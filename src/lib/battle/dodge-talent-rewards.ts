@@ -1,5 +1,5 @@
+import { rollBattleChance } from "./chance-roll";
 import { REACTIVE_REWARD_CHANCES } from "../game-constants";
-import { rollTalentChance } from "./status-helpers";
 import { applyDrawResult, drawFromState } from "./draw";
 import { addPlayerStatusWithCombatText } from "./player-rewards";
 import { addForgeToPlayer, applyCleanseHeals } from "./status-player";
@@ -15,7 +15,7 @@ export function applyDodgeTalentStatuses(state: BattleState, combatTexts: Combat
       nextState.hand.length + nextState.pendingHandCards.length - state.hand.length - state.pendingHandCards.length;
     if (drawn > 0) mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "draw", amount: drawn });
   }
-  if (state.talentEffects.forgeOnDodge > 0 && rollTalentChance(REACTIVE_REWARD_CHANCES.feint, nextState)) {
+  if (state.talentEffects.forgeOnDodge > 0 && rollBattleChance(REACTIVE_REWARD_CHANCES.feint, nextState)) {
     nextState = addForgeToPlayer(nextState, state.talentEffects.forgeOnDodge, combatTexts);
   }
   if (state.talentEffects.thornsOnDodge > 0) {
@@ -54,6 +54,14 @@ export function applyDodgeTalentStatuses(state: BattleState, combatTexts: Combat
     if (previous > 0 && nextState.playerStatuses[status] === 0) {
       removedStatuses += 1;
       mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: status, signal: "cleanse", text: "" });
+    } else if (nextState.playerStatuses[status] < previous) {
+      mergeCombatText(combatTexts, {
+        target: "player",
+        kind: "damage",
+        stat: status,
+        amount: previous - nextState.playerStatuses[status],
+        impact: false,
+      });
     }
   }
   return removedStatuses > 0 ? applyCleanseHeals(nextState, combatTexts, 1) : nextState;

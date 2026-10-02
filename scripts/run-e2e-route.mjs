@@ -45,7 +45,7 @@ export const E2E_ROUTES = Object.freeze({
       "test",
       "tests/e2e/specs/menu-navigation.spec.ts",
       "-g",
-      "Options|Auto-End",
+      "controller-equivalent options",
       "--project",
       "chromium",
     ],
@@ -120,8 +120,8 @@ Examples:
 }
 
 export function resolveE2eRoute(route) {
-  const normalized = E2E_ROUTE_ALIASES[route] ?? route;
-  return E2E_ROUTES[normalized];
+  const normalized = Object.hasOwn(E2E_ROUTE_ALIASES, route) ? E2E_ROUTE_ALIASES[route] : route;
+  return Object.hasOwn(E2E_ROUTES, normalized) ? E2E_ROUTES[normalized] : undefined;
 }
 
 const invokedAsCli = (process.argv[1] ?? "").includes("run-e2e-route.mjs");
@@ -152,10 +152,15 @@ if (invokedAsCli) {
     );
     process.exit(1);
   }
-  const result = await runTaskCommand("npx", [...resolved.args, ...playwrightArgs], {
-    cwd: ROOT,
-    label: resolved.label,
-    live,
-  });
+  const result = await runTaskCommand(
+    process.execPath,
+    ["scripts/run-compact.mjs", ...resolved.args, ...playwrightArgs],
+    {
+      cwd: ROOT,
+      label: resolved.label,
+      live,
+      env: { ...process.env, ...(live ? { ALCHEMY_OUTPUT_CAPTURED: "1" } : {}) },
+    },
+  );
   process.exit(result.status ?? 1);
 }

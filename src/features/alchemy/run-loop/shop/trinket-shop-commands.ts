@@ -1,53 +1,39 @@
 import { grantTrinketToRunWithRecord } from "@/features/alchemy/shared/stores/deck-mutations";
 import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
 import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readActivityData } from "@/lib/active-run-session";
-import type { TalentEffectManifest, TrinketEntry } from "@/lib/game-data";
+import type { TalentEffectManifest } from "@/lib/game-data";
 import { isLootEligible } from "@/lib/loot";
 import type { TrinketShopCommands } from "./shop-action-types";
 import {
   createGetRefreshPrice,
+  createShopPurchaseActions,
   createShopRefreshAction,
   initializeShop,
-  purchaseSlotOffering,
 } from "./shop-commands-core";
 import { getShopBuyPrice } from "./shop-pricing";
-import { resolveReadShopPricingContext } from "./shop-pricing-context";
 import { shopItemSlotKey } from "./shop-slot-keys";
 import { createInitialTrinketShopState, resampleTrinketShopOfferings } from "./shop-state-init";
-import { runShopTransaction } from "./shop-transactions";
 
 export function createTrinketShopCommands({
   talentEffects,
 }: {
   talentEffects: TalentEffectManifest;
 }): TrinketShopCommands {
-  const getBuyPrice = () => {
-    return getShopBuyPrice("trinket", null, resolveReadShopPricingContext(talentEffects, "trinketShopState"));
-  };
+  const { buy, getBuyPrice } = createShopPurchaseActions({
+    activity: "trinket-shop",
+    talentEffects,
+    itemsOf: (state) => state.trinkets,
+    slotKeyOf: (item, index) => shopItemSlotKey(item.id, index),
+    idOf: (item) => item.id,
+    priceOf: (_trinket, context) => getShopBuyPrice("trinket", null, context),
+    isAvailable: (draft, offered) => !draft.gear.ownedTrinketIds.includes(offered.id),
+    acquire: (draft, offered) => grantTrinketToRunWithRecord(draft, offered.id),
+  });
   const getRefreshPrice = createGetRefreshPrice("trinket-shop", talentEffects);
 
   const initialize = initializeShop("trinket-shop", (draft) =>
     createInitialTrinketShopState(createDraftRunRandomSource(draft, "shops"), draft.gear.ownedTrinketIds),
   );
-
-  function buy(trinket: TrinketEntry, slotKey: string): boolean {
-    return runShopTransaction("trinket-shop", (draft) => {
-      const state = readActivityData(draft.session.activity, "trinket-shop");
-      return purchaseSlotOffering({
-        talentEffects,
-        activity: "trinket-shop",
-        draft,
-        items: state.trinkets,
-        requestedId: trinket.id,
-        slotKey,
-        slotKeyOf: (item, index) => shopItemSlotKey(item.id, index),
-        idOf: (item) => item.id,
-        isAvailable: (innerDraft, offered) => !innerDraft.gear.ownedTrinketIds.includes(offered.id),
-        acquire: (innerDraft, offered) => grantTrinketToRunWithRecord(innerDraft, offered.id),
-      });
-    }).committed;
-  }
 
   const refresh = createShopRefreshAction({
     activity: "trinket-shop",

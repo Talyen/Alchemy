@@ -131,6 +131,28 @@ describe("getEnemyDamageMultiplier", () => {
       expect(getEnemyDamageMultiplier(state, rule.damageType), rule.traitId).toBe(rule.multiplier);
     }
   });
+
+  it("keeps cached trait products separate from live crowd control and replacement trait lists", () => {
+    const state = patchBattleState({
+      currentEnemy: {
+        traits: ["holy-vulnerability", "minor-holy-vulnerability", "sunward", "sunward"].map((id) => ({
+          id,
+          title: id,
+          description: "",
+        })),
+      },
+      talentEffects: { stunDoubleDamage: true },
+    });
+    const nativeAndWard = 2 * 1.3 * 0.5;
+    expect(getEnemyDamageMultiplier(state, "holy")).toBe(nativeAndWard);
+    expect(getEnemyDamageMultiplier(state, "physical")).toBe(1);
+    expect(getEnemyDamageMultiplier(state, "unknown")).toBe(1);
+    const stunned = { ...state, enemyCC: { ...state.enemyCC, stunSkipTurns: 1 } };
+    expect(getEnemyDamageMultiplier(stunned, "holy")).toBe(nativeAndWard * 2);
+    const replaced = { ...stunned, currentEnemy: { ...stunned.currentEnemy, traits: [] } };
+    expect(getEnemyDamageMultiplier(replaced, "holy")).toBe(2);
+    expect(getEnemyDamageMultiplier(state, "holy")).toBe(nativeAndWard);
+  });
 });
 
 describe("rollPercent", () => {

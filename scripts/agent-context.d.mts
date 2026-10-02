@@ -15,10 +15,24 @@ export function parseContextArgs(args: string[]): {
   json: boolean;
   tests: boolean;
   test: string | null;
+  entries: boolean;
+  entry: string | null;
+  related: boolean;
+  session: string | null;
+  refresh: boolean;
+  full: boolean;
+  locate: boolean;
 };
 
 export function renderContext(
   selection: ReturnType<typeof import("./lib/agent/agent-context.mjs").selectContext>,
   sections: ReturnType<typeof import("./lib/agent/agent-context.mjs").contextSections>,
   budget?: number,
-): { text: string; included: ReturnType<typeof import("./lib/agent/agent-context.mjs").contextSections> };
+  options?: { locate?: boolean },
+): {
+  text: string;
+  included: ReturnType<typeof import("./lib/agent/agent-context.mjs").contextSections>;
+  located: ReturnType<typeof import("./lib/agent/agent-context.mjs").contextSections>;
+};
+
+export function main(argv?: string[]): number;

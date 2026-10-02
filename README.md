@@ -41,15 +41,16 @@ Desktop local development is `npm run dev:desktop`.
 
 ## Develop
 
-| Command                    | Action                                                   |
-| -------------------------- | -------------------------------------------------------- |
-| `npm run dev`              | Start Vite dev server                                    |
-| `npm run dev:desktop`      | Start the Electron shell                                 |
-| `npm test`                 | Run Vitest unit tests                                    |
-| `npm run test:e2e`         | Run Playwright against the existing production build     |
-| `npm run lint`             | Lint all source files                                    |
-| `npm run verify -- --diff` | Run related tests and risk escalations for changed paths |
-| `npm run check -- --diff`  | Run the source-aware push and handoff gate               |
+| Command                    | Action                                                  |
+| -------------------------- | ------------------------------------------------------- |
+| `npm run dev`              | Start Vite dev server                                   |
+| `npm run dev:desktop`      | Start the Electron shell                                |
+| `npm test`                 | Run bounded Node-only smoke tests                       |
+| `npm run test:full`        | Run the full unit suite; append paths for focused tests |
+| `npm run test:e2e`         | Run Playwright against the existing production build    |
+| `npm run lint`             | Lint all source files                                   |
+| `npm run verify -- --diff` | Run lightweight changed-path verification               |
+| `npm run check -- --diff`  | Run the lightweight push and handoff gate               |
 
 Install Playwright's browser once before the first local E2E run:
 
@@ -60,6 +61,10 @@ npx playwright install chromium
 Run `npm run build` before `npm run test:e2e` to test current source. For
 checks against the development server, use `npm run test:e2e:dev`. Focused
 commands and fixture guidance live in the [E2E guide](./tests/e2e/README.md).
+
+Use explicit task-owned paths instead of `--diff` when the checkout contains
+other work. [Contributing](./CONTRIBUTING.md#what-to-run-when-you-change) owns
+local execution policy and the opt-in full gates; a local pass still needs CI validation.
 
 Full command catalog (build, desktop, gates, balance sim, perf, clean):
 [`Docs/REFERENCE.md`](./Docs/REFERENCE.md#environment--commands). Path-specific
@@ -93,7 +98,7 @@ Feature layout and run-state ownership:
 - `steam/` — Steam packaging and upload configuration
 
 Root configuration files remain beside `package.json` for tool discovery. Local
-outputs such as `dist/`, `release-desktop/`, `reports/`, `playwright-report/`, and
+outputs such as `dist/`, `dist-demo/`, `release-desktop/`, `release-desktop-demo/`, `reports/`, `playwright-report/`, and
 `test-results/` are ignored artifacts. `scratch/` and `output/` hold temporary local
 work; retained design materials belong in `Docs/design/`. Existing `npm run clean` and
 `npm run prune:transient` commands manage disposable reports and caches.

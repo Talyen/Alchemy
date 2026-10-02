@@ -54,6 +54,29 @@ export function slugify(s) {
 export function main(argv = process.argv.slice(2)) {
   const [cmd, ...rest] = argv;
 
+  if (["create", "remove", "list", "prune"].includes(cmd)) {
+    const valueOptions = cmd === "create" ? ["--task", "--base"] : cmd === "remove" ? ["--task"] : [];
+    const flagOptions = cmd === "create" ? ["--detached"] : cmd === "remove" ? ["--force"] : [];
+    const seen = new Set();
+    for (let index = 0; index < rest.length; index++) {
+      const arg = rest[index];
+      const equals = arg.indexOf("=");
+      const name = equals < 0 ? arg : arg.slice(0, equals);
+      if (seen.has(name) || (!valueOptions.includes(name) && !flagOptions.includes(arg))) {
+        console.error(`Unknown or repeated option: ${arg}`);
+        process.exit(2);
+      }
+      seen.add(name);
+      if (valueOptions.includes(name)) {
+        const value = equals < 0 ? rest[++index] : arg.slice(equals + 1);
+        if (!value || value.startsWith("-")) {
+          console.error(`${name} requires a value`);
+          process.exit(2);
+        }
+      }
+    }
+  }
+
   function getArg(name) {
     const prefix = `${name}=`;
     for (let index = 0; index < rest.length; index++) {
@@ -74,12 +97,12 @@ export function main(argv = process.argv.slice(2)) {
 
   if (cmd === "list") {
     const r = runGit(["worktree", "list"], { stdio: "inherit" });
-    process.exit(r.status ?? 0);
+    process.exit(r.status ?? 1);
   }
 
   if (cmd === "prune") {
     const r = runGit(["worktree", "prune", "-v"], { stdio: "inherit" });
-    process.exit(r.status ?? 0);
+    process.exit(r.status ?? 1);
   }
 
   if (cmd === "create") {
@@ -202,7 +225,7 @@ export function main(argv = process.argv.slice(2)) {
     }
 
     const prune = runGit(["worktree", "prune"], { stdio: "inherit" });
-    process.exit(prune.status ?? 0);
+    process.exit(prune.status ?? 1);
   }
 
   console.error(`unknown command: ${cmd}`);

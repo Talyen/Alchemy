@@ -103,6 +103,47 @@ describe("createCanvasLifecycle", () => {
     lifecycle.dispose();
   });
 
+  it("skips repeated resize setup while observer-free frames continue, but responds to size and DPR changes", () => {
+    vi.stubGlobal("ResizeObserver", undefined);
+    vi.stubGlobal("devicePixelRatio", 1);
+    const frames: FrameRequestCallback[] = [];
+    vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    const onResize = vi.fn();
+    const onFrame = vi.fn();
+    const lifecycle = createCanvasLifecycle({ canvas, onResize, onFrame });
+    const writeWidth = vi.spyOn(canvas, "width", "set");
+    const writeHeight = vi.spyOn(canvas, "height", "set");
+    frames.shift()!(100);
+    frames.shift()!(200);
+    window.dispatchEvent(new Event("focus"));
+    expect(onFrame).toHaveBeenCalledTimes(2);
+    expect(onResize).toHaveBeenCalledExactlyOnceWith(640, 480, 1);
+    expect(writeWidth).not.toHaveBeenCalled();
+    expect(writeHeight).not.toHaveBeenCalled();
+
+    Object.defineProperty(parent, "clientWidth", { value: 800, configurable: true });
+    frames.shift()!(300);
+    expect(onResize).toHaveBeenLastCalledWith(800, 480, 1);
+    expect(onFrame).toHaveBeenLastCalledWith(300, expect.any(Number), 800, 480);
+    expect(canvas.width).toBe(800);
+
+    vi.stubGlobal("devicePixelRatio", 2);
+    frames.shift()!(400);
+    expect(onResize).toHaveBeenLastCalledWith(800, 480, 2);
+    expect(canvas.width).toBe(1600);
+    expect(canvas.height).toBe(960);
+
+    // Canvas writes reset drawing state even when the requested size is unchanged.
+    canvas.width = 2;
+    frames.shift()!(500);
+    expect(canvas.width).toBe(1600);
+    expect(onResize).toHaveBeenCalledTimes(4);
+    lifecycle.dispose();
+  });
+
   it("pauses frame loop when motion is disabled", () => {
     localStorage.setItem("alchemy-disable-animations", "true");
     const raf = vi.spyOn(window, "requestAnimationFrame");
@@ -116,6 +157,36 @@ describe("createCanvasLifecycle", () => {
     expect(raf).not.toHaveBeenCalled();
     expect(onFrame).not.toHaveBeenCalled();
     lifecycle.dispose();
+  });
+
+  it("resumes after the OS reduced-motion preference is switched off", () => {
+    const query = new EventTarget();
+    let reduced = false;
+    Object.defineProperty(query, "matches", { get: () => reduced });
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn(() => query as MediaQueryList),
+    );
+    const frames: FrameRequestCallback[] = [];
+    const raf = vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    const onFrame = vi.fn();
+    const lifecycle = createCanvasLifecycle({ canvas, onFrame });
+    reduced = true;
+    frames.shift()!(100);
+    expect(onFrame).not.toHaveBeenCalled();
+    const callsBeforeResume = raf.mock.calls.length;
+    reduced = false;
+    query.dispatchEvent(new Event("change"));
+    expect(raf).toHaveBeenCalledTimes(callsBeforeResume + 1);
+    frames.shift()!(200);
+    expect(onFrame).toHaveBeenCalledOnce();
+    lifecycle.dispose();
+    const callsAfterDispose = raf.mock.calls.length;
+    query.dispatchEvent(new Event("change"));
+    expect(raf).toHaveBeenCalledTimes(callsAfterDispose);
   });
 
   it("pauses frame loop when document is hidden", () => {

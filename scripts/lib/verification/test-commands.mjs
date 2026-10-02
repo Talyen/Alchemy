@@ -20,6 +20,11 @@ const SAVE_CORE_SUITES = Object.freeze([
 ]);
 
 export const TEST_SUITES = Object.freeze({
+  local: Object.freeze([
+    "tests/lib/rng.test.ts",
+    "tests/app/autosave-scheduler.test.ts",
+    "tests/scripts/local-verification.test.ts",
+  ]),
   save: Object.freeze([
     ...SAVE_CORE_SUITES,
     "tests/architecture/save-migration-guard.test.ts",
@@ -46,36 +51,43 @@ export function validateTestSuitePaths(rootDir, suites = TEST_SUITES.shipUnit) {
 }
 
 export const COMMANDS = Object.freeze({
+  "unit-local": {
+    label: "local Node smoke",
+    reason: "bounded local checks; full validation belongs to CI",
+    command: NPM,
+    args: ["test"],
+  },
   "unit-all": {
     label: "complete unit suite",
     reason: "large selections use full coverage without exceeding platform argument limits",
     command: NPM,
-    args: ["test"],
+    args: ["run", "test:full"],
   },
   related: {
     label: "dependency-related unit tests",
     reason: "Vitest selects tests that import the changed implementation",
-    command: "npx",
-    args: ["vitest", "related", `--maxWorkers=${VITEST_MAX_WORKERS}`],
+    command: process.execPath,
+    args: ["scripts/run-compact.mjs", "vitest", "related", `--maxWorkers=${VITEST_MAX_WORKERS}`],
   },
   "unit-changed": {
     label: "changed unit tests",
     reason: "changed Vitest files execute directly",
-    command: "npx",
-    args: ["vitest", "run"],
+    command: process.execPath,
+    args: ["scripts/run-compact.mjs", "vitest", "run"],
   },
   "unit-save": {
     label: "save/persistence unit tests",
     reason: "save changes preserve schema, storage, autosave, and hydration behavior",
     command: NPM,
-    args: ["test", "--", ...TEST_SUITES.save],
+    args: ["run", "test:full", "--", ...TEST_SUITES.save],
   },
   "unit-desktop": {
     label: "desktop boundary unit tests",
     reason: "desktop changes preserve security, crash reporting, and package layout",
     command: NPM,
     args: [
-      "test",
+      "run",
+      "test:full",
       "--",
       "tests/desktop/desktop-security.test.ts",
       "tests/desktop/desktop-sentry.test.ts",
@@ -86,13 +98,13 @@ export const COMMANDS = Object.freeze({
     label: "tooling and architecture unit tests",
     reason: "tooling checks read repository files and cannot be selected reliably from imports alone",
     command: NPM,
-    args: ["test", "--", ...TEST_SUITES.tooling],
+    args: ["run", "test:full", "--", ...TEST_SUITES.tooling],
   },
   "unit-performance": {
     label: "performance harness unit tests",
     reason: "performance harness and runtime marks share profiling contracts",
     command: NPM,
-    args: ["test", "--", "tests/performance", "tests/lib/performance"],
+    args: ["run", "test:full", "--", "tests/performance", "tests/lib/performance"],
   },
   "report-balance": {
     label: "balance report integration",

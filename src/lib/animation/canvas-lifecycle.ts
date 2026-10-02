@@ -73,6 +73,7 @@ export function createCanvasLifecycle({
 
   let ro: ResizeObserver | null = null;
   let lastDpr = typeof devicePixelRatio !== "undefined" ? devicePixelRatio : 1;
+  let lastBackingScale: number | undefined;
 
   function resize() {
     if (lifetime.signal.aborted) return;
@@ -88,6 +89,7 @@ export function createCanvasLifecycle({
     const scale = visible ? resolveCanvasBackingScale(w, h, backingScaleOptions) : 1;
     const backingWidth = visible ? Math.max(1, Math.floor(w * scale)) : 1;
     const backingHeight = visible ? Math.max(1, Math.floor(h * scale)) : 1;
+    const backingChanged = canvas.width !== backingWidth || canvas.height !== backingHeight;
     // Assigning either dimension clears the bitmap and drawing state, even
     // when the value is unchanged. The canvas itself owns its backing size.
     if (canvas.width !== backingWidth) canvas.width = backingWidth;
@@ -96,10 +98,16 @@ export function createCanvasLifecycle({
     const nextWidth = visible ? w : 0;
     const nextHeight = visible ? h : 0;
     const sizeChanged = lifecycle.logicalWidth !== nextWidth || lifecycle.logicalHeight !== nextHeight;
+    const scaleChanged = lastBackingScale !== scale;
     lifecycle.logicalWidth = nextWidth;
     lifecycle.logicalHeight = nextHeight;
-    onResize?.(nextWidth, nextHeight, scale);
-    if (sizeChanged) scheduleFrame();
+    // Focus/observer notifications and the observer-free frame loop can all
+    // repeat the same size. Reinitialize drawing state only when its inputs change.
+    if (sizeChanged || backingChanged || scaleChanged) {
+      lastBackingScale = scale;
+      onResize?.(nextWidth, nextHeight, scale);
+      scheduleFrame();
+    }
   }
 
   function isPaused() {
@@ -165,6 +173,7 @@ export function createCanvasLifecycle({
     lifetime.abort();
     cancelFrame();
     ro?.disconnect();
+    motionQuery?.removeEventListener("change", resume);
   }
 
   resize();
@@ -174,9 +183,13 @@ export function createCanvasLifecycle({
     ro.observe(parent);
   }
 
+  const motionQuery = window?.matchMedia?.("(prefers-reduced-motion: reduce)");
+  motionQuery?.addEventListener("change", resume);
+
   const listenerOptions = { signal: lifetime.signal };
   document?.addEventListener("visibilitychange", resume, listenerOptions);
   window?.addEventListener("focus", resume, listenerOptions);
+  window?.addEventListener("storage", resume, listenerOptions);
   if (pauseOnBlur) window?.addEventListener("blur", cancelFrame, listenerOptions);
 
   if (immediate && !isPaused()) {

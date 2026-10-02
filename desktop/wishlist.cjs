@@ -4,7 +4,9 @@ async function openWishlist({ appId, client, openExternal, pause }) {
   if (!/^\d+$/u.test(raw) || !Number.isSafeInteger(target) || target <= 0 || target === 480) return false;
   pause();
   try {
-    if (client?.overlay && client.overlay.isEnabled?.() !== false) {
+    // A void activation call cannot tell us that an unavailable overlay opened.
+    // Older bindings without availability detection use the browser destination.
+    if (client?.isOverlayEnabled?.() === true) {
       client.overlay.activateToStore(target, 0);
       return true;
     }

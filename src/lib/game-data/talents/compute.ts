@@ -1,19 +1,29 @@
 import type { TalentEffectManifest } from "../talent-effect-manifest";
 import type { KeywordId } from "../types";
 import { getTalentById } from "./talent-pool-definitions";
-import { isUsableTalentForKeyword, type TalentEffectOperation, type UnlockedTalents } from "./types";
+import {
+  isUsableTalentForKeyword,
+  type TalentDefinition,
+  type TalentEffectOperation,
+  type UnlockedTalents,
+} from "./types";
 import { createEmptyTalentEffectManifest } from "./manifest-defaults";
+
+function* usableUnlockedTalents(unlockedTalents: UnlockedTalents): Iterable<TalentDefinition> {
+  for (const [keywordId, talentIds] of Object.entries(unlockedTalents)) {
+    for (const talentId of talentIds ?? []) {
+      const talent = getTalentById(talentId);
+      if (isUsableTalentForKeyword(talent, keywordId as KeywordId)) yield talent;
+    }
+  }
+}
 
 export function computeTalentEffects(unlockedTalents: UnlockedTalents): TalentEffectManifest {
   const manifest = createEmptyTalentEffectManifest();
 
-  for (const [keywordId, talentIds] of Object.entries(unlockedTalents)) {
-    for (const talentId of talentIds ?? []) {
-      const talent = getTalentById(talentId);
-      if (!isUsableTalentForKeyword(talent, keywordId as KeywordId)) continue;
-      for (const effect of talent.effects ?? []) {
-        applyTalentEffect(manifest, effect);
-      }
+  for (const talent of usableUnlockedTalents(unlockedTalents)) {
+    for (const effect of talent.effects ?? []) {
+      applyTalentEffect(manifest, effect);
     }
   }
 
@@ -23,16 +33,8 @@ export function computeTalentEffects(unlockedTalents: UnlockedTalents): TalentEf
 export function normalizeUnlockedTalents(unlockedTalents: UnlockedTalents): UnlockedTalents {
   const normalized: UnlockedTalents = {};
 
-  for (const [keywordId, talentIds] of Object.entries(unlockedTalents)) {
-    const validIds = [];
-    for (const talentId of talentIds ?? []) {
-      const talent = getTalentById(talentId);
-      if (!isUsableTalentForKeyword(talent, keywordId as KeywordId)) continue;
-      validIds.push(talentId);
-    }
-    if (validIds.length > 0) {
-      normalized[keywordId as keyof UnlockedTalents] = validIds;
-    }
+  for (const talent of usableUnlockedTalents(unlockedTalents)) {
+    (normalized[talent.keywordId] ??= []).push(talent.id);
   }
 
   return normalized;

@@ -9,7 +9,6 @@ vi.setConfig({ testTimeout: 30_000 });
 import {
   BATTLE_NO_DIRECT_RNG,
   BATTLE_NO_MATH_FLOOR,
-  BATTLE_NO_MATH_RANDOM,
   CLASSNAME_NO_TEMPLATE,
   NO_UNOWNED_CONTEXT_CREATION,
   restrictedSyntax,
@@ -81,19 +80,35 @@ describe("eslint rationalization", () => {
   it("bans Math.floor/ceil/trunc but allows Math.round", async () => {
     const selectors = restrictedSyntax(...BATTLE_NO_MATH_FLOOR);
     for (const fn of ["floor", "ceil", "trunc"]) {
-      const msgs = await lintSyntax("src/lib/battle/card-play.ts", `Math.${fn}(1.5);`, selectors);
-      expect(msgs.length, `should ban Math.${fn}`).toBeGreaterThan(0);
+      const msgs = await lintSyntax("src/lib/battle/card-play.ts", `Math.${fn}(1.5); Math["${fn}"](1.5);`, selectors);
+      expect(msgs.length, `should ban dot and computed Math.${fn}`).toBe(2);
     }
     const allowed = await lintSyntax("src/lib/battle/card-play.ts", `Math.round(1.5);`, selectors);
     expect(allowed.length).toBe(0);
   });
 
-  it("collapses Math.random to single property-access selector", async () => {
-    expect(BATTLE_NO_MATH_RANDOM.length).toBe(1);
-    expect(BATTLE_NO_MATH_RANDOM[0].selector).toBe('MemberExpression[object.name="Math"][property.name="random"]');
-    const selectors = restrictedSyntax(...BATTLE_NO_MATH_RANDOM);
-    const msgs = await lintSyntax("src/lib/battle/card-play.ts", `Math.random(); const x = Math.random;`, selectors);
-    expect(msgs.length).toBeGreaterThan(0);
+  it("rejects dot and literal computed randomness without mistaking dynamic keys for builtins", async () => {
+    for (const file of [
+      "src/lib/battle/card-play.ts",
+      "src/features/alchemy/run-loop/run/progression-commands.ts",
+      "src/features/alchemy/run-loop/navigation/example.tsx",
+    ]) {
+      const messages = await effectiveMessages(
+        file,
+        `Math.random(); const direct = Math.random; Math["random"](); const computed = Math["random"]; Math[random]();`,
+        "no-restricted-syntax",
+      );
+      expect(messages, file).toHaveLength(4);
+      expect(messages.every((message) => message.message.includes("seeded"))).toBe(true);
+      if (file.includes("run-loop")) {
+        const nestedDispatch = await effectiveMessages(
+          file,
+          'import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";',
+          "no-restricted-syntax",
+        );
+        expect(nestedDispatch, file).toHaveLength(1);
+      }
+    }
   });
 
   it("className template targets only raw template directly on className", async () => {

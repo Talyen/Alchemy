@@ -10,7 +10,7 @@ For refactors and simplification passes on attached paths, use [Docs/Audits](./A
 sections when useful and skip material already understood; follow dependencies
 when they matter to the requested behavior. Generated asset barrels are
 outputs; use the [asset workflow](./WORKFLOWS-ASSETS.md) for their sources and
-regeneration. Each checklist's tests are selected by the changed-path route
+regeneration. The opt-in full verifier selects tests through changed-path routes
 ([CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change)); only
 catalog-external tests are named inline. Named suites are verification entry points. Apply the [test value policy](../CONTRIBUTING.md#test-value-and-coverage-strategy) throughout; section-specific save-compatibility and browser-timing requirements still apply.
 
@@ -82,8 +82,9 @@ navigation. Keep persisted drafts and resume paths in their existing owners.
   [Mystery effects](#adding-a-new-mystery-effect-kind), and
   [Corruption flow](#adding--changing-corruption-flow).
 - Preserve supported saved geography and in-flight encounters. Below-baseline development maps are disposable under the [save baseline](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline); no historical grid/hex migration belongs in navigation.
-- Cover the changed setup/resume route with the dependency-related tests selected
-  by `verify`.
+- Cover the changed setup/resume route with focused unit tests using
+  `npm run test:full -- <test-paths>`; dependency-related selection belongs to
+  the opt-in full verifier.
 
 ## Change battle playback
 
@@ -97,7 +98,7 @@ Visible behavior: [UI battle feedback](./UI_BATTLE.md#battle-feedback) and [batt
 - Defer defeat teardown until the delayed screen transition commits; keep [battle timing](../src/lib/game-constants/battle-timing.ts) aligned with `combatant-attack-lunge` in [keyframes](../src/styles/keyframes.css) and the shake delay in [theme styles](../src/styles/theme.css). Death, survival, and lunge composition details live in [UI battle motion](./UI_MOTION.md#battle-motion).
 - Wish choices open after active card transfers finish. Cards with both Draw and Wish show their draws first; queued Wishes also wait for the previous chosen card to reach the hand. Use the existing transfer-in-progress presentation signal without delaying gameplay commits.
 - Preserve immutable hidden-hand keys, callback binding, post-death navigation timing, and the rule that mid-enemy-turn reload skips presentation replay.
-- Run the focused battle playback tests and the selection from `verify`; use the shared browser fixture with real timing for animation coverage, following [the E2E guide](../tests/e2e/README.md#test-import). Do not request `fastBattle` or enable fast mode when timing is under test.
+- Run the focused battle playback unit tests with `npm run test:full -- <test-paths>` and finish with the task-scoped local gate. Browser animation coverage follows [the E2E guide](../tests/e2e/README.md#running-focused-checks) and requires an explicit local execution request. Use its shared fixture with real timing; do not request `fastBattle` or enable fast mode when timing is under test.
 
 ## Adding a new screen
 
@@ -158,5 +159,5 @@ Numeric corruption also updates matching delayed repeats of the changed effect, 
 - **2. Destination handlers (corrupt / exit / abandon)** — `run-loop/navigation/corruption-flow.ts`
 - **2b. Shell wiring** — `createCorruptionFlowHandlers()` wired in `shell/run-flow-engine.ts` (receives advance/return callbacks plus labyrinth-map return)
 - **3. Screen** — `run-loop/screens/corruption-screen.tsx`
-- **4. Resume** — `session.corruptionResult` via `run-resume-codec.ts` (`encodeCorruptionResult`, screen-scoped)
+- **4. Resume** — `session.activity` with kind `corruption` owns the result. `run-resume-codec.ts` encodes its data as `activeRun.corruptionResult` and restores that activity; menu visits do not change the saved location.
 - **5. Tests** — `tests/features/alchemy/run-loop/corruption.test.ts`, destination E2E Mystery/Corruption cases

@@ -110,7 +110,6 @@ function updateParticle(p: BackgroundParticle, dt: number, now: number, width: n
 
 function renderParticle(ctx: CanvasRenderingContext2D, p: BackgroundParticle): void {
   ctx.globalAlpha = p.alpha;
-  ctx.fillStyle = p.color;
   ctx.beginPath();
   ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
   ctx.fill();
@@ -177,8 +176,15 @@ export function startBackgroundParticles(
     },
     onFrame: (now, dt, w, h) => {
       ctx.clearRect(0, 0, w, h);
+      // Keep draw order for translucent overlaps. Only skip identical state
+      // writes within this frame; resizing can reset the context between frames.
+      let previousColor: string | undefined;
       for (const p of particles) {
         updateParticle(p, dt, now, w, h);
+        if (p.color !== previousColor) {
+          ctx.fillStyle = p.color;
+          previousColor = p.color;
+        }
         renderParticle(ctx, p);
       }
     },

@@ -8,6 +8,9 @@ class MockImage extends EventTarget {
   complete = false;
   naturalWidth = 1;
   decode = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+  removeAttribute(name: string) {
+    if (name === "src") this.src = "";
+  }
   onload = () => this.dispatchEvent(new Event("load"));
   onerror = () => this.dispatchEvent(new Event("error"));
 }
@@ -77,6 +80,7 @@ describe("preloadImage", () => {
 
     await vi.advanceTimersByTimeAsync(IMAGE_PRELOAD_TIMEOUT_MS);
     await expect(stalled).resolves.toBeUndefined();
+    expect(mockImageInstances[0].src).toBe("");
 
     const retry = preloadImage(src);
     expect(mockImageInstances).toHaveLength(2);
@@ -110,6 +114,58 @@ describe("preloadImage", () => {
 
   it("handles empty string safely", async () => {
     await expect(preloadImage("")).resolves.toBeUndefined();
+  });
+
+  it("keeps concurrent loads deduplicated beyond the completed cache capacity", async () => {
+    const sources = Array.from({ length: 501 }, uniqueUrl);
+    const pending = sources.map(preloadImage);
+    expect(preloadImage(sources[0]!)).toBe(pending[0]);
+    expect(mockImageInstances).toHaveLength(501);
+    for (const image of mockImageInstances) image.onload();
+    await Promise.all(pending);
+  });
+
+  it("bounds completed entries and keeps recently used images warm", async () => {
+    const sources = Array.from({ length: 500 }, uniqueUrl);
+    const pending = sources.map(preloadImage);
+    for (const image of mockImageInstances) image.onload();
+    await Promise.all(pending);
+    expect(preloadImage(sources[0]!)).toBe(pending[0]);
+
+    const added = preloadImage(uniqueUrl());
+    mockImageInstances.at(-1)!.onload();
+    await added;
+    expect(preloadImage(sources[0]!)).toBe(pending[0]);
+    const evicted = preloadImage(sources[1]!);
+    expect(mockImageInstances).toHaveLength(502);
+    mockImageInstances.at(-1)!.onload();
+    await evicted;
+  });
+
+  it("releases pending warmups and their timers immediately on reset", async () => {
+    vi.useFakeTimers();
+    const sources = Array.from({ length: 3 }, uniqueUrl);
+    const pending = sources.map(preloadImage);
+    expect(vi.getTimerCount()).toBe(3);
+    resetImagePreloadCache();
+    await Promise.all(pending);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(mockImageInstances.every((image) => image.src === "")).toBe(true);
+    for (const image of mockImageInstances) image.onload();
+    expect(mockImageInstances.every((image) => image.decode.mock.calls.length === 0)).toBe(true);
+  });
+
+  it("does not cache an old successful load after reset", async () => {
+    const src = uniqueUrl();
+    const old = preloadImage(src);
+    resetImagePreloadCache();
+    mockImageInstances[0].onload();
+    await old;
+
+    const replacement = preloadImage(src);
+    expect(mockImageInstances).toHaveLength(2);
+    mockImageInstances[1].onload();
+    await replacement;
   });
 
   it("does not let an old failure evict a replacement after reset", async () => {

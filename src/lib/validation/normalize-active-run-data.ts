@@ -2,7 +2,14 @@ import { repairShopOfferings, shopItemSlotKey } from "@/lib/active-run-session/s
 import type { BattleSnapshot } from "@/lib/battle";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { DRAFT_CHOICES, DRAFT_ROUNDS, MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
-import { cardById, characters, selectRewardCards, type BattleCard, type KeywordId } from "@/lib/game-data";
+import {
+  cardById,
+  characters,
+  isMixedPotionCard,
+  selectRewardCards,
+  type BattleCard,
+  type KeywordId,
+} from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { createRunStateRng, type RunRngState, type RunRngStream } from "@/lib/rng";
 import type {
@@ -15,14 +22,21 @@ import type {
 } from "./save-schemas/active-run";
 import type { PersistedBattleCard } from "./save-schemas/battle-card-schemas";
 
-function isLiveCardId(id: string): boolean {
-  return cardById[id] !== undefined;
-}
-
 // Deliberate removals are recorded in TOMBSTONED_CARD_IDS for explicit
 // fixtures; load drops every non-live id identically via this single check.
-function filterLiveCards<T extends { id: string }>(cards: T[]): T[] {
-  return cards.filter((card) => isLiveCardId(card.id));
+function isRecoverableCard(card: Pick<BattleCard, "id" | "cost" | "effects" | "descriptionLines">): boolean {
+  if (Object.hasOwn(cardById, card.id)) return true;
+  return (
+    isMixedPotionCard(card) &&
+    Number.isInteger(card.cost) &&
+    card.cost >= 0 &&
+    card.effects.length > 0 &&
+    card.descriptionLines.length > 0
+  );
+}
+
+function filterLiveCards<T extends Pick<BattleCard, "id" | "cost" | "effects" | "descriptionLines">>(cards: T[]): T[] {
+  return cards.filter(isRecoverableCard);
 }
 
 function filterLiveBattleState(state: BattleSnapshot): BattleSnapshot {
@@ -79,22 +93,16 @@ function normalizeLabyrinthModifiers(
 
 function normalizeShopState(state: ShopState | null): ShopState | null {
   if (!state) return null;
-  const repaired = repairShopOfferings(
-    state.cards,
-    state.purchasedSlotKeys,
-    (card) => isLiveCardId(card.id),
-    (card, index) => shopItemSlotKey(card.id, index),
+  const repaired = repairShopOfferings(state.cards, state.purchasedSlotKeys, isRecoverableCard, (card, index) =>
+    shopItemSlotKey(card.id, index),
   );
   return { ...state, cards: repaired.items, purchasedSlotKeys: repaired.purchasedSlotKeys };
 }
 
 function normalizeAlchemistState(state: AlchemistState | null): AlchemistState | null {
   if (!state) return null;
-  const repaired = repairShopOfferings(
-    state.potions,
-    state.purchasedSlotKeys,
-    (potion) => isLiveCardId(potion.id),
-    (potion, index) => shopItemSlotKey(potion.id, index),
+  const repaired = repairShopOfferings(state.potions, state.purchasedSlotKeys, isRecoverableCard, (potion, index) =>
+    shopItemSlotKey(potion.id, index),
   );
   return { ...state, potions: repaired.items, purchasedSlotKeys: repaired.purchasedSlotKeys };
 }
@@ -237,7 +245,7 @@ function normalizeCorruptionResult(
   result: ValidatedActiveRunData["corruptionResult"],
 ): ValidatedActiveRunData["corruptionResult"] {
   if (!result) return result;
-  if (!isLiveCardId(result.originalCard.id) || !isLiveCardId(result.corruptedCard.id)) return null;
+  if (!isRecoverableCard(result.originalCard) || !isRecoverableCard(result.corruptedCard)) return null;
   return result;
 }
 

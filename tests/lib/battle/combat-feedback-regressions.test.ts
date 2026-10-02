@@ -23,7 +23,7 @@ describe("combat feedback regressions", () => {
     expect(emptyTexts).toEqual([]);
   });
 
-  it("Dodge cleansing identifies fully removed statuses without announcing partial or empty cleanses", () => {
+  it("Dodge cleansing distinguishes full cleanses from partial stack removal", () => {
     const state = regressionBattle({
       playerStatuses: { burn: 1, poison: 2, stun: 2 },
       talentEffects: { cleanseStacksOnDodge: 1, cleanseCcOnDodge: true },
@@ -34,6 +34,7 @@ describe("combat feedback regressions", () => {
     expect(texts).toEqual([
       { target: "player", kind: "notice", stat: "stun", signal: "cleanse", text: "" },
       { target: "player", kind: "notice", stat: "burn", signal: "cleanse", text: "" },
+      { target: "player", kind: "damage", stat: "poison", amount: 1, impact: false },
     ]);
   });
 

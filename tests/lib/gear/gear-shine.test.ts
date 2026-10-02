@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { keywordDefinitions } from "@/lib/game-data";
+import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
+import { getKeywordTextShineColors, MAX_TEXT_SHINE_KEYWORDS } from "@/lib/keyword-text-shine";
 import { getKeywordBorderShineColors } from "@/lib/keyword-border-shine";
 import { NEUTRAL_SHINE_FALLBACK } from "@/lib/animation/shine-gradient";
 import { gearAffixCatalog } from "@/lib/gear/affix-catalog";
+import { getGearInstanceAffixes } from "@/lib/gear/affixes";
+import { getUniqueAffixes } from "@/lib/gear/unique-catalog";
 import { gearDefinitions } from "@/lib/gear/definitions";
 import {
   getAstralShineColors,
@@ -26,6 +29,48 @@ function instance(overrides: Partial<GearInstance> & Pick<GearInstance, "instanc
 }
 
 describe("gear shine", () => {
+  it("preserves text palette order and duplicate handling across all keywords", () => {
+    const keywords = Object.keys(keywordDefinitions) as KeywordId[];
+    for (let index = 0; index < keywords.length; index++) {
+      const rotated = [...keywords.slice(index), ...keywords.slice(0, index)];
+      const input = rotated.flatMap((keyword) => [keyword, keyword]);
+      const affinity = rotated.slice(1, 5);
+      const selected = [
+        ...input.filter((keyword) => affinity.includes(keyword)),
+        ...input.filter((keyword) => !affinity.includes(keyword)),
+      ].slice(0, MAX_TEXT_SHINE_KEYWORDS);
+      expect(selectTextShineKeywordIds(input, affinity)).toEqual(selected);
+      for (const ids of [input, selected, []]) {
+        const expected = [...new Set(ids)].slice(0, MAX_TEXT_SHINE_KEYWORDS).flatMap((keyword) => {
+          const [primary] = keywordDefinitions[keyword].shineColors;
+          return primary ? [primary, `color-mix(in srgb, ${primary} 55%, transparent)`] : [];
+        });
+        expect(getKeywordTextShineColors(ids)).toEqual(expected);
+      }
+    }
+  });
+
+  it("shares protected canonical Unique affixes across inspection and combat reads", () => {
+    const first = instance({ instanceId: "unique-read-1", definitionId: "wardbreaker", affixes: [] });
+    const second = instance({
+      instanceId: "unique-read-2",
+      definitionId: "wardbreaker",
+      affixes: [{ id: "flat-burn", value: 999 }],
+    });
+    const expected = getUniqueAffixes("wardbreaker")!;
+    const view = getGearInstanceAffixes(first);
+    expect(view).toEqual(expected);
+    expect(getGearInstanceAffixes(second)).toBe(view);
+    expect(Object.isFrozen(view)).toBe(true);
+    expect(Reflect.set(view[0]!, "value", 999)).toBe(false);
+
+    const mutableCopy = getUniqueAffixes("wardbreaker")!;
+    mutableCopy[0]!.value = 999;
+    mutableCopy.pop();
+    expect(getGearInstanceAffixes(first)).toEqual(expected);
+    expect(getUniqueAffixes("wardbreaker")).toEqual(expected);
+  });
+
   it("collects unique sorted keywords from affixes including secondary keywords", () => {
     const keywordIds = getGearInstanceKeywordIds(
       instance({

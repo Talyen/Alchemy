@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { BattleCardEffectSchema } from "@/lib/game-data";
 import { createUniqueGearBattleState } from "@/lib/battle";
+import { recordNestedValidationWarnings } from "./validation-utils";
 
 const echoCardSchema = z.looseObject({
   id: z.string(),
@@ -27,6 +28,18 @@ export const UniqueGearBattleStateSchema = z
     finalSparkUsed: ready,
     lastArcheryUid: cardUid,
     returningFlightUid: cardUid,
-    archeryEchoes: z.array(echoCardSchema).catch([]),
+    archeryEchoes: z
+      .array(z.unknown())
+      .transform((entries) =>
+        entries.flatMap((entry, index) => {
+          const result = echoCardSchema.safeParse(entry);
+          if (result.success) return [result.data];
+          recordNestedValidationWarnings([
+            { path: `uniqueGear.archeryEchoes[${index}]`, message: "malformed Archery echo was dropped" },
+          ]);
+          return [];
+        }),
+      )
+      .catch([]),
   })
   .catch(() => ({ ...createUniqueGearBattleState(), archeryEchoes: [] }));

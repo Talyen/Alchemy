@@ -1,7 +1,7 @@
 export interface ParticleLoopCallbacks<T> {
   step: (particle: T, dt: number) => void;
 
-  draw: (ctx: CanvasRenderingContext2D, particle: T, progress: number) => void;
+  draw: (ctx: CanvasRenderingContext2D, particles: readonly T[], progress: number) => void;
 }
 
 export function animateParticleLoop<T>({
@@ -38,8 +38,8 @@ export function animateParticleLoop<T>({
 
     for (const p of particles) {
       step(p, dt);
-      draw(ctx, p, progress);
     }
+    draw(ctx, particles, progress);
 
     if (progress < 1) {
       rafId = requestAnimationFrame(frame);

@@ -1,5 +1,6 @@
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { applyHealingWithCombatText } from "./player-rewards";
+import { addForgeToPlayer, applyArmorReward, applyBlockReward } from "./status-player";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import {
@@ -51,8 +52,7 @@ function initializePlayerHealthAndBlock(
   const maxHealth = options.maxHealth ?? MAX_PLAYER_HEALTH;
   const playerHealth = options.playerHealth ?? MAX_PLAYER_HEALTH;
   const startingHealth = Math.min(maxHealth, playerHealth);
-  const baseBlock = talentEffects.startBlock + startBlock + gearEffects.startBlock;
-  const startingBlock = baseBlock > 0 ? baseBlock + gearEffects.flatBlockGained : 0;
+  const startingBlock = talentEffects.startBlock + startBlock + gearEffects.startBlock;
   const startingArmor = talentEffects.startArmor + gearEffects.startArmor;
   return { startingHealth, maxHealth, startingBlock, startingArmor };
 }
@@ -110,7 +110,7 @@ function resolveStartingPlayerStatuses(
       battleGearEffects.startThorns,
     block: startingBlock + (battleTalents.manaBulwarkActive ? mana : 0),
     forge: battleTalents.startForge + battleGearEffects.startForge,
-    armor: startingArmor > 0 ? startingArmor + battleGearEffects.flatArmorGained : 0,
+    armor: startingArmor,
   };
 }
 
@@ -171,6 +171,15 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
   const encounterBenefits = battleContentSystem === "labyrinth" ? (options.encounterBenefits ?? []) : [];
   const mana = BASE_PLAYER_MANA + manaBonus + battleTalents.startMana + battleTalents.runMaxManaBonus;
   const baseState = defaultBattleState();
+  const openingStatuses = resolveStartingPlayerStatuses(
+    baseState.playerStatuses,
+    encounterBenefits,
+    battleTalents,
+    battleGearEffects,
+    startingBlock,
+    playerStartingArmor,
+    mana,
+  );
   const state: BattleState = {
     ...baseState,
     deck,
@@ -188,15 +197,7 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
     enemyRegeneration,
     roomScalingMultiplier,
     enemyMitigation: resolveStartingEnemyMitigation(battleEnemy.traits, startingArmor, startingEnemyBlock),
-    playerStatuses: resolveStartingPlayerStatuses(
-      baseState.playerStatuses,
-      encounterBenefits,
-      battleTalents,
-      battleGearEffects,
-      startingBlock,
-      playerStartingArmor,
-      mana,
-    ),
+    playerStatuses: { ...openingStatuses, forge: 0, armor: 0, block: 0 },
     enemyStatuses: {
       ...baseState.enemyStatuses,
       thorns: resolveStartingEnemyThorns(battleEnemy.traits),
@@ -207,11 +208,6 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
     trinketEffects,
     gearEffects: battleGearEffects,
     flags: { ...baseState.flags, legacyEnemyThornsReady: battleEnemy.traits.some((trait) => trait.id === "thorns") },
-    uniqueGear: {
-      ...baseState.uniqueGear,
-      everkeenReady:
-        battleGearEffects.forgeReadiesPhysicalRepeat > 0 && battleTalents.startForge + battleGearEffects.startForge > 0,
-    },
     discoveredCardIds: battleDiscovered,
     nextCardUid: 0,
     difficultyModifiers: battleDiffs,
@@ -219,8 +215,16 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
     contentSystemType: battleContentSystem,
     appliesFightPacing: battleAppliesFightPacing,
   };
+  // Opening grants use the ordinary gain owners, without fight pacing. Forge
+  // precedes Block so Tempered Guard sees the Forge already granted.
+  let equipped = state;
+  if (openingStatuses.forge > 0)
+    equipped = addForgeToPlayer(equipped, openingStatuses.forge, [], { skipFightPacing: true });
+  if (openingStatuses.armor > 0) equipped = applyArmorReward(equipped, openingStatuses.armor, []);
+  if (openingStatuses.block > 0)
+    equipped = applyBlockReward(equipped, openingStatuses.block, [], { skipFightPacing: true });
   const healedState = resolvePendingBattleReactions(
-    applyHealingWithCombatText(state, battleTalents.startHealth + battleGearEffects.startHeal, [], {
+    applyHealingWithCombatText(equipped, battleTalents.startHealth + battleGearEffects.startHeal, [], {
       skipFightPacing: true,
     }),
     [],

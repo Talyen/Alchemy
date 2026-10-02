@@ -38,25 +38,28 @@ export function addPlayerStatus(state: BattleState, status: PlayerStatusId, delt
     thornsBonus > 0
       ? { ...updated.playerStatuses, thorns: updated.playerStatuses.thorns + thornsBonus }
       : updated.playerStatuses;
-  return {
-    ...updated,
-    playerStatuses,
-    uniqueGear:
-      status === "forge" &&
-      effectiveDelta > 0 &&
-      state.gearEffects.forgeReadiesPhysicalRepeat > 0 &&
-      !state.action?.repeatActive
-        ? { ...state.uniqueGear, everkeenReady: true }
-        : state.uniqueGear,
-  };
+  const uniqueGear =
+    status === "forge" &&
+    effectiveDelta > 0 &&
+    state.gearEffects.forgeReadiesPhysicalRepeat > 0 &&
+    !state.action?.repeatActive &&
+    !state.uniqueGear.everkeenReady
+      ? { ...state.uniqueGear, everkeenReady: true }
+      : state.uniqueGear;
+  if (playerStatuses === updated.playerStatuses && uniqueGear === updated.uniqueGear) return updated;
+  return { ...updated, playerStatuses, uniqueGear };
 }
 
 export function setPlayerStatus(state: BattleState, status: PlayerStatusId, value: number): BattleState {
+  const pendingEnemyBleedLeechHealing =
+    status === "bleed" ? Math.min(state.pendingEnemyBleedLeechHealing, value) : state.pendingEnemyBleedLeechHealing;
+  const unchangedStatus = Object.is(state.playerStatuses[status], value);
+  // Reapplying Bleed can still repair its pending Leech credit.
+  if (unchangedStatus && Object.is(pendingEnemyBleedLeechHealing, state.pendingEnemyBleedLeechHealing)) return state;
   return {
     ...state,
-    playerStatuses: { ...state.playerStatuses, [status]: value },
-    pendingEnemyBleedLeechHealing:
-      status === "bleed" ? Math.min(state.pendingEnemyBleedLeechHealing, value) : state.pendingEnemyBleedLeechHealing,
+    playerStatuses: unchangedStatus ? state.playerStatuses : { ...state.playerStatuses, [status]: value },
+    pendingEnemyBleedLeechHealing,
   };
 }
 
@@ -96,16 +99,26 @@ export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta:
 }
 
 export function setEnemyStatus(state: BattleState, status: EnemyStatusId, value: number): BattleState {
+  if (Object.is(state.enemyStatuses[status], value)) return state;
   return { ...state, enemyStatuses: { ...state.enemyStatuses, [status]: value } };
 }
 
+// Trait lists are immutable battle inputs. Key by the list so state copies
+// reuse the lookup, replacement lists invalidate it, and old battles can be collected.
+const enemyTraitSets = new WeakMap<BattleState["currentEnemy"]["traits"], ReadonlySet<string>>();
+
 export function hasEnemyTrait(state: BattleState, traitId: string, traitSet?: ReadonlySet<string>): boolean {
-  if (traitSet) return traitSet.has(traitId);
-  return state.currentEnemy.traits.some((trait) => trait.id === traitId);
+  return (traitSet ?? getEnemyTraitSet(state)).has(traitId);
 }
 
-export function getEnemyTraitSet(state: BattleState): ReadonlySet<string> {
-  return new Set(state.currentEnemy.traits.map((trait) => trait.id));
+export function getEnemyTraitSet(state: Pick<BattleState, "currentEnemy">): ReadonlySet<string> {
+  const traits = state.currentEnemy.traits;
+  let set = enemyTraitSets.get(traits);
+  if (!set) {
+    set = new Set(traits.map((trait) => trait.id));
+    enemyTraitSets.set(traits, set);
+  }
+  return set;
 }
 
 export function addEnemyMitigation(state: BattleState, field: keyof EnemyMitigation, delta: number): BattleState {
@@ -193,9 +206,11 @@ export function damageEnemyHealth(state: BattleState, damage: number): EnemyHitH
 
 export function gainMana(state: BattleState, amount: number, allowOverflow = false): BattleState {
   if (amount <= 0) return state;
+  const mana = allowOverflow ? state.mana + amount : Math.max(state.mana, Math.min(state.maxMana, state.mana + amount));
+  if (Object.is(mana, state.mana)) return state;
   return {
     ...state,
-    mana: allowOverflow ? state.mana + amount : Math.max(state.mana, Math.min(state.maxMana, state.mana + amount)),
+    mana,
   };
 }
 
@@ -293,6 +308,12 @@ export function applyPlayerCombatDamage(
   return { ...state, playerHealth: 0, deathsDoorActive: false, dodgeChanceFromDamage: 0 };
 }
 
+/** Read immediately after damage, before rewards: Phoenix restores Health after the lethal loss; Death's Door prevents it. */
+export function playerHealthLostToDamage(before: BattleState, after: BattleState): number {
+  const phoenixTriggered = before.playerStatuses.phoenixFeather > 0 && after.playerStatuses.phoenixFeather === 0;
+  return phoenixTriggered ? before.playerHealth : Math.max(0, before.playerHealth - after.playerHealth);
+}
+
 export function effectivePlayerHealingAmount(state: BattleState, amount: number): number {
   return Math.round(
     (amount + (amount > 0 ? (state.talentEffects.homesteadHealing ?? 0) : 0)) * state.talentEffects.healMultiplier,
@@ -309,10 +330,7 @@ export function resolvePlayerHealing(state: BattleState, amount: number, allowOv
   const playerHealth = clampHealth(state.playerHealth, amount, state.playerMaxHealth);
   const actualHeal = playerHealth - state.playerHealth;
   const overheal = state.playerHealth + amount - playerHealth;
-  let nextState = {
-    ...state,
-    playerHealth,
-  };
+  let nextState = Object.is(playerHealth, state.playerHealth) ? state : { ...state, playerHealth };
   if (actualHeal > 0 && nextState.trinketEffects.grovesFavorThornsOnHealthRestore > 0) {
     nextState = {
       ...nextState,

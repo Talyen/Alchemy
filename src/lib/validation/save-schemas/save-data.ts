@@ -47,7 +47,7 @@ import {
   type EquippedTrinkets,
 } from "@/lib/gear/types";
 import { clamp } from "@/lib/math";
-import { pruneOrphanGearLoadouts } from "@/lib/gear/operations";
+import { pruneOrphanGearLoadouts } from "@/lib/gear/loadout-operations";
 
 function clampedSettingSchema(defaultValue: number, range: { min: number; max: number }) {
   return z

@@ -36,7 +36,16 @@ export function CompanionPanel({
   turnActive?: boolean;
   turnShineColors?: readonly string[];
 }) {
-  const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible();
+  const {
+    wrapperRef: triggerRef,
+    visible,
+    onMouseEnter,
+    onMouseLeave,
+    onFocusCapture,
+    onBlurCapture,
+  } = useHoverVisible({
+    focusWithinGuard: true,
+  });
   const resolvedShineColors = turnShineColors ?? getCompanionShineColors(companion);
 
   return (
@@ -47,9 +56,13 @@ export function CompanionPanel({
       aria-label={`Active companion: ${companion.title}`}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      onFocusCapture={onFocusCapture}
+      onBlurCapture={onBlurCapture}
     >
       <CombatantStatusEffectPresentation keyword={ccKeyword}>
         <Surface
+          as="button"
+          ariaLabel={`Inspect ${companion.title}`}
           clipContents={false}
           className={cn(
             "combatant-art relative",

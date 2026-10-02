@@ -4,9 +4,11 @@ import path from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { chooseCheckpointStep, selectCase } from "../performance/case-selection.mjs";
+import { REPO_ROOT, runGit } from "./lib/repository-paths.mjs";
 
-const [outputDir, scenario, seedText = "42"] = process.argv.slice(2);
-if (!outputDir || !scenario) throw new Error("Usage: prepare-performance-cases <output-dir> <scenario> [seed]");
+const [outputPath, scenario, seedText = "42"] = process.argv.slice(2);
+if (!outputPath || !scenario) throw new Error("Usage: prepare-performance-cases <output-dir> <scenario> [seed]");
+const outputDir = path.resolve(outputPath);
 const selected = selectCase(scenario, Number(seedText));
 const workDir = path.join(outputDir, "case-generation", scenario);
 fs.mkdirSync(workDir, { recursive: true });
@@ -42,8 +44,11 @@ function runWorker(label, checkpointAt) {
     JSON.stringify({ config, ...(fixture ? { fixture } : {}), ...(checkpointAt ? { checkpointAt } : {}) }),
   );
   fs.writeFileSync(journal, "");
+  // Every worker artifact must belong to this invocation, including optional
+  // checkpoints. A successful worker may finish without reaching the checkpoint.
+  for (const stale of [output, `${output}.start`, `${output}.checkpoint`]) fs.rmSync(stale, { force: true });
   const child = spawnSync(process.execPath, ["scripts/run-playthrough-worker.mjs", input, output, journal], {
-    cwd: process.cwd(),
+    cwd: REPO_ROOT,
     encoding: "utf8",
     timeout: 120_000,
     maxBuffer: 2 * 1024 * 1024,
@@ -108,35 +113,35 @@ if (
 }
 const saveHash = createHash("sha256").update(JSON.stringify(initialSave)).digest("hex");
 const sourceHash = createHash("sha256");
-const sourcePaths = execFileSync(
-  "git",
-  [
-    "ls-files",
-    "--cached",
-    "--others",
-    "--exclude-standard",
-    "-z",
-    "--",
-    "src",
-    "performance",
-    "scripts",
-    "tests/pages",
-    "tests/e2e",
-    "package.json",
-    "package-lock.json",
-  ],
-  { encoding: "utf8" },
-)
+const inventory = runGit(REPO_ROOT, [
+  "ls-files",
+  "--cached",
+  "--others",
+  "--exclude-standard",
+  "-z",
+  "--",
+  "src",
+  "performance",
+  "scripts",
+  "tests/pages",
+  "tests/e2e",
+  "package.json",
+  "package-lock.json",
+]);
+if (inventory.status !== 0)
+  throw new Error(`Could not inspect performance sources: ${inventory.error?.message ?? inventory.stderr}`);
+const sourcePaths = inventory.stdout
   .split("\0")
-  .filter((file) => /\.(?:tsx?|m?js|json)$/.test(file) && fs.existsSync(file));
-for (const file of [...new Set(sourcePaths)].sort()) sourceHash.update(file).update(fs.readFileSync(file));
+  .filter((file) => /\.(?:tsx?|m?js|json)$/.test(file) && fs.existsSync(path.join(REPO_ROOT, file)));
+for (const file of [...new Set(sourcePaths)].sort())
+  sourceHash.update(file).update(fs.readFileSync(path.join(REPO_ROOT, file)));
 const manifest = {
   version: 1,
   ...selected,
   checkpointStep: step,
   saveHash,
   codeIdentity: {
-    commit: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
+    commit: execFileSync("git", ["rev-parse", "HEAD"], { cwd: REPO_ROOT, encoding: "utf8" }).trim(),
     sourceHash: sourceHash.digest("hex"),
   },
   coverage,

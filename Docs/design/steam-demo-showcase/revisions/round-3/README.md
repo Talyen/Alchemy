@@ -1,6 +1,7 @@
 # Round 3 showcase drafts
 
-Pending image approval; no game artwork or screen layout has been replaced.
+Historical proposals, pending approval at the time of this round. The
+[selected user-supplied promo](../../README.md) is now the shipping source.
 
 - [Expanded mosaic](./expanded-mosaic.html): eight heroes in a tall fractured mosaic, with a taller boss panel beside them
 - [Boss gallery](./boss-gallery.html): full-width boss artwork above an eight-hero mosaic and the feature panels
@@ -14,7 +15,7 @@ statistics in their related feature panels instead of a separate footer strip.
 
 All eight current hero portraits are included. Bosses remain the seven-entry
 shared Campaign pool; Boss Battles does not imply later-act-exclusive types.
-[counts.json](./counts.json) records the actual catalogs: eight heroes, 105 cards,
+[counts.json](./counts.json) records the catalogs at generation: eight heroes, 105 cards,
 104 offerable/draft cards, 200 Talents, 29 Uniques, 24 Trinkets, and 23 Homestead
 building/farm/research entries. The renderer rejects unsupported marketing thresholds.
 
@@ -33,7 +34,7 @@ its original JPEG is unchanged. Other source artwork is unchanged.
 
 ## Screen-space evidence
 
-A current production Electron run at maximum game size measured the image at
+During this review round, a production Electron run at maximum game size measured the then-current image at
 1091×614 CSS pixels within a 1280×720 window, and 1233×694 within 1280×800.
 The image region has essentially the same height as the image, so it already
 uses the available vertical space. Compact heading/action spacing could recover
@@ -41,4 +42,5 @@ roughly 15–25 pixels; it is not an implemented change in these drafts.
 
 Moving statistics out of the separate footer removes approximately 13% of the
 old image canvas overhead, which is redistributed to the feature panels.
-Measurement output is retained locally in `reports/demo-copy-review/measurements.json`.
+Measurement output was retained locally in `reports/demo-copy-review/measurements.json`.
+These measurements describe the earlier composition, not the selected promo's native aspect ratio.

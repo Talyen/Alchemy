@@ -12,7 +12,6 @@ export class ShopPage {
   readonly goldText: Locator;
   readonly purchasedText: Locator;
   readonly cardGrid: Locator;
-  readonly inspectButtons: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -26,12 +25,12 @@ export class ShopPage {
     this.goldText = this.page.getByTestId("run-gold");
     this.purchasedText = this.page.getByText("Purchased").first();
     this.cardGrid = this.page.locator('[data-testid="card-selection-grid"]');
-    this.inspectButtons = this.page.locator('button[aria-label^="Buy "]');
   }
 
   async gold(): Promise<number> {
-    const text = await this.goldText.textContent();
-    return text ? Number(text.match(/[\d,]+/)?.[0]?.replace(/,/g, "")) : 0;
+    const label = await this.goldText.getAttribute("aria-label");
+    if (!label) throw new Error("Gold display has no accessible amount");
+    return Number(label.replace(/^Gold:\s*/, ""));
   }
 
   async buyCard(index = 0) {
@@ -62,28 +61,7 @@ export class ShopPage {
   }
 
   async refresh() {
-    await expect(this.refreshBtn).toBeVisible();
     await expect(this.refreshBtn).toBeEnabled();
     await this.refreshBtn.click();
-  }
-
-  async getInspectLabels(): Promise<Array<string | null>> {
-    return Promise.all((await this.inspectButtons.all()).map((btn) => btn.getAttribute("aria-label")));
-  }
-
-  async mixPotions() {
-    await expect(this.mixBtn).toBeEnabled();
-    await this.mixBtn.click();
-    await expect(this.page.getByText("Select two Potions to Combine")).toBeVisible();
-    const selectBtns = this.page.getByRole("button", { name: /^Select / });
-    await selectBtns.nth(0).click();
-    await selectBtns.nth(1).click();
-    await expect(this.combineBtn).toBeEnabled({ timeout: 3000 });
-    await this.combineBtn.click();
-    await expect(this.page.getByRole("button", { name: "Mixed Potion", exact: true })).toBeVisible({ timeout: 3000 });
-  }
-
-  async navigateToDestination(name: string) {
-    await this.page.getByRole("button", { name }).click();
   }
 }

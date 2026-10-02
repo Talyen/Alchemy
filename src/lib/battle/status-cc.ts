@@ -7,6 +7,7 @@ import {
   setPlayerStatus,
   addEnemyMitigation,
   hasEnemyTrait,
+  isPlayerDefeated,
   type BattleState,
   type CcState,
   type CombatTextEvent,
@@ -167,6 +168,7 @@ export type EnemyCcTriggerResult = { kind: "skip"; state: BattleState } | { kind
 
 export function tryTriggerEnemyCc(input: EnemyCcTriggerCheckInput): EnemyCcTriggerResult | null {
   const { preHitHealth, nextState, stat, stackValue, thresholdFraction, ccCooldown, skipDuration, combatTexts } = input;
+  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return null;
   if (isCcControlled(nextState.enemyCC)) return null;
   if (preHitHealth <= 0 || stackValue < preHitHealth * thresholdFraction) return null;
   const immuneClear = applyEnemyCcImmunityClear({ nextState, stat, ccCooldown });

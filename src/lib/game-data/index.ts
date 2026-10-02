@@ -18,6 +18,6 @@ export { defaultTrinketEffects } from "./trinket-manifest";
 export type { TrinketManifest } from "./trinket-manifest";
 export * from "./types";
 
-export { effectChildren, mapEffectChildren } from "./effect-tree";
+export { areBattleCardEffectsEqual, effectChildren, mapEffectChildren, visitBattleCardEffects } from "./effect-tree";
 
 export { canonicalCardDescriptionMatches, describeCardEffects, effectDescriptionLine } from "./effect-metadata";

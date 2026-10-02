@@ -25,7 +25,7 @@ export function KeywordTag({
   showTooltip = false,
 }: KeywordTagProps) {
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
-    useHoverVisible<HTMLSpanElement>();
+    useHoverVisible<HTMLButtonElement>();
 
   const def = keywordDefinitions[keywordId];
   const Icon = keywordIcons[keywordId];
@@ -53,9 +53,11 @@ export function KeywordTag({
   if (!showTooltip) return tag;
 
   return (
-    <span
+    <button
       ref={triggerRef}
+      type="button"
       className="relative inline-flex items-center"
+      aria-label={`Inspect ${def.label} keyword`}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       onFocusCapture={onFocusCapture}
@@ -78,6 +80,6 @@ export function KeywordTag({
           )}
         </TooltipBody>
       </PortaledTooltip>
-    </span>
+    </button>
   );
 }

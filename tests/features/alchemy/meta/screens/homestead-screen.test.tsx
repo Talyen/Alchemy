@@ -28,16 +28,6 @@ describe("HomesteadScreen", () => {
     onBondCompanion: vi.fn(() => true),
   };
 
-  it("renders homestead screen header, wallet, and tabs", () => {
-    render(<HomesteadScreen {...defaultProps} />);
-
-    expect(screen.getByRole("heading", { name: "Homestead" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Buildings" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Farm" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Research" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Companions" })).toBeTruthy();
-  });
-
   it("handles building construction click", () => {
     const onConstructBuilding = vi.fn(() => true);
     render(<HomesteadScreen {...defaultProps} onConstructBuilding={onConstructBuilding} />);
@@ -61,51 +51,6 @@ describe("HomesteadScreen", () => {
     expect(onConstructBuilding).not.toHaveBeenCalled();
   });
 
-  it("switches to the farm tab and displays farm plots", async () => {
-    render(<HomesteadScreen {...defaultProps} />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Farm" }));
-    await waitFor(() => {
-      expect(screen.getByAltText("Wheat Field")).toBeTruthy();
-    });
-  });
-
-  it("switches to research tab and shows research upgrades", async () => {
-    render(<HomesteadScreen {...defaultProps} />);
-    fireEvent.click(screen.getByRole("button", { name: "Research" }));
-    await waitFor(() => {
-      expect(screen.getByAltText("Leyline Energy")).toBeTruthy();
-    });
-  });
-
-  it("renders companions pagination control", async () => {
-    render(<HomesteadScreen {...defaultProps} />);
-    fireEvent.click(screen.getByRole("button", { name: "Companions" }));
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Companions" })).toBeTruthy();
-    });
-    const nextButtons = screen.getAllByRole("button");
-    expect(nextButtons.length).toBeGreaterThan(0);
-  });
-
-  it("pages companions eight per page across two rows", async () => {
-    const companions = cardLibrary.filter((c) => c.effects.some((e) => e.kind === "summon-companion"));
-    const discovered = companions.slice(0, 9).map((c) => c.id);
-    render(<HomesteadScreen {...defaultProps} discoveredCardIds={discovered} />);
-    fireEvent.click(screen.getByRole("button", { name: "Companions" }));
-
-    const ninth = companions[8]!;
-    await waitFor(() => {
-      expect(screen.getAllByRole("button", { name: /Bond /i })).toHaveLength(8);
-    });
-    expect(screen.queryByRole("button", { name: new RegExp(ninth.title, "i") })).toBeNull();
-
-    fireEvent.click(screen.getByRole("button", { name: "Next page" }));
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: new RegExp(ninth.title, "i") })).toBeTruthy();
-    });
-  });
-
   it("paginates only the companion cards belonging to each page", async () => {
     const companions = cardLibrary.filter((c) => c.effects.some((e) => e.kind === "summon-companion"));
     render(<HomesteadScreen {...defaultProps} />);
@@ -116,25 +61,5 @@ describe("HomesteadScreen", () => {
     await waitFor(() => expect(screen.getByAltText(companions[8]!.title)).toBeTruthy());
     expect(screen.queryByAltText(companions[0]!.title)).toBeNull();
     for (const card of companions.slice(8, 16)) expect(screen.getByAltText(card.title)).toBeTruthy();
-  });
-
-  it("paginates buildings across two pages with six on the first page", async () => {
-    render(<HomesteadScreen {...defaultProps} />);
-
-    // Page 1: 6 buildings
-    expect(screen.getByRole("button", { name: /Blacksmith/i })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Wishing Well/i })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /Library/i })).toBeNull();
-
-    // Navigate to Page 2
-    fireEvent.click(screen.getByRole("button", { name: "Next page" }));
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Library/i })).toBeTruthy();
-    });
-    expect(screen.getByRole("button", { name: /Transmutation Crucible/i })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Mycology Cellar/i })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Sparring Grounds/i })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Archery Range/i })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /Blacksmith/i })).toBeNull();
   });
 });

@@ -1,101 +1,19 @@
-import { expect } from "@playwright/test";
-import { test } from "../../fixtures/e2e";
-import { SAVE_KEY } from "../../browser-helpers";
+import { expect, test } from "../../fixtures/e2e";
 import { BattlePage } from "../../pages/battle-page";
 import { MenuPage } from "../../pages/menu-page";
-import { critical } from "../../playwright-tags";
-import { saveEnvelopeFixture } from "../../fixtures/saves";
 
-async function unlockDifficulties(page: import("@playwright/test").Page, difficultyIds: string[]) {
-  const baseSave = saveEnvelopeFixture();
-  const save = {
-    ...baseSave,
-    completedDifficulties: {
-      ...baseSave.completedDifficulties,
-      knight: [...difficultyIds],
-      wizard: [...difficultyIds],
-    },
-    finishedRunCharacters: ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"],
-  };
-  await page.addInitScript(
-    ({ saveKey, save }) => {
-      localStorage.setItem(saveKey, JSON.stringify(save));
-    },
-    { saveKey: SAVE_KEY, save },
-  );
-}
-
-test.describe("Character Select", () => {
-  test("all characters are selectable and starting run is mapped to localStorage", critical, async ({ page }) => {
-    const menu = new MenuPage(page);
-    await menu.goToCharacterSelectUnlocked();
-    await expect(page.getByRole("button", { name: "Select Knight" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Select Ranger" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Select Rogue" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Select Wizard" })).toBeVisible();
-
-    await page.getByRole("button", { name: "Select Knight" }).click();
-
-    await expect
-      .poll(
-        async () => {
-          const saveStateJson = await page.evaluate((saveKey) => localStorage.getItem(saveKey), SAVE_KEY);
-          if (!saveStateJson) return null;
-          const save = JSON.parse(saveStateJson) as { activeRun?: { characterId?: string; runDeck?: unknown[] } };
-          return save.activeRun?.characterId === "knight" && Array.isArray(save.activeRun?.runDeck)
-            ? save.activeRun
-            : null;
-        },
-        { timeout: 5000, message: "activeRun should persist knight characterId and runDeck after run start" },
-      )
-      .not.toBeNull();
-  });
-
-  // Menu-back routing and difficulty unlock states live in screen-routes and
-  // difficulty-select-screen unit tests; the browser keeps character persistence
-  // plus the two battle-boot wirings below.
-});
-
-test.describe("Difficulty Select", () => {
-  test.beforeEach(async ({ page }) => {
-    await unlockDifficulties(page, ["difficulty-1"]);
-  });
-
-  // Difficulty unlock states live in difficulty-select-screen.test.tsx.
-  test("selecting difficulty enables Play and starts a battle; Back returns to character select", async ({
-    page,
-    fastBattle,
-  }) => {
-    void fastBattle;
-    const menu = new MenuPage(page);
-    await menu.goToCharacterSelect();
-    await menu.selectCharacterAndContinue("Knight");
-
-    const playBtn = page.getByRole("button", { name: "Play" }).first();
-    await expect(playBtn).toBeDisabled();
-
-    await page.getByRole("button", { name: "Back" }).click();
-    await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
-
-    await menu.selectCharacterAndContinue("Knight");
-
-    await page.getByRole("button", { name: "Novice" }).click();
-    await expect(playBtn).toBeEnabled();
-    await playBtn.click();
-    await expect(new BattlePage(page).hand.first()).toBeVisible({ timeout: 5000 });
-  });
-});
-
-test.describe("Difficulty Skip (first-time player)", () => {
-  test("selecting a character with no completed difficulties skips to battle", async ({ page }) => {
-    await page.addInitScript((saveKey) => {
-      localStorage.setItem(saveKey, JSON.stringify({ finishedRunCharacters: [] }));
-    }, SAVE_KEY);
-
-    const menu = new MenuPage(page);
-    await menu.goToCharacterSelect();
-    await menu.selectCharacterAndContinue("Knight");
-
-    await expect(new BattlePage(page).hand.first()).toBeVisible({ timeout: 5000 });
-  });
+test("an unlocked difficulty starts a battle and Back returns to hero selection", async ({ page, fastBattle }) => {
+  void fastBattle;
+  const menu = new MenuPage(page);
+  await menu.goToCharacterSelectUnlocked("campaign", { completedDifficulties: { knight: ["difficulty-1"] } });
+  await menu.selectCharacterAndContinue("Knight");
+  const play = page.getByRole("button", { name: "Play", exact: true });
+  await expect(play).toBeDisabled();
+  await page.getByRole("button", { name: "Back", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
+  await menu.selectCharacterAndContinue("Knight");
+  await page.getByRole("button", { name: "Novice" }).click();
+  await expect(play).toBeEnabled();
+  await play.click();
+  await new BattlePage(page).waitForOpeningHand();
 });

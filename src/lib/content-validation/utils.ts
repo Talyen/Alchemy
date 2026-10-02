@@ -84,3 +84,38 @@ export function validateArt(
     addWarning(area, id, "Uses placeholder art");
   }
 }
+
+interface LibraryBasicsOptions<T extends { id: string }> {
+  area: ContentValidationArea;
+  items: readonly T[];
+  schema: ZodType;
+  titleOf?: (item: T) => string;
+  artOf?: (item: T) => string;
+  idLabel: string;
+}
+
+// Shared duplicate + schema + art triplet for library validators. Bespoke
+// checks (offer pools, ability coverage, parity, affix pools) stay inline.
+export function validateLibraryBasics<T extends { id: string }>(
+  collector: Collector,
+  { area, items, schema, titleOf, artOf, idLabel }: LibraryBasicsOptions<T>,
+): void {
+  addDuplicateIssues(
+    items.map((item) => item.id),
+    area,
+    idLabel,
+    collector.error,
+  );
+  if (titleOf) {
+    addDuplicateIssues(
+      items.map((item) => titleOf(item)),
+      area,
+      "title",
+      collector.error,
+    );
+  }
+  for (const item of items) {
+    collectSchemaIssues(schema, item, area, item.id, collector.error);
+    if (artOf) validateArt(area, item.id, artOf(item), collector.error, collector.warning);
+  }
+}

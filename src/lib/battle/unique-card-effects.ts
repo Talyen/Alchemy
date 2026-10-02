@@ -1,7 +1,7 @@
 import { resolveSecondaryAction } from "./action-context";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import { UNIQUE_GEAR_COMBAT } from "../game-constants";
-import { damageOnlyEffects } from "./card-classification";
+import { damageOnlyEffects, isAttackCard } from "./card-classification";
 import { applyCardEffects } from "./effect-handlers";
 import { cardHasDamageType, cardHasKeyword, isNatureCard } from "./card-classification";
 import { type BattleState, type CombatTextEvent, isPlayerDefeated } from "./types";
@@ -26,33 +26,42 @@ export function repeatUniqueCardDamage(
 export function prepareUniqueCardPlay(state: BattleState, card: BattleCard, manaCost: number) {
   const gear = state.gearEffects;
   const unique = state.uniqueGear;
-  const physical = cardHasDamageType(card, "physical");
-  const archery = cardHasKeyword(card, "archery");
-  const nature = isNatureCard(card);
-  const everkeen = gear.forgeReadiesPhysicalRepeat > 0 && unique.everkeenReady && physical;
+  const archery = (gear.archeryDodgeAndDraw > 0 || gear.recoverLastArcheryCard > 0) && cardHasKeyword(card, "archery");
+  const everkeen = gear.forgeReadiesPhysicalRepeat > 0 && unique.everkeenReady && cardHasDamageType(card, "physical");
   const finalSpark =
     gear.lastManaElementalRepeat > 0 &&
     !unique.finalSparkUsed &&
     state.mana > 0 &&
     manaCost >= state.mana &&
+    isAttackCard(card) &&
     (cardHasKeyword(card, "burn") || cardHasKeyword(card, "freeze"));
-  const critical = gear.dodgeReadiesNatureCrit > 0 && unique.wildheartReady && nature;
+  const critical = gear.dodgeReadiesNatureCrit > 0 && unique.wildheartReady && isNatureCard(card);
+  const wrenflightActive = unique.wrenflightActive || (gear.archeryDodgeAndDraw > 0 && archery);
+  const lastArcheryUid = gear.recoverLastArcheryCard > 0 && archery ? (card.uid ?? null) : unique.lastArcheryUid;
+  const uniqueChanged =
+    everkeen ||
+    critical ||
+    finalSpark ||
+    wrenflightActive !== unique.wrenflightActive ||
+    lastArcheryUid !== unique.lastArcheryUid;
   const damageEffects: Array<Extract<BattleCardEffect, { kind: "damage" }>> = [];
   return {
     damageEffects,
     repeatCount: Number(everkeen) + Number(finalSpark),
     critical,
-    state: {
-      ...state,
-      uniqueGear: {
-        ...unique,
-        everkeenReady: everkeen ? false : unique.everkeenReady,
-        wildheartReady: critical ? false : unique.wildheartReady,
-        finalSparkUsed: unique.finalSparkUsed || finalSpark,
-        wrenflightActive: unique.wrenflightActive || (gear.archeryDodgeAndDraw > 0 && archery),
-        lastArcheryUid: gear.recoverLastArcheryCard > 0 && archery ? (card.uid ?? null) : unique.lastArcheryUid,
-      },
-    },
+    state: uniqueChanged
+      ? {
+          ...state,
+          uniqueGear: {
+            ...unique,
+            everkeenReady: everkeen ? false : unique.everkeenReady,
+            wildheartReady: critical ? false : unique.wildheartReady,
+            finalSparkUsed: unique.finalSparkUsed || finalSpark,
+            wrenflightActive,
+            lastArcheryUid,
+          },
+        }
+      : state,
   };
 }
 
@@ -62,9 +71,12 @@ export function finishUniqueCardDamage(
   prepared: ReturnType<typeof prepareUniqueCardPlay>,
   combatTexts: CombatTextEvent[],
 ): BattleState {
+  const echo =
+    state.gearEffects.archeryEchoNextTurn > 0 && prepared.damageEffects.length > 0 && cardHasKeyword(card, "archery");
+  if (!echo && prepared.repeatCount === 0) return state;
   const damageCard = { ...card, effects: prepared.damageEffects };
   let next = state;
-  if (state.gearEffects.archeryEchoNextTurn > 0 && cardHasKeyword(card, "archery") && damageCard.effects.length > 0) {
+  if (echo) {
     next = {
       ...next,
       uniqueGear: { ...next.uniqueGear, archeryEchoes: [...next.uniqueGear.archeryEchoes, damageCard] },

@@ -6,6 +6,7 @@ import {
   type Ref,
   type RefObject,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -161,7 +162,11 @@ function CardHoverPopup({
   descriptionContext: CardDescriptionContext;
   padding?: number | undefined;
 }) {
-  const descriptionLines = visible ? getEffectiveCardDescriptionLines(card, descriptionContext) : [];
+  const descriptionLines = useMemo(
+    () => (visible ? getEffectiveCardDescriptionLines(card, descriptionContext) : []),
+    [visible, card, descriptionContext],
+  );
+  const plasmaColorPair = useMemo(() => (visible ? getPlasmaColorPairForCard(card) : null), [visible, card]);
   return (
     <DetailPopup
       idPrefix={card.id}
@@ -170,7 +175,7 @@ function CardHoverPopup({
       descriptionLines={descriptionLines}
       visible={visible}
       triggerRef={triggerRef}
-      plasmaColorPair={getPlasmaColorPairForCard(card)}
+      plasmaColorPair={plasmaColorPair}
       {...(padding !== undefined ? { padding } : {})}
       {...(card.corrupted ? { card } : {})}
     />

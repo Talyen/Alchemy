@@ -14,6 +14,7 @@ import {
   applyPlayerCombatDamage,
   isPlayerDefeated,
   mitigatePlayerCombatDamage,
+  playerHealthLostToDamage,
   scaleReceivedPlayerDamage,
   type BattleState,
   type CombatTextEvent,
@@ -203,7 +204,6 @@ function applyEnemyHealthHit(
     if (effect.damageType === "poison" && hasEnemyTrait(state, "giant-snake"))
       attackState = recordEnemyAbilityActivation(attackState, "giant-snake");
   }
-  const prevHealth = state.playerHealth;
   const damagedState = applyPlayerCombatDamage(
     attackState,
     actualDamage,
@@ -213,12 +213,10 @@ function applyEnemyHealthHit(
     combatTexts,
   );
   const blockLost = Math.min(blockSpent + totalExtraBlock, damagedState.playerStatuses.block);
-  // Recovery does not cancel Health damage already dealt by the lethal hit.
-  const phoenixTriggered = state.playerStatuses.phoenixFeather > 0 && damagedState.playerStatuses.phoenixFeather === 0;
   const outcome = {
     blockLost,
     healthAfterHit: damagedState.playerHealth,
-    healthDamage: phoenixTriggered ? prevHealth : Math.max(0, prevHealth - damagedState.playerHealth),
+    healthDamage: playerHealthLostToDamage(state, damagedState),
     attemptedDamage,
     resolvedDamage: actualDamage,
     landed: attemptedDamage > 0,
@@ -314,12 +312,13 @@ function resolveEnemyDamageEffectCore(
 
   nextState = applyEnemyHitLeech(nextState, effect, facts, combatTexts);
 
-  if (mitigation.blockAbsorb > 0 && options.triggerBlockRetaliation) {
+  const attackBlockLost = blockLost + preDamageBlockStrip;
+  if (attackBlockLost > 0 && options.triggerBlockRetaliation) {
     nextState = applyBlockedAttackRetaliation(
       nextState,
-      blockLost,
+      attackBlockLost,
       combatTexts,
-      blockLost > 0 && blockLost >= hitState.playerStatuses.block,
+      attackBlockLost >= state.playerStatuses.block,
     );
   }
 
@@ -329,8 +328,8 @@ function resolveEnemyDamageEffectCore(
     const traitSet = options.traitSet ?? getEnemyTraitSet(nextState);
     if (
       hasEnemyTrait(nextState, "earth-elemental", traitSet) &&
-      hitState.playerStatuses.block > 0 &&
-      blockLost >= hitState.playerStatuses.block &&
+      state.playerStatuses.block > 0 &&
+      attackBlockLost >= state.playerStatuses.block &&
       nextState.playerHealth > 0
     ) {
       nextState = processEnemyDamageEffect(

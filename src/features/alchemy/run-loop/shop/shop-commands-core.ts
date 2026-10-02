@@ -1,5 +1,5 @@
 import { readActivityData, type RunActivityData } from "@/lib/active-run-session";
-import type { BattleCard, TalentEffectManifest, TrinketEntry } from "@/lib/game-data";
+import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
 import type { ShopRefreshModifiers } from "./shop-action-types";
 import type { GearInstance } from "@/lib/gear";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
@@ -9,14 +9,16 @@ import {
   readDraftGold,
   setRunActivityData,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { getShopBuyPrice, getShopRefreshPrice, type ShopBuyKind, type ShopRefreshKind } from "./shop-pricing";
+import { getShopRefreshPrice, type ShopBuyPriceContext, type ShopRefreshKind } from "./shop-pricing";
 import {
   resolveDraftShopModifiers,
   resolveDraftShopPricingContext,
   resolveReadShopModifiers,
+  resolveReadShopPricingContext,
+  type ShopSessionStateKey,
 } from "./shop-pricing-context";
 import { shopItemSlotKey, findShopOffering } from "./shop-slot-keys";
-import { runShopTransaction, type ShopTransactionResult } from "./shop-transactions";
+import { runShopTransaction } from "./shop-transactions";
 
 type ShopActivity = Parameters<typeof runShopTransaction>[0];
 const REFRESH_KIND: Record<ShopActivity, ShopRefreshKind> = {
@@ -25,11 +27,11 @@ const REFRESH_KIND: Record<ShopActivity, ShopRefreshKind> = {
   "trinket-shop": "trinket",
   "equipment-shop": "equipment",
 };
-const BUY_KIND: Record<ShopActivity, ShopBuyKind> = {
-  shop: "merchantCard",
-  alchemist: "alchemistPotion",
-  "trinket-shop": "trinket",
-  "equipment-shop": "gear",
+const SHOP_STATE_KEY: Record<ShopActivity, ShopSessionStateKey> = {
+  shop: "shopState",
+  alchemist: "alchemistState",
+  "trinket-shop": "trinketShopState",
+  "equipment-shop": "equipmentShopState",
 };
 
 export function initializeShop<K extends ShopActivity>(
@@ -108,51 +110,59 @@ export function gearSlotKeyOf(instance: GearInstance): string {
   return instance.instanceId;
 }
 
-interface SlotPurchaseConfig<TItem extends BattleCard | GearInstance | TrinketEntry> {
-  talentEffects: TalentEffectManifest;
-  activity: ShopActivity;
-  draft: GameplayDraft;
-  items: readonly TItem[];
-  requestedId: string;
-  slotKey: string;
-  slotKeyOf: (item: TItem, index: number) => string;
-  idOf: (item: TItem) => string;
-  isAvailable?: (draft: GameplayDraft, offered: TItem) => boolean;
-  acquire: (draft: GameplayDraft, offered: TItem) => void;
+interface ShopItemByActivity {
+  shop: RunActivityData["shop"]["cards"][number];
+  alchemist: RunActivityData["alchemist"]["potions"][number];
+  "trinket-shop": RunActivityData["trinket-shop"]["trinkets"][number];
+  "equipment-shop": RunActivityData["equipment-shop"]["gear"][number];
 }
 
-export function purchaseSlotOffering<TItem extends BattleCard | GearInstance | TrinketEntry>(
-  config: SlotPurchaseConfig<TItem>,
-): ShopTransactionResult {
-  const state = readActivityData(config.draft.session.activity, config.activity);
-  const buyKind = BUY_KIND[config.activity];
-  const atSlot = findShopOffering(config.items, config.slotKey, config.slotKeyOf);
-  const offered = atSlot !== undefined && config.idOf(atSlot) === config.requestedId ? atSlot : undefined;
-  const draftContext = resolveDraftShopPricingContext(config.talentEffects, config.draft, state);
-  if (!offered) {
-    if (buyKind === "trinket") {
-      const price = getShopBuyPrice(buyKind, null, draftContext);
-      return { committed: false, price, value: undefined };
-    }
-    return { committed: false, price: 0, value: undefined };
+interface ShopPurchaseConfig<K extends ShopActivity> {
+  talentEffects: TalentEffectManifest;
+  activity: K;
+  itemsOf: (state: RunActivityData[NoInfer<K>]) => ReadonlyArray<ShopItemByActivity[NoInfer<K>]>;
+  slotKeyOf: (item: ShopItemByActivity[NoInfer<K>], index: number) => string;
+  idOf: (item: ShopItemByActivity[NoInfer<K>]) => string;
+  priceOf: (item: ShopItemByActivity[NoInfer<K>], context: ShopBuyPriceContext) => number;
+  isAvailable?: (draft: GameplayDraft, offered: ShopItemByActivity[NoInfer<K>]) => boolean;
+  acquire: (draft: GameplayDraft, offered: ShopItemByActivity[NoInfer<K>]) => void;
+}
+
+export function createShopPurchaseActions<K extends ShopActivity>(
+  config: ShopPurchaseConfig<K>,
+): {
+  buy: (requested: ShopItemByActivity[K], slotKey: string) => boolean;
+  getBuyPrice: (item: ShopItemByActivity[K]) => number;
+} {
+  const getBuyPrice = (item: ShopItemByActivity[K]) =>
+    config.priceOf(item, resolveReadShopPricingContext(config.talentEffects, SHOP_STATE_KEY[config.activity]));
+
+  function buy(requested: ShopItemByActivity[K], slotKey: string): boolean {
+    return runShopTransaction(config.activity, (draft) => {
+      const state = readActivityData(draft.session.activity, config.activity);
+      const offered = findShopOffering(config.itemsOf(state), slotKey, config.slotKeyOf);
+      if (!offered || config.idOf(offered) !== config.idOf(requested)) {
+        return { committed: false, price: 0, value: undefined };
+      }
+      // Price and acquire the live shelf item; callers may hold an older copy.
+      const price = config.priceOf(offered, resolveDraftShopPricingContext(config.talentEffects, draft, state));
+      if (
+        (config.isAvailable && !config.isAvailable(draft, offered)) ||
+        readDraftGold(draft) < price ||
+        state.purchasedSlotKeys.includes(slotKey)
+      ) {
+        return { committed: false, price, value: undefined };
+      }
+      deductGold(draft, price);
+      setRunActivityData(draft, config.activity, {
+        ...state,
+        firstPurchaseUsed: true,
+        purchasedSlotKeys: [...state.purchasedSlotKeys, slotKey],
+      });
+      config.acquire(draft, offered);
+      return { committed: true, price, value: undefined };
+    }).committed;
   }
-  const price =
-    buyKind === "trinket"
-      ? getShopBuyPrice(buyKind, null, draftContext)
-      : getShopBuyPrice(buyKind, offered, draftContext);
-  if (
-    (config.isAvailable && !config.isAvailable(config.draft, offered)) ||
-    readDraftGold(config.draft) < price ||
-    state.purchasedSlotKeys.includes(config.slotKey)
-  ) {
-    return { committed: false, price, value: undefined };
-  }
-  deductGold(config.draft, price);
-  setRunActivityData(config.draft, config.activity, {
-    ...state,
-    firstPurchaseUsed: true,
-    purchasedSlotKeys: [...state.purchasedSlotKeys, config.slotKey],
-  });
-  config.acquire(config.draft, offered);
-  return { committed: true, price, value: undefined };
+
+  return { buy, getBuyPrice };
 }

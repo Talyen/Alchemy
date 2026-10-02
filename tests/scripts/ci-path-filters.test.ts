@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
@@ -7,6 +7,28 @@ import { resolveRoutes, SHARED_BUILD_PATTERNS } from "../../scripts/lib/verifica
 import { globToRegExp } from "../../scripts/lib/glob-pattern.mjs";
 
 const repoRoot = path.resolve(import.meta.dirname, "../..");
+
+describe("CI action dependencies", () => {
+  it("pins external actions in workflows and composite actions to full commit SHAs", () => {
+    const references = [".github/workflows", ".github/actions"].flatMap((directory) => {
+      const root = path.join(repoRoot, directory);
+      return readdirSync(root, { recursive: true })
+        .filter((file) => /\.ya?ml$/u.test(file))
+        .flatMap((file) => {
+          const contents = readFileSync(path.join(root, file), "utf8");
+          return [...contents.matchAll(/^\s*(?:-\s*)?uses:\s*(\S+)/gmu)].map((match) => ({
+            file: path.join(directory, file),
+            reference: match[1],
+          }));
+        });
+    });
+    expect(references.length).toBeGreaterThan(0);
+    for (const { file, reference } of references) {
+      if (reference.startsWith("./")) continue;
+      expect(reference, `${file}: ${reference}`).toMatch(/^[^@\s]+@[a-f0-9]{40}$/u);
+    }
+  });
+});
 
 /**
  * CI topology is owned by .github/workflows/ while local selection is owned by
@@ -48,16 +70,16 @@ function ciGatesFor(filters: Map<string, string[]>, filePath: string): string[] 
 // Empty gates means the change is covered by ungated every-push jobs
 // (lint/test/build/critical e2e), not a path-gated job.
 const PATH_CASES: Array<[string, string[], string[]]> = [
-  ["src/features/alchemy/shared/storage/io.ts", ["runtime", "save"], ["save", "desktop", "desktop_renderer"]],
-  ["src/features/alchemy/shared/stores/run-store.ts", ["runtime", "save"], ["save", "desktop_renderer"]],
-  ["src/lib/validation/save-schemas/save-data.ts", ["runtime", "save"], ["save"]],
-  ["src/lib/content-validation/validators.ts", ["runtime", "save"], ["save"]],
-  ["src/lib/active-run-session/session.ts", ["runtime", "save"], ["save"]],
-  ["src/app/use-app-save-state.ts", ["runtime", "save"], ["save", "desktop_renderer"]],
-  ["src/app/autosave-lifecycle.ts", ["runtime", "save"], ["save", "desktop_renderer"]],
+  ["src/features/alchemy/shared/storage/io.ts", ["runtime", "save"], ["desktop", "desktop_renderer"]],
+  ["src/features/alchemy/shared/stores/run-store.ts", ["runtime", "save"], ["desktop_renderer"]],
+  ["src/lib/validation/save-schemas/save-data.ts", ["runtime", "save"], []],
+  ["src/lib/content-validation/validators.ts", ["runtime", "save"], []],
+  ["src/lib/active-run-session/session.ts", ["runtime", "save"], []],
+  ["src/app/use-app-save-state.ts", ["runtime", "save"], ["desktop_renderer"]],
+  ["src/app/autosave-lifecycle.ts", ["runtime", "save"], ["desktop_renderer"]],
   // Save specs intentionally run nothing locally (browser-test has no commands;
-  // local handoff does not rerun browser journeys) while CI runs the save gate.
-  ["tests/e2e/specs/save-persistence.spec.ts", ["browser-test"], ["save"]],
+  // local handoff does not rerun browser journeys) while CI runs every-push unit and critical browser coverage.
+  ["tests/e2e/specs/save-persistence.spec.ts", ["browser-test"], []],
   ["scripts/sync-generated.mjs", ["assets", "tooling"], ["assets"]],
   ["scripts/prepare-assets.mjs", ["assets", "tooling"], ["assets", "desktop_renderer"]],
   ["scripts/sync-art-barrels.mjs", ["assets", "tooling"], ["assets"]],
@@ -68,7 +90,7 @@ const PATH_CASES: Array<[string, string[], string[]]> = [
   ["scripts/smoke-desktop.ps1", ["desktop", "tooling"], ["desktop", "desktop_renderer"]],
   ["scripts/lib/release/release-checks.mjs", ["desktop", "tooling"], ["desktop", "desktop_renderer"]],
   ["desktop/main.cjs", ["desktop"], ["desktop", "desktop_renderer"]],
-  ["src/lib/platform.ts", ["desktop", "runtime"], ["save", "desktop", "desktop_renderer"]],
+  ["src/lib/platform.ts", ["desktop", "runtime"], ["desktop", "desktop_renderer"]],
   ["src/App.tsx", ["runtime"], ["desktop_renderer"]],
   ["src/app/app-shell.ts", ["runtime"], ["desktop_renderer"]],
   ["src/lib/battle/damage-calc.ts", ["runtime"], []],
@@ -77,14 +99,14 @@ const PATH_CASES: Array<[string, string[], string[]]> = [
   ["scripts/lib/vite-chunks.mjs", ["tooling"], ["desktop", "desktop_renderer"]],
   ["scripts/lib/release/sentry-release.mjs", ["tooling"], ["desktop", "desktop_renderer"]],
   ["scripts/lib/release/desktop-build-config.mjs", ["desktop", "tooling"], ["desktop", "desktop_renderer"]],
-  ["package.json", ["tooling"], ["save", "desktop", "desktop_renderer", "assets"]],
+  ["package.json", ["tooling"], ["desktop", "desktop_renderer", "assets"]],
   ["Docs/REFERENCE.md", ["documentation"], []],
 ];
 
 describe("CI path-filter parity", () => {
   it("keeps local routes and CI gates aligned on representative paths", () => {
     const filters = readCiFilters();
-    expect([...filters.keys()]).toEqual(["save", "desktop", "desktop_renderer", "assets"]);
+    expect([...filters.keys()]).toEqual(["desktop", "desktop_renderer", "assets"]);
     for (const [filePath, routeIds, gates] of PATH_CASES) {
       expect(
         resolveRoutes([filePath])
@@ -140,7 +162,7 @@ describe("desktop CI artifact flow", () => {
     const retained = release.indexOf("- name: Retain verified release package");
     expect(retained).toBeGreaterThan(release.indexOf("npm run smoke:desktop"));
     const upload = release.slice(retained);
-    expect(upload).toContain("uses: actions/upload-artifact@v7");
+    expect(upload).toMatch(/uses: actions\/upload-artifact@[a-f0-9]{40}/u);
     expect(upload).toContain("name: release-package-${{ github.ref_name }}-${{ github.run_attempt }}");
     expect(upload).toContain("release-desktop/");
     expect(upload).toContain("release-notes/${{ github.ref_name }}.md");

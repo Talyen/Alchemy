@@ -30,14 +30,14 @@ describe("reward attribution regressions", () => {
     expect(unblocked.nextState.enemyMitigation.armor).toBe(6);
   });
 
-  it("Feast does not award Block when kill rewards finish a Potion's healing", () => {
+  it("Overflow does not award Block from kill rewards triggered by a Potion's healing", () => {
     const state = patchBattleState({
       playerHealth: 80,
       playerMaxHealth: 100,
       enemyHealth: 1,
       currentEnemy: { traits: [bloodCountess] },
       gearEffects: { healOnKill: 20 },
-      talentEffects: { blockOnConsume: 4 },
+      talentEffects: { overhealToBlockRatio: 0.25 },
     });
     const result = applyCardEffects(state, cardById["health-potion"]!, [], {
       origin: "played-card",

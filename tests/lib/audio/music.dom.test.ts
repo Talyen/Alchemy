@@ -224,6 +224,8 @@ it("invalidating the outgoing track stops the transition and builds a fresh trac
   invalidateCacheForKey(MUSIC_KEYS.MENU);
   vi.advanceTimersByTime(3000);
   expect(menu).toMatchObject({ paused: true, currentTime: 0 });
+  expect(menu.removeAttribute).toHaveBeenCalledWith("src");
+  expect(menu.load).toHaveBeenCalledOnce();
   expect(isMusicPaused()).toBe(true);
   expect(createdFakeAudio).toHaveLength(1);
   playMusicImmediate(MUSIC_KEYS.MENU);
@@ -247,6 +249,8 @@ it("reset cancels callbacks and drops cached boss elements", () => {
   playMusicImmediate(MUSIC_KEYS.BOSS_FROSTWARDEN);
   expect(lastFakeAudio()).not.toBe(boss);
   expect(boss.paused).toBe(true);
+  expect(boss.removeAttribute).toHaveBeenCalledWith("src");
+  expect(boss.load).toHaveBeenCalledOnce();
 });
 
 it("dedupes previews, ignores unknown requests, and restores menu on preview end", () => {

@@ -15,6 +15,16 @@ function namedTrinketIds(effects: readonly MysteryEffect[]): string[] {
   return effects.flatMap((effect) => (effect.kind === "gainTrinket" ? [effect.trinketId] : []));
 }
 
+function pickRandomMysteryTrinketId(
+  fromIds: readonly string[] | undefined,
+  isExcluded: (id: string) => boolean,
+  rng: () => number,
+): string | undefined {
+  const available = trinketLibrary.filter((entry) => !isExcluded(entry.id));
+  const constrained = fromIds?.length ? available.filter((entry) => fromIds.includes(entry.id)) : [];
+  return pickRandom(constrained.length > 0 ? constrained : available, rng)?.id;
+}
+
 export function pickMysteryTrinketGrantId({
   preferredId,
   fromIds,
@@ -28,13 +38,7 @@ export function pickMysteryTrinketGrantId({
 }): string | undefined {
   if (preferredId && !owned.has(preferredId)) return preferredId;
 
-  const constrained = fromIds?.length
-    ? trinketLibrary.filter((entry) => fromIds.includes(entry.id) && !owned.has(entry.id))
-    : [];
-  if (constrained.length > 0) return pickRandom(constrained, rng)?.id;
-
-  const unowned = trinketLibrary.filter((entry) => !owned.has(entry.id));
-  return pickRandom(unowned, rng)?.id;
+  return pickRandomMysteryTrinketId(fromIds, (id) => owned.has(id), rng);
 }
 
 function resolveMysteryTrinketEffect(
@@ -53,13 +57,7 @@ function resolveMysteryTrinketEffect(
   }
 
   if (effect.kind === "gainRandomTrinket") {
-    const isExcluded = (id: string) => owned.has(id) || reservedNamedIds.has(id);
-    const fromIds = effect.fromIds;
-    const candidates = fromIds?.length
-      ? trinketLibrary.filter((entry) => fromIds.includes(entry.id) && !isExcluded(entry.id))
-      : [];
-    const pool = candidates.length > 0 ? candidates : trinketLibrary.filter((entry) => !isExcluded(entry.id));
-    const picked = pickRandom(pool, rng)?.id;
+    const picked = pickRandomMysteryTrinketId(effect.fromIds, (id) => owned.has(id) || reservedNamedIds.has(id), rng);
     if (!picked) return mysteryTrinketFallbackEffect(fallbackSeed);
     owned.add(picked);
     return { kind: "gainTrinket", trinketId: picked };

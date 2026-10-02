@@ -58,14 +58,4 @@ describe("CombatantAttackLunge", () => {
     expect(getByTestId("combatant-attack-lunge").classList.contains("animate-cast-brace")).toBe(true);
     expect(getByTestId("combatant-attack-lunge").style.getPropertyValue("--cast-brace-ms")).toBe("520ms");
   });
-
-  it("applies custom className", () => {
-    const { getByTestId } = render(
-      <CombatantAttackLunge attackToken={0} aim={1} className="test-column-class">
-        <span>art</span>
-      </CombatantAttackLunge>,
-    );
-
-    expect(getByTestId("combatant-attack-lunge").classList.contains("test-column-class")).toBe(true);
-  });
 });

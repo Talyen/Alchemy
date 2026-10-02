@@ -18,6 +18,7 @@ import {
   getPlasmaKeywordsForEnemy,
   getPlasmaKeywordsForGear,
   getPlasmaKeywordsForTalent,
+  getPlasmaKeywordsForText,
   lerpPlasmaColor,
 } from "@/features/alchemy/shared/config/plasma-palettes";
 import { parsePlasmaHexColor } from "@/lib/animation/plasma-colors";
@@ -147,6 +148,17 @@ describe("getPlasmaKeywordsForTalent", () => {
     const keywords = getPlasmaKeywordsForTalent(talent);
     expect(keywords).toEqual(["burn"]);
     expect(getPlasmaColorPairForTalent(talent)).toEqual(getPlasmaColorPair(["burn"]));
+  });
+});
+
+describe("getPlasmaKeywordsForText", () => {
+  it("preserves first-mentioned colors and returns independently owned keyword lists", () => {
+    const text = "Frozen enemies take Burn damage; FREEZE and Burning repeat those colors. Mana Crystal.";
+    const keywords = getPlasmaKeywordsForText(text);
+    expect(keywords).toEqual(["freeze", "burn", "mana"]);
+    keywords.reverse();
+    expect(getPlasmaKeywordsForText(text)).toEqual(["freeze", "burn", "mana"]);
+    expect(getPlasmaColorPair(getPlasmaKeywordsForText(text))).toEqual(getPlasmaColorPair(["freeze", "burn"]));
   });
 });
 

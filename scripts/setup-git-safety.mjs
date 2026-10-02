@@ -19,7 +19,7 @@ For manual use: export PATH="${shimDir}:$PATH"`);
   process.exit(0);
 }
 
-const repoOnly = args.includes("--repo") || args.length === 0;
+const repoOnly = args.every((arg) => arg === "--repo");
 if (!repoOnly) {
   console.error("Unknown option. Only --repo is supported (repository-scoped install).");
   process.exit(2);

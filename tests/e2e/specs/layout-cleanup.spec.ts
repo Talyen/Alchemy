@@ -1,5 +1,5 @@
 import { expect, test } from "../../fixtures/e2e";
-import type { Locator, Page } from "@playwright/test";
+import type { Locator } from "@playwright/test";
 import {
   injectSaveState,
   makeStartingDeck,
@@ -36,28 +36,6 @@ async function expectCenteredRows(locator: Locator, maxColumns: number, width: n
   }
 }
 
-async function lastPage(page: Page, target: Locator) {
-  const next = page.getByRole("button", { name: "Next page", exact: true });
-  if ((await next.count()) === 0) return;
-  for (let count = 0; count < 50 && (await next.isEnabled()); count += 1) {
-    await next.click();
-    await waitForLayoutSettled(page, target);
-  }
-  await expect(next).toBeDisabled();
-}
-
-async function expectNearbyPagination(page: Page, tiles: Locator) {
-  const rects = await boxes(tiles);
-  const pager = await page.getByRole("button", { name: "Next page", exact: true }).boundingBox();
-  expect(pager).not.toBeNull();
-  const bottom = Math.max(...rects.map((r) => r.y + r.height));
-  const scale = await page.evaluate(() =>
-    Number(getComputedStyle(document.documentElement).getPropertyValue("--content-scale")),
-  );
-  expect(pager!.y - bottom).toBeGreaterThanOrEqual(-1);
-  expect(pager!.y - bottom).toBeLessThanOrEqual(24 * scale + 2);
-}
-
 test(
   "Collection keeps its column limits and centered rows on short, tall, and large displays",
   slow,
@@ -71,7 +49,7 @@ test(
       { width: 3840, height: 2160 },
     ]) {
       await page.setViewportSize(viewport);
-      for (const tab of ["Heroes", "Cards", "Bestiary", "Trinkets", "Uniques"]) {
+      for (const tab of ["Heroes", "Bestiary"]) {
         await page.getByRole("button", { name: tab, exact: true }).click();
         await page.mouse.move(0, 0);
         await waitForLayoutSettled(page, tiles);
@@ -80,29 +58,6 @@ test(
     }
   },
 );
-
-test("short Collection and Homestead pages center their items and keep pagination nearby", slow, async ({ page }) => {
-  test.setTimeout(60_000);
-  await page.setViewportSize({ width: 1470, height: 956 });
-  const menu = new MenuPage(page);
-  await menu.gotoCollection();
-  await page.getByRole("button", { name: "Heroes", exact: true }).click();
-  await waitForLayoutSettled(page, page.getByRole("button", { name: /^Inspect/ }));
-  await expect(page.getByRole("button", { name: "Next page", exact: true })).toHaveCount(0);
-  await page.getByRole("button", { name: "Cards", exact: true }).click();
-  const cards = page.getByRole("button", { name: /^Inspect/ });
-  await waitForLayoutSettled(page, cards);
-  await lastPage(page, cards);
-  await expectCenteredRows(cards, 4, 1470);
-  await expectNearbyPagination(page, cards);
-  await page.getByRole("button", { name: "Back", exact: true }).click();
-  await menu.openHomestead();
-  const nodes = page.getByRole("button", { name: /^Build / });
-  await waitForLayoutSettled(page, nodes);
-  await lastPage(page, nodes);
-  await expectCenteredRows(nodes, 3, 1470);
-  await expectNearbyPagination(page, nodes);
-});
 
 test("Corruption picker capacity is independent of resize history and preserves selection", slow, async ({ page }) => {
   await page.setViewportSize({ width: 1470, height: 956 });

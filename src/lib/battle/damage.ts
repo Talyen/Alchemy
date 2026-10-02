@@ -5,6 +5,7 @@ import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import { UNIQUE_GEAR_COMBAT } from "../game-constants";
 import { addGoldWithCombatText } from "./player-rewards";
 import { computeCardDamageToEnemy } from "./damage-calc";
+import { computeBaseDamage } from "./player-damage-base";
 import { resolvePlayerHit } from "./hit-resolution";
 import { tryDodgePlayerAttackPacket } from "./dodge";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
@@ -22,9 +23,8 @@ interface AttackPacket {
   applyPartingCut: boolean;
 }
 
-// Single owner for per-hit flag consumption. It runs after the dodge
-// early-return in dealDamageToEnemy, so a dodged attack preserves every
-// flag consumed here (matching the leech/poison comment below).
+// Builds an immutable candidate; dealDamageToEnemy commits its flag changes
+// only after establishing a positive attack and passing Dodge.
 function consumeAttackPacketFlags(state: BattleState, effect: DamageEffect): { state: BattleState } & AttackPacket {
   const convertToPoison = readCombatFlag(state, "nextHitPoison");
   const poisonPacket = convertToPoison ? { ...effect, damageType: "poison" as const } : effect;
@@ -130,14 +130,29 @@ export function dealDamageToEnemy(
   if (bonuses.sanguine > 0) {
     state = { ...state, flags: { ...state.flags, sanguinePhysicalBonus: 0 } };
   }
+  const consumed = consumeAttackPacketFlags(state, resolvedEffect);
+  const { packet, applyPartingCut } = consumed;
+  const baseDamageBonus =
+    bonuses.flat +
+    (packet.damageType === "physical" ? bonuses.physical + consumed.physicalBonus : 0) +
+    (packet.damageType === "bleed" ? bonuses.bleed : 0);
+  const armorSuppliesDamage =
+    packet.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0 && state.enemyMitigation.armor > 0;
+  if (
+    !armorSuppliesDamage &&
+    computeBaseDamage(consumed.state, packet, {
+      card,
+      bonus: baseDamageBonus,
+      companionAttack: context?.origin === "companion",
+    }) <= 0
+  )
+    return state;
   const dodged = tryDodgePlayerAttackPacket(state, combatTexts);
   if (dodged) {
     captureDamageEffect(resolvedEffect);
     return dodged;
   }
 
-  const consumed = consumeAttackPacketFlags(state, resolvedEffect);
-  const { packet, applyPartingCut } = consumed;
   captureDamageEffect(packet);
   const damageState = consumed.state;
   bonuses.physical += consumed.physicalBonus;

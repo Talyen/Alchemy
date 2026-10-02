@@ -1,15 +1,17 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import {
   findBestPlayableHandCard,
   findBestWishChoice,
   getPlayableHandCardKeys,
+  handHasPlayableCard,
   handHasHiddenCard,
 } from "@/features/alchemy/run-loop/battle/playable-hand";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { makeTestCard } from "../../../../fixtures/cards";
 import { cardById, type BattleCard } from "@/lib/game-data";
+import * as battle from "@/lib/battle";
 
 const affordableCard: BattleCard = {
   id: "slash",
@@ -27,6 +29,24 @@ const expensiveCard: BattleCard = {
   cost: 9,
   uid: 2,
 };
+
+describe("handHasPlayableCard", () => {
+  it("stops validating once it finds a playable card", () => {
+    const validate = vi.spyOn(battle, "canPlayCard");
+    const state = makeTestBattleState({ hand: [expensiveCard, affordableCard, affordableCard], mana: 2 });
+    expect(handHasPlayableCard(state)).toBe(true);
+    expect(validate).toHaveBeenCalledTimes(2);
+    expect(handHasPlayableCard({ ...state, hand: [expensiveCard] })).toBe(false);
+    expect(handHasPlayableCard({ ...state, hand: [] })).toBe(false);
+  });
+
+  it("keeps the post-defeat play option and Wish gate", () => {
+    const state = makeTestBattleState({ hand: [affordableCard], enemyHealth: 0, mana: 2 });
+    expect(handHasPlayableCard(state)).toBe(true);
+    expect(handHasPlayableCard(state, { allowAfterEnemyDefeat: false })).toBe(false);
+    expect(handHasPlayableCard({ ...state, wishOptions: [affordableCard] })).toBe(false);
+  });
+});
 
 describe("getPlayableHandCardKeys", () => {
   it("marks affordable player-phase cards as playable", () => {

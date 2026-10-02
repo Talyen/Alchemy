@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_ARMORY_INVENTORY_FILTERS,
   matchesGearFilters,
@@ -6,6 +6,8 @@ import {
   type ArmoryInventoryFilters,
 } from "@/features/alchemy/meta/screens/armory/armory-inventory-filtering";
 import { getGearInstanceKeywordIds, type GearInstance } from "@/lib/gear";
+import * as gear from "@/lib/gear";
+import * as keywordText from "@/lib/keyword-text";
 import type { TrinketEntry } from "@/lib/game-data";
 
 const sword: GearInstance = {
@@ -23,6 +25,30 @@ const filters = (patch: Partial<ArmoryInventoryFilters>): ArmoryInventoryFilters
 const equipped = new Set(["sword"]);
 
 describe("Armory inventory matching", () => {
+  it("avoids descriptions and keywords for equipment and rarity browsing", () => {
+    const descriptions = vi.spyOn(gear, "getGearInstanceTooltipEntries");
+    const keywords = vi.spyOn(gear, "getGearInstanceKeywordIds");
+    expect(matchesGearFilters(sword, filters({ equipment: "equipped", search: "  " }), equipped)).toBe(true);
+    expect(matchesGearFilters(sword, filters({ rarities: ["astral"] }), equipped)).toBe(true);
+    expect(matchesGearFilters(sword, filters({ rarities: ["unique"], search: "longsword" }), equipped)).toBe(false);
+    expect(descriptions).not.toHaveBeenCalled();
+    expect(keywords).not.toHaveBeenCalled();
+  });
+
+  it("does not extract Trinket keywords during search-only browsing", () => {
+    const keywords = vi.spyOn(keywordText, "extractKeywordIds");
+    const trinket: TrinketEntry = {
+      id: "charm",
+      title: "Cold Charm",
+      art: "",
+      descriptionLines: ["Gain Block after Freeze."],
+      effects: {},
+    };
+    expect(matchesTrinketFilters(trinket, filters({ search: "freeze charm" }), new Set())).toBe(true);
+    expect(matchesTrinketFilters(trinket, filters({ equipment: "unequipped" }), new Set())).toBe(true);
+    expect(keywords).not.toHaveBeenCalled();
+  });
+
   it("combines normalized search words, rarity, keywords, and equipment", () => {
     const criteria = filters({
       search: "  PHYSICAL   longsword ",

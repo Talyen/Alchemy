@@ -33,7 +33,8 @@ export interface EnemyDotPulse {
 }
 
 function pulseHealthDamage(pulses: readonly EnemyDotPulse[], index: number, health: number): number {
-  const earlierDamage = pulses.slice(0, index).reduce((sum, pulse) => sum + pulse.finalDamage, 0);
+  let earlierDamage = 0;
+  for (let i = 0; i < index; i++) earlierDamage += pulses[i]!.finalDamage;
   return Math.min(pulses[index]?.finalDamage ?? 0, Math.max(0, health - earlierDamage));
 }
 
@@ -49,19 +50,22 @@ export function applyEnemyDotDamage(
   let nextState: BattleState = hit.state;
 
   const bleedIndex = pulses.findIndex((pulse) => pulse.status === "bleed");
-  if (bleedIndex >= 0 && pulseHealthDamage(pulses, bleedIndex, previousHealth) > 0) {
-    nextState = applyBleedDamageDraw(nextState, pulseHealthDamage(pulses, bleedIndex, previousHealth), combatTexts);
+  const bleedHealthDamage = bleedIndex >= 0 ? pulseHealthDamage(pulses, bleedIndex, previousHealth) : 0;
+  if (bleedHealthDamage > 0) {
+    nextState = applyBleedDamageDraw(nextState, bleedHealthDamage, combatTexts);
     nextState = addGoldWithCombatText(nextState, state.trinketEffects.cutpurseGoldOnBleed, combatTexts);
   }
 
-  for (const [index, pulse] of pulses.entries()) {
+  let earlierDamage = 0;
+  for (const pulse of pulses) {
     nextState = setEnemyStatus(nextState, pulse.status, pulse.nextStacks);
     nextState = applyElementalDamageManaRestore(
       nextState,
       pulse.status,
-      pulseHealthDamage(pulses, index, previousHealth),
+      Math.min(pulse.finalDamage, Math.max(0, previousHealth - earlierDamage)),
       combatTexts,
     );
+    earlierDamage += pulse.finalDamage;
   }
   if (applyRiders) nextState = applyRiders(nextState, hit);
   nextState = decayArmorAfterDamage(nextState, finalDamage, "enemy", combatTexts);
@@ -106,14 +110,17 @@ export function detonateEnemyStatuses(
       (status === "burn" || (status === "bleed" && state.gearEffects.sharedBurnBleedBonuses > 0)
         ? getBurnBonusToBleedingMultiplier(state)
         : 1);
+    // Projected ticks all use the same immutable battle inputs. Keep the
+    // multiplication order and per-tick rounding when reusing these factors.
+    const poisonMultiplier = status === "poison" ? getPoisonDamageMultiplierAgainstBleeding(state) : 1;
+    const poisonDecayMultiplier =
+      status === "poison" && hasEncounterBenefit(state, "venomous") ? LABYRINTH_MODIFIER_CONFIG.half : 1;
     while (stacks > 0) {
-      finalDamage += Math.round(
-        (stacks + bonus) * multiplier * (status === "poison" ? getPoisonDamageMultiplierAgainstBleeding(state) : 1),
-      );
+      finalDamage += Math.round((stacks + bonus) * multiplier * poisonMultiplier);
       if (mode === "next-tick") break;
       stacks =
         status === "poison"
-          ? decayPoisonStacks(stacks, hasEncounterBenefit(state, "venomous") ? LABYRINTH_MODIFIER_CONFIG.half : 1)
+          ? decayPoisonStacks(stacks, poisonDecayMultiplier)
           : status === "burn" || (status === "bleed" && state.gearEffects.bleedDecaysByHalf > 0)
             ? decayHalvedStatus(stacks)
             : 0;
@@ -150,10 +157,7 @@ export function detonateEnemyStatuses(
     if (!bleedPulse) return nextState;
     return payPendingBleedLeech(
       previousHealth,
-      {
-        ...nextState,
-        pendingBleedLeechHealing: Math.min(nextState.pendingBleedLeechHealing, bleedPulse.finalDamage),
-      },
+      nextState,
       combatTexts,
       state.enemyStatuses.poison > 0 || state.enemyStatuses.bleed > 0,
       pulseHealthDamage(pulses, pulses.indexOf(bleedPulse), previousHealth),

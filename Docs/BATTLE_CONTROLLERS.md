@@ -8,7 +8,7 @@ Controller composition supplies callbacks; screens do not construct controllers.
 
 ```text
 useAlchemyRunController → useBattleController → routeCommands.battle
-App → RenderAlchemyScreen → BattleScreenRoute → BattleScreen (command props)
+App → renderAlchemyScreenRoute → BattleScreenRoute → BattleScreen (command props)
 ```
 
 At interaction time, those callbacks resolve gameplay before presentation:
@@ -22,7 +22,7 @@ BattleScreenRoute → useBattleScreenRouteData → displayed frame or committed 
 
 - `useAlchemyRunController` exposes battle **commands** on `routeCommands.battle`. Battle **display** is local to `BattleScreenRoute` via `useBattleScreenRouteData`, which selects the current presentation frame or the committed snapshot.
 - Autoplay / auto-end-turn **ticks** live in `useBattlePlayback` on that route. Session autoplay on/off lives in `useBattleController`. Playback how-to: [WORKFLOWS § Change battle playback](./WORKFLOWS.md#change-battle-playback).
-- Presentation leaves subscribe to `battle-presentation-store`. Teardown follows committed store `screen !== "battle"` (not `renderedScreen`). `App.tsx` passes `routeCommands` through `RenderAlchemyScreen`. Run/battle bindings stay on props; the allowed providers are `AppScreenChromeProvider` and `CardDescriptionProvider`, while presentation-only state may use `ui-store`. See [WORKFLOWS § Add a new card](./CONTENT_AUTHORING.md#add-a-new-card) for card-description context.
+- Presentation leaves subscribe to `battle-presentation-store`. Teardown follows committed store `screen !== "battle"` (not `renderedScreen`). `App.tsx` passes `routeCommands` through `renderAlchemyScreenRoute`. Run/battle bindings stay on props; the allowed providers are `AppScreenChromeProvider` and `CardDescriptionProvider`, while presentation-only state may use `ui-store`. See [Content authoring § Add a new card](./CONTENT_AUTHORING.md#add-a-new-card) for card-description context.
 
 ### Data flow
 

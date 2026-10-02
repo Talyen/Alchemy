@@ -6,7 +6,7 @@ import fs from "node:fs";
 import { summarizeAndReportFailure, summarizeStepResult } from "./lib/run-step.mjs";
 import { resolveRoutePlan } from "./lib/verification/change-routes.mjs";
 import { parseChangedPathsArgs, resolveSelectedPaths } from "./lib/verification/changed-paths.mjs";
-import { DOCS_CHECK_KEY } from "./lib/verification/test-commands.mjs";
+import { COMMANDS, DOCS_CHECK_KEY } from "./lib/verification/test-commands.mjs";
 import { ensureRunId, writeCurrentRun } from "./lib/verification/current-run.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { runCommand } from "./lib/run-command.mjs";
@@ -16,7 +16,7 @@ import { selectContext } from "./lib/agent/agent-context.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
-const VERIFY_FLAGS = new Set(["diff", "plan", "verbose-plan", "verbose", "keep-going", "skip-docs-check"]);
+const VERIFY_FLAGS = new Set(["diff", "plan", "verbose-plan", "verbose", "keep-going", "skip-docs-check", "full"]);
 
 export function parseVerifyArgs(argv) {
   const { flags, paths } = parseChangedPathsArgs(argv, {
@@ -29,6 +29,14 @@ export function parseVerifyArgs(argv) {
 }
 
 export function filterPlanCommands(plan, flags) {
+  if (!flags.has("full")) {
+    return {
+      ...plan,
+      commands: plan.paths.some((file) => !file.endsWith(".md"))
+        ? [{ key: "unit-local", ...COMMANDS["unit-local"] }]
+        : [],
+    };
+  }
   if (flags.has("skip-docs-check")) {
     return { ...plan, commands: plan.commands.filter((command) => command.key !== DOCS_CHECK_KEY) };
   }
@@ -103,11 +111,13 @@ export function main(argv = process.argv.slice(2)) {
     process.stdout.write(formatPlan(plan, { verbosePlan: flags.has("verbose-plan") }));
     if (flags.has("plan")) return 0;
 
-    const cache = createVerificationCache(ROOT, plan.commands);
-    const sessionInputs = process.env.ALCHEMY_AGENT_SESSION ? captureVerificationInputs(ROOT) : null;
+    // Local smoke does not need the full repository/dependency identity walk.
+    const cache = flags.has("full") ? createVerificationCache(ROOT, plan.commands) : null;
+    const sessionInputs =
+      flags.has("full") && process.env.ALCHEMY_AGENT_SESSION ? captureVerificationInputs(ROOT) : null;
     const outcomes = [];
     for (const [index, command] of plan.commands.entries()) {
-      const receipt = cache.read(command);
+      const receipt = cache?.read(command);
       const outcome = receipt
         ? { passed: true, command, reused: receipt.runId }
         : runVerificationCommand(command, index, flags.has("verbose"), runId, sessionInputs);
@@ -120,7 +130,7 @@ export function main(argv = process.argv.slice(2)) {
       outcomes.push(outcome);
       if (!outcome.passed && !flags.has("keep-going")) break;
     }
-    const stable = cache.finish(outcomes, runId);
+    const stable = cache?.finish(outcomes, runId) ?? true;
     if (!stable) {
       console.error("Verification inputs changed during the run; rerun for current inputs.");
       outcomes.push({ passed: false, command: { label: "verification input staleness" } });
@@ -167,7 +177,9 @@ export function main(argv = process.argv.slice(2)) {
       summary:
         failed.length > 0
           ? `${failed[0].command.label} failed; inspect its bounded digest first.`
-          : `${outcomes.length}/${outcomes.length} verification steps passed.`,
+          : flags.has("full")
+            ? `${outcomes.length}/${outcomes.length} verification steps passed.`
+            : "Local verification passed; full CI validation is required.",
     });
     return failed.length === 0 ? 0 : 1;
   } catch (error) {

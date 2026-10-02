@@ -3,6 +3,7 @@ import type { HomesteadEffectManifest } from "./types";
 import { emptyInventory } from "./inventory";
 import { materialCost } from "./data-builders";
 import { HOMESTEAD_LOOT_MULTIPLIERS, LABYRINTH_REWARD_CONFIG } from "../game-constants";
+import { rngInt } from "@/lib/rng";
 
 export interface MaterialLootEntry {
   material: MaterialId;
@@ -95,7 +96,7 @@ export function getEnemyMaterialLoot(enemyId: string, enemyType: string, rng: ()
   const loot: MaterialInventory = { ...table.guaranteed };
   for (const bonus of table.bonuses) {
     if (rng() < bonus.chance) {
-      loot[bonus.material] += bonus.min + Math.floor(rng() * (bonus.max - bonus.min + 1));
+      loot[bonus.material] += bonus.min + rngInt(rng, bonus.max - bonus.min + 1);
     }
   }
   return applyTypeMultiplier(loot, enemyType);

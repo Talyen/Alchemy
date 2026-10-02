@@ -1,4 +1,5 @@
 export const TEST_SUITES: {
+  local: readonly string[];
   save: readonly string[];
   tooling: readonly string[];
   shipUnit: readonly string[];

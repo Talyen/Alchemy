@@ -1,3 +1,5 @@
+import { createNumericManifest } from "@/lib/manifest-utils";
+
 export const CRAFTING_CURRENCY_IDS = [
   "discordant-dice",
   "sprig-of-growth",
@@ -9,10 +11,7 @@ export const CRAFTING_CURRENCY_IDS = [
 
 export type CraftingCurrencyId = (typeof CRAFTING_CURRENCY_IDS)[number];
 
-export const EMPTY_CRAFTING_CURRENCIES = Object.fromEntries(CRAFTING_CURRENCY_IDS.map((id) => [id, 0])) as Record<
-  CraftingCurrencyId,
-  number
->;
+export const EMPTY_CRAFTING_CURRENCIES = createNumericManifest(CRAFTING_CURRENCY_IDS);
 
 function sanitizeCurrencyValue(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;

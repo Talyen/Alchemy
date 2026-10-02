@@ -91,12 +91,12 @@ keep the same spacing.
 
 ## Options
 
-Gameplay Options lists the existing mouse/keyboard controls and core Mana/Block/inspection rules. Failed local saves show a non-modal warning until an acknowledged retry; the warning does not change save recovery behavior.
+Gameplay Options contains Auto-End Turn and Remember Auto-Battle Preference. The former Controls instructions are removed. Failed local saves show a non-modal warning until an acknowledged retry; the warning does not change save recovery behavior.
 
 Options opened from either end-run outcome returns to that same recap through Back or Escape, including after changing Game Size.
 
 Game Size and Tooltip Size are device-local preferences, separate from game
-saves and cloud mirroring. Reset Sizes and Reset Options reset both. Clearing
+saves and cloud mirroring. Reset to Default in the Other tab resets options and both sizes. Clearing
 progress or importing a save does not change them.
 
 Options uses compact unboxed groups with pale-gold headings, fading rules,

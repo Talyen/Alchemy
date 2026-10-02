@@ -264,12 +264,22 @@ export function relatedLocations(root, selectedPaths, limit = 6) {
     ...new Set(
       tests
         .flatMap((file) => dependencies.get(file) ?? [])
-        .filter((file) => /(?:fixture|test-utils|test-helpers|testing|playwright-shared)/u.test(file)),
+        .filter(
+          (file) =>
+            !isTest(file) && /(?:^tests\/|fixture|test-utils|test-helpers|testing|playwright-shared)/u.test(file),
+        ),
     ),
   ]
     .sort()
     .slice(0, limit);
+  // Direct dependencies reveal reusable owners without guessing from filenames.
+  // Keep selected files out: callers already know those locations.
+  const helpers = [...new Set([...seeds].flatMap((file) => dependencies.get(file) ?? []))]
+    .filter((file) => !seeds.has(file) && !isTest(file) && !fixtures.includes(file) && !file.startsWith("tests/"))
+    .sort()
+    .slice(0, limit);
   return {
+    helpers,
     consumers: ranked
       .filter(([file]) => !isTest(file))
       .slice(0, limit)

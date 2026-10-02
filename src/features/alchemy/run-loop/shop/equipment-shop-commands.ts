@@ -1,21 +1,19 @@
 import { grantGearToRunWithRecord } from "@/features/alchemy/shared/stores/deck-mutations";
 import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
 import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readActivityData } from "@/lib/active-run-session";
 import type { TalentEffectManifest } from "@/lib/game-data";
-import { getOwnedUniqueDefinitionIds, type GearInstance } from "@/lib/gear";
+import { getOwnedUniqueDefinitionIds } from "@/lib/gear";
 import type { EquipmentShopCommands } from "./shop-action-types";
 import {
   createGetRefreshPrice,
+  createShopPurchaseActions,
   createShopRefreshAction,
   gearSlotKeyOf,
   initializeShop,
-  purchaseSlotOffering,
 } from "./shop-commands-core";
 import { getShopBuyPrice } from "./shop-pricing";
-import { resolveDraftShopModifiers, resolveReadShopPricingContext } from "./shop-pricing-context";
+import { resolveDraftShopModifiers } from "./shop-pricing-context";
 import { createInitialEquipmentShopState, resampleEquipmentShopOfferings } from "./shop-state-init";
-import { runShopTransaction } from "./shop-transactions";
 
 export function createEquipmentShopCommands({
   talentEffects,
@@ -24,9 +22,15 @@ export function createEquipmentShopCommands({
   talentEffects: TalentEffectManifest;
   gearAstralChanceBonus: number;
 }): EquipmentShopCommands {
-  const getBuyPrice = (instance: GearInstance) => {
-    return getShopBuyPrice("gear", instance, resolveReadShopPricingContext(talentEffects, "equipmentShopState"));
-  };
+  const { buy, getBuyPrice } = createShopPurchaseActions({
+    activity: "equipment-shop",
+    talentEffects,
+    itemsOf: (state) => state.gear,
+    slotKeyOf: gearSlotKeyOf,
+    idOf: (item) => item.instanceId,
+    priceOf: (instance, context) => getShopBuyPrice("gear", instance, context),
+    acquire: grantGearToRunWithRecord,
+  });
   const getRefreshPrice = createGetRefreshPrice("equipment-shop", talentEffects);
 
   const initialize = initializeShop("equipment-shop", (draft) =>
@@ -38,23 +42,6 @@ export function createEquipmentShopCommands({
       resolveDraftShopModifiers(draft),
     ),
   );
-
-  function buy(instance: GearInstance, slotKey: string): boolean {
-    return runShopTransaction("equipment-shop", (draft) => {
-      const state = readActivityData(draft.session.activity, "equipment-shop");
-      return purchaseSlotOffering({
-        talentEffects,
-        activity: "equipment-shop",
-        draft,
-        items: state.gear,
-        requestedId: instance.instanceId,
-        slotKey,
-        slotKeyOf: (item) => gearSlotKeyOf(item),
-        idOf: (item) => item.instanceId,
-        acquire: (innerDraft, offered) => grantGearToRunWithRecord(innerDraft, offered),
-      });
-    }).committed;
-  }
 
   const refresh = createShopRefreshAction({
     activity: "equipment-shop",

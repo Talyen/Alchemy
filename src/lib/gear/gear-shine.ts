@@ -25,15 +25,19 @@ export function selectTextShineKeywordIds(
 ): KeywordId[] {
   const affinity = new Set<KeywordId>(affinityKeywords);
   const preferred: KeywordId[] = [];
-  const rest: KeywordId[] = [];
   for (const keywordId of instanceKeywordIds) {
     if (affinity.has(keywordId)) {
       preferred.push(keywordId);
-    } else {
-      rest.push(keywordId);
+      if (preferred.length === MAX_TEXT_SHINE_KEYWORDS) return preferred;
     }
   }
-  return [...preferred, ...rest].slice(0, MAX_TEXT_SHINE_KEYWORDS);
+  for (const keywordId of instanceKeywordIds) {
+    if (!affinity.has(keywordId)) {
+      preferred.push(keywordId);
+      if (preferred.length === MAX_TEXT_SHINE_KEYWORDS) break;
+    }
+  }
+  return preferred;
 }
 
 export function getGearInstanceKeywordIds(instance: GearInstance): KeywordId[] {
@@ -76,6 +80,7 @@ function resolveShineColors(
 }
 
 export function getGearDefinitionShineColors(definition: GearDefinition): readonly string[] {
+  if (definition.rarity !== "unique" && definition.rarity !== "astral") return [];
   const keywords =
     definition.rarity === "unique"
       ? extractKeywordIds(definition.descriptionLines.join(" "))
@@ -85,7 +90,7 @@ export function getGearDefinitionShineColors(definition: GearDefinition): readon
 
 export function getGearInstanceShineColors(instance: GearInstance): readonly string[] {
   const definition = gearDefinitions[instance.definitionId];
-  if (!definition) return [];
+  if (!definition || (definition.rarity !== "unique" && definition.rarity !== "astral")) return [];
   return resolveShineColors(definition.rarity, "border", getGearInstanceKeywordIds(instance));
 }
 
@@ -95,7 +100,8 @@ export function getGearDefinitionTextShineColors(definition: GearDefinition): re
 
 export function getGearInstanceTextShineColors(instance: GearInstance): readonly string[] {
   const definition = gearDefinitions[instance.definitionId];
-  if (!definition) return [];
+  if (!definition || (definition.rarity !== "unique" && definition.rarity !== "astral")) return [];
+  if (definition.rarity === "unique") return [...UNIQUE_TEXT_SHINE_COLORS];
   return resolveShineColors(
     definition.rarity,
     "text",

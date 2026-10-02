@@ -1,7 +1,7 @@
 import type { CharacterId } from "@/lib/game-data";
 import { trinketLibrary } from "@/lib/game-data";
 import { useMemo } from "react";
-import { flattenGearInventories } from "@/lib/gear";
+import { GEAR_CHARACTER_IDS } from "@/lib/gear";
 import { useShallow } from "zustand/react/shallow";
 import { type GameplayPersistenceCodec } from "./persistence-codec";
 import type { GearSaveFields, GearStateFields } from "./gear-store-types";
@@ -102,7 +102,7 @@ export function useGearArmorySlice(): GearArmorySlice {
 }
 
 function hasAnyOwnedGear(inventories: GearStateFields["inventories"], ownedTrinketIds: string[]): boolean {
-  return flattenGearInventories(inventories).length > 0 || ownedTrinketIds.length > 0;
+  return ownedTrinketIds.length > 0 || GEAR_CHARACTER_IDS.some((id) => inventories[id].length > 0);
 }
 
 export function readHasAnyOwnedGear(): boolean {

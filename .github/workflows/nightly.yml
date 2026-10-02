@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           sparse-checkout: |
             /*
@@ -29,7 +29,7 @@ jobs:
 
       - run: npm run build
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: dist
           path: dist/
@@ -38,7 +38,7 @@ jobs:
 
       - name: Retain build failure diagnostics
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: build-diagnostics-nightly-prepare
           path: |
@@ -60,7 +60,7 @@ jobs:
       matrix:
         shard: [1, 2, 3, 4]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           sparse-checkout: |
             /*
@@ -69,7 +69,7 @@ jobs:
 
       - uses: ./.github/actions/setup
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: dist
           path: dist/
@@ -95,7 +95,7 @@ jobs:
 
       - name: Upload Playwright results
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: playwright-report-nightly-web-${{ matrix.shard }}-results
           path: reports/playwright-results.json
@@ -104,7 +104,7 @@ jobs:
 
       - name: Upload Playwright report
         if: failure() || steps.playwright-summary.outputs.retain-diagnostics == 'true'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: playwright-report-nightly-web-${{ matrix.shard }}
           path: |
@@ -125,7 +125,7 @@ jobs:
       matrix:
         slot: [0, 1, 2]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           sparse-checkout: |
             /*
@@ -134,7 +134,7 @@ jobs:
 
       - uses: ./.github/actions/setup
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: dist
           path: dist/
@@ -164,9 +164,15 @@ jobs:
         env:
           CI: true
 
+      - name: Verify generated checkpoint replay
+        if: matrix.slot == 0
+        run: xvfb-run --auto-servernum -- npm run perf -- --scenario campaign-early --electron --skip-build
+        env:
+          CI: true
+
       - name: Upload replay and diagnostics
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: performance-discovery-${{ steps.seed.outputs.value }}
           path: |
@@ -180,13 +186,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
 
       - uses: ./.github/actions/setup
 
-      - uses: actions/cache@v6
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         id: electron-binary-cache
         with:
           path: |
@@ -218,7 +224,7 @@ jobs:
 
       - name: Upload Playwright results
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: playwright-report-nightly-electron-results
           path: reports/playwright-electron-results.json
@@ -227,7 +233,7 @@ jobs:
 
       - name: Upload Electron Playwright report
         if: failure() || steps.playwright-summary.outputs.retain-diagnostics == 'true'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: playwright-report-nightly-electron
           path: |
@@ -240,7 +246,7 @@ jobs:
 
       - name: Retain build failure diagnostics
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: build-diagnostics-nightly-ship-gate-full
           path: |
@@ -255,7 +261,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           sparse-checkout: |
             /*
@@ -272,7 +278,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           sparse-checkout: |
             /*
@@ -285,7 +291,7 @@ jobs:
       - name: Unit tests with coverage (thresholds in vitest.config.ts)
         run: npm run test:coverage
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: failure()
         with:
           name: coverage-report
@@ -297,7 +303,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           sparse-checkout: |
             /*
@@ -310,7 +316,7 @@ jobs:
       - name: Mutate battle damage calculation
         run: npm run test:mutation
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
           name: mutation-report

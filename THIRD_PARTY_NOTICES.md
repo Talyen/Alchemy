@@ -17,11 +17,12 @@ other bundled dependencies.
 
 ## Afterglow CRT
 
-The CRT screen overlays adapt the scanline and glass styling and preset values
+The former CRT screen overlays adapted the scanline and glass styling and preset values
 from [Afterglow CRT](https://github.com/HauntedCrusader/afterglow-crt),
 Copyright (c) 2026 HauntedCrusader, under the MIT license. The full notice is
 preserved in [public/licenses/afterglow-crt.txt](./public/licenses/afterglow-crt.txt)
-and copied into web and desktop builds.
+and copied into web and desktop builds. The CRT renderer and Screen Effects
+option have been removed; this notice retains the attribution for that earlier work.
 
 ## Asset provenance register
 

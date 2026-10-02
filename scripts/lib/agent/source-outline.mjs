@@ -90,19 +90,34 @@ export function sourceOutline(rootDir, relativePath, { entries = false, tests = 
 
 function testOutline(ts, file, location) {
   const roots = new Set(["describe", "it", "test"]);
-  const modifiers = new Set(["each", "skip", "only", "todo", "concurrent", "sequential", "fails", "skipIf", "runIf"]);
+  const modifiers = new Set([
+    "each",
+    "skip",
+    "only",
+    "todo",
+    "concurrent",
+    "sequential",
+    "fails",
+    "skipIf",
+    "runIf",
+    "serial",
+    "parallel",
+  ]);
   function invocation(node) {
     if (!ts.isCallExpression(node)) return null;
     let expression = node.expression;
+    let playwrightSuite = false;
     while (!ts.isIdentifier(expression)) {
       if (ts.isPropertyAccessExpression(expression)) {
-        if (!modifiers.has(expression.name.text)) return null;
+        if (expression.name.text === "describe") playwrightSuite = true;
+        else if (!modifiers.has(expression.name.text)) return null;
         expression = expression.expression;
       } else if (ts.isCallExpression(expression)) expression = expression.expression;
       else if (ts.isTaggedTemplateExpression(expression)) expression = expression.tag;
       else return null;
     }
     if (!roots.has(expression.text)) return null;
+    if (playwrightSuite && expression.text !== "test") return null;
     const title = node.arguments[0];
     const callback = node.arguments.find((arg) => ts.isArrowFunction(arg) || ts.isFunctionExpression(arg));
     // Exclude the intermediate .each(cases) / .skipIf(condition) invocation.
@@ -111,7 +126,7 @@ function testOutline(ts, file, location) {
       ts.isStringLiteral(title) || ts.isNoSubstitutionTemplateLiteral(title)
         ? title.text
         : `[dynamic: ${title.getText(file).slice(0, 120)}]`;
-    return { kind: expression.text, name, callback };
+    return { kind: playwrightSuite ? "describe" : expression.text, name, callback };
   }
   const found = [];
   const setupPointers = (scope) =>

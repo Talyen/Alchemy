@@ -1,6 +1,7 @@
 import { createRunStreamRng, hashStringToUint32 } from "@/lib/rng";
 import { enemyLootTables, getEnemyMaterialLoot } from "@/lib/homestead/material-rewards";
 import { MATERIAL_IDS, type MaterialInventory } from "@/lib/homestead/types";
+import { emptyInventory } from "@/lib/homestead/inventory";
 import { escapeHtml, renderReportPage } from "./report-layout";
 
 const MATERIALS_REPORT_SAMPLES = 20_000;
@@ -18,12 +19,8 @@ export interface MaterialsBalanceReport {
   rows: MaterialsReportRow[];
 }
 
-function zeroInventory(): MaterialInventory {
-  return { wood: 0, stone: 0, iron: 0, food: 0, herbs: 0, hide: 0, gems: 0 };
-}
-
 function meanLoot(enemyId: string, enemyType: MaterialsReportRow["enemyType"], samples: number): MaterialInventory {
-  const totals = zeroInventory();
+  const totals = emptyInventory();
   const rng = createRunStreamRng(
     hashStringToUint32(`${MATERIALS_REPORT_SEED_VERSION}:${enemyId}:${enemyType}`),
     "rewards",
@@ -32,7 +29,7 @@ function meanLoot(enemyId: string, enemyType: MaterialsReportRow["enemyType"], s
     const loot = getEnemyMaterialLoot(enemyId, enemyType, rng);
     for (const material of MATERIAL_IDS) totals[material] += loot[material] ?? 0;
   }
-  const mean = zeroInventory();
+  const mean = emptyInventory();
   for (const material of MATERIAL_IDS) mean[material] = totals[material] / samples;
   return mean;
 }

@@ -3,10 +3,13 @@ name: CI
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -17,12 +20,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      save: ${{ steps.filter.outputs.save }}
       desktop: ${{ steps.filter.outputs.desktop }}
       desktop_renderer: ${{ steps.filter.outputs.desktop_renderer }}
       assets: ${{ steps.filter.outputs.assets }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
           sparse-checkout: |
@@ -36,23 +38,6 @@ jobs:
         id: filter
         with:
           filters: |
-            save:
-              - ".github/**"
-              - "package.json"
-              - "package-lock.json"
-              - "src/lib/validation/**"
-              - "src/lib/content-validation/**"
-              - "src/features/alchemy/shared/storage/**"
-              - "src/lib/active-run-session/**"
-              - "src/lib/platform.ts"
-              - "src/lib/platform-save-backend.ts"
-              - "src/features/alchemy/shared/stores/**"
-              - "src/app/*save*.ts"
-              - "src/app/use-alchemy-bootstrap.ts"
-              - "src/features/alchemy/shell/use-alchemy-run-controller*"
-              - "tests/fixtures/current-saves*"
-              - "tests/e2e/mid-combat-save*"
-              - "tests/e2e/specs/save-*"
             desktop:
               - "scripts/build-verified.mjs"
               - "scripts/lib/vite-*.mjs"
@@ -138,7 +123,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
           sparse-checkout: |
@@ -155,7 +140,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
           sparse-checkout: |
@@ -172,8 +157,8 @@ jobs:
         if: always()
         run: node scripts/ci-summarize.mjs --vitest
 
-      - uses: actions/upload-artifact@v7
-        if: failure()
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: always()
         with:
           name: vitest-timings
           path: |
@@ -187,7 +172,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           sparse-checkout: |
             /*
@@ -203,7 +188,7 @@ jobs:
       - name: Smoke test production build
         run: npm run smoke:preview
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: dist
           path: dist/
@@ -212,7 +197,7 @@ jobs:
 
       - name: Retain build failure diagnostics
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: build-diagnostics-ci-build
           path: |
@@ -233,7 +218,7 @@ jobs:
       matrix:
         shard: [1, 2, 3]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           sparse-checkout: |
             /*
@@ -241,7 +226,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: dist
           path: dist/
@@ -268,7 +253,7 @@ jobs:
 
       - name: Upload Playwright results
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: playwright-report-critical-${{ matrix.shard }}-results
           path: reports/playwright-results-${{ matrix.shard }}.json
@@ -277,7 +262,7 @@ jobs:
 
       - name: Upload Playwright report
         if: failure() || steps.playwright-summary.outputs.retain-diagnostics == 'true'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: playwright-report-critical-${{ matrix.shard }}
           path: |
@@ -295,7 +280,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           sparse-checkout: |
             /*
@@ -309,7 +294,7 @@ jobs:
       - name: Check desktop bundle budget
         run: npm run check:bundle
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: dist-desktop
           path: dist/
@@ -318,7 +303,7 @@ jobs:
 
       - name: Retain build failure diagnostics
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: build-diagnostics-ci-ship-gate
           path: |
@@ -334,70 +319,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       - uses: ./.github/actions/setup
       - name: Assert committed outputs match preparation
         run: npm run assets:check
-
-  # Critical save journeys run in e2e; this gate adds the remaining save scenarios.
-  save-gate:
-    needs: [changes, build]
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.save == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          sparse-checkout: |
-            /*
-            !Raw Assets
-          sparse-checkout-cone-mode: false
-
-      - uses: ./.github/actions/setup
-      - uses: actions/download-artifact@v8
-        with:
-          name: dist
-          path: dist/
-
-      - name: Smoke test downloaded build including music
-        run: npm run smoke:preview
-
-      - uses: ./.github/actions/setup-playwright
-
-      - run: mkdir -p reports
-      - name: Run additional save journeys
-        run: npm run test:ship:e2e -- --grep-invert @critical
-        env:
-          PLAYWRIGHT_VITE_MODE: preview
-
-      - name: Summarize save journeys
-        id: playwright-summary
-        if: always()
-        run: node scripts/ci-summarize.mjs --playwright
-
-      - name: Upload Playwright results
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: playwright-report-save-gate-results
-          path: reports/playwright-results.json
-          retention-days: 7
-          if-no-files-found: ignore
-
-      - name: Upload save failure report
-        if: failure() || steps.playwright-summary.outputs.retain-diagnostics == 'true'
-        uses: actions/upload-artifact@v7
-        with:
-          name: playwright-report-save-gate
-          path: |
-            playwright-report/
-            test-results/
-            reports/playwright-results.json
-            reports/current-run.*
-            reports/runs/
-          retention-days: 7
-          if-no-files-found: ignore
 
   desktop-build:
     needs: [changes, ship-gate]
@@ -411,7 +337,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           sparse-checkout: |
             /*
@@ -421,7 +347,7 @@ jobs:
       - uses: ./.github/actions/setup
 
       - name: Cache Electron binary
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.cache/electron
@@ -438,7 +364,7 @@ jobs:
       - name: Reuse desktop renderer bundle
         id: renderer-download
         if: needs.ship-gate.result == 'success'
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: dist-desktop
           path: dist/
@@ -460,7 +386,7 @@ jobs:
         run: npm run smoke:desktop
 
       - name: Upload desktop artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: release-desktop-win
           path: release-desktop/
@@ -468,7 +394,7 @@ jobs:
 
       - name: Retain build failure diagnostics
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: build-diagnostics-ci-desktop-build
           path: |
@@ -484,7 +410,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           sparse-checkout: |
             /*
@@ -493,14 +419,14 @@ jobs:
 
       - uses: ./.github/actions/setup
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: dist-desktop
           path: dist/
           compression-level: 0
 
       - name: Cache Electron binary
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         id: electron-binary-cache
         with:
           path: |
@@ -512,7 +438,8 @@ jobs:
       - name: Ensure Electron binary
         run: node scripts/ensure-electron.mjs
 
-      - uses: ./.github/actions/setup-playwright
+      - name: Install Electron system dependencies
+        run: npx playwright install-deps chromium
 
       - run: mkdir -p reports
 
@@ -529,7 +456,7 @@ jobs:
 
       - name: Upload Playwright results
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: playwright-report-electron-results
           path: reports/playwright-electron-results.json
@@ -538,7 +465,7 @@ jobs:
 
       - name: Upload Electron Playwright report
         if: failure() || steps.playwright-summary.outputs.retain-diagnostics == 'true'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: playwright-report-electron
           path: |

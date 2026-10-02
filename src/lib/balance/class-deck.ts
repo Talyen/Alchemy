@@ -7,11 +7,12 @@ import {
   getStartingDeck,
   type BattleCard,
   type CharacterId,
-  type CompanionId,
   type KeywordId,
 } from "@/lib/game-data";
 import { createSeededRng, pickRandom, sampleItems } from "@/lib/rng";
 import type { TalentPreset } from "./simulator-types";
+
+export { removeCompanionSummonFromDeck } from "./companion-deck";
 
 const ALCHEMIST_MIXED_POTION_COUNT = 2;
 
@@ -97,10 +98,4 @@ export function insertCardIntoDeck(deck: readonly BattleCard[], card: BattleCard
 
 export function removeCardIdFromDeck(deck: readonly BattleCard[], cardId: string): BattleCard[] {
   return deck.filter((card) => card.id !== cardId);
-}
-
-export function removeCompanionSummonFromDeck(deck: readonly BattleCard[], companionId: CompanionId): BattleCard[] {
-  return deck.filter(
-    (card) => !card.effects.some((effect) => effect.kind === "summon-companion" && effect.companionId === companionId),
-  );
 }

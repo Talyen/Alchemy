@@ -337,6 +337,33 @@ describe("applyPlayerStatusEffect � forge integration", () => {
 });
 
 describe("forge threshold boundaries", () => {
+  it("preserves all rewards and combat text order when one gain crosses every threshold", () => {
+    const state = patchBattleState({
+      playerStatuses: { forge: 3 },
+      enemyMitigation: { armor: 5 },
+      talentEffects: {
+        forgeBurnThreshold: 4,
+        forgeBurnDamage: 2,
+        forgeStripArmorThreshold: 5,
+        forgeBlockThreshold: 6,
+        forgeBlockAmount: 7,
+      },
+    });
+    const texts = makeTexts();
+    const result = addForgeToPlayer(state, 3, texts);
+    expect(result.playerStatuses.forge).toBe(6);
+    expect(result.enemyStatuses.burn).toBe(2);
+    expect(result.enemyMitigation.armor).toBe(0);
+    expect(result.playerStatuses.block).toBe(7);
+    expect(texts).toEqual([
+      { target: "enemy", kind: "damage", stat: "burn", amount: 2 },
+      { target: "player", kind: "status", stat: "block", amount: 7 },
+      { target: "player", kind: "status", stat: "forge", amount: 3 },
+    ]);
+    expect(state.playerStatuses.forge).toBe(3);
+    expect(state.enemyMitigation.armor).toBe(5);
+  });
+
   it("forge burn burst fires on crossing threshold from below (3 -> 6, threshold 4)", () => {
     const state = patchBattleState({
       playerStatuses: { forge: 3 },

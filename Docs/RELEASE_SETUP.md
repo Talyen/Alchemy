@@ -20,7 +20,7 @@ identity or save data. Otherwise, events use Sentry's standard Electron error co
    enabling the secrets. Keep its crash-reporting disclosure aligned with this
    runtime contract (canonical wording owned by [PRIVACY.md](../PRIVACY.md)).
 
-Release desktop builds create hidden source maps, upload them as `alchemy@<package version>`, and delete them before
+Release desktop builds create hidden source maps, upload them under the edition-specific [Sentry release name](./STEAM_DEMO.md#edition-contract), and delete them before
 electron-builder assembles the application. All packages also exclude source maps, including builds without Sentry.
 The packaging verifier inspects `app.asar` for maps and CI credentials.
 Reporting failures and offline play never block startup, saves, gameplay, or quit.

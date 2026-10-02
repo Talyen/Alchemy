@@ -84,3 +84,39 @@ Decision: compact Markdown tables before budgeting discovery output; route save 
 Evidence: focused parser, search, and command-runner regression checks plus the repository completion gate; no new matched agent trials or whole-task token-savings claim. Ports guidance now fits the existing output limit rather than being deferred in full. A passing gate establishes compatibility, not improved agent efficiency.
 
 Reason: remove demonstrated retrieval failures and central editing friction without mandatory discovery steps, reduced verification, or gameplay refactoring. Earlier whole-task evidence still cautions against treating smaller excerpts as guaranteed savings.
+
+## 2026-10-02 — Keep new retrieval controls optional and check adoption
+
+Decision: retain the requested compact status, separate index/working-file review
+checkpoints, actionable failure hints, focused damage/browser-fixture context and
+shorter root guidance. Complete final diff review and verification remain required;
+no new startup sequence or routine measurement is imposed.
+
+Evidence: [Twenty isolated investigations](../evals/results/retrieval-followup-2026-10-02.md)
+preserved source and passed source-based acceptance. Observed costs were mixed;
+status and checkpoint agents used direct Git/snapshot comparisons instead of the
+new helpers, so their totals do not establish those tools' benefit. Implementation
+passed 137 focused tests and task-owned local handoff checks. Four incomplete
+checkpoint-evidence trials were excluded and rerun from fresh sources.
+
+Reason: retain useful optional capabilities without claiming reliable token savings.
+Before interpreting a future retrieval comparison, check feature adoption and
+complete independent index/working snapshot inventories. The evaluation owner
+contains that prevention; unavailable read telemetry remains unobserved.
+
+## 2026-10-02 — Prune unproven retrieval machinery
+
+Decision: supersede the checkpoint/failure-hint retention decision above after
+user review. Remove the custom snapshot module, checkpoint flags, binary Git
+support used only by snapshots and added default failure hints. Keep compact
+status, shorter root instructions and existing optional owner lookup. Preserve
+the evaluation records and original bounded diagnostics/full-log behavior.
+
+Evidence: [The retained trial results](../evals/results/retrieval-followup-2026-10-02.md)
+show no reliable task-level savings; status/checkpoint agents never adopted the
+new helpers. Higher totals alone do not prove a regression, but the machinery's
+maintenance cost had no demonstrated benefit. The user explicitly authorized
+this pruning recommendation.
+
+Reason: passing correctness checks is insufficient justification for substantial
+new efficiency tooling. Keep the smaller useful changes and the measured lessons.

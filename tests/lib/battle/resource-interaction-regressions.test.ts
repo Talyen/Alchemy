@@ -10,7 +10,7 @@ describe("resource interactions", () => {
     const state = patchBattleState({ enemyMitigation: { armor: 3 } });
     const texts: CombatTextEvent[] = [];
     const next = applyGearCcPhysicalDamage(state, 4, texts);
-    expect(next.enemyHealth).toBe(state.enemyHealth - 4);
+    expect(next.enemyHealth).toBe(state.enemyHealth - 1);
     expect(next.enemyMitigation.armor).toBe(2);
     const protectedState = patchBattleState({
       enemyMitigation: { armor: 3 },

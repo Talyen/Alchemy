@@ -1,12 +1,18 @@
 import { expect, test } from "../../fixtures/e2e";
 import { controllerInput } from "../controller-input";
-import { injectLabyrinthRun, makeCard } from "../../browser-helpers";
+import { injectLabyrinthRun, makeCard, waitForLayoutSettled } from "../../browser-helpers";
 import { gridLabyrinthMapFixture } from "../../fixtures/labyrinth-map";
 import { BattlePage } from "../../pages/battle-page";
 
 // A real overflowing UI, seeded before navigation; no wheel/scroll DOM shortcuts.
 test("mapped cursor clicks, hover inspection and wheel scrolling work together", async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "alchemy-device-display-v1",
+      JSON.stringify({ version: 1, gameSizePercent: 120, tooltipSizePercent: 100 }),
+    );
+  });
   const map = gridLabyrinthMapFixture();
   const node = map.nodes["labyrinth-floor-1-n0"]!;
   node.enemyId = "vampire";
@@ -27,8 +33,8 @@ test("mapped cursor clicks, hover inspection and wheel scrolling work together",
   await input.click();
   const details = page.getByRole("complementary", { name: "Chamber details" });
   const scroller = details.locator(".overflow-y-auto");
-  await expect(scroller).toBeVisible();
-  expect(await scroller.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
+  await waitForLayoutSettled(page, details);
+  await expect.poll(() => scroller.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
   await input.point(scroller);
   await input.scroll(5000);
   await expect.poll(() => scroller.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);

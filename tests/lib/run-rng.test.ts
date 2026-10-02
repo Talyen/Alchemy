@@ -25,10 +25,6 @@ describe("run RNG", () => {
     resetRunDomainStore();
   });
 
-  it("replays the same stream from the same seed and counter", () => {
-    expect(drawSequence(123456, "rewards", 5)).toEqual(drawSequence(123456, "rewards", 5));
-  });
-
   it("advancing one named stream does not perturb another", () => {
     const baseline = drawSequence(987654, "destinations", 3);
     const state = createRunRngState(987654);
@@ -43,13 +39,30 @@ describe("run RNG", () => {
     expect(actual).toEqual(baseline);
   });
 
-  it("stepRunRng advances counters and matches nextRunRngValue", () => {
-    const state1 = createRunRngState(42);
-    const state2 = createRunRngState(42);
-    const peek = nextRunRngValue(state1, "rewards");
-    const stepped = stepRunRng(state2, "rewards");
-    expect(stepped).toBe(peek.value);
-    expect(state2.counters.rewards).toBe(peek.nextCounter);
+  it.each([
+    { stream: "rewards", values: [0.3151330079417676, 0.610154019901529, 0.09219017042778432] },
+    { stream: "destinations", values: [0.06644266727380455, 0.4844358095433563, 0.6881019657012075] },
+    { stream: "events", values: [0.2549680513329804, 0.12153172912076116, 0.11579785658977926] },
+    { stream: "shops", values: [0.19091883092187345, 0.6437403073068708, 0.9986634401138872] },
+    { stream: "world", values: [0.4205515377689153, 0.7797303574625403, 0.3962498402688652] },
+  ] as const)("preserves the saved $stream sequence in every RNG adapter", ({ stream, values }) => {
+    const state = createRunRngState(123456);
+    const boundState = createRunRngState(123456);
+    state.counters[stream] = 17;
+    boundState.counters[stream] = 17;
+    const bound = createRunStateRng(boundState, stream);
+    const standalone = createRunStreamRng(state.seed, stream, 17);
+
+    for (const [index, expected] of values.entries()) {
+      const before = { ...state.counters };
+      expect(nextRunRngValue(state, stream)).toEqual({ value: expected, nextCounter: 18 + index });
+      expect(state.counters).toEqual(before);
+      expect(stepRunRng(state, stream)).toBe(expected);
+      expect(state.counters).toEqual({ ...before, [stream]: 18 + index });
+      expect(bound()).toBe(expected);
+      expect(boundState.counters).toEqual(state.counters);
+      expect(standalone()).toBe(expected);
+    }
   });
 
   it("continues the exact sequence after snapshot and restore", () => {
@@ -62,16 +75,6 @@ describe("run RNG", () => {
 
     expect(dispatchRunSessionCommand((draft) => createDraftRunRandomSource(draft, "rewards")())).toBe(expectedNext);
     expect(first).not.toBe(expectedNext);
-  });
-
-  it("createRunStreamRng matches nextRunRngValue for the same seed and stream", () => {
-    const stream = createRunStreamRng(123456, "world");
-    const state = createRunRngState(123456);
-    const expected: number[] = [];
-    for (let index = 0; index < 5; index += 1) {
-      expected.push(stepRunRng(state, "world"));
-    }
-    expect([stream(), stream(), stream(), stream(), stream()]).toEqual(expected);
   });
 
   it("supports numeric and RNG seeds (callers pass Math.random explicitly)", () => {
@@ -93,19 +96,6 @@ describe("run RNG", () => {
     expect(createRunRngState(() => -Infinity).seed).toBe(0);
 
     expect(createRunRngState(() => 0.5).seed).toBe(((0.5 * 0x1_0000_0000) | 0) >>> 0);
-  });
-
-  it("createRunStateRng matches stepRunRng and advances state counters", () => {
-    const state1 = createRunRngState(123456);
-    const state2 = createRunRngState(123456);
-    const bound = createRunStateRng(state1, "world");
-
-    for (let index = 0; index < 5; index += 1) {
-      const drawn = bound();
-      const direct = stepRunRng(state2, "world");
-      expect(drawn).toBe(direct);
-      expect(state1.counters.world).toBe(index + 1);
-    }
   });
 
   it("throws on unknown stream", () => {

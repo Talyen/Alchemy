@@ -27,15 +27,28 @@ function getElectronExecutablePath(): string {
 }
 
 export async function launchElectronApp(
-  options: { packagedRenderer?: boolean; enableGpu?: boolean; background?: boolean; offscreen?: boolean } = {},
+  options: {
+    packagedRenderer?: boolean;
+    enableGpu?: boolean;
+    background?: boolean;
+    offscreen?: boolean;
+    profile?: string;
+  } = {},
 ): Promise<ElectronApplication> {
   const args =
     process.env.CI && !options.enableGpu
       ? [".", "--no-sandbox", "--disable-gpu", "--mute-audio"]
       : [".", "--mute-audio"];
 
-  const profile = fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-electron-test-"));
-  const removeProfile = () => fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  const ownsProfile = options.profile === undefined;
+  const profile = options.profile ?? fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-electron-test-"));
+  if (path.dirname(profile) !== os.tmpdir() || !path.basename(profile).startsWith("alchemy-electron-test-")) {
+    throw new Error("Electron tests require an isolated temporary profile");
+  }
+  // A relaunch test owns its supplied profile until both application lifetimes finish.
+  const removeProfile = () => {
+    if (ownsProfile) fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  };
   let application: ElectronApplication | undefined;
   try {
     application = await electron.launch({

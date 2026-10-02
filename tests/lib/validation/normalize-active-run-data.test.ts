@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { ActiveRunDataSchema } from "@/lib/validation";
+import { createMixedPotion } from "@/lib/alchemist";
+import { cardById } from "@/lib/game-data";
 import { defaultBattleState } from "@/lib/battle";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { createSeededRng } from "@/lib/rng";
@@ -21,6 +23,31 @@ const testMysteryEvent = {
 };
 
 describe("ActiveRunDataSchema normalize", () => {
+  it("preserves generated Mixed Potions in the run and every battle pile on resume", () => {
+    const mixed = createMixedPotion(cardById["health-potion"]!, cardById["mana-potion"]!);
+    const result = parseActiveRunData({
+      runDeck: [mixed, tombstonedCard],
+      activeCombat: {
+        battleState: {
+          ...defaultBattleState(),
+          deck: [{ ...mixed, uid: 1 }],
+          hand: [{ ...mixed, uid: 2 }],
+          pendingHandCards: [{ ...mixed, uid: 3 }],
+          discard: [{ ...mixed, uid: 4 }],
+          exhausted: [{ ...mixed, uid: 5 }],
+        },
+      },
+    });
+    expect(result.runDeck.map((card) => card.id)).toEqual([mixed.id]);
+    expect(result.runDeck[0]?.effects).toEqual(mixed.effects);
+    const battle = result.activeCombat!.battleState;
+    for (const pile of [battle.deck, battle.hand, battle.pendingHandCards, battle.discard, battle.exhausted]) {
+      expect(pile).toHaveLength(1);
+      expect(pile[0]?.id).toBe(mixed.id);
+      expect(pile[0]?.effects).toEqual(mixed.effects);
+    }
+  });
+
   it("passes through an active campaign run and nulls foreign content fields", () => {
     const result = parseActiveRunData();
     expect(result.contentSystemType).toBe("campaign");

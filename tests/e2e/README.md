@@ -7,19 +7,30 @@ When a command or E2E test fails, use [failure-first triage](../../Docs/REFERENC
 
 Browser specs live in [`specs/`](./specs/). Electron specs and their launch/setup helpers live in [`tests/electron/`](../electron/). Shared fixtures and page objects also serve performance checks.
 
-Helpers live in this directory and are re-exported from [`tests/browser-helpers.ts`](../browser-helpers.ts) (all modules, including `mid-combat-save` and `gear-combat`). Layout assertions are in [`layout-assertions.ts`](./layout-assertions.ts), page objects in [`tests/pages/`](../pages/), and fixtures in [`tests/fixtures/e2e.ts`](../fixtures/e2e.ts). Run-phase assertions use `expectRunPhase(page, phase)` from [`tests/pages/game-stage.ts`](../pages/game-stage.ts).
+Helpers live in this directory and are re-exported from [`tests/browser-helpers.ts`](../browser-helpers.ts) (supported helper modules). Layout assertions are in [`layout-assertions.ts`](./layout-assertions.ts), page objects in [`tests/pages/`](../pages/), and fixtures in [`tests/fixtures/e2e.ts`](../fixtures/e2e.ts). Run-phase assertions use `expectRunPhase(page, phase)` from [`tests/pages/game-stage.ts`](../pages/game-stage.ts).
 
 ## Choosing browser coverage
 
-Apply [test value and coverage strategy](../../CONTRIBUTING.md#test-value-and-coverage-strategy) before choosing fixtures. Identify the browser-specific failure a test would detect and inspect existing journeys first. Use representative journeys and shared UI behavior rather than one spec per mechanic or content variant. Extend a journey only when the assertion fits its purpose; keep unrelated scenarios independently diagnosable. Consolidate or retire low-value coverage under the shared policy, preserving real-timing canaries where timing is the behavior under test.
+Identify the browser-specific failure and inspect existing journeys before choosing
+fixtures. [Test value and coverage strategy](../../CONTRIBUTING.md#test-value-and-coverage-strategy)
+owns coverage selection and retirement. Preserve real-timing canaries where timing
+is the behavior under test.
 
 ## Running focused checks
 
-For current source edits, run `PLAYWRIGHT_VITE_MODE=dev npx playwright test <spec> --project=chromium`. Preview mode is the default and serves the existing build; rebuild before using it to verify source changes. Use `--project=chromium` with an equals sign so a following spec is not consumed as another project name.
+### Local execution policy
 
-Run browser batches serially or combine specs in one invocation. Browser, Electron, and performance tests start their own server and reject occupied ports, leaving existing processes running. This prevents a run from silently testing another checkout or reusing preview output when development mode was requested; see [Playwright configuration](../playwright-shared.ts).
+Browser and Electron suites are CI-first. The default local `check` gate runs only bounded Node smoke and selected-file formatting. The commands below are manual opt-ins, requiring an explicit user request for local execution. Do not launch suites automatically for an implementation or test-fix task.
+[Browser and Electron commands](#browser-and-electron-commands) own invocation,
+ports, build edition and concurrency details when local execution is requested.
 
-Local Electron runs collect only the desktop bridge and main-menu smoke, so they open one temporary game window. The CI and nightly Electron jobs explicitly select the full suite.
+### Browser and Electron commands
+
+For current source edits, run `npm run test:e2e:dev -- <spec>`. This uses the shared local test lane and retains compact diagnostics. Preview mode is the default for `test:e2e` and serves the existing build; rebuild before using it to verify source changes. For direct Playwright diagnosis, use `--project=chromium` with an equals sign so a following spec is not consumed as another project name; raw invocations require manual coordination under [the test policy](../../CONTRIBUTING.md#what-to-run-when-you-change).
+
+Run browser batches serially or combine specs in one invocation. Browser tests and browser-hosted performance tests start their own server and reject occupied ports, leaving existing processes running. This prevents a run from silently testing another checkout or reusing preview output when development mode was requested; see [Playwright configuration](../playwright-shared.ts).
+
+An explicitly requested local Electron run collects only the desktop bridge and main-menu smoke. Electron tests load the built desktop renderer through the app protocol without starting a preview server; CI and nightly explicitly select the full suite. These tests launch the checkout's Electron runtime. The [packaged Windows startup check](../../Docs/RELEASE.md#packaged-windows-startup-check) separately validates the distributed application.
 
 For agent runs on macOS, set `ALCHEMY_ELECTRON_BACKGROUND=1` to keep the isolated
 Electron window hidden and render without taking focus. Background mode
@@ -28,9 +39,9 @@ launch and user authorization when they would interrupt their desktop. The opt-i
 [desktop layout review](../layout-review/README.md) captures the full viewport
 matrix with this mode and verifies hidden versus offscreen composition.
 
-Browser tests default to port 4173. To use another port, run `PLAYWRIGHT_BROWSER_PREVIEW_PORT=4273 PLAYWRIGHT_VITE_MODE=dev npx playwright test tests/e2e/specs/menu-navigation.spec.ts --project=chromium`. The override also sets the browser URL and seeded storage origin. Electron uses `PLAYWRIGHT_ELECTRON_PREVIEW_PORT` (default 4175), and performance uses `PLAYWRIGHT_PERF_PORT` (default 4176). Preview mode still requires rebuilding after source changes.
+Browser tests default to port 4173. To use another port, run `PLAYWRIGHT_BROWSER_PREVIEW_PORT=4273 npm run test:e2e:dev -- tests/e2e/specs/menu-navigation.spec.ts`. The override also sets the browser URL and seeded storage origin. Performance uses `PLAYWRIGHT_PERF_PORT` (default 4176); [desktop layout review](../layout-review/README.md) owns its separate preview-server setup. Preview mode still requires rebuilding after source changes.
 
-Do not rebuild `dist/` while a preview-mode suite is running. Replaced asset files can produce unrelated 404s and interaction failures in tests already in progress.
+Build and test with the same `ALCHEMY_EDITION`: full uses `dist/` and demo uses `dist-demo/` under the [edition contract](../../Docs/STEAM_DEMO.md#edition-contract). Do not rebuild the selected renderer directory while a preview-mode suite is running. Web and desktop builds of that edition overwrite the same directory; replaced assets can produce unrelated 404s and interaction failures in tests already in progress.
 
 Run the full Vitest suite separately from browser and performance batches. Concurrent full-unit and browser runs can exhaust local resources and cause unrelated interaction and teardown timeouts; reproduce the affected checks without that competing load before changing assertions or timeouts. If multiple browser workers time out during startup or teardown with GPU-stall warnings, isolate an affected spec with `--workers=1` before changing its timeout or assertions.
 
@@ -49,19 +60,35 @@ must never request it or call `enableFastMode`/`useFastBattle`.
 
 ## Navigation and bootstrap
 
-- Save assertions wait for the persisted value with `expect.poll`; visible navigation does not imply that a debounced write has completed. If a fixture needs damage on the next enemy turn, supply three canonical damaging ability IDs rather than assume the default Goblin cannot Block.
-- Save injectors install page-level initialization scripts that run again on navigation and reload. To verify changes persisted after injection, open a fresh page in the same browser context (shared storage, no page-level seeding script), collect its runtime errors, and close it after assertions.
-- The fresh-storage cold-start test keeps real loading enabled, with a 30-second menu wait inside a 60-second test budget for parallel suite load. Ordinary menu checks retain their shorter budgets.
-- `openGameModeSelect` retries Play if bootstrap unmounts the menu.
-- `selectGameMode(page, mode)` clicks a mode after Play; it never resumes a separate slot.
-- `selectCharacterAndContinue` clicks a hero portrait; character select has no Back/Continue footer.
-- `resumeCampaignRun` waits for the saved destination or uses the main-menu Continue action.
-- `startBattleWithDeck` and `startAtDestination` bootstrap battle.
-- `injectActiveBattle` injects a mid-battle snapshot and boots straight into the battle screen.
-- `winBattleAndClaimReward` wins via combat and claims the first reward card.
-- `assertEndRunShowsRecap` ends a run immediately without confirmation, asserts the End Run screen, then continues to the main menu.
-- `injectMidCombatSave`, `injectDestinationAtIndex`, and `injectMysterySummaryVisit` inject exact persisted states.
-- `failOnRuntimeErrors` collects errors on extra pages created by a test or on Electron pages; assert the collected errors before closing those pages. The browser fixture covers its own `page` automatically.
+Choose the existing helper by the state the test needs. Use
+[the helper barrel](../browser-helpers.ts) for its supported exports; import other
+owners directly.
+
+| Need                          | Owner / helper                                                      | Behavior                                                                                                          |
+| ----------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Open mode selection           | `navigation.ts`: `openGameModeSelect`, `selectGameMode`             | Retries Play if bootstrap unmounts the menu; selecting a mode never resumes a separate slot                       |
+| Select hero                   | `tests/pages/menu-page.ts`: `MenuPage.selectCharacterAndContinue`   | Clicks the portrait; no Back/Continue footer                                                                      |
+| Resume campaign               | `navigation.ts`: `resumeCampaignRun`                                | Waits for the saved destination or uses main-menu Continue                                                        |
+| Start battle or destination   | `battle-setup.ts`: `startBattleWithDeck`, `startAtDestination`      | Bootstraps battle                                                                                                 |
+| Inject mid-battle             | `save-injection.ts`: `injectActiveBattle`                           | Boots directly into battle                                                                                        |
+| Win and claim reward          | `battle-setup.ts`: `winBattleAndClaimReward`                        | Wins through combat and claims the first reward card                                                              |
+| End run and return            | `battle-setup.ts`: `assertEndRunShowsRecap`                         | Ends immediately without confirmation, asserts recap, then continues to the menu                                  |
+| Seed exact persisted state    | `save-injection.ts`: `injectSaveState`, `injectMysterySummaryVisit` | Page initialization scripts rerun on navigation and reload                                                        |
+| Inspect acknowledged save     | `save-injection.ts`: `withSavedGame`, `readSavedGame`               | The former opens an unseeded page, checks runtime errors and closes it; the latter reads the acknowledged payload |
+| Collect errors on extra pages | `errors.ts`: `failOnRuntimeErrors`                                  | Assert collected errors before closing; the browser fixture covers its own page automatically                     |
+
+Save assertions wait for the persisted value with `expect.poll`; visible
+navigation does not imply that a debounced write has completed. After injection,
+verify persistence on a fresh page in the same browser context, without page-level
+seeding. If the next enemy turn must deal damage, supply three canonical damaging
+ability IDs rather than assume the default Goblin cannot Block.
+
+The fresh-storage cold-start test retains real loading, a 30-second menu wait and
+a 60-second test budget for parallel suite load. Ordinary menu checks keep their
+shorter budgets. [Cards and battle page](#cards-and-battle-page) owns presets and
+hand readiness; [controller input](#controller-equivalent-input) owns keyboard
+journeys. Layout assertions live in `layout-assertions.ts`; run-phase assertions
+use `tests/pages/game-stage.ts` (`expectRunPhase`).
 
 ## Cards and battle page
 
@@ -95,16 +122,16 @@ tag a test `@critical` when its journey must gate every push. Tags are inherited
 adding `@slow` to a child does not remove a parent's `@critical`. In mixed suites,
 tag representative tests individually so secondary variants stay nightly-only.
 
-CI retains JSON results on every run and failure diagnostics on failed or flaky
+CI traces the first retry rather than every passing browser journey. CI retains JSON results on every run and failure diagnostics on failed or flaky
 runs, including tests that pass on retry. A retry remains permitted; flakes do
 not create an additional gate.
 
-The path-filtered `save-gate` runs save specs with `--grep-invert @critical`; the critical job already owns those journeys. Save-touching pushes cover the union once. Local `test:ship:e2e` and release checks still run the complete save specs, and nightly includes them in the full web suite.
+All retained save specs are critical and run once in the every-push/pull-request browser gate. Local `test:ship:e2e` remains an explicit opt-in; release and nightly include the complete retained suite.
 
 ## Controller-equivalent input
 
 Use [controllerInput](./controller-input.ts) for Steam Input's intended keyboard and
-mouse outputs. `reach` traverses with actual Tab/Shift+Tab and detects cycles;
+mouse outputs. `reach` traverses with actual Tab/F7 and detects cycles;
 `activate` requires an enabled control before pressing Enter. For an inspectable
 aria-disabled control, use `reach` and assert its disabled behavior separately.
 Target the actual focusable button, not an art wrapper. Bootstrap fixtures may

@@ -80,6 +80,7 @@ export function defaultBattleState(): BattleState {
     playerStatuses: createEmptyPlayerStatuses(),
     enemyStatuses: createEmptyEnemyStatuses(),
     pendingBleedLeechHealing: 0,
+    pendingCardBleedLeechHealing: 0,
     pendingEnemyBleedLeechHealing: 0,
     enemyPhysicalDamageBonus: 0,
     playerCC: { stunSkipTurns: 0, freezeSkipTurns: 0, cooldown: 0 },

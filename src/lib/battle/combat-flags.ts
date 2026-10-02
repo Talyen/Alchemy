@@ -41,7 +41,7 @@ export const FLAG_DEFINITIONS = {
   pendingCinderSkinReaction: { default: false as const, secondaryValue: null, lifetime: "combat" },
   pendingEmberwakeDamage: { default: false as const, secondaryValue: null, lifetime: "combat" },
   cinderSkinUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
-  holyRetributionUsedThisTurn: { default: false as const, secondaryValue: true as const, lifetime: "player-turn" },
+  holyRetributionUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   spitefulHealedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   spellrendingUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
 
@@ -75,10 +75,12 @@ export type CombatFlags = {
   [K in FlagId]: (typeof FLAG_DEFINITIONS)[K]["default"] extends boolean ? boolean : number;
 };
 
+const INITIAL_FLAG_DEFAULTS = Object.freeze(
+  Object.fromEntries(Object.entries(FLAG_DEFINITIONS).map(([key, definition]) => [key, definition.default])),
+) as Readonly<CombatFlags>;
+
 export function createInitialFlags(): CombatFlags {
-  return Object.fromEntries(
-    Object.entries(FLAG_DEFINITIONS).map(([k, def]) => [k, (def as { default: unknown }).default]),
-  ) as CombatFlags;
+  return { ...INITIAL_FLAG_DEFAULTS };
 }
 
 /** Preserve combat-scoped and unspent next-action flags across turn boundaries. */

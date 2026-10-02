@@ -15,6 +15,7 @@ import {
   type Destination,
 } from "@/lib/routing";
 import { createEmptyRewardState, type RewardState } from "@/lib/active-run-session";
+import { pickWeighted } from "@/lib/rng";
 
 export interface DestinationOptionsInput {
   currentHealth?: number;
@@ -99,16 +100,7 @@ export function computeDestinationWeight(destination: Destination, context: Dest
 }
 
 function weightedPick(pool: Destination[], context: DestinationOfferState, rng: () => number): Destination | null {
-  if (pool.length === 0) return null;
-  const weights = pool.map((destination) => computeDestinationWeight(destination, context));
-  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
-  if (totalWeight <= 0) return pool[0] ?? null;
-  let roll = rng() * totalWeight;
-  const selectedIndex = weights.findIndex((weight) => {
-    roll -= weight;
-    return roll < 0;
-  });
-  return pool[selectedIndex >= 0 ? selectedIndex : pool.length - 1] ?? null;
+  return pickWeighted(pool, (destination) => computeDestinationWeight(destination, context), rng) ?? null;
 }
 
 export function advanceDestinationOfferState(

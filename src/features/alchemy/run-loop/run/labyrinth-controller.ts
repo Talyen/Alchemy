@@ -1,12 +1,12 @@
-import { DESTINATIONS, type Destination } from "@/lib/routing";
 import { current } from "immer";
+import { LABYRINTH_TYPE_TO_DESTINATION } from "@/lib/content-systems/labyrinth/data";
 import { canEnterLabyrinthNode, expandBeyondBoss } from "@/lib/content-systems/labyrinth/map-generation";
 import {
   canDescendFromLabyrinthNode,
   canInspectLabyrinthNode,
   withClearedNode,
 } from "@/lib/content-systems/labyrinth/map-state";
-import type { LabyrinthNode, LabyrinthNodeType } from "@/lib/content-systems/types";
+import type { LabyrinthNode } from "@/lib/content-systems/types";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { logError } from "@/lib/error-logger";
 import {
@@ -25,18 +25,6 @@ export interface LabyrinthController {
   descend: () => void;
   onNodeCleared: () => void;
 }
-const ROOM_DESTINATIONS: Record<Exclude<LabyrinthNodeType, "entrance">, Destination> = {
-  combat: DESTINATIONS.NORMAL_COMBAT,
-  elite: DESTINATIONS.ELITE_COMBAT,
-  boss: DESTINATIONS.BOSS_COMBAT,
-  rest: DESTINATIONS.CAMPFIRE,
-  mystery: DESTINATIONS.MYSTERY,
-  corruption: DESTINATIONS.CORRUPTION,
-  shop: DESTINATIONS.CARD_SHOP,
-  alchemist: DESTINATIONS.ALCHEMIST_SHOP,
-  "trinket-shop": DESTINATIONS.TRINKET_SHOP,
-  "equipment-shop": DESTINATIONS.GEAR_SHOP,
-};
 export function createLabyrinthController(): LabyrinthController {
   const selectNode = (nodeId: string) => {
     dispatchRunSessionCommand((draft) => {
@@ -59,7 +47,8 @@ export function createLabyrinthController(): LabyrinthController {
       if (!node || !canEnterLabyrinthNode(map, nodeId)) return null;
       setActiveLabyrinthPendingNode(draft, nodeId);
       const visitId = `labyrinth:${map.currentFloor}:${nodeId}`;
-      const recorded = node.type !== "entrance" && recordRunRoom(draft, ROOM_DESTINATIONS[node.type], visitId);
+      const recorded =
+        node.type !== "entrance" && recordRunRoom(draft, LABYRINTH_TYPE_TO_DESTINATION[node.type], visitId);
       return { node: current(node), visitId, recorded };
     });
     if (!entry) return false;

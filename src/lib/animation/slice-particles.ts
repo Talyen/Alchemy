@@ -172,11 +172,13 @@ export function sampleBorderSpark(
   progress: number,
   cardWidth: number,
   cardHeight: number,
+  target?: SliceSparkSample,
 ): SliceSparkSample | null {
-  const distance = BORDER_DISTANCE + particle.distanceNoise * BORDER_DISTANCE_VARIATION;
   const delay = particle.delayNoise * BORDER_DELAY;
   const lifetime = BORDER_LIFETIME + particle.lifetimeNoise * BORDER_LIFETIME_VARIATION;
   const age = clamp01((progress - delay) / Math.max(lifetime, 0.01));
+  if (!(progress >= delay && age < 1)) return null;
+  const distance = BORDER_DISTANCE + particle.distanceNoise * BORDER_DISTANCE_VARIATION;
   const easedAge = 1 - (1 - age) ** BORDER_AGE_EASE;
   const startX = particle.origin.x * cardWidth;
   const startY = particle.origin.y * cardHeight;
@@ -185,14 +187,14 @@ export function sampleBorderSpark(
     (BORDER_SIZE + particle.sizeNoise * BORDER_SIZE_VARIATION) * (1 - age * BORDER_SIZE_SHRINK),
   );
   const fadeProgress = Math.max(0, (age - BORDER_FADE_START) / (1 - BORDER_FADE_START));
-  const opacity = progress >= delay && age < 1 ? (1 - fadeProgress) ** BORDER_FADE_EXPONENT : 0;
+  const opacity = (1 - fadeProgress) ** BORDER_FADE_EXPONENT;
   if (opacity <= 0 || diameter <= 0) return null;
-  return {
-    x: startX + particle.direction.dx * distance * easedAge,
-    y: startY + particle.direction.dy * distance * easedAge,
-    diameter,
-    opacity,
-  };
+  const sample = target ?? { x: 0, y: 0, diameter: 0, opacity: 0 };
+  sample.x = startX + particle.direction.dx * distance * easedAge;
+  sample.y = startY + particle.direction.dy * distance * easedAge;
+  sample.diameter = diameter;
+  sample.opacity = opacity;
+  return sample;
 }
 
 export function sampleCutSpark(
@@ -200,6 +202,7 @@ export function sampleCutSpark(
   crackProgress: number,
   cardWidth: number,
   cardHeight: number,
+  target?: SliceSparkSample,
 ): SliceSparkSample | null {
   const age = (crackProgress - particle.delay) / particle.lifetime;
   if (age <= 0 || age >= 1) return null;
@@ -208,10 +211,10 @@ export function sampleCutSpark(
   const diameter = particle.size * (1 - 0.3 * age);
   const opacity = (1 - age) ** 1.4;
   if (diameter <= 0 || opacity <= 0) return null;
-  return {
-    x: particle.unitOrigin.x * cardWidth + particle.sprayDir.dx * dist,
-    y: particle.unitOrigin.y * cardHeight + particle.sprayDir.dy * dist,
-    diameter,
-    opacity,
-  };
+  const sample = target ?? { x: 0, y: 0, diameter: 0, opacity: 0 };
+  sample.x = particle.unitOrigin.x * cardWidth + particle.sprayDir.dx * dist;
+  sample.y = particle.unitOrigin.y * cardHeight + particle.sprayDir.dy * dist;
+  sample.diameter = diameter;
+  sample.opacity = opacity;
+  return sample;
 }

@@ -5,11 +5,22 @@ export function isAnimationDisabled(): boolean {
   return result.ok && result.value === "true";
 }
 
+let reducedMotionQuery: MediaQueryList | undefined;
+let reducedMotionWindow: Window | undefined;
+let reducedMotionMatchMedia: Window["matchMedia"] | undefined;
+
 export function prefersReducedMotion(): boolean {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
     return false;
   }
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // MediaQueryList.matches stays live as the OS preference changes. Cache the
+  // query object, not its result, since animation loops read this every frame.
+  if (!reducedMotionQuery || reducedMotionWindow !== window || reducedMotionMatchMedia !== window.matchMedia) {
+    reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    reducedMotionWindow = window;
+    reducedMotionMatchMedia = window.matchMedia;
+  }
+  return reducedMotionQuery.matches;
 }
 
 export function shouldReduceMotion(): boolean {

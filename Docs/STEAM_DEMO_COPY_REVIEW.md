@@ -49,8 +49,8 @@ sentence-ending periods removed.
 ## Current wishlist flow
 
 1. The player explicitly clicks `Wishlist on Steam` on the demo menu or standalone marketing screen
-2. With a configured full-game App ID, the desktop opens that game's Steam store overlay
-3. If the overlay is unavailable or fails, it opens the fixed full-game Steam store URL in the browser
+2. With a valid full-game App ID, the desktop opens the game menu to pause automatic battle actions
+3. It requests the Steam store overlay only when the binding reports that the overlay is enabled; unavailable or unknown availability, or a thrown overlay request, uses the fixed full-game Steam store URL in the browser
 4. The player uses Steam's own wishlist action on the store page
 
 The game does not automatically add the game to a wishlist. There is no separate
@@ -59,7 +59,10 @@ never invokes a store or promotional action. Invalid or placeholder App IDs do
 not open a destination. Actual store screenshots and Steam overlay delivery await
 real App IDs and Steamworks setup.
 
-Source: [bounded wishlist bridge](../desktop/wishlist.cjs).
+Source: [bounded wishlist bridge](../desktop/wishlist.cjs). The installed binding's
+availability limits and required Steam validation are recorded in
+[Steam demo](./STEAM_DEMO.md#input-and-release-evidence); a successful request alone
+does not prove that Steam displayed the destination.
 
 ## Local screen captures
 
@@ -69,51 +72,50 @@ isolated temporary Electron profile: `menu.png`, `modes.png`, `heroes.png`,
 boss test run through the normal combat, reward, and settlement flow; reward
 quantities are illustrative rather than a representative balance sample.
 
-## Approved feature showcase
+## Archived approved feature showcase
 
-The equal six-panel image uses these approved labels: **More Heroes**, **More
+The earlier equal six-panel image used these approved labels: **More Heroes**, **More
 Campaign Acts**, **The Labyrinth**, **Wildwood Draft**, **Cards & Talents**, and
 **Homestead & Armory**. The last two communicate ongoing depth, not exclusive
 full-game access. Later-act bosses are shown as approved.
 
-The showcase occupies the largest available screen area beneath the compact
+That composition has been superseded by the [selected user-supplied promo image](#selected-user-supplied-promo-image). The marketing image occupies the largest available screen area beneath the compact
 heading. Wishlist on Steam is the primary gold CTA; Main Menu is the secondary
-outline button to its right. No additional headline or descriptive copy is baked
-into the image. Accessible image text repeats only these labels.
+outline button to its right. The earlier composition had no additional headline
+or descriptive copy baked into it, and its accessible text repeated those six labels.
 
 Editable composition, original source inventory, and regeneration command:
 [showcase source](./design/steam-demo-showcase/README.md).
 
-## Pending showcase revisions
+## Archived showcase revisions
 
-Two alternatives are under review: a fractured hero ribbon and a fractured hero
-mosaic. Proposed panels replace Cards & Talents with Boons, Trinkets, Uniques,
-Crafting, and give Homestead a separate panel. All seven catalog bosses are
+Two earlier alternatives explored a fractured hero ribbon and a fractured hero
+mosaic. Proposed panels replaced Cards & Talents with Boons, Trinkets, Uniques,
+Crafting, and gave Homestead a separate panel. All seven catalog bosses are
 shown under the provisional truthful label Boss Battles: current Campaign boss
 selection uses a shared pool, with no Act 1-only exclusion.
 
-Proposed stat labels are **100+ Cards**, **200+ Talents**, **25+ Uniques**, and
+Proposed stat labels were **100+ Cards**, **200+ Talents**, **25+ Uniques**, and
 **20+ Trinkets**. These refer to overall catalog content, not exclusive demo
-unlocks. The current exact catalog counts are 105, 200, 29, and 24 respectively.
+unlocks. The retained catalog snapshots counted 105, 200, 29, and 24 respectively; recheck live catalogs before reusing the claims.
 
-The in-game showcase remains the previously approved version. Only the approved
-CTA wording changed to **Wishlist on Steam**, on the menu and marketing screen.
+These studies are archived alternatives; the selected user-supplied image is the
+current game artwork. **Wishlist on Steam** remains the CTA on the menu and marketing screen.
 
 [Draft layouts and source facts](./design/steam-demo-showcase/revisions/README.md).
 
-### Round 3 pending layouts
+### Round 3 archived layouts
 
 [Expanded mosaic and boss gallery](./design/steam-demo-showcase/revisions/round-3/README.md)
-are review-only alternatives. They include all eight heroes and integrated
-number-plus statistics. Library is the approved temporary stand-in for the
-missing Moonlit Observatory artwork. The game image remains unchanged.
+are archived alternatives. They include all eight heroes and integrated
+number-plus statistics. Library was the approved temporary stand-in for the
+missing Moonlit Observatory artwork in this round.
 
-### Round 4 pending layouts
+### Round 4 archived layouts
 
 [Quiet gallery and editorial collage](./design/steam-demo-showcase/revisions/round-4/README.md)
 omit statistics and keep only feature captions. The original artwork, eight heroes,
-and seven bosses are preserved. These alternatives remain pending image approval;
-the current game artwork is unchanged.
+and seven bosses are preserved. The selected user-supplied promo supersedes these studies.
 
 ## Selected user-supplied promo image
 

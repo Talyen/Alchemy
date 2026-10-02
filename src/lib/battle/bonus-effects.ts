@@ -1,5 +1,5 @@
+import { rollBattleChance } from "./chance-roll";
 import { FREE_CARD_SENTINEL } from "../game-constants";
-import { rollTalentChance } from "./status-helpers";
 import { drawFromState, applyDrawResult } from "./draw";
 import { addGoldWithCombatText, gainManaWithCombatText } from "./player-rewards";
 import { setFlag, stripEnemyArmor, stripEnemyBlock, type BattleState, type CombatTextEvent } from "./types";
@@ -79,7 +79,7 @@ export function applyCrowdControlTriggerBonuses(
 
 export function applyLuckyCloverGold(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (state.trinketEffects.luckyCloverGoldChance <= 0 || damage <= 0) return state;
-  if (rollTalentChance(state.trinketEffects.luckyCloverGoldChance, state)) {
+  if (rollBattleChance(state.trinketEffects.luckyCloverGoldChance, state)) {
     return addGoldWithCombatText(state, damage, combatTexts);
   }
   return state;
@@ -87,13 +87,13 @@ export function applyLuckyCloverGold(state: BattleState, damage: number, combatT
 
 export function applyNatureManaRefund(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
   if (damage <= 0 || state.gearEffects.manaOnNatureDamageChance <= 0) return state;
-  return rollTalentChance(state.gearEffects.manaOnNatureDamageChance, state)
+  return rollBattleChance(state.gearEffects.manaOnNatureDamageChance, state)
     ? gainManaWithCombatText(state, 1, combatTexts)
     : state;
 }
 
 export function applyNatureGoldReward(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
-  if (damage <= 0 || !rollTalentChance(state.talentEffects.goldOnNatureDamageChance, state)) return state;
+  if (damage <= 0 || !rollBattleChance(state.talentEffects.goldOnNatureDamageChance, state)) return state;
   return addGoldWithCombatText(state, damage, combatTexts);
 }
 

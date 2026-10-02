@@ -131,6 +131,36 @@ describe("SaveStorage ownership", () => {
     expect(storageBackend.writeSync.mock.calls.map(([key]) => key)).toEqual([SAVE_KEY, SAVE_RECOVERY_KEY]);
   });
 
+  it("queues recovery when page exit cannot synchronously write the backup", async () => {
+    const storageBackend = backend();
+    storageBackend.writeSync.mockImplementation((key) =>
+      key === SAVE_KEY ? { ok: false, error: new Error("write denied") } : null,
+    );
+    const storage = new SaveStorage(storageBackend);
+    const snapshot = { ...createDefaultSaveData(), discoveredCardIds: ["slash"] };
+
+    expect(await storage.saveForExit(snapshot)).toBe("saved");
+    expect(storageBackend.writeSync.mock.calls.map(([key]) => key)).toEqual([SAVE_KEY, SAVE_RECOVERY_KEY]);
+    expect(storageBackend.write.mock.calls.map(([key]) => key)).toEqual([SAVE_RECOVERY_KEY]);
+    expect(JSON.parse(storageBackend.write.mock.calls[0]![1]).discoveredCardIds).toEqual(["slash"]);
+    expect(await storage.save(snapshot)).toBe("saved");
+    expect(storageBackend.write.mock.calls.map(([key]) => key)).toEqual([SAVE_RECOVERY_KEY, SAVE_RECOVERY_KEY]);
+  });
+
+  it("keeps the main write route when both synchronous exit writes fail", async () => {
+    const storageBackend = backend();
+    storageBackend.writeSync.mockImplementation(() => {
+      throw new Error("write denied");
+    });
+    const storage = new SaveStorage(storageBackend);
+
+    expect(await storage.saveForExit(createDefaultSaveData())).toBe("failed");
+    expect(storageBackend.writeSync.mock.calls.map(([key]) => key)).toEqual([SAVE_KEY, SAVE_RECOVERY_KEY]);
+    expect(storageBackend.write).not.toHaveBeenCalled();
+    expect(await storage.save(createDefaultSaveData())).toBe("saved");
+    expect(storageBackend.write.mock.calls.map(([key]) => key)).toEqual([SAVE_KEY]);
+  });
+
   it.each(["save", "saveForExit", "clear", "load"] as const)(
     "rejects backend replacement during %s, then permits it after completion",
     async (operation) => {

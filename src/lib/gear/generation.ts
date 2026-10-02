@@ -1,68 +1,26 @@
-import { GEAR_AFFIX_COUNT, GEAR_AFFIX_COUNT_MIN_WEIGHT } from "@/lib/game-constants";
 import { rollLootGearRarity, type LootAvailability, type LootWeights } from "@/lib/loot";
 import { pickRandom, sampleItems } from "@/lib/rng";
-import { createInstanceId } from "@/lib/utils";
-import { rollAffixes } from "./affix-pool";
-import { gearBaseItemList, gearBaseItems, type GearBaseItemId } from "./base-items";
+import { gearBaseItemList } from "./base-items";
 import { gearDefinitionId, gearDefinitions } from "./definitions";
-import { GEAR_RARITIES } from "./types";
-import { uniqueItemList, type UniqueItemDefinition } from "./unique-catalog";
-import type { GearAffixRoll, GearDefinition, GearInstance, GearRarity } from "./types";
+import { generateUniqueGearInstance, createRolledGearInstance } from "./instances";
+import { getGearLootAvailability } from "./loot-availability";
+import type { GearInstance, GearRarity } from "./types";
+import { uniqueItemList } from "./unique-catalog";
 
-export function generateUniqueGearInstance(uniqueDef: UniqueItemDefinition): GearInstance {
-  // Unique affixes are canonical per definition (see getUniqueAffixes); the
-  // instance stores no rolls so saved items can never diverge from the catalog.
-  return {
-    instanceId: createInstanceId(),
-    definitionId: uniqueDef.id,
-    affixes: [],
-  };
-}
+export {
+  createGearInstance,
+  generateDevRandomGearInstance,
+  generateGearInstanceForBaseItem,
+  generateUniqueGearInstance,
+  rollAffixCount,
+} from "./instances";
+export { getGearLootAvailability, getOwnedUniqueDefinitionIds, getRewardLootAvailability } from "./loot-availability";
 
-export function getOwnedUniqueDefinitionIds(inventories?: Record<string, GearInstance[]> | null): Set<string> {
-  const owned = new Set<string>();
-  if (!inventories) return owned;
-  for (const list of Object.values(inventories)) {
-    for (const inst of list) {
-      if (gearDefinitions[inst.definitionId]?.rarity === "unique") {
-        owned.add(inst.definitionId);
-      }
-    }
-  }
-  return owned;
-}
-
-export function getGearLootAvailability(
-  ownedUniqueIds: ReadonlySet<string> = new Set(),
-  baseItemIds: readonly string[] = gearBaseItemList.map((base) => base.id),
-): LootAvailability {
-  return {
-    basic: baseItemIds.some((id) => Boolean(gearDefinitions[gearDefinitionId(id, "basic")])),
-    astral: baseItemIds.some((id) => Boolean(gearDefinitions[gearDefinitionId(id, "astral")])),
-    unique: uniqueItemList.some((unique) => baseItemIds.includes(unique.baseItemId) && !ownedUniqueIds.has(unique.id)),
-  };
-}
-
-/**
- * Full reward availability: gear rarity gates plus the card/boon/trinket pool
- * flags. Reward, shop, and report call sites share this so pool-exclusion
- * logic cannot drift between screens.
- */
-export function getRewardLootAvailability(
-  ownedUniqueIds: ReadonlySet<string> = new Set(),
-  pools: {
-    baseItemIds?: readonly string[];
-    cards?: boolean;
-    boons?: boolean;
-    trinkets?: boolean;
-  } = {},
-): LootAvailability {
-  return {
-    ...getGearLootAvailability(ownedUniqueIds, pools.baseItemIds),
-    card: pools.cards ?? true,
-    boon: pools.boons ?? true,
-    trinket: pools.trinkets ?? true,
-  };
+function eligibleBasePool(baseItemIds: readonly string[] | undefined): typeof gearBaseItemList {
+  if (baseItemIds === undefined) return gearBaseItemList;
+  const allowed = new Set(baseItemIds);
+  // Catalog order owns seeded sampling; caller order and duplicates do not.
+  return gearBaseItemList.filter((base) => allowed.has(base.id));
 }
 
 interface GenerateGearOfferingsOptions {
@@ -88,25 +46,42 @@ function generateGearOfferings({
   // alone exclude selected bases; the sampled order never needs a second mutation.
   const sampledBases = sampleItems(basePool, count, rng);
   const reservedBases = new Map<string, "ordinary" | "unique">();
+  const baseIds = new Set(basePool.map((base) => base.id));
   const unownedUniques = uniqueItemList.filter(
-    (unique) => !ownedUniqueIds.has(unique.id) && basePool.some((base) => base.id === unique.baseItemId),
+    (unique) => !ownedUniqueIds.has(unique.id) && baseIds.has(unique.baseItemId),
   );
   const choices: GearInstance[] = [];
 
   for (let index = 0; index < count; index += 1) {
-    const unusedBases = basePool.filter((base) => !reservedBases.has(base.id));
-    const repeatableBases = basePool.filter((base) => reservedBases.get(base.id) !== "unique");
-    const eligibleBases = unusedBases.length > 0 ? unusedBases : fillCount ? repeatableBases : [];
+    const unusedBases: typeof basePool = [];
+    let repeatableBaseCount = 0;
+    for (const base of basePool) {
+      const reservation = reservedBases.get(base.id);
+      if (reservation === undefined) unusedBases.push(base);
+      if (reservation !== "unique") repeatableBaseCount++;
+    }
+    const eligibleBases =
+      unusedBases.length > 0
+        ? unusedBases
+        : fillCount
+          ? basePool.filter((base) => reservedBases.get(base.id) !== "unique")
+          : [];
     if (eligibleBases.length === 0) break;
 
-    const availableUniques = unownedUniques.filter((unique) => !reservedBases.has(unique.baseItemId));
+    // Reservations only accumulate. Compact this call-owned pool in catalog
+    // order so later picks retain the same seeded indices without new arrays.
+    let kept = 0;
+    for (const unique of unownedUniques) {
+      if (!reservedBases.has(unique.baseItemId)) unownedUniques[kept++] = unique;
+    }
+    unownedUniques.length = kept;
+    const availableUniques = unownedUniques;
     const availability = getGearLootAvailability(
       ownedUniqueIds,
       eligibleBases.map((base) => base.id),
     );
     // Leave an ordinary base available to fill later slots on a narrow shelf.
-    availability.unique =
-      availableUniques.length > 0 && (index === count - 1 || !fillCount || repeatableBases.length > 1);
+    availability.unique = availableUniques.length > 0 && (index === count - 1 || !fillCount || repeatableBaseCount > 1);
     let rarity = rollTier(availability, index);
 
     if (rarity === "unique") {
@@ -120,14 +95,12 @@ function generateGearOfferings({
       rarity = "astral";
     }
 
-    const base =
-      sampledBases.find((item) => !reservedBases.has(item.id)) ??
-      pickRandom(unusedBases.length > 0 ? unusedBases : repeatableBases, rng);
+    const base = sampledBases.find((item) => !reservedBases.has(item.id)) ?? pickRandom(eligibleBases, rng);
     if (!base) break;
     reservedBases.set(base.id, "ordinary");
     const definition = gearDefinitions[gearDefinitionId(base.id, rarity)];
     if (!definition) break;
-    choices.push(rollAndCreateInstance(definition, rarity, rng));
+    choices.push(createRolledGearInstance(definition, rng));
   }
 
   return choices;
@@ -146,7 +119,7 @@ export function generateLootGearChoices(
     rng,
     rollTier: (available) => rollLootGearRarity(weights, rng, available),
     ownedUniqueIds,
-    basePool: baseItemIds ? gearBaseItemList.filter((base) => baseItemIds.includes(base.id)) : gearBaseItemList,
+    basePool: eligibleBasePool(baseItemIds),
     fillCount,
   });
 }
@@ -165,7 +138,7 @@ export function generateGearRewardChoicesForRarity(
     rollTier: () => rarity,
     ownedUniqueIds,
     fallbackUniqueToAstral: false,
-    basePool: baseItemIds ? gearBaseItemList.filter((base) => baseItemIds.includes(base.id)) : gearBaseItemList,
+    basePool: eligibleBasePool(baseItemIds),
     fillCount,
   });
 }
@@ -185,61 +158,4 @@ export function generateGearRewardChoicesForRarities(
     },
     ownedUniqueIds,
   });
-}
-
-export function rollAffixCount(rarity: GearRarity, rng: () => number): number {
-  const range = GEAR_AFFIX_COUNT[rarity];
-  if (range.max <= range.min) return range.min;
-  const draw = rng();
-  if (draw < GEAR_AFFIX_COUNT_MIN_WEIGHT) return range.min;
-  // Uniform across the remaining counts so wider future ranges can hit middles.
-  const rest = range.max - range.min;
-  return (
-    range.min +
-    1 +
-    Math.min(rest - 1, Math.floor(((draw - GEAR_AFFIX_COUNT_MIN_WEIGHT) / (1 - GEAR_AFFIX_COUNT_MIN_WEIGHT)) * rest))
-  );
-}
-
-export function createGearInstance(definition: GearDefinition, affixes: GearAffixRoll[] = []): GearInstance {
-  return {
-    instanceId: createInstanceId(),
-    definitionId: definition.id,
-    affixes,
-  };
-}
-
-function rollAndCreateInstance(definition: GearDefinition, rarity: GearRarity, rng: () => number): GearInstance {
-  const affixCount = rollAffixCount(rarity, rng);
-  return createGearInstance(definition, rollAffixes(definition, affixCount, rng));
-}
-
-export function generateGearInstanceForBaseItem(
-  baseItemId: string,
-  rng: () => number,
-  rarity: "basic" | "astral" = "basic",
-): GearInstance | null {
-  if (!(baseItemId in gearBaseItems)) return null;
-  const baseItem = gearBaseItems[baseItemId as GearBaseItemId];
-  const definition = gearDefinitions[gearDefinitionId(baseItem.id, rarity)];
-  if (!definition) return null;
-  return rollAndCreateInstance(definition, rarity, rng);
-}
-
-export function generateDevRandomGearInstance(rng: () => number): GearInstance {
-  const rarity = pickRandom(GEAR_RARITIES, rng) ?? "basic";
-  if (rarity === "unique") {
-    const unique = pickRandom(uniqueItemList, rng);
-    if (unique) return generateUniqueGearInstance(unique);
-  }
-  // A missed Unique roll (exhausted pool) falls back to Astral, never to a
-  // nonexistent "<base>-unique" definition.
-  const fallbackRarity = rarity === "unique" ? "astral" : rarity;
-  const baseItem = pickRandom(gearBaseItemList, rng);
-  if (!baseItem) throw new Error("gearBaseItemList is empty");
-  const definition =
-    gearDefinitions[gearDefinitionId(baseItem.id, fallbackRarity)] ??
-    gearDefinitions[gearDefinitionId(baseItem.id, "basic")];
-  if (!definition?.rarity) throw new Error(`Missing gear definition for ${baseItem.id}`);
-  return rollAndCreateInstance(definition, definition.rarity, rng);
 }

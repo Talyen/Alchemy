@@ -10,6 +10,7 @@ import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-tra
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { SEPTIC_SPLIT_CHANCE_PERCENT } from "../game-constants";
 import { removePlayerArmor } from "./status-helpers";
+import { applyArmorLossAttackRetaliation } from "./player-defensive-reactions";
 import {
   hasEnemyTrait,
   isPlayerDefeated,
@@ -40,7 +41,7 @@ export function regrowEnemyThorns(state: BattleState, combatTexts: CombatTextEve
 }
 
 export function processEncounterTraitActionStart(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
-  let nextState = state;
+  let nextState = hasEnemyTrait(state, "thorns") ? regrowEnemyThorns(state, combatTexts) : state;
   if (hasEnemyTrait(nextState, "tempered")) {
     nextState = recordEnemyAbilityActivation(nextState, "tempered");
     nextState = addEnemyStatusText(nextState, "forge", scaleByRoomMultiplier(nextState, 1), combatTexts);
@@ -91,7 +92,14 @@ export function processEncounterTraitActionDamage(state: BattleState, combatText
     nextState = recordEnemyAbilityActivation(nextState, "caustic");
     nextState = dealTraitDamage(nextState, "poison", 1, combatTexts);
     if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
-    nextState = removePlayerArmor(nextState, scaleByRoomMultiplier(nextState, 1), combatTexts);
+    let armorLost = 0;
+    nextState = removePlayerArmor(nextState, scaleByRoomMultiplier(nextState, 1), combatTexts, (amount) => {
+      armorLost = amount;
+    });
+    nextState = resolvePendingBattleReactions(
+      applyArmorLossAttackRetaliation(nextState, armorLost, combatTexts),
+      combatTexts,
+    );
   }
   if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
   if (hasEnemyTrait(nextState, "flesheater")) {

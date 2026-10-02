@@ -19,6 +19,7 @@ import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-thres
 import { scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { removePlayerArmor } from "./status-helpers";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
+import { applyArmorLossAttackRetaliation } from "./player-defensive-reactions";
 import {
   addEnemyStatus,
   isPlayerDefeated,
@@ -63,7 +64,8 @@ function applyEnemyEffect(
           : Math.min(state.playerStatuses.armor, scaleByRoomMultiplier(state, effect.amount ?? 0));
       if (amount <= 0) return state;
       mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "armor", amount });
-      return removePlayerArmor(state, amount, combatTexts);
+      const removed = removePlayerArmor(state, amount, combatTexts);
+      return applyArmorLossAttackRetaliation(removed, amount, combatTexts);
     }
     case "multiply-enemy-status": {
       if (isStunFreezeBuildupBlocked(state.playerCC)) return state;

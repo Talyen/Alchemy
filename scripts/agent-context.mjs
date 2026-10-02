@@ -27,6 +27,7 @@ export function parseContextArgs(argv) {
     session: null,
     refresh: false,
     full: false,
+    locate: false,
   };
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index];
@@ -41,6 +42,7 @@ export function parseContextArgs(argv) {
     else if (arg === "--related") options.related = true;
     else if (arg === "--refresh") options.refresh = true;
     else if (arg === "--full") options.full = true;
+    else if (arg === "--locate") options.locate = true;
     else if (arg.startsWith("--")) throw new Error(`Unknown option: ${arg}`);
     else options.paths.push(arg);
   }
@@ -56,48 +58,62 @@ export function parseContextArgs(argv) {
   if (options.refresh && !options.session) throw new Error("--refresh requires --session <id>");
   if (
     options.outline &&
-    (options.session || options.related || options.json || options.paths.length || options.task || options.diff)
+    (options.session ||
+      options.related ||
+      options.json ||
+      options.paths.length ||
+      options.task ||
+      options.diff ||
+      options.locate)
   )
     throw new Error("Outline mode cannot be combined with documentation discovery options");
   if (options.full && !options.json) throw new Error("--full requires --json");
+  if (options.full && options.locate) throw new Error("Choose --locate or --full, not both");
   return options;
 }
 
-export function renderContext(selection, sections, budget = CONTEXT_OUTPUT_BYTES) {
+export function renderContext(selection, sections, budget = CONTEXT_OUTPUT_BYTES, { locate = false } = {}) {
   const lines = [
     `Tasks: ${selection.tasks.join(", ") || "general"}`,
     ...selection.entrypoints.map((file) => `Entry: ${file}`),
     `Verification: ${selection.plan.commands.map((command) => command.key).join(", ") || "select paths once known"}`,
     "During work: npm run verify -- <task-owned paths>; handoff: npm run check -- <task-owned paths>.",
-    "Read the following owner sections once; expand only at a dependency or unresolved question.",
+    locate
+      ? "Owner locations only; section contents have not been read. Open the needed ranges."
+      : "Read the following owner sections once; expand only at a dependency or unresolved question.",
   ];
   if (selection.related) {
-    lines.push("Related locations (ranked static-import hints, at most two hops; not exhaustive test coverage):");
+    lines.push(
+      "Related locations (helpers, consumers, closest tests and setup; static hints, not exhaustive coverage):",
+    );
     for (const [kind, files] of Object.entries(selection.related))
       for (const file of files) lines.push(`  ${kind}: ${file}`);
   }
   for (const pointer of selection.pointers ?? [])
     lines.push(`More guidance (--task ${pointer.task}): ${pointer.path} § ${pointer.heading}`);
   const included = [];
+  const located = [];
   let omitted = 0;
   for (const section of sections) {
     const pointer = `${section.path}:${section.start}-${section.end}`;
-    const block = `\n${pointer}\n${compactMarkdownTables(section.text)}`;
+    const block = locate
+      ? `${pointer} § ${section.heading ?? "whole document"}`
+      : `\n${pointer}\n${compactMarkdownTables(section.text)}`;
     if (Buffer.byteLength([...lines, block].join("\n"), "utf8") <= budget - 150) {
       lines.push(block);
-      included.push(section);
+      (locate ? located : included).push(section);
     } else {
       const deferred = `Deferred section: ${pointer} (${section.heading ?? "whole document"}); open if needed.`;
       if (Buffer.byteLength([...lines, deferred].join("\n")) <= budget - 150) lines.push(deferred);
       else omitted++;
-      for (const preview of sectionPreview(section)) {
+      for (const preview of locate ? [] : sectionPreview(section)) {
         if (Buffer.byteLength([...lines, preview].join("\n")) <= budget - 150) lines.push(preview);
         else break;
       }
     }
   }
   if (omitted) lines.push(`${omitted} more section locations omitted; use --json --full for the complete selection.`);
-  return { text: lines.join("\n"), included };
+  return { text: lines.join("\n"), included, located };
 }
 
 export function renderSourceOutline(declarations, symbol = null, budget = CONTEXT_OUTPUT_BYTES) {
@@ -141,6 +157,7 @@ export function main(argv = process.argv.slice(2)) {
   let operation = "context";
   try {
     const options = parseContextArgs(argv);
+    if (options.locate) operation = "locate";
     if (options.outline) {
       operation = "outline";
       const declarations = sourceOutline(ROOT, options.outline, {
@@ -164,7 +181,7 @@ export function main(argv = process.argv.slice(2)) {
     }
     if (!options.task && !options.paths.length && !options.diff) {
       console.log(
-        `Usage: npm run context -- <paths> | --task <${Object.keys(CONTEXT_TASKS).join("|")}> | --diff | --outline <file> [--symbol <name> | --entries | --entry <id> | --tests | --test <suite-qualified-name>]\nOptional doc discovery: --related --session <id> [--refresh]`,
+        `Usage: npm run context -- <paths> | --task <${Object.keys(CONTEXT_TASKS).join("|")}> | --diff | --outline <file> [--symbol <name> | --entries | --entry <id> | --tests | --test <suite-qualified-name>]\nOptional doc discovery: --locate --related --session <id> [--refresh]`,
       );
       return 0;
     }
@@ -179,8 +196,9 @@ export function main(argv = process.argv.slice(2)) {
     const notice = incremental
       ? `Context session ${options.session}: ${incremental.omitted} unchanged sections omitted. Use --refresh after context loss or a new session ID for a fresh agent.`
       : "";
-    const rendered = renderContext(selection, sections, CONTEXT_OUTPUT_BYTES - Buffer.byteLength(notice) - 1);
+    const rendered = renderContext(selection, sections, CONTEXT_OUTPUT_BYTES - Buffer.byteLength(notice) - 1, options);
     const included = options.json && options.full ? sections : rendered.included;
+    const displayed = options.locate ? rendered.located : included;
     for (const section of included)
       recordAgentEvent(
         ROOT,
@@ -188,9 +206,9 @@ export function main(argv = process.argv.slice(2)) {
       );
     recordAgentEvent(ROOT, {
       kind: "discovery",
-      operation: "context",
+      operation,
       status: "found",
-      truncated: included.length < sections.length,
+      truncated: displayed.length < sections.length,
     });
     console.log(
       options.json
@@ -198,8 +216,11 @@ export function main(argv = process.argv.slice(2)) {
             {
               ...selection,
               sections: included,
+              ...(options.locate && {
+                locations: rendered.located.map(({ path, heading, start, end }) => ({ path, heading, start, end })),
+              }),
               deferredSections: sections
-                .filter((section) => !included.includes(section))
+                .filter((section) => !displayed.includes(section))
                 .map(({ path, heading, start, end }) => ({ path, heading, start, end })),
               omittedUnchanged: incremental?.omitted ?? 0,
               complete: Boolean(options.full),

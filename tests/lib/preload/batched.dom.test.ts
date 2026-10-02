@@ -87,28 +87,57 @@ describe("yieldToAnimationFrame", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   it("uses requestAnimationFrame when available", async () => {
-    const rafMock = vi.fn((cb: FrameRequestCallback) => {
-      cb(100);
+    let callback: FrameRequestCallback | undefined;
+    const rafMock = vi.fn((next: FrameRequestCallback) => {
+      callback = next;
       return 1;
     });
     vi.stubGlobal("requestAnimationFrame", rafMock);
+    const cancel = vi.fn();
+    vi.stubGlobal("cancelAnimationFrame", cancel);
 
-    await yieldToAnimationFrame();
+    const promise = yieldToAnimationFrame();
+    callback?.(100);
+    await promise;
     expect(rafMock).toHaveBeenCalledTimes(1);
+    expect(cancel).toHaveBeenCalledWith(1);
+  });
+
+  it("finishes a suspended background frame once and cancels its pending work", async () => {
+    vi.useFakeTimers();
+    let callback: FrameRequestCallback | undefined;
+    vi.stubGlobal(
+      "requestAnimationFrame",
+      vi.fn((next: FrameRequestCallback) => {
+        callback = next;
+        return 9;
+      }),
+    );
+    const cancel = vi.fn();
+    vi.stubGlobal("cancelAnimationFrame", cancel);
+    const finished = vi.fn();
+    const promise = yieldToAnimationFrame().then(finished);
+    await vi.advanceTimersByTimeAsync(100);
+    await promise;
+    expect(finished).toHaveBeenCalledOnce();
+    expect(cancel).toHaveBeenCalledWith(9);
+    callback?.(200);
+    expect(finished).toHaveBeenCalledOnce();
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it("falls back to setTimeout when requestAnimationFrame is not available", async () => {
-    vi.stubGlobal("requestAnimationFrame", undefined);
     vi.useFakeTimers();
+    // Installing the clock can restore RAF, so remove it after timer setup.
+    vi.stubGlobal("requestAnimationFrame", undefined);
 
     const promise = yieldToAnimationFrame();
     vi.advanceTimersByTime(0);
     await promise;
-
-    vi.useRealTimers();
   });
 });
 

@@ -1,6 +1,6 @@
 # Scripts implementation map
 
-Use [REFERENCE](../Docs/COMMANDS.md#script-command-reference) to choose a command,
+Use [Commands](../Docs/COMMANDS.md#script-command-reference) to choose a command,
 [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) to select checks,
 and this map to locate their implementation owners.
 
@@ -35,7 +35,7 @@ Manifest paths derive from `MANAGED_DIRS` + `MANIFEST_BASENAME` via `getManagedM
 
 ## Agent discovery and evaluation
 
-`agent-diff.mjs` (`npm run review:diff`) retains complete status and bounds authored patches; generated/media details expand with `--full <path>`.
+`agent-diff.mjs` owns `review:diff` and `review:status`: complete inventories on disk, bounded task patches/status in the terminal. Generated/media details expand with `--full <path>`.
 
 | Concern                                                             | Implementation owner              |
 | ------------------------------------------------------------------- | --------------------------------- |

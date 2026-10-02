@@ -48,6 +48,10 @@ describe("git-classify", () => {
       ["push", "--force"],
       ["push", "-f"],
       ["push", "--force-with-lease"],
+      ["push", "origin", "+main:main"],
+      ["push", "origin", "+main"],
+      ["push", "origin", "--", "+main:main"],
+      ["push", "-vf", "origin", "main"],
     ]) {
       expect(isDestructive(argv), `git ${argv.join(" ")}`).toBe(true);
     }
@@ -67,6 +71,9 @@ describe("git-classify", () => {
       ["clean", "-fd", "--dry-run"],
       ["push", "--force-with-lease", "--dry-run"],
       ["push", "-fn"],
+      ["push", "--dry-run", "origin", "+main:main"],
+      ["push", "origin", "main", "--push-option", "+option"],
+      ["push", "origin", "main", "--push-option", "--force"],
       ["branch", "-d", "feature"],
       ["branch", "feature"],
       ["push", "origin", "main"],

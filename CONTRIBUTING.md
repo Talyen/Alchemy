@@ -4,34 +4,50 @@ Install dependencies with `npm ci`. `npm run context -- <relevant paths>` can lo
 
 ## What to run when you change…
 
-Use the gate appropriate to the work. `check` includes `verify`, so do not run both consecutively on unchanged inputs:
+The default local gate is deliberately resource-light. Agents may run unit tests whenever useful without user approval; CI still owns complete validation.
 
-| Moment           | Command                    | Responsibility                                                                                                     |
-| ---------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| During work      | `npm run verify -- --diff` | Changed Vitest files, dependency-related tests, and save/assets/desktop/balance/performance escalations            |
-| Push and handoff | `npm run check -- --diff`  | Verification, the CI static aggregate for executable changes, lockfile consistency, pure builds, and preview smoke |
-| Release          | `npm run release`          | Full release, desktop packaging, tag, push, and CI watch                                                           |
+| Moment           | Command                        | Responsibility                                                                                                 |
+| ---------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| Local smoke      | `npm test`                     | Three fixed Node suites, one worker, lower process priority, 512 MiB Node heap limit and a 30-second deadline  |
+| During work      | `npm run verify -- --diff`     | Bounded Node smoke; no import-graph selection or dependency-cache identity walk                                |
+| Push and handoff | `npm run check -- --diff`      | Local smoke plus selected-file formatting; no builds, installs, browsers, DOM suites, or full static aggregate |
+| CI               | Pull request or push to `main` | Full Vitest, static checks, builds, smoke, critical browser journeys and applicable desktop/assets checks      |
 
-`npm run verify -- --diff --plan` previews selection without running it. Explicit file or directory paths may replace `--diff`; relative and absolute paths within the checkout select the same checks. Directories expand to tracked and untracked nonignored files, retaining deleted tracked paths for risk selection. When the checkout contains unrelated work, use the complete set of task-owned paths (including incidental fixes) for task verification and state that scope at handoff; the pre-push hook selects the complete outgoing revision range. A failure elsewhere must be reported or resolved under the incidental-fix policy, not hidden by narrowing a failed check. Browser flows remain available through the `test:e2e:*` scripts when investigation needs them, but local handoff does not rerun the every-push critical suite.
+Local formatting checks at most 50 existing files, each no larger than 256,000 bytes. Larger batches are explicitly deferred to CI. Reports say that a passing local check still requires full CI validation; it is not release evidence.
 
-The risk escalations are intentionally broad and few:
+Markdown-only selections skip Node smoke in the default verifier. For documentation
+edits, run `npm run docs:check` explicitly as well as the task-scoped `check`;
+the default gate checks selected-file formatting but does not run documentation contracts.
 
-- Save changes run the complete save/persistence unit suite.
-- Asset source or pipeline changes run the read-only prepared-output freshness check.
-- Desktop changes run the desktop boundary unit suite.
-- Balance changes run the report-construction check; performance changes run performance harness unit tests. FPS/hitch profiling remains opt-in under [PERFORMANCE](./Docs/PERFORMANCE.md).
-- Tooling and configuration changes run the complete tooling and architecture unit suite because those tests inspect repository files directly. When gameplay changes are included, their dependency-related tests still run.
-- Other implementation changes use Vitest dependency selection; changed test files execute directly.
+Use explicit task-owned paths in a mixed checkout. `--diff` selects the complete dirty set, including deletions. `npm run verify -- --diff --plan` previews the lightweight selection. The pre-push hook selects outgoing paths and retains its source/cleanliness guards, but uses the same lightweight gate.
 
-Eligible expensive unit commands can reuse a recent passing result under the [verification reuse policy](#verification-reuse). Use `ALCHEMY_VERIFY_FRESH=1` for fresh observations during nondeterminism investigation.
+Focused, dependency-related, and full unit tests, including DOM unit tests, may run locally without user approval. Use `npm run test:full -- <paths>` for focused suites or `npm run test:full` for the full unit suite. Broader local validation still requires an explicit user request: `npm run check:full -- --diff` and `npm run verify:full -- --diff` include checks beyond unit tests. Browser/Electron, coverage, mutation, profiling, builds, and full static commands remain opt-ins. Do not substitute a direct Playwright invocation to bypass that policy. Release workflows remain fully verified in CI.
 
-Authoritative working-tree discovery disables Git's filesystem monitor and untracked cache for each command (`-c core.fsmonitor=false -c core.untrackedCache=false`). Changed-path selection, directory expansion, verification receipts, and pre-push cleanliness therefore include newly created nonignored files without changing persistent Git settings. If manual status output seems incomplete, use the same command-local overrides with `git status --short --untracked-files=all -- <path>`; discovery failures must not be treated as a clean checkout.
+One-shot Vitest and Playwright commands through `run-compact.mjs`, including
+full/focused unit tests and the full verifier's related/changed selections, share
+one local test lane with the ship unit runner across checkouts on the same host.
+An occupied lane fails before tests start; retry after the active run finishes.
+The lightweight Node smoke does not acquire this lane. Raw CLI and watch/debug
+sessions bypass it and must be coordinated manually. The runner defaults native
+bundler threads to one; the four-worker Vitest ceiling remains unchanged. An
+unrelated overloaded host can still cause failures: preserve the failed result
+and inspect collection and host resources before retrying or changing timeouts.
+Implementation: [local test lane](./scripts/lib/verification/local-test-lane.mjs).
 
-The completion gate records every passed, failed, and skipped stage under one run ID, retains bounded failure evidence, and rejects results if tracked source inputs change during the run. Documentation-only changes run documentation and format checks without unit, build, or browser work, including Markdown under source, script, and test directories. Executable changes run the same static aggregate as CI, but not full Vitest or browser journeys. Runtime inputs trigger a non-mutating build, its bundle budget check, and preview smoke. Package manifests trigger `npm ci --dry-run --ignore-scripts`; other pushes do not.
+DOM suites use [the JSDOM environment](./tests/jsdom-environment.ts), which
+temporarily removes Node storage descriptors before browser globals are installed
+and restores them during teardown. JSDOM owns both local and session storage;
+Node Web Storage flags and a Node storage file are unnecessary for these tests.
+
+The full verifier retains broad risk selection: save changes select persistence suites, asset changes select prepared-output checks, desktop changes select boundary suites, and tooling changes select tooling/architecture tests. Other implementation changes use dependency-related selection. These escalations do not run in the default local gate. The full completion gate adds static checks, lockfile consistency, applicable builds, bundle budgets, and preview smoke.
+
+Authoritative working-tree discovery disables Git's filesystem monitor and untracked cache per command (`-c core.fsmonitor=false -c core.untrackedCache=false`). Discovery failures are not a clean checkout. Checks preserve run-attributed diagnostics and reject results if source inputs change during the run.
 
 ## Verification reuse
 
-`verify` keeps local passing receipts under `reports/verification-cache/` for eligible slow commands: dependency-related and changed unit tests plus save, desktop, and performance unit suites. Reuse requires unchanged inputs and the same executable and arguments; a narrower command cannot satisfy broader coverage. Tooling suites, reports, assets, static checks, builds, smoke tests, browser runs, and CI always execute.
+The default local verifier does not scan installed dependencies or create full-verification receipts.
+
+The opt-in full verifier keeps local passing receipts under `reports/verification-cache/` for eligible slow commands: dependency-related and changed unit tests plus save, desktop, and performance unit suites. Reuse requires unchanged inputs and the same executable and arguments; a narrower command cannot satisfy broader coverage. Tooling suites, reports, assets, static checks, builds, smoke tests, browser runs, and CI always execute.
 
 Receipts expire after one hour. Reused results retain their original run ID and expiry, with provenance in the run-specific `verify/summary.json` linked by the completion report. Failures invalidate receipts; changed or unverifiable inputs prevent reuse. Normal report cleanup removes disposable receipts.
 
@@ -69,13 +85,13 @@ Hook tests pass changing inputs through `renderHook(callback, { initialProps })`
 
 ## E2E policy
 
-Fixture, bootstrap, page-object, tag, and diagnostic instructions live in [tests/e2e/README.md](./tests/e2e/README.md). Every push runs the `@critical` suite once; save-touching pushes additionally run the non-critical save scenarios. Together those jobs cover the complete save specs without repeating their critical journeys. Nightly and release workflows own the full browser suite; nightly also owns coverage, mutation, deep entry-export analysis, and full Electron coverage.
+Fixture, bootstrap, page-object, tag, and diagnostic instructions live in [tests/e2e/README.md](./tests/e2e/README.md). Every pull request and push to `main` runs the `@critical` suite once, including all retained save specs. There is no separate save browser job. Nightly and release workflows own the full browser suite; nightly also owns coverage, mutation, deep entry-export analysis, and full Electron coverage.
 
 ## Hooks and workflow hygiene
 
-`lefthook` pre-push invokes only `npm run check -- --pre-push`, forwarding Git’s ref/object-ID pairs through stdin. The gate selects the union of outgoing changes, including removed paths; a new remote ref selects its full tree. Deleted remote refs require no checks. Large selections travel through a JSON path file and use the complete unit suite rather than exceeding platform command limits. Outgoing commits must match the checked-out HEAD, and unavailable base revisions fail explicitly. When source checks are needed, pre-push requires a clean checkout (including nonignored untracked files) so tests cannot pass against an uncommitted fix. Ordinary task checks still support dirty work. Local `--diff` continues to select working-tree changes, retaining both sides of renames for risk selection and falling back to HEAD’s changes when clean. Pre-commit formats staged files selected by `scripts/prettier-paths.mjs`; commit-msg runs commitlint. Install hooks with `npm run prepare`.
+`lefthook` pre-push invokes only `npm run check -- --pre-push`, forwarding Git’s ref/object-ID pairs through stdin. The gate selects the union of outgoing changes, including removed paths; a new remote ref selects its full tree. Deleted remote refs require no checks. Large selections travel through a JSON path file; the opt-in full verifier falls back to the complete unit suite when related-test arguments exceed platform limits. Outgoing commits must match the checked-out HEAD, and unavailable base revisions fail explicitly. When source checks are needed, pre-push requires a clean checkout (including nonignored untracked files) so tests cannot pass against an uncommitted fix. Ordinary task checks still support dirty work. Local `--diff` continues to select working-tree changes, retaining both sides of renames for risk selection and falling back to HEAD’s changes when clean. Pre-commit formats staged files selected by `scripts/prettier-paths.mjs`; commit-msg runs commitlint. Install hooks with `npm run prepare`.
 
-Execution plans under `Docs/Plans/` are workflow artifacts, not product correctness gates. Follow the [plan lifecycle](./Docs/Plans/README.md) to finish and archive only task-owned plans, then validate with `npm run docs:check` (also included in the handoff gate). `npm run docs:check:final` is an explicit repository-wide closure check; another task's active plan does not require cancellation or block ordinary handoff.
+Execution plans under `Docs/Plans/` are workflow artifacts, not product correctness gates. Follow the [plan lifecycle](./Docs/Plans/README.md) to finish and archive only task-owned plans, then validate with `npm run docs:check` (also included in the opt-in full gate). `npm run docs:check:final` is an explicit repository-wide closure check; another task's active plan does not require cancellation or block ordinary handoff.
 
 Use matched [agent evaluations](./.agents/evals/README.md) for uncertain workflow changes, consequential changes to safeguards, or claims of improved agent performance. Straightforward contradiction removal and procedural simplification can use source review and documentation checks. Compare correctness alongside observed reads, retries, and available host usage when running trials.
 
@@ -104,7 +120,13 @@ sources. `npm run dev` prepares assets through its `predev` lifecycle; use the
 explicit `sync:*` and asset authoring commands when intentionally regenerating
 outputs for a build.
 
-Every push to `main` runs the static aggregate, full Vitest, one web build plus preview smoke, and the critical browser suite. Only save persistence, prepared assets, desktop packaging, and Electron tests remain path-gated. Dependency setup skips Electron downloads by default; only packaging and Electron test jobs install the binary. Installed Electron binaries use exact lockfile-specific caches without fallback to an older dependency set. Browser setup installs OS dependencies even when browser binaries are cached. Asset freshness jobs use a full checkout. CI topology is owned solely by `.github/workflows/`; local test selection is owned by the broad categories in `scripts/lib/verification/change-routes.mjs`.
+Every pull request and push to `main` runs the static aggregate, full Vitest, one web build plus preview smoke, and the critical browser suite. Prepared assets, desktop packaging, and Electron tests remain path-gated. Dependency setup skips Electron downloads by default; only packaging and Electron test jobs install the binary. Installed Electron binaries use exact lockfile-specific caches without fallback to an older dependency set. Browser setup installs OS dependencies even when browser binaries are cached. Asset freshness jobs use a full checkout. CI topology is owned solely by `.github/workflows/`; local test selection is owned by the broad categories in `scripts/lib/verification/change-routes.mjs`.
+
+External GitHub Actions in workflows and composite actions use full commit SHAs,
+with version comments for review. Resolve pins from the action's own repository;
+keep local actions on relative paths. [.github/dependabot.yml](./.github/dependabot.yml)
+groups weekly Actions updates into reviewable pull requests; updates still pass
+the normal CI gates before merging.
 
 [Bugbot](./.cursor/BUGBOT.md) remains an optional post-push review aid for gameplay, save, and battle-rule changes; it is not a required status check.
 

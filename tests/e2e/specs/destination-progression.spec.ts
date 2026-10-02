@@ -1,52 +1,52 @@
 import { controllerInput } from "../controller-input";
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
-import { injectDestinationAtIndex, injectMysterySummaryVisit, assertRowAlignment } from "../../browser-helpers";
+import { injectSaveState, makeStartingDeck, readSavedGame, withSavedGame } from "../../browser-helpers";
 import { DestinationPage } from "../../pages/destination-page";
 import { MysteryPage } from "../../pages/mystery-page";
 import { CorruptionPage } from "../../pages/corruption-page";
 import { critical } from "../../playwright-tags";
 
-test.describe("Destination Progression", () => {
-  test("destination screen shows available choices from the pool", critical, async ({ page }) => {
-    await injectDestinationAtIndex(page, {
-      destinations: ["Normal Combat", "Campfire", "Mystery"],
+test(
+  "a Mystery choice awards its XP once and survives returning to the route",
+  critical,
+  async ({ page, fastBattle }) => {
+    void fastBattle;
+    const choice = { label: "Take the Offering", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] };
+    await injectSaveState(page, {
+      runDeck: makeStartingDeck(),
+      selectedDifficulty: null,
+      currentScreen: "mystery",
+      interruptedFlow: { kind: "none" },
+      lastOfferedDestinations: ["Mystery", "Campfire", "Normal Combat"],
+      mysteryVisit: {
+        event: {
+          id: "ancient-altar",
+          title: "Ancient Altar",
+          art: "",
+          narrative: "A weathered stone altar.",
+          choices: [choice],
+        },
+        chosenChoice: null,
+        cardChoices: null,
+        grantedTrinketIds: [],
+        grantedGear: [],
+        chosenCardId: null,
+      },
     });
     await page.goto("/");
-
-    const destination = new DestinationPage(page);
-    await destination.expectVisible();
-    const choices = [
-      destination.destinationButton("Combat"),
-      destination.destinationButton("Campfire"),
-      destination.destinationButton("Mystery"),
-    ];
-    for (const choice of choices) {
-      await expect(choice).toBeVisible();
-    }
-    await assertRowAlignment(choices);
-    await expect(page.getByRole("button", { name: "Normal Combat", exact: true })).toHaveCount(0);
-    await destination.pick("Combat");
-    await expect(page.getByTestId("battle-scene")).toBeVisible();
-    await expect(page.getByRole("button", { name: "End Turn" })).toBeVisible();
-  });
-
-  // Pool exhaustion and boss-appearance rules live in run-destination-wiring
-  // and run-domain-progress unit tests; the browser keeps the choice-pool,
-  // mystery, and corruption-result wirings.
-});
-
-test.describe("Mystery Event Flow", () => {
-  test("mystery completes and returns to destination choices", critical, async ({ page }) => {
-    await injectMysterySummaryVisit(page);
-    await page.goto("/");
-
-    const mystery = new MysteryPage(page);
-    await expect(mystery.continueBtn).toBeVisible({ timeout: 10000 });
-    await mystery.continueBtn.click();
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
-  });
-});
+    await expect(page.getByRole("button", { name: /Take the Offering/ })).toBeVisible();
+    const before = (await readSavedGame(page)).talentXP.holy ?? 0;
+    await page.getByRole("button", { name: /Take the Offering/ }).click({ clickCount: 2, delay: 20 });
+    await expect.poll(async () => (await readSavedGame(page)).talentXP.holy).toBe(before + 8);
+    await new MysteryPage(page).continueBtn.click();
+    await new DestinationPage(page).expectVisible();
+    await withSavedGame(page, async (resumed) => {
+      await new DestinationPage(resumed).expectVisible();
+      expect((await readSavedGame(resumed)).talentXP.holy).toBe(before + 8);
+    });
+  },
+);
 
 test.describe("Corruption Full Flow", () => {
   // Altar intro/leave and corrupted-in-deck membership live in
@@ -62,5 +62,13 @@ test.describe("Corruption Full Flow", () => {
 
     await controllerInput(page).activate(corruption.continueBtn);
     await new DestinationPage(page).expectVisible();
+    await expect
+      .poll(async () => (await readSavedGame(page)).activeRun?.runDeck.filter((card) => card.corrupted).length)
+      .toBe(1);
+    await withSavedGame(page, async (resumed) => {
+      await new DestinationPage(resumed).expectVisible();
+      await resumed.getByRole("button", { name: "View Deck · 6 cards" }).click();
+      await expect(resumed.getByRole("dialog").getByRole("img", { name: /^Corrupted / })).toHaveCount(1);
+    });
   });
 });

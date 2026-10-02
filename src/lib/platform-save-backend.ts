@@ -34,8 +34,18 @@ function uniqueCandidates(candidates: string[]): string[] {
 
 type DesktopApi = NonNullable<ReturnType<typeof getDesktopApi>>;
 
-function desktopUnavailable(): { ok: false; error: unknown } {
-  return { ok: false, error: new Error("Desktop save API is unavailable") };
+async function withDesktopSaveApi<T extends SaveBackendReadResult | SaveBackendWriteResult>(
+  operation: (desktop: DesktopApi) => Promise<T>,
+): Promise<T | { ok: false; error: unknown }> {
+  const desktop = getDesktopApi();
+  if (desktop?.isDesktop !== true) {
+    return { ok: false, error: new Error("Desktop save API is unavailable") };
+  }
+  try {
+    return await operation(desktop);
+  } catch (error) {
+    return { ok: false, error };
+  }
 }
 
 async function bestEffortCloudWrite(
@@ -117,6 +127,42 @@ async function readDesktopCandidates(desktop: DesktopApi, recovery: boolean): Pr
   };
 }
 
+async function writeDesktopSave(
+  desktop: DesktopApi,
+  key: string,
+  value: string,
+  cloudSyncEnabled: boolean,
+): Promise<SaveBackendWriteResult> {
+  const slot = key === SAVE_RECOVERY_KEY ? "recovery" : undefined;
+  const localWritten = await desktop.writeSave(value, slot);
+  // Recovery may still be mirrored after a local failure; the primary slot
+  // must remain local-first. Neither Cloud result changes local write success.
+  if (cloudSyncEnabled && (localWritten || slot === "recovery")) {
+    await bestEffortCloudWrite(
+      () => desktop.steamCloudWrite?.(value, slot),
+      localWritten
+        ? "Steam Cloud write failed, save may not sync"
+        : "Recovery save could not be mirrored to Steam Cloud",
+    );
+  }
+  return localWritten ? { ok: true } : { ok: false, error: new Error("Failed to write desktop save file") };
+}
+
+async function readDemoImportSource(): Promise<DemoImportSource> {
+  return (
+    getDesktopApi()?.readDemoImportSource?.() ?? {
+      initialized: true,
+      fullSaveExists: false,
+      readFailed: false,
+      candidates: [],
+    }
+  );
+}
+
+async function completeDemoInitialization(): Promise<boolean> {
+  return (await getDesktopApi()?.completeDemoInitialization?.()) ?? false;
+}
+
 export function createBrowserSaveBackend(): SaveBackend {
   return {
     readCandidates(key) {
@@ -126,15 +172,11 @@ export function createBrowserSaveBackend(): SaveBackend {
     },
 
     write(key, value) {
-      const stored = tryLocalStorageSetItem(key, value);
-      if (!stored.ok) return Promise.resolve(stored);
-      return Promise.resolve({ ok: true });
+      return Promise.resolve(tryLocalStorageSetItem(key, value));
     },
 
     writeSync(key, value) {
-      const stored = tryLocalStorageSetItem(key, value);
-      if (!stored.ok) return stored;
-      return { ok: true };
+      return tryLocalStorageSetItem(key, value);
     },
 
     clear(key) {
@@ -151,65 +193,18 @@ export function createBrowserSaveBackend(): SaveBackend {
 
 export function createDesktopSaveBackend({ cloudSyncEnabled = false }: PlatformSaveBackendOptions = {}): SaveBackend {
   return {
-    readDemoImportSource: async () =>
-      getDesktopApi()?.readDemoImportSource?.() ?? {
-        initialized: true,
-        fullSaveExists: false,
-        readFailed: false,
-        candidates: [],
-      },
-    completeDemoInitialization: async () => (await getDesktopApi()?.completeDemoInitialization?.()) ?? false,
-    async readCandidates(key) {
-      const desktop = getDesktopApi();
-      if (desktop?.isDesktop !== true) return desktopUnavailable();
-      try {
-        return await readDesktopCandidates(desktop, key === SAVE_RECOVERY_KEY);
-      } catch (error) {
-        return { ok: false, error };
-      }
-    },
-
-    async write(key, value) {
-      const desktop = getDesktopApi();
-      if (desktop?.isDesktop !== true) return desktopUnavailable();
-      try {
-        const slot = key === SAVE_RECOVERY_KEY ? "recovery" : undefined;
-        const localWritten = await desktop.writeSave(value, slot);
-        if (!localWritten) {
-          if (slot === "recovery" && cloudSyncEnabled) {
-            await bestEffortCloudWrite(
-              () => desktop.steamCloudWrite?.(value, slot),
-              "Recovery save could not be mirrored to Steam Cloud",
-            );
-          }
-          return { ok: false, error: new Error("Failed to write desktop save file") };
-        }
-        if (cloudSyncEnabled) {
-          await bestEffortCloudWrite(
-            () => desktop.steamCloudWrite?.(value, slot),
-            "Steam Cloud write failed, save may not sync",
-          );
-        }
-        return { ok: true };
-      } catch (error) {
-        return { ok: false, error };
-      }
-    },
+    readDemoImportSource,
+    completeDemoInitialization,
+    readCandidates: (key) => withDesktopSaveApi((desktop) => readDesktopCandidates(desktop, key === SAVE_RECOVERY_KEY)),
+    write: (key, value) => withDesktopSaveApi((desktop) => writeDesktopSave(desktop, key, value, cloudSyncEnabled)),
 
     // Desktop persistence is async IPC: exit flushes go through the queue.
     writeSync() {
       return null;
     },
 
-    async clear(_key, options?: SaveBackendClearOptions) {
-      const desktop = getDesktopApi();
-      if (desktop?.isDesktop !== true) return desktopUnavailable();
-      try {
-        return await clearDesktop(desktop, cloudSyncEnabled, options?.forceLocalWipe === true);
-      } catch (error) {
-        return { ok: false, error };
-      }
-    },
+    clear: (_key, options) =>
+      withDesktopSaveApi((desktop) => clearDesktop(desktop, cloudSyncEnabled, options?.forceLocalWipe === true)),
   };
 }
 
@@ -220,8 +215,8 @@ export function createPlatformSaveBackend({ cloudSyncEnabled = false }: Platform
   // environment between backend creation and use.
   const active = () => (getDesktopApi()?.isDesktop === true ? desktop : browser);
   return {
-    readDemoImportSource: () => desktop.readDemoImportSource!(),
-    completeDemoInitialization: () => desktop.completeDemoInitialization!(),
+    readDemoImportSource,
+    completeDemoInitialization,
     readCandidates: (key) => active().readCandidates(key),
     write: (key, value) => active().write(key, value),
     writeSync: (key, value) => active().writeSync(key, value),

@@ -2,13 +2,7 @@ import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-st
 import type { ActiveRunData } from "@/lib/active-run-session";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import type { TalentXP } from "@/lib/game-data";
-import {
-  cloneBattleCard,
-  getStartingDeck,
-  type CharacterId,
-  type CompanionId,
-  type UnlockedTalents,
-} from "@/lib/game-data";
+import { getStartingDeck, type CharacterId, type CompanionId, type UnlockedTalents } from "@/lib/game-data";
 import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear";
 import { companionTierItems } from "@/lib/homestead/companions";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
@@ -124,7 +118,7 @@ export function generateRunSeed(): number {
 function createFreshActiveRunFields(characterId: CharacterId): ActiveRunProgressFields {
   return {
     characterId,
-    runDeck: getStartingDeck(characterId).map(cloneBattleCard),
+    runDeck: getStartingDeck(characterId),
     runPlayerHealth: MAX_PLAYER_HEALTH,
     runMaxHealth: MAX_PLAYER_HEALTH,
     runMetaMaxHealth: MAX_PLAYER_HEALTH,

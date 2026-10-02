@@ -2,7 +2,7 @@
 
 The Armory is available from the first launch, before finding any Gear. It is the permanent meta-progression screen for managing **Gear** (per-character equipment with affix rolls), fixed collectible **Trinkets**, and **Crafting Currencies**. It is the primary surface for `useGearArmorySlice` and the gateway to their in-battle effects.
 
-> **Related:** [ARCHITECTURE.md § Permanent Gear](./ARCHITECTURE.md#permanent-gear-gear-store), [GAME_RULES.md § Domain Glossary](./GLOSSARY.md#domain-glossary), [WORKFLOWS.md § Add permanent Gear](./WORKFLOWS.md#add-permanent-gear).
+> **Related:** [ARCHITECTURE.md § Permanent Gear](./ARCHITECTURE.md#permanent-gear-gear-store), [GLOSSARY.md § Domain Glossary](./GLOSSARY.md#domain-glossary), [WORKFLOWS.md § Add permanent Gear](./WORKFLOWS.md#add-permanent-gear).
 
 ## Layout
 
@@ -119,6 +119,10 @@ Homestead mutation timing remains unchanged.
 ## State flow
 
 - **Pure rules** — `src/lib/gear/` — types, definitions, affixes, crafting, generation
+  - `loadout-operations.ts` owns slot compatibility, equipment changes, and orphan repair.
+  - `instance-normalization.ts` owns saved-instance repair; save schemas import it directly.
+  - `equipped-effects.ts` owns per-item and equipped battle stat aggregation.
+  - `operations.ts` owns inventory salvage. The Gear barrel retains the public API; save repair imports its rule owners directly, without depending on crafting.
 - **Aggregate** — `gameplay-state-store` gear region via `gear-store.ts` (selectors + persistence codec) and `gear-session-command.ts` (HP-sync wrapper)
 - **Screen** — Armory route → `use-armory-controller.ts` → `armory-screen.tsx`
 - **Battle** — `computeGearManifest` → `BattleState.gearEffects`; rebound on live meta mutation
@@ -126,7 +130,7 @@ Homestead mutation timing remains unchanged.
 
 ### Read paths
 
-- **`Armory lock`** — computed from generated Gear or permanent Trinket ownership via `useIsArmoryLocked()` in `gear-store.ts`; `MenuScreen` receives a `locked` prop, it does not read the store. Combat preserves browsing but makes each battling hero’s Armory tab read-only; see [Combat equipment restrictions](#combat-equipment-restrictions).
+- **Armory access** — the Main Menu always offers Armory, including before any Gear or Trinkets are owned. Combat preserves browsing but makes the battling hero’s Armory tab read-only through `useGearCombatRestrictions`; see [Combat equipment restrictions](#combat-equipment-restrictions).
 - **`ArmoryScreen`** — reads Gear, Trinket ownership/equipment, and crafting currencies via `useGearArmorySlice`, combat reservations via `useGearCombatRestrictions`, plus finished-run and active-run reads bundled in `useArmoryController`.
 - **Interaction policy** — `armory-item-state.ts` owns inventory/equipment click decisions alongside targeting affordances. Equipped slots retain locked browsing; inventory tiles retain reservation and compatibility guards. `use-armory-targeting-state.ts` owns mutually exclusive idle, salvage, currency, and salvage-confirmation modes through intent callbacks. Store commands still validate authoritative mutations.
 - **`useArmoryController`** — facade hook that bundles the read-only slice plus the mutation callbacks.

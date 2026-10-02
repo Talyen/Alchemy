@@ -3,8 +3,6 @@ import type { CraftingCurrencyId, GearInstance, GearSlot } from "@/lib/gear";
 import { createEmptyGearInventories, createEmptyGearLoadouts } from "@/lib/gear/types";
 import { MenuPage } from "../pages/menu-page";
 
-export { createEmptyGearLoadouts };
-
 export const bodyGear = {
   instanceId: "gear-body",
   definitionId: "leather-armor-basic" as const,
@@ -23,7 +21,7 @@ export interface OpenArmoryOptions {
   craftingCurrencies?: Partial<Record<CraftingCurrencyId, number>>;
 }
 
-export function gearUnlockedMeta(inventory: GearInstance[], loadouts = createEmptyGearLoadouts()) {
+function gearUnlockedMeta(inventory: GearInstance[], loadouts = createEmptyGearLoadouts()) {
   const gearInventories = createEmptyGearInventories();
   gearInventories.knight = inventory;
   return { gearInventories, gearLoadouts: loadouts };

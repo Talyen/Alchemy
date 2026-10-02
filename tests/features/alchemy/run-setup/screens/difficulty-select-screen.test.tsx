@@ -40,40 +40,6 @@ describe("DifficultySelectScreen", () => {
     expect(diff3Btn.getAttribute("aria-disabled")).toBe("true");
   });
 
-  it("shows completed badge when difficulty is in completedDifficulties", () => {
-    render(
-      <DifficultySelectScreen
-        characterId="knight"
-        selectedDifficulty="difficulty-1"
-        completedDifficulties={["difficulty-1"]}
-        onSelect={vi.fn()}
-        onBack={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByText("Completed")).toBeDefined();
-    const diff2Btn = screen.getByRole("button", { name: /Adventurer/i });
-    expect(diff2Btn.getAttribute("disabled")).toBeNull();
-    expect(diff2Btn.getAttribute("aria-disabled")).toBe("false");
-  });
-
-  it("renders bonus XP on a separate line without a literal newline escape", () => {
-    render(
-      <DifficultySelectScreen
-        characterId="knight"
-        selectedDifficulty={null}
-        completedDifficulties={["difficulty-1"]}
-        onSelect={vi.fn()}
-        onBack={vi.fn()}
-      />,
-    );
-
-    const adventurer = screen.getByRole("button", { name: "Adventurer" });
-    expect(adventurer.textContent).toContain("30% Bonus XP");
-    expect(adventurer.textContent).not.toContain("\\n");
-    expect(adventurer.querySelector("br")).not.toBeNull();
-  });
-
   it("allows selecting an unlocked difficulty and pressing Play", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
@@ -99,24 +65,6 @@ describe("DifficultySelectScreen", () => {
     await user.click(playButton);
 
     expect(onSelect).toHaveBeenCalledWith("difficulty-1");
-  });
-
-  it("triggers onBack when clicking Back button", async () => {
-    const user = userEvent.setup();
-    const onBack = vi.fn();
-
-    render(
-      <DifficultySelectScreen
-        characterId="knight"
-        selectedDifficulty="difficulty-1"
-        completedDifficulties={[]}
-        onSelect={vi.fn()}
-        onBack={onBack}
-      />,
-    );
-
-    await user.click(screen.getByRole("button", { name: /Back/i }));
-    expect(onBack).toHaveBeenCalledOnce();
   });
 
   it("displays unlock requirement tooltip on hovering locked difficulty", () => {

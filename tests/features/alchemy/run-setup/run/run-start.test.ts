@@ -2,12 +2,26 @@ import { describe, expect, it } from "vitest";
 import { getStartingDeck, type BattleCard } from "@/lib/game-data";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { createRunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
+import { createInitialActiveRunFields } from "@/features/alchemy/shared/stores/run-state-init";
 import {
   canReplaceRunForStart,
   isDifficultySelectContinuation,
 } from "@/features/alchemy/run-setup/run/run-start-command";
 
 describe("createRunStartSnapshot", () => {
+  it("keeps freshly initialized decks independent of other runs and the catalog", () => {
+    const original = getStartingDeck("knight");
+    const first = createInitialActiveRunFields(null, "knight").runDeck;
+    const second = createInitialActiveRunFields(null, "knight").runDeck;
+    first[0]!.cost += 10;
+    first[0]!.descriptionLines.push("Changed in this run");
+    const damage = first.flatMap((card) => card.effects).find((effect) => effect.kind === "damage");
+    expect(damage).toBeDefined();
+    damage!.amount += 100;
+    expect(second).toEqual(original);
+    expect(getStartingDeck("knight")).toEqual(original);
+  });
+
   it("creates a campaign snapshot with difficulty, start gold, and route reset", () => {
     const result = createRunStartSnapshot({
       characterId: "knight",

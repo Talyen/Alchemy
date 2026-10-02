@@ -36,13 +36,17 @@ function scoreFinding(finding: BalanceFinding): number {
   }
 }
 
+function compareFindings(a: BalanceFinding, b: BalanceFinding): number {
+  return scoreFinding(b) - scoreFinding(a) || a.id.localeCompare(b.id);
+}
+
 export function selectBalanceFindings(candidates: readonly BalanceFinding[], cap: number): BalanceFindingsReport {
   const byKey = new Map<string, BalanceFinding>();
   for (const finding of candidates) {
     const key = findingKey(finding);
     byKey.set(key, keepBetter(byKey.get(key), finding));
   }
-  const ranked = [...byKey.values()].sort((a, b) => scoreFinding(b) - scoreFinding(a) || a.id.localeCompare(b.id));
+  const ranked = [...byKey.values()].sort(compareFindings);
   const collapsed = collapseMatchupClusters(ranked);
   const selected = selectDiverseFindings(collapsed, cap);
   const shownByBucket = emptyBucketCounts();
@@ -81,33 +85,32 @@ function matchupEnemyId(finding: BalanceFinding): string {
   return sep === -1 ? finding.id : finding.id.slice(sep + 1);
 }
 
-function collapseMatchupClusters(findings: readonly BalanceFinding[]): BalanceFinding[] {
+function collapseMatchupClusters(ranked: readonly BalanceFinding[]): BalanceFinding[] {
   const kept: BalanceFinding[] = [];
-  const groups = new Map<string, BalanceFinding[]>();
-  for (const finding of findings) {
+  const groups = new Map<string, { best: BalanceFinding; count: number }>();
+  for (const finding of ranked) {
     if (finding.scope !== "matchup") {
       kept.push(finding);
       continue;
     }
     const key = `${matchupEnemyId(finding)}:${finding.tier}:${finding.metric}:${finding.bucket}`;
-    const list = groups.get(key) ?? [];
-    list.push(finding);
-    groups.set(key, list);
+    const group = groups.get(key);
+    // Ranked input puts the representative first, including the ID tie-break.
+    if (group) group.count += 1;
+    else groups.set(key, { best: finding, count: 1 });
   }
-  for (const group of groups.values()) {
-    const best = [...group].sort((a, b) => scoreFinding(b) - scoreFinding(a) || a.id.localeCompare(b.id))[0];
-    if (!best) continue;
-    if (group.length === 1) {
+  for (const { best, count } of groups.values()) {
+    if (count === 1) {
       kept.push(best);
       continue;
     }
     kept.push({
       ...best,
-      clusterSize: group.length,
-      worstScenario: `${best.worstScenario} · worst of ${group.length} classes`,
+      clusterSize: count,
+      worstScenario: `${best.worstScenario} · worst of ${count} classes`,
     });
   }
-  return kept.sort((a, b) => scoreFinding(b) - scoreFinding(a) || a.id.localeCompare(b.id));
+  return kept.sort(compareFindings);
 }
 
 function selectDiverseFindings(ranked: readonly BalanceFinding[], cap: number): BalanceFinding[] {
@@ -116,17 +119,13 @@ function selectDiverseFindings(ranked: readonly BalanceFinding[], cap: number): 
   for (const finding of ranked) {
     queues.get(finding.bucket)?.push(finding);
   }
+  const buckets = FINDING_BUCKET_ORDER.map((bucket) => queues.get(bucket)!.values());
   const shown: BalanceFinding[] = [];
-  const seen = new Set<string>();
   while (shown.length < cap) {
     let added = false;
-    for (const bucket of FINDING_BUCKET_ORDER) {
-      const queue = queues.get(bucket);
-      const next = queue?.shift();
+    for (const bucket of buckets) {
+      const next = bucket.next().value;
       if (!next) continue;
-      const key = findingKey(next);
-      if (seen.has(key)) continue;
-      seen.add(key);
       shown.push(next);
       added = true;
       if (shown.length >= cap) break;
@@ -141,8 +140,5 @@ function orderFindingsForDisplay(findings: readonly BalanceFinding[]): BalanceFi
     FindingBucket,
     number
   >;
-  return [...findings].sort(
-    (a, b) =>
-      bucketRank[a.bucket] - bucketRank[b.bucket] || scoreFinding(b) - scoreFinding(a) || a.id.localeCompare(b.id),
-  );
+  return [...findings].sort((a, b) => bucketRank[a.bucket] - bucketRank[b.bucket] || compareFindings(a, b));
 }

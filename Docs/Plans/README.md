@@ -26,8 +26,9 @@ and document-reachability contracts.
    moves every terminal plan, so use that form only for repository-wide cleanup.
    The command rebases relative Markdown links inside moved plans, including links
    between plans archived together. Update links from other documents to the moved plan.
-3. Confirm your plan is archived and run `npm run docs:check`, or the task-scoped
-   `npm run check -- <paths>` that includes it. Include the moved plan and
+3. Confirm your plan is archived, run `npm run docs:check`, then the task-scoped
+   `npm run check -- <paths>`. The default local gate does not run documentation
+   contracts. Include the moved plan and
    updated links in the task-owned paths.
 
 Other tasks' active or blocked plans may remain. Do not mark them finished,

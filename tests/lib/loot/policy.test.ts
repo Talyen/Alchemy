@@ -17,6 +17,16 @@ const sources = Object.keys(LOOT_SOURCE_WEIGHTS) as LootSource[];
 const progress = { depth: 24, highestCompletedDifficulty: null };
 
 describe("shared loot policy", () => {
+  it("keeps caller weights and authored source weights unchanged when filtering pools", () => {
+    const baseline = resolveLootWeights({ source: "normal", progress });
+    const original = { ...baseline };
+    const authored = { ...LOOT_SOURCE_WEIGHTS.normal };
+    rollLootGearRarity(Object.freeze(baseline), () => 0.5, { basic: false });
+    expect(baseline).toEqual(original);
+    resolveLootWeights({ source: "normal", progress, available: { basic: false, unique: false } });
+    expect(LOOT_SOURCE_WEIGHTS.normal).toEqual(authored);
+  });
+
   it.each([
     ["astral", 3, 0],
     ["astral", 4, 0.2],

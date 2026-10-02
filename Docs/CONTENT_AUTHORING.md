@@ -160,13 +160,14 @@ at run end. Wishing Well alternates Gold/Gems by room (odd rooms Gold) in every
 mode. Tailoring also produces Gold. Capture the recap after these payouts so
 the Gold and Material totals include them.
 
-Homestead screens (like all screen directories) are excluded from `vitest` coverage thresholds — see the coverage `exclude` list in `vitest.config.ts` — and are covered by E2E `tests/e2e/specs/homestead-flow.spec.ts` plus the unit `homestead/*.test.tsx` suites. Use `npm run test -- tests/lib/homestead` for the lib contract and `npm run test:e2e:route -- homestead` when the change needs browser verification.
+Homestead screens (like all screen directories) are excluded from `vitest` coverage thresholds — see the coverage `exclude` list in `vitest.config.ts` — and are covered by E2E `tests/e2e/specs/homestead-flow.spec.ts` plus the unit `homestead/*.test.tsx` suites. Use `npm run test:full -- tests/lib/homestead` for the lib contract. Browser verification uses `npm run test:e2e:route -- homestead` under the [local execution policy](../CONTRIBUTING.md#what-to-run-when-you-change).
 
 ## Add a new keyword
 
-- **1. Define keyword config (label, description, colors)** — `src/lib/game-data/keywords.ts`
-- **2. Add display config if needed** — `src/features/alchemy/shared/config/keywords.ts`
-- **3. Add talent XP trigger** — `src/lib/game-data/talents/progression.ts` (keyword-based XP logic)
+1. Extend `KeywordId` in `src/lib/game-data/types.ts`, then add the label, description, and colors to `keywordDefinitions` in `src/lib/game-data/keywords.ts`.
+2. Add the keyword's icon to `keywordIcons` in `src/features/alchemy/shared/config/metadata.ts`. Register its display wording and inflections in `src/lib/keyword-text.ts` so descriptions, item shine, and tooltips recognize it; `shared/config/keywords.ts` only re-exports that tokenizer.
+3. Make `getCardKeywords` report it through effect metadata in `src/lib/game-data/effect-metadata.ts` or an explicit card tag. This same classification drives card display and ordinary card-play XP.
+4. Ordinary XP already flows through `awardCardXP` in `src/features/alchemy/shared/stores/write/run-progress.ts`; add a separate trigger there only when the mechanic needs one, as Dodge does. `src/lib/game-data/talents/progression.ts` owns point math, not event triggering. Add its talent tree through [Add a new talent](#add-a-new-talent).
 
 Keyword labels and descriptions must pass the typography rules (no em dashes; descriptions stay period-free — see `src/lib/content-validation/validators-typography.ts`). Run `npm run content:audit` before handing off.
 

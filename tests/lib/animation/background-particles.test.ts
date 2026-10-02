@@ -53,6 +53,39 @@ function makeMockCanvas(
 }
 
 describe("startBackgroundParticles", () => {
+  it("sets a shared color once per frame while preserving every particle draw", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.5);
+    vi.spyOn(performance, "now").mockReturnValue(0);
+    const { canvas, ctx } = makeMockCanvas(undefined, { width: 200, height: 100 });
+    let color = "";
+    const setColor = vi.fn((value: string) => {
+      color = value;
+    });
+    Object.defineProperty(ctx, "fillStyle", { get: () => color, set: setColor });
+    const draws: Array<{ color: string; alpha: number }> = [];
+    vi.mocked(ctx.fill).mockImplementation(() => {
+      draws.push({ color, alpha: ctx.globalAlpha });
+    });
+    const frames: FrameRequestCallback[] = [];
+    vi.spyOn(window, "requestAnimationFrame").mockImplementation((frame) => {
+      frames.push(frame);
+      return frames.length;
+    });
+    const stop = startBackgroundParticles({ current: canvas }, "dust");
+    frames[0]!(16.67);
+    expect(setColor).toHaveBeenCalledTimes(1);
+    expect(draws).toEqual(Array.from({ length: 20 }, () => ({ color: "rgba(200, 190, 175, 1)", alpha: 0.065 })));
+    const x = 100 + Math.sin(Math.PI + 16.67 * 0.001 * 0.4) * 0.3;
+    expect(ctx.arc).toHaveBeenCalledTimes(20);
+    expect(ctx.arc).toHaveBeenLastCalledWith(x, 47.5, 4.5, 0, Math.PI * 2);
+    color = "reset by resize";
+    frames[1]!(33.34);
+    expect(setColor).toHaveBeenCalledTimes(2);
+    expect(draws).toHaveLength(40);
+    expect(draws[20]?.color).toBe("rgba(200, 190, 175, 1)");
+    stop();
+  });
+
   it("does not clear the backing store on unchanged resize notifications", () => {
     const { canvas, parent } = makeMockCanvas();
     vi.spyOn(window, "requestAnimationFrame").mockReturnValue(1);

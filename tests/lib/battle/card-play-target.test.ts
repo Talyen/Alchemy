@@ -3,6 +3,27 @@ import { getBattleCardPlayTarget } from "@/lib/battle";
 import { makeTestCard } from "../../fixtures/battle";
 
 describe("getBattleCardPlayTarget", () => {
+  it("keeps the first nested target and refreshes it when the effects are replaced", () => {
+    const card = makeTestCard({
+      effects: [
+        {
+          kind: "repeat-over-turns",
+          remainingTurns: 1,
+          effects: [
+            { kind: "chance", probability: 0.5, successEffects: [], failureEffects: [] },
+            { kind: "heal", amount: 1 },
+          ],
+        },
+        { kind: "damage", damageType: "physical", amount: 2 },
+      ],
+    });
+    expect(getBattleCardPlayTarget(card)).toBe("player");
+    const costVariant = { ...card, cost: 0 };
+    card.effects = [{ kind: "damage", damageType: "physical", amount: 2 }];
+    expect(getBattleCardPlayTarget(card)).toBe("enemy");
+    expect(getBattleCardPlayTarget(costVariant)).toBe("player");
+  });
+
   it('returns "enemy" for damage cards', () => {
     const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
     expect(getBattleCardPlayTarget(card)).toBe("enemy");

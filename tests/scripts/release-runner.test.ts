@@ -24,6 +24,63 @@ afterEach(() => {
 });
 
 describe("release workflow result", () => {
+  it.each(["missing run", "unavailable GitHub CLI"])(
+    "reports incomplete verification after publishing with %s",
+    async (condition) => {
+      vi.useFakeTimers();
+      vi.spyOn(console, "log").mockImplementation(() => {});
+      vi.mocked(readFileSync)
+        .mockReturnValueOnce(JSON.stringify({ version: "0.1.0" }))
+        .mockReturnValueOnce(JSON.stringify({ version: "0.1.1" }));
+      vi.mocked(execFileSync).mockImplementation((_command, args) => {
+        const argv = args as string[];
+        if (argv[0] === "rev-parse") return argv.includes("--abbrev-ref") ? "main" : "a".repeat(40);
+        if (argv[0] === "remote") return "https://github.com/example/alchemy.git";
+        if (argv[1] === "list" && condition === "unavailable GitHub CLI") throw new Error("gh unavailable");
+        return "";
+      });
+      const result = runRelease({ label: "Release", gates: [] }).then(
+        () => null,
+        (error: unknown) => error,
+      );
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(await result).toEqual(
+        expect.objectContaining({
+          message: expect.stringMatching(
+            /Release v0\.1\.1 was pushed, but CI verification is incomplete.*https:\/\/github\.com\/example\/alchemy/,
+          ),
+        }),
+      );
+      expect(vi.mocked(execFileSync).mock.calls.filter(([, args]) => args?.[0] === "push")).toHaveLength(1);
+      expect(vi.mocked(execFileSync).mock.calls.some(([, args]) => args?.[1] === "watch")).toBe(false);
+    },
+  );
+
+  it("waits for a successful release run matching both the tag and its commit", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.mocked(readFileSync)
+      .mockReturnValueOnce(JSON.stringify({ version: "0.1.0" }))
+      .mockReturnValueOnce(JSON.stringify({ version: "0.1.1" }));
+    vi.mocked(execFileSync).mockImplementation((_command, args) => {
+      const argv = args as string[];
+      if (argv[0] === "rev-parse") return argv.includes("--abbrev-ref") ? "main" : "a".repeat(40);
+      if (argv[0] === "remote") return "https://github.com/example/alchemy.git";
+      if (argv[1] === "list") return "123";
+      return "";
+    });
+    const result = runRelease({ label: "Release", gates: [] });
+    await vi.advanceTimersByTimeAsync(5_000);
+    await result;
+    expect(execFileSync).toHaveBeenCalledWith("git", ["rev-parse", "v0.1.1^{commit}"], expect.anything());
+    expect(execFileSync).toHaveBeenCalledWith(
+      "gh",
+      expect.arrayContaining(["--branch", "v0.1.1", "--commit", "a".repeat(40)]),
+      expect.anything(),
+    );
+    expect(execFileSync).toHaveBeenCalledWith("gh", ["run", "watch", "123", "--exit-status"], expect.anything());
+  });
+
   it("stops after a rejected atomic push without retrying refs or monitoring", async () => {
     vi.spyOn(console, "log").mockImplementation(() => {});
     vi.mocked(readFileSync)

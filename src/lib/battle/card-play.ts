@@ -63,12 +63,21 @@ export interface CardPlayOptions {
   allowAfterEnemyDefeat?: boolean;
 }
 
-function cardHasOnlyCleanseEffect(card: BattleCard, state: BattleSnapshot): boolean {
-  if (!card.effects.some((effect) => effect.kind === "remove-harmful-status")) return false;
+function cleanseOnlyCardHasNoTargets(card: BattleCard, state: BattleSnapshot): boolean {
+  if (!card.effects.some((effect) => effect.kind === "remove-harmful-status" || effect.kind === "remove-player-status"))
+    return false;
   const hasUsefulEffect = card.effects.some(
-    (effect) => effect.kind !== "remove-harmful-status" && effect.kind !== "self-damage",
+    (effect) =>
+      effect.kind !== "remove-harmful-status" &&
+      effect.kind !== "remove-player-status" &&
+      effect.kind !== "self-damage",
   );
-  return !hasUsefulEffect && countRemovableHarmfulStatuses(state.playerStatuses) === 0;
+  if (hasUsefulEffect) return false;
+  return !card.effects.some((effect) =>
+    effect.kind === "remove-harmful-status"
+      ? (effect.removeAll || (effect.amount ?? 0) > 0) && countRemovableHarmfulStatuses(state.playerStatuses) > 0
+      : effect.kind === "remove-player-status" && state.playerStatuses[effect.status] > 0,
+  );
 }
 
 function validateCardPlay(
@@ -77,6 +86,7 @@ function validateCardPlay(
   index: number,
   options?: CardPlayOptions,
 ): ReturnType<typeof computeCardPayment> | null {
+  if (!Number.isInteger(card.cost) || card.cost < 0) return null;
   if (state.enemyHealth <= 0 && !options?.allowAfterEnemyDefeat) return null;
   if (isPlayerDefeated(state)) return null;
   if (state.turnPhase !== "player") return null;
@@ -85,9 +95,14 @@ function validateCardPlay(
   if (!handCard) return null;
   const payment = computeCardPayment(state, handCard);
   if (!payment.affordable) return null;
-  if (cardHasOnlyCleanseEffect(card, state)) return null;
+  if (cleanseOnlyCardHasNoTargets(card, state)) return null;
   return payment;
 }
+
+// UI highlighting, auto-end-turn, and autoplay inspect the same immutable
+// snapshot. Keep only boolean previews; payment objects stay freshly owned by
+// resolution, and weak keys do not retain completed battles or old hands.
+const playableCards = new WeakMap<BattleSnapshot, Map<number, boolean>>();
 
 export function canPlayCard(
   state: BattleSnapshot,
@@ -95,7 +110,22 @@ export function canPlayCard(
   index: number,
   options?: CardPlayOptions,
 ): boolean {
-  return validateCardPlay(state, card, index, options) !== null;
+  // A caller-supplied wrapper may have different costs or effects from the hand.
+  // Preserve its validation behavior without putting it in the snapshot cache.
+  if (!Number.isInteger(index) || index < 0 || state.hand[index] !== card) {
+    return validateCardPlay(state, card, index, options) !== null;
+  }
+  const key = index * 2 + (options?.allowAfterEnemyDefeat ? 1 : 0);
+  let previews = playableCards.get(state);
+  const cached = previews?.get(key);
+  if (cached !== undefined) return cached;
+  const playable = validateCardPlay(state, card, index, options) !== null;
+  if (!previews) {
+    previews = new Map();
+    playableCards.set(state, previews);
+  }
+  previews.set(key, playable);
+  return playable;
 }
 
 export function playBattleCardResolved(
@@ -139,12 +169,13 @@ export function playBattleCardResolved(
   };
   const paid = applySpellrendingPurge(stripped, manaSpent, combatTexts);
   const played = resolvePaidCardEffects(deliverPendingHandCards(paid), card, combatTexts, {
+    eligibility: state,
     playTwice,
     guaranteedCrit: prepared.critical,
     damageEffects: prepared.damageEffects,
     manaAtStart: paymentState.mana,
     enemyFreezeSkipTurnsAtStart: paymentState.enemyCC.freezeSkipTurns,
-    hadNoThornsOnPlay: paymentState.playerStatuses.thorns === 0,
+    hadNoThornsOnPlay: state.playerStatuses.thorns === 0,
   });
   let nextState = finishUniqueCardDamage(played.state, card, prepared, combatTexts);
   nextState = processEncounterTraitCardAction(nextState, card, combatTexts, played.attackAttempted);

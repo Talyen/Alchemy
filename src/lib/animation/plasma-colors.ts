@@ -46,8 +46,12 @@ export function lerpParsedRgbFloats(
   from: readonly [number, number, number],
   to: readonly [number, number, number],
   t: number,
+  target: [number, number, number] = [0, 0, 0],
 ): [number, number, number] {
-  return [from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t, from[2] + (to[2] - from[2]) * t];
+  target[0] = from[0] + (to[0] - from[0]) * t;
+  target[1] = from[1] + (to[1] - from[1]) * t;
+  target[2] = from[2] + (to[2] - from[2]) * t;
+  return target;
 }
 
 export function lerpPlasmaColor(a: string, b: string, t: number): string {

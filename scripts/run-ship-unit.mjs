@@ -13,6 +13,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateRouteCatalog } from "./lib/verification/change-routes.mjs";
 import { TEST_SUITES, validateTestSuitePaths } from "./lib/verification/test-commands.mjs";
+import { acquireLocalTestLane } from "./lib/verification/local-test-lane.mjs";
 
 const root = dirname(fileURLToPath(import.meta.url));
 /** Resolve a dir/file path against the repo root. */
@@ -38,8 +39,15 @@ if (missing.length > 0) {
 }
 
 const live = process.argv.includes("--live") || process.argv.includes("--verbose");
-const result = await runTaskCommand("npx", ["vitest", "run", `--maxWorkers=${VITEST_MAX_WORKERS}`, ...SUITES], {
-  label: "ship unit suite",
-  live,
-});
-process.exit(result.status ?? 1);
+const lane = await acquireLocalTestLane();
+try {
+  const result = await runTaskCommand("npx", ["vitest", "run", `--maxWorkers=${VITEST_MAX_WORKERS}`, ...SUITES], {
+    cwd: at(),
+    label: "ship unit suite",
+    live,
+    env: { ...process.env, RAYON_NUM_THREADS: process.env.RAYON_NUM_THREADS ?? "1" },
+  });
+  process.exitCode = result.status ?? 1;
+} finally {
+  await lane.release();
+}

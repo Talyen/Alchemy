@@ -6,18 +6,22 @@ Demo/full edition behavior and save transfer are owned by [Steam demo](./STEAM_D
 
 ## Commands
 
-Build and installer selection: [REFERENCE.md § Build commands decision tree](./COMMANDS.md#build-commands-decision-tree). `package.json` owns the complete script list. `check:ship:full` adds save E2E on top of `check:ship`. Electron coverage runs in the path-filtered `electron-e2e` CI job and unconditionally each night; `npm run test:ship:desktop` is also available locally but is not part of the pre-tag gate. Gate composition and tiers are owned by [CONTRIBUTING.md](../CONTRIBUTING.md#static-build-and-ci-policy).
+Build and installer selection: [COMMANDS.md § Build commands decision tree](./COMMANDS.md#build-commands-decision-tree). `package.json` owns the complete script list. `check:ship:full` adds save E2E on top of `check:ship`. Electron coverage runs in the path-filtered `electron-e2e` CI job and unconditionally each night; `npm run test:ship:desktop` is also available locally but is not part of the pre-tag gate. Gate composition and tiers are owned by [CONTRIBUTING.md](../CONTRIBUTING.md#static-build-and-ci-policy).
 
 | Command                          | When it runs                                                                                                 |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `npm run verify:release-version` | `release.yml` — before web build and again before packaging, tag must match `package.json`                   |
-| `npm run sync:steam-appid`       | `dist:desktop` — writes `steam_appid.txt` from `STEAM_APP_ID` before packaging                               |
+| `npm run sync:steam-appid`       | `dist:desktop` — writes `steam_appid.txt` for the selected edition before packaging                          |
 | `npm run sync:changelog`         | Optional: rebuild `CHANGELOG.md` ## [Unreleased] from git (also runs automatically as release `prerelease`)  |
 | `npm run generate:patch-notes`   | Active dev → `release-notes/UNRELEASED.md`; tag CI → `release-notes/vX.Y.Z.md`. `--dry-run` prints to stdout |
-| `npm run steam:upload:dry-run`   | Validates Steam VDF templates + contentroot (`release-desktop/win-unpacked`) without credentials             |
+| `npm run steam:upload:dry-run`   | Validates Steam VDF templates and the selected edition's unpacked contentroot without credentials            |
 | `npm run release`                | Full gate, prints player-note draft, release commit/tag, pushes `main` + tag, then watches release CI        |
 | `npm run release -- --dry-run`   | Print the player-facing patch-note draft from git; no gates, bump, tag, or push                              |
 | `npm run release:hotfix`         | Lighter gate, forced patch commit/tag, pushes `main` + tag, then watches release CI                          |
+
+For direct build, packaging, App ID synchronization, and upload commands, keep
+`ALCHEMY_EDITION` consistent. The [edition contract](./STEAM_DEMO.md#edition-contract)
+owns output directories and Steam targets; release CI handles both editions separately.
 
 ## Changelog (release-time only)
 
@@ -46,8 +50,12 @@ without gates, a bump, a tag, or a push. A real release prints it after gates
 and before tagging.
 
 Unknown release options fail before any gates, version changes, or publishing.
-The workflow watcher returns failure when the watched GitHub Actions run fails;
-if monitoring is unavailable, inspect the printed workflow link.
+The workflow watcher matches the release tag and its commit SHA, and returns
+failure when the watched GitHub Actions run fails. If no matching run can be
+observed, it exits nonzero and reports CI verification as incomplete with a
+workflow link. The tag has already been pushed: inspect that run and resume with
+`gh run watch <run-id> --exit-status`; rerunning the release command would create
+another version rather than resume monitoring.
 
 ## Agent release flow
 
@@ -122,11 +130,13 @@ or unreviewed build cannot become player-visible automatically.
 
 ## Steam depot and App ID
 
-- **Depot contentroot** is the unpacked app under `release-desktop/`; the exact
+- **Depot contentroot** is the selected edition's unpacked app under
+  `release-desktop/` (full) or `release-desktop-demo/` (demo); the exact
   path and safety assertions are owned by `scripts/steam-upload.mjs` and its
   dry-run command.
-- **Runtime Steam App ID** is synchronized from `STEAM_APP_ID` and
-  `steam/platforms.json` by `npm run sync:steam-appid`; packaged resolution and
+- **Runtime Steam App ID** is synchronized from `STEAM_APP_ID` (full) or
+  `STEAM_DEMO_APP_ID` (demo), with the local development fallback in
+  `steam/platforms.json`, by `npm run sync:steam-appid`; packaged resolution and
   verification are owned by `desktop/main.cjs` and the desktop package verifier.
 - **SteamCMD** setup and credential handling belong to `release.yml` and
   `scripts/steam-upload.mjs`. Configure Steam Guard for the build account per

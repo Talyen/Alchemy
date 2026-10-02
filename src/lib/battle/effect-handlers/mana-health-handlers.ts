@@ -1,22 +1,15 @@
 import { hasCardHealing } from "./handler-types";
 import type { EffectHandlers } from "./handler-types";
 import { isPotionCard } from "@/lib/game-data";
-import {
-  applyCardHealing,
-  addForgeToPlayer,
-  applyBlockReward,
-  applyHealthLossTalentRewards,
-  checkHealthThresholds,
-} from "../status-player";
+import { applyCardHealing, applyHealthLossTalentRewards, checkHealthThresholds } from "../status-player";
 import { applyPotionMultiplier } from "../amount-helpers";
 import { MIN_MAX_MANA_FLOOR, PERCENT_DENOMINATOR } from "../../game-constants";
 import { applyHealOnManaGain, gainManaWithCombatText, applyHealingWithCombatText } from "../player-rewards";
 import { mergeCombatText } from "../combat-text-events";
-import { dealSelfDamage, getEnemyDamageMultiplier } from "../status-helpers";
-import { resolvePlayerHealing, type BattleState, type CombatTextEvent } from "../types";
-import { paceCombatMagnitude } from "../fight-pacing";
+import { dealSelfDamage } from "../status-helpers";
+import type { BattleState, CombatTextEvent } from "../types";
 import { ccDeepenedSinceStart } from "./handler-types";
-import { dealScaledBurnWithStacks } from "../scaled-damage";
+import { resolveFollowUpHit } from "../follow-up-hit-resolution";
 
 function restoreMana(
   state: BattleState,
@@ -58,19 +51,15 @@ function burnEnemyOnManaCrystalLoss(
   if (crystalsLost <= 0 || state.talentEffects.burnDamageOnManaCrystalLoss <= 0 || state.enemyHealth <= 0) {
     return state;
   }
-  const burned = dealScaledBurnWithStacks(
+  return resolveFollowUpHit(
     state,
-    state.talentEffects.burnDamageOnManaCrystalLoss * crystalsLost,
-    combatTexts,
     {
-      multiplier: getEnemyDamageMultiplier(state, "burn"),
+      source: "talent-fixed",
+      damageType: "burn",
+      amount: state.talentEffects.burnDamageOnManaCrystalLoss * crystalsLost,
     },
+    combatTexts,
   );
-  return state.enemyStatuses.burn === 0 &&
-    burned.enemyHealth < state.enemyHealth &&
-    burned.gearEffects.forgeOnBurnVsUnburned > 0
-    ? addForgeToPlayer(burned, burned.gearEffects.forgeOnBurnVsUnburned, combatTexts)
-    : burned;
 }
 function loseMaxMana(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
   const newMaxMana = Math.max(MIN_MAX_MANA_FLOOR, state.maxMana - amount);
@@ -110,21 +99,9 @@ export const MANA_HEALTH_HANDLERS = {
       : 0;
     const cardSpecificBonus = state.talentEffects.cardHealBonus[card.id] ?? 0;
     const healAmount = Math.round(adjustedHeal * (1 + consumeBonus) + cardSpecificBonus);
-    // Feast belongs to the Potion's heal, excluding healing from its resulting reactions.
-    const potionHealing = resolvePlayerHealing(state, paceCombatMagnitude(state, healAmount, "player")).restored;
-    const healed = hasCardHealing(context)
+    return hasCardHealing(context)
       ? applyCardHealing(state, healAmount, combatTexts)
       : applyHealingWithCombatText(state, healAmount, combatTexts);
-    if (
-      hasCardHealing(context) &&
-      isPotionCard(card) &&
-      state.talentEffects.blockOnConsume > 0 &&
-      potionHealing > 0 &&
-      state.playerHealth + potionHealing === state.playerMaxHealth
-    ) {
-      return applyBlockReward(healed, state.talentEffects.blockOnConsume, combatTexts);
-    }
-    return healed;
   },
   "lose-health": (state, _card, effect, _potionMult, combatTexts) => {
     const { state: damaged, healthLost } = dealSelfDamage(state, effect.amount, "health", combatTexts);

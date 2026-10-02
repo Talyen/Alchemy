@@ -57,6 +57,7 @@ function assertReleaseHead() {
 
 async function watchRelease({ label, tag }) {
   console.log(`\n═══ ${label} ${tag} pushed ═══\n`);
+  const sha = capture("git", ["rev-parse", `${tag}^{commit}`]);
   let repoPath = null;
   try {
     repoPath = parseGithubRepoPath(capture("git", ["remote", "get-url", "origin"]));
@@ -77,6 +78,8 @@ async function watchRelease({ label, tag }) {
         "release.yml",
         "--branch",
         tag,
+        "--commit",
+        sha,
         "--limit",
         "1",
         "--json",
@@ -110,8 +113,10 @@ async function watchRelease({ label, tag }) {
   const url = repoPath
     ? `https://github.com/${repoPath}/actions/workflows/release.yml`
     : "[GitHub Actions release workflow]";
-  console.log("Monitoring not available. Check release at:");
-  console.log(url);
+  throw new Error(
+    `${label} ${tag} was pushed, but CI verification is incomplete: no matching release run could be observed. ` +
+      `Inspect ${url} before taking further release action; do not rerun the release command to resume monitoring.`,
+  );
 }
 
 /**

@@ -12,7 +12,7 @@ import {
   shouldBlockPreventStatusBuildup,
 } from "./status-player";
 import type { BattleState, CombatTextEvent, CombatTextStat } from "./types";
-import { hasEnemyTrait, isPlayerDefeated } from "./types/state-helpers";
+import { hasEnemyTrait, isPlayerDefeated, playerHealthLostToDamage } from "./types/state-helpers";
 
 function applyVanguardCrestAfterBlock(
   state: BattleState,
@@ -39,6 +39,23 @@ function applyEnemyForgeDecayOnHit(state: BattleState, actualDamage: number, dam
   };
 }
 
+export function applyArmorLossAttackRetaliation(
+  state: BattleState,
+  armorLost: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  return armorLost > 0 &&
+    !isPlayerDefeated(state) &&
+    state.enemyHealth > 0 &&
+    state.gearEffects.stunOnArmorLostToAttack > 0
+    ? resolveFollowUpHit(
+        state,
+        { source: "player-follow-up", damageType: "stun", amount: state.gearEffects.stunOnArmorLostToAttack },
+        combatTexts,
+      )
+    : state;
+}
+
 function resolvePostDamageThresholds(
   state: BattleState,
   prevHealth: number,
@@ -56,18 +73,7 @@ function resolvePostDamageThresholds(
   });
   nextState = applyVanguardCrestAfterBlock(nextState, blockAbsorb, remainingDamage, combatTexts);
   nextState = checkHealthThresholds(prevHealth, healthAfterHit, nextState, combatTexts);
-  if (
-    armorLost > 0 &&
-    !isPlayerDefeated(nextState) &&
-    nextState.enemyHealth > 0 &&
-    nextState.gearEffects.stunOnArmorLostToAttack > 0
-  ) {
-    nextState = resolveFollowUpHit(
-      nextState,
-      { source: "player-follow-up", damageType: "stun", amount: nextState.gearEffects.stunOnArmorLostToAttack },
-      combatTexts,
-    );
-  }
+  nextState = applyArmorLossAttackRetaliation(nextState, armorLost, combatTexts);
   nextState = applyEnemyForgeDecayOnHit(nextState, actualDamage, damageType);
   return nextState;
 }
@@ -78,8 +84,7 @@ function recordPlayerHealthLost(
   damageType: CombatTextStat,
   combatTexts: CombatTextEvent[],
 ) {
-  const phoenixTriggered = prevState.playerStatuses.phoenixFeather > 0 && nextState.playerStatuses.phoenixFeather === 0;
-  const healthLost = phoenixTriggered ? prevState.playerHealth : prevState.playerHealth - nextState.playerHealth;
+  const healthLost = playerHealthLostToDamage(prevState, nextState);
   if (healthLost > 0) {
     const stat = damageType === "physical" ? "health" : damageType;
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat, amount: healthLost });

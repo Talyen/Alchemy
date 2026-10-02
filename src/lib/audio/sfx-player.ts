@@ -46,7 +46,7 @@ export function createSfxPlayer(deps: SfxPlayerDependencies) {
   const cues = new Set<Cue>();
   const cooldowns = new Map<string, CooldownReservation>();
 
-  function finish(cue: Cue, release = true): boolean {
+  function finish(cue: Cue): boolean {
     const state = cue.state;
     if (state.phase === "finished") return false;
     cue.state = { phase: "finished" };
@@ -55,7 +55,7 @@ export function createSfxPlayer(deps: SfxPlayerDependencies) {
     if (state.phase === "playing") {
       state.element.onended = null;
       state.element.onerror = null;
-      if (release) releaseAudioElement(state.element);
+      releaseAudioElement(state.element);
     }
     return true;
   }
@@ -68,8 +68,17 @@ export function createSfxPlayer(deps: SfxPlayerDependencies) {
   }
 
   function boundAmbientPlayback(): void {
-    const ambient = [...cues].filter((cue) => !cue.trackForCleanup && cue.state.phase === "playing");
-    for (const cue of ambient.slice(0, Math.max(0, ambient.length - MAX_AMBIENT_SFX))) finish(cue);
+    let excess = -MAX_AMBIENT_SFX;
+    for (const cue of cues) {
+      if (!cue.trackForCleanup && cue.state.phase === "playing") excess += 1;
+    }
+    if (excess <= 0) return;
+    for (const cue of cues) {
+      if (!cue.trackForCleanup && cue.state.phase === "playing") {
+        finish(cue);
+        if (--excess === 0) return;
+      }
+    }
   }
 
   function play(
@@ -107,11 +116,11 @@ export function createSfxPlayer(deps: SfxPlayerDependencies) {
         if (!finish(cue)) return;
         if (cooldowns.get(name) === reservation) cooldowns.delete(name);
       };
-      element.onended = () => finish(cue, false);
+      element.onended = () => finish(cue);
       element.onerror = fail;
       try {
         syncCue(cue);
-        boundAmbientPlayback();
+        if (!cue.trackForCleanup) boundAmbientPlayback();
         void Promise.resolve(element.play()).catch(fail);
       } catch {
         fail();

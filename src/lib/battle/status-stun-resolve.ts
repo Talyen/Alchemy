@@ -1,3 +1,4 @@
+import { applyNatureLeech } from "./follow-up-hit-resolution";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { hasEnemyTrait, setFlag, setEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
 import { addGoldWithCombatText, applyHitEpilogue } from "./player-rewards";
@@ -46,20 +47,25 @@ function applyStunTrinketEffects(state: BattleState, combatTexts?: CombatTextEve
       combatTexts ?? [],
       {
         multiplier: getEnemyDamageMultiplier(nextState, "nature"),
-        // Nature refunds resolve before the shared threshold/kill epilogue.
-        // Order against the epilogue is cosmetic (independent resources), so
-        // the extras run first and the canonical tail stays in one place.
-        riders: (damagedState, finalDamage, texts) =>
-          applyHitEpilogue(
+        // Capture the hit's Health loss before Leech can trigger more damage;
+        // the shared threshold and kill epilogue still closes this packet.
+        riders: (damagedState, finalDamage, texts) => {
+          const healthDamage = Math.max(0, previousHealth - damagedState.enemyHealth);
+          const leeched =
+            state.gearEffects.natureLeechVsPoisoned > 0 && state.enemyStatuses.poison > 0
+              ? applyNatureLeech(damagedState, healthDamage, texts, previousHealth, true)
+              : damagedState;
+          return applyHitEpilogue(
             applyNatureGoldReward(
-              applyLuckyCloverGold(applyNatureManaRefund(damagedState, finalDamage, texts), finalDamage, texts),
-              Math.max(0, previousHealth - damagedState.enemyHealth),
+              applyLuckyCloverGold(applyNatureManaRefund(leeched, finalDamage, texts), finalDamage, texts),
+              healthDamage,
               texts,
             ),
             previousHealth,
             enemyWasAlive,
             texts,
-          ),
+          );
+        },
       },
     );
   }

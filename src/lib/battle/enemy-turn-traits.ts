@@ -39,8 +39,6 @@ export function processEnemyRegeneration(state: BattleState, combatTexts: Combat
   return nextState;
 }
 
-const EVERY_OTHER_TURN_TRAITS = new Set(["rusting-carapace", "iron-hide", "glacial-shell"]);
-
 type EnemyTurnStartHandler = (state: BattleState, combatTexts: CombatTextEvent[]) => BattleState;
 
 function makeMitigationHandler(stat: "forge" | "armor" | "block", amount: number): EnemyTurnStartHandler {
@@ -50,30 +48,36 @@ function makeMitigationHandler(stat: "forge" | "armor" | "block", amount: number
   };
 }
 
-const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
-  "rusting-carapace": makeMitigationHandler("forge", TRAIT_FORGE_PER_TURN),
-  "iron-hide": makeMitigationHandler("armor", IRON_HIDE_ARMOR_PER_TURN),
-  "glacial-shell": (state, combatTexts) => {
-    const amount = Math.min(
-      TRAIT_FREEZE_BONUS_PER_TURN,
-      GLACIAL_SURGE_MAX_FREEZE_BONUS - state.enemyStatuses.freezeBonus,
-    );
-    if (amount <= 0) return state;
-    mergeCombatText(combatTexts, {
-      target: "enemy",
-      kind: "status",
-      stat: "freezeBonus",
-      amount,
-    });
-    return addEnemyStatus(state, "freezeBonus", amount);
-  },
-  cleric: makeMitigationHandler("block", 1),
-  "stone-golem": makeMitigationHandler("block", 1),
-};
+interface EnemyTurnStartTrait {
+  handler: EnemyTurnStartHandler;
+  everyOtherTurn: boolean;
+}
 
-const difficultyTurnStartHandlers: Partial<Record<DifficultyModifier["kind"], EnemyTurnStartHandler>> = {
-  "enemy-gains-forge-each-turn": makeMitigationHandler("forge", DIFFICULTY_FORGE_PER_TURN),
-};
+const enemyTraitTurnStartHandlers = new Map<string, EnemyTurnStartTrait>([
+  ["rusting-carapace", { handler: makeMitigationHandler("forge", TRAIT_FORGE_PER_TURN), everyOtherTurn: true }],
+  ["iron-hide", { handler: makeMitigationHandler("armor", IRON_HIDE_ARMOR_PER_TURN), everyOtherTurn: true }],
+  [
+    "glacial-shell",
+    {
+      everyOtherTurn: true,
+      handler: (state, combatTexts) => {
+        const amount = Math.min(
+          TRAIT_FREEZE_BONUS_PER_TURN,
+          GLACIAL_SURGE_MAX_FREEZE_BONUS - state.enemyStatuses.freezeBonus,
+        );
+        if (amount <= 0) return state;
+        mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "freezeBonus", amount });
+        return addEnemyStatus(state, "freezeBonus", amount);
+      },
+    },
+  ],
+  ["cleric", { handler: makeMitigationHandler("block", 1), everyOtherTurn: false }],
+  ["stone-golem", { handler: makeMitigationHandler("block", 1), everyOtherTurn: false }],
+]);
+
+const difficultyTurnStartHandlers = new Map<DifficultyModifier["kind"], EnemyTurnStartHandler>([
+  ["enemy-gains-forge-each-turn", makeMitigationHandler("forge", DIFFICULTY_FORGE_PER_TURN)],
+]);
 
 const PASSIVE_ONLY_TRAITS = new Set<string>([
   "brittle-bones",
@@ -117,15 +121,13 @@ const PASSIVE_ONLY_MODIFIERS = new Set<DifficultyModifier["kind"]>([
   "enemy-damage-multiplier",
 ]);
 
-export const ENEMY_TRAIT_TURN_START_HANDLER_IDS = Object.keys(enemyTraitTurnStartHandlers);
+export const ENEMY_TRAIT_TURN_START_HANDLER_IDS = [...enemyTraitTurnStartHandlers.keys()];
 
 export const PASSIVE_ONLY_ENEMY_TRAIT_IDS = [...PASSIVE_ONLY_TRAITS];
 
-export const REACTION_ONLY_ENEMY_TRAIT_IDS = [...REACTION_ONLY_TRAITS] as string[];
+export const REACTION_ONLY_ENEMY_TRAIT_IDS = [...REACTION_ONLY_TRAITS];
 
-export const DIFFICULTY_TURN_START_MODIFIER_KINDS = Object.keys(difficultyTurnStartHandlers) as Array<
-  DifficultyModifier["kind"]
->;
+export const DIFFICULTY_TURN_START_MODIFIER_KINDS = [...difficultyTurnStartHandlers.keys()];
 
 export const PASSIVE_ONLY_DIFFICULTY_MODIFIER_KINDS = [...PASSIVE_ONLY_MODIFIERS];
 
@@ -136,12 +138,12 @@ const ALL_DIFFICULTY_MODIFIER_KINDS: Array<DifficultyModifier["kind"]> = [
 
 function isEnemyTraitTurnStartCovered(traitId: string): boolean {
   return (
-    traitId in enemyTraitTurnStartHandlers || PASSIVE_ONLY_TRAITS.has(traitId) || REACTION_ONLY_TRAITS.has(traitId)
+    enemyTraitTurnStartHandlers.has(traitId) || PASSIVE_ONLY_TRAITS.has(traitId) || REACTION_ONLY_TRAITS.has(traitId)
   );
 }
 
 function isDifficultyModifierTurnStartCovered(kind: DifficultyModifier["kind"]): boolean {
-  return kind in difficultyTurnStartHandlers || PASSIVE_ONLY_MODIFIERS.has(kind);
+  return difficultyTurnStartHandlers.has(kind) || PASSIVE_ONLY_MODIFIERS.has(kind);
 }
 
 export function collectUncoveredEnemyTraitIds(traitIds: Iterable<string>): string[] {
@@ -165,10 +167,10 @@ function processTraitHandler(
   state: BattleState,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  const handler = enemyTraitTurnStartHandlers[trait.id];
-  if (handler) {
-    if (EVERY_OTHER_TURN_TRAITS.has(trait.id) && !isEveryOtherTurnScalingTurn(state)) return state;
-    return handler(recordEnemyAbilityActivation(state, trait.id), combatTexts);
+  const traitHandler = enemyTraitTurnStartHandlers.get(trait.id);
+  if (traitHandler) {
+    if (traitHandler.everyOtherTurn && !isEveryOtherTurnScalingTurn(state)) return state;
+    return traitHandler.handler(recordEnemyAbilityActivation(state, trait.id), combatTexts);
   }
   if (!PASSIVE_ONLY_TRAITS.has(trait.id) && !REACTION_ONLY_TRAITS.has(trait.id)) {
     console.warn(`[Battle] No turn-start handler for trait: ${trait.id}`);
@@ -185,7 +187,7 @@ function processDifficultyModifier(
   combatTexts: CombatTextEvent[],
   scalingBlocked: boolean,
 ): BattleState {
-  const handler = difficultyTurnStartHandlers[modifier.kind];
+  const handler = difficultyTurnStartHandlers.get(modifier.kind);
   if (!handler) {
     if (!PASSIVE_ONLY_MODIFIERS.has(modifier.kind)) {
       console.warn(`[Battle] No turn-start handler for difficulty modifier: ${modifier.kind}`);

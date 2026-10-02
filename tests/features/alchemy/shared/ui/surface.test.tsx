@@ -6,45 +6,23 @@ import { Surface } from "@/features/alchemy/shared/ui/surface";
 afterEach(() => cleanup());
 
 describe("Surface", () => {
-  it("renders as button with hover scale attribute", () => {
-    render(
-      <Surface as="button" ariaLabel="Play" hoverScaleActive className="extra">
-        content
-      </Surface>,
-    );
-    const btn = screen.getByRole("button", { name: "Play" });
-    expect(btn.dataset.hovered).toBe("true");
-    expect(btn.className).toContain("surface");
-    expect(btn.className).toContain("extra");
-  });
-
-  it("renders as div with button role when onDivClick is provided", async () => {
+  it("makes a div action focusable and activates it with pointer, Enter, and Space", async () => {
     const onDivClick = vi.fn();
     render(
       <Surface onDivClick={onDivClick} ariaLabel="Open">
         content
       </Surface>,
     );
-    const el = screen.getByRole("button", { name: "Open" });
-    expect(el.tagName).toBe("DIV");
-    expect(el.getAttribute("tabIndex")).toBe("0");
-    await userEvent.click(el);
-    expect(onDivClick).toHaveBeenCalledOnce();
-  });
-
-  it("handles Enter and Space on div role", async () => {
-    const onDivClick = vi.fn();
-    const { container } = render(
-      <Surface onDivClick={onDivClick} ariaLabel="Action">
-        content
-      </Surface>,
-    );
-    const el = container.querySelector("div[role='button']") as HTMLElement;
-    el.focus();
-    await userEvent.keyboard("{Enter}");
+    const action = screen.getByRole("button", { name: "Open" });
+    const user = userEvent.setup();
+    await user.tab();
+    expect(document.activeElement).toBe(action);
+    await user.keyboard("{Enter}");
     expect(onDivClick).toHaveBeenCalledTimes(1);
-    await userEvent.keyboard(" ");
+    await user.keyboard(" ");
     expect(onDivClick).toHaveBeenCalledTimes(2);
+    await user.click(action);
+    expect(onDivClick).toHaveBeenCalledTimes(3);
   });
 
   it("disables button when disabled", () => {

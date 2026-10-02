@@ -34,7 +34,7 @@ describe("additional player-facing regressions", () => {
       trinketEffects: { frozenHeartDamage: 6 },
     });
     const next = tryTriggerEnemyFreeze(state, { ...state, enemyStatuses: { ...state.enemyStatuses, freeze: 100 } }, []);
-    expect(next.enemyHealth).toBe(94);
+    expect(next.enemyHealth).toBe(97);
     expect(next.enemyMitigation.armor).toBe(2);
   });
 

@@ -47,14 +47,6 @@ export function makeStatusCard(damageType: string, amount: number, overrides: Re
   };
 }
 
-export const WOLF_COMPANION_CARD = makeTestCard({
-  id: "wolf-companion",
-  title: "Wolf",
-  descriptionLines: ["Summon a wolf ally"],
-  art: "placeholder",
-  effects: [{ kind: "summon-companion", companionId: "wolf" as const }],
-});
-
 export function makeHighDamageCard(amount = 500) {
   return makeTestCard({
     id: "fireball",

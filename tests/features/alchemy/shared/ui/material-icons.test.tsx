@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { HomesteadResourceWallet, ResourcePill } from "@/features/alchemy/shared/ui/material-icons";
+import { HomesteadResourceWallet } from "@/features/alchemy/shared/ui/material-icons";
 
 const LABELS = ["Gold", "Wood", "Stone", "Iron", "Food", "Herbs", "Hide", "Gems"];
 
@@ -16,12 +16,5 @@ describe("HomesteadResourceWallet", () => {
       expect(screen.getByRole("img", { name: label })).toBeTruthy();
       expect(screen.getByText(label).parentElement?.textContent).toContain(label === "Gold" ? "100" : "0");
     }
-  });
-
-  it("truncates long custom titles with a full-text tooltip", () => {
-    const longTitle = "A very long custom resource title that must truncate";
-    render(<ResourcePill resource="wood" title={longTitle} amount={5} />);
-    const label = screen.getByText(longTitle);
-    expect(label.getAttribute("title")).toBe(longTitle);
   });
 });

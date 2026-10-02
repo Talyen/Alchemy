@@ -284,7 +284,8 @@ export const UI_NO_SESSION_STORES = [
 /** @type {SyntaxSelector[]} */
 export const BATTLE_NO_MATH_RANDOM = [
   {
-    selector: 'MemberExpression[object.name="Math"][property.name="random"]',
+    selector:
+      'MemberExpression[object.name="Math"]:matches([computed=false][property.name="random"], [computed=true][property.value="random"])',
     message:
       "Reference to Math.random is not allowed in the battle engine. Use getBattleRng(state) for seeded combat RNG; placeholderRng from @/lib/rng is only for UI-default battle snapshots.",
   },
@@ -293,24 +294,28 @@ export const BATTLE_NO_MATH_RANDOM = [
 /** @type {SyntaxSelector[]} */
 export const GAMEPLAY_NO_MATH_RANDOM = [
   {
-    selector: 'MemberExpression[object.name="Math"][property.name="random"]',
+    selector:
+      'MemberExpression[object.name="Math"]:matches([computed=false][property.name="random"], [computed=true][property.value="random"])',
     message:
-      "Gameplay code must take a seeded rng instead of Math.random (persisted streams only). Armory crafting/dev-spawn randomness lives in meta screens by design — see ARCHITECTURE.md Run randomness.",
+      "Gameplay code must take a seeded rng instead of Math.random (persisted streams only). Armory crafting/dev-spawn randomness lives in meta screens by design — see Docs/RUN_STATE.md#run-randomness.",
   },
 ];
 
 /** @type {SyntaxSelector[]} */
 export const BATTLE_NO_MATH_FLOOR = [
   {
-    selector: 'CallExpression[callee.object.name="Math"][callee.property.name="floor"]',
+    selector:
+      'CallExpression[callee.object.name="Math"]:matches([callee.computed=false][callee.property.name="floor"], [callee.computed=true][callee.property.value="floor"])',
     message: "Use Math.round() instead of Math.floor() in battle engine code.",
   },
   {
-    selector: 'CallExpression[callee.object.name="Math"][callee.property.name="ceil"]',
+    selector:
+      'CallExpression[callee.object.name="Math"]:matches([callee.computed=false][callee.property.name="ceil"], [callee.computed=true][callee.property.value="ceil"])',
     message: "Use Math.round() instead of Math.ceil() in battle engine code.",
   },
   {
-    selector: 'CallExpression[callee.object.name="Math"][callee.property.name="trunc"]',
+    selector:
+      'CallExpression[callee.object.name="Math"]:matches([callee.computed=false][callee.property.name="trunc"], [callee.computed=true][callee.property.value="trunc"])',
     message: "Use Math.round() instead of Math.trunc() in battle engine code.",
   },
 ];
@@ -340,12 +345,12 @@ export const AGGREGATE_NO_DIRECT_MUTATION = [
   {
     selector: 'MemberExpression[object.name="useGameplayStateStore"][property.name="getState"]',
     message:
-      "Use capability ports (run-reads / run-session-write-port) + dispatchRunSessionCommand instead of useGameplayStateStore.getState() — see .agents/knowledge/patterns/run-state-command-boundary.md.",
+      "Use capability ports (run-reads / run-session-write-port) + dispatchRunSessionCommand instead of useGameplayStateStore.getState() — see Docs/RUN_STATE.md#gameplay-command-boundary.",
   },
   {
     selector: 'MemberExpression[object.name="useGameplayStateStore"][property.name="setState"]',
     message:
-      "Use dispatchRunSessionCommand + draft mutators instead of useGameplayStateStore.setState() — see .agents/knowledge/patterns/run-state-command-boundary.md.",
+      "Use dispatchRunSessionCommand + draft mutators instead of useGameplayStateStore.setState() — see Docs/RUN_STATE.md#gameplay-command-boundary.",
   },
 ];
 
@@ -355,13 +360,13 @@ export const GEAR_NO_OUTER_DISPATCH = [
     selector:
       'ImportDeclaration[source.value=/gear-session-command/] ImportSpecifier[imported.name="dispatchGearMutationWithRunHealthSync"]',
     message:
-      "Use mutateGearWithRunHealthSync(draft, ...) inside a run-session command — outer dispatch nests commands — see .agents/knowledge/patterns/gear-hp-sync.md.",
+      "Use mutateGearWithRunHealthSync(draft, ...) inside a run-session command — outer dispatch nests commands — see Docs/ARMORY.md#write-paths.",
   },
   {
     selector:
       'ImportDeclaration[source.value=/gear-session-command/] ImportSpecifier[imported.name="dispatchGearSalvageWithMaterialGrant"]',
     message:
-      "Use mutateGearWithRunHealthSync(draft, ...) + grantMaterials(draft, ...) inside a run-session command — outer salvage dispatch nests commands — see .agents/knowledge/patterns/gear-hp-sync.md.",
+      "Use mutateGearWithRunHealthSync(draft, ...) + grantMaterials(draft, ...) inside a run-session command — outer salvage dispatch nests commands — see Docs/ARMORY.md#write-paths.",
   },
 ];
 

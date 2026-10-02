@@ -40,3 +40,10 @@ the study's pile images and preview files.
 [Crafting currency tooltip preview](./ui/crafting-tooltip-preview.html) is a
 standalone wording and presentation study. Current crafting behavior is owned
 by [ARMORY](../ARMORY.md), and current interaction conventions by [UI](../UI.md).
+
+## Demo marketing studies
+
+[Selected promo and archived showcase studies](./steam-demo-showcase/README.md)
+identify the current production image and preserve earlier editable compositions.
+The [copy review](../STEAM_DEMO_COPY_REVIEW.md) owns approved wording and remaining
+notice approvals; the archived layouts do not replace the selected artwork.

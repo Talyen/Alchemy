@@ -76,6 +76,7 @@ describe("script execution reliability", () => {
       expect(executable).toBe(process.execPath);
       expect(fs.existsSync(args[0])).toBe(true);
       expect(args.slice(1)).toEqual(["--version"]);
+      expect(commandInvocation(tool, ["--version"])).toEqual([executable, args]);
     }
     expect(() => commandInvocation("npx", ["not-installed"])).toThrow("Unsupported local CLI");
     expect(fs.existsSync(resolveBuilderBin())).toBe(true);
@@ -96,6 +97,45 @@ describe("script execution reliability", () => {
       ]);
       expect(result.status).toBe(0);
       expect(JSON.parse(result.output)).toEqual(args);
+    }
+  });
+
+  it("preserves UTF-8 characters split across stdout and stderr chunks", async () => {
+    const result = await runCommandAsync(process.execPath, [
+      "-e",
+      `const fs = require('node:fs');
+       const bytes = Buffer.from('龍✨');
+       fs.writeSync(1, bytes.subarray(0, 1));
+       fs.writeSync(2, bytes.subarray(0, 2));
+       setTimeout(() => {
+         fs.writeSync(1, bytes.subarray(1));
+         fs.writeSync(2, bytes.subarray(2));
+       }, 50);`,
+    ]);
+    expect(result.status).toBe(0);
+    expect(result.output).toBe("龍✨\n龍✨");
+  });
+
+  it("rejects unsupported sync arguments before rewriting changelog or version metadata", () => {
+    const root = repository();
+    fs.cpSync(path.join(ROOT, "scripts"), path.join(root, "scripts"), { recursive: true });
+    fs.copyFileSync(path.join(ROOT, ".versionrc.json"), path.join(root, ".versionrc.json"));
+    fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ version: "1.2.3" }));
+    const changelog = path.join(root, "CHANGELOG.md");
+    const metadata = path.join(root, "src/lib/validation/metadata.generated.ts");
+    fs.mkdirSync(path.dirname(metadata), { recursive: true });
+    fs.writeFileSync(changelog, "# Changelog\n\n## [Unreleased]\n\n_Stale._\n");
+    fs.writeFileSync(metadata, "original metadata");
+    const before = [changelog, metadata].map((file) => fs.readFileSync(file, "utf8"));
+    for (const script of ["sync-changelog.mjs", "sync-version-metadata.mjs"]) {
+      for (const arg of ["--chek", "unexpected", "-x"]) {
+        const result = spawnSync(process.execPath, [path.join(root, "scripts", script), arg], {
+          cwd: root,
+          encoding: "utf8",
+        });
+        expect(result.status, result.stderr).toBe(2);
+        expect([changelog, metadata].map((file) => fs.readFileSync(file, "utf8"))).toEqual(before);
+      }
     }
   });
 
@@ -221,6 +261,47 @@ describe("script execution reliability", () => {
     await delay(600);
     expect(fs.existsSync(marker)).toBe(false);
   });
+
+  it("stops nested command runners and their separate process groups at the outer deadline", async () => {
+    const root = fixture();
+    const marker = path.join(root, "nested-survived");
+    const runnerUrl = pathToFileURL(path.join(ROOT, "scripts/lib/run-command.mjs")).href;
+    const descendant = `console.log('nested ready:' + Date.now()); setTimeout(() => require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'survived'), 1500);`;
+    const nested = `import {runCommandAsync} from ${JSON.stringify(runnerUrl)};
+      await runCommandAsync(process.execPath, ['-e', ${JSON.stringify(descendant)}], {stdio:'inherit'});`;
+    const result = await runCommandAsync(process.execPath, ["--input-type=module", "-e", nested], {
+      timeout: 1000,
+      logPath: path.join(root, "outer.log"),
+    });
+    expect(result.output).toContain("nested ready");
+    expect(result.timedOut).toBe(true);
+    const readyAt = Number(/nested ready:(\d+)/u.exec(result.output)?.[1]);
+    await delay(Math.max(0, readyAt + 1800 - Date.now()));
+    expect(fs.existsSync(marker)).toBe(false);
+  });
+
+  it.each(["HEAD", "status", "source"])(
+    "rejects an unverifiable %s instead of issuing a passing source digest",
+    (failure) => {
+      const source = `import cp from 'node:child_process';
+      import fs from 'node:fs';
+      import {syncBuiltinESMExports} from 'node:module';
+      cp.spawnSync = (_command, args) => args.includes('rev-parse')
+        ? {status: ${failure === "HEAD" ? 1 : 0}, stdout:'abc', stderr:'cannot read HEAD'}
+        : {status: ${failure === "status" ? 1 : 0}, stdout:' M game.ts\\0', stderr:'cannot inspect checkout'};
+      fs.lstatSync = () => { throw Object.assign(new Error('cannot read source'), {code:'EACCES'}); };
+      syncBuiltinESMExports();
+      const {captureSourceDigest} = await import('./scripts/check.mjs');
+      try { captureSourceDigest(); process.exitCode = 9; }
+      catch (error) { console.log(error.message); }`;
+      const result = spawnSync(process.execPath, ["--input-type=module", "-e", source], {
+        cwd: ROOT,
+        encoding: "utf8",
+      });
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.stdout).toMatch(/cannot|Could not/);
+    },
+  );
 
   it("retains a renamed file's original risk selection and exact path spelling", () => {
     const root = repository();
@@ -404,6 +485,38 @@ describe("script execution reliability", () => {
       });
       expect(result.status, result.stderr).toBe(2);
     }
+  });
+
+  it("keeps direct optimizer checks read-only and rejects unsupported arguments before preparing assets", () => {
+    const root = fixture();
+    fs.cpSync(path.join(ROOT, "scripts"), path.join(root, "scripts"), { recursive: true });
+    fs.symlinkSync(path.join(ROOT, "node_modules"), path.join(root, "node_modules"), "junction");
+    const source = path.join(root, "Raw Assets/Music/theme.ogg");
+    fs.mkdirSync(path.dirname(source), { recursive: true });
+    fs.writeFileSync(source, "authored music");
+    const run = (script: string, ...args: string[]) =>
+      spawnSync(process.execPath, [path.join(root, "scripts", script), ...args], { cwd: root, encoding: "utf8" });
+
+    for (const script of ["optimize-assets.mjs", "optimize-music.mjs", "optimize-sounds.mjs"]) {
+      for (const arg of ["--chek", "unexpected"]) {
+        const result = run(script, arg);
+        expect(result.status, result.stderr).toBe(2);
+        expect(result.stderr).toMatch(/Unknown option|Unexpected optimization arguments/);
+      }
+    }
+    expect(fs.existsSync(path.join(root, "public"))).toBe(false);
+    const stale = run("optimize-music.mjs", "--check");
+    expect(stale.status, stale.stderr).toBe(1);
+    expect(fs.existsSync(path.join(root, "public"))).toBe(false);
+
+    expect(run("optimize-music.mjs").status).toBe(0);
+    const output = path.join(root, "public/Music/theme.ogg");
+    const manifest = path.join(root, "public/Music/.asset-hashes.json");
+    const before = [output, manifest].map((file) => fs.readFileSync(file));
+    expect(run("optimize-music.mjs", "--check").status).toBe(0);
+    fs.writeFileSync(source, "changed music");
+    expect(run("optimize-music.mjs", "--check").status).toBe(1);
+    expect([output, manifest].map((file) => fs.readFileSync(file))).toEqual(before);
   });
 
   it("finds nested TS/TSX suites and rejects missing, empty, and non-test selections", () => {

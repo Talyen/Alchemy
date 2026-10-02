@@ -4,18 +4,14 @@ import { readSfxPlays, resetSfxPlays, trackSfxPlays } from "../../pages/audio-ha
 import { critical } from "../../playwright-tags";
 
 test.describe("SFX playback", critical, () => {
-  test("menu interaction starts at least one SFX", async ({ page }) => {
+  test("an enabled menu action successfully starts its SFX", async ({ page }) => {
     await trackSfxPlays(page);
 
-    const errorCue = await page.request.get("/sounds/denied-03.ogg");
-    const errorCueMp3 = await page.request.get("/sounds/denied-03.mp3");
-    expect(errorCue.ok() || errorCueMp3.ok()).toBe(true);
-
     const menu = new MenuPage(page);
-    await menu.goToCharacterSelect();
+    await menu.goto();
+    await menu.expectMainMenu();
     await resetSfxPlays(page);
-    await page.getByRole("button", { name: "Wizard (Locked)" }).click({ force: true });
-
-    expect(await readSfxPlays(page)).toBeGreaterThan(0);
+    await menu.openGameModeSelect();
+    await expect.poll(() => readSfxPlays(page)).toBeGreaterThan(0);
   });
 });

@@ -15,8 +15,10 @@ import { mergeCombatText } from "./combat-text-events";
 import {
   applyPlayerCombatDamage,
   decayEnemyArmor,
+  getEnemyTraitSet,
   isPlayerDefeated,
   mitigatePlayerCombatDamage,
+  playerHealthLostToDamage,
   reduceEnemyArmor,
   scaleReceivedPlayerDamage,
   setPlayerStatus,
@@ -24,7 +26,6 @@ import {
   type CombatTextEvent,
 } from "./types";
 import type { EnemyStatusDamageId } from "@/lib/game-data";
-import { getBattleRng, rollPercent } from "@/lib/rng";
 import { halveRounded } from "./amount-helpers";
 
 export function decayHalvedStatus(value: number) {
@@ -59,15 +60,28 @@ export function getPoisonDamageMultiplierAgainstBleeding(
     : 1;
 }
 
+const enemyTraitDamageMultipliers = new WeakMap<ReadonlySet<string>, ReadonlyMap<string, number>>();
+
 export function getEnemyTraitDamageMultiplier(state: Pick<BattleState, "currentEnemy">, damageType: string): number {
-  const traits = state.currentEnemy.traits;
-  const native = TRAIT_DAMAGE_RULES.find(
-    (rule) => damageType === rule.damageType && traits.some((trait) => trait.id === rule.traitId),
-  );
-  const hasWard = LABYRINTH_HALF_DAMAGE_WARDS.some(
-    (rule) => rule.damageType === damageType && traits.some((trait) => trait.id === rule.traitId),
-  );
-  return (native?.multiplier ?? 1) * (hasWard ? LABYRINTH_MODIFIER_CONFIG.half : 1);
+  const traits = getEnemyTraitSet(state);
+  let multipliers = enemyTraitDamageMultipliers.get(traits);
+  if (!multipliers) {
+    const resolved = new Map<string, number>();
+    // Preserve authored multiplication order; wards apply once after all native traits.
+    for (const rule of TRAIT_DAMAGE_RULES) {
+      if (traits.has(rule.traitId))
+        resolved.set(rule.damageType, (resolved.get(rule.damageType) ?? 1) * rule.multiplier);
+    }
+    const wardedTypes = new Set<string>();
+    for (const rule of LABYRINTH_HALF_DAMAGE_WARDS) {
+      if (!traits.has(rule.traitId) || wardedTypes.has(rule.damageType)) continue;
+      wardedTypes.add(rule.damageType);
+      resolved.set(rule.damageType, (resolved.get(rule.damageType) ?? 1) * LABYRINTH_MODIFIER_CONFIG.half);
+    }
+    multipliers = resolved;
+    enemyTraitDamageMultipliers.set(traits, multipliers);
+  }
+  return multipliers.get(damageType) ?? 1;
 }
 
 export function getEnemyDamageMultiplier(
@@ -113,9 +127,7 @@ export function dealSelfDamage(
     { ignoreMitigation: true },
     combatTexts,
   );
-  // Phoenix heals after the lethal loss; Death's Door prevents that loss instead.
-  const phoenixTriggered = state.playerStatuses.phoenixFeather > 0 && postDamage.playerStatuses.phoenixFeather === 0;
-  const healthLost = phoenixTriggered ? state.playerHealth : Math.max(0, state.playerHealth - postDamage.playerHealth);
+  const healthLost = playerHealthLostToDamage(state, postDamage);
   if (healthLost > 0) {
     mergeCombatText(combatTexts, {
       target: "player",
@@ -128,10 +140,6 @@ export function dealSelfDamage(
     state: healthCost ? postDamage : decayArmorAfterDamage(postDamage, resolvedDamage, "player", combatTexts),
     healthLost,
   };
-}
-
-export function rollTalentChance(chance: number, state: { rng?: () => number }): boolean {
-  return chance > 0 && rollPercent(chance, getBattleRng(state));
 }
 
 export function applyPoisonDamageArmorRider(

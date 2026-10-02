@@ -28,23 +28,57 @@ function buildAffinityPool(
 ): BattleCard[] {
   const deckIds = new Set(deck.map((c) => c.id));
   const shuffledCandidates = shuffle(candidates, activeRng);
-  const scored = shuffledCandidates.map((card) => {
+  const scoreCard = (card: BattleCard): number => {
     let score = 0;
     for (const kw of getCardKeywords(card)) score += freq[kw] ?? 0;
     if (!deckIds.has(card.id)) score += REWARD_SELECTION_CONFIG.newCardScoreBonus;
     if (companionScoreBonus > 0 && isCompanionCard(card)) score += companionScoreBonus;
-    return { card, score };
-  });
+    return score;
+  };
+  const poolSize = Math.min(count * REWARD_SELECTION_CONFIG.affinityPoolMultiplier, candidates.length);
+  // Ordinary rewards retain only a handful of cards. Keep the shuffled order
+  // for ties, just like the stable sort, without scoring objects for the catalog.
+  // Larger requests use sorting to avoid quadratic insertion work.
+  if (poolSize > 0 && poolSize <= 16) {
+    const limit = Math.floor(poolSize);
+    const cards: BattleCard[] = [];
+    const scores: number[] = [];
+    for (const card of shuffledCandidates) {
+      const score = scoreCard(card);
+      if (cards.length === limit && score <= scores[limit - 1]!) continue;
+      let index = cards.length;
+      while (index > 0 && score > scores[index - 1]!) index--;
+      if (index >= limit) continue;
+      cards.splice(index, 0, card);
+      scores.splice(index, 0, score);
+      if (cards.length > limit) {
+        cards.pop();
+        scores.pop();
+      }
+    }
+    return cards;
+  }
+  const scored = shuffledCandidates.map((card) => ({ card, score: scoreCard(card) }));
   scored.sort((a, b) => b.score - a.score);
-  return scored
-    .slice(0, Math.min(count * REWARD_SELECTION_CONFIG.affinityPoolMultiplier, scored.length))
-    .map((s) => s.card);
+  return scored.slice(0, poolSize).map((s) => s.card);
 }
 
 function dampenCompanionCandidates(candidates: BattleCard[], rng: () => number): BattleCard[] {
   return candidates.filter(
     (card) => !isCompanionCard(card) || rng() < REWARD_SELECTION_CONFIG.companionOwnedKeepFraction,
   );
+}
+
+function pruneSelectedCards(pool: BattleCard[], selectedIds: ReadonlySet<string>): void {
+  if (selectedIds.size === 0) return;
+  // Both pools are owned by this reward selection. Compact in order so
+  // weighted duplicates and seeded picks match filtering, without new arrays.
+  let kept = 0;
+  for (const card of pool) {
+    if (selectedIds.has(card.id)) continue;
+    pool[kept++] = card;
+  }
+  pool.length = kept;
 }
 
 function pickOneCard(
@@ -54,11 +88,11 @@ function pickOneCard(
   rng: () => number,
 ): BattleCard | undefined {
   if (rng() >= REWARD_RANDOM_CHANCE_FRACTION) {
-    const availableAffinity = affinityPool.filter((card) => !selectedIds.has(card.id));
-    if (availableAffinity.length > 0) return pickRandom(availableAffinity, rng);
+    pruneSelectedCards(affinityPool, selectedIds);
+    if (affinityPool.length > 0) return pickRandom(affinityPool, rng);
   }
-  const availableRandom = randomPool.filter((card) => !selectedIds.has(card.id));
-  return availableRandom.length > 0 ? pickRandom(availableRandom, rng) : undefined;
+  pruneSelectedCards(randomPool, selectedIds);
+  return pickRandom(randomPool, rng);
 }
 
 export function selectRewardCards(

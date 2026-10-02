@@ -1,3 +1,5 @@
+import { applyDamageStatuses } from "./damage-status-riders";
+import { rollBattleChance } from "./chance-roll";
 import { resolveBattleSequence, type ReactionBoundary } from "./battle-sequence";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { hasEncounterBenefit, hasEnemyTrait } from "./types";
@@ -19,7 +21,7 @@ import {
   applyArmorReward,
   applyBlockReward,
 } from "./status-player";
-import { getEnemyDamageMultiplier, rollTalentChance } from "./status-helpers";
+import { getEnemyDamageMultiplier } from "./status-helpers";
 import { getBattleRng, pickRandom, rollPercent } from "@/lib/rng";
 import { getEditableCorruptionTargets, updateCardNumericValue } from "@/lib/corruption";
 import { getCorruptionTargetEffect } from "@/lib/corruption/numeric";
@@ -36,6 +38,7 @@ import { dealEnemyScaledDamage } from "./scaled-damage";
 import { gearFrozenDamageMultiplier } from "./scaled-damage";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { scaleByRoomMultiplier } from "./enemy-turn-traits";
+import { appendUniqueMany } from "@/lib/utils";
 
 function processEncounterTraitWish(state: BattleState): BattleState {
   if (!hasEnemyTrait(state, "jealous")) return state;
@@ -72,14 +75,14 @@ export function buildWishOptions(
     state.talentEffects.wishExtraChoices +
     (state.flags.nextWishExtraChoice ? 1 : 0) +
     (hasEncounterBenefit(state, "wishful") && !state.flags.encounterWishUsed ? 1 : 0) +
-    (rollTalentChance(state.talentEffects.wishExtraChoiceChance, state) ? 1 : 0);
+    (rollBattleChance(state.talentEffects.wishExtraChoiceChance, state) ? 1 : 0);
 
   const candidates = getOfferableCardPool().filter(
     (candidate) =>
       candidate.id !== card?.id &&
       (!companionOnly || candidate.effects.some((effect) => effect.kind === "summon-companion")),
   );
-  const fullDeck = [...state.deck, ...state.hand, ...state.discard, ...state.exhausted];
+  const fullDeck = [...state.deck, ...state.hand, ...state.pendingHandCards, ...state.discard, ...state.exhausted];
   const undiscovered = state.talentEffects.wishUndiscoveredCards
     ? candidates.filter((candidate) => !state.discoveredCardIds.includes(candidate.id))
     : [];
@@ -99,13 +102,13 @@ export function buildWishOptions(
 function applyWishGoldTriggers(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
   const gearGold =
-    state.gearEffects.goldOnWish > 0 && rollTalentChance(REACTIVE_REWARD_CHANCES.wishfulAffix, state)
+    state.gearEffects.goldOnWish > 0 && rollBattleChance(REACTIVE_REWARD_CHANCES.wishfulAffix, state)
       ? state.gearEffects.goldOnWish
       : 0;
   const talentGold =
     nextState.talentEffects.goldOnWish > 0 &&
     (nextState.talentEffects.goldOnWishChance <= 0 ||
-      rollTalentChance(nextState.talentEffects.goldOnWishChance, nextState))
+      rollBattleChance(nextState.talentEffects.goldOnWishChance, nextState))
       ? nextState.talentEffects.goldOnWish
       : 0;
   const goldAmount = talentGold + gearGold;
@@ -157,7 +160,7 @@ function applyWishHealthAndStatusTriggers(
 
 function applyWishDrawTriggers(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   const talentDraw =
-    state.talentEffects.wishDrawsCard || rollTalentChance(state.talentEffects.wishDrawChance, state) ? 1 : 0;
+    state.talentEffects.wishDrawsCard || rollBattleChance(state.talentEffects.wishDrawChance, state) ? 1 : 0;
   const drawCount = talentDraw + state.gearEffects.drawOnWish;
   if (drawCount <= 0) return state;
   return applyDrawResult(state, drawFromState(state, drawCount), combatTexts);
@@ -264,12 +267,24 @@ function applyWishBurnTrigger(
   const multiplier = getEnemyDamageMultiplier(state, "burn") * gearFrozenDamageMultiplier(state);
   return dealEnemyScaledDamage(state, burnAmount, "burn", combatTexts, {
     multiplier,
-    riders: (damagedState) => applyHitEpilogue(damagedState, state.enemyHealth, enemyWasAlive, combatTexts),
+    riders: (damagedState, damage, texts) =>
+      applyHitEpilogue(
+        applyDamageStatuses(
+          damagedState,
+          { kind: "damage", damageType: "burn", amount: burnAmount },
+          damage,
+          texts,
+          state.enemyHealth,
+        ),
+        state.enemyHealth,
+        enemyWasAlive,
+        texts,
+      ),
   });
 }
 
 function applyWishTrinketTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
-  if (!state.talentEffects.wishTrinketChoice || !rollTalentChance(REACTIVE_REWARD_CHANCES.wishfulTrinket, state))
+  if (!state.talentEffects.wishTrinketChoice || !rollBattleChance(REACTIVE_REWARD_CHANCES.wishfulTrinket, state))
     return state;
   const isForge = rollPercent(WISH_TRINKET_FORK_PERCENT, getBattleRng(state));
   const status = isForge ? ("forge" as const) : ("armor" as const);
@@ -332,9 +347,13 @@ export function chooseWishCard(state: BattleState, cardId: string, combatTexts: 
       ? applyPlayerStatusEffect(state, { kind: "player-status", status: "block", amount: blockAmount }, combatTexts)
       : state;
   let nextState = addCardToHandOrQueue({ ...rewarded, wishOptions: nextWishOptions, wishQueue }, chosenCard);
-  if (declinedCards.length > 0 && rollTalentChance(nextState.talentEffects.declinedWishCardChance, nextState)) {
+  const acquiredIds = [chosenCard.id];
+  if (declinedCards.length > 0 && rollBattleChance(nextState.talentEffects.declinedWishCardChance, nextState)) {
     const bonusCard = pickRandom(declinedCards, getBattleRng(nextState));
-    if (bonusCard) nextState = addCardToHandOrQueue(nextState, bonusCard);
+    if (bonusCard) {
+      nextState = addCardToHandOrQueue(nextState, bonusCard);
+      acquiredIds.push(bonusCard.id);
+    }
   }
-  return nextState;
+  return { ...nextState, discoveredCardIds: appendUniqueMany(nextState.discoveredCardIds, acquiredIds) };
 }

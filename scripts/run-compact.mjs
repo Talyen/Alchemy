@@ -4,6 +4,11 @@ import { createRunId } from "./lib/verification/current-run.mjs";
 import { failureSummary, completionCounts } from "./lib/compact-output.mjs";
 import { runCommandAsync, runStreamCommand } from "./lib/run-command.mjs";
 import { defineScript, UsageError } from "./lib/script-run.mjs";
+import {
+  acquireLocalTestLane,
+  isInteractiveTestCommand,
+  usesLocalTestLane,
+} from "./lib/verification/local-test-lane.mjs";
 
 export { completionCounts };
 
@@ -19,17 +24,26 @@ export async function runCompact(argv, rootDir = ROOT) {
   }
   const [command, ...args] = argv;
   if (!command || command.startsWith("--")) throw new UsageError(USAGE);
+  const lane = usesLocalTestLane(command, args) ? await acquireLocalTestLane() : null;
+  try {
+    return await runCompactCommand(command, args, rootDir);
+  } finally {
+    await lane?.release();
+  }
+}
+
+async function runCompactCommand(command, args, rootDir) {
+  const env = usesLocalTestLane(command, args)
+    ? { ...process.env, RAYON_NUM_THREADS: process.env.RAYON_NUM_THREADS ?? "1" }
+    : process.env;
   // The outer gate already owns full logs and diagnostics. Interactive flags
   // retain their normal terminal behavior even through a one-shot npm entry.
-  if (
-    process.env.ALCHEMY_OUTPUT_CAPTURED === "1" ||
-    args.some((arg) => ["--watch", "-w", "--ui", "--debug"].includes(arg))
-  ) {
-    return runStreamCommand(command, args, { cwd: rootDir }).status ?? 1;
+  if (process.env.ALCHEMY_OUTPUT_CAPTURED === "1" || isInteractiveTestCommand(args)) {
+    return runStreamCommand(command, args, { cwd: rootDir, env }).status ?? 1;
   }
   const logPath = path.join(rootDir, "reports", "compact", createRunId("compact"), "output.log");
   console.log(`Running ${path.basename(command)}; full log: ${path.relative(rootDir, logPath)}`);
-  const result = await runCommandAsync(command, args, { cwd: rootDir, logPath });
+  const result = await runCommandAsync(command, args, { cwd: rootDir, env, logPath });
   const status = result.status ?? 1;
   console.log(`${status === 0 ? "PASS" : "FAIL"} (exit ${status}, ${(result.elapsedMs / 1000).toFixed(1)}s)`);
   const counts = completionCounts(result.output);

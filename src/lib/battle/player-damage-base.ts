@@ -86,8 +86,6 @@ function computeBaseRawAmount(
   } else {
     amount = effect.amount + forgeBonus;
   }
-  if (state.enemyCC.freezeSkipTurns > 0) amount += state.talentEffects.freezeDamageBonusVsFrozen;
-  if (state.enemyStatuses.poison > 0) amount += state.talentEffects.poisonDamageBonusVsPoisoned;
   if (card?.tags?.includes("archery")) {
     amount += state.talentEffects.flatArrowDamage + state.gearEffects.flatArrowDamage;
     if (readCombatFlag(state, "archerySecondCardActive")) {
@@ -222,13 +220,25 @@ export function computeBaseDamage(
   const hasArmor = effect.equalToArmor === true;
   const hasGold = effect.equalToGoldPercent !== undefined;
   const isEqualTo = hasBlock || hasArmor || hasGold || effect.equalToForge === true;
-  if (isEqualTo) return Math.max(0, rawAmount);
+  const vulnerabilityBonus =
+    (state.enemyCC.freezeSkipTurns > 0 ? state.talentEffects.freezeDamageBonusVsFrozen : 0) +
+    (state.enemyStatuses.poison > 0 ? state.talentEffects.poisonDamageBonusVsPoisoned : 0);
+  if (isEqualTo) return Math.max(0, rawAmount + (rawAmount > 0 ? vulnerabilityBonus : 0));
   const modifier = DAMAGE_TYPE_HANDLERS[effect.damageType];
   if (!modifier) throw new Error(`Missing DamageType handler: ${effect.damageType}`);
-  let amount = modifier(state, rawAmount);
-  if (state.gearEffects.sharedBurnBleedBonuses > 0) {
-    if (effect.damageType === "burn") amount += applyBleedDamageModifiers(state, 0);
-    if (effect.damageType === "bleed") amount += applyBurnDamageModifiers(state, 0);
-  }
-  return Math.max(0, amount);
+  const sharedBonus =
+    state.gearEffects.sharedBurnBleedBonuses <= 0
+      ? 0
+      : effect.damageType === "burn"
+        ? applyBleedDamageModifiers(state, 0)
+        : effect.damageType === "bleed"
+          ? applyBurnDamageModifiers(state, 0)
+          : 0;
+  const amount = modifier(state, rawAmount) + sharedBonus;
+  // Keep vulnerability bonuses inside the existing type-scaling stage, but
+  // require a positive packet before they can enlarge it.
+  return Math.max(
+    0,
+    amount > 0 && vulnerabilityBonus > 0 ? modifier(state, rawAmount + vulnerabilityBonus) + sharedBonus : amount,
+  );
 }

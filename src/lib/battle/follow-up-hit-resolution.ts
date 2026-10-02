@@ -1,3 +1,4 @@
+import { rollBattleChance } from "./chance-roll";
 import { resolveSecondaryAction } from "./action-context";
 import type { DamageType, TalentEffectManifest } from "@/lib/game-data";
 import { getBattleRng, rollPercent } from "@/lib/rng";
@@ -23,11 +24,9 @@ import {
   applyLeechHitHealing,
   applyLeechHitRewards,
 } from "./damage-rider-leech";
-import { rollTalentChance } from "./status-helpers";
 import { resolveTypedEnemyHit } from "./typed-hit-resolution";
 import { resolveStunFollowUpHit } from "./stun-follow-up-hit";
 import { type BattleState, type CombatTextEvent } from "./types";
-
 import type { FollowUpHitRequest } from "./player-hit-core";
 
 /** Lower resolution tier: Wish and other reactions can emit shallow hits without importing card orchestration. */
@@ -137,7 +136,7 @@ function applyFollowUpNatureRiders(
 
 export function tryPoisonStunProc(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
   if (damage <= 0) return state;
-  if (!rollTalentChance(state.talentEffects.poisonStunChance, state)) return state;
+  if (!rollBattleChance(state.talentEffects.poisonStunChance, state)) return state;
   return resolveFollowUpHit(state, { source: "talent-derived", damageType: "stun", amount: damage }, combatTexts);
 }
 
@@ -147,7 +146,7 @@ export function applyBrassCenser(
   combatTexts: CombatTextEvent[],
   enemyHealthBeforeHit = state.enemyHealth,
 ): BattleState {
-  if (damage <= 0 || !rollTalentChance(state.trinketEffects.brassCenserProcChance, state)) return state;
+  if (damage <= 0 || !rollBattleChance(state.trinketEffects.brassCenserProcChance, state)) return state;
   if (rollPercent(BRASS_CENSER_SPLIT_CHANCE_PERCENT, getBattleRng(state))) {
     return resolveFollowUpHit(state, { source: "player-follow-up", damageType: "burn", amount: damage }, combatTexts);
   }
@@ -170,7 +169,7 @@ export function tryTalentTypedHit(
   combatTexts: CombatTextEvent[],
   fraction = damageType === "bleed" ? TALENT_CONVERSION_BLEED_FRACTION : TALENT_CONVERSION_DEFAULT_FRACTION,
 ): BattleState {
-  if (sourceDamage <= 0 || state.enemyHealth <= 0 || !rollTalentChance(chance, state)) return state;
+  if (sourceDamage <= 0 || state.enemyHealth <= 0 || !rollBattleChance(chance, state)) return state;
   return resolveFollowUpHit(
     state,
     {
@@ -212,7 +211,7 @@ export function applyNatureLeech(
 ) {
   if (damage <= 0) return state;
   const leechChance = state.talentEffects.natureLeechChance + state.gearEffects.natureLeechChance;
-  if (!guaranteed && (leechChance <= 0 || !rollTalentChance(leechChance, state))) return state;
+  if (!guaranteed && (leechChance <= 0 || !rollBattleChance(leechChance, state))) return state;
   return applyLifestealAndPlayerHitTriggers(state, damage, combatTexts, false, false, enemyHealthBeforeHit);
 }
 

@@ -9,7 +9,8 @@ description: Select and run Alchemy verification after edits and before handoff,
 
 1. Inspect the final diff and select all task-owned paths, including deletions and incidental fixes. Use `--diff` when the whole diff belongs to the task; otherwise pass explicit paths.
 2. During iteration, run `npm run verify -- <paths>` as needed. Add `--plan` to inspect selection and owner pointers when uncertain. Set `ALCHEMY_VERIFY_FRESH=1` when investigating nondeterminism or requesting a fresh run.
-3. Before handoff, run `npm run check -- <paths>`. It includes applicable verification. Documentation-only changes use documentation and format checks; executable changes receive the broader gates defined by CONTRIBUTING.
+3. Before handoff, run `npm run check -- <paths>`. The default is bounded Node smoke and selected-file formatting. Agents may run focused, dependency-related, or full unit suites, including DOM unit tests, without user approval using `npm run test:full -- <paths>`. Full static, browser, build and broader verification commands require an explicit user request for local execution. Report pending CI validation separately from a local pass.
+   For documentation edits, also run `npm run docs:check` explicitly; Markdown-only selections skip Node smoke, and the default gate does not run documentation contracts.
 4. Resolve failures or report the remaining limitation. Follow [failure-first triage](../../../Docs/REFERENCE.md#failure-first-triage) for bounded diagnostics.
 
 For test changes, apply the [test value policy](../../../CONTRIBUTING.md#test-value-and-coverage-strategy), including verification scope for surviving protection and deleted paths.

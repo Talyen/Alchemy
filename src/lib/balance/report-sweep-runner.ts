@@ -3,7 +3,13 @@ import type { GearEffectManifest } from "@/lib/gear";
 import { reportTierForPreset, reportTierRecord } from "./report-catalog";
 import type { PairedTierRow } from "./report-model";
 import type { ReportRunOptions } from "./report-options";
-import { emptyPairedWinStats, makePairedDelta, pairedWinStats, type PairedWinStats } from "./report-rankings";
+import {
+  combinePairedWinStats,
+  emptyPairedWinStats,
+  makePairedDelta,
+  pairedWinStats,
+  type PairedWinStats,
+} from "./report-rankings";
 import { DEFAULT_MAX_TURNS } from "./simulator";
 import { simulateWinSeries, type WinSeries } from "./simulator-batch";
 import type { BalanceBatchConfig, TalentPreset } from "./simulator-types";
@@ -74,17 +80,7 @@ function addComparison(collected: PairedStatsById, tier: TalentPreset, id: strin
     collected.set(id, byTier);
   }
   const existing = byTier.get(tier);
-  if (!existing) {
-    byTier.set(tier, { ...stats });
-  } else {
-    existing.n += stats.n;
-    existing.treatmentWins += stats.treatmentWins;
-    existing.baselineWins += stats.baselineWins;
-    existing.squaredDifferenceSum += stats.squaredDifferenceSum;
-    existing.treatmentTurns += stats.treatmentTurns;
-    existing.baselineTurns += stats.baselineTurns;
-    existing.squaredTurnDifferenceSum += stats.squaredTurnDifferenceSum;
-  }
+  byTier.set(tier, existing ? combinePairedWinStats([existing, stats]) : { ...stats });
 }
 
 function rowsFromComparisons(collected: PairedStatsById): PairedTierRow[] {

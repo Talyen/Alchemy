@@ -29,7 +29,7 @@ export const burnTalents = [
   t(
     "burn-dmg-4",
     "Combustible",
-    "10% chance when you Consume a card to detonate the enemy's Burn",
+    "10% chance when you Consume a card to detonate the enemy's Burn (except cards that summon a Companion)",
     "Bomb",
     setEffect("consumeDetonatesBurnChance", 10),
   ),

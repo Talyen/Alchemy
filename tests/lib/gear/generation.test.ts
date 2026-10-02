@@ -19,6 +19,33 @@ import { createSeededRng } from "@/lib/rng";
 const weights = resolveLootWeights({ source: "equipment", progress: { depth: 24, highestCompletedDifficulty: null } });
 
 describe("gear generation", () => {
+  it.each([
+    { fillCount: false, nextRandom: 0.19854954350739717 },
+    { fillCount: true, nextRandom: 0.4058688203804195 },
+  ])("preserves seeded gear and subsequent RNG with fillCount=$fillCount", ({ fillCount, nextRandom }) => {
+    const rng = createSeededRng(17);
+    const choices = generateLootGearChoices(4, rng, weights, new Set(), ["ruby-ring", "emerald-ring"], fillCount);
+    const expected = [
+      { definitionId: "ruby-ring-basic", affixes: [{ id: "burn-per-mana", value: 10 }] },
+      {
+        definitionId: "emerald-ring-astral",
+        affixes: [
+          { id: "armor-on-nature-card", value: 2 },
+          { id: "dodge-armor", value: 3 },
+          { id: "archery-ignore-armor", value: 3 },
+        ],
+      },
+      ...(fillCount
+        ? [
+            { definitionId: "emerald-ring-basic", affixes: [{ id: "archery-ignore-armor", value: 1 }] },
+            { definitionId: "emerald-ring-basic", affixes: [{ id: "dodge-chance", value: 2 }] },
+          ]
+        : []),
+    ];
+    expect(choices.map(({ definitionId, affixes }) => ({ definitionId, affixes }))).toEqual(expected);
+    expect(rng()).toBe(nextRandom);
+  });
+
   it("generates gear reward instances with affixes", () => {
     let roll = 0;
     const rng = () => {
@@ -181,6 +208,39 @@ describe("gear generation", () => {
     expect(instance!.definitionId).toMatch(/^emerald-ring-(basic|astral)$/);
     expect(gearDefinitions[instance!.definitionId]?.baseItemId).toBe("emerald-ring");
     expect(instance!.affixes.length).toBeGreaterThanOrEqual(GEAR_AFFIX_COUNT.basic.min);
+  });
+
+  it("treats allowed bases as membership while preserving catalog sampling order", () => {
+    const pools = [
+      ["ruby-ring", "emerald-ring"],
+      ["emerald-ring", "ruby-ring", "emerald-ring", "unknown"],
+    ];
+    const generated = pools.map((pool) => {
+      const seeded = createSeededRng(17);
+      let draws = 0;
+      const choices = generateLootGearChoices(
+        4,
+        () => {
+          draws += 1;
+          return seeded();
+        },
+        weights,
+        new Set(),
+        pool,
+        true,
+      );
+      return { draws, choices: choices.map(({ definitionId, affixes }) => ({ definitionId, affixes })) };
+    });
+    expect(generated[0].choices).toHaveLength(4);
+    expect(generated[1]).toEqual(generated[0]);
+  });
+
+  it("does not draw randomness when the allowed base pool is empty", () => {
+    const rng = () => {
+      throw new Error("An empty pool must not consume run RNG");
+    };
+    expect(generateLootGearChoices(3, rng, weights, new Set(), [])).toEqual([]);
+    expect(generateGearRewardChoicesForRarity(3, "astral", rng, new Set(), ["unknown"])).toEqual([]);
   });
 
   it("returns null for an unknown base item id", () => {

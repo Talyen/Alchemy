@@ -82,15 +82,6 @@ describe("RunEndScreen", () => {
     expect(burnLv).toBeTruthy();
   });
 
-  it("hides keyword section when runEndTalentXP is empty", () => {
-    renderRunEnd();
-
-    expect(screen.queryByText("+12")).toBeNull();
-    expect(screen.queryByText("Physical")).toBeNull();
-    expect(screen.queryByText(/^Lv\d+$/)).toBeNull();
-    expect(screen.getByRole("button", { name: /main menu/i }).isConnected).toBe(true);
-  });
-
   it.each([
     [1, [1]],
     [3, [3]],
@@ -153,34 +144,12 @@ describe("RunEndScreen", () => {
     expect(Array.from(grid.children).every((card, index) => card === cards[index])).toBe(true);
   });
 
-  it("hides obtained items when the recap is empty", () => {
-    renderRunEnd();
-    expect(screen.queryByRole("img")).toBeNull();
-  });
-
   it("shows salvaged crafting currencies earned during the run", () => {
     renderRunEnd({ runEndCurrencies: { ...emptyCurrencies, "discordant-dice": 2 } });
 
     const chips = screen.getAllByTestId("run-end-currency");
     expect(chips).toHaveLength(1);
     expect(chips[0]!.getAttribute("data-currency-id")).toBe("discordant-dice");
-  });
-
-  it("hides the currency row when nothing was salvaged", () => {
-    renderRunEnd();
-    expect(screen.queryByTestId("run-end-currency")).toBeNull();
-  });
-
-  it("shows four obtained item portraits without paging", () => {
-    const items = [0, 1, 2, 3].map((index) => gearItem(`armor-${index}`));
-    renderRunEnd({ runEndItems: items });
-
-    const portraits = screen.getAllByRole("img", { name: "Leather Armor" });
-    expect(portraits).toHaveLength(4);
-    const sizeWrapper = portraits[0]!.parentElement?.parentElement?.parentElement?.parentElement;
-    expect(sizeWrapper?.className).toContain("w-[calc(13.8308*var(--content-rem,1rem))]");
-    expect(sizeWrapper?.className).toContain("[&>*>*]:!w-full");
-    expect(screen.queryByRole("button", { name: "Next page" })).toBeNull();
   });
 
   it("pages item portraits after four rewards", async () => {

@@ -90,7 +90,21 @@ export function isDestructive(parsedArgs) {
     return args.includes("-D");
   }
   if (subcommand === "push") {
-    return args.includes("--force") || args.includes("-f") || args.some((a) => a.startsWith("--force"));
+    let options = true;
+    for (let index = 1; index < args.length; index++) {
+      const arg = args[index];
+      if (options && arg === "--") {
+        options = false;
+        continue;
+      }
+      if (options && ["--repo", "--receive-pack", "--exec", "-o", "--push-option"].includes(arg)) {
+        index++;
+        continue;
+      }
+      if (options && (arg.startsWith("--force") || /^-[^-]*f/u.test(arg))) return true;
+      if (arg.startsWith("+")) return true;
+    }
+    return false;
   }
   return false;
 }

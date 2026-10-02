@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { campaignLootDepth, createLootProgress, labyrinthLootDepth } from "@/lib/loot";
+import { campaignLootDepth, createLootProgress, labyrinthLootDepth, highestCompletedLootDifficulty } from "@/lib/loot";
 import { gridLabyrinthMapFixture, twoFloorLabyrinthMapFixture } from "../../fixtures/labyrinth-map";
 
 describe("loot depth", () => {
@@ -52,5 +52,17 @@ describe("loot depth", () => {
   it("clamps loot progress depth to at least 1", () => {
     expect(createLootProgress(0, {}).depth).toBe(1);
     expect(createLootProgress(-4, {}).depth).toBe(1);
+  });
+
+  it("uses the highest completed difficulty across heroes regardless of order or duplicates", () => {
+    expect(highestCompletedLootDifficulty({})).toBeNull();
+    expect(highestCompletedLootDifficulty({ knight: [], mage: [] })).toBeNull();
+    const completed = {
+      knight: ["difficulty-2", "difficulty-1", "difficulty-2"],
+      mage: ["difficulty-3", "difficulty-1"],
+    } as const;
+    expect(highestCompletedLootDifficulty(completed)).toBe("difficulty-3");
+    expect(highestCompletedLootDifficulty({ knight: completed.knight })).toBe("difficulty-2");
+    expect(completed.knight).toEqual(["difficulty-2", "difficulty-1", "difficulty-2"]);
   });
 });

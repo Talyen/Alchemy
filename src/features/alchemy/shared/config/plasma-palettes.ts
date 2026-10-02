@@ -16,7 +16,7 @@ import {
 import { gearDefinitions, getGearInstanceKeywordIds, getUniqueGearShineColors, type GearInstance } from "@/lib/gear";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
-import { keywordAliasMap, keywordPattern } from "./keywords";
+import { extractKeywordIds } from "./keywords";
 import {
   getCompanionShineColors,
   getInspectionKeywordShineColors,
@@ -64,16 +64,7 @@ export function getPlasmaKeywordsForTalent(talent: Pick<TalentDefinition, "keywo
 }
 
 export function getPlasmaKeywordsForText(text: string): KeywordId[] {
-  const keywords = new Set<KeywordId>();
-  const matches = text.matchAll(keywordPattern);
-  for (const match of matches) {
-    const keywordId = keywordAliasMap.get(match[0].toLowerCase());
-    if (keywordId) {
-      keywords.add(keywordId);
-    }
-  }
-
-  return [...keywords];
+  return extractKeywordIds(text);
 }
 
 export function getPlasmaColorPair(keywordIds: readonly KeywordId[]): PlasmaColorPair | null {

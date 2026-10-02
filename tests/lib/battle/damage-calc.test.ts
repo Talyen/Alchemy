@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { computeCardDamageToEnemy, forgeAppliesToDamageType } from "@/lib/battle/damage-calc";
 import { defaultTalentEffects } from "@/lib/battle";
 import { defaultGearEffects } from "@/lib/gear";
@@ -69,6 +69,34 @@ describe("computeCardDamageToEnemy", () => {
     const { modifiedDamage } = computeCardDamageToEnemy(state, physicalEffect);
     expect(modifiedDamage).toBe(physicalEffect.amount * CRIT_MULTIPLIER);
   });
+
+  it.each(["rolled", "next-hit", "physical", "guaranteed"] as const)(
+    "%s critical hits share the bonus formula and preserve RNG consumption",
+    (source) => {
+      const rng = vi.fn(() => 0);
+      const state = patchBattleState({
+        enemyMitigation: { block: 0, armor: 0 },
+        talentEffects: { homesteadCriticalDamage: 3 },
+        flags: { nextHitCrit: source === "next-hit", nextPhysicalCrit: source === "physical" },
+        rng,
+      });
+      const context = { manaAtStart: 3, enemyFreezeSkipTurnsAtStart: 0, guaranteedCrit: source === "guaranteed" };
+      const result = computeCardDamageToEnemy(state, physicalEffect, undefined, context);
+      expect(result.modifiedDamage).toBe(physicalEffect.amount * CRIT_MULTIPLIER + 3);
+      expect(result.critical).toBe(true);
+      expect(result.nextState.flags.nextHitCrit).toBe(false);
+      expect(result.nextState.flags.nextPhysicalCrit).toBe(false);
+      expect(rng).toHaveBeenCalledTimes(source === "rolled" ? 1 : 0);
+
+      rng.mockClear();
+      const zeroDamage = computeCardDamageToEnemy(state, { ...physicalEffect, amount: 0 }, undefined, context);
+      expect(zeroDamage.modifiedDamage).toBe(0);
+      expect(zeroDamage.critical).toBe(false);
+      expect(zeroDamage.nextState.flags.nextHitCrit).toBe(source === "next-hit");
+      expect(zeroDamage.nextState.flags.nextPhysicalCrit).toBe(source === "physical");
+      expect(rng).toHaveBeenCalledTimes(source === "rolled" ? 1 : 0);
+    },
+  );
 
   it("doubles forge contribution for physical with expert blacksmith", () => {
     const state = patchBattleState({

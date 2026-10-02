@@ -34,7 +34,7 @@ that answers the question; ordinary FPS questions usually need only the summary.
 Open a deep trace in Chrome: DevTools → Performance → Load profile → select the `.json` file.
 
 Ordinary runs rebuild the renderer so a clean Git checkout cannot silently reuse an older build.
-Reuse an existing `dist/` with `--skip-build` only when intentionally profiling that build, such as when iterating on the harness itself.
+Reuse an existing renderer with `--skip-build` only when intentionally profiling that build, such as when iterating on the harness itself. Keep `ALCHEMY_EDITION` consistent: the [edition contract](./STEAM_DEMO.md#edition-contract) selects `dist/` for full and `dist-demo/` for demo.
 
 Keep ordinary profiling at the default **one measured run per scenario** to limit
 local CPU/GPU use. The harness also performs one unmeasured warm-up so cold JIT,
@@ -146,6 +146,13 @@ Override per-scenario defaults with `PERF_MEASURE_MS` / `PERF_MIN_FRAMES` for ha
 
 Judge an optimization by a repeatable improvement in the targeted latency or hitch, compared with observed run-to-run variation. Check relevant neighboring scenarios for regressions; a fixed percentage alone cannot distinguish an improvement from noise.
 
+Preserve player-facing visual fidelity, particle counts, animation timing, and
+sound behavior when optimizing. For rendering changes, compare actual pixels
+under identical inputs; deterministic geometry or draw-output comparisons can
+also protect the affected calculation. Reuse existing parity checks where they
+cover the change. A passing build or better FPS does not establish presentation
+parity; report it as unverified when the necessary comparison is unavailable.
+
 ## Workflow
 
 ```text
@@ -201,7 +208,8 @@ trace events fail capture. Screenshots are omitted to reduce trace overhead.
 | `scripts/run-performance.mjs`                       | CLI entry (`npm run perf`, `npm run perf:compare`) |
 | `tests/performance/`                                | Metrics, compare, and report unit tests (Node)     |
 
-Metric and comparison unit tests in `tests/performance/` run in the ordinary Node Vitest suite (`npm test`).
+Run metric and comparison unit tests with `npm run test:full -- tests/performance`.
+They also run in the full unit suite; `npm test` contains only fixed local smoke suites.
 
 Related: [PerformanceAudit.md](./Audits/PerformanceAudit.md) (when to change code), [CONTRIBUTING.md](../CONTRIBUTING.md) (E2E helpers / animation policy).
 

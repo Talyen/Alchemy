@@ -87,7 +87,6 @@ const LEGACY_SNAPSHOT_FIELDS: ReadonlyArray<keyof TalentEffectManifest> = [
   "armorBlockAmount",
   "armorCleanseThreshold",
   "flatArmorAmount",
-  "blockOnConsume",
   "blockOnCompanionDamage",
   "bleedPoisonDamageTakenBonus",
   "forgeBurnThreshold",

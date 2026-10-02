@@ -1,9 +1,11 @@
 import { CORRUPTION_MIN_VALUE, CORRUPTION_TEXT_PATTERNS, PERCENT_DENOMINATOR } from "@/lib/game-constants";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import { conditionalDamageDescription, mapEffectChildren } from "@/lib/game-data";
-import { getCorruptionTargetEffect, type CorruptionTarget } from "./numeric-targets";
+import { effectAddressKey, getCorruptionTargetEffect } from "./effect-address";
+import type { CorruptionTarget } from "./numeric-targets";
 
-export { getEditableCorruptionTargets, getCorruptionTargetEffect } from "./numeric-targets";
+export { getCorruptionTargetEffect } from "./effect-address";
+export { getEditableCorruptionTargets } from "./numeric-targets";
 export type { CorruptionTarget } from "./numeric-targets";
 
 // Declarative rules for lines that need word-to-digit or singular/plural normalization
@@ -57,13 +59,13 @@ export function updateCardNumericValue(card: BattleCard, target: CorruptionTarge
     return card;
   const editsByAddress = new Map<string, Array<(typeof target.edits)[number]>>();
   for (const edit of target.edits) {
-    const key = [edit.effectIndex, ...(edit.effectPath ?? [])].join("/");
+    const key = effectAddressKey(edit);
     const edits = editsByAddress.get(key) ?? [];
     edits.push(edit);
     editsByAddress.set(key, edits);
   }
   function update(effect: BattleCardEffect, root: number, path: number[] = []): BattleCardEffect {
-    const edits = editsByAddress.get([root, ...path].join("/"));
+    const edits = editsByAddress.get(effectAddressKey({ effectIndex: root, effectPath: path }));
     if (edits) {
       const changed = { ...effect };
       for (const edit of edits) (changed as Record<string, unknown>)[edit.field] = nextValue * edit.multiplier;
@@ -93,12 +95,7 @@ export function applyNumericCorruption(card: BattleCard, target: CorruptionTarge
   if (sourceEffect?.kind === "companion-action") nextValue = Math.max(1, nextValue);
   if (
     sourceEffect?.kind === "random-damage" &&
-    !target.edits.some(
-      (edit) =>
-        edit.effectIndex === target.effectIndex &&
-        (edit.effectPath ?? []).join("/") === (target.effectPath ?? []).join("/") &&
-        edit.field !== target.field,
-    )
+    !target.edits.some((edit) => effectAddressKey(edit) === effectAddressKey(target) && edit.field !== target.field)
   ) {
     if (target.field === "minAmount") nextValue = Math.min(nextValue, sourceEffect.maxAmount);
     if (target.field === "maxAmount") nextValue = Math.max(nextValue, sourceEffect.minAmount);
@@ -109,7 +106,6 @@ export function applyNumericCorruption(card: BattleCard, target: CorruptionTarge
 
   const nextCard = updateCardNumericValue(card, target, nextValue);
   if (nextCard === card) return card;
-  nextCard.corrupted = true;
   const deltaLen = nextCard.descriptionLines[target.lineIndex]!.length - currentLine.length;
   const shiftedExisting = (card.corruptedValuePositions ?? [])
     .filter((pos) => !(pos.lineIndex === target.lineIndex && pos.matchIndex === target.matchIndex))
@@ -118,9 +114,12 @@ export function applyNumericCorruption(card: BattleCard, target: CorruptionTarge
         ? { ...pos, matchIndex: pos.matchIndex + deltaLen }
         : pos,
     );
-  nextCard.corruptedValuePositions = [
-    ...shiftedExisting,
-    { lineIndex: target.lineIndex, matchIndex: target.matchIndex },
-  ].filter((position) => /^\d/.test(nextCard.descriptionLines[position.lineIndex]?.slice(position.matchIndex) ?? ""));
-  return nextCard;
+  return {
+    ...nextCard,
+    corrupted: true,
+    corruptedValuePositions: [
+      ...shiftedExisting,
+      { lineIndex: target.lineIndex, matchIndex: target.matchIndex },
+    ].filter((position) => /^\d/.test(nextCard.descriptionLines[position.lineIndex]?.slice(position.matchIndex) ?? "")),
+  };
 }

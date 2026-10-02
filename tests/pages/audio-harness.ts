@@ -19,7 +19,7 @@ async function pretendPlayerHost(page: Page): Promise<void> {
   });
 }
 
-/** Counts `/sounds/` plays in `window.__alchemySfxPlays`. */
+/** Counts successfully started SFX, including media loading and play rejection. */
 export async function trackSfxPlays(page: Page): Promise<void> {
   await pretendPlayerHost(page);
   await page.addInitScript((marker: string) => {
@@ -30,11 +30,11 @@ export async function trackSfxPlays(page: Page): Promise<void> {
       constructor(src?: string) {
         super(src);
         const origPlay = this.play.bind(this);
-        this.play = () => {
-          if (this.src.includes(marker)) {
+        this.play = async () => {
+          await origPlay();
+          if (this.src.includes(marker) && this.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
             runtime.__alchemySfxPlays = (runtime.__alchemySfxPlays ?? 0) + 1;
           }
-          return origPlay();
         };
       }
     };

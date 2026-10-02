@@ -1,6 +1,8 @@
 import { CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
 import { capitalizeWord } from "@/lib/utils";
 import { conditionalDamageDescription } from "./cards/conditional-damage-description";
+import { areBattleCardEffectsEqual } from "./effect-tree";
+import { DAMAGE_TYPES } from "./types";
 import type { BattleCard, BattleCardEffect, EnemyStatusId, KeywordId } from "./types";
 
 interface EffectPresentation<K extends BattleCardEffect["kind"]> {
@@ -67,7 +69,7 @@ const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } =
   },
   "cleanse-player-status-to-damage": { keywords: (effect) => [effect.status, effect.damageType] },
   "random-damage": {
-    keywords: (effect) => (effect.damageTypePool?.length ? effect.damageTypePool : ["physical"]),
+    keywords: (effect) => [...(effect.damageTypePool?.length ? effect.damageTypePool : DAMAGE_TYPES)],
     describe: (effect) =>
       effect.damageTypePool?.length
         ? `Deal ${effect.minAmount}–${effect.maxAmount} ${joinOrOptions(effect.damageTypePool.map(capitalizeWord), true)} damage`
@@ -76,7 +78,11 @@ const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } =
   chance: { keywords: (effect) => collectKeywordsFromChance(effect) },
   "player-status": {
     keywords: (effect) =>
-      effect.statusPool ?? (effect.status !== "haste" && effect.status !== "phoenixFeather" ? [effect.status] : []),
+      effect.statusPool
+        ? [...effect.statusPool]
+        : effect.status !== "haste" && effect.status !== "phoenixFeather"
+          ? [effect.status]
+          : [],
     describe: (effect) => {
       if (effect.perManaCrystal !== undefined)
         return `Gain ${effect.perManaCrystal} ${capitalizeWord(effect.status)} per Mana Crystal`;
@@ -257,7 +263,7 @@ export function describeCardEffects(effects: readonly BattleCardEffect[]): strin
         continue;
       }
       const repeated = describeOnce(effect);
-      if (repeated && JSON.stringify(effect) === JSON.stringify(next)) {
+      if (repeated && areBattleCardEffectsEqual(effect, next)) {
         lines.push(`${repeated} twice`);
         index++;
         continue;
@@ -267,7 +273,7 @@ export function describeCardEffects(effects: readonly BattleCardEffect[]): strin
         next.kind === "repeat-over-turns" &&
         next.remainingTurns === 1 &&
         next.effects.length === 1 &&
-        JSON.stringify(effect) === JSON.stringify(next.effects[0])
+        areBattleCardEffectsEqual(effect, next.effects[0]!)
       ) {
         lines.push(`${repeated} this turn and next`);
         index++;

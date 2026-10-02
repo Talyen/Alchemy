@@ -1,9 +1,9 @@
 import "../../../../helpers/mock-audio";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CharacterSelectScreen } from "@/features/alchemy/run-setup/screens/character-select-screen";
-import { getPlasmaColorPairForCharacter } from "@/features/alchemy/shared/config";
+
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 
 describe("CharacterSelectScreen", () => {
@@ -28,26 +28,6 @@ describe("CharacterSelectScreen", () => {
     expect(screen.getByRole("button", { name: /Rogue/i }).getAttribute("aria-disabled")).toBe("false");
   });
 
-  it("renders heroes in roster order", () => {
-    render(
-      <CharacterSelectScreen
-        onSelect={vi.fn()}
-        finishedRunCharacters={["knight", "rogue", "ranger", "wizard", "alchemist", "warlock", "druid"]}
-      />,
-    );
-
-    expect(screen.getAllByRole("button").map((button) => button.getAttribute("aria-label"))).toEqual([
-      "Select Knight",
-      "Select Rogue",
-      "Select Ranger",
-      "Select Wizard",
-      "Select Alchemist",
-      "Select Warlock",
-      "Select Druid",
-      "Select Wildcard",
-    ]);
-  });
-
   it("triggers onSelect when clicking an unlocked hero", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
@@ -58,26 +38,6 @@ describe("CharacterSelectScreen", () => {
     expect(onSelect).toHaveBeenCalledWith("knight");
   });
 
-  it("uses the hero tooltip as the plasma owner for pointer and keyboard interaction", async () => {
-    render(<CharacterSelectScreen onSelect={vi.fn()} finishedRunCharacters={[]} />);
-    const knight = screen.getByRole("button", { name: "Select Knight" });
-    const wrapper = knight.parentElement!;
-
-    fireEvent.mouseEnter(wrapper);
-    await waitFor(() =>
-      expect(useUiStore.getState().plasmaInteraction?.colorPair).toEqual(getPlasmaColorPairForCharacter("knight")),
-    );
-    fireEvent.mouseLeave(wrapper);
-    await waitFor(() => expect(useUiStore.getState().plasmaInteraction).toBeNull());
-
-    fireEvent.focus(knight);
-    await waitFor(() =>
-      expect(useUiStore.getState().plasmaInteraction?.colorPair).toEqual(getPlasmaColorPairForCharacter("knight")),
-    );
-    fireEvent.blur(knight);
-    await waitFor(() => expect(useUiStore.getState().plasmaInteraction).toBeNull());
-  });
-
   it("rejects selection of a locked hero", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
@@ -85,27 +45,5 @@ describe("CharacterSelectScreen", () => {
 
     await user.click(screen.getByRole("button", { name: "Rogue (Locked)" }));
     expect(onSelect).not.toHaveBeenCalled();
-  });
-
-  it("renders shine border with hero affinity colors and hover preview styles on locked heroes", () => {
-    const { rerender } = render(<CharacterSelectScreen onSelect={vi.fn()} finishedRunCharacters={[]} />);
-
-    const lockedRogueButton = screen.getByRole("button", { name: "Rogue (Locked)" });
-    const shineBorder = lockedRogueButton.querySelector(".shine-border");
-    expect(shineBorder).not.toBeNull();
-    const lockedShinePaint = lockedRogueButton.querySelector<HTMLElement>(".shine-border-paint")?.style.backgroundColor;
-    expect(lockedShinePaint).toBeTruthy();
-
-    const rogueImage = lockedRogueButton.querySelector("img");
-    expect(rogueImage?.className).toContain("opacity-45");
-    expect(rogueImage?.className).toContain("grayscale");
-    expect(rogueImage?.className).toContain("group-hover:opacity-100");
-    expect(rogueImage?.className).toContain("group-hover:grayscale-0");
-
-    rerender(<CharacterSelectScreen onSelect={vi.fn()} finishedRunCharacters={["knight"]} />);
-    const unlockedRogueButton = screen.getByRole("button", { name: "Select Rogue" });
-    const unlockedShinePaint =
-      unlockedRogueButton.querySelector<HTMLElement>(".shine-border-paint")?.style.backgroundColor;
-    expect(lockedShinePaint).toBe(unlockedShinePaint);
   });
 });

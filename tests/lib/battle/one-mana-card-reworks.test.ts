@@ -62,7 +62,7 @@ describe("one-Mana card tradeoffs", () => {
     expect(played.pendingTurnStartEffects).toHaveLength(0);
   });
 
-  it("Burning Wish creates normal Burn buildup without changing Gear-only Wish pulses", () => {
+  it("Burning Wish and Wishfire create normal Burn buildup without spending a reserved critical hit", () => {
     const initial = battle({
       talentEffects: { burnOnWish: 2 },
       enemyMitigation: { armor: 3 },
@@ -74,13 +74,14 @@ describe("one-Mana card tradeoffs", () => {
     expect(burned.enemyMitigation.armor).toBe(2);
     expect(burned.flags.nextHitCrit).toBe(true);
     const gear = applyWishEffect(
-      battle({ gearEffects: { burnOnWish: 2 }, enemyStatuses: { burn: 1 } }),
+      battle({ gearEffects: { burnOnWish: 2 }, enemyStatuses: { burn: 1 }, flags: { nextHitCrit: true } }),
       cardById.wish!,
       1,
       [],
     );
     expect(gear.enemyHealth).toBe(198);
-    expect(gear.enemyStatuses.burn).toBe(1);
+    expect(gear.enemyStatuses.burn).toBe(3);
+    expect(gear.flags.nextHitCrit).toBe(true);
   });
 
   it("Stargaze does not add a Wish to the pending queue", () => {

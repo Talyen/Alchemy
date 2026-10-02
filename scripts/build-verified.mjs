@@ -4,6 +4,7 @@ import { syncGenerated } from "./sync-generated.mjs";
 import { runTaskCommand } from "./lib/run-command.mjs";
 import { defineScript, UsageError } from "./lib/script-run.mjs";
 import { validateDesktopBuildConfig } from "./lib/release/desktop-build-config.mjs";
+import { REPO_ROOT } from "./lib/repository-paths.mjs";
 
 async function main(argv = process.argv.slice(2)) {
   const modes = [];
@@ -51,6 +52,7 @@ async function main(argv = process.argv.slice(2)) {
   }
 
   const result = await runTaskCommand("npx", ["vite", ...viteArgs], {
+    cwd: REPO_ROOT,
     env: { ...process.env },
     label: isDesktop ? "desktop build" : "web build",
     live,

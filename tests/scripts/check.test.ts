@@ -3,9 +3,11 @@ import { readFileSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { captureSourceDigest, parseCheckArgs, runCheck } from "../../scripts/check.mjs";
+import { captureSourceDigest, parseCheckArgs, runCheck as runFullCheck } from "../../scripts/check.mjs";
 
-describe("source-aware completion gate", () => {
+const runCheck = (...args: Parameters<typeof runFullCheck>) => runFullCheck([...(args[0] ?? []), "--full"], args[1]);
+
+describe("full source-aware completion gate", () => {
   let runId: string;
 
   beforeEach(() => {
@@ -174,7 +176,7 @@ describe("source-aware completion gate", () => {
     });
     expect(code).toBe(1);
     const record = JSON.parse(readFileSync(join(process.cwd(), "reports/current-run.json"), "utf8")) as {
-      artifacts: Array<{ role: string; existsAtWrite: boolean }>;
+      artifacts: Array<{ path: string; role: string; existsAtWrite: boolean }>;
       commandExposures: Array<{ key: string; rawBytes: number; exposedBytes: number }>;
       summary: string;
     };
@@ -182,9 +184,14 @@ describe("source-aware completion gate", () => {
       expect.objectContaining({ role: "primary", existsAtWrite: true }),
       expect.objectContaining({ role: "secondary", existsAtWrite: true }),
     ]);
-    expect(record.commandExposures).toContainEqual(
-      expect.objectContaining({ key: "ci-static", rawBytes: 21, exposedBytes: 21 }),
-    );
+    expect(record.commandExposures).toContainEqual(expect.objectContaining({ key: "ci-static", rawBytes: 21 }));
+    const failureExposure = record.commandExposures.find((entry) => entry.key === "ci-static");
+    expect(failureExposure?.exposedBytes).toBeGreaterThanOrEqual(21);
+    expect(failureExposure?.exposedBytes).toBeLessThanOrEqual(4096);
+    const digest = record.artifacts.find((artifact) => artifact.role === "primary");
+    const detail = readFileSync(join(process.cwd(), digest?.path ?? ""), "utf8");
+    expect(detail).toContain("static failure detail");
+    expect(detail).toContain("# Verification failure: CI static checks");
     expect(record.summary).toBe("Check failed at CI static checks.");
     expect(record.commandExposures.map((entry) => entry.key)).toEqual(["verification", "ci-static"]);
   });

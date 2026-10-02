@@ -1,6 +1,7 @@
 import { LOOT_ACCOUNT_MULTIPLIERS, LOOT_DEPTH_CURVES, LOOT_SOURCE_WEIGHTS } from "@/lib/game-constants";
 import type { DifficultyId } from "@/lib/game-data";
 import { clamp, lerp } from "@/lib/math";
+import { pickWeighted } from "@/lib/rng";
 
 export type LootSource = keyof typeof LOOT_SOURCE_WEIGHTS;
 /** Every loot kind in the source-weight tables. Tests assert each source carries exactly these keys. */
@@ -46,20 +47,23 @@ export function lootAccountMultiplier(difficulty: DifficultyId | null): number {
 }
 
 function normalizeLootWeights(weights: LootWeights, available: LootAvailability = {}): LootWeights {
-  const filtered = { ...weights };
-  for (const kind of Object.keys(filtered) as LootKind[]) {
-    if (available[kind] === false) filtered[kind] = 0;
+  // Callers supply a fresh, private record. Preserve its key order so sums
+  // and seeded bucket boundaries retain their existing floating-point values.
+  const kinds = Object.keys(weights) as LootKind[];
+  let total = 0;
+  for (const kind of kinds) {
+    if (available[kind] === false) weights[kind] = 0;
+    total += weights[kind];
   }
-  let total = Object.values(filtered).reduce((sum, weight) => sum + weight, 0);
   if (total === 0) {
     const fallback = LOOT_FALLBACK_ORDER.find((kind) => available[kind] !== false);
-    if (fallback) filtered[fallback] = 1;
-    total = Object.values(filtered).reduce((sum, weight) => sum + weight, 0);
+    if (fallback) weights[fallback] = 1;
+    for (const kind of kinds) total += weights[kind];
   }
   if (total > 0) {
-    for (const kind of Object.keys(filtered) as LootKind[]) filtered[kind] /= total;
+    for (const kind of kinds) weights[kind] /= total;
   }
-  return filtered;
+  return weights;
 }
 
 export function resolveLootWeights({
@@ -86,23 +90,10 @@ export function resolveLootWeights({
   return normalizeLootWeights(weights, available);
 }
 
-function pickWeighted<T extends string>(weights: Record<T, number>, rng: () => number): T {
-  const total = Object.values<number>(weights).reduce((sum, weight) => sum + weight, 0);
-  if (total <= 0) throw new Error("Cannot select from an empty loot pool");
-  const draw = rng();
-  if (!(draw >= 0 && draw < 1)) throw new Error("Rng draw out of range");
-  let remaining = draw * total;
-  let last: T | undefined;
-  // Half-open buckets: a draw landing exactly on a boundary falls through to
-  // the next kind, and float rounding falls back to the last positive kind.
-  for (const kind of Object.keys(weights) as T[]) {
-    if (weights[kind] <= 0) continue;
-    last = kind;
-    remaining -= weights[kind];
-    if (remaining < 0) return kind;
-  }
-  if (!last) throw new Error("Cannot select from an empty loot pool");
-  return last;
+function pickLootKind<T extends string>(weights: Record<T, number>, rng: () => number): T {
+  const selected = pickWeighted(Object.keys(weights) as T[], (kind) => weights[kind], rng);
+  if (selected === undefined) throw new Error("Cannot select from an empty loot pool");
+  return selected;
 }
 
 function lootGroupWeights(weights: LootWeights): Record<LootGroup, number> {
@@ -115,7 +106,7 @@ function lootGroupWeights(weights: LootWeights): Record<LootGroup, number> {
 }
 
 export function rollLootGroup(weights: LootWeights, rng: () => number): LootGroup {
-  return pickWeighted(lootGroupWeights(weights), rng);
+  return pickLootKind(lootGroupWeights(weights), rng);
 }
 
 export function rollLootGearRarity(
@@ -127,5 +118,5 @@ export function rollLootGearRarity(
     { ...weights, card: 0, boon: 0, trinket: 0 },
     { ...available, card: false, boon: false, trinket: false },
   );
-  return pickWeighted({ basic: eligible.basic, astral: eligible.astral, unique: eligible.unique }, rng);
+  return pickLootKind({ basic: eligible.basic, astral: eligible.astral, unique: eligible.unique }, rng);
 }

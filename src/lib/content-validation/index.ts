@@ -1,14 +1,8 @@
 import type { ContentValidationIssue, ContentValidationResult } from "./types";
 import { createCollector } from "./utils";
-import {
-  validateCards,
-  validateEnemies,
-  validateCompanions,
-  validateTrinkets,
-  validateTalents,
-  validateKeywordsAndStatuses,
-  validateEncounterTraits,
-} from "./validators";
+import { validateTalents, validateKeywordsAndStatuses, validateEncounterTraits } from "./validators";
+import { validateCards, validateTrinkets } from "./validators-cards";
+import { validateEnemies, validateCompanions } from "./validators-enemies";
 import { validateGear } from "./validators-gear";
 import { validateTypography } from "./validators-typography";
 

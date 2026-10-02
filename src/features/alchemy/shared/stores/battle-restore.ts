@@ -23,6 +23,7 @@ function hydrateBattleState(battleState: BattleSnapshot): BattleSnapshot {
     ...battleState,
     deck: battleState.deck.map(hydrateCard),
     hand: battleState.hand.map(hydrateCard),
+    pendingHandCards: battleState.pendingHandCards.map(hydrateCard),
     discard: battleState.discard.map(hydrateCard),
     exhausted: battleState.exhausted.map(hydrateCard),
     wishOptions: battleState.wishOptions ? battleState.wishOptions.map(hydrateCard) : null,

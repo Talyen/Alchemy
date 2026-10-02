@@ -298,12 +298,20 @@ describe("cooldown, delay, and cancellation", () => {
 });
 
 describe("SFX lifetime", () => {
-  it("releases an ended element from later stops", () => {
+  it("releases an ended media source exactly once and ignores late failures", () => {
     playCardSound("slash");
     const el = lastFakeAudio()!;
-    el.onended?.();
+    const ended = el.onended!;
+    const failed = el.onerror!;
+    ended();
+    ended();
+    failed();
     stopAllSfx();
-    expect(el.pause).not.toHaveBeenCalled();
+    expect(el.pause).toHaveBeenCalledOnce();
+    expect(el.removeAttribute).toHaveBeenCalledWith("src");
+    expect(el.load).toHaveBeenCalledOnce();
+    expect(el.onended).toBeNull();
+    expect(el.onerror).toBeNull();
   });
 
   it("releases a failed element from later stops", () => {

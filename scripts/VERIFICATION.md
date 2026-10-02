@@ -5,19 +5,20 @@
 Gate composition, CI tiers, and reuse policy live in
 [CONTRIBUTING](../CONTRIBUTING.md#static-build-and-ci-policy).
 
-| Concern                                   | Implementation owner                                                                                                                                                                                  |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Completion orchestration                  | `check.mjs`                                                                                                                                                                                           |
-| Related tests and risk escalations        | `verify-changed.mjs`                                                                                                                                                                                  |
-| Finished-step exposure/digest reporting   | `lib/run-step.mjs` (shared by `check` + `verify`)                                                                                                                                                     |
-| Path parsing and classification           | `lib/verification/changed-paths.mjs` + `lib/verification/change-routes.mjs`                                                                                                                           |
-| Documentation contracts and plan metadata | `check-docs.mjs` (also serves `plans:check` via `--plans-only` and `docs:check:final` via `--final`), `check-documentation-contract.mjs`, `lib/plan-checks.mjs` (`archive-plans.mjs` shares that lib) |
-| Passing unit receipts                     | `lib/verification/verification-cache.mjs`                                                                                                                                                             |
-| Bundle budgets                            | `lib/verification/bundle-budget.mjs`                                                                                                                                                                  |
-| Full and staged formatting                | `run-prettier.mjs` + `prettier-paths.mjs` + `.prettierignore` (`PRETTIER_NEVER_FORMAT_RE` is the staged-path subset; `.prettierignore` also covers build outputs)                                     |
-| Plan creation and archiving               | `new-plan.mjs` + `archive-plans.mjs`; [plan lifecycle](../Docs/Plans/README.md#task-handoff)                                                                                                          |
-| Selection byte budgets                    | `lib/agent/selection-budgets.mjs` (`INLINE_ARGS_BYTES` for check paths.json spill vs `RELATED_SELECTION_BYTES` for verify unit-all fallback; same value, different meanings)                          |
-| Test concurrency                          | `lib/verification/test-concurrency.mjs` (`VITEST_MAX_WORKERS` for ship suites; CI full runs keep Vitest defaults)                                                                                     |
+| Concern                                    | Implementation owner                                                                                                                                                                                  |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Completion orchestration                   | `check.mjs`                                                                                                                                                                                           |
+| Local smoke and opt-in full test selection | `verify-changed.mjs` + `run-local-tests.mjs`                                                                                                                                                          |
+| Finished-step exposure/digest reporting    | `lib/run-step.mjs` (shared by `check` + `verify`)                                                                                                                                                     |
+| Path parsing and classification            | `lib/verification/changed-paths.mjs` + `lib/verification/change-routes.mjs`                                                                                                                           |
+| Documentation contracts and plan metadata  | `check-docs.mjs` (also serves `plans:check` via `--plans-only` and `docs:check:final` via `--final`), `check-documentation-contract.mjs`, `lib/plan-checks.mjs` (`archive-plans.mjs` shares that lib) |
+| Passing unit receipts                      | `lib/verification/verification-cache.mjs`                                                                                                                                                             |
+| Bundle budgets                             | `lib/verification/bundle-budget.mjs`                                                                                                                                                                  |
+| Full and staged formatting                 | `run-prettier.mjs` + `prettier-paths.mjs` + `.prettierignore` (`PRETTIER_NEVER_FORMAT_RE` is the staged-path subset; `.prettierignore` also covers build outputs)                                     |
+| Plan creation and archiving                | `new-plan.mjs` + `archive-plans.mjs`; [plan lifecycle](../Docs/Plans/README.md#task-handoff)                                                                                                          |
+| Selection byte budgets                     | `lib/agent/selection-budgets.mjs` (`INLINE_ARGS_BYTES` for check paths.json spill vs `RELATED_SELECTION_BYTES` for verify unit-all fallback; same value, different meanings)                          |
+| Test concurrency                           | `lib/verification/test-concurrency.mjs` (`VITEST_MAX_WORKERS` for related, ship, and full unit runs via `vitest.config.ts`; local smoke uses `vitest.local.config.ts`)                                |
+| Overlapping local test runs                | `lib/verification/local-test-lane.mjs` (used by `run-compact.mjs` and `run-ship-unit.mjs`)                                                                                                            |
 
 `lib/repository-paths.mjs` normalizes selections for checks and discovery. Relative
 and absolute paths inside the checkout are equivalent. Directory selections use
@@ -31,14 +32,36 @@ Route glob matching precompiles `ROUTES` + shared build patterns once instead
 of per file. The `documentation` route covers `Docs/**` so check classification
 (`isDocumentationPath`) and verify routing agree on docs images and archives.
 
+## Local verification profiles
+
+The default `verify` profile runs a fixed, bounded Node smoke suite for selections
+containing non-Markdown paths; Markdown-only selections run no verifier commands.
+`check` adds small selected-file formatting batches. Documentation edits also need
+an explicit `npm run docs:check` under [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change).
+The default profile does not run dependency-related selection, full static checks,
+builds, browsers, or the verification-cache identity walk. Unit suites may run
+locally without user approval via `npm run test:full -- <paths>`. Broader full
+verification commands require an explicit local opt-in; CI owns complete validation.
+
+The local test lane holds a loopback TCP listener on `127.0.0.1:48157` for the
+duration of a one-shot unit or browser command. Bind failure stops the new run
+before collection and reports the contention. Normal completion releases the
+listener; process termination releases it through the OS, without stale lock
+files, PID reuse decisions, or killing another session. An unrelated listener on
+that port also blocks the run and must be diagnosed, not terminated automatically.
+Raw Vitest/Playwright invocations and watch/debug sessions are outside this lane.
+It coordinates participating Alchemy commands, not unrelated host workloads.
+
+## CI and documentation contracts
+
 CI path filters (`.github/workflows/ci.yml` `changes` job) stay owned by the
 workflows; `tests/scripts/ci-path-filters.test.ts` pins the intended
-route↔gate alignment so the two lists cannot drift silently. `docs:check` runs
+route↔gate alignment so the two lists cannot drift silently. In the full profile, `docs:check` runs
 once per gate: verification skips its copy (`--skip-docs-check`) when `check`
 will run it through the static aggregate.
-`check:static` runs generated + format + typecheck + lint (fast local static);
+`check:static` runs generated + format + typecheck + lint (CI or explicit local opt-in);
 `lint:ci` adds docs + deadcode + boundaries + architecture-smoke + Playwright
-collection, so the boundary subset is not double-run on every local static
+collection, so the boundary subset is not double-run on every full static
 invocation. Generated-output validation stays layered by design: fast
 `sync-generated --check` (barrels + version), full `assets:check` (prepared
 outputs), and the pre-build guard in `build-verified.mjs` share one
@@ -55,12 +78,14 @@ history is advisory and does not require an entry for each skill or knowledge ed
 Repository-relative matching uses forward slashes on every platform, including
 history and archived-plan exemptions.
 
+## Build and test selection
+
 Script interface ownership is described in [Script declarations](./README.md#script-declarations). Shared build inputs select both renderer builds through the existing
 change routes. Test selection preserves deleted paths for classification and risk escalations, but executes only surviving changed unit files. When consolidating tests, include the surviving files in the task selection; update stale suite references rather than disabling their validation. [Test value](../CONTRIBUTING.md#test-value-and-coverage-strategy) owns coverage decisions.
 
-`check:bundle` enforces total JavaScript size, reports individual chunk sizes, and checks the current `dist/assets/` and fails when the build is missing
-or empty. Web and desktop renderer builds both write `dist/`; run them sequentially and check immediately
-after the relevant build. The local completion gate checks each selected build
+`check:bundle` enforces total JavaScript size, reports individual chunk sizes, and checks the selected edition's renderer assets, failing when the build is missing
+or empty. [Edition policy](../Docs/STEAM_DEMO.md#edition-contract) selects `dist/` for full and `dist-demo/` for demo through `ALCHEMY_EDITION`. Web and desktop builds of the same edition overwrite that edition's renderer directory; run them sequentially with the same edition selection and check immediately
+after the relevant build. The opt-in full completion gate checks each selected build
 before continuing; skipping builds also skips their budgets. CI checks web bundles
 on every push and release; ship gates check desktop bundles, and `dist:desktop`
 checks before packaging or signing.

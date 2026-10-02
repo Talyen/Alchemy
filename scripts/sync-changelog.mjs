@@ -6,7 +6,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getCommitsSinceTag, latestVersionTag } from "./lib/release/git-release.mjs";
 import { buildChangelogUnreleased, replaceChangelogUnreleased } from "./lib/release/patch-notes-core.mjs";
-import { defineScript } from "./lib/script-run.mjs";
+import { defineScript, UsageError } from "./lib/script-run.mjs";
+import { parseKnownFlags } from "./lib/cli-args.mjs";
 import { writeTextIfChanged } from "./lib/write-text-if-changed.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -62,6 +63,7 @@ export async function syncChangelog(options = {}) {
 }
 
 defineScript(import.meta.url, () => {
-  const isCheck = process.argv.includes("--check");
-  return syncChangelog({ check: isCheck });
+  const { flags, rest } = parseKnownFlags(process.argv.slice(2), { check: {} });
+  if (rest.length) throw new UsageError(`Unexpected changelog arguments: ${rest.join(", ")}`);
+  return syncChangelog({ check: flags.has("check") });
 });

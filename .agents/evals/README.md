@@ -1,6 +1,6 @@
 # Reproducible agent evaluations
 
-Use matched trials for uncertain workflow changes, consequential changes to safeguards, or claims of improved agent performance. Straightforward contradiction removal, procedural simplification, formatting, and link repairs can use source review and documentation checks. When trials are warranted, choose one or two representative tasks; keep this a small set of real coding exercises, not an autonomous benchmark service.
+Use matched trials for uncertain workflow changes, consequential changes to safeguards, or claims of improved agent performance. Straightforward contradiction removal, procedural simplification, formatting, and link repairs can use source review and documentation checks. Evaluate one candidate improvement at a time against the same frozen baseline; record its exact path set and patch hash so status, diagnostics, routing and instruction changes cannot borrow one another's results. When trials are warranted, choose one or two representative tasks; keep this a small set of real coding exercises, not an autonomous benchmark service.
 
 ## Fixed setup
 
@@ -8,9 +8,16 @@ Use matched trials for uncertain workflow changes, consequential changes to safe
 
 When a new cohort includes an uncommitted source snapshot, freeze that snapshot once and apply the candidate change to the frozen copy. Before launching, compare the source inventories and require that only the intended candidate paths differ. Never populate a candidate from live files while another session may be editing them; record the snapshot and candidate patch hashes.
 
+For review scenarios, capture index and working-file inventories independently;
+an absent working file may still have reviewed index contents. Record whether
+participants used the changed retrieval capability: cheaper answers from an
+unchanged workflow do not demonstrate savings from an unused tool.
+
 Before coding trials, confirm that the evaluation sandbox supports the selected gates, including local loopback listeners used by tooling tests and preview smoke. Record sandbox and network settings in the comparison settings. Exclude setup failures and restart affected comparisons with matching capabilities.
 
 Use different variant names, but identical comparison settings. Put the per-variant instruction patch identity in acceptance evidence, not the shared settings. Run at least two trials per variant before claiming a reliable improvement. Use fresh verification (`ALCHEMY_VERIFY_FRESH=1`) in both variants for discovery comparisons; evaluate cache effectiveness separately with the same warm/cold procedure. Never compare an empty baseline event capture with an instrumented candidate as if that established savings.
+
+For CLI trials, pin the model and reasoning effort explicitly and use `--ignore-user-config`; a shared app can change global defaults during a comparison. Record any additional fixed tool configuration. Reset disposable context-session state between trials and verify source inventories afterward. Keep runs with settings or source drift as excluded evidence, not efficiency results.
 
 For new cohorts, include outcome-focused requests that leave implementation discovery to the agent. Keep acceptance checks separate from the request where they would disclose the workflow being evaluated. For example, a save-preference request can specify its default and persistence behavior without prescribing the schema, codec, fixture, or migration edits. Preserve historical prompts and baselines; give a changed request a new task version and use it identically in both variants.
 
@@ -64,3 +71,9 @@ Keep older baselines immutable. When game evolution requires a new baseline, cha
 [September 12 discovery-context trials](./results/context-discovery-2026-09-12.md) record battle/run-state adoption and the excluded concurrent-edit setup.
 
 [September 12 instruction-guidance trials](./results/instruction-guidance-2026-09-12.md) record the proportional-discovery and skill-simplification comparison, including mixed token results and the excluded sandbox setup.
+
+[October 2 optional-retrieval trials](./results/optional-retrieval-2026-10-02.md) record smaller discovery/diff responses, increased whole-task token usage, the removed startup hint, and the excluded global-settings drift.
+
+[October 2 retrieval follow-up trials](./results/retrieval-followup-2026-10-02.md) isolate status, checkpoints, diagnostics, routing and root instructions; record mixed costs, unused capabilities and the excluded incomplete checkpoint evidence.
+
+[October 2 repository-efficiency trials](./results/repository-efficiency-2026-10-02.md) record independent helper/classification comparisons, mixed whole-investigation costs, optional-tool uptake and preserved enforcement.

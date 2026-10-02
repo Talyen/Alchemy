@@ -1,7 +1,13 @@
 import { CORRUPTION_TEXT_PATTERNS } from "@/lib/game-constants";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
-import { conditionalDamageDescription, effectChildren, effectDescriptionLine } from "@/lib/game-data";
+import {
+  areBattleCardEffectsEqual,
+  conditionalDamageDescription,
+  effectChildren,
+  effectDescriptionLine,
+} from "@/lib/game-data";
 import { capitalizeWord } from "@/lib/utils";
+import { effectAddressKey, getCorruptionTargetEffect, type NumericEffectAddress } from "./effect-address";
 
 const CORRUPTIBLE_NUMERIC_FIELDS = [
   "amount",
@@ -15,11 +21,6 @@ const CORRUPTIBLE_NUMERIC_FIELDS = [
 ] as const;
 
 type CorruptibleNumericField = (typeof CORRUPTIBLE_NUMERIC_FIELDS)[number];
-
-interface NumericEffectAddress {
-  effectIndex: number;
-  effectPath?: number[];
-}
 
 interface NumericEffectEdit extends NumericEffectAddress {
   kind: BattleCardEffect["kind"];
@@ -150,7 +151,7 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
       effect.kind === "repeat-over-turns" &&
       effect.remainingTurns === 1 &&
       effect.effects.length === 1 &&
-      areEffectsEquivalent(previous, effect.effects[0]!) &&
+      areBattleCardEffectsEqual(previous, effect.effects[0]!) &&
       card.descriptionLines.includes(`${effectDescriptionLine(previous)} this turn and next`)
     )
       implicitScheduledPaths.add(effectAddressKey({ effectIndex: index, effectPath: [0] }));
@@ -318,7 +319,7 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
     const source = getCorruptionTargetEffect(card, target)!;
     const edits = target.edits;
     for (const node of nodes) {
-      if (!node.effectPath || authored.has(effectAddressKey(node)) || !areEffectsEquivalent(node.effect, source))
+      if (!node.effectPath || authored.has(effectAddressKey(node)) || !areBattleCardEffectsEqual(node.effect, source))
         continue;
       if (!edits.some((edit) => effectAddressKey(edit) === effectAddressKey(node)))
         edits.push(...bindingFor(node, target.field).edits);
@@ -326,30 +327,4 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
     edits.sort((a, b) => nodeOrder.get(effectAddressKey(a))! - nodeOrder.get(effectAddressKey(b))!);
   }
   return targets.sort((a, b) => a.lineIndex - b.lineIndex || a.matchIndex - b.matchIndex);
-}
-
-export function getCorruptionTargetEffect(
-  card: BattleCard,
-  target: NumericEffectAddress,
-): BattleCardEffect | undefined {
-  let effect = card.effects[target.effectIndex];
-  for (const index of target.effectPath ?? []) {
-    if (!effect) return undefined;
-    effect = effectChildren(effect)[index];
-  }
-  return effect;
-}
-
-function effectAddressKey(address: NumericEffectAddress): string {
-  return [address.effectIndex, ...(address.effectPath ?? [])].join("/");
-}
-
-function areEffectsEquivalent(a: BattleCardEffect, b: BattleCardEffect): boolean {
-  if (a === b) return true;
-  if (a.kind !== b.kind) return false;
-  const aKeys = Object.keys(a);
-  if (aKeys.length !== Object.keys(b).length) return false;
-  const aRecord = a as Record<string, unknown>;
-  const bRecord = b as Record<string, unknown>;
-  return aKeys.every((key) => aRecord[key] === bRecord[key]);
 }

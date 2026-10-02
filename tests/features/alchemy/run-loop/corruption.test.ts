@@ -8,7 +8,7 @@ import {
 } from "@/lib/corruption";
 import { getCorruptionMutationGroups } from "@/lib/corruption/mutations";
 import { applyNumericCorruption, updateCardNumericValue } from "@/lib/corruption/numeric";
-import { cardById, cardLibrary } from "@/lib/game-data";
+import { cardById, cardLibrary, cloneBattleCard, describeCardEffects, type BattleCardEffect } from "@/lib/game-data";
 import { createMixedPotion } from "@/lib/alchemist";
 import type { CORRUPTION_OUTCOME_WEIGHTS } from "@/lib/game-constants";
 import { makeTestCard } from "../../../fixtures/cards";
@@ -354,6 +354,25 @@ describe("labyrinth corruption room modifiers", () => {
 });
 
 describe("numeric text alignment", () => {
+  it("keeps a cloned damage pool's immediate and scheduled amounts aligned", () => {
+    const hit: BattleCardEffect = {
+      kind: "damage",
+      damageType: "physical",
+      damageTypePool: ["physical", "holy"],
+      amount: 3,
+    };
+    const effects: BattleCardEffect[] = [hit, { kind: "repeat-over-turns", remainingTurns: 1, effects: [hit] }];
+    const card = cloneBattleCard(makeTestCard({ effects, descriptionLines: describeCardEffects(effects) }));
+    const before = structuredClone(card);
+    const targets = getEditableCorruptionTargets(card);
+    expect(targets).toHaveLength(1);
+    const changed = applyNumericCorruption(card, targets[0]!, 1);
+    expect(changed.descriptionLines).toEqual(["Deal 4 Physical or Holy damage this turn and next"]);
+    expect(changed.effects[0]).toMatchObject({ amount: 4 });
+    expect(changed.effects[1]).toMatchObject({ effects: [changed.effects[0]] });
+    expect(card).toEqual(before);
+  });
+
   it("reserves a combined damage amount while binding equal-valued custom prose", () => {
     const hit = { kind: "damage" as const, damageType: "burn" as const, amount: 3 };
     const card = makeTestCard({

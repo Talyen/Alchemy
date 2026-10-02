@@ -314,6 +314,7 @@ describe("merchant shop actions", () => {
       const commits: number[] = [];
       const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
       expect(actions.merchant.buyCard({ ...onShelf }, shopItemSlotKey("missing-card", 0))).toBe(false);
+      expect(actions.merchant.buyCard({ ...onShelf, id: "missing-card" }, shopItemSlotKey(onShelf.id, 0))).toBe(false);
       unsubscribe();
       expect(readRunProfile().gold).toBe(999);
       expect(commits).toHaveLength(0);

@@ -15,13 +15,13 @@ function selectCard(key: string | null) {
 }
 
 function resolveCard(container: HTMLDivElement, x: number, y: number) {
-  const slots = Array.from(container.querySelectorAll<HTMLElement>("[data-hand-slot]"));
+  const slots = container.querySelectorAll<HTMLElement>("[data-hand-slot]");
   const first = slots[0];
-  const last = slots.at(-1);
+  const last = slots[slots.length - 1];
   if (!first || !last) return null;
   const bounds = container.getBoundingClientRect();
   const firstRect = first.getBoundingClientRect();
-  const lastRect = last.getBoundingClientRect();
+  const lastRect = last === first ? firstRect : last.getBoundingClientRect();
   const artwork = first.querySelector("button");
   const scale = first.offsetWidth > 0 ? firstRect.width / first.offsetWidth : 1;
   const width = artwork?.offsetWidth ?? first.offsetWidth;
@@ -38,7 +38,7 @@ function resolveCard(container: HTMLDivElement, x: number, y: number) {
   let nearest = first;
   let distance = Infinity;
   for (const slot of slots) {
-    const rect = slot.getBoundingClientRect();
+    const rect = slot === first ? firstRect : slot === last ? lastRect : slot.getBoundingClientRect();
     const candidate = Math.abs(x - rect.left - rect.width / 2);
     if (candidate < distance) {
       nearest = slot;

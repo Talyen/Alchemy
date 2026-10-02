@@ -35,6 +35,7 @@ export function writeCombatFlag<K extends keyof CombatFlags>(
       value = Math.max(state.flags[key] as number, value) as CombatFlags[K];
     }
   }
+  if (Object.is(state.flags[key], value)) return state;
   return { ...state, flags: { ...state.flags, [key]: value } };
 }
 

@@ -44,3 +44,23 @@ describe("Armory targeting transitions", () => {
     expect(result.current.salvagePending).toBeNull();
   });
 });
+
+describe("salvage confirmation target", () => {
+  it("cancels a confirmation if the item is crafted while its old salvage preview is open", () => {
+    const item: GearInstance = { instanceId: "sword", definitionId: "longsword-basic", affixes: [] };
+    const initialProps = {
+      editable: true,
+      craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
+      characterId: "knight" as const,
+      inventoryById: new Map([[item.instanceId, item]]),
+    };
+    const { result, rerender } = renderHook(useArmoryTargetingState, { initialProps });
+    act(() => result.current.confirmSalvage({ instance: item, yield: computeSalvageYield(item) }));
+    expect(result.current.salvagePending?.instance).toBe(item);
+    rerender({ ...initialProps, inventoryById: new Map([[item.instanceId, { ...item }]]) });
+    expect(result.current.salvagePending?.instance).toBe(item);
+    const crafted: GearInstance = { ...item, definitionId: "longsword-astral" };
+    rerender({ ...initialProps, inventoryById: new Map([[item.instanceId, crafted]]) });
+    expect(result.current.salvagePending).toBeNull();
+  });
+});

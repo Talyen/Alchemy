@@ -8,6 +8,7 @@ import {
   SLICE_RIGHT_BORDER_PARTICLES,
   SLICE_SPARK_COLOR,
   type SliceBorderParticle,
+  type SliceSparkSample,
 } from "./slice-particles";
 import type { SliceOffset, SliceVisual } from "./slice-timeline";
 
@@ -28,6 +29,7 @@ function drawBorderSparks(
   originY: number,
   offset: SliceOffset,
   twistDeg: number,
+  scratch: SliceSparkSample,
 ): void {
   if (dissolve <= 0.001) return;
   const cx = cardWidth / 2;
@@ -39,7 +41,7 @@ function drawBorderSparks(
   // stay correct even if draw ordering changes above.
   ctx.fillStyle = SLICE_SPARK_COLOR;
   for (const particle of particles) {
-    const sample = sampleBorderSpark(particle, dissolve, cardWidth, cardHeight);
+    const sample = sampleBorderSpark(particle, dissolve, cardWidth, cardHeight, scratch);
     if (!sample) continue;
     const dx = sample.x - cx;
     const dy = sample.y - cy;
@@ -58,6 +60,9 @@ export function drawSliceFrame(
   originY: number,
 ): void {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  // Samples are consumed immediately; one frame-local object serves every
+  // spark without retaining mutable state across canvases or frames.
+  const scratch: SliceSparkSample = { x: 0, y: 0, diameter: 0, opacity: 0 };
 
   if (visual.lineOpacity > 0.02 && visual.crackDraw > 0) {
     ctx.globalAlpha = visual.lineOpacity * 0.95;
@@ -80,7 +85,7 @@ export function drawSliceFrame(
 
   ctx.fillStyle = SLICE_SPARK_COLOR;
   for (const particle of SLICE_CUT_PARTICLES) {
-    const sample = sampleCutSpark(particle, visual.crackT, cardWidth, cardHeight);
+    const sample = sampleCutSpark(particle, visual.crackT, cardWidth, cardHeight, scratch);
     if (!sample) continue;
     fillSpark(ctx, originX + sample.x, originY + sample.y, sample.diameter, sample.opacity);
   }
@@ -95,6 +100,7 @@ export function drawSliceFrame(
     originY,
     visual.leftOffset,
     -visual.twistDeg,
+    scratch,
   );
   drawBorderSparks(
     ctx,
@@ -106,6 +112,7 @@ export function drawSliceFrame(
     originY,
     visual.rightOffset,
     visual.twistDeg,
+    scratch,
   );
 
   ctx.globalAlpha = 1;

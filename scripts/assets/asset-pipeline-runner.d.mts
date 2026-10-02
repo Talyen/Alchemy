@@ -8,6 +8,10 @@ export function resolvePipelinePaths(
 ): { rootDir: string; sourceDir: string; outputDir: string; manifestPath: string };
 
 export function ensureOutputDir(outputDir: string, options?: { check?: boolean }): Promise<void>;
+export function writeStagedOutput(
+  outputPath: string,
+  transform: (temporaryPath: string) => Promise<unknown>,
+): Promise<void>;
 
 export function readSourceDir(
   dir: string,

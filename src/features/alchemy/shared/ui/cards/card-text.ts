@@ -13,9 +13,11 @@ export function getCorruptedValueOffsets(
   card: Pick<BattleCard, "corruptedValuePositions"> | undefined,
   lineIndex: number,
 ): Set<number> {
-  return new Set(
-    card?.corruptedValuePositions?.filter((p) => p.lineIndex === lineIndex).map((p) => p.matchIndex) ?? [],
-  );
+  const offsets = new Set<number>();
+  for (const position of card?.corruptedValuePositions ?? []) {
+    if (position.lineIndex === lineIndex) offsets.add(position.matchIndex);
+  }
+  return offsets;
 }
 
 export function splitCorruptedNumericParts(

@@ -1,7 +1,7 @@
+import { rollBattleChance } from "./chance-roll";
 import { readCombatFlag } from "./action-context";
 import { resolveSecondaryAction } from "./action-context";
 import { HALF_DIVISOR, LABYRINTH_MODIFIER_CONFIG, REACTIVE_REWARD_CHANCES } from "../game-constants";
-import { rollTalentChance } from "./status-helpers";
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { mergeCombatText } from "./combat-text-events";
@@ -16,6 +16,7 @@ import { applyArmorReward, applyBlockDepletionForgeReward, applyBlockReward } fr
 import {
   applyCardPlayTalentRewards,
   applyMortarAndPestlePotionUse,
+  applyTwinCasting,
   resolveCardEffectChain,
   shouldElementalTalentRepeat,
 } from "./card-play-effects";
@@ -36,7 +37,7 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
   if (state.gearEffects.dodgeDrawAndPlay <= 0) return state;
   if (state.enemyHealth <= 0 || state.playerHealth <= 0) return state;
 
-  if (!rollTalentChance(REACTIVE_REWARD_CHANCES.bladedance, state)) return state;
+  if (!rollBattleChance(REACTIVE_REWARD_CHANCES.bladedance, state)) return state;
   const drawn = takeRandomCardFromDeck(state);
   if (!drawn) return state;
 
@@ -64,6 +65,7 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
     nextState = applyMortarAndPestlePotionUse(nextState, drawn.card, combatTexts);
     nextState = applyCardPlayTalentRewards(nextState, drawn.card, combatTexts, hadNoThornsOnPlay);
   }
+  nextState = applyTwinCasting(nextState, drawn.card, combatTexts);
   nextState = processEncounterTraitCardAction(nextState, drawn.card, combatTexts, chained.attackAttempted);
   if (playTwice) {
     nextState = processEncounterTraitCardAction(
@@ -119,7 +121,7 @@ function applyDodgeCounterAttacks(
   if (
     nextState.gearEffects.physicalOnDodge > 0 &&
     nextState.enemyHealth > 0 &&
-    rollTalentChance(REACTIVE_REWARD_CHANCES.riposting, nextState)
+    rollBattleChance(REACTIVE_REWARD_CHANCES.riposting, nextState)
   ) {
     nextState = resolveSecondaryAction(nextState, "retaliation", (current) =>
       resolveFollowUpHit(
@@ -148,7 +150,7 @@ function applyDodgeCounterAttacks(
       ),
     );
   }
-  if (nextState.talentEffects.goldOnDodge > 0 && rollTalentChance(REACTIVE_REWARD_CHANCES.luckyFoot, nextState)) {
+  if (nextState.talentEffects.goldOnDodge > 0 && rollBattleChance(REACTIVE_REWARD_CHANCES.luckyFoot, nextState)) {
     nextState = addGoldWithCombatText(nextState, nextState.talentEffects.goldOnDodge, combatTexts);
   }
   return nextState;
@@ -227,7 +229,7 @@ function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], 
     nextState.talentEffects.companionAttacksOnDodge &&
     nextState.activeCompanion &&
     nextState.enemyHealth > 0 &&
-    rollTalentChance(REACTIVE_REWARD_CHANCES.packWeave, nextState)
+    rollBattleChance(REACTIVE_REWARD_CHANCES.packWeave, nextState)
   ) {
     nextState = processCompanionTurnStart(nextState, combatTexts);
   }
@@ -254,7 +256,12 @@ export function resolveEnemyAttackHit(
   const { canDodge = false, ...damageOptions } = options;
   if (canDodge && hasEnemyTrait(state, "ravenous")) effect = { ...effect, lifesteal: true };
   const preparedDamage = prepareEnemyDamage(state, effect, damageOptions);
-  const dodged = tryDodgeEnemyDamagePacket(state, combatTexts, canDodge, preparedDamage.incomingDamage);
+  const dodged = tryDodgeEnemyDamagePacket(
+    state,
+    combatTexts,
+    canDodge && preparedDamage.attemptedDamage > 0,
+    preparedDamage.incomingDamage,
+  );
   if (dodged)
     return {
       state: resolvePendingBattleReactions(dodged, combatTexts),

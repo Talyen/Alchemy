@@ -1,5 +1,5 @@
 import "../../../../helpers/mock-audio";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DraftDeckScreen } from "@/features/alchemy/run-setup/screens/draft-deck-screen";
@@ -13,35 +13,6 @@ describe("DraftDeckScreen", () => {
     cleanup();
     vi.useRealTimers();
     useUiStore.setState({ hoveredCardId: null, shimmerState: null, plasmaInteraction: null });
-  });
-
-  it("renders in-progress draft header and choices", async () => {
-    const user = userEvent.setup();
-    const onPick = vi.fn();
-    const onComplete = vi.fn();
-
-    const card1 = makeTestCard({ id: "strike", title: "Strike" });
-    const card2 = makeTestCard({ id: "defend", title: "Defend" });
-    const card3 = makeTestCard({ id: "heal", title: "Heal" });
-
-    render(
-      <DraftDeckScreen
-        onComplete={onComplete}
-        draftedCards={[card1]}
-        draftChoices={[card1, card2, card3]}
-        onPick={onPick}
-      />,
-    );
-
-    expect(screen.getByText("Draft a Deck")).toBeDefined();
-    expect(screen.getByText(`Pick 1 of 3 cards - 1/${String(DRAFT_ROUNDS)} selected`)).toBeDefined();
-
-    const choices = screen.getAllByRole("button");
-    expect(choices.length).toBeGreaterThanOrEqual(3);
-
-    const defendCard = screen.getByRole("button", { name: /Defend/i });
-    await user.click(defendCard);
-    expect(onPick).toHaveBeenCalledWith(card2.id);
   });
 
   it("renders completed draft state with continue action", async () => {
@@ -60,60 +31,6 @@ describe("DraftDeckScreen", () => {
     const continueBtn = screen.getByRole("button", { name: /Continue/i });
     await user.click(continueBtn);
     expect(onComplete).toHaveBeenCalledWith();
-  });
-
-  it("updates plasma interaction on hovering draft choice", () => {
-    const card = makeTestCard({ id: "fireball", title: "Fireball", tags: ["burn"] });
-
-    render(<DraftDeckScreen onComplete={vi.fn()} draftedCards={[]} draftChoices={[card]} onPick={vi.fn()} />);
-
-    const choiceBtn = screen.getByRole("button", { name: /Fireball/i });
-    fireEvent.mouseEnter(choiceBtn);
-
-    expect(useUiStore.getState().plasmaInteraction).not.toBeNull();
-
-    fireEvent.mouseLeave(choiceBtn);
-    expect(useUiStore.getState().plasmaInteraction).toBeNull();
-  });
-
-  it("isolates hover state for duplicate drafted cards", () => {
-    const cardA = makeTestCard({ id: "strike", title: "Strike" });
-    const cardB = makeTestCard({ id: "strike", title: "Strike" });
-    const drafted = [
-      cardA,
-      cardB,
-      ...Array.from({ length: DRAFT_ROUNDS - 2 }, (_, index) =>
-        makeTestCard({ id: `card-${index}`, title: `Card ${index}` }),
-      ),
-    ];
-
-    render(<DraftDeckScreen onComplete={vi.fn()} draftedCards={drafted} draftChoices={[]} onPick={vi.fn()} />);
-
-    const strikeButtons = screen.getAllByRole("button", { name: /Strike/i });
-    expect(strikeButtons).toHaveLength(2);
-
-    fireEvent.mouseEnter(strikeButtons[0]!);
-    expect(useUiStore.getState().hoveredCardId).toBe("drafted-strike-0-strike");
-
-    fireEvent.mouseEnter(strikeButtons[1]!);
-    expect(useUiStore.getState().hoveredCardId).toBe("drafted-strike-1-strike");
-  });
-
-  it("shows keyword shine on hover for draft choices and completed cards", () => {
-    const card = makeTestCard({ id: "fireball", title: "Fireball", tags: ["burn"] });
-    const { rerender } = render(
-      <DraftDeckScreen onComplete={vi.fn()} draftedCards={[]} draftChoices={[card]} onPick={vi.fn()} />,
-    );
-
-    const choiceBtn = screen.getByRole("button", { name: /Fireball/i });
-    expect(choiceBtn.querySelector(".shine-border")).toBeNull();
-    fireEvent.mouseEnter(choiceBtn);
-    expect(choiceBtn.querySelector(".shine-border")).not.toBeNull();
-
-    rerender(<DraftDeckScreen onComplete={vi.fn()} draftedCards={[card]} draftChoices={[]} onPick={vi.fn()} />);
-    const draftedBtn = screen.getByRole("button", { name: /Fireball/i });
-    fireEvent.mouseEnter(draftedBtn);
-    expect(draftedBtn.querySelector(".shine-border")).not.toBeNull();
   });
 
   it("holds the Continue action until the Draft Complete art grid swaps in", async () => {

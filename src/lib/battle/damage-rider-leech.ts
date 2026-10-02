@@ -1,3 +1,4 @@
+import { rollBattleChance } from "./chance-roll";
 import { readCombatFlag } from "./action-context";
 import { applyArmorReward, applyBlockReward, applyCardHealing } from "./status-player";
 import { hasEncounterBenefit } from "./types";
@@ -20,7 +21,6 @@ import {
   gainManaWithCombatText,
 } from "./player-rewards";
 import { scaledGearLeechHeal } from "./scaled-damage";
-import { rollTalentChance } from "./status-helpers";
 import { getBattleRng, pickRandom } from "@/lib/rng";
 import { applyPercentBonus, scalePercent } from "./amount-helpers";
 import { resolveStunFollowUpHit } from "./stun-follow-up-hit";
@@ -75,7 +75,7 @@ export function applyLeechHealing(
   if (actualHealing > 0 && belowHalf && state.gearEffects.stunOnLeechBelowHalfHealth > 0) {
     restored = resolveStunFollowUpHit(restored, state.gearEffects.stunOnLeechBelowHalfHealth, combatTexts);
   }
-  if (actualHealing > 0 && rollTalentChance(state.gearEffects.leechBlockChance, state)) {
+  if (actualHealing > 0 && rollBattleChance(state.gearEffects.leechBlockChance, state)) {
     restored = applyBlockReward(restored, actualHealing, combatTexts, { skipFightPacing: true });
   }
   if (belowHalf && state.talentEffects.leechBlockBelowHalfPercent > 0 && actualHealing > 0) {
@@ -89,7 +89,7 @@ export function applyLeechHealing(
   if (restoredToFull && state.talentEffects.manaOnLeechToFull > 0) {
     restored = gainManaWithCombatText(restored, state.talentEffects.manaOnLeechToFull, combatTexts);
   }
-  if (actualHealing > 0 && rollTalentChance(state.talentEffects.leechGoldChance, state)) {
+  if (actualHealing > 0 && rollBattleChance(state.talentEffects.leechGoldChance, state)) {
     restored = addGoldWithCombatText(restored, actualHealing, combatTexts);
   }
   if (restoredToFull && state.talentEffects.nextAttackPhysicalOnLeechToFull > 0) {
@@ -98,11 +98,15 @@ export function applyLeechHealing(
   return healing > 0 && !isPlayerDefeated(restored) ? applyLeechManaRider(restored, combatTexts) : restored;
 }
 
-/** Shared base scaler: desperate → blood debt → gear → blood-feast, in that order. */
-function scaleLeechBase(state: BattleState, amount: number): number {
+/** Shared base scaler: desperate → blood debt → gear → explicit card share → blood-feast. */
+function scaleLeechBase(state: BattleState, amount: number, cardLeechFraction = 0): number {
+  const base = scaledGearLeechHeal(
+    addBloodDebtHealing(state, applyDesperateLeechBonus(state, amount)),
+    state.gearEffects,
+  );
   return scalePlayerLeechHeal(
     state,
-    scaledGearLeechHeal(addBloodDebtHealing(state, applyDesperateLeechBonus(state, amount)), state.gearEffects),
+    applyPercentBonus(base, state.talentEffects.cardLeechBonusPercent * cardLeechFraction, PERCENT_DENOMINATOR),
   );
 }
 
@@ -110,16 +114,16 @@ export function applyScaledLeechHealing(
   state: BattleState,
   rawAmount: number,
   combatTexts: CombatTextEvent[],
-  options: { cardHealing?: boolean; afflicted?: boolean } = {},
+  options: { cardHealing?: boolean; afflicted?: boolean; cardLeechFraction?: number } = {},
 ): BattleState {
   if (rawAmount <= 0) return state;
-  return applyLeechHealing(state, scaleLeechBase(state, rawAmount), combatTexts, options);
+  return applyLeechHealing(state, scaleLeechBase(state, rawAmount, options.cardLeechFraction), combatTexts, options);
 }
 
 function applyLeechManaRider(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
   for (const chance of [state.talentEffects.manaOnLeechChance, state.gearEffects.manaOnLeechChance]) {
-    if (rollTalentChance(chance, state)) {
+    if (rollBattleChance(chance, state)) {
       nextState = gainManaWithCombatText(nextState, 1, combatTexts);
     }
   }
@@ -127,7 +131,7 @@ function applyLeechManaRider(state: BattleState, combatTexts: CombatTextEvent[])
 }
 
 function applyLeechTrinketSiphonRider(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
-  if (!rollTalentChance(state.talentEffects.trinketSiphonChance, state)) return state;
+  if (!rollBattleChance(state.talentEffects.trinketSiphonChance, state)) return state;
   const mit = state.enemyMitigation;
   const pool: Array<{ key: keyof EnemyMitigation; status: PlayerStatusId }> = (
     [
@@ -156,11 +160,11 @@ function applyLeechTrinketSiphonRider(state: BattleState, combatTexts: CombatTex
 export function applyLeechHitRewards(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
   if (damage <= 0) return state;
   let nextState = state;
-  if (rollTalentChance(state.talentEffects.leechBleedChance, state)) {
+  if (rollBattleChance(state.talentEffects.leechBleedChance, state)) {
     nextState = addEnemyStatus(nextState, "bleed", damage);
   }
   nextState = applyLeechTrinketSiphonRider(nextState, combatTexts);
-  if (rollTalentChance(state.talentEffects.leechPoisonChance, state)) {
+  if (rollBattleChance(state.talentEffects.leechPoisonChance, state)) {
     nextState = addEnemyStatus(nextState, "poison", damage);
   }
   return nextState;
@@ -234,13 +238,13 @@ export function applyDamageBlock(
 }
 
 export function applyHolyBlockChance(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
-  if (damage <= 0 || !rollTalentChance(state.talentEffects.holyBlockChance, state)) return state;
+  if (damage <= 0 || !rollBattleChance(state.talentEffects.holyBlockChance, state)) return state;
   return applyBlockReward(state, damage, combatTexts, { skipFightPacing: true });
 }
 
 export function applyHolyTithe(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0 || state.talentEffects.holyGoldChance <= 0) return state;
-  if (rollTalentChance(state.talentEffects.holyGoldChance, state)) {
+  if (rollBattleChance(state.talentEffects.holyGoldChance, state)) {
     return addGoldWithCombatText(state, damage, combatTexts);
   }
   return state;
@@ -259,10 +263,14 @@ export function payPendingBleedLeech(
   let nextState: BattleState = {
     ...state,
     pendingBleedLeechHealing: 0,
+    pendingCardBleedLeechHealing: 0,
   };
   const leechPaid = Math.min(leechAmount, bleedHealthDamage);
   if (leechPaid > 0) {
-    nextState = applyScaledLeechHealing(nextState, computeLeechHeal(leechPaid), combatTexts, { afflicted });
+    nextState = applyScaledLeechHealing(nextState, computeLeechHeal(leechPaid), combatTexts, {
+      afflicted,
+      cardLeechFraction: Math.min(1, state.pendingCardBleedLeechHealing / leechAmount),
+    });
   }
   return nextState;
 }

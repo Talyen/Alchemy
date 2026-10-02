@@ -6,6 +6,7 @@ import { parseKnownFlags } from "./lib/cli-args.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { runTaskCommand } from "./lib/run-command.mjs";
 import { UsageError } from "./lib/script-run.mjs";
+import { REPO_ROOT } from "./lib/repository-paths.mjs";
 
 const require = createRequire(import.meta.url);
 const prettierCli = require.resolve("prettier/bin/prettier.cjs");
@@ -26,6 +27,7 @@ export async function runPrettier(argv = process.argv.slice(2)) {
   const { mode, targets } = resolvePrettierTargets(argv);
   if (targets.length === 0) return 0;
   const result = await runTaskCommand(process.execPath, [prettierCli, mode, ...targets], {
+    cwd: REPO_ROOT,
     label: `Prettier ${mode}`,
     live: process.env.ALCHEMY_OUTPUT_CAPTURED === "1",
   });

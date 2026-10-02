@@ -15,6 +15,7 @@ import {
 export type TooltipPlacement = "above" | "below" | "side-start" | "side-end";
 
 interface TooltipPanelProps {
+  id?: string;
   children: ReactNode;
   width?: string;
   className?: string;
@@ -33,6 +34,7 @@ function tooltipAnchorClass(placement: TooltipPlacement): string {
 }
 
 export function TooltipPanel({
+  id,
   children,
   width = tooltipWidthClass,
   className,
@@ -44,6 +46,8 @@ export function TooltipPanel({
   return (
     <div
       ref={ref}
+      id={id}
+      role="tooltip"
       className={cn(
         popupBaseClassName,
         tooltipAnchorClass(placement),

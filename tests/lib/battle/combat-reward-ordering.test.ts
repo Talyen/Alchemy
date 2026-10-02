@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { cardById } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
@@ -6,7 +6,7 @@ import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { applyArmorReward } from "@/lib/battle/status-player";
-import { makeTestCard, patchBattleState } from "../../fixtures/battle";
+import { makeCombatTexts, makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("combat reward ordering", () => {
   it("Resonant Chime restores Mana before a Consumed card checks Lastlight", () => {
@@ -126,6 +126,32 @@ describe("combat reward ordering", () => {
       talentEffects: { goldOnArmorGainChance: 100 },
     });
     expect(applyArmorReward(armorState, 4, []).gold).toBe(4);
+  });
+
+  it.each([
+    { cleanseRoll: 0.1, goldRoll: 0.9, poison: 0, gold: 0 },
+    { cleanseRoll: 0.9, goldRoll: 0.1, poison: 2, gold: 4 },
+    { cleanseRoll: 0.1, goldRoll: 0.1, poison: 0, gold: 4 },
+  ])("resolves Purification before Coinmail ($cleanseRoll, $goldRoll)", ({ cleanseRoll, goldRoll, poison, gold }) => {
+    const rng = vi.fn().mockReturnValueOnce(cleanseRoll).mockReturnValueOnce(goldRoll);
+    const state = patchBattleState({
+      rng,
+      playerStatuses: { poison: 2 },
+      talentEffects: { armorCleanseChance: 50, goldOnArmorGainChance: 50 },
+    });
+    const texts = makeCombatTexts();
+    const result = applyArmorReward(state, 4, texts);
+
+    expect(result.playerStatuses).toMatchObject({ armor: 4, poison });
+    expect(result.gold).toBe(gold);
+    expect(rng).toHaveBeenCalledTimes(2);
+    expect(texts.map((text) => text.stat)).toEqual([
+      "armor",
+      ...(poison === 0 ? ["poison"] : []),
+      ...(gold > 0 ? ["gold"] : []),
+    ]);
+    expect(state.playerStatuses).toMatchObject({ armor: 0, poison: 2 });
+    expect(state.gold).toBe(0);
   });
 
   it.each([

@@ -4,24 +4,15 @@ import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { TalentPreset } from "./simulator-types";
+import { companionIdsFromDeck } from "./companion-deck";
+
+export { companionIdsFromDeck } from "./companion-deck";
 
 const SIM_COMPANION_BOND_BY_PRESET: Record<TalentPreset, number> = {
   early: 1,
   mid: 2,
   late: 3,
 };
-
-export function companionIdsFromDeck(deck: readonly BattleCard[]): CompanionId[] {
-  const ids = new Set<CompanionId>();
-  for (const card of deck) {
-    for (const effect of card.effects) {
-      if (effect.kind === "summon-companion") {
-        ids.add(effect.companionId);
-      }
-    }
-  }
-  return [...ids];
-}
 
 export function buildSimCompanionBondLevels(
   deck: readonly BattleCard[],

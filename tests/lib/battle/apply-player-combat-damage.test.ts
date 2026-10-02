@@ -1,18 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { patchBattleState } from "../../fixtures/battle";
 import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
-import { applyPlayerCombatDamage } from "@/lib/battle/types";
-import type { BattleState } from "@/lib/battle/types";
+import { applyPlayerCombatDamage, playerHealthLostToDamage } from "@/lib/battle/types";
 import { DEATHS_DOOR_GRACE_TURNS } from "@/lib/game-constants";
-
-function talents(partial: Partial<BattleState["talentEffects"]>): BattleState["talentEffects"] {
-  return partial as BattleState["talentEffects"];
-}
 
 describe("applyPlayerCombatDamage", () => {
   it("returns state unchanged when damage is zero", () => {
     const state = patchBattleState({ playerHealth: 30 });
-    expect(applyPlayerCombatDamage(state, 0, "hostile")).toBe(state);
+    const result = applyPlayerCombatDamage(state, 0, "hostile");
+    expect(result).toBe(state);
+    expect(playerHealthLostToDamage(state, result)).toBe(0);
   });
 
   it("returns state unchanged when damage is negative", () => {
@@ -24,12 +21,13 @@ describe("applyPlayerCombatDamage", () => {
     const state = patchBattleState({ playerHealth: 30 });
     const result = applyPlayerCombatDamage(state, 10, "hostile");
     expect(result.playerHealth).toBe(20);
+    expect(playerHealthLostToDamage(state, result)).toBe(10);
   });
 
   it("applies base damage reduction", () => {
     const state = patchBattleState({
       playerHealth: 30,
-      talentEffects: talents({ damageReduction: 3 }),
+      talentEffects: { damageReduction: 3 },
     });
     const result = applyPlayerCombatDamage(state, 10, "hostile");
     expect(result.playerHealth).toBe(23);
@@ -38,7 +36,7 @@ describe("applyPlayerCombatDamage", () => {
   it("applies burn damage reduction", () => {
     const state = patchBattleState({
       playerHealth: 30,
-      talentEffects: talents({ burnDamageReduction: 5 }),
+      talentEffects: { burnDamageReduction: 5 },
     });
     const result = applyPlayerCombatDamage(state, 15, "hostile", "burn");
     expect(result.playerHealth).toBe(20);
@@ -47,7 +45,7 @@ describe("applyPlayerCombatDamage", () => {
   it("applies freeze damage reduction", () => {
     const state = patchBattleState({
       playerHealth: 30,
-      talentEffects: talents({ freezeDamageReduction: 4 }),
+      talentEffects: { freezeDamageReduction: 4 },
     });
     const result = applyPlayerCombatDamage(state, 10, "hostile", "freeze");
     expect(result.playerHealth).toBe(24);
@@ -56,7 +54,7 @@ describe("applyPlayerCombatDamage", () => {
   it("does not apply receiveHalfNatureDamage (attack/DoT paths scale instead)", () => {
     const state = patchBattleState({
       playerHealth: 30,
-      talentEffects: talents({ receiveHalfNatureDamage: true }),
+      talentEffects: { receiveHalfNatureDamage: true },
     });
     const result = applyPlayerCombatDamage(state, 10, "hostile", "nature");
     expect(result.playerHealth).toBe(20);
@@ -65,7 +63,7 @@ describe("applyPlayerCombatDamage", () => {
   it("applies nature damage reduction", () => {
     const state = patchBattleState({
       playerHealth: 30,
-      talentEffects: talents({ natureDamageReduction: 3 }),
+      talentEffects: { natureDamageReduction: 3 },
     });
     const result = applyPlayerCombatDamage(state, 10, "hostile", "nature");
     expect(result.playerHealth).toBe(23);
@@ -74,7 +72,7 @@ describe("applyPlayerCombatDamage", () => {
   it("applies poison damage reduction", () => {
     const state = patchBattleState({
       playerHealth: 30,
-      talentEffects: talents({ poisonDamageReduction: 3 }),
+      talentEffects: { poisonDamageReduction: 3 },
     });
     const result = applyPlayerCombatDamage(state, 8, "hostile", "poison");
     expect(result.playerHealth).toBe(25);
@@ -83,7 +81,7 @@ describe("applyPlayerCombatDamage", () => {
   it("can bypass player mitigation for trait-authored damage", () => {
     const state = patchBattleState({
       playerHealth: 30,
-      talentEffects: talents({ damageReduction: 3, burnDamageReduction: 5 }),
+      talentEffects: { damageReduction: 3, burnDamageReduction: 5 },
     });
     const result = applyPlayerCombatDamage(state, 10, "hostile", "burn", { ignoreMitigation: true });
     expect(result.playerHealth).toBe(20);
@@ -93,6 +91,7 @@ describe("applyPlayerCombatDamage", () => {
     const state = patchBattleState({ playerHealth: 5, deathsDoorUsed: true });
     const result = applyPlayerCombatDamage(state, 20, "hostile");
     expect(result.playerHealth).toBe(0);
+    expect(playerHealthLostToDamage(state, result)).toBe(5);
   });
 
   it("activates deaths door on lethal hit if not used", () => {
@@ -103,6 +102,7 @@ describe("applyPlayerCombatDamage", () => {
     expect(result.deathsDoorActive).toBe(true);
     expect(result.deathsDoorTriggeredTurn).toBe(3);
     expect(result.deathsDoorGraceTurnsRemaining).toBe(DEATHS_DOOR_GRACE_TURNS);
+    expect(playerHealthLostToDamage(state, result)).toBe(4);
   });
 
   it("does not reactivate deaths door if already used", () => {
@@ -111,6 +111,7 @@ describe("applyPlayerCombatDamage", () => {
     expect(result.playerHealth).toBe(1);
     expect(result.deathsDoorActive).toBe(true);
     expect(result.deathsDoorUsed).toBe(true);
+    expect(playerHealthLostToDamage(state, result)).toBe(4);
   });
 
   it("lethal hit after grace expires kills the player", () => {
@@ -141,6 +142,7 @@ describe("applyPlayerCombatDamage", () => {
     const result = applyPlayerCombatDamage(state, 20, "hostile");
     expect(result.playerHealth).toBe(9);
     expect(result.playerStatuses.phoenixFeather).toBe(0);
+    expect(playerHealthLostToDamage(state, result)).toBe(5);
     expect(result.deathsDoorUsed).toBe(false);
     expect(result.deathsDoorActive).toBe(false);
   });

@@ -152,10 +152,7 @@ function* collectTypographyEntries(): Generator<TypographyEntry> {
 
 export function validateTypography(collector: Collector): void {
   for (const entry of collectTypographyEntries()) {
-    const options: { allowPeriod?: boolean; sliceLimit?: number } = {};
-    if (entry.allowPeriod !== undefined) options.allowPeriod = entry.allowPeriod;
-    if (entry.sliceLimit !== undefined) options.sliceLimit = entry.sliceLimit;
-    checkTextTypography(collector, entry.area, entry.id, entry.label, entry.text, options);
+    checkTextTypography(collector, entry.area, entry.id, entry.label, entry.text, entry);
   }
 
   for (const affix of gearAffixList) {

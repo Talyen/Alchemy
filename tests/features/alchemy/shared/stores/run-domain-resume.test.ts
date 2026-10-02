@@ -2,6 +2,7 @@ import { restoreActiveBattle } from "@/features/alchemy/shared/stores/battle-res
 import "../../../../helpers/mock-audio";
 import "../../../../helpers/mock-flush-save";
 import { beforeEach, describe, expect, it } from "vitest";
+import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { ActiveRunDataSchema } from "@/lib/validation/save-schemas/active-run";
 import { defaultBattleState } from "@/lib/battle";
 import { finalizeRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
@@ -16,7 +17,7 @@ import {
   readBattle,
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-reads";
-import { cardLibrary, getStartingDeck } from "@/lib/game-data";
+import { cardById, cardLibrary, getStartingDeck } from "@/lib/game-data";
 import { findMysteryEvent } from "@/lib/mystery";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { ANCIENT_ALTAR_MYSTERY_VISIT } from "./active-run-data-fixture";
@@ -158,6 +159,17 @@ describe("session facade API", () => {
     const rewardState = readRunSession().rewardFlow.state;
     expect(rewardState.choices).toEqual([]);
     expect(finalizeRewardState({ rewardState, companionRewardCards: null }).route).toBe(REWARD_ROUTES.ACT_COMPLETE);
+  });
+
+  it("restores Archery metadata for a card queued behind a full hand", () => {
+    const arrow = { ...cardById["venom-arrow"]!, uid: 42 };
+    const parsed = PersistedBattleStateSchema.parse({ ...defaultBattleState(), pendingHandCards: [arrow] });
+    expect(parsed.pendingHandCards[0]?.tags).toBeUndefined();
+    initializeActiveBattle(parsed, null);
+    const queued = readBattle().battleState.pendingHandCards[0];
+    expect(queued?.tags).toEqual(["archery"]);
+    expect(queued?.uid).toBe(42);
+    expect(queued?.effects).toEqual(arrow.effects);
   });
 
   it("preserves enemy-phase combat without a transition on restore", () => {

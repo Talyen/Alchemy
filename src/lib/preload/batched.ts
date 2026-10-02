@@ -18,11 +18,21 @@ export async function batchedPreload<T>(
 
 export function yieldToAnimationFrame(): Promise<void> {
   return new Promise((resolve) => {
-    if (typeof requestAnimationFrame === "function") {
-      requestAnimationFrame(() => resolve());
+    if (typeof requestAnimationFrame !== "function") {
+      globalThis.setTimeout(resolve, 0);
       return;
     }
-    globalThis.setTimeout(resolve, 0);
+    // Background tabs suspend RAF; the loading screen must still finish.
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      globalThis.clearTimeout(timeout);
+      cancelAnimationFrame(frame);
+      resolve();
+    };
+    const timeout = globalThis.setTimeout(finish, 100);
+    const frame = requestAnimationFrame(finish);
   });
 }
 

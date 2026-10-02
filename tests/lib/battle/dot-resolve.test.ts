@@ -70,6 +70,28 @@ describe("applyEnemyDotDamage", () => {
     expect(next.enemyStatuses.poison).toBe(3);
     expect(next.gold).toBe(state.gold + 3);
   });
+
+  it.each([4, 6, 8])("attributes ordered pulse rewards only to Health actually lost from %i Health", (health) => {
+    const state = patchBattleState({
+      enemyHealth: health,
+      mana: 0,
+      maxMana: 3,
+      gearEffects: { elementalDamageManaChance: 100 },
+      trinketEffects: { cutpurseGoldOnBleed: 2 },
+    });
+    const next = applyEnemyDotDamage(
+      state,
+      [
+        { status: "poison", finalDamage: 4, nextStacks: 0 },
+        { status: "burn", finalDamage: 2, nextStacks: 0 },
+        { status: "bleed", finalDamage: 3, nextStacks: 0 },
+      ],
+      makeTexts(),
+    );
+    expect(next.enemyHealth).toBe(0);
+    expect(next.mana).toBe(health > 4 ? 1 : 0);
+    expect(next.gold).toBe(state.gold + (health > 6 ? 2 : 0));
+  });
 });
 
 describe("dealEnemyDotTick", () => {

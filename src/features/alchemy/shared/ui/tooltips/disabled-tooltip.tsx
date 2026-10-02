@@ -16,10 +16,33 @@ export function DisabledTooltip({
   message: ReactNode;
   children: ReactNode;
 }) {
-  const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible();
+  const {
+    wrapperRef: triggerRef,
+    visible,
+    onMouseEnter,
+    onMouseLeave,
+    onFocusCapture,
+    onBlurCapture,
+  } = useHoverVisible({
+    focusWithinGuard: true,
+  });
 
   return (
-    <div ref={triggerRef} className="relative" {...(show ? { onMouseEnter, onMouseLeave } : {})}>
+    <div
+      ref={triggerRef}
+      className="relative"
+      {...(show
+        ? {
+            role: "group",
+            tabIndex: 0,
+            "aria-disabled": true,
+            onMouseEnter,
+            onMouseLeave,
+            onFocusCapture,
+            onBlurCapture,
+          }
+        : {})}
+    >
       {children}
       {show ? (
         <PortaledTooltip triggerRef={triggerRef} visible={visible} className="whitespace-nowrap">

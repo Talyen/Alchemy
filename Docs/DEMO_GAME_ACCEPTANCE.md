@@ -24,6 +24,11 @@ artifacts under `reports/demo-acceptance/`. Durable assertions live in the demo
 browser/Electron specs and focused unit tests. Re-run affected checks after
 changing gameplay, persistence or layouts; this record is not permanent certification.
 
+The UI matrix records requested Tooltip Size values, including 75%, which is
+below the current 90% minimum. New candidate checks use the supported extremes
+under [display sizing](./UI.md#display-sizing); the historical matrix does not
+establish a supported 75% option.
+
 ## Measured local performance
 
 Native Electron, macOS arm64, 1440×900, DPR 2, approximately 60 Hz. One measured
@@ -55,8 +60,11 @@ rows open until actual feedback is recorded.
 Run **`npm run demo:playtest`** for the production demo without Steamworks.
 Progress uses `scratch/demo-playtest-profile`; normal profiles and Steam Cloud
 are untouched. Clear Save Data in Options starts a fresh playtest. The launcher
-builds current assets and opens the local Electron runtime, without the
-development-only comparison controls.
+ensures the checkout's Electron runtime is installed, validates committed
+generated outputs, and builds the demo desktop renderer before opening it.
+It does not regenerate authored assets; prepare changed sources through the
+[asset workflow](./WORKFLOWS-ASSETS.md) first. Development-only comparison controls
+remain absent.
 
 1. Let someone unfamiliar with Alchemy begin without coaching. Note time to
    first card, whether they find Mana/Block, enemy inspection and End Turn, and

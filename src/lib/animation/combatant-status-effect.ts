@@ -14,6 +14,18 @@ import { parseHexRgbBytes, type RgbTuple } from "./plasma-colors";
 
 export type CombatantStatusEffectKind = "stun" | "freeze";
 
+// These inputs depend only on the authored particle counts, not frame time or canvas size.
+const STAR_NOISE = Array.from({ length: COMBATANT_STATUS_STAR_COUNT }, (_, index) => animationNoise(index, 17));
+const FLAKE_NOISE = Array.from({ length: COMBATANT_STATUS_FLAKE_COUNT }, (_, index) => ({
+  along: animationNoise(index, 41),
+  insetNoise: animationNoise(index, 47),
+  delay: (index / COMBATANT_STATUS_FLAKE_COUNT) * 0.72,
+}));
+const STAR_DIRECTIONS = Array.from({ length: 8 }, (_, index) => {
+  const angle = (index * Math.PI) / 4 - Math.PI / 2;
+  return { cos: Math.cos(angle), sin: Math.sin(angle) };
+});
+
 export interface CombatantStatusPalette {
   primary: string;
   secondary: string;
@@ -65,10 +77,10 @@ function drawStar(
   const spikes = 4;
   ctx.beginPath();
   for (let i = 0; i < spikes * 2; i++) {
-    const angle = (i * Math.PI) / spikes - Math.PI / 2;
+    const direction = STAR_DIRECTIONS[i]!;
     const radius = i % 2 === 0 ? size : size * 0.38;
-    const px = x + Math.cos(angle) * radius;
-    const py = y + Math.sin(angle) * radius;
+    const px = x + direction.cos * radius;
+    const py = y + direction.sin * radius;
     if (i === 0) ctx.moveTo(px, py);
     else ctx.lineTo(px, py);
   }
@@ -89,16 +101,21 @@ function drawSnowflake(
   primary: RgbTuple,
   secondary: RgbTuple,
   opacity: number,
+  directions: Float64Array,
 ): void {
   const petals = 6;
   ctx.beginPath();
   for (let petal = 0; petal < petals; petal++) {
     const angle = (petal / petals) * Math.PI * 2 + rotation;
-    const tipX = centerX + Math.cos(angle) * radius;
-    const tipY = centerY + Math.sin(angle) * radius;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    directions[petal * 2] = cos;
+    directions[petal * 2 + 1] = sin;
+    const tipX = centerX + cos * radius;
+    const tipY = centerY + sin * radius;
     const side = radius * 0.28;
-    const perpX = -Math.sin(angle);
-    const perpY = Math.cos(angle);
+    const perpX = -sin;
+    const perpY = cos;
 
     ctx.moveTo(centerX, centerY);
     ctx.lineTo(tipX + perpX * side, tipY + perpY * side);
@@ -114,12 +131,13 @@ function drawSnowflake(
 
   ctx.beginPath();
   for (let petal = 0; petal < petals; petal++) {
-    const angle = (petal / petals) * Math.PI * 2 + rotation;
-    const midX = centerX + Math.cos(angle) * radius * 0.55;
-    const midY = centerY + Math.sin(angle) * radius * 0.55;
+    const cos = directions[petal * 2]!;
+    const sin = directions[petal * 2 + 1]!;
+    const midX = centerX + cos * radius * 0.55;
+    const midY = centerY + sin * radius * 0.55;
     const arm = radius * 0.22;
-    const perpX = -Math.sin(angle);
-    const perpY = Math.cos(angle);
+    const perpX = -sin;
+    const perpY = cos;
 
     ctx.moveTo(midX + perpX * arm, midY + perpY * arm);
     ctx.lineTo(midX - perpX * arm, midY - perpY * arm);
@@ -144,7 +162,7 @@ function drawSwirlingStars(
   const angleBase = progress * Math.PI * 2;
 
   for (let index = 0; index < COMBATANT_STATUS_STAR_COUNT; index++) {
-    const noise = animationNoise(index, 17);
+    const noise = STAR_NOISE[index]!;
     const angle = angleBase + (index / COMBATANT_STATUS_STAR_COUNT) * Math.PI * 2 + noise * 0.35;
     const radial = radius * (0.85 + noise * 0.3);
     const x = centerX + Math.cos(angle) * radial;
@@ -185,14 +203,15 @@ function drawIceCrystals(
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
+  // Reuse each petal's exact direction for both drawing passes. Double precision
+  // keeps coordinates unchanged; one frame-local buffer serves every crystal.
+  const directions = new Float64Array(12);
   for (let index = 0; index < COMBATANT_STATUS_FLAKE_COUNT; index++) {
-    const along = animationNoise(index, 41);
+    const { along, insetNoise, delay } = FLAKE_NOISE[index]!;
     const edge = index % 4;
-    const delay = (index / COMBATANT_STATUS_FLAKE_COUNT) * 0.72;
     const flakeAppear = clamp01((encroach - delay) / 0.28);
     if (flakeAppear <= 0.02) continue;
 
-    const insetNoise = animationNoise(index, 47);
     const inset = 4 + insetNoise * (6 + crackDensity * 10);
     let centerX: number;
     let centerY: number;
@@ -228,6 +247,7 @@ function drawIceCrystals(
       palette.primaryRgb,
       palette.secondaryRgb,
       opacity,
+      directions,
     );
   }
 }

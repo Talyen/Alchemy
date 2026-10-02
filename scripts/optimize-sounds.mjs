@@ -32,9 +32,15 @@ import {
   VORBIS_QUALITY,
   soundTransformSettings,
 } from "./assets/asset-constants.mjs";
-import { ensureOutputDir, resolvePipelinePaths, runManifestPipeline } from "./assets/asset-pipeline-runner.mjs";
+import {
+  ensureOutputDir,
+  resolvePipelinePaths,
+  runManifestPipeline,
+  writeStagedOutput,
+} from "./assets/asset-pipeline-runner.mjs";
 import { failedMessagesResult } from "./lib/process-helpers.mjs";
-import { runPipelineScript } from "./lib/script-run.mjs";
+import { runPipelineScript, UsageError } from "./lib/script-run.mjs";
+import { parseKnownFlags } from "./lib/cli-args.mjs";
 import { mapPool } from "./lib/map-pool.mjs";
 
 const execFileAsync = promisify(execFile);
@@ -58,7 +64,7 @@ async function optimizeSound({ source, target }, storedEntry, check) {
     settings,
     SCHEMA_VERSION,
     storedEntry,
-    () => convertSound(sourcePath, outputPath, settings),
+    () => writeStagedOutput(outputPath, (temporaryPath) => convertSound(sourcePath, temporaryPath, settings)),
     { check },
   );
   return {
@@ -184,17 +190,19 @@ async function ensureMp3Fallbacks(previousManifest, managedOggs, check) {
 
       if (!(await isOutputFresh(mp3Path, stored, sourceEntry.hash))) {
         if (check) throw new Error(`Stale prepared asset: ${mp3Path}`);
-        await execFileAsync(ffmpegPath, [
-          "-y",
-          "-i",
-          oggPath,
-          "-c:a",
-          MP3_FALLBACK_SETTINGS.codec,
-          "-q:a",
-          MP3_FALLBACK_SETTINGS.quality,
-          "-vn",
-          mp3Path,
-        ]);
+        await writeStagedOutput(mp3Path, (temporaryPath) =>
+          execFileAsync(ffmpegPath, [
+            "-y",
+            "-i",
+            oggPath,
+            "-c:a",
+            MP3_FALLBACK_SETTINGS.codec,
+            "-q:a",
+            MP3_FALLBACK_SETTINGS.quality,
+            "-vn",
+            temporaryPath,
+          ]),
+        );
         converted += 1;
         mp3Entries[mp3Name] = { ...(await withOutputHash(sourceEntry, mp3Path)), owner };
       } else {
@@ -211,4 +219,8 @@ async function ensureMp3Fallbacks(previousManifest, managedOggs, check) {
   return { mp3Entries, curatedOggEntries, mp3Failures };
 }
 
-runPipelineScript(import.meta.url, "Sound optimization", optimizeSounds);
+runPipelineScript(import.meta.url, "Sound optimization", () => {
+  const { flags, rest } = parseKnownFlags(process.argv.slice(2), { check: {} });
+  if (rest.length) throw new UsageError(`Unexpected optimization arguments: ${rest.join(", ")}`);
+  return optimizeSounds({ check: flags.has("check") });
+});

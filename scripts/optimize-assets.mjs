@@ -1,5 +1,3 @@
-import { rename, rm } from "node:fs/promises";
-import { randomUUID } from "node:crypto";
 import path from "node:path";
 
 import sharp from "sharp";
@@ -18,9 +16,11 @@ import {
   readSourceDir,
   resolvePipelinePaths,
   runManifestPipeline,
+  writeStagedOutput,
 } from "./assets/asset-pipeline-runner.mjs";
 import { GEAR_FILE_PATTERN, GEAR_SLOT_IDS, SLOT_BACKGROUND_PATTERN, toGearTarget } from "./assets/gear-filenames.mjs";
-import { runPipelineScript } from "./lib/script-run.mjs";
+import { runPipelineScript, UsageError } from "./lib/script-run.mjs";
+import { parseKnownFlags } from "./lib/cli-args.mjs";
 
 const { sourceDir, outputDir, manifestPath } = resolvePipelinePaths(import.meta.url, {
   sourceSubpath: ["Raw Assets"],
@@ -160,17 +160,12 @@ async function optimizeAsset(asset, storedEntry, check) {
     settings,
     SCHEMA_VERSION,
     storedEntry,
-    async () => {
-      // Validate staged bytes before replacing the last usable prepared image.
-      const temporaryPath = `${outputPath}.${randomUUID()}.tmp`;
-      try {
+    () =>
+      writeStagedOutput(outputPath, async (temporaryPath) => {
+        // Validate staged bytes before replacing the last usable prepared image.
         await applyArtTransform(sharp(sourcePath), settings).toFile(temporaryPath);
         if (asset.requiresTransparency) await validateTransparency(temporaryPath, `Prepared ${asset.target}`);
-        await rename(temporaryPath, outputPath);
-      } finally {
-        await rm(temporaryPath, { force: true });
-      }
-    },
+      }),
     { check },
   );
   // Fresh-hit output re-validation is intentional tamper-evidence (pinned by
@@ -208,4 +203,8 @@ export async function optimizeAssets({ check = false } = {}) {
   return { ok: true };
 }
 
-runPipelineScript(import.meta.url, "Asset optimization", optimizeAssets);
+runPipelineScript(import.meta.url, "Asset optimization", () => {
+  const { flags, rest } = parseKnownFlags(process.argv.slice(2), { check: {} });
+  if (rest.length) throw new UsageError(`Unexpected optimization arguments: ${rest.join(", ")}`);
+  return optimizeAssets({ check: flags.has("check") });
+});

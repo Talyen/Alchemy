@@ -124,6 +124,33 @@ describe("getCardKeywords", () => {
 
 describe("selectRewardCards", () => {
   it.each([
+    { count: 1, ids: ["card-36"], nextRandom: 0.384123298805207 },
+    { count: 3, ids: ["card-36", "card-1", "card-33"], nextRandom: 0.01149781048297882 },
+    {
+      count: 9,
+      ids: ["card-36", "card-1", "card-11", "card-14", "card-19", "card-2", "card-13", "card-12", "card-38"],
+      nextRandom: 0.25641172588802874,
+    },
+  ])("preserves ranked ties and RNG with $count rewards from a larger pool", ({ count, ids, nextRandom }) => {
+    // Captured from full stable sorting before introducing the bounded shortlist.
+    // Nine rewards also exercises the larger-request sort path.
+    const pool = Array.from({ length: 40 }, (_, index) =>
+      card({
+        id: `card-${index}`,
+        effects:
+          index % 3 === 0
+            ? [{ kind: "damage", damageType: "physical", amount: 5 }]
+            : index % 3 === 1
+              ? [{ kind: "heal", amount: 5 }]
+              : [],
+      }),
+    );
+    const rng = mulberry32(37);
+    expect(selectRewardCards([pool[0]!], pool, count, [], rng, ["physical"]).map((entry) => entry.id)).toEqual(ids);
+    expect(rng()).toBe(nextRandom);
+  });
+
+  it.each([
     {
       seed: 7,
       count: 3,
@@ -161,6 +188,8 @@ describe("selectRewardCards", () => {
       card({ id: "plain" }),
     ];
     const deck = [physicalCard("strike-0"), ...(hasCompanion ? [companionCard("owned-wolf")] : [])];
+    Object.freeze(pool);
+    Object.freeze(deck);
     const rng = mulberry32(seed);
     const rewards = selectRewardCards(deck, pool, count, [card({ id: "strike-1" })], rng, ["health"]);
 

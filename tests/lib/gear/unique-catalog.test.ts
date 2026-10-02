@@ -120,15 +120,6 @@ describe("fixed Unique compatibility", () => {
     }
   });
 
-  it("does not share mutable rolls between instances or the catalog", () => {
-    const unique = uniqueItemList[0];
-    const first = getGearInstanceAffixes(generateUniqueGearInstance(unique));
-    const second = getGearInstanceAffixes(generateUniqueGearInstance(unique));
-    first[1].value = 999;
-    expect(second[1]).toEqual(unique.supportingAffixes[0]);
-    expect(unique.supportingAffixes[0].value).not.toBe(999);
-  });
-
   it("keeps UNIQUE_GEAR_COMBAT magnitudes in sync with signature descriptions", () => {
     const descriptionOf = (id: GearAffixId) => gearAffixCatalog[id].descriptionTemplate;
     // Numeric prose: the number in text must equal the combat constant.

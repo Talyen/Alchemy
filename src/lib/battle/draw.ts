@@ -65,7 +65,9 @@ export function drawCards(
   pendingHandCards: BattleCard[] = [],
 ) {
   let nextDeck = [...deck];
-  let nextDiscard = [...discard];
+  // Only the deck is mutated. shuffle() owns a fresh array when refilling,
+  // so the untouched discard can stay shared with the immutable input state.
+  let nextDiscard = discard;
   const slots = Math.max(0, MAX_HAND_SIZE - hand.length);
   const nextHand = [...hand, ...pendingHandCards.slice(0, slots)];
   const nextPendingHandCards = pendingHandCards.slice(slots);
@@ -73,10 +75,12 @@ export function drawCards(
   const uidChanges: CardUidChange[] = [];
 
   for (let i = 0; i < amount; i++) {
-    const refilled = refillDeck(nextDeck, nextDiscard, rng);
-    if (!refilled) break;
-    nextDeck = refilled.deck;
-    nextDiscard = refilled.discard;
+    if (nextDeck.length === 0) {
+      const refilled = refillDeck(nextDeck, nextDiscard, rng);
+      if (!refilled) break;
+      nextDeck = refilled.deck;
+      nextDiscard = refilled.discard;
+    }
 
     const card = nextDeck.pop();
     if (!card) break;
@@ -106,7 +110,8 @@ export function takeRandomCardFromDeck(state: BattleState): {
 } | null {
   const refilled = refillDeck(state.deck, state.discard, getBattleRng(state));
   if (!refilled || refilled.deck.length === 0) return null;
-  const deck = [...refilled.deck];
+  // A reshuffle already returned an owned deck; copy only an existing pile.
+  const deck = refilled.deck === state.deck ? [...refilled.deck] : refilled.deck;
   const rawCard = takeRandomItem(deck, getBattleRng(state));
   if (!rawCard) return null;
   return {
@@ -173,7 +178,10 @@ export function drawKeywordCard(
         : null
       : refillDeck(ready.deck, ready.discard, getBattleRng(ready));
   if (!refilled) return ready;
-  const indices = refilled.deck.flatMap((card, index) => (cardHasKeyword(card, keyword) ? [index] : []));
+  const indices: number[] = [];
+  for (let index = 0; index < refilled.deck.length; index++) {
+    if (cardHasKeyword(refilled.deck[index]!, keyword)) indices.push(index);
+  }
   if (indices.length === 0) return ready;
   const sampled = indices[rngInt(getBattleRng(ready), indices.length)];
   if (sampled === undefined) return ready;

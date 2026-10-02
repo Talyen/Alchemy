@@ -9,39 +9,37 @@ Record unresolved recurring friction and consequential lessons with the observat
 Steam overlay validation: steamworks.js 0.4 exposes neither overlay activation
 callbacks nor availability detection. Desktop pauses on default Shift+Tab and
 focus loss; custom chords and Deck overlay paths require real Steam evidence.
-Upstream callback/availability work remains unmerged. See the [demo owner](../Docs/STEAM_DEMO.md#input-and-release-evidence)
-for the release gate and next action. Controller backward focus uses F7 to avoid
-the existing Shift+Tab mapping collision.
+Upstream callback/availability work remains unmerged as checked on 2026-10-02.
+The integration now uses the native callback when exposed, has no invalid second
+callback pump, and uses the browser wishlist destination when availability is
+unknown. See the [demo owner](../Docs/STEAM_DEMO.md#input-and-release-evidence)
+for the minimal native-fork solution and hardware evidence matrix. Controller
+backward focus uses F7 to avoid the existing Shift+Tab mapping collision.
 
-Node 24 Web Storage: its experimental global `localStorage` getter returns undefined
-without `--localstorage-file` and shadows JSDOM storage in Vitest. Focused DOM
-checks pass with `NODE_OPTIONS=--no-experimental-webstorage`, which lets JSDOM own
-test storage. Use that local invocation on affected Node versions; no Node
-storage file or product save change is needed. A permanent runtime/test-environment
-compatibility fix remains separate from the Options change.
+Expensive test collection under unrelated host load remains unverified. Routine
+overlap now stops before collection through the shared local test lane; default
+handoff uses bounded Node smoke, and four-worker unit limits remain in place.
+Raw CLI/watch sessions bypass the lane and must be coordinated manually. If a
+single coordinated run still stalls, record collection timing and host pressure
+before changing gameplay or test timeouts. Do not terminate another session's
+processes. Original timeout evidence and the mitigation are preserved in
+[October history](./history/friction-2026-10.md); prevention lives in
+[the test policy](../CONTRIBUTING.md#what-to-run-when-you-change).
 
-Local related-test fan-out: two overlapping repository checks plus UI journeys
-caused five-second unit timeouts and one-minute dev-server startup failures.
-Dependency-related verification now uses the existing four-worker budget in
-[verification test commands](../scripts/lib/verification/test-commands.mjs).
-Browser journeys should still run serially after broad unit verification.
-A 2026-09-30 Corruption refactor check passed 328 related suites / 4,091
-assertions in 538s. A repeat after a type-notation-only lint correction ran for
-1,233s before cancellation and reported five-second UI and simulation timeouts;
-all six failing suites plus five affected suites passed together with
-`--maxWorkers=1` (174 assertions, 70s). The four-worker cap does not eliminate
-local timing sensitivity. Next investigate related-test import analysis and
-worker contention before changing product code or raising global timeouts.
-A standalone full-suite comparison on 2026-09-30 took 237s with nine default
-workers and eight timeouts; the same checkout with four workers passed in 77s.
-Full local and CI unit runs now share the existing ceiling in
-[Vitest configuration](../vitest.config.ts), leaving one CPU free on smaller
-hosts. This bounds ordinary fan-out; overlapping sessions still need separate
-resource diagnosis.
+Scoped handoff checks can repeatedly fail their final source-staleness guard
+while another session edits the shared checkout: three 2026-10-02 five-bug
+checks passed smoke and selected-file formatting but observed different
+checkout-wide digests at completion. The guard in `scripts/check.mjs` hashes
+all dirty paths even when the check selects explicit task paths. Keep the
+failed run evidence and retry after checkout writes settle; do not bypass the
+guard or stop another session. The focused combat suites passed independently.
 
 ## Resolved history
 
 [September 2026](./history/friction-2026-09.md). All previous resolved entries are preserved there.
+
+[October 2026](./history/friction-2026-10.md) records Node Web Storage isolation
+and the mitigation for overlapping expensive test runs.
 
 The September history also records package-fixture isolation and native report-watcher
 teardown recovery from the card-animation handoff. Prevention lives in

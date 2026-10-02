@@ -1,74 +1,57 @@
-import { getCardKeywords, type BattleCard, type BattleCardEffect, type KeywordId } from "@/lib/game-data";
+import {
+  getCardKeywords,
+  DAMAGE_TYPES,
+  visitBattleCardEffects,
+  type BattleCard,
+  type BattleCardEffect,
+  type KeywordId,
+} from "@/lib/game-data";
 
-// Single owner for walking nested effects. The recursive wrappers are
-// "chance" (success/failure branches) and "repeat-over-turns" (scheduled
-// effects); every battle-side walker must descend into both so new wrappers
-// cannot silently fall out of targeting, classification, or replays.
-function forEachNestedEffect(effects: readonly BattleCardEffect[], visit: (effect: BattleCardEffect) => void): void {
-  for (const effect of effects) {
-    visit(effect);
-    if (effect.kind === "chance") {
-      forEachNestedEffect(effect.successEffects, visit);
-      forEachNestedEffect(effect.failureEffects, visit);
-    } else if (effect.kind === "repeat-over-turns") {
-      forEachNestedEffect(effect.effects, visit);
-    }
-  }
+interface EffectClassification {
+  damageTypes: ReadonlySet<string>;
+  playTarget: "player" | "enemy";
 }
 
-function collectDamageTypes(effects: readonly BattleCardEffect[], set: Set<string>): void {
-  forEachNestedEffect(effects, (effect) => {
+// All derived classification belongs to the immutable effect tree. Card
+// variants share it; replacing effects automatically selects a fresh entry.
+const EFFECT_CLASSIFICATION_CACHE = new WeakMap<readonly BattleCardEffect[], EffectClassification>();
+
+function classifyEffects(effects: readonly BattleCardEffect[]): EffectClassification {
+  const cached = EFFECT_CLASSIFICATION_CACHE.get(effects);
+  if (cached) return cached;
+  const damageTypes = new Set<string>();
+  let playTarget: "player" | "enemy" | null = null;
+  visitBattleCardEffects(effects, (effect) => {
+    // Targeting uses the first concrete effect; damage queries include the
+    // whole tree, even when later effects target the other side.
+    playTarget ??= effectTarget(effect);
     if (effect.kind === "damage") {
-      if (effect.damageTypeIfTargetHasBlock) set.add(effect.damageTypeIfTargetHasBlock);
-      if (effect.damageTypeIfTargetFrozen) set.add(effect.damageTypeIfTargetFrozen);
-    }
-    if (effect.kind === "damage" && effect.damageTypePool?.length) {
-      for (const type of effect.damageTypePool) set.add(type);
-    } else if (effect.kind === "damage" || effect.kind === "cleanse-player-status-to-damage") {
-      set.add(effect.damageType);
+      if (effect.damageTypeIfTargetHasBlock) damageTypes.add(effect.damageTypeIfTargetHasBlock);
+      if (effect.damageTypeIfTargetFrozen) damageTypes.add(effect.damageTypeIfTargetFrozen);
+      for (const type of effect.damageTypePool?.length ? effect.damageTypePool : [effect.damageType]) {
+        damageTypes.add(type);
+      }
+    } else if (effect.kind === "cleanse-player-status-to-damage") {
+      damageTypes.add(effect.damageType);
     } else if (effect.kind === "random-damage") {
-      for (const type of effect.damageTypePool?.length ? effect.damageTypePool : ["physical"]) set.add(type);
+      for (const type of effect.damageTypePool?.length ? effect.damageTypePool : DAMAGE_TYPES) damageTypes.add(type);
     }
   });
-}
-
-const CARD_DAMAGE_TYPES_CACHE = new WeakMap<BattleCard, Set<string>>();
-
-function getCardDamageTypes(card: BattleCard): Set<string> {
-  const cached = CARD_DAMAGE_TYPES_CACHE.get(card);
-  if (cached) return cached;
-  const types = new Set<string>();
-  collectDamageTypes(card.effects, types);
-  CARD_DAMAGE_TYPES_CACHE.set(card, types);
-  return types;
+  const classification: EffectClassification = { damageTypes, playTarget: playTarget ?? "enemy" };
+  EFFECT_CLASSIFICATION_CACHE.set(effects, classification);
+  return classification;
 }
 
 export function hasDamageEffect(effects: readonly BattleCardEffect[]): boolean {
-  let found = false;
-  forEachNestedEffect(effects, (effect) => {
-    if (
-      effect.kind === "damage" ||
-      effect.kind === "cleanse-player-status-to-damage" ||
-      effect.kind === "random-damage"
-    ) {
-      found = true;
-    }
-  });
-  return found;
+  return classifyEffects(effects).damageTypes.size > 0;
 }
 
-const ATTACK_CARD_CACHE = new WeakMap<object, boolean>();
-
 export function isAttackCard(card: Pick<BattleCard, "effects">): boolean {
-  const cached = ATTACK_CARD_CACHE.get(card);
-  if (cached !== undefined) return cached;
-  const result = hasDamageEffect(card.effects);
-  ATTACK_CARD_CACHE.set(card, result);
-  return result;
+  return hasDamageEffect(card.effects);
 }
 
 export function cardHasDamageType(card: BattleCard, damageType: string): boolean {
-  return getCardDamageTypes(card).has(damageType);
+  return classifyEffects(card.effects).damageTypes.has(damageType);
 }
 
 export function cardHasKeyword(card: BattleCard, keyword: string): boolean {
@@ -80,19 +63,24 @@ export function isNatureCard(card: BattleCard): boolean {
 }
 
 export function damageOnlyEffects(effects: readonly BattleCardEffect[]): BattleCardEffect[] {
-  return effects.flatMap((effect): BattleCardEffect[] => {
-    if (effect.kind === "damage" || effect.kind === "random-damage") return [effect];
+  const damageEffects: BattleCardEffect[] = [];
+  for (const effect of effects) {
+    if (effect.kind === "damage" || effect.kind === "random-damage") {
+      damageEffects.push(effect);
+    }
     if (effect.kind === "chance") {
       const successEffects = damageOnlyEffects(effect.successEffects);
       const failureEffects = damageOnlyEffects(effect.failureEffects);
-      return successEffects.length || failureEffects.length ? [{ ...effect, successEffects, failureEffects }] : [];
+      if (successEffects.length || failureEffects.length) {
+        damageEffects.push({ ...effect, successEffects, failureEffects });
+      }
     }
     if (effect.kind === "repeat-over-turns") {
       const inner = damageOnlyEffects(effect.effects);
-      return inner.length ? [{ ...effect, effects: inner }] : [];
+      if (inner.length) damageEffects.push({ ...effect, effects: inner });
     }
-    return [];
-  });
+  }
+  return damageEffects;
 }
 
 function effectTarget(effect: BattleCardEffect): "player" | "enemy" | null {
@@ -134,11 +122,5 @@ function effectTarget(effect: BattleCardEffect): "player" | "enemy" | null {
 }
 
 export function getBattleCardPlayTarget(card: BattleCard): "player" | "enemy" {
-  let target: "player" | "enemy" | null = null;
-  // Depth-first, in card order — the same sequence the previous recursive
-  // walk visited — so the first concrete target still wins.
-  forEachNestedEffect(card.effects, (effect) => {
-    target ??= effectTarget(effect);
-  });
-  return target ?? "enemy";
+  return classifyEffects(card.effects).playTarget;
 }

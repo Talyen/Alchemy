@@ -1,4 +1,4 @@
-/** Link a shader pair and release every intermediate resource on failure. */
+/** Link a shader pair and release the intermediate shader resources. */
 export function createWebGLProgram(
   gl: WebGLRenderingContext,
   vertexSource: string,
@@ -9,10 +9,6 @@ export function createWebGLProgram(
     if (!shader) return null;
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      gl.deleteShader(shader);
-      return null;
-    }
     return shader;
   }
   const vertex = compile(gl.VERTEX_SHADER, vertexSource);
@@ -27,10 +23,16 @@ export function createWebGLProgram(
     gl.attachShader(program, vertex);
     gl.attachShader(program, fragment);
     gl.linkProgram(program);
+    // The linked executable survives detachment. Attached shaders would keep
+    // their resources alive even after deleteShader marks them for deletion.
+    gl.detachShader(program, vertex);
+    gl.detachShader(program, fragment);
   }
   gl.deleteShader(vertex);
   gl.deleteShader(fragment);
   if (!program) return null;
+  // Linking also detects compile failures, avoiding two synchronous shader
+  // status queries during renderer startup.
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
     gl.deleteProgram(program);
     return null;

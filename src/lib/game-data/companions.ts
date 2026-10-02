@@ -15,6 +15,7 @@ import {
   wolfCompanion,
 } from "./assets";
 import type { BattleCardEffect, CompanionDefinition, CompanionId } from "./types";
+import { mapEffectChildren } from "./effect-tree";
 
 export const companionLibrary: Record<CompanionDefinition["id"], CompanionDefinition> = {
   wolf: {
@@ -107,43 +108,6 @@ export const defaultCompanionBondLevels: Record<CompanionId, number> = Object.fr
   Object.keys(companionLibrary).map((id) => [id, 0]),
 ) as Record<CompanionId, number>;
 
-function getCompanionBondEffects(companion: CompanionDefinition, bondLevel = 0): BattleCardEffect[] {
-  if (bondLevel === 0) return companion.turnStartEffects;
-  if (companion.id === "mana-moth" || companion.id === "library-owl") {
-    return [
-      ...companion.turnStartEffects,
-      {
-        kind: "chance",
-        probability: bondLevel / 4,
-        successEffects: companion.turnStartEffects,
-        failureEffects: [],
-      },
-    ];
-  }
-  if (companion.id === "will-o-wisp") {
-    return [...companion.turnStartEffects, { kind: "heal", amount: bondLevel }];
-  }
-  function scaleEffect(effect: BattleCardEffect): BattleCardEffect {
-    if (effect.kind === "chance") {
-      return {
-        ...effect,
-        successEffects: effect.successEffects.map(scaleEffect),
-        failureEffects: effect.failureEffects.map(scaleEffect),
-      };
-    }
-    if (
-      effect.kind === "damage" ||
-      effect.kind === "heal" ||
-      effect.kind === "gain-gold" ||
-      (effect.kind === "player-status" && companion.id !== "wolf")
-    ) {
-      return { ...effect, amount: effect.amount + bondLevel };
-    }
-    return effect;
-  }
-  return companion.turnStartEffects.map(scaleEffect);
-}
-
 export interface CompanionDamageModifiers {
   damageBonus: number;
   bleedDamageBonus: number;
@@ -155,6 +119,12 @@ export function getModifiedCompanionEffects(
   bondLevel: number,
   modifiers: CompanionDamageModifiers,
 ): BattleCardEffect[] {
+  const bonusTrigger = companion.id === "mana-moth" || companion.id === "library-owl";
+  const bonusHeal = companion.id === "will-o-wisp";
+  const amountBond = bonusTrigger || bonusHeal ? 0 : bondLevel;
+
+  // Apply Bond before damage bonuses, retaining the original arithmetic order.
+  // One walk avoids constructing an intermediate bonded effect tree.
   function scale(effect: BattleCardEffect): BattleCardEffect {
     if (effect.kind === "damage") {
       const pool = effect.damageTypePool;
@@ -177,16 +147,33 @@ export function getModifiedCompanionEffects(
         };
       }
       const bonus = modifiers.damageBonus + (effect.damageType === "bleed" ? modifiers.bleedDamageBonus : 0);
-      return { ...effect, amount: Math.round((effect.amount + bonus) * modifiers.damageMultiplier) };
+      return { ...effect, amount: Math.round((effect.amount + amountBond + bonus) * modifiers.damageMultiplier) };
     }
     if (effect.kind === "chance") {
-      return {
-        ...effect,
-        successEffects: effect.successEffects.map(scale),
-        failureEffects: effect.failureEffects.map(scale),
-      };
+      return mapEffectChildren(effect, scale);
+    }
+    if (
+      amountBond !== 0 &&
+      (effect.kind === "heal" ||
+        effect.kind === "gain-gold" ||
+        (effect.kind === "player-status" && companion.id !== "wolf"))
+    ) {
+      return { ...effect, amount: effect.amount + amountBond };
     }
     return effect;
   }
-  return getCompanionBondEffects(companion, bondLevel).map(scale);
+  const effects = companion.turnStartEffects.map(scale);
+  if (bondLevel !== 0) {
+    if (bonusTrigger) {
+      effects.push({
+        kind: "chance",
+        probability: bondLevel / 4,
+        successEffects: companion.turnStartEffects.map(scale),
+        failureEffects: [],
+      });
+    } else if (bonusHeal) {
+      effects.push({ kind: "heal", amount: bondLevel });
+    }
+  }
+  return effects;
 }

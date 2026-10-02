@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
@@ -7,15 +7,26 @@ import { BattleCardButton } from "@/features/alchemy/shared/ui/cards/card-button
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import type { BattleActionsProps } from "@/features/alchemy/run-loop/screens/battle-screen/types";
 import { waitForArtwork } from "../../../../../helpers/artwork-test";
-import type { BattleCard } from "@/lib/game-data";
+import type { BattleCard, CardDescriptionContext } from "@/lib/game-data";
 import { patchBattleState } from "../../../../../fixtures/battle";
+import { MOTION_FADE_MS } from "@/lib/game-constants";
 
 vi.mock("@/features/alchemy/shared/ui/cards/card-button", () => ({
-  BattleCardButton: vi.fn(({ ariaLabel, onClick }: { ariaLabel: string; onClick: () => void }) => (
-    <button type="button" onClick={onClick}>
-      {ariaLabel}
-    </button>
-  )),
+  BattleCardButton: vi.fn(
+    ({
+      ariaLabel,
+      onClick,
+      descriptionContext,
+    }: {
+      ariaLabel: string;
+      onClick: () => void;
+      descriptionContext: CardDescriptionContext;
+    }) => (
+      <button type="button" onClick={onClick} data-companion-damage={descriptionContext.companionDamage}>
+        {ariaLabel}
+      </button>
+    ),
+  ),
 }));
 
 vi.mock("@/features/alchemy/shared/ui/use-interactive-card", () => ({
@@ -48,6 +59,7 @@ describe("WishOverlay", () => {
     cleanup();
     resetEscapeStackForTests();
     useUiStore.getState().setAutoplayPreviewCardId(null);
+    vi.useRealTimers();
   });
 
   it("ignores Escape and stops GameMenu from receiving the key", async () => {
@@ -113,6 +125,23 @@ describe("WishOverlay", () => {
     const calls = vi.mocked(BattleCardButton).mock.calls;
     expect(calls.length).toBeGreaterThan(0);
     expect(calls[calls.length - 1]?.[0]).toEqual(expect.objectContaining({ hovered: true, suppressTooltip: true }));
+  });
+
+  it("holds outgoing choices and scaling through exit, then uses the next Wish's context", async () => {
+    const battleState = patchBattleState({ wishOptions: [wishCard], talentEffects: { companionDamage: 3 } });
+    const actions = { onWishChoice: vi.fn() } as unknown as BattleActionsProps;
+    const { rerender } = render(<WishOverlay open battleState={battleState} actions={actions} />);
+    await waitForArtwork();
+    vi.useFakeTimers();
+    const nextState = patchBattleState({ wishOptions: null, talentEffects: { companionDamage: 9 } });
+
+    rerender(<WishOverlay open={false} battleState={nextState} actions={actions} />);
+    expect(screen.getByText("Choose Wish Card").getAttribute("data-companion-damage")).toBe("3");
+    act(() => vi.advanceTimersByTime(MOTION_FADE_MS));
+    expect(screen.queryByText("Choose Wish Card")).toBeNull();
+
+    rerender(<WishOverlay open battleState={{ ...nextState, wishOptions: [wishCard] }} actions={actions} />);
+    expect(screen.getByText("Choose Wish Card").getAttribute("data-companion-damage")).toBe("9");
   });
 
   it("leaves wish options unhighlighted without an autoplay preview", async () => {

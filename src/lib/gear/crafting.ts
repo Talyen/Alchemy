@@ -17,7 +17,7 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import { gearDefinitionId, gearDefinitions, gearInstanceRarity } from "./definitions";
 import { type GearInstance, type GearAffixRoll, type GearRarity } from "./types";
 import { clamp, clamp01, lerp } from "@/lib/math";
-import { EMPTY_CRAFTING_CURRENCIES, type CraftingCurrencyId } from "./crafting-ids";
+import { CRAFTING_CURRENCY_IDS, EMPTY_CRAFTING_CURRENCIES, type CraftingCurrencyId } from "./crafting-ids";
 export type { CraftingCurrencyId } from "./crafting-ids";
 
 export interface CraftingCurrencyDefinition {
@@ -28,54 +28,54 @@ export interface CraftingCurrencyDefinition {
   art: string;
 }
 
-export const CRAFTING_CURRENCY_LIST: CraftingCurrencyDefinition[] = [
-  {
+const CRAFTING_CURRENCIES_BY_ID = {
+  "discordant-dice": {
     id: "discordant-dice",
     displayName: "Discordant Dice",
     tooltipEffect: "**Reroll** All Affixes",
     description: "Rerolls all affixes using normal affinity rules.",
     art: craftingArt["discordant-dice"]!,
   },
-  {
+  "sprig-of-growth": {
     id: "sprig-of-growth",
     displayName: "Sprig of Growth",
     tooltipEffect: "**Add** a Random Affix",
     description: "Adds a random affix using normal affinity rules.",
     art: craftingArt["sprig-of-growth"]!,
   },
-  {
+  voidstone: {
     id: "voidstone",
     displayName: "Voidstone",
     tooltipEffect: "**Remove** All Affixes",
     description: "Removes all affixes from an item.",
     art: craftingArt.voidstone!,
   },
-  {
+  "ascension-seal": {
     id: "ascension-seal",
     displayName: "Ascension Seal",
     tooltipEffect: "**Upgrade** a Basic item to Astral quality",
     description: "Upgrades a Basic item and its existing affixes to Astral quality.",
     art: craftingArt["ascension-seal"]!,
   },
-  {
+  "severance-maw": {
     id: "severance-maw",
     displayName: "Severance Maw",
     tooltipEffect: "**Remove** a Random Affix",
     description: "Removes a random affix from an item.",
     art: craftingArt["severance-maw"]!,
   },
-  {
+  "smiths-whetstone": {
     id: "smiths-whetstone",
     displayName: "Smith's Whetstone",
     tooltipEffect: "**Upgrade** a Random Affix",
     description: "Increases a random affix value by 1.",
     art: craftingArt["smiths-whetstone"]!,
   },
-];
+} satisfies { [K in CraftingCurrencyId]: CraftingCurrencyDefinition & { id: K } };
 
-const CRAFTING_CURRENCIES_BY_ID: Record<CraftingCurrencyId, CraftingCurrencyDefinition> = Object.fromEntries(
-  CRAFTING_CURRENCY_LIST.map((currency) => [currency.id, currency]),
-) as Record<CraftingCurrencyId, CraftingCurrencyDefinition>;
+export const CRAFTING_CURRENCY_LIST: CraftingCurrencyDefinition[] = CRAFTING_CURRENCY_IDS.map(
+  (id) => CRAFTING_CURRENCIES_BY_ID[id],
+);
 
 export function getCraftingCurrencyDefinition(id: CraftingCurrencyId): CraftingCurrencyDefinition {
   const definition = CRAFTING_CURRENCIES_BY_ID[id];
@@ -115,12 +115,13 @@ function prepareCraftingCurrency(currencyId: CraftingCurrencyId, item: GearInsta
       if (!item.affixes.length) return "This item has no affixes to reroll.";
       return (rng) => ({ ...item, affixes: definition ? rollAffixes(definition, item.affixes.length, rng) : [] });
     case "sprig-of-growth": {
+      if (!rarity || item.affixes.length >= GEAR_AFFIX_COUNT[rarity].max)
+        return "No affix slots or eligible affixes available.";
       const presentIds = new Set(item.affixes.map((affix) => affix.id));
       const available = definition
         ? buildEligibleAffixPool(definition).filter((affix) => !presentIds.has(affix.id))
         : [];
-      if (!rarity || item.affixes.length >= GEAR_AFFIX_COUNT[rarity].max || !available.length)
-        return "No affix slots or eligible affixes available.";
+      if (!available.length) return "No affix slots or eligible affixes available.";
       return (rng) => {
         const chosen = pickRandom(available, rng)!;
         return { ...item, affixes: [...item.affixes, { id: chosen.id, value: rollAffixValue(chosen, rarity, rng) }] };

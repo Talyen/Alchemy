@@ -37,13 +37,18 @@ export function hasArmoryCriteria(filters: ArmoryInventoryFilters, isTrinket: bo
   );
 }
 
+// A filtering pass repeats the same query for every item. Retain only its latest
+// tokenization, without caching inventory text that can change after crafting.
+let lastSearchQuery: string | undefined;
+let lastSearchWords: readonly string[] = [];
+
 function matchesSearch(text: string, query: string): boolean {
+  if (query !== lastSearchQuery) {
+    lastSearchWords = query.trim().toLocaleLowerCase().split(/\s+/);
+    lastSearchQuery = query;
+  }
   const normalized = text.toLocaleLowerCase().replace(/\s+/g, " ");
-  return query
-    .trim()
-    .toLocaleLowerCase()
-    .split(/\s+/)
-    .every((word) => normalized.includes(word));
+  return lastSearchWords.every((word) => normalized.includes(word));
 }
 
 function matchesKeywords(keywordIds: readonly KeywordId[], filters: ArmoryInventoryFilters): boolean {
@@ -68,6 +73,15 @@ export function matchesGearFilters(
 ): boolean {
   if (!hasArmoryCriteria(filters, false)) return true;
   const definition = gearDefinitions[item.definitionId];
+  if (
+    !matchesEquipment(equippedIds.has(item.instanceId), filters.equipment, otherHeroEquippedIds.has(item.instanceId)) ||
+    (filters.rarities.length > 0 && (definition?.rarity == null || !filters.rarities.includes(definition.rarity)))
+  ) {
+    return false;
+  }
+  if (filters.keywords.length > 0 && !matchesKeywords(getGearInstanceKeywordIds(item), filters)) return false;
+  if (!filters.search.trim()) return true;
+
   const searchText = [
     getGearInstanceTitle(item),
     definition ? gearBaseItems[definition.baseItemId]?.displayName : undefined,
@@ -75,12 +89,7 @@ export function matchesGearFilters(
   ]
     .filter(Boolean)
     .join(" ");
-  return (
-    matchesSearch(searchText, filters.search) &&
-    (filters.rarities.length === 0 || (definition?.rarity != null && filters.rarities.includes(definition.rarity))) &&
-    matchesKeywords(getGearInstanceKeywordIds(item), filters) &&
-    matchesEquipment(equippedIds.has(item.instanceId), filters.equipment, otherHeroEquippedIds.has(item.instanceId))
-  );
+  return matchesSearch(searchText, filters.search);
 }
 
 export function matchesTrinketFilters(
@@ -89,11 +98,12 @@ export function matchesTrinketFilters(
   equippedIds: ReadonlySet<string>,
 ): boolean {
   if (!hasArmoryCriteria(filters, true)) return true;
+  if (!matchesEquipment(equippedIds.has(item.id), filters.equipment)) return false;
+  if (!filters.search.trim() && filters.keywords.length === 0) return true;
   const text = item.descriptionLines.join(" ");
   return (
-    matchesSearch(`${item.title} ${text}`, filters.search) &&
-    matchesKeywords(extractKeywordIds(text), filters) &&
-    matchesEquipment(equippedIds.has(item.id), filters.equipment)
+    (filters.keywords.length === 0 || matchesKeywords(extractKeywordIds(text), filters)) &&
+    (!filters.search.trim() || matchesSearch(`${item.title} ${text}`, filters.search))
   );
 }
 

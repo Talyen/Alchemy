@@ -2,7 +2,7 @@ import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import type { BattleSnapshot } from "./types/state-types";
 import { harmfulPlayerStatusIds, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import { halveRounded, scalePercent } from "./amount-helpers";
-import { computeCardPayment } from "./card-cost-rules";
+import { computeEffectiveCost } from "./card-cost-rules";
 
 const DOT_STATUSES = new Set(["burn", "poison", "bleed"]);
 const CONTROL_STATUSES = new Set(["stun", "freeze"]);
@@ -34,41 +34,50 @@ function scoreEffects(effects: readonly BattleCardEffect[], state: BattleSnapsho
   return total;
 }
 
+function scoreDamageEffect(effect: Extract<BattleCardEffect, { kind: "damage" }>, state: BattleSnapshot): number {
+  if (effect.equalToForge) return state.playerStatuses.forge;
+  if (effect.equalToBlock) return scalePercent(state.playerStatuses.block, effect.equalToBlockPercent ?? 100);
+  if (effect.equalToArmor) return state.playerStatuses.armor;
+  if (effect.equalToGoldPercent !== undefined) return scalePercent(state.gold, effect.equalToGoldPercent);
+  // Type-only conditions cannot change this score. Ordinary attacks need no
+  // temporary resolved effect; amount-changing conditions keep the shared resolver.
+  if (effect.blockCost === undefined && !effect.damageTypeIfTargetFrozen) return effect.amount;
+  return resolveConditionalCardDamage(effect, {
+    actorBlock: state.playerStatuses.block,
+    targetBlock: state.enemyMitigation.block,
+    targetFrozen: state.enemyCC.freezeSkipTurns > 0,
+  }).effect.amount;
+}
+
+function playerStatusAmount(
+  effect: Extract<BattleCardEffect, { kind: "player-status" }>,
+  state?: BattleSnapshot,
+): number {
+  // Without a snapshot, immediate-defense scoring uses the authored conversion factor.
+  if (!state) return effect.convertCurrentMana ?? effect.perManaCrystal ?? effect.amount;
+  if (effect.convertCurrentMana !== undefined) return state.mana * effect.convertCurrentMana;
+  if (effect.perManaCrystal !== undefined) return state.maxMana * effect.perManaCrystal;
+  return effect.amount;
+}
+
 function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, capacity: ScoreCapacity): number {
   switch (effect.kind) {
     case "damage":
-      return effect.equalToForge
-        ? state.playerStatuses.forge
-        : effect.equalToBlock
-          ? scalePercent(state.playerStatuses.block, effect.equalToBlockPercent ?? 100)
-          : effect.equalToArmor
-            ? state.playerStatuses.armor
-            : effect.equalToGoldPercent !== undefined
-              ? scalePercent(state.gold, effect.equalToGoldPercent)
-              : resolveConditionalCardDamage(effect, {
-                  actorBlock: state.playerStatuses.block,
-                  targetBlock: state.enemyMitigation.block,
-                  targetFrozen: state.enemyCC.freezeSkipTurns > 0,
-                }).effect.amount;
+      return scoreDamageEffect(effect, state);
     case "random-damage":
       return (effect.minAmount + effect.maxAmount) / 2;
     case "enemy-status":
       if (DOT_STATUSES.has(effect.status) || CONTROL_STATUSES.has(effect.status)) return effect.amount;
       return 0;
     case "player-status": {
-      const amount =
-        effect.convertCurrentMana !== undefined
-          ? state.mana * effect.convertCurrentMana
-          : effect.perManaCrystal !== undefined
-            ? state.maxMana * effect.perManaCrystal
-            : effect.amount;
-      return (
-        (effect.statusPool ?? [effect.status]).reduce(
-          (total, status) =>
-            total + (status === "block" || status === "armor" ? amount * AUTOPLAY_EFFECT_SCORE.defense : 0),
-          0,
-        ) / (effect.statusPool?.length ?? 1)
-      );
+      const amount = playerStatusAmount(effect, state);
+      const defense = amount * AUTOPLAY_EFFECT_SCORE.defense;
+      if (!effect.statusPool) return effect.status === "block" || effect.status === "armor" ? defense : 0;
+      let total = 0;
+      for (const status of effect.statusPool) {
+        if (status === "block" || status === "armor") total += defense;
+      }
+      return total / effect.statusPool.length;
     }
     case "heal":
       return Math.min(effect.amount, Math.max(0, state.playerMaxHealth - state.playerHealth));
@@ -76,7 +85,8 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, capacity: 
       // A full cleanse is worth the harmful effects actually present; a
       // fixed cleanse is worth its amount. Panacea Potion carries no amount.
       if (effect.removeAll) {
-        const removable = harmfulPlayerStatusIds.filter((status) => state.playerStatuses[status] > 0).length;
+        let removable = 0;
+        for (const status of harmfulPlayerStatusIds) if (state.playerStatuses[status] > 0) removable += 1;
         return removable * AUTOPLAY_EFFECT_SCORE.cleanse;
       }
       return (effect.amount ?? 0) * AUTOPLAY_EFFECT_SCORE.cleanse;
@@ -147,13 +157,13 @@ export function getImmediateDamage(card: BattleCard): number {
   }, 0);
 }
 
-export function getImmediateDefense(card: BattleCard, state?: BattleSnapshot): number {
-  return card.effects.reduce((total, effect) => {
+function immediateDefenseFromEffects(effects: readonly BattleCardEffect[], state?: BattleSnapshot): number {
+  return effects.reduce((total, effect) => {
     if (effect.kind === "chance") {
       return (
         total +
-        effect.probability * getImmediateDefense({ ...card, effects: effect.successEffects }, state) +
-        (1 - effect.probability) * getImmediateDefense({ ...card, effects: effect.failureEffects }, state)
+        effect.probability * immediateDefenseFromEffects(effect.successEffects, state) +
+        (1 - effect.probability) * immediateDefenseFromEffects(effect.failureEffects, state)
       );
     }
     if (effect.kind === "heal")
@@ -162,14 +172,7 @@ export function getImmediateDefense(card: BattleCard, state?: BattleSnapshot): n
         (state ? Math.min(effect.amount, Math.max(0, state.playerMaxHealth - state.playerHealth)) : effect.amount)
       );
     if (effect.kind === "player-status" && (effect.status === "block" || effect.status === "armor")) {
-      const amount = state
-        ? effect.convertCurrentMana !== undefined
-          ? state.mana * effect.convertCurrentMana
-          : effect.perManaCrystal !== undefined
-            ? state.maxMana * effect.perManaCrystal
-            : effect.amount
-        : (effect.convertCurrentMana ?? effect.perManaCrystal ?? effect.amount);
-      return total + amount;
+      return total + playerStatusAmount(effect, state);
     }
     if (effect.kind === "remove-harmful-status") {
       if (state && !harmfulPlayerStatusIds.some((status) => state.playerStatuses[status] > 0)) return total;
@@ -180,8 +183,12 @@ export function getImmediateDefense(card: BattleCard, state?: BattleSnapshot): n
   }, 0);
 }
 
+export function getImmediateDefense(card: BattleCard, state?: BattleSnapshot): number {
+  return immediateDefenseFromEffects(card.effects, state);
+}
+
 export function getEffectiveDamageScore(card: BattleCard, state: BattleSnapshot): number {
-  const cost = computeCardPayment(state, card).effectiveCost;
+  const cost = computeEffectiveCost(state, card).effectiveCost;
   return scoreEffects(card.effects, state, {
     manaRoom: Math.max(0, state.maxMana - Math.max(0, state.mana - cost)),
   });

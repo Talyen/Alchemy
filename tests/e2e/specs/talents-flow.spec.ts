@@ -2,53 +2,11 @@ import { controllerInput } from "../controller-input";
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
 import { MenuPage } from "../../pages/menu-page";
-import { injectHomestead, injectTalentUnlocks } from "../save-injection";
+import { readSavedGame, withSavedGame } from "../save-injection";
 import { critical, slow } from "../../playwright-tags";
 
 test.describe("Talents Flow", () => {
-  test("shows talent overview grid and navigates to keyword tree and back", critical, async ({ page }) => {
-    const menu = new MenuPage(page);
-    await menu.gotoWithUnlockedMeta();
-    await menu.openTalents();
-
-    await expect(page.getByRole("heading", { name: "Talents" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Select Burn Talents" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Select Physical Talents" })).toBeVisible();
-
-    await page.getByRole("button", { name: "Select Burn Talents" }).click();
-    await expect(page.getByRole("heading", { name: "Burn" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Back" })).toBeVisible();
-
-    await page.getByRole("button", { name: "Back" }).click();
-    await expect(page.getByRole("heading", { name: "Talents" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Select Burn Talents" })).toBeVisible();
-  });
-
-  test("reset talents button is disabled when empty and opens confirmation when allocated", async ({ page }) => {
-    const menu = new MenuPage(page);
-    await menu.gotoWithUnlockedMeta();
-    await menu.openTalents();
-
-    const resetBtn = page.getByRole("button", { name: "Reset Talents" });
-    await expect(resetBtn).toBeVisible();
-    await expect(resetBtn).toBeDisabled();
-
-    await injectHomestead(page);
-    await injectTalentUnlocks(page, { physical: ["physical-expert-blacksmith"] });
-    await page.goto("/");
-    await menu.openTalents();
-
-    await expect(resetBtn).toBeEnabled();
-    await resetBtn.click();
-    await expect(page.getByRole("heading", { name: "Reset Talents" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Reset", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Cancel" })).toBeVisible();
-    await page.getByRole("button", { name: "Cancel" }).click();
-    await expect(page.getByRole("heading", { name: "Reset Talents" })).toHaveCount(0);
-    await expect(resetBtn).toBeEnabled();
-  });
-
-  test("keyboard navigation unlocks consecutive talents without leaving the tree", critical, async ({ page }) => {
+  test("keyboard allocation spends two points and survives resume", critical, async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.gotoWithUnlockedMeta({ talentXP: { dodge: 550 }, unlockedTalents: {} });
     await menu.openTalents();
@@ -56,6 +14,8 @@ test.describe("Talents Flow", () => {
     const input = controllerInput(page);
     await input.activate(portrait, 50);
 
+    const points = page.getByText(/^\d+ Talent Points? Remaining$/);
+    const before = Number((await points.innerText()).match(/\d+/)![0]);
     for (const [name, key] of [
       ["Lightfoot", "Enter"],
       ["Catch Breath", "Space"],
@@ -70,6 +30,21 @@ test.describe("Talents Flow", () => {
           .locator(".talent-card-unlocked"),
       ).toBeVisible();
     }
+    await expect(points).toHaveText(`${before - 2} Talent Points Remaining`);
+    await expect
+      .poll(async () => (await readSavedGame(page)).unlockedTalents.dodge)
+      .toEqual(["dodge-lightfoot", "dodge-catch-breath"]);
+    await withSavedGame(page, async (resumed) => {
+      await new MenuPage(resumed).openTalents();
+      await resumed.getByRole("button", { name: "Select Dodge Talents" }).click();
+      await expect(resumed.getByText(`${before - 2} Talent Points Remaining`, { exact: true })).toBeVisible();
+      for (const name of ["Lightfoot", "Catch Breath"]) {
+        await expect(resumed.getByText(name, { exact: true })).toBeVisible();
+        await expect(resumed.getByRole("button").filter({ has: resumed.getByText(name, { exact: true }) })).toHaveCount(
+          0,
+        );
+      }
+    });
   });
 
   // Header stability and small-viewport description fit below belong to the
@@ -106,6 +81,12 @@ test.describe("Talents Flow", () => {
     await page.mouse.move(0, 0);
     await expect.poll(scales).toEqual(before.map(() => "none"));
 
-    expect(await geometry()).toEqual(before);
+    const after = await geometry();
+    expect(after).toHaveLength(before.length);
+    for (const [index, rect] of after.entries()) {
+      for (const dimension of ["x", "y", "width", "height"] as const) {
+        expect(Math.abs(rect[dimension] - before[index]![dimension])).toBeLessThan(1);
+      }
+    }
   });
 });

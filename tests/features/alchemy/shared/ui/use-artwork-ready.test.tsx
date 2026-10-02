@@ -8,15 +8,18 @@ function View({
   identity = "menu",
   showArtwork = true,
   source,
+  secondarySource,
 }: {
   identity?: string;
   showArtwork?: boolean;
   source?: string;
+  secondarySource?: string;
 }) {
   const { ref: artworkRef, pending: artworkPending } = useArtworkReady(identity);
   return (
     <div ref={artworkRef} data-artwork-pending={artworkPending} data-testid="view">
       {showArtwork ? <img key={identity} src={source ?? `${identity}.webp`} alt="Artwork" /> : null}
+      {secondarySource ? <img src={secondarySource} alt="Secondary artwork" /> : null}
     </div>
   );
 }
@@ -150,11 +153,69 @@ describe("artwork reveal", () => {
     expect(screen.getByAltText("Artwork").style.visibility).toBe("hidden");
   });
 
+  it("does not rescan artwork for text and icon changes", async () => {
+    render(<View />);
+    const view = screen.getByTestId("view");
+    const scan = vi.spyOn(view, "querySelectorAll");
+    await act(async () => {
+      const counter = document.createElement("span");
+      counter.textContent = "12 Health";
+      view.append(counter, document.createElementNS("http://www.w3.org/2000/svg", "svg"));
+    });
+    await paint();
+    await act(async () => {
+      view.querySelector("span")!.textContent = "11 Health";
+      view.querySelector("svg")!.remove();
+      view.querySelector("span")!.remove();
+    });
+    await paint();
+    expect(scan).not.toHaveBeenCalled();
+    expect(view.dataset.artworkPending).toBe("true");
+    fireEvent.error(screen.getByAltText("Artwork"));
+    await paint();
+    expect(view.dataset.artworkPending).toBeUndefined();
+  });
+
+  it("tracks artwork added and removed inside a nested subtree", async () => {
+    render(<View showArtwork={false} />);
+    await paint();
+    const view = screen.getByTestId("view");
+    const wrapper = document.createElement("section");
+    const image = document.createElement("img");
+    image.src = "nested.webp";
+    wrapper.append(image);
+    await act(async () => view.append(wrapper));
+    await paint();
+    expect(view.dataset.artworkPending).toBe("true");
+    await act(async () => wrapper.remove());
+    await paint();
+    expect(view.dataset.artworkPending).toBeUndefined();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it("releases removed artwork without waiting for its deadline", async () => {
     const { rerender } = render(<View />);
     rerender(<View showArtwork={false} />);
     await paint();
     expect(screen.getByTestId("view").dataset.artworkPending).toBeUndefined();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("waits for every image when a decoded image is replaced and a pending image is removed", async () => {
+    const { rerender } = render(<View source="first.webp" secondarySource="second.webp" />);
+    const primary = screen.getByAltText("Artwork");
+    Object.defineProperty(primary, "decode", { value: () => Promise.resolve() });
+    fireEvent.load(primary);
+    await paint();
+    expect(screen.getByTestId("view").dataset.artworkPending).toBe("true");
+
+    rerender(<View source="replacement.webp" />);
+    await paint();
+    expect(screen.getByTestId("view").dataset.artworkPending).toBe("true");
+    fireEvent.load(primary);
+    await paint();
+    expect(screen.getByTestId("view").dataset.artworkPending).toBeUndefined();
+    expect(primary.style.visibility).not.toBe("hidden");
     expect(vi.getTimerCount()).toBe(0);
   });
 });

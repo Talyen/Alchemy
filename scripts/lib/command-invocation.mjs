@@ -6,6 +6,9 @@ const LOCAL_CLIS = {
   vitest: "vitest/vitest.mjs",
   playwright: "@playwright/test/cli.js",
   eslint: "eslint/bin/eslint.js",
+  tsc: "typescript/bin/tsc",
+  knip: "knip/bin/knip.js",
+  concurrently: "concurrently/dist/bin/concurrently.js",
   depcruise: "dependency-cruiser/bin/dependency-cruise.mjs",
   "commit-and-tag-version": "commit-and-tag-version/bin/cli.js",
   vite: "vite/bin/vite.js",
@@ -57,6 +60,11 @@ export function commandInvocation(command, args = []) {
     const cli = path.join(ROOT, "node_modules", relative);
     if (!fs.existsSync(cli)) throw new Error(`Missing local CLI: ${cli} (run npm ci)`);
     return [process.execPath, [cli, ...forwarded]];
+  }
+  // Bare tool names are used by compact and CI runners too. Resolve them
+  // through Node so direct calls need neither npm's PATH nor Windows .cmd shims.
+  if (Object.hasOwn(LOCAL_CLIS, command)) {
+    return [process.execPath, [resolveNodeCli(command, LOCAL_CLIS[command]), ...args]];
   }
   return [command, args];
 }

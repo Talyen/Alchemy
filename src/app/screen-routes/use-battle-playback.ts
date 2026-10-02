@@ -49,6 +49,7 @@ export function useBattlePlayback({
 
   const { scheduleAutoEndTurn, clearAutoEndTurn } = useBattleAutoEndTurn({
     autoEndTurn: autoEndTurn || isAutoplayEnabled,
+    isAutoplayEnabled,
     screen,
     battleState,
     hasActiveBattle,

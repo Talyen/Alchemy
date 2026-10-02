@@ -227,7 +227,6 @@ describe("playBattleCardResolved", () => {
       healOnConsume: 1,
       goldOnConsume: 1,
       poisonOnConsume: 1,
-      blockOnConsume: 2,
       drawOnConsume: 1,
     };
     const potionState = makeState({
@@ -277,6 +276,7 @@ describe("playBattleCardResolved", () => {
     );
     expect(summonResult.state.activeCompanion?.id).toBe("wolf");
     expect(summonResult.state.gold).toBe(0);
+    expect(summonResult.state.playerHealth).toBe(10);
     expect(summonResult.state.playerStatuses.block).toBe(0);
     expect(summonResult.state.enemyStatuses.poison).toBe(0);
   });

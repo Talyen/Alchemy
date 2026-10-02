@@ -68,26 +68,20 @@ export function hasAffordableHomesteadUpgrade(input: {
     discoveredCardIds,
   } = input;
 
-  const affordableBuilding = buildings.some((b) =>
-    canUpgradeTierItem(b, constructedBuildings[b.id] ?? 0, materialInventory),
-  );
+  if (buildings.some((b) => canUpgradeTierItem(b, constructedBuildings[b.id] ?? 0, materialInventory))) return true;
 
-  const affordableFarm = farmPlots.some((f) => canUpgradeTierItem(f, plantedFarms[f.id] ?? 0, materialInventory));
+  if (farmPlots.some((f) => canUpgradeTierItem(f, plantedFarms[f.id] ?? 0, materialInventory))) return true;
 
-  const affordableResearch = researchUpgrades.some((r) =>
-    canUpgradeTierItem(r, completedResearch[r.id] ?? 0, materialInventory),
-  );
+  if (researchUpgrades.some((r) => canUpgradeTierItem(r, completedResearch[r.id] ?? 0, materialInventory))) return true;
 
   const discoveredSet = new Set(discoveredCardIds);
-  const affordableBond = COMPANION_CARDS.some(({ id, companionId }) => {
+  return COMPANION_CARDS.some(({ id, companionId }) => {
     if (!discoveredSet.has(id)) return false;
     const currentLevel = bondedCompanions[companionId] ?? 0;
     if (currentLevel >= COMPANION_MAX_TIER) return false;
     const bondTier = COMPANION_BOND_TIERS[currentLevel];
     return bondTier !== undefined && canAfford(materialInventory, bondTier);
   });
-
-  return affordableBuilding || affordableFarm || affordableResearch || affordableBond;
 }
 
 export interface AppScreenChrome {

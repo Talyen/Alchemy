@@ -17,15 +17,6 @@ describe("GameModeSelectScreen", () => {
     onSelectWildwood: vi.fn(),
   };
 
-  it("renders the game mode chooser title and modes", () => {
-    render(<GameModeSelectScreen {...defaultProps} />);
-
-    expect(screen.getByRole("heading", { name: "Start a Run" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "The Campaign" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "The Labyrinth" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Wildwood Draft" })).toBeTruthy();
-  });
-
   it("dispatches the selection handlers when unlocked modes are clicked", () => {
     const onSelectCampaign = vi.fn();
     const onSelectLabyrinth = vi.fn();

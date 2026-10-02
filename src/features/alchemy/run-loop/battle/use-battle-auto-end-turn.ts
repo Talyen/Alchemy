@@ -8,11 +8,12 @@ import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { useLatestRef } from "../../shared/ui/use-latest-ref";
 import type { Screen } from "@/lib/routing";
 import { usePlaybackBlocked } from "./playback-gate";
-import { handHasPlayableCard } from "./playable-hand";
+import { findBestPlayableHandCard, handHasPlayableCard } from "./playable-hand";
 import type { BattlePlaybackPresentationGate } from "./presentation/use-hand-presentation";
 
 interface AutoEndTurnOptions {
   autoEndTurn: boolean;
+  isAutoplayEnabled?: boolean;
   screen: Screen;
   battleState: BattleSnapshot;
   hasActiveBattle: boolean;
@@ -25,6 +26,7 @@ interface AutoEndTurnOptions {
 
 export function useBattleAutoEndTurn({
   autoEndTurn,
+  isAutoplayEnabled = false,
   screen,
   battleState,
   hasActiveBattle,
@@ -38,6 +40,7 @@ export function useBattleAutoEndTurn({
   const onEndTurnRef = useLatestRef(onEndTurn);
   const battleStateRef = useLatestRef(battleState);
   const autoEndTurnRef = useLatestRef(autoEndTurn);
+  const autoplayEnabledRef = useLatestRef(isAutoplayEnabled);
   const autoEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isPlaybackBlocked = usePlaybackBlocked({
     screen,
@@ -55,9 +58,10 @@ export function useBattleAutoEndTurn({
 
   const canAutoEndTurn = useCallback(
     (current: BattleSnapshot) => {
-      return autoEndTurnRef.current && !isPlaybackBlocked(current) && !handHasPlayableCard(current);
+      if (!autoEndTurnRef.current || isPlaybackBlocked(current)) return false;
+      return autoplayEnabledRef.current ? findBestPlayableHandCard(current) === null : !handHasPlayableCard(current);
     },
-    [autoEndTurnRef, isPlaybackBlocked],
+    [autoEndTurnRef, autoplayEnabledRef, isPlaybackBlocked],
   );
 
   // React-lifecycle timer by design, not a battle-session timer: it is cleared
@@ -89,7 +93,7 @@ export function useBattleAutoEndTurn({
   useEffect(() => {
     scheduleAutoEndTurnRaw();
     return clearAutoEndTurn;
-  }, [scheduleAutoEndTurnRaw, clearAutoEndTurn, autoEndTurn, gameMenuOpen, inspectionOpen]);
+  }, [scheduleAutoEndTurnRaw, clearAutoEndTurn, autoEndTurn, isAutoplayEnabled, gameMenuOpen, inspectionOpen]);
 
   return { scheduleAutoEndTurn, clearAutoEndTurn };
 }

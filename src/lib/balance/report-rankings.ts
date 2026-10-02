@@ -93,6 +93,12 @@ export function combinePairedWinStats(stats: readonly PairedWinStats[]): PairedW
   return combined;
 }
 
+function pairedStandardError(n: number, differenceSum: number, squaredDifferenceSum: number): number {
+  if (n <= 1) return 0;
+  const variance = Math.max(0, (squaredDifferenceSum - (differenceSum * differenceSum) / n) / (n - 1));
+  return Math.sqrt(variance / n);
+}
+
 export function makePairedDelta(id: string, stats: PairedWinStats): PairedDelta {
   if (stats.n === 0) {
     return {
@@ -113,21 +119,13 @@ export function makePairedDelta(id: string, stats: PairedWinStats): PairedDelta 
   const baseline = stats.baselineWins / stats.n;
   const differenceSum = stats.treatmentWins - stats.baselineWins;
   const delta = differenceSum / stats.n;
-  const sampleVariance =
-    stats.n > 1
-      ? Math.max(0, (stats.squaredDifferenceSum - (differenceSum * differenceSum) / stats.n) / (stats.n - 1))
-      : 0;
-  const se = stats.n > 1 ? Math.sqrt(sampleVariance / stats.n) : 0;
+  const se = pairedStandardError(stats.n, differenceSum, stats.squaredDifferenceSum);
 
   const treatmentTurns = stats.treatmentTurns / stats.n;
   const baselineTurns = stats.baselineTurns / stats.n;
   const turnDiffSum = stats.treatmentTurns - stats.baselineTurns;
   const turnDelta = turnDiffSum / stats.n;
-  const turnVariance =
-    stats.n > 1
-      ? Math.max(0, (stats.squaredTurnDifferenceSum - (turnDiffSum * turnDiffSum) / stats.n) / (stats.n - 1))
-      : 0;
-  const turnSe = stats.n > 1 ? Math.sqrt(turnVariance / stats.n) : 0;
+  const turnSe = pairedStandardError(stats.n, turnDiffSum, stats.squaredTurnDifferenceSum);
 
   return {
     id,

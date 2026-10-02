@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { getCraftingCurrencyDefinition, type CraftingCurrencyId } from "@/lib/gear";
 import { cn } from "@/lib/utils";
@@ -12,9 +12,25 @@ const CURRENCY_CURSOR_STYLES: Record<CraftingCurrencyId, { className: string }> 
   "smiths-whetstone": { className: "bg-stone-950" },
 };
 
+interface CursorPoint {
+  x: number;
+  y: number;
+}
+
+function positionCursor(cursor: HTMLDivElement, point: CursorPoint): void {
+  cursor.style.left = `${Math.min(point.x, window.innerWidth - 112)}px`;
+  cursor.style.top = `${Math.min(point.y, window.innerHeight - 112)}px`;
+}
+
 export function ArmoryCurrencyCursor({ activeCurrencyId }: { activeCurrencyId: CraftingCurrencyId | null }) {
-  const lastPoint = useRef<{ x: number; y: number } | null>(null);
-  const [point, setPoint] = useState<{ x: number; y: number } | null>(null);
+  const lastPoint = useRef<CursorPoint | null>(null);
+  const displayedPoint = useRef<CursorPoint | null>(null);
+  const cursorRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useLayoutEffect(() => {
+    if (cursorRef.current && displayedPoint.current) positionCursor(cursorRef.current, displayedPoint.current);
+  });
 
   useEffect(() => {
     if (!activeCurrencyId) {
@@ -24,7 +40,16 @@ export function ArmoryCurrencyCursor({ activeCurrencyId }: { activeCurrencyId: C
     let pending = lastPoint.current;
     function flush() {
       raf = 0;
-      setPoint(pending);
+      const next = pending;
+      const visibilityChanged = (displayedPoint.current !== null) !== (next !== null);
+      displayedPoint.current = next;
+      const cursor = cursorRef.current;
+      if (cursor && next) {
+        // React owns mounting and artwork; pointer frames only move the
+        // existing node, retaining the same CSS offsets and viewport clamp.
+        positionCursor(cursor, next);
+      }
+      if (visibilityChanged) setVisible(next !== null);
     }
     function handlePointerMove(event: PointerEvent) {
       const target = event.target instanceof Element ? event.target : null;
@@ -39,7 +64,10 @@ export function ArmoryCurrencyCursor({ activeCurrencyId }: { activeCurrencyId: C
       pending = null;
       lastPoint.current = pending;
       if (!raf) raf = requestAnimationFrame(flush);
-      else setPoint(null);
+      else {
+        displayedPoint.current = null;
+        setVisible(false);
+      }
     }
     raf = requestAnimationFrame(flush);
     document.addEventListener("pointerdown", handlePointerMove, { passive: true });
@@ -50,20 +78,21 @@ export function ArmoryCurrencyCursor({ activeCurrencyId }: { activeCurrencyId: C
       document.removeEventListener("pointerdown", handlePointerMove);
       document.removeEventListener("pointermove", handlePointerMove);
       document.documentElement.removeEventListener("pointerleave", handlePointerLeave);
-      setPoint(null);
+      displayedPoint.current = null;
+      setVisible(false);
     };
   }, [activeCurrencyId]);
 
-  if (!activeCurrencyId || !point) return null;
+  if (!activeCurrencyId || !visible) return null;
   const activeCurrency = getCraftingCurrencyDefinition(activeCurrencyId);
   return createPortal(
     <div
+      ref={cursorRef}
       data-testid="armory-crafting-cursor"
       className={cn(
         "armory-currency-cursor pointer-events-none fixed z-[130] translate-x-4 translate-y-4 overflow-hidden rounded-xl",
         CURRENCY_CURSOR_STYLES[activeCurrencyId].className,
       )}
-      style={{ left: Math.min(point.x, window.innerWidth - 112), top: Math.min(point.y, window.innerHeight - 112) }}
     >
       <img src={activeCurrency.art} alt="" className="h-full w-full object-cover" />
     </div>,

@@ -1,4 +1,4 @@
-import { type Locator, type Page } from "@playwright/test";
+import { type Page } from "@playwright/test";
 import { injectHomestead } from "../e2e/save-injection";
 import { MenuPage } from "./menu-page";
 
@@ -28,21 +28,5 @@ export class HomesteadPage {
 
   async switchTab(name: "Buildings" | "Farm" | "Research" | "Companions") {
     await this.page.getByRole("button", { name }).click();
-  }
-
-  constructButton() {
-    return this.page.getByRole("button", { name: /^(?:Construct|Build|Upgrade|Bond|Craft)\b/ }).first();
-  }
-
-  async getBuildingText(name: string) {
-    return this.page.getByRole("button", { name: new RegExp(name, "i") }).first();
-  }
-
-  materialPill(material: "Wood" | "Stone" | "Iron" | "Food" | "Herbs" | "Hide" | "Gems" | "Gold", amount: number) {
-    return this.page
-      .getByText(new RegExp(`^${material}$`, "i"))
-      .locator("xpath=..")
-      .getByText(String(amount))
-      .locator("xpath=../..");
   }
 }

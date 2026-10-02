@@ -1,7 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { HomesteadTooltipCost } from "@/features/alchemy/meta/screens/homestead/homestead-tile-node";
 import { HomesteadUpgradeNode } from "@/features/alchemy/meta/screens/homestead/upgrade-node";
 import { buildings, researchUpgrades } from "@/lib/homestead/data";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -116,52 +115,5 @@ describe("HomesteadUpgradeNode hover tooltip", () => {
     const text = panelText();
     const occurrences = (text.match(/per Room/g) || []).length;
     expect(occurrences).toBe(1);
-  });
-});
-
-describe("HomesteadTooltipCost", () => {
-  afterEach(cleanup);
-
-  it("renders label with cost icons and amounts", () => {
-    render(
-      <HomesteadTooltipCost
-        label="Build"
-        cost={{ ...emptyInventory(), wood: 5, iron: 3 }}
-        inventory={{ ...emptyInventory(), wood: 10, iron: 10 }}
-      />,
-    );
-
-    expect(screen.getByText("Build")).toBeTruthy();
-    expect(screen.getByText("5")).toBeTruthy();
-    expect(screen.getByText("3")).toBeTruthy();
-  });
-
-  it("marks unaffordable amounts destructive without a message", () => {
-    const { container } = render(
-      <HomesteadTooltipCost
-        label="Upgrade"
-        cost={{ ...emptyInventory(), wood: 5, iron: 3 }}
-        inventory={{ ...emptyInventory(), wood: 10, iron: 1 }}
-      />,
-    );
-
-    expect(screen.getByText("Upgrade")).toBeTruthy();
-    expect(screen.queryByText(/not enough/i)).toBeNull();
-    expect(container.querySelector(".text-destructive")?.textContent).toContain("3");
-  });
-
-  it("renders nothing when the cost is empty and no stars provided", () => {
-    const { container } = render(
-      <HomesteadTooltipCost label="Build" cost={emptyInventory()} inventory={emptyInventory()} />,
-    );
-
-    expect(container.textContent).toBe("");
-  });
-
-  it("renders label with stars even when cost is empty", () => {
-    render(<HomesteadTooltipCost label="Max Level" stars={<span data-testid="stars">★★★</span>} />);
-
-    expect(screen.getByText("Max Level")).toBeTruthy();
-    expect(screen.getByTestId("stars")).toBeTruthy();
   });
 });

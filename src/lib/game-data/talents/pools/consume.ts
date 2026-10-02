@@ -14,7 +14,7 @@ export const consumeTalents = [
   t(
     "consume-last-supper",
     "Last Supper",
-    "When you Consume your last card in hand, gain 3 Forge",
+    "When you Consume your last card in hand, gain 3 Forge (except cards that summon a Companion)",
     "Gift",
     setEffect("forgeOnConsume", 3),
   ),
@@ -42,21 +42,21 @@ export const consumeTalents = [
   t(
     "consume-aftertaste",
     "Aftertaste",
-    "When you Consume a card, restore 1 Health",
+    "When you Consume a card, restore 1 Health (except cards that summon a Companion)",
     "Cookie",
     setEffect("healOnConsume", 1),
   ),
   t(
     "consume-leftovers",
     "Leftovers",
-    "Consuming a card has a 25% chance to grant 4 Gold",
+    "Consuming a card has a 25% chance to grant 4 Gold (except cards that summon a Companion)",
     "Package",
     setEffect("goldOnConsume", 4),
   ),
   t(
     "consume-second-helping",
     "Second Helping",
-    "When you Consume a card, draw a card",
+    "When you Consume a card, draw a card (except cards that summon a Companion)",
     "CopyPlus",
     setEffect("uncappedDrawOnConsume", 1),
   ),

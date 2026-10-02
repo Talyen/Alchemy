@@ -1,11 +1,16 @@
-import { controllerInput } from "../controller-input";
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
 import { ShopPage } from "../../pages/shop-page";
-import { expectRunPhase } from "../../pages/game-stage";
 import { RewardPage } from "../../pages/reward-page";
 import { DestinationPage } from "../../pages/destination-page";
-import { enterPrimaryRewardScreen, SAVE_KEY, startAtDestination } from "../../browser-helpers";
+import {
+  enterPrimaryRewardScreen,
+  readSavedGame,
+  withSavedGame,
+  SAVE_KEY,
+  startAtDestination,
+} from "../../browser-helpers";
+import type { ParsedSaveData } from "@/lib/validation";
 import { critical, slow } from "../../playwright-tags";
 
 async function enterShop(page: import("@playwright/test").Page, gold: number, destination: "Card Shop" | "Gear Shop") {
@@ -14,22 +19,27 @@ async function enterShop(page: import("@playwright/test").Page, gold: number, de
   await expect(page.getByRole("heading", { name: destination })).toBeVisible();
 }
 
-test.describe("Card Shop", critical, () => {
-  test.describe("with sufficient gold", () => {
-    test.beforeEach(async ({ page }) => {
-      await enterShop(page, 9999, "Card Shop");
-    });
-
-    test("buying a card deducts gold and marks as purchased", async ({ page }) => {
-      const shop = new ShopPage(page);
-      await expectRunPhase(page, "runLoop");
-      const goldBefore = await shop.gold();
-
-      await controllerInput(page).activate(shop.buyBtn.first());
-      await shop.waitForPurchase();
-
-      expect(await shop.gold()).toBeLessThan(goldBefore);
-    });
+test("buying a card charges its quote once and survives resume", critical, async ({ page, fastBattle }) => {
+  void fastBattle;
+  await enterShop(page, 9999, "Card Shop");
+  const shop = new ShopPage(page);
+  const buy = shop.buyBtn.first();
+  const title = (await buy.getAttribute("aria-label"))!.replace(/^Buy /, "");
+  const price = Number((await buy.locator("span.tabular-nums").last().innerText()).replaceAll(",", ""));
+  expect(price).toBeGreaterThan(0);
+  const gold = await shop.gold();
+  const deckSize = (await readSavedGame(page)).activeRun!.runDeck.length;
+  await buy.click({ clickCount: 2, delay: 20 });
+  await shop.waitForPurchase();
+  await expect.poll(() => shop.gold()).toBe(gold - price);
+  await expect.poll(async () => (await readSavedGame(page)).activeRun?.runDeck.length).toBe(deckSize + 1);
+  await withSavedGame(page, async (resumed) => {
+    await expect(resumed.getByRole("heading", { name: "Card Shop", exact: true })).toBeVisible();
+    await expect(resumed.getByRole("button", { name: title, exact: true })).toBeDisabled();
+    expect(await new ShopPage(resumed).gold()).toBe(gold - price);
+    await resumed.getByRole("button", { name: `View Deck · ${deckSize + 1} cards` }).click();
+    await expect(resumed.getByRole("dialog").getByRole("img", { name: title, exact: true }).first()).toBeVisible();
+    expect((await readSavedGame(resumed)).activeRun?.runDeck).toHaveLength(deckSize + 1);
   });
 });
 
@@ -53,15 +63,6 @@ test.describe("Shop fade-out", () => {
 });
 
 test.describe("Reward Flow", () => {
-  test("card reward: clicking a card claims it immediately", critical, async ({ page, fastBattle }) => {
-    void fastBattle;
-    await enterPrimaryRewardScreen(page, { rewardType: "card", choiceIds: ["slash", "bash"] });
-
-    const reward = new RewardPage(page);
-    await reward.claimFirstReward();
-    await new DestinationPage(page).expectVisible();
-  });
-
   test("Skip ignores a resumed card reward selection", async ({ page, fastBattle }) => {
     void fastBattle;
     await enterPrimaryRewardScreen(page, { rewardType: "card", choiceIds: ["slash", "bash"], selectedId: "bash" });
@@ -75,80 +76,32 @@ test.describe("Reward Flow", () => {
     expect(deck.some((card) => card.id === "bash")).toBe(false);
   });
 
-  test("boon, trinket, and gear rewards persist correctly", async ({ page, fastBattle }) => {
-    void fastBattle;
-
-    await enterPrimaryRewardScreen(page, {
-      rewardType: "boon",
-      choiceIds: ["tattered-pages", "companions-collar"],
+  for (const rewardType of ["boon", "trinket", "gear"] as const) {
+    test(`${rewardType} is granted to its proper inventory once and survives resume`, async ({ page, fastBattle }) => {
+      void fastBattle;
+      await enterPrimaryRewardScreen(page, {
+        rewardType,
+        choiceIds: ["tattered-pages", "companions-collar"],
+        gearChoices: [{ instanceId: "reward-gear", definitionId: "leather-armor-basic", affixes: [] }],
+      });
+      const hasReward = (save: ParsedSaveData) =>
+        rewardType === "gear"
+          ? Object.values(save.gearInventories ?? {})
+              .flat()
+              .filter((gear) => gear.instanceId === "reward-gear").length
+          : (rewardType === "boon" ? (save.activeRun?.runBoons ?? []) : (save.ownedTrinketIds ?? [])).filter(
+              (id) => id === "tattered-pages",
+            ).length;
+      expect(hasReward(await readSavedGame(page))).toBe(0);
+      await new RewardPage(page).claimFirstReward();
+      await new DestinationPage(page).expectVisible();
+      await expect.poll(async () => hasReward(await readSavedGame(page))).toBe(1);
+      await withSavedGame(page, async (resumed) => {
+        await new DestinationPage(resumed).expectVisible();
+        const save = await readSavedGame(resumed);
+        expect(hasReward(save)).toBe(1);
+        if (rewardType === "trinket") expect(save.activeRun?.runBoons).not.toContain("tattered-pages");
+      });
     });
-    await new RewardPage(page).claimFirstReward();
-    await new DestinationPage(page).expectVisible();
-    await expect
-      .poll(() =>
-        page.evaluate(
-          (saveKey) => JSON.parse(localStorage.getItem(saveKey) || "{}").activeRun?.runBoons ?? [],
-          SAVE_KEY,
-        ),
-      )
-      .toContain("tattered-pages");
-
-    await enterPrimaryRewardScreen(page, {
-      rewardType: "trinket",
-      choiceIds: ["tattered-pages", "companions-collar"],
-    });
-    await new RewardPage(page).claimFirstReward();
-    await new DestinationPage(page).expectVisible();
-    await expect
-      .poll(() =>
-        page.evaluate((saveKey) => JSON.parse(localStorage.getItem(saveKey) || "{}").ownedTrinketIds ?? [], SAVE_KEY),
-      )
-      .toContain("tattered-pages");
-    const saved = await page.evaluate((saveKey) => JSON.parse(localStorage.getItem(saveKey) || "{}"), SAVE_KEY);
-    expect(saved.ownedTrinketIds).toContain("tattered-pages");
-    expect(saved.activeRun?.runBoons ?? []).not.toContain("tattered-pages");
-
-    await enterPrimaryRewardScreen(page, {
-      rewardType: "gear",
-      gearChoices: [{ instanceId: "reward-gear", definitionId: "leather-armor-basic", affixes: [] }],
-    });
-    await new RewardPage(page).claimFirstReward();
-    await new DestinationPage(page).expectVisible();
-    await expect
-      .poll(() =>
-        page.evaluate((saveKey) => {
-          const inventories = JSON.parse(localStorage.getItem(saveKey) || "{}").gearInventories || {};
-          return (Object.values(inventories).flat() as Array<{ instanceId: string }>).some(
-            (gear) => gear.instanceId === "reward-gear",
-          );
-        }, SAVE_KEY),
-      )
-      .toBe(true);
-  });
-
-  test("unclaimed rewards survive reload and can be claimed immediately", critical, async ({ page, fastBattle }) => {
-    void fastBattle;
-    await enterPrimaryRewardScreen(page, {
-      rewardType: "trinket",
-      choiceIds: ["tattered-pages", "companions-collar"],
-    });
-    await expect
-      .poll(async () =>
-        page.evaluate(
-          (saveKey) => JSON.parse(localStorage.getItem(saveKey) || "{}").activeRun?.interruptedFlow?.kind,
-          SAVE_KEY,
-        ),
-      )
-      .toBe("primary-reward");
-    await page.reload();
-    await new RewardPage(page).claimFirstReward();
-    await new DestinationPage(page).expectVisible();
-    await expect
-      .poll(() =>
-        page.evaluate((saveKey) => JSON.parse(localStorage.getItem(saveKey) || "{}").ownedTrinketIds ?? [], SAVE_KEY),
-      )
-      .toContain("tattered-pages");
-    const saved = await page.evaluate((saveKey) => JSON.parse(localStorage.getItem(saveKey) || "{}"), SAVE_KEY);
-    expect(saved.ownedTrinketIds).toContain("tattered-pages");
-  });
+  }
 });

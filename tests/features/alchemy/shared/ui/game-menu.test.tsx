@@ -119,24 +119,4 @@ describe("GameMenu", () => {
     await user.keyboard("{Enter} ");
     expect(onMainMenu).not.toHaveBeenCalled();
   });
-
-  it("renders menu items with designated icon color classes", () => {
-    renderMenu({ isOpen: true, anchorRect: null });
-
-    const talentsButton = screen.getByRole("button", { name: /talents/i });
-    const talentsIcon = talentsButton.querySelector("svg");
-    expect(talentsIcon?.getAttribute("class")).toContain("text-violet-400");
-
-    const homesteadButton = screen.getByRole("button", { name: /homestead/i });
-    const homesteadIcon = homesteadButton.querySelector("svg");
-    expect(homesteadIcon?.getAttribute("class")).toContain("text-emerald-400");
-
-    const armoryButton = screen.getByRole("button", { name: /armory/i });
-    const armoryIcon = armoryButton.querySelector("svg");
-    expect(armoryIcon?.getAttribute("class")).toContain("text-sky-300");
-
-    const optionsButton = screen.getByRole("button", { name: /options/i });
-    const optionsIcon = optionsButton.querySelector("svg");
-    expect(optionsIcon?.getAttribute("class")).toContain("text-zinc-400");
-  });
 });

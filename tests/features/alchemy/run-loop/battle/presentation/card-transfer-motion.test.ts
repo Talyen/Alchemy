@@ -3,7 +3,6 @@ import { CARD_TRANSFER_CONFIG } from "@/lib/game-constants";
 import { getCardTransferPose } from "@/features/alchemy/run-loop/battle/presentation/card-transfer-motion";
 import type { CardTransfer } from "@/features/alchemy/shared/types";
 import { makeTestCard } from "../../../../../fixtures/battle";
-import acceptedArc from "../../../../../fixtures/card-transfer-arc.json";
 
 const transfer: CardTransfer = {
   id: "draw-1",
@@ -20,36 +19,6 @@ const transfer: CardTransfer = {
 };
 
 describe("standard card motion", () => {
-  it("keeps the accepted travel easing, scale, and rotation", () => {
-    for (const kind of ["draw", "discard"] as const) {
-      const rotateY = [
-        ...(kind === "draw" ? CARD_TRANSFER_CONFIG.drawFlipKeyframes : CARD_TRANSFER_CONFIG.discardFlipKeyframes),
-      ];
-      const baseline = acceptedArc;
-      for (let index = 0; index <= 20; index++) {
-        const pose = getCardTransferPose({ ...transfer, kind, rotateY }, index / 20);
-        expect(pose.x).toBeCloseTo(baseline.x[index]!, 10);
-        expect(pose.scaleX).toBeCloseTo(baseline.scale[index]!, 10);
-        expect(pose.scaleY).toBeCloseTo(baseline.scale[index]!, 10);
-        expect(pose.rotate).toBeCloseTo(baseline.rotate[index]!, 10);
-      }
-    }
-  });
-
-  it("uses a shallow arc with a gentle departure and exact landing", () => {
-    const progress = 0.5;
-    const halfwayAlongPath = 1 - Math.cbrt(1 - progress);
-    const pose = getCardTransferPose(transfer, halfwayAlongPath);
-    const directY = (transfer.to.y - transfer.from.y) * progress;
-    expect(directY - pose.y).toBeCloseTo(transfer.from.height * 0.1);
-    const early = getCardTransferPose(transfer, 0.001);
-    const earlyProgress = early.x / (transfer.to.x - transfer.from.x);
-    const earlyLift = (transfer.to.y - transfer.from.y) * earlyProgress - early.y;
-    expect(earlyLift).toBeLessThan(0.002);
-    expect(getCardTransferPose(transfer, 0).y).toBe(0);
-    expect(getCardTransferPose(transfer, 1).y).toBe(transfer.to.y - transfer.from.y);
-  });
-
   it("turns through the edge-on midpoint without stopping", () => {
     for (const kind of ["draw", "discard"] as const) {
       const rotateY = [

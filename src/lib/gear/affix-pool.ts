@@ -24,23 +24,30 @@ function allowedAspectsForDefinition(def: GearDefinition): GearAffixAspect[] {
   return ["defensive"];
 }
 
-const eligibleAffixPoolCache = new Map<string, readonly GearAffixDefinition[]>();
-
-function eligibleAffixCacheKey(definition: GearDefinition): string {
-  // Key on the actual pool inputs — not just the base item — so future
-  // per-rarity or per-variant affinity can never collide silently. The cached
-  // array is frozen; copy before mutating.
-  return [
-    definition.baseItemId,
-    ...[...definition.compatibleSlots].sort(),
-    ...[...definition.affinityKeywords].sort(),
-  ].join("|");
+interface CachedAffixPool {
+  baseItemId: string;
+  compatibleSlots: readonly GearSlot[];
+  affinityKeywords: readonly string[];
+  pool: readonly GearAffixDefinition[];
 }
 
+// Catalog definitions recur throughout reward generation and crafting previews.
+// Weak ownership also lets temporary definitions and their pools be collected.
+const eligibleAffixPoolCache = new WeakMap<GearDefinition, CachedAffixPool>();
+
 export function buildEligibleAffixPool(definition: GearDefinition): readonly GearAffixDefinition[] {
-  const cacheKey = eligibleAffixCacheKey(definition);
-  const cached = eligibleAffixPoolCache.get(cacheKey);
-  if (cached) return cached;
+  const cached = eligibleAffixPoolCache.get(definition);
+  // Compare values rather than just array identity: callers can edit custom
+  // definitions in place. Stable lookups need no sorting or temporary arrays.
+  if (
+    cached &&
+    cached.baseItemId === definition.baseItemId &&
+    cached.compatibleSlots.length === definition.compatibleSlots.length &&
+    cached.compatibleSlots.every((slot, index) => slot === definition.compatibleSlots[index]) &&
+    cached.affinityKeywords.length === definition.affinityKeywords.length &&
+    cached.affinityKeywords.every((keyword, index) => keyword === definition.affinityKeywords[index])
+  )
+    return cached.pool;
   const allowedAspects = new Set(allowedAspectsForDefinition(definition));
   const pool = Object.freeze(
     gearAffixList.filter(
@@ -50,7 +57,12 @@ export function buildEligibleAffixPool(definition: GearDefinition): readonly Gea
         affixMatchesAffinity(affix, definition.affinityKeywords),
     ),
   );
-  eligibleAffixPoolCache.set(cacheKey, pool);
+  eligibleAffixPoolCache.set(definition, {
+    baseItemId: definition.baseItemId,
+    compatibleSlots: [...definition.compatibleSlots],
+    affinityKeywords: [...definition.affinityKeywords],
+    pool,
+  });
   return pool;
 }
 

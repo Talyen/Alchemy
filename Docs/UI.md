@@ -8,14 +8,14 @@ Alchemy's accessibility stance. Screen wiring checklists remain in
 
 ## Guide index
 
-| Topic                                                          | Guide                              |
-| -------------------------------------------------------------- | ---------------------------------- |
-| Shared components, buttons, sizing, colors, accessibility      | This page                          |
-| Hover tooltips, modal input, focus and dismissal               | [Interaction](./UI_INTERACTION.md) |
-| Screen fades, battle and equipment motion, conditional options | [Motion](./UI_MOTION.md)           |
-| Combat feedback, deck and enemy inspection, Corrupted text     | [Battle UI](./UI_BATTLE.md)        |
-| Collection, Armory, rewards, Wishes, Options and recap         | [Browsing](./UI_BROWSING.md)       |
-| Discovery, map layout and room inspection                      | [Labyrinth](./UI_LABYRINTH.md)     |
+| Topic                                                      | Guide                              |
+| ---------------------------------------------------------- | ---------------------------------- |
+| Shared components, buttons, sizing, colors, accessibility  | This page                          |
+| Hover tooltips, modal input, focus and dismissal           | [Interaction](./UI_INTERACTION.md) |
+| Screen fades, battle and equipment motion                  | [Motion](./UI_MOTION.md)           |
+| Combat feedback, deck and enemy inspection, Corrupted text | [Battle UI](./UI_BATTLE.md)        |
+| Collection, Armory, rewards, Wishes, Options and recap     | [Browsing](./UI_BROWSING.md)       |
+| Discovery, map layout and room inspection                  | [Labyrinth](./UI_LABYRINTH.md)     |
 
 ## Placement and boundaries
 
@@ -101,10 +101,12 @@ containment and restoration for confirmations, card inspection, and enemy
 inspection, following [overlay lifecycle](./UI_INTERACTION.md#overlay-lifecycle). New focus behavior
 outside that contract, screen-reader announcement systems, contrast tooling,
 and per-component reduced-motion variants require a product decision.
-Preserve the existing [Armory reduced-motion handling](./UI_BROWSING.md#armory-crafting-and-salvage).
+Preserve the existing [equipment transfer reduced-motion handling](./UI_MOTION.md#equipment-movement-animations).
 Shared motion accommodations live in
 `src/styles/keyframes.css` and `src/styles/components.css`; Armory also disables
-inventory movement and crafting feedback motion locally.
+inventory movement and crafting feedback motion locally in
+`armory/item-picker-grid.tsx`, `armory/trinket-picker-grid.tsx`, and
+`armory/armory-screen.css` under `meta/screens/`.
 
 ESLint checks keyboard counterparts for click actions and rejects focusable
 controls marked `aria-hidden`. Prefer native buttons with exposed state (for

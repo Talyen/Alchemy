@@ -25,6 +25,7 @@ descriptions can use available width to fit; tooltips never scroll or truncate.
 - Use `maxWidthFraction` for small-window bounds.
 - Tooltip entrance fades and moves away from the trigger; exit fades with a return movement. [Component styles](../src/styles/components.css) own the offsets and easing, with durations from [motion constants](../src/lib/game-constants/ui-motion.ts). CSS `@starting-style` supplies the first-render entrance, and transitions reverse smoothly on re-hover. Hover remains immediate for rapid inspection. Keep `--tooltip-exit-duration` in sync with `TOOLTIP_FADE_MS`.
 - Tooltip panels are `pointer-events-none`; nested interactive tooltips are unsupported.
+- Tooltip panels expose `role="tooltip"`. `PortaledTooltip` associates its stable ID with the trigger and focused controls inside a trigger wrapper through `aria-describedby`, preserving other descriptions and removing only its own association when hidden or unmounted. Locked menu entries and unavailable shop services reveal their reasons on focus; hero keyword pills and the active Companion remain focusable for inspection. Tabs expose their selected state through `aria-pressed`.
 - `PortaledTooltip` retains the complete last visible content through fade-out, including descriptions computed only while hovered. Header and body enter and exit as one panel.
 - State-driven triggers mount the portal only while hovered; exit fades complete via the shared `TOOLTIP_FADE_MS` hold — do not add a second hold alongside `PortaledTooltip`.
 - Fade primitives are consolidated in `src/features/alchemy/shared/ui/use-fade.tsx` (import `FadeSlot`, `useFadePresence`, `useSequentialFadeSwap`, `useHeldWhile` from there directly); placement helpers live in `shared/ui/tooltips/portaled-tooltip-placement.ts`, content slots in `shared/ui/tooltips/tooltip-panel.tsx`. `DisabledTooltip` lives in `shared/ui/tooltips/disabled-tooltip.tsx`.
@@ -83,6 +84,7 @@ controls within the screen or top dialog. Left/right adjust horizontal sliders;
 up/down leave them. Text editing and dropdowns keep their own arrow behavior.
 Tab/Shift+Tab remain keyboard traversal; Steam Input uses F7/Tab for bumpers
 to avoid the Steam overlay chord. Directional focus stops at layout edges.
+F7 counts as keyboard input for deferred screen-focus recovery while artwork is preparing.
 The controlled select state registers above dialogs in the Escape stack so it
 cannot accidentally navigate out of Options or Armory.
 

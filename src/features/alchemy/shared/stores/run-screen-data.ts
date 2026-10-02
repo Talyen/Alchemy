@@ -1,105 +1,88 @@
-import type { BattleCard, CharacterId, TalentXP } from "@/lib/game-data";
-import type { EncounterRewardTraitId, LabyrinthMap } from "@/lib/content-systems/types";
-import type { CorruptionResult } from "@/lib/corruption";
-import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
-import type { CraftingCurrencyId, GearInstance } from "@/lib/gear";
-import type { RunObtainedItem, RunRecap } from "@/lib/active-run-session";
-import type { MaterialInventory } from "@/lib/homestead/types";
-import type {
-  AlchemistState,
-  EquipmentShopState,
-  RewardState,
-  ShopState,
-  TrinketShopState,
-} from "@/lib/active-run-session";
+import { readActivityData } from "@/lib/active-run-session";
+import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
+import type { BattleCard } from "@/lib/game-data";
+import type { GameplayState } from "./gameplay-state-store";
 
-interface CampfireScreenData {
-  modifiers: readonly EncounterRewardTraitId[];
-  runPlayerHealth: number;
-  runMaxHealth: number;
+// Preserve the card-domain contract rather than exposing the save schema type.
+function selectRunDeck(state: GameplayState): BattleCard[] {
+  return state.run.activeRun.runDeck;
 }
 
-interface ShopScreenData {
-  gold: number;
-  runDeck: BattleCard[];
-  shopState: ShopState;
+function selectRunEndData(state: GameplayState) {
+  return {
+    characterId: state.run.activeRun.characterId,
+    runEndMaterials: state.session.runEndMaterials,
+    runEndCurrencies: state.session.runEndCurrencies,
+    runEndTalentXP: state.session.runEndTalentXP,
+    runEndItems: state.session.runEndItems,
+    runRecap: state.session.runRecap,
+    runEndLabyrinthFloor: state.session.runEndLabyrinthFloor,
+    talentXP: state.runProfile.talentXP,
+  };
 }
 
-interface AlchemistScreenData {
-  gold: number;
-  runDeck: BattleCard[];
-  alchemistState: AlchemistState;
-}
+// Each selector owns its route's exact data contract; types derive from these
+// projections so adding or changing a field cannot drift from the runtime data.
+export const RUN_SCREEN_SELECTORS = {
+  shop: (state: GameplayState) => ({
+    gold: state.runProfile.gold,
+    runDeck: selectRunDeck(state),
+    shopState: readActivityData(state.session.activity, "shop"),
+  }),
+  alchemist: (state: GameplayState) => ({
+    gold: state.runProfile.gold,
+    runDeck: selectRunDeck(state),
+    alchemistState: readActivityData(state.session.activity, "alchemist"),
+  }),
+  "trinket-shop": (state: GameplayState) => ({
+    gold: state.runProfile.gold,
+    trinketShopState: readActivityData(state.session.activity, "trinket-shop"),
+  }),
+  "equipment-shop": (state: GameplayState) => ({
+    gold: state.runProfile.gold,
+    equipmentShopState: readActivityData(state.session.activity, "equipment-shop"),
+  }),
+  campfire: (state: GameplayState) => ({
+    modifiers: activeLabyrinthBenefits(
+      state.run.activeRun.contentSystemType,
+      state.session.activeLabyrinthRewardModifiers,
+    ),
+    runPlayerHealth: state.run.activeRun.runPlayerHealth,
+    runMaxHealth: state.run.activeRun.runMaxHealth,
+  }),
+  "labyrinth-map": (state: GameplayState) => ({
+    labyrinthMap: state.session.labyrinthMap,
+    selectedLabyrinthNodeId: state.session.selectedLabyrinthNodeId,
+  }),
+  rewards: (state: GameplayState) => ({
+    rewardState: state.session.rewardFlow.state,
+    rewardClaimInFlight: state.session.rewardFlow.claim.kind === "reward",
+  }),
+  destination: (state: GameplayState) => ({ rewardState: state.session.rewardFlow.state }),
+  mystery: (state: GameplayState) => {
+    const visit = readActivityData(state.session.activity, "mystery");
+    return {
+      mysteryEvent: visit.mysteryEvent,
+      mysteryCardChoices: visit.mysteryCardChoices,
+      mysteryGrantedTrinketIds: visit.mysteryGrantedTrinketIds,
+      mysteryGrantedGearInstances: visit.mysteryGrantedGearInstances,
+      mysteryChosenCardId: visit.mysteryChosenCardId,
+      mysteryChosenChoice: visit.mysteryChosenChoice,
+      // Screens sum the current run's XP and the permanent profile total.
+      runTalentXP: state.run.activeRun.runTalentXP,
+      talentXP: state.runProfile.talentXP,
+    };
+  },
+  corruption: (state: GameplayState) => ({
+    runDeck: selectRunDeck(state),
+    corruptionResult: readActivityData(state.session.activity, "corruption"),
+  }),
+  "game-over": selectRunEndData,
+  "run-victory": selectRunEndData,
+  "wildwood-removal": (state: GameplayState) => ({ runDeck: selectRunDeck(state) }),
+};
 
-interface TrinketShopScreenData {
-  gold: number;
-  trinketShopState: TrinketShopState;
-}
-
-interface EquipmentShopScreenData {
-  gold: number;
-  equipmentShopState: EquipmentShopState;
-}
-
-interface LabyrinthMapScreenData {
-  labyrinthMap: LabyrinthMap | null;
-  selectedLabyrinthNodeId: string | null;
-}
-
-interface RewardsScreenData {
-  rewardState: RewardState;
-  rewardClaimInFlight: boolean;
-}
-
-interface DestinationScreenData {
-  rewardState: RewardState;
-}
-
-interface MysteryScreenData {
-  mysteryEvent: MysteryEvent | null;
-  mysteryCardChoices: BattleCard[] | null;
-  mysteryGrantedTrinketIds: string[];
-  mysteryGrantedGearInstances: GearInstance[];
-  mysteryChosenCardId: string | null;
-  mysteryChosenChoice: MysteryChoice | null;
-  runTalentXP: TalentXP;
-  talentXP: TalentXP;
-}
-
-interface CorruptionScreenData {
-  runDeck: BattleCard[];
-  corruptionResult: CorruptionResult | null;
-}
-
-interface RunEndScreenData {
-  runRecap: RunRecap | null;
-  characterId: CharacterId;
-  runEndTalentXP: TalentXP;
-  talentXP: TalentXP;
-  runEndMaterials: MaterialInventory;
-  runEndCurrencies: Record<CraftingCurrencyId, number>;
-  runEndItems: RunObtainedItem[];
-  runEndLabyrinthFloor: number | null;
-}
-
-interface WildwoodRemovalScreenData {
-  runDeck: BattleCard[];
-}
-
-export interface RunScreenDataByScreen {
-  campfire: CampfireScreenData;
-  shop: ShopScreenData;
-  alchemist: AlchemistScreenData;
-  "trinket-shop": TrinketShopScreenData;
-  "equipment-shop": EquipmentShopScreenData;
-  "labyrinth-map": LabyrinthMapScreenData;
-  rewards: RewardsScreenData;
-  destination: DestinationScreenData;
-  mystery: MysteryScreenData;
-  corruption: CorruptionScreenData;
-  "game-over": RunEndScreenData;
-  "run-victory": RunEndScreenData;
-  "wildwood-removal": WildwoodRemovalScreenData;
-}
-
-export type RunDataScreen = keyof RunScreenDataByScreen;
+export type RunDataScreen = keyof typeof RUN_SCREEN_SELECTORS;
+export type RunScreenDataByScreen = {
+  [S in RunDataScreen]: ReturnType<(typeof RUN_SCREEN_SELECTORS)[S]>;
+};

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { scaleByRoomMultiplier } from "@/lib/battle/enemy-turn-traits";
+import { canPlayCard } from "@/lib/battle";
+import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { cardById, enemyById } from "@/lib/game-data";
 
 describe("PersistedBattleStateSchema", () => {
@@ -87,6 +89,30 @@ describe("PersistedBattleStateSchema", () => {
     if (!result.success) return;
     expect(result.data.mana).toBe(0);
     expect(result.data.turnPhase).toBe("player");
+  });
+
+  it("repairs negative Mana so the resumed battle remains playable across turns", () => {
+    const restored = PersistedBattleStateSchema.parse({
+      ...validState(),
+      hand: [{ ...cardById.slash!, uid: 1, cost: 0 }],
+      deck: [{ ...cardById.slash!, uid: 2, cost: 0 }],
+      mana: -2,
+      maxMana: -3,
+    });
+    expect(restored.mana).toBe(0);
+    expect(restored.maxMana).toBe(1);
+    expect(canPlayCard(restored, restored.hand[0]!, 0)).toBe(true);
+    const nextTurn = endPlayerTurn({ ...restored, rng: () => 0.99 }).state;
+    expect(nextTurn.mana).toBe(1);
+    expect(nextTurn.hand.some((card, index) => canPlayCard(nextTurn, card, index))).toBe(true);
+  });
+
+  it("preserves valid Mana overflow and an empty current Mana pool", () => {
+    for (const mana of [0, 7]) {
+      const restored = PersistedBattleStateSchema.parse({ ...validState(), mana, maxMana: 4 });
+      expect(restored.mana).toBe(mana);
+      expect(restored.maxMana).toBe(4);
+    }
   });
 
   it("repairs an invalid turnPhase to player", () => {

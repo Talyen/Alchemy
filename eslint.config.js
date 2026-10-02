@@ -532,6 +532,20 @@ export default tseslint.config(
       ignores: undefined,
       extra: [...GEAR_NO_OUTER_DISPATCH],
     },
+    // These gameplay paths overlap the run-loop dispatch policy above. Compose
+    // both here: flat config replaces the complete no-restricted-syntax value.
+    {
+      make: syntaxBlock,
+      files: ["src/features/alchemy/run-loop/navigation/**/*.ts", "src/features/alchemy/run-loop/run/**/*.ts"],
+      ignores: undefined,
+      extra: [...GAMEPLAY_NO_MATH_RANDOM, ...GEAR_NO_OUTER_DISPATCH],
+    },
+    {
+      make: tsxBlock,
+      files: ["src/features/alchemy/run-loop/navigation/**/*.tsx", "src/features/alchemy/run-loop/run/**/*.tsx"],
+      ignores: undefined,
+      extra: [...GAMEPLAY_NO_MATH_RANDOM, ...GEAR_NO_OUTER_DISPATCH],
+    },
   ].map((route) =>
     route.make(
       [...route.files],

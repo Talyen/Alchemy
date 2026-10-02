@@ -1,7 +1,7 @@
 import { isMixedPotionCard, type BattleCard } from "@/lib/game-data";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { CORRUPTION_TRANSFORM_CHANCE_FRACTION } from "@/lib/game-constants";
-import { pickRandom } from "@/lib/rng";
+import { pickRandom, pickWeighted } from "@/lib/rng";
 import { getCorruptionMutationGroups, type CorruptionMutationGroup } from "./mutations";
 
 export { getEditableCorruptionTargets, replaceNumberAt, updateCardNumericValue } from "./numeric";
@@ -16,14 +16,8 @@ export interface CorruptionResult {
 export const isSpecialCorruptionCard = isMixedPotionCard;
 
 function pickMutation(groups: CorruptionMutationGroup[], rng: () => number) {
-  if (groups.length === 0) return undefined;
-  const total = groups.reduce((sum, group) => sum + group.weight, 0);
-  let roll = rng() * total;
-  for (const group of groups) {
-    roll -= group.weight;
-    if (roll < 0) return pickRandom(group.mutations, rng);
-  }
-  return pickRandom(groups[groups.length - 1]!.mutations, rng);
+  const group = pickWeighted(groups, (entry) => entry.weight, rng);
+  return group ? pickRandom(group.mutations, rng) : undefined;
 }
 
 function preserveCardUid(card: BattleCard, uid: BattleCard["uid"]): BattleCard {

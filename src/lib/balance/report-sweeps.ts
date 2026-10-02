@@ -7,7 +7,6 @@ import {
   getCardKeywords,
   trinketLibrary,
   type BattleCard,
-  type CompanionId,
 } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { effectsForInstance, generateLootGearChoices, gearBaseItemList } from "@/lib/gear";
@@ -15,15 +14,9 @@ import { gearAffixList } from "@/lib/gear/affix-catalog";
 import { effectsForAffixRolls } from "@/lib/gear/affixes";
 import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
 import { createRunStreamRng, sampleItems } from "@/lib/rng";
-import {
-  buildClassSimDeck,
-  cardMatchesAffinity,
-  insertCardIntoDeck,
-  removeCardIdFromDeck,
-  removeCompanionSummonFromDeck,
-} from "./class-deck";
+import { buildClassSimDeck, cardMatchesAffinity, insertCardIntoDeck, removeCardIdFromDeck } from "./class-deck";
+import { companionIdsFromDeck, removeCompanionSummonFromDeck } from "./companion-deck";
 import { SIM_GEAR_ROLL_DEPTH, SIM_GEAR_ROLL_SOURCE } from "./gear-preset";
-import { companionIdsFromDeck } from "./homestead-preset";
 import {
   balanceScenarioSeed,
   BOON_GAUNTLET,
@@ -219,22 +212,18 @@ export function runTalentSweep(options: ReportRunOptions): PairedTierRow[] {
   return runPairedSweep(options, talentGroups(options));
 }
 
-function summonCards(): BattleCard[] {
-  return cardLibrary.filter((card) => card.effects.some((effect) => effect.kind === "summon-companion"));
-}
-
 function* companionGroups(options: ReportRunOptions): Iterable<PairedSweepGroup> {
-  const summons = summonCards();
+  const summons = cardLibrary.flatMap((card) => {
+    const companionId = companionIdsFromDeck([card])[0];
+    return companionId ? [{ card, companionId }] : [];
+  });
   for (const tier of REPORT_TIERS) {
     for (const characterId of reportCharacterIds()) {
       const deckSeed = balanceScenarioSeed("companion-deck", tier.preset, characterId);
       const classKeywords = characters[characterId].keywords;
       const deck = buildClassSimDeck(characterId, tier.preset, deckSeed);
       const deckCompanions = companionIdsFromDeck(deck);
-      const specs = summons.flatMap((card) => {
-        const effect = card.effects.find((candidate) => candidate.kind === "summon-companion");
-        if (!effect || effect.kind !== "summon-companion") return [];
-        const companionId: CompanionId = effect.companionId;
+      const specs = summons.flatMap(({ card, companionId }) => {
         if (!(companionId in companionLibrary)) return [];
         if (
           !classKeywords.includes("companion") &&
@@ -243,11 +232,7 @@ function* companionGroups(options: ReportRunOptions): Iterable<PairedSweepGroup>
         )
           return [];
         const baselineDeck = removeCompanionSummonFromDeck(deck, companionId);
-        const alreadyInDeck = deck.some((entry) =>
-          entry.effects.some(
-            (candidate) => candidate.kind === "summon-companion" && candidate.companionId === companionId,
-          ),
-        );
+        const alreadyInDeck = deckCompanions.includes(companionId);
         return [{ companionId, baselineDeck, treatmentDeck: insertCardIntoDeck(baselineDeck, card), alreadyInDeck }];
       });
       for (const scenario of BOON_GAUNTLET) {

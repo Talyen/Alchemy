@@ -60,3 +60,57 @@ it("retains both change layers, renames, deletions, untracked files and generate
   expect(expanded).toContain("reversed.ts");
   expect(expanded).not.toContain("+staged");
 });
+
+it("shows a selected patch before unrelated paths consume its budget and retains the complete inventory", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-diff-"));
+  roots.push(root);
+  const git = (...args: string[]) => execFileSync("git", args, { cwd: root, stdio: "pipe" });
+  git("init");
+  fs.writeFileSync(path.join(root, ".gitignore"), "reports/\n");
+  fs.mkdirSync(path.join(root, "unrelated"));
+  for (let index = 0; index < 100; index++)
+    fs.writeFileSync(path.join(root, `unrelated/long-unrelated-file-name-${index}.ts`), "unrelated\n");
+  fs.writeFileSync(path.join(root, "selected.ts"), "selected change\n");
+  const result = reviewDiff(root, { paths: ["selected.ts"], budget: 1200 });
+  expect(Buffer.byteLength(result.text)).toBeLessThanOrEqual(1200);
+  expect(result.text).toContain("+selected change");
+  expect(result.text).toContain("unrelated/: 0 selected, 100 other changed paths");
+  expect(result.text).not.toContain("long-unrelated-file-name");
+  const report = fs.readFileSync(result.report, "utf8");
+  expect(report).toContain("long-unrelated-file-name-99.ts");
+  expect(report).toContain("+selected change");
+  expect(report).not.toContain("+unrelated");
+});
+
+it("bounds scoped status while keeping both layers, rename sources and unrelated inventory", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-status-"));
+  roots.push(root);
+  const git = (...args: string[]) => execFileSync("git", args, { cwd: root, stdio: "pipe" });
+  git("init");
+  fs.writeFileSync(path.join(root, ".gitignore"), "reports/\n");
+  fs.writeFileSync(path.join(root, "old name.ts"), "before\n");
+  git("add", ".");
+  git(
+    "-c",
+    "user.name=Test",
+    "-c",
+    "user.email=test@example.com",
+    "-c",
+    "core.hooksPath=/dev/null",
+    "commit",
+    "-m",
+    "fixture",
+  );
+  git("mv", "old name.ts", "new name.ts");
+  fs.writeFileSync(path.join(root, "new name.ts"), "after\n");
+  fs.mkdirSync(path.join(root, "unrelated"));
+  for (let index = 0; index < 100; index++) fs.writeFileSync(path.join(root, `unrelated/${index}.ts`), "noise\n");
+  const scoped = reviewDiff(root, { statusOnly: true, paths: ["old name.ts"], budget: 1200 });
+  expect(scoped.text).toContain('RM "new name.ts" <- "old name.ts"');
+  expect(scoped.text).toContain("unrelated/: 0 selected, 100 other changed paths");
+  expect(scoped.text).not.toContain("+after");
+  expect(Buffer.byteLength(scoped.text)).toBeLessThanOrEqual(1200);
+  const compact = reviewDiff(root, { statusOnly: true });
+  expect(compact.text).not.toContain('"new name.ts"');
+  expect(fs.readFileSync(compact.report, "utf8")).toContain('"unrelated/99.ts"');
+});

@@ -404,14 +404,15 @@ describe("resolveStunTrigger via applyCardEffects", () => {
     });
     const state = makeStateWithFailedRolls({
       mana: 10,
-      enemyHealth: 20,
-      enemyMaxHealth: 20,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
       talentEffects,
       hand: [card],
       rng: () => 0.5,
     });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
+    expect(result.enemyHealth).toBe(6);
     expect(result.enemyStatuses.stun).toBe(0);
     expect(result.enemyCC.stunSkipTurns).toBe(1);
     expect(result.enemyCC.cooldown).toBe(0);

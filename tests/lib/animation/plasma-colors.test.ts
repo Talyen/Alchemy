@@ -55,6 +55,19 @@ describe("plasma-colors", () => {
   });
 
   describe("lerpParsedRgbFloats", () => {
+    it("reuses an output tuple with exactly the same channels as allocating interpolation", () => {
+      const from = parsePlasmaHexColor("#137abd");
+      const to = parsePlasmaHexColor("#e25409");
+      const target: [number, number, number] = [0, 0, 0];
+      for (const t of [0, 0.001, 0.25, 0.5, 0.999, 1]) {
+        const expected = from.map((channel, index) => channel + (to[index]! - channel) * t);
+        expect(lerpParsedRgbFloats(from, to, t, target)).toBe(target);
+        expect(target).toEqual(expected);
+      }
+      expect(from).toEqual(parsePlasmaHexColor("#137abd"));
+      expect(to).toEqual(parsePlasmaHexColor("#e25409"));
+    });
+
     it("interpolates float tuples directly without string conversions", () => {
       const from: [number, number, number] = [0, 0.2, 0.8];
       const to: [number, number, number] = [1, 0.6, 0.4];

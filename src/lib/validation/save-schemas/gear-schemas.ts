@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { GEAR_AFFIX_IDS } from "@/lib/gear/affix-catalog";
 import { GEAR_DEFINITION_IDS } from "@/lib/gear/definitions";
-import { normalizeGearInstance } from "@/lib/gear/operations";
+import { normalizeGearInstance } from "@/lib/gear/instance-normalization";
 
 const GearAffixRollSchema = z.object({
   id: z.enum(GEAR_AFFIX_IDS),
@@ -15,7 +15,7 @@ export const GearInstanceSchema = z.object({
 });
 
 export function normalizeGearInstanceArray(raw: unknown): Array<z.infer<typeof GearInstanceSchema>> {
-  // Canonical array wrapper around normalizeGearInstance from gear/operations.
+  // Canonical array wrapper around normalizeGearInstance from gear/instance-normalization.
   // Run-obtained items reuse the single-item normalizer directly to preserve
   // order in a heterogeneous list; all other save paths go through this helper.
   if (!Array.isArray(raw)) return [];

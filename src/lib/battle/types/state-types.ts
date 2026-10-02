@@ -88,6 +88,8 @@ export interface BattleSnapshot {
   playerStatuses: PlayerStatusValues;
   enemyStatuses: EnemyStatusValues;
   pendingBleedLeechHealing: number;
+  /** Subset of pending Bleed Leech supplied by explicit card Leech. */
+  pendingCardBleedLeechHealing: number;
   pendingEnemyBleedLeechHealing: number;
   enemyPhysicalDamageBonus: number;
   playerCC: CcState;

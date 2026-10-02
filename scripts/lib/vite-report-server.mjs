@@ -9,6 +9,7 @@ import { createServer } from "vite";
  */
 export async function withReportServer(fn) {
   const server = await createServer({
+    root: path.resolve(import.meta.dirname, "../.."),
     configFile: false,
     define: { __ALCHEMY_EDITION__: JSON.stringify(resolveEdition(process.env.ALCHEMY_EDITION)) },
     appType: "custom",

@@ -10,6 +10,7 @@ import {
   setLabyrinthMap,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
+import { DESTINATIONS } from "@/lib/routing";
 
 function firstReachableId() {
   return "labyrinth-floor-1-n0";
@@ -156,13 +157,20 @@ describe("Labyrinth commands", () => {
     controller.selectNode(firstReachableId());
     controller.enterSelectedNode(() => dispatchRunSessionCommand((draft) => completeRunRoom(draft)));
     expect(readActiveRun().runHistory).toEqual([
-      expect.objectContaining({ id: `labyrinth:1:${firstReachableId()}`, completed: true }),
+      expect.objectContaining({
+        id: `labyrinth:1:${firstReachableId()}`,
+        destination: DESTINATIONS.NORMAL_COMBAT,
+        completed: true,
+      }),
     ]);
   });
 
   it("passes the selected corruption chamber with its room modifiers", () => {
     const corruptionId = firstReachableId();
     dispatchRunSessionCommand((draft) => {
+      setHasActiveRun(draft, true);
+      draft.run.activeRun.contentSystemType = "labyrinth";
+      draft.run.activeRun.runHistory = [];
       const node = draft.session.labyrinthMap!.nodes[corruptionId]!;
       node.type = "corruption";
       node.rewardModifiers = ["blood-rite"];
@@ -182,6 +190,9 @@ describe("Labyrinth commands", () => {
       expect.objectContaining({ type: "corruption", rewardModifiers: ["blood-rite"] }),
     );
     expect(readRunSession().activeLabyrinthPendingNode).toBe(corruptionId);
+    expect(readActiveRun().runHistory).toEqual([
+      expect.objectContaining({ destination: DESTINATIONS.CORRUPTION, completed: false }),
+    ]);
   });
   it("enters a previously discovered branch without moving through completed rooms", () => {
     const controller = createLabyrinthController();

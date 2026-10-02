@@ -5,9 +5,18 @@ import {
   coreScenarioSeeds,
   reportCharacterIds,
   REPORT_TIERS,
+  titleFor,
 } from "@/lib/balance/report-catalog";
 
 describe("report-catalog", () => {
+  it("resolves catalog titles and preserves unknown IDs, including object property names", () => {
+    expect(titleFor("enemy", "skeleton")).toBe("Skeleton");
+    expect(titleFor("character", "knight")).toBe("Knight");
+    for (const id of ["unknown-enemy", "constructor", "toString", "__proto__"]) {
+      expect(titleFor("enemy", id)).toBe(id);
+    }
+  });
+
   it("exposes tier and gauntlet catalog", () => {
     expect(REPORT_TIERS).toHaveLength(3);
     expect(REPORT_TIERS.map((tier) => tier.label)).toEqual(["Early", "Mid", "Late"]);

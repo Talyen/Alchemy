@@ -5,6 +5,51 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("worktree removal", () => {
+  it("rejects malformed options before removing a worktree named force", () => {
+    const root = mkdtempSync(join(tmpdir(), "alchemy-worktree-"));
+    try {
+      const script = join(root, "scripts", "agent-worktree.mjs");
+      mkdirSync(join(root, "scripts"));
+      copyFileSync(join(process.cwd(), "scripts", "agent-worktree.mjs"), script);
+      const saved = join(root, ".worktrees", "force", "work.txt");
+      mkdirSync(join(root, ".worktrees", "force"), { recursive: true });
+      writeFileSync(saved, "uncommitted work");
+      expect(spawnSync("git", ["init", "-q"], { cwd: root }).status).toBe(0);
+      for (const args of [
+        ["remove", "--task", "--force"],
+        ["remove", "--task=--force", "--force"],
+        ["remove", "--task=force", "--force", "--typo"],
+        ["remove", "--task=force", "--force", "--task=other"],
+        ["create", "--task=force", "--base", "--detached"],
+      ]) {
+        const result = spawnSync(process.execPath, [script, ...args], { encoding: "utf8" });
+        expect(result.status, result.stderr).toBe(2);
+        expect(readFileSync(saved, "utf8")).toBe("uncommitted work");
+      }
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("reports failure when Git cannot start for list or prune", () => {
+    const root = mkdtempSync(join(tmpdir(), "alchemy-worktree-"));
+    try {
+      const script = join(root, "scripts", "agent-worktree.mjs");
+      mkdirSync(join(root, "scripts"));
+      copyFileSync(join(process.cwd(), "scripts", "agent-worktree.mjs"), script);
+      for (const command of ["list", "prune"]) {
+        const result = spawnSync(process.execPath, [script, command], {
+          cwd: root,
+          env: { ...process.env, PATH: root },
+          encoding: "utf8",
+        });
+        expect(result.status, command).toBe(1);
+      }
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it("preserves directories for empty task slugs and unregistered worktrees", () => {
     const root = mkdtempSync(join(tmpdir(), "alchemy-worktree-"));
     try {

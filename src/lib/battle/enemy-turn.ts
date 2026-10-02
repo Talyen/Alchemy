@@ -45,11 +45,6 @@ function finalizePlayerTurn(
   return { state: finalState, combatTexts, playerTurnSkipped: isCcControlled(finalState.playerCC) };
 }
 
-interface CombatTextResult {
-  state: BattleState;
-  texts: CombatTextEvent[];
-}
-
 function processHasteEarlyTurn(state: BattleState): BattleState {
   return {
     ...state,
@@ -116,85 +111,42 @@ function resolveEnemyPostTickResolution(
   return { state: nextState, afterAbilityState };
 }
 
-function resolveSkippedEnemyTurn(state: BattleState, startResult = resolveEnemyTurnStart(state)) {
-  const enemyTurnStartCombatTexts = startResult.texts;
+function resolveEnemyTurn(state: BattleState): Exclude<EndPlayerTurnResolution, { kind: "haste" }> {
+  const skippedAtStart = isCcControlled(state.enemyCC);
+  const enemyTurnStartCombatTexts: CombatTextEvent[] = [];
+  const enemyTurnStartState = tickEnemyStatuses(state, enemyTurnStartCombatTexts);
   const enemyResolutionCombatTexts: CombatTextEvent[] = [];
-  const nextState = startResult.state;
-  const enemyTurnStartState = nextState;
 
   if (enemyTurnStartState.enemyHealth <= 0 || isPlayerDefeated(enemyTurnStartState)) {
     return {
-      kind: "skipped" as const,
+      kind: skippedAtStart ? "skipped" : "standard",
       ...finalizePlayerTurn(
         resolveDeathsDoorGraceExpiry(enemyTurnStartState, enemyTurnStartCombatTexts),
         enemyTurnStartCombatTexts,
       ),
       enemyTurnStartState,
       enemyTurnStartCombatTexts,
-      enemyResolutionCombatTexts: [],
+      enemyResolutionCombatTexts,
       enemyPerformedAbility: false,
     };
   }
 
-  const result = resolveEnemyPostTickResolution(nextState, enemyResolutionCombatTexts, "skip");
+  // Status ticks can trigger control; choose the action only after ticking once.
+  const skipped = skippedAtStart || isCcControlled(enemyTurnStartState.enemyCC);
+  const result = resolveEnemyPostTickResolution(
+    enemyTurnStartState,
+    enemyResolutionCombatTexts,
+    skipped ? "skip" : "attack",
+  );
   const combatTexts = [...enemyTurnStartCombatTexts, ...enemyResolutionCombatTexts];
-
   return {
-    kind: "skipped" as const,
+    kind: skipped ? "skipped" : "standard",
     ...finalizePlayerTurn(result.state, combatTexts, { manaAtTurnEnd: state.mana }),
     enemyTurnStartState,
     enemyTurnStartCombatTexts,
     enemyResolutionCombatTexts,
-    enemyPerformedAbility: false,
-  };
-}
-
-function resolveEnemyTurnStart(state: BattleState): CombatTextResult {
-  const texts: CombatTextEvent[] = [];
-  const nextState = tickEnemyStatuses(state, texts);
-  return { state: nextState, texts };
-}
-
-function resolveEnemyAction(state: BattleState): CombatTextResult & { afterAbilityState: BattleState } {
-  const texts: CombatTextEvent[] = [];
-  const result = resolveEnemyPostTickResolution(state, texts, "attack");
-  return { state: result.state, texts, afterAbilityState: result.afterAbilityState! };
-}
-
-function resolveStandardEnemyTurn(nextState: BattleState) {
-  const startResult = resolveEnemyTurnStart(nextState);
-  const enemyTurnStartState = startResult.state;
-  const enemyTurnStartCombatTexts = startResult.texts;
-
-  if (enemyTurnStartState.enemyHealth <= 0 || isPlayerDefeated(enemyTurnStartState)) {
-    return {
-      kind: "standard" as const,
-      ...finalizePlayerTurn(
-        resolveDeathsDoorGraceExpiry(enemyTurnStartState, enemyTurnStartCombatTexts),
-        enemyTurnStartCombatTexts,
-      ),
-      enemyTurnStartState,
-      enemyTurnStartCombatTexts,
-      enemyResolutionCombatTexts: [],
-      enemyPerformedAbility: false,
-    };
-  }
-
-  if (enemyTurnStartState.enemyCC.stunSkipTurns > 0 || enemyTurnStartState.enemyCC.freezeSkipTurns > 0) {
-    return resolveSkippedEnemyTurn(nextState, startResult);
-  }
-
-  const actionResult = resolveEnemyAction(enemyTurnStartState);
-  const combatTexts = [...enemyTurnStartCombatTexts, ...actionResult.texts];
-
-  return {
-    kind: "standard" as const,
-    ...finalizePlayerTurn(actionResult.state, combatTexts, { manaAtTurnEnd: nextState.mana }),
-    enemyTurnStartState,
-    enemyTurnStartCombatTexts,
-    enemyResolutionCombatTexts: actionResult.texts,
-    enemyPerformedAbility: true,
-    afterAbilityState: actionResult.afterAbilityState,
+    enemyPerformedAbility: !skipped,
+    ...(result.afterAbilityState ? { afterAbilityState: result.afterAbilityState } : {}),
   };
 }
 
@@ -212,18 +164,7 @@ export function endPlayerTurn(state: BattleState): EndPlayerTurnResolution {
     return { ...result, combatTexts: [...endingTexts, ...result.combatTexts] };
   }
 
-  const enemyPhaseState = resetEnemyTurnState(nextState);
-
-  if (turnEndedState.enemyCC.stunSkipTurns + turnEndedState.enemyCC.freezeSkipTurns > 0) {
-    const result = resolveSkippedEnemyTurn(enemyPhaseState);
-    return {
-      ...result,
-      combatTexts: [...endingTexts, ...result.combatTexts],
-      enemyTurnStartCombatTexts: [...endingTexts, ...result.enemyTurnStartCombatTexts],
-    };
-  }
-
-  const result = resolveStandardEnemyTurn(enemyPhaseState);
+  const result = resolveEnemyTurn(resetEnemyTurnState(nextState));
   return {
     ...result,
     combatTexts: [...endingTexts, ...result.combatTexts],

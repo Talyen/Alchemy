@@ -15,12 +15,19 @@ export function prepareCombatFeedback(
   for (const event of events) mergeCombatText(consolidated, { ...event });
   const priority = (event: CombatTextEvent) => (event.kind === "notice" ? 0 : event.kind === "damage" ? 1 : 2);
   consolidated.sort((a, b) => priority(a) - priority(b));
-  const meaningful = consolidated.filter((event) => event.kind === "notice" || event.amount !== 0);
-  const visible = meaningful.length > 0 ? meaningful : consolidated.slice(0, 1);
+  const byTarget: Record<CombatTextEvent["target"], CombatTextEvent[]> = { player: [], enemy: [] };
+  let hasMeaningful = false;
+  for (const event of consolidated) {
+    if (event.kind !== "notice" && event.amount === 0) continue;
+    byTarget[event.target].push(event);
+    hasMeaningful = true;
+  }
+  const fallback = consolidated[0];
+  if (!hasMeaningful && fallback) byTarget[fallback.target].push(fallback);
   const bursts: CombatTextBurst[] = [];
   const impacts: Partial<Record<"playerImpactCue" | "enemyImpactCue", Omit<CombatImpactCue, "sequence">>> = {};
   for (const target of ["player", "enemy"] as const) {
-    const entries = visible.filter((event) => event.target === target);
+    const entries = byTarget[target];
     if (entries.length === 0) continue;
     const id = `combat-burst-${actionId}-${target}`;
     bursts.push({

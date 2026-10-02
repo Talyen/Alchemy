@@ -6,7 +6,7 @@ import { readRepoPackageJson } from "./lib/repo-package.mjs";
 import { resolveRootDir } from "./assets/asset-pipeline-runner.mjs";
 import { writeTextIfChanged } from "./lib/write-text-if-changed.mjs";
 import { parseKnownFlags } from "./lib/cli-args.mjs";
-import { defineScript } from "./lib/script-run.mjs";
+import { defineScript, UsageError } from "./lib/script-run.mjs";
 
 export async function syncVersionMetadata({ check = false } = {}) {
   const root = resolveRootDir(import.meta.url);
@@ -24,7 +24,8 @@ export const CURRENT_GAME_BUILD_VERSION = ${JSON.stringify(version)};
 }
 
 export async function runSyncVersionMetadata(argv = process.argv.slice(2)) {
-  const { flags } = parseKnownFlags(argv, { check: {} }, { usage: "npm run sync:version [-- --check]" });
+  const { flags, rest } = parseKnownFlags(argv, { check: {} }, { usage: "npm run sync:version [-- --check]" });
+  if (rest.length) throw new UsageError(`Unexpected version arguments: ${rest.join(", ")}`);
   await syncVersionMetadata({ check: flags.has("check") });
 }
 

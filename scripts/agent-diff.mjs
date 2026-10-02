@@ -10,7 +10,7 @@ const GENERATED =
   /(?:^Raw Assets\/|^src\/assets\/optimized\/|^public\/(?:sounds|Music)\/|\.generated\.|(?:^|\/)\.asset-hashes\.json$|^src\/lib\/game-data\/gear-art\.ts$|(?:^|\/)package-lock\.json$)/u;
 
 function git(root, args, accepted = [0]) {
-  const result = runGit(root, ["--no-pager", ...args]);
+  const result = runGit(root, ["--literal-pathspecs", "--no-pager", ...args]);
   if (result.error || !accepted.includes(result.status))
     throw new Error(result.error?.message ?? result.stderr.trim() ?? "Git diff failed");
   return result.stdout;
@@ -31,18 +31,24 @@ function inventory(root) {
 }
 
 /** Complete status is retained even when path selection or output limits hide patches. */
-export function reviewDiff(root = ROOT, { paths = [], full = false, budget = 12_000 } = {}) {
+export function reviewDiff(root = ROOT, { paths = [], full = false, statusOnly = false, budget = null } = {}) {
+  budget ??= statusOnly ? 4_000 : 12_000;
   const selected = paths.map((file) => toRepoRelative(root, file));
   const entries = inventory(root);
+  const isSelected = ({ file, from }) =>
+    !selected.length ||
+    [file, from]
+      .filter(Boolean)
+      .some((name) => selected.some((p) => p === "." || name === p || name.startsWith(`${p}/`)));
   const patches = [];
   for (const entry of entries) {
     const names = [entry.file, entry.from].filter(Boolean);
-    if (
-      selected.length &&
-      !names.some((file) => selected.some((p) => p === "." || file === p || file.startsWith(`${p}/`)))
-    )
-      continue;
+    if (!isSelected(entry)) continue;
     const label = `${entry.status} ${JSON.stringify(entry.file)}${entry.from ? ` <- ${JSON.stringify(entry.from)}` : ""}`;
+    if (statusOnly) {
+      if (selected.length) patches.push(label);
+      continue;
+    }
     if (!full && names.some((file) => GENERATED.test(file))) {
       patches.push(`${label}: generated/media patch omitted; use --full with this path.`);
       continue;
@@ -69,12 +75,27 @@ export function reviewDiff(root = ROOT, { paths = [], full = false, budget = 12_
   const status = entries.map(
     ({ status, file, from }) => `${status} ${JSON.stringify(file)}${from ? ` <- ${JSON.stringify(from)}` : ""}`,
   );
-  const blocks = ["Complete working-tree inventory:", ...status, "", "Selected patches:", ...patches];
+  const selectedHeading = statusOnly ? "Selected status:" : "Selected patches:";
+  const blocks = ["Complete working-tree inventory:", ...status, "", selectedHeading, ...patches];
   fs.writeFileSync(report, blocks.join("\n") + "\n");
-  const footer = `\nComplete inventory and selected patches: ${report}\nExpand: npm run review:diff -- --full <path> (or read the report).`;
-  const lines = [`${entries.length} changed paths; ${patches.length} selected patches/summaries.`];
+  const directories = new Map();
+  for (const entry of entries) {
+    const directory = entry.file.includes("/") ? `${entry.file.split("/")[0]}/` : "(root)";
+    const counts = directories.get(directory) ?? { selected: 0, other: 0 };
+    counts[isSelected(entry) ? "selected" : "other"]++;
+    directories.set(directory, counts);
+  }
+  const summary = [...directories]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([directory, counts]) => `${directory}: ${counts.selected} selected, ${counts.other} other changed paths`);
+  const footer = `\nComplete inventory and ${statusOnly ? "selected status" : "selected patches"}: ${report}\n${statusOnly ? "Review: npm run review:diff -- <task-owned paths>" : "Expand: npm run review:diff -- --full <path> (or read the report)."}`;
+  const lines = [
+    statusOnly && !selected.length
+      ? `${entries.length} changed paths; grouped below. Name task-owned paths to show individual status.`
+      : `${entries.length} changed paths; ${patches.length} selected ${statusOnly ? "status entries" : "patches/summaries"}.`,
+  ];
   let omitted = 0;
-  for (const block of blocks) {
+  for (const block of [selectedHeading, ...patches, "", "Working-tree summary:", ...summary]) {
     if (Buffer.byteLength([...lines, block, footer].join("\n")) <= budget - 160) lines.push(block);
     else omitted++;
   }
@@ -87,14 +108,21 @@ export function main(argv = process.argv.slice(2), root = ROOT) {
   try {
     if (argv.includes("--help")) {
       console.log(
-        "Usage: npm run review:diff -- [--full] [paths...]\nComplete status plus bounded authored patches; full selected patches are retained in reports/agent-diff.",
+        "Usage: npm run review:diff -- [--full] [--status] [paths...]\nStatus bounds task paths and retains complete inventory. Reports live in reports/agent-diff.",
       );
       return 0;
     }
-    if (argv.some((arg) => arg.startsWith("--") && arg !== "--full")) throw new Error("Unknown diff option");
-    console.log(
-      reviewDiff(root, { full: argv.includes("--full"), paths: argv.filter((arg) => arg !== "--full") }).text,
-    );
+    const options = { paths: [], full: false, statusOnly: false };
+    let positional = false;
+    for (let index = 0; index < argv.length; index++) {
+      const arg = argv[index];
+      if (!positional && arg === "--") positional = true;
+      else if (!positional && arg === "--full") options.full = true;
+      else if (!positional && arg === "--status") options.statusOnly = true;
+      else if (!positional && arg.startsWith("--")) throw new Error("Unknown diff option");
+      else options.paths.push(arg);
+    }
+    console.log(reviewDiff(root, options).text);
     return 0;
   } catch (error) {
     console.error(error.message);

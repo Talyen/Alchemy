@@ -46,7 +46,10 @@ vi.mock("node:fs/promises", async (importOriginal) => {
     readFile: vi.fn(original.readFile),
     writeFile: vi.fn(original.writeFile),
     copyFile: vi.fn(async (source: string, target: string) => {
-      if (source === fixture.failedSource) throw new Error("fixture processing failed");
+      if (source === fixture.failedSource) {
+        await original.writeFile(target, "partial audio");
+        throw new Error("fixture processing failed");
+      }
       await original.copyFile(source, target);
     }),
   };
@@ -77,7 +80,10 @@ beforeEach(async () => {
   }
   fixture.failedSource = "";
   fixture.transform.mockReset().mockImplementation(async (source, target) => {
-    if (source === fixture.failedSource) throw new Error("fixture processing failed");
+    if (source === fixture.failedSource) {
+      await writeFile(target, "partial art");
+      throw new Error("fixture processing failed");
+    }
     await writeFile(target, `webp:${await readFile(source, "utf8")}`);
   });
   vi.mocked(copyFile).mockClear();
@@ -203,6 +209,7 @@ describe.each([
   it("preserves the manifest and orphans on failure, then repairs outputs and cleans up on retry", async () => {
     await optimize();
     const before = await readFile(manifestPath, "utf8");
+    const previousOutput = await readFile(path.join(output, `a.${extension}`));
     const orphan = path.join(output, `orphan.${extension}`);
     await writeFile(orphan, "keep until success");
     fixture.failedSource = path.join(source, `a.${input}`);
@@ -214,9 +221,11 @@ describe.each([
       error: `FAILED a.${extension}: fixture processing failed`,
     });
     expect(await readFile(manifestPath, "utf8")).toBe(before);
+    expect(await readFile(path.join(output, `a.${extension}`))).toEqual(previousOutput);
     expect(manifestWrites()).toHaveLength(0);
     expect(await readFile(orphan, "utf8")).toBe("keep until success");
     expect(await readFile(path.join(output, `b.${extension}`), "utf8")).toContain("updated b");
+    expect((await readdir(output)).some((name) => name.includes(".tmp"))).toBe(false);
     fixture.failedSource = "";
     await expect(optimize()).resolves.toEqual({ ok: true });
     expect(await readFile(path.join(output, `a.${extension}`), "utf8")).toContain("updated a");

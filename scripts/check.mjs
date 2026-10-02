@@ -14,14 +14,17 @@ import {
 } from "./lib/verification/changed-paths.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { runGit } from "./lib/repository-paths.mjs";
-import { runCommand } from "./lib/run-command.mjs";
+import { runCommandAsync } from "./lib/run-command.mjs";
 import { INLINE_ARGS_BYTES } from "./lib/agent/selection-budgets.mjs";
+import { filterPrettierPaths } from "./prettier-paths.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
 function gitOutput(args) {
   const result = runGit(ROOT, args);
-  return result.status === 0 ? result.stdout : "";
+  if (result.status !== 0)
+    throw new Error(`Could not capture source revision: ${result.error?.message ?? result.stderr}`);
+  return result.stdout;
 }
 
 function hashPath(relativePath) {
@@ -33,14 +36,16 @@ function hashPath(relativePath) {
       .createHash("sha256")
       .update(fs.readFileSync(path.join(ROOT, relativePath)))
       .digest("hex");
-  } catch {
-    return "missing";
+  } catch (error) {
+    if (error.code === "ENOENT") return "missing";
+    throw error;
   }
 }
 
 export function captureSourceDigest() {
-  const head = gitOutput(["rev-parse", "HEAD"]).trim() || "no-head";
-  const paths = changedGitPaths(ROOT) ?? [];
+  const head = gitOutput(["rev-parse", "HEAD"]).trim();
+  const paths = changedGitPaths(ROOT);
+  if (!head || paths === null) throw new Error("Could not capture source state: git status or HEAD is unavailable");
   const payload = [head, ...paths.sort().map((filePath) => `${filePath}:${hashPath(filePath)}`)].join("\0");
   return { head, hash: crypto.createHash("sha256").update(payload).digest("hex").slice(0, 16) };
 }
@@ -55,7 +60,7 @@ export function parseCheckArgs(argv) {
     usage: "Provide paths or use --diff. Example: npm run check -- --diff",
   });
   for (const flag of flags) {
-    if (flag !== "diff") throw new Error(`Unknown check option: --${flag}`);
+    if (flag !== "diff" && flag !== "full") throw new Error(`Unknown check option: --${flag}`);
   }
   return resolveSelectedPaths(ROOT, { flags, paths });
 }
@@ -69,9 +74,10 @@ function defaultRunner(label, command, args, env) {
   // Sanitize labels for log filenames: labels differ only by spaces today, but
   // slashes or other separators would collide or escape the check/ directory.
   const slug = label.replaceAll(/[^a-z0-9-_]+/giu, "-");
-  return runCommand(command, args, {
+  return runCommandAsync(command, args, {
     cwd: ROOT,
     env,
+    timeout: env.ALCHEMY_CHECK_PROFILE === "local" ? 30_000 : undefined,
     logPath: path.join(ROOT, "reports/runs", env.ALCHEMY_RUN_ID, "check", `${slug}.log`),
   });
 }
@@ -80,13 +86,24 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   const runner = options.runner ?? defaultRunner;
   const digestFn = options.captureDigest ?? captureSourceDigest;
   const paths = parseCheckArgs(argv);
+  const full = argv.includes("--full");
   if (paths.length === 0) {
     console.log("No changed source to check.");
     return 0;
   }
   const selection = classify(paths);
   const runId = ensureRunId("check");
-  const env = { ...process.env, ALCHEMY_RUN_ID: runId };
+  const env = {
+    ...process.env,
+    ALCHEMY_RUN_ID: runId,
+    ALCHEMY_CHECK_PROFILE: full ? "full" : "local",
+    ...(full
+      ? {}
+      : {
+          NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --max-old-space-size=512`.trim(),
+          RAYON_NUM_THREADS: "1",
+        }),
+  };
   const before = digestFn();
   let verifyArgs = [...paths];
   // Byte budget for inline CLI args before spilling the selection to paths.json.
@@ -100,11 +117,24 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   }
   // Static checks rerun docs:check via lint:ci, so verification skips its own
   // copy on executable changes; documentation-only changes keep it here.
-  if (selection.needsCodeChecks) verifyArgs.push("--skip-docs-check");
-  const skipBuilds = process.env.ALCHEMY_CHECK_SKIP_BUILD === "1";
-  const buildReason = skipBuilds ? "skipped via ALCHEMY_CHECK_SKIP_BUILD=1 (CI still builds)" : undefined;
+  if (full) verifyArgs.push("--full");
+  if (full && selection.needsCodeChecks) verifyArgs.push("--skip-docs-check");
+  const skipBuilds = !full || process.env.ALCHEMY_CHECK_SKIP_BUILD === "1";
+  const ciReason = "CI-only in the default local gate";
+  const buildReason = !full
+    ? ciReason
+    : skipBuilds
+      ? "skipped via ALCHEMY_CHECK_SKIP_BUILD=1 (CI still builds)"
+      : undefined;
   const webEnabled = selection.web && !skipBuilds;
   const desktopEnabled = selection.desktop && !skipBuilds;
+  const formatPaths = filterPrettierPaths(paths).filter((file) =>
+    fs.statSync(path.join(ROOT, file), { throwIfNoEntry: false })?.isFile(),
+  );
+  const smallFormatBatch =
+    formatPaths.length > 0 &&
+    formatPaths.length <= 50 &&
+    formatPaths.every((file) => fs.statSync(path.join(ROOT, file)).size <= 256_000);
   const definitions = [
     {
       key: "verification",
@@ -114,28 +144,36 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       enabled: true,
     },
     {
+      key: "local-format",
+      label: "selected-file format",
+      command: "node",
+      args: ["scripts/run-prettier.mjs", "--check", ...formatPaths],
+      enabled: !full && smallFormatBatch,
+      reason: full ? "included in full static checks" : "empty or large formatting batch deferred to CI",
+    },
+    {
       key: "documentation-format",
       label: "documentation format",
       command: "npm",
       args: ["run", "format:check"],
-      enabled: !selection.needsCodeChecks,
-      reason: "included in static checks",
+      enabled: full && !selection.needsCodeChecks,
+      reason: !full ? ciReason : "included in static checks",
     },
     {
       key: "ci-static",
       label: "CI static checks",
       command: "npm",
       args: ["run", "lint:ci"],
-      enabled: selection.needsCodeChecks,
-      reason: "documentation-only change",
+      enabled: full && selection.needsCodeChecks,
+      reason: !full ? ciReason : "documentation-only change",
     },
     {
       key: "lockfile",
       label: "lockfile consistency",
       command: "npm",
       args: ["ci", "--dry-run", "--ignore-scripts"],
-      enabled: selection.lockfile,
-      reason: "package manifests unchanged",
+      enabled: full && selection.lockfile,
+      reason: !full ? ciReason : "package manifests unchanged",
     },
     {
       key: "web-build",
@@ -249,19 +287,25 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
     rootDir: ROOT,
     runId,
     status: failed ? "failed" : "passed",
-    command: "npm run check",
+    command: full ? "npm run check -- --full" : "npm run check",
     artifacts,
     counts: { passed, failed: failedCount, skipped },
     commandExposures: exposures,
     steps,
     sourceDigest: before.hash,
-    summary: failed ? `Check failed at ${failed.label}.` : `${passed} steps passed; ${skipped} not applicable.`,
+    summary: failed
+      ? `Check failed at ${failed.label}.`
+      : full
+        ? `${passed} steps passed; ${skipped} not applicable.`
+        : "Local check passed; full CI validation is required.",
   });
   if (failed) {
     console.error(`✗ check failed at ${failed.label} (exit ${failed.code}, run ${runId})`);
     return 1;
   }
-  console.log(`\n✓ check passed (run ${runId}, source ${before.hash})`);
+  console.log(
+    `\n✓ ${full ? "full check passed" : "local check passed; full validation required in CI"} (run ${runId}, source ${before.hash})`,
+  );
   return 0;
 }
 

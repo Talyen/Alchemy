@@ -1,21 +1,20 @@
-import { cardById, type CharacterId } from "@/lib/game-data";
+import { cardById } from "@/lib/game-data";
 import { ANOMALY_METRICS, getAnomalyThreshold } from "./anomalies";
 import { buildClassSimDeck } from "./class-deck";
 import {
   balanceScenarioSeed,
   coreMatchupsForTier,
   coreScenarioSeeds,
-  REPORT_ENEMY_TYPES,
   REPORT_TIERS,
   reportCharacterIds,
   reportTierForPreset,
   reportTierRecord,
-  type ReportEnemyType,
 } from "./report-catalog";
-import type { AnomalyMetricRow, AnomalyReportRow, BalanceReportModel, ClassMatchupRow } from "./report-model";
+import type { AnomalyMetricRow, AnomalyReportRow, BalanceReportModel } from "./report-model";
 import { rateCellFromBatch } from "./rate-statistics";
 import type { ReportRunOptions } from "./report-options";
-import { combineRateCells, topPlayedCards, type RateCell } from "./report-rankings";
+import { combineRateCells } from "./report-rankings";
+import { summarizeCoreRates, sumCardPlayCounts, type CoreRateRow } from "./core-report-summary";
 import {
   buildBalanceBatchConfig,
   runAffixSweep,
@@ -30,6 +29,7 @@ import { simulateBatch } from "./simulator-batch";
 import type { BalanceBatchResult, TalentPreset } from "./simulator-types";
 
 export type { ReportRunOptions } from "./report-options";
+export { equalWeightByType } from "./core-report-summary";
 
 function shouldLogBalanceProgress(): boolean {
   return Boolean(process.env.ALCHEMY_BALANCE_VERBOSE) || Boolean(process.env.ALCHEMY_BALANCE_PROGRESS);
@@ -44,13 +44,7 @@ function withPhaseTiming<T>(label: string, fn: () => T): T {
   return result;
 }
 
-interface CoreRow {
-  characterId: CharacterId;
-  enemyId: string;
-  enemyType: ReportEnemyType;
-  tier: TalentPreset;
-  cell: RateCell;
-  cardPlayCounts: Record<string, number>;
+interface CoreRow extends CoreRateRow {
   results: BalanceBatchResult["results"];
 }
 
@@ -86,19 +80,13 @@ function runCoreScenarios(options: ReportRunOptions): CoreRow[] {
             ),
           );
         }
-        const cardPlayCounts: Record<string, number> = {};
-        for (const batch of batches) {
-          for (const [cardId, count] of Object.entries(batch.cardPlayCounts)) {
-            cardPlayCounts[cardId] = (cardPlayCounts[cardId] ?? 0) + count;
-          }
-        }
         rows.push({
           characterId,
           enemyId: matchup.enemyId,
           enemyType: matchup.enemyType,
           tier: tier.preset,
           cell: combineRateCells(batches.map(rateCellFromBatch)),
-          cardPlayCounts,
+          cardPlayCounts: sumCardPlayCounts(batches.map((batch) => batch.cardPlayCounts)),
           results: batches.flatMap((batch) => batch.results),
         });
       }
@@ -154,92 +142,11 @@ function collectAnomalies(rows: CoreRow[]): { anomalies: AnomalyReportRow[]; met
   return { anomalies: Object.values(byField).sort((a, b) => b.maxValue - a.maxValue), metrics };
 }
 
-function buildClassMatchups(rows: CoreRow[]): ClassMatchupRow[] {
-  const groups = new Map<string, CoreRow[]>();
-  for (const row of rows) {
-    const key = `${row.characterId}|${row.enemyId}|${row.enemyType}`;
-    const list = groups.get(key);
-    if (list) list.push(row);
-    else groups.set(key, [row]);
-  }
-
-  return [...groups.entries()]
-    .map(([key, matching]) => {
-      const [characterId, enemyId, enemyType] = key.split("|") as [CharacterId, string, ReportEnemyType];
-      const lateCardCounts: Record<string, number> = {};
-      for (const row of matching) {
-        if (row.tier === "late") {
-          for (const [id, count] of Object.entries(row.cardPlayCounts)) {
-            lateCardCounts[id] = (lateCardCounts[id] ?? 0) + count;
-          }
-        }
-      }
-      return {
-        characterId,
-        enemyId,
-        enemyType,
-        rates: reportTierRecord((tier) =>
-          combineRateCells(matching.filter((row) => row.tier === tier).map((row) => row.cell)),
-        ),
-        topCardsLate: topPlayedCards(lateCardCounts),
-      };
-    })
-    .sort(
-      (left, right) =>
-        left.characterId.localeCompare(right.characterId) ||
-        left.rates.late.winRate - right.rates.late.winRate ||
-        left.enemyId.localeCompare(right.enemyId),
-    );
-}
-
-export function equalWeightByType(byType: Readonly<Record<ReportEnemyType, RateCell>>): RateCell {
-  return combineRateCells(
-    REPORT_ENEMY_TYPES.map((type) => byType[type]),
-    "groups",
-  );
-}
-
 export function buildBalanceReport(options: ReportRunOptions): BalanceReportModel {
   const core = withPhaseTiming("core scenarios", () => runCoreScenarios(options));
   const { anomalies, metrics } = withPhaseTiming("anomalies", () => collectAnomalies(core));
 
-  const byEnemy = new Map<string, CoreRow[]>();
-  const byCharacter = new Map<CharacterId, CoreRow[]>();
-  for (const row of core) {
-    const enemyList = byEnemy.get(row.enemyId);
-    if (enemyList) enemyList.push(row);
-    else byEnemy.set(row.enemyId, [row]);
-
-    const charList = byCharacter.get(row.characterId);
-    if (charList) charList.push(row);
-    else byCharacter.set(row.characterId, [row]);
-  }
-
-  const enemies = [...byEnemy.entries()].map(([id, matching]) => ({
-    id,
-    rates: reportTierRecord((tier) =>
-      combineRateCells(matching.filter((row) => row.tier === tier).map((row) => row.cell)),
-    ),
-  }));
-
-  const classes = reportCharacterIds().map((id) => {
-    const matching = byCharacter.get(id) ?? [];
-    const byType = (tier: TalentPreset): Record<ReportEnemyType, RateCell> =>
-      Object.fromEntries(
-        REPORT_ENEMY_TYPES.map((type) => [
-          type,
-          combineRateCells(
-            matching.filter((row) => row.tier === tier && row.enemyType === type).map((row) => row.cell),
-          ),
-        ]),
-      ) as Record<ReportEnemyType, RateCell>;
-    const ratesByType = reportTierRecord(byType);
-    return {
-      id,
-      rates: reportTierRecord((tier) => equalWeightByType(ratesByType[tier])),
-      ratesByType,
-    };
-  });
+  const summary = withPhaseTiming("core rate summary", () => summarizeCoreRates(core));
   return {
     meta: {
       samplingMode: options.mode ?? "custom",
@@ -250,9 +157,7 @@ export function buildBalanceReport(options: ReportRunOptions): BalanceReportMode
       cardDeckSamples: options.cardDeckSamples,
       deckSeeds: options.deckSeeds,
     },
-    enemies: enemies.sort((a, b) => a.rates.late.winRate - b.rates.late.winRate),
-    classes: classes.sort((a, b) => a.rates.late.winRate - b.rates.late.winRate),
-    classMatchups: withPhaseTiming("class matchups", () => buildClassMatchups(core)),
+    ...summary,
     boons: withPhaseTiming("boon sweep", () =>
       runTrinketSweep(options).sort((a, b) => a.deltas.late.delta - b.deltas.late.delta),
     ),

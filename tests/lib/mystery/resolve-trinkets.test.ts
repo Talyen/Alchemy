@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { trinketLibrary } from "@/lib/game-data";
 import { gearBaseItemList } from "@/lib/gear/base-items";
 import { findMysteryEvent, isMysteryLootEligible } from "@/lib/mystery";
@@ -109,13 +109,15 @@ describe("resolveMysteryEventTrinkets", () => {
 
   it("falls back to an astral gear drop instead of a duplicate when every trinket is owned", () => {
     const allOwned = trinketLibrary.map((entry) => entry.id);
-    const resolved = resolveMysteryEventTrinkets(eventWithTwoTrinkets, allOwned, () => 0);
+    const rng = vi.fn(() => 0);
+    const resolved = resolveMysteryEventTrinkets(eventWithTwoTrinkets, allOwned, rng);
     for (const effect of resolved.choices[0]!.effects) {
       expect(effect).toMatchObject({ kind: "gainGeneratedGear", astral: true });
       if (effect.kind !== "gainGeneratedGear") return;
       expect(gearBaseItemList.some((item) => item.id === effect.baseItemId)).toBe(true);
     }
     expect(trinketIdsOn(resolved)).toHaveLength(0);
+    expect(rng).not.toHaveBeenCalled();
   });
 
   it("derives the same fallback gear from the same slot across resolution passes", () => {
@@ -250,9 +252,11 @@ it("reserves a later named Boon before rolling an earlier random grant", () => {
   const early = { depth: 1, highestCompletedDifficulty: null };
 
   expect(isMysteryLootEligible(event, early, owned)).toBe(true);
-  expect(resolveMysteryEventTrinkets(event, owned, () => 0).choices[0]?.effects).toEqual([
+  const rng = vi.fn(() => 0);
+  expect(resolveMysteryEventTrinkets(event, owned, rng).choices[0]?.effects).toEqual([
     { kind: "gainTrinket", trinketId: "sin-eaters-lantern" },
     { kind: "gainTrinket", trinketId: "bone-charm" },
   ]);
+  expect(rng).toHaveBeenCalledOnce();
   expect(isMysteryLootEligible(event, early, [...owned, "sin-eaters-lantern"])).toBe(false);
 });

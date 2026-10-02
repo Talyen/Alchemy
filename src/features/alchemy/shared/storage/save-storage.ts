@@ -121,27 +121,40 @@ export class SaveStorage {
     return this.writeSerializedSnapshot(serialized);
   }
 
-  private async writeSerializedSnapshot(serialized: string): Promise<SaveWriteOutcome> {
+  private async tryWriteSnapshot(key: string, serialized: string, failureMessage: string): Promise<boolean> {
     try {
-      const result = await this.backend.write(this.writeKey, serialized);
-      if (result.ok) return "saved";
-      logStorageFailure("Save data could not be written", result.error);
+      const result = await this.backend.write(key, serialized);
+      if (result.ok) return true;
+      logStorageFailure(failureMessage, result.error);
     } catch (error) {
-      logStorageFailure("Save data could not be written", error);
+      logStorageFailure(failureMessage, error);
     }
-    if (this.writeKey === SAVE_KEY) {
-      try {
-        const recovery = await this.backend.write(SAVE_RECOVERY_KEY, serialized);
-        if (recovery.ok) {
-          this.writeKey = SAVE_RECOVERY_KEY;
-          return "saved";
-        }
-        logStorageFailure("Recovery save could not be written", recovery.error);
-      } catch (error) {
-        logStorageFailure("Recovery save could not be written", error);
-      }
+    return false;
+  }
+
+  private async writeSerializedSnapshot(serialized: string): Promise<SaveWriteOutcome> {
+    if (await this.tryWriteSnapshot(this.writeKey, serialized, "Save data could not be written")) return "saved";
+    if (
+      this.writeKey === SAVE_KEY &&
+      (await this.tryWriteSnapshot(SAVE_RECOVERY_KEY, serialized, "Recovery save could not be written"))
+    ) {
+      this.writeKey = SAVE_RECOVERY_KEY;
+      return "saved";
     }
     return "failed";
+  }
+
+  // Keep this synchronous: exit flushing checks queue ownership before yielding.
+  private tryWriteExitSnapshot(key: string, serialized: string, failureMessage: string): boolean | null {
+    try {
+      const result = this.backend.writeSync(key, serialized);
+      if (result === null) return null;
+      if (result.ok) return true;
+      logStorageFailure(failureMessage, result.error);
+    } catch (error) {
+      logStorageFailure(failureMessage, error);
+    }
+    return false;
   }
 
   async save(data: UnstampedSaveData): Promise<SaveWriteOutcome> {
@@ -157,33 +170,22 @@ export class SaveStorage {
    * in-flight async write cannot land after the exit snapshot.
    */
   private async flushSerializedExitSave(data: UnstampedSaveData, serialized: string): Promise<SaveWriteOutcome> {
-    let syncResult: ReturnType<SaveBackend["writeSync"]>;
-    try {
-      syncResult = this.backend.writeSync(this.writeKey, serialized);
-    } catch (error) {
-      syncResult = { ok: false, error };
-    }
+    const syncResult = this.tryWriteExitSnapshot(
+      this.writeKey,
+      serialized,
+      "Save data could not be written during page exit",
+    );
     if (syncResult === null) return await this.queue.enqueue(data, (snapshot) => this.writeSaveSnapshot(snapshot));
-    if (!syncResult.ok) {
-      logStorageFailure("Save data could not be written during page exit", syncResult.error);
-      if (this.writeKey === SAVE_KEY) {
-        let recovery;
-        try {
-          recovery = this.backend.writeSync(SAVE_RECOVERY_KEY, serialized);
-        } catch (error) {
-          logStorageFailure("Recovery save could not be written during page exit", error);
-          return "failed";
-        }
-        if (recovery?.ok) {
-          this.writeKey = SAVE_RECOVERY_KEY;
-        } else if (recovery === null) {
-          this.writeKey = SAVE_RECOVERY_KEY;
-          return await this.queue.enqueue(data, (snapshot) => this.writeSaveSnapshot(snapshot));
-        } else {
-          if (recovery) logStorageFailure("Recovery save could not be written during page exit", recovery.error);
-          return "failed";
-        }
-      } else return "failed";
+    if (!syncResult) {
+      if (this.writeKey !== SAVE_KEY) return "failed";
+      const recovery = this.tryWriteExitSnapshot(
+        SAVE_RECOVERY_KEY,
+        serialized,
+        "Recovery save could not be written during page exit",
+      );
+      if (recovery === false) return "failed";
+      this.writeKey = SAVE_RECOVERY_KEY;
+      if (recovery === null) return await this.queue.enqueue(data, (snapshot) => this.writeSaveSnapshot(snapshot));
     }
     if (this.queue.isIdle) return "saved";
     return await this.queue.enqueue(data, (snapshot) => this.writeSaveSnapshot(snapshot));

@@ -9,13 +9,12 @@ export function resetSoundUrlCache(): void {
 function browserCanPlayOggVorbis(): boolean {
   if (cachedOggSupport !== null) return cachedOggSupport;
   if (typeof Audio === "undefined") {
-    cachedOggSupport = true;
-    return cachedOggSupport;
+    return true;
   }
   try {
     cachedOggSupport = new Audio().canPlayType('audio/ogg; codecs="vorbis"') !== "";
   } catch {
-    cachedOggSupport = true;
+    return true;
   }
   return cachedOggSupport;
 }

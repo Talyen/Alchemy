@@ -39,6 +39,9 @@ describe("script consolidation", () => {
     ]);
     expect(parseKnownFlags(["--check", "--", "--not-a-flag"], { check: {} }).rest).toEqual(["--not-a-flag"]);
     expect(() => parseKnownFlags(["--bogus"], { check: {} })).toThrow(UsageError);
+    for (const name of ["constructor", "toString", "__proto__"]) {
+      expect(() => parseKnownFlags([`--${name}`], { check: {} }), name).toThrow(UsageError);
+    }
     expect(() => parseKnownFlags(["--mode"], { mode: { takesValue: true } })).toThrow(UsageError);
     expect(parseKnownFlags(["-p=5173"], { port: { short: "p", takesValue: true } }).values.get("port")).toEqual([
       "5173",

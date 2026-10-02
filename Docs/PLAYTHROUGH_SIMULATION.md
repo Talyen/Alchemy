@@ -124,13 +124,15 @@ validation follows a successful committed action.
 
 Shared operations remain with their production owners:
 
-- Battle start and card/Wish commands: `run-loop/battle/`.
+- Battle start and card/Wish commands: `shared/stores/battle-start-commands.ts`
+  and `shared/stores/battle-commands.ts` under `src/features/alchemy/`.
 - Turn completion and outcome settlement: existing battle/run-flow owners.
 - Autosave subscription, scheduling and acknowledgement: `src/app/autosave-lifecycle.ts`.
 - Gear mutations and flushes: the Armory command owner.
 - Save schemas and normalization: existing storage and validation owners.
 
 `npm run test:playthrough` runs the retained correctness scenarios in plain Node.
-The PR/manual workflow runs them plus a fixed two-seed career sweep. The normal
-full Vitest suite also includes them. Broader exploration uses the CLI and remains
+The [PR/manual workflow](../.github/workflows/playthrough.yml) runs them plus a fixed
+two-seed career sweep. The normal full Vitest suite excludes `tests/playthrough/`;
+`vitest.playthrough.config.ts` owns their separate collection. Broader exploration uses the CLI and remains
 separate from fixed-population balance comparisons.

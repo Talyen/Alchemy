@@ -5,6 +5,7 @@ import { normalizePersistedBattleState } from "../normalize-persisted-battle-sta
 import { isEnemyId, keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { BattleCardEffectSchema, parseSavedCardArray, savedCardArraySchema } from "./battle-card-schemas";
 import { UniqueGearBattleStateSchema } from "./unique-gear-state";
+import { recordNestedValidationWarnings } from "./validation-utils";
 
 // Load-tolerant fallbacks: one corrupt scalar or collection repairs to battle
 // defaults instead of voiding the whole combat session. Only primitives are
@@ -12,7 +13,20 @@ import { UniqueGearBattleStateSchema } from "./unique-gear-state";
 // never share references.
 const battleFallbacks = defaultBattleState();
 
+const pendingTurnStartEffectSchema = z.object({
+  remainingTurns: z.number().int().positive(),
+  effects: z.array(BattleCardEffectSchema),
+  sourceCard: z
+    .object({
+      id: z.string(),
+      consume: z.boolean().optional(),
+      tags: z.array(z.enum(Object.keys(keywordDefinitions) as KeywordId[])).optional(),
+    })
+    .optional(),
+});
+
 const PersistedBattleStateWireSchema = z.looseObject({
+  pendingCardBleedLeechHealing: z.number().int().nonnegative().catch(0),
   deck: savedCardArraySchema("deck").catch([]),
   hand: savedCardArraySchema("hand").catch([]),
   pendingHandCards: savedCardArraySchema("pendingHandCards").catch([]),
@@ -28,17 +42,15 @@ const PersistedBattleStateWireSchema = z.looseObject({
     )
     .catch([]),
   pendingTurnStartEffects: z
-    .array(
-      z.object({
-        remainingTurns: z.number().int().positive(),
-        effects: z.array(BattleCardEffectSchema),
-        sourceCard: z
-          .object({
-            id: z.string(),
-            consume: z.boolean().optional(),
-            tags: z.array(z.enum(Object.keys(keywordDefinitions) as KeywordId[])).optional(),
-          })
-          .optional(),
+    .array(z.unknown())
+    .transform((entries) =>
+      entries.flatMap((entry, index) => {
+        const result = pendingTurnStartEffectSchema.safeParse(entry);
+        if (result.success) return [result.data];
+        recordNestedValidationWarnings([
+          { path: `pendingTurnStartEffects[${index}]`, message: "malformed scheduled effect was dropped" },
+        ]);
+        return [];
       }),
     )
     .catch([]),

@@ -35,45 +35,25 @@ describe("Progress", () => {
     return container.firstChild!.firstChild as HTMLElement;
   }
 
-  it("sets width based on value", () => {
-    const { container } = render(<Progress value={50} />);
+  it("keeps the visible fill and accessible value in sync as progress changes", () => {
+    const { container, rerender } = render(<Progress value={50} aria-label="Health" />);
+    const progressbar = screen.getByRole("progressbar", { name: "Health" });
+    expect(progressbar.getAttribute("aria-valuemin")).toBe("0");
+    expect(progressbar.getAttribute("aria-valuemax")).toBe("100");
+    expect(progressbar.getAttribute("aria-valuenow")).toBe("50");
     expect(getFill(container).style.width).toBe("50%");
-  });
 
-  it("clamps value above 100", () => {
-    const { container } = render(<Progress value={150} />);
-    expect(getFill(container).style.width).toBe("100%");
-    expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("100");
-  });
-
-  it("clamps value below 0", () => {
-    const { container } = render(<Progress value={-10} />);
-    expect(getFill(container).style.width).toBe("0%");
-    expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("0");
-  });
-
-  it("treats undefined value as 0", () => {
-    const { container } = render(<Progress value={undefined} />);
-    expect(getFill(container).style.width).toBe("0%");
-  });
-
-  it("treats NaN value as 0", () => {
-    const { container } = render(<Progress value={Number.NaN} />);
-    expect(getFill(container).style.width).toBe("0%");
-  });
-
-  it("exposes progressbar accessibility role and value attributes", () => {
-    const { container } = render(<Progress value={75} />);
-    const progressbar = container.querySelector("[role='progressbar']");
-    expect(progressbar).toBeDefined();
-    expect(progressbar?.getAttribute("aria-valuenow")).toBe("75");
-    expect(progressbar?.getAttribute("aria-valuemin")).toBe("0");
-    expect(progressbar?.getAttribute("aria-valuemax")).toBe("100");
-  });
-
-  it("passes an accessible name through to the progressbar", () => {
-    render(<Progress value={40} aria-label="Health" />);
-    expect(screen.getByRole("progressbar", { name: "Health" })).toBeDefined();
+    for (const [value, expected] of [
+      [150, 100],
+      [-10, 0],
+      [undefined, 0],
+      [Number.NaN, 0],
+      [75, 75],
+    ] as const) {
+      rerender(<Progress value={value} aria-label="Health" />);
+      expect(getFill(container).style.width, `fill for ${value}`).toBe(`${expected}%`);
+      expect(progressbar.getAttribute("aria-valuenow"), `accessible value for ${value}`).toBe(String(expected));
+    }
   });
 
   it("never lets fillStyle override the value-driven width", () => {
@@ -100,18 +80,10 @@ describe("TextAnimate", () => {
     vi.unstubAllGlobals();
   });
 
-  it("renders text with accessible aria-label", () => {
-    render(<TextAnimate>Enter the labyrinth</TextAnimate>);
-    const paragraph = screen.getByLabelText("Enter the labyrinth");
-    expect(paragraph).toBeDefined();
-    expect(paragraph.textContent).toContain("Enter");
-    expect(paragraph.textContent).toContain("the");
-    expect(paragraph.textContent).toContain("labyrinth");
-  });
-
   it("announces text once with word spans hidden from assistive tech", () => {
     const { container } = render(<TextAnimate>Enter the labyrinth</TextAnimate>);
     const paragraph = screen.getByLabelText("Enter the labyrinth");
+    expect(paragraph.textContent).toBe("Enter the labyrinth");
     const labelled = container.querySelectorAll("[aria-label]");
     expect(labelled.length).toBe(1);
     expect(labelled[0]).toBe(paragraph);

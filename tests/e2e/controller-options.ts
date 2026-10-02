@@ -47,4 +47,5 @@ export async function exerciseControllerOptions(page: Page) {
   await expect(clear).toBeFocused();
   await input.press("back");
   await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+  return before - 1;
 }

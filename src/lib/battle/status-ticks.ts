@@ -1,3 +1,4 @@
+import { rollBattleChance } from "./chance-roll";
 import { resolveBattleSequence } from "./battle-sequence";
 import { applyHealthLossTalentRewards, checkHealthThresholds } from "./status-player";
 import { drawKeywordCard } from "./draw";
@@ -7,6 +8,7 @@ import {
   applyPlayerCombatDamage,
   isPlayerDefeated,
   mitigatePlayerCombatDamage,
+  playerHealthLostToDamage,
   scaleReceivedPlayerDamage,
   setPlayerStatus,
   type BattleState,
@@ -22,7 +24,6 @@ import {
   getEnemyDamageMultiplier,
   getPoisonBonusAgainstBleeding,
   getPoisonDamageMultiplierAgainstBleeding,
-  rollTalentChance,
   reduceDamageByMana,
 } from "./status-helpers";
 import { gearFrozenDamageMultiplier } from "./scaled-damage";
@@ -57,7 +58,7 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   let nextBurn = state.enemyStatuses.burn;
   const preventsDecay =
     state.talentEffects.burnPreventDecayChance > 0 &&
-    rollTalentChance(state.talentEffects.burnPreventDecayChance, state);
+    rollBattleChance(state.talentEffects.burnPreventDecayChance, state);
   if (!preventsDecay && !hasEncounterBenefit(state, "eternal-flame")) {
     nextBurn = decayHalvedStatus(nextBurn);
   }
@@ -74,7 +75,7 @@ export function tickEnemyPoison(state: BattleState, combatTexts: CombatTextEvent
   emitDotCombatText(combatTexts, "enemy", "poison", finalDamage);
   const isFrozenPreserved = state.enemyCC.freezeSkipTurns > 0 && state.talentEffects.freezePreventsPoisonDecay;
   let nextPoison = state.enemyStatuses.poison;
-  if (rollTalentChance(state.talentEffects.poisonGainChance, state)) {
+  if (rollBattleChance(state.talentEffects.poisonGainChance, state)) {
     nextPoison += POISON_GAIN_AMOUNT;
   } else if (!isFrozenPreserved) {
     nextPoison = decayPoisonStacks(
@@ -94,8 +95,8 @@ export function tickEnemyPoison(state: BattleState, combatTexts: CombatTextEvent
 function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.bleed;
   if (damage <= 0) {
-    if (state.pendingBleedLeechHealing === 0) return state;
-    return { ...state, pendingBleedLeechHealing: 0 };
+    if (state.pendingBleedLeechHealing === 0 && state.pendingCardBleedLeechHealing === 0) return state;
+    return { ...state, pendingBleedLeechHealing: 0, pendingCardBleedLeechHealing: 0 };
   }
 
   const multiplier =
@@ -107,19 +108,24 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   emitDotCombatText(combatTexts, "enemy", "bleed", finalDamage);
   const healthBeforeBleed = state.enemyHealth;
   const nextBleed = state.gearEffects.bleedDecaysByHalf > 0 ? decayHalvedStatus(damage) : 0;
-  return dealEnemyDotTick(state, "bleed", finalDamage, nextBleed, combatTexts, (nextState) => {
-    const afterLeech = payPendingBleedLeech(healthBeforeBleed, nextState, combatTexts, true);
-    return nextState.enemyHealth < healthBeforeBleed && state.talentEffects.drawPhysicalOnBleedTick
-      ? drawKeywordCard(afterLeech, "physical")
-      : afterLeech;
+  return dealEnemyDotTick(state, "bleed", finalDamage, nextBleed, combatTexts, (nextState, hit) => {
+    const afterLeech = payPendingBleedLeech(healthBeforeBleed, nextState, combatTexts, true, hit.healthDamage);
+    const retainedLeech = {
+      ...afterLeech,
+      pendingBleedLeechHealing: Math.min(nextBleed, decayHalvedStatus(state.pendingBleedLeechHealing)),
+      pendingCardBleedLeechHealing: Math.min(nextBleed, decayHalvedStatus(state.pendingCardBleedLeechHealing)),
+    };
+    return hit.healthDamage > 0 && state.talentEffects.drawPhysicalOnBleedTick
+      ? drawKeywordCard(retainedLeech, "physical")
+      : retainedLeech;
   });
 }
 
 export function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
   if (state.enemyStatuses.burn <= 0 && state.enemyStatuses.poison <= 0 && state.enemyStatuses.bleed <= 0) {
-    if (state.pendingBleedLeechHealing === 0) return state;
-    return { ...state, pendingBleedLeechHealing: 0 };
+    if (state.pendingBleedLeechHealing === 0 && state.pendingCardBleedLeechHealing === 0) return state;
+    return { ...state, pendingBleedLeechHealing: 0, pendingCardBleedLeechHealing: 0 };
   }
   return resolveBattleSequence(
     state,
@@ -146,8 +152,7 @@ function dealPlayerDotTick(
     nextStacks,
   );
   if (applyRiders) nextState = applyRiders(nextState);
-  const phoenixTriggered = state.playerStatuses.phoenixFeather > 0 && nextState.playerStatuses.phoenixFeather === 0;
-  const healthLost = phoenixTriggered ? state.playerHealth : Math.max(0, state.playerHealth - nextState.playerHealth);
+  const healthLost = playerHealthLostToDamage(state, nextState);
   if (healthLost > 0) {
     emitDotCombatText(combatTexts, "player", status, healthLost);
   }
@@ -189,11 +194,9 @@ function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
     return { ...state, pendingEnemyBleedLeechHealing: 0 };
   }
   const finalDamage = mitigatePlayerDot(state, damage, "bleed");
-  const healthBeforeBleed = state.playerHealth;
   const pendingLeech = state.pendingEnemyBleedLeechHealing;
   return dealPlayerDotTick(state, finalDamage, "bleed", 0, combatTexts, (nextState) => {
-    const phoenixTriggered = state.playerStatuses.phoenixFeather > 0 && nextState.playerStatuses.phoenixFeather === 0;
-    const healthLost = phoenixTriggered ? healthBeforeBleed : Math.max(0, healthBeforeBleed - nextState.playerHealth);
+    const healthLost = playerHealthLostToDamage(state, nextState);
     const enemyLeechDamage = Math.min(pendingLeech, healthLost);
     let next = nextState;
     if (enemyLeechDamage > 0) {
@@ -220,11 +223,11 @@ export function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEv
     }
     return resolvePlayerEndOfTickReactions(nextState, combatTexts);
   }
-  let nextState = tickPlayerBurn(state, combatTexts);
+  let nextState = resolvePendingBattleReactions(tickPlayerBurn(state, combatTexts), combatTexts);
   if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) {
     return resolvePlayerEndOfTickReactions(nextState, combatTexts);
   }
-  nextState = tickPlayerPoison(nextState, combatTexts);
+  nextState = resolvePendingBattleReactions(tickPlayerPoison(nextState, combatTexts), combatTexts);
   if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) {
     return resolvePlayerEndOfTickReactions(nextState, combatTexts);
   }

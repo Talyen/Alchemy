@@ -1,10 +1,27 @@
 import type { BattleCardEffect } from "./types";
 
-/** Stable child order also defines saved corruption target paths: success, then failure. */
+/** Stable child order also defines Corruption effect paths: success, then failure. */
 export function effectChildren(effect: BattleCardEffect): BattleCardEffect[] {
   if (effect.kind === "chance") return [...effect.successEffects, ...effect.failureEffects];
   if (effect.kind === "repeat-over-turns") return effect.effects;
   return [];
+}
+
+/** Visit wrappers before their children in card order; returning true stops the entire walk. */
+export function visitBattleCardEffects(
+  effects: readonly BattleCardEffect[],
+  visit: (effect: BattleCardEffect) => boolean | void,
+): boolean {
+  for (const effect of effects) {
+    if (visit(effect)) return true;
+    if (effect.kind === "chance") {
+      if (visitBattleCardEffects(effect.successEffects, visit) || visitBattleCardEffects(effect.failureEffects, visit))
+        return true;
+    } else if (effect.kind === "repeat-over-turns" && visitBattleCardEffects(effect.effects, visit)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /** Map one level without changing branch grouping; callers own recursion and leaf behavior. */
@@ -21,4 +38,31 @@ export function mapEffectChildren(
   }
   if (effect.kind === "repeat-over-turns") return { ...effect, effects: effect.effects.map(map) };
   return effect;
+}
+
+function equalEffectValue(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true;
+  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+  if (Array.isArray(a) || Array.isArray(b)) {
+    return (
+      Array.isArray(a) &&
+      Array.isArray(b) &&
+      a.length === b.length &&
+      a.every((value, index) => equalEffectValue(value, b[index]))
+    );
+  }
+  const keys = Object.keys(a);
+  return (
+    keys.length === Object.keys(b).length &&
+    keys.every(
+      (key) =>
+        Object.hasOwn(b, key) &&
+        equalEffectValue((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key]),
+    )
+  );
+}
+
+/** Compare effect payloads, including ordered pools and branches, independent of object field order. */
+export function areBattleCardEffectsEqual(a: BattleCardEffect, b: BattleCardEffect): boolean {
+  return a.kind === b.kind && equalEffectValue(a, b);
 }

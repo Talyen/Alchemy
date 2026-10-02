@@ -13,15 +13,8 @@ import { HALF_DIVISOR } from "@/lib/game-constants";
 import { PLAYABLE_HAND_OPTIONS } from "../../shared/config/battle-input";
 export { PLAYABLE_HAND_OPTIONS };
 
-function findFirstPlayableHandCard(
-  state: BattleSnapshot,
-  options: CardPlayOptions = PLAYABLE_HAND_OPTIONS,
-): { card: BattleCard; index: number } | null {
-  return getPlayableHandCards(state, options)[0] ?? null;
-}
-
 export function handHasPlayableCard(state: BattleSnapshot, options: CardPlayOptions = PLAYABLE_HAND_OPTIONS): boolean {
-  return findFirstPlayableHandCard(state, options) !== null;
+  return state.hand.some((card, index) => card && canPlayCard(state, card, index, options));
 }
 
 function getPlayableHandCards(
@@ -49,6 +42,10 @@ function immediateSelfDamage(effects: readonly BattleCardEffect[]): number {
 }
 
 function hasPotentialLethalSelfCost(card: BattleCard, state: BattleSnapshot): boolean {
+  if (!state.deathsDoorUsed || state.deathsDoorActive || state.playerStatuses.phoenixFeather > 0) return false;
+  const selfDamage = immediateSelfDamage(card.effects);
+  if (selfDamage >= 0 && selfDamage * 2 < state.playerHealth) return false;
+
   const keywords = getCardKeywords(card);
   const mayRepeat =
     state.flags.playNextCardTwice ||
@@ -61,12 +58,7 @@ function hasPotentialLethalSelfCost(card: BattleCard, state: BattleSnapshot): bo
       if (keyword === "wish") return state.talentEffects.wishCardPlayTwiceChance > 0;
       return false;
     });
-  return (
-    state.deathsDoorUsed &&
-    !state.deathsDoorActive &&
-    state.playerStatuses.phoenixFeather <= 0 &&
-    immediateSelfDamage(card.effects) * (mayRepeat ? 2 : 1) >= state.playerHealth
-  );
+  return selfDamage * (mayRepeat ? 2 : 1) >= state.playerHealth;
 }
 
 /**

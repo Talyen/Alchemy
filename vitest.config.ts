@@ -88,7 +88,7 @@ export default defineConfig({
           name: "dom",
           include: ["tests/**/*.test.tsx", ...domTypeScriptPatterns],
           exclude: excludedTestPaths,
-          environment: "jsdom",
+          environment: "./tests/jsdom-environment.ts",
           setupFiles: ["tests/setup-dom.ts"],
         },
       },

@@ -2,13 +2,31 @@
 
 Canonical detail linked from [REFERENCE.md](./REFERENCE.md).
 
+## Choose a command
+
+Use direct reads and scoped `rg` when the owner is clear. These optional commands
+replace a broader read or search; ordinary edits need no discovery setup.
+
+| Need                                          | Command                                                                |
+| --------------------------------------------- | ---------------------------------------------------------------------- |
+| Find owner ranges, consumers, tests and setup | `npm run context -- --locate --related <path>`                         |
+| Read selected owner sections                  | `npm run context -- <path>`                                            |
+| Locate source declarations                    | `npm run context -- --outline <file>`                                  |
+| Read one declaration or content entry         | Add `--symbol <name>` or `--entry <id>` to the outline command         |
+| Find matching files                           | `npm run search -- <literal> <directory>`                              |
+| Inspect task status or patches                | `npm run review:status -- <paths>` or `npm run review:diff -- <paths>` |
+
+Use [operation selection](#select-the-operation) for topic names and
+[source excerpts](#read-a-source-declaration-or-content-entry) for test lookup.
+[Session controls](#optional-context-controls) and
+[measurements](#context-efficiency-measurements) are for longer investigations.
+
 ## Agent discovery
 
 Use direct reads and scoped `rg` when the owner is clear. The optional `context`
 command helps locate owner sections and entry points when it is not:
 
 ```sh
-npm run context -- src/lib/battle/card-play.ts
 npm run context -- --task save-write
 npm run context -- --diff
 ```
@@ -26,19 +44,38 @@ provide an overview and locations; deferred content has not been read. Follow
 those pointers when needed. `--json` has the same budget; `--json --full` is for
 tools that need all selected sections.
 
+`--locate` emits headings and source ranges instead of section prose. Add
+`--related` when consumers, tests and fixture locations help answer the current
+question. Location-only output records no content reads and never marks a
+section as read in a context session; `--json` exposes these pointers as
+`locations`, with an empty `sections` array. `--locate` cannot be combined with
+source outlines or `--full`.
+
 Discovery is not a prerequisite, a replacement for required skills, or a test
 coverage selector. `scripts/lib/agent/agent-context.mjs` owns its catalog;
 `scripts/lib/verification/change-routes.mjs` separately owns verification selection. Keep
 catalog entries as references to canonical prose, not copies of that prose.
 Documentation checks validate those references, and `verify --plan` uses them.
 
-### Select the operation
+Use the [operation catalog](#select-the-operation), [source excerpts](#read-a-source-declaration-or-content-entry),
+[optional controls](#optional-context-controls), and [bounded search](#bounded-search)
+when more specific discovery is needed.
+
+## Select the operation
 
 Use the narrow topic when a subsystem has several owners:
 
 - Assets: `assets-art`, `assets-gear`, `assets-sound`, `assets-music`, or `assets-pipeline`.
 - Saves: `save-load`, `save-write`, `save-delete`, or `save-compatibility`.
 - Battle: `battle` for engine rules; `battle-controller` for route/controller wiring.
+- Card classification: `battle-classification` for effect-derived attack, damage-type and keyword queries.
+- Damage calculation: `battle-damage` for damage packets, modifiers, pacing and rounding; hit orchestration outside this scope retains the broader battle owner.
+- Browser fixtures: `browser-fixture` for page objects, browser seeding and shared assertions; mixed spec work retains the broader browser contract.
+- End Turn: `battle-end-turn` for commit/playback, phase order, Block, and RNG rules.
+- Audio: `audio-sfx`, `audio-music`, or `audio-preload` for their runtime lifetimes;
+  each includes shared host, volume and failure rules. `audio` reads the full guide.
+- Run commands: `run-command` for atomic writes and post-commit feedback;
+  `run-state` supplies the broader aggregate and ownership contract.
 - Verification: `verification` for running gates; `verification-tooling` for implementation.
 - Overlays: `overlay` for input, focus and lifetime; screen-specific guidance is in the [UI index](./UI.md#guide-index).
 
@@ -46,7 +83,11 @@ Paths also select relevant owners. Mixed requests retain applicable safety
 owners. Use the command's task listing for the complete current catalog rather
 than guessing names.
 
-### Read a source declaration or content entry
+Focused categories replace their broader parent only when they cover every
+matching path. An explicit broad category or a path outside the focused concern
+retains the parent contract. Verification selection is independent and unchanged.
+
+## Read a source declaration or content entry
 
 ```sh
 npm run context -- --outline src/lib/battle/card-play.ts
@@ -66,11 +107,13 @@ those pointers are insufficient. Earlier [investigation trials](../.agents/evals
 found that targeted test excerpts could increase total reading; use this option
 only when it helps the investigation.
 
-### Optional context controls
+## Optional context controls
 
 - `--related` adds ranked consumers, tests and imported fixtures from current
-  static imports, aliases and reexports. At most two consumer hops and six
-  locations per kind are shown. These are hints, not exhaustive coverage.
+  static imports, aliases and reexports. Direct implementation dependencies appear
+  as helpers; imported test support appears as fixtures even without a fixture-like
+  filename. Tests are ranked by consumer distance, then path. At most two consumer
+  hops and six locations per kind are shown. These are hints, not exhaustive coverage.
 - `--session <unique-id>` suppresses unchanged sections actually emitted earlier
   in that session. Use a separate ID per agent. After context loss, use `--refresh`
   with that ID or start a new one. Changed and budget-deferred sections remain
@@ -81,7 +124,12 @@ because another guide links the same section. Split a large file only when
 repeated reads or co-changes demonstrate separable responsibilities; file size
 alone is not a refactoring target.
 
-### Bounded search
+For a longer investigation, reuse a unique `--session` when more owner sections
+become relevant, and use `--symbol` or `--entry` when only one implementation is
+needed. Use these controls when they replace broader or repeated reads; small
+edits require no discovery setup. Refresh the session after context loss.
+
+## Bounded search
 
 `npm run search -- <literal> [paths...]` wraps `rg`, returning up to 40 filenames
 within 8 KB. Use `--excerpts` for matching lines and `--regex` for intentional
@@ -115,6 +163,14 @@ Direct `lint`, `typecheck`, `typecheck:all`, and `deadcode` commands retain full
 
 `.rgignore` keeps raw media, generated catalogs, asset hashes, archived plans and lockfiles out of ordinary `rg` discovery. Use `rg --no-ignore-dot <pattern> <explicit-path>` to inspect them. Git inventories, asset validation and the custom discovery import graph remain complete; the wrapper owns its exclusions independently.
 
-`npm run review:diff -- [paths...]` prints bounded authored patches and retains the complete working-tree inventory and selected patches under `reports/agent-diff/`. Staged and unstaged changes remain separate, including reversals between the two. Generated/media patches are summarized by path; use `npm run review:diff -- --full <path>` to retain their full patches too. Large patches remain in the linked report rather than filling the terminal. Omitted output is not completed review. Path selection never hides unrelated changes from the retained inventory.
+`npm run review:diff -- [paths...]` prints selected patches first, then changed-path counts by top-level directory. It retains the complete working-tree inventory and selected patches under `reports/agent-diff/`; unrelated filenames no longer consume the patch preview budget. Staged and unstaged changes remain separate, including reversals between the two. Generated/media patches are summarized by path; use `npm run review:diff -- --full <path>` to retain their full patches too. Large patches remain in the linked report rather than filling the terminal. Omitted output is not completed review. Directory counts do not establish review of unrelated changes; read the complete inventory when reviewing the whole checkout.
 
 Use `--task verification` for running gates and `--task verification-tooling` for their implementation. Direct verification implementation paths select both.
+
+## Compact status
+
+`npm run review:status -- [paths...]` uses the same uncached Git inventory as
+`review:diff`. Without paths it groups changes by top-level directory; explicit
+task paths show bounded status entries, including both status columns and rename
+sources. The complete inventory remains in the linked report. This is status
+inspection, not patch review; expand the inventory for a whole-checkout task.

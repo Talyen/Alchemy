@@ -6,23 +6,19 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readActivityData } from "@/lib/active-run-session";
 import { SHOP_CARDS_OFFERED } from "@/lib/game-constants";
-import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
+import type { TalentEffectManifest } from "@/lib/game-data";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { isValidDeckIndex } from "@/lib/utils";
 import type { MerchantShopCommands } from "./shop-action-types";
 import {
   cardSlotKeyOf,
   createGetRefreshPrice,
+  createShopPurchaseActions,
   createShopRefreshAction,
   initializeShop,
-  purchaseSlotOffering,
 } from "./shop-commands-core";
 import { computeRemoveCardPrice, getShopBuyPrice } from "./shop-pricing";
-import {
-  resolveDraftShopModifiers,
-  resolveReadShopModifiers,
-  resolveReadShopPricingContext,
-} from "./shop-pricing-context";
+import { resolveDraftShopModifiers, resolveReadShopModifiers } from "./shop-pricing-context";
 import { createInitialShopState, merchantShopPool, resampleCardShopOfferings } from "./shop-state-init";
 import { commitShopService, runShopTransaction } from "./shop-transactions";
 
@@ -33,9 +29,15 @@ export function createMerchantShopCommands({
   talentEffects: TalentEffectManifest;
   homesteadEffects: Pick<HomesteadEffectManifest, "removeCardDiscount">;
 }): MerchantShopCommands {
-  const getCardBuyPrice = (card: BattleCard) => {
-    return getShopBuyPrice("merchantCard", card, resolveReadShopPricingContext(talentEffects, "shopState"));
-  };
+  const { buy: buyCard, getBuyPrice: getCardBuyPrice } = createShopPurchaseActions({
+    activity: "shop",
+    talentEffects,
+    itemsOf: (state) => state.cards,
+    slotKeyOf: cardSlotKeyOf,
+    idOf: (item) => item.id,
+    priceOf: (card, context) => getShopBuyPrice("merchantCard", card, context),
+    acquire: appendCardToRunWithDiscovery,
+  });
   const getRemoveCardPrice = () =>
     computeRemoveCardPrice(talentEffects, resolveReadShopModifiers(), homesteadEffects.removeCardDiscount);
   const getRefreshPrice = createGetRefreshPrice("shop", talentEffects);
@@ -47,23 +49,6 @@ export function createMerchantShopCommands({
       resolveDraftShopModifiers(draft),
     ),
   );
-
-  function buyCard(card: BattleCard, slotKey: string): boolean {
-    return runShopTransaction("shop", (draft) => {
-      const state = readActivityData(draft.session.activity, "shop");
-      return purchaseSlotOffering({
-        talentEffects,
-        activity: "shop",
-        draft,
-        items: state.cards,
-        requestedId: card.id,
-        slotKey,
-        slotKeyOf: cardSlotKeyOf,
-        idOf: (item) => item.id,
-        acquire: (innerDraft, offered) => appendCardToRunWithDiscovery(innerDraft, offered),
-      });
-    }).committed;
-  }
 
   function removeCard(index: number): boolean {
     return runShopTransaction(

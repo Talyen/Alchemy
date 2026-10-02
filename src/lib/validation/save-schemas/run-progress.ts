@@ -1,5 +1,5 @@
 import { ACTS_PER_RUN, MAX_PLAYER_HEALTH } from "@/lib/game-constants";
-import { normalizeGearInstance } from "@/lib/gear/operations";
+import { normalizeGearInstance } from "@/lib/gear/instance-normalization";
 import { createRunRngState, type RunRngState } from "@/lib/rng";
 import { DESTINATIONS } from "@/lib/routing";
 import { z } from "zod";
@@ -28,7 +28,7 @@ const RunObtainedItemSchema = z.discriminatedUnion("kind", [RunObtainedGearItemS
 function normalizeRunObtainedItems(raw: unknown): Array<z.infer<typeof RunObtainedItemSchema>> {
   if (!Array.isArray(raw)) return [];
   // Canonical single-item normalizer is normalizeGearInstance from
-  // gear/operations (same as normalizeGearInstanceArray uses); the loop below
+  // gear/instance-normalization (same as normalizeGearInstanceArray uses); the loop below
   // preserves original order while dropping invalid gear, which the array
   // wrapper alone cannot do for this heterogeneous list.
   const items: Array<z.infer<typeof RunObtainedItemSchema>> = [];

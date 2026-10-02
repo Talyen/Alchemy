@@ -35,3 +35,73 @@ it("does not animate color changes or start a renderer when animations are disab
   expect(raf).not.toHaveBeenCalled();
   expect(screen.queryByTestId("static-plasma-background")).toBeNull();
 });
+
+it("completes a color fade on schedule when rerenders supply equivalent color pairs", () => {
+  let now = 0;
+  vi.spyOn(performance, "now").mockImplementation(() => now);
+  const pending = new Map<number, FrameRequestCallback>();
+  let nextFrameId = 0;
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+    pending.set(++nextFrameId, callback);
+    return nextFrameId;
+  });
+  vi.stubGlobal("cancelAnimationFrame", (id: number) => pending.delete(id));
+  vi.mocked(startKeywordPlasma).mockReturnValue(vi.fn());
+  const advanceFrame = (time: number) => {
+    now = time;
+    const callbacks = [...pending.values()];
+    pending.clear();
+    act(() => callbacks.forEach((callback) => callback(time)));
+  };
+
+  const view = render(<KeywordPlasmaBackground colorPair={colorPair} />);
+  const options = vi.mocked(startKeywordPlasma).mock.calls.at(-1)![0];
+  view.rerender(<KeywordPlasmaBackground colorPair={{ primary: "#ffffff", secondary: "#ffffff" }} />);
+  advanceFrame(200);
+  expect(options.colorsRef.current.primary).toEqual([1, 0.5, 0.5]);
+  const mixedColors = options.colorsRef.current;
+  const mixedPrimary = mixedColors.primary;
+
+  view.rerender(<KeywordPlasmaBackground colorPair={{ primary: "#ffffff", secondary: "#ffffff" }} intensity={50} />);
+  advanceFrame(400);
+  expect(options.colorsRef.current).toBe(mixedColors);
+  expect(options.colorsRef.current.primary).toBe(mixedPrimary);
+  expect(options.colorsRef.current).toEqual({ primary: [1, 1, 1], secondary: [1, 1, 1] });
+  expect(pending.size).toBe(0);
+});
+
+it("starts interrupted fades from the displayed colors and keeps their origins fixed", () => {
+  let now = 0;
+  vi.spyOn(performance, "now").mockImplementation(() => now);
+  const pending = new Map<number, FrameRequestCallback>();
+  let nextFrameId = 0;
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+    pending.set(++nextFrameId, callback);
+    return nextFrameId;
+  });
+  vi.stubGlobal("cancelAnimationFrame", (id: number) => pending.delete(id));
+  vi.mocked(startKeywordPlasma).mockReturnValue(vi.fn());
+  const advanceFrame = (time: number) => {
+    now = time;
+    const callbacks = [...pending.values()];
+    pending.clear();
+    act(() => callbacks.forEach((callback) => callback(time)));
+  };
+  const view = render(<KeywordPlasmaBackground colorPair={colorPair} />);
+  const options = vi.mocked(startKeywordPlasma).mock.calls.at(-1)![0];
+  view.rerender(<KeywordPlasmaBackground colorPair={{ primary: "#ffffff", secondary: "#ffffff" }} />);
+  advanceFrame(200);
+  const interruptedColors = options.colorsRef.current;
+  expect(interruptedColors.primary).toEqual([1, 0.5, 0.5]);
+
+  view.rerender(<KeywordPlasmaBackground colorPair={{ primary: "#000000", secondary: "#000000" }} />);
+  advanceFrame(300);
+  expect(options.colorsRef.current.primary).toEqual([0.75, 0.375, 0.375]);
+  advanceFrame(400);
+  expect(options.colorsRef.current.primary).toEqual([0.5, 0.25, 0.25]);
+  expect(options.colorsRef.current.secondary).toEqual([0.25, 0.25, 0.5]);
+  expect(interruptedColors.primary).toEqual([1, 0.5, 0.5]);
+  advanceFrame(600);
+  expect(options.colorsRef.current.primary).toEqual([0, 0, 0]);
+  expect(pending.size).toBe(0);
+});

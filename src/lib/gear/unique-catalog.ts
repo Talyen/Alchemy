@@ -154,9 +154,25 @@ export const uniqueItemList: UniqueItemDefinition[] = [
 ];
 
 const uniqueItemDefinitions = new Map(uniqueItemList.map((item) => [item.id, item]));
+const uniqueAffixViews = new Map<string, ReadonlyArray<Readonly<GearAffixRoll>>>();
 
 export function getUniqueItemDefinition(id: string): UniqueItemDefinition | undefined {
   return uniqueItemDefinitions.get(id);
+}
+
+/** Shared immutable reads for combat, keyword colors and inspection. */
+export function getUniqueAffixView(id: string): ReadonlyArray<Readonly<GearAffixRoll>> | undefined {
+  const cached = uniqueAffixViews.get(id);
+  if (cached) return cached;
+  const definition = uniqueItemDefinitions.get(id);
+  if (!definition) return undefined;
+  // The authored catalog is stable, so only encountered Unique definitions
+  // allocate a view. Unknown or transient instance IDs never enter this cache.
+  const view = Object.freeze(
+    [definition.signatureAffix, ...definition.supportingAffixes].map((affix) => Object.freeze({ ...affix })),
+  );
+  uniqueAffixViews.set(id, view);
+  return view;
 }
 
 export function getUniqueAffixes(id: string): GearAffixRoll[] | undefined {

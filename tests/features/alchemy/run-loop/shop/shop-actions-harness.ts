@@ -1,6 +1,5 @@
-const lootProgress = { depth: 24, highestCompletedDifficulty: null };
 import "../../../../helpers/mock-audio";
-import { expect, beforeEach } from "vitest";
+import { beforeEach } from "vitest";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
 import { createEmptyTalentEffectManifest, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
 import {
@@ -27,6 +26,8 @@ import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { makeTestCard } from "../../../../fixtures/cards";
 import { makeEffect } from "../../../../fixtures/battle";
 
+const lootProgress = { depth: 24, highestCompletedDifficulty: null };
+
 export const setShopState = createRunSessionCommand(mutateShopState);
 export const setAlchemistState = createRunSessionCommand(mutateAlchemistState);
 export const setTrinketShopState = createRunSessionCommand(mutateTrinketShopState);
@@ -46,8 +47,8 @@ export function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
 }
 
 export function requiredItem<T>(value: T | undefined, label: string): T {
-  expect(value, `${label} fixture should exist`).toBeDefined();
-  return value as T;
+  if (value === undefined) throw new Error(`${label} fixture should exist`);
+  return value;
 }
 
 export function buildActions(
@@ -58,10 +59,11 @@ export function buildActions(
     trinketIds: string[];
   }>,
 ) {
-  if (overrides?.trinketIds) {
-    dispatchRunSessionCommand((draft) => setRunBoons(draft, overrides.trinketIds!));
+  const trinketIds = overrides?.trinketIds;
+  if (trinketIds) {
+    dispatchRunSessionCommand((draft) => setRunBoons(draft, trinketIds));
   }
-  const talentEffects = { ...defaultTalentEffects, ...overrides?.talentEffects } as TalentEffectManifest;
+  const talentEffects = { ...defaultTalentEffects, ...overrides?.talentEffects };
   return createShopActions({
     talentEffects,
     homesteadEffects: {

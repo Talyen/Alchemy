@@ -2,7 +2,6 @@ import os from "node:os";
 import { defineConfig, devices } from "@playwright/test";
 import {
   BROWSER_PREVIEW_PORT,
-  ELECTRON_PREVIEW_PORT,
   PERF_PREVIEW_PORT,
   TIMEOUTS,
   playwrightCiSettings,
@@ -17,7 +16,6 @@ export type AlchemyPlaywrightPreset = "e2e" | "electron" | "performance";
 
 export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
   if (preset === "electron") {
-    const previewPort = previewPortFromEnv("PLAYWRIGHT_ELECTRON_PREVIEW_PORT", ELECTRON_PREVIEW_PORT);
     const isCi = !!process.env.CI;
     return defineConfig({
       testDir: "./tests/electron",
@@ -30,13 +28,6 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
       globalTimeout: TIMEOUTS.electron.global,
       ...playwrightCiSettings({ isCi, defaultJsonOut: "reports/playwright-electron-results.json" }),
       preserveOutput: "failures-only",
-      webServer: {
-        ...previewWebServer(previewPort),
-        env: {
-          ALCHEMY_DEV_PORT: String(previewPort),
-          ...(process.env.ALCHEMY_RUN_ID ? { ALCHEMY_RUN_ID: process.env.ALCHEMY_RUN_ID } : {}),
-        },
-      },
     });
   }
 
@@ -114,7 +105,7 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
     preserveOutput: "failures-only",
     use: {
       baseURL: `http://127.0.0.1:${port}`,
-      trace: isPrepush ? "off" : "retain-on-failure",
+      trace: isPrepush ? "off" : isCi ? "on-first-retry" : "retain-on-failure",
       actionTimeout: isCi ? TIMEOUTS.e2e.actionCi : TIMEOUTS.e2e.actionLocal,
       launchOptions: { args: ["--mute-audio"] },
       ...(process.env.PLAYWRIGHT_COLD_BOOT === "1"

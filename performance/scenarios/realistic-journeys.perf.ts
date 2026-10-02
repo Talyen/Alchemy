@@ -84,7 +84,12 @@ async function playRealCombat(
       if (!choice) throw new Error(`Replay card unavailable: ${expected?.name}`);
       const card = playable.nth(choice.index);
       if (cardIndex === 0) await card.hover();
+      const mana = await battle.mana();
       await record(`play:${choice.label}`, () => card.click(), recordAction);
+      if (journeyCase.scenario === "campaign-early" && actions === 0) {
+        // This reachable starter checkpoint replaces the separate generated-case UI smoke.
+        await expect.poll(() => battle.mana()).toBeLessThan(mana);
+      }
       actions++;
       await delay(350);
       await resolveWishChoices(page, recordAction);

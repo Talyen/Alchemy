@@ -1,14 +1,11 @@
-import { rollFreshBossId } from "@/features/alchemy/shared/config";
-import { createInitialDestinationResult } from "@/features/alchemy/shared/run-flow/destination-flow";
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 import { createStarterDraftChoices } from "@/features/alchemy/shared/run-flow/starter-draft";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import { sampleAndApplyDestinationOffer } from "@/features/alchemy/shared/stores/destination-offer-command";
 import {
   createDraftRunRandomSource,
-  setDestinationOfferState,
   setLabyrinthMap,
   setPendingCharacterId,
-  setRewardState,
   setStarterDraftChoices,
   setWildwoodDraft,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -26,23 +23,15 @@ function sampleAndApplyInitialCampaignDestinations(
   getAvailableDestinations: ContentSystemNavigationDeps["getAvailableDestinations"],
   maxHealth: number,
 ): void {
-  const run = draft.run.activeRun;
-  const initialDestinations = createInitialDestinationResult({
-    availableDestinations: getAvailableDestinations({
+  sampleAndApplyDestinationOffer(
+    draft,
+    getAvailableDestinations({
       currentHealth: maxHealth,
       currentGold: draft.runProfile.gold,
       destinationIndexInAct: 0,
       maxHealth,
     }),
-    offerState: {
-      lastOfferedDestinations: run.lastOfferedDestinations,
-      roundsSinceOffered: run.destinationRoundsSinceOffered,
-    },
-    rollBossEnemyId: () => rollFreshBossId(createDraftRunRandomSource(draft, "world")),
-    rng: createDraftRunRandomSource(draft, "destinations"),
-  });
-  setDestinationOfferState(draft, initialDestinations.offerState);
-  setRewardState(draft, initialDestinations.rewardState);
+  );
 }
 
 interface StartSnapshotOptions {

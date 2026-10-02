@@ -5,6 +5,7 @@ import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-stor
 import { resetBattlePresentationAndRun } from "../features/alchemy/run-loop/battle/battle-test-reset";
 import { AUTO_END_TURN_DELAY_MS } from "@/lib/game-constants";
 import { makeTestBattleState } from "../fixtures/battle";
+import { cardById } from "@/lib/game-data";
 import { makeEmptyHandBattle } from "../features/alchemy/run-loop/battle/open-battle-fixture";
 
 function renderPlayback(overrides: Partial<Parameters<typeof useBattlePlayback>[0]> = {}) {
@@ -63,6 +64,33 @@ describe("useBattlePlayback", () => {
     });
 
     expect(handleEndTurn).toHaveBeenCalledOnce();
+    vi.useRealTimers();
+  });
+
+  it("ends an autoplay turn containing only lethal cards, preserving manual choice when autoplay stops", () => {
+    vi.useFakeTimers();
+    useSettingsStore.setState({ autoEndTurn: true });
+    const handleEndTurn = vi.fn();
+    const handleAutoplayCard = vi.fn(() => false);
+    const { rerender, unmount } = renderPlayback({
+      handleEndTurn,
+      handleAutoplayCard,
+      battleState: makeTestBattleState({
+        hand: [cardById["blood-offering"]!],
+        playerHealth: 1,
+        deathsDoorUsed: true,
+      }),
+      isAutoplayEnabled: true,
+    });
+    act(() => vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS));
+    expect(handleAutoplayCard).not.toHaveBeenCalled();
+    expect(handleEndTurn).toHaveBeenCalledOnce();
+
+    handleEndTurn.mockClear();
+    rerender({ isAutoplayEnabled: false });
+    act(() => vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS * 2));
+    expect(handleEndTurn).not.toHaveBeenCalled();
+    unmount();
     vi.useRealTimers();
   });
 

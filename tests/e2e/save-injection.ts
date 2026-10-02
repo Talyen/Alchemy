@@ -7,6 +7,25 @@ import type { InjectedBattleState } from "../fixtures/battle-state";
 import { gridLabyrinthMapFixture } from "../fixtures/labyrinth-map";
 import { makeHighDamageCard } from "./cards";
 import { navigateToGame } from "./navigation";
+import { failOnRuntimeErrors } from "./errors";
+import type { ParsedSaveData } from "@/lib/validation";
+
+export function readSavedGame(page: Page): Promise<ParsedSaveData> {
+  return page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? "{}"), SAVE_KEY);
+}
+
+/** Page-level seed scripts rerun on reload; this page reads only the acknowledged save. */
+export async function withSavedGame(page: Page, verify: (resumed: Page) => Promise<void>): Promise<void> {
+  const resumed = await page.context().newPage();
+  const errors = failOnRuntimeErrors(resumed);
+  try {
+    await resumed.goto(new URL("/", page.url()).href, { waitUntil: "domcontentloaded" });
+    await verify(resumed);
+    expect(errors).toEqual([]);
+  } finally {
+    await resumed.close();
+  }
+}
 
 export function destinationInterruptedFlow(destinations: string[]) {
   return {
@@ -16,29 +35,6 @@ export function destinationInterruptedFlow(destinations: string[]) {
     lastVictoryEnemyType: null,
     lastVictoryContentSystem: null,
   };
-}
-
-export async function injectDestinationAtIndex(
-  page: Page,
-  options: {
-    destinations: string[];
-    destinationIndexInAct?: number;
-    completedDestinations?: string[];
-    roomsEncountered?: number;
-    runPlayerHealth?: number;
-    runMaxHealth?: number;
-  },
-) {
-  const destinationIndexInAct = options.destinationIndexInAct ?? 0;
-  await injectSaveState(page, {
-    runPlayerHealth: options.runPlayerHealth ?? 30,
-    runMaxHealth: options.runMaxHealth ?? 30,
-    roomsEncountered: options.roomsEncountered ?? destinationIndexInAct,
-    destinationIndexInAct,
-    completedDestinations: options.completedDestinations ?? [],
-    currentScreen: "destination",
-    interruptedFlow: destinationInterruptedFlow(options.destinations),
-  });
 }
 
 export async function injectMysterySummaryVisit(page: Page) {
@@ -230,18 +226,6 @@ export async function injectHomestead(page: Page, overrides: Record<string, unkn
     return;
   }
   await injectLocalStorage(page, save, false);
-}
-
-export async function injectTalentUnlocks(page: Page, unlockedTalents: Record<string, string[]>) {
-  await page.addInitScript(
-    ({ saveKey, talents }) => {
-      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      save.unlockedTalents = { ...(save.unlockedTalents || {}), ...talents };
-      save.discoveredCardIds = save.discoveredCardIds || ["slash"];
-      localStorage.setItem(saveKey, JSON.stringify(save));
-    },
-    { saveKey: SAVE_KEY, talents: unlockedTalents },
-  );
 }
 
 export async function injectBossState(page: Page, act = 1, overrides: Record<string, unknown> = {}) {

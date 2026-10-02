@@ -127,12 +127,22 @@ export function animateHurtSparks(
     height,
     duration,
     step: stepHurtSpark,
-    draw: (c, p, progress) => {
-      if (p.alpha <= 0.01) return;
-      p.alpha = Math.max(0, 1 - progress * progress);
-      c.globalAlpha = p.alpha;
-      c.fillStyle = p.color;
-      c.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+    draw: (c, sparks, progress) => {
+      const alpha = Math.max(0, 1 - progress * progress);
+      c.globalAlpha = alpha;
+      // Preserve translucent draw order; only avoid repeated state writes.
+      let previousColor: string | undefined;
+      for (const p of sparks) {
+        // Keep the previous-frame cutoff: even a final transparent frame
+        // advances the same sparks as before.
+        if (p.alpha <= 0.01) continue;
+        p.alpha = alpha;
+        if (p.color !== previousColor) {
+          c.fillStyle = p.color;
+          previousColor = p.color;
+        }
+        c.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+      }
       c.globalAlpha = 1;
     },
     onComplete,

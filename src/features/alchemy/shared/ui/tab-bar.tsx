@@ -39,6 +39,7 @@ export function TabBar<T extends string>({
             className={tab.id === activeTab ? activeClassName : undefined}
             wrapperClassName="shrink-0"
             aria-label={isDisabled ? `${tab.label} (Locked)` : tab.label}
+            aria-pressed={tab.id === activeTab}
           >
             <Icon className={cn("h-7 w-7", tab.iconClassName)} />
             {tab.label}

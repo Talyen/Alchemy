@@ -457,6 +457,22 @@ describe("unique item battle effects", () => {
 });
 
 describe("damageOnlyEffects", () => {
+  it("keeps damage order and chance branches while leaving the source tree untouched", () => {
+    const damage: BattleCardEffect = { kind: "damage", damageType: "physical", amount: 3 };
+    const chance: BattleCardEffect = {
+      kind: "chance",
+      probability: 0.5,
+      successEffects: [{ kind: "heal", amount: 2 }, damage],
+      failureEffects: [{ kind: "draw-cards", amount: 1 }],
+    };
+    const source: BattleCardEffect[] = [damage, { kind: "heal", amount: 1 }, chance, damage];
+    const before = structuredClone(source);
+    const filtered = damageOnlyEffects(source);
+    expect(filtered).toEqual([damage, { ...chance, successEffects: [damage], failureEffects: [] }, damage]);
+    expect(source).toEqual(before);
+    expect(filtered[1]).not.toBe(chance);
+  });
+
   it("preserves scheduled damage inside repeat-over-turns for echoes and repeats", () => {
     const scheduled: BattleCardEffect = {
       kind: "repeat-over-turns",
@@ -481,6 +497,32 @@ describe("damageOnlyEffects", () => {
 
 describe("prepareUniqueCardPlay flag matrix", () => {
   const gear = (overrides = {}) => ({ ...defaultGearEffects, ...overrides });
+
+  it("preserves readied bonuses when their items are inactive and reuses unchanged state", () => {
+    const state = patchBattleState({
+      gearEffects: gear(),
+      uniqueGear: { everkeenReady: true, wildheartReady: true },
+    });
+    const prepared = prepareUniqueCardPlay(
+      state,
+      makeTestCard({ tags: ["archery", "nature"], effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
+      1,
+    );
+    expect(prepared.state).toBe(state);
+    expect(prepared.repeatCount).toBe(0);
+    expect(prepared.critical).toBe(false);
+  });
+
+  it("updates both Archery item trackers and reuses state once they are unchanged", () => {
+    const state = patchBattleState({
+      gearEffects: gear({ archeryDodgeAndDraw: 1, recoverLastArcheryCard: 1 }),
+    });
+    const card = makeTestCard({ uid: 7, tags: ["archery"] });
+    const prepared = prepareUniqueCardPlay(state, card, 1);
+    expect(prepared.state.uniqueGear).toMatchObject({ wrenflightActive: true, lastArcheryUid: 7 });
+    expect(state.uniqueGear.wrenflightActive).toBe(false);
+    expect(prepareUniqueCardPlay(prepared.state, card, 1).state).toBe(prepared.state);
+  });
 
   it("arms final spark only when the card spends all remaining mana", () => {
     const burnPhysical = () =>

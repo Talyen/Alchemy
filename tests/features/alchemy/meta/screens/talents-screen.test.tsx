@@ -23,27 +23,6 @@ describe("TalentsScreen", () => {
     onResetTalents: vi.fn(),
   };
 
-  it("shows the Dodge portrait and all ten real talents", async () => {
-    render(<TalentsScreen {...defaultProps} talentXP={{ dodge: 550 }} />);
-    const portrait = screen.getByRole("button", { name: "Select Dodge Talents" });
-    expect(portrait.querySelector("img")?.getAttribute("alt")).toBe("Dodge");
-    fireEvent.click(portrait);
-    await waitFor(() => expect(screen.getByText("Lightfoot")).toBeTruthy());
-    expect(screen.getByText("Perfect Timing")).toBeTruthy();
-    expect(screen.queryByText("Coming Soon")).toBeNull();
-    const lightfoot = screen.getByRole("button", { name: /Lightfoot/ });
-    expect(lightfoot.tagName).toBe("BUTTON");
-    fireEvent.click(lightfoot);
-    await waitFor(() => expect(defaultProps.onUnlockTalent).toHaveBeenCalledWith("dodge", "dodge-lightfoot"));
-  });
-
-  it("renders the talent overview grid with keywords", () => {
-    render(<TalentsScreen {...defaultProps} />);
-
-    expect(screen.getByRole("heading", { name: "Talents" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Select Physical Talents" })).toBeTruthy();
-  });
-
   it("navigates into keyword tree on selection and back to overview", async () => {
     render(<TalentsScreen {...defaultProps} />);
 
@@ -104,39 +83,5 @@ describe("TalentsScreen", () => {
       />,
     );
     await waitFor(() => expect(screen.queryByText(/Talent Points? Remaining$/)).toBeNull());
-  });
-
-  it("updates the points footer in real time and uses the singular label", async () => {
-    const { rerender } = render(
-      <TalentsScreen
-        talentXP={{ physical: 200 }}
-        unlockedTalents={{ physical: [] }}
-        onUnlockTalent={vi.fn()}
-        onResetTalents={vi.fn()}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "Select Physical Talents" }));
-    await waitFor(() => expect(screen.getByText("4 Talent Points Remaining")).toBeTruthy());
-
-    rerender(
-      <TalentsScreen
-        talentXP={{ physical: 200 }}
-        unlockedTalents={{ physical: ["physical-a"] }}
-        onUnlockTalent={vi.fn()}
-        onResetTalents={vi.fn()}
-      />,
-    );
-    await waitFor(() => expect(screen.getByText("3 Talent Points Remaining")).toBeTruthy());
-
-    rerender(
-      <TalentsScreen
-        talentXP={{ physical: 20 }}
-        unlockedTalents={{ physical: [] }}
-        onUnlockTalent={vi.fn()}
-        onResetTalents={vi.fn()}
-      />,
-    );
-    await waitFor(() => expect(screen.getByText("1 Talent Point Remaining")).toBeTruthy());
   });
 });

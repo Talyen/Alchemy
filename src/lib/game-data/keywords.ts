@@ -1,15 +1,12 @@
 import type { BattleCard, BattleCardEffect, CompanionDefinition, KeywordDefinition, KeywordId } from "./types";
 import { collectKeywordsFromBattleEffect } from "./effect-metadata";
 
-const CARD_KEYWORD_CACHE = new WeakMap<BattleCard, KeywordId[]>();
-const COMPANION_KEYWORD_CACHE = new WeakMap<CompanionDefinition, KeywordId[]>();
+// Cost/title variants can share an immutable effect tree. Cache that tree,
+// while keeping Consume and tags on the card that actually requested it.
+const EFFECT_KEYWORD_CACHE = new WeakMap<readonly BattleCardEffect[], readonly KeywordId[]>();
 
-function cachedEffectKeywords(
-  cache: WeakMap<object, KeywordId[]>,
-  key: object,
-  effects: readonly BattleCardEffect[],
-): KeywordId[] {
-  const cached = cache.get(key);
+function cachedEffectKeywords(effects: readonly BattleCardEffect[]): readonly KeywordId[] {
+  const cached = EFFECT_KEYWORD_CACHE.get(effects);
   if (cached) return cached;
   const keywords = new Set<KeywordId>();
   for (const effect of effects) {
@@ -18,13 +15,13 @@ function cachedEffectKeywords(
     }
   }
   const result = [...keywords];
-  cache.set(key, result);
+  EFFECT_KEYWORD_CACHE.set(effects, result);
   return result;
 }
 
 export function getCardKeywords(card: BattleCard): KeywordId[] {
-  const base = cachedEffectKeywords(CARD_KEYWORD_CACHE, card, card.effects);
-  if (!card.consume && !card.tags?.length) return base;
+  const base = cachedEffectKeywords(card.effects);
+  if (!card.consume && !card.tags?.length) return [...base];
   const keywords = new Set(base);
   if (card.consume) keywords.add("consume");
   for (const tag of card.tags ?? []) keywords.add(tag);
@@ -32,7 +29,7 @@ export function getCardKeywords(card: BattleCard): KeywordId[] {
 }
 
 export function getCompanionKeywords(companion: CompanionDefinition): KeywordId[] {
-  return cachedEffectKeywords(COMPANION_KEYWORD_CACHE, companion, companion.turnStartEffects);
+  return [...cachedEffectKeywords(companion.turnStartEffects)];
 }
 
 export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
@@ -210,5 +207,5 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
 };
 
 export function filterKeywordsForTalentXP(keywords: KeywordId[]): KeywordId[] {
-  return keywords.filter((kw) => kw in keywordDefinitions);
+  return keywords.filter((kw) => Object.hasOwn(keywordDefinitions, kw));
 }

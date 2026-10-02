@@ -13,6 +13,7 @@ import {
 import { audioState } from "./state";
 import { clamp01 } from "../math";
 import { pickRandomUnsafe } from "@/lib/rng";
+import { releaseAudioElement } from "./element";
 
 const musicBase = audioUrl(MUSIC_BASE_PATH);
 
@@ -215,7 +216,7 @@ export function playMusic(key: string): void {
   if (playback.phase === "fading-out" && playback.track.key === key) {
     const track = playback.track;
     cancelTransition();
-    applyTrackVolume(track, 1);
+    activateTrack(track, 1);
     return;
   }
   if (playback.phase !== "idle" && playback.track.key === key && playback.phase !== "fading-out") {
@@ -246,6 +247,7 @@ export function playMusic(key: string): void {
     () => {
       const incoming = resolveTrack(key);
       if (incoming) fadeIn(incoming);
+      else applyTrackVolume(outgoing, 1);
     },
   );
 }
@@ -271,8 +273,8 @@ export function invalidateCacheForKey(key: string): void {
   }
   const track = musicTracks.get(key);
   if (track) {
-    track.element.pause();
     track.element.currentTime = 0;
+    releaseAudioElement(track.element);
     musicTracks.delete(key);
   }
 }
@@ -280,6 +282,7 @@ export function invalidateCacheForKey(key: string): void {
 /** Test-only reset; volume preferences remain owned by the caller. */
 export function resetMusicRuntimeForTests(): void {
   pauseAllMusic();
+  for (const { element } of musicTracks.values()) releaseAudioElement(element);
   musicTracks.clear();
   playback = { phase: "idle" };
 }
@@ -292,7 +295,7 @@ export function resetMusicRuntimeForTests(): void {
  * playMusic() clears the preview, so the key is set after the switch.
  */
 export function previewBossMusic(key: string): void {
-  if (bossPreviewKey === key) return;
+  if (bossPreviewKey === key && !isMusicPaused()) return;
   if (!MUSIC_CATALOG[key]) return;
   playMusic(key);
   bossPreviewKey = key;

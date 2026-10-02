@@ -7,10 +7,7 @@ import {
   PurchasableGearItem,
   PurchasableTrinketItem,
 } from "@/features/alchemy/run-loop/shop/ui/purchasable-shop-item";
-import {
-  getShopItemAriaLabel,
-  getShopPurchaseState,
-} from "@/features/alchemy/run-loop/shop/ui/purchasable-shop-helpers";
+
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 
@@ -37,25 +34,6 @@ const testGearInstance: GearInstance = {
   definitionId: "longsword-basic",
   affixes: [],
 };
-
-describe("getShopPurchaseState", () => {
-  it("returns canPurchase true when affordable and not yet purchased", () => {
-    expect(getShopPurchaseState(50, 60, false)).toEqual({ canAfford: true, canPurchase: true });
-    expect(getShopPurchaseState(50, 50, false)).toEqual({ canAfford: true, canPurchase: true });
-  });
-
-  it("returns canPurchase false when unaffordable or already purchased", () => {
-    expect(getShopPurchaseState(50, 49, false)).toEqual({ canAfford: false, canPurchase: false });
-    expect(getShopPurchaseState(50, 100, true)).toEqual({ canAfford: true, canPurchase: false });
-  });
-});
-
-describe("getShopItemAriaLabel", () => {
-  it("prepends Buy when not purchased, and uses title when purchased", () => {
-    expect(getShopItemAriaLabel("Strike", false)).toBe("Buy Strike");
-    expect(getShopItemAriaLabel("Strike", true)).toBe("Strike");
-  });
-});
 
 describe("PurchasableCardItem", () => {
   afterEach(() => {

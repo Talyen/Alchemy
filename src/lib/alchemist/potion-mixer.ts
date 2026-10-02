@@ -7,6 +7,7 @@ import {
 } from "../game-constants";
 import type { BattleCard, BattleCardEffect } from "../game-data";
 import {
+  areBattleCardEffectsEqual,
   describeCardEffects,
   isMixedPotionCard,
   isRecursiveBattleCardEffectKind,
@@ -16,34 +17,12 @@ import {
 
 const MIXED_POTION_ERROR = "Cannot mix with an existing Mixed Potion";
 
-function isDeepEqual(a: unknown, b: unknown): boolean {
-  if (Object.is(a, b)) return true;
-  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
-  if (Array.isArray(a) || Array.isArray(b)) {
-    return (
-      Array.isArray(a) &&
-      Array.isArray(b) &&
-      a.length === b.length &&
-      a.every((item, index) => isDeepEqual(item, b[index]))
-    );
-  }
-  const keysA = Object.keys(a);
-  const keysB = Object.keys(b);
-  return (
-    keysA.length === keysB.length &&
-    keysA.every(
-      (key) =>
-        Object.hasOwn(b, key) && isDeepEqual((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key]),
-    )
-  );
-}
-
 function areEffectsEquivalent(a: readonly BattleCardEffect[], b: readonly BattleCardEffect[]): boolean {
   // Deep comparison: same-id cards can carry different payloads (nested
   // chance/repeat trees, companion ids, conditional damage flags), and a
   // shallow kind/amount check would merge them and silently drop cardB's
   // distinct effects below.
-  return a.length === b.length && a.every((effect, index) => isDeepEqual(effect, b[index]));
+  return a.length === b.length && a.every((effect, index) => areBattleCardEffectsEqual(effect, b[index]!));
 }
 
 function scaledAmount(amount: number, multiplier: number, potencyBonus: number): number {
@@ -54,6 +33,13 @@ function scaledAmount(amount: number, multiplier: number, potencyBonus: number):
 function scalePotionEffect(effect: BattleCardEffect, multiplier: number, potencyBonus: number): BattleCardEffect {
   if (isRecursiveBattleCardEffectKind(effect.kind)) {
     return mapEffectChildren(effect, (child) => scalePotionEffect(child, multiplier, potencyBonus));
+  }
+  if (effect.kind === "random-draw" || effect.kind === "random-damage") {
+    return {
+      ...effect,
+      minAmount: scaledAmount(effect.minAmount, multiplier, potencyBonus),
+      maxAmount: scaledAmount(effect.maxAmount, multiplier, potencyBonus),
+    };
   }
   if ("amount" in effect && typeof effect.amount === "number") {
     return { ...effect, amount: scaledAmount(effect.amount, multiplier, potencyBonus) };

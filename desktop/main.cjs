@@ -28,6 +28,7 @@ const TEST_PROFILE_ISOLATED =
 const BACKGROUND_AUTOMATION =
   !app.isPackaged && TEST_PROFILE_ISOLATED && process.env.ALCHEMY_ELECTRON_BACKGROUND === "1";
 const { openWishlist } = require("./wishlist.cjs");
+const { registerOverlayPause } = require("./steam-overlay.cjs");
 const metadata = require(path.join(app.getAppPath(), "package.json"));
 const EDITION = resolveEdition(app.isPackaged ? metadata.gameEdition : process.env.ALCHEMY_EDITION);
 const EDITION_POLICY = editionPolicy(EDITION);
@@ -111,6 +112,16 @@ function initializeSteamworks() {
     const steamworks = require("steamworks.js");
     steamworks.electronEnableSteamOverlay();
     steamClient = steamworks.init(steamAppId);
+    const overlayPause = registerOverlayPause({
+      client: steamClient,
+      steamCallbacks: steamworks.SteamCallback,
+      pause: () => mainWindow?.webContents.send("alchemy:external-focus-lost"),
+    });
+    if (overlayPause) {
+      app.once("before-quit", () => overlayPause.disconnect());
+    } else {
+      console.warn("Steam overlay activation callbacks are unavailable; custom shortcuts and Deck require validation.");
+    }
     console.log(`Steamworks initialized successfully (App ID ${steamAppId}).`);
   } catch (error) {
     console.warn("Failed to initialize Steamworks (Steam might not be running):", error);
@@ -435,16 +446,7 @@ app.whenReady().then(async () => {
   registerIpcHandlers();
   initializeSteamworks();
 
-  if (steamClient?.callback) {
-    setInterval(() => {
-      try {
-        steamClient.callback.runCallbacks();
-      } catch (error) {
-        console.error("Error running Steam callbacks:", error);
-      }
-    }, 50);
-  }
-
+  // steamworks.js owns the callback pump started by init().
   createMainWindow();
   app.on("activate", () => {
     if (BACKGROUND_AUTOMATION) return;

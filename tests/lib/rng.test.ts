@@ -4,6 +4,7 @@ import {
   getBattleRng,
   hashStringToUint32,
   pickRandom,
+  pickWeighted,
   pickRandomUnsafe,
   placeholderRng,
   rngInt,
@@ -87,6 +88,37 @@ describe("sampleItems", () => {
     expect(sampleItems([], 3, () => 0.5)).toEqual([]);
     expect(sampleItems([10, 20], 2, () => 0.5)).toEqual([10, 20]);
   });
+
+  it("preserves seeded sample order and subsequent draws without mutating the input", () => {
+    const items = Object.freeze(["a", "b", "c", "d", "e", "f"]);
+    const excluded = new Set(["b", "e"]);
+    // Reference the original full Fisher-Yates shuffle followed by a slice.
+    const referenceSample = (pool: readonly string[], count: number, rng: () => number) => {
+      if (count === 0) return [];
+      const shuffled = [...pool];
+      for (let index = shuffled.length - 1; index > 0; index--) {
+        const swapIndex = Math.floor(rng() * (index + 1));
+        [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex]!, shuffled[index]!];
+      }
+      return shuffled.slice(0, Math.min(count, shuffled.length));
+    };
+    for (const seed of [0, 1, 42, 0xffffffff]) {
+      for (const count of [0, 1, 3, 6, 10]) {
+        for (const skipExcluded of [false, true]) {
+          const actualRng = createSeededRng(seed);
+          const expectedRng = createSeededRng(seed);
+          const pool = skipExcluded ? items.filter((item) => !excluded.has(item)) : items;
+          const actual = skipExcluded
+            ? sampleItemsExcluding(items, count, actualRng, excluded, (item) => item)
+            : sampleItems(items, count, actualRng);
+          expect(actual).toEqual(referenceSample(pool, count, expectedRng));
+          expect(actualRng()).toBe(expectedRng());
+          expect(actual).not.toBe(items);
+        }
+      }
+    }
+    expect(items).toEqual(["a", "b", "c", "d", "e", "f"]);
+  });
 });
 
 describe("sampleItemsExcluding", () => {
@@ -126,6 +158,91 @@ describe("pickRandom", () => {
   it("returns undefined for empty array and element for single element", () => {
     expect(pickRandom([], () => 0.5)).toBeUndefined();
     expect(pickRandom([7], () => 0.5)).toBe(7);
+  });
+});
+
+describe("pickWeighted", () => {
+  const entries = Object.freeze([
+    Object.freeze({ id: "disabled-first", weight: 0 }),
+    Object.freeze({ id: "first", weight: 1 }),
+    Object.freeze({ id: "disabled-middle", weight: 0 }),
+    Object.freeze({ id: "second", weight: 3 }),
+    Object.freeze({ id: "disabled-last", weight: 0 }),
+  ]);
+  const weightOf = (entry: { weight: number }) => entry.weight;
+
+  it("uses half-open buckets and never selects zero-weight entries", () => {
+    for (const [draw, id] of [
+      [0, "first"],
+      [0.249999, "first"],
+      [0.25, "second"],
+      [0.999999, "second"],
+    ] as const) {
+      expect(pickWeighted(entries, weightOf, () => draw)?.id).toBe(id);
+    }
+  });
+
+  it("does not draw from empty or all-zero pools", () => {
+    const rng = () => {
+      throw new Error("unexpected draw");
+    };
+    expect(pickWeighted([], weightOf, rng)).toBeUndefined();
+    expect(pickWeighted([{ weight: 0 }], weightOf, rng)).toBeUndefined();
+  });
+
+  it("falls back to the last positive entry when floating-point subtraction exhausts the buckets", () => {
+    const weights = [Number.MIN_VALUE, Number.MIN_VALUE, 0];
+    expect(
+      pickWeighted(
+        weights.map((weight, id) => ({ id, weight })),
+        weightOf,
+        () => 1 - Number.EPSILON / 2,
+      )?.id,
+    ).toBe(1);
+  });
+
+  it("evaluates each weight once and consumes one draw even for a single eligible item", () => {
+    let evaluations = 0;
+    let draws = 0;
+    expect(
+      pickWeighted(
+        entries.slice(0, 2),
+        (entry) => {
+          evaluations++;
+          return entry.weight;
+        },
+        () => {
+          draws++;
+          return 0.5;
+        },
+      ),
+    ).toBe(entries[1]);
+    expect(evaluations).toBe(2);
+    expect(draws).toBe(1);
+  });
+
+  it.each([-1, NaN, Infinity, -Infinity])("rejects invalid weight %s before drawing", (weight) => {
+    expect(() =>
+      pickWeighted([{ weight: 1 }, { weight }], weightOf, () => {
+        throw new Error("unexpected draw");
+      }),
+    ).toThrow("pickWeighted requires finite non-negative weights");
+  });
+
+  it("rejects overflowing totals before drawing", () => {
+    expect(() =>
+      pickWeighted(
+        [Number.MAX_VALUE, Number.MAX_VALUE],
+        (weight) => weight,
+        () => {
+          throw new Error("unexpected draw");
+        },
+      ),
+    ).toThrow("pickWeighted requires a finite total weight");
+  });
+
+  it.each([-0.1, 1, NaN, Infinity])("rejects out-of-range draw %s", (draw) => {
+    expect(() => pickWeighted(entries, weightOf, () => draw)).toThrow("Rng draw out of range");
   });
 });
 

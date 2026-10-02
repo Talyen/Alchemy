@@ -93,6 +93,24 @@ describe.each(cases)("outer %s", () => {
     for (const hook of ["beforeEach", "beforeAll", "afterEach"]) expect(entries[0]?.setup?.join("\n")).toContain(hook);
   });
 
+  it("locates Playwright tests inside test.describe and retains hook setup", () => {
+    const root = fixture({
+      "journey.spec.ts": `test.describe("Progression Locks", critical, () => {
+  test.beforeEach(() => prepare());
+  test("gates progression", critical, () => check());
+  test.describe.serial("nested", () => {
+    test("resumes", () => checkResume());
+  });
+});`,
+    });
+    const entries = sourceOutline(root, "journey.spec.ts", { tests: true });
+    expect(entries.map((entry) => entry.name)).toEqual([
+      "Progression Locks > gates progression",
+      "Progression Locks > nested > resumes",
+    ]);
+    expect(entries[0]?.setup?.join("\n")).toContain("test.beforeEach(() => prepare())");
+  });
+
   it("shares diagnostic space across failed checkers despite a noisy first failure", () => {
     const output = [
       ...Array.from(
@@ -221,16 +239,27 @@ describe.each(cases)("outer %s", () => {
   it("derives consumers, tests and fixture imports through aliases and reexports", () => {
     const root = fixture({
       "tsconfig.json": JSON.stringify({ compilerOptions: { paths: { "@/*": ["./src/*"] } } }),
-      "src/owner.ts": "export const value = 1;",
+      "src/owner.ts": 'import { clamp } from "./math"; export const value = clamp(1);',
+      "src/math.ts": "export const clamp = (n: number) => n;",
       "src/index.ts": 'export { value } from "./owner";',
-      "tests/owner.test.ts": 'import { value } from "@/index"; import { setup } from "./fixture";',
-      "tests/fixture.ts": "export const setup = 1;",
+      "tests/owner.test.ts":
+        'import { value } from "@/index"; import { setup } from "./setup"; import "../support/playwright-shared";',
+      "tests/z-direct.test.ts": 'import { value } from "@/owner";',
+      "tests/setup.ts": "export const setup = 1;",
+      "support/playwright-shared.ts": "export {};",
       "tests/unrelated.test.ts": "export {};",
     });
     expect(relatedLocations(root, ["src/owner.ts"])).toEqual({
+      helpers: ["src/math.ts"],
       consumers: ["src/index.ts"],
-      tests: ["tests/owner.test.ts"],
-      fixtures: ["tests/fixture.ts"],
+      tests: ["tests/z-direct.test.ts", "tests/owner.test.ts"],
+      fixtures: ["support/playwright-shared.ts", "tests/setup.ts"],
+    });
+    expect(relatedLocations(root, ["src/owner.ts"], 0)).toEqual({
+      helpers: [],
+      consumers: [],
+      tests: [],
+      fixtures: [],
     });
     // A repository-root selection seeds every file instead of matching none.
     expect(relatedLocations(root, ["."]).tests).toContain("tests/owner.test.ts");

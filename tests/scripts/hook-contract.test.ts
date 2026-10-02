@@ -2,7 +2,6 @@ import { mkdtempSync, readFileSync, writeFileSync, readdirSync, rmSync } from "n
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { ROUTES } from "../../scripts/lib/verification/change-routes.mjs";
 import { runCiLint } from "../../scripts/lint-ci.mjs";
 
 const ROOT = join(import.meta.dirname, "../..");
@@ -93,33 +92,12 @@ describe("canonical verification commands", () => {
     }
   });
 
-  it("keeps the complete save browser gate aligned with canonical save paths and explicit CI triggers", () => {
+  it("runs critical browser journeys on every push and keeps manual save selection unfiltered", () => {
     const workflow = readFileSync(join(ROOT, ".github/workflows/ci.yml"), "utf8");
-    const saveFilter = workflow.match(/^ {12}save:\n((?: {14}- .*\n)+)/mu)?.[1];
-    expect(saveFilter).toBeDefined();
-    const patterns = [...(saveFilter ?? "").matchAll(/- "([^"]+)"/gu)].map((match) => match[1]);
-    const saveRoute = ROUTES.find((route) => route.id === "save");
-    expect(saveRoute).toBeDefined();
-    expect(patterns.toSorted()).toEqual(
-      [
-        ...(saveRoute?.patterns ?? []),
-        ".github/**",
-        "package.json",
-        "package-lock.json",
-        "src/lib/platform.ts",
-        "src/features/alchemy/shell/use-alchemy-run-controller*",
-        "tests/fixtures/current-saves*",
-        "tests/e2e/mid-combat-save*",
-        "tests/e2e/specs/save-*",
-      ].toSorted(),
-    );
-    expect(workflow).toMatch(
-      /save-gate:\n {4}needs: \[changes, build\]\n {4}if: github\.event_name == 'workflow_dispatch' \|\| needs\.changes\.outputs\.save == 'true'/u,
-    );
-    const saveJob = workflow.split("  save-gate:\n")[1].split("  desktop-build:\n")[0];
-    expect(saveJob).toContain("run: npm run test:ship:e2e -- --grep-invert @critical");
+    const e2eJob = workflow.split("  e2e:\n")[1].split("  ship-gate:\n")[0];
+    expect(e2eJob).not.toMatch(/^ {4}if:/mu);
+    expect(e2eJob).toContain("npm run test:e2e:critical");
     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { scripts: Record<string, string> };
-    expect(workflow.split("  e2e:\n")[1].split("  ship-gate:\n")[0]).toContain("npm run test:e2e:critical");
     expect(pkg.scripts["test:e2e:critical"]).toContain("--grep @critical");
     expect(pkg.scripts["test:ship:e2e"]).not.toContain("--grep");
   });

@@ -192,8 +192,9 @@ const trinketDefinitions = [
 ];
 
 export const trinketLibrary = trinketDefinitions.map(({ entry }) => entry);
+const trinketDefinitionsById = new Map(trinketDefinitions.map((definition) => [definition.entry.id, definition]));
 
 /** The complete trigger and outcome, using the supplied balance values. */
 export function describeTrinket(id: string, effects: Partial<TrinketManifest>): string | null {
-  return trinketDefinitions.find(({ entry }) => entry.id === id)?.describe(effects) ?? null;
+  return trinketDefinitionsById.get(id)?.describe(effects) ?? null;
 }

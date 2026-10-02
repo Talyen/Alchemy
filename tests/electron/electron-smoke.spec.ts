@@ -1,6 +1,8 @@
 import { exerciseControllerOptions } from "../e2e/controller-options";
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
+import { BattlePage } from "../pages/battle-page";
 import { expect, test } from "@playwright/test";
 import type { ElectronApplication, Page } from "@playwright/test";
 import { getElectronMainWindow, launchElectronApp } from "./electron-helpers";
@@ -13,7 +15,7 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
   let window: Page;
 
   test.beforeEach(async () => {
-    electronApp = await launchElectronApp();
+    electronApp = await launchElectronApp({ packagedRenderer: true });
     window = await getElectronMainWindow(electronApp);
   });
 
@@ -26,45 +28,9 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
 
     const isDesktop = await window.evaluate(() => window.alchemyDesktop?.isDesktop === true);
     expect(isDesktop).toBe(true);
+    expect(window.url()).toMatch(/^alchemy:/);
 
     await new MenuPage(window).expectMainMenuAfterColdStart();
-    expect(errors).toEqual([]);
-  });
-
-  test("mapped controller keys navigate desktop Options", async () => {
-    const errors = failOnRuntimeErrors(window);
-    await new MenuPage(window).expectMainMenuAfterColdStart();
-    await electronApp!.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1280, 720));
-    await window.getByRole("button", { name: "Options", exact: true }).click();
-    await expect(window.getByRole("combobox", { name: "Display Mode" })).toBeVisible();
-    await expect(window.getByRole("slider", { name: "Background Particles", exact: true })).toBeInViewport();
-    await expect
-      .poll(() =>
-        window.locator(".game-page-scroll").evaluate((element) => element.scrollHeight - element.clientHeight),
-      )
-      .toBeLessThanOrEqual(1);
-    await window.getByRole("button", { name: "Back", exact: true }).click();
-    await exerciseControllerOptions(window);
-    expect(errors).toEqual([]);
-  });
-
-  test("writes and reads save data through the desktop bridge", async () => {
-    const errors = failOnRuntimeErrors(window);
-
-    const payload = JSON.stringify({ marker: "electron-save-test", lastSavedAt: 123 });
-    const wrote = await window.evaluate(async (data) => {
-      await window.alchemyDesktop?.clearSave();
-      return window.alchemyDesktop?.writeSave(data) ?? false;
-    }, payload);
-    expect(wrote).toBe(true);
-    const profile = await electronApp!.evaluate(({ app }) => app.getPath("userData"));
-    expect(path.basename(profile)).toMatch(/^alchemy-electron-test-/);
-    expect(fs.readFileSync(path.join(profile, "save.json"), "utf8")).toBe(payload);
-
-    const readBack = await window.evaluate(
-      async () => ((await window.alchemyDesktop?.listSaveCandidates()) ?? [])[0] ?? null,
-    );
-    expect(readBack).toBe(payload);
     expect(errors).toEqual([]);
   });
 
@@ -105,17 +71,6 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
       async () => (await window.alchemyDesktop?.listSaveCandidates("recovery")) ?? [],
     );
     expect(recoveryAfterClear).toEqual([]);
-    expect(errors).toEqual([]);
-  });
-
-  test("setDisplayMode resolves without error", async () => {
-    const errors = failOnRuntimeErrors(window);
-
-    await window.evaluate(async () => {
-      await window.alchemyDesktop?.setDisplayMode("windowed");
-      await window.alchemyDesktop?.setDisplayMode("borderless-fullscreen");
-    });
-
     expect(errors).toEqual([]);
   });
 
@@ -177,43 +132,6 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
     }
     expect(errors).toEqual([]);
   });
-
-  test("loadSave prefers cloud payload when divergence mock is active", async () => {
-    const errors = failOnRuntimeErrors(window);
-
-    const localPayload = JSON.stringify({ marker: "local", lastSavedAt: 0, saveSchemaVersion: 3 });
-    const cloudPayload = JSON.stringify({ marker: "cloud", lastSavedAt: 0, saveSchemaVersion: 3 });
-
-    await window.evaluate(
-      async ({ localPayload, cloudPayload }) => {
-        const desktop = window.alchemyDesktop;
-        if (!desktop) throw new Error("desktop bridge missing");
-
-        await desktop.clearSave();
-        await desktop.writeSave(localPayload);
-
-        const mockEl = document.createElement("div");
-        mockEl.id = "__steamCloudReadMock";
-        mockEl.setAttribute("data-payload", cloudPayload);
-        document.body.appendChild(mockEl);
-
-        const readLocal = (await desktop.listSaveCandidates())[0] ?? null;
-        const readCloud = await desktop.steamCloudRead?.();
-        (window as unknown as { __cloudMergeProbe: { local: string | null; cloud: string | null } }).__cloudMergeProbe =
-          { local: readLocal, cloud: readCloud ?? null };
-
-        mockEl.remove();
-      },
-      { localPayload, cloudPayload },
-    );
-
-    const probe = await window.evaluate(
-      () => (window as unknown as { __cloudMergeProbe: { local: string; cloud: string } }).__cloudMergeProbe,
-    );
-    expect(probe.local).toBe(localPayload);
-    expect(probe.cloud).toBe(cloudPayload);
-    expect(errors).toEqual([]);
-  });
 });
 
 test("mapped controller keys navigate the packaged desktop renderer", desktop, async () => {
@@ -223,9 +141,54 @@ test("mapped controller keys navigate the packaged desktop renderer", desktop, a
     const errors = failOnRuntimeErrors(page);
     await new MenuPage(page).expectMainMenuAfterColdStart();
     expect(page.url()).toMatch(/^alchemy:\/\//);
+    await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1280, 720));
+    await page.getByRole("button", { name: "Options", exact: true }).click();
+    await expect(page.getByRole("combobox", { name: "Display Mode" })).toBeVisible();
+    await expect(page.getByRole("slider", { name: "Background Particles", exact: true })).toBeInViewport();
+    await page.getByRole("button", { name: "Back", exact: true }).click();
     await exerciseControllerOptions(page);
     expect(errors).toEqual([]);
   } finally {
     await application.close();
+  }
+});
+
+test("a played desktop run survives closing and relaunching the packaged UI", desktop, async () => {
+  const profile = fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-electron-test-"));
+  let application: ElectronApplication | undefined;
+  try {
+    application = await launchElectronApp({ packagedRenderer: true, profile });
+    let page = await getElectronMainWindow(application);
+    const errors = failOnRuntimeErrors(page);
+    const menu = new MenuPage(page);
+    await menu.expectMainMenuAfterColdStart();
+    await menu.openGameModeSelect();
+    await page.getByRole("button", { name: "The Campaign", exact: true }).click();
+    await menu.selectCharacterAndContinue("Knight");
+    const battle = new BattlePage(page);
+    await battle.waitForOpeningHand();
+    await battle.playFirstCard();
+    await battle.endTurn();
+    const savePath = path.join(profile, "save.json");
+    const readBattle = () => JSON.parse(fs.readFileSync(savePath, "utf8")).activeRun?.activeCombat?.battleState;
+    await expect.poll(() => (fs.existsSync(savePath) ? readBattle()?.turn : null)).toBe(2);
+    const acknowledged = readBattle();
+    expect(acknowledged.hand.length).toBeGreaterThan(0);
+    expect(errors).toEqual([]);
+    await application.close();
+    application = undefined;
+    application = await launchElectronApp({ packagedRenderer: true, profile });
+    page = await getElectronMainWindow(application);
+    const restoredErrors = failOnRuntimeErrors(page);
+    const restored = new BattlePage(page);
+    await expect(restored.endTurnBtn).toBeEnabled();
+    await expect.poll(() => restored.playerHealth()).toBe(acknowledged.playerHealth);
+    await expect.poll(() => restored.enemyHealth()).toBe(acknowledged.enemyHealth);
+    await expect(restored.hand).toHaveCount(acknowledged.hand.length);
+    expect(readBattle().turn).toBe(2);
+    expect(restoredErrors).toEqual([]);
+  } finally {
+    await application?.close();
+    fs.rmSync(profile, { recursive: true, force: true });
   }
 });

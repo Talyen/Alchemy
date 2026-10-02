@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { keywordPattern } from "@/features/alchemy/shared/config/keywords";
 import {
   canonicalizeKeywordText,
   tokenizeDescription,
@@ -7,6 +8,41 @@ import {
 } from "@/features/alchemy/shared/utils/string";
 
 describe("tokenizeDescription", () => {
+  it("reuses keyword parsing while keeping callers' parts independent", () => {
+    const line = "Cache regression: Gain 37 Block.";
+    const matchAll = vi.spyOn(keywordPattern, Symbol.matchAll);
+    try {
+      const first = tokenizeDescription(line);
+      const expected = first.map((part) => ({ ...part }));
+      first[0]!.text = "changed";
+      first.find((part) => part.keywordId)!.keywordId = "burn";
+      first.pop();
+
+      expect(tokenizeDescription(line)).toEqual(expected);
+      expect(canonicalizeKeywordText(line)).toBe(line);
+      expect(matchAll).toHaveBeenCalledOnce();
+    } finally {
+      matchAll.mockRestore();
+    }
+  });
+
+  it("evicts old numeric variants and leaves oversized descriptions uncached", () => {
+    const line = "Eviction regression: Gain 999 Block.";
+    const oversized = "Long description ".repeat(128) + "Gain 7 Block.";
+    const matchAll = vi.spyOn(keywordPattern, Symbol.matchAll);
+    try {
+      const expected = tokenizeDescription(line);
+      for (let amount = 0; amount < 512; amount++) tokenizeDescription(`Cache churn: Gain ${amount} Block.`);
+      expect(tokenizeDescription(line)).toEqual(expected);
+      expect(matchAll.mock.calls.filter(([text]) => text === line)).toHaveLength(2);
+
+      expect(tokenizeDescription(oversized)).toEqual(tokenizeDescription(oversized));
+      expect(matchAll.mock.calls.filter(([text]) => text === oversized)).toHaveLength(2);
+    } finally {
+      matchAll.mockRestore();
+    }
+  });
+
   it("returns a plain text part for a sentence with no keywords", () => {
     const result = tokenizeDescription("Just some text");
     expect(result).toEqual([{ text: "Just some text" }]);

@@ -21,6 +21,42 @@ export const CONTEXT_TASKS = {
     entrypoints: ["src/lib/battle/card-play.ts", "src/lib/battle/effect-handlers"],
     fixture: "src/lib/battle/card-play.ts",
   },
+  "battle-classification": {
+    narrows: "battle",
+    matches: /^(?:src|tests)\/lib\/battle\/card-classification(?:\.test)?\.ts$/u,
+    docs: [
+      owner("Docs/GAME_RULES.md", "State, turns, and randomness"),
+      owner("Docs/GAME_RULES.md", "Card classification"),
+    ],
+    entrypoints: ["src/lib/battle/card-classification.ts"],
+    fixture: "src/lib/battle/card-classification.ts",
+  },
+  "battle-damage": {
+    narrows: "battle",
+    matches:
+      /^(?:src|tests)\/lib\/battle\/(?:damage-calc|player-damage-base|player-damage-multipliers|damage-modifiers|scaled-damage)(?:\.test)?\.ts$/u,
+    docs: [
+      owner("Docs/GAME_RULES.md", "State, turns, and randomness"),
+      owner("Docs/GAME_RULES.md", "Hit resolution and pacing"),
+    ],
+    entrypoints: ["src/lib/battle/damage-calc.ts", "src/lib/battle/damage-modifiers.ts"],
+    fixture: "src/lib/battle/damage-calc.ts",
+  },
+  "battle-end-turn": {
+    narrows: "battle",
+    matches:
+      /^(?:(?:src|tests)\/lib\/battle\/(?:enemy-turn|player-turn-transition)\.|(?:src|tests)\/features\/alchemy\/run-loop\/battle\/end-turn-ui\.)/u,
+    docs: [
+      owner("Docs/GAME_RULES.md", "State, turns, and randomness"),
+      owner("Docs/GAME_RULES.md", "Turn order and resources"),
+      owner("Docs/RUN_STATE.md", "Committed battle playback"),
+    ],
+    entrypoints: [
+      "src/lib/battle/enemy-turn.ts",
+      "src/lib/battle/player-turn-transition.ts",
+      "src/features/alchemy/run-loop/battle/end-turn-ui.ts",
+    ],
+  },
   "battle-controller": {
     matches:
       /(?:run-loop\/battle\/|shell\/(?:use-battle-controller|use-alchemy-run-controller|use-run-flow-engine|run-flow-engine|route-commands)|screen-routes\/(?:battle-screen-route|use-battle-screen-route-data))/u,
@@ -99,6 +135,37 @@ export const CONTEXT_TASKS = {
     matches: /^(?:(?:src|tests)\/lib\/audio\/|src\/lib\/game-constants\/audio\.ts$)/u,
     docs: [owner("Docs/AUDIO.md", null)],
     entrypoints: ["src/lib/audio/index.ts", "src/lib/audio/sound-registry.ts"],
+  },
+  "audio-sfx": {
+    narrows: "audio",
+    matches: /^(?:src|tests)\/lib\/audio\/sfx(?:-player|\.dom)?\./u,
+    docs: [
+      owner("Docs/AUDIO.md", "Shared playback rules"),
+      owner("Docs/AUDIO.md", "Sound effect lifecycle"),
+      owner("Docs/AUDIO.md", "Loading and registration"),
+      owner("Docs/AUDIO.md", "Change checklist"),
+    ],
+    entrypoints: ["src/lib/audio/index.ts", "src/lib/audio/sfx.ts", "src/lib/audio/sfx-player.ts"],
+  },
+  "audio-music": {
+    narrows: "audio",
+    matches: /^(?:src|tests)\/lib\/audio\/music(?:[^/]*\.test)?\./u,
+    docs: [
+      owner("Docs/AUDIO.md", "Shared playback rules"),
+      owner("Docs/AUDIO.md", "Music lifecycle"),
+      owner("Docs/AUDIO.md", "Change checklist"),
+    ],
+    entrypoints: ["src/lib/audio/index.ts", "src/lib/audio/music.ts", "src/lib/audio/volume.ts"],
+  },
+  "audio-preload": {
+    narrows: "audio",
+    matches: /^(?:src|tests)\/lib\/audio\/(?:preload(?:\.dom)?|sound-registry)\./u,
+    docs: [
+      owner("Docs/AUDIO.md", "Shared playback rules"),
+      owner("Docs/AUDIO.md", "Loading and registration"),
+      owner("Docs/AUDIO.md", "Change checklist"),
+    ],
+    entrypoints: ["src/lib/audio/index.ts", "src/lib/audio/preload.ts", "src/lib/audio/sound-registry.ts"],
   },
   tooltip: {
     matches: /(?:tooltip|card-description|keyword-text)/u,
@@ -199,6 +266,20 @@ export const CONTEXT_TASKS = {
     ],
     fixture: "src/features/alchemy/shared/stores/run-session-command.ts",
   },
+  "run-command": {
+    narrows: "run-state",
+    matches:
+      /(?:^src\/features\/alchemy\/shared\/stores\/run-session-command\.ts$|^tests\/features\/alchemy\/shared\/stores\/run-session-command\.test\.ts$)/u,
+    docs: [
+      owner("Docs/RUN_STATE.md", "Command atomicity"),
+      owner("Docs/RUN_STATE.md", "Post-commit behavior"),
+      owner("Docs/RUN_WORKFLOWS.md", "Gameplay command boundary"),
+    ],
+    entrypoints: [
+      "src/features/alchemy/shared/stores/run-session-command.ts",
+      "src/features/alchemy/shared/stores/run-session-write-port.ts",
+    ],
+  },
   "run-persistence": {
     matches: /(?:\/storage\/|\/save-schemas\/|run-resume|run-session-lifecycle|run-lifecycle)/u,
     docs: [owner("Docs/RUN_STATE.md", "Persistence API")],
@@ -268,10 +349,24 @@ export const CONTEXT_TASKS = {
     docs: [
       owner("CONTRIBUTING.md", "Test value and coverage strategy"),
       owner("tests/e2e/README.md", "Choosing browser coverage"),
-      owner("tests/e2e/README.md", "Running focused checks"),
+      owner("tests/e2e/README.md", "Local execution policy"),
       owner("tests/e2e/README.md", "Navigation and bootstrap"),
     ],
     entrypoints: ["tests/playwright-shared.ts", "tests/e2e/README.md"],
+  },
+  "browser-fixture": {
+    narrows: "browser",
+    matches:
+      /^tests\/(?:pages\/|fixtures\/e2e\.ts$|e2e\/(?:cards|save-injection|layout-assertions|controller-input)\.ts$)/u,
+    docs: [
+      owner("tests/e2e/README.md", "Choosing browser coverage"),
+      owner("tests/e2e/README.md", "Local execution policy"),
+      owner("tests/e2e/README.md", "Test import"),
+      owner("tests/e2e/README.md", "Navigation and bootstrap"),
+      owner("tests/e2e/README.md", "Fixtures and diagnostics"),
+    ],
+    entrypoints: ["tests/fixtures/e2e.ts", "tests/e2e/save-injection.ts", "tests/pages/battle-page.ts"],
+    fixture: "tests/e2e/save-injection.ts",
   },
   tooling: {
     matches: /^(?:scripts\/|tests\/scripts\/|\.agents\/)/u,
@@ -280,20 +375,20 @@ export const CONTEXT_TASKS = {
   },
   verification: {
     matches:
-      /^(?:scripts\/(?:check|verify-changed|lib\/(?:change-routes|changed-paths|run-step|verification-cache|test-commands))\.mjs|tests\/scripts\/(?:check|verify-changed|verification-cache)\.test\.ts)$/u,
+      /^(?:scripts\/(?:check|verify-changed|lib\/run-step|lib\/verification\/(?:change-routes|changed-paths|verification-cache|test-commands))\.mjs|tests\/scripts\/(?:check|verify-changed|verification-cache)\.test\.ts)$/u,
     docs: [owner("CONTRIBUTING.md", "What to run when you change…")],
     entrypoints: ["scripts/check.mjs", "scripts/verify-changed.mjs", "scripts/lib/verification/change-routes.mjs"],
     fixture: "scripts/check.mjs",
   },
   "verification-tooling": {
     matches:
-      /^scripts\/(?:check|verify-changed|lib\/(?:change-routes|changed-paths|run-step|verification-cache|test-commands))\.mjs$/u,
+      /^scripts\/(?:check|verify-changed|lib\/run-step|lib\/verification\/(?:change-routes|changed-paths|verification-cache|test-commands))\.mjs$/u,
     docs: [owner("scripts/VERIFICATION.md", "Checks / verification (nesting order)")],
     entrypoints: ["scripts/check.mjs"],
   },
   discovery: {
     matches:
-      /^(?:scripts\/(?:agent-(?:context|search|eval)|measure-agent-context|context-hotspots|lib\/agent-(?:context|discovery|events))\.mjs|tests\/scripts\/agent-(?:context|discovery|eval)\.test\.ts)$/u,
+      /^(?:scripts\/(?:agent-(?:context|search|eval)|measure-agent-context|context-hotspots|lib\/agent\/agent-(?:context|discovery|events))\.mjs|tests\/scripts\/agent-(?:context|discovery|eval)\.test\.ts)$/u,
     docs: [owner("Docs/AGENT_DISCOVERY.md", "Agent discovery")],
     entrypoints: ["scripts/lib/agent/agent-context.mjs"],
   },
@@ -313,14 +408,24 @@ export function selectContext(paths, task) {
   }
   if (task && !Object.hasOwn(CONTEXT_TASKS, task))
     throw new Error(`Unknown task: ${task}. Choose ${Object.keys(CONTEXT_TASKS).join(", ")}`);
-  const selected = Object.entries(CONTEXT_TASKS).filter(
+  const matched = Object.entries(CONTEXT_TASKS).filter(
     ([id, entry]) => id === task || paths.some((file) => entry.matches.test(file)),
+  );
+  // A focused owner replaces its parent only when it covers every matching path.
+  // Mixed work and explicit broad requests retain the complete parent contract.
+  const selected = matched.filter(
+    ([id, entry]) =>
+      id === task ||
+      !matched.some(([, child]) => child.narrows === id) ||
+      paths
+        .filter((file) => entry.matches.test(file))
+        .some((file) => !matched.some(([, child]) => child.narrows === id && child.matches.test(file))),
   );
   const docs = selected.flatMap(([, entry]) => entry.docs);
   if (selected.some(([id]) => id.startsWith("save-"))) docs.unshift(...CONTEXT_TASKS.save.docs);
   for (const route of plan.routes) {
     if (FALLBACK_DOC_ROUTES.has(route.id)) docs.push(...route.docs);
-    if (route.id === "browser-test" && !selected.some(([id]) => id === "browser"))
+    if (route.id === "browser-test" && !selected.some(([id, entry]) => id === "browser" || entry.narrows === "browser"))
       docs.push(...CONTEXT_TASKS.browser.docs);
     if (route.id === "tooling") docs.push(...CONTEXT_TASKS.tooling.docs);
     if (route.id === "assets") docs.push(...assetCommon);
@@ -336,11 +441,17 @@ export function selectContext(paths, task) {
     selected.some(([id]) => id.startsWith("assets")) || plan.routes.some((route) => route.id === "assets");
   const saveWork = selected.some(([id]) => id.startsWith("save")) || plan.routes.some((route) => route.id === "save");
   const runStateWork = selected.some(([id]) => id === "run-state");
+  const audioWork = selected.some(([id]) => id.startsWith("audio"));
   const pointers = Object.entries(CONTEXT_TASKS)
     .filter(
       ([id]) =>
         ((assetWork && id.startsWith("assets-")) ||
           (saveWork && id.startsWith("save-")) ||
+          (audioWork && id.startsWith("audio-")) ||
+          (selected.some(([id]) => id.startsWith("battle")) && id === "battle-end-turn") ||
+          (selected.some(([id]) => id.startsWith("battle")) &&
+            ["battle-damage", "battle-classification"].includes(id)) ||
+          (selected.some(([id]) => id.startsWith("browser")) && id === "browser-fixture") ||
           (runStateWork && ["run-persistence", "run-ports", "run-randomness", "run-setup"].includes(id))) &&
         !selected.some(([selectedId]) => selectedId === id),
     )

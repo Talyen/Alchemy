@@ -1,9 +1,11 @@
 import fs from "node:fs";
+import { randomUUID } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   CONTEXT_OUTPUT_BYTES,
+  main,
   parseContextArgs,
   renderContext,
   renderSourceOutline,
@@ -25,6 +27,122 @@ import {
 } from "../../scripts/lib/agent/markdown-sections.mjs";
 
 describe("agent discovery", () => {
+  it("finds implementation guidance for helpers in their current directories", () => {
+    for (const file of ["change-routes", "changed-paths", "verification-cache", "test-commands"]) {
+      const selected = selectContext([`scripts/lib/verification/${file}.mjs`]);
+      expect(selected.tasks, file).toContain("verification");
+      expect(selected.tasks, file).toContain("verification-tooling");
+      expect(selected.docs, file).toContainEqual({
+        path: "scripts/VERIFICATION.md",
+        heading: "Checks / verification (nesting order)",
+      });
+    }
+    for (const file of ["agent-context", "agent-discovery", "agent-events"]) {
+      const selected = selectContext([`scripts/lib/agent/${file}.mjs`]);
+      expect(selected.tasks, file).toContain("discovery");
+      expect(selected.docs, file).toContainEqual({ path: "Docs/AGENT_DISCOVERY.md", heading: "Agent discovery" });
+    }
+  });
+
+  it("locates owners without exposing prose, recording reads, or suppressing later content", () => {
+    const session = `locate-${randomUUID()}`;
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.stubEnv("ALCHEMY_AGENT_SESSION", session);
+    try {
+      expect(main(["--task", "audio-music", "--locate", "--json", "--session", session])).toBe(0);
+      const locations = JSON.parse(log.mock.calls.at(-1)?.[0] ?? "{}");
+      expect(locations.sections).toEqual([]);
+      expect(locations.locations).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: "Docs/AUDIO.md",
+            heading: "Music lifecycle",
+            start: expect.any(Number),
+            end: expect.any(Number),
+          }),
+        ]),
+      );
+      expect(locations.deferredSections).toEqual([]);
+      const events = fs
+        .readFileSync(`reports/agent-evals/${session}/events.jsonl`, "utf8")
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line));
+      expect(events).toEqual([expect.objectContaining({ kind: "discovery", operation: "locate", truncated: false })]);
+      expect(main(["--task", "audio-music", "--json", "--session", session])).toBe(0);
+      const content = JSON.parse(log.mock.calls.at(-1)?.[0] ?? "{}");
+      expect(content.omittedUnchanged).toBe(0);
+      expect(content.sections.some((section: { text: string }) => section.text.includes("pending destination"))).toBe(
+        true,
+      );
+      expect(main(["--task", "audio-music", "--json", "--session", session])).toBe(0);
+      expect(JSON.parse(log.mock.calls.at(-1)?.[0] ?? "{}").omittedUnchanged).toBe(content.sections.length);
+    } finally {
+      log.mockRestore();
+      vi.unstubAllEnvs();
+      fs.rmSync(`reports/agent-context/${session}.json`, { force: true });
+      fs.rmSync(`reports/agent-evals/${session}`, { force: true, recursive: true });
+    }
+  });
+
+  it("bounds location-only output without substituting previews for unread prose", () => {
+    const sections = Array.from({ length: 100 }, (_, index) => ({
+      path: "guide.md",
+      heading: `Contract ${index}`,
+      start: index + 1,
+      end: index + 1,
+      text: "DO NOT EMIT",
+    }));
+    const rendered = renderContext({ tasks: [], docs: [], entrypoints: [], plan: { commands: [] } }, sections, 2000, {
+      locate: true,
+    });
+    expect(Buffer.byteLength(rendered.text)).toBeLessThanOrEqual(2000);
+    expect(rendered.text).not.toContain("DO NOT EMIT");
+    expect(rendered.text).not.toContain("Overview:");
+    expect(rendered.included).toEqual([]);
+    expect(rendered.located.length).toBeGreaterThan(0);
+    expect(rendered.located.length).toBeLessThan(sections.length);
+    expect(() => parseContextArgs(["--locate", "--outline", "owner.ts"])).toThrow("Outline mode");
+    expect(() => parseContextArgs(["--locate", "--json", "--full"])).toThrow("Choose --locate");
+  });
+
+  it("narrows runtime concerns while retaining shared contracts and verification selection", () => {
+    for (const [file, task, heading, sharedRule] of [
+      ["src/lib/audio/music.ts", "audio-music", "Music lifecycle", "active audible host"],
+      ["src/lib/audio/sfx-player.ts", "audio-sfx", "Sound effect lifecycle", "non-fatal"],
+      ["src/lib/audio/preload.ts", "audio-preload", "Loading and registration", "percents"],
+      ["src/lib/battle/enemy-turn.ts", "battle-end-turn", "State, turns, and randomness", "Math.round"],
+      [
+        "src/features/alchemy/shared/stores/run-session-command.ts",
+        "run-command",
+        "Command atomicity",
+        "returning `false`",
+      ],
+    ]) {
+      const selected = selectContext([file]);
+      expect(selected.tasks).toContain(task);
+      expect(selected.docs.some((doc) => doc.heading === heading)).toBe(true);
+      const rendered = renderContext(selected, contextSections(process.cwd(), selected));
+      expect(rendered.text).toContain(sharedRule);
+      expect(rendered.text).not.toContain("Deferred section:");
+      expect(selected.plan).toEqual(resolveRoutePlan([file]));
+    }
+    const music = selectContext(["src/lib/audio/music.ts"]);
+    expect(music.tasks).not.toContain("audio");
+    expect(renderContext(music, contextSections(process.cwd(), music)).text).not.toContain("Cooldown reservations");
+    expect(selectContext(["src/lib/audio/music.ts"], "audio").docs).toContainEqual({
+      path: "Docs/AUDIO.md",
+      heading: null,
+    });
+    expect(selectContext(["src/lib/audio/music.ts", "src/lib/audio/host.ts"]).tasks).toContain("audio");
+    expect(selectContext(["src/lib/battle/enemy-turn.ts", "src/lib/battle/card-play.ts"]).tasks).toContain("battle");
+    const mixed = selectContext(["src/lib/audio/music.ts", "src/features/alchemy/shared/storage/io.ts"]);
+    expect(mixed.docs.some((doc) => doc.heading === "Public save contract")).toBe(true);
+    expect(mixed.plan).toEqual(
+      resolveRoutePlan(["src/lib/audio/music.ts", "src/features/alchemy/shared/storage/io.ts"]),
+    );
+  });
+
   it("fits ports and save guidance without losing source coordinates", () => {
     for (const task of ["run-ports", "save", "save-load", "save-write", "save-delete", "save-compatibility"]) {
       const selection = selectContext([], task);
@@ -200,9 +318,10 @@ describe("agent discovery", () => {
     const battle = selectContext(["src/lib/battle/damage-calc.ts"]);
     const text = renderContext(battle, contextSections(process.cwd(), battle)).text;
     expect(text).not.toContain("Screen transition:");
-    expect(text).toContain("BATTLE_CONTROLLERS.md");
+    expect(text).toContain("Hit resolution and pacing");
     const controller = selectContext(["src/features/alchemy/shell/use-battle-controller.ts"]);
     expect(controller.tasks).toContain("battle-controller");
+    expect(controller.docs.some((doc) => doc.path === "Docs/BATTLE_CONTROLLERS.md")).toBe(true);
     const affix = selectContext(["src/lib/gear/ordinary-affixes.ts"]);
     expect(renderContext(affix, contextSections(process.cwd(), affix)).text).not.toContain("Depth counts locations");
   });
@@ -275,7 +394,7 @@ describe("agent discovery", () => {
     );
     for (const heading of [
       "Overlay lifecycle",
-      "Run state",
+      "Command atomicity",
       "Public save contract",
       "Agent discovery",
       "Add or replace sound",
@@ -393,5 +512,63 @@ describe("agent discovery", () => {
     expect(() => parseContextArgs(["--task"])).toThrow("requires a value");
     expect(() => parseContextArgs(["--symbol", "Button"])).toThrow("requires --outline");
     expect(() => selectContext([], "made-up")).toThrow("Unknown task");
+  });
+});
+
+it("narrows damage and browser-fixture operations without hiding mixed work or changing test selection", () => {
+  for (const [file, task, parent, rules] of [
+    ["src/lib/battle/damage-calc.ts", "battle-damage", "battle", ["Math.round", "world", "Damage outcomes"]],
+    [
+      "tests/e2e/save-injection.ts",
+      "browser-fixture",
+      "browser",
+      ["explicit user request", "runtimeErrors", "fresh page"],
+    ],
+  ] as const) {
+    const focused = selectContext([file]);
+    expect(focused.tasks).toContain(task);
+    expect(focused.tasks).not.toContain(parent);
+    expect(focused.plan).toEqual(resolveRoutePlan([file]));
+    const rendered = renderContext(focused, contextSections(process.cwd(), focused));
+    for (const rule of rules) expect(rendered.text).toContain(rule);
+    expect(rendered.text).not.toContain("Deferred section:");
+    const broad = selectContext([file], parent);
+    expect(broad.tasks).toContain(parent);
+    expect(Buffer.byteLength(rendered.text)).toBeLessThan(
+      Buffer.byteLength(renderContext(broad, contextSections(process.cwd(), broad)).text),
+    );
+  }
+  expect(selectContext(["src/lib/battle/damage-calc.ts", "src/lib/battle/card-play.ts"]).tasks).toContain("battle");
+  expect(selectContext(["tests/e2e/save-injection.ts", "tests/e2e/specs/save-persistence.spec.ts"]).tasks).toContain(
+    "browser",
+  );
+  expect(selectContext(["tests/fixtures/rng.ts"]).tasks).not.toContain("browser-fixture");
+});
+
+describe("focused classification and browser context", () => {
+  it("keeps classification rules and safety owners while retaining broad context for mixed work", () => {
+    const file = "src/lib/battle/card-classification.ts";
+    const selection = selectContext([file]);
+    expect(selection.tasks).toContain("battle-classification");
+    expect(selection.tasks).not.toContain("battle");
+    const rendered = renderContext(selection, contextSections(process.cwd(), selection));
+    expect(rendered.text).toContain("tags alone do not make a card an attack");
+    expect(rendered.text).toContain("Math.round");
+    expect(rendered.text).toContain("world");
+    expect(selection.plan).toEqual(resolveRoutePlan([file]));
+    for (const broad of [selectContext([file], "battle"), selectContext([file, "src/lib/battle/card-play.ts"])]) {
+      expect(broad.tasks).toContain("battle");
+      expect(renderContext(broad, contextSections(process.cwd(), broad)).text).toContain("Damage outcomes");
+    }
+  });
+
+  it("retains browser execution policy with a pointer to manual commands", () => {
+    const selection = selectContext(["tests/e2e/specs/menu-navigation.spec.ts"]);
+    const rendered = renderContext(selection, contextSections(process.cwd(), selection));
+    expect(rendered.text).toContain("explicit user request");
+    expect(rendered.text).toContain("#browser-and-electron-commands");
+    expect(rendered.text).toContain("withSavedGame");
+    expect(rendered.text).not.toContain("PLAYWRIGHT_BROWSER_PREVIEW_PORT=4273");
+    expect(selection.plan).toEqual(resolveRoutePlan(["tests/e2e/specs/menu-navigation.spec.ts"]));
   });
 });

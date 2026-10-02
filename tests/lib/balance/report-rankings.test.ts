@@ -29,14 +29,32 @@ describe("paired delta noise", () => {
   });
 
   it("combines scenario sufficient statistics like concatenated series", () => {
-    const first = pairedWinStats(Uint8Array.from([1, 0]), Uint8Array.from([1, 1]));
-    const second = pairedWinStats(Uint8Array.from([1, 1]), Uint8Array.from([0, 1]));
+    const first = pairedWinStats(
+      Uint8Array.from([1, 0]),
+      Uint8Array.from([1, 1]),
+      Uint16Array.from([2, 8]),
+      Uint16Array.from([3, 6]),
+    );
+    const second = pairedWinStats(
+      Uint8Array.from([1, 1]),
+      Uint8Array.from([0, 1]),
+      Uint16Array.from([4, 5]),
+      Uint16Array.from([7, 5]),
+    );
+    const original = structuredClone([first, second]);
     const combined = makePairedDelta("combined", combinePairedWinStats([first, second]));
     const concatenated = makePairedDelta(
       "combined",
-      pairedWinStats(Uint8Array.from([1, 0, 1, 1]), Uint8Array.from([1, 1, 0, 1])),
+      pairedWinStats(
+        Uint8Array.from([1, 0, 1, 1]),
+        Uint8Array.from([1, 1, 0, 1]),
+        Uint16Array.from([2, 8, 4, 5]),
+        Uint16Array.from([3, 6, 7, 5]),
+      ),
     );
     expect(combined).toEqual(concatenated);
+    expect(combined.turnSe).toBeGreaterThan(0);
+    expect([first, second]).toEqual(original);
   });
 
   it("marks empty and one-sample comparisons as insufficient", () => {

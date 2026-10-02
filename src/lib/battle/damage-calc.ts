@@ -15,10 +15,10 @@ import { getEnemyDamageMultiplier, getEnemyTraitDamageMultiplier } from "./statu
 import { hasEncounterBenefit, reduceEnemyArmor, setFlag, type BattleState } from "./types";
 export { forgeAppliesToDamageType } from "./player-damage-base";
 
-function applyCrit(damage: number, state: BattleState) {
+function applyCrit(damage: number, state: BattleState, guaranteed = false) {
   const chance =
     GLOBAL_CRIT_CHANCE_PERCENT + (state.deathsDoorActive ? state.gearEffects.criticalChanceWhileDeathsDoor : 0);
-  const critical = readCombatFlag(state, "nextHitCrit") || rollPercent(chance, getBattleRng(state));
+  const critical = guaranteed || readCombatFlag(state, "nextHitCrit") || rollPercent(chance, getBattleRng(state));
   return {
     damage:
       critical && damage > 0 ? damage * CRIT_MULTIPLIER + (state.talentEffects.homesteadCriticalDamage ?? 0) : damage,
@@ -84,19 +84,26 @@ export function computeReflectedHolyDamageToEnemy(state: BattleState, blockLost:
   return applyBlockAbsorption(state, damage);
 }
 
-const ENCOUNTER_FIRST_HIT_BY_DAMAGE_TYPE = {
+const ENCOUNTER_FIRST_HIT_BY_DAMAGE_TYPE: Partial<
+  Record<
+    DamageType,
+    {
+      id: "heavy-hand" | "consecrated" | "wildheart";
+      flag: "encounterPhysicalUsed" | "encounterHolyUsed" | "encounterNatureUsed";
+    }
+  >
+> = {
   physical: { id: "heavy-hand", flag: "encounterPhysicalUsed" },
   holy: { id: "consecrated", flag: "encounterHolyUsed" },
   nature: { id: "wildheart", flag: "encounterNatureUsed" },
-} as const;
+};
 
 function resolveEncounterFirstHit(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   playedCard: boolean,
 ): { state: BattleState; multiplier: number } {
-  const firstAttack =
-    ENCOUNTER_FIRST_HIT_BY_DAMAGE_TYPE[effect.damageType as keyof typeof ENCOUNTER_FIRST_HIT_BY_DAMAGE_TYPE] ?? null;
+  const firstAttack = ENCOUNTER_FIRST_HIT_BY_DAMAGE_TYPE[effect.damageType];
   if (
     playedCard &&
     firstAttack &&
@@ -176,15 +183,11 @@ export function computeCardDamageToEnemy(
     context?.origin !== "companion" &&
     state.talentEffects.archeryCritOnCrowdControl &&
     state.flags.hawkEyeReady;
-  const criticalResult =
-    context?.guaranteedCrit || physicalCritReady || hawkEyeCritReady
-      ? {
-          damage:
-            repeatedDamage * CRIT_MULTIPLIER +
-            (repeatedDamage > 0 ? (stateAfterFirst.talentEffects.homesteadCriticalDamage ?? 0) : 0),
-          critical: repeatedDamage > 0,
-        }
-      : applyCrit(repeatedDamage, stateAfterFirst);
+  const criticalResult = applyCrit(
+    repeatedDamage,
+    stateAfterFirst,
+    context?.guaranteedCrit === true || physicalCritReady || hawkEyeCritReady,
+  );
   const kingbreaker = effect.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0;
   const finalDamage = Math.round(
     criticalResult.damage + (kingbreaker ? state.enemyMitigation.armor * (context?.damageMultiplier ?? 1) : 0),

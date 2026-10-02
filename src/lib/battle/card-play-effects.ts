@@ -1,3 +1,4 @@
+import { rollBattleChance } from "./chance-roll";
 import { readCombatFlag } from "./action-context";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { prepareTalentCardPlay } from "./talent-card-play";
@@ -11,7 +12,6 @@ import { processCompanionTurnStart } from "./companion";
 import { applyArmorReward, applyBlockReward } from "./status-player";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
-import { rollTalentChance } from "./status-helpers";
 import { cardHasKeyword, isNatureCard } from "./card-classification";
 import { WISH_TRINKET_FORK_PERCENT } from "../game-constants";
 
@@ -29,6 +29,7 @@ export function applyMortarAndPestlePotionUse(state: BattleState, card: BattleCa
 }
 
 export interface CardEffectChainOptions {
+  eligibility?: BattleState;
   playedCard?: boolean;
   guaranteedCrit?: boolean;
   damageEffects?: NonNullable<CardEffectResolutionContext["damageEffects"]>;
@@ -51,8 +52,13 @@ export function resolveCardEffectChain(
   attackAttempted: boolean;
   attackBonuses: NonNullable<CardEffectResolutionContext["attackBonuses"]>;
 } {
+  state = resolvePendingBattleReactions(state, combatTexts);
+  if (isPlayerDefeated(state)) {
+    return { state, attackAttempted: false, attackBonuses: { flat: 0, physical: 0, bleed: 0 } };
+  }
   const talentPlay = prepareTalentCardPlay(state, card, combatTexts, {
     countsAsPlayedCard: options.playedCard === true,
+    ...(options.eligibility ? { eligibility: options.eligibility } : {}),
   });
   const reacted = resolvePendingBattleReactions(talentPlay.state, combatTexts);
   const damageEffects = options.damageEffects ?? [];
@@ -82,10 +88,11 @@ export function shouldElementalTalentRepeat(state: BattleState, card: BattleCard
     (cardHasKeyword(card, "stun") ? state.talentEffects.stunCardPlayTwiceChance : 0) +
     (cardHasKeyword(card, "wish") ? state.talentEffects.wishCardPlayTwiceChance : 0);
 
-  return rollTalentChance(Math.min(100, chance), state);
+  return rollBattleChance(Math.min(100, chance), state);
 }
 
 interface PaidCardEffectsOptions {
+  eligibility: BattleState;
   playTwice: boolean;
   guaranteedCrit: boolean;
   damageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]>;
@@ -99,6 +106,7 @@ export function resolvePaidCardEffects(
   card: BattleCard,
   combatTexts: CombatTextEvent[],
   {
+    eligibility,
     playTwice,
     guaranteedCrit,
     damageEffects,
@@ -112,14 +120,15 @@ export function resolvePaidCardEffects(
   repeatAttackAttempted: boolean;
 } {
   const chained = resolveCardEffectChain(state, card, combatTexts, {
+    eligibility,
     playedCard: true,
     guaranteedCrit,
     damageEffects,
     manaAtStart,
     enemyFreezeSkipTurnsAtStart,
-    // Play-twice resolves both damage copies before talent rewards so
-    // companion/nature triggers fire once after the full play.
-    skipTalentRewards: playTwice,
+    // Paid plays use the conditions captured before payment reactions.
+    // Resolve both copies before paying companion/nature rewards once.
+    skipTalentRewards: true,
   });
   let nextState = chained.state;
 
@@ -134,8 +143,9 @@ export function resolvePaidCardEffects(
       enemyFreezeSkipTurnsAtStart: nextState.enemyCC.freezeSkipTurns,
     });
     nextState = applyMortarAndPestlePotionUse(nextState, card, combatTexts);
-    nextState = applyCardPlayTalentRewards(nextState, card, combatTexts, hadNoThornsOnPlay);
   }
+
+  nextState = applyCardPlayTalentRewards(nextState, card, combatTexts, hadNoThornsOnPlay);
 
   nextState = applyTwinCasting(nextState, card, combatTexts);
 
@@ -146,7 +156,7 @@ export function resolvePaidCardEffects(
   };
 }
 
-function applyTwinCasting(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]): BattleState {
+export function applyTwinCasting(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]): BattleState {
   if (isPlayerDefeated(state) || state.gearEffects.elementalTwinCasting <= 0) return state;
 
   const hasBurn = cardHasKeyword(card, "burn");

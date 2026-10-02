@@ -2,6 +2,12 @@
 
 ## Supported baseline
 
+Battle snapshots include `pendingCardBleedLeechHealing`, the explicit-card subset
+of queued Bleed Leech. It defaults to zero and cannot exceed the total queued
+Leech. New snapshots preserve that attribution through ticks, detonations, and
+resume so Deep Siphon applies only to card-origin Leech. This additive field does
+not change the save version.
+
 There are currently no historical player saves that must be preserved. Remove code
 that exists only to retain obsolete saved mechanics rather than maintaining parallel
 rulesets. Resumed battles must use current rules; restart or exit an incompatible
@@ -19,16 +25,16 @@ Game build identity is distinct from schema and content versions. Ordinary compa
 
 ## When to increment
 
-Increment the schema version for structural or meaning changes that require a supported payload transformation. Do not bump for safe additive defaults. Content versions are reserved for content ID/meaning remaps, not ordinary balance tuning. The baseline removes historical transforms; `migration/index.ts` retains raw-version readers and future protection. Add only transformations for supported formats when those become necessary.
+Increment the schema version for structural or meaning changes that require a supported payload transformation. Do not bump for safe additive defaults. Content versions are reserved for content ID/meaning remaps, not ordinary balance tuning. The baseline removes below-floor historical transforms; `migration/index.ts` owns the supported version 19-to-20 transformation, raw-version readers, and future protection. Add only transformations for supported formats.
 
 ## Required pattern (automated)
 
 1. Decide whether a compatible default or supported transformation is required.
 2. Change version metadata only as required; never advance the supported floor casually.
 3. For a supported transformation, (re)introduce an ordered migration table covering every increment and apply it before current-shape validation. Update schema and hydration defaults together.
-4. Change the save shape, its codec, its fixtures, and `RUN_PROFILE_SAVE_KEYS` together: the run-profile key list is an explicit tuple with a compile-time completeness check, so adding a `PermanentProgressFields` member fails the build until the save contract is updated deliberately.
+4. Change the save shape, its owning codec, defaults, and fixtures together. For run-profile fields, also update `RUN_PROFILE_SAVE_KEYS`: this explicit tuple has a compile-time completeness check, so adding a `PermanentProgressFields` member fails the build until that key list is updated. Other domains keep their own codec field selections.
 5. Add previous-version fixtures to `tests/fixtures/current-saves.ts` when supported versions diverge. Preserve playable state and progression, not just field presence. The migration contract test checks every supported increment. The version 19 Mystery fixture exercises the version 20 offer migration; gear/currency coverage lives in the `gear-save` / `save-data-schema` suites.
-6. Run the changed-path gate, which selects the full save/persistence suite.
+6. Run relevant save/persistence unit suites with `npm run test:full -- <test-paths>` and the [task-scoped gate](../../../../../CONTRIBUTING.md#what-to-run-when-you-change). The opt-in full verifier selects the complete save/persistence suite; the default local gate does not.
 
 ## Test expectations
 
@@ -44,7 +50,9 @@ Choose the intended new-player default. Safe additive fields retain that default
 
 Preserve valid current-run card effects, descriptions, and explicit Consume overrides together under the [supported baseline](#supported-baseline). Incomplete card content recovers from the live catalog. Gear/loadout ownership cleanup, native enemy Trait refresh, current catalog filtering, and safe manifest defaults remain current-data repair, not historical migrations. Stored Unique affix rolls are dropped at normalization in favor of the canonical catalog affixes; pre-release material renames (gems to crystal, then crystal to gems) and additions (stone, hide) resolve through schema defaults, not aliases or migrations. Persisted battle scalars and collections repair field-by-field to battle defaults, while enemy identity and display data come from the live catalog. A battle block without any card piles or a known enemy is a fragment, not a fight, and drops the combat session instead of fabricating one; the run remains playable and load reports a battle-repair warning. Battle telemetry is runtime-only and is never persisted.
 
-Reworked Talents may retain their IDs, while current run restoration rebinds derived manifests from purchased IDs and Homestead effects. Remove retired manifest keys and their gameplay branches instead of preserving legacy battle behavior. Use defaults for compatible additions and retire incompatible development snapshots when required. Shop state adds `freeRefreshUsed` with a false default and field-by-field hydration for older saves; refresh affordability, RNG, and visit limits follow the [shop workflow](../../../../../Docs/WORKFLOWS.md#change-a-shop). The additive `hawkEyeReady`, `archeryCardsPlayedThisTurn`, `archerySecondCardActive`, `firstBurnCardFreeUsed`, and `nextPhysicalCrit` battle flags default safely, normalize to their declared boolean/number types, and persist across turns and resume. Hawk Eye and Riposte readiness are never reconstructed from existing status or Dodge state, and new opening draws/rewards are never replayed during normalization. All new flags reset with a new battle.
+Reworked Talents may retain their IDs, while current run restoration rebinds derived manifests from purchased IDs and Homestead effects. Remove retired manifest keys and their gameplay branches instead of preserving legacy battle behavior. Use defaults for compatible additions and retire incompatible development snapshots when required. Shop state adds `freeRefreshUsed` with a false default and field-by-field hydration for older saves; refresh affordability, RNG, and visit limits follow the [shop workflow](../../../../../Docs/WORKFLOWS.md#change-a-shop).
+
+Battle flags default safely, normalize to their declared boolean/number types, and preserve their current values on resume. Their turn/combat/until-consumed lifetimes are owned by [combat-flags.ts](../../../../../src/lib/battle/combat-flags.ts): Archery sequence flags reset each player turn, while Hawk Eye and Riposte readiness survive until consumed and the first-Burn-free allowance lasts for the combat. Never reconstruct readiness from existing status or Dodge state, or replay opening draws/rewards during normalization. New battles initialize fresh flags.
 
 ## Run recap tracking
 
@@ -135,7 +143,7 @@ Dev builds also accept `?wipeLocalSave=1` (exact value) to clear local candidate
 
 ## Load order
 
-Candidate compatibility/freshness checks → current-shape validation → normalization → hydration → restore. If supported versions ever diverge, migration steps execute after compatibility checks and before validation. `SaveDataSchema` is a load-tolerant shape validator; raw-version acceptance belongs to candidate evaluation and must occur first. Test-only direct parsing is not the compatibility gate. Repair happens in two layers with distinct owners: schema load-repair (`SaveDataSchema` transform) runs inside candidate evaluation, then codec hydrate-repair (`hydrateAlchemyPersistenceFields` in `storage/persistence.ts` plus the run-profile codec) runs at restore; candidate evaluation only hydrates the active-run deck via `toActiveRunData`.
+Candidate compatibility/freshness prefilter → supported migrations → current-shape validation and normalization → winner selection → active-run card hydration → codec hydration and restore. Version 19 Mystery offers migrate to version 20 before validation; below-floor and future formats never enter that transformation. `SaveDataSchema` is a load-tolerant shape validator; raw-version acceptance belongs to candidate evaluation and must occur first. Test-only direct parsing is not the compatibility gate. Repair happens in two layers with distinct owners: schema load-repair (`SaveDataSchema` transform) runs inside candidate evaluation, then codec hydrate-repair (`hydrateAlchemyPersistenceFields` in `storage/persistence.ts` plus the run-profile codec) runs at restore; after winner selection, `toActiveRunData` hydrates its run deck, draft choices, Card/Alchemist shop cards, Mystery cards, and Corruption pair. Battle piles hydrate later through `initializeActiveBattle`; candidate evaluation does not publish gameplay state.
 
 ## Implementation rules
 
@@ -144,6 +152,7 @@ Candidate compatibility/freshness checks → current-shape validation → normal
 - Card validation and hydration treat saved effects and descriptions as one content unit. `BattleCardSchema` returns an empty effect list if any effect fails validation, including nested effects; missing or malformed lists likewise become empty. `hydrateCard` preserves both saved lists only when both are usable, without comparing their lengths against the current catalog. Otherwise it restores both from the library and clears saved `corrupted`, `baseTitle`, and `corruptedValuePositions`. Valid saved cost, UID, and explicit Consume overrides survive; title, art, and catalog metadata refresh from the library. The empty-list recovery signal survives normalization and JSON round trips without extra saved fields.
 - The same card validator covers active-run card locations and saved battle deck, hand, discard, exhausted, Wish options, and Wish queue, including pending battle result states. Battle card hydration occurs when `initializeActiveBattle` restores the session; other card locations hydrate through `toActiveRunData`. Complete valid saved modifications survive even when their effect count differs from current content. Incomplete content recovery may reset card modifications, but requires no schema bump because the persisted shape and valid values retain their meanings.
 - Card arrays keep valid entries when a sibling card is malformed, with a developer-facing repair warning for each dropped position. Missing or non-array run decks still invalidate the run. Shop and Alchemist purchase keys follow surviving cards to their new slots. A Wish prompt emptied by malformed or removed cards advances to the next nonempty queued choice, or closes when none remains, so resumed combat stays playable.
+- Battle normalization repairs invalid Mana to zero and enforces the current minimum of one Mana Crystal. Valid unspent Mana and overflow above the crystal count survive resume.
 - The `SaveLoadStatus` shape has five variants: `ok`, `unavailable`, `unsupported-newer-schema`, `unsupported-newer-content`, and `corrupt`. These are internal diagnostics; none blocks play or opens a save-problem screen. The `ok` variant may carry developer-facing `warnings` (repair notes such as dropped card content); these never gate loads and are not shown to players.
 
 ## Four-tier Homestead

@@ -19,6 +19,11 @@ const modifiedCard: BattleCard = {
 };
 
 describe("saved card content restoration", () => {
+  it("treats inherited object keys as unknown cards during hydration", () => {
+    const invalid = BattleCardSchema.parse({ id: "toString" });
+    expect(hydrateCard(invalid)).toBe(invalid);
+  });
+
   it("does not add catalog Consume to a complete reusable saved Roll the Dice", () => {
     const legacy: BattleCard = {
       ...cardById["roll-the-dice"]!,
@@ -212,7 +217,13 @@ describe("cloneBattleCard", () => {
         {
           kind: "chance",
           probability: 0.5,
-          successEffects: [{ kind: "damage", damageType: "physical", amount: 4 }],
+          successEffects: [
+            {
+              kind: "repeat-over-turns",
+              remainingTurns: 1,
+              effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
+            },
+          ],
           failureEffects: [{ kind: "gain-gold", amount: 3 }],
         },
       ],
@@ -229,5 +240,16 @@ describe("cloneBattleCard", () => {
     }
     expect(cloneChance.successEffects).not.toBe(sourceChance.successEffects);
     expect(cloneChance.failureEffects).not.toBe(sourceChance.failureEffects);
+    const cloneRepeat = cloneChance.successEffects[0];
+    const sourceRepeat = sourceChance.successEffects[0];
+    if (cloneRepeat?.kind !== "repeat-over-turns" || sourceRepeat?.kind !== "repeat-over-turns") {
+      throw new Error("Expected repeated effects");
+    }
+    expect(cloneRepeat).not.toBe(sourceRepeat);
+    expect(cloneRepeat.effects).not.toBe(sourceRepeat.effects);
+    const cloneDamage = cloneRepeat.effects[0];
+    if (cloneDamage?.kind !== "damage") throw new Error("Expected damage effect");
+    cloneDamage.amount = 99;
+    expect(sourceRepeat.effects[0]).toEqual({ kind: "damage", damageType: "physical", amount: 4 });
   });
 });

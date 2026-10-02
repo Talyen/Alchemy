@@ -104,7 +104,8 @@ describe("screen-specific run data hooks", () => {
     expect(result.current).not.toHaveProperty("shopState");
   });
 
-  it("preserves selective subscriptions for a screen", () => {
+  it("preserves selective subscriptions for an active screen", () => {
+    setRunSession({ activity: { kind: "shop", data: emptyShopState() } });
     let renders = 0;
     renderHook(() => {
       renders += 1;
@@ -117,15 +118,29 @@ describe("screen-specific run data hooks", () => {
 
     expect(renders).toBe(1);
   });
-  it("holds the outgoing shelf while navigation commits a different activity", () => {
+  it("holds the outgoing shelf without tracking later writes, then reads a fresh visit", () => {
     setRunProgress({ gold: 42 });
     setRunSession({ hasActiveRun: true, activity: { kind: "shop", data: emptyShopState() } });
-    const { result } = renderHook(() => useShopScreenData());
+    let renders = 0;
+    const { result } = renderHook(() => {
+      renders += 1;
+      return useShopScreenData();
+    });
     act(() => dispatchRunSessionCommand((draft) => setShopState(draft, { ...emptyShopState(), refreshesLeft: 0 })));
     const outgoing = result.current;
     act(() => dispatchRunSessionCommand((draft) => prepareRunNavigation(draft, "destination")));
     expect(readRunSession().activity).toEqual({ kind: "destination" });
     expect(result.current).toBe(outgoing);
     expect(result.current.shopState.refreshesLeft).toBe(0);
+    const inactiveRenders = renders;
+    act(() => setRunProgress({ gold: 99 }));
+    expect(result.current).toBe(outgoing);
+    expect(result.current.gold).toBe(42);
+    expect(renders).toBe(inactiveRenders);
+
+    act(() => dispatchRunSessionCommand((draft) => setShopState(draft, emptyShopState())));
+    expect(result.current).not.toBe(outgoing);
+    expect(result.current.shopState.refreshesLeft).toBe(emptyShopState().refreshesLeft);
+    expect(result.current.gold).toBe(99);
   });
 });

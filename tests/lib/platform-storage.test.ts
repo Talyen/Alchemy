@@ -135,6 +135,27 @@ describe("platform save backend", () => {
     expect(desktop.steamCloudWrite).toHaveBeenCalledWith("new-recovery", "recovery");
   });
 
+  it("does not mirror a primary save when the local write fails", async () => {
+    const desktop = installDesktopApi({ overrides: { writeSave: vi.fn().mockResolvedValue(false) } });
+    await expect(createDesktopSaveBackend({ cloudSyncEnabled: true }).write(SAVE_KEY, "payload")).resolves.toEqual({
+      ok: false,
+      error: expect.any(Error),
+    });
+    expect(desktop.steamCloudWrite).not.toHaveBeenCalled();
+  });
+
+  it("keeps a successful local save when Cloud rejects", async () => {
+    installDesktopApi({ overrides: { steamCloudWrite: vi.fn().mockRejectedValue(new Error("Cloud offline")) } });
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      await expect(createDesktopSaveBackend({ cloudSyncEnabled: true }).write(SAVE_KEY, "payload")).resolves.toEqual({
+        ok: true,
+      });
+    } finally {
+      warning.mockRestore();
+    }
+  });
+
   it("writes desktop local before cloud and treats cloud failure as non-fatal", async () => {
     const order: string[] = [];
     installDesktopApi({
@@ -230,6 +251,73 @@ describe("platform save backend", () => {
     expect(backend.writeSync("ignored", "payload")).toBeNull();
     await expect(backend.clear("ignored")).resolves.toEqual({ ok: false, error: expect.anything() });
   });
+
+  it("resolves demo initialization methods against the current desktop API", async () => {
+    const backend = createPlatformSaveBackend();
+    await expect(backend.readDemoImportSource?.()).resolves.toEqual({
+      initialized: true,
+      fullSaveExists: false,
+      readFailed: false,
+      candidates: [],
+    });
+    await expect(backend.completeDemoInitialization?.()).resolves.toBe(false);
+    const source = { initialized: false, fullSaveExists: false, readFailed: false, candidates: ["demo"] };
+    installDesktopApi({
+      overrides: {
+        readDemoImportSource: vi.fn().mockResolvedValue(source),
+        completeDemoInitialization: vi.fn().mockResolvedValue(true),
+      },
+    });
+    await expect(backend.readDemoImportSource?.()).resolves.toEqual(source);
+    await expect(backend.completeDemoInitialization?.()).resolves.toBe(true);
+  });
+
+  it("selects the active backend per operation after creation", async () => {
+    const backend = createPlatformSaveBackend();
+    await backend.write(SAVE_KEY, "browser");
+    const desktop = installDesktopApi({ saveCandidates: ["desktop"] });
+    await expect(backend.readCandidates(SAVE_KEY)).resolves.toEqual({ ok: true, candidates: ["desktop"] });
+    await backend.write(SAVE_KEY, "desktop-update");
+    expect(desktop.writeSave).toHaveBeenCalledWith("desktop-update", undefined);
+    window.alchemyDesktop = undefined;
+    await expect(backend.readCandidates(SAVE_KEY)).resolves.toEqual({ ok: true, candidates: ["browser"] });
+  });
+
+  it.each(["write", "clear"] as const)("returns a desktop %s rejection as a failure result", async (operation) => {
+    const error = new Error("IPC failed");
+    installDesktopApi({
+      overrides: {
+        writeSave: vi.fn().mockRejectedValue(error),
+        clearSave: vi.fn().mockRejectedValue(error),
+      },
+    });
+    const backend = createDesktopSaveBackend();
+    const result = operation === "write" ? backend.write(SAVE_KEY, "payload") : backend.clear(SAVE_KEY);
+    await expect(result).resolves.toEqual({ ok: false, error });
+  });
+
+  it.each(["read", "write", "clear"] as const)(
+    "returns a browser %s exception as a failure result",
+    async (operation) => {
+      const error = new Error("Storage access denied");
+      const fail = () => {
+        throw error;
+      };
+      Object.defineProperty(window, "localStorage", {
+        value: { getItem: fail, setItem: fail, removeItem: fail },
+        configurable: true,
+      });
+      const backend = createBrowserSaveBackend();
+      const result =
+        operation === "read"
+          ? backend.readCandidates(SAVE_KEY)
+          : operation === "write"
+            ? backend.write(SAVE_KEY, "payload")
+            : backend.clear(SAVE_KEY);
+      await expect(result).resolves.toEqual({ ok: false, error });
+      if (operation === "write") expect(backend.writeSync(SAVE_KEY, "payload")).toEqual({ ok: false, error });
+    },
+  );
 
   it("reports browser storage failure instead of throwing without browser globals", async () => {
     vi.stubGlobal("window", undefined);

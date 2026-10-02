@@ -143,6 +143,29 @@ describe("useArmoryOrdering", () => {
     ]);
   });
 
+  it("preserves a sort committed in the same batch as a filter change", () => {
+    const { result } = renderHook(() =>
+      useArmoryOrdering({
+        characterId: "knight",
+        selectedSlot: "main-hand",
+        pickerItems: [swordBasic1, hatchetBasic, swordAstral, swordUnique],
+        ownedTrinkets: [],
+      }),
+    );
+    act(() => {
+      result.current.onSort("name-desc");
+      result.current.setFilters({ ...DEFAULT_ARMORY_INVENTORY_FILTERS, search: "hatchet" });
+    });
+    expect(result.current.pagedGear.map((item) => item.instanceId)).toEqual(["hatchet-b1"]);
+    act(() => result.current.setFilters(DEFAULT_ARMORY_INVENTORY_FILTERS));
+    expect(result.current.orderedGear.map((item) => item.instanceId)).toEqual([
+      "sword-unique",
+      "sword-b1",
+      "hatchet-b1",
+      "sword-astral",
+    ]);
+  });
+
   it("remembers criteria and filtered pages by hero/slot and clamps after crafting", () => {
     const items: GearInstance[] = Array.from({ length: 14 }, (_, index) => ({
       ...swordBasic1,

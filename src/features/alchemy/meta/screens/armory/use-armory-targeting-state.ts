@@ -12,6 +12,17 @@ type TargetingState =
 
 const IDLE: TargetingState = { kind: "idle" };
 
+function matchesSalvagePreview(preview: GearInstance, current: GearInstance | undefined): boolean {
+  return (
+    current !== undefined &&
+    current.definitionId === preview.definitionId &&
+    current.affixes.length === preview.affixes.length &&
+    current.affixes.every(
+      (affix, index) => affix.id === preview.affixes[index]?.id && affix.value === preview.affixes[index]?.value,
+    )
+  );
+}
+
 export function useArmoryTargetingState({
   editable,
   craftingCurrencies,
@@ -52,7 +63,8 @@ export function useArmoryTargetingState({
     targeting.kind !== "idle" &&
     (!editable ||
       (activeCurrencyId !== null && craftingCurrencies[activeCurrencyId] <= 0) ||
-      (salvagePending !== null && !inventoryById.has(salvagePending.instance.instanceId)))
+      (salvagePending !== null &&
+        !matchesSalvagePreview(salvagePending.instance, inventoryById.get(salvagePending.instance.instanceId))))
   ) {
     setTargeting(IDLE);
   }

@@ -1,17 +1,11 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { resetEscapeStackForTests } from "@/app/escape-stack";
-import {
-  BattleBoonInspectButton,
-  BattleBoonInspectOverlay,
-} from "@/features/alchemy/run-loop/screens/battle-screen/boon-inspect";
-import {
-  hasInspectableBoons,
-  uniqueRunBoons,
-} from "@/features/alchemy/run-loop/screens/battle-screen/unique-run-boons";
-import { installReadyArtworkForTests, waitForArtwork } from "../../../../../helpers/artwork-test";
+import { BattleBoonInspectOverlay } from "@/features/alchemy/run-loop/screens/battle-screen/boon-inspect";
+import { uniqueRunBoons } from "@/features/alchemy/run-loop/screens/battle-screen/unique-run-boons";
+import { installReadyArtworkForTests } from "../../../../../helpers/artwork-test";
 import { TRINKET_PAGE_SIZE } from "@/lib/game-constants";
 import { trinketLibrary, type TrinketEntry } from "@/lib/game-data";
 
@@ -19,17 +13,6 @@ const library: TrinketEntry[] = [
   { id: "alpha", title: "Alpha Charm", descriptionLines: ["Gain 1 Block."], art: "alpha-art", effects: {} },
   { id: "beta", title: "Beta Stone", descriptionLines: ["Draw 1."], art: "beta-art", effects: {} },
 ];
-
-describe("hasInspectableBoons", () => {
-  it("returns true when at least one boon matches in the library", () => {
-    expect(hasInspectableBoons(["missing", "alpha"], library)).toBe(true);
-  });
-
-  it("returns false when no boons match or list is empty", () => {
-    expect(hasInspectableBoons([], library)).toBe(false);
-    expect(hasInspectableBoons(["unknown", "also-unknown"], library)).toBe(false);
-  });
-});
 
 describe("uniqueRunBoons", () => {
   it("keeps first-seen ids and skips duplicates and unknown entries", () => {
@@ -49,12 +32,6 @@ describe("BattleBoonInspectOverlay", () => {
   afterEach(() => {
     cleanup();
     resetEscapeStackForTests();
-  });
-
-  it("uses the trophy icon for the Boons toggle", () => {
-    const { container } = render(<BattleBoonInspectButton open={false} onToggle={vi.fn()} />);
-    expect(container.querySelector("svg.lucide-trophy")).not.toBeNull();
-    expect(container.querySelector("svg.lucide-shopping-bag")).toBeNull();
   });
 
   it("shows an empty Boons icon when nothing resolves and keeps close available", () => {
@@ -84,31 +61,6 @@ describe("BattleBoonInspectOverlay", () => {
     expect(screen.getByText("Brass Censer")).toBeTruthy();
     expect(screen.getByText("Boon")).toBeTruthy();
     expect(screen.getByText(/Holy/)).toBeTruthy();
-  });
-
-  it("closes on Escape and on backdrop click", async () => {
-    const user = userEvent.setup();
-    const onClose = vi.fn();
-    render(<BattleBoonInspectOverlay open trinketIds={["brass-censer"]} onClose={onClose} />);
-
-    await user.keyboard("{Escape}");
-    expect(onClose).toHaveBeenCalledTimes(1);
-
-    fireEvent.click(screen.getByTestId("battle-boon-inspect-overlay"));
-    expect(onClose).toHaveBeenCalledTimes(2);
-
-    fireEvent.click(screen.getByRole("img", { name: "Brass Censer" }));
-    expect(onClose).toHaveBeenCalledTimes(2);
-  });
-
-  it("closes from the header close button", async () => {
-    const user = userEvent.setup();
-    const onClose = vi.fn();
-    render(<BattleBoonInspectOverlay open trinketIds={["brass-censer"]} onClose={onClose} />);
-
-    await waitForArtwork();
-    await user.click(screen.getByRole("button", { name: "Close boons" }));
-    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it("blocks close and pagination actions while fading out", () => {

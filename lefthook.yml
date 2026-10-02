@@ -13,6 +13,6 @@ commit-msg:
 pre-push:
   commands:
     push-gate:
-      # check is the canonical source-aware completion gate.
+      # check is the bounded local gate; CI owns full validation.
       run: npm run check -- --pre-push
       use_stdin: true

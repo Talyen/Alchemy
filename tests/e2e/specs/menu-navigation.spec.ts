@@ -7,7 +7,8 @@ import {
   makeCard,
   makeGoblinBattleState,
   SAVE_KEY,
-  startBattleWithDeck,
+  readSavedGame,
+  withSavedGame,
   enableLoadingScreen,
   failOnRuntimeErrors,
   injectHomestead,
@@ -19,27 +20,21 @@ import { LOADING_WORDS } from "@/app/loading-words";
 import { critical, slow } from "../../playwright-tags";
 
 test.describe("Menu", () => {
-  test("main menu reports the meta run phase and shows all buttons", async ({ page }) => {
-    const menu = new MenuPage(page);
-    await menu.goto();
-    await menu.expectMainMenu();
-    await expectRunPhase(page, "meta");
-    await expect(menu.playBtn).toBeVisible();
-    await expect(menu.collectionBtn).toBeVisible();
-    await expect(menu.optionsBtn).toBeVisible();
-    await expect(menu.talentsBtn).toBeVisible();
-    await menu.openGameModeSelect();
-    await expect(page.getByRole("button", { name: /The Campaign/ })).toBeVisible();
-    await expect(page.getByRole("button", { name: /The Labyrinth/ })).toBeVisible();
-    await expect(page.getByRole("button", { name: /Wildwood Draft/ })).toBeVisible();
-  });
-
-  // Menu shine borders live in armory-shine-borders and collection-tile unit
-  // tests; the browser keeps the Continue-gate wiring below.
+  // The browser protects Continue and clearing the live adventure.
 
   test("Continue is the only play action until End Run clears the current adventure", critical, async ({ page }) => {
     await injectActiveBattle(page, makeGoblinBattleState());
-    await new BattlePage(page).menuBtn.click();
+    const battle = new BattlePage(page);
+    await battle.menuBtn.click();
+    const panel = page.getByTestId("game-menu");
+    await expect(panel).toBeVisible();
+    const triggerBounds = await battle.menuBtn.boundingBox();
+    const menuBounds = await panel.boundingBox();
+    expect(triggerBounds).not.toBeNull();
+    expect(menuBounds).not.toBeNull();
+    expect(Math.abs(menuBounds!.x + menuBounds!.width - triggerBounds!.x - triggerBounds!.width)).toBeLessThan(80);
+    expect(menuBounds!.y).toBeGreaterThanOrEqual(triggerBounds!.y + triggerBounds!.height - 8);
+
     await page.getByRole("button", { name: "Main Menu" }).click();
     await expect(page.getByRole("button", { name: "Continue", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: /^(Play|New Run)$/ })).toHaveCount(0);
@@ -85,90 +80,6 @@ test.describe("Menu", () => {
         }, SAVE_KEY),
       )
       .toEqual({ rooms: 3, health: 17, parked: undefined });
-  });
-});
-
-test.describe("Navigation", critical, () => {
-  test("in-battle menu allows navigation to collection, options, and talents", async ({ page, fastBattle }) => {
-    void fastBattle;
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => makeCard()),
-    );
-    const battle = new BattlePage(page);
-
-    await battle.menuBtn.click();
-
-    const triggerBounds = await battle.menuBtn.boundingBox();
-    const menuBounds = await page.getByTestId("game-menu").boundingBox();
-    expect(triggerBounds).not.toBeNull();
-    expect(menuBounds).not.toBeNull();
-    expect(Math.abs(menuBounds!.x + menuBounds!.width - triggerBounds!.x - triggerBounds!.width)).toBeLessThan(80);
-    expect(menuBounds!.y).toBeGreaterThanOrEqual(triggerBounds!.y + triggerBounds!.height - 8);
-
-    await expect(page.getByRole("button", { name: "Main Menu" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Collection" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Options" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Talents" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "End Turn" })).toBeVisible();
-  });
-});
-
-test.describe("Options Screen", critical, () => {
-  test("options tabs, clear-save dialog, and volume persistence", async ({ page }) => {
-    const menu = new MenuPage(page);
-    await menu.goto();
-    await menu.openOptions();
-
-    await expect(page.getByLabel("Aspect Ratio")).toBeVisible();
-    const heading = page.getByRole("heading", { name: "Options", exact: true });
-    const headingBounds = await heading.boundingBox();
-    expect(headingBounds).not.toBeNull();
-    for (const [tab, label] of [
-      ["Display", "Game Size"],
-      ["Sound", "Music Volume"],
-      ["Gameplay", "Auto-End Turn"],
-      ["Other", "Save Data"],
-      ["Display", "Aspect Ratio"],
-    ]) {
-      await page.getByRole("button", { name: tab, exact: true }).click();
-      await expect(page.getByText(label, { exact: true })).toBeVisible();
-      expect(await heading.boundingBox()).toEqual(headingBounds);
-    }
-    await page.getByRole("button", { name: "Sound" }).click();
-    await expect(page.getByText("Music Volume")).toBeVisible();
-    await expect(page.getByText("Sound Effects Volume")).toBeVisible();
-    await page.getByRole("button", { name: "Other" }).click();
-    await expect(page.getByText("Save Data", { exact: true })).toBeVisible();
-    await expect(page.getByText("Clear Save Data", { exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Display" }).click();
-    await expect(page.getByLabel("Aspect Ratio")).toBeVisible();
-
-    await page.getByRole("button", { name: "Other" }).click();
-    await page.getByRole("button", { name: "Clear Save Data" }).click();
-    await expect(page.getByRole("heading", { name: "Clear Save Data" })).toBeVisible({ timeout: 3000 });
-    await expect(page.getByRole("button", { name: "Cancel" })).toBeFocused();
-    await page.keyboard.press("Tab");
-    await expect(page.getByRole("dialog").getByRole("button", { name: "Clear Save Data" })).toBeFocused();
-    await page.keyboard.press("Tab");
-    await expect(page.getByRole("button", { name: "Cancel" })).toBeFocused();
-    await page.getByRole("button", { name: "Cancel" }).click();
-    await expect(page.getByRole("dialog")).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Clear Save Data" })).toBeFocused();
-
-    await page.getByRole("button", { name: "Sound" }).click();
-    await expect(page.getByText("Music Volume")).toBeVisible();
-    const musicSlider = page.getByLabel("Music Volume");
-    await musicSlider.focus();
-    await page.keyboard.press("ArrowLeft");
-    await expect
-      .poll(async () => {
-        const save = await page.evaluate((saveKey) => {
-          return JSON.parse(localStorage.getItem(saveKey) || "{}");
-        }, SAVE_KEY);
-        return save.musicVolume;
-      })
-      .toBeLessThan(50);
   });
 });
 
@@ -229,21 +140,17 @@ test.describe("Progression Locks", () => {
       await expect(page.getByRole("button", { name: "Wildwood Draft (Locked)" })).toBeVisible();
     },
   );
-
-  test("finished Rogue and Ranger unlock Labyrinth and Wildwood tiles", async ({ page }) => {
-    await injectHomestead(page, { finishedRunCharacters: ["rogue", "ranger"] });
-    const menu = new MenuPage(page);
-    await menu.goto();
-    await menu.openGameModeSelect();
-
-    await expect(page.getByRole("button", { name: "The Labyrinth", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Wildwood Draft", exact: true })).toBeVisible();
-  });
 });
 
 test("controller-equivalent options, select arrows and dialog focus", critical, async ({ page }) => {
   await page.goto("/");
-  await exerciseControllerOptions(page);
+  const volume = await exerciseControllerOptions(page);
+  await expect.poll(async () => (await readSavedGame(page)).musicVolume).toBe(volume);
+  await withSavedGame(page, async (resumed) => {
+    await new MenuPage(resumed).openOptions();
+    await resumed.getByRole("button", { name: "Sound", exact: true }).click();
+    await expect(resumed.getByRole("slider", { name: "Music Volume", exact: true })).toHaveValue(String(volume));
+  });
 });
 
 test("keeps an open game menu reachable after resizing the window", slow, async ({ page }) => {

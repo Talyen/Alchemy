@@ -28,37 +28,35 @@ export function isStorageUnavailable(error: unknown): boolean {
   return error instanceof Error && error.message === STORAGE_UNAVAILABLE_MESSAGE;
 }
 
-/** Single guarded access path for browser localStorage. Never throws. */
-export function tryLocalStorageGetItem(key: string): LocalStorageReadResult {
+function withBrowserStorage<T extends { ok: true }>(
+  operation: (storage: Storage) => T,
+): T | { ok: false; error: unknown } {
   const storage = getBrowserStorage();
   if (!storage) return unavailableResult();
   try {
-    return { ok: true, value: storage.getItem(key) };
+    return operation(storage);
   } catch (error) {
     return { ok: false, error };
   }
+}
+
+/** Single guarded access path for browser localStorage. Never throws. */
+export function tryLocalStorageGetItem(key: string): LocalStorageReadResult {
+  return withBrowserStorage((storage) => ({ ok: true, value: storage.getItem(key) }));
 }
 
 /** Single guarded write path for browser localStorage. Never throws. */
 export function tryLocalStorageSetItem(key: string, value: string): LocalStorageWriteResult {
-  const storage = getBrowserStorage();
-  if (!storage) return unavailableResult();
-  try {
+  return withBrowserStorage((storage) => {
     storage.setItem(key, value);
     return { ok: true };
-  } catch (error) {
-    return { ok: false, error };
-  }
+  });
 }
 
 /** Single guarded removal path for browser localStorage. Never throws. */
 export function tryLocalStorageRemoveItem(key: string): LocalStorageWriteResult {
-  const storage = getBrowserStorage();
-  if (!storage) return unavailableResult();
-  try {
+  return withBrowserStorage((storage) => {
     storage.removeItem(key);
     return { ok: true };
-  } catch (error) {
-    return { ok: false, error };
-  }
+  });
 }

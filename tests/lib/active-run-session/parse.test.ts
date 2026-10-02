@@ -7,6 +7,14 @@ import { findMysteryEvent } from "@/lib/mystery";
 import { makeMinimalActiveRunInput, makeWildwoodDraft } from "../../fixtures/active-run";
 
 describe("parseActiveRun", () => {
+  it.each(["toString", "constructor", "__proto__"])(
+    "drops inherited catalog key %s instead of crashing resume",
+    (id) => {
+      const result = parseActiveRun(makeMinimalActiveRunInput({ runDeck: [cardById.slash!, { id }] }));
+      expect(result?.runDeck.map((card) => card.id)).toEqual(["slash"]);
+    },
+  );
+
   it.each(["campaign", "wildwood"])(
     "recovers incomplete card content across %s save locations",
     (contentSystemType) => {

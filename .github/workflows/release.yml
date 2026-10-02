@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
           sparse-checkout: |
@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
           sparse-checkout: |
@@ -61,7 +61,7 @@ jobs:
         if: always()
         run: node scripts/ci-summarize.mjs --vitest
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: failure()
         with:
           name: vitest-timings
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           sparse-checkout: |
             /*
@@ -96,7 +96,7 @@ jobs:
       - name: Smoke test production build
         run: npm run smoke:preview
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: dist
           path: dist/
@@ -105,7 +105,7 @@ jobs:
 
       - name: Retain build failure diagnostics
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: build-diagnostics-release-build
           path: |
@@ -127,7 +127,7 @@ jobs:
       matrix:
         shard: [1, 2, 3]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           sparse-checkout: |
             /*
@@ -135,7 +135,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: dist
           path: dist/
@@ -159,7 +159,7 @@ jobs:
 
       - name: Upload Playwright results
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: playwright-report-release-${{ matrix.shard }}-results
           path: reports/playwright-results.json
@@ -168,7 +168,7 @@ jobs:
 
       - name: Upload Playwright report
         if: failure() || steps.playwright-summary.outputs.retain-diagnostics == 'true'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: playwright-report-release-${{ matrix.shard }}
           path: |
@@ -187,13 +187,13 @@ jobs:
       ALCHEMY_EDITION: demo
       PLAYWRIGHT_VITE_MODE: preview
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: ./.github/actions/setup
       - uses: ./.github/actions/setup-playwright
       - run: npm run build
       - run: npm run check:bundle
       - run: npx playwright test tests/e2e/specs/steam-demo.spec.ts --project=chromium
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: failure()
         with:
           name: demo-e2e-diagnostics
@@ -210,14 +210,14 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
 
       - uses: ./.github/actions/setup
 
       - name: Cache Electron binary
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.cache/electron
@@ -266,7 +266,7 @@ jobs:
 
       - name: Retain verified release package
         id: package-upload
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: release-package-${{ github.ref_name }}-${{ github.run_attempt }}
           path: |
@@ -278,7 +278,7 @@ jobs:
 
       - name: Retain build failure diagnostics
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: build-diagnostics-release-package
           path: |
@@ -295,14 +295,14 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
 
       - uses: ./.github/actions/setup
 
       - name: Cache Electron binary
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.cache/electron
@@ -356,7 +356,7 @@ jobs:
 
       - name: Retain verified release package
         id: package-upload
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: release-package-demo-${{ github.ref_name }}-${{ github.run_attempt }}
           path: |
@@ -368,7 +368,7 @@ jobs:
 
       - name: Retain build failure diagnostics
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: build-diagnostics-release-package-demo
           path: |
@@ -403,19 +403,19 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: ./.github/actions/setup
 
       # The producer's ID remains valid when only this failed job is retried.
       - name: Download verified release package
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           artifact-ids: ${{ needs.package.outputs.artifact-id }}
           merge-multiple: true
           path: .
 
       - name: Download verified demo package
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           artifact-ids: ${{ needs.package-demo.outputs.artifact-id }}
           merge-multiple: true
@@ -423,7 +423,7 @@ jobs:
 
       # windows-latest does not ship SteamCMD; pin a known setup action by version tag.
       - name: Install SteamCMD
-        uses: CyberAndrii/setup-steamcmd@v1.3.0
+        uses: CyberAndrii/setup-steamcmd@afc45f145b95c175c3a3862d3ca84756537d48e8 # v1.3.0
 
       - name: Steam upload
         shell: bash

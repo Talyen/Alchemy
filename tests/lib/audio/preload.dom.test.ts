@@ -8,7 +8,7 @@ import {
   resetSoundPreloadCache,
 } from "@/lib/audio/preload";
 import { audioState } from "@/lib/audio/state";
-import { createdFakeAudio, soundedFakeAudio } from "../../helpers/fake-audio";
+import { createdFakeAudio, soundedFakeAudio, installFakeAudio } from "../../helpers/fake-audio";
 import { installCleanAudio } from "../../helpers/audio-fixture";
 
 beforeEach(() => {
@@ -55,12 +55,65 @@ describe("getSoundUrl", () => {
 });
 
 describe("preloadSounds", () => {
+  it("continues warming later sounds after an Audio constructor fails", () => {
+    const WorkingAudio = Audio;
+    let first = true;
+    vi.stubGlobal(
+      "Audio",
+      class extends WorkingAudio {
+        constructor() {
+          if (first) {
+            first = false;
+            throw new Error("temporary audio failure");
+          }
+          super();
+        }
+      },
+    );
+    expect(() => preloadSounds(["failed.ogg", "later.ogg"])).not.toThrow();
+    expect(soundedFakeAudio().map((element) => element.src)).toEqual([getSoundUrl("later.ogg")]);
+  });
+
+  it("releases a failed source assignment and continues warming later sounds", () => {
+    vi.useFakeTimers();
+    let failedElement: (typeof createdFakeAudio)[number] | undefined;
+    installFakeAudio({
+      onCreate: (element) => {
+        if (failedElement) return;
+        failedElement = element;
+        Object.defineProperty(element, "src", {
+          get: () => "",
+          set: () => {
+            throw new Error("source failure");
+          },
+        });
+      },
+    });
+    expect(() => preloadSounds(["failed-source.ogg", "later-source.ogg"])).not.toThrow();
+    expect(failedElement?.pause).toHaveBeenCalledOnce();
+    expect(failedElement?.load).toHaveBeenCalledOnce();
+    expect(soundedFakeAudio().map((element) => element.src)).toEqual([getSoundUrl("later-source.ogg")]);
+    expect(vi.getTimerCount()).toBe(1);
+    resetSoundPreloadCache();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it("warms each name via HTMLAudio preload", () => {
+    vi.useFakeTimers();
     preloadSounds(["a.ogg", "b.ogg"]);
     const warmed = createdFakeAudio.filter((el) => el.preload === "auto");
     expect(warmed).toHaveLength(2);
     expect(warmed[0]?.src).toContain("a.");
     expect(warmed[1]?.src).toContain("b.");
+    for (const element of warmed) {
+      const source = element.src;
+      element.oncanplaythrough?.();
+      expect(element.oncanplaythrough).toBeNull();
+      expect(element.onerror).toBeNull();
+      expect(element.src).toBe(source);
+      expect(element.load).not.toHaveBeenCalled();
+    }
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it("skips names already warming", () => {

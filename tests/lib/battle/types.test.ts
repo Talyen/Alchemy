@@ -5,6 +5,9 @@ import {
   addPlayerStatus,
   addEnemyStatus,
   setEnemyStatus,
+  setPlayerStatus,
+  gainMana,
+  resolvePlayerHealing,
   setFlag,
   clampHealth,
   applyPlayerHealing,
@@ -13,6 +16,70 @@ import {
 import type { PlayerStatusId, EnemyStatusId } from "@/lib/game-data";
 import { makeTestBattleState, patchBattleState } from "../../fixtures/battle";
 import { defaultCombatFlags } from "../../fixtures/default-battle-state";
+
+describe("unchanged battle writes", () => {
+  it("reuses state for unchanged status, flag, capped Mana and Health writes", () => {
+    const state = makeTestBattleState({ playerHealth: 30, playerMaxHealth: 30, mana: 3, maxMana: 3 });
+    expect(setPlayerStatus(state, "block", state.playerStatuses.block)).toBe(state);
+    expect(addPlayerStatus(state, "block", 0)).toBe(state);
+    expect(setEnemyStatus(state, "burn", state.enemyStatuses.burn)).toBe(state);
+    expect(writeCombatFlag(state, "nextHitCrit", state.flags.nextHitCrit)).toBe(state);
+    expect(gainMana(state, 2)).toBe(state);
+    expect(resolvePlayerHealing(state, 5)).toEqual({ state, effective: 5, restored: 0, overflow: 5 });
+    expect(resolvePlayerHealing(state, 5).state).toBe(state);
+    expect(gainMana(state, 2, true).mana).toBe(5);
+  });
+
+  it("repairs pending Bleed Leech credit even when Bleed itself is unchanged", () => {
+    const state = patchBattleState({ playerStatuses: { bleed: 2 }, pendingEnemyBleedLeechHealing: 5 });
+    const next = setPlayerStatus(state, "bleed", 2);
+    expect(next.pendingEnemyBleedLeechHealing).toBe(2);
+    expect(next.playerStatuses).toBe(state.playerStatuses);
+    expect(state.pendingEnemyBleedLeechHealing).toBe(5);
+    expect(setPlayerStatus(next, "bleed", 2)).toBe(next);
+  });
+
+  it("still converts healing overflow to Block at full Health", () => {
+    const state = patchBattleState({
+      playerHealth: 30,
+      playerMaxHealth: 30,
+      talentEffects: { overhealToBlockRatio: 0.5 },
+    });
+    const healing = resolvePlayerHealing(state, 10, true);
+    expect(healing.state.playerStatuses.block).toBe(state.playerStatuses.block + 5);
+    expect(healing.restored).toBe(0);
+    expect(healing.overflow).toBe(10);
+    expect(state.playerStatuses.block).toBe(0);
+  });
+
+  it("retains Block and Forge reactions when sharing unchanged state fields", () => {
+    const state = patchBattleState({
+      gearEffects: { flatBlockGained: 2, forgeReadiesPhysicalRepeat: 1 },
+      trinketEffects: { ironwoodBucklerThornsOnBlock: 3 },
+    });
+    const block = addPlayerStatus(state, "block", 1);
+    expect(block.playerStatuses.block).toBe(3);
+    expect(block.playerStatuses.thorns).toBe(3);
+    const forge = addPlayerStatus(state, "forge", 1);
+    expect(forge.uniqueGear.everkeenReady).toBe(true);
+    const moreForge = addPlayerStatus(forge, "forge", 1);
+    expect(moreForge.playerStatuses.forge).toBe(2);
+    expect(moreForge.uniqueGear).toBe(forge.uniqueGear);
+    expect(state.playerStatuses.block).toBe(0);
+    expect(state.uniqueGear.everkeenReady).toBe(false);
+  });
+
+  it("compares secondary flag writes after preserving the unspent card discount", () => {
+    const state = patchBattleState({ flags: { nextCardCostReduction: 2 } });
+    resolveSecondaryAction(state, "companion", (secondary) => {
+      expect(writeCombatFlag(secondary, "nextCardCostReduction", 0)).toBe(secondary);
+      const earned = writeCombatFlag(secondary, "nextCardCostReduction", 3);
+      expect(earned.flags.nextCardCostReduction).toBe(3);
+      expect(secondary.flags.nextCardCostReduction).toBe(2);
+      return earned;
+    });
+  });
+});
 
 describe("addPlayerStatus", () => {
   it("adds delta to the given player status", () => {

@@ -46,6 +46,7 @@
     "context": "node scripts/agent-context.mjs",
     "search": "node scripts/agent-search.mjs",
     "review:diff": "node scripts/agent-diff.mjs",
+    "review:status": "node scripts/agent-diff.mjs --status",
     "eval:agent": "node scripts/agent-eval.mjs",
     "measure:agent-context": "node scripts/measure-agent-context.mjs",
     "context:hotspots": "node scripts/context-hotspots.mjs",
@@ -74,7 +75,7 @@
     "steam:upload:dry-run": "cross-env STEAM_UPLOAD_DRY_RUN=1 node scripts/steam-upload.mjs",
     "clean": "node scripts/clean-dev-artifacts.mjs",
     "clean:all": "node scripts/clean-dev-artifacts.mjs --all",
-    "test": "node scripts/run-compact.mjs vitest run",
+    "test": "node scripts/run-local-tests.mjs",
     "test:watch": "vitest",
     "test:coverage": "node scripts/run-compact.mjs vitest run --coverage",
     "test:mutation": "stryker run",
@@ -122,7 +123,10 @@
     "release:hotfix": "node scripts/release.mjs --hotfix",
     "test:verbose": "vitest run",
     "test:e2e:verbose": "cross-env PLAYWRIGHT_VITE_MODE=preview playwright test --project=chromium",
-    "demo:playtest": "node scripts/play-demo.mjs"
+    "demo:playtest": "node scripts/play-demo.mjs",
+    "test:full": "node scripts/run-compact.mjs vitest run",
+    "check:full": "node scripts/check.mjs --full",
+    "verify:full": "node scripts/verify-changed.mjs --full"
   },
   "dependencies": {
     "@floating-ui/dom": "^1.8.0",

@@ -1,6 +1,7 @@
-# Pending showcase layout drafts
+# Archived showcase layout drafts
 
-These are review drafts, not replacements for the current in-game image.
+These proposals were awaiting review when created. The [selected user-supplied promo](../README.md)
+is now the shipping source; these drafts remain historical alternatives.
 The artwork is assembled from existing originals through clipping and positioning;
 no original source artwork is repainted. Hero head crops use per-portrait scaling
 so Warlock does not dominate the group.
@@ -14,14 +15,15 @@ Regenerate source HTML, count snapshot, and review PNGs with
 
 ## Source facts
 
-[counts.json](./counts.json) is loaded from the current runtime catalogs. It counts
+[counts.json](./counts.json) records the runtime catalogs when the renderer last ran. It counts
 cardLibrary, talentPool, uniqueItemList, trinketLibrary, and bossEnemies. The
 24-entry trinket catalog is also the shared effect source for run Boons; counts
 must not be added together to suggest 48 distinct entries.
 
-Current counts: 105 cards, 200 Talents, 29 Uniques, 24 Trinkets, and 7 bosses.
+Retained counts: 105 cards, 200 Talents, 29 Uniques, 24 Trinkets, and 7 bosses.
 Draft copy: 100+ Cards, 200+ Talents, 25+ Uniques, 20+ Trinkets. Each threshold
 means at least that quantity, not an inflated estimate or full-game-only count.
+Regenerate and verify live counts before reusing those claims.
 
 Campaign `rollFreshBossId` selects from the shared seven-boss catalog without
 filtering by act. Act 1 is not fixed to Blight Treant. The draft label Boss Battles

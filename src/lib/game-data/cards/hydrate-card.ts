@@ -14,7 +14,9 @@ function cloneEffect(effect: BattleCard["effects"][number]): BattleCard["effects
   if (effect.kind === "player-status" && effect.statusPool) {
     return { ...effect, statusPool: [...effect.statusPool] };
   }
-  return { ...mapEffectChildren(effect, cloneEffect) };
+  // Wrappers already own a fresh object and cloned branches; leaves still need a copy.
+  const mapped = mapEffectChildren(effect, cloneEffect);
+  return mapped === effect ? { ...effect } : mapped;
 }
 
 function hydrateCost(saved: SavedCard, libraryCard: BattleCard): number {
@@ -38,7 +40,7 @@ export function cloneBattleCard(card: BattleCard): BattleCard {
 }
 
 export function hydrateCard(savedCard: SavedCard): BattleCard {
-  const libraryCard = cardById[savedCard.id];
+  const libraryCard = Object.hasOwn(cardById, savedCard.id) ? cardById[savedCard.id] : undefined;
   if (!libraryCard) {
     return savedCard;
   }

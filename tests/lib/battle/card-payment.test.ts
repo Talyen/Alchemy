@@ -1,9 +1,40 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { canPlayCard, playBattleCardResolved } from "@/lib/battle/card-play";
 import { computeCardPayment } from "@/lib/battle/card-cost-rules";
+import * as cardCostRules from "@/lib/battle/card-cost-rules";
 import { patchBattleState, makeTestCard } from "../../fixtures/battle";
 
 describe("card payment", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("reuses immutable hand previews while separating cards and post-defeat permission", () => {
+    const payment = vi.spyOn(cardCostRules, "computeCardPayment");
+    const card = makeTestCard({ cost: 1, effects: [] });
+    const expensive = makeTestCard({ cost: 3, effects: [] });
+    const state = patchBattleState({ mana: 1, hand: [card, expensive] });
+    expect(canPlayCard(state, card, 0)).toBe(true);
+    expect(canPlayCard(state, card, 0, { allowAfterEnemyDefeat: false })).toBe(true);
+    expect(canPlayCard(state, expensive, 1)).toBe(false);
+    expect(canPlayCard(state, expensive, 1)).toBe(false);
+    expect(payment).toHaveBeenCalledTimes(2);
+
+    // Replacement snapshots recompute even when the hand is unchanged.
+    const depleted = { ...state, mana: 0 };
+    expect(canPlayCard(depleted, card, 0)).toBe(false);
+    const defeated = { ...state, enemyHealth: 0 };
+    expect(canPlayCard(defeated, card, 0)).toBe(false);
+    expect(canPlayCard(defeated, card, 0, { allowAfterEnemyDefeat: true })).toBe(true);
+    expect(canPlayCard(defeated, card, 0)).toBe(false);
+    expect(canPlayCard(defeated, card, 0, { allowAfterEnemyDefeat: true })).toBe(true);
+
+    // Wrappers cannot reuse a hand card's preview, and committed play still
+    // owns fresh payment data after a successful preview.
+    expect(canPlayCard(state, { ...card, cost: -1 }, 0)).toBe(false);
+    payment.mockClear();
+    expect(playBattleCardResolved(state, card.id, 0).state.mana).toBe(0);
+    expect(payment).toHaveBeenCalledOnce();
+  });
+
   it.each([
     { cost: 0, mana: 0, block: 0, blockCost: 0, affordable: true },
     { cost: 3, mana: 3, block: 6, blockCost: 0, affordable: true },

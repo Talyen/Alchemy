@@ -1,3 +1,4 @@
+import { rollBattleChance } from "./chance-roll";
 import { resolveSecondaryAction } from "./action-context";
 import { HALF_DIVISOR } from "../game-constants";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
@@ -8,7 +9,6 @@ import { isPlayerDefeated, type BattleState, type CombatTextEvent } from "./type
 import { applyScaledLeechHealing, computeLeechHeal } from "./damage-rider-leech";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { applyBlockReward, applyHealingWithCombatText, gainManaWithCombatText } from "./player-rewards";
-import { rollTalentChance } from "./status-helpers";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { getBattleCompanionDamageModifiers } from "./companion-scaling";
 import { addForgeToPlayer } from "./status-player";
@@ -73,7 +73,10 @@ export function resolveCompanionTurnStart(
     if (
       damageDealt > 0 &&
       afterEffects.gearEffects.healOnCompanionAttack > 0 &&
-      afterEffects.playerHealth < afterEffects.playerMaxHealth / HALF_DIVISOR
+      // Kill healing must not cancel eligibility; retaliation can also move
+      // the player below half Health during this Companion action.
+      (s.playerHealth < s.playerMaxHealth / HALF_DIVISOR ||
+        afterEffects.playerHealth < afterEffects.playerMaxHealth / HALF_DIVISOR)
     ) {
       afterEffects = applyHealingWithCombatText(
         afterEffects,
@@ -86,8 +89,8 @@ export function resolveCompanionTurnStart(
       afterEffects = applyBlockReward(afterEffects, state.talentEffects.blockOnCompanionDamage, combatTexts);
     }
 
-    if (damageDealt > 0 && state.talentEffects.companionStunChance > 0) {
-      if (rollTalentChance(state.talentEffects.companionStunChance, state)) {
+    if (damageDealt > 0 && afterEffects.enemyHealth > 0 && state.talentEffects.companionStunChance > 0) {
+      if (rollBattleChance(state.talentEffects.companionStunChance, state)) {
         afterEffects = resolveFollowUpHit(
           afterEffects,
           { source: "talent-derived", damageType: "stun", amount: damageDealt },
@@ -97,13 +100,13 @@ export function resolveCompanionTurnStart(
     }
 
     if (damageDealt > 0 && state.talentEffects.companionLeechChance > 0) {
-      if (rollTalentChance(state.talentEffects.companionLeechChance, state)) {
+      if (rollBattleChance(state.talentEffects.companionLeechChance, state)) {
         afterEffects = applyScaledLeechHealing(afterEffects, computeLeechHeal(damageDealt), combatTexts);
       }
     }
 
     for (let index = 0; index < damagePackets; index += 1) {
-      if (rollTalentChance(afterEffects.talentEffects.companionManaChance, afterEffects)) {
+      if (rollBattleChance(afterEffects.talentEffects.companionManaChance, afterEffects)) {
         afterEffects = gainManaWithCombatText(afterEffects, 1, combatTexts);
       }
     }

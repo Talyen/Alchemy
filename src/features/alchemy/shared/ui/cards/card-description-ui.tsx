@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useMemo, type ReactNode } from "react";
 
 import type { BattleCard, KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
@@ -68,10 +68,14 @@ export function KeywordToken({ keywordId, matchedText }: { keywordId: KeywordId;
     >
       <span className={cn("cursor-help font-semibold", definition.colorClass)}>{matchedText}</span>
       <PortaledTooltip triggerRef={triggerRef} visible={visible}>
-        <span className={cn("flex items-center gap-2", tooltipHeaderClass)}>
-          <KeywordTag keywordId={keywordId} className="text-sm sm:text-base" />
-        </span>
-        <TooltipBody>{renderColoredKeywords(definition.description)}</TooltipBody>
+        {visible ? (
+          <>
+            <span className={cn("flex items-center gap-2", tooltipHeaderClass)}>
+              <KeywordTag keywordId={keywordId} className="text-sm sm:text-base" />
+            </span>
+            <TooltipBody>{renderColoredKeywords(definition.description)}</TooltipBody>
+          </>
+        ) : null}
       </PortaledTooltip>
     </span>
   );
@@ -86,21 +90,22 @@ export function DescriptionLines({
   idPrefix: string;
   card?: Pick<BattleCard, "corruptedValuePositions">;
 }) {
-  return (
-    <TooltipBody>
-      {lines.map((line, lineIndex) => {
+  const corruptedValuePositions = card?.corruptedValuePositions;
+  const content = useMemo(
+    () =>
+      lines.map((line, lineIndex) => {
         const parts = tokenizeDescription(line);
-        const corruptedOffsets = getCorruptedValueOffsets(card, lineIndex);
+        const corruptedOffsets = getCorruptedValueOffsets(
+          corruptedValuePositions ? { corruptedValuePositions } : undefined,
+          lineIndex,
+        );
         let runningLength = 0;
-        const partOffsets = parts.map((part) => {
-          const offset = runningLength;
-          runningLength += part.text.length;
-          return offset;
-        });
 
         return (
           <div key={`${idPrefix}-${lineIndex}-${line}`} className={tooltipBodyLineClass}>
             {parts.map((part, index) => {
+              const offset = runningLength;
+              runningLength += part.text.length;
               if (part.keywordId) {
                 return (
                   <span
@@ -111,7 +116,6 @@ export function DescriptionLines({
                   </span>
                 );
               }
-              const offset = partOffsets[index] ?? 0;
               return splitCorruptedNumericParts(part.text, offset, corruptedOffsets).map((frag, fi) =>
                 frag.corrupted ? (
                   <span key={`${idPrefix}-${lineIndex}-${index}-${fi}`} className="text-destructive">
@@ -124,9 +128,11 @@ export function DescriptionLines({
             })}
           </div>
         );
-      })}
-    </TooltipBody>
+      }),
+    [lines, idPrefix, corruptedValuePositions],
   );
+
+  return <TooltipBody>{content}</TooltipBody>;
 }
 
 export function getCardDisplayTitle(card: Pick<BattleCard, "title" | "corrupted">) {

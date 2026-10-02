@@ -69,6 +69,19 @@ describe("animation-prefs", () => {
       expect(prefersReducedMotion()).toBe(true);
     });
 
+    it("reuses the query while observing live OS preference changes", () => {
+      const query = { matches: false };
+      const matchMedia = vi.fn(() => query);
+      vi.stubGlobal("matchMedia", matchMedia);
+
+      expect(prefersReducedMotion()).toBe(false);
+      query.matches = true;
+      expect(prefersReducedMotion()).toBe(true);
+      query.matches = false;
+      expect(prefersReducedMotion()).toBe(false);
+      expect(matchMedia).toHaveBeenCalledExactlyOnceWith("(prefers-reduced-motion: reduce)");
+    });
+
     it("returns false when prefers-reduced-motion does not match", () => {
       vi.stubGlobal(
         "matchMedia",

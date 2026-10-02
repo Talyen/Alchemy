@@ -215,8 +215,6 @@ export const DEFAULT_TALENT_EFFECTS = {
   goldOnConsume: 0,
   drawOnConsume: 0,
   poisonOnConsume: 0,
-  // Retained for old battle snapshots; current Feast uses cardHealMultipliers.
-  blockOnConsume: 0,
   cardHealMultipliers: {} as Record<string, number>,
 
   shopCardDiscount: 0,

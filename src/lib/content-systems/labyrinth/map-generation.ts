@@ -1,5 +1,5 @@
 import { isLootEligible } from "@/lib/loot";
-import { pickRandom, shuffle } from "@/lib/rng";
+import { pickRandom, rngInt, shuffle } from "@/lib/rng";
 import { enemiesByType, enemyById, type EnemyType } from "@/lib/game-data";
 
 import type { LabyrinthFloor, LabyrinthGridPosition, LabyrinthMap, LabyrinthNode, LabyrinthNodeType } from "../types";
@@ -11,10 +11,6 @@ import { canDescendFromLabyrinthNode, floorNodes } from "./map-state";
 export { canEnterLabyrinthNode } from "./map-state";
 
 const COMBAT_NODE_TYPES = new Set<LabyrinthNodeType>(["combat", "elite", "boss"]);
-
-function randomInt(min: number, max: number, rng: () => number): number {
-  return min + Math.floor(rng() * (max - min + 1));
-}
 
 function usedEnemyIds(map: LabyrinthMap): Set<string> {
   return new Set(Object.values(map.nodes).flatMap((node) => (node.enemyId ? [node.enemyId] : [])));
@@ -77,29 +73,39 @@ export function orderTypesForPositions(
   const neighbors = positions.map((_, index) => neighborSlots(positions, index));
   const seated = [...types];
   const slots = shuffle(types.map((_, index) => index).slice(1, -1), rng);
-  const conflicts = () =>
-    neighbors.reduce(
-      (sum, adjacent, index) =>
-        sum + adjacent.filter((other) => other > index && seated[other] === seated[index]).length,
-      0,
-    );
-  let best = conflicts();
+  function conflictsAt(index: number): number {
+    let count = 0;
+    for (const other of neighbors[index] ?? []) {
+      if (seated[other] === seated[index]) count += 1;
+    }
+    return count;
+  }
+  let best = 0;
+  for (let index = 0; index < seated.length; index += 1) best += conflictsAt(index);
+  best /= 2;
   let improved = true;
   while (improved && best > 0) {
     improved = false;
-    for (const [index, first] of slots.entries()) {
-      for (const second of slots.slice(index + 1)) {
+    for (let index = 0; index < slots.length; index += 1) {
+      const first = slots[index]!;
+      for (let next = index + 1; next < slots.length; next += 1) {
+        const second = slots[next]!;
         if (seated[first] === seated[second]) continue;
         const firstType = seated[first];
         const secondType = seated[second];
         if (firstType === undefined || secondType === undefined) continue;
-        [seated[first], seated[second]] = [secondType, firstType];
-        const score = conflicts();
+        const before = conflictsAt(first) + conflictsAt(second);
+        seated[first] = secondType;
+        seated[second] = firstType;
+        // Only edges touching these rooms can change. Their shared edge is
+        // counted twice in both sums, but swapping preserves its equality.
+        const score = best - before + conflictsAt(first) + conflictsAt(second);
         if (score < best) {
           best = score;
           improved = true;
         } else {
-          [seated[first], seated[second]] = [firstType, secondType];
+          seated[first] = firstType;
+          seated[second] = secondType;
         }
       }
     }
@@ -139,7 +145,7 @@ function makeNode(input: {
 
 function generateFloorPositions(rng: () => number): LabyrinthGridPosition[] {
   const columns = Array.from({ length: LABYRINTH_GRID.columns }, (_, col) => col);
-  const entrance = { row: 0, col: randomInt(0, LABYRINTH_GRID.columns - 1, rng) };
+  const entrance = { row: 0, col: rngInt(rng, LABYRINTH_GRID.columns) };
   const eligibleColumns = columns.filter(
     (col) => Math.abs(col - entrance.col) >= LABYRINTH_GRID.minimumBossColumnDistance,
   );

@@ -1,3 +1,4 @@
+import { rollBattleChance } from "./chance-roll";
 import { readCombatFlag } from "./action-context";
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { BattleCardEffect, DamageType, EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data";
@@ -23,7 +24,7 @@ import { mergeCombatText } from "./combat-text-events";
 import { BLEED_STATUS_MULTIPLIER, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
 import { paceCombatMagnitude } from "./fight-pacing";
 import { dealScaledBurnWithStacks } from "./scaled-damage";
-import { getEnemyDamageMultiplier, rollTalentChance } from "./status-helpers";
+import { getEnemyDamageMultiplier } from "./status-helpers";
 import { applyPercentBonus } from "./amount-helpers";
 import { clamp } from "@/lib/math";
 
@@ -46,7 +47,11 @@ export function applyCardHealing(
 }
 
 export function countRemovableHarmfulStatuses(playerStatuses: BattleState["playerStatuses"]): number {
-  return harmfulPlayerStatusIds.filter((statusId) => playerStatuses[statusId] > 0).length;
+  let count = 0;
+  for (const statusId of harmfulPlayerStatusIds) {
+    if (playerStatuses[statusId] > 0) count += 1;
+  }
+  return count;
 }
 
 export function applyHealthLossTalentRewards(
@@ -58,7 +63,7 @@ export function applyHealthLossTalentRewards(
   if (
     healthLost <= 0 ||
     isPlayerDefeated(nextState) ||
-    !rollTalentChance(previousState.talentEffects.healthLossCleanseChance, previousState)
+    !rollBattleChance(previousState.talentEffects.healthLossCleanseChance, previousState)
   ) {
     return nextState;
   }
@@ -88,9 +93,10 @@ export function applyHealthThresholdCleanse(
   previousHealth: number,
   state: BattleState,
   combatTexts?: CombatTextEvent[],
+  healthAfterDamage = state.playerHealth,
 ): BattleState {
   const threshold = (state.playerMaxHealth * state.talentEffects.cleanseBelowHealthPercent) / PERCENT_DENOMINATOR;
-  return threshold > 0 && previousHealth >= threshold && state.playerHealth < threshold && state.playerHealth > 0
+  return threshold > 0 && previousHealth >= threshold && healthAfterDamage < threshold && healthAfterDamage > 0
     ? removeHarmfulPlayerStatuses(state, Infinity, combatTexts)
     : state;
 }
@@ -102,9 +108,9 @@ function applyHealthThresholdRewards(
   combatTexts: CombatTextEvent[],
 ): BattleState {
   if (nextHealth <= 0) return state;
-  let nextState = applyHealthThresholdCleanse(prevHealth, state, combatTexts);
+  let nextState = applyHealthThresholdCleanse(prevHealth, state, combatTexts, nextHealth);
   const maxHealth = state.playerMaxHealth;
-  for (const config of normalizeThresholdConfigs(state.talentEffects.healthThresholdBlock, "block")) {
+  for (const config of healthThresholdConfigs(state.talentEffects.healthThresholdBlock)) {
     const thresholdHp = (maxHealth * config.threshold) / PERCENT_DENOMINATOR;
     if (!crossedBelow(prevHealth, nextHealth, thresholdHp)) continue;
     nextState = applyPlayerStatusEffect(
@@ -121,7 +127,7 @@ function applyHealthThresholdRewards(
       nextState = { ...nextState, flags: { ...nextState.flags, desperateGuardUsed: true } };
     }
   }
-  for (const config of normalizeThresholdConfigs(state.talentEffects.healthThresholdArmor, "armor")) {
+  for (const config of healthThresholdConfigs(state.talentEffects.healthThresholdArmor)) {
     const thresholdHp = (maxHealth * config.threshold) / PERCENT_DENOMINATOR;
     if (!crossedBelow(prevHealth, nextHealth, thresholdHp)) continue;
     nextState = applyArmorReward(nextState, config.amount, combatTexts);
@@ -129,13 +135,14 @@ function applyHealthThresholdRewards(
   return nextState;
 }
 
-function normalizeThresholdConfigs(
-  configs: { threshold: number; amount: number } | Array<{ threshold: number; amount: number }> | null,
-  stat: "block" | "armor",
-): Array<{ threshold: number; amount: number; stat: "block" | "armor" }> {
-  if (configs == null) return [];
-  const list = Array.isArray(configs) ? configs : [configs];
-  return list.map((config) => ({ ...config, stat }));
+type HealthThresholdConfig = { threshold: number; amount: number };
+const EMPTY_HEALTH_THRESHOLDS: readonly HealthThresholdConfig[] = [];
+
+function healthThresholdConfigs(
+  configs: HealthThresholdConfig | HealthThresholdConfig[] | null,
+): readonly HealthThresholdConfig[] {
+  if (configs == null) return EMPTY_HEALTH_THRESHOLDS;
+  return Array.isArray(configs) ? configs : [configs];
 }
 
 export function checkHealthThresholds(
@@ -151,18 +158,24 @@ function scaleBleedStatus(status: PlayerStatusId, amount: number): number {
   return status === "bleed" ? amount * BLEED_STATUS_MULTIPLIER : amount;
 }
 
-export function addForgeToPlayer(state: BattleState, baseAmount: number, combatTexts?: CombatTextEvent[]): BattleState {
+export function addForgeToPlayer(
+  state: BattleState,
+  baseAmount: number,
+  combatTexts?: CombatTextEvent[],
+  options?: { skipFightPacing?: boolean },
+): BattleState {
+  if (baseAmount <= 0) return state;
   let amount = baseAmount + state.talentEffects.flatForgeGained;
   if (state.playerStatuses.burn > 0 && state.talentEffects.forgeBurningBonusPercent > 0) {
     amount = applyPercentBonus(amount, state.talentEffects.forgeBurningBonusPercent);
   }
-  if (rollTalentChance(state.talentEffects.forgeDoubleChance, state)) {
+  if (rollBattleChance(state.talentEffects.forgeDoubleChance, state)) {
     amount *= 2;
   }
   if (state.playerHealth < state.playerMaxHealth / HALF_DIVISOR) {
     amount = applyPercentBonus(amount, state.talentEffects.forgeLowHealthBonusPercent);
   }
-  amount = paceCombatMagnitude(state, amount, "player");
+  if (!options?.skipFightPacing) amount = paceCombatMagnitude(state, amount, "player");
   if (amount <= 0) return state;
   const oldForge = state.playerStatuses.forge;
   const newForge = oldForge + amount;
@@ -213,6 +226,15 @@ export function applyForgeThresholdRewards(
   newForge: number,
   combatTexts?: CombatTextEvent[],
 ): BattleState {
+  const { forgeBurnThreshold, forgeStripArmorThreshold, forgeBlockThreshold } = state.talentEffects;
+  // Most Forge gains cross no reward threshold. Avoid allocating the reward
+  // table and its callbacks unless at least one reward can run.
+  if (
+    !crossesForgeThreshold(oldForge, newForge, forgeBurnThreshold) &&
+    !crossesForgeThreshold(oldForge, newForge, forgeStripArmorThreshold) &&
+    !crossesForgeThreshold(oldForge, newForge, forgeBlockThreshold)
+  )
+    return state;
   const thresholds: Array<{
     threshold: number;
     apply: (s: BattleState) => BattleState;
@@ -245,6 +267,10 @@ export function applyForgeThresholdRewards(
     nextState = onFirstCrossThreshold(oldForge, newForge, threshold, apply, nextState);
   }
   return nextState;
+}
+
+function crossesForgeThreshold(oldForge: number, newForge: number, threshold: number): boolean {
+  return !(threshold <= 0 || oldForge >= threshold || newForge < threshold);
 }
 
 export function applyPlayerStatusEffect(

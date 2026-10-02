@@ -1,3 +1,5 @@
+import { resolvePendingBattleReactions } from "./enemy-attack-damage";
+import { rollBattleChance } from "./chance-roll";
 import { isPotionCard, getCardKeywords, type BattleCard } from "@/lib/game-data";
 import { addPlayerStatusWithCombatText } from "./player-rewards";
 import {
@@ -11,9 +13,9 @@ import { isAttackCard } from "./card-classification";
 import { applyDrawResult, drawFromState } from "./draw";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
-import { rollTalentChance } from "./status-helpers";
-import { reduceEnemyArmor, setFlag, type BattleState, type CombatTextEvent } from "./types";
+import { isPlayerDefeated, reduceEnemyArmor, setFlag, type BattleState, type CombatTextEvent } from "./types";
 import { mergeCombatText } from "./combat-text-events";
+import { applyEmergencyWishForEmptyDraw } from "./wish";
 
 function computeTalentAttackBonuses(
   state: BattleState,
@@ -34,22 +36,31 @@ function computeTalentAttackBonuses(
   };
 }
 
+function drawCardPlayReward(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
+  const drawn = applyDrawResult(state, drawFromState(state, amount), combatTexts);
+  const wished = applyEmergencyWishForEmptyDraw(drawn, amount, combatTexts);
+  return wished === drawn ? drawn : resolvePendingBattleReactions(wished, combatTexts);
+}
+
 function applyTalentDrawTriggers(
   state: BattleState,
   keywords: string[],
   archery: boolean,
   combatTexts: CombatTextEvent[],
+  eligibility: BattleState,
 ): BattleState {
   let nextState = state;
   const talents = state.talentEffects;
-  if (archery && state.enemyCC.stunSkipTurns > 0 && talents.drawOnArcheryVsStunned > 0) {
-    nextState = applyDrawResult(nextState, drawFromState(nextState, talents.drawOnArcheryVsStunned), combatTexts);
+  if (archery && eligibility.enemyCC.stunSkipTurns > 0 && talents.drawOnArcheryVsStunned > 0) {
+    nextState = drawCardPlayReward(nextState, talents.drawOnArcheryVsStunned, combatTexts);
+    if (isPlayerDefeated(nextState)) return nextState;
   }
-  if (archery && rollTalentChance(state.gearEffects.archeryDrawChance, state)) {
-    nextState = applyDrawResult(nextState, drawFromState(nextState, 1), combatTexts);
+  if (archery && rollBattleChance(state.gearEffects.archeryDrawChance, state)) {
+    nextState = drawCardPlayReward(nextState, 1, combatTexts);
+    if (isPlayerDefeated(nextState)) return nextState;
   }
   if (keywords.includes("companion") && talents.drawOnCompanionCard > 0) {
-    nextState = applyDrawResult(nextState, drawFromState(nextState, talents.drawOnCompanionCard), combatTexts);
+    nextState = drawCardPlayReward(nextState, talents.drawOnCompanionCard, combatTexts);
   }
   return nextState;
 }
@@ -60,10 +71,11 @@ function applyTalentStatusAndHitTriggers(
   keywords: string[],
   nature: boolean,
   combatTexts: CombatTextEvent[],
+  eligibility: BattleState,
 ): BattleState {
   let nextState = state;
   const talents = state.talentEffects;
-  const archeryWithoutBlock = keywords.includes("archery") && state.playerStatuses.block === 0;
+  const archeryWithoutBlock = keywords.includes("archery") && eligibility.playerStatuses.block === 0;
 
   if (keywords.includes("holy") && talents.wishExtraChoiceAfterHolyCard) {
     nextState = { ...nextState, flags: { ...nextState.flags, nextWishExtraChoice: true } };
@@ -88,7 +100,7 @@ function applyTalentStatusAndHitTriggers(
   if (
     keywords.includes("burn") &&
     talents.forgeOnBurnCard > 0 &&
-    (talents.forgeOnBurnCardChance <= 0 || rollTalentChance(talents.forgeOnBurnCardChance, nextState))
+    (talents.forgeOnBurnCardChance <= 0 || rollBattleChance(talents.forgeOnBurnCardChance, nextState))
   ) {
     nextState = addForgeToPlayer(nextState, talents.forgeOnBurnCard, combatTexts);
   }
@@ -131,7 +143,7 @@ export function prepareTalentCardPlay(
   state: BattleState,
   card: BattleCard,
   combatTexts: CombatTextEvent[],
-  options: { countsAsPlayedCard?: boolean } = {},
+  options: { countsAsPlayedCard?: boolean; eligibility?: BattleState } = {},
 ) {
   const keywords = getCardKeywords(card);
   const physical = keywords.includes("physical");
@@ -141,8 +153,10 @@ export function prepareTalentCardPlay(
   const talents = state.talentEffects;
 
   const attackBonuses = computeTalentAttackBonuses(state, keywords, archery, physical, attack);
-  let nextState = applyTalentDrawTriggers(state, keywords, archery, combatTexts);
-  nextState = applyTalentStatusAndHitTriggers(nextState, card, keywords, nature, combatTexts);
+  const eligibility = options.eligibility ?? state;
+  let nextState = applyTalentDrawTriggers(state, keywords, archery, combatTexts, eligibility);
+  if (isPlayerDefeated(nextState)) return { attackBonuses, state: nextState };
+  nextState = applyTalentStatusAndHitTriggers(nextState, card, keywords, nature, combatTexts, eligibility);
 
   if (options.countsAsPlayedCard) {
     const archeryCardsPlayed = state.flags.archeryCardsPlayedThisTurn;

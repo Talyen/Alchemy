@@ -1,5 +1,5 @@
 import { talentFor } from "../talent-builder";
-import { setEffect } from "../types";
+import { addEffect, setEffect } from "../types";
 
 const t = talentFor("physical");
 
@@ -16,7 +16,7 @@ export const physicalTalents = [
     "Shield Slam",
     "Physical damage is increased by half your Block",
     "Shield",
-    setEffect("blockToPhysicalDamageMultiplier", 0.5),
+    addEffect("blockToPhysicalDamageMultiplier", 0.5),
   ),
   t(
     "physical-armored-fists",

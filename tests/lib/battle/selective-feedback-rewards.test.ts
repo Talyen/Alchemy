@@ -88,6 +88,12 @@ describe("selective feedback rewards", () => {
     const state = battle({ talentEffects: computeTalentEffects({ consume: ["consume-feast"] }) });
     expect(play({ ...state, playerHealth: 10 }, cardById.apple!).state.playerHealth).toBe(18);
     expect(play({ ...state, playerHealth: 10 }, cardById.bread!).state.playerHealth).toBe(22);
+    expect(play({ ...state, playerHealth: 10 }, cardById["health-potion"]!).state.playerHealth).toBe(18);
+    for (const card of [cardById.apple!, cardById.bread!]) {
+      const result = play({ ...state, playerHealth: 38 }, card).state;
+      expect(result.playerHealth).toBe(40);
+      expect(result.playerStatuses.block).toBe(0);
+    }
   });
 
   it("Rotgut and Consuming strengthen existing packets without creating another hit", () => {

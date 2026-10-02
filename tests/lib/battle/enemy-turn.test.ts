@@ -232,6 +232,31 @@ describe("legacy enemy-phase recovery", () => {
 });
 
 describe("endPlayerTurn — tick order", () => {
+  it.each([
+    { stunSkipTurns: 0, kind: "standard" },
+    { stunSkipTurns: 1, kind: "skipped" },
+  ] as const)("keeps $kind playback at the lethal status tick without an attack frame", ({ stunSkipTurns, kind }) => {
+    const state = battleState({
+      enemyHealth: 2,
+      enemyStatuses: { burn: 3 },
+      enemyCC: { stunSkipTurns },
+      playerHealth: 30,
+    });
+    const result = endPlayerTurn(state);
+
+    expect(result.kind).toBe(kind);
+    if (result.kind === "haste") throw new Error("Expected an enemy-turn resolution");
+    expect(result.enemyTurnStartState.enemyHealth).toBe(0);
+    expect(result.state).toEqual(result.enemyTurnStartState);
+    expect(result.enemyPerformedAbility).toBe(false);
+    expect(result).not.toHaveProperty("afterAbilityState");
+    expect(result.enemyResolutionCombatTexts).toEqual([]);
+    expect(result.combatTexts).toEqual(result.enemyTurnStartCombatTexts);
+    expect(result.combatTexts).toContainEqual(expect.objectContaining({ target: "enemy", stat: "burn", amount: 3 }));
+    expect(result.state.lastEnemyAbilityId).toBe(state.lastEnemyAbilityId);
+    expect(result.state.playerHealth).toBe(30);
+  });
+
   it("ticks enemy DoT before attack when enemy survives", () => {
     const state = battleState({
       enemyHealth: 50,
@@ -464,6 +489,35 @@ describe("endPlayerTurn — companion", () => {
 });
 
 describe("endPlayerTurn — pending turn-start pulses", () => {
+  it("keeps newly scheduled pulses for later turns without executing them immediately", () => {
+    const state = battleState({
+      playerHealth: 10,
+      playerMaxHealth: 30,
+      enemyCC: { stunSkipTurns: 4 },
+      pendingTurnStartEffects: [
+        {
+          remainingTurns: 1,
+          effects: [{ kind: "repeat-over-turns", remainingTurns: 2, effects: [{ kind: "heal", amount: 4 }] }],
+          sourceCard: { id: "scheduled-remedy" },
+        },
+      ],
+    });
+    const first = endPlayerTurn(state);
+    expect(first.state.playerHealth).toBe(10);
+    expect(first.state.pendingTurnStartEffects).toEqual([
+      { remainingTurns: 2, effects: [{ kind: "heal", amount: 4 }], sourceCard: { id: "scheduled-remedy" } },
+    ]);
+    const second = endPlayerTurn(first.state);
+    expect(second.state.playerHealth).toBe(14);
+    expect(second.state.pendingTurnStartEffects).toEqual([
+      { remainingTurns: 1, effects: [{ kind: "heal", amount: 4 }], sourceCard: { id: "scheduled-remedy" } },
+    ]);
+    const third = endPlayerTurn(second.state);
+    expect(third.state.playerHealth).toBe(18);
+    expect(third.state.pendingTurnStartEffects).toEqual([]);
+    expect(state.pendingTurnStartEffects[0]?.remainingTurns).toBe(1);
+  });
+
   it("resolves queued freeze damage at the start of the next player turn", () => {
     const state = battleState({
       enemyHealth: 30,

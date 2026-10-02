@@ -177,6 +177,9 @@ describe("gear domain", () => {
     expect(normalizeGearInstance({})).toBeNull();
     expect(normalizeGearInstance({ instanceId: 1, definitionId: "ruby-ring-basic" })).toBeNull();
     expect(normalizeGearInstance({ instanceId: "gear-1", definitionId: "not-a-gear-id" })).toBeNull();
+    for (const definitionId of ["constructor", "__proto__", "toString"]) {
+      expect(normalizeGearInstance({ instanceId: "gear-1", definitionId })).toBeNull();
+    }
   });
 
   it("does not apply the same saved affix twice", () => {

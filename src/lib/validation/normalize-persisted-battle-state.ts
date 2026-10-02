@@ -3,12 +3,15 @@ import {
   findEnemyAbilityCard,
   enemyById,
   enemyBestiary,
+  companionLibrary,
   isEnemyId,
   type BestiaryEntry,
   type EnemyTrait,
   type TalentEffectManifest,
 } from "@/lib/game-data";
 import { computeTrinketManifest, isDefaultTrinketManifest } from "@/lib/trinkets";
+import { MAX_HAND_SIZE, MIN_MAX_MANA_FLOOR } from "@/lib/game-constants";
+import { toFiniteNonNegativeInt } from "./save-schemas/validation-utils";
 import {
   ENCOUNTER_TRAITS,
   sanitizeEncounterTraitIds,
@@ -90,9 +93,10 @@ function restoreEnemyTraits(value: unknown, enemy: BestiaryEntry | undefined): E
   ];
 }
 
-export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): BattleSnapshot {
-  const defaults = defaultBattleState();
-  const savedEnemy = saved.currentEnemy;
+function normalizeEnemy(
+  savedEnemy: BattleSnapshot["currentEnemy"] | undefined,
+  defaultEnemy: BattleSnapshot["currentEnemy"],
+): BattleSnapshot["currentEnemy"] {
   const catalogEnemy = savedEnemy && isEnemyId(savedEnemy.id) ? enemyById[savedEnemy.id] : undefined;
   const savedAbilityIds = savedEnemy?.abilityIds;
   const abilityIds =
@@ -101,41 +105,20 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
     new Set(savedAbilityIds).size === 3 &&
     savedAbilityIds.every((id) => typeof id === "string" && findEnemyAbilityCard(id))
       ? savedAbilityIds
-      : (catalogEnemy?.abilityIds ?? defaults.currentEnemy.abilityIds);
-  const merged: BattleSnapshot = {
-    ...defaults,
-    ...battleSnapshot({ ...defaults, ...saved }),
-    encounterBenefits:
-      saved.contentSystemType === "labyrinth" && Array.isArray(saved.encounterBenefits)
-        ? sanitizeEncounterTraitIds(saved.encounterBenefits, "reward")
-        : [],
-    trinketEffects: mergeRecord(defaults.trinketEffects, saved.trinketEffects),
-    gearEffects: mergeRecord(defaults.gearEffects, saved.gearEffects),
-    talentEffects: normalizeTalentEffects(defaults.talentEffects, saved.talentEffects),
-    flags: mergeRecord(defaults.flags, saved.flags),
-    uniqueGear: mergeRecord(defaults.uniqueGear, saved.uniqueGear),
-    playerStatuses: normalizeNonNegativeRecord(defaults.playerStatuses, saved.playerStatuses),
-    enemyStatuses: normalizeNonNegativeRecord(defaults.enemyStatuses, saved.enemyStatuses),
-    playerCC: normalizeNonNegativeRecord(defaults.playerCC, saved.playerCC),
-    enemyCC: normalizeNonNegativeRecord(defaults.enemyCC, saved.enemyCC),
-    enemyMitigation: normalizeNonNegativeRecord(defaults.enemyMitigation, saved.enemyMitigation),
-    pendingTurnStartEffects: saved.pendingTurnStartEffects ?? defaults.pendingTurnStartEffects,
-    pendingHandCards: saved.pendingHandCards ?? defaults.pendingHandCards,
-    pendingForgeThresholds: saved.pendingForgeThresholds ?? defaults.pendingForgeThresholds,
-    currentEnemy: {
-      ...(catalogEnemy ?? defaults.currentEnemy),
-      abilityIds,
-      traits: restoreEnemyTraits(saved.currentEnemy?.traits, catalogEnemy),
-    },
+      : (catalogEnemy?.abilityIds ?? defaultEnemy.abilityIds);
+  return {
+    ...(catalogEnemy ?? defaultEnemy),
+    abilityIds,
+    traits: restoreEnemyTraits(savedEnemy?.traits, catalogEnemy),
   };
-  // battleMetrics is runtime-only telemetry; never persisted.
-  delete merged.battleMetrics;
-  merged.lastEnemyAbilityId =
-    typeof saved.lastEnemyAbilityId === "string" && abilityIds.includes(saved.lastEnemyAbilityId)
-      ? saved.lastEnemyAbilityId
-      : null;
+}
 
-  const savedFlags: Record<string, unknown> = saved.flags ?? {};
+function normalizeCombatFlags(
+  defaults: BattleSnapshot["flags"],
+  saved: Partial<BattleSnapshot["flags"]> | undefined,
+): BattleSnapshot["flags"] {
+  const flags = mergeRecord(defaults, saved);
+  const savedFlags: Record<string, unknown> = saved ?? {};
   // Only these transient signals require an exact boolean; every other saved
   // flag keeps its persisted value via the manifest merge above.
   for (const key of [
@@ -147,7 +130,7 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
     "firstBurnCardFreeUsed",
     "archerySecondCardActive",
   ] as const) {
-    merged.flags[key] = savedFlags[key] === true;
+    flags[key] = savedFlags[key] === true;
   }
   for (const key of [
     "companionNextAttackBonus",
@@ -156,21 +139,107 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
     "pendingWishMana",
     "archeryCardsPlayedThisTurn",
   ] as const) {
-    merged.flags[key] = clampNonNegative(merged.flags[key], 0);
+    flags[key] = clampNonNegative(flags[key], 0);
   }
-  for (const key of ["playerDodgeCount", "dodgeChanceFromDamage"] as const) {
-    merged[key] = clampNonNegative(merged[key], 0);
-  }
-  merged.roomScalingMultiplier =
-    Number.isFinite(merged.roomScalingMultiplier) && merged.roomScalingMultiplier > 0
-      ? merged.roomScalingMultiplier
-      : defaults.roomScalingMultiplier;
-  for (const key of ["playerHealth", "enemyHealth", "playerMaxHealth", "enemyMaxHealth", "gold"] as const) {
-    merged[key] = clampNonNegative(merged[key], defaults[key]);
-  }
+  return flags;
+}
+
+function normalizeCombatResources(state: BattleSnapshot, defaults: BattleSnapshot) {
+  const positiveOrDefault = (value: number, fallback: number) =>
+    Number.isFinite(value) && value > 0 ? value : fallback;
+  const playerMaxHealth = positiveOrDefault(state.playerMaxHealth, defaults.playerMaxHealth);
+  const enemyMaxHealth = positiveOrDefault(state.enemyMaxHealth, defaults.enemyMaxHealth);
+  return {
+    playerDodgeCount: clampNonNegative(state.playerDodgeCount, 0),
+    dodgeChanceFromDamage: clampNonNegative(state.dodgeChanceFromDamage, 0),
+    roomScalingMultiplier: positiveOrDefault(state.roomScalingMultiplier, defaults.roomScalingMultiplier),
+    playerMaxHealth,
+    enemyMaxHealth,
+    playerHealth: Math.min(clampNonNegative(state.playerHealth, defaults.playerHealth), playerMaxHealth),
+    enemyHealth: Math.min(clampNonNegative(state.enemyHealth, defaults.enemyHealth), enemyMaxHealth),
+    gold: clampNonNegative(state.gold, defaults.gold),
+    mana: clampNonNegative(state.mana, defaults.mana),
+    maxMana: Math.max(MIN_MAX_MANA_FLOOR, clampNonNegative(state.maxMana, defaults.maxMana)),
+  };
+}
+
+function normalizeCardPiles(state: BattleSnapshot, defaults: BattleSnapshot) {
+  const highestCardUid = [state.deck, state.hand, state.pendingHandCards, state.discard, state.exhausted].reduce(
+    (highest, cards) => cards.reduce((max, card) => Math.max(max, toFiniteNonNegativeInt(card.uid) ?? 0), highest),
+    0,
+  );
+  return {
+    cardsPlayedThisTurn: toFiniteNonNegativeInt(state.cardsPlayedThisTurn) ?? 0,
+    nextCardUid: Math.max(toFiniteNonNegativeInt(state.nextCardUid) ?? defaults.nextCardUid, highestCardUid + 1),
+    hand: state.hand.length > MAX_HAND_SIZE ? state.hand.slice(0, MAX_HAND_SIZE) : state.hand,
+    pendingHandCards:
+      state.hand.length > MAX_HAND_SIZE
+        ? [...state.hand.slice(MAX_HAND_SIZE), ...state.pendingHandCards]
+        : state.pendingHandCards,
+  };
+}
+
+function normalizeSurvival(state: BattleSnapshot, saved: Partial<BattleSnapshot>, defaults: BattleSnapshot) {
+  const savedSurvival: { deathsDoorActive?: unknown; deathsDoorUsed?: unknown } = saved;
   // Load-path truncation (not battle Math.round): turn must stay an integer ≥1.
-  merged.turn = Number.isFinite(merged.turn) && merged.turn >= 1 ? Math.trunc(merged.turn) : defaults.turn;
-  return merged;
+  const turn = Number.isFinite(state.turn) && state.turn >= 1 ? Math.trunc(state.turn) : defaults.turn;
+  const triggeredTurn = toFiniteNonNegativeInt(state.deathsDoorTriggeredTurn);
+  return {
+    turn,
+    deathsDoorActive: savedSurvival.deathsDoorActive === true,
+    deathsDoorUsed: savedSurvival.deathsDoorUsed === true,
+    deathsDoorGraceTurnsRemaining: toFiniteNonNegativeInt(state.deathsDoorGraceTurnsRemaining),
+    deathsDoorTriggeredTurn:
+      triggeredTurn !== null && triggeredTurn >= 1 && triggeredTurn <= turn ? triggeredTurn : null,
+  };
+}
+
+export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): BattleSnapshot {
+  const defaults = defaultBattleState();
+  const currentEnemy = normalizeEnemy(saved.currentEnemy, defaults.currentEnemy);
+  const merged: BattleSnapshot = {
+    ...defaults,
+    ...battleSnapshot({ ...defaults, ...saved }),
+    encounterBenefits:
+      saved.contentSystemType === "labyrinth" && Array.isArray(saved.encounterBenefits)
+        ? sanitizeEncounterTraitIds(saved.encounterBenefits, "reward")
+        : [],
+    trinketEffects: mergeRecord(defaults.trinketEffects, saved.trinketEffects),
+    gearEffects: mergeRecord(defaults.gearEffects, saved.gearEffects),
+    talentEffects: normalizeTalentEffects(defaults.talentEffects, saved.talentEffects),
+    flags: normalizeCombatFlags(defaults.flags, saved.flags),
+    uniqueGear: mergeRecord(defaults.uniqueGear, saved.uniqueGear),
+    playerStatuses: normalizeNonNegativeRecord(defaults.playerStatuses, saved.playerStatuses),
+    enemyStatuses: normalizeNonNegativeRecord(defaults.enemyStatuses, saved.enemyStatuses),
+    playerCC: normalizeNonNegativeRecord(defaults.playerCC, saved.playerCC),
+    enemyCC: normalizeNonNegativeRecord(defaults.enemyCC, saved.enemyCC),
+    enemyMitigation: normalizeNonNegativeRecord(defaults.enemyMitigation, saved.enemyMitigation),
+    pendingTurnStartEffects: saved.pendingTurnStartEffects ?? defaults.pendingTurnStartEffects,
+    pendingHandCards: saved.pendingHandCards ?? defaults.pendingHandCards,
+    pendingForgeThresholds: saved.pendingForgeThresholds ?? defaults.pendingForgeThresholds,
+    currentEnemy,
+    lastEnemyAbilityId:
+      typeof saved.lastEnemyAbilityId === "string" && currentEnemy.abilityIds.includes(saved.lastEnemyAbilityId)
+        ? saved.lastEnemyAbilityId
+        : null,
+  };
+  // battleMetrics is runtime-only telemetry; never persisted.
+  delete merged.battleMetrics;
+  const companion = merged.activeCompanion;
+  return {
+    ...merged,
+    ...normalizeCombatResources(merged, defaults),
+    ...normalizeCardPiles(merged, defaults),
+    ...normalizeSurvival(merged, saved, defaults),
+    pendingCardBleedLeechHealing: Math.min(
+      clampNonNegative(merged.pendingBleedLeechHealing, 0),
+      clampNonNegative(merged.pendingCardBleedLeechHealing, 0),
+    ),
+    activeCompanion:
+      companion && typeof companion.id === "string" && Object.hasOwn(companionLibrary, companion.id)
+        ? companionLibrary[companion.id]
+        : null,
+  };
 }
 
 export function repairPersistedTrinketManifest(battleState: BattleSnapshot, runBoons: string[]): BattleSnapshot {

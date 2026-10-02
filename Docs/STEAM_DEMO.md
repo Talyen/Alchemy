@@ -87,12 +87,46 @@ Published layouts and hardware validation remain governed by
 [release setup](./RELEASE_SETUP.md#steam-input-default-mapping-controller-playable).
 
 Desktop focus loss and the default Shift+Tab chord open the game menu, stopping
-automatic battle actions until the player dismisses it. Wishlist overlay opening
-does the same. The installed Steamworks binding lacks overlay activation and
-availability callbacks, so this does not establish coverage for custom overlay
-shortcuts or every Deck overlay path. Physical Steam validation is a release
-blocker; a supported callback binding is needed if those paths do not emit focus
-loss. Do not claim this gap is closed by browser tests.
+automatic battle actions until the player dismisses it. Wishlist opening does
+the same; the store opens in the overlay only when
+`client.isOverlayEnabled()` returns true at click time, otherwise it uses the
+fixed Steam store URL in the browser. Unknown availability is not success:
+overlay activation returns void and can silently do nothing.
+
+The installed steamworks.js 0.4.0 lacks native overlay activation callbacks and
+availability detection. [The pause listener](../desktop/steam-overlay.cjs) uses
+`SteamCallback.GameOverlayActivated` when supported, pauses on `active: true`,
+and leaves the game menu open when the overlay closes. `steamworks.js.init()`
+owns callback pumping; do not add a second timer or call
+`client.callback.runCallbacks()`, which the installed binding does not expose.
+
+The complete solution is a binding with both native capabilities, followed by
+physical Steam validation. The upstream
+[activation callback patch](https://github.com/ceifa/steamworks.js/pull/205) and
+[availability patch](https://github.com/ceifa/steamworks.js/pull/203) remain open
+as checked on 2026-10-02. If a supported release is unavailable when shipping,
+maintain a minimal fork pinned to an exact commit with those two changes. Exclude
+the availability patch's unrelated workshop declaration. Rebuild and verify its
+native binaries for Windows and Linux/Deck (and macOS if shipped); editing
+JavaScript or declarations in the npm package cannot add a native callback.
+Keep its current Steam/cloud APIs and package layout unchanged.
+
+Validate the actual packaged game launched through Steam on Windows and Deck:
+
+- During automatic battle actions, open the default overlay, a remapped keyboard
+  overlay shortcut, and the Deck overlay/controller path. Require the native
+  activation event and game menu, with no continued automatic actions.
+- Close each overlay. The menu must remain open until the player resumes.
+- Open the wishlist with the overlay enabled, disabled, and not yet ready.
+  Require exactly one usable store destination and the game menu in each case.
+- Repeat after suspend/resume and Steam reconnection. Record package version/hash,
+  platform, Steam client version, shortcut/layout, callback evidence, and result.
+
+Valve documents both
+[activation events and delayed overlay availability](https://partner.steamgames.com/doc/features/overlay#communication-from-the-overlay-to-your-game).
+Custom shortcuts and Deck paths remain a release blocker until native binding
+and hardware evidence are available. Browser or mocked callback tests cannot
+close this gate.
 
 Every release builds both editions, retains independent verified artifacts and
 uploads to separate App IDs/depots. Public Steam promotion remains manual, with

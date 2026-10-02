@@ -77,6 +77,9 @@ describe("gear-store", () => {
     mutateGearForTest((gear) => gear.addInstance(armor, "knight"));
     expect(readHasAnyOwnedGear()).toBe(true);
     resetGearForTest();
+    mutateGearForTest((gear) => gear.addInstance(armor, "wildcard"));
+    expect(readHasAnyOwnedGear()).toBe(true);
+    resetGearForTest();
     expect(readHasAnyOwnedGear()).toBe(false);
     mutateGearForTest((gear) => gear.addTrinket("bone-charm"));
     expect(readHasAnyOwnedGear()).toBe(true);

@@ -63,10 +63,8 @@ function computeDeathsDoorGraceRemaining(state: BattleState): number {
 
 function processPendingTurnStartEffects(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (state.pendingTurnStartEffects.length === 0) return state;
-  const due: BattleState["pendingTurnStartEffects"] = [];
   const kept: BattleState["pendingTurnStartEffects"] = [];
   for (const pulse of state.pendingTurnStartEffects) {
-    due.push(pulse);
     if (pulse.remainingTurns > 1) kept.push({ ...pulse, remainingTurns: pulse.remainingTurns - 1 });
   }
   const pulseCard: BattleCard = {
@@ -77,19 +75,19 @@ function processPendingTurnStartEffects(state: BattleState, combatTexts: CombatT
     cost: 0,
     effects: [],
   };
-  return resolveSecondaryAction({ ...state, pendingTurnStartEffects: kept }, "delayed-card", (nextState) =>
-    due.reduce(
-      (current, pulse) =>
-        current.enemyHealth <= 0 || isPlayerDefeated(current)
-          ? current
-          : applyCardEffects(current, { ...pulseCard, ...pulse.sourceCard, effects: pulse.effects }, combatTexts, {
-              manaAtStart: current.mana,
-              enemyFreezeSkipTurnsAtStart: current.enemyCC.freezeSkipTurns,
-              origin: "triggered-card",
-            }),
-      nextState,
-    ),
-  );
+  // Commit the remaining schedule before executing pulses, so effects queued
+  // by a pulse survive and start on the following turn.
+  return resolveSecondaryAction({ ...state, pendingTurnStartEffects: kept }, "delayed-card", (current) => {
+    for (const pulse of state.pendingTurnStartEffects) {
+      if (current.enemyHealth <= 0 || isPlayerDefeated(current)) break;
+      current = applyCardEffects(current, { ...pulseCard, ...pulse.sourceCard, effects: pulse.effects }, combatTexts, {
+        manaAtStart: current.mana,
+        enemyFreezeSkipTurnsAtStart: current.enemyCC.freezeSkipTurns,
+        origin: "triggered-card",
+      });
+    }
+    return current;
+  });
 }
 
 function resetPlayerTurnState(

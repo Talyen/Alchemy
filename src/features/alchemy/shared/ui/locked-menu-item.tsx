@@ -34,10 +34,19 @@ export function LockedMenuItem({
   size = "default",
   variant = "ghost",
 }: LockedMenuItemProps) {
-  const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible();
+  const { wrapperRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } = useHoverVisible({
+    focusWithinGuard: true,
+  });
 
   return (
-    <div ref={triggerRef} className="relative overflow-visible" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
+    <div
+      ref={wrapperRef}
+      className="relative overflow-visible"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onFocusCapture={onFocusCapture}
+      onBlurCapture={onBlurCapture}
+    >
       <Button
         variant={variant}
         size={size}
@@ -56,7 +65,7 @@ export function LockedMenuItem({
         {children}
       </Button>
       {visible && locked && (
-        <PortaledTooltip triggerRef={triggerRef} visible placement={tooltipPlacement} className="text-left">
+        <PortaledTooltip triggerRef={wrapperRef} visible placement={tooltipPlacement} className="text-left">
           <LockedFeatureTooltip title={title} message={message} />
         </PortaledTooltip>
       )}

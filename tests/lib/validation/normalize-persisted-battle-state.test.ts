@@ -1,13 +1,54 @@
 import { describe, expect, it } from "vitest";
-import { defaultBattleState } from "@/lib/battle";
+import { battleSnapshot, defaultBattleState } from "@/lib/battle";
 import type { TrinketManifest } from "@/lib/battle/types";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { GEAR_EFFECT_KEYS } from "@/lib/gear";
-import { enemyById } from "@/lib/game-data";
-import { MANABURN_DAMAGE_PERCENT } from "@/lib/game-constants";
+import { cardById, enemyById } from "@/lib/game-data";
+import { MANABURN_DAMAGE_PERCENT, MAX_HAND_SIZE, MIN_MAX_MANA_FLOOR } from "@/lib/game-constants";
 import { normalizePersistedBattleState, repairPersistedTrinketManifest } from "@/lib/validation";
 
 describe("normalizePersistedBattleState", () => {
+  it("repairs related fields consistently without mutating the saved battle", () => {
+    const saved = {
+      ...battleSnapshot(defaultBattleState()),
+      playerHealth: 100,
+      playerMaxHealth: 50,
+      mana: Number.NaN,
+      maxMana: 0,
+      turn: 4.9,
+      deathsDoorActive: true,
+      deathsDoorUsed: true,
+      deathsDoorTriggeredTurn: 5,
+      deathsDoorGraceTurnsRemaining: 2.9,
+      hand: Array.from({ length: MAX_HAND_SIZE + 1 }, (_, index) => ({ ...cardById.slash!, uid: index + 1 })),
+      pendingHandCards: [{ ...cardById.block!, uid: 50 }],
+      nextCardUid: 1,
+    };
+    const before = structuredClone(saved);
+    Object.freeze(saved);
+    Object.freeze(saved.flags);
+    Object.freeze(saved.hand);
+    Object.freeze(saved.pendingHandCards);
+
+    const normalized = normalizePersistedBattleState(saved);
+    expect(normalized).toMatchObject({
+      playerHealth: 50,
+      playerMaxHealth: 50,
+      mana: defaultBattleState().mana,
+      maxMana: MIN_MAX_MANA_FLOOR,
+      turn: 4,
+      deathsDoorActive: true,
+      deathsDoorUsed: true,
+      deathsDoorTriggeredTurn: null,
+      deathsDoorGraceTurnsRemaining: 2,
+      nextCardUid: 51,
+    });
+    expect(normalized.hand).toHaveLength(MAX_HAND_SIZE);
+    expect(normalized.pendingHandCards.map((card) => card.uid)).toEqual([MAX_HAND_SIZE + 1, 50]);
+    expect(normalizePersistedBattleState(normalized)).toEqual(normalized);
+    expect(saved).toEqual(before);
+  });
+
   it("retains a running battle's Health, defenses, and old roster across balance updates", () => {
     const saved = {
       ...defaultBattleState(),
@@ -98,6 +139,8 @@ describe("normalizePersistedBattleState", () => {
         holyReflectionBlockLostPercent: 30,
         holyOnAttackBlocked: 6,
         archeryHolyDamageVsFrozen: 2,
+        blockOnConsume: 4,
+        cardHealMultipliers: { apple: 1, bread: 1 },
         unknownTalentEffect: 9,
       } as typeof defaults.talentEffects,
     });
@@ -105,6 +148,8 @@ describe("normalizePersistedBattleState", () => {
     expect(normalized.talentEffects.holyReflectionBlockLostPercent).toBe(30);
     expect(normalized.talentEffects).not.toHaveProperty("holyOnAttackBlocked");
     expect(normalized.talentEffects).not.toHaveProperty("archeryHolyDamageVsFrozen");
+    expect(normalized.talentEffects).not.toHaveProperty("blockOnConsume");
+    expect(normalized.talentEffects.cardHealMultipliers).toEqual({ apple: 1, bread: 1 });
     expect(normalized.talentEffects).not.toHaveProperty("unknownTalentEffect");
     expect(normalizePersistedBattleState(normalized).talentEffects).toEqual(normalized.talentEffects);
   });

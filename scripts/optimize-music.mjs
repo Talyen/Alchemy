@@ -14,8 +14,10 @@ import {
   readSourceDir,
   resolvePipelinePaths,
   runManifestPipeline,
+  writeStagedOutput,
 } from "./assets/asset-pipeline-runner.mjs";
-import { runPipelineScript } from "./lib/script-run.mjs";
+import { runPipelineScript, UsageError } from "./lib/script-run.mjs";
+import { parseKnownFlags } from "./lib/cli-args.mjs";
 
 async function discoverAudioFiles(dir) {
   const entries = await readSourceDir(dir);
@@ -60,7 +62,7 @@ export async function optimizeMusic({ check = false } = {}) {
         MUSIC_SETTINGS,
         SCHEMA_VERSION,
         storedEntry,
-        () => copyFile(sourcePath, outputPath),
+        () => writeStagedOutput(outputPath, (temporaryPath) => copyFile(sourcePath, temporaryPath)),
         { check },
       );
       return { message: `${file} ${fresh ? "already up to date" : "copied"}`, entry };
@@ -74,4 +76,8 @@ export async function optimizeMusic({ check = false } = {}) {
   return { ok: true };
 }
 
-runPipelineScript(import.meta.url, "Music optimization", optimizeMusic);
+runPipelineScript(import.meta.url, "Music optimization", () => {
+  const { flags, rest } = parseKnownFlags(process.argv.slice(2), { check: {} });
+  if (rest.length) throw new UsageError(`Unexpected optimization arguments: ${rest.join(", ")}`);
+  return optimizeMusic({ check: flags.has("check") });
+});

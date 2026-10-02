@@ -41,12 +41,12 @@ export function trinketOrderRow(entry: TrinketEntry): ArmoryOrderRow {
 
 export function compareOrderRows(a: ArmoryOrderRow, b: ArmoryOrderRow, sort: ArmorySortOption): number {
   const rankCompare = a.rank - b.rank;
+  if (sort === "rarity" && rankCompare !== 0) return rankCompare;
   const titleCompare = a.title.localeCompare(b.title);
   if (sort === "name" || sort === "name-desc") {
     if (titleCompare !== 0) return sort === "name-desc" ? -titleCompare : titleCompare;
     if (rankCompare !== 0) return rankCompare;
   } else {
-    if (rankCompare !== 0) return rankCompare;
     if (titleCompare !== 0) return titleCompare;
   }
   return a.id.localeCompare(b.id);
@@ -59,7 +59,6 @@ export function reconcileOrder(currentIds: readonly string[], rows: readonly Arm
   const survivingSet = new Set(surviving);
   const newlyAvailable = rows
     .filter((row) => !survivingSet.has(row.id))
-    .slice()
     .sort((a, b) => compareOrderRows(a, b, "rarity"))
     .map((row) => row.id);
   return [...surviving, ...newlyAvailable];

@@ -22,7 +22,12 @@ export function campaignLootDepth(currentAct: number, destinationIndexInAct: num
  */
 export function labyrinthLootDepth(map: LabyrinthMap | null, pendingNodeId: string | null = null): number {
   if (!map) return 1;
-  const cleared = Object.values(map.nodes).filter((node) => node.cleared && node.type !== "entrance").length;
+  let cleared = 0;
+  for (const id in map.nodes) {
+    if (!Object.hasOwn(map.nodes, id)) continue;
+    const node = map.nodes[id];
+    if (node?.cleared && node.type !== "entrance") cleared++;
+  }
   const pending = pendingNodeId ? map.nodes[pendingNodeId] : undefined;
   return Math.max(1, cleared + (pending?.cleared ? 0 : 1));
 }
@@ -30,8 +35,16 @@ export function labyrinthLootDepth(map: LabyrinthMap | null, pendingNodeId: stri
 export function highestCompletedLootDifficulty(
   completed: Readonly<Record<string, readonly DifficultyId[]>>,
 ): DifficultyId | null {
-  const clears = new Set(Object.values(completed).flat());
-  return [...DIFFICULTY_ORDER].reverse().find((id) => clears.has(id)) ?? null;
+  const clears = new Set<DifficultyId>();
+  for (const characterId in completed) {
+    if (!Object.hasOwn(completed, characterId)) continue;
+    for (const difficulty of completed[characterId] ?? []) clears.add(difficulty);
+  }
+  for (let index = DIFFICULTY_ORDER.length - 1; index >= 0; index--) {
+    const difficulty = DIFFICULTY_ORDER[index];
+    if (difficulty !== undefined && clears.has(difficulty)) return difficulty;
+  }
+  return null;
 }
 
 export function createLootProgress(

@@ -38,7 +38,7 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("Playwright server configuration", () => {
-  it.each(["e2e", "electron", "performance"] as const)("owns the %s server locally and in CI", (preset) => {
+  it.each(["e2e", "performance"] as const)("owns the %s server locally and in CI", (preset) => {
     expect(configFor(preset).webServer.reuseExistingServer).toBe(false);
     vi.stubEnv("CI", "true");
     expect(configFor(preset).webServer.reuseExistingServer).toBe(false);
@@ -73,12 +73,16 @@ describe("Playwright server configuration", () => {
     expect(configFor().workers).toBe(2);
   });
 
+  it("runs packaged Electron without a preview server", () => {
+    expect(createAlchemyPlaywrightConfig("electron").webServer).toBeUndefined();
+  });
+
   it("collects one local Electron smoke unless a CI job explicitly selects the full suite", () => {
-    expect(configFor("electron").grep?.toString()).toBe("/@local-electron-smoke/");
+    expect(createAlchemyPlaywrightConfig("electron").grep?.toString()).toBe("/@local-electron-smoke/");
     vi.stubEnv("CI", "true");
-    expect(configFor("electron").grep?.toString()).toBe("/@local-electron-smoke/");
+    expect(createAlchemyPlaywrightConfig("electron").grep?.toString()).toBe("/@local-electron-smoke/");
     vi.stubEnv("PLAYWRIGHT_ELECTRON_FULL", "1");
-    expect(configFor("electron").grep).toBeUndefined();
+    expect(createAlchemyPlaywrightConfig("electron").grep).toBeUndefined();
   });
 
   it("starts development mode on the overridden port", () => {

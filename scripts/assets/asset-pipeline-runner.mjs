@@ -1,4 +1,5 @@
-import { mkdir, readdir } from "node:fs/promises";
+import { mkdir, readdir, rename, rm } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -37,6 +38,18 @@ export function resolvePipelinePaths(importMetaUrl, { sourceSubpath, managedKey 
 /** Create the output directory for mutating runs; check mode never writes. */
 export async function ensureOutputDir(outputDir, { check = false } = {}) {
   if (!check) await mkdir(outputDir, { recursive: true });
+}
+
+/** Publish only complete output bytes; preserve the extension for encoder format detection. */
+export async function writeStagedOutput(outputPath, transform) {
+  const extension = path.extname(outputPath);
+  const temporaryPath = `${outputPath}.${randomUUID()}.tmp${extension}`;
+  try {
+    await transform(temporaryPath);
+    await rename(temporaryPath, outputPath);
+  } finally {
+    await rm(temporaryPath, { force: true });
+  }
 }
 
 /**

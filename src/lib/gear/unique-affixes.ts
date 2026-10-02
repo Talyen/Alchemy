@@ -160,7 +160,7 @@ export const primaryUniqueAffixes = [
     "Winter’s Credit",
     "offensive",
     "freeze",
-    "Spend 3 Block per missing Mana to play Freeze cards.",
+    "Spend 3 Block per missing Mana for Freeze cards. Block depletion rewards do not trigger.",
     "blockPaysFreezeMana",
     "mana",
   ),

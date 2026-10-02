@@ -89,7 +89,10 @@ export function parsePerformanceArgs(argv) {
       args.trace ||
       args.electron ||
       args.cold ||
-      args.skipBuild)
+      args.skipBuild ||
+      args.replay ||
+      argv.includes("--suite") ||
+      argv.includes("--seed"))
   )
     throw new Error("--compare cannot be combined with profiling options");
   return args;
@@ -264,6 +267,8 @@ async function main() {
   const selectedSuite =
     args.suite === "synthetic" ? SYNTHETIC_SCENARIOS : args.suite === "seeded" ? SEEDED_SCENARIOS : METRIC_SCENARIOS;
   const replay = args.replay ? JSON.parse(fs.readFileSync(path.resolve(args.replay), "utf8")) : null;
+  if (args.replay && (replay?.version !== 1 || !REALISTIC_CASE_IDS.has(replay?.scenario)))
+    throw new Error("Invalid replay bundle");
   const scenario = replay?.scenario ?? (args.all ? null : (args.scenario ?? selectedSuite[0] ?? DEFAULT_SCENARIO));
 
   if (args.electron) {
@@ -285,7 +290,6 @@ async function main() {
       ? [scenario]
       : [];
   if (replay) {
-    if (replay.version !== 1 || !REALISTIC_CASE_IDS.has(replay.scenario)) throw new Error("Invalid replay bundle");
     fs.writeFileSync(path.join(outDir, `${replay.scenario}.case.json`), JSON.stringify(replay, null, 2));
   } else {
     for (const id of prepared) {

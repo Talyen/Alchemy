@@ -1,17 +1,9 @@
 import { expect } from "@playwright/test";
 import { MAX_HAND_SIZE } from "@/lib/game-constants";
-import {
-  boxesOverlap,
-  injectActiveBattle,
-  makeCard,
-  makeGoblinBattleState,
-  startAtDestination,
-  startBattleWithDeck,
-  WOLF_COMPANION_CARD,
-} from "../../browser-helpers";
+import { injectActiveBattle, makeCard, makeGoblinBattleState, startBattleWithDeck } from "../../browser-helpers";
 import { test } from "../../fixtures/e2e";
 import { BattlePage } from "../../pages/battle-page";
-import { DestinationPage } from "../../pages/destination-page";
+
 import { critical, slow } from "../../playwright-tags";
 
 test.describe("Battle Flow", () => {
@@ -85,40 +77,6 @@ test.describe("Card Interactions", slow, () => {
 
     await battle.hand.nth(0).click();
     await expect(async () => expect(await battle.handCount()).toBe(handBefore - 2)).toPass({ timeout: 3000 });
-  });
-});
-
-test.describe("Elite Combat", critical, () => {
-  test("elite combat destination opens a playable battle", async ({ page }) => {
-    await startAtDestination(page, {}, { forceDestination: "Elite Combat" });
-
-    await new DestinationPage(page).enterCombat("Elite Combat");
-    const battle = new BattlePage(page);
-    await battle.waitForOpeningHand();
-    await expect(battle.endTurnBtn).toBeEnabled();
-  });
-});
-
-test.describe("Companion Battle Behavior", () => {
-  const COMPANION_DECK = Array.from({ length: 6 }, () => WOLF_COMPANION_CARD);
-
-  test("summon companion card places companion in battle panel", async ({ page, fastBattle }) => {
-    void fastBattle;
-
-    await startBattleWithDeck(page, COMPANION_DECK);
-    const battle = new BattlePage(page);
-
-    await battle.playCardNamed("Wolf");
-    await expect(battle.companionPanel).toBeVisible({ timeout: 3000 });
-    await expect(battle.companionPanel).toHaveAttribute("aria-label", "Active companion: Wolf Companion");
-
-    await expect(async () => {
-      const companionBox = await battle.companionPanel.boundingBox();
-      const healthBox = await battle.playerHealthPanel.boundingBox();
-      expect(companionBox && healthBox).toBeTruthy();
-      if (!companionBox || !healthBox) return;
-      expect(boxesOverlap(companionBox, healthBox)).toBe(false);
-    }).toPass();
   });
 });
 

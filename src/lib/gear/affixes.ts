@@ -3,12 +3,22 @@ import { gearAffixCatalog, formatAffixDescription, type GearAffixDefinition } fr
 import type { GearEffectManifest } from "./gear-effect-manifest";
 import { defaultGearEffects } from "./gear-effect-manifest";
 import { gearDefinitions } from "./definitions";
-import { getUniqueAffixes } from "./unique-catalog";
+import { getUniqueAffixView } from "./unique-catalog";
 import type { GearAffixRoll, GearInstance, GearRarity } from "./types";
 import { clamp } from "@/lib/math";
+import { rngInt } from "@/lib/rng";
+
+interface AffixRollInput {
+  id: string;
+  value: number;
+}
 
 function isGearAffixId(value: string): value is GearAffixId {
-  return value in gearAffixCatalog;
+  return Object.hasOwn(gearAffixCatalog, value);
+}
+
+function isAffixRollArray(value: readonly AffixRollInput[] | null | undefined): value is readonly AffixRollInput[] {
+  return Array.isArray(value);
 }
 
 export function resolveAffixEffects(affixes: readonly GearAffixRoll[]): GearEffectManifest {
@@ -23,32 +33,58 @@ export function resolveAffixEffects(affixes: readonly GearAffixRoll[]): GearEffe
 }
 
 export function effectsForAffixRolls(
-  rawAffixes: readonly GearAffixRoll[] | Array<{ id: string; value: number }> | null | undefined,
+  rawAffixes: readonly AffixRollInput[] | null | undefined,
   rarity?: GearRarity | null,
 ): GearEffectManifest {
-  return resolveAffixEffects(
-    normalizeAffixRolls(rawAffixes as Array<{ id: string; value: number }> | null | undefined, rarity),
-  );
+  const effects = { ...defaultGearEffects };
+  addAffixRollEffects(effects, rawAffixes, rarity);
+  return effects;
+}
+
+function normalizedAffixValue(
+  value: number,
+  definition: GearAffixDefinition,
+  rarity?: GearRarity | null,
+): number | null {
+  if (!Number.isFinite(value) || value <= 0) return null;
+  const rounded = Math.round(value);
+  const range = rarity ? definition.roll[rarity] : undefined;
+  return range ? clamp(rounded, range.min, range.max) : rounded;
+}
+
+/** Internal gear aggregation: normalize into a newly owned manifest without temporary roll arrays. */
+export function addAffixRollEffects(
+  effects: GearEffectManifest,
+  rawAffixes: readonly AffixRollInput[] | null | undefined,
+  rarity?: GearRarity | null,
+): void {
+  if (!isAffixRollArray(rawAffixes)) return;
+  for (const entry of rawAffixes) {
+    if (!entry || !isGearAffixId(entry.id)) continue;
+    const definition = gearAffixCatalog[entry.id];
+    const value = normalizedAffixValue(entry.value, definition, rarity);
+    if (value !== null) effects[definition.effectKey] += value;
+  }
 }
 
 export function normalizeAffixRolls(
-  rawAffixes?: Array<{ id: string; value: number }> | null,
+  rawAffixes?: readonly AffixRollInput[] | null,
   rarity?: GearRarity | null,
 ): GearAffixRoll[] {
-  if (!rawAffixes || !Array.isArray(rawAffixes)) return [];
-  return rawAffixes.flatMap((entry) => {
-    if (!entry || !isGearAffixId(entry.id) || !Number.isFinite(entry.value) || entry.value <= 0) return [];
-    const range = rarity ? gearAffixCatalog[entry.id].roll[rarity] : undefined;
-    if (!range) return [{ id: entry.id, value: Math.round(entry.value) }];
-    const rounded = Math.round(entry.value);
-    return [{ id: entry.id, value: clamp(rounded, range.min, range.max) }];
-  });
+  if (!isAffixRollArray(rawAffixes)) return [];
+  const rolls: GearAffixRoll[] = [];
+  for (const entry of rawAffixes) {
+    if (!entry || !isGearAffixId(entry.id)) continue;
+    const value = normalizedAffixValue(entry.value, gearAffixCatalog[entry.id], rarity);
+    if (value !== null) rolls.push({ id: entry.id, value });
+  }
+  return rolls;
 }
 
 export function rollAffixValue(def: GearAffixDefinition, rarity: GearRarity, rng: () => number): number {
   const range = def.roll[rarity];
   const span = range.max - range.min + 1;
-  return range.min + Math.floor(rng() * span);
+  return range.min + rngInt(rng, span);
 }
 
 export function getGearAffixDisplayName(affixId: GearAffixId): string {
@@ -59,19 +95,22 @@ export function getGearAffixTooltipEntries(
   affixes: readonly GearAffixRoll[],
   rarity?: GearRarity | null,
 ): Array<{ key: string; name: string; text: string; affixId: GearAffixId; value: number }> {
-  return normalizeAffixRolls([...affixes], rarity).flatMap((roll, index) => {
-    const def = gearAffixCatalog[roll.id];
-    if (!def) return [];
-    return [
-      {
-        key: `${roll.id}-${index}`,
-        affixId: roll.id,
-        value: roll.value,
-        name: getGearAffixDisplayName(roll.id),
-        text: formatAffixDescription(def.descriptionTemplate, roll.value),
-      },
-    ];
-  });
+  const entries: ReturnType<typeof getGearAffixTooltipEntries> = [];
+  if (!isAffixRollArray(affixes)) return entries;
+  for (const roll of affixes) {
+    if (!roll || !isGearAffixId(roll.id)) continue;
+    const definition = gearAffixCatalog[roll.id];
+    const value = normalizedAffixValue(roll.value, definition, rarity);
+    if (value === null) continue;
+    entries.push({
+      key: `${roll.id}-${entries.length}`,
+      affixId: roll.id,
+      value,
+      name: definition.name,
+      text: formatAffixDescription(definition.descriptionTemplate, value),
+    });
+  }
+  return entries;
 }
 
 export function affixMatchesAffinity(def: GearAffixDefinition, affinityKeywords: readonly string[]): boolean {
@@ -81,8 +120,8 @@ export function affixMatchesAffinity(def: GearAffixDefinition, affinityKeywords:
   );
 }
 
-export function getGearInstanceAffixes(instance: GearInstance): readonly GearAffixRoll[] {
-  return getUniqueAffixes(instance.definitionId) ?? instance.affixes;
+export function getGearInstanceAffixes(instance: GearInstance): ReadonlyArray<Readonly<GearAffixRoll>> {
+  return getUniqueAffixView(instance.definitionId) ?? instance.affixes;
 }
 
 export function getGearInstanceTooltipEntries(

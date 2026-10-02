@@ -28,6 +28,15 @@ function mixUint32(value: number): number {
   return toUint32(mixed ^ (mixed >>> 15));
 }
 
+function getRunStreamSalt(stream: RunRngStream): number {
+  if (!Object.hasOwn(STREAM_SALTS, stream)) throw new Error(`Unknown run RNG stream: ${stream}`);
+  return STREAM_SALTS[stream];
+}
+
+function runValueAtCounter(seed: number, salt: number, counter: number): number {
+  return mixUint32(seed ^ salt ^ Math.imul(counter, 0x85eb_ca6b)) / UINT32_RANGE;
+}
+
 function assertDraw(draw: number): number {
   if (!(draw >= 0 && draw < 1)) throw new Error("Rng draw out of range");
   return draw;
@@ -73,21 +82,16 @@ export function createRunRngState(seedOrRng: number | Rng): RunRngState {
 }
 
 export function nextRunRngValue(state: RunRngState, stream: RunRngStream): { value: number; nextCounter: number } {
-  if (!Object.hasOwn(STREAM_SALTS, stream)) {
-    throw new Error(`Unknown run RNG stream: ${stream}`);
-  }
-  const counter = state.counters[stream] ?? 0;
-  const value = mixUint32(state.seed ^ STREAM_SALTS[stream] ^ Math.imul(counter + 1, 0x85eb_ca6b)) / UINT32_RANGE;
-  return { value, nextCounter: counter + 1 };
+  const salt = getRunStreamSalt(stream);
+  const nextCounter = (state.counters[stream] ?? 0) + 1;
+  return { value: runValueAtCounter(state.seed, salt, nextCounter), nextCounter };
 }
 
 export function stepRunRng(state: RunRngState, stream: RunRngStream): number {
-  if (!Object.hasOwn(STREAM_SALTS, stream)) {
-    throw new Error(`Unknown run RNG stream: ${stream}`);
-  }
+  const salt = getRunStreamSalt(stream);
   const nextCounter = (state.counters[stream] ?? 0) + 1;
   state.counters[stream] = nextCounter;
-  return mixUint32(state.seed ^ STREAM_SALTS[stream] ^ Math.imul(nextCounter, 0x85eb_ca6b)) / UINT32_RANGE;
+  return runValueAtCounter(state.seed, salt, nextCounter);
 }
 
 export function createRunStateRng(state: RunRngState, stream: RunRngStream): Rng {
@@ -102,15 +106,12 @@ export function rngInt(rng: Rng, n: number): number {
 export function createRunStreamRng(seed: number, stream: RunRngStream = "world", startCounter = 0): Rng {
   if (!Number.isInteger(startCounter) || startCounter < 0)
     throw new Error("createRunStreamRng requires a non-negative integer startCounter");
-  if (!Object.hasOwn(STREAM_SALTS, stream)) {
-    throw new Error(`Unknown run RNG stream: ${stream}`);
-  }
+  const salt = getRunStreamSalt(stream);
   const seed32 = toUint32(seed);
-  const salt = STREAM_SALTS[stream];
   let counter = startCounter;
   return () => {
     counter += 1;
-    return mixUint32(seed32 ^ salt ^ Math.imul(counter, 0x85eb_ca6b)) / UINT32_RANGE;
+    return runValueAtCounter(seed32, salt, counter);
   };
 }
 
@@ -134,23 +135,59 @@ export function getBattleRng(state: { rng?: Rng }): Rng {
 }
 
 export function shuffle<T>(items: readonly T[], rng: Rng): T[] {
-  const shuffled = [...items];
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+  return shuffleOwned([...items], rng);
+}
+
+function shuffleOwned<T>(items: T[], rng: Rng): T[] {
+  for (let index = items.length - 1; index > 0; index -= 1) {
     const swapIndex = rngInt(rng, index + 1);
-    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex]!, shuffled[index]!];
+    const item = items[index]!;
+    items[index] = items[swapIndex]!;
+    items[swapIndex] = item;
   }
-  return shuffled;
+  return items;
 }
 
 export function sampleItems<T>(items: readonly T[], count: number, rng: Rng): T[] {
   if (!Number.isInteger(count) || count < 0) throw new Error("sampleItems requires a non-negative integer count");
   if (count === 0) return [];
-  return shuffle(items, rng).slice(0, Math.min(count, items.length));
+  return sampleOwned([...items], count, rng);
+}
+
+function sampleOwned<T>(items: T[], count: number, rng: Rng): T[] {
+  // Keep the full shuffle: even a small sample must preserve seeded results
+  // and the stream position used by subsequent rewards and encounters.
+  shuffleOwned(items, rng);
+  items.length = Math.min(count, items.length);
+  return items;
 }
 
 export function pickRandom<T>(items: readonly T[], rng: Rng): T | undefined {
   if (items.length === 0) return undefined;
   return items[rngInt(rng, items.length)];
+}
+
+/** Half-open weighted buckets in item order; empty or all-zero pools do not draw. */
+export function pickWeighted<T>(items: readonly T[], weightOf: (item: T) => number, rng: Rng): T | undefined {
+  const weights = items.map(weightOf);
+  let total = 0;
+  let lastPositiveIndex = -1;
+  for (const [index, weight] of weights.entries()) {
+    if (!Number.isFinite(weight) || weight < 0) throw new Error("pickWeighted requires finite non-negative weights");
+    total += weight;
+    if (weight > 0) lastPositiveIndex = index;
+  }
+  if (!Number.isFinite(total)) throw new Error("pickWeighted requires a finite total weight");
+  if (lastPositiveIndex < 0) return undefined;
+
+  let remaining = assertDraw(rng()) * total;
+  for (const [index, weight] of weights.entries()) {
+    if (weight === 0) continue;
+    remaining -= weight;
+    if (remaining < 0) return items[index];
+  }
+  // Floating-point subtraction can exhaust the buckets; never select a zero-weight tail.
+  return items[lastPositiveIndex];
 }
 
 /** Sample without replacement while skipping excluded keys (e.g. owned or currently shown items). */
@@ -161,11 +198,10 @@ export function sampleItemsExcluding<T, K>(
   exclude: ReadonlySet<K>,
   keyOf: (item: T) => K,
 ): T[] {
-  return sampleItems(
-    items.filter((item) => !exclude.has(keyOf(item))),
-    count,
-    rng,
-  );
+  const eligible = items.filter((item) => !exclude.has(keyOf(item)));
+  if (!Number.isInteger(count) || count < 0) throw new Error("sampleItems requires a non-negative integer count");
+  if (count === 0) return [];
+  return sampleOwned(eligible, count, rng);
 }
 
 export function takeRandomItem<T>(items: T[], rng: Rng): T | undefined {

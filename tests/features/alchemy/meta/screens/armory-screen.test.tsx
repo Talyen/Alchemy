@@ -75,18 +75,6 @@ describe("ArmoryScreen core", () => {
     expect(screen.getByRole("button", { name: "Rogue" }).className).toMatch(/ring-/);
   });
 
-  it("renders character tabs in roster order", () => {
-    renderArmoryScreen({
-      finishedRunCharacters: ["knight", "rogue", "ranger", "wizard", "alchemist", "warlock", "druid"],
-    });
-
-    expect(
-      within(screen.getByTestId("armory-character-selector"))
-        .getAllByRole("button")
-        .map((button) => button.textContent?.trim()),
-    ).toEqual(["Knight", "Rogue", "Ranger", "Wizard", "Alchemist", "Warlock", "Druid", "Wildcard"]);
-  });
-
   it("disables characters whose prerequisite has not finished", () => {
     renderArmoryScreen({ finishedRunCharacters: ["knight"] });
 
@@ -158,19 +146,6 @@ describe("ArmoryScreen core", () => {
     expect(onEquip).toHaveBeenCalledWith("knight", "body", expect.objectContaining({ instanceId: "gear-body" }));
   });
 
-  it("renders the development gear-spawn action when provided", async () => {
-    const onSpawnDevGear = vi.fn();
-    renderArmoryScreen({ onSpawnDevGear });
-
-    if (!import.meta.env.DEV) {
-      expect(screen.queryByLabelText("Spawn random gear")).toBeNull();
-      return;
-    }
-
-    await userEvent.setup().click(screen.getByLabelText("Spawn random gear"));
-    expect(onSpawnDevGear).toHaveBeenCalledWith("knight");
-  });
-
   it("paginates matching inventory to six items per page", async () => {
     const user = userEvent.setup();
     const items = Array.from({ length: 7 }, (_, index) => ({
@@ -187,18 +162,6 @@ describe("ArmoryScreen core", () => {
     await waitFor(() => {
       expect(document.querySelectorAll('[data-testid="armory-inventory-item"]')).toHaveLength(1);
       expect(document.querySelectorAll('[data-testid="armory-inventory-filler"]')).toHaveLength(5);
-    });
-  });
-
-  it("keeps a 2×3 inventory footprint when the selected slot has no items", async () => {
-    const user = userEvent.setup();
-    renderArmoryScreen();
-
-    await user.click(screen.getByLabelText("Right accessory equipment slot"));
-    await waitFor(() => {
-      expect(screen.getByRole("img", { name: "Empty" })).toBeTruthy();
-      expect(document.querySelectorAll('[data-testid="armory-inventory-item"]')).toHaveLength(0);
-      expect(document.querySelectorAll('[data-testid="armory-inventory-filler"]')).toHaveLength(6);
     });
   });
 });

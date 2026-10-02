@@ -53,37 +53,33 @@ test(
   },
 );
 
-test(
-  "Bestiary uses the same trait and ability inspection without revealing undiscovered enemies",
-  critical,
-  async ({ page }) => {
-    await new MenuPage(page).gotoCollection({ encounteredEnemyIds: ["bandit"] });
-    await page.getByRole("button", { name: "Bestiary", exact: true }).click();
-    const bandit = page.getByRole("button", { name: "Inspect Bandit", exact: true });
-    await bandit.hover();
-    const tooltip = page.locator(".hover-popup-panel[data-visible]");
-    await expect(tooltip).toContainText("Ambush");
-    await expect(tooltip).not.toContainText("Slash");
-    await bandit.click();
-    const dialog = page.getByRole("dialog", { name: "Bandit" });
-    await expect(dialog.getByRole("heading", { name: "Abilities" })).toBeVisible();
-    await expect(tooltip).toHaveCount(0);
-    for (const name of ["Slash", "Serrated Edge", "Block"])
-      await expect(dialog.getByRole("img", { name, exact: true })).toBeVisible();
-    await dialog.getByRole("button", { name: "Serrated Edge", exact: true }).focus();
-    await expect(tooltip).toContainText("Deal 2 Physical or Bleed damage");
-    await page.keyboard.press("Escape");
-    await expect(dialog).toHaveCount(0);
-    await expect(bandit).toBeFocused();
-    await expect(tooltip).toHaveCount(0);
-    const undiscovered = page.getByRole("button", { name: "Inspect Undiscovered Entry" }).first();
-    await undiscovered.hover();
-    await expect(tooltip).toContainText("Undiscovered");
-    await expect(tooltip.locator("[data-enemy-trait]")).toHaveCount(0);
-    await undiscovered.click();
-    await expect(page.getByRole("dialog")).toHaveCount(0);
-  },
-);
+test("Bestiary uses the same trait and ability inspection without revealing undiscovered enemies", async ({ page }) => {
+  await new MenuPage(page).gotoCollection({ encounteredEnemyIds: ["bandit"] });
+  await page.getByRole("button", { name: "Bestiary", exact: true }).click();
+  const bandit = page.getByRole("button", { name: "Inspect Bandit", exact: true });
+  await bandit.hover();
+  const tooltip = page.locator(".hover-popup-panel[data-visible]");
+  await expect(tooltip).toContainText("Ambush");
+  await expect(tooltip).not.toContainText("Slash");
+  await bandit.click();
+  const dialog = page.getByRole("dialog", { name: "Bandit" });
+  await expect(dialog.getByRole("heading", { name: "Abilities" })).toBeVisible();
+  await expect(tooltip).toHaveCount(0);
+  for (const name of ["Slash", "Serrated Edge", "Block"])
+    await expect(dialog.getByRole("img", { name, exact: true })).toBeVisible();
+  await dialog.getByRole("button", { name: "Serrated Edge", exact: true }).focus();
+  await expect(tooltip).toContainText("Deal 2 Physical or Bleed damage");
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(bandit).toBeFocused();
+  await expect(tooltip).toHaveCount(0);
+  const undiscovered = page.getByRole("button", { name: "Inspect Undiscovered Entry" }).first();
+  await undiscovered.hover();
+  await expect(tooltip).toContainText("Undiscovered");
+  await expect(tooltip.locator("[data-enemy-trait]")).toHaveCount(0);
+  await undiscovered.click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
 
 // Trait-box sizing across map, hover, and inspection widths belonged to the
 // display-sizing layout owner ("enemy Traits remain readable and inside the

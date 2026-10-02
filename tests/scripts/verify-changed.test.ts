@@ -45,6 +45,7 @@ describe("verification selection", () => {
     expect(plan.routes.map((route) => route.id)).toEqual(["runtime"]);
     expect(plan.commands.map((command) => command.key)).toEqual(["related"]);
     expect(plan.commands[0]?.args).toEqual([
+      "scripts/run-compact.mjs",
       "vitest",
       "related",
       "--maxWorkers=4",
@@ -61,7 +62,7 @@ describe("verification selection", () => {
     ];
     const plan = resolveRoutePlan(paths);
     expect(plan.commands.map((command) => command.key)).toEqual(["assets-check", "unit-all"]);
-    expect(plan.commands.find((command) => command.key === "unit-all")?.args).toEqual(["test"]);
+    expect(plan.commands.find((command) => command.key === "unit-all")?.args).toEqual(["run", "test:full"]);
   });
 
   it("loads a large selection losslessly from a JSON file", () => {
@@ -81,7 +82,10 @@ describe("verification selection", () => {
     const filePath = "tests/lib/battle/damage-calc.test.ts";
     const plan = resolveRoutePlan([filePath]);
     expect(plan.routes.map((route) => route.id)).toEqual(["unit-test"]);
-    expect(plan.commands[0]).toMatchObject({ key: "unit-changed", args: ["vitest", "run", filePath] });
+    expect(plan.commands[0]).toMatchObject({
+      key: "unit-changed",
+      args: ["scripts/run-compact.mjs", "vitest", "run", filePath],
+    });
   });
 
   it("omits retired test files without losing surviving tests or risk escalations", () => {
@@ -91,7 +95,7 @@ describe("verification selection", () => {
     const plan = resolveRoutePlan([retired, surviving]);
     expect(plan.paths).toEqual([retired, surviving]);
     expect(plan.commands).toEqual([
-      expect.objectContaining({ key: "unit-changed", args: ["vitest", "run", surviving] }),
+      expect.objectContaining({ key: "unit-changed", args: ["scripts/run-compact.mjs", "vitest", "run", surviving] }),
     ]);
     expect(resolveRoutePlan([retired]).commands).toEqual([]);
     expect(resolveRoutePlan(["tests/desktop/retired-coverage.test.ts"]).commands.map((command) => command.key)).toEqual(
@@ -114,6 +118,7 @@ describe("verification selection", () => {
     const plan = resolveRoutePlan(["scripts/check.mjs", runtimePath, "src/lib/game-data/effects/BATTLE_HANDLERS.md"]);
     expect(plan.commands.map((command) => command.key)).toEqual(["docs-check", "unit-tooling", "related"]);
     expect(plan.commands.find((command) => command.key === "related")?.args).toEqual([
+      "scripts/run-compact.mjs",
       "vitest",
       "related",
       "--maxWorkers=4",
@@ -164,7 +169,12 @@ describe("verification selection", () => {
       "tests/lib/game-data/keywords.test.ts",
     ]);
     expect(plan.commands.map((command) => command.key)).toEqual(["unit-tooling", "unit-changed"]);
-    expect(plan.commands[1].args).toEqual(["vitest", "run", "tests/lib/game-data/keywords.test.ts"]);
+    expect(plan.commands[1].args).toEqual([
+      "scripts/run-compact.mjs",
+      "vitest",
+      "run",
+      "tests/lib/game-data/keywords.test.ts",
+    ]);
   });
 
   it("retains desktop and browser selection after folder moves", () => {
@@ -186,12 +196,12 @@ describe("verification selection", () => {
   it("skips documentation checks on request without losing other escalations", () => {
     const plan = resolveRoutePlan(["scripts/check.mjs", "src/lib/battle/damage-calc.ts", "Docs/guide.md"]);
     expect(plan.commands.map((command) => command.key)).toContain("docs-check");
-    const filtered = filterPlanCommands(plan, new Set(["skip-docs-check"]));
+    const filtered = filterPlanCommands(plan, new Set(["full", "skip-docs-check"]));
     expect(filtered.commands.map((command) => command.key)).not.toContain("docs-check");
     expect(filtered.commands.map((command) => command.key)).toEqual(
       plan.commands.map((command) => command.key).filter((key) => key !== "docs-check"),
     );
-    expect(filterPlanCommands(plan, new Set()).commands).toBe(plan.commands);
+    expect(filterPlanCommands(plan, new Set(["full"])).commands).toBe(plan.commands);
   });
 
   it("rejects unknown verify flags before running commands", () => {

@@ -27,7 +27,7 @@ export function commitBattleWish(cardId: string) {
     if (!bound.wishOptions?.some((option) => option.id === cardId)) return null;
     const next = chooseWishCard(bound, cardId);
     commitResolvedBattle(draft, bound, next);
-    discoverCardIds(draft, [cardId]);
+    discoverCardIds(draft, next.discoveredCardIds);
     return battleSnapshot(next);
   });
 }

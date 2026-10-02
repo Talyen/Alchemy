@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useUiStore } from "../stores/ui-store";
 import { getHoverId } from "../utils";
@@ -23,6 +23,8 @@ export function useInteractiveCard(scope: string, itemId: string) {
   const onHoverEnd = useCallback(() => {
     setHoveredCardId((current) => (current === hoverId ? null : current));
   }, [hoverId, setHoveredCardId]);
+
+  useEffect(() => onHoverEnd, [onHoverEnd]);
 
   return {
     hoverId,

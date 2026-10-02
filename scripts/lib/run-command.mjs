@@ -1,6 +1,7 @@
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { StringDecoder } from "node:string_decoder";
 import { commandInvocation } from "./command-invocation.mjs";
 import { createRunId } from "./verification/current-run.mjs";
 import { completionCounts, failureSummary } from "./compact-output.mjs";
@@ -8,8 +9,8 @@ import { completionCounts, failureSummary } from "./compact-output.mjs";
 const DEFAULT_MAX_BUFFER = 16 * 1024 * 1024;
 const activeCommands = new Set();
 
-function stopActiveCommands(signal) {
-  for (const stop of activeCommands) stop();
+async function stopActiveCommands(signal) {
+  await Promise.allSettled([...activeCommands].map((stop) => stop()));
   process.exit(signal === "SIGINT" ? 130 : 143);
 }
 
@@ -162,13 +163,17 @@ export function runCommandAsync(command, args = [], options = {}) {
     const child = spawn(...invocation, childSpawnOpts);
     let stdout = "";
     let stderr = "";
+    const stdoutDecoder = new StringDecoder("utf8");
+    const stderrDecoder = new StringDecoder("utf8");
     let timedOut = false;
     let timeoutHandle;
     let spawnError;
     let bufferError;
     let capturedBytes = 0;
+    let stopping;
     const stopTree = () => {
-      if (!child.pid) return;
+      if (stopping) return stopping;
+      if (!child.pid) return Promise.resolve();
       if (process.platform === "win32") {
         const killed = spawnSync("taskkill.exe", ["/PID", String(child.pid), "/T", "/F"], {
           windowsHide: true,
@@ -176,13 +181,27 @@ export function runCommandAsync(command, args = [], options = {}) {
           encoding: "utf8",
         });
         if (killed.error) spawnError ??= killed.error;
+        stopping = Promise.resolve();
       } else {
-        try {
-          process.kill(-child.pid, "SIGKILL");
-        } catch (error) {
-          if (error.code !== "ESRCH") spawnError ??= error;
-        }
+        const signalGroup = (signal) => {
+          try {
+            process.kill(-child.pid, signal);
+          } catch (error) {
+            if (error.code !== "ESRCH") spawnError ??= error;
+          }
+        };
+        // Nested runners own separate groups. Let their SIGTERM handlers stop
+        // those descendants before forcing this group down, including children
+        // that ignore SIGTERM. Await the grace period before releasing captures.
+        signalGroup("SIGTERM");
+        stopping = new Promise((resolve) => {
+          setTimeout(() => {
+            signalGroup("SIGKILL");
+            resolve();
+          }, 250);
+        });
       }
+      return stopping;
     };
     activeCommands.add(stopTree);
     if (activeCommands.size === 1) {
@@ -205,19 +224,22 @@ export function runCommandAsync(command, args = [], options = {}) {
         }
         return;
       }
-      if (stderrChunk) stderr += chunk;
-      else stdout += chunk;
+      if (stderrChunk) stderr += stderrDecoder.write(chunk);
+      else stdout += stdoutDecoder.write(chunk);
     };
     child.stdout?.on("data", (chunk) => collect(chunk, false));
     child.stderr?.on("data", (chunk) => collect(chunk, true));
-    const finish = (status, error) => {
+    const finish = async (status, error) => {
       if (timeoutHandle) clearTimeout(timeoutHandle);
+      await stopping;
       activeCommands.delete(stopTree);
       if (activeCommands.size === 0) {
         process.off("SIGINT", onInterrupt);
         process.off("SIGTERM", onTerminate);
       }
       error ??= spawnError ?? bufferError;
+      stdout += stdoutDecoder.end();
+      stderr += stderrDecoder.end();
       const captured = capture.finish();
       if (timedOut && !error) error = new Error(`command timed out after ${timeoutMs}ms: ${command} ${args.join(" ")}`);
       resolve({

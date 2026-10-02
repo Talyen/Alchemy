@@ -5,6 +5,7 @@ import { spawnSync, execFileSync } from "node:child_process";
 import { defineScript } from "./lib/script-run.mjs";
 import { withReportServer } from "./lib/vite-report-server.mjs";
 import { createHash } from "node:crypto";
+import { REPO_ROOT, runGit } from "./lib/repository-paths.mjs";
 
 defineScript(import.meta.url, async () => {
   const args = process.argv.slice(2);
@@ -56,32 +57,29 @@ defineScript(import.meta.url, async () => {
       ? "reports/playthrough-comparison"
       : "reports/playthrough";
   const reportDir = resolve(arg("out", defaultDirectory));
-  mkdirSync(reportDir, { recursive: true });
+  const timeoutMs = integer("timeout", 120) * 1000;
   const hash = createHash("sha256").update(`edition:${resolveEdition(process.env.ALCHEMY_EDITION)}`);
-  const sourcePaths = execFileSync(
-    "git",
-    [
-      "ls-files",
-      "--cached",
-      "--others",
-      "--exclude-standard",
-      "-z",
-      "--",
-      "src",
-      "scripts",
-      "package.json",
-      "package-lock.json",
-      "game-edition.mjs",
-    ],
-    { encoding: "utf8" },
-  )
-    .split("\0")
-    .filter((path) => /\.(?:tsx?|m?js|json)$/.test(path));
+  const inventory = runGit(REPO_ROOT, [
+    "ls-files",
+    "--cached",
+    "--others",
+    "--exclude-standard",
+    "-z",
+    "--",
+    "src",
+    "scripts",
+    "package.json",
+    "package-lock.json",
+    "game-edition.mjs",
+  ]);
+  if (inventory.status !== 0)
+    throw new Error(`Could not inspect playthrough sources: ${inventory.error?.message ?? inventory.stderr}`);
+  const sourcePaths = inventory.stdout.split("\0").filter((path) => /\.(?:tsx?|m?js|json)$/.test(path));
   for (const path of [...new Set(sourcePaths)].sort())
-    if (existsSync(path)) hash.update(path).update(readFileSync(path));
+    if (existsSync(resolve(REPO_ROOT, path))) hash.update(path).update(readFileSync(resolve(REPO_ROOT, path)));
   const codeIdentity = {
     edition: resolveEdition(process.env.ALCHEMY_EDITION),
-    head: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
+    head: execFileSync("git", ["rev-parse", "HEAD"], { cwd: REPO_ROOT, encoding: "utf8" }).trim(),
     sourceHash: hash.digest("hex"),
   };
   const bundlePath = arg("bundle", null);
@@ -111,6 +109,12 @@ defineScript(import.meta.url, async () => {
             ...(arg("save", null) ? { initialSave: JSON.parse(readFileSync(arg("save"), "utf8")) } : {}),
           }));
   if (!Array.isArray(configs) || configs.length === 0) throw new Error("Scenario manifest must not be empty");
+  // Seeds become report filenames before the worker validates gameplay options.
+  // Check the complete batch before writing or replacing any replay evidence.
+  for (const config of configs)
+    if (!Number.isSafeInteger(config?.seed) || config.seed < 0 || config.seed > 0xffffffff)
+      throw new Error("Seed must be an unsigned 32-bit integer");
+  mkdirSync(reportDir, { recursive: true });
   const results = [];
   for (const [index, config] of configs.entries()) {
     const prefix = resolve(reportDir, `career-${index}-${config.seed}`);
@@ -129,8 +133,9 @@ defineScript(import.meta.url, async () => {
     for (const stale of [output, `${output}.start`, `${output}.checkpoint`]) rmSync(stale, { force: true });
     writeFileSync(journal, "");
     const child = spawnSync(process.execPath, ["scripts/run-playthrough-worker.mjs", input, output, journal], {
+      cwd: REPO_ROOT,
       encoding: "utf8",
-      timeout: integer("timeout", 120) * 1000,
+      timeout: timeoutMs,
       maxBuffer: 2 * 1024 * 1024,
     });
     if (child.status !== 0) {

@@ -49,6 +49,9 @@ The main menu offers Continue when a run is unfinished, otherwise Play. Continue
 Destination offer construction is pure in `shared/run-flow/destination-flow.ts`.
 Callers supply offer history, boss ID, and command-bound RNG; destination
 generation is not exposed through the content-system navigation API.
+`shared/stores/destination-offer-command.ts` samples and applies Campaign
+destination offers for both run start and progression inside the caller's
+existing command, committing offer history, reward state, and RNG counters together.
 
 ## Battle path
 
@@ -129,7 +132,10 @@ layers live beside their leaves (`card-ghost-overlay.tsx`,
 ## Shop commands
 
 `create-shop-actions.ts` composes the matching `*-shop-commands.ts` modules;
-`shop-commands-core.ts` owns shared purchase and live refresh-price helpers.
+`shop-commands-core.ts` owns shared purchase actions and live price helpers.
+Each shop supplies typed shelf selection, item identity, pricing, and acquisition
+rules; the shared purchase owner uses that pricing rule for both displayed quotes
+and commits, validating and acquiring the live shelf item inside the transaction.
 Pure shelf samplers live in `shop-state-init.ts`. `shop-commands-core.ts` owns
 initialization, purchase validation, and the complete refresh recipe; the activity
 selects pricing and the typed `setRunActivityData` write target. Callers supply

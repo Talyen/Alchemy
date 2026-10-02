@@ -1,11 +1,42 @@
 import { describe, expect, it } from "vitest";
 import { GEAR_AFFIX_IDS, gearAffixCatalog } from "@/lib/gear/affix-catalog";
-import { defaultGearEffects, getGearAffixTooltipEntries, normalizeAffixRolls, resolveAffixEffects } from "@/lib/gear";
+import {
+  defaultGearEffects,
+  effectsForAffixRolls,
+  getGearAffixTooltipEntries,
+  normalizeAffixRolls,
+  resolveAffixEffects,
+} from "@/lib/gear";
 
 describe("gear affixes", () => {
   it("shows both Saintfall magnitudes in its tooltip", () => {
     const [entry] = getGearAffixTooltipEntries([{ id: "saintfall", value: 4 }], "unique");
     expect(entry?.text).toBe("When Block is depleted, deal 4 Holy to the attacker and restore 4 Health");
+  });
+
+  it("keeps tooltip keys contiguous after invalid rolls and normalizes displayed values", () => {
+    const affixes = Object.freeze([
+      Object.freeze({ id: "flat-physical", value: NaN }),
+      Object.freeze({ id: "flat-physical", value: 999 }),
+      Object.freeze({ id: "flat-physical", value: -1 }),
+      Object.freeze({ id: "flat-physical", value: 1.4 }),
+    ] as const);
+    expect(getGearAffixTooltipEntries(affixes, "basic")).toEqual([
+      {
+        key: "flat-physical-0",
+        affixId: "flat-physical",
+        value: 2,
+        name: "Ironbound",
+        text: "Increases Physical damage by 2",
+      },
+      {
+        key: "flat-physical-1",
+        affixId: "flat-physical",
+        value: 1,
+        name: "Ironbound",
+        text: "Increases Physical damage by 1",
+      },
+    ]);
   });
 
   describe("normalizeAffixRolls", () => {
@@ -33,6 +64,17 @@ describe("gear affixes", () => {
         ]),
       ).toEqual([{ id: "flat-physical", value: 2 }]);
     });
+
+    it("ignores inherited object keys when restoring rolls and aggregating effects", () => {
+      const raw = [
+        { id: "constructor", value: 3 },
+        { id: "__proto__", value: 3 },
+        { id: "toString", value: 3 },
+        { id: "flat-physical", value: 2 },
+      ];
+      expect(normalizeAffixRolls(raw, "basic")).toEqual([{ id: "flat-physical", value: 2 }]);
+      expect(effectsForAffixRolls(raw, "basic")).toEqual({ ...defaultGearEffects, flatPhysicalDamage: 2 });
+    });
   });
 
   describe("resolveAffixEffects", () => {
@@ -41,6 +83,25 @@ describe("gear affixes", () => {
       const effects = resolveAffixEffects([{ id: affixId, value: 3 }]);
       expect(effects[definition.effectKey]).toBe(defaultGearEffects[definition.effectKey] + 3);
     });
+  });
+
+  it("keeps direct aggregation consistent with normalized rolls without changing its inputs", () => {
+    const raw = Object.freeze([
+      Object.freeze({ id: "flat-physical", value: 999 }),
+      Object.freeze({ id: "flat-physical", value: 0.1 }),
+      Object.freeze({ id: "flat-burn", value: 2.4 }),
+      Object.freeze({ id: "absorb-per-mana", value: 5 }),
+      Object.freeze({ id: "not-an-affix", value: 1 }),
+      Object.freeze({ id: "flat-stun", value: -1 }),
+      Object.freeze({ id: "flat-stun", value: NaN }),
+    ]);
+    for (const rarity of [undefined, "basic", "astral", "unique"] as const) {
+      const expected = resolveAffixEffects(normalizeAffixRolls(raw, rarity));
+      const effects = effectsForAffixRolls(raw, rarity);
+      expect(effects).toEqual(expected);
+      effects.flatPhysicalDamage = -1;
+      expect(effectsForAffixRolls(raw, rarity)).toEqual(expected);
+    }
   });
 });
 

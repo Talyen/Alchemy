@@ -54,8 +54,8 @@ export interface AppBackgroundInput {
 export function shouldTreatAsBackground(input: AppBackgroundInput): boolean {
   if (input.hidden) return true;
   if (input.eventType === "blur") return true;
-  if (input.eventType === "focus") return false;
   if (!input.hasVisibleArea) return true;
+  if (input.eventType === "focus") return false;
   return !input.hasFocus;
 }
 

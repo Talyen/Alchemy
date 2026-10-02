@@ -33,7 +33,7 @@ export function parseKnownFlags(argv, spec = {}, { usage } = {}) {
       const equals = arg.indexOf("=");
       const name = equals === -1 ? arg.slice(2) : arg.slice(2, equals);
       const inline = equals === -1 ? null : arg.slice(equals + 1);
-      const definition = spec[name];
+      const definition = Object.hasOwn(spec, name) ? spec[name] : undefined;
       if (!definition) throw new UsageError(`Unknown option: ${arg}.${usage ? ` ${usage}` : ""}`);
       if (definition.takesValue) {
         if (inline != null) pushValue(name, inline, arg);

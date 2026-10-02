@@ -20,6 +20,9 @@ export function purgeEnemyBenefits(
     nextState = category
       ? { ...nextState, enemyMitigation: { ...mitigation, [category]: 0 } }
       : setEnemyStatus(nextState, status!, 0);
+    if (purged === "thorns") {
+      nextState = { ...nextState, flags: { ...nextState.flags, legacyEnemyThornsReady: false } };
+    }
     combatTexts.push({ target: "enemy", kind: "notice", stat: purged, text: "Purged", signal: "purge" });
     removed += 1;
   }

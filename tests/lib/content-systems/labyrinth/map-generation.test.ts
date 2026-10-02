@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createSeededRng } from "@/lib/rng";
+import { createSeededRng, shuffle } from "@/lib/rng";
 import {
   expandBeyondBoss,
   generateLabyrinthMap,
@@ -124,6 +124,55 @@ describe("labyrinth type seating", () => {
     }
     return conflicts;
   }
+
+  it("preserves the full-rescan seating result and RNG stream", () => {
+    // Independent full-grid scoring protects seeded output when local swap
+    // scoring changes, especially edges shared by both swapped rooms.
+    function referenceOrder(types: LabyrinthNodeType[], positions: LabyrinthGridPosition[], rng: () => number) {
+      const seated = [...types];
+      const slots = shuffle(types.map((_, index) => index).slice(1, -1), rng);
+      let best = sameTypeAdjacencies(seated, positions);
+      let improved = true;
+      while (improved && best > 0) {
+        improved = false;
+        for (const [index, first] of slots.entries()) {
+          for (const second of slots.slice(index + 1)) {
+            if (seated[first] === seated[second]) continue;
+            const firstType = seated[first]!;
+            const secondType = seated[second]!;
+            seated[first] = secondType;
+            seated[second] = firstType;
+            const score = sameTypeAdjacencies(seated, positions);
+            if (score < best) {
+              best = score;
+              improved = true;
+            } else {
+              seated[first] = firstType;
+              seated[second] = secondType;
+            }
+          }
+        }
+      }
+      return seated;
+    }
+
+    const positions = labyrinthGridPositions();
+    const pool: LabyrinthNodeType[] = ["combat", "combat", "rest", "mystery", "elite"];
+    for (let seed = 0; seed < 32; seed += 1) {
+      const inputRng = createSeededRng(seed);
+      const types: LabyrinthNodeType[] = positions.map(() => pool[Math.floor(inputRng() * pool.length)]!);
+      types[0] = "entrance";
+      types[types.length - 1] = "boss";
+      const original = [...types];
+      const actualRng = createSeededRng(seed);
+      const referenceRng = createSeededRng(seed);
+      expect(orderTypesForPositions(types, positions, actualRng)).toEqual(
+        referenceOrder(types, positions, referenceRng),
+      );
+      expect(actualRng()).toBe(referenceRng());
+      expect(types).toEqual(original);
+    }
+  });
 
   it("separates duplicate types when the layout allows it", () => {
     const positions: LabyrinthGridPosition[] = [

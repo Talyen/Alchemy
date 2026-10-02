@@ -35,6 +35,7 @@ export function KeywordPlasmaBackground({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const colorPair =
     explicitColorPair !== undefined ? explicitColorPair : keywordIds ? getPlasmaColorPair(keywordIds) : null;
+  const hasColorPair = colorPair !== null;
   const activePair = colorPair ?? BLACK_PAIR;
   const targetPrimary = activePair.primary;
   const targetSecondary = activePair.secondary;
@@ -56,21 +57,32 @@ export function KeywordPlasmaBackground({
 
     if (!motionAllowed || !visible || !active || !webglAvailable) {
       colorsRef.current = currentTarget;
-      activeRef.current = colorPair !== null;
+      activeRef.current = hasColorPair;
       return;
     }
     const from = { ...colorsRef.current };
     if (from.primary === targetPrimary && from.secondary === targetSecondary) {
-      activeRef.current = colorPair !== null;
-      if (colorPair !== null) wakeRef.current();
+      activeRef.current = hasColorPair;
+      if (hasColorPair) wakeRef.current();
       return;
     }
     activeRef.current = true;
     wakeRef.current();
 
     const start = performance.now();
-    const fromPrimary = typeof from.primary === "string" ? parsePlasmaHexColor(from.primary) : from.primary;
-    const fromSecondary = typeof from.secondary === "string" ? parsePlasmaHexColor(from.secondary) : from.secondary;
+    // Interrupted fades need owned starting tuples; the previous fade's output
+    // is mutable, and must never become the next fade's working buffer.
+    const fromPrimary =
+      typeof from.primary === "string"
+        ? parsePlasmaHexColor(from.primary)
+        : ([...from.primary] as [number, number, number]);
+    const fromSecondary =
+      typeof from.secondary === "string"
+        ? parsePlasmaHexColor(from.secondary)
+        : ([...from.secondary] as [number, number, number]);
+    const mixedPrimary: [number, number, number] = [0, 0, 0];
+    const mixedSecondary: [number, number, number] = [0, 0, 0];
+    const mixedColors: PlasmaColorState = { primary: mixedPrimary, secondary: mixedSecondary };
     let cachedTarget: PlasmaColorPair | null = null;
     let toPrimary = parsePlasmaHexColor(currentTarget.primary);
     let toSecondary = parsePlasmaHexColor(currentTarget.secondary);
@@ -86,14 +98,13 @@ export function KeywordPlasmaBackground({
       }
 
       const t = Math.min(1, (now - start) / COLOR_LERP_MS);
-      colorsRef.current = {
-        primary: lerpParsedRgbFloats(fromPrimary, toPrimary, t),
-        secondary: lerpParsedRgbFloats(fromSecondary, toSecondary, t),
-      };
+      lerpParsedRgbFloats(fromPrimary, toPrimary, t, mixedPrimary);
+      lerpParsedRgbFloats(fromSecondary, toSecondary, t, mixedSecondary);
+      colorsRef.current = mixedColors;
 
       if (t < 1) {
         rafRef.current = requestAnimationFrame(tick);
-      } else if (colorPair === null) {
+      } else if (!hasColorPair) {
         idleTimerRef.current = window.setTimeout(() => {
           activeRef.current = false;
         }, 100);
@@ -105,7 +116,7 @@ export function KeywordPlasmaBackground({
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current);
     };
-  }, [colorPair, targetPrimary, targetSecondary, motionAllowed, visible, active, webglAvailable]);
+  }, [hasColorPair, targetPrimary, targetSecondary, motionAllowed, visible, active, webglAvailable]);
 
   useEffect(() => {
     if (!motionAllowed || !visible) return;

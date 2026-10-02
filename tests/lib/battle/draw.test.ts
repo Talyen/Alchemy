@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { defaultBattleState, defaultTalentEffects, endPlayerTurn, playBattleCardResolved } from "@/lib/battle";
-import { drawCards, drawKeywordCard } from "@/lib/battle/draw";
+import { drawCards, drawKeywordCard, takeRandomCardFromDeck } from "@/lib/battle/draw";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { shuffle } from "@/lib/rng";
 import { CARDS_PER_TURN, MAX_HAND_SIZE } from "@/lib/game-constants";
@@ -127,12 +127,17 @@ describe("drawCards — edge cases", () => {
   it("mid-draw reshuffles discard when deck runs out", () => {
     const deck = [makeTestCardWithId("d1")];
     const discard = [makeTestCardWithId("d2"), makeTestCardWithId("d3"), makeTestCardWithId("d4")];
-    const result = drawCards(deck, discard, [], 4, 0, seededRng(1));
-    expect(result.hand).toHaveLength(4);
+    Object.freeze(deck);
+    Object.freeze(discard);
+    const rng = vi.fn(() => 0);
+    const result = drawCards(deck, discard, [], 4, 0, rng);
+    expect(result.hand.map((card) => card.id)).toEqual(["d1", "d2", "d4", "d3"]);
+    expect(result.hand.map((card) => card.uid)).toEqual([0, 1, 2, 3]);
     expect(result.deck).toHaveLength(0);
     expect(result.discard).toHaveLength(0);
-    const ids = result.hand.map((c: { id: string }) => c.id).sort();
-    expect(ids).toEqual(["d1", "d2", "d3", "d4"]);
+    expect(rng).toHaveBeenCalledTimes(2);
+    expect(deck.map((card) => card.id)).toEqual(["d1"]);
+    expect(discard.map((card) => card.id)).toEqual(["d2", "d3", "d4"]);
   });
 
   it("both piles empty returns empty hand unchanged", () => {
@@ -244,6 +249,33 @@ describe("drawCards — edge cases", () => {
     expect(next.hand[0]?.id).toBe("waiting");
     expect(next.hand.some((card) => card.id === "ordinary")).toBe(true);
     expect(next.pendingHandCards).toEqual([]);
+  });
+});
+
+describe("takeRandomCardFromDeck", () => {
+  it.each(["deck", "discard"] as const)("preserves the %s input and seeded draw order", (pile) => {
+    const cards = [makeCard("a", { uid: 1 }), makeCard("b", { uid: 2 }), makeCard("c", { uid: 3 })];
+    const rng = vi.fn(() => 0);
+    const state = makeTestBattleState({
+      deck: pile === "deck" ? cards : [],
+      discard: pile === "discard" ? cards : [],
+      nextCardUid: 40,
+      uniqueGear: { returningFlightUid: 1, lastArcheryUid: 2 },
+      rng,
+    });
+    Object.freeze(state.deck);
+    Object.freeze(state.discard);
+
+    const result = takeRandomCardFromDeck(state)!;
+    expect(result.card.id).toBe(pile === "deck" ? "a" : "b");
+    expect(result.card.uid).toBe(40);
+    expect(result.nextCardUid).toBe(41);
+    expect(result.deck.map((card) => card.id)).toEqual(pile === "deck" ? ["b", "c"] : ["c", "a"]);
+    expect(result.discard).toEqual([]);
+    expect(result.uniqueGear.returningFlightUid).toBe(pile === "deck" ? 40 : 1);
+    expect(result.uniqueGear.lastArcheryUid).toBe(pile === "discard" ? 40 : 2);
+    expect(rng).toHaveBeenCalledTimes(pile === "deck" ? 1 : 3);
+    expect(cards.map((card) => card.id)).toEqual(["a", "b", "c"]);
   });
 });
 

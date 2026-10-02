@@ -119,18 +119,18 @@ export function gauntletDepthDeltaFor(enemyId: string): number {
 }
 
 const TITLE_LOOKUPS = {
-  enemy: Object.fromEntries(enemyBestiary.map((entry) => [entry.id, entry.title])),
-  character: Object.fromEntries(Object.values(characters).map((entry) => [entry.id, entry.name])),
-  boon: Object.fromEntries(trinketLibrary.map((entry) => [entry.id, entry.title])),
-  card: Object.fromEntries(cardLibrary.map((entry) => [entry.id, entry.title])),
-  companion: Object.fromEntries(Object.values(companionLibrary).map((entry) => [entry.id, entry.title])),
-  affix: Object.fromEntries(gearAffixList.map((entry) => [entry.id, entry.name])),
-  gear: Object.fromEntries(gearBaseItemList.map((entry) => [entry.id, entry.displayName])),
-  talent: Object.fromEntries(talentPool.map((entry) => [entry.id, entry.name])),
+  enemy: new Map(enemyBestiary.map((entry) => [entry.id, entry.title])),
+  character: new Map<string, string>(Object.values(characters).map((entry) => [entry.id, entry.name])),
+  boon: new Map(trinketLibrary.map((entry) => [entry.id, entry.title])),
+  card: new Map(cardLibrary.map((entry) => [entry.id, entry.title])),
+  companion: new Map<string, string>(Object.values(companionLibrary).map((entry) => [entry.id, entry.title])),
+  affix: new Map(gearAffixList.map((entry) => [entry.id, entry.name])),
+  gear: new Map(gearBaseItemList.map((entry) => [entry.id, entry.displayName])),
+  talent: new Map(talentPool.map((entry) => [entry.id, entry.name])),
 };
 
 export type TitleLookupKind = keyof typeof TITLE_LOOKUPS;
 
 export function titleFor(kind: TitleLookupKind, id: string): string {
-  return TITLE_LOOKUPS[kind][id] ?? id;
+  return TITLE_LOOKUPS[kind].get(id) ?? id;
 }

@@ -1,5 +1,5 @@
 import { mkdtempSync, rmSync } from "node:fs";
-import { mkdir, readFile, utimes, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -162,6 +162,28 @@ describe("sound manifest publication", () => {
     fixture.convert.mockImplementation(convert);
     await expect(optimizeSounds()).resolves.toEqual({ ok: true });
     await expect(readFile(path.join(outputDir, "orphan.ogg"))).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  it("preserves usable fallback bytes when the encoder writes partial output before failing", async () => {
+    await optimizeSounds();
+    const fallback = path.join(outputDir, "generated.mp3");
+    const before = await readFile(fallback);
+    const manifest = await readFile(manifestPath);
+    await writeFile(path.join(sourceDir, "raw.ogg"), "new audio");
+    fixture.convert.mockImplementation(async (args) => {
+      await writeFile(args.at(-1)!, "partial audio");
+      throw new Error("encoder interrupted");
+    });
+    await expect(optimizeSounds()).resolves.toMatchObject({ ok: false });
+    expect(await readFile(fallback)).toEqual(before);
+    expect(await readFile(manifestPath)).toEqual(manifest);
+    expect((await readdir(outputDir)).sort()).toEqual([
+      ".asset-hashes.json",
+      "curated.mp3",
+      "curated.ogg",
+      "generated.mp3",
+      "generated.ogg",
+    ]);
   });
 
   it("does not build fallbacks from a stale OGG after its source fails", async () => {

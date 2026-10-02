@@ -31,12 +31,28 @@ export function dealEnemyScaledDamage(
 ): BattleState {
   if (baseDamage <= 0 || state.enemyHealth <= 0) return state;
   const pacedDamage = paceCombatDamage(state, baseDamage, "player");
-  const finalDamage = Math.round(pacedDamage * (options.multiplier ?? 1));
+  const damage = Math.max(0, Math.round(pacedDamage * (options.multiplier ?? 1)));
+  const absorbed = Math.min(damage, state.enemyMitigation.block);
+  if (absorbed > 0) {
+    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "block", amount: absorbed });
+  }
+  const blocked =
+    absorbed > 0
+      ? { ...state, enemyMitigation: { ...state.enemyMitigation, block: state.enemyMitigation.block - absorbed } }
+      : state;
+  const armor = stat === "physical" ? blocked.enemyMitigation.armor : 0;
+  const finalDamage = Math.max(0, damage - absorbed - armor);
+  if (finalDamage <= 0) return blocked;
   if (finalDamage > 0) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat, amount: finalDamage });
   }
-  const hit = damageEnemyHealth(state, finalDamage);
-  const rewarded = applyIronGuardReward(hit.state, stat, hit.healthDamage, combatTexts);
+  const hit = damageEnemyHealth(blocked, finalDamage);
+  const rewarded = decayArmorAfterDamage(
+    applyIronGuardReward(hit.state, stat, hit.healthDamage, combatTexts),
+    finalDamage,
+    "enemy",
+    combatTexts,
+  );
   const resolved = options.riders ? options.riders(rewarded, finalDamage, combatTexts) : rewarded;
   return applyElementalDamageManaRestore(resolved, stat, hit.healthDamage, combatTexts);
 }
@@ -56,8 +72,7 @@ export function dealScaledBurnWithStacks(
     ...options,
     riders: (damaged, finalDamage, texts) => {
       const burning = addEnemyStatus(damaged, "burn", finalDamage);
-      const decayed = decayArmorAfterDamage(burning, finalDamage, "enemy", texts);
-      return applyHitEpilogue(decayed, preHitHealth, preHitHealth > 0, texts);
+      return applyHitEpilogue(burning, preHitHealth, preHitHealth > 0, texts);
     },
   });
 }
@@ -71,12 +86,6 @@ export function applyGearCcPhysicalDamage(
   const enemyWasAlive = state.enemyHealth > 0;
   return dealEnemyScaledDamage(state, gearDamage, "physical", combatTexts, {
     multiplier: getEnemyDamageMultiplier(state, "physical") * gearFrozenDamageMultiplier(state),
-    riders: (nextState, finalDamage, texts) =>
-      applyHitEpilogue(
-        decayArmorAfterDamage(nextState, finalDamage, "enemy", texts),
-        state.enemyHealth,
-        enemyWasAlive,
-        texts,
-      ),
+    riders: (nextState, _finalDamage, texts) => applyHitEpilogue(nextState, state.enemyHealth, enemyWasAlive, texts),
   });
 }

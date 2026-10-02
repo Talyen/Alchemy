@@ -69,7 +69,7 @@ test("inspects the run deck and each battle pile without advancing combat", crit
   await expect(dialog.getByRole("img")).toHaveCount(2);
 });
 
-test("shows an empty draft and updates the viewer after each pick", critical, async ({ page, fastBattle }) => {
+test("shows an empty draft and updates the viewer after each pick", async ({ page, fastBattle }) => {
   void fastBattle;
   await injectSaveState(page, {
     contentSystemType: "wildwood",

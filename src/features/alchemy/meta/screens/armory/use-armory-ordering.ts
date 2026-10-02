@@ -201,7 +201,7 @@ export function useArmoryOrdering({
       setPlaceholderIndex(null);
       setStored((prev) => ({
         ...prev,
-        [activeKey]: { ...reconciled, filters: nextFilters, page: 0 },
+        [activeKey]: { ...(prev[activeKey] ?? reconciled), filters: nextFilters, page: 0 },
       }));
     },
     [activeKey, reconciled],

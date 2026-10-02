@@ -3,7 +3,6 @@ import { useRef, useState } from "react";
 import { type BattleCard, type CardDescriptionContext } from "@/lib/game-data";
 
 import { BattleCardButton } from "../../../shared/ui/cards/card-button";
-import { useHeldWhile } from "../../../shared/ui/use-fade";
 import { getCardDisplayTitle } from "../../../shared/ui/cards/card-description-ui";
 import { ModalOverlayShell } from "../../../shared/ui/modal-overlay-shell";
 import { ScreenHeader } from "../../../shared/ui/layout-components";
@@ -114,18 +113,14 @@ export function WishOverlay({
   battleState: BattleScreenState;
   actions: BattleActionsProps;
 }) {
-  const displayState = useHeldWhile(open, battleState);
+  // ModalOverlayShell holds the rendered choices and descriptions through exit;
+  // a second snapshot here would also retain unrelated battle piles and events.
   const [openSession, setOpenSession] = useState({ open, options: battleState.wishOptions, id: 0 });
   if (open !== openSession.open || (open && battleState.wishOptions !== openSession.options)) {
     setOpenSession({ open, options: battleState.wishOptions, id: open ? openSession.id + 1 : openSession.id });
   }
 
   return (
-    <WishOverlayPanel
-      key={openSession.id}
-      open={open}
-      displayState={displayState}
-      onWishChoice={actions.onWishChoice}
-    />
+    <WishOverlayPanel key={openSession.id} open={open} displayState={battleState} onWishChoice={actions.onWishChoice} />
   );
 }

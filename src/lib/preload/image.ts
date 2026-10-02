@@ -2,35 +2,56 @@ import { IMAGE_PRELOAD_BATCH_SIZE } from "../game-constants";
 import { batchedPreload, yieldToAnimationFrame } from "./batched";
 import { waitForImage } from "./image-readiness";
 
-const imageLoads = new Map<string, Promise<void>>();
+interface PendingImageLoad {
+  promise: Promise<void>;
+  image: HTMLImageElement;
+  lifetime: AbortController;
+}
+
+const imageLoads = new Map<string, PendingImageLoad>();
+const loadedImages = new Map<string, Promise<void>>();
 const MAX_IMAGE_CACHE_SIZE = 500;
 
 export function resetImagePreloadCache(): void {
+  for (const { image, lifetime } of imageLoads.values()) {
+    lifetime.abort();
+    image.removeAttribute("src");
+  }
   imageLoads.clear();
+  loadedImages.clear();
 }
 
 export function preloadImage(src: string): Promise<void> {
   if (!src) return Promise.resolve();
-  const existing = imageLoads.get(src);
+  const pending = imageLoads.get(src);
+  if (pending) return pending.promise;
+  const existing = loadedImages.get(src);
   if (existing) {
-    imageLoads.delete(src);
-    imageLoads.set(src, existing);
+    loadedImages.delete(src);
+    loadedImages.set(src, existing);
     return existing;
-  }
-
-  if (imageLoads.size >= MAX_IMAGE_CACHE_SIZE) {
-    const firstKey = imageLoads.keys().next().value;
-    if (firstKey) imageLoads.delete(firstKey);
   }
 
   const image = new Image();
   image.decoding = "async";
   image.src = src;
-  const promise = waitForImage(image).then((ready) => {
-    // Promise identity keeps an old failure from evicting a retry after reset.
-    if (!ready && imageLoads.get(src) === promise) imageLoads.delete(src);
+  const lifetime = new AbortController();
+  const promise = waitForImage(image, lifetime.signal).then((ready) => {
+    // Failed or timed-out warmups should not keep fetching or decoding an
+    // orphaned image. Visible artwork has its own image element.
+    if (!ready) image.removeAttribute("src");
+    // Pending work must stay deduplicated even when the completed LRU is full.
+    // Identity also prevents a completion after reset from caching stale work.
+    if (imageLoads.get(src)?.promise !== promise) return;
+    imageLoads.delete(src);
+    if (!ready) return;
+    if (loadedImages.size >= MAX_IMAGE_CACHE_SIZE) {
+      const firstKey = loadedImages.keys().next().value;
+      if (firstKey !== undefined) loadedImages.delete(firstKey);
+    }
+    loadedImages.set(src, promise);
   });
-  imageLoads.set(src, promise);
+  imageLoads.set(src, { promise, image, lifetime });
   return promise;
 }
 

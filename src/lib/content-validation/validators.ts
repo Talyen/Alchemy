@@ -1,202 +1,26 @@
-import type { ZodType } from "zod";
-import { findEnemyAbilityCard } from "@/lib/game-data";
-import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import {
-  cardLibrary,
-  companionLibrary,
-  enemyBestiary,
-  trinketLibrary,
   keywordDefinitions,
   harmfulPlayerStatusIds,
   PLAYER_STATUS_DISPLAY_ORDER,
   ENEMY_STATUS_DISPLAY_ORDER,
   talentPool,
   getTalentTreeKeywordIds,
-  ENEMY_TYPE_VALUES,
-  type BattleCard,
-  type BattleCardEffect,
-  type TrinketEntry,
 } from "@/lib/game-data";
 import { ENEMY_STATUS_IDS_LIST } from "@/lib/validation";
-import { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "@/lib/battle";
 import {
   COMBAT_ENCOUNTER_TRAIT_IDS,
   REWARD_ENCOUNTER_TRAIT_IDS,
   ENCOUNTER_TRAITS,
 } from "../content-systems/encounter-traits";
-import {
-  flattenEffects,
-  validateCardDescriptionParity,
-  validateEnemyTraitDescriptionParity,
-  validateTrinketDescriptionParity,
-} from "./card-parity";
-import {
-  CardContentSchema,
-  EnemyContentSchema,
-  CompanionContentSchema,
-  TrinketContentSchema,
-  EncounterTraitContentSchema,
-} from "./schemas";
-import { addDuplicateIssues, collectSchemaIssues, validateArt } from "./utils";
-import type { Collector } from "./utils";
-import type { ContentValidationArea } from "./types";
+import { EncounterTraitContentSchema } from "./schemas";
+import { addDuplicateIssues, collectSchemaIssues, type Collector } from "./utils";
 
-interface LibraryBasicsOptions<T extends { id: string }> {
-  area: ContentValidationArea;
-  items: readonly T[];
-  schema: ZodType;
-  titleOf?: (item: T) => string;
-  artOf?: (item: T) => string;
-  idLabel: string;
-}
-
-// Shared duplicate + schema + art triplet for library validators. Bespoke
-// checks (offer pools, ability coverage, parity, affix pools) stay inline.
-function validateLibraryBasics<T extends { id: string }>(
-  collector: Collector,
-  { area, items, schema, titleOf, artOf, idLabel }: LibraryBasicsOptions<T>,
-): void {
-  addDuplicateIssues(
-    items.map((item) => item.id),
-    area,
-    idLabel,
-    collector.error,
-  );
-  if (titleOf) {
-    addDuplicateIssues(
-      items.map((item) => titleOf(item)),
-      area,
-      "title",
-      collector.error,
-    );
-  }
-  for (const item of items) {
-    collectSchemaIssues(schema, item, area, item.id, collector.error);
-    if (artOf) validateArt(area, item.id, artOf(item), collector.error, collector.warning);
-  }
-}
+export { validateCards, validateTrinkets } from "./validators-cards";
+export { validateEnemies, validateCompanions } from "./validators-enemies";
 
 const encounterTraitIdList: readonly string[] = [...COMBAT_ENCOUNTER_TRAIT_IDS, ...REWARD_ENCOUNTER_TRAIT_IDS];
 const combatEncounterTraitIdSet = new Set<string>(COMBAT_ENCOUNTER_TRAIT_IDS);
 const rewardEncounterTraitIdSet = new Set<string>(REWARD_ENCOUNTER_TRAIT_IDS);
-
-// Branch nodes are unwrapped by flattenEffects, so authored chance shapes need
-// their own walk. Empty failureEffects is reserved for runtime-synthesized
-// bonus-trigger chances (bonded Mana Moth / Library Owl), never authored cards.
-function eachChanceEffect(effects: BattleCardEffect[]): Array<Extract<BattleCardEffect, { kind: "chance" }>> {
-  return effects.flatMap((effect) => {
-    if (effect.kind === "chance") {
-      return [effect, ...eachChanceEffect(effect.successEffects), ...eachChanceEffect(effect.failureEffects)];
-    }
-    if (effect.kind === "repeat-over-turns") return eachChanceEffect(effect.effects);
-    return [];
-  });
-}
-
-function validateCardOffers(card: BattleCard, offerableIds: Set<string>, collector: Collector): void {
-  if (card.excludeFromOfferPool && offerableIds.has(card.id))
-    collector.error("rewards", card.id, "Card is excluded from offer pool but was found in offerable card pool");
-  if (!card.excludeFromOfferPool && !offerableIds.has(card.id))
-    collector.error("rewards", card.id, "Library card is missing from offerable card pool");
-}
-
-export function validateCards(collector: Collector): void {
-  validateLibraryBasics(collector, {
-    area: "cards",
-    items: cardLibrary,
-    schema: CardContentSchema,
-    titleOf: (card) => card.title,
-    artOf: (card) => card.art,
-    idLabel: "card id",
-  });
-
-  const companionIds = new Set(Object.keys(companionLibrary));
-  const offerableIds = new Set(getOfferableCardPool().map((card) => card.id));
-  for (const card of cardLibrary) {
-    for (const issue of validateCardDescriptionParity(card)) collector.issues.push(issue);
-    for (const effect of flattenEffects(card.effects)) {
-      if (effect.kind === "summon-companion" && !companionIds.has(effect.companionId)) {
-        collector.error("cards", card.id, `References unknown companion: ${effect.companionId}`);
-      }
-    }
-    for (const effect of eachChanceEffect(card.effects)) {
-      if (effect.failureEffects.length === 0) {
-        collector.error("cards", card.id, "Authored chance effect has an empty failure branch");
-      }
-    }
-    validateCardOffers(card, offerableIds, collector);
-    if (card.cost >= 5) collector.warning("balance", card.id, `Card cost ${card.cost} is unusually high`);
-    if (card.effects.length === 0 && !card.excludeFromOfferPool)
-      collector.warning("balance", card.id, "Card has no authored effects");
-  }
-}
-
-export function validateEnemies(collector: Collector): void {
-  validateLibraryBasics(collector, {
-    area: "enemies",
-    items: enemyBestiary,
-    schema: EnemyContentSchema,
-    titleOf: (enemy) => enemy.title,
-    artOf: (enemy) => enemy.art,
-    idLabel: "enemy id",
-  });
-
-  for (const enemyType of ENEMY_TYPE_VALUES) {
-    if (!enemyBestiary.some((enemy) => enemy.enemyType === enemyType)) {
-      collector.error("enemies", enemyType, `Enemy pool is missing type: ${enemyType}`);
-    }
-  }
-
-  for (const enemy of enemyBestiary) {
-    for (const id of enemy.abilityIds) {
-      if (!findEnemyAbilityCard(id)) collector.error("enemies", enemy.id, `Unsupported enemy ability: ${id}`);
-    }
-    for (const issue of validateEnemyTraitDescriptionParity(enemy)) collector.issues.push(issue);
-  }
-
-  const bestiaryTraitIds = enemyBestiary.flatMap((enemy) => enemy.traits.map((trait) => trait.id));
-  for (const traitId of collectUncoveredEnemyTraitIds(bestiaryTraitIds)) {
-    collector.error("enemies", traitId, "Enemy trait has no runtime handler or reaction coverage");
-  }
-  for (const modifierKind of collectUncoveredDifficultyModifierKinds()) {
-    collector.error(
-      "encounter-traits",
-      modifierKind,
-      "Difficulty modifier has no turn-start handler or passive-only entry",
-    );
-  }
-}
-
-export function validateCompanions(collector: Collector): void {
-  validateLibraryBasics(collector, {
-    area: "companions",
-    items: Object.values(companionLibrary),
-    schema: CompanionContentSchema,
-    artOf: (companion) => companion.art,
-    idLabel: "companion id",
-  });
-  for (const [id, companion] of Object.entries(companionLibrary)) {
-    if (companion.id !== id) {
-      collector.error("companions", id, `Companion record key does not match id ${companion.id}`);
-    }
-  }
-}
-
-export function validateTrinkets(collector: Collector, entries: readonly TrinketEntry[] = trinketLibrary): void {
-  validateLibraryBasics(collector, {
-    area: "trinkets",
-    items: entries,
-    schema: TrinketContentSchema,
-    titleOf: (trinket) => trinket.title,
-    artOf: (trinket) => trinket.art,
-    idLabel: "trinket id",
-  });
-  for (const trinket of entries) {
-    for (const issue of validateTrinketDescriptionParity(trinket)) {
-      collector.issues.push(issue);
-    }
-  }
-}
 
 export function validateTalents(collector: Collector): void {
   addDuplicateIssues(
@@ -269,8 +93,7 @@ function validateSingleEncounterTrait(
 }
 
 export function validateEncounterTraits(collector: Collector): void {
-  const definitions = ENCOUNTER_TRAITS as Record<string, unknown>;
-  const definitionIds = new Set(Object.keys(definitions));
+  const definitionIds = new Set(Object.keys(ENCOUNTER_TRAITS));
   const listedIds = new Set(encounterTraitIdList);
   addDuplicateIssues(encounterTraitIdList, "encounter-traits", "encounter trait id", collector.error);
   for (const id of listedIds) {

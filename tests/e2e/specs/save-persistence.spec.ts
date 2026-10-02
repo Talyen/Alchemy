@@ -1,259 +1,136 @@
-import { expect } from "@playwright/test";
-import { test } from "../../fixtures/e2e";
+import { expect, test } from "../../fixtures/e2e";
 import {
-  injectSaveState,
-  injectDestinationAtIndex,
-  resumeCampaignRun,
-  SAVE_KEY,
-  seedRandom,
+  injectExactSave,
+  injectActiveBattle,
+  makeCard,
+  makeGoblinBattleState,
   makeHighDamageCard,
+  readSavedGame,
+  seedRandom,
   startBattleWithDeck,
   enterPrimaryRewardScreen,
-  failOnRuntimeErrors,
+  withSavedGame,
+  SAVE_KEY,
 } from "../../browser-helpers";
-import { injectMidCombatSave } from "../mid-combat-save";
 import { BattlePage } from "../../pages/battle-page";
 import { DestinationPage } from "../../pages/destination-page";
 import { RewardPage } from "../../pages/reward-page";
 import { critical } from "../../playwright-tags";
-import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation/metadata";
 import { currentSchemaCampaignSave } from "../../fixtures/current-saves";
 
-function getSavedLastSavedAt(page: import("@playwright/test").Page): Promise<number> {
-  return page.evaluate((saveKey) => {
-    const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-    return typeof save.lastSavedAt === "number" ? save.lastSavedAt : 0;
-  }, SAVE_KEY);
-}
-
-function getSavedBattleTurn(page: import("@playwright/test").Page): Promise<number> {
-  return page.evaluate((saveKey) => {
-    const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-    return save.activeRun?.activeCombat?.battleState?.turn ?? 0;
-  }, SAVE_KEY);
-}
-
-function persistedPurseGold(save: { gold?: unknown }): number {
-  return typeof save.gold === "number" ? save.gold : 0;
-}
-
-test.describe("Save Persistence & Resume", () => {
-  test("resume run restores exact state after reload", critical, async ({ page }) => {
-    await seedRandom(page, 42);
-    await injectSaveState(page, {
-      characterId: "knight",
-      runGold: 42,
-      runPlayerHealth: 18,
-      runMaxHealth: 30,
-      roomsEncountered: 3,
-      currentAct: 1,
-      destinationIndexInAct: 2,
-      completedDestinations: ["Normal Combat", "Normal Combat"],
-    });
-    await page.goto("/");
-
-    const savedBefore = await page.evaluate((saveKey) => {
-      const s = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      return s.activeRun;
-    }, SAVE_KEY);
-    expect(savedBefore.runPlayerHealth).toBe(18);
-    expect(savedBefore.runMaxHealth).toBe(30);
-    expect(savedBefore.currentAct).toBe(1);
-    expect(savedBefore.destinationIndexInAct).toBe(2);
-
-    await page.goto("/");
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
-
-    const savedAfter = await page.evaluate((saveKey) => {
-      const s = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      return s;
-    }, SAVE_KEY);
-    expect(persistedPurseGold(savedAfter)).toBe(42);
-    expect(savedAfter.activeRun.runPlayerHealth).toBe(18);
-  });
-
-  test("resume restores destination choices when reloaded between battles", critical, async ({ page }) => {
-    await seedRandom(page, 42);
-    await injectDestinationAtIndex(page, {
-      destinations: ["Campfire", "Mystery", "Card Shop"],
-      destinationIndexInAct: 1,
-      roomsEncountered: 2,
-      completedDestinations: ["Normal Combat"],
-      runPlayerHealth: 22,
-    });
-    await page.goto("/");
-    await resumeCampaignRun(page);
-
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole("button", { name: "Campfire" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Mystery" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Card Shop" })).toBeVisible();
-    await expect(page.locator('[aria-label^="Play "]')).toHaveCount(0);
-  });
-
-  test("reload restores an in-progress battle", critical, async ({ page }) => {
-    await injectMidCombatSave(page);
-
-    const battle = new BattlePage(page);
-    await expect(battle.endTurnBtn).toBeVisible({ timeout: 10000 });
-    await expect.poll(() => battle.playerHealth()).toBe(18);
-    await expect.poll(() => battle.enemyHealth()).toBe(40);
-
-    const turnBefore = await page.evaluate((saveKey) => {
-      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      return save.activeRun?.activeCombat?.battleState?.turn ?? null;
-    }, SAVE_KEY);
-    expect(turnBefore).toBe(2);
-
-    await page.reload();
-
-    await expect(battle.endTurnBtn).toBeVisible({ timeout: 10000 });
-    await expect.poll(() => battle.playerHealth()).toBe(18);
-    await expect.poll(() => battle.enemyHealth()).toBe(40);
-
-    const turnAfter = await page.evaluate((saveKey) => {
-      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      return save.activeRun?.activeCombat?.battleState?.turn ?? null;
-    }, SAVE_KEY);
-    expect(turnAfter).toBe(2);
-  });
-
-  test("reload from an enemy-resolution continuation resumes a playable battle", critical, async ({ page }) => {
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => makeHighDamageCard()),
-    );
-
-    const battle = new BattlePage(page);
-    await expect(battle.endTurnBtn).toBeEnabled({ timeout: 5000 });
-    await expect
-      .poll(
-        () =>
-          page.evaluate((saveKey) => {
-            const activeRun = JSON.parse(localStorage.getItem(saveKey) || "{}").activeRun;
-            return activeRun?.activeCombat?.battleState?.turnPhase ?? null;
-          }, SAVE_KEY),
-        { timeout: 8000 },
-      )
-      .toBe("player");
-
-    const expectedHandSize = await page.evaluate((saveKey) => {
-      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      const activeRun = save.activeRun;
-      const activeCombat = activeRun?.activeCombat;
-      if (!activeRun || !activeCombat) throw new Error("Expected an active combat save");
-      const resultState = activeCombat.battleState;
-      activeRun.currentScreen = "battle";
-      activeRun.activeCombat = {
-        ...activeCombat,
-        battleState: { ...resultState, turnPhase: "enemy", hand: [] },
-        pendingBattleTransition: {
-          kind: "enemy-turn",
-          resultState,
-          playerTurnSkipped: false,
-        },
-      };
-      localStorage.setItem(saveKey, JSON.stringify(save));
-      return resultState.hand.length as number;
-    }, SAVE_KEY);
-
-    expect(expectedHandSize).toBeGreaterThan(0);
-    // The original page's initializer would overwrite the interrupted save on reload.
-    const resumedPage = await page.context().newPage();
-    const errors = failOnRuntimeErrors(resumedPage);
-    try {
-      await resumedPage.goto("/");
-      const resumedBattle = new BattlePage(resumedPage);
-      await expect(resumedBattle.endTurnBtn).toBeEnabled({ timeout: 10000 });
-      await expect(resumedBattle.hand).toHaveCount(expectedHandSize);
-      await expect
-        .poll(() =>
-          resumedPage.evaluate((saveKey) => {
-            const combat = JSON.parse(localStorage.getItem(saveKey) || "{}").activeRun?.activeCombat;
-            return combat?.battleState?.turnPhase === "player" && !combat.pendingBattleTransition;
-          }, SAVE_KEY),
-        )
-        .toBe(true);
-      expect(errors).toEqual([]);
-    } finally {
-      await resumedPage.close();
-    }
-  });
-
-  test("resumes a run from a current-schema campaign fixture", async ({ page }) => {
-    const saved = currentSchemaCampaignSave();
-    await page.addInitScript(
-      (data) => {
-        try {
-          localStorage.setItem(data.saveKey, JSON.stringify(data.save));
-        } catch {}
+test("current-format resume retains Health, Gold, and offered destinations", critical, async ({ page }) => {
+  const save = currentSchemaCampaignSave();
+  await injectExactSave(page, {
+    ...save,
+    activeRun: {
+      ...(save.activeRun as Record<string, unknown>),
+      interruptedFlow: {
+        kind: "destination",
+        destinations: ["Campfire", "Mystery", "Card Shop"],
+        selectedBossId: null,
+        lastVictoryEnemyType: null,
+        lastVictoryContentSystem: null,
       },
-      { saveKey: SAVE_KEY, save: saved },
-    );
-
-    await page.goto("/");
-    await resumeCampaignRun(page);
-
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
-
-    const restored = await page.evaluate((saveKey) => {
-      return JSON.parse(localStorage.getItem(saveKey) || "{}");
-    }, SAVE_KEY);
-    expect(restored.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-    expect(persistedPurseGold(restored)).toBe(42);
-    expect(restored.activeRun.runPlayerHealth).toBe(18);
+    },
   });
-});
-
-test.describe("Autosave Cadence", () => {
-  test("save is written after the first end turn in battle", critical, async ({ page, fastBattle }) => {
-    void fastBattle;
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => makeHighDamageCard()),
-    );
-
-    const savedAtBefore = await getSavedLastSavedAt(page);
-    const turnBefore = await getSavedBattleTurn(page);
-    const battle = new BattlePage(page);
-    await battle.endTurn();
-
-    await expect.poll(() => getSavedBattleTurn(page)).toBeGreaterThan(turnBefore);
-    await expect.poll(() => getSavedLastSavedAt(page)).toBeGreaterThan(savedAtBefore);
-  });
-
-  test("claimed card survives a fresh-page resume", critical, async ({ page }) => {
-    await enterPrimaryRewardScreen(page, { rewardType: "card", choiceIds: ["slash", "bash"] });
-
-    const savedAtBeforeReward = await getSavedLastSavedAt(page);
-    const reward = new RewardPage(page);
-    await reward.claimFirstReward();
-    await new DestinationPage(page).expectVisible();
-
-    await expect.poll(() => getSavedLastSavedAt(page)).toBeGreaterThan(savedAtBeforeReward);
-    await expect
-      .poll(() =>
-        page.evaluate(
-          (saveKey) =>
-            JSON.parse(localStorage.getItem(saveKey) || "{}").activeRun?.runDeck?.filter(
-              (card: { id: string }) => card.id === "slash",
-            ).length,
-          SAVE_KEY,
-        ),
-      )
-      .toBe(1);
-
-    // The injected page would reset storage on reload; a new page reads the actual save.
-    const resumedPage = await page.context().newPage();
-    const errors = failOnRuntimeErrors(resumedPage);
-    try {
-      await resumedPage.goto("/");
-      await new DestinationPage(resumedPage).expectVisible();
-      await resumedPage.getByRole("button", { name: "View Deck · 7 cards" }).click();
-      await expect(resumedPage.getByRole("dialog").getByRole("img", { name: "Slash", exact: true })).toBeVisible();
-      expect(errors).toEqual([]);
-    } finally {
-      await resumedPage.close();
+  await page.goto("/");
+  await new DestinationPage(page).expectVisible();
+  await expect.poll(async () => (await readSavedGame(page)).activeRun?.runPlayerHealth).toBe(18);
+  await withSavedGame(page, async (resumed) => {
+    await new DestinationPage(resumed).expectVisible();
+    for (const name of ["Campfire", "Mystery", "Card Shop"]) {
+      await expect(resumed.getByRole("button", { name, exact: true })).toBeVisible();
     }
+    const restored = await readSavedGame(resumed);
+    expect(restored.gold).toBe(42);
+    expect(restored.activeRun?.runPlayerHealth).toBe(18);
+    expect(restored.activeRun?.destinationIndexInAct).toBe(2);
   });
 });
+
+test("played cards and the next enemy turn survive a fresh-page resume", critical, async ({ page, fastBattle }) => {
+  void fastBattle;
+  await seedRandom(page, 42);
+  const deck = Array.from({ length: 6 }, () => makeCard({ cost: 0 }));
+  const state = makeGoblinBattleState({ hand: deck.slice(0, 4), deck: deck.slice(4) });
+  state.currentEnemy = { ...state.currentEnemy, abilityIds: ["slash", "sunder", "burning-blade"] };
+  await injectActiveBattle(page, state, { runDeck: deck, runPlayerHealth: 18 });
+  const battle = new BattlePage(page);
+  await battle.playFirstCard();
+  await expect.poll(() => battle.enemyHealth()).toBeLessThan(40);
+  await battle.endTurn();
+  await expect.poll(() => battle.playerHealth()).toBeLessThan(18);
+  await expect.poll(async () => (await readSavedGame(page)).activeRun?.activeCombat?.battleState.turn).toBe(3);
+  const acknowledged = (await readSavedGame(page)).activeRun!.activeCombat!.battleState;
+  await withSavedGame(page, async (resumed) => {
+    const restored = new BattlePage(resumed);
+    await expect(restored.endTurnBtn).toBeEnabled();
+    await expect.poll(() => restored.playerHealth()).toBe(acknowledged.playerHealth);
+    await expect.poll(() => restored.enemyHealth()).toBe(acknowledged.enemyHealth);
+    await expect(restored.hand).toHaveCount(acknowledged.hand.length);
+    expect((await readSavedGame(resumed)).activeRun?.activeCombat?.battleState.turn).toBe(3);
+    await restored.playFirstCard();
+    await expect.poll(() => restored.handCount()).toBe(acknowledged.hand.length - 1);
+  });
+});
+
+test("an interrupted enemy turn resumes once with a playable hand", critical, async ({ page, fastBattle }) => {
+  void fastBattle;
+  await startBattleWithDeck(
+    page,
+    Array.from({ length: 6 }, () => makeHighDamageCard()),
+  );
+  await expect
+    .poll(async () => (await readSavedGame(page)).activeRun?.activeCombat?.battleState.turnPhase)
+    .toBe("player");
+  const handSize = await page.evaluate((key) => {
+    const save = JSON.parse(localStorage.getItem(key) ?? "{}");
+    const run = save.activeRun;
+    const combat = run.activeCombat;
+    const resultState = combat.battleState;
+    run.activeCombat = {
+      ...combat,
+      battleState: { ...resultState, turnPhase: "enemy", hand: [] },
+      pendingBattleTransition: { kind: "enemy-turn", resultState, playerTurnSkipped: false },
+    };
+    localStorage.setItem(key, JSON.stringify(save));
+    return resultState.hand.length as number;
+  }, SAVE_KEY);
+  expect(handSize).toBeGreaterThan(0);
+  await withSavedGame(page, async (resumed) => {
+    const battle = new BattlePage(resumed);
+    await expect(battle.endTurnBtn).toBeEnabled();
+    await expect(battle.hand).toHaveCount(handSize);
+    await expect
+      .poll(async () => Boolean((await readSavedGame(resumed)).activeRun?.activeCombat?.pendingBattleTransition))
+      .toBe(false);
+    const health = await battle.enemyHealth();
+    await battle.playFirstCard();
+    await expect.poll(() => battle.enemyHealth()).toBeLessThan(health);
+  });
+});
+
+test(
+  "a pending card reward can be resumed, claimed once, and resumed again",
+  critical,
+  async ({ page, fastBattle }) => {
+    void fastBattle;
+    await enterPrimaryRewardScreen(page, { rewardType: "card", choiceIds: ["slash", "bash"] });
+    await expect.poll(async () => (await readSavedGame(page)).activeRun?.interruptedFlow?.kind).toBe("primary-reward");
+    await withSavedGame(page, async (resumed) => {
+      await new RewardPage(resumed).claimFirstReward();
+      await new DestinationPage(resumed).expectVisible();
+      await expect
+        .poll(
+          async () => (await readSavedGame(resumed)).activeRun?.runDeck.filter((card) => card.id === "slash").length,
+        )
+        .toBe(1);
+      await withSavedGame(resumed, async (restored) => {
+        await new DestinationPage(restored).expectVisible();
+        await restored.getByRole("button", { name: "View Deck · 7 cards" }).click();
+        await expect(restored.getByRole("dialog").getByRole("img", { name: "Slash", exact: true })).toBeVisible();
+        expect((await readSavedGame(restored)).activeRun?.runDeck).toHaveLength(7);
+      });
+    });
+  },
+);

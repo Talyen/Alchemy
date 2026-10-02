@@ -11,12 +11,22 @@ export function useArtworkReady(identity: string | number) {
     if (!root) return;
     setReadyIdentity(null);
     const waits = new Map<HTMLImageElement, { source: string; lifetime: AbortController; pending: boolean }>();
-    let frame = 0;
+    let pendingCount = 0;
+    let frame: number | null = null;
+    const scheduleReveal = () => {
+      if (pendingCount > 0 || frame !== null) return;
+      frame = requestAnimationFrame(() => {
+        frame = null;
+        setReadyIdentity(identity);
+      });
+    };
     const reconcile = () => {
-      cancelAnimationFrame(frame);
+      if (frame !== null) cancelAnimationFrame(frame);
+      frame = null;
       const images = new Set(root.querySelectorAll<HTMLImageElement>("img[src]"));
       for (const [image, wait] of waits) {
         if (!images.has(image) || wait.source !== sourceOf(image)) {
+          if (wait.pending) pendingCount -= 1;
           wait.lifetime.abort();
           waits.delete(image);
         }
@@ -25,6 +35,7 @@ export function useArtworkReady(identity: string | number) {
         if (waits.has(image)) continue;
         const wait = { source: sourceOf(image), lifetime: new AbortController(), pending: true };
         waits.set(image, wait);
+        pendingCount += 1;
         image.style.removeProperty("visibility");
         image.loading = "eager";
         void waitForImage(image, wait.lifetime.signal).then((ready) => {
@@ -32,27 +43,46 @@ export function useArtworkReady(identity: string | number) {
           // Source changes can precede delivery of the mutation observer.
           if (wait.source !== sourceOf(image)) return reconcile();
           wait.pending = false;
+          pendingCount -= 1;
           if (!ready) image.style.visibility = "hidden";
-          reconcile();
+          // Decode completions change readiness, not the mounted image set.
+          // The observer handles DOM/source changes before the reveal frame.
+          scheduleReveal();
         });
       }
-      if ([...waits.values()].some((wait) => wait.pending)) return;
-      frame = requestAnimationFrame(() => {
-        observer.disconnect();
-        setReadyIdentity(identity);
-      });
+      if (pendingCount > 0) setReadyIdentity(null);
+      scheduleReveal();
     };
-    const observer = new MutationObserver(reconcile);
+    const observer = new MutationObserver((records) => {
+      // Text, icons and combat counters change frequently inside a screen.
+      // Only image sources or subtrees containing images can change readiness.
+      if (records.some(affectsArtwork)) reconcile();
+    });
     observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ["src", "srcset"] });
     reconcile();
     return () => {
       observer.disconnect();
-      cancelAnimationFrame(frame);
+      if (frame !== null) cancelAnimationFrame(frame);
       for (const wait of waits.values()) wait.lifetime.abort();
     };
   }, [identity]);
 
   return { ref, pending: readyIdentity !== identity || undefined };
+}
+
+function containsArtwork(node: Node): boolean {
+  return node instanceof Element && (node.matches("img") || node.querySelector("img") !== null);
+}
+
+function affectsArtwork(record: MutationRecord): boolean {
+  if (record.type === "attributes") return record.target instanceof HTMLImageElement;
+  for (const node of record.addedNodes) {
+    if (containsArtwork(node)) return true;
+  }
+  for (const node of record.removedNodes) {
+    if (containsArtwork(node)) return true;
+  }
+  return false;
 }
 
 function sourceOf(image: HTMLImageElement): string {

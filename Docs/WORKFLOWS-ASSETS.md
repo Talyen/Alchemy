@@ -225,6 +225,11 @@ after manifest publication; standalone optimizers do not roll back a published
 manifest if cleanup fails. `assets:check` validates without publication or cleanup;
 see [verification](#skip-mode-and-verification).
 
+Art, sound conversion, MP3 fallbacks, and music copies write to temporary sibling
+files and replace the prepared output only after success. An interrupted transform
+keeps the previous usable output and removes its partial temporary file. Other
+successful outputs may still advance during the same failed preparation run.
+
 ### Strict generated-art inputs
 
 Barrel generation treats the committed art manifest as required input, not a

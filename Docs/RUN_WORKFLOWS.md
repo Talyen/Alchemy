@@ -4,7 +4,7 @@
 
 1. Decide whether the change needs a version bump or a safe additive default using the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#when-to-increment).
 2. Follow its [required pattern](../src/features/alchemy/shared/storage/MIGRATIONS.md#required-pattern-automated), updating the schema, domain defaults, codecs, and fixtures together. [Defaults and resume normalization](../src/features/alchemy/shared/storage/MIGRATIONS.md#defaults-and-resume-normalization) names the owners; [deletion](../src/features/alchemy/shared/storage/MIGRATIONS.md#deletion) owns clear-save modes.
-3. Verify the [save test expectations](../src/features/alchemy/shared/storage/MIGRATIONS.md#test-expectations) through the [task-scoped gate](../CONTRIBUTING.md#what-to-run-when-you-change), which selects the complete save/persistence suite. Reuse `tests/helpers/save-candidate-fixtures.ts` for candidate scenarios.
+3. Verify the [save test expectations](../src/features/alchemy/shared/storage/MIGRATIONS.md#test-expectations) with the relevant save/persistence unit suites (`npm run test:full -- <test-paths>`), then run the [task-scoped gate](../CONTRIBUTING.md#what-to-run-when-you-change). The default local gate does not select the complete save suite; the opt-in full verifier does. Reuse `tests/helpers/save-candidate-fixtures.ts` for candidate scenarios.
 
 ---
 
@@ -14,7 +14,7 @@
 2. Update the active-run schema and, for progression fields, the shared `run-progress.ts` schema plus fresh/resume initialization in `run-state-init.ts`. Wire/live progression types and serialization keys derive from that schema. Use defaults and normalization before adding a migration step; the save contract is in [`MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md).
 3. Update `encodeRunResumeSnapshot()` / `decodeRunResumeSnapshot()` in `run-resume-codec.ts`. This codec is the sole `RunSession` ↔ `ActiveRunData` translation boundary; shops and interrupted flow keep their focused codec helpers.
 4. Keep `snapshotRun()` / `restoreRun()` as thin lifecycle wrappers and publish boot/resume through one `dispatchRunSessionCommand()`. Defer navigation, audio, and presentation work until after commit.
-5. Run the active-run snapshot/codec tests plus the storage/migration tests named by the save contract. Use the changed-path route for the final selection.
+5. Run the active-run snapshot/codec tests plus the storage/migration tests named by the save contract using `npm run test:full -- <test-paths>`. Follow the [verification policy](../CONTRIBUTING.md#what-to-run-when-you-change) for the final gate; the default local gate does not perform dependency-related selection.
 
 ---
 
@@ -71,7 +71,7 @@ Run outcome flows use [`run-end-commands.ts`](../src/features/alchemy/run-loop/r
 
 ## Gameplay command boundary
 
-Ownership and anti-patterns: [ARCHITECTURE.md § Run state](./RUN_STATE.md#run-state). Keep the command synchronous; put audio, navigation, timers, and presentation cleanup in `afterCommit`. Pass the draft to every gameplay mutator. This outer-boundary example awards an already bonus-adjusted material amount and passes it to presentation feedback after commit:
+Ownership and anti-patterns: [RUN_STATE.md § Run state](./RUN_STATE.md#run-state). Keep the command synchronous; put audio, navigation, timers, and presentation cleanup in `afterCommit`. Pass the draft to every gameplay mutator. This outer-boundary example awards an already bonus-adjusted material amount and passes it to presentation feedback after commit:
 
 ```ts
 import type { MaterialInventory } from "@/lib/homestead/types";

@@ -1,9 +1,7 @@
 import { GAME_EDITION_POLICY, IS_DEMO } from "@/lib/game-edition";
 import { getBossById, rollFreshBossId } from "@/features/alchemy/shared/config";
-import {
-  createInitialDestinationResult,
-  isBossOnlyDestinationOffer,
-} from "@/features/alchemy/shared/run-flow/destination-flow";
+import { isBossOnlyDestinationOffer } from "@/features/alchemy/shared/run-flow/destination-flow";
+import { sampleAndApplyDestinationOffer } from "@/features/alchemy/shared/stores/destination-offer-command";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import {
@@ -16,7 +14,6 @@ import {
   setCorruptionResult,
   setCurrentAct,
   setDestinationIndexInAct,
-  setDestinationOfferState,
   setHasActiveBattle,
   setRewardState,
   setRoomsEncountered,
@@ -36,19 +33,12 @@ export function createProgressionCommands(getAvailableDestinations: RunFlowHandl
   }
 
   function setNextDestinationState(draft: GameplayDraft, destinationIndexInAct?: number) {
-    const run = draft.run.activeRun;
-    const indexInAct = destinationIndexInAct ?? run.destinationIndexInAct;
-    const initialDestinations = createInitialDestinationResult({
-      availableDestinations: getAvailableDestinations({ destinationIndexInAct: indexInAct }),
-      offerState: {
-        lastOfferedDestinations: run.lastOfferedDestinations,
-        roundsSinceOffered: run.destinationRoundsSinceOffered,
-      },
-      rollBossEnemyId: () => rollFreshBossId(createDraftRunRandomSource(draft, "world")),
-      rng: createDraftRunRandomSource(draft, "destinations"),
-    });
-    setDestinationOfferState(draft, initialDestinations.offerState);
-    setRewardState(draft, initialDestinations.rewardState);
+    sampleAndApplyDestinationOffer(
+      draft,
+      getAvailableDestinations({
+        destinationIndexInAct: destinationIndexInAct ?? draft.run.activeRun.destinationIndexInAct,
+      }),
+    );
   }
 
   function prepareDestinationScreen() {

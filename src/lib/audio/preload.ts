@@ -25,10 +25,14 @@ function clearStallTimer(el: HTMLAudioElement): void {
   }
 }
 
-function abortPreloadElement(el: HTMLAudioElement) {
+function finishPreloadElement(el: HTMLAudioElement): void {
   clearStallTimer(el);
   el.oncanplaythrough = null;
   el.onerror = null;
+}
+
+function abortPreloadElement(el: HTMLAudioElement) {
+  finishPreloadElement(el);
   // Shared with `stopAllSfx`: releasing the source plus load() frees the
   // element for collection instead of leaving a stalled fetch attached.
   releaseAudioElement(el);
@@ -56,17 +60,20 @@ export function preloadSounds(names: readonly string[] | string[]) {
     // Marked before warming so a failed name never retry-storms; a missed
     // warmup only costs a cold first play, never correctness.
     htmlPreloadStarted.add(name);
-    const el = new Audio();
-    el.preload = "auto";
-    const stallTimer = setTimeout(() => abortPreloadElement(el), STALLED_PRELOAD_TIMEOUT_MS);
-    htmlPreloadTimers.set(el, stallTimer);
-    el.oncanplaythrough = () => {
-      clearStallTimer(el);
-    };
-    el.onerror = () => {
-      abortPreloadElement(el);
-    };
-    el.src = getSoundUrl(name);
+    let el: HTMLAudioElement | undefined;
+    try {
+      el = new Audio();
+      const warming = el;
+      warming.preload = "auto";
+      const stallTimer = setTimeout(() => abortPreloadElement(warming), STALLED_PRELOAD_TIMEOUT_MS);
+      htmlPreloadTimers.set(warming, stallTimer);
+      warming.oncanplaythrough = () => finishPreloadElement(warming);
+      warming.onerror = () => abortPreloadElement(warming);
+      warming.src = getSoundUrl(name);
+    } catch {
+      // Warmup is optional; one failed element must not abort app/battle startup.
+      if (el) abortPreloadElement(el);
+    }
   }
 }
 

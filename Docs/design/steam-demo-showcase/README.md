@@ -2,7 +2,7 @@
 
 The current game image is the user-supplied
 `Raw Assets/Marketing/Unlock Full Game Demo Promo.jpg`, moved unchanged from
-Downloads. The marketing manifest owns that source and its optimized WebP.
+Downloads. `scripts/assets/core-assets.mjs` owns that source and its optimized WebP.
 The selected image is 2752×1536 and displays uncropped at its native aspect ratio.
 
 The composition and renderer below are **archived studies**, not the current
@@ -33,12 +33,13 @@ All source files are unchanged originals under `Raw Assets/`:
 | Cards & Talents    | Cards/Fireball.jpeg, Cards/Frostbolt.jpeg, Cards/Poison Dagger.jpeg; Talents/Burn.jpeg, Talents/Freeze.jpeg, Talents/Poison.jpeg                          |
 | Homestead & Armory | Homestead/Alchemy Lab.jpeg, Homestead/Blacksmith's Forge.jpeg; Gear/Longsword - Astral.jpeg, Gear/Plate Armor - Astral.jpeg, Gear/Spellbook - Astral.jpeg |
 
-The manifest uses the marketing preset: width 2560, WebP quality 90. Run art
-optimization and generated export synchronization through the normal
-[asset workflow](../../WORKFLOWS-ASSETS.md). The game imports the optimized image
-through its curated asset map; accessible image text repeats only the six approved labels.
+The current manifest uses the marketing preset for the selected user-supplied
+JPG, not this archived PNG master. Run production optimization and generated
+export synchronization through the normal [asset workflow](../../WORKFLOWS-ASSETS.md).
+The game imports that selected image through its curated asset map; current
+accessible text is recorded in the [copy review](../../STEAM_DEMO_COPY_REVIEW.md#selected-user-supplied-promo-image).
 
-## Pending alternatives
+## Archived alternatives
 
-The [revised layout drafts](./revisions/README.md) are for review only. They do
-not replace this approved master or the optimized in-game image.
+The [revised layout drafts](./revisions/README.md) retain earlier proposals. None
+is the current shipping source; regenerating them does not update the selected promo.

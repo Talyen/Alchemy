@@ -27,6 +27,14 @@ describe("enemy turn trait coverage", () => {
     expect(uncoveredTraits, `Missing handler or PASSIVE_ONLY entry for: ${uncoveredTraits.join(", ")}`).toEqual([]);
   });
 
+  it("rejects inherited object property names as unhandled traits", () => {
+    expect(collectUncoveredEnemyTraitIds(["toString", "constructor", "__proto__", "toString"])).toEqual([
+      "toString",
+      "constructor",
+      "__proto__",
+    ]);
+  });
+
   it("documents every difficulty modifier kind with handler or passive-only entry", () => {
     const uncoveredKinds = collectUncoveredDifficultyModifierKinds();
     expect(uncoveredKinds, `Missing handler or PASSIVE_ONLY entry for: ${uncoveredKinds.join(", ")}`).toEqual([]);

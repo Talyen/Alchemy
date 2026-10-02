@@ -2,7 +2,14 @@ import { expect } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
 import { BattlePage } from "../../pages/battle-page";
 import { critical, slow } from "../../playwright-tags";
-import { injectSaveState, makeCard, makeHighDamageCard, SAVE_KEY, seedRandom } from "../../browser-helpers";
+import {
+  injectSaveState,
+  makeCard,
+  makeHighDamageCard,
+  SAVE_KEY,
+  seedRandom,
+  withSavedGame,
+} from "../../browser-helpers";
 
 async function pickDraftCard(page: import("@playwright/test").Page) {
   await page
@@ -146,7 +153,7 @@ test.describe("Wildwood Draft", () => {
           (saveKey) => JSON.parse(localStorage.getItem(saveKey) ?? "{}").activeRun?.runPlayerHealth,
           SAVE_KEY,
         );
-        return typeof health === "number" && health > 0 && health < 30;
+        return health === 10;
       })
       .toBe(true);
   });
@@ -179,14 +186,15 @@ test.describe("Wildwood Draft", () => {
     }, SAVE_KEY);
     expect(choiceIdsBefore).toEqual(["slash", "bash", "block"]);
 
-    await page.reload();
-    await expect(page.getByRole("heading", { name: "Victory" })).toBeVisible({ timeout: 10000 });
+    await withSavedGame(page, async (resumed) => {
+      await expect(resumed.getByRole("heading", { name: "Victory" })).toBeVisible({ timeout: 10000 });
 
-    const choiceIdsAfter = await page.evaluate((saveKey) => {
-      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      return save.activeRun?.interruptedFlow?.pending?.choiceIds ?? [];
-    }, SAVE_KEY);
-    expect(choiceIdsAfter).toEqual(["slash", "bash", "block"]);
+      const choiceIdsAfter = await resumed.evaluate((saveKey) => {
+        const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
+        return save.activeRun?.interruptedFlow?.pending?.choiceIds ?? [];
+      }, SAVE_KEY);
+      expect(choiceIdsAfter).toEqual(["slash", "bash", "block"]);
+    });
   });
 });
 
@@ -212,12 +220,12 @@ test.describe("Wildwood Traits", slow, () => {
     }, SAVE_KEY);
     expect(traitsBefore).toContain("zealot");
 
-    await page.reload();
-
-    const traitsAfter = await page.evaluate((saveKey) => {
-      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      return save.activeRun?.wildwoodDraft?.currentCombatTraitIds ?? [];
-    }, SAVE_KEY);
-    expect(traitsAfter).toContain("zealot");
+    await withSavedGame(page, async (resumed) => {
+      const traitsAfter = await resumed.evaluate((saveKey) => {
+        const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
+        return save.activeRun?.wildwoodDraft?.currentCombatTraitIds ?? [];
+      }, SAVE_KEY);
+      expect(traitsAfter).toContain("zealot");
+    });
   });
 });

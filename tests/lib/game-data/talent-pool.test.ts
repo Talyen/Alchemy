@@ -147,6 +147,14 @@ describe("talent row layout", () => {
     expect(getAllocatableTalentChoices("consume", []).every((t) => !isTalentPlaceholder(t))).toBe(true);
   });
 
+  it("offers the missing talent in a partial row even when later rows were purchased", () => {
+    const talents = getTalentsForKeyword("physical");
+    const missing = talents[2]!;
+    const unlocked = talents.filter((talent) => talent !== missing).map((talent) => talent.id);
+    expect(getAllocatableTalentChoices("physical", [...unlocked, "unknown", unlocked[0]!])).toEqual([missing]);
+    expect(isTalentRowUnlocked("physical", unlocked, 2)).toBe(false);
+  });
+
   it("includes partial keywords in the talent tree", () => {
     expect(getTalentTreeKeywordIds()).toContain("nature");
     expect(getTalentTreeKeywordIds()).toContain("archery");

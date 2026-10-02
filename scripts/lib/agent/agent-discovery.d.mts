@@ -22,4 +22,4 @@ export function relatedLocations(
   root: string,
   paths: string[],
   limit?: number,
-): { consumers: string[]; tests: string[]; fixtures: string[] };
+): { helpers: string[]; consumers: string[]; tests: string[]; fixtures: string[] };

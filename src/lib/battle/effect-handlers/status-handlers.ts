@@ -6,7 +6,7 @@ import { applyPlayerStatusEffect, applyCleanseHeals, removeHarmfulPlayerStatuses
 import { tryTriggerEnemyFreeze } from "../damage-status-riders";
 import { resolveStunTrigger } from "../status-stun-resolve";
 import { dealDamageToEnemy } from "../damage";
-import { type EnemyStatusId } from "@/lib/game-data";
+import { type EnemyStatusId, type PlayerStatusId } from "@/lib/game-data";
 import { resolveFollowUpHit } from "../follow-up-hit-resolution";
 import { getBattleRng, pickRandom } from "@/lib/rng";
 
@@ -19,6 +19,12 @@ function resolveEnemyStatusCcTrigger(
   if (status === "freeze") return tryTriggerEnemyFreeze(preHitState, nextState, combatTexts);
   if (status === "stun") return resolveStunTrigger(nextState, combatTexts);
   return nextState;
+}
+
+function cleansePlayerStatus(state: BattleState, status: PlayerStatusId, combatTexts: CombatTextEvent[]): BattleState {
+  if (state.playerStatuses[status] <= 0) return state;
+  mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: status, signal: "cleanse", text: "" });
+  return applyCleanseHeals(setPlayerStatus(state, status, 0), combatTexts);
 }
 
 export const STATUS_HANDLERS = {
@@ -60,15 +66,7 @@ export const STATUS_HANDLERS = {
     return removeHarmfulPlayerStatuses(state, adjustedRemove, combatTexts);
   },
   "remove-player-status": (state, _card, effect, _potionMult, combatTexts) => {
-    if (state.playerStatuses[effect.status] <= 0) return state;
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "notice",
-      stat: effect.status,
-      signal: "cleanse",
-      text: "",
-    });
-    return applyCleanseHeals(setPlayerStatus(state, effect.status, 0), combatTexts);
+    return cleansePlayerStatus(state, effect.status, combatTexts);
   },
   "multiply-enemy-status": (state, _card, effect, _potionMult, combatTexts) => {
     const current = state.enemyStatuses[effect.status];
@@ -88,14 +86,7 @@ export const STATUS_HANDLERS = {
     const stacks = state.playerStatuses[effect.status];
     if (stacks <= 0) return state;
 
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "notice",
-      stat: effect.status,
-      signal: "cleanse",
-      text: "",
-    });
-    const cleansed = applyCleanseHeals(setPlayerStatus(state, effect.status, 0), combatTexts);
+    const cleansed = cleansePlayerStatus(state, effect.status, combatTexts);
     const amount = applyPotionMultiplier(stacks, potionMult);
 
     return dealDamageToEnemy(

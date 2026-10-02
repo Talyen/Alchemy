@@ -15,7 +15,7 @@ contracts are owned by [Steam demo](./STEAM_DEMO.md).
 - [x] Campaign only, ending after Act 1; Novice only; unlimited replay.
 - [x] Knight → Rogue → Ranger through the existing victory, defeat or abandonment unlock chain.
 - [x] Existing content pools, Talents, Homestead and Armory rules and costs; existing UI onboarding.
-- [x] Excluded characters/modes retain their names and show bold red Requires Full Game tooltips. Victory recap leads to the separate The Journey Continues marketing screen with the feature showcase and primary wishlist CTA.
+- [x] Excluded characters/modes retain their names and show bold red Requires Full Game tooltips. Victory recap leads to the separate The Journey Continues marketing screen with the selected promo image and primary wishlist CTA.
 - [x] English; Steam only; Windows x64; controller play through Steam Input and Deck through Proton.
 - [x] Automatic one-time earned permanent-progress import through shared Steam Cloud, with local Windows fallback. Active runs and full-Campaign difficulty credit do not transfer.
 - [x] Demo remains available after full launch; demo and full candidates build from one source version.
@@ -31,7 +31,7 @@ subjective player comprehension. `HUMAN` rows require actual feedback;
 
 - [x] An isolated offline production demo opens a main menu with Play, Options, Quit, Wishlist above Play/Continue. Temporary comparison tooling and developer-only actions are hidden in production.
 - [x] A fresh-profile browser journey reaches a real starter hand within the three-minute technical budget, with no mandatory cinematics/lore or progression detour. This measurement excludes human reading time.
-- [x] Existing UI provides card descriptions, Mana/Health, Block, enemy Traits/Abilities, deck/pile inspection and End Turn. Gameplay Options now lists controls and basic rules without adding a tutorial.
+- [x] Existing UI provides card descriptions, Mana/Health, Block, enemy Traits/Abilities, deck/pile inspection and End Turn. The former Controls instructions in Options are intentionally omitted; there is no separate tutorial.
 - [x] Victory leads through rewards and destination choices; run endings show earned progress and return to Play. Normal End Run unlocks the next approved hero and progression screens.
 - [x] Essential navigation uses layout-independent Tab/F7, Enter/Space, Escape, arrows and pointer/scroll input. Demo browser and native Options journeys verify focus and dismissal.
 - [x] In-game feedback/support links are intentionally omitted. Use the base game’s Steam Discussions for demo feedback; demo user reviews require the deferred separate demo store page. Configure customer-support contact information in Steamworks separately.
@@ -63,6 +63,10 @@ Use [game rules](./GAME_RULES.md), [run state](./RUN_STATE.md), and [run workflo
 ## 5. Readability, feedback, and Options
 
 Follow [UI](./UI.md), [interaction](./UI_INTERACTION.md), and [motion](./UI_MOTION.md).
+
+The recorded matrix below requested Tooltip Size 75/125. The current supported
+range is 90–125%; use 90/125 when repeating candidate checks, following the
+[display sizing contract](./UI.md#display-sizing).
 
 - [x] Inspect battle/hand, enemy/deck inspection and card tooltips at exact browser viewports 1280×720 and 1280×800, Game Size 80/100/120 and Tooltip Size 75/125. Seven-card hands and End Turn remain usable; screenshots are retained locally.
 - [x] Inspect the production demo menu/footer and Options in isolated Electron at minimum-size/size-extreme cases. Native window dimensions are asserted against the available host work area; exact 1280×800 geometry is independently covered in Chromium.
@@ -96,7 +100,7 @@ Use [audio](./AUDIO.md) and [performance](./PERFORMANCE.md).
 
 ## 8. Ending and launch communication
 
-- [x] Act 1 ends with The Journey Continues and the standard recap. Main Menu returns to Play/Quit; defeat/abandonment use Journey's End and do not pretend the demo was conquered.
+- [x] Act 1 ends with the Victory recap; Continue then opens The Journey Continues. Main Menu returns to Play/Quit; defeat/abandonment use Journey's End and do not pretend the demo was conquered.
 - [x] Main menu/completion wishlist controls and the fixed full-game target/fallback are implemented and regression-tested. Actual Steam destination/overlay behavior remains deferred until real App IDs exist; Quit has no promotional side effect.
 - [x] Demo completion copy and full-game locks accurately identify further Campaign acts, heroes and modes as full-game content.
 - [ ] Prepare a short gameplay-led demo trailer and announcement showing card decisions, rewards, progression, and the actual endpoint. Confirm all links and launch timing before publication.
