@@ -11,7 +11,7 @@ export function addEnemyMitigationWithCombatText(
   amount: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  const applied = field === "block" ? paceCombatMagnitude(state, amount, "enemy") : amount;
+  const applied = field === "armor" ? amount : paceCombatMagnitude(state, amount, "enemy");
   mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: field, amount: applied });
   return addEnemyMitigation(state, field, applied);
 }

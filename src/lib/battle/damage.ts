@@ -122,7 +122,8 @@ export function dealDamageToEnemy(
     card.tags?.includes("archery") && readCombatFlag(state, "archerySecondCardActive")
       ? state.talentEffects.archerySecondCardDamage
       : 0;
-  context?.damageEffects?.push({ ...resolvedEffect, amount: resolvedEffect.amount + sequenceBonus });
+  const captureDamageEffect = (packet: DamageEffect) =>
+    context?.damageEffects?.push({ ...packet, amount: packet.amount + sequenceBonus });
   // Attempt-scoped bonuses precede Dodge; next-hit bonuses are spent only on contact.
   const bonuses = consumeAttackBonuses(context);
   bonuses.physical += bonuses.sanguine;
@@ -131,11 +132,13 @@ export function dealDamageToEnemy(
   }
   const dodged = tryDodgePlayerAttackPacket(state, combatTexts);
   if (dodged) {
+    captureDamageEffect(resolvedEffect);
     return dodged;
   }
 
-  const consumed = consumeAttackPacketFlags(state, effect);
+  const consumed = consumeAttackPacketFlags(state, resolvedEffect);
   const { packet, applyPartingCut } = consumed;
+  captureDamageEffect(packet);
   const damageState = consumed.state;
   bonuses.physical += consumed.physicalBonus;
 

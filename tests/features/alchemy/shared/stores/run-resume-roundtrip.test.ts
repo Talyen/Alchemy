@@ -11,7 +11,7 @@ import { canEnterLabyrinthNode, withClearedNode } from "@/lib/content-systems/la
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { createSeededRng } from "@/lib/rng";
 import { ROUTE_SCREENS } from "@/lib/routing";
-import { decodeRunResumeSnapshot, encodePersistedShops } from "@/features/alchemy/shared/stores/run-resume-codec";
+import { decodeRunResumeSnapshot } from "@/features/alchemy/shared/stores/run-resume-codec";
 import { runProfilePersistenceCodec } from "@/features/alchemy/shared/stores/run-profile-codec";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
@@ -310,8 +310,13 @@ describe("shop persistence", () => {
 
   it("serializes no shop when no visit is active", () => {
     setRunSession({ hasActiveRun: true });
-    const shops = encodePersistedShops(readRunSession());
-    expect(shops).toEqual({ shopState: null, alchemistState: null, trinketShopState: null, equipmentShopState: null });
+    const snapshot = snapshotRun();
+    expect(snapshot).toMatchObject({
+      shopState: null,
+      alchemistState: null,
+      trinketShopState: null,
+      equipmentShopState: null,
+    });
   });
 });
 

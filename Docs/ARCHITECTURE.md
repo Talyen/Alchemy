@@ -87,6 +87,11 @@ Controller construction, route props, and playback bindings: [Battle controllers
 
 The [session capability reference](./RUN_STATE.md#session-capability-ports) lists controller, route, and domain entry points together. Use the [battle path](#battle-path), [shop commands](#shop-commands), and [run setup ownership](#run-setup-ownership) sections for their distinct execution contracts.
 
+Labyrinth room entry has one callback: `labyrinth-controller.ts` validates and
+records the selected room, then passes its snapshot to `shell/labyrinth-node-routing.ts`.
+The shell owns room routing and prepares traits before destination initialization.
+The controller cancels pending entry and its history record if opening throws.
+
 ### Run loop overview
 
 `run-loop/` splits each outcome into three layers: pure computation in
@@ -106,8 +111,10 @@ and post-claim routing.
 
 Single owners to know: `run/run-materials.ts` owns the run-earned Material grant
 site inventory and end-of-run Material totals across all three modes;
-`battle/autoplay-driver.ts` owns the shared autoplay / auto-end-turn gate
-(`isBattlePlaybackBlocked`, `usePlaybackBlocked`); `battle/playback-lifetime.ts`
+`battle/playback-gate.ts` owns the shared Card, Wish, and auto-end-turn gate
+(`isBattlePlaybackBlocked`, `usePlaybackBlocked`). `use-battle-autoplay.ts` selects
+a ready action with its live commit guard; the React-free `autoplay-driver.ts`
+owns retries, pacing, and cancellation through one action loop. `battle/playback-lifetime.ts`
 owns explicit playback phases, binding readiness, cancellation, timers, transfers, and draw counts.
 `battle/draw-sequence.ts` sequences hand reveals against that lifetime; draw ownership
 is shared even when callers copy dependencies to strengthen a screen guard.
@@ -123,13 +130,16 @@ layers live beside their leaves (`card-ghost-overlay.tsx`,
 
 `create-shop-actions.ts` composes the matching `*-shop-commands.ts` modules;
 `shop-commands-core.ts` owns shared purchase and live refresh-price helpers.
-Pure shelf samplers live in `shop-state-init.ts`, and draft recipes in
-`shop-transactions.ts`. `runShopTransaction` / `commitShopInitialize` own dispatch:
+Pure shelf samplers live in `shop-state-init.ts`. `shop-commands-core.ts` owns
+initialization, purchase validation, and the complete refresh recipe; the activity
+selects pricing and the typed `setRunActivityData` write target. Callers supply
+shop-specific sampling and acquisition rules without wiring separate state writers.
+`runShopTransaction` owns guarded dispatch and success feedback:
 payment, benefits, and visit changes commit together, and stale commands for
 another shop are rejected. Gear writes inside that transaction follow
 [Armory write paths](./ARMORY.md#write-paths).
 
-Only the active visit is encoded by `encodePersistedShops`; presentation
+Only the active visit is encoded by `encodeRunResumeSnapshot`; presentation
 navigation does not select the shelf to save. Kind `"merchant"` is the
 player-facing **Card Shop**. For the editing sequence, refresh behavior, typed
 shelf assignment, and modifier ordering, follow

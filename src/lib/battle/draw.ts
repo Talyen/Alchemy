@@ -1,7 +1,8 @@
 import type { BattleCard } from "@/lib/game-data";
 import { cardHasKeyword } from "./card-classification";
 import { getBattleRng, rngInt, shuffle, takeRandomItem } from "@/lib/rng";
-import type { BattleState } from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { mergeCombatText } from "./combat-text-events";
 import { MAX_HAND_SIZE } from "../game-constants";
 
 interface CardUidChange {
@@ -129,22 +130,39 @@ export function drawFromState(state: BattleState, amount: number) {
   );
 }
 
-export function applyDrawResult(state: BattleState, draw: ReturnType<typeof drawCards>): BattleState {
-  return {
-    ...state,
-    deck: draw.deck,
-    discard: draw.discard,
-    hand: draw.hand,
-    pendingHandCards: draw.pendingHandCards,
-    nextCardUid: draw.nextCardUid,
-    uniqueGear: remapDrawnCardBenefits(state, draw.uidChanges),
-  };
+function reportDraw(state: BattleState, nextState: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
+  const received =
+    nextState.hand.length + nextState.pendingHandCards.length - state.hand.length - state.pendingHandCards.length;
+  if (received > 0 && combatTexts) {
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "draw", amount: received });
+  }
+  return nextState;
+}
+
+export function applyDrawResult(
+  state: BattleState,
+  draw: ReturnType<typeof drawCards>,
+  combatTexts?: CombatTextEvent[],
+): BattleState {
+  return reportDraw(
+    state,
+    {
+      ...state,
+      deck: draw.deck,
+      discard: draw.discard,
+      hand: draw.hand,
+      pendingHandCards: draw.pendingHandCards,
+      nextCardUid: draw.nextCardUid,
+      uniqueGear: remapDrawnCardBenefits(state, draw.uidChanges),
+    },
+    combatTexts,
+  );
 }
 
 export function drawKeywordCard(
   state: BattleState,
   keyword: string,
-  options: { refillFromDiscard?: boolean } = {},
+  options: { refillFromDiscard?: boolean; combatTexts?: CombatTextEvent[] } = {},
 ): BattleState {
   const ready = deliverPendingHandCards(state);
   // Twin-casting only tutors from the deck itself; ordinary draws reshuffle.
@@ -163,13 +181,17 @@ export function drawKeywordCard(
   const deckCard = refilled.deck[index];
   if (!deckCard) return ready;
   const card = { ...deckCard, uid: ready.nextCardUid };
-  return {
-    ...ready,
-    deck: refilled.deck.filter((_, i) => i !== index),
-    discard: refilled.discard,
-    hand: ready.hand.length < MAX_HAND_SIZE ? [...ready.hand, card] : ready.hand,
-    pendingHandCards: ready.hand.length < MAX_HAND_SIZE ? ready.pendingHandCards : [...ready.pendingHandCards, card],
-    nextCardUid: ready.nextCardUid + 1,
-    uniqueGear: remapDrawnCardBenefits(ready, [{ previous: deckCard.uid, next: card.uid }]),
-  };
+  return reportDraw(
+    ready,
+    {
+      ...ready,
+      deck: refilled.deck.filter((_, i) => i !== index),
+      discard: refilled.discard,
+      hand: ready.hand.length < MAX_HAND_SIZE ? [...ready.hand, card] : ready.hand,
+      pendingHandCards: ready.hand.length < MAX_HAND_SIZE ? ready.pendingHandCards : [...ready.pendingHandCards, card],
+      nextCardUid: ready.nextCardUid + 1,
+      uniqueGear: remapDrawnCardBenefits(ready, [{ previous: deckCard.uid, next: card.uid }]),
+    },
+    options.combatTexts,
+  );
 }

@@ -260,7 +260,12 @@ describe("Sun-Struck Shield reflection", () => {
         playerHealth: 40,
         gold: 1000,
         playerStatuses: { block: 3, forge: 20 },
-        talentEffects: { ...shieldTalents, forgeToHoly: true, holyGoldPercent: 3, holyBlockPercentFromDamage: 15 },
+        talentEffects: {
+          ...shieldTalents,
+          forgeHolyDamagePercent: 100,
+          holyGoldPercent: 3,
+          holyBlockPercentFromDamage: 15,
+        },
         gearEffects: { flatHolyDamage: 50 },
         flags: { nextHitCrit: true },
       }),

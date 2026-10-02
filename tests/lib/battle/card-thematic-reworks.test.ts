@@ -394,7 +394,10 @@ describe("thematic card effects", () => {
   });
 
   it("Burning Blade gains Forge before reading it for Burn, including for enemies", () => {
-    const hero = play("burning-blade", { playerStatuses: { forge: 4 }, talentEffects: { forgeToBurn: true } });
+    const hero = play("burning-blade", {
+      playerStatuses: { forge: 4 },
+      talentEffects: { forgeBurnDamagePercent: 100 },
+    });
     expect(hero.enemyStatuses.burn).toBe(5);
     expect(hero.enemyHealth).toBe(95);
     expect(hero.playerStatuses.forge).toBe(4);

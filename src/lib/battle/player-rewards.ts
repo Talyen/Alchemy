@@ -7,7 +7,7 @@ import { FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR } from "../game-constants";
 import { mergeCombatText } from "./combat-text-events";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
-import type { PlayerStatusId } from "@/lib/game-data";
+import type { DamageType, PlayerStatusId } from "@/lib/game-data";
 import {
   blockAmountWithForge,
   damageEnemyHealth,
@@ -288,6 +288,18 @@ function rollRewardChance(chance: number, state: BattleState): boolean {
   return chance > 0 && rollPercent(chance, getBattleRng(state));
 }
 
+export function applyIronGuardReward(
+  state: BattleState,
+  damageType: DamageType,
+  healthDamage: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  if (damageType !== "physical" || healthDamage <= 0) return state;
+  return rollRewardChance(state.talentEffects.armorOnPhysicalDamageChance, state)
+    ? applyArmorReward(state, healthDamage, combatTexts)
+    : state;
+}
+
 export function applyArmorReward(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
   if (amount <= 0) return state;
   return resolveSecondaryAction(state, "reward", (current) => applyArmorStatusEffect(current, amount, combatTexts));
@@ -309,7 +321,7 @@ function applyBlockGainRewards(state: BattleState, gained: number, combatTexts: 
     nextState = applyArmorReward(nextState, gained, combatTexts);
   }
   if (rollRewardChance(nextState.talentEffects.drawHolyOnBlockChance, nextState)) {
-    nextState = drawKeywordCard(nextState, "holy");
+    nextState = drawKeywordCard(nextState, "holy", { combatTexts });
   }
   return nextState;
 }
@@ -374,9 +386,7 @@ export function onFirstCrossThreshold(
 
 function applyArmorTalentChecks(state: BattleState, amount: number, combatTexts: CombatTextEvent[]) {
   if (state.playerHealth < state.playerMaxHealth / HALF_DIVISOR) {
-    amount = state.talentEffects.armorDoubledBelowHalfHealth
-      ? amount * FIRST_EFFECT_MULTIPLIER
-      : applyPercentBonus(amount, state.talentEffects.armorLowHealthBonusPercent);
+    amount = applyPercentBonus(amount, state.talentEffects.armorLowHealthBonusPercent);
   }
   if (state.talentEffects.firstArmorCardDoubled && !readCombatFlag(state, "firstArmorCardDoubledUsed")) {
     amount *= FIRST_EFFECT_MULTIPLIER;

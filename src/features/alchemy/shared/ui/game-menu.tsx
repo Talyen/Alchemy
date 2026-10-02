@@ -13,8 +13,6 @@ const GAME_MENU_CONFIG = {
   anchoredMenuWidthPx: 392,
 } as const;
 
-type Gate = "talents" | "homestead";
-
 interface GameMenuProps {
   isOpen: boolean;
   onClose: () => void;
@@ -38,141 +36,9 @@ interface MenuItem {
   label: string;
   Icon: typeof Swords;
   iconClassName?: string;
-  show: boolean;
-  gate?: Gate;
+  onSelect: (() => void) | undefined;
+  lock?: { locked: boolean; message: string };
   danger?: boolean;
-  dividerBefore?: boolean;
-  handler: () => void;
-}
-
-type BuildMenuItemsArgs = Pick<
-  GameMenuProps,
-  "onClose" | "onMainMenu" | "onCollection" | "onTalents" | "onHomestead" | "onArmory" | "onOptions"
-> & {
-  onEndRun: (() => void) | undefined;
-  onReturnToRun: (() => void) | undefined;
-  returnToRunLabel: "Return to Run" | "Return to Battle";
-  currentScreen: Screen | undefined;
-};
-
-function buildMenuItems({
-  onClose,
-  onMainMenu,
-  onCollection,
-  onTalents,
-  onHomestead,
-  onArmory,
-  onOptions,
-  onEndRun,
-  onReturnToRun,
-  returnToRunLabel,
-  currentScreen,
-}: BuildMenuItemsArgs): MenuItem[] {
-  const closeAfter = (action: () => void) => () => {
-    action();
-    onClose();
-  };
-
-  return [
-    {
-      key: "return-to-run",
-      label: returnToRunLabel ?? "Return to Run",
-      Icon: Swords,
-      show: !!onReturnToRun,
-      handler: closeAfter(() => onReturnToRun?.()),
-    },
-    { key: "main-menu", label: "Main Menu", Icon: House, show: true, handler: closeAfter(onMainMenu) },
-    {
-      key: "collection",
-      label: "Collection",
-      Icon: BookOpen,
-      iconClassName: "text-gold-light",
-      show: currentScreen !== "collection",
-      handler: closeAfter(onCollection),
-    },
-    {
-      key: "talents",
-      label: "Talents",
-      Icon: WandSparkles,
-      iconClassName: "text-violet-400",
-      gate: "talents",
-      show: currentScreen !== "talents",
-      handler: closeAfter(onTalents),
-    },
-    {
-      key: "homestead",
-      label: "Homestead",
-      Icon: TreePine,
-      iconClassName: "text-emerald-400",
-      gate: "homestead",
-      show: currentScreen !== "homestead",
-      handler: closeAfter(onHomestead),
-    },
-    {
-      key: "armory",
-      label: "Armory",
-      Icon: Shield,
-      iconClassName: "text-sky-300",
-      show: currentScreen !== "armory",
-      handler: closeAfter(onArmory),
-    },
-    {
-      key: "options",
-      label: "Options",
-      Icon: Cog,
-      iconClassName: "text-zinc-400",
-      show: currentScreen !== "options",
-      handler: closeAfter(onOptions),
-    },
-    {
-      key: "end-run",
-      label: "End Run",
-      Icon: Swords,
-      danger: true,
-      dividerBefore: true,
-      show: !!onEndRun,
-      handler: closeAfter(() => onEndRun?.()),
-    },
-  ];
-}
-
-function GameMenuPanel({
-  items,
-  locks,
-  messages,
-}: {
-  items: MenuItem[];
-  locks: Record<Gate, boolean>;
-  messages: Record<Gate, string>;
-}) {
-  return (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- only shields menu clicks from the backdrop; menu buttons own keyboard actions
-    <div
-      data-testid="game-menu"
-      className="alchemy-shell w-full max-w-[calc(28.8023*var(--content-rem,1rem))] overflow-visible rounded-shell-dialog border border-border/80 px-5 py-4"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className="grid gap-0.5">
-        {items
-          .filter((item) => item.show)
-          .map((item) => (
-            <Fragment key={item.key}>
-              {item.dividerBefore && <div className="my-0.5 border-t border-border/60" />}
-              <LockedMenuItem
-                title={item.label}
-                message={item.gate ? messages[item.gate] : ""}
-                locked={item.gate ? locks[item.gate] : false}
-                onSelect={item.handler}
-                icon={<item.Icon className={cn("h-6 w-6 shrink-0", item.iconClassName)} />}
-                className={cn(controlLabelClass, "h-11 w-full justify-start gap-3", item.danger && "text-red-400")}
-              >
-                {item.label}
-              </LockedMenuItem>
-            </Fragment>
-          ))}
-      </div>
-    </div>
-  );
 }
 
 function anchoredMenuStyle(anchorRect: DOMRect): React.CSSProperties {
@@ -204,28 +70,68 @@ export function GameMenu({
   isHomesteadLocked = false,
 }: GameMenuProps) {
   const layoutAnchorRect = useHeldWhile(isOpen, anchorRect ?? null);
+  const items: MenuItem[] = [
+    { key: "return-to-run", label: returnToRunLabel, Icon: Swords, onSelect: onReturnToRun },
+    { key: "main-menu", label: "Main Menu", Icon: House, onSelect: onMainMenu },
+    {
+      key: "collection",
+      label: "Collection",
+      Icon: BookOpen,
+      iconClassName: "text-gold-light",
+      onSelect: onCollection,
+    },
+    {
+      key: "talents",
+      label: "Talents",
+      Icon: WandSparkles,
+      iconClassName: "text-violet-400",
+      onSelect: onTalents,
+      lock: { locked: isTalentsLocked, message: getProgressionFeatureUnlockMessage("talents") },
+    },
+    {
+      key: "homestead",
+      label: "Homestead",
+      Icon: TreePine,
+      iconClassName: "text-emerald-400",
+      onSelect: onHomestead,
+      lock: { locked: isHomesteadLocked, message: getProgressionFeatureUnlockMessage("homestead") },
+    },
+    { key: "armory", label: "Armory", Icon: Shield, iconClassName: "text-sky-300", onSelect: onArmory },
+    { key: "options", label: "Options", Icon: Cog, iconClassName: "text-zinc-400", onSelect: onOptions },
+    { key: "end-run", label: "End Run", Icon: Swords, onSelect: onEndRun, danger: true },
+  ];
 
   const panel = (
-    <GameMenuPanel
-      items={buildMenuItems({
-        onClose,
-        onMainMenu,
-        onCollection,
-        onTalents,
-        onHomestead,
-        onArmory,
-        onOptions,
-        onEndRun,
-        onReturnToRun,
-        returnToRunLabel,
-        currentScreen,
-      })}
-      locks={{ talents: isTalentsLocked, homestead: isHomesteadLocked }}
-      messages={{
-        talents: getProgressionFeatureUnlockMessage("talents"),
-        homestead: getProgressionFeatureUnlockMessage("homestead"),
-      }}
-    />
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- only shields menu clicks from the backdrop; menu buttons own keyboard actions
+    <div
+      data-testid="game-menu"
+      className="alchemy-shell w-full max-w-[calc(28.8023*var(--content-rem,1rem))] overflow-visible rounded-shell-dialog border border-border/80 px-5 py-4"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="grid gap-0.5">
+        {items.map(({ key, label, Icon, iconClassName, onSelect, lock, danger }) => {
+          if (!onSelect || key === currentScreen) return null;
+          return (
+            <Fragment key={key}>
+              {danger && <div className="my-0.5 border-t border-border/60" />}
+              <LockedMenuItem
+                title={label}
+                message={lock?.message ?? ""}
+                locked={lock?.locked ?? false}
+                onSelect={() => {
+                  onSelect();
+                  onClose();
+                }}
+                icon={<Icon className={cn("h-6 w-6 shrink-0", iconClassName)} />}
+                className={cn(controlLabelClass, "h-11 w-full justify-start gap-3", danger && "text-red-400")}
+              >
+                {label}
+              </LockedMenuItem>
+            </Fragment>
+          );
+        })}
+      </div>
+    </div>
   );
 
   return (

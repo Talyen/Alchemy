@@ -46,7 +46,11 @@ describe("Talent wish talent rewards", () => {
 
   it("Wish selection cannot turn an absent reward into Block through Forge", () => {
     const options = [attack("1"), attack("2")];
-    const state = battle({ playerStatuses: { forge: 5 }, talentEffects: { forgeToBlock: true }, wishOptions: options });
+    const state = battle({
+      playerStatuses: { forge: 5 },
+      talentEffects: { forgeBlockPercent: 100 },
+      wishOptions: options,
+    });
     expect(chooseWishCard(state, "1").playerStatuses.block).toBe(0);
     const noDeclines = {
       ...state,

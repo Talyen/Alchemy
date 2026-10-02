@@ -149,13 +149,27 @@ export function getImmediateDamage(card: BattleCard): number {
 
 export function getImmediateDefense(card: BattleCard, state?: BattleSnapshot): number {
   return card.effects.reduce((total, effect) => {
+    if (effect.kind === "chance") {
+      return (
+        total +
+        effect.probability * getImmediateDefense({ ...card, effects: effect.successEffects }, state) +
+        (1 - effect.probability) * getImmediateDefense({ ...card, effects: effect.failureEffects }, state)
+      );
+    }
     if (effect.kind === "heal")
       return (
         total +
         (state ? Math.min(effect.amount, Math.max(0, state.playerMaxHealth - state.playerHealth)) : effect.amount)
       );
     if (effect.kind === "player-status" && (effect.status === "block" || effect.status === "armor")) {
-      return total + (effect.convertCurrentMana ?? effect.perManaCrystal ?? effect.amount);
+      const amount = state
+        ? effect.convertCurrentMana !== undefined
+          ? state.mana * effect.convertCurrentMana
+          : effect.perManaCrystal !== undefined
+            ? state.maxMana * effect.perManaCrystal
+            : effect.amount
+        : (effect.convertCurrentMana ?? effect.perManaCrystal ?? effect.amount);
+      return total + amount;
     }
     if (effect.kind === "remove-harmful-status") {
       if (state && !harmfulPlayerStatusIds.some((status) => state.playerStatuses[status] > 0)) return total;

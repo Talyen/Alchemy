@@ -1,3 +1,4 @@
+import { summarizeBattleRates } from "./rate-statistics";
 import { DEFAULT_SEED, simulateBattle } from "./simulator";
 import type { BalanceBatchConfig, BalanceBatchResult } from "./simulator-types";
 
@@ -18,61 +19,29 @@ function forEachSimulation(
   }
 }
 
-function runBatchInternal(config: BalanceBatchConfig): BalanceBatchResult {
-  let wins = 0;
-  let losses = 0;
-  let timeouts = 0;
-  let turnTotal = 0;
-  let healthTotal = 0;
+export function simulateBatch(config: BalanceBatchConfig): BalanceBatchResult {
   let cardsPlayedTotal = 0;
-  let enemyAttacksTotal = 0;
-  let enemyAbilityActivationsTotal = 0;
-  let enemyAbilityUsesTotal = 0;
-  let winsBeforeEnemyAttack = 0;
   const cardPlayCounts: Record<string, number> = {};
   const results: BalanceBatchResult["results"] = [];
 
   forEachSimulation(config, (result) => {
     results.push(result);
-    if (result.outcome === "win") wins += 1;
-    else if (result.outcome === "loss") losses += 1;
-    else timeouts += 1;
-    turnTotal += result.turns;
-    healthTotal += Math.max(0, result.playerHealth);
     cardsPlayedTotal += result.totalCardsPlayed;
-    enemyAttacksTotal += result.enemyAttackActions;
-    enemyAbilityUsesTotal += Object.values(result.enemyAbilityUses).reduce((a, b) => a + b, 0);
-    enemyAbilityActivationsTotal += Object.values(result.enemyAbilityActivations).reduce((a, b) => a + b, 0);
-    if (result.wonBeforeEnemyAttack) winsBeforeEnemyAttack += 1;
     for (const [cardId, count] of Object.entries(result.cardsPlayed)) {
       cardPlayCounts[cardId] = (cardPlayCounts[cardId] ?? 0) + count;
     }
   });
 
-  const iterations = config.iterations;
+  const { n: iterations, ...rates } = summarizeBattleRates(results);
   return {
     config,
     iterations,
-    wins,
-    losses,
-    timeouts,
-    winRate: wins / iterations,
-    lossRate: losses / iterations,
-    timeoutRate: timeouts / iterations,
-    averageTurns: turnTotal / iterations,
-    averageEnemyAttacks: enemyAttacksTotal / iterations,
-    averageEnemyAbilityActivations: enemyAbilityActivationsTotal / iterations,
-    averageEnemyAbilityUses: enemyAbilityUsesTotal / iterations,
-    winsBeforeEnemyAttackRate: winsBeforeEnemyAttack / iterations,
-    averageHealthRemaining: healthTotal / iterations,
+    ...rates,
+    lossRate: rates.losses / iterations,
     averageCardsPlayed: cardsPlayedTotal / iterations,
     cardPlayCounts,
     results,
   };
-}
-
-export function simulateBatch(config: BalanceBatchConfig): BalanceBatchResult {
-  return runBatchInternal(config);
 }
 
 export interface WinSeries {

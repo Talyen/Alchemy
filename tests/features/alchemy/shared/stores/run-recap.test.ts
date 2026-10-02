@@ -137,9 +137,9 @@ it("records distinct Wildwood boss attempts and keeps the trail through resume",
     };
   });
   const battle = createBattleStartCommands(() => {});
-  battle.startBossById("forge-golem");
+  battle.startBossById({ bossId: "forge-golem" });
   command((draft) => completeRunRoom(draft));
-  battle.startBossById("forge-golem");
+  battle.startBossById({ bossId: "forge-golem" });
   const saved = parseActiveRun(snapshotRun())!;
   expect(saved.runHistory.map((room) => [room.destination, room.completed])).toEqual([
     [DESTINATIONS.BOSS_COMBAT, true],

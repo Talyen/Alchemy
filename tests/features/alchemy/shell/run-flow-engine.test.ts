@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS, type Screen, type ScreenTransitionOptions } from "@/lib/routing";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
+import type { BattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
 import { createRunFlowEngine } from "@/features/alchemy/shell/run-flow-engine";
 import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
 import { readRunAvailableDestinations } from "@/features/alchemy/shell/run-destination-wiring";
@@ -44,7 +45,7 @@ function makeEngine({
   cancelPending?: () => void;
   startBattle?: () => void;
   startBossBattle?: () => void;
-  startBossById?: (bossId: string) => boolean;
+  startBossById?: BattleStartCommands["startBossById"];
   initializeShop?: () => void;
   labyrinthClearNode?: () => void;
 } = {}) {

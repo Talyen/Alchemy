@@ -57,6 +57,7 @@ export function focusInDirection(direction: FocusDirection): boolean {
       return false;
     if (
       current instanceof HTMLInputElement &&
+      current.type !== "checkbox" &&
       (current.type !== "range" || direction === "left" || direction === "right")
     )
       return false;

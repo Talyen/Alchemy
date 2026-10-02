@@ -151,9 +151,11 @@ function dealPlayerDotTick(
   if (healthLost > 0) {
     emitDotCombatText(combatTexts, "player", status, healthLost);
   }
-  nextState = checkHealthThresholds(state.playerHealth, nextState.playerHealth, nextState, combatTexts);
+  const healthAfterTick = nextState.playerHealth;
+  nextState = decayArmorAfterDamage(nextState, reducedDamage, "player", combatTexts);
+  nextState = checkHealthThresholds(state.playerHealth, healthAfterTick, nextState, combatTexts);
   nextState = applyHealthLossTalentRewards(state, nextState, healthLost, combatTexts);
-  return decayArmorAfterDamage(nextState, reducedDamage, "player", combatTexts);
+  return nextState;
 }
 
 function mitigatePlayerDot(state: BattleState, damage: number, status: "burn" | "poison" | "bleed"): number {

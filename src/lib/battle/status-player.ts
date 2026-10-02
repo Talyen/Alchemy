@@ -49,14 +49,6 @@ export function countRemovableHarmfulStatuses(playerStatuses: BattleState["playe
   return harmfulPlayerStatusIds.filter((statusId) => playerStatuses[statusId] > 0).length;
 }
 
-function applyChanceReward(
-  state: BattleState,
-  chance: number,
-  apply: (state: BattleState) => BattleState,
-): BattleState {
-  return chance > 0 && rollTalentChance(chance, state) ? apply(state) : state;
-}
-
 export function applyHealthLossTalentRewards(
   previousState: BattleState,
   nextState: BattleState,
@@ -71,18 +63,6 @@ export function applyHealthLossTalentRewards(
     return nextState;
   }
   return removeHarmfulPlayerStatuses(nextState, 1, combatTexts);
-}
-
-export function applyIronGuardReward(
-  state: BattleState,
-  damageType: DamageType,
-  healthDamage: number,
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  if (damageType !== "physical" || healthDamage <= 0) return state;
-  return applyChanceReward(state, state.talentEffects.armorOnPhysicalDamageChance, (s) =>
-    applyArmorReward(s, healthDamage, combatTexts),
-  );
 }
 
 export function applyBlockDepletionForgeReward(
@@ -180,9 +160,7 @@ export function addForgeToPlayer(state: BattleState, baseAmount: number, combatT
     amount *= 2;
   }
   if (state.playerHealth < state.playerMaxHealth / HALF_DIVISOR) {
-    amount = state.talentEffects.forgeDoubledBelowHalfHealth
-      ? amount * 2
-      : applyPercentBonus(amount, state.talentEffects.forgeLowHealthBonusPercent);
+    amount = applyPercentBonus(amount, state.talentEffects.forgeLowHealthBonusPercent);
   }
   amount = paceCombatMagnitude(state, amount, "player");
   if (amount <= 0) return state;
@@ -341,4 +319,10 @@ export function applyPlayerStatusFromAttack(
   return addPlayerStatusWithCombatText(state, status, amount, combatTexts, { skipFightPacing: true });
 }
 
-export { applyArmorReward, applyBlockReward, applyCleanseHeals, removeHarmfulPlayerStatuses } from "./player-rewards";
+export {
+  applyArmorReward,
+  applyBlockReward,
+  applyCleanseHeals,
+  applyIronGuardReward,
+  removeHarmfulPlayerStatuses,
+} from "./player-rewards";

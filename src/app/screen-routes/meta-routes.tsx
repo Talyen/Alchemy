@@ -1,6 +1,5 @@
 import { IS_DEMO } from "@/lib/game-edition";
 import { openFullGameWishlist } from "@/lib/platform";
-import type { ReactNode } from "react";
 import { isDesktop, quitDesktopApp } from "@/lib/platform";
 import { menuLogo } from "@/lib/game-data";
 import { useMenuBadges } from "@/app/app-screen-chrome-context";
@@ -32,7 +31,7 @@ import {
   useHasActiveRun,
   useTalentProgressSlice,
 } from "@/features/alchemy/shared/stores/run-reads";
-import type { MetaCommands, MetaRouteCtx } from "./route-ctx";
+import type { MetaRouteCtx } from "./route-ctx";
 import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
 
 const setCollectionPageCommand = createRunSessionCommand(setCollectionPage);
@@ -42,7 +41,8 @@ const plantFarmCommand = createRunSessionCommand(plantFarm);
 const completeResearchCommand = createRunSessionCommand(completeResearch);
 const bondCompanionCommand = createRunSessionCommand(bondCompanion);
 
-function MenuScreenRoute({ commands }: { commands: MetaCommands }) {
+function MenuScreenRoute({ routeCommands }: MetaRouteCtx) {
+  const commands = routeCommands.meta;
   const { hasUnspentTalents, hasAffordableHomestead } = useMenuBadges();
   const hasActiveRun = useHasActiveRun();
   const finishedRunCharacters = useFinishedRunCharacters();
@@ -65,26 +65,13 @@ function MenuScreenRoute({ commands }: { commands: MetaCommands }) {
   );
 }
 
-function ArmoryScreenRoute({
-  onBack,
-  onOpenGameMenu,
-}: {
-  onBack?: (() => void) | undefined;
-  onOpenGameMenu: (rect: DOMRect) => void;
-}) {
+function ArmoryScreenRoute({ onBack, onOpenGameMenu }: MetaRouteCtx) {
   const controller = useArmoryController();
   return <ArmoryScreen {...controller} onBack={onBack} onMenu={onOpenGameMenu} />;
 }
 
-function GameModeSelectScreenRoute({
-  commands,
-  onBack,
-  onOpenGameMenu,
-}: {
-  commands: MetaCommands;
-  onBack?: (() => void) | undefined;
-  onOpenGameMenu: (rect: DOMRect) => void;
-}) {
+function GameModeSelectScreenRoute({ routeCommands, onBack, onOpenGameMenu }: MetaRouteCtx) {
+  const commands = routeCommands.meta;
   const finishedRunCharacters = useFinishedRunCharacters();
   return (
     <GameModeSelectScreen
@@ -98,13 +85,7 @@ function GameModeSelectScreenRoute({
   );
 }
 
-function CollectionScreenRoute({
-  onBack,
-  onOpenGameMenu,
-}: {
-  onBack?: (() => void) | undefined;
-  onOpenGameMenu: (rect: DOMRect) => void;
-}) {
+function CollectionScreenRoute({ onBack, onOpenGameMenu }: MetaRouteCtx) {
   const profile = useProfileCollectionSlice();
   const bondedCompanions = useBondedCompanions();
   const finishedRunCharacters = useFinishedRunCharacters();
@@ -122,13 +103,7 @@ function CollectionScreenRoute({
   );
 }
 
-function HomesteadScreenRoute({
-  onBack,
-  onOpenGameMenu,
-}: {
-  onBack?: (() => void) | undefined;
-  onOpenGameMenu: (rect: DOMRect) => void;
-}) {
+function HomesteadScreenRoute({ onBack, onOpenGameMenu }: MetaRouteCtx) {
   const homesteadValues = useHomesteadProgressSlice();
   const { discoveredCardIds } = useProfileDiscoverySlice();
 
@@ -146,15 +121,8 @@ function HomesteadScreenRoute({
   );
 }
 
-function TalentsScreenRoute({
-  commands,
-  onBack,
-  onOpenGameMenu,
-}: {
-  commands: MetaCommands;
-  onBack?: (() => void) | undefined;
-  onOpenGameMenu: (rect: DOMRect) => void;
-}) {
+function TalentsScreenRoute({ routeCommands, onBack, onOpenGameMenu }: MetaRouteCtx) {
+  const commands = routeCommands.meta;
   const talentProgress = useTalentProgressSlice();
 
   return (
@@ -168,22 +136,11 @@ function TalentsScreenRoute({
   );
 }
 
-export const metaScreenRoutes: {
-  menu: (ctx: MetaRouteCtx) => ReactNode;
-  "game-mode-select": (ctx: MetaRouteCtx) => ReactNode;
-  collection: (ctx: MetaRouteCtx) => ReactNode;
-  homestead: (ctx: MetaRouteCtx) => ReactNode;
-  talents: (ctx: MetaRouteCtx) => ReactNode;
-  armory: (ctx: MetaRouteCtx) => ReactNode;
-} = {
-  menu: ({ routeCommands }) => <MenuScreenRoute commands={routeCommands.meta} />,
-  "game-mode-select": ({ routeCommands, onBack, onOpenGameMenu }) => (
-    <GameModeSelectScreenRoute commands={routeCommands.meta} onBack={onBack} onOpenGameMenu={onOpenGameMenu} />
-  ),
-  collection: ({ onBack, onOpenGameMenu }) => <CollectionScreenRoute onBack={onBack} onOpenGameMenu={onOpenGameMenu} />,
-  homestead: ({ onBack, onOpenGameMenu }) => <HomesteadScreenRoute onBack={onBack} onOpenGameMenu={onOpenGameMenu} />,
-  talents: ({ routeCommands, onBack, onOpenGameMenu }) => (
-    <TalentsScreenRoute commands={routeCommands.meta} onBack={onBack} onOpenGameMenu={onOpenGameMenu} />
-  ),
-  armory: ({ onBack, onOpenGameMenu }) => <ArmoryScreenRoute onBack={onBack} onOpenGameMenu={onOpenGameMenu} />,
+export const metaScreenRoutes = {
+  menu: MenuScreenRoute,
+  "game-mode-select": GameModeSelectScreenRoute,
+  collection: CollectionScreenRoute,
+  homestead: HomesteadScreenRoute,
+  talents: TalentsScreenRoute,
+  armory: ArmoryScreenRoute,
 };

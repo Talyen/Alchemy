@@ -1,28 +1,32 @@
-import { createShopRefreshAction } from "@/features/alchemy/run-loop/shop/shop-commands-core";
-import type { DraftStateWriter } from "@/features/alchemy/run-loop/shop/shop-transactions";
-import type { AlchemistState, ShopState } from "@/lib/active-run-session";
+import { createShopRefreshAction, initializeShop } from "@/features/alchemy/run-loop/shop/shop-commands-core";
+import type { AlchemistState } from "@/lib/active-run-session";
+import { setRunActivityData } from "@/features/alchemy/shared/stores/run-session-write-port";
+import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import type { TalentEffectManifest } from "@/lib/game-data";
 
-declare const alchemistWriter: DraftStateWriter<AlchemistState>;
-declare const shopWriter: DraftStateWriter<ShopState>;
+declare const alchemistState: AlchemistState;
+declare const draft: GameplayDraft;
 declare const talents: TalentEffectManifest;
 
 createShopRefreshAction({
   activity: "shop",
-  kind: "merchant",
   talentEffects: talents,
-  // @ts-expect-error -- a Card Shop refresh cannot write Alchemist state
-  setState: alchemistWriter,
-  mapState: (previous) => previous,
-  resample: () => [],
+  // @ts-expect-error -- a Card Shop refresh must return a card shelf and its service state
+  resample: () => alchemistState,
 });
+
+// @ts-expect-error -- initialization uses the same activity-to-state contract as refresh
+initializeShop("shop", () => alchemistState);
 
 createShopRefreshAction({
   activity: "shop",
-  // @ts-expect-error -- a Card Shop refresh cannot use Trinket pricing
-  kind: "trinket",
   talentEffects: talents,
-  setState: shopWriter,
-  mapState: (previous) => previous,
-  resample: () => [],
+  resample: (_draft, state) => {
+    // @ts-expect-error -- Card Shop samplers cannot read an Alchemist shelf
+    void state.potions;
+    return state;
+  },
 });
+
+// @ts-expect-error -- the canonical write target cannot be inferred from a mismatched payload
+setRunActivityData(draft, "shop", alchemistState);

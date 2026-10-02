@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from "react";
 
-import { IMAGE_PRELOAD_TIMEOUT_MS } from "@/lib/game-constants";
+import { waitForImage } from "@/lib/preload";
 
 export function useArtworkReady(identity: string | number) {
   const ref = useRef<HTMLDivElement>(null);
@@ -10,70 +10,51 @@ export function useArtworkReady(identity: string | number) {
     const root = ref.current;
     if (!root) return;
     setReadyIdentity(null);
-    let cancelled = false;
+    const waits = new Map<HTMLImageElement, { source: string; lifetime: AbortController; pending: boolean }>();
     let frame = 0;
-    const cleanups: Array<() => void> = [];
-    let generation = 0;
-    const waitForArtwork = () => {
-      const attempt = ++generation;
+    const reconcile = () => {
       cancelAnimationFrame(frame);
-      cleanups.splice(0).forEach((cleanup) => cleanup());
-      const images = Array.from(root.querySelectorAll<HTMLImageElement>("img[src]"));
-      const pending = images.map(
-        (image) =>
-          new Promise<void>((resolve) => {
-            image.style.removeProperty("visibility");
-            let settled = false;
-            const finish = (failed = false) => {
-              if (settled) return;
-              settled = true;
-              cleanup();
-              if (failed && !cancelled && attempt === generation) image.style.visibility = "hidden";
-              resolve();
-            };
-            const decode = () => {
-              if (typeof image.decode !== "function") {
-                finish(image.naturalWidth === 0);
-                return;
-              }
-              void image.decode().then(
-                () => finish(),
-                () => finish(true),
-              );
-            };
-            const fail = () => finish(true);
-            const timeout = window.setTimeout(fail, IMAGE_PRELOAD_TIMEOUT_MS);
-            const cleanup = () => {
-              window.clearTimeout(timeout);
-              image.removeEventListener("load", decode);
-              image.removeEventListener("error", fail);
-            };
-            cleanups.push(cleanup);
-            image.loading = "eager";
-            image.addEventListener("load", decode);
-            image.addEventListener("error", fail);
-            if (image.complete) decode();
-          }),
-      );
-      void Promise.all(pending).then(() => {
-        if (cancelled || attempt !== generation) return;
-        frame = requestAnimationFrame(() => {
-          if (cancelled || attempt !== generation) return;
-          observer.disconnect();
-          setReadyIdentity(identity);
+      const images = new Set(root.querySelectorAll<HTMLImageElement>("img[src]"));
+      for (const [image, wait] of waits) {
+        if (!images.has(image) || wait.source !== sourceOf(image)) {
+          wait.lifetime.abort();
+          waits.delete(image);
+        }
+      }
+      for (const image of images) {
+        if (waits.has(image)) continue;
+        const wait = { source: sourceOf(image), lifetime: new AbortController(), pending: true };
+        waits.set(image, wait);
+        image.style.removeProperty("visibility");
+        image.loading = "eager";
+        void waitForImage(image, wait.lifetime.signal).then((ready) => {
+          if (wait.lifetime.signal.aborted) return;
+          // Source changes can precede delivery of the mutation observer.
+          if (wait.source !== sourceOf(image)) return reconcile();
+          wait.pending = false;
+          if (!ready) image.style.visibility = "hidden";
+          reconcile();
         });
+      }
+      if ([...waits.values()].some((wait) => wait.pending)) return;
+      frame = requestAnimationFrame(() => {
+        observer.disconnect();
+        setReadyIdentity(identity);
       });
     };
-    const observer = new MutationObserver(waitForArtwork);
+    const observer = new MutationObserver(reconcile);
     observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ["src", "srcset"] });
-    waitForArtwork();
+    reconcile();
     return () => {
-      cancelled = true;
       observer.disconnect();
       cancelAnimationFrame(frame);
-      cleanups.forEach((cleanup) => cleanup());
+      for (const wait of waits.values()) wait.lifetime.abort();
     };
   }, [identity]);
 
   return { ref, pending: readyIdentity !== identity || undefined };
+}
+
+function sourceOf(image: HTMLImageElement): string {
+  return JSON.stringify([image.getAttribute("src"), image.getAttribute("srcset")]);
 }

@@ -4,7 +4,6 @@ import { memo, useState, type RefObject } from "react";
 import { playCardSound, playEnemyAttack } from "@/lib/audio";
 import { cardBack, getEffectiveCardDescriptionLines } from "@/lib/game-data";
 import { gearDefinitions, getGearDefinitionShineColors } from "@/lib/gear";
-import { cardById } from "../../../shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 import { ShineBorder } from "@/components/ui/shine-border";
 
@@ -46,7 +45,7 @@ export const CollectionTile = memo(function CollectionTile({
   inspectionOpen = false,
 }: CollectionTileProps) {
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
-    item.hoverScope,
+    `collection-${item.frameType}`,
     item.id,
   );
   const [flipped, setFlipped] = useState(false);
@@ -89,10 +88,10 @@ export const CollectionTile = memo(function CollectionTile({
           getTileWidthClass(item.frameType === "bestiary" ? "bestiary" : "collectionCard"),
         )}
         onClick={(event) => {
-          if (item.hoverScope === "collection-card") {
+          if (item.frameType === "card") {
             playCardSound(item.id);
             setFlipped((f) => !f);
-          } else if (item.hoverScope === "collection-bestiary") {
+          } else if (item.frameType === "bestiary") {
             if (item.discovered) dismiss();
             playEnemyAttack(item.id);
             onEnemyActivate?.(item.id, event.currentTarget);
@@ -106,13 +105,9 @@ export const CollectionTile = memo(function CollectionTile({
 });
 
 function collectionTileShineColors(item: CollectionTileItem): readonly string[] {
-  if (item.card) return getCardInspectionShineColors(item.card);
-  if (item.frameType === "card") {
-    const catalogCard = cardById[item.id];
-    if (catalogCard) return getCardInspectionShineColors(catalogCard);
-  }
-  if (item.character) return getCharacterShineColors(item.character.id);
-  if (item.enemyEntry) return getEnemyKeywordShineColors(item.enemyEntry);
+  if (item.frameType === "card") return getCardInspectionShineColors(item.card);
+  if (item.frameType === "hero") return getCharacterShineColors(item.character.id);
+  if (item.frameType === "bestiary") return getEnemyKeywordShineColors(item.enemyEntry);
   if (item.frameType === "trinket") return getTrinketShineColors(item.id);
   if (item.frameType === "unique") {
     const definition = gearDefinitions[item.id];
@@ -137,26 +132,26 @@ function CollectionTilePopup({
   hovered: boolean;
   triggerRef: RefObject<HTMLElement | null>;
 }) {
-  if (item.frameType === "hero" && item.character) {
+  if (item.frameType === "hero") {
     return (
       <HeroTooltip
         character={item.character}
         isLocked={!item.discovered}
         requiresFullGame={!isEditionCharacterAvailable(item.character.id)}
-        unlockRequirementText={item.unlockRequirementText ?? ""}
+        unlockRequirementText={item.unlockRequirementText}
         triggerRef={triggerRef}
         visible={hovered}
       />
     );
   }
-  if (item.frameType === "bestiary" && item.enemyEntry) {
+  if (item.frameType === "bestiary") {
     return (
       <EnemyTooltip entry={item.enemyEntry} discovered={item.discovered} triggerRef={triggerRef} visible={hovered} />
     );
   }
   const descriptionLines =
-    item.card && hovered
-      ? getEffectiveCardDescriptionLines(item.card, { companionBondLevels: item.companionBondLevels ?? {} })
+    item.frameType === "card" && item.discovered && hovered
+      ? getEffectiveCardDescriptionLines(item.card, { companionBondLevels: item.companionBondLevels })
       : item.descriptionLines;
   const uniqueDefinition = item.frameType === "unique" ? gearDefinitions[item.id] : undefined;
   const title =
@@ -178,7 +173,7 @@ function CollectionTilePopup({
       plasmaColorPair={
         !item.discovered
           ? null
-          : item.card
+          : item.frameType === "card"
             ? getPlasmaColorPairForCard(item.card)
             : item.frameType === "trinket"
               ? getPlasmaColorPairForTrinket(item.id)

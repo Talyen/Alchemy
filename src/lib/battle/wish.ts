@@ -155,12 +155,12 @@ function applyWishHealthAndStatusTriggers(
   return nextState;
 }
 
-function applyWishDrawTriggers(state: BattleState): BattleState {
+function applyWishDrawTriggers(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   const talentDraw =
     state.talentEffects.wishDrawsCard || rollTalentChance(state.talentEffects.wishDrawChance, state) ? 1 : 0;
   const drawCount = talentDraw + state.gearEffects.drawOnWish;
   if (drawCount <= 0) return state;
-  return applyDrawResult(state, drawFromState(state, drawCount));
+  return applyDrawResult(state, drawFromState(state, drawCount), combatTexts);
 }
 
 export function applyWishEffect(
@@ -199,7 +199,7 @@ export function applyWishEffect(
       let next = applyWishGoldTriggers(processEncounterTraitWish(current), combatTexts);
       next = applyWishGemsGoldTrigger(next, combatTexts);
       next = applyWishHealthAndStatusTriggers(next, combatTexts, eligibility);
-      next = applyWishDrawTriggers(next);
+      next = applyWishDrawTriggers(next, combatTexts);
       if (eligibility.hand.length === 0 && next.gearEffects.nextCardDiscountOnEmptyHandWish > 0) {
         next = {
           ...next,

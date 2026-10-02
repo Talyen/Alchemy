@@ -1,87 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { applyCardEffects, applyEffectByKind } from "@/lib/battle/effect-handlers/registry";
+import { applyCardEffects, applyEffectByKind, EFFECT_APPLY_BY_KIND } from "@/lib/battle/effect-handlers/registry";
 import { companionLibrary } from "@/lib/game-data";
-import { applySummonCompanionEffect, applyBuffCompanionEffect } from "@/lib/battle/effect-handlers/simple-handlers";
-import {
-  applySelfDamageEffect,
-  applyDamageEffect,
-  applyRandomDamageEffect,
-  applyRemoveEnemyArmorEffect,
-} from "@/lib/battle/effect-handlers/damage-handlers";
-import {
-  applyPlayerStatusEffectHandler,
-  applyEnemyStatusEffect,
-  applyRemovePlayerStatusEffect,
-  applyMultiplyEnemyStatusEffect,
-  applyCleansePlayerStatusToDamageEffect,
-  applyRemoveHarmfulStatusEffect,
-} from "@/lib/battle/effect-handlers/status-handlers";
-import {
-  applyRestoreManaEffect,
-  applyLoseManaEffect,
-  applyGainMaxManaEffect,
-  applyLoseMaxManaEffect,
-  applyHealEffect,
-  applyLoseHealthEffect,
-} from "@/lib/battle/effect-handlers/mana-health-handlers";
-import {
-  applyGainGoldEffect,
-  applyWishEffectHandler,
-  applyDrawCardsEffect,
-  applyNextArcheryFreeEffect,
-  applyNextHitCritEffect,
-  applyNextHitLeechEffect,
-  applyPlayNextCardTwiceEffect,
-  applyNextHitPoisonEffect,
-  applyRandomDrawEffect,
-} from "@/lib/battle/effect-handlers/simple-handlers";
-import { applyCompanionActionEffect } from "@/lib/battle/effect-handlers/registry";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
-
-type EffectHandler = (
-  state: ReturnType<typeof patchBattleState>,
-  card: never,
-  effect: never,
-  multiplier: number,
-  texts: CombatTextEvent[],
-) => unknown;
-
-describe("effect handlers reject mismatched kinds", () => {
-  it.each([
-    { name: "applySummonCompanionEffect", apply: applySummonCompanionEffect },
-    { name: "applyBuffCompanionEffect", apply: applyBuffCompanionEffect },
-    { name: "applyDamageEffect", apply: applyDamageEffect },
-    { name: "applySelfDamageEffect", apply: applySelfDamageEffect },
-    { name: "applyRandomDamageEffect", apply: applyRandomDamageEffect },
-    { name: "applyRemoveEnemyArmorEffect", apply: applyRemoveEnemyArmorEffect },
-    { name: "applyRestoreManaEffect", apply: applyRestoreManaEffect },
-    { name: "applyLoseManaEffect", apply: applyLoseManaEffect },
-    { name: "applyGainMaxManaEffect", apply: applyGainMaxManaEffect },
-    { name: "applyLoseMaxManaEffect", apply: applyLoseMaxManaEffect },
-    { name: "applyHealEffect", apply: applyHealEffect },
-    { name: "applyLoseHealthEffect", apply: applyLoseHealthEffect },
-    { name: "applyPlayerStatusEffectHandler", apply: applyPlayerStatusEffectHandler },
-    { name: "applyEnemyStatusEffect", apply: applyEnemyStatusEffect },
-    { name: "applyRemoveHarmfulStatusEffect", apply: applyRemoveHarmfulStatusEffect },
-    { name: "applyRemovePlayerStatusEffect", apply: applyRemovePlayerStatusEffect },
-    { name: "applyMultiplyEnemyStatusEffect", apply: applyMultiplyEnemyStatusEffect },
-    { name: "applyCleansePlayerStatusToDamageEffect", apply: applyCleansePlayerStatusToDamageEffect },
-    { name: "applyGainGoldEffect", apply: applyGainGoldEffect },
-    { name: "applyWishEffectHandler", apply: applyWishEffectHandler },
-    { name: "applyDrawCardsEffect", apply: applyDrawCardsEffect },
-    { name: "applyCompanionActionEffect", apply: applyCompanionActionEffect },
-    { name: "applyRandomDrawEffect", apply: applyRandomDrawEffect },
-    { name: "applyNextHitCritEffect", apply: applyNextHitCritEffect },
-    { name: "applyNextHitLeechEffect", apply: applyNextHitLeechEffect },
-    { name: "applyPlayNextCardTwiceEffect", apply: applyPlayNextCardTwiceEffect },
-    { name: "applyNextHitPoisonEffect", apply: applyNextHitPoisonEffect },
-    { name: "applyNextArcheryFreeEffect", apply: applyNextArcheryFreeEffect },
-  ] as const)("$name throws for a mismatched kind", ({ apply }) => {
-    const state = patchBattleState();
-    expect(() => (apply as EffectHandler)(state, {} as never, { kind: "__never__" } as never, 1, [])).toThrow();
-  });
-});
 
 describe("applySelfDamageEffect", () => {
   it("does not grant rider status when Death's Door absorbs the full hit", () => {
@@ -91,7 +12,7 @@ describe("applySelfDamageEffect", () => {
       playerStatuses: { burn: 0 },
     });
     const texts: CombatTextEvent[] = [];
-    const result = applySelfDamageEffect(
+    const result = EFFECT_APPLY_BY_KIND["self-damage"](
       state,
       {} as never,
       { kind: "self-damage", damageType: "burn", amount: 5 } as never,
@@ -107,7 +28,7 @@ describe("applySelfDamageEffect", () => {
 describe("applyPlayerStatusEffectHandler", () => {
   it("applies perManaCrystal scaling", () => {
     const state = patchBattleState({ maxMana: 5 });
-    const result = applyPlayerStatusEffectHandler(
+    const result = EFFECT_APPLY_BY_KIND["player-status"](
       state,
       {} as never,
       { kind: "player-status", status: "block", amount: 2, perManaCrystal: 2 } as never,
@@ -119,7 +40,7 @@ describe("applyPlayerStatusEffectHandler", () => {
 
   it("converts current mana as block per mana and zeroes mana", () => {
     const state = patchBattleState({ mana: 4, maxMana: 5 });
-    const result = applyPlayerStatusEffectHandler(
+    const result = EFFECT_APPLY_BY_KIND["player-status"](
       state,
       {} as never,
       { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 } as never,
@@ -132,7 +53,7 @@ describe("applyPlayerStatusEffectHandler", () => {
 
   it("respects potion multiplier on convertCurrentMana", () => {
     const state = patchBattleState({ mana: 4, maxMana: 5 });
-    const result = applyPlayerStatusEffectHandler(
+    const result = EFFECT_APPLY_BY_KIND["player-status"](
       state,
       {} as never,
       { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 } as never,
@@ -144,7 +65,7 @@ describe("applyPlayerStatusEffectHandler", () => {
 
   it("uses frozen manaAtStart snapshot, not live mana", () => {
     const state = patchBattleState({ mana: 4, maxMana: 5 });
-    const result = applyPlayerStatusEffectHandler(
+    const result = EFFECT_APPLY_BY_KIND["player-status"](
       state,
       {} as never,
       { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 } as never,
@@ -163,7 +84,7 @@ describe("applyEnemyStatusEffect", () => {
       enemyStatuses: { freeze: 0 },
       enemyCC: { freezeSkipTurns: 0, stunSkipTurns: 0, cooldown: 0 },
     });
-    const result = applyEnemyStatusEffect(
+    const result = EFFECT_APPLY_BY_KIND["enemy-status"](
       state,
       {} as never,
       { kind: "enemy-status", status: "freeze", amount: 3 } as never,
@@ -176,7 +97,7 @@ describe("applyEnemyStatusEffect", () => {
   it("applies stun and triggers stun resolution", () => {
     const texts: CombatTextEvent[] = [];
     const state = patchBattleState();
-    const result = applyEnemyStatusEffect(
+    const result = EFFECT_APPLY_BY_KIND["enemy-status"](
       state,
       {} as never,
       { kind: "enemy-status", status: "stun", amount: 2 } as never,
@@ -196,7 +117,7 @@ describe("applyRemovePlayerStatusEffect", () => {
       trinketEffects: { sinEaterHealOnHarmfulStatusRemove: 3 },
       talentEffects: { healOnStatusCleanse: 2 },
     });
-    const result = applyRemovePlayerStatusEffect(
+    const result = EFFECT_APPLY_BY_KIND["remove-player-status"](
       state,
       {} as never,
       { kind: "remove-player-status", status: "burn" } as never,
@@ -211,7 +132,7 @@ describe("applyRemovePlayerStatusEffect", () => {
     const state = patchBattleState({
       playerStatuses: { burn: 0 },
     });
-    const result = applyRemovePlayerStatusEffect(
+    const result = EFFECT_APPLY_BY_KIND["remove-player-status"](
       state,
       {} as never,
       { kind: "remove-player-status", status: "burn" } as never,
@@ -227,7 +148,7 @@ describe("applyMultiplyEnemyStatusEffect", () => {
     const state = patchBattleState({
       enemyStatuses: { poison: 0 },
     });
-    const result = applyMultiplyEnemyStatusEffect(
+    const result = EFFECT_APPLY_BY_KIND["multiply-enemy-status"](
       state,
       {} as never,
       { kind: "multiply-enemy-status", status: "poison", factor: 2 } as never,
@@ -241,7 +162,7 @@ describe("applyMultiplyEnemyStatusEffect", () => {
     const state = patchBattleState({
       enemyStatuses: { freeze: 4 },
     });
-    const result = applyMultiplyEnemyStatusEffect(
+    const result = EFFECT_APPLY_BY_KIND["multiply-enemy-status"](
       state,
       {} as never,
       { kind: "multiply-enemy-status", status: "freeze", factor: 3 } as never,
@@ -255,7 +176,7 @@ describe("applyMultiplyEnemyStatusEffect", () => {
 describe("applyCleansePlayerStatusToDamageEffect", () => {
   it("no-ops when player has 0 stacks", () => {
     const state = patchBattleState();
-    const result = applyCleansePlayerStatusToDamageEffect(
+    const result = EFFECT_APPLY_BY_KIND["cleanse-player-status-to-damage"](
       state,
       makeTestCard(),
       { kind: "cleanse-player-status-to-damage", status: "burn", damageType: "physical" } as never,
@@ -270,7 +191,7 @@ describe("applyCleansePlayerStatusToDamageEffect", () => {
       playerStatuses: { burn: 5 },
       enemyHealth: 30,
     });
-    const result = applyCleansePlayerStatusToDamageEffect(
+    const result = EFFECT_APPLY_BY_KIND["cleanse-player-status-to-damage"](
       state,
       makeTestCard(),
       { kind: "cleanse-player-status-to-damage", status: "burn", damageType: "physical" } as never,
@@ -285,7 +206,7 @@ describe("applyCleansePlayerStatusToDamageEffect", () => {
 describe("applyRestoreManaEffect ifEnemyFrozen", () => {
   it("no-ops when enemy not frozen and ifEnemyFrozen set", () => {
     const state = patchBattleState({ enemyCC: { freezeSkipTurns: 0, stunSkipTurns: 0, cooldown: 0 } });
-    const result = applyRestoreManaEffect(
+    const result = EFFECT_APPLY_BY_KIND["restore-mana"](
       state,
       {} as never,
       { kind: "restore-mana", amount: 2, ifEnemyFrozen: true } as never,
@@ -298,7 +219,7 @@ describe("applyRestoreManaEffect ifEnemyFrozen", () => {
 
   it("restores when enemy frozen at start", () => {
     const state = patchBattleState({ mana: 1, enemyCC: { freezeSkipTurns: 2, stunSkipTurns: 0, cooldown: 0 } });
-    const result = applyRestoreManaEffect(
+    const result = EFFECT_APPLY_BY_KIND["restore-mana"](
       state,
       {} as never,
       { kind: "restore-mana", amount: 2, ifEnemyFrozen: true } as never,
@@ -313,7 +234,7 @@ describe("applyRestoreManaEffect ifEnemyFrozen", () => {
 describe("applyGainGoldEffect ifEnemyStunned", () => {
   it("no-ops when the enemy is not stunned and ifEnemyStunned is set", () => {
     const state = patchBattleState({ enemyCC: { freezeSkipTurns: 0, stunSkipTurns: 0, cooldown: 0 } });
-    const result = applyGainGoldEffect(
+    const result = EFFECT_APPLY_BY_KIND["gain-gold"](
       state,
       {} as never,
       { kind: "gain-gold", amount: 2, ifEnemyStunned: true } as never,
@@ -327,7 +248,7 @@ describe("applyGainGoldEffect ifEnemyStunned", () => {
   it("pays gold when the enemy is stunned", () => {
     const state = patchBattleState({ gold: 5, enemyCC: { freezeSkipTurns: 0, stunSkipTurns: 2, cooldown: 0 } });
     const texts: CombatTextEvent[] = [];
-    const result = applyGainGoldEffect(
+    const result = EFFECT_APPLY_BY_KIND["gain-gold"](
       state,
       {} as never,
       { kind: "gain-gold", amount: 2, ifEnemyStunned: true } as never,
@@ -345,7 +266,7 @@ describe("applyGainGoldEffect ifEnemyStunned", () => {
       enemyCC: { freezeSkipTurns: 0, stunSkipTurns: 0, cooldown: 0 },
       enemyStatuses: { stun: 5 },
     });
-    const result = applyGainGoldEffect(
+    const result = EFFECT_APPLY_BY_KIND["gain-gold"](
       state,
       {} as never,
       { kind: "gain-gold", amount: 2, ifEnemyStunned: true } as never,
@@ -361,29 +282,38 @@ describe("applyNextArcheryFreeEffect", () => {
   it("raises the free-archery flag", () => {
     const state = patchBattleState();
     expect(state.flags.nextArcheryCardFree).toBe(false);
-    const result = applyNextArcheryFreeEffect(state, {} as never, { kind: "next-archery-free" } as never, 1, []);
+    const result = EFFECT_APPLY_BY_KIND["next-archery-free"](
+      state,
+      {} as never,
+      { kind: "next-archery-free" } as never,
+      1,
+      [],
+    );
     expect(result.flags.nextArcheryCardFree).toBe(true);
   });
 });
 
 describe("applyEffectByKind unknown kind", () => {
-  it("warns and returns state unchanged", () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    try {
-      const state = patchBattleState();
-      const unknown = applyEffectByKind("nope" as never, state, makeTestCard(), { kind: "nope" } as never, 1, []);
-      expect(unknown).toBe(state);
-      expect(warn).toHaveBeenCalledWith(expect.stringContaining("Missing handler"));
-    } finally {
-      warn.mockRestore();
-    }
-  });
+  it.each(["nope", "toString", "constructor", "__proto__"])(
+    "rejects unknown kind %s without invoking a handler",
+    (kind) => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      try {
+        const state = patchBattleState();
+        const unknown = applyEffectByKind(state, makeTestCard(), { kind } as never, 1, []);
+        expect(unknown).toBe(state);
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining("Missing handler"));
+      } finally {
+        warn.mockRestore();
+      }
+    },
+  );
 });
 
 describe("applyCompanionActionEffect", () => {
   it("no-ops without an active companion", () => {
     const state = patchBattleState({ activeCompanion: null });
-    const result = applyCompanionActionEffect(
+    const result = EFFECT_APPLY_BY_KIND["companion-action"](
       state,
       makeTestCard(),
       { kind: "companion-action", amount: 2 } as never,
@@ -395,14 +325,14 @@ describe("applyCompanionActionEffect", () => {
 
   it("acts once per amount with an active companion", () => {
     const base = patchBattleState({ activeCompanion: companionLibrary.wolf, enemyHealth: 100 });
-    const once = applyCompanionActionEffect(
+    const once = EFFECT_APPLY_BY_KIND["companion-action"](
       base,
       makeTestCard(),
       { kind: "companion-action", amount: 1 } as never,
       1,
       [],
     );
-    const twice = applyCompanionActionEffect(
+    const twice = EFFECT_APPLY_BY_KIND["companion-action"](
       base,
       makeTestCard(),
       { kind: "companion-action", amount: 2 } as never,
@@ -474,4 +404,4 @@ describe("repeat action scope suppresses potion scaling", () => {
 
 // Handler-per-kind coverage lives in
 // tests/lib/game-data/effect-kind-coverage.test.ts; this file pins dispatch
-// behavior (mismatched kinds, snapshots, branches).
+// behavior (snapshots, branches, and failure handling).

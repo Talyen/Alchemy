@@ -183,8 +183,8 @@ describe("session facade API", () => {
     battle.flags.pendingWishMana = 2;
     battle.talentEffects = {
       ...battle.talentEffects,
-      forgeToBurn: true,
-      armorToPhysicalDamage: true,
+      forgeBurnDamagePercent: 100,
+      armorPhysicalDamagePercent: 100,
       nextAttackPhysicalOnDodge: 4,
     };
     initializeActiveBattle(battle, null);
@@ -204,9 +204,7 @@ describe("session facade API", () => {
     );
     const restored = readBattle().battleState;
     expect(restored.talentEffects).toMatchObject({
-      forgeToBurn: false,
       forgeBurnDamagePercent: 50,
-      armorToPhysicalDamage: false,
       armorPhysicalDamagePercent: 50,
       nextAttackPhysicalOnDodge: 2,
       partingCutDamagePercent: 50,

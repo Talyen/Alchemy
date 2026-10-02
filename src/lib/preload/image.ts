@@ -1,12 +1,8 @@
-import { IMAGE_PRELOAD_BATCH_SIZE, IMAGE_PRELOAD_TIMEOUT_MS } from "../game-constants";
+import { IMAGE_PRELOAD_BATCH_SIZE } from "../game-constants";
 import { batchedPreload, yieldToAnimationFrame } from "./batched";
+import { waitForImage } from "./image-readiness";
 
-interface ImageLoadEntry {
-  token: object;
-  promise: Promise<void>;
-}
-
-const imageLoads = new Map<string, ImageLoadEntry>();
+const imageLoads = new Map<string, Promise<void>>();
 const MAX_IMAGE_CACHE_SIZE = 500;
 
 export function resetImagePreloadCache(): void {
@@ -19,7 +15,7 @@ export function preloadImage(src: string): Promise<void> {
   if (existing) {
     imageLoads.delete(src);
     imageLoads.set(src, existing);
-    return existing.promise;
+    return existing;
   }
 
   if (imageLoads.size >= MAX_IMAGE_CACHE_SIZE) {
@@ -27,54 +23,14 @@ export function preloadImage(src: string): Promise<void> {
     if (firstKey) imageLoads.delete(firstKey);
   }
 
-  const token = {};
-  let handled = false;
-  let shouldCache = true;
-
-  const promise = new Promise<void>((resolve) => {
-    const image = new Image();
-    image.decoding = "async";
-
-    function finish(keepCached: boolean) {
-      if (handled) return;
-      handled = true;
-      shouldCache = keepCached;
-      clearTimeout(timeout);
-      image.onload = null;
-      image.onerror = null;
-      if (!keepCached && imageLoads.get(src)?.token === token) {
-        imageLoads.delete(src);
-      }
-      resolve();
-    }
-
-    function handleLoad() {
-      if (handled) return;
-      image.onload = null;
-      image.onerror = null;
-      if (typeof image.decode === "function") {
-        void image.decode().then(
-          () => finish(true),
-          () => finish(false),
-        );
-      } else {
-        finish(true);
-      }
-    }
-
-    const timeout = globalThis.setTimeout(() => finish(false), IMAGE_PRELOAD_TIMEOUT_MS);
-    image.onload = handleLoad;
-    image.onerror = () => finish(false);
-    image.src = src;
-
-    if (image.complete) {
-      handleLoad();
-    }
+  const image = new Image();
+  image.decoding = "async";
+  image.src = src;
+  const promise = waitForImage(image).then((ready) => {
+    // Promise identity keeps an old failure from evicting a retry after reset.
+    if (!ready && imageLoads.get(src) === promise) imageLoads.delete(src);
   });
-
-  if (shouldCache) {
-    imageLoads.set(src, { token, promise });
-  }
+  imageLoads.set(src, promise);
   return promise;
 }
 

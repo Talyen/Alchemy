@@ -50,7 +50,7 @@ function buildNoviceCampaignDeps(
     completedDifficulties: IS_DEMO ? {} : readProfileStore().completedDifficulties,
     initializeRunForDifficulty,
     getDifficultyModifiers,
-    onStartBattle: deps.onStartBattle,
+    startBattle: deps.startBattle,
     navigateToBattle: () =>
       deps.navigateTo(ROUTE_SCREENS.BATTLE, () =>
         dispatchRunSessionCommand((draft) => setPendingCharacterId(draft, null)),
@@ -232,10 +232,10 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       !isDifficultyUnlocked(difficultyId, completed)
     )
       return;
-    const { freshDeck, totalStartGold } = initializeRunForDifficulty(selectedId, difficultyId);
-    if (!freshDeck || freshDeck.length === 0) return;
+    initializeRunForDifficulty(selectedId, difficultyId);
+    if (readActiveRun().runDeck.length === 0) return;
     const modifiers = getDifficultyModifiers(selectedId, difficultyId);
-    deps.onStartBattle(freshDeck, totalStartGold, DEFAULT_BATTLE_ENEMY_TYPE, modifiers);
+    deps.startBattle({ enemyType: DEFAULT_BATTLE_ENEMY_TYPE, modifiers });
     deps.navigateTo(ROUTE_SCREENS.BATTLE, () =>
       dispatchRunSessionCommand((draft) => setPendingCharacterId(draft, null)),
     );

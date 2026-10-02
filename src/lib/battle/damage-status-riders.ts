@@ -9,7 +9,12 @@ import {
 import { applyCrowdControlTriggerBonuses } from "./bonus-effects";
 import { tryTriggerEnemyCc } from "./status-cc";
 import { resolveStunTrigger } from "./status-stun-resolve";
-import { applyPoisonDamageArmorRider, getEnemyDamageMultiplier, rollTalentChance } from "./status-helpers";
+import {
+  applyPoisonDamageArmorRider,
+  decayArmorAfterDamage,
+  getEnemyDamageMultiplier,
+  rollTalentChance,
+} from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import {
   BLEED_STATUS_MULTIPLIER,
@@ -208,7 +213,13 @@ export function tryTriggerEnemyFreeze(
     const frozenHealth = result.enemyHealth;
     result = dealEnemyScaledDamage(result, result.trinketEffects.frozenHeartDamage, "physical", combatTexts, {
       multiplier: getEnemyDamageMultiplier(result, "physical"),
-      riders: (damagedState) => applyHitEpilogue(damagedState, frozenHealth, enemyWasAlive, combatTexts),
+      riders: (damagedState, damage, texts) =>
+        applyHitEpilogue(
+          decayArmorAfterDamage(damagedState, damage, "enemy", texts),
+          frozenHealth,
+          enemyWasAlive,
+          texts,
+        ),
     });
   }
   result = applyGearCcPhysicalDamage(result, preHitState.gearEffects.damageOnFreezePhysical, combatTexts);

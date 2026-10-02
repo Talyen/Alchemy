@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, type RefObject } from "react";
+import { useShallow } from "zustand/react/shallow";
 import type { BattleSnapshot } from "@/lib/battle";
 import { useBattlePresentationStore } from "../battle-presentation-store";
-import { getPlayableHandCardKeys, getPlayableHandCardKeysExcludingHidden } from "../playable-hand";
+import { getPlayableHandCardKeys } from "../playable-hand";
 
 export function useHiddenHandCardKeys() {
   return useBattlePresentationStore((s) => s.hiddenHandCardKeys);
@@ -11,75 +12,22 @@ export function useCardTransferInProgress() {
   return useBattlePresentationStore((s) => s.cardTransferInProgress);
 }
 
-// Playability depends on hand, mana, turn/CC state, and cost-effect slices. Depending on
-// the whole snapshot would recompute on every committed tick (enemy HP, block, DoT ticks).
-// Immer structural sharing keeps untouched slices referentially stable, so listing the
-// inputs explicitly skips recompute when unrelated battle fields change.
-export function usePlayableHandCardKeys(playabilityState: BattleSnapshot) {
-  const {
-    hand,
-    mana,
-    turnPhase,
-    playerCC,
-    playerStatuses,
-    playerHealth,
-    deathsDoorActive,
-    enemyHealth,
-    wishOptions,
-    flags,
-    talentEffects,
-    trinketEffects,
-    gearEffects,
-    uniqueGear,
-    encounterBenefits,
-  } = playabilityState;
-  return useMemo(
-    () =>
-      getPlayableHandCardKeys({
-        ...playabilityState,
-        hand,
-        mana,
-        turnPhase,
-        playerCC,
-        playerStatuses,
-        playerHealth,
-        deathsDoorActive,
-        enemyHealth,
-        wishOptions,
-        flags,
-        talentEffects,
-        trinketEffects,
-        gearEffects,
-        uniqueGear,
-        encounterBenefits,
-      }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- playabilityState spread is reconstructed from the listed slices above; listing the whole snapshot would defeat the memo.
-    [
-      hand,
-      mana,
-      turnPhase,
-      playerCC,
-      playerStatuses,
-      playerHealth,
-      deathsDoorActive,
-      enemyHealth,
-      wishOptions,
-      flags,
-      talentEffects,
-      trinketEffects,
-      gearEffects,
-      uniqueGear,
-      encounterBenefits,
-    ],
+// Legality belongs to the engine. Memoize its complete immutable input rather than
+// mirroring the engine's evolving field dependencies in presentation code.
+export function useHandPresentation(battleState: BattleSnapshot) {
+  const presentation = useBattlePresentationStore(
+    useShallow((state) => ({
+      hiddenHandCardKeys: state.hiddenHandCardKeys,
+      animationInProgress:
+        state.cardTransferInProgress || state.cardTransfers.length > 0 || state.cardGhosts.length > 0,
+    })),
   );
-}
-
-export function useInteractiveHandCardKeys(battleState: BattleSnapshot, playableKeys?: Set<string>) {
-  const hiddenHandCardKeys = useHiddenHandCardKeys();
-  return useMemo(
-    () => getPlayableHandCardKeysExcludingHidden(battleState, hiddenHandCardKeys, playableKeys),
-    [battleState, hiddenHandCardKeys, playableKeys],
+  const playableHandCardKeys = useMemo(() => getPlayableHandCardKeys(battleState), [battleState]);
+  const interactiveHandCardKeys = useMemo(
+    () => new Set([...playableHandCardKeys].filter((key) => !presentation.hiddenHandCardKeys.includes(key))),
+    [presentation.hiddenHandCardKeys, playableHandCardKeys],
   );
+  return { ...presentation, playableHandCardKeys, interactiveHandCardKeys };
 }
 
 export function useCardAnimationInProgress() {

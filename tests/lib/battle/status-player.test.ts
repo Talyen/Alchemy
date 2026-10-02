@@ -152,13 +152,13 @@ describe("applyPlayerStatusEffect", () => {
     expect(result.playerStatuses.block).toBe(5);
   });
 
-  it("doubles armor when player is below half health and armorDoubledBelowHalfHealth is active", () => {
+  it("doubles armor when player is below half health and armorLowHealthBonusPercent is active", () => {
     const state = patchBattleState({
       playerHealth: 10,
       playerMaxHealth: 30,
       talentEffects: {
         ...defaultTalentEffects,
-        armorDoubledBelowHalfHealth: true,
+        armorLowHealthBonusPercent: 100,
       },
     });
     const effect = { kind: "player-status" as const, status: "armor" as const, amount: 4 };
@@ -320,11 +320,11 @@ describe("applyPlayerStatusEffect � forge integration", () => {
     expect(result.enemyMitigation.armor).toBe(0);
   });
 
-  it("forgeBlockBurst respects forgeToBlock synergy", () => {
+  it("forgeBlockBurst respects forgeBlockPercent synergy", () => {
     const state = patchBattleState({
       playerStatuses: { forge: 5 },
       talentEffects: {
-        forgeToBlock: true,
+        forgeBlockPercent: 100,
         forgeBlockThreshold: 6,
         forgeBlockAmount: 10,
       },
@@ -394,7 +394,7 @@ describe("low-health resource bonuses", () => {
     const state = patchBattleState({
       playerHealth,
       playerMaxHealth: 30,
-      talentEffects: { armorDoubledBelowHalfHealth: true, forgeDoubledBelowHalfHealth: true },
+      talentEffects: { armorLowHealthBonusPercent: 100, forgeLowHealthBonusPercent: 100 },
     });
     const armor = applyPlayerStatusEffect(state, { kind: "player-status", status: "armor", amount: 4 }, []);
     const forge = addForgeToPlayer(state, 4);

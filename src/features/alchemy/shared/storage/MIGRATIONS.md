@@ -85,6 +85,14 @@ Device display preferences (versioned `alchemy-device-display-v<n>` key, current
 
 Routine skips stay silent: missing, empty, and below-baseline candidates on fresh profiles never reach the error sink (`logStorageFailure`), because browser journeys assert zero runtime errors. Non-object roots and genuinely corrupt JSON do report. Candidate validation reports genuinely corrupt JSON and schema failures of otherwise versioned candidates; storage I/O failures are logged separately. Pinned by `save-version-protection.test.ts`.
 
+`selectSaveCandidates(primary, recovery)` inspects each candidate once and returns
+the load state together with its safe write-slot recommendation. Compatibility
+checks protect every newer-format candidate, including stale copies after the
+playable winner. The winning raw payload, validated data, and repair notes stay
+together until hydration. `evaluateSaveCandidates` is the single-source facade;
+demo import uses the same selection and rejects a protected source. Storage adds
+unreadable-primary protection at the I/O boundary.
+
 A failed local candidate read is different from an empty or corrupt candidate set. Desktop still attempts the Cloud copy; the storage owner tries both slots and uses any compatible candidate it can read. If the primary is unreadable, new progress writes to the recovery slot, leaving the primary untouched. If neither slot can be read, play starts with defaults and writes still attempt the recovery slot. If a normal primary write fails, the same snapshot is attempted in recovery before autosave reports failure and retries. The player sees no save-problem screen. When all storage writes fail, progress remains in memory for that session and autosave keeps retrying; durability cannot be promised until some storage accepts a write.
 
 ## Future schema saves

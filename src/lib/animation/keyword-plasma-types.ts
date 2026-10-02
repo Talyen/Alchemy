@@ -1,3 +1,4 @@
+import type { CanvasBackingScaleOptions } from "./canvas-lifecycle";
 import type { RgbTuple } from "./plasma-colors";
 
 type PlasmaColorValue = string | RgbTuple;
@@ -16,7 +17,9 @@ export interface PlasmaRendererOptions {
   onWakeReady?: ((wake: () => void) => void) | undefined;
 }
 
-export const PLASMA_MAX_BACKING_PIXELS = 1_500_000;
-export const PLASMA_BACKING_SCALE = 0.45;
-export const PLASMA_MIN_BACKING_SCALE = 0.25;
-export const PLASMA_MAX_BACKING_SCALE = 0.75;
+export const PLASMA_BACKING_OPTIONS = {
+  maxPixels: 1_500_000,
+  scaleMultiplier: 0.45,
+  minScale: 0.25,
+  maxScale: 0.75,
+} satisfies CanvasBackingScaleOptions;

@@ -2,22 +2,14 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { installRafStub } from "../helpers/animation-test";
 import { IMAGE_PRELOAD_TIMEOUT_MS } from "@/lib/game-constants";
 
-interface MockImage {
-  src: string;
-  decoding: string;
-  onload: (() => void) | null;
-  onerror: (() => void) | null;
-  decode: () => Promise<void>;
-}
-
-function createMockImage(): MockImage {
-  return {
-    src: "",
-    decoding: "",
-    onload: null,
-    onerror: null,
-    decode: vi.fn().mockResolvedValue(undefined),
-  };
+class MockImage extends EventTarget {
+  src = "";
+  decoding = "";
+  complete = false;
+  naturalWidth = 1;
+  decode = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+  onload = () => this.dispatchEvent(new Event("load"));
+  onerror = () => this.dispatchEvent(new Event("error"));
 }
 
 let urlCounter = 0;
@@ -31,7 +23,7 @@ beforeEach(() => {
   resetImagePreloadCache();
 
   vi.stubGlobal("Image", function () {
-    const instance = createMockImage();
+    const instance = new MockImage();
     mockImageInstances.push(instance);
     return instance;
   } as unknown as typeof Image);
@@ -45,32 +37,24 @@ afterEach(() => {
 const { preloadImage, preloadImagesInBatches, resetImagePreloadCache } = await import("@/lib/image-preload");
 
 describe("preloadImage", () => {
-  it("creates an Image and sets decoding to async", async () => {
+  it("warms the source and waits for decoding before settling", async () => {
     const src = uniqueUrl();
     const promise = preloadImage(src);
-    expect(mockImageInstances.length).toBe(1);
-    expect(mockImageInstances[0].decoding).toBe("async");
-    mockImageInstances[0].onload?.();
-    await promise;
-  });
-
-  it("sets src on the created Image", async () => {
-    const src = uniqueUrl();
-    const promise = preloadImage(src);
-    expect(mockImageInstances[0].src).toBe(src);
-    mockImageInstances[0].onload?.();
-    await promise;
-  });
-
-  it("resolves when image loads successfully", async () => {
-    const promise = preloadImage(uniqueUrl());
-    mockImageInstances[0].onload?.();
-    await expect(promise).resolves.toBeUndefined();
-  });
-
-  it("resolves when image errors (no rejection)", async () => {
-    const promise = preloadImage(uniqueUrl());
-    mockImageInstances[0].onerror?.();
+    const image = mockImageInstances[0];
+    expect(image).toMatchObject({ src, decoding: "async" });
+    let decoded!: () => void;
+    image.decode.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          decoded = resolve;
+        }),
+    );
+    const settled = vi.fn();
+    void promise.then(settled);
+    image.onload?.();
+    await Promise.resolve();
+    expect(settled).not.toHaveBeenCalled();
+    decoded();
     await expect(promise).resolves.toBeUndefined();
   });
 
@@ -78,7 +62,7 @@ describe("preloadImage", () => {
     const src = uniqueUrl();
     const first = preloadImage(src);
     mockImageInstances[0].onerror?.();
-    await first;
+    await expect(first).resolves.toBeUndefined();
 
     const retry = preloadImage(src);
     expect(mockImageInstances).toHaveLength(2);
@@ -105,7 +89,7 @@ describe("preloadImage", () => {
     const first = preloadImage(src);
     vi.mocked(mockImageInstances[0].decode).mockRejectedValueOnce(new Error("decode failed"));
     mockImageInstances[0].onload?.();
-    await first;
+    await expect(first).resolves.toBeUndefined();
 
     const retry = preloadImage(src);
     expect(mockImageInstances).toHaveLength(2);
@@ -128,39 +112,25 @@ describe("preloadImage", () => {
     await expect(preloadImage("")).resolves.toBeUndefined();
   });
 
-  it("evicts cached entries when resetImagePreloadCache is called", async () => {
-    const src = "reset-test.png";
-    const p1 = preloadImage(src);
-    mockImageInstances[0].onload?.();
-    await p1;
-
-    expect(mockImageInstances).toHaveLength(1);
+  it("does not let an old failure evict a replacement after reset", async () => {
+    const src = uniqueUrl();
+    const old = preloadImage(src);
     resetImagePreloadCache();
-
-    const p2 = preloadImage(src);
+    const replacement = preloadImage(src);
     expect(mockImageInstances).toHaveLength(2);
+    mockImageInstances[0].onerror?.();
+    await old;
+    expect(preloadImage(src)).toBe(replacement);
     mockImageInstances[1].onload?.();
-    await p2;
+    await replacement;
   });
 
-  it("allows retrying when an error occurs synchronously during instantiation", async () => {
-    // Stub Image so setting src immediately triggers onerror synchronously
+  it("allows retrying an image that is already broken when its source is assigned", async () => {
     vi.stubGlobal("Image", function () {
-      let currentSrc = "";
-      const instance: MockImage = {
-        decoding: "",
-        onload: null,
-        onerror: null,
-        decode: vi.fn().mockResolvedValue(undefined),
-        get src() {
-          return currentSrc;
-        },
-        set src(value: string) {
-          currentSrc = value;
-          // Synchronous error trigger:
-          instance.onerror?.();
-        },
-      };
+      const instance = new MockImage();
+      instance.complete = true;
+      instance.naturalWidth = 0;
+      instance.decode = vi.fn().mockRejectedValue(new Error("Broken image"));
       mockImageInstances.push(instance);
       return instance;
     } as unknown as typeof Image);
@@ -168,7 +138,6 @@ describe("preloadImage", () => {
     const src = "sync-error-test.png";
     await preloadImage(src);
 
-    // After synchronous error, retrying should create a new Image, not return a cached failure
     const retry = preloadImage(src);
     expect(mockImageInstances.length).toBe(2);
     await retry;
@@ -176,14 +145,9 @@ describe("preloadImage", () => {
 
   it("gracefully falls back to onload when image.decode is undefined", async () => {
     vi.stubGlobal("Image", function () {
-      const instance = {
-        src: "",
-        decoding: "",
-        onload: null,
-        onerror: null,
-        // No decode method
-      };
-      mockImageInstances.push(instance as unknown as MockImage);
+      const instance = new MockImage();
+      Reflect.deleteProperty(instance, "decode");
+      mockImageInstances.push(instance);
       return instance;
     } as unknown as typeof Image);
 

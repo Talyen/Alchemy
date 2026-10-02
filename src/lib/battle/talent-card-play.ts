@@ -34,17 +34,22 @@ function computeTalentAttackBonuses(
   };
 }
 
-function applyTalentDrawTriggers(state: BattleState, keywords: string[], archery: boolean): BattleState {
+function applyTalentDrawTriggers(
+  state: BattleState,
+  keywords: string[],
+  archery: boolean,
+  combatTexts: CombatTextEvent[],
+): BattleState {
   let nextState = state;
   const talents = state.talentEffects;
   if (archery && state.enemyCC.stunSkipTurns > 0 && talents.drawOnArcheryVsStunned > 0) {
-    nextState = applyDrawResult(nextState, drawFromState(nextState, talents.drawOnArcheryVsStunned));
+    nextState = applyDrawResult(nextState, drawFromState(nextState, talents.drawOnArcheryVsStunned), combatTexts);
   }
   if (archery && rollTalentChance(state.gearEffects.archeryDrawChance, state)) {
-    nextState = applyDrawResult(nextState, drawFromState(nextState, 1));
+    nextState = applyDrawResult(nextState, drawFromState(nextState, 1), combatTexts);
   }
   if (keywords.includes("companion") && talents.drawOnCompanionCard > 0) {
-    nextState = applyDrawResult(nextState, drawFromState(nextState, talents.drawOnCompanionCard));
+    nextState = applyDrawResult(nextState, drawFromState(nextState, talents.drawOnCompanionCard), combatTexts);
   }
   return nextState;
 }
@@ -136,7 +141,7 @@ export function prepareTalentCardPlay(
   const talents = state.talentEffects;
 
   const attackBonuses = computeTalentAttackBonuses(state, keywords, archery, physical, attack);
-  let nextState = applyTalentDrawTriggers(state, keywords, archery);
+  let nextState = applyTalentDrawTriggers(state, keywords, archery, combatTexts);
   nextState = applyTalentStatusAndHitTriggers(nextState, card, keywords, nature, combatTexts);
 
   if (options.countsAsPlayedCard) {

@@ -9,11 +9,11 @@ const manaCard = makeTestCard({ id: "mana-test", effects: [] });
 
 function applyManaEffect(
   state: ReturnType<typeof patchBattleState>,
-  effect: Parameters<typeof applyEffectByKind>[3],
+  effect: Parameters<typeof applyEffectByKind>[2],
   potionMult: number,
   texts: CombatTextEvent[],
 ) {
-  return applyEffectByKind(effect.kind, state, manaCard, effect, potionMult, texts);
+  return applyEffectByKind(state, manaCard, effect, potionMult, texts);
 }
 
 describe("applyEffectByKind (mana effects)", () => {

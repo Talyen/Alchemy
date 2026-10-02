@@ -200,7 +200,7 @@ describe("computeTalentEffects", () => {
   it("returns empty effects with no unlocked talents", () => {
     const effects = computeTalentEffects({});
     expect(effects.flatPhysicalDamage).toBe(0);
-    expect(effects.armorToPhysicalDamage).toBe(false);
+    expect(effects.armorPhysicalDamagePercent).toBe(0);
   });
 
   it("ignores talent ids saved under the wrong keyword", () => {

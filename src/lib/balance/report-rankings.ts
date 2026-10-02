@@ -1,86 +1,8 @@
+export type { RateCell } from "./simulator-types";
+export { emptyRateCell, combineRateCells } from "./rate-statistics";
+
 export function isDeltaNoisy(delta: number, se: number, k = 2): boolean {
   return se > 0 && Math.abs(delta) < k * se;
-}
-
-export interface RateCell {
-  wins: number;
-  losses: number;
-  timeouts: number;
-  winRate: number;
-  timeoutRate: number;
-  averageTurns: number;
-  averageEnemyAttacks: number;
-  averageEnemyAbilityActivations: number;
-  averageEnemyAbilityUses: number;
-  winsBeforeEnemyAttackRate: number;
-  averageHealthRemaining: number;
-  n: number;
-}
-
-export function emptyRateCell(): RateCell {
-  return {
-    wins: 0,
-    losses: 0,
-    timeouts: 0,
-    winRate: 0,
-    timeoutRate: 0,
-    averageTurns: 0,
-    averageHealthRemaining: 0,
-    averageEnemyAttacks: 0,
-    averageEnemyAbilityActivations: 0,
-    averageEnemyAbilityUses: 0,
-    winsBeforeEnemyAttackRate: 0,
-    n: 0,
-  };
-}
-
-export function combineRateCells(cells: readonly RateCell[]): RateCell {
-  if (cells.length === 0) return emptyRateCell();
-  if (cells.length === 1 && cells[0]) return { ...cells[0] };
-  let n = 0;
-  let winsTotal = 0;
-  let lossesTotal = 0;
-  let timeoutsTotal = 0;
-  let winRateWeighted = 0;
-  let timeoutRateWeighted = 0;
-  let turnsWeighted = 0;
-  let healthWeighted = 0;
-  let attacksWeighted = 0;
-  let abilityUsesWeighted = 0;
-  let abilityActivationsWeighted = 0;
-  let winsBeforeAttackWeighted = 0;
-
-  for (const cell of cells) {
-    const weight = cell.n;
-    n += weight;
-    winsTotal += cell.wins;
-    lossesTotal += cell.losses;
-    timeoutsTotal += cell.timeouts;
-    winRateWeighted += cell.winRate * weight;
-    timeoutRateWeighted += cell.timeoutRate * weight;
-    turnsWeighted += cell.averageTurns * weight;
-    healthWeighted += cell.averageHealthRemaining * weight;
-    attacksWeighted += cell.averageEnemyAttacks * weight;
-    abilityUsesWeighted += cell.averageEnemyAbilityUses * weight;
-    abilityActivationsWeighted += cell.averageEnemyAbilityActivations * weight;
-    winsBeforeAttackWeighted += cell.winsBeforeEnemyAttackRate * weight;
-  }
-
-  if (n === 0) return emptyRateCell();
-  return {
-    wins: winsTotal,
-    losses: lossesTotal,
-    timeouts: timeoutsTotal,
-    winRate: winRateWeighted / n,
-    timeoutRate: timeoutRateWeighted / n,
-    averageTurns: turnsWeighted / n,
-    averageEnemyAttacks: attacksWeighted / n,
-    averageEnemyAbilityUses: abilityUsesWeighted / n,
-    averageEnemyAbilityActivations: abilityActivationsWeighted / n,
-    winsBeforeEnemyAttackRate: winsBeforeAttackWeighted / n,
-    averageHealthRemaining: healthWeighted / n,
-    n,
-  };
 }
 
 export interface PairedDelta {

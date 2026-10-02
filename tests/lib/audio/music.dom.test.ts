@@ -27,6 +27,41 @@ afterEach(() => {
   resetMusicRuntimeForTests();
   vi.unstubAllGlobals();
   vi.useRealTimers();
+  vi.restoreAllMocks();
+});
+
+it("keeps music initialization failures nonfatal and retries on the next request", () => {
+  vi.spyOn(console, "warn").mockImplementation(() => {});
+  vi.stubGlobal(
+    "Audio",
+    class {
+      constructor() {
+        throw new Error("Audio initialization failed");
+      }
+    },
+  );
+  expect(() => playMusicImmediate(MUSIC_KEYS.MENU)).not.toThrow();
+  expect(isMusicPaused()).toBe(true);
+  installFakeAudio();
+  playMusicImmediate(MUSIC_KEYS.MENU);
+  expect(lastFakeAudio()?.paused).toBe(false);
+});
+
+it("keeps synchronous music playback failures nonfatal and retries the cached track", () => {
+  vi.spyOn(console, "warn").mockImplementation(() => {});
+  installFakeAudio({
+    onCreate: (element) => {
+      element.play.mockImplementationOnce(() => {
+        throw new Error("Audio playback failed");
+      });
+    },
+  });
+  expect(() => playMusicImmediate(MUSIC_KEYS.MENU)).not.toThrow();
+  const menu = lastFakeAudio()!;
+  expect(menu.paused).toBe(true);
+  playMusic(MUSIC_KEYS.MENU);
+  expect(menu.paused).toBe(false);
+  expect(createdFakeAudio).toHaveLength(1);
 });
 
 it("keeps the volume curve, fade gain, boss boost, and saturation", () => {

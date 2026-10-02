@@ -1,4 +1,4 @@
-import type { EffectHandler } from "./handler-types";
+import type { EffectHandlers } from "./handler-types";
 import { resolveConditionalCardDamage } from "../conditional-card-damage";
 import { mergeCombatText } from "../combat-text-events";
 import { setPlayerStatus } from "../types";
@@ -9,55 +9,51 @@ import { applyPotionMultiplier, halveRounded } from "../amount-helpers";
 import { dealDamageToEnemy } from "../damage";
 import { dealSelfDamage } from "../status-helpers";
 import { addPlayerStatus, reduceEnemyArmor } from "../types";
-import { defineHandler } from "./handler-types";
 import { rangeBoundsError } from "./simple-handlers";
 
-export const applyDamageEffect = defineHandler("damage", (state, card, effect, potionMult, combatTexts, context) => {
-  const selected = resolveConditionalCardDamage(effect, {
-    actorBlock: state.playerStatuses.block,
-    targetBlock: state.enemyMitigation.block,
-    targetFrozen: state.enemyCC.freezeSkipTurns > 0,
-  });
-  effect = selected.effect;
-  if (selected.blockSpent > 0) {
-    const beforeBlockSpend = state;
-    state = setPlayerStatus(state, "block", state.playerStatuses.block - selected.blockSpent);
-    state = applyBlockDepletionForgeReward(beforeBlockSpend, state, combatTexts);
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "damage",
-      stat: "block",
-      amount: selected.blockSpent,
-      impact: false,
+export const DAMAGE_HANDLERS = {
+  damage: (state, card, effect, potionMult, combatTexts, context) => {
+    const selected = resolveConditionalCardDamage(effect, {
+      actorBlock: state.playerStatuses.block,
+      targetBlock: state.enemyMitigation.block,
+      targetFrozen: state.enemyCC.freezeSkipTurns > 0,
     });
-  }
-  let damageType = effect.damageType;
-  if (effect.damageTypePool && effect.damageTypePool.length > 0) {
-    const picked = pickRandom(effect.damageTypePool, getBattleRng(state));
-    if (picked) damageType = picked;
-  }
-  const adjustedEffect = {
-    ...effect,
-    damageType,
-    amount: applyPotionMultiplier(effect.amount, potionMult),
-  };
-  return dealDamageToEnemy(state, card, adjustedEffect, combatTexts, context);
-});
-
-export const applySelfDamageEffect = defineHandler("self-damage", (state, _card, effect, _potionMult, combatTexts) => {
-  const { state: postDamage, healthLost } = dealSelfDamage(state, effect.amount, effect.damageType, combatTexts);
-  const thresholded = checkHealthThresholds(
-    state.playerHealth,
-    postDamage.playerHealth,
-    addPlayerStatus(postDamage, effect.damageType, healthLost),
-    combatTexts,
-  );
-  return applyHealthLossTalentRewards(state, thresholded, healthLost, combatTexts);
-});
-
-export const applyRandomDamageEffect = defineHandler(
-  "random-damage",
-  (state, card, effect, potionMult, combatTexts, context) => {
+    effect = selected.effect;
+    if (selected.blockSpent > 0) {
+      const beforeBlockSpend = state;
+      state = setPlayerStatus(state, "block", state.playerStatuses.block - selected.blockSpent);
+      state = applyBlockDepletionForgeReward(beforeBlockSpend, state, combatTexts);
+      mergeCombatText(combatTexts, {
+        target: "player",
+        kind: "damage",
+        stat: "block",
+        amount: selected.blockSpent,
+        impact: false,
+      });
+    }
+    let damageType = effect.damageType;
+    if (effect.damageTypePool && effect.damageTypePool.length > 0) {
+      const picked = pickRandom(effect.damageTypePool, getBattleRng(state));
+      if (picked) damageType = picked;
+    }
+    const adjustedEffect = {
+      ...effect,
+      damageType,
+      amount: applyPotionMultiplier(effect.amount, potionMult),
+    };
+    return dealDamageToEnemy(state, card, adjustedEffect, combatTexts, context);
+  },
+  "self-damage": (state, _card, effect, _potionMult, combatTexts) => {
+    const { state: postDamage, healthLost } = dealSelfDamage(state, effect.amount, effect.damageType, combatTexts);
+    const thresholded = checkHealthThresholds(
+      state.playerHealth,
+      postDamage.playerHealth,
+      addPlayerStatus(postDamage, effect.damageType, healthLost),
+      combatTexts,
+    );
+    return applyHealthLossTalentRewards(state, thresholded, healthLost, combatTexts);
+  },
+  "random-damage": (state, card, effect, potionMult, combatTexts, context) => {
     if (effect.maxAmount < effect.minAmount) {
       throw rangeBoundsError("random-damage");
     }
@@ -73,11 +69,7 @@ export const applyRandomDamageEffect = defineHandler(
     const amount = applyPotionMultiplier(rolled, potionMult);
     return dealDamageToEnemy(state, card, { kind: "damage", damageType, amount }, combatTexts, context);
   },
-);
-
-export const applyRemoveEnemyArmorEffect = defineHandler(
-  "remove-enemy-armor",
-  (state, _card, effect, _potionMult, combatTexts) => {
+  "remove-enemy-armor": (state, _card, effect, _potionMult, combatTexts) => {
     const remainingArmor = effect.halve ? halveRounded(state.enemyMitigation.armor) : 0;
     const amount = effect.halve
       ? state.enemyMitigation.armor - remainingArmor
@@ -90,11 +82,4 @@ export const applyRemoveEnemyArmorEffect = defineHandler(
       mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "armor", amount: removed, impact: false });
     return next;
   },
-);
-
-export const DAMAGE_HANDLERS = {
-  damage: applyDamageEffect,
-  "self-damage": applySelfDamageEffect,
-  "remove-enemy-armor": applyRemoveEnemyArmorEffect,
-  "random-damage": applyRandomDamageEffect,
-} satisfies Partial<Record<import("@/lib/game-data").BattleCardEffectKind, EffectHandler>>;
+} satisfies Partial<EffectHandlers>;

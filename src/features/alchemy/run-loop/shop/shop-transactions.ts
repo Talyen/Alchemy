@@ -3,9 +3,6 @@ import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-
 import { deductGold, readDraftGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { playGoldSpend, playUISound } from "@/lib/audio";
 
-type StateUpdate<T> = T | ((previous: T) => T);
-export type DraftStateWriter<T> = (draft: GameplayDraft, value: StateUpdate<T>) => void;
-
 export interface ShopTransactionResult<T = undefined> {
   committed: boolean;
   price: number;
@@ -30,46 +27,6 @@ export function runShopTransaction<T>(
   return result;
 }
 
-export function commitShopInitialize<T>(
-  setState: DraftStateWriter<T>,
-  createInitial: (draft: GameplayDraft) => T,
-): void {
-  dispatchRunSessionCommand((draft) => {
-    setState(draft, createInitial(draft));
-  });
-}
-
-interface PurchaseShopOfferingInput<TState extends { firstPurchaseUsed: boolean; purchasedSlotKeys: string[] }> {
-  draft: GameplayDraft;
-  price: number;
-  state: TState;
-  setState: DraftStateWriter<TState>;
-  slotKey: string;
-  offeringMatches: boolean;
-  acquire: () => void;
-}
-
-export function purchaseShopOffering<TState extends { firstPurchaseUsed: boolean; purchasedSlotKeys: string[] }>(
-  input: PurchaseShopOfferingInput<TState>,
-): ShopTransactionResult {
-  if (
-    !input.offeringMatches ||
-    readDraftGold(input.draft) < input.price ||
-    input.state.purchasedSlotKeys.includes(input.slotKey)
-  ) {
-    return { committed: false, price: input.price, value: undefined };
-  }
-
-  deductGold(input.draft, input.price);
-  input.setState(input.draft, (previous) => ({
-    ...previous,
-    firstPurchaseUsed: true,
-    purchasedSlotKeys: [...previous.purchasedSlotKeys, input.slotKey],
-  }));
-  input.acquire();
-  return { committed: true, price: input.price, value: undefined };
-}
-
 interface CommitShopServiceInput<T> {
   draft: GameplayDraft;
   price: number;
@@ -85,33 +42,4 @@ export function commitShopService<T>(input: CommitShopServiceInput<T>): ShopTran
   deductGold(input.draft, input.price);
   const value = input.apply();
   return { committed: true, price: input.price, value };
-}
-
-interface RefreshShopOfferingsInput<T, TItem> {
-  draft: GameplayDraft;
-  price: number;
-  refreshesLeft: number;
-  freeRefreshUsed: boolean;
-  setState: DraftStateWriter<T>;
-  mapState: (previous: T, newItems: TItem[]) => T;
-  resample: () => TItem[];
-}
-
-export function refreshShopOfferings<
-  T extends { refreshesLeft: number; freeRefreshUsed: boolean; purchasedSlotKeys: string[] },
-  TItem,
->(input: RefreshShopOfferingsInput<T, TItem>): ShopTransactionResult<TItem[] | null> {
-  if (input.refreshesLeft <= 0 || readDraftGold(input.draft) < input.price) {
-    return { committed: false, price: input.price, value: null };
-  }
-
-  deductGold(input.draft, input.price);
-  const newItems = input.resample();
-  input.setState(input.draft, (previous) => ({
-    ...input.mapState(previous, newItems),
-    refreshesLeft: previous.refreshesLeft - 1,
-    freeRefreshUsed: input.freeRefreshUsed,
-    purchasedSlotKeys: [],
-  }));
-  return { committed: true, price: input.price, value: newItems };
 }

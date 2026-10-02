@@ -9,57 +9,43 @@ import { isRecursiveBattleCardEffectKind } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "../types";
 import { getBattleRng, rollChance } from "@/lib/rng";
 import { logError } from "../../error-logger";
-import type { CardEffectResolutionContext, EffectHandler } from "./handler-types";
-import { defineHandler } from "./handler-types";
+import type { CardEffectResolutionContext, EffectHandler, EffectHandlers } from "./handler-types";
 import { DAMAGE_HANDLERS } from "./damage-handlers";
 import { STATUS_HANDLERS } from "./status-handlers";
 import { MANA_HEALTH_HANDLERS } from "./mana-health-handlers";
 import { SIMPLE_HANDLERS } from "./simple-handlers";
 
-type RegisteredEffectKind = Exclude<BattleCardEffectKind, "chance" | "repeat-over-turns">;
+type RegisteredEffectKind = keyof EffectHandlers;
 
-// Defined here (not in simple-handlers) so companion-effects stays free of an
-// import back into this registry: this file already imports
-// resolveCompanionTurnStart, so the handler can close over applyCardEffects
-// lazily without creating a module cycle. See companion.ts binder for the
-// non-card entry path.
-export const applyCompanionActionEffect = defineHandler(
-  "companion-action",
-  (state, _card, effect, _potionMult, combatTexts) => {
+// Companion actions close over applyCardEffects here so companion-effects
+// never imports back into the registry.
+export const EFFECT_APPLY_BY_KIND: EffectHandlers = {
+  ...DAMAGE_HANDLERS,
+  ...STATUS_HANDLERS,
+  ...MANA_HEALTH_HANDLERS,
+  ...SIMPLE_HANDLERS,
+  "companion-action": (state, _card, effect, _potionMult, combatTexts) => {
     let nextState = state;
     for (let action = 0; action < effect.amount; action += 1) {
       nextState = resolveCompanionTurnStart(nextState, combatTexts, applyCardEffects);
     }
     return nextState;
   },
-);
+};
 
-const handlerGroups = [
-  DAMAGE_HANDLERS,
-  STATUS_HANDLERS,
-  MANA_HEALTH_HANDLERS,
-  SIMPLE_HANDLERS,
-  { "companion-action": applyCompanionActionEffect },
-] as const;
-const registeredKinds = handlerGroups.flatMap((group) => Object.keys(group));
+const registeredKinds = [
+  ...[DAMAGE_HANDLERS, STATUS_HANDLERS, MANA_HEALTH_HANDLERS, SIMPLE_HANDLERS].flatMap((group) => Object.keys(group)),
+  "companion-action",
+];
 if (new Set(registeredKinds).size !== registeredKinds.length) {
   throw new Error("Duplicate card effect handler kind");
 }
 
-export const EFFECT_APPLY_BY_KIND = {
-  ...DAMAGE_HANDLERS,
-  ...STATUS_HANDLERS,
-  ...MANA_HEALTH_HANDLERS,
-  ...SIMPLE_HANDLERS,
-  "companion-action": applyCompanionActionEffect,
-} satisfies Record<RegisteredEffectKind, EffectHandler>;
-
 function hasEffectApplyHandler(kind: BattleCardEffectKind): kind is RegisteredEffectKind {
-  return !isRecursiveBattleCardEffectKind(kind) && kind in EFFECT_APPLY_BY_KIND;
+  return !isRecursiveBattleCardEffectKind(kind) && Object.hasOwn(EFFECT_APPLY_BY_KIND, kind);
 }
 
 export function applyEffectByKind(
-  kind: BattleCardEffectKind,
   state: BattleState,
   card: BattleCard,
   effect: BattleCardEffect,
@@ -67,12 +53,17 @@ export function applyEffectByKind(
   combatTexts: CombatTextEvent[],
   context?: CardEffectResolutionContext,
 ): BattleState {
+  const kind = effect.kind;
   if (!hasEffectApplyHandler(kind)) {
     console.warn(`[Battle] Missing handler for effect kind: ${kind}`);
     logError(`Missing handler for effect kind: ${kind}`, "battle", { kind });
     return state;
   }
-  let nextState = EFFECT_APPLY_BY_KIND[kind](state, card, effect, potionMult, combatTexts, context);
+  // TypeScript loses the key/effect correlation when indexing a union of
+  // functions. Dispatch derives the key from this same effect; keep the sole
+  // widening at that boundary, while tables and direct callers stay typed.
+  const apply = EFFECT_APPLY_BY_KIND[kind] as EffectHandler;
+  let nextState = apply(state, card, effect, potionMult, combatTexts, context);
   if (kind === "summon-companion" && hasEncounterBenefit(state, "eager-pack")) {
     // Eager Pack is two immediate Companion actions on summon by design
     // ("Your Companions act twice when summoned"), not one.
@@ -123,7 +114,7 @@ function applySingleEffect(
     };
   }
 
-  return applyEffectByKind(effect.kind, state, card, effect, potionMult, combatTexts, context);
+  return applyEffectByKind(state, card, effect, potionMult, combatTexts, context);
 }
 
 export function applyCardEffects(

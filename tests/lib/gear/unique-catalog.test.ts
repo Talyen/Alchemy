@@ -1,7 +1,10 @@
 import { resolveLootWeights } from "@/lib/loot";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   canApplyCraftingCurrency,
+  applyCraftingCurrency,
+  craftingCurrencyBlockedReason,
+  CRAFTING_CURRENCY_LIST,
   generateLootGearChoices,
   generateUniqueGearInstance,
   gearAffixCatalog,
@@ -54,10 +57,13 @@ describe("unique item catalog", () => {
   it("prevents crafting currencies from modifying unique items", () => {
     const unique = uniqueItemList[0];
     const instance = generateUniqueGearInstance(unique);
-    expect(canApplyCraftingCurrency("discordant-dice", instance)).toBe(false);
-    expect(canApplyCraftingCurrency("ascension-seal", instance)).toBe(false);
-    expect(canApplyCraftingCurrency("severance-maw", instance)).toBe(false);
-    expect(canApplyCraftingCurrency("smiths-whetstone", instance)).toBe(false);
+    const rng = vi.fn(() => 0);
+    for (const { id } of CRAFTING_CURRENCY_LIST) {
+      expect(craftingCurrencyBlockedReason(id, instance)).toBe("Unique items cannot be crafted.");
+      expect(canApplyCraftingCurrency(id, instance)).toBe(false);
+      expect(applyCraftingCurrency(id, instance, rng)).toBe(instance);
+    }
+    expect(rng).not.toHaveBeenCalled();
   });
 
   it("yields guaranteed salvage currency package on unique salvage", () => {

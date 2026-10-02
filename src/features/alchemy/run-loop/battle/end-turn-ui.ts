@@ -8,7 +8,7 @@ import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import type { createBattleSession } from "./battle-session";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
-import { isBattlePlaybackBlocked } from "./autoplay-driver";
+import { isBattlePlaybackBlocked } from "./playback-gate";
 import { logBattleError, playCompanionSound, presentCombatTexts } from "./controller-utils";
 import type { createBattleTransferDeps } from "./battle-transfers";
 import type { BattleControllerContext } from "./battle-context";

@@ -7,7 +7,7 @@ import { computeTalentEffects } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { enemyBestiary } from "@/lib/game-data";
 import { resetRunBattleSlice, resetRunProgressSlice, setRunProgress } from "../../../../helpers/run-domain-store-test";
-import { readActiveRun, readBattle } from "@/features/alchemy/shared/stores/run-reads";
+import { readActiveRun, readBattle, readRunRevision } from "@/features/alchemy/shared/stores/run-reads";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
@@ -45,7 +45,7 @@ describe("createBattleInit", () => {
       draft.runProfile.effects = testEffects;
     });
 
-    init.startBattle(readActiveRun().runDeck, 0, "normal");
+    init.startBattle({ enemyType: "normal" });
 
     const battle = readBattle().battleState;
     const expected = mergeIntoManifest(computeTalentEffects({}), testEffects);
@@ -53,13 +53,12 @@ describe("createBattleInit", () => {
     expect(battle.currentEnemy.enemyType).toBe("normal");
 
     expect(battle).not.toHaveProperty("rng");
-    expect(battle).not.toHaveProperty("rng");
   });
 
   it("beginBattle increments roomsEncountered and sets hasActiveBattle", () => {
     setRunProgress({ roomsEncountered: 2, runPlayerHealth: 25, runMaxHealth: 30 });
 
-    makeInit().startBattle(readActiveRun().runDeck, 10, "normal");
+    makeInit().startBattle({ enemyType: "normal" });
 
     const enemyId = readBattle().battleState.currentEnemy.id;
     expect(readActiveRun().roomsEncountered).toBe(3);
@@ -73,9 +72,36 @@ describe("createBattleInit", () => {
     expect(prepareBattleSessionForStart).toHaveBeenCalled();
   });
 
-  it("honors an explicitly selected normal enemy", () => {
-    makeInit().startBattle(readActiveRun().runDeck, 0, "normal", [], "skeleton");
-    expect(readBattle().battleState.currentEnemy.id).toBe("skeleton");
+  it("uses the live purse while honoring explicit enemy and empty difficulty overrides", () => {
+    setRunProgress({ gold: 27, selectedDifficulty: "difficulty-3" });
+    makeInit().startBattle({
+      enemyType: "normal",
+      modifiers: [],
+      enemyId: "skeleton",
+    });
+    const battle = readBattle().battleState;
+    expect(battle.currentEnemy.id).toBe("skeleton");
+    expect(battle.gold).toBe(27);
+    expect(battle.difficultyModifiers).toEqual([]);
+  });
+
+  it.each(["forge-golem", "skeleton", "unknown-enemy"])("starts a boss with the optional enemy %s", (enemyId) => {
+    makeInit().startBossBattle({ enemyId });
+    const battle = readBattle().battleState;
+    expect(battle.currentEnemy.enemyType).toBe("boss");
+    if (enemyId === "forge-golem") expect(battle.currentEnemy.id).toBe(enemyId);
+  });
+
+  it("rejects an unknown explicit boss without committing or starting presentation", () => {
+    const before = readBattle();
+    const run = readActiveRun();
+    const revision = readRunRevision();
+    const presentationCalls = prepareBattleSessionForStart.mock.calls.length;
+    expect(makeInit().startBossById({ bossId: "unknown-boss" })).toBe(false);
+    expect(readBattle()).toEqual(before);
+    expect(readActiveRun()).toEqual(run);
+    expect(readRunRevision()).toBe(revision);
+    expect(prepareBattleSessionForStart).toHaveBeenCalledTimes(presentationCalls);
   });
 
   it("appendUnique avoids duplicate encountered enemy ids", () => {
@@ -87,14 +113,14 @@ describe("createBattleInit", () => {
       runMaxHealth: 30,
     });
 
-    makeInit().startBattle(readActiveRun().runDeck, 0, "normal");
+    makeInit().startBattle({ enemyType: "normal" });
 
     const ids = readActiveRun().encounteredRunEnemyIds;
     expect(ids.filter((id) => id === skeleton.id)).toHaveLength(1);
   });
 
   it("appends the persisted Wildwood combat trait to a boss encounter", () => {
-    makeInit().startBossById("forge-golem", undefined, "tempered");
+    makeInit().startBossById({ bossId: "forge-golem", wildwoodModifierId: "tempered" });
 
     expect(readBattle().battleState.currentEnemy.traits).toEqual(
       expect.arrayContaining([
@@ -106,7 +132,7 @@ describe("createBattleInit", () => {
     );
   });
 
-  it("reads live run state when a battle starts inside another command", () => {
+  it.each(["normal", "boss"] as const)("reads live run state when starting a %s battle", (kind) => {
     const templateCard = readActiveRun().runDeck[0]!;
     setRunProgress({
       runDeck: [{ ...templateCard, id: "stale-card" }],
@@ -119,7 +145,8 @@ describe("createBattleInit", () => {
     const freshCard = { ...templateCard, id: "fresh-card" };
 
     setRunProgress({ runDeck: [freshCard], gold: 27, roomsEncountered: 4 });
-    init.startBossById("forge-golem");
+    if (kind === "boss") init.startBossById({ bossId: "forge-golem" });
+    else init.startBattle({ enemyId: "skeleton" });
 
     const battle = readBattle().battleState;
     expect([...battle.hand, ...battle.deck, ...battle.discard, ...battle.exhausted].map((card) => card.id)).toEqual([
@@ -136,7 +163,10 @@ describe("createBattleInit", () => {
       runMaxHealth: 30,
       rng: createRunRngState(() => 42 / 0x1_0000_0000),
     });
-    makeInit().startBattle(readActiveRun().runDeck, 0, "normal", [{ kind: "start-companion" }]);
+    makeInit().startBattle({
+      enemyType: "normal",
+      modifiers: [{ kind: "start-companion" }],
+    });
 
     const battle = readBattle().battleState;
     expect(battle.activeCompanion?.id).toBe("wolf");
@@ -151,7 +181,10 @@ describe("createBattleInit", () => {
       runMaxHealth: 30,
       rng: createRunRngState(() => 42 / 0x1_0000_0000),
     });
-    makeInit().startBattle(readActiveRun().runDeck, 0, "normal", [{ kind: "start-companion" }]);
+    makeInit().startBattle({
+      enemyType: "normal",
+      modifiers: [{ kind: "start-companion" }],
+    });
 
     expect(feedback).toHaveBeenCalled();
     const texts = feedback.mock.calls[0]?.[1] ?? [];

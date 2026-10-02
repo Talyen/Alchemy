@@ -59,17 +59,8 @@ describe("startCombatantStatusEffectLoop", () => {
     vi.stubGlobal("cancelAnimationFrame", vi.fn());
 
     const canvas = attachCanvas();
-    const widthSetter = vi.fn();
-    Object.defineProperty(canvas, "width", {
-      configurable: true,
-      get: () => 48,
-      set: widthSetter,
-    });
-    Object.defineProperty(canvas, "height", {
-      configurable: true,
-      get: () => 64,
-      set: vi.fn(),
-    });
+    vi.stubGlobal("devicePixelRatio", 1);
+    const widthSetter = vi.spyOn(canvas, "width", "set");
 
     const stop = startCombatantStatusEffectLoop({
       canvas,
@@ -190,8 +181,11 @@ describe("startCombatantStatusEffectLoop", () => {
 
     stop();
     expect(disconnect).toHaveBeenCalledOnce();
+    width = 96;
     notifyResize();
     window.dispatchEvent(new Event("focus"));
+    expect(canvas.width).toBe(48);
+    expect(onFrame).toHaveBeenCalledTimes(2);
     expect(pending.size).toBe(0);
   });
 

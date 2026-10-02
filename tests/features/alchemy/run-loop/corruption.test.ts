@@ -354,6 +354,25 @@ describe("labyrinth corruption room modifiers", () => {
 });
 
 describe("numeric text alignment", () => {
+  it("reserves a combined damage amount while binding equal-valued custom prose", () => {
+    const hit = { kind: "damage" as const, damageType: "burn" as const, amount: 3 };
+    const card = makeTestCard({
+      descriptionLines: ["Collect 3 Gold", "Deal and Receive 3 Burn damage"],
+      effects: [hit, { ...hit, kind: "self-damage" }, { kind: "gain-gold", amount: 3 }],
+    });
+    const [gold, damage] = getEditableCorruptionTargets(card);
+    const changed = updateCardNumericValue(card, gold!, 4);
+    expect(changed.descriptionLines).toEqual(["Collect 4 Gold", "Deal and Receive 3 Burn damage"]);
+    expect(changed.effects).toEqual([hit, { ...hit, kind: "self-damage" }, { kind: "gain-gold", amount: 4 }]);
+    const changedDamage = updateCardNumericValue(card, damage!, 5);
+    expect(changedDamage.effects).toEqual([
+      { ...hit, amount: 5 },
+      { ...hit, kind: "self-damage", amount: 5 },
+      { kind: "gain-gold", amount: 3 },
+    ]);
+    expect(card.effects[0]).toEqual(hit);
+  });
+
   it("rejects a stale shared edit without changing any branch or its description", () => {
     const card = cardById["luck-potion"]!;
     const target = getEditableCorruptionTargets(card)[0]!;

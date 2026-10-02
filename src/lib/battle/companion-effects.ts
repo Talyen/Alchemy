@@ -72,10 +72,14 @@ export function resolveCompanionTurnStart(
     }
     if (
       damageDealt > 0 &&
-      state.gearEffects.healOnCompanionAttack > 0 &&
-      state.playerHealth < state.playerMaxHealth / HALF_DIVISOR
+      afterEffects.gearEffects.healOnCompanionAttack > 0 &&
+      afterEffects.playerHealth < afterEffects.playerMaxHealth / HALF_DIVISOR
     ) {
-      afterEffects = applyHealingWithCombatText(afterEffects, state.gearEffects.healOnCompanionAttack, combatTexts);
+      afterEffects = applyHealingWithCombatText(
+        afterEffects,
+        afterEffects.gearEffects.healOnCompanionAttack,
+        combatTexts,
+      );
     }
 
     if (damageDealt > 0 && state.talentEffects.blockOnCompanionDamage > 0 && state.playerStatuses.block === 0) {

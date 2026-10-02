@@ -5,6 +5,11 @@ import { SAVE_KEY, SAVE_RECOVERY_KEY } from "@/lib/game-constants";
 import { SaveStorage } from "@/features/alchemy/shared/storage/save-storage";
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { deferred } from "../../../../helpers/deferred";
+import {
+  futureContentSaveCandidate,
+  futureSaveCandidate,
+  playableSaveCandidate,
+} from "../../../../helpers/save-candidate-fixtures";
 
 function backend() {
   return {
@@ -16,6 +21,30 @@ function backend() {
 }
 
 describe("SaveStorage ownership", () => {
+  const older = playableSaveCandidate(10);
+  const newer = playableSaveCandidate(20);
+  const future = futureSaveCandidate(1);
+  const futureContent = futureContentSaveCandidate(30);
+  it.each<[string, string[], string[], number, string]>([
+    ["future primary backup", [newer, future], [], 20, SAVE_RECOVERY_KEY],
+    ["future primary content", [futureContent], [newer], 20, SAVE_RECOVERY_KEY],
+    ["future recovery backup", [older], [newer, future], 20, SAVE_KEY],
+    ["both slots protected", [newer, future], [older, futureContent], 20, SAVE_RECOVERY_KEY],
+  ])("selects progress and a safe write slot with %s", async (_label, primary, recovery, savedAt, writeKey) => {
+    const storageBackend = backend();
+    storageBackend.readCandidates.mockImplementation(async (key) => ({
+      ok: true,
+      candidates: key === SAVE_KEY ? primary : recovery,
+    }));
+    const storage = new SaveStorage(storageBackend);
+
+    const loaded = await storage.load();
+    expect(loaded.status.kind).toBe("ok");
+    expect(loaded.data.lastSavedAt).toBe(savedAt);
+    expect(await storage.save(loaded.data)).toBe("saved");
+    expect(storageBackend.write).toHaveBeenCalledExactlyOnceWith(writeKey, expect.any(String));
+  });
+
   it("saves beside a newer-format primary without overwriting it", async () => {
     const protectedBackend = backend();
     const future = JSON.stringify({ ...createDefaultSaveData(), saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1 });

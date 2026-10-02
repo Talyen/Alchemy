@@ -83,43 +83,9 @@ export function getCraftingCurrencyDefinition(id: CraftingCurrencyId): CraftingC
   return definition;
 }
 
-function addRandomAffix(item: GearInstance, rng: () => number): GearInstance {
-  const def = gearDefinitions[item.definitionId];
-  if (!def) return item;
-  const rarity = gearInstanceRarity(item) ?? "basic";
-  const available = eligibleNewAffixes(item);
-  const chosen = pickRandom(available, rng);
-  if (!chosen) return item;
-  return {
-    ...item,
-    affixes: [...item.affixes, { id: chosen.id, value: rollAffixValue(chosen, rarity, rng) }],
-  };
-}
-
-function eligibleNewAffixes(item: GearInstance) {
-  const def = gearDefinitions[item.definitionId];
-  if (!def) return [];
-  const presentIds = new Set(item.affixes.map((affix) => affix.id));
-  return buildEligibleAffixPool(def).filter((affix) => !presentIds.has(affix.id));
-}
-
-function hasAvailableAffix(item: GearInstance): boolean {
-  const def = gearDefinitions[item.definitionId];
-  if (!def) return false;
-  const pool = buildEligibleAffixPool(def);
-  if (pool.length === 0) return false;
-  if (item.affixes.length === 0) return true;
-  return pool.some((affix) => !item.affixes.some((present) => present.id === affix.id));
-}
-
 function affixMaxValue(roll: GearAffixRoll, rarity: GearRarity): number {
   const def = gearAffixCatalog[roll.id];
   return def ? def.roll[rarity].max : roll.value;
-}
-
-function hasUpgradeableAffix(item: GearInstance): boolean {
-  const rarity = gearInstanceRarity(item) ?? "basic";
-  return item.affixes.some((affix) => affix.value < affixMaxValue(affix, rarity));
 }
 
 function upgradeAffixValueToAstral(roll: GearAffixRoll): GearAffixRoll {
@@ -135,93 +101,68 @@ function upgradeAffixValueToAstral(roll: GearAffixRoll): GearAffixRoll {
   };
 }
 
-function hasAnyAffix(item: GearInstance): boolean {
-  return item.affixes.length > 0;
-}
+// Preparation resolves legality and eligible choices without drawing randomness.
+// Preview reads the rejection; application executes the same rule against the
+// current item, so guards and transformations cannot drift into separate tables.
+type CraftingPlan = string | ((rng: () => number) => GearInstance);
 
-interface CraftingCurrencyBehavior {
-  canApply(item: GearInstance): boolean;
-  apply(item: GearInstance, rng: () => number): GearInstance;
-}
-
-const CRAFTING_CURRENCY_BEHAVIORS: Record<CraftingCurrencyId, CraftingCurrencyBehavior> = {
-  "discordant-dice": {
-    canApply: hasAnyAffix,
-    apply: (item, rng) => {
-      const def = gearDefinitions[item.definitionId];
-      return { ...item, affixes: def ? rollAffixes(def, item.affixes.length, rng) : [] };
-    },
-  },
-  "sprig-of-growth": {
-    canApply: (item) => {
-      const rarity = gearInstanceRarity(item);
-      if (!rarity) return false;
-      return item.affixes.length < GEAR_AFFIX_COUNT[rarity].max && hasAvailableAffix(item);
-    },
-    apply: addRandomAffix,
-  },
-  voidstone: {
-    canApply: hasAnyAffix,
-    apply: (item) => ({ ...item, affixes: [] }),
-  },
-  "ascension-seal": {
-    canApply: (item) => {
-      if (gearInstanceRarity(item) !== "basic") return false;
-      const baseItemId = gearDefinitions[item.definitionId]?.baseItemId;
-      return baseItemId !== undefined && gearDefinitions[gearDefinitionId(baseItemId, "astral")] !== undefined;
-    },
-    apply: (item) => {
-      const def = gearDefinitions[item.definitionId];
-      const baseItemId = def?.baseItemId;
-      if (baseItemId === undefined) return item;
-      const nextDefId = gearDefinitionId(baseItemId, "astral");
-      if (!gearDefinitions[nextDefId]) return item;
-      return { ...item, definitionId: nextDefId, affixes: item.affixes.map(upgradeAffixValueToAstral) };
-    },
-  },
-  "severance-maw": {
-    canApply: hasAnyAffix,
-    apply: (item, rng) => {
-      if (item.affixes.length === 0) return item;
-      const index = rngInt(rng, item.affixes.length);
-      return { ...item, affixes: item.affixes.filter((_, affixIndex) => affixIndex !== index) };
-    },
-  },
-  "smiths-whetstone": {
-    canApply: (item) => hasAnyAffix(item) && hasUpgradeableAffix(item),
-    apply: (item, rng) => {
-      const rarity = gearInstanceRarity(item) ?? "basic";
-      const upgradeableIndexes = item.affixes.flatMap((affix, index) =>
-        affix.value < affixMaxValue(affix, rarity) ? [index] : [],
-      );
-      const index = pickRandom(upgradeableIndexes, rng);
-      if (index === undefined) return item;
-      return {
-        ...item,
-        affixes: item.affixes.map((affix, affixIndex) =>
-          affixIndex === index ? { ...affix, value: affix.value + 1 } : affix,
-        ),
+function prepareCraftingCurrency(currencyId: CraftingCurrencyId, item: GearInstance): CraftingPlan {
+  const rarity = gearInstanceRarity(item);
+  if (rarity === "unique") return "Unique items cannot be crafted.";
+  const definition = gearDefinitions[item.definitionId];
+  switch (currencyId) {
+    case "discordant-dice":
+      if (!item.affixes.length) return "This item has no affixes to reroll.";
+      return (rng) => ({ ...item, affixes: definition ? rollAffixes(definition, item.affixes.length, rng) : [] });
+    case "sprig-of-growth": {
+      const presentIds = new Set(item.affixes.map((affix) => affix.id));
+      const available = definition
+        ? buildEligibleAffixPool(definition).filter((affix) => !presentIds.has(affix.id))
+        : [];
+      if (!rarity || item.affixes.length >= GEAR_AFFIX_COUNT[rarity].max || !available.length)
+        return "No affix slots or eligible affixes available.";
+      return (rng) => {
+        const chosen = pickRandom(available, rng)!;
+        return { ...item, affixes: [...item.affixes, { id: chosen.id, value: rollAffixValue(chosen, rarity, rng) }] };
       };
-    },
-  },
-};
+    }
+    case "voidstone":
+      if (!item.affixes.length) return "This item has no affixes to remove.";
+      return () => ({ ...item, affixes: [] });
+    case "ascension-seal": {
+      const nextDefinitionId = definition && gearDefinitionId(definition.baseItemId, "astral");
+      if (rarity !== "basic" || !nextDefinitionId || !gearDefinitions[nextDefinitionId])
+        return "Only Basic items can be upgraded to Astral.";
+      return () => ({ ...item, definitionId: nextDefinitionId, affixes: item.affixes.map(upgradeAffixValueToAstral) });
+    }
+    case "severance-maw":
+      if (!item.affixes.length) return "This item has no affixes to remove.";
+      return (rng) => {
+        const index = rngInt(rng, item.affixes.length);
+        return { ...item, affixes: item.affixes.filter((_, affixIndex) => affixIndex !== index) };
+      };
+    case "smiths-whetstone": {
+      if (!item.affixes.length) return "This item has no affixes to upgrade.";
+      const indexes = item.affixes.flatMap((affix, index) =>
+        affix.value < affixMaxValue(affix, rarity ?? "basic") ? [index] : [],
+      );
+      if (!indexes.length) return "All affixes are already at maximum.";
+      return (rng) => {
+        const index = pickRandom(indexes, rng)!;
+        return {
+          ...item,
+          affixes: item.affixes.map((affix, affixIndex) =>
+            affixIndex === index ? { ...affix, value: affix.value + 1 } : affix,
+          ),
+        };
+      };
+    }
+  }
+}
 
 export function craftingCurrencyBlockedReason(currencyId: CraftingCurrencyId, item: GearInstance): string | null {
-  if (gearInstanceRarity(item) === "unique") return "Unique items cannot be crafted.";
-  if (CRAFTING_CURRENCY_BEHAVIORS[currencyId].canApply(item)) return null;
-  switch (currencyId) {
-    case "sprig-of-growth":
-      return "No affix slots or eligible affixes available.";
-    case "ascension-seal":
-      return "Only Basic items can be upgraded to Astral.";
-    case "smiths-whetstone":
-      return item.affixes.length ? "All affixes are already at maximum." : "This item has no affixes to upgrade.";
-    case "discordant-dice":
-      return "This item has no affixes to reroll.";
-    case "voidstone":
-    case "severance-maw":
-      return "This item has no affixes to remove.";
-  }
+  const plan = prepareCraftingCurrency(currencyId, item);
+  return typeof plan === "string" ? plan : null;
 }
 
 export function canApplyCraftingCurrency(currencyId: CraftingCurrencyId, item: GearInstance): boolean {
@@ -233,9 +174,8 @@ export function applyCraftingCurrency(
   item: GearInstance,
   rng: () => number,
 ): GearInstance {
-  if (!canApplyCraftingCurrency(currencyId, item)) return item;
-  const behavior = CRAFTING_CURRENCY_BEHAVIORS[currencyId];
-  return behavior.apply(item, rng);
+  const plan = prepareCraftingCurrency(currencyId, item);
+  return typeof plan === "string" ? item : plan(rng);
 }
 
 export function rollSalvageYield(rarity: GearRarity, rng: () => number): Record<CraftingCurrencyId, number> {

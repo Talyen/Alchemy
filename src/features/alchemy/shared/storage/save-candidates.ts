@@ -69,50 +69,35 @@ function collectSaveRepairWarnings(raw: Partial<SaveData>, normalized: ParsedSav
   if (rawGold !== undefined && rawGold !== normalized.gold && !isCombatGoldOverride(rawCombatGold, normalized.gold)) {
     warnings.push(`Field "gold" was repaired (raw ${JSON.stringify(rawGold)} -> ${normalized.gold})`);
   }
-  // Zod `.catch()` silently resets corrupt sections to empty defaults, so a
-  // damaged block would otherwise look like intentional loss. Warn only when
-  // the raw payload held something beyond harmless defaults; absent or
-  // already-empty fields stay silent so fresh saves do not warn. New
-  // inventories add one row here, not a new branch plus helper.
-  const rawInventories = raw as {
-    gearInventories?: unknown;
-    ownedTrinketIds?: unknown;
-    craftingCurrencies?: unknown;
-    materialInventory?: unknown;
-  };
-  const inventoryChecks: Array<{ damaged: boolean; message: string }> = [
-    {
-      message: "gear collection could not be fully restored",
-      damaged:
-        rawInventories.gearInventories !== undefined &&
-        !isEmptyGearLike(rawInventories.gearInventories) &&
-        isEmptyGearInventories(normalized.gearInventories),
-    },
-    {
-      message: "owned trinkets could not be fully restored",
-      damaged:
-        rawInventories.ownedTrinketIds !== undefined &&
-        !(Array.isArray(rawInventories.ownedTrinketIds) && rawInventories.ownedTrinketIds.length === 0) &&
-        normalized.ownedTrinketIds.length === 0,
-    },
-    {
-      message: "crafting currencies could not be fully restored",
-      damaged:
-        rawInventories.craftingCurrencies !== undefined &&
-        sumInventoryValues(normalized.craftingCurrencies) === 0 &&
-        (sumInventoryValues(rawInventories.craftingCurrencies) > 0 ||
-          !isPlainObject(rawInventories.craftingCurrencies)),
-    },
-    {
-      message: "homestead materials could not be fully restored",
-      damaged:
-        rawInventories.materialInventory !== undefined &&
-        sumInventoryValues(normalized.materialInventory) === 0 &&
-        (sumInventoryValues(rawInventories.materialInventory) > 0 || !isPlainObject(rawInventories.materialInventory)),
-    },
-  ];
-  for (const check of inventoryChecks) {
-    if (check.damaged) warnings.push(check.message);
+  // Zod catches damaged inventories with empty defaults. Only warn when
+  // that reset discarded nonempty raw data; fresh and already-empty saves stay silent.
+  if (
+    raw.gearInventories !== undefined &&
+    !isEmptyGearLike(raw.gearInventories) &&
+    isEmptyGearInventories(normalized.gearInventories)
+  ) {
+    warnings.push("gear collection could not be fully restored");
+  }
+  if (
+    raw.ownedTrinketIds !== undefined &&
+    !(Array.isArray(raw.ownedTrinketIds) && raw.ownedTrinketIds.length === 0) &&
+    normalized.ownedTrinketIds.length === 0
+  ) {
+    warnings.push("owned trinkets could not be fully restored");
+  }
+  if (
+    raw.craftingCurrencies !== undefined &&
+    sumInventoryValues(normalized.craftingCurrencies) === 0 &&
+    (sumInventoryValues(raw.craftingCurrencies) > 0 || !isPlainObject(raw.craftingCurrencies))
+  ) {
+    warnings.push("crafting currencies could not be fully restored");
+  }
+  if (
+    raw.materialInventory !== undefined &&
+    sumInventoryValues(normalized.materialInventory) === 0 &&
+    (sumInventoryValues(raw.materialInventory) > 0 || !isPlainObject(raw.materialInventory))
+  ) {
+    warnings.push("homestead materials could not be fully restored");
   }
   return warnings;
 }
@@ -127,95 +112,81 @@ function getFutureSaveStatus(parsed: unknown): SaveLoadStatus | null {
   return null;
 }
 
-export function hasUnsupportedFutureCandidate(candidates: string[]): boolean {
-  return candidates.some((candidate) => {
-    try {
-      return getFutureSaveStatus(JSON.parse(candidate) as unknown) !== null;
-    } catch {
-      return false;
-    }
-  });
+export interface SaveCandidateSelection {
+  state: SaveLoadState;
+  useRecovery: boolean;
 }
 
-export function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
-  let futureStatus: SaveLoadStatus | null = null;
-  let newestFutureSavedAt = -1;
-  let bestParsed: unknown = null;
-  let bestData: ParsedSaveData | null = null;
-  let nestedCardWarnings: Array<{ path: string; message: string }> = [];
-  let playableSavedAt = 0;
-  for (const candidate of candidates) {
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(candidate) as unknown;
-    } catch (error) {
-      logStorageFailure("Save candidate JSON parse failed, trying next candidate", error);
-      continue;
-    }
-
-    const candidateFutureStatus = getFutureSaveStatus(parsed);
-    if (candidateFutureStatus) {
-      const savedAt = getCandidateSavedAt(parsed, -1);
-      // First-wins on ties, matching the playable-vs-playable tie-break
-      // below: recency across future kinds (schema vs content) still decides,
-      // but equal timestamps keep the earlier candidate in read order.
-      if (futureStatus === null || savedAt > newestFutureSavedAt) {
-        newestFutureSavedAt = savedAt;
-        futureStatus = candidateFutureStatus;
+/** Select progress and its safe write slot from the same compatibility pass. */
+export function selectSaveCandidates(
+  primary: readonly string[],
+  recovery: readonly string[] = [],
+): SaveCandidateSelection {
+  let future: { status: SaveLoadStatus; savedAt: number } | null = null;
+  let playable: {
+    raw: Partial<SaveData>;
+    data: ParsedSaveData;
+    errors: Array<{ path: string; message: string }>;
+  } | null = null;
+  const futureSlots = new Set<string>();
+  for (const [slot, candidates] of Object.entries({ primary, recovery })) {
+    for (const candidate of candidates) {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(candidate) as unknown;
+      } catch (error) {
+        logStorageFailure("Save candidate JSON parse failed, trying next candidate", error);
+        continue;
       }
-      continue;
-    }
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      logStorageFailure("Save candidate root was not an object, trying next candidate");
-      continue;
-    }
 
-    // Reject disposable formats before field defaults can stamp them as current.
-    // Stays silent: empty or missing candidates on fresh profiles are routine,
-    // and logStorageFailure feeds the error sink asserted empty by E2E journeys.
-    if (getRawSaveSchemaVersion(parsed) < LAUNCH_SAVE_SCHEMA_VERSION) continue;
-    // Cheap pre-filter: the shared timestamp normalizer guarantees a
-    // successful parse yields exactly this value, so a candidate that cannot
-    // beat the current best (or tie-break it) skips the full Zod parse.
-    // The first valid candidate and any potential winner are always parsed,
-    // so validation diagnostics for the loaded save are preserved.
-    if (bestData && getCandidateSavedAt(parsed, 0) <= playableSavedAt) continue;
-    const result = safeParseWithErrors(SaveDataSchema, migrateSupportedSaveData(parsed));
-    // Defensive: nearly every SaveDataSchema field carries `.catch`, so any
-    // object passing the baseline above parses successfully and this branch
-    // is effectively unreachable. Kept so a future strict field cannot
-    // promote a corrupt candidate to playable.
-    if (!result.success) {
-      logStorageFailure("Save candidate failed validation, trying next candidate", result.error);
-      continue;
-    }
-    const data = result.data;
-    if (!bestData || data.lastSavedAt > playableSavedAt) {
-      bestParsed = parsed;
-      bestData = data;
-      nestedCardWarnings = result.errors;
-      playableSavedAt = data.lastSavedAt;
+      const status = getFutureSaveStatus(parsed);
+      if (status) {
+        futureSlots.add(slot);
+        const savedAt = getCandidateSavedAt(parsed, -1);
+        if (!future || savedAt > future.savedAt) future = { status, savedAt };
+        continue;
+      }
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        logStorageFailure("Save candidate root was not an object, trying next candidate");
+        continue;
+      }
+      // Disposable formats stay silent and cannot acquire current defaults.
+      if (getRawSaveSchemaVersion(parsed) < LAUNCH_SAVE_SCHEMA_VERSION) continue;
+      // Timestamp normalization matches the schema. Ties retain read order;
+      // candidates that cannot win need no expensive validation.
+      if (playable && getCandidateSavedAt(parsed, 0) <= playable.data.lastSavedAt) continue;
+      const result = safeParseWithErrors(SaveDataSchema, migrateSupportedSaveData(parsed));
+      if (!result.success) {
+        logStorageFailure("Save candidate failed validation, trying next candidate", result.error);
+        continue;
+      }
+      playable = { raw: parsed, data: result.data, errors: result.errors };
     }
   }
 
-  let playable: SaveLoadState | null = null;
-  if (bestData) {
-    const warnings = collectSaveRepairWarnings(bestParsed as Partial<SaveData>, bestData);
-    // Nested card-content repair notes (e.g. dropped effects/descriptions),
-    // not corrupt top-level fields: safeParseWithErrors only returns these on
-    // success, so phrase them as repairs.
-    for (const note of nestedCardWarnings) {
+  let state: SaveLoadState;
+  if (playable) {
+    const warnings = collectSaveRepairWarnings(playable.raw, playable.data);
+    for (const note of playable.errors) {
       warnings.push(`Card content "${note.path}" was repaired: ${note.message}`);
     }
-    const hydrated: SaveData = {
-      ...bestData,
-      activeRun: bestData.activeRun ? toActiveRunData(bestData.activeRun) : null,
+    state = {
+      data: {
+        ...playable.data,
+        activeRun: playable.data.activeRun ? toActiveRunData(playable.data.activeRun) : null,
+      },
+      status: warnings.length > 0 ? { kind: "ok", warnings } : { kind: "ok" },
     };
-    playable = { data: hydrated, status: warnings.length > 0 ? { kind: "ok", warnings } : { kind: "ok" } };
+  } else {
+    state = { data: createDefaultSaveData(), status: future?.status ?? { kind: "corrupt" } };
   }
-  const future: SaveLoadState | null = futureStatus ? { data: createDefaultSaveData(), status: futureStatus } : null;
+  return {
+    state,
+    useRecovery: futureSlots.has("primary") || (recovery.length > 0 && !futureSlots.has("recovery")),
+  };
+}
 
-  if (playable) return playable;
-  if (future) return future;
-  return { data: createDefaultSaveData(), status: { kind: "corrupt" } };
+/** Single-source validation used by headless careers and save contract tests. */
+export function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
+  return selectSaveCandidates(candidates).state;
 }

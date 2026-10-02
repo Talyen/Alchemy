@@ -48,80 +48,49 @@ function resolveEquippedDefinitionAt(
   return gearDefinitions[instance.definitionId];
 }
 
+type HandSlot = "main-hand" | "off-hand";
+type HandPairResolution = "compatible" | "reject" | HandSlot;
+
+/** Equip preserves the incoming hand; save repair preserves main-hand. Quiver requirements cannot be displaced. */
+function resolveHandPair(
+  mainHand: GearDefinition | undefined,
+  offHand: GearDefinition | undefined,
+  incomingSlot?: HandSlot,
+): HandPairResolution {
+  if (offHand?.slotRule === "quiver" && mainHand?.slotRule !== "ranged") {
+    return incomingSlot ? "reject" : "off-hand";
+  }
+  if (mainHand?.slotRule === "ranged" && offHand && !isQuiver(offHand)) {
+    return incomingSlot === "off-hand" ? "reject" : "off-hand";
+  }
+  if (mainHand?.slotRule === "two-handed" && offHand) {
+    return incomingSlot === "off-hand" ? "main-hand" : "off-hand";
+  }
+  return "compatible";
+}
+
+function resolveLoadoutEquip(
+  definition: GearDefinition,
+  slot: GearSlot,
+  characterLoadout: GearLoadouts[GearCharacterId],
+  inventory: GearInstance[],
+): HandPairResolution {
+  if (!isGearCompatibleWithSlot(definition, slot)) return "reject";
+  if (slot !== "main-hand" && slot !== "off-hand") return "compatible";
+  return resolveHandPair(
+    slot === "main-hand" ? definition : resolveEquippedDefinitionAt(inventory, characterLoadout, "main-hand"),
+    slot === "off-hand" ? definition : resolveEquippedDefinitionAt(inventory, characterLoadout, "off-hand"),
+    slot,
+  );
+}
+
 export function isGearCompatibleWithLoadoutSlot(
   definition: GearDefinition,
   slot: GearSlot,
   characterLoadout: GearLoadouts[GearCharacterId],
   inventory: GearInstance[],
 ): boolean {
-  if (!isGearCompatibleWithSlot(definition, slot)) return false;
-
-  const mainHandDef = resolveEquippedDefinitionAt(inventory, characterLoadout, "main-hand");
-  const offHandDef = resolveEquippedDefinitionAt(inventory, characterLoadout, "off-hand");
-
-  if (slot === "off-hand") {
-    if (isQuiver(definition)) {
-      return mainHandDef ? isRangedWeapon(mainHandDef) : false;
-    }
-    if (mainHandDef && isRangedWeapon(mainHandDef)) {
-      return false;
-    }
-  }
-  if (slot === "main-hand" && !isRangedWeapon(definition) && offHandDef && isQuiver(offHandDef)) {
-    return false;
-  }
-  return true;
-}
-
-function resolveHandConflicts(
-  characterLoadout: GearLoadouts[GearCharacterId],
-  slot: GearSlot,
-  definition: GearDefinition,
-  inventory: GearInstance[],
-): GearLoadouts[GearCharacterId] {
-  if (slot !== "main-hand" && slot !== "off-hand") return characterLoadout;
-  if (slot === "main-hand" && isTwoHanded(definition)) {
-    return { ...characterLoadout, "off-hand": null };
-  }
-  if (slot === "off-hand") {
-    const mainHandDefinition = resolveEquippedDefinitionAt(inventory, characterLoadout, "main-hand");
-    if (mainHandDefinition && isTwoHanded(mainHandDefinition)) {
-      return { ...characterLoadout, "main-hand": null };
-    }
-    return characterLoadout;
-  }
-  const offHandDef = resolveEquippedDefinitionAt(inventory, characterLoadout, "off-hand");
-  if (!offHandDef) return characterLoadout;
-  // Note: no off-hand-compatible base is two-handed (two-handers are all
-  // main-hand only), so only quiver/range pairing needs repair here.
-  if (isQuiver(offHandDef) && !isRangedWeapon(definition)) return { ...characterLoadout, "off-hand": null };
-  if (isRangedWeapon(definition) && !isQuiver(offHandDef)) return { ...characterLoadout, "off-hand": null };
-  return characterLoadout;
-}
-
-/**
- * Steady-state hand repair shared by loadout normalization: a two-handed main
- * hand, a quiver without a ranged main hand, and a ranged main hand without a
- * quiver each forfeit the off-hand slot. The equip path additionally prefers
- * an incoming item over the incumbent (see resolveHandConflicts), so the two
- * must not be merged.
- */
-function repairHandPairing(
-  characterLoadout: GearLoadouts[GearCharacterId],
-  inventoryOrLookup: GearInstance[] | ReadonlyMap<string, GearInstance>,
-): GearLoadouts[GearCharacterId] {
-  const mainHand = resolveEquippedDefinitionAt(inventoryOrLookup, characterLoadout, "main-hand");
-  const offHand = resolveEquippedDefinitionAt(inventoryOrLookup, characterLoadout, "off-hand");
-  if (mainHand && isTwoHanded(mainHand) && characterLoadout["off-hand"]) {
-    return { ...characterLoadout, "off-hand": null };
-  }
-  if (offHand && isQuiver(offHand) && (!mainHand || !isRangedWeapon(mainHand))) {
-    return { ...characterLoadout, "off-hand": null };
-  }
-  if (mainHand && isRangedWeapon(mainHand) && offHand && !isQuiver(offHand)) {
-    return { ...characterLoadout, "off-hand": null };
-  }
-  return characterLoadout;
+  return resolveLoadoutEquip(definition, slot, characterLoadout, inventory) !== "reject";
 }
 
 export function pruneOrphanGearLoadouts(inventory: GearInstance[], loadouts: GearLoadouts): GearLoadouts {
@@ -135,9 +104,9 @@ export function pruneOrphanGearLoadouts(inventory: GearInstance[], loadouts: Gea
       const definition = instance ? gearDefinitions[instance.definitionId] : undefined;
       if (instanceId && definition && isGearCompatibleWithSlot(definition, slot)) next[characterId][slot] = instanceId;
     }
-    // Crafted/legacy saves cannot hold hand pairings the equip path would
-    // never produce; repair them with the same steady-state rule.
-    next[characterId] = repairHandPairing(next[characterId], inventoryById);
+    const mainHand = resolveEquippedDefinitionAt(inventoryById, next[characterId], "main-hand");
+    const offHand = resolveEquippedDefinitionAt(inventoryById, next[characterId], "off-hand");
+    if (resolveHandPair(mainHand, offHand) !== "compatible") next[characterId]["off-hand"] = null;
   }
 
   return normalizeExclusiveGearLoadouts(next);
@@ -153,11 +122,13 @@ export function equipGear(
   const definition = gearDefinitions[instance.definitionId];
   if (!definition) return loadouts;
   if (!inventory.some((item) => item.instanceId === instance.instanceId)) return loadouts;
-  if (!isGearCompatibleWithLoadoutSlot(definition, slot, loadouts[characterId], inventory)) return loadouts;
+  const resolution = resolveLoadoutEquip(definition, slot, loadouts[characterId], inventory);
+  if (resolution === "reject") return loadouts;
 
   const next = removeGearFromLoadouts(loadouts, instance.instanceId);
   const characterLoadout = { ...next[characterId], [slot]: instance.instanceId };
-  next[characterId] = resolveHandConflicts(characterLoadout, slot, definition, inventory);
+  if (resolution !== "compatible") characterLoadout[resolution] = null;
+  next[characterId] = characterLoadout;
   return pruneOrphanGearLoadouts(inventory, next);
 }
 

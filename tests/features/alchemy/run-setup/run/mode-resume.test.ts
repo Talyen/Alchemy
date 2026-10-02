@@ -20,7 +20,7 @@ import { ANCIENT_ALTAR_MYSTERY_VISIT } from "../../shared/stores/active-run-data
 
 beforeEach(resetAllTestStores);
 
-function createNavigation(onStartBattle = vi.fn()) {
+function createNavigation(startBattle = vi.fn()) {
   const navigateTo = (screen: Screen, onCommit?: () => void) => {
     dispatchRunSessionCommand((draft) => setScreen(draft, screen));
     onCommit?.();
@@ -28,7 +28,7 @@ function createNavigation(onStartBattle = vi.fn()) {
   return createContentSystemNavigation({
     navigateTo,
     resumeTo: navigateTo,
-    onStartBattle,
+    startBattle,
     getAvailableDestinations: () => ["Normal Combat"],
     onResumeWildwood: vi.fn(),
   });
@@ -89,8 +89,8 @@ describe("saved mode navigation", () => {
   });
 
   it("keeps a completed Campaign Wildcard draft at confirmation after reload", () => {
-    const onStartBattle = vi.fn();
-    const nav = createNavigation(onStartBattle);
+    const startBattle = vi.fn();
+    const nav = createNavigation(startBattle);
     nav.beginCampaign();
     nav.handleCharacterSelect("wildcard");
     for (let round = 0; round < DRAFT_ROUNDS; round += 1) {
@@ -102,20 +102,18 @@ describe("saved mode navigation", () => {
 
     dispatchRunSessionCommand((draft) => setScreen(draft, "menu"));
     nav.handleStandardDraftComplete();
-    expect(onStartBattle).not.toHaveBeenCalled();
+    expect(startBattle).not.toHaveBeenCalled();
     reloadSavedRuns();
     nav.resumeRun();
 
     expect(readActiveRunScreen()).toBe("draft-deck");
     expect(readRunSession().starterDraftChoices).toEqual([]);
     nav.handleStandardDraftComplete();
-    expect(onStartBattle).toHaveBeenCalledExactlyOnceWith(
-      expect.any(Array),
-      expect.any(Number),
-      "normal",
-      expect.any(Array),
-      "skeleton",
-    );
+    expect(startBattle).toHaveBeenCalledExactlyOnceWith({
+      enemyType: "normal",
+      modifiers: expect.any(Array),
+      enemyId: "skeleton",
+    });
     expect(readActiveRunScreen()).toBe("battle");
     expect(readRunSession().starterDraftChoices).toBeNull();
   });
@@ -124,8 +122,8 @@ describe("saved mode navigation", () => {
     dispatchRunSessionCommand((draft) => {
       draft.profile.completedDifficulties.wildcard = [DEFAULT_CAMPAIGN_DIFFICULTY_ID];
     });
-    const onStartBattle = vi.fn();
-    const nav = createNavigation(onStartBattle);
+    const startBattle = vi.fn();
+    const nav = createNavigation(startBattle);
     nav.beginCampaign();
     nav.handleCharacterSelect("wildcard");
     for (let round = 0; round < DRAFT_ROUNDS; round += 1) {
@@ -142,7 +140,7 @@ describe("saved mode navigation", () => {
     nav.handleStandardDraftComplete();
     expect(readActiveRunScreen()).toBe("difficulty-select");
     expect(readRunSession().starterDraftChoices).toBeNull();
-    expect(onStartBattle).not.toHaveBeenCalled();
+    expect(startBattle).not.toHaveBeenCalled();
   });
 
   it.each(["shop", "rewards", "mystery", "corruption"] as const)(

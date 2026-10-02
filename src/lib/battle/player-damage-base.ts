@@ -6,7 +6,7 @@ import {
   type DamageType,
   type TalentEffectManifest,
 } from "@/lib/game-data";
-import { BLOCK_SCALED_DAMAGE_PERCENT, BURN_BLOCK_SCALED_DAMAGE_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
+import { BURN_BLOCK_SCALED_DAMAGE_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
 import { scalePercent, scalePerMana } from "./amount-helpers";
 import { flatDamageBonus } from "./damage-modifiers";
 import { getPoisonBonusAgainstBleeding, getPoisonDamageMultiplierAgainstBleeding } from "./status-helpers";
@@ -19,20 +19,17 @@ function forgeDamagePercent(
   companionAttack = false,
 ): number {
   if (companionAttack && (gear?.companionBenefitsFromForge ?? 0) > 0) return PERCENT_DENOMINATOR;
-  // Full-strength Homestead/Gear grants and legacy snapshot flags take precedence;
+  // Full-strength Homestead/Gear grants take precedence;
   // overlapping permissions do not award Forge twice.
-  const burn = Math.max(
-    talents.forgeToBurn ? PERCENT_DENOMINATOR : talents.forgeBurnDamagePercent,
-    talents.homesteadForgeBurnPercent ?? 0,
-  );
-  const bleed = talents.forgeToBleed ? PERCENT_DENOMINATOR : talents.forgeBleedDamagePercent;
+  const burn = Math.max(talents.forgeBurnDamagePercent, talents.homesteadForgeBurnPercent ?? 0);
+  const bleed = talents.forgeBleedDamagePercent;
   const shared = (gear?.sharedBurnBleedBonuses ?? 0) > 0;
   switch (damageType) {
     case "physical":
     case "stun":
       return PERCENT_DENOMINATOR;
     case "holy":
-      return talents.forgeToHoly || (gear?.holyPreservesForge ?? 0) > 0 || (gear?.goldGrantsForgeAndHoly ?? 0) > 0
+      return (gear?.holyPreservesForge ?? 0) > 0 || (gear?.goldGrantsForgeAndHoly ?? 0) > 0
         ? PERCENT_DENOMINATOR
         : talents.forgeHolyDamagePercent;
     case "burn":
@@ -103,11 +100,7 @@ function computeBaseRawAmount(
 
 function applyPhysicalScaling(state: BattleState, rawAmount: number): number {
   let nextAmount = rawAmount + flatDamageBonus(state, "physical");
-  if (state.talentEffects.armorToPhysicalDamage) {
-    nextAmount += state.playerStatuses.armor;
-  } else {
-    nextAmount += scalePercent(state.playerStatuses.armor, state.talentEffects.armorPhysicalDamagePercent);
-  }
+  nextAmount += scalePercent(state.playerStatuses.armor, state.talentEffects.armorPhysicalDamagePercent);
 
   if (state.talentEffects.blockToPhysicalDamageMultiplier > 0) {
     nextAmount += Math.round(state.playerStatuses.block * state.talentEffects.blockToPhysicalDamageMultiplier);
@@ -131,11 +124,7 @@ function applyHolyDamageModifiers(state: BattleState, rawAmount: number): number
     PERCENT_DENOMINATOR,
   );
   nextAmount += scalePercent(state.gold, state.gearEffects.holyDamageFromGoldPercent, PERCENT_DENOMINATOR);
-  if (state.talentEffects.blockToHolyDamage) {
-    nextAmount += blockScaledDamage(state, BLOCK_SCALED_DAMAGE_PERCENT);
-  } else {
-    nextAmount += blockScaledDamage(state, state.talentEffects.blockHolyDamagePercent);
-  }
+  nextAmount += blockScaledDamage(state, state.talentEffects.blockHolyDamagePercent);
   return nextAmount;
 }
 
@@ -145,11 +134,7 @@ function applyBleedDamageModifiers(state: BattleState, rawAmount: number): numbe
 
 function applyStunDamageModifiers(state: BattleState, rawAmount: number): number {
   let nextAmount = rawAmount + flatDamageBonus(state, "stun");
-  if (state.talentEffects.blockToStunDamage) {
-    nextAmount += blockScaledDamage(state, BLOCK_SCALED_DAMAGE_PERCENT);
-  } else {
-    nextAmount += blockScaledDamage(state, state.talentEffects.blockStunDamagePercent);
-  }
+  nextAmount += blockScaledDamage(state, state.talentEffects.blockStunDamagePercent);
   return nextAmount;
 }
 
@@ -178,11 +163,7 @@ function applyFreezeDamageModifiers(state: BattleState, rawAmount: number): numb
 
 function applyNatureDamageModifiers(state: BattleState, rawAmount: number): number {
   let nextAmount = rawAmount + flatDamageBonus(state, "nature");
-  if (state.talentEffects.armorToNatureDamage) {
-    nextAmount += state.playerStatuses.armor;
-  } else {
-    nextAmount += scalePercent(state.playerStatuses.armor, state.talentEffects.armorNatureDamagePercent);
-  }
+  nextAmount += scalePercent(state.playerStatuses.armor, state.talentEffects.armorNatureDamagePercent);
   if (state.enemyStatuses.poison > 0) {
     nextAmount += state.talentEffects.natureBonusVsPoisoned;
   }

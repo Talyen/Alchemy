@@ -405,26 +405,43 @@ describe("gear domain", () => {
       expect(result.knight["off-hand"]).toBe(quiver.instanceId);
     });
 
-    it("rejects equipping a non-ranged main-hand when a quiver is in the off-hand", () => {
-      const loadouts: GearLoadouts = createEmptyGearLoadouts();
-      loadouts.knight["off-hand"] = quiver.instanceId;
-      const inventory = [quiver, longsword];
+    it.each(["longsword-basic", "staff-basic"])(
+      "rejects equipping %s while a Quiver is in off-hand",
+      (definitionId) => {
+        const loadouts: GearLoadouts = createEmptyGearLoadouts();
+        loadouts.knight["off-hand"] = quiver.instanceId;
+        const weapon = makeGearInstance(definitionId);
+        const inventory = [quiver, weapon];
+        expect(
+          isGearCompatibleWithLoadoutSlot(gearDefinitions[definitionId], "main-hand", loadouts.knight, inventory),
+        ).toBe(false);
+        expect(equipGear(loadouts, "knight", "main-hand", weapon, inventory)).toBe(loadouts);
+      },
+    );
+
+    it("displaces a shield when equipping a bow but rejects the reverse selection", () => {
+      const inventory = [longbow, buckler, ring];
+      const withRing = equipGear(createEmptyGearLoadouts(), "knight", "left-accessory", ring, inventory);
+      const withShield = equipGear(withRing, "knight", "off-hand", buckler, inventory);
       expect(
-        isGearCompatibleWithLoadoutSlot(gearDefinitions["longsword-basic"], "main-hand", loadouts.knight, inventory),
-      ).toBe(false);
-      const result = equipGear(loadouts, "knight", "main-hand", longsword, inventory);
-      expect(result.knight["main-hand"]).toBeNull();
-      expect(result.knight["off-hand"]).toBe(quiver.instanceId);
+        isGearCompatibleWithLoadoutSlot(
+          gearDefinitions[longbow.definitionId],
+          "main-hand",
+          withShield.knight,
+          inventory,
+        ),
+      ).toBe(true);
+      const withBow = equipGear(withShield, "knight", "main-hand", longbow, inventory);
+      expect(withBow.knight).toEqual({ ...withRing.knight, "main-hand": longbow.instanceId });
+      expect(withShield.knight["off-hand"]).toBe(buckler.instanceId);
+      expect(equipGear(withBow, "knight", "off-hand", buckler, inventory)).toBe(withBow);
     });
 
-    it("resolveHandConflicts clears the off-hand quiver when a non-ranged main-hand is equipped", () => {
+    it("allows a melee weapon after the player unequips their Quiver", () => {
       const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "main-hand", longbow, [longbow]);
       const withQuiver = equipGear(loadouts, "knight", "off-hand", quiver, [longbow, quiver]);
       expect(withQuiver.knight["off-hand"]).toBe(quiver.instanceId);
-      const withQuiverRemoved: GearLoadouts = {
-        ...withQuiver,
-        knight: { ...withQuiver.knight, "off-hand": null },
-      };
+      const withQuiverRemoved = unequipGear(withQuiver, "knight", "off-hand", [longbow, quiver]);
       const swapped = equipGear(withQuiverRemoved, "knight", "main-hand", longsword, [longbow, quiver, longsword]);
       expect(swapped.knight["main-hand"]).toBe(longsword.instanceId);
       expect(swapped.knight["off-hand"]).toBeNull();

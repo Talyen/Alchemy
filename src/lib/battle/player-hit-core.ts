@@ -60,11 +60,15 @@ export type HitRequest =
   | Readonly<{ source: "reflected-holy"; blockLost: number }>
   | Readonly<{ source: "attack-purge" }>;
 
-export function applyBleedDamageDraw(state: BattleState, healthDamage: number): BattleState {
+export function applyBleedDamageDraw(
+  state: BattleState,
+  healthDamage: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
   if (healthDamage <= 0 || !rollTalentChance(state.talentEffects.drawOnBleedDamageChance, state)) {
     return state;
   }
-  return applyDrawResult(state, drawFromState(state, 1));
+  return applyDrawResult(state, drawFromState(state, 1), combatTexts);
 }
 
 export function applyElementalDamageManaRestore(

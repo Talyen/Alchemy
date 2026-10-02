@@ -45,12 +45,12 @@ describe("card hit resolution", () => {
 });
 
 describe("damage riders via applyCardEffects", () => {
-  it("armorToPhysicalDamage adds armor to physical damage", () => {
+  it("armorPhysicalDamagePercent adds armor to physical damage", () => {
     const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
       playerStatuses: defaultPlayerStatusValues({ armor: 6 }),
-      talentEffects: { ...defaultTalentEffects, armorToPhysicalDamage: true },
+      talentEffects: { ...defaultTalentEffects, armorPhysicalDamagePercent: 100 },
       rng: seededRng(99),
       deck: [],
       hand: [],
@@ -199,12 +199,12 @@ describe("damage riders via applyCardEffects", () => {
     expect(result.enemyStatuses.stun).toBeGreaterThanOrEqual(5);
   });
 
-  it("armorToNatureDamage adds armor to nature damage", () => {
+  it("armorNatureDamagePercent adds armor to nature damage", () => {
     const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
       playerStatuses: defaultPlayerStatusValues({ armor: 4 }),
-      talentEffects: { ...defaultTalentEffects, armorToNatureDamage: true },
+      talentEffects: { ...defaultTalentEffects, armorNatureDamagePercent: 100 },
       rng: () => 0.99,
       deck: [],
       hand: [],

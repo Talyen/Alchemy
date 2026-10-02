@@ -12,7 +12,7 @@ import {
   shouldBlockPreventStatusBuildup,
 } from "./status-player";
 import type { BattleState, CombatTextEvent, CombatTextStat } from "./types";
-import { hasEnemyTrait } from "./types/state-helpers";
+import { hasEnemyTrait, isPlayerDefeated } from "./types/state-helpers";
 
 function applyVanguardCrestAfterBlock(
   state: BattleState,
@@ -48,13 +48,20 @@ function resolvePostDamageThresholds(
   damageType: string,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  let nextState = applyVanguardCrestAfterBlock(state, blockAbsorb, remainingDamage, combatTexts);
-  nextState = checkHealthThresholds(prevHealth, nextState.playerHealth, nextState, combatTexts);
+  const healthAfterHit = state.playerHealth;
   let armorLost = 0;
-  nextState = decayArmorAfterDamage(nextState, actualDamage, "player", combatTexts, (amount) => {
+  // Decay the Armor present for the hit before threshold rewards grant new Armor.
+  let nextState = decayArmorAfterDamage(state, actualDamage, "player", combatTexts, (amount) => {
     armorLost = amount;
   });
-  if (armorLost > 0 && nextState.enemyHealth > 0 && nextState.gearEffects.stunOnArmorLostToAttack > 0) {
+  nextState = applyVanguardCrestAfterBlock(nextState, blockAbsorb, remainingDamage, combatTexts);
+  nextState = checkHealthThresholds(prevHealth, healthAfterHit, nextState, combatTexts);
+  if (
+    armorLost > 0 &&
+    !isPlayerDefeated(nextState) &&
+    nextState.enemyHealth > 0 &&
+    nextState.gearEffects.stunOnArmorLostToAttack > 0
+  ) {
     nextState = resolveFollowUpHit(
       nextState,
       { source: "player-follow-up", damageType: "stun", amount: nextState.gearEffects.stunOnArmorLostToAttack },
@@ -66,12 +73,13 @@ function resolvePostDamageThresholds(
 }
 
 function recordPlayerHealthLost(
-  prevHealth: number,
+  prevState: BattleState,
   nextState: BattleState,
   damageType: CombatTextStat,
   combatTexts: CombatTextEvent[],
 ) {
-  const healthLost = prevHealth - nextState.playerHealth;
+  const phoenixTriggered = prevState.playerStatuses.phoenixFeather > 0 && nextState.playerStatuses.phoenixFeather === 0;
+  const healthLost = phoenixTriggered ? prevState.playerHealth : prevState.playerHealth - nextState.playerHealth;
   if (healthLost > 0) {
     const stat = damageType === "physical" ? "health" : damageType;
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat, amount: healthLost });
@@ -84,6 +92,7 @@ function applyBlockDepletedHeal(
   combatTexts: CombatTextEvent[],
   isBlockDepleted: boolean,
 ): BattleState {
+  if (isPlayerDefeated(nextState)) return nextState;
   let finalState = nextState;
   const healAmount = prevState.talentEffects.blockDepletedHeal + prevState.gearEffects.blockDepletedHeal;
 
@@ -159,7 +168,7 @@ export function applyPlayerDefensiveReactions(
   if (blockAbsorb > 0 && state.gearEffects.blockReadiesFreePhysical > 0) {
     nextState = { ...nextState, uniqueGear: { ...nextState.uniqueGear, knightsAnswerReady: true } };
   }
-  recordPlayerHealthLost(prevHealth, nextState, effect.damageType, combatTexts);
+  recordPlayerHealthLost(state, nextState, effect.damageType, combatTexts);
 
   if (
     nextState.enemyHealth > 0 &&

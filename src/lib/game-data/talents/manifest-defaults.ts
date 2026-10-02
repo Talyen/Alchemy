@@ -5,7 +5,7 @@ interface HealthThresholdBonus {
 }
 
 export const DEFAULT_TALENT_EFFECTS = {
-  // Numeric tuning for current talents; earlier boolean fields remain readable in saved snapshots.
+  // Resource scaling has one percentage value per bonus.
   armorLowHealthBonusPercent: 0,
   partingCutDamagePercent: 0,
   blockHolyDamagePercent: 0,
@@ -124,7 +124,6 @@ export const DEFAULT_TALENT_EFFECTS = {
   homesteadFreeManaChance: 0,
   homesteadForgeBurnPercent: 0,
 
-  armorToPhysicalDamage: false,
   physicalStunChance: 0,
   physicalBleedChance: 0,
   physicalDetonatesBleed: false,
@@ -156,31 +155,23 @@ export const DEFAULT_TALENT_EFFECTS = {
   blockAbsorbPhysicalBonus: 0,
   blockReduceBurnDamage: 0,
   blockDepletedHeal: 0,
-  blockToHolyDamage: false,
-  blockToStunDamage: false,
   blockOnDodgeEqualToAttack: false,
 
   startForge: 0,
   forgeBurningBonusPercent: 0,
   forgeDoubleChance: 0,
   forgeOnBlockDepleted: 0,
-  forgeToBurn: false,
-  forgeToHoly: false,
-  forgeToBlock: false,
-  forgeToBleed: false,
   forgeBurnThreshold: 0,
   forgeBurnDamage: 0,
   forgeStripArmorThreshold: 0,
   physicalStripArmorByForge: false,
   flatForgeGained: 0,
-  forgeDoubledBelowHalfHealth: false,
   forgeBlockThreshold: 0,
   forgeBlockAmount: 0,
 
   armorMitigatesBurn: false,
   armorBlockThreshold: 0,
   armorBlockAmount: 0,
-  armorDoubledBelowHalfHealth: false,
   firstArmorCardDoubled: false,
   startArmor: 0,
   armorMitigatesBleed: false,
@@ -350,7 +341,6 @@ export const DEFAULT_TALENT_EFFECTS = {
   natureBonusVsPoisoned: 0,
   receiveHalfNatureDamage: false,
   natureStunChance: 0,
-  armorToNatureDamage: false,
   blockOnNatureCard: 0,
   healOnNatureCard: 0,
   nextNatureCardFreeOnDodge: false,

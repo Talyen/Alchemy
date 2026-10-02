@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { resolvePlasmaBackingScale } from "@/lib/animation/keyword-plasma-lifecycle";
 import { startKeywordPlasma } from "@/lib/animation/keyword-plasma";
 import { startWebGLKeywordPlasma } from "@/lib/animation/keyword-plasma-webgl";
 
@@ -8,13 +7,6 @@ vi.mock("@/lib/error-logger", () => ({ logError: vi.fn() }));
 
 beforeEach(() => vi.clearAllMocks());
 afterEach(() => vi.unstubAllGlobals());
-
-it("bounds the backing surface on large displays", () => {
-  vi.stubGlobal("devicePixelRatio", 2);
-  const scale = resolvePlasmaBackingScale(3840, 2160);
-  expect(3840 * 2160 * scale * scale).toBeLessThanOrEqual(1_500_001);
-  expect(scale).toBeGreaterThan(0);
-});
 
 describe("plasma availability", () => {
   function setup() {

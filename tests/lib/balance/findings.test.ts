@@ -11,6 +11,7 @@ import {
   type PairedTierRow,
   type RateCell,
 } from "@/lib/balance";
+import { collectBalanceFindings } from "@/lib/balance/findings-collector";
 import { emptyPairedWinStats } from "@/lib/balance/report-rankings";
 
 function cell(partial: Partial<RateCell>): RateCell {
@@ -222,21 +223,60 @@ describe("evaluateBalanceFindings", () => {
     expect(findings.some((finding) => finding.id === "flat-poison:turns")).toBe(false);
   });
 
-  it("checks enemy equity in early and mid game", () => {
+  it("compares sampled enemies within their type and classes within their tier", () => {
     const model = emptyModel();
-    model.enemies = ["skeleton", "goblin", "slime"].map((id, index) => ({
-      id,
-      rates: rates(
-        emptyRateCell(),
-        cell({ winRate: index === 0 ? 0.5 : 0.95 }),
-        cell({ winRate: index === 0 ? 0.5 : 0.95 }),
-      ),
-    }));
-    const findings = evaluateBalanceFindings(model).findings;
+    const sampledRates = (winRate: number) => rates(emptyRateCell(), cell({ winRate }), cell({ winRate }));
+    model.enemies = [
+      { id: "skeleton", rates: sampledRates(0.5) },
+      { id: "goblin", rates: sampledRates(0.95) },
+      { id: "slime", rates: sampledRates(0.95) },
+      { id: "mimic", rates: sampledRates(0.1) },
+      { id: "necromancer", rates: rates(emptyRateCell()) },
+    ];
+    const ratesByType = {
+      early: { normal: emptyRateCell(), elite: emptyRateCell(), boss: emptyRateCell() },
+      mid: { normal: emptyRateCell(), elite: emptyRateCell(), boss: emptyRateCell() },
+      late: { normal: emptyRateCell(), elite: emptyRateCell(), boss: emptyRateCell() },
+    };
+    model.classes = [
+      { id: "wizard", rates: sampledRates(0.5), ratesByType },
+      { id: "rogue", rates: sampledRates(0.95), ratesByType },
+      { id: "knight", rates: sampledRates(0.95), ratesByType },
+      { id: "alchemist", rates: rates(emptyRateCell()), ratesByType },
+    ];
+    const equity = collectBalanceFindings(model).filter((finding) => finding.bucket === "equity");
     expect(
-      findings.some((finding) => finding.id === "skeleton" && finding.tier === "early" && finding.bucket === "equity"),
-    ).toBe(true);
-    expect(findings.some((finding) => finding.id === "skeleton" && finding.tier === "mid")).toBe(true);
+      equity.map(({ scope, id, tier, band, worstScenario }) => ({ scope, id, tier, band, worstScenario })),
+    ).toEqual([
+      {
+        scope: "enemy",
+        id: "skeleton",
+        tier: "early",
+        band: "within 15% of normal median (95.0%)",
+        worstScenario: "Skeleton (early)",
+      },
+      {
+        scope: "enemy",
+        id: "skeleton",
+        tier: "mid",
+        band: "within 15% of normal median (95.0%)",
+        worstScenario: "Skeleton (mid)",
+      },
+      {
+        scope: "class",
+        id: "wizard",
+        tier: "early",
+        band: "within 15% of class median (95.0%)",
+        worstScenario: "Wizard overall (early)",
+      },
+      {
+        scope: "class",
+        id: "wizard",
+        tier: "mid",
+        band: "within 15% of class median (95.0%)",
+        worstScenario: "Wizard overall (mid)",
+      },
+    ]);
   });
 
   it("flags anomaly spikes over threshold and ignores values under it", () => {

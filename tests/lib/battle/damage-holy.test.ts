@@ -26,10 +26,10 @@ describe("computeBaseDamage — holy damage", () => {
     expect(result.enemyHealth).toBe(30 - 7);
   });
 
-  it("scales holy damage with block when blockToHolyDamage is active", () => {
+  it("scales holy damage with block when blockHolyDamagePercent is active", () => {
     const state = patchBattleState({
       playerStatuses: defaultPlayerStatusValues({ block: 10 }),
-      talentEffects: { ...defaultTalentEffects, blockToHolyDamage: true },
+      talentEffects: { ...defaultTalentEffects, blockHolyDamagePercent: 30 },
     });
     const card = makeTestCard({ effects: [makeEffect("holy", 5)] });
     const result = dealDamage(state, card);

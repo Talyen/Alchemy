@@ -187,7 +187,7 @@ describe("encodeRunResumeSnapshot", () => {
       idle: (encoded: ActiveRunData) =>
         encoded.shopState === null && encoded.alchemistState === null && encoded.trinketShopState === null,
     },
-  ])("encodePersistedShops keeps only $screen offerings", ({ screen, seed, active, idle }) => {
+  ])("keeps only $screen offerings", ({ screen, seed, active, idle }) => {
     seed();
     const encoded = encodeState(screen);
     expect(active(encoded)).toBe(true);

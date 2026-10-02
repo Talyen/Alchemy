@@ -19,13 +19,7 @@ import {
   type FindingsTier,
 } from "./findings-types";
 import { REPORT_ENEMY_TYPES, REPORT_TIERS, titleFor } from "./report-catalog";
-import type {
-  BalanceReportModel,
-  ClassMatchupRow,
-  ClassTypeSplitRow,
-  PairedTierRow,
-  TierRateRow,
-} from "./report-model";
+import type { BalanceReportModel, ClassMatchupRow, PairedTierRow, TierRateRow } from "./report-model";
 import { isDeltaNoisy, type RateCell } from "./report-rankings";
 
 const ENEMY_CAUSE_HINTS: Record<string, string> = {
@@ -39,12 +33,19 @@ const ENEMY_CAUSE_HINTS: Record<string, string> = {
   necromancer: "Fangs, Bloodthorn, and Rend; double Holy damage received.",
 };
 
-function causeHintSpread(id: string): { causeHint?: string } {
-  const hint = ENEMY_CAUSE_HINTS[id];
-  return hint ? { causeHint: hint } : {};
+const REVIEW_SUFFIX = " Discuss before applying a change.";
+
+type FindingContext = Pick<BalanceFinding, "scope" | "id" | "title" | "tier" | "worstScenario" | "causeHint">;
+type FindingDetails = Omit<BalanceFinding, keyof FindingContext>;
+
+function finding(context: FindingContext, details: FindingDetails): BalanceFinding {
+  return { ...context, ...details, recommendation: `${details.recommendation}${REVIEW_SUFFIX}` };
 }
 
-const REVIEW_SUFFIX = " Discuss before applying a change.";
+function enemyCauseHint(id: string): Pick<FindingContext, "causeHint"> {
+  const causeHint = ENEMY_CAUSE_HINTS[id];
+  return causeHint ? { causeHint } : {};
+}
 
 function enemyTypeOf(id: string): EnemyTypeBand | undefined {
   return isEnemyId(id) ? enemyById[id].enemyType : undefined;
@@ -60,239 +61,162 @@ function median(values: readonly number[]): number {
   return (low + high) / 2;
 }
 
-function collectRateFindings(options: {
-  scope: FindingScope;
-  id: string;
-  title: string;
-  tier: FindingsTier;
-  cell: RateCell;
-  enemyType: EnemyTypeBand | undefined;
-  worstScenario: string;
-  causeHint?: string;
-}): BalanceFinding[] {
-  const findings: BalanceFinding[] = [];
-  const { scope, id, title, tier, cell, enemyType, worstScenario, causeHint } = options;
-  if (cell.n <= 0) return findings;
+function collectRateFindings({
+  cell,
+  enemyType,
+  ...context
+}: FindingContext & { cell: RateCell; enemyType: EnemyTypeBand | undefined }): BalanceFinding[] {
+  const details: FindingDetails[] = [];
+  if (cell.n <= 0) return [];
 
   if (cell.timeoutRate >= MATERIAL_TIMEOUT_RATE) {
-    findings.push({
+    details.push({
       severity: "critical",
-      scope,
-      id,
-      title,
-      tier,
       metric: "timeoutRate",
       bucket: "timeout",
       observed: cell.timeoutRate,
       band: `< ${(MATERIAL_TIMEOUT_RATE * 100).toFixed(0)}% timeouts`,
-      worstScenario,
-      ...(causeHint ? { causeHint } : {}),
-      recommendation: `Fights hit the 30-turn cap (stall).${REVIEW_SUFFIX}`,
+      recommendation: "Fights hit the 30-turn cap (stall).",
     });
   }
 
   if (isWinRateFloorOrCeiling(cell.winRate)) {
-    findings.push({
+    details.push({
       severity: "critical",
-      scope,
-      id,
-      title,
-      tier,
       metric: "winRate",
       bucket: "floorCeiling",
       observed: cell.winRate,
       band: "never 0% or 100%",
-      worstScenario,
-      ...(causeHint ? { causeHint } : {}),
-      recommendation: `Win rate is a floor or ceiling.${REVIEW_SUFFIX}`,
-    });
-  } else if (enemyType === "boss" && cell.winRate < WIN_RATE_BAND_BY_TYPE.boss.min) {
-    findings.push({
-      severity: "critical",
-      scope,
-      id,
-      title,
-      tier,
-      metric: "winRate",
-      bucket: "typeWinRate",
-      observed: cell.winRate,
-      band: formatWinRateBand("boss"),
-      worstScenario,
-      ...(causeHint ? { causeHint } : {}),
-      recommendation: `Boss win rate is below 70%.${REVIEW_SUFFIX}`,
+      recommendation: "Win rate is a floor or ceiling.",
     });
   } else if (enemyType && isWinRateOutsideTypeBand(cell.winRate, enemyType)) {
     const tooLow = cell.winRate < WIN_RATE_BAND_BY_TYPE[enemyType].min;
-    findings.push({
-      severity: "serious",
-      scope,
-      id,
-      title,
-      tier,
+    const hardBoss = enemyType === "boss" && tooLow;
+    details.push({
+      severity: hardBoss ? "critical" : "serious",
       metric: "winRate",
       bucket: "typeWinRate",
       observed: cell.winRate,
       band: formatWinRateBand(enemyType),
-      worstScenario,
-      ...(causeHint ? { causeHint } : {}),
-      recommendation: tooLow
-        ? `Win rate is below the ${enemyType} band.${REVIEW_SUFFIX}`
-        : `Win rate is above the ${enemyType} band.${REVIEW_SUFFIX}`,
+      recommendation: hardBoss
+        ? "Boss win rate is below 70%."
+        : `Win rate is ${tooLow ? "below" : "above"} the ${enemyType} band.`,
     });
   }
 
   if (enemyType && isLengthOutsideBand(cell.averageTurns, enemyType)) {
     const tooShort = cell.averageTurns < LENGTH_BAND_BY_TYPE[enemyType].min;
-    findings.push({
+    details.push({
       severity: "serious",
-      scope,
-      id,
-      title,
-      tier,
       metric: "averageTurns",
       bucket: "length",
       observed: cell.averageTurns,
       band: formatLengthBand(enemyType),
-      worstScenario,
-      ...(causeHint ? { causeHint } : {}),
-      recommendation: tooShort
-        ? `Fight is shorter than the ${enemyType} length band.${REVIEW_SUFFIX}`
-        : `Fight is longer than the ${enemyType} length band.${REVIEW_SUFFIX}`,
+      recommendation: `Fight is ${tooShort ? "shorter" : "longer"} than the ${enemyType} length band.`,
     });
   }
-  return findings;
+  return details.map((detail) => finding(context, detail));
 }
 
 function collectEnemyRateFindings(model: BalanceReportModel): BalanceFinding[] {
-  const findings: BalanceFinding[] = [];
-  for (const enemy of model.enemies) {
-    const enemyType = enemyTypeOf(enemy.id);
-    for (const { preset: tier } of REPORT_TIERS) {
+  return model.enemies.flatMap((enemy) =>
+    REPORT_TIERS.flatMap(({ preset: tier }) => {
       const title = titleFor("enemy", enemy.id);
-      findings.push(
-        ...collectRateFindings({
-          scope: "enemy",
-          id: enemy.id,
-          title,
-          tier,
-          cell: enemy.rates[tier],
-          enemyType,
-          worstScenario: `${title} (${tier})`,
-          ...causeHintSpread(enemy.id),
-        }),
-      );
-    }
-  }
-  return findings;
+      return collectRateFindings({
+        scope: "enemy",
+        id: enemy.id,
+        title,
+        tier,
+        cell: enemy.rates[tier],
+        enemyType: enemyTypeOf(enemy.id),
+        worstScenario: `${title} (${tier})`,
+        ...enemyCauseHint(enemy.id),
+      });
+    }),
+  );
 }
 
 function collectClassRateFindings(model: BalanceReportModel): BalanceFinding[] {
-  const findings: BalanceFinding[] = [];
-  for (const row of model.classes) {
-    const classTitle = titleFor("character", row.id);
-    for (const { preset: tier } of REPORT_TIERS) {
-      findings.push(
-        ...collectRateFindings({
+  return model.classes.flatMap((row) => {
+    const title = titleFor("character", row.id);
+    return [
+      ...REPORT_TIERS.flatMap(({ preset: tier }) =>
+        collectRateFindings({
           scope: "class",
           id: row.id,
-          title: classTitle,
+          title,
           tier,
           cell: row.rates[tier],
           enemyType: undefined,
-          worstScenario: `${classTitle} overall (${tier})`,
+          worstScenario: `${title} overall (${tier})`,
           ...(row.id === "wizard" || row.id === "warlock"
             ? { causeHint: "Burn (and Bleed for Warlock) can spike stacks quickly." }
             : {}),
         }),
-      );
-    }
-
-    for (const { preset: tier } of REPORT_TIERS) {
-      for (const enemyType of REPORT_ENEMY_TYPES) {
-        const cell = row.ratesByType[tier][enemyType];
-        if (cell.n <= 0) continue;
-        findings.push(
-          ...collectRateFindings({
+      ),
+      ...REPORT_TIERS.flatMap(({ preset: tier }) =>
+        REPORT_ENEMY_TYPES.flatMap((enemyType) =>
+          collectRateFindings({
             scope: "class",
             id: `${row.id}:${enemyType}`,
-            title: `${classTitle} vs ${enemyType}`,
+            title: `${title} vs ${enemyType}`,
             tier,
-            cell,
+            cell: row.ratesByType[tier][enemyType],
             enemyType,
-            worstScenario: `${classTitle} vs ${enemyType} (${tier})`,
+            worstScenario: `${title} vs ${enemyType} (${tier})`,
           }),
-        );
-      }
-    }
-  }
-  return findings;
+        ),
+      ),
+    ];
+  });
 }
 
-function collectEnemyTypeEquity(enemies: readonly TierRateRow[]): BalanceFinding[] {
-  const findings: BalanceFinding[] = [];
-  const byType: Record<EnemyTypeBand, TierRateRow[]> = { normal: [], elite: [], boss: [] };
-  for (const enemy of enemies) {
-    const enemyType = enemyTypeOf(enemy.id);
-    if (!enemyType) continue;
-    byType[enemyType].push(enemy);
-  }
-  for (const { preset: tier } of REPORT_TIERS) {
-    for (const enemyType of REPORT_ENEMY_TYPES) {
-      const rows = byType[enemyType];
-      const rates = rows.map((row) => row.rates[tier].winRate).filter((_, i) => (rows[i]?.rates[tier].n ?? 0) > 0);
-      if (rates.length < 2) continue;
-      const med = median(rates);
-      for (const row of rows) {
-        if (row.rates[tier].n <= 0) continue;
-        const spread = Math.abs(row.rates[tier].winRate - med);
-        if (spread < EQUITY_SPREAD) continue;
-        const title = titleFor("enemy", row.id);
-        findings.push({
-          severity: "serious",
-          scope: "enemy",
+function collectEquityFindings(
+  rows: readonly TierRateRow[],
+  tier: FindingsTier,
+  enemyType?: EnemyTypeBand,
+): BalanceFinding[] {
+  const scope = enemyType ? "enemy" : "class";
+  const sampled = rows.filter((row) => row.rates[tier].n > 0);
+  if (sampled.length < 2) return [];
+  const med = median(sampled.map((row) => row.rates[tier].winRate));
+  const pool = enemyType ? `${enemyType} median` : "class median";
+  return sampled.flatMap((row) => {
+    const observed = row.rates[tier].winRate;
+    if (Math.abs(observed - med) < EQUITY_SPREAD) return [];
+    const title = titleFor(scope === "enemy" ? "enemy" : "character", row.id);
+    return [
+      finding(
+        {
+          scope,
           id: row.id,
           title,
           tier,
+          worstScenario: `${title}${scope === "class" ? " overall" : ""} (${tier})`,
+          ...(scope === "enemy" ? enemyCauseHint(row.id) : {}),
+        },
+        {
+          severity: "serious",
           metric: "winRate",
           bucket: "equity",
-          observed: row.rates[tier].winRate,
-          band: `within ${EQUITY_SPREAD * 100}% of ${enemyType} median (${(med * 100).toFixed(1)}%)`,
-          worstScenario: `${title} (${tier})`,
-          ...causeHintSpread(row.id),
-          recommendation: `This ${enemyType} is 15pp+ from the type median (same power budget).${REVIEW_SUFFIX}`,
-        });
-      }
-    }
-  }
-  return findings;
+          observed,
+          band: `within ${EQUITY_SPREAD * 100}% of ${pool} (${(med * 100).toFixed(1)}%)`,
+          recommendation: `This ${enemyType ?? "class"} is 15pp+ from the ${enemyType ? "type" : "class"} median (same power budget).`,
+        },
+      ),
+    ];
+  });
 }
 
-function collectClassEquity(classes: readonly ClassTypeSplitRow[]): BalanceFinding[] {
-  const findings: BalanceFinding[] = [];
-  for (const { preset: tier } of REPORT_TIERS) {
-    const rates = classes.filter((row) => row.rates[tier].n > 0).map((row) => row.rates[tier].winRate);
-    if (rates.length < 2) continue;
-    const med = median(rates);
-    for (const row of classes) {
-      if (row.rates[tier].n <= 0) continue;
-      if (Math.abs(row.rates[tier].winRate - med) < EQUITY_SPREAD) continue;
-      const title = titleFor("character", row.id);
-      findings.push({
-        severity: "serious",
-        scope: "class",
-        id: row.id,
-        title,
-        tier,
-        metric: "winRate",
-        bucket: "equity",
-        observed: row.rates[tier].winRate,
-        band: `within ${EQUITY_SPREAD * 100}% of class median (${(med * 100).toFixed(1)}%)`,
-        worstScenario: `${title} overall (${tier})`,
-        recommendation: `This class is 15pp+ from the class median (same power budget).${REVIEW_SUFFIX}`,
-      });
-    }
+function collectEnemyTypeEquity(enemies: readonly TierRateRow[]): BalanceFinding[] {
+  const byType: Record<EnemyTypeBand, TierRateRow[]> = { normal: [], elite: [], boss: [] };
+  for (const enemy of enemies) {
+    const enemyType = enemyTypeOf(enemy.id);
+    if (enemyType) byType[enemyType].push(enemy);
   }
-  return findings;
+  return REPORT_TIERS.flatMap(({ preset: tier }) =>
+    REPORT_ENEMY_TYPES.flatMap((type) => collectEquityFindings(byType[type], tier, type)),
+  );
 }
 
 function collectMatchupFindings(model: BalanceReportModel): BalanceFinding[] {
@@ -322,48 +246,31 @@ function collectMatchupFindings(model: BalanceReportModel): BalanceFinding[] {
         const effectiveEnemyType = row.enemyType || enemyType;
         const matchupTitle = `${titleFor("character", row.characterId)} vs ${titleFor("enemy", row.enemyId)}`;
 
-        if (!clustered && spread >= EQUITY_SPREAD) {
-          findings.push(
-            ...collectRateFindings({
-              scope: "matchup",
-              id: `${row.characterId}:${row.enemyId}`,
-              title: matchupTitle,
-              tier,
-              cell,
-              enemyType: effectiveEnemyType,
-              worstScenario: `${matchupTitle} (${tier})`,
-              ...causeHintSpread(row.enemyId),
-            }),
-          );
-          findings.push({
-            severity: "serious",
-            scope: "matchup",
-            id: `${row.characterId}:${row.enemyId}`,
-            title: matchupTitle,
-            tier,
-            metric: "winRate",
-            bucket: "equity",
-            observed: cell.winRate,
-            band: `within ${EQUITY_SPREAD * 100}% of this enemy's class median (${(med * 100).toFixed(1)}%)`,
-            worstScenario: `${matchupTitle} (${tier})`,
-            ...causeHintSpread(row.enemyId),
-            recommendation: `This matchup is 15pp+ from other classes vs the same enemy.${REVIEW_SUFFIX}`,
-          });
-        } else if (
+        const context: FindingContext = {
+          scope: "matchup",
+          id: `${row.characterId}:${row.enemyId}`,
+          title: matchupTitle,
+          tier,
+          worstScenario: `${matchupTitle} (${tier})`,
+          ...enemyCauseHint(row.enemyId),
+        };
+        const equityOutlier = !clustered && spread >= EQUITY_SPREAD;
+        const lengthOutlier =
           effectiveEnemyType &&
           turnSpread >= MATCHUP_TURN_SPREAD_THRESHOLD &&
-          isLengthOutsideBand(cell.averageTurns, effectiveEnemyType)
-        ) {
+          isLengthOutsideBand(cell.averageTurns, effectiveEnemyType);
+        if (equityOutlier || lengthOutlier) {
+          findings.push(...collectRateFindings({ ...context, cell, enemyType: effectiveEnemyType }));
+        }
+        if (equityOutlier) {
           findings.push(
-            ...collectRateFindings({
-              scope: "matchup",
-              id: `${row.characterId}:${row.enemyId}`,
-              title: matchupTitle,
-              tier,
-              cell,
-              enemyType: effectiveEnemyType,
-              worstScenario: `${matchupTitle} (${tier})`,
-              ...causeHintSpread(row.enemyId),
+            finding(context, {
+              severity: "serious",
+              metric: "winRate",
+              bucket: "equity",
+              observed: cell.winRate,
+              band: `within ${EQUITY_SPREAD * 100}% of this enemy's class median (${(med * 100).toFixed(1)}%)`,
+              recommendation: "This matchup is 15pp+ from other classes vs the same enemy.",
             }),
           );
         }
@@ -376,7 +283,7 @@ function collectMatchupFindings(model: BalanceReportModel): BalanceFinding[] {
 function collectPairedFindings(
   rows: readonly PairedTierRow[],
   scope: Extract<FindingScope, "boon" | "card" | "talent" | "companion" | "gear" | "affix">,
-  context = "",
+  contextLabel = "",
 ): BalanceFinding[] {
   const findings: BalanceFinding[] = [];
   for (const { preset: tier } of REPORT_TIERS) {
@@ -386,42 +293,50 @@ function collectPairedFindings(
     const turnMed = median(usable.map((entry) => entry.delta.turnDelta));
     for (const { row, delta } of usable) {
       const baseTitle = titleFor(scope, row.id);
-      const label = context ? `${baseTitle} (${context})` : baseTitle;
+      const label = contextLabel ? `${baseTitle} (${contextLabel})` : baseTitle;
+      const context: FindingContext = {
+        scope,
+        id: contextLabel ? `${row.id}:${contextLabel}` : row.id,
+        title: label,
+        tier,
+        worstScenario: `${label} (${tier})`,
+      };
       if (!delta.noisy && Math.abs(delta.delta - med) >= PAIRED_DELTA_FROM_MEDIAN) {
-        findings.push({
-          severity: "serious",
-          scope,
-          id: context ? `${row.id}:${context}` : row.id,
-          title: label,
-          tier,
-          metric: "delta",
-          bucket: "paired",
-          observed: delta.delta,
-          band: `noisy skipped; |delta − median| ≥ ${PAIRED_DELTA_FROM_MEDIAN * 100}pp (median ${(med * 100).toFixed(1)}pp)`,
-          worstScenario: `${label} (${tier})`,
-          recommendation: `Non-noisy paired delta is far from the category median.${REVIEW_SUFFIX}`,
-        });
+        findings.push(
+          finding(context, {
+            severity: "serious",
+            metric: "delta",
+            bucket: "paired",
+            observed: delta.delta,
+            band: `noisy skipped; |delta − median| ≥ ${PAIRED_DELTA_FROM_MEDIAN * 100}pp (median ${(med * 100).toFixed(1)}pp)`,
+            recommendation: "Non-noisy paired delta is far from the category median.",
+          }),
+        );
       }
       if (
         !isDeltaNoisy(delta.turnDelta, delta.turnSe) &&
         Math.abs(delta.turnDelta - turnMed) >= PAIRED_TURN_DELTA_THRESHOLD
       ) {
-        findings.push({
-          severity: "serious",
-          scope,
-          id: context ? `${row.id}:${context}:turns` : `${row.id}:turns`,
-          title: label,
-          tier,
-          metric: "averageTurns",
-          bucket: "length",
-          observed: delta.turnDelta,
-          band: `|turn delta − median| ≥ ${PAIRED_TURN_DELTA_THRESHOLD.toFixed(1)} rounds (median ${turnMed.toFixed(1)})`,
-          worstScenario: `${label} (${tier}) · turn impact: ${delta.turnDelta >= 0 ? "+" : ""}${delta.turnDelta.toFixed(1)} rounds`,
-          recommendation:
-            delta.turnDelta > 0
-              ? `Increases observed fight duration by ${delta.turnDelta.toFixed(1)} rounds.${REVIEW_SUFFIX}`
-              : `Reduces observed fight duration by ${Math.abs(delta.turnDelta).toFixed(1)} rounds.${REVIEW_SUFFIX}`,
-        });
+        findings.push(
+          finding(
+            {
+              ...context,
+              id: `${context.id}:turns`,
+              worstScenario: `${label} (${tier}) · turn impact: ${delta.turnDelta >= 0 ? "+" : ""}${delta.turnDelta.toFixed(1)} rounds`,
+            },
+            {
+              severity: "serious",
+              metric: "averageTurns",
+              bucket: "length",
+              observed: delta.turnDelta,
+              band: `|turn delta − median| ≥ ${PAIRED_TURN_DELTA_THRESHOLD.toFixed(1)} rounds (median ${turnMed.toFixed(1)})`,
+              recommendation:
+                delta.turnDelta > 0
+                  ? `Increases observed fight duration by ${delta.turnDelta.toFixed(1)} rounds.`
+                  : `Reduces observed fight duration by ${Math.abs(delta.turnDelta).toFixed(1)} rounds.`,
+            },
+          ),
+        );
       }
     }
   }
@@ -440,42 +355,46 @@ function collectAnomalies(model: BalanceReportModel): BalanceFinding[] {
         row.field.includes("Burn") || row.field.includes("Player→Enemy")
           ? "Burn stack application (e.g. Flaming Shield) can spike vs Burn-vulnerable enemies."
           : undefined;
-      findings.push({
-        severity: "watch",
-        scope: "anomaly",
-        id: row.field,
-        title: row.field,
-        tier,
-        metric: "anomaly",
-        bucket: "anomaly",
-        observed: value,
-        band: `≤ ${threshold} (${tier})`,
-        worstScenario: peak?.peakScenario ?? row.field,
-        ...(burnHint ? { causeHint: burnHint } : {}),
-        recommendation: `Peak value exceeds the anomaly threshold.${REVIEW_SUFFIX}`,
-      });
+      findings.push(
+        finding(
+          {
+            scope: "anomaly",
+            id: row.field,
+            title: row.field,
+            tier,
+            worstScenario: peak?.peakScenario ?? row.field,
+            ...(burnHint ? { causeHint: burnHint } : {}),
+          },
+          {
+            severity: "watch",
+            metric: "anomaly",
+            bucket: "anomaly",
+            observed: value,
+            band: `≤ ${threshold} (${tier})`,
+            recommendation: "Peak value exceeds the anomaly threshold.",
+          },
+        ),
+      );
     }
   }
   return findings;
 }
 
 export function collectBalanceFindings(model: BalanceReportModel): BalanceFinding[] {
-  const candidates: BalanceFinding[] = [];
-
-  candidates.push(...collectEnemyRateFindings(model));
-  candidates.push(...collectEnemyTypeEquity(model.enemies));
-  candidates.push(...collectClassRateFindings(model));
-  candidates.push(...collectClassEquity(model.classes));
-  candidates.push(...collectMatchupFindings(model));
-  candidates.push(...collectPairedFindings(model.boons, "boon"));
-  candidates.push(...collectPairedFindings(model.cardsIsolatedSkeleton, "card", "isolated vs Skeleton"));
-  candidates.push(...collectPairedFindings(model.cardsIsolatedElite, "card", "isolated vs Mimic"));
-  candidates.push(...collectPairedFindings(model.cardsInClass, "card", "in-class"));
-  candidates.push(...collectPairedFindings(model.talents, "talent"));
-  candidates.push(...collectPairedFindings(model.companions, "companion"));
-  candidates.push(...collectPairedFindings(model.gear, "gear"));
-  candidates.push(...collectPairedFindings(model.affixes, "affix"));
-  candidates.push(...collectAnomalies(model));
-
-  return candidates;
+  return [
+    ...collectEnemyRateFindings(model),
+    ...collectEnemyTypeEquity(model.enemies),
+    ...collectClassRateFindings(model),
+    ...REPORT_TIERS.flatMap(({ preset: tier }) => collectEquityFindings(model.classes, tier)),
+    ...collectMatchupFindings(model),
+    ...collectPairedFindings(model.boons, "boon"),
+    ...collectPairedFindings(model.cardsIsolatedSkeleton, "card", "isolated vs Skeleton"),
+    ...collectPairedFindings(model.cardsIsolatedElite, "card", "isolated vs Mimic"),
+    ...collectPairedFindings(model.cardsInClass, "card", "in-class"),
+    ...collectPairedFindings(model.talents, "talent"),
+    ...collectPairedFindings(model.companions, "companion"),
+    ...collectPairedFindings(model.gear, "gear"),
+    ...collectPairedFindings(model.affixes, "affix"),
+    ...collectAnomalies(model),
+  ];
 }

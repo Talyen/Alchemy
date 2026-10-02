@@ -2,7 +2,7 @@ import { SAVE_KEY, SAVE_RECOVERY_KEY } from "@/lib/game-constants";
 import { type SaveBackend } from "@/lib/platform-save-backend";
 
 import type { SaveData, UnstampedSaveData } from "./types";
-import { evaluateSaveCandidates, hasUnsupportedFutureCandidate, type SaveLoadState } from "./save-candidates";
+import { selectSaveCandidates, type SaveLoadState } from "./save-candidates";
 import { createDefaultSaveData } from "./defaults";
 import { SaveWriteQueue, type SaveWriteOutcome } from "./save-write-queue";
 import { logStorageFailure } from "@/lib/storage-logging";
@@ -49,64 +49,40 @@ export class SaveStorage {
     this.writeKey = SAVE_KEY;
   }
 
-  private async collectSaveCandidates(): Promise<{ candidates: string[]; useRecovery: boolean; readFailed: boolean }> {
-    const read = async (key: string) => {
-      try {
-        return await this.backend.readCandidates(key);
-      } catch (error) {
-        return { ok: false as const, error };
-      }
-    };
-    const [primary, recovery] = await Promise.all([read(SAVE_KEY), read(SAVE_RECOVERY_KEY)]);
-    if (!primary.ok) logStorageFailure("Main save candidates could not be read", primary.error);
-    if (!recovery.ok) logStorageFailure("Recovery save candidates could not be read", recovery.error);
-    const primaryIncomplete = !primary.ok || primary.localReadFailed === true;
-    const primaryCandidates = primary.ok ? primary.candidates : [];
-    const recoveryCandidates = recovery.ok ? recovery.candidates : [];
-    const primaryHasFuture = hasUnsupportedFutureCandidate(primaryCandidates);
-    const recoveryHasFuture = hasUnsupportedFutureCandidate(recoveryCandidates);
-    return {
-      candidates: [...primaryCandidates, ...recoveryCandidates],
-      useRecovery: primaryIncomplete || primaryHasFuture || (recoveryCandidates.length > 0 && !recoveryHasFuture),
-      readFailed: !primary.ok && !recovery.ok,
-    };
-  }
-
-  private applySaveWritePolicy(result: SaveLoadState, useRecovery: boolean): SaveLoadState {
-    this.writeKey = useRecovery ? SAVE_RECOVERY_KEY : SAVE_KEY;
-    this.setWritesDisabled(false);
-    return result;
-  }
-
   async load(): Promise<SaveLoadState> {
     this.pendingLoads++;
     try {
-      return await this.loadState();
+      const read = async (key: string) => {
+        try {
+          return await this.backend.readCandidates(key);
+        } catch (error) {
+          return { ok: false as const, error };
+        }
+      };
+      const [primary, recovery] = await Promise.all([read(SAVE_KEY), read(SAVE_RECOVERY_KEY)]);
+      if (!primary.ok) logStorageFailure("Main save candidates could not be read", primary.error);
+      if (!recovery.ok) logStorageFailure("Recovery save candidates could not be read", recovery.error);
+      const primaryCandidates = primary.ok ? primary.candidates : [];
+      const recoveryCandidates = recovery.ok ? recovery.candidates : [];
+      const selection = selectSaveCandidates(primaryCandidates, recoveryCandidates);
+      const useRecovery = !primary.ok || primary.localReadFailed === true || selection.useRecovery;
+      let loaded = selection.state;
+
+      if (primaryCandidates.length === 0 && recoveryCandidates.length === 0) {
+        const readFailed = !primary.ok && !recovery.ok;
+        loaded = { data: createDefaultSaveData(), status: { kind: readFailed ? "unavailable" : "ok" } };
+        if (!IS_DEMO && !useRecovery && !readFailed && this.backend.readDemoImportSource) {
+          this.demoInitialization ??= this.initializeDemoProgress();
+          loaded = (await this.demoInitialization) ?? loaded;
+        }
+      }
+      if (loaded.data.activeRun && !isEditionRunAvailable(loaded.data.activeRun)) loaded.data.activeRun = null;
+      this.writeKey = useRecovery ? SAVE_RECOVERY_KEY : SAVE_KEY;
+      this.setWritesDisabled(false);
+      return loaded;
     } finally {
       this.pendingLoads--;
     }
-  }
-
-  private async loadState(): Promise<SaveLoadState> {
-    const { candidates, useRecovery, readFailed } = await this.collectSaveCandidates();
-
-    if (candidates.length === 0) {
-      if (!IS_DEMO && !useRecovery && !readFailed && this.backend.readDemoImportSource) {
-        this.demoInitialization ??= this.initializeDemoProgress();
-        const imported = await this.demoInitialization;
-        if (imported) return this.applySaveWritePolicy(imported, false);
-      }
-      return this.applySaveWritePolicy(
-        { data: createDefaultSaveData(), status: { kind: readFailed ? "unavailable" : "ok" } },
-        useRecovery,
-      );
-    }
-
-    const loaded = evaluateSaveCandidates(candidates);
-    if (loaded.data.activeRun && !isEditionRunAvailable(loaded.data.activeRun)) {
-      loaded.data.activeRun = null;
-    }
-    return this.applySaveWritePolicy(loaded, useRecovery);
   }
 
   private async initializeDemoProgress(): Promise<SaveLoadState | null> {

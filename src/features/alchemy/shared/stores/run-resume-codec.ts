@@ -12,21 +12,14 @@ import {
   serializeTrinketShopState,
   transitionRunActivity,
   type ActiveRunData,
-  type InterruptedFlow,
   type LabyrinthPendingNodeId,
-  type PersistedAlchemistState,
   type PersistedBattleTransition,
-  type PersistedEquipmentShopState,
-  type PersistedMysteryVisit,
-  type PersistedShopState,
-  type PersistedTrinketShopState,
   type RewardState,
   type RunActivity,
 } from "@/lib/active-run-session";
 import { battleSnapshot } from "@/lib/battle";
 import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthMap } from "@/lib/content-systems/types";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
-import type { CorruptionResult } from "@/lib/corruption";
 import type { BattleCard } from "@/lib/game-data";
 import { type Screen } from "@/lib/routing";
 import { decodeInterruptedFlow, encodeInterruptedFlow, inferActiveRunScreen } from "./encode-interrupted-flow";
@@ -53,70 +46,6 @@ export interface DecodedRunResumeSnapshot {
   session: DecodedRunResumeSession;
 }
 
-interface PersistedShops {
-  shopState: PersistedShopState | null;
-  alchemistState: PersistedAlchemistState | null;
-  trinketShopState: PersistedTrinketShopState | null;
-  equipmentShopState: PersistedEquipmentShopState | null;
-}
-
-const EMPTY_PERSISTED_SHOPS: PersistedShops = Object.freeze({
-  shopState: null,
-  alchemistState: null,
-  trinketShopState: null,
-  equipmentShopState: null,
-});
-
-// Single source for each shop's save/load pairing: adding a shop touches one
-// entry, and encode/decode cannot drift apart.
-const SHOP_VISIT_CODECS = {
-  shop: {
-    serialize: (activity: Extract<RunActivity, { kind: "shop" }>) => serializeShopState(activity.data),
-    hydrate: (persisted: NonNullable<ActiveRunData["shopState"]>): RunActivity => ({
-      kind: "shop",
-      data: hydrateShopState(persisted),
-    }),
-  },
-  alchemist: {
-    serialize: (activity: Extract<RunActivity, { kind: "alchemist" }>) => serializeAlchemistState(activity.data),
-    hydrate: (persisted: NonNullable<ActiveRunData["alchemistState"]>): RunActivity => ({
-      kind: "alchemist",
-      data: hydrateAlchemistState(persisted),
-    }),
-  },
-  "trinket-shop": {
-    serialize: (activity: Extract<RunActivity, { kind: "trinket-shop" }>) => serializeTrinketShopState(activity.data),
-    hydrate: (persisted: NonNullable<ActiveRunData["trinketShopState"]>): RunActivity => ({
-      kind: "trinket-shop",
-      data: hydrateTrinketShopState(persisted),
-    }),
-  },
-  "equipment-shop": {
-    serialize: (activity: Extract<RunActivity, { kind: "equipment-shop" }>) =>
-      serializeEquipmentShopState(activity.data),
-    hydrate: (persisted: NonNullable<ActiveRunData["equipmentShopState"]>): RunActivity => ({
-      kind: "equipment-shop",
-      data: hydrateEquipmentShopState(persisted),
-    }),
-  },
-} as const;
-
-export function encodePersistedShops(session: RunSession["session"]): PersistedShops {
-  const activity = session.activity;
-  if (activity.kind === "shop")
-    return { ...EMPTY_PERSISTED_SHOPS, shopState: SHOP_VISIT_CODECS.shop.serialize(activity) };
-  if (activity.kind === "alchemist")
-    return { ...EMPTY_PERSISTED_SHOPS, alchemistState: SHOP_VISIT_CODECS.alchemist.serialize(activity) };
-  if (activity.kind === "trinket-shop")
-    return { ...EMPTY_PERSISTED_SHOPS, trinketShopState: SHOP_VISIT_CODECS["trinket-shop"].serialize(activity) };
-  if (activity.kind === "equipment-shop")
-    return {
-      ...EMPTY_PERSISTED_SHOPS,
-      equipmentShopState: SHOP_VISIT_CODECS["equipment-shop"].serialize(activity),
-    };
-  return EMPTY_PERSISTED_SHOPS;
-}
-
 function pickActiveRunProgress(run: RunSession["run"]): ActiveRunProgressFields {
   const progress = {} as ActiveRunProgressFields;
   // Single container cast for union-key mechanics: every key comes from
@@ -130,7 +59,7 @@ function pickActiveRunProgress(run: RunSession["run"]): ActiveRunProgressFields 
   return progress;
 }
 
-// Session persistence contract (see encodeActiveRunFromSession below): the
+// Session persistence contract (see encodeRunResumeSnapshot below): the
 // transient fields never reach a snapshot, and the gated ones persist only for
 // matching content systems. persistence-commit-filter derives its
 // dirty-tracking skip sets from these, so the two cannot drift apart.
@@ -156,40 +85,14 @@ export const LABYRINTH_GATED_SESSION_KEYS = [
 export const WILDWOOD_GATED_SESSION_KEY = "wildwoodDraft" as const satisfies keyof RunSessionFields;
 export const NON_WILDWOOD_GATED_SESSION_KEY = "starterDraftChoices" as const satisfies keyof RunSessionFields;
 
-interface EncodeResumeFields {
-  currentScreen: Screen | null;
-  interruptedFlow: InterruptedFlow;
-  shopState: PersistedShopState | null;
-  alchemistState: PersistedAlchemistState | null;
-  trinketShopState: PersistedTrinketShopState | null;
-  equipmentShopState: PersistedEquipmentShopState | null;
-  mysteryVisit: PersistedMysteryVisit | null;
-  corruptionResult: CorruptionResult | null;
-}
-
-function resolvePendingBattleTransition(activeRun: ActiveRunData): PersistedBattleTransition | null {
-  return activeRun.activeCombat?.pendingBattleTransition ?? null;
-}
-
-function encodeActivityFields(
-  session: RunSession["session"],
-  screen: Screen | null | undefined,
-): Omit<EncodeResumeFields, "currentScreen"> {
-  return {
-    interruptedFlow: encodeInterruptedFlow(session, screen),
-    ...encodePersistedShops(session),
-    mysteryVisit: session.activity.kind === "mystery" ? serializeMysteryVisit(session.activity.data) : null,
-    corruptionResult: session.activity.kind === "corruption" ? session.activity.data : null,
-  };
-}
-
-function encodeActiveRunFromSession(source: RunSession, resume: EncodeResumeFields): ActiveRunData {
+export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): ActiveRunData {
   const { run, session, battle } = source;
+  const activity = session.activity;
+  const currentScreen = runActivityScreen(activity) ?? screen ?? source.screen;
   const progress = pickActiveRunProgress(run);
   const isLabyrinth = progress.contentSystemType === "labyrinth";
   // An active terminal snapshot still needs outcome settlement after restore.
-  const keepCombat = battle.hasActiveBattle;
-  const activeCombat = keepCombat
+  const activeCombat = battle.hasActiveBattle
     ? {
         battleState: battleSnapshot(battle.battleState),
         pendingBattleTransition: null,
@@ -198,7 +101,7 @@ function encodeActiveRunFromSession(source: RunSession, resume: EncodeResumeFiel
       }
     : null;
 
-  return {
+  const snapshot: ActiveRunData = {
     ...progress,
     destinationRoundsSinceOffered: { ...progress.destinationRoundsSinceOffered },
     rng: { seed: progress.rng.seed, counters: { ...progress.rng.counters } },
@@ -209,24 +112,16 @@ function encodeActiveRunFromSession(source: RunSession, resume: EncodeResumeFiel
     wildwoodDraft: progress.contentSystemType === "wildwood" ? session.wildwoodDraft : null,
     starterDraftChoices: progress.contentSystemType === "wildwood" ? null : session.starterDraftChoices,
     activeCombat,
-    currentScreen: resume.currentScreen,
-    interruptedFlow: resume.interruptedFlow,
-    shopState: resume.shopState,
-    alchemistState: resume.alchemistState,
-    trinketShopState: resume.trinketShopState,
-    equipmentShopState: resume.equipmentShopState,
-    mysteryVisit: resume.mysteryVisit,
-    corruptionResult: resume.corruptionResult,
-  };
-}
-
-export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): ActiveRunData {
-  const currentScreen = runActivityScreen(source.session.activity) ?? screen ?? source.screen;
-  const snapshot = encodeActiveRunFromSession(source, {
     currentScreen,
-    ...encodeActivityFields(source.session, currentScreen),
-  });
-  return source.session.activity.kind === "idle" || source.session.activity.kind === "inactive"
+    interruptedFlow: encodeInterruptedFlow(session, currentScreen),
+    shopState: activity.kind === "shop" ? serializeShopState(activity.data) : null,
+    alchemistState: activity.kind === "alchemist" ? serializeAlchemistState(activity.data) : null,
+    trinketShopState: activity.kind === "trinket-shop" ? serializeTrinketShopState(activity.data) : null,
+    equipmentShopState: activity.kind === "equipment-shop" ? serializeEquipmentShopState(activity.data) : null,
+    mysteryVisit: activity.kind === "mystery" ? serializeMysteryVisit(activity.data) : null,
+    corruptionResult: activity.kind === "corruption" ? activity.data : null,
+  };
+  return activity.kind === "idle" || activity.kind === "inactive"
     ? { ...snapshot, currentScreen: inferActiveRunScreen(snapshot) }
     : snapshot;
 }
@@ -256,7 +151,7 @@ export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunRes
   return {
     progress: createInitialActiveRunFields(activeRun),
     screen,
-    pendingBattleTransition: resolvePendingBattleTransition(activeRun),
+    pendingBattleTransition: activeRun.activeCombat?.pendingBattleTransition ?? null,
     session: {
       labyrinthMap: activeRun.labyrinthMap,
       labyrinthPendingNode: activeRun.labyrinthPendingNode,
@@ -278,13 +173,13 @@ export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunRes
 }
 
 function decodeRunActivity(activeRun: ActiveRunData, screen: Screen): RunActivity {
-  if (screen === "shop" && activeRun.shopState) return SHOP_VISIT_CODECS.shop.hydrate(activeRun.shopState);
+  if (screen === "shop" && activeRun.shopState) return { kind: "shop", data: hydrateShopState(activeRun.shopState) };
   if (screen === "alchemist" && activeRun.alchemistState)
-    return SHOP_VISIT_CODECS.alchemist.hydrate(activeRun.alchemistState);
+    return { kind: "alchemist", data: hydrateAlchemistState(activeRun.alchemistState) };
   if (screen === "trinket-shop" && activeRun.trinketShopState)
-    return SHOP_VISIT_CODECS["trinket-shop"].hydrate(activeRun.trinketShopState);
+    return { kind: "trinket-shop", data: hydrateTrinketShopState(activeRun.trinketShopState) };
   if (screen === "equipment-shop" && activeRun.equipmentShopState)
-    return SHOP_VISIT_CODECS["equipment-shop"].hydrate(activeRun.equipmentShopState);
+    return { kind: "equipment-shop", data: hydrateEquipmentShopState(activeRun.equipmentShopState) };
   if (screen === "mystery")
     return {
       kind: screen,

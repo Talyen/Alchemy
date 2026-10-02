@@ -1,105 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  driveAutoplay,
-  isBattlePlayInputBusy,
-  isBattlePlaybackBlocked,
-  isWishPlaybackBlocked,
-} from "@/features/alchemy/run-loop/battle/autoplay-driver";
-import { findFirstPlayableHandCard } from "@/features/alchemy/run-loop/battle/playable-hand";
+import { driveAutoplay } from "@/features/alchemy/run-loop/battle/autoplay-driver";
 import * as animationPrefs from "@/lib/animation/animation-prefs";
-import { makeTestBattleState, makeTestCard } from "../../../../fixtures/battle";
-import { makeEmptyHandBattle, makeOpenBattle, playableCard } from "./open-battle-fixture";
-
-describe("isBattlePlayInputBusy", () => {
-  it("is busy during a play commit or a card transfer", () => {
-    expect(isBattlePlayInputBusy({ cardPlayInProgress: false, cardTransferInProgress: false })).toBe(false);
-    expect(isBattlePlayInputBusy({ cardPlayInProgress: true, cardTransferInProgress: false })).toBe(true);
-    expect(isBattlePlayInputBusy({ cardPlayInProgress: false, cardTransferInProgress: true })).toBe(true);
-  });
-});
-
-describe("isBattlePlaybackBlocked", () => {
-  const openBattle = makeOpenBattle();
-
-  it("allows an open player turn", () => {
-    expect(isBattlePlaybackBlocked(openBattle)).toBe(false);
-  });
-
-  it("blocks while a matching hand card is hidden", () => {
-    expect(isBattlePlaybackBlocked({ ...openBattle, hiddenHandCardKeys: ["slash-1"] })).toBe(true);
-  });
-
-  it("does not block on hidden keys that are not in the current hand", () => {
-    expect(
-      isBattlePlaybackBlocked({
-        ...makeEmptyHandBattle(),
-        hiddenHandCardKeys: ["slash-1"],
-      }),
-    ).toBe(false);
-  });
-
-  it("blocks while a card transfer is in progress", () => {
-    expect(isBattlePlaybackBlocked({ ...openBattle, cardTransferInProgress: true })).toBe(true);
-  });
-
-  it("blocks when the game menu is open", () => {
-    expect(isBattlePlaybackBlocked({ ...openBattle, gameMenuOpen: true })).toBe(true);
-  });
-
-  it("blocks when wish options are showing", () => {
-    expect(
-      isBattlePlaybackBlocked({
-        ...openBattle,
-        battleState: { ...openBattle.battleState, wishOptions: [{ ...playableCard, uid: 2 }] },
-      }),
-    ).toBe(true);
-  });
-});
-
-describe("isWishPlaybackBlocked", () => {
-  const openBattle = makeOpenBattle();
-  const wishedBattle = {
-    ...openBattle,
-    battleState: { ...openBattle.battleState, wishOptions: [{ ...playableCard, uid: 2 }] },
-  };
-
-  it("blocks without wish options", () => {
-    expect(isWishPlaybackBlocked(openBattle)).toBe(true);
-  });
-
-  it("allows an open player turn with wish options", () => {
-    expect(isWishPlaybackBlocked(wishedBattle)).toBe(false);
-  });
-
-  it("blocks when the game menu is open", () => {
-    expect(isWishPlaybackBlocked({ ...wishedBattle, gameMenuOpen: true })).toBe(true);
-  });
-
-  it("blocks while a card transfer is in progress", () => {
-    expect(isWishPlaybackBlocked({ ...wishedBattle, cardTransferInProgress: true })).toBe(true);
-  });
-});
-
-describe("findFirstPlayableHandCard", () => {
-  it("returns the first affordable card in hand order", () => {
-    const expensive = {
-      ...makeTestCard({
-        id: "meteor",
-        cost: 9,
-        effects: [{ kind: "damage", damageType: "burn", amount: 20 }],
-      }),
-      uid: 1,
-    };
-    const cheap = { ...playableCard, uid: 2 };
-    const state = makeTestBattleState({
-      hand: [expensive, cheap],
-      mana: 1,
-      turnPhase: "player",
-    });
-
-    expect(findFirstPlayableHandCard(state)?.card.uid).toBe(2);
-  });
-});
+import { playableCard } from "./open-battle-fixture";
 
 describe("driveAutoplay", () => {
   afterEach(() => {
@@ -107,144 +9,67 @@ describe("driveAutoplay", () => {
     vi.useRealTimers();
   });
 
-  it("plays cards in hand order until disabled", async () => {
-    const playable = [
-      { ...playableCard, uid: 1 },
-      { ...playableCard, uid: 2 },
-    ];
+  it("runs ready actions in sequence until disabled", async () => {
     const played: number[] = [];
-    const controller = new AbortController();
-
     await driveAutoplay({
-      signal: controller.signal,
+      signal: new AbortController().signal,
       delayMs: 0,
       postPlayDelayMs: 0,
-      isEnabled: () => played.length < playable.length,
-      isBlocked: () => false,
-      findPlayableCard: () => {
-        const remaining = playable.filter((card) => !played.includes(card.uid));
-        const card = remaining[0];
-        return card ? { card, index: 0 } : null;
-      },
-      playCard: (card) => {
-        played.push(card.uid ?? 0);
-        return true;
-      },
+      isEnabled: () => played.length < 2,
+      findAction: () => ({
+        canCommit: () => true,
+        play: () => {
+          played.push(played.length + 1);
+          return true;
+        },
+      }),
     });
-
     expect(played).toEqual([1, 2]);
   });
 
-  it("auto-picks a wish choice while the card gate is blocked", async () => {
-    const wish = { ...playableCard, uid: 3 };
-    const played: number[] = [];
-    const playCard = vi.fn(() => true);
-    const controller = new AbortController();
-
+  it("retries a rejected action instead of stopping", async () => {
+    let committed = false;
+    const play = vi.fn(() => {
+      committed = play.mock.calls.length > 1;
+      return committed;
+    });
     await driveAutoplay({
-      signal: controller.signal,
+      signal: new AbortController().signal,
       delayMs: 0,
       postPlayDelayMs: 0,
-      isEnabled: () => played.length < 1,
-      isBlocked: () => true,
-      findPlayableCard: () => {
-        throw new Error("card branch must not run while wishes are showing");
-      },
-      playCard,
-      isWishBlocked: () => false,
-      findWishChoice: () => wish,
-      playWish: (card) => {
-        played.push(card.uid ?? 0);
-        return true;
-      },
+      isEnabled: () => !committed,
+      findAction: () => ({ canCommit: () => true, play }),
     });
-
-    expect(played).toEqual([3]);
-    expect(playCard).not.toHaveBeenCalled();
+    expect(play).toHaveBeenCalledTimes(2);
   });
 
-  it("resolves a wish granted by the just-played card instead of stalling", async () => {
-    const card = { ...playableCard, uid: 1 };
-    const wish = { ...playableCard, uid: 9 };
-    let cardPlayed = false;
-    let wishPlayed = false;
+  it("rechecks eligibility, enablement, and cancellation during an action preview", async () => {
     const controller = new AbortController();
-
+    let enabled = true;
+    let eligible = true;
     await driveAutoplay({
       signal: controller.signal,
       delayMs: 0,
       postPlayDelayMs: 0,
-      isEnabled: () => !wishPlayed,
-      // After the card play the card gate stays blocked by the granted wish.
-      isBlocked: () => cardPlayed && !wishPlayed,
-      findPlayableCard: () => (cardPlayed ? null : { card, index: 0 }),
-      playCard: () => {
-        cardPlayed = true;
-        return true;
-      },
-      isWishBlocked: () => !cardPlayed || wishPlayed,
-      findWishChoice: () => (cardPlayed && !wishPlayed ? wish : null),
-      playWish: (choice) => {
-        wishPlayed = choice.uid === wish.uid;
-        return wishPlayed;
-      },
+      isEnabled: () => enabled,
+      findAction: () => ({
+        canCommit: () => eligible,
+        play: async (control) => {
+          await Promise.resolve();
+          expect(control.signal).toBe(controller.signal);
+          expect(control.canCommit()).toBe(true);
+          eligible = false;
+          expect(control.canCommit()).toBe(false);
+          eligible = true;
+          enabled = false;
+          expect(control.canCommit()).toBe(false);
+          enabled = true;
+          controller.abort();
+          expect(control.canCommit()).toBe(false);
+          return false;
+        },
+      }),
     });
-
-    expect(cardPlayed).toBe(true);
-    expect(wishPlayed).toBe(true);
-  });
-
-  it("retries a rejected wish pick instead of stopping", async () => {
-    const wish = { ...playableCard, uid: 3 };
-    let attempts = 0;
-    const played: number[] = [];
-    const controller = new AbortController();
-
-    await driveAutoplay({
-      signal: controller.signal,
-      delayMs: 0,
-      postPlayDelayMs: 0,
-      isEnabled: () => played.length < 1 && attempts < 5,
-      isBlocked: () => true,
-      findPlayableCard: () => null,
-      playCard: () => true,
-      isWishBlocked: () => false,
-      findWishChoice: () => wish,
-      playWish: (card) => {
-        attempts += 1;
-        if (attempts === 1) return false;
-        played.push(card.uid ?? 0);
-        return true;
-      },
-    });
-
-    expect(attempts).toBeGreaterThan(1);
-    expect(played).toEqual([3]);
-  });
-
-  it("retries after a rejected play instead of stopping", async () => {
-    const playable = { ...playableCard, uid: 1 };
-    let attempts = 0;
-    const played: number[] = [];
-    const controller = new AbortController();
-
-    await driveAutoplay({
-      signal: controller.signal,
-      delayMs: 0,
-      postPlayDelayMs: 0,
-      isEnabled: () => played.length < 1 && attempts < 5,
-      isBlocked: () => false,
-      findPlayableCard: () => ({ card: playable, index: 0 }),
-      playCard: (card) => {
-        attempts += 1;
-        if (attempts === 1) return false;
-        played.push(card.uid ?? 0);
-        return true;
-      },
-    });
-
-    expect(attempts).toBeGreaterThan(1);
-    expect(played).toEqual([1]);
   });
 
   it("waits the post-play delay before playing the next card", async () => {
@@ -261,15 +86,17 @@ describe("driveAutoplay", () => {
       delayMs: 0,
       postPlayDelayMs: 1000,
       isEnabled: () => played.length < playable.length,
-      isBlocked: () => false,
-      findPlayableCard: () => {
-        const remaining = playable.filter((card) => !played.includes(card.uid));
-        const card = remaining[0];
-        return card ? { card, index: 0 } : null;
-      },
-      playCard: (card) => {
-        played.push(card.uid ?? 0);
-        return true;
+      findAction: () => {
+        const card = playable.find((item) => !played.includes(item.uid));
+        return card
+          ? {
+              canCommit: () => true,
+              play: () => {
+                played.push(card.uid);
+                return true;
+              },
+            }
+          : null;
       },
     });
 
@@ -299,12 +126,16 @@ describe("driveAutoplay", () => {
       postPlayDelayMs: 0,
       wakeRef,
       isEnabled: () => played.length < 1,
-      isBlocked: () => blocked,
-      findPlayableCard: () => ({ card: { ...playableCard, uid: 1 }, index: 0 }),
-      playCard: (card) => {
-        played.push(card.uid ?? 0);
-        return true;
-      },
+      findAction: () =>
+        blocked
+          ? null
+          : {
+              canCommit: () => !blocked,
+              play: () => {
+                played.push(1);
+                return true;
+              },
+            },
     });
 
     await vi.advanceTimersByTimeAsync(0);
@@ -336,9 +167,7 @@ describe("driveAutoplay", () => {
       postPlayDelayMs: 1000,
       wakeRef,
       isEnabled: () => true,
-      isBlocked: () => state.blocked,
-      findPlayableCard: () => ({ card: playableCard, index: 0 }),
-      playCard,
+      findAction: () => (state.blocked ? null : { canCommit: () => !state.blocked, play: playCard }),
     });
     return { controller, wakeRef, state, playCard, done };
   }
@@ -393,7 +222,7 @@ describe("driveAutoplay", () => {
 
   it.each([false, true])("cleans up an aborted wait (waiting for readiness: %s)", async (blocked) => {
     const run = startTimedAutoplay(blocked);
-    await vi.advanceTimersByTimeAsync(25);
+    await vi.advanceTimersByTimeAsync(blocked ? 1025 : 25);
     expect(vi.getTimerCount()).toBe(1);
     if (blocked) expect(run.wakeRef.current).toEqual(expect.any(Function));
     run.controller.abort();

@@ -9,7 +9,7 @@ export interface TierRateRow {
   readonly rates: ReportTierRecord<RateCell>;
 }
 
-export interface ClassTypeSplitRow {
+interface ClassTypeSplitRow {
   readonly id: CharacterId;
   readonly rates: ReportTierRecord<RateCell>;
   readonly ratesByType: ReportTierRecord<Readonly<Record<ReportEnemyType, RateCell>>>;

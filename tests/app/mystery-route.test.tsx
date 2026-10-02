@@ -2,6 +2,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render } from "@testing-library/react";
 import { runLoopScreenRoutes } from "@/app/screen-routes/run-loop-routes";
 import type { MysteryEvent } from "@/lib/mystery";
+import { createMockRouteCommands } from "../helpers/run-controller";
+
+const MysteryRoute = runLoopScreenRoutes.mystery;
 
 const continueSpy = vi.fn();
 
@@ -79,17 +82,21 @@ afterEach(() => {
 });
 
 function routeElement() {
-  return runLoopScreenRoutes.mystery?.({
-    routeCommands: {
-      runLoop: {
-        mystery: {
-          handleContinue: () => continueSpy(),
-          handleChoice: vi.fn(),
-          handleChooseCard: vi.fn(),
+  return (
+    <MysteryRoute
+      routeCommands={{
+        runLoop: {
+          ...createMockRouteCommands().runLoop,
+          mystery: {
+            handleContinue: () => continueSpy(),
+            handleChoice: vi.fn(),
+            handleChooseCard: vi.fn(),
+          },
         },
-      },
-    },
-  } as never);
+      }}
+      onOpenGameMenu={vi.fn()}
+    />
+  );
 }
 
 describe("MysteryScreenRoute", () => {

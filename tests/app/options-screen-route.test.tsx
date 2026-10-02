@@ -11,6 +11,8 @@ import {
 import { DEVICE_DISPLAY_STORAGE_KEY } from "@/features/alchemy/shared/storage";
 import type { OptionsRouteCtx } from "@/app/screen-routes/route-ctx";
 
+const OptionsRoute = optionsScreenRoutes.options;
+
 interface OptionsScreenStubProps {
   display: {
     selectedAspectRatio: string;
@@ -75,7 +77,7 @@ describe("options screen route", () => {
   });
 
   it("binds saved settings and screen actions to the owning store", () => {
-    render(optionsScreenRoutes.options(routeContext));
+    render(<OptionsRoute {...routeContext} />);
 
     expect(screen.getByTestId("aspect-ratio").textContent).toBe("auto");
     expect(screen.getByTestId("music-volume").textContent).toBe("50");
@@ -91,7 +93,7 @@ describe("options screen route", () => {
 
   it("resets device sizes alongside settings on Reset Options", () => {
     useDeviceDisplayStore.getState().setGameSizePercent(85);
-    render(optionsScreenRoutes.options(routeContext));
+    render(<OptionsRoute {...routeContext} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Reset Options" }));
 
@@ -99,7 +101,7 @@ describe("options screen route", () => {
   });
 
   it("binds the clear-save dialog to transient UI state", () => {
-    render(optionsScreenRoutes.options(routeContext));
+    render(<OptionsRoute {...routeContext} />);
     expect(screen.getByTestId("clear-save-confirm").textContent).toBe("false");
 
     fireEvent.click(screen.getByRole("button", { name: "Open Confirm" }));

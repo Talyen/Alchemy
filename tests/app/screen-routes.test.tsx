@@ -38,7 +38,7 @@ vi.mock("@/features/alchemy/run-loop/screens", () => ({
 }));
 
 vi.mock("@/features/alchemy/run-loop/screens/run-end-screen", () => ({
-  RunEndScreen: () => <div data-testid="run-end-screen" />,
+  RunEndScreen: ({ title }: { title: string }) => <div data-testid="run-end-screen">{title}</div>,
 }));
 
 vi.mock("@/app/app-screen-chrome-context", () => ({
@@ -78,11 +78,23 @@ describe("SCREEN_ROUTES registry", () => {
     expect(registeredScreens).toEqual(expectedScreens);
   });
 
-  it("renders with ErrorBoundary for every registered Screen", () => {
+  it("mounts the correct component while navigating across every registered Screen", () => {
+    const view = render(renderAlchemyScreenRoute(createMockProps("menu")));
+    const screenTestIds: Partial<Record<Screen, string>> = {
+      shop: "card-shop-screen",
+      alchemist: "alchemist-shop-screen",
+      mystery: "mystery-screen-shell",
+      "game-over": "run-end-screen",
+      "run-victory": "run-end-screen",
+    };
     for (const screen of ROUTE_SCREEN_VALUES) {
-      const props = createMockProps(screen);
-      const { container } = render(renderAlchemyScreenRoute(props));
-      expect(container.firstChild).toBeDefined();
+      view.rerender(renderAlchemyScreenRoute(createMockProps(screen)));
+      expect(view.getByTestId(screenTestIds[screen] ?? `${screen}-screen`)).toBeDefined();
+      if (screen === "game-over" || screen === "run-victory") {
+        expect(view.getByTestId("run-end-screen").textContent).toBe(
+          screen === "game-over" ? "Journey’s End" : "Victory",
+        );
+      }
     }
   });
 

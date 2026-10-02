@@ -94,9 +94,9 @@ before handing off.
 
 One definition powers a permanent Armory Trinket and a run-scoped **Boon**. Both reveal one Collection entry; Boons occupy no slot. `combineTrinketEffectIds` deduplicates matching forms.
 
-1. Add data/art in `game-data/compendium/trinkets.ts` and `game-data/assets.ts`.
+1. Add data/art in `game-data/compendium/trinkets.ts` and `game-data/assets.ts`. Use `defineTrinket` with its effects and a description formatter. Interpolate numeric amounts from the formatter's typed effects; do not repeat balance values in prose.
 2. Reuse existing effects when they express the new Trinket. Only for a new effect, extend `TrinketManifest` and `defaultTrinketEffects` in `src/lib/game-data/trinket-manifest.ts` and wire its battle/run consumers; check Boon exclusions. Content validation derives effect field types from these defaults and requires at least one active effect.
-3. Add a rule in `src/lib/content-validation/card-parity/trinket-parity.ts` covering the complete trigger and outcome, numeric captures in effect-key order, and required boolean effects. Keep the rule and regression tests in `tests/lib/content-validation/trinket-validation.test.ts` aligned with wording changes; numeric expectations come from authored effects. Run `npm run content:audit` before handing off.
+3. Content validation uses that same description definition to check the complete trigger and outcome, required effect keys, and boolean mechanics. No separate parity rule is needed. Keep meaningful regressions in `tests/lib/content-validation/trinket-validation.test.ts`; run `npm run content:audit` before handing off.
 4. Verify Gear-aggregate ownership/equip plus permanent and ephemeral UI/discovery.
 
 ## Add a new companion

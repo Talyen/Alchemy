@@ -1,7 +1,7 @@
 import { writeCombatFlag } from "../action-context";
 import type { BattleCardEffect } from "@/lib/game-data";
 import type { BattleState } from "../types";
-import type { EffectHandler } from "./handler-types";
+import type { EffectHandlers, EffectHandler } from "./handler-types";
 import { companionLibrary } from "@/lib/game-data";
 import { applyPotionMultiplier } from "../amount-helpers";
 import { mergeCombatText } from "../combat-text-events";
@@ -9,7 +9,6 @@ import { addGoldWithCombatText, applyBlockReward } from "../player-rewards";
 import { applyEmergencyWishForEmptyDraw, applyWishEffect } from "../wish";
 import { resolvePendingBattleReactions } from "../enemy-attack-damage";
 import { drawFromState, applyDrawResult } from "../draw";
-import { defineHandler } from "./handler-types";
 import { getBattleRng, rngInt } from "@/lib/rng";
 
 const RANGE_BOUNDS_MESSAGE = "maxAmount must be >= minAmount";
@@ -17,75 +16,6 @@ const RANGE_BOUNDS_MESSAGE = "maxAmount must be >= minAmount";
 export function rangeBoundsError(kind: string): Error {
   return new Error(`[Battle] ${kind} ${RANGE_BOUNDS_MESSAGE}`);
 }
-
-export const applyRandomDrawEffect = defineHandler("random-draw", (state, _card, effect, potionMult, combatTexts) => {
-  if (effect.maxAmount < effect.minAmount) throw rangeBoundsError("random-draw");
-  const amount = effect.minAmount + rngInt(getBattleRng(state), effect.maxAmount - effect.minAmount + 1);
-  const next = applyDrawResult(state, drawFromState(state, applyPotionMultiplier(amount, potionMult)));
-  mergeCombatText(combatTexts, {
-    target: "player",
-    kind: "status",
-    stat: "draw",
-    amount: next.hand.length + next.pendingHandCards.length - state.hand.length - state.pendingHandCards.length,
-  });
-  return applyEmergencyWishForEmptyDraw(next, amount, combatTexts);
-});
-
-export const applySummonCompanionEffect = defineHandler(
-  "summon-companion",
-  (state, _card, effect, _potionMult, combatTexts) => {
-    mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: "companion", text: "" });
-    const summoned = { ...state, activeCompanion: companionLibrary[effect.companionId] };
-    return summoned.gearEffects.blockOnCompanionSummon > 0
-      ? applyBlockReward(summoned, summoned.gearEffects.blockOnCompanionSummon, combatTexts)
-      : summoned;
-  },
-);
-
-export const applyBuffCompanionEffect = defineHandler(
-  "buff-companion",
-  (state, _card, effect, _potionMult, combatTexts) => {
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "companion", amount: effect.amount });
-    return { ...state, companionDamageBuff: state.companionDamageBuff + effect.amount };
-  },
-);
-
-export const applyGainGoldEffect = defineHandler("gain-gold", (state, _card, effect, potionMult, combatTexts) => {
-  if (effect.ifEnemyStunned && state.enemyCC.stunSkipTurns <= 0) {
-    return state;
-  }
-  const adjustedGold = applyPotionMultiplier(effect.amount, potionMult);
-  return addGoldWithCombatText(state, adjustedGold, combatTexts);
-});
-
-export const applyWishEffectHandler = defineHandler("wish", (state, card, effect, potionMult, combatTexts) => {
-  if (effect.companionIfAbsent && state.activeCompanion) return state;
-  const adjustedWish = applyPotionMultiplier(effect.amount, potionMult);
-  if (adjustedWish > 0) mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: "wish", text: "" });
-  return applyWishEffect(
-    state,
-    card,
-    adjustedWish,
-    combatTexts,
-    {
-      kind: "each-step",
-      settle: resolvePendingBattleReactions,
-    },
-    effect.companionIfAbsent === true,
-  );
-});
-
-export const applyDrawCardsEffect = defineHandler("draw-cards", (state, _card, effect, potionMult, combatTexts) => {
-  const amount = applyPotionMultiplier(effect.amount, potionMult);
-  const next = applyDrawResult(state, drawFromState(state, amount));
-  mergeCombatText(combatTexts, {
-    target: "player",
-    kind: "status",
-    stat: "draw",
-    amount: next.hand.length + next.pendingHandCards.length - state.hand.length - state.pendingHandCards.length,
-  });
-  return applyEmergencyWishForEmptyDraw(next, amount, combatTexts);
-});
 
 const FLAG_EFFECTS = {
   "next-hit-crit": "nextHitCrit",
@@ -100,35 +30,77 @@ const FLAG_EFFECTS = {
 
 type FlagEffectKind = keyof typeof FLAG_EFFECTS;
 
-function makeFlagHandler<K extends FlagEffectKind>(kind: K): ReturnType<typeof defineHandler<K>> {
-  const flag = FLAG_EFFECTS[kind];
-  return defineHandler(kind, (state, _card, _effect, _potionMult, combatTexts) => {
-    mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: flag, signal: "prepared", text: "" });
-    return writeCombatFlag(state, flag, true);
-  });
-}
+const applyFlagEffect = ((state, _card, effect, _potionMult, combatTexts) => {
+  const flag = FLAG_EFFECTS[effect.kind];
+  mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: flag, signal: "prepared", text: "" });
+  return writeCombatFlag(state, flag, true);
+}) satisfies EffectHandler<FlagEffectKind>;
 
-const FLAG_HANDLERS: Record<FlagEffectKind, EffectHandler> = {
-  "next-hit-crit": makeFlagHandler("next-hit-crit"),
-  "next-hit-leech": makeFlagHandler("next-hit-leech"),
-  "play-next-card-twice": makeFlagHandler("play-next-card-twice"),
-  "next-hit-poison": makeFlagHandler("next-hit-poison"),
-  "next-archery-free": makeFlagHandler("next-archery-free"),
-};
-
-// Named aliases kept for direct unit tests; new code should use FLAG_HANDLERS.
-export const applyNextHitCritEffect = FLAG_HANDLERS["next-hit-crit"];
-export const applyNextHitLeechEffect = FLAG_HANDLERS["next-hit-leech"];
-export const applyPlayNextCardTwiceEffect = FLAG_HANDLERS["play-next-card-twice"];
-export const applyNextHitPoisonEffect = FLAG_HANDLERS["next-hit-poison"];
-export const applyNextArcheryFreeEffect = FLAG_HANDLERS["next-archery-free"];
+const FLAG_HANDLERS = {
+  "next-hit-crit": applyFlagEffect,
+  "next-hit-leech": applyFlagEffect,
+  "play-next-card-twice": applyFlagEffect,
+  "next-hit-poison": applyFlagEffect,
+  "next-archery-free": applyFlagEffect,
+} satisfies Pick<EffectHandlers, FlagEffectKind>;
 
 export const SIMPLE_HANDLERS = {
-  "gain-gold": applyGainGoldEffect,
-  wish: applyWishEffectHandler,
-  "summon-companion": applySummonCompanionEffect,
-  "buff-companion": applyBuffCompanionEffect,
-  "random-draw": applyRandomDrawEffect,
-  "draw-cards": applyDrawCardsEffect,
+  "random-draw": (state, _card, effect, potionMult, combatTexts) => {
+    if (effect.maxAmount < effect.minAmount) throw rangeBoundsError("random-draw");
+    const amount = effect.minAmount + rngInt(getBattleRng(state), effect.maxAmount - effect.minAmount + 1);
+    const next = applyDrawResult(state, drawFromState(state, applyPotionMultiplier(amount, potionMult)));
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "status",
+      stat: "draw",
+      amount: next.hand.length + next.pendingHandCards.length - state.hand.length - state.pendingHandCards.length,
+    });
+    return applyEmergencyWishForEmptyDraw(next, amount, combatTexts);
+  },
+  "summon-companion": (state, _card, effect, _potionMult, combatTexts) => {
+    mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: "companion", text: "" });
+    const summoned = { ...state, activeCompanion: companionLibrary[effect.companionId] };
+    return summoned.gearEffects.blockOnCompanionSummon > 0
+      ? applyBlockReward(summoned, summoned.gearEffects.blockOnCompanionSummon, combatTexts)
+      : summoned;
+  },
+  "buff-companion": (state, _card, effect, _potionMult, combatTexts) => {
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "companion", amount: effect.amount });
+    return { ...state, companionDamageBuff: state.companionDamageBuff + effect.amount };
+  },
+  "gain-gold": (state, _card, effect, potionMult, combatTexts) => {
+    if (effect.ifEnemyStunned && state.enemyCC.stunSkipTurns <= 0) {
+      return state;
+    }
+    const adjustedGold = applyPotionMultiplier(effect.amount, potionMult);
+    return addGoldWithCombatText(state, adjustedGold, combatTexts);
+  },
+  wish: (state, card, effect, potionMult, combatTexts) => {
+    if (effect.companionIfAbsent && state.activeCompanion) return state;
+    const adjustedWish = applyPotionMultiplier(effect.amount, potionMult);
+    if (adjustedWish > 0) mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: "wish", text: "" });
+    return applyWishEffect(
+      state,
+      card,
+      adjustedWish,
+      combatTexts,
+      {
+        kind: "each-step",
+        settle: resolvePendingBattleReactions,
+      },
+      effect.companionIfAbsent === true,
+    );
+  },
+  "draw-cards": (state, _card, effect, potionMult, combatTexts) => {
+    const amount = applyPotionMultiplier(effect.amount, potionMult);
+    const next = applyDrawResult(state, drawFromState(state, amount));
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "status",
+      stat: "draw",
+      amount: next.hand.length + next.pendingHandCards.length - state.hand.length - state.pendingHandCards.length,
+    });
+    return applyEmergencyWishForEmptyDraw(next, amount, combatTexts);
+  },
   ...FLAG_HANDLERS,
-} satisfies Partial<Record<import("@/lib/game-data").BattleCardEffectKind, EffectHandler>>;
+} satisfies Partial<EffectHandlers>;

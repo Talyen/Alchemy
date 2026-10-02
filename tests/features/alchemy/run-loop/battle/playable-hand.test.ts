@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
+import { playBattleCardResolved } from "@/lib/battle/card-play";
 import {
   findBestPlayableHandCard,
   findBestWishChoice,
   getPlayableHandCardKeys,
-  getPlayableHandCardKeysExcludingHidden,
   handHasHiddenCard,
 } from "@/features/alchemy/run-loop/battle/playable-hand";
 import { makeTestBattleState } from "../../../../fixtures/battle";
@@ -104,52 +104,6 @@ describe("getPlayableHandCardKeys", () => {
     };
 
     expect(getPlayableHandCardKeys(state).has("slash-1")).toBe(false);
-  });
-});
-
-describe("getPlayableHandCardKeysExcludingHidden", () => {
-  it("excludes hidden keys but keeps other affordable cards", () => {
-    const drawingCard: BattleCard = { ...affordableCard, id: "draw", uid: 3 };
-    const state = {
-      ...defaultBattleState(),
-      turnPhase: "player" as const,
-      mana: 2,
-      wishOptions: null,
-      hand: [affordableCard, drawingCard],
-    };
-
-    const playable = getPlayableHandCardKeysExcludingHidden(state, ["draw-3"]);
-    expect(playable.has("slash-1")).toBe(true);
-    expect(playable.has("draw-3")).toBe(false);
-  });
-
-  it("does not mutate a shared playable-keys set", () => {
-    const drawingCard: BattleCard = { ...affordableCard, id: "draw", uid: 3 };
-    const state = {
-      ...defaultBattleState(),
-      turnPhase: "player" as const,
-      mana: 2,
-      wishOptions: null,
-      hand: [affordableCard, drawingCard],
-    };
-    const shared = getPlayableHandCardKeys(state);
-    const playable = getPlayableHandCardKeysExcludingHidden(state, ["draw-3"], shared);
-
-    expect(shared.has("draw-3")).toBe(true);
-    expect(playable.has("draw-3")).toBe(false);
-    expect(playable).not.toBe(shared);
-  });
-
-  it("keeps visible cards available independently of transfers", () => {
-    const state = {
-      ...defaultBattleState(),
-      turnPhase: "player" as const,
-      mana: 2,
-      wishOptions: null,
-      hand: [affordableCard],
-    };
-
-    expect(getPlayableHandCardKeysExcludingHidden(state, []).size).toBe(1);
   });
 });
 
@@ -290,6 +244,36 @@ describe("findBestPlayableHandCard", () => {
         playerStatuses: { ...state.playerStatuses, phoenixFeather: 1 },
       })?.card.id,
     ).toBe(offering.id);
+  });
+
+  it("leaves repeated Health costs to manual play when the second resolution is lethal", () => {
+    const offering = cardById["blood-offering"]!;
+    const state = greedyState([offering], {
+      playerHealth: 2,
+      deathsDoorUsed: true,
+      flags: { ...defaultBattleState().flags, playNextCardTwice: true },
+    });
+    expect(playBattleCardResolved({ ...state, rng: () => 0.99 }, offering.id, 0).state.playerHealth).toBe(0);
+    expect(findBestPlayableHandCard(state)).toBeNull();
+  });
+
+  it("does not prioritize Mana Shield as defense when a free play would convert zero Mana", () => {
+    const shield = cardById["mana-shield"]!;
+    const hit = strongHit;
+    const state = greedyState([shield, hit], {
+      playerHealth: 10,
+      mana: 0,
+      flags: { ...defaultBattleState().flags, nextCardCostReduction: 99 },
+    });
+    expect(playBattleCardResolved({ ...state, rng: () => 0.99 }, shield.id, 0).state.playerStatuses.block).toBe(0);
+    expect(findBestPlayableHandCard(state)?.card.id).toBe(hit.id);
+  });
+
+  it("recognizes Luck Potion's nested Block outcome when seeking defense at low Health", () => {
+    const potion = cardById["luck-potion"]!;
+    const state = greedyState([strongHit, potion], { playerHealth: 10, mana: 3, maxMana: 3 });
+    expect(playBattleCardResolved({ ...state, rng: () => 0.99 }, potion.id, 1).state.playerStatuses.block).toBe(4);
+    expect(findBestPlayableHandCard(state)?.card.id).toBe(potion.id);
   });
 
   it.each(["exorcism", "cauterize", "dark-pact"])(

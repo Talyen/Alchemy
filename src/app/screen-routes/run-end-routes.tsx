@@ -1,11 +1,11 @@
 import { IS_DEMO } from "@/lib/game-edition";
 import { isDesktop, openFullGameWishlist } from "@/lib/platform";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { DemoCompletionScreen } from "@/features/alchemy/run-loop/screens/demo-completion-screen";
 import { RunEndScreen } from "@/features/alchemy/run-loop/screens/run-end-screen";
 import { useRunEndScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
-import type { RunEndCommands, RunEndRouteCtx } from "./route-ctx";
+import type { RunEndRouteCtx } from "./route-ctx";
 
 const RUN_END_COPY = {
   defeat: { title: "Journey’s End", subtitle: "" },
@@ -15,7 +15,9 @@ const RUN_END_COPY = {
   },
 } as const;
 
-function RunEndScreenRoute({ outcome, commands }: { outcome: keyof typeof RUN_END_COPY; commands: RunEndCommands }) {
+function RunEndScreenRoute({ screen, routeCommands }: RunEndRouteCtx) {
+  const outcome = screen === "run-victory" ? "victory" : "defeat";
+  const commands = routeCommands.runEnd;
   const {
     characterId,
     runEndTalentXP,
@@ -66,10 +68,7 @@ function RunEndScreenRoute({ outcome, commands }: { outcome: keyof typeof RUN_EN
   );
 }
 
-export const runEndScreenRoutes: {
-  "game-over": (ctx: RunEndRouteCtx) => ReactNode;
-  "run-victory": (ctx: RunEndRouteCtx) => ReactNode;
-} = {
-  "game-over": ({ routeCommands }) => <RunEndScreenRoute outcome="defeat" commands={routeCommands.runEnd} />,
-  "run-victory": ({ routeCommands }) => <RunEndScreenRoute outcome="victory" commands={routeCommands.runEnd} />,
+export const runEndScreenRoutes = {
+  "game-over": RunEndScreenRoute,
+  "run-victory": RunEndScreenRoute,
 };

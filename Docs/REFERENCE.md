@@ -88,9 +88,16 @@ paired iterations, 33 isolated-card deck samples, and 3 deck seeds for tuning
 decisions. Both commands write the standard `reports/balance-findings.*` and
 `reports/balance-full/` artifacts.
 
-Live autoplay scoring lives in `src/lib/battle/autoplay-policy.ts` and is game-design owned; changing those weights changes autoplay and Wish picks in real runs. `src/lib/balance/play-policy.ts` re-exports that policy so reports match the skill floor — fork sim-local scoring there instead of retuning live. `findings.ts` gathers ordered candidates from rate, equity, matchup, paired, and anomaly collectors in `findings-*.ts`; `findings-selection.ts` owns deduplication, ranking, matchup clustering, and bucket selection. `report-methodology.ts` supplies shared HTML/JSON methodology without importing the simulation runner. Shared HTML shell, escaping, and JSON stringification live in `report-layout.ts`; gauntlet depths and typical gear-roll depth live in `report-catalog.ts` / `gear-preset.ts`.
+Live autoplay scoring lives in `src/lib/battle/autoplay-policy.ts` and is game-design owned; changing those weights changes autoplay and Wish picks in real runs. `src/lib/balance/play-policy.ts` re-exports that policy so reports match the skill floor — fork sim-local scoring there instead of retuning live. `findings.ts` gathers ordered candidates from rate, equity, matchup, paired, and anomaly collectors in `findings-*.ts`; `findings-selection.ts` owns deduplication, ranking, matchup clustering, and bucket selection. `findings-collector.ts` attaches report identity separately from metric rules and shares one sampled-median evaluator between enemy-type and class equity; candidate order remains explicit in `collectBalanceFindings`. `report-methodology.ts` supplies shared HTML/JSON methodology without importing the simulation runner. Shared HTML shell, escaping, and JSON stringification live in `report-layout.ts`; gauntlet depths and typical gear-roll depth live in `report-catalog.ts` / `gear-preset.ts`.
 
 Exact presets, finding bands, report grouping, pairing methodology, and measurement semantics are owned by `src/lib/balance/` and the generated report; use findings as review input rather than applying tunings automatically. The summary opens `reports/balance-findings.html` and writes a JSON companion.
+
+Report measurements share `RateCell` in `simulator-types.ts` and an exhaustive
+extraction/aggregation record in `rate-statistics.ts`. Batch summaries and report
+aggregation use that same record: outcome counts and sample counts always sum;
+rates and averages weight by battles, or equally by sampled enemy types for
+class rankings. Add a measurement to the contract and its record together; batch
+to report projection and both weighting modes then include it automatically.
 
 Paired sweeps describe reference fights and one or more variants in `report-sweeps.ts`. `report-sweep-runner.ts` owns batch configuration, matched-fight validation, one simulation of each shared reference, and paired result aggregation. A pair must keep character, enemy, depth, tier, fight seed, and iteration count equal; only the tested deck, talent, Trinket, or Gear input varies. A variant can use the reference as either the baseline or treatment, so removing a card or talent preserves the meaning of the reported delta.
 

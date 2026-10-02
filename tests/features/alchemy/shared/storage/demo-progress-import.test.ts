@@ -46,6 +46,12 @@ describe("automatic demo progress import", () => {
       ),
     ).toBeNull();
   });
+  it("does not import a playable backup alongside a newer-format source", () => {
+    const playable = JSON.stringify({ ...createDefaultSaveData(), gold: 200, lastSavedAt: 20 });
+    const future = JSON.stringify({ ...createDefaultSaveData(), saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1 });
+    expect(prepareDemoProgressImport(source([playable, future]))).toBeNull();
+    expect(prepareDemoProgressImport(source([future, playable]))).toBeNull();
+  });
   it("acknowledges the local import once even when initialization is requested concurrently", async () => {
     const write = vi.fn().mockResolvedValue({ ok: true });
     const receipt = vi.fn().mockResolvedValue(true);

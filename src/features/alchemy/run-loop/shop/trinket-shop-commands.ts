@@ -1,9 +1,6 @@
 import { grantTrinketToRunWithRecord } from "@/features/alchemy/shared/stores/deck-mutations";
 import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
-import {
-  createDraftRunRandomSource,
-  setTrinketShopState,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readActivityData } from "@/lib/active-run-session";
 import type { TalentEffectManifest, TrinketEntry } from "@/lib/game-data";
 import { isLootEligible } from "@/lib/loot";
@@ -28,9 +25,9 @@ export function createTrinketShopCommands({
   const getBuyPrice = () => {
     return getShopBuyPrice("trinket", null, resolveReadShopPricingContext(talentEffects, "trinketShopState"));
   };
-  const getRefreshPrice = createGetRefreshPrice("trinket", talentEffects);
+  const getRefreshPrice = createGetRefreshPrice("trinket-shop", talentEffects);
 
-  const initialize = initializeShop(setTrinketShopState, (draft) =>
+  const initialize = initializeShop("trinket-shop", (draft) =>
     createInitialTrinketShopState(createDraftRunRandomSource(draft, "shops"), draft.gear.ownedTrinketIds),
   );
 
@@ -39,13 +36,11 @@ export function createTrinketShopCommands({
       const state = readActivityData(draft.session.activity, "trinket-shop");
       return purchaseSlotOffering({
         talentEffects,
-        state,
-        setState: setTrinketShopState,
+        activity: "trinket-shop",
         draft,
         items: state.trinkets,
         requestedId: trinket.id,
         slotKey,
-        buyKind: "trinket",
         slotKeyOf: (item, index) => shopItemSlotKey(item.id, index),
         idOf: (item) => item.id,
         isAvailable: (innerDraft, offered) => !innerDraft.gear.ownedTrinketIds.includes(offered.id),
@@ -56,18 +51,17 @@ export function createTrinketShopCommands({
 
   const refresh = createShopRefreshAction({
     activity: "trinket-shop",
-    kind: "trinket",
     talentEffects,
-    setState: setTrinketShopState,
     guard: (draft) => isLootEligible("trinket", resolveDraftLootProgress(draft).depth),
-    mapState: (previous, trinkets: TrinketEntry[]) => ({ ...previous, trinkets }),
-    resample: (draft, state) =>
-      resampleTrinketShopOfferings(
+    resample: (draft, state) => ({
+      ...state,
+      trinkets: resampleTrinketShopOfferings(
         createDraftRunRandomSource(draft, "shops"),
         resolveDraftLootProgress(draft),
         draft.gear.ownedTrinketIds,
         state.trinkets.map((trinket) => trinket.id),
       ),
+    }),
   });
 
   return { initialize, buy, refresh, getBuyPrice, getRefreshPrice };

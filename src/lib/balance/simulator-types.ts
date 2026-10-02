@@ -58,14 +58,11 @@ export type BalanceBatchConfig = Omit<BattleSimulationConfig, "seed"> & {
   seed?: number;
 };
 
-export interface BalanceBatchResult {
-  config: BalanceBatchConfig;
-  iterations: number;
+export interface RateCell {
   wins: number;
   losses: number;
   timeouts: number;
   winRate: number;
-  lossRate: number;
   timeoutRate: number;
   averageTurns: number;
   averageEnemyAttacks: number;
@@ -73,6 +70,13 @@ export interface BalanceBatchResult {
   averageEnemyAbilityUses: number;
   winsBeforeEnemyAttackRate: number;
   averageHealthRemaining: number;
+  n: number;
+}
+
+export interface BalanceBatchResult extends Omit<RateCell, "n"> {
+  config: BalanceBatchConfig;
+  iterations: number;
+  lossRate: number;
   averageCardsPlayed: number;
   cardPlayCounts: Record<string, number>;
   results: BattleSimulationResult[];

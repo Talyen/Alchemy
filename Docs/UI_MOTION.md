@@ -12,6 +12,8 @@ Canonical detail linked from [UI.md](./UI.md).
 
 Screen and `FadeSlot` reveals wait for the mounted images to load and decode through `useArtworkReady`, then allow a layout frame before starting the fade. While preparing a reveal, the gate also tracks artwork inserted after layout measurement and changed image sources; stale decode completions cannot reveal or hide the replacement. The observer disconnects after reveal, so normal battle updates do not restart the whole-screen gate. Startup preloading is a warm-up, not proof that a later mounted image is paint-ready. Failed or timed-out images stay hidden for that mount so they cannot pop in after the screen is revealed. Reserve intrinsic artwork dimensions when image height determines layout, including the menu logo.
 
+Startup preloading and mounted artwork share [image readiness](../src/lib/preload/image-readiness.ts), which owns load/decode completion, the timeout, and listener cleanup. The reveal gate retains each image's wait until its source changes or it leaves the screen; unrelated DOM changes do not restart its deadline.
+
 Opacity fades use reversible CSS transitions, so an interrupted reveal exits from
 its current opacity instead of restarting at full opacity. The first changed render
 already carries the exit phase. Screen input, including external battle chrome, stays
@@ -39,6 +41,12 @@ and bar share an eased refill, then hold the exact result before continuing. Kee
 that snapshot through the outgoing screen fade so applying the heal cannot restart
 the visible refill. Use `CAMPFIRE_ANIMATION_MS` and `CAMPFIRE_CONTINUE_DELAY_MS` from
 [battle timing](../src/lib/game-constants/battle-timing.ts).
+
+Canvas decorations share [the canvas lifecycle](../src/lib/animation/canvas-lifecycle.ts):
+background particles, combatant status effects, and keyword plasma use its resize,
+frame pacing, and pause/resume policy. The canvas owns backing dimensions; unchanged
+sizes must not clear its drawing state. Disposal aborts event listeners, cancels
+the queued frame, and disconnects resize observation; late callbacks do nothing.
 
 ## Battle motion
 

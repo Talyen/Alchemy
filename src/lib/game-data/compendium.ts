@@ -3,7 +3,7 @@ import { enemyBestiary } from "./compendium/enemies";
 import { trinketLibrary } from "./compendium/trinkets";
 
 export { enemyBestiary } from "./compendium/enemies";
-export { trinketLibrary } from "./compendium/trinkets";
+export { trinketLibrary, describeTrinket } from "./compendium/trinkets";
 
 export type EnemyEntry = (typeof enemyBestiary)[number];
 export type EnemyId = EnemyEntry["id"];

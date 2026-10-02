@@ -144,10 +144,10 @@ function readVisit<K extends keyof RunActivityData>(draft: GameplayDraft, kind: 
   return readActivityData(draft.session.activity, kind);
 }
 
-function setVisitState<K extends keyof RunActivityData>(
+export function setRunActivityData<K extends keyof RunActivityData>(
   draft: GameplayDraft,
   kind: K,
-  action: ActivityUpdate<K>,
+  action: ActivityUpdate<NoInfer<K>>,
 ): void {
   const data = typeof action === "function" ? action(readVisit(draft, kind)) : action;
   draft.session.activity = { kind, data } as GameplayDraft["session"]["activity"];
@@ -155,7 +155,7 @@ function setVisitState<K extends keyof RunActivityData>(
 
 function defineVisitSetter<K extends keyof RunActivityData>(kind: K) {
   return (draft: GameplayDraft, action: ActivityUpdate<K>): void => {
-    setVisitState(draft, kind, action);
+    setRunActivityData(draft, kind, action);
   };
 }
 

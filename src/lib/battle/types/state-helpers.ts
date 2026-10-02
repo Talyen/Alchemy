@@ -13,9 +13,7 @@ import { writeCombatFlag } from "../action-context";
 
 export function blockAmountWithForge(state: BattleState, amount: number): number {
   if (amount <= 0) return amount;
-  const forgeBonus = state.talentEffects.forgeToBlock
-    ? state.playerStatuses.forge
-    : scalePercent(state.playerStatuses.forge, state.talentEffects.forgeBlockPercent);
+  const forgeBonus = scalePercent(state.playerStatuses.forge, state.talentEffects.forgeBlockPercent);
   return amount + forgeBonus;
 }
 

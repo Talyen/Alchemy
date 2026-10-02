@@ -36,7 +36,7 @@ describe("combat reward ordering", () => {
       talentEffects: {
         armorOnDodge: 1,
         flatArmorAmount: 1,
-        armorDoubledBelowHalfHealth: true,
+        armorLowHealthBonusPercent: 100,
         firstArmorCardDoubled: true,
         armorBlockThreshold: 4,
         armorBlockAmount: 8,

@@ -6,12 +6,7 @@ import {
   canInspectLabyrinthNode,
   withClearedNode,
 } from "@/lib/content-systems/labyrinth/map-state";
-import type {
-  EncounterCombatTraitId,
-  EncounterRewardTraitId,
-  LabyrinthNode,
-  LabyrinthNodeType,
-} from "@/lib/content-systems/types";
+import type { LabyrinthNode, LabyrinthNodeType } from "@/lib/content-systems/types";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { logError } from "@/lib/error-logger";
 import {
@@ -26,29 +21,9 @@ import {
 export interface LabyrinthController {
   selectNode: (nodeId: string) => void;
   deselectNode: () => void;
-  enterSelectedNode: (handlers: LabyrinthNodeHandlers) => boolean;
+  enterSelectedNode: (openRoom: (node: LabyrinthNode) => void) => boolean;
   descend: () => void;
   onNodeCleared: () => void;
-}
-export interface LabyrinthNodeHandlers {
-  onStartBattleWithModifiers: (
-    enemyType: "normal" | "elite",
-    modifiers: EncounterCombatTraitId[],
-    rewardModifiers: EncounterRewardTraitId[],
-    enemyId?: string,
-  ) => void;
-  onStartBossBattleWithModifiers: (
-    modifiers: EncounterCombatTraitId[],
-    rewardModifiers: EncounterRewardTraitId[],
-    enemyId?: string,
-  ) => void;
-  onStartRest: (modifiers?: EncounterRewardTraitId[]) => void;
-  onStartMystery: (modifiers?: EncounterRewardTraitId[]) => void;
-  onStartCorruption: (modifiers?: EncounterRewardTraitId[]) => void;
-  onStartShop: (modifiers?: EncounterRewardTraitId[]) => void;
-  onStartAlchemist: (modifiers?: EncounterRewardTraitId[]) => void;
-  onStartTrinketShop: (modifiers?: EncounterRewardTraitId[]) => void;
-  onStartEquipmentShop: (modifiers?: EncounterRewardTraitId[]) => void;
 }
 const ROOM_DESTINATIONS: Record<Exclude<LabyrinthNodeType, "entrance">, Destination> = {
   combat: DESTINATIONS.NORMAL_COMBAT,
@@ -62,25 +37,6 @@ const ROOM_DESTINATIONS: Record<Exclude<LabyrinthNodeType, "entrance">, Destinat
   "trinket-shop": DESTINATIONS.TRINKET_SHOP,
   "equipment-shop": DESTINATIONS.GEAR_SHOP,
 };
-type NodeAction = (node: LabyrinthNode, handlers: LabyrinthNodeHandlers) => void;
-const NODE_ACTIONS: Record<LabyrinthNodeType, NodeAction> = {
-  combat: (node, handlers) =>
-    handlers.onStartBattleWithModifiers("normal", node.modifiers, node.rewardModifiers, node.enemyId),
-  elite: (node, handlers) =>
-    handlers.onStartBattleWithModifiers("elite", node.modifiers, node.rewardModifiers, node.enemyId),
-  boss: (node, handlers) => handlers.onStartBossBattleWithModifiers(node.modifiers, node.rewardModifiers, node.enemyId),
-  entrance: () => {},
-  rest: (node, handlers) => handlers.onStartRest(node.rewardModifiers),
-  mystery: (node, handlers) => handlers.onStartMystery(node.rewardModifiers),
-  corruption: (node, handlers) => handlers.onStartCorruption(node.rewardModifiers),
-  shop: (node, handlers) => handlers.onStartShop(node.rewardModifiers),
-  alchemist: (node, handlers) => handlers.onStartAlchemist(node.rewardModifiers),
-  "trinket-shop": (node, handlers) => handlers.onStartTrinketShop(node.rewardModifiers),
-  "equipment-shop": (node, handlers) => handlers.onStartEquipmentShop(node.rewardModifiers),
-};
-function routeNodeInteraction(node: LabyrinthNode, handlers: LabyrinthNodeHandlers): void {
-  NODE_ACTIONS[node.type](node, handlers);
-}
 export function createLabyrinthController(): LabyrinthController {
   const selectNode = (nodeId: string) => {
     dispatchRunSessionCommand((draft) => {
@@ -91,7 +47,7 @@ export function createLabyrinthController(): LabyrinthController {
   const deselectNode = () => {
     dispatchRunSessionCommand((draft) => setSelectedLabyrinthNodeId(draft, null));
   };
-  const enterSelectedNode = (handlers: LabyrinthNodeHandlers): boolean => {
+  const enterSelectedNode = (openRoom: (node: LabyrinthNode) => void): boolean => {
     const entry = dispatchRunSessionCommand((draft) => {
       const session = draft.session;
       if (session.activeLabyrinthPendingNode) return null;
@@ -108,7 +64,7 @@ export function createLabyrinthController(): LabyrinthController {
     });
     if (!entry) return false;
     try {
-      routeNodeInteraction(entry.node, handlers);
+      openRoom(entry.node);
     } catch (error) {
       dispatchRunSessionCommand((draft) => {
         setActiveLabyrinthPendingNode(draft, null);

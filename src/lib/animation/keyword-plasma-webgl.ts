@@ -1,7 +1,7 @@
 import { createWebGLProgram } from "./webgl-program";
 import { parsePlasmaHexColor, type RgbTuple } from "@/lib/animation/plasma-colors";
-import { createPlasmaLifecycle } from "./keyword-plasma-lifecycle";
-import type { PlasmaRendererOptions } from "./keyword-plasma-types";
+import { createCanvasLifecycle } from "./canvas-lifecycle";
+import { PLASMA_BACKING_OPTIONS, type PlasmaRendererOptions } from "./keyword-plasma-types";
 
 const VERTEX_SHADER = `
 attribute vec2 aPosition;
@@ -103,10 +103,13 @@ export function startWebGLKeywordPlasma(options: PlasmaRendererOptions): (() => 
   let cachedPrimary: RgbTuple = [0, 0, 0];
   let cachedSecondary: RgbTuple = [0, 0, 0];
 
-  const lifecycle = createPlasmaLifecycle({
+  const startTime = performance.now();
+  const lifecycle = createCanvasLifecycle({
     canvas,
     active,
-    onFrame: (time, width, height) => {
+    fpsLimit: 30,
+    backingScale: PLASMA_BACKING_OPTIONS,
+    onFrame: (now, _dt, width, height) => {
       if (width <= 0 || height <= 0) return;
 
       gl.viewport(0, 0, canvas.width, canvas.height);
@@ -130,7 +133,7 @@ export function startWebGLKeywordPlasma(options: PlasmaRendererOptions): (() => 
 
       const backingScale = height > 0 ? canvas.height / height : 1;
       gl.uniform2f(sizeLoc, canvas.width, canvas.height);
-      gl.uniform1f(timeLoc, time);
+      gl.uniform1f(timeLoc, (now - startTime) / 1000);
       gl.uniform3f(primaryLoc, primary[0], primary[1], primary[2]);
       gl.uniform3f(secondaryLoc, secondary[0], secondary[1], secondary[2]);
       gl.uniform2f(focalLoc, canvas.width / 2, canvas.height / 2 - focalYOffset * backingScale);

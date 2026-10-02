@@ -67,24 +67,55 @@ describe("paired deck helpers", () => {
   });
 });
 
-it("weights enemy interaction measurements by battle count", () => {
-  const result = combineRateCells([
-    {
+describe("rate aggregation", () => {
+  it("weights every average by battles while summing actual outcome counts", () => {
+    const first = {
       ...emptyRateCell(),
       n: 1,
-      averageEnemyAttacks: 0,
+      wins: 1,
+      winRate: 1,
+      averageTurns: 2,
+      averageHealthRemaining: 4,
       averageEnemyAbilityActivations: 2,
+      averageEnemyAbilityUses: 4,
       winsBeforeEnemyAttackRate: 1,
-    },
-    {
+    };
+    const second = {
       ...emptyRateCell(),
       n: 3,
+      wins: 1,
+      losses: 1,
+      timeouts: 1,
+      winRate: 1 / 3,
+      timeoutRate: 1 / 3,
+      averageTurns: 6,
+      averageHealthRemaining: 12,
       averageEnemyAttacks: 4,
       averageEnemyAbilityActivations: 6,
-      winsBeforeEnemyAttackRate: 0,
-    },
-  ]);
-  expect(result.averageEnemyAttacks).toBe(3);
-  expect(result.averageEnemyAbilityActivations).toBe(5);
-  expect(result.winsBeforeEnemyAttackRate).toBe(0.25);
+      averageEnemyAbilityUses: 8,
+    };
+    const original = structuredClone([first, second]);
+    expect(combineRateCells([first, second])).toEqual({
+      wins: 2,
+      losses: 1,
+      timeouts: 1,
+      n: 4,
+      winRate: 0.5,
+      timeoutRate: 0.25,
+      averageTurns: 5,
+      averageHealthRemaining: 10,
+      averageEnemyAttacks: 3,
+      averageEnemyAbilityActivations: 5,
+      averageEnemyAbilityUses: 7,
+      winsBeforeEnemyAttackRate: 0.25,
+    });
+    expect([first, second]).toEqual(original);
+    expect(combineRateCells([first])).toEqual(first);
+    expect(combineRateCells([first])).not.toBe(first);
+  });
+
+  it("returns finite zero measurements when there are no samples", () => {
+    expect(combineRateCells([])).toEqual(emptyRateCell());
+    expect(combineRateCells([emptyRateCell(), emptyRateCell()])).toEqual(emptyRateCell());
+  });
 });

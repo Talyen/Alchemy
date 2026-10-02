@@ -5,7 +5,6 @@ import {
 } from "@/features/alchemy/shared/run-flow/campaign-start";
 import { getPreviousDestination } from "@/features/alchemy/shared/run-flow/resolve-available-destinations";
 import { DEFAULT_BATTLE_ENEMY_TYPE, DEFAULT_CAMPAIGN_DIFFICULTY_ID } from "@/lib/game-constants";
-import { getStartingDeck } from "@/lib/game-data";
 
 describe("getPreviousDestination", () => {
   it("returns undefined at the start of an act", () => {
@@ -18,19 +17,17 @@ describe("getPreviousDestination", () => {
 });
 
 describe("tryStartNoviceCampaignBattle", () => {
-  const freshDeck = getStartingDeck("knight");
-
   function makeDeps(overrides: Partial<Parameters<typeof tryStartNoviceCampaignBattle>[1]> = {}) {
     return {
       completedDifficulties: {},
-      initializeRunForDifficulty: vi.fn(() => ({ freshDeck, totalStartGold: 99 })),
+      initializeRunForDifficulty: vi.fn(),
       getDifficultyModifiers: vi.fn(
         (_charId: import("@/lib/game-data").CharacterId, _diffId: import("@/lib/game-data").DifficultyId) =>
           [{ kind: "start-block" as const, amount: 5 }] as Array<
             import("@/lib/game-data/difficulties").DifficultyModifier
           >,
       ),
-      onStartBattle: vi.fn(),
+      startBattle: vi.fn(),
       navigateToBattle: vi.fn(),
       ...overrides,
     };
@@ -42,13 +39,11 @@ describe("tryStartNoviceCampaignBattle", () => {
 
     expect(started).toBe(true);
     expect(deps.initializeRunForDifficulty).toHaveBeenCalledWith("knight", DEFAULT_CAMPAIGN_DIFFICULTY_ID);
-    expect(deps.onStartBattle).toHaveBeenCalledWith(
-      freshDeck,
-      99,
-      DEFAULT_BATTLE_ENEMY_TYPE,
-      [{ kind: "start-block", amount: 5 }],
-      "skeleton",
-    );
+    expect(deps.startBattle).toHaveBeenCalledWith({
+      enemyType: DEFAULT_BATTLE_ENEMY_TYPE,
+      modifiers: [{ kind: "start-block", amount: 5 }],
+      enemyId: "skeleton",
+    });
     expect(deps.navigateToBattle).toHaveBeenCalledOnce();
   });
 
@@ -59,7 +54,7 @@ describe("tryStartNoviceCampaignBattle", () => {
     const started = tryStartNoviceCampaignBattle("knight", deps);
 
     expect(started).toBe(false);
-    expect(deps.onStartBattle).not.toHaveBeenCalled();
+    expect(deps.startBattle).not.toHaveBeenCalled();
     expect(deps.navigateToBattle).not.toHaveBeenCalled();
   });
 });
@@ -71,9 +66,9 @@ describe("afterCampaignCharacterResolved", () => {
       "knight",
       {
         completedDifficulties: {},
-        initializeRunForDifficulty: vi.fn(() => ({ freshDeck: getStartingDeck("knight"), totalStartGold: 0 })),
+        initializeRunForDifficulty: vi.fn(),
         getDifficultyModifiers: vi.fn(() => []),
-        onStartBattle: vi.fn(),
+        startBattle: vi.fn(),
         navigateToBattle: vi.fn(),
       },
       onContinue,
@@ -89,7 +84,7 @@ describe("afterCampaignCharacterResolved", () => {
         completedDifficulties: { knight: [DEFAULT_CAMPAIGN_DIFFICULTY_ID] },
         initializeRunForDifficulty: vi.fn(),
         getDifficultyModifiers: vi.fn(),
-        onStartBattle: vi.fn(),
+        startBattle: vi.fn(),
         navigateToBattle: vi.fn(),
       },
       onContinue,

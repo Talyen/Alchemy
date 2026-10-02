@@ -13,8 +13,9 @@ import {
   type ReportEnemyType,
 } from "./report-catalog";
 import type { AnomalyMetricRow, AnomalyReportRow, BalanceReportModel, ClassMatchupRow } from "./report-model";
+import { rateCellFromBatch } from "./rate-statistics";
 import type { ReportRunOptions } from "./report-options";
-import { combineRateCells, emptyRateCell, topPlayedCards, type RateCell } from "./report-rankings";
+import { combineRateCells, topPlayedCards, type RateCell } from "./report-rankings";
 import {
   buildBalanceBatchConfig,
   runAffixSweep,
@@ -29,23 +30,6 @@ import { simulateBatch } from "./simulator-batch";
 import type { BalanceBatchResult, TalentPreset } from "./simulator-types";
 
 export type { ReportRunOptions } from "./report-options";
-
-function cellFromBatch(batch: BalanceBatchResult): RateCell {
-  return {
-    wins: batch.wins,
-    losses: batch.losses,
-    timeouts: batch.timeouts,
-    winRate: batch.winRate,
-    timeoutRate: batch.timeoutRate,
-    averageTurns: batch.averageTurns,
-    averageEnemyAttacks: batch.averageEnemyAttacks,
-    averageEnemyAbilityActivations: batch.averageEnemyAbilityActivations,
-    averageEnemyAbilityUses: batch.averageEnemyAbilityUses,
-    winsBeforeEnemyAttackRate: batch.winsBeforeEnemyAttackRate,
-    averageHealthRemaining: batch.averageHealthRemaining,
-    n: batch.iterations,
-  };
-}
 
 function shouldLogBalanceProgress(): boolean {
   return Boolean(process.env.ALCHEMY_BALANCE_VERBOSE) || Boolean(process.env.ALCHEMY_BALANCE_PROGRESS);
@@ -113,7 +97,7 @@ function runCoreScenarios(options: ReportRunOptions): CoreRow[] {
           enemyId: matchup.enemyId,
           enemyType: matchup.enemyType,
           tier: tier.preset,
-          cell: combineRateCells(batches.map(cellFromBatch)),
+          cell: combineRateCells(batches.map(rateCellFromBatch)),
           cardPlayCounts,
           results: batches.flatMap((batch) => batch.results),
         });
@@ -209,51 +193,10 @@ function buildClassMatchups(rows: CoreRow[]): ClassMatchupRow[] {
 }
 
 export function equalWeightByType(byType: Readonly<Record<ReportEnemyType, RateCell>>): RateCell {
-  const types = REPORT_ENEMY_TYPES.filter((type) => byType[type].n > 0);
-  if (types.length === 0) return emptyRateCell();
-  let totalN = 0;
-  let winsTotal = 0;
-  let lossesTotal = 0;
-  let timeoutsTotal = 0;
-  let winRateSum = 0;
-  let timeoutRateSum = 0;
-  let turnsSum = 0;
-  let healthSum = 0;
-  let attacksSum = 0;
-  let abilityUsesSum = 0;
-  let abilityActivationsSum = 0;
-  let winsBeforeAttackSum = 0;
-
-  for (const type of types) {
-    const cell = byType[type];
-    totalN += cell.n;
-    winsTotal += cell.wins;
-    lossesTotal += cell.losses;
-    timeoutsTotal += cell.timeouts;
-    winRateSum += cell.winRate;
-    timeoutRateSum += cell.timeoutRate;
-    turnsSum += cell.averageTurns;
-    healthSum += cell.averageHealthRemaining;
-    attacksSum += cell.averageEnemyAttacks;
-    abilityUsesSum += cell.averageEnemyAbilityUses;
-    abilityActivationsSum += cell.averageEnemyAbilityActivations;
-    winsBeforeAttackSum += cell.winsBeforeEnemyAttackRate;
-  }
-  const count = types.length;
-  return {
-    wins: winsTotal,
-    losses: lossesTotal,
-    timeouts: timeoutsTotal,
-    winRate: winRateSum / count,
-    timeoutRate: timeoutRateSum / count,
-    averageTurns: turnsSum / count,
-    averageEnemyAttacks: attacksSum / count,
-    averageEnemyAbilityUses: abilityUsesSum / count,
-    averageEnemyAbilityActivations: abilityActivationsSum / count,
-    winsBeforeEnemyAttackRate: winsBeforeAttackSum / count,
-    averageHealthRemaining: healthSum / count,
-    n: totalN,
-  };
+  return combineRateCells(
+    REPORT_ENEMY_TYPES.map((type) => byType[type]),
+    "groups",
+  );
 }
 
 export function buildBalanceReport(options: ReportRunOptions): BalanceReportModel {

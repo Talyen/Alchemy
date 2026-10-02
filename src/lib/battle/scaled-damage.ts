@@ -1,7 +1,7 @@
 import type { GearEffectManifest } from "@/lib/gear";
 import { PERCENT_DENOMINATOR } from "../game-constants";
 import { applyPercentBonus } from "./amount-helpers";
-import { applyHitEpilogue } from "./player-rewards";
+import { applyHitEpilogue, applyIronGuardReward } from "./player-rewards";
 import { mergeCombatText } from "./combat-text-events";
 import { addEnemyStatus, damageEnemyHealth, type BattleState, type CombatTextEvent } from "./types";
 import { decayArmorAfterDamage, getEnemyDamageMultiplier } from "./status-helpers";
@@ -36,7 +36,8 @@ export function dealEnemyScaledDamage(
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat, amount: finalDamage });
   }
   const hit = damageEnemyHealth(state, finalDamage);
-  const resolved = options.riders ? options.riders(hit.state, finalDamage, combatTexts) : hit.state;
+  const rewarded = applyIronGuardReward(hit.state, stat, hit.healthDamage, combatTexts);
+  const resolved = options.riders ? options.riders(rewarded, finalDamage, combatTexts) : rewarded;
   return applyElementalDamageManaRestore(resolved, stat, hit.healthDamage, combatTexts);
 }
 

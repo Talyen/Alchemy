@@ -59,7 +59,9 @@ describe("collection item helpers", () => {
     });
 
     expect(item.descriptionLines).toEqual([]);
-    expect(item.card?.id).toBe(item.id);
+    expect(item.frameType).toBe("card");
+    if (item.frameType !== "card") throw new Error("expected card tile");
+    expect(item.card.id).toBe(item.id);
   });
 
   it("keeps Knight unlocked and uses unlock copy for locked heroes", () => {
@@ -111,6 +113,27 @@ describe("collection item helpers", () => {
     });
 
     expect(overflow.map((item) => item.id)).toEqual(last.map((item) => item.id));
+  });
+
+  it.each(["bestiary", "trinkets"] as const)("masks %s details without changing catalog order", (collectionTab) => {
+    const library = collectionTab === "bestiary" ? enemyBestiary : trinketLibrary;
+    const sorted = [...library].sort((a, b) => a.title.localeCompare(b.title));
+    const input = { collectionTab, ...emptyDiscoveries, page: 0, pageSize: 2 };
+    const hidden = getCollectionPageItems(input);
+    const revealed = getCollectionPageItems({
+      ...input,
+      encounteredEnemyIds: [sorted[0].id],
+      discoveredTrinketIds: [sorted[0].id],
+    });
+    expect(hidden.map((item) => item.id)).toEqual(sorted.slice(0, 2).map((entry) => entry.id));
+    expect(hidden.every((item) => !item.discovered && item.title === "Undiscovered")).toBe(true);
+    expect(revealed[0]).toMatchObject({
+      title: sorted[0].title,
+      descriptionLines: sorted[0].descriptionLines,
+      discovered: true,
+    });
+    expect(revealed[1]).toEqual(hidden[1]);
+    expect(getCollectionPageItems(input)).toEqual(hidden);
   });
 
   it("returns hidden unique copy until the unique is discovered", () => {

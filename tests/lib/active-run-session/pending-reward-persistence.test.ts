@@ -44,12 +44,18 @@ describe("pending reward persistence", () => {
     expect(restored).toEqual(rewardState);
   });
 
-  it("drops a stale selection with no choices or shared value instead of reviving it", () => {
-    // selectedId is only ever set at claim time alongside its choices; a lone
-    // selection cannot resolve to anything, so it must not keep a reward alive.
-    const persisted = serializePendingReward({ ...createEmptyRewardState(), selectedId: "slash" });
-    expect(persisted).toBeNull();
-  });
+  it.each(["card", "boon", "trinket", "gear"] as const)(
+    "drops an empty %s reward with a stale selection",
+    (rewardType) => {
+      // selectedId is only ever set at claim time alongside its choices; a lone
+      // selection cannot resolve to anything, so it must not keep a reward alive.
+      const state = { ...createEmptyRewardState(), rewardType, choices: [], selectedId: "slash" };
+      expect(serializePendingReward(state)).toBeNull();
+      const persisted = serializePendingReward({ ...state, gold: 1 })!;
+      persisted.gold = 0;
+      expect(restorePendingReward(persisted)).toBeNull();
+    },
+  );
 
   it("restores trinket rewardType from persisted saves", () => {
     const parsed = restorePendingReward({
@@ -138,6 +144,20 @@ describe("pending reward persistence", () => {
     const restored = restorePendingRewardBundle(persisted);
     expect(restored.rewardState).toEqual(rewardState);
     expect(restored.companionRewardCards).toEqual(bonuses);
+  });
+
+  it("keeps bonus cards reachable when the primary reward has no resolvable choices", () => {
+    const bonus = cardLibrary.find((card) => card.id === "slash")!;
+    const persisted = serializePendingReward({ ...createEmptyRewardState(), rewardType: "trinket", choices: [] }, [
+      bonus,
+    ])!;
+    if (persisted.rewardType === "gear") throw new Error("Expected catalog reward");
+    persisted.choiceIds = ["missing-trinket"];
+    expect(restorePendingReward(persisted)).toBeNull();
+    expect(restorePendingRewardBundle(persisted)).toEqual({
+      rewardState: createEmptyRewardState(),
+      companionRewardCards: [bonus],
+    });
   });
 
   it.each([{ ids: [] }, { ids: ["no-such-bonus-card"] }])("restores no bonus for IDs $ids", ({ ids }) => {

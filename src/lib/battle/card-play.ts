@@ -47,7 +47,7 @@ function applySpellrendingPurge(state: BattleState, manaSpent: number, combatTex
   )
     return state;
   const ready = { ...state, flags: { ...state.flags, spellrendingUsedThisTurn: true } };
-  const purged = purgeEnemyBenefits(ready, ready.gearEffects.purgeOnFirstPaidCard, combatTexts);
+  const purged = purgeEnemyBenefits(ready, 1, combatTexts);
   return applyPurgeGearRewards(purged.state, purged.removed, combatTexts);
 }
 

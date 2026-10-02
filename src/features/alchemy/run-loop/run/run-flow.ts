@@ -1,6 +1,7 @@
 import type { ShopKind } from "@/features/alchemy/run-loop/shop/shop-action-types";
 import type { DestinationOptionsInput } from "@/features/alchemy/shared/run-flow";
-import type { BattleCard, DifficultyModifier } from "@/lib/game-data";
+import type { DifficultyModifier } from "@/lib/game-data";
+import type { BattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
 import type { Destination, Screen, ScreenTransitionOptions } from "@/lib/routing";
 import { createDefeatHandlers } from "./run-flow-defeat";
 import { createDestinationScreenHandlers } from "./run-flow-destination-screen";
@@ -13,13 +14,7 @@ export interface RunFlowShellActions {
   transition: (screen: Screen, options?: ScreenTransitionOptions) => void;
   labyrinthClearNode: () => void;
   initializeShop: (kind: ShopKind) => void;
-  startBattle: (opts?: {
-    deck?: BattleCard[];
-    gold?: number;
-    enemyType?: "normal" | "elite";
-    modifiers?: DifficultyModifier[];
-    enemyId?: string;
-  }) => void;
+  startBattle: BattleStartCommands["startBattle"];
 
   startBoss: (opts?: { bossId?: string | null; modifiers?: DifficultyModifier[] }) => void;
 

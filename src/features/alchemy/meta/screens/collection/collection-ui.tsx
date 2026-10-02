@@ -78,7 +78,7 @@ export function CollectionGrid({
       >
         {pageItems.map((item) => (
           <div
-            key={`${item.hoverScope}-${item.id}`}
+            key={`${item.frameType}-${item.id}`}
             className="relative max-w-full shrink-0"
             style={{ width: `calc(${referenceWidth}px * var(--content-scale, 1))` }}
           >

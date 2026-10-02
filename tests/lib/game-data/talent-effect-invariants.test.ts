@@ -20,17 +20,8 @@ import {
 const ROOT = join(import.meta.dirname, "../../..");
 
 const LEGACY_SNAPSHOT_FIELDS: ReadonlyArray<keyof TalentEffectManifest> = [
-  "armorDoubledBelowHalfHealth",
   "partingCutOnDodge",
-  "blockToHolyDamage",
-  "blockToStunDamage",
   "blockOnDodgeEqualToAttack",
-  "forgeToHoly",
-  "forgeToBlock",
-  "forgeToBleed",
-  "forgeDoubledBelowHalfHealth",
-  "armorToNatureDamage",
-  "armorToPhysicalDamage",
   "physicalOnDodgeEqualToAttack",
 
   "archeryBleedChance",
@@ -150,7 +141,6 @@ const UNUSED_MANIFEST_ALLOWLIST: ReadonlySet<keyof TalentEffectManifest> = new S
   "blockOnNatureCard",
   "bleedExecuteThreshold",
   "bleedExecuteMultiplier",
-  "forgeToBurn",
   "natureDamageReduction",
   "potionMixPotency",
   "wishGemsGold",

@@ -1,8 +1,7 @@
-import type { EffectHandler } from "./handler-types";
+import type { EffectHandlers } from "./handler-types";
 import { applyPotionMultiplier } from "../amount-helpers";
 import { addEnemyStatus, setPlayerStatus, type BattleState, type CombatTextEvent } from "../types";
 import { mergeCombatText } from "../combat-text-events";
-import { defineHandler } from "./handler-types";
 import { applyPlayerStatusEffect, applyCleanseHeals, removeHarmfulPlayerStatuses } from "../status-player";
 import { tryTriggerEnemyFreeze } from "../damage-status-riders";
 import { resolveStunTrigger } from "../status-stun-resolve";
@@ -22,9 +21,8 @@ function resolveEnemyStatusCcTrigger(
   return nextState;
 }
 
-export const applyPlayerStatusEffectHandler = defineHandler(
-  "player-status",
-  (state, _card, effect, potionMult, combatTexts, context) => {
+export const STATUS_HANDLERS = {
+  "player-status": (state, _card, effect, potionMult, combatTexts, context) => {
     let adjustedAmount = effect.amount;
     let nextState = state;
     if (effect.convertCurrentMana) {
@@ -39,38 +37,29 @@ export const applyPlayerStatusEffectHandler = defineHandler(
       : effect.status;
     return applyPlayerStatusEffect(nextState, { ...effect, status, amount: adjustedAmount }, combatTexts);
   },
-);
+  "enemy-status": (state, _card, effect, potionMult, combatTexts) => {
+    const amount = applyPotionMultiplier(effect.amount, potionMult);
+    if (effect.status === "stun" || effect.status === "freeze") {
+      return resolveFollowUpHit(state, { source: "player-follow-up", damageType: effect.status, amount }, combatTexts);
+    }
+    const nextState = addEnemyStatus(state, effect.status, amount);
+    const appliedAmount = nextState.enemyStatuses[effect.status] - state.enemyStatuses[effect.status];
+    mergeCombatText(combatTexts, {
+      target: "enemy",
+      kind: effect.status === "burn" || effect.status === "poison" || effect.status === "bleed" ? "multiply" : "status",
+      stat: effect.status,
+      amount: appliedAmount,
+    });
 
-export const applyEnemyStatusEffect = defineHandler("enemy-status", (state, _card, effect, potionMult, combatTexts) => {
-  const amount = applyPotionMultiplier(effect.amount, potionMult);
-  if (effect.status === "stun" || effect.status === "freeze") {
-    return resolveFollowUpHit(state, { source: "player-follow-up", damageType: effect.status, amount }, combatTexts);
-  }
-  const nextState = addEnemyStatus(state, effect.status, amount);
-  const appliedAmount = nextState.enemyStatuses[effect.status] - state.enemyStatuses[effect.status];
-  mergeCombatText(combatTexts, {
-    target: "enemy",
-    kind: effect.status === "burn" || effect.status === "poison" || effect.status === "bleed" ? "multiply" : "status",
-    stat: effect.status,
-    amount: appliedAmount,
-  });
-
-  return nextState;
-});
-
-export const applyRemoveHarmfulStatusEffect = defineHandler(
-  "remove-harmful-status",
-  (state, _card, effect, potionMult, combatTexts) => {
+    return nextState;
+  },
+  "remove-harmful-status": (state, _card, effect, potionMult, combatTexts) => {
     const adjustedRemove = effect.removeAll
       ? Number.POSITIVE_INFINITY
       : applyPotionMultiplier(effect.amount ?? 0, potionMult);
     return removeHarmfulPlayerStatuses(state, adjustedRemove, combatTexts);
   },
-);
-
-export const applyRemovePlayerStatusEffect = defineHandler(
-  "remove-player-status",
-  (state, _card, effect, _potionMult, combatTexts) => {
+  "remove-player-status": (state, _card, effect, _potionMult, combatTexts) => {
     if (state.playerStatuses[effect.status] <= 0) return state;
     mergeCombatText(combatTexts, {
       target: "player",
@@ -81,11 +70,7 @@ export const applyRemovePlayerStatusEffect = defineHandler(
     });
     return applyCleanseHeals(setPlayerStatus(state, effect.status, 0), combatTexts);
   },
-);
-
-export const applyMultiplyEnemyStatusEffect = defineHandler(
-  "multiply-enemy-status",
-  (state, _card, effect, _potionMult, combatTexts) => {
+  "multiply-enemy-status": (state, _card, effect, _potionMult, combatTexts) => {
     const current = state.enemyStatuses[effect.status];
     if (current <= 0) return state;
 
@@ -99,11 +84,7 @@ export const applyMultiplyEnemyStatusEffect = defineHandler(
 
     return resolveEnemyStatusCcTrigger(state, nextState, effect.status, combatTexts);
   },
-);
-
-export const applyCleansePlayerStatusToDamageEffect = defineHandler(
-  "cleanse-player-status-to-damage",
-  (state, card, effect, potionMult, combatTexts, context) => {
+  "cleanse-player-status-to-damage": (state, card, effect, potionMult, combatTexts, context) => {
     const stacks = state.playerStatuses[effect.status];
     if (stacks <= 0) return state;
 
@@ -125,13 +106,4 @@ export const applyCleansePlayerStatusToDamageEffect = defineHandler(
       context,
     );
   },
-);
-
-export const STATUS_HANDLERS = {
-  "player-status": applyPlayerStatusEffectHandler,
-  "enemy-status": applyEnemyStatusEffect,
-  "remove-harmful-status": applyRemoveHarmfulStatusEffect,
-  "remove-player-status": applyRemovePlayerStatusEffect,
-  "multiply-enemy-status": applyMultiplyEnemyStatusEffect,
-  "cleanse-player-status-to-damage": applyCleansePlayerStatusToDamageEffect,
-} satisfies Partial<Record<import("@/lib/game-data").BattleCardEffectKind, EffectHandler>>;
+} satisfies Partial<EffectHandlers>;

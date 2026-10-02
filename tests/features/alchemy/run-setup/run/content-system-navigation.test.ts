@@ -31,11 +31,11 @@ beforeEach(() => {
 function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNavigation>[0]> = {}) {
   const navigateTo = vi.fn();
   const resumeTo = vi.fn();
-  const onStartBattle = vi.fn();
+  const startBattle = vi.fn();
   return {
     navigateTo,
     resumeTo,
-    onStartBattle,
+    startBattle,
     getAvailableDestinations: () => [DESTINATIONS.NORMAL_COMBAT],
     onResumeWildwood: vi.fn(),
     ...overrides,
@@ -56,13 +56,11 @@ describe("createContentSystemNavigation", () => {
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps);
     nav.handleCharacterSelect("knight");
-    expect(deps.onStartBattle).toHaveBeenCalledExactlyOnceWith(
-      expect.any(Array),
-      expect.any(Number),
-      "normal",
-      expect.any(Array),
-      "skeleton",
-    );
+    expect(deps.startBattle).toHaveBeenCalledExactlyOnceWith({
+      enemyType: "normal",
+      modifiers: expect.any(Array),
+      enemyId: "skeleton",
+    });
     expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE, expect.any(Function));
     expect(readActiveRun().contentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
     expect(readActiveRun().characterId).toBe("knight");
@@ -76,7 +74,7 @@ describe("createContentSystemNavigation", () => {
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps);
     nav.handleCharacterSelect("knight");
-    expect(deps.onStartBattle).not.toHaveBeenCalled();
+    expect(deps.startBattle).not.toHaveBeenCalled();
     expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DIFFICULTY_SELECT);
     expect(readRunSession().pendingCharacterId).toBe("knight");
   });
@@ -216,13 +214,11 @@ describe("createContentSystemNavigation", () => {
     nav.handleStandardDraftComplete();
     expect(() => nav.handleStandardDraftComplete()).not.toThrow();
 
-    expect(deps.onStartBattle).toHaveBeenCalledExactlyOnceWith(
-      expect.any(Array),
-      expect.any(Number),
-      "normal",
-      expect.any(Array),
-      "skeleton",
-    );
+    expect(deps.startBattle).toHaveBeenCalledExactlyOnceWith({
+      enemyType: "normal",
+      modifiers: expect.any(Array),
+      enemyId: "skeleton",
+    });
     expect(deps.navigateTo).toHaveBeenLastCalledWith(ROUTE_SCREENS.BATTLE, expect.any(Function));
   });
 
@@ -370,12 +366,10 @@ describe("createContentSystemNavigation", () => {
 
     expect(readActiveRun().contentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
     expect(readActiveRun().runDeck).toEqual(draftedCards);
-    expect(deps.onStartBattle).toHaveBeenCalledExactlyOnceWith(
-      expect.any(Array),
-      expect.any(Number),
-      "normal",
-      expect.any(Array),
-    );
+    expect(deps.startBattle).toHaveBeenCalledExactlyOnceWith({
+      enemyType: "normal",
+      modifiers: expect.any(Array),
+    });
   });
   it("repairs missing Campaign destinations using the current run's progress without switching runs", () => {
     setRunProgress({

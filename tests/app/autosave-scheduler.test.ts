@@ -1,172 +1,140 @@
 import { describe, expect, it } from "vitest";
-import {
-  applyAutosaveCompletion,
-  createAutosaveScheduler,
-  computeAutosaveDelay,
-  shouldAttemptFlush,
-} from "@/app/autosave-scheduler";
+import { createAutosaveScheduler } from "@/app/autosave-scheduler";
 
-describe("computeAutosaveDelay", () => {
-  it("uses the debounce when max wait is far away and no retry is pending", () => {
-    expect(
-      computeAutosaveDelay({ debounceMs: 500, maxWaitMs: 10_000, now: 1_000, dirtySince: 1_000, retryAt: 0 }),
-    ).toBe(500);
-  });
-
-  it("caps the delay at the remaining max wait", () => {
-    expect(
-      computeAutosaveDelay({ debounceMs: 500, maxWaitMs: 10_000, now: 10_500, dirtySince: 1_000, retryAt: 0 }),
-    ).toBe(500);
-    expect(
-      computeAutosaveDelay({ debounceMs: 500, maxWaitMs: 10_000, now: 10_900, dirtySince: 1_000, retryAt: 0 }),
-    ).toBe(100);
-  });
-
-  it("honors a pending retry even when it exceeds the debounce", () => {
-    expect(
-      computeAutosaveDelay({ debounceMs: 500, maxWaitMs: 10_000, now: 1_000, dirtySince: 1_000, retryAt: 11_000 }),
-    ).toBe(10_000);
-  });
-
-  it("ignores an expired retry in the past", () => {
-    expect(
-      computeAutosaveDelay({ debounceMs: 500, maxWaitMs: 10_000, now: 5_000, dirtySince: 1_000, retryAt: 2_000 }),
-    ).toBe(500);
-  });
-
-  it("starts immediately when animations are disabled", () => {
-    expect(computeAutosaveDelay({ debounceMs: 0, maxWaitMs: 10_000, now: 1_000, dirtySince: 1_000, retryAt: 0 })).toBe(
-      0,
-    );
-  });
-});
-
-describe("shouldAttemptFlush", () => {
-  it("blocks clean and already-submitted revisions", () => {
-    expect(
-      shouldAttemptFlush({
-        revision: 1,
-        acknowledgedRevision: 1,
-        submittedRevision: 1,
-        terminal: false,
-      }),
-    ).toBe(false);
-    expect(
-      shouldAttemptFlush({
-        revision: 2,
-        acknowledgedRevision: 1,
-        submittedRevision: 2,
-        terminal: false,
-      }),
-    ).toBe(false);
-  });
-
-  it("allows terminal flushes past the submitted revision", () => {
-    expect(shouldAttemptFlush({ revision: 2, acknowledgedRevision: 1, submittedRevision: 2, terminal: true })).toBe(
-      true,
-    );
-  });
-
-  it("blocks terminal flushes with nothing new to acknowledge", () => {
-    expect(shouldAttemptFlush({ revision: 1, acknowledgedRevision: 1, submittedRevision: 1, terminal: true })).toBe(
-      false,
-    );
-  });
-});
-
-describe("applyAutosaveCompletion", () => {
-  it("acknowledges saved revisions and clears the retry", () => {
-    expect(
-      applyAutosaveCompletion({
-        revision: 2,
-        acknowledgedRevision: 1,
-        submittedRevision: 2,
-        retryAt: 9_999,
-        savingRevision: 2,
-        outcome: "saved",
-        now: 2_000,
-        maxWaitMs: 10_000,
-      }),
-    ).toMatchObject({ acknowledgedRevision: 2, retryAt: 0, action: "cancel" });
-  });
-
-  it("keeps newer revisions dirty after an older save lands", () => {
-    expect(
-      applyAutosaveCompletion({
-        revision: 3,
-        acknowledgedRevision: 1,
-        submittedRevision: 2,
-        retryAt: 0,
-        savingRevision: 2,
-        outcome: "saved",
-        now: 2_000,
-        maxWaitMs: 10_000,
-      }),
-    ).toMatchObject({ acknowledgedRevision: 2, action: "schedule" });
-  });
-
-  it("rewinds to the acknowledged revision and retries after failure", () => {
-    expect(
-      applyAutosaveCompletion({
-        revision: 2,
-        acknowledgedRevision: 1,
-        submittedRevision: 2,
-        retryAt: 0,
-        savingRevision: 2,
-        outcome: "failed",
-        now: 2_000,
-        maxWaitMs: 10_000,
-      }),
-    ).toMatchObject({ submittedRevision: 1, retryAt: 12_000, action: "schedule" });
-  });
-
-  it("ignores a stale failed completion for a superseded revision", () => {
-    expect(
-      applyAutosaveCompletion({
-        revision: 3,
-        acknowledgedRevision: 1,
-        submittedRevision: 3,
-        retryAt: 0,
-        savingRevision: 2,
-        outcome: "failed",
-        now: 2_000,
-        maxWaitMs: 10_000,
-      }),
-    ).toMatchObject({ action: "ignore", retryAt: 0 });
-  });
-});
-
-describe("autosave subscription lifecycle", () => {
-  it("invalidates skipped and cancelled submissions without acknowledging new progress", () => {
+describe("autosave scheduler", () => {
+  it("blocks clean and submitted work without advancing on a peek", () => {
     const scheduler = createAutosaveScheduler(10_000);
+    expect(scheduler.canSubmit(false)).toBe(false);
+    expect(scheduler.submit(true)).toBeNull();
+    expect(scheduler.nextDelay(100, 500)).toBeNull();
     scheduler.markDirty(100);
-    const old = scheduler.submit(false)!;
-    expect(scheduler.complete(old, "skipped", 200)).toBe("cancel");
-    scheduler.markDirty(300);
-    expect(scheduler.complete(old, "saved", 400)).toBe("ignore");
-    const next = scheduler.submit(false)!;
-    scheduler.cancel();
-    scheduler.markDirty(500);
-    expect(scheduler.complete(next, "failed", 600)).toBe("ignore");
-    expect(scheduler.nextDelay(600, 500)).toBe(500);
+    expect(scheduler.canSubmit(false)).toBe(true);
+    expect(scheduler.canSubmit(false)).toBe(true);
+    const submission = scheduler.submit(false)!;
+    expect(scheduler.submit(false)).toBeNull();
+    expect(scheduler.nextDelay(200, 500)).toBeNull();
+    expect(scheduler.complete(submission, "saved", 200)).toBe("cancel");
+    expect(scheduler.submit(true)).toBeNull();
+  });
+
+  it("caps repeated changes at the original max wait and allows an immediate debounce", () => {
+    const scheduler = createAutosaveScheduler(10_000);
+    scheduler.markDirty(1_000);
+    expect(scheduler.nextDelay(1_000, 500)).toBe(500);
+    scheduler.markDirty(10_500);
+    expect(scheduler.nextDelay(10_500, 500)).toBe(500);
+    expect(scheduler.nextDelay(10_900, 500)).toBe(100);
+    expect(scheduler.nextDelay(11_000, 500)).toBe(0);
+    expect(scheduler.nextDelay(11_100, 500)).toBe(0);
+    expect(scheduler.nextDelay(10_500, 0)).toBe(0);
+  });
+
+  it("keeps the retry cooldown despite new changes, an expired max wait, and disabled animations", () => {
+    const scheduler = createAutosaveScheduler(10_000);
+    scheduler.markDirty(1_000);
+    expect(scheduler.complete(scheduler.submit(false)!, "failed", 2_000)).toBe("schedule");
+    scheduler.markDirty(3_000);
+    expect(scheduler.nextDelay(3_000, 500)).toBe(9_000);
+    expect(scheduler.nextDelay(3_000, 0)).toBe(9_000);
+    expect(scheduler.nextDelay(11_900, 500)).toBe(100);
+    expect(scheduler.nextDelay(12_000, 500)).toBe(0);
+    expect(scheduler.nextDelay(12_100, 500)).toBe(0);
+    expect(scheduler.complete(scheduler.submit(false)!, "saved", 12_100)).toBe("cancel");
+    expect(scheduler.nextDelay(12_100, 500)).toBeNull();
+    scheduler.markDirty(13_000);
+    expect(scheduler.nextDelay(13_000, 500)).toBe(500);
+  });
+
+  it("uses a separately configured retry cooldown without replacing the debounce", () => {
+    const scheduler = createAutosaveScheduler(10_000, 100);
+    scheduler.markDirty(1_000);
+    scheduler.complete(scheduler.submit(false)!, "failed", 1_500);
+    expect(scheduler.nextDelay(1_500, 500)).toBe(500);
+    expect(scheduler.nextDelay(1_500, 0)).toBe(100);
+    expect(scheduler.nextDelay(1_700, 500)).toBe(500);
+  });
+
+  it("keeps newer changes dirty when an older save succeeds", () => {
+    const scheduler = createAutosaveScheduler(10_000);
+    scheduler.markDirty(1_000);
+    const older = scheduler.submit(false)!;
+    scheduler.markDirty(2_000);
+    expect(scheduler.complete(older, "saved", 3_000)).toBe("schedule");
+    expect(scheduler.nextDelay(11_900, 500)).toBe(100);
+    expect(scheduler.complete(scheduler.submit(false)!, "saved", 12_000)).toBe("cancel");
+    expect(scheduler.nextDelay(12_000, 500)).toBeNull();
+  });
+
+  it("does not let an older success clear a newer failure's cooldown", () => {
+    const scheduler = createAutosaveScheduler(10_000);
+    scheduler.markDirty(1_000);
+    const older = scheduler.submit(false)!;
+    scheduler.markDirty(2_000);
+    const newer = scheduler.submit(false)!;
+    expect(scheduler.complete(newer, "failed", 3_000)).toBe("schedule");
+    expect(scheduler.complete(older, "saved", 4_000)).toBe("schedule");
+    expect(scheduler.nextDelay(4_000, 0)).toBe(9_000);
     expect(scheduler.submit(false)).not.toBeNull();
   });
 
-  it("submits one exit write per revision across back-to-back exit events", () => {
+  it("ignores older failures while a newer submission is pending or saved", () => {
+    const scheduler = createAutosaveScheduler(10_000);
+    scheduler.markDirty(1_000);
+    const older = scheduler.submit(false)!;
+    scheduler.markDirty(2_000);
+    const newer = scheduler.submit(false)!;
+    expect(scheduler.complete(older, "failed", 3_000)).toBe("ignore");
+    expect(scheduler.nextDelay(3_000, 500)).toBeNull();
+    expect(scheduler.complete(newer, "saved", 4_000)).toBe("cancel");
+    expect(scheduler.complete(older, "failed", 5_000)).toBe("ignore");
+    expect(scheduler.submit(false)).toBeNull();
+  });
+
+  it.each(["saved", "failed", "skipped"] as const)("ignores late %s completions after cancellation", (outcome) => {
     const scheduler = createAutosaveScheduler(10_000);
     scheduler.markDirty(100);
-    expect(scheduler.submit(true)).not.toBeNull();
-    expect(scheduler.submit(true)).toBeNull();
-    scheduler.markDirty(200);
+    const older = scheduler.submit(false)!;
+    scheduler.cancel();
+    expect(scheduler.nextDelay(200, 500)).toBeNull();
+    scheduler.markDirty(300);
+    const newer = scheduler.submit(false)!;
+    expect(scheduler.complete(older, outcome, 400)).toBe("ignore");
+    expect(scheduler.complete(newer, "saved", 500)).toBe("cancel");
+  });
+
+  it("drops skipped work and starts a fresh deadline for subsequent progress", () => {
+    const scheduler = createAutosaveScheduler(10_000);
+    scheduler.markDirty(100);
+    const older = scheduler.submit(true)!;
+    expect(scheduler.complete(older, "skipped", 200)).toBe("cancel");
+    expect(scheduler.submit(false)).toBeNull();
+    scheduler.markDirty(20_000);
+    expect(scheduler.complete(older, "saved", 20_100)).toBe("ignore");
+    expect(scheduler.nextDelay(20_100, 500)).toBe(500);
     expect(scheduler.submit(true)).not.toBeNull();
   });
 
-  it("preserves the max-wait window across re-schedules without new dirt", () => {
+  it("allows an exit to cover pending work once per revision", () => {
     const scheduler = createAutosaveScheduler(10_000);
-    scheduler.markDirty(1_000);
-    // Rapid re-schedules without markDirty keep dirtySince, so the cap shrinks.
-    expect(scheduler.nextDelay(1_000, 500)).toBe(500);
-    expect(scheduler.nextDelay(10_500, 500)).toBe(500);
-    expect(scheduler.nextDelay(10_900, 500)).toBe(100);
+    scheduler.markDirty(100);
+    const ordinary = scheduler.submit(false)!;
+    const exit = scheduler.submit(true)!;
+    expect(exit).not.toBeNull();
+    expect(scheduler.submit(true)).toBeNull();
+    expect(scheduler.complete(exit, "saved", 200)).toBe("cancel");
+    expect(scheduler.complete(ordinary, "failed", 300)).toBe("ignore");
+    expect(scheduler.nextDelay(300, 500)).toBeNull();
+    scheduler.markDirty(400);
+    expect(scheduler.submit(true)).not.toBeNull();
+  });
+
+  it("retries a failed exit on the timer while repeated exit signals stay latched", () => {
+    const scheduler = createAutosaveScheduler(10_000);
+    scheduler.markDirty(100);
+    expect(scheduler.complete(scheduler.submit(true)!, "failed", 200)).toBe("schedule");
+    expect(scheduler.submit(true)).toBeNull();
+    expect(scheduler.nextDelay(200, 0)).toBe(10_000);
+    expect(scheduler.complete(scheduler.submit(false)!, "saved", 10_200)).toBe("cancel");
+    expect(scheduler.nextDelay(10_200, 500)).toBeNull();
   });
 });

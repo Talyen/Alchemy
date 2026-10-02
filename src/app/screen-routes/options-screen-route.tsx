@@ -1,5 +1,4 @@
 import { useDeviceDisplayStore } from "@/features/alchemy/shared/stores/device-display-store";
-import type { ReactNode } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { isDesktop } from "@/lib/platform";
 import { OptionsScreen } from "@/features/alchemy/meta/screens";
@@ -7,11 +6,9 @@ import { useSettingsActions, useSettingsStore } from "@/features/alchemy/shared/
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import type { OptionsRouteCtx } from "./route-ctx";
 
-type OptionsScreenRouteProps = OptionsRouteCtx;
-
 const noop = (): void => {};
 
-function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBack, onOpenGameMenu }: OptionsScreenRouteProps) {
+function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBack, onOpenGameMenu }: OptionsRouteCtx) {
   const settings = useSettingsStore(
     useShallow((s) => ({
       selectedAspectRatio: s.selectedAspectRatio,
@@ -95,8 +92,4 @@ function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBack, onOpe
   );
 }
 
-export const optionsScreenRoutes: {
-  options: (ctx: OptionsRouteCtx) => ReactNode;
-} = {
-  options: (ctx) => <OptionsScreenRoute {...ctx} />,
-};
+export const optionsScreenRoutes = { options: OptionsScreenRoute };

@@ -96,7 +96,7 @@ function resolveEnemyPostTickResolution(
     afterAbilityState = nextState;
     if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return { state: nextState, afterAbilityState };
   } else {
-    nextState = reduceSkipTurns(nextState);
+    nextState = reduceSkipTurns(nextState, texts);
   }
   // This turn's Bleed Leech is also suppressed when the last Frozen turn expires.
   if (regenerationBlocked && nextState.pendingEnemyBleedLeechHealing > 0) {

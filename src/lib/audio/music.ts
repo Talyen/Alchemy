@@ -122,9 +122,14 @@ function playElement(el: HTMLAudioElement): void {
     el.pause();
     return;
   }
-  el.play().catch(() => {
+  const reportFailure = () => {
     console.warn("Music playback blocked until user interaction");
-  });
+  };
+  try {
+    void Promise.resolve(el.play()).catch(reportFailure);
+  } catch {
+    reportFailure();
+  }
 }
 
 function resolveTrack(key: string): MusicTrackRecord | undefined {
@@ -133,9 +138,15 @@ function resolveTrack(key: string): MusicTrackRecord | undefined {
   const catalog = MUSIC_CATALOG[key];
   const file = pickRandomUnsafe(catalog?.files ?? []);
   if (!catalog || !file) return undefined;
-  const element = new Audio(musicBase + file);
-  element.loop = true;
-  if (catalog.skipSeconds) element.currentTime = catalog.skipSeconds;
+  let element: HTMLAudioElement;
+  try {
+    element = new Audio(musicBase + file);
+    element.loop = true;
+    if (catalog.skipSeconds) element.currentTime = catalog.skipSeconds;
+  } catch {
+    console.warn("Music track could not be initialized");
+    return undefined;
+  }
   const track = { key, element, fadeGain: 1 };
   musicTracks.set(key, track);
   return track;

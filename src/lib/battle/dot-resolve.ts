@@ -50,7 +50,7 @@ export function applyEnemyDotDamage(
 
   const bleedIndex = pulses.findIndex((pulse) => pulse.status === "bleed");
   if (bleedIndex >= 0 && pulseHealthDamage(pulses, bleedIndex, previousHealth) > 0) {
-    nextState = applyBleedDamageDraw(nextState, pulseHealthDamage(pulses, bleedIndex, previousHealth));
+    nextState = applyBleedDamageDraw(nextState, pulseHealthDamage(pulses, bleedIndex, previousHealth), combatTexts);
     nextState = addGoldWithCombatText(nextState, state.trinketEffects.cutpurseGoldOnBleed, combatTexts);
   }
 

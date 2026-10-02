@@ -45,6 +45,13 @@ ordering follow [the battle workflow](./WORKFLOWS.md#change-battle-playback).
 
 Divine Intervention opens or queues an ordinary Wish under the [Talent rules](./TALENT_RULES.md#wishes-and-mana), using the existing [Wish interaction](./UI_BROWSING.md#rewards-and-wishes). The retained `nextWishExtraChoice` status chip describes compatibility state, not readiness granted by the current talent.
 
+## Hand playability
+
+`useHandPresentation` derives visual and interactive card eligibility together from
+the current immutable battle snapshot and one presentation-store subscription.
+The engine owns legality; presentation only excludes hidden cards from interaction.
+Do not mirror engine field dependencies in a separate UI cache.
+
 ## Deck and pile inspection
 
 The stacked-cards icon opens the run Deck during drafting,

@@ -120,7 +120,7 @@ describe("defaultHomesteadEffects", () => {
     expect(defaultHomesteadEffects.flatPhysicalDamage).toBe(0);
     expect(defaultHomesteadEffects.companionDamage).toBe(0);
     expect(defaultHomesteadEffects.companionBondLevels.wolf).toBe(0);
-    expect("forgeToBurn" in defaultHomesteadEffects).toBe(false);
+    expect("forgeBurnDamagePercent" in defaultHomesteadEffects).toBe(false);
     expect("healMultiplier" in defaultHomesteadEffects).toBe(false);
     expect("potionPotency" in defaultHomesteadEffects).toBe(false);
   });
@@ -265,10 +265,10 @@ describe("mergeIntoManifest", () => {
   it("preserves non-merged talent fields", () => {
     const talent = makeTalentManifest();
     talent.firstBleedCardFree = true;
-    talent.armorToPhysicalDamage = true;
+    talent.armorPhysicalDamagePercent = 100;
     const merged = mergeIntoManifest(talent, makeHomesteadEffects());
     expect(merged.firstBleedCardFree).toBe(true);
-    expect(merged.armorToPhysicalDamage).toBe(true);
+    expect(merged.armorPhysicalDamagePercent).toBe(100);
   });
 
   it("does not spread homestead-only fields into talent manifest", () => {

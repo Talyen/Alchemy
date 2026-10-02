@@ -1,18 +1,10 @@
-import type { ReactNode } from "react";
 import { CharacterSelectScreen, DifficultySelectScreen, DraftDeckScreen } from "@/features/alchemy/run-setup/screens";
 import { useCompletedDifficulties, useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
 import { useDifficultySelectSlice, useDraftDeckSlice } from "@/features/alchemy/shared/stores/run-reads";
-import type { RunSetupCommands, RunSetupRouteCtx } from "./route-ctx";
+import type { RunSetupRouteCtx } from "./route-ctx";
 
-function CharacterSelectScreenRoute({
-  commands,
-  onBack,
-  onOpenGameMenu,
-}: {
-  commands: RunSetupCommands;
-  onBack?: (() => void) | undefined;
-  onOpenGameMenu: (rect: DOMRect) => void;
-}) {
+function CharacterSelectScreenRoute({ routeCommands, onBack, onOpenGameMenu }: RunSetupRouteCtx) {
+  const commands = routeCommands.runSetup;
   const finishedRunCharacters = useFinishedRunCharacters();
 
   return (
@@ -25,15 +17,8 @@ function CharacterSelectScreenRoute({
   );
 }
 
-function DifficultySelectScreenRoute({
-  commands,
-  onBack,
-  onOpenGameMenu,
-}: {
-  commands: RunSetupCommands;
-  onBack?: (() => void) | undefined;
-  onOpenGameMenu: (rect: DOMRect) => void;
-}) {
+function DifficultySelectScreenRoute({ routeCommands, onBack, onOpenGameMenu }: RunSetupRouteCtx) {
+  const commands = routeCommands.runSetup;
   const { characterId, selectedDifficulty } = useDifficultySelectSlice();
   const completedDifficulties = useCompletedDifficulties()[characterId];
 
@@ -52,7 +37,8 @@ function DifficultySelectScreenRoute({
   );
 }
 
-function DraftDeckScreenRoute({ commands }: { commands: RunSetupCommands }) {
+function DraftDeckScreenRoute({ routeCommands }: RunSetupRouteCtx) {
+  const commands = routeCommands.runSetup;
   const draft = useDraftDeckSlice();
   const isWildwoodDraft = draft.contentSystemType === "wildwood" && draft.wildwoodDraft?.phase === "draft";
   const draftChoices = isWildwoodDraft ? (draft.wildwoodDraft?.draftChoices ?? []) : (draft.starterDraftChoices ?? []);
@@ -66,16 +52,8 @@ function DraftDeckScreenRoute({ commands }: { commands: RunSetupCommands }) {
   );
 }
 
-export const runSetupScreenRoutes: {
-  "character-select": (ctx: RunSetupRouteCtx) => ReactNode;
-  "draft-deck": (ctx: RunSetupRouteCtx) => ReactNode;
-  "difficulty-select": (ctx: RunSetupRouteCtx) => ReactNode;
-} = {
-  "character-select": ({ routeCommands, onBack, onOpenGameMenu }) => (
-    <CharacterSelectScreenRoute commands={routeCommands.runSetup} onBack={onBack} onOpenGameMenu={onOpenGameMenu} />
-  ),
-  "draft-deck": ({ routeCommands }) => <DraftDeckScreenRoute commands={routeCommands.runSetup} />,
-  "difficulty-select": ({ routeCommands, onBack, onOpenGameMenu }) => (
-    <DifficultySelectScreenRoute commands={routeCommands.runSetup} onBack={onBack} onOpenGameMenu={onOpenGameMenu} />
-  ),
+export const runSetupScreenRoutes = {
+  "character-select": CharacterSelectScreenRoute,
+  "draft-deck": DraftDeckScreenRoute,
+  "difficulty-select": DifficultySelectScreenRoute,
 };

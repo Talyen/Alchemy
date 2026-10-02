@@ -137,7 +137,7 @@ export function resolvePaidCardEffects(
     nextState = applyCardPlayTalentRewards(nextState, card, combatTexts, hadNoThornsOnPlay);
   }
 
-  nextState = applyTwinCasting(nextState, card);
+  nextState = applyTwinCasting(nextState, card, combatTexts);
 
   return {
     state: nextState,
@@ -146,7 +146,7 @@ export function resolvePaidCardEffects(
   };
 }
 
-function applyTwinCasting(state: BattleState, card: BattleCard): BattleState {
+function applyTwinCasting(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]): BattleState {
   if (isPlayerDefeated(state) || state.gearEffects.elementalTwinCasting <= 0) return state;
 
   const hasBurn = cardHasKeyword(card, "burn");
@@ -161,7 +161,7 @@ function applyTwinCasting(state: BattleState, card: BattleCard): BattleState {
     targetType = "burn";
   }
   if (!targetType) return state;
-  return drawKeywordCard(state, targetType, { refillFromDiscard: false });
+  return drawKeywordCard(state, targetType, { refillFromDiscard: false, combatTexts });
 }
 
 export function applyResonantChimeTrinket(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {

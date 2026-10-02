@@ -25,6 +25,23 @@ afterEach(() => {
 });
 
 describe("directional focus", () => {
+  it("lets directional navigation leave inventory filter checkboxes", () => {
+    const root = screen();
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = true;
+    root.append(checkbox);
+    place(checkbox, 0, 0);
+    const right = button(root, 100, 0);
+    const below = button(root, 0, 100);
+    checkbox.focus();
+    expect(focusInDirection("right")).toBe(true);
+    expect(document.activeElement).toBe(right);
+    checkbox.focus();
+    focusInDirection("down");
+    expect(document.activeElement).toBe(below);
+    expect(checkbox.checked).toBe(true);
+  });
   it("follows a grid in both axes and stops at the edge", () => {
     const root = screen();
     const first = button(root, 0, 0),

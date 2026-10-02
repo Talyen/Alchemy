@@ -13,12 +13,6 @@ export interface RenderAlchemyScreenProps {
   onBack?: (() => void) | undefined;
 }
 
-export type MetaCommands = AlchemyRouteCommands["meta"];
-export type RunSetupCommands = AlchemyRouteCommands["runSetup"];
-export type RunLoopCommands = AlchemyRouteCommands["runLoop"];
-export type BattleCommands = AlchemyRouteCommands["battle"];
-export type RunEndCommands = AlchemyRouteCommands["runEnd"];
-
 interface PhaseRouteCtx<K extends keyof AlchemyRouteCommands> {
   routeCommands: Pick<AlchemyRouteCommands, K>;
   onOpenGameMenu: (rect: DOMRect) => void;
@@ -28,7 +22,7 @@ interface PhaseRouteCtx<K extends keyof AlchemyRouteCommands> {
 export type MetaRouteCtx = PhaseRouteCtx<"meta">;
 export type RunSetupRouteCtx = PhaseRouteCtx<"runSetup">;
 export type RunLoopRouteCtx = PhaseRouteCtx<"runLoop">;
-export type RunEndRouteCtx = PhaseRouteCtx<"runEnd">;
+export type RunEndRouteCtx = PhaseRouteCtx<"runEnd"> & Pick<RenderAlchemyScreenProps, "screen">;
 
 export interface BattleRouteCtx extends PhaseRouteCtx<"battle"> {
   cardInspection?: RenderAlchemyScreenProps["cardInspection"];

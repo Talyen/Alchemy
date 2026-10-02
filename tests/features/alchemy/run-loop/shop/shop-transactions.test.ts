@@ -1,14 +1,15 @@
+import "../../../../helpers/mock-audio";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { purchaseShopOffering, refreshShopOfferings } from "@/features/alchemy/run-loop/shop/shop-transactions";
+import { createShopRefreshAction } from "@/features/alchemy/run-loop/shop/shop-commands-core";
 import { applyStrongSpiritsToPotions } from "@/features/alchemy/run-loop/shop/shop-state-init";
 import {
   createRunSessionCommand,
-  dispatchRunSessionCommand,
   subscribeRunSessionCommits,
 } from "@/features/alchemy/shared/stores/run-session-command";
 import { setShopState as mutateShopState } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { cardById, type BattleCard } from "@/lib/game-data";
-import { emptyShopState, readActivityData, type ShopState } from "@/lib/active-run-session";
+import { SHOP_REFRESH_PRICE } from "@/lib/game-constants";
+import { cardById, createEmptyTalentEffectManifest } from "@/lib/game-data";
+import { emptyShopState, readActivityData } from "@/lib/active-run-session";
 import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
@@ -18,11 +19,12 @@ beforeEach(() => {
   resetAllTestStores();
 });
 
-describe("refreshShopOfferings", () => {
+describe("shop refresh transaction", () => {
+  const talentEffects = createEmptyTalentEffectManifest();
   const newItems = [cardById["health-potion"]!, cardById["mana-potion"]!];
 
   it("commits gold and refreshed state atomically", () => {
-    setRunProgress({ gold: 10 });
+    setRunProgress({ gold: SHOP_REFRESH_PRICE + 5 });
     setShopState({
       ...emptyShopState(),
       cards: newItems,
@@ -34,28 +36,19 @@ describe("refreshShopOfferings", () => {
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
 
-    const refreshed = dispatchRunSessionCommand((draft) =>
-      refreshShopOfferings<ShopState, BattleCard>({
-        draft,
-        price: 5,
-        refreshesLeft: readActivityData(draft.session.activity, "shop").refreshesLeft,
-        freeRefreshUsed: false,
-        setState: mutateShopState,
-        resample: () => applyStrongSpiritsToPotions(newItems, ["strong-spirits"]),
-        mapState: (previous, items) => ({ ...previous, cards: items }),
-      }),
-    );
+    const expectedItems = applyStrongSpiritsToPotions(newItems, ["strong-spirits"]);
+    const refreshed = createShopRefreshAction({
+      activity: "shop",
+      talentEffects,
+      resample: (_draft, state) => ({ ...state, cards: expectedItems }),
+    })();
     unsubscribe();
 
-    expect(refreshed).toMatchObject({
-      committed: true,
-      price: 5,
-      value: applyStrongSpiritsToPotions(newItems, ["strong-spirits"]),
-    });
-    expect(refreshed.value).not.toEqual(newItems);
+    expect(refreshed).toBe(true);
+    expect(expectedItems).not.toEqual(newItems);
     expect(commits).toHaveLength(1);
     expect(readRunProfile().gold).toBe(5);
-    expect(readActivityData(readRunSession().activity, "shop").cards).toEqual(refreshed.value);
+    expect(readActivityData(readRunSession().activity, "shop").cards).toEqual(expectedItems);
     expect(readActivityData(readRunSession().activity, "shop")).toMatchObject({
       firstPurchaseUsed: true,
       removeUsed: true,
@@ -65,7 +58,7 @@ describe("refreshShopOfferings", () => {
   });
 
   it.each([
-    { name: "no refreshes remain", gold: 10, refreshesLeft: 0 },
+    { name: "no refreshes remain", gold: SHOP_REFRESH_PRICE, refreshesLeft: 0 },
     { name: "gold is insufficient", gold: 2, refreshesLeft: 1 },
   ])("does not publish a revision when $name", ({ gold, refreshesLeft }) => {
     setRunProgress({ gold });
@@ -77,55 +70,17 @@ describe("refreshShopOfferings", () => {
       purchasedSlotKeys: ["health-potion-0"],
     });
     const previousSession = readRunSession();
-    const resample = vi.fn(() => newItems);
+    const resample = vi.fn(() => ({ ...emptyShopState(), cards: newItems }));
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
 
-    const refreshed = dispatchRunSessionCommand((draft) =>
-      refreshShopOfferings<ShopState, BattleCard>({
-        draft,
-        price: 5,
-        refreshesLeft: readActivityData(draft.session.activity, "shop").refreshesLeft,
-        freeRefreshUsed: false,
-        setState: mutateShopState,
-        resample,
-        mapState: (previous, items) => ({ ...previous, cards: items }),
-      }),
-    );
+    const refreshed = createShopRefreshAction({ activity: "shop", talentEffects, resample })();
     unsubscribe();
 
-    expect(refreshed).toMatchObject({ committed: false, price: 5, value: null });
+    expect(refreshed).toBe(false);
     expect(commits).toHaveLength(0);
     expect(readRunProfile().gold).toBe(gold);
     expect(resample).not.toHaveBeenCalled();
     expect(readRunSession()).toEqual(previousSession);
-  });
-});
-
-describe("purchaseShopOffering", () => {
-  it("does not spend gold when the payload is not the live offering", () => {
-    setRunProgress({ gold: 10 });
-    setShopState({ ...emptyShopState(), purchasedSlotKeys: [] });
-    const commits: number[] = [];
-    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
-
-    const result = dispatchRunSessionCommand((draft) =>
-      purchaseShopOffering({
-        draft,
-        price: 5,
-        state: readActivityData(draft.session.activity, "shop"),
-        setState: mutateShopState,
-        slotKey: "missing-0",
-        offeringMatches: false,
-        acquire: () => {
-          throw new Error("should not acquire");
-        },
-      }),
-    );
-    unsubscribe();
-
-    expect(result).toMatchObject({ committed: false, price: 5 });
-    expect(commits).toHaveLength(0);
-    expect(readRunProfile().gold).toBe(10);
   });
 });

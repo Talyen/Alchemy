@@ -1,6 +1,5 @@
 import { characters, type CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 import {
-  canApplyCraftingCurrency,
   craftingCurrencyBlockedReason,
   getCraftingCurrencyDefinition,
   getGearInstanceTitle,
@@ -41,10 +40,10 @@ export function getArmoryTargetState({
     return { canCraft: false, salvageable: false, blockedReason: reservationReason, mode: null, targetAriaLabel: null };
   }
   const title = getGearInstanceTitle(instance);
-  const canCraft = !reservedBy && activeCurrencyId !== null && canApplyCraftingCurrency(activeCurrencyId, instance);
   const salvageable = !reservedBy && salvageMode;
   const blockedReason =
     reservationReason ?? (activeCurrencyId ? craftingCurrencyBlockedReason(activeCurrencyId, instance) : null);
+  const canCraft = activeCurrencyId !== null && blockedReason === null;
   const mode: ArmoryTargetMode = salvageable ? "salvage" : canCraft ? "currency" : null;
   let targetAriaLabel: string | null = null;
   if (activeCurrencyId && canCraft) {

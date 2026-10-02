@@ -186,7 +186,9 @@ export function computeCardDamageToEnemy(
         }
       : applyCrit(repeatedDamage, stateAfterFirst);
   const kingbreaker = effect.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0;
-  const finalDamage = criticalResult.damage + (kingbreaker ? state.enemyMitigation.armor : 0);
+  const finalDamage = Math.round(
+    criticalResult.damage + (kingbreaker ? state.enemyMitigation.armor * (context?.damageMultiplier ?? 1) : 0),
+  );
 
   const result = resolveDamageAfterMitigation(
     stateAfterFirst,

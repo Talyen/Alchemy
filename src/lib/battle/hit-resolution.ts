@@ -359,7 +359,7 @@ function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts
   onDamageDealt?.(facts.healthDamage);
   // Spend the resource used by this packet before its rewards grant fresh Forge.
   let nextState = applyIronGuardReward(hit.state, effect.damageType, facts.healthDamage, combatTexts);
-  if (effect.damageType === "bleed") nextState = applyBleedDamageDraw(nextState, facts.healthDamage);
+  if (effect.damageType === "bleed") nextState = applyBleedDamageDraw(nextState, facts.healthDamage, combatTexts);
   nextState = consumeForgeAfterDamage(nextState, effect, modifiedDamage, combatTexts, companionAttack);
 
   nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy");
@@ -373,7 +373,7 @@ function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts
     card.tags?.includes("archery") &&
     nextState.gearEffects.archeryCritDrawsCompanion > 0
   ) {
-    nextState = drawKeywordCard(nextState, "companion");
+    nextState = drawKeywordCard(nextState, "companion", { combatTexts });
   }
   if (effect.damageType === "holy") {
     nextState = applyHolyDamageRiders(nextState, card, facts, combatTexts, !companionAttack);

@@ -1,24 +1,30 @@
 import { cardById } from "./cards/library/cards";
 import type { BattleCard, BattleCardEffect, BestiaryEntry } from "./types";
 
+// The runtime allowlist also defines the enemy damage contract, so accepting
+// a hero field cannot silently leave the enemy resolver's type behind.
+const ENEMY_DAMAGE_FIELDS = [
+  "kind",
+  "damageType",
+  "damageTypePool",
+  "amount",
+  "lifesteal",
+  "doubleIfEnemyBleeding",
+  "equalToBlock",
+  "equalToBlockPercent",
+  "equalToForge",
+  "ignoreArmor",
+  "ignoreBlock",
+  "blockCost",
+  "blockDamageBonus",
+  "damageTypeIfTargetHasBlock",
+  "damageTypeIfTargetFrozen",
+  "amountIfTargetFrozen",
+] as const satisfies ReadonlyArray<keyof Extract<BattleCardEffect, { kind: "damage" }>>;
+
 export type EnemyAbilityDamageEffect = Pick<
   Extract<BattleCardEffect, { kind: "damage" }>,
-  | "kind"
-  | "damageType"
-  | "damageTypePool"
-  | "amount"
-  | "lifesteal"
-  | "doubleIfEnemyBleeding"
-  | "equalToBlock"
-  | "equalToBlockPercent"
-  | "equalToForge"
-  | "ignoreArmor"
-  | "ignoreBlock"
-  | "blockCost"
-  | "blockDamageBonus"
-  | "damageTypeIfTargetHasBlock"
-  | "damageTypeIfTargetFrozen"
-  | "amountIfTargetFrozen"
+  (typeof ENEMY_DAMAGE_FIELDS)[number]
 >;
 
 export type EnemyAbilityEffect =
@@ -39,94 +45,56 @@ function hasOnlyFields(effect: BattleCardEffect, fields: readonly string[]): boo
   return Object.keys(effect).every((field) => fields.includes(field));
 }
 
-function supportsEnemyEffect(effect: BattleCardEffect): effect is EnemyAbilityEffect {
-  switch (effect.kind) {
-    case "damage":
-      return hasOnlyFields(effect, [
-        "kind",
-        "damageType",
-        "damageTypePool",
-        "amount",
-        "lifesteal",
-        "doubleIfEnemyBleeding",
-        "equalToBlock",
-        "equalToBlockPercent",
-        "equalToForge",
-        "ignoreArmor",
-        "ignoreBlock",
-        "blockCost",
-        "blockDamageBonus",
-        "damageTypeIfTargetHasBlock",
-        "damageTypeIfTargetFrozen",
-        "amountIfTargetFrozen",
-      ]);
-    case "player-status":
-      return (
-        ["block", "armor", "forge", "thorns"].includes(effect.status) &&
-        hasOnlyFields(effect, ["kind", "status", "amount"])
-      );
-    case "heal":
-      return hasOnlyFields(effect, ["kind", "amount"]);
-    case "remove-enemy-armor":
-      return hasOnlyFields(effect, ["kind", "amount", "removeAll", "halve"]);
-    case "multiply-enemy-status":
-      return effect.status === "freeze" && hasOnlyFields(effect, ["kind", "status", "factor"]);
-    case "chance":
-      return effect.successEffects.every(supportsEnemyEffect) && effect.failureEffects.every(supportsEnemyEffect);
-    case "wish":
-    case "enemy-status":
-    case "restore-mana":
-    case "lose-mana":
-    case "lose-max-mana":
-    case "gain-max-mana":
-    case "gain-gold":
-    case "summon-companion":
-    case "remove-harmful-status":
-    case "remove-player-status":
-    case "self-damage":
-    case "buff-companion":
-    case "companion-action":
-    case "random-draw":
-    case "lose-health":
-    case "draw-cards":
-    case "cleanse-player-status-to-damage":
-    case "random-damage":
-    case "repeat-over-turns":
-    case "next-hit-crit":
-    case "next-hit-leech":
-    case "play-next-card-twice":
-    case "next-hit-poison":
-    case "next-archery-free":
-      return false;
-  }
+function supportsEnemyLeaf(effect: BattleCardEffect): boolean {
+  if (effect.kind === "damage") return hasOnlyFields(effect, ENEMY_DAMAGE_FIELDS);
+  if (effect.kind === "player-status")
+    return (
+      ["block", "armor", "forge", "thorns"].includes(effect.status) &&
+      hasOnlyFields(effect, ["kind", "status", "amount"])
+    );
+  if (effect.kind === "heal") return hasOnlyFields(effect, ["kind", "amount"]);
+  if (effect.kind === "remove-enemy-armor") return hasOnlyFields(effect, ["kind", "amount", "removeAll", "halve"]);
+  if (effect.kind === "multiply-enemy-status")
+    return effect.status === "freeze" && hasOnlyFields(effect, ["kind", "status", "factor"]);
+  return false;
 }
 
-const ENEMY_ABILITY_CARD_VALIDITY_CACHE = new WeakMap<BattleCard, boolean>();
-const ENEMY_ABILITY_CARD_BY_ID_CACHE = new Map<string, EnemyAbilityCard | undefined>();
-const ENEMY_ABILITY_DEALS_DAMAGE_CACHE = new WeakMap<object, boolean>();
+interface EnemyEffectAnalysis {
+  unsupported: BattleCardEffect | undefined;
+  dealsDamage: boolean;
+}
+
+// Effect trees are immutable. Key by the tree itself, rather than the card or
+// temporary branch wrappers: scaled/replaced trees get a fresh analysis.
+const effectAnalysis = new WeakMap<readonly BattleCardEffect[], EnemyEffectAnalysis>();
+
+function analyzeEffects(effects: readonly BattleCardEffect[]): EnemyEffectAnalysis {
+  const cached = effectAnalysis.get(effects);
+  if (cached) return cached;
+  const result: EnemyEffectAnalysis = { unsupported: undefined, dealsDamage: false };
+  for (const effect of effects) {
+    if (effect.kind === "chance") {
+      const success = analyzeEffects(effect.successEffects);
+      const failure = analyzeEffects(effect.failureEffects);
+      result.unsupported ??= success.unsupported ?? failure.unsupported;
+      result.dealsDamage ||= success.dealsDamage || failure.dealsDamage;
+    } else {
+      if (!supportsEnemyLeaf(effect)) result.unsupported ??= effect;
+      result.dealsDamage ||= effect.kind === "damage";
+    }
+  }
+  effectAnalysis.set(effects, result);
+  return result;
+}
 
 export function isEnemyAbilityCard(card: BattleCard): card is EnemyAbilityCard {
-  const cached = ENEMY_ABILITY_CARD_VALIDITY_CACHE.get(card);
-  if (cached !== undefined) return cached;
-
-  const valid = !card.consume && card.effects.length > 0 && card.effects.every(supportsEnemyEffect);
-  ENEMY_ABILITY_CARD_VALIDITY_CACHE.set(card, valid);
-  return valid;
+  return !card.consume && card.effects.length > 0 && !analyzeEffects(card.effects).unsupported;
 }
 
 export function findEnemyAbilityCard(id: string): EnemyAbilityCard | undefined {
-  if (ENEMY_ABILITY_CARD_BY_ID_CACHE.has(id)) {
-    return ENEMY_ABILITY_CARD_BY_ID_CACHE.get(id);
-  }
-
-  if (!Object.hasOwn(cardById, id)) {
-    ENEMY_ABILITY_CARD_BY_ID_CACHE.set(id, undefined);
-    return undefined;
-  }
+  if (!Object.hasOwn(cardById, id)) return undefined;
   const card = cardById[id];
-  const result = card && isEnemyAbilityCard(card) ? card : undefined;
-  ENEMY_ABILITY_CARD_BY_ID_CACHE.set(id, result);
-  return result;
+  return card && isEnemyAbilityCard(card) ? card : undefined;
 }
 
 export function getEnemyAbilityCard(id: string): EnemyAbilityCard {
@@ -138,23 +106,14 @@ export function getEnemyAbilityCard(id: string): EnemyAbilityCard {
   return card;
 }
 
-function describeUnsupportedEffect(effect: BattleCardEffect): string | undefined {
-  if (supportsEnemyEffect(effect)) return undefined;
-  if (effect.kind === "chance") {
-    const bad =
-      effect.successEffects.map(describeUnsupportedEffect).find(Boolean) ??
-      effect.failureEffects.map(describeUnsupportedEffect).find(Boolean);
-    return bad ?? `chance with unsupported branch in ${JSON.stringify(Object.keys(effect))}`;
-  }
-  return `${effect.kind} with fields [${Object.keys(effect).sort().join(",")}]`;
-}
-
 function describeEnemyAbilityProblem(card: BattleCard | undefined): string {
   if (!card || typeof card !== "object" || !Array.isArray(card.effects)) return "unknown card id";
   if (card.consume) return "consume cards cannot be enemy abilities";
   if (card.effects.length === 0) return "no effects";
-  const bad = card.effects.map(describeUnsupportedEffect).find(Boolean);
-  return bad ? `unsupported effect ${bad}` : "failed validation for unknown reason";
+  const bad = analyzeEffects(card.effects).unsupported;
+  return bad
+    ? `unsupported effect ${bad.kind} with fields [${Object.keys(bad).sort().join(",")}]`
+    : "failed validation for unknown reason";
 }
 
 export function getEnemyAbilities(enemy: Pick<BestiaryEntry, "abilityIds">): EnemyAbilityCard[] {
@@ -162,16 +121,5 @@ export function getEnemyAbilities(enemy: Pick<BestiaryEntry, "abilityIds">): Ene
 }
 
 export function enemyAbilityDealsDamage(card: Pick<BattleCard, "effects">): boolean {
-  const cached = ENEMY_ABILITY_DEALS_DAMAGE_CACHE.get(card);
-  if (cached !== undefined) return cached;
-
-  const dealsDamage = card.effects.some(
-    (effect) =>
-      effect.kind === "damage" ||
-      (effect.kind === "chance" &&
-        (enemyAbilityDealsDamage({ effects: effect.successEffects }) ||
-          enemyAbilityDealsDamage({ effects: effect.failureEffects }))),
-  );
-  ENEMY_ABILITY_DEALS_DAMAGE_CACHE.set(card, dealsDamage);
-  return dealsDamage;
+  return analyzeEffects(card.effects).dealsDamage;
 }

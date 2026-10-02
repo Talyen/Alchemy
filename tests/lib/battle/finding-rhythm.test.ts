@@ -5,7 +5,7 @@ import { tryDodgeEnemyAttackPacket } from "@/lib/battle/dodge";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { tickPlayerStatuses } from "@/lib/battle/status-ticks";
-import { applyLoseHealthEffect } from "@/lib/battle/effect-handlers/mana-health-handlers";
+import { EFFECT_APPLY_BY_KIND } from "@/lib/battle/effect-handlers/registry";
 import { dealSelfDamage } from "@/lib/battle/status-helpers";
 import { dealDamage, incomingPhysical, makeTestCard } from "../../fixtures/battle";
 
@@ -98,7 +98,7 @@ describe("Finding Rhythm", () => {
     expect(damaged.playerHealth).toBe(95);
     expect(damaged.dodgeChanceFromDamage).toBe(0);
     expect(applyPlayerCombatDamage(state, 5, "self").dodgeChanceFromDamage).toBe(0);
-    const paid = applyLoseHealthEffect(state, makeTestCard(), { kind: "lose-health", amount: 5 }, 1, []);
+    const paid = EFFECT_APPLY_BY_KIND["lose-health"](state, makeTestCard(), { kind: "lose-health", amount: 5 }, 1, []);
     expect(paid.playerHealth).toBe(95);
     expect(paid.dodgeChanceFromDamage).toBe(0);
   });

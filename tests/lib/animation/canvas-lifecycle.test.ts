@@ -60,7 +60,12 @@ describe("createCanvasLifecycle", () => {
     expect(onFrame).not.toHaveBeenCalled();
   });
 
-  it("initializes canvas dimensions and invokes onResize", () => {
+  it("initializes logical dimensions without clearing an already-sized canvas", () => {
+    vi.stubGlobal("devicePixelRatio", 1);
+    canvas.width = 640;
+    canvas.height = 480;
+    const writeWidth = vi.spyOn(canvas, "width", "set");
+    const writeHeight = vi.spyOn(canvas, "height", "set");
     const onResize = vi.fn();
     const onFrame = vi.fn();
     const lifecycle = createCanvasLifecycle({
@@ -73,7 +78,9 @@ describe("createCanvasLifecycle", () => {
     expect(canvas.style.height).toBe("480px");
     expect(lifecycle.logicalWidth).toBe(640);
     expect(lifecycle.logicalHeight).toBe(480);
-    expect(onResize).toHaveBeenCalledWith(640, 480, expect.any(Number));
+    expect(onResize).toHaveBeenCalledWith(640, 480, 1);
+    expect(writeWidth).not.toHaveBeenCalled();
+    expect(writeHeight).not.toHaveBeenCalled();
     lifecycle.dispose();
   });
 
@@ -128,12 +135,21 @@ describe("createCanvasLifecycle", () => {
   it("cleans up listeners and cancels animation frames on dispose", () => {
     vi.spyOn(window, "requestAnimationFrame").mockReturnValue(99);
     const cancelRaf = vi.spyOn(window, "cancelAnimationFrame");
+    const onResize = vi.fn();
     const lifecycle = createCanvasLifecycle({
       canvas,
       onFrame: vi.fn(),
+      onResize,
     });
 
     lifecycle.dispose();
-    expect(cancelRaf).toHaveBeenCalledWith(99);
+    lifecycle.dispose();
+    onResize.mockClear();
+    window.dispatchEvent(new Event("focus"));
+    window.dispatchEvent(new Event("blur"));
+    document.dispatchEvent(new Event("visibilitychange"));
+    lifecycle.scheduleFrame();
+    expect(onResize).not.toHaveBeenCalled();
+    expect(cancelRaf).toHaveBeenCalledExactlyOnceWith(99);
   });
 });

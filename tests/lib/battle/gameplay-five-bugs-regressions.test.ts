@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { cardById } from "@/lib/game-data";
 import { computeEffectiveCost } from "@/lib/battle/card-cost-rules";
 import { resolveSecondaryAction, writeCombatFlag } from "@/lib/battle/action-context";
-import { applyCleansePlayerStatusToDamageEffect } from "@/lib/battle/effect-handlers/status-handlers";
+import { EFFECT_APPLY_BY_KIND } from "@/lib/battle/effect-handlers/registry";
 import { getEffectiveDamageScore } from "@/lib/battle/autoplay-policy";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
@@ -86,7 +86,7 @@ describe("gameplay five bugs regressions", () => {
         { kind: "cleanse-player-status-to-damage" }
       >;
 
-      const next = applyCleansePlayerStatusToDamageEffect(state, card, effect, 1, combatTexts);
+      const next = EFFECT_APPLY_BY_KIND["cleanse-player-status-to-damage"](state, card, effect, 1, combatTexts);
       expect(next.playerStatuses.burn).toBe(0);
       expect(next.enemyHealth).toBe(46);
 

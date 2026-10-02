@@ -47,7 +47,7 @@ describe("Wildwood reward selection", () => {
     const flow = createWildwoodGauntletFlow({
       navigateTo: vi.fn(),
       resumeTo: vi.fn(),
-      onStartBossById: startBoss,
+      startBossById: startBoss,
       clearCardHover: vi.fn(),
     });
     flow.handleWildwoodRemoveCard(0);
@@ -75,12 +75,12 @@ describe("Wildwood reward selection", () => {
     });
     const navigateTo = vi.fn();
     const resumeTo = vi.fn();
-    const onStartBossById = vi.fn(() => true);
-    const flow = createWildwoodGauntletFlow({ navigateTo, resumeTo, onStartBossById, clearCardHover: vi.fn() });
+    const startBossById = vi.fn(() => true);
+    const flow = createWildwoodGauntletFlow({ navigateTo, resumeTo, startBossById, clearCardHover: vi.fn() });
 
     flow.resumeWildwoodRun();
 
-    expect(onStartBossById).toHaveBeenCalledWith("forge-golem", undefined, "tempered");
+    expect(startBossById).toHaveBeenCalledWith({ bossId: "forge-golem", wildwoodModifierId: "tempered" });
     expect(resumeTo).toHaveBeenCalledExactlyOnceWith(ROUTE_SCREENS.BATTLE);
     expect(navigateTo).not.toHaveBeenCalled();
   });

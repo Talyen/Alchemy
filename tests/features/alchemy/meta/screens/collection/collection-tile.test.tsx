@@ -8,14 +8,16 @@ import { cardLibrary } from "@/lib/game-data";
 beforeEach(() => useUiStore.setState({ hoveredCardId: null, shimmerState: null }));
 afterEach(cleanup);
 
-const item = getCollectionPageItems({
-  collectionTab: "cards",
+const input = {
+  collectionTab: "cards" as const,
   discoveredCardIds: cardLibrary.map((entry) => entry.id),
   encounteredEnemyIds: [],
   discoveredTrinketIds: [],
   discoveredUniqueIds: [],
   page: 0,
-})[0]!;
+};
+const item = getCollectionPageItems(input)[0]!;
+const hiddenItem = getCollectionPageItems({ ...input, discoveredCardIds: [] })[0]!;
 
 describe("Collection borders", () => {
   it("shows matching shine on discovered and undiscovered entries during hover or focus", () => {
@@ -36,10 +38,12 @@ describe("Collection borders", () => {
 
     discovered.unmount();
     useUiStore.setState({ hoveredCardId: null, shimmerState: null });
-    render(<CollectionTile item={{ ...item, discovered: false }} />);
+    render(<CollectionTile item={hiddenItem} />);
     const undiscoveredButton = screen.getByRole("button", { name: "Inspect Undiscovered Entry" });
     expect(undiscoveredButton.querySelector(".shine-border")).toBeNull();
     fireEvent.mouseEnter(undiscoveredButton.parentElement!);
+    expect(screen.getByText("Discover this card during a run to reveal it here.")).toBeTruthy();
+    expect(screen.queryByText(item.title)).toBeNull();
     expect(undiscoveredButton.querySelector<HTMLElement>(".shine-border-paint")?.style.backgroundColor).toBe(
       shineColor,
     );

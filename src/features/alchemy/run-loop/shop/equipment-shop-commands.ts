@@ -1,9 +1,6 @@
 import { grantGearToRunWithRecord } from "@/features/alchemy/shared/stores/deck-mutations";
 import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
-import {
-  createDraftRunRandomSource,
-  setEquipmentShopState,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readActivityData } from "@/lib/active-run-session";
 import type { TalentEffectManifest } from "@/lib/game-data";
 import { getOwnedUniqueDefinitionIds, type GearInstance } from "@/lib/gear";
@@ -30,9 +27,9 @@ export function createEquipmentShopCommands({
   const getBuyPrice = (instance: GearInstance) => {
     return getShopBuyPrice("gear", instance, resolveReadShopPricingContext(talentEffects, "equipmentShopState"));
   };
-  const getRefreshPrice = createGetRefreshPrice("equipment", talentEffects);
+  const getRefreshPrice = createGetRefreshPrice("equipment-shop", talentEffects);
 
-  const initialize = initializeShop(setEquipmentShopState, (draft) =>
+  const initialize = initializeShop("equipment-shop", (draft) =>
     createInitialEquipmentShopState(
       createDraftRunRandomSource(draft, "shops"),
       resolveDraftLootProgress(draft),
@@ -47,13 +44,11 @@ export function createEquipmentShopCommands({
       const state = readActivityData(draft.session.activity, "equipment-shop");
       return purchaseSlotOffering({
         talentEffects,
-        state,
-        setState: setEquipmentShopState,
+        activity: "equipment-shop",
         draft,
         items: state.gear,
         requestedId: instance.instanceId,
         slotKey,
-        buyKind: "gear",
         slotKeyOf: (item) => gearSlotKeyOf(item),
         idOf: (item) => item.instanceId,
         acquire: (innerDraft, offered) => grantGearToRunWithRecord(innerDraft, offered),
@@ -63,12 +58,10 @@ export function createEquipmentShopCommands({
 
   const refresh = createShopRefreshAction({
     activity: "equipment-shop",
-    kind: "equipment",
     talentEffects,
-    setState: setEquipmentShopState,
-    mapState: (previous, gear: GearInstance[]) => ({ ...previous, gear }),
-    resample: (draft, state, modifiers) =>
-      resampleEquipmentShopOfferings(
+    resample: (draft, state, modifiers) => ({
+      ...state,
+      gear: resampleEquipmentShopOfferings(
         createDraftRunRandomSource(draft, "shops"),
         resolveDraftLootProgress(draft),
         gearAstralChanceBonus,
@@ -76,6 +69,7 @@ export function createEquipmentShopCommands({
         modifiers,
         state.gear,
       ),
+    }),
   });
 
   return { initialize, buy, refresh, getBuyPrice, getRefreshPrice };

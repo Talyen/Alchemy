@@ -54,9 +54,11 @@ export function createCanvasLifecycle({
   if (!parent) {
     return { logicalWidth: 0, logicalHeight: 0, scheduleFrame: () => {}, dispose: () => {} };
   }
-  const activeParent = parent;
 
-  let running = true;
+  const activeParent = parent;
+  const lifetime = new AbortController();
+  const document = globalThis.document;
+  const window = globalThis.window;
   let animFrameId: number | null = null;
   let lastTime = performance.now();
   let lastFrameAt = 0;
@@ -65,16 +67,15 @@ export function createCanvasLifecycle({
   const lifecycle: CanvasLifecycle = {
     logicalWidth: 0,
     logicalHeight: 0,
-    scheduleFrame: () => {},
-    dispose: () => {},
+    scheduleFrame,
+    dispose,
   };
 
   let ro: ResizeObserver | null = null;
   let lastDpr = typeof devicePixelRatio !== "undefined" ? devicePixelRatio : 1;
-  let lastBackingWidth = -1;
-  let lastBackingHeight = -1;
 
   function resize() {
+    if (lifetime.signal.aborted) return;
     lastDpr = typeof devicePixelRatio !== "undefined" ? devicePixelRatio : 1;
     const w = activeParent.clientWidth;
     const h = activeParent.clientHeight;
@@ -83,51 +84,34 @@ export function createCanvasLifecycle({
     if (canvas.style.width !== cssWidth) canvas.style.width = cssWidth;
     if (canvas.style.height !== cssHeight) canvas.style.height = cssHeight;
 
-    if (w <= 0 || h <= 0) {
-      if (lastBackingWidth !== 1) {
-        canvas.width = 1;
-        lastBackingWidth = 1;
-      }
-      if (lastBackingHeight !== 1) {
-        canvas.height = 1;
-        lastBackingHeight = 1;
-      }
-      lifecycle.logicalWidth = 0;
-      lifecycle.logicalHeight = 0;
-      onResize?.(0, 0, 1);
-      return;
-    }
+    const visible = w > 0 && h > 0;
+    const scale = visible ? resolveCanvasBackingScale(w, h, backingScaleOptions) : 1;
+    const backingWidth = visible ? Math.max(1, Math.floor(w * scale)) : 1;
+    const backingHeight = visible ? Math.max(1, Math.floor(h * scale)) : 1;
+    // Assigning either dimension clears the bitmap and drawing state, even
+    // when the value is unchanged. The canvas itself owns its backing size.
+    if (canvas.width !== backingWidth) canvas.width = backingWidth;
+    if (canvas.height !== backingHeight) canvas.height = backingHeight;
 
-    const scale = resolveCanvasBackingScale(w, h, backingScaleOptions);
-    const backingWidth = Math.max(1, Math.floor(w * scale));
-    const backingHeight = Math.max(1, Math.floor(h * scale));
-    if (lastBackingWidth !== backingWidth) {
-      canvas.width = backingWidth;
-      lastBackingWidth = backingWidth;
-    }
-    if (lastBackingHeight !== backingHeight) {
-      canvas.height = backingHeight;
-      lastBackingHeight = backingHeight;
-    }
-
-    const prevW = lifecycle.logicalWidth;
-    const prevH = lifecycle.logicalHeight;
-    lifecycle.logicalWidth = w;
-    lifecycle.logicalHeight = h;
-
-    onResize?.(w, h, scale);
-    if (prevW !== w || prevH !== h) {
-      scheduleFrame();
-    }
+    const nextWidth = visible ? w : 0;
+    const nextHeight = visible ? h : 0;
+    const sizeChanged = lifecycle.logicalWidth !== nextWidth || lifecycle.logicalHeight !== nextHeight;
+    lifecycle.logicalWidth = nextWidth;
+    lifecycle.logicalHeight = nextHeight;
+    onResize?.(nextWidth, nextHeight, scale);
+    if (sizeChanged) scheduleFrame();
   }
 
   function isPaused() {
-    if (!running || !active() || shouldReduceMotion()) return true;
-    if (typeof document !== "undefined") {
-      if (document.hidden) return true;
-      if (pauseOnBlur && typeof document.hasFocus === "function" && !document.hasFocus()) return true;
-    }
-    return canvas.width < 2 || canvas.height < 2;
+    return (
+      lifetime.signal.aborted ||
+      !active() ||
+      shouldReduceMotion() ||
+      document?.hidden ||
+      (pauseOnBlur && document && !document.hasFocus()) ||
+      canvas.width < 2 ||
+      canvas.height < 2
+    );
   }
 
   function scheduleFrame() {
@@ -162,7 +146,7 @@ export function createCanvasLifecycle({
   }
 
   function resume() {
-    if (!running) return;
+    if (lifetime.signal.aborted || document?.hidden) return;
     resize();
     if (animFrameId !== null) return;
     lastTime = performance.now();
@@ -170,62 +154,39 @@ export function createCanvasLifecycle({
     scheduleFrame();
   }
 
-  function handleVisibilityChange() {
-    if (typeof document !== "undefined" && !document.hidden && running) {
-      resume();
-    }
+  function cancelFrame() {
+    if (animFrameId === null) return;
+    cancelAnimationFrame(animFrameId);
+    animFrameId = null;
   }
 
-  function handleWindowBlur() {
-    if (pauseOnBlur && animFrameId !== null) {
-      cancelAnimationFrame(animFrameId);
-      animFrameId = null;
-    }
+  function dispose() {
+    if (lifetime.signal.aborted) return;
+    lifetime.abort();
+    cancelFrame();
+    ro?.disconnect();
   }
 
   resize();
 
   if (typeof ResizeObserver !== "undefined") {
     ro = new ResizeObserver(resize);
-    ro.observe(activeParent);
+    ro.observe(parent);
   }
 
-  if (typeof document !== "undefined") {
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-  }
-  if (typeof window !== "undefined") {
-    window.addEventListener("blur", handleWindowBlur);
-    window.addEventListener("focus", resume);
-  }
+  const listenerOptions = { signal: lifetime.signal };
+  document?.addEventListener("visibilitychange", resume, listenerOptions);
+  window?.addEventListener("focus", resume, listenerOptions);
+  if (pauseOnBlur) window?.addEventListener("blur", cancelFrame, listenerOptions);
 
   if (immediate && !isPaused()) {
     // resize() above may have already queued a frame; drop it before running
     // the synchronous first frame so dispose() tracks the only pending id.
-    if (animFrameId !== null) {
-      cancelAnimationFrame(animFrameId);
-      animFrameId = null;
-    }
+    cancelFrame();
     frame(lastTime);
   } else {
     scheduleFrame();
   }
-
-  lifecycle.scheduleFrame = scheduleFrame;
-  lifecycle.dispose = () => {
-    running = false;
-    if (animFrameId !== null) {
-      cancelAnimationFrame(animFrameId);
-      animFrameId = null;
-    }
-    ro?.disconnect();
-    if (typeof document !== "undefined") {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    }
-    if (typeof window !== "undefined") {
-      window.removeEventListener("blur", handleWindowBlur);
-      window.removeEventListener("focus", resume);
-    }
-  };
 
   return lifecycle;
 }

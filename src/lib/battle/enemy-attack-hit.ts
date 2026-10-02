@@ -211,7 +211,7 @@ function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], 
   }
   nextState = resolvePendingBattleReactions(nextState, combatTexts);
   if (isPlayerDefeated(nextState)) return nextState;
-  if (state.gearEffects.archeryDodgeAndDraw > 0) nextState = drawKeywordCard(nextState, "archery");
+  if (state.gearEffects.archeryDodgeAndDraw > 0) nextState = drawKeywordCard(nextState, "archery", { combatTexts });
   nextState = resolvePendingBattleReactions(
     applyDodgeDefensiveReactions(nextState, combatTexts, dodgedAmount, state),
     combatTexts,

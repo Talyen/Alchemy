@@ -1,4 +1,5 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import * as floatingUi from "@floating-ui/dom";
 import { useRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -9,6 +10,15 @@ import {
   usePortaledTooltipPlacement,
   type PortaledTooltipPlacement,
 } from "@/features/alchemy/shared/ui/tooltips/portaled-tooltip-placement";
+
+vi.mock("@floating-ui/dom", async (importOriginal) => {
+  const original = await importOriginal<typeof floatingUi>();
+  return {
+    ...original,
+    computePosition: (...args: Parameters<typeof original.computePosition>) => original.computePosition(...args),
+    autoUpdate: (...args: Parameters<typeof original.autoUpdate>) => original.autoUpdate(...args),
+  };
+});
 
 describe("preferredFloatingPlacement", () => {
   it("maps above to top", () => {
@@ -62,6 +72,32 @@ describe("usePortaledTooltipPlacement", () => {
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
+  });
+
+  it("keeps the newest position when an older measurement finishes after a resize", async () => {
+    const pending: Array<(result: Awaited<ReturnType<typeof floatingUi.computePosition>>) => void> = [];
+    const compute = vi.spyOn(floatingUi, "computePosition").mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          pending.push(resolve);
+        }),
+    );
+    let remeasure!: () => void;
+    vi.spyOn(floatingUi, "autoUpdate").mockImplementation((_reference, _floating, update) => {
+      remeasure = update;
+      return () => {};
+    });
+    render(<Harness placement="above" />);
+    act(() => remeasure());
+    await waitFor(() => expect(compute).toHaveBeenCalledTimes(2));
+    const result = { x: 200, y: 100, placement: "bottom" as const, strategy: "fixed" as const, middlewareData: {} };
+    await act(async () => pending[1]!(result));
+    const floating = screen.getByTestId("tip-floating");
+    expect(floating.style.left).toBe("200px");
+    await act(async () => pending[0]!({ ...result, x: 10, y: 20, placement: "top" }));
+    expect(floating.style.left).toBe("200px");
+    expect(floating.style.top).toBe("100px");
+    expect(floating.dataset.placeBelow).toBe("true");
   });
 
   it("resolves a pixel position through the Floating UI chain", async () => {

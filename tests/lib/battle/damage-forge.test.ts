@@ -18,35 +18,18 @@ describe("computeBaseDamage — forge bonus", () => {
     expect(result.playerStatuses.forge).toBe(2);
   });
 
-  it("adds forge to burn when forgeToBurn talent is active", () => {
+  it.each([
+    ["burn", "forgeBurnDamagePercent"],
+    ["holy", "forgeHolyDamagePercent"],
+    ["bleed", "forgeBleedDamagePercent"],
+  ] as const)("converts Forge into %s damage and spends one stack", (type, field) => {
     const state = patchBattleState({
       playerStatuses: defaultPlayerStatusValues({ forge: 2 }),
-      talentEffects: { ...defaultTalentEffects, forgeToBurn: true },
+      talentEffects: { ...defaultTalentEffects, [field]: 100 },
     });
-    const card = makeTestCard({ effects: [makeEffect("burn", 5)] });
+    const card = makeTestCard({ effects: [makeEffect(type, 5)] });
     const result = dealDamage(state, card);
     expect(result.enemyHealth).toBe(23);
-    expect(result.playerStatuses.forge).toBe(1);
-  });
-
-  it("adds forge to holy when forgeToHoly talent is active", () => {
-    const state = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ forge: 2 }),
-      talentEffects: { ...defaultTalentEffects, forgeToHoly: true },
-    });
-    const card = makeTestCard({ effects: [makeEffect("holy", 5)] });
-    const result = dealDamage(state, card);
-    expect(result.enemyHealth).toBe(23);
-    expect(result.playerStatuses.forge).toBe(1);
-  });
-
-  it("adds forge to bleed when forgeToBleed talent is active", () => {
-    const state = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ forge: 2 }),
-      talentEffects: { ...defaultTalentEffects, forgeToBleed: true },
-    });
-    const card = makeTestCard({ effects: [makeEffect("bleed", 5)] });
-    const result = dealDamage(state, card);
     expect(result.playerStatuses.forge).toBe(1);
   });
 });
@@ -75,36 +58,9 @@ describe("applyForgeStunRider", () => {
 });
 
 describe("consumeForgeAfterDamage", () => {
-  it("consumes 1 forge after physical damage", () => {
+  it.each(["physical", "stun"] as const)("consumes one Forge after %s damage", (type) => {
     const state = patchBattleState({ playerStatuses: defaultPlayerStatusValues({ forge: 3 }) });
-    const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
-    const result = dealDamage(state, card);
-    expect(result.playerStatuses.forge).toBe(2);
-  });
-
-  it("consumes 1 forge after stun damage", () => {
-    const state = patchBattleState({ playerStatuses: defaultPlayerStatusValues({ forge: 3 }) });
-    const card = makeTestCard({ effects: [makeEffect("stun", 5)] });
-    const result = dealDamage(state, card);
-    expect(result.playerStatuses.forge).toBe(2);
-  });
-
-  it("consumes 1 forge after burn damage when forgeToBurn talent is active", () => {
-    const state = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ forge: 3 }),
-      talentEffects: { ...defaultTalentEffects, forgeToBurn: true },
-    });
-    const card = makeTestCard({ effects: [makeEffect("burn", 5)] });
-    const result = dealDamage(state, card);
-    expect(result.playerStatuses.forge).toBe(2);
-  });
-
-  it("consumes 1 forge after holy damage when forgeToHoly talent is active", () => {
-    const state = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ forge: 3 }),
-      talentEffects: { ...defaultTalentEffects, forgeToHoly: true },
-    });
-    const card = makeTestCard({ effects: [makeEffect("holy", 5)] });
+    const card = makeTestCard({ effects: [makeEffect(type, 5)] });
     const result = dealDamage(state, card);
     expect(result.playerStatuses.forge).toBe(2);
   });

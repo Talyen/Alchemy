@@ -5,6 +5,7 @@ import { applyPlayerStatusEffect, addForgeToPlayer } from "@/lib/battle/status-p
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { applyWishEffect } from "@/lib/battle/wish";
+import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { patchBattleState, type BattleStatePatch } from "../../fixtures/battle";
 import { makeTestCard } from "../../fixtures/cards";
 
@@ -31,6 +32,27 @@ function damage(state: ReturnType<typeof battle>, damageType: DamageType, amount
 }
 
 describe("repeatability-based talent balance", () => {
+  it("loads current percentages without reviving retired resource-scaling overrides", () => {
+    const initial = battle({ talentEffects: scaling });
+    const restored = PersistedBattleStateSchema.parse({
+      ...initial,
+      talentEffects: {
+        ...initial.talentEffects,
+        armorToPhysicalDamage: true,
+        armorToNatureDamage: true,
+        blockToHolyDamage: true,
+        blockToStunDamage: true,
+        forgeToBurn: true,
+        forgeToHoly: true,
+        forgeToBlock: true,
+        forgeToBleed: true,
+        armorDoubledBelowHalfHealth: true,
+        forgeDoubledBelowHalfHealth: true,
+      },
+    });
+    expect(restored.talentEffects).toEqual(initial.talentEffects);
+  });
+
   it.each([
     ["physical", 15], // 4 base + 5 Forge + 4 Armor + 2 Block
     ["nature", 4],
@@ -50,7 +72,7 @@ describe("repeatability-based talent balance", () => {
   it("retains full Forge from Homestead and Gear without adding the talent contribution twice", () => {
     const initial = battle({ talentEffects: scaling, playerStatuses: { forge: 8 } });
     expect(damage(initial, "burn")).toBe(8);
-    const homestead = { ...initial, talentEffects: { ...scaling, forgeToBurn: true } };
+    const homestead = { ...initial, talentEffects: { ...scaling, homesteadForgeBurnPercent: 100 } };
     expect(damage(homestead, "burn")).toBe(12);
     expect(damage({ ...homestead, gearEffects: { ...initial.gearEffects, sharedBurnBleedBonuses: 1 } }, "bleed")).toBe(
       12,

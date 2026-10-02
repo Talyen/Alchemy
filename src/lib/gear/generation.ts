@@ -9,21 +9,6 @@ import { GEAR_RARITIES } from "./types";
 import { uniqueItemList, type UniqueItemDefinition } from "./unique-catalog";
 import type { GearAffixRoll, GearDefinition, GearInstance, GearRarity } from "./types";
 
-type GearBaseItem = (typeof gearBaseItemList)[number];
-
-interface OfferingPool {
-  basePool: readonly GearBaseItem[];
-  remainingBases: GearBaseItem[];
-  ownedUniqueIds: ReadonlySet<string>;
-  reservedBases: Map<string, "ordinary" | "unique">;
-  fillCount: boolean;
-}
-
-interface NextOffering {
-  availability: LootAvailability;
-  repeatableBases: GearBaseItem[];
-}
-
 export function generateUniqueGearInstance(uniqueDef: UniqueItemDefinition): GearInstance {
   // Unique affixes are canonical per definition (see getUniqueAffixes); the
   // instance stores no rolls so saved items can never diverge from the catalog.
@@ -32,82 +17,6 @@ export function generateUniqueGearInstance(uniqueDef: UniqueItemDefinition): Gea
     definitionId: uniqueDef.id,
     affixes: [],
   };
-}
-
-function createOfferingPool(
-  basePool: readonly GearBaseItem[],
-  count: number,
-  rng: () => number,
-  ownedUniqueIds: ReadonlySet<string>,
-  fillCount: boolean,
-): OfferingPool {
-  return {
-    basePool,
-    remainingBases: sampleItems(basePool, count, rng),
-    ownedUniqueIds,
-    reservedBases: new Map(),
-    fillCount,
-  };
-}
-
-function nextOffering(pool: OfferingPool, index: number, count: number): NextOffering | null {
-  const unusedBases = pool.basePool.filter((base) => !pool.reservedBases.has(base.id));
-  const repeatableBases = pool.basePool.filter((base) => pool.reservedBases.get(base.id) !== "unique");
-  const eligibleBases = unusedBases.length > 0 ? unusedBases : pool.fillCount ? repeatableBases : [];
-  if (eligibleBases.length === 0) return null;
-
-  const unusedAvailability = getGearLootAvailability(
-    pool.ownedUniqueIds,
-    unusedBases.map((base) => base.id),
-  );
-  const availability =
-    unusedBases.length > 0
-      ? unusedAvailability
-      : getGearLootAvailability(
-          pool.ownedUniqueIds,
-          eligibleBases.map((base) => base.id),
-        );
-  // A Unique cannot share its base with an earlier ordinary offer. On a
-  // filling shelf, reserve the option until a later slot can still be filled.
-  availability.unique =
-    Boolean(unusedAvailability.unique) && (index === count - 1 || !pool.fillCount || repeatableBases.length > 1);
-  return { availability, repeatableBases };
-}
-
-function reserveBase(pool: OfferingPool, baseId: string, kind: "ordinary" | "unique"): void {
-  pool.reservedBases.set(baseId, kind);
-  const sampledIndex = pool.remainingBases.findIndex((item) => item.id === baseId);
-  if (sampledIndex >= 0) pool.remainingBases.splice(sampledIndex, 1);
-}
-
-function takeOrdinaryBase(pool: OfferingPool, repeatableBases: readonly GearBaseItem[], rng: () => number) {
-  const sampled = pool.remainingBases.find((item) => !pool.reservedBases.has(item.id));
-  if (sampled) {
-    reserveBase(pool, sampled.id, "ordinary");
-    return sampled;
-  }
-  const unused = pickRandom(
-    pool.basePool.filter((item) => !pool.reservedBases.has(item.id)),
-    rng,
-  );
-  if (unused) {
-    reserveBase(pool, unused.id, "ordinary");
-    return unused;
-  }
-  return pool.fillCount ? pickRandom(repeatableBases, rng) : undefined;
-}
-
-function takeUnique(pool: OfferingPool, rng: () => number): GearInstance | null {
-  const availableUniques = uniqueItemList.filter(
-    (unique) =>
-      !pool.ownedUniqueIds.has(unique.id) &&
-      !pool.reservedBases.has(unique.baseItemId) &&
-      pool.basePool.some((base) => base.id === unique.baseItemId),
-  );
-  const unique = pickRandom(availableUniques, rng);
-  if (!unique) return null;
-  reserveBase(pool, unique.baseItemId, "unique");
-  return generateUniqueGearInstance(unique);
 }
 
 export function getOwnedUniqueDefinitionIds(inventories?: Record<string, GearInstance[]> | null): Set<string> {
@@ -166,27 +75,6 @@ interface GenerateGearOfferingsOptions {
   basePool?: typeof gearBaseItemList;
 }
 
-function rollOfferingInstance(
-  tier: "unique" | "astral" | "basic",
-  pool: OfferingPool,
-  repeatableBases: readonly GearBaseItem[],
-  rng: () => number,
-  fallbackUniqueToAstral: boolean,
-): GearInstance | null {
-  if (tier === "unique") {
-    const uniqueInstance = takeUnique(pool, rng);
-    if (uniqueInstance) return uniqueInstance;
-    if (!fallbackUniqueToAstral) return null;
-    tier = "astral";
-  }
-
-  const rarity: GearRarity = tier === "basic" ? "basic" : "astral";
-  const baseItem = takeOrdinaryBase(pool, repeatableBases, rng);
-  if (!baseItem) return null;
-  const definition = gearDefinitions[gearDefinitionId(baseItem.id, rarity)];
-  return definition ? rollAndCreateInstance(definition, rarity, rng) : null;
-}
-
 function generateGearOfferings({
   count,
   rng,
@@ -196,21 +84,50 @@ function generateGearOfferings({
   fillCount = false,
   basePool = gearBaseItemList,
 }: GenerateGearOfferingsOptions): GearInstance[] {
-  const pool = createOfferingPool(basePool, count, rng, ownedUniqueIds, fillCount);
+  // Sample once before rarity rolls to preserve the run RNG sequence. Reservations
+  // alone exclude selected bases; the sampled order never needs a second mutation.
+  const sampledBases = sampleItems(basePool, count, rng);
+  const reservedBases = new Map<string, "ordinary" | "unique">();
+  const unownedUniques = uniqueItemList.filter(
+    (unique) => !ownedUniqueIds.has(unique.id) && basePool.some((base) => base.id === unique.baseItemId),
+  );
   const choices: GearInstance[] = [];
 
   for (let index = 0; index < count; index += 1) {
-    const next = nextOffering(pool, index, count);
-    if (!next) break;
-    const instance = rollOfferingInstance(
-      rollTier(next.availability, index),
-      pool,
-      next.repeatableBases,
-      rng,
-      fallbackUniqueToAstral,
+    const unusedBases = basePool.filter((base) => !reservedBases.has(base.id));
+    const repeatableBases = basePool.filter((base) => reservedBases.get(base.id) !== "unique");
+    const eligibleBases = unusedBases.length > 0 ? unusedBases : fillCount ? repeatableBases : [];
+    if (eligibleBases.length === 0) break;
+
+    const availableUniques = unownedUniques.filter((unique) => !reservedBases.has(unique.baseItemId));
+    const availability = getGearLootAvailability(
+      ownedUniqueIds,
+      eligibleBases.map((base) => base.id),
     );
-    if (!instance) break;
-    choices.push(instance);
+    // Leave an ordinary base available to fill later slots on a narrow shelf.
+    availability.unique =
+      availableUniques.length > 0 && (index === count - 1 || !fillCount || repeatableBases.length > 1);
+    let rarity = rollTier(availability, index);
+
+    if (rarity === "unique") {
+      const unique = pickRandom(availableUniques, rng);
+      if (unique) {
+        reservedBases.set(unique.baseItemId, "unique");
+        choices.push(generateUniqueGearInstance(unique));
+        continue;
+      }
+      if (!fallbackUniqueToAstral) break;
+      rarity = "astral";
+    }
+
+    const base =
+      sampledBases.find((item) => !reservedBases.has(item.id)) ??
+      pickRandom(unusedBases.length > 0 ? unusedBases : repeatableBases, rng);
+    if (!base) break;
+    reservedBases.set(base.id, "ordinary");
+    const definition = gearDefinitions[gearDefinitionId(base.id, rarity)];
+    if (!definition) break;
+    choices.push(rollAndCreateInstance(definition, rarity, rng));
   }
 
   return choices;

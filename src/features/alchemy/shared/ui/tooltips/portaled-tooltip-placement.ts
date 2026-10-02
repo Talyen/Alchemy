@@ -56,12 +56,14 @@ export function usePortaledTooltipPlacement(
     }
 
     let cancelled = false;
+    let measurement = 0;
     let needsSizing = true;
     let sizedWidth = 0;
     let sizedHeight = 0;
 
     const update = () => {
       if (cancelled) return;
+      const currentMeasurement = ++measurement;
       const stage = getVrStageElement();
       const bounds = stage.getBoundingClientRect();
       const horizontalInset = horizontalInsetForStage(bounds);
@@ -97,7 +99,7 @@ export function usePortaledTooltipPlacement(
           }),
         ],
       }).then(({ x, y, placement: finalPlacement }) => {
-        if (cancelled) return;
+        if (cancelled || currentMeasurement !== measurement) return;
         const state = floatingPlacementToTooltipState(finalPlacement);
         setPlaceBelow(state.placeBelow);
         setTooltipSide(state.tooltipSide);

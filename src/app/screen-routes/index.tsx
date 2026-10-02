@@ -20,9 +20,13 @@ export const SCREEN_ROUTES = {
 } satisfies Record<Screen, ScreenRoute>;
 
 export function renderAlchemyScreenRoute(ctx: RenderAlchemyScreenProps): ReactNode {
-  const render = SCREEN_ROUTES[ctx.screen];
-  if (!render) {
+  const Route = SCREEN_ROUTES[ctx.screen];
+  if (!Route) {
     throw new Error(`Missing screen route for ${ctx.screen}`);
   }
-  return <ErrorBoundary label={ctx.screen}>{render(ctx)}</ErrorBoundary>;
+  return (
+    <ErrorBoundary label={ctx.screen}>
+      <Route {...ctx} />
+    </ErrorBoundary>
+  );
 }

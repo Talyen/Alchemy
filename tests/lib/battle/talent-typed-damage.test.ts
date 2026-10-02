@@ -96,7 +96,7 @@ describe("talent damage conversions", () => {
       enemyStatuses: { poison: 2 },
       talentEffects: {
         flatBurnDamage: 100,
-        forgeToBurn: true,
+        forgeBurnDamagePercent: 100,
         burnDamagePerManaCrystal: 100,
         freezeDamageBonusVsFrozen: 1,
         poisonDamageBonusVsPoisoned: 1,

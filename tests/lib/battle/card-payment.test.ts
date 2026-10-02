@@ -59,7 +59,7 @@ describe("card payment", () => {
     expect(payment.effectiveCost).toBe(0);
     expect(payment.consumedFlags).toEqual(new Set(["firstHolyCardFreeUsed", "encounterArcheryUsed"]));
     expect(payment.disarmedFlags.size).toBe(0);
-    expect(payment.uniqueDiscounts).toEqual({ knightsAnswerReady: false });
+    expect(payment.uniqueDiscounts).toEqual({});
     expect(canPlayCard(state, card, 0)).toBe(true);
     expect(canPlayCard(state, card, 0)).toBe(true);
     expect(state.flags.firstHolyCardFreeUsed).toBe(false);
@@ -70,7 +70,7 @@ describe("card payment", () => {
       nextArcheryCardFree: true,
       encounterArcheryUsed: true,
     });
-    expect(result.uniqueGear).toMatchObject(payment.uniqueDiscounts);
+    expect(result.uniqueGear.knightsAnswerReady).toBe(true);
     expect(result.mana).toBe(0);
   });
 

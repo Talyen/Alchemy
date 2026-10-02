@@ -259,7 +259,7 @@ export function advanceToPlayerTurn(
   return resolvePendingBattleReactions(healedState, combatTexts);
 }
 
-export function reduceSkipTurns(state: BattleState): BattleState {
+export function reduceSkipTurns(state: BattleState, combatTexts: CombatTextEvent[] = []): BattleState {
   const prevCc = state.enemyCC;
   const decrementedCc = decrementCcSkipTurns(prevCc);
   const nextState = {
@@ -271,7 +271,7 @@ export function reduceSkipTurns(state: BattleState): BattleState {
     nextState.enemyHealth > 0 &&
     !isPlayerDefeated(nextState) &&
     state.talentEffects.drawOnThaw > 0
-    ? applyDrawResult(nextState, drawFromState(nextState, state.talentEffects.drawOnThaw))
+    ? applyDrawResult(nextState, drawFromState(nextState, state.talentEffects.drawOnThaw), combatTexts)
     : nextState;
 }
 

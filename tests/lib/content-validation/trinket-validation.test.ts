@@ -1,14 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { trinketLibrary, type TrinketEntry } from "@/lib/game-data";
+import { describeTrinket, trinketLibrary, type TrinketEntry } from "@/lib/game-data";
 import type { TrinketManifest } from "@/lib/battle/types";
 import { defaultTrinketEffects } from "@/lib/trinkets";
 import { validateTrinkets } from "@/lib/content-validation/validators";
 import { TrinketContentSchema } from "@/lib/content-validation/schemas";
 import { createCollector } from "@/lib/content-validation/utils";
-import {
-  TRINKET_PARITY_RULES,
-  validateTrinketDescriptionParity,
-} from "@/lib/content-validation/card-parity/trinket-parity";
+import { validateTrinketDescriptionParity } from "@/lib/content-validation/card-parity/trinket-parity";
 
 function getTrinket(id: string): TrinketEntry {
   const trinket = trinketLibrary.find((entry) => entry.id === id);
@@ -49,24 +46,28 @@ describe("Trinket effect schema", () => {
 });
 
 describe("Trinket description parity", () => {
-  it("covers exactly the catalog", () => {
-    expect(Object.keys(TRINKET_PARITY_RULES).sort()).toEqual(trinketLibrary.map((entry) => entry.id).sort());
-  });
-
-  it.each(trinketLibrary)("rejects changed numeric effects for $id", (trinket) => {
-    for (const [key, value] of Object.entries(trinket.effects)) {
-      if (typeof value !== "number") continue;
-      const changed = { ...trinket, effects: { ...trinket.effects, [key]: value + 1 } };
-      expect(parityMessages(changed)).toContain(
-        `Effect ${key} value ${value + 1} does not match described amount ${value}`,
-      );
+  it("keeps every catalog description in sync with its authored effects", () => {
+    for (const entry of trinketLibrary) {
+      expect(entry.descriptionLines).toEqual([describeTrinket(entry.id, entry.effects)]);
+      expect(parityMessages(entry)).toEqual([]);
+      for (const [key, value] of Object.entries(entry.effects)) {
+        if (typeof value !== "number") continue;
+        const changed = { ...entry, effects: { ...entry.effects, [key]: value + 1 } };
+        expect(parityMessages(changed), `${entry.id}: ${key}`).toEqual([
+          expect.stringContaining("required trigger and outcome"),
+        ]);
+      }
     }
   });
 
-  it("rejects swapped threshold and reward amounts", () => {
+  it("keeps threshold and reward amounts distinct", () => {
+    const effects = { resonantChimeCardsRequired: 4, resonantChimeMana: 2 };
+    expect(describeTrinket(chimes.id, effects)).toBe("When you play 4 or more cards in a single turn, gain 2 Mana");
+    expect(parityMessages({ ...chimes, effects })).toEqual([
+      expect.stringContaining('"When you play 4 or more cards in a single turn, gain 2 Mana"'),
+    ]);
     expect(parityMessages({ ...chimes, effects: { resonantChimeCardsRequired: 1, resonantChimeMana: 3 } })).toEqual([
-      "Effect resonantChimeCardsRequired value 1 does not match described amount 3",
-      "Effect resonantChimeMana value 3 does not match described amount 1",
+      expect.stringContaining('"When you play 1 or more cards in a single turn, gain 3 Mana"'),
     ]);
   });
 
@@ -75,7 +76,7 @@ describe("Trinket description parity", () => {
     "When you play 3.5 or more cards in a single turn, gain 1 Mana",
   ])("rejects numeric substring matches: %s", (description) => {
     expect(parityMessages({ ...chimes, descriptionLines: [description] })).toEqual([
-      expect.stringContaining("Effect resonantChimeCardsRequired value 3 does not match described amount"),
+      expect.stringContaining("required trigger and outcome"),
     ]);
   });
 
@@ -109,13 +110,13 @@ describe("Trinket description parity", () => {
     expect(parityMessages({ ...chimes, effects: { resonantChimeMana: 1, extraDrawPerBattle: 3 } })).toEqual([
       "Missing required effect: resonantChimeCardsRequired",
       "Unexpected effect: extraDrawPerBattle",
-      "Effect resonantChimeCardsRequired value undefined does not match described amount 3",
+      expect.stringContaining("required trigger and outcome"),
     ]);
   });
 
   it("rejects unregistered Trinkets", () => {
     expect(parityMessages({ ...chimes, id: "unregistered-trinket" })).toEqual([
-      'Trinket "unregistered-trinket" has no registered description parity rule',
+      'Trinket "unregistered-trinket" has no registered description definition',
     ]);
   });
 

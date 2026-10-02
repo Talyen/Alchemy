@@ -1,13 +1,9 @@
 import { wildwoodPhaseToScreen } from "@/features/alchemy/shared/run-flow/wildwood-screen-routing";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import {
-  canOfferWildwoodRemoval,
-  canSkipWildwoodRemoval,
-  type WildwoodModifierId,
-} from "@/lib/content-systems/wildwood/gauntlet";
+import { canOfferWildwoodRemoval, canSkipWildwoodRemoval } from "@/lib/content-systems/wildwood/gauntlet";
 import { logError } from "@/lib/error-logger";
-import type { DifficultyModifier } from "@/lib/game-data";
+import type { BattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import {
   prepareWildwoodBoss,
@@ -19,17 +15,13 @@ import { finishRewardClaim } from "./reward-commands";
 interface WildwoodGauntletFlowOptions {
   navigateTo: (nextScreen: Screen, prepareNavigation?: () => void) => void;
   resumeTo: (nextScreen: Screen) => void;
-  onStartBossById: (
-    bossId: string,
-    modifiers?: DifficultyModifier[],
-    wildwoodModifierId?: WildwoodModifierId,
-  ) => boolean;
+  startBossById: BattleStartCommands["startBossById"];
   clearCardHover: () => void;
 }
 export function createWildwoodGauntletFlow({
   navigateTo,
   resumeTo,
-  onStartBossById,
+  startBossById,
   clearCardHover,
 }: WildwoodGauntletFlowOptions) {
   const startNextWildwoodBoss = (prepareNavigation?: () => void, removeIndex?: number) => {
@@ -38,7 +30,7 @@ export function createWildwoodGauntletFlow({
       prepareNavigation?.();
       return;
     }
-    if (!onStartBossById(started.bossId, undefined, started.modifierId)) {
+    if (!startBossById({ bossId: started.bossId, wildwoodModifierId: started.modifierId })) {
       logError("[Wildwood] Failed to start boss battle", "other");
       prepareNavigation?.();
       navigateTo(ROUTE_SCREENS.MENU, teardownRun);
@@ -54,7 +46,7 @@ export function createWildwoodGauntletFlow({
       return;
     }
     if (state.phase === "battle" && state.currentBossId && state.currentCombatTraitIds[0]) {
-      if (onStartBossById(state.currentBossId, undefined, state.currentCombatTraitIds[0])) {
+      if (startBossById({ bossId: state.currentBossId, wildwoodModifierId: state.currentCombatTraitIds[0] })) {
         resumeTo(ROUTE_SCREENS.BATTLE);
       } else {
         logError("[createWildwoodGauntletFlow] resumeWildwoodRun: failed to resume boss battle", "other");

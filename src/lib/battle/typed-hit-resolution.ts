@@ -27,7 +27,7 @@ export function resolveTypedEnemyHit(
 ): { state: BattleState; facts: HitFacts } {
   const { state: damaged, facts } = applyHitHealth(state, resolvedDamage, eligibility, options.critical ?? false);
   let next = applyIronGuardReward(damaged, effect.damageType, facts.healthDamage, combatTexts);
-  if (effect.damageType === "bleed") next = applyBleedDamageDraw(next, facts.healthDamage);
+  if (effect.damageType === "bleed") next = applyBleedDamageDraw(next, facts.healthDamage, combatTexts);
   next = decayArmorAfterDamage(next, resolvedDamage, "enemy", combatTexts);
   // Buildup can trigger another hit. Resolve it before thresholds and once-only kill rewards.
   next = applyDamageStatuses(next, effect, resolvedDamage, combatTexts, facts.previousHealth, options);

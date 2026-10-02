@@ -10,6 +10,11 @@ Trinkets, and Uniques, or three for Bestiary. Resize retains the selected or fir
 orientation resolves capacity before page synchronization. Collection keeps
 per-tab page memory.
 
+`meta/screens/collection/collection-items.ts` owns each tab's ordered catalog,
+default capacity, and undiscovered copy. All tabs share pagination and discovery
+masking. Tile payloads are discriminated by `frameType`; catalog data stays
+available for locked-entry shine, while discovery gates tooltip details.
+
 Armory uses six-item pages and retains working order and page per hero and slot
 while mounted. Its bottom-center Search, Filters, and Sort toolbar keeps criteria
 per hero/slot. Filtering preserves hidden items in the complete working order;

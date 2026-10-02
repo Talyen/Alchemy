@@ -24,7 +24,16 @@ export function applyCrowdControlTriggerBonuses(
   let nextState = state;
   const draw = bonuses.draw ?? 0;
   if (draw > 0) {
+    const beforeDraw = nextState;
     nextState = applyDrawResult(nextState, drawFromState(nextState, draw));
+    const received =
+      nextState.hand.length +
+      nextState.pendingHandCards.length -
+      beforeDraw.hand.length -
+      beforeDraw.pendingHandCards.length;
+    if (received > 0 && combatTexts) {
+      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "draw", amount: received });
+    }
   }
   if (bonuses.nextCardFree) {
     nextState = setFlag(nextState, "nextCardCostReduction", FREE_CARD_SENTINEL);

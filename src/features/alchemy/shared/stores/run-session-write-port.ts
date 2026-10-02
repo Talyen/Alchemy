@@ -58,6 +58,7 @@ export {
   setRunEndMaterials,
   setSelectedLabyrinthNodeId,
   setShopState,
+  setRunActivityData,
   setStarterDraftChoices,
   setTrinketShopState,
   setWildwoodDraft,

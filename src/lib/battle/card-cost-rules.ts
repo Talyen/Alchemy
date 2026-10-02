@@ -161,6 +161,8 @@ export function computeEffectiveCost(state: CardCostState, card: BattleCard) {
   );
   const discountedCost = isFree ? 0 : Math.max(0, card.cost - discount - returnedDiscount);
   const result = computeStandardCost(state, card, discountedCost);
+  // First-card Talents take priority and leave the Unique free-card opportunity armed.
+  if (result.consumedFlags.size > 0) delete uniqueDiscounts.knightsAnswerReady;
   if (quickdrawUsed) result.consumedFlags.add("encounterArcheryUsed");
   return { ...result, uniqueDiscounts };
 }

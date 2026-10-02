@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   applyCraftingCurrency,
   canApplyCraftingCurrency,
+  craftingCurrencyBlockedReason,
   computeSalvageYield,
   createEmptyGearLoadouts,
   normalizeCraftingCurrencies,
@@ -30,35 +31,37 @@ describe("crafting currency logic", () => {
     affixes,
   });
 
-  it("validates the six currency target rules", () => {
-    expect(canApplyCraftingCurrency("discordant-dice", createBasicItem([]))).toBe(false);
-    expect(canApplyCraftingCurrency("discordant-dice", createBasicItem([{ id: "flat-physical", value: 1 }]))).toBe(
-      true,
-    );
-    expect(canApplyCraftingCurrency("sprig-of-growth", createBasicItem([{ id: "flat-physical", value: 1 }]))).toBe(
-      true,
-    );
-    expect(
-      canApplyCraftingCurrency(
-        "sprig-of-growth",
-        createBasicItem([
-          { id: "flat-physical", value: 1 },
-          { id: "flat-stun", value: 1 },
-        ]),
-      ),
-    ).toBe(false);
-    expect(canApplyCraftingCurrency("voidstone", createBasicItem())).toBe(true);
-    expect(canApplyCraftingCurrency("voidstone", createBasicItem([]))).toBe(false);
-    expect(canApplyCraftingCurrency("ascension-seal", createBasicItem())).toBe(true);
-    expect(canApplyCraftingCurrency("ascension-seal", createAstralItem())).toBe(false);
-    expect(canApplyCraftingCurrency("severance-maw", createBasicItem())).toBe(true);
-    expect(canApplyCraftingCurrency("severance-maw", createBasicItem([]))).toBe(false);
-    expect(canApplyCraftingCurrency("smiths-whetstone", createBasicItem([{ id: "flat-physical", value: 1 }]))).toBe(
-      true,
-    );
-    expect(canApplyCraftingCurrency("smiths-whetstone", createBasicItem([{ id: "flat-physical", value: 2 }]))).toBe(
-      false,
-    );
+  it.each([
+    ["discordant-dice", createBasicItem([]), "This item has no affixes to reroll."],
+    ["discordant-dice", createBasicItem(), null],
+    ["sprig-of-growth", createBasicItem(), null],
+    [
+      "sprig-of-growth",
+      createBasicItem([
+        { id: "flat-physical", value: 1 },
+        { id: "flat-stun", value: 1 },
+      ]),
+      "No affix slots or eligible affixes available.",
+    ],
+    ["voidstone", createBasicItem(), null],
+    ["voidstone", createBasicItem([]), "This item has no affixes to remove."],
+    ["ascension-seal", createBasicItem(), null],
+    ["ascension-seal", createAstralItem(), "Only Basic items can be upgraded to Astral."],
+    ["severance-maw", createBasicItem(), null],
+    ["severance-maw", createBasicItem([]), "This item has no affixes to remove."],
+    ["smiths-whetstone", createBasicItem(), null],
+    ["smiths-whetstone", createBasicItem([]), "This item has no affixes to upgrade."],
+    ["smiths-whetstone", createBasicItem([{ id: "flat-physical", value: 2 }]), "All affixes are already at maximum."],
+  ] as const)("keeps %s eligibility, rejection and application consistent", (currency, item, reason) => {
+    const original = structuredClone(item);
+    expect(craftingCurrencyBlockedReason(currency, item)).toBe(reason);
+    expect(canApplyCraftingCurrency(currency, item)).toBe(reason === null);
+    if (reason !== null) {
+      const rng = vi.fn(() => 0);
+      expect(applyCraftingCurrency(currency, item, rng)).toBe(item);
+      expect(rng).not.toHaveBeenCalled();
+    }
+    expect(item).toEqual(original);
   });
 
   it("rerolls all affixes using an affinity-eligible pool", () => {

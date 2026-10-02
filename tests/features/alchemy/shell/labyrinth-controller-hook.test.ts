@@ -1,10 +1,7 @@
 import { act } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { gridLabyrinthMapFixture } from "../../../fixtures/labyrinth-map";
-import {
-  createLabyrinthController,
-  type LabyrinthNodeHandlers,
-} from "@/features/alchemy/run-loop/run/labyrinth-controller";
+import { createLabyrinthController } from "@/features/alchemy/run-loop/run/labyrinth-controller";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import {
@@ -13,21 +10,6 @@ import {
   setLabyrinthMap,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
-
-function stubNodeHandlers(overrides: Partial<LabyrinthNodeHandlers> = {}): LabyrinthNodeHandlers {
-  return {
-    onStartBattleWithModifiers: vi.fn(),
-    onStartBossBattleWithModifiers: vi.fn(),
-    onStartRest: vi.fn(),
-    onStartMystery: vi.fn(),
-    onStartCorruption: vi.fn(),
-    onStartShop: vi.fn(),
-    onStartAlchemist: vi.fn(),
-    onStartTrinketShop: vi.fn(),
-    onStartEquipmentShop: vi.fn(),
-    ...overrides,
-  };
-}
 
 function firstReachableId() {
   return "labyrinth-floor-1-n0";
@@ -47,7 +29,7 @@ describe("Labyrinth commands", () => {
     let entered = false;
     act(() => {
       controller.selectNode(target);
-      entered = controller.enterSelectedNode(stubNodeHandlers({ onStartBattleWithModifiers: onStartBattle }));
+      entered = controller.enterSelectedNode(onStartBattle);
     });
 
     expect(entered).toBe(true);
@@ -61,7 +43,7 @@ describe("Labyrinth commands", () => {
 
     act(() => {
       controller.selectNode(target);
-      controller.enterSelectedNode(stubNodeHandlers());
+      controller.enterSelectedNode(vi.fn());
       controller.onNodeCleared();
     });
 
@@ -74,14 +56,13 @@ describe("Labyrinth commands", () => {
     const onStartBattle = vi.fn();
     const controller = createLabyrinthController();
     const target = firstReachableId();
-    const handlers = stubNodeHandlers({ onStartBattleWithModifiers: onStartBattle });
 
     let first = false;
     let second = true;
     act(() => {
       controller.selectNode(target);
-      first = controller.enterSelectedNode(handlers);
-      second = controller.enterSelectedNode(handlers);
+      first = controller.enterSelectedNode(onStartBattle);
+      second = controller.enterSelectedNode(onStartBattle);
     });
 
     expect(first).toBe(true);
@@ -99,7 +80,7 @@ describe("Labyrinth commands", () => {
     act(() => {
       controller.selectNode(firstReachableId());
       controller.selectNode(locked!.id);
-      entered = controller.enterSelectedNode(stubNodeHandlers());
+      entered = controller.enterSelectedNode(vi.fn());
     });
 
     expect(readRunSession().selectedLabyrinthNodeId).toBe(locked!.id);
@@ -154,13 +135,9 @@ describe("Labyrinth commands", () => {
     act(() => controller.selectNode(target));
     expect(() =>
       act(() =>
-        controller.enterSelectedNode(
-          stubNodeHandlers({
-            onStartBattleWithModifiers: () => {
-              throw new Error("Cannot start battle");
-            },
-          }),
-        ),
+        controller.enterSelectedNode(() => {
+          throw new Error("Cannot start battle");
+        }),
       ),
     ).toThrow("Cannot start battle");
     expect(readRunSession().activeLabyrinthPendingNode).toBeNull();
@@ -177,17 +154,13 @@ describe("Labyrinth commands", () => {
     });
     const controller = createLabyrinthController();
     controller.selectNode(firstReachableId());
-    controller.enterSelectedNode(
-      stubNodeHandlers({
-        onStartBattleWithModifiers: () => dispatchRunSessionCommand((draft) => completeRunRoom(draft)),
-      }),
-    );
+    controller.enterSelectedNode(() => dispatchRunSessionCommand((draft) => completeRunRoom(draft)));
     expect(readActiveRun().runHistory).toEqual([
       expect.objectContaining({ id: `labyrinth:1:${firstReachableId()}`, completed: true }),
     ]);
   });
 
-  it("routes corruption chambers to onStartCorruption with room modifiers", () => {
+  it("passes the selected corruption chamber with its room modifiers", () => {
     const corruptionId = firstReachableId();
     dispatchRunSessionCommand((draft) => {
       const node = draft.session.labyrinthMap!.nodes[corruptionId]!;
@@ -201,16 +174,18 @@ describe("Labyrinth commands", () => {
     let entered = false;
     act(() => {
       controller.selectNode(corruptionId);
-      entered = controller.enterSelectedNode(stubNodeHandlers({ onStartCorruption }));
+      entered = controller.enterSelectedNode(onStartCorruption);
     });
 
     expect(entered).toBe(true);
-    expect(onStartCorruption).toHaveBeenCalledWith(["blood-rite"]);
+    expect(onStartCorruption).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "corruption", rewardModifiers: ["blood-rite"] }),
+    );
     expect(readRunSession().activeLabyrinthPendingNode).toBe(corruptionId);
   });
   it("enters a previously discovered branch without moving through completed rooms", () => {
     const controller = createLabyrinthController();
-    const handlers = stubNodeHandlers();
+    const handlers = vi.fn();
     act(() => {
       controller.selectNode(firstReachableId());
       controller.enterSelectedNode(handlers);
@@ -218,8 +193,8 @@ describe("Labyrinth commands", () => {
       controller.selectNode("labyrinth-floor-1-n3");
       controller.enterSelectedNode(handlers);
     });
-    expect(handlers.onStartBattleWithModifiers).toHaveBeenCalledOnce();
-    expect(handlers.onStartRest).toHaveBeenCalledOnce();
+    expect(handlers).toHaveBeenNthCalledWith(1, expect.objectContaining({ type: "combat" }));
+    expect(handlers).toHaveBeenNthCalledWith(2, expect.objectContaining({ type: "rest" }));
     expect(readRunSession().activeLabyrinthPendingNode).toBe("labyrinth-floor-1-n3");
     expect(readRunSession().labyrinthMap!.currentNodeId).toBe(firstReachableId());
     act(() => controller.onNodeCleared());

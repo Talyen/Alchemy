@@ -61,14 +61,6 @@ describe("drawSliceFrame", () => {
       stroke: vi.fn(),
       moveTo: vi.fn(),
       lineTo: vi.fn(),
-      save: vi.fn(),
-      restore: vi.fn(),
-      translate: vi.fn(),
-      rotate: vi.fn(),
-      rect: vi.fn(),
-      clip: vi.fn(),
-      quadraticCurveTo: vi.fn(),
-      closePath: vi.fn(),
       globalAlpha: 1,
       fillStyle: "",
       strokeStyle: "",
@@ -88,7 +80,7 @@ describe("drawSliceFrame", () => {
     expect(ctx.fill).toHaveBeenCalled();
   });
 
-  it("draws pointed blade shapes during the sweep", () => {
+  it("draws crack polyline and stroke during crack draw phase", () => {
     const ctx = createMockCtx();
     const visual = computeSliceVisual(0.04, 200, 300);
     drawSliceFrame(ctx, visual, 200, 300, 100, 50);
@@ -96,26 +88,8 @@ describe("drawSliceFrame", () => {
     expect(ctx.clearRect).toHaveBeenCalled();
     expect(ctx.stroke).toHaveBeenCalled();
     expect(ctx.moveTo).toHaveBeenCalled();
-    expect(ctx.quadraticCurveTo).toHaveBeenCalledTimes(6);
-    expect(ctx.closePath).toHaveBeenCalledTimes(3);
-    expect(ctx.arc).not.toHaveBeenCalled();
+    expect(ctx.lineTo).toHaveBeenCalled();
   });
-
-  it("moves and rotates each shaded edge with its portrait half", () => {
-    const ctx = createMockCtx();
-    const visual = computeSliceVisual(0.5, 200, 150);
-    drawSliceFrame(ctx, visual, 200, 150, 100, 50);
-    for (const [offset, sign] of [
-      [visual.leftOffset, -1],
-      [visual.rightOffset, 1],
-    ] as const) {
-      expect(ctx.translate).toHaveBeenCalledWith(200 + offset.x, 125 + offset.y);
-      expect(ctx.rotate).toHaveBeenCalledWith((sign * visual.twistDeg * Math.PI) / 180);
-    }
-    expect(ctx.clip).toHaveBeenCalledTimes(2);
-    expect(ctx.quadraticCurveTo).not.toHaveBeenCalled();
-  });
-
   it("clears every visual at completion", () => {
     const ctx = createMockCtx();
     drawSliceFrame(ctx, computeSliceVisual(1, 200, 150), 200, 150, 100, 50);

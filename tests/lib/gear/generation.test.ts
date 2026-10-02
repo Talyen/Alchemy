@@ -77,6 +77,16 @@ describe("gear generation", () => {
     );
   });
 
+  it("stops narrow rewards at pool exhaustion instead of repeating bases", () => {
+    const choices = generateGearRewardChoicesForRarity(4, "basic", () => 0, new Set(), ["emerald-ring"]);
+    expect(choices.map((choice) => choice.definitionId)).toEqual(["emerald-ring-basic"]);
+  });
+
+  it("leaves a forced Unique reward empty when every allowed Unique is owned", () => {
+    const owned = new Set(uniqueItemList.map((unique) => unique.id));
+    expect(generateGearRewardChoicesForRarity(3, "unique", () => 0, owned)).toEqual([]);
+  });
+
   it("generates a dev random instance with valid definition and affix bounds", () => {
     let roll = 0;
     const rng = () => {

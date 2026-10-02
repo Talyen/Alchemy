@@ -311,8 +311,12 @@ describe("merchant shop actions", () => {
       const actions = buildActions();
       const onShelf = requiredItem(readActivityData(readRunSession().activity, "shop").cards[0], "merchant card");
 
+      const commits: number[] = [];
+      const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
       expect(actions.merchant.buyCard({ ...onShelf }, shopItemSlotKey("missing-card", 0))).toBe(false);
+      unsubscribe();
       expect(readRunProfile().gold).toBe(999);
+      expect(commits).toHaveLength(0);
     });
   });
   describe("init", () => {

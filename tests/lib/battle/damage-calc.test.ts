@@ -22,12 +22,12 @@ describe("forgeAppliesToDamageType", () => {
   });
 
   it.each([
-    ["burn", "forgeToBurn"],
-    ["holy", "forgeToHoly"],
-    ["bleed", "forgeToBleed"],
-  ] as const)("gates %s on its talent flag", (damageType, talentFlag) => {
+    ["burn", "forgeBurnDamagePercent"],
+    ["holy", "forgeHolyDamagePercent"],
+    ["bleed", "forgeBleedDamagePercent"],
+  ] as const)("gates %s on its talent percentage", (damageType, talentPercent) => {
     expect(forgeAppliesToDamageType(damageType, defaultTalentEffects)).toBe(false);
-    expect(forgeAppliesToDamageType(damageType, { ...defaultTalentEffects, [talentFlag]: true })).toBe(true);
+    expect(forgeAppliesToDamageType(damageType, { ...defaultTalentEffects, [talentPercent]: 100 })).toBe(true);
   });
 });
 

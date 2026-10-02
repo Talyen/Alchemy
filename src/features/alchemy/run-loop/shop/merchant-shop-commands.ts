@@ -38,9 +38,9 @@ export function createMerchantShopCommands({
   };
   const getRemoveCardPrice = () =>
     computeRemoveCardPrice(talentEffects, resolveReadShopModifiers(), homesteadEffects.removeCardDiscount);
-  const getRefreshPrice = createGetRefreshPrice("merchant", talentEffects);
+  const getRefreshPrice = createGetRefreshPrice("shop", talentEffects);
 
-  const initialize = initializeShop(setShopState, (draft) =>
+  const initialize = initializeShop("shop", (draft) =>
     createInitialShopState(
       draft.run.activeRun.runDeck,
       createDraftRunRandomSource(draft, "shops"),
@@ -53,13 +53,11 @@ export function createMerchantShopCommands({
       const state = readActivityData(draft.session.activity, "shop");
       return purchaseSlotOffering({
         talentEffects,
-        state,
-        setState: setShopState,
+        activity: "shop",
         draft,
         items: state.cards,
         requestedId: card.id,
         slotKey,
-        buyKind: "merchantCard",
         slotKeyOf: cardSlotKeyOf,
         idOf: (item) => item.id,
         acquire: (innerDraft, offered) => appendCardToRunWithDiscovery(innerDraft, offered),
@@ -96,18 +94,17 @@ export function createMerchantShopCommands({
 
   const refresh = createShopRefreshAction({
     activity: "shop",
-    kind: "merchant",
     talentEffects,
-    setState: setShopState,
-    mapState: (previous, cards: BattleCard[]) => ({ ...previous, cards }),
-    resample: (draft, state, modifiers) =>
-      resampleCardShopOfferings(
+    resample: (draft, state, modifiers) => ({
+      ...state,
+      cards: resampleCardShopOfferings(
         draft.run.activeRun.runDeck,
         merchantShopPool(modifiers),
         state.cards,
         SHOP_CARDS_OFFERED,
         createDraftRunRandomSource(draft, "shops"),
       ),
+    }),
   });
 
   return { initialize, buyCard, removeCard, refresh, getCardBuyPrice, getRemoveCardPrice, getRefreshPrice };

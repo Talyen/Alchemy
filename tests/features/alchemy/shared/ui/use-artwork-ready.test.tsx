@@ -137,4 +137,24 @@ describe("artwork reveal", () => {
     await paint();
     expect(image.style.visibility).toBe("hidden");
   });
+
+  it("keeps a stalled image's original deadline through unrelated DOM changes", async () => {
+    render(<View />);
+    const view = screen.getByTestId("view");
+    act(() => vi.advanceTimersByTime(IMAGE_PRELOAD_TIMEOUT_MS / 2));
+    await act(async () => view.append(document.createElement("span")));
+    await paint();
+    act(() => vi.advanceTimersByTime(IMAGE_PRELOAD_TIMEOUT_MS / 2));
+    await paint();
+    expect(view.dataset.artworkPending).toBeUndefined();
+    expect(screen.getByAltText("Artwork").style.visibility).toBe("hidden");
+  });
+
+  it("releases removed artwork without waiting for its deadline", async () => {
+    const { rerender } = render(<View />);
+    rerender(<View showArtwork={false} />);
+    await paint();
+    expect(screen.getByTestId("view").dataset.artworkPending).toBeUndefined();
+    expect(vi.getTimerCount()).toBe(0);
+  });
 });

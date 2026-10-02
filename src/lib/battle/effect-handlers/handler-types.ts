@@ -32,10 +32,10 @@ export function hasCardHealing(context: CardEffectResolutionContext | undefined)
   return context?.origin === "played-card" || context?.origin === "triggered-card";
 }
 
-export type EffectHandler = (
+export type EffectHandler<K extends BattleCardEffectKind = BattleCardEffectKind> = (
   state: BattleState,
   card: BattleCard,
-  effect: BattleCardEffect,
+  effect: Extract<BattleCardEffect, { kind: K }>,
   potionMult: number,
   combatTexts: CombatTextEvent[],
   context?: CardEffectResolutionContext,
@@ -45,21 +45,7 @@ export function ccDeepenedSinceStart(current: number, atStart: number | undefine
   return current > (atStart ?? current);
 }
 
-export function defineHandler<K extends BattleCardEffectKind>(
-  kind: K,
-  fn: (
-    state: BattleState,
-    card: BattleCard,
-    effect: Extract<BattleCardEffect, { kind: K }>,
-    potionMult: number,
-    combatTexts: CombatTextEvent[],
-    context: CardEffectResolutionContext | undefined,
-  ) => BattleState,
-): EffectHandler {
-  return (state, card, effect, potionMult, combatTexts, context) => {
-    if (effect.kind !== kind) {
-      throw new Error(`[Battle] handler mismatch: expected ${kind} got ${effect.kind}`);
-    }
-    return fn(state, card, effect as Extract<BattleCardEffect, { kind: K }>, potionMult, combatTexts, context);
-  };
-}
+/** Table keys determine the effect type; recursive effects belong to orchestration. */
+export type EffectHandlers = {
+  [K in Exclude<BattleCardEffectKind, "chance" | "repeat-over-turns">]: EffectHandler<K>;
+};

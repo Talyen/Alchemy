@@ -34,19 +34,16 @@ export function createRunFlowEngine(
     clearCardHover();
     rawResumeTo(nextScreen, prepareNavigation);
   };
-  const startBattle = battle.startBattle ?? battle.onStartBattle!;
-  const startBossBattle = battle.startBossBattle ?? battle.onStartBossBattle!;
-  const startBossById = battle.startBossById ?? battle.onStartBossById!;
   const wildwood = createWildwoodGauntletFlow({
     navigateTo,
     resumeTo,
-    onStartBossById: startBossById,
+    startBossById: battle.startBossById,
     clearCardHover,
   });
   const contentNav = createContentSystemNavigation({
     navigateTo,
     resumeTo,
-    onStartBattle: startBattle,
+    startBattle: battle.startBattle,
     getAvailableDestinations: outcomes.getAvailableDestinations,
     onResumeWildwood: wildwood.resumeWildwoodRun,
   });
@@ -58,10 +55,10 @@ export function createRunFlowEngine(
     transition,
     labyrinthClearNode,
     initializeShop,
-    startBattle: (opts) => startBattle?.(opts?.deck, opts?.gold, opts?.enemyType, opts?.modifiers, opts?.enemyId),
+    startBattle: battle.startBattle,
     startBoss: (opts) => {
-      if (opts?.bossId && startBossById?.(opts.bossId, opts.modifiers)) return;
-      startBossBattle?.();
+      if (opts?.bossId && battle.startBossById({ bossId: opts.bossId, modifiers: opts.modifiers })) return;
+      battle.startBossBattle();
     },
     beginMysteryEvent: mystery.beginMysteryEvent,
     wildwoodRewardComplete: wildwood.handleWildwoodRewardComplete,

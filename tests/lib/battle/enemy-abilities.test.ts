@@ -9,6 +9,7 @@ import {
   isEnemyAbilityCard,
 } from "@/lib/game-data";
 import { applyEnemyAbility, processEnemyAbility } from "@/lib/battle/enemy-turn-attack";
+import { paceCombatMagnitude } from "@/lib/battle/fight-pacing";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { getEnemyAbilityPressure, scaleEnemyAbilityDamage } from "@/lib/battle/battle-enemy-setup";
 import { normalizePersistedBattleState } from "@/lib/validation/normalize-persisted-battle-state";
@@ -42,6 +43,20 @@ function useAbility(state: BattleState, id: string, texts: CombatTextEvent[] = [
 }
 
 describe("enemy repertoire", () => {
+  it("Burning Blade paces its Forge grant before deriving its Burn damage", () => {
+    const state = enemyState("pyromancer", {
+      appliesFightPacing: true,
+      turn: 10,
+      enemyHealth: 10,
+      roomScalingMultiplier: 4,
+    });
+    const expectedForge = paceCombatMagnitude(state, 4, "enemy");
+    expect(expectedForge).toBeGreaterThan(4);
+    const texts: CombatTextEvent[] = [];
+    const result = useAbility(state, "burning-blade", texts);
+    expect(result.enemyMitigation.forge).toBe(expectedForge);
+    expect(texts).toContainEqual({ target: "enemy", kind: "status", stat: "forge", amount: expectedForge });
+  });
   it("assigns three distinct canonical, fully supported cards to every enemy", () => {
     for (const enemy of enemyBestiary) {
       expect(enemy.abilityIds).toHaveLength(3);
@@ -196,7 +211,7 @@ describe("enemy card effects", () => {
     const base = enemyState();
     const state = {
       ...base,
-      talentEffects: { ...base.talentEffects, flatPhysicalDamage: 100, flatArmorAmount: 100, forgeToBlock: true },
+      talentEffects: { ...base.talentEffects, flatPhysicalDamage: 100, flatArmorAmount: 100, forgeBlockPercent: 100 },
       gearEffects: { ...base.gearEffects, flatBlockGained: 100 },
       playerStatuses: { ...base.playerStatuses, forge: 100 },
     };

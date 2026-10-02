@@ -6,14 +6,14 @@ import {
   type BattleSnapshot,
   type CardPlayOptions,
 } from "@/lib/battle";
-import type { BattleCard } from "@/lib/game-data";
+import { getCardKeywords, type BattleCard } from "@/lib/game-data";
 import type { BattleCardEffect } from "@/lib/game-data";
 import { HALF_DIVISOR } from "@/lib/game-constants";
 
 import { PLAYABLE_HAND_OPTIONS } from "../../shared/config/battle-input";
 export { PLAYABLE_HAND_OPTIONS };
 
-export function findFirstPlayableHandCard(
+function findFirstPlayableHandCard(
   state: BattleSnapshot,
   options: CardPlayOptions = PLAYABLE_HAND_OPTIONS,
 ): { card: BattleCard; index: number } | null {
@@ -49,11 +49,23 @@ function immediateSelfDamage(effects: readonly BattleCardEffect[]): number {
 }
 
 function hasPotentialLethalSelfCost(card: BattleCard, state: BattleSnapshot): boolean {
+  const keywords = getCardKeywords(card);
+  const mayRepeat =
+    state.flags.playNextCardTwice ||
+    keywords.some((keyword) => {
+      if (keyword === "burn") return state.talentEffects.burnCardPlayTwiceChance > 0;
+      if (keyword === "freeze") return state.talentEffects.freezeCardPlayTwiceChance > 0;
+      if (keyword === "nature") return state.talentEffects.natureCardPlayTwiceChance > 0;
+      if (keyword === "poison") return state.talentEffects.poisonCardPlayTwiceChance > 0;
+      if (keyword === "stun") return state.talentEffects.stunCardPlayTwiceChance > 0;
+      if (keyword === "wish") return state.talentEffects.wishCardPlayTwiceChance > 0;
+      return false;
+    });
   return (
     state.deathsDoorUsed &&
     !state.deathsDoorActive &&
     state.playerStatuses.phoenixFeather <= 0 &&
-    immediateSelfDamage(card.effects) >= state.playerHealth
+    immediateSelfDamage(card.effects) * (mayRepeat ? 2 : 1) >= state.playerHealth
   );
 }
 
@@ -140,16 +152,4 @@ export function getPlayableHandCardKeys(battleState: BattleSnapshot): Set<string
     }
   }
   return keys;
-}
-
-export function getPlayableHandCardKeysExcludingHidden(
-  battleState: BattleSnapshot,
-  hiddenHandCardKeys: HiddenHandCardKeys,
-  playableKeys?: Set<string>,
-): Set<string> {
-  const next = new Set(playableKeys ?? getPlayableHandCardKeys(battleState));
-  for (const hiddenKey of hiddenHandCardKeys) {
-    next.delete(hiddenKey);
-  }
-  return next;
 }

@@ -87,21 +87,13 @@ function commitRunStart(mutate: (draft: GameplayDraft) => RunStartOutcome, after
 
 export function createNewRunInitialization(deps: ContentSystemNavigationDeps) {
   function initializeRunForDifficulty(characterId: CharacterId, difficultyId: DifficultyId) {
-    const outcome = dispatchRunSessionCommand(
-      (draft) => {
-        const startSnapshot = createStartSnapshot(draft, characterId, CONTENT_SYSTEMS.CAMPAIGN, { difficultyId });
-        const { startGoldGranted } = applyRunStartToDraft(draft, startSnapshot, { discoverDeck: true });
-        setStarterDraftChoices(draft, null);
-        sampleAndApplyInitialCampaignDestinations(draft, deps.getAvailableDestinations, startSnapshot.runMaxHealth);
-        return {
-          freshDeck: startSnapshot.freshDeck,
-          totalStartGold: draft.runProfile.gold,
-          playGoldSound: startGoldGranted > 0,
-        };
-      },
-      { afterCommit: (outcome) => afterRunStartCommitted(outcome) },
-    );
-    return { freshDeck: outcome.freshDeck, totalStartGold: outcome.totalStartGold };
+    commitRunStart((draft) => {
+      const startSnapshot = createStartSnapshot(draft, characterId, CONTENT_SYSTEMS.CAMPAIGN, { difficultyId });
+      const { startGoldGranted } = applyRunStartToDraft(draft, startSnapshot, { discoverDeck: true });
+      setStarterDraftChoices(draft, null);
+      sampleAndApplyInitialCampaignDestinations(draft, deps.getAvailableDestinations, startSnapshot.runMaxHealth);
+      return { playGoldSound: startGoldGranted > 0 };
+    });
   }
 
   function initializeLabyrinthRun(characterId: CharacterId) {

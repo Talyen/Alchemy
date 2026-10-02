@@ -193,11 +193,8 @@ const PersistedPendingRewardUnionSchema = z.discriminatedUnion("rewardType", [
   createChoicePendingRewardSchema("trinket"),
   z.object({
     rewardType: z.literal("gear"),
-    // If every saved gear instance is invalid (catalog rotation), min(1) fails
-    // and InterruptedFlow falls back to {kind:"none"}. Intentional load repair:
-    // a gear reward with no valid choices cannot be offered, and restore
-    // already maps empty gear to null. Shared gold/materials on the same
-    // pending reward are dropped with it; preserving them is a future change.
+    // Empty or repaired choices still carry shared Gold/Materials and bonus
+    // cards. Reward restoration decides whether the bundle has value to keep.
     gearChoices: z.preprocess(normalizeGearInstanceArray, z.array(GearInstanceSchema).catch([])),
     ...PersistedPendingRewardBaseSchema,
   }),

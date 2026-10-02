@@ -1,5 +1,5 @@
 import { labyrinthCampfireHealing } from "@/lib/content-systems/labyrinth/room-rules";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef } from "react";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { EnemyInspectionOverlay } from "@/features/alchemy/shared/ui/inspection/enemy-inspection-overlay";
 import {
@@ -38,17 +38,10 @@ import {
 } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import { useHomesteadEffects, useTalentEffects } from "@/features/alchemy/shared/stores/run-reads";
 import { getCampfireHealFraction } from "@/lib/campfire-heal";
-import type { BattleCommands, BattleRouteCtx, RunLoopCommands, RunLoopRouteCtx } from "./route-ctx";
+import type { BattleRouteCtx, RunLoopRouteCtx } from "./route-ctx";
 
-function BattleScreenRoute({
-  cardInspection,
-  commands,
-  gameMenuOpen,
-}: {
-  cardInspection?: BattleRouteCtx["cardInspection"];
-  commands: BattleCommands;
-  gameMenuOpen: BattleRouteCtx["gameMenuOpen"];
-}) {
+function BattleScreenRoute({ cardInspection, routeCommands, gameMenuOpen }: BattleRouteCtx) {
+  const commands = routeCommands.battle;
   const { characterId, heroArt, playerName, aspectMode, stagePixelRatio } = useAppScreenChrome();
   const { battleScreenData, hasActiveBattle } = useBattleScreenRouteData();
   const enemyInspectionOpen = useUiStore((state) => state.enemyInspectionOpen);
@@ -123,7 +116,8 @@ function BattleScreenRoute({
   );
 }
 
-function LabyrinthMapScreenRoute({ commands }: { commands: RunLoopCommands["labyrinth"] }) {
+function LabyrinthMapScreenRoute({ routeCommands }: RunLoopRouteCtx) {
+  const commands = routeCommands.runLoop.labyrinth;
   const r = useLabyrinthMapScreenData();
   const { heroArt } = useAppScreenChrome();
   return (
@@ -139,7 +133,8 @@ function LabyrinthMapScreenRoute({ commands }: { commands: RunLoopCommands["laby
   );
 }
 
-function RewardsScreenRoute({ commands }: { commands: RunLoopCommands["rewards"] }) {
+function RewardsScreenRoute({ routeCommands }: RunLoopRouteCtx) {
+  const commands = routeCommands.runLoop.rewards;
   const r = useRewardsScreenData();
   return (
     <RewardsScreen
@@ -151,17 +146,20 @@ function RewardsScreenRoute({ commands }: { commands: RunLoopCommands["rewards"]
   );
 }
 
-function WildwoodRemovalScreenRoute({ commands }: { commands: RunLoopCommands["wildwood"] }) {
+function WildwoodRemovalScreenRoute({ routeCommands }: RunLoopRouteCtx) {
+  const commands = routeCommands.runLoop.wildwood;
   const r = useWildwoodRemovalScreenData();
   return <WildwoodRemovalScreen runDeck={r.runDeck} onRemove={commands.removeCard} onSkip={commands.skipRemoval} />;
 }
 
-function DestinationScreenRoute({ commands }: { commands: RunLoopCommands["destinations"] }) {
+function DestinationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
+  const commands = routeCommands.runLoop.destinations;
   const r = useDestinationScreenData();
   return <DestinationScreen rewardState={r.rewardState} onChoose={commands.choose} onPrepare={commands.prepare} />;
 }
 
-function CampfireScreenRoute({ commands }: { commands: RunLoopCommands["destinations"] }) {
+function CampfireScreenRoute({ routeCommands }: RunLoopRouteCtx) {
+  const commands = routeCommands.runLoop.destinations;
   const r = useCampfireScreenData();
   const healingBonus = useHomesteadEffects().homesteadHealing;
   const talentEffects = useTalentEffects();
@@ -177,13 +175,9 @@ function CampfireScreenRoute({ commands }: { commands: RunLoopCommands["destinat
   );
 }
 
-function CardShopScreenRoute({
-  commands,
-  onContinue,
-}: {
-  onContinue: () => void;
-  commands: RunLoopCommands["shop"]["merchant"];
-}) {
+function CardShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
+  const commands = routeCommands.runLoop.shop.merchant;
+  const onContinue = routeCommands.runLoop.shop.continue;
   const r = useShopScreenData();
   return (
     <CardShopScreen
@@ -204,13 +198,9 @@ function CardShopScreenRoute({
   );
 }
 
-function AlchemistShopScreenRoute({
-  commands,
-  onContinue,
-}: {
-  onContinue: () => void;
-  commands: RunLoopCommands["shop"]["alchemist"];
-}) {
+function AlchemistShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
+  const commands = routeCommands.runLoop.shop.alchemist;
+  const onContinue = routeCommands.runLoop.shop.continue;
   const r = useAlchemistScreenData();
   return (
     <AlchemistShopScreen
@@ -235,13 +225,9 @@ function AlchemistShopScreenRoute({
   );
 }
 
-function TrinketShopScreenRoute({
-  commands,
-  onContinue,
-}: {
-  onContinue: () => void;
-  commands: RunLoopCommands["shop"]["trinket"];
-}) {
+function TrinketShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
+  const commands = routeCommands.runLoop.shop.trinket;
+  const onContinue = routeCommands.runLoop.shop.continue;
   const r = useTrinketShopScreenData();
   return (
     <TrinketShopScreen
@@ -262,13 +248,9 @@ function TrinketShopScreenRoute({
   );
 }
 
-function EquipmentShopScreenRoute({
-  commands,
-  onContinue,
-}: {
-  onContinue: () => void;
-  commands: RunLoopCommands["shop"]["equipment"];
-}) {
+function EquipmentShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
+  const commands = routeCommands.runLoop.shop.equipment;
+  const onContinue = routeCommands.runLoop.shop.continue;
   const r = useEquipmentShopScreenData();
   return (
     <EquipmentShopScreen
@@ -289,7 +271,8 @@ function EquipmentShopScreenRoute({
   );
 }
 
-function CorruptionScreenRoute({ commands }: { commands: RunLoopCommands["corruption"] }) {
+function CorruptionScreenRoute({ routeCommands }: RunLoopRouteCtx) {
+  const commands = routeCommands.runLoop.corruption;
   const r = useCorruptionScreenData();
   return (
     <CorruptionScreen
@@ -301,52 +284,17 @@ function CorruptionScreenRoute({ commands }: { commands: RunLoopCommands["corrup
   );
 }
 
-export const runLoopScreenRoutes: {
-  battle: (ctx: BattleRouteCtx) => ReactNode;
-  "labyrinth-map": (ctx: RunLoopRouteCtx) => ReactNode;
-  rewards: (ctx: RunLoopRouteCtx) => ReactNode;
-  "wildwood-removal": (ctx: RunLoopRouteCtx) => ReactNode;
-  destination: (ctx: RunLoopRouteCtx) => ReactNode;
-  campfire: (ctx: RunLoopRouteCtx) => ReactNode;
-  shop: (ctx: RunLoopRouteCtx) => ReactNode;
-  alchemist: (ctx: RunLoopRouteCtx) => ReactNode;
-  "trinket-shop": (ctx: RunLoopRouteCtx) => ReactNode;
-  "equipment-shop": (ctx: RunLoopRouteCtx) => ReactNode;
-  mystery: (ctx: RunLoopRouteCtx) => ReactNode;
-  corruption: (ctx: RunLoopRouteCtx) => ReactNode;
-} = {
-  battle: ({ routeCommands, gameMenuOpen, cardInspection }) => (
-    <BattleScreenRoute commands={routeCommands.battle} gameMenuOpen={gameMenuOpen} cardInspection={cardInspection} />
-  ),
-  "labyrinth-map": ({ routeCommands }) => <LabyrinthMapScreenRoute commands={routeCommands.runLoop.labyrinth} />,
-  rewards: ({ routeCommands }) => <RewardsScreenRoute commands={routeCommands.runLoop.rewards} />,
-  "wildwood-removal": ({ routeCommands }) => <WildwoodRemovalScreenRoute commands={routeCommands.runLoop.wildwood} />,
-  destination: ({ routeCommands }) => <DestinationScreenRoute commands={routeCommands.runLoop.destinations} />,
-  campfire: ({ routeCommands }) => <CampfireScreenRoute commands={routeCommands.runLoop.destinations} />,
-  shop: ({ routeCommands }) => (
-    <CardShopScreenRoute
-      onContinue={routeCommands.runLoop.shop.continue}
-      commands={routeCommands.runLoop.shop.merchant}
-    />
-  ),
-  alchemist: ({ routeCommands }) => (
-    <AlchemistShopScreenRoute
-      onContinue={routeCommands.runLoop.shop.continue}
-      commands={routeCommands.runLoop.shop.alchemist}
-    />
-  ),
-  "trinket-shop": ({ routeCommands }) => (
-    <TrinketShopScreenRoute
-      onContinue={routeCommands.runLoop.shop.continue}
-      commands={routeCommands.runLoop.shop.trinket}
-    />
-  ),
-  "equipment-shop": ({ routeCommands }) => (
-    <EquipmentShopScreenRoute
-      onContinue={routeCommands.runLoop.shop.continue}
-      commands={routeCommands.runLoop.shop.equipment}
-    />
-  ),
-  mystery: ({ routeCommands }) => <MysteryScreenRoute commands={routeCommands.runLoop.mystery} />,
-  corruption: ({ routeCommands }) => <CorruptionScreenRoute commands={routeCommands.runLoop.corruption} />,
+export const runLoopScreenRoutes = {
+  battle: BattleScreenRoute,
+  "labyrinth-map": LabyrinthMapScreenRoute,
+  rewards: RewardsScreenRoute,
+  "wildwood-removal": WildwoodRemovalScreenRoute,
+  destination: DestinationScreenRoute,
+  campfire: CampfireScreenRoute,
+  shop: CardShopScreenRoute,
+  alchemist: AlchemistShopScreenRoute,
+  "trinket-shop": TrinketShopScreenRoute,
+  "equipment-shop": EquipmentShopScreenRoute,
+  mystery: MysteryScreenRoute,
+  corruption: CorruptionScreenRoute,
 };

@@ -30,12 +30,7 @@ import { useBattleDescriptionContext } from "./use-battle-description-context";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
 import { getHandCardKey } from "../../battle/playable-hand";
 import { getElementCenterX, playHandSlotReflow } from "./hand-slot-reflow";
-import {
-  useCardAnimationInProgress,
-  useHiddenHandCardKeys,
-  useInteractiveHandCardKeys,
-  usePlayableHandCardKeys,
-} from "../../battle/presentation/use-hand-presentation";
+import { useHandPresentation } from "../../battle/presentation/use-hand-presentation";
 import type { BattleSnapshot } from "@/lib/battle";
 import { focusControl } from "../../../shared/ui/focus-navigation";
 import { getActiveCcKeyword, type ActiveCcKeyword } from "../../../shared/utils/cc-presentation";
@@ -166,10 +161,12 @@ export function BattleHand({
   const { battleState, stagePixelRatio } = view;
   const { handCardRefs } = refs;
   const { onCardClick } = actions;
-  const hiddenHandCardKeys = useHiddenHandCardKeys();
-  const visuallyPlayableHandCardKeys = usePlayableHandCardKeys(playabilityState);
-  const interactiveHandCardKeys = useInteractiveHandCardKeys(playabilityState, visuallyPlayableHandCardKeys);
-  const animationInProgress = useCardAnimationInProgress();
+  const {
+    hiddenHandCardKeys,
+    playableHandCardKeys: visuallyPlayableHandCardKeys,
+    interactiveHandCardKeys,
+    animationInProgress,
+  } = useHandPresentation(playabilityState);
   const keyboardActivation = useRef(false);
   const recovery = useRef<{ played: string; order: string[] } | null>(null);
   const pointer = useHandPointer(battleState.hand, hiddenHandCardKeys, handCardRefs);

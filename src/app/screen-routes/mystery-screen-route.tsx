@@ -3,7 +3,7 @@ import { useFadePresence, useHeldWhile } from "@/features/alchemy/shared/ui/use-
 import { cardById, trinketById } from "@/features/alchemy/shared/config/game-data-catalog";
 import { MysteryScreen, MysteryScreenShell } from "@/features/alchemy/run-loop/screens";
 import { useMysteryScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
-import type { RunLoopCommands } from "./route-ctx";
+import type { RunLoopRouteCtx } from "./route-ctx";
 
 const findCard = (id: string) => cardById[id];
 const findTrinket = (id: string) => trinketById[id];
@@ -37,7 +37,8 @@ function useHeldMysteryVisit(r: ReturnType<typeof useMysteryScreenData>) {
   return mounted ? held : null;
 }
 
-export function MysteryScreenRoute({ commands }: { commands: RunLoopCommands["mystery"] }) {
+export function MysteryScreenRoute({ routeCommands }: RunLoopRouteCtx) {
+  const commands = routeCommands.runLoop.mystery;
   const r = useMysteryScreenData();
   const { handleContinue } = commands;
 
