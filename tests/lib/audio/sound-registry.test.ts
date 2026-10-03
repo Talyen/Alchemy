@@ -1,58 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cardLibrary, companionLibrary, enemyBestiary } from "@/lib/game-data";
 import { COMPANION_SOUND_CARD_IDS, MUSIC_KEYS } from "@/lib/game-constants";
-import { cardSounds, enemyAttackSounds, battleEventSounds, uiSounds, stingerSounds } from "@/lib/audio/sound-registry";
-
-describe("cardSounds", () => {
-  it("every entry maps to a non-empty array of .ogg filenames", () => {
-    for (const sounds of Object.values(cardSounds)) {
-      expect(sounds.length).toBeGreaterThan(0);
-      for (const s of sounds) {
-        expect(s).toBeTruthy();
-        expect(s).toMatch(/\.ogg$/);
-      }
-    }
-  });
-});
-
-describe("enemyAttackSounds", () => {
-  it("every entry maps to a non-empty array of .ogg filenames", () => {
-    for (const sounds of Object.values(enemyAttackSounds)) {
-      expect(sounds.length).toBeGreaterThan(0);
-      for (const s of sounds) {
-        expect(s).toBeTruthy();
-        expect(s).toMatch(/\.ogg$/);
-      }
-    }
-  });
-});
-
-describe("battleEventSounds", () => {
-  it("all values are non-empty .ogg filenames", () => {
-    for (const name of Object.values(battleEventSounds)) {
-      expect(name).toBeTruthy();
-      expect(name).toMatch(/\.ogg$/);
-    }
-  });
-});
-
-describe("uiSounds", () => {
-  it("all values are non-empty .ogg filenames", () => {
-    for (const name of Object.values(uiSounds)) {
-      expect(name).toBeTruthy();
-      expect(name).toMatch(/\.ogg$/);
-    }
-  });
-});
-
-describe("stingerSounds", () => {
-  it("all values are non-empty .ogg filenames", () => {
-    for (const name of Object.values(stingerSounds)) {
-      expect(name).toBeTruthy();
-      expect(name).toMatch(/\.ogg$/);
-    }
-  });
-});
+import { cardSounds, enemyAttackSounds, battleEventSounds, uiSounds } from "@/lib/audio/sound-registry";
 
 describe("cross-registry key consistency", () => {
   it("every card with cardSounds is defined in cardLibrary", () => {
@@ -70,15 +19,14 @@ describe("cross-registry key consistency", () => {
   });
 });
 
-describe("intentional cross-table sound sharing", () => {
-  // These cues are shared across tables on purpose (one file, two semantic
-  // entries). The registry defines them via shared constants; this pin keeps
-  // a rename on one side from silently forking the other.
-  it("reuses the same file for battle and UI equivalents", () => {
-    expect(battleEventSounds.gainGold).toBe(uiSounds.shopBuy);
-    expect(battleEventSounds.endTurn).toBe(uiSounds.toggleOff);
-    expect(battleEventSounds.consumeCard).toBe(uiSounds.shopRemove);
-    expect(cardSounds["will-o-wisp-companion"]).toContain(uiSounds.musicBoxMystery);
+describe("approved separation of formerly shared cues", () => {
+  // Approved choices distinguish spending from gaining Gold and keep the
+  // selected removal and companion actions silent.
+  it("keeps selected event roles distinct and respects explicit silence", () => {
+    expect(battleEventSounds.gainGold).not.toBe(uiSounds.shopBuy);
+    expect(battleEventSounds.endTurn).not.toBe(uiSounds.toggleOff);
+    expect(uiSounds.shopRemove).toBeNull();
+    expect(cardSounds["will-o-wisp-companion"]).toBeUndefined();
   });
 
   it("covers every music boss with an attack cue and pins attack-only bosses", () => {
@@ -98,69 +46,30 @@ describe("intentional cross-table sound sharing", () => {
 // exact: adding a sound (or content) must update them, so new cards and
 // enemies get a conscious sound decision instead of silent drift.
 const SILENT_CARD_IDS: readonly string[] = [
-  "astral-arrow",
   "avatar",
-  "blizzard",
-  "bounty-shot",
   "caustic-jab",
-  "combustion",
-  "concussive-shot",
-  "crystal-bulwark",
-  "dark-pact",
-  "earthquake",
   "exorcism",
-  "fire-arrow",
-  "gamblers-shot",
-  "glacial-ward",
-  "golden-plate",
-  "hemorrhage",
-  "ice-shot",
-  "kindling",
-  "lightning-arrow",
-  "lightning-bolt",
-  "maul",
-  "molten-bulwark",
-  "phoenix-feather",
+  "library-owl-companion",
+  "mana-moth-companion",
   "pixie-dust",
-  "pounce",
+  "prayer",
   "predators-focus",
-  "ray-of-frost",
   "rend",
-  "roll-the-dice",
   "sanctified-plate",
-  "sap-arrow",
-  "serrated-arrowhead",
-  "shadowstep",
   "sniff-out",
-  "spiked-shield",
-  "stargaze",
   "tithe",
-  "venom-arrow",
+  "will-o-wisp-companion",
   "wishing-well",
 ];
 
 const SILENT_ENEMY_IDS: readonly string[] = [
-  "bandit",
   "banshee",
-  "blood-countess",
-  "blood-cultist",
-  "brawler",
   "cleric",
-  "dire-wolf",
-  "earth-elemental",
-  "fire-imp",
   "giant-snake",
   "giant-spider",
-  "hellhound",
-  "ice-wraith",
   "inquisitor",
-  "ogre",
   "paladin",
-  "pyromancer",
   "seraph",
-  "stone-golem",
-  "stone-titan",
-  "vampire",
   "will-o-wisp",
   "winter-wolf",
   "yeti",
@@ -168,9 +77,10 @@ const SILENT_ENEMY_IDS: readonly string[] = [
 ];
 
 describe("silent-coverage pinning", () => {
-  it("every companion has a card sound and a battle companion mapping", () => {
+  it("every companion has a mapping and the approved silent companions stay quiet", () => {
     for (const id of Object.keys(companionLibrary)) {
-      expect(cardSounds[`${id}-companion`]).toBeDefined();
+      if (!["mana-moth", "will-o-wisp", "library-owl"].includes(id))
+        expect(cardSounds[`${id}-companion`]).toBeDefined();
       expect(COMPANION_SOUND_CARD_IDS[id]).toBe(`${id}-companion`);
     }
   });

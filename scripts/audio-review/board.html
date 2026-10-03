@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Alchemy · Sound desk</title>
+    <link rel="stylesheet" href="board.css" />
+    <script type="module" src="board.mjs"></script>
+  </head>
+  <body>
+    <header>
+      <div>
+        <p class="eyebrow">ALCHEMY · TACTILE FANTASY</p>
+        <h1>Sound desk</h1>
+      </div>
+      <div class="header-actions">
+        <span id="progress-text"></span><button id="export" class="primary" type="button">Export choices ↗</button>
+      </div>
+    </header>
+    <main>
+      <div class="toolbar">
+        <label
+          >Review<select id="audition">
+            <option value="remaining">Remaining</option>
+            <option value="all">All mappings</option>
+            <option value="chosen">Chosen</option>
+          </select></label
+        >
+        <label
+          >Group<select id="group">
+            <option value="All">All groups</option>
+          </select></label
+        >
+        <label class="search">Search<input id="search" type="search" placeholder="Card, action, creature…" /></label>
+      </div>
+      <section class="transport" aria-label="Audition controls">
+        <button id="stop" type="button">■ Stop</button>
+        <label
+          >Volume <input id="volume" type="range" min="0" max="100" value="40" /><output id="volume-value"
+            >40%</output
+          ></label
+        >
+        <p id="now-playing" role="status" aria-live="polite">Ready to audition</p>
+      </section>
+      <div class="queue-heading">
+        <span id="queue-position"></span
+        ><span id="decision-status" role="status" aria-live="polite"
+          >Choose once to save and move to the next mapping.</span
+        >
+      </div>
+      <section id="mappings" aria-label="Current sound mapping"></section>
+      <nav class="queue-navigation" aria-label="Review navigation">
+        <button id="previous" type="button">← Previous</button
+        ><button id="undo" type="button" disabled>Undo last choice</button
+        ><button id="next" type="button">Skip / Next →</button>
+      </nav>
+      <p class="shortcuts">1 Current · 2–4 Candidates · 0 No sound · ← / → Navigate. Choices save automatically.</p>
+      <details class="extras">
+        <summary>More controls, sequences & source data</summary>
+        <div class="extra-controls">
+          <label
+            >Level<select id="level">
+              <option value="matched">Level matched</option>
+              <option value="original">Original level</option>
+            </select></label
+          >
+          <label
+            >Proposal<select id="status">
+              <option value="all">All proposals</option>
+              <option value="replacement">Replace cue</option>
+              <option value="addition">Add cue</option>
+              <option value="retained">Keep recording</option>
+              <option value="silence">Keep quiet</option>
+              <option value="gap">Unmatched gap</option>
+            </select></label
+          >
+          <label
+            >Screen<select id="screen">
+              <option value="all">Any screen</option>
+            </select></label
+          >
+          <label class="check"><input id="advance" type="checkbox" checked /> Advance after choosing</label>
+        </div>
+        <p class="subtle">Sequences illustrate cue overlap rather than exact game timing.</p>
+        <div class="extra-controls">
+          <label
+            >Sequence set<select id="sequence-set">
+              <option value="proposed">Recommended</option>
+              <option value="current">Currently playing</option>
+              <option value="chosen">Your choices (undecided → recommended)</option>
+            </select></label
+          ><label
+            >Repeats<select id="repeats">
+              <option value="1">Once</option>
+              <option value="3">3 times</option>
+              <option value="6">6 times</option>
+            </select></label
+          >
+        </div>
+        <div id="sequences" class="sequence-grid"></div>
+        <div class="downloads">
+          <a href="report.md" download>Full mapping report</a><a href="mappings.json" download>Source data</a>
+        </div>
+        <div id="library-notes" class="subtle"></div>
+        <p class="subtle">
+          Matched previews use fixed gain toward −22 dB mean, with a −1.5 dB peak ceiling and a +12 dB boost cap.
+          Original level has no gain change. Both are PCM preview copies; excerpts and loop seams still need listening.
+        </p>
+      </details>
+    </main>
+    <footer>Review choices only. Gameplay audio and library masters remain unchanged.</footer>
+  </body>
+</html>

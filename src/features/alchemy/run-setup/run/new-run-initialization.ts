@@ -9,7 +9,7 @@ import {
   setStarterDraftChoices,
   setWildwoodDraft,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { playGoldGain } from "@/lib/audio";
+import { playGoldGain, playUISound } from "@/lib/audio";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
@@ -60,6 +60,7 @@ interface RunStartOutcome {
 }
 
 function afterRunStartCommitted(outcome: RunStartOutcome): void {
+  playUISound("newRun");
   if (outcome.playGoldSound) playGoldGain();
 }
 

@@ -1,3 +1,4 @@
+import { playUISound } from "@/lib/audio";
 import { wildwoodPhaseToScreen } from "@/features/alchemy/shared/run-flow/wildwood-screen-routing";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
@@ -64,7 +65,10 @@ export function createWildwoodGauntletFlow({
   };
   const handleDraftPick = chooseWildwoodDraftCard;
   const handleWildwoodDraftComplete = () => {
-    if (completeWildwoodDraft()) startNextWildwoodBoss();
+    if (completeWildwoodDraft()) {
+      playUISound("draftComplete");
+      startNextWildwoodBoss();
+    }
   };
   const handleWildwoodRewardComplete = (prepareNavigation?: () => void) => {
     const state = readRunSession().wildwoodDraft;

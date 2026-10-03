@@ -1,3 +1,4 @@
+import { playUISound } from "@/lib/audio";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { alchemyLab } from "@/features/alchemy/shared/config/game-data-catalog";
@@ -74,6 +75,7 @@ export function BrewPotionPanel({
     setError("");
   }
   function choose(index: number) {
+    playUISound(allowStrengthen ? "shopSelect" : "selection");
     setError("");
     setSelected((previous) =>
       previous.includes(index)

@@ -1,6 +1,7 @@
 import type { ElementType } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { playUISound } from "@/lib/audio";
 
 export interface TabBarProps<T extends string> {
   tabs: Array<{
@@ -35,7 +36,10 @@ export function TabBar<T extends string>({
             variant="outline"
             size="lg"
             disabled={isDisabled}
-            onClick={() => onSelectTab(tab.id)}
+            onClick={() => {
+              onSelectTab(tab.id);
+              if (tab.id !== activeTab) playUISound("selection");
+            }}
             className={tab.id === activeTab ? activeClassName : undefined}
             wrapperClassName="shrink-0"
             aria-label={isDisabled ? `${tab.label} (Locked)` : tab.label}

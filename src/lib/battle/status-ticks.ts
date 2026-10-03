@@ -42,7 +42,7 @@ function emitDotCombatText(
   stat: "burn" | "poison" | "bleed",
   amount: number,
 ) {
-  mergeCombatText(combatTexts, { target, kind: "damage", stat, amount });
+  mergeCombatText(combatTexts, { target, kind: "damage", stat, amount, periodic: true });
 }
 
 function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 
-import { playBattleEvent } from "@/lib/audio";
+import { playBattleEvent, playUISound } from "@/lib/audio";
 import {
   chooserRowShellWidthClass,
   getBossById,
@@ -50,7 +50,14 @@ export function DestinationScreen({
   return (
     <TitledScreenShell title={title} maxWidthClass={bossOnly ? "max-w-3xl" : chooserRowShellWidthClass}>
       <div className="mt-6 flex flex-col justify-center">
-        <DestinationChoices destinationOptions={destinationOptions} onChoose={onChoose} selectedBoss={boss} />
+        <DestinationChoices
+          destinationOptions={destinationOptions}
+          onChoose={(destination) => {
+            onChoose(destination);
+            playUISound("mapNode");
+          }}
+          selectedBoss={boss}
+        />
       </div>
     </TitledScreenShell>
   );

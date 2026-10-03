@@ -53,7 +53,8 @@ export function playEnemyAttack(enemyId: string) {
 }
 
 export function playBattleEvent(event: keyof typeof battleEventSounds, options: PlaySoundOptions = {}) {
-  player.play(battleEventSounds[event], options);
+  const sound = battleEventSounds[event];
+  if (sound) player.play(sound, options);
 }
 
 export function playSliceDeath() {
@@ -61,7 +62,8 @@ export function playSliceDeath() {
 }
 
 export function playUISound(event: UISound) {
-  player.play(uiSounds[event], { volume: SFX_UI_VOLUME, trackForCleanup: false });
+  const sound = uiSounds[event];
+  if (sound) player.play(sound, { volume: SFX_UI_VOLUME, trackForCleanup: false });
 }
 
 export function playVictory() {
@@ -70,4 +72,8 @@ export function playVictory() {
 
 export function playDefeat() {
   player.play(stingerSounds.defeat, { volume: SFX_DEFEAT_VOLUME, trackForCleanup: false });
+}
+
+export function playRunVictory() {
+  player.play(stingerSounds.runVictory, { volume: SFX_VICTORY_VOLUME, trackForCleanup: false });
 }

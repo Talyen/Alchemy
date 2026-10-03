@@ -22,6 +22,8 @@
     "assets:optimize:sounds": "node scripts/optimize-sounds.mjs",
     "assets:optimize:music": "node scripts/optimize-music.mjs",
     "assets:check": "node scripts/assets.mjs --check",
+    "audio:review": "node scripts/audio-review.mjs",
+    "agent:browser": "node scripts/agent-browser.mjs",
     "predev": "node scripts/prune-transient-artifacts.mjs && node scripts/stop-dev-server.mjs && node scripts/assets.mjs --prepare",
     "predev:desktop": "npm run predev && node scripts/sync-steam-appid.mjs",
     "dev": "vite",

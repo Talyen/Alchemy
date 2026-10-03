@@ -174,7 +174,13 @@ function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts
   nextState = applyElementalDamageManaRestore(nextState, effect.damageType, facts.healthDamage, combatTexts);
 
   if (modifiedDamage > 0) {
-    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: effect.damageType, amount: modifiedDamage });
+    mergeCombatText(combatTexts, {
+      target: "enemy",
+      kind: "damage",
+      stat: effect.damageType,
+      amount: modifiedDamage,
+      ...(facts.critical ? { critical: true } : {}),
+    });
   }
 
   nextState = applyHitEpilogue(nextState, previousHealth, facts.enemyWasAlive, combatTexts);

@@ -87,7 +87,7 @@ describe("applyCurrencyToGear", () => {
       onApplyCurrency,
       clearCurrency,
     });
-    expect(playUISound).toHaveBeenCalledWith("talentUnlock");
+    expect(playUISound).toHaveBeenCalledWith("craft");
     expect(clearCurrency).toHaveBeenCalledTimes(1);
   });
 });

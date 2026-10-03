@@ -1,3 +1,4 @@
+import { playUISound } from "@/lib/audio";
 import { useDeviceDisplayStore } from "@/features/alchemy/shared/stores/device-display-store";
 import { useShallow } from "zustand/react/shallow";
 import { isDesktop } from "@/lib/platform";
@@ -85,6 +86,7 @@ function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBack, onOpe
           // device sizes alone (see clearAllPersistentGameData).
           actions.resetToDefaults();
           resetSizes();
+          playUISound("destructiveConfirm");
         },
       }}
       dev={{ onUnlockAll: onUnlockAllDevMode }}

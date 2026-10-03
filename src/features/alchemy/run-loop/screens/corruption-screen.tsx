@@ -1,3 +1,4 @@
+import { playUISound } from "@/lib/audio";
 import { useMemo, useState } from "react";
 import { Dices, MoveRight } from "lucide-react";
 
@@ -52,7 +53,10 @@ function CorruptionDeckPicker({
           chrome="corruption"
           isSelected={selectedIndex === index}
           shineColor={getCardInspectionShineColors(card)}
-          onSelect={() => onSelect(index)}
+          onSelect={() => {
+            if (selectedIndex !== index) playUISound("corruptSelect");
+            onSelect(index);
+          }}
         />
       )}
     />

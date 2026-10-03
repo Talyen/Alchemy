@@ -1,3 +1,4 @@
+import { playUISound } from "@/lib/audio";
 import { discoverCardIds, discoverTrinketIds, discoverUniqueIds } from "@/features/alchemy/shared/stores/profile-store";
 import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/reset";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
@@ -16,7 +17,10 @@ export function useDevShortcuts(run: Pick<AlchemyRunCommands, "resetRunState" | 
   const { resetRunState, unlockAllTalents } = run;
   const clearSaveData = useCallback(() => {
     void clearAllPersistentGameData().then((cleared) => {
-      if (cleared) resetRunState();
+      if (cleared) {
+        playUISound("destructiveConfirm");
+        resetRunState();
+      }
     });
   }, [resetRunState]);
 

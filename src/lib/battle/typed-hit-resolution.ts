@@ -36,7 +36,13 @@ export function resolveTypedEnemyHit(
   }
   next = applyElementalDamageManaRestore(next, effect.damageType, facts.healthDamage, combatTexts);
   if (resolvedDamage > 0) {
-    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: effect.damageType, amount: resolvedDamage });
+    mergeCombatText(combatTexts, {
+      target: "enemy",
+      kind: "damage",
+      stat: effect.damageType,
+      amount: resolvedDamage,
+      ...(facts.critical ? { critical: true } : {}),
+    });
   }
   // Shared closer: thresholds then kill payouts (same as other hit paths).
   next = applyHitEpilogue(next, facts.previousHealth, facts.enemyWasAlive, combatTexts);

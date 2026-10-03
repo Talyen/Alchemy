@@ -1,3 +1,4 @@
+import { playUISound } from "@/lib/audio";
 import { IS_DEMO } from "@/lib/game-edition";
 import { openFullGameWishlist } from "@/lib/platform";
 import { isDesktop, quitDesktopApp } from "@/lib/platform";
@@ -56,7 +57,14 @@ function MenuScreenRoute({ routeCommands }: MetaRouteCtx) {
       onHomestead={() => commands.goToScreen("homestead")}
       onTalents={() => commands.goToScreen("talents")}
       onArmory={() => commands.goToScreen("armory")}
-      {...(isDesktop() ? { onQuit: quitDesktopApp } : {})}
+      {...(isDesktop()
+        ? {
+            onQuit: () => {
+              playUISound("destructiveConfirm");
+              quitDesktopApp();
+            },
+          }
+        : {})}
       logoSrc={menuLogo}
       hasUnspentTalents={hasUnspentTalents}
       hasAffordableHomestead={hasAffordableHomestead}

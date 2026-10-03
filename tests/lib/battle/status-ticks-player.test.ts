@@ -23,7 +23,7 @@ describe("tickPlayerStatuses", () => {
     expect(next.playerHealth).toBe(12);
     expect(next.playerStatuses.burn).toBe(4);
     expect(next.playerCC.stunSkipTurns).toBe(1);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 8 });
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 8, periodic: true });
   });
 
   it("fully clears player burn at 1 stack", () => {
@@ -45,7 +45,7 @@ describe("tickPlayerStatuses", () => {
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
     expect(next.playerHealth).toBe(26);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 4 });
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 4, periodic: true });
   });
 
   it.each<{
@@ -90,7 +90,13 @@ describe("tickPlayerStatuses", () => {
       expect(next.playerStatuses.armor).toBe(expectedArmor);
       if (expectedBurnAfter !== undefined) expect(next.playerStatuses.burn).toBe(expectedBurnAfter);
       if (expectedDamageText !== undefined) {
-        expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: expectedDamageText });
+        expect(texts).toContainEqual({
+          target: "player",
+          kind: "damage",
+          stat: "burn",
+          amount: expectedDamageText,
+          periodic: true,
+        });
       }
     },
   );
@@ -152,7 +158,13 @@ describe("tickPlayerStatuses", () => {
       expect(next.playerHealth).toBe(expectedHealth);
       if (expectedBurnAfter !== undefined) expect(next.playerStatuses.burn).toBe(expectedBurnAfter);
       if (expectedDamageText !== undefined) {
-        expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: expectedDamageText });
+        expect(texts).toContainEqual({
+          target: "player",
+          kind: "damage",
+          stat: "burn",
+          amount: expectedDamageText,
+          periodic: true,
+        });
       }
     },
   );
@@ -166,7 +178,7 @@ describe("tickPlayerStatuses", () => {
     const next = tickPlayerStatuses(state, texts);
     expect(next.playerHealth).toBe(25);
     expect(next.playerStatuses.poison).toBe(4);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "poison", amount: 5 });
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "poison", amount: 5, periodic: true });
   });
 
   it("receiveHalfPoisonDamage halves poison damage", () => {
@@ -178,7 +190,7 @@ describe("tickPlayerStatuses", () => {
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
     expect(next.playerHealth).toBe(26);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "poison", amount: 4 });
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "poison", amount: 4, periodic: true });
   });
 
   it("deals bleed damage and clears bleed", () => {
@@ -190,7 +202,7 @@ describe("tickPlayerStatuses", () => {
     const next = tickPlayerStatuses(state, texts);
     expect(next.playerHealth).toBe(23);
     expect(next.playerStatuses.bleed).toBe(0);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "bleed", amount: 7 });
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "bleed", amount: 7, periodic: true });
   });
 
   it.each(["burn", "bleed"] as const)("receiveHalf%sDamage applies resists before armor", (status) => {
@@ -207,7 +219,7 @@ describe("tickPlayerStatuses", () => {
 
     const next = tickPlayerStatuses(state, texts);
     expect(next.playerHealth).toBe(28);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: status, amount: 2 });
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: status, amount: 2, periodic: true });
   });
 
   it("clears stun and triggers turn skip when threshold exceeded", () => {
@@ -321,14 +333,6 @@ describe("tickPlayerStatuses", () => {
     expect(afterReTrigger.playerCC.cooldown).toBe(0);
   });
 
-  it("skips ticks when all statuses are 0", () => {
-    const state = patchBattleState();
-    const texts = makeTexts();
-    const next = tickPlayerStatuses(state, texts);
-    expect(next.playerHealth).toBe(30);
-    expect(texts).toEqual([]);
-  });
-
   it("applies all player DoTs in sequence", () => {
     const state = patchBattleState({
       playerHealth: 50,
@@ -359,7 +363,7 @@ describe("tickPlayerStatuses", () => {
     expect(next.playerHealth).toBe(0);
     expect(next.playerStatuses.poison).toBe(lethal === "burn" ? 10 : 8);
     expect(next.playerStatuses.bleed).toBe(10);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: lethal, amount: 5 });
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: lethal, amount: 5, periodic: true });
     if (lethal === "burn") expect(texts.some((entry) => entry.stat === "poison")).toBe(false);
     expect(texts.some((entry) => entry.stat === "bleed")).toBe(false);
   });

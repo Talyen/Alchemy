@@ -13,6 +13,7 @@ import { createCampfirePotionOffers, isBrewablePotion, type BrewOperation } from
 import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
 import { createTransmutationOffers, isTransmutableCard } from "@/lib/alchemist/transmutation";
 import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
+import { playUISound } from "@/lib/audio";
 
 export function initializeAlchemyVisit(kind: "campfire" | "transmutation"): void {
   dispatchRunSessionCommand((draft) => {
@@ -28,7 +29,7 @@ export function initializeAlchemyVisit(kind: "campfire" | "transmutation"): void
   });
 }
 export function brewAtCampfire(operation: BrewOperation): BattleCard | null {
-  return dispatchRunSessionCommand((draft) => {
+  const brewed = dispatchRunSessionCommand((draft) => {
     if (draft.session.activity.kind !== "campfire" || draft.session.activity.data.completed) return null;
     const visit = draft.session.activity.data;
     const deck = draft.run.activeRun.runDeck;
@@ -54,6 +55,8 @@ export function brewAtCampfire(operation: BrewOperation): BattleCard | null {
     setAlchemyVisit(draft, "campfire", { ...visit, result, completed: true });
     return result;
   });
+  if (brewed) playUISound("campBrew");
+  return brewed;
 }
 export function transmuteCard(sourceIndex: number, offerIndex: number): BattleCard | null {
   return dispatchRunSessionCommand((draft) => {

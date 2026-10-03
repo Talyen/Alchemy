@@ -147,6 +147,9 @@ export interface NumericCombatTextEvent {
   amount: number;
   impact?: boolean;
   additive?: boolean;
+  /** Resolved hit metadata for audio; neither field changes combat magnitudes. */
+  critical?: boolean;
+  periodic?: boolean;
 }
 
 interface NoticeCombatTextEvent {

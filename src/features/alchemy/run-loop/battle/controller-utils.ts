@@ -64,9 +64,24 @@ export function playCombatTextSounds(combatTexts: CombatTextEvent[]) {
   const sounds = new Set<Parameters<typeof playBattleEvent>[0]>();
   for (const ct of combatTexts) {
     if (ct.kind === "notice") {
+      if (ct.text === "Wildfire") sounds.add("wildfire");
+      else if (ct.text === "Shatter · Critical") sounds.add("shatter");
+      else if (ct.stat === "dodge") sounds.add("dodge");
       if (ct.signal || ct.text === "Purged") continue;
       if (ct.stat === "stun") sounds.add("stunProc");
       else if (ct.stat === "freeze") sounds.add("freezeProc");
+      continue;
+    }
+    if (ct.amount <= 0) continue;
+    if (ct.stat === "armor") sounds.add("armorChange");
+    if (ct.kind === "status" && ct.stat === "forge") sounds.add("forgeGain");
+    if (ct.kind === "damage" && ct.impact !== false && ct.critical) sounds.add("critHit");
+    if (ct.kind === "damage" && ct.periodic && ct.stat === "burn") {
+      sounds.add("burnTick");
+      continue;
+    }
+    if (ct.kind === "damage" && ct.periodic && ct.stat === "bleed") {
+      sounds.add("bleedTick");
       continue;
     }
     if (ct.kind === "damage" && ct.impact !== false && ct.target === "enemy") {

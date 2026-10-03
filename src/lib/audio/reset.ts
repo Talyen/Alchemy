@@ -2,6 +2,7 @@ import { audioState } from "./state";
 import { resetHtmlSfxRuntime } from "./sfx";
 import { resetMusicRuntimeForTests } from "./music";
 import { resetSoundPreloadCache } from "./preload";
+import { stopScreenAmbience } from "./ambience";
 
 /**
  * Single test-only reset for the audio runtime. Clears mute/host/cooldown
@@ -16,4 +17,5 @@ export function resetAudioRuntimeForTests(): void {
   resetHtmlSfxRuntime();
   resetMusicRuntimeForTests();
   resetSoundPreloadCache();
+  stopScreenAmbience();
 }

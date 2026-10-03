@@ -198,17 +198,20 @@ export function ArmoryScreen({
   const handlePageChange = (page: number) => {
     settleActiveTransfers();
     ordering.setPage(page);
+    playUISound("selection");
   };
 
   const handleFiltersChange = (filters: ArmoryInventoryFilters) => {
     settleActiveTransfers();
     clearTargeting();
     ordering.setFilters(filters);
+    playUISound("selection");
   };
 
   const handleSort = (option: ArmorySortOption) => {
     settleActiveTransfers();
     ordering.onSort(option);
+    playUISound("selection");
   };
 
   const equippedSalvageCharacter = salvagePending

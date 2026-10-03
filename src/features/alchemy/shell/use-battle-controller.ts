@@ -1,3 +1,4 @@
+import { playUISound } from "@/lib/audio";
 import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-card-play";
 import { useBattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import { createBattleInit } from "@/features/alchemy/run-loop/battle/battle-init";
@@ -42,11 +43,13 @@ export function useBattleController({
   const autoplayEnabledRef = useRef(isAutoplayEnabled);
 
   const updateAutoplayEnabled = useCallback((enabled: boolean, persist: boolean) => {
+    const previous = autoplayEnabledRef.current;
     autoplayEnabledRef.current = enabled;
     setIsAutoplayEnabledState(enabled);
     if (persist && useSettingsStore.getState().rememberAutoplayPreference) {
       useSettingsStore.getState().setAutoplayEnabled(enabled);
     }
+    if (persist && previous !== enabled) playUISound(enabled ? "toggleOn" : "toggleOff");
   }, []);
 
   const setAutoplayEnabled = useCallback(

@@ -1,3 +1,4 @@
+import { battleEventSounds } from "@/lib/audio/sound-registry";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { getSoundUrl } from "@/lib/audio";
 import {
@@ -173,14 +174,7 @@ describe("preloadBattleSounds", () => {
   it("warms the full battle event set including opening status cues", () => {
     preloadBattleSounds(["slash"], "skeleton");
     const urls = createdFakeAudio.map((el) => el.src);
-    for (const name of [
-      "sword-impact-hit-1.",
-      "punch-3.",
-      "power-down.",
-      "ice-freeze-1.",
-      "vibraphone-chime-quick.",
-      "toggle-off.",
-    ]) {
+    for (const name of Object.values(battleEventSounds).filter((name) => name !== null)) {
       expect(urls.some((url) => url.includes(name))).toBe(true);
     }
   });

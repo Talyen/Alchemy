@@ -1,5 +1,7 @@
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
+import { playUISound } from "@/lib/audio";
+import type { UISound } from "@/lib/audio";
 import {
   assertRunResumeTransitionAllowed,
   assertScreenTransitionAllowed,
@@ -38,17 +40,19 @@ export function createScreenNavigation({
     onPendingChange?.(false);
   }
 
-  function transitionTo(screen: Screen, options: ScreenTransitionOptions, resume: boolean) {
+  function transitionTo(screen: Screen, options: ScreenTransitionOptions, resume: boolean, feedback?: UISound) {
     // Guard first (approved): a skipped move stays a silent no-op even on an
     // unusual edge; only unskipped moves validate against the policy table.
     if (options.guard && !options.guard()) return;
-    if (resume) assertRunResumeTransitionAllowed(readScreen(), screen);
-    else assertScreenTransitionAllowed(readScreen(), screen);
+    const previousScreen = readScreen();
+    if (resume) assertRunResumeTransitionAllowed(previousScreen, screen);
+    else assertScreenTransitionAllowed(previousScreen, screen);
     cancelPending();
     const requestedRevision = revision;
     options.prepare?.();
     if (requestedRevision !== revision) return;
     prepareScreen(screen);
+    if (feedback && previousScreen !== screen) playUISound(feedback);
     onPendingChange?.(true);
     const show = () => {
       if (requestedRevision !== revision) return;
@@ -67,9 +71,9 @@ export function createScreenNavigation({
   }
 
   return {
-    navigateTo: (screen, prepare) => transition(screen, prepare ? { prepare } : {}),
+    navigateTo: (screen, prepare) => transitionTo(screen, prepare ? { prepare } : {}, false, "navigate"),
     resumeTo: (screen, prepare, immediate = false) =>
-      transitionTo(screen, prepare ? { prepare, immediate } : { immediate }, true),
+      transitionTo(screen, prepare ? { prepare, immediate } : { immediate }, true, "resumeRun"),
     transition,
     cancelPending,
   };

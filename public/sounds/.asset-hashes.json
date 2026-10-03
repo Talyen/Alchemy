@@ -1,12 +1,42 @@
 {
-  "bonus-regen-rate.mp3": {
-    "hash": "8827eea7de6df688337b3a5e17c70842",
-    "outputHash": "7fe05c6a7d23f9d0170d647d8f8310fb",
+  "atmo-eerie-cave-water-drips-emptyness-howling-f2038732-0-12000.mp3": {
+    "hash": "74a46bd1ea0a17538a46ec0d417df09c",
+    "outputHash": "a75c4712d3cf93c48ed65dcde4f4013e",
     "owner": "generated"
   },
-  "bonus-regen-rate.ogg": {
-    "hash": "3091b3fcd8d1817949351f2a05a0c74c",
-    "outputHash": "6bb104fb33035fce2fc4bf6f1f131fc6",
+  "atmo-eerie-cave-water-drips-emptyness-howling-f2038732-0-12000.ogg": {
+    "hash": "33d81018589e0edaf0e55d3995c733e0",
+    "outputHash": "e8d4dfaa4aad658635af03415135d9f2",
+    "owner": "generated"
+  },
+  "bow-attack-01-626d2d6d-0-3000.mp3": {
+    "hash": "0e7e17a8fa782c92bc43894227254d25",
+    "outputHash": "6257bb1efd9412f827e0ebbe9b9067ab",
+    "owner": "generated"
+  },
+  "bow-attack-01-626d2d6d-0-3000.ogg": {
+    "hash": "8c0bfb0bc4384cc0ad1bee73e0bec14c",
+    "outputHash": "a1e4007aa8061ee9752d10b3d42786f7",
+    "owner": "generated"
+  },
+  "bow-attack-02-d2ecb917-0-3000.mp3": {
+    "hash": "e02abfefc3db1a3e37cd534aade699b9",
+    "outputHash": "179ccc20bedadbe3591f96a91dabbf30",
+    "owner": "generated"
+  },
+  "bow-attack-02-d2ecb917-0-3000.ogg": {
+    "hash": "a86e5ab4726e862a5a17cdda3b96a04c",
+    "outputHash": "1dbe2c03869bf7228af5f3e5de25d23c",
+    "owner": "generated"
+  },
+  "bread-curst-bite-mouth-close-chew-crunch-vari-fefd384f-0-1440.mp3": {
+    "hash": "be3433bc9c788c5645dcffefa461eea8",
+    "outputHash": "b7521d77e56d43b76a71d9fbec1d97b3",
+    "owner": "generated"
+  },
+  "bread-curst-bite-mouth-close-chew-crunch-vari-fefd384f-0-1440.ogg": {
+    "hash": "087abd4776993dea0397412c3a474ab0",
+    "outputHash": "dc07124dbe47264a4b78a819a53a37e3",
     "owner": "generated"
   },
   "buff-pickup-1.mp3": {
@@ -29,6 +59,26 @@
     "outputHash": "914bee4bf2573506b047fd5de065c27b",
     "owner": "generated"
   },
+  "burning-house-t4-fire-low-intensity-with-crac-69b70331-0-12000.mp3": {
+    "hash": "6002eff9b8bbf2219572d93d484fdc65",
+    "outputHash": "f54978fccc590ec84e18516222e64cd1",
+    "owner": "generated"
+  },
+  "burning-house-t4-fire-low-intensity-with-crac-69b70331-0-12000.ogg": {
+    "hash": "c16b72a645c659f476b63bcc82a3d707",
+    "outputHash": "6d492667c51eaf93f1ec71c4d619de3b",
+    "owner": "generated"
+  },
+  "button-assorted-03-fc496fdd-0-359.mp3": {
+    "hash": "2a13be53feb547a31fd5ed8e364f0578",
+    "outputHash": "9584a653e98b994226617d5e0c925a2e",
+    "owner": "generated"
+  },
+  "button-assorted-03-fc496fdd-0-359.ogg": {
+    "hash": "efcddc451e0dd3319222153b6b53c0e3",
+    "outputHash": "3e22e8d0e91bb55149b455f4dbe8dbc1",
+    "owner": "generated"
+  },
   "card-draw-1.mp3": {
     "hash": "87dd568ec1dcc2a515ecc6d5163192f8",
     "outputHash": "e93132aac7cd55bbc24b29cb3dd0b830",
@@ -49,16 +99,6 @@
     "outputHash": "693c33d0168ac911e20914242ca6d45b",
     "owner": "generated"
   },
-  "card-draw-3.mp3": {
-    "hash": "5aca801f782d3c70618ca9c105eae9a8",
-    "outputHash": "882d82a2630623aebe496969542c1890",
-    "owner": "generated"
-  },
-  "card-draw-3.ogg": {
-    "hash": "7194baf7f077bc8d9df8b7a942938e27",
-    "outputHash": "38aa2a5fed3e9bbe42af8d72d9a66976",
-    "owner": "generated"
-  },
   "card-fan.mp3": {
     "hash": "c7bbbeb470a711fe83b7299f241adcd5",
     "outputHash": "3cb6051177464212341e1fe8be14865b",
@@ -67,6 +107,26 @@
   "card-fan.ogg": {
     "hash": "b754aaa5947fcd7b13a504571974ea3f",
     "outputHash": "f7a6144179c1d0b8c7d1fcb9192e5b8d",
+    "owner": "generated"
+  },
+  "clothing-movement-01-786d2b95-0-1572.mp3": {
+    "hash": "5d7e1dd415497d08150218d033d179ef",
+    "outputHash": "f1258323c8710fe7c5a5502bb889718f",
+    "owner": "generated"
+  },
+  "clothing-movement-01-786d2b95-0-1572.ogg": {
+    "hash": "92ff5877e151bc3ab34459e4db112c9d",
+    "outputHash": "1f418db3cc55727b518918785b4c8ccb",
+    "owner": "generated"
+  },
+  "coins-drop-carpet-06-396f065a-0-650.mp3": {
+    "hash": "121d81d158238c22119454c2512cf3b4",
+    "outputHash": "1cdd636b7b390a68033ec5a54ff9214e",
+    "owner": "generated"
+  },
+  "coins-drop-carpet-06-396f065a-0-650.ogg": {
+    "hash": "71deb8a22da4582fd0d09de7b7c5113e",
+    "outputHash": "fc58e19d35d77d7f7e747dde72ea1e8d",
     "owner": "generated"
   },
   "coins-gather-quick.mp3": {
@@ -79,6 +139,36 @@
     "outputHash": "44b3b4ebbd8e156d233c90808b00b312",
     "owner": "curated"
   },
+  "coins-pouch-leather-drop-into-takes-3-bbe032a5-0-2000.mp3": {
+    "hash": "78de6a27fe0de6114ef2870d2bad2370",
+    "outputHash": "fec21fe6cde6562f18b753452df235f0",
+    "owner": "generated"
+  },
+  "coins-pouch-leather-drop-into-takes-3-bbe032a5-0-2000.ogg": {
+    "hash": "05ae53bb15bf55b0897d787e591e0c41",
+    "outputHash": "08190c2e6f978b4b33215b299d2ca03d",
+    "owner": "generated"
+  },
+  "creature-monster-attack-09-108cd42b-0-1854.mp3": {
+    "hash": "eb4141174f37f9e8db07a41cc6fa7fbe",
+    "outputHash": "889f72bce4fe26c779c1a8101848fb39",
+    "owner": "generated"
+  },
+  "creature-monster-attack-09-108cd42b-0-1854.ogg": {
+    "hash": "c906ef6b353aaa9ba0a15323524753df",
+    "outputHash": "e253ed15723b159faf99506b6b1b7373",
+    "owner": "generated"
+  },
+  "dark-spell-life-tap-03-dd1d0dd1-0-2754.mp3": {
+    "hash": "71c2932083598a96b354627aa4ecff86",
+    "outputHash": "01e54b2c91c9dd72937e6ec0cb5c8c04",
+    "owner": "generated"
+  },
+  "dark-spell-life-tap-03-dd1d0dd1-0-2754.ogg": {
+    "hash": "f9b1f7815cf1d7584833376189f6ea91",
+    "outputHash": "e791ed999c5b76742559580c9be3d7c0",
+    "owner": "generated"
+  },
   "denied-03.mp3": {
     "hash": "90a256fd4f4f7b8f993fb7836faf9d58",
     "outputHash": "fd332c456523479bf748be37d142e75e",
@@ -87,6 +177,26 @@
   "denied-03.ogg": {
     "hash": "3a87af95c1a00b8b15d9b6fb480f6acd",
     "outputHash": "52c11b5dbcded726b439b0d0132b359e",
+    "owner": "generated"
+  },
+  "dice-roll-01-b4d30a6d-0-430.mp3": {
+    "hash": "f998d277ab12047b138d7dd36955696b",
+    "outputHash": "65ed6ea83eae0b28c8d903fb2d3243da",
+    "owner": "generated"
+  },
+  "dice-roll-01-b4d30a6d-0-430.ogg": {
+    "hash": "d5c43fc553956650ce844cfecff8b7ec",
+    "outputHash": "56c6fefff72a61f9937d8dfa673ec5b5",
+    "owner": "generated"
+  },
+  "efx-int-mutt-growl-42-b-ef1caab1-0-2443.mp3": {
+    "hash": "54f3769d78ceb206205eb5bdd0d70ed9",
+    "outputHash": "9ee499e9a1c43b95102d5aefb0e55ac5",
+    "owner": "generated"
+  },
+  "efx-int-mutt-growl-42-b-ef1caab1-0-2443.ogg": {
+    "hash": "6c04cb3a5b8682a7b8998a170b0287e6",
+    "outputHash": "a7dbbf2d22f309e247569fef53a57f14",
     "owner": "generated"
   },
   "energy-noise.mp3": {
@@ -109,6 +219,16 @@
     "outputHash": "654cba003e8819ab0c63aef801904756",
     "owner": "generated"
   },
+  "fireball-02-e587c4fa-0-3000.mp3": {
+    "hash": "41364dce59a4c99063c657ab16bbbe9a",
+    "outputHash": "d2e1ec79c3a317b684b018df10bca3c9",
+    "owner": "generated"
+  },
+  "fireball-02-e587c4fa-0-3000.ogg": {
+    "hash": "6c7c24d7a12a916006d969f78e7328de",
+    "outputHash": "57a8752e9b32fc405c24850a1e468435",
+    "owner": "generated"
+  },
   "fireball-1.mp3": {
     "hash": "8aa50706704b1158f7d2ff37d6398ab4",
     "outputHash": "d5a4d8a080b60321e77b810be6798013",
@@ -119,15 +239,25 @@
     "outputHash": "7b515ce1c85396b7ebabb9dc9876e892",
     "owner": "generated"
   },
-  "gurgling.mp3": {
-    "hash": "7fbe88a3dddd5955b7cb0874c65cd87e",
-    "outputHash": "a1057323cdf68261501f080f8811dd13",
-    "owner": "curated"
+  "grand-piano-chime-positive-e36bc9a2-0-979.mp3": {
+    "hash": "d5cac86b55b2f83f0843d945b3df2d0f",
+    "outputHash": "19b0753d0120e46d43fcf642b046acf1",
+    "owner": "generated"
   },
-  "gurgling.ogg": {
-    "hash": "9e1abf30a15832be9f86aadaea458755",
-    "outputHash": "de7dc4810ff0e66e65e8f01448fba2f8",
-    "owner": "curated"
+  "grand-piano-chime-positive-e36bc9a2-0-979.ogg": {
+    "hash": "7e3440f23bc021852ad83d07ec445f51",
+    "outputHash": "ebba82fcaed837b19982ec1ab68ed8f5",
+    "owner": "generated"
+  },
+  "ground-impact-large-falling-rocks-various-04-2f578e6a-0-5305.mp3": {
+    "hash": "c599dc6e14cca8b97399983f553de26b",
+    "outputHash": "978e29927b69ee4df23baadd4203d7b3",
+    "owner": "generated"
+  },
+  "ground-impact-large-falling-rocks-various-04-2f578e6a-0-5305.ogg": {
+    "hash": "2567951f13ad142f0cfa7cc82aeed7d3",
+    "outputHash": "ea1b587c3b73469d234f5e5ab6fa8e7e",
+    "owner": "generated"
   },
   "gut-kick.mp3": {
     "hash": "501d65302dacef7c3e1705908c8ee0fb",
@@ -137,6 +267,26 @@
   "gut-kick.ogg": {
     "hash": "1b56bebcf73523e0e79829af89c26224",
     "outputHash": "21bd25af7f042c8506fbc8bdda781cd9",
+    "owner": "generated"
+  },
+  "hand-to-hand-combat-body-hits-deep-punch-02-2265fdc2-0-208.mp3": {
+    "hash": "bfe30b9153221b42310f87b46625cc67",
+    "outputHash": "3d3d6a8732428995b84e26016cba6b7c",
+    "owner": "generated"
+  },
+  "hand-to-hand-combat-body-hits-deep-punch-02-2265fdc2-0-208.ogg": {
+    "hash": "e87ec0a1aea77754fdce556d76117b61",
+    "outputHash": "1337a58e6658500a449ea9cf4eaf7b2d",
+    "owner": "generated"
+  },
+  "harpsichord-chime-positive-f88163a6-0-1144.mp3": {
+    "hash": "3091e1b96ccf45573d3c38e5dbabc34c",
+    "outputHash": "868bce443efc23eeed5c914dbb8848d0",
+    "owner": "generated"
+  },
+  "harpsichord-chime-positive-f88163a6-0-1144.ogg": {
+    "hash": "11203ec441b26d277850b3f12b18bfc8",
+    "outputHash": "6151b30ebd75f993fd88993c88dfde01",
     "owner": "generated"
   },
   "harpsichord-defeated.mp3": {
@@ -169,6 +319,36 @@
     "outputHash": "16c6b2dab5c67831385335ae53b3142c",
     "owner": "generated"
   },
+  "harpsichord-negative-quick-fd60821c-0-1146.mp3": {
+    "hash": "b52bfe10be5e31f12003a63ba540844b",
+    "outputHash": "e4de44e4a379d576537631fee2ee7c47",
+    "owner": "generated"
+  },
+  "harpsichord-negative-quick-fd60821c-0-1146.ogg": {
+    "hash": "51a0819f70f2fe8942ee5916a36ec90a",
+    "outputHash": "d6e52e51e60f7486254825ba35fc4f2c",
+    "owner": "generated"
+  },
+  "heavy-armor-block-01-a169e2a5-0-2000.mp3": {
+    "hash": "9a4ef77d05a75fdcc2f1c8f246897284",
+    "outputHash": "a4ecd45930882f6fc79ff5c967c05e69",
+    "owner": "generated"
+  },
+  "heavy-armor-block-01-a169e2a5-0-2000.ogg": {
+    "hash": "261b83b03a50acaab326f88c27e92d6f",
+    "outputHash": "b2885ffebcac3c34f7fb1a3e9a0f8607",
+    "owner": "generated"
+  },
+  "hkap2-spin-whoosh-2a-261f31e9-0-608.mp3": {
+    "hash": "c1b487ade0ef0f030b7e527791e347c4",
+    "outputHash": "63778f823bad72d49d4b67ea41cd269e",
+    "owner": "generated"
+  },
+  "hkap2-spin-whoosh-2a-261f31e9-0-608.ogg": {
+    "hash": "efd7ce6cbb8664b42815e72322a4040d",
+    "outputHash": "3b86a6c9aceb04d679cf4caec680ec8f",
+    "owner": "generated"
+  },
   "horror-sting.mp3": {
     "hash": "e5853c3fc5b745dee4f25cd8c25dbeec",
     "outputHash": "9de630630554aeb4ffaf91ac2175c3c8",
@@ -179,14 +359,14 @@
     "outputHash": "dd1fc22d4e062eefc320d634c5029f5b",
     "owner": "generated"
   },
-  "ice-freeze-1.mp3": {
-    "hash": "eaafd065b551e27dff2638ddcdfb5010",
-    "outputHash": "8f1f61ff1d05e60f9c279a06387adcee",
+  "ice-impact-debris-heavy-single-fienup-015-sis-3d39507f-0-1413.mp3": {
+    "hash": "1eda12d9684fbefad0e786add060ff8f",
+    "outputHash": "3c61e049fe50c62a043139c3e3ae0a94",
     "owner": "generated"
   },
-  "ice-freeze-1.ogg": {
-    "hash": "37851ebd071339d6a161898c15e9083f",
-    "outputHash": "88ddc85013a00584c1e80aa4d036dc11",
+  "ice-impact-debris-heavy-single-fienup-015-sis-3d39507f-0-1413.ogg": {
+    "hash": "278ce1eea9996113961950d0078de0f2",
+    "outputHash": "1e3999289a5eea1b712a07b4a0d98918",
     "owner": "generated"
   },
   "ice-in-water.mp3": {
@@ -209,34 +389,44 @@
     "outputHash": "cd5b436a0c0c7866f6073f289c733a22",
     "owner": "generated"
   },
-  "keys-jingling.mp3": {
-    "hash": "238411b5ee6bc6972cc0b8ed818e0f39",
-    "outputHash": "7b058d7f24c90c359e63a3b9d6c43621",
-    "owner": "curated"
-  },
-  "keys-jingling.ogg": {
-    "hash": "b2daa7156b1bc808ecf1893b1b92cf7e",
-    "outputHash": "eb52d3697823fd7513ede14e2509e988",
-    "owner": "curated"
-  },
-  "kick.mp3": {
-    "hash": "0610daef28f48e29c7cd10eb1466fc55",
-    "outputHash": "ab36556c53c9645492dbb70fd68cd1f2",
-    "owner": "curated"
-  },
-  "kick.ogg": {
-    "hash": "0ac112d9f0f7609db836a0747985a1a1",
-    "outputHash": "8767c8dff307cc658af68f0265ec7cae",
-    "owner": "curated"
-  },
-  "metal-button-4.mp3": {
-    "hash": "24bcf1cd22290f5c81be90fa9e5013c6",
-    "outputHash": "303b19510a2bd669e30277f4105678cf",
+  "ilmarinen-blacksmith-forge-hammer-anvil-strik-0f11505a-0-432.mp3": {
+    "hash": "b2c9663f5bdec42b2ff13c6838ceca01",
+    "outputHash": "c34e0b69184102019a5f0aa840d2ebf7",
     "owner": "generated"
   },
-  "metal-button-4.ogg": {
-    "hash": "a7222a622e27c79786beb49294dfed99",
-    "outputHash": "a3ef361bc6744883aba6d51c7a927393",
+  "ilmarinen-blacksmith-forge-hammer-anvil-strik-0f11505a-0-432.ogg": {
+    "hash": "3679c47e082844fdba3fd2d7d8adc164",
+    "outputHash": "8fc494b5f296821f82122abafbd8da11",
+    "owner": "generated"
+  },
+  "lightning-impact-ac84ed8a-0-2000.mp3": {
+    "hash": "a00ed685cbf93f9db392b256569dc73f",
+    "outputHash": "1624f99e5b1f0041e8585aaaf6535678",
+    "owner": "generated"
+  },
+  "lightning-impact-ac84ed8a-0-2000.ogg": {
+    "hash": "97c18641575425920fc615695d3da523",
+    "outputHash": "4e9ec9248e82dad5f4c208f105a9b817",
+    "owner": "generated"
+  },
+  "liquids-gingerbeer-pour-plop-gurgling-fizzy-e-79e9e572-0-4000.mp3": {
+    "hash": "97c7dc85884d7d37bbb74aeebc3dc837",
+    "outputHash": "16b05388bb62ed0b0d81e16d10ade953",
+    "owner": "generated"
+  },
+  "liquids-gingerbeer-pour-plop-gurgling-fizzy-e-79e9e572-0-4000.ogg": {
+    "hash": "156b7e8d7bd0da679b769ebdf13fbe00",
+    "outputHash": "c96229e17c982da5c8de8f1be9b6a417",
+    "owner": "generated"
+  },
+  "magic-ice-whoosh-ice-bloc-debris-01-2eb4176c-0-2352.mp3": {
+    "hash": "1bfa91655f5a745341a3a6b02a42a00e",
+    "outputHash": "59ababde366464b30a60b0eeb4b9ae63",
+    "owner": "generated"
+  },
+  "magic-ice-whoosh-ice-bloc-debris-01-2eb4176c-0-2352.ogg": {
+    "hash": "9a48240c94e1bf71ba0ccfc2dc0105b6",
+    "outputHash": "1f2b665cf2889844de533a7d2d7d065c",
     "owner": "generated"
   },
   "mine-2.mp3": {
@@ -249,6 +439,16 @@
     "outputHash": "efb291c33b90172234cb2c96b9cb0733",
     "owner": "generated"
   },
+  "monster-bite-3-7193d1d8-0-1339.mp3": {
+    "hash": "708e7a35eece92baeed8127bc998df91",
+    "outputHash": "bf4e2a03cda7a205f6bd986fe1eddd73",
+    "owner": "generated"
+  },
+  "monster-bite-3-7193d1d8-0-1339.ogg": {
+    "hash": "4869fe524ccf3f1ccd49b76f846b150c",
+    "outputHash": "8c7f40e72ea9cb0f3375dd407fad7833",
+    "owner": "generated"
+  },
   "music-box-chime-positive.mp3": {
     "hash": "8b4aa90caf9d4751aa255f502472265d",
     "outputHash": "3ee264767fe6940ff04c9e48a3530238",
@@ -257,6 +457,16 @@
   "music-box-chime-positive.ogg": {
     "hash": "c07634613cd70bd9c7faf893145330cd",
     "outputHash": "9d90f2d4488139dc33b7e4c34989f9f0",
+    "owner": "generated"
+  },
+  "music-box-level-complete-062b379c-0-4197.mp3": {
+    "hash": "aab314c7d10706c9d150c84f51939ce8",
+    "outputHash": "b55a0b0cc029e265b2588d58b437a502",
+    "owner": "generated"
+  },
+  "music-box-level-complete-062b379c-0-4197.ogg": {
+    "hash": "d00b3a76a3ebd6c800e129368f63a4dc",
+    "outputHash": "2fc8617311f5d5c4f53f78f8d80f9b40",
     "owner": "generated"
   },
   "music-box-mystery.mp3": {
@@ -269,36 +479,6 @@
     "outputHash": "5f962342dd08d2eedec026744cb890a3",
     "owner": "generated"
   },
-  "page-turn.mp3": {
-    "hash": "368f784c1330d41fe81bcabdd7b55559",
-    "outputHash": "cdd3c63df8a551b530f04258a5d33171",
-    "owner": "generated"
-  },
-  "page-turn.ogg": {
-    "hash": "e54902b5b6f82dbcfc8e529d61ef4772",
-    "outputHash": "72c28cbd7d21bee444122ed0bde8d449",
-    "owner": "generated"
-  },
-  "paper-move.mp3": {
-    "hash": "02a4dffedd69fbddf92b344fe89f0912",
-    "outputHash": "446af0803d4155cf9d201c1ad299b6f4",
-    "owner": "generated"
-  },
-  "paper-move.ogg": {
-    "hash": "1feba25ddb46c814bedf81be9847b8f2",
-    "outputHash": "ea0c172c28444465ad41e65867f0ee36",
-    "owner": "generated"
-  },
-  "power-down.mp3": {
-    "hash": "4fb3f81505f87ef305f4de572e14835f",
-    "outputHash": "4a3bbf9e6e884f6a5f756545c9ab898d",
-    "owner": "curated"
-  },
-  "power-down.ogg": {
-    "hash": "b0897e4790ee264fa91fc386d0d7fd96",
-    "outputHash": "39bb69d934a9e16ec51e8a8d4bea7337",
-    "owner": "curated"
-  },
   "punch-3.mp3": {
     "hash": "a95aabd44a6b372d57ab3eee28dcbded",
     "outputHash": "b35e7fdb2bcb63c9cc53a62218a077ab",
@@ -307,26 +487,6 @@
   "punch-3.ogg": {
     "hash": "99ba53550fceaf4fc4a6402409ae4375",
     "outputHash": "8eb2cd3c1e28a633ec913135bd1a965c",
-    "owner": "curated"
-  },
-  "rock-meteor-swarm-1.mp3": {
-    "hash": "d5ca6b784a5613e987ca3a8a315fef05",
-    "outputHash": "5a5af4db6283d68de025907a6b8d07a6",
-    "owner": "generated"
-  },
-  "rock-meteor-swarm-1.ogg": {
-    "hash": "27838797ee301e594064888f611f5516",
-    "outputHash": "03a28dd627c824a9f4baa913a7f42133",
-    "owner": "generated"
-  },
-  "splat-quick.mp3": {
-    "hash": "d0953cd3aa45307b22380e3f48f680ce",
-    "outputHash": "2086d1b64011ddeebf274e7215fb8b59",
-    "owner": "curated"
-  },
-  "splat-quick.ogg": {
-    "hash": "4fed59ef9b3dd34b5bafdbf2bf124cb9",
-    "outputHash": "6ee5264bbdc4814aa0cea125c1eea36b",
     "owner": "curated"
   },
   "squelching-4.mp3": {
@@ -369,6 +529,16 @@
     "outputHash": "c2365590c0490e4477be078bb16fffb2",
     "owner": "generated"
   },
+  "switch-03-297909c3-0-640.mp3": {
+    "hash": "97ac5d2f84a34abdb8fe75c4e7c7cb36",
+    "outputHash": "9e01ee7371e2cb944b46fe1beda58963",
+    "owner": "generated"
+  },
+  "switch-03-297909c3-0-640.ogg": {
+    "hash": "27256b46559a5155ec20a5d6f9cc037c",
+    "outputHash": "30beeaa72ad259346510a2ad4630e3cd",
+    "owner": "generated"
+  },
   "sword-attack-1.mp3": {
     "hash": "49591cca9b13d4cc386032043157aed9",
     "outputHash": "4a4e3784ab07d6e8beda39f944915bb3",
@@ -399,34 +569,14 @@
     "outputHash": "6a4bbb4556c922dfd98d2356c924b863",
     "owner": "generated"
   },
-  "sword-blocked-2.mp3": {
-    "hash": "1dc195738b0480ebaf5343f53ffcc3cb",
-    "outputHash": "927f60be49942d6a55780666646e807f",
+  "sword-clash-02-57d075a4-0-267.mp3": {
+    "hash": "61bc486481c927d958ec4326ac9ef368",
+    "outputHash": "5ee74335076125f8a92031e9c2dffbcf",
     "owner": "generated"
   },
-  "sword-blocked-2.ogg": {
-    "hash": "460b4de0377fc06ee3ee17785f2bd5d2",
-    "outputHash": "f762a9c8cdc0fc2d3e985f8408203069",
-    "owner": "generated"
-  },
-  "sword-clash.mp3": {
-    "hash": "468fa7032ff8527d22911b881e82e02e",
-    "outputHash": "2bbccdca45b9a5b6d07c5bdd7b650caa",
-    "owner": "generated"
-  },
-  "sword-clash.ogg": {
-    "hash": "be3c04f5ae908af2f04cd51755e9e1ae",
-    "outputHash": "b6bc8f254832b73a5ae14fb3b760c631",
-    "owner": "generated"
-  },
-  "sword-impact-hit-1.mp3": {
-    "hash": "bb8f5f6961e562b106db9c5204e15766",
-    "outputHash": "3c0092dae851ea09a63a2ddc79254ebe",
-    "owner": "generated"
-  },
-  "sword-impact-hit-1.ogg": {
-    "hash": "940b9888dfc4cea39865a3d7600b4bd9",
-    "outputHash": "3f3bdd7f3637e9bfe7d14a4cabed00f0",
+  "sword-clash-02-57d075a4-0-267.ogg": {
+    "hash": "cc524ecc7364408c93356c92f3263d5d",
+    "outputHash": "2966cb37e9970670a3ae99bc109cb787",
     "owner": "generated"
   },
   "sword-impact-hit-2.mp3": {
@@ -449,6 +599,16 @@
     "outputHash": "6f3478206b150c59978b47e90988e6e4",
     "owner": "generated"
   },
+  "texture-whoosh-02-fast-02-1c520254-0-835.mp3": {
+    "hash": "0dd63bbee9c529ce36836a947ce786ef",
+    "outputHash": "31ce7a29ab3522207acd9a2754bdc41e",
+    "owner": "generated"
+  },
+  "texture-whoosh-02-fast-02-1c520254-0-835.ogg": {
+    "hash": "24722fa06455e1aa111e4a811a61f9c9",
+    "outputHash": "28a3d3f9a795722be5305954537936d2",
+    "owner": "generated"
+  },
   "toggle-off.mp3": {
     "hash": "f9504fc01716acc3dadf40d6bdb4c50f",
     "outputHash": "3a9b49ca21c7ddea423a1341e34e936b",
@@ -459,45 +619,15 @@
     "outputHash": "ae1ca49e0d92679f9676fe68c13f682b",
     "owner": "generated"
   },
-  "toggle-on.mp3": {
-    "hash": "860297b50c06a548e35a7b3b6292092d",
-    "outputHash": "eef80002de56cac217ed0d4610822b86",
+  "weapon-impact-parry-01-1b12234a-0-922.mp3": {
+    "hash": "01142f2353eadbc84e6a4b33b5fa6471",
+    "outputHash": "fec5e6f574da3a348969facadc045b08",
     "owner": "generated"
   },
-  "toggle-on.ogg": {
-    "hash": "64807512d085a06b3de96ec9e1ee198c",
-    "outputHash": "be97c9399b67bbec623450a217d1acdf",
+  "weapon-impact-parry-01-1b12234a-0-922.ogg": {
+    "hash": "183268151db33d3598b1b23f9b3fe7ea",
+    "outputHash": "e81b858091c493e3850825626e4c8cd1",
     "owner": "generated"
-  },
-  "torch-attack-strike-1.mp3": {
-    "hash": "d8ffb55307b5f607d7fa25dcfddf8382",
-    "outputHash": "c50466a328202d01181238018837c1a6",
-    "owner": "generated"
-  },
-  "torch-attack-strike-1.ogg": {
-    "hash": "4876121e93f53949e170cb1052f33c6f",
-    "outputHash": "786ce668276569fe29f0ce86a4f99b88",
-    "owner": "generated"
-  },
-  "torch-impact-1.mp3": {
-    "hash": "18bf6ad5a5913d9ff6fc82d72c168582",
-    "outputHash": "ab0f91317fdb0a860741163478a9c3f3",
-    "owner": "generated"
-  },
-  "torch-impact-1.ogg": {
-    "hash": "c0217a209146fdf2ec239a4b6ca97617",
-    "outputHash": "aa35e887876a1ca9c6b129d7c05647af",
-    "owner": "generated"
-  },
-  "vibraphone-chime-quick.mp3": {
-    "hash": "aa9bcb20ab383bbe7d2ef98d47819807",
-    "outputHash": "3838aafb1089276b8e34e72cd3f097ce",
-    "owner": "curated"
-  },
-  "vibraphone-chime-quick.ogg": {
-    "hash": "0309c17265b812182dba0fc625ac3d9c",
-    "outputHash": "4fb1818822de5725c6cddbf2461b41e1",
-    "owner": "curated"
   },
   "whoosh-1.mp3": {
     "hash": "2283efcb158109612cf6d630f68b43cb",
@@ -509,14 +639,14 @@
     "outputHash": "37a862e69b693427736b7035ac799019",
     "owner": "curated"
   },
-  "whoosh-2.mp3": {
-    "hash": "e1f43f7ca7e47e637991903bccbf4d37",
-    "outputHash": "b083e3f21b77292d17dacc6d74779dd3",
-    "owner": "curated"
+  "wood-breaking-cracking-snapping-breaking-peel-d8b1cf2e-0-1333.mp3": {
+    "hash": "5aa9d619e16a8273966ab5acc4dfadaa",
+    "outputHash": "8eaf1a0ff8f18a439ced293c7ad5994a",
+    "owner": "generated"
   },
-  "whoosh-2.ogg": {
-    "hash": "bec203e98f32d2d4e0857b55774d5fc3",
-    "outputHash": "a5b41cdab4b3fc777e6695b0e3186462",
-    "owner": "curated"
+  "wood-breaking-cracking-snapping-breaking-peel-d8b1cf2e-0-1333.ogg": {
+    "hash": "09dbf1624d3184d40c397ae7e9e7b56d",
+    "outputHash": "44ec1e7ad1004bcf51aac69ec8cf30fc",
+    "owner": "generated"
   }
 }

@@ -1,0 +1,30 @@
+export const ROOT: string;
+export type ProcessRow = {
+  pid: number;
+  parent: number;
+  group: number;
+  started: string;
+  state: string;
+  command: string;
+};
+export type BrowserGroup = { pid: number; started: string; members?: { pid: number; started: string }[] };
+export type BrowserRecord = {
+  task: string;
+  daemon: { pid: number; started: string };
+  groups: BrowserGroup[];
+  session: string;
+  closed: boolean;
+  guardian?: { pid: number; started: string };
+};
+export function taskKey(env?: NodeJS.ProcessEnv): string | null;
+export function browserSocketDirectory(env?: NodeJS.ProcessEnv): string;
+export function registry(root?: string): Promise<string>;
+export function processRows(output: string): ProcessRow[];
+export function processInfo(pid: number): Promise<ProcessRow | null>;
+export function ownedGroups(rows: ProcessRow[], daemonPid: number): BrowserGroup[];
+export function readRecord(file: string): Promise<BrowserRecord | null>;
+export function stopSession(file: string): Promise<void>;
+export function closeTaskBrowsers(root?: string, key?: string | null): Promise<void>;
+export function recoverBrowsers(root?: string): Promise<void>;
+export function captureBrowser(session: string, root?: string, key?: string | null, required?: boolean): Promise<void>;
+export function watchBrowser(file: string): Promise<void>;

@@ -23,5 +23,9 @@ export function mergeCombatText(combatTexts: CombatTextEvent[], nextEvent: Comba
     );
   });
   if (!existing) combatTexts.push(nextEvent);
-  else if (existing.kind !== "notice" && nextEvent.kind !== "notice") existing.amount += nextEvent.amount;
+  else if (existing.kind !== "notice" && nextEvent.kind !== "notice") {
+    existing.amount += nextEvent.amount;
+    if (nextEvent.critical) existing.critical = true;
+    if (nextEvent.periodic) existing.periodic = true;
+  }
 }

@@ -1,3 +1,4 @@
+import { playUISound } from "@/lib/audio";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { transmutationCrucible } from "@/features/alchemy/shared/config/game-data-catalog";
@@ -66,6 +67,7 @@ export function TransmutationScreen({
                   isSelected={source === index}
                   disabled={!isTransmutableCard(card)}
                   onSelect={() => {
+                    if (source !== index) playUISound("transmuteSelect");
                     setSource(index);
                     setError("");
                   }}
@@ -81,6 +83,7 @@ export function TransmutationScreen({
                     isSelected={offer === index}
                     disabled={original?.id === card.id}
                     onSelect={() => {
+                      if (offer !== index) playUISound("transmuteSelect");
                       setOffer(index);
                       setError("");
                     }}

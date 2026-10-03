@@ -9,6 +9,7 @@ import { installReadyArtworkForTests, waitForArtwork } from "../../../../helpers
 
 vi.mock("@/lib/audio", () => ({
   playBattleEvent: vi.fn(),
+  playUISound: vi.fn(),
 }));
 
 describe("DestinationScreen", () => {

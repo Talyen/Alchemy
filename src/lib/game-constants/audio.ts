@@ -16,6 +16,7 @@ export const FADE_IN_DURATION_MS = 1400;
 export const MUSIC_MASTER_GAIN = 0.7;
 
 export const SFX_UI_VOLUME = 0.6;
+export const SFX_AMBIENCE_VOLUME = 0.12;
 export const SFX_VICTORY_VOLUME = 0.8;
 export const SFX_DEFEAT_VOLUME = 0.7;
 
@@ -26,7 +27,8 @@ export const SFX_COOLDOWN_MS = 80;
 export const MUSIC_BOSS_VOLUME_BOOST = 2;
 export const MUSIC_FADE_TICK_MS = 30;
 
-// Battle companion ids with registered attack sounds. Values follow the
+// Battle companion ids whose turn cue follows the summoning card. A lookup
+// can deliberately resolve to silence. Values follow the
 // `${id}-companion` convention and are derived below so a rename touches one
 // list; the registry test pins both sides so new companions get a conscious
 // sound decision.

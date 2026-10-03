@@ -1,0 +1,2806 @@
+{
+  "schemaVersion": 1,
+  "direction": "Tactile fantasy",
+  "libraryRootDefault": "/Users/ryanmcintire/Documents/Asset Library/Sounds",
+  "reviewPolicy": "Approved choices are archived in approved-export.json and approved-choices.json. Current references reflect installed registrations.",
+  "families": [
+    {
+      "id": "paper",
+      "title": "Card handling",
+      "rationale": "Paper on felt gives card movement a physical identity. Prefer a small dealt-card take over a large shuffle; keep frequent draws quiet.",
+      "candidates": [
+        {
+          "assetId": "7c8f32b690ad942b",
+          "path": "cards/games_deck_of_cards_dealt_on_to_felt_table_surface_43__timothy_mchugh_playing_cards_betting_chips__7c8f32b690ad942b.flac",
+          "start": 0,
+          "duration": 0.862437,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "081285164b6b602a",
+          "path": "cards/card_draw_01__existing_library_unattributed__081285164b6b602a.flac",
+          "start": 0,
+          "duration": 0.348299,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "ccbc2e11f85c650f",
+          "path": "cards/gathering_a_pile_of_small_cards_05__sound_ex_machina_paper_cardboard__ccbc2e11f85c650f.flac",
+          "start": 0,
+          "duration": 2,
+          "note": "First 2 seconds of a longer recording; choose the final take after listening."
+        }
+      ]
+    },
+    {
+      "id": "shuffle",
+      "title": "Discard, removal and packs",
+      "rationale": "A brief fan or paper gather distinguishes a batch from a single draw. Removal should feel final without implying damage.",
+      "candidates": [
+        {
+          "assetId": "ccbc2e11f85c650f",
+          "path": "cards/gathering_a_pile_of_small_cards_05__sound_ex_machina_paper_cardboard__ccbc2e11f85c650f.flac",
+          "start": 0,
+          "duration": 3,
+          "note": "First 3 seconds of a longer recording; choose the final take after listening."
+        },
+        {
+          "assetId": "1890b6b187126f5f",
+          "path": "cards/card_fan__existing_library_unattributed__1890b6b187126f5f.flac",
+          "start": 0,
+          "duration": 0.394739,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "a095ddcf88b70773",
+          "path": "cards/games_deck_of_cards_handled_shuffled_and_tapped_onto_table_1__timothy_mchugh_playing_cards_betting_chips__a095ddcf88b70773.wav",
+          "start": 0,
+          "duration": 2.741333,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "page",
+      "title": "Collection and book pages",
+      "rationale": "A real page turn supports the Collection and Library Owl without adding a musical reward to routine browsing.",
+      "candidates": [
+        {
+          "assetId": "c24a548abb96aa5b",
+          "path": "items/turn_page_thick_magazine_002__3maze_books_magazines__c24a548abb96aa5b.flac",
+          "start": 0,
+          "duration": 0.927083,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "8ee66c00b72cba10",
+          "path": "items/catalogue_page_turn_9__touchdown_audio_the_white_stuff__8ee66c00b72cba10.wav",
+          "start": 0,
+          "duration": 0.818052,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "c8ceca6bfe4fb524",
+          "path": "items/page_turn__existing_library_unattributed__c8ceca6bfe4fb524.flac",
+          "start": 0,
+          "duration": 0.905578,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "click",
+      "title": "Navigation and selection",
+      "rationale": "Short mechanical button takes are plausible tactile UI candidates. Keep them soft, with no celebratory meaning on ordinary selection.",
+      "candidates": [
+        {
+          "assetId": "fc496fdd09d81c3a",
+          "path": "interface/button_assorted_03__existing_library_unattributed__fc496fdd09d81c3a.flac",
+          "start": 0,
+          "duration": 0.358917,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "fe2e19abd593c050",
+          "path": "interface/button_assorted_02__existing_library_unattributed__fe2e19abd593c050.flac",
+          "start": 0,
+          "duration": 0.4365,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "d766acdfcd333bea",
+          "path": "interface/analog_synthesized_ui_button_click_tone_1__the_chris_alan_analog_synthesized_ui_sfx__d766acdfcd333bea.flac",
+          "start": 0,
+          "duration": 0.095312,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "toggle-on",
+      "title": "Enable setting",
+      "rationale": "Retain the short toggle if it fits after audition. A switch is stronger than a generic selection click.",
+      "candidates": [
+        {
+          "assetId": "d2e16090e00cd6c0",
+          "path": "interface/toggle_on_02__existing_library_unattributed__d2e16090e00cd6c0.flac",
+          "start": 0,
+          "duration": 0.476009,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "fc496fdd09d81c3a",
+          "path": "interface/button_assorted_03__existing_library_unattributed__fc496fdd09d81c3a.flac",
+          "start": 0,
+          "duration": 0.358917,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "toggle-off",
+      "title": "Disable setting",
+      "rationale": "Keep on/off distinct while using one tactile family. This source is also the existing End Turn registration.",
+      "candidates": [
+        {
+          "assetId": "3fda95562a48031f",
+          "path": "interface/toggle_off_02__existing_library_unattributed__3fda95562a48031f.flac",
+          "start": 0,
+          "duration": 0.429569,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "297909c316af4680",
+          "path": "interface/toggle_off__existing_library_unattributed__297909c316af4680.flac",
+          "start": 0,
+          "duration": 0.639729,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "error",
+      "title": "Rejected action",
+      "rationale": "A short harpsichord negative offers fantasy character with less alarm than a modern denied beep. Reserve it for an attempted action, not disabled hover.",
+      "candidates": [
+        {
+          "assetId": "fd60821c6e944f8f",
+          "path": "music_and_outcomes/harpsichord_negative_quick__existing_library_unattributed__fd60821c6e944f8f.flac",
+          "start": 0,
+          "duration": 1.145533,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "b82cdf1e4f349e68",
+          "path": "interface/denied__existing_library_unattributed__b82cdf1e4f349e68.flac",
+          "start": 0,
+          "duration": 1.333333,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "transition",
+      "title": "Screen movement and dodge",
+      "rationale": "A fast texture whoosh can acknowledge a major transition or dodge. Avoid repeating it on every hover.",
+      "candidates": [
+        {
+          "assetId": "1c520254f5674b51",
+          "path": "combat/texture_whoosh_02_fast_02__soundrangers_whooshes_and_transitions__1c520254f5674b51.flac",
+          "start": 0,
+          "duration": 0.834531,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "261f31e98c726fc2",
+          "path": "combat/hkap2_spin_whoosh_2a__noizboy_hong_kong_action_kit_hit_kit_2__261f31e98c726fc2.wav",
+          "start": 0,
+          "duration": 0.60826,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "equip",
+      "title": "Equipping gear",
+      "rationale": "Cloth/equipment movement better suggests handling gear than a metal UI button alone; retain a metal accent for armored slots.",
+      "candidates": [
+        {
+          "assetId": "786d2b95b31cfbc6",
+          "path": "interface/equip_01__existing_library_unattributed__786d2b95b31cfbc6.flac",
+          "start": 0,
+          "duration": 1.571771,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "fe01c6d3b9480bfa",
+          "path": "interface/metal_button_04__existing_library_unattributed__fe01c6d3b9480bfa.flac",
+          "start": 0,
+          "duration": 0.499521,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "blade",
+      "title": "Blade attacks",
+      "rationale": "A designed melee sword take suggests an attack rather than a generic body hit. Compare existing sword attacks before choosing a heavier replacement.",
+      "candidates": [
+        {
+          "assetId": "77e022f2123c6797",
+          "path": "combat/melee_sword_attack_04__sound_spark_llc_gore__77e022f2123c6797.flac",
+          "start": 0,
+          "duration": 1.372344,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "30f752c8bbaac9ee",
+          "path": "combat/sword_attack_01__existing_library_unattributed__30f752c8bbaac9ee.ogg",
+          "start": 0,
+          "duration": 3.0,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "1e6f03e1cd618b7d",
+          "path": "combat/sword_attack_02__existing_library_unattributed__1e6f03e1cd618b7d.ogg",
+          "start": 0,
+          "duration": 3.0,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "impact",
+      "title": "Physical hit",
+      "rationale": "A short deep body hit avoids making every hit sound like a sword. Keep the impact distinct from the attack windup.",
+      "candidates": [
+        {
+          "assetId": "2265fdc25df1d5fe",
+          "path": "combat/hand_to_hand_combat_body_hits_deep_punch_02__the_chris_alan_hand_to_hand_combat_body_hi__2265fdc25df1d5fe.flac",
+          "start": 0,
+          "duration": 0.207583,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "3988123cf8cc1cbb",
+          "path": "combat/punch_03__existing_library_unattributed__3988123cf8cc1cbb.wav",
+          "start": 0,
+          "duration": 0.482083,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "heavy",
+      "title": "Heavy attacks and Stun",
+      "rationale": "A heavier gore/body punch is a candidate for Bash and brute hits; listen for excess gore and a tail that could mask the next action.",
+      "candidates": [
+        {
+          "assetId": "cf6585bd00ef3da4",
+          "path": "combat/efx_sd_gore_punch_02_b_m__coll_anderson_gore__cf6585bd00ef3da4.flac",
+          "start": 0,
+          "duration": 3.093333,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "760c2dcd9278e544",
+          "path": "combat/gut_kick_01__existing_library_unattributed__760c2dcd9278e544.flac",
+          "start": 0,
+          "duration": 2.5,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "parry",
+      "title": "Block and metal defense",
+      "rationale": "Medieval armor parry is a direct material match for Block. Avoid using the same strength for gaining Block and absorbing a hit.",
+      "candidates": [
+        {
+          "assetId": "1b12234aca325a25",
+          "path": "combat/weapon_impact_parry_01__double_trouble_audio_medieval_armor_and_im__1b12234aca325a25.flac",
+          "start": 0,
+          "duration": 0.921833,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "a169e2a5350c7868",
+          "path": "combat/heavy_armor_block_01__existing_library_unattributed__a169e2a5350c7868.mp3",
+          "start": 0,
+          "duration": 2.0,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "df513702f53e0117",
+          "path": "combat/sword_clash__existing_library_unattributed__df513702f53e0117.flac",
+          "start": 0,
+          "duration": 0.348299,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "critical",
+      "title": "Critical hit and Shatter",
+      "rationale": "A short clash distinguishes a critical impact. A brittle ice alternative belongs to Shatter rather than every critical hit.",
+      "candidates": [
+        {
+          "assetId": "57d075a4aa3f50d2",
+          "path": "combat/sword_clash_02__existing_library_unattributed__57d075a4aa3f50d2.flac",
+          "start": 0,
+          "duration": 0.267029,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "3d39507f328cb6cc",
+          "path": "combat/ice_impact_debris_heavy_single_fienup_015_sis2__soundopolis_icy_snow_2_hd__3d39507f328cb6cc.flac",
+          "start": 0,
+          "duration": 1.413333,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "bow",
+      "title": "Archery",
+      "rationale": "Bow release supplies the missing shared identity for Archery. Elemental arrow cards can later layer a quiet elemental accent.",
+      "candidates": [
+        {
+          "assetId": "626d2d6da17c1173",
+          "path": "combat/bow_attack_01__existing_library_unattributed__626d2d6da17c1173.ogg",
+          "start": 0,
+          "duration": 3.0,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "d2ecb917432cd15e",
+          "path": "combat/bow_attack_02__existing_library_unattributed__d2ecb917432cd15e.ogg",
+          "start": 0,
+          "duration": 3.0,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "5d67b59c924fb233",
+          "path": "combat/future_weapons_3_crossbow_arrow_hit_2__soundmorph_future_weapons_3__5d67b59c924fb233.flac",
+          "start": 0,
+          "duration": 1.624073,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "fire",
+      "title": "Burn and fire spells",
+      "rationale": "Compare another fireball take against the current one. Keep tick accents smaller than spell casts; avoid another hit layer when the impact already communicates damage.",
+      "candidates": [
+        {
+          "assetId": "e587c4fab796fcfc",
+          "path": "magic/fireball_02__existing_library_unattributed__e587c4fab796fcfc.ogg",
+          "start": 0,
+          "duration": 3.0,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "7b515ce1c85396b7",
+          "path": "magic/fireball_01__existing_library_unattributed__7b515ce1c85396b7.ogg",
+          "start": 0,
+          "duration": 3.0,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "aa35e887876a1ca9",
+          "path": "combat/torch_impact_01__existing_library_unattributed__aa35e887876a1ca9.ogg",
+          "start": 0,
+          "duration": 3.0,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "ice",
+      "title": "Freeze and ice spells",
+      "rationale": "Designed ice debris gives a brittle material identity; compare against the existing ice throw. Buff-positive ice is useful for wards.",
+      "candidates": [
+        {
+          "assetId": "2eb4176c9b7cd7e4",
+          "path": "magic/magic_ice_whoosh_ice_bloc_debris_01__articulated_sounds_magic_elements_vol_1__2eb4176c9b7cd7e4.flac",
+          "start": 0,
+          "duration": 2.352219,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "cd5b436a0c0c7866",
+          "path": "world/ice_throw_01__existing_library_unattributed__cd5b436a0c0c7866.ogg",
+          "start": 0,
+          "duration": 4.0,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "67cfc88cca9fc827",
+          "path": "magic/ice_spell_ice_spell_buff_positive_02__sound_spark_llc_magic_spells_buffs_and_att__67cfc88cca9fc827.flac",
+          "start": 0,
+          "duration": 1.8835,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "lightning",
+      "title": "Lightning and Nature electricity",
+      "rationale": "A short electric surge separates lightning from fire and general arcane hum. Check brightness and fatigue on repeated arrows.",
+      "candidates": [
+        {
+          "assetId": "c8cb6d5c07cad872",
+          "path": "magic/electric_surge_blast_04__gamemaster_audio_magic_and_spell_sounds__c8cb6d5c07cad872.flac",
+          "start": 0,
+          "duration": 1.91926,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "66735590b9f1cb24",
+          "path": "magic/lightning_cast_s__existing_library_unattributed__66735590b9f1cb24.flac",
+          "start": 0,
+          "duration": 1.625,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "ac84ed8a167b00dc",
+          "path": "magic/lightning_impact__existing_library_unattributed__ac84ed8a167b00dc.flac",
+          "start": 0,
+          "duration": 2.0,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "earth",
+      "title": "Stone, Meteor and Earthquake",
+      "rationale": "Falling rocks can give stone enemies and Earthquake appropriate mass. Meteor may keep its current designed swarm if the rock recording lacks magic.",
+      "candidates": [
+        {
+          "assetId": "2f578e6a54f50842",
+          "path": "combat/ground_impact_large_falling_rocks_various_04__articulated_sounds_magic_elements_vol_1__2f578e6a54f50842.flac",
+          "start": 0,
+          "duration": 5.304979,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "03a28dd627c824a9",
+          "path": "crafting/rock_meteor_swarm_01__existing_library_unattributed__03a28dd627c824a9.ogg",
+          "start": 0,
+          "duration": 6.0,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "nature",
+      "title": "Vines, Thorns and natural magic",
+      "rationale": "A designed air/foliage swirl suggests living movement. Use sparingly; do not add a cue to every passive Thorns calculation.",
+      "candidates": [
+        {
+          "assetId": "b043bd250f274868",
+          "path": "magic/magic_air_large_whoosh_swirl_wind_gust_foliage_01__articulated_sounds_magic_elements_vol_1__b043bd250f274868.flac",
+          "start": 0,
+          "duration": 2.285677,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "d8b1cf2e907a0653",
+          "path": "crafting/wood_breaking_cracking_snapping_breaking_peeling_bones_break_snap_crack_13__matt_script_you_me_debris__d8b1cf2e907a0653.flac",
+          "start": 0,
+          "duration": 1.332688,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "poison",
+      "title": "Poison, acid and slime",
+      "rationale": "A jelly/liquid impact fits organic poison or slime better than metallic damage. Small bubbles offer a quieter status alternative.",
+      "candidates": [
+        {
+          "assetId": "39ef492375854f47",
+          "path": "combat/jelly_movement_gore_liquid_splat_impact_slime_various09__mattia_cellotto_the_borax_experiment__39ef492375854f47.flac",
+          "start": 0,
+          "duration": 0.613333,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "942dba3f2d4b0b49",
+          "path": "world/bubbles_04__existing_library_unattributed__942dba3f2d4b0b49.wav",
+          "start": 0,
+          "duration": 1.010438,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "107f944c9f98c1d0",
+          "path": "world/unfathomed_hydrophone_submerged_largeplastic_water_foam_gurgling_gentle__eiravaein_works_unfathomed__107f944c9f98c1d0.flac",
+          "start": 0,
+          "duration": 2.941625,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "bleed",
+      "title": "Bleed and bites",
+      "rationale": "A compact bite or dry tissue/bone accent fits tearing attacks. Tick sounds remain optional because another wet layer can become tiring.",
+      "candidates": [
+        {
+          "assetId": "7193d1d8f9e4d76e",
+          "path": "creatures/monster_bite_3__olivier_girardot_monsters__7193d1d8f9e4d76e.flac",
+          "start": 0,
+          "duration": 1.338937,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "a654292a027c33d1",
+          "path": "combat/gore_bone_break_and_flesh_tear_dry_soft_5__timothy_mchugh_gorification_hd__a654292a027c33d1.flac",
+          "start": 0,
+          "duration": 1.36,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "77190fefce8bb2b5",
+          "path": "combat/gore_bone_break_wet_juicy_hard_2__timothy_mchugh_gorification_hd__77190fefce8bb2b5.flac",
+          "start": 0,
+          "duration": 1.093333,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "heal",
+      "title": "Health restoration and Cleanse",
+      "rationale": "A dedicated heal texture separates restoration from ordinary pickup. The short musical alternative is easier to read among combat impacts.",
+      "candidates": [
+        {
+          "assetId": "2847537ec06e3c64",
+          "path": "magic/heal_01__existing_library_unattributed__2847537ec06e3c64.flac",
+          "start": 0,
+          "duration": 2.878,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "f2f1e39641e35e93",
+          "path": "music_and_outcomes/grand_piano_chime_quick__existing_library_unattributed__f2f1e39641e35e93.flac",
+          "start": 0,
+          "duration": 1.078594,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "14da4a0663bd9f7f",
+          "path": "magic/buff_pickup_04__existing_library_unattributed__14da4a0663bd9f7f.flac",
+          "start": 0,
+          "duration": 2.5,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "holy",
+      "title": "Holy and major blessings",
+      "rationale": "A gentle tuned chime can establish Holy without borrowing fireball. Listen for overly ambient tails before using it on frequent attacks.",
+      "candidates": [
+        {
+          "assetId": "ca9649eafb7a150b",
+          "path": "items/helina_windchimes_mixed_paper_aluminum_tuned_glassclappermini_windcatcher_cottonrope_relea__eiravaein_works_helina__ca9649eafb7a150b.flac",
+          "start": 0,
+          "duration": 4,
+          "note": "First 4 seconds of a longer recording; choose the final take after listening."
+        },
+        {
+          "assetId": "f88163a637a68068",
+          "path": "music_and_outcomes/harpsichord_chime_positive__existing_library_unattributed__f88163a637a68068.flac",
+          "start": 0,
+          "duration": 1.144467,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "mana",
+      "title": "Mana and arcane support",
+      "rationale": "A compact casting/buff take distinguishes Mana from food pickups. Avoid a continuous hum for one-off resource changes.",
+      "candidates": [
+        {
+          "assetId": "869c4a8362c702cb",
+          "path": "magic/magspel_cast_casting_buff_hy_pc_003__existing_library_unattributed__869c4a8362c702cb.flac",
+          "start": 0,
+          "duration": 2.5,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "6c03709f5f91634e",
+          "path": "magic/energy_noise_01__existing_library_unattributed__6c03709f5f91634e.flac",
+          "start": 0,
+          "duration": 2.619323,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "919a596c9543d7b8",
+          "path": "magic/magangl_buff_buff_pickup_hy_pc_005__existing_library_unattributed__919a596c9543d7b8.flac",
+          "start": 0,
+          "duration": 2.5,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "dark",
+      "title": "Dark pacts and blood magic",
+      "rationale": "Life Tap directly matches sacrificial magic. Its darkness should communicate a pact rather than a generic success reward.",
+      "candidates": [
+        {
+          "assetId": "dd1d0dd1c90ef7ee",
+          "path": "magic/dark_spell_life_tap_03__sound_spark_llc_magic_spells_buffs_and_att__dd1d0dd1c90ef7ee.flac",
+          "start": 0,
+          "duration": 2.754104,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "0789cec073b6aeec",
+          "path": "magic/arcane_spell_doppler_shift_03__sound_spark_llc_magic_spells_buffs_and_att__0789cec073b6aeec.flac",
+          "start": 0,
+          "duration": 2.9925,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "wish",
+      "title": "Wish, Mystery and Corruption",
+      "rationale": "An arcane doppler shift gives transformations an identity distinct from the current mystery music-box cue. Compare for tonal consistency.",
+      "candidates": [
+        {
+          "assetId": "0789cec073b6aeec",
+          "path": "magic/arcane_spell_doppler_shift_03__sound_spark_llc_magic_spells_buffs_and_att__0789cec073b6aeec.flac",
+          "start": 0,
+          "duration": 2.9925,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "935957b92e8debeb",
+          "path": "magic/magspel_cast_weirdness_hy_pc_003__existing_library_unattributed__935957b92e8debeb.flac",
+          "start": 0,
+          "duration": 2.5,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "potion",
+      "title": "Potion use and bottles",
+      "rationale": "Glass pour and fizz suggests an actual Potion. The bottle-open alternative is shorter; the existing ice-in-water source is a useful baseline.",
+      "candidates": [
+        {
+          "assetId": "1b85561d4b87d2de",
+          "path": "items/burst_glass_release_bottle_pour_fizz_cistern_empty_marble_slosh__eiravaein_sound_burst__1b85561d4b87d2de.flac",
+          "start": 0,
+          "duration": 3,
+          "note": "First 3 seconds of a longer recording; choose the final take after listening."
+        },
+        {
+          "assetId": "6548c33612f8f6bc",
+          "path": "items/ramunebottle_open_marble_punch_decompress_ping_glass__eiravaein_works_vaeyan_i__6548c33612f8f6bc.flac",
+          "start": 0,
+          "duration": 0.368,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "d4fc2b8de4e05d38",
+          "path": "world/ice_in_water__existing_library_unattributed__d4fc2b8de4e05d38.flac",
+          "start": 0,
+          "duration": 0.487619,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "brew",
+      "title": "Potion mixing, strengthening and brewing",
+      "rationale": "Submerged glass fizz and gurgle is a strong material match for alchemy. These long recordings need a listening-selected final excerpt.",
+      "candidates": [
+        {
+          "assetId": "9ef141584b991342",
+          "path": "world/unfathomed_hydrophone_submerged_smallglass_effervescenttabs_carbonateddrink_pouring_fillin__eiravaein_works_unfathomed__9ef141584b991342.flac",
+          "start": 0,
+          "duration": 4,
+          "note": "First 4 seconds of a longer recording; choose the final take after listening."
+        },
+        {
+          "assetId": "79e9e572b8d56905",
+          "path": "world/liquids_gingerbeer_pour_plop_gurgling_fizzy_effervescent_close_m__eiravaein_works_vaeyan_ii__79e9e572b8d56905.flac",
+          "start": 0,
+          "duration": 4,
+          "note": "First 4 seconds of a longer recording; choose the final take after listening."
+        },
+        {
+          "assetId": "1c11a8245d9143ec",
+          "path": "world/bubbles_03__existing_library_unattributed__1c11a8245d9143ec.wav",
+          "start": 0,
+          "duration": 1.424792,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "food",
+      "title": "Rations and berries",
+      "rationale": "A small bread bite can replace the generic buff pickup for food. Check mouth noise before reusing it for every ration.",
+      "candidates": [
+        {
+          "assetId": "fefd384f414f2505",
+          "path": "world/bread_curst_bite_mouth_close_chew_crunch_various21__mattia_cellotto_crunch_mode__fefd384f414f2505.flac",
+          "start": 0,
+          "duration": 1.44,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "dab5917f211ec980",
+          "path": "magic/buff_pickup_01__existing_library_unattributed__dab5917f211ec980.flac",
+          "start": 0,
+          "duration": 2,
+          "note": "First 2 seconds of a longer recording; choose the final take after listening."
+        }
+      ]
+    },
+    {
+      "id": "coins",
+      "title": "Gold gain, spending and purchases",
+      "rationale": "Coins in a sack or dropped on a soft surface feel tangible and stay short. Gain and spending may share a family but should not trigger twice per transaction.",
+      "candidates": [
+        {
+          "assetId": "30fa746b5854e61e",
+          "path": "items/coins_in_sack_held_by_drawstring_06__shapeforms_the_mint_coins_and_money__30fa746b5854e61e.flac",
+          "start": 0,
+          "duration": 0.47,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "396f065a95ab129d",
+          "path": "items/coins_drop_carpet_06__shapeforms_the_mint_coins_and_money__396f065a95ab129d.flac",
+          "start": 0,
+          "duration": 0.65,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "bbe032a583692ea4",
+          "path": "movement/coins_pouch_leather_drop_into_takes_3__effectsworks_coinage__bbe032a583692ea4.flac",
+          "start": 0,
+          "duration": 2,
+          "note": "First 2 seconds of a longer recording; choose the final take after listening."
+        }
+      ]
+    },
+    {
+      "id": "dice",
+      "title": "Luck and gambling",
+      "rationale": "A real dice roll directly acknowledges Roll the Dice and gambling effects. Avoid using chance-result audio before the result is committed.",
+      "candidates": [
+        {
+          "assetId": "b4d30a6d0efe6992",
+          "path": "cards/dice_roll_01__existing_library_unattributed__b4d30a6d0efe6992.flac",
+          "start": 0,
+          "duration": 0.429569,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "8c99d07d759fa285",
+          "path": "cards/dice_roll_04__existing_library_unattributed__8c99d07d759fa285.flac",
+          "start": 0,
+          "duration": 0.62839,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "forge",
+      "title": "Forge, crafting and Forge Golem",
+      "rationale": "A short blacksmith anvil strike is a precise material match for forging and metallic boss weight; reject excessive ringout after audition.",
+      "candidates": [
+        {
+          "assetId": "0f11505ac361bf7b",
+          "path": "crafting/ilmarinen_blacksmith_forge_hammer_anvil_strike_loose_ringing_splash_iron_thin_m__eiravaein_works_ilmarinen__0f11505ac361bf7b.flac",
+          "start": 0,
+          "duration": 0.432,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "16b445e000b28396",
+          "path": "crafting/ilmarinen_blacksmith_forge_hotiron_water_squelch_sizzle_rough_popping_m__eiravaein_works_ilmarinen__16b445e000b28396.flac",
+          "start": 0,
+          "duration": 2.304,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "salvage",
+      "title": "Salvaging and broken materials",
+      "rationale": "A compact wood/debris crack suggests dismantling rather than mining. The existing mining cue remains a comparison candidate.",
+      "candidates": [
+        {
+          "assetId": "d8b1cf2e907a0653",
+          "path": "crafting/wood_breaking_cracking_snapping_breaking_peeling_bones_break_snap_crack_13__matt_script_you_me_debris__d8b1cf2e907a0653.flac",
+          "start": 0,
+          "duration": 1.332688,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "efb291c33b901722",
+          "path": "crafting/mine_02__existing_library_unattributed__efb291c33b901722.ogg",
+          "start": 0,
+          "duration": 2.0,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "bone",
+      "title": "Skeleton and bone movement",
+      "rationale": "A dry bone crack gives Risen Skeleton a distinct material identity. Keep it quiet on the repeated companion effect.",
+      "candidates": [
+        {
+          "assetId": "cbf22510e53ef270",
+          "path": "combat/bone_cracking_18__membrans_bone_crackings_sound_pack_01__cbf22510e53ef270.flac",
+          "start": 0,
+          "duration": 0.480677,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "915bcf97ef26ed1a",
+          "path": "combat/bone_cracking_34__membrans_bone_crackings_sound_pack_01__915bcf97ef26ed1a.flac",
+          "start": 0,
+          "duration": 0.794813,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "beast",
+      "title": "Creature attacks and summons",
+      "rationale": "A short creature attack is an alternative to sword hits for beasts. These are designed creature takes, not verified species recordings.",
+      "candidates": [
+        {
+          "assetId": "108cd42b5b26ea82",
+          "path": "creatures/creature_monster_attack_09__matiasmacsd_creatures_zone__108cd42b5b26ea82.flac",
+          "start": 0,
+          "duration": 1.854313,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "67e151f278a87638",
+          "path": "creatures/monster_within_hunter_fley_attack02__soundmorph_monster_within__67e151f278a87638.flac",
+          "start": 0,
+          "duration": 1.482531,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "7193d1d8f9e4d76e",
+          "path": "creatures/monster_bite_3__olivier_girardot_monsters__7193d1d8f9e4d76e.flac",
+          "start": 0,
+          "duration": 1.338937,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "canine",
+      "title": "Wolf and Retriever summons",
+      "rationale": "A close dog bark/growl can mark a canine summon. Prefer an effect-based cue for repeated combat turns; no authentic wolf take is established.",
+      "candidates": [
+        {
+          "assetId": "568b3d3f31f36500",
+          "path": "creatures/dog_big_close_barking_3_011__bart_kamski_dogs_game_ready__568b3d3f31f36500.flac",
+          "start": 0,
+          "duration": 1.395828,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "ef1caab144992a7a",
+          "path": "creatures/efx_int_mutt_growl_42_b__coll_anderson_dog__ef1caab144992a7a.flac",
+          "start": 0,
+          "duration": 2.442667,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "wood",
+      "title": "Blight Treant and wooden impacts",
+      "rationale": "A dry snapping wood take gives the Treant a distinct identity rather than the shared heavy punch. Ability turns still use their card sound.",
+      "candidates": [
+        {
+          "assetId": "d8b1cf2e907a0653",
+          "path": "crafting/wood_breaking_cracking_snapping_breaking_peeling_bones_break_snap_crack_13__matt_script_you_me_debris__d8b1cf2e907a0653.flac",
+          "start": 0,
+          "duration": 1.332688,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "806bb3cf7d939192",
+          "path": "crafting/wood_break__existing_library_unattributed__806bb3cf7d939192.flac",
+          "start": 0,
+          "duration": 0.623188,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "progress",
+      "title": "Talents, Homestead and discoveries",
+      "rationale": "A short harpsichord positive fits fantasy progression. Retain the music-box alternative if its brighter tone better matches the game.",
+      "candidates": [
+        {
+          "assetId": "f88163a637a68068",
+          "path": "music_and_outcomes/harpsichord_chime_positive__existing_library_unattributed__f88163a637a68068.flac",
+          "start": 0,
+          "duration": 1.144467,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "cceca0183473c3f1",
+          "path": "music_and_outcomes/music_box_chime_positive__existing_library_unattributed__cceca0183473c3f1.flac",
+          "start": 0,
+          "duration": 1.645918,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "e36bc9a2ca2c0432",
+          "path": "music_and_outcomes/grand_piano_chime_positive__existing_library_unattributed__e36bc9a2ca2c0432.flac",
+          "start": 0,
+          "duration": 0.978617,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "victory",
+      "title": "Victory and run completion",
+      "rationale": "Keep the existing harpsichord completion as the leading candidate; compare music-box and piano alternatives instead of replacing for novelty.",
+      "candidates": [
+        {
+          "assetId": "b75cb0b674e56eb7",
+          "path": "music_and_outcomes/harpsichord_level_complete__existing_library_unattributed__b75cb0b674e56eb7.flac",
+          "start": 0,
+          "duration": 3.697098,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "062b379c143839a6",
+          "path": "music_and_outcomes/music_box_level_complete__existing_library_unattributed__062b379c143839a6.flac",
+          "start": 0,
+          "duration": 4.197234,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "cf8877332cbec336",
+          "path": "music_and_outcomes/grand_piano_level_complete__existing_library_unattributed__cf8877332cbec336.flac",
+          "start": 0,
+          "duration": 3.783991,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "defeat",
+      "title": "Defeat",
+      "rationale": "Keep the concise existing harpsichord defeat pending listening. A softer music-box alternative may better suit ordinary failed runs.",
+      "candidates": [
+        {
+          "assetId": "b707cf3a0eca1b4a",
+          "path": "music_and_outcomes/harpsichord_defeated__existing_library_unattributed__b707cf3a0eca1b4a.flac",
+          "start": 0,
+          "duration": 2.997732,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "4479bcff0d112d33",
+          "path": "music_and_outcomes/music_box_defeated__existing_library_unattributed__4479bcff0d112d33.flac",
+          "start": 0,
+          "duration": 3.497732,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "ade5f9a32c63f077",
+          "path": "music_and_outcomes/defeat_01__existing_library_unattributed__ade5f9a32c63f077.flac",
+          "start": 0,
+          "duration": 3.89034,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "danger",
+      "title": "Death\u2019s Door and boss warning",
+      "rationale": "Retain the short Death\u2019s Door sting until a better warning is established. Avoid implying immediate defeat on a boss-route warning.",
+      "candidates": [
+        {
+          "assetId": "58a16863d12e2bba",
+          "path": "world/deaths_door__existing_library_unattributed__58a16863d12e2bba.flac",
+          "start": 0,
+          "duration": 0.879819,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "death",
+      "title": "Enemy death",
+      "rationale": "Compare the existing slice against dry bone cracking for non-flesh enemies. Keep death acknowledgment short and below victory.",
+      "candidates": [
+        {
+          "assetId": "a38188b702a7e08c",
+          "path": "combat/sword_slice__existing_library_unattributed__a38188b702a7e08c.flac",
+          "start": 0,
+          "duration": 0.766259,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "cbf22510e53ef270",
+          "path": "combat/bone_cracking_18__membrans_bone_crackings_sound_pack_01__cbf22510e53ef270.flac",
+          "start": 0,
+          "duration": 0.480677,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "rest",
+      "title": "Campfire rest",
+      "rationale": "A short fire-lighting cue fits the Campfire action; restoration can use its own quiet heal accent if needed.",
+      "candidates": [
+        {
+          "assetId": "254ea560ab3602e6",
+          "path": "crafting/fire_lighting__existing_library_unattributed__254ea560ab3602e6.flac",
+          "start": 0,
+          "duration": 0.650159,
+          "note": "Full recording at original level or matched level."
+        }
+      ]
+    },
+    {
+      "id": "amb-fire",
+      "title": "Optional Campfire / forge ambience",
+      "rationale": "Low fire crackle could support Campfire and the forge. This is a 12-second excerpt, not a validated seamless loop.",
+      "candidates": [
+        {
+          "assetId": "94e204a918003f16",
+          "path": "crafting/firecracklinginawoodstove__uberduo_the_cabin_audio_playset__94e204a918003f16.flac",
+          "start": 0,
+          "duration": 12,
+          "note": "First 12 seconds of a longer recording; choose the final take after listening."
+        },
+        {
+          "assetId": "69b703317050a173",
+          "path": "crafting/burning_house_t4_fire_low_intensity_with_crackling_mkh8060__pole_position_the_burning_house_library__69b703317050a173.wav",
+          "start": 0,
+          "duration": 12,
+          "note": "First 12 seconds of a longer recording; choose the final take after listening."
+        }
+      ]
+    },
+    {
+      "id": "amb-forest",
+      "title": "Optional exploration / Homestead ambience",
+      "rationale": "Quiet forest birds and wind can support exploration. Check geographic character and competing calls before looping.",
+      "candidates": [
+        {
+          "assetId": "829d240311619c79",
+          "path": "creatures/forest_quiet_birds_and_wind_the_morning_140313_00__charlie_atanasyan_philippines_sound_librar__829d240311619c79.flac",
+          "start": 0,
+          "duration": 12,
+          "note": "First 12 seconds of a longer recording; choose the final take after listening."
+        },
+        {
+          "assetId": "6e97e0f699807c12",
+          "path": "world/flatwoods_pinecastle_nature_forest_whispering_pines_02__sound_spark_llc_forest_ambience_1_central__6e97e0f699807c12.flac",
+          "start": 0,
+          "duration": 12,
+          "note": "Opening 12-second excerpt. Unusually quiet source (\u221256.8 dB mean, \u221241.3 dB peak in this excerpt); the +12 dB preview boost cap leaves it quiet. Treat as a weak alternate and review gain/noise before use."
+        }
+      ]
+    },
+    {
+      "id": "amb-cave",
+      "title": "Optional Labyrinth / Mystery ambience",
+      "rationale": "Cave water and air can support the Labyrinth or Mystery. Keep a low level and avoid masking the music. Loop seams are unverified.",
+      "candidates": [
+        {
+          "assetId": "101eb7ae425f4110",
+          "path": "world/ambience_zinc_mine_running_water_distant_cave_underground__robin_barstow_the_zinc_mines__101eb7ae425f4110.flac",
+          "start": 0,
+          "duration": 12,
+          "note": "First 12 seconds of a longer recording; choose the final take after listening."
+        },
+        {
+          "assetId": "f2038732033b1b52",
+          "path": "world/atmo_eerie_cave_water_drips_emptyness_howling_interior_wind_oppressive_loop__articulated_sounds_ghosts_return__f2038732033b1b52.flac",
+          "start": 0,
+          "duration": 12,
+          "note": "First 12 seconds of a longer recording; choose the final take after listening."
+        }
+      ]
+    },
+    {
+      "id": "amb-alchemy",
+      "title": "Optional alchemy ambience",
+      "rationale": "Gentle bubbles could form an alchemy texture; this is not a designed room loop, and repeated transients may distract.",
+      "candidates": [
+        {
+          "assetId": "107f944c9f98c1d0",
+          "path": "world/unfathomed_hydrophone_submerged_largeplastic_water_foam_gurgling_gentle__eiravaein_works_unfathomed__107f944c9f98c1d0.flac",
+          "start": 0,
+          "duration": 2.941625,
+          "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "f8bce678d6aa0954",
+          "path": "world/057500_bubbling_creek_loop__the_sound_pack_tree_sonic_seaside__f8bce678d6aa0954.flac",
+          "start": 0,
+          "duration": 12,
+          "note": "First 12 seconds of a longer recording; choose the final take after listening."
+        }
+      ]
+    },
+    {
+      "id": "quiet",
+      "title": "Intentional quiet",
+      "rationale": "Existing visible feedback is sufficient for inspection and continuous adjustment. Reserve sound for committed actions rather than every render or pointer movement.",
+      "candidates": [],
+      "silenceReason": "Keep passive inspection, tooltips, continuous sliders, and automatic saves quiet; no sound candidate is needed."
+    }
+  ],
+  "actions": [
+    {
+      "id": "navigate",
+      "title": "Menus, Back, Continue and screen navigation",
+      "group": "Navigation",
+      "family": "click",
+      "screens": [
+        "menu",
+        "options",
+        "collection",
+        "talents",
+        "homestead",
+        "armory",
+        "game-mode-select",
+        "character-select",
+        "difficulty-select",
+        "draft-deck",
+        "game-over",
+        "run-victory"
+      ],
+      "trigger": "Accepted navigation by pointer or keyboard; do not replay on the current destination.",
+      "current": "uiSounds.navigate",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P2",
+      "evidence": ["src/components/ui/button.tsx", "src/features/alchemy/shared/ui/locked-menu-item.tsx"]
+    },
+    {
+      "id": "pause",
+      "title": "Open and dismiss game menu",
+      "group": "Navigation",
+      "family": "click",
+      "screens": ["battle"],
+      "trigger": "Open/close the game menu; preserve mute and background behavior.",
+      "current": "uiSounds.pause",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P2",
+      "evidence": ["src/App.tsx"]
+    },
+    {
+      "id": "inspect",
+      "title": "Inspect cards, gear, enemies, tooltips and help",
+      "group": "Navigation",
+      "family": "quiet",
+      "screens": ["collection", "armory", "battle", "options"],
+      "trigger": "Passive inspection, detail paging and help text.",
+      "current": null,
+      "currentState": "silent",
+      "note": "Visual focus and inspection suffice; avoid hover noise.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/shared/ui/cards/card-button.tsx"]
+    },
+    {
+      "id": "selection",
+      "title": "Select tabs, filters, sorting and pagination",
+      "group": "Navigation",
+      "family": "click",
+      "screens": ["collection", "armory", "talents", "homestead"],
+      "trigger": "A changed selection, including keyboard activation; one cue per meaningful change.",
+      "current": "uiSounds.selection",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P2",
+      "evidence": [
+        "src/features/alchemy/meta/screens/collection-screen.tsx",
+        "src/features/alchemy/meta/screens/armory-screen.tsx"
+      ]
+    },
+    {
+      "id": "settings-continuous",
+      "title": "Volume and continuous option adjustment",
+      "group": "Settings",
+      "family": "quiet",
+      "screens": ["options"],
+      "trigger": "Dragging a slider; do not play a cue at every intermediate value.",
+      "current": null,
+      "currentState": "silent",
+      "note": "",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/meta/screens/options/options-panels.tsx"]
+    },
+    {
+      "id": "toggle-on",
+      "title": "Enable an option / autoplay",
+      "group": "Settings",
+      "family": "toggle-on",
+      "screens": ["options", "battle"],
+      "trigger": "Accepted enable toggle.",
+      "current": "uiSounds.toggleOn",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/meta/screens/options/options-panels.tsx"]
+    },
+    {
+      "id": "toggle-off",
+      "title": "Disable an option / autoplay",
+      "group": "Settings",
+      "family": "toggle-off",
+      "screens": ["options", "battle"],
+      "trigger": "Accepted disable toggle.",
+      "current": "uiSounds.toggleOff",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/meta/screens/options/options-panels.tsx"]
+    },
+    {
+      "id": "error",
+      "title": "Rejected action or locked content",
+      "group": "Navigation",
+      "family": "error",
+      "screens": ["menu", "options", "game-mode-select", "character-select", "battle", "armory"],
+      "trigger": "An attempted action is rejected; show its reason.",
+      "current": "uiSounds.error",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P1",
+      "evidence": [
+        "src/features/alchemy/shared/ui/locked-menu-item.tsx",
+        "src/features/alchemy/run-loop/battle/battle-card-play.ts"
+      ]
+    },
+    {
+      "id": "screen-transition",
+      "title": "Screen transition accent",
+      "group": "Navigation",
+      "family": "transition",
+      "screens": ["menu"],
+      "trigger": "Committed major screen change; optional and lower priority.",
+      "current": "uiSounds.screenTransition",
+      "currentState": "registered-unused",
+      "note": "",
+      "priority": "P2",
+      "evidence": ["src/lib/audio/sound-registry.ts"]
+    },
+    {
+      "id": "new-run",
+      "title": "Confirm mode, hero and difficulty / start run",
+      "group": "Run setup",
+      "family": "progress",
+      "screens": ["game-mode-select", "character-select", "difficulty-select"],
+      "trigger": "Confirm setup and enter a new run; selection itself uses a quiet UI cue.",
+      "current": "uiSounds.newRun",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-setup/run/new-run-initialization.ts"]
+    },
+    {
+      "id": "draft-select",
+      "title": "Draft or deselect a starter card",
+      "group": "Run setup",
+      "family": "paper",
+      "screens": ["draft-deck"],
+      "trigger": "Accepted starter-draft selection or removal.",
+      "current": "uiSounds.draftSelect",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-setup/screens/draft-deck-screen.tsx"]
+    },
+    {
+      "id": "draft-complete",
+      "title": "Complete starter draft",
+      "group": "Run setup",
+      "family": "progress",
+      "screens": ["draft-deck"],
+      "trigger": "Confirm a valid complete draft.",
+      "current": "uiSounds.draftComplete",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-setup/run/new-run-initialization.ts"]
+    },
+    {
+      "id": "resume",
+      "title": "Resume saved run",
+      "group": "Run setup",
+      "family": "click",
+      "screens": ["menu"],
+      "trigger": "Return to the saved run; do not replay rewards, attacks or summons.",
+      "current": "uiSounds.resumeRun",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/shared/stores/run-resume-codec.ts"]
+    },
+    {
+      "id": "save",
+      "title": "Automatic save / successful hydration",
+      "group": "Settings",
+      "family": "quiet",
+      "screens": ["menu", "options"],
+      "trigger": "Automatic save and restore need no routine audible interruption.",
+      "current": null,
+      "currentState": "silent",
+      "note": "",
+      "priority": "P2",
+      "evidence": ["Docs/RUN_STATE.md"]
+    },
+    {
+      "id": "destructive-confirm",
+      "title": "Confirm abandon, reset or quit",
+      "group": "Settings",
+      "family": "error",
+      "screens": ["options", "menu", "battle"],
+      "trigger": "Only after the user confirms; sound reinforces the visible outcome and never delays saving.",
+      "current": "uiSounds.destructiveConfirm",
+      "currentState": "playing",
+      "note": "Compare a subdued negative cue; ordinary cancel uses navigation.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/shared/stores/run-lifecycle.ts"]
+    },
+    {
+      "id": "enemyHit",
+      "title": "Enemy takes an impact",
+      "group": "Battle feedback",
+      "family": "impact",
+      "screens": ["battle"],
+      "trigger": "Resolved outcome: Enemy takes an impact.",
+      "current": "battleEventSounds.enemyHit",
+      "currentState": "playing",
+      "note": "Group repeated outcomes; audio must not determine gameplay timing.",
+      "priority": "P1",
+      "evidence": [
+        "src/features/alchemy/run-loop/battle/controller-utils.ts",
+        "src/features/alchemy/run-loop/battle/end-turn-ui.ts",
+        "src/features/alchemy/run-loop/battle/battle-transfers.ts",
+        "src/lib/audio/sfx.ts"
+      ]
+    },
+    {
+      "id": "playerHit",
+      "title": "Hero takes an impact",
+      "group": "Battle feedback",
+      "family": "impact",
+      "screens": ["battle"],
+      "trigger": "Resolved outcome: Hero takes an impact.",
+      "current": "battleEventSounds.playerHit",
+      "currentState": "playing",
+      "note": "Group repeated outcomes; audio must not determine gameplay timing.",
+      "priority": "P1",
+      "evidence": [
+        "src/features/alchemy/run-loop/battle/controller-utils.ts",
+        "src/features/alchemy/run-loop/battle/end-turn-ui.ts",
+        "src/features/alchemy/run-loop/battle/battle-transfers.ts",
+        "src/lib/audio/sfx.ts"
+      ]
+    },
+    {
+      "id": "blockAbsorb",
+      "title": "Block absorbs damage",
+      "group": "Battle feedback",
+      "family": "parry",
+      "screens": ["battle"],
+      "trigger": "Resolved outcome: Block absorbs damage.",
+      "current": "battleEventSounds.blockAbsorb",
+      "currentState": "playing",
+      "note": "Group repeated outcomes; audio must not determine gameplay timing.",
+      "priority": "P1",
+      "evidence": [
+        "src/features/alchemy/run-loop/battle/controller-utils.ts",
+        "src/features/alchemy/run-loop/battle/end-turn-ui.ts",
+        "src/features/alchemy/run-loop/battle/battle-transfers.ts",
+        "src/lib/audio/sfx.ts"
+      ]
+    },
+    {
+      "id": "critHit",
+      "title": "Critical hit",
+      "group": "Battle feedback",
+      "family": "critical",
+      "screens": ["battle"],
+      "trigger": "Resolved outcome: Critical hit.",
+      "current": "battleEventSounds.critHit",
+      "currentState": "playing",
+      "note": "Registry entries marked unused are proposals for activation, not evidence that this cue currently plays.",
+      "priority": "P2",
+      "evidence": [
+        "src/features/alchemy/run-loop/battle/controller-utils.ts",
+        "src/features/alchemy/run-loop/battle/end-turn-ui.ts",
+        "src/features/alchemy/run-loop/battle/battle-transfers.ts",
+        "src/lib/audio/sfx.ts"
+      ]
+    },
+    {
+      "id": "stunProc",
+      "title": "Stunned",
+      "group": "Battle feedback",
+      "family": "heavy",
+      "screens": ["battle"],
+      "trigger": "Resolved outcome: Stunned.",
+      "current": "battleEventSounds.stunProc",
+      "currentState": "playing",
+      "note": "Group repeated outcomes; audio must not determine gameplay timing.",
+      "priority": "P2",
+      "evidence": [
+        "src/features/alchemy/run-loop/battle/controller-utils.ts",
+        "src/features/alchemy/run-loop/battle/end-turn-ui.ts",
+        "src/features/alchemy/run-loop/battle/battle-transfers.ts",
+        "src/lib/audio/sfx.ts"
+      ]
+    },
+    {
+      "id": "freezeProc",
+      "title": "Frozen",
+      "group": "Battle feedback",
+      "family": "ice",
+      "screens": ["battle"],
+      "trigger": "Resolved outcome: Frozen.",
+      "current": "battleEventSounds.freezeProc",
+      "currentState": "playing",
+      "note": "Group repeated outcomes; audio must not determine gameplay timing.",
+      "priority": "P2",
+      "evidence": [
+        "src/features/alchemy/run-loop/battle/controller-utils.ts",
+        "src/features/alchemy/run-loop/battle/end-turn-ui.ts",
+        "src/features/alchemy/run-loop/battle/battle-transfers.ts",
+        "src/lib/audio/sfx.ts"
+      ]
+    },
+    {
+      "id": "burnTick",
+      "title": "Burn damage over time",
+      "group": "Battle feedback",
+      "family": "fire",
+      "screens": ["battle"],
+      "trigger": "Resolved outcome: Burn damage over time.",
+      "current": "battleEventSounds.burnTick",
+      "currentState": "playing",
+      "note": "Registry entries marked unused are proposals for activation, not evidence that this cue currently plays.",
+      "priority": "P2",
+      "evidence": [
+        "src/features/alchemy/run-loop/battle/controller-utils.ts",
+        "src/features/alchemy/run-loop/battle/end-turn-ui.ts",
+        "src/features/alchemy/run-loop/battle/battle-transfers.ts",
+        "src/lib/audio/sfx.ts"
+      ]
+    },
+    {
+      "id": "poisonTick",
+      "title": "Poison damage over time",
+      "group": "Battle feedback",
+      "family": "poison",
+      "screens": ["battle"],
+      "trigger": "Resolved outcome: Poison damage over time.",
+      "current": "battleEventSounds.poisonTick",
+      "currentState": "registered-unused",
+      "note": "Registry entries marked unused are proposals for activation, not evidence that this cue currently plays.",
+      "priority": "P2",
+      "evidence": [
+        "src/features/alchemy/run-loop/battle/controller-utils.ts",
+        "src/features/alchemy/run-loop/battle/end-turn-ui.ts",
+        "src/features/alchemy/run-loop/battle/battle-transfers.ts",
+        "src/lib/audio/sfx.ts"
+      ]
+    },
+    {
+      "id": "bleedTick",
+      "title": "Bleed damage over time",
+      "group": "Battle feedback",
+      "family": "bleed",
+      "screens": ["battle"],
+      "trigger": "Resolved outcome: Bleed damage over time.",
+      "current": "battleEventSounds.bleedTick",
+      "currentState": "playing",
+      "note": "Registry entries marked unused are proposals for activation, not evidence that this cue currently plays.",
+      "priority": "P2",
+      "evidence": [
+        "src/features/alchemy/run-loop/battle/controller-utils.ts",
+        "src/features/alchemy/run-loop/battle/end-turn-ui.ts",
+        "src/features/alchemy/run-loop/battle/battle-transfers.ts",
+        "src/lib/audio/sfx.ts"
+      ]
+    },
+    {
+      "id": "playerHeal",
+      "title": "Hero restores Health",
+      "group": "Battle feedback",
+      "family": "heal",
+      "screens": ["battle"],
+      "trigger": "Resolved outcome: Hero restores Health.",
+      "current": "battleEventSounds.playerHeal",
+      "currentState": "playing",
+      "note": "Group repeated outcomes; audio must not determine gameplay timing.",
+      "priority": "P2",
+      "evidence": [
+        "src/features/alchemy/run-loop/battle/controller-utils.ts",
+        "src/features/alchemy/run-loop/battle/end-turn-ui.ts",
+        "src/features/alchemy/run-loop/battle/battle-transfers.ts",
+        "src/lib/audio/sfx.ts"
+      ]
+    },
+    {
+      "id": "consumeCard",
+      "title": "Consume a card",
+      "group": "Battle feedback",
+      "family": "shuffle",
+      "screens": ["battle"],
+      "trigger": "Resolved outcome: Consume a card.",
+      "current": "battleEventSounds.consumeCard",
+      "currentState": "registered-unused",
+      "note": "Registry entries marked unused are proposals for activation, not evidence that this cue currently plays.",
+      "priority": "P2",
+      "evidence": [
+        "src/features/alchemy/run-loop/battle/controller-utils.ts",
+        "src/features/alchemy/run-loop/battle/end-turn-ui.ts",
+        "src/features/alchemy/run-loop/battle/battle-transfers.ts",
+        "src/lib/audio/sfx.ts"
+      ]
+    },
+    {
+      "id": "drawCards",
+      "title": "Draw batch acknowledgment",
+      "group": "Battle feedback",
+      "family": "paper",
+      "screens": ["battle"],
+      "trigger": "Resolved outcome: Draw batch acknowledgment.",
+      "current": "battleEventSounds.drawCards",
+      "currentState": "registered-unused",
+      "note": "Registry entries marked unused are proposals for activation, not evidence that this cue currently plays.",
+      "priority": "P2",
+      "evidence": [
+        "src/features/alchemy/run-loop/battle/controller-utils.ts",
+        "src/features/alchemy/run-loop/battle/end-turn-ui.ts",
+        "src/features/alchemy/run-loop/battle/battle-transfers.ts",
+        "src/lib/audio/sfx.ts"
+      ]
+    },
+    {
+      "id": "drawTransfer",
+      "title": "Card enters hand",
+      "group": "Battle feedback",
+      "family": "paper",
+      "screens": ["battle"],
+      "trigger": "Resolved outcome: Card enters hand.",
+      "current": "battleEventSounds.drawTransfer",
+      "currentState": "playing",
+      "note": "Group repeated outcomes; audio must not determine gameplay timing.",
+      "priority": "P1",
+      "evidence": [
+        "src/features/alchemy/run-loop/battle/controller-utils.ts",
+        "src/features/alchemy/run-loop/battle/end-turn-ui.ts",
+        "src/features/alchemy/run-loop/battle/battle-transfers.ts",
+        "src/lib/audio/sfx.ts"
+      ]
+    },
+    {
+      "id": "endTurn",
+      "title": "End Turn acknowledgment",
+      "group": "Battle feedback",
+      "family": "toggle-off",
+      "screens": ["battle"],
+      "trigger": "Resolved outcome: End Turn acknowledgment.",
+      "current": "battleEventSounds.endTurn",
+      "currentState": "registered-unused",
+      "note": "Registry entries marked unused are proposals for activation, not evidence that this cue currently plays.",
+      "priority": "P2",
+      "evidence": [
+        "src/features/alchemy/run-loop/battle/controller-utils.ts",
+        "src/features/alchemy/run-loop/battle/end-turn-ui.ts",
+        "src/features/alchemy/run-loop/battle/battle-transfers.ts",
+        "src/lib/audio/sfx.ts"
+      ]
+    },
+    {
+      "id": "wishAppear",
+      "title": "Wish choices appear",
+      "group": "Battle feedback",
+      "family": "wish",
+      "screens": ["battle"],
+      "trigger": "Resolved outcome: Wish choices appear.",
+      "current": "battleEventSounds.wishAppear",
+      "currentState": "registered-unused",
+      "note": "Registry entries marked unused are proposals for activation, not evidence that this cue currently plays.",
+      "priority": "P2",
+      "evidence": [
+        "src/features/alchemy/run-loop/battle/controller-utils.ts",
+        "src/features/alchemy/run-loop/battle/end-turn-ui.ts",
+        "src/features/alchemy/run-loop/battle/battle-transfers.ts",
+        "src/lib/audio/sfx.ts"
+      ]
+    },
+    {
+      "id": "gainGold",
+      "title": "Gold is gained",
+      "group": "Battle feedback",
+      "family": "coins",
+      "screens": ["battle"],
+      "trigger": "Resolved outcome: Gold is gained.",
+      "current": "battleEventSounds.gainGold",
+      "currentState": "playing",
+      "note": "Group repeated outcomes; audio must not determine gameplay timing.",
+      "priority": "P2",
+      "evidence": [
+        "src/features/alchemy/run-loop/battle/controller-utils.ts",
+        "src/features/alchemy/run-loop/battle/end-turn-ui.ts",
+        "src/features/alchemy/run-loop/battle/battle-transfers.ts",
+        "src/lib/audio/sfx.ts"
+      ]
+    },
+    {
+      "id": "deathsDoor",
+      "title": "Death\u2019s Door / boss-route warning",
+      "group": "Battle feedback",
+      "family": "danger",
+      "screens": ["battle", "destination"],
+      "trigger": "Resolved outcome: Death\u2019s Door / boss-route warning.",
+      "current": "battleEventSounds.deathsDoor",
+      "currentState": "playing",
+      "note": "Group repeated outcomes; audio must not determine gameplay timing.",
+      "priority": "P2",
+      "evidence": [
+        "src/features/alchemy/run-loop/battle/controller-utils.ts",
+        "src/features/alchemy/run-loop/battle/end-turn-ui.ts",
+        "src/features/alchemy/run-loop/battle/battle-transfers.ts",
+        "src/lib/audio/sfx.ts"
+      ]
+    },
+    {
+      "id": "sliceDeath",
+      "title": "Enemy dies",
+      "group": "Battle feedback",
+      "family": "death",
+      "screens": ["battle"],
+      "trigger": "Resolved outcome: Enemy dies.",
+      "current": "battleEventSounds.sliceDeath",
+      "currentState": "playing",
+      "note": "Group repeated outcomes; audio must not determine gameplay timing.",
+      "priority": "P2",
+      "evidence": [
+        "src/features/alchemy/run-loop/battle/controller-utils.ts",
+        "src/features/alchemy/run-loop/battle/end-turn-ui.ts",
+        "src/features/alchemy/run-loop/battle/battle-transfers.ts",
+        "src/lib/audio/sfx.ts"
+      ]
+    },
+    {
+      "id": "dodge",
+      "title": "Dodge avoids an attack",
+      "group": "Battle feedback",
+      "family": "transition",
+      "screens": ["battle"],
+      "trigger": "Resolved event: Dodge avoids an attack.",
+      "current": "battleEventSounds.dodge",
+      "currentState": "playing",
+      "note": "New semantic cue proposal. Avoid duplicating a simultaneous cast, hit or heal; Leech can reuse the existing heal acknowledgment.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/battle/controller-utils.ts", "Docs/GAME_RULES.md"]
+    },
+    {
+      "id": "armor",
+      "title": "Armor gained or stripped",
+      "group": "Battle feedback",
+      "family": "parry",
+      "screens": ["battle"],
+      "trigger": "Resolved event: Armor gained or stripped.",
+      "current": "battleEventSounds.armorChange",
+      "currentState": "playing",
+      "note": "New semantic cue proposal. Avoid duplicating a simultaneous cast, hit or heal; Leech can reuse the existing heal acknowledgment.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/battle/controller-utils.ts", "Docs/GAME_RULES.md"]
+    },
+    {
+      "id": "forge-status",
+      "title": "Forge gained",
+      "group": "Battle feedback",
+      "family": "forge",
+      "screens": ["battle"],
+      "trigger": "Resolved event: Forge gained.",
+      "current": "battleEventSounds.forgeGain",
+      "currentState": "playing",
+      "note": "New semantic cue proposal. Avoid duplicating a simultaneous cast, hit or heal; Leech can reuse the existing heal acknowledgment.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/battle/controller-utils.ts", "Docs/GAME_RULES.md"]
+    },
+    {
+      "id": "thorns",
+      "title": "Thorns retaliation",
+      "group": "Battle feedback",
+      "family": "nature",
+      "screens": ["battle"],
+      "trigger": "Resolved event: Thorns retaliation.",
+      "current": null,
+      "currentState": "silent",
+      "note": "New semantic cue proposal. Avoid duplicating a simultaneous cast, hit or heal; Leech can reuse the existing heal acknowledgment.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/battle/controller-utils.ts", "Docs/GAME_RULES.md"]
+    },
+    {
+      "id": "leech",
+      "title": "Leech restoration",
+      "group": "Battle feedback",
+      "family": "quiet",
+      "screens": ["battle"],
+      "trigger": "Resolved event: Leech restoration.",
+      "current": null,
+      "currentState": "silent",
+      "note": "New semantic cue proposal. Avoid duplicating a simultaneous cast, hit or heal; Leech can reuse the existing heal acknowledgment.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/battle/controller-utils.ts", "Docs/GAME_RULES.md"]
+    },
+    {
+      "id": "wildfire",
+      "title": "Wildfire triggers",
+      "group": "Battle feedback",
+      "family": "fire",
+      "screens": ["battle"],
+      "trigger": "Resolved event: Wildfire triggers.",
+      "current": "battleEventSounds.wildfire",
+      "currentState": "playing",
+      "note": "New semantic cue proposal. Avoid duplicating a simultaneous cast, hit or heal; Leech can reuse the existing heal acknowledgment.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/battle/controller-utils.ts", "Docs/GAME_RULES.md"]
+    },
+    {
+      "id": "shatter",
+      "title": "Shatter triggers",
+      "group": "Battle feedback",
+      "family": "critical",
+      "screens": ["battle"],
+      "trigger": "Resolved event: Shatter triggers.",
+      "current": "battleEventSounds.shatter",
+      "currentState": "playing",
+      "note": "New semantic cue proposal. Avoid duplicating a simultaneous cast, hit or heal; Leech can reuse the existing heal acknowledgment.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/battle/controller-utils.ts", "Docs/GAME_RULES.md"]
+    },
+    {
+      "id": "mana-change",
+      "title": "Mana restoration or loss",
+      "group": "Battle feedback",
+      "family": "mana",
+      "screens": ["battle"],
+      "trigger": "Resolved event: Mana restoration or loss.",
+      "current": null,
+      "currentState": "silent",
+      "note": "New semantic cue proposal. Avoid duplicating a simultaneous cast, hit or heal; Leech can reuse the existing heal acknowledgment.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/battle/controller-utils.ts", "Docs/GAME_RULES.md"]
+    },
+    {
+      "id": "status-purge",
+      "title": "Purge / remove a harmful status",
+      "group": "Battle feedback",
+      "family": "heal",
+      "screens": ["battle"],
+      "trigger": "Resolved event: Purge / remove a harmful status.",
+      "current": null,
+      "currentState": "silent",
+      "note": "New semantic cue proposal. Avoid duplicating a simultaneous cast, hit or heal; Leech can reuse the existing heal acknowledgment.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/battle/controller-utils.ts", "Docs/GAME_RULES.md"]
+    },
+    {
+      "id": "haste",
+      "title": "Haste extra turn",
+      "group": "Battle feedback",
+      "family": "transition",
+      "screens": ["battle"],
+      "trigger": "Resolved event: Haste extra turn.",
+      "current": "battleEventSounds.haste",
+      "currentState": "playing",
+      "note": "New semantic cue proposal. Avoid duplicating a simultaneous cast, hit or heal; Leech can reuse the existing heal acknowledgment.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/battle/controller-utils.ts", "Docs/GAME_RULES.md"]
+    },
+    {
+      "id": "no-effect",
+      "title": "Accepted action has no effect",
+      "group": "Battle feedback",
+      "family": "quiet",
+      "screens": ["battle"],
+      "trigger": "Resolved event: Accepted action has no effect.",
+      "current": null,
+      "currentState": "silent",
+      "note": "New semantic cue proposal. Avoid duplicating a simultaneous cast, hit or heal; Leech can reuse the existing heal acknowledgment.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/battle/controller-utils.ts", "Docs/GAME_RULES.md"]
+    },
+    {
+      "id": "gearMove",
+      "title": "Move or equip Gear",
+      "group": "Navigation",
+      "family": "equip",
+      "screens": ["armory"],
+      "trigger": "Accepted action: Move or equip Gear.",
+      "current": "uiSounds.gearMove",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P2",
+      "evidence": [
+        "src/lib/audio/sound-registry.ts",
+        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
+      ]
+    },
+    {
+      "id": "cardHover",
+      "title": "Card hover / focus",
+      "group": "Navigation",
+      "family": "quiet",
+      "screens": ["battle", "collection"],
+      "trigger": "Accepted action: Card hover / focus.",
+      "current": "uiSounds.cardHover",
+      "currentState": "registered-unused",
+      "note": "",
+      "priority": "P2",
+      "evidence": [
+        "src/lib/audio/sound-registry.ts",
+        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
+      ]
+    },
+    {
+      "id": "cardDrag",
+      "title": "Card drag begins",
+      "group": "Navigation",
+      "family": "paper",
+      "screens": ["battle"],
+      "trigger": "Accepted action: Card drag begins.",
+      "current": "uiSounds.cardDrag",
+      "currentState": "registered-unused",
+      "note": "",
+      "priority": "P2",
+      "evidence": [
+        "src/lib/audio/sound-registry.ts",
+        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
+      ]
+    },
+    {
+      "id": "shopBuy",
+      "title": "Successful paid purchase",
+      "group": "Services",
+      "family": "coins",
+      "screens": ["shop", "alchemist", "trinket-shop", "equipment-shop"],
+      "trigger": "Accepted action: Successful paid purchase.",
+      "current": "uiSounds.shopBuy",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P1",
+      "evidence": [
+        "src/lib/audio/sound-registry.ts",
+        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
+      ]
+    },
+    {
+      "id": "shopRefresh",
+      "title": "Successful shop refresh",
+      "group": "Services",
+      "family": "shuffle",
+      "screens": ["shop", "alchemist", "trinket-shop", "equipment-shop"],
+      "trigger": "Accepted action: Successful shop refresh.",
+      "current": "uiSounds.shopRefresh",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P2",
+      "evidence": [
+        "src/lib/audio/sound-registry.ts",
+        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
+      ]
+    },
+    {
+      "id": "shopRemove",
+      "title": "Successful Card Shop removal",
+      "group": "Services",
+      "family": "shuffle",
+      "screens": ["shop"],
+      "trigger": "Accepted action: Successful Card Shop removal.",
+      "current": "uiSounds.shopRemove",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P2",
+      "evidence": [
+        "src/lib/audio/sound-registry.ts",
+        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
+      ]
+    },
+    {
+      "id": "campfireRest",
+      "title": "Rest at Campfire",
+      "group": "Services",
+      "family": "rest",
+      "screens": ["campfire"],
+      "trigger": "Accepted action: Rest at Campfire.",
+      "current": "uiSounds.campfireRest",
+      "currentState": "registered-unused",
+      "note": "",
+      "priority": "P2",
+      "evidence": [
+        "src/lib/audio/sound-registry.ts",
+        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
+      ]
+    },
+    {
+      "id": "alchemistMix",
+      "title": "Mix or strengthen a Potion",
+      "group": "Services",
+      "family": "brew",
+      "screens": ["alchemist"],
+      "trigger": "Accepted action: Mix or strengthen a Potion.",
+      "current": "uiSounds.alchemistMix",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P1",
+      "evidence": [
+        "src/lib/audio/sound-registry.ts",
+        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
+      ]
+    },
+    {
+      "id": "talentUnlock",
+      "title": "Talent unlock and shared progression cue",
+      "group": "Progression",
+      "family": "progress",
+      "screens": ["talents", "homestead", "rewards", "armory", "mystery"],
+      "trigger": "Accepted action: Talent unlock and shared progression cue.",
+      "current": "uiSounds.talentUnlock",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P2",
+      "evidence": [
+        "src/lib/audio/sound-registry.ts",
+        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
+      ]
+    },
+    {
+      "id": "collectionPage",
+      "title": "Collection page turn",
+      "group": "Navigation",
+      "family": "page",
+      "screens": ["collection"],
+      "trigger": "Accepted action: Collection page turn.",
+      "current": "uiSounds.collectionPage",
+      "currentState": "registered-unused",
+      "note": "",
+      "priority": "P2",
+      "evidence": [
+        "src/lib/audio/sound-registry.ts",
+        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
+      ]
+    },
+    {
+      "id": "musicBoxMystery",
+      "title": "Mystery entry or successful Corruption",
+      "group": "Navigation",
+      "family": "wish",
+      "screens": ["mystery", "corruption"],
+      "trigger": "Accepted action: Mystery entry or successful Corruption.",
+      "current": "uiSounds.musicBoxMystery",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P2",
+      "evidence": [
+        "src/lib/audio/sound-registry.ts",
+        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
+      ]
+    },
+    {
+      "id": "packOpen",
+      "title": "Open a pack",
+      "group": "Progression",
+      "family": "shuffle",
+      "screens": ["rewards"],
+      "trigger": "Accepted action: Open a pack.",
+      "current": "uiSounds.packOpen",
+      "currentState": "registered-unused",
+      "note": "",
+      "priority": "P2",
+      "evidence": [
+        "src/lib/audio/sound-registry.ts",
+        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
+      ]
+    },
+    {
+      "id": "salvage",
+      "title": "Successful Gear salvage",
+      "group": "Progression",
+      "family": "salvage",
+      "screens": ["armory"],
+      "trigger": "Accepted action: Successful Gear salvage.",
+      "current": "uiSounds.salvage",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P1",
+      "evidence": [
+        "src/lib/audio/sound-registry.ts",
+        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
+      ]
+    },
+    {
+      "id": "shop-free",
+      "title": "Free purchase or free service success",
+      "group": "Services",
+      "family": "coins",
+      "screens": ["shop", "alchemist", "trinket-shop", "equipment-shop"],
+      "trigger": "Committed result or meaningful selection: Free purchase or free service success.",
+      "current": null,
+      "currentState": "silent",
+      "note": "Use a success cue only after commit; an existing coin, shared progression, or card cue may already acknowledge a related outcome. Avoid stacking duplicates.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/shop/shop-transactions.ts"]
+    },
+    {
+      "id": "shop-select",
+      "title": "Inspect/select a shop offering or service ingredient",
+      "group": "Services",
+      "family": "click",
+      "screens": ["shop", "alchemist", "trinket-shop", "equipment-shop"],
+      "trigger": "Committed result or meaningful selection: Inspect/select a shop offering or service ingredient.",
+      "current": "uiSounds.shopSelect",
+      "currentState": "playing",
+      "note": "Use a success cue only after commit; an existing coin, shared progression, or card cue may already acknowledge a related outcome. Avoid stacking duplicates.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/shop/ui/purchasable-shop-item.tsx"]
+    },
+    {
+      "id": "camp-brew",
+      "title": "Brew a Potion at Campfire",
+      "group": "Services",
+      "family": "brew",
+      "screens": ["campfire"],
+      "trigger": "Committed result or meaningful selection: Brew a Potion at Campfire.",
+      "current": "uiSounds.campBrew",
+      "currentState": "playing",
+      "note": "Use a success cue only after commit; an existing coin, shared progression, or card cue may already acknowledge a related outcome. Avoid stacking duplicates.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/screens/campfire-screen.tsx"]
+    },
+    {
+      "id": "transmute-select",
+      "title": "Select surrendered and replacement cards",
+      "group": "Services",
+      "family": "paper",
+      "screens": ["transmutation"],
+      "trigger": "Committed result or meaningful selection: Select surrendered and replacement cards.",
+      "current": "uiSounds.transmuteSelect",
+      "currentState": "playing",
+      "note": "Use a success cue only after commit; an existing coin, shared progression, or card cue may already acknowledge a related outcome. Avoid stacking duplicates.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/screens/transmutation-screen.tsx"]
+    },
+    {
+      "id": "transmute",
+      "title": "Confirm Transmutation",
+      "group": "Services",
+      "family": "wish",
+      "screens": ["transmutation"],
+      "trigger": "Committed result or meaningful selection: Confirm Transmutation.",
+      "current": null,
+      "currentState": "silent",
+      "note": "Use a success cue only after commit; an existing coin, shared progression, or card cue may already acknowledge a related outcome. Avoid stacking duplicates.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/screens/transmutation-screen.tsx"]
+    },
+    {
+      "id": "corrupt-select",
+      "title": "Select a card for Corruption",
+      "group": "Services",
+      "family": "paper",
+      "screens": ["corruption"],
+      "trigger": "Committed result or meaningful selection: Select a card for Corruption.",
+      "current": "uiSounds.corruptSelect",
+      "currentState": "playing",
+      "note": "Use a success cue only after commit; an existing coin, shared progression, or card cue may already acknowledge a related outcome. Avoid stacking duplicates.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/screens/corruption-screen.tsx"]
+    },
+    {
+      "id": "mystery-choice",
+      "title": "Commit a Mystery choice",
+      "group": "Services",
+      "family": "wish",
+      "screens": ["mystery"],
+      "trigger": "Committed result or meaningful selection: Commit a Mystery choice.",
+      "current": null,
+      "currentState": "silent",
+      "note": "Use a success cue only after commit; an existing coin, shared progression, or card cue may already acknowledge a related outcome. Avoid stacking duplicates.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/navigation/mystery-event-navigation.ts"]
+    },
+    {
+      "id": "map-node",
+      "title": "Select and enter a destination / Labyrinth room",
+      "group": "Exploration",
+      "family": "click",
+      "screens": ["destination", "labyrinth-map"],
+      "trigger": "Committed result or meaningful selection: Select and enter a destination / Labyrinth room.",
+      "current": "uiSounds.mapNode",
+      "currentState": "playing",
+      "note": "Use a success cue only after commit; an existing coin, shared progression, or card cue may already acknowledge a related outcome. Avoid stacking duplicates.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/screens/destination-screen.tsx"]
+    },
+    {
+      "id": "map-reveal",
+      "title": "New Labyrinth floor or room reveal",
+      "group": "Exploration",
+      "family": "page",
+      "screens": ["labyrinth-map"],
+      "trigger": "Committed result or meaningful selection: New Labyrinth floor or room reveal.",
+      "current": null,
+      "currentState": "silent",
+      "note": "Use a success cue only after commit; an existing coin, shared progression, or card cue may already acknowledge a related outcome. Avoid stacking duplicates.",
+      "priority": "P2",
+      "evidence": ["Docs/UI_LABYRINTH.md"]
+    },
+    {
+      "id": "reward-select",
+      "title": "Inspect/select a reward",
+      "group": "Services",
+      "family": "paper",
+      "screens": ["rewards"],
+      "trigger": "Committed result or meaningful selection: Inspect/select a reward.",
+      "current": null,
+      "currentState": "silent",
+      "note": "Use a success cue only after commit; an existing coin, shared progression, or card cue may already acknowledge a related outcome. Avoid stacking duplicates.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/screens/rewards-screen.tsx"]
+    },
+    {
+      "id": "materials",
+      "title": "Materials are awarded",
+      "group": "Progression",
+      "family": "equip",
+      "screens": ["rewards", "mystery", "game-over", "run-victory"],
+      "trigger": "Committed result or meaningful selection: Materials are awarded.",
+      "current": null,
+      "currentState": "silent",
+      "note": "Use a success cue only after commit; an existing coin, shared progression, or card cue may already acknowledge a related outcome. Avoid stacking duplicates.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/run/run-materials.ts"]
+    },
+    {
+      "id": "boon",
+      "title": "Gain a Boon or Trinket",
+      "group": "Progression",
+      "family": "holy",
+      "screens": ["rewards", "mystery", "trinket-shop"],
+      "trigger": "Committed result or meaningful selection: Gain a Boon or Trinket.",
+      "current": null,
+      "currentState": "silent",
+      "note": "Use a success cue only after commit; an existing coin, shared progression, or card cue may already acknowledge a related outcome. Avoid stacking duplicates.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/screens/mystery/mystery-screen.tsx"]
+    },
+    {
+      "id": "wildwood",
+      "title": "Remove a card at Wildwood",
+      "group": "Services",
+      "family": "shuffle",
+      "screens": ["wildwood-removal"],
+      "trigger": "Committed result or meaningful selection: Remove a card at Wildwood.",
+      "current": null,
+      "currentState": "silent",
+      "note": "Use a success cue only after commit; an existing coin, shared progression, or card cue may already acknowledge a related outcome. Avoid stacking duplicates.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/screens/wildwood-removal-screen.tsx"]
+    },
+    {
+      "id": "craft-select",
+      "title": "Select crafting recipe, material and quality",
+      "group": "Progression",
+      "family": "click",
+      "screens": ["armory"],
+      "trigger": "Committed result or meaningful selection: Select crafting recipe, material and quality.",
+      "current": null,
+      "currentState": "silent",
+      "note": "Use a success cue only after commit; an existing coin, shared progression, or card cue may already acknowledge a related outcome. Avoid stacking duplicates.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/meta/screens/armory/parts/crafting-strip.tsx"]
+    },
+    {
+      "id": "loadout",
+      "title": "Switch or move a loadout / unequip",
+      "group": "Progression",
+      "family": "equip",
+      "screens": ["armory"],
+      "trigger": "Committed result or meaningful selection: Switch or move a loadout / unequip.",
+      "current": null,
+      "currentState": "silent",
+      "note": "Use a success cue only after commit; an existing coin, shared progression, or card cue may already acknowledge a related outcome. Avoid stacking duplicates.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/meta/screens/armory-screen.tsx"]
+    },
+    {
+      "id": "bond",
+      "title": "Increase companion Bond",
+      "group": "Progression",
+      "family": "progress",
+      "screens": ["homestead"],
+      "trigger": "Committed result or meaningful selection: Increase companion Bond.",
+      "current": "uiSounds.bond",
+      "currentState": "playing",
+      "note": "Use a success cue only after commit; an existing coin, shared progression, or card cue may already acknowledge a related outcome. Avoid stacking duplicates.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/meta/screens/homestead-screen.tsx"]
+    },
+    {
+      "id": "unlock-content",
+      "title": "New hero, mode, difficulty or Collection discovery",
+      "group": "Progression",
+      "family": "progress",
+      "screens": ["collection", "game-mode-select", "character-select", "difficulty-select"],
+      "trigger": "Committed result or meaningful selection: New hero, mode, difficulty or Collection discovery.",
+      "current": null,
+      "currentState": "silent",
+      "note": "Use a success cue only after commit; an existing coin, shared progression, or card cue may already acknowledge a related outcome. Avoid stacking duplicates.",
+      "priority": "P2",
+      "evidence": ["src/lib/game-data/character-unlocks.ts"]
+    },
+    {
+      "id": "craft",
+      "title": "Craft Gear successfully",
+      "group": "Progression",
+      "family": "forge",
+      "screens": ["armory"],
+      "trigger": "Successful Gear crafting commit.",
+      "current": "uiSounds.craft",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P1",
+      "evidence": ["src/features/alchemy/meta/screens/armory/armory-screen-actions.ts"]
+    },
+    {
+      "id": "reward-claim",
+      "title": "Accept a reward",
+      "group": "Progression",
+      "family": "progress",
+      "screens": ["rewards"],
+      "trigger": "Committed reward selection.",
+      "current": "uiSounds.talentUnlock",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/run/run-flow-rewards.ts"]
+    },
+    {
+      "id": "homestead-upgrade",
+      "title": "Upgrade Homestead",
+      "group": "Progression",
+      "family": "forge",
+      "screens": ["homestead"],
+      "trigger": "Committed Homestead upgrade.",
+      "current": "uiSounds.talentUnlock",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/meta/screens/homestead-screen.tsx"]
+    },
+    {
+      "id": "mystery-benefit",
+      "title": "Positive Mystery result",
+      "group": "Services",
+      "family": "progress",
+      "screens": ["mystery"],
+      "trigger": "Committed positive Mystery reward.",
+      "current": "uiSounds.talentUnlock",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/screens/mystery/mystery-screen.tsx"]
+    },
+    {
+      "id": "victory",
+      "title": "Battle victory",
+      "group": "Outcomes",
+      "family": "victory",
+      "screens": ["battle", "rewards"],
+      "trigger": "Resolved battle victory, including Gold awarded.",
+      "current": "stingerSounds.victory",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P1",
+      "evidence": ["src/features/alchemy/run-loop/run/run-flow-victory.ts"]
+    },
+    {
+      "id": "run-victory",
+      "title": "Complete a run",
+      "group": "Outcomes",
+      "family": "victory",
+      "screens": ["run-victory"],
+      "trigger": "Final run completion; avoid repeating the battle victory stinger.",
+      "current": "stingerSounds.runVictory",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/run/run-flow-victory.ts"]
+    },
+    {
+      "id": "defeat",
+      "title": "Run defeat",
+      "group": "Outcomes",
+      "family": "defeat",
+      "screens": ["game-over"],
+      "trigger": "Resolved defeat transition.",
+      "current": "stingerSounds.defeat",
+      "currentState": "playing",
+      "note": "",
+      "priority": "P1",
+      "evidence": ["src/features/alchemy/shared/stores/run-lifecycle.ts"]
+    },
+    {
+      "id": "amb-camp",
+      "title": "Campfire ambience",
+      "group": "Optional ambience",
+      "family": "amb-fire",
+      "screens": ["campfire"],
+      "trigger": "Optional screen ambience below music and SFX; stop on departure.",
+      "current": "screenAmbienceSounds.campfire",
+      "currentState": "playing",
+      "note": "Loop seams and subjective fit are unverified. No shop-room take sufficiently free of modern detail was established; silence is a valid choice.",
+      "priority": "P3",
+      "evidence": ["src/lib/routing/screens.ts"]
+    },
+    {
+      "id": "amb-forge",
+      "title": "Forge / Armory ambience",
+      "group": "Optional ambience",
+      "family": "amb-fire",
+      "screens": ["armory"],
+      "trigger": "Optional screen ambience below music and SFX; stop on departure.",
+      "current": null,
+      "currentState": "silent",
+      "note": "Loop seams and subjective fit are unverified. No shop-room take sufficiently free of modern detail was established; silence is a valid choice.",
+      "priority": "P3",
+      "evidence": ["src/lib/routing/screens.ts"]
+    },
+    {
+      "id": "amb-forest",
+      "title": "Exploration / Homestead ambience",
+      "group": "Optional ambience",
+      "family": "amb-forest",
+      "screens": ["destination", "homestead"],
+      "trigger": "Optional screen ambience below music and SFX; stop on departure.",
+      "current": null,
+      "currentState": "silent",
+      "note": "Loop seams and subjective fit are unverified. No shop-room take sufficiently free of modern detail was established; silence is a valid choice.",
+      "priority": "P3",
+      "evidence": ["src/lib/routing/screens.ts"]
+    },
+    {
+      "id": "amb-labyrinth",
+      "title": "Labyrinth / Mystery ambience",
+      "group": "Optional ambience",
+      "family": "amb-cave",
+      "screens": ["labyrinth-map", "mystery"],
+      "trigger": "Optional screen ambience below music and SFX; stop on departure.",
+      "current": "screenAmbienceSounds.labyrinth-map",
+      "currentState": "playing",
+      "note": "Loop seams and subjective fit are unverified. No shop-room take sufficiently free of modern detail was established; silence is a valid choice.",
+      "priority": "P3",
+      "evidence": ["src/lib/routing/screens.ts"]
+    },
+    {
+      "id": "amb-alchemy",
+      "title": "Alchemist / Transmutation ambience",
+      "group": "Optional ambience",
+      "family": "amb-alchemy",
+      "screens": ["alchemist", "transmutation"],
+      "trigger": "Optional screen ambience below music and SFX; stop on departure.",
+      "current": null,
+      "currentState": "silent",
+      "note": "Loop seams and subjective fit are unverified. No shop-room take sufficiently free of modern detail was established; silence is a valid choice.",
+      "priority": "P3",
+      "evidence": ["src/lib/routing/screens.ts"]
+    },
+    {
+      "id": "amb-shop",
+      "title": "Optional shop ambience",
+      "group": "Optional ambience",
+      "family": "quiet",
+      "screens": ["shop", "trinket-shop", "equipment-shop"],
+      "trigger": "Optional screen ambience below music and SFX; stop on departure.",
+      "current": null,
+      "currentState": "silent",
+      "note": "Loop seams and subjective fit are unverified. No shop-room take sufficiently free of modern detail was established; silence is a valid choice.",
+      "priority": "P3",
+      "evidence": ["src/lib/routing/screens.ts"]
+    }
+  ],
+  "assignments": {
+    "cards": {
+      "slash": "blade",
+      "stab": "blade",
+      "serrated-edge": "blade",
+      "sunder": "blade",
+      "cleanse": "heal",
+      "heal": "heal",
+      "smelling-salts": "heal",
+      "haste": "transition",
+      "shadowstep": "transition",
+      "poison-dagger": "poison",
+      "venom-fangs": "poison",
+      "caustic-jab": "poison",
+      "fireball": "fire",
+      "burning-blade": "fire",
+      "cauterize": "fire",
+      "sunburst": "fire",
+      "kindling": "fire",
+      "phoenix-feather": "fire",
+      "cinderbloom": "fire",
+      "combustion": "fire",
+      "molten-bulwark": "fire",
+      "fangs": "bleed",
+      "hemorrhage": "bleed",
+      "rend": "bleed",
+      "predators-focus": "bleed",
+      "frostbolt": "ice",
+      "ray-of-frost": "ice",
+      "stargaze": "ice",
+      "blizzard": "ice",
+      "cold-snap": "ice",
+      "glacial-ward": "ice",
+      "anvil": "forge",
+      "bash": "heavy",
+      "shield-bash": "heavy",
+      "pounce": "heavy",
+      "maul": "heavy",
+      "block": "parry",
+      "plate-mail": "parry",
+      "crystal-bulwark": "parry",
+      "blessed-aegis": "holy",
+      "tithe": "holy",
+      "exorcism": "holy",
+      "sanctified-plate": "holy",
+      "avatar": "holy",
+      "smite": "holy",
+      "judgment": "holy",
+      "holy-radiance": "holy",
+      "wish": "wish",
+      "wishing-well": "wish",
+      "prayer": "wish",
+      "meteor": "earth",
+      "earthquake": "earth",
+      "roll-the-dice": "dice",
+      "blackjack": "dice",
+      "lightning-bolt": "lightning",
+      "steal": "coins",
+      "golden-plate": "coins",
+      "bloodthorn": "nature",
+      "grasping-vines": "nature",
+      "briar-shield": "nature",
+      "thorn-mail": "nature",
+      "spiked-shield": "nature",
+      "pack-tactics": "beast",
+      "sniff-out": "beast",
+      "fire-arrow": "bow",
+      "ice-shot": "bow",
+      "venom-arrow": "bow",
+      "serrated-arrowhead": "bow",
+      "concussive-shot": "bow",
+      "lightning-arrow": "bow",
+      "bounty-shot": "bow",
+      "sap-arrow": "bow",
+      "gamblers-shot": "bow",
+      "astral-arrow": "bow",
+      "mixed-potion": "potion",
+      "health-potion": "potion",
+      "mana-potion": "potion",
+      "panacea-potion": "potion",
+      "stoneskin-potion": "potion",
+      "acid-potion": "potion",
+      "luck-potion": "potion",
+      "wishing-potion": "potion",
+      "apple": "food",
+      "bread": "food",
+      "mana-berries": "food",
+      "mana-crystals": "mana",
+      "pixie-dust": "mana",
+      "mana-shield": "mana",
+      "blood-offering": "dark",
+      "faustian-bargain": "dark",
+      "dark-pact": "dark",
+      "wolf-companion": "canine",
+      "lizard-scout-companion": "poison",
+      "frost-whelp-companion": "ice",
+      "bear-companion": "heavy",
+      "panther-companion": "bleed",
+      "phoenix-companion": "fire",
+      "skeleton-companion": "bone",
+      "pixie-companion": "heal",
+      "mana-moth-companion": "mana",
+      "will-o-wisp-companion": "wish",
+      "golden-retriever-companion": "coins",
+      "shield-scarab-companion": "parry",
+      "library-owl-companion": "page",
+      "fox-companion": "beast"
+    },
+    "enemies": {
+      "forge-golem": "forge",
+      "frostwarden": "ice",
+      "frost-elemental": "ice",
+      "ice-wraith": "ice",
+      "winter-wolf": "ice",
+      "yeti": "ice",
+      "blight-treant": "wood",
+      "iron-bear": "heavy",
+      "ogre": "heavy",
+      "brawler": "heavy",
+      "skeleton": "bone",
+      "goblin": "blade",
+      "bandit": "blade",
+      "mimic": "beast",
+      "mud-elemental": "poison",
+      "plague-doctor": "poison",
+      "slime": "poison",
+      "giant-spider": "poison",
+      "giant-snake": "poison",
+      "necromancer": "dark",
+      "vampire": "dark",
+      "blood-cultist": "dark",
+      "blood-countess": "dark",
+      "living-armor": "parry",
+      "stone-golem": "parry",
+      "fire-elemental": "fire",
+      "fire-imp": "fire",
+      "hellhound": "fire",
+      "pyromancer": "fire",
+      "will-o-wisp": "wish",
+      "dire-wolf": "canine",
+      "zealot": "holy",
+      "cleric": "holy",
+      "inquisitor": "holy",
+      "paladin": "holy",
+      "seraph": "holy",
+      "banshee": "danger",
+      "earth-elemental": "earth",
+      "stone-titan": "earth"
+    },
+    "companions": {
+      "wolf": "canine",
+      "lizard-scout": "poison",
+      "frost-whelp": "ice",
+      "bear": "heavy",
+      "panther": "bleed",
+      "phoenix": "fire",
+      "skeleton": "bone",
+      "pixie": "heal",
+      "mana-moth": "mana",
+      "will-o-wisp": "wish",
+      "golden-retriever": "coins",
+      "shield-scarab": "parry",
+      "library-owl": "page",
+      "fox": "beast"
+    }
+  },
+  "destinationCoverage": [
+    "Normal Combat",
+    "Elite Combat",
+    "Card Shop",
+    "Alchemist's Shop",
+    "Trinket Shop",
+    "Gear Shop",
+    "Mystery",
+    "Corruption",
+    "Transmutation",
+    "Campfire",
+    "Boss Combat"
+  ],
+  "keywordCoverage": {
+    "physical": ["enemyHit", "playerHit", "card:slash"],
+    "health": ["playerHeal", "card:cleanse"],
+    "mana": ["mana-change", "card:meteor"],
+    "block": ["blockAbsorb", "card:block"],
+    "dodge": ["dodge"],
+    "armor": ["armor", "card:plate-mail"],
+    "forge": ["forge-status", "card:anvil"],
+    "burn": ["burnTick", "wildfire", "card:fireball"],
+    "freeze": ["freezeProc", "shatter", "card:frostbolt"],
+    "holy": ["card:smite", "card:holy-radiance", "card:blessed-aegis"],
+    "poison": ["poisonTick", "card:poison-dagger"],
+    "bleed": ["bleedTick", "card:fangs"],
+    "stun": ["stunProc", "card:bash"],
+    "nature": ["thorns", "wildfire", "card:lightning-bolt"],
+    "archery": ["card:fire-arrow", "card:concussive-shot", "card:sniff-out"],
+    "companion": ["card:wolf-companion", "companion:wolf", "card:pack-tactics"],
+    "leech": ["leech", "card:fangs"],
+    "wish": ["wishAppear", "card:wish"],
+    "consume": ["consumeCard", "card:haste"],
+    "gold": ["gainGold", "shopBuy", "card:tithe"],
+    "thorns": ["thorns", "card:briar-shield"]
+  },
+  "sequences": [
+    {
+      "id": "slash",
+      "title": "Card play \u2192 impact",
+      "note": "Illustrative listening timeline; not a recording or exact reproduction of game timing. Current mode omits unused/silent registrations.",
+      "steps": [
+        {
+          "mapping": "card:slash",
+          "at": 0
+        },
+        {
+          "mapping": "enemyHit",
+          "at": 0.28
+        }
+      ]
+    },
+    {
+      "id": "ice",
+      "title": "Frostbolt \u2192 impact \u2192 Frozen",
+      "note": "Illustrative listening timeline; not a recording or exact reproduction of game timing. Current mode omits unused/silent registrations.",
+      "steps": [
+        {
+          "mapping": "card:frostbolt",
+          "at": 0
+        },
+        {
+          "mapping": "enemyHit",
+          "at": 0.3
+        },
+        {
+          "mapping": "freezeProc",
+          "at": 0.65
+        }
+      ]
+    },
+    {
+      "id": "block",
+      "title": "Block \u2192 absorb a hit",
+      "note": "Illustrative listening timeline; not a recording or exact reproduction of game timing. Current mode omits unused/silent registrations.",
+      "steps": [
+        {
+          "mapping": "card:block",
+          "at": 0
+        },
+        {
+          "mapping": "blockAbsorb",
+          "at": 1.2
+        }
+      ]
+    },
+    {
+      "id": "turn",
+      "title": "End Turn \u2192 enemy hit \u2192 new hand",
+      "note": "Illustrative listening timeline; not a recording or exact reproduction of game timing. Current mode omits unused/silent registrations.",
+      "steps": [
+        {
+          "mapping": "endTurn",
+          "at": 0
+        },
+        {
+          "mapping": "card:slash",
+          "at": 0.8
+        },
+        {
+          "mapping": "playerHit",
+          "at": 1.1
+        },
+        {
+          "mapping": "drawTransfer",
+          "at": 1.8
+        },
+        {
+          "mapping": "drawTransfer",
+          "at": 2.0
+        },
+        {
+          "mapping": "drawTransfer",
+          "at": 2.2
+        }
+      ]
+    },
+    {
+      "id": "purchase",
+      "title": "Browse \u2192 purchase \u2192 leave",
+      "note": "Illustrative listening timeline; not a recording or exact reproduction of game timing. Current mode omits unused/silent registrations.",
+      "steps": [
+        {
+          "mapping": "shop-select",
+          "at": 0
+        },
+        {
+          "mapping": "shopBuy",
+          "at": 0.7
+        },
+        {
+          "mapping": "navigate",
+          "at": 2
+        }
+      ]
+    },
+    {
+      "id": "craft",
+      "title": "Recipe \u2192 craft \u2192 equip",
+      "note": "Illustrative listening timeline; not a recording or exact reproduction of game timing. Current mode omits unused/silent registrations.",
+      "steps": [
+        {
+          "mapping": "craft-select",
+          "at": 0
+        },
+        {
+          "mapping": "craft",
+          "at": 0.8
+        },
+        {
+          "mapping": "gearMove",
+          "at": 2
+        }
+      ]
+    },
+    {
+      "id": "rewards",
+      "title": "Victory \u2192 Gold \u2192 claim reward",
+      "note": "Illustrative listening timeline; not a recording or exact reproduction of game timing. Current mode omits unused/silent registrations.",
+      "steps": [
+        {
+          "mapping": "victory",
+          "at": 0
+        },
+        {
+          "mapping": "gainGold",
+          "at": 1.2
+        },
+        {
+          "mapping": "reward-claim",
+          "at": 4.5
+        }
+      ]
+    },
+    {
+      "id": "brew",
+      "title": "Select ingredient \u2192 brew Potion",
+      "note": "Illustrative listening timeline; not a recording or exact reproduction of game timing. Current mode omits unused/silent registrations.",
+      "steps": [
+        {
+          "mapping": "transmute-select",
+          "at": 0
+        },
+        {
+          "mapping": "camp-brew",
+          "at": 0.8
+        }
+      ]
+    }
+  ]
+}

@@ -41,6 +41,12 @@ the study's pile images and preview files.
 standalone wording and presentation study. Current crafting behavior is owned
 by [ARMORY](../ARMORY.md), and current interaction conventions by [UI](../UI.md).
 
+## Sound proposals
+
+[Alchemy sound desk](./audio-review/README.md) provides a whole-game sound mapping,
+curated external-library candidates, and a standalone local audition board with
+current/proposed comparisons, action sequences, listening notes and choice export.
+
 ## Demo marketing studies
 
 [Selected promo and archived showcase studies](./steam-demo-showcase/README.md)

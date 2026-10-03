@@ -1,3 +1,4 @@
+import { playUISound } from "@/lib/audio";
 import { isEditionModeAvailable } from "@/lib/game-edition";
 import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import {
@@ -55,6 +56,7 @@ export function createRunResumeNavigation(deps: ContentSystemNavigationDeps) {
     });
     const screen = snapshotRun().currentScreen;
     if (!screen) return;
+    playUISound("resumeRun");
     // Card hover clears universally on navigation (see run-flow-engine).
     if (screen === ROUTE_SCREENS.DESTINATION && mode === CONTENT_SYSTEMS.CAMPAIGN) {
       deps.resumeTo(screen, () => {

@@ -2,6 +2,7 @@ import { useSelectDismiss } from "../../../shared/ui/use-select-dismiss";
 import { useId, type ReactNode } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { playUISound } from "@/lib/audio";
 import { controlLabelClass, controlDescriptionClass } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
 import type { AspectRatioOption, DisplayMode } from "../../../shared/types";
@@ -50,7 +51,14 @@ function SettingsSelect<T extends string>({ id, label, value, options, onChange 
       <label htmlFor={id} className={cn("options-settings-label", controlLabelClass)}>
         {label}
       </label>
-      <Select {...selectDismiss} value={value} onValueChange={(nextValue) => onChange(nextValue as T)}>
+      <Select
+        {...selectDismiss}
+        value={value}
+        onValueChange={(nextValue) => {
+          onChange(nextValue as T);
+          if (nextValue !== value) playUISound("selection");
+        }}
+      >
         <SelectTrigger id={id} className="options-settings-control py-2">
           <SelectValue />
         </SelectTrigger>
@@ -156,7 +164,14 @@ export function SettingsToggle({
       <label htmlFor={id} className={cn("min-w-0 flex-1 cursor-pointer", controlLabelClass)}>
         {label}
       </label>
-      <Switch id={id} checked={checked} onCheckedChange={onChange} />
+      <Switch
+        id={id}
+        checked={checked}
+        onCheckedChange={(next) => {
+          onChange(next);
+          if (next !== checked) playUISound(next ? "toggleOn" : "toggleOff");
+        }}
+      />
     </div>
   );
 }

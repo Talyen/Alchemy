@@ -300,7 +300,13 @@ describe("saved reaction allowances", () => {
     const thawed = resume({ ...frozen, enemyCC: state.enemyCC });
     expect(play(thawed, cardById["mana-crystals"]!).state.flags.hawkEyeReady).toBe(true);
     const first = play(thawed, arrow);
-    expect(first.combatTexts).toContainEqual({ target: "enemy", kind: "damage", stat: "physical", amount: 4 });
+    expect(first.combatTexts).toContainEqual({
+      target: "enemy",
+      kind: "damage",
+      stat: "physical",
+      amount: 4,
+      critical: true,
+    });
     expect(first.state.enemyHealth).toBe(76);
     expect(first.state.flags.hawkEyeReady).toBe(false);
     expect(play(first.state, arrow).state.enemyHealth).toBe(74);

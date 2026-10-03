@@ -36,13 +36,21 @@ Implementation: [local test lane](./scripts/lib/verification/local-test-lane.mjs
 
 ### Agent preview ownership
 
-For an authorized interactive browser review, use one uniquely named session per
-task and reuse it for navigation, reloads, and captures. Record its session name
-and owner; close it on completion, failure, and cancellation, and verify that its
-browser processes exited. A successful close request alone is insufficient when
-the browser is unresponsive. Preserve the session identity and report failed
-cleanup instead of opening additional replacement sessions. Never close all
-sessions, kill unrelated browsers, or reclaim an active session based on age.
+For an authorized interactive browser review on macOS/Linux, use
+`npm run agent:browser -- <action and arguments>` in place of the raw CLI.
+It selects the Codex task's session automatically; use the same actions for
+navigation, reloads and captures. Launch records persist in Git's common directory.
+The guardian cleans recorded browser groups if their daemon exits, verifying
+surviving members even after a group leader exits; a later command recovers
+abandoned records. Managed launches use the same socket directory for the CLI
+and ownership capture, including Linux runtime directories. `npm run check` automatically closes this task's
+sessions on success, failure or cancellation and verifies process exit, including failed closes.
+Its exit fallback waits for cleanup and reports failures while retaining ownership records.
+No manual session IDs, registration or cleanup checklist are required.
+Without a Codex task identity, or on Windows, the command passes through to the
+native CLI and leaves human session ownership unchanged. User-attached browsers
+use the native CLI. Never close all sessions, kill unrelated browsers, or reclaim
+an active session based on age. Preserve identities and report failed cleanup.
 
 One-shot Playwright/Electron runs use the existing managed command and test-lane
 cleanup; do not replace them with detached browser daemons. The Alchemy test lane

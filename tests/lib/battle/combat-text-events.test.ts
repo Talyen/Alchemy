@@ -3,6 +3,21 @@ import { mergeCombatText } from "@/lib/battle/combat-text-events";
 import type { CombatTextEvent, NumericCombatTextEvent } from "@/lib/battle";
 
 describe("combat feedback aggregation", () => {
+  it("preserves resolved audio metadata while keeping the same numeric aggregation", () => {
+    const texts: CombatTextEvent[] = [];
+    mergeCombatText(texts, { target: "enemy", kind: "damage", stat: "burn", amount: 2 });
+    mergeCombatText(texts, {
+      target: "enemy",
+      kind: "damage",
+      stat: "burn",
+      amount: 3,
+      critical: true,
+      periodic: true,
+    });
+    expect(texts).toEqual([
+      { target: "enemy", kind: "damage", stat: "burn", amount: 5, critical: true, periodic: true },
+    ]);
+  });
   it("hides status buildup while retaining damage, control notices and beneficial gains", () => {
     const texts: CombatTextEvent[] = [];
     mergeCombatText(texts, { target: "player", kind: "status", stat: "burn", amount: 2 });

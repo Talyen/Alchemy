@@ -57,6 +57,7 @@ export async function playTurnFrames(
       if (!deps.isSessionActive(sessionNum)) return;
       markBattleStage("enemy-end");
     } else {
+      playBattleEvent("haste");
       presentCombatTexts(presentation, turn.combatTexts);
     }
     await runHandDrawSequence(

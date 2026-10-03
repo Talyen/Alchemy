@@ -33,7 +33,7 @@ export function applyCurrencyToGear({
     playUISound("error");
     return false;
   }
-  playUISound("talentUnlock");
+  playUISound("craft");
   clearCurrency();
   return true;
 }

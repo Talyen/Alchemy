@@ -3,10 +3,12 @@ import { audioState } from "./state";
 import { syncMusicSettings, pauseAllMusic } from "./music";
 import { syncActiveHtmlSfxPlayback } from "./sfx";
 import { clamp01 } from "../math";
+import { syncScreenAmbience } from "./ambience";
 
 function applyMuteToElements(mutedHost: boolean) {
   syncActiveHtmlSfxPlayback();
   syncMusicSettings();
+  syncScreenAmbience();
   if (audioState.muted && mutedHost) pauseAllMusic();
 }
 
@@ -29,11 +31,13 @@ export function initAudioHost() {
 export function setSfxVolume(value: number) {
   audioState.sfxVolume = clamp01(value);
   syncActiveHtmlSfxPlayback();
+  syncScreenAmbience();
 }
 
 export function setMasterVolume(value: number) {
   audioState.masterVolume = clamp01(value);
   syncActiveHtmlSfxPlayback();
+  syncScreenAmbience();
 
   syncMusicSettings();
 }

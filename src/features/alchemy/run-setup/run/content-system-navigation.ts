@@ -1,3 +1,4 @@
+import { playUISound } from "@/lib/audio";
 import {
   isEditionCharacterAvailable,
   isEditionModeAvailable,
@@ -144,12 +145,12 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       logError(`[content-system-navigation] handleStarterDraftPick: card not offered ${cardId}`, "other");
       return;
     }
-    dispatchRunSessionCommand((draft) => {
+    const picked = dispatchRunSessionCommand((draft) => {
       const choices = draft.session.starterDraftChoices;
-      if (draft.run.activeRun.contentSystemType === CONTENT_SYSTEMS.WILDWOOD || !choices?.length) return;
-      if (draft.run.activeRun.runDeck.length >= DRAFT_ROUNDS) return;
+      if (draft.run.activeRun.contentSystemType === CONTENT_SYSTEMS.WILDWOOD || !choices?.length) return false;
+      if (draft.run.activeRun.runDeck.length >= DRAFT_ROUNDS) return false;
       const picked = choices.find((choice) => choice.id === cardId);
-      if (!picked) return;
+      if (!picked) return false;
       const nextDeck = [...draft.run.activeRun.runDeck, cloneBattleCard(picked)];
       setRunDeck(draft, nextDeck);
       discoverCardIds(draft, [picked.id]);
@@ -159,7 +160,9 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
           ? []
           : createStarterDraftChoices(nextDeck, createDraftRunRandomSource(draft, "rewards")),
       );
+      return true;
     });
+    if (picked) playUISound("draftSelect");
   }
 
   function handleStandardDraftComplete() {
@@ -192,6 +195,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     )
       return;
 
+    playUISound("draftComplete");
     if (systemType === CONTENT_SYSTEMS.LABYRINTH) {
       initializeLabyrinthRun("wildcard");
       return;

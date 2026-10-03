@@ -1,3 +1,4 @@
+import { playUISound } from "@/lib/audio";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
@@ -37,11 +38,11 @@ export function prepareWildwoodBoss(removeIndex?: number) {
   });
 }
 export function chooseWildwoodDraftCard(cardId: string): void {
-  dispatchRunSessionCommand((draft) => {
+  const picked = dispatchRunSessionCommand((draft) => {
     const state = draft.session.wildwoodDraft;
     const activeRun = draft.run.activeRun;
-    if (activeRun.contentSystemType !== CONTENT_SYSTEMS.WILDWOOD || !state) return;
-    if (!offeredWildwoodDraftCard(state, activeRun.runDeck, cardId)) return;
+    if (activeRun.contentSystemType !== CONTENT_SYSTEMS.WILDWOOD || !state) return false;
+    if (!offeredWildwoodDraftCard(state, activeRun.runDeck, cardId)) return false;
     const pick = pickWildwoodDraftCard(
       state,
       activeRun.characterId,
@@ -49,10 +50,12 @@ export function chooseWildwoodDraftCard(cardId: string): void {
       cardId,
       createDraftRunRandomSource(draft, "world"),
     );
-    if (!pick) return;
+    if (!pick) return false;
     appendCardToRunWithDiscovery(draft, pick.card);
     setWildwoodDraft(draft, pick.state);
+    return true;
   });
+  if (picked) playUISound("draftSelect");
 }
 export function completeWildwoodDraft(): boolean {
   return dispatchRunSessionCommand((draft) => {

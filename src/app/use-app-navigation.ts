@@ -17,12 +17,14 @@ import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { MOTION_FADE_MS } from "@/lib/game-constants";
 import type { Screen } from "@/lib/routing";
 import { useCallback, useEffect, useState } from "react";
+import { playUISound } from "@/lib/audio";
 
 export function useGameMenuState() {
   const [gameMenuOpen, setGameMenuOpen] = useState(false);
   const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
 
   const openGameMenu = useCallback((rect?: DOMRect) => {
+    playUISound("pause");
     setMenuAnchorRect(rect ?? null);
     setGameMenuOpen(true);
   }, []);
@@ -44,11 +46,13 @@ export function useGameMenuState() {
   );
 
   const closeGameMenu = useCallback(() => {
+    playUISound("pause");
     setGameMenuOpen(false);
     setMenuAnchorRect(null);
   }, []);
 
   const toggleGameMenu = useCallback(() => {
+    playUISound("pause");
     // Keyboard-driven toggle has no anchor element, so it always clears any
     // stale anchor: a null anchor renders the menu unanchored (centered),
     // which is the correct keyboard-opened state, and keeps closed anchor-free.

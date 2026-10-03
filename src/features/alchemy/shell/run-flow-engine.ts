@@ -1,3 +1,4 @@
+import { playUISound } from "@/lib/audio";
 import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/navigation/mystery-event-navigation";
 import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/corruption-flow";
 import type { RunFlowShellActions, RunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
@@ -90,6 +91,7 @@ export function createRunFlowEngine(
     endLabyrinthRun: flowHandlers.endLabyrinthRun,
     handleAbandonRun: () => {
       cancelPending();
+      playUISound("destructiveConfirm");
       flowHandlers.handleAbandonRun();
     },
     handleCharacterSelect: contentNav.handleCharacterSelect,

@@ -3,6 +3,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 import { changedGitPaths, ensureRunId, writeCurrentRun } from "./lib/verification/current-run.mjs";
 import { summarizeAndReportFailure, summarizeStepResult } from "./lib/run-step.mjs";
@@ -15,6 +16,7 @@ import {
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { runGit } from "./lib/repository-paths.mjs";
 import { runCommandAsync } from "./lib/run-command.mjs";
+import { closeTaskBrowsers, taskKey } from "./lib/agent-browser-session.mjs";
 import { INLINE_ARGS_BYTES } from "./lib/agent/selection-budgets.mjs";
 import { filterPrettierPaths } from "./prettier-paths.mjs";
 
@@ -310,11 +312,29 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
 }
 
 if (isMainModule(import.meta.url)) {
+  let cleanupFinished = false;
+  process.once("exit", () => {
+    if (cleanupFinished || !taskKey() || process.platform === "win32") return;
+    // Cancellation can exit from the command runner before promises settle.
+    // Finish cleanup here and expose a failure instead of abandoning a silent child.
+    const cleanup = spawnSync(process.execPath, [path.join(ROOT, "scripts/agent-browser.mjs"), "--cleanup-task"], {
+      stdio: "inherit",
+      timeout: 30_000,
+    });
+    if (cleanup.status !== 0) {
+      console.error("Browser cleanup failed; retained ownership records for recovery.");
+      process.exitCode = 2;
+    }
+  });
   runCheck()
-    .then((code) => {
+    .then(async (code) => {
+      await closeTaskBrowsers();
+      cleanupFinished = true;
       process.exitCode = code;
     })
-    .catch((error) => {
+    .catch(async (error) => {
+      await closeTaskBrowsers().catch((cleanupError) => console.error(cleanupError.message));
+      cleanupFinished = true;
       console.error(error instanceof Error ? error.message : String(error));
       process.exitCode = 2;
     });

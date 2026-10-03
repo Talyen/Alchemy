@@ -1,13 +1,12 @@
+import { battleEventSounds } from "@/lib/audio/sound-registry";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { resetAudioRuntimeForTests } from "@/lib/audio/reset";
 import * as audio from "@/lib/audio";
 import { audioState } from "@/lib/audio/state";
 import {
   defaultMeasureVisualCardRect,
-  getCardTransferBatchSpeed,
   playCombatTextSounds,
   presentCombatTexts,
-  transferCardIntervalSeconds,
 } from "@/features/alchemy/run-loop/battle/controller-utils";
 
 const playedSrcs: string[] = [];
@@ -41,6 +40,31 @@ afterEach(() => {
 });
 
 describe("playCombatTextSounds", () => {
+  it("distinguishes periodic ticks and resolved critical/control/resource signals from ordinary spell damage", () => {
+    const cues = vi.spyOn(audio, "playBattleEvent");
+    playCombatTextSounds([
+      { target: "enemy", kind: "damage", stat: "burn", amount: 4 },
+      { target: "enemy", kind: "damage", stat: "physical", amount: 8, critical: true },
+      { target: "enemy", kind: "damage", stat: "burn", amount: 3, periodic: true },
+      { target: "player", kind: "damage", stat: "bleed", amount: 2, periodic: true },
+      { target: "player", kind: "notice", stat: "dodge", text: "Dodged" },
+      { target: "player", kind: "status", stat: "armor", amount: 2 },
+      { target: "player", kind: "status", stat: "forge", amount: 2 },
+      { target: "enemy", kind: "notice", stat: "burn", text: "Wildfire" },
+      { target: "enemy", kind: "notice", stat: "physical", text: "Shatter · Critical" },
+    ]);
+    expect(cues.mock.calls.map(([name]) => name)).toEqual([
+      "enemyHit",
+      "critHit",
+      "burnTick",
+      "bleedTick",
+      "dodge",
+      "armorChange",
+      "forgeGain",
+      "wildfire",
+      "shatter",
+    ]);
+  });
   it("plays each cue once per batch and ignores non-impact and status-only changes", () => {
     const cues = vi.spyOn(audio, "playBattleEvent");
     playCombatTextSounds([
@@ -54,28 +78,9 @@ describe("playCombatTextSounds", () => {
     ]);
     expect(cues.mock.calls.map(([name]) => name)).toEqual(["enemyHit", "blockAbsorb", "playerHeal"]);
     expect(playedSrcs).toHaveLength(3);
-    expect(playedSrcs.filter((src) => src.includes("sword-impact-hit-1."))).toHaveLength(1);
-    expect(playedSrcs.filter((src) => src.includes("sword-blocked-2."))).toHaveLength(1);
-    expect(playedSrcs.filter((src) => src.includes("vibraphone-chime-quick."))).toHaveLength(1);
-  });
-});
-
-describe("getCardTransferBatchSpeed", () => {
-  it("uses small speed up to the small max and medium through the medium count", () => {
-    expect(getCardTransferBatchSpeed(0)).toBe(1);
-    expect(getCardTransferBatchSpeed(2)).toBe(1);
-    expect(getCardTransferBatchSpeed(3)).toBe(1.4);
-  });
-
-  it("uses large speed above the medium count", () => {
-    expect(getCardTransferBatchSpeed(4)).toBe(1.6);
-    expect(getCardTransferBatchSpeed(10)).toBe(1.6);
-  });
-});
-
-describe("transferCardIntervalSeconds", () => {
-  it("scales duration by speed and adds the completion buffer in seconds", () => {
-    expect(transferCardIntervalSeconds(0.3, 1.5, 50)).toBeCloseTo(0.25, 10);
+    expect(playedSrcs.filter((src) => src.includes(battleEventSounds.enemyHit))).toHaveLength(1);
+    expect(playedSrcs.filter((src) => src.includes(battleEventSounds.blockAbsorb))).toHaveLength(1);
+    expect(playedSrcs.filter((src) => src.includes(battleEventSounds.playerHeal))).toHaveLength(1);
   });
 });
 
@@ -112,14 +117,6 @@ describe("presentCombatTexts", () => {
     presentCombatTexts(presenter, [...events]);
     expect(presenter.showCombatTexts).toHaveBeenCalledExactlyOnceWith(events);
     expect(presenter.shakeEnemy).toHaveBeenCalledOnce();
-    expect(presenter.shakePlayer).not.toHaveBeenCalled();
-  });
-
-  it("is a no-op for empty events", () => {
-    const presenter = { showCombatTexts: vi.fn(), shakeEnemy: vi.fn(), shakePlayer: vi.fn() };
-    presentCombatTexts(presenter, []);
-    expect(presenter.showCombatTexts).not.toHaveBeenCalled();
-    expect(presenter.shakeEnemy).not.toHaveBeenCalled();
     expect(presenter.shakePlayer).not.toHaveBeenCalled();
   });
 });

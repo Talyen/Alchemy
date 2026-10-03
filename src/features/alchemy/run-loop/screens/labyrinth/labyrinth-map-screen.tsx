@@ -1,3 +1,4 @@
+import { playUISound } from "@/lib/audio";
 import { useEffect } from "react";
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { FadeSlot } from "../../../shared/ui/use-fade";
@@ -71,9 +72,15 @@ export function LabyrinthMapScreen({
               heroArt={heroArt}
               nodes={floorNodes(labyrinthMap, labyrinthMap.currentFloor)}
               selectedNodeId={selectedNode?.id ?? null}
-              onSelect={onNodeSelect}
+              onSelect={(id) => {
+                onNodeSelect(id);
+                if (id !== selectedNodeId) playUISound("mapNode");
+              }}
               onDeselect={onNodeDeselect}
-              onEnter={onNodeEnter}
+              onEnter={() => {
+                onNodeEnter();
+                playUISound("mapNode");
+              }}
               onDescend={onDescend}
             />
           ) : null}

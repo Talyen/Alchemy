@@ -14,6 +14,8 @@ import {
   setMusicVolume,
   setMuted,
   setSfxVolume,
+  setScreenAmbience,
+  stopScreenAmbience,
 } from "@/lib/audio";
 import { logError } from "@/lib/error-logger";
 import { isDesktop, setDisplayMode as setPlatformDisplayMode } from "@/lib/platform";
@@ -82,6 +84,11 @@ export function useAppAudioEffects({
   }, []);
 
   const initialScreenRef = useRef(true);
+
+  useEffect(() => {
+    setScreenAmbience(screen);
+    return stopScreenAmbience;
+  }, [screen]);
 
   const hasActiveBattle = useHasActiveBattle();
   const lastBattleActiveRef = useRef(hasActiveBattle);

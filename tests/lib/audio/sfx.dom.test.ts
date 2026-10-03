@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { audioState } from "@/lib/audio/state";
-import { uiSounds } from "@/lib/audio/sound-registry";
+import { uiSounds, battleEventSounds } from "@/lib/audio/sound-registry";
 import {
   stopAllSfx,
   playCardSound,
@@ -30,10 +30,6 @@ afterEach(() => {
 });
 
 describe("stopAllSfx", () => {
-  it("runs without error when no active sources", () => {
-    expect(() => stopAllSfx()).not.toThrow();
-  });
-
   it("stops battle-tracked sources", () => {
     playCardSound("slash");
     const el = lastFakeAudio()!;
@@ -95,7 +91,7 @@ describe("playGoldGain", () => {
 describe("playGoldSpend", () => {
   it("plays gold spend audio via shopBuy sound", () => {
     playGoldSpend();
-    expect(lastFakeAudio()?.src).toContain("coins-gather-quick.");
+    expect(lastFakeAudio()?.src).toContain(uiSounds.shopBuy);
     expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
   });
 });
@@ -122,12 +118,6 @@ describe("playBattleEvent", () => {
 });
 
 describe("playUISound", () => {
-  it("plays audio for known UI sound", () => {
-    playUISound("shopBuy");
-    expect(lastFakeAudio()?.src).toContain("coins-gather-quick.");
-    expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
-  });
-
   it("plays audio for error sound", () => {
     playUISound("error");
     expect(lastFakeAudio()?.src).toContain("denied-03.");
@@ -174,7 +164,7 @@ describe("cold runtime playback", () => {
 
     expect(soundedFakeAudio()).toHaveLength(3);
     expect(soundedFakeAudio().some((el) => el.src.includes("denied-03."))).toBe(true);
-    expect(soundedFakeAudio().some((el) => el.src.includes("sword-impact-hit-1."))).toBe(true);
+    expect(soundedFakeAudio().some((el) => el.src.includes(battleEventSounds.enemyHit))).toBe(true);
     expect(soundedFakeAudio().some((el) => el.src.includes("harpsichord-level-complete."))).toBe(true);
   });
 

@@ -120,6 +120,7 @@ export function useArmoryTransfers({
         return;
       }
       commitEquip(instance.instanceId, replacedId, displaced);
+      playUISound("gearMove");
       present(flights);
     });
   }
@@ -139,6 +140,7 @@ export function useArmoryTransfers({
       });
       onEquipTrinket(characterId, trinketId);
       commitEquip(trinketId, replacedId);
+      playUISound("gearMove");
       present(flights);
     });
   }

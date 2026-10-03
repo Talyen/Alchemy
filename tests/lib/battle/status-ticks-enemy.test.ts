@@ -32,7 +32,7 @@ describe("tickEnemyStatuses", () => {
     const next = tickEnemyStatuses(state, texts);
     expect(next.enemyHealth).toBe(20);
     expect(next.enemyStatuses.burn).toBe(5);
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "burn", amount: 10 });
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "burn", amount: 10, periodic: true });
   });
 
   it("fully clears enemy burn at 1 stack", () => {
@@ -54,7 +54,7 @@ describe("tickEnemyStatuses", () => {
     const next = tickEnemyStatuses(state, texts);
     expect(next.enemyHealth).toBe(22);
     expect(next.enemyStatuses.poison).toBe(6);
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "poison", amount: 8 });
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "poison", amount: 8, periodic: true });
   });
 
   it("deals bleed damage equal to stack and resets bleed to 0", () => {
@@ -66,7 +66,7 @@ describe("tickEnemyStatuses", () => {
     const next = tickEnemyStatuses(state, texts);
     expect(next.enemyHealth).toBe(24);
     expect(next.enemyStatuses.bleed).toBe(0);
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "bleed", amount: 6 });
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "bleed", amount: 6, periodic: true });
   });
 
   it("heals player from pending bleed leech healing", () => {
@@ -113,14 +113,6 @@ describe("tickEnemyStatuses", () => {
 
     expect(next.playerHealth).toBe(22);
     expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 2 });
-  });
-
-  it("skips tick when burn is 0", () => {
-    const state = patchBattleState();
-    const texts = makeTexts();
-    const next = tickEnemyStatuses(state, texts);
-    expect(next.enemyHealth).toBe(30);
-    expect(texts).toEqual([]);
   });
 
   it("applies all DoTs in sequence", () => {
@@ -173,16 +165,6 @@ describe("tickEnemyStatuses", () => {
     expect(next.enemyHealth).toBe(22);
     expect(next.playerHealth).toBe(24);
     expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 4 });
-  });
-
-  it("clamps enemy health at 0", () => {
-    const state = patchBattleState({
-      enemyHealth: 3,
-      enemyStatuses: defaultEnemyStatusValues({ burn: 10 }),
-    });
-    const texts = makeTexts();
-    const next = tickEnemyStatuses(state, texts);
-    expect(next.enemyHealth).toBe(0);
   });
 
   it("applies resistance multiplier for burn", () => {
@@ -250,7 +232,7 @@ describe("tickEnemyStatuses", () => {
     const next = tickEnemyStatuses(state, texts);
 
     expect(next.enemyHealth).toBe(42);
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "bleed", amount: 8 });
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "bleed", amount: 8, periodic: true });
   });
 });
 

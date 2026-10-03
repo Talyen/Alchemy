@@ -82,11 +82,11 @@ export function preloadBattleSounds(
   enemyId: string,
   abilityIds: readonly string[] = [],
 ) {
-  // The full battle event set is small (~14 files) and opening combat text can
+  // Opening combat text can
   // trigger stun/freeze/heal cues, so warm everything rather than a subset.
   // Enemy abilities play through playCardSound(ability.id), so their card
   // sounds are warmed alongside the visible hand.
-  const names = new Set<string>(Object.values(battleEventSounds));
+  const names = new Set<string>(Object.values(battleEventSounds).filter((name) => name !== null));
   for (const cardId of [...handCardIds, ...abilityIds]) {
     for (const name of getCardSounds(cardId)) names.add(name);
   }
@@ -100,7 +100,7 @@ export function preloadAllSounds() {
   preloadAllSoundsStarted = true;
 
   const urgentSounds = [...Object.values(uiSounds), battleEventSounds.drawTransfer];
-  preloadSounds(urgentSounds);
+  preloadSounds(urgentSounds.filter((name) => name !== null));
 
   const pendingNames = allRegisteredSoundFiles().filter((name) => !htmlPreloadStarted.has(name));
   if (pendingNames.length === 0) return;

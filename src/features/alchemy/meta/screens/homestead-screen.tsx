@@ -101,7 +101,7 @@ export function HomesteadScreen({
 
   function handleBondCompanion(companionId: CompanionId) {
     if (onBondCompanion(companionId)) {
-      playUISound("talentUnlock");
+      playUISound("bond");
     }
   }
 
