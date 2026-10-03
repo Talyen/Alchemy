@@ -86,10 +86,7 @@ export function getTalentKeywordProgress(
   const displayLevel = points + 1;
   const xpForNext = xpForNextPoint(points);
   const xpRemaining = xpToNextPoint(totalXP);
-  const progressPercent = Math.min(
-    100,
-    Math.round(((xpForNext - xpRemaining) / xpForNext) * 100),
-  );
+  const progressPercent = Math.min(100, Math.round(((xpForNext - xpRemaining) / xpForNext) * 100));
   const spentPoints = unlockedCount;
   const unspentPoints = Math.max(0, points - spentPoints);
   const cappedUnspent =

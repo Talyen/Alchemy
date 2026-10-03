@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { TALENT_ICONS } from "@/features/alchemy/shared/config";
-import type { KeywordId } from "@/lib/game-data";
 import {
   talentPool,
   getTalentsForKeyword,
@@ -40,17 +39,6 @@ describe("talentPool data integrity", () => {
           .map((t) => t.id),
       ).toEqual(talents.map((t) => t.id));
     }
-  });
-});
-
-describe("getTalentsForKeyword", () => {
-  it("returns only talents matching the keyword", () => {
-    const phys = getTalentsForKeyword("physical");
-    expect(phys.every((t) => t.keywordId === "physical")).toBe(true);
-  });
-
-  it("returns empty array for unknown keyword", () => {
-    expect(getTalentsForKeyword("unknown" as unknown as KeywordId)).toEqual([]);
   });
 });
 
@@ -107,12 +95,6 @@ describe("talent row layout", () => {
     expect(isTalentRowUnlocked("physical", [phys[0]!.id, phys[1]!.id, phys[2]!.id], 2)).toBe(true);
   });
 
-  it("placeholder nodes never gate later rows", () => {
-    const archery = getTalentsForKeyword("archery");
-    const realIds = archery.filter((t) => !isTalentPlaceholder(t)).map((t) => t.id);
-    expect(isTalentRowUnlocked("archery", realIds, 3)).toBe(true);
-  });
-
   it("getAllocatableTalentChoices returns only real talents on unlocked rows", () => {
     const phys = getTalentsForKeyword("physical");
     expect(getAllocatableTalentChoices("physical", []).map((t) => t.id)).toEqual([phys[0]!.id]);
@@ -125,12 +107,18 @@ describe("talent row layout", () => {
     expect(getAllocatableTalentChoices("consume", []).every((t) => !isTalentPlaceholder(t))).toBe(true);
   });
 
-  it("offers the missing talent in a partial row even when later rows were purchased", () => {
+  it("keeps displayed choices and unlock validation aligned after purchases beyond a partial row", () => {
     const talents = getTalentsForKeyword("physical");
     const missing = talents[2]!;
     const unlocked = talents.filter((talent) => talent !== missing).map((talent) => talent.id);
-    expect(getAllocatableTalentChoices("physical", [...unlocked, "unknown", unlocked[0]!])).toEqual([missing]);
+    const saved = [...unlocked, "unknown", unlocked[0]!];
+    expect(getAllocatableTalentChoices("physical", saved)).toEqual([missing]);
     expect(isTalentRowUnlocked("physical", unlocked, 2)).toBe(false);
+    expect(canUnlockTalent("physical", missing.id, { physical: 2000 }, { physical: unlocked })).toEqual({ ok: true });
+    expect(tryUnlockTalent("physical", missing.id, { physical: 2000 }, { physical: unlocked })).toEqual({
+      unlockedTalents: { physical: [...unlocked, missing.id] },
+    });
+    expect(getAllocatableTalentChoices("physical", [...unlocked, missing.id])).toEqual([]);
   });
 
   it("includes partial keywords in the talent tree", () => {

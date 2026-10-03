@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  computeShopBuyPrice,
-  computeShopServicePrice,
-  getCardBuyTalentDiscounts,
   getEquipmentShopPrice,
-  getGenericBuyTalentDiscounts,
   getShopBuyPrice,
   getShopRefreshPrice,
 } from "@/features/alchemy/run-loop/shop/shop-pricing";
@@ -18,45 +14,23 @@ import {
   SHOP_REFRESH_PRICE,
   TRINKET_SHOP_TRINKET_PRICE,
 } from "@/lib/game-constants";
-import { generateGearRewardChoicesForRarity, gearDefinitions } from "@/lib/gear";
+import { gearDefinitions } from "@/lib/gear";
 import { cardById, cardLibrary, createEmptyTalentEffectManifest } from "@/lib/game-data";
 
 describe("shop-pricing", () => {
-  it("computeShopBuyPrice applies haggle only for generic items", () => {
-    expect(
-      computeShopBuyPrice({
-        basePrice: TRINKET_SHOP_TRINKET_PRICE,
-        haggleDiscount: 5,
-        firstPurchaseUsed: false,
-      }),
-    ).toBe(TRINKET_SHOP_TRINKET_PRICE - 5);
-  });
-
-  it("computeShopBuyPrice stacks haggle and apothecary on potions", () => {
-    const potion = cardLibrary.find((c) => c.id === "health-potion")!;
-    const { haggleDiscount, apothecaryDiscount } = getCardBuyTalentDiscounts(potion, {
-      shopCardDiscount: 5,
-      potionDiscount: 5,
-    });
-    expect(
-      computeShopBuyPrice({
-        basePrice: 20,
-        haggleDiscount,
-        apothecaryDiscount,
-        firstPurchaseUsed: false,
-      }),
-    ).toBe(10);
-  });
-
-  it("computeShopBuyPrice applies Merchant's Favor on first purchase", () => {
-    expect(
-      computeShopBuyPrice({
-        basePrice: TRINKET_SHOP_TRINKET_PRICE,
-        haggleDiscount: 0,
-        merchantsFavorDiscount: 7,
-        firstPurchaseUsed: false,
-      }),
-    ).toBe(TRINKET_SHOP_TRINKET_PRICE - 7);
+  it("stacks location, talent, Potion, and first-purchase discounts in the live quote", () => {
+    const potion = cardById["health-potion"]!;
+    const context = {
+      talentEffects: { ...createEmptyTalentEffectManifest(), shopCardDiscount: 5, potionDiscount: 5 },
+      runBoons: ["merchants-favor"],
+      firstPurchaseUsed: false,
+    };
+    expect(getShopBuyPrice("alchemistPotion", potion, context)).toBe(13);
+    expect(getShopBuyPrice("alchemistPotion", potion, { ...context, firstPurchaseUsed: true })).toBe(20);
+    expect(getShopBuyPrice("alchemistPotion", potion, { ...context, modifiers: ["happy-hour"] })).toBe(0);
+    expect(getShopBuyPrice("merchantCard", potion, context)).toBe(13);
+    expect(getShopBuyPrice("merchantCard", cardById["slash"]!, context)).toBe(18);
+    expect(getShopBuyPrice("trinket", null, context)).toBe(88);
   });
 
   it.each([
@@ -76,24 +50,20 @@ describe("shop-pricing", () => {
     }
   });
 
-  it("computeShopServicePrice applies service discounts", () => {
-    expect(computeShopServicePrice(50, 10)).toBe(40);
-  });
-
-  it("getGenericBuyTalentDiscounts exposes haggle only", () => {
-    expect(getGenericBuyTalentDiscounts({ shopCardDiscount: 5 })).toEqual({
-      haggleDiscount: 5,
-      apothecaryDiscount: 0,
-    });
-  });
-
-  it("getEquipmentShopPrice uses rarity", () => {
-    const astralChoices = generateGearRewardChoicesForRarity(1, "astral", () => 0.08);
-    const basicChoices = generateGearRewardChoicesForRarity(1, "basic", () => 0.99);
-    const uniqueChoices = generateGearRewardChoicesForRarity(1, "unique", () => 0.01);
-    expect(astralChoices.some((c) => getEquipmentShopPrice(c) === EQUIPMENT_SHOP_ASTRAL_PRICE)).toBe(true);
-    expect(basicChoices.some((c) => getEquipmentShopPrice(c) === EQUIPMENT_SHOP_BASIC_PRICE)).toBe(true);
-    expect(uniqueChoices.some((c) => getEquipmentShopPrice(c) === EQUIPMENT_SHOP_UNIQUE_PRICE)).toBe(true);
+  it.each([
+    ["leather-armor-basic", EQUIPMENT_SHOP_BASIC_PRICE],
+    ["longsword-astral", EQUIPMENT_SHOP_ASTRAL_PRICE],
+    ["oathkeeper", EQUIPMENT_SHOP_UNIQUE_PRICE],
+  ] as const)("quotes %s at its rarity price without generating random fixtures", (definitionId, price) => {
+    const item = { instanceId: "item", definitionId, affixes: [] };
+    expect(getEquipmentShopPrice(item)).toBe(price);
+    expect(
+      getShopBuyPrice("gear", item, {
+        talentEffects: createEmptyTalentEffectManifest(),
+        runBoons: [],
+        firstPurchaseUsed: true,
+      }),
+    ).toBe(price);
   });
 
   it("getShopBuyPrice halves the merchant base price under bargain-bin before talent discounts", () => {

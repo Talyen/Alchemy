@@ -45,9 +45,7 @@ export function getActiveRewardModifiersForContentSystem(
 }
 
 export function getGenerousGoldBonus(modifiers: EncounterRewardTraitId[], gold: number): number {
-  return modifiers.includes("generous")
-    ? Math.round(gold * LABYRINTH_REWARD_CONFIG.generousGoldBonusFraction)
-    : 0;
+  return modifiers.includes("generous") ? Math.round(gold * LABYRINTH_REWARD_CONFIG.generousGoldBonusFraction) : 0;
 }
 
 export function getWealthyGoldBonus(modifiers: EncounterRewardTraitId[]): number {
@@ -89,7 +87,11 @@ export function computeVictoryGold({
   const earnedBeforeMultiplier =
     inCombatGold +
     gold +
-    (eliteBonus + bossBonus + generousBonus + wealthyBonus + talentGoldPerCombat +
+    (eliteBonus +
+      bossBonus +
+      generousBonus +
+      wealthyBonus +
+      talentGoldPerCombat +
       computeTrinketManifest(runBoons).smugglersMapGoldBonus);
   return {
     earnedBeforeMultiplier,

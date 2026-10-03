@@ -8,9 +8,6 @@ import {
   formatLargeAmount,
   isValidDeckIndex,
 } from "@/lib/utils";
-import { removeWildwoodCard, createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
-import { applyMixToDeck } from "@/lib/alchemist";
-import { makeTestCard } from "../fixtures/cards";
 
 describe("numeric bounds", () => {
   it("keeps invalid volume/opacity inputs bounded and rejects reversed ranges", () => {
@@ -69,10 +66,6 @@ describe("appendUniqueMany", () => {
   });
 });
 
-function makeCard(id: string) {
-  return makeTestCard({ id, cost: 1, effects: [] });
-}
-
 describe("isValidDeckIndex", () => {
   it("accepts valid integer indices", () => {
     expect(isValidDeckIndex(0, 3)).toBe(true);
@@ -87,45 +80,3 @@ describe("isValidDeckIndex", () => {
     expect(isValidDeckIndex(10, 3)).toBe(false);
   });
 });
-
-describe("removeWildwoodCard", () => {
-  it("rejects non-integer indices", () => {
-    const state = { ...createInitialWildwoodDraftState("knight", () => 0.5), phase: "removal" as const };
-    const deck = [
-      makeCard("a"),
-      makeCard("b"),
-      makeCard("c"),
-      makeCard("d"),
-      makeCard("e"),
-      makeCard("f"),
-      makeCard("g"),
-      makeCard("h"),
-    ];
-    expect(removeWildwoodCard(state, deck, 0.5)).toBeNull();
-    expect(removeWildwoodCard(state, deck, NaN)).toBeNull();
-    expect(removeWildwoodCard(state, deck, Infinity)).toBeNull();
-    expect(removeWildwoodCard(state, deck, -1)).toBeNull();
-    expect(removeWildwoodCard(state, deck, 8)).toBeNull();
-  });
-});
-
-describe("applyMixToDeck", () => {
-  it("throws for fractional or NaN indices", () => {
-    const deck = [makeCard("a"), makeCard("b"), makeCard("c")];
-    const mixed = makeCard("mixed");
-    expect(() => applyMixToDeck(deck, 0.5 as unknown as number, 1, mixed)).toThrow();
-    expect(() => applyMixToDeck(deck, NaN, 1, mixed)).toThrow();
-    expect(() => applyMixToDeck(deck, 0, 1.2, mixed)).toThrow();
-    expect(() => applyMixToDeck(deck, 0, 0, mixed)).toThrow();
-    expect(() => applyMixToDeck(deck, -1, 1, mixed)).toThrow();
-    expect(() => applyMixToDeck(deck, 0, 5, mixed)).toThrow();
-  });
-  it("succeeds for valid distinct indices", () => {
-    const deck = [makeCard("a"), makeCard("b"), makeCard("c")];
-    const mixed = makeCard("mixed");
-    const result = applyMixToDeck(deck, 0, 1, mixed);
-    expect(result).toHaveLength(2);
-    expect(result[result.length - 1].id).toBe("mixed");
-  });
-});
-

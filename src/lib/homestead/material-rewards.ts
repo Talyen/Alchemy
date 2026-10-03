@@ -163,7 +163,7 @@ export function applyScavengerHerbalistModifiers(
   flags: ScavengerHerbalistFlags,
 ): MaterialInventory {
   if (!flags.scavenger && !flags.herbalist) return materials;
-  const next = { ...materials };
+  const next = flags.scavenger ? emptyInventory() : { ...materials };
   if (flags.scavenger) {
     for (const material of MATERIAL_IDS) {
       next[material] = Math.round((materials[material] ?? 0) * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier);

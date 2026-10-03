@@ -1,4 +1,4 @@
-import { repairShopOfferings, shopItemSlotKey } from "@/lib/active-run-session/shop-offering-repair";
+import { repairShopOfferings } from "@/lib/active-run-session/shop-offering-repair";
 import type { BattleSnapshot } from "@/lib/battle";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { DRAFT_CHOICES, DRAFT_ROUNDS, MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
@@ -87,12 +87,6 @@ function normalizeLabyrinthModifiers(
         ? data.activeLabyrinthRewardModifiers
         : (data.activeCombat?.activeLabyrinthRewardModifiers ?? []),
   };
-}
-
-function normalizeShopCards(cards: PersistedBattleCard[], purchasedSlotKeys: string[]) {
-  return repairShopOfferings(cards, purchasedSlotKeys, isRecoverableCard, (card, index) =>
-    shopItemSlotKey(card.id, index),
-  );
 }
 
 function toPersistedCard(card: BattleCard): PersistedBattleCard {
@@ -216,9 +210,11 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
     (stream) => rngState.counters[stream] !== data.rng.counters[stream],
   );
 
-  const shop = data.shopState && normalizeShopCards(data.shopState.cards, data.shopState.purchasedSlotKeys);
+  const shop =
+    data.shopState && repairShopOfferings(data.shopState.cards, data.shopState.purchasedSlotKeys, isRecoverableCard);
   const alchemist =
-    data.alchemistState && normalizeShopCards(data.alchemistState.potions, data.alchemistState.purchasedSlotKeys);
+    data.alchemistState &&
+    repairShopOfferings(data.alchemistState.potions, data.alchemistState.purchasedSlotKeys, isRecoverableCard);
 
   return {
     ...data,
@@ -232,10 +228,14 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
     wildwoodDraft,
     starterDraftChoices,
     activeCombat: data.activeCombat ? normalizeActiveCombat(data.activeCombat, data.contentSystemType) : null,
-    shopState: data.shopState && shop ? { ...data.shopState, cards: shop.items, purchasedSlotKeys: shop.purchasedSlotKeys } : null,
-    alchemistState: data.alchemistState && alchemist
-      ? { ...data.alchemistState, potions: alchemist.items, purchasedSlotKeys: alchemist.purchasedSlotKeys }
-      : null,
+    shopState:
+      data.shopState && shop
+        ? { ...data.shopState, cards: shop.items, purchasedSlotKeys: shop.purchasedSlotKeys }
+        : null,
+    alchemistState:
+      data.alchemistState && alchemist
+        ? { ...data.alchemistState, potions: alchemist.items, purchasedSlotKeys: alchemist.purchasedSlotKeys }
+        : null,
     corruptionResult: normalizeCorruptionResult(data.corruptionResult),
     mysteryVisit,
   };

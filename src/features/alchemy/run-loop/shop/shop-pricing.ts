@@ -72,7 +72,8 @@ export function getShopBuyPrice(...[kind, item, context]: ShopBuyPriceArguments)
   const price = Math.max(
     0,
     Math.round(basePrice * getBuyMultiplier(kind, item, context.modifiers ?? [])) -
-      context.talentEffects.shopCardDiscount - potionDiscount,
+      context.talentEffects.shopCardDiscount -
+      potionDiscount,
   );
   return context.firstPurchaseUsed
     ? price

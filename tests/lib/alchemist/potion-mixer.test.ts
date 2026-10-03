@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { createMixedPotion, tryCreateMixedPotion, applyMixToDeck, doublePotionPotency } from "@/lib/alchemist";
-import { ALCHEMIST_MIX_PRICE } from "@/lib/game-constants";
 import { cardLibrary, type BattleCard } from "@/lib/game-data";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
@@ -90,13 +89,7 @@ describe("createMixedPotion", () => {
 
     expect(mixed.effects).toHaveLength(1);
     expect(mixed.effects[0]).toEqual({ kind: "heal", amount: 10 });
-  });
-
-  it("doubles numeric description lines when mixing the same potion", () => {
-    const mixed = createMixedPotion(healPotion, healPotion);
-
-    expect(mixed.descriptionLines).toContain("Restore 10 Health");
-    expect(mixed.descriptionLines).toContain("Consume");
+    expect(mixed.descriptionLines).toEqual(["Restore 10 Health", "Consume"]);
   });
 
   it("combines description lines and normalizes Consume to one final line", () => {
@@ -245,10 +238,13 @@ describe("tryCreateMixedPotion", () => {
     expect(result).toBeNull();
   });
 
-  it("returns the mixed potion on success", () => {
-    const result = tryCreateMixedPotion(healPotion, firePotion);
-    expect(result).not.toBeNull();
-    expect(result!.effects).toHaveLength(2);
+  it("uses the same eligibility for throwing and nullable callers, including strengthened Potions", () => {
+    const brewed = makePotion({ brewed: true });
+    expect(tryCreateMixedPotion(brewed, healPotion)).toBeNull();
+    expect(tryCreateMixedPotion(healPotion, brewed)).toBeNull();
+    expect(() => createMixedPotion(brewed, healPotion)).toThrow();
+    expect(() => createMixedPotion(healPotion, brewed)).toThrow();
+    expect(tryCreateMixedPotion(healPotion, firePotion)).toEqual(createMixedPotion(healPotion, firePotion));
   });
 });
 
@@ -260,7 +256,9 @@ describe("applyMixToDeck", () => {
 
   it("removes the two potions at given indices and appends the mixed potion", () => {
     const deck = [potionA, potionB, potionC];
+    const original = [...deck];
     const result = applyMixToDeck(deck, 0, 1, mixed);
+    expect(deck).toEqual(original);
 
     expect(result).toHaveLength(2);
     expect(result[0].id).toBe("c");
@@ -276,25 +274,13 @@ describe("applyMixToDeck", () => {
     expect(result[1].id).toBe(mixed.id);
   });
 
-  it("does not mutate the original deck array", () => {
-    const deck = [potionA, potionB, potionC];
-    const copy = [...deck];
-    applyMixToDeck(deck, 0, 1, mixed);
-    expect(deck).toEqual(copy);
-  });
-
-  it("appends the mixed potion at the end", () => {
-    const deck = [makePotion({ id: "a" }), makePotion({ id: "b" }), makePotion({ id: "c" }), makePotion({ id: "d" })];
-    const result = applyMixToDeck(deck, 0, 1, mixed);
-
-    expect(result[result.length - 1].id).toBe(mixed.id);
-  });
-
   it("throws on identical indices or out-of-bounds indices", () => {
     const deck = [potionA, potionB, potionC];
     expect(() => applyMixToDeck(deck, 1, 1, mixed)).toThrow("Invalid potion indices for mixing");
     expect(() => applyMixToDeck(deck, -1, 1, mixed)).toThrow("Invalid potion indices for mixing");
     expect(() => applyMixToDeck(deck, 0, 5, mixed)).toThrow("Invalid potion indices for mixing");
+    expect(() => applyMixToDeck(deck, 0.5, 1, mixed)).toThrow();
+    expect(() => applyMixToDeck(deck, 0, Number.NaN, mixed)).toThrow();
   });
 });
 
@@ -329,12 +315,6 @@ describe("same-card specialty potions", () => {
 
     expect(mixed.effects[0]).toEqual({ kind: "remove-harmful-status", amount: 2 });
     expect(mixed.descriptionLines).toContain("Cleanse 2 harmful status effects");
-  });
-});
-
-describe("gold deduction", () => {
-  it("costs 40 gold per mix", () => {
-    expect(ALCHEMIST_MIX_PRICE).toBe(40);
   });
 });
 

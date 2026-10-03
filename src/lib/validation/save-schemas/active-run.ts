@@ -143,7 +143,6 @@ const ShopObjectSchema = createShopObjectSchema({
   ...state,
   ...repairSavedShopCards(state.cards, state.purchasedSlotKeys, "shopState.cards"),
 }));
-export type ShopState = z.output<typeof ShopObjectSchema>;
 const ShopPersistSchema = ShopObjectSchema.nullable().catch(null);
 
 const AlchemistObjectSchema = createShopObjectSchema({
@@ -153,7 +152,6 @@ const AlchemistObjectSchema = createShopObjectSchema({
   const repaired = repairSavedShopCards(state.potions, state.purchasedSlotKeys, "alchemistState.potions");
   return { ...state, potions: repaired.cards, purchasedSlotKeys: repaired.purchasedSlotKeys };
 });
-export type AlchemistState = z.output<typeof AlchemistObjectSchema>;
 const AlchemistPersistSchema = AlchemistObjectSchema.nullable().catch(null);
 
 const TrinketShopObjectSchema = createShopObjectSchema({
