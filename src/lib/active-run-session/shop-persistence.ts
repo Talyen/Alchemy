@@ -15,7 +15,7 @@ import { trinketById, type TrinketEntry } from "@/lib/game-data";
 import { gearDefinitions } from "@/lib/gear/definitions";
 import { repairShopOfferings } from "./shop-offering-repair";
 
-export function lookupTrinketEntries(ids: readonly string[]): TrinketEntry[] {
+function lookupTrinketEntries(ids: readonly string[]): TrinketEntry[] {
   return ids.flatMap((id) => {
     const entry = Object.hasOwn(trinketById, id) ? trinketById[id] : undefined;
     return entry ? [entry] : [];

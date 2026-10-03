@@ -1,6 +1,5 @@
 export { type Screen, ROUTE_SCREENS, ROUTE_SCREEN_VALUES } from "./screens";
 export {
-  ALLOWED_SCREEN_TRANSITIONS,
   assertScreenTransitionAllowed,
   assertRunResumeTransitionAllowed,
   isScreenTransitionAllowed,

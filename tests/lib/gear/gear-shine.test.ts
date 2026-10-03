@@ -2,10 +2,11 @@ import { expect, it } from "vitest";
 import { getGearInstanceAffixes } from "@/lib/gear/affixes";
 import { getUniqueAffixes } from "@/lib/gear/unique-catalog";
 import { getGearInstanceKeywordIds } from "@/lib/gear/gear-shine";
+import type { GearInstance } from "@/lib/gear/types";
 
 it("shares protected canonical Unique affixes across inspection and combat reads", () => {
-  const first = { instanceId: "unique-read-1", definitionId: "wardbreaker", affixes: [] };
-  const second = {
+  const first: GearInstance = { instanceId: "unique-read-1", definitionId: "wardbreaker", affixes: [] };
+  const second: GearInstance = {
     instanceId: "unique-read-2",
     definitionId: "wardbreaker",
     affixes: [{ id: "flat-burn", value: 999 }],

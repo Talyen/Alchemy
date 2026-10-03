@@ -13,17 +13,17 @@ function getVrStageElement(): Element {
   return document.querySelector(VR_STAGE_SELECTOR) ?? document.documentElement;
 }
 
-export function horizontalInsetForStage(stage: Pick<DOMRect, "left" | "right">): number {
+function horizontalInsetForStage(stage: Pick<DOMRect, "left" | "right">): number {
   return clamp((stage.right - stage.left) / 4, 48, DEFAULT_HORIZONTAL_INSET);
 }
 
-export function preferredFloatingPlacement(placement: PortaledTooltipPlacement): Placement {
+function preferredFloatingPlacement(placement: PortaledTooltipPlacement): Placement {
   if (placement === "side-start") return "left";
   if (placement === "side-end") return "right";
   return "top";
 }
 
-export function floatingPlacementToTooltipState(finalPlacement: Placement): {
+function floatingPlacementToTooltipState(finalPlacement: Placement): {
   placeBelow: boolean;
   tooltipSide: PortaledTooltipSide | null;
 } {

@@ -22,6 +22,8 @@ describe("Mystery visit resume", () => {
           effects: [
             { kind: "gainGold", amount: 40 },
             { kind: "gainXP", keyword: "holy", amount: 8 },
+            { kind: "healHealth", amount: 5, chance: 0 },
+            { kind: "gainRandomTrinket", fromIds: ["bone-charm"] },
             { kind: "gainGeneratedGear", baseItemId: "emerald-ring", astral: true },
             { kind: "chooseCard", tag: "archery" },
           ],
@@ -66,7 +68,17 @@ describe("Mystery visit resume", () => {
             title: "Saved",
             art: "",
             narrative: "",
-            choices: [{ label: "Browse", effects: [{ kind: "chooseCard", tag: "" }] }],
+            choices: [
+              {
+                label: "Browse",
+                effects: [
+                  { kind: "chooseCard", tag: "" },
+                  { kind: "healHealth", amount: 5, chance: undefined },
+                  { kind: "gainRandomTrinket", fromIds: undefined },
+                  { kind: "gainGeneratedGear", baseItemId: "emerald-ring", astral: undefined },
+                ],
+              },
+            ],
           },
           chosenChoice: null,
           cardChoices: null,
@@ -77,7 +89,13 @@ describe("Mystery visit resume", () => {
       }),
     );
     const visit = hydrateMysteryVisit(restored!.mysteryVisit);
-    expect(visit.mysteryEvent?.choices).toEqual([{ label: "Browse", effects: [{ kind: "chooseCard" }] }]);
+    const effects = [
+      { kind: "chooseCard" },
+      { kind: "healHealth", amount: 5 },
+      { kind: "gainRandomTrinket" },
+      { kind: "gainGeneratedGear", baseItemId: "emerald-ring" },
+    ];
+    expect(visit.mysteryEvent?.choices).toStrictEqual([{ label: "Browse", effects }]);
     expect(visit.mysteryChosenChoice).toBeNull();
     expect(visit.mysteryChosenCardId).toBeNull();
   });

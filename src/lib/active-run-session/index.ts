@@ -1,7 +1,6 @@
 export {
   emptyHydratedMysteryVisit,
   hydrateMysteryVisit,
-  hydratePersistedMysteryChoice,
   hydratePersistedMysteryVisit,
   serializeMysteryVisit,
 } from "./mystery-visit-persistence";

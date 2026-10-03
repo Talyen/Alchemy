@@ -15,6 +15,7 @@ test.describe("Talents Flow", () => {
     await input.activate(portrait, 50);
 
     const points = page.getByText(/^\d+ Talent Points? Remaining$/);
+    await expect(points).toBeVisible();
     const before = Number((await points.innerText()).match(/\d+/)![0]);
     for (const [name, key] of [
       ["Lightfoot", "Enter"],

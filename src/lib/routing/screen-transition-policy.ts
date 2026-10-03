@@ -36,7 +36,7 @@ export interface ScreenTransitionOptions {
   guard?: () => boolean;
 }
 
-export const ALLOWED_SCREEN_TRANSITIONS: Record<Screen, readonly Screen[]> = {
+const ALLOWED_SCREEN_TRANSITIONS: Record<Screen, readonly Screen[]> = {
   [ROUTE_SCREENS.MENU]: [ROUTE_SCREENS.GAME_MODE_SELECT, ...META_DESTINATIONS],
   [ROUTE_SCREENS.GAME_MODE_SELECT]: [...META_DESTINATIONS, ROUTE_SCREENS.CHARACTER_SELECT],
   [ROUTE_SCREENS.CHARACTER_SELECT]: [

@@ -1,8 +1,6 @@
 import { keywordAliasMap, keywordAliases, keywordPattern } from "../config/keywords";
 import type { DescriptionPart } from "../types";
 
-export { extractKeywordIds } from "../config/keywords";
-
 const keywordAliasTextMap = new Map<string, string>(
   keywordAliases.map((alias) => [alias.match.toLowerCase(), alias.match]),
 );

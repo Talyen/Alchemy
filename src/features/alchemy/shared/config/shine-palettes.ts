@@ -67,7 +67,9 @@ export function getCardKeywordShineColors(card: BattleCard): readonly string[] {
   return getInspectionKeywordShineColors(getCardDisplayKeywords(card));
 }
 
-export const getCardInspectionShineColors = getCardKeywordShineColors;
+export function getCardInspectionShineColors(card: BattleCard): readonly string[] {
+  return getCardKeywordShineColors(card);
+}
 
 export function getCompanionShineColors(companion: CompanionDefinition): readonly string[] {
   const colors = getKeywordBorderShineColors(getCompanionKeywords(companion));

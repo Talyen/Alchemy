@@ -6,7 +6,7 @@ import type { PersistedMysteryVisit } from "./types";
 import type { ParsedActiveRunData } from "@/lib/validation";
 
 type PersistedMysteryVisitInput = NonNullable<ParsedActiveRunData["mysteryVisit"]>;
-export type PersistedMysteryChoiceInput = PersistedMysteryVisitInput["event"]["choices"][number];
+type PersistedMysteryChoiceInput = PersistedMysteryVisitInput["event"]["choices"][number];
 
 export interface HydratedMysteryVisit {
   mysteryEvent: MysteryEvent | null;
@@ -67,7 +67,7 @@ export function hydratePersistedMysteryVisit(
   };
 }
 
-export function hydratePersistedMysteryChoice(choice: PersistedMysteryChoiceInput | null): MysteryChoice | null {
+function hydratePersistedMysteryChoice(choice: PersistedMysteryChoiceInput | null): MysteryChoice | null {
   return choice ? hydrateMysteryChoice(choice) : null;
 }
 
@@ -76,6 +76,21 @@ function hydrateMysteryChoice(choice: PersistedMysteryChoiceInput): MysteryChoic
     label: choice.label,
     effects: choice.effects.map((effect): MysteryEffect => {
       if (effect.kind === "gainXP") return { ...effect, keyword: effect.keyword as KeywordId };
+      // Parsed optional fields may be explicitly undefined; live effects omit them.
+      if (effect.kind === "healHealth")
+        return {
+          kind: effect.kind,
+          amount: effect.amount,
+          ...(effect.chance !== undefined ? { chance: effect.chance } : {}),
+        };
+      if (effect.kind === "gainRandomTrinket")
+        return { kind: effect.kind, ...(effect.fromIds !== undefined ? { fromIds: effect.fromIds } : {}) };
+      if (effect.kind === "gainGeneratedGear")
+        return {
+          kind: effect.kind,
+          baseItemId: effect.baseItemId,
+          ...(effect.astral ? { astral: effect.astral } : {}),
+        };
       if (effect.kind !== "chooseCard") return effect;
       return effect.tag ? { kind: "chooseCard", tag: effect.tag as KeywordId } : { kind: "chooseCard" };
     }),

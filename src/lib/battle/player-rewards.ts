@@ -35,7 +35,7 @@ function emitGainedStatusText(
   mergeCombatText(combatTexts, { target: "player", kind: "status", stat, amount: gained });
 }
 
-export function emitOverhealBlockText(
+function emitOverhealBlockText(
   stateBefore: Pick<BattleState, "playerStatuses">,
   stateAfter: Pick<BattleState, "playerStatuses">,
   combatTexts: CombatTextEvent[],

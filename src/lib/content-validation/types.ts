@@ -1,4 +1,4 @@
-export type ContentValidationSeverity = "error" | "warning";
+type ContentValidationSeverity = "error" | "warning";
 export type ContentValidationArea =
   | "art"
   | "balance"
