@@ -49,99 +49,16 @@ describe("handHasPlayableCard", () => {
 });
 
 describe("getPlayableHandCardKeys", () => {
-  it("marks affordable player-phase cards as playable", () => {
-    const state = {
-      ...defaultBattleState(),
-      turnPhase: "player" as const,
-      mana: 2,
-      wishOptions: null,
-      hand: [affordableCard, expensiveCard],
-    };
-
-    const playable = getPlayableHandCardKeys(state);
-    expect(playable.has("slash-1")).toBe(true);
-    expect(playable.has("meteor-2")).toBe(false);
-  });
-
-  it("returns empty when wish options are active", () => {
-    const state = {
-      ...defaultBattleState(),
-      turnPhase: "player" as const,
-      mana: 9,
-      wishOptions: [affordableCard],
-      hand: [affordableCard],
-    };
-
-    expect(getPlayableHandCardKeys(state).size).toBe(0);
-  });
-
-  it("does not mark cleanse-only cards playable without a harmful status", () => {
-    const cleanse: BattleCard = {
-      ...affordableCard,
-      id: "cleanse",
-      effects: [{ kind: "remove-harmful-status", amount: 1 }],
-      uid: 4,
-    };
-    const state = {
-      ...defaultBattleState(),
-      turnPhase: "player" as const,
-      mana: 2,
-      wishOptions: null,
-      hand: [cleanse],
-    };
-
-    expect(getPlayableHandCardKeys(state).has("cleanse-4")).toBe(false);
-  });
-
-  it("marks cleanse-only cards playable when a harmful status is present", () => {
-    const cleanse: BattleCard = {
-      ...affordableCard,
-      id: "cleanse",
-      effects: [{ kind: "remove-harmful-status", amount: 1 }],
-      uid: 4,
-    };
-    const state = {
-      ...defaultBattleState(),
-      turnPhase: "player" as const,
-      mana: 2,
-      wishOptions: null,
-      hand: [cleanse],
-      playerStatuses: { ...defaultBattleState().playerStatuses, burn: 1 },
-    };
-
-    expect(getPlayableHandCardKeys(state).has("cleanse-4")).toBe(true);
-  });
-
-  it("does not mark cards playable when the player is defeated", () => {
-    const state = {
-      ...defaultBattleState(),
-      turnPhase: "player" as const,
-      mana: 2,
-      wishOptions: null,
-      playerHealth: 0,
-      deathsDoorActive: false,
-      hand: [affordableCard],
-    };
-
-    expect(getPlayableHandCardKeys(state).has("slash-1")).toBe(false);
-  });
-});
-
-describe("handHasHiddenCard", () => {
-  it("is true when a current hand card key is hidden", () => {
-    const state = {
-      ...defaultBattleState(),
-      hand: [affordableCard],
-    };
-    expect(handHasHiddenCard(state, ["slash-1"])).toBe(true);
-  });
-
-  it("is false for hidden keys that are not in the current hand", () => {
-    const state = {
-      ...defaultBattleState(),
-      hand: [affordableCard],
-    };
-    expect(handHasHiddenCard(state, ["meteor-2"])).toBe(false);
+  it("uses live play eligibility and index keys without confusing repeated copies", () => {
+    const cleanse = makeTestCard({ id: "cleanse", effects: [{ kind: "remove-harmful-status", amount: 1 }] });
+    const state = makeTestBattleState({ hand: [affordableCard, expensiveCard, cleanse, cleanse], mana: 2 });
+    expect(getPlayableHandCardKeys(state)).toEqual(new Set(["slash-1"]));
+    const afflicted = { ...state, playerStatuses: { ...state.playerStatuses, burn: 1 } };
+    expect(getPlayableHandCardKeys(afflicted)).toEqual(new Set(["slash-1", "cleanse-no-uid-2", "cleanse-no-uid-3"]));
+    expect(handHasHiddenCard(afflicted, ["cleanse-no-uid-3"])).toBe(true);
+    expect(handHasHiddenCard({ ...afflicted, hand: [affordableCard] }, ["cleanse-no-uid-3"])).toBe(false);
+    expect(getPlayableHandCardKeys({ ...afflicted, wishOptions: [affordableCard] })).toEqual(new Set());
+    expect(getPlayableHandCardKeys({ ...afflicted, playerHealth: 0, deathsDoorActive: false })).toEqual(new Set());
   });
 });
 

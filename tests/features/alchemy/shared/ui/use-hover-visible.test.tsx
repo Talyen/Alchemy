@@ -1,36 +1,13 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, cleanup, act, fireEvent } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { useHoverVisible } from "@/features/alchemy/shared/ui/use-hover-visible";
 
-afterEach(() => cleanup());
-
-function HoverHarness({
-  holdMs = 0,
-  interactive,
-  isHovered,
-}: {
-  holdMs?: number;
-  interactive?: boolean;
-  isHovered?: boolean;
-}) {
-  const { triggerRef, wrapperRef, visible, mounted, onMouseEnter, onMouseLeave } = useHoverVisible<HTMLDivElement>({
-    holdMs,
-    interactive,
-    isHovered,
-  });
-  return (
-    <div>
-      <div ref={triggerRef} data-testid="trigger" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
-        trigger
-      </div>
-      <div ref={wrapperRef} data-testid="wrapper" />
-      <span data-testid="visible">{String(visible)}</span>
-      <span data-testid="mounted">{String(mounted)}</span>
-    </div>
-  );
-}
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
 
 function ControlledHarness({ interactive = true, isHovered }: { interactive?: boolean; isHovered: boolean }) {
   const { wrapperRef, showPopup } = useHoverVisible<HTMLDivElement>({
@@ -86,39 +63,6 @@ describe("useHoverVisible", () => {
     expect(screen.getByTestId("visible").textContent).toBe("false");
     fireEvent.mouseMove(trigger);
     expect(screen.getByTestId("visible").textContent).toBe("true");
-  });
-  it("toggles visible on mouse enter/leave in uncontrolled mode", async () => {
-    render(<HoverHarness />);
-    expect(screen.getByTestId("visible").textContent).toBe("false");
-    await userEvent.hover(screen.getByTestId("trigger"));
-    expect(screen.getByTestId("visible").textContent).toBe("true");
-    await userEvent.unhover(screen.getByTestId("trigger"));
-    expect(screen.getByTestId("visible").textContent).toBe("false");
-  });
-
-  it("holds mounted after visible becomes false when holdMs > 0", async () => {
-    vi.useFakeTimers();
-    render(<HoverHarness holdMs={160} />);
-    const trigger = screen.getByTestId("trigger");
-    await act(async () => {
-      fireEvent.mouseEnter(trigger);
-    });
-    expect(screen.getByTestId("mounted").textContent).toBe("true");
-    await act(async () => {
-      fireEvent.mouseLeave(trigger);
-    });
-    expect(screen.getByTestId("mounted").textContent).toBe("true");
-    await act(async () => {
-      vi.advanceTimersByTime(161);
-    });
-    expect(screen.getByTestId("mounted").textContent).toBe("false");
-    vi.useRealTimers();
-  });
-
-  it("respects interactive=false in controlled mode", () => {
-    const { rerender } = render(<ControlledHarness interactive={false} isHovered={true} />);
-    expect(screen.getByTestId("showPopup").textContent).toBe("false");
-    rerender(<ControlledHarness interactive={true} isHovered={true} />);
   });
 
   it("showPopup holds through fade when controlled isHovered flips", async () => {
@@ -202,7 +146,7 @@ describe("useHoverVisible", () => {
     const onHoverStart = vi.fn();
     const onHoverEnd = vi.fn();
     function InteractiveHoldHarness({ interactive }: { interactive: boolean }) {
-      const { wrapperRef, showPopup, handleHoverStart } = useHoverVisible<HTMLDivElement>({
+      const { wrapperRef, showPopup, handleHoverStart, handleMouseLeave } = useHoverVisible<HTMLDivElement>({
         holdMs: 160,
         interactive,
         isHovered: true,
@@ -211,7 +155,7 @@ describe("useHoverVisible", () => {
       });
       return (
         <div ref={wrapperRef} data-testid="wrap">
-          <button data-testid="start" onMouseEnter={handleHoverStart as unknown as React.MouseEventHandler}>
+          <button data-testid="start" onMouseEnter={handleHoverStart} onMouseLeave={handleMouseLeave}>
             start
           </button>
           <span data-testid="showPopup">{String(showPopup)}</span>
@@ -224,8 +168,14 @@ describe("useHoverVisible", () => {
       fireEvent.mouseEnter(screen.getByTestId("start"));
     });
     expect(onHoverStart).not.toHaveBeenCalled();
+    fireEvent.mouseLeave(screen.getByTestId("start"));
+    expect(onHoverEnd).not.toHaveBeenCalled();
     rerender(<InteractiveHoldHarness interactive={true} />);
     expect(screen.getByTestId("showPopup").textContent).toBe("true");
+    fireEvent.mouseEnter(screen.getByTestId("start"));
+    fireEvent.mouseLeave(screen.getByTestId("start"));
+    expect(onHoverStart).toHaveBeenCalledOnce();
+    expect(onHoverEnd).toHaveBeenCalledOnce();
     vi.useRealTimers();
   });
 });

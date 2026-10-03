@@ -58,7 +58,19 @@ describe("paired delta noise", () => {
   });
 
   it("marks empty and one-sample comparisons as insufficient", () => {
-    expect(makePairedDelta("empty", emptyPairedWinStats()).noisy).toBe(true);
+    expect(makePairedDelta("empty", emptyPairedWinStats())).toEqual({
+      id: "empty",
+      delta: 0,
+      winRate: 0,
+      baseline: 0,
+      se: 0,
+      turnDelta: 0,
+      baselineTurns: 0,
+      treatmentTurns: 0,
+      turnSe: 0,
+      n: 0,
+      noisy: true,
+    });
     expect(makePairedDelta("single", pairedWinStats(Uint8Array.from([0]), Uint8Array.from([1]))).noisy).toBe(true);
     expect(isDeltaNoisy(0.3, 0.05)).toBe(false);
   });

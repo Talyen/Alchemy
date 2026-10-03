@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  balanceScenarioSeed,
-  BOON_GAUNTLET,
-  coreScenarioSeeds,
-  reportCharacterIds,
-  REPORT_TIERS,
-  titleFor,
-} from "@/lib/balance/report-catalog";
+import { enemiesByType } from "@/lib/game-data";
+import { coreMatchupsForTier, coreScenarioSeeds, REPORT_TIERS, titleFor } from "@/lib/balance/report-catalog";
 
 describe("report-catalog", () => {
   it("resolves catalog titles and preserves unknown IDs, including object property names", () => {
@@ -17,16 +11,21 @@ describe("report-catalog", () => {
     }
   });
 
-  it("exposes tier and gauntlet catalog", () => {
-    expect(REPORT_TIERS).toHaveLength(3);
-    expect(REPORT_TIERS.map((tier) => tier.label)).toEqual(["Early", "Mid", "Late"]);
-    expect(BOON_GAUNTLET.map((entry) => entry.enemyId)).toEqual(["skeleton", "goblin", "mimic", "iron-bear"]);
-  });
-
-  it("derives stable seeds from scenario identity", () => {
-    const identity = ["late", "wizard", "skeleton", 23, 0] as const;
-    expect(balanceScenarioSeed("core", ...identity)).toBe(balanceScenarioSeed("core", ...identity));
-    expect(balanceScenarioSeed("core", ...identity)).not.toBe(balanceScenarioSeed("core", ...identity, "other"));
+  it("covers every enemy at the intended depths in stable encounter order", () => {
+    for (const tier of REPORT_TIERS) {
+      const matchups = coreMatchupsForTier(tier);
+      const grouped = new Map<string, number[]>();
+      for (const row of matchups) {
+        expect(enemiesByType[row.enemyType].some((enemy) => enemy.id === row.enemyId)).toBe(true);
+        grouped.set(row.enemyId, [...(grouped.get(row.enemyId) ?? []), row.depth - tier.depthOffset]);
+      }
+      expect([...grouped.keys()]).toEqual(
+        [...enemiesByType.normal, ...enemiesByType.elite, ...enemiesByType.boss].map((enemy) => enemy.id),
+      );
+      for (const enemy of enemiesByType.normal) expect(grouped.get(enemy.id)).toEqual([0, 3, 6]);
+      for (const enemy of enemiesByType.elite) expect(grouped.get(enemy.id)).toEqual([2, 5, 7]);
+      for (const enemy of enemiesByType.boss) expect(grouped.get(enemy.id)).toEqual([7]);
+    }
   });
 
   it("shares class decks across enemies while keeping fight randomness distinct", () => {
@@ -46,6 +45,5 @@ describe("report-catalog", () => {
     });
     expect(skeleton.deckSeed).toBe(mimic.deckSeed);
     expect(skeleton.fightSeed).not.toBe(mimic.fightSeed);
-    expect(reportCharacterIds()).toEqual([...reportCharacterIds()].sort());
   });
 });

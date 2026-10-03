@@ -58,7 +58,11 @@ export function logError(
   logging = true;
   const entry: LogEntry = { message, source, stack, context, componentStack, cause };
   try {
-    console.error(`[${source}] ${message}`, context ?? "", stack ?? "", componentStack ?? "");
+    try {
+      console.error(`[${source}] ${message}`, context ?? "", stack ?? "", componentStack ?? "");
+    } catch {
+      // A broken console adapter must not disable persistence or crash-reporting sinks.
+    }
     for (const sink of sinks) {
       try {
         sink(entry);
@@ -66,8 +70,6 @@ export function logError(
         // One bad sink (e.g. full storage) must not break logging for the rest.
       }
     }
-  } catch {
-    // console.error itself failed; there is no deeper sink that could report it.
   } finally {
     logging = false;
   }

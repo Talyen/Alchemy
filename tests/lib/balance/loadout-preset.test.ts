@@ -4,7 +4,8 @@ import { buildTypicalGearEffects } from "@/lib/balance/gear-preset";
 import { buildSimCompanionBondLevels, companionIdsFromDeck } from "@/lib/balance/homestead-preset";
 import { createSeededRng } from "@/lib/rng";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
-import { characters, getStartingDeck } from "@/lib/game-data";
+import { characters, createEmptyTalentEffectManifest, getStartingDeck } from "@/lib/game-data";
+import { makeTestCard } from "../../fixtures/cards";
 import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
 
 describe("resolveSimLoadout", () => {
@@ -51,41 +52,47 @@ describe("buildTypicalGearEffects", () => {
 });
 
 describe("simulateBattle loadout", () => {
-  it("uses mid-tier gold when gold is omitted", () => {
-    const result = simulateBattle({
-      characterId: "rogue",
+  it("applies the same Companion bonds to direct and nested summon cards in bare simulations", () => {
+    const summon = { kind: "summon-companion" as const, companionId: "wolf" as const };
+    const card = makeTestCard({ id: "bond-probe", cost: 0, effects: [summon] });
+    const options = {
+      characterId: "knight" as const,
       enemyId: "skeleton",
-      talentPreset: "mid",
-      loadoutMode: "bare",
+      talentPreset: "early" as const,
+      loadoutMode: "bare" as const,
       seed: 7,
-      maxTurns: 2,
-      policy: "random-playable",
+      maxTurns: 3,
+      appliesFightPacing: false,
+      trackMetrics: true,
+    };
+    const direct = simulateBattle({ ...options, deck: [card] });
+    const nested = simulateBattle({
+      ...options,
+      deck: [{ ...card, effects: [{ kind: "chance", probability: 1, successEffects: [summon], failureEffects: [] }] }],
     });
-    expect(result.outcome).toBeDefined();
+    expect(direct.totalCardsPlayed).toBeGreaterThan(0);
+    expect(direct.enemyHealth).toBeLessThan(direct.enemyMaxHealth);
+    expect(nested).toEqual(direct);
   });
 
-  it("honors an explicit gold override of 0", () => {
-    const withGold = simulateBattle({
-      characterId: "wizard",
+  it("uses tier Gold when omitted but honors an explicit empty purse in Gold-scaled damage", () => {
+    const options = {
+      characterId: "knight" as const,
       enemyId: "skeleton",
-      talentPreset: "late",
-      loadoutMode: "bare",
-      gold: 80,
-      seed: 3,
-      maxTurns: 4,
-      policy: "random-playable",
-    });
-    const zeroGold = simulateBattle({
-      characterId: "wizard",
-      enemyId: "skeleton",
-      talentPreset: "late",
-      loadoutMode: "bare",
-      gold: 0,
-      seed: 3,
-      maxTurns: 4,
-      policy: "random-playable",
-    });
-    expect(withGold.seed).toBe(zeroGold.seed);
+      talentPreset: "mid" as const,
+      loadoutMode: "bare" as const,
+      seed: 7,
+      maxTurns: 1,
+      appliesFightPacing: false,
+      talentEffects: { ...createEmptyTalentEffectManifest(), holyGoldPercent: 100 },
+      deck: [makeTestCard({ cost: 0, effects: [{ kind: "damage", damageType: "holy", amount: 1 }] })],
+    };
+    const defaultPurse = simulateBattle(options);
+    const emptyPurse = simulateBattle({ ...options, gold: 0 });
+    expect(defaultPurse.totalCardsPlayed).toBe(1);
+    expect(emptyPurse.totalCardsPlayed).toBe(1);
+    expect(defaultPurse).toEqual(simulateBattle({ ...options, gold: TIER_GOLD.mid }));
+    expect(emptyPurse.enemyHealth).toBeGreaterThan(defaultPurse.enemyHealth);
   });
 
   it("applies gearEffects to max health", () => {

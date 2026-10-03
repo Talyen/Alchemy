@@ -5,7 +5,6 @@ import {
   getShopRefreshPrice,
 } from "@/features/alchemy/run-loop/shop/shop-pricing";
 import {
-  ALCHEMIST_POTION_PRICE,
   ALCHEMIST_REFRESH_PRICE,
   EQUIPMENT_SHOP_ASTRAL_PRICE,
   EQUIPMENT_SHOP_BASIC_PRICE,
@@ -14,7 +13,6 @@ import {
   SHOP_REFRESH_PRICE,
   TRINKET_SHOP_TRINKET_PRICE,
 } from "@/lib/game-constants";
-import { gearDefinitions } from "@/lib/gear";
 import { cardById, cardLibrary, createEmptyTalentEffectManifest } from "@/lib/game-data";
 
 describe("shop-pricing", () => {
@@ -82,19 +80,6 @@ describe("shop-pricing", () => {
     ).toBe(Math.round(SHOP_CARD_PRICE * 0.5) - 5);
   });
 
-  it("getShopBuyPrice halves alchemist potions under happy-hour", () => {
-    const potion = cardLibrary.find((c) => c.id === "health-potion")!;
-    const talents = createEmptyTalentEffectManifest();
-    expect(
-      getShopBuyPrice("alchemistPotion", potion, {
-        talentEffects: talents,
-        runBoons: [],
-        firstPurchaseUsed: true,
-        modifiers: ["happy-hour"],
-      }),
-    ).toBe(Math.round(ALCHEMIST_POTION_PRICE * 0.5));
-  });
-
   it("getShopBuyPrice applies collectors-favor to trinkets", () => {
     const talents = createEmptyTalentEffectManifest();
     expect(getShopBuyPrice("trinket", null, { talentEffects: talents, runBoons: [], firstPurchaseUsed: true })).toBe(
@@ -110,27 +95,20 @@ describe("shop-pricing", () => {
     ).toBe(Math.round(TRINKET_SHOP_TRINKET_PRICE * 0.75));
   });
 
-  it("getShopBuyPrice halves only basic gear under apprentice", () => {
-    const talents = createEmptyTalentEffectManifest();
-    const basicId = Object.keys(gearDefinitions).find((id) => gearDefinitions[id]?.rarity === "basic")!;
-    const astralId = Object.keys(gearDefinitions).find((id) => gearDefinitions[id]?.rarity === "astral")!;
-    const basic = { instanceId: "basic-1", definitionId: basicId, affixes: [] };
-    const astral = { instanceId: "astral-1", definitionId: astralId, affixes: [] };
-    expect(
-      getShopBuyPrice("gear", basic, {
-        talentEffects: talents,
-        runBoons: [],
-        firstPurchaseUsed: true,
-        modifiers: ["apprentice"],
-      }),
-    ).toBe(Math.round(EQUIPMENT_SHOP_BASIC_PRICE * 0.5));
-    expect(
-      getShopBuyPrice("gear", astral, {
-        talentEffects: talents,
-        runBoons: [],
-        firstPurchaseUsed: true,
-        modifiers: ["apprentice"],
-      }),
-    ).toBe(EQUIPMENT_SHOP_ASTRAL_PRICE);
+  it("limits apprentice pricing to Basic gear even with unrelated shop traits present", () => {
+    const context = {
+      talentEffects: createEmptyTalentEffectManifest(),
+      runBoons: [],
+      firstPurchaseUsed: true,
+      modifiers: ["apprentice", "bargain-bin", "happy-hour", "collectors-favor"] as const,
+    };
+    for (const [definitionId, price] of [
+      ["leather-armor-basic", 20],
+      ["longsword-astral", EQUIPMENT_SHOP_ASTRAL_PRICE],
+      ["oathkeeper", EQUIPMENT_SHOP_UNIQUE_PRICE],
+      ["missing-definition", EQUIPMENT_SHOP_BASIC_PRICE],
+    ] as const) {
+      expect(getShopBuyPrice("gear", { instanceId: definitionId, definitionId, affixes: [] }, context)).toBe(price);
+    }
   });
 });

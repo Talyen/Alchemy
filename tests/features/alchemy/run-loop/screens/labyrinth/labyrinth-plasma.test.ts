@@ -19,14 +19,19 @@ function makeNode(overrides: Partial<LabyrinthNode> = {}): LabyrinthNode {
 }
 
 describe("labyrinth node plasma", () => {
+  it("deduplicates modifiers in display order before selecting the two primary colors", () => {
+    expect(
+      getLabyrinthNodePlasmaPair(
+        makeNode({
+          type: "boss",
+          modifiers: ["tempered", "tempered", "plated"],
+          rewardModifiers: ["generous"],
+        }),
+      ),
+    ).toEqual(getPlasmaColorPair(["forge", "armor"]));
+  });
   it("returns no pair for the entrance", () => {
     expect(getLabyrinthNodePlasmaPair(makeNode({ type: "entrance" }))).toBeNull();
-  });
-
-  it("resolves a pair for combat, rest, and boss nodes", () => {
-    expect(getLabyrinthNodePlasmaPair(makeNode({ type: "combat" }))).not.toBeNull();
-    expect(getLabyrinthNodePlasmaPair(makeNode({ type: "rest" }))).not.toBeNull();
-    expect(getLabyrinthNodePlasmaPair(makeNode({ type: "boss" }))).not.toBeNull();
   });
 
   it("falls back to the physical palette for unknown enemies", () => {
@@ -52,10 +57,5 @@ describe("labyrinth node plasma", () => {
       primary: getPlasmaColorPair(["forge"])?.primary,
       secondary: phoenixFeatherStatus.shineColors[0],
     });
-  });
-
-  it("is deterministic for the same node", () => {
-    const node = makeNode({ type: "boss", modifiers: ["tempered"] });
-    expect(getLabyrinthNodePlasmaPair(node)).toEqual(getLabyrinthNodePlasmaPair({ ...node }));
   });
 });

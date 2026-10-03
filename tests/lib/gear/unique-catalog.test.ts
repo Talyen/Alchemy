@@ -96,6 +96,30 @@ describe("unique item catalog", () => {
   });
 });
 
+it("repairs malformed rolls consistently for saved gear, combat effects, and tooltips", () => {
+  const raw = {
+    instanceId: "damaged-save-item",
+    definitionId: "longsword-basic",
+    affixes: [
+      null,
+      4,
+      { id: { toString: () => "flat-physical" }, value: 3 },
+      { id: "flat-physical", value: "4" },
+      { id: "flat-physical", value: 999 },
+    ],
+  };
+  const normalized = normalizeGearInstance(raw)!;
+  const expected = gearAffixCatalog["flat-physical"].roll.basic.max;
+  expect(normalized).toEqual({
+    instanceId: raw.instanceId,
+    definitionId: raw.definitionId,
+    affixes: [{ id: "flat-physical", value: expected }],
+  });
+  const live = raw as unknown as GearInstance;
+  expect(effectsForInstance(live)).toEqual(effectsForInstance(normalized));
+  expect(getGearInstanceTooltipEntries(live)).toEqual(getGearInstanceTooltipEntries(normalized));
+});
+
 describe("fixed Unique compatibility", () => {
   it.each(uniqueItemList)("repairs saved $displayName without changing ownership", (unique) => {
     const original: GearInstance = {

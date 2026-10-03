@@ -26,36 +26,15 @@ function slotsForPreset(preset: TalentPreset): GearSlot[] {
   return LATE_GEAR_SLOTS;
 }
 
-function itemFitsSlot(item: GearBaseItemDefinition, slot: GearSlot): boolean {
-  return item.compatibleSlots.includes(slot);
-}
-
-function itemMatchesAffinity(item: GearBaseItemDefinition, keywords: readonly string[]): boolean {
-  if (keywords.length === 0) return true;
-  return item.affinityKeywords.some((keyword) => keywords.includes(keyword));
-}
-
-function slotConstraints(
-  item: GearBaseItemDefinition,
-  slot: GearSlot,
-  options: { rangedMainHand: boolean; skipTwoHanded: boolean },
-): boolean {
-  if (!itemFitsSlot(item, slot)) return false;
-  if (slot === "off-hand") {
-    if (options.rangedMainHand) return item.slotRule === "quiver";
-    if (item.slotRule === "quiver") return false;
-  }
-  if (options.skipTwoHanded && item.slotRule === "two-handed") return false;
-  return true;
-}
-
-function poolForSlot(
-  slot: GearSlot,
-  keywords: readonly string[],
-  options: { rangedMainHand: boolean; skipTwoHanded: boolean },
-): GearBaseItemDefinition[] {
-  const inSlot = gearBaseItemList.filter((item) => slotConstraints(item, slot, options));
-  const affinity = inSlot.filter((item) => itemMatchesAffinity(item, keywords));
+function poolForSlot(slot: GearSlot, keywords: readonly string[], rangedMainHand: boolean): GearBaseItemDefinition[] {
+  const inSlot = gearBaseItemList.filter(
+    (item) =>
+      item.compatibleSlots.includes(slot) &&
+      (slot !== "off-hand" || (rangedMainHand ? item.slotRule === "quiver" : item.slotRule !== "quiver")),
+  );
+  const affinity = inSlot.filter(
+    (item) => keywords.length === 0 || item.affinityKeywords.some((keyword) => keywords.includes(keyword)),
+  );
   return affinity.length > 0 ? affinity : inSlot;
 }
 
@@ -69,26 +48,21 @@ export function buildTypicalGearEffects(
   if (slots.length === 0) return { ...defaultGearEffects };
 
   const keywords = characters[characterId].keywords;
+  const weights = resolveLootWeights({
+    source: SIM_GEAR_ROLL_SOURCE,
+    progress: { depth: SIM_GEAR_ROLL_DEPTH, highestCompletedDifficulty: null },
+    astralChanceBonus,
+  });
   let effects = { ...defaultGearEffects };
   let rangedMainHand = false;
   let skipOffHand = false;
 
   for (const slot of slots) {
     if (slot === "off-hand" && skipOffHand) continue;
-    const pool = poolForSlot(slot, keywords, { rangedMainHand, skipTwoHanded: false });
+    const pool = poolForSlot(slot, keywords, rangedMainHand);
     const chosen = pickRandom(pool, rng);
     if (!chosen) continue;
-    const instance = generateLootGearChoices(
-      1,
-      rng,
-      resolveLootWeights({
-        source: SIM_GEAR_ROLL_SOURCE,
-        progress: { depth: SIM_GEAR_ROLL_DEPTH, highestCompletedDifficulty: null },
-        astralChanceBonus,
-      }),
-      new Set(),
-      [chosen.id],
-    )[0];
+    const instance = generateLootGearChoices(1, rng, weights, new Set(), [chosen.id])[0];
     if (!instance) continue;
     effects = mergeGearEffectManifests(effects, effectsForInstance(instance));
     if (slot === "main-hand") {

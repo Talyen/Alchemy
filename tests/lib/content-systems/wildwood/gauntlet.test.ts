@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  canCompleteWildwoodDraft,
-  canOfferWildwoodRemoval,
-  canPrepareNextWildwoodBoss,
   canSkipWildwoodRemoval,
-  createInitialWildwoodDraftState,
   createWildwoodBossBag,
   drawWildwoodBoss,
   enterWildwoodBattle,
@@ -14,12 +10,11 @@ import {
   pickWildwoodDraftCard,
   prepareNextWildwoodBoss,
   removeWildwoodCard,
-  withWildwoodModifier,
   type WildwoodDraftState,
 } from "@/lib/content-systems/wildwood/gauntlet";
 import { WILDWOOD_BOSS_IDS } from "@/lib/content-systems/wildwood/bosses";
-import { DRAFT_CHOICES, DRAFT_ROUNDS } from "@/lib/game-constants";
-import type { BestiaryEntry, BattleCard } from "@/lib/game-data";
+import { DRAFT_ROUNDS } from "@/lib/game-constants";
+import type { BattleCard } from "@/lib/game-data";
 import { createRunRngState, createRunStateRng } from "@/lib/rng";
 import { makeTestCard } from "../../../fixtures/cards";
 
@@ -54,55 +49,19 @@ function card(id: string): BattleCard {
 }
 
 describe("Wildwood Draft gauntlet rules", () => {
-  it("initializes Wildwood draft state with valid initial choices", () => {
-    const initial = createInitialWildwoodDraftState("knight", () => 0.5);
-    expect(initial.phase).toBe("draft");
-    expect(initial.draftChoices).toHaveLength(DRAFT_CHOICES);
-    expect(initial.remainingBossIds).toEqual([]);
-    expect(initial.currentBossId).toBeNull();
-  });
-
-  it("creates a shuffled bag containing every boss exactly once", () => {
+  it("refills every boss once and repairs an actual boundary repeat without rerolling", () => {
     const bag = createWildwoodBossBag(() => 0.5);
-    expect([...bag].sort()).toEqual([...WILDWOOD_BOSS_IDS].sort());
-  });
-
-  it("refills the bag and prevents a boundary repeat", () => {
-    const result = drawWildwoodBoss([], "iron-bear", () => 0);
-    expect(result.bossId).not.toBe("iron-bear");
-    expect(result.remainingBossIds).toHaveLength(WILDWOOD_BOSS_IDS.length - 1);
+    const source = countingRng();
+    const draw = drawWildwoodBoss([], bag[0]!, source.rng);
+    expect(draw.bossId).toBe(bag[1]);
+    expect(draw.remainingBossIds).toEqual([bag[0], ...bag.slice(2)]);
+    expect([draw.bossId, ...draw.remainingBossIds].sort()).toEqual([...WILDWOOD_BOSS_IDS].sort());
+    expect(source.draws).toBe(WILDWOOD_BOSS_IDS.length - 1);
   });
 
   it("consumes the next boss from an existing bag", () => {
     const result = drawWildwoodBoss(["forge-golem", "iron-bear"], "frostwarden", () => 0.5);
     expect(result).toEqual({ bossId: "forge-golem", remainingBossIds: ["iron-bear"] });
-  });
-
-  it("offers removal only for decks with at least eight cards", () => {
-    expect(canOfferWildwoodRemoval(7)).toBe(false);
-    expect(canOfferWildwoodRemoval(8)).toBe(true);
-  });
-
-  it("appends a shared combat trait without mutating the boss", () => {
-    const boss: BestiaryEntry = {
-      id: "boss",
-      title: "Boss",
-      subtitle: "",
-      descriptionLines: [],
-      art: "",
-      enemyType: "boss",
-      traits: [{ id: "normal", title: "Normal", description: "Normal trait" }],
-      abilityIds: ["slash", "bash", "block"],
-    };
-
-    const result = withWildwoodModifier(boss, "tempered");
-
-    expect(result).not.toBe(boss);
-    expect(result.traits).toEqual([
-      boss.traits[0],
-      { id: "tempered", title: "Tempered", description: "Enemy gains 1 Forge each turn" },
-    ]);
-    expect(boss.traits).toHaveLength(1);
   });
 });
 
@@ -135,21 +94,14 @@ describe("Wildwood draft picks", () => {
     expect(pickWildwoodDraftCard(draftState(), "knight", fullDeck, "slash", source.rng)).toBeNull();
     expect(source.draws).toBe(0);
   });
-
-  it("rejects completion from the wrong phase or undersized deck", () => {
-    expect(canCompleteWildwoodDraft(draftState(), DRAFT_ROUNDS - 1)).toBe(false);
-    expect(canCompleteWildwoodDraft(draftState({ phase: "reward" }), DRAFT_ROUNDS)).toBe(false);
-    expect(canCompleteWildwoodDraft(draftState(), DRAFT_ROUNDS)).toBe(true);
-  });
 });
 
 describe("Wildwood phase transitions", () => {
-  it("prepares the next boss from a completed draft and from reward or removal", () => {
-    expect(canPrepareNextWildwoodBoss(draftState(), DRAFT_ROUNDS - 1)).toBe(false);
-    expect(canPrepareNextWildwoodBoss(draftState({ phase: "battle" }), DRAFT_ROUNDS)).toBe(false);
-    expect(canPrepareNextWildwoodBoss(draftState(), DRAFT_ROUNDS)).toBe(true);
-    expect(canPrepareNextWildwoodBoss(draftState({ phase: "reward" }), 5)).toBe(true);
-    expect(canPrepareNextWildwoodBoss(draftState({ phase: "removal" }), 8)).toBe(true);
+  it("rejects boss preparation from battle or an unfinished draft without spending RNG", () => {
+    const source = countingRng();
+    expect(prepareNextWildwoodBoss(draftState(), DRAFT_ROUNDS - 1, source.rng)).toBeNull();
+    expect(prepareNextWildwoodBoss(draftState({ phase: "battle" }), DRAFT_ROUNDS, source.rng)).toBeNull();
+    expect(source.draws).toBe(0);
   });
 
   it("does not enter battle from an unprepared reward after victory", () => {

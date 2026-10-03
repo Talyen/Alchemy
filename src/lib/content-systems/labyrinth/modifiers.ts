@@ -56,7 +56,11 @@ export function getEnemyModifiersForNodeType(
   );
   const selected: EncounterCombatTraitId[] = [];
   for (const id of pool) {
-    if ([...enemyTraits, ...selected].every((other) => areLabyrinthTraitsCompatible(id, other))) selected.push(id);
+    if (
+      enemyTraits.every((other) => areLabyrinthTraitsCompatible(id, other)) &&
+      selected.every((other) => areLabyrinthTraitsCompatible(id, other))
+    )
+      selected.push(id);
     if (selected.length === (type === "combat" ? 1 : 2)) break;
   }
   return selected;

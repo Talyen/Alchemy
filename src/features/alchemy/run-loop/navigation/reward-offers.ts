@@ -1,11 +1,4 @@
-import {
-  isLootEligible,
-  resolveLootWeights,
-  rollLootGroup,
-  type LootAvailability,
-  type LootProgress,
-  type LootSource,
-} from "@/lib/loot";
+import { isLootEligible, resolveLootWeights, rollLootGroup, type LootProgress, type LootSource } from "@/lib/loot";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import {
   getCardKeywords,
@@ -88,56 +81,6 @@ function hoardBaseIds(modifier: EncounterRewardTraitId): string[] | null {
   return null;
 }
 
-function createHoardRewardState({
-  rewardModifiers,
-  lootProgress,
-  source,
-  rng,
-  ownedUniqueIds,
-  trinkets,
-  availability,
-  gearAstralChanceBonus,
-}: {
-  rewardModifiers: readonly EncounterRewardTraitId[];
-  lootProgress: LootProgress;
-  source: LootSource;
-  rng: () => number;
-  ownedUniqueIds: ReadonlySet<string>;
-  trinkets: typeof trinketLibrary;
-  availability: LootAvailability;
-  gearAstralChanceBonus: number;
-}): RewardOffer | null {
-  for (const modifier of rewardModifiers) {
-    const baseIds = hoardBaseIds(modifier);
-    if (baseIds) {
-      const gearAvailable = getGearLootAvailability(ownedUniqueIds, baseIds);
-      if (baseIds.length === 0 || (!gearAvailable.basic && !gearAvailable.astral)) return null;
-      const weights = resolveLootWeights({
-        source,
-        progress: lootProgress,
-        astralChanceBonus: gearAstralChanceBonus,
-        available: { ...gearAvailable, card: false, boon: false, trinket: false, unique: false },
-      });
-      const choices = generateLootGearChoices(REWARD_CARD_CHOICES, rng, weights, ownedUniqueIds, baseIds, true);
-      return choices.length > 0 ? { rewardType: "gear", choices } : null;
-    }
-    if (modifier === "astral-hoard" || modifier === "unique-hoard") {
-      const rarity = modifier === "astral-hoard" ? "astral" : "unique";
-      if (!isLootEligible(rarity, lootProgress.depth) || availability[rarity] === false) return null;
-      const choices = generateGearRewardChoicesForRarity(REWARD_CARD_CHOICES, rarity, rng, ownedUniqueIds);
-      return choices.length > 0 ? { rewardType: "gear", choices } : null;
-    }
-    if (modifier === "trinket-hoard") {
-      if (!isLootEligible("trinket", lootProgress.depth) || trinkets.length === 0) return null;
-      return {
-        rewardType: "trinket",
-        choices: sampleItems(trinkets, REWARD_CARD_CHOICES, rng),
-      };
-    }
-  }
-  return null;
-}
-
 export function createRewardOffer({
   source,
   lootProgress,
@@ -168,17 +111,36 @@ export function createRewardOffer({
     astralChanceBonus: gearAstralChanceBonus,
     available: availability,
   });
-  const hoard = createHoardRewardState({
-    rewardModifiers,
-    lootProgress,
-    source,
-    rng,
-    ownedUniqueIds,
-    trinkets,
-    availability,
-    gearAstralChanceBonus,
-  });
-  if (hoard) return hoard;
+  for (const modifier of rewardModifiers) {
+    const baseIds = hoardBaseIds(modifier);
+    if (baseIds) {
+      const gearAvailable = getGearLootAvailability(ownedUniqueIds, baseIds);
+      if (baseIds.length === 0 || (!gearAvailable.basic && !gearAvailable.astral)) break;
+      const weights = resolveLootWeights({
+        source,
+        progress: lootProgress,
+        astralChanceBonus: gearAstralChanceBonus,
+        available: { ...gearAvailable, card: false, boon: false, trinket: false, unique: false },
+      });
+      const choices = generateLootGearChoices(REWARD_CARD_CHOICES, rng, weights, ownedUniqueIds, baseIds, true);
+      if (choices.length > 0) return { rewardType: "gear", choices };
+      break;
+    }
+    if (modifier === "astral-hoard" || modifier === "unique-hoard") {
+      const rarity = modifier === "astral-hoard" ? "astral" : "unique";
+      if (!isLootEligible(rarity, lootProgress.depth) || availability[rarity] === false) break;
+      const choices = generateGearRewardChoicesForRarity(REWARD_CARD_CHOICES, rarity, rng, ownedUniqueIds);
+      if (choices.length > 0) return { rewardType: "gear", choices };
+      break;
+    }
+    if (modifier === "trinket-hoard") {
+      if (!isLootEligible("trinket", lootProgress.depth) || trinkets.length === 0) break;
+      return {
+        rewardType: "trinket",
+        choices: sampleItems(trinkets, REWARD_CARD_CHOICES, rng),
+      };
+    }
+  }
   const category = rollLootGroup(weights, rng);
   switch (category) {
     case "gear":

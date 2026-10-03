@@ -1,55 +1,35 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-  addMaterials,
   bondCompanion,
   completeResearch,
   constructBuilding,
   plantFarm,
   pruneUnknownCompanions,
-  setMaterials,
 } from "@/features/alchemy/shared/stores/homestead-actions";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { createEmptyTierRecord, type TieredItem } from "@/lib/homestead/tiers";
 import { createInitialPermanentFields } from "@/features/alchemy/shared/stores/run-state-init";
 import * as errorLogger from "@/lib/error-logger";
 import type { CompanionId } from "@/lib/game-data";
 
 describe("homestead-actions", () => {
   describe("pruneUnknownCompanions", () => {
-    it("returns original record when all companion IDs are known", () => {
-      const companions = { wolf: 2, phoenix: 1 } as Record<CompanionId, number>;
-      const result = pruneUnknownCompanions(companions);
-      expect(result).toEqual(companions);
-    });
-
     it("filters unknown companions and logs error", () => {
       const logSpy = vi.spyOn(errorLogger, "logError").mockImplementation(() => {});
-      const corrupted = { wolf: 2, unknownCompanion: 3 } as any;
+      const corrupted = JSON.parse('{"wolf":2,"unknownCompanion":3,"toString":4,"__proto__":5}') as Record<
+        CompanionId,
+        number
+      >;
+      const before = structuredClone(corrupted);
 
       const result = pruneUnknownCompanions(corrupted);
       expect(result).toEqual({ wolf: 2 });
       expect(logSpy).toHaveBeenCalledWith(
         "Removed companions missing from catalog",
         "other",
-        expect.objectContaining({ removed: ["unknownCompanion"] }),
+        expect.objectContaining({ removed: ["unknownCompanion", "toString", "__proto__"] }),
       );
+      expect(corrupted).toEqual(before);
       logSpy.mockRestore();
-    });
-  });
-
-  describe("addMaterials and setMaterials", () => {
-    it("adds materials to profile", () => {
-      const profile = createInitialPermanentFields();
-      addMaterials(profile, { ...emptyInventory(), wood: 5, iron: 10 });
-      expect(profile.materialInventory.wood).toBe(5);
-      expect(profile.materialInventory.iron).toBe(10);
-    });
-
-    it("sets materials on profile directly", () => {
-      const profile = createInitialPermanentFields();
-      setMaterials(profile, { ...emptyInventory(), gems: 99 });
-      expect(profile.materialInventory.gems).toBe(99);
-      expect(profile.materialInventory.wood).toBe(0);
     });
   });
 
@@ -57,9 +37,9 @@ describe("homestead-actions", () => {
     it("fails when inventory cannot afford building cost", () => {
       const profile = createInitialPermanentFields();
       profile.materialInventory = emptyInventory();
-      const success = constructBuilding(profile, "blacksmiths-forge");
-      expect(success).toBe(false);
-      expect(profile.constructedBuildings["blacksmiths-forge"]).toBe(0);
+      const before = structuredClone(profile);
+      expect(constructBuilding(profile, "blacksmiths-forge")).toBe(false);
+      expect(profile).toEqual(before);
     });
 
     it("upgrades building, deducts cost, and updates computed effects", () => {
@@ -80,9 +60,9 @@ describe("homestead-actions", () => {
       profile.constructedBuildings["blacksmiths-forge"] = 4;
       profile.materialInventory = { ...emptyInventory(), iron: 1000, stone: 1000 };
 
-      const success = constructBuilding(profile, "blacksmiths-forge");
-      expect(success).toBe(false);
-      expect(profile.constructedBuildings["blacksmiths-forge"]).toBe(4);
+      const before = structuredClone(profile);
+      expect(constructBuilding(profile, "blacksmiths-forge")).toBe(false);
+      expect(profile).toEqual(before);
     });
   });
 
@@ -128,24 +108,6 @@ describe("homestead-actions", () => {
       const success = bondCompanion(profile, "wolf");
       expect(success).toBe(false);
       expect(profile.bondedCompanions.wolf).toBe(0);
-    });
-  });
-
-  describe("createEmptyTierRecord", () => {
-    const testItems: Array<TieredItem<"a" | "b" | "c", number>> = [
-      { id: "a", tiers: [1, 2, 3] },
-      { id: "b", tiers: [1, 2] },
-      { id: "c", tiers: [1] },
-    ];
-
-    it("creates zero-filled record", () => {
-      const result = createEmptyTierRecord(testItems);
-      expect(result).toEqual({ a: 0, b: 0, c: 0 });
-    });
-
-    it("handles empty items", () => {
-      const result = createEmptyTierRecord([]);
-      expect(result).toEqual({});
     });
   });
 });

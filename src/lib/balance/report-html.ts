@@ -35,6 +35,20 @@ function pairedRows(rows: readonly PairedTierRow[], kind: TitleLookupKind): stri
     .join("\n");
 }
 
+function pairedSection(
+  title: string,
+  explanation: string,
+  rows: readonly PairedTierRow[],
+  kind: "boon" | "card" | "talent" | "companion" | "gear",
+): string {
+  const heading = { boon: "Boon", card: "Card", talent: "Talent", companion: "Companion", gear: "Item" }[kind];
+  return `<h2>${escapeHtml(title)}</h2>
+${explanation ? `<p class="meta">${escapeHtml(explanation)}</p>` : ""}
+<div class="scroll"><table><thead><tr><th>${heading}</th><th>Delta Early</th><th>Delta Mid</th><th>Delta Late</th></tr></thead><tbody>
+${pairedRows(rows, kind)}
+</tbody></table></div>`;
+}
+
 export function renderBalanceReportHtml(model: BalanceReportModel, options: ReportRunOptions): string {
   const methodology = reportMethodologyLines(options)
     .map((line) => `<li>${escapeHtml(line)}</li>`)
@@ -121,51 +135,19 @@ ${classRows}
 ${matchupRows}
 </tbody></table></div>
 
-<h2>Boon Rankings</h2>
-<p class="meta">Paired delta vs no-boon baseline (same deck/seed/matchup). Noisy = |delta| &lt; 2 SE.</p>
-<div class="scroll"><table><thead><tr><th>Boon</th><th>Delta Early</th><th>Delta Mid</th><th>Delta Late</th></tr></thead><tbody>
-${pairedRows(model.boons, "boon")}
-</tbody></table></div>
-
-<h2>Card Rankings — isolated vs Skeleton</h2>
-<p class="meta">Target card + 9 random others vs random 10-card baseline. Paired seeds.</p>
-<div class="scroll"><table><thead><tr><th>Card</th><th>Delta Early</th><th>Delta Mid</th><th>Delta Late</th></tr></thead><tbody>
-${pairedRows(model.cardsIsolatedSkeleton, "card")}
-</tbody></table></div>
-
-<h2>Card Rankings — isolated vs Mimic</h2>
-<div class="scroll"><table><thead><tr><th>Card</th><th>Delta Early</th><th>Delta Mid</th><th>Delta Late</th></tr></thead><tbody>
-${pairedRows(model.cardsIsolatedElite, "card")}
-</tbody></table></div>
-
-<h2>Card Rankings — in-class decks</h2>
-<p class="meta">Insert (or remove-then-compare) the card in a class-identity deck vs Skeleton.</p>
-<div class="scroll"><table><thead><tr><th>Card</th><th>Delta Early</th><th>Delta Mid</th><th>Delta Late</th></tr></thead><tbody>
-${pairedRows(model.cardsInClass, "card")}
-</tbody></table></div>
-
-<h2>Talent ablation</h2>
-<p class="meta">Affinity combat talents on vs off, class decks, gauntlet enemies, paired.</p>
-<div class="scroll"><table><thead><tr><th>Talent</th><th>Delta Early</th><th>Delta Mid</th><th>Delta Late</th></tr></thead><tbody>
-${pairedRows(model.talents, "talent")}
-</tbody></table></div>
-
-<h2>Companion ablation</h2>
-<p class="meta">Summon card in vs out of class decks on the gauntlet.</p>
-<div class="scroll"><table><thead><tr><th>Companion</th><th>Delta Early</th><th>Delta Mid</th><th>Delta Late</th></tr></thead><tbody>
-${pairedRows(model.companions, "companion")}
-</tbody></table></div>
+${pairedSection("Boon Rankings", "Paired delta vs no-boon baseline (same deck/seed/matchup). Noisy = |delta| < 2 SE.", model.boons, "boon")}
+${pairedSection("Card Rankings — isolated vs Skeleton", "Target card + 9 random others vs random 10-card baseline. Paired seeds.", model.cardsIsolatedSkeleton, "card")}
+${pairedSection("Card Rankings — isolated vs Mimic", "", model.cardsIsolatedElite, "card")}
+${pairedSection("Card Rankings — in-class decks", "Insert (or remove-then-compare) the card in a class-identity deck vs Skeleton.", model.cardsInClass, "card")}
+${pairedSection("Talent ablation", "Affinity combat talents on vs off, class decks, gauntlet enemies, paired.", model.talents, "talent")}
+${pairedSection("Companion ablation", "Summon card in vs out of class decks on the gauntlet.", model.companions, "companion")}
 
 <h2>Item affix isolation</h2>
 <p class="meta">One affix vs no gear, all heroes and deck seeds. Rounded midpoint roll: Basic early/mid, Astral late; unique affixes use their fixed value. These are sensitivity probes, including early access to unique effects.</p>
 <table><thead><tr><th>Affix</th><th>Early Δ</th><th>Mid Δ</th><th>Late Δ</th></tr></thead><tbody>
 ${pairedRows(model.affixes, "affix")}
 </tbody></table>
-<h2>Gear ablation</h2>
-<p class="meta">Target base gear item equipped vs default gear baseline on the gauntlet.</p>
-<div class="scroll"><table><thead><tr><th>Item</th><th>Delta Early</th><th>Delta Mid</th><th>Delta Late</th></tr></thead><tbody>
-${pairedRows(model.gear, "gear")}
-</tbody></table></div>
+${pairedSection("Gear ablation", "Target base gear item equipped vs default gear baseline on the gauntlet.", model.gear, "gear")}
 
 <h2>Anomalies</h2>
 <div class="scroll"><table><thead><tr><th>Field</th><th>Max Value</th><th>Battles</th><th>Peak Scenario</th></tr></thead><tbody>

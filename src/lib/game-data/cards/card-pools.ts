@@ -21,7 +21,7 @@ const POTION_CARD_IDS: ReadonlySet<string> = new Set([
 ]);
 
 export function isPotionCard(card: Pick<BattleCard, "id">): boolean {
-  return POTION_CARD_IDS.has(card.id) || isMixedPotionCard(card);
+  return isStandardPotionCard(card) || isMixedPotionCard(card);
 }
 
 export function isStandardPotionCard(card: Pick<BattleCard, "id">): boolean {

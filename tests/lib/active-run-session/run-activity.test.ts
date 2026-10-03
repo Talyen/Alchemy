@@ -1,4 +1,3 @@
-import { emptyAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
 import { describe, expect, it } from "vitest";
 import {
   emptyShopState,
@@ -8,93 +7,73 @@ import {
   transitionRunActivity,
   type RunActivity,
 } from "@/lib/active-run-session";
-import { SHOP_REFRESHES } from "@/lib/game-constants";
 
-describe("run-activity", () => {
-  describe("isActiveRunActivity", () => {
-    it("returns false for inactive activity and true for any active activity", () => {
-      expect(isActiveRunActivity({ kind: "inactive" })).toBe(false);
-      expect(isActiveRunActivity({ kind: "idle" })).toBe(true);
-      expect(isActiveRunActivity({ kind: "battle" })).toBe(true);
-      expect(isActiveRunActivity({ kind: "shop", data: emptyShopState() })).toBe(true);
-    });
+const idle: RunActivity = { kind: "idle" };
+
+describe("run activity ownership", () => {
+  it("preserves live visit progress on same-screen and meta navigation", () => {
+    const shop = { ...emptyShopState(), refreshesLeft: 1, purchasedIds: ["slash-0"] };
+    const activity: RunActivity = { kind: "shop", data: shop };
+    expect(readActivityData(activity, "shop")).toBe(shop);
+    expect(transitionRunActivity(activity, "shop")).toBe(activity);
+    expect(transitionRunActivity(activity, "options")).toBe(activity);
+    expect(runActivityScreen(activity)).toBe("shop");
+    expect(isActiveRunActivity(activity)).toBe(true);
   });
 
-  describe("readActivityData", () => {
-    it("reads matching activity data when present", () => {
-      const shopState = { ...emptyShopState(), refreshesLeft: 9 };
-      const activity: RunActivity = { kind: "shop", data: shopState };
-      expect(readActivityData(activity, "shop")).toBe(shopState);
-    });
-
-    it("returns frozen fallback empty visit when kind does not match", () => {
-      const activity: RunActivity = { kind: "idle" };
-      const fallbackShop = readActivityData(activity, "shop");
-      expect(fallbackShop.cards).toEqual([]);
-      expect(fallbackShop.refreshesLeft).toBe(SHOP_REFRESHES);
-      expect(Object.isFrozen(fallbackShop)).toBe(true);
-      expect(Object.isFrozen(fallbackShop.cards)).toBe(true);
-
-      // Attempting to mutate fallback in strict mode throws
-      expect(() => {
-        fallbackShop.refreshesLeft = 99;
-      }).toThrow();
-      expect(() => {
-        fallbackShop.cards.push(null as never);
-      }).toThrow();
-    });
-  });
-
-  describe("runActivityScreen", () => {
-    it("returns null for idle and inactive activities", () => {
-      expect(runActivityScreen({ kind: "idle" })).toBeNull();
-      expect(runActivityScreen({ kind: "inactive" })).toBeNull();
-    });
-
-    it("returns screen name for progress and visit activities", () => {
-      expect(runActivityScreen({ kind: "battle" })).toBe("battle");
-      expect(runActivityScreen({ kind: "campfire", data: emptyAlchemyVisit() })).toBe("campfire");
-      expect(runActivityScreen({ kind: "shop", data: emptyShopState() })).toBe("shop");
-    });
-  });
-
-  describe("transitionRunActivity", () => {
-    it("preserves identical activity when target screen matches", () => {
-      const current: RunActivity = { kind: "battle" };
-      expect(transitionRunActivity(current, "battle")).toBe(current);
-    });
-
-    it("transitions to stateless progress screens", () => {
-      expect(transitionRunActivity({ kind: "idle" }, "rewards")).toEqual({ kind: "rewards" });
-      expect(transitionRunActivity({ kind: "idle" }, "campfire")).toEqual({
-        kind: "campfire",
-        data: emptyAlchemyVisit(),
-      });
-      expect(transitionRunActivity({ kind: "idle" }, "labyrinth-map")).toEqual({ kind: "labyrinth-map" });
-    });
-
-    it("transitions to visit screens with empty initialized state", () => {
-      const shopActivity = transitionRunActivity({ kind: "idle" }, "shop");
-      expect(shopActivity.kind).toBe("shop");
-      if (shopActivity.kind === "shop") {
-        expect(shopActivity.data.cards).toEqual([]);
-        expect(shopActivity.data.refreshesLeft).toBe(SHOP_REFRESHES);
+  it("initializes every visit with fresh mutable state matching its immutable read fallback", () => {
+    for (const kind of [
+      "campfire",
+      "transmutation",
+      "shop",
+      "alchemist",
+      "trinket-shop",
+      "equipment-shop",
+      "mystery",
+      "corruption",
+    ] as const) {
+      const first = transitionRunActivity(idle, kind);
+      const second = transitionRunActivity(idle, kind);
+      const fallback = readActivityData(idle, kind);
+      expect(first, kind).toEqual({ kind, data: fallback });
+      if (fallback === null) continue;
+      const data = readActivityData(first, kind);
+      expect(data, kind).not.toBe(readActivityData(second, kind));
+      expect(data, kind).not.toBe(fallback);
+      expect(Object.isFrozen(data), kind).toBe(false);
+      expect(Object.isFrozen(fallback), kind).toBe(true);
+      for (const value of Object.values(fallback)) {
+        if (value && typeof value === "object") expect(Object.isFrozen(value), kind).toBe(true);
       }
+    }
+    const fallback = readActivityData(idle, "shop");
+    expect(() => {
+      fallback.cards.push(null as never);
+    }).toThrow();
+    expect(() => {
+      fallback.refreshesLeft = 99;
+    }).toThrow();
+    const fresh = transitionRunActivity(idle, "shop");
+    expect(readActivityData(fresh, "shop")).toEqual(emptyShopState());
+  });
 
-      const mysteryActivity = transitionRunActivity({ kind: "idle" }, "mystery");
-      expect(mysteryActivity.kind).toBe("mystery");
-      if (mysteryActivity.kind === "mystery") {
-        expect(mysteryActivity.data.mysteryEvent).toBeNull();
-      }
-
-      const corruptionActivity = transitionRunActivity({ kind: "idle" }, "corruption");
-      expect(corruptionActivity).toEqual({ kind: "corruption", data: null });
-    });
-
-    it("preserves activity for unhandled screens", () => {
-      const current: RunActivity = { kind: "battle" };
-      // Options screen does not alter in-run activity
-      expect(transitionRunActivity(current, "options")).toBe(current);
-    });
+  it("keeps progress screens resumable while inactive and idle remain unrouted", () => {
+    for (const kind of [
+      "battle",
+      "rewards",
+      "destination",
+      "labyrinth-map",
+      "wildwood-removal",
+      "draft-deck",
+      "difficulty-select",
+    ] as const) {
+      const activity = transitionRunActivity(idle, kind);
+      expect(activity).toEqual({ kind });
+      expect(runActivityScreen(activity)).toBe(kind);
+    }
+    expect(runActivityScreen(idle)).toBeNull();
+    expect(runActivityScreen({ kind: "inactive" })).toBeNull();
+    expect(isActiveRunActivity({ kind: "inactive" })).toBe(false);
+    expect(isActiveRunActivity(idle)).toBe(true);
   });
 });

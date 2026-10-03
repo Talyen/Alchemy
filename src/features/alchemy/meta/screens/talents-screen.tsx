@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { RotateCcw } from "lucide-react";
 
 import {
@@ -45,57 +45,39 @@ export function TalentsScreen({
   const [hoveredOverviewKeyword, setHoveredOverviewKeyword] = useState<KeywordId | null>(null);
   const [hoveredTalent, setHoveredTalent] = useState<TalentDefinition | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const keywordIds = useMemo(() => getTalentTreeKeywordIds(), []);
+  const keywordIds = getTalentTreeKeywordIds();
   const hasAllocatedTalents = Object.values(unlockedTalents).some((talents) => (talents?.length ?? 0) > 0);
-  const unspentByKeyword = useMemo(() => {
-    const map = new Map<KeywordId, boolean>();
-    for (const keywordId of keywordIds) {
-      map.set(
-        keywordId,
-        getTalentKeywordProgress(
-          talentXP[keywordId] ?? 0,
-          (unlockedTalents[keywordId] ?? []).length,
-          countImplementedTalents(keywordId),
-        ).hasUnspent,
-      );
-    }
-    return map;
-  }, [keywordIds, talentXP, unlockedTalents]);
-
+  const unspentByKeyword = new Map(
+    keywordIds.map((keywordId) => [
+      keywordId,
+      getTalentKeywordProgress(
+        talentXP[keywordId] ?? 0,
+        (unlockedTalents[keywordId] ?? []).length,
+        countImplementedTalents(keywordId),
+      ).hasUnspent,
+    ]),
+  );
   const selectedKeywordDef = selectedKeyword ? keywordDefinitions[selectedKeyword] : undefined;
-  const unlockedIds = useMemo(
-    () => (selectedKeyword ? (unlockedTalents[selectedKeyword] ?? []) : []),
-    [selectedKeyword, unlockedTalents],
+  const unlockedIds = selectedKeyword ? (unlockedTalents[selectedKeyword] ?? []) : [];
+  const allTalentsForKeyword = selectedKeyword ? getTalentsForKeyword(selectedKeyword) : [];
+  const allocatableIds = new Set(
+    selectedKeyword ? getAllocatableTalentChoices(selectedKeyword, unlockedIds).map((talent) => talent.id) : [],
   );
-  const allTalentsForKeyword = useMemo(
-    () => (selectedKeyword ? getTalentsForKeyword(selectedKeyword) : []),
-    [selectedKeyword],
-  );
-  const allocatableIds = useMemo(
-    () =>
-      selectedKeyword
-        ? new Set(getAllocatableTalentChoices(selectedKeyword, unlockedIds).map((t) => t.id))
-        : new Set<string>(),
-    [selectedKeyword, unlockedIds],
-  );
-  const progress = useMemo(() => {
-    if (!selectedKeyword) return null;
-    return getTalentKeywordProgress(
-      talentXP[selectedKeyword] ?? 0,
-      unlockedIds.length,
-      countImplementedTalents(selectedKeyword),
-    );
-  }, [selectedKeyword, talentXP, unlockedIds.length]);
-
-  const plasmaKeywordIds = useMemo(() => {
-    if (selectedKeyword === null) {
-      return hoveredOverviewKeyword ? [hoveredOverviewKeyword] : null;
-    }
-    if (hoveredTalent) {
-      return getPlasmaKeywordsForTalent(hoveredTalent);
-    }
-    return null;
-  }, [hoveredOverviewKeyword, hoveredTalent, selectedKeyword]);
+  const progress = selectedKeyword
+    ? getTalentKeywordProgress(
+        talentXP[selectedKeyword] ?? 0,
+        unlockedIds.length,
+        countImplementedTalents(selectedKeyword),
+      )
+    : null;
+  const plasmaKeywordIds =
+    selectedKeyword === null
+      ? hoveredOverviewKeyword
+        ? [hoveredOverviewKeyword]
+        : null
+      : hoveredTalent
+        ? getPlasmaKeywordsForTalent(hoveredTalent)
+        : null;
   usePlasmaInteraction(plasmaKeywordIds ? getPlasmaColorPair(plasmaKeywordIds) : null, plasmaKeywordIds !== null);
 
   function handleUnlockTalent(talentId: string) {

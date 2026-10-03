@@ -43,27 +43,24 @@ const SHOP_BUY_BASE_PRICE = {
   trinket: TRINKET_SHOP_TRINKET_PRICE,
 } as const;
 
-function getBuyMultiplier(
-  kind: ShopBuyPriceArguments[0],
-  item: ShopBuyPriceArguments[1],
-  modifiers: readonly EncounterRewardTraitId[],
-): number {
-  if (kind === "merchantCard" && modifiers.includes("bargain-bin")) return LABYRINTH_MODIFIER_CONFIG.half;
-  if (kind === "alchemistPotion" && modifiers.includes("happy-hour")) return LABYRINTH_MODIFIER_CONFIG.half;
-  if (kind === "trinket" && modifiers.includes("collectors-favor"))
-    return LABYRINTH_MODIFIER_CONFIG.trinketPriceMultiplier;
-  if (
-    kind === "gear" &&
-    modifiers.includes("apprentice") &&
-    item !== null &&
-    "definitionId" in item &&
-    gearDefinitions[item.definitionId]?.rarity === "basic"
-  )
-    return LABYRINTH_MODIFIER_CONFIG.half;
-  return 1;
+function getBuyMultiplier(...[kind, item, context]: ShopBuyPriceArguments): number {
+  const modifiers = context.modifiers ?? [];
+  switch (kind) {
+    case "merchantCard":
+      return modifiers.includes("bargain-bin") ? LABYRINTH_MODIFIER_CONFIG.half : 1;
+    case "alchemistPotion":
+      return modifiers.includes("happy-hour") ? LABYRINTH_MODIFIER_CONFIG.half : 1;
+    case "trinket":
+      return modifiers.includes("collectors-favor") ? LABYRINTH_MODIFIER_CONFIG.trinketPriceMultiplier : 1;
+    case "gear":
+      return modifiers.includes("apprentice") && gearDefinitions[item.definitionId]?.rarity === "basic"
+        ? LABYRINTH_MODIFIER_CONFIG.half
+        : 1;
+  }
 }
 
-export function getShopBuyPrice(...[kind, item, context]: ShopBuyPriceArguments): number {
+export function getShopBuyPrice(...args: ShopBuyPriceArguments): number {
+  const [kind, item, context] = args;
   const basePrice = kind === "gear" ? getEquipmentShopPrice(item) : SHOP_BUY_BASE_PRICE[kind];
   const potionDiscount =
     (kind === "merchantCard" || kind === "alchemistPotion") && isStandardPotionCard(item)
@@ -71,9 +68,7 @@ export function getShopBuyPrice(...[kind, item, context]: ShopBuyPriceArguments)
       : 0;
   const price = Math.max(
     0,
-    Math.round(basePrice * getBuyMultiplier(kind, item, context.modifiers ?? [])) -
-      context.talentEffects.shopCardDiscount -
-      potionDiscount,
+    Math.round(basePrice * getBuyMultiplier(...args)) - context.talentEffects.shopCardDiscount - potionDiscount,
   );
   return context.firstPurchaseUsed
     ? price

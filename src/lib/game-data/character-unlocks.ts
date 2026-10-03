@@ -1,15 +1,15 @@
 import { characters, type CharacterId } from "./characters";
 
-const UNLOCK_CHAIN: CharacterId[] = [
-  "knight",
-  "rogue",
-  "ranger",
-  "wizard",
-  "alchemist",
-  "warlock",
-  "druid",
-  "wildcard",
-];
+const CHARACTER_REQUIREMENTS: Record<CharacterId, CharacterId | null> = {
+  knight: null,
+  rogue: "knight",
+  ranger: "rogue",
+  wizard: "ranger",
+  alchemist: "wizard",
+  warlock: "alchemist",
+  druid: "warlock",
+  wildcard: "druid",
+};
 
 export type ProgressionFeatureId = "talents" | "homestead";
 export type GameModeId = "campaign" | "labyrinth" | "wildwood";
@@ -31,16 +31,8 @@ function getUnlockMessage(requiredCharacterId: CharacterId): string {
 
 export const KNIGHT_UNLOCK_MESSAGE = getUnlockMessage("knight");
 
-const characterUnlockRequirements: Record<CharacterId, { requiredChar: CharacterId | null; requiredName: string }> =
-  Object.fromEntries(
-    UNLOCK_CHAIN.map((id, index) => {
-      const requiredChar = index === 0 ? null : (UNLOCK_CHAIN[index - 1] ?? null);
-      return [id, { requiredChar, requiredName: requiredChar ? characters[requiredChar].name : "" }];
-    }),
-  ) as Record<CharacterId, { requiredChar: CharacterId | null; requiredName: string }>;
-
 export function getRequiredPreviousCharacter(characterId: CharacterId): CharacterId | null {
-  return characterUnlockRequirements[characterId].requiredChar;
+  return CHARACTER_REQUIREMENTS[characterId];
 }
 
 export function isCharacterUnlocked(characterId: CharacterId, finishedRunCharacters: readonly CharacterId[]): boolean {
@@ -64,16 +56,12 @@ export function getProgressionFeatureUnlockMessage(featureId: ProgressionFeature
   return getUnlockMessage(FEATURE_REQUIREMENTS[featureId]);
 }
 
-function getGameModeUnlockRequirement(modeId: GameModeId): CharacterId | null {
-  return GAME_MODE_REQUIREMENTS[modeId];
-}
-
 export function isGameModeUnlocked(modeId: GameModeId, finishedRunCharacters: readonly CharacterId[]): boolean {
-  const required = getGameModeUnlockRequirement(modeId);
+  const required = GAME_MODE_REQUIREMENTS[modeId];
   return required === null || finishedRunCharacters.includes(required);
 }
 
 export function getGameModeUnlockMessage(modeId: GameModeId): string {
-  const required = getGameModeUnlockRequirement(modeId);
+  const required = GAME_MODE_REQUIREMENTS[modeId];
   return required ? getUnlockMessage(required) : "";
 }

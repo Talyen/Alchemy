@@ -91,8 +91,8 @@ export function useArmoryOrdering({
   const hasCriteria = hasArmoryCriteria(filters, isTrinket);
 
   // Keep the complete order separate from its current browsing projection.
-  // React Compiler memoizes these derivations; the category is also written
-  // below during reconciliation, so do not manually memoize aliases of it.
+  // Reconciliation writes the category during render; derive its projection
+  // directly so it cannot retain a previous category's items.
   const orderedGear = isTrinket
     ? []
     : orderedIds.map((id) => gearById.get(id)).filter((item): item is GearInstance => Boolean(item));
@@ -111,92 +111,72 @@ export function useArmoryOrdering({
   // Sliced page items
   const pageStart = safePage * ARMORY_PAGE_SIZE;
   const pageEnd = pageStart + ARMORY_PAGE_SIZE;
-  const pagedGear = useMemo(() => visibleGear.slice(pageStart, pageEnd), [visibleGear, pageStart, pageEnd]);
-  const pagedTrinkets = useMemo(() => visibleTrinkets.slice(pageStart, pageEnd), [visibleTrinkets, pageStart, pageEnd]);
+  const pagedGear = visibleGear.slice(pageStart, pageEnd);
+  const pagedTrinkets = visibleTrinkets.slice(pageStart, pageEnd);
 
   const fillerCount = Math.max(0, ARMORY_PAGE_SIZE - (isTrinket ? pagedTrinkets.length : pagedGear.length));
 
   // Active placeholder on the current page (if any)
-  const placeholderLocalIndex = useMemo(() => {
-    if (placeholderIndex === null) return null;
-    const placeholderPage = Math.floor(placeholderIndex / ARMORY_PAGE_SIZE);
-    if (placeholderPage !== safePage) return null;
-    return placeholderIndex % ARMORY_PAGE_SIZE;
-  }, [placeholderIndex, safePage]);
+  const placeholderLocalIndex =
+    placeholderIndex !== null && Math.floor(placeholderIndex / ARMORY_PAGE_SIZE) === safePage
+      ? placeholderIndex % ARMORY_PAGE_SIZE
+      : null;
 
-  const commitOrder = useCallback(
-    (nextIds: string[], page: number) => {
-      setStored((prev) => ({
-        ...prev,
-        [activeKey]: {
-          order: nextIds,
-          poolIds: [...poolIds],
-          page,
-          filters: prev[activeKey]?.filters ?? DEFAULT_ARMORY_INVENTORY_FILTERS,
-        },
-      }));
-    },
-    [activeKey, poolIds],
-  );
+  const commitOrder = (nextIds: string[], page: number) => {
+    setStored((prev) => ({
+      ...prev,
+      [activeKey]: {
+        order: nextIds,
+        poolIds: [...poolIds],
+        page,
+        filters: prev[activeKey]?.filters ?? DEFAULT_ARMORY_INVENTORY_FILTERS,
+      },
+    }));
+  };
 
   // Page change
-  const setPage = useCallback(
-    (nextPage: number) => {
-      setPlaceholderIndex(null);
-      commitOrder(orderedIds, getPagination(visibleIds.length, nextPage, ARMORY_PAGE_SIZE).page);
-    },
-    [commitOrder, orderedIds, visibleIds.length],
-  );
+  const setPage = (nextPage: number) => {
+    setPlaceholderIndex(null);
+    commitOrder(orderedIds, getPagination(visibleIds.length, nextPage, ARMORY_PAGE_SIZE).page);
+  };
 
   // Explicit one-time sort
-  const onSort = useCallback(
-    (option: ArmorySortOption) => {
-      setPlaceholderIndex(null);
-      const sorted = [...pool]
-        .sort((a, b) => compareOrderRows(a, b, isTrinket && option === "rarity" ? "name" : option))
-        .map((row) => row.id);
-      commitOrder(sorted, 0);
-    },
-    [commitOrder, isTrinket, pool],
-  );
+  const onSort = (option: ArmorySortOption) => {
+    setPlaceholderIndex(null);
+    const sorted = [...pool]
+      .sort((a, b) => compareOrderRows(a, b, isTrinket && option === "rarity" ? "name" : option))
+      .map((row) => row.id);
+    commitOrder(sorted, 0);
+  };
 
   // Confirmed equipment mutations
-  const commitEquip = useCallback(
-    (incomingId: string, replacedId: string | null, displaced: readonly DisplacedGearItem[] = []) => {
-      // Inventory placement is independent of artwork and motion preferences.
-      const nextIds = placeTransfer(orderedIds, incomingId, replacedId, displaced, selectedSlot);
-      const incomingIndex = visibleIds.indexOf(incomingId);
-      setPlaceholderIndex(
-        !hasCriteria && !replacedId && displaced.length === 0 && incomingIndex !== -1 ? incomingIndex : null,
-      );
-      commitOrder(nextIds, getPagination(nextIds.length, storedPage, ARMORY_PAGE_SIZE).page);
-    },
-    [commitOrder, orderedIds, storedPage, selectedSlot, visibleIds, hasCriteria],
-  );
+  const commitEquip = (incomingId: string, replacedId: string | null, displaced: readonly DisplacedGearItem[] = []) => {
+    // Inventory placement is independent of artwork and motion preferences.
+    const nextIds = placeTransfer(orderedIds, incomingId, replacedId, displaced, selectedSlot);
+    const incomingIndex = visibleIds.indexOf(incomingId);
+    setPlaceholderIndex(
+      !hasCriteria && !replacedId && displaced.length === 0 && incomingIndex !== -1 ? incomingIndex : null,
+    );
+    commitOrder(nextIds, getPagination(nextIds.length, storedPage, ARMORY_PAGE_SIZE).page);
+  };
 
-  const commitUnequip = useCallback(
-    (unequippedId: string) => {
-      setPlaceholderIndex(null);
-      const nextIds = placeUnequip(orderedIds, unequippedId, safePage, ARMORY_PAGE_SIZE, visibleIds);
-      commitOrder(nextIds, safePage);
-    },
-    [commitOrder, orderedIds, visibleIds, safePage],
-  );
+  const commitUnequip = (unequippedId: string) => {
+    setPlaceholderIndex(null);
+    const nextIds = placeUnequip(orderedIds, unequippedId, safePage, ARMORY_PAGE_SIZE, visibleIds);
+    commitOrder(nextIds, safePage);
+  };
 
   const clearPlaceholder = useCallback(() => {
     setPlaceholderIndex(null);
   }, []);
 
-  const setFilters = useCallback(
-    (nextFilters: ArmoryInventoryFilters) => {
-      setPlaceholderIndex(null);
-      setStored((prev) => ({
-        ...prev,
-        [activeKey]: { ...(prev[activeKey] ?? reconciled), filters: nextFilters, page: 0 },
-      }));
-    },
-    [activeKey, reconciled],
-  );
+  const setFilters = (nextFilters: ArmoryInventoryFilters) => {
+    setPlaceholderIndex(null);
+    setStored((prev) => ({
+      ...prev,
+      [activeKey]: { ...(prev[activeKey] ?? reconciled), filters: nextFilters, page: 0 },
+    }));
+  };
 
   return {
     filters,

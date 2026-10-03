@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { battleSnapshot, defaultBattleState } from "@/lib/battle";
 import type { TrinketManifest } from "@/lib/battle/types";
 import { computeTrinketManifest } from "@/lib/trinkets";
-import { GEAR_EFFECT_KEYS } from "@/lib/gear";
 import { cardById, enemyById } from "@/lib/game-data";
 import { MANABURN_DAMAGE_PERCENT, MAX_HAND_SIZE, MIN_MAX_MANA_FLOOR } from "@/lib/game-constants";
 import { normalizePersistedBattleState, repairPersistedTrinketManifest } from "@/lib/validation";
@@ -121,14 +120,8 @@ describe("normalizePersistedBattleState", () => {
     const normalized = normalizePersistedBattleState(saved);
 
     expect(normalized.turn).toBe(4);
-    expect(normalized.gearEffects.flatPhysicalDamage).toBe(3);
-    expect(normalized.flags.divineAegisTriggered).toBe(true);
-    for (const key of GEAR_EFFECT_KEYS) {
-      if (key === "flatPhysicalDamage") continue;
-      expect(normalized.gearEffects[key]).toBe(0);
-    }
-    expect(normalized.flags.firstHolyCardFreeUsed).toBe(false);
-    expect(normalized.flags.pendingCinderSkinReaction).toBe(false);
+    expect(normalized.gearEffects).toEqual({ ...defaultBattleState().gearEffects, flatPhysicalDamage: 3 });
+    expect(normalized.flags).toEqual({ ...defaultBattleState().flags, divineAegisTriggered: true });
   });
 
   it("keeps current talent effects while dropping unknown saved fields", () => {
@@ -137,6 +130,7 @@ describe("normalizePersistedBattleState", () => {
       talentEffects: {
         ...defaults.talentEffects,
         holyReflectionBlockLostPercent: 30,
+        burnDamagePerManaCrystal: MANABURN_DAMAGE_PERCENT,
         holyOnAttackBlocked: 6,
         archeryHolyDamageVsFrozen: 2,
         blockOnConsume: 4,
@@ -146,23 +140,13 @@ describe("normalizePersistedBattleState", () => {
     });
 
     expect(normalized.talentEffects.holyReflectionBlockLostPercent).toBe(30);
+    expect(normalized.talentEffects.burnDamagePerManaCrystal).toBe(MANABURN_DAMAGE_PERCENT);
     expect(normalized.talentEffects).not.toHaveProperty("holyOnAttackBlocked");
     expect(normalized.talentEffects).not.toHaveProperty("archeryHolyDamageVsFrozen");
     expect(normalized.talentEffects).not.toHaveProperty("blockOnConsume");
     expect(normalized.talentEffects.cardHealMultipliers).toEqual({ apple: 1, bread: 1 });
     expect(normalized.talentEffects).not.toHaveProperty("unknownTalentEffect");
     expect(normalizePersistedBattleState(normalized).talentEffects).toEqual(normalized.talentEffects);
-  });
-
-  it("defaults additive enemy trait flags for older battle snapshots", () => {
-    const defaults = defaultBattleState();
-    const { enemyFirstHitDoubleUsed: _firstHit, enemyBrawlerDamagePenalty: _brawler, ...legacyFlags } = defaults.flags;
-    const normalized = normalizePersistedBattleState({
-      flags: legacyFlags as unknown as ReturnType<typeof defaultBattleState>["flags"],
-    });
-
-    expect(normalized.flags.enemyFirstHitDoubleUsed).toBe(false);
-    expect(normalized.flags.enemyBrawlerDamagePenalty).toBe(false);
   });
 
   it("sanitizes persisted enemy traits", () => {
@@ -185,43 +169,22 @@ describe("normalizePersistedBattleState", () => {
     ]);
   });
 
-  it("fills empty status and CC records with numeric defaults", () => {
+  it("repairs malformed defenses and control counters while retaining valid live stacks", () => {
+    const defaults = defaultBattleState();
     const normalized = normalizePersistedBattleState({
-      playerStatuses: {} as ReturnType<typeof defaultBattleState>["playerStatuses"],
-      enemyStatuses: {} as ReturnType<typeof defaultBattleState>["enemyStatuses"],
-      playerCC: {} as ReturnType<typeof defaultBattleState>["playerCC"],
-      enemyCC: {} as ReturnType<typeof defaultBattleState>["enemyCC"],
-      enemyMitigation: {} as ReturnType<typeof defaultBattleState>["enemyMitigation"],
+      currentEnemy: enemyById.skeleton,
+      playerStatuses: { block: 4, armor: -2, stun: Number.NaN } as typeof defaults.playerStatuses,
+      enemyStatuses: { burn: 6, poison: Infinity } as typeof defaults.enemyStatuses,
+      playerCC: { stunSkipTurns: -1 } as typeof defaults.playerCC,
+      enemyCC: { cooldown: Number.NaN } as typeof defaults.enemyCC,
+      enemyMitigation: { armor: -5, block: 3 } as typeof defaults.enemyMitigation,
     });
-
-    expect(normalized.playerStatuses.block).toBe(0);
-    expect(normalized.playerStatuses.armor).toBe(0);
-    expect(normalized.enemyStatuses.burn).toBe(0);
-    expect(normalized.playerCC.stunSkipTurns).toBe(0);
-    expect(normalized.enemyCC.cooldown).toBe(0);
-    expect(normalized.enemyMitigation.armor).toBe(0);
-  });
-
-  it("keeps live stacks while filling omitted status keys", () => {
-    const normalized = normalizePersistedBattleState({
-      playerStatuses: { block: 4 } as ReturnType<typeof defaultBattleState>["playerStatuses"],
-    });
-
-    expect(normalized.playerStatuses.block).toBe(4);
-    expect(normalized.playerStatuses.armor).toBe(0);
-    expect(normalized.playerStatuses.stun).toBe(0);
-  });
-
-  it("does not rewrite an already-percent Manaburn snapshot", () => {
-    const defaults = defaultBattleState().talentEffects;
-    const normalized = normalizePersistedBattleState({
-      talentEffects: {
-        ...defaults,
-        burnDamagePerManaCrystal: MANABURN_DAMAGE_PERCENT,
-      },
-    });
-
-    expect(normalized.talentEffects.burnDamagePerManaCrystal).toBe(MANABURN_DAMAGE_PERCENT);
+    expect(normalized.playerStatuses).toEqual({ ...defaults.playerStatuses, block: 4 });
+    expect(normalized.enemyStatuses).toEqual({ ...defaults.enemyStatuses, burn: 6 });
+    expect(normalized.playerCC).toEqual(defaults.playerCC);
+    expect(normalized.enemyCC).toEqual(defaults.enemyCC);
+    expect(normalized.enemyMitigation).toEqual({ ...defaults.enemyMitigation, block: 3 });
+    expect(normalizePersistedBattleState(normalized)).toEqual(normalized);
   });
 });
 

@@ -84,40 +84,12 @@ function offerMysteryCardChoices(
   return { followUp: "choose-card" };
 }
 
-function healFromMystery(amount: number, chance: number | undefined, maxHealth: number, context: MysteryEffectContext) {
-  if (chance !== undefined && context.rng() >= chance) return { followUp: null };
-  setRunPlayerHealth(context.draft, (p) => Math.min(maxHealth, p + amount));
-  return { followUp: null };
-}
-
-function damageFromMystery(amount: number, context: MysteryEffectContext) {
-  setRunPlayerHealth(context.draft, (p) => Math.max(0, p - amount));
-  return { followUp: null };
-}
-
-function gainMysteryGold(amount: number, context: MysteryEffectContext) {
-  addGold(context.draft, amount);
-  if (amount > 0) return { followUp: null, goldSound: "gain" as const };
-  return { followUp: null };
-}
-
-function loseMysteryGold(amount: number, context: MysteryEffectContext) {
-  deductGold(context.draft, amount);
-  if (amount > 0) return { followUp: null, goldSound: "spend" as const };
-  return { followUp: null };
-}
-
 function removeMysteryCard(context: MysteryEffectContext) {
   setRunDeck(context.draft, (p) => {
     if (p.length === 0) return p;
     const idx = rngInt(context.rng, p.length);
     return p.filter((_, i) => i !== idx);
   });
-  return { followUp: null };
-}
-
-function gainMysteryTrinket(trinketId: string, context: MysteryEffectContext) {
-  appendBoonToRunWithDiscovery(context.draft, trinketId);
   return { followUp: null };
 }
 
@@ -135,7 +107,7 @@ function gainRandomMysteryTrinket(
     if (!baseItem) return { followUp: null };
     return gainMysteryGeneratedGear(baseItem.id, context, true);
   }
-  gainMysteryTrinket(trinketId, context);
+  appendBoonToRunWithDiscovery(context.draft, trinketId);
   setMysteryGrantedTrinketIds(context.draft, (previous) => [...previous, trinketId]);
   return { followUp: null };
 }
@@ -194,21 +166,29 @@ export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffect
       return addSpecificMysteryCard(effect.cardId, context);
     case "chooseCard":
       return offerMysteryCardChoices(effect, context);
-    case "healHealth":
-      return healFromMystery(effect.amount, effect.chance, context.draft.run.activeRun.runMaxHealth, context);
+    case "healHealth": {
+      const maxHealth = context.draft.run.activeRun.runMaxHealth;
+      if (effect.chance !== undefined && context.rng() >= effect.chance) return { followUp: null };
+      setRunPlayerHealth(context.draft, (health) => Math.min(maxHealth, health + effect.amount));
+      return { followUp: null };
+    }
     case "damageHealth":
-      return damageFromMystery(effect.amount, context);
+      setRunPlayerHealth(context.draft, (health) => Math.max(0, health - effect.amount));
+      return { followUp: null };
     case "gainGold":
-      return gainMysteryGold(effect.amount, context);
+      addGold(context.draft, effect.amount);
+      return { followUp: null, ...(effect.amount > 0 ? { goldSound: "gain" } : {}) };
     case "loseGold":
-      return loseMysteryGold(effect.amount, context);
+      deductGold(context.draft, effect.amount);
+      return { followUp: null, ...(effect.amount > 0 ? { goldSound: "spend" } : {}) };
     case "gainXP":
       awardMysteryXP(context.draft, effect.keyword, effect.amount);
       return { followUp: null };
     case "removeCard":
       return removeMysteryCard(context);
     case "gainTrinket":
-      return gainMysteryTrinket(effect.trinketId, context);
+      appendBoonToRunWithDiscovery(context.draft, effect.trinketId);
+      return { followUp: null };
     case "gainRandomTrinket":
       return gainRandomMysteryTrinket(effect, context);
     case "gainRandomGear":

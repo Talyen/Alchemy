@@ -18,10 +18,6 @@ import {
   sanitizePersistedEnemyTraits,
 } from "@/lib/content-systems/encounter-traits";
 
-function mergeRecord<T extends object>(defaults: T, saved: Partial<T> | undefined): T {
-  return { ...defaults, ...saved };
-}
-
 function normalizeTalentEffects(
   defaults: TalentEffectManifest,
   saved: Partial<TalentEffectManifest> | undefined,
@@ -29,7 +25,7 @@ function normalizeTalentEffects(
   const knownSaved = Object.fromEntries(
     Object.entries(saved ?? {}).filter(([key]) => Object.hasOwn(defaults, key)),
   ) as Partial<TalentEffectManifest>;
-  const merged = mergeRecord(defaults, knownSaved);
+  const merged = { ...defaults, ...knownSaved };
   if (!Array.isArray(merged.healthThresholdArmor)) merged.healthThresholdArmor = [];
   const savedRecord = saved ?? {};
   merged.wishExtraChoiceAfterHolyCard = savedRecord.wishExtraChoiceAfterHolyCard === true;
@@ -45,7 +41,7 @@ function normalizeNonNegativeRecord<T extends { [K in keyof T]: number }>(
   defaults: T,
   saved: Partial<T> | undefined,
 ): T {
-  const merged = mergeRecord(defaults, saved);
+  const merged = { ...defaults, ...saved };
   for (const key of Object.keys(defaults) as Array<keyof T>) {
     const value = merged[key];
     if (typeof value !== "number" || !Number.isFinite(value) || value < 0) merged[key] = defaults[key];
@@ -117,7 +113,7 @@ function normalizeCombatFlags(
   defaults: BattleSnapshot["flags"],
   saved: Partial<BattleSnapshot["flags"]> | undefined,
 ): BattleSnapshot["flags"] {
-  const flags = mergeRecord(defaults, saved);
+  const flags = { ...defaults, ...saved };
   const savedFlags: Record<string, unknown> = saved ?? {};
   // Only these transient signals require an exact boolean; every other saved
   // flag keeps its persisted value via the manifest merge above.
@@ -200,17 +196,16 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
   const defaults = defaultBattleState();
   const currentEnemy = normalizeEnemy(saved.currentEnemy, defaults.currentEnemy);
   const merged: BattleSnapshot = {
-    ...defaults,
     ...battleSnapshot({ ...defaults, ...saved }),
     encounterBenefits:
       saved.contentSystemType === "labyrinth" && Array.isArray(saved.encounterBenefits)
         ? sanitizeEncounterTraitIds(saved.encounterBenefits, "reward")
         : [],
-    trinketEffects: mergeRecord(defaults.trinketEffects, saved.trinketEffects),
-    gearEffects: mergeRecord(defaults.gearEffects, saved.gearEffects),
+    trinketEffects: { ...defaults.trinketEffects, ...saved.trinketEffects },
+    gearEffects: { ...defaults.gearEffects, ...saved.gearEffects },
     talentEffects: normalizeTalentEffects(defaults.talentEffects, saved.talentEffects),
     flags: normalizeCombatFlags(defaults.flags, saved.flags),
-    uniqueGear: mergeRecord(defaults.uniqueGear, saved.uniqueGear),
+    uniqueGear: { ...defaults.uniqueGear, ...saved.uniqueGear },
     playerStatuses: normalizeNonNegativeRecord(defaults.playerStatuses, saved.playerStatuses),
     enemyStatuses: normalizeNonNegativeRecord(defaults.enemyStatuses, saved.enemyStatuses),
     playerCC: normalizeNonNegativeRecord(defaults.playerCC, saved.playerCC),

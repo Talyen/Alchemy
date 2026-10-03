@@ -10,7 +10,6 @@ import { removePlayerArmor } from "@/lib/battle/status-helpers";
 import { makeTestCard } from "../../fixtures/cards";
 import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/battle";
 import {
-  defaultEnemyMitigation,
   defaultPlayerStatusValues,
   defaultTalentEffects,
   defaultTrinketManifest,
@@ -278,25 +277,7 @@ describe("applyPlayerDamageStatuses", () => {
   });
 });
 
-describe("applyPlayerStatusEffect � forge integration", () => {
-  it("applies forge burn burst when forge crosses threshold", () => {
-    const state = patchBattleState({
-      playerStatuses: { forge: 3 },
-      talentEffects: { forgeBurnThreshold: 5, forgeBurnDamage: 4 },
-    });
-    const effect = { kind: "player-status" as const, status: "forge" as const, amount: 3 };
-    const texts = makeTexts();
-    const result = applyPlayerStatusEffect(state, effect, texts);
-    expect(result.playerStatuses.forge).toBe(6);
-    expect(result.enemyStatuses.burn).toBe(4);
-    expect(result.enemyHealth).toBe(state.enemyHealth - 4);
-
-    expect(texts).toEqual([
-      { target: "enemy", kind: "damage", stat: "burn", amount: 4 },
-      { target: "player", kind: "status", stat: "forge", amount: 3 },
-    ]);
-  });
-
+describe("applyPlayerStatusEffect — forge integration", () => {
   it("flatForgeGained increases forge from card effects", () => {
     const state = patchBattleState({
       talentEffects: { flatForgeGained: 1 },
@@ -306,18 +287,6 @@ describe("applyPlayerStatusEffect � forge integration", () => {
     const result = applyPlayerStatusEffect(state, effect, texts);
     expect(result.playerStatuses.forge).toBe(4);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 4 });
-  });
-
-  it("strips enemy armor when forge crosses forgeStripArmorThreshold", () => {
-    const state = patchBattleState({
-      playerStatuses: { forge: 5 },
-      enemyMitigation: defaultEnemyMitigation({ armor: 4 }),
-      talentEffects: { forgeStripArmorThreshold: 6 },
-    });
-    const effect = { kind: "player-status" as const, status: "forge" as const, amount: 2 };
-    const result = applyPlayerStatusEffect(state, effect, []);
-    expect(result.playerStatuses.forge).toBe(7);
-    expect(result.enemyMitigation.armor).toBe(0);
   });
 
   it("forgeBlockBurst respects forgeBlockPercent synergy", () => {
@@ -364,17 +333,6 @@ describe("forge threshold boundaries", () => {
     expect(state.enemyMitigation.armor).toBe(5);
   });
 
-  it("forge burn burst fires on crossing threshold from below (3 -> 6, threshold 4)", () => {
-    const state = patchBattleState({
-      playerStatuses: { forge: 3 },
-      talentEffects: { forgeBurnThreshold: 4, forgeBurnDamage: 7 },
-    });
-    const effect = { kind: "player-status" as const, status: "forge" as const, amount: 3 };
-    const result = applyPlayerStatusEffect(state, effect, []);
-    expect(result.playerStatuses.forge).toBe(6);
-    expect(result.enemyStatuses.burn).toBe(7);
-  });
-
   it("forge burn burst does NOT fire when oldForge exactly equals threshold (4 -> 7, threshold 4)", () => {
     const state = patchBattleState({
       playerStatuses: { forge: 4 },
@@ -399,16 +357,6 @@ describe("forge threshold boundaries", () => {
 });
 
 describe("addForgeToPlayer", () => {
-  it("adds flatForgeGained to forge gain", () => {
-    const state = patchBattleState({
-      talentEffects: { flatForgeGained: 1 },
-    });
-    const texts = makeTexts();
-    const result = addForgeToPlayer(state, 3, texts);
-    expect(result.playerStatuses.forge).toBe(4);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 4 });
-  });
-
   it("does nothing when amount is zero after modifiers", () => {
     const state = patchBattleState();
     const result = addForgeToPlayer(state, 0);

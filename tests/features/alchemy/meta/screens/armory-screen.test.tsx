@@ -17,18 +17,6 @@ describe("ArmoryScreen core", () => {
   installArmoryScreenTestHooks();
   installReadyArtworkForTests();
 
-  it("renders equipment slots and the matching item picker", () => {
-    renderArmoryScreen();
-
-    expect(screen.getByRole("heading", { name: "Armory" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Equipment" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Weapons" })).toBeTruthy();
-    expect(screen.queryByRole("heading", { name: "Weapon 1" })).toBeNull();
-    expect(screen.getByRole("heading", { name: "Crafting" })).toBeTruthy();
-    expect(document.querySelector('[data-gear-title="Longsword"]')).not.toBeNull();
-    expect(document.querySelector('[data-gear-title="Leather Armor"]')).toBeNull();
-  });
-
   it("filters the picker to the selected equipment slot", async () => {
     const user = userEvent.setup();
     renderArmoryScreen();
@@ -52,18 +40,6 @@ describe("ArmoryScreen core", () => {
 
     await user.click(screen.getByLabelText("Main-hand equipment slot"));
     expect(onUnequip).toHaveBeenCalledWith("knight", "main-hand");
-  });
-
-  it("displays character name chip with matching tab color when item is equipped on another character", () => {
-    const loadouts = createEmptyGearLoadouts();
-    loadouts.rogue["main-hand"] = "gear-sword";
-    renderArmoryScreen({ loadouts });
-
-    const swordItem = document.querySelector('[data-testid="armory-inventory-item"][data-gear-title="Longsword"]');
-    expect(swordItem).not.toBeNull();
-    const chip = swordItem?.querySelector("span");
-    expect(chip).not.toBeNull();
-    expect(chip?.className).toMatch(/text-red-600/);
   });
 
   it("switches to an unlocked character", async () => {

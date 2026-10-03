@@ -4,7 +4,6 @@ import {
   DAMAGE_TYPES,
   ENEMY_STATUS_DISPLAY_ORDER,
   PLAYER_STATUS_DISPLAY_ORDER,
-  type BattleCardEffect,
   type DamageType,
   type KeywordId,
   keywordDefinitions,
@@ -93,14 +92,11 @@ function buildStatusChips(
 ): StatusChip[] {
   if (!statuses) return [];
   const blockBuildup = cc ? isStunFreezeBuildupBlocked(cc) : false;
-  return order.reduce<StatusChip[]>((chips, id) => {
-    if (blockBuildup && (id === "stun" || id === "freeze")) return chips;
-    const value = statuses[id];
-    if ((value ?? 0) > 0) {
-      chips.push({ id, value: value!, ...(id === "phoenixFeather" ? { hideValue: true } : {}) });
-    }
-    return chips;
-  }, []);
+  return order.flatMap((id): StatusChip[] => {
+    if (blockBuildup && (id === "stun" || id === "freeze")) return [];
+    const value = statuses[id] ?? 0;
+    return value > 0 ? [{ id, value, ...(id === "phoenixFeather" ? { hideValue: true } : {}) }] : [];
+  });
 }
 
 function buildActiveCcChips(cc: CcState): StatusChip[] {
@@ -126,10 +122,6 @@ function insertAfterBuffTier(chips: StatusChip[], additions: StatusChip[]): Stat
   return [...chips.slice(0, insertAt), ...additions, ...chips.slice(insertAt)];
 }
 
-function isDamageEffect(effect: BattleCardEffect): effect is Extract<BattleCardEffect, { kind: "damage" }> {
-  return effect.kind === "damage";
-}
-
 function buildArmedPlayerChips(state: BattleSnapshot): StatusChip[] {
   const chips: StatusChip[] = [];
   const { flags } = state;
@@ -147,12 +139,9 @@ function buildArmedPlayerChips(state: BattleSnapshot): StatusChip[] {
   if (flags.nextHolyCardFree) chips.push({ id: "nextHolyCardFree", value: 1, hideValue: true });
   if (flags.nextNatureCardFree) chips.push({ id: "nextNatureCardFree", value: 1, hideValue: true });
 
-  let echoCount = 0;
-  for (const pulse of state.pendingTurnStartEffects) {
-    if (pulse.effects.length === 0) continue;
-    const damages = pulse.effects.filter(isDamageEffect);
-    if (damages.length !== pulse.effects.length) echoCount += 1;
-  }
+  const echoCount = state.pendingTurnStartEffects.filter((pulse) =>
+    pulse.effects.some((effect) => effect.kind !== "damage"),
+  ).length;
   if (echoCount > 0) chips.push({ id: "echo", value: echoCount });
 
   chips.push(...buildActiveCcChips(state.playerCC));
@@ -165,9 +154,8 @@ function buildPendingEnemyChips(state: BattleSnapshot): StatusChip[] {
   const incomingByType = new Map<DamageType, number>();
   for (const pulse of state.pendingTurnStartEffects) {
     if (pulse.effects.length === 0) continue;
-    const damages = pulse.effects.filter(isDamageEffect);
-    if (damages.length !== pulse.effects.length) continue;
-    for (const effect of damages) {
+    if (!pulse.effects.every((effect) => effect.kind === "damage")) continue;
+    for (const effect of pulse.effects) {
       incomingByType.set(effect.damageType, (incomingByType.get(effect.damageType) ?? 0) + effect.amount);
     }
   }

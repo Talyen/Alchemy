@@ -70,34 +70,6 @@ it("does not revive a removed controlled page even before the parent acknowledge
   expect(notify).toHaveBeenCalledExactlyOnceWith(0);
 });
 
-describe("usePaginatedRows", () => {
-  it("resets to the first page when resetKey changes", () => {
-    const items = [0, 1, 2, 3, 4];
-    const { result, rerender } = renderHook(({ resetKey }) => usePaginatedRows(items, 2, 2, resetKey), {
-      initialProps: { resetKey: true },
-    });
-
-    act(() => {
-      result.current.setPage(1);
-    });
-    expect(result.current.page).toBe(1);
-
-    rerender({ resetKey: false });
-    expect(result.current.page).toBe(0);
-  });
-
-  it("keeps the page when resetKey is omitted", () => {
-    const items = [0, 1, 2, 3, 4];
-    const { result, rerender } = renderHook(() => usePaginatedRows(items, 2, 2));
-
-    act(() => {
-      result.current.setPage(1);
-    });
-    rerender();
-    expect(result.current.page).toBe(1);
-  });
-});
-
 describe("pagination bounds", () => {
   it("retains the clamped page when a list grows again", () => {
     const items = Array.from({ length: 30 }, (_, index) => index);
@@ -113,8 +85,25 @@ describe("pagination bounds", () => {
     expect(result.current.pageItems).toEqual(items.slice(10, 20));
   });
 
-  it("bounds negative pages and handles zero capacity for empty choices", () => {
-    expect(paginateRows([0, 1, 2, 3], -1, 2, 2)).toMatchObject({ page: 0, pageItems: [0, 1] });
-    expect(paginateRows([], 0, 0, 4)).toEqual({ page: 0, totalPages: 1, pageItems: [], rows: [] });
+  it("keeps the controlled picker selection visible across resizes and honors a new context", () => {
+    const notify = vi.fn();
+    const { result, rerender } = renderHook(
+      ({ size, context }) =>
+        useControlledPagination({
+          page: 2,
+          pageSize: size,
+          itemCount: 40,
+          selectedIndex: 23,
+          context,
+          onPageChange: notify,
+        }),
+      { initialProps: { size: 8, context: "gear" } },
+    );
+    rerender({ size: 6, context: "gear" });
+    expect(result.current.page).toBe(3);
+    expect(notify).toHaveBeenCalledExactlyOnceWith(3);
+    rerender({ size: 10, context: "trinkets" });
+    expect(result.current.page).toBe(2);
+    expect(notify).toHaveBeenCalledTimes(1);
   });
 });

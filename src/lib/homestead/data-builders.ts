@@ -1,15 +1,4 @@
-import type {
-  BuildingId,
-  FarmId,
-  HomesteadBuilding,
-  HomesteadEffectManifest,
-  HomesteadFarm,
-  HomesteadResearch,
-  HomesteadUpgradeItem,
-  HomesteadUpgradeTier,
-  MaterialInventory,
-  ResearchId,
-} from "./types";
+import type { HomesteadEffectManifest, HomesteadUpgradeItem, HomesteadUpgradeTier, MaterialInventory } from "./types";
 import type { MaterialId } from "./types";
 import { emptyInventory } from "./inventory";
 
@@ -100,7 +89,7 @@ export function gemsSingleCosts(): MaterialInventory[] {
 
 type BenefitFn = (tierOneBased: number) => string;
 
-function stackingUpgrade<TId extends string>(
+export function stackingUpgrade<TId extends string>(
   id: TId,
   title: string,
   costs: readonly MaterialInventory[],
@@ -113,37 +102,4 @@ function stackingUpgrade<TId extends string>(
     title,
     tiers: stackingTiers(costs, perTierEffects, benefitForTier, nonCombatBenefitDescription),
   };
-}
-
-export function stackingBuilding(
-  id: BuildingId,
-  title: string,
-  costs: readonly MaterialInventory[],
-  perTierEffects: PerTierEffects,
-  benefitForTier: BenefitFn,
-  nonCombatBenefitDescription?: string | BenefitFn,
-): HomesteadBuilding {
-  return stackingUpgrade(id, title, costs, perTierEffects, benefitForTier, nonCombatBenefitDescription);
-}
-
-export function stackingFarm(
-  id: FarmId,
-  title: string,
-  costs: readonly MaterialInventory[],
-  perTierEffects: PerTierEffects,
-  benefitForTier: BenefitFn,
-  nonCombatBenefitDescription?: string | BenefitFn,
-): HomesteadFarm {
-  return stackingUpgrade(id, title, costs, perTierEffects, benefitForTier, nonCombatBenefitDescription);
-}
-
-export function stackingResearch(
-  id: ResearchId,
-  title: string,
-  costs: readonly MaterialInventory[],
-  perTierEffects: PerTierEffects,
-  benefitForTier: BenefitFn,
-  nonCombatBenefitDescription?: string | BenefitFn,
-): HomesteadResearch {
-  return stackingUpgrade(id, title, costs, perTierEffects, benefitForTier, nonCombatBenefitDescription);
 }

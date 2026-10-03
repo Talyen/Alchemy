@@ -2,7 +2,7 @@ import { addInventory } from "@/lib/homestead/inventory";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { companionTierItems } from "@/lib/homestead/companions";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
-import { createTierLookup, type TieredItem } from "@/lib/homestead/tiers";
+import type { TieredItem } from "@/lib/homestead/tiers";
 import { logError } from "@/lib/error-logger";
 import { defaultCompanionBondLevels } from "@/lib/game-data";
 import { tryUpgradeTierItem } from "@/lib/homestead/upgrades";
@@ -11,16 +11,11 @@ import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/ho
 import type { PermanentProgressFields } from "@/features/alchemy/shared/stores/run-state-init";
 import type { Draft } from "immer";
 
-const buildingLookup = createTierLookup(buildings);
-const farmLookup = createTierLookup(farmPlots);
-const researchLookup = createTierLookup(researchUpgrades);
-const companionLookup = createTierLookup(companionTierItems);
-
 export function pruneUnknownCompanions(companions: Record<CompanionId, number>): Record<CompanionId, number> {
-  const removed = Object.keys(companions).filter((key) => !(key in defaultCompanionBondLevels));
+  const removed = Object.keys(companions).filter((key) => !Object.hasOwn(defaultCompanionBondLevels, key));
   if (removed.length === 0) return companions;
   logError("Removed companions missing from catalog", "other", { removed });
-  return Object.fromEntries(Object.entries(companions).filter(([key]) => key in defaultCompanionBondLevels)) as Record<
+  return Object.fromEntries(Object.entries(companions).filter(([key]) => !removed.includes(key))) as Record<
     CompanionId,
     number
   >;
@@ -36,13 +31,13 @@ function recomputeEffects(profile: PermanentProgressFields): void {
   );
 }
 
-function applyTierUpgrade<TId extends string>(
+function applyTierUpgrade(
   profile: PermanentProgressFields,
-  lookup: Map<TId, TieredItem<TId>>,
+  items: readonly TieredItem[],
   levels: Record<string, number>,
-  id: TId,
+  id: string,
 ): boolean {
-  const definition = lookup.get(id);
+  const definition = items.find((item) => item.id === id);
   const result = tryUpgradeTierItem(definition, levels[id] ?? 0, profile.materialInventory);
   if (!result.ok) return false;
   profile.materialInventory = result.inventory;
@@ -60,17 +55,17 @@ export function setMaterials(profile: Draft<PermanentProgressFields>, materials:
 }
 
 export function constructBuilding(profile: Draft<PermanentProgressFields>, id: BuildingId): boolean {
-  return applyTierUpgrade(profile, buildingLookup, profile.constructedBuildings, id);
+  return applyTierUpgrade(profile, buildings, profile.constructedBuildings, id);
 }
 
 export function plantFarm(profile: Draft<PermanentProgressFields>, id: FarmId): boolean {
-  return applyTierUpgrade(profile, farmLookup, profile.plantedFarms, id);
+  return applyTierUpgrade(profile, farmPlots, profile.plantedFarms, id);
 }
 
 export function completeResearch(profile: Draft<PermanentProgressFields>, id: ResearchId): boolean {
-  return applyTierUpgrade(profile, researchLookup, profile.completedResearch, id);
+  return applyTierUpgrade(profile, researchUpgrades, profile.completedResearch, id);
 }
 
 export function bondCompanion(profile: Draft<PermanentProgressFields>, id: CompanionId): boolean {
-  return applyTierUpgrade(profile, companionLookup, profile.bondedCompanions, id);
+  return applyTierUpgrade(profile, companionTierItems, profile.bondedCompanions, id);
 }

@@ -19,18 +19,6 @@ function isLikeDamage(damageType: DamageType, target: "burn" | "bleed", state: B
   );
 }
 
-function isBurnLikeDamage(damageType: DamageType, state: BattleState): boolean {
-  return isLikeDamage(damageType, "burn", state);
-}
-
-function isBleedLikeDamage(damageType: DamageType, state: BattleState): boolean {
-  return isLikeDamage(damageType, "bleed", state);
-}
-
-function doublingActive(flag: boolean, cc: number): boolean {
-  return flag && cc > 0;
-}
-
 function isBelowHalfHealth(state: BattleState): boolean {
   return state.playerHealth * HALF_DIVISOR < state.playerMaxHealth;
 }
@@ -52,12 +40,12 @@ function computeTypeSpecificDamageBonus(
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
 ): number {
   let bonus = 0;
-  if (isBurnLikeDamage(effect.damageType, state)) {
+  if (isLikeDamage(effect.damageType, "burn", state)) {
     bonus += (state.maxMana * state.gearEffects.burnDamagePerManaPercent) / PERCENT_DENOMINATOR;
   }
   if (effect.damageType === "physical") {
-    if (doublingActive(state.talentEffects.physicalDoubledVsStunned, state.enemyCC.stunSkipTurns)) bonus += 1;
-    if (doublingActive(state.talentEffects.physicalDoubledVsFrozen, state.enemyCC.freezeSkipTurns)) bonus += 1;
+    if (state.talentEffects.physicalDoubledVsStunned && state.enemyCC.stunSkipTurns > 0) bonus += 1;
+    if (state.talentEffects.physicalDoubledVsFrozen && state.enemyCC.freezeSkipTurns > 0) bonus += 1;
     if (isBelowHalfHealth(state)) {
       bonus += state.talentEffects.physicalDoubledBelowHalfHealth
         ? 1
@@ -76,7 +64,7 @@ function computeTypeSpecificDamageBonus(
   if (effect.damageType === "holy" && state.enemyCC.stunSkipTurns > 0) {
     bonus += state.gearEffects.holyBonusVsStunnedPercent / PERCENT_DENOMINATOR;
   }
-  if (isBleedLikeDamage(effect.damageType, state)) {
+  if (isLikeDamage(effect.damageType, "bleed", state)) {
     if (isBelowHalfHealth(state) && state.talentEffects.bleedDesperateMultiplier > 1) {
       bonus += state.talentEffects.bleedDesperateMultiplier - 1;
     }
@@ -100,7 +88,7 @@ function computeCardSpecificTalentBonus(
     bonus += state.talentEffects.consumeDamageBonusPercent / PERCENT_DENOMINATOR;
   }
   if (
-    isBurnLikeDamage(effect.damageType, state) &&
+    isLikeDamage(effect.damageType, "burn", state) &&
     card?.consume &&
     state.talentEffects.consumeBurnDamageBonusPercent > 0
   ) {
@@ -109,8 +97,8 @@ function computeCardSpecificTalentBonus(
   if (card?.tags?.includes("archery")) {
     const cc = state.enemyCC;
     const talentEffects = state.talentEffects;
-    if (doublingActive(talentEffects.archeryDoubledVsStunned, cc.stunSkipTurns)) bonus += 1;
-    if (doublingActive(talentEffects.archeryDoubledVsFrozen, cc.freezeSkipTurns)) bonus += 1;
+    if (talentEffects.archeryDoubledVsStunned && cc.stunSkipTurns > 0) bonus += 1;
+    if (talentEffects.archeryDoubledVsFrozen && cc.freezeSkipTurns > 0) bonus += 1;
     if (
       talentEffects.archeryDoubledVsHighHealth &&
       state.enemyHealth * PERCENT_DENOMINATOR >= state.enemyMaxHealth * ARCHERY_FULL_HEALTH_THRESHOLD_PERCENT
@@ -132,14 +120,9 @@ function computeExternalDamageMultipliers(
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
 ): number {
   let bonus = 0;
-  const enemyMultiplier = getEnemyDamageMultiplier(state, effect.damageType);
-  if (enemyMultiplier !== 1) bonus += enemyMultiplier - 1;
-
-  const frozenMultiplier = gearFrozenDamageMultiplier(state);
-  if (frozenMultiplier !== 1) bonus += frozenMultiplier - 1;
-
-  const burnBonusToBleeding = computeBurnMultiplier(effect, state);
-  if (burnBonusToBleeding !== 1) bonus += burnBonusToBleeding - 1;
+  bonus += getEnemyDamageMultiplier(state, effect.damageType) - 1;
+  bonus += gearFrozenDamageMultiplier(state) - 1;
+  if (isLikeDamage(effect.damageType, "burn", state)) bonus += getBurnBonusToBleedingMultiplier(state) - 1;
 
   return bonus;
 }
@@ -164,7 +147,7 @@ export function applyFirstDamageBonus(
   let nextState: BattleState = state;
   let firstBonus = 0;
 
-  if (isBurnLikeDamage(effect.damageType, state)) {
+  if (isLikeDamage(effect.damageType, "burn", state)) {
     if (
       nextState.talentEffects.firstBurnCardBonusMultiplier > 1 &&
       !readCombatFlag(nextState, "firstBurnCardDoubledUsed")
@@ -181,11 +164,6 @@ export function applyFirstDamageBonus(
   return { state: nextState, firstBonus };
 }
 
-function computeBurnMultiplier(effect: Extract<BattleCardEffect, { kind: "damage" }>, state: BattleState): number {
-  if (!isBurnLikeDamage(effect.damageType, state)) return 1;
-  return getBurnBonusToBleedingMultiplier(state);
-}
-
 export function resolveDamageBonusMultiplier(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
@@ -200,7 +178,7 @@ export function resolveDamageBonusMultiplier(
   },
 ): number {
   const unwoundedBonus =
-    isBleedLikeDamage(effect.damageType, state) && state.enemyStatuses.bleed === 0
+    isLikeDamage(effect.damageType, "bleed", state) && state.enemyStatuses.bleed === 0
       ? state.talentEffects.bleedUnwoundedBonusPercent / PERCENT_DENOMINATOR
       : 0;
   const cullBonus =

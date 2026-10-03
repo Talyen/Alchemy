@@ -9,13 +9,15 @@ function View({
   showArtwork = true,
   source,
   secondarySource,
+  initialRevealOnly = false,
 }: {
   identity?: string;
   showArtwork?: boolean;
   source?: string;
   secondarySource?: string;
+  initialRevealOnly?: boolean;
 }) {
-  const { ref: artworkRef, pending: artworkPending } = useArtworkReady(identity);
+  const { ref: artworkRef, pending: artworkPending } = useArtworkReady(identity, { initialRevealOnly });
   return (
     <div ref={artworkRef} data-artwork-pending={artworkPending} data-testid="view">
       {showArtwork ? <img key={identity} src={source ?? `${identity}.webp`} alt="Artwork" /> : null}
@@ -217,5 +219,27 @@ describe("artwork reveal", () => {
     expect(screen.getByTestId("view").dataset.artworkPending).toBeUndefined();
     expect(primary.style.visibility).not.toBe("hidden");
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("keeps a revealed screen usable while replacement artwork waits for decode", async () => {
+    const { rerender } = render(<View initialRevealOnly />);
+    const primary = screen.getByAltText("Artwork");
+    Object.defineProperty(primary, "decode", { value: () => Promise.resolve() });
+    fireEvent.load(primary);
+    await paint();
+    expect(primary.style.visibility).toBe("");
+    const view = screen.getByTestId("view");
+    expect(view.dataset.artworkPending).toBeUndefined();
+
+    rerender(<View initialRevealOnly secondarySource="reward.webp" />);
+    await paint();
+    const secondary = screen.getByAltText("Secondary artwork");
+    expect(view.dataset.artworkPending).toBeUndefined();
+    expect(secondary.style.visibility).toBe("hidden");
+    Object.defineProperty(secondary, "decode", { value: () => Promise.resolve() });
+    fireEvent.load(secondary);
+    await paint();
+    expect(secondary.style.visibility).toBe("");
+    expect(view.dataset.artworkPending).toBeUndefined();
   });
 });

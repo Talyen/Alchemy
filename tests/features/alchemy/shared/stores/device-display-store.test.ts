@@ -20,6 +20,7 @@ describe("device display preferences", () => {
     vi.restoreAllMocks();
     useDeviceDisplayStore.getState().resetSizes();
     flushDeviceDisplayPreferences();
+    vi.useRealTimers();
   });
   it("defaults independently and validates saved values", () => {
     expect(readDeviceDisplayPreferences()).toEqual({ gameSizePercent: 100, tooltipSizePercent: 100 });
@@ -40,16 +41,27 @@ describe("device display preferences", () => {
     expect(useDeviceDisplayStore.getState()).toMatchObject({ gameSizePercent: 85, tooltipSizePercent: 120 });
   });
   it("debounces storage writes behind synchronous state updates", () => {
+    vi.useFakeTimers();
+    const write = vi.spyOn(Storage.prototype, "setItem");
     useDeviceDisplayStore.getState().setGameSizePercent(85);
+    vi.advanceTimersByTime(100);
     useDeviceDisplayStore.getState().setTooltipSizePercent(120);
     // In-memory state applies instantly; storage trails until flushed.
     expect(useDeviceDisplayStore.getState()).toMatchObject({ gameSizePercent: 85, tooltipSizePercent: 120 });
     expect(localStorage.getItem(DEVICE_DISPLAY_STORAGE_KEY)).toBeNull();
-    flushDeviceDisplayPreferences();
+    vi.advanceTimersByTime(149);
+    expect(write).not.toHaveBeenCalled();
+    // No-op slider ticks must neither write nor restart the pending debounce.
+    useDeviceDisplayStore.getState().setTooltipSizePercent(120);
+    vi.advanceTimersByTime(1);
+    expect(write).toHaveBeenCalledTimes(1);
     expect(readDeviceDisplayPreferences()).toEqual({ gameSizePercent: 85, tooltipSizePercent: 120 });
     // A flush with no pending changes never touches storage.
     localStorage.removeItem(DEVICE_DISPLAY_STORAGE_KEY);
     flushDeviceDisplayPreferences();
+    expect(localStorage.getItem(DEVICE_DISPLAY_STORAGE_KEY)).toBeNull();
+    useDeviceDisplayStore.getState().setGameSizePercent(85);
+    vi.runAllTimers();
     expect(localStorage.getItem(DEVICE_DISPLAY_STORAGE_KEY)).toBeNull();
   });
   it("persists separately and resets both preferences", () => {

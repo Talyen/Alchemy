@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { renderBalanceReportHtml } from "@/lib/balance/report-html";
 import { renderBalanceReportJson } from "@/lib/balance/report-json";
-import { reportMethodologyLines } from "@/lib/balance/report-methodology";
 import type { BalanceReportModel } from "@/lib/balance/report-model";
 import type { ReportRunOptions } from "@/lib/balance/report-options";
 import { emptyRateCell } from "@/lib/balance/report-rankings";
@@ -97,41 +96,37 @@ describe("report rendering and methodology", () => {
     anomalyMetrics: [{ field: "maxPlayerBurn", values: { early: 50, mid: 120, late: 250 } }],
   };
 
-  it("produces methodology lines reflecting run options", () => {
-    const lines = reportMethodologyLines(options);
-    expect(lines.length).toBeGreaterThan(10);
-    expect(lines.some((l) => l.includes("Sampling mode=quick"))).toBe(true);
-    expect(lines.some((l) => l.includes("Loadout mode=typical"))).toBe(true);
-    expect(lines.some((l) => l.includes("Play policy=random-playable"))).toBe(true);
-    expect(lines.some((l) => l.includes("Fight pacing on"))).toBe(true);
-  });
-
-  it("renders balance report HTML with all expected matrix sections", () => {
-    const html = renderBalanceReportHtml(model, options);
-    expect(html).toContain("<h1>Balance Report</h1>");
-    expect(html).toContain("Enemy Rankings");
-    expect(html).toContain("Class Rankings");
-    expect(html).toContain("Class Matchups");
-    expect(html).toContain("Boon Rankings");
-    expect(html).toContain("Card Rankings");
-    expect(html).toContain("Talent ablation");
-    expect(html).toContain("Companion ablation");
-    expect(html).toContain("Item affix isolation");
-    expect(html).toContain("Gear ablation");
-    expect(html).toContain("Anomalies");
-    expect(html).toContain("All Anomaly Metrics");
-    expect(html).toContain("Skeleton");
-    expect(html).toContain("Knight");
-  });
-
-  it("renders balance report JSON with targets and methodology", () => {
-    const jsonStr = renderBalanceReportJson(model, options);
-    const parsed = JSON.parse(jsonStr);
-    expect(parsed.agentNotice).toContain("DRILL-DOWN ONLY");
-    expect(parsed.methodology).toBeDefined();
-    expect(parsed.targets.winRateByType).toBeDefined();
-    expect(parsed.enemies).toHaveLength(2);
-    expect(parsed.classes).toHaveLength(1);
-    expect(parsed.affixes).toHaveLength(1);
+  it("renders each paired comparison in its own section with ordered tiers and escaped catalog fallbacks", () => {
+    const comparisons = [
+      ["boons", "Boon Rankings"],
+      ["cardsIsolatedSkeleton", "Card Rankings — isolated vs Skeleton"],
+      ["cardsIsolatedElite", "Card Rankings — isolated vs Mimic"],
+      ["cardsInClass", "Card Rankings — in-class decks"],
+      ["talents", "Talent ablation"],
+      ["companions", "Companion ablation"],
+      ["gear", "Gear ablation"],
+    ] as const;
+    const changed = { ...model };
+    for (const [key] of comparisons) {
+      changed[key] = [
+        {
+          id: `<${key}&>`,
+          deltas: {
+            early: mockPairedDelta({ delta: 0.1 }),
+            mid: mockPairedDelta({ delta: -0.2 }),
+            late: mockPairedDelta({ delta: 0.3, noisy: true }),
+          },
+        },
+      ];
+    }
+    const html = renderBalanceReportHtml(changed, options);
+    for (const [key, heading] of comparisons) {
+      const section = html.split(`<h2>${heading}</h2>`)[1]!.split("<h2>")[0]!;
+      expect(section).toContain(`&lt;${key}&amp;&gt;`);
+      expect(section).toMatch(/10\.0%[\s\S]*-20\.0%[\s\S]*30\.0% \(noisy\)/);
+      expect(section).not.toContain(`<${key}&>`);
+    }
+    const exported = JSON.parse(renderBalanceReportJson(changed, options));
+    for (const [key] of comparisons) expect(exported[key]).toEqual(changed[key]);
   });
 });

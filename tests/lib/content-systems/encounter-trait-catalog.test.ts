@@ -25,6 +25,19 @@ describe("encounter trait catalog", () => {
     }
   });
 
+  it("keeps caller edits to eligible pools from changing future encounters", () => {
+    for (const mode of ["labyrinth", "wildwood"] as const) {
+      for (const category of ["combat", "reward"] as const) {
+        const expected = eligibleEncounterTraitIds(mode, category);
+        const edited = eligibleEncounterTraitIds(mode, category);
+        edited.reverse();
+        edited.length = 0;
+        expect(eligibleEncounterTraitIds(mode, category)).toEqual(expected);
+        expect(pickEncounterTrait(mode, category, () => 0)).toBe(expected[0]);
+      }
+    }
+  });
+
   it("keeps Generous and Scavenger out of Wildwood while allowing its useful rewards", () => {
     const wildwoodRewards = pickEncounterTraits("wildwood", "reward", 10, () => 0.5);
     expect(wildwoodRewards.sort()).toEqual(["alchemist", "companion"]);

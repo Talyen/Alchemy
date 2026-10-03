@@ -20,7 +20,7 @@ import { useGameplayStateStore, type GameplayState } from "./gameplay-state-stor
 // The classifications follow encodeRunResumeSnapshot in run-resume-codec.ts.
 export function subscribePersistenceCommits(listener: () => void): () => void {
   const unsubscribeSettings = useSettingsStore.subscribe((state, previous) => {
-    if (!settingsPersistedInputsEqual(previous, state)) listener();
+    if (!fieldsEqual(previous, state, SETTINGS_SAVE_KEYS)) listener();
   });
   const unsubscribeGameplay = useGameplayStateStore.subscribe((state, previous) => {
     if (!gameplayPersistedInputsEqual(previous, state)) listener();
@@ -35,13 +35,6 @@ export function subscribePersistenceCommits(listener: () => void): () => void {
 // PROFILE_SAVE_KEYS below), so a future persisted field is compared
 // automatically. Transient UI state lives outside this store entirely.
 const SETTINGS_SAVE_KEYS = Object.keys(createDefaultSettingsSaveFields()) as Array<keyof SettingsSaveFields>;
-
-function settingsPersistedInputsEqual(previous: SettingsSaveFields, next: SettingsSaveFields): boolean {
-  for (const key of SETTINGS_SAVE_KEYS) {
-    if (!Object.is(previous[key], next[key])) return false;
-  }
-  return true;
-}
 
 // Profile save keys derive from the defaults factory, so a future persisted
 // profile field is compared automatically while collectionTab/collectionPages
@@ -97,9 +90,7 @@ function gameplayPersistedInputsEqual(previous: GameplayState, next: GameplaySta
   if (!Object.is(previous.gear, next.gear)) return false;
   if (!Object.is(previous.battle.battleState, next.battle.battleState)) return false;
   if (previous.battle.hasActiveBattle !== next.battle.hasActiveBattle) return false;
-  for (const key of PROFILE_SAVE_KEYS) {
-    if (!Object.is(previous.profile[key], next.profile[key])) return false;
-  }
+  if (!fieldsEqual(previous.profile, next.profile, PROFILE_SAVE_KEYS)) return false;
   if (!Object.is(previous.run.activeRun, next.run.activeRun)) return false;
   return sessionPersistedInputsEqual(
     previous.session,

@@ -9,18 +9,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function readAffixEntries(value: unknown): Array<{ id: string; value: number }> | undefined {
-  if (!Array.isArray(value)) return undefined;
-  const entries = value.flatMap((entry) => {
-    if (!isRecord(entry)) return [];
-    const id = typeof entry.id === "string" ? entry.id : undefined;
-    const rollValue = entry.value;
-    if (!id || typeof rollValue !== "number") return [];
-    return [{ id, value: rollValue }];
-  });
-  return entries.length > 0 ? entries : undefined;
-}
-
 export function normalizeGearInstance(raw: unknown): GearInstance | null {
   if (!isRecord(raw)) return null;
 
@@ -30,8 +18,6 @@ export function normalizeGearInstance(raw: unknown): GearInstance | null {
     definitionId && Object.hasOwn(gearDefinitions, definitionId) ? gearDefinitions[definitionId] : undefined;
   if (!instanceId || !definitionId || !definition) return null;
 
-  const rawAffixes = readAffixEntries(raw.affixes);
-
   // Unique affixes resolve canonically at read time; stored rolls are dropped
   // so older saves carrying them converge on the catalog without a migration.
   if (getUniqueAffixes(definitionId)) {
@@ -39,7 +25,7 @@ export function normalizeGearInstance(raw: unknown): GearInstance | null {
   }
 
   const seen = new Set<string>();
-  const affixes = normalizeAffixRolls(rawAffixes, definition.rarity)
+  const affixes = normalizeAffixRolls(Array.isArray(raw.affixes) ? raw.affixes : undefined, definition.rarity)
     .filter((roll) => {
       if (seen.has(roll.id) || gearAffixCatalog[roll.id].uniqueOnly) return false;
       seen.add(roll.id);

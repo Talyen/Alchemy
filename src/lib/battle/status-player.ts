@@ -229,45 +229,23 @@ export function applyForgeThresholdRewards(
   combatTexts?: CombatTextEvent[],
 ): BattleState {
   const { forgeBurnThreshold, forgeStripArmorThreshold, forgeBlockThreshold } = state.talentEffects;
-  // Most Forge gains cross no reward threshold. Avoid allocating the reward
-  // table and its callbacks unless at least one reward can run.
-  if (
-    !crossesGainThreshold(oldForge, newForge, forgeBurnThreshold) &&
-    !crossesGainThreshold(oldForge, newForge, forgeStripArmorThreshold) &&
-    !crossesGainThreshold(oldForge, newForge, forgeBlockThreshold)
-  )
-    return state;
-  const thresholds: Array<{
-    threshold: number;
-    apply: (s: BattleState) => BattleState;
-  }> = [
-    {
-      threshold: state.talentEffects.forgeBurnThreshold,
-      apply: (s) => {
-        if (s.enemyHealth <= 0) return s;
-        const burned = dealScaledBurnWithStacks(s, s.talentEffects.forgeBurnDamage, combatTexts ?? [], {
-          multiplier: getEnemyDamageMultiplier(s, "burn"),
-        });
-        return s.enemyStatuses.burn === 0 &&
-          burned.enemyHealth < s.enemyHealth &&
-          burned.gearEffects.forgeOnBurnVsUnburned > 0
-          ? addForgeToPlayer(burned, burned.gearEffects.forgeOnBurnVsUnburned, combatTexts)
-          : burned;
-      },
-    },
-    {
-      threshold: state.talentEffects.forgeStripArmorThreshold,
-      apply: stripEnemyArmor,
-    },
-    {
-      threshold: state.talentEffects.forgeBlockThreshold,
-      apply: (s) => applyBlockReward(s, s.talentEffects.forgeBlockAmount, combatTexts ?? []),
-    },
-  ];
   let nextState = state;
-  for (const { threshold, apply } of thresholds) {
-    if (crossesGainThreshold(oldForge, newForge, threshold)) nextState = apply(nextState);
+  // Burn resolves before stripping Armor and granting Block, including any
+  // Forge earned by the Burn itself. Thresholds use this gain's original span.
+  if (crossesGainThreshold(oldForge, newForge, forgeBurnThreshold) && nextState.enemyHealth > 0) {
+    const burned = dealScaledBurnWithStacks(nextState, nextState.talentEffects.forgeBurnDamage, combatTexts ?? [], {
+      multiplier: getEnemyDamageMultiplier(nextState, "burn"),
+    });
+    nextState =
+      nextState.enemyStatuses.burn === 0 &&
+      burned.enemyHealth < nextState.enemyHealth &&
+      burned.gearEffects.forgeOnBurnVsUnburned > 0
+        ? addForgeToPlayer(burned, burned.gearEffects.forgeOnBurnVsUnburned, combatTexts)
+        : burned;
   }
+  if (crossesGainThreshold(oldForge, newForge, forgeStripArmorThreshold)) nextState = stripEnemyArmor(nextState);
+  if (crossesGainThreshold(oldForge, newForge, forgeBlockThreshold))
+    nextState = applyBlockReward(nextState, nextState.talentEffects.forgeBlockAmount, combatTexts ?? []);
   return nextState;
 }
 

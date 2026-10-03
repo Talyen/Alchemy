@@ -5,42 +5,34 @@ import {
   gainManaWithCombatText,
   addPlayerStatusWithCombatText,
   applyHealingWithCombatText,
-  emitOverhealBlockText,
   payKillPayouts,
+  applyArmorStatusEffect,
 } from "@/lib/battle/player-rewards";
 import type { GearEffectManifest } from "@/lib/gear";
 import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import { tryTriggerEnemyFreeze } from "@/lib/battle/damage-status-riders";
 import type { BattleState } from "@/lib/battle/types";
-import { defaultPlayerStatusValues, defaultTrinketManifest } from "../../fixtures/default-battle-state";
+import { defaultTrinketManifest } from "../../fixtures/default-battle-state";
 import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/battle";
 
-describe("emitOverhealBlockText", () => {
-  it("emits block combat text when overheal increases block", () => {
-    const base = defaultPlayerStatusValues({ block: 2 });
-    const before = { playerStatuses: base };
-    const after = { playerStatuses: { ...base, block: 7 } };
-    const texts = makeTexts();
-    emitOverhealBlockText(before, after, texts);
-    expect(texts).toEqual([{ target: "player", kind: "status", stat: "block", amount: 5 }]);
-  });
-
-  it("no-ops when block did not increase", () => {
-    const statuses = defaultPlayerStatusValues({ block: 4 });
-    const texts = makeTexts();
-    emitOverhealBlockText({ playerStatuses: statuses }, { playerStatuses: statuses }, texts);
-    expect(texts).toEqual([]);
-  });
-});
-
 describe("applyHealingWithCombatText", () => {
-  it("includes overflow in the visible healing amount", () => {
-    const state = patchBattleState({ playerHealth: 29, playerMaxHealth: 30 });
+  it("acknowledges the full heal and only the Block gained from allowed Overflow", () => {
+    const state = patchBattleState({
+      playerHealth: 29,
+      playerMaxHealth: 30,
+      playerStatuses: { block: 2 },
+      talentEffects: { overhealToBlockRatio: 1 },
+    });
     const texts = makeTexts();
-    applyHealingWithCombatText(state, 10, texts);
-    const healText = texts.find((t) => t.kind === "heal");
-    expect(healText).toEqual({ target: "player", kind: "heal", stat: "health", amount: 10 });
+    const next = applyHealingWithCombatText(state, 10, texts, { allowOverhealBlock: true });
+    expect(next.playerHealth).toBe(30);
+    expect(next.playerStatuses.block).toBe(11);
+    expect(texts).toEqual([
+      { target: "player", kind: "heal", stat: "health", amount: 10 },
+      { target: "player", kind: "status", stat: "block", amount: 9 },
+    ]);
+    expect(state.playerStatuses.block).toBe(2);
   });
 
   it("grants Grove's Favor Thorns when Health is actually restored", () => {
@@ -104,14 +96,6 @@ describe("applyHealingWithCombatText", () => {
 });
 
 describe("addGoldWithCombatText", () => {
-  it("adds gold to battle state and emits scaled combat text", () => {
-    const state = patchBattleState({ gold: 10 });
-    const texts = makeTexts();
-    const nextState = addGoldWithCombatText(state, 5, texts);
-    expect(nextState.gold).toBe(15);
-    expect(texts).toEqual([{ target: "player", kind: "status", stat: "gold", amount: 5 }]);
-  });
-
   it("scales gold using gear multiplier when present", () => {
     const state = patchBattleState({
       gold: 10,
@@ -121,14 +105,6 @@ describe("addGoldWithCombatText", () => {
     const nextState = addGoldWithCombatText(state, 10, texts);
     expect(nextState.gold).toBe(25);
     expect(texts).toEqual([{ target: "player", kind: "status", stat: "gold", amount: 15 }]);
-  });
-
-  it("no-ops when amount is 0 or negative", () => {
-    const state = patchBattleState({ gold: 10 });
-    const texts = makeTexts();
-    const nextState = addGoldWithCombatText(state, 0, texts);
-    expect(nextState.gold).toBe(10);
-    expect(texts).toEqual([]);
   });
 });
 
@@ -246,4 +222,21 @@ describe("Arcane Mending from bonus Mana", () => {
     });
     expect(gainManaWithCombatText(state, 3, []).playerHealth).toBe(10);
   });
+});
+
+it("settles simultaneous Armor thresholds in order and does not reward an already-crossed threshold", () => {
+  const state = patchBattleState({
+    playerStatuses: { armor: 3, burn: 2 },
+    talentEffects: { armorBlockThreshold: 5, armorBlockAmount: 2, armorCleanseThreshold: 5 },
+    trinketEffects: { ironwoodBucklerThornsOnBlock: 1 },
+    gearEffects: { blockOnCleanse: 1 },
+  });
+  const texts = makeTexts();
+  const next = applyArmorStatusEffect(state, 2, texts);
+  expect(next.playerStatuses).toMatchObject({ armor: 5, burn: 0, block: 3, thorns: 2 });
+  expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 3 });
+  expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "burn", signal: "cleanse", text: "" });
+  const second = applyArmorStatusEffect(next, 1, []);
+  expect(second.playerStatuses).toMatchObject({ armor: 6, block: 3, thorns: 2 });
+  expect(state.playerStatuses).toMatchObject({ armor: 3, burn: 2, block: 0, thorns: 0 });
 });

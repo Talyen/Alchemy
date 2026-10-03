@@ -16,13 +16,14 @@ function applyTierEffects(base: HomesteadEffectManifest, partial?: Partial<Homes
     const amount = numericEffects[key];
     if (typeof amount === "number") base[key] = addNumericEffect(base[key], amount);
   }
-  if (cardHealBonus) base.cardHealBonus = addCardHealBonuses(base.cardHealBonus, cardHealBonus);
+  for (const [id, amount] of Object.entries(cardHealBonus ?? {})) {
+    base.cardHealBonus[id] = (base.cardHealBonus[id] ?? 0) + amount;
+  }
   if (companionBondLevels) {
-    const bonds = { ...base.companionBondLevels };
+    const bonds = base.companionBondLevels;
     for (const id of Object.keys(companionBondLevels) as CompanionId[]) {
       bonds[id] = (bonds[id] ?? 0) + companionBondLevels[id];
     }
-    base.companionBondLevels = bonds;
   }
 }
 
@@ -38,22 +39,6 @@ function applyItemTiers(
       applyTierEffects(base, item.tiers[i]?.effects);
     }
   }
-}
-
-function addCardHealBonuses(base: Record<string, number>, addition: Record<string, number>): Record<string, number> {
-  const merged = { ...base };
-  for (const [id, amount] of Object.entries(addition)) {
-    merged[id] = (merged[id] ?? 0) + amount;
-  }
-  return merged;
-}
-
-function mergeCompanionBonds(target: TalentEffectManifest, source: HomesteadEffectManifest): void {
-  const merged = { ...target.companionBondLevels };
-  for (const id of Object.keys(source.companionBondLevels) as CompanionId[]) {
-    merged[id] = Math.max(merged[id] ?? 0, source.companionBondLevels[id]);
-  }
-  target.companionBondLevels = merged;
 }
 
 export function computeHomesteadEffects(
@@ -73,7 +58,7 @@ export function computeHomesteadEffects(
   applyItemTiers(effects, researchUpgrades, completedResearch);
 
   for (const [id, level] of Object.entries(bondedCompanions)) {
-    if (id in effects.companionBondLevels) {
+    if (Object.hasOwn(effects.companionBondLevels, id)) {
       effects.companionBondLevels[id as keyof typeof effects.companionBondLevels] = level;
     }
   }
@@ -85,16 +70,25 @@ export function mergeIntoManifest(
   talentEffects: TalentEffectManifest,
   homesteadEffects: HomesteadEffectManifest,
 ): TalentEffectManifest {
-  const merged: TalentEffectManifest = { ...talentEffects };
+  const merged: TalentEffectManifest = {
+    ...talentEffects,
+    cardHealBonus: { ...talentEffects.cardHealBonus },
+    companionBondLevels: { ...talentEffects.companionBondLevels },
+  };
 
   for (const key of HOMESTEAD_BATTLE_NUMERIC_KEYS) {
     merged[key] = addNumericEffect(merged[key], homesteadEffects[key]);
   }
 
-  if (Object.keys(homesteadEffects.cardHealBonus).length > 0) {
-    merged.cardHealBonus = addCardHealBonuses(merged.cardHealBonus, homesteadEffects.cardHealBonus);
+  for (const [id, amount] of Object.entries(homesteadEffects.cardHealBonus)) {
+    merged.cardHealBonus[id] = (merged.cardHealBonus[id] ?? 0) + amount;
   }
-  mergeCompanionBonds(merged, homesteadEffects);
+  for (const id of Object.keys(homesteadEffects.companionBondLevels) as CompanionId[]) {
+    merged.companionBondLevels[id] = Math.max(
+      merged.companionBondLevels[id] ?? 0,
+      homesteadEffects.companionBondLevels[id],
+    );
+  }
 
   return merged;
 }

@@ -22,14 +22,10 @@ export const AUTOPLAY_EFFECT_SCORE = {
   wish: 3,
 } as const;
 
-interface ScoreCapacity {
-  manaRoom: number;
-}
-
-function scoreEffects(effects: readonly BattleCardEffect[], state: BattleSnapshot, capacity: ScoreCapacity): number {
+function scoreEffects(effects: readonly BattleCardEffect[], state: BattleSnapshot, manaRoom: number): number {
   let total = 0;
   for (const effect of effects) {
-    total += scoreEffect(effect, state, capacity);
+    total += scoreEffect(effect, state, manaRoom);
   }
   return total;
 }
@@ -60,7 +56,7 @@ function playerStatusAmount(
   return effect.amount;
 }
 
-function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, capacity: ScoreCapacity): number {
+function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, manaRoom: number): number {
   switch (effect.kind) {
     case "damage":
       return scoreDamageEffect(effect, state);
@@ -93,11 +89,11 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, capacity: 
     }
     case "chance":
       return (
-        effect.probability * scoreEffects(effect.successEffects, state, capacity) +
-        (1 - effect.probability) * scoreEffects(effect.failureEffects, state, capacity)
+        effect.probability * scoreEffects(effect.successEffects, state, manaRoom) +
+        (1 - effect.probability) * scoreEffects(effect.failureEffects, state, manaRoom)
       );
     case "repeat-over-turns":
-      return effect.remainingTurns * scoreEffects(effect.effects, state, capacity);
+      return effect.remainingTurns * scoreEffects(effect.effects, state, manaRoom);
     case "draw-cards":
       return Math.min(effect.amount, state.deck.length + state.discard.length) * AUTOPLAY_EFFECT_SCORE.draw;
     case "random-draw":
@@ -106,16 +102,14 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, capacity: 
         AUTOPLAY_EFFECT_SCORE.draw
       );
     case "restore-mana":
-      return (
-        Math.min(effect.amount, effect.allowOverflow ? effect.amount : capacity.manaRoom) * AUTOPLAY_EFFECT_SCORE.mana
-      );
+      return Math.min(effect.amount, effect.allowOverflow ? effect.amount : manaRoom) * AUTOPLAY_EFFECT_SCORE.mana;
     case "summon-companion":
       return AUTOPLAY_EFFECT_SCORE.summon;
     case "buff-companion":
       return effect.amount * AUTOPLAY_EFFECT_SCORE.companionBuff;
     case "companion-action":
       return state.activeCompanion
-        ? effect.amount * scoreEffects(state.activeCompanion.turnStartEffects, state, capacity)
+        ? effect.amount * scoreEffects(state.activeCompanion.turnStartEffects, state, manaRoom)
         : 0;
     case "multiply-enemy-status": {
       const current = state.enemyStatuses[effect.status] ?? 0;
@@ -189,9 +183,7 @@ export function getImmediateDefense(card: BattleCard, state?: BattleSnapshot): n
 
 export function getEffectiveDamageScore(card: BattleCard, state: BattleSnapshot): number {
   const cost = computeEffectiveCost(state, card).effectiveCost;
-  return scoreEffects(card.effects, state, {
-    manaRoom: Math.max(0, state.maxMana - Math.max(0, state.mana - cost)),
-  });
+  return scoreEffects(card.effects, state, Math.max(0, state.maxMana - Math.max(0, state.mana - cost)));
 }
 
 export function pickHighestScoring(

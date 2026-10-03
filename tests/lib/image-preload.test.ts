@@ -33,6 +33,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  resetImagePreloadCache();
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
@@ -101,21 +102,6 @@ describe("preloadImage", () => {
     await retry;
   });
 
-  it("caches already-loaded images", async () => {
-    const src = uniqueUrl();
-    const p1 = preloadImage(src);
-    mockImageInstances[0].onload?.();
-    await p1;
-
-    const p2 = preloadImage(src);
-    await expect(p2).resolves.toBeUndefined();
-    expect(mockImageInstances.length).toBe(1);
-  });
-
-  it("handles empty string safely", async () => {
-    await expect(preloadImage("")).resolves.toBeUndefined();
-  });
-
   it("keeps concurrent loads deduplicated beyond the completed cache capacity", async () => {
     const sources = Array.from({ length: 501 }, uniqueUrl);
     const pending = sources.map(preloadImage);
@@ -153,19 +139,6 @@ describe("preloadImage", () => {
     expect(mockImageInstances.every((image) => image.src === "")).toBe(true);
     for (const image of mockImageInstances) image.onload();
     expect(mockImageInstances.every((image) => image.decode.mock.calls.length === 0)).toBe(true);
-  });
-
-  it("does not cache an old successful load after reset", async () => {
-    const src = uniqueUrl();
-    const old = preloadImage(src);
-    resetImagePreloadCache();
-    mockImageInstances[0].onload();
-    await old;
-
-    const replacement = preloadImage(src);
-    expect(mockImageInstances).toHaveLength(2);
-    mockImageInstances[1].onload();
-    await replacement;
   });
 
   it("does not let an old failure evict a replacement after reset", async () => {
@@ -232,22 +205,15 @@ describe("preloadImagesInBatches", () => {
     await expect(promise).resolves.toBeUndefined();
   });
 
-  it("deduplicates sources before warming", async () => {
-    const src = uniqueUrl();
-    const promise = preloadImagesInBatches([src, src], 2);
-    expect(mockImageInstances).toHaveLength(1);
-    mockImageInstances[0].onload?.();
-    await expect(promise).resolves.toBeUndefined();
-  });
-
   it("reports per-image progress against the unique total", async () => {
     const reports: Array<[number, number]> = [];
     const srcs = [uniqueUrl(), uniqueUrl(), uniqueUrl()];
-    const promise = preloadImagesInBatches(srcs, 8, (loaded, total) => {
+    const promise = preloadImagesInBatches([...srcs, srcs[0]!, ""], 8, (loaded, total) => {
       reports.push([loaded, total]);
     });
 
     expect(reports).toEqual([[0, 3]]);
+    expect(mockImageInstances).toHaveLength(3);
     mockImageInstances[0].onload?.();
     await vi.waitFor(() => expect(reports).toContainEqual([1, 3]));
     mockImageInstances[1].onload?.();

@@ -21,19 +21,14 @@ export function deriveGearCombatRestrictions(state: {
   battle: Pick<GameplayState["battle"], "hasActiveBattle">;
   gear: Pick<GameplayState["gear"], "loadouts" | "equippedTrinkets">;
 }): GearCombatRestrictions {
-  const characters: GearCombatRestrictions["characters"] = {};
-  const foregroundMode = state.session.activity.kind !== "inactive" ? state.run.activeRun.contentSystemType : null;
-  if (foregroundMode && state.battle.hasActiveBattle) {
-    characters[state.run.activeRun.characterId] = [foregroundMode];
+  const restrictions: GearCombatRestrictions = { characters: {}, gear: {}, trinkets: {} };
+  if (state.session.activity.kind === "inactive" || !state.battle.hasActiveBattle) return restrictions;
+  const { characterId, contentSystemType } = state.run.activeRun;
+  restrictions.characters[characterId] = [contentSystemType];
+  for (const instanceId of Object.values(state.gear.loadouts[characterId])) {
+    if (instanceId) restrictions.gear[instanceId] = characterId;
   }
-  const gear: GearCombatRestrictions["gear"] = {};
-  const trinkets: GearCombatRestrictions["trinkets"] = {};
-  for (const characterId of Object.keys(characters) as CharacterId[]) {
-    for (const instanceId of Object.values(state.gear.loadouts[characterId])) {
-      if (instanceId) gear[instanceId] = characterId;
-    }
-    const trinketId = state.gear.equippedTrinkets[characterId];
-    if (trinketId) trinkets[trinketId] = characterId;
-  }
-  return { characters, gear, trinkets };
+  const trinketId = state.gear.equippedTrinkets[characterId];
+  if (trinketId) restrictions.trinkets[trinketId] = characterId;
+  return restrictions;
 }

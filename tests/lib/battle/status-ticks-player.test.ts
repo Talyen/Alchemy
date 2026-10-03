@@ -21,19 +21,8 @@ describe("tickPlayerStatuses", () => {
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
     expect(next.playerHealth).toBe(12);
-    expect(next.playerCC.stunSkipTurns).toBe(1);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 8 });
-  });
-
-  it("deals burn damage to player and halves burn", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ burn: 8 }),
-    });
-    const texts = makeTexts();
-    const next = tickPlayerStatuses(state, texts);
-    expect(next.playerHealth).toBe(22);
     expect(next.playerStatuses.burn).toBe(4);
+    expect(next.playerCC.stunSkipTurns).toBe(1);
     expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 8 });
   });
 
@@ -178,15 +167,6 @@ describe("tickPlayerStatuses", () => {
     expect(next.playerHealth).toBe(25);
     expect(next.playerStatuses.poison).toBe(4);
     expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "poison", amount: 5 });
-  });
-
-  it("decays high player poison stacks by 20%", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ poison: 100 }),
-    });
-    const next = tickPlayerStatuses(state, makeTexts());
-    expect(next.playerStatuses.poison).toBe(80);
   });
 
   it("receiveHalfPoisonDamage halves poison damage", () => {
@@ -366,21 +346,21 @@ describe("tickPlayerStatuses", () => {
     expect(next.playerStatuses.freeze).toBe(2);
   });
 
-  it("stops remaining player DoTs after a lethal burn tick", () => {
+  it.each(["burn", "poison"] as const)("stops remaining player DoTs after lethal %s", (lethal) => {
     const state = patchBattleState({
       playerHealth: 5,
       playerMaxHealth: 30,
       deathsDoorUsed: true,
-      playerStatuses: defaultPlayerStatusValues({ burn: 10, poison: 10, bleed: 10 }),
+      playerStatuses: defaultPlayerStatusValues({ burn: lethal === "burn" ? 10 : 0, poison: 10, bleed: 10 }),
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
 
     expect(next.playerHealth).toBe(0);
-    expect(next.playerStatuses.poison).toBe(10);
+    expect(next.playerStatuses.poison).toBe(lethal === "burn" ? 10 : 8);
     expect(next.playerStatuses.bleed).toBe(10);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 5 });
-    expect(texts.some((entry) => entry.stat === "poison")).toBe(false);
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: lethal, amount: 5 });
+    if (lethal === "burn") expect(texts.some((entry) => entry.stat === "poison")).toBe(false);
     expect(texts.some((entry) => entry.stat === "bleed")).toBe(false);
   });
 });

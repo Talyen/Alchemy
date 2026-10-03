@@ -55,6 +55,27 @@ describe("useArmoryController", () => {
     expect(readActiveRun().runCurrenciesEarned).toEqual(EMPTY_CRAFTING_CURRENCIES);
   });
 
+  it("uses the current run state when flushing after a controller rerender", () => {
+    const armor: GearInstance = { instanceId: "rerender-armor", definitionId: "plate-armor-basic", affixes: [] };
+    const inventories = createEmptyGearInventories();
+    inventories.knight = [armor];
+    mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
+    const { result } = renderHook(() => useArmoryController());
+    act(() => {
+      dispatchRunSessionCommand((draft) => {
+        initializeActiveRun(draft, null, "knight");
+        setHasActiveRun(draft, true);
+      });
+    });
+    act(() => {
+      expect(result.current.onEquip("knight", "body", armor)).toBe(true);
+    });
+    expect(flushSaveAfterGearMutation).toHaveBeenLastCalledWith(expect.objectContaining({ characterId: "knight" }));
+    act(() => dispatchRunSessionCommand((draft) => setHasActiveRun(draft, false)));
+    act(() => result.current.onUnequip("knight", "body"));
+    expect(flushSaveAfterGearMutation).toHaveBeenLastCalledWith(null);
+  });
+
   it("syncs health for the active-run character when editing another loadout", () => {
     const armor: GearInstance = {
       instanceId: "rogue-health-armor",

@@ -1,10 +1,12 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { resetAudioRuntimeForTests } from "@/lib/audio/reset";
+import * as audio from "@/lib/audio";
 import { audioState } from "@/lib/audio/state";
 import {
   defaultMeasureVisualCardRect,
   getCardTransferBatchSpeed,
   playCombatTextSounds,
+  presentCombatTexts,
   transferCardIntervalSeconds,
 } from "@/features/alchemy/run-loop/battle/controller-utils";
 
@@ -34,57 +36,27 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
 describe("playCombatTextSounds", () => {
-  it("plays enemyHit for enemy damage", () => {
-    playCombatTextSounds([{ target: "enemy", kind: "damage", stat: "physical", amount: 5 }]);
-    expect(playedSrcs.some((src) => src.includes("sword-impact-hit-1."))).toBe(true);
-  });
-
-  it("plays blockAbsorb for player block absorb", () => {
-    playCombatTextSounds([{ target: "player", kind: "damage", stat: "block", amount: 3 }]);
-    expect(playedSrcs.some((src) => src.includes("sword-blocked-2."))).toBe(true);
-  });
-
-  it("plays playerHit for player health damage", () => {
-    playCombatTextSounds([{ target: "player", kind: "damage", stat: "health", amount: 4 }]);
-    expect(playedSrcs.some((src) => src.includes("punch-3."))).toBe(true);
-  });
-
-  it("plays playerHeal for player heal", () => {
-    playCombatTextSounds([{ target: "player", kind: "heal", stat: "health", amount: 6 }]);
-    expect(playedSrcs.some((src) => src.includes("vibraphone-chime-quick."))).toBe(true);
-  });
-
-  it("plays nothing for player status", () => {
-    playCombatTextSounds([{ target: "player", kind: "status", stat: "block", amount: 5 }]);
-    expect(playedSrcs).toEqual([]);
-  });
-
-  it("plays nothing for notice events", () => {
-    playCombatTextSounds([{ target: "player", kind: "notice", stat: "health", text: "watched" }]);
-    expect(playedSrcs).toEqual([]);
-  });
-
-  it("plays nothing for empty combat texts", () => {
-    playCombatTextSounds([]);
-    expect(playedSrcs).toEqual([]);
-  });
-
-  it("plays nothing for enemy heal", () => {
-    playCombatTextSounds([{ target: "enemy", kind: "heal", stat: "health", amount: 2 }]);
-    expect(playedSrcs).toEqual([]);
-  });
-
-  it("plays multiple events in one batch", () => {
+  it("plays each cue once per batch and ignores non-impact and status-only changes", () => {
+    const cues = vi.spyOn(audio, "playBattleEvent");
     playCombatTextSounds([
       { target: "enemy", kind: "damage", stat: "physical", amount: 5 },
-      { target: "player", kind: "heal", stat: "health", amount: 2 },
+      { target: "enemy", kind: "damage", stat: "burn", amount: 2 },
+      { target: "player", kind: "damage", stat: "block", amount: 3 },
+      { target: "player", kind: "damage", stat: "health", amount: 4, impact: false },
+      { target: "player", kind: "heal", stat: "health", amount: 6 },
+      { target: "player", kind: "status", stat: "block", amount: 5 },
+      { target: "enemy", kind: "heal", stat: "health", amount: 2 },
     ]);
-    expect(playedSrcs.some((src) => src.includes("sword-impact-hit-1."))).toBe(true);
-    expect(playedSrcs.some((src) => src.includes("vibraphone-chime-quick."))).toBe(true);
+    expect(cues.mock.calls.map(([name]) => name)).toEqual(["enemyHit", "blockAbsorb", "playerHeal"]);
+    expect(playedSrcs).toHaveLength(3);
+    expect(playedSrcs.filter((src) => src.includes("sword-impact-hit-1."))).toHaveLength(1);
+    expect(playedSrcs.filter((src) => src.includes("sword-blocked-2."))).toHaveLength(1);
+    expect(playedSrcs.filter((src) => src.includes("vibraphone-chime-quick."))).toHaveLength(1);
   });
 });
 
@@ -130,17 +102,20 @@ describe("defaultMeasureVisualCardRect", () => {
 });
 
 describe("presentCombatTexts", () => {
-  it("shows texts, shakes the damaged side, and plays sounds in one call", async () => {
-    const { presentCombatTexts } = await import("@/features/alchemy/run-loop/battle/controller-utils");
+  it("shows texts, shakes the damaged side, and plays sounds in one call", () => {
     const presenter = { showCombatTexts: vi.fn(), shakeEnemy: vi.fn(), shakePlayer: vi.fn() };
-    presentCombatTexts(presenter, [{ target: "enemy", kind: "damage", stat: "physical", amount: 5 }]);
-    expect(presenter.showCombatTexts).toHaveBeenCalledOnce();
+    const events = [
+      { target: "enemy", kind: "damage", stat: "physical", amount: 5 },
+      { target: "enemy", kind: "damage", stat: "burn", amount: 2 },
+      { target: "player", kind: "damage", stat: "armor", amount: 1, impact: false },
+    ] as const;
+    presentCombatTexts(presenter, [...events]);
+    expect(presenter.showCombatTexts).toHaveBeenCalledExactlyOnceWith(events);
     expect(presenter.shakeEnemy).toHaveBeenCalledOnce();
     expect(presenter.shakePlayer).not.toHaveBeenCalled();
   });
 
-  it("is a no-op for empty events", async () => {
-    const { presentCombatTexts } = await import("@/features/alchemy/run-loop/battle/controller-utils");
+  it("is a no-op for empty events", () => {
     const presenter = { showCombatTexts: vi.fn(), shakeEnemy: vi.fn(), shakePlayer: vi.fn() };
     presentCombatTexts(presenter, []);
     expect(presenter.showCombatTexts).not.toHaveBeenCalled();

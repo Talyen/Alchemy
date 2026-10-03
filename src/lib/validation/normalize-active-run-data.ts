@@ -38,11 +38,11 @@ function filterLiveCards<T extends Pick<BattleCard, "id" | "cost" | "effects" | 
 }
 
 function filterLiveBattleState(state: BattleSnapshot): BattleSnapshot {
-  const wishOptions = state.wishOptions ? filterLiveCards(state.wishOptions) : null;
+  let wishOptions = state.wishOptions ? filterLiveCards(state.wishOptions) : null;
   const wishQueue = state.wishQueue.map((queue) => filterLiveCards(queue)).filter((queue) => queue.length > 0);
   // An empty Wish prompt blocks card play. Advance to the next valid queued
   // choice after malformed or removed cards are dropped, or close the prompt.
-  const [nextWishOptions, ...remainingWishQueue] = wishOptions?.length ? [] : wishQueue;
+  if (!wishOptions?.length) wishOptions = wishQueue.shift() ?? null;
   return {
     ...state,
     deck: filterLiveCards(state.deck),
@@ -50,8 +50,8 @@ function filterLiveBattleState(state: BattleSnapshot): BattleSnapshot {
     pendingHandCards: filterLiveCards(state.pendingHandCards),
     discard: filterLiveCards(state.discard),
     exhausted: filterLiveCards(state.exhausted),
-    wishOptions: wishOptions?.length ? wishOptions : (nextWishOptions ?? null),
-    wishQueue: wishOptions?.length ? wishQueue : remainingWishQueue,
+    wishOptions,
+    wishQueue,
   };
 }
 

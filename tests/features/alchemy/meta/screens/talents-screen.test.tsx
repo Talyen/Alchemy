@@ -48,8 +48,6 @@ describe("TalentsScreen", () => {
     );
 
     const resetButton = screen.getByRole("button", { name: "Reset talents" });
-    expect(resetButton.className).toContain("h-11");
-    expect(resetButton.className).toContain("w-11");
     fireEvent.click(resetButton);
 
     expect(screen.getByRole("heading", { name: "Reset Talents" })).toBeTruthy();

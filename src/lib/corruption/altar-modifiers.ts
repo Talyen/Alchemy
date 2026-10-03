@@ -39,26 +39,19 @@ export function applyAltarModifiers(
   card: BattleCard,
   modifiers: readonly EncounterRewardTraitId[],
 ): CorruptionMutationGroup[] {
-  let shaped = groups;
-  if (modifiers.includes("steady-sigil")) {
-    shaped = shaped.filter((group) => group.kind !== "weaken");
-  }
-  if (modifiers.includes("blood-rite")) {
-    shaped = shaped.map((group) => {
-      if (group.kind === "leech") return { ...group, weight: group.weight * 3 };
-      if (group.kind === "convert") return { ...group, weight: group.weight * 2 };
-      return group;
+  const steady = modifiers.includes("steady-sigil");
+  const blood = modifiers.includes("blood-rite");
+  const keywords = modifiers.includes("echoing-altar") ? new Set<KeywordId>(getCardKeywords(card)) : null;
+  if (!steady && !blood && !keywords) return groups;
+
+  return groups
+    .filter((group) => !steady || group.kind !== "weaken")
+    .map((group) => {
+      const weight = group.weight * (blood && group.kind === "leech" ? 3 : blood && group.kind === "convert" ? 2 : 1);
+      const keywordForCard =
+        group.kind === "secondary" ? addedKeyword : group.kind === "convert" ? convertedKeyword : null;
+      const mutations =
+        keywords && keywordForCard ? filterEchoMutations(group.mutations, keywords, keywordForCard) : group.mutations;
+      return weight === group.weight && mutations === group.mutations ? group : { ...group, weight, mutations };
     });
-  }
-  if (modifiers.includes("echoing-altar")) {
-    const keywords = new Set<KeywordId>(getCardKeywords(card));
-    shaped = shaped.map((group) => {
-      if (group.kind === "secondary")
-        return { ...group, mutations: filterEchoMutations(group.mutations, keywords, addedKeyword) };
-      if (group.kind === "convert")
-        return { ...group, mutations: filterEchoMutations(group.mutations, keywords, convertedKeyword) };
-      return group;
-    });
-  }
-  return shaped;
 }

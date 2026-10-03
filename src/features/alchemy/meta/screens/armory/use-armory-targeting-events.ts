@@ -10,43 +10,26 @@ interface UseArmoryTargetingEventsOptions {
   clearTargeting: () => void;
 }
 
-const ARMORY_TARGETING_SELECTORS = {
-  workspace: '[data-testid="armory-workspace"]',
-  inventoryItem: '[data-testid="armory-inventory-item"]',
-  equipmentSlot: '[data-testid="armory-equipment-slot"]',
-  trinketSlot: '[data-testid="armory-trinket-slot"]',
-  trinketItem: '[data-testid="armory-trinket-item"]',
-  craftingCurrency: '[data-testid="armory-crafting-currency"]',
-  craftingStrip: '[data-testid="armory-crafting-strip"]',
-  salvageToggle: '[data-testid="armory-salvage-toggle"]',
-  confirmationDialog: '[data-testid="confirmation-dialog"]',
-  salvageable: '[data-salvageable="true"]',
-} as const;
+function testIdSelectors(...ids: string[]): string {
+  return ids.map((id) => `[data-testid="${id}"]`).join(",");
+}
 
+const WORKSPACE = testIdSelectors("armory-workspace");
+const CONTEXT_MENU_REGIONS = testIdSelectors(
+  "armory-crafting-currency",
+  "armory-inventory-item",
+  "armory-trinket-item",
+  "armory-equipment-slot",
+  "armory-trinket-slot",
+);
 const CURRENCY_CLICK_REGIONS = [
-  ARMORY_TARGETING_SELECTORS.workspace,
-  ARMORY_TARGETING_SELECTORS.confirmationDialog,
-  ARMORY_TARGETING_SELECTORS.inventoryItem,
-  ARMORY_TARGETING_SELECTORS.equipmentSlot,
-  ARMORY_TARGETING_SELECTORS.trinketSlot,
-  ARMORY_TARGETING_SELECTORS.trinketItem,
-  ARMORY_TARGETING_SELECTORS.craftingCurrency,
-  ARMORY_TARGETING_SELECTORS.craftingStrip,
-  ARMORY_TARGETING_SELECTORS.salvageToggle,
+  CONTEXT_MENU_REGIONS,
+  WORKSPACE,
+  testIdSelectors("confirmation-dialog", "armory-crafting-strip", "armory-salvage-toggle"),
 ].join(",");
-
 const SALVAGE_CLICK_REGIONS = [
-  ARMORY_TARGETING_SELECTORS.salvageable,
-  ARMORY_TARGETING_SELECTORS.salvageToggle,
-  ARMORY_TARGETING_SELECTORS.craftingStrip,
-].join(",");
-
-const CONTEXT_MENU_REGIONS = [
-  ARMORY_TARGETING_SELECTORS.craftingCurrency,
-  ARMORY_TARGETING_SELECTORS.inventoryItem,
-  ARMORY_TARGETING_SELECTORS.trinketItem,
-  ARMORY_TARGETING_SELECTORS.equipmentSlot,
-  ARMORY_TARGETING_SELECTORS.trinketSlot,
+  '[data-salvageable="true"]',
+  testIdSelectors("armory-salvage-toggle", "armory-crafting-strip"),
 ].join(",");
 
 function setupTargetingEventListeners(salvageMode: boolean, clearTargeting: () => void): () => void {
@@ -59,11 +42,7 @@ function setupTargetingEventListeners(salvageMode: boolean, clearTargeting: () =
   function handleContextMenu(event: MouseEvent) {
     const target = event.target instanceof Element ? event.target : null;
     if (target?.closest(CONTEXT_MENU_REGIONS)) return;
-    if (target?.closest(ARMORY_TARGETING_SELECTORS.workspace)) event.preventDefault();
-    clearTargeting();
-  }
-
-  function handleBlur() {
+    if (target?.closest(WORKSPACE)) event.preventDefault();
     clearTargeting();
   }
 
@@ -76,16 +55,15 @@ function setupTargetingEventListeners(salvageMode: boolean, clearTargeting: () =
     priority: ESCAPE_PRIORITY.ARMORY_TRANSIENT,
     onEscape: () => clearTargeting(),
   });
-  document.addEventListener("click", handleClick);
-  document.addEventListener("contextmenu", handleContextMenu);
-  window.addEventListener("blur", handleBlur);
-  document.addEventListener("visibilitychange", handleVisibilityChange);
+  const lifetime = new AbortController();
+  const options = { signal: lifetime.signal };
+  document.addEventListener("click", handleClick, options);
+  document.addEventListener("contextmenu", handleContextMenu, options);
+  window.addEventListener("blur", clearTargeting, options);
+  document.addEventListener("visibilitychange", handleVisibilityChange, options);
   return () => {
     unsubscribeEscape();
-    document.removeEventListener("click", handleClick);
-    document.removeEventListener("contextmenu", handleContextMenu);
-    window.removeEventListener("blur", handleBlur);
-    document.removeEventListener("visibilitychange", handleVisibilityChange);
+    lifetime.abort();
   };
 }
 

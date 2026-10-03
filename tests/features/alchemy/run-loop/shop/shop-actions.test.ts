@@ -26,6 +26,7 @@ import {
   SHOP_REMOVE_PRICE,
   TRINKET_SHOP_TRINKET_PRICE,
 } from "@/lib/game-constants";
+import { cardById } from "@/lib/game-data";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import type { GearInstance } from "@/lib/gear";
 import { gearDefinitions } from "@/lib/gear";
@@ -157,26 +158,6 @@ describe("alchemist shop actions", () => {
       expect(readActivityData(readRunSession().activity, "alchemist").mixUsed).toBe(false);
     });
 
-    it("prevents a second mix attempt after first succeeds", () => {
-      setRunProgress({
-        gold: 999,
-        runDeck: [
-          makeCard({ id: "health-potion", title: "Potion A" }),
-          makeCard({ id: "mana-potion", title: "Potion B" }),
-        ],
-      });
-      setAlchemistState(createInitialAlchemistState());
-      const firstActions = buildActions({ talentEffects: { potionMixPotency: 0 } });
-
-      const first = firstActions.alchemist.mixPotions(0, 1);
-      expect(first).not.toBeNull();
-      expect(readActivityData(readRunSession().activity, "alchemist").mixUsed).toBe(true);
-
-      const second = firstActions.alchemist.mixPotions(0, 1);
-      expect(second).toBeNull();
-      expect(readRunProfile().gold).toBe(999 - ALCHEMIST_MIX_PRICE);
-    });
-
     it("no-ops a second mix on the same actions instance without double-spending gold", () => {
       setRunProgress({
         gold: 999,
@@ -191,11 +172,41 @@ describe("alchemist shop actions", () => {
       const actions = buildActions({ talentEffects: { potionMixPotency: 0 } });
 
       expect(actions.alchemist.mixPotions(0, 1)).not.toBeNull();
-      expect(actions.alchemist.mixPotions(2, 3)).toBeNull();
+      expect(actions.alchemist.mixPotions(0, 1)).toBeNull();
       expect(readRunProfile().gold).toBe(999 - ALCHEMIST_MIX_PRICE);
       expect(readActivityData(readRunSession().activity, "alchemist").mixUsed).toBe(true);
     });
   });
+  it("strengthening pays once and uses the same service slot as mixing", () => {
+    const originalDeck = [cardById["health-potion"]!, cardById["mana-potion"]!, cardById["stoneskin-potion"]!];
+    setRunProgress({ gold: 0, runDeck: originalDeck });
+    setAlchemistState(createInitialAlchemistState());
+    const actions = buildActions();
+    expect(actions.alchemist.strengthenPotion(0)).toBeNull();
+    expect(readActiveRun().runDeck).toEqual(originalDeck);
+    expect(readActivityData(readRunSession().activity, "alchemist").mixUsed).toBe(false);
+
+    setRunProgress({ gold: 2 * ALCHEMIST_MIX_PRICE });
+    const commits: number[] = [];
+    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
+    try {
+      const strengthened = actions.alchemist.strengthenPotion(0);
+      expect(strengthened).toMatchObject({ brewed: true, effects: [{ kind: "heal", amount: 12 }] });
+      expect(readActiveRun().runDeck).toEqual([strengthened, ...originalDeck.slice(1)]);
+      expect(readRunProfile().gold).toBe(ALCHEMIST_MIX_PRICE);
+      expect(readActivityData(readRunSession().activity, "alchemist").mixUsed).toBe(true);
+      const after = readActiveRun();
+      expect(actions.alchemist.mixPotions(1, 2)).toBeNull();
+      expect(actions.alchemist.strengthenPotion(1)).toBeNull();
+      expect(readActiveRun()).toEqual(after);
+      expect(readRunProfile().gold).toBe(ALCHEMIST_MIX_PRICE);
+      expect(commits).toHaveLength(1);
+      expect(playUISound).toHaveBeenCalledExactlyOnceWith("alchemistMix");
+    } finally {
+      unsubscribe();
+    }
+  });
+
   describe("talent discounts", () => {
     it("applies potion discount only for standard potions in alchemist", () => {
       setRunProgress({ gold: 999 });

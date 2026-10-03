@@ -25,13 +25,6 @@ interface SaveBackendClearOptions {
   forceLocalWipe?: boolean;
 }
 
-// Local-first ordering invariant: local ring candidates precede the Cloud
-// mirror, so dedup must preserve first-seen order. Kept module-private next
-// to its sole caller to prevent reuse that would bypass that ordering.
-function uniqueCandidates(candidates: string[]): string[] {
-  return Array.from(new Set(candidates));
-}
-
 type DesktopApi = NonNullable<ReturnType<typeof getDesktopApi>>;
 
 async function withDesktopSaveApi<T extends SaveBackendReadResult | SaveBackendWriteResult>(
@@ -65,49 +58,48 @@ async function clearDesktop(
   cloudSyncEnabled: boolean,
   forceLocalWipe: boolean,
 ): Promise<SaveBackendWriteResult> {
-  if (forceLocalWipe) {
-    // Native clearSave preserves the local initialization receipt before wiping.
-    const localCleared = await desktop.clearSave();
-    if (!localCleared) {
-      return { ok: false, error: new Error("Failed to clear desktop save file") };
+  if (!forceLocalWipe) {
+    if (desktop.completeDemoInitialization && !(await desktop.completeDemoInitialization())) {
+      return { ok: false, error: new Error("Could not preserve demo initialization before clearing progress") };
     }
     if (cloudSyncEnabled) {
-      await bestEffortCloudWrite(
-        () => desktop.steamCloudDelete?.(),
-        "Steam Cloud delete failed after local wipe; next save will overwrite the mirror",
-      );
-      await bestEffortCloudWrite(
-        () => desktop.steamCloudDelete?.("recovery"),
-        "Steam Cloud recovery delete failed after local wipe; next save will overwrite the mirror",
-      );
-    }
-    return { ok: true };
-  }
-  if (desktop.completeDemoInitialization && !(await desktop.completeDemoInitialization())) {
-    return { ok: false, error: new Error("Could not preserve demo initialization before clearing progress") };
-  }
-  if (cloudSyncEnabled) {
-    const cloudCleared = (await desktop.steamCloudDelete?.()) ?? false;
-    const recoveryCloudCleared = (await desktop.steamCloudDelete?.("recovery")) ?? false;
-    if (!cloudCleared || !recoveryCloudCleared) {
-      return { ok: false, error: new Error("Failed to clear Steam Cloud save") };
+      const cloudCleared = (await desktop.steamCloudDelete?.()) ?? false;
+      const recoveryCloudCleared = (await desktop.steamCloudDelete?.("recovery")) ?? false;
+      if (!cloudCleared || !recoveryCloudCleared) {
+        return { ok: false, error: new Error("Failed to clear Steam Cloud save") };
+      }
     }
   }
+  // Native clearSave preserves the receipt. A forced wipe clears local progress
+  // first; ordinary clearing requires successful Cloud deletion before this point.
   const localCleared = await desktop.clearSave();
   if (!localCleared) {
     return { ok: false, error: new Error("Failed to clear desktop save file") };
+  }
+  if (forceLocalWipe && cloudSyncEnabled) {
+    await bestEffortCloudWrite(
+      () => desktop.steamCloudDelete?.(),
+      "Steam Cloud delete failed after local wipe; next save will overwrite the mirror",
+    );
+    await bestEffortCloudWrite(
+      () => desktop.steamCloudDelete?.("recovery"),
+      "Steam Cloud recovery delete failed after local wipe; next save will overwrite the mirror",
+    );
   }
   return { ok: true };
 }
 
 async function readDesktopCandidates(desktop: DesktopApi, recovery: boolean): Promise<SaveBackendReadResult> {
   let localCandidates: string[] = [];
+  let localReadFailed: boolean;
   let localReadError: unknown;
   try {
     const result = await desktop.readSaveSlot(recovery ? "recovery" : undefined);
     localCandidates = result.candidates;
-    if (result.localReadFailed) localReadError = new Error("Local save candidates could not be read completely");
+    localReadFailed = result.localReadFailed;
+    if (localReadFailed) localReadError = new Error("Local save candidates could not be read completely");
   } catch (error) {
+    localReadFailed = true;
     localReadError = error;
     logStorageFailure("Desktop save candidates could not be listed", error);
   }
@@ -119,11 +111,12 @@ async function readDesktopCandidates(desktop: DesktopApi, recovery: boolean): Pr
     logStorageFailure("Steam Cloud read failed", error);
   }
 
-  if (localReadError && !cloudCandidate && localCandidates.length === 0) return { ok: false, error: localReadError };
+  if (localReadFailed && !cloudCandidate && localCandidates.length === 0) return { ok: false, error: localReadError };
   return {
     ok: true,
-    candidates: uniqueCandidates(cloudCandidate ? [...localCandidates, cloudCandidate] : localCandidates),
-    ...(localReadError ? { localReadFailed: true } : {}),
+    // Dedup keeps the local ring ahead of the Cloud mirror in first-seen order.
+    candidates: [...new Set(cloudCandidate ? [...localCandidates, cloudCandidate] : localCandidates)],
+    ...(localReadFailed ? { localReadFailed: true } : {}),
   };
 }
 
@@ -167,26 +160,16 @@ export function createBrowserSaveBackend(): SaveBackend {
   return {
     readCandidates(key) {
       const stored = tryLocalStorageGetItem(key);
-      if (!stored.ok) return Promise.resolve(stored);
-      return Promise.resolve({ ok: true, candidates: stored.value ? [stored.value] : [] });
+      return Promise.resolve(stored.ok ? { ok: true, candidates: stored.value ? [stored.value] : [] } : stored);
     },
 
-    write(key, value) {
-      return Promise.resolve(tryLocalStorageSetItem(key, value));
-    },
+    write: (key, value) => Promise.resolve(tryLocalStorageSetItem(key, value)),
 
-    writeSync(key, value) {
-      return tryLocalStorageSetItem(key, value);
-    },
+    writeSync: tryLocalStorageSetItem,
 
     clear(key) {
       const removed = tryLocalStorageRemoveItem(key);
-      if (!removed.ok) return Promise.resolve(removed);
-      if (key === SAVE_KEY) {
-        const recoveryRemoved = tryLocalStorageRemoveItem(SAVE_RECOVERY_KEY);
-        if (!recoveryRemoved.ok) return Promise.resolve(recoveryRemoved);
-      }
-      return Promise.resolve({ ok: true });
+      return Promise.resolve(removed.ok && key === SAVE_KEY ? tryLocalStorageRemoveItem(SAVE_RECOVERY_KEY) : removed);
     },
   };
 }

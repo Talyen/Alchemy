@@ -2,57 +2,41 @@ import { describe, expect, it } from "vitest";
 import { getAvailableDestinations } from "@/lib/routing";
 import { ELITE_HEALTH_THRESHOLD, SHOP_MIN_GOLD } from "@/lib/game-constants";
 
-const MAX_HEALTH = 30;
+const MAX_HEALTH = 31;
 const eliteFloor = Math.round(MAX_HEALTH * ELITE_HEALTH_THRESHOLD);
+const freeDestinations = ["Normal Combat", "Mystery", "Corruption", "Transmutation", "Campfire"];
+const affordableDestinations = [
+  "Normal Combat",
+  "Card Shop",
+  "Alchemist's Shop",
+  "Trinket Shop",
+  "Gear Shop",
+  "Mystery",
+  "Corruption",
+  "Transmutation",
+  "Campfire",
+];
 
-describe("getAvailableDestinations", () => {
-  it("excludes Gear Shop when no gear is owned (Armory locked)", () => {
-    const destinations = getAvailableDestinations(MAX_HEALTH, 100, MAX_HEALTH, false);
-    expect(destinations).not.toContain("Gear Shop");
+describe("destination eligibility", () => {
+  it("keeps free actions available and excludes all shops below their Gold floor", () => {
+    expect(getAvailableDestinations(eliteFloor - 1, SHOP_MIN_GOLD - 1, MAX_HEALTH)).toEqual(freeDestinations);
+    expect(getAvailableDestinations(eliteFloor - 1, SHOP_MIN_GOLD, MAX_HEALTH)).toEqual(affordableDestinations);
   });
 
-  it("includes Gear Shop when gear is owned and gold meets the shop minimum", () => {
-    const destinations = getAvailableDestinations(MAX_HEALTH, SHOP_MIN_GOLD, MAX_HEALTH, true);
-    expect(destinations).toContain("Gear Shop");
-  });
-  it("never includes Boss Combat", () => {
-    const destinations = getAvailableDestinations(MAX_HEALTH, 100, MAX_HEALTH);
-    expect(destinations).not.toContain("Boss Combat");
-  });
-
-  it("offers Campfire brewing and free Transmutation even at full Health with no Gold", () => {
-    const destinations = getAvailableDestinations(MAX_HEALTH, 0, MAX_HEALTH);
-    expect(destinations).toContain("Campfire");
-    expect(destinations).toContain("Transmutation");
+  it("opens Elite Combat at the rounded Health boundary without offering Boss Combat", () => {
+    expect(getAvailableDestinations(eliteFloor, SHOP_MIN_GOLD, MAX_HEALTH)).toEqual([
+      affordableDestinations[0],
+      "Elite Combat",
+      ...affordableDestinations.slice(1),
+    ]);
   });
 
-  it("excludes shops when gold is just below the shop minimum", () => {
-    for (const shop of ["Card Shop", "Alchemist's Shop", "Trinket Shop", "Gear Shop"]) {
-      const destinations = getAvailableDestinations(MAX_HEALTH, SHOP_MIN_GOLD - 1, MAX_HEALTH);
-      expect(destinations).not.toContain(shop);
-    }
-  });
-
-  it("includes shops when gold meets the shop minimum", () => {
-    for (const shop of ["Card Shop", "Alchemist's Shop", "Trinket Shop", "Gear Shop"]) {
-      const destinations = getAvailableDestinations(MAX_HEALTH, SHOP_MIN_GOLD, MAX_HEALTH, true);
-      expect(destinations).toContain(shop);
-    }
-  });
-
-  it("excludes Elite Combat when Health is just below half max", () => {
-    const destinations = getAvailableDestinations(eliteFloor - 1, 100, MAX_HEALTH);
-    expect(destinations).not.toContain("Elite Combat");
-  });
-
-  it("includes Elite Combat when Health reaches half max", () => {
-    const destinations = getAvailableDestinations(eliteFloor, 100, MAX_HEALTH);
-    expect(destinations).toContain("Elite Combat");
-  });
-
-  it("returns Normal Combat, Mystery, and remaining destinations", () => {
-    const destinations = getAvailableDestinations(MAX_HEALTH, 100, MAX_HEALTH);
-    expect(destinations).toContain("Normal Combat");
-    expect(destinations).toContain("Mystery");
+  it("removes only the unavailable Gear and Trinket shops, including a completed collection", () => {
+    expect(getAvailableDestinations(eliteFloor - 1, SHOP_MIN_GOLD, MAX_HEALTH, false, true)).toEqual(
+      affordableDestinations.filter((destination) => destination !== "Gear Shop"),
+    );
+    expect(getAvailableDestinations(eliteFloor - 1, SHOP_MIN_GOLD, MAX_HEALTH, true, false)).toEqual(
+      affordableDestinations.filter((destination) => destination !== "Trinket Shop"),
+    );
   });
 });

@@ -38,37 +38,15 @@ function collectEnemyKeywordIds(enemyId: string | undefined): KeywordId[] {
 }
 
 function getLabyrinthNodeKeywordIds(node: LabyrinthNode): KeywordId[] {
-  const seen = new Set<KeywordId>();
-  const ordered: KeywordId[] = [];
-  const push = (ids: readonly KeywordId[]) => {
-    for (const id of ids) {
-      if (!seen.has(id)) {
-        seen.add(id);
-        ordered.push(id);
-      }
-    }
-  };
-
   const base = LABYRINTH_TYPE_BASE_KEYWORDS[node.type] ?? [];
-  const enemyKeywords = node.enemyId ? collectEnemyKeywordIds(node.enemyId) : [];
-
-  if (enemyKeywords.length > 0) {
-    push(enemyKeywords);
-  } else if (base.length > 0) {
-    push(base);
-  }
-
-  for (const traitId of node.modifiers ?? []) {
-    const kws = ENCOUNTER_COMBAT_TRAIT_KEYWORDS[traitId];
-    if (kws) push(kws);
-  }
-  for (const traitId of node.rewardModifiers ?? []) {
-    const kws = ENCOUNTER_REWARD_TRAIT_KEYWORDS[traitId];
-    if (kws) push(kws);
-  }
-
-  if (ordered.length === 0 && base.length > 0) push(base);
-  return ordered;
+  const enemyKeywords = collectEnemyKeywordIds(node.enemyId);
+  return [
+    ...new Set([
+      ...(enemyKeywords.length ? enemyKeywords : base),
+      ...(node.modifiers ?? []).flatMap((id) => ENCOUNTER_COMBAT_TRAIT_KEYWORDS[id] ?? []),
+      ...(node.rewardModifiers ?? []).flatMap((id) => ENCOUNTER_REWARD_TRAIT_KEYWORDS[id] ?? []),
+    ]),
+  ];
 }
 
 export function getLabyrinthNodePlasmaPair(node: LabyrinthNode): PlasmaColorPair | null {
@@ -85,9 +63,7 @@ export function getLabyrinthNodePlasmaPair(node: LabyrinthNode): PlasmaColorPair
     keywordPair && hasPhoenixNest && keywordIds.length === 1
       ? { ...keywordPair, secondary: phoenixFeatherStatus.shineColors[0] }
       : keywordPair;
-  if (node.type === "boss") {
-    return pair;
-  }
+  if (node.type === "boss") return pair;
   const dest = LABYRINTH_TYPE_TO_DESTINATION[node.type];
   const meta = dest ? destinationMeta[dest] : undefined;
   if (meta?.plasmaColorPair) return meta.plasmaColorPair;

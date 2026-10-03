@@ -3,21 +3,16 @@ import { CONTENT_REFERENCE_VIEWPORT, STAGE_HEIGHT } from "@/lib/game-constants";
 import { DEFAULT_DEVICE_DISPLAY, normalizeDisplayPercent, type DeviceDisplayPreferences } from "@/lib/settings-values";
 import type { AspectRatioOption } from "../types";
 
-const LAYOUT_CONFIG = {
-  DEFAULT_WIDTH: 1920,
-  DEFAULT_HEIGHT: 1080,
-  STAGE_PIXEL_RATIO_DEFAULT: 1,
-  ASPECT_RATIO_STAGE_SIZES: {
-    "16:9": { width: 1920, height: 1080 },
-    "16:10": { width: 1920, height: 1200 },
-    "21:9": { width: 2560, height: 1080 },
-  } as Record<Exclude<AspectRatioOption, "auto">, { width: number; height: number }>,
+const FIXED_ASPECT_RATIOS = {
+  "16:9": 1920 / 1080,
+  "16:10": 1920 / 1200,
+  "21:9": 2560 / 1080,
 } as const;
 
 function useViewportSize(active: boolean) {
   const [viewportSize, setViewportSize] = useState(() => ({
-    width: typeof window !== "undefined" ? window.innerWidth : LAYOUT_CONFIG.DEFAULT_WIDTH,
-    height: typeof window !== "undefined" ? window.innerHeight : LAYOUT_CONFIG.DEFAULT_HEIGHT,
+    width: typeof window !== "undefined" ? window.innerWidth : 1920,
+    height: typeof window !== "undefined" ? window.innerHeight : 1080,
   }));
 
   useEffect(() => {
@@ -45,32 +40,11 @@ function useViewportSize(active: boolean) {
   return viewportSize;
 }
 
-function getVirtualStageDimensions(resolvedAspect: Exclude<AspectRatioOption, "auto">): {
-  stageWidth: number;
-  stageHeight: number;
-} {
-  const targetSize = LAYOUT_CONFIG.ASPECT_RATIO_STAGE_SIZES[resolvedAspect];
-  return {
-    stageWidth: Math.round(STAGE_HEIGHT * (targetSize.width / targetSize.height)),
-    stageHeight: STAGE_HEIGHT,
-  };
-}
-
 function getAspectModeFromRatio(aspectRatio: number): "standard" | "narrow" | "ultrawide" {
   if (aspectRatio < 1.68) {
     return "narrow";
   }
   if (aspectRatio > 2.05) {
-    return "ultrawide";
-  }
-  return "standard";
-}
-
-function getAspectMode(resolvedAspect: Exclude<AspectRatioOption, "auto">): "standard" | "narrow" | "ultrawide" {
-  if (resolvedAspect === "16:10") {
-    return "narrow";
-  }
-  if (resolvedAspect === "21:9") {
     return "ultrawide";
   }
   return "standard";
@@ -88,10 +62,10 @@ export function getVirtualResolutionLayout(
   const width = Number.isFinite(viewportWidth) ? Math.max(0, viewportWidth) : 0;
   const height = Number.isFinite(viewportHeight) ? Math.max(0, viewportHeight) : 0;
   const viewportAspect = width > 0 && height > 0 ? width / height : 16 / 9;
-  const { stageWidth, stageHeight } =
-    selectedAspectRatio === "auto"
-      ? { stageWidth: STAGE_HEIGHT * viewportAspect, stageHeight: STAGE_HEIGHT }
-      : getVirtualStageDimensions(selectedAspectRatio);
+  const aspectRatio = selectedAspectRatio === "auto" ? viewportAspect : FIXED_ASPECT_RATIOS[selectedAspectRatio];
+  const stageWidth =
+    selectedAspectRatio === "auto" ? STAGE_HEIGHT * aspectRatio : Math.round(STAGE_HEIGHT * aspectRatio);
+  const stageHeight = STAGE_HEIGHT;
   const stageScale = Math.min(width / stageWidth, height / stageHeight);
   // Fit the reference composition inside the frame; the stage still fills Auto's viewport.
   const automaticScale = stageScale * Math.min(stageWidth / CONTENT_REFERENCE_STAGE_WIDTH, 1);
@@ -121,9 +95,8 @@ export function getVirtualResolutionLayout(
     tooltipStyle: {
       "--content-scale": tooltipScale,
     } as React.CSSProperties,
-    aspectMode:
-      selectedAspectRatio === "auto" ? getAspectModeFromRatio(viewportAspect) : getAspectMode(selectedAspectRatio),
-    stagePixelRatio: LAYOUT_CONFIG.STAGE_PIXEL_RATIO_DEFAULT,
+    aspectMode: getAspectModeFromRatio(aspectRatio),
+    stagePixelRatio: 1,
     stageScale,
     contentScale,
     stageContentScale,

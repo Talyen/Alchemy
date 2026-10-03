@@ -55,6 +55,20 @@ describe("applyMysteryEffect", () => {
     const result = apply({ kind: "healHealth", amount: 5 });
     expect(result.followUp).toBeNull();
     expect(readActiveRun().runPlayerHealth).toBe(25);
+    apply({ kind: "healHealth", amount: 20 });
+    expect(readActiveRun().runPlayerHealth).toBe(30);
+  });
+
+  it("draws randomness only for chance healing and respects the probability boundary", () => {
+    setRunProgress({ runPlayerHealth: 20, runMaxHealth: 30 });
+    const rng = vi.fn(() => 0.5);
+    apply({ kind: "healHealth", amount: 3 }, rng);
+    expect(rng).not.toHaveBeenCalled();
+    apply({ kind: "healHealth", amount: 3, chance: 0.5 }, rng);
+    expect(readActiveRun().runPlayerHealth).toBe(23);
+    apply({ kind: "healHealth", amount: 3, chance: 0.51 }, rng);
+    expect(readActiveRun().runPlayerHealth).toBe(26);
+    expect(rng).toHaveBeenCalledTimes(2);
   });
 
   it("damageHealth never drops health below zero", () => {
@@ -68,12 +82,16 @@ describe("applyMysteryEffect", () => {
     const result = apply({ kind: "gainGold", amount: 10 });
     expect(result.goldSound).toBe("gain");
     expect(readRunProfile().gold).toBe(30);
+    expect(apply({ kind: "gainGold", amount: 0 }).goldSound).toBeUndefined();
+    expect(readRunProfile().gold).toBe(30);
   });
 
   it("loseGold spends gold with the spend sound", () => {
     setRunProgress({ gold: 20 });
     const result = apply({ kind: "loseGold", amount: 5 });
     expect(result.goldSound).toBe("spend");
+    expect(readRunProfile().gold).toBe(15);
+    expect(apply({ kind: "loseGold", amount: 0 }).goldSound).toBeUndefined();
     expect(readRunProfile().gold).toBe(15);
   });
 

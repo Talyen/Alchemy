@@ -1,11 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { keywordPattern } from "@/features/alchemy/shared/config/keywords";
-import {
-  canonicalizeKeywordText,
-  tokenizeDescription,
-  extractKeywordIds,
-  getHoverId,
-} from "@/features/alchemy/shared/utils/string";
+import { canonicalizeKeywordText, tokenizeDescription } from "@/features/alchemy/shared/utils/string";
 
 describe("tokenizeDescription", () => {
   it("reuses keyword parsing while keeping callers' parts independent", () => {
@@ -13,7 +8,8 @@ describe("tokenizeDescription", () => {
     const matchAll = vi.spyOn(keywordPattern, Symbol.matchAll);
     try {
       const first = tokenizeDescription(line);
-      const expected = first.map((part) => ({ ...part }));
+      const expected = [{ text: "Cache regression: Gain 37 " }, { text: "Block", keywordId: "block" }, { text: "." }];
+      expect(first).toEqual(expected);
       first[0]!.text = "changed";
       first.find((part) => part.keywordId)!.keywordId = "burn";
       first.pop();
@@ -43,25 +39,6 @@ describe("tokenizeDescription", () => {
     }
   });
 
-  it("returns a plain text part for a sentence with no keywords", () => {
-    const result = tokenizeDescription("Just some text");
-    expect(result).toEqual([{ text: "Just some text" }]);
-  });
-
-  it("tokenizes a single keyword in the middle of text", () => {
-    const result = tokenizeDescription("Deal 5 Physical damage");
-    expect(result.length).toBeGreaterThanOrEqual(2);
-    const keywordPart = result.find((p) => p.keywordId === "physical");
-    expect(keywordPart?.text).toBe("Physical");
-  });
-
-  it("tokenizes multiple keywords", () => {
-    const result = tokenizeDescription("Gain 5 Block and 2 Armor");
-    const keywordIds = result.filter((p) => p.keywordId).map((p) => p.keywordId);
-    expect(keywordIds).toContain("block");
-    expect(keywordIds).toContain("armor");
-  });
-
   it("uses canonical casing for lowercase, inflected, and multi-word aliases", () => {
     const result = tokenizeDescription("physical consume consumed frozen mana crystal");
 
@@ -76,26 +53,20 @@ describe("tokenizeDescription", () => {
       "Physical Consume Consumed Frozen Mana Crystal",
     );
   });
-
-  it("handles an empty string", () => {
-    const result = tokenizeDescription("");
-    expect(result).toEqual([{ text: "" }]);
-  });
 });
 
-describe("extractKeywordIds", () => {
-  it("returns unique keyword ids in description order of first appearance", () => {
-    expect(extractKeywordIds("Gain 5 Block and 2 Armor")).toEqual(["block", "armor"]);
-  });
-
-  it("returns an empty array when no keywords match", () => {
-    expect(extractKeywordIds("Just some text")).toEqual([]);
-  });
-});
-
-describe("getHoverId", () => {
-  it("joins scope and cardId with a dash", () => {
-    expect(getHoverId("hand", "slash")).toBe("hand-slash");
-    expect(getHoverId("reward", "fireball")).toBe("reward-fireball");
-  });
+it("keeps punctuation and word boundaries while canonicalizing multiword aliases", () => {
+  const line = "mana crystal, armor; blocked? poison ivy and mana!";
+  const expected = [
+    { text: "Mana Crystal", keywordId: "mana" },
+    { text: ", " },
+    { text: "Armor", keywordId: "armor" },
+    { text: "; blocked? " },
+    { text: "Poison", keywordId: "poison" },
+    { text: " ivy and " },
+    { text: "Mana", keywordId: "mana" },
+    { text: "!" },
+  ];
+  expect(tokenizeDescription(line)).toEqual(expected);
+  expect(canonicalizeKeywordText(line)).toBe("Mana Crystal, Armor; blocked? Poison ivy and Mana!");
 });

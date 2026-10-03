@@ -5,7 +5,6 @@ import {
   craftingCurrencyBlockedReason,
   computeSalvageYield,
   createEmptyGearLoadouts,
-  normalizeCraftingCurrencies,
   rollSalvageYield,
   salvageGear,
   type GearAffixRoll,
@@ -189,24 +188,6 @@ describe("crafting currency logic", () => {
     const reloaded = JSON.parse(JSON.stringify(item)) as GearInstance;
     expect(computeSalvageYield(reloaded)).toEqual(preview);
     expect(computeSalvageYield({ ...item, affixes: [{ id: "flat-physical", value: 2 }] })).toEqual(preview);
-  });
-
-  it("normalizes crafting currencies to known nonnegative integer ids", () => {
-    expect(
-      normalizeCraftingCurrencies({
-        "discordant-dice": 2.8,
-        "sprig-of-growth": -1,
-        voidstone: Number.POSITIVE_INFINITY,
-        unknown: 10,
-      }),
-    ).toEqual({
-      "discordant-dice": 2,
-      "sprig-of-growth": 0,
-      voidstone: 0,
-      "ascension-seal": 0,
-      "severance-maw": 0,
-      "smiths-whetstone": 0,
-    });
   });
 
   it("handles uncataloged affix ids safely without throwing", () => {

@@ -31,6 +31,23 @@ function trackMissingArt(id: string, context: string): void {
   missingGearArtDefinitionIds.push(id);
 }
 
+function createDefinition(
+  baseItemId: GearBaseItemId,
+  rarity: GearRarity,
+  presentation: Pick<GearDefinition, "id" | "displayName" | "art" | "descriptionLines">,
+): GearDefinition {
+  const base = gearBaseItems[baseItemId];
+  return {
+    ...presentation,
+    baseItemId,
+    rarity,
+    compatibleSlots: [...base.compatibleSlots],
+    slotRule: base.slotRule,
+    affinityKeywords: [...base.affinityKeywords],
+    salvageValue: { ...base.salvageByRarity[rarity] },
+  };
+}
+
 function buildVariantDefinitions(): Record<string, GearDefinition> {
   const variants: Record<string, GearDefinition> = {};
 
@@ -45,18 +62,12 @@ function buildVariantDefinitions(): Record<string, GearDefinition> {
         continue;
       }
       if (art !== gearArtByDefinitionId[id]) trackMissingArt(id, `base ${baseItemId}`);
-      variants[id] = {
+      variants[id] = createDefinition(baseItemId, rarity, {
         id,
         displayName: rarity === "astral" ? `Astral ${baseItem.displayName}` : baseItem.displayName,
-        baseItemId,
-        rarity,
-        compatibleSlots: [...baseItem.compatibleSlots],
-        slotRule: baseItem.slotRule,
-        affinityKeywords: [...baseItem.affinityKeywords],
-        descriptionLines: [],
         art,
-        salvageValue: { ...baseItem.salvageByRarity[rarity] },
-      };
+        descriptionLines: [],
+      });
     }
   }
 
@@ -75,18 +86,12 @@ function buildVariantDefinitions(): Record<string, GearDefinition> {
     if (art !== gearArtByDefinitionId[gearDefinitionId(unique.baseItemId, "astral")]) {
       trackMissingArt(unique.id, `base ${unique.baseItemId}`);
     }
-    variants[unique.id] = {
+    variants[unique.id] = createDefinition(unique.baseItemId, "unique", {
       id: unique.id,
       displayName: unique.displayName,
-      baseItemId: unique.baseItemId,
-      rarity: "unique",
-      compatibleSlots: [...baseItem.compatibleSlots],
-      slotRule: baseItem.slotRule,
-      affinityKeywords: [...baseItem.affinityKeywords],
-      descriptionLines: [unique.description],
       art,
-      salvageValue: { ...baseItem.salvageByRarity.unique },
-    };
+      descriptionLines: [unique.description],
+    });
   }
 
   return variants;

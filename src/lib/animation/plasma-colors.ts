@@ -5,29 +5,20 @@ export interface PlasmaColorPair {
 
 export type RgbTuple = readonly [number, number, number];
 
-const HEX_3_PATTERN = /^[0-9a-f]{3}$/i;
-const HEX_6_PATTERN = /^[0-9a-f]{6}$/i;
+const HEX_PATTERN = /^(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 
 export function parseHexRgbBytes(
   hex: string,
   fallback: readonly [number, number, number] = [255, 255, 255],
 ): [number, number, number] {
   const normalized = hex.trim().replace(/^#/, "");
-  if (HEX_3_PATTERN.test(normalized)) {
-    return [
-      Number.parseInt(normalized.charAt(0) + normalized.charAt(0), 16),
-      Number.parseInt(normalized.charAt(1) + normalized.charAt(1), 16),
-      Number.parseInt(normalized.charAt(2) + normalized.charAt(2), 16),
-    ];
-  }
-  if (HEX_6_PATTERN.test(normalized)) {
-    return [
-      Number.parseInt(normalized.slice(0, 2), 16),
-      Number.parseInt(normalized.slice(2, 4), 16),
-      Number.parseInt(normalized.slice(4, 6), 16),
-    ];
-  }
-  return [fallback[0], fallback[1], fallback[2]];
+  if (!HEX_PATTERN.test(normalized)) return [...fallback];
+  const expanded = normalized.length === 3 ? normalized.replace(/./g, "$&$&") : normalized;
+  return [
+    Number.parseInt(expanded.slice(0, 2), 16),
+    Number.parseInt(expanded.slice(2, 4), 16),
+    Number.parseInt(expanded.slice(4, 6), 16),
+  ];
 }
 
 export function parseHexRgbNormalized(

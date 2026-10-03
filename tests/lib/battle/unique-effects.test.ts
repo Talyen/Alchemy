@@ -473,25 +473,26 @@ describe("damageOnlyEffects", () => {
     expect(filtered[1]).not.toBe(chance);
   });
 
-  it("preserves scheduled damage inside repeat-over-turns for echoes and repeats", () => {
-    const scheduled: BattleCardEffect = {
-      kind: "repeat-over-turns",
-      remainingTurns: 2,
-      effects: [{ kind: "damage", damageType: "burn", amount: 4 }],
-    } as BattleCardEffect;
-    const filtered = damageOnlyEffects([scheduled]);
-    expect(filtered).toHaveLength(1);
-    expect(filtered[0]).toMatchObject({ kind: "repeat-over-turns", remainingTurns: 2 });
-    expect((filtered[0] as { effects: BattleCardEffect[] }).effects).toHaveLength(1);
-  });
-
-  it("drops repeat-over-turns wrappers with no damage inside", () => {
-    const scheduled: BattleCardEffect = {
-      kind: "repeat-over-turns",
-      remainingTurns: 2,
-      effects: [{ kind: "draw-cards", amount: 1 }],
-    } as BattleCardEffect;
-    expect(damageOnlyEffects([scheduled])).toHaveLength(0);
+  it("preserves nested scheduled damage and drops empty wrappers without repeating support effects", () => {
+    const damage: BattleCardEffect = { kind: "random-damage", minAmount: 1, maxAmount: 3, damageTypePool: ["burn"] };
+    const support: BattleCardEffect = { kind: "draw-cards", amount: 1 };
+    const source: BattleCardEffect[] = [
+      { kind: "repeat-over-turns", remainingTurns: 2, effects: [support] },
+      {
+        kind: "repeat-over-turns",
+        remainingTurns: 3,
+        effects: [{ kind: "chance", probability: 0.2, successEffects: [support], failureEffects: [damage, support] }],
+      },
+    ];
+    const before = structuredClone(source);
+    expect(damageOnlyEffects(source)).toEqual([
+      {
+        kind: "repeat-over-turns",
+        remainingTurns: 3,
+        effects: [{ kind: "chance", probability: 0.2, successEffects: [], failureEffects: [damage] }],
+      },
+    ]);
+    expect(source).toEqual(before);
   });
 });
 

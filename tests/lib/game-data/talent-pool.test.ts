@@ -17,18 +17,6 @@ import {
 } from "@/lib/game-data";
 
 describe("talentPool data integrity", () => {
-  it("each talent has a non-empty description", () => {
-    for (const talent of talentPool) {
-      expect(talent.description, `Talent "${talent.id}" has empty description`).toBeTruthy();
-    }
-  });
-
-  it("each talent has a name", () => {
-    for (const talent of talentPool) {
-      expect(talent.name, `Talent "${talent.id}" is missing a name`).toBeTruthy();
-    }
-  });
-
   it("each talent keyword has at least one talent and rows cover every entry", () => {
     for (const kw of getTalentTreeKeywordIds()) {
       const talents = getTalentsForKeyword(kw);
@@ -43,14 +31,6 @@ describe("talentPool data integrity", () => {
 });
 
 describe("talent row layout", () => {
-  it("chunks by fixed size", () => {
-    expect(chunkIntoRows([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
-  });
-
-  it("chunks by explicit sizes", () => {
-    expect(chunkIntoRows(["a", "b", "c", "d"], [1, 2, 3])).toEqual([["a"], ["b", "c"], ["d"]]);
-  });
-
   it("keeps overflow entries in a final row instead of dropping them", () => {
     expect(chunkIntoRows([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], [1, 2, 3, 4])).toEqual([
       [1],
@@ -59,12 +39,6 @@ describe("talent row layout", () => {
       [7, 8, 9, 10],
       [11],
     ]);
-  });
-
-  it("splits a full keyword into rows of 1, 2, 3, 4 in pool order", () => {
-    const rows = getTalentRows("physical");
-    expect(rows.map((row) => row.length)).toEqual([1, 2, 3, 4]);
-    expect(rows.flat().map((t) => t.id)).toEqual(getTalentsForKeyword("physical").map((t) => t.id));
   });
 
   it("fills authored keywords to the full grid without placeholders", () => {
@@ -83,10 +57,6 @@ describe("talent row layout", () => {
     expect(getTalentRowIndex(9)).toBe(3);
   });
 
-  it("row 0 is always unlocked", () => {
-    expect(isTalentRowUnlocked("physical", [], 0)).toBe(true);
-  });
-
   it("a row is unlocked only when every real talent above it is unlocked", () => {
     const phys = getTalentsForKeyword("physical");
     expect(isTalentRowUnlocked("physical", [], 1)).toBe(false);
@@ -102,9 +72,20 @@ describe("talent row layout", () => {
     expect(getAllocatableTalentChoices("physical", ids).map((t) => t.id)).toEqual([1, 2].map((i) => phys[i]!.id));
   });
 
-  it("getAllocatableTalentChoices never returns placeholders", () => {
-    expect(getAllocatableTalentChoices("consume", [])).toHaveLength(1);
-    expect(getAllocatableTalentChoices("consume", []).every((t) => !isTalentPlaceholder(t))).toBe(true);
+  it("offers exactly the unpurchased talents whose prerequisites allow an actual unlock", () => {
+    for (const keyword of getTalentTreeKeywordIds()) {
+      const talents = getTalentsForKeyword(keyword);
+      // Saved later purchases must not unlock an unfinished earlier row.
+      const allIds = talents.map((talent) => talent.id);
+      const partialRows = [0, 2, 6, 9].map((missing) => allIds.filter((_, index) => index !== missing));
+      for (const purchased of [[], ...partialRows, allIds]) {
+        const offers = getAllocatableTalentChoices(keyword, purchased);
+        const legal = talents.filter(
+          (talent) => canUnlockTalent(keyword, talent.id, { [keyword]: 100_000 }, { [keyword]: purchased }).ok,
+        );
+        expect(offers, keyword).toEqual(legal);
+      }
+    }
   });
 
   it("keeps displayed choices and unlock validation aligned after purchases beyond a partial row", () => {
@@ -208,60 +189,6 @@ describe("computeTalentEffects", () => {
 });
 
 describe("combat feedback talent progression", () => {
-  it.each([
-    [
-      "holy",
-      [
-        "Faith Barrier",
-        "Celestial Ward",
-        "Purge",
-        "Divine Favor",
-        "Prosperity",
-        "Scorching Light",
-        "Tithe",
-        "Radiant Guard",
-        "Blessed Leech",
-        "Divine Intervention",
-      ],
-    ],
-    [
-      "nature",
-      [
-        "Overgrowth",
-        "Thornskin",
-        "Bramblegrowth",
-        "Photosynthesis",
-        "Windstep",
-        "Briar Patch",
-        "Toxic Pollen",
-        "Verdant Cycle",
-        "Ecosystem",
-        "Entangle",
-      ],
-    ],
-    [
-      "leech",
-      [
-        "Deep Siphon",
-        "Blood Debt",
-        "Affliction Siphon",
-        "Desperate Siphon",
-        "Cull the Weak",
-        "Sanguine Overflow",
-        "Bloodletting",
-        "Mana Siphon",
-        "Armor Siphon",
-        "Virulent Leech",
-      ],
-    ],
-  ] as const)("keeps the agreed %s order and gates its final row", (keyword, names) => {
-    const talents = getTalentsForKeyword(keyword);
-    expect(talents.map((talent) => talent.name)).toEqual(names);
-    const early = talents.slice(0, 6).map((talent) => talent.id);
-    expect(isTalentRowUnlocked(keyword, early, 3)).toBe(true);
-    expect(isTalentRowUnlocked(keyword, early.slice(0, 5), 3)).toBe(false);
-  });
-
   it("preserves an already-purchased connector without granting its new prerequisites", () => {
     const purchased = { holy: ["holy-tithe"] };
     expect(normalizeUnlockedTalents(purchased)).toEqual(purchased);

@@ -112,9 +112,11 @@ export function equipGear(
   instance: GearInstance,
   inventory: GearInstance[],
 ): GearLoadouts {
-  const definition = gearDefinitions[instance.definitionId];
+  // Resolve the current inventory item before checking hand displacement;
+  // a stale caller's definition must not unequip unrelated equipment.
+  const owned = inventory.find((item) => item.instanceId === instance.instanceId);
+  const definition = owned ? gearDefinitions[owned.definitionId] : undefined;
   if (!definition) return loadouts;
-  if (!inventory.some((item) => item.instanceId === instance.instanceId)) return loadouts;
   const resolution = resolveLoadoutEquip(definition, slot, loadouts[characterId], inventory);
   if (resolution === "reject") return loadouts;
 
@@ -138,16 +140,12 @@ export function unequipGear(
 }
 
 function removeGearFromLoadouts(loadouts: GearLoadouts, instanceId: string): GearLoadouts {
-  const next: GearLoadouts = { ...loadouts };
+  const next = createEmptyGearLoadouts();
   for (const characterId of GEAR_CHARACTER_IDS) {
-    const loadout = loadouts[characterId];
-    const nextLoadout = { ...loadout };
     for (const slot of GEAR_SLOTS) {
-      if (nextLoadout[slot] === instanceId) {
-        nextLoadout[slot] = null;
-      }
+      const equipped = loadouts[characterId][slot];
+      if (equipped !== instanceId) next[characterId][slot] = equipped;
     }
-    next[characterId] = nextLoadout;
   }
   return next;
 }

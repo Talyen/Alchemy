@@ -21,6 +21,13 @@ const MARKET_THEMES: Partial<Record<EncounterRewardTraitId, KeywordId>> = {
   "wishing-market": "wish",
 };
 
+// Order preserves the selection priority when a restored room has multiple bonuses.
+const MYSTERY_REWARDS = [
+  ["golden-omen", "gainGold"],
+  ["bountiful", "gainMaterial"],
+  ["enlightening", "gainXP"],
+] as const;
+
 export function labyrinthCardShopPool(pool: BattleCard[], modifiers: readonly EncounterRewardTraitId[]): BattleCard[] {
   const theme = modifiers.map((id) => MARKET_THEMES[id]).find((value) => value !== undefined);
   return theme ? pool.filter((card) => getCardKeywords(card).includes(theme)) : pool;
@@ -32,16 +39,9 @@ export function labyrinthCampfireHealing(baseFraction: number, modifiers: readon
 }
 
 export function isLabyrinthMysteryEligible(event: MysteryEvent, modifiers: readonly EncounterRewardTraitId[]): boolean {
+  const preferredKind = MYSTERY_REWARDS.find(([id]) => modifiers.includes(id))?.[1];
   return event.choices.some((choice) =>
-    choice.effects.some((effect) =>
-      modifiers.includes("golden-omen")
-        ? effect.kind === "gainGold"
-        : modifiers.includes("bountiful")
-          ? effect.kind === "gainMaterial"
-          : modifiers.includes("enlightening")
-            ? effect.kind === "gainXP"
-            : true,
-    ),
+    choice.effects.some((effect) => !preferredKind || effect.kind === preferredKind),
   );
 }
 
@@ -51,17 +51,14 @@ export function applyLabyrinthMysteryModifiers(
   maxHealth: number,
 ): MysteryEvent {
   if (modifiers.length === 0) return event;
+  const boostedKinds = MYSTERY_REWARDS.filter(([id]) => modifiers.includes(id)).map(([, kind]) => kind);
   return {
     ...event,
     choices: event.choices.map((choice) => ({
       ...choice,
       effects: [
         ...choice.effects.map((effect) => {
-          if (
-            (effect.kind === "gainGold" && modifiers.includes("golden-omen")) ||
-            (effect.kind === "gainMaterial" && modifiers.includes("bountiful")) ||
-            (effect.kind === "gainXP" && modifiers.includes("enlightening"))
-          ) {
+          if ("amount" in effect && boostedKinds.some((kind) => kind === effect.kind)) {
             return { ...effect, amount: effect.amount * LABYRINTH_MODIFIER_CONFIG.double };
           }
           return effect;

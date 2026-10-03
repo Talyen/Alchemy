@@ -12,45 +12,33 @@ export function useHoverVisible<T extends HTMLElement = HTMLDivElement>(options?
   const triggerRef = useRef<T>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const {
-    holdMs: holdMsOpt,
-    focusWithinGuard: focusWithinGuardOpt,
+    holdMs = 0,
+    focusWithinGuard = false,
     interactive,
     suspended = false,
     isHovered,
     onHoverStart,
     onHoverEnd,
   } = options ?? {};
-  const holdMs = holdMsOpt ?? 0;
-  const focusWithinGuard = focusWithinGuardOpt ?? false;
   const isControlled = isHovered !== undefined;
   const [uncontrolledVisible, setUncontrolledVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
-  const visible = (() => {
-    const raw = isControlled ? (isHovered ?? false) : uncontrolledVisible;
-    if (interactive === false || suspended || dismissed) return false;
-    return raw;
-  })();
+  const visible = interactive !== false && !suspended && !dismissed && (isHovered ?? uncontrolledVisible);
 
   const doShow = useCallback(() => {
     if (interactive === false || suspended) return;
-    if (isControlled) onHoverStart?.();
-    else {
-      setUncontrolledVisible(true);
-      onHoverStart?.();
-    }
+    if (!isControlled) setUncontrolledVisible(true);
+    onHoverStart?.();
   }, [interactive, suspended, isControlled, onHoverStart]);
 
   const doHide = useCallback(
-    ({ checkFocusWithin }: { checkFocusWithin: boolean }) => {
+    (checkFocusWithin: boolean) => {
       if (checkFocusWithin && focusWithinGuard && wrapperRef.current?.matches(":focus-within")) return;
       if (interactive === false) return;
-      if (isControlled) onHoverEnd?.();
-      else {
-        setUncontrolledVisible(false);
-        onHoverEnd?.();
-      }
+      if (!isControlled) setUncontrolledVisible(false);
+      onHoverEnd?.();
     },
     [focusWithinGuard, interactive, isControlled, onHoverEnd],
   );
@@ -66,15 +54,15 @@ export function useHoverVisible<T extends HTMLElement = HTMLDivElement>(options?
   }, [dismissed, suspended, doShow]);
   const handleMouseLeave = useCallback(() => {
     if (!suspended) setDismissed(false);
-    doHide({ checkFocusWithin: true });
+    doHide(true);
   }, [suspended, doHide]);
   const handleBlur = useCallback(() => {
     if (!suspended) setDismissed(false);
-    doHide({ checkFocusWithin: false });
+    doHide(false);
   }, [suspended, doHide]);
   const dismiss = useCallback(() => {
     setDismissed(true);
-    doHide({ checkFocusWithin: false });
+    doHide(false);
   }, [doHide]);
 
   if (holdMs > 0 && visible && !mounted) {

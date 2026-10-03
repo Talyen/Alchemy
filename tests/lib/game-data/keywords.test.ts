@@ -50,3 +50,32 @@ it.each([
   expect(card).toBeDefined();
   expect(getCardKeywords(card!)).toEqual(expect.arrayContaining(expected));
 });
+
+it("keeps nested effect keywords in order for rewards and XP, including both chance branches", () => {
+  const card = makeTestCard({
+    consume: true,
+    tags: ["archery"],
+    effects: [
+      {
+        kind: "chance",
+        probability: 0.5,
+        successEffects: [
+          {
+            kind: "repeat-over-turns",
+            remainingTurns: 2,
+            effects: [
+              { kind: "damage", damageType: "bleed", amount: 3, lifesteal: true },
+              { kind: "heal", amount: 2 },
+            ],
+          },
+        ],
+        failureEffects: [
+          { kind: "player-status", status: "block", amount: 2 },
+          { kind: "player-status", status: "haste", amount: 1 },
+          { kind: "restore-mana", amount: 1 },
+        ],
+      },
+    ],
+  });
+  expect(getCardKeywords(card)).toEqual(["bleed", "leech", "health", "block", "mana", "consume", "archery"]);
+});

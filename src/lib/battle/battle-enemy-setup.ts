@@ -55,16 +55,6 @@ function scaleEnemyRegeneration(enemy: BestiaryEntry, roomMul: number): number {
   return Math.round(base * roomMul);
 }
 
-function buildScaledEnemy(enemy: BestiaryEntry, totalRoomsInRun = 0) {
-  const scaler = Math.max(0, totalRoomsInRun - 1);
-  const roomMul = 1 + scaler * ROOM_SCALING_INCREMENT;
-  return {
-    roomMul,
-    scaledEnemyHealth: scaleEnemyHealth(enemy, roomMul),
-    enemyRegeneration: scaleEnemyRegeneration(enemy, roomMul),
-  };
-}
-
 export function scaleEnemyAbilityDamage(
   state: Pick<BattleState, "roomScalingMultiplier" | "difficultyModifiers" | "currentEnemy">,
   effect: EnemyAbilityDamageEffect,
@@ -97,62 +87,29 @@ export function scaleEnemyAbilityDamage(
   };
 }
 
-function isStartCompanionMod(mod: DifficultyModifier): mod is Extract<DifficultyModifier, { kind: "start-companion" }> {
-  return mod.kind === "start-companion";
-}
-
 function modifierAmount(modifiers: DifficultyModifier[], kind: DifficultyModifier["kind"], fallback = 0): number {
-  const found = modifiers.find((m) => m.kind === kind) as { amount?: number } | undefined;
-  return found?.amount ?? fallback;
+  const found = modifiers.find((modifier) => modifier.kind === kind);
+  return found && "amount" in found ? found.amount : fallback;
 }
 
-function computeStartingStatuses(modifiers: DifficultyModifier[], enemy: BestiaryEntry, roomMul: number) {
-  const startingArmor = modifierAmount(modifiers, "enemy-starting-armor");
-  const traitStartingArmor = enemy.traits.some((t) => t.id === "living-armor")
-    ? Math.round(LIVING_ARMOR_STARTING_ARMOR * roomMul)
-    : 0;
-  const startBlock = modifierAmount(modifiers, "start-block");
-  const manaBonus = modifierAmount(modifiers, "start-max-mana");
-  const companionMod = modifiers.find(isStartCompanionMod);
-  const startCompanion = Boolean(companionMod);
-  const startCompanionId = companionMod?.companionId ?? "wolf";
-  const startingEnemyBlock = enemy.traits.some((t) => t.id === "starting-block")
-    ? Math.round(ENEMY_STARTING_BLOCK * roomMul)
-    : 0;
-  const modifierBlock = enemy.traits.some((t) => t.id === "shielded-arrival")
-    ? LABYRINTH_MODIFIER_CONFIG.shieldedArrivalBlock
-    : 0;
+export function initializeEnemyState(enemy: BestiaryEntry, battleRooms: number, modifiers: DifficultyModifier[]) {
+  const roomMul = 1 + Math.max(0, battleRooms - 1) * ROOM_SCALING_INCREMENT;
+  const hasTrait = (id: string) => enemy.traits.some((trait) => trait.id === id);
+  const companion = modifiers.find((modifier) => modifier.kind === "start-companion");
+  const traitArmor = hasTrait("living-armor") ? Math.round(LIVING_ARMOR_STARTING_ARMOR * roomMul) : 0;
+  const traitBlock = hasTrait("starting-block") ? Math.round(ENEMY_STARTING_BLOCK * roomMul) : 0;
   return {
-    startingArmor: startingArmor + traitStartingArmor,
-    startBlock,
-    manaBonus,
-    startCompanion,
-    startCompanionId,
-    startingEnemyBlock: startingEnemyBlock + modifierBlock,
-  };
-}
-
-export function initializeEnemyState(
-  battleEnemy: BestiaryEntry,
-  battleRooms: number,
-  battleDiffs: DifficultyModifier[],
-) {
-  const { scaledEnemyHealth, enemyRegeneration, roomMul } = buildScaledEnemy(battleEnemy, battleRooms);
-  const { startingArmor, startBlock, manaBonus, startCompanion, startCompanionId, startingEnemyBlock } =
-    computeStartingStatuses(battleDiffs, battleEnemy, roomMul);
-
-  const hpMul = modifierAmount(battleDiffs, "enemy-health-multiplier", 1);
-  const enemyMaxHealth = Math.round(scaledEnemyHealth * hpMul);
-
-  return {
-    enemyMaxHealth,
-    enemyRegeneration,
+    enemyMaxHealth: Math.round(
+      scaleEnemyHealth(enemy, roomMul) * modifierAmount(modifiers, "enemy-health-multiplier", 1),
+    ),
+    enemyRegeneration: scaleEnemyRegeneration(enemy, roomMul),
     roomScalingMultiplier: roomMul,
-    startingArmor,
-    startBlock,
-    manaBonus,
-    startCompanion,
-    startCompanionId,
-    startingEnemyBlock,
+    startingArmor: modifierAmount(modifiers, "enemy-starting-armor") + traitArmor,
+    startBlock: modifierAmount(modifiers, "start-block"),
+    manaBonus: modifierAmount(modifiers, "start-max-mana"),
+    startCompanion: Boolean(companion),
+    startCompanionId: companion?.companionId ?? "wolf",
+    startingEnemyBlock:
+      traitBlock + (hasTrait("shielded-arrival") ? LABYRINTH_MODIFIER_CONFIG.shieldedArrivalBlock : 0),
   };
 }

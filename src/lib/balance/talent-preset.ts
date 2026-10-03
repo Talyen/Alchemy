@@ -1,6 +1,6 @@
-import { defaultTalentEffects } from "@/lib/battle";
 import {
   computeTalentEffects,
+  createEmptyTalentEffectManifest,
   getTalentsForKeyword,
   isTalentPlaceholder,
   talentPool,
@@ -62,19 +62,6 @@ export function buildPresetUnlockedTalents(keywords: readonly KeywordId[], prese
   const isWildcard = keywords.length === 0;
   const unlockedTalents: UnlockedTalents = {};
 
-  if (isWildcard) {
-    let budget = WILDCARD_TALENT_BUDGET[preset];
-    for (const keywordId of allKeywordIds) {
-      if (budget <= 0) break;
-      const treeTalents = talentsInTreeOrder(keywordId);
-      const take = Math.min(treeTalents.length, 2, budget);
-      if (take <= 0) continue;
-      unlockedTalents[keywordId] = treeTalents.slice(0, take).map((talent) => talent.id);
-      budget -= take;
-    }
-    return unlockedTalents;
-  }
-
   for (const keywordId of keywords) {
     const treeTalents = talentsInTreeOrder(keywordId);
     const count = preset === "mid" ? MID_AFFINITY_TALENT_COUNT : Math.min(treeTalents.length, LATE_AFFINITY_TALENT_CAP);
@@ -82,12 +69,16 @@ export function buildPresetUnlockedTalents(keywords: readonly KeywordId[], prese
     unlockedTalents[keywordId] = treeTalents.slice(0, count).map((talent) => talent.id);
   }
 
-  let otherBudget = preset === "mid" ? MID_OTHER_TALENT_COUNT : LATE_OTHER_TALENT_COUNT;
+  let otherBudget = isWildcard
+    ? WILDCARD_TALENT_BUDGET[preset]
+    : preset === "mid"
+      ? MID_OTHER_TALENT_COUNT
+      : LATE_OTHER_TALENT_COUNT;
   for (const keywordId of allKeywordIds) {
     if (otherBudget <= 0) break;
     if (affinitySet.has(keywordId)) continue;
     const treeTalents = talentsInTreeOrder(keywordId);
-    const take = Math.min(treeTalents.length, otherBudget);
+    const take = Math.min(treeTalents.length, otherBudget, isWildcard ? 2 : Infinity);
     if (take <= 0) continue;
     unlockedTalents[keywordId] = treeTalents.slice(0, take).map((talent) => talent.id);
     otherBudget -= take;
@@ -108,7 +99,7 @@ export function countUnlockedCombatTalents(keywords: readonly KeywordId[], prese
 const PRESET_MANIFEST_CACHE = new Map<string, TalentEffectManifest>();
 
 export function buildPresetManifest(keywords: readonly KeywordId[], preset: TalentPreset): TalentEffectManifest {
-  if (preset === "early") return defaultTalentEffects;
+  if (preset === "early") return createEmptyTalentEffectManifest();
   const key = `${keywords.join(",")}:${preset}`;
   let cached = PRESET_MANIFEST_CACHE.get(key);
   if (!cached) {
@@ -120,6 +111,7 @@ export function buildPresetManifest(keywords: readonly KeywordId[], preset: Tale
     ...cached,
     companionBondLevels: { ...cached.companionBondLevels },
     cardHealBonus: { ...cached.cardHealBonus },
+    cardHealMultipliers: { ...cached.cardHealMultipliers },
     healthThresholdArmor: [...cached.healthThresholdArmor],
   };
 }

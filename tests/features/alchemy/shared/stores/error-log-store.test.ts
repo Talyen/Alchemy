@@ -19,15 +19,6 @@ describe("useErrorLogStore", () => {
     localStorage.clear();
   });
 
-  it("pushError appends an unreviewed entry with a unique id", () => {
-    useErrorLogStore.getState().pushError({ message: "boom", source: "storage" });
-    const errors = useErrorLogStore.getState().errors;
-    expect(errors).toHaveLength(1);
-    expect(errors[0]?.message).toBe("boom");
-    expect(errors[0]?.reviewed).toBe(false);
-    expect(errors[0]?.id).toMatch(/^err_/);
-  });
-
   it("caps stored errors at 100 entries", () => {
     for (let index = 0; index < 101; index += 1) {
       useErrorLogStore.getState().pushError({ message: `err-${index}`, source: "storage" });
@@ -38,31 +29,12 @@ describe("useErrorLogStore", () => {
     expect(errors.at(-1)?.message).toBe("err-100");
   });
 
-  it("markReviewed flips only the matching entry", () => {
-    useErrorLogStore.getState().pushError({ message: "one", source: "storage" });
-    useErrorLogStore.getState().pushError({ message: "two", source: "storage" });
-    const firstId = useErrorLogStore.getState().errors[0]!.id;
-    useErrorLogStore.getState().markReviewed(firstId);
-    const errors = useErrorLogStore.getState().errors;
-    expect(errors.find((entry) => entry.id === firstId)?.reviewed).toBe(true);
-    expect(errors.find((entry) => entry.message === "two")?.reviewed).toBe(false);
-  });
-
   it("clearErrors empties state and localStorage", () => {
     useErrorLogStore.getState().pushError({ message: "boom", source: "storage" });
     useErrorLogStore.getState().clearErrors();
     flushPersistedErrorLog();
     expect(useErrorLogStore.getState().errors).toEqual([]);
     expect(localStorage.getItem(STORAGE_KEY)).toBe("[]");
-  });
-
-  it("persists errors to localStorage", () => {
-    useErrorLogStore.getState().pushError({ message: "persisted", source: "storage" });
-    flushPersistedErrorLog();
-    const raw = localStorage.getItem(STORAGE_KEY);
-    expect(raw).toContain("persisted");
-    const parsed = JSON.parse(raw ?? "[]") as Array<{ message: string }>;
-    expect(parsed[0]?.message).toBe("persisted");
   });
 
   it.each(["not-json", "{}", "[null]", '[{"message":"missing required fields"}]'])(
@@ -139,5 +111,34 @@ describe("useErrorLogStore", () => {
     expect(parsed[0]?.id).toBe("err_1");
     expect(parsed.at(-1)).toMatchObject({ id: "err_100", reviewed: false });
     expect(parsed.at(-1)?.stack).toBeUndefined();
+  });
+
+  it("coalesces a burst into the latest snapshot and flushes it once before pagehide", () => {
+    vi.useFakeTimers();
+    const write = vi.spyOn(Storage.prototype, "setItem");
+    try {
+      useErrorLogStore.getState().pushError({ message: "first", source: "storage" });
+      useErrorLogStore.getState().pushError({ message: "second", source: "storage" });
+      const [first, second] = useErrorLogStore.getState().errors;
+      expect(first!.id).not.toBe(second!.id);
+      useErrorLogStore.getState().markReviewed(first!.id);
+      vi.advanceTimersByTime(499);
+      expect(write).not.toHaveBeenCalled();
+
+      window.dispatchEvent(new Event("pagehide"));
+      expect(parsePersistedErrorLog(localStorage.getItem(STORAGE_KEY))).toEqual(useErrorLogStore.getState().errors);
+      expect(useErrorLogStore.getState().errors.map((error) => error.reviewed)).toEqual([true, false]);
+      vi.advanceTimersByTime(500);
+      flushPersistedErrorLog();
+      expect(write).toHaveBeenCalledTimes(1);
+
+      useErrorLogStore.getState().clearErrors();
+      vi.advanceTimersByTime(500);
+      expect(localStorage.getItem(STORAGE_KEY)).toBe("[]");
+      expect(write).toHaveBeenCalledTimes(2);
+    } finally {
+      write.mockRestore();
+      vi.useRealTimers();
+    }
   });
 });

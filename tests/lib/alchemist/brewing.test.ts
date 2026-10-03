@@ -3,6 +3,7 @@ import { cardById } from "@/lib/game-data";
 import { createCampfirePotionOffers, strengthenPotion } from "@/lib/alchemist/brewing";
 import { createTransmutationOffers } from "@/lib/alchemist/transmutation";
 import { tryCreateMixedPotion } from "@/lib/alchemist";
+import { makeTestCard } from "../../fixtures/cards";
 import { BattleCardSchema } from "@/lib/validation/save-schemas/battle-card-schemas";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { createSeededRng } from "@/lib/rng";
@@ -32,7 +33,62 @@ describe("brewing and transmutation content", () => {
       { kind: "damage", damageType: "poison", amount: 3 },
     ]);
     const luck = strengthenPotion(cardById["luck-potion"]!)!;
-    expect(luck.effects[0]).toMatchObject({ kind: "chance", probability: 0.5 });
+    expect(luck.effects).toEqual([
+      {
+        kind: "chance",
+        probability: 0.5,
+        successEffects: [{ kind: "restore-mana", amount: 6 }],
+        failureEffects: [
+          {
+            kind: "chance",
+            probability: 0.5,
+            successEffects: [{ kind: "gain-gold", amount: 6 }],
+            failureEffects: [{ kind: "player-status", status: "block", amount: 6 }],
+          },
+        ],
+      },
+    ]);
+  });
+  it("strengthens nested magnitudes without scaling status durations or conversion factors", () => {
+    const protectedEffects = [
+      { kind: "player-status" as const, status: "haste" as const, amount: 1 },
+      { kind: "player-status" as const, status: "block" as const, amount: 2, convertCurrentMana: 3 },
+      { kind: "damage" as const, damageType: "holy" as const, amount: 50, equalToGoldPercent: 50 },
+    ];
+    const card = makeTestCard({
+      id: "health-potion",
+      effects: [
+        {
+          kind: "repeat-over-turns",
+          remainingTurns: 2,
+          effects: [
+            {
+              kind: "chance",
+              probability: 0.25,
+              successEffects: [{ kind: "heal", amount: 5 }],
+              failureEffects: protectedEffects,
+            },
+          ],
+        },
+      ],
+    });
+    const before = structuredClone(card);
+    const strengthened = strengthenPotion(card)!;
+    expect(strengthened.effects).toEqual([
+      {
+        kind: "repeat-over-turns",
+        remainingTurns: 2,
+        effects: [
+          {
+            kind: "chance",
+            probability: 0.25,
+            successEffects: [{ kind: "heal", amount: 8 }],
+            failureEffects: protectedEffects,
+          },
+        ],
+      },
+    ]);
+    expect(card).toEqual(before);
   });
   it("offers one explicit ordinary card role each with distinct identities", () => {
     const offers = createTransmutationOffers(createSeededRng(51));

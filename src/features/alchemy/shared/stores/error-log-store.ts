@@ -146,34 +146,16 @@ export const useErrorLogStore = create<ErrorLogStore>()((set) => ({
 // storage I/O on top of every failure, so writes are debounced with a pagehide flush.
 const ERROR_LOG_PERSIST_DEBOUNCE_MS = 500;
 let errorLogPersistTimer: ReturnType<typeof setTimeout> | null = null;
-let pendingErrorLogErrors: LoggedError[] | null = null;
-
-function scheduleErrorLogPersist(errors: LoggedError[]): void {
-  pendingErrorLogErrors = errors;
+function scheduleErrorLogPersist(): void {
   if (errorLogPersistTimer !== null) return;
-  errorLogPersistTimer = setTimeout(() => {
-    errorLogPersistTimer = null;
-    const pending = pendingErrorLogErrors;
-    pendingErrorLogErrors = null;
-    if (pending) persist(pending);
-  }, ERROR_LOG_PERSIST_DEBOUNCE_MS);
+  errorLogPersistTimer = setTimeout(flushPersistedErrorLog, ERROR_LOG_PERSIST_DEBOUNCE_MS);
 }
 
-function flushErrorLogPersist(): void {
-  if (errorLogPersistTimer !== null) {
-    clearTimeout(errorLogPersistTimer);
-    errorLogPersistTimer = null;
-  }
-  if (pendingErrorLogErrors) {
-    const pending = pendingErrorLogErrors;
-    pendingErrorLogErrors = null;
-    persist(pending);
-  }
-}
-
-// Exported for tests so debounced writes can be flushed deterministically.
 export function flushPersistedErrorLog(): void {
-  flushErrorLogPersist();
+  if (errorLogPersistTimer === null) return;
+  clearTimeout(errorLogPersistTimer);
+  errorLogPersistTimer = null;
+  persist(useErrorLogStore.getState().errors);
 }
 
 // Explicit boot wiring (called from main.tsx): the store module itself stays
@@ -184,12 +166,12 @@ let errorLogStoreInitialized = false;
 export function initErrorLogStore(): void {
   if (errorLogStoreInitialized) return;
   errorLogStoreInitialized = true;
-  useErrorLogStore.subscribe((state) => {
-    scheduleErrorLogPersist(state.errors);
+  useErrorLogStore.subscribe((state, previous) => {
+    if (state.errors !== previous.errors) scheduleErrorLogPersist();
   });
 
   if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
-    window.addEventListener("pagehide", flushErrorLogPersist);
+    window.addEventListener("pagehide", flushPersistedErrorLog);
   }
 
   registerErrorSink((entry) => {

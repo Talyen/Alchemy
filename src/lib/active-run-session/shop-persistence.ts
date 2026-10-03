@@ -16,9 +16,10 @@ import { gearDefinitions } from "@/lib/gear/definitions";
 import { repairShopOfferings } from "./shop-offering-repair";
 
 export function lookupTrinketEntries(ids: readonly string[]): TrinketEntry[] {
-  return ids
-    .map((id) => (Object.hasOwn(trinketById, id) ? trinketById[id] : undefined))
-    .filter((trinket): trinket is TrinketEntry => Boolean(trinket));
+  return ids.flatMap((id) => {
+    const entry = Object.hasOwn(trinketById, id) ? trinketById[id] : undefined;
+    return entry ? [entry] : [];
+  });
 }
 
 function hydrateRefreshableFields(data: RefreshableShopFields): RefreshableShopFields {
@@ -82,7 +83,8 @@ export function hydrateEquipmentShopState(data: PersistedEquipmentShopState): Eq
   const repaired = repairShopOfferings(
     data.gear,
     data.purchasedSlotKeys ?? [],
-    (instance) => gearDefinitions[instance.definitionId] != null,
+    (instance) =>
+      Object.hasOwn(gearDefinitions, instance.definitionId) && gearDefinitions[instance.definitionId] != null,
   );
   return {
     gear: repaired.items,

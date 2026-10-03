@@ -1,0 +1,35 @@
+import { afterEach, expect, it, vi } from "vitest";
+import { logError, registerErrorSink, resetErrorSinksForTests } from "@/lib/error-logger";
+
+afterEach(() => {
+  resetErrorSinksForTests();
+  vi.restoreAllMocks();
+});
+
+it("still delivers failures to healthy sinks when the console and another sink throw", () => {
+  vi.spyOn(console, "error").mockImplementation(() => {
+    throw new Error("Console adapter unavailable");
+  });
+  registerErrorSink(() => {
+    throw new Error("Storage full");
+  });
+  const healthy = vi.fn();
+  registerErrorSink(healthy);
+  const cause = new Error("Save failed");
+  logError("Save failed", "storage", { slot: "active" }, cause.stack, undefined, cause);
+  logError("Next failure", "battle");
+
+  expect(healthy.mock.calls.map(([entry]) => entry.message)).toEqual(["Save failed", "Next failure"]);
+  expect(healthy.mock.calls[0]?.[0]).toMatchObject({ source: "storage", context: { slot: "active" }, cause });
+});
+
+it("drops recursive sink failures without suppressing the next independent error", () => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  vi.spyOn(console, "warn").mockImplementation(() => {});
+  const healthy = vi.fn();
+  registerErrorSink(() => logError("Recursive error", "other"));
+  registerErrorSink(healthy);
+  logError("First", "storage");
+  logError("Second", "battle");
+  expect(healthy.mock.calls.map(([entry]) => entry.message)).toEqual(["First", "Second"]);
+});

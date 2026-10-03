@@ -261,3 +261,18 @@ describe("ActiveRunDataSchema normalize", () => {
     expect(result.mysteryVisit?.event).toEqual(testMysteryEvent);
   });
 });
+
+it("preserves an active Wish and queued choices until the active choice is resolved", () => {
+  const result = parseActiveRunData({
+    activeCombat: {
+      battleState: {
+        ...defaultBattleState(),
+        wishOptions: [liveCard, tombstonedCard],
+        wishQueue: [[tombstonedCard], [liveCard]],
+      },
+    },
+  });
+  const state = result.activeCombat!.battleState;
+  expect(state.wishOptions?.map((card) => card.id)).toEqual([liveCard.id]);
+  expect(state.wishQueue.map((queue) => queue.map((card) => card.id))).toEqual([[liveCard.id]]);
+});

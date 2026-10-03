@@ -1,174 +1,77 @@
 import { describe, expect, it } from "vitest";
+import { canPlayCard, playBattleCardResolved } from "@/lib/battle/card-play";
 import { computeEffectiveCost } from "@/lib/battle/card-cost-rules";
-import { FREE_CARD_SENTINEL } from "@/lib/game-constants";
-import { defaultBattleState, defaultTalentEffects } from "@/lib/battle";
-import type { BattleState, CombatFlags } from "@/lib/battle/types";
-import type { BattleCard } from "@/lib/game-data";
-import { makeTestCard } from "../../fixtures/cards";
+import type { CombatFlags } from "@/lib/battle/types";
+import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
+import { patchBattleState, makeTestCard } from "../../fixtures/battle";
 
-function makeState(flags: Partial<CombatFlags> = {}, talentOverrides: Record<string, unknown> = {}): BattleState {
-  return {
-    ...defaultBattleState(),
-    mana: 5,
-    maxMana: 5,
-    flags: { ...defaultBattleState().flags, ...flags },
-    talentEffects: { ...defaultTalentEffects, ...talentOverrides },
-  };
-}
+const firstFreeCases: Array<{
+  talent: keyof TalentEffectManifest;
+  flag: keyof CombatFlags;
+  card: Partial<BattleCard>;
+}> = [
+  {
+    talent: "firstBurnCardFree",
+    flag: "firstBurnCardFreeUsed",
+    card: { effects: [{ kind: "damage", damageType: "burn", amount: 1 }] },
+  },
+  {
+    talent: "firstHolyCardFree",
+    flag: "firstHolyCardFreeUsed",
+    card: { effects: [{ kind: "damage", damageType: "holy", amount: 1 }] },
+  },
+  {
+    talent: "firstPoisonCardFree",
+    flag: "firstPoisonCardFreeUsed",
+    card: { effects: [{ kind: "damage", damageType: "poison", amount: 1 }] },
+  },
+  {
+    talent: "firstBleedCardFree",
+    flag: "firstBleedCardFreeUsed",
+    card: { effects: [{ kind: "damage", damageType: "bleed", amount: 1 }] },
+  },
+  { talent: "firstConsumeCardFree", flag: "firstConsumeCardFreeUsed", card: { consume: true, effects: [] } },
+  {
+    talent: "firstCompanionCardFree",
+    flag: "firstCompanionCardFreeUsed",
+    card: { effects: [{ kind: "summon-companion", companionId: "wolf" }] },
+  },
+  { talent: "firstArcheryCardFree", flag: "firstArcheryCardFreeUsed", card: { tags: ["archery"], effects: [] } },
+];
 
-function physicalCard(overrides: Partial<BattleCard> = {}): BattleCard {
-  return makeTestCard({
-    id: "test",
-    title: "Test",
-    cost: 2,
-    effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
-    ...overrides,
-  });
-}
-
-function holyCard(): BattleCard {
-  return makeTestCard({
-    id: "holy",
-    title: "Holy",
-    cost: 2,
-    effects: [{ kind: "damage", damageType: "holy", amount: 5 }],
-  });
-}
-
-function poisonCard(): BattleCard {
-  return makeTestCard({
-    id: "poison",
-    title: "Poison",
-    cost: 2,
-    effects: [{ kind: "damage", damageType: "poison", amount: 2 }],
-  });
-}
-
-function bleedCard(): BattleCard {
-  return makeTestCard({
-    id: "bleed",
-    title: "Bleed",
-    cost: 2,
-    effects: [{ kind: "damage", damageType: "bleed", amount: 2 }],
-  });
-}
-
-function effectiveCost(
-  state: Pick<
-    BattleState,
-    "flags" | "talentEffects" | "trinketEffects" | "gearEffects" | "uniqueGear" | "encounterBenefits"
-  >,
-  card: BattleCard,
-): number {
-  return computeEffectiveCost(state, card).effectiveCost;
-}
-
-describe("computeEffectiveCost", () => {
-  it("returns base cost when no modifiers active", () => {
-    const state = makeState();
-    expect(effectiveCost(state, physicalCard())).toBe(2);
-  });
-
-  it("reduces cost by nextCardCostReduction", () => {
-    const state = makeState({ nextCardCostReduction: 1 });
-    expect(effectiveCost(state, physicalCard())).toBe(1);
-  });
-
-  it("does not reduce cost below 0 with nextCardCostReduction", () => {
-    const state = makeState({ nextCardCostReduction: 5 });
-    expect(effectiveCost(state, physicalCard())).toBe(0);
-  });
-
-  it("makes first holy card free when talent is active and flag not used", () => {
-    const state = makeState({ firstHolyCardFreeUsed: false }, { firstHolyCardFree: true });
-    expect(effectiveCost(state, holyCard())).toBe(0);
-  });
-
-  it("does not make non-first holy card free when flag is already used", () => {
-    const state = makeState({ firstHolyCardFreeUsed: true }, { firstHolyCardFree: true });
-    expect(effectiveCost(state, holyCard())).toBe(2);
-  });
-
-  it("makes first poison card free when talent is active", () => {
-    const state = makeState({ firstPoisonCardFreeUsed: false }, { firstPoisonCardFree: true });
-    expect(effectiveCost(state, poisonCard())).toBe(0);
-  });
-
-  it("makes first bleed card free when talent is active", () => {
-    const state = makeState({ firstBleedCardFreeUsed: false }, { firstBleedCardFree: true });
-    expect(effectiveCost(state, bleedCard())).toBe(0);
-  });
-
-  it("makes the first Burn card free when Flashpoint is active", () => {
-    const state = makeState({ firstBurnCardFreeUsed: false }, { firstBurnCardFree: true });
-    expect(effectiveCost(state, physicalCard({ effects: [{ kind: "damage", damageType: "burn", amount: 2 }] }))).toBe(
-      0,
-    );
-    expect(
-      effectiveCost(
-        { ...state, flags: { ...state.flags, firstBurnCardFreeUsed: true } },
-        physicalCard({ effects: [{ kind: "damage", damageType: "burn", amount: 2 }] }),
-      ),
-    ).toBe(2);
-  });
-
-  it("makes first companion card free when talent is active", () => {
-    const state = makeState({ firstCompanionCardFreeUsed: false }, { firstCompanionCardFree: true });
-    const card = physicalCard({
-      id: "wolf-companion",
-      effects: [{ kind: "summon-companion", companionId: "wolf" }],
+describe("first-card-free talents", () => {
+  it.each(firstFreeCases)("$talent pays for only its first matching card", ({ talent, flag, card }) => {
+    const first = makeTestCard({ ...card, id: "first", cost: 2, uid: 1 });
+    const second = makeTestCard({ ...card, id: "second", cost: 2, uid: 2 });
+    const state = patchBattleState({
+      mana: 0,
+      hand: [first, second],
+      talentEffects: { [talent]: true },
+      rng: () => 0.99,
     });
-    expect(effectiveCost(state, card)).toBe(0);
+    const unrelated = makeTestCard({ cost: 2, effects: [{ kind: "heal", amount: 1 }] });
+    expect(computeEffectiveCost(state, unrelated).effectiveCost).toBe(2);
+    expect(canPlayCard(state, first, 0)).toBe(true);
+    const result = playBattleCardResolved(state, first.id, 0).state;
+    expect(result.flags[flag]).toBe(true);
+    expect(result.mana).toBe(0);
+    expect(computeEffectiveCost(result, second).effectiveCost).toBe(2);
+    expect(canPlayCard(result, second, 0)).toBe(false);
+    expect(playBattleCardResolved(result, second.id, 0).state).toBe(result);
+    expect(state.flags[flag]).toBe(false);
   });
 
-  it("makes first archery card free when talent is active", () => {
-    const state = makeState({ firstArcheryCardFreeUsed: false }, { firstArcheryCardFree: true });
-    expect(effectiveCost(state, physicalCard({ tags: ["archery"] }))).toBe(0);
-  });
-
-  it("does not make a card free if it lacks the matching damage type", () => {
-    const state = makeState({}, { firstHolyCardFree: true });
-    const card = { ...physicalCard(), effects: [{ kind: "heal" as const, amount: 5 }] };
-    expect(effectiveCost(state, card)).toBe(2);
-  });
-
-  it("honors nextCardCostReduction even when first-card-free is already used", () => {
-    const state = makeState({ firstHolyCardFreeUsed: true, nextCardCostReduction: 1 }, { firstHolyCardFree: true });
-    expect(effectiveCost(state, holyCard())).toBe(1);
-  });
-
-  it("stacks nextCardCostReduction with first-card-free (free wins)", () => {
-    const state = makeState({ firstHolyCardFreeUsed: false, nextCardCostReduction: 1 }, { firstHolyCardFree: true });
-    expect(effectiveCost(state, holyCard())).toBe(0);
-  });
-
-  it("returns 0 and no consumed flags when FREE_CARD_SENTINEL is set", () => {
-    const state = makeState({ nextCardCostReduction: FREE_CARD_SENTINEL });
-    const { effectiveCost: cost, consumedFlags } = computeEffectiveCost(state, physicalCard());
-    expect(cost).toBe(0);
-    expect(consumedFlags.size).toBe(0);
-  });
-
-  it("consumes firstHolyCardFreeUsed when first holy card is free", () => {
-    const state = makeState({ firstHolyCardFreeUsed: false }, { firstHolyCardFree: true });
-    const { effectiveCost: cost, consumedFlags } = computeEffectiveCost(state, holyCard());
-    expect(cost).toBe(0);
-    expect(consumedFlags.has("firstHolyCardFreeUsed")).toBe(true);
-  });
-
-  it("disarms Arrow Dance when the next Archery card is free", () => {
-    const card = physicalCard({ tags: ["archery"] });
-    const state = makeState({ nextArcheryCardFree: true });
-    const { effectiveCost: cost, disarmedFlags } = computeEffectiveCost(state, card);
-    expect(cost).toBe(0);
-    expect(disarmedFlags.has("nextArcheryCardFree")).toBe(true);
-  });
-
-  it("disarms Windstep when the next Nature card is free", () => {
-    const card = physicalCard({ effects: [{ kind: "damage", damageType: "nature", amount: 5 }] });
-    const state = makeState({ nextNatureCardFree: true });
-    const { effectiveCost: cost, disarmedFlags } = computeEffectiveCost(state, card);
-    expect(cost).toBe(0);
-    expect(disarmedFlags.has("nextNatureCardFree")).toBe(true);
+  it("spends armed Holy, Archery, then Nature opportunities one at a time", () => {
+    const card = makeTestCard({ cost: 2, effects: [], tags: ["holy", "archery", "nature"] });
+    let state = patchBattleState({
+      flags: { nextHolyCardFree: true, nextArcheryCardFree: true, nextNatureCardFree: true },
+    });
+    for (const flag of ["nextHolyCardFree", "nextArcheryCardFree", "nextNatureCardFree"] as const) {
+      const result = computeEffectiveCost(state, card);
+      expect(result.effectiveCost).toBe(0);
+      expect(result.disarmedFlags).toEqual(new Set([flag]));
+      state = { ...state, flags: { ...state.flags, [flag]: false } };
+    }
+    expect(computeEffectiveCost(state, card).effectiveCost).toBe(2);
   });
 });

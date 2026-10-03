@@ -43,33 +43,20 @@ export function shouldPlayCardGoldGain(previousState: BattleSnapshot, nextState:
   return nextState.gold > previousState.gold && card.id !== "steal";
 }
 
-export function shouldShakeEnemyFromCombatTexts(combatTexts: CombatTextEvent[]) {
-  return combatTexts.some((ct) => ct.kind === "damage" && ct.impact !== false && ct.target === "enemy");
-}
-
-export function shouldShakePlayerFromCombatTexts(combatTexts: CombatTextEvent[]) {
-  return combatTexts.some((ct) => ct.kind === "damage" && ct.impact !== false && ct.target === "player");
-}
-
-export interface CombatTextShakeFeedback {
+export interface CombatTextPresenter {
+  showCombatTexts: (events: CombatTextEvent[]) => void;
   shakeEnemy: () => void;
   shakePlayer: () => void;
-}
-
-export function applyCombatTextShakeFeedback(combatTexts: CombatTextEvent[], feedback: CombatTextShakeFeedback) {
-  if (shouldShakeEnemyFromCombatTexts(combatTexts)) feedback.shakeEnemy();
-  if (shouldShakePlayerFromCombatTexts(combatTexts)) feedback.shakePlayer();
-}
-
-export interface CombatTextPresenter extends CombatTextShakeFeedback {
-  showCombatTexts: (events: CombatTextEvent[]) => void;
 }
 
 /** Single home for fight feedback: floating numbers + portrait shake + sounds. */
 export function presentCombatTexts(presenter: CombatTextPresenter, combatTexts: CombatTextEvent[]) {
   if (combatTexts.length === 0) return;
   presenter.showCombatTexts(combatTexts);
-  applyCombatTextShakeFeedback(combatTexts, presenter);
+  if (combatTexts.some((ct) => ct.kind === "damage" && ct.impact !== false && ct.target === "enemy"))
+    presenter.shakeEnemy();
+  if (combatTexts.some((ct) => ct.kind === "damage" && ct.impact !== false && ct.target === "player"))
+    presenter.shakePlayer();
   playCombatTextSounds(combatTexts);
 }
 

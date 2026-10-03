@@ -63,24 +63,19 @@ export function isNatureCard(card: BattleCard): boolean {
 }
 
 export function damageOnlyEffects(effects: readonly BattleCardEffect[]): BattleCardEffect[] {
-  const damageEffects: BattleCardEffect[] = [];
-  for (const effect of effects) {
-    if (effect.kind === "damage" || effect.kind === "random-damage") {
-      damageEffects.push(effect);
-    }
+  return effects.flatMap((effect): BattleCardEffect[] => {
+    if (effect.kind === "damage" || effect.kind === "random-damage") return [effect];
     if (effect.kind === "chance") {
       const successEffects = damageOnlyEffects(effect.successEffects);
       const failureEffects = damageOnlyEffects(effect.failureEffects);
-      if (successEffects.length || failureEffects.length) {
-        damageEffects.push({ ...effect, successEffects, failureEffects });
-      }
+      return successEffects.length || failureEffects.length ? [{ ...effect, successEffects, failureEffects }] : [];
     }
     if (effect.kind === "repeat-over-turns") {
       const inner = damageOnlyEffects(effect.effects);
-      if (inner.length) damageEffects.push({ ...effect, effects: inner });
+      return inner.length ? [{ ...effect, effects: inner }] : [];
     }
-  }
-  return damageEffects;
+    return [];
+  });
 }
 
 function effectTarget(effect: BattleCardEffect): "player" | "enemy" | null {

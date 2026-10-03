@@ -32,17 +32,10 @@ export function logStorageFailure(message: string, error?: unknown) {
   // Preserve readable browser storage errors from unknown throws (e.g.
   // DOMException quota errors, which are not instanceof Error and serialize
   // to {}). Narrowed before string conversion so no-base-to-string stays clean.
-  if (typeof error === "string") {
-    logError(message, "storage", { error });
-    return;
-  }
-  if (typeof error === "number" || typeof error === "boolean" || typeof error === "bigint") {
-    logError(message, "storage", { error: `${error}` });
-    return;
-  }
-  if (typeof error === "object" && error !== null) {
-    logError(message, "storage", { error: toLoggableStorageDetail(error) });
-    return;
-  }
-  logError(message, "storage", { error: Object.prototype.toString.call(error) });
+  let detail: string;
+  if (typeof error === "string") detail = error;
+  else if (typeof error === "number" || typeof error === "boolean" || typeof error === "bigint") detail = `${error}`;
+  else if (typeof error === "object" && error !== null) detail = toLoggableStorageDetail(error);
+  else detail = Object.prototype.toString.call(error);
+  logError(message, "storage", { error: detail });
 }

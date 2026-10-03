@@ -61,35 +61,30 @@ describe("gear domain", () => {
     expect(rogue.rogue["right-accessory"]).toBe(ring.instanceId);
   });
 
-  it("returns unchanged loadouts for unknown definition or incompatible slot", () => {
-    const loadouts = createEmptyGearLoadouts();
-    expect(
-      equipGear(
-        loadouts,
-        "knight",
-        "body",
-        {
-          instanceId: "x",
-          definitionId: "not-a-gear-id",
-          affixes: [],
-        },
-        [],
-      ),
-    ).toBe(loadouts);
+  it("rejects missing items and incompatible slots without removing equipped Gear", () => {
+    const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "left-accessory", ring, [ring]);
+    expect(equipGear(loadouts, "ranger", "right-accessory", ring, [])).toBe(loadouts);
+    expect(equipGear(loadouts, "ranger", "body", ring, [ring])).toBe(loadouts);
+  });
 
-    expect(
-      equipGear(
-        loadouts,
-        "knight",
-        "right-accessory",
-        {
-          instanceId: "body-1",
-          definitionId: "leather-armor-basic",
-          affixes: [],
-        },
-        [],
-      ),
-    ).toBe(loadouts);
+  it("uses live inventory definitions when a stale transfer could displace another hand item", () => {
+    const dagger = makeGearInstance("dagger-basic", "dagger-1");
+    const shield = makeGearInstance("leather-buckler-basic", "shield-1");
+    const inventory = [dagger, shield];
+    let loadouts = equipGear(createEmptyGearLoadouts(), "rogue", "main-hand", dagger, inventory);
+    loadouts = equipGear(loadouts, "knight", "off-hand", shield, inventory);
+    const before = structuredClone(loadouts);
+    const transferred = equipGear(
+      loadouts,
+      "knight",
+      "main-hand",
+      { ...dagger, definitionId: "staff-basic" },
+      inventory,
+    );
+    expect(transferred.knight["main-hand"]).toBe(dagger.instanceId);
+    expect(transferred.knight["off-hand"]).toBe(shield.instanceId);
+    expect(transferred.rogue["main-hand"]).toBeNull();
+    expect(loadouts).toEqual(before);
   });
 
   it("aggregates equipped affix physical damage", () => {

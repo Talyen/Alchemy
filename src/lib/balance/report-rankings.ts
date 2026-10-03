@@ -100,31 +100,18 @@ function pairedStandardError(n: number, differenceSum: number, squaredDifference
 }
 
 export function makePairedDelta(id: string, stats: PairedWinStats): PairedDelta {
-  if (stats.n === 0) {
-    return {
-      id,
-      delta: 0,
-      winRate: 0,
-      baseline: 0,
-      se: 0,
-      turnDelta: 0,
-      baselineTurns: 0,
-      treatmentTurns: 0,
-      turnSe: 0,
-      n: 0,
-      noisy: true,
-    };
-  }
-  const winRate = stats.treatmentWins / stats.n;
-  const baseline = stats.baselineWins / stats.n;
+  // Empty samples use the same result shape and finite zero measurements.
+  const mean = (total: number) => (stats.n === 0 ? 0 : total / stats.n);
+  const winRate = mean(stats.treatmentWins);
+  const baseline = mean(stats.baselineWins);
   const differenceSum = stats.treatmentWins - stats.baselineWins;
-  const delta = differenceSum / stats.n;
+  const delta = mean(differenceSum);
   const se = pairedStandardError(stats.n, differenceSum, stats.squaredDifferenceSum);
 
-  const treatmentTurns = stats.treatmentTurns / stats.n;
-  const baselineTurns = stats.baselineTurns / stats.n;
+  const treatmentTurns = mean(stats.treatmentTurns);
+  const baselineTurns = mean(stats.baselineTurns);
   const turnDiffSum = stats.treatmentTurns - stats.baselineTurns;
-  const turnDelta = turnDiffSum / stats.n;
+  const turnDelta = mean(turnDiffSum);
   const turnSe = pairedStandardError(stats.n, turnDiffSum, stats.squaredTurnDifferenceSum);
 
   return {

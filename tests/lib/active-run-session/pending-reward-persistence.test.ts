@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createGearInstance } from "@/lib/gear";
 import { gearDefinitions } from "@/lib/gear/definitions";
-import { cardLibrary, getCardKeywords, trinketLibrary } from "@/lib/game-data";
+import { cardLibrary, trinketById } from "@/lib/game-data";
 import type { Destination } from "@/lib/routing";
 import {
   restorePendingReward,
@@ -10,235 +10,97 @@ import {
 } from "@/lib/active-run-session/pending-reward-persistence";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 
+const slash = cardLibrary.find((card) => card.id === "slash")!;
+
 describe("pending reward persistence", () => {
-  it("round-trips gear reward choices with affixes intact", () => {
-    const instance = createGearInstance(gearDefinitions["ruby-ring-basic"], [
-      { id: "flat-burn", value: 1 },
-      { id: "flat-freeze", value: 1 },
-    ]);
-    const rewardState = {
-      ...createEmptyRewardState(),
+  it("round-trips gear identity, affixes, selection, currencies and victory routing", () => {
+    const instance = createGearInstance(gearDefinitions["ruby-ring-basic"], [{ id: "flat-burn", value: 1 }]);
+    const reward = {
+      ...createEmptyRewardState(["Campfire"]),
       rewardType: "gear" as const,
       choices: [instance],
       gold: 12,
+      materials: { ...createEmptyRewardState().materials, herbs: 3 },
       selectedId: instance.instanceId,
+      selectedBossId: "frostwarden",
       lastVictoryEnemyType: "elite" as const,
       lastVictoryContentSystem: "campaign" as const,
     };
-
-    const persisted = serializePendingReward(rewardState);
-    expect(persisted).toEqual({
-      rewardType: "gear",
-      gearChoices: [instance],
-      companionChoiceIds: [],
-      selectedId: instance.instanceId,
-      gold: 12,
-      materials: rewardState.materials,
-      destinations: [],
-      selectedBossId: null,
-      lastVictoryEnemyType: "elite",
-      lastVictoryContentSystem: "campaign",
-    });
-
-    const restored = restorePendingReward(persisted!);
-    expect(restored).toEqual(rewardState);
+    const persisted = serializePendingReward(reward)!;
+    expect(persisted.destinations).not.toBe(reward.destinations);
+    expect(restorePendingReward(JSON.parse(JSON.stringify(persisted)))).toEqual(reward);
   });
 
-  it.each(["card", "boon", "trinket", "gear"] as const)(
-    "drops an empty %s reward with a stale selection",
+  it.each(["card", "boon", "trinket"] as const)(
+    "restores %s choices from the catalog while dropping unknown and prototype IDs",
     (rewardType) => {
-      // selectedId is only ever set at claim time alongside its choices; a lone
-      // selection cannot resolve to anything, so it must not keep a reward alive.
-      const state = { ...createEmptyRewardState(), rewardType, choices: [], selectedId: "slash" };
-      expect(serializePendingReward(state)).toBeNull();
-      const persisted = serializePendingReward({ ...state, gold: 1 })!;
-      persisted.gold = 0;
-      expect(restorePendingReward(persisted)).toBeNull();
+      const reward =
+        rewardType === "card"
+          ? { ...createEmptyRewardState(), rewardType, choices: [slash] }
+          : { ...createEmptyRewardState(), rewardType, choices: [trinketById["bone-charm"]!] };
+      const persisted = serializePendingReward(reward)!;
+      if (persisted.rewardType === "gear") throw new Error("Expected catalog reward");
+      expect(persisted.rewardType).toBe(rewardType);
+      persisted.choiceIds = ["toString", "constructor", "missing-choice", reward.choices[0]!.id];
+      expect(restorePendingReward(persisted)).toEqual(reward);
     },
   );
 
-  it("restores trinket rewardType from persisted saves", () => {
-    const parsed = restorePendingReward({
-      rewardType: "trinket",
-      choiceIds: ["bone-charm"],
-      companionChoiceIds: [],
-      selectedId: null,
-      gold: 0,
-      materials: { wood: 0, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 },
-      destinations: [],
-      selectedBossId: null,
-      lastVictoryEnemyType: null,
-      lastVictoryContentSystem: null,
-    });
-    expect(parsed?.rewardType).toBe("trinket");
-    expect(parsed?.choices).toHaveLength(1);
+  it.each(["card", "gear"] as const)("drops an empty %s reward with a stale selection", (rewardType) => {
+    const reward = { ...createEmptyRewardState(), rewardType, choices: [], selectedId: "slash" };
+    expect(serializePendingReward(reward)).toBeNull();
+    const persisted = serializePendingReward({ ...reward, gold: 1 })!;
+    persisted.gold = 0;
+    expect(restorePendingReward(persisted)).toBeNull();
   });
 
-  it("round-trips a run-scoped boon reward distinctly", () => {
-    const entry = trinketLibrary.find((trinket) => trinket.id === "bone-charm");
-    expect(entry).toBeDefined();
-    const rewardState = {
+  it.each(["card", "gear"] as const)("retains material-only %s rewards without resolvable choices", (rewardType) => {
+    const reward = {
       ...createEmptyRewardState(),
-      rewardType: "boon" as const,
-      choices: [entry!],
+      rewardType,
+      choices: [],
+      materials: { ...createEmptyRewardState().materials, wood: 2 },
     };
-    const persisted = serializePendingReward(rewardState);
-    const boon = restorePendingReward(persisted!);
-    expect(persisted?.rewardType).toBe("boon");
-    expect(boon?.rewardType).toBe("boon");
-    expect(boon?.choices).toEqual([entry]);
+    const persisted = serializePendingReward(reward)!;
+    if (persisted.rewardType === "card") persisted.choiceIds = ["missing-choice"];
+    expect(restorePendingRewardBundle(persisted)).toEqual({ rewardState: reward, companionRewardCards: null });
   });
 
-  it("filters invalid destination labels on restore", () => {
-    const restored = restorePendingReward({
-      rewardType: "trinket",
-      choiceIds: ["bone-charm"],
-      companionChoiceIds: [],
-      selectedId: null,
-      gold: 0,
-      materials: { wood: 0, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 },
-      destinations: ["Campfire", "Not A Real Destination", "Mystery"] as Destination[],
-      selectedBossId: null,
-      lastVictoryEnemyType: null,
-      lastVictoryContentSystem: null,
-    });
-    expect(restored?.destinations).toEqual(["Campfire", "Mystery"]);
+  it("retains valid exit destinations after filtering corrupt labels, even with no reward choices", () => {
+    const persisted = serializePendingReward(createEmptyRewardState(["Campfire"]))!;
+    persisted.destinations = ["Campfire", "Not A Real Destination", "Mystery"] as Destination[];
+    expect(restorePendingReward(persisted)).toEqual(createEmptyRewardState(["Campfire", "Mystery"]));
   });
 
-  it.each(["companion", "archery", "wish", "nature"] as const)(
-    "round-trips %s bonus choices alongside the primary reward",
-    (theme) => {
-      const bonuses = cardLibrary
-        .filter((card) =>
-          theme === "companion"
-            ? card.effects.some((effect) => effect.kind === "summon-companion")
-            : getCardKeywords(card).includes(theme) &&
-              !card.effects.some((effect) => effect.kind === "summon-companion"),
-        )
-        .slice(0, 3);
-      expect(bonuses.length).toBeGreaterThan(0);
-      const primary = cardLibrary.find((card) => card.id === "slash")!;
-      const rewardState = {
-        ...createEmptyRewardState(),
-        choices: [primary],
-        gold: 8,
-      };
-      const persisted = serializePendingReward(rewardState, bonuses)!;
-
-      expect(persisted.companionChoiceIds).toEqual(bonuses.map((card) => card.id));
-      const restored = restorePendingRewardBundle(persisted);
-      expect(restored.rewardState).toEqual(rewardState);
-      expect(restored.companionRewardCards).toEqual(bonuses);
-    },
-  );
-
-  it("preserves mixed bonus choices in order while dropping unknown IDs", () => {
+  it("preserves ordered mixed bonuses and excluded cards while dropping unknown bonus IDs", () => {
     const companion = cardLibrary.find((card) => card.effects.some((effect) => effect.kind === "summon-companion"))!;
-    const plain = cardLibrary.find((card) => card.id === "slash")!;
     const excluded = cardLibrary.find((card) => card.excludeFromOfferPool)!;
-    const bonuses = [plain, companion, excluded];
-    const rewardState = { ...createEmptyRewardState(), choices: [plain] };
-    const persisted = serializePendingReward(rewardState, bonuses)!;
-    persisted.companionChoiceIds.splice(1, 0, "no-such-bonus-card");
-
-    const restored = restorePendingRewardBundle(persisted);
-    expect(restored.rewardState).toEqual(rewardState);
-    expect(restored.companionRewardCards).toEqual(bonuses);
+    const bonuses = [slash, companion, excluded];
+    const reward = { ...createEmptyRewardState(), choices: [excluded], gold: 8 };
+    const persisted = serializePendingReward(reward, bonuses)!;
+    expect(persisted.companionChoiceIds).toEqual(bonuses.map((card) => card.id));
+    persisted.companionChoiceIds.splice(1, 0, "missing-bonus");
+    expect(restorePendingRewardBundle(persisted)).toEqual({ rewardState: reward, companionRewardCards: bonuses });
   });
 
   it("keeps bonus cards reachable when the primary reward has no resolvable choices", () => {
-    const bonus = cardLibrary.find((card) => card.id === "slash")!;
     const persisted = serializePendingReward({ ...createEmptyRewardState(), rewardType: "trinket", choices: [] }, [
-      bonus,
+      slash,
     ])!;
-    if (persisted.rewardType === "gear") throw new Error("Expected catalog reward");
+    if (persisted.rewardType !== "trinket") throw new Error("Expected trinket reward");
     persisted.choiceIds = ["missing-trinket"];
     expect(restorePendingReward(persisted)).toBeNull();
     expect(restorePendingRewardBundle(persisted)).toEqual({
       rewardState: createEmptyRewardState(),
-      companionRewardCards: [bonus],
+      companionRewardCards: [slash],
     });
   });
 
-  it.each([{ ids: [] }, { ids: ["no-such-bonus-card"] }])("restores no bonus for IDs $ids", ({ ids }) => {
-    const rewardState = {
-      ...createEmptyRewardState(),
-      choices: [cardLibrary.find((card) => card.id === "slash")!],
-    };
-    const persisted = { ...serializePendingReward(rewardState)!, companionChoiceIds: ids };
-    expect(restorePendingRewardBundle(persisted)).toEqual({ rewardState, companionRewardCards: null });
-    expect(restorePendingRewardBundle({ ...persisted, rewardType: "card", choiceIds: [] })).toEqual({
-      rewardState: null,
-      companionRewardCards: null,
-    });
-  });
-
-  it("restores cards excluded from the general offer pool", () => {
-    const excludedCard = cardLibrary.find((card) => card.excludeFromOfferPool);
-    expect(excludedCard).toBeDefined();
-
-    const rewardState = {
-      ...createEmptyRewardState(),
-      rewardType: "card" as const,
-      choices: [excludedCard!],
-    };
-
-    const persisted = serializePendingReward(rewardState);
-    if (persisted?.rewardType === "card") {
-      expect(persisted.choiceIds).toEqual([excludedCard!.id]);
-    } else {
-      expect.fail("Expected persisted reward to be of type card");
-    }
-
-    const restored = restorePendingReward(persisted!);
-    expect(restored?.rewardType).toBe("card");
-    if (restored?.rewardType === "card") {
-      expect(restored.choices[0]?.id).toBe(excludedCard!.id);
-      expect(restored.choices[0]?.title).toBe(excludedCard!.title);
-    }
-  });
-
-  it("safely ignores Object prototype property names in choiceIds", () => {
-    const plain = cardLibrary.find((card) => card.id === "slash")!;
-    const rewardState = {
-      ...createEmptyRewardState(),
-      rewardType: "card" as const,
-      choices: [plain],
-    };
-    const persisted = serializePendingReward(rewardState)!;
-    if (persisted.rewardType === "card") {
-      persisted.choiceIds = ["toString", "constructor", "valueOf", plain.id];
-    }
-    const restored = restorePendingReward(persisted);
-    expect(restored?.rewardType).toBe("card");
-    if (restored?.rewardType === "card") {
-      expect(restored.choices).toEqual([plain]);
-    }
-  });
-
-  it("serializes and restores gear rewards with empty choices while preserving shared currencies", () => {
-    const rewardState = {
-      ...createEmptyRewardState(),
-      rewardType: "gear" as const,
-      choices: [],
-      gold: 25,
-      materials: { wood: 2, iron: 1, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 },
-    };
-    const persisted = serializePendingReward(rewardState);
-    expect(persisted).toEqual({
-      rewardType: "gear",
-      gearChoices: [],
-      companionChoiceIds: [],
-      selectedId: null,
-      gold: 25,
-      materials: rewardState.materials,
-      destinations: [],
-      selectedBossId: null,
-      lastVictoryEnemyType: null,
-      lastVictoryContentSystem: null,
-    });
-
-    const restored = restorePendingReward(persisted!);
-    expect(restored).toEqual(rewardState);
+  it("drops a bundle when neither its primary nor bonus choices can be restored", () => {
+    const persisted = serializePendingReward({ ...createEmptyRewardState(), choices: [slash] }, [slash])!;
+    if (persisted.rewardType !== "card") throw new Error("Expected card reward");
+    persisted.choiceIds = [];
+    persisted.companionChoiceIds = ["missing-bonus"];
+    expect(restorePendingRewardBundle(persisted)).toEqual({ rewardState: null, companionRewardCards: null });
   });
 });

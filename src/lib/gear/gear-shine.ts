@@ -12,32 +12,15 @@ import type { GearInstance } from "./types";
 const UNIQUE_SHINE_COLORS = [UI_GOLD.light, UI_GOLD.base, UI_GOLD.deep, UI_GOLD.pale, UI_GOLD.light] as const;
 const UNIQUE_TEXT_SHINE_COLORS = [UI_GOLD.pale, `color-mix(in srgb, ${UI_GOLD.pale} 55%, transparent)`] as const;
 
-function affixShineKeywordIds(affix: {
-  descriptionTemplate: string;
-  visibleKeywordIds?: readonly KeywordId[];
-}): readonly KeywordId[] {
-  return affix.visibleKeywordIds ?? extractKeywordIds(affix.descriptionTemplate);
-}
-
 export function selectTextShineKeywordIds(
   instanceKeywordIds: readonly KeywordId[],
   affinityKeywords: readonly KeywordId[],
 ): KeywordId[] {
-  const affinity = new Set<KeywordId>(affinityKeywords);
-  const preferred: KeywordId[] = [];
-  for (const keywordId of instanceKeywordIds) {
-    if (affinity.has(keywordId)) {
-      preferred.push(keywordId);
-      if (preferred.length === MAX_TEXT_SHINE_KEYWORDS) return preferred;
-    }
-  }
-  for (const keywordId of instanceKeywordIds) {
-    if (!affinity.has(keywordId)) {
-      preferred.push(keywordId);
-      if (preferred.length === MAX_TEXT_SHINE_KEYWORDS) break;
-    }
-  }
-  return preferred;
+  const affinity = new Set(affinityKeywords);
+  return [
+    ...instanceKeywordIds.filter((id) => affinity.has(id)),
+    ...instanceKeywordIds.filter((id) => !affinity.has(id)),
+  ].slice(0, MAX_TEXT_SHINE_KEYWORDS);
 }
 
 export function getGearInstanceKeywordIds(instance: GearInstance): KeywordId[] {
@@ -53,12 +36,6 @@ export function getGearInstanceKeywordIds(instance: GearInstance): KeywordId[] {
   return [...keywordIds].sort();
 }
 
-function collectShineColors(keywordIds: readonly KeywordId[], mode: "border" | "text"): readonly string[] {
-  const colors = mode === "text" ? getKeywordTextShineColors(keywordIds) : getKeywordBorderShineColors(keywordIds);
-  if (colors.length > 0) return colors;
-  return mode === "border" ? [...NEUTRAL_SHINE_FALLBACK] : NEUTRAL_SHINE_FALLBACK.slice(0, 2);
-}
-
 export function getUniqueGearShineColors(): readonly string[] {
   return UNIQUE_SHINE_COLORS;
 }
@@ -67,16 +44,14 @@ export function getUniqueGearTextShineColors(): readonly string[] {
   return UNIQUE_TEXT_SHINE_COLORS;
 }
 
-function resolveShineColors(
-  rarity: string | null | undefined,
-  mode: "border" | "text",
-  keywordIds: readonly KeywordId[],
-): readonly string[] {
-  if (rarity === "unique") {
-    return mode === "text" ? [...UNIQUE_TEXT_SHINE_COLORS] : collectShineColors(keywordIds, "border");
-  }
-  if (rarity !== "astral") return [];
-  return collectShineColors(keywordIds, mode);
+function borderShineColors(keywordIds: readonly KeywordId[]): readonly string[] {
+  const colors = getKeywordBorderShineColors(keywordIds);
+  return colors.length ? colors : [...NEUTRAL_SHINE_FALLBACK];
+}
+
+function textShineColors(keywordIds: readonly KeywordId[]): readonly string[] {
+  const colors = getKeywordTextShineColors(keywordIds);
+  return colors.length ? colors : NEUTRAL_SHINE_FALLBACK.slice(0, 2);
 }
 
 export function getGearDefinitionShineColors(definition: GearDefinition): readonly string[] {
@@ -85,28 +60,25 @@ export function getGearDefinitionShineColors(definition: GearDefinition): readon
     definition.rarity === "unique"
       ? extractKeywordIds(definition.descriptionLines.join(" "))
       : definition.affinityKeywords;
-  return resolveShineColors(definition.rarity, "border", keywords);
+  return borderShineColors(keywords);
 }
 
 export function getGearInstanceShineColors(instance: GearInstance): readonly string[] {
   const definition = gearDefinitions[instance.definitionId];
   if (!definition || (definition.rarity !== "unique" && definition.rarity !== "astral")) return [];
-  return resolveShineColors(definition.rarity, "border", getGearInstanceKeywordIds(instance));
+  return borderShineColors(getGearInstanceKeywordIds(instance));
 }
 
 export function getGearDefinitionTextShineColors(definition: GearDefinition): readonly string[] {
-  return resolveShineColors(definition.rarity, "text", definition.affinityKeywords);
+  if (definition.rarity === "unique") return [...UNIQUE_TEXT_SHINE_COLORS];
+  return definition.rarity === "astral" ? textShineColors(definition.affinityKeywords) : [];
 }
 
 export function getGearInstanceTextShineColors(instance: GearInstance): readonly string[] {
   const definition = gearDefinitions[instance.definitionId];
   if (!definition || (definition.rarity !== "unique" && definition.rarity !== "astral")) return [];
   if (definition.rarity === "unique") return [...UNIQUE_TEXT_SHINE_COLORS];
-  return resolveShineColors(
-    definition.rarity,
-    "text",
-    selectTextShineKeywordIds(getGearInstanceKeywordIds(instance), definition.affinityKeywords),
-  );
+  return textShineColors(selectTextShineKeywordIds(getGearInstanceKeywordIds(instance), definition.affinityKeywords));
 }
 
 export const GEAR_ASTRAL_SHINE_BORDER_WIDTH = 2;
@@ -116,6 +88,13 @@ export function getAstralShineColors(instance: GearInstance): readonly string[] 
   return colors.length > 0 ? colors : undefined;
 }
 
+function affixShineKeywordIds(affix: {
+  descriptionTemplate: string;
+  visibleKeywordIds?: readonly KeywordId[];
+}): readonly KeywordId[] {
+  return affix.visibleKeywordIds ?? extractKeywordIds(affix.descriptionTemplate);
+}
+
 export function getGearAffixTextShineColors(affix: { descriptionTemplate: string }): readonly string[] {
-  return collectShineColors(affixShineKeywordIds(affix), "text");
+  return textShineColors(affixShineKeywordIds(affix));
 }

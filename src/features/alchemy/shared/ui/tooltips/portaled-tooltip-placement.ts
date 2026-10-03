@@ -42,16 +42,17 @@ export function usePortaledTooltipPlacement(
   maxWidthFraction?: number,
 ) {
   const tooltipRef = useRef<HTMLDivElement>(null);
-  const [placeBelow, setPlaceBelow] = useState(false);
-  const [tooltipSide, setTooltipSide] = useState<PortaledTooltipSide | null>(null);
-  const [tooltipStyle, setTooltipStyle] = useState<CSSProperties | undefined>(undefined);
+  const [position, setPosition] = useState<{
+    placement: Placement;
+    tooltipStyle: CSSProperties | undefined;
+  }>({ placement: "top", tooltipStyle: undefined });
 
   useLayoutEffect(() => {
     const trigger = triggerRef.current;
     const tooltipEl = tooltipRef.current;
     if (!active || !trigger || !tooltipEl) {
       if (tooltipEl) tooltipEl.style.width = "";
-      setTooltipStyle(undefined);
+      setPosition((previous) => ({ ...previous, tooltipStyle: undefined }));
       return;
     }
 
@@ -100,12 +101,15 @@ export function usePortaledTooltipPlacement(
         ],
       }).then(({ x, y, placement: finalPlacement }) => {
         if (cancelled || currentMeasurement !== measurement) return;
-        const state = floatingPlacementToTooltipState(finalPlacement);
-        setPlaceBelow(state.placeBelow);
-        setTooltipSide(state.tooltipSide);
         const left = `${x}px`;
         const top = `${y}px`;
-        setTooltipStyle((previous) => (previous?.left === left && previous.top === top ? previous : { left, top }));
+        setPosition((previous) =>
+          previous.placement === finalPlacement &&
+          previous.tooltipStyle?.left === left &&
+          previous.tooltipStyle.top === top
+            ? previous
+            : { placement: finalPlacement, tooltipStyle: { left, top } },
+        );
       });
     };
 
@@ -138,5 +142,5 @@ export function usePortaledTooltipPlacement(
     };
   }, [active, triggerRef, padding, placement, maxWidthFraction]);
 
-  return { tooltipRef, placeBelow, tooltipSide, tooltipStyle };
+  return { tooltipRef, ...floatingPlacementToTooltipState(position.placement), tooltipStyle: position.tooltipStyle };
 }

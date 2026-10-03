@@ -88,10 +88,9 @@ export function nextRunRngValue(state: RunRngState, stream: RunRngStream): { val
 }
 
 export function stepRunRng(state: RunRngState, stream: RunRngStream): number {
-  const salt = getRunStreamSalt(stream);
-  const nextCounter = (state.counters[stream] ?? 0) + 1;
+  const { value, nextCounter } = nextRunRngValue(state, stream);
   state.counters[stream] = nextCounter;
-  return runValueAtCounter(state.seed, salt, nextCounter);
+  return value;
 }
 
 export function createRunStateRng(state: RunRngState, stream: RunRngStream): Rng {
@@ -149,12 +148,12 @@ function shuffleOwned<T>(items: T[], rng: Rng): T[] {
 }
 
 export function sampleItems<T>(items: readonly T[], count: number, rng: Rng): T[] {
-  if (!Number.isInteger(count) || count < 0) throw new Error("sampleItems requires a non-negative integer count");
-  if (count === 0) return [];
   return sampleOwned([...items], count, rng);
 }
 
 function sampleOwned<T>(items: T[], count: number, rng: Rng): T[] {
+  if (!Number.isInteger(count) || count < 0) throw new Error("sampleItems requires a non-negative integer count");
+  if (count === 0) return [];
   // Keep the full shuffle: even a small sample must preserve seeded results
   // and the stream position used by subsequent rewards and encounters.
   shuffleOwned(items, rng);
@@ -199,8 +198,6 @@ export function sampleItemsExcluding<T, K>(
   keyOf: (item: T) => K,
 ): T[] {
   const eligible = items.filter((item) => !exclude.has(keyOf(item)));
-  if (!Number.isInteger(count) || count < 0) throw new Error("sampleItems requires a non-negative integer count");
-  if (count === 0) return [];
   return sampleOwned(eligible, count, rng);
 }
 

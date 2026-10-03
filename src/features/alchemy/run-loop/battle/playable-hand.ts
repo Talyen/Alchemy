@@ -74,14 +74,11 @@ export function findBestPlayableHandCard(
   // Leave potentially lethal card costs to manual play, including costs after
   // an attack and self-damage that defenses might mitigate.
   const playable = getPlayableHandCards(state, options).filter(({ card }) => !hasPotentialLethalSelfCost(card, state));
-  if (playable.length === 0) return null;
-  if (state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR) {
-    const defensive = playable.filter(({ card }) => getImmediateDefense(card, state) > 0);
-    if (defensive.length > 0) {
-      return pickHighestScoring(defensive, (card) => getEffectiveDamageScore(card, state));
-    }
-  }
-  return pickHighestScoring(playable, (card) => getEffectiveDamageScore(card, state));
+  const defensive =
+    state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR
+      ? playable.filter(({ card }) => getImmediateDefense(card, state) > 0)
+      : [];
+  return pickHighestScoring(defensive.length ? defensive : playable, (card) => getEffectiveDamageScore(card, state));
 }
 
 /** Greedy Wish pick: highest effective-damage score wins, ties go to the earliest option. */
@@ -90,9 +87,10 @@ export function findBestWishChoice(state: BattleSnapshot): BattleCard | null {
   if (!options || options.length === 0) return null;
   const pairs = options.flatMap((card, index) => (card ? [{ card, index }] : []));
   const safePairs = pairs.filter(({ card }) => !hasPotentialLethalSelfCost(card, state));
-  if (safePairs.length > 0)
-    return pickHighestScoring(safePairs, (card) => getEffectiveDamageScore(card, state))?.card ?? null;
-  return pickHighestScoring(pairs, (card) => getEffectiveDamageScore(card, state))?.card ?? null;
+  return (
+    pickHighestScoring(safePairs.length ? safePairs : pairs, (card) => getEffectiveDamageScore(card, state))?.card ??
+    null
+  );
 }
 
 export function getHandCardKey(card: BattleCard, index?: number): string {
@@ -135,13 +133,5 @@ export function handHasHiddenCard(
 }
 
 export function getPlayableHandCardKeys(battleState: BattleSnapshot): Set<string> {
-  const keys = new Set<string>();
-  for (let index = 0; index < battleState.hand.length; index++) {
-    const card = battleState.hand[index];
-    if (!card) continue;
-    if (canPlayCard(battleState, card, index, PLAYABLE_HAND_OPTIONS)) {
-      keys.add(getHandCardKey(card, index));
-    }
-  }
-  return keys;
+  return new Set(getPlayableHandCards(battleState).map(({ card, index }) => getHandCardKey(card, index)));
 }

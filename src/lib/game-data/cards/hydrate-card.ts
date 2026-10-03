@@ -5,10 +5,7 @@ import { cardById } from "./library/cards";
 export type SavedCard = BattleCard;
 
 function cloneEffect(effect: BattleCard["effects"][number]): BattleCard["effects"][number] {
-  if (effect.kind === "damage" && effect.damageTypePool) {
-    return { ...effect, damageTypePool: [...effect.damageTypePool] };
-  }
-  if (effect.kind === "random-damage" && effect.damageTypePool) {
+  if ((effect.kind === "damage" || effect.kind === "random-damage") && effect.damageTypePool) {
     return { ...effect, damageTypePool: [...effect.damageTypePool] };
   }
   if (effect.kind === "player-status" && effect.statusPool) {
@@ -35,7 +32,9 @@ export function cloneBattleCard(card: BattleCard): BattleCard {
     descriptionLines: [...card.descriptionLines],
     effects: card.effects.map(cloneEffect),
     ...(card.tags ? { tags: [...card.tags] } : {}),
-    ...(card.corruptedValuePositions ? { corruptedValuePositions: [...card.corruptedValuePositions] } : {}),
+    ...(card.corruptedValuePositions
+      ? { corruptedValuePositions: card.corruptedValuePositions.map((position) => ({ ...position })) }
+      : {}),
   };
 }
 
@@ -54,10 +53,10 @@ export function hydrateCard(savedCard: SavedCard): BattleCard {
   // Missing Consume meant reusable in complete saved content, even if the catalog now Consumes.
   const consume = savedCard.consume ?? (keepSavedContent ? undefined : catalogConsume);
 
-  return {
+  return cloneBattleCard({
     ...catalogMetadata,
-    descriptionLines: [...content.descriptionLines],
-    effects: content.effects.map(cloneEffect),
+    descriptionLines: content.descriptionLines,
+    effects: content.effects,
     cost: hydrateCost(savedCard, libraryCard),
     ...(consume !== undefined && { consume }),
     ...(savedCard.brewed !== undefined && { brewed: savedCard.brewed }),
@@ -68,5 +67,5 @@ export function hydrateCard(savedCard: SavedCard): BattleCard {
       savedCard.corruptedValuePositions?.length && {
         corruptedValuePositions: savedCard.corruptedValuePositions,
       }),
-  };
+  });
 }

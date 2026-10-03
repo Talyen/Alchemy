@@ -20,7 +20,7 @@ import {
   type GearInstance,
 } from "@/lib/gear";
 import { cn } from "@/lib/utils";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { PageLayout, ScreenHeaderRow } from "../../shared/ui/layout-components";
 import { FadeSlot } from "../../shared/ui/use-fade";
 import { ArmoryCharacterTabs, ArmoryOverlays, type ArmoryScreenProps } from "./armory";
@@ -101,22 +101,19 @@ export function ArmoryScreen({
     clearTargeting,
   } = useArmoryTargetingState({ editable, craftingCurrencies, characterId, inventoryById });
 
-  const handleCombatLockedAttempt = useCallback(() => {
+  function handleCombatLockedAttempt() {
     if (!browseOnly) return;
     setNotice(COMBAT_LOCKED_MESSAGE);
     playUISound("error");
-  }, [browseOnly]);
+  }
 
-  const requireEditable = useCallback(
-    (action: () => void) => {
-      if (!editable) {
-        handleCombatLockedAttempt();
-        return;
-      }
-      action();
-    },
-    [editable, handleCombatLockedAttempt],
-  );
+  const requireEditable = (action: () => void) => {
+    if (!editable) {
+      handleCombatLockedAttempt();
+      return;
+    }
+    action();
+  };
 
   const {
     flyingItems,
@@ -143,16 +140,13 @@ export function ArmoryScreen({
     setNotice,
   });
 
-  const handleSelectCharacter = useCallback(
-    (id: CharacterId) => {
-      settleActiveTransfers();
-      setCharacterId(id);
-      setCraftingResult(null);
-      setNotice("");
-      clearTargeting();
-    },
-    [clearTargeting, settleActiveTransfers],
-  );
+  const handleSelectCharacter = (id: CharacterId) => {
+    settleActiveTransfers();
+    setCharacterId(id);
+    setCraftingResult(null);
+    setNotice("");
+    clearTargeting();
+  };
 
   function handleSelectCurrency(currencyId: CraftingCurrencyId) {
     requireEditable(() => {
@@ -163,77 +157,59 @@ export function ArmoryScreen({
     });
   }
 
-  const beginSalvage = useCallback(
-    (instance: GearInstance) => {
-      requireEditable(() => {
-        if (combatRestrictions.gear[instance.instanceId]) return;
+  const beginSalvage = (instance: GearInstance) => {
+    requireEditable(() => {
+      if (combatRestrictions.gear[instance.instanceId]) return;
+      setNotice("");
+      setCraftingResult(null);
+      confirmSalvage({ instance, yield: computeSalvageYield(instance) });
+    });
+  };
+
+  const handleApplyCurrency = (instance: GearInstance) => {
+    requireEditable(() => {
+      if (!activeCurrencyId || combatRestrictions.gear[instance.instanceId]) return;
+      const reason = craftingCurrencyBlockedReason(activeCurrencyId, instance);
+      if (reason) {
+        setNotice(reason);
+        playUISound("error");
+        return;
+      }
+      const applied = applyCurrencyToGear({
+        editable,
+        activeCurrencyId,
+        instance,
+        onApplyCurrency,
+        clearCurrency: clearTargeting,
+      });
+      if (applied) {
         setNotice("");
-        setCraftingResult(null);
-        confirmSalvage({ instance, yield: computeSalvageYield(instance) });
-      });
-    },
-    [combatRestrictions.gear, confirmSalvage, requireEditable],
-  );
+        setCraftingResult({ before: instance, currencyId: activeCurrencyId });
+      } else setNotice("Crafting could not be completed. No currency was spent.");
+    });
+  };
 
-  const handleApplyCurrency = useCallback(
-    (instance: GearInstance) => {
-      requireEditable(() => {
-        if (!activeCurrencyId || combatRestrictions.gear[instance.instanceId]) return;
-        const reason = craftingCurrencyBlockedReason(activeCurrencyId, instance);
-        if (reason) {
-          setNotice(reason);
-          playUISound("error");
-          return;
-        }
-        const applied = applyCurrencyToGear({
-          editable,
-          activeCurrencyId,
-          instance,
-          onApplyCurrency,
-          clearCurrency: clearTargeting,
-        });
-        if (applied) {
-          setNotice("");
-          setCraftingResult({ before: instance, currencyId: activeCurrencyId });
-        } else setNotice("Crafting could not be completed. No currency was spent.");
-      });
-    },
-    [activeCurrencyId, combatRestrictions.gear, requireEditable, editable, onApplyCurrency, clearTargeting],
-  );
+  const handleSlotSelect = (slot: ArmorySlot) => {
+    settleActiveTransfers();
+    setSelectedSlot(slot);
+    if (slot === "trinket") clearTargeting();
+  };
 
-  const handleSlotSelect = useCallback(
-    (slot: ArmorySlot) => {
-      settleActiveTransfers();
-      setSelectedSlot(slot);
-      if (slot === "trinket") clearTargeting();
-    },
-    [clearTargeting, settleActiveTransfers],
-  );
+  const handlePageChange = (page: number) => {
+    settleActiveTransfers();
+    ordering.setPage(page);
+  };
 
-  const handlePageChange = useCallback(
-    (page: number) => {
-      settleActiveTransfers();
-      ordering.setPage(page);
-    },
-    [ordering, settleActiveTransfers],
-  );
+  const handleFiltersChange = (filters: ArmoryInventoryFilters) => {
+    settleActiveTransfers();
+    clearTargeting();
+    ordering.setFilters(filters);
+  };
 
-  const handleFiltersChange = useCallback(
-    (filters: ArmoryInventoryFilters) => {
-      settleActiveTransfers();
-      clearTargeting();
-      ordering.setFilters(filters);
-    },
-    [ordering, settleActiveTransfers, clearTargeting],
-  );
-
-  const handleSort = useCallback(
-    (option: ArmorySortOption) => {
-      settleActiveTransfers();
-      ordering.onSort(option);
-    },
-    [ordering, settleActiveTransfers],
-  );
+  const handleSort = (option: ArmorySortOption) => {
+    settleActiveTransfers();
+    ordering.onSort(option);
+  };
 
   const equippedSalvageCharacter = salvagePending
     ? findGearEquippedCharacter(loadouts, salvagePending.instance.instanceId)

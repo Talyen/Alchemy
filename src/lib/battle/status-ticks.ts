@@ -223,14 +223,14 @@ export function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEv
     }
     return resolvePlayerEndOfTickReactions(nextState, combatTexts);
   }
-  let nextState = resolvePendingBattleReactions(tickPlayerBurn(state, combatTexts), combatTexts);
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) {
-    return resolvePlayerEndOfTickReactions(nextState, combatTexts);
+  let nextState = state;
+  // Burn and Poison settle their reactions before the next tick. Bleed is
+  // followed by the shared end-of-tick settlement, including crowd control.
+  for (const tick of [tickPlayerBurn, tickPlayerPoison]) {
+    nextState = resolvePendingBattleReactions(tick(nextState, combatTexts), combatTexts);
+    if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) {
+      return resolvePlayerEndOfTickReactions(nextState, combatTexts);
+    }
   }
-  nextState = resolvePendingBattleReactions(tickPlayerPoison(nextState, combatTexts), combatTexts);
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) {
-    return resolvePlayerEndOfTickReactions(nextState, combatTexts);
-  }
-  nextState = tickPlayerBleed(nextState, combatTexts);
-  return resolvePlayerEndOfTickReactions(nextState, combatTexts);
+  return resolvePlayerEndOfTickReactions(tickPlayerBleed(nextState, combatTexts), combatTexts);
 }

@@ -213,6 +213,8 @@ describe("cloneBattleCard", () => {
     const source: BattleCard = {
       ...cardById["slash"]!,
       tags: ["poison"],
+      corrupted: true,
+      corruptedValuePositions: [{ lineIndex: 0, matchIndex: 5 }],
       effects: [
         {
           kind: "chance",
@@ -228,6 +230,7 @@ describe("cloneBattleCard", () => {
         },
       ],
     };
+    const before = structuredClone(source);
     const clone = cloneBattleCard(source);
     expect(clone).toEqual(source);
     expect(clone).not.toBe(source);
@@ -250,6 +253,12 @@ describe("cloneBattleCard", () => {
     const cloneDamage = cloneRepeat.effects[0];
     if (cloneDamage?.kind !== "damage") throw new Error("Expected damage effect");
     cloneDamage.amount = 99;
-    expect(sourceRepeat.effects[0]).toEqual({ kind: "damage", damageType: "physical", amount: 4 });
+    clone.tags!.push("burn");
+    clone.corruptedValuePositions![0]!.lineIndex = 99;
+    expect(source).toEqual(before);
+
+    const restored = hydrateCard(source);
+    restored.corruptedValuePositions![0]!.matchIndex = 99;
+    expect(source).toEqual(before);
   });
 });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  characters,
   getCharacterUnlockMessage,
   getGameModeUnlockMessage,
   getProgressionFeatureUnlockMessage,
@@ -11,108 +12,49 @@ import {
   type GameModeId,
 } from "@/lib/game-data";
 
-describe("character unlock policy", () => {
-  it.each<{
-    character: CharacterId;
-    finished: CharacterId[];
-    unlocked: boolean;
-    message: string;
-  }>([
-    { character: "knight", finished: [], unlocked: true, message: "" },
-    { character: "rogue", finished: [], unlocked: false, message: "Finish a Run as the Knight to unlock" },
-    {
-      character: "ranger",
-      finished: ["knight"],
-      unlocked: false,
-      message: "Finish a Run as the Rogue to unlock",
-    },
-    {
-      character: "ranger",
-      finished: ["knight", "rogue"],
-      unlocked: true,
-      message: "Finish a Run as the Rogue to unlock",
-    },
-    {
-      character: "wizard",
-      finished: ["knight", "rogue"],
-      unlocked: false,
-      message: "Finish a Run as the Ranger to unlock",
-    },
-    {
-      character: "wizard",
-      finished: ["knight", "rogue", "ranger"],
-      unlocked: true,
-      message: "Finish a Run as the Ranger to unlock",
-    },
-    {
-      character: "alchemist",
-      finished: ["wizard"],
-      unlocked: true,
-      message: "Finish a Run as the Wizard to unlock",
-    },
-    {
-      character: "warlock",
-      finished: [],
-      unlocked: false,
-      message: "Finish a Run as the Alchemist to unlock",
-    },
-    {
-      character: "druid",
-      finished: ["warlock"],
-      unlocked: true,
-      message: "Finish a Run as the Warlock to unlock",
-    },
-    {
-      character: "wildcard",
-      finished: ["druid"],
-      unlocked: true,
-      message: "Finish a Run as the Druid to unlock",
-    },
-  ])("resolves $character", ({ character, finished, unlocked, message }) => {
-    expect(isCharacterUnlocked(character, finished)).toBe(unlocked);
-    expect(getCharacterUnlockMessage(character)).toBe(message);
-  });
-});
-
-describe("feature unlock policy", () => {
-  it.each([
-    ["talents", [] as CharacterId[], false],
-    ["talents", ["knight"] as CharacterId[], true],
-    ["homestead", [] as CharacterId[], false],
-    ["homestead", ["knight"] as CharacterId[], true],
-  ] as const)("resolves %s from completed characters", (feature, finished, unlocked) => {
-    expect(isProgressionFeatureUnlocked(feature, finished)).toBe(unlocked);
+describe("progression unlock policy", () => {
+  it("requires completion of the immediate predecessor, allowing progress without every earlier completion", () => {
+    const chain: CharacterId[] = ["knight", "rogue", "ranger", "wizard", "alchemist", "warlock", "druid", "wildcard"];
+    expect(isCharacterUnlocked("knight", [])).toBe(true);
+    expect(getCharacterUnlockMessage("knight")).toBe("");
+    for (let index = 1; index < chain.length; index++) {
+      const character = chain[index]!;
+      const previous = chain[index - 1]!;
+      expect(isCharacterUnlocked(character, []), character).toBe(false);
+      expect(isCharacterUnlocked(character, [previous]), character).toBe(true);
+      expect(
+        isCharacterUnlocked(
+          character,
+          chain.filter((id) => id !== previous),
+        ),
+        character,
+      ).toBe(false);
+      expect(getCharacterUnlockMessage(character)).toBe(`Finish a Run as the ${characters[previous].name} to unlock`);
+    }
   });
 
-  it("returns unlock message for progression features", () => {
-    expect(getProgressionFeatureUnlockMessage("talents")).toBe("Finish a Run as the Knight to unlock");
-    expect(getProgressionFeatureUnlockMessage("homestead")).toBe("Finish a Run as the Knight to unlock");
+  it("opens Talents and the Homestead only after a Knight run", () => {
+    for (const feature of ["talents", "homestead"] as const) {
+      expect(isProgressionFeatureUnlocked(feature, [])).toBe(false);
+      expect(isProgressionFeatureUnlocked(feature, ["rogue"])).toBe(false);
+      expect(isProgressionFeatureUnlocked(feature, ["knight"])).toBe(true);
+      expect(getProgressionFeatureUnlockMessage(feature)).toBe(KNIGHT_UNLOCK_MESSAGE);
+    }
     expect(KNIGHT_UNLOCK_MESSAGE).toBe("Finish a Run as the Knight to unlock");
   });
 
-  it.each<{
-    mode: GameModeId;
-    finished: CharacterId[];
-    unlocked: boolean;
-    message: string;
-  }>([
-    { mode: "campaign", finished: [], unlocked: true, message: "" },
-    { mode: "labyrinth", finished: [], unlocked: false, message: "Finish a Run as the Rogue to unlock" },
-    {
-      mode: "labyrinth",
-      finished: ["rogue"],
-      unlocked: true,
-      message: "Finish a Run as the Rogue to unlock",
-    },
-    { mode: "wildwood", finished: [], unlocked: false, message: "Finish a Run as the Ranger to unlock" },
-    {
-      mode: "wildwood",
-      finished: ["ranger"],
-      unlocked: true,
-      message: "Finish a Run as the Ranger to unlock",
-    },
-  ])("resolves $mode", ({ mode, finished, unlocked, message }) => {
-    expect(isGameModeUnlocked(mode, finished)).toBe(unlocked);
-    expect(getGameModeUnlockMessage(mode)).toBe(message);
+  it.each<{ mode: GameModeId; required: CharacterId | null }>([
+    { mode: "campaign", required: null },
+    { mode: "labyrinth", required: "rogue" },
+    { mode: "wildwood", required: "ranger" },
+  ])("gates $mode using its own completion requirement", ({ mode, required }) => {
+    expect(isGameModeUnlocked(mode, [])).toBe(required === null);
+    if (required) {
+      expect(isGameModeUnlocked(mode, ["knight"])).toBe(false);
+      expect(isGameModeUnlocked(mode, [required])).toBe(true);
+    }
+    expect(getGameModeUnlockMessage(mode)).toBe(
+      required ? `Finish a Run as the ${characters[required].name} to unlock` : "",
+    );
   });
 });

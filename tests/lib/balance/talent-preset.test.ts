@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildPresetUnlockedTalents,
+  buildPresetManifest,
   countUnlockedCombatTalents,
   isCombatTalent,
   talentsInTreeOrder,
@@ -55,4 +56,15 @@ describe("buildPresetUnlockedTalents", () => {
     expect(countUnlockedCombatTalents(["poison", "bleed", "gold"], "early")).toBe(0);
     expect(countUnlockedCombatTalents(["poison", "bleed", "gold"], "mid")).toBeGreaterThan(5);
   });
+});
+
+it.each(["early", "late"] as const)("keeps %s simulation manifests isolated from earlier callers", (preset) => {
+  const first = buildPresetManifest(["consume"], preset);
+  const expected = structuredClone(first);
+  first.flatPhysicalDamage = 999;
+  first.companionBondLevels.wolf = 999;
+  first.cardHealBonus.apple = 999;
+  first.cardHealMultipliers.apple = 999;
+  first.healthThresholdArmor.push({ threshold: 0.5, amount: 999 });
+  expect(buildPresetManifest(["consume"], preset)).toEqual(expected);
 });

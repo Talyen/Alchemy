@@ -1,21 +1,14 @@
-import { defaultTrinketEffects, trinketLibrary } from "@/lib/game-data";
+import { defaultTrinketEffects, trinketById } from "@/lib/game-data";
 import type { TrinketManifest } from "./battle/types";
 
 export { defaultTrinketEffects };
 
 const DEFAULT_TRINKET_MANIFEST_KEYS = Object.keys(defaultTrinketEffects) as Array<keyof TrinketManifest>;
 
-const trinketEffects: Record<string, Partial<TrinketManifest>> = Object.fromEntries(
-  trinketLibrary.map((entry) => [entry.id, entry.effects]),
-);
-
 export function computeTrinketManifest(trinketIds: readonly string[]): TrinketManifest {
   const manifest = { ...defaultTrinketEffects };
-  if (trinketIds.length === 0) return manifest;
-
   for (const id of trinketIds) {
-    const effects = trinketEffects[id];
-    if (effects) Object.assign(manifest, effects);
+    if (Object.hasOwn(trinketById, id)) Object.assign(manifest, trinketById[id]?.effects);
   }
 
   return manifest;

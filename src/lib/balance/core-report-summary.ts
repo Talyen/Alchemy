@@ -25,6 +25,17 @@ function ratesByTier(rows: readonly CoreRateRow[]) {
   return reportTierRecord((tier) => combineRateCells(rows.filter((row) => row.tier === tier).map((row) => row.cell)));
 }
 
+function groupRows<K>(rows: readonly CoreRateRow[], keyOf: (row: CoreRateRow) => K): Map<K, CoreRateRow[]> {
+  const groups = new Map<K, CoreRateRow[]>();
+  for (const row of rows) {
+    const key = keyOf(row);
+    const group = groups.get(key);
+    if (group) group.push(row);
+    else groups.set(key, [row]);
+  }
+  return groups;
+}
+
 export function equalWeightByType(byType: Readonly<Record<ReportEnemyType, RateCell>>): RateCell {
   return combineRateCells(
     REPORT_ENEMY_TYPES.map((type) => byType[type]),
@@ -33,27 +44,21 @@ export function equalWeightByType(byType: Readonly<Record<ReportEnemyType, RateC
 }
 
 function buildClassMatchups(rows: readonly CoreRateRow[]): ClassMatchupRow[] {
-  const groups = new Map<
-    string,
-    Pick<CoreRateRow, "characterId" | "enemyId" | "enemyType"> & { rows: CoreRateRow[] }
-  >();
-  for (const row of rows) {
-    const key = `${row.characterId}|${row.enemyId}|${row.enemyType}`;
-    const group = groups.get(key);
-    if (group) group.rows.push(row);
-    else groups.set(key, { characterId: row.characterId, enemyId: row.enemyId, enemyType: row.enemyType, rows: [row] });
-  }
+  const groups = groupRows(rows, (row) => `${row.characterId}|${row.enemyId}|${row.enemyType}`);
 
   return [...groups.values()]
-    .map(({ characterId, enemyId, enemyType, rows: matching }) => ({
-      characterId,
-      enemyId,
-      enemyType,
-      rates: ratesByTier(matching),
-      topCardsLate: topPlayedCards(
-        sumCardPlayCounts(matching.filter((row) => row.tier === "late").map((row) => row.cardPlayCounts)),
-      ),
-    }))
+    .map((matching) => {
+      const { characterId, enemyId, enemyType } = matching[0]!;
+      return {
+        characterId,
+        enemyId,
+        enemyType,
+        rates: ratesByTier(matching),
+        topCardsLate: topPlayedCards(
+          sumCardPlayCounts(matching.filter((row) => row.tier === "late").map((row) => row.cardPlayCounts)),
+        ),
+      };
+    })
     .sort(
       (left, right) =>
         left.characterId.localeCompare(right.characterId) ||
@@ -65,17 +70,8 @@ function buildClassMatchups(rows: readonly CoreRateRow[]): ClassMatchupRow[] {
 export function summarizeCoreRates(
   rows: readonly CoreRateRow[],
 ): Pick<BalanceReportModel, "enemies" | "classes" | "classMatchups"> {
-  const byEnemy = new Map<string, CoreRateRow[]>();
-  const byCharacter = new Map<CharacterId, CoreRateRow[]>();
-  for (const row of rows) {
-    const enemyRows = byEnemy.get(row.enemyId);
-    if (enemyRows) enemyRows.push(row);
-    else byEnemy.set(row.enemyId, [row]);
-
-    const characterRows = byCharacter.get(row.characterId);
-    if (characterRows) characterRows.push(row);
-    else byCharacter.set(row.characterId, [row]);
-  }
+  const byEnemy = groupRows(rows, (row) => row.enemyId);
+  const byCharacter = groupRows(rows, (row) => row.characterId);
 
   const enemies = [...byEnemy].map(([id, matching]) => ({ id, rates: ratesByTier(matching) }));
   const classes = reportCharacterIds().map((id) => {

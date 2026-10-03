@@ -126,7 +126,7 @@ Use `addEffect` for stackable numeric bonuses, including the same bonus written 
 Put talent-owned magnitudes on the talent ops (not only in `game-constants`) so descriptions and combat stay in lockstep. Talent and keyword descriptions omit periods, as enforced by content typography validation.
 
 1. If the talent needs a new battle bonus, add its default in `src/lib/game-data/talents/manifest-defaults.ts`; `TalentEffectManifest` derives from those defaults and `talent-effect-manifest.ts` re-exports it.
-2. Define the talent (`id`, `keywordId`, name, description, effects, and Lucide `icon` name) in the matching keyword module under `src/lib/game-data/talents/pools/`; `talent-pool-definitions.ts` assembles `talentPool` in its historical order, with `talent-pool-selectors.ts` exposing the assembled pool. Register the icon in `src/features/alchemy/shared/config/talent-icons.ts`.
+2. Define the talent (`id`, `keywordId`, name, description, effects, and Lucide `icon` name) in the matching keyword module under `src/lib/game-data/talents/pools/`; `talent-pool-definitions.ts` assembles `talentPool` in its historical order and the talent barrel exposes it. Register the icon in `src/features/alchemy/shared/config/talent-icons.ts`.
 3. Keyword portrait art (new keyword or replacement art) — [Asset workflow § Add or replace game art](./WORKFLOWS-ASSETS.md#add-or-replace-game-art) (`scripts/assets/talent-assets.mjs` + `talentArt` in `src/lib/game-data/assets.ts`)
 4. XP is keyword-based — `src/lib/game-data/talents/progression.ts` — no per-talent XP hook unless the keyword is new
 
@@ -141,7 +141,7 @@ New keywords still follow [Add a new keyword](./CONTENT_AUTHORING.md#add-a-new-k
 ## Add a homestead upgrade
 
 1. Add `BuildingId` / `FarmId` / `ResearchId` — `src/lib/homestead/types.ts`
-2. Define the item in `src/lib/homestead/data.ts` with `stackingBuilding`, `stackingFarm`, or `stackingResearch` from `data-builders.ts`. Supply four authored tier costs, reusing a matching cost ladder when appropriate, plus per-tier incremental effects and cumulative description callbacks. Upgrades with unequal tier increments pass a per-tier effect builder `(tierOneBased) => effects` instead of a flat object, as Detect Magic does for its Astral chance.
+2. Define the item in `src/lib/homestead/data.ts` with `stackingUpgrade` from `data-builders.ts`. Supply four authored tier costs, reusing a matching cost ladder when appropriate, plus per-tier incremental effects and cumulative description callbacks. Upgrades with unequal tier increments pass a per-tier effect builder `(tierOneBased) => effects` instead of a flat object, as Detect Magic does for its Astral chance.
 3. Add effect keys only when existing keys cannot express the upgrade — `HomesteadEffectManifest` + `HOMESTEAD_BATTLE_*_KEYS` in `types.ts`; defaults in `defaults.ts`
 4. Companion bond tiers (if companion) — `src/lib/homestead/companions.ts` (`COMPANION_BOND_TIERS` + `companionTierItems`) + `src/lib/game-data/companions.ts`
 5. Art & palette — Add `helpers.tsx:itemArt` entry in `src/features/alchemy/meta/screens/homestead/helpers.tsx` + art via the [asset workflow](./WORKFLOWS-ASSETS.md#add-or-replace-game-art)

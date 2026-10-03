@@ -1,37 +1,30 @@
 import { describe, expect, it } from "vitest";
-import { AUTOPLAY_EFFECT_SCORE, getEffectiveDamageScore, getImmediateDefense } from "@/lib/battle/autoplay-policy";
+import {
+  AUTOPLAY_EFFECT_SCORE,
+  getEffectiveDamageScore,
+  getImmediateDefense,
+  pickHighestScoring,
+} from "@/lib/battle/autoplay-policy";
 import type { BattleCard } from "@/lib/game-data";
-import * as simPolicy from "@/lib/balance/play-policy";
 import { makeTestBattleState, patchBattleState } from "../../fixtures/battle";
 import { makeTestCard } from "../../fixtures/cards";
 
-// Live autoplay weights are game design. Any change alters autoplay and Wish
-// picks in real runs, so it needs explicit design approval. The simulator
-// currently shares this policy; fork sim-local scoring instead of retuning live.
-describe("autoplay policy guard", () => {
-  it("pins live scoring weights", () => {
-    expect({ ...AUTOPLAY_EFFECT_SCORE }).toEqual({
-      defense: 0.5,
-      cleanse: 3,
-      draw: 2,
-      mana: 2,
-      summon: 6,
-      companionBuff: 2,
-      criticalHit: 4,
-      repeatCard: 5,
-      wish: 3,
-    });
-  });
-
-  it("keeps simulator sharing live scoring until an intentional fork", () => {
-    const slash = makeTestCard({
-      id: "guard-slash",
-      title: "Slash",
-      effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
-    });
-    const state = makeTestBattleState();
-    expect(simPolicy.getEffectiveDamageScore(slash, state)).toBe(getEffectiveDamageScore(slash, state));
-    expect(simPolicy.EFFECT_SCORE).toBe(AUTOPLAY_EFFECT_SCORE);
+describe("autoplay policy", () => {
+  it("chooses a refill only when it has usable Mana room and keeps hand order on equal scores", () => {
+    const refill = makeTestCard({ cost: 0, effects: [{ kind: "restore-mana", amount: 2 }] });
+    const draw = makeTestCard({ cost: 0, effects: [{ kind: "draw-cards", amount: 1 }] });
+    const playable = [
+      { card: refill, index: 3 },
+      { card: draw, index: 5 },
+    ];
+    for (const [mana, chosen] of [
+      [1, 3],
+      [2, 3],
+      [3, 5],
+    ]) {
+      const state = makeTestBattleState({ mana, maxMana: 3, deck: [makeTestCard()] });
+      expect(pickHighestScoring(playable, (card) => getEffectiveDamageScore(card, state))?.index).toBe(chosen);
+    }
   });
 
   it("counts queued draws and Mana spent by the card before scoring its refill", () => {

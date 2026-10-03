@@ -1,38 +1,24 @@
 import type { ZodType } from "zod";
 import { allGameArt, placeholderCard, placeholderDifficulty, placeholderEnemy } from "@/lib/game-data";
-import type { ContentValidationArea, ContentValidationIssue, ContentValidationSeverity } from "./types";
+import type { ContentValidationArea, ContentValidationIssue } from "./types";
 
 const knownArt = new Set(allGameArt);
 const placeholderArt = new Set([placeholderCard, placeholderDifficulty, placeholderEnemy]);
-
-function createIssue(
-  severity: ContentValidationSeverity,
-  area: ContentValidationArea,
-  id: string,
-  message: string,
-): ContentValidationIssue {
-  return { severity, area, id, message };
-}
 
 export function createCollector() {
   const issues: ContentValidationIssue[] = [];
   return {
     issues,
     error: (area: ContentValidationArea, id: string, message: string) => {
-      issues.push(createIssue("error", area, id, message));
+      issues.push({ severity: "error", area, id, message });
     },
     warning: (area: ContentValidationArea, id: string, message: string) => {
-      issues.push(createIssue("warning", area, id, message));
+      issues.push({ severity: "warning", area, id, message });
     },
   };
 }
 
 export type Collector = ReturnType<typeof createCollector>;
-
-function formatZodIssue(issue: { path: ReadonlyArray<string | number | symbol>; message: string }): string {
-  const path = issue.path.length > 0 ? `${issue.path.join(".")}: ` : "";
-  return `${path}${issue.message}`;
-}
 
 export function collectSchemaIssues<T>(
   schema: ZodType<T>,
@@ -44,7 +30,8 @@ export function collectSchemaIssues<T>(
   const parsed = schema.safeParse(value);
   if (!parsed.success) {
     for (const issue of parsed.error.issues) {
-      add(area, id, formatZodIssue(issue));
+      const path = issue.path.length > 0 ? `${issue.path.join(".")}: ` : "";
+      add(area, id, `${path}${issue.message}`);
     }
   }
 }

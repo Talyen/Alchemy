@@ -169,35 +169,27 @@ export class SaveStorage {
    * event loop: the trailing enqueue supersedes queued stale snapshots so an
    * in-flight async write cannot land after the exit snapshot.
    */
-  private async flushSerializedExitSave(data: UnstampedSaveData, serialized: string): Promise<SaveWriteOutcome> {
-    const syncResult = this.tryWriteExitSnapshot(
+  async saveForExit(data: UnstampedSaveData): Promise<SaveWriteOutcome> {
+    if (this.queue.areWritesDisabled() || this.queue.isClearPending) return "skipped";
+    const serialized = this.trySerializeSaveSnapshot(data, " during page exit");
+    if (serialized === null) return "failed";
+    let syncResult = this.tryWriteExitSnapshot(
       this.writeKey,
       serialized,
       "Save data could not be written during page exit",
     );
-    if (syncResult === null) return await this.queue.enqueue(data, (snapshot) => this.writeSaveSnapshot(snapshot));
-    if (!syncResult) {
+    if (syncResult === false) {
       if (this.writeKey !== SAVE_KEY) return "failed";
-      const recovery = this.tryWriteExitSnapshot(
+      syncResult = this.tryWriteExitSnapshot(
         SAVE_RECOVERY_KEY,
         serialized,
         "Recovery save could not be written during page exit",
       );
-      if (recovery === false) return "failed";
+      if (syncResult === false) return "failed";
       this.writeKey = SAVE_RECOVERY_KEY;
-      if (recovery === null) return await this.queue.enqueue(data, (snapshot) => this.writeSaveSnapshot(snapshot));
     }
-    if (this.queue.isIdle) return "saved";
-    return await this.queue.enqueue(data, (snapshot) => this.writeSaveSnapshot(snapshot));
-  }
-
-  async saveForExit(data: UnstampedSaveData): Promise<SaveWriteOutcome> {
-    if (this.queue.areWritesDisabled() || this.queue.isClearPending) {
-      return "skipped";
-    }
-    const serialized = this.trySerializeSaveSnapshot(data, " during page exit");
-    if (serialized === null) return "failed";
-    return this.flushSerializedExitSave(data, serialized);
+    if (syncResult === true && this.queue.isIdle) return "saved";
+    return this.save(data);
   }
 
   async clear(mode: "default" | "localWipe" = "default"): Promise<boolean> {

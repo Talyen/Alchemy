@@ -33,14 +33,6 @@ export function finalizeCcSkipTurnDecrement(prev: CcState, next: CcState): CcSta
   return next;
 }
 
-function clearPlayerCcStack(state: BattleState, stat: CcStat): BattleState {
-  return setPlayerStatus(state, stat, 0);
-}
-
-function clearEnemyCcStack(state: BattleState, stat: CcStat): BattleState {
-  return setEnemyStatus(state, stat, 0);
-}
-
 export interface PlayerCcTriggerInput {
   state: BattleState;
   stat: CcStat;
@@ -56,7 +48,7 @@ export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): B
     return state;
   }
   if (state.playerCC.cooldown > 0) {
-    return clearPlayerCcStack(state, stat);
+    return setPlayerStatus(state, stat, 0);
   }
   mergeCombatText(combatTexts, {
     target: "player",
@@ -65,7 +57,7 @@ export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): B
     text: stat === "stun" ? STATUS_CONFIG.CC_NOTICE_STUN : STATUS_CONFIG.CC_NOTICE_FREEZE,
   });
   let nextState: BattleState = {
-    ...clearPlayerCcStack(state, stat),
+    ...setPlayerStatus(state, stat, 0),
     playerCC: {
       ...state.playerCC,
       ...(stat === "stun"
@@ -111,47 +103,6 @@ export function resolvePlayerCrowdControlTriggers(state: BattleState, combatText
   return nextState;
 }
 
-export interface EnemyCcImmunityInput {
-  nextState: BattleState;
-  stat: CcStat;
-
-  ccCooldown: number;
-}
-
-export function applyEnemyCcImmunityClear(input: EnemyCcImmunityInput): BattleState | null {
-  if (input.ccCooldown <= 0) return null;
-  return clearEnemyCcStack(input.nextState, input.stat);
-}
-
-export interface EnemyCcTriggerInput {
-  nextState: BattleState;
-  stat: CcStat;
-  skipDuration: number;
-  combatTexts: CombatTextEvent[];
-  postTrigger?: (state: BattleState) => BattleState;
-}
-
-export function assignEnemyCrowdControlSkip(input: EnemyCcTriggerInput): BattleState {
-  const { nextState, stat, skipDuration, combatTexts, postTrigger } = input;
-  let result: BattleState = {
-    ...clearEnemyCcStack(nextState, stat),
-    enemyCC: {
-      ...nextState.enemyCC,
-      ...(stat === "stun"
-        ? { stunSkipTurns: nextState.enemyCC.stunSkipTurns + skipDuration }
-        : { freezeSkipTurns: nextState.enemyCC.freezeSkipTurns + skipDuration }),
-    },
-  };
-  mergeCombatText(combatTexts, {
-    target: "enemy",
-    kind: "notice",
-    stat,
-    text: stat === "stun" ? STATUS_CONFIG.CC_NOTICE_STUN : STATUS_CONFIG.CC_NOTICE_FREEZE,
-  });
-  if (postTrigger) result = postTrigger(result);
-  return result;
-}
-
 export interface EnemyCcTriggerCheckInput {
   preHitHealth: number;
 
@@ -171,7 +122,18 @@ export function tryTriggerEnemyCc(input: EnemyCcTriggerCheckInput): EnemyCcTrigg
   if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return null;
   if (isCcControlled(nextState.enemyCC)) return null;
   if (preHitHealth <= 0 || stackValue < preHitHealth * thresholdFraction) return null;
-  const immuneClear = applyEnemyCcImmunityClear({ nextState, stat, ccCooldown });
-  if (immuneClear) return { kind: "immune", state: immuneClear };
-  return { kind: "skip", state: assignEnemyCrowdControlSkip({ nextState, stat, skipDuration, combatTexts }) };
+  const cleared = setEnemyStatus(nextState, stat, 0);
+  if (ccCooldown > 0) return { kind: "immune", state: cleared };
+  const skipKey = stat === "stun" ? "stunSkipTurns" : "freezeSkipTurns";
+  const state = {
+    ...cleared,
+    enemyCC: { ...cleared.enemyCC, [skipKey]: cleared.enemyCC[skipKey] + skipDuration },
+  };
+  mergeCombatText(combatTexts, {
+    target: "enemy",
+    kind: "notice",
+    stat,
+    text: stat === "stun" ? STATUS_CONFIG.CC_NOTICE_STUN : STATUS_CONFIG.CC_NOTICE_FREEZE,
+  });
+  return { kind: "skip", state };
 }

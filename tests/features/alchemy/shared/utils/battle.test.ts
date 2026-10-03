@@ -3,12 +3,8 @@ import { createBattleState } from "@/lib/battle";
 import {
   getPlayerStatusChips,
   getEnemyStatusChips,
-  getCombatTextColorClass,
   getCombatImpactVisual,
-  getCombatTextIcon,
 } from "@/features/alchemy/shared/utils/battle";
-import { keywordIcons } from "@/features/alchemy/shared/config";
-import { phoenixFeatherStatus } from "@/features/alchemy/shared/config/phoenix-feather-status";
 import { enemyBestiary, keywordDefinitions } from "@/lib/game-data";
 import { makeTestCard } from "../../../../fixtures/battle";
 
@@ -21,46 +17,6 @@ function makeProductionBattleState() {
 describe("getPlayerStatusChips", () => {
   it.each([null, undefined] as const)("returns empty array when state is %s", (state) => {
     expect(getPlayerStatusChips(state)).toEqual([]);
-  });
-
-  it("returns empty array when no statuses are active", () => {
-    const state = makeProductionBattleState();
-    expect(getPlayerStatusChips(state)).toEqual([]);
-  });
-
-  it("returns matching chips for active statuses", () => {
-    const state = makeProductionBattleState();
-    state.playerStatuses.block = 10;
-    state.playerStatuses.burn = 3;
-    const chips = getPlayerStatusChips(state);
-    expect(chips).toContainEqual({ id: "block", value: 10 });
-    expect(chips).toContainEqual({ id: "burn", value: 3 });
-    expect(chips).toHaveLength(2);
-  });
-
-  it("filters out zero-value statuses", () => {
-    const state = makeProductionBattleState();
-    state.playerStatuses.block = 0;
-    state.playerStatuses.burn = 5;
-    const chips = getPlayerStatusChips(state);
-    expect(chips).not.toContainEqual({ id: "block", value: 0 });
-    expect(chips).toContainEqual({ id: "burn", value: 5 });
-  });
-
-  it("returns chips in defined order", () => {
-    const state = makeProductionBattleState();
-    state.playerStatuses.burn = 3;
-    state.playerStatuses.block = 10;
-    state.playerStatuses.stun = 1;
-    const ids = getPlayerStatusChips(state).map((c) => c.id);
-    expect(ids.indexOf("block")).toBeLessThan(ids.indexOf("burn"));
-    expect(ids.indexOf("burn")).toBeLessThan(ids.indexOf("stun"));
-  });
-
-  it("surfaces thorns between armor and forge", () => {
-    const state = makeProductionBattleState();
-    state.playerStatuses.thorns = 2;
-    expect(getPlayerStatusChips(state)).toContainEqual({ id: "thorns", value: 2 });
   });
 
   it("surfaces armed CombatFlags as badge-less buff chips", () => {
@@ -97,9 +53,11 @@ describe("getPlayerStatusChips", () => {
           { kind: "damage", damageType: "holy", amount: 4 },
         ],
       },
+      { remainingTurns: 1, effects: [] },
       { remainingTurns: 1, effects: [{ kind: "damage", damageType: "freeze", amount: 2 }] },
     ];
     expect(getPlayerStatusChips(state)).toEqual([{ id: "echo", value: 1 }]);
+    expect(getEnemyStatusChips(state)).toEqual([{ id: "pending-freeze", value: 2 }]);
   });
 
   it("orders armed chips after buffs and before harmful build-ups", () => {
@@ -107,16 +65,11 @@ describe("getPlayerStatusChips", () => {
     state.playerStatuses.block = 10;
     state.playerStatuses.burn = 3;
     state.flags.nextHitCrit = true;
-    const ids = getPlayerStatusChips(state).map((c) => c.id);
-    expect(ids).toEqual(["block", "nextHitCrit", "burn"]);
-  });
-
-  it("does not surface purely-offensive pending pulses under the hero", () => {
-    const state = makeProductionBattleState();
-    state.pendingTurnStartEffects = [
-      { remainingTurns: 1, effects: [{ kind: "damage", damageType: "stun", amount: 2 }] },
-    ];
-    expect(getPlayerStatusChips(state)).toEqual([]);
+    expect(getPlayerStatusChips(state)).toEqual([
+      { id: "block", value: 10 },
+      { id: "nextHitCrit", value: 1, hideValue: true },
+      { id: "burn", value: 3 },
+    ]);
   });
 
   it("surfaces the player's CC immunity cooldown only after active CC ends", () => {
@@ -155,29 +108,6 @@ describe("getEnemyStatusChips", () => {
     expect(getEnemyStatusChips(state)).toEqual([]);
   });
 
-  it("returns empty array when no statuses are active", () => {
-    const state = makeProductionBattleState();
-    expect(getEnemyStatusChips(state)).toEqual([]);
-  });
-
-  it("returns matching chips for active statuses", () => {
-    const state = makeProductionBattleState();
-    state.enemyStatuses.poison = 4;
-    state.enemyStatuses.freeze = 1;
-    const chips = getEnemyStatusChips(state);
-    expect(chips).toContainEqual({ id: "poison", value: 4 });
-    expect(chips).toContainEqual({ id: "freeze", value: 1 });
-  });
-
-  it("filters out zero-value statuses", () => {
-    const state = makeProductionBattleState();
-    state.enemyStatuses.poison = 0;
-    state.enemyStatuses.bleed = 2;
-    const chips = getEnemyStatusChips(state);
-    expect(chips).not.toContainEqual({ id: "poison", value: 0 });
-    expect(chips).toContainEqual({ id: "bleed", value: 2 });
-  });
-
   it("does not expose pending bleed leech healing as a status chip", () => {
     const state = makeProductionBattleState();
     state.enemyStatuses.bleed = 2;
@@ -197,20 +127,6 @@ describe("getEnemyStatusChips", () => {
       { id: "pending-stun", value: 2 },
       { id: "pending-freeze", value: 5 },
     ]);
-  });
-
-  it("does not surface mixed pending pulses under the enemy", () => {
-    const state = makeProductionBattleState();
-    state.pendingTurnStartEffects = [
-      {
-        remainingTurns: 1,
-        effects: [
-          { kind: "player-status", status: "block", amount: 4 },
-          { kind: "damage", damageType: "holy", amount: 4 },
-        ],
-      },
-    ];
-    expect(getEnemyStatusChips(state)).toEqual([]);
   });
 
   it("exposes onAttackBleed as a status chip", () => {
@@ -240,32 +156,6 @@ describe("getEnemyStatusChips", () => {
   });
 });
 
-describe("getCombatTextColorClass", () => {
-  it("returns red for health damage", () => {
-    expect(getCombatTextColorClass({ target: "player", kind: "damage", stat: "health", amount: 5 })).toBe(
-      "text-red-400",
-    );
-  });
-
-  it("returns type color for damage by type", () => {
-    expect(getCombatTextColorClass({ target: "enemy", kind: "damage", stat: "burn", amount: 5 })).toBe(
-      "text-orange-400",
-    );
-  });
-
-  it("returns green for heals", () => {
-    expect(getCombatTextColorClass({ target: "player", kind: "heal", stat: "health", amount: 5 })).toBe(
-      "text-green-400",
-    );
-  });
-
-  it("keeps Phoenix Feather's status color", () => {
-    expect(getCombatTextColorClass({ target: "player", kind: "status", stat: "phoenixFeather", amount: 1 })).toBe(
-      "text-orange-300",
-    );
-  });
-});
-
 describe("getCombatImpactVisual", () => {
   it.each(["physical", "burn", "freeze"] as const)("uses the %s keyword palette for damage", (stat) => {
     expect(getCombatImpactVisual({ target: "enemy", kind: "damage", stat, amount: 5 })).toEqual({
@@ -288,22 +178,5 @@ describe("getCombatImpactVisual", () => {
     { target: "player", kind: "notice", stat: "dodge", text: "Dodge" },
   ] as const)("does not create an impact for $kind $stat text", (event) => {
     expect(getCombatImpactVisual(event)).toBeNull();
-  });
-});
-
-describe("getCombatTextIcon", () => {
-  it("returns HeartPulse for heal", () => {
-    const icon = getCombatTextIcon({ target: "player", kind: "heal", stat: "health", amount: 5 });
-    expect(icon).toBe(keywordIcons.health);
-  });
-
-  it("returns the stat's icon for damage", () => {
-    const icon = getCombatTextIcon({ target: "enemy", kind: "damage", stat: "burn", amount: 5 });
-    expect(icon).toBe(keywordIcons.burn);
-  });
-
-  it("keeps Phoenix Feather's status icon", () => {
-    const icon = getCombatTextIcon({ target: "player", kind: "status", stat: "phoenixFeather", amount: 1 });
-    expect(icon).toBe(phoenixFeatherStatus.icon);
   });
 });

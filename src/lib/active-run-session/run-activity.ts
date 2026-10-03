@@ -22,14 +22,16 @@ export interface RunActivityData {
 }
 
 type VisitActivity = { [K in keyof RunActivityData]: { kind: K; data: RunActivityData[K] } }[keyof RunActivityData];
-type ProgressActivityKind =
-  | "battle"
-  | "rewards"
-  | "destination"
-  | "labyrinth-map"
-  | "wildwood-removal"
-  | "draft-deck"
-  | "difficulty-select";
+const STATELESS_RUN_SCREENS = [
+  "battle",
+  "rewards",
+  "destination",
+  "labyrinth-map",
+  "wildwood-removal",
+  "draft-deck",
+  "difficulty-select",
+] as const;
+type ProgressActivityKind = (typeof STATELESS_RUN_SCREENS)[number];
 export type RunActivity = { kind: "inactive" | "idle" | ProgressActivityKind } | VisitActivity;
 
 function deepFreeze<T>(obj: T): T {
@@ -54,23 +56,16 @@ const VISIT_FACTORIES: { readonly [K in keyof RunActivityData]: () => RunActivit
   corruption: () => null,
 };
 
-const EMPTY_VISITS: Readonly<RunActivityData> = deepFreeze({
-  campfire: VISIT_FACTORIES.campfire(),
-  transmutation: VISIT_FACTORIES.transmutation(),
-  shop: VISIT_FACTORIES.shop(),
-  alchemist: VISIT_FACTORIES.alchemist(),
-  "trinket-shop": VISIT_FACTORIES["trinket-shop"](),
-  "equipment-shop": VISIT_FACTORIES["equipment-shop"](),
-  mystery: VISIT_FACTORIES.mystery(),
-  corruption: VISIT_FACTORIES.corruption(),
-});
+const EMPTY_VISITS = deepFreeze(
+  Object.fromEntries(Object.entries(VISIT_FACTORIES).map(([kind, create]) => [kind, create()])),
+);
 
 /**
  * Reads visit data for `kind`. The matching branch returns live mutable state;
  * the fallback is a shared deep-frozen empty visit — read-only, do not mutate.
  */
 export function readActivityData<K extends keyof RunActivityData>(activity: RunActivity, kind: K): RunActivityData[K] {
-  return activity.kind === kind && "data" in activity ? (activity.data as RunActivityData[K]) : EMPTY_VISITS[kind];
+  return (activity.kind === kind && "data" in activity ? activity.data : EMPTY_VISITS[kind]) as RunActivityData[K];
 }
 
 export function isActiveRunActivity(activity: RunActivity): boolean {
@@ -81,23 +76,13 @@ export function runActivityScreen(activity: RunActivity): Screen | null {
   return activity.kind === "idle" || activity.kind === "inactive" ? null : activity.kind;
 }
 
-const STATELESS_RUN_SCREENS = new Set<ProgressActivityKind>([
-  "battle",
-  "rewards",
-  "destination",
-  "labyrinth-map",
-  "wildwood-removal",
-  "draft-deck",
-  "difficulty-select",
-]);
-
 export function transitionRunActivity(activity: RunActivity, screen: Screen): RunActivity {
   if (activity.kind === screen) return activity;
   if (Object.hasOwn(VISIT_FACTORIES, screen)) {
     const factory = VISIT_FACTORIES[screen as keyof RunActivityData];
     return { kind: screen as keyof RunActivityData, data: factory() } as RunActivity;
   }
-  if (STATELESS_RUN_SCREENS.has(screen as ProgressActivityKind)) {
+  if (STATELESS_RUN_SCREENS.includes(screen as ProgressActivityKind)) {
     return { kind: screen as ProgressActivityKind };
   }
   return activity;

@@ -1,4 +1,3 @@
-import { useCallback, useMemo } from "react";
 import type { CharacterId } from "@/lib/game-data";
 import {
   generateDevRandomGearInstance,
@@ -54,93 +53,34 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
   // an explicit rng so the source stays visible at the call site.
   const rng = options?.rng ?? Math.random;
 
-  const flush = useCallback(() => {
-    flushSaveAfterGearMutation(resolveActiveRunForSave(hasActiveRun));
-  }, [hasActiveRun]);
-
-  const onEquip = useCallback<ArmoryController["onEquip"]>(
-    (characterId, slot, instance) => mutateGearWithFlush(flush, (state) => state.equip(characterId, slot, instance)),
-    [flush],
-  );
-
-  const onUnequip = useCallback<ArmoryController["onUnequip"]>(
-    (characterId, slot) => {
+  const flush = () => flushSaveAfterGearMutation(resolveActiveRunForSave(hasActiveRun));
+  const controller: ArmoryController = {
+    ...gear,
+    finishedRunCharacters,
+    combatRestrictions,
+    onEquip: (characterId, slot, instance) =>
+      mutateGearWithFlush(flush, (state) => state.equip(characterId, slot, instance)),
+    onUnequip: (characterId, slot) => {
       mutateGearWithFlush(flush, (state) => state.unequip(characterId, slot));
     },
-    [flush],
-  );
-
-  const onEquipTrinket = useCallback<ArmoryController["onEquipTrinket"]>(
-    (characterId, trinketId) => {
+    onEquipTrinket: (characterId, trinketId) => {
       mutateGearWithFlush(flush, (state) => state.equipTrinket(characterId, trinketId));
     },
-    [flush],
-  );
-
-  const onUnequipTrinket = useCallback<ArmoryController["onUnequipTrinket"]>(
-    (characterId) => {
+    onUnequipTrinket: (characterId) => {
       mutateGearWithFlush(flush, (state) => state.unequipTrinket(characterId));
     },
-    [flush],
-  );
-
-  const onSalvage = useCallback<ArmoryController["onSalvage"]>(
-    (instanceId) => {
-      // Yield is recomputed authoritatively in the store; the preview shown in
-      // the confirm dialog is deterministic, so the payout always matches it.
-      return salvageGearWithFlush(flush, instanceId);
-    },
-    [flush],
-  );
-
-  const onApplyCurrency = useCallback<ArmoryController["onApplyCurrency"]>(
-    (currencyId, instanceId) =>
+    // The store recomputes the deterministic yield shown in the confirmation.
+    onSalvage: (instanceId) => salvageGearWithFlush(flush, instanceId),
+    onApplyCurrency: (currencyId, instanceId) =>
       mutateGearWithFlush(flush, (state) => state.applyCurrency(currencyId, instanceId, { rng })),
-    [flush, rng],
-  );
-
-  const onSpawnDevGear = useCallback<NonNullable<ArmoryController["onSpawnDevGear"]>>(
-    (characterId) => {
+  };
+  if (isAlchemyDevBuild()) {
+    controller.onSpawnDevGear = (characterId) => {
       if (!isAlchemyDevBuild()) return;
       mutateGearWithFlushAlways(flush, (state) => {
         state.addInstance(generateDevRandomGearInstance(rng), characterId);
       });
-    },
-    [flush, rng],
-  );
-
-  return useMemo(() => {
-    const controller: ArmoryController = {
-      inventories: gear.inventories,
-      loadouts: gear.loadouts,
-      ownedTrinketIds: gear.ownedTrinketIds,
-      equippedTrinkets: gear.equippedTrinkets,
-      craftingCurrencies: gear.craftingCurrencies,
-      finishedRunCharacters,
-      combatRestrictions,
-      onEquip,
-      onUnequip,
-      onEquipTrinket,
-      onUnequipTrinket,
-      onSalvage,
-      onApplyCurrency,
     };
-    if (isAlchemyDevBuild()) controller.onSpawnDevGear = onSpawnDevGear;
-    return controller;
-  }, [
-    combatRestrictions,
-    gear.inventories,
-    gear.loadouts,
-    gear.ownedTrinketIds,
-    gear.equippedTrinkets,
-    gear.craftingCurrencies,
-    finishedRunCharacters,
-    onEquip,
-    onUnequip,
-    onEquipTrinket,
-    onUnequipTrinket,
-    onSalvage,
-    onApplyCurrency,
-    onSpawnDevGear,
-  ]);
+  }
+  return controller;
 }

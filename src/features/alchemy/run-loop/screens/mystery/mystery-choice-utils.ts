@@ -77,29 +77,13 @@ export function getPlasmaKeywordsForMysteryReward({
   for (const { effect, grantedTrinketId, grantedGear } of paired) {
     if (effect.kind === "gainXP") {
       keywords.add(effect.keyword);
-    } else if (effect.kind === "addCard") {
-      const card = findCard(effect.cardId);
-      if (card) {
-        for (const kw of getCardKeywords(card)) keywords.add(kw);
-      }
-    } else if (effect.kind === "chooseCard") {
-      const card = chosenCardId ? findCard(chosenCardId) : undefined;
-      if (card) {
-        for (const kw of getCardKeywords(card)) keywords.add(kw);
-      }
-    } else if (effect.kind === "gainTrinket") {
-      for (const kw of getTrinketKeywords(effect.trinketId)) keywords.add(kw);
-    } else if (effect.kind === "gainRandomTrinket") {
-      if (grantedTrinketId) {
-        for (const kw of getTrinketKeywords(grantedTrinketId)) keywords.add(kw);
-      } else if (grantedGear) {
-        for (const kw of getPlasmaKeywordsForGear(grantedGear)) keywords.add(kw);
-      }
-    } else if (effect.kind === "gainRandomGear" || effect.kind === "gainGeneratedGear") {
-      if (grantedGear) {
-        for (const kw of getPlasmaKeywordsForGear(grantedGear)) keywords.add(kw);
-      }
     }
+    const cardId = effect.kind === "addCard" ? effect.cardId : effect.kind === "chooseCard" ? chosenCardId : null;
+    const card = cardId ? findCard(cardId) : undefined;
+    if (card) for (const keyword of getCardKeywords(card)) keywords.add(keyword);
+    const trinketId = effect.kind === "gainTrinket" ? effect.trinketId : grantedTrinketId;
+    if (trinketId) for (const keyword of getTrinketKeywords(trinketId)) keywords.add(keyword);
+    if (grantedGear) for (const keyword of getPlasmaKeywordsForGear(grantedGear)) keywords.add(keyword);
   }
 
   return Array.from(keywords);

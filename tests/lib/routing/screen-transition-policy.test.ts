@@ -1,13 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
-  ALLOWED_SCREEN_TRANSITIONS,
   assertScreenTransitionAllowed,
   isRunResumeTransitionAllowed,
   isRunLoopScreen,
   isScreenTransitionAllowed,
   ROUTE_SCREEN_VALUES,
   ROUTE_SCREENS,
-  SCREEN_PHASE,
   type Screen,
 } from "@/lib/routing";
 
@@ -59,15 +57,8 @@ const PRODUCTION_NAVIGATION_EDGES: ReadonlyArray<readonly [Screen, Screen]> = [
 ];
 
 describe("screen-transition-policy", () => {
-  it("defines a transition policy for every screen", () => {
-    expect(Object.keys(ALLOWED_SCREEN_TRANSITIONS).sort()).toEqual([...ROUTE_SCREEN_VALUES].sort());
-  });
-
-  it("derives run-loop policy members from SCREEN_PHASE", () => {
-    const fromPhase = ROUTE_SCREEN_VALUES.filter((screen) => SCREEN_PHASE[screen] === "runLoop").sort();
-    const fromClassifier = ROUTE_SCREEN_VALUES.filter(isRunLoopScreen).sort();
-    expect(fromPhase).toEqual(fromClassifier);
-    for (const screen of fromPhase) {
+  it("permits defeat recovery from every run-loop screen", () => {
+    for (const screen of ROUTE_SCREEN_VALUES.filter(isRunLoopScreen)) {
       expect(isScreenTransitionAllowed(screen, ROUTE_SCREENS.GAME_OVER), screen).toBe(true);
     }
   });

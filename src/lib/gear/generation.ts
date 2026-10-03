@@ -53,35 +53,19 @@ function generateGearOfferings({
   const choices: GearInstance[] = [];
 
   for (let index = 0; index < count; index += 1) {
-    const unusedBases: typeof basePool = [];
-    let repeatableBaseCount = 0;
-    for (const base of basePool) {
-      const reservation = reservedBases.get(base.id);
-      if (reservation === undefined) unusedBases.push(base);
-      if (reservation !== "unique") repeatableBaseCount++;
-    }
-    const eligibleBases =
-      unusedBases.length > 0
-        ? unusedBases
-        : fillCount
-          ? basePool.filter((base) => reservedBases.get(base.id) !== "unique")
-          : [];
+    const repeatableBases = basePool.filter((base) => reservedBases.get(base.id) !== "unique");
+    const unusedBases = repeatableBases.filter((base) => !reservedBases.has(base.id));
+    const eligibleBases = unusedBases.length > 0 ? unusedBases : fillCount ? repeatableBases : [];
     if (eligibleBases.length === 0) break;
 
-    // Reservations only accumulate. Compact this call-owned pool in catalog
-    // order so later picks retain the same seeded indices without new arrays.
-    let kept = 0;
-    for (const unique of unownedUniques) {
-      if (!reservedBases.has(unique.baseItemId)) unownedUniques[kept++] = unique;
-    }
-    unownedUniques.length = kept;
-    const availableUniques = unownedUniques;
+    const availableUniques = unownedUniques.filter((unique) => !reservedBases.has(unique.baseItemId));
     const availability = getGearLootAvailability(
       ownedUniqueIds,
       eligibleBases.map((base) => base.id),
     );
     // Leave an ordinary base available to fill later slots on a narrow shelf.
-    availability.unique = availableUniques.length > 0 && (index === count - 1 || !fillCount || repeatableBaseCount > 1);
+    availability.unique =
+      availableUniques.length > 0 && (index === count - 1 || !fillCount || repeatableBases.length > 1);
     let rarity = rollTier(availability, index);
 
     if (rarity === "unique") {

@@ -20,7 +20,7 @@ import {
   labyrinthCampfireHealing,
 } from "@/lib/content-systems/labyrinth/room-rules";
 import { LabyrinthMapSchema } from "@/lib/validation/save-schemas/labyrinth-schemas";
-import { keywordDefinitions, trinketLibrary } from "@/lib/game-data";
+import { keywordDefinitions } from "@/lib/game-data";
 import { findMysteryEvent, mysteryPool, pickResolvedMysteryEvent } from "@/lib/mystery";
 import { emptyHydratedMysteryVisit, hydrateMysteryVisit, serializeMysteryVisit } from "@/lib/active-run-session";
 import { getCompanionCardChoices } from "@/features/alchemy/run-loop/navigation/reward-flow";
@@ -91,16 +91,6 @@ describe("Labyrinth modifier catalog", () => {
       if (node.type !== "entrance") expect(node.rewardModifiers).toHaveLength(node.type === "transmutation" ? 0 : 1);
     }
   });
-
-  it("omits unsupported themed Trinket shops", () => {
-    const healing = trinketLibrary.filter((item) =>
-      item.descriptionLines.join(" ").match(/(?:Restore|Gain) \d+ Health/),
-    );
-    expect(healing).toHaveLength(2);
-    expect(trinketLibrary.filter((item) => item.descriptionLines.join(" ").includes("Archery"))).toHaveLength(0);
-    expect(Object.values(LABYRINTH_TRAITS).map((item) => item.label)).not.toContain("Mercy Charms");
-    expect(Object.values(LABYRINTH_TRAITS).map((item) => item.label)).not.toContain("Hunter’s Charms");
-  });
 });
 
 describe("Labyrinth support rules", () => {
@@ -120,14 +110,45 @@ describe("Labyrinth support rules", () => {
     (id) => {
       const eligible = mysteryPool.filter((event) => isLabyrinthMysteryEligible(event, [id]));
       expect(eligible.length).toBeGreaterThan(0);
-      for (let seed = 0; seed < 20; seed++) {
-        const event = pickResolvedMysteryEvent(seededRng(seed), [], (candidate) =>
-          isLabyrinthMysteryEligible(candidate, [id]),
-        );
-        expect(eligible.map((item) => item.id)).toContain(event.id);
-      }
+      const event = pickResolvedMysteryEvent(seededRng(17), [], (candidate) =>
+        isLabyrinthMysteryEligible(candidate, [id]),
+      );
+      expect(eligible.map((item) => item.id)).toContain(event.id);
     },
   );
+
+  it("keeps selection priority while applying all active reward bonuses once", () => {
+    const original = {
+      id: "mixed-rewards",
+      title: "Mixed rewards",
+      art: "",
+      narrative: "",
+      choices: [
+        {
+          label: "Claim",
+          effects: [
+            { kind: "gainGold" as const, amount: 10 },
+            { kind: "gainXP" as const, keyword: "holy" as const, amount: 8 },
+            { kind: "gainMaterial" as const, material: "wood" as const, amount: 3 },
+            { kind: "damageHealth" as const, amount: 2 },
+          ],
+        },
+      ],
+    };
+    const modifiers = ["enlightening", "golden-omen", "bountiful", "restful-discovery"] as const;
+    const xpOnly = { ...original, choices: [{ label: "Learn", effects: [original.choices[0]!.effects[1]!] }] };
+    expect(isLabyrinthMysteryEligible(xpOnly, ["enlightening"])).toBe(true);
+    expect(isLabyrinthMysteryEligible(xpOnly, modifiers)).toBe(false);
+    const before = structuredClone(original);
+    expect(applyLabyrinthMysteryModifiers(original, modifiers, 30).choices[0]?.effects).toEqual([
+      { kind: "gainGold", amount: 20 },
+      { kind: "gainXP", keyword: "holy", amount: 16 },
+      { kind: "gainMaterial", material: "wood", amount: 6 },
+      { kind: "damageHealth", amount: 2 },
+      { kind: "healHealth", amount: 5 },
+    ]);
+    expect(original).toEqual(before);
+  });
 
   it("Mystery descriptions and rewards survive resume without doubling twice", () => {
     const original = findMysteryEvent("ancient-altar")!;

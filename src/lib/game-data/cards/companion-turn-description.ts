@@ -7,10 +7,10 @@ function joinChanceTurnLines(success: string | null, failure: string | null): st
   return `${success.replace(/ each turn$/, "")} or ${failure.replace(/ each turn$/, "")} each turn`;
 }
 
-function companionTurnLine(effect: BattleCardEffect, amountOverride?: number): string | null {
+function companionTurnLine(effect: BattleCardEffect): string | null {
   switch (effect.kind) {
     case "damage": {
-      const amount = amountOverride ?? effect.amount;
+      const amount = effect.amount;
       const types = effect.damageTypePool?.length
         ? effect.damageTypePool.map(capitalizeWord)
         : [capitalizeWord(effect.damageType)];
@@ -65,36 +65,6 @@ function companionTurnLine(effect: BattleCardEffect, amountOverride?: number): s
   }
 }
 
-export function formatCompanionTurnLineBase(effect: BattleCardEffect, amountOverride?: number): string | null {
-  return companionTurnLine(effect, amountOverride);
-}
-
-export interface CompanionTurnLineContext {
-  bondLevel?: number;
-  damageBonus?: number;
-}
-
-export function formatCompanionTurnStartLine(
-  turnEffect: BattleCardEffect,
-  context: CompanionTurnLineContext = {},
-): string | null {
-  if (turnEffect.kind === "damage") {
-    const bondLevel = context.bondLevel ?? 0;
-    const globalBonus = context.damageBonus ?? 0;
-    return formatCompanionTurnLineBase(turnEffect, turnEffect.amount + bondLevel + globalBonus);
-  }
-  if (turnEffect.kind === "chance") {
-    const success = turnEffect.successEffects[0]
-      ? formatCompanionTurnStartLine(turnEffect.successEffects[0], context)
-      : null;
-    const failure = turnEffect.failureEffects[0]
-      ? formatCompanionTurnStartLine(turnEffect.failureEffects[0], context)
-      : null;
-    return joinChanceTurnLines(success, failure);
-  }
-  return formatCompanionTurnLineBase(turnEffect);
-}
-
 export function getCompanionDescriptionLines(
   companion: CompanionDefinition,
   bondLevel = 0,
@@ -104,7 +74,7 @@ export function getCompanionDescriptionLines(
     typeof damageBonus === "number" ? { damageBonus, bleedDamageBonus: 0, damageMultiplier: 1 } : damageBonus;
   const effects = getModifiedCompanionEffects(companion, bondLevel, modifiers);
   const lines = effects.map((effect) => {
-    const line = formatCompanionTurnStartLine(effect);
+    const line = companionTurnLine(effect);
     return (companion.id === "golden-retriever" || companion.id === "fox") && effect.kind === "gain-gold"
       ? line?.replace(/^Grants /, "Steals ")
       : line;

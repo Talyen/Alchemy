@@ -112,37 +112,13 @@ function idsForCategory<Category extends EncounterTraitCategory>(
 export const COMBAT_ENCOUNTER_TRAIT_IDS = idsForCategory("combat");
 export const REWARD_ENCOUNTER_TRAIT_IDS = idsForCategory("reward");
 
-function getEligibleTraitIds<C extends EncounterTraitCategory>(
-  mode: EncounterMode,
-  category: C,
-): Array<EncounterTraitIdFor<C>> {
-  return Object.values(ENCOUNTER_TRAITS)
-    .filter((trait) => trait.category === category && trait.modes.includes(mode))
-    .map((trait) => trait.id as EncounterTraitIdFor<C>);
-}
-
-const ELIGIBLE_TRAIT_POOLS: Record<
-  EncounterMode,
-  {
-    combat: EncounterCombatTraitId[];
-    reward: EncounterRewardTraitId[];
-  }
-> = {
-  labyrinth: {
-    combat: getEligibleTraitIds("labyrinth", "combat"),
-    reward: getEligibleTraitIds("labyrinth", "reward"),
-  },
-  wildwood: {
-    combat: getEligibleTraitIds("wildwood", "combat"),
-    reward: getEligibleTraitIds("wildwood", "reward"),
-  },
-};
-
 export function eligibleEncounterTraitIds<Category extends EncounterTraitCategory>(
   mode: EncounterMode,
   category: Category,
 ): Array<EncounterTraitIdFor<Category>> {
-  return ELIGIBLE_TRAIT_POOLS[mode][category] as Array<EncounterTraitIdFor<Category>>;
+  return Object.values(ENCOUNTER_TRAITS)
+    .filter((trait) => trait.category === category && trait.modes.includes(mode))
+    .map((trait) => trait.id as EncounterTraitIdFor<Category>);
 }
 
 function isEncounterTraitId(value: string): value is EncounterTraitId {

@@ -11,11 +11,14 @@ export function useArtworkReady(identity: string | number, { initialRevealOnly =
     if (!root) return;
     setReadyIdentity(null);
     const waits = new Map<HTMLImageElement, { source: string; lifetime: AbortController; pending: boolean }>();
-    let pendingCount = 0;
     let revealed = false;
     let frame: number | null = null;
+    const hasPendingArtwork = () => {
+      for (const wait of waits.values()) if (wait.pending) return true;
+      return false;
+    };
     const scheduleReveal = () => {
-      if (pendingCount > 0 || frame !== null) return;
+      if (hasPendingArtwork() || frame !== null) return;
       frame = requestAnimationFrame(() => {
         frame = null;
         revealed = true;
@@ -28,7 +31,6 @@ export function useArtworkReady(identity: string | number, { initialRevealOnly =
       const images = new Set(root.querySelectorAll<HTMLImageElement>("img[src]"));
       for (const [image, wait] of waits) {
         if (!images.has(image) || wait.source !== sourceOf(image)) {
-          if (wait.pending) pendingCount -= 1;
           wait.lifetime.abort();
           waits.delete(image);
         }
@@ -37,7 +39,6 @@ export function useArtworkReady(identity: string | number, { initialRevealOnly =
         if (waits.has(image)) continue;
         const wait = { source: sourceOf(image), lifetime: new AbortController(), pending: true };
         waits.set(image, wait);
-        pendingCount += 1;
         image.style.removeProperty("visibility");
         if (initialRevealOnly && revealed) image.style.visibility = "hidden";
         image.loading = "eager";
@@ -46,7 +47,6 @@ export function useArtworkReady(identity: string | number, { initialRevealOnly =
           // Source changes can precede delivery of the mutation observer.
           if (wait.source !== sourceOf(image)) return reconcile();
           wait.pending = false;
-          pendingCount -= 1;
           if (!ready) image.style.visibility = "hidden";
           else image.style.removeProperty("visibility");
           // Decode completions change readiness, not the mounted image set.
@@ -54,7 +54,7 @@ export function useArtworkReady(identity: string | number, { initialRevealOnly =
           scheduleReveal();
         });
       }
-      if (pendingCount > 0 && (!initialRevealOnly || !revealed)) setReadyIdentity(null);
+      if (hasPendingArtwork() && (!initialRevealOnly || !revealed)) setReadyIdentity(null);
       scheduleReveal();
     };
     const observer = new MutationObserver((records) => {

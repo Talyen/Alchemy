@@ -20,35 +20,29 @@ export function isBrewablePotion(card: BattleCard): boolean {
 }
 
 function strengthenEffect(effect: BattleCardEffect): BattleCardEffect {
-  const nested = mapEffectChildren(effect, strengthenEffect);
   if (
-    (nested.kind === "heal" ||
-      nested.kind === "restore-mana" ||
-      nested.kind === "gain-gold" ||
-      nested.kind === "damage" ||
-      nested.kind === "player-status") &&
-    "amount" in nested &&
-    typeof nested.amount === "number" &&
-    !(
-      nested.kind === "player-status" &&
-      (nested.status === "haste" || nested.status === "phoenixFeather" || nested.convertCurrentMana !== undefined)
-    ) &&
-    !(nested.kind === "damage" && (nested.equalToBlockPercent !== undefined || nested.equalToGoldPercent !== undefined))
+    effect.kind === "player-status" &&
+    (effect.status === "haste" || effect.status === "phoenixFeather" || effect.convertCurrentMana !== undefined)
+  )
+    return effect;
+  if (effect.kind === "damage" && (effect.equalToBlockPercent !== undefined || effect.equalToGoldPercent !== undefined))
+    return effect;
+  if (
+    effect.kind === "heal" ||
+    effect.kind === "restore-mana" ||
+    effect.kind === "gain-gold" ||
+    effect.kind === "damage" ||
+    effect.kind === "player-status"
   ) {
-    return { ...nested, amount: Math.round(nested.amount * POTION_STRENGTHEN_MULTIPLIER) };
+    return { ...effect, amount: Math.round(effect.amount * POTION_STRENGTHEN_MULTIPLIER) };
   }
-  return nested;
+  return mapEffectChildren(effect, strengthenEffect);
 }
+
 export function strengthenPotion(card: BattleCard): BattleCard | null {
   if (!isBrewablePotion(card)) return null;
   const effects = card.effects.map(strengthenEffect);
-  if (
-    effects.every((effect, index) => {
-      const original = card.effects[index];
-      return original !== undefined && areBattleCardEffectsEqual(effect, original);
-    })
-  )
-    return null;
+  if (effects.every((effect, index) => areBattleCardEffectsEqual(effect, card.effects[index]!))) return null;
   return {
     ...cloneBattleCard(card),
     brewed: true,

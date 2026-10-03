@@ -24,7 +24,7 @@ export function filterValidDestinationRounds(
   const roundsSinceOffered: Partial<Record<Destination, number>> = {};
   for (const [destination, rounds] of Object.entries(values)) {
     const canonical = canonicalizeDestination(destination);
-    if (isValidDestination(canonical) && typeof rounds === "number" && rounds >= 0) {
+    if (isValidDestination(canonical) && Number.isFinite(rounds) && rounds >= 0) {
       roundsSinceOffered[canonical] = rounds;
     }
   }

@@ -19,54 +19,35 @@ function isGearVariantArtKey(definitionId: string): boolean {
 }
 
 describe("gear definitions and art", () => {
-  it("builds one variant per base item rarity", () => {
-    for (const baseItem of Object.values(gearBaseItems)) {
-      for (const rarity of ["basic", "astral"] as const) {
-        const id = `${baseItem.id}-${rarity}`;
-        expect(gearDefinitions[id]).toBeDefined();
-        expect(gearDefinitions[id]?.rarity).toBe(rarity);
-        expect(gearDefinitions[id]?.baseItemId).toBe(baseItem.id);
-        expect(gearDefinitions[id]?.slotRule).toBe(baseItem.slotRule);
-      }
+  it("builds the complete catalog with independent slots, affinities, and salvage payouts", () => {
+    const expected = [
+      ...Object.keys(gearBaseItems).flatMap((id) =>
+        (["basic", "astral"] as const).map((rarity) => ({
+          id: `${id}-${rarity}`,
+          baseItemId: id,
+          rarity,
+        })),
+      ),
+      ...uniqueItemList.map((item) => ({ id: item.id, baseItemId: item.baseItemId, rarity: "unique" as const })),
+    ];
+    expect(Object.keys(gearDefinitions).sort()).toEqual(expected.map((item) => item.id).sort());
+    for (const identity of expected) {
+      const definition = gearDefinitions[identity.id]!;
+      const base = gearBaseItems[definition.baseItemId];
+      expect(definition, identity.id).toMatchObject({
+        ...identity,
+        compatibleSlots: base.compatibleSlots,
+        slotRule: base.slotRule,
+        affinityKeywords: base.affinityKeywords,
+        salvageValue: base.salvageByRarity[identity.rarity],
+      });
+      expect(definition.compatibleSlots).not.toBe(base.compatibleSlots);
+      expect(definition.affinityKeywords).not.toBe(base.affinityKeywords);
+      expect(definition.salvageValue).not.toBe(base.salvageByRarity[identity.rarity]);
     }
   });
-
-  it("builds a definition for every unique item", () => {
-    for (const unique of uniqueItemList) {
-      const definition = gearDefinitions[unique.id];
-      expect(definition, `${unique.id} missing definition`).toBeDefined();
-      expect(definition?.rarity).toBe("unique");
-      expect(definition?.baseItemId).toBe(unique.baseItemId);
-    }
-  });
-
   it("resolves art for every definition without missing-art fallbacks", () => {
     expect(missingGearArtDefinitionIds).toEqual([]);
-  });
-
-  it("maps art for every gear variant", () => {
-    for (const definition of gearDefinitionList) {
-      if (definition.rarity !== "unique") {
-        expect(gearArtByDefinitionId[definition.id], `${definition.id} missing art`).toBeTruthy();
-      }
-      expect(definition.art, `${definition.id} missing resolved art`).toBeTruthy();
-    }
-  });
-
-  it("maps item art only for known gear variant definitions", () => {
-    for (const [definitionId, art] of Object.entries(gearArtByDefinitionId)) {
-      if (!isGearVariantArtKey(definitionId)) continue;
-      expect(gearDefinitions[definitionId], `${definitionId} has art but no definition`).toBeDefined();
-      expect(art).toBeTruthy();
-    }
-  });
-
-  it("maps slot background art under slot-* keys only", () => {
-    for (const [definitionId, art] of Object.entries(gearArtByDefinitionId)) {
-      if (!isGearSlotArtKey(definitionId)) continue;
-      expect(art).toBeTruthy();
-      expect(gearDefinitions[definitionId], `${definitionId} should not be a gear definition`).toBeUndefined();
-    }
   });
 
   it("has no unused item art mappings", () => {

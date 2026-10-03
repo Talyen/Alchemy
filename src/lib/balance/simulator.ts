@@ -24,6 +24,7 @@ import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { createRunStreamRng, getBattleRng, rngInt } from "@/lib/rng";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { createEmptyAnomalies, sampleAnomalies, type BattleAnomalies } from "./anomalies";
+import { companionIdsFromDeck } from "./companion-deck";
 import { buildSimCompanionBondLevels } from "./homestead-preset";
 import { resolveSimLoadout, type BalanceLoadoutMode } from "./loadout-preset";
 import { getEffectiveDamageScore, getImmediateDamage, getImmediateDefense, pickHighestScoring } from "./play-policy";
@@ -105,10 +106,6 @@ function playAutomatedTurn(
   return nextState;
 }
 
-function deckHasCompanions(deck: readonly BattleCard[]): boolean {
-  return deck.some((card) => card.effects.some((effect) => effect.kind === "summon-companion"));
-}
-
 function resolveTalentEffects(
   config: BattleSimulationConfig,
   playerDeck: BattleCard[],
@@ -119,7 +116,7 @@ function resolveTalentEffects(
     config.talentEffects ??
     (preset ? buildPresetManifest(characters[config.characterId].keywords, preset) : defaultTalentEffects);
   const isBare = config.loadoutMode === "bare";
-  const hasCompanions = deckHasCompanions(playerDeck);
+  const hasCompanions = companionIdsFromDeck(playerDeck).length > 0;
   if (isBare && !hasCompanions) {
     return base;
   }

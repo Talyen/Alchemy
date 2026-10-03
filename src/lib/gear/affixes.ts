@@ -13,8 +13,8 @@ interface AffixRollInput {
   value: number;
 }
 
-function isGearAffixId(value: string): value is GearAffixId {
-  return Object.hasOwn(gearAffixCatalog, value);
+function isGearAffixId(value: unknown): value is GearAffixId {
+  return typeof value === "string" && Object.hasOwn(gearAffixCatalog, value);
 }
 
 function isAffixRollArray(value: readonly AffixRollInput[] | null | undefined): value is readonly AffixRollInput[] {

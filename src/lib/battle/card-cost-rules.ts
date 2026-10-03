@@ -55,60 +55,43 @@ function applyCostDiscount(cost: number, reduction: number): number {
   return reduction > 0 ? Math.max(0, cost - reduction) : cost;
 }
 
-function computeStandardCost(
-  state: CardCostState,
-  card: BattleCard,
-  discountedCost: number,
-): {
-  effectiveCost: number;
-  consumedFlags: Set<BooleanCombatFlag>;
-  disarmedFlags: Set<BooleanCombatFlag>;
-  spentArmedDiscount: boolean;
-} {
-  const consumedFlags = new Set<BooleanCombatFlag>();
-  const disarmedFlags = new Set<BooleanCombatFlag>();
+function computeStandardCost(state: CardCostState, card: BattleCard, discountedCost: number) {
+  const result = {
+    effectiveCost: 0,
+    consumedFlags: new Set<BooleanCombatFlag>(),
+    disarmedFlags: new Set<BooleanCombatFlag>(),
+    spentArmedDiscount: false,
+  };
+  if (card.cost === 0) return result;
 
-  if (card.cost === 0) {
-    return { effectiveCost: 0, consumedFlags, disarmedFlags, spentArmedDiscount: false };
+  const firstFree = FIRST_CARD_FREE_RULES.find(
+    (rule) => !readCombatFlag(state, rule.flag) && rule.condition(state, card),
+  );
+  if (firstFree) {
+    result.consumedFlags.add(firstFree.flag);
+    return result;
   }
-
-  for (const rule of FIRST_CARD_FREE_RULES) {
-    if (!readCombatFlag(state, rule.flag) && rule.condition(state, card)) {
-      return {
-        effectiveCost: 0,
-        consumedFlags: consumedFlags.add(rule.flag),
-        disarmedFlags,
-        spentArmedDiscount: false,
-      };
-    }
-  }
-
-  if (discountedCost === 0) {
-    return { effectiveCost: 0, consumedFlags, disarmedFlags, spentArmedDiscount: false };
-  }
+  if (discountedCost === 0) return result;
 
   const armedReduction = readCombatFlag(state, "nextCardCostReduction");
-  let effectiveCost = applyCostDiscount(discountedCost, armedReduction);
-  const spentArmedDiscount = armedReduction > 0 && effectiveCost < discountedCost;
-  if (effectiveCost === 0) return { effectiveCost, consumedFlags, disarmedFlags, spentArmedDiscount };
+  result.effectiveCost = applyCostDiscount(discountedCost, armedReduction);
+  result.spentArmedDiscount = armedReduction > 0 && result.effectiveCost < discountedCost;
+  if (result.effectiveCost === 0) return result;
 
+  // Holy, then Archery, then Nature: spend only the first matching opportunity.
+  let freeFlag: BooleanCombatFlag | undefined;
   if (readCombatFlag(state, "nextHolyCardFree") && (cardHasKeyword(card, "holy") || cardHasDamageType(card, "holy"))) {
-    effectiveCost = 0;
-    disarmedFlags.add("nextHolyCardFree");
-  }
-  if (effectiveCost === 0) return { effectiveCost, consumedFlags, disarmedFlags, spentArmedDiscount };
-
-  // A dual-keyword card with both flags spends archery first; nature survives
-  // for the next card. Priority is array order here, matching FIRST_CARD_FREE_RULES.
-  if (readCombatFlag(state, "nextArcheryCardFree") && cardHasKeyword(card, "archery")) {
-    effectiveCost = 0;
-    disarmedFlags.add("nextArcheryCardFree");
+    freeFlag = "nextHolyCardFree";
+  } else if (readCombatFlag(state, "nextArcheryCardFree") && cardHasKeyword(card, "archery")) {
+    freeFlag = "nextArcheryCardFree";
   } else if (readCombatFlag(state, "nextNatureCardFree") && isNatureCard(card)) {
-    effectiveCost = 0;
-    disarmedFlags.add("nextNatureCardFree");
+    freeFlag = "nextNatureCardFree";
   }
-
-  return { effectiveCost, consumedFlags, disarmedFlags, spentArmedDiscount };
+  if (freeFlag) {
+    result.effectiveCost = 0;
+    result.disarmedFlags.add(freeFlag);
+  }
+  return result;
 }
 
 function getEncounterCostDiscount(

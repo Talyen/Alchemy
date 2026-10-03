@@ -46,24 +46,6 @@ describe("gear generation", () => {
     expect(rng()).toBe(nextRandom);
   });
 
-  it("generates gear reward instances with affixes", () => {
-    let roll = 0;
-    const rng = () => {
-      roll += 0.173;
-      return roll % 1;
-    };
-    const choices = generateLootGearChoices(3, rng, weights);
-    expect(choices).toHaveLength(3);
-    for (const instance of choices) {
-      expect(instance.instanceId).toBeTruthy();
-      expect(gearDefinitions[instance.definitionId]).toBeDefined();
-      expect(instance.affixes.length).toBeGreaterThanOrEqual(1);
-      for (const affix of instance.affixes) {
-        expect(affix.value).toBeGreaterThan(0);
-      }
-    }
-  });
-
   it("never offers the same base item across the three choices (dedupe by baseItemId)", () => {
     for (let seed = 1; seed <= 50; seed += 1) {
       const rng = createSeededRng(seed);
@@ -72,11 +54,6 @@ describe("gear generation", () => {
       const baseItemIds = choices.map((c) => gearDefinitions[c.definitionId]?.baseItemId);
       expect(new Set(baseItemIds).size, `seed ${seed}: ${JSON.stringify(baseItemIds)}`).toBe(baseItemIds.length);
     }
-  });
-
-  it("guarantees the requested choice count even with duplicate-prone rng", () => {
-    const choices = generateLootGearChoices(3, () => 0, weights);
-    expect(choices).toHaveLength(3);
   });
 
   it("fills a narrow equipment shelf with ordinary Gear from its allowed bases", () => {

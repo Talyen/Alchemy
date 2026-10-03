@@ -8,30 +8,25 @@ export function floorNodes(map: LabyrinthMap, depth: number): LabyrinthNode[] {
 }
 
 function hasClearedNeighbor(map: LabyrinthMap, node: LabyrinthNode): boolean {
-  return (
-    node.floor === map.currentFloor &&
-    floorNodes(map, map.currentFloor).some(
-      (candidate) => candidate.cleared && areGridNeighbors(candidate.gridPosition, node.gridPosition),
-    )
+  return floorNodes(map, map.currentFloor).some(
+    (candidate) => candidate.cleared && areGridNeighbors(candidate.gridPosition, node.gridPosition),
   );
 }
 
 export function isNodeDiscovered(map: LabyrinthMap, nodeId: string): boolean {
-  const node = map.nodes[nodeId];
-  return Boolean(
-    node && node.floor === map.currentFloor && (node.cleared || node.type === "boss" || hasClearedNeighbor(map, node)),
-  );
+  return labyrinthNodeVisualState(map, nodeId) !== "undiscovered";
 }
 
 export function canEnterLabyrinthNode(map: LabyrinthMap, nodeId: string): boolean {
-  const node = map.nodes[nodeId];
-  return Boolean(node && !node.cleared && hasClearedNeighbor(map, node));
+  return labyrinthNodeVisualState(map, nodeId) === "reachable";
 }
 
 export function labyrinthNodeVisualState(map: LabyrinthMap, nodeId: string): LabyrinthNodeVisualState {
-  if (!isNodeDiscovered(map, nodeId)) return "undiscovered";
-  if (map.nodes[nodeId]?.cleared) return "cleared";
-  return canEnterLabyrinthNode(map, nodeId) ? "reachable" : "locked";
+  const node = map.nodes[nodeId];
+  if (!node || node.floor !== map.currentFloor) return "undiscovered";
+  if (node.cleared) return "cleared";
+  if (hasClearedNeighbor(map, node)) return "reachable";
+  return node.type === "boss" ? "locked" : "undiscovered";
 }
 
 export function canInspectLabyrinthNode(map: LabyrinthMap, nodeId: string): boolean {

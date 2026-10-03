@@ -69,9 +69,9 @@ describe("platform save backend", () => {
     });
   });
 
-  it("uses Cloud when the local save cannot be read and marks the main slot unsafe", async () => {
-    const error = new Error("local read failed");
-    const cloudRead = vi.fn().mockResolvedValue("cloud");
+  it("preserves a local read failure even when IPC rejects without an Error", async () => {
+    const error = undefined;
+    const cloudRead = vi.fn().mockResolvedValue(null);
     installDesktopApi({
       overrides: {
         readSaveSlot: vi.fn().mockRejectedValue(error),
@@ -80,12 +80,15 @@ describe("platform save backend", () => {
     });
 
     vi.spyOn(console, "error").mockImplementation(() => {});
-    await expect(createPlatformSaveBackend({ cloudSyncEnabled: true }).readCandidates("ignored")).resolves.toEqual({
+    const backend = createPlatformSaveBackend({ cloudSyncEnabled: true });
+    await expect(backend.readCandidates(SAVE_KEY)).resolves.toEqual({ ok: false, error });
+    cloudRead.mockResolvedValue("cloud");
+    await expect(backend.readCandidates(SAVE_KEY)).resolves.toEqual({
       ok: true,
       candidates: ["cloud"],
       localReadFailed: true,
     });
-    expect(cloudRead).toHaveBeenCalledOnce();
+    expect(cloudRead).toHaveBeenCalledTimes(2);
     vi.mocked(console.error).mockRestore();
   });
 
@@ -183,13 +186,32 @@ describe("platform save backend", () => {
     installDesktopApi({
       overrides: {
         clearSave,
-        steamCloudDelete: vi.fn().mockResolvedValue(false),
+        steamCloudDelete: vi.fn().mockResolvedValueOnce(true).mockResolvedValueOnce(false),
       },
     });
 
     const result = await createPlatformSaveBackend({ cloudSyncEnabled: true }).clear("ignored");
     expect(result.ok).toBe(false);
     expect(clearSave).not.toHaveBeenCalled();
+  });
+
+  it("preserves progress when its initialization receipt cannot be retained", async () => {
+    const desktop = installDesktopApi({
+      overrides: { completeDemoInitialization: vi.fn().mockResolvedValue(false) },
+    });
+    await expect(createDesktopSaveBackend({ cloudSyncEnabled: true }).clear(SAVE_KEY)).resolves.toMatchObject({
+      ok: false,
+    });
+    expect(desktop.steamCloudDelete).not.toHaveBeenCalled();
+    expect(desktop.clearSave).not.toHaveBeenCalled();
+  });
+
+  it("keeps the Cloud mirror when a forced local wipe fails", async () => {
+    const desktop = installDesktopApi({ overrides: { clearSave: vi.fn().mockResolvedValue(false) } });
+    await expect(
+      createDesktopSaveBackend({ cloudSyncEnabled: true }).clear(SAVE_KEY, { forceLocalWipe: true }),
+    ).resolves.toMatchObject({ ok: false });
+    expect(desktop.steamCloudDelete).not.toHaveBeenCalled();
   });
 
   it("clears cloud before the desktop backup ring", async () => {

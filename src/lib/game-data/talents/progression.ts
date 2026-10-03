@@ -7,7 +7,6 @@ import {
   XP_TRIANGULAR_MULTIPLIER,
 } from "@/lib/game-constants";
 import type { KeywordId } from "../types";
-import { clamp } from "@/lib/math";
 
 export type TalentXP = Partial<Record<KeywordId, number>>;
 
@@ -83,23 +82,19 @@ export function getTalentKeywordProgress(
   totalTalents?: number,
 ): TalentKeywordProgress {
   const points = computeTalentPoints(totalXP);
-  const displayLevel = points + 1;
   const xpForNext = xpForNextPoint(points);
   const xpRemaining = xpToNextPoint(totalXP);
   const progressPercent = Math.min(100, Math.round(((xpForNext - xpRemaining) / xpForNext) * 100));
-  const spentPoints = unlockedCount;
-  const unspentPoints = Math.max(0, points - spentPoints);
-  const cappedUnspent =
-    totalTalents !== undefined ? clamp(unspentPoints, 0, Math.max(0, totalTalents - unlockedCount)) : unspentPoints;
+  const unspentPoints = Math.max(0, Math.min(points, totalTalents ?? points) - unlockedCount);
   return {
     totalXP,
     points,
-    displayLevel,
+    displayLevel: points + 1,
     xpForNext,
     xpRemaining,
     progressPercent,
-    spentPoints,
-    unspentPoints: cappedUnspent,
-    hasUnspent: cappedUnspent > 0,
+    spentPoints: unlockedCount,
+    unspentPoints,
+    hasUnspent: unspentPoints > 0,
   };
 }

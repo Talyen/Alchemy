@@ -37,32 +37,26 @@ export function yieldToAnimationFrame(): Promise<void> {
 }
 
 export function scheduleIdle(callback: () => void, timeoutMs = 5000, retries = 0): void {
-  if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-    window.requestIdleCallback(
-      (deadline) => {
-        const nav =
-          typeof navigator !== "undefined"
-            ? (navigator as Navigator & { scheduling?: { isInputPending?: () => boolean } })
-            : undefined;
-        if (!deadline?.didTimeout && retries < 3 && nav?.scheduling?.isInputPending?.()) {
-          scheduleIdle(callback, timeoutMs, retries + 1);
-          return;
-        }
-        try {
-          callback();
-        } catch (error) {
-          console.error("scheduleIdle callback threw an error:", error);
-        }
-      },
-      { timeout: timeoutMs },
-    );
-    return;
-  }
-  globalThis.setTimeout(() => {
+  const run = () => {
     try {
       callback();
     } catch (error) {
       console.error("scheduleIdle callback threw an error:", error);
     }
-  }, 0);
+  };
+  if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
+    window.requestIdleCallback(
+      (deadline) => {
+        const nav = window.navigator as Navigator & { scheduling?: { isInputPending?: () => boolean } };
+        if (!deadline?.didTimeout && retries < 3 && nav?.scheduling?.isInputPending?.()) {
+          scheduleIdle(callback, timeoutMs, retries + 1);
+          return;
+        }
+        run();
+      },
+      { timeout: timeoutMs },
+    );
+    return;
+  }
+  globalThis.setTimeout(run, 0);
 }

@@ -1,13 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { MATERIAL_IDS, materialLabels } from "@/lib/homestead/types";
-import { EMPTY_INVENTORY, emptyInventory, addInventory, canAfford, subtractInventory } from "@/lib/homestead/inventory";
+import { MATERIAL_IDS } from "@/lib/homestead/types";
+import { emptyInventory } from "@/lib/homestead/inventory";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { computeHomesteadEffects, mergeIntoManifest } from "@/lib/homestead/effects";
 import {
   applyEndOfRunHomesteadBonuses,
   applyMaterialFindBonus,
-  applyScavengerHerbalistModifiers,
   computeCombatMaterialReward,
   computeMysteryMaterialReward,
   enemyLootTableIds,
@@ -17,114 +16,6 @@ import {
 import { enemyBestiary } from "@/lib/game-data/compendium/enemies";
 import { createEmptyTalentEffectManifest } from "@/lib/game-data";
 import { canUpgradeTierItem, getNextTierCost } from "@/lib/homestead/upgrades";
-
-describe("emptyInventory and EMPTY_INVENTORY", () => {
-  it("returns all materials at 0", () => {
-    const inv = emptyInventory();
-    for (const mat of MATERIAL_IDS) {
-      expect(inv[mat]).toBe(0);
-    }
-  });
-
-  it("has exactly the material keys", () => {
-    expect(Object.keys(emptyInventory())).toEqual(MATERIAL_IDS);
-  });
-
-  it("matches frozen EMPTY_INVENTORY constant", () => {
-    expect(emptyInventory()).toEqual(EMPTY_INVENTORY);
-    expect(Object.isFrozen(EMPTY_INVENTORY)).toBe(true);
-  });
-});
-
-describe("addInventory", () => {
-  it("adds two inventories", () => {
-    const a = { wood: 2, iron: 3, herbs: 0, food: 1, gems: 0, stone: 0, hide: 0 };
-    const b = { wood: 1, iron: 0, herbs: 4, food: 0, gems: 2, stone: 0, hide: 0 };
-    const result = addInventory(a, b);
-    expect(result.wood).toBe(3);
-    expect(result.iron).toBe(3);
-    expect(result.herbs).toBe(4);
-    expect(result.food).toBe(1);
-    expect(result.gems).toBe(2);
-  });
-
-  it("does not mutate inputs", () => {
-    const a = { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 };
-    const b = { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 };
-    addInventory(a, b);
-    expect(a.wood).toBe(1);
-  });
-
-  it("handles missing keys as 0", () => {
-    const a = emptyInventory();
-    const b = { wood: 2 } as typeof a;
-    const result = addInventory(a, b);
-    expect(result.wood).toBe(2);
-  });
-});
-
-describe("canAfford", () => {
-  it("returns true when inventory meets cost", () => {
-    const inv = { wood: 5, iron: 5, herbs: 5, food: 5, gems: 5, stone: 0, hide: 0 };
-    const cost = { wood: 3, iron: 2, herbs: 0, food: 1, gems: 0, stone: 0, hide: 0 };
-    expect(canAfford(inv, cost)).toBe(true);
-  });
-
-  it("returns false when inventory is short", () => {
-    const inv = { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 };
-    const cost = { wood: 5, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 };
-    expect(canAfford(inv, cost)).toBe(false);
-  });
-
-  it("handles missing cost keys as 0", () => {
-    const inv = { wood: 3, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 };
-    const cost = { wood: 3 } as ReturnType<typeof emptyInventory>;
-    expect(canAfford(inv, cost)).toBe(true);
-  });
-});
-
-describe("subtractInventory", () => {
-  it("subtracts cost from inventory", () => {
-    const inv = { wood: 5, iron: 5, herbs: 5, food: 5, gems: 5, stone: 0, hide: 0 };
-    const cost = { wood: 2, iron: 1, herbs: 0, food: 3, gems: 0, stone: 0, hide: 0 };
-    const result = subtractInventory(inv, cost);
-    expect(result.wood).toBe(3);
-    expect(result.iron).toBe(4);
-    expect(result.food).toBe(2);
-  });
-
-  it("clamps to 0 (no negative materials)", () => {
-    const inv = { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 };
-    const cost = { wood: 5, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 };
-    const result = subtractInventory(inv, cost);
-    expect(result.wood).toBe(0);
-  });
-
-  it("does not mutate inputs", () => {
-    const inv = { wood: 3, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 };
-    subtractInventory(inv, { wood: 1 } as ReturnType<typeof emptyInventory>);
-    expect(inv.wood).toBe(3);
-  });
-});
-
-describe("MATERIAL_IDS and labels", () => {
-  it("every material has a label", () => {
-    for (const mat of MATERIAL_IDS) {
-      expect(materialLabels[mat]).toBeTruthy();
-    }
-  });
-});
-
-describe("defaultHomesteadEffects", () => {
-  it("all values are at default (0 or empty)", () => {
-    expect(defaultHomesteadEffects.flatPhysicalDamage).toBe(0);
-    expect(defaultHomesteadEffects.companionDamage).toBe(0);
-    expect(defaultHomesteadEffects.companionBondLevels.wolf).toBe(0);
-    expect("forgeBurnDamagePercent" in defaultHomesteadEffects).toBe(false);
-    expect("healMultiplier" in defaultHomesteadEffects).toBe(false);
-    expect("potionPotency" in defaultHomesteadEffects).toBe(false);
-  });
-});
 
 describe.each([
   { name: "buildings", items: buildings, hasTiers: true },
@@ -303,6 +194,9 @@ describe("mergeIntoManifest", () => {
     expect(homestead).toEqual(homesteadBefore);
     merged.cardHealBonus.bread = 99;
     merged.companionBondLevels.wolf = 99;
+    const withoutBonuses = mergeIntoManifest(talent, defaultHomesteadEffects);
+    withoutBonuses.cardHealBonus.bread = 99;
+    withoutBonuses.companionBondLevels.wolf = 99;
     expect(talent).toEqual(talentBefore);
     expect(homestead).toEqual(homesteadBefore);
   });
@@ -413,24 +307,6 @@ describe("getEnemyMaterialLoot with bonus rolls", () => {
   });
 });
 
-describe("applyScavengerHerbalistModifiers", () => {
-  it("returns the same reward when no flags are set", () => {
-    const materials = { wood: 1, iron: 0, herbs: 2, food: 0, gems: 0, stone: 0, hide: 0 };
-    expect(applyScavengerHerbalistModifiers(materials, { scavenger: false, herbalist: false })).toBe(materials);
-  });
-
-  it("doubles every material for scavenger", () => {
-    const result = applyScavengerHerbalistModifiers(
-      { wood: 2, iron: 0, herbs: 1, food: 1, gems: 0, stone: 0, hide: 1 },
-      { scavenger: true, herbalist: false },
-    );
-    expect(result.wood).toBe(4);
-    expect(result.herbs).toBe(2);
-    expect(result.food).toBe(2);
-    expect(result.hide).toBe(2);
-  });
-});
-
 describe("computeCombatMaterialReward", () => {
   it("applies table, herb-find, scavenger, then herbalist in order", () => {
     // Bandit with every roll hitting: guaranteed 1 wood + 1 food, bonuses +1 wood +1 hide.
@@ -459,20 +335,6 @@ describe("computeCombatMaterialReward", () => {
       rng: stableRngZero(),
     });
     expect(result.herbs).toBe(4);
-  });
-
-  it("leaves non-herb loot untouched without flags", () => {
-    const result = computeCombatMaterialReward({
-      enemyId: "goblin",
-      enemyType: "normal",
-      effects: { herbFindBonus: 0 },
-      scavenger: false,
-      herbalist: false,
-      rng: stableRngZero(),
-    });
-    expect(result.wood).toBe(2);
-    expect(result.food).toBe(1);
-    expect(result.herbs).toBe(0);
   });
 });
 

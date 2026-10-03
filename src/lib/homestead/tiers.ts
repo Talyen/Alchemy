@@ -14,9 +14,3 @@ export function createEmptyTierRecord<T extends string, TTier = { cost: Material
   }
   return record;
 }
-
-export function createTierLookup<T extends string, TTier = { cost: MaterialInventory }>(
-  items: ReadonlyArray<TieredItem<T, TTier>>,
-): Map<T, TieredItem<T, TTier>> {
-  return new Map(items.map((item) => [item.id, item]));
-}

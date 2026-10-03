@@ -39,7 +39,7 @@ export function safeParseWithErrors<T>(
 }
 
 export function deduplicateStrings(val: unknown): string[] {
-  return collectUniqueStrings(val);
+  return Array.isArray(val) ? [...new Set(val.filter((entry): entry is string => typeof entry === "string"))] : [];
 }
 
 export function deduplicatedStringArraySchema() {
@@ -47,19 +47,8 @@ export function deduplicatedStringArraySchema() {
 }
 
 export function deduplicateFromSet<T extends string>(val: unknown, validIds: ReadonlySet<T> | readonly T[]): T[] {
-  if (!Array.isArray(val)) return [];
   const set: ReadonlySet<string> = validIds instanceof Set ? validIds : new Set<string>(validIds);
-  return collectUniqueStrings(val, (id) => set.has(id)) as T[];
-}
-
-function collectUniqueStrings(val: unknown, isValid: (id: string) => boolean = () => true): string[] {
-  if (!Array.isArray(val)) return [];
-  const seen = new Set<string>();
-  for (const entry of val) {
-    if (typeof entry !== "string" || !isValid(entry)) continue;
-    seen.add(entry);
-  }
-  return [...seen];
+  return deduplicateStrings(val).filter((id): id is T => set.has(id));
 }
 
 export function toFiniteNonNegativeInt(value: unknown): number | null {

@@ -73,10 +73,14 @@ describe("combat equipment protection", () => {
     dispatchRunSessionCommand((draft) => {
       draft.battle.battleState.enemyHealth = 0;
     });
-    expect(deriveGearCombatRestrictions(readGameplayState()).characters.knight).toEqual(["campaign"]);
+    expect(deriveGearCombatRestrictions(readGameplayState())).toEqual({
+      characters: { knight: ["campaign"] },
+      gear: { [sword.instanceId]: "knight" },
+      trinkets: { "brass-censer": "knight" },
+    });
     dispatchRunSessionCommand((draft) => {
       draft.battle.hasActiveBattle = false;
     });
-    expect(deriveGearCombatRestrictions(readGameplayState()).characters).toEqual({});
+    expect(deriveGearCombatRestrictions(readGameplayState())).toEqual({ characters: {}, gear: {}, trinkets: {} });
   });
 });

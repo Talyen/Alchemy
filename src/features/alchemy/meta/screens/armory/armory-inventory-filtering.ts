@@ -26,18 +26,13 @@ export function hasArmoryCriteria(filters: ArmoryInventoryFilters, isTrinket: bo
   return Boolean(filters.search.trim()) || filters.keywords.length > 0 || (!isTrinket && filters.rarities.length > 0);
 }
 
-// A filtering pass repeats the same query for every item. Retain only its latest
-// tokenization, without caching inventory text that can change after crafting.
-let lastSearchQuery: string | undefined;
-let lastSearchWords: readonly string[] = [];
-
 function matchesSearch(text: string, query: string): boolean {
-  if (query !== lastSearchQuery) {
-    lastSearchWords = query.trim().toLocaleLowerCase().split(/\s+/);
-    lastSearchQuery = query;
-  }
   const normalized = text.toLocaleLowerCase().replace(/\s+/g, " ");
-  return lastSearchWords.every((word) => normalized.includes(word));
+  return query
+    .trim()
+    .toLocaleLowerCase()
+    .split(/\s+/)
+    .every((word) => normalized.includes(word));
 }
 
 function matchesKeywords(keywordIds: readonly KeywordId[], filters: ArmoryInventoryFilters): boolean {
@@ -46,7 +41,6 @@ function matchesKeywords(keywordIds: readonly KeywordId[], filters: ArmoryInvent
 }
 
 export function matchesGearFilters(item: GearInstance, filters: ArmoryInventoryFilters): boolean {
-  if (!hasArmoryCriteria(filters, false)) return true;
   const definition = gearDefinitions[item.definitionId];
   if (filters.rarities.length > 0 && (definition?.rarity == null || !filters.rarities.includes(definition.rarity))) {
     return false;
@@ -65,13 +59,10 @@ export function matchesGearFilters(item: GearInstance, filters: ArmoryInventoryF
 }
 
 export function matchesTrinketFilters(item: TrinketEntry, filters: ArmoryInventoryFilters): boolean {
-  if (!hasArmoryCriteria(filters, true)) return true;
   if (!filters.search.trim() && filters.keywords.length === 0) return true;
   const text = item.descriptionLines.join(" ");
-  return (
-    (filters.keywords.length === 0 || matchesKeywords(extractKeywordIds(text), filters)) &&
-    (!filters.search.trim() || matchesSearch(`${item.title} ${text}`, filters.search))
-  );
+  if (filters.keywords.length > 0 && !matchesKeywords(extractKeywordIds(text), filters)) return false;
+  return !filters.search.trim() || matchesSearch(`${item.title} ${text}`, filters.search);
 }
 
 export const ARMORY_FILTER_KEYWORDS = Object.values(keywordDefinitions)

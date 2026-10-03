@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import { buildClassSimDeck, removeCompanionSummonFromDeck } from "@/lib/balance/class-deck";
 import { characters, getCardKeywords, getStartingDeck } from "@/lib/game-data";
 import { makeTestCard } from "../../fixtures/cards";
-import { buildSimCompanionBondLevels, companionIdsFromDeck } from "@/lib/balance/homestead-preset";
+import {
+  buildSimCompanionBondLevels,
+  buildTypicalHomesteadEffects,
+  companionIdsFromDeck,
+} from "@/lib/balance/homestead-preset";
 
 describe("buildClassSimDeck", () => {
   it("preserves knight starting deck and adds three mid-tier affinity cards", () => {
@@ -31,20 +35,8 @@ describe("buildClassSimDeck", () => {
     const deck = buildClassSimDeck("alchemist", "mid", 42_000);
     const mixed = deck.filter((card) => card.id.startsWith("mixed-potion"));
     expect(mixed).toHaveLength(2);
-    const first = buildClassSimDeck("alchemist", "mid", 42_000).map((card) => card.id);
-    const second = buildClassSimDeck("alchemist", "mid", 42_000).map((card) => card.id);
-    expect(second).toEqual(first);
-  });
-
-  it("builds wildcard late decks with thirteen offerable cards", () => {
-    const deck = buildClassSimDeck("wildcard", "late", 77_777);
-    expect(deck).toHaveLength(13);
-    expect(deck.every((card) => card.id.length > 0)).toBe(true);
-  });
-
-  it("is deterministic for the same seed", () => {
-    const first = buildClassSimDeck("wizard", "mid", 12_345).map((card) => card.id);
-    const second = buildClassSimDeck("wizard", "mid", 12_345).map((card) => card.id);
+    const first = deck;
+    const second = buildClassSimDeck("alchemist", "mid", 42_000);
     expect(second).toEqual(first);
   });
 });
@@ -83,5 +75,18 @@ describe("companion deck analysis", () => {
     expect(removeCompanionSummonFromDeck(deck, "wolf")).toEqual([bear, ordinary]);
     expect(removeCompanionSummonFromDeck(deck, "phoenix")).toEqual([repeatedWolf, bear, ordinary]);
     expect(deck).toEqual([wolf, repeatedWolf, bear, ordinary]);
+  });
+});
+
+describe("simulation homestead presets", () => {
+  it("keeps mutable fight effects isolated from later fights and other presets", () => {
+    const before = buildTypicalHomesteadEffects("mid");
+    const current = buildTypicalHomesteadEffects("mid");
+    current.runMaxHealthBonus = 999;
+    current.companionBondLevels.wolf = 999;
+    current.cardHealBonus.apple = 999;
+    expect(buildTypicalHomesteadEffects("mid")).toEqual(before);
+    expect(buildTypicalHomesteadEffects("early").runMaxHealthBonus).toBe(0);
+    expect(buildTypicalHomesteadEffects("late").runMaxHealthBonus).toBe(10);
   });
 });

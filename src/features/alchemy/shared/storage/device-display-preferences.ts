@@ -6,23 +6,16 @@ const DEVICE_DISPLAY_STORAGE_VERSION = 1;
 export const DEVICE_DISPLAY_STORAGE_KEY = `alchemy-device-display-v${DEVICE_DISPLAY_STORAGE_VERSION}`;
 
 export function readDeviceDisplayPreferences(): DeviceDisplayPreferences {
+  const stored = tryLocalStorageGetItem(DEVICE_DISPLAY_STORAGE_KEY);
+  if (!stored.ok) {
+    // Unavailable storage (SSR/test-node) stays silent like a version mismatch.
+    if (!isStorageUnavailable(stored.error)) {
+      logStorageFailure("Device display preferences could not be read, using defaults", stored.error);
+    }
+    return { ...DEFAULT_DEVICE_DISPLAY };
+  }
   try {
-    const stored = tryLocalStorageGetItem(DEVICE_DISPLAY_STORAGE_KEY);
-    if (!stored.ok) {
-      // Unavailable storage (SSR/test-node) stays silent like a version
-      // mismatch; only real read failures are logged.
-      if (!isStorageUnavailable(stored.error)) {
-        logStorageFailure("Device display preferences could not be read, using defaults", stored.error);
-      }
-      return { ...DEFAULT_DEVICE_DISPLAY };
-    }
-    let saved: unknown;
-    try {
-      saved = JSON.parse(stored.value ?? "null") as unknown;
-    } catch (error) {
-      logStorageFailure("Device display preferences could not be parsed, using defaults", error);
-      return { ...DEFAULT_DEVICE_DISPLAY };
-    }
+    const saved: unknown = JSON.parse(stored.value ?? "null");
     if (
       !saved ||
       typeof saved !== "object" ||
@@ -42,7 +35,7 @@ export function readDeviceDisplayPreferences(): DeviceDisplayPreferences {
       ),
     };
   } catch (error) {
-    logStorageFailure("Device display preferences could not be read, using defaults", error);
+    logStorageFailure("Device display preferences could not be parsed, using defaults", error);
     return { ...DEFAULT_DEVICE_DISPLAY };
   }
 }

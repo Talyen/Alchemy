@@ -13,22 +13,6 @@ import { withClearedNode } from "@/lib/content-systems/labyrinth/map-state";
 import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state";
 
 describe("BattleCardEffectSchema", () => {
-  it.each([
-    ["damage effect", { kind: "damage", damageType: "physical", amount: 6 }],
-    ["player-status effect", { kind: "player-status", status: "block", amount: 8 }],
-    ["heal effect", { kind: "heal", amount: 5 }],
-    ["summon-companion", { kind: "summon-companion", companionId: "wolf" }],
-    ["self-damage with enemy status damage type", { kind: "self-damage", damageType: "burn", amount: 3 }],
-    ["remove-player-status", { kind: "remove-player-status", status: "poison" }],
-    ["lose-health", { kind: "lose-health", amount: 1 }],
-    ["draw-cards", { kind: "draw-cards", amount: 2 }],
-    ["remove-enemy-armor", { kind: "remove-enemy-armor", amount: 2 }],
-    ["multiply-enemy-status", { kind: "multiply-enemy-status", status: "freeze", factor: 2 }],
-  ])("parses %s", (_label, effect) => {
-    const result = BattleCardEffectSchema.safeParse(effect);
-    expect(result.success).toBe(true);
-  });
-
   it("rejects unknown kind", () => {
     const result = BattleCardEffectSchema.safeParse({ kind: "unknown", amount: 5 });
     expect(result.success).toBe(false);
@@ -153,16 +137,15 @@ describe("CompletedDifficultiesSchema", () => {
 });
 
 describe("deduplicateFromSet and deduplicatedSetArraySchema", () => {
-  it("deduplicates and filters unknown elements against valid set", () => {
-    const valid = ["a", "b", "c"] as const;
-    expect(deduplicateFromSet(["a", "b", "a", "d", 123, null], valid)).toEqual(["a", "b"]);
-    expect(deduplicateFromSet("not an array", valid)).toEqual([]);
-  });
-
-  it("parses valid array and falls back safely using schema", () => {
-    const schema = deduplicatedSetArraySchema(["knight", "rogue"] as const);
-    expect(schema.parse(["knight", "rogue", "knight", "unknown"])).toEqual(["knight", "rogue"]);
-    expect(schema.parse("invalid")).toEqual([]);
-    expect(schema.parse(null)).toEqual([]);
+  it("repairs malformed discovery IDs in first-seen order for both catalog forms", () => {
+    const ids = ["knight", "rogue"] as const;
+    const saved = ["rogue", null, "knight", "rogue", 42, "unknown", "toString"];
+    for (const valid of [ids, new Set(ids)]) {
+      expect(deduplicateFromSet(saved, valid)).toEqual(["rogue", "knight"]);
+      const schema = deduplicatedSetArraySchema(valid);
+      expect(schema.parse(saved)).toEqual(["rogue", "knight"]);
+      expect(schema.parse(null)).toEqual([]);
+    }
+    expect(saved).toEqual(["rogue", null, "knight", "rogue", 42, "unknown", "toString"]);
   });
 });

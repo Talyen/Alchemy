@@ -9,7 +9,7 @@ import { readActivityData } from "@/lib/active-run-session";
 import { strengthenPotion as prepareStrengthenedPotion } from "@/lib/alchemist/brewing";
 import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
 import { ALCHEMIST_POTIONS_OFFERED, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
-import { isStandardPotionCard, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
+import { isMixedPotionCard, isStandardPotionCard, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { isValidDeckIndex } from "@/lib/utils";
@@ -24,7 +24,7 @@ import {
 import { computeMixPotionPrice, getShopBuyPrice } from "./shop-pricing";
 import { resolveDraftShopModifiers, resolveReadShopModifiers } from "./shop-pricing-context";
 import { applyStrongSpiritsToPotions, createInitialAlchemistState, resampleCardShopOfferings } from "./shop-state-init";
-import { commitShopService, runShopTransaction, type ShopTransactionResult } from "./shop-transactions";
+import { commitShopService, runShopTransaction } from "./shop-transactions";
 
 export function createAlchemistShopCommands({
   talentEffects,
@@ -54,48 +54,9 @@ export function createAlchemistShopCommands({
     ),
   );
 
-  function mixPotions(indexA: number, indexB: number): BattleCard | null {
-    return (
-      runShopTransaction(
-        "alchemist",
-        (draft): ShopTransactionResult<BattleCard | null> => {
-          const run = draft.run.activeRun;
-          const state = readActivityData(draft.session.activity, "alchemist");
-          const price = computeMixPotionPrice(
-            talentEffects,
-            resolveDraftShopModifiers(draft),
-            homesteadEffects.mixPotionDiscount,
-          );
-          const cardA = run.runDeck[indexA];
-          const cardB = run.runDeck[indexB];
-          const mixed =
-            cardA && cardB && isStandardPotionCard(cardA) && isStandardPotionCard(cardB)
-              ? tryCreateMixedPotion(cardA, cardB, talentEffects.potionMixPotency)
-              : null;
-          if (!mixed) return { committed: false, price, value: null };
-          return commitShopService({
-            draft,
-            price,
-            guard:
-              !state.mixUsed &&
-              indexA !== indexB &&
-              isValidDeckIndex(indexA, run.runDeck.length) &&
-              isValidDeckIndex(indexB, run.runDeck.length),
-            failureValue: null,
-            apply: () => {
-              setAlchemistState(draft, (previous) => ({ ...previous, mixUsed: true }));
-              setRunDeck(draft, (previous) => applyMixToDeck(previous, indexA, indexB, mixed));
-              discoverCardIds(draft, [MIXED_POTION_CARD_ID]);
-              return mixed;
-            },
-          });
-        },
-        "alchemistMix",
-      ).value ?? null
-    );
-  }
-
-  function strengthenPotion(index: number): BattleCard | null {
+  function brewPotion(
+    prepare: (deck: BattleCard[]) => { potion: BattleCard; deck: BattleCard[] } | null,
+  ): BattleCard | null {
     return (
       runShopTransaction(
         "alchemist",
@@ -106,23 +67,47 @@ export function createAlchemistShopCommands({
             homesteadEffects.mixPotionDiscount,
           );
           const state = readActivityData(draft.session.activity, "alchemist");
-          const card = draft.run.activeRun.runDeck[index];
-          const result = card ? prepareStrengthenedPotion(card) : null;
+          const prepared = state.mixUsed ? null : prepare(draft.run.activeRun.runDeck);
           return commitShopService({
             draft,
             price,
-            guard: Number.isInteger(index) && !state.mixUsed && result !== null,
+            guard: prepared !== null,
             failureValue: null,
             apply: () => {
+              if (!prepared) return null;
               setAlchemistState(draft, (previous) => ({ ...previous, mixUsed: true }));
-              setRunDeck(draft, (previous) => previous.map((card, i) => (i === index ? result! : card)));
-              return result;
+              setRunDeck(draft, prepared.deck);
+              if (isMixedPotionCard(prepared.potion)) {
+                discoverCardIds(draft, [MIXED_POTION_CARD_ID]);
+              }
+              return prepared.potion;
             },
           });
         },
         "alchemistMix",
       ).value ?? null
     );
+  }
+
+  function mixPotions(indexA: number, indexB: number): BattleCard | null {
+    return brewPotion((deck) => {
+      if (indexA === indexB || !isValidDeckIndex(indexA, deck.length) || !isValidDeckIndex(indexB, deck.length)) {
+        return null;
+      }
+      const cardA = deck[indexA]!;
+      const cardB = deck[indexB]!;
+      if (!isStandardPotionCard(cardA) || !isStandardPotionCard(cardB)) return null;
+      const potion = tryCreateMixedPotion(cardA, cardB, talentEffects.potionMixPotency);
+      return potion ? { potion, deck: applyMixToDeck(deck, indexA, indexB, potion) } : null;
+    });
+  }
+
+  function strengthenPotion(index: number): BattleCard | null {
+    return brewPotion((deck) => {
+      if (!isValidDeckIndex(index, deck.length)) return null;
+      const potion = prepareStrengthenedPotion(deck[index]!);
+      return potion ? { potion, deck: deck.map((card, i) => (i === index ? potion : card)) } : null;
+    });
   }
 
   const refresh = createShopRefreshAction({

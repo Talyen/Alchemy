@@ -116,14 +116,16 @@ export class SaveWriteQueue {
     const run = this.chain.then(async () => {
       try {
         const result = await clear();
-        if (!result.ok) {
-          options?.onError?.(result.error);
-          return false;
-        }
+        if (!result.ok) throw result.error;
         this.writesDisabled = false;
         return true;
       } catch (error) {
-        options?.onError?.(error);
+        try {
+          options?.onError?.(error);
+        } catch (notificationError) {
+          // Reporting must not reject the serialization chain and block later saves.
+          logStorageFailure("Save clear error handler threw", notificationError);
+        }
         return false;
       } finally {
         this.pendingClears--;

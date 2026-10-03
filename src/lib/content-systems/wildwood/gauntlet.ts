@@ -107,12 +107,7 @@ export function drawWildwoodBoss(
   if (bag.length === 0) {
     bag = createWildwoodBossBag(rng);
     if (previousBossId && bag[0] === previousBossId && bag.length > 1) {
-      const b0 = bag[0];
-      const b1 = bag[1];
-      if (b0 !== undefined && b1 !== undefined) {
-        bag[0] = b1;
-        bag[1] = b0;
-      }
+      [bag[0], bag[1]] = [bag[1]!, bag[0]];
     }
   }
   const [bossId, ...rest] = bag;
@@ -121,11 +116,7 @@ export function drawWildwoodBoss(
 }
 
 export function canPrepareNextWildwoodBoss(state: WildwoodDraftState, deckSize: number): boolean {
-  return (
-    state.phase === "reward" ||
-    state.phase === "removal" ||
-    (state.phase === "draft" && canCompleteWildwoodDraft(state, deckSize))
-  );
+  return state.phase === "reward" || state.phase === "removal" || canCompleteWildwoodDraft(state, deckSize);
 }
 
 export function prepareNextWildwoodBoss(
@@ -134,16 +125,17 @@ export function prepareNextWildwoodBoss(
   rng: () => number,
 ): { state: WildwoodDraftState; bossId: WildwoodBossId; modifierId: WildwoodModifierId } | null {
   if (!canPrepareNextWildwoodBoss(state, deckSize)) return null;
-  const draw = drawWildwoodBoss(state.remainingBossIds, state.currentBossId ?? state.previousBossId, rng);
-  const modifierId = pickWildwoodModifier(rng);
-  const rewardTraitId = pickWildwoodRewardTrait(rng);
+  const previousBossId = state.currentBossId ?? state.previousBossId;
+  const draw = drawWildwoodBoss(state.remainingBossIds, previousBossId, rng);
+  const modifierId = pickEncounterTrait("wildwood", "combat", rng);
+  const rewardTraitId = pickEncounterTrait("wildwood", "reward", rng);
   return {
     bossId: draw.bossId,
     modifierId,
     state: {
       ...state,
       remainingBossIds: draw.remainingBossIds,
-      previousBossId: state.currentBossId ?? state.previousBossId,
+      previousBossId,
       currentBossId: draw.bossId,
       currentCombatTraitIds: [modifierId],
       currentRewardTraitIds: [rewardTraitId],
@@ -180,14 +172,6 @@ export function canSkipWildwoodRemoval(state: WildwoodDraftState): boolean {
 
 export function enterWildwoodReward(state: WildwoodDraftState): WildwoodDraftState | null {
   return state.phase === "battle" ? { ...state, phase: "reward", currentCombatTraitIds: [] } : null;
-}
-
-function pickWildwoodModifier(rng: () => number): WildwoodModifierId {
-  return pickEncounterTrait("wildwood", "combat", rng);
-}
-
-function pickWildwoodRewardTrait(rng: () => number): EncounterRewardTraitId {
-  return pickEncounterTrait("wildwood", "reward", rng);
 }
 
 export function withWildwoodModifier(boss: BestiaryEntry, modifierId: WildwoodModifierId): BestiaryEntry {

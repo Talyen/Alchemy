@@ -1,8 +1,12 @@
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
-import type { BattleCard } from "@/lib/game-data";
+import type { BattleCard, KeywordId } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import type { MysteryChoice, MysteryEffect, MysteryEvent } from "@/lib/mystery";
 import type { PersistedMysteryVisit } from "./types";
+import type { ParsedActiveRunData } from "@/lib/validation";
+
+type PersistedMysteryVisitInput = NonNullable<ParsedActiveRunData["mysteryVisit"]>;
+export type PersistedMysteryChoiceInput = PersistedMysteryVisitInput["event"]["choices"][number];
 
 export interface HydratedMysteryVisit {
   mysteryEvent: MysteryEvent | null;
@@ -37,25 +41,6 @@ export function serializeMysteryVisit(visit: HydratedMysteryVisit): PersistedMys
   };
 }
 
-interface PersistedMysteryEventInput {
-  id: string;
-  title: string;
-  art: string;
-  narrative: string;
-  choices: readonly PersistedMysteryChoiceInput[];
-}
-
-function hydrateMysteryEvent(event: PersistedMysteryEventInput | MysteryEvent | null): MysteryEvent | null {
-  if (!event) return null;
-  return {
-    id: event.id,
-    title: event.title,
-    art: event.art,
-    narrative: event.narrative,
-    choices: event.choices.map((choice) => hydratePersistedMysteryChoice(choice)!),
-  };
-}
-
 export function hydrateMysteryVisit(data: PersistedMysteryVisit | null): HydratedMysteryVisit {
   if (!data) return emptyHydratedMysteryVisit();
   return {
@@ -68,43 +53,31 @@ export function hydrateMysteryVisit(data: PersistedMysteryVisit | null): Hydrate
   };
 }
 
-interface PersistedMysteryVisitInput {
-  event: PersistedMysteryEventInput | MysteryEvent;
-  chosenChoice?: PersistedMysteryChoiceInput | MysteryChoice | null;
-  cardChoices?: readonly unknown[] | null;
-  grantedTrinketIds?: readonly string[];
-  grantedGear?: readonly GearInstance[];
-  chosenCardId?: string | null;
-}
-
 export function hydratePersistedMysteryVisit(
   data: PersistedMysteryVisitInput | PersistedMysteryVisit | null,
 ): PersistedMysteryVisit | null {
   if (!data) return null;
   return {
-    event: hydrateMysteryEvent(data.event)!,
+    event: { ...data.event, choices: data.event.choices.map(hydrateMysteryChoice) },
     chosenChoice: hydratePersistedMysteryChoice(data.chosenChoice ?? null),
-    cardChoices: data.cardChoices?.map((card) => hydrateCard(card as BattleCard)) ?? null,
+    cardChoices: data.cardChoices?.map(hydrateCard) ?? null,
     grantedTrinketIds: [...(data.grantedTrinketIds ?? [])],
     grantedGear: [...(data.grantedGear ?? [])],
     chosenCardId: data.chosenCardId ?? null,
   };
 }
 
-export interface PersistedMysteryChoiceInput {
-  label: string;
-  effects: ReadonlyArray<MysteryEffect | { kind: string; [key: string]: unknown }>;
+export function hydratePersistedMysteryChoice(choice: PersistedMysteryChoiceInput | null): MysteryChoice | null {
+  return choice ? hydrateMysteryChoice(choice) : null;
 }
 
-export function hydratePersistedMysteryChoice(choice: PersistedMysteryChoiceInput | null): MysteryChoice | null {
-  if (!choice) return null;
+function hydrateMysteryChoice(choice: PersistedMysteryChoiceInput): MysteryChoice {
   return {
     label: choice.label,
     effects: choice.effects.map((effect): MysteryEffect => {
-      if (effect.kind !== "chooseCard") return effect as MysteryEffect;
-      return "tag" in effect && typeof effect.tag === "string" && effect.tag
-        ? { kind: "chooseCard", tag: effect.tag as import("@/lib/game-data").KeywordId }
-        : { kind: "chooseCard" };
+      if (effect.kind === "gainXP") return { ...effect, keyword: effect.keyword as KeywordId };
+      if (effect.kind !== "chooseCard") return effect;
+      return effect.tag ? { kind: "chooseCard", tag: effect.tag as KeywordId } : { kind: "chooseCard" };
     }),
   };
 }

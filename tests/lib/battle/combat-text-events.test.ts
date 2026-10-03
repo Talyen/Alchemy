@@ -1,50 +1,53 @@
 import { describe, expect, it } from "vitest";
+import { mergeCombatText } from "@/lib/battle/combat-text-events";
+import type { CombatTextEvent, NumericCombatTextEvent } from "@/lib/battle";
 
-import { mergeCombatText, shouldShowCombatText } from "@/lib/battle/combat-text-events";
-import { makeCombatTexts as makeTexts } from "../../fixtures/battle";
-
-describe("shouldShowCombatText", () => {
-  it("hides harmful status application text", () => {
-    expect(shouldShowCombatText({ target: "player", kind: "status", stat: "burn", amount: 2 })).toBe(false);
-    expect(shouldShowCombatText({ target: "enemy", kind: "status", stat: "poison", amount: 3 })).toBe(false);
-    expect(shouldShowCombatText({ target: "enemy", kind: "status", stat: "bleed", amount: 4 })).toBe(false);
-    expect(shouldShowCombatText({ target: "enemy", kind: "status", stat: "freeze", amount: 5 })).toBe(false);
-    expect(shouldShowCombatText({ target: "enemy", kind: "status", stat: "stun", amount: 6 })).toBe(false);
-  });
-
-  it("keeps harmful status damage text visible", () => {
-    expect(shouldShowCombatText({ target: "player", kind: "damage", stat: "burn", amount: 2 })).toBe(true);
-  });
-
-  it("keeps control notices visible", () => {
-    expect(shouldShowCombatText({ target: "enemy", kind: "notice", stat: "stun", text: "Stunned" })).toBe(true);
-    expect(shouldShowCombatText({ target: "enemy", kind: "notice", stat: "freeze", text: "Frozen" })).toBe(true);
-  });
-
-  it("keeps beneficial status and resource text visible", () => {
-    expect(shouldShowCombatText({ target: "player", kind: "status", stat: "block", amount: 5 })).toBe(true);
-    expect(shouldShowCombatText({ target: "player", kind: "status", stat: "gold", amount: 3 })).toBe(true);
-  });
-});
-
-describe("mergeCombatText", () => {
-  it("does not add harmful status application events", () => {
-    const texts = makeTexts();
+describe("combat feedback aggregation", () => {
+  it("hides status buildup while retaining damage, control notices and beneficial gains", () => {
+    const texts: CombatTextEvent[] = [];
     mergeCombatText(texts, { target: "player", kind: "status", stat: "burn", amount: 2 });
-    expect(texts).toEqual([]);
+    mergeCombatText(texts, { target: "enemy", kind: "status", stat: "stun", amount: 2 });
+    const visible: CombatTextEvent[] = [
+      { target: "player", kind: "damage", stat: "burn", amount: 2 },
+      { target: "enemy", kind: "notice", stat: "stun", text: "Stunned" },
+      { target: "player", kind: "status", stat: "block", amount: 5 },
+    ];
+    for (const event of visible) mergeCombatText(texts, event);
+    expect(texts).toEqual(visible);
   });
 
-  it("still merges visible events", () => {
-    const texts = makeTexts();
-    mergeCombatText(texts, { target: "player", kind: "status", stat: "block", amount: 2 });
-    mergeCombatText(texts, { target: "player", kind: "status", stat: "block", amount: 3 });
-    expect(texts).toEqual([{ target: "player", kind: "status", stat: "block", amount: 5 }]);
+  it.each<Partial<NumericCombatTextEvent>>([
+    { target: "player" },
+    { kind: "heal" },
+    { stat: "burn" },
+    { impact: false },
+    { additive: false },
+    { amount: -3 },
+    { amount: 0 },
+  ])("keeps a distinct numeric outcome separate: %j", (difference) => {
+    const base: NumericCombatTextEvent = { target: "enemy", kind: "damage", stat: "health", amount: 2 };
+    const distinct = { ...base, ...difference };
+    const texts: CombatTextEvent[] = [];
+    mergeCombatText(texts, { ...distinct });
+    mergeCombatText(texts, { ...base });
+    mergeCombatText(texts, { ...base });
+    expect(texts).toEqual([distinct, { ...base, amount: 4 }]);
   });
 
-  it("deduplicates matching control notices", () => {
-    const texts = makeTexts();
-    mergeCombatText(texts, { target: "enemy", kind: "notice", stat: "stun", text: "Stunned" });
-    mergeCombatText(texts, { target: "enemy", kind: "notice", stat: "stun", text: "Stunned" });
-    expect(texts).toEqual([{ target: "enemy", kind: "notice", stat: "stun", text: "Stunned" }]);
+  it("deduplicates notices only when their target, stat, text and signal match", () => {
+    const notice: CombatTextEvent = { target: "enemy", kind: "notice", stat: "stun", text: "Stunned" };
+    const texts: CombatTextEvent[] = [];
+    const distinct: CombatTextEvent[] = [
+      notice,
+      { ...notice, target: "player" },
+      { ...notice, stat: "freeze" },
+      { ...notice, text: "Purged" },
+      { ...notice, signal: "purge" },
+    ];
+    for (const event of distinct) {
+      mergeCombatText(texts, event);
+      mergeCombatText(texts, { ...event });
+    }
+    expect(texts).toEqual(distinct);
   });
 });

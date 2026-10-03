@@ -17,10 +17,11 @@ function namedTrinketIds(effects: readonly MysteryEffect[]): string[] {
 
 function pickRandomMysteryTrinketId(
   fromIds: readonly string[] | undefined,
-  isExcluded: (id: string) => boolean,
+  owned: ReadonlySet<string>,
   rng: () => number,
+  reserved: ReadonlySet<string> = new Set(),
 ): string | undefined {
-  const available = trinketLibrary.filter((entry) => !isExcluded(entry.id));
+  const available = trinketLibrary.filter((entry) => !owned.has(entry.id) && !reserved.has(entry.id));
   const constrained = fromIds?.length ? available.filter((entry) => fromIds.includes(entry.id)) : [];
   return pickRandom(constrained.length > 0 ? constrained : available, rng)?.id;
 }
@@ -38,7 +39,7 @@ export function pickMysteryTrinketGrantId({
 }): string | undefined {
   if (preferredId && !owned.has(preferredId)) return preferredId;
 
-  return pickRandomMysteryTrinketId(fromIds, (id) => owned.has(id), rng);
+  return pickRandomMysteryTrinketId(fromIds, owned, rng);
 }
 
 function resolveMysteryTrinketEffect(
@@ -48,22 +49,14 @@ function resolveMysteryTrinketEffect(
   rng: () => number,
   fallbackSeed: string,
 ): MysteryEffect {
-  if (effect.kind === "gainTrinket") {
-    if (owned.has(effect.trinketId)) {
-      return mysteryTrinketFallbackEffect(fallbackSeed);
-    }
-    owned.add(effect.trinketId);
-    return effect;
-  }
-
-  if (effect.kind === "gainRandomTrinket") {
-    const picked = pickRandomMysteryTrinketId(effect.fromIds, (id) => owned.has(id) || reservedNamedIds.has(id), rng);
-    if (!picked) return mysteryTrinketFallbackEffect(fallbackSeed);
-    owned.add(picked);
-    return { kind: "gainTrinket", trinketId: picked };
-  }
-
-  return effect;
+  if (effect.kind !== "gainTrinket" && effect.kind !== "gainRandomTrinket") return effect;
+  const id =
+    effect.kind === "gainTrinket"
+      ? effect.trinketId
+      : pickRandomMysteryTrinketId(effect.fromIds, owned, rng, reservedNamedIds);
+  if (id === undefined || owned.has(id)) return mysteryTrinketFallbackEffect(fallbackSeed);
+  owned.add(id);
+  return effect.kind === "gainTrinket" ? effect : { kind: "gainTrinket", trinketId: id };
 }
 
 export function resolveMysteryEventTrinkets(

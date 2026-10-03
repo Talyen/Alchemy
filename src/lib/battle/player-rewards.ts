@@ -43,14 +43,6 @@ export function emitOverhealBlockText(
   emitGainedStatusText(stateBefore, stateAfter, "block", combatTexts);
 }
 
-function emitReactiveThornsText(
-  stateBefore: Pick<BattleState, "playerStatuses">,
-  stateAfter: Pick<BattleState, "playerStatuses">,
-  combatTexts: CombatTextEvent[],
-) {
-  emitGainedStatusText(stateBefore, stateAfter, "thorns", combatTexts);
-}
-
 function resolveHealingWithFeedback(
   state: BattleState,
   amount: number,
@@ -63,7 +55,7 @@ function resolveHealingWithFeedback(
       mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healing.effective });
     }
     emitOverhealBlockText(state, healing.state, combatTexts);
-    emitReactiveThornsText(state, healing.state, combatTexts);
+    emitGainedStatusText(state, healing.state, "thorns", combatTexts);
   }
   return healing;
 }
@@ -166,7 +158,7 @@ export function addPlayerStatusWithCombatText(
     mergeCombatText(combatTexts, { target: "player", kind: "status", stat, amount: delta });
   }
   if (stat === "block" && combatTexts) {
-    emitReactiveThornsText(previousState, nextState, combatTexts);
+    emitGainedStatusText(previousState, nextState, "thorns", combatTexts);
   }
   return stat === "block" ? applyBlockGainRewards(nextState, delta, combatTexts ?? []) : nextState;
 }
@@ -373,18 +365,11 @@ function applyArmorTalentChecks(state: BattleState, amount: number, combatTexts:
   }
   const armorAmount = rollBattleChance(state.talentEffects.armorDoubleChance, state) ? amount * 2 : amount;
   const newArmor = state.playerStatuses.armor + armorAmount;
-  const thresholds: Array<{ threshold: number; apply: (s: BattleState) => BattleState }> = [
-    {
-      threshold: state.talentEffects.armorBlockThreshold,
-      apply: (s) => applyBlockReward(s, s.talentEffects.armorBlockAmount, combatTexts),
-    },
-    {
-      threshold: state.talentEffects.armorCleanseThreshold,
-      apply: (s) => removeHarmfulPlayerStatuses(s, Number.POSITIVE_INFINITY, combatTexts),
-    },
-  ];
-  for (const { threshold, apply } of thresholds) {
-    if (crossesGainThreshold(state.playerStatuses.armor, newArmor, threshold)) state = apply(state);
+  if (crossesGainThreshold(state.playerStatuses.armor, newArmor, state.talentEffects.armorBlockThreshold)) {
+    state = applyBlockReward(state, state.talentEffects.armorBlockAmount, combatTexts);
+  }
+  if (crossesGainThreshold(state.playerStatuses.armor, newArmor, state.talentEffects.armorCleanseThreshold)) {
+    state = removeHarmfulPlayerStatuses(state, Number.POSITIVE_INFINITY, combatTexts);
   }
   return { state, amount: armorAmount };
 }
@@ -398,7 +383,7 @@ export function applyArmorStatusEffect(
   const armorBefore = state.playerStatuses.armor;
   const checked = applyArmorTalentChecks(
     state,
-    amount + state.talentEffects.flatArmorAmount + (amount > 0 ? state.gearEffects.flatArmorGained : 0),
+    amount + state.talentEffects.flatArmorAmount + state.gearEffects.flatArmorGained,
     combatTexts,
   );
   state = checked.state;

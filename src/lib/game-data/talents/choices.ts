@@ -63,13 +63,9 @@ export function isTalentRowUnlocked(keywordId: KeywordId, unlockedIds: string[],
 
 export function getAllocatableTalentChoices(keywordId: KeywordId, unlockedIds: string[]): TalentDefinition[] {
   const unlocked = new Set(unlockedIds);
-  const rows = getTalentRows(keywordId);
-  // Overflow entries use the final authored row's gate, like getTalentRowIndex.
-  const finalRow = TALENT_ROW_SIZES.length - 1;
-  const gateRows = [...rows.slice(0, finalRow), rows.slice(finalRow).flat()];
-  for (const row of gateRows) {
-    const missing = row.filter((talent) => !isTalentPlaceholder(talent) && !unlocked.has(talent.id));
-    if (missing.length > 0) return missing;
-  }
-  return [];
+  const missing = getTalentsForKeyword(keywordId)
+    .map((talent, index) => ({ talent, row: getTalentRowIndex(index) }))
+    .filter(({ talent }) => !isTalentPlaceholder(talent) && !unlocked.has(talent.id));
+  const firstRow = missing[0]?.row;
+  return missing.filter(({ row }) => row === firstRow).map(({ talent }) => talent);
 }

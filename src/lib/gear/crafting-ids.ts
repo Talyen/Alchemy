@@ -38,8 +38,7 @@ export function addCraftingCurrencies(
   if (!added || typeof added !== "object") return next;
 
   for (const id of CRAFTING_CURRENCY_IDS) {
-    const value = sanitizeCurrencyValue(added[id]);
-    if (value > 0) next[id] += value;
+    next[id] += sanitizeCurrencyValue(added[id]);
   }
 
   return next;

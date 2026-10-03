@@ -1,18 +1,17 @@
+import type { HomesteadBuilding, HomesteadFarm, HomesteadResearch } from "./types";
 import {
   foodSingleCosts,
   gemsSingleCosts,
   herbsSingleCosts,
   materialCost,
-  stackingBuilding,
-  stackingFarm,
-  stackingResearch,
+  stackingUpgrade,
   woodFoodCosts,
   woodHideCosts,
   woodStoneCosts,
 } from "./data-builders";
 
-export const buildings = [
-  stackingBuilding(
+export const buildings: HomesteadBuilding[] = [
+  stackingUpgrade(
     "blacksmiths-forge",
     "Blacksmith",
     [
@@ -25,7 +24,7 @@ export const buildings = [
     (t) => `Physical damage +${t}\nBurn damage gains ${25 * t}% of Forge.`,
     (t) => `+${t} Iron per Room`,
   ),
-  stackingBuilding(
+  stackingUpgrade(
     "hunters-lodge",
     "Hunter's Lodge",
     woodHideCosts(),
@@ -33,7 +32,7 @@ export const buildings = [
     (t) => `Nature damage +${t}`,
     (t) => `+${t} Food and +${t} Hide per Room`,
   ),
-  stackingBuilding(
+  stackingUpgrade(
     "alchemy-lab",
     "Alchemy Lab",
     [
@@ -46,7 +45,7 @@ export const buildings = [
     (t) => `Potion damage and healing +${t}`,
     (t) => `+${t} Herbs per Room`,
   ),
-  stackingBuilding(
+  stackingUpgrade(
     "runesmiths-workshop",
     "Runesmith",
     [
@@ -59,14 +58,14 @@ export const buildings = [
     (t) => `Freeze and Holy damage +${t}`,
     (t) => `+${t} Gems per Room`,
   ),
-  stackingBuilding(
+  stackingUpgrade(
     "companion-sanctuary",
     "Sanctuary",
     woodFoodCosts(),
     { companionDamage: 1 },
     (t) => `Companion damage +${t}`,
   ),
-  stackingBuilding(
+  stackingUpgrade(
     "wishing-well",
     "Wishing Well",
     woodStoneCosts(),
@@ -74,7 +73,7 @@ export const buildings = [
     (t) => `${10 * t}% chance for an extra Wish choice`,
     (t) => `+${t} Gems or Gold per Room`,
   ),
-  stackingBuilding(
+  stackingUpgrade(
     "transmutation-crucible",
     "Transmutation Crucible",
     [
@@ -87,7 +86,7 @@ export const buildings = [
     (t) => `Burn damage +${t}`,
     (t) => `+${t} Iron per Room`,
   ),
-  stackingBuilding(
+  stackingUpgrade(
     "mycology-cellar",
     "Mycology Cellar",
     [
@@ -100,7 +99,7 @@ export const buildings = [
     (t) => `Leech healing +${t}`,
     (t) => `+${t} Herbs per Room`,
   ),
-  stackingBuilding(
+  stackingUpgrade(
     "sparring-grounds",
     "Sparring Grounds",
     woodStoneCosts(),
@@ -108,7 +107,7 @@ export const buildings = [
     (t) => `Starting Block +${2 * t}`,
     (t) => `+${t} Iron per Room`,
   ),
-  stackingBuilding(
+  stackingUpgrade(
     "archery-range",
     "Archery Range",
     woodHideCosts(),
@@ -116,7 +115,7 @@ export const buildings = [
     (t) => `Archery damage +${t}`,
     (t) => `+${t} Wood per Room`,
   ),
-  stackingBuilding(
+  stackingUpgrade(
     "library",
     "Library",
     [
@@ -130,8 +129,8 @@ export const buildings = [
   ),
 ];
 
-export const farmPlots = [
-  stackingFarm(
+export const farmPlots: HomesteadFarm[] = [
+  stackingUpgrade(
     "wheat-field",
     "Wheat Field",
     foodSingleCosts(),
@@ -139,7 +138,7 @@ export const farmPlots = [
     (t) => `Bread healing +${2 * t}`,
     (t) => `+${2 * t} Food per Room`,
   ),
-  stackingFarm(
+  stackingUpgrade(
     "herb-garden",
     "Herb Garden",
     herbsSingleCosts(),
@@ -147,7 +146,7 @@ export const farmPlots = [
     (t) => `Poison damage taken −${t}`,
     (t) => `+${t} Herbs per Room`,
   ),
-  stackingFarm(
+  stackingUpgrade(
     "chicken-coop",
     "Chicken Coop",
     woodFoodCosts(),
@@ -155,7 +154,7 @@ export const farmPlots = [
     (t) => `Health +${5 * t}`,
     (t) => `+${2 * t} Food per Room`,
   ),
-  stackingFarm(
+  stackingUpgrade(
     "pasture",
     "Pasture",
     woodFoodCosts(),
@@ -163,7 +162,7 @@ export const farmPlots = [
     (t) => `Physical damage taken −${t}`,
     (t) => `+${t} Hide per Room`,
   ),
-  stackingFarm(
+  stackingUpgrade(
     "orchard",
     "Orchard",
     woodFoodCosts(),
@@ -171,7 +170,7 @@ export const farmPlots = [
     (t) => `Apple healing +${2 * t}`,
     (t) => `+${2 * t} Food per Room`,
   ),
-  stackingFarm(
+  stackingUpgrade(
     "crystal-garden",
     "Crystal Garden",
     [
@@ -186,8 +185,8 @@ export const farmPlots = [
   ),
 ];
 
-export const researchUpgrades = [
-  stackingResearch(
+export const researchUpgrades: HomesteadResearch[] = [
+  stackingUpgrade(
     "leyline-energy",
     "Leyline Energy",
     gemsSingleCosts(),
@@ -195,7 +194,7 @@ export const researchUpgrades = [
     (t) => `${5 * t}% chance to spend no Mana`,
     (t) => `+${t} Gems per Room`,
   ),
-  stackingResearch(
+  stackingUpgrade(
     "detect-magic",
     "Detect Magic",
     gemsSingleCosts(),
@@ -203,7 +202,7 @@ export const researchUpgrades = [
     (t) => `Basic → Astral chance +${[3, 6, 10, 15][t - 1]}%`,
     (t) => `+${t} Gems per Room`,
   ),
-  stackingResearch(
+  stackingUpgrade(
     "botanical-distillation",
     "Botanical Distillation",
     herbsSingleCosts(),
@@ -211,7 +210,7 @@ export const researchUpgrades = [
     (t) => `Potion brewing cost −${2 * t} Gold`,
     (t) => `+${t} Herbs per Room`,
   ),
-  stackingResearch(
+  stackingUpgrade(
     "culinary-arts",
     "Culinary Arts",
     foodSingleCosts(),
@@ -219,7 +218,7 @@ export const researchUpgrades = [
     (t) => `Health restored +${t}`,
     (t) => `+${t} Food per Room`,
   ),
-  stackingResearch(
+  stackingUpgrade(
     "wool-tailoring",
     "Wool Tailoring",
     woodHideCosts(),
@@ -227,7 +226,7 @@ export const researchUpgrades = [
     (t) => `Freeze and Burn damage taken −${t}`,
     (t) => `+${t} Gold per Room`,
   ),
-  stackingResearch(
+  stackingUpgrade(
     "agility-training",
     "Agility Training",
     [

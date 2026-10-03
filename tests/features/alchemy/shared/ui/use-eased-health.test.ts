@@ -10,11 +10,20 @@ describe("useEasedHealth", () => {
     vi.unstubAllGlobals();
   });
 
-  it("synchronizes an inactive health change before a no-op animation", () => {
-    const frames = installRafStub();
+  it("resets inactive health and cancels interrupted animations on deactivation and unmount", () => {
+    vi.spyOn(performance, "now").mockReturnValue(0);
+    const frames = new Map<number, FrameRequestCallback>();
+    let nextFrame = 0;
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+      frames.set(++nextFrame, callback);
+      return nextFrame;
+    });
+    vi.stubGlobal("cancelAnimationFrame", (id: number) => frames.delete(id));
 
-    const { result, rerender } = renderHook(
-      ({ from, to, active }: { from: number; to: number; active: boolean }) => useEasedHealth({ from, to, active }),
+    const onFinished = vi.fn();
+    const { result, rerender, unmount } = renderHook(
+      ({ from, to, active }: { from: number; to: number; active: boolean }) =>
+        useEasedHealth({ from, to, active, onFinished }),
       { initialProps: { from: 10, to: 10, active: false } },
     );
 
@@ -24,38 +33,55 @@ describe("useEasedHealth", () => {
     rerender({ from: 20, to: 20, active: true });
     expect(result.current.displayHealth).toBe(20);
 
-    act(() => {
-      frames.shift()?.(0);
-    });
-
-    expect(result.current.displayHealth).toBe(20);
-  });
-
-  it("drives the displayed number and progress from one eased health value", () => {
-    vi.spyOn(performance, "now").mockReturnValue(0);
-    const frames = installRafStub();
-    const onFinished = vi.fn();
-
-    const { result } = renderHook(() =>
-      useEasedHealth({ from: 10, to: 20, active: true, durationMs: 1000, onFinished }),
-    );
-
-    act(() => {
-      frames.shift()?.(500);
-    });
-
-    expect(result.current.progressHealth).toBeCloseTo(18.75);
-    expect(result.current.displayHealth).toBe(19);
+    rerender({ from: 20, to: 30, active: true });
+    expect(frames.size).toBe(1);
+    rerender({ from: 22, to: 30, active: false });
+    expect(result.current.displayHealth).toBe(22);
+    expect(frames.size).toBe(0);
     expect(onFinished).not.toHaveBeenCalled();
-
-    act(() => {
-      frames.shift()?.(1000);
-    });
-
-    expect(result.current.progressHealth).toBe(20);
-    expect(result.current.displayHealth).toBe(20);
-    expect(onFinished).toHaveBeenCalledOnce();
+    rerender({ from: 22, to: 30, active: true });
+    unmount();
+    expect(frames.size).toBe(0);
+    expect(onFinished).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ["cubic", 18.75, 19],
+    ["linear", 15, 15],
+  ] as const)(
+    "keeps the %s meter and number in sync and finishes with the latest callback",
+    (easing, progress, display) => {
+      vi.spyOn(performance, "now").mockReturnValue(0);
+      const frames = installRafStub();
+      const onFinished = vi.fn();
+
+      const { result, rerender } = renderHook(
+        ({ callback }) =>
+          useEasedHealth({ from: 10, to: 20, active: true, durationMs: 1000, easing, onFinished: callback }),
+        { initialProps: { callback: onFinished } },
+      );
+
+      act(() => {
+        frames.shift()?.(500);
+      });
+
+      expect(result.current.progressHealth).toBeCloseTo(progress);
+      expect(result.current.displayHealth).toBe(display);
+      expect(onFinished).not.toHaveBeenCalled();
+
+      const latestCallback = vi.fn();
+      rerender({ callback: latestCallback });
+      expect(frames).toHaveLength(1);
+      act(() => {
+        frames.shift()?.(1000);
+      });
+
+      expect(result.current.progressHealth).toBe(20);
+      expect(result.current.displayHealth).toBe(20);
+      expect(onFinished).not.toHaveBeenCalled();
+      expect(latestCallback).toHaveBeenCalledOnce();
+    },
+  );
 
   it("settles the refill on the first frame when reduced motion is requested", () => {
     vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
@@ -70,21 +96,5 @@ describe("useEasedHealth", () => {
     expect(result.current.progressHealth).toBe(20);
     expect(onFinished).toHaveBeenCalledOnce();
     expect(frames).toHaveLength(0);
-  });
-
-  it("supports linear easing for constant-velocity meters", () => {
-    vi.spyOn(performance, "now").mockReturnValue(0);
-    const frames = installRafStub();
-
-    const { result } = renderHook(() =>
-      useEasedHealth({ from: 10, to: 20, active: true, durationMs: 1000, easing: "linear" }),
-    );
-
-    act(() => {
-      frames.shift()?.(500);
-    });
-
-    expect(result.current.progressHealth).toBeCloseTo(15);
-    expect(result.current.displayHealth).toBe(15);
   });
 });

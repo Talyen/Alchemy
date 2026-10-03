@@ -1,40 +1,28 @@
 import { describe, expect, it } from "vitest";
 import { DESTINATIONS, filterValidDestinations, filterValidDestinationRounds } from "@/lib/routing";
 
-describe("filterValidDestinations", () => {
-  it("remaps Merchant's Shop to Card Shop", () => {
-    expect(filterValidDestinations(["Mystery", "Merchant's Shop", "Campfire"])).toEqual([
-      DESTINATIONS.MYSTERY,
-      DESTINATIONS.CARD_SHOP,
-      DESTINATIONS.CAMPFIRE,
-    ]);
+describe("saved destinations", () => {
+  it("repairs renamed shops and drops unknown destinations without losing route order", () => {
+    expect(filterValidDestinations(["Mystery", "Merchant's Shop", "Old Bazaar", "Equipment Shop", "Campfire"])).toEqual(
+      [DESTINATIONS.MYSTERY, DESTINATIONS.CARD_SHOP, DESTINATIONS.GEAR_SHOP, DESTINATIONS.CAMPFIRE],
+    );
   });
 
-  it("remaps Equipment Shop to Gear Shop", () => {
-    expect(filterValidDestinations(["Mystery", "Equipment Shop", "Campfire"])).toEqual([
-      DESTINATIONS.MYSTERY,
-      DESTINATIONS.GEAR_SHOP,
-      DESTINATIONS.CAMPFIRE,
-    ]);
-  });
-
-  it("drops unknown destination strings", () => {
-    expect(filterValidDestinations(["Mystery", "Old Bazaar"])).toEqual([DESTINATIONS.MYSTERY]);
-  });
-});
-
-describe("filterValidDestinationRounds", () => {
-  it("remaps Merchant's Shop rounds onto Card Shop", () => {
-    expect(filterValidDestinationRounds({ "Merchant's Shop": 4, Mystery: 1 })).toEqual({
+  it("keeps valid offer history and rejects counters that would poison destination weighting", () => {
+    expect(
+      filterValidDestinationRounds({
+        "Merchant's Shop": 4,
+        "Equipment Shop": 2,
+        Mystery: 0,
+        Campfire: Number.POSITIVE_INFINITY,
+        Corruption: Number.NaN,
+        Transmutation: -1,
+        "Old Bazaar": 5,
+      }),
+    ).toEqual({
       [DESTINATIONS.CARD_SHOP]: 4,
-      [DESTINATIONS.MYSTERY]: 1,
-    });
-  });
-
-  it("remaps Equipment Shop rounds onto Gear Shop", () => {
-    expect(filterValidDestinationRounds({ "Equipment Shop": 2, Mystery: 1 })).toEqual({
       [DESTINATIONS.GEAR_SHOP]: 2,
-      [DESTINATIONS.MYSTERY]: 1,
+      [DESTINATIONS.MYSTERY]: 0,
     });
   });
 });

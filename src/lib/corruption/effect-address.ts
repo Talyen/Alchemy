@@ -1,4 +1,4 @@
-import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
+import { effectChildren, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 
 export interface NumericEffectAddress {
   effectIndex: number;
@@ -16,17 +16,7 @@ export function getCorruptionTargetEffect(
   let effect = card.effects[target.effectIndex];
   for (const index of target.effectPath ?? []) {
     if (!effect) return undefined;
-    if (effect.kind === "chance") {
-      // Address order is success then failure; index directly without merging branches.
-      effect =
-        index < effect.successEffects.length
-          ? effect.successEffects[index]
-          : effect.failureEffects[index - effect.successEffects.length];
-    } else if (effect.kind === "repeat-over-turns") {
-      effect = effect.effects[index];
-    } else {
-      return undefined;
-    }
+    effect = effectChildren(effect)[index];
   }
   return effect;
 }

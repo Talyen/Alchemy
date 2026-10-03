@@ -46,19 +46,19 @@ export function updateCardNumericValue(card: BattleCard, target: CorruptionTarge
   if (target.field === "equalToGoldPercent") nextValue = Math.min(PERCENT_DENOMINATOR, nextValue);
   const nextLine = replaceNumberAt(line, target.matchIndex, nextValue);
   if (nextLine === line) return card;
-  // Reject stale plans as a whole: a shared value must never partially update.
-  if (
-    !target.edits.length ||
-    target.edits.some((edit) => {
-      const effect = getCorruptionTargetEffect(card, edit);
-      return (
-        !effect || effect.kind !== edit.kind || (effect as Record<string, unknown>)[edit.field] !== edit.expectedValue
-      );
-    })
-  )
-    return card;
+  // Validate every shared edit before copying the tree; stale plans cannot
+  // partially update either a branch or its description.
+  if (!target.edits.length) return card;
   const editsByAddress = new Map<string, Array<(typeof target.edits)[number]>>();
   for (const edit of target.edits) {
+    const effect = getCorruptionTargetEffect(card, edit);
+    if (
+      !effect ||
+      effect.kind !== edit.kind ||
+      (effect as Record<string, unknown>)[edit.field] !== edit.expectedValue
+    ) {
+      return card;
+    }
     const key = effectAddressKey(edit);
     const edits = editsByAddress.get(key) ?? [];
     edits.push(edit);
@@ -101,9 +101,6 @@ export function applyNumericCorruption(card: BattleCard, target: CorruptionTarge
     if (target.field === "maxAmount") nextValue = Math.max(nextValue, sourceEffect.minAmount);
   }
   if (nextValue === target.value) return card;
-  const nextLine = replaceNumberAt(currentLine, target.matchIndex, nextValue);
-  if (nextLine === currentLine && target.value !== nextValue) return card;
-
   const nextCard = updateCardNumericValue(card, target, nextValue);
   if (nextCard === card) return card;
   const deltaLen = nextCard.descriptionLines[target.lineIndex]!.length - currentLine.length;

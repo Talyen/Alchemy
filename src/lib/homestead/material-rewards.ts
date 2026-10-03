@@ -72,21 +72,9 @@ export const enemyLootTables: Record<string, EnemyLootTable> = {
 
 export const enemyLootTableIds = Object.keys(enemyLootTables);
 
-function applyTypeMultiplier(loot: MaterialInventory, enemyType: string): MaterialInventory {
-  const multiplier =
-    enemyType === "boss"
-      ? HOMESTEAD_LOOT_MULTIPLIERS.boss
-      : enemyType === "elite"
-        ? HOMESTEAD_LOOT_MULTIPLIERS.elite
-        : HOMESTEAD_LOOT_MULTIPLIERS.normal;
-  if (multiplier === HOMESTEAD_LOOT_MULTIPLIERS.normal) return loot;
-  const result = { ...loot };
-  for (const mat of MATERIAL_IDS) {
-    // Battle-standard rounding: Math.round keeps elite multi-drops meaningfully
-    // above normal (2 × 1.3 = 2.6 → 3) where flooring would erase the bonus.
-    // Singleton drops stay identical to normal (1 × 1.3 = 1.3 → 1) by design.
-    result[mat] = Math.round((result[mat] ?? 0) * multiplier);
-  }
+function multiplyMaterials(materials: MaterialInventory, multiplier: number): MaterialInventory {
+  const result = { ...materials };
+  for (const material of MATERIAL_IDS) result[material] = Math.round((materials[material] ?? 0) * multiplier);
   return result;
 }
 
@@ -99,7 +87,14 @@ export function getEnemyMaterialLoot(enemyId: string, enemyType: string, rng: ()
       loot[bonus.material] += bonus.min + rngInt(rng, bonus.max - bonus.min + 1);
     }
   }
-  return applyTypeMultiplier(loot, enemyType);
+  const multiplier =
+    enemyType === "boss"
+      ? HOMESTEAD_LOOT_MULTIPLIERS.boss
+      : enemyType === "elite"
+        ? HOMESTEAD_LOOT_MULTIPLIERS.elite
+        : HOMESTEAD_LOOT_MULTIPLIERS.normal;
+  // Round multi-drops (2 × 1.3 → 3); singleton elite drops stay unchanged.
+  return multiplier === HOMESTEAD_LOOT_MULTIPLIERS.normal ? loot : multiplyMaterials(loot, multiplier);
 }
 
 export function applyMaterialFindBonus(
@@ -163,12 +158,9 @@ export function applyScavengerHerbalistModifiers(
   flags: ScavengerHerbalistFlags,
 ): MaterialInventory {
   if (!flags.scavenger && !flags.herbalist) return materials;
-  const next = flags.scavenger ? emptyInventory() : { ...materials };
-  if (flags.scavenger) {
-    for (const material of MATERIAL_IDS) {
-      next[material] = Math.round((materials[material] ?? 0) * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier);
-    }
-  }
+  const next = flags.scavenger
+    ? multiplyMaterials(materials, LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier)
+    : { ...materials };
   if (flags.herbalist) {
     // Herbalist lands after scavenger, so it tops up already-doubled herbs without itself being doubled.
     next.herbs = (next.herbs ?? 0) + LABYRINTH_REWARD_CONFIG.herbalistHerbBonus;

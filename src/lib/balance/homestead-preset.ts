@@ -37,22 +37,18 @@ function filledTierRecord(
   return record;
 }
 
+function homesteadTemplate(stars: number): HomesteadEffectManifest {
+  return computeHomesteadEffects(
+    filledTierRecord(buildings, stars),
+    filledTierRecord(farmPlots, stars),
+    filledTierRecord(researchUpgrades, stars),
+  );
+}
+
 const TYPICAL_HOMESTEAD_CACHE: Record<TalentPreset, HomesteadEffectManifest> = {
-  early: {
-    ...defaultHomesteadEffects,
-    companionBondLevels: { ...defaultHomesteadEffects.companionBondLevels },
-    cardHealBonus: { ...defaultHomesteadEffects.cardHealBonus },
-  },
-  mid: computeHomesteadEffects(
-    filledTierRecord(buildings, 1),
-    filledTierRecord(farmPlots, 1),
-    filledTierRecord(researchUpgrades, 1),
-  ),
-  late: computeHomesteadEffects(
-    filledTierRecord(buildings, 2),
-    filledTierRecord(farmPlots, 2),
-    filledTierRecord(researchUpgrades, 2),
-  ),
+  early: homesteadTemplate(0),
+  mid: homesteadTemplate(1),
+  late: homesteadTemplate(2),
 };
 
 export function buildTypicalHomesteadEffects(preset: TalentPreset): HomesteadEffectManifest {

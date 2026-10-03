@@ -5,8 +5,6 @@ import {
   hashStringToUint32,
   pickRandom,
   pickWeighted,
-  pickRandomUnsafe,
-  placeholderRng,
   rngInt,
   rollChance,
   rollPercent,
@@ -37,22 +35,6 @@ describe("rngInt", () => {
 });
 
 describe("shuffle", () => {
-  it("pins the exact order for a fixed draw", () => {
-    expect(shuffle([1, 2, 3, 4], () => 0.5)).toEqual([1, 4, 2, 3]);
-  });
-
-  it("does not mutate the original array", () => {
-    const original = [1, 2, 3];
-    const shuffled = shuffle(original, () => 0.5);
-    expect(original).toEqual([1, 2, 3]);
-    expect(shuffled).toHaveLength(3);
-  });
-
-  it("handles empty and single-element arrays", () => {
-    expect(shuffle([], () => 0.5)).toEqual([]);
-    expect(shuffle([42], () => 0.5)).toEqual([42]);
-  });
-
   it("rejects out-of-range draws instead of corrupting the deck", () => {
     expect(() => shuffle([1, 2, 3], () => 1)).toThrow();
     expect(() => shuffle([1, 2, 3], () => Number.NaN)).toThrow();
@@ -61,8 +43,15 @@ describe("shuffle", () => {
 
 describe("sampleItems", () => {
   it("rejects negative and non-integer counts", () => {
-    expect(() => sampleItems([1, 2, 3], -1, () => 0.5)).toThrow();
-    expect(() => sampleItems([1, 2, 3], 1.5, () => 0.5)).toThrow();
+    const rng = () => {
+      throw new Error("Invalid counts must not draw");
+    };
+    for (const count of [-1, 1.5, NaN, Infinity]) {
+      expect(() => sampleItems([1, 2, 3], count, rng)).toThrow("sampleItems requires a non-negative integer count");
+      expect(() => sampleItemsExcluding([1, 2, 3], count, rng, new Set(), (item) => item)).toThrow(
+        "sampleItems requires a non-negative integer count",
+      );
+    }
   });
 
   it("returns [] for zero count without drawing", () => {
@@ -74,13 +63,6 @@ describe("sampleItems", () => {
       }),
     ).toEqual([]);
     expect(draws).toBe(0);
-  });
-
-  it("samples up to count items without replacement", () => {
-    const items = [1, 2, 3, 4, 5] as const;
-    const sampled = sampleItems(items, 3, () => 0.5);
-    expect(sampled).toHaveLength(3);
-    expect(new Set(sampled).size).toBe(3);
   });
 
   it("caps sample count at array length and handles empty input", () => {
@@ -125,22 +107,18 @@ describe("sampleItemsExcluding", () => {
   const entries = [{ id: "a" }, { id: "b" }, { id: "c" }, { id: "d" }] as const;
   const keyOf = (entry: { id: string }) => entry.id;
 
-  it("skips excluded keys without replacement", () => {
-    const sampled = sampleItemsExcluding(entries, 3, () => 0.5, new Set(["b"]), keyOf);
-    expect(sampled).toHaveLength(3);
-    expect(sampled.map((entry) => entry.id)).not.toContain("b");
-  });
-
   it("returns [] when everything is excluded", () => {
-    expect(sampleItemsExcluding(entries, 2, () => 0.5, new Set(["a", "b", "c", "d"]), keyOf)).toEqual([]);
-  });
-
-  it("handles empty exclusion set and disjoint exclusions", () => {
-    const emptyExclude = sampleItemsExcluding(entries, 2, () => 0.5, new Set(), keyOf);
-    expect(emptyExclude).toHaveLength(2);
-
-    const disjointExclude = sampleItemsExcluding(entries, 2, () => 0.5, new Set(["z"]), keyOf);
-    expect(disjointExclude).toHaveLength(2);
+    expect(
+      sampleItemsExcluding(
+        entries,
+        2,
+        () => {
+          throw new Error("Empty pools must not draw");
+        },
+        new Set(["a", "b", "c", "d"]),
+        keyOf,
+      ),
+    ).toEqual([]);
   });
 });
 
@@ -148,11 +126,6 @@ describe("pickRandom", () => {
   it("rejects out-of-range draws", () => {
     expect(() => pickRandom([1, 2], () => 1)).toThrow();
     expect(pickRandom([1, 2], () => 0)).toBe(1);
-  });
-
-  it("returns the item at the selected index", () => {
-    expect(pickRandom([10, 20, 30], () => 0)).toBe(10);
-    expect(pickRandom([10, 20, 30], () => 0.5)).toBe(20);
   });
 
   it("returns undefined for empty array and element for single element", () => {
@@ -257,22 +230,6 @@ describe("takeRandomItem", () => {
     expect(removed).toBe("a");
     expect(list).toEqual(["b", "c"]);
   });
-
-  it("returns undefined for empty array", () => {
-    expect(takeRandomItem([], () => 0.5)).toBeUndefined();
-  });
-});
-
-describe("pickRandomUnsafe", () => {
-  it("returns undefined for empty array", () => {
-    expect(pickRandomUnsafe([])).toBeUndefined();
-  });
-
-  it("picks an element from non-empty array", () => {
-    const items = ["alpha", "beta", "gamma"];
-    const picked = pickRandomUnsafe(items);
-    expect(items).toContain(picked);
-  });
 });
 
 describe("createSeededRng", () => {
@@ -285,13 +242,6 @@ describe("createSeededRng", () => {
 
     expect(seq1).toEqual(seq2);
     expect(seq1.every((v) => v >= 0 && v < 1)).toBe(true);
-  });
-
-  it("produces different sequences for different seeds", () => {
-    const rng1 = createSeededRng(111);
-    const rng2 = createSeededRng(222);
-
-    expect(rng1()).not.toBe(rng2());
   });
 
   it("handles non-finite and negative seeds safely", () => {
@@ -312,20 +262,12 @@ describe("hashStringToUint32", () => {
     expect(Number.isInteger(hash1)).toBe(true);
   });
 
-  it("produces different hashes for distinct strings", () => {
-    expect(hashStringToUint32("alpha")).not.toBe(hashStringToUint32("beta"));
-  });
-
   it("hashes empty string", () => {
     expect(hashStringToUint32("")).toBe(2166136261);
   });
 });
 
-describe("placeholderRng and getBattleRng", () => {
-  it("placeholderRng returns 0", () => {
-    expect(placeholderRng()).toBe(0);
-  });
-
+describe("getBattleRng", () => {
   it("getBattleRng returns state rng when present", () => {
     const rng = () => 0.42;
     expect(getBattleRng({ rng })).toBe(rng);

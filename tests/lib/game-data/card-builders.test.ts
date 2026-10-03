@@ -4,13 +4,6 @@ import { damageCard, effectsCard } from "@/lib/game-data/cards/card-builders";
 import { describe, expect, it } from "vitest";
 
 describe("card builders", () => {
-  it("builds a lifesteal damage card with a shared Leech line", () => {
-    const card = damageCard({ id: "bloodthorn", art: "bloodthorn", damageType: "nature", amount: 3, lifesteal: true });
-    expect(card.title).toBe("Bloodthorn");
-    expect(card.descriptionLines).toEqual(["Deal 3 Nature damage", "Leech"]);
-    expect(card.effects).toEqual([{ kind: "damage", damageType: "nature", amount: 3, lifesteal: true }]);
-  });
-
   it("passes lifesteal through archery cards with the Archery tag", () => {
     const card = damageCard({
       id: "sap-arrow",
@@ -71,27 +64,6 @@ describe("card builders", () => {
       ],
     });
     expect(card.descriptionLines).toEqual(["Deal 3 Stun or 3 Bleed damage at random"]);
-  });
-
-  it("generates canonical lines for the simple kinds", () => {
-    const card = effectsCard({
-      id: "cauterize",
-      art: "cauterize",
-      effects: [
-        { kind: "remove-harmful-status", amount: 2 },
-        { kind: "self-damage", damageType: "burn", amount: 1 },
-      ],
-    });
-    expect(card.descriptionLines).toEqual(["Cleanse 2 harmful status effects", "Take 1 Burn damage"]);
-  });
-
-  it("keeps custom single-effect lines for haste-style effects", () => {
-    const card = effectsCard({
-      id: "haste",
-      art: "haste",
-      effects: [{ kind: "player-status", status: "haste", amount: 1 }],
-    });
-    expect(card.descriptionLines).toEqual(["Take an extra turn after this one"]);
   });
 
   it("rejects a chance effect without a success outcome", () => {

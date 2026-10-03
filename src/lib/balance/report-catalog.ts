@@ -60,21 +60,12 @@ export function reportCharacterIds(): CharacterId[] {
 }
 
 export function coreMatchupsForTier(tier: ReportTier): ReportMatchup[] {
-  const matchups: ReportMatchup[] = [];
-  for (const enemy of enemiesByType.normal) {
-    for (const depthDelta of [0, 3, 6]) {
-      matchups.push({ enemyId: enemy.id, enemyType: "normal", depth: tier.depthOffset + depthDelta });
-    }
-  }
-  for (const enemy of enemiesByType.elite) {
-    for (const depthDelta of [2, 5, 7]) {
-      matchups.push({ enemyId: enemy.id, enemyType: "elite", depth: tier.depthOffset + depthDelta });
-    }
-  }
-  for (const enemy of enemiesByType.boss) {
-    matchups.push({ enemyId: enemy.id, enemyType: "boss", depth: tier.depthOffset + 7 });
-  }
-  return matchups;
+  const depths = { normal: [0, 3, 6], elite: [2, 5, 7], boss: [7] };
+  return REPORT_ENEMY_TYPES.flatMap((enemyType) =>
+    enemiesByType[enemyType].flatMap((enemy) =>
+      depths[enemyType].map((depthDelta) => ({ enemyId: enemy.id, enemyType, depth: tier.depthOffset + depthDelta })),
+    ),
+  );
 }
 
 export function balanceScenarioSeed(namespace: string, ...parts: ReadonlyArray<string | number>): number {

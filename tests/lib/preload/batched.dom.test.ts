@@ -1,122 +1,49 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { batchedPreload, scheduleIdle, yieldToAnimationFrame } from "@/lib/preload/batched";
+import { deferred } from "../../helpers/deferred";
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+  vi.useRealTimers();
+});
 
 describe("batchedPreload", () => {
-  it("processes items in bounded batches and yields between them", async () => {
-    const items = [1, 2, 3, 4, 5];
-    const processed: number[] = [];
-    const yields: number[] = [];
-
-    await batchedPreload(
-      items,
-      async (n) => {
-        processed.push(n);
-      },
-      {
-        batchSize: 2,
-        yieldBetweenBatches: async () => {
-          yields.push(processed.length);
-        },
-      },
-    );
-
-    expect(processed).toEqual([1, 2, 3, 4, 5]);
-    // Yields should happen after batch 1 (size 2) and batch 2 (size 2), but not after the final single-element batch
-    expect(yields).toEqual([2, 4]);
+  it("waits for every in-flight item before yielding and starting the next batch", async () => {
+    const first = deferred<void>();
+    const second = deferred<void>();
+    const load = vi.fn((item: number) => (item === 1 ? first.promise : item === 2 ? second.promise : undefined));
+    const yieldBetweenBatches = vi.fn();
+    const completion = batchedPreload([1, 2, 3], load, { batchSize: 2, yieldBetweenBatches });
+    expect(load.mock.calls).toEqual([[1], [2]]);
+    first.resolve();
+    await first.promise;
+    expect(yieldBetweenBatches).not.toHaveBeenCalled();
+    expect(load).toHaveBeenCalledTimes(2);
+    second.resolve();
+    await completion;
+    expect(load.mock.calls).toEqual([[1], [2], [3]]);
+    expect(yieldBetweenBatches).toHaveBeenCalledOnce();
   });
 
-  it("handles empty items without yielding", async () => {
-    const yieldFn = vi.fn();
-    await batchedPreload([], vi.fn(), { yieldBetweenBatches: yieldFn });
-    expect(yieldFn).not.toHaveBeenCalled();
-  });
-
-  it("handles batchSize larger than item count without yielding", async () => {
-    const yieldFn = vi.fn();
-    const processed: number[] = [];
-    await batchedPreload(
-      [1, 2],
-      (n) => {
-        processed.push(n);
-      },
-      {
-        batchSize: 10,
-        yieldBetweenBatches: yieldFn,
-      },
-    );
-    expect(processed).toEqual([1, 2]);
-    expect(yieldFn).not.toHaveBeenCalled();
-  });
-
-  it("falls back to default batch size for NaN, zero, or negative batch sizes", async () => {
-    const items = [1, 2, 3, 4, 5, 6];
-    const yields: number[] = [];
-    const yieldFn = vi.fn(async () => {
-      yields.push(1);
-    });
-
-    await batchedPreload(items, vi.fn(), {
-      batchSize: Number.NaN,
-      yieldBetweenBatches: yieldFn,
-    });
-    // Default batch size is 4. For 6 items, batch 1 is 4 items, batch 2 is 2 items -> 1 yield
-    expect(yieldFn).toHaveBeenCalledTimes(1);
-
-    yieldFn.mockClear();
-    await batchedPreload(items, vi.fn(), {
-      batchSize: 0,
-      yieldBetweenBatches: yieldFn,
-    });
-    expect(yieldFn).toHaveBeenCalledTimes(1);
-  });
-
-  it("propagates rejections from loadOne", async () => {
+  it("stops loading later batches when an item fails", async () => {
     const error = new Error("load failed");
-    await expect(
-      batchedPreload([1, 2], (n) => {
-        if (n === 2) throw error;
-      }),
-    ).rejects.toThrow("load failed");
+    const load = vi.fn((item: number) => (item === 2 ? Promise.reject(error) : undefined));
+    const yieldBetweenBatches = vi.fn();
+    await expect(batchedPreload([1, 2, 3], load, { batchSize: 2, yieldBetweenBatches })).rejects.toBe(error);
+    expect(load.mock.calls).toEqual([[1], [2]]);
+    expect(yieldBetweenBatches).not.toHaveBeenCalled();
   });
 });
 
 describe("yieldToAnimationFrame", () => {
-  beforeEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-    vi.useRealTimers();
-  });
-
-  it("uses requestAnimationFrame when available", async () => {
-    let callback: FrameRequestCallback | undefined;
-    const rafMock = vi.fn((next: FrameRequestCallback) => {
-      callback = next;
-      return 1;
-    });
-    vi.stubGlobal("requestAnimationFrame", rafMock);
-    const cancel = vi.fn();
-    vi.stubGlobal("cancelAnimationFrame", cancel);
-
-    const promise = yieldToAnimationFrame();
-    callback?.(100);
-    await promise;
-    expect(rafMock).toHaveBeenCalledTimes(1);
-    expect(cancel).toHaveBeenCalledWith(1);
-  });
-
-  it("finishes a suspended background frame once and cancels its pending work", async () => {
+  it("finishes a suspended frame once and cleans up its timer and frame", async () => {
     vi.useFakeTimers();
     let callback: FrameRequestCallback | undefined;
-    vi.stubGlobal(
-      "requestAnimationFrame",
-      vi.fn((next: FrameRequestCallback) => {
-        callback = next;
-        return 9;
-      }),
-    );
+    vi.stubGlobal("requestAnimationFrame", (next: FrameRequestCallback) => {
+      callback = next;
+      return 9;
+    });
     const cancel = vi.fn();
     vi.stubGlobal("cancelAnimationFrame", cancel);
     const finished = vi.fn();
@@ -124,138 +51,78 @@ describe("yieldToAnimationFrame", () => {
     await vi.advanceTimersByTimeAsync(100);
     await promise;
     expect(finished).toHaveBeenCalledOnce();
-    expect(cancel).toHaveBeenCalledWith(9);
+    expect(cancel).toHaveBeenCalledExactlyOnceWith(9);
     callback?.(200);
     expect(finished).toHaveBeenCalledOnce();
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("falls back to setTimeout when requestAnimationFrame is not available", async () => {
+  it("finishes on the frame without retaining the fallback timer", async () => {
     vi.useFakeTimers();
-    // Installing the clock can restore RAF, so remove it after timer setup.
-    vi.stubGlobal("requestAnimationFrame", undefined);
-
+    let callback: FrameRequestCallback | undefined;
+    vi.stubGlobal("requestAnimationFrame", (next: FrameRequestCallback) => {
+      callback = next;
+      return 1;
+    });
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
     const promise = yieldToAnimationFrame();
-    vi.advanceTimersByTime(0);
+    callback?.(100);
     await promise;
+    expect(vi.getTimerCount()).toBe(0);
   });
 });
 
 describe("scheduleIdle", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it("schedules via requestIdleCallback when supported", () => {
-    const ricMock = vi.fn((cb: IdleRequestCallback) => {
-      cb({ didTimeout: false, timeRemaining: () => 50 });
-      return 1;
+  it("defers to pending input but eventually runs even if input stays busy", () => {
+    const callbacks: IdleRequestCallback[] = [];
+    vi.stubGlobal("requestIdleCallback", (callback: IdleRequestCallback) => {
+      callbacks.push(callback);
+      return callbacks.length;
     });
-    vi.stubGlobal("requestIdleCallback", ricMock);
-
+    vi.stubGlobal("navigator", { scheduling: { isInputPending: () => true } });
     const callback = vi.fn();
     scheduleIdle(callback);
-
-    expect(ricMock).toHaveBeenCalledTimes(1);
-    expect(callback).toHaveBeenCalledTimes(1);
-  });
-
-  it("reschedules up to 3 times when input is pending and deadline has not timed out", () => {
-    const ricCallbacks: IdleRequestCallback[] = [];
-    vi.stubGlobal(
-      "requestIdleCallback",
-      vi.fn((cb: IdleRequestCallback) => {
-        ricCallbacks.push(cb);
-        return ricCallbacks.length;
-      }),
-    );
-
-    const isInputPending = vi.fn().mockReturnValue(true);
-    vi.stubGlobal("navigator", {
-      scheduling: { isInputPending },
-    });
-
-    const callback = vi.fn();
-    scheduleIdle(callback);
-
-    expect(ricCallbacks).toHaveLength(1);
-    // 1st callback: input pending -> reschedules (retries: 1)
-    ricCallbacks[0]!({ didTimeout: false, timeRemaining: () => 50 });
-    expect(ricCallbacks).toHaveLength(2);
-    expect(callback).not.toHaveBeenCalled();
-
-    // 2nd callback: input pending -> reschedules (retries: 2)
-    ricCallbacks[1]!({ didTimeout: false, timeRemaining: () => 50 });
-    expect(ricCallbacks).toHaveLength(3);
-    expect(callback).not.toHaveBeenCalled();
-
-    // 3rd callback: input pending -> reschedules (retries: 3)
-    ricCallbacks[2]!({ didTimeout: false, timeRemaining: () => 50 });
-    expect(ricCallbacks).toHaveLength(4);
-    expect(callback).not.toHaveBeenCalled();
-
-    // 4th callback: retries is now 3, so it executes despite input pending
-    ricCallbacks[3]!({ didTimeout: false, timeRemaining: () => 50 });
-    expect(callback).toHaveBeenCalledTimes(1);
-  });
-
-  it("executes immediately without rescheduling if deadline didTimeout is true", () => {
-    const ricCallbacks: IdleRequestCallback[] = [];
-    vi.stubGlobal(
-      "requestIdleCallback",
-      vi.fn((cb: IdleRequestCallback) => {
-        ricCallbacks.push(cb);
-        return 1;
-      }),
-    );
-
-    const isInputPending = vi.fn().mockReturnValue(true);
-    vi.stubGlobal("navigator", {
-      scheduling: { isInputPending },
-    });
-
-    const callback = vi.fn();
-    scheduleIdle(callback);
-
-    // didTimeout is true: should NOT reschedule even if isInputPending is true
-    ricCallbacks[0]!({ didTimeout: true, timeRemaining: () => 0 });
-    expect(callback).toHaveBeenCalledTimes(1);
-    expect(ricCallbacks).toHaveLength(1);
-  });
-
-  it("falls back to setTimeout when requestIdleCallback is unavailable", () => {
-    vi.useFakeTimers();
-    vi.stubGlobal("requestIdleCallback", undefined);
-    // In JSDOM, window.requestIdleCallback exists on window object; remove it
-    if ("requestIdleCallback" in window) {
-      delete (window as unknown as { requestIdleCallback?: unknown }).requestIdleCallback;
+    for (let index = 0; index < 3; index++) {
+      callbacks[index]!({ didTimeout: false, timeRemaining: () => 50 });
+      expect(callback).not.toHaveBeenCalled();
     }
-
-    const callback = vi.fn();
-    scheduleIdle(callback);
-
-    expect(callback).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(0);
-    expect(callback).toHaveBeenCalledTimes(1);
-
-    vi.useRealTimers();
+    callbacks[3]!({ didTimeout: false, timeRemaining: () => 50 });
+    expect(callback).toHaveBeenCalledOnce();
+    expect(callbacks).toHaveLength(4);
   });
 
-  it("catches callback errors gracefully without uncaught rejection", () => {
-    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
-    const ricMock = vi.fn((cb: IdleRequestCallback) => {
-      cb({ didTimeout: false, timeRemaining: () => 50 });
+  it("honors an expired deadline despite pending input", () => {
+    vi.stubGlobal("requestIdleCallback", (callback: IdleRequestCallback) => {
+      callback({ didTimeout: true, timeRemaining: () => 0 });
       return 1;
     });
-    vi.stubGlobal("requestIdleCallback", ricMock);
+    vi.stubGlobal("navigator", { scheduling: { isInputPending: () => true } });
+    const callback = vi.fn();
+    scheduleIdle(callback);
+    expect(callback).toHaveBeenCalledOnce();
+  });
 
+  it.each(["idle", "timer"])("contains callback failures on the %s path", (path) => {
+    vi.useFakeTimers();
+    vi.stubGlobal(
+      "requestIdleCallback",
+      path === "idle"
+        ? (callback: IdleRequestCallback) => {
+            callback({ didTimeout: false, timeRemaining: () => 50 });
+            return 1;
+          }
+        : undefined,
+    );
+    const report = vi.spyOn(console, "error").mockImplementation(() => {});
+    const error = new Error("warmup failed");
+    const callback = vi.fn(() => {
+      throw error;
+    });
     expect(() => {
-      scheduleIdle(() => {
-        throw new Error("unhandled callback error");
-      });
+      scheduleIdle(callback);
+      vi.runAllTimers();
     }).not.toThrow();
-
-    expect(consoleError).toHaveBeenCalled();
-    consoleError.mockRestore();
+    expect(callback).toHaveBeenCalledOnce();
+    expect(report).toHaveBeenCalledExactlyOnceWith("scheduleIdle callback threw an error:", error);
   });
 });

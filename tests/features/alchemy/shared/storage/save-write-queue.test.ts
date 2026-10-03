@@ -117,6 +117,28 @@ describe("SaveWriteQueue", () => {
     expect(await protectedQueue.enqueue(snapshot(2), async () => "saved")).toBe("skipped");
   });
 
+  it.each(["reported", "thrown"])("survives a throwing notification for a %s clear failure", async (failure) => {
+    const queue = new SaveWriteQueue();
+    const error = new Error("clear denied");
+    const onError = vi.fn(() => {
+      throw new Error("notification failed");
+    });
+    await expect(
+      queue.enqueueClear(
+        async () => {
+          if (failure === "thrown") throw error;
+          return { ok: false, error };
+        },
+        { onError },
+      ),
+    ).resolves.toBe(false);
+    expect(onError).toHaveBeenCalledExactlyOnceWith(error);
+    expect(queue.isClearPending).toBe(false);
+    await expect(queue.enqueue(snapshot(2), async () => "saved")).resolves.toBe("saved");
+    await expect(queue.enqueueClear(async () => ({ ok: true }))).resolves.toBe(true);
+    await queue.waitForIdle();
+  });
+
   it("clears protection and listeners on reset", async () => {
     const queue = new SaveWriteQueue();
     const listener = vi.fn();

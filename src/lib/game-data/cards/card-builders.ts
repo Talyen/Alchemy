@@ -1,7 +1,7 @@
 import { CONSUME_DESCRIPTION_LINE } from "@/lib/game-constants";
 import { capitalizeWord } from "@/lib/utils";
 import { companionLibrary } from "../companions";
-import { describeCardEffects, effectDescriptionLine } from "../effect-metadata";
+import { describeCardEffects } from "../effect-metadata";
 import type { BattleCard, BattleCardEffect, DamageType, KeywordId } from "../types";
 import { getCompanionDescriptionLines } from "./companion-turn-description";
 
@@ -46,15 +46,11 @@ export function damageCard({
 }
 
 type PlayerStatusCardInput = CardBaseInput & { status: "block" | "armor" | "thorns" | "forge"; amount: number };
-export function playerStatusCard({ id, title, art, status, amount, cost = 1 }: PlayerStatusCardInput): BattleCard {
-  return {
-    id,
-    title: deriveTitle(id, title),
-    descriptionLines: [effectDescriptionLine({ kind: "player-status", status, amount })],
-    art,
-    cost,
+export function playerStatusCard({ status, amount, ...base }: PlayerStatusCardInput): BattleCard {
+  return effectsCard({
+    ...base,
     effects: [{ kind: "player-status", status, amount }],
-  };
+  });
 }
 
 type EffectsCardInput<E extends BattleCardEffect[]> = CardBaseInput & {

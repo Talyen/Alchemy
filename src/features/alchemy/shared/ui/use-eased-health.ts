@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { useLatestRef } from "./use-latest-ref";
 
 import { CAMPFIRE_ANIMATION_MS } from "@/lib/game-constants";
 import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
@@ -23,49 +24,38 @@ export function useEasedHealth({
   const animationDuration = reducedMotion ? 0 : durationMs;
   const [animatedHealth, setAnimatedHealth] = useState(from);
   const [syncedInput, setSyncedInput] = useState({ active, from });
-  const frameRef = useRef<number | null>(null);
-  const onFinishedRef = useRef(onFinished);
-  const inactiveFrom = active ? null : from;
+  const onFinishedRef = useLatestRef(onFinished);
 
   if (syncedInput.active !== active || syncedInput.from !== from) {
     setSyncedInput({ active, from });
     setAnimatedHealth(from);
   }
 
-  useEffect(() => {
-    onFinishedRef.current = onFinished;
-  }, [onFinished]);
-
-  const shownHealth = inactiveFrom ?? animatedHealth;
+  const shownHealth = active ? animatedHealth : from;
 
   useEffect(() => {
-    if (!active) {
-      if (frameRef.current !== null) {
-        cancelAnimationFrame(frameRef.current);
-        frameRef.current = null;
-      }
-      return;
-    }
+    if (!active) return;
 
     const startTime = performance.now();
+    let frame: number | null = null;
     function animate(now: number) {
       const progress = animationDuration <= 0 ? 1 : clamp01((now - startTime) / animationDuration);
       const eased = easing === "linear" ? progress : 1 - Math.pow(1 - progress, 3);
       setAnimatedHealth(from + (to - from) * eased);
       if (progress < 1) {
-        frameRef.current = requestAnimationFrame(animate);
+        frame = requestAnimationFrame(animate);
       } else {
-        frameRef.current = null;
+        frame = null;
         onFinishedRef.current?.();
       }
     }
 
-    frameRef.current = requestAnimationFrame(animate);
+    frame = requestAnimationFrame(animate);
 
     return () => {
-      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+      if (frame !== null) cancelAnimationFrame(frame);
     };
-  }, [active, animationDuration, easing, from, to]);
+  }, [active, animationDuration, easing, from, to, onFinishedRef]);
 
   return { displayHealth: Math.round(shownHealth), progressHealth: shownHealth };
 }

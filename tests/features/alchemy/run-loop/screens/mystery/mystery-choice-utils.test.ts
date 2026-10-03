@@ -1,38 +1,67 @@
-import { describe, expect, it } from "vitest";
-import type { MysteryChoice } from "@/lib/mystery";
+import { expect, it } from "vitest";
 import {
-  choiceOffersCardSelection,
-  hasPositiveMysteryEffect,
+  getPlasmaKeywordsForMysteryReward,
+  pairMysteryEffectsWithGrants,
 } from "@/features/alchemy/run-loop/screens/mystery/mystery-choice-utils";
+import { cardById, getCardKeywords } from "@/lib/game-data";
+import { getPlasmaKeywordsForGear } from "@/features/alchemy/shared/config";
+import { getTrinketKeywords } from "@/features/alchemy/shared/config/game-data-catalog";
+import type { MysteryEffect } from "@/lib/mystery";
 
-describe("hasPositiveMysteryEffect", () => {
-  it("returns true for heal and reward effects", () => {
-    expect(hasPositiveMysteryEffect([{ kind: "healHealth", amount: 5 }])).toBe(true);
-    expect(hasPositiveMysteryEffect([{ kind: "gainGold", amount: 10 }])).toBe(true);
-    expect(hasPositiveMysteryEffect([{ kind: "gainRandomGear" }])).toBe(true);
-    expect(hasPositiveMysteryEffect([{ kind: "gainGeneratedGear", baseItemId: "dagger" }])).toBe(true);
+it("pairs mixed Mystery grants in order so exhausted Boons cannot steal the next Gear reward", () => {
+  const gear = { instanceId: "first", definitionId: "emerald-ring-basic", affixes: [] };
+  const fallback = { instanceId: "fallback", definitionId: "leather-armor-basic", affixes: [] };
+  const lastGear = { instanceId: "last", definitionId: "ruby-ring-basic", affixes: [] };
+  const effects: MysteryEffect[] = [
+    { kind: "gainXP", keyword: "wish", amount: 1 },
+    { kind: "gainTrinket", trinketId: "bone-charm" },
+    { kind: "gainRandomTrinket" },
+    { kind: "gainRandomGear" },
+    { kind: "gainRandomTrinket" },
+    { kind: "gainGeneratedGear", baseItemId: "ruby-ring" },
+    { kind: "addCard", cardId: "slash" },
+    { kind: "chooseCard" },
+  ];
+  const grantedGearInstances = [gear, fallback, lastGear];
+  const grantedTrinketIds = ["lucky-clover"];
+  const paired = pairMysteryEffectsWithGrants(effects, grantedTrinketIds, grantedGearInstances);
+  expect(paired.map(({ grantedTrinketId }) => grantedTrinketId)).toEqual([
+    undefined,
+    undefined,
+    "lucky-clover",
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+  ]);
+  expect(paired.map(({ grantedGear }) => grantedGear?.instanceId)).toEqual([
+    undefined,
+    undefined,
+    undefined,
+    "first",
+    "fallback",
+    "last",
+    undefined,
+    undefined,
+  ]);
+  const keywords = getPlasmaKeywordsForMysteryReward({
+    choice: { label: "Mixed rewards", effects },
+    grantedTrinketIds,
+    grantedGearInstances,
+    chosenCardId: "block",
+    findCard: (id) => cardById[id],
   });
-
-  it("returns false for purely negative effects", () => {
-    expect(hasPositiveMysteryEffect([{ kind: "damageHealth", amount: 5 }])).toBe(false);
-    expect(hasPositiveMysteryEffect([{ kind: "loseGold", amount: 5 }])).toBe(false);
-  });
-});
-
-describe("choiceOffersCardSelection", () => {
-  it("returns true when a choice includes chooseCard", () => {
-    const choice: MysteryChoice = {
-      label: "Pick",
-      effects: [{ kind: "chooseCard" }],
-    };
-    expect(choiceOffersCardSelection(choice)).toBe(true);
-  });
-
-  it("returns false for non-picker effects", () => {
-    const choice: MysteryChoice = {
-      label: "Heal",
-      effects: [{ kind: "healHealth", amount: 5 }],
-    };
-    expect(choiceOffersCardSelection(choice)).toBe(false);
-  });
+  expect(keywords).toEqual([
+    ...new Set([
+      "wish",
+      ...getTrinketKeywords("bone-charm"),
+      ...getTrinketKeywords("lucky-clover"),
+      ...grantedGearInstances.flatMap(getPlasmaKeywordsForGear),
+      ...getCardKeywords(cardById.slash!),
+      ...getCardKeywords(cardById.block!),
+    ]),
+  ]);
+  expect(effects).toEqual(paired.map(({ effect }) => effect));
+  expect(grantedGearInstances).toEqual([gear, fallback, lastGear]);
 });

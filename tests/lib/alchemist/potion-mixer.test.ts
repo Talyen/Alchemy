@@ -52,7 +52,7 @@ describe("createMixedPotion", () => {
   it("combines two different potions by concatenating their effects", () => {
     const mixed = createMixedPotion(healPotion, firePotion);
 
-    expect(mixed.title).toBe("Mixed Potion");
+    expect(mixed.descriptionLines).toEqual(["Restore 5 Health", "Deal 8 Burn damage", "Consume"]);
     expect(mixed.consume).toBe(true);
     expect(mixed.effects).toHaveLength(2);
     expect(mixed.effects[0]).toEqual({ kind: "heal", amount: 5 });
@@ -90,12 +90,6 @@ describe("createMixedPotion", () => {
     expect(mixed.effects).toHaveLength(1);
     expect(mixed.effects[0]).toEqual({ kind: "heal", amount: 10 });
     expect(mixed.descriptionLines).toEqual(["Restore 10 Health", "Consume"]);
-  });
-
-  it("combines description lines and normalizes Consume to one final line", () => {
-    const mixed = createMixedPotion(healPotion, firePotion);
-
-    expect(mixed.descriptionLines).toEqual(["Restore 5 Health", "Deal 8 Burn damage", "Consume"]);
   });
 
   it("preserves repeated description lines from different cards to match concatenated effects", () => {
@@ -205,16 +199,6 @@ describe("createMixedPotion", () => {
     ]);
   });
 
-  it("throws when mixing with an existing Mixed Potion", () => {
-    const mixedPotion = makePotion({
-      id: "mixed-potion",
-      title: "Mixed Potion",
-    });
-
-    expect(() => createMixedPotion(mixedPotion, healPotion)).toThrow("Cannot mix with an existing Mixed Potion");
-    expect(() => createMixedPotion(healPotion, mixedPotion)).toThrow("Cannot mix with an existing Mixed Potion");
-  });
-
   it("produces a unique id based on card uids", () => {
     const p1 = makePotion({ id: "heal-potion", uid: 1 });
     const p2 = makePotion({ id: "fire-potion", uid: 2 });
@@ -232,18 +216,13 @@ describe("tryCreateMixedPotion", () => {
     expect(tryCreateMixedPotion(undefined, undefined)).toBeNull();
   });
 
-  it("returns null instead of throwing when mixing with a Mixed Potion", () => {
-    const mixedPotion = makePotion({ id: "mixed-potion" });
-    const result = tryCreateMixedPotion(healPotion, mixedPotion);
-    expect(result).toBeNull();
-  });
-
   it("uses the same eligibility for throwing and nullable callers, including strengthened Potions", () => {
-    const brewed = makePotion({ brewed: true });
-    expect(tryCreateMixedPotion(brewed, healPotion)).toBeNull();
-    expect(tryCreateMixedPotion(healPotion, brewed)).toBeNull();
-    expect(() => createMixedPotion(brewed, healPotion)).toThrow();
-    expect(() => createMixedPotion(healPotion, brewed)).toThrow();
+    for (const invalid of [makePotion({ brewed: true }), makePotion({ id: "mixed-potion" })]) {
+      expect(tryCreateMixedPotion(invalid, healPotion)).toBeNull();
+      expect(tryCreateMixedPotion(healPotion, invalid)).toBeNull();
+      expect(() => createMixedPotion(invalid, healPotion)).toThrow("Cannot mix");
+      expect(() => createMixedPotion(healPotion, invalid)).toThrow("Cannot mix");
+    }
     expect(tryCreateMixedPotion(healPotion, firePotion)).toEqual(createMixedPotion(healPotion, firePotion));
   });
 });
@@ -281,40 +260,6 @@ describe("applyMixToDeck", () => {
     expect(() => applyMixToDeck(deck, 0, 5, mixed)).toThrow("Invalid potion indices for mixing");
     expect(() => applyMixToDeck(deck, 0.5, 1, mixed)).toThrow();
     expect(() => applyMixToDeck(deck, 0, Number.NaN, mixed)).toThrow();
-  });
-});
-
-describe("same-card specialty potions", () => {
-  function manaPotion(): BattleCard {
-    return makePotion({
-      id: "mana-potion",
-      title: "Mana Potion",
-      descriptionLines: ["Gain 2 Mana", "Consume"],
-      effects: [{ kind: "restore-mana", amount: 2 }],
-    });
-  }
-
-  function panaceaPotion(): BattleCard {
-    return makePotion({
-      id: "panacea-potion",
-      title: "Panacea Potion",
-      descriptionLines: ["Cleanse a harmful status effect", "Consume"],
-      effects: [{ kind: "remove-harmful-status", amount: 1 }],
-    });
-  }
-
-  it("doubles restore-mana for two Mana Potions", () => {
-    const mixed = createMixedPotion(manaPotion(), manaPotion());
-
-    expect(mixed.effects[0]).toEqual({ kind: "restore-mana", amount: 4 });
-    expect(mixed.descriptionLines).toContain("Gain 4 Mana");
-  });
-
-  it("doubles remove-harmful-status for two Panacea Potions", () => {
-    const mixed = createMixedPotion(panaceaPotion(), panaceaPotion());
-
-    expect(mixed.effects[0]).toEqual({ kind: "remove-harmful-status", amount: 2 });
-    expect(mixed.descriptionLines).toContain("Cleanse 2 harmful status effects");
   });
 });
 

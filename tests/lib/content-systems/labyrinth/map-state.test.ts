@@ -24,6 +24,8 @@ describe("Labyrinth discovery and movement", () => {
     expect(canEnterLabyrinthNode(map, south)).toBe(true);
     expect(canInspectLabyrinthNode(map, boss)).toBe(true);
     expect(canEnterLabyrinthNode(map, boss)).toBe(false);
+    expect(labyrinthNodeVisualState(map, boss)).toBe("locked");
+    expect(labyrinthNodeVisualState(map, entrance)).toBe("cleared");
     expect(canInspectLabyrinthNode(map, diagonal)).toBe(false);
     expect(labyrinthNodeVisualState(map, diagonal)).toBe("undiscovered");
   });
@@ -50,6 +52,8 @@ describe("Labyrinth discovery and movement", () => {
     const current = map.currentNodeId;
     expect(canInspectLabyrinthNode(map, east)).toBe(false);
     expect(canEnterLabyrinthNode(map, east)).toBe(false);
+    expect(labyrinthNodeVisualState(map, east)).toBe("undiscovered");
+    expect(labyrinthNodeVisualState(map, "missing")).toBe("undiscovered");
     expect(withClearedNode(map, east)).toBe(map);
     expect(withClearedNode(map, "labyrinth-floor-2-n14")).toBe(map);
     expect(withClearedNode(map, current)).toBe(map);

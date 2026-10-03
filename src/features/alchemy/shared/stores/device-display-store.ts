@@ -31,28 +31,27 @@ export function initDeviceDisplayPreferences(): void {
 }
 
 let pendingWriteTimer: ReturnType<typeof setTimeout> | null = null;
-let hasUnwrittenChanges = false;
 
 function markDeviceDisplayClean(): void {
   if (pendingWriteTimer !== null) {
     clearTimeout(pendingWriteTimer);
     pendingWriteTimer = null;
   }
-  hasUnwrittenChanges = false;
 }
 
 // Synchronous flush for abrupt exits (pagehide) and tests. Reads live state
 // at flush time, so a stale scheduled write can never clobber newer values.
 // No-ops when nothing changed, so pagehide never pays for a redundant write.
 export function flushDeviceDisplayPreferences(): void {
-  if (!hasUnwrittenChanges) return;
+  if (pendingWriteTimer === null) return;
   const { gameSizePercent, tooltipSizePercent } = useDeviceDisplayStore.getState();
   writeDeviceDisplayPreferences({ gameSizePercent, tooltipSizePercent });
   markDeviceDisplayClean();
 }
 
-useDeviceDisplayStore.subscribe(() => {
-  hasUnwrittenChanges = true;
+useDeviceDisplayStore.subscribe((next, previous) => {
+  if (next.gameSizePercent === previous.gameSizePercent && next.tooltipSizePercent === previous.tooltipSizePercent)
+    return;
   if (pendingWriteTimer !== null) clearTimeout(pendingWriteTimer);
   pendingWriteTimer = setTimeout(flushDeviceDisplayPreferences, DEVICE_DISPLAY_WRITE_DELAY_MS);
 });

@@ -609,6 +609,26 @@ describe("removeConsume highlight preservation", () => {
     expect(reusable.corruptedValuePositions).toEqual([{ lineIndex: 0, matchIndex: 8 }]);
   });
 
+  it("remaps highlights after every removed Consume line", () => {
+    const card = makeTestCard({
+      descriptionLines: ["Consume", "Deal 6 Physical damage", "Consume", "Restore 4 Health"],
+      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
+      consume: true,
+      corruptedValuePositions: [
+        { lineIndex: 1, matchIndex: 5 },
+        { lineIndex: 2, matchIndex: 0 },
+        { lineIndex: 3, matchIndex: 8 },
+      ],
+    });
+    const reusable = getCorruptionMutationGroups(card).find((group) => group.kind === "reusable")!.mutations[0]!.card;
+    expect(reusable.descriptionLines).toEqual(["Deal 6 Physical damage", "Restore 4 Health"]);
+    expect(reusable.corruptedValuePositions).toEqual([
+      { lineIndex: 0, matchIndex: 5 },
+      { lineIndex: 1, matchIndex: 8 },
+    ]);
+    expect(card.corruptedValuePositions![2]!.lineIndex).toBe(3);
+  });
+
   it("shifts line indices down when Consume precedes other lines", () => {
     // Edge case: Consume is the first line (unusual but possible after addLine first=true).
     const card = makeTestCard({

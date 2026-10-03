@@ -12,12 +12,6 @@ function findingKey(finding: BalanceFinding): string {
   return `${finding.scope}:${finding.id}:${finding.tier}:${finding.metric}:${finding.bucket}`;
 }
 
-function keepBetter(existing: BalanceFinding | undefined, next: BalanceFinding): BalanceFinding {
-  if (!existing) return next;
-  if (SEVERITY_RANK[next.severity] < SEVERITY_RANK[existing.severity]) return next;
-  return existing;
-}
-
 function scoreFinding(finding: BalanceFinding): number {
   const severity = (2 - SEVERITY_RANK[finding.severity]) * 10;
   switch (finding.metric) {
@@ -44,7 +38,8 @@ export function selectBalanceFindings(candidates: readonly BalanceFinding[], cap
   const byKey = new Map<string, BalanceFinding>();
   for (const finding of candidates) {
     const key = findingKey(finding);
-    byKey.set(key, keepBetter(byKey.get(key), finding));
+    const existing = byKey.get(key);
+    if (!existing || SEVERITY_RANK[finding.severity] < SEVERITY_RANK[existing.severity]) byKey.set(key, finding);
   }
   const ranked = [...byKey.values()].sort(compareFindings);
   const collapsed = collapseMatchupClusters(ranked);
@@ -69,15 +64,7 @@ export function selectBalanceFindings(candidates: readonly BalanceFinding[], cap
 }
 
 function emptyBucketCounts(): Record<FindingBucket, number> {
-  return {
-    timeout: 0,
-    floorCeiling: 0,
-    typeWinRate: 0,
-    length: 0,
-    equity: 0,
-    paired: 0,
-    anomaly: 0,
-  };
+  return Object.fromEntries(FINDING_BUCKET_ORDER.map((bucket) => [bucket, 0])) as Record<FindingBucket, number>;
 }
 
 function matchupEnemyId(finding: BalanceFinding): string {

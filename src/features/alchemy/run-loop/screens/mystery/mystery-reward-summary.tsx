@@ -28,15 +28,6 @@ interface LookupProps {
   findTrinket: (id: string) => TrinketEntry | undefined;
 }
 
-function renderFoundOrLost(effect: MysteryEffect, prefix: string) {
-  return (
-    <div className="flex items-center justify-center gap-2 text-lg font-medium text-balance text-muted-foreground">
-      {prefix}
-      <MysteryEffectBadge effect={effect} />
-    </div>
-  );
-}
-
 function MysteryCardRewardItem({ card }: { card: BattleCard }) {
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
     "mystery-reward",
@@ -124,16 +115,19 @@ function MysteryRewardEffectItem({
       if (!grantedGear) return <p className={cn(controlLabelClass, "text-balance")}>{fallbackLabel}</p>;
       return <MysteryGearRewardItem instance={grantedGear} />;
     }
+    case "loseGold":
+      return (
+        <div className="flex items-center justify-center gap-2 text-lg font-medium text-balance text-muted-foreground">
+          Lost <MysteryEffectBadge effect={effect} />
+        </div>
+      );
     case "gainGold":
     case "gainMaterial":
-      return renderFoundOrLost(effect, "Found");
-    case "loseGold":
-      return renderFoundOrLost(effect, "Lost");
+    case "gainXP":
     case "removeCard":
       return null;
     case "healHealth":
     case "damageHealth":
-    case "gainXP":
       return (
         <p className={bodyTextClass}>
           <MysteryEffectBadge effect={effect} findCard={findCard} findTrinket={findTrinket} />
@@ -161,20 +155,15 @@ export function MysteryRewardSummary({
   talentXP?: TalentXP;
   onContinue: () => void;
 } & LookupProps) {
-  const xpEffects = choice.effects.filter((e): e is Extract<MysteryEffect, { kind: "gainXP" }> => e.kind === "gainXP");
-  const resourceEffects = choice.effects.filter((e) => e.kind === "gainGold" || e.kind === "gainMaterial");
-
-  const xpKeywords = [...new Set(xpEffects.map((effect) => effect.keyword))];
-
-  const totalGold = resourceEffects
-    .filter((e): e is typeof e & { kind: "gainGold" } => e.kind === "gainGold")
-    .reduce((sum, e) => sum + e.amount, 0);
-
+  const xpKeywords = new Set<Extract<MysteryEffect, { kind: "gainXP" }>["keyword"]>();
+  let totalGold = 0;
+  let hasResources = false;
   const mats: Partial<Record<MaterialId, number>> = {};
-  for (const e of resourceEffects) {
-    if (e.kind === "gainMaterial") {
-      mats[e.material] = (mats[e.material] ?? 0) + e.amount;
-    }
+  for (const effect of choice.effects) {
+    if (effect.kind === "gainXP") xpKeywords.add(effect.keyword);
+    if (effect.kind === "gainGold") totalGold += effect.amount;
+    if (effect.kind === "gainMaterial") mats[effect.material] = (mats[effect.material] ?? 0) + effect.amount;
+    if (effect.kind === "gainGold" || effect.kind === "gainMaterial") hasResources = true;
   }
 
   const resolvedOtherEffects = useMemo(() => {
@@ -187,7 +176,7 @@ export function MysteryRewardSummary({
   return (
     <div className="flex w-full flex-col items-center gap-6 text-center">
       <KeywordProgressGrid
-        entries={xpKeywords.map((kw) => ({
+        entries={[...xpKeywords].map((kw) => ({
           kw,
           totalXP: (talentXP[kw] ?? 0) + (runTalentXP[kw] ?? 0),
         }))}
@@ -207,7 +196,7 @@ export function MysteryRewardSummary({
         </div>
       ))}
 
-      {resourceEffects.length > 0 ? (
+      {hasResources ? (
         <div className="w-full min-w-0">
           <FoundResourcesRow gold={totalGold} materials={mats} size="lg" />
         </div>
