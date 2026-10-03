@@ -1,15 +1,26 @@
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useErrorLogStore } from "@/features/alchemy/shared/stores/error-log-store";
+import { useErrorLogStore, type LoggedError } from "@/features/alchemy/shared/stores/error-log-store";
 import { ScreenHeaderRow, ScreenShell } from "../../../shared/ui/layout-components";
 
-function displayContext(context: Record<string, unknown>): string | undefined {
+function displayContext(context: Record<string, unknown> | undefined, indent?: number): string | undefined {
   try {
-    return JSON.stringify(context, null, 2);
+    return JSON.stringify(context, null, indent);
   } catch {
     return "Context could not be displayed.";
   }
+}
+
+function formatLoggedError(entry: LoggedError): string {
+  const lines = [
+    `[${entry.source}] ${entry.message}`,
+    `  at ${new Date(entry.timestamp).toISOString()}`,
+    `  stack: ${entry.stack ?? "(none)"}`,
+    `  context: ${displayContext(entry.context)}`,
+  ];
+  if (entry.componentStack) lines.push(`  component stack: ${entry.componentStack}`);
+  return `${lines.join("\n")}\n`;
 }
 
 export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
@@ -28,12 +39,7 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
   async function handleCopyAll() {
     setCopyFeedback(null);
     try {
-      const text = errors
-        .map(
-          (e) =>
-            `[${e.source}] ${e.message}\n  at ${new Date(e.timestamp).toISOString()}\n  stack: ${e.stack ?? "(none)"}\n  context: ${JSON.stringify(e.context)}\n`,
-        )
-        .join("\n---\n");
+      const text = errors.map(formatLoggedError).join("\n---\n");
       if (!navigator.clipboard?.writeText) {
         setCopyFeedback({ status: "failed", entries: errors });
         return;
@@ -130,7 +136,7 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground">Context:</p>
                       <pre className="mt-1 rounded-lg bg-black/30 p-2 text-xs break-all whitespace-pre-wrap text-foreground/80">
-                        {displayContext(e.context)}
+                        {displayContext(e.context, 2)}
                       </pre>
                     </div>
                   ) : null}

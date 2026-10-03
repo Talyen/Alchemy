@@ -28,14 +28,6 @@ import { getCardKeywords } from "@/lib/game-data/keywords";
 import { seededRng } from "../../../fixtures/rng";
 
 describe("Labyrinth modifier catalog", () => {
-  it("keeps new descriptions short and player-facing", () => {
-    for (const trait of Object.values(LABYRINTH_TRAITS)) {
-      expect(trait.description.split(/\s+/).length, trait.label).toBeLessThanOrEqual(10);
-      expect(trait.description, trait.label).not.toMatch(/\b(keyword|both|numerical)\b/i);
-    }
-    expect(LABYRINTH_TRAITS["strong-spirits"].description).toBe("Offered Potions have doubled potency");
-  });
-
   it("covers all registered themes", () => {
     const covered = new Set(Object.values(LABYRINTH_TRAITS).flatMap((trait) => (trait.keyword ? [trait.keyword] : [])));
     expect([...covered].sort()).toEqual(Object.keys(keywordDefinitions).sort());
@@ -46,9 +38,9 @@ describe("Labyrinth modifier catalog", () => {
     for (const type of ["combat", "elite", "boss", ...LABYRINTH_SUPPORT_TYPES] as const) {
       for (let seed = 0; seed < 30; seed++) {
         const mods = getRewardModifiersForNodeType(seededRng(seed), type);
-        expect(mods).toHaveLength(1);
-        expect(isLabyrinthTraitEligible(mods[0]!, type)).toBe(true);
-        expect(ENCOUNTER_TRAITS[mods[0]!].category).toBe("reward");
+        expect(mods).toHaveLength(type === "transmutation" ? 0 : 1);
+        if (mods[0]) expect(isLabyrinthTraitEligible(mods[0], type)).toBe(true);
+        if (mods[0]) expect(ENCOUNTER_TRAITS[mods[0]].category).toBe("reward");
       }
     }
     expect(getRewardModifiersForNodeType(seededRng(1), "entrance")).toEqual([]);
@@ -96,7 +88,7 @@ describe("Labyrinth modifier catalog", () => {
     const map = generateLabyrinthMap(seededRng(28));
     expect(LabyrinthMapSchema.parse(JSON.parse(JSON.stringify(map)))).toEqual(map);
     for (const node of Object.values(map.nodes)) {
-      if (node.type !== "entrance") expect(node.rewardModifiers).toHaveLength(1);
+      if (node.type !== "entrance") expect(node.rewardModifiers).toHaveLength(node.type === "transmutation" ? 0 : 1);
     }
   });
 

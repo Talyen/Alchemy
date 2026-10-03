@@ -56,6 +56,8 @@ export function makeActiveRunData(overrides: Partial<ActiveRunData> = {}): Activ
     equipmentShopState: null,
     mysteryVisit: null,
     corruptionResult: null,
+    campfireState: null,
+    transmutationState: null,
     ...overrides,
   } satisfies ActiveRunData;
 }
@@ -155,5 +157,7 @@ export function createCompleteActiveRunData(): ActiveRunData {
     },
     mysteryVisit: null,
     corruptionResult: null,
+    campfireState: null,
+    transmutationState: null,
   } satisfies ActiveRunData;
 }

@@ -14,9 +14,18 @@ describe("draw and status interaction regressions", () => {
   it("Mana Berries offers an Emergency Wish when its draw finds empty piles", () => {
     const card = cardById["mana-berries"]!;
     const state = patchBattleState({ hand: [card], deck: [], discard: [], rng: () => 0.99 });
-    const next = playBattleCardResolved(state, card.id, 0).state;
-    expect(next.wishOptions).toHaveLength(3);
-    expect(next.exhausted).toContainEqual(card);
+    const result = playBattleCardResolved(state, card.id, 0);
+    expect(result.state.wishOptions).toHaveLength(3);
+    expect(result.state.exhausted).toContainEqual(card);
+    expect(result.combatTexts.some((text) => text.stat === "draw")).toBe(false);
+  });
+
+  it("does not report a random draw when empty piles trigger an Emergency Wish", () => {
+    const card = makeTestCard({ effects: [{ kind: "random-draw", minAmount: 1, maxAmount: 2 }] });
+    const state = patchBattleState({ hand: [card], deck: [], discard: [], rng: () => 0.99 });
+    const result = playBattleCardResolved(state, card.id, 0);
+    expect(result.state.wishOptions).toHaveLength(3);
+    expect(result.combatTexts.some((text) => text.stat === "draw")).toBe(false);
   });
 
   it("Runic Quill offers an Emergency Wish after the last Health Potion is consumed", () => {

@@ -1,0 +1,20 @@
+/** Explicit, ordinary sidegrades; adding a card here requires choosing its gameplay role. */
+export const TRANSMUTATION_ROLES = {
+  slash: "attack",
+  stab: "attack",
+  "poison-dagger": "attack",
+  fireball: "attack",
+  frostbolt: "attack",
+  bash: "attack",
+  "lightning-bolt": "attack",
+  block: "defense",
+  "plate-mail": "defense",
+  "health-potion": "defense",
+  "stoneskin-potion": "defense",
+  heal: "defense",
+  cleanse: "utility",
+  wish: "utility",
+  anvil: "utility",
+  "mana-potion": "utility",
+  "mana-berries": "utility",
+} as const;

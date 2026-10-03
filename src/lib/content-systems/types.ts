@@ -12,6 +12,7 @@ export type LabyrinthNodeType =
   | "rest"
   | "mystery"
   | "corruption"
+  | "transmutation"
   | "shop"
   | "alchemist"
   | "trinket-shop"

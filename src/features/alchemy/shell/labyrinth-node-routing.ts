@@ -1,3 +1,4 @@
+import { initializeAlchemyVisit } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
 import type { ShopActions } from "@/features/alchemy/run-loop/shop/shop-action-types";
 import type { LabyrinthController } from "@/features/alchemy/run-loop/run/labyrinth-controller";
 import type {
@@ -36,7 +37,8 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
       screen: ROUTE_SCREENS.BATTLE,
       initialize: (node) => deps.battle.startBossBattle({ modifiers: [], enemyId: node.enemyId }),
     },
-    rest: { screen: ROUTE_SCREENS.CAMPFIRE },
+    rest: { screen: ROUTE_SCREENS.CAMPFIRE, initialize: () => initializeAlchemyVisit("campfire") },
+    transmutation: { screen: ROUTE_SCREENS.TRANSMUTATION, initialize: () => initializeAlchemyVisit("transmutation") },
     corruption: { screen: ROUTE_SCREENS.CORRUPTION, initialize: () => deps.corruption.reset() },
     shop: { screen: ROUTE_SCREENS.SHOP, initialize: () => deps.shop.initialize("merchant") },
     alchemist: { screen: ROUTE_SCREENS.ALCHEMIST, initialize: () => deps.shop.initialize("alchemist") },

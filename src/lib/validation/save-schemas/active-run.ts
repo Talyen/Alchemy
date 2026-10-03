@@ -126,6 +126,16 @@ function repairSavedShopCards(cards: unknown[], purchasedSlotKeys: string[], pat
   };
 }
 
+const AlchemyVisitSchema = z
+  .object({
+    offers: savedCardArraySchema("alchemyVisit.offers"),
+    result: BattleCardSchema.nullable(),
+    original: BattleCardSchema.nullable(),
+    completed: z.boolean(),
+  })
+  .nullable()
+  .catch(null);
+
 const ShopObjectSchema = createShopObjectSchema({
   cards: z.array(z.unknown()),
   removeUsed: z.boolean().catch(false),
@@ -238,6 +248,8 @@ const ActiveRunDataObjectSchema = z.object({
   equipmentShopState: EquipmentShopPersistSchema,
   mysteryVisit: MysteryVisitPersistSchema,
   corruptionResult: CorruptionResultPersistSchema,
+  campfireState: AlchemyVisitSchema,
+  transmutationState: AlchemyVisitSchema,
 });
 
 export type ValidatedActiveRunData = z.output<typeof ActiveRunDataObjectSchema>;

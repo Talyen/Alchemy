@@ -1,3 +1,4 @@
+import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { resetCorruptionVisit } from "@/features/alchemy/shared/stores/navigation-commands";
 import { type Destination } from "@/lib/routing";
 import { logError } from "@/lib/error-logger";
@@ -64,7 +65,9 @@ export function createDestinationScreenHandlers(
   }
 
   function handleCampfireContinue() {
-    if (restAtCampfire()) advanceToNextDestination();
+    const activity = readRunSession().activity;
+    if (activity.kind !== "campfire") return;
+    if (activity.data.completed || restAtCampfire()) advanceToNextDestination();
   }
 
   return {

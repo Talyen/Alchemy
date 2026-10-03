@@ -1,9 +1,9 @@
 import { expect, test } from "../../fixtures/e2e";
 import { makeStatusCard, startBattleWithDeck } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
-import { slow } from "../../playwright-tags";
+import { slow, critical } from "../../playwright-tags";
 
-test.describe("Stunned enemy turn presentation", slow, () => {
+test.describe("Stunned enemy turn presentation", { tag: [critical.tag, slow.tag] }, () => {
   test("stunned enemy shows Enemy Turn and draws hand without a flash", async ({ page }) => {
     test.setTimeout(60_000);
 

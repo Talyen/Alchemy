@@ -1,3 +1,4 @@
+import type { AlchemyVisit } from "./alchemy-visits";
 import type { BattleSnapshot } from "@/lib/battle";
 import type {
   ContentSystemId,
@@ -87,4 +88,6 @@ export interface ActiveRunData extends PersistedRunProgress {
   equipmentShopState: PersistedEquipmentShopState | null;
   mysteryVisit: PersistedMysteryVisit | null;
   corruptionResult: CorruptionResult | null;
+  campfireState?: AlchemyVisit | null;
+  transmutationState?: AlchemyVisit | null;
 }

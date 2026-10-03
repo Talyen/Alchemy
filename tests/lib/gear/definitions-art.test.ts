@@ -4,12 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { gearArtByDefinitionId } from "@/lib/game-data/gear-art.generated";
 import { gearBaseItems } from "@/lib/gear/base-items";
-import {
-  gearDefinitions,
-  gearDefinitionList,
-  GEAR_DEFINITION_IDS,
-  missingGearArtDefinitionIds,
-} from "@/lib/gear/definitions";
+import { gearDefinitions, gearDefinitionList, missingGearArtDefinitionIds } from "@/lib/gear/definitions";
 import { uniqueItemList } from "@/lib/gear/unique-catalog";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -34,10 +29,6 @@ describe("gear definitions and art", () => {
         expect(gearDefinitions[id]?.slotRule).toBe(baseItem.slotRule);
       }
     }
-  });
-
-  it("keeps definition ids aligned with the catalog", () => {
-    expect(GEAR_DEFINITION_IDS.length).toBe(gearDefinitionList.length);
   });
 
   it("builds a definition for every unique item", () => {

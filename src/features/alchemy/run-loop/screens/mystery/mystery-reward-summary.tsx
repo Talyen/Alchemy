@@ -208,7 +208,7 @@ export function MysteryRewardSummary({
       ))}
 
       {resourceEffects.length > 0 ? (
-        <div>
+        <div className="w-full min-w-0">
           <FoundResourcesRow gold={totalGold} materials={mats} size="lg" />
         </div>
       ) : null}

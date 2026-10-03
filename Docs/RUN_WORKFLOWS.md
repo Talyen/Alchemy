@@ -97,3 +97,9 @@ Inside an existing reward, shop, or mystery command, call the mutator with that 
 Resolve battle gameplay and commit its RNG/XP before starting presentation. Return detached frames for playback; never commit gameplay from a draw or animation callback. `activeCombat.pendingBattleTransition` is retained only for consuming older saves, not for authoring new animation flows.
 
 ---
+
+## Campfire brewing and Transmutation visits
+
+`navigation/alchemy-commands.ts` initializes fixed visit offers using the saved events RNG stream. Campfire and Transmutation activities own offers, completion, and result cards; the resume codec persists them independently of the visible menu. Returning or reloading must not regenerate an initialized visit.
+
+Brew and exchange commands validate the current activity, completion, source eligibility, and selected offers before writing. Payment, deck replacement, discovery, and visit use commit synchronously through the run-session write port. Campfire Rest and Brew are mutually exclusive. A completed Labyrinth support visit clears its pending node through the existing progression flow.

@@ -30,8 +30,8 @@ export interface SaveLoadState {
 }
 
 function isEmptyGearLike(value: unknown): boolean {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
-  const entries = Object.values(value as Record<string, unknown>);
+  if (!isPlainObject(value)) return false;
+  const entries = Object.values(value);
   if (entries.length === 0) return true;
   return entries.every((entry) => entry === undefined || (Array.isArray(entry) && entry.length === 0));
 }
@@ -53,19 +53,23 @@ function sumInventoryValues(value: unknown): number {
   return total;
 }
 
-function collectSaveRepairWarnings(raw: Partial<SaveData>, normalized: ParsedSaveData): string[] {
+function collectSaveRepairWarnings(raw: Record<string, unknown>, normalized: ParsedSaveData): string[] {
   const warnings: string[] = [];
   if (raw.activeRun && !normalized.activeRun) {
     warnings.push("active run could not be restored");
   }
-  if (raw.activeRun?.activeCombat != null && normalized.activeRun && !normalized.activeRun.activeCombat) {
+  const rawActiveRun = isPlainObject(raw.activeRun) ? raw.activeRun : undefined;
+  if (rawActiveRun?.activeCombat != null && normalized.activeRun && !normalized.activeRun.activeCombat) {
     warnings.push("battle could not be restored");
   }
-  const rawGold = (raw as { gold?: unknown }).gold;
+  const rawGold = raw.gold;
   // Live combat gold intentionally overrides the purse (see SaveDataSchema
   // resolvePersistedGold); that override is not a repair.
-  const rawCombatGold = (raw as { activeRun?: { activeCombat?: { battleState?: { gold?: unknown } } } }).activeRun
-    ?.activeCombat?.battleState?.gold;
+  const rawCombatCandidate = rawActiveRun?.activeCombat;
+  const rawCombat = isPlainObject(rawCombatCandidate) ? rawCombatCandidate : undefined;
+  const rawBattleCandidate = rawCombat?.battleState;
+  const rawBattle = isPlainObject(rawBattleCandidate) ? rawBattleCandidate : undefined;
+  const rawCombatGold = rawBattle?.gold;
   if (rawGold !== undefined && rawGold !== normalized.gold && !isCombatGoldOverride(rawCombatGold, normalized.gold)) {
     warnings.push(`Field "gold" was repaired (raw ${JSON.stringify(rawGold)} -> ${normalized.gold})`);
   }
@@ -124,7 +128,7 @@ export function selectSaveCandidates(
 ): SaveCandidateSelection {
   let future: { status: SaveLoadStatus; savedAt: number } | null = null;
   let playable: {
-    raw: Partial<SaveData>;
+    raw: Record<string, unknown>;
     data: ParsedSaveData;
     errors: Array<{ path: string; message: string }>;
   } | null = null;
@@ -146,7 +150,7 @@ export function selectSaveCandidates(
         if (!future || savedAt > future.savedAt) future = { status, savedAt };
         continue;
       }
-      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      if (!isPlainObject(parsed)) {
         logStorageFailure("Save candidate root was not an object, trying next candidate");
         continue;
       }

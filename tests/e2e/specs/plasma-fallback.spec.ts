@@ -1,8 +1,9 @@
 import { expect, test } from "../../fixtures/e2e";
 import { MenuPage } from "../../pages/menu-page";
+import { critical } from "../../playwright-tags";
 
 for (const failure of ["context", "shader"] as const) {
-  test(`static glow survives WebGL ${failure} failure`, async ({ page, runtimeErrors }) => {
+  test(`static glow survives WebGL ${failure} failure`, critical, async ({ page, runtimeErrors }) => {
     await page.addInitScript((kind) => {
       if (kind === "context") {
         const original = HTMLCanvasElement.prototype.getContext;

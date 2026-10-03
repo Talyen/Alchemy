@@ -208,7 +208,7 @@ export const researchUpgrades = [
     "Botanical Distillation",
     herbsSingleCosts(),
     { mixPotionDiscount: 2, endRunHerbsPerRoom: 1 },
-    (t) => `Potion mixing cost −${2 * t} Gold`,
+    (t) => `Potion brewing cost −${2 * t} Gold`,
     (t) => `+${t} Herbs per Room`,
   ),
   stackingResearch(

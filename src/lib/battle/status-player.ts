@@ -18,14 +18,13 @@ import {
   applyArmorStatusEffect,
   applyBlockReward,
   removeHarmfulPlayerStatuses,
-  onFirstCrossThreshold,
 } from "./player-rewards";
 import { mergeCombatText } from "./combat-text-events";
 import { BLEED_STATUS_MULTIPLIER, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
 import { paceCombatMagnitude } from "./fight-pacing";
 import { dealScaledBurnWithStacks } from "./scaled-damage";
 import { getEnemyDamageMultiplier } from "./status-helpers";
-import { applyPercentBonus } from "./amount-helpers";
+import { applyPercentBonus, crossesGainThreshold } from "./amount-helpers";
 import { clamp } from "@/lib/math";
 
 export function applyCardHealing(
@@ -233,9 +232,9 @@ export function applyForgeThresholdRewards(
   // Most Forge gains cross no reward threshold. Avoid allocating the reward
   // table and its callbacks unless at least one reward can run.
   if (
-    !crossesForgeThreshold(oldForge, newForge, forgeBurnThreshold) &&
-    !crossesForgeThreshold(oldForge, newForge, forgeStripArmorThreshold) &&
-    !crossesForgeThreshold(oldForge, newForge, forgeBlockThreshold)
+    !crossesGainThreshold(oldForge, newForge, forgeBurnThreshold) &&
+    !crossesGainThreshold(oldForge, newForge, forgeStripArmorThreshold) &&
+    !crossesGainThreshold(oldForge, newForge, forgeBlockThreshold)
   )
     return state;
   const thresholds: Array<{
@@ -267,13 +266,9 @@ export function applyForgeThresholdRewards(
   ];
   let nextState = state;
   for (const { threshold, apply } of thresholds) {
-    nextState = onFirstCrossThreshold(oldForge, newForge, threshold, apply, nextState);
+    if (crossesGainThreshold(oldForge, newForge, threshold)) nextState = apply(nextState);
   }
   return nextState;
-}
-
-function crossesForgeThreshold(oldForge: number, newForge: number, threshold: number): boolean {
-  return !(threshold <= 0 || oldForge >= threshold || newForge < threshold);
 }
 
 export function applyPlayerStatusEffect(

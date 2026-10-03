@@ -6,6 +6,7 @@ import {
   commitDestinationClaim,
   createDraftRunRandomSource,
   setRunPlayerHealth,
+  setAlchemyVisit,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { getCampfireHealFraction, getCampfireRestHealth } from "@/lib/campfire-heal";
 import { activeLabyrinthBenefits, labyrinthCampfireHealing } from "@/lib/content-systems/labyrinth/room-rules";
@@ -30,7 +31,7 @@ export function cancelClaimedDestination() {
 }
 export function restAtCampfire() {
   return dispatchRunSessionCommand((draft) => {
-    if (draft.session.activity.kind !== "campfire") return false;
+    if (draft.session.activity.kind !== "campfire" || draft.session.activity.data.completed) return false;
     const talentEffects = computeTalentEffects(draft.runProfile.unlockedTalents);
     const modifiers = activeLabyrinthBenefits(
       draft.run.activeRun.contentSystemType,
@@ -48,6 +49,7 @@ export function restAtCampfire() {
         draft.runProfile.effects.homesteadHealing,
       ),
     );
+    setAlchemyVisit(draft, "campfire", { ...draft.session.activity.data, completed: true });
     return true;
   });
 }

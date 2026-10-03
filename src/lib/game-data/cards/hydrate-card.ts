@@ -60,6 +60,7 @@ export function hydrateCard(savedCard: SavedCard): BattleCard {
     effects: content.effects.map(cloneEffect),
     cost: hydrateCost(savedCard, libraryCard),
     ...(consume !== undefined && { consume }),
+    ...(savedCard.brewed !== undefined && { brewed: savedCard.brewed }),
     ...(savedCard.uid !== undefined && { uid: savedCard.uid }),
     ...(keepSavedContent && savedCard.corrupted !== undefined && { corrupted: savedCard.corrupted }),
     ...(keepSavedContent && savedCard.baseTitle !== undefined && { baseTitle: savedCard.baseTitle }),

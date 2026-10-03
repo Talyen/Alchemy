@@ -80,4 +80,33 @@ describe("getEffectiveCardDescriptionLines", () => {
     const card = makeTestCard({ descriptionLines: [] });
     expect(getEffectiveCardDescriptionLines(card)).toEqual([]);
   });
+  it("labels chance reaction previews conditionally and excludes scheduled hits", () => {
+    const reactionPreview = { shatter: "Shatter: destroy all defenses", wildfire: "Wildfire: detonate 15 Burn" };
+    const chance = makeTestCard({
+      descriptionLines: ["Random attack"],
+      effects: [
+        {
+          kind: "chance",
+          probability: 0.5,
+          successEffects: [{ kind: "damage", damageType: "nature", amount: 4 }],
+          failureEffects: [],
+        },
+      ],
+    });
+    expect(getEffectiveCardDescriptionLines(chance, { reactionPreview })).toEqual([
+      "Random attack",
+      "If the Nature hit resolves: Wildfire: detonate 15 Burn",
+    ]);
+    const scheduled = makeTestCard({
+      descriptionLines: ["Later attack"],
+      effects: [
+        {
+          kind: "repeat-over-turns",
+          remainingTurns: 1,
+          effects: [{ kind: "damage", damageType: "nature", amount: 4 }],
+        },
+      ],
+    });
+    expect(getEffectiveCardDescriptionLines(scheduled, { reactionPreview })).toEqual(["Later attack"]);
+  });
 });

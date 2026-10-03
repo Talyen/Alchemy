@@ -30,7 +30,7 @@ describe("resource interaction regressions", () => {
   });
 
   it.each<[string, BattleStatePatch]>([
-    ["Shatter", { enemyCC: { freezeSkipTurns: 1 }, talentEffects: { freezeDamageBonusVsFrozen: 1 } }],
+    ["Brittle Ice", { enemyCC: { freezeSkipTurns: 1 }, talentEffects: { freezeDamageBonusVsFrozen: 1 } }],
     ["Corrosive", { enemyStatuses: { poison: 1 }, talentEffects: { poisonDamageBonusVsPoisoned: 1 } }],
   ])("%s cannot turn zero damage into a hit", (_name, patch) => {
     const state = patchBattleState(patch);

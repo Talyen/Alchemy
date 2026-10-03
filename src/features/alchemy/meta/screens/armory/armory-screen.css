@@ -77,45 +77,53 @@
 }
 
 .armory-inventory-controls {
-  position: relative;
-  z-index: 20;
-  width: 100%;
-  margin: 0.5rem auto 0;
-  padding-top: 0.25rem;
-  border-top: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
-}
-
-.armory-inventory-summary {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-start;
-  gap: 0.5rem;
-  height: 2.5rem;
-  overflow-x: auto;
-  white-space: nowrap;
+  justify-content: flex-end;
+  gap: calc(0.5 * var(--content-rem, 1rem));
+  max-width: 100%;
 }
 
 .armory-inventory-search {
-  flex: 1 1 calc(12 * var(--content-rem, 1rem));
-  max-width: calc(22 * var(--content-rem, 1rem));
+  display: flex;
+  align-items: center;
   min-width: 0;
+  max-width: 100%;
 }
 
-.armory-filter-panel {
-  display: flex;
-  flex-direction: column;
-  color-scheme: dark;
-  position: absolute;
-  bottom: calc(100% + 0.5rem);
-  left: 50%;
-  z-index: 50;
-  width: min(calc(23 * var(--content-rem, 1rem)), 100%);
-  max-height: min(calc(36 * var(--content-rem, 1rem)), 75vh);
+.armory-inventory-search-field {
+  position: relative;
+  width: 0;
+  min-width: 0;
   overflow: hidden;
-  transform: translateX(-50%);
-  padding: 1rem;
+  visibility: hidden;
+  transition:
+    width 200ms ease-out,
+    visibility 200ms;
+}
+
+.armory-inventory-search[data-expanded="true"] .armory-inventory-search-field {
+  width: calc(20 * var(--content-rem, 1rem));
+  visibility: visible;
+}
+
+.armory-inventory-menu {
+  position: absolute;
+  visibility: hidden;
+  z-index: 50;
+  width: calc(23 * var(--content-rem, 1rem));
+  overflow: auto;
+  color-scheme: dark;
+  padding: calc(1 * var(--content-rem, 1rem));
   border: 1px solid var(--color-border);
-  border-radius: 1rem;
+  border-radius: calc(1 * var(--content-rem, 1rem));
   background: var(--color-background);
   box-shadow: 0 12px 40px rgb(0 0 0 / 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .armory-inventory-search-field {
+    transition: none;
+  }
 }

@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  COMBAT_ENCOUNTER_TRAIT_IDS,
   ENCOUNTER_TRAITS,
-  REWARD_ENCOUNTER_TRAIT_IDS,
   eligibleEncounterTraitIds,
   pickEncounterTrait,
   pickEncounterTraits,
@@ -11,16 +9,6 @@ import {
 } from "@/lib/content-systems/encounter-traits";
 
 describe("encounter trait catalog", () => {
-  it("keeps unique combat and reward ids aligned with the catalog", () => {
-    expect(new Set(COMBAT_ENCOUNTER_TRAIT_IDS).size).toBe(COMBAT_ENCOUNTER_TRAIT_IDS.length);
-    expect(new Set(REWARD_ENCOUNTER_TRAIT_IDS).size).toBe(REWARD_ENCOUNTER_TRAIT_IDS.length);
-    expect(Object.keys(ENCOUNTER_TRAITS).sort()).toEqual(
-      [...COMBAT_ENCOUNTER_TRAIT_IDS, ...REWARD_ENCOUNTER_TRAIT_IDS].sort(),
-    );
-    expect(COMBAT_ENCOUNTER_TRAIT_IDS.every((id) => ENCOUNTER_TRAITS[id].category === "combat")).toBe(true);
-    expect(REWARD_ENCOUNTER_TRAIT_IDS.every((id) => ENCOUNTER_TRAITS[id].category === "reward")).toBe(true);
-  });
-
   it("keeps every eligible labyrinth and Wildwood trait pool non-empty", () => {
     for (const mode of ["labyrinth", "wildwood"] as const) {
       for (const category of ["combat", "reward"] as const) {

@@ -8,7 +8,7 @@ import { decayArmorAfterDamage, getEnemyDamageMultiplier } from "./status-helper
 import { paceCombatDamage } from "./fight-pacing";
 import { applyElementalDamageManaRestore } from "./player-hit-core";
 
-export function gearFrozenDamageMultiplier(state: BattleState): number {
+export function gearFrozenDamageMultiplier(state: Pick<BattleState, "enemyCC" | "gearEffects">): number {
   if (state.enemyCC.freezeSkipTurns <= 0 || state.gearEffects.frozenEnemyDamageBonusPercent <= 0) return 1;
   return 1 + state.gearEffects.frozenEnemyDamageBonusPercent / PERCENT_DENOMINATOR;
 }

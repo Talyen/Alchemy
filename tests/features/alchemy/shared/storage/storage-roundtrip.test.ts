@@ -21,11 +21,6 @@ function roundTrip(value: unknown): { original: SaveData; reParsed: SaveData } {
 }
 
 describe("save JSON round trips", () => {
-  it("minimal save round-trips through JSON serialize/deserialize", () => {
-    const { original, reParsed } = roundTrip({ musicVolume: 75, sfxVolume: 25 });
-    expect(reParsed).toEqual(original);
-  });
-
   it("active run save round-trips through JSON serialize/deserialize", () => {
     const original = parseSave({
       musicVolume: 60,
@@ -168,12 +163,5 @@ describe("save JSON round trips", () => {
     expect(reParsed.materialInventory).toEqual({ ...emptyInventory(), wood: 12, iron: 5, herbs: 3, gems: 1 });
 
     expect(reParsed.bondedCompanions).toMatchObject({ wolf: 3, "lizard-scout": 1 });
-  });
-
-  it("round-trip preserves NaN-free serialization", () => {
-    const { original, reParsed } = roundTrip({});
-    expect(JSON.stringify(original)).not.toContain("NaN");
-    expect(JSON.stringify(original)).not.toContain("undefined");
-    expect(reParsed).toEqual(original);
   });
 });

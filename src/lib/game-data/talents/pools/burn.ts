@@ -35,7 +35,7 @@ export const burnTalents = [
   ),
   t(
     "burn-first-double",
-    "Wildfire",
+    "Flash Fire",
     "Burn cards have a 10% chance to play twice",
     "TrendingUp",
     setEffect("burnCardPlayTwiceChance", 10),

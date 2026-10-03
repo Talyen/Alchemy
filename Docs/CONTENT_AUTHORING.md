@@ -179,3 +179,11 @@ Exact generated descriptions bypass English parity parsing. The parser remains
 for custom templates and saved/Corrupted/Mixed Potion descriptions. Keep compact
 combined phrases stable: Corruption still uses their displayed numeric positions
 to preserve the established editable-value contract.
+
+### Transmutation roles and Potion brewing
+
+`cards/transmutation-roles.ts` explicitly assigns ordinary sidegrade candidates to attack, defense, or utility roles. The card library exposes those roles as `transmutationRole`; Transmutation samples one distinct card per role without guessing from titles. Add candidates deliberately and keep each role populated.
+
+Current-run Potion transformations carry `brewed: true`. Preserve this metadata, the transformed effects, and generated descriptions together. Mixed and strengthened Potions cannot be used as brewing ingredients or Transmutation sources. Strengthening preserves probabilities, percentage effects, Wishes, and draw counts; offer it only when a numerical benefit changes.
+
+The former Shatter and Wildfire talents are displayed as Brittle Ice and Flash Fire to distinguish them from the universal reactions. Their saved IDs and effects remain unchanged.

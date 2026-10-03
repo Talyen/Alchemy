@@ -1,3 +1,5 @@
+import { brewAtCampfire, transmuteCard } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
+import { restAtCampfire } from "@/features/alchemy/run-loop/run/destination-commands";
 import type { AlchemyRouteCommands, AlchemyRunCommands } from "./route-commands";
 import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
@@ -136,6 +138,8 @@ export function useAlchemyRunController(): AlchemyRunCommands {
           prepare: nav.prepareDestinationScreen,
           choose: nav.handleDestinationChoice,
           continueCampfire: nav.handleCampfireContinue,
+          rest: restAtCampfire,
+          brew: brewAtCampfire,
         },
         wildwood: {
           removeCard: nav.handleWildwoodRemoveCard,
@@ -147,6 +151,7 @@ export function useAlchemyRunController(): AlchemyRunCommands {
           handleChooseCard: nav.handleMysteryChooseCard,
           handleContinue: nav.handleMysteryContinue,
         },
+        transmutation: { exchange: transmuteCard, continue: nav.advanceToNextDestination },
         corruption: {
           handleCorruptCard: nav.handleCorruptCard,
           handleExit: nav.handleCorruptionExit,

@@ -125,10 +125,10 @@ describe("distinct talent conditions", () => {
     expect(effects.poisonCardPlayTwiceChance).toBe(10);
   });
 
-  it("Wildfire repeats the current Burn card without a second roll", () => {
+  it("Flash Fire repeats the current Burn card without a second roll", () => {
     let rolls = 0;
     const initial = battle({
-      talentEffects: talents("Wildfire"),
+      talentEffects: talents("Flash Fire"),
       rng: () => (rolls++ === 0 ? 0 : 0.99),
     });
     const result = play(initial, cardById["fireball"]!);
@@ -187,12 +187,12 @@ describe("distinct talent conditions", () => {
     expect(play(first, card).enemyHealth).toBe(94);
   });
 
-  it("Shatter adds generic damage and Snow Pack does not add a separate Freeze hit", () => {
+  it("Brittle Ice stacks with Shatter and Snow Pack does not add a separate Freeze hit", () => {
     const shatter = play(
-      battle({ talentEffects: talents("Shatter"), enemyCC: { freezeSkipTurns: 1 } }),
+      battle({ talentEffects: talents("Brittle Ice"), enemyCC: { freezeSkipTurns: 1 } }),
       makeTestCard({ cost: 0, effects: [{ kind: "damage", damageType: "physical", amount: 4 }] }),
     );
-    expect(shatter.enemyHealth).toBe(95);
+    expect(shatter.enemyHealth).toBe(90);
 
     const initial = battle({
       talentEffects: talents("Snow Pack"),
@@ -200,7 +200,7 @@ describe("distinct talent conditions", () => {
       enemyCC: { freezeSkipTurns: 1 },
     });
     const next = processCompanionTurnStart(initial, []);
-    expect(next.enemyHealth).toBe(98);
+    expect(next.enemyHealth).toBe(96);
     expect(next.enemyStatuses.freeze).toBe(0);
     expect(
       processCompanionTurnStart(

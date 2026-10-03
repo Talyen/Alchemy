@@ -9,6 +9,7 @@ export { default as alchemyLogo } from "@/assets/optimized/alchemy-logo.webp";
 export { default as anvil } from "@/assets/optimized/anvil.webp";
 export { default as apple } from "@/assets/optimized/apple.webp";
 export { default as archeryRange } from "@/assets/optimized/archery-range.webp";
+export { default as armorySalvage } from "@/assets/optimized/armory-salvage.webp";
 export { default as astralArrow } from "@/assets/optimized/astral-arrow.webp";
 export { default as avatar } from "@/assets/optimized/avatar.webp";
 export { default as bandit } from "@/assets/optimized/bandit.webp";

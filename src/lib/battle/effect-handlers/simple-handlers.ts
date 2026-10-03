@@ -48,13 +48,7 @@ export const SIMPLE_HANDLERS = {
   "random-draw": (state, _card, effect, potionMult, combatTexts) => {
     if (effect.maxAmount < effect.minAmount) throw rangeBoundsError("random-draw");
     const amount = effect.minAmount + rngInt(getBattleRng(state), effect.maxAmount - effect.minAmount + 1);
-    const next = applyDrawResult(state, drawFromState(state, applyPotionMultiplier(amount, potionMult)));
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat: "draw",
-      amount: next.hand.length + next.pendingHandCards.length - state.hand.length - state.pendingHandCards.length,
-    });
+    const next = applyDrawResult(state, drawFromState(state, applyPotionMultiplier(amount, potionMult)), combatTexts);
     return applyEmergencyWishForEmptyDraw(next, amount, combatTexts);
   },
   "summon-companion": (state, _card, effect, _potionMult, combatTexts) => {
@@ -93,13 +87,7 @@ export const SIMPLE_HANDLERS = {
   },
   "draw-cards": (state, _card, effect, potionMult, combatTexts) => {
     const amount = applyPotionMultiplier(effect.amount, potionMult);
-    const next = applyDrawResult(state, drawFromState(state, amount));
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat: "draw",
-      amount: next.hand.length + next.pendingHandCards.length - state.hand.length - state.pendingHandCards.length,
-    });
+    const next = applyDrawResult(state, drawFromState(state, amount), combatTexts);
     return applyEmergencyWishForEmptyDraw(next, amount, combatTexts);
   },
   ...FLAG_HANDLERS,

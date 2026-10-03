@@ -35,7 +35,8 @@ describe("queued Golden Crucible rewards", () => {
 
 describe("pending hand cards", () => {
   it("resumes a reserved card once with its UID", () => {
-    const card = { ...cardById.slash!, uid: 73 };
+    const { transmutationRole: _role, ...slash } = cardById.slash!;
+    const card = { ...slash, uid: 73 };
     const saved = PersistedBattleStateSchema.parse(
       JSON.parse(JSON.stringify(patchBattleState({ pendingHandCards: [card], deck: [], discard: [], hand: [] }))),
     );

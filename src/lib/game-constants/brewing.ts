@@ -1,0 +1,2 @@
+export const POTION_STRENGTHEN_MULTIPLIER = 1.5;
+export const CAMPFIRE_POTION_OFFERS = 3;

@@ -47,6 +47,12 @@ export const coreAssets = [
   },
   // Crafting
   {
+    source: "Crafting/Salvage.png",
+    target: "armory-salvage.webp",
+    width: WIDTH.crafting,
+    quality: QUALITY.crafting,
+  },
+  {
     source: "Crafting/Ascension Seal.png",
     target: "crafting-ascension-seal.webp",
     width: WIDTH.crafting,

@@ -10,10 +10,7 @@ import { mergeCombatText } from "./combat-text-events";
 export function applyDodgeTalentStatuses(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
   if (state.talentEffects.drawOnDodge > 0) {
-    nextState = applyDrawResult(nextState, drawFromState(nextState, state.talentEffects.drawOnDodge));
-    const drawn =
-      nextState.hand.length + nextState.pendingHandCards.length - state.hand.length - state.pendingHandCards.length;
-    if (drawn > 0) mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "draw", amount: drawn });
+    nextState = applyDrawResult(nextState, drawFromState(nextState, state.talentEffects.drawOnDodge), combatTexts);
   }
   if (state.talentEffects.forgeOnDodge > 0 && rollBattleChance(REACTIVE_REWARD_CHANCES.feint, nextState)) {
     nextState = addForgeToPlayer(nextState, state.talentEffects.forgeOnDodge, combatTexts);

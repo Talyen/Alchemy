@@ -83,6 +83,8 @@ describe("encodeRunResumeSnapshot", () => {
       equipmentShopState: null,
       mysteryVisit: null,
       corruptionResult: null,
+      campfireState: null,
+      transmutationState: null,
       wildwoodDraft: null,
       starterDraftChoices: null,
       runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 },

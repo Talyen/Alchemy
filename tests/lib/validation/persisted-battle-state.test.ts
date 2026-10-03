@@ -44,7 +44,9 @@ describe("PersistedBattleStateSchema", () => {
 
   it("restores a battle when queued cards are its only card pile", () => {
     const { deck: _, hand: _hand, discard: _discard, exhausted: _exhausted, ...state } = validState();
-    const pendingHandCards = [{ ...cardById.slash!, uid: 42 }];
+    // Offer roles are catalog metadata, not part of a persisted battle card.
+    const { transmutationRole: _role, ...slash } = cardById.slash!;
+    const pendingHandCards = [{ ...slash, uid: 42 }];
     const restored = PersistedBattleStateSchema.parse({ ...state, pendingHandCards });
     expect(restored.pendingHandCards).toEqual(pendingHandCards);
   });

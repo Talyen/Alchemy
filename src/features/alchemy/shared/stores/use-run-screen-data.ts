@@ -40,6 +40,10 @@ export function useEquipmentShopScreenData() {
   return useRetainedScreenData("equipment-shop");
 }
 
+export function useTransmutationScreenData() {
+  return useRetainedScreenData("transmutation");
+}
+
 export function useCampfireScreenData() {
   return useRetainedScreenData("campfire");
 }

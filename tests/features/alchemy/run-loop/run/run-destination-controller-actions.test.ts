@@ -1,3 +1,4 @@
+import { emptyAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as config from "@/features/alchemy/shared/config";
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
@@ -50,7 +51,7 @@ describe("run destination controller actions", () => {
   });
 
   it("continues from campfire through the progression handler", () => {
-    setRunSession({ activity: { kind: "campfire" } });
+    setRunSession({ activity: { kind: "campfire", data: emptyAlchemyVisit() } });
     let commit: (() => void) | undefined;
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => {
       commit = onCommitted;
@@ -68,7 +69,7 @@ describe("run destination controller actions", () => {
   });
 
   it("advanceToNextDestination samples the next picker at the live destination index after a non-combat continue", () => {
-    setRunSession({ activity: { kind: "campfire" } });
+    setRunSession({ activity: { kind: "campfire", data: emptyAlchemyVisit() } });
     vi.spyOn(config, "rollFreshBossId").mockReturnValue("mimic");
     setRunProgress({
       destinationIndexInAct: 7,
@@ -94,7 +95,7 @@ describe("run destination controller actions", () => {
   });
 
   it("advanceToNextDestination carries the live index so Corruption suppression applies after a non-combat continue", () => {
-    setRunSession({ activity: { kind: "campfire" } });
+    setRunSession({ activity: { kind: "campfire", data: emptyAlchemyVisit() } });
     setRunProgress({
       destinationIndexInAct: 2,
       completedDestinations: [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.CORRUPTION],

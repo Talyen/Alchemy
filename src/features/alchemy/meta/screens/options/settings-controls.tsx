@@ -6,10 +6,10 @@ import { controlLabelClass, controlDescriptionClass } from "@/features/alchemy/s
 import { cn } from "@/lib/utils";
 import type { AspectRatioOption, DisplayMode } from "../../../shared/types";
 
-export function SettingsSection({ title, children }: { title?: string; children: ReactNode }) {
+export function SettingsSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section>
-      {title ? <h2 className="options-settings-heading text-base font-semibold text-gold-pale">{title}</h2> : null}
+      <h2 className="options-settings-heading text-base font-semibold text-gold-pale">{title}</h2>
       {children}
     </section>
   );
@@ -25,10 +25,10 @@ export function SettingsAction({
   children: ReactNode;
 }) {
   return (
-    <div className="options-settings-row">
+    <div className="options-settings-row options-settings-action">
       <div className="options-settings-label">
         <p className={controlLabelClass}>{label}</p>
-        <p className={controlDescriptionClass}>{description}</p>
+        <p className={cn("options-settings-description", controlDescriptionClass)}>{description}</p>
       </div>
       <div className="options-settings-control flex justify-end">{children}</div>
     </div>

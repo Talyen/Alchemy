@@ -48,7 +48,7 @@ function scalePotionEffect(effect: BattleCardEffect, multiplier: number, potency
 }
 
 export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyBonus: number = 0): BattleCard {
-  if (isMixedPotionCard(cardA) || isMixedPotionCard(cardB)) {
+  if (isMixedPotionCard(cardA) || isMixedPotionCard(cardB) || cardA.brewed || cardB.brewed) {
     throw new Error(MIXED_POTION_ERROR);
   }
 
@@ -77,6 +77,7 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyB
     art: mixedPotion,
     cost: MIXED_POTION_COST,
     consume: true,
+    brewed: true,
     effects,
   };
 }
@@ -87,7 +88,7 @@ export function tryCreateMixedPotion(
   potencyBonus: number = 0,
 ): BattleCard | null {
   if (!cardA || !cardB) return null;
-  if (isMixedPotionCard(cardA) || isMixedPotionCard(cardB)) return null;
+  if (isMixedPotionCard(cardA) || isMixedPotionCard(cardB) || cardA.brewed || cardB.brewed) return null;
   return createMixedPotion(cardA, cardB, potencyBonus);
 }
 

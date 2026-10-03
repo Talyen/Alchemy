@@ -52,32 +52,41 @@ function normalizedAffixValue(
   return range ? clamp(rounded, range.min, range.max) : rounded;
 }
 
-/** Internal gear aggregation: normalize into a newly owned manifest without temporary roll arrays. */
-export function addAffixRollEffects(
-  effects: GearEffectManifest,
+// Save repair, effect aggregation, and tooltips must accept the same rolls.
+// Visit directly so aggregation does not need an intermediate roll array.
+function forEachNormalizedAffixRoll(
   rawAffixes: readonly AffixRollInput[] | null | undefined,
-  rarity?: GearRarity | null,
+  rarity: GearRarity | null | undefined,
+  visit: (definition: GearAffixDefinition, value: number) => void,
 ): void {
   if (!isAffixRollArray(rawAffixes)) return;
   for (const entry of rawAffixes) {
     if (!entry || !isGearAffixId(entry.id)) continue;
     const definition = gearAffixCatalog[entry.id];
     const value = normalizedAffixValue(entry.value, definition, rarity);
-    if (value !== null) effects[definition.effectKey] += value;
+    if (value !== null) visit(definition, value);
   }
+}
+
+/** Internal gear aggregation: normalize into a newly owned manifest without temporary roll arrays. */
+export function addAffixRollEffects(
+  effects: GearEffectManifest,
+  rawAffixes: readonly AffixRollInput[] | null | undefined,
+  rarity?: GearRarity | null,
+): void {
+  forEachNormalizedAffixRoll(rawAffixes, rarity, (definition, value) => {
+    effects[definition.effectKey] += value;
+  });
 }
 
 export function normalizeAffixRolls(
   rawAffixes?: readonly AffixRollInput[] | null,
   rarity?: GearRarity | null,
 ): GearAffixRoll[] {
-  if (!isAffixRollArray(rawAffixes)) return [];
   const rolls: GearAffixRoll[] = [];
-  for (const entry of rawAffixes) {
-    if (!entry || !isGearAffixId(entry.id)) continue;
-    const value = normalizedAffixValue(entry.value, gearAffixCatalog[entry.id], rarity);
-    if (value !== null) rolls.push({ id: entry.id, value });
-  }
+  forEachNormalizedAffixRoll(rawAffixes, rarity, (definition, value) => {
+    rolls.push({ id: definition.id, value });
+  });
   return rolls;
 }
 
@@ -96,20 +105,15 @@ export function getGearAffixTooltipEntries(
   rarity?: GearRarity | null,
 ): Array<{ key: string; name: string; text: string; affixId: GearAffixId; value: number }> {
   const entries: ReturnType<typeof getGearAffixTooltipEntries> = [];
-  if (!isAffixRollArray(affixes)) return entries;
-  for (const roll of affixes) {
-    if (!roll || !isGearAffixId(roll.id)) continue;
-    const definition = gearAffixCatalog[roll.id];
-    const value = normalizedAffixValue(roll.value, definition, rarity);
-    if (value === null) continue;
+  forEachNormalizedAffixRoll(affixes, rarity, (definition, value) => {
     entries.push({
-      key: `${roll.id}-${entries.length}`,
-      affixId: roll.id,
+      key: `${definition.id}-${entries.length}`,
+      affixId: definition.id,
       value,
       name: definition.name,
       text: formatAffixDescription(definition.descriptionTemplate, value),
     });
-  }
+  });
   return entries;
 }
 

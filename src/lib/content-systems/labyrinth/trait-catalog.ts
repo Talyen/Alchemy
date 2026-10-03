@@ -122,7 +122,7 @@ export const LABYRINTH_TRAITS = {
   "wishing-market": room("shop", "Wishing Market", "All offered cards have Wish", "wish"),
   "clean-slate": room("shop", "Clean Slate", "Removing a card costs 0 Gold", "gold"),
   "bargain-bin": room("shop", "Bargain Bin", "Cards cost half as much Gold", "gold"),
-  "open-kitchen": room("alchemist", "Open Kitchen", "Mixing Potions is free", "consume"),
+  "open-kitchen": room("alchemist", "Open Kitchen", "Brewing Potions is free", "consume"),
   "happy-hour": room("alchemist", "Happy Hour", "Potions cost half as much Gold", "gold"),
   "fresh-batch": room("alchemist", "Fresh Batch", "Refreshing Potions is free", "wish"),
   "strong-spirits": room("alchemist", "Strong Spirits", "Offered Potions have doubled potency", "poison"),

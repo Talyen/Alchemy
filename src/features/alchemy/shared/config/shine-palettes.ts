@@ -40,6 +40,7 @@ export const SHINE_PALETTES = {
     rest: ["#c2410c", "#f97316", "#fed7aa", "#fb923c"],
     mystery: ["#71717a", "#a1a1aa", "#e4e4e7", "#a1a1aa"],
     corruption: [...LABYRINTH_RED_SHINE],
+    transmutation: ["#a16207", "#fbbf24", "#fde047", "#ca8a04"],
     shop: ["#a16207", "#eab308", "#fde047", "#ca8a04"],
     alchemist: ["#047857", "#10b981", "#6ee7b7", "#059669"],
     "trinket-shop": ["#7c3aed", "#a855f7", "#e9d5ff", "#a855f7"],

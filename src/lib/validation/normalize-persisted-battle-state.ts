@@ -123,6 +123,8 @@ function normalizeCombatFlags(
   // flag keeps its persisted value via the manifest merge above.
   for (const key of [
     "hawkEyeReady",
+    "shatterUsed",
+    "wildfireUsed",
     "pendingCinderSkinReaction",
     "nextWishExtraChoice",
     "previousCardWasArchery",

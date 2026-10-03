@@ -86,19 +86,23 @@ describe("gear affixes", () => {
   });
 
   it("keeps direct aggregation consistent with normalized rolls without changing its inputs", () => {
-    const raw = Object.freeze([
+    const knownAffixes = Object.freeze([
       Object.freeze({ id: "flat-physical", value: 999 }),
       Object.freeze({ id: "flat-physical", value: 0.1 }),
       Object.freeze({ id: "flat-burn", value: 2.4 }),
       Object.freeze({ id: "absorb-per-mana", value: 5 }),
-      Object.freeze({ id: "not-an-affix", value: 1 }),
       Object.freeze({ id: "flat-stun", value: -1 }),
       Object.freeze({ id: "flat-stun", value: NaN }),
-    ]);
+    ] as const);
+    const raw = Object.freeze([...knownAffixes, Object.freeze({ id: "not-an-affix", value: 1 })]);
     for (const rarity of [undefined, "basic", "astral", "unique"] as const) {
-      const expected = resolveAffixEffects(normalizeAffixRolls(raw, rarity));
+      const normalized = normalizeAffixRolls(raw, rarity);
+      const expected = resolveAffixEffects(normalized);
       const effects = effectsForAffixRolls(raw, rarity);
       expect(effects).toEqual(expected);
+      expect(
+        getGearAffixTooltipEntries(knownAffixes, rarity).map(({ affixId, value }) => ({ id: affixId, value })),
+      ).toEqual(normalized);
       effects.flatPhysicalDamage = -1;
       expect(effectsForAffixRolls(raw, rarity)).toEqual(expected);
     }

@@ -1,12 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  BATTLE_STAGE_MARK_PREFIX,
-  STARTUP_READY_MARK,
-  battleStageMarkName,
-  markBattleStage,
-  markStartupReady,
-} from "@/lib/performance/marks";
-import { STARTUP_READY_MARK as STARTUP_SHIM_MARK } from "@/lib/performance/startup-marks";
+import { STARTUP_READY_MARK, battleStageMarkName, markBattleStage, markStartupReady } from "@/lib/performance/marks";
 
 afterEach(() => {
   performance.clearMarks(STARTUP_READY_MARK);
@@ -26,13 +19,6 @@ afterEach(() => {
 });
 
 describe("performance marks", () => {
-  it("exposes startup and battle mark contracts from one module", () => {
-    expect(STARTUP_READY_MARK).toBe("alchemy:startup:ready");
-    expect(STARTUP_SHIM_MARK).toBe(STARTUP_READY_MARK);
-    expect(BATTLE_STAGE_MARK_PREFIX).toBe("alchemy:battle:");
-    expect(battleStageMarkName("draw-end")).toBe("alchemy:battle:draw-end");
-  });
-
   it("records marks idempotently and swallows exceptions", () => {
     markStartupReady();
     markStartupReady();

@@ -52,7 +52,7 @@ export const goldTalents = [
   t(
     "gold-mix-discount",
     "Alchemy Discount",
-    "Mixing Potions costs 10 less Gold",
+    "Brewing Potions costs 10 less Gold",
     "FlaskConical",
     setEffect("mixPotionDiscount", 10),
   ),

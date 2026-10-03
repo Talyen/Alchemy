@@ -1,3 +1,4 @@
+import { initializeAlchemyVisit } from "../navigation/alchemy-commands";
 import type { RunFlowShellActions } from "./run-flow";
 import { DESTINATIONS, ROUTE_SCREENS, type Destination } from "@/lib/routing";
 import { ENEMY_TYPES } from "@/lib/game-data";
@@ -8,7 +9,14 @@ export type DestinationRouteDeps = Pick<
 > & { resetCorruption: () => void };
 
 const DESTINATION_HANDLERS: Record<Destination, (deps: DestinationRouteDeps) => void> = {
-  [DESTINATIONS.CAMPFIRE]: (deps) => deps.navigateTo(ROUTE_SCREENS.CAMPFIRE),
+  [DESTINATIONS.CAMPFIRE]: (deps) => {
+    initializeAlchemyVisit("campfire");
+    deps.navigateTo(ROUTE_SCREENS.CAMPFIRE);
+  },
+  [DESTINATIONS.TRANSMUTATION]: (deps) => {
+    initializeAlchemyVisit("transmutation");
+    deps.navigateTo(ROUTE_SCREENS.TRANSMUTATION);
+  },
   [DESTINATIONS.CARD_SHOP]: (deps) => {
     deps.initializeShop("merchant");
     deps.navigateTo(ROUTE_SCREENS.SHOP);

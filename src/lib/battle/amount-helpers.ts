@@ -26,3 +26,8 @@ export function scalePerMana(maxMana: number, value: number, unit: "percent" | "
 export function halveRounded(value: number): number {
   return Math.round(value / HALF_DIVISOR);
 }
+
+/** Reward thresholds trigger only when a gain first reaches them from below. */
+export function crossesGainThreshold(previous: number, next: number, threshold: number): boolean {
+  return !(threshold <= 0 || previous >= threshold || next < threshold);
+}

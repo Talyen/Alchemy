@@ -6,6 +6,39 @@ Alchemy's accessibility stance. Screen wiring checklists remain in
 [in the browsing guide](./UI_BROWSING.md#armory-crafting-and-salvage); Gear data and mutation rules live in
 [ARMORY.md](./ARMORY.md).
 
+## Every player action receives feedback
+
+Every supported player action must produce a timely, perceivable response that
+acknowledges the input and communicates its outcome. Visible feedback is the
+baseline; audio may reinforce it. Essential meaning must remain understandable
+with sound muted. Apply this core design principle to all UI, UX, and gameplay
+design, implementation, and review.
+
+- Cover pointer actions, keyboard activation, focus and navigation, selection, dismissal, and gameplay actions. Equivalent input methods must communicate the same result.
+- A changed screen, visible focus or selected state, updated value, or clear gameplay reaction can satisfy the principle. Reuse shared feedback before adding effects; add extra effects only when they improve clarity.
+- Acknowledge delayed actions promptly, show that work is pending, then communicate completion or failure. Distinguish input acknowledgment from successful completion.
+- Explain rejected or ineffective actions. Disabled controls must communicate unavailability and its reason through existing inspection or focus patterns without implying success. Valid actions with no effect still need acknowledgment; follow the existing [battle feedback](./UI_BATTLE.md#battle-feedback) conventions for their presentation.
+- Match feedback strength to importance and frequency. Keep repeated actions readable without overwhelming animation or sound; group related outcomes where existing presentation rules allow it.
+- Preserve meaning under existing motion preferences, mute settings, and audio failures. Static state changes can carry the same meaning as motion. Follow the existing [accessibility stance](#accessibility-stance), [motion](./UI_MOTION.md), and [audio contract](./AUDIO.md#runtime-contract).
+- Feedback must reflect resolved gameplay. Animation or sound completion must never determine whether an accepted action commits; preserve the [turn presentation](./GAME_RULES.md#state-turns-and-randomness) contract.
+- Unbound keys and clicks on noninteractive scenery require no reaction.
+
+### Examples
+
+| Action                                    | Expected feedback                                                                                                                                              |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Select a tab                              | The active tab and displayed content visibly change; selecting the current tab can rely on its existing selected state and press feedback.                     |
+| Attempt a purchase with insufficient Gold | The unavailable purchase and required Gold are clear, with a reason available on inspection or focus; do not play a purchase-success cue.                      |
+| Play a card                               | Acknowledge the play and show the resolved card movement, resource changes, and affected combatants' outcomes, using the existing battle feedback conventions. |
+| End Turn                                  | Acknowledge the accepted action and make the discard, enemy, and next-hand sequence visible; gameplay commits independently of playback.                       |
+| Craft an item                             | Show pending state if needed, then the resulting item and spent materials; explain rejection or failure without presenting a successful craft.                 |
+
+### Why this matters
+
+- **Confidence and control:** timely feedback lets players tell whether input registered, understand the current state, and choose their next action. It reduces uncertainty and repeated clicks caused by uncertainty. [Nielsen Norman Group, Visibility of System Status](https://www.nngroup.com/articles/visibility-system-status/)
+- **Game feel and learning:** clear reactions connect actions to consequences and communicate the importance of game events. Pichlmair and Johansen's survey describes feedback amplification as supporting clarity and player empowerment; in Alchemy, these cues should help players understand outcomes as well as feel their impact. [Designing Game Feel: A Survey](https://arxiv.org/abs/2011.09201)
+- **Perceivability:** complementary visual and audio cues help players perceive information when one channel is unavailable. The visual baseline is Alchemy's chosen policy, informed by this guidance; it does not imply adoption of the full guideline set. [Xbox Accessibility Guideline 103: Additional channels for visual and audio cues](https://learn.microsoft.com/en-us/xbox/accessibility/xbox-accessibility-guidelines/103)
+
 ## Guide index
 
 | Topic                                                      | Guide                              |
@@ -158,7 +191,7 @@ Dock. At 100% Game Size, the reference retains its original content scale of
 Game Size (80–120%, 5% steps). Wider or taller frames gain background space;
 there is no separate large-window growth curve or content-scale cap. Use CSS
 viewport dimensions, never device pixel ratio, for layout. The root font remains
-16px. Artwork preserves its aspect ratio and intentional crops.
+16px. Small text uses 16px (`text-sm`) and 14px (`text-xs`) before content scaling, including compact controls, select options, tooltip text, keyword tags, resource labels, and feedback. Artwork preserves its aspect ratio and intentional crops.
 
 Hover tooltips retain their original untransformed size at the reference browser
 viewport. Their scale is visible game content scale divided by the reference

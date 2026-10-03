@@ -2,7 +2,7 @@ import { readCombatFlag, resolveSecondaryAction } from "./action-context";
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import { rollBattleChance } from "./chance-roll";
 import { drawKeywordCard } from "./draw";
-import { applyPercentBonus } from "./amount-helpers";
+import { applyPercentBonus, crossesGainThreshold } from "./amount-helpers";
 import { FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR } from "../game-constants";
 import { mergeCombatText } from "./combat-text-events";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
@@ -363,17 +363,6 @@ export function removeHarmfulPlayerStatuses(state: BattleState, amount: number, 
   return applyCleanseHeals(nextState, combatTexts, removed);
 }
 
-export function onFirstCrossThreshold(
-  prevValue: number,
-  nextValue: number,
-  threshold: number,
-  onCross: (s: BattleState) => BattleState,
-  state: BattleState,
-): BattleState {
-  if (threshold <= 0 || prevValue >= threshold || nextValue < threshold) return state;
-  return onCross(state);
-}
-
 function applyArmorTalentChecks(state: BattleState, amount: number, combatTexts: CombatTextEvent[]) {
   if (state.playerHealth < state.playerMaxHealth / HALF_DIVISOR) {
     amount = applyPercentBonus(amount, state.talentEffects.armorLowHealthBonusPercent);
@@ -395,7 +384,7 @@ function applyArmorTalentChecks(state: BattleState, amount: number, combatTexts:
     },
   ];
   for (const { threshold, apply } of thresholds) {
-    state = onFirstCrossThreshold(state.playerStatuses.armor, newArmor, threshold, apply, state);
+    if (crossesGainThreshold(state.playerStatuses.armor, newArmor, threshold)) state = apply(state);
   }
   return { state, amount: armorAmount };
 }

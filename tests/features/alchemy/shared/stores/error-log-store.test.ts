@@ -104,6 +104,26 @@ describe("useErrorLogStore", () => {
     expect(parsed[0]?.context).toBeUndefined();
   });
 
+  it("serializes a stateful context once without losing neighboring entries", () => {
+    const toJSON = vi.fn(() => {
+      if (toJSON.mock.calls.length > 1) throw new Error("Context was serialized twice");
+      return { detail: "snapshot" };
+    });
+    useErrorLogStore.getState().pushError({ message: "stateful", source: "storage", context: { toJSON } });
+    useErrorLogStore.getState().pushError({ message: "healthy", source: "storage" });
+    flushPersistedErrorLog();
+
+    const parsed = parsePersistedErrorLog(localStorage.getItem(STORAGE_KEY));
+    expect(parsed.map((entry) => entry.message)).toEqual(["stateful", "healthy"]);
+    expect(parsed[0]?.context).toEqual({ detail: "snapshot" });
+    expect(toJSON).toHaveBeenCalledTimes(1);
+  });
+
+  it("drops timestamps that cannot be rendered as dates", () => {
+    const entry = { id: "err_saved", message: "bad time", source: "other", timestamp: 1e20 };
+    expect(parsePersistedErrorLog(JSON.stringify([entry]))).toEqual([]);
+  });
+
   it("normalizes optional fields and caps restored entries", () => {
     const entries = Array.from({ length: 101 }, (_, index) => ({
       id: `err_${index}`,

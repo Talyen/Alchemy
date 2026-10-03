@@ -1,4 +1,4 @@
-import { keywordDefinitions, type CharacterId, type KeywordId, type TrinketEntry } from "@/lib/game-data";
+import { keywordDefinitions, type KeywordId, type TrinketEntry } from "@/lib/game-data";
 import {
   gearDefinitions,
   gearBaseItems,
@@ -10,31 +10,20 @@ import {
 } from "@/lib/gear";
 import { extractKeywordIds } from "@/lib/keyword-text";
 
-type ArmoryEquipmentFilter = "equipped" | "unequipped";
-
 export interface ArmoryInventoryFilters {
   search: string;
   rarities: GearRarity[];
   keywords: KeywordId[];
-  keywordMatch: "any" | "all";
-  equipment: ArmoryEquipmentFilter | null;
 }
 
 export const DEFAULT_ARMORY_INVENTORY_FILTERS: ArmoryInventoryFilters = {
   search: "",
   rarities: [],
   keywords: [],
-  keywordMatch: "any",
-  equipment: null,
 };
 
 export function hasArmoryCriteria(filters: ArmoryInventoryFilters, isTrinket: boolean): boolean {
-  return (
-    Boolean(filters.search.trim()) ||
-    filters.keywords.length > 0 ||
-    filters.equipment !== null ||
-    (!isTrinket && filters.rarities.length > 0)
-  );
+  return Boolean(filters.search.trim()) || filters.keywords.length > 0 || (!isTrinket && filters.rarities.length > 0);
 }
 
 // A filtering pass repeats the same query for every item. Retain only its latest
@@ -53,30 +42,13 @@ function matchesSearch(text: string, query: string): boolean {
 
 function matchesKeywords(keywordIds: readonly KeywordId[], filters: ArmoryInventoryFilters): boolean {
   if (filters.keywords.length === 0) return true;
-  const includes = (keyword: KeywordId) => keywordIds.includes(keyword);
-  return filters.keywordMatch === "all" ? filters.keywords.every(includes) : filters.keywords.some(includes);
+  return filters.keywords.some((keyword) => keywordIds.includes(keyword));
 }
 
-function matchesEquipment(
-  isEquipped: boolean,
-  filter: ArmoryEquipmentFilter | null,
-  isEquippedByOther = isEquipped,
-): boolean {
-  return filter === null || (filter === "equipped" ? isEquippedByOther : !isEquipped);
-}
-
-export function matchesGearFilters(
-  item: GearInstance,
-  filters: ArmoryInventoryFilters,
-  equippedIds: ReadonlySet<string>,
-  otherHeroEquippedIds: ReadonlySet<string> = equippedIds,
-): boolean {
+export function matchesGearFilters(item: GearInstance, filters: ArmoryInventoryFilters): boolean {
   if (!hasArmoryCriteria(filters, false)) return true;
   const definition = gearDefinitions[item.definitionId];
-  if (
-    !matchesEquipment(equippedIds.has(item.instanceId), filters.equipment, otherHeroEquippedIds.has(item.instanceId)) ||
-    (filters.rarities.length > 0 && (definition?.rarity == null || !filters.rarities.includes(definition.rarity)))
-  ) {
+  if (filters.rarities.length > 0 && (definition?.rarity == null || !filters.rarities.includes(definition.rarity))) {
     return false;
   }
   if (filters.keywords.length > 0 && !matchesKeywords(getGearInstanceKeywordIds(item), filters)) return false;
@@ -92,36 +64,14 @@ export function matchesGearFilters(
   return matchesSearch(searchText, filters.search);
 }
 
-export function matchesTrinketFilters(
-  item: TrinketEntry,
-  filters: ArmoryInventoryFilters,
-  equippedIds: ReadonlySet<string>,
-): boolean {
+export function matchesTrinketFilters(item: TrinketEntry, filters: ArmoryInventoryFilters): boolean {
   if (!hasArmoryCriteria(filters, true)) return true;
-  if (!matchesEquipment(equippedIds.has(item.id), filters.equipment)) return false;
   if (!filters.search.trim() && filters.keywords.length === 0) return true;
   const text = item.descriptionLines.join(" ");
   return (
     (filters.keywords.length === 0 || matchesKeywords(extractKeywordIds(text), filters)) &&
     (!filters.search.trim() || matchesSearch(`${item.title} ${text}`, filters.search))
   );
-}
-
-export function getArmoryEquippedGearIds(
-  loadouts: Partial<Record<CharacterId, Record<string, string | null>>>,
-  excludeCharacterId?: CharacterId,
-): Set<string> {
-  return new Set(
-    Object.entries(loadouts)
-      .filter(([id]) => id !== excludeCharacterId)
-      .flatMap(([, loadout]) => Object.values(loadout ?? {}).filter((id): id is string => Boolean(id))),
-  );
-}
-
-export function getArmoryEquippedTrinketIds(
-  equippedTrinkets: Partial<Record<CharacterId, string | null>>,
-): Set<string> {
-  return new Set(Object.values(equippedTrinkets).filter((id): id is string => id != null));
 }
 
 export const ARMORY_FILTER_KEYWORDS = Object.values(keywordDefinitions)

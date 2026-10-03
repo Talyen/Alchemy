@@ -75,6 +75,11 @@ exhaust routing and Consume rewards. Keep the order of effect resolution,
 encounter reactions, and Consume routing explicit at each caller; automatic
 play does not use the ordinary payment entry point.
 
+`battle/enemy-damage-mitigation.ts` owns enemy damage preparation and the player's
+Block, Armor, and damage reductions. `battle/enemy-attack-damage.ts` applies the
+result to Health and resolves defensive rewards, Leech, retaliation, and pending
+reactions. Its existing damage entry points remain the caller-facing surface.
+
 Direct player hits use source-specific recipes in `lib/battle/hit-resolution.ts`
 and its lower `follow-up-hit-resolution.ts` tier. `player-hit-core.ts` carries source
 intent (`HitRequest`) and captures eligibility and Health results (`HitFacts`) before

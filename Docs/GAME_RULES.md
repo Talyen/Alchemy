@@ -4,6 +4,7 @@ Canonical owner for game rules, content-system behavior, and shared domain terms
 
 ## Guide index
 
+- [Every player action receives feedback](./UI.md#every-player-action-receives-feedback) governs gameplay presentation: communicate accepted, rejected, and ineffective actions while keeping resolution independent of animation and sound.
 - [Combat rules](#battle-implementation-rules) and [engine invariants](#engine-invariants).
 - [Talent rules](./TALENT_RULES.md): progression, action rewards, triggers, and card-specific interactions.
 - [Unique items](./UNIQUE_ITEMS.md): signature effects and combat exceptions.
@@ -113,7 +114,7 @@ Crowd-control triggers require both combatants to survive the hit. A lethal Stun
 - **Block status resistance** — while the hero has Block, Coagulate halves incoming Bleed damage and Detoxify halves incoming Poison damage. They mitigate damage rather than preventing buildup, and check Block before the incoming packet spends it; damage that breaks through Block still deals Health damage and matching status buildup.
 - **Shield Slam** — Physical damage increases by half the player’s current Block. Rupture detonates Bleed only from a positive Critical Physical packet; a fully blocked or armored hit does not detonate it.
 - **Crushing Force** — Earth Elemental checks the Block spent by the incoming hit. Replacing broken Block through a defensive reward does not cancel its follow-up; killing the enemy with retaliation does.
-- **Damage vulnerabilities** — Shatter adds 1 damage to positive player/Companion packets against Frozen enemies, and Corrosive adds 1 against Poisoned enemies; Exploit Weakness doubles damage against Stunned enemies. A matching enemy trait never disables these Talents. Trait matching retains its established first-match order.
+- **Damage vulnerabilities** — Brittle Ice adds 1 damage to positive player/Companion packets against Frozen enemies, and Corrosive adds 1 against Poisoned enemies; Exploit Weakness doubles damage against Stunned enemies. A matching enemy trait never disables these Talents. Trait matching retains its established first-match order.
 - **Enemy status** — stack changes go through `addEnemyStatus()` / `setEnemyStatus()` in `src/lib/battle/types/state-helpers.ts` (re-exported from `src/lib/battle/types.ts`); `braced` enemy trait halves incoming stun.
 - **Crowd-control thresholds** — baseline Stun and Freeze trigger when buildup reaches at least half Health. Enemies use Health before the hit; heroes use maximum Health. Enemy current Health lets control become easier as a boss weakens, while checking before the hit prevents one damage packet from both adding buildup and lowering its own threshold. Threshold modifiers apply before the comparison.
 - **Skipped player turns** — the committed turn resolver advances through Stun and Freeze skips until the hero can act or combat ends; skipped turns do not trigger Companion actions.
@@ -358,3 +359,18 @@ reactions. `consumeAttackBonuses` owns the action-local pool shared by successiv
 effects and play-twice; these attempt bonuses are spent even on a Dodge, while
 next-hit flags are preserved. This ordering is separate from the detailed
 hit-stage ordering above and must not reorder RNG or feedback.
+
+## Brewing, Transmutation, and elemental reactions
+
+Campfires offer Rest or Brew, including at full Health. Brew adds one of three fixed standard Potion offers (at least one recovery/defense option), or combines two owned eligible Potions. It replaces Rest without a resource cost. Potions remain in the run deck after Consume. Rest-only room bonuses apply only to Rest.
+
+The Alchemist shop sells ordinary Potions and offers one Brew service per visit: Combine or Strengthen, at the existing 40 Gold mixing price before discounts. Strengthen adds 50% to eligible beneficial numerical magnitudes, rounded; cost, Consume, probabilities, Wishes, draw counts, and percentage effects stay unchanged. Mixed and strengthened Potions cannot be brewed again. Location potency modifiers do not spend this eligibility.
+
+Transmutation offers one free exchange for a fixed choice of three ordinary sidegrades: attack, defense, and utility, assigned through explicit content roles. Offers do not depend on the surrendered card. Corrupted cards are eligible; Mixed and strengthened Potions are not. Identical base identities cannot be exchanged. Leaving consumes the destination; confirmation alone replaces a card.
+
+Shatter and Wildfire each activate once per player turn through card hits (including automatic plays) or Companion actions. Their saved flags reset before turn-start Companion actions. Secondary Gear/talent damage, retaliation, delayed pulses, and status ticks do not initiate reactions.
+
+- **Shatter:** a positive Physical attack against an actually Frozen enemy destroys all enemy Block and Armor before mitigation and guarantees that hit's Critical. Freeze remains. Later hits resolve normally. Dodge is resolved before removing defenses or spending the opportunity; Frozen enemies currently cannot Dodge under the existing crowd-control rule.
+- **Wildfire:** a positive resolved Nature hit against an already Burning enemy detonates the remaining projected Burn ticks and clears Burn, after the hit and its normal follow-ups/retaliation, only while the hero and enemy survive. It uses remaining-tick detonation modifiers and per-tick rounding; unmodified 8 Burn pays 8 + 4 + 2 + 1 = 15. It adds no multiplier or Nature buildup.
+
+Card inspection previews show current defenses or projected remaining Burn damage and whether the reaction is used this turn. Chance-dependent hits label their reactions conditionally. Gameplay commits independently of the visible confirmation, defense-breaking notices, fire damage feedback, and result screens.

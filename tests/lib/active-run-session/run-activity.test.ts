@@ -1,3 +1,4 @@
+import { emptyAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
 import { describe, expect, it } from "vitest";
 import {
   emptyShopState,
@@ -52,7 +53,7 @@ describe("run-activity", () => {
 
     it("returns screen name for progress and visit activities", () => {
       expect(runActivityScreen({ kind: "battle" })).toBe("battle");
-      expect(runActivityScreen({ kind: "campfire" })).toBe("campfire");
+      expect(runActivityScreen({ kind: "campfire", data: emptyAlchemyVisit() })).toBe("campfire");
       expect(runActivityScreen({ kind: "shop", data: emptyShopState() })).toBe("shop");
     });
   });
@@ -65,7 +66,10 @@ describe("run-activity", () => {
 
     it("transitions to stateless progress screens", () => {
       expect(transitionRunActivity({ kind: "idle" }, "rewards")).toEqual({ kind: "rewards" });
-      expect(transitionRunActivity({ kind: "idle" }, "campfire")).toEqual({ kind: "campfire" });
+      expect(transitionRunActivity({ kind: "idle" }, "campfire")).toEqual({
+        kind: "campfire",
+        data: emptyAlchemyVisit(),
+      });
       expect(transitionRunActivity({ kind: "idle" }, "labyrinth-map")).toEqual({ kind: "labyrinth-map" });
     });
 

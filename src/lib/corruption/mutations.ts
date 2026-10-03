@@ -1,12 +1,10 @@
 import {
   BattleCardEffectSchema,
   effectDescriptionLine,
-  getCardKeywords,
   visitBattleCardEffects,
   type BattleCard,
   type BattleCardEffect,
   type DamageType,
-  type KeywordId,
 } from "@/lib/game-data";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import {
@@ -21,6 +19,9 @@ import {
   CORRUPTION_MAX_EFFECT_LINES,
   CORRUPTION_DAMAGE_BASELINES,
 } from "@/lib/game-constants";
+import { addCorruptionEffect, addCorruptionLine, removeConsume, countCorruptionEffectLines } from "./card-edits";
+import { applyAltarModifiers } from "./altar-modifiers";
+import type { CorruptionMutationGroup, Mutation } from "./mutation-types";
 import {
   getCorruptionTargetEffect,
   applyNumericCorruption,
@@ -28,42 +29,7 @@ import {
   type CorruptionTarget,
 } from "./numeric";
 
-interface Mutation {
-  card: BattleCard;
-  delta: 1 | -1;
-}
-
-export interface CorruptionMutationGroup {
-  kind: keyof typeof CORRUPTION_OUTCOME_WEIGHTS;
-  weight: number;
-  mutations: Mutation[];
-}
-
-const trailingKeywords = new Set(["Consume", "Archery", "Leech", "Companion"]);
-
-function addLine(card: BattleCard, line: string, effect?: BattleCardEffect, first = false): BattleCard {
-  const keywordIndex =
-    line === "Consume" ? -1 : card.descriptionLines.findIndex((entry) => trailingKeywords.has(entry));
-  const lineIndex = first ? 0 : keywordIndex < 0 ? card.descriptionLines.length : keywordIndex;
-  const descriptionLines = [...card.descriptionLines];
-  descriptionLines.splice(lineIndex, 0, line);
-  const positions = (card.corruptedValuePositions ?? []).map((pos) => ({
-    ...pos,
-    lineIndex: pos.lineIndex >= lineIndex ? pos.lineIndex + 1 : pos.lineIndex,
-  }));
-  for (const match of line.matchAll(/\d+/g)) positions.push({ lineIndex, matchIndex: match.index });
-  return {
-    ...card,
-    corrupted: true,
-    descriptionLines,
-    effects: effect ? (first ? [effect, ...card.effects] : [...card.effects, effect]) : [...card.effects],
-    corruptedValuePositions: positions,
-  };
-}
-
-function addEffect(card: BattleCard, effect: BattleCardEffect, first = false): BattleCard {
-  return addLine(card, effectDescriptionLine(effect), effect, first);
-}
+export type { CorruptionMutationGroup } from "./mutation-types";
 
 function isPlainMagnitude(effect: BattleCardEffect): boolean {
   if (effect.kind === "heal") return true;
@@ -167,86 +133,13 @@ function canRemoveConsume(card: BattleCard): boolean {
   );
 }
 
-function removeConsume(card: BattleCard): BattleCard {
-  const consumeIndex = card.descriptionLines.indexOf("Consume");
-  const positions =
-    consumeIndex < 0
-      ? (card.corruptedValuePositions ?? [])
-      : (card.corruptedValuePositions ?? [])
-          .filter((pos) => pos.lineIndex !== consumeIndex)
-          .map((pos) => (pos.lineIndex > consumeIndex ? { ...pos, lineIndex: pos.lineIndex - 1 } : pos));
-  return {
-    ...card,
-    corrupted: true,
-    consume: false,
-    ...(card.tags ? { tags: card.tags.filter((tag) => tag !== "consume") } : {}),
-    descriptionLines: card.descriptionLines.filter((line) => line !== "Consume"),
-    corruptedValuePositions: positions,
-  };
-}
-
-function secondaryKeyword(effect: BattleCardEffect): KeywordId | null {
-  if (effect.kind === "player-status" && effect.status === "block") return "block";
-  if (effect.kind === "heal") return "health";
-  if (effect.kind === "damage" && (effect.damageType === "poison" || effect.damageType === "burn")) {
-    return effect.damageType;
-  }
-  return null;
-}
-
-function filterEchoSecondary(mutations: Mutation[], keywords: ReadonlySet<KeywordId>): Mutation[] {
-  const matching = mutations.filter(({ card }) => {
-    const added = card.effects.at(-1);
-    if (!added) return false;
-    const keyword = secondaryKeyword(added);
-    return keyword !== null && keywords.has(keyword);
-  });
-  return matching.length > 0 ? matching : mutations;
-}
-
-function filterEchoConversions(mutations: Mutation[], keywords: ReadonlySet<KeywordId>): Mutation[] {
-  const matching = mutations.filter(({ card }) => {
-    const effect = card.effects[0];
-    return effect?.kind === "damage" && keywords.has(effect.damageType);
-  });
-  return matching.length > 0 ? matching : mutations;
-}
-
-function applyAltarModifiers(
-  groups: CorruptionMutationGroup[],
-  card: BattleCard,
-  modifiers: readonly EncounterRewardTraitId[],
-): CorruptionMutationGroup[] {
-  let shaped = groups;
-  if (modifiers.includes("steady-sigil")) {
-    shaped = shaped.filter((group) => group.kind !== "weaken");
-  }
-  if (modifiers.includes("blood-rite")) {
-    shaped = shaped.map((group) => {
-      if (group.kind === "leech") return { ...group, weight: group.weight * 3 };
-      if (group.kind === "convert") return { ...group, weight: group.weight * 2 };
-      return group;
-    });
-  }
-  if (modifiers.includes("echoing-altar")) {
-    const keywords = new Set<KeywordId>(getCardKeywords(card));
-    shaped = shaped.map((group) => {
-      if (group.kind === "secondary") return { ...group, mutations: filterEchoSecondary(group.mutations, keywords) };
-      if (group.kind === "convert") return { ...group, mutations: filterEchoConversions(group.mutations, keywords) };
-      return group;
-    });
-  }
-  return shaped;
-}
-
 export function getCorruptionMutationGroups(
   card: BattleCard,
   modifiers: readonly EncounterRewardTraitId[] = [],
 ): CorruptionMutationGroup[] {
   const targets = getEditableCorruptionTargets(card);
   const target = plainTarget(card, targets);
-  const roomForLine =
-    card.descriptionLines.filter((line) => !trailingKeywords.has(line)).length < CORRUPTION_MAX_EFFECT_LINES;
+  const roomForLine = countCorruptionEffectLines(card) < CORRUPTION_MAX_EFFECT_LINES;
   const groups: CorruptionMutationGroup[] = [];
   function add(kind: CorruptionMutationGroup["kind"], cards: BattleCard[]) {
     if (cards.length)
@@ -284,29 +177,32 @@ export function getCorruptionMutationGroups(
                   existing.status === effect.status),
             ),
         )
-        .map((effect) => addEffect(card, effect)),
+        .map((effect) => addCorruptionEffect(card, effect)),
     );
   }
   if (target && !card.consume) {
     if (roomForLine) {
       add("bargain", [
-        addEffect(
+        addCorruptionEffect(
           applyNumericCorruption(card, target, target.value),
           { kind: "lose-health", amount: CORRUPTION_HEALTH_PRICE },
-          true,
+          "first",
         ),
       ]);
       const amount = CORRUPTION_JACKPOT_AMOUNT;
-      add("draw", [addEffect(card, { kind: "draw-cards", amount })]);
-      add("mana", [addEffect(card, { kind: "restore-mana", amount })]);
+      add("draw", [addCorruptionEffect(card, { kind: "draw-cards", amount })]);
+      add("mana", [addCorruptionEffect(card, { kind: "restore-mana", amount })]);
     }
     const effect = card.effects[0];
     if (effect && effect.kind === "damage" && !effect.lifesteal && !card.descriptionLines.includes("Leech")) {
-      add("leech", [addLine({ ...card, effects: [{ ...effect, lifesteal: true }] }, "Leech")]);
+      add("leech", [addCorruptionLine({ ...card, effects: [{ ...effect, lifesteal: true }] }, "Leech")]);
     }
     add("consume", [
       {
-        ...addLine(applyNumericCorruption(card, target, target.value * (CORRUPTION_CONSUME_MULTIPLIER - 1)), "Consume"),
+        ...addCorruptionLine(
+          applyNumericCorruption(card, target, target.value * (CORRUPTION_CONSUME_MULTIPLIER - 1)),
+          "Consume",
+        ),
         consume: true,
       },
     ]);

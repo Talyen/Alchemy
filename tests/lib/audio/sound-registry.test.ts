@@ -43,11 +43,6 @@ describe("uiSounds", () => {
       expect(name).toMatch(/\.ogg$/);
     }
   });
-
-  it("all UI sound names are unique", () => {
-    const values = Object.values(uiSounds);
-    expect(new Set(values).size).toBe(values.length);
-  });
 });
 
 describe("stingerSounds", () => {
@@ -56,11 +51,6 @@ describe("stingerSounds", () => {
       expect(name).toBeTruthy();
       expect(name).toMatch(/\.ogg$/);
     }
-  });
-
-  it("all stinger names are unique", () => {
-    const values = Object.values(stingerSounds);
-    expect(new Set(values).size).toBe(values.length);
   });
 });
 

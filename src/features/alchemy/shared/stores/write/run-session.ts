@@ -35,6 +35,14 @@ export function clearTransientSession(draft: GameplayDraft): void {
   Object.assign(draft.session, createInitialSessionFields());
 }
 
+export function setAlchemyVisit(
+  draft: GameplayDraft,
+  kind: "campfire" | "transmutation",
+  data: RunActivityData["campfire"],
+): void {
+  draft.session.activity = { kind, data };
+}
+
 // ── Reward flow ──────────────────────────────────────────────────────────────
 
 function defineRewardFlowSetter<K extends keyof RunRewardFlow>(field: K) {

@@ -173,11 +173,12 @@ describe("ArmoryScreen equipment movement and inventory ordering", () => {
   it("searches and clears inventory from the browsing controls", async () => {
     const user = userEvent.setup();
     renderArmoryScreen();
-    expect(screen.getByRole("combobox", { name: "Sort inventory" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Sort inventory" })).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Search inventory" }));
     await user.type(screen.getByRole("searchbox", { name: "Search inventory" }), "nothing matches");
     expect(screen.getByText("No items match your search and filters.")).toBeTruthy();
     expect(document.querySelectorAll('[data-testid="armory-inventory-item"]')).toHaveLength(0);
-    await user.click(screen.getByRole("button", { name: "Clear inventory search" }));
+    await user.click(screen.getByRole("button", { name: "Close inventory search" }));
     expect(document.querySelectorAll('[data-testid="armory-inventory-item"]')).toHaveLength(1);
   });
 
@@ -280,7 +281,7 @@ describe("ArmoryScreen equipment movement and inventory ordering", () => {
     await user.click(screen.getByLabelText("Trinket equipment slot"));
 
     // Verify sort option is present
-    expect(screen.getByRole("combobox", { name: "Sort inventory" })).toBeDefined();
+    expect(screen.getByRole("button", { name: "Sort inventory" })).toBeDefined();
 
     // Click trinket to equip
     const censerBtn = screen.getByRole("button", { name: "Equip Brass Censer" });

@@ -156,11 +156,13 @@ describe("computeBaseDamage — physical vs statuses", () => {
   it("amplifies physical damage against frozen enemies", () => {
     const state = patchBattleState({
       rng: () => 0.99,
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
       enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
       talentEffects: { ...defaultTalentEffects, physicalDoubledVsFrozen: true },
     });
     const card = makeTestCard({ effects: [makeEffect("physical", 10)] });
     const result = dealDamage(state, card);
-    expect(result.enemyHealth).toBe(10);
+    expect(result.enemyHealth).toBe(60);
   });
 });

@@ -124,32 +124,12 @@ function toPersistedCard(card: BattleCard): PersistedBattleCard {
   return base;
 }
 
-function repairEmptyCardChoices(
-  rngState: RunRngState,
-  stream: RunRngStream,
-  count: number,
-  deckForAffinity: BattleCard[],
-  seedKeywords: KeywordId[],
-  alreadyOwned: BattleCard[] = deckForAffinity,
-): PersistedBattleCard[] | null {
-  const repaired = selectRewardCards(
-    deckForAffinity,
-    getOfferableCardPool(),
-    count,
-    alreadyOwned,
-    createRunStateRng(rngState, stream),
-    seedKeywords,
-  ).map(toPersistedCard);
-  return repaired.length > 0 ? repaired : null;
-}
-
-function reDealEmptiedChoices(
+function repairCardChoices(
   choices: PersistedBattleCard[],
   args: {
-    awaitPick: boolean;
-    checkDeckSize: boolean;
+    canPick: boolean;
     runDeck: BattleCard[];
-    rngState: RunRngState | null;
+    rngState: RunRngState;
     stream: RunRngStream;
     count: number;
     seedKeywords: KeywordId[];
@@ -157,39 +137,30 @@ function reDealEmptiedChoices(
   },
 ): PersistedBattleCard[] {
   const filtered = filterLiveCards(choices);
-  if (
-    filtered.length > 0 ||
-    !args.awaitPick ||
-    (args.checkDeckSize && args.runDeck.length >= DRAFT_ROUNDS) ||
-    !args.rngState
-  ) {
-    return filtered;
-  }
-  return (
-    repairEmptyCardChoices(
-      args.rngState,
-      args.stream,
-      args.count,
-      args.runDeck,
-      args.seedKeywords,
-      args.alreadyOwned,
-    ) ?? filtered
-  );
+  if (filtered.length > 0 || !args.canPick) return filtered;
+  const repaired = selectRewardCards(
+    args.runDeck,
+    getOfferableCardPool(),
+    args.count,
+    args.alreadyOwned ?? args.runDeck,
+    createRunStateRng(args.rngState, args.stream),
+    args.seedKeywords,
+  ).map(toPersistedCard);
+  return repaired.length > 0 ? repaired : filtered;
 }
 
 function repairWildwoodDraft(
   data: ValidatedActiveRunData,
   runDeck: BattleCard[],
-  rngState: RunRngState | null,
+  rngState: RunRngState,
 ): WildwoodDraftState | null {
   if (data.contentSystemType !== "wildwood") return null;
   const draft = data.wildwoodDraft;
   if (!draft) return null;
   return {
     ...draft,
-    draftChoices: reDealEmptiedChoices(draft.draftChoices, {
-      awaitPick: draft.phase === "draft",
-      checkDeckSize: true,
+    draftChoices: repairCardChoices(draft.draftChoices, {
+      canPick: draft.phase === "draft" && runDeck.length < DRAFT_ROUNDS,
       runDeck,
       rngState,
       stream: "world",
@@ -202,13 +173,12 @@ function repairWildwoodDraft(
 function repairStarterDraft(
   data: ValidatedActiveRunData,
   runDeck: BattleCard[],
-  rngState: RunRngState | null,
+  rngState: RunRngState,
 ): PersistedBattleCard[] | null {
   if (data.contentSystemType === "wildwood") return null;
   if (!data.starterDraftChoices) return null;
-  return reDealEmptiedChoices(data.starterDraftChoices, {
-    awaitPick: true,
-    checkDeckSize: true,
+  return repairCardChoices(data.starterDraftChoices, {
+    canPick: runDeck.length < DRAFT_ROUNDS,
     runDeck,
     rngState,
     stream: "rewards",
@@ -220,7 +190,7 @@ function repairStarterDraft(
 function repairMysteryVisit(
   data: ValidatedActiveRunData,
   runDeck: BattleCard[],
-  rngState: RunRngState | null,
+  rngState: RunRngState,
 ): MysteryVisitState | null {
   if (data.currentScreen != null && data.currentScreen !== "mystery") return null;
   const visit = data.mysteryVisit;
@@ -228,9 +198,8 @@ function repairMysteryVisit(
   if (!visit.cardChoices) return { ...visit, cardChoices: null };
   return {
     ...visit,
-    cardChoices: reDealEmptiedChoices(visit.cardChoices, {
-      awaitPick: visit.chosenCardId == null,
-      checkDeckSize: false,
+    cardChoices: repairCardChoices(visit.cardChoices, {
+      canPick: visit.chosenCardId == null,
       runDeck,
       rngState,
       stream: "events",

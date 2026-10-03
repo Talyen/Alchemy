@@ -84,6 +84,43 @@ export function dealEnemyDotTick(
   return applyEnemyDotDamage(state, [{ status, finalDamage, nextStacks }], combatTexts, applyRiders);
 }
 
+export function projectEnemyDotDamage(
+  state: Pick<
+    BattleState,
+    "enemyStatuses" | "enemyCC" | "currentEnemy" | "talentEffects" | "gearEffects" | "encounterBenefits"
+  >,
+  status: EnemyDotStatus,
+  mode: "next-tick" | "remaining-ticks" = "next-tick",
+): number {
+  const amount = state.enemyStatuses[status];
+  if (amount <= 0) return 0;
+  let finalDamage = 0;
+  let stacks = amount;
+  const bonus = status === "poison" ? getPoisonBonusAgainstBleeding(state) : 0;
+  const multiplier =
+    getEnemyDamageMultiplier(state, status) *
+    gearFrozenDamageMultiplier(state) *
+    (status === "burn" || (status === "bleed" && state.gearEffects.sharedBurnBleedBonuses > 0)
+      ? getBurnBonusToBleedingMultiplier(state)
+      : 1);
+  // Projected ticks all use the same immutable battle inputs. Keep the
+  // multiplication order and per-tick rounding when reusing these factors.
+  const poisonMultiplier = status === "poison" ? getPoisonDamageMultiplierAgainstBleeding(state) : 1;
+  const poisonDecayMultiplier =
+    status === "poison" && hasEncounterBenefit(state, "venomous") ? LABYRINTH_MODIFIER_CONFIG.half : 1;
+  while (stacks > 0) {
+    finalDamage += Math.round((stacks + bonus) * multiplier * poisonMultiplier);
+    if (mode === "next-tick") break;
+    stacks =
+      status === "poison"
+        ? decayPoisonStacks(stacks, poisonDecayMultiplier)
+        : status === "burn" || (status === "bleed" && state.gearEffects.bleedDecaysByHalf > 0)
+          ? decayHalvedStatus(stacks)
+          : 0;
+  }
+  return finalDamage;
+}
+
 export function detonateEnemyStatuses(
   state: BattleState,
   statuses: ReadonlyArray<"bleed" | "poison" | "burn">,
@@ -101,30 +138,7 @@ export function detonateEnemyStatuses(
   for (const status of statuses) {
     const amount = state.enemyStatuses[status];
     if (amount <= 0) continue;
-    let finalDamage = 0;
-    let stacks = amount;
-    const bonus = status === "poison" ? getPoisonBonusAgainstBleeding(state) : 0;
-    const multiplier =
-      getEnemyDamageMultiplier(state, status) *
-      gearFrozenDamageMultiplier(state) *
-      (status === "burn" || (status === "bleed" && state.gearEffects.sharedBurnBleedBonuses > 0)
-        ? getBurnBonusToBleedingMultiplier(state)
-        : 1);
-    // Projected ticks all use the same immutable battle inputs. Keep the
-    // multiplication order and per-tick rounding when reusing these factors.
-    const poisonMultiplier = status === "poison" ? getPoisonDamageMultiplierAgainstBleeding(state) : 1;
-    const poisonDecayMultiplier =
-      status === "poison" && hasEncounterBenefit(state, "venomous") ? LABYRINTH_MODIFIER_CONFIG.half : 1;
-    while (stacks > 0) {
-      finalDamage += Math.round((stacks + bonus) * multiplier * poisonMultiplier);
-      if (mode === "next-tick") break;
-      stacks =
-        status === "poison"
-          ? decayPoisonStacks(stacks, poisonDecayMultiplier)
-          : status === "burn" || (status === "bleed" && state.gearEffects.bleedDecaysByHalf > 0)
-            ? decayHalvedStatus(stacks)
-            : 0;
-    }
+    const finalDamage = projectEnemyDotDamage(state, status, mode);
     pulses.push({
       status,
       finalDamage,

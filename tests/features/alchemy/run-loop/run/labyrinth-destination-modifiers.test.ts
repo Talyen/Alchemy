@@ -1,3 +1,4 @@
+import { emptyAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
 import "../../../../helpers/mock-audio";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";
@@ -21,7 +22,7 @@ describe("Labyrinth destination modifiers", () => {
     ["healing-spring", 30],
   ] as const)("%s applies its healing through the normal Rest action", (id, health) => {
     setRunProgress({ contentSystemType: "labyrinth", runPlayerHealth: 5, runMaxHealth: 30 });
-    setRunSession({ activity: { kind: "campfire" }, activeLabyrinthRewardModifiers: [id] });
+    setRunSession({ activity: { kind: "campfire", data: emptyAlchemyVisit() }, activeLabyrinthRewardModifiers: [id] });
     const navigateTo = vi.fn((_screen: string, commit?: () => void) => commit?.());
     createRunFlow(makeFlowHandlerDeps({ navigateTo })).handleCampfireContinue();
     expect(readActiveRun().runPlayerHealth).toBe(health);
@@ -29,11 +30,17 @@ describe("Labyrinth destination modifiers", () => {
 
   it("Hidden Purse adds Gold and Herbal Hearth adds a real Potion", () => {
     setRunProgress({ contentSystemType: "labyrinth", gold: 0, runDeck: [] });
-    setRunSession({ activity: { kind: "campfire" }, activeLabyrinthRewardModifiers: ["hidden-purse"] });
+    setRunSession({
+      activity: { kind: "campfire", data: emptyAlchemyVisit() },
+      activeLabyrinthRewardModifiers: ["hidden-purse"],
+    });
     const handlers = createRunFlow(makeFlowHandlerDeps());
     handlers.handleCampfireContinue();
     expect(readRunProfile().gold).toBe(15);
-    setRunSession({ activity: { kind: "campfire" }, activeLabyrinthRewardModifiers: ["herbal-hearth"] });
+    setRunSession({
+      activity: { kind: "campfire", data: emptyAlchemyVisit() },
+      activeLabyrinthRewardModifiers: ["herbal-hearth"],
+    });
     handlers.handleCampfireContinue();
     expect(readActiveRun().runDeck).toHaveLength(1);
     expect(getStandardPotionPool().map((card) => card.id)).toContain(readActiveRun().runDeck[0]!.id);
@@ -41,7 +48,10 @@ describe("Labyrinth destination modifiers", () => {
 
   it("Campfire selectors keep stable modifier references across renders", () => {
     setRunProgress({ contentSystemType: "labyrinth" });
-    setRunSession({ activity: { kind: "campfire" }, activeLabyrinthRewardModifiers: ["deep-rest"] });
+    setRunSession({
+      activity: { kind: "campfire", data: emptyAlchemyVisit() },
+      activeLabyrinthRewardModifiers: ["deep-rest"],
+    });
     const { result, rerender } = renderHook(() => useCampfireScreenData());
     const modifiers = result.current.modifiers;
     rerender();
@@ -50,7 +60,10 @@ describe("Labyrinth destination modifiers", () => {
 
   it("Golden Omen presents and pays the doubled event reward once", () => {
     setRunProgress({ contentSystemType: "labyrinth", gold: 0 });
-    setRunSession({ activity: { kind: "campfire" }, activeLabyrinthRewardModifiers: ["golden-omen"] });
+    setRunSession({
+      activity: { kind: "campfire", data: emptyAlchemyVisit() },
+      activeLabyrinthRewardModifiers: ["golden-omen"],
+    });
     const { result } = renderHook(() => createMysteryEventNavigation({ navigateTo: vi.fn() }));
     act(() => result.current.beginMysteryEvent());
     const choice = readActivityData(readRunSession().activity, "mystery").mysteryEvent!.choices.find((entry) =>
@@ -66,7 +79,10 @@ describe("Labyrinth destination modifiers", () => {
 
   it("Restful Discovery includes its healing in the existing event outcome", () => {
     setRunProgress({ contentSystemType: "labyrinth", runPlayerHealth: 5, runMaxHealth: 100 });
-    setRunSession({ activity: { kind: "campfire" }, activeLabyrinthRewardModifiers: ["restful-discovery"] });
+    setRunSession({
+      activity: { kind: "campfire", data: emptyAlchemyVisit() },
+      activeLabyrinthRewardModifiers: ["restful-discovery"],
+    });
     const { result } = renderHook(() => createMysteryEventNavigation({ navigateTo: vi.fn() }));
     act(() => result.current.beginMysteryEvent());
     const choice = readActivityData(readRunSession().activity, "mystery").mysteryEvent!.choices[0]!;
@@ -86,7 +102,7 @@ it("ignores another Rest click while the completed campfire is fading out", () =
   });
   setRunSession({
     hasActiveRun: true,
-    activity: { kind: "campfire" },
+    activity: { kind: "campfire", data: emptyAlchemyVisit() },
     activeLabyrinthRewardModifiers: ["hidden-purse"],
   });
   const navigation = createScreenNavigation({

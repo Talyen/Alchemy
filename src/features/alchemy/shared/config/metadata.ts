@@ -36,6 +36,7 @@ import {
 import {
   alchemistShopBg,
   campfire,
+  transmutationCrucible,
   corruptionAltar,
   eliteEnemyBg,
   keywordDefinitions,
@@ -114,6 +115,12 @@ export const destinationMeta: Record<Destination, ThemedChooserMeta> = {
     accentClassName: "text-zinc-200",
     art: mysteryBg,
     plasmaColorPair: { primary: "#e4e4e7", secondary: "#3f3f46" },
+  },
+  Transmutation: {
+    icon: Beaker,
+    accentClassName: "text-amber-400",
+    art: transmutationCrucible,
+    plasmaColorPair: { primary: "#fbbf24", secondary: "#78350f" },
   },
   Corruption: {
     icon: Dices,

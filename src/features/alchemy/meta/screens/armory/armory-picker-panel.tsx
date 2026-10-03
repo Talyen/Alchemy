@@ -80,21 +80,31 @@ export function ArmoryPickerPanel({
       className="alchemy-shell relative flex min-h-0 min-w-0 flex-col rounded-shell-dialog border border-border/80 p-4"
     >
       <FadeSlot swapKey={selectedSlot} className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <div className="relative flex min-h-10 w-full items-center justify-center">
-          <h2 className={cn("text-center font-sans", sectionTitleClass)}>{SLOT_LABELS[selectedSlot]}</h2>
-          {onSpawnDevGear && editable && selectedSlot !== "trinket" ? (
-            <div className="absolute right-0">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                aria-label="Spawn random gear"
-                onClick={() => onSpawnDevGear(characterId)}
-              >
-                <Dices className="h-4 w-4" />
-              </Button>
-            </div>
-          ) : null}
+        <div className="relative z-20 mb-3 flex min-h-11 w-full flex-wrap items-center justify-between gap-2">
+          <h2 className={cn("font-sans", sectionTitleClass)}>{SLOT_LABELS[selectedSlot]}</h2>
+          <div className="flex max-w-full flex-wrap items-center justify-end gap-2">
+            <ArmoryInventoryControls
+              key={`${characterId}:${selectedSlot}`}
+              filters={filters}
+              isTrinket={selectedSlot === "trinket"}
+              onFiltersChange={onFiltersChange}
+              onSort={onSort}
+              onBrowse={onBrowse}
+            />
+            {onSpawnDevGear && editable && selectedSlot !== "trinket" ? (
+              <div className="shrink-0">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Spawn random gear"
+                  onClick={() => onSpawnDevGear(characterId)}
+                >
+                  <Dices className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : null}
+          </div>
         </div>
         {selectedSlot === "trinket" ? (
           <TrinketPickerGrid
@@ -130,16 +140,6 @@ export function ArmoryPickerPanel({
             {...paging}
           />
         )}
-        <ArmoryInventoryControls
-          key={`${characterId}:${selectedSlot}`}
-          filters={filters}
-          isTrinket={selectedSlot === "trinket"}
-          matchCount={matchCount}
-          totalCount={totalCount}
-          onFiltersChange={onFiltersChange}
-          onSort={onSort}
-          onBrowse={onBrowse}
-        />
       </FadeSlot>
     </section>
   );

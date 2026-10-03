@@ -52,11 +52,11 @@ describe("Open Field generation", () => {
         if (["combat", "elite", "boss"].includes(node.type)) {
           expect(node.enemyId).toBeTruthy();
           expect(node.modifiers).toHaveLength(node.type === "combat" ? 1 : 2);
-          expect(node.rewardModifiers).toHaveLength(1);
+          expect(node.rewardModifiers).toHaveLength(node.type === "transmutation" ? 0 : 1);
         } else if (node.type !== "entrance") {
           expect(node.enemyId).toBeUndefined();
           expect(node.modifiers).toEqual([]);
-          expect(node.rewardModifiers).toHaveLength(1);
+          expect(node.rewardModifiers).toHaveLength(node.type === "transmutation" ? 0 : 1);
         }
       }
     }

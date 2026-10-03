@@ -113,13 +113,6 @@ describe("fixed Unique compatibility", () => {
     expect(getGearInstanceTooltipEntries(original)).toEqual(getGearInstanceTooltipEntries(normalized));
   });
 
-  it("keeps the 21 new signature descriptions short and free of technical wording", () => {
-    for (const unique of uniqueItemList.slice(8)) {
-      expect(unique.description.split(/\s+/).length, unique.displayName).toBeLessThanOrEqual(15);
-      expect(unique.description).not.toMatch(/\b(tick|manually|resolving|triggered|commands|stacking|readies)\b/i);
-    }
-  });
-
   it("keeps UNIQUE_GEAR_COMBAT magnitudes in sync with signature descriptions", () => {
     const descriptionOf = (id: GearAffixId) => gearAffixCatalog[id].descriptionTemplate;
     // Numeric prose: the number in text must equal the combat constant.

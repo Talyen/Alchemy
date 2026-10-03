@@ -1,3 +1,4 @@
+import { emptyAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
 import "../../../../helpers/mock-audio";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -357,7 +358,7 @@ describe("gold-only interrupted rewards", () => {
     setRunProgress({ characterId: "knight", contentSystemType: "campaign" });
     setRunSession({
       hasActiveRun: true,
-      activity: { kind: "campfire" },
+      activity: { kind: "campfire", data: emptyAlchemyVisit() },
       rewardState: { ...createEmptyRewardState(), gold: 12, materials: { ...emptyInventory(), wood: 2 } },
       companionRewardCards: null,
     });

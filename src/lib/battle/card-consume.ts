@@ -15,12 +15,7 @@ import { REACTIVE_REWARD_CHANCES } from "../game-constants";
 import { applyEmergencyWishForEmptyDraw } from "./wish";
 
 function drawConsumeReward(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
-  const drawn = applyDrawResult(state, drawFromState(state, amount));
-  const received =
-    drawn.hand.length + drawn.pendingHandCards.length - state.hand.length - state.pendingHandCards.length;
-  if (received > 0) {
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "draw", amount: received });
-  }
+  const drawn = applyDrawResult(state, drawFromState(state, amount), combatTexts);
   const wished = applyEmergencyWishForEmptyDraw(drawn, amount, combatTexts);
   // A failed draw can now trigger Wish damage; settle its retaliation before another reward.
   return wished === drawn ? drawn : resolvePendingBattleReactions(wished, combatTexts);

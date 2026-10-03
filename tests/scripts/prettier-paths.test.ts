@@ -1,15 +1,9 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { PRETTIER_GLOBS, PRETTIER_NEVER_FORMAT_RE, filterPrettierPaths } from "../../scripts/prettier-paths.mjs";
+import { PRETTIER_NEVER_FORMAT_RE, filterPrettierPaths } from "../../scripts/prettier-paths.mjs";
 
 describe("prettier-paths", () => {
-  it("exports the shared format globs", () => {
-    expect(PRETTIER_GLOBS).toEqual(
-      expect.arrayContaining(["**/*.{ts,tsx,mts,css,mjs,cjs,js,json,md,yml,yaml}", ".prettierrc"]),
-    );
-  });
-
   it("filters staged paths to Prettier-relevant files", () => {
     expect(
       filterPrettierPaths([

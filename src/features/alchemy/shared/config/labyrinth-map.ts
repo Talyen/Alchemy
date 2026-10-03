@@ -16,6 +16,7 @@ import type { LabyrinthNodeType } from "@/lib/content-systems/types";
 import {
   alchemistShopBg,
   campfire,
+  transmutationCrucible,
   corruptionAltar,
   eliteEnemyBg,
   merchantShopBg,
@@ -61,7 +62,7 @@ export const LABYRINTH_NODE_META: Record<LabyrinthNodeType, LabyrinthNodeMeta> =
     className: "bg-black text-orange-500",
     shineColors: [...SHINE_PALETTES.labyrinth.rest],
     art: campfire,
-    actionLabel: "Rest",
+    actionLabel: "Enter",
   },
   mystery: {
     icon: Sparkles,
@@ -69,6 +70,13 @@ export const LABYRINTH_NODE_META: Record<LabyrinthNodeType, LabyrinthNodeMeta> =
     shineColors: [...SHINE_PALETTES.labyrinth.mystery],
     art: mysteryBg,
     actionLabel: "Investigate",
+  },
+  transmutation: {
+    icon: FlaskConical,
+    className: "bg-black text-amber-400",
+    shineColors: [...SHINE_PALETTES.labyrinth.transmutation],
+    art: transmutationCrucible,
+    actionLabel: "Enter",
   },
   corruption: {
     icon: Dices,

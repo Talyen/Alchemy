@@ -5,7 +5,9 @@ Alchemy is a fantasy roguelite deckbuilder. Use plain language and player-facing
 ## Working style
 
 - Default to `npm run check -- <task-owned paths>`. `npm test` is bounded Node smoke; focused, dependency-related and full unit suites (including DOM) may run without approval via `npm run test:full -- <paths>`. Browser/Electron, coverage, mutation, profiling, full static checks, builds, packaging, `check:full` and `verify:full` require an explicit local-execution request. [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change) owns gate details.
+- Add high-value tests by default and actively retire encountered low- and medium-value tests after checking their purpose and dependencies. Rare additions and borderline retention need a concrete reason; adding no test is valid. Follow [test value](./CONTRIBUTING.md#test-value-and-coverage-strategy) for selection, scoped retirement, and reporting.
 - Inspect working-tree status and relevant diffs before editing. Preserve existing work; re-read shared files when another session may be editing them. Ask only when intent or a safe merge is ambiguous.
+- Reuse one owned interactive browser session per task and verify cleanup on completion or failure; [preview ownership](./CONTRIBUTING.md#agent-preview-ownership) owns session and cross-repo resource discipline.
 - Complete requested behavior and blockers. Fix small, understood adjacent issues; report substantial independent findings. Avoid broad cleanup or an uncited [audit](./Docs/Audits/README.md). Decide routine details; ask about consequential unresolved choices.
 - Reuse owners and libraries; justify new dependencies or abstractions with concrete consumers. Preserve behavior and external contracts.
 - Start unclear failures with the diagnostic summary and a specific hypothesis. Reassess unproductive approaches; consult [knowledge](./.agents/knowledge/index.md) when history helps. Record unresolved recurring friction and consequential lessons in [.agents/FRICTION_LOG.md](./.agents/FRICTION_LOG.md); reusable prevention belongs in its canonical owner. Routine fixes need no history entry.
@@ -27,6 +29,7 @@ Direct reads and scoped searches suffice. Optional discovery, bounded search and
 
 ## High-risk invariants
 
+- Apply [Every player action receives feedback](./Docs/UI.md#every-player-action-receives-feedback) to UI, UX, and gameplay design, implementation, and review: supported actions need timely visible acknowledgment and clear outcomes; audio may reinforce them, and essential meaning survives mute.
 - Outside `shared/stores/`, use capability ports. Writes go through `dispatchRunSessionCommand()` and `run-session-write-port.ts`.
 - Run/battle controllers travel through route/shell props. Only `AppScreenChromeProvider` and `CardDescriptionProvider` are allowed providers; presentation state may use `ui-store`.
 - `BattleState` is immutable. Gameplay uses seeded `world` RNG and `Math.round` for combat magnitudes. Shared tuning belongs in `src/lib/game-constants/`; content magnitudes stay with definitions.

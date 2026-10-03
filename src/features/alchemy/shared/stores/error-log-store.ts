@@ -41,7 +41,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function normalizePersistedError(value: unknown): LoggedError | null {
   if (!isRecord(value)) return null;
   if (typeof value.id !== "string" || typeof value.message !== "string") return null;
-  if (typeof value.timestamp !== "number" || !Number.isFinite(value.timestamp)) return null;
+  if (typeof value.timestamp !== "number" || !Number.isFinite(new Date(value.timestamp).getTime())) return null;
   if (typeof value.source !== "string" || !ERROR_SOURCES.has(value.source as ErrorSource)) return null;
 
   const stack = typeof value.stack === "string" ? value.stack : undefined;
@@ -86,25 +86,24 @@ function loadPersisted(): LoggedError[] {
 function persist(errors: LoggedError[]): void {
   if (typeof window === "undefined" || typeof localStorage === "undefined") return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(toPersistableErrors(errors)));
+    localStorage.setItem(STORAGE_KEY, serializeErrorLog(errors));
   } catch {
     // Avoid logError here: this store is itself an error sink, so reporting would recurse.
     console.warn("[error-log] Failed to persist errors");
   }
 }
 
-// One poisoned context (circular, BigInt) must not drop the whole batch:
-// entries whose context is not JSON-serializable persist without it.
-function toPersistableErrors(errors: LoggedError[]): LoggedError[] {
-  return errors.map((entry) => {
-    if (entry.context === undefined) return entry;
+// Serialize each context once: a stateful toJSON can succeed on a probe and
+// fail on a second pass. Isolate failures so other entries still reach storage.
+function serializeErrorLog(errors: readonly LoggedError[]): string {
+  const entries = errors.map((entry) => {
     try {
-      JSON.stringify(entry.context);
-      return entry;
+      return JSON.stringify(entry);
     } catch {
-      return { ...entry, context: undefined };
+      return JSON.stringify({ ...entry, context: undefined });
     }
   });
+  return `[${entries.join(",")}]`;
 }
 
 function createLoggedErrorId(): string {

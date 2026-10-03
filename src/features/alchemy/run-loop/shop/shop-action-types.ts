@@ -26,6 +26,7 @@ export interface AlchemistShopCommands {
   initialize: () => void;
   buyPotion: (card: BattleCard, slotKey: string) => boolean;
   mixPotions: (indexA: number, indexB: number) => BattleCard | null;
+  strengthenPotion: (index: number) => BattleCard | null;
   refresh: () => boolean;
   getPotionBuyPrice: (card: BattleCard) => number;
   getMixPrice: () => number;

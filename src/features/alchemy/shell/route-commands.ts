@@ -1,3 +1,4 @@
+import type { BrewOperation } from "@/lib/alchemist/brewing";
 import type { BattleRefs } from "../shared/types";
 import type {
   MerchantShopCommands,
@@ -47,6 +48,8 @@ export interface AlchemyRouteCommands {
       prepare: () => void;
       choose: (destination: Destination) => void;
       continueCampfire: () => void;
+      rest: () => boolean;
+      brew: (operation: BrewOperation) => BattleCard | null;
     };
     wildwood: {
       removeCard: (index: number) => void;
@@ -64,6 +67,7 @@ export interface AlchemyRouteCommands {
       handleChooseCard: (cardId: string) => boolean;
       handleContinue: () => void;
     };
+    transmutation: { exchange: (sourceIndex: number, offerIndex: number) => BattleCard | null; continue: () => void };
     corruption: {
       handleCorruptCard: (cardIndex: number) => void;
       handleExit: () => void;

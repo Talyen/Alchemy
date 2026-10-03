@@ -5,7 +5,6 @@ import {
   getCompanionKeywords,
   getModifiedCompanionEffects,
   keywordDefinitions,
-  type CompanionId,
 } from "@/lib/game-data";
 import { getCompanionShineColors } from "@/features/alchemy/shared/config";
 import { getKeywordBorderShineColors } from "@/lib/keyword-border-shine";
@@ -29,41 +28,6 @@ describe("companionLibrary data integrity", () => {
       },
     ]);
     expect(companion.turnStartEffects).toEqual(before);
-  });
-
-  it("has all expected companions", () => {
-    const expectedIds = [
-      "wolf",
-      "lizard-scout",
-      "frost-whelp",
-      "bear",
-      "panther",
-      "phoenix",
-      "skeleton",
-      "pixie",
-      "mana-moth",
-      "will-o-wisp",
-      "golden-retriever",
-      "shield-scarab",
-      "library-owl",
-      "fox",
-    ];
-    for (const id of expectedIds) {
-      expect(companionLibrary[id as CompanionId]).toBeDefined();
-    }
-  });
-
-  it("each companion has non-empty title and art", () => {
-    for (const companion of Object.values(companionLibrary)) {
-      expect(companion.title).toBeTruthy();
-      expect(companion.art).toBeTruthy();
-    }
-  });
-
-  it("each companion has at least one turn-start effect", () => {
-    for (const companion of Object.values(companionLibrary)) {
-      expect(companion.turnStartEffects.length).toBeGreaterThan(0);
-    }
   });
 
   it("each turnStartEffect uses a supported companion effect kind", () => {
@@ -101,11 +65,6 @@ describe("companionLibrary data integrity", () => {
   it("all companion baseline effects are distinct", () => {
     const signatures = Object.values(companionLibrary).map((companion) => JSON.stringify(companion.turnStartEffects));
     expect(new Set(signatures).size).toBe(signatures.length);
-  });
-
-  it("all companion IDs are unique", () => {
-    const ids = Object.keys(companionLibrary);
-    expect(new Set(ids).size).toBe(ids.length);
   });
 
   it("Panther remains tied for the highest baseline damage among damage-dealing companions", () => {

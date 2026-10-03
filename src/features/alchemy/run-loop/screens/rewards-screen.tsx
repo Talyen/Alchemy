@@ -122,7 +122,7 @@ function RewardsFound({
     );
   }
   return (
-    <div className="flex min-h-[calc(52px*var(--content-scale,1))] items-center justify-center">
+    <div className="flex min-h-[calc(52px*var(--content-scale,1))] w-full min-w-0 items-center justify-center">
       <FoundResourcesRow gold={rewardGold} materials={rewardMaterials} />
     </div>
   );

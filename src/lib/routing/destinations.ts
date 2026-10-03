@@ -7,6 +7,7 @@ export const DESTINATIONS = {
   GEAR_SHOP: "Gear Shop",
   MYSTERY: "Mystery",
   CORRUPTION: "Corruption",
+  TRANSMUTATION: "Transmutation",
   CAMPFIRE: "Campfire",
   BOSS_COMBAT: "Boss Combat",
 } as const;

@@ -120,6 +120,8 @@ export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): Ac
     equipmentShopState: activity.kind === "equipment-shop" ? serializeEquipmentShopState(activity.data) : null,
     mysteryVisit: activity.kind === "mystery" ? serializeMysteryVisit(activity.data) : null,
     corruptionResult: activity.kind === "corruption" ? activity.data : null,
+    campfireState: activity.kind === "campfire" ? activity.data : null,
+    transmutationState: activity.kind === "transmutation" ? activity.data : null,
   };
   return activity.kind === "idle" || activity.kind === "inactive"
     ? { ...snapshot, currentScreen: inferActiveRunScreen(snapshot) }
@@ -185,6 +187,9 @@ function decodeRunActivity(activeRun: ActiveRunData, screen: Screen): RunActivit
       kind: screen,
       data: hydrateMysteryVisit(activeRun.mysteryVisit),
     };
+  if (screen === "campfire" && activeRun.campfireState) return { kind: screen, data: activeRun.campfireState };
+  if (screen === "transmutation" && activeRun.transmutationState)
+    return { kind: screen, data: activeRun.transmutationState };
   if (screen === "corruption") return { kind: screen, data: activeRun.corruptionResult };
   return transitionRunActivity({ kind: "idle" }, screen);
 }

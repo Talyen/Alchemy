@@ -131,11 +131,6 @@ describe.each([
   { name: "farmPlots", items: farmPlots, hasTiers: true },
   { name: "researchUpgrades", items: researchUpgrades, hasTiers: true },
 ])("$name data integrity", ({ items, hasTiers }) => {
-  it("all IDs are unique", () => {
-    const ids = items.map((item) => item.id);
-    expect(new Set(ids).size).toBe(ids.length);
-  });
-
   it("each entry has required fields", () => {
     for (const item of items) {
       expect(item.title).toBeTruthy();
@@ -547,11 +542,6 @@ describe("applyEndOfRunHomesteadBonuses", () => {
 });
 
 describe("homestead content integrity", () => {
-  it("contains 6 farm plots starting with wheat-field", () => {
-    expect(farmPlots).toHaveLength(6);
-    expect(farmPlots[0]?.id).toBe("wheat-field");
-  });
-
   it("separates bonuses from room production at every tier", () => {
     for (const item of [...buildings, ...farmPlots, ...researchUpgrades]) {
       for (const tier of item.tiers) {

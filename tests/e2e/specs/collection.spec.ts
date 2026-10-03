@@ -3,10 +3,11 @@ import { expect } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
 import { assertHorizontalNeighborGap } from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
+import { critical } from "../../playwright-tags";
 
 test.describe("Collection", () => {
   test.describe("with a discovered card", () => {
-    test("collection shows tabs, card inspection, and keeps tile gaps", async ({ page }) => {
+    test("collection shows tabs, card inspection, and keeps tile gaps", critical, async ({ page }) => {
       await new MenuPage(page).gotoCollection({ discoveredCardIds: ["anvil"] });
 
       await expect(page.getByRole("button", { name: "Heroes" })).toBeVisible();

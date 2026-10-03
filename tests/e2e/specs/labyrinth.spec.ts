@@ -67,9 +67,10 @@ test.describe("Labyrinth exploration", critical, () => {
     await expect(diagonal).toHaveAttribute("data-state", "undiscovered");
     await expect(diagonal.locator("img")).toHaveAttribute("src", /labyrinth-shrouded-/);
     await room.click();
-    await page.getByRole("button", { name: "Rest", exact: true }).click();
+    await page.getByRole("button", { name: "Enter", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Campfire", exact: true, level: 1 })).toBeVisible();
-    await page.getByRole("button", { name: "Rest", exact: true }).click();
+    await page.getByRole("button", { name: /^Rest · Recover/ }).click();
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
     await expect(room).toHaveAttribute("aria-current", "location");
     await expect(room.locator("img")).toHaveAttribute("src", /knight(?:-[\w-]+)?\.webp/);
     await expect(room.locator("img")).not.toHaveClass(/grayscale/);
@@ -82,9 +83,10 @@ test.describe("Labyrinth exploration", critical, () => {
     await page.keyboard.press("Escape");
     const otherBranch = page.locator('[data-labyrinth-node="labyrinth-floor-1-n3"] button');
     await otherBranch.click();
-    await page.getByRole("button", { name: "Rest", exact: true }).click();
+    await page.getByRole("button", { name: "Enter", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Campfire", exact: true, level: 1 })).toBeVisible();
-    await page.getByRole("button", { name: "Rest", exact: true }).click();
+    await page.getByRole("button", { name: /^Rest · Recover/ }).click();
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
     await expect(otherBranch).toHaveAttribute("aria-current", "location");
     await expect(diagonal.locator("img")).toHaveCount(1);
     await expect(page.locator('[data-labyrinth-node="labyrinth-floor-1-n1"]')).toHaveAttribute(

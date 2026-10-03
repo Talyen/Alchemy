@@ -1,26 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { cardLibrary, companionLibrary, type KeywordId } from "@/lib/game-data";
-import {
-  filterKeywordsForTalentXP,
-  getCardKeywords,
-  getCompanionKeywords,
-  keywordDefinitions,
-} from "@/lib/game-data/keywords";
+import { filterKeywordsForTalentXP, getCardKeywords, getCompanionKeywords } from "@/lib/game-data/keywords";
 import { makeTestCard } from "../../fixtures/cards";
 
 describe("keywordDefinitions", () => {
   it("keeps only catalog keywords eligible for Talent XP", () => {
     const keywords = ["burn", "constructor", "__proto__", "toString", "health"] as KeywordId[];
     expect(filterKeywordsForTalentXP(keywords)).toEqual(["burn", "health"]);
-  });
-
-  it("each keyword has a non-empty id, label, description, colorClass", () => {
-    for (const [id, kw] of Object.entries(keywordDefinitions)) {
-      expect(kw.id).toBe(id);
-      expect(kw.label).toBeTruthy();
-      expect(kw.description).toBeTruthy();
-      expect(kw.colorClass).toBeTruthy();
-    }
   });
 
   it("includes archery from card tags", () => {

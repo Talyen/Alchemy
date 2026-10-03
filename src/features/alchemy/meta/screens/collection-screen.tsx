@@ -13,6 +13,7 @@ import {
 } from "../../shared/config";
 import { PageLayout, ScreenHeaderRow, ScreenShell } from "../../shared/ui/layout-components";
 import { CollectionGrid, CollectionTabs, CollectionPagination } from "./collection/collection-ui";
+import { CollectionContentLayout } from "./collection/collection-content-layout";
 import { enemyById, type CharacterId, type BestiaryEntry } from "../../shared/config/game-data-catalog";
 import { EnemyInspectionOverlay } from "../../shared/ui/inspection/enemy-inspection-overlay";
 import type { CollectionTab } from "../../shared/types";
@@ -104,7 +105,13 @@ export function CollectionScreen({
         <ScreenHeaderRow title="Collection" onBack={onBack} onMenu={onMenu} />
         <CollectionTabs collectionTab={collectionTab} onSelectTab={onSelectTab} />
 
-        <div className="mt-6 flex flex-col items-center gap-4 overflow-visible">
+        <CollectionContentLayout
+          pagination={
+            totalPages > 1 ? (
+              <CollectionPagination page={activePage} totalPages={totalPages} onPageChange={handlePageChange} />
+            ) : null
+          }
+        >
           <div ref={onContainer} className="relative w-full overflow-visible">
             <GridMeasurement onMeasure={onMeasure} referenceTileWidth={referenceTileWidth} />
             <CollectionGrid
@@ -122,12 +129,7 @@ export function CollectionScreen({
               inspectionOpen={inspectedEnemy !== null}
             />
           </div>
-          {totalPages > 1 ? (
-            <div className="flex flex-wrap items-center justify-center">
-              <CollectionPagination page={activePage} totalPages={totalPages} onPageChange={handlePageChange} />
-            </div>
-          ) : null}
-        </div>
+        </CollectionContentLayout>
       </ScreenShell>
       <EnemyInspectionOverlay
         open={inspectedEnemy !== null}

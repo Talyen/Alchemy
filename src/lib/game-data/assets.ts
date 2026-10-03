@@ -15,6 +15,7 @@ export const menuLogo = assetRefs.alchemyLogo;
 export const demoFeatureShowcase = assetRefs.demoFeatureShowcase;
 export const pileDrawArt = assetRefs.drawPile;
 export const pileDiscardArt = assetRefs.discardPile;
+export const armorySalvageArt = assetRefs.armorySalvage;
 
 export const labyrinthShroudedArt = [
   assetRefs.labyrinthShroudedVeiledArch,

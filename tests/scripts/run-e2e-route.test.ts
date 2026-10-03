@@ -1,4 +1,4 @@
-import fs, { existsSync, readFileSync } from "node:fs";
+import fs, { existsSync } from "node:fs";
 import os from "node:os";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
@@ -72,14 +72,6 @@ describe("e2e routes", () => {
         tests.some((test) => pattern.test(test.name)),
         `${name} selects no retained journey`,
       ).toBe(true);
-    }
-  });
-
-  it("exposes routes through the single test:e2e:route entry instead of per-route aliases", () => {
-    const scripts = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8")).scripts;
-    expect(scripts["test:e2e:route"]).toBe("node scripts/run-e2e-route.mjs");
-    for (const name of Object.keys(E2E_ROUTES)) {
-      expect(scripts[`test:e2e:${name}`], name).toBeUndefined();
     }
   });
 

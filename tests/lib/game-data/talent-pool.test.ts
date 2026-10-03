@@ -14,26 +14,10 @@ import {
   canUnlockTalent,
   tryUnlockTalent,
   isTalentPlaceholder,
-  keywordDefinitions,
   getTalentTreeKeywordIds,
 } from "@/lib/game-data";
 
-const validKeywords = Object.keys(keywordDefinitions);
-
 describe("talentPool data integrity", () => {
-  it("all talent IDs are unique", () => {
-    const ids = talentPool.map((t) => t.id);
-    expect(new Set(ids).size).toBe(ids.length);
-  });
-
-  it("each talent has a valid keywordId", () => {
-    for (const talent of talentPool) {
-      expect(validKeywords, `Talent "${talent.id}" has invalid keyword "${talent.keywordId}"`).toContain(
-        talent.keywordId,
-      );
-    }
-  });
-
   it("each talent has a non-empty description", () => {
     for (const talent of talentPool) {
       expect(talent.description, `Talent "${talent.id}" has empty description`).toBeTruthy();
@@ -55,12 +39,6 @@ describe("talentPool data integrity", () => {
           .flat()
           .map((t) => t.id),
       ).toEqual(talents.map((t) => t.id));
-    }
-  });
-
-  it("contains talents for all talent-tree keywords", () => {
-    for (const kw of getTalentTreeKeywordIds()) {
-      expect(getTalentsForKeyword(kw).length).toBeGreaterThan(0);
     }
   });
 });

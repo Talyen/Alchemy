@@ -23,7 +23,6 @@ import {
   type ArmoryInventoryFilters,
 } from "./armory-inventory-filtering";
 
-const NO_EQUIPPED_IDS: ReadonlySet<string> = new Set();
 const NO_IDS: readonly string[] = [];
 
 interface StoredCategory {
@@ -57,17 +56,11 @@ export function useArmoryOrdering({
   selectedSlot,
   pickerItems,
   ownedTrinkets,
-  equippedGearIds = NO_EQUIPPED_IDS,
-  equippedTrinketIds = NO_EQUIPPED_IDS,
-  otherHeroGearIds = equippedGearIds,
 }: {
   characterId: CharacterId;
   selectedSlot: ArmorySlot;
   pickerItems: GearInstance[];
   ownedTrinkets: TrinketEntry[];
-  equippedGearIds?: ReadonlySet<string>;
-  equippedTrinketIds?: ReadonlySet<string>;
-  otherHeroGearIds?: ReadonlySet<string>;
 }) {
   const isTrinket = selectedSlot === "trinket";
   const activeKey = `${characterId}:${selectedSlot}`;
@@ -106,10 +99,8 @@ export function useArmoryOrdering({
   const orderedTrinkets = !isTrinket
     ? []
     : orderedIds.map((id) => trinketById.get(id)).filter((item): item is TrinketEntry => Boolean(item));
-  const visibleGear = orderedGear.filter((item) =>
-    matchesGearFilters(item, filters, equippedGearIds, otherHeroGearIds),
-  );
-  const visibleTrinkets = orderedTrinkets.filter((item) => matchesTrinketFilters(item, filters, equippedTrinketIds));
+  const visibleGear = orderedGear.filter((item) => matchesGearFilters(item, filters));
+  const visibleTrinkets = orderedTrinkets.filter((item) => matchesTrinketFilters(item, filters));
   const visibleIds = isTrinket ? visibleTrinkets.map((item) => item.id) : visibleGear.map((item) => item.instanceId);
   const { page: safePage, totalPages } = getPagination(visibleIds.length, storedPage, ARMORY_PAGE_SIZE);
   // Persist clamping so later inventory growth cannot restore an obsolete page.

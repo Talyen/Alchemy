@@ -10,7 +10,7 @@ function isNumericCombatText(event: CombatTextEvent): event is NumericCombatText
 }
 
 export function shouldShowCombatText(event: CombatTextEvent) {
-  return event.kind !== "status" || !harmfulPlayerStatusIds.includes(event.stat as never);
+  return event.kind !== "status" || !harmfulPlayerStatusIds.some((status) => status === event.stat);
 }
 
 export function mergeCombatText(combatTexts: CombatTextEvent[], nextEvent: CombatTextEvent) {

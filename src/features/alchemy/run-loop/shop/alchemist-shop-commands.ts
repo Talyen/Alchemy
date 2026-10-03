@@ -6,6 +6,7 @@ import {
   setRunDeck,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readActivityData } from "@/lib/active-run-session";
+import { strengthenPotion as prepareStrengthenedPotion } from "@/lib/alchemist/brewing";
 import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
 import { ALCHEMIST_POTIONS_OFFERED, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import { isStandardPotionCard, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
@@ -94,6 +95,36 @@ export function createAlchemistShopCommands({
     );
   }
 
+  function strengthenPotion(index: number): BattleCard | null {
+    return (
+      runShopTransaction(
+        "alchemist",
+        (draft) => {
+          const price = computeMixPotionPrice(
+            talentEffects,
+            resolveDraftShopModifiers(draft),
+            homesteadEffects.mixPotionDiscount,
+          );
+          const state = readActivityData(draft.session.activity, "alchemist");
+          const card = draft.run.activeRun.runDeck[index];
+          const result = card ? prepareStrengthenedPotion(card) : null;
+          return commitShopService({
+            draft,
+            price,
+            guard: Number.isInteger(index) && !state.mixUsed && result !== null,
+            failureValue: null,
+            apply: () => {
+              setAlchemistState(draft, (previous) => ({ ...previous, mixUsed: true }));
+              setRunDeck(draft, (previous) => previous.map((card, i) => (i === index ? result! : card)));
+              return result;
+            },
+          });
+        },
+        "alchemistMix",
+      ).value ?? null
+    );
+  }
+
   const refresh = createShopRefreshAction({
     activity: "alchemist",
     talentEffects,
@@ -112,5 +143,14 @@ export function createAlchemistShopCommands({
     }),
   });
 
-  return { initialize, buyPotion, mixPotions, refresh, getPotionBuyPrice, getMixPrice, getRefreshPrice };
+  return {
+    initialize,
+    buyPotion,
+    mixPotions,
+    strengthenPotion,
+    refresh,
+    getPotionBuyPrice,
+    getMixPrice,
+    getRefreshPrice,
+  };
 }

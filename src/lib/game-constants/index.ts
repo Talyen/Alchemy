@@ -1,6 +1,7 @@
 export * from "./audio";
 export * from "./battle-timing";
 export * from "./combat-rules";
+export * from "./brewing";
 export * from "./corruption";
 export * from "./enemy-traits";
 export * from "./enemy-balance";

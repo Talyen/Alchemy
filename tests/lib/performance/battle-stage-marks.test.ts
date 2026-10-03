@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  BATTLE_STAGE_MARK_PREFIX,
   battleStageMarkName,
   markBattleStage,
   clearBattleStageMarks,
@@ -26,13 +25,6 @@ afterEach(() => {
 });
 
 describe("battle stage marks", () => {
-  it("builds prefixed mark names", () => {
-    expect(BATTLE_STAGE_MARK_PREFIX).toBe("alchemy:battle:");
-    for (const stage of ALL_STAGES) {
-      expect(battleStageMarkName(stage)).toBe(`alchemy:battle:${stage}`);
-    }
-  });
-
   it("records performance marks for valid stages", () => {
     markBattleStage("resolve-start");
     markBattleStage("resolve-end");

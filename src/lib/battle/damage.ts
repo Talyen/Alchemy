@@ -1,4 +1,5 @@
 import { consumeAttackBonuses } from "./effect-handlers/handler-types";
+import { applyShatter, applyWildfire, canInitiateElementalReaction, canShatter } from "./elemental-reactions";
 import { readCombatFlag } from "./action-context";
 import { scalePercent } from "./amount-helpers";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
@@ -154,7 +155,11 @@ export function dealDamageToEnemy(
   }
 
   captureDamageEffect(packet);
-  const damageState = consumed.state;
+  const reactionEligible = canInitiateElementalReaction(state, context);
+  const wildfireReady =
+    reactionEligible && packet.damageType === "nature" && state.enemyStatuses.burn > 0 && !state.flags.wildfireUsed;
+  const shatter = reactionEligible && packet.damageType === "physical" && canShatter(state);
+  const damageState = shatter ? applyShatter(consumed.state, combatTexts) : consumed.state;
   bonuses.physical += consumed.physicalBonus;
 
   // Resolve magnitude and defenses before riders, follow-up hits, then reactions.
@@ -162,6 +167,7 @@ export function dealDamageToEnemy(
     manaAtStart: damageState.mana,
     enemyFreezeSkipTurnsAtStart: damageState.enemyCC.freezeSkipTurns,
     ...context,
+    guaranteedCrit: shatter || context?.guaranteedCrit === true,
     baseDamageBonus:
       bonuses.flat +
       (packet.damageType === "physical" ? bonuses.physical : 0) +
@@ -200,5 +206,19 @@ export function dealDamageToEnemy(
   if (result.enemyHealth <= 0 && card.tags?.includes("archery") && result.talentEffects.goldOnArcheryKill > 0) {
     result = addGoldWithCombatText(result, result.talentEffects.goldOnArcheryKill, combatTexts);
   }
-  return resolvePendingBattleReactions(applyEncounterThorns(result, combatTexts), combatTexts);
+  result = resolvePendingBattleReactions(applyEncounterThorns(result, combatTexts), combatTexts);
+  if (!wildfireReady || modifiedDamage <= 0) return result;
+  const enemyAliveBeforeWildfire = result.enemyHealth > 0;
+  result = resolvePendingBattleReactions(applyWildfire(result, combatTexts), combatTexts);
+  // A lethal detonation belongs to this attack; earlier packet kills already paid above.
+  if (
+    enemyAliveBeforeWildfire &&
+    result.enemyHealth <= 0 &&
+    card.tags?.includes("archery") &&
+    result.talentEffects.goldOnArcheryKill > 0
+  ) {
+    result = addGoldWithCombatText(result, result.talentEffects.goldOnArcheryKill, combatTexts);
+    result = resolvePendingBattleReactions(result, combatTexts);
+  }
+  return result;
 }

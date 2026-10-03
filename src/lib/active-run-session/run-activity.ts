@@ -1,3 +1,4 @@
+import { emptyAlchemyVisit, type AlchemyVisit } from "./alchemy-visits";
 import type { CorruptionResult } from "@/lib/corruption";
 import type { Screen } from "@/lib/routing";
 import { emptyHydratedMysteryVisit, type HydratedMysteryVisit } from "./mystery-visit-persistence";
@@ -10,6 +11,8 @@ import {
 } from "./shop-session-types";
 
 export interface RunActivityData {
+  campfire: AlchemyVisit;
+  transmutation: AlchemyVisit;
   shop: ShopState;
   alchemist: AlchemistState;
   "trinket-shop": TrinketShopState;
@@ -23,7 +26,6 @@ type ProgressActivityKind =
   | "battle"
   | "rewards"
   | "destination"
-  | "campfire"
   | "labyrinth-map"
   | "wildwood-removal"
   | "draft-deck"
@@ -42,6 +44,8 @@ function deepFreeze<T>(obj: T): T {
 }
 
 const VISIT_FACTORIES: { readonly [K in keyof RunActivityData]: () => RunActivityData[K] } = {
+  campfire: emptyAlchemyVisit,
+  transmutation: emptyAlchemyVisit,
   shop: emptyShopState,
   alchemist: emptyAlchemistState,
   "trinket-shop": emptyTrinketShopState,
@@ -51,6 +55,8 @@ const VISIT_FACTORIES: { readonly [K in keyof RunActivityData]: () => RunActivit
 };
 
 const EMPTY_VISITS: Readonly<RunActivityData> = deepFreeze({
+  campfire: VISIT_FACTORIES.campfire(),
+  transmutation: VISIT_FACTORIES.transmutation(),
   shop: VISIT_FACTORIES.shop(),
   alchemist: VISIT_FACTORIES.alchemist(),
   "trinket-shop": VISIT_FACTORIES["trinket-shop"](),
@@ -79,7 +85,6 @@ const STATELESS_RUN_SCREENS = new Set<ProgressActivityKind>([
   "battle",
   "rewards",
   "destination",
-  "campfire",
   "labyrinth-map",
   "wildwood-removal",
   "draft-deck",

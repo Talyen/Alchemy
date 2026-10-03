@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { getAvailableDestinations } from "@/lib/routing";
-import { CAMPFIRE_HEALTH_THRESHOLD, ELITE_HEALTH_THRESHOLD, SHOP_MIN_GOLD } from "@/lib/game-constants";
+import { ELITE_HEALTH_THRESHOLD, SHOP_MIN_GOLD } from "@/lib/game-constants";
 
 const MAX_HEALTH = 30;
-const campfireFloor = Math.round(MAX_HEALTH * CAMPFIRE_HEALTH_THRESHOLD);
 const eliteFloor = Math.round(MAX_HEALTH * ELITE_HEALTH_THRESHOLD);
 
 describe("getAvailableDestinations", () => {
@@ -21,24 +20,10 @@ describe("getAvailableDestinations", () => {
     expect(destinations).not.toContain("Boss Combat");
   });
 
-  it("excludes Campfire when Health reaches the campfire threshold of max", () => {
-    const destinations = getAvailableDestinations(campfireFloor, 100, MAX_HEALTH);
-    expect(destinations).not.toContain("Campfire");
-  });
-
-  it("includes Campfire when Health is just below the campfire threshold", () => {
-    const destinations = getAvailableDestinations(campfireFloor - 1, 100, MAX_HEALTH);
+  it("offers Campfire brewing and free Transmutation even at full Health with no Gold", () => {
+    const destinations = getAvailableDestinations(MAX_HEALTH, 0, MAX_HEALTH);
     expect(destinations).toContain("Campfire");
-  });
-
-  it("includes Campfire below 80% Health when the threshold falls between whole Health points", () => {
-    expect(getAvailableDestinations(3, 100, 4)).toContain("Campfire");
-  });
-
-  it("includes Campfire when Health is low regardless of thresholds", () => {
-    const destinations = getAvailableDestinations(eliteFloor - 2, 100, MAX_HEALTH);
-
-    expect(destinations).toContain("Campfire");
+    expect(destinations).toContain("Transmutation");
   });
 
   it("excludes shops when gold is just below the shop minimum", () => {

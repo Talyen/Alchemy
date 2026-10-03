@@ -11,10 +11,15 @@ Helpers live in this directory and are re-exported from [`tests/browser-helpers.
 
 ## Choosing browser coverage
 
-Identify the browser-specific failure and inspect existing journeys before choosing
-fixtures. [Test value and coverage strategy](../../CONTRIBUTING.md#test-value-and-coverage-strategy)
-owns coverage selection and retirement. Preserve real-timing canaries where timing
-is the behavior under test.
+Before adding a journey, identify a distinct, consequential browser-specific
+failure and explain why existing journeys or cheaper unit/DOM tests cannot
+protect it. [Test value and coverage strategy](../../CONTRIBUTING.md#test-value-and-coverage-strategy)
+owns the high-value admission standard, rare exceptions, and active retirement.
+Apply it to journeys encountered during authorized work: remove low- and
+medium-value coverage by default after checking its purpose, dependencies, and
+execution tier, or strengthen/move it when inexpensive high-value protection is
+possible. Nightly placement does not justify weak coverage. Preserve real-timing
+canaries where timing is the behavior under test.
 
 ## Running focused checks
 

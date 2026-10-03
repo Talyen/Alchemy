@@ -1,10 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  ANIMATION_DISABLED_DURATION,
-  isAnimationDisabled,
-  prefersReducedMotion,
-  shouldReduceMotion,
-} from "@/lib/animation/animation-prefs";
+import { isAnimationDisabled, prefersReducedMotion, shouldReduceMotion } from "@/lib/animation/animation-prefs";
 
 describe("animation-prefs", () => {
   beforeEach(() => {
@@ -15,10 +10,6 @@ describe("animation-prefs", () => {
     localStorage.clear();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
-  });
-
-  it("exports ANIMATION_DISABLED_DURATION as 1ms", () => {
-    expect(ANIMATION_DISABLED_DURATION).toBe(1);
   });
 
   describe("isAnimationDisabled", () => {

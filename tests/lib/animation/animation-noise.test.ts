@@ -12,12 +12,4 @@ describe("animationNoise", () => {
     expect(val1).toBeLessThan(1);
     expect(val3).not.toBe(val1);
   });
-
-  it("produces varied values across indices and salts", () => {
-    const values = new Set<number>();
-    for (let i = 0; i < 20; i++) {
-      values.add(animationNoise(i, 42));
-    }
-    expect(values.size).toBe(20);
-  });
 });

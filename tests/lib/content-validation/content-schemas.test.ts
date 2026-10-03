@@ -14,17 +14,6 @@ import {
 // Structural schema rejects with synthetic mutations. Valid catalog entries
 // are the baselines; the clean-catalog gate covers the accept paths.
 describe("content schemas", () => {
-  it("accepts catalog baselines", () => {
-    expect(CardContentSchema.safeParse(cardLibrary[0]).success).toBe(true);
-    expect(EnemyContentSchema.safeParse(enemyBestiary[0]).success).toBe(true);
-    expect(CompanionContentSchema.safeParse(Object.values(companionLibrary)[0]).success).toBe(true);
-    const [traitId, trait] = Object.entries(ENCOUNTER_TRAITS)[0];
-    expect(EncounterTraitContentSchema.safeParse(trait).success).toBe(true);
-    expect(traitId.length).toBeGreaterThan(0);
-    expect(GearDefinitionContentSchema.safeParse(gearDefinitionList[0]).success).toBe(true);
-    expect(GearAffixContentSchema.safeParse(Object.values(gearAffixCatalog)[0]).success).toBe(true);
-  });
-
   it("rejects cards with empty fields or negative cost", () => {
     const base = cardLibrary[0];
     expect(CardContentSchema.safeParse({ ...base, id: "" }).success).toBe(false);

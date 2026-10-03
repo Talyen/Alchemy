@@ -51,7 +51,7 @@ describe("Labyrinth inspector", () => {
     expect(screen.getAllByText("Campfire")).toHaveLength(1);
     fireEvent.click(screen.getByTestId("chamber-art"));
     expect(onEnter).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Rest" }));
+    fireEvent.click(screen.getByRole("button", { name: "Enter" }));
     expect(onEnter).toHaveBeenCalledOnce();
     expect(screen.queryByRole("button", { name: /Close/ })).toBeNull();
   });

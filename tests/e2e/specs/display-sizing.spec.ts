@@ -16,9 +16,10 @@ import { MenuPage } from "../../pages/menu-page";
 import { slow } from "../../playwright-tags";
 import { CONTENT_REFERENCE_VIEWPORT, STAGE_HEIGHT } from "../../../src/lib/game-constants/ui-layout";
 
+// The 1920x1080 baseline is the default Chromium viewport for every other
+// spec, so this loop covers small and ultrawide extremes without re-running it.
 const VIEWPORTS = [
   { width: 1280, height: 720 },
-  { width: 1920, height: 1080 },
   { width: 3440, height: 1440 },
 ];
 

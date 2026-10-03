@@ -127,6 +127,7 @@ Start with the document for your question:
 | How do agents work here?                     | [AGENTS.md](./AGENTS.md), [Optional discovery tools](./Docs/AGENT_DISCOVERY.md), [Local skills](./.agents/skills/README.md)                              |
 
 [Audit guides](./Docs/Audits/README.md) are on-demand review procedures.
+The [October 2026 test value review](./Docs/TEST_VALUE_REVIEW.md) records portfolio classifications and low-value retirements.
 [Plans](./Docs/Plans/README.md), [design studies](./Docs/design/README.md), and
 [agent history](./.agents/history/README.md) retain context; they do not override
 current behavior and workflow owners.

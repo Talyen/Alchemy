@@ -14,7 +14,9 @@ export function isValidDeckIndex(index: number, deckLength: number): boolean {
   return Number.isInteger(index) && index >= 0 && index < deckLength;
 }
 
-export function appendUnique<T>(items: readonly T[], item: T): T[] {
+export function appendUnique<T>(items: T[], item: T): T[];
+export function appendUnique<T>(items: readonly T[], item: T): readonly T[];
+export function appendUnique<T>(items: readonly T[], item: T): readonly T[] {
   return appendUniqueMany(items, [item]);
 }
 
@@ -33,8 +35,11 @@ export function createInstanceId(): string {
   return `id-${Date.now()}-${fallbackInstanceCounter}-${Math.random().toString(36).slice(2) || "0"}`;
 }
 
-export function appendUniqueMany<T>(items: readonly T[], additions: readonly T[]): T[] {
-  if (additions.length === 0) return items as T[];
+// No-op merges retain the original reference and its mutability contract.
+export function appendUniqueMany<T>(items: T[], additions: readonly T[]): T[];
+export function appendUniqueMany<T>(items: readonly T[], additions: readonly T[]): readonly T[];
+export function appendUniqueMany<T>(items: readonly T[], additions: readonly T[]): readonly T[] {
+  if (additions.length === 0) return items;
   const set = new Set(items);
   let changed = false;
   for (const add of additions) {
@@ -43,5 +48,5 @@ export function appendUniqueMany<T>(items: readonly T[], additions: readonly T[]
       changed = true;
     }
   }
-  return changed ? Array.from(set) : (items as T[]);
+  return changed ? Array.from(set) : items;
 }

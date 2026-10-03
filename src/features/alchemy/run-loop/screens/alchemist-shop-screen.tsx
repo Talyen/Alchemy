@@ -1,18 +1,15 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { FlaskConical } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { isStandardPotionCard, type BattleCard } from "@/lib/game-data";
-import { MIXED_POTION_TITLE } from "@/lib/game-constants";
+import { type BattleCard } from "@/lib/game-data";
+import { BrewPotionPanel } from "./brew-potion-panel";
+import { isBrewablePotion, strengthenPotion, type BrewOperation } from "@/lib/alchemist/brewing";
 import { collectionTileWidthClass, getCardInspectionShineColors } from "@/features/alchemy/shared/config";
 
 import { BattleCardButton } from "../../shared/ui/cards/card-button";
 import { PurchasableCardItem } from "../shop/ui/purchasable-shop-item";
-import { SelectableCard } from "../../shared/ui/cards/selectable-card";
-import { CardSelectionGrid } from "../../shared/ui/cards/card-selection-grid";
-import { ScreenDescription } from "../../shared/ui/layout-components";
 import { ServiceButton } from "../shop/ui/service-button";
-import { useCaptureEscapeCancel } from "../../shared/ui/use-modal-escape-dismiss";
 import { GenericShopScreen } from "./generic-shop-screen";
 import { ShopBrowseShell } from "./shop-browse-shell";
 import { FadeSlot } from "../../shared/ui/use-fade";
@@ -31,6 +28,8 @@ export function AlchemistShopScreen({
   onBuyCard,
   onRefresh,
   onMixPotions,
+  onStrengthenPotion,
+  potency,
   onContinue,
 }: {
   gold: number;
@@ -45,58 +44,26 @@ export function AlchemistShopScreen({
   onBuyCard: (card: BattleCard, slotKey: string) => boolean;
   onRefresh: () => void;
   onMixPotions: (indexA: number, indexB: number) => BattleCard | null;
+  onStrengthenPotion: (index: number) => BattleCard | null;
+  potency: number;
   onContinue: () => void;
 }) {
-  const [mix, setMix] = useState<{ step: 0 | 1 | 2; a: number | null; b: number | null; page: number }>({
-    step: 0,
-    a: null,
-    b: null,
-    page: 0,
-  });
+  const [mixMode, setMixMode] = useState(false);
   const [mixedCard, setMixedCard] = useState<BattleCard | null>(null);
-  const mixMode = mix.step > 0;
-
-  function resetSelections() {
-    setMix({ step: 0, a: null, b: null, page: 0 });
-  }
-
-  useCaptureEscapeCancel(mixMode && !mixedCard ? resetSelections : undefined);
-
-  function startMix() {
-    setMix({ step: 1, a: null, b: null, page: 0 });
-  }
-
-  function selectMixCard(index: number) {
-    const card = runDeck[index];
-    if (!card || !isStandardPotionCard(card)) return;
-    if (mix.step === 1) {
-      setMix((s) => ({ ...s, step: 2, a: index }));
-    } else if (mix.step === 2) {
-      if (index === mix.a) {
-        setMix((s) => ({ ...s, step: 1, a: null, b: null }));
-      } else if (index === mix.b) {
-        setMix((s) => ({ ...s, b: null }));
-      } else {
-        setMix((s) => ({ ...s, b: index }));
-      }
-    }
-  }
-
-  function handleMixConfirm() {
-    if (mix.a === null || mix.b === null || gold < mixPrice) return;
-    const result = onMixPotions(mix.a, mix.b);
-    if (result) setMixedCard(result);
-  }
-
-  const mixableCards = useMemo(
-    () => runDeck.map((c, i) => ({ card: c, index: i })).filter(({ card }) => isStandardPotionCard(card)),
-    [runDeck],
-  );
-  const hasEnoughPotionsToMix = mixableCards.length >= 2;
-  const mixDisabled = gold < mixPrice || !hasEnoughPotionsToMix;
-  const mixDisabledMessage = hasEnoughPotionsToMix ? "Not Enough Gold" : "Not Enough Potions to Mix";
+  const mixable = runDeck.filter(isBrewablePotion);
+  const mixDisabled = gold < mixPrice || (mixable.length < 2 && !mixable.some((card) => strengthenPotion(card)));
+  const mixDisabledMessage = gold < mixPrice ? "Not Enough Gold" : "No eligible Potions to brew";
   const modeKey = mixedCard ? "result" : mixMode ? "mix" : "browse";
-
+  function confirm(operation: BrewOperation): BattleCard | null {
+    const result =
+      operation.kind === "combine"
+        ? onMixPotions(...operation.indices)
+        : operation.kind === "strengthen"
+          ? onStrengthenPotion(operation.index)
+          : null;
+    if (result) setMixedCard(result);
+    return result;
+  }
   return (
     <FadeSlot swapKey={modeKey} className="h-full w-full">
       {mixedCard ? (
@@ -105,7 +72,7 @@ export function AlchemistShopScreen({
             <div className="flex flex-col items-center gap-3">
               <BattleCardButton
                 card={mixedCard}
-                ariaLabel={MIXED_POTION_TITLE}
+                ariaLabel={mixedCard.title}
                 shimmerActive={false}
                 shimmerToken={undefined}
                 shineColor={getCardInspectionShineColors(mixedCard)}
@@ -118,7 +85,7 @@ export function AlchemistShopScreen({
                 className="min-w-56"
                 onClick={() => {
                   setMixedCard(null);
-                  resetSelections();
+                  setMixMode(false);
                 }}
               >
                 Continue
@@ -128,39 +95,15 @@ export function AlchemistShopScreen({
         </ShopBrowseShell>
       ) : mixMode ? (
         <ShopBrowseShell title="Alchemist's Shop" gold={gold}>
-          <div>
-            <ScreenDescription className="mb-3">Select two Potions to Combine</ScreenDescription>
-            <CardSelectionGrid
-              items={mixableCards}
-              selectedIndex={mixableCards.findIndex((item) => item.index === (mix.b ?? mix.a))}
-              page={mix.page}
-              onPageChange={(page) => setMix((s) => ({ ...s, page }))}
-              paginationSize="default"
-              paginationReserveSpace
-              renderItem={({ card, index }) => (
-                <SelectableCard
-                  card={card}
-                  chrome="shop"
-                  isSelected={mix.a === index || mix.b === index}
-                  shineColor={getCardInspectionShineColors(card)}
-                  onSelect={() => selectMixCard(index)}
-                />
-              )}
-            />
-            <div className="mt-5 flex justify-center gap-3">
-              <Button size="lg" variant="outline" onClick={resetSelections}>
-                Cancel
-              </Button>
-              <Button
-                size="lg"
-                disabled={mix.a === null || mix.b === null || gold < mixPrice}
-                title={gold < mixPrice ? "Not Enough Gold" : undefined}
-                onClick={handleMixConfirm}
-              >
-                Combine
-              </Button>
-            </div>
-          </div>
+          <BrewPotionPanel
+            deck={runDeck}
+            allowStrengthen
+            price={mixPrice}
+            gold={gold}
+            potency={potency}
+            onConfirm={confirm}
+            onBack={() => setMixMode(false)}
+          />
         </ShopBrowseShell>
       ) : (
         <GenericShopScreen
@@ -178,13 +121,13 @@ export function AlchemistShopScreen({
           extraServices={
             <ServiceButton
               icon={FlaskConical}
-              label="Mix Potions"
+              label="Brew Potion"
               cost={mixPrice}
               disabled={mixDisabled}
               disabledMessage={mixDisabledMessage}
               used={mixUsed}
-              soldOutText="Mix Potions - Sold Out"
-              onClick={startMix}
+              soldOutText="Brew Potion - Used"
+              onClick={() => setMixMode(true)}
             />
           }
           renderItem={(card, price, purchased, onBuy) => (

@@ -20,6 +20,28 @@ const badEffectCard = {
 };
 
 describe("safeParseWithErrors nested card warnings", () => {
+  it("repairs malformed corruption highlights without changing valid positions or the input", () => {
+    const saved = {
+      ...badEffectCard,
+      effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
+      corrupted: true,
+      corruptedValuePositions: [
+        { lineIndex: 0, matchIndex: 5 },
+        null,
+        "invalid",
+        { lineIndex: -1, matchIndex: "invalid" },
+      ],
+    };
+    const before = structuredClone(saved);
+    const result = BattleCardSchema.parse(saved);
+    expect(result.corruptedValuePositions).toEqual([
+      { lineIndex: 0, matchIndex: 5 },
+      { lineIndex: 0, matchIndex: 0 },
+    ]);
+    expect(saved).toEqual(before);
+    expect(BattleCardSchema.parse(result)).toEqual(result);
+  });
+
   it("collects per-card repair notes without failing the parse", () => {
     const result = safeParseWithErrors(BattleCardSchema, badEffectCard);
     expect(result.success).toBe(true);

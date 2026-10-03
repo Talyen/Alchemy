@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   DEFAULT_ARMORY_INVENTORY_FILTERS,
   matchesGearFilters,
@@ -6,8 +6,6 @@ import {
   type ArmoryInventoryFilters,
 } from "@/features/alchemy/meta/screens/armory/armory-inventory-filtering";
 import { getGearInstanceKeywordIds, type GearInstance } from "@/lib/gear";
-import * as gear from "@/lib/gear";
-import * as keywordText from "@/lib/keyword-text";
 import type { TrinketEntry } from "@/lib/game-data";
 
 const sword: GearInstance = {
@@ -22,73 +20,36 @@ const filters = (patch: Partial<ArmoryInventoryFilters>): ArmoryInventoryFilters
   ...DEFAULT_ARMORY_INVENTORY_FILTERS,
   ...patch,
 });
-const equipped = new Set(["sword"]);
 
 describe("Armory inventory matching", () => {
-  it("avoids descriptions and keywords for equipment and rarity browsing", () => {
-    const descriptions = vi.spyOn(gear, "getGearInstanceTooltipEntries");
-    const keywords = vi.spyOn(gear, "getGearInstanceKeywordIds");
-    expect(matchesGearFilters(sword, filters({ equipment: "equipped", search: "  " }), equipped)).toBe(true);
-    expect(matchesGearFilters(sword, filters({ rarities: ["astral"] }), equipped)).toBe(true);
-    expect(matchesGearFilters(sword, filters({ rarities: ["unique"], search: "longsword" }), equipped)).toBe(false);
-    expect(descriptions).not.toHaveBeenCalled();
-    expect(keywords).not.toHaveBeenCalled();
-  });
-
-  it("does not extract Trinket keywords during search-only browsing", () => {
-    const keywords = vi.spyOn(keywordText, "extractKeywordIds");
-    const trinket: TrinketEntry = {
-      id: "charm",
-      title: "Cold Charm",
-      art: "",
-      descriptionLines: ["Gain Block after Freeze."],
-      effects: {},
-    };
-    expect(matchesTrinketFilters(trinket, filters({ search: "freeze charm" }), new Set())).toBe(true);
-    expect(matchesTrinketFilters(trinket, filters({ equipment: "unequipped" }), new Set())).toBe(true);
-    expect(keywords).not.toHaveBeenCalled();
-  });
-
-  it("combines normalized search words, rarity, keywords, and equipment", () => {
+  it("combines normalized search words, rarity, and keywords", () => {
     const criteria = filters({
       search: "  PHYSICAL   longsword ",
       rarities: ["basic", "astral"],
       keywords: ["physical"],
-      equipment: "equipped",
     });
-    expect(matchesGearFilters(sword, criteria, equipped)).toBe(true);
-    expect(matchesGearFilters(sword, { ...criteria, rarities: ["unique"] }, equipped)).toBe(false);
-    expect(matchesGearFilters(sword, criteria, new Set())).toBe(false);
-    expect(matchesGearFilters(sword, { ...criteria, search: "longsword burn" }, equipped)).toBe(false);
+    expect(matchesGearFilters(sword, criteria)).toBe(true);
+    expect(matchesGearFilters(sword, { ...criteria, rarities: ["unique"] })).toBe(false);
+    expect(matchesGearFilters(sword, { ...criteria, search: "longsword burn" })).toBe(false);
   });
 
-  it("keeps the current hero's other equipped slot out of both equipment subsets", () => {
-    expect(matchesGearFilters(sword, filters({ equipment: "equipped" }), equipped, new Set())).toBe(false);
-    expect(matchesGearFilters(sword, filters({ equipment: "unequipped" }), equipped, new Set())).toBe(false);
-    expect(matchesGearFilters(sword, filters({ equipment: null }), equipped, new Set())).toBe(true);
-  });
-
-  it("matches Any or All across affixes without counting base affinities", () => {
-    expect(matchesGearFilters(sword, filters({ keywords: ["physical", "burn"] }), equipped)).toBe(true);
-    expect(matchesGearFilters(sword, filters({ keywords: ["physical", "burn"], keywordMatch: "all" }), equipped)).toBe(
-      false,
-    );
-    expect(
-      matchesGearFilters(sword, filters({ keywords: ["physical", "poison"], keywordMatch: "all" }), equipped),
-    ).toBe(true);
-    expect(matchesGearFilters({ ...sword, affixes: [] }, filters({ keywords: ["physical"] }), equipped)).toBe(false);
+  it("matches any selected affix keyword without counting base affinities", () => {
+    expect(matchesGearFilters(sword, filters({ keywords: ["physical", "burn"] }))).toBe(true);
+    expect(matchesGearFilters(sword, filters({ keywords: ["burn", "freeze"] }))).toBe(false);
+    expect(matchesGearFilters(sword, filters({ keywords: ["physical", "poison"] }))).toBe(true);
+    expect(matchesGearFilters({ ...sword, affixes: [] }, filters({ keywords: ["physical"] }))).toBe(false);
   });
 
   it("searches Unique names, base names, and canonical fixed affixes", () => {
     const unique: GearInstance = { instanceId: "unique", definitionId: "oathkeeper", affixes: [] };
-    expect(matchesGearFilters(unique, filters({ search: "oathkeeper longsword" }), new Set())).toBe(true);
+    expect(matchesGearFilters(unique, filters({ search: "oathkeeper longsword" }))).toBe(true);
     const keywords = getGearInstanceKeywordIds(unique);
     expect(keywords.length).toBeGreaterThan(0);
-    expect(matchesGearFilters(unique, filters({ keywords, keywordMatch: "all" }), new Set())).toBe(true);
-    expect(matchesGearFilters(unique, filters({ search: "physical" }), new Set())).toBe(true);
+    expect(matchesGearFilters(unique, filters({ keywords }))).toBe(true);
+    expect(matchesGearFilters(unique, filters({ search: "physical" }))).toBe(true);
   });
 
-  it("filters Trinket effect keywords and equipment without applying Gear rarity", () => {
+  it("filters Trinket effect keywords without applying Gear rarity", () => {
     const trinket: TrinketEntry = {
       id: "charm",
       title: "Cold Charm",
@@ -99,12 +60,10 @@ describe("Armory inventory matching", () => {
     const criteria = filters({
       search: "freeze charm",
       keywords: ["block", "freeze"],
-      keywordMatch: "all",
       rarities: ["unique"],
-      equipment: "unequipped",
     });
-    expect(matchesTrinketFilters(trinket, criteria, new Set())).toBe(true);
-    expect(matchesTrinketFilters(trinket, criteria, new Set(["charm"]))).toBe(false);
-    expect(matchesTrinketFilters(trinket, { ...criteria, keywords: ["physical"] }, new Set())).toBe(false);
+    expect(matchesTrinketFilters(trinket, criteria)).toBe(true);
+    expect(matchesTrinketFilters(trinket, { ...criteria, keywords: ["freeze", "physical"] })).toBe(true);
+    expect(matchesTrinketFilters(trinket, { ...criteria, keywords: ["physical"] })).toBe(false);
   });
 });

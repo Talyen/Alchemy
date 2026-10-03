@@ -1,3 +1,4 @@
+import { hydrateAlchemyVisit } from "./alchemy-visits";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { ActiveRunDataSchema, type ParsedActiveRunData } from "@/lib/validation";
 
@@ -8,6 +9,8 @@ export function toActiveRunData(parsed: ParsedActiveRunData): ActiveRunData {
   return {
     ...parsed,
     runDeck: parsed.runDeck.map(hydrateCard),
+    campfireState: hydrateAlchemyVisit(parsed.campfireState),
+    transmutationState: hydrateAlchemyVisit(parsed.transmutationState),
     wildwoodDraft: parsed.wildwoodDraft
       ? {
           ...parsed.wildwoodDraft,

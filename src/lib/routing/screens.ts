@@ -20,6 +20,7 @@ export const ROUTE_SCREENS = {
   EQUIPMENT_SHOP: "equipment-shop",
   MYSTERY: "mystery",
   CORRUPTION: "corruption",
+  TRANSMUTATION: "transmutation",
   RUN_VICTORY: "run-victory",
   LABYRINTH_MAP: "labyrinth-map",
   WILDWOOD_REMOVAL: "wildwood-removal",

@@ -42,7 +42,13 @@ export const RUN_SCREEN_SELECTORS = {
     gold: state.runProfile.gold,
     equipmentShopState: readActivityData(state.session.activity, "equipment-shop"),
   }),
+  transmutation: (state: GameplayState) => ({
+    runDeck: selectRunDeck(state),
+    visit: readActivityData(state.session.activity, "transmutation"),
+  }),
   campfire: (state: GameplayState) => ({
+    runDeck: selectRunDeck(state),
+    visit: readActivityData(state.session.activity, "campfire"),
     modifiers: activeLabyrinthBenefits(
       state.run.activeRun.contentSystemType,
       state.session.activeLabyrinthRewardModifiers,

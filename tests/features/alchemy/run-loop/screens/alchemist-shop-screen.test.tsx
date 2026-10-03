@@ -62,15 +62,17 @@ describe("AlchemistShopScreen mix Escape", () => {
         mixPrice={25}
         refreshPrice={15}
         onBuyCard={() => true}
-        onRefresh={() => {}}
+        onRefresh={() => true}
         onMixPotions={onMixPotions}
+        onStrengthenPotion={() => null}
+        potency={0}
         onContinue={() => {}}
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: /Mix Potions/i }));
+    await user.click(screen.getByRole("button", { name: /Brew Potion/i }));
     const [first, second] = await screen.findAllByRole("button", { name: "Select shop card" });
-    const combine = screen.getByRole("button", { name: "Combine" });
+    const combine = screen.getByRole("button", { name: /^Brew(?: ·.*)?$/ });
     await user.click(first!);
     await user.click(second!);
     await user.click(first!);
@@ -79,6 +81,7 @@ describe("AlchemistShopScreen mix Escape", () => {
     await user.click(combine);
     expect(onMixPotions).not.toHaveBeenCalled();
 
+    await user.click(second!);
     await user.click(first!);
     await user.click(combine);
     expect(onMixPotions).toHaveBeenCalledExactlyOnceWith(1, 0);
@@ -101,19 +104,21 @@ describe("AlchemistShopScreen mix Escape", () => {
         mixPrice={25}
         refreshPrice={15}
         onBuyCard={() => true}
-        onRefresh={() => {}}
+        onRefresh={() => true}
         onMixPotions={() => null}
+        onStrengthenPotion={() => null}
+        potency={0}
         onContinue={() => {}}
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: /Mix Potions/i }));
-    expect(await screen.findByText("Select two Potions to Combine")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: /Brew Potion/i }));
+    expect(await screen.findByText("Choose two Potions to replace with one Mixed Potion.")).toBeTruthy();
 
     await user.keyboard("{Escape}");
 
-    expect(await screen.findByRole("button", { name: /Mix Potions/i })).toBeTruthy();
-    expect(screen.queryByText("Select two Potions to Combine")).toBeNull();
+    expect(await screen.findByRole("button", { name: /Brew Potion/i })).toBeTruthy();
+    expect(screen.queryByText("Choose two Potions to replace with one Mixed Potion.")).toBeNull();
     expect(gameMenuHandler).not.toHaveBeenCalled();
 
     window.removeEventListener("keydown", gameMenuHandler);

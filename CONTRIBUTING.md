@@ -34,6 +34,22 @@ unrelated overloaded host can still cause failures: preserve the failed result
 and inspect collection and host resources before retrying or changing timeouts.
 Implementation: [local test lane](./scripts/lib/verification/local-test-lane.mjs).
 
+### Agent preview ownership
+
+For an authorized interactive browser review, use one uniquely named session per
+task and reuse it for navigation, reloads, and captures. Record its session name
+and owner; close it on completion, failure, and cancellation, and verify that its
+browser processes exited. A successful close request alone is insufficient when
+the browser is unresponsive. Preserve the session identity and report failed
+cleanup instead of opening additional replacement sessions. Never close all
+sessions, kill unrelated browsers, or reclaim an active session based on age.
+
+One-shot Playwright/Electron runs use the existing managed command and test-lane
+cleanup; do not replace them with detached browser daemons. The Alchemy test lane
+does not reserve memory against Lantern previews or Trinket builds. When another
+repo is running an expensive inspection and memory pressure is high, finish or
+close the owned inspection before admitting another; source editing can continue.
+
 DOM suites use [the JSDOM environment](./tests/jsdom-environment.ts), which
 temporarily removes Node storage descriptors before browser globals are installed
 and restores them during teardown. JSDOM owns both local and session storage;
@@ -55,21 +71,37 @@ Set `ALCHEMY_VERIFY_FRESH=1` for fresh local observations, including nondetermin
 
 ## Test value and coverage strategy
 
-Prefer fewer, higher-value tests that detect meaningful failures and remain affordable to maintain and run. Judge coverage by distinct failure risks, assertion strength, diagnostic usefulness, runtime, and upkeep. Test counts and coverage percentages are not improvement targets; existing configured gates still apply.
+Add permanent tests for high-value protection by default. Add low- or medium-value tests only as rare exceptions with a concrete justification. Judge value by the failure detected, its consequence, assertion strength, distinct protection, diagnostic usefulness, runtime, and upkeep. Test counts and coverage percentages are not improvement targets; existing configured gates still apply.
 
-Before adding coverage, inspect nearby tests and shared validation. Retain or improve an existing assertion when it already protects the behavior; adding no test is valid when the change has adequate protection or no consequential automated-test risk. A bug fix or audit finding does not automatically require a new test. Add coverage when a meaningful risk lacks trustworthy protection, at the cheapest layer that can actually detect it.
+- **High-value:** detects a concrete, consequential failure, asserts the behavior strongly enough to catch it, and adds distinct protection at a justified maintenance and execution cost. Examples include incorrect combat outcomes, lost or duplicated progress, blocked interactions, broken save/resume, and violated architectural contracts.
+- **Medium-value:** tests real behavior but has limited consequences, substantial overlap, or disproportionate setup and upkeep.
+- **Low-value:** checks incidental details, repeats implementation, or provides little credible defect detection.
 
-- **Mechanics and content:** prefer fast engine tests for combat rules, effect ordering, and consequential interactions. Use shared invariant/content validation for common contracts, with representative cases and meaningful boundaries. Do not enumerate every card, talent, effect, numeric variant, or combination merely because it exists.
-- **Components and hooks:** test meaningful interaction and orchestration outcomes. Avoid duplicating engine arithmetic, incidental markup, styling tables, and private implementation details.
-- **Browser journeys:** protect representative core flows, integration wiring, real timing, layout, focus, and persistence across reloads when a browser is needed to establish correctness. Per-mechanic UI/E2E coverage is not a goal. Similar assertions at different layers can protect different risks.
+Before adding coverage, identify the plausible failure and inspect nearby tests and shared validation. Prefer strengthening an existing assertion when that closes the gap; otherwise choose the cheapest layer that can actually detect the failure. Adding no test is valid when existing protection is adequate or the remaining risk does not justify permanent coverage. A changed function, bug fix, audit finding, content variant, or uncovered line does not automatically require a new test.
 
-Consolidate, streamline, move to a cheaper layer, or delete tests encountered within the task's scope when justified; separate permission and one-for-one replacements are unnecessary. This includes redundant, obsolete, brittle implementation-detail, and unique low-value tests whose limited protection does not justify their cost. For overlap, identify the surviving protection; for unique coverage retired, briefly explain the risk accepted and maintenance tradeoff. Diagnose failures before retirement: never delete or weaken a test simply to hide a product defect or obtain a green gate. Preserve meaningful protection for known regressions, save compatibility, critical journeys, and architectural boundaries, while allowing better tests to replace their existing form.
+Evidence that a fix works and permanent regression coverage are separate decisions. Existing assertions, a focused reproduction, or source inspection can provide evidence where justified; report material limits of that evidence. For a rare low- or medium-value addition, explain the specific benefit and why stronger or cheaper protection is unavailable. No numeric scoring or separate approval is required.
 
-Keep scenarios focused and failures diagnosable. Combining unrelated checks into a giant journey or parameterized matrix does not improve value merely by reducing test declarations. Share fixtures where they preserve a common invariant or prevent drift; keep scenario-specific setup clear. Local cleanup is encouraged, not a requirement to audit the entire suite during every task.
+| Layer         | Usually high-value                                                                                                         | Usually decline                                                                                                                   |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Engine/unit   | Consequential combat interactions; save reconciliation that prevents progress loss; shared content invariants              | Trivial wrappers; repeated numeric or content variants; checks already guaranteed by types                                        |
+| Component/DOM | An interaction dispatches the correct command and handles a consequential failure                                          | Incidental markup or CSS classes; duplicated engine arithmetic behind mocks                                                       |
+| Browser/E2E   | Reload preserves progress; actual keyboard focus permits continued play; real animation timing or integration wiring works | Per-card mechanics journeys already protected by engine tests; duplicated screen smoke; cosmetic variants without a concrete risk |
+
+These examples are contextual: exact values and layout assertions can be high-value when they protect the actual contract. Similar assertions at different layers can protect distinct failures. Use representative cases and meaningful boundaries rather than enumerating every card, talent, effect, or combination.
+
+### Active test retirement
+
+Evaluate tests read, modified, or diagnosed during authorized work. Remove encountered low- and medium-value tests by default after checking their purpose and dependencies; retaining a borderline test requires a concrete reason. Unique coverage alone does not require retention or replacement. When an inexpensive change can provide high-value protection, strengthen the test or move it to a cheaper layer instead.
+
+Before retirement, check why the test exists, including known regressions, distinct integration risks, and execution tiers. Diagnose failures first: never delete or weaken a test simply to hide a product defect or obtain a green gate. Preserve trustworthy protection for consequential known regressions, save compatibility, critical journeys, and architectural boundaries; their existing test form is not sacred.
+
+No separate permission or one-for-one replacement is required. For material coverage changes, briefly report protection added or reused, justified exceptions or borderline retention, and protection retired. For overlap, identify surviving protection; for unique coverage retired, explain the specific risk accepted and maintenance tradeoff. Avoid scoring forms and routine essays.
+
+Keep cleanup within tests encountered during authorized work; do not turn every task into a suite-wide audit. Keep scenarios focused and failures diagnosable. Combining unrelated checks into a giant journey or parameterized matrix does not improve value merely by reducing test declarations. Share fixtures where they preserve a common invariant or prevent drift; keep scenario-specific setup clear.
 
 For exhaustive orchestration checks such as the affix sweep, retain the scenario coverage while collecting invariant violations into a total and bounded, scenario-specific examples. Avoid thousands of identical matcher calls. Test-local timeouts are failure ceilings, not performance targets; reproduce a slowdown with the full unit suite running separately from browser work before changing global workers, timeouts, or gameplay.
 
-When removing or moving suites, update maintained references and explicit gate selections to match the surviving protection. Include deleted paths in verification scope; changed unit files that no longer exist are not executed, but their route escalations remain. For consolidation, also select the surviving test files; for retirement without replacement, run applicable gates and report material lost protection. Use timing and coverage reports as evidence when useful, without inventing quotas, mandatory measurements, or automatic threshold ratcheting.
+When removing or moving tests, remove support code made unused by retirement and update maintained references and explicit gate selections to match the surviving protection. Include deleted paths in verification scope; changed unit files that no longer exist are not executed, but their route escalations remain. For consolidation, also select the surviving test files; for retirement without replacement, run applicable gates and report material lost protection. Use timing and coverage reports as evidence when useful, without inventing quotas, mandatory measurements, or automatic threshold ratcheting.
 
 CLI tests that create package or release artifacts must use temporary project roots,
 including the script dependency closure and output directories. Never create or

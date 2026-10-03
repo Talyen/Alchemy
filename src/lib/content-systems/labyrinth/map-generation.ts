@@ -37,6 +37,7 @@ function plannedTypes(count: number, rng: () => number, lootDepth: number): Laby
     "mystery",
     "rest",
     "corruption",
+    "transmutation",
     "shop",
     "alchemist",
     "trinket-shop",

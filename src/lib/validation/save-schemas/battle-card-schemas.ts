@@ -18,11 +18,10 @@ function parseSavedEffectList(values: unknown[]): {
 }
 
 function cloneSavedDescriptionLines(values: unknown[]): { values: string[] | null; errors: ValidationError[] } {
-  const allStrings = values.every((line) => typeof line === "string");
-  if (!allStrings) {
+  if (!values.every((line) => typeof line === "string")) {
     return { values: null, errors: [{ path: "descriptionLines", message: "contained non-string values" }] };
   }
-  return { values: [...values] as string[], errors: [] };
+  return { values: [...values], errors: [] };
 }
 
 export { BattleCardEffectSchema };
@@ -41,6 +40,7 @@ export const BattleCardSchema = z
     cost: z.number().catch(-1),
     consume: z.boolean().optional(),
     corrupted: z.boolean().optional(),
+    brewed: z.boolean().optional(),
     corruptedValuePositions: z
       .array(
         z
@@ -58,17 +58,7 @@ export const BattleCardSchema = z
   .transform((saved) => {
     const described = cloneSavedDescriptionLines(saved.descriptionLines);
     const effects = parseSavedEffectList(saved.effects);
-    const corruptedValuePositions = Array.isArray(saved.corruptedValuePositions)
-      ? saved.corruptedValuePositions.filter(
-          (p): p is { lineIndex: number; matchIndex: number } =>
-            p !== null &&
-            typeof p === "object" &&
-            Number.isInteger(p.lineIndex) &&
-            Number.isInteger(p.matchIndex) &&
-            p.lineIndex >= 0 &&
-            p.matchIndex >= 0,
-        )
-      : undefined;
+    const corruptedValuePositions = saved.corruptedValuePositions?.filter((position) => position !== null);
     const cost = Number.isInteger(saved.cost) && saved.cost >= 0 ? saved.cost : -1;
     const result = {
       id: saved.id,
@@ -79,6 +69,7 @@ export const BattleCardSchema = z
       effects: effects.values,
       ...(saved.uid !== undefined ? { uid: saved.uid } : {}),
       ...(saved.consume !== undefined ? { consume: saved.consume } : {}),
+      ...(saved.brewed !== undefined ? { brewed: saved.brewed } : {}),
       ...(saved.corrupted !== undefined ? { corrupted: saved.corrupted } : {}),
       ...(saved.baseTitle !== undefined ? { baseTitle: saved.baseTitle } : {}),
       ...(corruptedValuePositions && corruptedValuePositions.length > 0 ? { corruptedValuePositions } : {}),

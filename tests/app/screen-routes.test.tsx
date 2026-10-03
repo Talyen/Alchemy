@@ -41,6 +41,10 @@ vi.mock("@/features/alchemy/run-loop/screens/run-end-screen", () => ({
   RunEndScreen: ({ title }: { title: string }) => <div data-testid="run-end-screen">{title}</div>,
 }));
 
+vi.mock("@/features/alchemy/run-loop/screens/transmutation-screen", () => ({
+  TransmutationScreen: () => <div data-testid="transmutation-screen" />,
+}));
+
 vi.mock("@/app/app-screen-chrome-context", () => ({
   useAppScreenChrome: () => ({
     characterId: "knight",

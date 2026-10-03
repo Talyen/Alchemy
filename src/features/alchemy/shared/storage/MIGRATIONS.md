@@ -197,3 +197,9 @@ progress import, separate cloud filenames and initialization receipts are owned
 by [Steam demo](../../../../../Docs/STEAM_DEMO.md). Receipts survive Clear Save Data;
 no active run or full-Campaign win credit is imported. Public demo carryover freezes
 the supported baseline just like a full release; never retire promised progress.
+
+## Alchemy visit and reaction additions
+
+Current saves include optional Campfire/Transmutation visit records with fixed offers, original/result cards, and completion. Missing records default to null and initialize on first entry; existing records survive resume without rerolling or repeated grants. Saved cards retain optional `brewed` metadata so transformations remain ineligible after hydration.
+
+Battle flags include `shatterUsed` and `wildfireUsed`, defaulting to false through the canonical flag definitions and resetting each player turn. Current snapshots preserve spent opportunities across reload. These compatible additive defaults do not require a schema-version bump.

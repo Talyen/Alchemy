@@ -2,6 +2,7 @@ import type { TrinketEntry } from "@/lib/game-data";
 import {
   GEAR_SLOTS,
   gearDefinitions,
+  gearBaseItems,
   getGearInstanceTitle,
   type ArmorySlot,
   type GearInstance,
@@ -11,7 +12,7 @@ import {
 
 export const ARMORY_PAGE_SIZE = 6;
 
-export type ArmorySortOption = "rarity" | "name" | "name-desc";
+export type ArmorySortOption = "rarity" | "name" | "base-type";
 
 const RARITY_RANK: Record<GearRarity, number> = {
   unique: 0,
@@ -29,26 +30,33 @@ export interface ArmoryOrderRow {
   id: string;
   title: string;
   rank: number;
+  baseType: string;
 }
 
 export function gearOrderRow(instance: GearInstance): ArmoryOrderRow {
-  return { id: instance.instanceId, title: getGearInstanceTitle(instance), rank: getGearRarityRank(instance) };
+  const definition = gearDefinitions[instance.definitionId];
+  return {
+    id: instance.instanceId,
+    title: getGearInstanceTitle(instance),
+    rank: getGearRarityRank(instance),
+    baseType: definition ? (gearBaseItems[definition.baseItemId]?.displayName ?? "") : "",
+  };
 }
 
 export function trinketOrderRow(entry: TrinketEntry): ArmoryOrderRow {
-  return { id: entry.id, title: entry.title, rank: 0 };
+  return { id: entry.id, title: entry.title, rank: 0, baseType: "" };
 }
 
 export function compareOrderRows(a: ArmoryOrderRow, b: ArmoryOrderRow, sort: ArmorySortOption): number {
   const rankCompare = a.rank - b.rank;
   if (sort === "rarity" && rankCompare !== 0) return rankCompare;
-  const titleCompare = a.title.localeCompare(b.title);
-  if (sort === "name" || sort === "name-desc") {
-    if (titleCompare !== 0) return sort === "name-desc" ? -titleCompare : titleCompare;
-    if (rankCompare !== 0) return rankCompare;
-  } else {
-    if (titleCompare !== 0) return titleCompare;
+  if (sort === "base-type") {
+    const baseCompare = a.baseType.localeCompare(b.baseType);
+    if (baseCompare !== 0) return baseCompare;
   }
+  const titleCompare = a.title.localeCompare(b.title);
+  if (titleCompare !== 0) return titleCompare;
+  if (rankCompare !== 0) return rankCompare;
   return a.id.localeCompare(b.id);
 }
 

@@ -25,6 +25,7 @@ export {
   abandonCorruptionDestinationVisit,
   abandonLabyrinthCorruptionVisit,
   abandonMysteryDestinationVisit,
+  setAlchemyVisit,
   beginDestinationClaim,
   beginRewardClaim,
   cancelDestinationClaim,

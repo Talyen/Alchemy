@@ -132,14 +132,14 @@ describe("useArmoryOrdering", () => {
     act(() => result.current.setFilters({ ...DEFAULT_ARMORY_INVENTORY_FILTERS, search: "hatchet" }));
     expect(result.current.pagedGear.map((item) => item.instanceId)).toEqual(["hatchet-b1"]);
     expect(result.current.orderedGear.map((item) => item.instanceId)).toEqual(before);
-    act(() => result.current.onSort("name-desc"));
+    act(() => result.current.onSort("base-type"));
     expect(result.current.pagedGear.map((item) => item.instanceId)).toEqual(["hatchet-b1"]);
     act(() => result.current.setFilters(DEFAULT_ARMORY_INVENTORY_FILTERS));
     expect(result.current.orderedGear.map((item) => item.instanceId)).toEqual([
-      "sword-unique",
-      "sword-b1",
       "hatchet-b1",
       "sword-astral",
+      "sword-b1",
+      "sword-unique",
     ]);
   });
 
@@ -153,16 +153,16 @@ describe("useArmoryOrdering", () => {
       }),
     );
     act(() => {
-      result.current.onSort("name-desc");
+      result.current.onSort("base-type");
       result.current.setFilters({ ...DEFAULT_ARMORY_INVENTORY_FILTERS, search: "hatchet" });
     });
     expect(result.current.pagedGear.map((item) => item.instanceId)).toEqual(["hatchet-b1"]);
     act(() => result.current.setFilters(DEFAULT_ARMORY_INVENTORY_FILTERS));
     expect(result.current.orderedGear.map((item) => item.instanceId)).toEqual([
-      "sword-unique",
-      "sword-b1",
       "hatchet-b1",
       "sword-astral",
+      "sword-b1",
+      "sword-unique",
     ]);
   });
 

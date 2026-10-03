@@ -1,4 +1,6 @@
 export const FLAG_DEFINITIONS = {
+  shatterUsed: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
+  wildfireUsed: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   hawkEyeReady: { default: false as const, secondaryValue: null, lifetime: "until-consumed" },
   killRewardsPaid: { default: false as const, secondaryValue: null, lifetime: "combat" },
   nextHolyCardFree: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },

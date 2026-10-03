@@ -27,11 +27,7 @@ import { ArmoryCharacterTabs, ArmoryOverlays, type ArmoryScreenProps } from "./a
 import { ArmoryEquipmentPanel } from "./armory/armory-equipment-panel";
 import { ArmoryFeedback } from "./armory/armory-feedback";
 import { COMBAT_LOCKED_MESSAGE } from "./armory/armory-item-state";
-import {
-  getArmoryEquippedGearIds,
-  getArmoryEquippedTrinketIds,
-  type ArmoryInventoryFilters,
-} from "./armory/armory-inventory-filtering";
+import type { ArmoryInventoryFilters } from "./armory/armory-inventory-filtering";
 import type { ArmorySortOption } from "./armory/armory-ordering";
 import { ArmoryPickerPanel } from "./armory/armory-picker-panel";
 import { applyCurrencyToGear, itemsMatchingSlot } from "./armory/armory-screen-actions";
@@ -88,17 +84,11 @@ export function ArmoryScreen({
   const equippedTrinketId = equippedTrinkets[characterId];
   const equippedTrinket = equippedTrinketId ? trinketById[equippedTrinketId] : undefined;
 
-  const equippedGearIds = useMemo(() => getArmoryEquippedGearIds(loadouts), [loadouts]);
-  const otherHeroGearIds = useMemo(() => getArmoryEquippedGearIds(loadouts, characterId), [loadouts, characterId]);
-  const equippedTrinketIds = useMemo(() => getArmoryEquippedTrinketIds(equippedTrinkets), [equippedTrinkets]);
   const ordering = useArmoryOrdering({
     characterId,
     selectedSlot,
     pickerItems,
     ownedTrinkets,
-    equippedGearIds,
-    equippedTrinketIds,
-    otherHeroGearIds,
   });
 
   const {

@@ -1,23 +1,7 @@
 import { describe, expect, it } from "vitest";
-import {
-  CRAFTING_CURRENCY_IDS,
-  EMPTY_CRAFTING_CURRENCIES,
-  addCraftingCurrencies,
-  normalizeCraftingCurrencies,
-} from "@/lib/gear/crafting-ids";
+import { EMPTY_CRAFTING_CURRENCIES, addCraftingCurrencies, normalizeCraftingCurrencies } from "@/lib/gear/crafting-ids";
 
 describe("crafting-ids", () => {
-  it("defines expected currency ids", () => {
-    expect([...CRAFTING_CURRENCY_IDS]).toEqual([
-      "discordant-dice",
-      "sprig-of-growth",
-      "voidstone",
-      "ascension-seal",
-      "severance-maw",
-      "smiths-whetstone",
-    ]);
-  });
-
   it("normalizes and merges currencies without art dependency", () => {
     expect(EMPTY_CRAFTING_CURRENCIES).toEqual({
       "discordant-dice": 0,

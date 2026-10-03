@@ -1,3 +1,4 @@
+import { emptyAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
 import { runActivityScreen, transitionRunActivity } from "@/lib/active-run-session";
 import { BATTLE_CARD_EFFECT_KINDS } from "@/lib/game-data/effects/registry";
 import { DAMAGE_TYPES } from "@/lib/game-data/types";
@@ -39,7 +40,7 @@ describe("exhaustive switch coverage", () => {
 
   it("maps every gameplay screen to an activity and preserves it across menu navigation", () => {
     for (const screen of ROUTE_SCREEN_VALUES) {
-      const next = transitionRunActivity({ kind: "campfire" }, screen);
+      const next = transitionRunActivity({ kind: "campfire", data: emptyAlchemyVisit() }, screen);
       expect(runActivityScreen(next), screen).toBe(isRunResumeScreen(screen) ? screen : "campfire");
     }
   });

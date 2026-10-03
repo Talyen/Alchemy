@@ -31,7 +31,7 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
         descend: fn(),
       },
       rewards: { skip: fn(), claimChoice: fn() },
-      destinations: { prepare: fn(), choose: fn(), continueCampfire: fn() },
+      destinations: { prepare: fn(), choose: fn(), continueCampfire: fn(), rest: fn(), brew: fn() },
       wildwood: { removeCard: fn(), skipRemoval: fn() },
       shop: {
         continue: fn(),
@@ -47,6 +47,7 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
           buyPotion: fn(),
           refresh: fn(),
           mixPotions: fn(),
+          strengthenPotion: fn(),
           getPotionBuyPrice: fn(),
           getMixPrice: fn(),
           getRefreshPrice: fn(),
@@ -66,6 +67,7 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
       },
       mystery: { handleChoice: fn(), handleChooseCard: fn(), handleContinue: fn() },
       corruption: { handleCorruptCard: fn(), handleExit: fn() },
+      transmutation: { exchange: fn(), continue: fn() },
     },
     battle: {
       screen: "battle",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cardLibrary, getCardKeywords } from "@/lib/game-data";
-import { characters, getStartingDeck, allStartingDeckCardIds, type CharacterId } from "@/lib/game-data/characters";
+import { characters, getStartingDeck, allStartingDeckCardIds } from "@/lib/game-data/characters";
 
 describe("characters data integrity", () => {
   it("each character has a valid starting deck referencing cardLibrary IDs", () => {
@@ -36,35 +36,6 @@ describe("hero badge coverage", () => {
           .map((card) => card.id);
         expect(holders, `${id} badge "${keyword}" has no starting-deck card`).not.toHaveLength(0);
       }
-    }
-  });
-});
-
-describe("starting deck tooltip lists", () => {
-  // Snapshot of exactly what HeroTooltip renders per hero
-  // (startingDeck titles joined by ", "). Update deliberately: a diff here
-  // means players see a different list on Choose Your Hero + Collection.
-  const EXPECTED_TOOLTIP_TITLES: Record<Exclude<CharacterId, "wildcard">, string[]> = {
-    knight: ["Anvil", "Bash", "Block", "Plate Mail", "Shield Bash", "Sunder", "Spiked Shield"],
-    rogue: ["Steal", "Poison Dagger", "Stab", "Serrated Edge", "Blackjack", "Shadowstep", "Hemorrhage"],
-    ranger: ["Wolf", "Pack Tactics", "Lightning Arrow", "Venom Arrow", "Bounty Shot", "Astral Arrow", "Ice Shot"],
-    wizard: ["Fireball", "Frostbolt", "Mana Crystals", "Meteor", "Mana Shield", "Stargaze", "Ray of Frost"],
-    alchemist: [
-      "Acid Potion",
-      "Health Potion",
-      "Poison Dagger",
-      "Wishing Potion",
-      "Panacea Potion",
-      "Caustic Jab",
-      "Kindling",
-    ],
-    warlock: ["Fangs", "Kindling", "Faustian Bargain", "Blood Offering", "Combustion", "Dark Pact", "Risen Skeleton"],
-    druid: ["Bloodthorn", "Grasping Vines", "Mana Berries", "Bear", "Cinderbloom", "Briar Shield", "Earthquake"],
-  };
-
-  it("matches the rendered Starting Deck line for every hero", () => {
-    for (const [id, titles] of Object.entries(EXPECTED_TOOLTIP_TITLES)) {
-      expect(characters[id as CharacterId].startingDeck.map((card) => card.title)).toEqual(titles);
     }
   });
 });

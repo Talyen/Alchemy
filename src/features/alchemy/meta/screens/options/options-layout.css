@@ -42,3 +42,16 @@
 .options-settings-toggle {
   flex-wrap: nowrap;
 }
+
+/* Action buttons need only their own width; descriptions use the remaining space. */
+.options-settings-action .options-settings-label {
+  flex: 1 1 calc(20 * var(--content-rem));
+}
+
+.options-settings-action .options-settings-control {
+  flex: 0 1 auto;
+}
+
+.options-settings-action .options-settings-description {
+  text-wrap: wrap;
+}

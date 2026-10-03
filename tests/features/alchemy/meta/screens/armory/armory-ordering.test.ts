@@ -66,6 +66,18 @@ describe("armory-ordering", () => {
       ]);
     });
 
+    it("groups Unique and ordinary gear by base type before displayed name, rarity, and ID", () => {
+      const rows = [uniqueSword, basicSwordB, basicHatchet, astralSword, basicSwordA].map(gearOrderRow);
+      expect(rows.find((row) => row.id === uniqueSword.instanceId)?.baseType).toBe("Longsword");
+      expect(rows.sort((a, b) => compareOrderRows(a, b, "base-type")).map((row) => row.id)).toEqual([
+        "hatchet-basic-1",
+        "sword-astral-1",
+        "sword-basic-a",
+        "sword-basic-b",
+        "sword-unique-1",
+      ]);
+    });
+
     it("sorts trinkets by title A-Z, then ID tie-breaker", () => {
       const trinketA: TrinketEntry = {
         id: "trinket-a",
@@ -98,10 +110,10 @@ describe("armory-ordering", () => {
     it("preserves surviving order, removes missing IDs, and appends newly available rows deterministically", () => {
       const currentIds = ["item-2", "item-1", "item-removed"];
       const rows = [
-        { id: "item-1", title: "Zebra", rank: 0 },
-        { id: "item-2", title: "Alpha", rank: 0 },
-        { id: "item-3", title: "Beta", rank: 0 },
-        { id: "item-4", title: "Apple", rank: 0 },
+        { id: "item-1", title: "Zebra", rank: 0, baseType: "" },
+        { id: "item-2", title: "Alpha", rank: 0, baseType: "" },
+        { id: "item-3", title: "Beta", rank: 0, baseType: "" },
+        { id: "item-4", title: "Apple", rank: 0, baseType: "" },
       ];
 
       const reconciled = reconcileOrder(currentIds, rows);

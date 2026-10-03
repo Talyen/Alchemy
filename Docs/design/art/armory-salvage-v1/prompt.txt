@@ -1,0 +1,12 @@
+Generated with the built-in image_gen tool on October 2, 2026.
+Production master: Raw Assets/Crafting/Salvage.png (1254 x 1254).
+Prepared asset: src/assets/optimized/armory-salvage.webp (420 x 420).
+The Salvage button shares the crafting currencies' armory-currency-art sizing.
+
+Use case: stylized-concept
+Asset type: square fantasy deckbuilder Armory Salvage action icon.
+Primary request: Show the action of dismantling unwanted gear: a heavy smith's hammer striking a cracked, worn steel shoulder armor plate, splitting it into a few clearly visible metal scraps. The hammer is diagonally raised into the strike with a short graphic motion streak and a small bright impact burst. This must read as breaking down equipment, not a collectible currency.
+Style/medium: bold hand-painted fantasy game illustration, chunky angular facets, strong near-black outlines, crisp silhouette, restrained texture, warm amber edge highlights on cool gray steel and brown wood. Match polished fantasy crafting icon art.
+Scene/backdrop: opaque charcoal-black vignette, minimal, no detailed environment.
+Composition/framing: exact square 1:1 canvas, centered compact action composition filling most of the square with safe margins, readable at 80 pixels, hammer and broken armor are the dominant shapes.
+Constraints: no text, no letters, no numbers, no border, no badge, no coin, no gem, no orb, no currency pile, no people or hands, no watermark. One cohesive image.

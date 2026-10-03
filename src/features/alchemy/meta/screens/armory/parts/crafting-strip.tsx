@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import { Trash2 } from "lucide-react";
+import { armorySalvageArt } from "@/lib/game-data/assets";
 import { CRAFTING_CURRENCY_LIST, type CraftingCurrencyId } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { sectionTitleClass, surfaceSelectedRingClass } from "../../../../shared/config";
@@ -47,7 +47,7 @@ export function CraftingStrip({
           aria-pressed={salvageMode}
           disabled={!editable || (!hasSalvageableGear && !salvageMode)}
           className={cn(
-            "relative flex h-20 w-20 flex-col items-center justify-center gap-1 overflow-hidden rounded-xl border border-border/80 bg-black text-red-300 transition-[color,background-color,border-color,box-shadow] duration-150 enabled:hover:border-red-400/80 enabled:hover:text-red-200 enabled:active:bg-red-950/30",
+            "armory-currency-art relative block overflow-hidden rounded-xl border border-border/80 bg-black text-red-300 transition-[color,background-color,border-color,box-shadow] duration-150 enabled:hover:border-red-400/80 enabled:hover:text-red-200 enabled:active:bg-red-950/30",
             salvageMode && surfaceSelectedRingClass,
             (!editable || (!hasSalvageableGear && !salvageMode)) && "cursor-default opacity-50",
           )}
@@ -57,8 +57,8 @@ export function CraftingStrip({
             onToggleSalvageMode();
           }}
         >
-          <Trash2 className="h-8 w-8" />
-          <span className="text-xs">Salvage</span>
+          <img src={armorySalvageArt} alt="" className="h-full w-full object-cover" />
+          <span className="absolute inset-x-0 bottom-0 bg-black/70 py-1 text-xs">Salvage</span>
         </button>
       </div>
     </div>

@@ -28,6 +28,8 @@ Map important failure modes to their current tests before adding or deleting cov
 
 For flake, inspect failure artifacts and distinguish a product race from timing, isolation, fixture, or environment problems. Reproduce the suspect scenario and relevant ordering or concurrency conditions; an isolated pass does not prove a parallel failure fixed. Never weaken an assertion or add retries just to hide the failure.
 
+Use the shared high-, medium-, and low-value definitions when evaluating additions and retention. Remove encountered low- and medium-value tests by default after checking their purpose and dependencies, or strengthen/move them when inexpensive high-value protection is possible. Unique coverage alone does not require retention or replacement; justify borderline retention and report material accepted risks.
+
 For overlapping tests, compare the failure mode, layer, and CI tier of the surviving assertion. Prioritize false confidence in critical behavior and blocked verification over redundant assertions or naming; apply the shared policy when retiring coverage.
 
 Verify changed tests detect the intended failure and pass on correct behavior. For runtime or flake claims, compare the same scenario and report repetitions and conditions; bounded success is evidence, not a guarantee of zero flakes.
@@ -36,7 +38,7 @@ Verify changed tests detect the intended failure and pass on correct behavior. F
 
 - **Ownership:** battle/effects → `tests/lib/battle`, `tests/lib/game-data`; gear → `tests/lib/gear` + store tests; saves/migrations → storage + `tests/architecture/`; orchestration → stores/shell/navigation tests. Reuse page objects (`tests/pages/`) and helpers; introduce support abstractions only when they clarify a real interaction or invariant.
 - **Quality:** assert outcomes (HP deltas, events, reloaded save shape), not implementation details or log fingerprints; no "function exists" assertions; no soft-fails; seeded RNG for battle edges; reuse corrupt/partial save fixtures.
-- **Allowed E2E fixes:** consolidate or retire low-value journeys under the shared test value policy; add missing critical journeys; shorten waits after deterministic bootstrap; place journeys in the configured tiers without copying them solely for scheduling; stable roles/test ids over text/index hunts; repair isolation; improve diagnostics.
+- **Allowed E2E fixes:** actively retire low- and medium-value journeys under the shared test value policy; add missing high-value critical journeys; shorten waits after deterministic bootstrap; place journeys in the configured tiers without copying them solely for scheduling; stable roles/test ids over text/index hunts; repair isolation; improve diagnostics.
 
 ## Known signals
 

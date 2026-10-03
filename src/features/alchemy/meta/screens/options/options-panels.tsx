@@ -116,7 +116,7 @@ export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps 
 
 export function AudioOptionsPanel({ audio }: { audio: AudioOptionsProps }) {
   return (
-    <SettingsSection>
+    <SettingsSection title="Audio">
       <SettingsSlider
         label="Overall Volume"
         value={audio.masterVolume}
@@ -149,7 +149,7 @@ export function AudioOptionsPanel({ audio }: { audio: AudioOptionsProps }) {
 
 export function GameplayOptionsPanel({ gameplay }: { gameplay: GameplayOptionsProps }) {
   return (
-    <SettingsSection>
+    <SettingsSection title="Battle">
       <SettingsToggle label="Auto-End Turn" checked={gameplay.autoEndTurn} onChange={gameplay.onAutoEndTurnChange} />
       <SettingsToggle
         label="Remember Auto-Battle Preference"
@@ -162,7 +162,7 @@ export function GameplayOptionsPanel({ gameplay }: { gameplay: GameplayOptionsPr
 
 function SaveDataOptionsPanel({ saveData }: { saveData: SaveDataOptionsProps }) {
   return (
-    <SettingsSection>
+    <SettingsSection title="Reset & Save Data">
       <SettingsAction label="Options" description="Reset all options to default values">
         <Button variant="outline" onClick={saveData.onResetOptions}>
           Reset to Default

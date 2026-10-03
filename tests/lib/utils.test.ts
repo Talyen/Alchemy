@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 import {
   appendUnique,
   appendUniqueMany,
@@ -136,6 +136,19 @@ describe("appendUnique", () => {
 });
 
 describe("appendUniqueMany", () => {
+  it("retains the base reference for no-op merges, including frozen inputs", () => {
+    const base = Object.freeze(["a", "b"]);
+    expect(appendUniqueMany(base, [])).toBe(base);
+    expect(appendUniqueMany(base, ["b", "a", "b"])).toBe(base);
+    expect(appendUnique(base, "a")).toBe(base);
+    expect(appendUniqueMany(base, ["b", "c", "c"])).toEqual(["a", "b", "c"]);
+    expect(base).toEqual(["a", "b"]);
+    expectTypeOf(appendUniqueMany(base, [])).toEqualTypeOf<readonly string[]>();
+    expectTypeOf(appendUnique(base, "a")).toEqualTypeOf<readonly string[]>();
+    expectTypeOf(appendUniqueMany(["a"], ["b"])).toEqualTypeOf<string[]>();
+    expectTypeOf(appendUnique(["a"], "b")).toEqualTypeOf<string[]>();
+  });
+
   it("merges unique items preserving order", () => {
     expect(appendUniqueMany([1, 2], [2, 3, 4])).toEqual([1, 2, 3, 4]);
   });

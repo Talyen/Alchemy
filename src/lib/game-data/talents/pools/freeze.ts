@@ -13,7 +13,7 @@ export const freezeTalents = [
   ),
   t(
     "freeze-double-damage",
-    "Shatter",
+    "Brittle Ice",
     "Frozen enemies take 1 additional damage",
     "Split",
     setEffect("freezeDamageBonusVsFrozen", 1),

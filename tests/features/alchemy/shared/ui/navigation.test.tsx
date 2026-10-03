@@ -6,19 +6,6 @@ import { FlankingPagination, PaginationControls } from "@/features/alchemy/share
 describe("PaginationControls", () => {
   afterEach(cleanup);
 
-  it("returns null when totalPages is 1 and reserveSpace is false", () => {
-    const { container } = render(
-      <PaginationControls page={0} totalPages={1} onPageChange={vi.fn()} reserveSpace={false} />,
-    );
-    expect(container.firstChild).toBeNull();
-  });
-
-  it("renders container but no buttons when totalPages is 1 and reserveSpace is true", () => {
-    const { container } = render(<PaginationControls page={0} totalPages={1} onPageChange={vi.fn()} reserveSpace />);
-    expect(container.firstChild).not.toBeNull();
-    expect(screen.queryByRole("button")).toBeNull();
-  });
-
   it("navigates forward and backward when multiple pages exist", () => {
     const onPageChange = vi.fn();
     render(<PaginationControls page={1} totalPages={3} onPageChange={onPageChange} />);

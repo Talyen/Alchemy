@@ -27,10 +27,13 @@ export type BattleScreenState = Pick<
   | "turnPhase"
   | "playerCC"
   | "enemyCC"
+  | "enemyStatuses"
+  | "enemyMitigation"
   | "talentEffects"
   | "trinketEffects"
   | "gearEffects"
   | "flags"
+  | "encounterBenefits"
 >;
 
 interface BattleScreenViewProps {

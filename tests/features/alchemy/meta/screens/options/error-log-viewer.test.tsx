@@ -90,14 +90,34 @@ describe("ErrorLogViewer", () => {
     expect(screen.queryByText(/Copied ·/)).toBeNull();
   });
 
-  it("keeps an unserializable error inspectable and reports copy failure", async () => {
+  it("reports clipboard rejection without clearing the log", async () => {
     const user = userEvent.setup();
-    const context: Record<string, unknown> = {};
-    context.self = context;
-    useErrorLogStore.getState().pushError({ message: "Circular context", source: "global", context });
+    vi.spyOn(navigator.clipboard, "writeText").mockRejectedValueOnce(new Error("Clipboard unavailable"));
+    useErrorLogStore.getState().pushError({ message: "Retained failure", source: "global" });
     render(<ErrorLogViewer onClose={vi.fn()} />);
     await user.click(screen.getByRole("button", { name: "Copy All" }));
     expect(screen.getByText("Copy failed · 1 error")).toBeTruthy();
+    expect(screen.getByText("Retained failure")).toBeTruthy();
+  });
+
+  it("exports healthy and unserializable errors with their diagnostic details", async () => {
+    const user = userEvent.setup();
+    const context: Record<string, unknown> = {};
+    context.self = context;
+    useErrorLogStore.getState().pushError({
+      message: "Circular context",
+      source: "react",
+      context,
+      componentStack: "at BattleScreen",
+    });
+    useErrorLogStore.getState().pushError({ message: "Healthy context", source: "global", context: { detail: 42 } });
+    const writeText = vi.spyOn(navigator.clipboard, "writeText");
+    render(<ErrorLogViewer onClose={vi.fn()} />);
+    await user.click(screen.getByRole("button", { name: "Copy All" }));
+    expect(screen.getByText("Copied · 2 errors")).toBeTruthy();
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("Context could not be displayed."));
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("component stack: at BattleScreen"));
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('context: {"detail":42}'));
     await user.click(screen.getByRole("button", { name: /Circular context/ }));
     expect(screen.getByText("Context could not be displayed.")).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Clear" }));

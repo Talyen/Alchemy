@@ -3,6 +3,11 @@
 Canonical workflow for runtime music and sound effects. Asset authoring and
 optimization remain in [WORKFLOWS-ASSETS.md](./WORKFLOWS-ASSETS.md).
 
+Follow [Every player action receives feedback](./UI.md#every-player-action-receives-feedback):
+audio may reinforce visible acknowledgment and outcomes, but essential meaning
+must survive mute or playback failure. This principle does not require a sound
+for every action or change the intentional silent-content registrations below.
+
 ## Ownership
 
 | Concern                              | Owner                                                                                                                                                                             |

@@ -1,3 +1,5 @@
+import { TransmutationScreen } from "@/features/alchemy/run-loop/screens/transmutation-screen";
+import { initializeAlchemyVisit } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
 import { labyrinthCampfireHealing } from "@/lib/content-systems/labyrinth/room-rules";
 import { useEffect, useRef } from "react";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
@@ -27,6 +29,7 @@ import { MysteryScreenRoute } from "@/app/screen-routes/mystery-screen-route";
 import {
   useAlchemistScreenData,
   useCampfireScreenData,
+  useTransmutationScreenData,
   useCorruptionScreenData,
   useDestinationScreenData,
   useEquipmentShopScreenData,
@@ -161,6 +164,7 @@ function DestinationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 function CampfireScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.destinations;
   const r = useCampfireScreenData();
+  useEffect(() => initializeAlchemyVisit("campfire"), []);
   const healingBonus = useHomesteadEffects().homesteadHealing;
   const talentEffects = useTalentEffects();
   const healFraction = labyrinthCampfireHealing(getCampfireHealFraction(talentEffects.campfireHealBonus), r.modifiers);
@@ -170,6 +174,11 @@ function CampfireScreenRoute({ routeCommands }: RunLoopRouteCtx) {
       maxHealth={r.runMaxHealth}
       healFraction={healFraction}
       healingBonus={healingBonus}
+      runDeck={r.runDeck}
+      visit={r.visit}
+      potency={talentEffects.potionMixPotency}
+      onRest={commands.rest}
+      onBrew={commands.brew}
       onContinue={commands.continueCampfire}
     />
   );
@@ -202,6 +211,7 @@ function AlchemistShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.shop.alchemist;
   const onContinue = routeCommands.runLoop.shop.continue;
   const r = useAlchemistScreenData();
+  const potency = useTalentEffects().potionMixPotency;
   return (
     <AlchemistShopScreen
       gold={r.gold}
@@ -220,6 +230,8 @@ function AlchemistShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
       onBuyCard={commands.buyPotion}
       onRefresh={commands.refresh}
       onMixPotions={commands.mixPotions}
+      onStrengthenPotion={commands.strengthenPotion}
+      potency={potency}
       onContinue={onContinue}
     />
   );
@@ -284,6 +296,20 @@ function CorruptionScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   );
 }
 
+function TransmutationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
+  const commands = routeCommands.runLoop.transmutation;
+  const r = useTransmutationScreenData();
+  useEffect(() => initializeAlchemyVisit("transmutation"), []);
+  return (
+    <TransmutationScreen
+      runDeck={r.runDeck}
+      visit={r.visit}
+      onExchange={commands.exchange}
+      onContinue={commands.continue}
+    />
+  );
+}
+
 export const runLoopScreenRoutes = {
   battle: BattleScreenRoute,
   "labyrinth-map": LabyrinthMapScreenRoute,
@@ -297,4 +323,5 @@ export const runLoopScreenRoutes = {
   "equipment-shop": EquipmentShopScreenRoute,
   mystery: MysteryScreenRoute,
   corruption: CorruptionScreenRoute,
+  transmutation: TransmutationScreenRoute,
 };

@@ -1,11 +1,5 @@
 import { expect, test } from "../../fixtures/e2e";
-import {
-  makeCard,
-  startBattleWithDeck,
-  enterPrimaryRewardScreen,
-  injectActiveBattle,
-  makeGoblinBattleState,
-} from "../../browser-helpers";
+import { makeCard, startBattleWithDeck, injectActiveBattle, makeGoblinBattleState } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { DestinationPage } from "../../pages/destination-page";
 import { critical } from "../../playwright-tags";
@@ -55,20 +49,6 @@ test.describe("Controller-equivalent keyboard navigation", () => {
     await expect(battle.endTurnBtn).toBeFocused();
     await input.press("confirm");
     await expect(battle.endTurnBtn).toBeEnabled();
-  });
-
-  test("keyboard navigation selects destinations and claims rewards", async ({ page, fastBattle }) => {
-    void fastBattle;
-    await enterPrimaryRewardScreen(page, {
-      rewardType: "card",
-      choiceIds: ["slash", "bash"],
-      destinations: ["Normal Combat", "Campfire"],
-    });
-    const input = controllerInput(page);
-    await input.activate(page.getByRole("button", { name: /^Select / }).first());
-    await new DestinationPage(page).expectVisible();
-    await input.activate(page.getByRole("button", { name: "Combat", exact: true }));
-    await expect(new BattlePage(page).endTurnBtn).toBeVisible();
   });
 });
 

@@ -36,7 +36,8 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   physical: {
     id: "physical",
     label: "Physical",
-    description: "Physical damage type",
+    description:
+      "Physical damage type; once per turn, a hit against a Frozen enemy triggers Shatter: destroy all enemy Block and Armor and guarantee a Critical hit, preserving Freeze",
     colorClass: "text-slate-300",
     borderClass: "border-slate-300",
     shineColors: ["#cbd5e1", "#64748b", "#cbd5e1"],
@@ -94,7 +95,8 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   burn: {
     id: "burn",
     label: "Burn",
-    description: "Burn deals damage and reduces by half each turn",
+    description:
+      "Burn deals damage and reduces by half each turn; once per turn, a damaging Nature hit triggers Wildfire, dealing all remaining Burn damage immediately and removing Burn",
     colorClass: "text-orange-400",
     borderClass: "border-orange-400",
     shineColors: ["#fb923c", "#ea580c", "#fb923c"],
@@ -142,7 +144,8 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   nature: {
     id: "nature",
     label: "Nature",
-    description: "Nature damage type",
+    description:
+      "Nature damage type; once per turn, a damaging hit against a Burning enemy triggers Wildfire: detonate all remaining Burn damage and remove Burn",
     colorClass: "text-emerald-600",
     borderClass: "border-emerald-600",
     shineColors: ["#059669", "#064e3b", "#059669"],
