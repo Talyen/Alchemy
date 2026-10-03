@@ -1,7 +1,1 @@
-export {
-  BATTLE_STAGE_MARK_PREFIX,
-  battleStageMarkName,
-  clearBattleStageMarks,
-  markBattleStage,
-  type BattleStageMark,
-} from "./marks";
+export { battleStageMarkName, clearBattleStageMarks, markBattleStage, type BattleStageMark } from "./marks";

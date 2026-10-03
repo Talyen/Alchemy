@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import { armorySalvageArt } from "@/lib/game-data/assets";
+import { armorySalvageArt } from "@/lib/game-data";
 import { CRAFTING_CURRENCY_LIST, type CraftingCurrencyId } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { sectionTitleClass, surfaceSelectedRingClass } from "../../../../shared/config";

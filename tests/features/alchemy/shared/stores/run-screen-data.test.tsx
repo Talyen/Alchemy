@@ -9,6 +9,7 @@ import {
 import {
   useAlchemistScreenData,
   useCampfireScreenData,
+  useTransmutationScreenData,
   useCorruptionScreenData,
   useDestinationScreenData,
   useEquipmentShopScreenData,
@@ -36,6 +37,7 @@ beforeEach(() => {
 // without extending this registry is a compile error (Record<RunDataScreen>).
 const SCREEN_HOOKS: Record<RunDataScreen, () => unknown> = {
   campfire: useCampfireScreenData,
+  transmutation: useTransmutationScreenData,
   shop: useShopScreenData,
   alchemist: useAlchemistScreenData,
   "trinket-shop": useTrinketShopScreenData,

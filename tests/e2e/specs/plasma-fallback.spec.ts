@@ -14,9 +14,10 @@ for (const failure of ["context", "shader"] as const) {
           return args[0] === "webgl" ? null : original.apply(this, args);
         } as typeof original;
       } else {
-        const original = WebGLRenderingContext.prototype.getShaderParameter;
-        WebGLRenderingContext.prototype.getShaderParameter = function (shader, parameter) {
-          return parameter === this.COMPILE_STATUS ? false : original.call(this, shader, parameter);
+        const original = WebGLRenderingContext.prototype.shaderSource;
+        WebGLRenderingContext.prototype.shaderSource = function (shader, _source) {
+          // Force an actual compile failure; startup detects it through program linking.
+          original.call(this, shader, "invalid GLSL source");
         };
       }
     }, failure);

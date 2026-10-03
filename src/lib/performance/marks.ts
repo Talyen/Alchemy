@@ -8,7 +8,7 @@ export function markStartupReady(): void {
   } catch {}
 }
 
-export const BATTLE_STAGE_MARK_PREFIX = "alchemy:battle:";
+const BATTLE_STAGE_MARK_PREFIX = "alchemy:battle:";
 
 const BATTLE_STAGES = [
   "discard-start",

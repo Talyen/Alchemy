@@ -140,6 +140,9 @@ export function offerRunChoices({ config, controller, offer, choices, recordBatt
     case "campfire":
       offer("campfire", "rest", 1, flow.handleCampfireContinue);
       break;
+    case "transmutation":
+      offer("transmutation-exit", "leave", 0, flow.advanceToNextDestination);
+      break;
     case "mystery": {
       const visit = activity.data;
       if (visit.mysteryCardChoices?.length)

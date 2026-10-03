@@ -4,7 +4,7 @@ import { CollectionContentLayout } from "@/features/alchemy/meta/screens/collect
 import { FadeSlot } from "@/features/alchemy/shared/ui/use-fade";
 import { MOTION_FADE_MS } from "@/lib/game-constants";
 
-const observers: { notify: () => void; disconnect: ReturnType<typeof vi.fn> }[] = [];
+const observers: Array<{ notify: () => void; disconnect: ReturnType<typeof vi.fn> }> = [];
 
 beforeEach(() => {
   localStorage.removeItem("alchemy-disable-animations");
