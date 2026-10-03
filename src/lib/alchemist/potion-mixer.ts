@@ -18,7 +18,7 @@ import {
 const MIXED_POTION_ERROR = "Cannot mix with an existing Mixed Potion";
 
 function canMixPotion(card: BattleCard | undefined): card is BattleCard {
-  return card !== undefined && !isMixedPotionCard(card) && !card.brewed;
+  return card != null && !isMixedPotionCard(card) && !card.brewed;
 }
 
 function areEffectsEquivalent(a: readonly BattleCardEffect[], b: readonly BattleCardEffect[]): boolean {

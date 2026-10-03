@@ -41,12 +41,7 @@ export function appendUniqueMany<T>(items: readonly T[], additions: readonly T[]
 export function appendUniqueMany<T>(items: readonly T[], additions: readonly T[]): readonly T[] {
   if (additions.length === 0) return items;
   const set = new Set(items);
-  let changed = false;
-  for (const add of additions) {
-    if (!set.has(add)) {
-      set.add(add);
-      changed = true;
-    }
-  }
-  return changed ? Array.from(set) : items;
+  const originalSize = set.size;
+  for (const add of additions) set.add(add);
+  return set.size === originalSize ? items : [...set];
 }

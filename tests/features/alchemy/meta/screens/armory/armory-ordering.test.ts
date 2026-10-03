@@ -72,7 +72,7 @@ describe("armory-ordering", () => {
       // Displaced from off-hand: a shield (only compatible with off-hand)
       const shield: GearInstance = {
         instanceId: "shield-1",
-        definitionId: "shield-basic",
+        definitionId: "leather-buckler-basic",
         affixes: [],
       };
       const result = placeTransfer(
