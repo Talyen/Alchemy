@@ -17,14 +17,6 @@ import { isStandardPotionCard } from "@/lib/game-data/cards/card-pools";
 import { gearDefinitions, type GearInstance } from "@/lib/gear";
 import { computeTrinketManifest } from "@/lib/trinkets";
 
-export interface ShopBuyPriceInput {
-  basePrice: number;
-  haggleDiscount: number;
-  apothecaryDiscount?: number;
-  merchantsFavorDiscount?: number;
-  firstPurchaseUsed: boolean;
-}
-
 export type ShopRefreshKind = "merchant" | "alchemist" | "trinket" | "equipment";
 
 export interface ShopBuyPriceContext {
@@ -43,58 +35,6 @@ export function getEquipmentShopPrice(instance: GearInstance): number {
   const rarity = gearDefinitions[instance.definitionId]?.rarity;
   if (rarity === "unique") return EQUIPMENT_SHOP_UNIQUE_PRICE;
   return rarity === "astral" ? EQUIPMENT_SHOP_ASTRAL_PRICE : EQUIPMENT_SHOP_BASIC_PRICE;
-}
-
-export function computeShopBuyPrice(input: ShopBuyPriceInput): number {
-  const apothecary = input.apothecaryDiscount ?? 0;
-  let price = Math.max(0, input.basePrice - input.haggleDiscount - apothecary);
-  if (!input.firstPurchaseUsed) {
-    price = Math.max(0, price - (input.merchantsFavorDiscount ?? 0));
-  }
-  return price;
-}
-
-export function computeShopServicePrice(basePrice: number, serviceDiscount = 0): number {
-  return Math.max(0, basePrice - serviceDiscount);
-}
-
-function computeShopRefreshPrice(
-  basePrice: number,
-  shopFreeRefresh: boolean,
-  refreshesLeft: number,
-  freeRefreshUsed: boolean,
-): number {
-  if (shopFreeRefresh && !freeRefreshUsed && refreshesLeft > 0) return 0;
-  return basePrice;
-}
-
-export function getCardBuyTalentDiscounts(
-  card: BattleCard,
-  talents: Pick<TalentEffectManifest, "shopCardDiscount" | "potionDiscount">,
-): { haggleDiscount: number; apothecaryDiscount: number } {
-  const haggleDiscount = talents.shopCardDiscount;
-  const apothecaryDiscount = isStandardPotionCard(card) ? talents.potionDiscount : 0;
-  return { haggleDiscount, apothecaryDiscount };
-}
-
-export function getGenericBuyTalentDiscounts(talents: Pick<TalentEffectManifest, "shopCardDiscount">): {
-  haggleDiscount: number;
-  apothecaryDiscount: number;
-} {
-  return { haggleDiscount: talents.shopCardDiscount, apothecaryDiscount: 0 };
-}
-
-function computeBuyPrice(
-  basePrice: number,
-  discounts: { haggleDiscount: number; apothecaryDiscount: number },
-  context: ShopBuyPriceContext,
-): number {
-  return computeShopBuyPrice({
-    basePrice,
-    ...discounts,
-    merchantsFavorDiscount: computeTrinketManifest(context.runBoons).merchantsFavorDiscount,
-    firstPurchaseUsed: context.firstPurchaseUsed,
-  });
 }
 
 const SHOP_BUY_BASE_PRICE = {
@@ -125,15 +65,18 @@ function getBuyMultiplier(
 
 export function getShopBuyPrice(...[kind, item, context]: ShopBuyPriceArguments): number {
   const basePrice = kind === "gear" ? getEquipmentShopPrice(item) : SHOP_BUY_BASE_PRICE[kind];
-  const discounts =
-    kind === "merchantCard" || kind === "alchemistPotion"
-      ? getCardBuyTalentDiscounts(item, context.talentEffects)
-      : getGenericBuyTalentDiscounts(context.talentEffects);
-  return computeBuyPrice(
-    Math.round(basePrice * getBuyMultiplier(kind, item, context.modifiers ?? [])),
-    discounts,
-    context,
+  const potionDiscount =
+    (kind === "merchantCard" || kind === "alchemistPotion") && isStandardPotionCard(item)
+      ? context.talentEffects.potionDiscount
+      : 0;
+  const price = Math.max(
+    0,
+    Math.round(basePrice * getBuyMultiplier(kind, item, context.modifiers ?? [])) -
+      context.talentEffects.shopCardDiscount - potionDiscount,
   );
+  return context.firstPurchaseUsed
+    ? price
+    : Math.max(0, price - computeTrinketManifest(context.runBoons).merchantsFavorDiscount);
 }
 
 const SHOP_REFRESH_POLICY: Record<ShopRefreshKind, { basePrice: number; freeTrait: EncounterRewardTraitId | null }> = {
@@ -152,7 +95,7 @@ export function getShopRefreshPrice(
 ): number {
   const { basePrice, freeTrait } = SHOP_REFRESH_POLICY[kind];
   if (refreshesLeft > 0 && freeTrait !== null && modifiers.includes(freeTrait)) return 0;
-  return computeShopRefreshPrice(basePrice, talentEffects.shopFreeRefresh, refreshesLeft, freeRefreshUsed);
+  return talentEffects.shopFreeRefresh && !freeRefreshUsed && refreshesLeft > 0 ? 0 : basePrice;
 }
 
 export function computeRemoveCardPrice(
@@ -161,7 +104,7 @@ export function computeRemoveCardPrice(
   homesteadDiscount = 0,
 ): number {
   if (modifiers.includes("clean-slate")) return 0;
-  return computeShopServicePrice(SHOP_REMOVE_PRICE, talentEffects.removeCardDiscount + homesteadDiscount);
+  return Math.max(0, SHOP_REMOVE_PRICE - (talentEffects.removeCardDiscount + homesteadDiscount));
 }
 
 export function computeMixPotionPrice(
@@ -170,5 +113,5 @@ export function computeMixPotionPrice(
   homesteadDiscount = 0,
 ): number {
   if (modifiers.includes("open-kitchen")) return 0;
-  return computeShopServicePrice(ALCHEMIST_MIX_PRICE, talentEffects.mixPotionDiscount + homesteadDiscount);
+  return Math.max(0, ALCHEMIST_MIX_PRICE - (talentEffects.mixPotionDiscount + homesteadDiscount));
 }

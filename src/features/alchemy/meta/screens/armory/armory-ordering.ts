@@ -103,20 +103,10 @@ export function placeTransfer(
   const list = currentIds.filter((id) => !additionalIds.includes(id));
   const incomingIndex = list.indexOf(incomingId);
 
-  // 1. Target slot replacement or removal
-  if (targetReplacedId) {
-    if (incomingIndex !== -1) list[incomingIndex] = targetReplacedId;
-    else list.push(targetReplacedId);
-  } else {
-    const removalIndex = list.indexOf(incomingId);
-    if (removalIndex !== -1) list.splice(removalIndex, 1);
-  }
-
-  if (compatibleAdditional.length > 0) {
-    const anchorIndex = targetReplacedId ? list.indexOf(targetReplacedId) : incomingIndex;
-    const insertPosition = anchorIndex === -1 ? list.length : targetReplacedId ? anchorIndex + 1 : anchorIndex;
-    list.splice(insertPosition, 0, ...additionalIds);
-  }
+  // Replace the incoming position once with every item returned to inventory.
+  // A missing incoming id appends its replacement and other displaced items.
+  const returnedIds = [...(targetReplacedId ? [targetReplacedId] : []), ...additionalIds];
+  list.splice(incomingIndex === -1 ? list.length : incomingIndex, incomingIndex === -1 ? 0 : 1, ...returnedIds);
 
   return list;
 }

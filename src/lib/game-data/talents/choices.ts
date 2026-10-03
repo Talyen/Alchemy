@@ -53,40 +53,23 @@ export function getTalentRows(keywordId: KeywordId): TalentDefinition[][] {
 }
 
 export function isTalentRowUnlocked(keywordId: KeywordId, unlockedIds: string[], rowIndex: number): boolean {
-  const talents = getTalentsForKeyword(keywordId);
   const unlocked = new Set(unlockedIds);
-  let index = 0;
-  for (let row = 0; row < rowIndex && row < TALENT_ROW_SIZES.length; row++) {
-    const size = TALENT_ROW_SIZES[row] ?? 0;
-    const end = Math.min(index + size, talents.length);
-    for (let position = index; position < end; position++) {
-      const talent = talents[position]!;
-      if (!isTalentPlaceholder(talent) && !unlocked.has(talent.id)) return false;
-    }
-    index += size;
+  for (const [row, talents] of getTalentRows(keywordId).entries()) {
+    if (row >= rowIndex || row >= TALENT_ROW_SIZES.length) break;
+    if (talents.some((talent) => !isTalentPlaceholder(talent) && !unlocked.has(talent.id))) return false;
   }
   return true;
 }
 
 export function getAllocatableTalentChoices(keywordId: KeywordId, unlockedIds: string[]): TalentDefinition[] {
-  const talents = getTalentsForKeyword(keywordId);
   const unlocked = new Set(unlockedIds);
-  const choices: TalentDefinition[] = [];
-  let index = 0;
-  for (let row = 0; row < TALENT_ROW_SIZES.length; row++) {
-    // Later rows require the whole current row, but its own missing talents
-    // remain choices. Overflow entries retain the final authored row's gate.
-    const end =
-      row === TALENT_ROW_SIZES.length - 1 ? talents.length : Math.min(index + TALENT_ROW_SIZES[row]!, talents.length);
-    let complete = true;
-    for (; index < end; index++) {
-      const talent = talents[index]!;
-      if (!isTalentPlaceholder(talent) && !unlocked.has(talent.id)) {
-        choices.push(talent);
-        complete = false;
-      }
-    }
-    if (!complete) break;
+  const rows = getTalentRows(keywordId);
+  // Overflow entries use the final authored row's gate, like getTalentRowIndex.
+  const finalRow = TALENT_ROW_SIZES.length - 1;
+  const gateRows = [...rows.slice(0, finalRow), rows.slice(finalRow).flat()];
+  for (const row of gateRows) {
+    const missing = row.filter((talent) => !isTalentPlaceholder(talent) && !unlocked.has(talent.id));
+    if (missing.length > 0) return missing;
   }
-  return choices;
+  return [];
 }

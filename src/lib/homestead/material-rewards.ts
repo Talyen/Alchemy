@@ -162,21 +162,18 @@ export function applyScavengerHerbalistModifiers(
   materials: MaterialInventory,
   flags: ScavengerHerbalistFlags,
 ): MaterialInventory {
-  let next: MaterialInventory = { ...materials };
-  let mutated = false;
+  if (!flags.scavenger && !flags.herbalist) return materials;
+  const next = { ...materials };
   if (flags.scavenger) {
-    mutated = true;
-    next = emptyInventory();
     for (const material of MATERIAL_IDS) {
       next[material] = Math.round((materials[material] ?? 0) * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier);
     }
   }
   if (flags.herbalist) {
-    mutated = true;
     // Herbalist lands after scavenger, so it tops up already-doubled herbs without itself being doubled.
     next.herbs = (next.herbs ?? 0) + LABYRINTH_REWARD_CONFIG.herbalistHerbBonus;
   }
-  return mutated ? next : materials;
+  return next;
 }
 
 export interface CombatMaterialRewardInput {

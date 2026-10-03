@@ -32,7 +32,6 @@ export interface SaveLoadState {
 function isEmptyGearLike(value: unknown): boolean {
   if (!isPlainObject(value)) return false;
   const entries = Object.values(value);
-  if (entries.length === 0) return true;
   return entries.every((entry) => entry === undefined || (Array.isArray(entry) && entry.length === 0));
 }
 
@@ -89,19 +88,18 @@ function collectSaveRepairWarnings(raw: Record<string, unknown>, normalized: Par
   ) {
     warnings.push("owned trinkets could not be fully restored");
   }
-  if (
-    raw.craftingCurrencies !== undefined &&
-    sumInventoryValues(normalized.craftingCurrencies) === 0 &&
-    (sumInventoryValues(raw.craftingCurrencies) > 0 || !isPlainObject(raw.craftingCurrencies))
-  ) {
-    warnings.push("crafting currencies could not be fully restored");
-  }
-  if (
-    raw.materialInventory !== undefined &&
-    sumInventoryValues(normalized.materialInventory) === 0 &&
-    (sumInventoryValues(raw.materialInventory) > 0 || !isPlainObject(raw.materialInventory))
-  ) {
-    warnings.push("homestead materials could not be fully restored");
+  for (const [field, label] of [
+    ["craftingCurrencies", "crafting currencies"],
+    ["materialInventory", "homestead materials"],
+  ] as const) {
+    const original = raw[field];
+    if (
+      original !== undefined &&
+      sumInventoryValues(normalized[field]) === 0 &&
+      (sumInventoryValues(original) > 0 || !isPlainObject(original))
+    ) {
+      warnings.push(`${label} could not be fully restored`);
+    }
   }
   return warnings;
 }

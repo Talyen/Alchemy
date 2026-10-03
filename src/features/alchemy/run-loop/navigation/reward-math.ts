@@ -24,10 +24,6 @@ interface VictoryGoldResult {
   persistedGold: number;
 }
 
-function hasRewardModifier(modifiers: EncounterRewardTraitId[], kind: EncounterRewardTraitId): boolean {
-  return modifiers.includes(kind);
-}
-
 const COMPANION_REWARD_TRAITS: readonly EncounterRewardTraitId[] = [
   "companion",
   "fletched",
@@ -39,7 +35,7 @@ export const shouldGrantCompanionReward = (modifiers: EncounterRewardTraitId[]):
   COMPANION_REWARD_TRAITS.some((id) => modifiers.includes(id));
 
 export const shouldGrantAlchemistReward = (modifiers: EncounterRewardTraitId[]): boolean =>
-  hasRewardModifier(modifiers, "alchemist");
+  modifiers.includes("alchemist");
 
 export function getActiveRewardModifiersForContentSystem(
   contentSystemType: ContentSystemId,
@@ -49,17 +45,17 @@ export function getActiveRewardModifiersForContentSystem(
 }
 
 export function getGenerousGoldBonus(modifiers: EncounterRewardTraitId[], gold: number): number {
-  return hasRewardModifier(modifiers, "generous")
+  return modifiers.includes("generous")
     ? Math.round(gold * LABYRINTH_REWARD_CONFIG.generousGoldBonusFraction)
     : 0;
 }
 
 export function getWealthyGoldBonus(modifiers: EncounterRewardTraitId[]): number {
-  return hasRewardModifier(modifiers, "wealthy") ? LABYRINTH_REWARD_CONFIG.wealthyGoldBonus : 0;
+  return modifiers.includes("wealthy") ? LABYRINTH_REWARD_CONFIG.wealthyGoldBonus : 0;
 }
 
 export function getWellProvisionedHealing(modifiers: EncounterRewardTraitId[], maxHealth: number): number {
-  return hasRewardModifier(modifiers, "wellProvisioned")
+  return modifiers.includes("wellProvisioned")
     ? Math.max(1, Math.round(maxHealth * LABYRINTH_REWARD_CONFIG.wellProvisionedHealFraction))
     : 0;
 }
@@ -70,23 +66,9 @@ export function applyLabyrinthRewardMaterialModifiers(
 ): MaterialInventory {
   // Thin adapter over the single pipeline owner in homestead/material-rewards.ts.
   return applyScavengerHerbalistModifiers(materials, {
-    scavenger: hasRewardModifier(modifiers, "scavenger"),
-    herbalist: hasRewardModifier(modifiers, "herbalist"),
+    scavenger: modifiers.includes("scavenger"),
+    herbalist: modifiers.includes("herbalist"),
   });
-}
-
-function getSmugglersMapGoldBonus(trinketIds: string[]): number {
-  return computeTrinketManifest(trinketIds).smugglersMapGoldBonus;
-}
-
-function sumGoldBonuses(
-  bonusGold: number,
-  generousBonus: number,
-  wealthyBonus: number,
-  talentGoldPerCombat: number,
-  trinketIds: string[],
-): number {
-  return bonusGold + generousBonus + wealthyBonus + talentGoldPerCombat + getSmugglersMapGoldBonus(trinketIds);
 }
 
 export function computeVictoryGold({
@@ -107,7 +89,8 @@ export function computeVictoryGold({
   const earnedBeforeMultiplier =
     inCombatGold +
     gold +
-    sumGoldBonuses(eliteBonus + bossBonus, generousBonus, wealthyBonus, talentGoldPerCombat, runBoons);
+    (eliteBonus + bossBonus + generousBonus + wealthyBonus + talentGoldPerCombat +
+      computeTrinketManifest(runBoons).smugglersMapGoldBonus);
   return {
     earnedBeforeMultiplier,
     persistedGold: purseGold + Math.round(earnedBeforeMultiplier * goldMultiplier),

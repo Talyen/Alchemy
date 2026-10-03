@@ -28,7 +28,7 @@ import {
 } from "./report";
 import { PERF_VIEWPORT } from "./viewport";
 import { MIN_PAINT_PX } from "./battle-art-diagnostics";
-import { STARTUP_READY_MARK } from "../src/lib/performance/startup-marks";
+import { STARTUP_READY_MARK } from "../src/lib/performance/marks";
 import { requirePositiveFiniteObservation } from "./scenario-contracts";
 import { extractSegmentSample, measureSegments } from "./journey-segments";
 import type { JourneyAction, JourneyCase, SegmentRequirement } from "./journey-types";

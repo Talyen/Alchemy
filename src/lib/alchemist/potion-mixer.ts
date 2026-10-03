@@ -17,6 +17,10 @@ import {
 
 const MIXED_POTION_ERROR = "Cannot mix with an existing Mixed Potion";
 
+function canMixPotion(card: BattleCard | undefined): card is BattleCard {
+  return card !== undefined && !isMixedPotionCard(card) && !card.brewed;
+}
+
 function areEffectsEquivalent(a: readonly BattleCardEffect[], b: readonly BattleCardEffect[]): boolean {
   // Deep comparison: same-id cards can carry different payloads (nested
   // chance/repeat trees, companion ids, conditional damage flags), and a
@@ -48,7 +52,7 @@ function scalePotionEffect(effect: BattleCardEffect, multiplier: number, potency
 }
 
 export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyBonus: number = 0): BattleCard {
-  if (isMixedPotionCard(cardA) || isMixedPotionCard(cardB) || cardA.brewed || cardB.brewed) {
+  if (!canMixPotion(cardA) || !canMixPotion(cardB)) {
     throw new Error(MIXED_POTION_ERROR);
   }
 
@@ -87,8 +91,7 @@ export function tryCreateMixedPotion(
   cardB: BattleCard | undefined,
   potencyBonus: number = 0,
 ): BattleCard | null {
-  if (!cardA || !cardB) return null;
-  if (isMixedPotionCard(cardA) || isMixedPotionCard(cardB) || cardA.brewed || cardB.brewed) return null;
+  if (!canMixPotion(cardA) || !canMixPotion(cardB)) return null;
   return createMixedPotion(cardA, cardB, potencyBonus);
 }
 
@@ -96,11 +99,7 @@ export function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: numbe
   if (indexA === indexB || !isValidDeckIndex(indexA, deck.length) || !isValidDeckIndex(indexB, deck.length)) {
     throw new Error("Invalid potion indices for mixing");
   }
-  const highIdx = Math.max(indexA, indexB);
-  const lowIdx = Math.min(indexA, indexB);
-  const next = deck.filter((_, i) => i !== highIdx && i !== lowIdx);
-  next.push(mixed);
-  return next;
+  return [...deck.filter((_, index) => index !== indexA && index !== indexB), mixed];
 }
 
 export function doublePotionPotency(card: BattleCard): BattleCard {

@@ -9,11 +9,6 @@ import {
 import type { KeywordId } from "../types";
 import { clamp } from "@/lib/math";
 
-const TALENT_PROGRESS_CONFIG = {
-  MAX_PERCENT: 100,
-  PERCENT_MULTIPLIER: 100,
-} as const;
-
 export type TalentXP = Partial<Record<KeywordId, number>>;
 
 export function xpForNextPoint(currentPoints: number): number {
@@ -63,11 +58,9 @@ export function computeRunEndTalentXPSnapshot(runTalentXP: TalentXP, multiplier:
 
 export function mergeRunTalentXPIntoPermanent(runTalentXP: TalentXP, talentXP: TalentXP, multiplier: number): TalentXP {
   const nextTalentXP = { ...talentXP };
-  for (const [kw, amount] of Object.entries(runTalentXP)) {
-    if (typeof amount === "number") {
-      const bonusAmount = Math.round(amount * multiplier);
-      nextTalentXP[kw as KeywordId] = (nextTalentXP[kw as KeywordId] ?? 0) + bonusAmount;
-    }
+  for (const [kw, bonus] of Object.entries(computeRunEndTalentXPSnapshot(runTalentXP, multiplier))) {
+    const keyword = kw as KeywordId;
+    nextTalentXP[keyword] = (nextTalentXP[keyword] ?? 0) + bonus;
   }
   return nextTalentXP;
 }
@@ -94,8 +87,8 @@ export function getTalentKeywordProgress(
   const xpForNext = xpForNextPoint(points);
   const xpRemaining = xpToNextPoint(totalXP);
   const progressPercent = Math.min(
-    TALENT_PROGRESS_CONFIG.MAX_PERCENT,
-    Math.round(((xpForNext - xpRemaining) / xpForNext) * TALENT_PROGRESS_CONFIG.PERCENT_MULTIPLIER),
+    100,
+    Math.round(((xpForNext - xpRemaining) / xpForNext) * 100),
   );
   const spentPoints = unlockedCount;
   const unspentPoints = Math.max(0, points - spentPoints);

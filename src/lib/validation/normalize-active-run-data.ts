@@ -14,9 +14,7 @@ import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { createRunStateRng, type RunRngState, type RunRngStream } from "@/lib/rng";
 import type {
   ActiveCombatData,
-  AlchemistState,
   MysteryVisitState,
-  ShopState,
   ValidatedActiveRunData,
   WildwoodDraftState,
 } from "./save-schemas/active-run";
@@ -91,20 +89,10 @@ function normalizeLabyrinthModifiers(
   };
 }
 
-function normalizeShopState(state: ShopState | null): ShopState | null {
-  if (!state) return null;
-  const repaired = repairShopOfferings(state.cards, state.purchasedSlotKeys, isRecoverableCard, (card, index) =>
+function normalizeShopCards(cards: PersistedBattleCard[], purchasedSlotKeys: string[]) {
+  return repairShopOfferings(cards, purchasedSlotKeys, isRecoverableCard, (card, index) =>
     shopItemSlotKey(card.id, index),
   );
-  return { ...state, cards: repaired.items, purchasedSlotKeys: repaired.purchasedSlotKeys };
-}
-
-function normalizeAlchemistState(state: AlchemistState | null): AlchemistState | null {
-  if (!state) return null;
-  const repaired = repairShopOfferings(state.potions, state.purchasedSlotKeys, isRecoverableCard, (potion, index) =>
-    shopItemSlotKey(potion.id, index),
-  );
-  return { ...state, potions: repaired.items, purchasedSlotKeys: repaired.purchasedSlotKeys };
 }
 
 function toPersistedCard(card: BattleCard): PersistedBattleCard {
@@ -228,6 +216,10 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
     (stream) => rngState.counters[stream] !== data.rng.counters[stream],
   );
 
+  const shop = data.shopState && normalizeShopCards(data.shopState.cards, data.shopState.purchasedSlotKeys);
+  const alchemist =
+    data.alchemistState && normalizeShopCards(data.alchemistState.potions, data.alchemistState.purchasedSlotKeys);
+
   return {
     ...data,
     rng: rngCountersChanged ? rngState : data.rng,
@@ -240,8 +232,10 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
     wildwoodDraft,
     starterDraftChoices,
     activeCombat: data.activeCombat ? normalizeActiveCombat(data.activeCombat, data.contentSystemType) : null,
-    shopState: normalizeShopState(data.shopState),
-    alchemistState: normalizeAlchemistState(data.alchemistState),
+    shopState: data.shopState && shop ? { ...data.shopState, cards: shop.items, purchasedSlotKeys: shop.purchasedSlotKeys } : null,
+    alchemistState: data.alchemistState && alchemist
+      ? { ...data.alchemistState, potions: alchemist.items, purchasedSlotKeys: alchemist.purchasedSlotKeys }
+      : null,
     corruptionResult: normalizeCorruptionResult(data.corruptionResult),
     mysteryVisit,
   };

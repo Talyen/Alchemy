@@ -2,7 +2,7 @@ import { enableLoadingScreen, injectHomestead } from "../../tests/e2e/save-injec
 import { MenuPage } from "../../tests/pages/menu-page";
 import { delay } from "../delay";
 import { expect, test } from "../fixtures";
-import { STARTUP_READY_MARK } from "../../src/lib/performance/startup-marks";
+import { STARTUP_READY_MARK } from "../../src/lib/performance/marks";
 import { requirePositiveFiniteObservation } from "../scenario-contracts";
 
 test.describe("startup-first-use", () => {

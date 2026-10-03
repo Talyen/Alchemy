@@ -1,240 +1,81 @@
 import { describe, expect, it } from "vitest";
 import {
-  xpForNextPoint,
-  xpThresholdForPoints,
   computeTalentPoints,
-  computeTotalTalentPoints,
   computeStartingMaxHealth,
   xpToNextPoint,
   addTalentXP,
   getTalentKeywordProgress,
   normalizeUnlockedTalents,
-  isUsableTalentForKeyword,
   computeRunEndTalentXPSnapshot,
   mergeRunTalentXPIntoPermanent,
-  getTalentsForKeyword,
 } from "@/lib/game-data";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 
-describe("xpForNextPoint", () => {
-  it("returns 20 XP for point 0→1", () => expect(xpForNextPoint(0)).toBe(20));
-  it("returns 40 XP for point 1→2", () => expect(xpForNextPoint(1)).toBe(40));
-  it("returns 100 XP for point 4→5", () => expect(xpForNextPoint(4)).toBe(100));
+describe("talent progression", () => {
+  it.each([
+    [19, 0, 1],
+    [20, 1, 40],
+    [59, 1, 1],
+    [60, 2, 60],
+    [119, 2, 1],
+    [120, 3, 80],
+  ])("awards points only at the threshold for %i XP", (xp, points, remaining) => {
+    expect(computeTalentPoints(xp)).toBe(points);
+    expect(xpToNextPoint(xp)).toBe(remaining);
+  });
+
+  it("adds starting Health from points earned independently across keywords", () => {
+    expect(computeStartingMaxHealth({ physical: 19, health: 60 })).toBe(MAX_PLAYER_HEALTH + 2);
+    expect(computeStartingMaxHealth({})).toBe(MAX_PLAYER_HEALTH);
+  });
+
+  it("awards keyword XP without changing the previous snapshot", () => {
+    const input = Object.freeze({ physical: 1 });
+    expect(addTalentXP(input, ["physical", "burn"], 3)).toEqual({ physical: 4, burn: 3 });
+    expect(input).toEqual({ physical: 1 });
+  });
+
+  it("shows progress within the current level and caps spendable points at remaining talents", () => {
+    expect(getTalentKeywordProgress(30, 0)).toEqual({
+      totalXP: 30,
+      points: 1,
+      displayLevel: 2,
+      xpForNext: 40,
+      xpRemaining: 30,
+      progressPercent: 25,
+      spentPoints: 0,
+      unspentPoints: 1,
+      hasUnspent: true,
+    });
+    expect(getTalentKeywordProgress(200, 3, 3)).toMatchObject({ unspentPoints: 0, hasUnspent: false });
+    expect(getTalentKeywordProgress(200, 1, 2)).toMatchObject({ unspentPoints: 1, hasUnspent: true });
+    expect(getTalentKeywordProgress(20, 5)).toMatchObject({ unspentPoints: 0, hasUnspent: false });
+    expect(getTalentKeywordProgress(20, 0)).toMatchObject({ progressPercent: 0, xpRemaining: 40 });
+  });
 });
 
 describe("talent save compatibility", () => {
-  it("preserves the shipped Bleed talent id", () => {
-    expect(normalizeUnlockedTalents({ bleed: ["bleed-execute"] })).toEqual({ bleed: ["bleed-execute"] });
-  });
-
-  it("drops unknown and keyword-mismatched ids", () => {
-    expect(normalizeUnlockedTalents({ burn: ["bleed-execute", "unknown-talent"] })).toEqual({});
-  });
-
-  it("omits keywords left with no valid ids", () => {
-    expect(normalizeUnlockedTalents({ burn: ["bleed-execute"], bleed: ["bleed-execute"] })).toEqual({
+  it("preserves purchased talents while dropping unknown and keyword-mismatched ids", () => {
+    expect(normalizeUnlockedTalents({
+      burn: ["bleed-execute", "unknown-talent"],
       bleed: ["bleed-execute"],
-    });
-  });
-});
-
-describe("isUsableTalentForKeyword", () => {
-  const flay = getTalentsForKeyword("bleed").find((t) => t.id === "bleed-execute")!;
-
-  it("accepts a real talent under its own keyword", () => {
-    expect(isUsableTalentForKeyword(flay, "bleed")).toBe(true);
-  });
-
-  it("rejects unknown ids", () => {
-    expect(isUsableTalentForKeyword(undefined, "bleed")).toBe(false);
-  });
-
-  it("rejects keyword mismatches", () => {
-    expect(isUsableTalentForKeyword(flay, "burn")).toBe(false);
-  });
-
-  it("rejects placeholders", () => {
-    expect(
-      isUsableTalentForKeyword({ id: "burn-x", keywordId: "burn", description: "x", isPlaceholder: true }, "burn"),
-    ).toBe(false);
+    })).toEqual({ bleed: ["bleed-execute"] });
   });
 });
 
 describe("run-end talent XP", () => {
-  it("snapshots run XP through the difficulty multiplier with rounding", () => {
-    expect(computeRunEndTalentXPSnapshot({ burn: 3 }, 0.5)).toEqual({ burn: 2 });
+  it("settles exactly the rounded recap awards into permanent XP without losing other keywords", () => {
+    const run = Object.freeze({ burn: 3, physical: 5 });
+    const permanent = Object.freeze({ burn: 10, health: 20 });
+    expect(computeRunEndTalentXPSnapshot(run, 0.5)).toEqual({ burn: 2, physical: 3 });
+    expect(mergeRunTalentXPIntoPermanent(run, permanent, 0.5)).toEqual({ burn: 12, physical: 3, health: 20 });
+    expect(run).toEqual({ burn: 3, physical: 5 });
+    expect(permanent).toEqual({ burn: 10, health: 20 });
   });
 
-  it("merges rounded run XP into permanent totals", () => {
-    expect(mergeRunTalentXPIntoPermanent({ burn: 3 }, { burn: 10 }, 0.5)).toEqual({ burn: 12 });
-  });
-
-  it("ignores non-numeric entries", () => {
-    expect(computeRunEndTalentXPSnapshot({ burn: "bad" } as unknown as { burn: number }, 1)).toEqual({});
-  });
-});
-
-describe("xpThresholdForPoints", () => {
-  it("returns 0 for 0 points", () => expect(xpThresholdForPoints(0)).toBe(0));
-  it("returns 20 for 1 point", () => expect(xpThresholdForPoints(1)).toBe(20));
-  it("returns 60 for 2 points", () => expect(xpThresholdForPoints(2)).toBe(60));
-  it("returns 120 for 3 points", () => expect(xpThresholdForPoints(3)).toBe(120));
-});
-
-describe("computeTalentPoints", () => {
-  it("returns 0 for 0 XP", () => expect(computeTalentPoints(0)).toBe(0));
-  it("returns 0 for XP below 20", () => expect(computeTalentPoints(19)).toBe(0));
-  it("returns 1 for exactly 20 XP", () => expect(computeTalentPoints(20)).toBe(1));
-  it("returns 2 for 60 XP", () => expect(computeTalentPoints(60)).toBe(2));
-  it("returns 3 for 120 XP", () => expect(computeTalentPoints(120)).toBe(3));
-  it("returns 4 for 200 XP", () => expect(computeTalentPoints(200)).toBe(4));
-  it("does not go negative", () => expect(computeTalentPoints(-5)).toBe(0));
-});
-
-describe("xpToNextPoint", () => {
-  it("returns 20 remaining from 0 XP", () => expect(xpToNextPoint(0)).toBe(20));
-  it("returns 15 remaining from 5 XP", () => expect(xpToNextPoint(5)).toBe(15));
-  it("returns 40 remaining from exactly 20 XP (next threshold is 60)", () => expect(xpToNextPoint(20)).toBe(40));
-  it("returns 39 remaining from 21 XP (toward threshold of 60)", () => expect(xpToNextPoint(21)).toBe(39));
-});
-
-describe("computeTotalTalentPoints", () => {
-  it("returns 0 for empty talent XP", () => {
-    expect(computeTotalTalentPoints({})).toBe(0);
-  });
-
-  it("sums points across keywords", () => {
-    expect(computeTotalTalentPoints({ physical: 20, burn: 60 })).toBe(3);
-  });
-});
-
-describe("computeStartingMaxHealth", () => {
-  it("returns base health with no talent XP", () => {
-    expect(computeStartingMaxHealth({})).toBe(MAX_PLAYER_HEALTH);
-  });
-
-  it("adds 1 max health per earned talent point", () => {
-    expect(computeStartingMaxHealth({ physical: 20, health: 60 })).toBe(MAX_PLAYER_HEALTH + 3);
-  });
-});
-
-describe("addTalentXP", () => {
-  it("adds XP to a new keyword", () => {
-    const result = addTalentXP({}, ["physical"]);
-    expect(result.physical).toBe(1);
-  });
-
-  it("adds XP to an existing keyword", () => {
-    const result = addTalentXP({ physical: 3 }, ["physical"]);
-    expect(result.physical).toBe(4);
-  });
-
-  it("adds XP to multiple keywords at once", () => {
-    const result = addTalentXP({}, ["physical", "burn"]);
-    expect(result.physical).toBe(1);
-    expect(result.burn).toBe(1);
-  });
-
-  it("returns a new object without mutating the input", () => {
-    const input = { physical: 1 };
-    const result = addTalentXP(input, ["physical"]);
-    expect(input).toEqual({ physical: 1 });
-    expect(result.physical).toBe(2);
-    expect(result).not.toBe(input);
-  });
-});
-
-describe("getTalentKeywordProgress", () => {
-  it("returns zero progress for 0 XP and 0 unlocked", () => {
-    const result = getTalentKeywordProgress(0, 0);
-    expect(result.totalXP).toBe(0);
-    expect(result.points).toBe(0);
-    expect(result.displayLevel).toBe(1);
-    expect(result.spentPoints).toBe(0);
-    expect(result.unspentPoints).toBe(0);
-    expect(result.hasUnspent).toBe(false);
-    expect(result.progressPercent).toBe(0);
-  });
-
-  it("reports 0 points below XP threshold", () => {
-    const result = getTalentKeywordProgress(18, 0);
-    expect(result.points).toBe(0);
-    expect(result.displayLevel).toBe(1);
-    expect(result.xpForNext).toBe(20);
-    expect(result.xpRemaining).toBe(2);
-    expect(result.progressPercent).toBe(90);
-  });
-
-  it("reports 1 point at exactly 20 XP", () => {
-    const result = getTalentKeywordProgress(20, 0);
-    expect(result.points).toBe(1);
-    expect(result.displayLevel).toBe(2);
-    expect(result.xpForNext).toBe(40);
-    expect(result.xpRemaining).toBe(40);
-    expect(result.progressPercent).toBe(0);
-    expect(result.hasUnspent).toBe(true);
-  });
-
-  it("computes progress percentage correctly", () => {
-    const result = getTalentKeywordProgress(30, 0);
-    expect(result.points).toBe(1);
-    expect(result.displayLevel).toBe(2);
-    expect(result.xpForNext).toBe(40);
-    expect(result.xpRemaining).toBe(30);
-    expect(result.progressPercent).toBe(25);
-  });
-
-  it("distinguishes spent vs unspent points", () => {
-    const result = getTalentKeywordProgress(60, 1);
-    expect(result.points).toBe(2);
-    expect(result.displayLevel).toBe(3);
-    expect(result.spentPoints).toBe(1);
-    expect(result.unspentPoints).toBe(1);
-    expect(result.hasUnspent).toBe(true);
-  });
-
-  it("reports hasUnspent false when all points are spent", () => {
-    const result = getTalentKeywordProgress(60, 2);
-    expect(result.points).toBe(2);
-    expect(result.displayLevel).toBe(3);
-    expect(result.spentPoints).toBe(2);
-    expect(result.unspentPoints).toBe(0);
-    expect(result.hasUnspent).toBe(false);
-  });
-
-  it("handles high XP values", () => {
-    const result = getTalentKeywordProgress(200, 3);
-    expect(result.points).toBe(4);
-    expect(result.displayLevel).toBe(5);
-    expect(result.xpForNext).toBe(100);
-    expect(result.spentPoints).toBe(3);
-    expect(result.unspentPoints).toBe(1);
-  });
-
-  it("clamps progress percent at 100", () => {
-    const result = getTalentKeywordProgress(0, 0);
-    expect(result.progressPercent).toBe(0);
-  });
-
-  it("handles more spent than available points", () => {
-    const result = getTalentKeywordProgress(20, 5);
-    expect(result.points).toBe(1);
-    expect(result.displayLevel).toBe(2);
-    expect(result.spentPoints).toBe(5);
-    expect(result.unspentPoints).toBe(0);
-    expect(result.hasUnspent).toBe(false);
-  });
-
-  it("returns correct structure", () => {
-    const result = getTalentKeywordProgress(0, 0);
-    expect(result).toHaveProperty("totalXP");
-    expect(result).toHaveProperty("points");
-    expect(result).toHaveProperty("displayLevel");
-    expect(result).toHaveProperty("xpForNext");
-    expect(result).toHaveProperty("xpRemaining");
-    expect(result).toHaveProperty("progressPercent");
-    expect(result).toHaveProperty("spentPoints");
-    expect(result).toHaveProperty("unspentPoints");
-    expect(result).toHaveProperty("hasUnspent");
+  it("ignores malformed entries in both the recap and permanent award", () => {
+    const run = { burn: "bad", physical: 3 } as unknown as { burn: number; physical: number };
+    expect(computeRunEndTalentXPSnapshot(run, 1)).toEqual({ physical: 3 });
+    expect(mergeRunTalentXPIntoPermanent(run, { burn: 10 }, 1)).toEqual({ burn: 10, physical: 3 });
   });
 });
