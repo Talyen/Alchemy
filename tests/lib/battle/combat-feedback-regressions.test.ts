@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { applyCardEffects } from "@/lib/battle";
 import { applyDodgeTalentStatuses } from "@/lib/battle/dodge-talent-rewards";
 import { prepareTalentCardPlay } from "@/lib/battle/talent-card-play";
 import { applyCrowdControlTriggerBonuses } from "@/lib/battle/bonus-effects";
@@ -8,6 +9,25 @@ import { MAX_HAND_SIZE } from "@/lib/game-constants";
 import { makeTestCard, regressionBattle } from "../../fixtures/battle";
 
 describe("combat feedback regressions", () => {
+  it("acknowledges a capped Mana restoration without inventing a resource gain or damage impact", () => {
+    const state = regressionBattle({ mana: 3, maxMana: 3 });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, makeTestCard({ effects: [{ kind: "restore-mana", amount: 2 }] }), texts);
+    expect(result.mana).toBe(3);
+    expect(texts).toEqual([{ target: "player", kind: "status", stat: "mana", amount: 0, impact: false }]);
+  });
+
+  it("acknowledges an ineffective attack on the enemy without claiming a hit", () => {
+    const state = regressionBattle();
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(
+      state,
+      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 0 }] }),
+      texts,
+    );
+    expect(result.enemyHealth).toBe(state.enemyHealth);
+    expect(texts).toEqual([{ target: "enemy", kind: "damage", stat: "physical", amount: 0, impact: false }]);
+  });
   it("Tailwind reports cards actually received, including draws queued behind a full hand", () => {
     const state = regressionBattle({
       hand: Array.from({ length: MAX_HAND_SIZE }, () => makeTestCard()),

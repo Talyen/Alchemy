@@ -17,6 +17,7 @@ const tables: Record<string, Record<string, string | readonly string[] | null>> 
   screenAmbienceSounds,
 };
 const bindings: Record<string, string> = ledger.bindings;
+const revisions: Record<string, { runtimeFiles: string[] }> = ledger.runtimeRevisions;
 
 it("installs every approved cue, preserves current choices, and represents selected silence without leaking a shared family cue", () => {
   for (const choice of ledger.choices) {
@@ -35,7 +36,7 @@ it("installs every approved cue, preserves current choices, and represents selec
       expect(["current", "silence"], id).toContain(choice.choice);
       continue;
     }
-    expect(actual, id).toEqual(choice.runtimeFiles);
+    expect(actual, id).toEqual(revisions[id]?.runtimeFiles ?? choice.runtimeFiles);
   }
   expect(screenAmbienceSounds.mystery).toBe(screenAmbienceSounds["labyrinth-map"]);
 });

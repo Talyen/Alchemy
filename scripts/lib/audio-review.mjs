@@ -53,6 +53,46 @@ export async function hashFile(file) {
     .digest("hex");
 }
 
+/** A relocated library can retain the masters without its optional catalog. */
+export async function readLibraryCatalog(libraryRoot, candidates) {
+  try {
+    return {
+      catalog: parseCatalog(await readFile(path.join(libraryRoot, "reference/catalog.csv"), "utf8")),
+      metadataSource: "catalog",
+    };
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+  const selected = new Map();
+  for (const candidate of candidates) {
+    const previous = selected.get(candidate.assetId);
+    if (previous && previous.path !== candidate.path)
+      throw new Error(`Conflicting candidate paths: ${candidate.assetId}`);
+    selected.set(candidate.assetId, candidate);
+  }
+  const catalog = await Promise.all(
+    [...selected.values()].map(async (candidate) => {
+      const file = containedPath(libraryRoot, candidate.path);
+      const [originalName, pack, filenameId] = path.basename(file, path.extname(file)).split("__");
+      if (filenameId !== candidate.assetId || !pack)
+        throw new Error(`Candidate filename identity mismatch: ${candidate.path}`);
+      return {
+        asset_id: candidate.assetId,
+        path: candidate.path,
+        stored_sha256: await hashFile(file),
+        original_sha256: "",
+        original_names: originalName.replaceAll("_", " "),
+        source_libraries: pack.replaceAll("_", " "),
+        license_reference: "Catalog unavailable; attribution inferred from filename only.",
+        duration_seconds: "",
+        review_required: "True",
+        provenance_ids: "",
+      };
+    }),
+  );
+  return { catalog, metadataSource: "filenames-and-file-hashes" };
+}
+
 export async function loadGameInventory() {
   return withReportServer(async (server) => {
     const load = (file) => server.ssrLoadModule(`/src/${file}.ts`);
@@ -100,7 +140,7 @@ export function validateMappings(manifest, inventory, catalog) {
   const assets = new Map(catalog.map((asset) => [asset.asset_id, asset]));
   if (assets.size !== catalog.length) throw new Error("Duplicate catalog asset ID");
   for (const family of manifest.families) {
-    if (family.candidates.length > 3) throw new Error(`Too many alternatives for ${family.id}`);
+    if (family.candidates.length > 4) throw new Error(`Too many alternatives for ${family.id}`);
     const chosen = new Set();
     for (const candidate of family.candidates) {
       const asset = assets.get(candidate.assetId);
@@ -150,6 +190,21 @@ export function validateMappings(manifest, inventory, catalog) {
     ...inventory.enemies.map(({ id }) => `enemy:${id}`),
     ...inventory.companions.map(({ id }) => `companion:${id}`),
   ]);
+  for (const [dependent, source] of Object.entries(manifest.sharedChoices ?? {})) {
+    if (
+      !contentMappingIds.has(dependent) ||
+      !contentMappingIds.has(source) ||
+      dependent === source ||
+      manifest.sharedChoices[source]
+    )
+      throw new Error(`Invalid shared sound choice: ${dependent} -> ${source}`);
+    const familyFor = (id) => {
+      const [kind, key] = id.split(":");
+      return manifest.assignments[kind === "enemy" ? "enemies" : kind === "companion" ? "companions" : "cards"][key];
+    };
+    if (familyFor(dependent) !== familyFor(source))
+      throw new Error(`Shared choices need the same candidates: ${dependent}`);
+  }
   for (const [keyword, actionIds] of Object.entries(manifest.keywordCoverage))
     for (const id of actionIds)
       if (!ids.has(id) && !contentMappingIds.has(id)) throw new Error(`Unknown action ${id} for ${keyword}`);
@@ -233,8 +288,8 @@ export function buildMappings(manifest, inventory, catalog, currentIdentity) {
           kind === "enemies"
             ? "Ability turns use the ability card cue first. This fallback does not replace those sounds."
             : kind === "companions"
-              ? "Audition repeated turn effects at a restrained level; a vocal summon need not repeat every turn."
-              : "Use the family cue once per accepted play; effect/impact layers need separate overlap review.",
+              ? "Summoning and turn effects share the focal recording; compare repeated playback at a restrained level."
+              : "One focal cue per accepted play; routine effect layers are suppressed, with at most one resolved special accent.",
         priority:
           (kind === "enemies" && entity.enemyType === "boss") ||
           (kind === "cards" && !currentFiles.length && entity.keywords.includes("archery"))
@@ -297,6 +352,11 @@ export function buildMappings(manifest, inventory, catalog, currentIdentity) {
           : "replacement";
     return {
       ...mapping,
+      choiceFrom: manifest.sharedChoices?.[mapping.id],
+      note:
+        mapping.id === "enemy:will-o-wisp"
+          ? `${mapping.note} This choice also sets the Will-o'-Wisp companion and its summoning card.`
+          : mapping.note,
       candidates,
       status,
       rationale: family.rationale,

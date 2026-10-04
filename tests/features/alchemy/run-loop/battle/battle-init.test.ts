@@ -187,6 +187,7 @@ describe("createBattleInit", () => {
     });
 
     expect(feedback).toHaveBeenCalled();
+    expect(feedback.mock.calls[0]?.[2]).toBe("efx-int-mutt-growl-42-b-ef1caab1-0-2443.ogg");
     const texts = feedback.mock.calls[0]?.[1] ?? [];
     expect(texts.some((ct) => ct.kind === "damage" && ct.target === "enemy")).toBe(true);
   });

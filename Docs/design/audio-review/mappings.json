@@ -237,14 +237,14 @@
           "assetId": "30f752c8bbaac9ee",
           "path": "combat/sword_attack_01__existing_library_unattributed__30f752c8bbaac9ee.ogg",
           "start": 0,
-          "duration": 3.0,
+          "duration": 3,
           "note": "Full recording at original level or matched level."
         },
         {
           "assetId": "1e6f03e1cd618b7d",
           "path": "combat/sword_attack_02__existing_library_unattributed__1e6f03e1cd618b7d.ogg",
           "start": 0,
-          "duration": 3.0,
+          "duration": 3,
           "note": "Full recording at original level or matched level."
         }
       ]
@@ -307,7 +307,7 @@
           "assetId": "a169e2a5350c7868",
           "path": "combat/heavy_armor_block_01__existing_library_unattributed__a169e2a5350c7868.mp3",
           "start": 0,
-          "duration": 2.0,
+          "duration": 2,
           "note": "Full recording at original level or matched level."
         },
         {
@@ -349,14 +349,14 @@
           "assetId": "626d2d6da17c1173",
           "path": "combat/bow_attack_01__existing_library_unattributed__626d2d6da17c1173.ogg",
           "start": 0,
-          "duration": 3.0,
+          "duration": 3,
           "note": "Full recording at original level or matched level."
         },
         {
           "assetId": "d2ecb917432cd15e",
           "path": "combat/bow_attack_02__existing_library_unattributed__d2ecb917432cd15e.ogg",
           "start": 0,
-          "duration": 3.0,
+          "duration": 3,
           "note": "Full recording at original level or matched level."
         },
         {
@@ -377,21 +377,21 @@
           "assetId": "e587c4fab796fcfc",
           "path": "magic/fireball_02__existing_library_unattributed__e587c4fab796fcfc.ogg",
           "start": 0,
-          "duration": 3.0,
+          "duration": 3,
           "note": "Full recording at original level or matched level."
         },
         {
           "assetId": "7b515ce1c85396b7",
           "path": "magic/fireball_01__existing_library_unattributed__7b515ce1c85396b7.ogg",
           "start": 0,
-          "duration": 3.0,
+          "duration": 3,
           "note": "Full recording at original level or matched level."
         },
         {
           "assetId": "aa35e887876a1ca9",
           "path": "combat/torch_impact_01__existing_library_unattributed__aa35e887876a1ca9.ogg",
           "start": 0,
-          "duration": 3.0,
+          "duration": 3,
           "note": "Full recording at original level or matched level."
         }
       ]
@@ -412,7 +412,7 @@
           "assetId": "cd5b436a0c0c7866",
           "path": "world/ice_throw_01__existing_library_unattributed__cd5b436a0c0c7866.ogg",
           "start": 0,
-          "duration": 4.0,
+          "duration": 4,
           "note": "Full recording at original level or matched level."
         },
         {
@@ -447,7 +447,7 @@
           "assetId": "ac84ed8a167b00dc",
           "path": "magic/lightning_impact__existing_library_unattributed__ac84ed8a167b00dc.flac",
           "start": 0,
-          "duration": 2.0,
+          "duration": 2,
           "note": "Full recording at original level or matched level."
         }
       ]
@@ -468,7 +468,7 @@
           "assetId": "03a28dd627c824a9",
           "path": "crafting/rock_meteor_swarm_01__existing_library_unattributed__03a28dd627c824a9.ogg",
           "start": 0,
-          "duration": 6.0,
+          "duration": 6,
           "note": "Full recording at original level or matched level."
         }
       ]
@@ -640,32 +640,32 @@
           "note": "Full recording at original level or matched level."
         },
         {
-          "assetId": "0789cec073b6aeec",
-          "path": "magic/arcane_spell_doppler_shift_03__sound_spark_llc_magic_spells_buffs_and_att__0789cec073b6aeec.flac",
-          "start": 0,
-          "duration": 2.9925,
-          "note": "Full recording at original level or matched level."
+          "assetId": "fded9548efba5ccf",
+          "path": "magic/magspel_cast_casting_buff_hy_pc_004__existing_library_unattributed__fded9548efba5ccf.flac",
+          "start": 0.02,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
         }
       ]
     },
     {
       "id": "wish",
       "title": "Wish, Mystery and Corruption",
-      "rationale": "An arcane doppler shift gives transformations an identity distinct from the current mystery music-box cue. Compare for tonal consistency.",
+      "rationale": "Available short casting takes replace the missing Doppler and Weirdness sources; audition for arcane identity.",
       "candidates": [
         {
-          "assetId": "0789cec073b6aeec",
-          "path": "magic/arcane_spell_doppler_shift_03__sound_spark_llc_magic_spells_buffs_and_att__0789cec073b6aeec.flac",
-          "start": 0,
-          "duration": 2.9925,
-          "note": "Full recording at original level or matched level."
+          "assetId": "fded9548efba5ccf",
+          "path": "magic/magspel_cast_casting_buff_hy_pc_004__existing_library_unattributed__fded9548efba5ccf.flac",
+          "start": 0.02,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
         },
         {
-          "assetId": "935957b92e8debeb",
-          "path": "magic/magspel_cast_weirdness_hy_pc_003__existing_library_unattributed__935957b92e8debeb.flac",
-          "start": 0,
-          "duration": 2.5,
-          "note": "Full recording at original level or matched level."
+          "assetId": "6b612bab4fa9e078",
+          "path": "magic/magspel_cast_casting_buff_hy_pc_001__existing_library_unattributed__6b612bab4fa9e078.flac",
+          "start": 0.05,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
         }
       ]
     },
@@ -832,7 +832,7 @@
           "assetId": "efb291c33b901722",
           "path": "crafting/mine_02__existing_library_unattributed__efb291c33b901722.ogg",
           "start": 0,
-          "duration": 2.0,
+          "duration": 2,
           "note": "Full recording at original level or matched level."
         }
       ]
@@ -1151,6 +1151,349 @@
       "rationale": "Existing visible feedback is sufficient for inspection and continuous adjustment. Reserve sound for committed actions rather than every render or pointer movement.",
       "candidates": [],
       "silenceReason": "Keep passive inspection, tooltips, continuous sliders, and automatic saves quiet; no sound candidate is needed."
+    },
+    {
+      "id": "battle-focus-card-avatar",
+      "title": "Avatar audition",
+      "rationale": "Two source-specific alternatives for Avatar. These are unapproved listening candidates; no production replacement is installed.",
+      "candidates": [
+        {
+          "assetId": "a47d5cbcd05115a4",
+          "path": "world/church_choir_dm__certified_audio_ambient_soundscapes__a47d5cbcd05115a4.flac",
+          "start": 0,
+          "duration": 2.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        },
+        {
+          "assetId": "f6318a19f7ff55a2",
+          "path": "combat/impact_sound_design_hit_chime_resonant_hit_chime_accent_tinkle_fast__airborne_sound_crisis_accents__f6318a19f7ff55a2.wav",
+          "start": 0,
+          "duration": 2.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        }
+      ]
+    },
+    {
+      "id": "battle-focus-card-exorcism",
+      "title": "Exorcism audition",
+      "rationale": "Four listening options, including the original pair. Compare their character before choosing; no production replacement is installed.",
+      "candidates": [
+        {
+          "assetId": "ef2ba58846d5bd45",
+          "path": "magic/purge_01__existing_library_unattributed__ef2ba58846d5bd45.flac",
+          "start": 0,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        },
+        {
+          "assetId": "5fd0b4261693e69f",
+          "path": "magic/sorcery_ck_effect_reverse_explosion_02__rock_the_speakerbox_sorcery__5fd0b4261693e69f.wav",
+          "start": 2.83,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        },
+        {
+          "assetId": "27c0faf91f7c4909",
+          "path": "magic/casting_charge_matter_grow_04__gamemaster_audio_magic_and_spell_sounds__27c0faf91f7c4909.flac",
+          "start": 0,
+          "duration": 1.167,
+          "note": "Additional listening option. Full charge and impact take, with 5 ms edge fades; unheard."
+        },
+        {
+          "assetId": "962097dd78656709",
+          "path": "magic/spell_impact_01__existing_library_unattributed__962097dd78656709.ogg",
+          "start": 0,
+          "duration": 0.371,
+          "note": "Additional listening option. First prominent event selected from signal levels, with 5 ms edge fades; unheard."
+        }
+      ]
+    },
+    {
+      "id": "battle-focus-card-sanctified-plate",
+      "title": "Sanctified Plate audition",
+      "rationale": "Two source-specific alternatives for Sanctified Plate. These are unapproved listening candidates; no production replacement is installed.",
+      "candidates": [
+        {
+          "assetId": "5abcc0c609bce213",
+          "path": "magic/arcane_metal_01__existing_library_unattributed__5abcc0c609bce213.flac",
+          "start": 0.25,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        },
+        {
+          "assetId": "a6a1ca66d08efd92",
+          "path": "combat/plate_impact_hard_02__double_trouble_audio_medieval_armor_and_im__a6a1ca66d08efd92.flac",
+          "start": 0,
+          "duration": 0.764,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        }
+      ]
+    },
+    {
+      "id": "battle-focus-card-tithe",
+      "title": "Tithe audition",
+      "rationale": "Two source-specific alternatives for Tithe. These are unapproved listening candidates; no production replacement is installed.",
+      "candidates": [
+        {
+          "assetId": "f6318a19f7ff55a2",
+          "path": "combat/impact_sound_design_hit_chime_resonant_hit_chime_accent_tinkle_fast__airborne_sound_crisis_accents__f6318a19f7ff55a2.wav",
+          "start": 0,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        },
+        {
+          "assetId": "d4797e91fa2b61fd",
+          "path": "music_and_outcomes/harpsichord_chime_quick__existing_library_unattributed__d4797e91fa2b61fd.flac",
+          "start": 0,
+          "duration": 1.07,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        }
+      ]
+    },
+    {
+      "id": "battle-focus-card-prayer",
+      "title": "Prayer audition",
+      "rationale": "Four listening options, including the original pair. Compare their character before choosing; no production replacement is installed.",
+      "candidates": [
+        {
+          "assetId": "9c263c55e9a235f1",
+          "path": "music_and_outcomes/singing_bowl_strike_sustain_d_02__prismo_sound_singing_bowls__9c263c55e9a235f1.wav",
+          "start": 4.63,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        },
+        {
+          "assetId": "5a40569f44e9180f",
+          "path": "music_and_outcomes/harp_01__existing_library_unattributed__5a40569f44e9180f.flac",
+          "start": 0,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        },
+        {
+          "assetId": "a47d5cbcd05115a4",
+          "path": "world/church_choir_dm__certified_audio_ambient_soundscapes__a47d5cbcd05115a4.flac",
+          "start": 0,
+          "duration": 1.5,
+          "note": "Additional listening option. First prominent event selected from signal levels, with 5 ms edge fades; unheard."
+        },
+        {
+          "assetId": "bf0c54416d4acd6c",
+          "path": "magic/magspel_cast_casting_buff_hy_pc_005__existing_library_unattributed__bf0c54416d4acd6c.flac",
+          "start": 0.03,
+          "duration": 1.5,
+          "note": "Additional listening option. First prominent event selected from signal levels, with 5 ms edge fades; unheard."
+        }
+      ]
+    },
+    {
+      "id": "battle-focus-card-wishing-well",
+      "title": "Wishing Well audition",
+      "rationale": "Two source-specific alternatives for Wishing Well. These are unapproved listening candidates; no production replacement is installed.",
+      "candidates": [
+        {
+          "assetId": "fded9548efba5ccf",
+          "path": "magic/magspel_cast_casting_buff_hy_pc_004__existing_library_unattributed__fded9548efba5ccf.flac",
+          "start": 0.02,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        },
+        {
+          "assetId": "44c5b75bf0f94799",
+          "path": "magic/illusion_mystery_magical_water__sound_ex_machina_endless_drones__44c5b75bf0f94799.flac",
+          "start": 0,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        }
+      ]
+    },
+    {
+      "id": "battle-focus-enemy-will-o-wisp",
+      "title": "Will-o\u2019-Wisp enemy audition",
+      "rationale": "Two source-specific alternatives for Will-o\u2019-Wisp enemy. These are unapproved listening candidates; no production replacement is installed.",
+      "candidates": [
+        {
+          "assetId": "b861ccb684646844",
+          "path": "magic/ghosts_spell_hocus_pocus_2_lr__articulated_sounds_ghosts__b861ccb684646844.flac",
+          "start": 0.88,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        },
+        {
+          "assetId": "6b612bab4fa9e078",
+          "path": "magic/magspel_cast_casting_buff_hy_pc_001__existing_library_unattributed__6b612bab4fa9e078.flac",
+          "start": 0.05,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        }
+      ]
+    },
+    {
+      "id": "battle-focus-companion-library-owl",
+      "title": "Library Owl audition",
+      "rationale": "Two source-specific alternatives for Library Owl. These are unapproved listening candidates; no production replacement is installed.",
+      "candidates": [
+        {
+          "assetId": "f8eb76079359d8d6",
+          "path": "magic/magic_generic_haunted_old_grimoire_open_flip_through_close_01__articulated_sounds_magic_elements_vol_1__f8eb76079359d8d6.flac",
+          "start": 0.28,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        },
+        {
+          "assetId": "8ee66c00b72cba10",
+          "path": "items/catalogue_page_turn_9__touchdown_audio_the_white_stuff__8ee66c00b72cba10.wav",
+          "start": 0.38,
+          "duration": 0.438,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        }
+      ]
+    },
+    {
+      "id": "battle-focus-enemy-cleric",
+      "title": "Cleric audition",
+      "rationale": "Two source-specific alternatives for Cleric. These are unapproved listening candidates; no production replacement is installed.",
+      "candidates": [
+        {
+          "assetId": "2847537ec06e3c64",
+          "path": "magic/heal_01__existing_library_unattributed__2847537ec06e3c64.flac",
+          "start": 0,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        },
+        {
+          "assetId": "9c263c55e9a235f1",
+          "path": "music_and_outcomes/singing_bowl_strike_sustain_d_02__prismo_sound_singing_bowls__9c263c55e9a235f1.wav",
+          "start": 4.63,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        }
+      ]
+    },
+    {
+      "id": "battle-focus-enemy-inquisitor",
+      "title": "Inquisitor audition",
+      "rationale": "Two source-specific alternatives for Inquisitor. These are unapproved listening candidates; no production replacement is installed.",
+      "candidates": [
+        {
+          "assetId": "f6318a19f7ff55a2",
+          "path": "combat/impact_sound_design_hit_chime_resonant_hit_chime_accent_tinkle_fast__airborne_sound_crisis_accents__f6318a19f7ff55a2.wav",
+          "start": 0,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        },
+        {
+          "assetId": "ef2ba58846d5bd45",
+          "path": "magic/purge_01__existing_library_unattributed__ef2ba58846d5bd45.flac",
+          "start": 0,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        }
+      ]
+    },
+    {
+      "id": "battle-focus-enemy-paladin",
+      "title": "Paladin audition",
+      "rationale": "Two source-specific alternatives for Paladin. These are unapproved listening candidates; no production replacement is installed.",
+      "candidates": [
+        {
+          "assetId": "28230a5cb0123eda",
+          "path": "magic/arcane_metal_02__existing_library_unattributed__28230a5cb0123eda.flac",
+          "start": 0.11,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        },
+        {
+          "assetId": "a6a1ca66d08efd92",
+          "path": "combat/plate_impact_hard_02__double_trouble_audio_medieval_armor_and_im__a6a1ca66d08efd92.flac",
+          "start": 0,
+          "duration": 0.764,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        }
+      ]
+    },
+    {
+      "id": "battle-focus-enemy-seraph",
+      "title": "Seraph audition",
+      "rationale": "Two source-specific alternatives for Seraph. These are unapproved listening candidates; no production replacement is installed.",
+      "candidates": [
+        {
+          "assetId": "a47d5cbcd05115a4",
+          "path": "world/church_choir_dm__certified_audio_ambient_soundscapes__a47d5cbcd05115a4.flac",
+          "start": 0,
+          "duration": 2.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        },
+        {
+          "assetId": "e5440ea12f1c5e20",
+          "path": "world/angels_behind_the_wall__digital_rain_lab_dreamscapes_vol_2__e5440ea12f1c5e20.flac",
+          "start": 0.01,
+          "duration": 2.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        }
+      ]
+    },
+    {
+      "id": "battle-focus-enemy-zealot",
+      "title": "Zealot audition",
+      "rationale": "Two source-specific alternatives for Zealot. These are unapproved listening candidates; no production replacement is installed.",
+      "candidates": [
+        {
+          "assetId": "3b300b28cadd1c94",
+          "path": "magic/magspel_cast_casting_buff_hy_pc_002__existing_library_unattributed__3b300b28cadd1c94.flac",
+          "start": 0.02,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        },
+        {
+          "assetId": "fded9548efba5ccf",
+          "path": "magic/magspel_cast_casting_buff_hy_pc_004__existing_library_unattributed__fded9548efba5ccf.flac",
+          "start": 0.02,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        }
+      ]
+    },
+    {
+      "id": "battle-focus-enemy-giant-snake",
+      "title": "Giant Snake audition",
+      "rationale": "Two source-specific alternatives for Giant Snake. These are unapproved listening candidates; no production replacement is installed.",
+      "candidates": [
+        {
+          "assetId": "c33cf3f943e5ae6c",
+          "path": "creatures/snake_hiss_03__gamemaster_audio_animal_sounds__c33cf3f943e5ae6c.flac",
+          "start": 0.81,
+          "duration": 0.804,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        },
+        {
+          "assetId": "e9aede68b7efc05d",
+          "path": "creatures/creature_hiss_4_m__rdgsfx002_creatures__e9aede68b7efc05d.flac",
+          "start": 0.33,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        }
+      ]
+    },
+    {
+      "id": "battle-focus-enemy-giant-spider",
+      "title": "Giant Spider audition",
+      "rationale": "Two source-specific alternatives for Giant Spider. These are unapproved listening candidates; no production replacement is installed.",
+      "candidates": [
+        {
+          "assetId": "d2d3d05e3b8f01d4",
+          "path": "creatures/bug_people_03__existing_library_unattributed__d2d3d05e3b8f01d4.flac",
+          "start": 0.05,
+          "duration": 1.387,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        },
+        {
+          "assetId": "454bd7cf4a88ccde",
+          "path": "world/gaf_sfx01_horror_designed_corpseinsect_01__game_audio_factory_gafsfx01_dark_materials__454bd7cf4a88ccde.wav",
+          "start": 0.12,
+          "duration": 1.5,
+          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
+        }
+      ]
     }
   ],
   "actions": [
@@ -1502,7 +1845,7 @@
       "screens": ["battle"],
       "trigger": "Resolved outcome: Poison damage over time.",
       "current": "battleEventSounds.poisonTick",
-      "currentState": "registered-unused",
+      "currentState": "playing",
       "note": "Registry entries marked unused are proposals for activation, not evidence that this cue currently plays.",
       "priority": "P2",
       "evidence": [
@@ -1574,7 +1917,7 @@
       "screens": ["battle"],
       "trigger": "Resolved outcome: Draw batch acknowledgment.",
       "current": "battleEventSounds.drawCards",
-      "currentState": "registered-unused",
+      "currentState": "playing",
       "note": "Registry entries marked unused are proposals for activation, not evidence that this cue currently plays.",
       "priority": "P2",
       "evidence": [
@@ -1610,7 +1953,7 @@
       "screens": ["battle"],
       "trigger": "Resolved outcome: End Turn acknowledgment.",
       "current": "battleEventSounds.endTurn",
-      "currentState": "registered-unused",
+      "currentState": "playing",
       "note": "Registry entries marked unused are proposals for activation, not evidence that this cue currently plays.",
       "priority": "P2",
       "evidence": [
@@ -1628,7 +1971,7 @@
       "screens": ["battle"],
       "trigger": "Resolved outcome: Wish choices appear.",
       "current": "battleEventSounds.wishAppear",
-      "currentState": "registered-unused",
+      "currentState": "playing",
       "note": "Registry entries marked unused are proposals for activation, not evidence that this cue currently plays.",
       "priority": "P2",
       "evidence": [
@@ -1790,9 +2133,9 @@
       "family": "mana",
       "screens": ["battle"],
       "trigger": "Resolved event: Mana restoration or loss.",
-      "current": null,
-      "currentState": "silent",
-      "note": "New semantic cue proposal. Avoid duplicating a simultaneous cast, hit or heal; Leech can reuse the existing heal acknowledgment.",
+      "current": "battleEventSounds.manaChange",
+      "currentState": "playing",
+      "note": "Standalone feedback only; suppressed when the source has a focal cue.",
       "priority": "P2",
       "evidence": ["src/features/alchemy/run-loop/battle/controller-utils.ts", "Docs/GAME_RULES.md"]
     },
@@ -1803,9 +2146,9 @@
       "family": "heal",
       "screens": ["battle"],
       "trigger": "Resolved event: Purge / remove a harmful status.",
-      "current": null,
-      "currentState": "silent",
-      "note": "New semantic cue proposal. Avoid duplicating a simultaneous cast, hit or heal; Leech can reuse the existing heal acknowledgment.",
+      "current": "battleEventSounds.cleanse",
+      "currentState": "playing",
+      "note": "Standalone feedback only; suppressed when the source has a focal cue.",
       "priority": "P2",
       "evidence": ["src/features/alchemy/run-loop/battle/controller-utils.ts", "Docs/GAME_RULES.md"]
     },
@@ -2445,6 +2788,32 @@
       "note": "Loop seams and subjective fit are unverified. No shop-room take sufficiently free of modern detail was established; silence is a valid choice.",
       "priority": "P3",
       "evidence": ["src/lib/routing/screens.ts"]
+    },
+    {
+      "id": "block-gain",
+      "title": "Gain Block",
+      "group": "Battle",
+      "family": "parry",
+      "screens": ["battle"],
+      "trigger": "Resolved standalone gain block.",
+      "current": "battleEventSounds.blockGain",
+      "currentState": "playing",
+      "note": "Suppressed when the source has a focal cue.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/battle/combat-sound-selection.ts"]
+    },
+    {
+      "id": "thorns-gain",
+      "title": "Gain Thorns",
+      "group": "Battle",
+      "family": "nature",
+      "screens": ["battle"],
+      "trigger": "Resolved standalone gain thorns.",
+      "current": "battleEventSounds.thornsGain",
+      "currentState": "playing",
+      "note": "Suppressed when the source has a focal cue.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/battle/combat-sound-selection.ts"]
     }
   ],
   "assignments": {
@@ -2489,16 +2858,16 @@
       "plate-mail": "parry",
       "crystal-bulwark": "parry",
       "blessed-aegis": "holy",
-      "tithe": "holy",
-      "exorcism": "holy",
-      "sanctified-plate": "holy",
-      "avatar": "holy",
+      "tithe": "battle-focus-card-tithe",
+      "exorcism": "battle-focus-card-exorcism",
+      "sanctified-plate": "battle-focus-card-sanctified-plate",
+      "avatar": "battle-focus-card-avatar",
       "smite": "holy",
       "judgment": "holy",
       "holy-radiance": "holy",
       "wish": "wish",
-      "wishing-well": "wish",
-      "prayer": "wish",
+      "wishing-well": "battle-focus-card-wishing-well",
+      "prayer": "battle-focus-card-prayer",
       "meteor": "earth",
       "earthquake": "earth",
       "roll-the-dice": "dice",
@@ -2549,10 +2918,10 @@
       "skeleton-companion": "bone",
       "pixie-companion": "heal",
       "mana-moth-companion": "mana",
-      "will-o-wisp-companion": "wish",
+      "will-o-wisp-companion": "battle-focus-enemy-will-o-wisp",
       "golden-retriever-companion": "coins",
       "shield-scarab-companion": "parry",
-      "library-owl-companion": "page",
+      "library-owl-companion": "battle-focus-companion-library-owl",
       "fox-companion": "beast"
     },
     "enemies": {
@@ -2573,8 +2942,8 @@
       "mud-elemental": "poison",
       "plague-doctor": "poison",
       "slime": "poison",
-      "giant-spider": "poison",
-      "giant-snake": "poison",
+      "giant-spider": "battle-focus-enemy-giant-spider",
+      "giant-snake": "battle-focus-enemy-giant-snake",
       "necromancer": "dark",
       "vampire": "dark",
       "blood-cultist": "dark",
@@ -2585,13 +2954,13 @@
       "fire-imp": "fire",
       "hellhound": "fire",
       "pyromancer": "fire",
-      "will-o-wisp": "wish",
+      "will-o-wisp": "battle-focus-enemy-will-o-wisp",
       "dire-wolf": "canine",
-      "zealot": "holy",
-      "cleric": "holy",
-      "inquisitor": "holy",
-      "paladin": "holy",
-      "seraph": "holy",
+      "zealot": "battle-focus-enemy-zealot",
+      "cleric": "battle-focus-enemy-cleric",
+      "inquisitor": "battle-focus-enemy-inquisitor",
+      "paladin": "battle-focus-enemy-paladin",
+      "seraph": "battle-focus-enemy-seraph",
       "banshee": "danger",
       "earth-elemental": "earth",
       "stone-titan": "earth"
@@ -2606,10 +2975,10 @@
       "skeleton": "bone",
       "pixie": "heal",
       "mana-moth": "mana",
-      "will-o-wisp": "wish",
+      "will-o-wisp": "battle-focus-enemy-will-o-wisp",
       "golden-retriever": "coins",
       "shield-scarab": "parry",
-      "library-owl": "page",
+      "library-owl": "battle-focus-companion-library-owl",
       "fox": "beast"
     }
   },
@@ -2722,7 +3091,7 @@
         },
         {
           "mapping": "drawTransfer",
-          "at": 2.0
+          "at": 2
         },
         {
           "mapping": "drawTransfer",
@@ -2802,5 +3171,27 @@
         }
       ]
     }
-  ]
+  ],
+  "battleFocus": [
+    "card:avatar",
+    "card:exorcism",
+    "card:sanctified-plate",
+    "card:tithe",
+    "card:prayer",
+    "card:wishing-well",
+    "enemy:will-o-wisp",
+    "companion:will-o-wisp",
+    "companion:library-owl",
+    "enemy:cleric",
+    "enemy:inquisitor",
+    "enemy:paladin",
+    "enemy:seraph",
+    "enemy:zealot",
+    "enemy:giant-snake",
+    "enemy:giant-spider"
+  ],
+  "sharedChoices": {
+    "companion:will-o-wisp": "enemy:will-o-wisp",
+    "card:will-o-wisp-companion": "enemy:will-o-wisp"
+  }
 }

@@ -375,11 +375,5 @@ export function decayEnemyArmor(state: BattleState): BattleState {
   if (hasEnemyTrait(state, "unbreakable") || state.enemyMitigation.armor <= MIN_ARMOR_AMOUNT) {
     return state;
   }
-  return {
-    ...state,
-    enemyMitigation: {
-      ...state.enemyMitigation,
-      armor: Math.max(0, state.enemyMitigation.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT),
-    },
-  };
+  return reduceEnemyArmor(state, BATTLE_CONFIG.ARMOR_DECAY_AMOUNT);
 }

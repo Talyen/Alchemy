@@ -1,35 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { computeCardDamageToEnemy, forgeAppliesToDamageType } from "@/lib/battle/damage-calc";
+import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { defaultTalentEffects } from "@/lib/battle";
-import { defaultGearEffects } from "@/lib/gear";
 import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { CRIT_MULTIPLIER } from "@/lib/game-constants";
-import type { BattleCardEffect, DamageType } from "@/lib/game-data";
-import {
-  dealDamage,
-  makeCombatTexts,
-  makeEffect,
-  makeTestCard,
-  patchBattleState,
-  seededRng,
-} from "../../fixtures/battle";
-import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
-import { defaultCombatFlags, defaultTrinketManifest } from "../../fixtures/default-battle-state";
-
-describe("forgeAppliesToDamageType", () => {
-  it.each(["physical", "stun"] as const)("always applies to %s", (damageType) => {
-    expect(forgeAppliesToDamageType(damageType, defaultTalentEffects)).toBe(true);
-  });
-
-  it.each([
-    ["burn", "forgeBurnDamagePercent"],
-    ["holy", "forgeHolyDamagePercent"],
-    ["bleed", "forgeBleedDamagePercent"],
-  ] as const)("gates %s on its talent percentage", (damageType, talentPercent) => {
-    expect(forgeAppliesToDamageType(damageType, defaultTalentEffects)).toBe(false);
-    expect(forgeAppliesToDamageType(damageType, { ...defaultTalentEffects, [talentPercent]: 100 })).toBe(true);
-  });
-});
+import type { BattleCardEffect } from "@/lib/game-data";
+import { dealDamage, makeCombatTexts, makeEffect, makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("computeCardDamageToEnemy", () => {
   const physicalEffect: Extract<BattleCardEffect, { kind: "damage" }> = {
@@ -37,38 +12,6 @@ describe("computeCardDamageToEnemy", () => {
     damageType: "physical",
     amount: 6,
   };
-
-  it("absorbs enemy block before health", () => {
-    const state = patchBattleState({
-      enemyHealth: 30,
-      enemyMitigation: { block: 4 },
-      rng: seededRng(99),
-    });
-    const { nextState, modifiedDamage } = computeCardDamageToEnemy(state, physicalEffect);
-    expect(nextState.enemyMitigation.block).toBe(0);
-    expect(modifiedDamage).toBe(2);
-    expect(nextState.enemyHealth).toBe(30);
-  });
-
-  it("applies sundering armor pierce for physical damage", () => {
-    const base = patchBattleState();
-    const state = patchBattleState({
-      enemyHealth: 30,
-      enemyMitigation: { ...base.enemyMitigation, armor: 10, block: 0 },
-      trinketEffects: { ...base.trinketEffects, sunderingArmorPiercing: 10 },
-    });
-    const { modifiedDamage } = computeCardDamageToEnemy(state, physicalEffect);
-    expect(modifiedDamage).toBe(6);
-  });
-
-  it("applies crit multiplier when random rolls below threshold", () => {
-    const state = patchBattleState({
-      enemyMitigation: { block: 0, armor: 0 },
-      rng: () => 0,
-    });
-    const { modifiedDamage } = computeCardDamageToEnemy(state, physicalEffect);
-    expect(modifiedDamage).toBe(physicalEffect.amount * CRIT_MULTIPLIER);
-  });
 
   it.each(["rolled", "next-hit", "physical", "guaranteed"] as const)(
     "%s critical hits share the bonus formula and preserve RNG consumption",
@@ -162,280 +105,120 @@ describe("low-health damage bonuses", () => {
   });
 });
 
-describe("dealDamageToEnemy — basic physical damage", () => {
-  it("deals base damage to enemy health", () => {
-    const state = patchBattleState({ enemyHealth: 30 });
-    const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
-    const result = dealDamage(state, card);
-    expect(result.enemyHealth).toBe(25);
-  });
-
-  it("adds gear flat physical damage separately from talents", () => {
-    const state = patchBattleState({
-      enemyHealth: 30,
-      gearEffects: { ...defaultGearEffects, flatPhysicalDamage: 3 },
-      talentEffects: { ...patchBattleState().talentEffects, flatPhysicalDamage: 0 },
-    });
-    const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
-    const result = dealDamage(state, card);
-    expect(result.enemyHealth).toBe(22);
-  });
-
-  it("adds gear flat bonuses for each damage type", () => {
-    const damageTypes = [
-      ["physical", "flatPhysicalDamage"],
-      ["stun", "flatStunDamage"],
-      ["holy", "flatHolyDamage"],
-      ["burn", "flatBurnDamage"],
-      ["poison", "flatPoisonDamage"],
-      ["bleed", "flatBleedDamage"],
-      ["freeze", "flatFreezeDamage"],
-      ["nature", "flatNatureDamage"],
-    ] as const;
-
-    for (const [damageType, gearKey] of damageTypes) {
-      const state = patchBattleState({
-        enemyHealth: 30,
-        gearEffects: { ...defaultGearEffects, [gearKey]: 1 },
-        talentEffects: { ...patchBattleState().talentEffects },
-      });
-      const card = makeTestCard({ effects: [makeEffect(damageType, 5)] });
-      const result = dealDamage(state, card);
-      expect(result.enemyHealth).toBe(24);
-    }
-  });
-
-  it("produces combat text for damage", () => {
-    const state = patchBattleState({ enemyHealth: 30 });
-    const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
+describe("resolved card damage", () => {
+  it("resolves Block before Armor, decays Armor, and reports only damage reaching Health without mutating input", () => {
+    const state = patchBattleState({ enemyMitigation: { block: 4, armor: 3 }, rng: () => 0.99 });
+    const card = makeTestCard({ effects: [makeEffect("physical", 10)] });
     const texts = makeCombatTexts();
-    dealDamage(state, card, texts);
-    expect(texts.length).toBeGreaterThan(0);
-    expect(texts.some((t) => t.target === "enemy" && t.kind === "damage")).toBe(true);
-  });
-});
-
-describe("computeBaseDamage — equalToBlock / equalToArmor", () => {
-  it("damage equals block plus forge when equalToBlock", () => {
-    const state = patchBattleState({ playerStatuses: defaultPlayerStatusValues({ block: 7 }) });
-    const card = makeTestCard({ effects: [makeEffect("physical", 0, { equalToBlock: true })] });
-    const result = dealDamage(state, card);
-    expect(result.enemyHealth).toBeLessThanOrEqual(30 - 7);
+    const result = dealDamage(state, card, texts);
+    expect(result.enemyHealth).toBe(27);
+    expect(result.enemyMitigation).toEqual({ block: 0, armor: 2, forge: 0 });
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "physical", amount: 3 });
+    expect(state.enemyHealth).toBe(30);
+    expect(state.enemyMitigation).toEqual({ block: 4, armor: 3, forge: 0 });
   });
 
-  it("damage equals armor plus forge when equalToArmor", () => {
-    const state = patchBattleState({ playerStatuses: defaultPlayerStatusValues({ armor: 4 }) });
-    const card = makeTestCard({ effects: [makeEffect("physical", 0, { equalToArmor: true })] });
-    const result = dealDamage(state, card);
-    expect(result.enemyHealth).toBeLessThanOrEqual(30 - 4);
-  });
-});
-
-describe("dealDamageToEnemy — edge cases", () => {
-  it("does not decrease health below 0", () => {
-    const state = patchBattleState({ enemyHealth: 3 });
-    const card = makeTestCard({ effects: [makeEffect("physical", 100)] });
-    const result = dealDamage(state, card);
-    expect(result.enemyHealth).toBe(0);
-  });
-
-  it("handles zero damage gracefully", () => {
+  it("combines Gear and Talent damage once before mitigation", () => {
     const state = patchBattleState({
-      enemyHealth: 30,
-      enemyMitigation: { armor: 0, forge: 0, block: 0 },
+      gearEffects: { flatPhysicalDamage: 3 },
+      talentEffects: { flatPhysicalDamage: 2 },
+      rng: () => 0.99,
     });
-    const card = makeTestCard({ effects: [makeEffect("physical", 0)] });
-    const result = dealDamage(state, card);
+    expect(dealDamage(state, makeTestCard({ effects: [makeEffect("physical", 5)] })).enemyHealth).toBe(20);
+  });
+
+  it.each(["block", "armor"] as const)("uses live %s plus Forge and spends Forge only once", (resource) => {
+    const state = patchBattleState({ playerStatuses: { [resource]: 7, forge: 3 }, rng: () => 0.99 });
+    const effect = makeEffect("physical", 0, resource === "block" ? { equalToBlock: true } : { equalToArmor: true });
+    const result = dealDamage(state, makeTestCard({ effects: [effect] }));
+    expect(result.enemyHealth).toBe(20);
+    expect(result.playerStatuses.forge).toBe(2);
+    expect(result.playerStatuses[resource]).toBe(7);
+  });
+
+  it("caps lethal hits at zero and leaves Forge untouched for zero damage", () => {
+    expect(
+      dealDamage(patchBattleState({ enemyHealth: 3 }), makeTestCard({ effects: [makeEffect("physical", 100)] }))
+        .enemyHealth,
+    ).toBe(0);
+    const state = patchBattleState({ rng: () => 0.99 });
+    const texts = makeCombatTexts();
+    const result = dealDamage(state, makeTestCard({ effects: [makeEffect("physical", 0)] }), texts);
     expect(result.enemyHealth).toBe(30);
     expect(result.playerStatuses.forge).toBe(0);
+    expect(texts).toEqual([]);
   });
-});
 
-describe("applyFirstDamageModifiers", () => {
-  it("increases first burn card damage by 50% when Wildfire talent active", () => {
+  it("spends each first-Burn opportunity once and leaves an identity multiplier unspent", () => {
+    const card = makeTestCard({ effects: [makeEffect("burn", 5)] });
     const state = patchBattleState({
       rng: () => 0.99,
-      talentEffects: { ...defaultTalentEffects, firstBurnCardBonusMultiplier: 1.5 },
+      talentEffects: { firstBurnCardBonusMultiplier: 1.5 },
+      trinketEffects: { firstBurnDoubled: true },
     });
-    const card = makeTestCard({ effects: [makeEffect("burn", 5)] });
-    const result = dealDamage(state, card);
-    expect(result.flags.firstBurnCardDoubledUsed).toBe(true);
-    expect(result.enemyHealth).toBe(22);
+    const first = dealDamage(state, card);
+    expect(first.enemyHealth).toBe(17);
+    expect(first.flags.firstBurnCardDoubledUsed).toBe(true);
+    expect(first.flags.firstBurnTrinketDoubledUsed).toBe(true);
+    const second = dealDamage(first, card);
+    expect(second.enemyHealth).toBe(12);
+    const ordinary = dealDamage(
+      patchBattleState({ talentEffects: { firstBurnCardBonusMultiplier: 1 }, rng: () => 0.99 }),
+      card,
+    );
+    expect(ordinary.enemyHealth).toBe(25);
+    expect(ordinary.flags.firstBurnCardDoubledUsed).toBe(false);
   });
 
-  it("does not boost second burn card when Wildfire flag is used", () => {
-    const state = patchBattleState({
-      rng: () => 0.99,
-      talentEffects: { ...defaultTalentEffects, firstBurnCardBonusMultiplier: 1.5 },
-      flags: defaultCombatFlags({ firstBurnCardDoubledUsed: true }),
-    });
-    const card = makeTestCard({ effects: [makeEffect("burn", 5)] });
-    const result = dealDamage(state, card);
-    expect(result.flags.firstBurnCardDoubledUsed).toBe(true);
-    expect(result.enemyHealth).toBe(25);
-  });
-
-  it("does not consume Wildfire when the multiplier is identity", () => {
-    const state = patchBattleState({
-      rng: () => 0.99,
-      talentEffects: { ...defaultTalentEffects, firstBurnCardBonusMultiplier: 1 },
-    });
-    const card = makeTestCard({ effects: [makeEffect("burn", 5)] });
-    const result = dealDamage(state, card);
-    expect(result.flags.firstBurnCardDoubledUsed).toBe(false);
-    expect(result.enemyHealth).toBe(25);
-  });
-
-  it("doubles first burn damage via boon effect", () => {
-    const state = patchBattleState({
-      rng: () => 0.99,
-      trinketEffects: defaultTrinketManifest({ firstBurnDoubled: true }),
-    });
-    const card = makeTestCard({ effects: [makeEffect("burn", 5)] });
-    const result = dealDamage(state, card);
-    expect(result.flags.firstBurnTrinketDoubledUsed).toBe(true);
-  });
-});
-
-const CHAIN_TYPES: DamageType[] = ["physical", "holy", "bleed", "stun", "burn", "freeze", "nature", "poison"];
-
-describe("dealDamageToEnemy — full calc/rider/status chain per wound kind", () => {
-  for (const damageType of CHAIN_TYPES) {
-    it(`${damageType} reduces enemy health and emits matching damage text`, () => {
-      const state = patchBattleState({ enemyHealth: 30, enemyMaxHealth: 30 });
-      const card = makeTestCard({ effects: [makeEffect(damageType, 5)] });
+  it.each(["burn", "poison", "bleed", "freeze", "stun"] as const)(
+    "reports exact %s damage and builds only its matching status",
+    (damageType) => {
+      const state = patchBattleState({ rng: () => 0.99 });
       const texts = makeCombatTexts();
-      const result = dealDamage(state, card, texts);
-      expect(result.enemyHealth).toBeLessThan(30);
-      expect(texts.some((t) => t.target === "enemy" && t.kind === "damage" && t.stat === damageType)).toBe(true);
-    });
-  }
+      const result = dealDamage(state, makeTestCard({ effects: [makeEffect(damageType, 5)] }), texts);
+      expect(result.enemyHealth).toBe(25);
+      expect(result.enemyStatuses).toEqual({ ...state.enemyStatuses, [damageType]: 5 });
+      expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: damageType, amount: 5 });
+    },
+  );
 
-  it("burn stacks burn equal to damage dealt", () => {
-    const state = patchBattleState({ enemyHealth: 30, enemyMaxHealth: 30 });
-    const result = dealDamage(state, makeTestCard({ effects: [makeEffect("burn", 5)] }));
-    expect(result.enemyStatuses.burn).toBeGreaterThan(0);
-  });
-
-  it("poison stacks poison equal to damage dealt", () => {
-    const state = patchBattleState({ enemyHealth: 30, enemyMaxHealth: 30 });
-    const result = dealDamage(state, makeTestCard({ effects: [makeEffect("poison", 5)] }));
-    expect(result.enemyStatuses.poison).toBeGreaterThan(0);
-  });
-
-  it("bleed stacks equal to damage as bleed", () => {
-    const state = patchBattleState({ enemyHealth: 30, enemyMaxHealth: 30 });
-    const result = dealDamage(state, makeTestCard({ effects: [makeEffect("bleed", 5)] }));
-    expect(result.enemyStatuses.bleed).toBe(5);
-  });
-
-  it("freeze and stun build their own stacks", () => {
-    const frozen = dealDamage(
-      patchBattleState({ enemyHealth: 30, enemyMaxHealth: 30 }),
-      makeTestCard({ effects: [makeEffect("freeze", 5)] }),
-    );
-    expect(frozen.enemyStatuses.freeze).toBeGreaterThan(0);
-    const stunned = dealDamage(
-      patchBattleState({ enemyHealth: 30, enemyMaxHealth: 30 }),
-      makeTestCard({ effects: [makeEffect("stun", 5)] }),
-    );
-    expect(stunned.enemyStatuses.stun).toBeGreaterThan(0);
-  });
-
-  it("physical, holy and nature apply no enemy status by default", () => {
-    for (const damageType of ["physical", "holy", "nature"] as const) {
-      const state = patchBattleState({ enemyHealth: 30, enemyMaxHealth: 30 });
-      const result = dealDamage(state, makeTestCard({ effects: [makeEffect(damageType, 5)] }));
-      expect(result.enemyStatuses.burn).toBe(0);
-      expect(result.enemyStatuses.poison).toBe(0);
-      expect(result.enemyStatuses.bleed).toBe(0);
-      expect(result.enemyStatuses.freeze).toBe(0);
-      expect(result.enemyStatuses.stun).toBe(0);
-    }
-  });
-
-  it("bleed with lifesteal queues leech that detonation pays as healing", () => {
-    const state = patchBattleState({ enemyHealth: 30, enemyMaxHealth: 30, playerHealth: 20, playerMaxHealth: 30 });
+  it("pays queued Bleed Leech once when its stacks detonate", () => {
+    const state = patchBattleState({ playerHealth: 20, rng: () => 0.99 });
     const afterHit = dealDamage(state, makeTestCard({ effects: [makeEffect("bleed", 5, { lifesteal: true })] }));
-    expect(afterHit.pendingBleedLeechHealing).toBeGreaterThan(0);
-    const texts = makeCombatTexts();
-    const afterDetonate = detonateEnemyStatuses(afterHit, ["bleed"], texts);
+    expect(afterHit.pendingBleedLeechHealing).toBe(5);
+    expect(afterHit.playerHealth).toBe(23);
+    const afterDetonate = detonateEnemyStatuses(afterHit, ["bleed"], []);
     expect(afterDetonate.pendingBleedLeechHealing).toBe(0);
-    expect(afterDetonate.playerHealth).toBeGreaterThan(20);
-  });
-});
-
-describe("dealDamageToEnemy — enemy armor", () => {
-  it("physical damage is reduced by enemy armor", () => {
-    const state = patchBattleState({
-      rng: () => 0.99,
-      enemyMitigation: { armor: 3, forge: 0, block: 0 },
-    });
-    const card = makeTestCard({ effects: [makeEffect("physical", 10)] });
-    const result = dealDamage(state, card);
-    expect(result.enemyHealth).toBe(30 - 10 + 3);
+    expect(afterDetonate.playerHealth).toBe(26);
+    expect(detonateEnemyStatuses(afterDetonate, ["bleed"], []).playerHealth).toBe(26);
   });
 
-  it("sunderingArmorPiercing removes enemy armor", () => {
-    const state = patchBattleState({
-      rng: () => 0.99,
-      enemyMitigation: { armor: 5, forge: 0, block: 0 },
-      trinketEffects: defaultTrinketManifest({ sunderingArmorPiercing: 2 }),
-    });
-    const card = makeTestCard({ effects: [makeEffect("physical", 10)] });
-    const result = dealDamage(state, card);
-    expect(result.enemyHealth).toBe(23);
-    expect(result.enemyMitigation.armor).toBe(2);
+  it("distinguishes ignored Armor from destroyed Armor, and lets Burn bypass Armor", () => {
+    const state = patchBattleState({ enemyMitigation: { armor: 5 }, rng: () => 0.99 });
+    const card = makeTestCard({ tags: ["archery"], effects: [makeEffect("physical", 10)] });
+    const pierced = dealDamage({ ...state, talentEffects: { ...state.talentEffects, archeryArmorPiercing: 1 } }, card);
+    expect(pierced.enemyHealth).toBe(24);
+    expect(pierced.enemyMitigation.armor).toBe(4);
+    const sundered = dealDamage(
+      { ...state, trinketEffects: { ...state.trinketEffects, sunderingArmorPiercing: 2 } },
+      card,
+    );
+    expect(sundered.enemyHealth).toBe(23);
+    expect(sundered.enemyMitigation.armor).toBe(2);
+    expect(dealDamage(state, makeTestCard({ effects: [makeEffect("burn", 10)] })).enemyHealth).toBe(20);
   });
 
-  it("Piercing Shot ignores 1 Armor on Archery physical hits", () => {
+  it.each([
+    ["physical", "armor"],
+    ["nature", "forge"],
+  ] as const)("siphons enemy %s-hit %s to the hero without duplicating the benefit", (damageType, stat) => {
     const state = patchBattleState({
-      rng: () => 0.99,
-      enemyMitigation: { armor: 3, forge: 0, block: 0 },
-      talentEffects: { ...defaultTalentEffects, archeryArmorPiercing: 1 },
-    });
-    const card = makeTestCard({
-      tags: ["archery"],
-      effects: [makeEffect("physical", 10)],
-    });
-    const result = dealDamage(state, card);
-    expect(result.enemyHealth).toBe(22);
-    expect(result.enemyMitigation.armor).toBe(2);
-  });
-
-  it("non-physical damage ignores enemy armor", () => {
-    const state = patchBattleState({
-      rng: () => 0.99,
-      enemyMitigation: { armor: 5, forge: 0, block: 0 },
-    });
-    const card = makeTestCard({ effects: [makeEffect("burn", 10)] });
-    const result = dealDamage(state, card);
-    expect(result.enemyHealth).toBe(20);
-  });
-});
-
-describe("dealDamageToEnemy — boonSiphon siphoning", () => {
-  it("steals armor and gains armor for the player when armor is siphoned", () => {
-    const state = patchBattleState({
-      enemyMitigation: { armor: 5, block: 0, forge: 0 },
-      talentEffects: { ...defaultTalentEffects, trinketSiphonChance: 100 },
+      enemyMitigation: { [stat]: 5 },
+      talentEffects: { trinketSiphonChance: 100 },
       rng: () => 0.1,
     });
-    const card = makeTestCard({ effects: [makeEffect("physical", 10, { lifesteal: true })] });
-    const result = dealDamage(state, card);
-    expect(result.enemyMitigation.armor).toBe(3);
-    expect(result.playerStatuses.armor).toBe(1);
-  });
-
-  it("steals forge and gains forge for the player when forge is siphoned", () => {
-    const state = patchBattleState({
-      enemyMitigation: { armor: 0, block: 0, forge: 3 },
-      talentEffects: { ...defaultTalentEffects, trinketSiphonChance: 100 },
-      rng: () => 0.1,
-    });
-    const card = makeTestCard({ effects: [makeEffect("nature", 10, { lifesteal: true })] });
-    const result = dealDamage(state, card);
-    expect(result.enemyMitigation.forge).toBe(2);
-    expect(result.playerStatuses.forge).toBe(1);
+    const result = dealDamage(state, makeTestCard({ effects: [makeEffect(damageType, 10, { lifesteal: true })] }));
+    expect(result.enemyMitigation[stat]).toBe(stat === "armor" ? 3 : 4);
+    expect(result.playerStatuses[stat]).toBe(1);
   });
 });

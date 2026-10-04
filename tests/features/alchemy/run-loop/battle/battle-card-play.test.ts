@@ -129,37 +129,38 @@ function clickCard(
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(playCardSound).mockImplementation((id) => `${id}.ogg`);
   resetBattlePresentationAndRun();
   useUiStore.getState().setCardInspection(null);
 });
 
 describe("createBattleCardPlay", () => {
-  it.each([
-    { burn: 0, playsCleanseSound: false },
-    { burn: 3, playsCleanseSound: true },
-  ])("plays the Cleanse cue only when a status is removed (Burn $burn)", ({ burn, playsCleanseSound }) => {
-    const cleanse = makeTestCard({
-      id: "cleanse",
-      cost: 1,
-      effects: [
-        { kind: "remove-harmful-status", amount: 1 },
-        { kind: "heal", amount: 2 },
-      ],
-    });
-    const base = makeTestBattleState();
-    const state = makeTestBattleState({
-      hand: [{ ...cleanse, uid: 1 }],
-      mana: 3,
-      playerHealth: 20,
-      playerStatuses: { ...base.playerStatuses, burn },
-    });
-    dispatchRunSessionCommand((draft) => setSyncedBattleState(draft, state));
+  it.each([{ burn: 0 }, { burn: 3 }])(
+    "acknowledges accepted Cleanse even without a removable status (Burn $burn)",
+    ({ burn }) => {
+      const cleanse = makeTestCard({
+        id: "cleanse",
+        cost: 1,
+        effects: [
+          { kind: "remove-harmful-status", amount: 1 },
+          { kind: "heal", amount: 2 },
+        ],
+      });
+      const base = makeTestBattleState();
+      const state = makeTestBattleState({
+        hand: [{ ...cleanse, uid: 1 }],
+        mana: 3,
+        playerHealth: 20,
+        playerStatuses: { ...base.playerStatuses, burn },
+      });
+      dispatchRunSessionCommand((draft) => setSyncedBattleState(draft, state));
 
-    const { ctx, session, transferDeps } = makeDeps();
-    clickCard(createBattleCardPlay(ctx, session, transferDeps).handleCardClick, { ...cleanse, uid: 1 }, 0);
+      const { ctx, session, transferDeps } = makeDeps();
+      clickCard(createBattleCardPlay(ctx, session, transferDeps).handleCardClick, { ...cleanse, uid: 1 }, 0);
 
-    expect(playCardSound).toHaveBeenCalledTimes(playsCleanseSound ? 1 : 0);
-  });
+      expect(playCardSound).toHaveBeenCalledExactlyOnceWith("cleanse");
+    },
+  );
 
   it("plays a legal card and syncs battle state", async () => {
     const slash = makeTestCard({
@@ -184,7 +185,8 @@ describe("createBattleCardPlay", () => {
       expect(ctx.playback.scheduleAutoEndTurn).toHaveBeenCalled();
     });
     expectAwardedCard(awardCardXP, "slash");
-    expect(playBattleEvent).toHaveBeenCalledWith("enemyHit");
+    expect(playCardSound).toHaveBeenCalledExactlyOnceWith("slash");
+    expect(playBattleEvent).not.toHaveBeenCalled();
     expect(playUISound).not.toHaveBeenCalled();
     expect(logError).not.toHaveBeenCalled();
     expect(useBattlePresentationStore.getState().playerAttackToken).toBe(1);
@@ -487,6 +489,7 @@ describe("createBattleCardPlay", () => {
 
     await expect(handleAutoplayWish(strong, autoplayControl)).resolves.toBe(true);
     const next = readBattle().battleState;
+    expect(playUISound).toHaveBeenCalledWith("selection");
     expect(next.wishOptions).toBeNull();
     expect(next.hand.map((card) => card.id)).toEqual(["strong-wish"]);
     expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();

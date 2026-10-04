@@ -7,14 +7,14 @@ import {
   collectAudioEvidence,
   inspectLibrary,
   loadGameInventory,
-  parseCatalog,
+  readLibraryCatalog,
 } from "./lib/audio-review.mjs";
 import { currentSoundIdentity, prepareReviewMedia } from "./lib/audio-review-media.mjs";
 import { serveReview } from "./lib/audio-review-server.mjs";
 import { importChoices, restoreChoices } from "./audio-review/choices.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const output = path.join(root, "reports/audio-review");
+const reviewOutput = (battleFocus) => path.join(root, "reports/audio-review", battleFocus ? "battle-focus" : "");
 
 function reportMarkdown(report) {
   const lines = [
@@ -69,10 +69,14 @@ function reportMarkdown(report) {
   return `${lines.join("\n")}\n`;
 }
 
-export async function generateAudioReview({ libraryRoot, checkOnly = false, choicesPath } = {}) {
+export async function generateAudioReview({ libraryRoot, checkOnly = false, choicesPath, battleFocus = false } = {}) {
+  const output = reviewOutput(battleFocus);
   const manifest = JSON.parse(await readFile(path.join(root, "Docs/design/audio-review/mappings.json"), "utf8"));
   libraryRoot = path.resolve(libraryRoot ?? manifest.libraryRootDefault);
-  const catalog = parseCatalog(await readFile(path.join(libraryRoot, "reference/catalog.csv"), "utf8"));
+  const { catalog, metadataSource } = await readLibraryCatalog(
+    libraryRoot,
+    manifest.families.flatMap((family) => family.candidates),
+  );
   const inventory = await loadGameInventory();
   const files = [
     ...new Set(
@@ -82,7 +86,15 @@ export async function generateAudioReview({ libraryRoot, checkOnly = false, choi
     ),
   ];
   const identities = await currentSoundIdentity(root, files);
-  const mappings = buildMappings(manifest, inventory, catalog, identities);
+  const allMappings = buildMappings(manifest, inventory, catalog, identities);
+  const mappings = battleFocus
+    ? manifest.battleFocus.map((id) => {
+        const mapping = allMappings.find((entry) => entry.id === id);
+        if (!mapping || mapping.candidates.length < 2 || mapping.candidates.length > 4)
+          throw new Error(`Invalid battle audition: ${id}`);
+        return mapping;
+      })
+    : allMappings;
   let initialChoices = {};
   const choicesCache = path.join(output, "imported-choices.json");
   try {
@@ -101,6 +113,8 @@ export async function generateAudioReview({ libraryRoot, checkOnly = false, choi
   const { media, failures } = await prepareReviewMedia({ root, libraryRoot, output, mappings, checkOnly });
   const report = {
     schemaVersion: 1,
+    reviewId: battleFocus ? "battle-focus-v1" : undefined,
+    metadataSource,
     direction: manifest.direction,
     generatedAt: new Date().toISOString(),
     libraryRoot,
@@ -108,7 +122,7 @@ export async function generateAudioReview({ libraryRoot, checkOnly = false, choi
     missingCatalogPaths,
     inventory,
     mappings,
-    sequences: manifest.sequences,
+    sequences: battleFocus ? [] : manifest.sequences,
     media,
     failures,
     evidence: await collectAudioEvidence(root),
@@ -143,29 +157,31 @@ async function main() {
     port = 4317,
     serve = false,
     checkOnly = false,
-    serveOnly = false;
+    serveOnly = false,
+    battleFocus = false;
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--serve") serve = true;
     else if (args[i] === "--serve-only") {
       serve = true;
       serveOnly = true;
-    } else if (args[i] === "--check") checkOnly = true;
+    } else if (args[i] === "--battle-focus") battleFocus = true;
+    else if (args[i] === "--check") checkOnly = true;
     else if (args[i] === "--library" && args[i + 1]) libraryRoot = args[++i];
     else if (args[i] === "--choices" && args[i + 1]) choicesPath = args[++i];
     else if (args[i] === "--port" && args[i + 1]) port = Number(args[++i]);
     else
       throw new UsageError(
-        "Usage: npm run audio:review -- [--check | --serve | --serve-only] [--library <Sounds directory>] [--choices <export.json>] [--port <port>]",
+        "Usage: npm run audio:review -- [--check | --serve | --serve-only] [--battle-focus] [--library <Sounds directory>] [--choices <export.json>] [--port <port>]",
       );
   }
   if (!Number.isInteger(port) || port < 0 || port > 65535 || (checkOnly && serve))
     throw new UsageError("Invalid port or incompatible review modes");
   if (serveOnly && choicesPath) throw new UsageError("Use --serve with --choices to regenerate and import choices");
   const report = serveOnly
-    ? JSON.parse(await readFile(path.join(output, "mappings.json"), "utf8"))
-    : await generateAudioReview({ libraryRoot, checkOnly, choicesPath });
+    ? JSON.parse(await readFile(path.join(reviewOutput(battleFocus), "mappings.json"), "utf8"))
+    : await generateAudioReview({ libraryRoot, checkOnly, choicesPath, battleFocus });
   if (!serve) return;
-  const server = await serveReview(output, report, port);
+  const server = await serveReview(reviewOutput(battleFocus), report, port);
   console.info(`Alchemy audio review: http://127.0.0.1:${server.address().port}/ (Ctrl+C to stop)`);
   const stop = () => {
     server.close();

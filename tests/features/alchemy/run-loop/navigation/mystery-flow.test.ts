@@ -1,10 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { MysteryEffect } from "@/lib/mystery";
-import {
-  applyMysteryEffect,
-  type MysteryEffectContext,
-  type MysteryEffectResult,
-} from "@/features/alchemy/run-loop/navigation/mystery-flow";
+import { applyMysteryEffect, type MysteryEffectResult } from "@/features/alchemy/run-loop/navigation/mystery-flow";
 import { cardLibrary, getCardKeywords, trinketLibrary } from "@/lib/game-data";
 import * as cardPools from "@/lib/game-data/cards/card-pools";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
@@ -12,17 +8,10 @@ import { resetAllTestStores, resetProfileForTest } from "../../../../helpers/run
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
 import { setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readActivityData } from "@/lib/active-run-session";
-function makeContext(rng: () => number = () => 0.5): MysteryEffectContext {
-  let context!: MysteryEffectContext;
-  dispatchRunSessionCommand((draft) => {
-    context = { draft, rng };
-  });
-  return context;
-}
-
 function apply(effect: MysteryEffect, rng: () => number = () => 0.5): MysteryEffectResult {
   let result!: MysteryEffectResult;
   dispatchRunSessionCommand((draft) => {
@@ -40,8 +29,10 @@ beforeEach(() => {
 
 describe("applyMysteryEffect", () => {
   it("addCard appends the library card and tracks discovery", () => {
+    const before = readActiveRun().runDeck.map((card) => card.id);
     apply({ kind: "addCard", cardId: "slash" });
-    expect(readActiveRun().runDeck.map((card) => card.id)).toContain("slash");
+    expect(readActiveRun().runDeck.map((card) => card.id)).toEqual([...before, "slash"]);
+    expect(readProfileStore().discoveredCardIds).toContain("slash");
   });
 
   it("chooseCard opens the picker and pauses evaluation", () => {
@@ -101,10 +92,16 @@ describe("applyMysteryEffect", () => {
   });
 
   it("removeCard removes one deck card at random without opening a picker", () => {
-    setRunProgress({ runDeck: [slash] });
-    const result = apply({ kind: "removeCard" });
+    const second = cardLibrary.find((card) => card.id === "fireball")!;
+    setRunProgress({ runDeck: [slash, second] });
+    const rng = vi.fn(() => 0);
+    const result = apply({ kind: "removeCard" }, rng);
     expect(result.followUp).toBeNull();
+    expect(readActiveRun().runDeck).toEqual([second]);
+    apply({ kind: "removeCard" }, rng);
     expect(readActiveRun().runDeck).toEqual([]);
+    apply({ kind: "removeCard" }, rng);
+    expect(rng).toHaveBeenCalledTimes(2);
   });
 
   it("gainTrinket appends unowned trinkets exactly once", () => {
@@ -188,14 +185,11 @@ describe("applyMysteryEffect", () => {
   });
 
   it("gainMaterial awards the material during the run", () => {
-    apply({ kind: "gainMaterial", material: "wood", amount: 1 });
-    expect(readRunProfile().materialInventory.wood).toBeGreaterThanOrEqual(1);
-  });
-
-  it("throws for unknown effect kinds", () => {
-    expect(() => applyMysteryEffect({ kind: "unknown-kind" } as unknown as MysteryEffect, makeContext())).toThrow(
-      /Unhandled mystery effect kind/,
-    );
+    const before = readRunProfile().materialInventory.wood;
+    const result = apply({ kind: "gainMaterial", material: "wood", amount: 3 });
+    expect(readRunProfile().materialInventory.wood).toBe(before + 3);
+    expect(readActiveRun().runMaterialsEarned.wood).toBe(3);
+    expect(result.materialAward).toEqual({ material: "wood", amount: 3 });
   });
 });
 

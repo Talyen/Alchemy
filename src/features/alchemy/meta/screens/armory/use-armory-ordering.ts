@@ -27,7 +27,7 @@ const NO_IDS: readonly string[] = [];
 
 interface StoredCategory {
   order: string[];
-  poolIds: string[];
+  poolIds: ReadonlySet<string>;
   page: number;
   filters: ArmoryInventoryFilters;
 }
@@ -35,18 +35,17 @@ interface StoredCategory {
 function reconcileCategory(
   entry: StoredCategory | undefined,
   pool: readonly ArmoryOrderRow[],
-  poolIds: readonly string[],
   poolSet: ReadonlySet<string>,
 ): StoredCategory {
   // Reconcile only on membership change: a confirmed transfer updates the
   // working order before refreshed props arrive, and the old pool must not
   // undo it. Same render-phase adjustment pattern as usePagination.
-  if (entry && entry.poolIds.length === poolIds.length && entry.poolIds.every((id) => poolSet.has(id))) return entry;
+  if (entry && entry.poolIds.size === poolSet.size && [...entry.poolIds].every((id) => poolSet.has(id))) return entry;
   const order = reconcileOrder(entry?.order ?? NO_IDS, pool);
   return {
     order,
     filters: entry?.filters ?? DEFAULT_ARMORY_INVENTORY_FILTERS,
-    poolIds: [...poolIds],
+    poolIds: poolSet,
     page: getPagination(order.length, entry?.page ?? 0, ARMORY_PAGE_SIZE).page,
   };
 }
@@ -79,11 +78,10 @@ export function useArmoryOrdering({
     () => (isTrinket ? ownedTrinkets.map(trinketOrderRow) : pickerItems.map(gearOrderRow)),
     [isTrinket, pickerItems, ownedTrinkets],
   );
-  const poolIds = useMemo(() => pool.map((row) => row.id), [pool]);
-  const poolSet = useMemo(() => new Set(poolIds), [poolIds]);
+  const poolSet = useMemo(() => new Set(pool.map((row) => row.id)), [pool]);
 
   const entry = stored[activeKey];
-  const reconciled = reconcileCategory(entry, pool, poolIds, poolSet);
+  const reconciled = reconcileCategory(entry, pool, poolSet);
   const orderedIds = reconciled.order;
   const storedPage = reconciled.page;
 
@@ -127,7 +125,7 @@ export function useArmoryOrdering({
       ...prev,
       [activeKey]: {
         order: nextIds,
-        poolIds: [...poolIds],
+        poolIds: poolSet,
         page,
         filters: prev[activeKey]?.filters ?? DEFAULT_ARMORY_INVENTORY_FILTERS,
       },
@@ -185,7 +183,7 @@ export function useArmoryOrdering({
     visibleGear,
     visibleTrinkets,
     matchCount: visibleIds.length,
-    totalCount: poolIds.length,
+    totalCount: pool.length,
     safePage,
     totalPages,
     fillerCount,

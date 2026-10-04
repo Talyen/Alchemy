@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { makeWildwoodDraft, parseActiveRunData, tombstonedCard, tombstonedCard2 } from "../../fixtures/active-run";
 import { createRunRngState, createSeededRng, stepRunRng } from "@/lib/rng";
 import { TOMBSTONED_CARD_IDS, isTombstonedCardId } from "@/lib/validation/migration/tombstoned-content-ids";
+import { ActiveRunDataSchema } from "@/lib/validation";
 import { cardById } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
@@ -29,6 +30,15 @@ describe("ActiveRunDataSchema empty-choice repair", () => {
 
     expect(result.rng.counters.world).toBe(0);
     expect(result.rng.counters.events).toBe(0);
+    const resumed = ActiveRunDataSchema.parse(JSON.parse(JSON.stringify(result)));
+    expect(resumed.starterDraftChoices?.map((card) => card.id)).toEqual(repaired.map((card) => card.id));
+    expect(resumed.rng).toEqual(result.rng);
+    const choice = repaired[0]!;
+    const catalog = cardById[choice.id]!;
+    const authored = structuredClone(catalog);
+    choice.descriptionLines.push("changed after repair");
+    choice.effects.length = 0;
+    expect(catalog).toEqual(authored);
   });
 
   it("re-offers starter draft choices for labyrinth", () => {

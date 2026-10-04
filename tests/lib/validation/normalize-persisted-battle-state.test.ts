@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { battleSnapshot, defaultBattleState } from "@/lib/battle";
+import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import type { TrinketManifest } from "@/lib/battle/types";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { cardById, enemyById } from "@/lib/game-data";
@@ -173,14 +174,27 @@ describe("normalizePersistedBattleState", () => {
     const defaults = defaultBattleState();
     const normalized = normalizePersistedBattleState({
       currentEnemy: enemyById.skeleton,
-      playerStatuses: { block: 4, armor: -2, stun: Number.NaN } as typeof defaults.playerStatuses,
-      enemyStatuses: { burn: 6, poison: Infinity } as typeof defaults.enemyStatuses,
+      playerStatuses: { block: 4, armor: -2, stun: Number.NaN, retiredDefense: 999 } as typeof defaults.playerStatuses,
+      enemyStatuses: { burn: 6, poison: Infinity, retiredStatus: 7 } as typeof defaults.enemyStatuses,
+      gearEffects: {
+        flatPhysicalDamage: Number.NaN,
+        flatHolyDamage: -2,
+        flatBurnDamage: 1.5,
+        retiredDamage: 9,
+      } as typeof defaults.gearEffects,
       playerCC: { stunSkipTurns: -1 } as typeof defaults.playerCC,
-      enemyCC: { cooldown: Number.NaN } as typeof defaults.enemyCC,
-      enemyMitigation: { armor: -5, block: 3 } as typeof defaults.enemyMitigation,
+      enemyCC: { cooldown: Number.NaN, retiredControl: 4 } as typeof defaults.enemyCC,
+      enemyMitigation: { armor: -5, block: 3, retiredMitigation: 8 } as typeof defaults.enemyMitigation,
     });
     expect(normalized.playerStatuses).toEqual({ ...defaults.playerStatuses, block: 4 });
     expect(normalized.enemyStatuses).toEqual({ ...defaults.enemyStatuses, burn: 6 });
+    expect(normalized.gearEffects).toEqual({ ...defaults.gearEffects, flatBurnDamage: 1.5 });
+    expect(
+      computeCardDamageToEnemy(
+        { ...defaults, ...normalized, rng: () => 0.99, appliesFightPacing: false },
+        { kind: "damage", damageType: "physical", amount: 6 },
+      ).modifiedDamage,
+    ).toBe(3);
     expect(normalized.playerCC).toEqual(defaults.playerCC);
     expect(normalized.enemyCC).toEqual(defaults.enemyCC);
     expect(normalized.enemyMitigation).toEqual({ ...defaults.enemyMitigation, block: 3 });

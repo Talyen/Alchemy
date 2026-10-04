@@ -1,4 +1,4 @@
-import { isActiveRunActivity, readActivityData, runActivityScreen, type RunActivity } from "@/lib/active-run-session";
+import { isActiveRunActivity, readActivityData, runActivityScreen } from "@/lib/active-run-session";
 import { isPlayerDefeated, getBattleCompanionDamageModifiers, type BattleSnapshot } from "@/lib/battle";
 import type { ContentSystemId, EncounterCombatTraitId } from "@/lib/content-systems/types";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
@@ -55,19 +55,6 @@ export type RunProfileReadView = Readonly<PermanentProgressFields>;
 export type RunSessionReadView = Readonly<RunSessionFields> & { readonly hasActiveRun: boolean };
 export type BattleReadView = Readonly<RunDomainBattleState>;
 
-export function hasActiveRunActivity(activity: RunActivity): boolean {
-  return isActiveRunActivity(activity);
-}
-
-export function runPhaseFor(screen: Screen, hasActiveBattle: boolean): RunPhase {
-  return getRunPhase(screen, hasActiveBattle);
-}
-
-function useRunPhase(screen: Screen | undefined, committedScreen: Screen, hasActiveBattle: boolean): RunPhase {
-  const resolvedScreen = screen ?? committedScreen;
-  return useMemo(() => runPhaseFor(resolvedScreen, hasActiveBattle), [resolvedScreen, hasActiveBattle]);
-}
-
 function useShallowRunSelector<T>(selector: (state: GameplayState) => T): T {
   return useGameplayStateStore(useShallow(selector));
 }
@@ -79,7 +66,7 @@ export function readRunProfile(): RunProfileReadView {
 }
 export function readRunSession(): RunSessionReadView {
   const session = readGameplayState().session;
-  return deepFreezeInDev({ ...session, hasActiveRun: hasActiveRunActivity(session.activity) });
+  return deepFreezeInDev({ ...session, hasActiveRun: isActiveRunActivity(session.activity) });
 }
 export function readShopFirstPurchaseUsed(shop: ShopSessionStateKey): boolean {
   return readActivityData(readGameplayState().session.activity, SHOP_VISIT_BY_STATE_KEY[shop]).firstPurchaseUsed;
@@ -94,7 +81,7 @@ export function readRunInitialized(): boolean {
   return readGameplayState().run.initialized;
 }
 export function readHasActiveRun(): boolean {
-  return hasActiveRunActivity(readGameplayState().session.activity);
+  return isActiveRunActivity(readGameplayState().session.activity);
 }
 export function readHasActiveBattle(): boolean {
   return readGameplayState().battle.hasActiveBattle;
@@ -104,16 +91,16 @@ export function readActiveRunScreen(): Screen {
 }
 export function readRunResumeScreen(): Screen | null {
   const state = readGameplayState();
-  return hasActiveRunActivity(state.session.activity) ? runActivityScreen(state.session.activity) : null;
+  return isActiveRunActivity(state.session.activity) ? runActivityScreen(state.session.activity) : null;
 }
 export function useRunResumeScreen(): Screen | null {
   return useGameplayStateStore((state) =>
-    hasActiveRunActivity(state.session.activity) ? runActivityScreen(state.session.activity) : null,
+    isActiveRunActivity(state.session.activity) ? runActivityScreen(state.session.activity) : null,
   );
 }
 export function readRunPhase(): RunPhase {
   const state = readGameplayState();
-  return runPhaseFor(state.run.navigation.screen, state.battle.hasActiveBattle);
+  return getRunPhase(state.run.navigation.screen, state.battle.hasActiveBattle);
 }
 
 export function useTalentEffects(): TalentEffectManifest {
@@ -141,7 +128,7 @@ export function selectAutosaveAllowed(
   },
   screen: Screen,
 ): boolean {
-  const phase = runPhaseFor(screen, state.battle.hasActiveBattle);
+  const phase = getRunPhase(screen, state.battle.hasActiveBattle);
   if (phase === "runEnd") return false;
   if (phase === "battle" && state.battle.battleState.enemyHealth <= 0) return false;
 
@@ -155,11 +142,11 @@ export function useHasActiveBattle(): boolean {
   return useGameplayStateStore((state) => state.battle.hasActiveBattle);
 }
 export function useHasActiveRun(): boolean {
-  return useGameplayStateStore((state) => hasActiveRunActivity(state.session.activity));
+  return useGameplayStateStore((state) => isActiveRunActivity(state.session.activity));
 }
 export function useForegroundResumeKind(): "battle" | "run" | null {
   return useGameplayStateStore((state) => {
-    if (!hasActiveRunActivity(state.session.activity)) return null;
+    if (!isActiveRunActivity(state.session.activity)) return null;
     return state.battle.hasActiveBattle ? "battle" : "run";
   });
 }
@@ -265,18 +252,18 @@ export function useRunSessionBattleContext(screen?: Screen): RunSessionBattleCon
   const battle = useRunSessionBattleSlice();
   const activeLabyrinthModifiers = useGameplayStateStore(useShallow((state) => state.session.activeLabyrinthModifiers));
   const committedScreen = useGameplayStateStore((state) => state.run.navigation.screen);
-  const phase = useRunPhase(screen, committedScreen, battle.hasActiveBattle);
+  const phase = getRunPhase(screen ?? committedScreen, battle.hasActiveBattle);
   return useMemo(() => ({ phase, battle, activeLabyrinthModifiers }), [phase, battle, activeLabyrinthModifiers]);
 }
 export function useRunSessionNavigationSlice(screen?: Screen): RunSessionNavigationSlice {
   const session = useShallowRunSelector((state) => ({
     screen: state.run.navigation.screen,
     hasActiveBattle: state.battle.hasActiveBattle,
-    hasActiveRun: hasActiveRunActivity(state.session.activity),
+    hasActiveRun: isActiveRunActivity(state.session.activity),
     pendingCharacterId: state.session.pendingCharacterId,
     pendingContentSystemType: state.session.pendingContentSystemType,
   }));
-  const phase = useRunPhase(screen, session.screen, session.hasActiveBattle);
+  const phase = getRunPhase(screen ?? session.screen, session.hasActiveBattle);
   return useMemo(
     () => ({
       phase,
@@ -294,9 +281,9 @@ export function getRunSessionFromState(state: GameplayState, screen?: Screen): R
   const { talentXP, unlockedTalents } = state.runProfile;
   return {
     screen: resolvedScreen,
-    phase: runPhaseFor(resolvedScreen, battle.hasActiveBattle),
+    phase: getRunPhase(resolvedScreen, battle.hasActiveBattle),
     run: { ...pickActiveRunView(state.run), talentXP, unlockedTalents, gold: state.runProfile.gold },
-    session: { ...state.session, hasActiveRun: hasActiveRunActivity(state.session.activity) },
+    session: { ...state.session, hasActiveRun: isActiveRunActivity(state.session.activity) },
     battle,
   };
 }
@@ -314,7 +301,7 @@ function selectCardInspectionData(state: GameplayState) {
     runSeed: run.rng.seed,
     characterId: run.characterId,
     mode: run.contentSystemType,
-    hasActiveRun: hasActiveRunActivity(state.session.activity),
+    hasActiveRun: isActiveRunActivity(state.session.activity),
     hasActiveBattle: state.battle.hasActiveBattle,
     battleReady:
       state.battle.hasActiveBattle &&

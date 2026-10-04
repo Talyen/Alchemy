@@ -1,19 +1,14 @@
 import { useUiStore, isBattleInspectionOpen } from "../../shared/stores/ui-store";
 import type { MouseEvent } from "react";
-import {
-  canPlayCard as canPlayCardInBattle,
-  isAttackCard,
-  type BattleSnapshot,
-  type CombatTextEvent,
-} from "@/lib/battle";
+import { canPlayCard as canPlayCardInBattle, isAttackCard, type BattleSnapshot } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
-import { playCardSound, playGoldGain, playUISound } from "@/lib/audio";
+import { playCardSound, playBattleEvent, playUISound } from "@/lib/audio";
 import { AUTOPLAY_PREVIEW_MS, CARD_ACTIVATION_ROTATION_DEGREES } from "@/lib/game-constants";
 import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { animateCardActivation } from "./card-transfer-animations";
 import { getCardRect, getHoverId } from "../../shared/utils";
-import { presentCombatTexts, shouldPlayCardGoldGain } from "./controller-utils";
+import { presentCombatTexts } from "./controller-utils";
 import { PLAYABLE_HAND_OPTIONS, getHandCardKey } from "./playable-hand";
 import { runBattleDraw } from "./draw-sequence";
 import { type createBattleSession } from "./battle-session";
@@ -92,16 +87,6 @@ export function createBattleCardPlay(
     );
   }
 
-  function playCardResolutionFeedback(
-    card: BattleCard,
-    prePlayState: BattleSnapshot,
-    postPlayState: BattleSnapshot,
-    combatTexts: CombatTextEvent[],
-  ) {
-    if (shouldPlayCardGoldGain(prePlayState, postPlayState, card)) playGoldGain();
-    presentCombatTexts(getPresentation(), combatTexts);
-  }
-
   // A stale autoplay preview must never linger past the play it teased (manual takeover included).
   function clearStaleAutoplayPreview() {
     useUiStore.getState().setAutoplayPreviewCardId(null);
@@ -155,19 +140,15 @@ export function createBattleCardPlay(
       getPresentation().telegraphCast("player");
     }
     animatePlayedCard(card, index, sourceRect, currentState.hand.length);
-    if (
-      card.id !== "cleanse" ||
-      played.combatTexts.some((event) => event.kind === "notice" && event.signal === "cleanse")
-    ) {
-      playCardSound(card.id);
-    }
+    const focalSound = playCardSound(card.id);
+    if (!currentState.deathsDoorActive && played.state.deathsDoorActive) playBattleEvent("deathsDoor");
     ctx.setHoveredCardId((current) => (current === getHoverId("hand", getHandCardKey(card, index)) ? null : current));
 
     runDrawSequenceAndFinalize(
       currentState.hand,
       played.state,
       () => {
-        playCardResolutionFeedback(card, currentState, played.state, played.combatTexts);
+        presentCombatTexts(getPresentation(), played.combatTexts, focalSound);
       },
       sessionNum,
       "play card",
@@ -223,6 +204,7 @@ export function createBattleCardPlay(
     if (!currentState.wishOptions?.some((option) => option.id === card.id)) return false;
     const newState = commitBattleWish(card.id);
     if (!newState) return false;
+    playUISound("selection");
     const sessionNum = ctx.playback.id;
     session.checkBattleEnd(newState, sessionNum);
     runDrawSequenceAndFinalize(currentState.hand, newState, () => {}, sessionNum, errorContext);

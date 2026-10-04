@@ -22,6 +22,8 @@ export interface ReviewAction {
   evidence: string[];
 }
 export interface ReviewManifest {
+  sharedChoices?: Record<string, string>;
+  battleFocus?: string[];
   schemaVersion: number;
   direction: string;
   libraryRootDefault: string;
@@ -49,6 +51,7 @@ export interface ReviewInventory {
   registry: Record<string, Record<string, string | string[] | null>>;
 }
 export interface ReviewMapping extends Omit<ReviewAction, "current"> {
+  choiceFrom?: string;
   current?: string | null;
   currentFiles: string[];
   status: string;
@@ -66,6 +69,10 @@ export interface ReviewMapping extends Omit<ReviewAction, "current"> {
   silenceReason: string | null;
 }
 export function parseCatalog(csv: string): CatalogAsset[];
+export function readLibraryCatalog(
+  libraryRoot: string,
+  candidates: ReviewCandidate[],
+): Promise<{ catalog: CatalogAsset[]; metadataSource: string }>;
 export function containedPath(root: string, relative: string): string;
 export function hashFile(file: string): Promise<string>;
 export function loadGameInventory(): Promise<ReviewInventory>;

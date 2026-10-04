@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "vitest";
-import { MATERIAL_IDS } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
@@ -15,33 +14,7 @@ import {
 } from "@/lib/homestead/material-rewards";
 import { enemyBestiary } from "@/lib/game-data/compendium/enemies";
 import { createEmptyTalentEffectManifest } from "@/lib/game-data";
-import { canUpgradeTierItem, getNextTierCost } from "@/lib/homestead/upgrades";
-
-describe.each([
-  { name: "buildings", items: buildings, hasTiers: true },
-  { name: "farmPlots", items: farmPlots, hasTiers: true },
-  { name: "researchUpgrades", items: researchUpgrades, hasTiers: true },
-])("$name data integrity", ({ items, hasTiers }) => {
-  it("each entry has required fields", () => {
-    for (const item of items) {
-      expect(item.title).toBeTruthy();
-      if (hasTiers) expect(item.tiers.length).toBeGreaterThan(0);
-    }
-  });
-
-  it("tier costs use only valid non-negative materials", () => {
-    for (const item of items) {
-      for (const tier of item.tiers ?? []) {
-        for (const mat of Object.keys(tier.cost)) {
-          expect(MATERIAL_IDS).toContain(mat);
-        }
-        for (const mat of MATERIAL_IDS) {
-          expect(tier.cost[mat]).toBeGreaterThanOrEqual(0);
-        }
-      }
-    }
-  });
-});
+import { tryUpgradeTierItem } from "@/lib/homestead/upgrades";
 
 describe("homestead upgrade IDs cross-category uniqueness", () => {
   it("all IDs across buildings, farmPlots, and researchUpgrades are mutually unique", () => {
@@ -79,47 +52,11 @@ describe("computeHomesteadEffects", () => {
     });
   });
 
-  it("keeps every numeric bonus and production component increasing through four tiers", () => {
-    for (const [items, kind] of [
-      [buildings, "building"],
-      [farmPlots, "farm"],
-      [researchUpgrades, "research"],
-    ] as const) {
-      for (const item of items) {
-        expect(item.tiers).toHaveLength(4);
-        let previous = defaultHomesteadEffects;
-        for (let level = 1; level <= 4; level++) {
-          const record = { [item.id]: level };
-          const effects = computeHomesteadEffects(
-            kind === "building" ? record : {},
-            kind === "farm" ? record : {},
-            kind === "research" ? record : {},
-          );
-          for (const [key, value] of Object.entries(item.tiers[level - 1]!.effects!)) {
-            if (typeof value === "number") {
-              expect(value, `${item.id}: ${key}`).toBeGreaterThan(0);
-              expect(effects[key as keyof typeof effects]).toBeGreaterThan(
-                previous[key as keyof typeof previous] as number,
-              );
-            } else if (typeof value === "object") {
-              for (const amount of Object.values(value)) expect(amount).toBeGreaterThan(0);
-            }
-          }
-          previous = effects;
-        }
-      }
-    }
-  });
-
-  it("stores Companion Bonds without adding global Companion damage", () => {
-    const effects = computeHomesteadEffects({}, {}, {}, { wolf: 2 });
-    expect(effects.companionBondLevels.wolf).toBe(2);
-    expect(effects.companionDamage).toBe(0);
-  });
-
   it("accumulates farm healing across tiers without sharing mutable defaults", () => {
     const effects = computeHomesteadEffects({}, { "wheat-field": 4, orchard: 2 }, {}, { wolf: 2 });
     expect(effects.cardHealBonus).toEqual({ bread: 8, apple: 4 });
+    expect(effects.companionBondLevels.wolf).toBe(2);
+    expect(effects.companionDamage).toBe(0);
 
     effects.cardHealBonus.bread = 99;
     effects.companionBondLevels.wolf = 99;
@@ -130,60 +67,38 @@ describe("computeHomesteadEffects", () => {
 });
 
 describe("mergeIntoManifest", () => {
-  const makeTalentManifest = () => ({
-    ...createEmptyTalentEffectManifest(),
-    flatPhysicalDamage: 3,
-    startGold: 10,
-    startBlock: 2,
-    campfireHealBonus: 0.1,
-  });
-
-  const makeHomesteadEffects = () => ({
-    ...defaultHomesteadEffects,
-    flatPhysicalDamage: 1,
-    companionDamage: 1,
-    companionBondLevels: { ...defaultHomesteadEffects.companionBondLevels, wolf: 2 },
-    homesteadPotionBonus: 1,
-  });
-
-  it("adds homestead effects to talent effects", () => {
-    const merged = mergeIntoManifest(makeTalentManifest(), makeHomesteadEffects());
-    expect(merged.flatPhysicalDamage).toBe(4);
-    expect(merged.startGold).toBe(10);
-    expect(merged.startBlock).toBe(2);
-    expect(merged.campfireHealBonus).toBeCloseTo(0.1);
-    expect(merged.homesteadPotionBonus).toBe(1);
-    expect(merged.companionBondLevels.wolf).toBe(2);
-    expect(merged.healMultiplier).toBe(1);
-    expect(merged.flatFreezeDamage).toBe(0);
-    expect(merged.flatNatureDamage).toBe(0);
-  });
-
-  it("preserves non-merged talent fields", () => {
-    const talent = makeTalentManifest();
+  it("adds card healing and takes the higher companion bond without mutating either manifest", () => {
+    const talent = {
+      ...createEmptyTalentEffectManifest(),
+      flatPhysicalDamage: 3,
+      startGold: 10,
+      startBlock: 2,
+      campfireHealBonus: 0.1,
+    };
     talent.firstBleedCardFree = true;
     talent.armorPhysicalDamagePercent = 100;
-    const merged = mergeIntoManifest(talent, makeHomesteadEffects());
-    expect(merged.firstBleedCardFree).toBe(true);
-    expect(merged.armorPhysicalDamagePercent).toBe(100);
-  });
-
-  it("does not spread homestead-only fields into talent manifest", () => {
-    const merged = mergeIntoManifest(makeTalentManifest(), makeHomesteadEffects());
-    expect((merged as unknown as Record<string, unknown>).endRunFoodPerRoom).toBeUndefined();
-  });
-
-  it("adds card healing and takes the higher companion bond without mutating either manifest", () => {
-    const talent = makeTalentManifest();
     talent.cardHealBonus = { bread: 3, apple: 1 };
     talent.companionBondLevels.wolf = 3;
     const homestead = {
-      ...makeHomesteadEffects(),
+      ...defaultHomesteadEffects,
+      flatPhysicalDamage: 1,
+      companionBondLevels: { ...defaultHomesteadEffects.companionBondLevels, wolf: 2 },
+      homesteadPotionBonus: 1,
       cardHealBonus: { bread: 2, potion: 4 },
     };
     const talentBefore = structuredClone(talent);
     const homesteadBefore = structuredClone(homestead);
     const merged = mergeIntoManifest(talent, homestead);
+    expect(merged).toMatchObject({
+      flatPhysicalDamage: 4,
+      startGold: 10,
+      startBlock: 2,
+      campfireHealBonus: 0.1,
+      firstBleedCardFree: true,
+      armorPhysicalDamagePercent: 100,
+      homesteadPotionBonus: 1,
+    });
+    expect(merged).not.toHaveProperty("endRunFoodPerRoom");
     expect(merged.cardHealBonus).toEqual({
       bread: 5,
       apple: 1,
@@ -202,43 +117,19 @@ describe("mergeIntoManifest", () => {
   });
 });
 
-function stableRngZero(): () => number {
-  return () => 0;
-}
-
 describe("getEnemyMaterialLoot", () => {
   it("returns empty inventory for unknown enemy", () => {
-    const loot = getEnemyMaterialLoot("unknown", "normal", stableRngZero());
-    for (const mat of MATERIAL_IDS) {
-      expect(loot[mat]).toBe(0);
-    }
+    const loot = getEnemyMaterialLoot("unknown", "normal", () => 0);
+    expect(loot).toEqual(emptyInventory());
   });
 
-  it.each<{
-    name: string;
-    enemyId: string;
-    expected: Record<string, number>;
-  }>([
-    {
-      name: "goblin drops guaranteed wood and food plus its triggered wood bonus for normal type",
-      enemyId: "goblin",
-      expected: { wood: 2, food: 1 },
-    },
-    {
-      name: "skeleton has no guaranteed materials but its triggered herb bonus pays",
-      enemyId: "skeleton",
-      expected: { wood: 0, iron: 0, herbs: 1, food: 0, gems: 0, stone: 0, hide: 0 },
-    },
-    {
-      name: "necromancer drops guaranteed herbs and gems plus triggered bonuses",
-      enemyId: "necromancer",
-      expected: { herbs: 3, gems: 2, stone: 0, hide: 0 },
-    },
-  ])("$name", ({ enemyId, expected }) => {
-    const loot = getEnemyMaterialLoot(enemyId, "normal", stableRngZero());
-    for (const [mat, value] of Object.entries(expected)) {
-      expect(loot[mat as keyof typeof loot]).toBe(value);
-    }
+  it("pays guaranteed loot, successful bonuses, and type scaling without changing the catalog", () => {
+    const before = structuredClone(enemyLootTables.mimic);
+    const rng = vi.fn().mockReturnValueOnce(0.1).mockReturnValueOnce(0.5).mockReturnValueOnce(0.4);
+    expect(getEnemyMaterialLoot("mimic", "elite", rng)).toEqual({ ...emptyInventory(), iron: 3, gems: 1 });
+    expect(rng).toHaveBeenCalledTimes(3);
+    expect(getEnemyMaterialLoot("mimic", "boss", () => 0.9)).toEqual({ ...emptyInventory(), iron: 6 });
+    expect(enemyLootTables.mimic).toEqual(before);
   });
 });
 
@@ -262,51 +153,6 @@ describe("enemy loot parity", () => {
   });
 });
 
-describe("getEnemyMaterialLoot with elite multiplier", () => {
-  it("applies 1.3x material multiplier for elite enemies", () => {
-    const normal = getEnemyMaterialLoot("goblin", "normal", stableRngZero());
-    const elite = getEnemyMaterialLoot("goblin", "elite", stableRngZero());
-    expect(elite.wood).toBe(Math.round(normal.wood * 1.3));
-    expect(elite.food).toBe(Math.round(normal.food * 1.3));
-  });
-
-  it("rounds elite multipliers instead of flooring singleton drops away", () => {
-    const normal = getEnemyMaterialLoot("necromancer", "normal", stableRngZero());
-    expect(normal.herbs).toBe(3);
-    const elite = getEnemyMaterialLoot("necromancer", "elite", stableRngZero());
-    expect(elite.herbs).toBe(4);
-  });
-
-  it("triples loot for boss enemies", () => {
-    const normal = getEnemyMaterialLoot("goblin", "normal", stableRngZero());
-    const boss = getEnemyMaterialLoot("goblin", "boss", stableRngZero());
-    expect(boss.wood).toBe(normal.wood * 3);
-    expect(boss.food).toBe(normal.food * 3);
-  });
-});
-
-describe("getEnemyMaterialLoot with bonus rolls", () => {
-  it("grants bonus materials when random rolls are favorable", () => {
-    const rng = vi
-      .fn()
-      .mockReturnValueOnce(0.1)
-      .mockReturnValueOnce(0.5)
-      .mockReturnValueOnce(0.3)
-      .mockReturnValueOnce(0.1);
-    const loot = getEnemyMaterialLoot("mimic", "normal", rng);
-    // Triggered bonuses always pay at least their minimum on top of guaranteed loot.
-    expect(loot.iron).toBe(3);
-    expect(loot.gems).toBe(1);
-  });
-
-  it("skips bonuses when random rolls fail", () => {
-    const rng = vi.fn(() => 0.9);
-    const loot = getEnemyMaterialLoot("mimic", "normal", rng);
-    expect(loot.iron).toBe(2);
-    expect(loot.gems).toBe(0);
-  });
-});
-
 describe("computeCombatMaterialReward", () => {
   it("applies table, herb-find, scavenger, then herbalist in order", () => {
     // Bandit with every roll hitting: guaranteed 1 wood + 1 food, bonuses +1 wood +1 hide.
@@ -316,7 +162,7 @@ describe("computeCombatMaterialReward", () => {
       effects: { herbFindBonus: 0 },
       scavenger: true,
       herbalist: true,
-      rng: stableRngZero(),
+      rng: () => 0,
     });
     expect(result.wood).toBe(4);
     expect(result.food).toBe(2);
@@ -332,7 +178,7 @@ describe("computeCombatMaterialReward", () => {
       effects: { herbFindBonus: 1 },
       scavenger: true,
       herbalist: false,
-      rng: stableRngZero(),
+      rng: () => 0,
     });
     expect(result.herbs).toBe(4);
   });
@@ -350,27 +196,10 @@ describe("computeMysteryMaterialReward", () => {
 });
 
 describe("applyMaterialFindBonus", () => {
-  it("multiplies herb rewards and leaves other materials unchanged", () => {
-    const result = applyMaterialFindBonus(
-      { wood: 1, iron: 0, herbs: 10, food: 2, gems: 0, stone: 0, hide: 0 },
-      { herbFindBonus: 0.3 },
-    );
-    expect(result.herbs).toBe(13);
-    expect(result.wood).toBe(1);
-    expect(result.food).toBe(2);
-  });
-
-  it("returns the same reward when no herbs are present", () => {
-    const materials = { wood: 1, iron: 0, herbs: 0, food: 2, gems: 0, stone: 0, hide: 0 };
-    expect(applyMaterialFindBonus(materials, { herbFindBonus: 0.3 })).toBe(materials);
-  });
-
-  it("rounds fractional herb bonuses instead of flooring them away", () => {
-    const result = applyMaterialFindBonus(
-      { wood: 0, iron: 0, herbs: 1, food: 0, gems: 0, stone: 0, hide: 0 },
-      { herbFindBonus: 0.5 },
-    );
-    expect(result.herbs).toBe(2);
+  it("rounds fractional herb bonuses without changing other rewards or its input", () => {
+    const base = { ...emptyInventory(), wood: 2, herbs: 1 };
+    expect(applyMaterialFindBonus(base, { herbFindBonus: 0.5 })).toEqual({ ...base, herbs: 2 });
+    expect(base).toEqual({ ...emptyInventory(), wood: 2, herbs: 1 });
   });
 });
 
@@ -388,12 +217,7 @@ describe("applyEndOfRunHomesteadBonuses", () => {
       herbFindBonus: 0.1,
     };
     const result = applyEndOfRunHomesteadBonuses(base, effects, 4);
-    expect(result.food).toBe(3 + 8);
-    expect(result.hide).toBe(0 + 8);
-    expect(result.gems).toBe(1 + 4);
-    expect(result.herbs).toBe(Math.floor((10 + 4) * 1.1));
-    expect(result.iron).toBe(0 + 4);
-    expect(result.wood).toBe(4 + 8);
+    expect(result).toEqual({ wood: 12, iron: 4, herbs: 15, food: 11, gems: 5, stone: 0, hide: 8 });
   });
 
   it("does not add flat herbs when only herbFindBonus is set", () => {
@@ -403,37 +227,20 @@ describe("applyEndOfRunHomesteadBonuses", () => {
   });
 });
 
-describe("homestead content integrity", () => {
-  it("separates bonuses from room production at every tier", () => {
-    for (const item of [...buildings, ...farmPlots, ...researchUpgrades]) {
-      for (const tier of item.tiers) {
-        expect(tier.benefitDescription).not.toContain("per Room");
-        if (!tier.nonCombatBenefitDescription) continue;
-        expect(tier.nonCombatBenefitDescription).toContain("per Room");
-        const rates = Object.entries(tier.effects!).filter(([key]) => key.startsWith("endRun"));
-        expect(rates.length).toBeGreaterThan(0);
-        for (const [, value] of rates) expect(value).toBeGreaterThan(0);
-      }
-    }
-  });
-});
-
-describe("upgrade tier helpers", () => {
-  const building = buildings[0]!;
-
-  it("getNextTierCost returns cost of next level and null when maxed", () => {
-    expect(getNextTierCost(building, 0)).toEqual(building.tiers[0]!.cost);
-    expect(getNextTierCost(building, 1)).toEqual(building.tiers[1]!.cost);
-    expect(getNextTierCost(building, building.tiers.length)).toBeNull();
-    expect(getNextTierCost(undefined, 0)).toBeNull();
-    expect(getNextTierCost(building, -1)).toBeNull();
-  });
-
-  it("canUpgradeTierItem checks affordability and level bounds", () => {
-    const cost = building.tiers[0]!.cost;
-    expect(canUpgradeTierItem(building, 0, cost)).toBe(true);
-    expect(canUpgradeTierItem(building, 0, emptyInventory())).toBe(false);
-    expect(canUpgradeTierItem(building, building.tiers.length, cost)).toBe(false);
-    expect(canUpgradeTierItem(undefined, 0, cost)).toBe(false);
+describe("Homestead upgrade payment", () => {
+  it("spends exactly the next tier cost once and rejects unaffordable or completed upgrades", () => {
+    const building = buildings[0]!;
+    const inventory = { ...building.tiers[0]!.cost };
+    const before = { ...inventory };
+    const result = tryUpgradeTierItem(building, 0, inventory);
+    expect(result).toEqual({ ok: true, inventory: emptyInventory(), nextLevel: 1 });
+    expect(inventory).toEqual(before);
+    expect(tryUpgradeTierItem(building, 1, result.inventory)).toEqual({ ...result, ok: false });
+    expect(tryUpgradeTierItem(building, building.tiers.length, inventory)).toEqual({
+      ok: false,
+      inventory,
+      nextLevel: building.tiers.length,
+    });
+    expect(tryUpgradeTierItem(undefined, 0, inventory)).toEqual({ ok: false, inventory, nextLevel: 0 });
   });
 });

@@ -16,6 +16,12 @@ export function restoreChoices(mappings, stored) {
       reviewed: saved.reviewed === true,
     };
   }
+  for (const mapping of mappings) {
+    if (!mapping.choiceFrom) continue;
+    const source = restored[mapping.choiceFrom];
+    if (source) restored[mapping.id] = { ...source };
+    else delete restored[mapping.id];
+  }
   return restored;
 }
 
@@ -30,10 +36,11 @@ export function importChoices(payload, mappings) {
     Object.defineProperty(records, record.mappingId, { value: record, enumerable: true });
   }
   const choices = restoreChoices(mappings, records);
-  return { choices, skipped: payload.choices.length - Object.keys(choices).length };
+  return { choices, skipped: payload.choices.filter((record) => !Object.hasOwn(choices, record.mappingId)).length };
 }
 
 export function buildChoicesExport(report, choices) {
+  choices = restoreChoices(report.mappings, choices);
   return {
     schemaVersion: 1,
     exportedAt: new Date().toISOString(),

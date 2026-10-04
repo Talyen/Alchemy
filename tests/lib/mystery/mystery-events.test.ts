@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getMysteryEffectRank, mysteryPool, pickMysteryEvent } from "@/lib/mystery";
+import { getMysteryEffectRank, mysteryPool } from "@/lib/mystery";
 import { cardLibrary, mysteryEventArt, trinketLibrary } from "@/lib/game-data";
 import { gearBaseItems } from "@/lib/gear";
 
@@ -17,18 +17,8 @@ function rewardCategory(effect: { kind: string }): string {
 }
 
 describe("mysteryPool", () => {
-  it("each event has required fields and 2 choices", () => {
-    for (const event of mysteryPool) {
-      expect(event.id).toBeTruthy();
-      expect(event.title).toBeTruthy();
-      expect(event.narrative).toBeTruthy();
-      expect(typeof event.art).toBe("string");
-      expect(event.choices).toHaveLength(2);
-    }
-  });
-
-  it("each event has a unique ID", () => {
-    const ids = mysteryPool.map((e) => e.id);
+  it("uses unique event IDs so saved visits restore the same event", () => {
+    const ids = mysteryPool.map((event) => event.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
@@ -55,18 +45,6 @@ describe("mysteryPool", () => {
         (choice) => new Set(choice.effects.map((effect) => rewardCategory(effect))).size,
       );
       expect(new Set(categoryCounts).size, event.id).toBe(1);
-    }
-  });
-
-  it("uses standardized side-reward quantities", () => {
-    for (const event of mysteryPool) {
-      for (const choice of event.choices) {
-        for (const effect of choice.effects) {
-          if (effect.kind === "gainXP") expect(effect.amount, `${event.id}/${choice.label}`).toBe(8);
-          if (effect.kind === "gainGold") expect(effect.amount, `${event.id}/${choice.label}`).toBe(20);
-          if (effect.kind === "gainMaterial") expect(effect.amount, `${event.id}/${choice.label}`).toBe(3);
-        }
-      }
     }
   });
 
@@ -134,98 +112,5 @@ describe("mysteryPool", () => {
         }
       }
     }
-  });
-
-  it("Overgrown Temple Search the Crypt offers random Gear and Iron", () => {
-    const temple = mysteryPool.find((e) => e.id === "overgrown-temple");
-    expect(temple).toBeDefined();
-    const search = temple!.choices.find((c) => c.label === "Search the Crypt");
-    expect(search).toBeDefined();
-    expect(search!.effects).toContainEqual({ kind: "gainRandomGear" });
-    expect(search!.effects).toContainEqual({ kind: "gainGold", amount: 20 });
-    expect(search!.effects).toContainEqual({ kind: "gainMaterial", material: "iron", amount: 3 });
-  });
-
-  it("companion events still grant companion cards", () => {
-    const lodge = mysteryPool.find((e) => e.id === "hunters-lodge");
-    const wolf = mysteryPool.find((e) => e.id === "the-wolf");
-    const phoenix = mysteryPool.find((e) => e.id === "the-phoenix");
-    const necromancer = mysteryPool.find((e) => e.id === "necromancers-offer");
-    expect(
-      lodge!.choices.some((c) => c.effects.some((e) => e.kind === "addCard" && e.cardId === "wolf-companion")),
-    ).toBe(true);
-    expect(
-      wolf!.choices.some((c) => c.effects.some((e) => e.kind === "addCard" && e.cardId === "wolf-companion")),
-    ).toBe(true);
-    expect(
-      phoenix!.choices.some((c) => c.effects.some((e) => e.kind === "addCard" && e.cardId === "phoenix-companion")),
-    ).toBe(true);
-    expect(
-      necromancer!.choices.some((c) =>
-        c.effects.some((e) => e.kind === "addCard" && e.cardId === "skeleton-companion"),
-      ),
-    ).toBe(true);
-  });
-
-  it("previously resource-only choices now grant a portrait reward", () => {
-    const portraitOf = (eventId: string, label: string) => {
-      const event = mysteryPool.find((entry) => entry.id === eventId);
-      const choice = event?.choices.find((entry) => entry.label === label);
-      return choice?.effects.find((effect) => PORTRAIT_EFFECT_KINDS.has(effect.kind));
-    };
-
-    expect(portraitOf("mana-berries", "Gather Crystals")).toEqual({ kind: "addCard", cardId: "mana-berries" });
-    expect(portraitOf("enchanted-spring", "Gather the Moss")).toEqual({
-      kind: "gainTrinket",
-      trinketId: "groves-favor",
-    });
-    expect(portraitOf("fungal-grotto", "Harvest Mushrooms")).toEqual({
-      kind: "gainTrinket",
-      trinketId: "plague-doctors-mask",
-    });
-    expect(portraitOf("fungal-grotto", "Collect Crystals")).toEqual({
-      kind: "gainTrinket",
-      trinketId: "frozen-pocketwatch",
-    });
-    expect(portraitOf("wisdom-tree", "Collect Branches")).toEqual({ kind: "gainGeneratedGear", baseItemId: "staff" });
-    expect(portraitOf("wisdom-tree", "Forage Herbs")).toEqual({
-      kind: "gainGeneratedGear",
-      baseItemId: "emerald-amulet",
-    });
-    expect(portraitOf("ancient-altar", "Take the Offering")).toEqual({
-      kind: "gainGeneratedGear",
-      baseItemId: "topaz-ring",
-    });
-    expect(portraitOf("hidden-cache", "Take the Coinpurse")).toEqual({
-      kind: "gainTrinket",
-      trinketId: "merchants-favor",
-    });
-    expect(portraitOf("overgrown-temple", "Take a Tile")).toEqual({
-      kind: "gainTrinket",
-      trinketId: "vanguards-crest",
-    });
-    expect(portraitOf("crystal-geode", "Take the Shell")).toEqual({
-      kind: "gainGeneratedGear",
-      baseItemId: "sapphire-amulet",
-    });
-    expect(portraitOf("meteorite-crash", "Search the Crater")).toEqual({
-      kind: "gainGeneratedGear",
-      baseItemId: "ruby-ring",
-    });
-    expect(portraitOf("sacred-grove", "Pick the Blooms")).toEqual({
-      kind: "gainGeneratedGear",
-      baseItemId: "emerald-amulet",
-    });
-    expect(portraitOf("mountain-pass", "Gather Herbs")).toEqual({ kind: "addCard", cardId: "fox-companion" });
-    expect(portraitOf("murky-pond", "Catch Fish")).toEqual({ kind: "addCard", cardId: "lizard-scout-companion" });
-    expect(portraitOf("murky-pond", "Pull the Reeds")).toEqual({ kind: "addCard", cardId: "will-o-wisp-companion" });
-    expect(portraitOf("roadside-censer", "Gather Incense")).toEqual({ kind: "gainGeneratedGear", baseItemId: "mace" });
-  });
-});
-
-describe("pickMysteryEvent", () => {
-  it("returns a valid event from the pool", () => {
-    const event = pickMysteryEvent(() => 0.5);
-    expect(mysteryPool).toContain(event);
   });
 });

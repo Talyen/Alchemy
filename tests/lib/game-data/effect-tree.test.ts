@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { visitBattleCardEffects, type BattleCardEffect } from "@/lib/game-data";
+import { effectChildren, mapEffectChildren, visitBattleCardEffects, type BattleCardEffect } from "@/lib/game-data";
 
 function nestedEffects(): BattleCardEffect[] {
   return [
@@ -23,6 +23,30 @@ function nestedEffects(): BattleCardEffect[] {
 }
 
 describe("visitBattleCardEffects", () => {
+  it("keeps Corruption child addresses stable across success and failure branches", () => {
+    const chance: BattleCardEffect = {
+      kind: "chance",
+      probability: 0.5,
+      successEffects: [
+        { kind: "heal", amount: 1 },
+        { kind: "restore-mana", amount: 2 },
+      ],
+      failureEffects: [{ kind: "gain-gold", amount: 3 }],
+    };
+    const before = structuredClone(chance);
+    expect(effectChildren(chance)).toEqual([...chance.successEffects, ...chance.failureEffects]);
+    const mapped = mapEffectChildren(chance, (_child, index) => ({ kind: "gain-gold", amount: index + 1 }));
+    expect(mapped).toEqual({
+      ...chance,
+      successEffects: [
+        { kind: "gain-gold", amount: 1 },
+        { kind: "gain-gold", amount: 2 },
+      ],
+      failureEffects: [{ kind: "gain-gold", amount: 3 }],
+    });
+    expect(chance).toEqual(before);
+  });
+
   it("visits wrappers and nested effects in authored order without changing the tree", () => {
     const effects = nestedEffects();
     const before = structuredClone(effects);

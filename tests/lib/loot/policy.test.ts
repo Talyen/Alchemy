@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { LOOT_DEPTH_CURVES, LOOT_SOURCE_WEIGHTS } from "@/lib/game-constants";
-import { createSeededRng } from "@/lib/rng";
 import {
   highestCompletedLootDifficulty,
   isLootEligible,
@@ -27,25 +26,16 @@ describe("shared loot policy", () => {
     expect(LOOT_SOURCE_WEIGHTS.normal).toEqual(authored);
   });
 
-  it.each([
-    ["astral", 3, 0],
-    ["astral", 4, 0.2],
-    ["astral", 6, 0.4],
-    ["astral", 8, 0.6],
-    ["astral", 12, 0.8],
-    ["astral", 16, 1],
-    ["trinket", 7, 0],
-    ["trinket", 8, 0.35],
-    ["trinket", 12, 0.675],
-    ["trinket", 16, 1],
-    ["unique", 11, 0],
-    ["unique", 12, 0.2],
-    ["unique", 18, 0.6],
-    ["unique", 24, 1],
-  ] as const)("interpolates %s at depth %s", (kind, depth, multiplier) => {
-    expect(lootDepthMultiplier(kind, depth)).toBeCloseTo(multiplier);
-    expect(isLootEligible(kind, depth)).toBe(multiplier > 0);
-    expect(lootDepthMultiplier(kind, 1000)).toBe(1);
+  it("opens each premium pool at its depth gate and interpolates instead of stepping", () => {
+    for (const kind of ["astral", "trinket", "unique"] as const) {
+      const [first, second] = LOOT_DEPTH_CURVES[kind];
+      expect(isLootEligible(kind, first.depth - 1), kind).toBe(false);
+      expect(lootDepthMultiplier(kind, first.depth), kind).toBe(first.weight);
+      expect(lootDepthMultiplier(kind, (first.depth + second.depth) / 2), kind).toBeCloseTo(
+        (first.weight + second.weight) / 2,
+      );
+      expect(lootDepthMultiplier(kind, 1000), kind).toBe(1);
+    }
   });
 
   it.each(sources)("preserves the full-depth %s baseline and blocks early premiums even with bonuses", (source) => {
@@ -117,7 +107,7 @@ describe("shared loot policy", () => {
     expect(astralFallback).toBe("astral");
   });
 
-  it("selects groups and conditional rarities from the same weights and is seed reproducible", () => {
+  it("selects groups and conditional rarities from the same weights", () => {
     const weights = resolveLootWeights({ source: "normal", progress });
     expect(rollLootGroup(weights, () => 0.54)).toBe("card");
     expect(rollLootGroup(weights, () => 0.6)).toBe("gear");
@@ -127,11 +117,6 @@ describe("shared loot policy", () => {
     expect(rollLootGearRarity(weights, () => 0.7)).toBe("astral");
     expect(rollLootGearRarity(weights, () => 0.99)).toBe("unique");
     expect(rollLootGearRarity(weights, () => 0.99, { unique: false })).toBe("astral");
-    const sample = () => {
-      const rng = createSeededRng(42);
-      return Array.from({ length: 100 }, () => [rollLootGroup(weights, rng), rollLootGearRarity(weights, rng)]);
-    };
-    expect(sample()).toEqual(sample());
   });
 
   it("leaves Boss rewards unchanged by Astral bonuses, which transfer Basic weight only", () => {

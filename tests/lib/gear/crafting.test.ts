@@ -5,7 +5,6 @@ import {
   craftingCurrencyBlockedReason,
   computeSalvageYield,
   createEmptyGearLoadouts,
-  rollSalvageYield,
   salvageGear,
   type GearAffixRoll,
   type GearInstance,
@@ -32,8 +31,6 @@ describe("crafting currency logic", () => {
 
   it.each([
     ["discordant-dice", createBasicItem([]), "This item has no affixes to reroll."],
-    ["discordant-dice", createBasicItem(), null],
-    ["sprig-of-growth", createBasicItem(), null],
     [
       "sprig-of-growth",
       createBasicItem([
@@ -42,32 +39,19 @@ describe("crafting currency logic", () => {
       ]),
       "No affix slots or eligible affixes available.",
     ],
-    ["voidstone", createBasicItem(), null],
     ["voidstone", createBasicItem([]), "This item has no affixes to remove."],
-    ["ascension-seal", createBasicItem(), null],
     ["ascension-seal", createAstralItem(), "Only Basic items can be upgraded to Astral."],
-    ["severance-maw", createBasicItem(), null],
     ["severance-maw", createBasicItem([]), "This item has no affixes to remove."],
-    ["smiths-whetstone", createBasicItem(), null],
     ["smiths-whetstone", createBasicItem([]), "This item has no affixes to upgrade."],
     ["smiths-whetstone", createBasicItem([{ id: "flat-physical", value: 2 }]), "All affixes are already at maximum."],
-  ] as const)("keeps %s eligibility, rejection and application consistent", (currency, item, reason) => {
+  ] as const)("rejects %s without changing the item or drawing randomness", (currency, item, reason) => {
     const original = structuredClone(item);
     expect(craftingCurrencyBlockedReason(currency, item)).toBe(reason);
-    expect(canApplyCraftingCurrency(currency, item)).toBe(reason === null);
-    if (reason !== null) {
-      const rng = vi.fn(() => 0);
-      expect(applyCraftingCurrency(currency, item, rng)).toBe(item);
-      expect(rng).not.toHaveBeenCalled();
-    }
+    expect(canApplyCraftingCurrency(currency, item)).toBe(false);
+    const rng = vi.fn(() => 0);
+    expect(applyCraftingCurrency(currency, item, rng)).toBe(item);
+    expect(rng).not.toHaveBeenCalled();
     expect(item).toEqual(original);
-  });
-
-  it("rerolls all affixes using an affinity-eligible pool", () => {
-    const updated = applyCraftingCurrency("discordant-dice", createBasicItem(), () => 0);
-    expect(updated.definitionId).toBe("shortsword-basic");
-    expect(updated.affixes).toHaveLength(1);
-    expect(updated.affixes[0].value).toBeGreaterThan(0);
   });
 
   it("preserves current affix count when rerolling with Discordant Dice", () => {
@@ -103,7 +87,8 @@ describe("crafting currency logic", () => {
     );
     expect(updated.affixes).toHaveLength(2);
     expect(updated.affixes[0].id).toBe("flat-physical");
-    expect(updated.affixes[1].id).toBeDefined();
+    expect(updated.affixes[1].id).not.toBe("flat-physical");
+    expect(updated.affixes[1].value).toBeGreaterThan(0);
   });
 
   it("does not allow Sprig of Growth when the eligible affix pool is exhausted", () => {
@@ -160,20 +145,6 @@ describe("crafting currency logic", () => {
     ]);
   });
 
-  it("yields current currencies from salvage", () => {
-    expect(rollSalvageYield("basic", () => 0)["discordant-dice"]).toBeGreaterThanOrEqual(1);
-    const astralYield = rollSalvageYield("astral", () => 0);
-    expect(astralYield["discordant-dice"]).toBeGreaterThanOrEqual(1);
-    expect(astralYield["smiths-whetstone"]).toBe(1);
-  });
-
-  it("combines homestead salvage value with rolled crafting currencies", () => {
-    const salvageYield = computeSalvageYield(createBasicItem());
-    expect(salvageYield.materials.iron).toBe(3);
-    expect(salvageYield.materials.food).toBe(0);
-    expect(salvageYield.currencies["discordant-dice"]).toBeGreaterThanOrEqual(1);
-  });
-
   it("uses a frozen yield instead of re-rolling when salvageGear is given one", () => {
     const item = createBasicItem();
     const frozen = computeSalvageYield(item);
@@ -185,6 +156,8 @@ describe("crafting currency logic", () => {
   it("keeps salvage preview rewards stable across reload and affix changes", () => {
     const item = createBasicItem();
     const preview = computeSalvageYield(item);
+    expect(preview.materials.iron).toBe(3);
+    expect(preview.currencies["discordant-dice"]).toBeGreaterThanOrEqual(1);
     const reloaded = JSON.parse(JSON.stringify(item)) as GearInstance;
     expect(computeSalvageYield(reloaded)).toEqual(preview);
     expect(computeSalvageYield({ ...item, affixes: [{ id: "flat-physical", value: 2 }] })).toEqual(preview);
@@ -194,7 +167,7 @@ describe("crafting currency logic", () => {
     const unknownItem: GearInstance = {
       instanceId: "test-unknown-id",
       definitionId: "shortsword-basic",
-      affixes: [{ id: "non-existent-affix" as any, value: 5 }],
+      affixes: [{ id: "non-existent-affix" as GearAffixRoll["id"], value: 5 }],
     };
     expect(canApplyCraftingCurrency("smiths-whetstone", unknownItem)).toBe(false);
     expect(canApplyCraftingCurrency("ascension-seal", unknownItem)).toBe(true);

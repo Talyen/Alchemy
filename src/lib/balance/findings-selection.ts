@@ -101,31 +101,17 @@ function collapseMatchupClusters(ranked: readonly BalanceFinding[]): BalanceFind
 }
 
 function selectDiverseFindings(ranked: readonly BalanceFinding[], cap: number): BalanceFinding[] {
-  const queues = new Map<FindingBucket, BalanceFinding[]>();
-  for (const bucket of FINDING_BUCKET_ORDER) queues.set(bucket, []);
-  for (const finding of ranked) {
-    queues.get(finding.bucket)?.push(finding);
-  }
-  const buckets = FINDING_BUCKET_ORDER.map((bucket) => queues.get(bucket)!.values());
+  const buckets = FINDING_BUCKET_ORDER.map((bucket) => ranked.filter((finding) => finding.bucket === bucket));
   const shown: BalanceFinding[] = [];
-  while (shown.length < cap) {
-    let added = false;
-    for (const bucket of buckets) {
-      const next = bucket.next().value;
-      if (!next) continue;
-      shown.push(next);
-      added = true;
-      if (shown.length >= cap) break;
-    }
-    if (!added) break;
+  for (let round = 0; shown.length < cap; round++) {
+    const next = buckets.flatMap((bucket) => bucket[round] ?? []);
+    if (next.length === 0) break;
+    shown.push(...next.slice(0, cap - shown.length));
   }
   return shown;
 }
 
 function orderFindingsForDisplay(findings: readonly BalanceFinding[]): BalanceFinding[] {
-  const bucketRank = Object.fromEntries(FINDING_BUCKET_ORDER.map((bucket, index) => [bucket, index])) as Record<
-    FindingBucket,
-    number
-  >;
-  return [...findings].sort((a, b) => bucketRank[a.bucket] - bucketRank[b.bucket] || compareFindings(a, b));
+  // Round-robin selection already preserves ranking within each bucket.
+  return FINDING_BUCKET_ORDER.flatMap((bucket) => findings.filter((finding) => finding.bucket === bucket));
 }

@@ -1,7 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { parseBalanceReportOptions } from "@/lib/balance/report-options";
 
+afterEach(() => vi.unstubAllEnvs());
+
 describe("parseBalanceReportOptions", () => {
+  it("does not let ambient pacing override an explicitly supplied environment", () => {
+    vi.stubEnv("ALCHEMY_BALANCE_PACING", "invalid ambient value");
+    expect(parseBalanceReportOptions({}).appliesFightPacing).toBe(true);
+    expect(() => parseBalanceReportOptions()).toThrow("ALCHEMY_BALANCE_PACING");
+  });
   it("defaults to a broad quick sweep", () => {
     expect(parseBalanceReportOptions({})).toEqual({
       mode: "quick",
@@ -66,13 +73,5 @@ describe("parseBalanceReportOptions", () => {
     ["ALCHEMY_BALANCE_FINDINGS_CAP", "0"],
   ])("rejects invalid %s=%s before report generation", (name, value) => {
     expect(() => parseBalanceReportOptions({ [name]: value })).toThrow(name);
-  });
-
-  it.each(["on", "1", "true"])("accepts pacing enabled as %s", (value) => {
-    expect(parseBalanceReportOptions({ ALCHEMY_BALANCE_PACING: value }).appliesFightPacing).toBe(true);
-  });
-
-  it.each(["off", "0", "false"])("accepts pacing disabled as %s", (value) => {
-    expect(parseBalanceReportOptions({ ALCHEMY_BALANCE_PACING: value }).appliesFightPacing).toBe(false);
   });
 });

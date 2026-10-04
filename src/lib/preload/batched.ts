@@ -8,11 +8,12 @@ export async function batchedPreload<T>(
 ): Promise<void> {
   const rawBatch = options.batchSize ?? 4;
   const batchSize = Number.isFinite(rawBatch) && rawBatch > 0 ? Math.max(1, Math.floor(rawBatch)) : 4;
-  const yieldFn = options.yieldBetweenBatches ?? (() => Promise.resolve());
   for (let index = 0; index < items.length; index += batchSize) {
     const batch = items.slice(index, index + batchSize);
-    await Promise.all(batch.map((item) => Promise.resolve(loadOne(item))));
-    if (index + batchSize < items.length) await yieldFn();
+    // Capture synchronous throws as rejections too, so every started load
+    // belongs to Promise.all and cannot leave an unhandled rejection behind.
+    await Promise.all(batch.map(async (item) => loadOne(item)));
+    if (index + batchSize < items.length) await options.yieldBetweenBatches?.();
   }
 }
 

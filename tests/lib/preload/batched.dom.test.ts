@@ -34,6 +34,16 @@ describe("batchedPreload", () => {
     expect(load.mock.calls).toEqual([[1], [2]]);
     expect(yieldBetweenBatches).not.toHaveBeenCalled();
   });
+
+  it("captures synchronous failures without abandoning sibling loads or starting another batch", async () => {
+    const error = new Error("synchronous load failure");
+    const load = vi.fn((item: number) => {
+      if (item === 1) return Promise.reject(error);
+      if (item === 2) throw error;
+    });
+    await expect(batchedPreload([1, 2, 3, 4], load, { batchSize: 3 })).rejects.toBe(error);
+    expect(load.mock.calls).toEqual([[1], [2], [3]]);
+  });
 });
 
 describe("yieldToAnimationFrame", () => {

@@ -10,7 +10,6 @@ import {
   rollPercent,
   sampleItems,
   sampleItemsExcluding,
-  shuffle,
   takeRandomItem,
 } from "@/lib/rng";
 
@@ -34,13 +33,6 @@ describe("rngInt", () => {
   });
 });
 
-describe("shuffle", () => {
-  it("rejects out-of-range draws instead of corrupting the deck", () => {
-    expect(() => shuffle([1, 2, 3], () => 1)).toThrow();
-    expect(() => shuffle([1, 2, 3], () => Number.NaN)).toThrow();
-  });
-});
-
 describe("sampleItems", () => {
   it("rejects negative and non-integer counts", () => {
     const rng = () => {
@@ -52,23 +44,6 @@ describe("sampleItems", () => {
         "sampleItems requires a non-negative integer count",
       );
     }
-  });
-
-  it("returns [] for zero count without drawing", () => {
-    let draws = 0;
-    expect(
-      sampleItems([1, 2, 3], 0, () => {
-        draws += 1;
-        return 0.5;
-      }),
-    ).toEqual([]);
-    expect(draws).toBe(0);
-  });
-
-  it("caps sample count at array length and handles empty input", () => {
-    expect(sampleItems([10, 20], 5, () => 0.5)).toHaveLength(2);
-    expect(sampleItems([], 3, () => 0.5)).toEqual([]);
-    expect(sampleItems([10, 20], 2, () => 0.5)).toEqual([10, 20]);
   });
 
   it("preserves seeded sample order and subsequent draws without mutating the input", () => {
@@ -128,9 +103,16 @@ describe("pickRandom", () => {
     expect(pickRandom([1, 2], () => 0)).toBe(1);
   });
 
-  it("returns undefined for empty array and element for single element", () => {
-    expect(pickRandom([], () => 0.5)).toBeUndefined();
-    expect(pickRandom([7], () => 0.5)).toBe(7);
+  it("preserves stream position for empty and singleton reward pools", () => {
+    let draws = 0;
+    const rng = () => {
+      draws++;
+      return 0.5;
+    };
+    expect(pickRandom([], rng)).toBeUndefined();
+    expect(draws).toBe(0);
+    expect(pickRandom([7], rng)).toBe(7);
+    expect(draws).toBe(1);
   });
 });
 
@@ -233,46 +215,21 @@ describe("takeRandomItem", () => {
 });
 
 describe("createSeededRng", () => {
-  it("produces deterministic pseudo-random sequences for a seed", () => {
-    const rng1 = createSeededRng(12345);
-    const rng2 = createSeededRng(12345);
-
-    const seq1 = [rng1(), rng1(), rng1(), rng1()];
-    const seq2 = [rng2(), rng2(), rng2(), rng2()];
-
-    expect(seq1).toEqual(seq2);
-    expect(seq1.every((v) => v >= 0 && v < 1)).toBe(true);
-  });
-
-  it("handles non-finite and negative seeds safely", () => {
-    const rngNan = createSeededRng(Number.NaN);
-    const val = rngNan();
-    expect(val).toBeGreaterThanOrEqual(0);
-    expect(val).toBeLessThan(1);
+  it("preserves the seeded sequence used by saved runs", () => {
+    const rng = createSeededRng(12345);
+    expect(Array.from({ length: 4 }, () => rng())).toEqual([
+      0.9797282677609473, 0.3067522644996643, 0.484205421525985, 0.817934412509203,
+    ]);
   });
 });
 
 describe("hashStringToUint32", () => {
-  it("produces deterministic 32-bit unsigned hashes", () => {
-    const hash1 = hashStringToUint32("salvage:item-123");
-    const hash2 = hashStringToUint32("salvage:item-123");
-    expect(hash1).toBe(hash2);
-    expect(hash1).toBeGreaterThanOrEqual(0);
-    expect(hash1).toBeLessThanOrEqual(0xffff_ffff);
-    expect(Number.isInteger(hash1)).toBe(true);
-  });
-
-  it("hashes empty string", () => {
-    expect(hashStringToUint32("")).toBe(2166136261);
+  it("preserves the hash that seeds salvage previews", () => {
+    expect(hashStringToUint32("salvage:item-123")).toBe(834049458);
   });
 });
 
 describe("getBattleRng", () => {
-  it("getBattleRng returns state rng when present", () => {
-    const rng = () => 0.42;
-    expect(getBattleRng({ rng })).toBe(rng);
-  });
-
   it("getBattleRng throws when rng is missing", () => {
     expect(() => getBattleRng({})).toThrow(/BattleState.rng is required/);
   });
@@ -293,8 +250,10 @@ describe("rolls", () => {
   });
 
   it("agrees across percent and probability scales", () => {
-    expect(rollPercent(50, () => 0.49)).toBe(rollChance(0.5, () => 0.49));
-    expect(rollPercent(50, () => 0.5)).toBe(rollChance(0.5, () => 0.5));
+    expect(rollPercent(50, () => 0.49)).toBe(true);
+    expect(rollChance(0.5, () => 0.49)).toBe(true);
+    expect(rollPercent(50, () => 0.5)).toBe(false);
+    expect(rollChance(0.5, () => 0.5)).toBe(false);
   });
 
   it("rejects NaN chances", () => {

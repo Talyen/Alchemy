@@ -4,7 +4,6 @@ import { gearDefinitions } from "@/lib/gear/definitions";
 import { cardLibrary, trinketById } from "@/lib/game-data";
 import type { Destination } from "@/lib/routing";
 import {
-  restorePendingReward,
   restorePendingRewardBundle,
   serializePendingReward,
 } from "@/lib/active-run-session/pending-reward-persistence";
@@ -28,7 +27,7 @@ describe("pending reward persistence", () => {
     };
     const persisted = serializePendingReward(reward)!;
     expect(persisted.destinations).not.toBe(reward.destinations);
-    expect(restorePendingReward(JSON.parse(JSON.stringify(persisted)))).toEqual(reward);
+    expect(restorePendingRewardBundle(JSON.parse(JSON.stringify(persisted))).rewardState).toEqual(reward);
   });
 
   it.each(["card", "boon", "trinket"] as const)(
@@ -42,7 +41,7 @@ describe("pending reward persistence", () => {
       if (persisted.rewardType === "gear") throw new Error("Expected catalog reward");
       expect(persisted.rewardType).toBe(rewardType);
       persisted.choiceIds = ["toString", "constructor", "missing-choice", reward.choices[0]!.id];
-      expect(restorePendingReward(persisted)).toEqual(reward);
+      expect(restorePendingRewardBundle(persisted).rewardState).toEqual(reward);
     },
   );
 
@@ -51,7 +50,7 @@ describe("pending reward persistence", () => {
     expect(serializePendingReward(reward)).toBeNull();
     const persisted = serializePendingReward({ ...reward, gold: 1 })!;
     persisted.gold = 0;
-    expect(restorePendingReward(persisted)).toBeNull();
+    expect(restorePendingRewardBundle(persisted).rewardState).toBeNull();
   });
 
   it.each(["card", "gear"] as const)("retains material-only %s rewards without resolvable choices", (rewardType) => {
@@ -69,7 +68,7 @@ describe("pending reward persistence", () => {
   it("retains valid exit destinations after filtering corrupt labels, even with no reward choices", () => {
     const persisted = serializePendingReward(createEmptyRewardState(["Campfire"]))!;
     persisted.destinations = ["Campfire", "Not A Real Destination", "Mystery"] as Destination[];
-    expect(restorePendingReward(persisted)).toEqual(createEmptyRewardState(["Campfire", "Mystery"]));
+    expect(restorePendingRewardBundle(persisted).rewardState).toEqual(createEmptyRewardState(["Campfire", "Mystery"]));
   });
 
   it("preserves ordered mixed bonuses and excluded cards while dropping unknown bonus IDs", () => {
@@ -89,7 +88,6 @@ describe("pending reward persistence", () => {
     ])!;
     if (persisted.rewardType !== "trinket") throw new Error("Expected trinket reward");
     persisted.choiceIds = ["missing-trinket"];
-    expect(restorePendingReward(persisted)).toBeNull();
     expect(restorePendingRewardBundle(persisted)).toEqual({
       rewardState: createEmptyRewardState(),
       companionRewardCards: [slash],

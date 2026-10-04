@@ -1,7 +1,7 @@
 import { playBattleEvent, playCardSound } from "@/lib/audio";
 import { logError } from "@/lib/error-logger";
-import type { BattleSnapshot, CombatTextEvent } from "@/lib/battle";
-import type { BattleCard } from "@/lib/game-data";
+import type { CombatTextEvent } from "@/lib/battle";
+import { selectCombatSound } from "./combat-sound-selection";
 import { CARD_TRANSFER_CONFIG, COMPANION_SOUND_CARD_IDS } from "@/lib/game-constants";
 import type { CardRect } from "../../shared/types";
 
@@ -36,11 +36,7 @@ export function viewportRectToBattleSceneRect(rect: CardRect, sceneRect: BattleS
 
 export function playCompanionSound(companionId: string) {
   const soundCardId = COMPANION_SOUND_CARD_IDS[companionId];
-  if (soundCardId) playCardSound(soundCardId);
-}
-
-export function shouldPlayCardGoldGain(previousState: BattleSnapshot, nextState: BattleSnapshot, card: BattleCard) {
-  return nextState.gold > previousState.gold && card.id !== "steal";
+  if (soundCardId) return playCardSound(soundCardId);
 }
 
 export interface CombatTextPresenter {
@@ -50,51 +46,23 @@ export interface CombatTextPresenter {
 }
 
 /** Single home for fight feedback: floating numbers + portrait shake + sounds. */
-export function presentCombatTexts(presenter: CombatTextPresenter, combatTexts: CombatTextEvent[]) {
+export function presentCombatTexts(
+  presenter: CombatTextPresenter,
+  combatTexts: CombatTextEvent[],
+  focalSound?: string,
+) {
   if (combatTexts.length === 0) return;
   presenter.showCombatTexts(combatTexts);
   if (combatTexts.some((ct) => ct.kind === "damage" && ct.impact !== false && ct.target === "enemy"))
     presenter.shakeEnemy();
   if (combatTexts.some((ct) => ct.kind === "damage" && ct.impact !== false && ct.target === "player"))
     presenter.shakePlayer();
-  playCombatTextSounds(combatTexts);
+  playCombatTextSounds(combatTexts, focalSound);
 }
 
-export function playCombatTextSounds(combatTexts: CombatTextEvent[]) {
-  const sounds = new Set<Parameters<typeof playBattleEvent>[0]>();
-  for (const ct of combatTexts) {
-    if (ct.kind === "notice") {
-      if (ct.text === "Wildfire") sounds.add("wildfire");
-      else if (ct.text === "Shatter · Critical") sounds.add("shatter");
-      else if (ct.stat === "dodge") sounds.add("dodge");
-      if (ct.signal || ct.text === "Purged") continue;
-      if (ct.stat === "stun") sounds.add("stunProc");
-      else if (ct.stat === "freeze") sounds.add("freezeProc");
-      continue;
-    }
-    if (ct.amount <= 0) continue;
-    if (ct.stat === "armor") sounds.add("armorChange");
-    if (ct.kind === "status" && ct.stat === "forge") sounds.add("forgeGain");
-    if (ct.kind === "damage" && ct.impact !== false && ct.critical) sounds.add("critHit");
-    if (ct.kind === "damage" && ct.periodic && ct.stat === "burn") {
-      sounds.add("burnTick");
-      continue;
-    }
-    if (ct.kind === "damage" && ct.periodic && ct.stat === "bleed") {
-      sounds.add("bleedTick");
-      continue;
-    }
-    if (ct.kind === "damage" && ct.impact !== false && ct.target === "enemy") {
-      sounds.add("enemyHit");
-    } else if (ct.kind === "damage" && ct.impact !== false && ct.target === "player" && ct.stat === "block") {
-      sounds.add("blockAbsorb");
-    } else if (ct.kind === "damage" && ct.impact !== false && ct.target === "player") {
-      sounds.add("playerHit");
-    } else if (ct.kind === "heal" && ct.target === "player") {
-      sounds.add("playerHeal");
-    }
-  }
-  for (const sound of sounds) playBattleEvent(sound);
+export function playCombatTextSounds(combatTexts: CombatTextEvent[], focalSound?: string) {
+  const sound = selectCombatSound(combatTexts, focalSound !== undefined);
+  if (sound) playBattleEvent(sound, { excludeSound: focalSound });
 }
 
 export function transferCardIntervalSeconds(

@@ -1,7 +1,7 @@
-import { cloneBattleCard } from "@/lib/game-data";
 import { getStandardPotionPool, isStandardPotionCard } from "@/lib/game-data/cards/card-pools";
 import {
   areBattleCardEffectsEqual,
+  cloneBattleCard,
   describeCardEffects,
   mapEffectChildren,
   type BattleCard,
@@ -43,12 +43,12 @@ export function strengthenPotion(card: BattleCard): BattleCard | null {
   if (!isBrewablePotion(card)) return null;
   const effects = card.effects.map(strengthenEffect);
   if (effects.every((effect, index) => areBattleCardEffectsEqual(effect, card.effects[index]!))) return null;
-  return {
-    ...cloneBattleCard(card),
+  return cloneBattleCard({
+    ...card,
     brewed: true,
     effects,
     descriptionLines: [...describeCardEffects(effects), ...(card.consume ? [CONSUME_DESCRIPTION_LINE] : [])],
-  };
+  });
 }
 export function createCampfirePotionOffers(rng: () => number): BattleCard[] {
   const pool = shuffle(getStandardPotionPool(), rng);

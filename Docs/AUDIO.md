@@ -43,7 +43,7 @@ Playback modules live together in `src/lib/audio/`; callers use `@/lib/audio`, b
 
 - `useAppAudioEffects` starts best-effort warming when the app shell mounts after the startup gate. UI sounds and the draw-transfer cue warm immediately; the remaining manifest warms in one input-idle callback. Startup does not wait for audio fetching or decoding. Battle initialization also warms the full battle event set, opening-hand cards, enemy ability cards, and the current enemy's attack sounds.
 - Crafted Mixed Potion IDs resolve to the base Potion sound for both playback and battle preloading.
-- Every companion has a battle-to-card mapping. Mana Moth, Will-o'-Wisp and Library Owl deliberately have no summon/turn cue. Cards and enemies without a registered sound stay silent and are pinned in the exact `SILENT_*` lists in `tests/lib/audio/sound-registry.test.ts`: adding a sound (or content) must update those lists. Approved separation of Gold gain/spending and explicit service silence are pinned there, as is the music-boss vs attack-only (`living-armor`) roster.
+- Every card, enemy fallback and companion now has a nonempty focal registration, enforced by exact catalog coverage in `tests/lib/audio/sound-registry.test.ts`. Companion turns use their summoning card's cue; the enemy and companion Will-o'-Wisp share the approved recording. Gold gain/spending remain distinct, and explicit UI/service silence remains intentional. The music-boss vs attack-only (`living-armor`) roster is pinned in the same tests.
 - UI event keys remain available when their cue is `null`. Playback and preloading skip these explicit silence choices. The approved export and resolved registrations are archived in [the installation record](./design/audio-review/INSTALLATION.md).
 
 ### Music lifecycle
@@ -89,14 +89,40 @@ non-fatal, and late callbacks cannot dispose a replacement loop. Truncated sourc
 excerpts have short edge fades to prevent hard-cut clicks; their loop character
 still needs an in-game listening pass.
 
-Battle feedback uses resolved `critical` and `periodic` combat-text metadata to
-distinguish critical hits and selected Burn/Bleed ticks from ordinary spell
-damage. These optional presentation fields do not change combat calculations or
-save data. Existing visual aggregation remains unchanged.
+### Battle sound focus
+
+Accepted cards, enemy abilities, and companion actions request one authored focal
+cue at activation. Card and enemy playback return the selected filename even
+when muted or cooldown-suppressed; this identifies the source for its later
+feedback, rather than claiming playback succeeded. No shared action pointer or
+persisted audio state is needed. Accepted Cleanse still sounds when it removes
+nothing. End Turn and Wish selection acknowledge successful commits.
+
+An authored focal cue suppresses routine damage, healing, Gold, Armor, Forge,
+and other status layers. At resolution, at most one accent is selected:
+Shatter, Wildfire, critical hit, Dodge, Freeze, then Stun. Prepared or removed
+statuses are not procs. If the accent uses the focal recording, it is omitted
+without substituting another accent. Death's Door, slice death and outcome
+stingers remain separate. Quiet draw/discard paper cues follow card movement.
+Different actions may overlap while their clips finish; there is no global
+voice-stealing rule.
+
+Without a focal cue, one standalone feedback cue is selected: special outcomes,
+damage, healing, cleanse, Mana, Armor, Forge, Block, Thorns, Gold, Wish, then draw.
+Only damage magnitudes compete numerically. Ties prefer Burn, Poison, Bleed,
+player hit, Block absorption, then enemy hit. Resolved `critical` and `periodic`
+metadata distinguishes ordinary spells from critical hits and Burn/Poison/Bleed
+ticks. The selector does not change combat calculations, saves or visual feedback.
+
+The [focused Sound desk review](./design/audio-review/README.md#battle-replacement-auditions)
+now has fifteen approved decisions covering sixteen sources. Exorcism uses
+Purge; Prayer uses the shorter choir excerpt; Avatar and Seraph share the longer
+choir excerpt. The selected files, source hashes and exact excerpt boundaries
+are recorded in [the installation ledger](./design/audio-review/approved-choices.json).
 
 ## Change checklist
 
-1. Register new card, enemy, or companion sounds in the owning sound registry or audio module (`sound-registry.ts`, `COMPANION_SOUND_CARD_IDS`); cards and enemies intentionally left silent go on the exact pin lists in `tests/lib/audio/sound-registry.test.ts`.
+1. Register new card, enemy, or companion sounds in the owning sound registry or audio module (`sound-registry.ts`, `COMPANION_SOUND_CARD_IDS`); the exact catalog coverage in `tests/lib/audio/sound-registry.test.ts` requires a nonempty focal registration for new content.
 2. Add or replace source audio through [the asset workflow](./WORKFLOWS-ASSETS.md#add-or-replace-sound) and regenerate committed outputs.
 3. Keep host visibility, volume, cache, and failure behavior in the runtime audio owners above.
 4. Run focused unit suites with `npm run test:full -- tests/lib/audio` and any affected lifecycle tests, then the task-scoped local gate. Browser playback verification uses `npm run test:e2e:route -- audio` under the [local execution policy](../CONTRIBUTING.md#what-to-run-when-you-change).

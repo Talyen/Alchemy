@@ -36,6 +36,7 @@ export function playCardSound(cardId: string) {
   const sound = pickRandomUnsafe(getCardSounds(cardId));
   if (!sound) return;
   player.play(sound);
+  return sound;
 }
 
 export function playGoldGain() {
@@ -50,11 +51,16 @@ export function playEnemyAttack(enemyId: string) {
   const sound = pickRandomUnsafe(enemyAttackSounds[enemyId] ?? []);
   if (!sound) return;
   player.play(sound);
+  return sound;
 }
 
-export function playBattleEvent(event: keyof typeof battleEventSounds, options: PlaySoundOptions = {}) {
+export function playBattleEvent(
+  event: keyof typeof battleEventSounds,
+  { excludeSound, ...options }: PlaySoundOptions & { excludeSound?: string } = {},
+) {
   const sound = battleEventSounds[event];
-  if (sound) player.play(sound, options);
+  if (sound && sound !== excludeSound) player.play(sound, options);
+  return sound;
 }
 
 export function playSliceDeath() {

@@ -4,6 +4,7 @@ export interface ReviewChoice {
   reviewed: boolean;
 }
 export interface ChoiceMapping {
+  choiceFrom?: string;
   id: string;
   title: string;
   candidates: Array<{ assetId: string }>;

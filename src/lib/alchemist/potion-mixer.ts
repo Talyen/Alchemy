@@ -8,6 +8,7 @@ import {
 import type { BattleCard, BattleCardEffect } from "../game-data";
 import {
   areBattleCardEffectsEqual,
+  cloneBattleCard,
   describeCardEffects,
   isMixedPotionCard,
   isRecursiveBattleCardEffectKind,
@@ -74,7 +75,7 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyB
   const uidA = cardA.uid ?? 0;
   const uidB = cardB.uid ?? 0;
 
-  return {
+  return cloneBattleCard({
     id: `${MIXED_POTION_CARD_ID}-${cardA.id}-${uidA}-${cardB.id}-${uidB}`,
     title: MIXED_POTION_TITLE,
     descriptionLines,
@@ -83,7 +84,7 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyB
     consume: true,
     brewed: true,
     effects,
-  };
+  });
 }
 
 export function tryCreateMixedPotion(
@@ -104,9 +105,9 @@ export function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: numbe
 
 export function doublePotionPotency(card: BattleCard): BattleCard {
   const effects = card.effects.map((effect) => scalePotionEffect(effect, 2, 0));
-  return {
+  return cloneBattleCard({
     ...card,
     effects,
     descriptionLines: [...describeCardEffects(effects), ...(card.consume ? [CONSUME_DESCRIPTION_LINE] : [])],
-  };
+  });
 }

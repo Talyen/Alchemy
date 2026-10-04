@@ -14,7 +14,6 @@ import {
 } from "./types";
 
 export type ActiveCcKeyword = "stun" | "freeze";
-type CcStat = ActiveCcKeyword;
 
 export function getActiveCcKeyword(cc: CcState): ActiveCcKeyword | null {
   if (cc.stunSkipTurns > 0) return "stun";
@@ -35,7 +34,7 @@ export function finalizeCcSkipTurnDecrement(prev: CcState, next: CcState): CcSta
 
 export interface PlayerCcTriggerInput {
   state: BattleState;
-  stat: CcStat;
+  stat: ActiveCcKeyword;
   stackValue: number;
   thresholdFraction: number;
   combatTexts: CombatTextEvent[];
@@ -56,13 +55,12 @@ export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): B
     stat,
     text: stat === "stun" ? STATUS_CONFIG.CC_NOTICE_STUN : STATUS_CONFIG.CC_NOTICE_FREEZE,
   });
+  const skipKey = stat === "stun" ? "stunSkipTurns" : "freezeSkipTurns";
   let nextState: BattleState = {
     ...setPlayerStatus(state, stat, 0),
     playerCC: {
       ...state.playerCC,
-      ...(stat === "stun"
-        ? { stunSkipTurns: state.playerCC.stunSkipTurns + BATTLE_CONFIG.BASE_CC_DURATION }
-        : { freezeSkipTurns: state.playerCC.freezeSkipTurns + BATTLE_CONFIG.BASE_CC_DURATION }),
+      [skipKey]: state.playerCC[skipKey] + BATTLE_CONFIG.BASE_CC_DURATION,
     },
   };
 
@@ -83,31 +81,25 @@ export function resolvePlayerCrowdControlTriggers(state: BattleState, combatText
   // Mirror the enemy guard in tryTriggerEnemyCc: while controlled, new buildup
   // banks for later instead of extending the skip or firing the other stat on
   // a follow-up packet of the same attack.
-  if (isCcControlled(state.playerCC)) return state;
-  let nextState = resolvePlayerCrowdControlTrigger({
-    state,
-    stat: "stun",
-    stackValue: state.playerStatuses.stun,
-    thresholdFraction: STUN_THRESHOLD_FRACTION,
-    combatTexts,
-  });
-  // A stun that just fired controls the player; don't also freeze on the same packet.
-  if (isCcControlled(nextState.playerCC)) return nextState;
-  nextState = resolvePlayerCrowdControlTrigger({
-    state: nextState,
-    stat: "freeze",
-    stackValue: nextState.playerStatuses.freeze,
-    thresholdFraction: FREEZE_THRESHOLD_FRACTION,
-    combatTexts,
-  });
-  return nextState;
+  for (const stat of ["stun", "freeze"] as const) {
+    // Stun takes priority; once controlled, bank the other stat for later.
+    if (isCcControlled(state.playerCC)) break;
+    state = resolvePlayerCrowdControlTrigger({
+      state,
+      stat,
+      stackValue: state.playerStatuses[stat],
+      thresholdFraction: stat === "stun" ? STUN_THRESHOLD_FRACTION : FREEZE_THRESHOLD_FRACTION,
+      combatTexts,
+    });
+  }
+  return state;
 }
 
 export interface EnemyCcTriggerCheckInput {
   preHitHealth: number;
 
   nextState: BattleState;
-  stat: CcStat;
+  stat: ActiveCcKeyword;
   stackValue: number;
   thresholdFraction: number;
   ccCooldown: number;

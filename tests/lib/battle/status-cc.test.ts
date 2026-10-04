@@ -117,9 +117,8 @@ describe("resolvePlayerCrowdControlTriggers", () => {
     });
     const texts: CombatTextEvent[] = [];
     const result = resolvePlayerCrowdControlTriggers(state, texts);
-    expect(result.playerCC.stunSkipTurns).toBe(1);
-    expect(result.playerCC.freezeSkipTurns).toBe(0);
-    expect(texts).toHaveLength(0);
+    expect(result).toBe(state);
+    expect(texts).toEqual([]);
   });
 
   it("fires stun once when both stats cross threshold on the same packet", () => {
@@ -131,5 +130,8 @@ describe("resolvePlayerCrowdControlTriggers", () => {
     const result = resolvePlayerCrowdControlTriggers(state, texts);
     expect(result.playerCC.stunSkipTurns).toBe(1);
     expect(result.playerCC.freezeSkipTurns).toBe(0);
+    expect(result.playerStatuses.stun).toBe(0);
+    expect(result.playerStatuses.freeze).toBe(20);
+    expect(texts).toEqual([{ target: "player", kind: "notice", stat: "stun", text: "Stunned" }]);
   });
 });

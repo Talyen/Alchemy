@@ -65,10 +65,7 @@ export function initializeGear(
 }
 
 export function addGearInstance(gear: Draft<GearStateFields>, instance: GearInstance, characterId: CharacterId): void {
-  gear.inventories = {
-    ...gear.inventories,
-    [characterId]: [...(gear.inventories[characterId] ?? []), instance],
-  };
+  gear.inventories[characterId].push(instance);
 }
 
 export function equipGearInstance(
@@ -121,7 +118,6 @@ export function salvageGearInstance(
   gear: Draft<GearStateFields>,
   instanceId: string,
 ): {
-  inventories: GearInventories;
   yieldedCurrencies: Record<CraftingCurrencyId, number>;
   yieldedMaterials: MaterialInventory;
 } | null {
@@ -135,14 +131,10 @@ export function salvageGearInstance(
   // payout agree without trusting a frozen client value.
   const result = salvageGear(flattenGearInventories(gear.inventories), gear.loadouts, instanceId);
   if (!result) return null;
-  gear.inventories = {
-    ...gear.inventories,
-    [owner]: gear.inventories[owner].filter((item) => item.instanceId !== instanceId),
-  };
+  gear.inventories[owner] = gear.inventories[owner].filter((item) => item.instanceId !== instanceId);
   gear.loadouts = result.loadouts;
   gear.craftingCurrencies = addCraftingCurrencies(gear.craftingCurrencies, result.yieldedCurrencies);
   return {
-    inventories: gear.inventories,
     yieldedCurrencies: result.yieldedCurrencies,
     yieldedMaterials: result.yieldedMaterials,
   };
@@ -157,14 +149,13 @@ export function applyGearCurrency(
   if (!options?.rng) throw new Error("applyCurrency requires an explicit rng");
   const owner = findGearInventoryOwner(gear.inventories, instanceId);
   if (!owner) return false;
-  const item = gear.inventories[owner].find((entry) => entry.instanceId === instanceId);
+  const inventory = gear.inventories[owner];
+  const index = inventory.findIndex((entry) => entry.instanceId === instanceId);
+  const item = inventory[index];
   if (!item || (gear.craftingCurrencies[currencyId] ?? 0) < 1) return false;
   const updatedItem = applyCraftingCurrency(currencyId, item, options.rng);
   if (updatedItem === item) return false;
-  gear.inventories = {
-    ...gear.inventories,
-    [owner]: gear.inventories[owner].map((entry) => (entry.instanceId === instanceId ? updatedItem : entry)),
-  };
+  inventory[index] = updatedItem;
   gear.craftingCurrencies = normalizeCraftingCurrencies({
     ...gear.craftingCurrencies,
     [currencyId]: (gear.craftingCurrencies[currencyId] ?? 0) - 1,

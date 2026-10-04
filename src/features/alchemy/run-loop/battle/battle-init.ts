@@ -1,5 +1,5 @@
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import { preloadBattleSounds } from "@/lib/audio";
+import { preloadBattleSounds, playBattleEvent } from "@/lib/audio";
 import { playCompanionSound, presentCombatTexts } from "./controller-utils";
 import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
@@ -14,12 +14,13 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
     ctx.playback.beginOpening();
     presentationStore.setOpeningDrawPending(true);
     presentationStore.setCardTransferInProgress(true);
+    const focalSound = companionId ? playCompanionSound(companionId) : undefined;
     if (companionId) {
-      playCompanionSound(companionId);
       presentationStore.shakeCompanion();
       presentationStore.telegraphAttack("companion");
     }
-    presentCombatTexts(presentationStore, startingTexts);
+    if (battleState.deathsDoorActive) playBattleEvent("deathsDoor");
+    presentCombatTexts(presentationStore, startingTexts, focalSound);
     if (outcome) session.handleVictoryDefeat?.(outcome);
   }
 

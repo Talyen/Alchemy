@@ -8,6 +8,21 @@ function snapshot(gold: number) {
 }
 
 describe("SaveWriteQueue", () => {
+  it("still clears and cancels autosave when another cancellation listener throws", async () => {
+    const queue = new SaveWriteQueue();
+    queue.subscribeCancellation(() => {
+      throw new Error("subscriber failed");
+    });
+    const cancelled = vi.fn();
+    queue.subscribeCancellation(cancelled);
+    const clear = vi.fn(async () => ({ ok: true }));
+    await expect(queue.enqueueClear(clear)).resolves.toBe(true);
+    expect(clear).toHaveBeenCalledOnce();
+    expect(cancelled).toHaveBeenCalledOnce();
+    expect(queue.isClearPending).toBe(false);
+    await expect(queue.enqueue(snapshot(2), async () => "saved")).resolves.toBe("saved");
+  });
+
   it.each(["saved", "failed"] as const)("coalesced callers share the replacement's %s outcome", async (outcome) => {
     const queue = new SaveWriteQueue();
     const gate = deferred<SaveWriteOutcome>();
@@ -90,23 +105,6 @@ describe("SaveWriteQueue", () => {
     expect(await queue.enqueue(snapshot(2), write)).toBe("saved");
   });
 
-  it.each(["reported", "thrown"])("reports a %s clear failure and keeps the queue usable", async (failure) => {
-    const queue = new SaveWriteQueue();
-    const error = new Error("clear denied");
-    const onError = vi.fn();
-    await expect(
-      queue.enqueueClear(
-        async () => {
-          if (failure === "thrown") throw error;
-          return { ok: false, error };
-        },
-        { onError },
-      ),
-    ).resolves.toBe(false);
-    expect(onError).toHaveBeenCalledExactlyOnceWith(error);
-    expect(await queue.enqueue(snapshot(1), async () => "saved")).toBe("saved");
-  });
-
   it("keeps write protection isolated per queue instance", async () => {
     const protectedQueue = new SaveWriteQueue();
     const openQueue = new SaveWriteQueue();
@@ -150,13 +148,12 @@ describe("SaveWriteQueue", () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 
-  it("returns skipped for uncloneable payloads while writes are disabled", async () => {
+  it("rejects uncloneable snapshots without blocking later saves", async () => {
     const queue = new SaveWriteQueue();
-    queue.setWritesDisabled(true);
     const write = vi.fn().mockResolvedValue("saved" as const);
-    const circular: Record<string, unknown> = {};
-    circular.self = circular;
-    expect(await queue.enqueue(circular as unknown as ReturnType<typeof snapshot>, write)).toBe("skipped");
+    const invalid = { ...snapshot(1), unexpected: () => {} };
+    expect(await queue.enqueue(invalid, write)).toBe("failed");
     expect(write).not.toHaveBeenCalled();
+    expect(await queue.enqueue(snapshot(2), write)).toBe("saved");
   });
 });

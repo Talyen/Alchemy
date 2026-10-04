@@ -117,6 +117,51 @@ function applySingleEffect(
   return applyEffectByKind(state, card, effect, potionMult, combatTexts, context);
 }
 
+function ineffectiveEffectFeedback(effect: BattleCardEffect): CombatTextEvent | null {
+  const feedback = { target: "player", kind: "status", stat: "effect", amount: 0, impact: false } as const;
+  switch (effect.kind) {
+    case "remove-harmful-status":
+    case "remove-player-status":
+    case "cleanse-player-status-to-damage":
+      return null; // Cleanse handlers own their ineffective-action notices.
+    case "damage":
+      return { ...feedback, target: "enemy", kind: "damage", stat: effect.damageType };
+    case "enemy-status":
+    case "multiply-enemy-status":
+      return { ...feedback, target: "enemy", kind: "multiply", stat: effect.status };
+    case "remove-enemy-armor":
+      return { ...feedback, target: "enemy", stat: "armor" };
+    case "player-status":
+      return { ...feedback, stat: effect.status };
+    case "heal":
+    case "lose-health":
+      return { ...feedback, stat: "health" };
+    case "restore-mana":
+    case "lose-mana":
+    case "lose-max-mana":
+    case "gain-max-mana":
+      return { ...feedback, stat: "mana" };
+    case "companion-action":
+      return { ...feedback, stat: "companion" };
+    case "wish":
+    case "self-damage":
+    case "random-damage":
+    case "summon-companion":
+    case "buff-companion":
+    case "random-draw":
+    case "gain-gold":
+    case "draw-cards":
+    case "next-hit-crit":
+    case "next-hit-leech":
+    case "play-next-card-twice":
+    case "next-hit-poison":
+    case "next-archery-free":
+    case "chance":
+    case "repeat-over-turns":
+      return feedback;
+  }
+}
+
 export function applyCardEffects(
   state: BattleState,
   card: BattleCard,
@@ -137,58 +182,15 @@ export function applyCardEffects(
     (currentState, effect) => applySingleEffect(currentState, card, effect, potionMult, combatTexts, context),
     { kind: "each-step", settle: resolvePendingBattleReactions },
   );
+  const primary = card.effects[0];
   if (
     combatTexts.length === 0 &&
     !isPlayerDefeated(state) &&
-    card.effects.length > 0 &&
-    !["remove-harmful-status", "remove-player-status", "cleanse-player-status-to-damage"].includes(
-      card.effects[0]!.kind,
-    ) &&
-    (hasEffectApplyHandler(card.effects[0]!.kind) || isRecursiveBattleCardEffectKind(card.effects[0]!.kind))
+    primary &&
+    (hasEffectApplyHandler(primary.kind) || isRecursiveBattleCardEffectKind(primary.kind))
   ) {
-    const primary = card.effects[0]!;
-    const stat =
-      primary.kind === "damage"
-        ? primary.damageType
-        : primary.kind === "heal" || primary.kind === "lose-health"
-          ? "health"
-          : primary.kind === "restore-mana" ||
-              primary.kind === "lose-mana" ||
-              primary.kind === "lose-max-mana" ||
-              primary.kind === "gain-max-mana"
-            ? "mana"
-            : primary.kind === "remove-harmful-status" ||
-                primary.kind === "remove-player-status" ||
-                primary.kind === "cleanse-player-status-to-damage"
-              ? "cleanse"
-              : primary.kind === "remove-enemy-armor"
-                ? "armor"
-                : primary.kind === "companion-action"
-                  ? "companion"
-                  : primary.kind === "player-status" ||
-                      primary.kind === "enemy-status" ||
-                      primary.kind === "multiply-enemy-status"
-                    ? primary.status
-                    : "effect";
-    const target =
-      primary.kind === "damage" ||
-      primary.kind === "remove-enemy-armor" ||
-      primary.kind === "multiply-enemy-status" ||
-      primary.kind === "enemy-status"
-        ? "enemy"
-        : "player";
-    mergeCombatText(combatTexts, {
-      target,
-      kind:
-        primary.kind === "damage"
-          ? "damage"
-          : primary.kind === "multiply-enemy-status" || primary.kind === "enemy-status"
-            ? "multiply"
-            : "status",
-      stat,
-      amount: 0,
-      impact: false,
-    });
+    const feedback = ineffectiveEffectFeedback(primary);
+    if (feedback) mergeCombatText(combatTexts, feedback);
   }
   return result;
 }

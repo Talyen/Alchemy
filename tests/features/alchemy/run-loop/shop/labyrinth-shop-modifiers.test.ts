@@ -9,7 +9,7 @@ import { gearDefinitions } from "@/lib/gear";
 import { gearBaseItems, type GearBaseItemId } from "@/lib/gear/base-items";
 import { createMixedPotion, doublePotionPotency } from "@/lib/alchemist";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
-import { hydrateAlchemistState, readActivityData, serializeAlchemistState } from "@/lib/active-run-session";
+import { hydrateAlchemistState, readActivityData } from "@/lib/active-run-session";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { playUISound } from "@/lib/audio";
 function room(id: EncounterRewardTraitId) {
@@ -74,7 +74,7 @@ describe("Labyrinth shops", () => {
     verify();
     expect(actions.alchemist.refresh()).toBe(true);
     verify();
-    const saved = serializeAlchemistState(readActivityData(readRunSession().activity, "alchemist"));
+    const saved = readActivityData(readRunSession().activity, "alchemist");
     expect(hydrateAlchemistState(JSON.parse(JSON.stringify(saved)))).toEqual(
       readActivityData(readRunSession().activity, "alchemist"),
     );

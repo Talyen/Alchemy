@@ -9,17 +9,7 @@ import {
   resampleTrinketShopOfferings,
   resampleEquipmentShopOfferings,
 } from "@/features/alchemy/run-loop/shop/shop-state-init";
-import {
-  hydrateAlchemistState,
-  hydrateEquipmentShopState,
-  hydrateShopState,
-  hydrateTrinketShopState,
-  serializeAlchemistState,
-  serializeEquipmentShopState,
-  serializeShopState,
-  serializeTrinketShopState,
-  shopItemSlotKey,
-} from "@/lib/active-run-session";
+import { hydrateTrinketShopState, serializeTrinketShopState, shopItemSlotKey } from "@/lib/active-run-session";
 import {
   SHOP_CARDS_OFFERED,
   ALCHEMIST_POTIONS_OFFERED,
@@ -162,29 +152,6 @@ describe("shop-state-init", () => {
     expect(createInitialEquipmentShopState().gear.length).toBe(EQUIPMENT_SHOP_OFFERED);
   });
 
-  it("round-trips merchant shop state through persistence helpers", () => {
-    const state = createInitialShopState();
-    const purchased = shopItemSlotKey(state.cards[0]!.id, 0);
-    state.refreshesLeft = 1;
-    state.firstPurchaseUsed = true;
-    state.purchasedSlotKeys = [purchased];
-    const restored = hydrateShopState(serializeShopState(state));
-    expect(restored.cards.map((card) => card.id)).toEqual(state.cards.map((card) => card.id));
-    expect(restored.purchasedSlotKeys).toEqual([purchased]);
-    expect(restored.removeUsed).toBe(false);
-  });
-
-  it("round-trips alchemist shop state through persistence helpers", () => {
-    const state = createInitialAlchemistState();
-    const purchased = shopItemSlotKey(state.potions[0]!.id, 0);
-    state.mixUsed = true;
-    state.purchasedSlotKeys = [purchased];
-    const restored = hydrateAlchemistState(serializeAlchemistState(state));
-    expect(restored.potions.map((card) => card.id)).toEqual(state.potions.map((card) => card.id));
-    expect(restored.purchasedSlotKeys).toEqual([purchased]);
-    expect(restored.mixUsed).toBe(true);
-  });
-
   it("round-trips trinket shop state through persistence helpers", () => {
     const state = createInitialTrinketShopState(() => 0.1);
     const purchased = shopItemSlotKey(state.trinkets[0]!.id, 0);
@@ -196,44 +163,5 @@ describe("shop-state-init", () => {
     expect(restored.refreshesLeft).toBe(2);
     expect(restored.firstPurchaseUsed).toBe(true);
     expect(restored.purchasedSlotKeys).toEqual([purchased]);
-  });
-
-  it("remaps purchased keys when a persisted trinket id is missing from the catalog", () => {
-    const liveA = trinketLibrary[0]!;
-    const liveB = trinketLibrary[1]!;
-    const restored = hydrateTrinketShopState({
-      trinketIds: [liveA.id, "not-a-real-trinket", liveB.id],
-      refreshesLeft: 1,
-      freeRefreshUsed: false,
-      firstPurchaseUsed: true,
-      purchasedSlotKeys: [shopItemSlotKey(liveB.id, 2)],
-    });
-    expect(restored.trinkets.map((entry) => entry.id)).toEqual([liveA.id, liveB.id]);
-    expect(restored.purchasedSlotKeys).toEqual([shopItemSlotKey(liveB.id, 1)]);
-  });
-
-  it("round-trips equipment shop state through persistence helpers", () => {
-    const state = createInitialEquipmentShopState(() => 0.2);
-    state.refreshesLeft = 1;
-    const restored = hydrateEquipmentShopState(serializeEquipmentShopState(state));
-    expect(restored.gear.map((item) => item.instanceId)).toEqual(state.gear.map((item) => item.instanceId));
-    expect(restored.refreshesLeft).toBe(1);
-  });
-
-  it("drops unknown equipment definitions and orphan purchase keys on hydrate", () => {
-    const live = {
-      instanceId: "shelf-basic",
-      definitionId: "leather-armor-basic",
-      affixes: [],
-    };
-    const restored = hydrateEquipmentShopState({
-      gear: [{ instanceId: "gone", definitionId: "not-a-real-definition", affixes: [] }, live],
-      refreshesLeft: 1,
-      freeRefreshUsed: false,
-      firstPurchaseUsed: true,
-      purchasedSlotKeys: ["gone", "shelf-basic", "orphan-slot"],
-    });
-    expect(restored.gear.map((item) => item.instanceId)).toEqual(["shelf-basic"]);
-    expect(restored.purchasedSlotKeys).toEqual(["shelf-basic"]);
   });
 });

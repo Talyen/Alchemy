@@ -1,5 +1,6 @@
 import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
 import "../../../../helpers/mock-audio";
+import { playBattleEvent, playCardSound } from "@/lib/audio";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/end-turn-ui";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
@@ -17,6 +18,7 @@ import { makeDrawSequenceDeps } from "./turn-orchestration-fixture";
 vi.mock("@/lib/animation/animation-prefs", () => ({ isAnimationDisabled: () => false }));
 
 beforeEach(() => {
+  vi.clearAllMocks();
   resetBattlePresentationAndRun();
   useUiStore.getState().setCardInspection(null);
 });
@@ -84,6 +86,29 @@ describe("End Turn execution and playback", () => {
     expect(useBattlePresentationStore.getState().displayedBattle).toBe(before.battle.battleState);
     ui.handleEndTurn();
     expect(readGameplayState()).toBe(resolved);
+    expect(vi.mocked(playBattleEvent).mock.calls.filter(([event]) => event === "endTurn")).toHaveLength(1);
+  });
+
+  it("keeps a focal enemy ability cue on the terminal playback shortcut", () => {
+    const { ui } = makeUi();
+    vi.mocked(playCardSound).mockReturnValue("slash.ogg");
+    dispatchRunSessionCommand((draft) =>
+      initializeActiveBattle(
+        draft,
+        patchBattleState({
+          playerHealth: 1,
+          deathsDoorUsed: true,
+          gearEffects: { dodgeChance: -100 },
+          currentEnemy: { abilityIds: ["slash"] },
+          enemyHealth: 1000,
+          enemyMaxHealth: 1000,
+        }),
+      ),
+    );
+    ui.handleEndTurn();
+    expect(readGameplayState().battle.battleState.playerHealth).toBe(0);
+    expect(playCardSound).toHaveBeenCalledExactlyOnceWith("slash");
+    expect(vi.mocked(playBattleEvent).mock.calls.some(([event]) => event === "playerHit")).toBe(false);
   });
 
   it.each([false, true])(

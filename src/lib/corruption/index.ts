@@ -17,7 +17,9 @@ export const isSpecialCorruptionCard = isMixedPotionCard;
 
 function pickMutation(groups: CorruptionMutationGroup[], rng: () => number) {
   const group = pickWeighted(groups, (entry) => entry.weight, rng);
-  return group ? pickRandom(group.mutations, rng) : undefined;
+  if (!group) return undefined;
+  const mutation = pickRandom(group.mutations, rng);
+  return mutation ? { ...mutation, kind: group.kind } : undefined;
 }
 
 function preserveCardUid(card: BattleCard, uid: BattleCard["uid"]): BattleCard {
@@ -58,9 +60,8 @@ export function corruptCard(
   let finalCard = mutation.card;
   let finalDelta = mutation.delta;
   if (twin) {
-    const firstKind = groups.find((entry) => entry.mutations.includes(mutation))?.kind;
     const secondGroups = getCorruptionMutationGroups(mutation.card, singleModifiers).filter(
-      (group) => group.kind !== firstKind && !isOppositeAxis(firstKind, group.kind),
+      (group) => group.kind !== mutation.kind && group.kind !== OPPOSITE_AXIS[mutation.kind],
     );
     const second = pickMutation(secondGroups, rng);
     if (second) {
@@ -82,10 +83,6 @@ const OPPOSITE_AXIS: Partial<Record<CorruptionMutationGroup["kind"], CorruptionM
   consume: "reusable",
   reusable: "consume",
 };
-
-function isOppositeAxis(first: CorruptionMutationGroup["kind"] | undefined, second: CorruptionMutationGroup["kind"]) {
-  return first !== undefined && OPPOSITE_AXIS[first] === second;
-}
 
 export function corruptDeckCard(
   deck: BattleCard[],

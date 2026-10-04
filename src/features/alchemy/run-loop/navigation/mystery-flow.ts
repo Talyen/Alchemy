@@ -44,16 +44,6 @@ export interface MysteryEffectContext {
   rng: () => number;
 }
 
-function addSpecificMysteryCard(cardId: string, context: MysteryEffectContext) {
-  const card = cardById[cardId];
-  if (!card) {
-    if (import.meta.env.DEV) console.warn(`[Mystery] addCard "${cardId}" matched no card; granting nothing`);
-    return { followUp: null };
-  }
-  appendCardToRunWithDiscovery(context.draft, card);
-  return { followUp: null };
-}
-
 function getMysteryCardChoicePool(tag?: KeywordId): BattleCard[] {
   const pool = getOfferableCardPool();
   if (!tag) return pool;
@@ -84,15 +74,6 @@ function offerMysteryCardChoices(
   return { followUp: "choose-card" };
 }
 
-function removeMysteryCard(context: MysteryEffectContext) {
-  setRunDeck(context.draft, (p) => {
-    if (p.length === 0) return p;
-    const idx = rngInt(context.rng, p.length);
-    return p.filter((_, i) => i !== idx);
-  });
-  return { followUp: null };
-}
-
 function gainRandomMysteryTrinket(
   effect: Extract<MysteryEffect, { kind: "gainRandomTrinket" }>,
   context: MysteryEffectContext,
@@ -103,19 +84,17 @@ function gainRandomMysteryTrinket(
   if (!trinketId) {
     // Every candidate is owned: fall back to guaranteed-Astral gear, matching
     // the pre-resolution fallback in resolve-trinkets.ts for named grants.
-    const baseItem = pickRandom(gearBaseItemList, context.rng);
-    if (!baseItem) return { followUp: null };
-    return gainMysteryGeneratedGear(baseItem.id, context, true);
+    return gainRandomMysteryGear(context, true);
   }
   appendBoonToRunWithDiscovery(context.draft, trinketId);
   setMysteryGrantedTrinketIds(context.draft, (previous) => [...previous, trinketId]);
   return { followUp: null };
 }
 
-function gainRandomMysteryGear(context: MysteryEffectContext) {
+function gainRandomMysteryGear(context: MysteryEffectContext, forceAstral = false) {
   const baseItem = pickRandom(gearBaseItemList, context.rng);
   if (!baseItem) return { followUp: null };
-  return gainMysteryGeneratedGear(baseItem.id, context);
+  return gainMysteryGeneratedGear(baseItem.id, context, forceAstral);
 }
 
 function gainMysteryGeneratedGear(baseItemId: string, context: MysteryEffectContext, forceAstral = false) {
@@ -162,8 +141,13 @@ function assertNever(value: never): never {
 
 export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffectContext): MysteryEffectResult {
   switch (effect.kind) {
-    case "addCard":
-      return addSpecificMysteryCard(effect.cardId, context);
+    case "addCard": {
+      const card = cardById[effect.cardId];
+      if (card) appendCardToRunWithDiscovery(context.draft, card);
+      else if (import.meta.env.DEV)
+        console.warn(`[Mystery] addCard "${effect.cardId}" matched no card; granting nothing`);
+      return { followUp: null };
+    }
     case "chooseCard":
       return offerMysteryCardChoices(effect, context);
     case "healHealth": {
@@ -185,7 +169,12 @@ export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffect
       awardMysteryXP(context.draft, effect.keyword, effect.amount);
       return { followUp: null };
     case "removeCard":
-      return removeMysteryCard(context);
+      setRunDeck(context.draft, (deck) => {
+        if (deck.length === 0) return deck;
+        const index = rngInt(context.rng, deck.length);
+        return deck.filter((_, i) => i !== index);
+      });
+      return { followUp: null };
     case "gainTrinket":
       appendBoonToRunWithDiscovery(context.draft, effect.trinketId);
       return { followUp: null };

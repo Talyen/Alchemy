@@ -89,6 +89,12 @@ describe("brewing and transmutation content", () => {
       },
     ]);
     expect(card).toEqual(before);
+    const wrapper = strengthened.effects[0];
+    if (wrapper.kind !== "repeat-over-turns") throw new Error("Expected scheduled Potion");
+    const chance = wrapper.effects[0];
+    if (chance.kind !== "chance") throw new Error("Expected chance Potion");
+    Object.assign(chance.failureEffects[0], { amount: 99 });
+    expect(card).toEqual(before);
   });
   it("offers one explicit ordinary card role each with distinct identities", () => {
     const offers = createTransmutationOffers(createSeededRng(51));

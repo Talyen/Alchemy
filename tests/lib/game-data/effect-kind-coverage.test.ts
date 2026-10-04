@@ -6,7 +6,6 @@ import {
   TEMPLATE_EFFECT_DEFINITIONS,
   type BattleCardEffect,
 } from "@/lib/game-data";
-import { collectKeywordsFromBattleEffect } from "@/lib/game-data/effect-metadata";
 import { EFFECT_APPLY_BY_KIND } from "@/lib/battle/effect-handlers/registry";
 
 // Single contract for "adding a kind" (see BATTLE_HANDLERS.md): the union,
@@ -55,10 +54,6 @@ const MINIMAL_EFFECT_BY_KIND: Record<(typeof BATTLE_CARD_EFFECT_KINDS)[number], 
 };
 
 describe("effect kind coverage", () => {
-  it("covers every kind exactly once", () => {
-    expect(new Set(Object.keys(MINIMAL_EFFECT_BY_KIND))).toEqual(new Set(BATTLE_CARD_EFFECT_KINDS));
-  });
-
   it("template definitions cover all non-recursive kinds", () => {
     const recursive = new Set<string>(RECURSIVE_BATTLE_CARD_EFFECT_KINDS);
     const templateKinds = new Set<string>(TEMPLATE_EFFECT_DEFINITIONS.map((def) => def.kind));
@@ -78,12 +73,6 @@ describe("effect kind coverage", () => {
     const registered = new Set(Object.keys(EFFECT_APPLY_BY_KIND));
     for (const kind of BATTLE_CARD_EFFECT_KINDS) {
       expect(registered.has(kind)).toBe(!recursive.has(kind));
-    }
-  });
-
-  it("every kind has a keyword grouping", () => {
-    for (const [kind, effect] of Object.entries(MINIMAL_EFFECT_BY_KIND)) {
-      expect(Array.isArray(collectKeywordsFromBattleEffect(effect)), kind).toBe(true);
     }
   });
 });

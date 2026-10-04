@@ -9,7 +9,7 @@ import { containedPath, hashFile } from "./audio-review.mjs";
 import { mapPool } from "./map-pool.mjs";
 
 const execute = promisify(execFile);
-const PREVIEW_VERSION = 1;
+const PREVIEW_VERSION = 3;
 
 export async function currentSoundIdentity(root, files) {
   const generated = new Map(generatedSoundAssets.map(({ source, target }) => [target, source]));
@@ -130,14 +130,18 @@ export async function prepareReviewMedia({ root, libraryRoot, output, mappings, 
       try {
         const { stderr } = await encode([
           "-y",
-          "-i",
-          source.sourcePath,
+          // Seek before decoding so fades use the excerpt's timestamps.
+          // Output seeking would apply the fades to the master before trimming.
           "-ss",
           String(source.start),
+          "-i",
+          source.sourcePath,
           ...(source.duration ? ["-t", String(source.duration)] : []),
           "-vn",
           "-af",
-          "volumedetect",
+          source.duration
+            ? `afade=t=in:d=0.005,afade=t=out:st=${Math.max(0, source.duration - 0.005)}:d=0.005,volumedetect`
+            : "volumedetect",
           "-ar",
           "48000",
           "-ac",
@@ -173,7 +177,7 @@ export async function prepareReviewMedia({ root, libraryRoot, output, mappings, 
           originalHash: await hashFile(temporaryOriginal),
           matchedHash: await hashFile(temporaryMatched),
           processing:
-            "48 kHz stereo 16-bit PCM preview. Original level has no gain change. Matched level uses fixed gain toward −22 dB mean, capped at −1.5 dB peak and +12 dB boost; dynamics preserved. Excerpts are not final edits or validated loops.",
+            "48 kHz stereo 16-bit PCM preview. Original level has no gain change. Matched level uses fixed gain toward −22 dB mean, capped at −1.5 dB peak and +12 dB boost; dynamics preserved. Excerpts have 5 ms edge fades; they are not final edits or validated loops.",
         };
         await rename(temporaryOriginal, path.join(output, original));
         await rename(temporaryMatched, path.join(output, matched));

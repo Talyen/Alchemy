@@ -6,6 +6,14 @@ import type { Screen } from "../routing/screens";
 type SoundCue = string | null;
 
 export const cardSounds: Record<string, string[]> = {
+  avatar: ["battle-focus-church-choir-dm-a47d5cbc-0-2500.ogg"],
+  exorcism: ["battle-focus-purge-01-ef2ba588-0-1500.ogg"],
+  "sanctified-plate": ["battle-focus-arcane-metal-01-5abcc0c6-250-1500.ogg"],
+  tithe: ["battle-focus-impact-sound-design-hit-chime-resonant-f6318a19-0-1500.ogg"],
+  prayer: ["battle-focus-church-choir-dm-a47d5cbc-0-1500.ogg"],
+  "wishing-well": ["battle-focus-illusion-mystery-magical-water-44c5b75b-0-1500.ogg"],
+  "will-o-wisp-companion": ["battle-focus-magspel-cast-casting-buff-hy-pc-6b612bab-50-1500.ogg"],
+  "library-owl-companion": ["battle-focus-magic-generic-haunted-old-grimoire-open-f8eb7607-280-1500.ogg"],
   slash: ["sword-attack-1.ogg"],
   stab: ["sword-attack-3.ogg"],
   bash: ["gut-kick.ogg"],
@@ -96,10 +104,24 @@ export const cardSounds: Record<string, string[]> = {
   "spiked-shield": ["wood-breaking-cracking-snapping-breaking-peel-d8b1cf2e-0-1333.ogg"],
   "golden-plate": ["coins-pouch-leather-drop-into-takes-3-bbe032a5-0-2000.ogg"],
   "crystal-bulwark": ["heavy-armor-block-01-a169e2a5-0-2000.ogg"],
+  "caustic-jab": ["sword-impact-hit-2.ogg"],
+  rend: ["monster-bite-3-7193d1d8-0-1339.ogg"],
+  "predators-focus": ["monster-bite-3-7193d1d8-0-1339.ogg"],
+  "sniff-out": ["efx-int-mutt-growl-42-b-ef1caab1-0-2443.ogg"],
+  "pixie-dust": ["buff-pickup.ogg"],
+  "mana-moth-companion": ["buff-pickup.ogg"],
   shadowstep: ["texture-whoosh-02-fast-02-1c520254-0-835.ogg"],
 };
 
 export const enemyAttackSounds: Record<string, string[]> = {
+  "will-o-wisp": ["battle-focus-magspel-cast-casting-buff-hy-pc-6b612bab-50-1500.ogg"],
+  cleric: ["battle-focus-heal-01-2847537e-0-1500.ogg"],
+  inquisitor: ["battle-focus-impact-sound-design-hit-chime-resonant-f6318a19-0-1500.ogg"],
+  paladin: ["battle-focus-plate-impact-hard-02-a6a1ca66-0-764.ogg"],
+  seraph: ["battle-focus-church-choir-dm-a47d5cbc-0-2500.ogg"],
+  zealot: ["battle-focus-magspel-cast-casting-buff-hy-pc-3b300b28-20-1500.ogg"],
+  "giant-snake": ["battle-focus-creature-hiss-4-m-e9aede68-330-1500.ogg"],
+  "giant-spider": ["battle-focus-bug-people-03-d2d3d05e-50-1387.ogg"],
   skeleton: ["swish-hit.ogg"],
   goblin: ["swish-hit.ogg"],
   mimic: ["creature-monster-attack-09-108cd42b-0-1854.ogg"],
@@ -127,6 +149,9 @@ export const enemyAttackSounds: Record<string, string[]> = {
   brawler: ["gut-kick.ogg"],
   "stone-golem": ["weapon-impact-parry-01-1b12234a-0-922.ogg"],
   "earth-elemental": ["ground-impact-large-falling-rocks-various-04-2f578e6a-0-5305.ogg"],
+  "winter-wolf": ["ice-throw-1.ogg"],
+  yeti: ["ice-throw-1.ogg"],
+  banshee: ["dark-spell-life-tap-03-dd1d0dd1-0-2754.ogg"],
   "stone-titan": ["ground-impact-large-falling-rocks-various-04-2f578e6a-0-5305.ogg"],
 };
 
@@ -141,6 +166,10 @@ export const battleEventSounds = {
   poisonTick: "squelching-4.ogg",
   bleedTick: "monster-bite-3-7193d1d8-0-1339.ogg",
   playerHeal: "buff-pickup-1.ogg",
+  cleanse: "buff-pickup-1.ogg",
+  manaChange: "buff-pickup.ogg",
+  blockGain: "sword-blocked-1.ogg",
+  thornsGain: "wood-breaking-cracking-snapping-breaking-peel-d8b1cf2e-0-1333.ogg",
   consumeCard: "card-fan.ogg",
   drawCards: "card-draw-1.ogg",
   drawTransfer: "card-draw-2.ogg",

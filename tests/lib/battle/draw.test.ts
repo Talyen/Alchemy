@@ -1,125 +1,39 @@
 import { describe, expect, it, vi } from "vitest";
-import { defaultBattleState, defaultTalentEffects, endPlayerTurn, playBattleCardResolved } from "@/lib/battle";
+import { defaultBattleState, endPlayerTurn, playBattleCardResolved } from "@/lib/battle";
 import { drawCards, drawKeywordCard, takeRandomCardFromDeck } from "@/lib/battle/draw";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
-import { shuffle } from "@/lib/rng";
 import { CARDS_PER_TURN, MAX_HAND_SIZE } from "@/lib/game-constants";
-import { emptyInventory } from "@/lib/homestead/inventory";
 import { makeTestBattleState, makeTestCardWithId, patchBattleState, seededRng } from "../../fixtures/battle";
-import { makeTestCard } from "../../fixtures/cards";
 
 const makeCard = makeTestCardWithId;
 
-describe("defaultTalentEffects", () => {
-  it("has all numeric fields set to 0 except known non-zero defaults", () => {
-    const nonZeroDefaults = new Set([
-      "bleedDesperateMultiplier",
-      "bleedExecuteMultiplier",
-      "healMultiplier",
-      "potionPotency",
-    ]);
-    for (const [key, value] of Object.entries(defaultTalentEffects)) {
-      if (typeof value === "number" && !nonZeroDefaults.has(key)) expect(value).toBe(0);
-    }
-  });
-
-  it("has all boolean fields set to false", () => {
-    for (const value of Object.values(defaultTalentEffects)) {
-      if (typeof value === "boolean") expect(value).toBe(false);
-    }
-  });
-
-  it("has empty armor thresholds, a null block threshold, zero companion bonds, and known non-zero multipliers", () => {
-    expect(defaultTalentEffects).toMatchObject({
-      healthThresholdBlock: null,
-      healthThresholdArmor: [],
-      bleedDesperateMultiplier: 1,
-      healMultiplier: 1,
-    });
-    const levels = defaultTalentEffects.companionBondLevels;
-    expect(Object.keys(levels).length).toBeGreaterThan(0);
-    for (const value of Object.values(levels)) expect(value).toBe(0);
-  });
-});
-
 describe("defaultBattleState", () => {
-  it("returns fresh object each call (no mutation sharing)", () => {
-    const a = defaultBattleState();
-    const b = defaultBattleState();
-    expect(a).not.toBe(b);
-    a.playerHealth = 15;
-    expect(b.playerHealth).toBe(30);
-  });
-
-  it("initializes placeholder combat defaults", () => {
-    const s = defaultBattleState();
-    expect(s).toMatchObject({
-      mana: 0,
-      maxMana: 0,
-      playerHealth: 30,
-      enemyHealth: 30,
-      currentEnemy: { id: "skeleton" },
-      pendingMaterials: emptyInventory(),
-      talentEffects: defaultTalentEffects,
-      playerStatuses: {
-        block: 0,
-        armor: 0,
-        forge: 0,
-        haste: 0,
-        burn: 0,
-        poison: 0,
-        bleed: 0,
-        freeze: 0,
-        stun: 0,
-      },
-      enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+  it("isolates nested combat state so one battle cannot alter the next battle's defaults", () => {
+    const first = defaultBattleState();
+    const next = defaultBattleState();
+    const before = structuredClone({
+      playerStatuses: next.playerStatuses,
+      enemyStatuses: next.enemyStatuses,
+      flags: next.flags,
+      talents: next.talentEffects,
+      gear: next.gearEffects,
+      deck: next.deck,
     });
-    expect(s.rng()).toBe(0);
-    for (const value of Object.values(s.flags)) {
-      if (typeof value === "boolean") expect(value).toBe(false);
-      if (typeof value === "number") expect(value).toBe(0);
-    }
-  });
-});
-
-describe("shuffle", () => {
-  it("returns a new array (not the same reference)", () => {
-    const cards = [makeTestCard({ id: "a", title: "A" })];
-    const shuffled = shuffle(cards, seededRng(1));
-    expect(shuffled).not.toBe(cards);
-  });
-
-  it("does not mutate the original array", () => {
-    const cards = [
-      makeTestCard({
-        id: "a",
-        title: "A",
-        effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 5 }],
-      }),
-    ];
-    const original = [...cards];
-    shuffle(cards, seededRng(1));
-    expect(cards).toEqual(original);
-  });
-
-  it("preserves all cards", () => {
-    const cards = [
-      makeTestCard({ id: "a", title: "A", uid: 1 }),
-      makeTestCard({ id: "b", title: "B", uid: 2 }),
-      makeTestCard({ id: "c", title: "C", uid: 3 }),
-    ];
-    const shuffled = shuffle(cards, seededRng(1));
-    expect(shuffled).toHaveLength(3);
-    expect(shuffled.map((c) => c.id).sort()).toEqual(["a", "b", "c"]);
-  });
-
-  it("handles empty array", () => {
-    expect(shuffle([], seededRng(1))).toEqual([]);
-  });
-
-  it("handles single-card array", () => {
-    const card = makeTestCard({ id: "a", title: "A" });
-    expect(shuffle([card], seededRng(1))).toEqual([card]);
+    first.playerStatuses.block = 5;
+    first.enemyStatuses.burn = 3;
+    first.flags.nextHitCrit = true;
+    first.talentEffects.companionBondLevels.wolf = 4;
+    first.talentEffects.healthThresholdArmor.push({ threshold: 50, amount: 3 });
+    first.gearEffects.flatPhysicalDamage = 10;
+    first.deck.push(makeCard("previous-battle"));
+    expect({
+      playerStatuses: next.playerStatuses,
+      enemyStatuses: next.enemyStatuses,
+      flags: next.flags,
+      talents: next.talentEffects,
+      gear: next.gearEffects,
+      deck: next.deck,
+    }).toEqual(before);
   });
 });
 

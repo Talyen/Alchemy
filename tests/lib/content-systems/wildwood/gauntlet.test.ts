@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   canSkipWildwoodRemoval,
   createWildwoodBossBag,
@@ -17,19 +17,6 @@ import { DRAFT_ROUNDS } from "@/lib/game-constants";
 import type { BattleCard } from "@/lib/game-data";
 import { createRunRngState, createRunStateRng } from "@/lib/rng";
 import { makeTestCard } from "../../../fixtures/cards";
-
-function countingRng() {
-  let draws = 0;
-  return {
-    get draws() {
-      return draws;
-    },
-    rng: () => {
-      draws += 1;
-      return 0.5;
-    },
-  };
-}
 
 function draftState(overrides: Partial<WildwoodDraftState> = {}): WildwoodDraftState {
   return {
@@ -51,34 +38,40 @@ function card(id: string): BattleCard {
 describe("Wildwood Draft gauntlet rules", () => {
   it("refills every boss once and repairs an actual boundary repeat without rerolling", () => {
     const bag = createWildwoodBossBag(() => 0.5);
-    const source = countingRng();
-    const draw = drawWildwoodBoss([], bag[0]!, source.rng);
+    const rng = vi.fn(() => 0.5);
+    const draw = drawWildwoodBoss([], bag[0]!, rng);
     expect(draw.bossId).toBe(bag[1]);
     expect(draw.remainingBossIds).toEqual([bag[0], ...bag.slice(2)]);
     expect([draw.bossId, ...draw.remainingBossIds].sort()).toEqual([...WILDWOOD_BOSS_IDS].sort());
-    expect(source.draws).toBe(WILDWOOD_BOSS_IDS.length - 1);
+    expect(rng).toHaveBeenCalledTimes(WILDWOOD_BOSS_IDS.length - 1);
   });
 
-  it("consumes the next boss from an existing bag", () => {
-    const result = drawWildwoodBoss(["forge-golem", "iron-bear"], "frostwarden", () => 0.5);
-    expect(result).toEqual({ bossId: "forge-golem", remainingBossIds: ["iron-bear"] });
+  it("consumes the next boss without mutating the bag or drawing randomness", () => {
+    const bag = Object.freeze(["forge-golem", "iron-bear"] as const);
+    const rng = vi.fn(() => 0.5);
+    expect(drawWildwoodBoss(bag, "frostwarden", rng)).toEqual({
+      bossId: "forge-golem",
+      remainingBossIds: ["iron-bear"],
+    });
+    expect(rng).not.toHaveBeenCalled();
+    expect(bag).toEqual(["forge-golem", "iron-bear"]);
   });
 });
 
 describe("Wildwood draft picks", () => {
   it("accepts an offered card and refreshes choices below the draft limit", () => {
-    const source = countingRng();
-    const pick = pickWildwoodDraftCard(draftState(), "knight", [], "slash", source.rng);
+    const rng = vi.fn(() => 0.5);
+    const pick = pickWildwoodDraftCard(draftState(), "knight", [], "slash", rng);
     expect(pick?.card.id).toBe("slash");
     expect(pick?.state.draftChoices.length).toBeGreaterThan(0);
-    expect(source.draws).toBeGreaterThan(0);
+    expect(rng).toHaveBeenCalled();
   });
 
   it("rejects a non-offered card without drawing RNG", () => {
-    const source = countingRng();
+    const rng = vi.fn(() => 0.5);
     expect(offeredWildwoodDraftCard(draftState(), [], "meteor")).toBeNull();
-    expect(pickWildwoodDraftCard(draftState(), "knight", [], "meteor", source.rng)).toBeNull();
-    expect(source.draws).toBe(0);
+    expect(pickWildwoodDraftCard(draftState(), "knight", [], "meteor", rng)).toBeNull();
+    expect(rng).not.toHaveBeenCalled();
   });
 
   it("rejects a second pick of the same offered card from the updated state", () => {
@@ -88,20 +81,27 @@ describe("Wildwood draft picks", () => {
     expect(second).toBeNull();
   });
 
-  it("rejects excess picks once the draft is full without drawing RNG", () => {
-    const source = countingRng();
-    const fullDeck = Array.from({ length: DRAFT_ROUNDS }, (_, index) => card(`draft-${index}`));
-    expect(pickWildwoodDraftCard(draftState(), "knight", fullDeck, "slash", source.rng)).toBeNull();
-    expect(source.draws).toBe(0);
+  it("finishes the draft with an owned card and rejects excess picks without rerolling", () => {
+    const rng = vi.fn(() => 0.5);
+    const deck = Array.from({ length: DRAFT_ROUNDS - 1 }, (_, index) => card(`draft-${index}`));
+    const state = draftState();
+    const picked = pickWildwoodDraftCard(state, "knight", deck, "slash", rng)!;
+    expect(picked.state.draftChoices).toEqual([]);
+    expect(picked.card).toEqual(state.draftChoices[0]);
+    expect(picked.card).not.toBe(state.draftChoices[0]);
+    picked.card.descriptionLines.push("modified");
+    expect(state.draftChoices[0].descriptionLines).not.toContain("modified");
+    expect(pickWildwoodDraftCard(state, "knight", [...deck, picked.card], "slash", rng)).toBeNull();
+    expect(rng).not.toHaveBeenCalled();
   });
 });
 
 describe("Wildwood phase transitions", () => {
   it("rejects boss preparation from battle or an unfinished draft without spending RNG", () => {
-    const source = countingRng();
-    expect(prepareNextWildwoodBoss(draftState(), DRAFT_ROUNDS - 1, source.rng)).toBeNull();
-    expect(prepareNextWildwoodBoss(draftState({ phase: "battle" }), DRAFT_ROUNDS, source.rng)).toBeNull();
-    expect(source.draws).toBe(0);
+    const rng = vi.fn(() => 0.5);
+    expect(prepareNextWildwoodBoss(draftState(), DRAFT_ROUNDS - 1, rng)).toBeNull();
+    expect(prepareNextWildwoodBoss(draftState({ phase: "battle" }), DRAFT_ROUNDS, rng)).toBeNull();
+    expect(rng).not.toHaveBeenCalled();
   });
 
   it("does not enter battle from an unprepared reward after victory", () => {
@@ -116,27 +116,21 @@ describe("Wildwood phase transitions", () => {
     expect(enterWildwoodBattle(afterVictory!)).toBeNull();
   });
 
-  it("enters battle after preparing the next boss from reward", () => {
-    const afterVictory = enterWildwoodReward(
-      draftState({
-        phase: "battle",
-        currentBossId: "forge-golem",
-        currentCombatTraitIds: ["tempered"],
-      }),
-    );
-    const prepared = prepareNextWildwoodBoss(afterVictory!, 5, () => 0);
-    expect(prepared).not.toBeNull();
-    expect(enterWildwoodBattle(prepared!.state)?.phase).toBe("battle");
-  });
-
-  it("uses one world draw for each trait when the boss bag is already filled", () => {
+  it("prepares a fresh battle from victory while consuming only the two world trait draws", () => {
     const rngState = createRunRngState(42);
-    const prepared = prepareNextWildwoodBoss(draftState({ phase: "reward" }), 5, createRunStateRng(rngState, "world"));
-
-    expect(prepared?.bossId).toBe("iron-bear");
-    expect(prepared?.state.currentCombatTraitIds).toHaveLength(1);
-    expect(prepared?.state.currentRewardTraitIds).toHaveLength(1);
-    expect(rngState.counters.world).toBe(2);
+    const victorious = draftState({
+      phase: "battle",
+      currentBossId: "forge-golem",
+      currentCombatTraitIds: ["tempered"],
+    });
+    const reward = enterWildwoodReward(victorious)!;
+    const prepared = prepareNextWildwoodBoss(reward, 5, createRunStateRng(rngState, "world"))!;
+    expect(prepared.bossId).toBe("iron-bear");
+    expect(prepared.state.currentCombatTraitIds).toHaveLength(1);
+    expect(prepared.state.currentRewardTraitIds).toHaveLength(1);
+    expect(enterWildwoodBattle(prepared.state)).toEqual({ ...prepared.state, phase: "battle" });
+    expect(rngState.counters).toEqual({ world: 2, rewards: 0, destinations: 0, events: 0, shops: 0 });
+    expect(victorious.phase).toBe("battle");
   });
 
   it("enters removal only from reward and skip only from removal", () => {

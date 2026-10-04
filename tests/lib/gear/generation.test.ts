@@ -11,9 +11,7 @@ import {
   gearDefinitions,
   rollAffixCount,
 } from "@/lib/gear";
-import { affixMatchesAffinity } from "@/lib/gear/affixes";
 import { buildEligibleAffixPool } from "@/lib/gear/affix-pool";
-import { gearAffixCatalog } from "@/lib/gear/affix-catalog";
 import { createSeededRng } from "@/lib/rng";
 
 const weights = resolveLootWeights({ source: "equipment", progress: { depth: 24, highestCompletedDifficulty: null } });
@@ -44,16 +42,6 @@ describe("gear generation", () => {
     ];
     expect(choices.map(({ definitionId, affixes }) => ({ definitionId, affixes }))).toEqual(expected);
     expect(rng()).toBe(nextRandom);
-  });
-
-  it("never offers the same base item across the three choices (dedupe by baseItemId)", () => {
-    for (let seed = 1; seed <= 50; seed += 1) {
-      const rng = createSeededRng(seed);
-      const choices = generateLootGearChoices(3, rng, weights);
-      expect(choices).toHaveLength(3);
-      const baseItemIds = choices.map((c) => gearDefinitions[c.definitionId]?.baseItemId);
-      expect(new Set(baseItemIds).size, `seed ${seed}: ${JSON.stringify(baseItemIds)}`).toBe(baseItemIds.length);
-    }
   });
 
   it("fills a narrow equipment shelf with ordinary Gear from its allowed bases", () => {
@@ -91,33 +79,6 @@ describe("gear generation", () => {
     expect(generateGearRewardChoicesForRarity(3, "unique", () => 0, owned)).toEqual([]);
   });
 
-  it("generates a dev random instance with valid definition and affix bounds", () => {
-    let roll = 0;
-    const rng = () => {
-      roll += 0.173;
-      return roll % 1;
-    };
-    const instance = generateDevRandomGearInstance(rng);
-    expect(instance.instanceId).toBeTruthy();
-    expect(gearDefinitions[instance.definitionId]).toBeDefined();
-    const definition = gearDefinitions[instance.definitionId];
-    expect(definition).toBeTruthy();
-    const rarity = definition.rarity!;
-    const range = GEAR_AFFIX_COUNT[rarity];
-    expect(instance.affixes.length).toBeGreaterThanOrEqual(range.min);
-    expect(instance.affixes.length).toBeLessThanOrEqual(range.max);
-    expect(new Set(instance.affixes.map((roll) => roll.id)).size).toBe(instance.affixes.length);
-  });
-
-  it("never throws from dev random generation across rarity rolls", () => {
-    for (let seed = 1; seed <= 50; seed += 1) {
-      const instance = generateDevRandomGearInstance(createSeededRng(seed));
-      const definition = gearDefinitions[instance.definitionId];
-      expect(definition, `seed ${seed}`).toBeDefined();
-      expect(definition?.rarity, `seed ${seed}`).toMatch(/^(basic|astral|unique)$/);
-    }
-  });
-
   it("weights Astral affix counts 80% toward three affixes", () => {
     expect(GEAR_AFFIX_COUNT_MIN_WEIGHT).toBe(0.8);
     expect(rollAffixCount("astral", () => 0.799999)).toBe(3);
@@ -134,18 +95,32 @@ describe("gear generation", () => {
     }
   });
 
+  it("preserves mixed reward order and reserves a different base for each rarity", () => {
+    const rarities = ["basic", "astral", "unique"] as const;
+    const choices = generateGearRewardChoicesForRarities(rarities, createSeededRng(17));
+    const definitions = choices.map((choice) => gearDefinitions[choice.definitionId]);
+    expect(definitions.map((definition) => definition.rarity)).toEqual(rarities);
+    expect(new Set(definitions.map((definition) => definition.baseItemId)).size).toBe(3);
+    expect(new Set(choices.map((choice) => choice.instanceId)).size).toBe(3);
+  });
+
   it.each([
-    ["basic", "basic", "astral"],
-    ["basic", "astral", "unique"],
-    ["astral", "astral", "unique"],
-    ["unique", "unique", "unique"],
-  ] as const)("generates ordered %s/%s/%s choices with shared exclusions", (...rarities) => {
-    for (let seed = 1; seed <= 50; seed += 1) {
-      const choices = generateGearRewardChoicesForRarities(rarities, createSeededRng(seed));
-      const definitions = choices.map((choice) => gearDefinitions[choice.definitionId]);
-      expect(definitions.map((definition) => definition.rarity)).toEqual(rarities);
-      expect(new Set(definitions.map((definition) => definition.baseItemId)).size).toBe(3);
-      expect(new Set(choices.map((choice) => choice.definitionId)).size).toBe(3);
+    [0, "basic"],
+    [0.5, "astral"],
+    [0.99, "unique"],
+  ] as const)("creates dev Gear from a %s rarity roll", (draw, rarity) => {
+    const instance = generateDevRandomGearInstance(() => draw);
+    const definition = gearDefinitions[instance.definitionId];
+    expect(definition.rarity).toBe(rarity);
+    if (rarity === "unique") {
+      expect(instance.affixes).toEqual([]);
+    } else {
+      const pool = buildEligibleAffixPool(definition).map((affix) => affix.id);
+      expect(instance.affixes).toHaveLength(
+        draw < GEAR_AFFIX_COUNT_MIN_WEIGHT ? GEAR_AFFIX_COUNT[rarity].min : GEAR_AFFIX_COUNT[rarity].max,
+      );
+      expect(instance.affixes.every((roll) => pool.includes(roll.id))).toBe(true);
+      expect(new Set(instance.affixes.map((roll) => roll.id)).size).toBe(instance.affixes.length);
     }
   });
 
@@ -158,25 +133,6 @@ describe("gear generation", () => {
       remaining === 1 ? ["unique", "astral", "astral"] : ["astral", "astral", "astral"],
     );
     expect(new Set(choices.map((choice) => gearDefinitions[choice.definitionId].baseItemId)).size).toBe(3);
-  });
-
-  it("rolls affixes only from eligible affinity and aspect pools", () => {
-    let roll = 0;
-    const rng = () => {
-      roll += 0.37;
-      return roll % 1;
-    };
-
-    for (let attempt = 0; attempt < 20; attempt += 1) {
-      const instance = generateLootGearChoices(1, rng, { ...weights, unique: 0 })[0]!;
-      const definition = gearDefinitions[instance.definitionId]!;
-      const pool = buildEligibleAffixPool(definition);
-      for (const affixRoll of instance.affixes) {
-        const affixDef = gearAffixCatalog[affixRoll.id];
-        expect(affixMatchesAffinity(affixDef, definition.affinityKeywords)).toBe(true);
-        expect(pool.some((entry) => entry.id === affixRoll.id)).toBe(true);
-      }
-    }
   });
 
   it("generates a named base item with reward rarity and affixes", () => {

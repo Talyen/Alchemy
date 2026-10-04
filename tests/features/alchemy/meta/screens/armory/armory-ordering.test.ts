@@ -48,25 +48,6 @@ describe("armory-ordering", () => {
       expect(currentIds).toEqual(["dagger-1", "sword-1", "bow-1", "axe-1"]);
     });
 
-    it("places replaced target item at incoming index, and compatible displaced items immediately after", () => {
-      const currentIds = ["sword-1", "bow-1", "axe-1"];
-      // Knight equips 2H sword replacing 1H sword at index 1 ("bow-1")
-      // Displaced from off-hand: a 1H dagger (compatible with main-hand)
-      const dagger: GearInstance = {
-        instanceId: "dagger-1",
-        definitionId: "dagger-basic",
-        affixes: [],
-      };
-      const result = placeTransfer(
-        currentIds,
-        "bow-1",
-        "replaced-main-hand",
-        [{ slot: "off-hand", instance: dagger }],
-        "main-hand",
-      );
-      expect(result).toEqual(["sword-1", "replaced-main-hand", "dagger-1", "axe-1"]);
-    });
-
     it("excludes displaced items incompatible with current category", () => {
       const currentIds = ["sword-1", "bow-1", "axe-1"];
       // Displaced from off-hand: a shield (only compatible with off-hand)

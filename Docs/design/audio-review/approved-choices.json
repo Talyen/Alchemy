@@ -432,6 +432,175 @@
       "sourceSha256": "ba2c2289853945c159e0065ad3226555c29e96eed95122192bf4e68e426b36ff",
       "processing": "Decoded full recording to 24-bit PCM.",
       "provenance": "reference/original_documents/Sounds/SonnissGDC/SOURCE.md; reference/provenance/archives/"
+    },
+    {
+      "source": "approved/battle-focus-church-choir-dm-a47d5cbc-0-2500.wav",
+      "target": "battle-focus-church-choir-dm-a47d5cbc-0-2500.ogg",
+      "assetId": "a47d5cbcd05115a4",
+      "libraryPath": "world/church_choir_dm__certified_audio_ambient_soundscapes__a47d5cbcd05115a4.flac",
+      "storedSha256": "06c14f16add07deb9327be845e36d15339bb13e65acb627846be5ff9890e50e1",
+      "originalSha256": "",
+      "start": 0,
+      "duration": 2.5,
+      "sourceSha256": "366a777410b7231a4799b3fd113ffc47507b88d4fa854b6660b2fc592af80ec9",
+      "processing": "Approved audition excerpt, decoded to 48 kHz stereo 24-bit PCM with 5 ms edge fades. Production loudness and codecs use the existing sound pipeline.",
+      "provenance": "Catalog unavailable; attribution inferred from filename only."
+    },
+    {
+      "source": "approved/battle-focus-purge-01-ef2ba588-0-1500.wav",
+      "target": "battle-focus-purge-01-ef2ba588-0-1500.ogg",
+      "assetId": "ef2ba58846d5bd45",
+      "libraryPath": "magic/purge_01__existing_library_unattributed__ef2ba58846d5bd45.flac",
+      "storedSha256": "304ff415ba960500d264e97aa78ca221e6748a8ef73979dace537b9f29201172",
+      "originalSha256": "",
+      "start": 0,
+      "duration": 1.5,
+      "sourceSha256": "565f8cf2822ba26d652e52dd8ed2fcc7b9ad902c5b4b0ff90842057b89165306",
+      "processing": "Approved audition excerpt, decoded to 48 kHz stereo 24-bit PCM with 5 ms edge fades. Production loudness and codecs use the existing sound pipeline.",
+      "provenance": "Catalog unavailable; attribution inferred from filename only."
+    },
+    {
+      "source": "approved/battle-focus-arcane-metal-01-5abcc0c6-250-1500.wav",
+      "target": "battle-focus-arcane-metal-01-5abcc0c6-250-1500.ogg",
+      "assetId": "5abcc0c609bce213",
+      "libraryPath": "magic/arcane_metal_01__existing_library_unattributed__5abcc0c609bce213.flac",
+      "storedSha256": "4f68f076ae36d824affe598525919a5d0df91311d8aa158b8bf44583197dd664",
+      "originalSha256": "",
+      "start": 0.25,
+      "duration": 1.5,
+      "sourceSha256": "46dfbf10a7e917e72023733dd3c9aa63b0af63540c56f3b2e7f3aad51d6aa761",
+      "processing": "Approved audition excerpt, decoded to 48 kHz stereo 24-bit PCM with 5 ms edge fades. Production loudness and codecs use the existing sound pipeline.",
+      "provenance": "Catalog unavailable; attribution inferred from filename only."
+    },
+    {
+      "source": "approved/battle-focus-impact-sound-design-hit-chime-resonant-f6318a19-0-1500.wav",
+      "target": "battle-focus-impact-sound-design-hit-chime-resonant-f6318a19-0-1500.ogg",
+      "assetId": "f6318a19f7ff55a2",
+      "libraryPath": "combat/impact_sound_design_hit_chime_resonant_hit_chime_accent_tinkle_fast__airborne_sound_crisis_accents__f6318a19f7ff55a2.wav",
+      "storedSha256": "f6318a19f7ff55a2de170fd929da0f71ac3c41e1c76ecbc11ce65992b34485cb",
+      "originalSha256": "",
+      "start": 0,
+      "duration": 1.5,
+      "sourceSha256": "ba048b50212a56dc7f6827fdcda5b294efbe37b0fedc146047bf125ee5657a61",
+      "processing": "Approved audition excerpt, decoded to 48 kHz stereo 24-bit PCM with 5 ms edge fades. Production loudness and codecs use the existing sound pipeline.",
+      "provenance": "Catalog unavailable; attribution inferred from filename only."
+    },
+    {
+      "source": "approved/battle-focus-church-choir-dm-a47d5cbc-0-1500.wav",
+      "target": "battle-focus-church-choir-dm-a47d5cbc-0-1500.ogg",
+      "assetId": "a47d5cbcd05115a4",
+      "libraryPath": "world/church_choir_dm__certified_audio_ambient_soundscapes__a47d5cbcd05115a4.flac",
+      "storedSha256": "06c14f16add07deb9327be845e36d15339bb13e65acb627846be5ff9890e50e1",
+      "originalSha256": "",
+      "start": 0,
+      "duration": 1.5,
+      "sourceSha256": "ecfbe56af2e5af39aeab9c84dc839851816b4cd7bdfa3e476bde13291f93d0c8",
+      "processing": "Approved audition excerpt, decoded to 48 kHz stereo 24-bit PCM with 5 ms edge fades. Production loudness and codecs use the existing sound pipeline.",
+      "provenance": "Catalog unavailable; attribution inferred from filename only."
+    },
+    {
+      "source": "approved/battle-focus-illusion-mystery-magical-water-44c5b75b-0-1500.wav",
+      "target": "battle-focus-illusion-mystery-magical-water-44c5b75b-0-1500.ogg",
+      "assetId": "44c5b75bf0f94799",
+      "libraryPath": "magic/illusion_mystery_magical_water__sound_ex_machina_endless_drones__44c5b75bf0f94799.flac",
+      "storedSha256": "162cd24e8a2c0e1e016c1d403d71780e4a6185fdb44abe4ab70c3204c82c5e14",
+      "originalSha256": "",
+      "start": 0,
+      "duration": 1.5,
+      "sourceSha256": "2494c300fed141d18880c171d6595d8dabe95416463cb6d81675ad4cbe8ce785",
+      "processing": "Approved audition excerpt, decoded to 48 kHz stereo 24-bit PCM with 5 ms edge fades. Production loudness and codecs use the existing sound pipeline.",
+      "provenance": "Catalog unavailable; attribution inferred from filename only."
+    },
+    {
+      "source": "approved/battle-focus-magspel-cast-casting-buff-hy-pc-6b612bab-50-1500.wav",
+      "target": "battle-focus-magspel-cast-casting-buff-hy-pc-6b612bab-50-1500.ogg",
+      "assetId": "6b612bab4fa9e078",
+      "libraryPath": "magic/magspel_cast_casting_buff_hy_pc_001__existing_library_unattributed__6b612bab4fa9e078.flac",
+      "storedSha256": "34465c04fb4c44917087b096bb6098d8fc9376aedecf53195b5932b2638d307a",
+      "originalSha256": "",
+      "start": 0.05,
+      "duration": 1.5,
+      "sourceSha256": "5c00f7f9360969f8e59ee3ac1ba69fcc2399e0579b9271f06cb3337555d7d872",
+      "processing": "Approved audition excerpt, decoded to 48 kHz stereo 24-bit PCM with 5 ms edge fades. Production loudness and codecs use the existing sound pipeline.",
+      "provenance": "Catalog unavailable; attribution inferred from filename only."
+    },
+    {
+      "source": "approved/battle-focus-magic-generic-haunted-old-grimoire-open-f8eb7607-280-1500.wav",
+      "target": "battle-focus-magic-generic-haunted-old-grimoire-open-f8eb7607-280-1500.ogg",
+      "assetId": "f8eb76079359d8d6",
+      "libraryPath": "magic/magic_generic_haunted_old_grimoire_open_flip_through_close_01__articulated_sounds_magic_elements_vol_1__f8eb76079359d8d6.flac",
+      "storedSha256": "9b407ed34d2069adf9629c74327ccc0a5080191cc8bea38da7a52423b6115b95",
+      "originalSha256": "",
+      "start": 0.28,
+      "duration": 1.5,
+      "sourceSha256": "d06ffa214a3e9e3a57cd9cc2df85a00411a0085ee61dbcce3c4a30fff869ce00",
+      "processing": "Approved audition excerpt, decoded to 48 kHz stereo 24-bit PCM with 5 ms edge fades. Production loudness and codecs use the existing sound pipeline.",
+      "provenance": "Catalog unavailable; attribution inferred from filename only."
+    },
+    {
+      "source": "approved/battle-focus-heal-01-2847537e-0-1500.wav",
+      "target": "battle-focus-heal-01-2847537e-0-1500.ogg",
+      "assetId": "2847537ec06e3c64",
+      "libraryPath": "magic/heal_01__existing_library_unattributed__2847537ec06e3c64.flac",
+      "storedSha256": "42e47c579442f3046a520ee19bf7623b9201874aa401467851cb2c3c94c734c4",
+      "originalSha256": "",
+      "start": 0,
+      "duration": 1.5,
+      "sourceSha256": "07dbb75c554615cec67b71993d66fd214a78077803d70e5766fd7929dd75902b",
+      "processing": "Approved audition excerpt, decoded to 48 kHz stereo 24-bit PCM with 5 ms edge fades. Production loudness and codecs use the existing sound pipeline.",
+      "provenance": "Catalog unavailable; attribution inferred from filename only."
+    },
+    {
+      "source": "approved/battle-focus-plate-impact-hard-02-a6a1ca66-0-764.wav",
+      "target": "battle-focus-plate-impact-hard-02-a6a1ca66-0-764.ogg",
+      "assetId": "a6a1ca66d08efd92",
+      "libraryPath": "combat/plate_impact_hard_02__double_trouble_audio_medieval_armor_and_im__a6a1ca66d08efd92.flac",
+      "storedSha256": "ac5578d37cc3181f0e81590a9a8ec9f4a26428ae4c37712c2e9dc7285153cf0d",
+      "originalSha256": "",
+      "start": 0,
+      "duration": 0.764,
+      "sourceSha256": "4502ae576d3a819e4f51f3ef5b8349bab5b0077678c6ec6266874910317e6c83",
+      "processing": "Approved audition excerpt, decoded to 48 kHz stereo 24-bit PCM with 5 ms edge fades. Production loudness and codecs use the existing sound pipeline.",
+      "provenance": "Catalog unavailable; attribution inferred from filename only."
+    },
+    {
+      "source": "approved/battle-focus-magspel-cast-casting-buff-hy-pc-3b300b28-20-1500.wav",
+      "target": "battle-focus-magspel-cast-casting-buff-hy-pc-3b300b28-20-1500.ogg",
+      "assetId": "3b300b28cadd1c94",
+      "libraryPath": "magic/magspel_cast_casting_buff_hy_pc_002__existing_library_unattributed__3b300b28cadd1c94.flac",
+      "storedSha256": "255dfc0204ff212421b4ae40199eaaaa172aa29f624b5fdf118b02e8b68c9545",
+      "originalSha256": "",
+      "start": 0.02,
+      "duration": 1.5,
+      "sourceSha256": "5ad0592f87873ca64640a1eeb6a60ce153c5112c8ec2e22895b33ed64f910563",
+      "processing": "Approved audition excerpt, decoded to 48 kHz stereo 24-bit PCM with 5 ms edge fades. Production loudness and codecs use the existing sound pipeline.",
+      "provenance": "Catalog unavailable; attribution inferred from filename only."
+    },
+    {
+      "source": "approved/battle-focus-creature-hiss-4-m-e9aede68-330-1500.wav",
+      "target": "battle-focus-creature-hiss-4-m-e9aede68-330-1500.ogg",
+      "assetId": "e9aede68b7efc05d",
+      "libraryPath": "creatures/creature_hiss_4_m__rdgsfx002_creatures__e9aede68b7efc05d.flac",
+      "storedSha256": "01e674fb420fa2d653a1a605d7ab4b3c4321c4ea7e5f6e73cafaa4917c1fc6fd",
+      "originalSha256": "",
+      "start": 0.33,
+      "duration": 1.5,
+      "sourceSha256": "00b34bb927376633081c8430a470e1d6fe51c83fb5d063e538c630a78472b6fc",
+      "processing": "Approved audition excerpt, decoded to 48 kHz stereo 24-bit PCM with 5 ms edge fades. Production loudness and codecs use the existing sound pipeline.",
+      "provenance": "Catalog unavailable; attribution inferred from filename only."
+    },
+    {
+      "source": "approved/battle-focus-bug-people-03-d2d3d05e-50-1387.wav",
+      "target": "battle-focus-bug-people-03-d2d3d05e-50-1387.ogg",
+      "assetId": "d2d3d05e3b8f01d4",
+      "libraryPath": "creatures/bug_people_03__existing_library_unattributed__d2d3d05e3b8f01d4.flac",
+      "storedSha256": "555bcaf51127a8cf6a852866d3ddad2765fd5fcb7554528b5c00e70a061e5915",
+      "originalSha256": "",
+      "start": 0.05,
+      "duration": 1.387,
+      "sourceSha256": "9bf7c03b321278f9efa770e6ab227f3a8223ec34cb65aa8f4fca3a5c270ac399",
+      "processing": "Approved audition excerpt, decoded to 48 kHz stereo 24-bit PCM with 5 ms edge fades. Production loudness and codecs use the existing sound pipeline.",
+      "provenance": "Catalog unavailable; attribution inferred from filename only."
     }
   ],
   "choices": [
@@ -747,7 +916,7 @@
     },
     {
       "mappingId": "deathsDoor",
-      "title": "Death\u2019s Door / boss-route warning",
+      "title": "Death’s Door / boss-route warning",
       "choice": "current",
       "baselineState": "playing",
       "baselineFiles": ["horror-sting.ogg"],
@@ -2950,6 +3119,186 @@
     "run-victory": "stingerSounds.runVictory",
     "defeat": "stingerSounds.defeat",
     "amb-camp": "screenAmbienceSounds.campfire",
-    "amb-labyrinth": "screenAmbienceSounds.labyrinth-map"
+    "amb-labyrinth": "screenAmbienceSounds.labyrinth-map",
+    "status-purge": "battleEventSounds.cleanse",
+    "mana-change": "battleEventSounds.manaChange"
+  },
+  "runtimeRevisions": {
+    "card:caustic-jab": {
+      "runtimeFiles": ["sword-impact-hit-2.ogg"],
+      "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
+    },
+    "card:rend": {
+      "runtimeFiles": ["monster-bite-3-7193d1d8-0-1339.ogg"],
+      "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
+    },
+    "card:predators-focus": {
+      "runtimeFiles": ["monster-bite-3-7193d1d8-0-1339.ogg"],
+      "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
+    },
+    "card:sniff-out": {
+      "runtimeFiles": ["efx-int-mutt-growl-42-b-ef1caab1-0-2443.ogg"],
+      "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
+    },
+    "card:pixie-dust": {
+      "runtimeFiles": ["buff-pickup.ogg"],
+      "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
+    },
+    "card:mana-moth-companion": {
+      "runtimeFiles": ["buff-pickup.ogg"],
+      "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
+    },
+    "companion:mana-moth": {
+      "runtimeFiles": ["buff-pickup.ogg"],
+      "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
+    },
+    "enemy:winter-wolf": {
+      "runtimeFiles": ["ice-throw-1.ogg"],
+      "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
+    },
+    "enemy:yeti": {
+      "runtimeFiles": ["ice-throw-1.ogg"],
+      "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
+    },
+    "enemy:banshee": {
+      "runtimeFiles": ["dark-spell-life-tap-03-dd1d0dd1-0-2754.ogg"],
+      "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
+    },
+    "status-purge": {
+      "runtimeFiles": ["buff-pickup-1.ogg"],
+      "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
+    },
+    "mana-change": {
+      "runtimeFiles": ["buff-pickup.ogg"],
+      "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
+    },
+    "card:avatar": {
+      "runtimeFiles": ["battle-focus-church-choir-dm-a47d5cbc-0-2500.ogg"],
+      "reason": "2026-10-03: selected in the focused battle listening export.",
+      "choice": "a47d5cbcd05115a4",
+      "notes": ""
+    },
+    "card:exorcism": {
+      "runtimeFiles": ["battle-focus-purge-01-ef2ba588-0-1500.ogg"],
+      "reason": "2026-10-03: selected in the focused battle listening export.",
+      "choice": "ef2ba58846d5bd45",
+      "notes": ""
+    },
+    "card:sanctified-plate": {
+      "runtimeFiles": ["battle-focus-arcane-metal-01-5abcc0c6-250-1500.ogg"],
+      "reason": "2026-10-03: selected in the focused battle listening export.",
+      "choice": "5abcc0c609bce213",
+      "notes": ""
+    },
+    "card:tithe": {
+      "runtimeFiles": ["battle-focus-impact-sound-design-hit-chime-resonant-f6318a19-0-1500.ogg"],
+      "reason": "2026-10-03: selected in the focused battle listening export.",
+      "choice": "f6318a19f7ff55a2",
+      "notes": ""
+    },
+    "card:prayer": {
+      "runtimeFiles": ["battle-focus-church-choir-dm-a47d5cbc-0-1500.ogg"],
+      "reason": "2026-10-03: selected in the focused battle listening export.",
+      "choice": "a47d5cbcd05115a4",
+      "notes": ""
+    },
+    "card:wishing-well": {
+      "runtimeFiles": ["battle-focus-illusion-mystery-magical-water-44c5b75b-0-1500.ogg"],
+      "reason": "2026-10-03: selected in the focused battle listening export.",
+      "choice": "44c5b75bf0f94799",
+      "notes": ""
+    },
+    "enemy:will-o-wisp": {
+      "runtimeFiles": ["battle-focus-magspel-cast-casting-buff-hy-pc-6b612bab-50-1500.ogg"],
+      "reason": "2026-10-03: selected in the focused battle listening export.",
+      "choice": "6b612bab4fa9e078",
+      "notes": ""
+    },
+    "companion:will-o-wisp": {
+      "runtimeFiles": ["battle-focus-magspel-cast-casting-buff-hy-pc-6b612bab-50-1500.ogg"],
+      "reason": "2026-10-03: selected in the focused battle listening export.",
+      "choice": "6b612bab4fa9e078",
+      "notes": ""
+    },
+    "card:will-o-wisp-companion": {
+      "runtimeFiles": ["battle-focus-magspel-cast-casting-buff-hy-pc-6b612bab-50-1500.ogg"],
+      "reason": "2026-10-03: selected in the focused battle listening export.",
+      "choice": "6b612bab4fa9e078",
+      "notes": ""
+    },
+    "companion:library-owl": {
+      "runtimeFiles": ["battle-focus-magic-generic-haunted-old-grimoire-open-f8eb7607-280-1500.ogg"],
+      "reason": "2026-10-03: selected in the focused battle listening export.",
+      "choice": "f8eb76079359d8d6",
+      "notes": ""
+    },
+    "card:library-owl-companion": {
+      "runtimeFiles": ["battle-focus-magic-generic-haunted-old-grimoire-open-f8eb7607-280-1500.ogg"],
+      "reason": "2026-10-03: selected in the focused battle listening export.",
+      "choice": "f8eb76079359d8d6",
+      "notes": ""
+    },
+    "enemy:cleric": {
+      "runtimeFiles": ["battle-focus-heal-01-2847537e-0-1500.ogg"],
+      "reason": "2026-10-03: selected in the focused battle listening export.",
+      "choice": "2847537ec06e3c64",
+      "notes": ""
+    },
+    "enemy:inquisitor": {
+      "runtimeFiles": ["battle-focus-impact-sound-design-hit-chime-resonant-f6318a19-0-1500.ogg"],
+      "reason": "2026-10-03: selected in the focused battle listening export.",
+      "choice": "f6318a19f7ff55a2",
+      "notes": ""
+    },
+    "enemy:paladin": {
+      "runtimeFiles": ["battle-focus-plate-impact-hard-02-a6a1ca66-0-764.ogg"],
+      "reason": "2026-10-03: selected in the focused battle listening export.",
+      "choice": "a6a1ca66d08efd92",
+      "notes": ""
+    },
+    "enemy:seraph": {
+      "runtimeFiles": ["battle-focus-church-choir-dm-a47d5cbc-0-2500.ogg"],
+      "reason": "2026-10-03: selected in the focused battle listening export.",
+      "choice": "a47d5cbcd05115a4",
+      "notes": ""
+    },
+    "enemy:zealot": {
+      "runtimeFiles": ["battle-focus-magspel-cast-casting-buff-hy-pc-3b300b28-20-1500.ogg"],
+      "reason": "2026-10-03: selected in the focused battle listening export.",
+      "choice": "3b300b28cadd1c94",
+      "notes": ""
+    },
+    "enemy:giant-snake": {
+      "runtimeFiles": ["battle-focus-creature-hiss-4-m-e9aede68-330-1500.ogg"],
+      "reason": "2026-10-03: selected in the focused battle listening export.",
+      "choice": "e9aede68b7efc05d",
+      "notes": ""
+    },
+    "enemy:giant-spider": {
+      "runtimeFiles": ["battle-focus-bug-people-03-d2d3d05e-50-1387.ogg"],
+      "reason": "2026-10-03: selected in the focused battle listening export.",
+      "choice": "d2d3d05e3b8f01d4",
+      "notes": ""
+    }
+  },
+  "battleFocusInstallation": {
+    "exportedAt": "2026-10-04T01:49:00.296Z",
+    "approvalSnapshotSha256": "9f880911bdedb4cff7ae5bc2183eb09df6d0ea9a0291acde355479fb298ff20f",
+    "approvalSnapshotFile": "battle-focus-approved-export.json",
+    "originalExportUnavailableAtArchive": true,
+    "targets": 16,
+    "independentDecisions": 15,
+    "uniqueClips": 13,
+    "excerptFadeCorrection": {
+      "reason": "Seek before decoding so 5 ms edge fades apply to the selected excerpt rather than the master timeline.",
+      "sources": [
+        "approved/battle-focus-arcane-metal-01-5abcc0c6-250-1500.wav",
+        "approved/battle-focus-magspel-cast-casting-buff-hy-pc-6b612bab-50-1500.wav",
+        "approved/battle-focus-magic-generic-haunted-old-grimoire-open-f8eb7607-280-1500.wav",
+        "approved/battle-focus-magspel-cast-casting-buff-hy-pc-3b300b28-20-1500.wav",
+        "approved/battle-focus-creature-hiss-4-m-e9aede68-330-1500.wav",
+        "approved/battle-focus-bug-people-03-d2d3d05e-50-1387.wav"
+      ]
+    }
   }
 }

@@ -3,7 +3,7 @@ import { restoreChoices, buildChoicesExport } from "./choices.mjs";
 
 const document = globalThis.document;
 const $ = (id) => document.getElementById(id);
-const STORAGE_KEY = "alchemy-audio-review:v1";
+let storageKey = "alchemy-audio-review:v1";
 let report,
   choices = {},
   focusId = null,
@@ -42,8 +42,9 @@ const player = createReviewPlayer({
 });
 
 function persist() {
+  choices = restoreChoices(report.mappings, choices);
   try {
-    globalThis.localStorage.setItem(STORAGE_KEY, JSON.stringify(choices));
+    globalThis.localStorage.setItem(storageKey, JSON.stringify(choices));
     return true;
   } catch {
     return false;
@@ -51,6 +52,7 @@ function persist() {
 }
 
 function matches(mapping) {
+  if (mapping.choiceFrom) return false;
   const query = $("search").value.toLowerCase().trim();
   const group = $("group").value,
     scope = $("audition").value;
@@ -277,9 +279,9 @@ function render(keepFocus = false) {
   const entries = queue();
   if (!keepFocus && !entries.some((mapping) => mapping.id === focusId)) focusId = entries[0]?.id ?? null;
   const mapping = currentMapping();
-  const chosen = report.mappings.filter((entry) => choices[entry.id]?.choice).length;
-  $("progress-text").textContent =
-    `${chosen} / ${report.mappings.length} chosen · ${report.mappings.length - chosen} remaining`;
+  const decisions = report.mappings.filter((entry) => !entry.choiceFrom);
+  const chosen = decisions.filter((entry) => choices[entry.id]?.choice).length;
+  $("progress-text").textContent = `${chosen} / ${decisions.length} chosen · ${decisions.length - chosen} remaining`;
   $("mappings").replaceChildren();
   if (mapping) {
     $("mappings").append(renderMapping(mapping));
@@ -349,11 +351,12 @@ async function init() {
   const response = await globalThis.fetch("mappings.json");
   if (!response.ok) throw new Error("The mapping report could not load.");
   report = await response.json();
+  if (report.reviewId) storageKey += `:${report.reviewId}`;
   choices = restoreChoices(report.mappings, report.initialChoices);
   try {
     choices = {
       ...choices,
-      ...restoreChoices(report.mappings, JSON.parse(globalThis.localStorage.getItem(STORAGE_KEY) ?? "{}")),
+      ...restoreChoices(report.mappings, JSON.parse(globalThis.localStorage.getItem(storageKey) ?? "{}")),
     };
   } catch {
     $("decision-status").textContent = "Browser choices could not load; imported choices are preserved.";
@@ -418,7 +421,7 @@ async function init() {
     } else if (event.key === "1") {
       event.preventDefault();
       choose(mapping, "current");
-    } else if (key >= 2 && key <= 4 && event.key.length === 1) {
+    } else if (key >= 2 && key <= 5 && event.key.length === 1) {
       const candidate = mapping.candidates[key - 2];
       if (candidate && mediaFor(candidate.mediaId)?.available) {
         event.preventDefault();

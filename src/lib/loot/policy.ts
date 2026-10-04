@@ -58,11 +58,9 @@ function normalizeLootWeights(weights: LootWeights, available: LootAvailability 
   if (total === 0) {
     const fallback = LOOT_FALLBACK_ORDER.find((kind) => available[kind] !== false);
     if (fallback) weights[fallback] = 1;
-    for (const kind of kinds) total += weights[kind];
+    return weights;
   }
-  if (total > 0) {
-    for (const kind of kinds) weights[kind] /= total;
-  }
+  for (const kind of kinds) weights[kind] /= total;
   return weights;
 }
 

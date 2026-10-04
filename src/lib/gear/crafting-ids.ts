@@ -1,4 +1,4 @@
-import { createNumericManifest } from "@/lib/manifest-utils";
+import { createNumericManifest, mergeNumericManifests } from "@/lib/manifest-utils";
 
 export const CRAFTING_CURRENCY_IDS = [
   "discordant-dice",
@@ -34,12 +34,9 @@ export function addCraftingCurrencies(
   base: Partial<Record<string, unknown>> | null | undefined,
   added: Partial<Record<string, unknown>> | null | undefined,
 ): Record<CraftingCurrencyId, number> {
-  const next = normalizeCraftingCurrencies(base);
-  if (!added || typeof added !== "object") return next;
-
-  for (const id of CRAFTING_CURRENCY_IDS) {
-    next[id] += sanitizeCurrencyValue(added[id]);
-  }
-
-  return next;
+  return mergeNumericManifests(
+    normalizeCraftingCurrencies(base),
+    normalizeCraftingCurrencies(added),
+    CRAFTING_CURRENCY_IDS,
+  );
 }

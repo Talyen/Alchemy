@@ -13,6 +13,7 @@ import {
   labyrinthGridPositions,
 } from "@/lib/content-systems/labyrinth/grid";
 import { LABYRINTH_SUPPORT_TYPES } from "@/lib/content-systems/labyrinth/data";
+import { enemyById } from "@/lib/game-data";
 import type { LabyrinthGridPosition, LabyrinthNodeType } from "@/lib/content-systems/types";
 
 describe("Open Field generation", () => {
@@ -50,9 +51,9 @@ describe("Open Field generation", () => {
       expect(new Set(support.map((node) => node.type)).size).toBe(support.length);
       for (const node of nodes) {
         if (["combat", "elite", "boss"].includes(node.type)) {
-          expect(node.enemyId).toBeTruthy();
+          expect(enemyById[node.enemyId!]?.enemyType).toBe(node.type === "combat" ? "normal" : node.type);
           expect(node.modifiers).toHaveLength(node.type === "combat" ? 1 : 2);
-          expect(node.rewardModifiers).toHaveLength(node.type === "transmutation" ? 0 : 1);
+          expect(node.rewardModifiers).toHaveLength(1);
         } else if (node.type !== "entrance") {
           expect(node.enemyId).toBeUndefined();
           expect(node.modifiers).toEqual([]);
@@ -174,36 +175,16 @@ describe("labyrinth type seating", () => {
     }
   });
 
-  it("separates duplicate types when the layout allows it", () => {
-    const positions: LabyrinthGridPosition[] = [
-      { row: 0, col: 0 },
-      { row: 1, col: 0 },
-      { row: 2, col: 0 },
-      { row: 3, col: 0 },
-    ];
-    const types: LabyrinthNodeType[] = ["combat", "rest", "combat", "boss"];
-    const result = orderTypesForPositions(types, positions, createSeededRng(7));
-    expect(result[0]).toBe("combat");
-    expect(result[result.length - 1]).toBe("boss");
-    expect([...result].sort()).toEqual([...types].sort());
-    expect(sameTypeAdjacencies(result, positions)).toBe(0);
-  });
-
-  it("separates repeated non-combat types without per-type logic", () => {
-    const positions: LabyrinthGridPosition[] = [
-      { row: 0, col: 0 },
-      { row: 1, col: 0 },
-      { row: 2, col: 0 },
-      { row: 3, col: 0 },
-      { row: 4, col: 0 },
-    ];
-    const types: LabyrinthNodeType[] = ["combat", "mystery", "combat", "mystery", "boss"];
+  it("actually separates adjacent rooms without moving the entrance or boss", () => {
+    const positions = Array.from({ length: 6 }, (_, row) => ({ row, col: 0 }));
+    const types: LabyrinthNodeType[] = ["entrance", "mystery", "mystery", "combat", "rest", "boss"];
+    expect(sameTypeAdjacencies(types, positions)).toBe(1);
     const result = orderTypesForPositions(types, positions, createSeededRng(11));
-    expect([...result].sort()).toEqual([...types].sort());
     expect(sameTypeAdjacencies(result, positions)).toBe(0);
-    const mysteries = result.map((type, index) => (type === "mystery" ? index : -1)).filter((index) => index >= 0);
-    expect(mysteries).toHaveLength(2);
-    expect(areGridNeighbors(positions[mysteries[0]!]!, positions[mysteries[1]!]!)).toBe(false);
+    expect(result[0]).toBe("entrance");
+    expect(result.at(-1)).toBe("boss");
+    expect([...result].sort()).toEqual([...types].sort());
+    expect(types).toEqual(["entrance", "mystery", "mystery", "combat", "rest", "boss"]);
   });
 
   it("still seats every planned type when separation is impossible", () => {

@@ -103,14 +103,14 @@ export function drawWildwoodBoss(
   previousBossId: WildwoodBossId | null,
   rng: () => number,
 ): { bossId: WildwoodBossId; remainingBossIds: WildwoodBossId[] } {
-  let bag = [...remainingBossIds];
-  if (bag.length === 0) {
-    bag = createWildwoodBossBag(rng);
+  let [bossId, ...rest] = remainingBossIds;
+  if (!bossId) {
+    const bag = createWildwoodBossBag(rng);
     if (previousBossId && bag[0] === previousBossId && bag.length > 1) {
       [bag[0], bag[1]] = [bag[1]!, bag[0]];
     }
+    [bossId, ...rest] = bag;
   }
-  const [bossId, ...rest] = bag;
   if (!bossId) throw new Error("Wildwood requires at least one boss in the compendium");
   return { bossId, remainingBossIds: rest };
 }

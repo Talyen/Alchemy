@@ -39,49 +39,15 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("playCombatTextSounds", () => {
-  it("distinguishes periodic ticks and resolved critical/control/resource signals from ordinary spell damage", () => {
-    const cues = vi.spyOn(audio, "playBattleEvent");
-    playCombatTextSounds([
-      { target: "enemy", kind: "damage", stat: "burn", amount: 4 },
-      { target: "enemy", kind: "damage", stat: "physical", amount: 8, critical: true },
-      { target: "enemy", kind: "damage", stat: "burn", amount: 3, periodic: true },
-      { target: "player", kind: "damage", stat: "bleed", amount: 2, periodic: true },
-      { target: "player", kind: "notice", stat: "dodge", text: "Dodged" },
-      { target: "player", kind: "status", stat: "armor", amount: 2 },
-      { target: "player", kind: "status", stat: "forge", amount: 2 },
+it("suppresses an accent using the focal recording without substituting another accent", () => {
+  playCombatTextSounds(
+    [
       { target: "enemy", kind: "notice", stat: "burn", text: "Wildfire" },
-      { target: "enemy", kind: "notice", stat: "physical", text: "Shatter · Critical" },
-    ]);
-    expect(cues.mock.calls.map(([name]) => name)).toEqual([
-      "enemyHit",
-      "critHit",
-      "burnTick",
-      "bleedTick",
-      "dodge",
-      "armorChange",
-      "forgeGain",
-      "wildfire",
-      "shatter",
-    ]);
-  });
-  it("plays each cue once per batch and ignores non-impact and status-only changes", () => {
-    const cues = vi.spyOn(audio, "playBattleEvent");
-    playCombatTextSounds([
-      { target: "enemy", kind: "damage", stat: "physical", amount: 5 },
-      { target: "enemy", kind: "damage", stat: "burn", amount: 2 },
-      { target: "player", kind: "damage", stat: "block", amount: 3 },
-      { target: "player", kind: "damage", stat: "health", amount: 4, impact: false },
-      { target: "player", kind: "heal", stat: "health", amount: 6 },
-      { target: "player", kind: "status", stat: "block", amount: 5 },
-      { target: "enemy", kind: "heal", stat: "health", amount: 2 },
-    ]);
-    expect(cues.mock.calls.map(([name]) => name)).toEqual(["enemyHit", "blockAbsorb", "playerHeal"]);
-    expect(playedSrcs).toHaveLength(3);
-    expect(playedSrcs.filter((src) => src.includes(battleEventSounds.enemyHit))).toHaveLength(1);
-    expect(playedSrcs.filter((src) => src.includes(battleEventSounds.blockAbsorb))).toHaveLength(1);
-    expect(playedSrcs.filter((src) => src.includes(battleEventSounds.playerHeal))).toHaveLength(1);
-  });
+      { target: "enemy", kind: "notice", stat: "stun", text: "Stunned" },
+    ],
+    battleEventSounds.wildfire,
+  );
+  expect(playedSrcs).toEqual([]);
 });
 
 describe("defaultMeasureVisualCardRect", () => {

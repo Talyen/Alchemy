@@ -11,17 +11,9 @@ interface PendingSave {
 }
 
 export class SaveWriteQueue {
-  // Async serialization chain: writes and clears run one at a time. The
-  // coalesced slot holds the latest pending write; the runner drains it in a
-  // loop so overlapping enqueues collapse to two physical writes at most.
-  // storageEpoch invalidates stale writes on clear/protection/reset; it is
-  // distinct from the autosave schedulerEpoch, which guards hook-lifetime
-  // revision counters (see autosave-scheduler.ts). Both are required: the
-  // "skipped" completion repairs a scheduler that already submitted, but a
-  // clear with no pending write still needs the cancellation broadcast to
-  // drop a debounced-but-unsubmitted dirty revision before it resurrects a
-  // deleted save. A clear also restarts the scheduler's max-wait window by
-  // design (old dirt is gone); failure retries instead preserve it.
+  // Serialize writes and clears; keep only the newest pending snapshot.
+  // The epoch invalidates submitted writes. Cancellation also tells autosave
+  // to discard dirty revisions it has not submitted, preventing deleted-save revival.
   private chain: Promise<void> = Promise.resolve();
   private coalesced: PendingSave | null = null;
   // Counter (not boolean): overlapping clears must each hold the write gate
@@ -64,13 +56,8 @@ export class SaveWriteQueue {
       this.discardPending();
       return Promise.resolve("skipped");
     }
-    // The queue owns its snapshot: clone synchronously on entry so a caller
-    // mutating after enqueue cannot corrupt the pending write (the runner
-    // drains in a later microtask, so deferring the clone to dequeue would
-    // capture same-task caller mutations). Coalescing swaps in the latest
-    // clone. Payloads are JSON-serializable by construction; a
-    // type-violating payload degrades to "failed" instead of throwing into
-    // terminal-flush callers that do not expect a synchronous throw.
+    // Clone before the runner's microtask: callers may mutate immediately after
+    // enqueue. Invalid snapshots fail asynchronously like ordinary write failures.
     let owned: UnstampedSaveData;
     try {
       owned = structuredClone(data);
@@ -78,9 +65,6 @@ export class SaveWriteQueue {
       logStorageFailure("Save snapshot could not be cloned", error);
       return Promise.resolve("failed");
     }
-    // A non-null coalesced slot always carries the current epoch:
-    // cancelPendingWrites bumps the epoch and clears the slot together, so no
-    // stale-epoch branch is needed here (staleness is still checked at drain).
     if (this.coalesced) {
       this.coalesced.data = owned;
       return this.coalesced.completion;
@@ -172,7 +156,14 @@ export class SaveWriteQueue {
   private cancelPendingWrites(): void {
     this.storageEpoch++;
     this.discardPending();
-    for (const listener of this.cancellationListeners) listener();
+    for (const listener of this.cancellationListeners) {
+      try {
+        listener();
+      } catch (error) {
+        // A subscriber must not strand the clear gate or suppress other cancellations.
+        logStorageFailure("Save cancellation listener threw", error);
+      }
+    }
   }
 
   private discardPending(): void {

@@ -1,5 +1,5 @@
 import type { KeywordId } from "../types";
-import { countImplementedTalents, getTalentRowIndex, getTalentsForKeyword, isTalentRowUnlocked } from "./choices";
+import { countImplementedTalents, getAllocatableTalentChoices } from "./choices";
 import { getTalentKeywordProgress, type TalentXP } from "./progression";
 import { getTalentById } from "./talent-pool-definitions";
 import { isTalentPlaceholder, type UnlockedTalents } from "./types";
@@ -35,8 +35,7 @@ export function canUnlockTalent(
   );
   if (!progress.hasUnspent) return { ok: false, reason: "no-unspent-points" };
 
-  const index = getTalentsForKeyword(keywordId).findIndex((entry) => entry.id === talentId);
-  if (index < 0 || !isTalentRowUnlocked(keywordId, unlockedIds, getTalentRowIndex(index))) {
+  if (!getAllocatableTalentChoices(keywordId, unlockedIds).some((entry) => entry.id === talentId)) {
     return { ok: false, reason: "not-eligible-choice" };
   }
 

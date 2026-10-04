@@ -1,10 +1,11 @@
-import { mkdtemp, mkdir, writeFile, rm, symlink } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, writeFile, rm, symlink } from "node:fs/promises";
 import path from "node:path";
 import { tmpdir } from "node:os";
 import { describe, expect, it, vi, afterEach } from "vitest";
 import {
   buildMappings,
   parseCatalog,
+  readLibraryCatalog,
   validateMappings,
   type ReviewInventory,
   type ReviewManifest,
@@ -12,6 +13,55 @@ import {
 import { serveReview } from "../../scripts/lib/audio-review-server.mjs";
 import { createReviewPlayer, type ReviewAudio } from "../../scripts/audio-review/playback.mjs";
 import { importChoices, restoreChoices, buildChoicesExport } from "../../scripts/audio-review/choices.mjs";
+import { prepareReviewMedia } from "../../scripts/lib/audio-review-media.mjs";
+
+it("fades the selected excerpt's edges without silencing audio after a late start", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "alchemy-audio-excerpt-"));
+  try {
+    const samples = 48_000;
+    const wave = Buffer.alloc(44 + samples * 2);
+    wave.write("RIFF", 0);
+    wave.writeUInt32LE(wave.length - 8, 4);
+    wave.write("WAVEfmt ", 8);
+    wave.writeUInt32LE(16, 16);
+    wave.writeUInt16LE(1, 20);
+    wave.writeUInt16LE(1, 22);
+    wave.writeUInt32LE(48_000, 24);
+    wave.writeUInt32LE(96_000, 28);
+    wave.writeUInt16LE(2, 32);
+    wave.writeUInt16LE(16, 34);
+    wave.write("data", 36);
+    wave.writeUInt32LE(samples * 2, 40);
+    for (let sample = 0; sample < samples; sample++) wave.writeInt16LE(8192, 44 + sample * 2);
+    await writeFile(path.join(root, "constant.wav"), wave);
+    const output = path.join(root, "previews");
+    const result = await prepareReviewMedia({
+      root,
+      libraryRoot: root,
+      output,
+      mappings: [
+        {
+          currentFiles: [],
+          candidates: [{ assetId: "constant", path: "constant.wav", start: 0.25, duration: 0.1, note: "fixture" }],
+        },
+      ],
+    });
+    expect(result.failures).toEqual([]);
+    const preview = await readFile(path.join(output, result.media["constant:0.25:0.1"].original!));
+    let offset = 12;
+    while (preview.toString("ascii", offset, offset + 4) !== "data") {
+      const size = preview.readUInt32LE(offset + 4);
+      offset += 8 + size + (size % 2);
+    }
+    const pcm = preview.subarray(offset + 8, offset + 8 + preview.readUInt32LE(offset + 4));
+    expect(pcm.length).toBe(4800 * 2 * 2);
+    expect(pcm.readInt16LE(0)).toBe(0);
+    expect(pcm.readInt16LE(2400 * 4)).toBeGreaterThan(5000);
+    expect(Math.abs(pcm.readInt16LE(pcm.length - 2))).toBeLessThan(100);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
 
 function fixture() {
   const inventory: ReviewInventory = {
@@ -94,6 +144,39 @@ describe("whole-game audio review coverage", () => {
     expect(mappings.find((mapping) => mapping.id === "hit")?.status).toBe("addition");
     expect(mappings.find((mapping) => mapping.id === "enemy:boss")?.currentState).toBe("silent");
   });
+});
+
+it("reconstructs missing catalog metadata from preserved masters, and rejects false identities", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "alchemy-audio-catalog-"));
+  try {
+    await mkdir(path.join(root, "magic"));
+    const relative = "magic/purge__example_pack__abc123.flac";
+    await writeFile(path.join(root, relative), "master bytes");
+    const candidate = { assetId: "abc123", path: relative, start: 0, duration: 1, note: "Unheard" };
+    const result = await readLibraryCatalog(root, [candidate, candidate]);
+    expect(result.metadataSource).toBe("filenames-and-file-hashes");
+    expect(result.catalog).toHaveLength(1);
+    expect(result.catalog[0]).toMatchObject({
+      asset_id: "abc123",
+      path: relative,
+      original_names: "purge",
+      source_libraries: "example pack",
+      original_sha256: "",
+      review_required: "True",
+    });
+    expect(result.catalog[0].stored_sha256).toMatch(/^[a-f0-9]{64}$/);
+    await expect(readLibraryCatalog(root, [{ ...candidate, assetId: "false-id" }])).rejects.toThrow(
+      /identity mismatch/,
+    );
+    await expect(readLibraryCatalog(root, [{ ...candidate, path: "../master.flac" }])).rejects.toThrow(
+      /escapes its owner/,
+    );
+    await mkdir(path.join(root, "reference"));
+    await writeFile(path.join(root, "reference/catalog.csv"), "malformed");
+    await expect(readLibraryCatalog(root, [candidate])).rejects.toThrow(/Invalid library catalog/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });
 
 describe("private preview serving", () => {
@@ -222,4 +305,31 @@ describe("audition playback lifetime", () => {
     expect(audio[1].pause).toHaveBeenCalledOnce();
     expect(vi.getTimerCount()).toBe(0);
   });
+});
+
+it("a shared enemy/companion selection overrides independent choices and survives import and export", () => {
+  const { inventory, manifest, catalog } = fixture();
+  manifest.sharedChoices = { "companion:wolf": "enemy:boss" };
+  const mappings = buildMappings(manifest, inventory, catalog, {});
+  const records = {
+    "enemy:boss": { choice: "asset", notes: "Use this take", reviewed: true },
+    "companion:wolf": { choice: "silence", notes: "Earlier independent choice", reviewed: true },
+  };
+  const choices = restoreChoices(mappings, records);
+  expect(choices["companion:wolf"]).toEqual(choices["enemy:boss"]);
+  const exported = buildChoicesExport({ mappings, direction: "Fantasy", generatedAt: "now" }, records);
+  expect(exported.choices.find((choice) => choice.mappingId === "companion:wolf")).toMatchObject({
+    choice: "asset",
+    candidate: { assetId: "asset" },
+    notes: "Use this take",
+  });
+  const imported = importChoices(
+    { schemaVersion: 1, choices: [{ mappingId: "enemy:boss", ...records["enemy:boss"] }] },
+    mappings,
+  );
+  expect(imported.skipped).toBe(0);
+  expect(imported.choices["companion:wolf"]).toEqual(imported.choices["enemy:boss"]);
+  expect(restoreChoices(mappings, { "companion:wolf": records["companion:wolf"] })).toEqual({});
+  manifest.sharedChoices["enemy:boss"] = "companion:wolf";
+  expect(() => validateMappings(manifest, inventory, catalog)).toThrow(/Invalid shared sound choice/);
 });

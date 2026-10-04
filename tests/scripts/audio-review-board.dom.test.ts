@@ -10,7 +10,14 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-it("preserves imported and newer browser choices while one-click decisions advance, undo safely, and export source identities", async () => {
+it("preserves review choices, undo, and export without crossing review namespaces", async () => {
+  const reviewId = "battle-focus-v1";
+  vi.resetModules();
+  const storageKey = "alchemy-audio-review:v1" + (reviewId ? `:${reviewId}` : "");
+  const legacy = JSON.stringify({
+    "card:stab": { choice: "silence", reviewed: true, notes: "Old whole-game decision" },
+  });
+  if (reviewId) localStorage.setItem("alchemy-audio-review:v1", legacy);
   document.documentElement.innerHTML = await readFile(path.resolve("scripts/audio-review/board.html"), "utf8");
   const candidate = {
     assetId: "source-id",
@@ -41,13 +48,20 @@ it("preserves imported and newer browser choices while one-click decisions advan
     candidates: [candidate],
   };
   const report = {
+    reviewId,
     direction: "Tactile fantasy",
     generatedAt: "2026-10-03",
     libraryRoot: "/library",
     mappings: [
       { ...template, id: "card:slash", title: "Slash" },
-      { ...template, id: "card:stab", title: "Stab" },
+      {
+        ...template,
+        id: "card:stab",
+        title: "Stab",
+        candidates: [candidate, ...[1, 2, 3].map((i) => ({ ...candidate, assetId: `source-alt-${i}` }))],
+      },
       { ...template, id: "card:bash", title: "Bash" },
+      { ...template, id: "companion:linked", title: "Linked companion", choiceFrom: "card:slash" },
     ],
     initialChoices: { "card:slash": { choice: "current", notes: "Imported note", reviewed: true } },
     inventory: { screens: ["battle"] },
@@ -67,7 +81,7 @@ it("preserves imported and newer browser choices while one-click decisions advan
     failures: [],
   };
   localStorage.setItem(
-    "alchemy-audio-review:v1",
+    storageKey,
     JSON.stringify({ "card:slash": { choice: "source-id", notes: "Newer browser note", reviewed: true } }),
   );
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => report }));
@@ -108,7 +122,7 @@ it("preserves imported and newer browser choices while one-click decisions advan
   document.querySelector<HTMLButtonElement>('[aria-label="Listen to Recommended for Stab"]')!.click();
   expect(play).toHaveBeenCalledOnce();
   expect(document.querySelector(".mapping")?.getAttribute("data-mapping-id")).toBe("card:stab");
-  expect(JSON.parse(localStorage.getItem("alchemy-audio-review:v1")!)["card:stab"]).toBeUndefined();
+  expect(JSON.parse(localStorage.getItem(storageKey)!)["card:stab"]).toBeUndefined();
   const notes = document.querySelector<HTMLTextAreaElement>('[aria-label="Listening notes for Stab"]')!;
   notes.value = "Shorten the tail";
   notes.dispatchEvent(new Event("input"));
@@ -116,18 +130,21 @@ it("preserves imported and newer browser choices while one-click decisions advan
   expect(document.querySelector(".mapping")?.getAttribute("data-mapping-id")).toBe("card:stab");
   document.querySelector<HTMLButtonElement>('[aria-label="Choose Recommended for Stab"]')!.click();
   expect(document.querySelector(".mapping")?.getAttribute("data-mapping-id")).toBe("card:bash");
-  expect(JSON.parse(localStorage.getItem("alchemy-audio-review:v1")!)["card:stab"]).toEqual({
+  expect(JSON.parse(localStorage.getItem(storageKey)!)["card:stab"]).toEqual({
     choice: "source-id",
     notes: "Shorten the tail",
     reviewed: true,
   });
   document.getElementById("undo")!.click();
   expect(document.querySelector(".mapping")?.getAttribute("data-mapping-id")).toBe("card:stab");
-  expect(JSON.parse(localStorage.getItem("alchemy-audio-review:v1")!)["card:stab"]).toEqual({
+  expect(JSON.parse(localStorage.getItem(storageKey)!)["card:stab"]).toEqual({
     choice: "",
     notes: "Shorten the tail",
     reviewed: false,
   });
+  document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "5", bubbles: true }));
+  expect(JSON.parse(localStorage.getItem(storageKey)!)["card:stab"].choice).toBe("source-alt-3");
+  document.getElementById("undo")!.click();
   document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "1", bubbles: true }));
   expect(document.querySelector(".mapping")?.getAttribute("data-mapping-id")).toBe("card:bash");
   document.querySelector<HTMLButtonElement>('[aria-label="Choose no sound for Bash"]')!.click();
@@ -144,7 +161,13 @@ it("preserves imported and newer browser choices while one-click decisions advan
   vi.useFakeTimers();
   document.getElementById("export")!.click();
   const payload = JSON.parse(exported);
-  expect(payload.choices).toHaveLength(3);
+  expect(payload.choices).toHaveLength(4);
+  expect(payload.choices[3]).toMatchObject({
+    mappingId: "companion:linked",
+    choice: "source-id",
+    notes: "Newer browser note",
+    reviewed: true,
+  });
   expect(payload.choices[0]).toMatchObject({
     mappingId: "card:slash",
     choice: "source-id",
@@ -167,5 +190,6 @@ it("preserves imported and newer browser choices while one-click decisions advan
     candidate: null,
   });
   expect(payload.note).toBe("Review choices only. No gameplay changes applied.");
+  if (reviewId) expect(localStorage.getItem("alchemy-audio-review:v1")).toBe(legacy);
   vi.runAllTimers();
 });

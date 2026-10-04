@@ -40,7 +40,7 @@ function parseChoice<T extends string>(name: string, raw: string | undefined, fa
   throw new Error(`${name} must be one of ${choices.join(", ")}; received ${JSON.stringify(raw)}`);
 }
 
-export function appliesFightPacingFromEnv(raw = process.env.ALCHEMY_BALANCE_PACING): boolean {
+export function appliesFightPacingFromEnv(raw: string | undefined): boolean {
   if (raw === undefined) return true;
   switch (raw.trim().toLowerCase()) {
     case "on":

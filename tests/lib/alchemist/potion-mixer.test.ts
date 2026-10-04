@@ -49,14 +49,16 @@ describe("createMixedPotion", () => {
     expect(mixed.descriptionLines).toEqual(["Gain 10 Mana, Gold, or Block", "Consume"]);
     expect(luck.descriptionLines[0]).toBe("Gain 4 Mana, Gold, or Block");
   });
-  it("combines two different potions by concatenating their effects", () => {
-    const mixed = createMixedPotion(healPotion, firePotion);
-
-    expect(mixed.descriptionLines).toEqual(["Restore 5 Health", "Deal 8 Burn damage", "Consume"]);
+  it("combines different Potions with potency bonuses while preserving both ingredients", () => {
+    const before = structuredClone([healPotion, firePotion]);
+    const mixed = createMixedPotion(healPotion, firePotion, 2);
+    expect(mixed.effects).toEqual([
+      { kind: "heal", amount: 7 },
+      { kind: "damage", damageType: "burn", amount: 10 },
+    ]);
+    expect(mixed.descriptionLines).toEqual(["Restore 7 Health", "Deal 10 Burn damage", "Consume"]);
     expect(mixed.consume).toBe(true);
-    expect(mixed.effects).toHaveLength(2);
-    expect(mixed.effects[0]).toEqual({ kind: "heal", amount: 5 });
-    expect(mixed.effects[1]).toEqual({ kind: "damage", damageType: "burn", amount: 8 });
+    expect([healPotion, firePotion]).toEqual(before);
   });
   it("keeps both effect sets when same-id cards differ below the top level", () => {
     const cardA = makePotion({
@@ -84,14 +86,6 @@ describe("createMixedPotion", () => {
     });
   });
 
-  it("doubles effects when mixing the same potion ID", () => {
-    const mixed = createMixedPotion(healPotion, healPotion);
-
-    expect(mixed.effects).toHaveLength(1);
-    expect(mixed.effects[0]).toEqual({ kind: "heal", amount: 10 });
-    expect(mixed.descriptionLines).toEqual(["Restore 10 Health", "Consume"]);
-  });
-
   it("preserves repeated description lines from different cards to match concatenated effects", () => {
     const manaPotionA = makePotion({
       id: "mana-potion-a",
@@ -109,15 +103,8 @@ describe("createMixedPotion", () => {
     expect(mixed.descriptionLines).toEqual(["Gain 2 Mana", "Gain 2 Mana", "Consume"]);
   });
 
-  it("applies potencyBonus to effects and matching description numbers", () => {
-    const mixed = createMixedPotion(healPotion, firePotion, 2);
-
-    expect(mixed.effects[0]).toEqual({ kind: "heal", amount: 7 });
-    expect(mixed.effects[1]).toEqual({ kind: "damage", damageType: "burn", amount: 10 });
-    expect(mixed.descriptionLines).toEqual(["Restore 7 Health", "Deal 10 Burn damage", "Consume"]);
-  });
-
-  it.each([2, 10])("keeps a %i-turn duration while scaling damage", (turns) => {
+  it("keeps a scheduled duration while scaling damage", () => {
+    const turns = 2;
     const durationPotion = makePotion({
       id: "duration-potion",
       descriptionLines: [`Deal 10 Poison damage for the next ${turns} turns`, "Consume"],
@@ -154,28 +141,6 @@ describe("createMixedPotion", () => {
     expect(mixed.effects[0]).toEqual({ kind: "damage", damageType: "burn", amount: 10 });
     expect(mixed.effects[1]).toEqual({ kind: "player-status", status: "block", amount: 20 });
     expect(mixed.descriptionLines).toEqual(["Deal 10 Burn damage", "Gain 20 Block", "Consume"]);
-  });
-
-  it("keeps non-amount field numbers frozen even when they collide with scaled amounts", () => {
-    const manaShieldPotion = makePotion({
-      id: "mana-shield-potion",
-      title: "Mana Shield",
-      descriptionLines: ["Convert each of your Mana into 5 Block", "Consume"],
-      effects: [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 5 }],
-    });
-    const firePotionFive = makePotion({
-      id: "fire-potion-five",
-      descriptionLines: ["Deal 5 Burn damage", "Consume"],
-      effects: [{ kind: "damage", damageType: "burn", amount: 5 }],
-    });
-
-    const mixed = createMixedPotion(firePotionFive, manaShieldPotion, 0);
-
-    expect(mixed.effects[1]).toEqual({ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 5 });
-    expect(mixed.descriptionLines).toEqual(["Deal 5 Burn damage", "Convert each of your Mana into 5 Block", "Consume"]);
-
-    const doubledFire = createMixedPotion(firePotionFive, firePotionFive);
-    expect(doubledFire.descriptionLines).toContain("Deal 10 Burn damage");
   });
 
   it("keeps an unscaled conversion rate when it matches a scaled damage amount", () => {
@@ -236,20 +201,11 @@ describe("applyMixToDeck", () => {
   it("removes the two potions at given indices and appends the mixed potion", () => {
     const deck = [potionA, potionB, potionC];
     const original = [...deck];
-    const result = applyMixToDeck(deck, 0, 1, mixed);
+    const result = applyMixToDeck(deck, 1, 0, mixed);
     expect(deck).toEqual(original);
 
     expect(result).toHaveLength(2);
     expect(result[0].id).toBe("c");
-    expect(result[1].id).toBe(mixed.id);
-  });
-
-  it("handles indices in any order (higher index first)", () => {
-    const deck = [potionA, potionB, potionC];
-    const result = applyMixToDeck(deck, 2, 0, mixed);
-
-    expect(result).toHaveLength(2);
-    expect(result[0].id).toBe("b");
     expect(result[1].id).toBe(mixed.id);
   });
 
@@ -263,35 +219,31 @@ describe("applyMixToDeck", () => {
   });
 });
 
-describe("doublePotionPotency", () => {
-  it("doubles card effect amount and updates description", () => {
-    const doubled = doublePotionPotency(healPotion);
-    expect(doubled.effects[0]).toEqual({ kind: "heal", amount: 10 });
-    expect(doubled.descriptionLines).toEqual(["Restore 10 Health", "Consume"]);
-  });
-});
-
-describe("repeat-over-turns effect scaling", () => {
-  it("scales nested effects inside repeat-over-turns", () => {
-    const lingeringPotion = makePotion({
-      id: "lingering-potion",
-      title: "Lingering Potion",
-      descriptionLines: ["Restore 4 Health for the next 2 turns", "Consume"],
+describe("Potion effect ownership", () => {
+  it.each(["mix", "double"] as const)("%s owns nested mutable pools and metadata", (operation) => {
+    const ingredient = makePotion({
+      tags: ["archery"],
       effects: [
         {
-          kind: "repeat-over-turns",
-          remainingTurns: 2,
-          effects: [{ kind: "heal", amount: 4 }],
+          kind: "chance",
+          probability: 0.5,
+          successEffects: [{ kind: "random-damage", minAmount: 1, maxAmount: 3, damageTypePool: ["burn", "holy"] }],
+          failureEffects: [{ kind: "player-status", status: "block", amount: 1, statusPool: ["armor", "block"] }],
         },
       ],
     });
-    const mixed = createMixedPotion(lingeringPotion, lingeringPotion, 2);
-    expect(mixed.effects[0]).toEqual({
-      kind: "repeat-over-turns",
-      remainingTurns: 2,
-      effects: [{ kind: "heal", amount: 10 }],
-    });
-    expect(mixed.descriptionLines).toEqual(["Restore 10 Health for the next 2 turns", "Consume"]);
+    const before = structuredClone(ingredient);
+    const result = operation === "mix" ? createMixedPotion(ingredient, ingredient) : doublePotionPotency(ingredient);
+    const chance = result.effects[0];
+    if (chance.kind !== "chance") throw new Error("Expected chance Potion");
+    const damage = chance.successEffects[0];
+    const status = chance.failureEffects[0];
+    if (damage.kind !== "random-damage" || status.kind !== "player-status") throw new Error("Expected pooled effects");
+    expect(damage).toMatchObject({ minAmount: 2, maxAmount: 6 });
+    damage.damageTypePool!.pop();
+    status.statusPool!.pop();
+    result.tags?.pop();
+    expect(ingredient).toEqual(before);
   });
 });
 

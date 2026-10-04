@@ -41,10 +41,10 @@ function normalizeNonNegativeRecord<T extends { [K in keyof T]: number }>(
   defaults: T,
   saved: Partial<T> | undefined,
 ): T {
-  const merged = { ...defaults, ...saved };
+  const merged = { ...defaults };
   for (const key of Object.keys(defaults) as Array<keyof T>) {
-    const value = merged[key];
-    if (typeof value !== "number" || !Number.isFinite(value) || value < 0) merged[key] = defaults[key];
+    const value = saved?.[key];
+    if (typeof value === "number" && Number.isFinite(value) && value >= 0) merged[key] = value;
   }
   return merged;
 }
@@ -202,7 +202,7 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
         ? sanitizeEncounterTraitIds(saved.encounterBenefits, "reward")
         : [],
     trinketEffects: { ...defaults.trinketEffects, ...saved.trinketEffects },
-    gearEffects: { ...defaults.gearEffects, ...saved.gearEffects },
+    gearEffects: normalizeNonNegativeRecord(defaults.gearEffects, saved.gearEffects),
     talentEffects: normalizeTalentEffects(defaults.talentEffects, saved.talentEffects),
     flags: normalizeCombatFlags(defaults.flags, saved.flags),
     uniqueGear: { ...defaults.uniqueGear, ...saved.uniqueGear },

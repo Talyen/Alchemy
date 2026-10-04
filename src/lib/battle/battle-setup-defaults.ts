@@ -90,7 +90,7 @@ export function defaultBattleState(): BattleState {
     activeCompanion: null,
     companionDamageBuff: 0,
     currentEnemy: skeletonEnemy,
-    talentEffects: defaultTalentEffects,
+    talentEffects: createEmptyTalentEffectManifest(),
     trinketEffects: { ...defaultTrinketEffects },
     gearEffects: { ...defaultGearEffects },
     flags: createInitialFlags(),

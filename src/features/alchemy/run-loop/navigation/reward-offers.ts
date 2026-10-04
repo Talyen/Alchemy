@@ -67,19 +67,12 @@ export function getCompanionCardChoices(
   return sampleItems(companions, LABYRINTH_REWARD_CONFIG.companionCardChoices, rng);
 }
 
-function hoardBaseIds(modifier: EncounterRewardTraitId): string[] | null {
-  if (modifier === "arms-hoard")
-    return gearBaseItemList
-      .filter((base) => base.compatibleSlots.includes("main-hand") || base.compatibleSlots.includes("off-hand"))
-      .map((base) => base.id);
-  if (modifier === "armor-hoard")
-    return gearBaseItemList.filter((base) => base.compatibleSlots.includes("body")).map((base) => base.id);
-  if (modifier === "ring-hoard")
-    return gearBaseItemList.filter((base) => base.id.endsWith("-ring")).map((base) => base.id);
-  if (modifier === "amulet-hoard")
-    return gearBaseItemList.filter((base) => base.id.endsWith("-amulet")).map((base) => base.id);
-  return null;
-}
+const HOARD_FILTERS: Partial<Record<EncounterRewardTraitId, (base: (typeof gearBaseItemList)[number]) => boolean>> = {
+  "arms-hoard": (base) => base.compatibleSlots.includes("main-hand") || base.compatibleSlots.includes("off-hand"),
+  "armor-hoard": (base) => base.compatibleSlots.includes("body"),
+  "ring-hoard": (base) => base.id.endsWith("-ring"),
+  "amulet-hoard": (base) => base.id.endsWith("-amulet"),
+};
 
 export function createRewardOffer({
   source,
@@ -105,23 +98,15 @@ export function createRewardOffer({
     boons: boons.length > 0,
     trinkets: trinkets.length > 0,
   });
-  const weights = resolveLootWeights({
-    source,
-    progress: lootProgress,
-    astralChanceBonus: gearAstralChanceBonus,
-    available: availability,
-  });
+  const weightsFor = (available: typeof availability) =>
+    resolveLootWeights({ source, progress: lootProgress, astralChanceBonus: gearAstralChanceBonus, available });
   for (const modifier of rewardModifiers) {
-    const baseIds = hoardBaseIds(modifier);
-    if (baseIds) {
+    const hoardFilter = HOARD_FILTERS[modifier];
+    if (hoardFilter) {
+      const baseIds = gearBaseItemList.filter(hoardFilter).map((base) => base.id);
       const gearAvailable = getGearLootAvailability(ownedUniqueIds, baseIds);
       if (baseIds.length === 0 || (!gearAvailable.basic && !gearAvailable.astral)) break;
-      const weights = resolveLootWeights({
-        source,
-        progress: lootProgress,
-        astralChanceBonus: gearAstralChanceBonus,
-        available: { ...gearAvailable, card: false, boon: false, trinket: false, unique: false },
-      });
+      const weights = weightsFor({ ...gearAvailable, card: false, boon: false, trinket: false, unique: false });
       const choices = generateLootGearChoices(REWARD_CARD_CHOICES, rng, weights, ownedUniqueIds, baseIds, true);
       if (choices.length > 0) return { rewardType: "gear", choices };
       break;
@@ -141,6 +126,7 @@ export function createRewardOffer({
       };
     }
   }
+  const weights = weightsFor(availability);
   const category = rollLootGroup(weights, rng);
   switch (category) {
     case "gear":

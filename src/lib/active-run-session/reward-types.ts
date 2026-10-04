@@ -16,11 +16,7 @@ export interface PendingRewardSharedFields {
   lastVictoryContentSystem: ContentSystemId | null;
 }
 
-type PendingRewardSharedInput = Omit<PendingRewardSharedFields, "companionChoiceIds"> & {
-  companionChoiceIds?: string[];
-};
-
-type RewardStateBase = PendingRewardSharedInput;
+type RewardStateBase = Omit<PendingRewardSharedFields, "companionChoiceIds">;
 
 export type CardRewardState = RewardStateBase & {
   rewardType: "card";
@@ -65,7 +61,6 @@ export function resolveRewardChoice(
 export function createEmptyRewardState(destinations: Destination[] = []): CardRewardState {
   return {
     choices: [],
-    companionChoiceIds: [],
     gold: 0,
     materials: emptyInventory(),
     selectedId: null,

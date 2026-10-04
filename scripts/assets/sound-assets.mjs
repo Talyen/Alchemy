@@ -243,6 +243,58 @@ export const generatedSoundAssets = [
     source: "approved/creature-monster-attack-09-108cd42b-0-1854.wav",
     target: "creature-monster-attack-09-108cd42b-0-1854.ogg",
   },
+  {
+    source: "approved/battle-focus-church-choir-dm-a47d5cbc-0-2500.wav",
+    target: "battle-focus-church-choir-dm-a47d5cbc-0-2500.ogg",
+  },
+  {
+    source: "approved/battle-focus-purge-01-ef2ba588-0-1500.wav",
+    target: "battle-focus-purge-01-ef2ba588-0-1500.ogg",
+  },
+  {
+    source: "approved/battle-focus-arcane-metal-01-5abcc0c6-250-1500.wav",
+    target: "battle-focus-arcane-metal-01-5abcc0c6-250-1500.ogg",
+  },
+  {
+    source: "approved/battle-focus-impact-sound-design-hit-chime-resonant-f6318a19-0-1500.wav",
+    target: "battle-focus-impact-sound-design-hit-chime-resonant-f6318a19-0-1500.ogg",
+  },
+  {
+    source: "approved/battle-focus-church-choir-dm-a47d5cbc-0-1500.wav",
+    target: "battle-focus-church-choir-dm-a47d5cbc-0-1500.ogg",
+  },
+  {
+    source: "approved/battle-focus-illusion-mystery-magical-water-44c5b75b-0-1500.wav",
+    target: "battle-focus-illusion-mystery-magical-water-44c5b75b-0-1500.ogg",
+  },
+  {
+    source: "approved/battle-focus-magspel-cast-casting-buff-hy-pc-6b612bab-50-1500.wav",
+    target: "battle-focus-magspel-cast-casting-buff-hy-pc-6b612bab-50-1500.ogg",
+  },
+  {
+    source: "approved/battle-focus-magic-generic-haunted-old-grimoire-open-f8eb7607-280-1500.wav",
+    target: "battle-focus-magic-generic-haunted-old-grimoire-open-f8eb7607-280-1500.ogg",
+  },
+  {
+    source: "approved/battle-focus-heal-01-2847537e-0-1500.wav",
+    target: "battle-focus-heal-01-2847537e-0-1500.ogg",
+  },
+  {
+    source: "approved/battle-focus-plate-impact-hard-02-a6a1ca66-0-764.wav",
+    target: "battle-focus-plate-impact-hard-02-a6a1ca66-0-764.ogg",
+  },
+  {
+    source: "approved/battle-focus-magspel-cast-casting-buff-hy-pc-3b300b28-20-1500.wav",
+    target: "battle-focus-magspel-cast-casting-buff-hy-pc-3b300b28-20-1500.ogg",
+  },
+  {
+    source: "approved/battle-focus-creature-hiss-4-m-e9aede68-330-1500.wav",
+    target: "battle-focus-creature-hiss-4-m-e9aede68-330-1500.ogg",
+  },
+  {
+    source: "approved/battle-focus-bug-people-03-d2d3d05e-50-1387.wav",
+    target: "battle-focus-bug-people-03-d2d3d05e-50-1387.ogg",
+  },
 ];
 
 /** Committed sounds without raw sources that remain owned by the sound pipeline. */

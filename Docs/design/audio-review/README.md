@@ -44,6 +44,47 @@ the last generated snapshot; regenerate after changing mappings or game content.
 If the existing encoder dependency lacks its binary, restore it with
 `node node_modules/ffmpeg-static/install.js`. No additional dependency is needed.
 
+## Battle replacement auditions
+
+The focused choices are now installed. [The validated approval snapshot](./battle-focus-approved-export.json)
+preserves all sixteen submitted selections; its archive note records that the
+Downloads file disappeared after validation, before copying. The source masters
+and original whole-game export are preserved. Current/selected comparisons use
+the installed clips when this review is regenerated.
+
+Prepare the sixteen requested battle rows and start a separate review session:
+
+```sh
+npm run audio:review -- --battle-focus --serve --port 4318
+```
+
+Most rows have two short, level-matched candidates and their current cue or silence.
+Exorcism and Prayer each have four options, including their original pair.
+The queue includes Avatar, Exorcism, Sanctified Plate, Tithe, Prayer, Wishing Well,
+both Will-o'-Wisp roles, Library Owl, Cleric, Inquisitor, Paladin, Seraph, Zealot,
+Giant Snake and Giant Spider. Companion selections also apply to their summoning
+cards; enemy rows choose fallback/Bestiary cues, while ability turns retain the
+ability card's focal sound.
+
+Will-o'-Wisp has one listening decision: the enemy choice automatically applies
+to the companion and summoning card. The dependent companion row is omitted
+from the queue and progress count, but its matching choice is included in exports.
+The focused queue therefore contains fifteen decisions for sixteen targets.
+
+Focused previews and imported choices live in `reports/audio-review/battle-focus/`.
+Their browser storage is separate from the previous whole-game choices. Use
+`--battle-focus --serve-only --port 4318` to reopen the prepared session, or add
+`--battle-focus --choices '/full/path/to/export.json'` when importing it. Export
+choices after listening; these previews do not install production replacements.
+
+When `reference/catalog.csv` is absent, generation checks selected master files
+and hashes directly. Recording and pack names are inferred from filenames and
+labeled as such; catalog provenance is not invented. Malformed existing catalogs,
+missing files and conflicting source identities still fail. Long recordings use
+explicit short excerpts selected from signal levels, with 5 ms edge fades.
+The old Doppler/Weirdness proposal sources are no longer present in the library;
+available casting takes replace them for this review.
+
 ## Review workflow
 
 The default **Remaining** queue shows one undecided mapping at a time. Existing
@@ -56,7 +97,7 @@ choices are skipped, and the header shows total progress.
    leaves the mapping undecided; Chosen lets you revisit saved decisions.
 4. Export your choices before sharing them or changing browsers/ports.
 
-Keyboard shortcuts: **1** keeps current, **2–4** choose candidates, **0** chooses
+Keyboard shortcuts: **1** keeps current, **2–5** choose candidates, **0** chooses
 silence, and arrow keys navigate. Shortcuts ignore typing in notes, search and
 select controls. No cue plays automatically when the queue advances.
 

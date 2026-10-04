@@ -45,7 +45,6 @@ export interface GearDraftView {
   equipTrinket: (characterId: CharacterId, trinketId: string) => boolean;
   unequipTrinket: (characterId: CharacterId) => boolean;
   salvage: (instanceId: string) => {
-    inventories: GearInventories;
     yieldedCurrencies: Record<CraftingCurrencyId, number>;
     yieldedMaterials: MaterialInventory;
   } | null;

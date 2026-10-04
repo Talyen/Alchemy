@@ -99,10 +99,6 @@ export function computeDestinationWeight(destination: Destination, context: Dest
   return Math.max(1, (baseWeight + pity) * repeatMultiplier);
 }
 
-function weightedPick(pool: Destination[], context: DestinationOfferState, rng: () => number): Destination | null {
-  return pickWeighted(pool, (destination) => computeDestinationWeight(destination, context), rng) ?? null;
-}
-
 export function advanceDestinationOfferState(
   offerState: DestinationOfferState,
   eligibleDestinations: Destination[],
@@ -122,17 +118,6 @@ export function advanceDestinationOfferState(
   };
 }
 
-function pickCombatPity(
-  remaining: Destination[],
-  weightContext: DestinationOfferState,
-  rng: () => number,
-): { picked: Destination; remaining: Destination[] } | null {
-  const combatPool = remaining.filter(isCombatDestination);
-  const picked = weightedPick(combatPool, weightContext, rng);
-  if (!picked) return null;
-  return { picked, remaining: remaining.filter((d) => d !== picked && !isCombatDestination(d)) };
-}
-
 export function sampleDestinationChoices(
   destinations: Destination[],
   offerState: DestinationOfferState = createEmptyDestinationOfferState(),
@@ -146,20 +131,22 @@ export function sampleDestinationChoices(
     };
   }
 
+  const pick = (pool: Destination[]) =>
+    pickWeighted(pool, (destination) => computeDestinationWeight(destination, offerState), rng);
   let remaining = [...eligibleDestinations];
   const choices: Destination[] = [];
 
   if (!lastOfferedIncludesCombat(offerState.lastOfferedDestinations)) {
-    const pity = pickCombatPity(remaining, offerState, rng);
-    if (pity) {
-      choices.push(pity.picked);
-      remaining = pity.remaining;
+    const combat = pick(remaining.filter(isCombatDestination));
+    if (combat) {
+      choices.push(combat);
+      remaining = remaining.filter((destination) => !isCombatDestination(destination));
     }
   }
 
   while (choices.length < DESTINATION_CHOICES && remaining.length > 0) {
     const pool = choices.some(isShopDestination) ? remaining.filter((d) => !isShopDestination(d)) : remaining;
-    const picked = weightedPick(pool, offerState, rng);
+    const picked = pick(pool);
     if (!picked) break;
     choices.push(picked);
     remaining = remaining.filter((destination) => destination !== picked);
@@ -192,7 +179,7 @@ export function restoreOrCreateDestinationRewardState(
   },
 ): RewardState {
   if (prev.destinations.length > 0) {
-    return withSelectedBossForDestinations(prev.destinations, { ...prev }, options.rollBossEnemyId);
+    return withSelectedBossForDestinations(prev.destinations, prev, options.rollBossEnemyId);
   }
 
   const sampled = sampleDestinationChoices(options.availableDestinations, options.offerState, options.rng);

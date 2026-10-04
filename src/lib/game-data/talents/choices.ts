@@ -39,7 +39,7 @@ export function countImplementedTalents(keywordId: KeywordId): number {
   return count;
 }
 
-export function getTalentRowIndex(index: number): number {
+function getTalentRowIndex(index: number): number {
   let cumulative = 0;
   for (const [row, size] of TALENT_ROW_SIZES.entries()) {
     cumulative += size;
@@ -50,15 +50,6 @@ export function getTalentRowIndex(index: number): number {
 
 export function getTalentRows(keywordId: KeywordId): TalentDefinition[][] {
   return chunkIntoRows(getTalentsForKeyword(keywordId), TALENT_ROW_SIZES);
-}
-
-export function isTalentRowUnlocked(keywordId: KeywordId, unlockedIds: string[], rowIndex: number): boolean {
-  const unlocked = new Set(unlockedIds);
-  for (const [row, talents] of getTalentRows(keywordId).entries()) {
-    if (row >= rowIndex || row >= TALENT_ROW_SIZES.length) break;
-    if (talents.some((talent) => !isTalentPlaceholder(talent) && !unlocked.has(talent.id))) return false;
-  }
-  return true;
 }
 
 export function getAllocatableTalentChoices(keywordId: KeywordId, unlockedIds: string[]): TalentDefinition[] {

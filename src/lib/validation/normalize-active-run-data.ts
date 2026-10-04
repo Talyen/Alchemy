@@ -5,6 +5,7 @@ import { DRAFT_CHOICES, DRAFT_ROUNDS, MYSTERY_CARD_CHOICES } from "@/lib/game-co
 import {
   cardById,
   characters,
+  cloneBattleCard,
   isMixedPotionCard,
   selectRewardCards,
   type BattleCard,
@@ -89,23 +90,6 @@ function normalizeLabyrinthModifiers(
   };
 }
 
-function toPersistedCard(card: BattleCard): PersistedBattleCard {
-  const base: PersistedBattleCard = {
-    id: card.id,
-    title: card.title,
-    descriptionLines: card.descriptionLines,
-    art: card.art,
-    cost: card.cost,
-    effects: card.effects,
-  };
-  if (card.uid !== undefined) base.uid = card.uid;
-  if (card.consume !== undefined) base.consume = card.consume;
-  if (card.corrupted) base.corrupted = true;
-  if (card.baseTitle) base.baseTitle = card.baseTitle;
-  if (card.corruptedValuePositions) base.corruptedValuePositions = card.corruptedValuePositions;
-  return base;
-}
-
 function repairCardChoices(
   choices: PersistedBattleCard[],
   args: {
@@ -127,8 +111,8 @@ function repairCardChoices(
     args.alreadyOwned ?? args.runDeck,
     createRunStateRng(args.rngState, args.stream),
     args.seedKeywords,
-  ).map(toPersistedCard);
-  return repaired.length > 0 ? repaired : filtered;
+  ).map(cloneBattleCard);
+  return repaired;
 }
 
 function repairWildwoodDraft(

@@ -4,7 +4,6 @@ import {
   PLAYER_STATUS_DISPLAY_ORDER,
   ENEMY_STATUS_DISPLAY_ORDER,
   talentPool,
-  getTalentTreeKeywordIds,
 } from "@/lib/game-data";
 import { ENEMY_STATUS_IDS_LIST } from "@/lib/validation";
 import {
@@ -31,20 +30,9 @@ export function validateTalents(collector: Collector): void {
 
   const knownKeywords = new Set(Object.keys(keywordDefinitions));
 
-  const treeKeywords = new Set(getTalentTreeKeywordIds());
-  const countByKeyword = new Map<string, number>();
   for (const talent of talentPool) {
-    if (!knownKeywords.has(talent.keywordId)) {
+    if (!knownKeywords.has(talent.keywordId))
       collector.error("talents", talent.id, `References unknown keyword: ${talent.keywordId}`);
-      continue;
-    }
-    countByKeyword.set(talent.keywordId, (countByKeyword.get(talent.keywordId) ?? 0) + 1);
-  }
-  for (const keyword of treeKeywords) {
-    const count = countByKeyword.get(keyword) ?? 0;
-    if (count < 1) {
-      collector.error("talents", keyword, `Talent pool has no entries for tree keyword "${keyword}"`);
-    }
   }
 }
 

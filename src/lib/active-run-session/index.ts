@@ -6,7 +6,7 @@ export {
 } from "./mystery-visit-persistence";
 export type { HydratedMysteryVisit } from "./mystery-visit-persistence";
 export { parseActiveRun, toActiveRunData } from "./parse";
-export { restorePendingReward, restorePendingRewardBundle, serializePendingReward } from "./pending-reward-persistence";
+export { restorePendingRewardBundle, serializePendingReward } from "./pending-reward-persistence";
 export { createEmptyRewardState, getRewardChoiceId, resolveRewardChoice } from "./reward-types";
 export type {
   BoonRewardState,
@@ -22,9 +22,6 @@ export {
   hydrateEquipmentShopState,
   hydrateShopState,
   hydrateTrinketShopState,
-  serializeAlchemistState,
-  serializeEquipmentShopState,
-  serializeShopState,
   serializeTrinketShopState,
 } from "./shop-persistence";
 export {

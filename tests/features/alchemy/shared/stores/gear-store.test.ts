@@ -55,7 +55,8 @@ describe("gear-store", () => {
     expect(readGearState().loadouts.knight["left-accessory"]).toBe("ring-1");
 
     const salvaged = mutateGearForTest((gear) => gear.salvage(ring.instanceId));
-    expect(salvaged?.inventories.knight).toEqual([]);
+    expect(salvaged).not.toBeNull();
+    expect(readGearState().inventories.knight).toEqual([]);
     expect(readGearState().loadouts.knight["left-accessory"]).toBeNull();
     expect(flattenGearInventories(readGearState().inventories)).toEqual([]);
     resetGearForTest();

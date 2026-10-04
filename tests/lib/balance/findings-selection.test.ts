@@ -63,6 +63,18 @@ describe("selectBalanceFindings", () => {
     expect(report.omittedByBucket.equity).toBe(1);
   });
 
+  it("continues through exhausted buckets without reversing their ranking", () => {
+    const candidates = [
+      finding("low", { observed: 0.8 }),
+      finding("middle", { observed: 0.5 }),
+      finding("high", { observed: 0 }),
+      finding("only-timeout", { bucket: "timeout", metric: "timeoutRate", observed: 0.1 }),
+    ];
+    const report = selectBalanceFindings(candidates, 10);
+    expect(report.findings.map(({ id }) => id)).toEqual(["only-timeout", "high", "middle", "low"]);
+    expect(report.omitted).toBe(0);
+  });
+
   it("handles an empty selection and caps larger than the candidate set", () => {
     const candidates = [finding("skeleton")];
     const empty = selectBalanceFindings(candidates, 0);

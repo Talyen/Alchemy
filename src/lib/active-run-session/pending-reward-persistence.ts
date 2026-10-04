@@ -77,7 +77,6 @@ function restoreRewardState(persisted: PersistedPendingReward): RewardState {
   const shared = {
     ...sharedRewardFields(persisted),
     destinations: filterValidDestinations(persisted.destinations),
-    companionChoiceIds: [],
   };
 
   if (persisted.rewardType === "gear") {
@@ -97,10 +96,6 @@ function restoreRewardState(persisted: PersistedPendingReward): RewardState {
 
 function retainPendingReward(state: RewardState): RewardState | null {
   return state.choices.length > 0 || hasSharedRewardValue(state) ? state : null;
-}
-
-export function restorePendingReward(persisted: PersistedPendingReward): RewardState | null {
-  return retainPendingReward(restoreRewardState(persisted));
 }
 
 export interface RestoredPendingReward {

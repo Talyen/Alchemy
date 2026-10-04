@@ -2,362 +2,172 @@ import { describe, expect, it, vi } from "vitest";
 import {
   advanceDestinationOfferState,
   computeDestinationWeight,
-  createDestinationRewardState,
   createEmptyDestinationOfferState,
   createInitialDestinationResult,
   getRunAvailableDestinations,
-  lastOfferedIncludesCombat,
   restoreOrCreateDestinationRewardState,
   sampleDestinationChoices,
-  withSelectedBossForDestinations,
 } from "@/features/alchemy/shared/run-flow/destination-flow";
 import { createEmptyRewardState } from "@/lib/active-run-session";
-import {
-  DEFAULT_DESTINATION_WEIGHT,
-  DESTINATION_PITY_WEIGHT_PER_ROUND,
-  LAST_OFFERED_DESTINATION_WEIGHT,
-} from "@/lib/game-constants";
-import { DESTINATIONS } from "@/lib/routing";
+import { DESTINATIONS, getAvailableDestinations, isCombatDestination, isShopDestination } from "@/lib/routing";
 import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import { createRunRngState, createRunStateRng } from "@/lib/rng";
 
-vi.mock("@/lib/routing", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/routing")>("@/lib/routing");
-  return {
-    ...actual,
-    getAvailableDestinations: vi.fn(() => [
-      actual.DESTINATIONS.NORMAL_COMBAT,
-      actual.DESTINATIONS.ELITE_COMBAT,
-      actual.DESTINATIONS.CARD_SHOP,
-      actual.DESTINATIONS.ALCHEMIST_SHOP,
-      actual.DESTINATIONS.MYSTERY,
-      actual.DESTINATIONS.CORRUPTION,
-      actual.DESTINATIONS.CAMPFIRE,
-    ]),
-  };
-});
+const FULL_POOL = Object.values(DESTINATIONS).filter((id) => id !== DESTINATIONS.BOSS_COMBAT);
 
-const FULL_POOL = [
-  DESTINATIONS.NORMAL_COMBAT,
-  DESTINATIONS.ELITE_COMBAT,
-  DESTINATIONS.CARD_SHOP,
-  DESTINATIONS.ALCHEMIST_SHOP,
-  DESTINATIONS.TRINKET_SHOP,
-  DESTINATIONS.GEAR_SHOP,
-  DESTINATIONS.MYSTERY,
-  DESTINATIONS.CAMPFIRE,
-] as const;
-
-describe("getRunAvailableDestinations", () => {
-  it("returns only Boss Combat at last index in act", () => {
-    const result = getRunAvailableDestinations({
-      destinationIndexInAct: 7,
-      currentHealth: 30,
-      currentGold: 100,
-      maxHealth: 30,
-    });
-    expect(result).toEqual([DESTINATIONS.BOSS_COMBAT]);
+describe("destination offers", () => {
+  it("uses real eligibility before the boss boundary and prevents consecutive Corruption visits", () => {
+    const input = { destinationIndexInAct: 2, currentHealth: 30, currentGold: 100, maxHealth: 30 };
+    expect(getRunAvailableDestinations(input)).toEqual(getAvailableDestinations(30, 100, 30));
+    expect(getRunAvailableDestinations({ ...input, previousDestination: DESTINATIONS.CORRUPTION })).toEqual(
+      getAvailableDestinations(30, 100, 30).filter((id) => id !== DESTINATIONS.CORRUPTION),
+    );
+    expect(
+      getRunAvailableDestinations({ ...input, destinationIndexInAct: 7, currentGold: 0, currentHealth: 1 }),
+    ).toEqual([DESTINATIONS.BOSS_COMBAT]);
   });
 
-  it("returns filtered destinations for non-last positions", () => {
-    const result = getRunAvailableDestinations({
-      destinationIndexInAct: 2,
-      currentHealth: 30,
-      currentGold: 100,
-      maxHealth: 30,
-    });
-    expect(result).toContain(DESTINATIONS.NORMAL_COMBAT);
-    expect(result).toContain(DESTINATIONS.CORRUPTION);
-    expect(result).not.toContain(DESTINATIONS.BOSS_COMBAT);
-  });
-
-  it("prevents Corruption after a Corruption destination", () => {
-    const result = getRunAvailableDestinations({
-      destinationIndexInAct: 2,
-      currentHealth: 30,
-      currentGold: 100,
-      maxHealth: 30,
-      previousDestination: DESTINATIONS.CORRUPTION,
-    });
-    expect(result).not.toContain(DESTINATIONS.CORRUPTION);
-  });
-});
-
-describe("computeDestinationWeight", () => {
-  it("down-weights destinations offered on the previous screen", () => {
-    const fresh = computeDestinationWeight(DESTINATIONS.CAMPFIRE, {
-      lastOfferedDestinations: [],
-      roundsSinceOffered: {},
-    });
-    const repeated = computeDestinationWeight(DESTINATIONS.CAMPFIRE, {
+  it("caps pity, discounts repeated offers, and updates only eligible history without changing the input", () => {
+    const history = {
       lastOfferedDestinations: [DESTINATIONS.CAMPFIRE],
-      roundsSinceOffered: {},
+      roundsSinceOffered: { [DESTINATIONS.CAMPFIRE]: 2, [DESTINATIONS.MYSTERY]: 999, [DESTINATIONS.GEAR_SHOP]: 8 },
+    };
+    const before = structuredClone(history);
+    expect(computeDestinationWeight(DESTINATIONS.CAMPFIRE, history)).toBeLessThan(
+      computeDestinationWeight(DESTINATIONS.CORRUPTION, history),
+    );
+    expect(computeDestinationWeight(DESTINATIONS.MYSTERY, history)).toBe(
+      computeDestinationWeight(DESTINATIONS.MYSTERY, {
+        ...history,
+        roundsSinceOffered: { [DESTINATIONS.MYSTERY]: 1000 },
+      }),
+    );
+    expect(
+      advanceDestinationOfferState(history, [DESTINATIONS.CAMPFIRE, DESTINATIONS.MYSTERY], [DESTINATIONS.CAMPFIRE]),
+    ).toEqual({
+      lastOfferedDestinations: [DESTINATIONS.CAMPFIRE],
+      roundsSinceOffered: { [DESTINATIONS.CAMPFIRE]: 0, [DESTINATIONS.MYSTERY]: 1000, [DESTINATIONS.GEAR_SHOP]: 8 },
     });
-    expect(repeated).toBeLessThan(fresh);
-    expect(repeated).toBe(LAST_OFFERED_DESTINATION_WEIGHT);
+    expect(history).toEqual(before);
   });
 
-  it("increases weight for destinations not offered recently", () => {
-    const base = computeDestinationWeight(DESTINATIONS.MYSTERY, {
-      lastOfferedDestinations: [],
-      roundsSinceOffered: {},
-    });
-    const pity = computeDestinationWeight(DESTINATIONS.MYSTERY, {
-      lastOfferedDestinations: [],
-      roundsSinceOffered: { [DESTINATIONS.MYSTERY]: 3 },
-    });
-    expect(pity).toBe(base + 3 * DESTINATION_PITY_WEIGHT_PER_ROUND);
-  });
-});
+  it("guarantees one combat after a peaceful offer and caps shops without drawing from an empty pool", () => {
+    const rng = vi.fn(() => 0.99);
+    const result = sampleDestinationChoices(FULL_POOL, createEmptyDestinationOfferState(), rng);
+    expect(result.choices.filter(isCombatDestination)).toEqual([DESTINATIONS.ELITE_COMBAT]);
+    expect(result.choices.filter(isShopDestination).length).toBeLessThanOrEqual(1);
+    expect(result.choices).toHaveLength(3);
+    expect(new Set(result.choices).size).toBe(3);
+    expect(result.offerState.lastOfferedDestinations).toEqual(result.choices);
+    expect(rng).toHaveBeenCalledTimes(3);
 
-describe("advanceDestinationOfferState", () => {
-  it("increments streaks only for eligible destinations not chosen", () => {
-    const next = advanceDestinationOfferState(
+    rng.mockClear();
+    const shops = sampleDestinationChoices(
+      [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.CARD_SHOP, DESTINATIONS.ALCHEMIST_SHOP],
       createEmptyDestinationOfferState(),
-      [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE],
-      [DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE, DESTINATIONS.NORMAL_COMBAT],
+      rng,
     );
-    expect(next.roundsSinceOffered[DESTINATIONS.NORMAL_COMBAT]).toBe(0);
-    expect(next.roundsSinceOffered[DESTINATIONS.MYSTERY]).toBe(0);
-    expect(next.roundsSinceOffered[DESTINATIONS.CAMPFIRE]).toBe(0);
-    expect(next.lastOfferedDestinations).toEqual([
-      DESTINATIONS.MYSTERY,
-      DESTINATIONS.CAMPFIRE,
-      DESTINATIONS.NORMAL_COMBAT,
-    ]);
+    expect(shops.choices).toEqual([DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.ALCHEMIST_SHOP]);
+    expect(rng).toHaveBeenCalledTimes(2);
   });
 
-  it("does not increment streak for gated destinations outside the eligible pool", () => {
-    const next = advanceDestinationOfferState(
-      { lastOfferedDestinations: [], roundsSinceOffered: { [DESTINATIONS.CAMPFIRE]: 2 } },
-      [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.MYSTERY],
-      [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.MYSTERY],
+  it("allows a peaceful offer after combat and deduplicates destinations before advancing history", () => {
+    const history = { lastOfferedDestinations: [DESTINATIONS.NORMAL_COMBAT], roundsSinceOffered: {} };
+    const result = sampleDestinationChoices(
+      [
+        DESTINATIONS.MYSTERY,
+        DESTINATIONS.MYSTERY,
+        DESTINATIONS.CAMPFIRE,
+        DESTINATIONS.CARD_SHOP,
+        DESTINATIONS.ALCHEMIST_SHOP,
+      ],
+      history,
+      () => 0,
     );
-    expect(next.roundsSinceOffered[DESTINATIONS.CAMPFIRE]).toBe(2);
-  });
-});
-
-describe("restoreOrCreateDestinationRewardState", () => {
-  it("keeps existing destinations on resume", () => {
-    const prev = createEmptyRewardState([DESTINATIONS.CAMPFIRE, DESTINATIONS.MYSTERY]);
-    const rollBossEnemyId = vi.fn(() => "frostwarden");
-    const result = restoreOrCreateDestinationRewardState(prev, {
-      availableDestinations: [DESTINATIONS.NORMAL_COMBAT],
-      offerState: createEmptyDestinationOfferState(),
-      rollBossEnemyId,
-      rng: () => 0.5,
+    expect(result.choices).toEqual([DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE, DESTINATIONS.CARD_SHOP]);
+    expect(result.offerState.roundsSinceOffered).toEqual({
+      Mystery: 0,
+      Campfire: 0,
+      "Card Shop": 0,
+      "Alchemist's Shop": 1,
     });
-    expect(result.destinations).toEqual([DESTINATIONS.CAMPFIRE, DESTINATIONS.MYSTERY]);
-    expect(result.selectedBossId).toBeNull();
-    expect(rollBossEnemyId).not.toHaveBeenCalled();
   });
 
-  it("samples destinations when none are stored", () => {
+  it("keeps forced Boss offers and empty pools from consuming world randomness", () => {
+    const rng = vi.fn(() => 0.5);
+    expect(
+      sampleDestinationChoices([DESTINATIONS.BOSS_COMBAT], createEmptyDestinationOfferState(), rng).choices,
+    ).toEqual([DESTINATIONS.BOSS_COMBAT]);
+    expect(sampleDestinationChoices([], createEmptyDestinationOfferState(), rng).choices).toEqual([]);
+    expect(rng).not.toHaveBeenCalled();
+  });
+
+  it("preserves a stored offer and its reward payload without resampling", () => {
+    const prev = {
+      ...createEmptyRewardState([DESTINATIONS.CAMPFIRE, DESTINATIONS.MYSTERY]),
+      gold: 17,
+      selectedBossId: "stale-boss",
+    };
+    const rng = vi.fn(() => 0.5);
+    const rollBossEnemyId = vi.fn(() => "frostwarden");
     const onSampled = vi.fn();
-    const prev = createEmptyRewardState();
-    const result = restoreOrCreateDestinationRewardState(prev, {
-      availableDestinations: [DESTINATIONS.CARD_SHOP, DESTINATIONS.CAMPFIRE, DESTINATIONS.MYSTERY],
+    expect(
+      restoreOrCreateDestinationRewardState(prev, {
+        availableDestinations: FULL_POOL,
+        offerState: createEmptyDestinationOfferState(),
+        rollBossEnemyId,
+        rng,
+        onSampled,
+      }),
+    ).toEqual({ ...prev, selectedBossId: null });
+    expect(rng).not.toHaveBeenCalled();
+    expect(rollBossEnemyId).not.toHaveBeenCalled();
+    expect(onSampled).not.toHaveBeenCalled();
+    expect(prev.selectedBossId).toBe("stale-boss");
+  });
+
+  it("samples a missing offer once and reports the same choices and updated history to its owner", () => {
+    const onSampled = vi.fn();
+    const rng = vi.fn(() => 0);
+    const result = restoreOrCreateDestinationRewardState(createEmptyRewardState(), {
+      availableDestinations: [DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE],
       offerState: createEmptyDestinationOfferState(),
-      rollBossEnemyId: () => "skeleton",
-      rng: () => 0.5,
+      rollBossEnemyId: () => "frostwarden",
+      rng,
       onSampled,
     });
-    expect(result.destinations.length).toBeGreaterThan(0);
-    expect(onSampled).toHaveBeenCalledOnce();
+    expect(result.destinations).toEqual([DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE]);
+    expect(onSampled).toHaveBeenCalledExactlyOnceWith({
+      choices: result.destinations,
+      offerState: { lastOfferedDestinations: result.destinations, roundsSinceOffered: { Mystery: 0, Campfire: 0 } },
+    });
+    expect(rng).toHaveBeenCalledTimes(2);
   });
 
-  it("repairs a missing boss preview with one world draw and preserves a saved preview", () => {
+  it.each([
+    { offer: DESTINATIONS.NORMAL_COMBAT, worldDraws: 0 },
+    { offer: DESTINATIONS.BOSS_COMBAT, worldDraws: 1 },
+  ])("draws and preserves a boss preview only for a forced $offer offer", ({ offer, worldDraws }) => {
     const rngState = createRunRngState(42);
     const rollBossEnemyId = () => rollFreshBossId(createRunStateRng(rngState, "world"));
     const options = {
-      availableDestinations: [DESTINATIONS.BOSS_COMBAT],
+      availableDestinations: [offer],
       offerState: createEmptyDestinationOfferState(),
       rollBossEnemyId,
       rng: () => 0.5,
     };
-    const repaired = restoreOrCreateDestinationRewardState(createEmptyRewardState([DESTINATIONS.BOSS_COMBAT]), options);
-    expect(repaired.selectedBossId).toBeTruthy();
-    expect(rngState.counters.world).toBe(1);
-
-    const saved = restoreOrCreateDestinationRewardState(repaired, options);
-    expect(saved.selectedBossId).toBe(repaired.selectedBossId);
-    expect(rngState.counters.world).toBe(1);
-  });
-});
-
-describe("createInitialDestinationResult", () => {
-  it.each([
-    { offer: DESTINATIONS.NORMAL_COMBAT, worldDraws: 0 },
-    { offer: DESTINATIONS.BOSS_COMBAT, worldDraws: 1 },
-  ])("draws a boss only for a boss-only $offer offer", ({ offer, worldDraws }) => {
-    const rngState = createRunRngState(42);
-    const result = createInitialDestinationResult({
-      availableDestinations: [offer],
-      offerState: createEmptyDestinationOfferState(),
-      rollBossEnemyId: () => rollFreshBossId(createRunStateRng(rngState, "world")),
-      rng: () => 0.5,
-    });
-    expect(result.rewardState.destinations).toEqual([offer]);
+    const initial = createInitialDestinationResult(options);
+    expect(initial.rewardState.destinations).toEqual([offer]);
     expect(rngState.counters.world).toBe(worldDraws);
-    expect(Boolean(result.rewardState.selectedBossId)).toBe(worldDraws === 1);
-  });
-});
-
-describe("sampleDestinationChoices", () => {
-  it("returns boss-only choices unchanged", () => {
-    const result = sampleDestinationChoices([DESTINATIONS.BOSS_COMBAT], createEmptyDestinationOfferState(), () => 0.5);
-    expect(result.choices).toEqual([DESTINATIONS.BOSS_COMBAT]);
-  });
-
-  it("guarantees exactly one combat when the previous screen offered none", () => {
-    const result = sampleDestinationChoices([...FULL_POOL], createEmptyDestinationOfferState(), () => 0.99);
-    const combatCount = result.choices.filter(
-      (destination) => destination === DESTINATIONS.NORMAL_COMBAT || destination === DESTINATIONS.ELITE_COMBAT,
-    ).length;
-    expect(combatCount).toBe(1);
-    expect(result.choices).toHaveLength(3);
-  });
-
-  it("allows zero combats when the previous screen offered combat", () => {
-    const result = sampleDestinationChoices(
-      [DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE, DESTINATIONS.CARD_SHOP, DESTINATIONS.ALCHEMIST_SHOP],
-      {
-        lastOfferedDestinations: [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE],
-        roundsSinceOffered: {},
-      },
-      () => 0,
-    );
-
-    expect(result.choices).toEqual([DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE, DESTINATIONS.CARD_SHOP]);
-  });
-
-  it("never offers more than one shop when the remaining pool is all shops", () => {
-    const result = sampleDestinationChoices(
-      [
-        DESTINATIONS.NORMAL_COMBAT,
-        DESTINATIONS.CARD_SHOP,
-        DESTINATIONS.ALCHEMIST_SHOP,
-        DESTINATIONS.TRINKET_SHOP,
-        DESTINATIONS.GEAR_SHOP,
-      ],
-      createEmptyDestinationOfferState(),
-      () => 0.5,
-    );
-
-    expect(result.choices).toHaveLength(2);
-    expect(result.choices.filter((destination) => destination.includes("Shop"))).toHaveLength(1);
-  });
-
-  it("returns all destinations when fewer than requested count", () => {
-    const result = sampleDestinationChoices(
-      [DESTINATIONS.NORMAL_COMBAT],
-      createEmptyDestinationOfferState(),
-      () => 0.5,
-    );
-    expect(result.choices).toEqual([DESTINATIONS.NORMAL_COMBAT]);
-  });
-
-  it("handles empty array", () => {
-    const result = sampleDestinationChoices([], createEmptyDestinationOfferState(), () => 0.5);
-    expect(result.choices).toEqual([]);
-  });
-
-  it("applies the shop cap even when the input has fewer than three unique destinations", () => {
-    const result = sampleDestinationChoices(
-      [DESTINATIONS.CARD_SHOP, DESTINATIONS.ALCHEMIST_SHOP, DESTINATIONS.TRINKET_SHOP],
-      { lastOfferedDestinations: [DESTINATIONS.NORMAL_COMBAT], roundsSinceOffered: {} },
-      () => 0,
-    );
-
-    expect(result.choices).toEqual([DESTINATIONS.CARD_SHOP]);
-  });
-
-  it("deduplicates malformed input before sampling", () => {
-    const result = sampleDestinationChoices(
-      [DESTINATIONS.MYSTERY, DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE],
-      { lastOfferedDestinations: [DESTINATIONS.NORMAL_COMBAT], roundsSinceOffered: {} },
-      () => 0,
-    );
-
-    expect(result.choices).toEqual([DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE]);
-    expect(result.offerState.roundsSinceOffered).toEqual({
-      [DESTINATIONS.MYSTERY]: 0,
-      [DESTINATIONS.CAMPFIRE]: 0,
-    });
-  });
-
-  it("favors high-pity destinations over freshly offered repeats", () => {
-    const pityWeight = computeDestinationWeight(DESTINATIONS.MYSTERY, {
-      lastOfferedDestinations: [],
-      roundsSinceOffered: { [DESTINATIONS.MYSTERY]: 10 },
-    });
-    const repeatWeight = computeDestinationWeight(DESTINATIONS.CAMPFIRE, {
-      lastOfferedDestinations: [DESTINATIONS.CAMPFIRE],
-      roundsSinceOffered: {},
-    });
-    expect(pityWeight).toBeGreaterThan(repeatWeight);
-    expect(pityWeight).toBeGreaterThan(DEFAULT_DESTINATION_WEIGHT);
-  });
-
-  it("returns DESTINATION_CHOICES entries when the valid pool has enough destinations", () => {
-    const result = sampleDestinationChoices([...FULL_POOL], createEmptyDestinationOfferState(), () => 0.5);
-
-    expect(result.choices).toHaveLength(3);
-    expect(new Set(result.choices).size).toBe(3);
-  });
-
-  it("includes exactly the picked combat when the previous screen had none", () => {
-    const result = sampleDestinationChoices([...FULL_POOL], createEmptyDestinationOfferState(), () => 0.99);
-    const combats = result.choices.filter(
-      (destination) => destination === DESTINATIONS.NORMAL_COMBAT || destination === DESTINATIONS.ELITE_COMBAT,
-    );
-
-    expect(combats).toEqual([DESTINATIONS.ELITE_COMBAT]);
-    expect(result.choices).toHaveLength(3);
-  });
-});
-
-describe("lastOfferedIncludesCombat", () => {
-  it("detects combat on the previous offer screen", () => {
-    expect(lastOfferedIncludesCombat([DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.MYSTERY])).toBe(true);
-    expect(lastOfferedIncludesCombat([DESTINATIONS.CAMPFIRE, DESTINATIONS.MYSTERY])).toBe(false);
-    expect(lastOfferedIncludesCombat([])).toBe(false);
-  });
-});
-
-describe("withSelectedBossForDestinations", () => {
-  it("sets selectedBossId when only Boss Combat is available", () => {
-    const reward = createEmptyRewardState(["Boss Combat"]);
-    const result = withSelectedBossForDestinations(["Boss Combat"], reward, () => "mimic");
-    expect(result.selectedBossId).toBe("mimic");
-  });
-
-  it("clears selectedBossId when multiple destinations are available", () => {
-    const reward = { ...createEmptyRewardState(["Normal Combat", "Campfire"]), selectedBossId: "dragon" };
-    const result = withSelectedBossForDestinations(["Normal Combat", "Campfire"], reward);
-    expect(result.selectedBossId).toBeNull();
-  });
-
-  it("preserves existing selectedBossId for single boss destination", () => {
-    const reward = { ...createEmptyRewardState(["Boss Combat"]), selectedBossId: "dragon" };
-    const rollBossEnemyId = vi.fn(() => "mimic");
-    const result = withSelectedBossForDestinations(["Boss Combat"], reward, rollBossEnemyId);
-    expect(result.selectedBossId).toBe("dragon");
-    expect(rollBossEnemyId).not.toHaveBeenCalled();
-  });
-});
-
-describe("createDestinationRewardState", () => {
-  it("returns empty reward state with destinations", () => {
-    const result = createDestinationRewardState(["Normal Combat", "Campfire"]);
-    expect(result.destinations).toEqual(["Normal Combat", "Campfire"]);
-    expect(result.gold).toBe(0);
-    expect(result.choices).toEqual([]);
-  });
-
-  it("sets selectedBossId for single boss destination", () => {
-    const result = createDestinationRewardState(["Boss Combat"], () => "mimic");
-    expect(result.selectedBossId).toBe("mimic");
-    expect(result.destinations).toEqual(["Boss Combat"]);
+    expect(Boolean(initial.rewardState.selectedBossId)).toBe(worldDraws === 1);
+    expect(restoreOrCreateDestinationRewardState(initial.rewardState, options)).toEqual(initial.rewardState);
+    expect(rngState.counters.world).toBe(worldDraws);
+    if (offer === DESTINATIONS.BOSS_COMBAT) {
+      const repaired = restoreOrCreateDestinationRewardState({ ...initial.rewardState, selectedBossId: null }, options);
+      expect(repaired.selectedBossId).toBeTruthy();
+      expect(rngState.counters.world).toBe(2);
+      expect(restoreOrCreateDestinationRewardState(repaired, options)).toEqual(repaired);
+      expect(rngState.counters.world).toBe(2);
+    }
   });
 });

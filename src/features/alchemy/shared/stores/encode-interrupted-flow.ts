@@ -46,11 +46,6 @@ export function encodeInterruptedFlow(
   session: RunSession["session"],
   currentScreen: Screen | null | undefined,
 ): InterruptedFlow {
-  if (currentScreen === "rewards") {
-    const pending = serializePendingReward(session.rewardFlow.state, session.rewardFlow.companionCards);
-    return pending ? { kind: "primary-reward", pending } : { kind: "none" };
-  }
-
   if (currentScreen === "destination") {
     return encodeDestinationFlow(session);
   }
@@ -65,10 +60,6 @@ export function encodeInterruptedFlow(
   }
 
   return { kind: "none" };
-}
-
-function resolveDestinationExitScreen(activeRun: ActiveRunData): Screen {
-  return resolveExplorationScreen(activeRun.labyrinthMap, activeRun.wildwoodDraft);
 }
 
 export function inferActiveRunScreen(activeRun: ActiveRunData): Screen {
@@ -157,7 +148,7 @@ function restoreDestinationFlow(
 ): DecodedClaimSurface {
   const destinations = filterValidDestinations(flow.destinations);
   if (destinations.length === 0) {
-    const screen = resolveDestinationExitScreen(activeRun);
+    const screen = resolveExplorationScreen(activeRun.labyrinthMap, activeRun.wildwoodDraft);
     if (screen !== "destination") {
       return { rewardState: null, companionRewardCards: null, screen };
     }

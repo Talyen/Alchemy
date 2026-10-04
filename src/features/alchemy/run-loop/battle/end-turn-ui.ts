@@ -43,22 +43,23 @@ export async function playTurnFrames(
       presentCombatTexts(presentation, turn.enemyTurnStartCombatTexts);
       await delay(ENEMY_PHASE_DELAY_MS);
       if (!deps.isSessionActive(sessionNum)) return;
+      let focalSound: string | undefined;
       if (turn.enemyPerformedAbility) {
         const ability = turn.state.lastEnemyAbilityId ? getEnemyAbilityCard(turn.state.lastEnemyAbilityId) : null;
-        if (ability) playCardSound(ability.id);
-        else playEnemyAttack(before.currentEnemy.id);
+        focalSound = ability ? playCardSound(ability.id) : playEnemyAttack(before.currentEnemy.id);
         if (!ability || enemyAbilityDealsDamage(ability)) presentation.telegraphAttack("enemy");
         else presentation.telegraphCast("enemy");
       }
       presentation.setDisplayedBattle({ ...(turn.afterAbilityState ?? turn.state), hand: [], turnPhase: "enemy" });
       if (!before.deathsDoorActive && turn.state.deathsDoorActive) playBattleEvent("deathsDoor");
-      presentCombatTexts(presentation, turn.enemyResolutionCombatTexts);
+      presentCombatTexts(presentation, turn.enemyResolutionCombatTexts, focalSound);
       await delay(ENEMY_ATTACK_RECOVERY_DELAY_MS);
       if (!deps.isSessionActive(sessionNum)) return;
       markBattleStage("enemy-end");
     } else {
-      playBattleEvent("haste");
-      presentCombatTexts(presentation, turn.combatTexts);
+      const focalSound = playBattleEvent("haste");
+      if (!before.deathsDoorActive && turn.state.deathsDoorActive) playBattleEvent("deathsDoor");
+      presentCombatTexts(presentation, turn.combatTexts, focalSound);
     }
     await runHandDrawSequence(
       before.hand,
@@ -75,10 +76,11 @@ export async function playTurnFrames(
       if (!options?.isCardPlayInProgress?.()) {
         presentation.setDisplayedBattle(companion.state);
       }
-      playCompanionSound(companion.id);
+      const focalSound = playCompanionSound(companion.id);
+      if (!turn.state.deathsDoorActive && companion.state.deathsDoorActive) playBattleEvent("deathsDoor");
       presentation.shakeCompanion();
       presentation.telegraphAttack("companion");
-      presentCombatTexts(presentation, companion.texts);
+      presentCombatTexts(presentation, companion.texts, focalSound);
     }
   }
 }
@@ -109,17 +111,31 @@ export function createBattleEndTurnUi(
     // Commit before starting any animation. Failed resolution leaves both gameplay and presentation untouched.
     const sessionNum = ctx.playback.id;
     const result = commitEndTurn();
+    playBattleEvent("endTurn");
     ctx.playback.clearAutoEndTurn();
     ctx.playback.beginAction();
     session.clearAllBattleTimeouts();
     if (result.state.enemyHealth <= 0 || isPlayerDefeated(result.state)) {
-      for (const { turn, companion } of result.frames) {
-        if (turn.kind === "haste") presentCombatTexts(presentation, turn.combatTexts);
-        else {
+      for (const { before, turn, companion } of result.frames) {
+        if (turn.kind === "haste") {
+          const focalSound = playBattleEvent("haste");
+          if (!before.deathsDoorActive && turn.state.deathsDoorActive) playBattleEvent("deathsDoor");
+          presentCombatTexts(presentation, turn.combatTexts, focalSound);
+        } else {
           presentCombatTexts(presentation, turn.enemyTurnStartCombatTexts);
-          presentCombatTexts(presentation, turn.enemyResolutionCombatTexts);
+          const focalSound = turn.enemyPerformedAbility
+            ? turn.state.lastEnemyAbilityId
+              ? playCardSound(turn.state.lastEnemyAbilityId)
+              : playEnemyAttack(before.currentEnemy.id)
+            : undefined;
+          if (!before.deathsDoorActive && turn.state.deathsDoorActive) playBattleEvent("deathsDoor");
+          presentCombatTexts(presentation, turn.enemyResolutionCombatTexts, focalSound);
         }
-        if (companion) presentCombatTexts(presentation, companion.texts);
+        if (companion) {
+          const focalSound = playCompanionSound(companion.id);
+          if (!turn.state.deathsDoorActive && companion.state.deathsDoorActive) playBattleEvent("deathsDoor");
+          presentCombatTexts(presentation, companion.texts, focalSound);
+        }
       }
       presentation.setDisplayedBattle(null);
       presentation.resetHandTransferUi();

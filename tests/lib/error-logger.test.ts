@@ -33,3 +33,17 @@ it("drops recursive sink failures without suppressing the next independent error
   logError("Second", "battle");
   expect(healthy.mock.calls.map(([entry]) => entry.message)).toEqual(["First", "Second"]);
 });
+
+it("unsubscribes only its own registration when consumers share a sink", () => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  const shared = vi.fn();
+  const first = registerErrorSink(shared);
+  const second = registerErrorSink(shared);
+  first();
+  first();
+  logError("Still subscribed", "storage");
+  expect(shared).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ message: "Still subscribed" }));
+  second();
+  logError("Unsubscribed", "storage");
+  expect(shared).toHaveBeenCalledOnce();
+});

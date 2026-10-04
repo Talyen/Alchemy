@@ -83,42 +83,6 @@ describe("useArmoryOrdering", () => {
     expect(result.current.orderedTrinkets.map((t) => t.id)).toEqual(["trinket-a", "trinket-b"]);
   });
 
-  it("preserves working order and page when switching heroes or categories", () => {
-    // 8 items = 2 pages
-    const manyItems = Array.from({ length: 8 }, (_, i) => ({
-      instanceId: `sword-${i}`,
-      definitionId: "longsword-basic",
-      affixes: [],
-    }));
-
-    const { result, rerender } = renderHook(
-      ({ charId, slot }: { charId: "knight" | "rogue"; slot: "main-hand" | "body" }) =>
-        useArmoryOrdering({
-          characterId: charId,
-          selectedSlot: slot,
-          pickerItems: manyItems,
-          ownedTrinkets: [],
-        }),
-      {
-        initialProps: { charId: "knight", slot: "main-hand" },
-      },
-    );
-
-    // Change to page 1 on knight:main-hand
-    act(() => {
-      result.current.setPage(1);
-    });
-    expect(result.current.safePage).toBe(1);
-
-    // Switch to rogue:main-hand
-    rerender({ charId: "rogue", slot: "main-hand" });
-    expect(result.current.safePage).toBe(0); // rogue starts on page 0
-
-    // Switch back to knight:main-hand
-    rerender({ charId: "knight", slot: "main-hand" });
-    expect(result.current.safePage).toBe(1); // knight remembered page 1
-  });
-
   it("filters without losing hidden order and sorts the full category", () => {
     const { result } = renderHook(() =>
       useArmoryOrdering({
