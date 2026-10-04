@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 
 import { type BattleCard, type CardDescriptionContext } from "@/lib/game-data";
 
@@ -13,7 +13,8 @@ import {
 } from "@/features/alchemy/shared/config";
 import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
 import { cn } from "@/lib/utils";
-import { WISH_OVERLAY_Z_INDEX } from "@/lib/game-constants";
+import { MAX_HAND_SIZE, WISH_OVERLAY_Z_INDEX } from "@/lib/game-constants";
+import { useDialogFocus } from "../../../shared/ui/use-dialog-focus";
 import type { BattleActionsProps, BattleScreenState } from "./types";
 import { useBattleDescriptionContext } from "./use-battle-description-context";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
@@ -84,9 +85,13 @@ function WishOverlayPanel({
       zIndex={WISH_OVERLAY_Z_INDEX}
       className="wish-overlay-backdrop flex items-center justify-center p-6"
     >
-      <div className="wish-overlay-panel alchemy-shell flex max-h-full w-fit max-w-5xl flex-col rounded-shell-screen border border-border/80 px-6 py-6">
+      <WishPanel>
         <ScreenHeader title="Wish" />
-        <p className={cn("mt-2 text-center", bodyTextClass)}>Choose one card to add to your hand.</p>
+        <p className={cn("mt-2 text-center", bodyTextClass)}>
+          {displayState.hand.length >= MAX_HAND_SIZE
+            ? "Your hand is full. Choose one card to wait until space opens."
+            : "Choose one card to add to your hand."}
+        </p>
 
         <div className="mt-6 flex min-h-0 items-start justify-center gap-5 overflow-y-auto p-3">
           {displayState.wishOptions?.map((card) => (
@@ -99,8 +104,26 @@ function WishOverlayPanel({
             />
           ))}
         </div>
-      </div>
+      </WishPanel>
     </ModalOverlayShell>
+  );
+}
+
+function WishPanel({ children }: { children: ReactNode }) {
+  const { panelRef, handleKeyDown } = useDialogFocus();
+  return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Mandatory choice modal contains keyboard focus
+    <div
+      ref={panelRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Wish"
+      tabIndex={-1}
+      onKeyDown={handleKeyDown}
+      className="wish-overlay-panel alchemy-shell flex max-h-full w-fit max-w-5xl flex-col rounded-shell-screen border border-border/80 px-6 py-6"
+    >
+      {children}
+    </div>
   );
 }
 

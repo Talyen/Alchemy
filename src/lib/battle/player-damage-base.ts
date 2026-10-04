@@ -96,97 +96,52 @@ function computeBaseRawAmount(
   return amount;
 }
 
-function applyPhysicalScaling(state: BattleState, rawAmount: number): number {
-  let nextAmount = rawAmount + flatDamageBonus(state, "physical");
-  nextAmount += scalePercent(state.playerStatuses.armor, state.talentEffects.armorPhysicalDamagePercent);
-
-  if (state.talentEffects.blockToPhysicalDamageMultiplier > 0) {
-    nextAmount += Math.round(state.playerStatuses.block * state.talentEffects.blockToPhysicalDamageMultiplier);
+function applyDamageTypeModifiers(state: BattleState, damageType: DamageType, rawAmount: number): number {
+  let amount = rawAmount + flatDamageBonus(state, damageType);
+  switch (damageType) {
+    case "physical":
+      amount += scalePercent(state.playerStatuses.armor, state.talentEffects.armorPhysicalDamagePercent);
+      if (state.talentEffects.blockToPhysicalDamageMultiplier > 0)
+        amount += Math.round(state.playerStatuses.block * state.talentEffects.blockToPhysicalDamageMultiplier);
+      if (state.enemyStatuses.poison > 0) amount += state.talentEffects.poisonPhysicalBonus;
+      if (state.enemyStatuses.bleed > 0) amount += state.talentEffects.bleedPhysicalBonus;
+      return amount;
+    case "holy":
+      amount += scalePercent(state.gold, state.talentEffects.holyGoldPercent, PERCENT_DENOMINATOR);
+      amount += scalePercent(
+        state.playerStatuses.block,
+        state.gearEffects.holyDamageFromBlockPercent,
+        PERCENT_DENOMINATOR,
+      );
+      amount += scalePercent(state.gold, state.gearEffects.holyDamageFromGoldPercent, PERCENT_DENOMINATOR);
+      return amount + blockScaledDamage(state, state.talentEffects.blockHolyDamagePercent);
+    case "bleed":
+      return amount;
+    case "stun":
+      return amount + blockScaledDamage(state, state.talentEffects.blockStunDamagePercent);
+    case "burn":
+      if (state.talentEffects.burnDamagePerMana > 0)
+        amount += scalePerMana(state.mana, state.talentEffects.burnDamagePerMana, "percent");
+      else if (state.talentEffects.burnDamagePerManaCrystal > 0)
+        amount += scalePerMana(state.maxMana, state.talentEffects.burnDamagePerManaCrystal, "percent");
+      return state.talentEffects.blockToBurnDamage
+        ? amount + blockScaledDamage(state, BURN_BLOCK_SCALED_DAMAGE_PERCENT)
+        : amount;
+    case "freeze":
+      if (state.talentEffects.freezeDamagePerMana > 0)
+        amount += scalePerMana(state.mana, state.talentEffects.freezeDamagePerMana, "percent");
+      else if (state.talentEffects.freezeDamagePerManaCrystal > 0)
+        amount += scalePerMana(state.maxMana, state.talentEffects.freezeDamagePerManaCrystal, "half");
+      return amount;
+    case "nature":
+      amount += scalePercent(state.playerStatuses.armor, state.talentEffects.armorNatureDamagePercent);
+      return amount + (state.enemyStatuses.poison > 0 ? state.talentEffects.natureBonusVsPoisoned : 0);
+    case "poison":
+      return Math.round(
+        (amount + getPoisonBonusAgainstBleeding(state)) * getPoisonDamageMultiplierAgainstBleeding(state),
+      );
   }
-  return nextAmount;
 }
-
-function applyPhysicalDamageModifiers(state: BattleState, rawAmount: number): number {
-  let nextAmount = applyPhysicalScaling(state, rawAmount);
-  if (state.enemyStatuses.poison > 0) nextAmount += state.talentEffects.poisonPhysicalBonus;
-  if (state.enemyStatuses.bleed > 0) nextAmount += state.talentEffects.bleedPhysicalBonus;
-  return nextAmount;
-}
-
-function applyHolyDamageModifiers(state: BattleState, rawAmount: number): number {
-  let nextAmount = rawAmount + flatDamageBonus(state, "holy");
-  nextAmount += scalePercent(state.gold, state.talentEffects.holyGoldPercent, PERCENT_DENOMINATOR);
-  nextAmount += scalePercent(
-    state.playerStatuses.block,
-    state.gearEffects.holyDamageFromBlockPercent,
-    PERCENT_DENOMINATOR,
-  );
-  nextAmount += scalePercent(state.gold, state.gearEffects.holyDamageFromGoldPercent, PERCENT_DENOMINATOR);
-  nextAmount += blockScaledDamage(state, state.talentEffects.blockHolyDamagePercent);
-  return nextAmount;
-}
-
-function applyBleedDamageModifiers(state: BattleState, rawAmount: number): number {
-  return rawAmount + flatDamageBonus(state, "bleed");
-}
-
-function applyStunDamageModifiers(state: BattleState, rawAmount: number): number {
-  let nextAmount = rawAmount + flatDamageBonus(state, "stun");
-  nextAmount += blockScaledDamage(state, state.talentEffects.blockStunDamagePercent);
-  return nextAmount;
-}
-
-function applyBurnDamageModifiers(state: BattleState, rawAmount: number): number {
-  let nextAmount = rawAmount + flatDamageBonus(state, "burn");
-  if (state.talentEffects.burnDamagePerMana > 0) {
-    nextAmount += scalePerMana(state.mana, state.talentEffects.burnDamagePerMana, "percent");
-  } else if (state.talentEffects.burnDamagePerManaCrystal > 0) {
-    nextAmount += scalePerMana(state.maxMana, state.talentEffects.burnDamagePerManaCrystal, "percent");
-  }
-  if (state.talentEffects.blockToBurnDamage) {
-    nextAmount += blockScaledDamage(state, BURN_BLOCK_SCALED_DAMAGE_PERCENT);
-  }
-  return nextAmount;
-}
-
-function applyFreezeDamageModifiers(state: BattleState, rawAmount: number): number {
-  let nextAmount = rawAmount + flatDamageBonus(state, "freeze");
-  if (state.talentEffects.freezeDamagePerMana > 0) {
-    nextAmount += scalePerMana(state.mana, state.talentEffects.freezeDamagePerMana, "percent");
-  } else if (state.talentEffects.freezeDamagePerManaCrystal > 0) {
-    nextAmount += scalePerMana(state.maxMana, state.talentEffects.freezeDamagePerManaCrystal, "half");
-  }
-  return nextAmount;
-}
-
-function applyNatureDamageModifiers(state: BattleState, rawAmount: number): number {
-  let nextAmount = rawAmount + flatDamageBonus(state, "nature");
-  nextAmount += scalePercent(state.playerStatuses.armor, state.talentEffects.armorNatureDamagePercent);
-  if (state.enemyStatuses.poison > 0) {
-    nextAmount += state.talentEffects.natureBonusVsPoisoned;
-  }
-  return nextAmount;
-}
-
-function applyPoisonDamageModifiers(state: BattleState, rawAmount: number): number {
-  return Math.round(
-    (rawAmount + flatDamageBonus(state, "poison") + getPoisonBonusAgainstBleeding(state)) *
-      getPoisonDamageMultiplierAgainstBleeding(state),
-  );
-}
-
-type DamageTypeHandler = (state: BattleState, rawAmount: number, card?: BattleCard) => number;
-
-const DAMAGE_TYPE_HANDLERS: Record<DamageType, DamageTypeHandler> = {
-  physical: applyPhysicalDamageModifiers,
-  holy: applyHolyDamageModifiers,
-  bleed: applyBleedDamageModifiers,
-  stun: applyStunDamageModifiers,
-  burn: applyBurnDamageModifiers,
-  freeze: applyFreezeDamageModifiers,
-  nature: applyNatureDamageModifiers,
-  poison: applyPoisonDamageModifiers,
-} satisfies Record<DamageType, DamageTypeHandler>;
 
 export function computeBaseDamage(
   state: BattleState,
@@ -224,21 +179,21 @@ export function computeBaseDamage(
     (state.enemyCC.freezeSkipTurns > 0 ? state.talentEffects.freezeDamageBonusVsFrozen : 0) +
     (state.enemyStatuses.poison > 0 ? state.talentEffects.poisonDamageBonusVsPoisoned : 0);
   if (isEqualTo) return Math.max(0, rawAmount + (rawAmount > 0 ? vulnerabilityBonus : 0));
-  const modifier = DAMAGE_TYPE_HANDLERS[effect.damageType];
-  if (!modifier) throw new Error(`Missing DamageType handler: ${effect.damageType}`);
   const sharedBonus =
     state.gearEffects.sharedBurnBleedBonuses <= 0
       ? 0
       : effect.damageType === "burn"
-        ? applyBleedDamageModifiers(state, 0)
+        ? applyDamageTypeModifiers(state, "bleed", 0)
         : effect.damageType === "bleed"
-          ? applyBurnDamageModifiers(state, 0)
+          ? applyDamageTypeModifiers(state, "burn", 0)
           : 0;
-  const amount = modifier(state, rawAmount) + sharedBonus;
+  const amount = applyDamageTypeModifiers(state, effect.damageType, rawAmount) + sharedBonus;
   // Keep vulnerability bonuses inside the existing type-scaling stage, but
   // require a positive packet before they can enlarge it.
   return Math.max(
     0,
-    amount > 0 && vulnerabilityBonus > 0 ? modifier(state, rawAmount + vulnerabilityBonus) + sharedBonus : amount,
+    amount > 0 && vulnerabilityBonus > 0
+      ? applyDamageTypeModifiers(state, effect.damageType, rawAmount + vulnerabilityBonus) + sharedBonus
+      : amount,
   );
 }

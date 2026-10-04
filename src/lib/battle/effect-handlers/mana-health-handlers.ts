@@ -1,5 +1,4 @@
-import { hasCardHealing } from "./handler-types";
-import type { EffectHandlers } from "./handler-types";
+import { ccDeepenedSinceStart, hasCardHealing, type EffectHandlers } from "./handler-types";
 import { isPotionCard } from "@/lib/game-data";
 import { applyCardHealing, applyHealthLossTalentRewards, checkHealthThresholds } from "../status-player";
 import { applyPotionMultiplier } from "../amount-helpers";
@@ -8,40 +7,7 @@ import { applyHealOnManaGain, gainManaWithCombatText, applyHealingWithCombatText
 import { mergeCombatText } from "../combat-text-events";
 import { dealSelfDamage } from "../status-helpers";
 import type { BattleState, CombatTextEvent } from "../types";
-import { ccDeepenedSinceStart } from "./handler-types";
 import { resolveFollowUpHit } from "../follow-up-hit-resolution";
-
-function restoreMana(
-  state: BattleState,
-  amount: number,
-  potionMult: number,
-  combatTexts: CombatTextEvent[],
-  allowOverflow = false,
-): BattleState {
-  return gainManaWithCombatText(state, applyPotionMultiplier(amount, potionMult), combatTexts, {
-    allowOverflow,
-  });
-}
-
-function loseMana(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
-  const mana = Math.max(0, state.mana - amount);
-  const manaLost = state.mana - mana;
-  if (manaLost > 0) {
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "mana", amount: manaLost });
-  }
-  return { ...state, mana };
-}
-
-function gainMaxMana(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
-  mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount });
-  let nextState: BattleState = {
-    ...state,
-    maxMana: state.maxMana + amount,
-    mana: state.mana + amount,
-  };
-  nextState = applyHealOnManaGain(nextState, amount, combatTexts, state.mana);
-  return nextState;
-}
 
 function burnEnemyOnManaCrystalLoss(
   state: BattleState,
@@ -61,14 +27,6 @@ function burnEnemyOnManaCrystalLoss(
     combatTexts,
   );
 }
-function loseMaxMana(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
-  const newMaxMana = Math.max(MIN_MAX_MANA_FLOOR, state.maxMana - amount);
-  const crystalsLost = state.maxMana - newMaxMana;
-  if (crystalsLost <= 0) return state;
-  mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "mana", amount: crystalsLost });
-  const nextState: BattleState = { ...state, maxMana: newMaxMana, mana: Math.min(newMaxMana, state.mana) };
-  return burnEnemyOnManaCrystalLoss(nextState, crystalsLost, combatTexts);
-}
 
 export const MANA_HEALTH_HANDLERS = {
   "restore-mana": (state, _card, effect, potionMult, combatTexts, context) => {
@@ -78,16 +36,37 @@ export const MANA_HEALTH_HANDLERS = {
     ) {
       return state;
     }
-    return restoreMana(state, effect.amount, potionMult, combatTexts, effect.allowOverflow);
+    return gainManaWithCombatText(state, applyPotionMultiplier(effect.amount, potionMult), combatTexts, {
+      allowOverflow: effect.allowOverflow ?? false,
+    });
   },
   "lose-mana": (state, _card, effect, _potionMult, combatTexts) => {
-    return loseMana(state, effect.amount, combatTexts);
+    const mana = Math.max(0, state.mana - effect.amount);
+    const manaLost = state.mana - mana;
+    if (manaLost > 0)
+      mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "mana", amount: manaLost });
+    return { ...state, mana };
   },
   "gain-max-mana": (state, _card, effect, _potionMult, combatTexts) => {
-    return gainMaxMana(state, effect.amount, combatTexts);
+    const amount = effect.amount;
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount });
+    return applyHealOnManaGain(
+      { ...state, maxMana: state.maxMana + amount, mana: state.mana + amount },
+      amount,
+      combatTexts,
+      state.mana,
+    );
   },
   "lose-max-mana": (state, _card, effect, _potionMult, combatTexts) => {
-    return loseMaxMana(state, effect.amount, combatTexts);
+    const maxMana = Math.max(MIN_MAX_MANA_FLOOR, state.maxMana - effect.amount);
+    const crystalsLost = state.maxMana - maxMana;
+    if (crystalsLost <= 0) return state;
+    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "mana", amount: crystalsLost });
+    return burnEnemyOnManaCrystalLoss(
+      { ...state, maxMana, mana: Math.min(maxMana, state.mana) },
+      crystalsLost,
+      combatTexts,
+    );
   },
   heal: (state, card, effect, potionMult, combatTexts, context) => {
     const potionBonus = isPotionCard(card) && effect.amount > 0 ? (state.talentEffects.homesteadPotionBonus ?? 0) : 0;

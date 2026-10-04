@@ -23,6 +23,7 @@ import { getPlasmaColorPair, getPlasmaKeywordsForTalent } from "../../shared/con
 import { FadeSlot } from "../../shared/ui/use-fade";
 import { playUISound } from "@/lib/audio";
 import { TalentTree } from "../talents/talent-tree";
+import { useCaptureEscapeCancel } from "../../shared/ui/use-modal-escape-dismiss";
 
 const TALENT_PANE_CLASS = "flex w-full flex-col items-center";
 
@@ -106,6 +107,7 @@ export function TalentsScreen({
       onBack?.();
     }
   };
+  useCaptureEscapeCancel(selectedKeyword !== null ? handleBack : undefined);
 
   return (
     <TitledScreenShell

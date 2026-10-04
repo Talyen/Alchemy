@@ -4,8 +4,7 @@ import { harmfulPlayerStatusIds, type BattleCard, type BattleCardEffect } from "
 import { halveRounded, scalePercent } from "./amount-helpers";
 import { computeEffectiveCost } from "./card-cost-rules";
 
-const DOT_STATUSES = new Set(["burn", "poison", "bleed"]);
-const CONTROL_STATUSES = new Set(["stun", "freeze"]);
+const SCORED_ENEMY_STATUSES = new Set(["burn", "poison", "bleed", "stun", "freeze"]);
 // Live autoplay scoring. Game-design owned: changing these weights changes
 // autoplay and Wish picks in real runs. The balance simulator re-exports this
 // policy today so reports match the skill floor; if the simulator needs its own
@@ -63,8 +62,7 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, manaRoom: 
     case "random-damage":
       return (effect.minAmount + effect.maxAmount) / 2;
     case "enemy-status":
-      if (DOT_STATUSES.has(effect.status) || CONTROL_STATUSES.has(effect.status)) return effect.amount;
-      return 0;
+      return SCORED_ENEMY_STATUSES.has(effect.status) ? effect.amount : 0;
     case "player-status": {
       const amount = playerStatusAmount(effect, state);
       const defense = amount * AUTOPLAY_EFFECT_SCORE.defense;
@@ -139,6 +137,7 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, manaRoom: 
     case "cleanse-player-status-to-damage":
     case "next-hit-poison":
     case "next-archery-free":
+    case "dodge-next-attack":
       return 0;
   }
 }

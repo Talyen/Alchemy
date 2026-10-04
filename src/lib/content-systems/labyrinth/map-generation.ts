@@ -81,11 +81,8 @@ export function orderTypesForPositions(
     }
     return count;
   }
-  let best = 0;
-  for (let index = 0; index < seated.length; index += 1) best += conflictsAt(index);
-  best /= 2;
   let improved = true;
-  while (improved && best > 0) {
+  while (improved) {
     improved = false;
     for (let index = 0; index < slots.length; index += 1) {
       const first = slots[index]!;
@@ -100,9 +97,7 @@ export function orderTypesForPositions(
         seated[second] = firstType;
         // Only edges touching these rooms can change. Their shared edge is
         // counted twice in both sums, but swapping preserves its equality.
-        const score = best - before + conflictsAt(first) + conflictsAt(second);
-        if (score < best) {
-          best = score;
+        if (conflictsAt(first) + conflictsAt(second) < before) {
           improved = true;
         } else {
           seated[first] = firstType;

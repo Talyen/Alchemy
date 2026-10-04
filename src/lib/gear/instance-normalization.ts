@@ -2,7 +2,6 @@ import { normalizeAffixRolls } from "./affixes";
 import { gearAffixCatalog } from "./affix-catalog";
 import { GEAR_AFFIX_COUNT } from "@/lib/game-constants";
 import { gearDefinitions } from "./definitions";
-import { getUniqueAffixes } from "./unique-catalog";
 import type { GearInstance } from "./types";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -20,7 +19,7 @@ export function normalizeGearInstance(raw: unknown): GearInstance | null {
 
   // Unique affixes resolve canonically at read time; stored rolls are dropped
   // so older saves carrying them converge on the catalog without a migration.
-  if (getUniqueAffixes(definitionId)) {
+  if (definition.rarity === "unique") {
     return { instanceId, definitionId, affixes: [] };
   }
 

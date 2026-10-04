@@ -37,38 +37,38 @@ export function getEquipmentShopPrice(instance: GearInstance): number {
   return rarity === "astral" ? EQUIPMENT_SHOP_ASTRAL_PRICE : EQUIPMENT_SHOP_BASIC_PRICE;
 }
 
-const SHOP_BUY_BASE_PRICE = {
-  merchantCard: SHOP_CARD_PRICE,
-  alchemistPotion: ALCHEMIST_POTION_PRICE,
-  trinket: TRINKET_SHOP_TRINKET_PRICE,
+const SHOP_BUY_POLICY = {
+  merchantCard: { basePrice: SHOP_CARD_PRICE, trait: "bargain-bin", multiplier: LABYRINTH_MODIFIER_CONFIG.half },
+  alchemistPotion: {
+    basePrice: ALCHEMIST_POTION_PRICE,
+    trait: "happy-hour",
+    multiplier: LABYRINTH_MODIFIER_CONFIG.half,
+  },
+  trinket: {
+    basePrice: TRINKET_SHOP_TRINKET_PRICE,
+    trait: "collectors-favor",
+    multiplier: LABYRINTH_MODIFIER_CONFIG.trinketPriceMultiplier,
+  },
 } as const;
-
-function getBuyMultiplier(...[kind, item, context]: ShopBuyPriceArguments): number {
-  const modifiers = context.modifiers ?? [];
-  switch (kind) {
-    case "merchantCard":
-      return modifiers.includes("bargain-bin") ? LABYRINTH_MODIFIER_CONFIG.half : 1;
-    case "alchemistPotion":
-      return modifiers.includes("happy-hour") ? LABYRINTH_MODIFIER_CONFIG.half : 1;
-    case "trinket":
-      return modifiers.includes("collectors-favor") ? LABYRINTH_MODIFIER_CONFIG.trinketPriceMultiplier : 1;
-    case "gear":
-      return modifiers.includes("apprentice") && gearDefinitions[item.definitionId]?.rarity === "basic"
-        ? LABYRINTH_MODIFIER_CONFIG.half
-        : 1;
-  }
-}
 
 export function getShopBuyPrice(...args: ShopBuyPriceArguments): number {
   const [kind, item, context] = args;
-  const basePrice = kind === "gear" ? getEquipmentShopPrice(item) : SHOP_BUY_BASE_PRICE[kind];
+  const { basePrice, trait, multiplier } =
+    kind === "gear"
+      ? {
+          basePrice: getEquipmentShopPrice(item),
+          trait: gearDefinitions[item.definitionId]?.rarity === "basic" ? ("apprentice" as const) : null,
+          multiplier: LABYRINTH_MODIFIER_CONFIG.half,
+        }
+      : SHOP_BUY_POLICY[kind];
+  const locationMultiplier = trait && context.modifiers?.includes(trait) ? multiplier : 1;
   const potionDiscount =
     (kind === "merchantCard" || kind === "alchemistPotion") && isStandardPotionCard(item)
       ? context.talentEffects.potionDiscount
       : 0;
   const price = Math.max(
     0,
-    Math.round(basePrice * getBuyMultiplier(...args)) - context.talentEffects.shopCardDiscount - potionDiscount,
+    Math.round(basePrice * locationMultiplier) - context.talentEffects.shopCardDiscount - potionDiscount,
   );
   return context.firstPurchaseUsed
     ? price

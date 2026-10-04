@@ -37,7 +37,7 @@ export function yieldToAnimationFrame(): Promise<void> {
   });
 }
 
-export function scheduleIdle(callback: () => void, timeoutMs = 5000, retries = 0): void {
+export function scheduleIdle(callback: () => void, timeoutMs = 5000): void {
   const run = () => {
     try {
       callback();
@@ -45,19 +45,19 @@ export function scheduleIdle(callback: () => void, timeoutMs = 5000, retries = 0
       console.error("scheduleIdle callback threw an error:", error);
     }
   };
-  if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
-    window.requestIdleCallback(
-      (deadline) => {
-        const nav = window.navigator as Navigator & { scheduling?: { isInputPending?: () => boolean } };
-        if (!deadline?.didTimeout && retries < 3 && nav?.scheduling?.isInputPending?.()) {
-          scheduleIdle(callback, timeoutMs, retries + 1);
-          return;
-        }
-        run();
-      },
-      { timeout: timeoutMs },
-    );
+  if (typeof window === "undefined" || typeof window.requestIdleCallback !== "function") {
+    globalThis.setTimeout(run, 0);
     return;
   }
-  globalThis.setTimeout(run, 0);
+  let retries = 0;
+  const onIdle: IdleRequestCallback = (deadline) => {
+    const nav = window.navigator as Navigator & { scheduling?: { isInputPending?: () => boolean } };
+    if (!deadline.didTimeout && retries < 3 && nav.scheduling?.isInputPending?.()) {
+      retries++;
+      window.requestIdleCallback(onIdle, { timeout: timeoutMs });
+    } else {
+      run();
+    }
+  };
+  window.requestIdleCallback(onIdle, { timeout: timeoutMs });
 }

@@ -40,5 +40,7 @@ describe("shop offer recovery", () => {
       purchasedSlotKeys: [instance.instanceId],
     });
     expect(original).toEqual(before);
+    const restored = hydrateEquipmentShopState(original);
+    expect(hydrateEquipmentShopState(restored)).toEqual(restored);
   });
 });

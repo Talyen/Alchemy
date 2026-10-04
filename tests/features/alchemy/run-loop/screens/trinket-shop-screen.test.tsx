@@ -35,7 +35,10 @@ it("buys the offered identity and prevents a repeat purchase of its slot", async
   expect(onBuyTrinket).toHaveBeenCalledExactlyOnceWith(testTrinket, "lucky-coin-0");
   rerender(view(["lucky-coin-0"]));
   const purchased = screen.getByRole("button", { name: "Lucky Coin" });
-  expect(purchased).toHaveProperty("disabled", true);
+  expect(purchased.getAttribute("aria-disabled")).toBe("true");
+  purchased.focus();
+  expect(document.activeElement).toBe(purchased);
+  await userEvent.keyboard("{Enter}");
   await userEvent.click(purchased);
   expect(onBuyTrinket).toHaveBeenCalledOnce();
 });

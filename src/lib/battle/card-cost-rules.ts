@@ -3,7 +3,7 @@ import { cardHasDamageType, cardHasKeyword, isNatureCard } from "./card-classifi
 import { hasEncounterBenefit } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { UNIQUE_GEAR_COMBAT } from "../game-constants";
-import { getCardKeywords, type BattleCard } from "@/lib/game-data";
+import type { BattleCard } from "@/lib/game-data";
 import { type BattleSnapshot, type CombatFlags } from "./types";
 
 type BooleanCombatFlag = {
@@ -15,40 +15,22 @@ type CardCostState = { action?: import("./action-context").BattleActionContext }
   "flags" | "talentEffects" | "gearEffects" | "uniqueGear" | "encounterBenefits"
 >;
 
-const FIRST_CARD_FREE_RULES: Array<{
-  flag: BooleanCombatFlag;
-  condition: (state: CardCostState, card: BattleCard) => boolean;
-}> = [
-  {
-    flag: "firstBurnCardFreeUsed",
-    condition: (state, card) => state.talentEffects.firstBurnCardFree && cardHasKeyword(card, "burn"),
-  },
-  {
-    flag: "firstHolyCardFreeUsed",
-    condition: (state, card) =>
-      state.talentEffects.firstHolyCardFree && (cardHasKeyword(card, "holy") || cardHasDamageType(card, "holy")),
-  },
-  {
-    flag: "firstPoisonCardFreeUsed",
-    condition: (state, card) => state.talentEffects.firstPoisonCardFree && cardHasDamageType(card, "poison"),
-  },
-  {
-    flag: "firstBleedCardFreeUsed",
-    condition: (state, card) => state.talentEffects.firstBleedCardFree && cardHasDamageType(card, "bleed"),
-  },
-  {
-    flag: "firstConsumeCardFreeUsed",
-    condition: (state, card) => state.talentEffects.firstConsumeCardFree && !!card.consume,
-  },
-  {
-    flag: "firstCompanionCardFreeUsed",
-    condition: (state, card) =>
-      state.talentEffects.firstCompanionCardFree && getCardKeywords(card).includes("companion"),
-  },
-  {
-    flag: "firstArcheryCardFreeUsed",
-    condition: (state, card) => state.talentEffects.firstArcheryCardFree && cardHasKeyword(card, "archery"),
-  },
+type FirstCardFreeTalent = Extract<keyof CardCostState["talentEffects"], `first${string}CardFree`>;
+
+const FIRST_CARD_FREE_RULES: ReadonlyArray<
+  readonly [talent: FirstCardFreeTalent, usedFlag: BooleanCombatFlag, matches: (card: BattleCard) => boolean]
+> = [
+  ["firstBurnCardFree", "firstBurnCardFreeUsed", (card) => cardHasKeyword(card, "burn")],
+  [
+    "firstHolyCardFree",
+    "firstHolyCardFreeUsed",
+    (card) => cardHasKeyword(card, "holy") || cardHasDamageType(card, "holy"),
+  ],
+  ["firstPoisonCardFree", "firstPoisonCardFreeUsed", (card) => cardHasDamageType(card, "poison")],
+  ["firstBleedCardFree", "firstBleedCardFreeUsed", (card) => cardHasDamageType(card, "bleed")],
+  ["firstConsumeCardFree", "firstConsumeCardFreeUsed", (card) => !!card.consume],
+  ["firstCompanionCardFree", "firstCompanionCardFreeUsed", (card) => cardHasKeyword(card, "companion")],
+  ["firstArcheryCardFree", "firstArcheryCardFreeUsed", (card) => cardHasKeyword(card, "archery")],
 ];
 
 function applyCostDiscount(cost: number, reduction: number): number {
@@ -65,10 +47,11 @@ function computeStandardCost(state: CardCostState, card: BattleCard, discountedC
   if (card.cost === 0) return result;
 
   const firstFree = FIRST_CARD_FREE_RULES.find(
-    (rule) => !readCombatFlag(state, rule.flag) && rule.condition(state, card),
+    ([talent, flag, matches]) => state.talentEffects[talent] && !readCombatFlag(state, flag) && matches(card),
   );
   if (firstFree) {
-    result.consumedFlags.add(firstFree.flag);
+    const [, usedFlag] = firstFree;
+    result.consumedFlags.add(usedFlag);
     return result;
   }
   if (discountedCost === 0) return result;

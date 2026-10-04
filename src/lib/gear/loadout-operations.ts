@@ -15,30 +15,15 @@ export function isGearCompatibleWithSlot(definition: GearDefinition, slot: GearS
   return definition.compatibleSlots.includes(slot);
 }
 
-export function isTwoHanded(definition: GearDefinition): boolean {
-  return definition.slotRule === "two-handed";
-}
-
-export function isRangedWeapon(definition: GearDefinition): boolean {
-  return definition.slotRule === "ranged";
-}
-
-export function isQuiver(definition: GearDefinition): boolean {
-  return definition.slotRule === "quiver";
-}
-
 function resolveEquippedDefinitionAt(
-  inventoryOrLookup: GearInstance[] | ReadonlyMap<string, GearInstance>,
+  inventory: GearInstance[],
   loadout: GearLoadouts[GearCharacterId],
   slot: GearSlot,
 ): GearDefinition | undefined {
   const instanceId = loadout[slot];
   if (!instanceId) return undefined;
-  const instance: GearInstance | undefined = Array.isArray(inventoryOrLookup)
-    ? inventoryOrLookup.find((item) => item.instanceId === instanceId)
-    : inventoryOrLookup.get(instanceId);
-  if (!instance) return undefined;
-  return gearDefinitions[instance.definitionId];
+  const instance = inventory.find((item) => item.instanceId === instanceId);
+  return instance ? gearDefinitions[instance.definitionId] : undefined;
 }
 
 type HandSlot = "main-hand" | "off-hand";
@@ -53,7 +38,7 @@ function resolveHandPair(
   if (offHand?.slotRule === "quiver" && mainHand?.slotRule !== "ranged") {
     return incomingSlot ? "reject" : "off-hand";
   }
-  if (mainHand?.slotRule === "ranged" && offHand && !isQuiver(offHand)) {
+  if (mainHand?.slotRule === "ranged" && offHand && offHand.slotRule !== "quiver") {
     return incomingSlot === "off-hand" ? "reject" : "off-hand";
   }
   if (mainHand?.slotRule === "two-handed" && offHand) {
@@ -87,18 +72,17 @@ export function isGearCompatibleWithLoadoutSlot(
 }
 
 export function pruneOrphanGearLoadouts(inventory: GearInstance[], loadouts: GearLoadouts): GearLoadouts {
-  const inventoryById = new Map(inventory.map((item) => [item.instanceId, item]));
+  const definitionById = new Map(inventory.map((item) => [item.instanceId, gearDefinitions[item.definitionId]]));
   const next = createEmptyGearLoadouts();
 
   for (const characterId of GEAR_CHARACTER_IDS) {
     for (const slot of GEAR_SLOTS) {
       const instanceId = loadouts[characterId][slot];
-      const instance = instanceId ? inventoryById.get(instanceId) : undefined;
-      const definition = instance ? gearDefinitions[instance.definitionId] : undefined;
+      const definition = instanceId ? definitionById.get(instanceId) : undefined;
       if (instanceId && definition && isGearCompatibleWithSlot(definition, slot)) next[characterId][slot] = instanceId;
     }
-    const mainHand = resolveEquippedDefinitionAt(inventoryById, next[characterId], "main-hand");
-    const offHand = resolveEquippedDefinitionAt(inventoryById, next[characterId], "off-hand");
+    const mainHand = definitionById.get(next[characterId]["main-hand"] ?? "");
+    const offHand = definitionById.get(next[characterId]["off-hand"] ?? "");
     if (resolveHandPair(mainHand, offHand) !== "compatible") next[characterId]["off-hand"] = null;
   }
 

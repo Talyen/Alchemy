@@ -1,7 +1,6 @@
 import { battleEventSounds } from "@/lib/audio/sound-registry";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { resetAudioRuntimeForTests } from "@/lib/audio/reset";
-import * as audio from "@/lib/audio";
 import { audioState } from "@/lib/audio/state";
 import {
   defaultMeasureVisualCardRect,
@@ -73,6 +72,14 @@ describe("defaultMeasureVisualCardRect", () => {
 });
 
 describe("presentCombatTexts", () => {
+  it("shows a prevented hit's zero feedback without shaking either portrait", () => {
+    const presenter = { showCombatTexts: vi.fn(), shakeEnemy: vi.fn(), shakePlayer: vi.fn() };
+    const events = [{ target: "enemy", kind: "damage", stat: "burn", amount: 0 }] as const;
+    presentCombatTexts(presenter, [...events]);
+    expect(presenter.showCombatTexts).toHaveBeenCalledExactlyOnceWith(events);
+    expect(presenter.shakeEnemy).not.toHaveBeenCalled();
+    expect(presenter.shakePlayer).not.toHaveBeenCalled();
+  });
   it("shows texts, shakes the damaged side, and plays sounds in one call", () => {
     const presenter = { showCombatTexts: vi.fn(), shakeEnemy: vi.fn(), shakePlayer: vi.fn() };
     const events = [

@@ -37,21 +37,30 @@ export function RemoveCardPanel({
 }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [page, setPage] = useState(0);
+  const [selectionDeck, setSelectionDeck] = useState(runDeck);
+  const [selectionNotice, setSelectionNotice] = useState("");
+  if (selectionDeck !== runDeck) {
+    setSelectionDeck(runDeck);
+    setSelectedIndex(null);
+    setPage(0);
+    setSelectionNotice("Your deck changed. Choose a card to remove again.");
+  }
   const items = useMemo(() => runDeck.map((card, index) => ({ card, index })), [runDeck]);
   const hasCost = gold !== undefined && removePrice !== undefined;
   const canAfford = !hasCost || gold >= removePrice;
-  const confirmDisabled = selectedIndex === null || !canAfford;
+  const confirmDisabled = selectedIndex === null || !runDeck[selectedIndex] || !canAfford;
 
   useCaptureEscapeCancel(escapeCancels ? onCancel : undefined);
 
   function handleConfirm() {
-    if (selectedIndex === null) return;
+    if (confirmDisabled || selectedIndex === null) return;
     onConfirm(selectedIndex);
   }
 
   return (
     <div className={cn(fitHeight ? "flex min-h-0 flex-1 flex-col gap-3" : compact ? "space-y-3" : "space-y-6")}>
       {intro}
+      {selectionNotice && <p role="status">{selectionNotice}</p>}
       <CardSelectionGrid
         fitHeight={fitHeight}
         items={items}
@@ -66,7 +75,10 @@ export function RemoveCardPanel({
             chrome="shop"
             isSelected={selectedIndex === index}
             shineColor={getCardInspectionShineColors(card)}
-            onSelect={() => setSelectedIndex(index)}
+            onSelect={() => {
+              setSelectedIndex(index);
+              setSelectionNotice("");
+            }}
           />
         )}
       />

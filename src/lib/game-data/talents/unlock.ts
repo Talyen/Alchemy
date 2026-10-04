@@ -1,6 +1,6 @@
 import type { KeywordId } from "../types";
 import { countImplementedTalents, getAllocatableTalentChoices } from "./choices";
-import { getTalentKeywordProgress, type TalentXP } from "./progression";
+import { computeTalentPoints, type TalentXP } from "./progression";
 import { getTalentById } from "./talent-pool-definitions";
 import { isTalentPlaceholder, type UnlockedTalents } from "./types";
 
@@ -28,12 +28,8 @@ export function canUnlockTalent(
   const unlockedIds = unlockedTalents[keywordId] ?? [];
   if (unlockedIds.includes(talentId)) return { ok: false, reason: "already-unlocked" };
 
-  const progress = getTalentKeywordProgress(
-    talentXP[keywordId] ?? 0,
-    unlockedIds.length,
-    countImplementedTalents(keywordId),
-  );
-  if (!progress.hasUnspent) return { ok: false, reason: "no-unspent-points" };
+  const points = Math.min(computeTalentPoints(talentXP[keywordId] ?? 0), countImplementedTalents(keywordId));
+  if (!(points > unlockedIds.length)) return { ok: false, reason: "no-unspent-points" };
 
   if (!getAllocatableTalentChoices(keywordId, unlockedIds).some((entry) => entry.id === talentId)) {
     return { ok: false, reason: "not-eligible-choice" };

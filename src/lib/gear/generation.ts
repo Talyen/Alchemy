@@ -16,13 +16,6 @@ export {
 } from "./instances";
 export { getGearLootAvailability, getOwnedUniqueDefinitionIds, getRewardLootAvailability } from "./loot-availability";
 
-function eligibleBasePool(baseItemIds: readonly string[] | undefined): typeof gearBaseItemList {
-  if (baseItemIds === undefined) return gearBaseItemList;
-  const allowed = new Set(baseItemIds);
-  // Catalog order owns seeded sampling; caller order and duplicates do not.
-  return gearBaseItemList.filter((base) => allowed.has(base.id));
-}
-
 interface GenerateGearOfferingsOptions {
   count: number;
   rng: () => number;
@@ -30,7 +23,7 @@ interface GenerateGearOfferingsOptions {
   ownedUniqueIds?: ReadonlySet<string>;
   fallbackUniqueToAstral?: boolean;
   fillCount?: boolean;
-  basePool?: typeof gearBaseItemList;
+  baseItemIds?: readonly string[];
 }
 
 function generateGearOfferings({
@@ -40,8 +33,11 @@ function generateGearOfferings({
   ownedUniqueIds = new Set(),
   fallbackUniqueToAstral = true,
   fillCount = false,
-  basePool = gearBaseItemList,
+  baseItemIds,
 }: GenerateGearOfferingsOptions): GearInstance[] {
+  const allowed = baseItemIds === undefined ? null : new Set(baseItemIds);
+  // Catalog order owns seeded sampling; caller order and duplicates do not.
+  const basePool = allowed ? gearBaseItemList.filter((base) => allowed.has(base.id)) : gearBaseItemList;
   // Sample once before rarity rolls to preserve the run RNG sequence. Reservations
   // alone exclude selected bases; the sampled order never needs a second mutation.
   const sampledBases = sampleItems(basePool, count, rng);
@@ -103,7 +99,7 @@ export function generateLootGearChoices(
     rng,
     rollTier: (available) => rollLootGearRarity(weights, rng, available),
     ownedUniqueIds,
-    basePool: eligibleBasePool(baseItemIds),
+    ...(baseItemIds === undefined ? {} : { baseItemIds }),
     fillCount,
   });
 }
@@ -122,7 +118,7 @@ export function generateGearRewardChoicesForRarity(
     rollTier: () => rarity,
     ownedUniqueIds,
     fallbackUniqueToAstral: false,
-    basePool: eligibleBasePool(baseItemIds),
+    ...(baseItemIds === undefined ? {} : { baseItemIds }),
     fillCount,
   });
 }

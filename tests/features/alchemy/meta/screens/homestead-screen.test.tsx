@@ -2,7 +2,9 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { HomesteadScreen } from "@/features/alchemy/meta/screens/homestead-screen";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { cardLibrary } from "@/lib/game-data";
+import { cardLibrary, defaultCompanionBondLevels } from "@/lib/game-data";
+import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
+import { createEmptyTierRecord } from "@/lib/homestead/tiers";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
 
@@ -17,10 +19,10 @@ describe("HomesteadScreen", () => {
   const defaultProps = {
     gold: 50,
     materialInventory: { ...emptyInventory(), iron: 100, stone: 100, wood: 100, food: 100 },
-    constructedBuildings: { "blacksmiths-forge": 0 } as any,
-    plantedFarms: {} as any,
-    completedResearch: {} as any,
-    bondedCompanions: {} as any,
+    constructedBuildings: createEmptyTierRecord(buildings),
+    plantedFarms: createEmptyTierRecord(farmPlots),
+    completedResearch: createEmptyTierRecord(researchUpgrades),
+    bondedCompanions: { ...defaultCompanionBondLevels },
     discoveredCardIds: ["wolf-companion"],
     onConstructBuilding: vi.fn(() => true),
     onPlantFarm: vi.fn(() => true),
@@ -28,13 +30,21 @@ describe("HomesteadScreen", () => {
     onBondCompanion: vi.fn(() => true),
   };
 
-  it("handles building construction click", () => {
+  it("dispatches the selected building once and stops offering completed upgrades", () => {
     const onConstructBuilding = vi.fn(() => true);
-    render(<HomesteadScreen {...defaultProps} onConstructBuilding={onConstructBuilding} />);
+    const { rerender } = render(<HomesteadScreen {...defaultProps} onConstructBuilding={onConstructBuilding} />);
 
     const blacksmithButton = screen.getByRole("button", { name: /Blacksmith/i });
     fireEvent.click(blacksmithButton);
-    expect(onConstructBuilding).toHaveBeenCalled();
+    expect(onConstructBuilding).toHaveBeenCalledExactlyOnceWith("blacksmiths-forge");
+    rerender(
+      <HomesteadScreen
+        {...defaultProps}
+        onConstructBuilding={onConstructBuilding}
+        constructedBuildings={{ ...defaultProps.constructedBuildings, "blacksmiths-forge": buildings[0]!.tiers.length }}
+      />,
+    );
+    expect(screen.queryByRole("button", { name: /Blacksmith/i })).toBeNull();
   });
 
   it("does not construct when the tile is unaffordable", () => {

@@ -100,7 +100,7 @@ export function applyHealthThresholdCleanse(
     : state;
 }
 
-function applyHealthThresholdRewards(
+export function checkHealthThresholds(
   prevHealth: number,
   nextHealth: number,
   state: BattleState,
@@ -109,15 +109,9 @@ function applyHealthThresholdRewards(
   if (nextHealth <= 0) return state;
   let nextState = applyHealthThresholdCleanse(prevHealth, state, combatTexts, nextHealth);
   const maxHealth = state.playerMaxHealth;
-  for (const config of healthThresholdConfigs(state.talentEffects.healthThresholdBlock)) {
-    const thresholdHp = (maxHealth * config.threshold) / PERCENT_DENOMINATOR;
-    if (!crossedBelow(prevHealth, nextHealth, thresholdHp)) continue;
-    nextState = applyPlayerStatusEffect(
-      nextState,
-      { kind: "player-status", status: "block", amount: config.amount },
-      combatTexts,
-    );
-  }
+  const block = state.talentEffects.healthThresholdBlock;
+  if (block && crossedBelow(prevHealth, nextHealth, (maxHealth * block.threshold) / PERCENT_DENOMINATOR))
+    nextState = applyBlockReward(nextState, block.amount, combatTexts);
   const once = state.talentEffects.healthThresholdBlockOnce;
   if (once && !readCombatFlag(nextState, "desperateGuardUsed")) {
     const thresholdHp = (maxHealth * once.threshold) / PERCENT_DENOMINATOR;
@@ -126,34 +120,12 @@ function applyHealthThresholdRewards(
       nextState = { ...nextState, flags: { ...nextState.flags, desperateGuardUsed: true } };
     }
   }
-  for (const config of healthThresholdConfigs(state.talentEffects.healthThresholdArmor)) {
+  for (const config of state.talentEffects.healthThresholdArmor) {
     const thresholdHp = (maxHealth * config.threshold) / PERCENT_DENOMINATOR;
     if (!crossedBelow(prevHealth, nextHealth, thresholdHp)) continue;
     nextState = applyArmorReward(nextState, config.amount, combatTexts);
   }
   return nextState;
-}
-
-interface HealthThresholdConfig {
-  threshold: number;
-  amount: number;
-}
-const EMPTY_HEALTH_THRESHOLDS: readonly HealthThresholdConfig[] = [];
-
-function healthThresholdConfigs(
-  configs: HealthThresholdConfig | HealthThresholdConfig[] | null,
-): readonly HealthThresholdConfig[] {
-  if (configs == null) return EMPTY_HEALTH_THRESHOLDS;
-  return Array.isArray(configs) ? configs : [configs];
-}
-
-export function checkHealthThresholds(
-  prevHealth: number,
-  nextHealth: number,
-  state: BattleState,
-  combatTexts: CombatTextEvent[],
-) {
-  return applyHealthThresholdRewards(prevHealth, nextHealth, state, combatTexts);
 }
 
 function scaleBleedStatus(status: PlayerStatusId, amount: number): number {

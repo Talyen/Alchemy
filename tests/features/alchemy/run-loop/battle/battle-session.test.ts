@@ -2,7 +2,7 @@ import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-li
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
-import { battleStageMarkName, markBattleStage } from "@/lib/performance/battle-stage-marks";
+import { battleStageMarkName, markBattleStage } from "@/lib/performance/marks";
 import { defaultBattleState } from "@/lib/battle";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setHasActiveBattle, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";

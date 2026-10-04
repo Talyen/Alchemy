@@ -20,7 +20,9 @@ export function parsePlanMetadata(source) {
       errors.push(`invalid metadata line ${JSON.stringify(line)}`);
       continue;
     }
-    metadata[match[1]] = match[2].trim();
+    const key = match[1];
+    if (Object.hasOwn(metadata, key)) errors.push(`duplicate metadata key ${key}`);
+    else metadata[key] = match[2].trim();
   }
 
   for (const key of REQUIRED_PLAN_KEYS) if (!metadata[key]) errors.push(`missing ${key}`);

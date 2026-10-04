@@ -23,6 +23,7 @@ function setup(
     returnToRun,
     handleMainMenu,
     backFromOptions,
+    backFromDifficultySelect: vi.fn(),
     goToScreen,
   });
   return { handler, returnToRun, handleMainMenu, backFromOptions, goToScreen };
@@ -60,13 +61,6 @@ describe("resolveScreenBackHandler", () => {
     expect(handler).toBeDefined();
     handler?.();
     expect(goToScreen).toHaveBeenCalledWith("game-mode-select");
-  });
-
-  it("steps back to character-select from difficulty-select", () => {
-    const { handler, goToScreen } = setup({ renderedScreen: "difficulty-select" });
-    expect(handler).toBeDefined();
-    handler?.();
-    expect(goToScreen).toHaveBeenCalledWith("character-select");
   });
 
   it.each(["menu", "battle", "shop", "destination", "draft-deck"] as const)("has no back handler on %s", (screen) => {

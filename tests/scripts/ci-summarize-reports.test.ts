@@ -1,20 +1,14 @@
-import { describe, expect, it, vi } from "vitest";
-import {
-  formatVitestSummaryMarkdown,
-  summarizeVitestFile,
-  summarizeVitestReport,
-} from "../../scripts/lib/verification/vitest-summary.mjs";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { formatVitestSummaryMarkdown, summarizeVitestReport } from "../../scripts/lib/verification/vitest-summary.mjs";
 import { parseSummaryArgs } from "../../scripts/ci-summarize.mjs";
 import {
   collectPlaywrightTests,
   formatPlaywrightSummaryMarkdown,
-  summarizePlaywrightFile,
   summarizePlaywrightReport,
 } from "../../scripts/lib/verification/playwright-summary.mjs";
 import { createRunId, ensureRunId, writeCurrentRun } from "../../scripts/lib/verification/current-run.mjs";
 import {
   buildFailureDiagnostic,
-  diagnosticIdentity,
   MAX_DIAGNOSTIC_BYTES,
   writeFailureDiagnostic,
 } from "../../scripts/lib/verification/playwright-diagnostics.mjs";
@@ -24,6 +18,16 @@ import os from "node:os";
 import path from "node:path";
 import { formatRecentRun, parseShowRunsArgs, readRecentRuns } from "../../scripts/show-runs.mjs";
 import PlaywrightRunReporter from "../../scripts/lib/verification/playwright-run-reporter.mjs";
+
+const temporaryRoots: string[] = [];
+function temporaryRoot(prefix: string): string {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  temporaryRoots.push(root);
+  return root;
+}
+afterEach(() => {
+  for (const root of temporaryRoots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
+});
 
 describe("ci-summarize (vitest)", () => {
   it("rejects structurally invalid reports while allowing a valid empty run", () => {
@@ -99,10 +103,6 @@ describe("ci-summarize (vitest)", () => {
     expect(md).toContain("routes:");
   });
 
-  it("reports missing files without throwing", () => {
-    expect(summarizeVitestFile(path.join(os.tmpdir(), "missing-vitest.json"))).toContain("No report");
-  });
-
   it("caps the default Vitest failure list", () => {
     const testResults = Array.from({ length: 6 }, (_, index) => ({
       name: `tests/failure-${index}.test.ts`,
@@ -121,32 +121,28 @@ describe("ci-summarize (vitest)", () => {
 
 describe("ci-summarize (playwright)", () => {
   it("retains diagnostics for failures and recovered retries, but not clean runs", () => {
-    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-ci-retention-"));
+    const directory = temporaryRoot("alchemy-ci-retention-");
     const script = path.resolve("scripts/ci-summarize.mjs");
-    try {
-      for (const [unexpected, flaky, retain] of [
-        [0, 0, false],
-        [1, 0, true],
-        [0, 1, true],
-      ] as const) {
-        const output = path.join(directory, "github-output");
-        fs.writeFileSync(output, "");
-        fs.writeFileSync(
-          path.join(directory, "report.json"),
-          JSON.stringify({
-            suites: [],
-            stats: { expected: 1, unexpected, flaky, skipped: 0 },
-          }),
-        );
-        execFileSync(process.execPath, [script, "--playwright", "report.json"], {
-          cwd: directory,
-          env: { ...process.env, GITHUB_OUTPUT: output, GITHUB_STEP_SUMMARY: path.join(directory, "summary") },
-          stdio: "pipe",
-        });
-        expect(fs.readFileSync(output, "utf8")).toBe(`retain-diagnostics=${retain}\n`);
-      }
-    } finally {
-      fs.rmSync(directory, { recursive: true, force: true });
+    for (const [unexpected, flaky, retain] of [
+      [0, 0, false],
+      [1, 0, true],
+      [0, 1, true],
+    ] as const) {
+      const output = path.join(directory, "github-output");
+      fs.writeFileSync(output, "");
+      fs.writeFileSync(
+        path.join(directory, "report.json"),
+        JSON.stringify({
+          suites: [],
+          stats: { expected: 1, unexpected, flaky, skipped: 0 },
+        }),
+      );
+      execFileSync(process.execPath, [script, "--playwright", "report.json"], {
+        cwd: directory,
+        env: { ...process.env, GITHUB_OUTPUT: output, GITHUB_STEP_SUMMARY: path.join(directory, "summary") },
+        stdio: "pipe",
+      });
+      expect(fs.readFileSync(output, "utf8")).toBe(`retain-diagnostics=${retain}\n`);
     }
   });
   it("reports setup errors independently of test failures", () => {
@@ -183,26 +179,6 @@ describe("ci-summarize (playwright)", () => {
     }
   });
 
-  it("shares the flattened test model with the E2E audit", () => {
-    const model = collectPlaywrightTests({
-      suites: [
-        {
-          specs: [
-            {
-              title: "slow save",
-              file: "tests/save.spec.ts",
-              line: 12,
-              tests: [{ status: "expected", results: [{ duration: 42 }] }],
-            },
-          ],
-        },
-      ],
-    });
-    expect(model.totalTests).toBe(1);
-    expect(model.passedTests).toBe(1);
-    expect(model.allTests[0]).toMatchObject({ title: "slow save", duration: 42, status: "expected" });
-  });
-
   it("keeps each project's failure message attached to its own test", () => {
     const report = {
       suites: [
@@ -235,6 +211,10 @@ describe("ci-summarize (playwright)", () => {
     expect(summary.failures.map((failure) => failure.message)).toEqual(["Chromium failure", "Firefox retry", ""]);
     expect(model.allTests.map((test) => test.errorMessage)).toEqual(summary.failures.map((failure) => failure.message));
     expect(model.flakyTests[0]).toMatchObject({ project: "firefox", retries: 1 });
+    const markdown = formatPlaywrightSummaryMarkdown(summary);
+    expect(markdown).toContain("Chromium failure");
+    expect(markdown).toContain("Firefox retry");
+    expect(markdown).toContain("(flaky)");
   });
 
   it("walks nested suites in report order and ignores malformed entries", () => {
@@ -280,57 +260,6 @@ describe("ci-summarize (playwright)", () => {
     });
   });
 
-  it("extracts unexpected and flaky specs", () => {
-    const summary = summarizePlaywrightReport({
-      stats: { expected: 10, unexpected: 1, flaky: 1, skipped: 2 },
-      suites: [
-        {
-          specs: [
-            {
-              title: "boots to menu",
-              file: "tests/e2e/specs/alchemy.spec.ts",
-              tests: [
-                {
-                  status: "unexpected",
-                  results: [{ errors: [{ message: "TimeoutError: locator.click\nmore" }] }],
-                },
-              ],
-            },
-            {
-              title: "flaky save",
-              file: "tests/e2e/specs/save-persistence.spec.ts",
-              tests: [{ status: "flaky", results: [{ errors: [] }] }],
-            },
-          ],
-        },
-      ],
-    });
-
-    expect(summary.unexpected).toBe(1);
-    expect(summary.flaky).toBe(1);
-    expect(summary.failures).toHaveLength(2);
-    expect(summary.failures[0]?.message).toContain("TimeoutError");
-
-    const md = formatPlaywrightSummaryMarkdown(summary);
-    expect(md).toContain("## Playwright");
-    expect(md).toContain("boots to menu");
-    expect(md).toContain("routes:");
-    expect(md).toContain("(flaky)");
-  });
-
-  it("reads a report file from disk", () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pw-summary-"));
-    const reportPath = path.join(dir, "report.json");
-    fs.writeFileSync(
-      reportPath,
-      JSON.stringify({
-        stats: { expected: 1, unexpected: 0, flaky: 0, skipped: 0 },
-        suites: [],
-      }),
-    );
-    expect(summarizePlaywrightFile(reportPath)).toContain("Passed: 1");
-  });
-
   it("caps failure details while retaining the total count", () => {
     const suites = Array.from({ length: 4 }, (_, index) => ({
       specs: [
@@ -352,77 +281,69 @@ describe("ci-summarize (playwright)", () => {
   });
 
   it("does not advertise a missing fixture diagnostic", () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), "pw-summary-no-digest-"));
-    try {
-      const summary = summarizePlaywrightReport(
-        {
-          stats: { expected: 0, unexpected: 1, flaky: 0, skipped: 0 },
-          suites: [
-            {
-              specs: [
-                {
-                  title: "raw animation canary",
-                  file: "tests/e2e/specs/draw-discard-animations.spec.ts",
-                  line: 10,
-                  tests: [{ status: "unexpected", projectName: "chromium", results: [{ errors: [] }] }],
-                },
-              ],
-            },
-          ],
-        },
-        { rootDir: root, runId: "no-digest-run" },
-      );
+    const root = temporaryRoot("pw-summary-no-digest-");
+    const summary = summarizePlaywrightReport(
+      {
+        stats: { expected: 0, unexpected: 1, flaky: 0, skipped: 0 },
+        suites: [
+          {
+            specs: [
+              {
+                title: "raw animation canary",
+                file: "tests/e2e/specs/draw-discard-animations.spec.ts",
+                line: 10,
+                tests: [{ status: "unexpected", projectName: "chromium", results: [{ errors: [] }] }],
+              },
+            ],
+          },
+        ],
+      },
+      { rootDir: root, runId: "no-digest-run" },
+    );
 
-      expect(summary.failures[0]?.digestPath).toBeNull();
-      expect(formatPlaywrightSummaryMarkdown(summary)).not.toContain("Diagnostic:");
-    } finally {
-      fs.rmSync(root, { recursive: true, force: true });
-    }
+    expect(summary.failures[0]?.digestPath).toBeNull();
+    expect(formatPlaywrightSummaryMarkdown(summary)).not.toContain("Diagnostic:");
   });
 });
 
 describe("current-run pointer", () => {
   it("writes a compact machine-readable and markdown pointer", () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), "current-run-"));
-    try {
-      const paths = writeCurrentRun({
-        rootDir: root,
-        runId: "verify-fixture-run",
-        commit: "abc123",
-        status: "failed",
-        command: "vitest",
-        artifacts: [
-          { path: "reports/summary.md", role: "primary" },
-          { path: "reports/raw", role: "secondary" },
-        ],
-        summary: "First failure is in the save route.",
-        counts: { passed: 2, failed: 1 },
-      });
-      const json = JSON.parse(fs.readFileSync(paths.jsonPath, "utf8"));
-      const markdown = fs.readFileSync(paths.markdownPath, "utf8");
+    const root = temporaryRoot("current-run-");
+    const paths = writeCurrentRun({
+      rootDir: root,
+      runId: "verify-fixture-run",
+      commit: "abc123",
+      status: "failed",
+      command: "vitest",
+      artifacts: [
+        { path: "reports/summary.md", role: "primary" },
+        { path: "reports/raw", role: "secondary" },
+      ],
+      summary: "First failure is in the save route.",
+      counts: { passed: 2, failed: 1 },
+    });
+    const json = JSON.parse(fs.readFileSync(paths.jsonPath, "utf8"));
+    const markdown = fs.readFileSync(paths.markdownPath, "utf8");
 
-      expect(json).toMatchObject({
-        commit: "abc123",
-        runId: "verify-fixture-run",
-        status: "failed",
-        command: "vitest",
-        artifacts: [
-          { path: "reports/summary.md", role: "primary", existsAtWrite: false },
-          { path: "reports/raw", role: "secondary", existsAtWrite: false },
-        ],
-      });
-      expect(json.dirtyPaths).toEqual([]);
-      expect(json.counts).toEqual({ passed: 2, failed: 1 });
-      expect(fs.existsSync(paths.runJsonPath)).toBe(true);
-      expect(fs.readFileSync(paths.runJsonPath, "utf8")).toBe(fs.readFileSync(paths.jsonPath, "utf8"));
-      expect(markdown).toContain("Run: `verify-fixture-run`");
-      expect(markdown).toContain("## Primary evidence");
-      expect(markdown).toContain("## Secondary drill-down");
-      expect(markdown).toContain("missing when pointer was written");
-      expect(markdown).toContain("First failure is in the save route.");
-    } finally {
-      fs.rmSync(root, { recursive: true, force: true });
-    }
+    expect(json).toMatchObject({
+      commit: "abc123",
+      runId: "verify-fixture-run",
+      status: "failed",
+      command: "vitest",
+      artifacts: [
+        { path: "reports/summary.md", role: "primary", existsAtWrite: false },
+        { path: "reports/raw", role: "secondary", existsAtWrite: false },
+      ],
+    });
+    expect(json.dirtyPaths).toEqual([]);
+    expect(json.counts).toEqual({ passed: 2, failed: 1 });
+    expect(fs.existsSync(paths.runJsonPath)).toBe(true);
+    expect(fs.readFileSync(paths.runJsonPath, "utf8")).toBe(fs.readFileSync(paths.jsonPath, "utf8"));
+    expect(markdown).toContain("Run: `verify-fixture-run`");
+    expect(markdown).toContain("## Primary evidence");
+    expect(markdown).toContain("## Secondary drill-down");
+    expect(markdown).toContain("missing when pointer was written");
+    expect(markdown).toContain("First failure is in the save route.");
   });
 
   it("creates deterministic IDs, reuses supplied IDs, and shows recent evidence state", () => {
@@ -435,36 +356,32 @@ describe("current-run pointer", () => {
     expect(ensureRunId("verify", generatedEnv)).toMatch(/^verify-\d{8}t\d{6}z-\d+-[a-z0-9]+$/u);
     expect(generatedEnv.ALCHEMY_RUN_ID).toMatch(/^verify-\d{8}t\d{6}z-\d+-[a-z0-9]+$/u);
 
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), "run-history-"));
-    try {
-      const evidence = path.join(root, "reports/evidence.md");
-      fs.mkdirSync(path.dirname(evidence), { recursive: true });
-      fs.writeFileSync(evidence, "failure");
-      writeCurrentRun({
-        rootDir: root,
-        runId: "older-run",
-        status: "failed",
-        command: "vitest",
-        artifacts: [{ path: evidence, role: "primary" }],
-        summary: "save test failed",
-      });
-      writeCurrentRun({
-        rootDir: root,
-        runId: "newer-run",
-        status: "passed",
-        command: "verify",
-        summary: "all steps passed",
-      });
+    const root = temporaryRoot("run-history-");
+    const evidence = path.join(root, "reports/evidence.md");
+    fs.mkdirSync(path.dirname(evidence), { recursive: true });
+    fs.writeFileSync(evidence, "failure");
+    writeCurrentRun({
+      rootDir: root,
+      runId: "older-run",
+      status: "failed",
+      command: "vitest",
+      artifacts: [{ path: evidence, role: "primary" }],
+      summary: "save test failed",
+    });
+    writeCurrentRun({
+      rootDir: root,
+      runId: "newer-run",
+      status: "passed",
+      command: "verify",
+      summary: "all steps passed",
+    });
 
-      expect(parseShowRunsArgs(["--last", "1", "--status", "failed"])).toEqual({ last: 1, status: "failed" });
-      const failed = readRecentRuns(root, { last: 1, status: "failed" });
-      expect(failed).toHaveLength(1);
-      expect(formatRecentRun(root, failed[0] ?? {})).toContain("evidence available");
-      fs.unlinkSync(evidence);
-      expect(formatRecentRun(root, failed[0] ?? {})).toContain("evidence pruned/missing");
-    } finally {
-      fs.rmSync(root, { recursive: true, force: true });
-    }
+    expect(parseShowRunsArgs(["--last", "1", "--status", "failed"])).toEqual({ last: 1, status: "failed" });
+    const failed = readRecentRuns(root, { last: 1, status: "failed" });
+    expect(failed).toHaveLength(1);
+    expect(formatRecentRun(root, failed[0] ?? {})).toContain("evidence available");
+    fs.unlinkSync(evidence);
+    expect(formatRecentRun(root, failed[0] ?? {})).toContain("evidence pruned/missing");
   });
 });
 
@@ -510,54 +427,59 @@ describe("Playwright failure diagnostics", () => {
     expect(diagnostic.markdown).toContain("<main>fallback</main>");
   });
 
-  it("uses file, line, and project to avoid duplicate-title collisions", () => {
-    const first = diagnosticIdentity({ file: "tests/a.spec.ts", line: 1, project: "chromium", title: "same" });
-    const second = diagnosticIdentity({ file: "tests/b.spec.ts", line: 1, project: "chromium", title: "same" });
-    expect(first.id).not.toBe(second.id);
-  });
-
   it("writes an exact digest and failure index", () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), "pw-diagnostic-"));
-    try {
-      const diagnostic = buildFailureDiagnostic({
-        runId: "playwright-write-run",
-        rootDir: root,
-        title: "writes a digest",
-        file: "tests/example.spec.ts",
-        line: 9,
-        project: "chromium",
-        status: "failed",
-        duration: 20,
-        logs: [],
-        accessibilitySnapshot: '- main:\n  - button "Retry"',
-      });
-      const result = writeFailureDiagnostic(root, diagnostic);
-      const index = JSON.parse(
-        fs.readFileSync(path.join(root, "test-results/failures/playwright-write-run/index.json"), "utf8"),
-      );
-      expect(fs.existsSync(result.digestPath)).toBe(true);
-      expect(index).toMatchObject({
-        runId: "playwright-write-run",
-        failures: [{ id: diagnostic.identity.id, runId: "playwright-write-run" }],
-      });
+    const root = temporaryRoot("pw-diagnostic-");
+    const diagnostic = buildFailureDiagnostic({
+      runId: "playwright-write-run",
+      rootDir: root,
+      title: "writes a digest",
+      file: "tests/example.spec.ts",
+      line: 9,
+      project: "chromium",
+      status: "failed",
+      duration: 20,
+      logs: [],
+      accessibilitySnapshot: '- main:\n  - button "Retry"',
+    });
+    const result = writeFailureDiagnostic(root, diagnostic);
+    const index = JSON.parse(
+      fs.readFileSync(path.join(root, "test-results/failures/playwright-write-run/index.json"), "utf8"),
+    );
+    expect(fs.existsSync(result.digestPath)).toBe(true);
+    expect(index).toMatchObject({
+      runId: "playwright-write-run",
+      failures: [{ id: diagnostic.identity.id, runId: "playwright-write-run" }],
+    });
 
-      const second = buildFailureDiagnostic({
-        runId: "playwright-second-run",
-        title: "writes a digest",
-        file: "tests/example.spec.ts",
-        line: 9,
-        project: "chromium",
-        status: "failed",
-        duration: 20,
-        logs: [],
-        accessibilitySnapshot: '- main:\n  - button "Retry"',
-      });
-      const secondResult = writeFailureDiagnostic(root, second);
-      expect(second.identity.id).toBe(diagnostic.identity.id);
-      expect(secondResult.digestPath).not.toBe(result.digestPath);
-      expect(fs.existsSync(result.digestPath)).toBe(true);
-    } finally {
-      fs.rmSync(root, { recursive: true, force: true });
-    }
+    const sameTitle = buildFailureDiagnostic({
+      runId: "playwright-write-run",
+      rootDir: root,
+      title: "writes a digest",
+      file: "tests/another.spec.ts",
+      line: 9,
+      project: "chromium",
+      status: "failed",
+      duration: 20,
+    });
+    const otherResult = writeFailureDiagnostic(root, sameTitle);
+    expect(otherResult.digestPath).not.toBe(result.digestPath);
+    expect(fs.readFileSync(result.digestPath, "utf8")).toBe(diagnostic.markdown);
+    expect(fs.readFileSync(otherResult.digestPath, "utf8")).toBe(sameTitle.markdown);
+
+    const second = buildFailureDiagnostic({
+      runId: "playwright-second-run",
+      title: "writes a digest",
+      file: "tests/example.spec.ts",
+      line: 9,
+      project: "chromium",
+      status: "failed",
+      duration: 20,
+      logs: [],
+      accessibilitySnapshot: '- main:\n  - button "Retry"',
+    });
+    const secondResult = writeFailureDiagnostic(root, second);
+    expect(second.identity.id).toBe(diagnostic.identity.id);
+    expect(secondResult.digestPath).not.toBe(result.digestPath);
+    expect(fs.existsSync(result.digestPath)).toBe(true);
   });
 });

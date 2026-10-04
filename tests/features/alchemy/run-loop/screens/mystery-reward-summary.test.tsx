@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { MysteryRewardSummary } from "@/features/alchemy/run-loop/screens/mystery/mystery-reward-summary";
-import { keywordDefinitions, type TrinketEntry } from "@/lib/game-data";
+import { type TrinketEntry } from "@/lib/game-data";
 import type { MysteryChoice } from "@/lib/mystery";
 import { getGearInstanceTitle, type GearInstance } from "@/lib/gear";
 
@@ -36,12 +36,25 @@ function renderSummary(
 describe("MysteryRewardSummary", () => {
   afterEach(cleanup);
 
-  it("shows the granted trinket tile for gainRandomTrinket", () => {
-    renderSummary([{ kind: "gainRandomTrinket" }], [boneCharm.id]);
-
-    expect(screen.getByRole("img", { name: "Bone Charm" })).toBeTruthy();
-    expect(screen.getByText("Bone Charm")).toBeTruthy();
-    expect(screen.queryByText("Gained a random trinket for this run")).toBeNull();
+  it("shows mixed Boon and Gear grants in effect order with their correct titles", () => {
+    const generated: GearInstance = { instanceId: "generated", definitionId: "emerald-ring-basic", affixes: [] };
+    const random: GearInstance = { instanceId: "random", definitionId: "leather-armor-basic", affixes: [] };
+    renderSummary(
+      [
+        { kind: "gainRandomTrinket" },
+        { kind: "gainGeneratedGear", baseItemId: "emerald-ring" },
+        { kind: "gainRandomGear" },
+      ],
+      [boneCharm.id],
+      [generated, random],
+    );
+    expect(screen.getAllByRole("img").map((image) => image.getAttribute("alt"))).toEqual([
+      boneCharm.title,
+      getGearInstanceTitle(generated),
+      getGearInstanceTitle(random),
+    ]);
+    expect(screen.getByText(getGearInstanceTitle(generated))).toBeTruthy();
+    expect(screen.getByText(getGearInstanceTitle(random))).toBeTruthy();
   });
 
   it("shows the trinket hover tooltip for gainRandomTrinket", () => {
@@ -103,38 +116,8 @@ describe("MysteryRewardSummary", () => {
     expect(screen.getByText(/damage/)).toBeTruthy();
   });
 
-  it("renders KeywordProgressCard for gainXP effects and triggers onContinue on click", () => {
+  it("groups XP rewards by keyword and allows continuing", () => {
     const onContinue = vi.fn();
-    render(
-      <MysteryRewardSummary
-        choice={{ label: "Practice Alchemy", effects: [{ kind: "gainXP", keyword: "burn", amount: 8 }] }}
-        findCard={() => undefined}
-        findTrinket={() => undefined}
-        grantedTrinketIds={[]}
-        grantedGearInstances={[]}
-        chosenCardId={null}
-        runTalentXP={{ burn: 8 }}
-        talentXP={{ burn: 12 }}
-        onContinue={onContinue}
-      />,
-    );
-
-    expect(screen.getByText("Burn")).toBeTruthy();
-    expect(screen.queryByText("+8 XP")).toBeNull();
-    expect(screen.queryByText("8/20")).toBeNull();
-    expect(screen.queryByText("10/20")).toBeNull();
-
-    const burnLv = screen.getByText("Lv2");
-    expect(burnLv).toBeTruthy();
-    expect(burnLv.className).toContain(keywordDefinitions.burn.colorClass);
-
-    const continueBtn = screen.getByRole("button", { name: "Continue" });
-    expect(continueBtn).toBeTruthy();
-    fireEvent.click(continueBtn);
-    expect(onContinue).toHaveBeenCalledOnce();
-  });
-
-  it("renders multiple XP rewards grouped by keyword", () => {
     render(
       <MysteryRewardSummary
         choice={{
@@ -152,7 +135,7 @@ describe("MysteryRewardSummary", () => {
         chosenCardId={null}
         runTalentXP={{ burn: 8, freeze: 6 }}
         talentXP={{ burn: 0, freeze: 0 }}
-        onContinue={vi.fn()}
+        onContinue={onContinue}
       />,
     );
 
@@ -163,46 +146,9 @@ describe("MysteryRewardSummary", () => {
     expect(screen.queryByText("+6 XP")).toBeNull();
     expect(screen.queryByText("6/10")).toBeNull();
 
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    expect(onContinue).toHaveBeenCalledOnce();
     const lvLabels = screen.getAllByText("Lv1");
     expect(lvLabels).toHaveLength(2);
-    expect(lvLabels.some((el) => el.className.includes(keywordDefinitions.burn.colorClass))).toBe(true);
-    expect(lvLabels.some((el) => el.className.includes(keywordDefinitions.freeze.colorClass))).toBe(true);
-  });
-
-  it("shows the granted gear tile for gainGeneratedGear", () => {
-    const instance = { instanceId: "mystery-gear-1", definitionId: "emerald-ring-basic", affixes: [] };
-    render(
-      <MysteryRewardSummary
-        choice={{ label: "Harvest Mushrooms", effects: [{ kind: "gainGeneratedGear", baseItemId: "emerald-ring" }] }}
-        findCard={() => undefined}
-        findTrinket={() => undefined}
-        grantedTrinketIds={[]}
-        grantedGearInstances={[instance]}
-        chosenCardId={null}
-        onContinue={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByText(getGearInstanceTitle(instance))).toBeTruthy();
-    const basicSurface = screen.getByRole("img", { name: getGearInstanceTitle(instance) }).closest(".surface");
-    expect(basicSurface?.querySelector(".shine-border")).toBeNull();
-    expect(basicSurface?.className).toMatch(/card-interactive-glow/);
-  });
-
-  it("shows the granted gear tile for gainRandomGear", () => {
-    const instance = { instanceId: "mystery-random-gear", definitionId: "emerald-ring-basic", affixes: [] };
-    render(
-      <MysteryRewardSummary
-        choice={{ label: "Search the Crypt", effects: [{ kind: "gainRandomGear" }] }}
-        findCard={() => undefined}
-        findTrinket={() => undefined}
-        grantedTrinketIds={[]}
-        grantedGearInstances={[instance]}
-        chosenCardId={null}
-        onContinue={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByText(getGearInstanceTitle(instance))).toBeTruthy();
   });
 });

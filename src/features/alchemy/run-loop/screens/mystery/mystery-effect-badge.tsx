@@ -52,20 +52,21 @@ export function MysteryEffectBadge({
   );
   switch (effect.kind) {
     case "gainGold":
-    case "loseGold": {
-      return (
-        <span className={cn(pillClass, goldPillStyle, goldTextColor)}>
-          <HomesteadResourceArtwork resource="gold" size={tooltip ? "xs" : "sm"} />
-          <span className="leading-none">{`${effect.amount} Gold`}</span>
-        </span>
-      );
-    }
+    case "loseGold":
     case "gainMaterial": {
-      const mat = effect.material;
+      const resource = effect.kind === "gainMaterial" ? effect.material : "gold";
       return (
-        <span className={cn(pillClass, matPillStyle[mat], matTextColor[mat])}>
-          <HomesteadResourceArtwork resource={mat} size={tooltip ? "xs" : "sm"} />
-          <span className="leading-none">{`${effect.amount} ${materialLabels[mat]}`}</span>
+        <span
+          className={cn(
+            pillClass,
+            resource === "gold" ? goldPillStyle : matPillStyle[resource],
+            resource === "gold" ? goldTextColor : matTextColor[resource],
+          )}
+        >
+          <HomesteadResourceArtwork resource={resource} size={tooltip ? "xs" : "sm"} />
+          <span className="leading-none">
+            {effect.amount} {resource === "gold" ? "Gold" : materialLabels[resource]}
+          </span>
         </span>
       );
     }
@@ -105,12 +106,10 @@ export function MysteryEffectBadge({
       const chooseLabel = tagLabel
         ? `Choose 1 of ${MYSTERY_CARD_CHOICES} ${tagLabel} cards`
         : `Choose 1 of ${MYSTERY_CARD_CHOICES} cards`;
-      return tooltip ? (
-        <span className="text-sm text-muted-foreground">
-          {renderInteractiveKeywords(`${chooseLabel} to add to your deck`)}
+      return (
+        <span className={cn("text-sm text-muted-foreground", !tooltip && "text-pretty")}>
+          {renderInteractiveKeywords(`${chooseLabel}${tooltip ? " to add to your deck" : ""}`)}
         </span>
-      ) : (
-        <span className="text-sm text-pretty text-muted-foreground">{renderInteractiveKeywords(chooseLabel)}</span>
       );
     }
     case "gainTrinket": {

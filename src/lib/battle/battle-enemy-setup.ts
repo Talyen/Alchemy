@@ -49,12 +49,6 @@ function scaleEnemyHealth(enemy: BestiaryEntry, roomMul: number): number {
   return Math.round(baseHealth * growth * contentMultiplier);
 }
 
-function scaleEnemyRegeneration(enemy: BestiaryEntry, roomMul: number): number {
-  if (!enemy.traits.some((t) => t.id === "regeneration")) return 0;
-  const base = enemy.enemyType === "boss" ? ENEMY_BOSS_REGENERATION : ENEMY_BASE_REGENERATION;
-  return Math.round(base * roomMul);
-}
-
 export function scaleEnemyAbilityDamage(
   state: Pick<BattleState, "roomScalingMultiplier" | "difficultyModifiers" | "currentEnemy">,
   effect: EnemyAbilityDamageEffect,
@@ -98,11 +92,12 @@ export function initializeEnemyState(enemy: BestiaryEntry, battleRooms: number, 
   const companion = modifiers.find((modifier) => modifier.kind === "start-companion");
   const traitArmor = hasTrait("living-armor") ? Math.round(LIVING_ARMOR_STARTING_ARMOR * roomMul) : 0;
   const traitBlock = hasTrait("starting-block") ? Math.round(ENEMY_STARTING_BLOCK * roomMul) : 0;
+  const regeneration = enemy.enemyType === "boss" ? ENEMY_BOSS_REGENERATION : ENEMY_BASE_REGENERATION;
   return {
     enemyMaxHealth: Math.round(
       scaleEnemyHealth(enemy, roomMul) * modifierAmount(modifiers, "enemy-health-multiplier", 1),
     ),
-    enemyRegeneration: scaleEnemyRegeneration(enemy, roomMul),
+    enemyRegeneration: hasTrait("regeneration") ? Math.round(regeneration * roomMul) : 0,
     roomScalingMultiplier: roomMul,
     startingArmor: modifierAmount(modifiers, "enemy-starting-armor") + traitArmor,
     startBlock: modifierAmount(modifiers, "start-block"),

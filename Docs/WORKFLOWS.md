@@ -102,15 +102,16 @@ Visible behavior: [UI battle feedback](./UI_BATTLE.md#battle-feedback) and [batt
 
 ## Adding a new screen
 
-1. Add the screen to `Screen` and `ROUTE_SCREENS` in `src/lib/routing/screens.ts`.
+1. Add the screen to `ROUTE_SCREENS` in `src/lib/routing/screens.ts`; `Screen` and the runtime value list derive from it.
 2. Classify it in `src/lib/routing/run-screen-router.ts` (`SCREEN_PHASE`) and add every legal interactive edge in `src/lib/routing/screen-transition-policy.ts`. Run-loop lists derive from `SCREEN_PHASE`; `use-screen-transitions.ts` owns delay/immediate/commit timing, not taxonomy.
    Ordinary edges cover new-run setup and player actions. Returning to an existing run uses `resumeRun` and its validated saved screen through `resumeTo`; do not add every resumable screen as an ordinary edge from menus or meta screens.
 3. Create the component under `run-loop/screens/`, `run-setup/screens/`, or `meta/screens/`, and export it from that directory's `index.ts`.
 4. Use `TitledScreenShell` from `shared/ui/layout-components.tsx`; `ScreenShell` is transparent and layout-only. `TitledScreenShell` owns the full-stage overflow wrapper so plasma shows through, and the app stage owns the background. Reserve `alchemy-shell` for contained panels. Main Menu and Battle are exceptions; choosers use widths from `shared/config/layout.ts`. The global menu button lives in `App.tsx`, so screens wire no menu props.
-5. Wire the route in the matching phase table under `src/app/screen-routes/` (`meta-routes`, `run-setup-routes`, or `run-loop-routes`).
-6. For resumable screens that can lose visit data during a fade, use a thin route wrapper with `useHeldWhile` and a shell fallback, following `app/screen-routes/mystery-screen-route.tsx`.
-7. If new props are needed, extend the phase route context and `RenderAlchemyScreenProps` in `src/app/screen-routes/route-ctx.ts` and `src/app/screen-routes/index.tsx`.
-8. Wire the navigation trigger at the caller of `goToScreen("<name>")`.
+5. Wire the route in the matching phase table under `src/app/screen-routes/` (`meta-routes`, `run-setup-routes`, `run-loop-routes`, or `run-end-routes`). Register a statically imported component; `SCREEN_ROUTES` checks completeness and mounts it through React.
+6. For activity-backed run screens, add the exact display selector in `shared/stores/run-screen-data.ts` and its capability hook in `use-run-screen-data.ts`. Those hooks retain outgoing data during fades; Battle keeps its dedicated [route display hook](./BATTLE_CONTROLLERS.md#battle-path). When the visit also clears its payload within the screen, use `useHeldWhile` and a shell fallback, following `app/screen-routes/mystery-screen-route.tsx`.
+7. Add required actions to the explicit command contracts in `shell/route-commands.ts` and compose them through the existing controller. Route display stays separate from commands. If route context props must change, update their owner in `src/app/screen-routes/route-ctx.ts` and its callers; `index.tsx` re-exports that contract.
+8. For a new gameplay activity, update `lib/active-run-session/run-activity.ts` and its initialization, then encode/decode resumable data through the [resume workflow](./RUN_WORKFLOWS.md#change-mid-run-resume-activerundata). A route alone does not establish an activity or saved location.
+9. Wire the navigation trigger at the caller of `goToScreen("<name>")`. For run activities, also update the production-flow adapter and legal choices in `src/app/playthrough/` so headless careers can proceed. Review affected route mocks, save fixtures, and browser helpers against the new contracts; verify initialization and current-format resume with focused unit tests.
 
 Boot restore/hydration sets a validated saved screen directly and intentionally bypasses the interactive transition table. Screen components subscribing to Zustand stores should select narrow slices or use `useShallow` to prevent render churn during high-frequency combat ticks.
 

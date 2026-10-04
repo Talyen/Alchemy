@@ -10,12 +10,15 @@ import { SelectableCard } from "../../shared/ui/cards/selectable-card";
 import { HealthRestoreMeter } from "../../shared/ui/health-restore-meter";
 import { useEasedHealth } from "../../shared/ui/use-eased-health";
 import { BrewPotionPanel } from "./brew-potion-panel";
+import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
+import { LABYRINTH_MODIFIER_CONFIG } from "@/lib/game-constants";
 
 export function CampfireScreen({
   playerHealth,
   maxHealth,
   healFraction,
   healingBonus = 0,
+  modifiers = [],
   runDeck,
   visit,
   potency,
@@ -27,6 +30,7 @@ export function CampfireScreen({
   maxHealth: number;
   healFraction: number;
   healingBonus?: number;
+  modifiers?: readonly EncounterRewardTraitId[];
   runDeck: BattleCard[];
   visit: AlchemyVisit;
   potency: number;
@@ -56,6 +60,12 @@ export function CampfireScreen({
             ) : (
               <>
                 <p role="status">Rest complete.</p>
+                {modifiers.includes("hidden-purse") && (
+                  <p role="status">{LABYRINTH_MODIFIER_CONFIG.hiddenPurseGold} Gold added to your purse.</p>
+                )}
+                {modifiers.includes("herbal-hearth") && (
+                  <p role="status">A random Potion was added to your run deck.</p>
+                )}
                 <HealthRestoreMeter
                   displayHealth={displayHealth}
                   maxHealth={maxHealth}
@@ -93,6 +103,10 @@ export function CampfireScreen({
               <Button onClick={() => setBrewing(true)}>Brew Potion</Button>
             </div>
             {restore === 0 && <p>Health is full. Rest restores no Health.</p>}
+            {modifiers.includes("hidden-purse") && (
+              <p>Rest also grants {LABYRINTH_MODIFIER_CONFIG.hiddenPurseGold} Gold.</p>
+            )}
+            {modifiers.includes("herbal-hearth") && <p>Rest also adds a random Potion to your run deck.</p>}
             <p>Rest or brew one Potion. Each Campfire can be used once.</p>
           </>
         )}

@@ -36,28 +36,7 @@ function buildAffinityPool(
     return score;
   };
   const poolSize = Math.min(count * REWARD_SELECTION_CONFIG.affinityPoolMultiplier, candidates.length);
-  // Ordinary rewards retain only a handful of cards. Keep the shuffled order
-  // for ties, just like the stable sort, without scoring objects for the catalog.
-  // Larger requests use sorting to avoid quadratic insertion work.
-  if (poolSize > 0 && poolSize <= 16) {
-    const limit = Math.floor(poolSize);
-    const cards: BattleCard[] = [];
-    const scores: number[] = [];
-    for (const card of shuffledCandidates) {
-      const score = scoreCard(card);
-      if (cards.length === limit && score <= scores[limit - 1]!) continue;
-      let index = cards.length;
-      while (index > 0 && score > scores[index - 1]!) index--;
-      if (index >= limit) continue;
-      cards.splice(index, 0, card);
-      scores.splice(index, 0, score);
-      if (cards.length > limit) {
-        cards.pop();
-        scores.pop();
-      }
-    }
-    return cards;
-  }
+  // Stable sorting preserves shuffled ties and the subsequent run RNG position.
   const scored = shuffledCandidates.map((card) => ({ card, score: scoreCard(card) }));
   scored.sort((a, b) => b.score - a.score);
   return scored.slice(0, poolSize).map((s) => s.card);

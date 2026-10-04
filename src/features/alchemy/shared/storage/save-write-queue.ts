@@ -6,6 +6,7 @@ export type SaveWriteOutcome = "saved" | "failed" | "skipped";
 interface PendingSave {
   data: UnstampedSaveData;
   storageEpoch: number;
+  write: (data: UnstampedSaveData) => Promise<SaveWriteOutcome>;
   completion: Promise<SaveWriteOutcome>;
   resolve: (outcome: SaveWriteOutcome) => void;
 }
@@ -25,7 +26,7 @@ export class SaveWriteQueue {
   private cancellationListeners = new Set<() => void>();
 
   get isIdle(): boolean {
-    return !this.runnerActive && this.coalesced === null;
+    return !this.runnerActive && this.coalesced === null && !this.isClearPending;
   }
 
   get isClearPending(): boolean {
@@ -67,13 +68,14 @@ export class SaveWriteQueue {
     }
     if (this.coalesced) {
       this.coalesced.data = owned;
+      this.coalesced.write = write;
       return this.coalesced.completion;
     }
     let resolve!: PendingSave["resolve"];
     const completion = new Promise<SaveWriteOutcome>((settle) => {
       resolve = settle;
     });
-    this.coalesced = { data: owned, storageEpoch: this.storageEpoch, completion, resolve };
+    this.coalesced = { data: owned, storageEpoch: this.storageEpoch, write, completion, resolve };
     if (!this.runnerActive) {
       this.runnerActive = true;
       this.chain = this.chain.then(async () => {
@@ -81,7 +83,7 @@ export class SaveWriteQueue {
           while (this.coalesced) {
             const pending = this.coalesced;
             this.coalesced = null;
-            pending.resolve(await this.runPending(pending, write));
+            pending.resolve(await this.runPending(pending));
           }
         } finally {
           this.runnerActive = false;
@@ -135,13 +137,10 @@ export class SaveWriteQueue {
     this.cancellationListeners.clear();
   }
 
-  private async runPending(
-    pending: PendingSave,
-    write: (data: UnstampedSaveData) => Promise<SaveWriteOutcome>,
-  ): Promise<SaveWriteOutcome> {
+  private async runPending(pending: PendingSave): Promise<SaveWriteOutcome> {
     if (this.writesDisabled || this.isClearPending || pending.storageEpoch !== this.storageEpoch) return "skipped";
     try {
-      const outcome = await write(pending.data);
+      const outcome = await pending.write(pending.data);
       return pending.storageEpoch === this.storageEpoch ? outcome : "skipped";
     } catch (error) {
       // Only fires for injected/unexpected throws: the real write path

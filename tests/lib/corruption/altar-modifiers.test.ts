@@ -3,6 +3,18 @@ import { applyAltarModifiers } from "@/lib/corruption/altar-modifiers";
 import { getCorruptionMutationGroups } from "@/lib/corruption/mutations";
 import { cardById } from "@/lib/game-data";
 
+it("Blood Rite favors Bleed over each other conversion instead of equally boosting all types", () => {
+  const card = cardById.slash!;
+  const conversion = getCorruptionMutationGroups(card, ["blood-rite"]).find((group) => group.kind === "convert")!;
+  const counts = new Map<string, number>();
+  for (const { card: outcome } of conversion.mutations) {
+    const effect = outcome.effects[0];
+    if (effect?.kind === "damage") counts.set(effect.damageType, (counts.get(effect.damageType) ?? 0) + 1);
+  }
+  expect(counts.get("bleed")).toBeGreaterThan(counts.get("poison")!);
+  expect(counts.get("bleed")).toBeGreaterThan(counts.get("freeze")!);
+});
+
 it("composes altar restrictions and weights without changing the original offers", () => {
   const card = { ...cardById.slash!, tags: ["poison" as const] };
   const groups = getCorruptionMutationGroups(card);

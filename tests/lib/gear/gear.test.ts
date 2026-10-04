@@ -140,44 +140,23 @@ describe("gear domain", () => {
     }
   });
 
-  it("does not apply the same saved affix twice", () => {
+  it("repairs saved affixes before applying slot limits so invalid rolls cannot displace real bonuses", () => {
     const normalized = normalizeGearInstance({
       instanceId: "sword-1",
       definitionId: "shortsword-basic",
       affixes: [
+        { id: "kingbreaker", value: 1 },
         { id: "flat-physical", value: 1 },
         { id: "flat-physical", value: 2 },
-      ],
-    });
-
-    expect(normalized?.affixes).toEqual([{ id: "flat-physical", value: 1 }]);
-  });
-
-  it("caps a saved Basic item's affixes at the Basic slot limit", () => {
-    const normalized = normalizeGearInstance({
-      instanceId: "sword-1",
-      definitionId: "shortsword-basic",
-      affixes: [
-        { id: "flat-physical", value: 1 },
         { id: "flat-stun", value: 1 },
         { id: "flat-holy", value: 1 },
       ],
     });
-
     expect(normalized?.affixes).toEqual([
       { id: "flat-physical", value: 1 },
       { id: "flat-stun", value: 1 },
     ]);
-  });
-
-  it("drops a Unique signature from an ordinary saved item", () => {
-    const normalized = normalizeGearInstance({
-      instanceId: "sword-1",
-      definitionId: "shortsword-basic",
-      affixes: [{ id: "kingbreaker", value: 1 }],
-    });
-
-    expect(normalized?.affixes).toEqual([]);
+    expect(effectsForInstance(normalized!).flatPhysicalDamage).toBe(1);
   });
 
   it("salvages equipped gear for crafting currencies and clears loadouts", () => {

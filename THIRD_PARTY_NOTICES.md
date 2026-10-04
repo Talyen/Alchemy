@@ -30,12 +30,12 @@ Every third-party art, audio, music, or font source must be recorded before a
 public release. Keep one row per source pack or licensor and link the local
 license or receipt when redistribution terms are not public.
 
-| Asset group                                          | Source / licensor                                                         | License or permission                                    | Attribution required    | Local evidence                                                                                                  |
-| ---------------------------------------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Original Alchemy code, documentation, and visual art | Ryan McIntire                                                             | CC BY-NC 4.0                                             | Yes                     | [LICENSE.md](./LICENSE.md); project owner confirms all artwork is original                                      |
-| Inter font (`public/fonts/Inter.woff2`)              | [The Inter Project Authors](https://github.com/rsms/inter/tree/66647c0bb) | SIL Open Font License 1.1                                | Preserve license notice | [Local license copy](./public/licenses/inter-ofl.txt)                                                           |
-| Registered and curated game sound effects            | Source packs under `Raw Assets/Sound Effects/`                            | Project owner states CC0 packs; exact sources unverified | Unknown                 | Pack names and license records unavailable — release blocker                                                    |
-| Thirteen Suno-generated music tracks                 | [Track links below](#music-source-links)                                  | Account entitlement at creation/download not verified    | Review applicable terms | Embedded song IDs and creation dates; private subscription/download evidence not yet recorded — release blocker |
+| Asset group                                          | Source / licensor                                                               | License or permission                                   | Attribution required    | Local evidence                                                                                                              |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Original Alchemy code, documentation, and visual art | Ryan McIntire                                                                   | CC BY-NC 4.0                                            | Yes                     | [LICENSE.md](./LICENSE.md); project owner confirms all artwork is original                                                  |
+| Inter font (`public/fonts/Inter.woff2`)              | [The Inter Project Authors](https://github.com/rsms/inter/tree/66647c0bb)       | SIL Open Font License 1.1                               | Preserve license notice | [Local license copy](./public/licenses/inter-ofl.txt)                                                                       |
+| Registered and curated game sound effects            | Sources listed by the [sound asset registry](./scripts/assets/sound-assets.mjs) | Earlier CC0 claim; pack-specific permissions unverified | Unknown                 | [Approved source ledger](./Docs/design/audio-review/approved-choices.json); redistribution records remain a release blocker |
+| Thirteen Suno-generated music tracks                 | [Track links below](#music-source-links)                                        | Account entitlement at creation/download not verified   | Review applicable terms | Embedded song IDs and creation dates; private subscription/download evidence not yet recorded — release blocker             |
 
 Files whose provenance is not represented above are not cleared for public
 distribution merely because they exist under `Raw Assets/`, `public/`, or
@@ -46,12 +46,18 @@ committed; record a stable private evidence location instead.
 The Inter WOFF2 name table identifies version 4.001 and project commit
 `66647c0bb`; the local license copy matches that revision.
 
-The current game sound registry has 40 generated sources and 12 curated OGGs.
-The project owner states the sounds came from [CC0](https://creativecommons.org/publicdomain/zero/1.0/)
-free-use packs, but does not have the pack names or license records. Seven
-registered WAVs have an embedded `Pixel Combat` album tag; that tag alone does
-not establish a license. Identify the source packs and their CC0 notices before
-clearing the sound effects for distribution.
+The [sound asset registry](./scripts/assets/sound-assets.mjs) owns the current
+generated-source and curated-OGG inventory. The project owner's earlier
+[CC0](https://creativecommons.org/publicdomain/zero/1.0/) statement was recorded
+without pack names or license records. The approved sound replacements now have
+source paths, hashes, and excerpt boundaries in the
+[installation ledger](./Docs/design/audio-review/approved-choices.json), with
+processing details in the [installation record](./Docs/design/audio-review/INSTALLATION.md).
+Those records identify recordings and listening decisions; they do not establish
+redistribution permission. Embedded tags such as `Pixel Combat` likewise identify
+a possible source without establishing its license. Resolve pack-specific
+permissions for both retained recordings and imported excerpts before clearing
+the sound effects for distribution.
 
 ### Music source links
 

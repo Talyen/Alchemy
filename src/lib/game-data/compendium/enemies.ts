@@ -173,7 +173,7 @@ export const enemyBestiary = [
       trait("fire-imp", "Cinder Touch", "Attacks inflict 1 additional Burn"),
       trait("minor-freeze-vulnerability", "Freeze Vulnerability", "Receives 30% more Freeze damage"),
     ],
-    abilityIds: ["fireball", "burning-blade", "molten-bulwark"],
+    abilityIds: ["fireball", "bellows-blast", "molten-bulwark"],
   }),
   defineEnemy({
     id: "hellhound",

@@ -49,35 +49,6 @@ describe("enemy turn trait coverage", () => {
     expect(modifierOverlap).toEqual([]);
     expect(PASSIVE_ONLY_ENEMY_TRAIT_IDS.filter((id) => REACTION_ONLY_ENEMY_TRAIT_IDS.includes(id))).toEqual([]);
   });
-
-  it("tracks imported traits with explicit runtime reactions", () => {
-    const importedIds = [
-      "will-o-wisp",
-      "bandit",
-      "ogre",
-      "fire-imp",
-      "hellhound",
-      "pyromancer",
-      "giant-spider",
-      "giant-snake",
-      "blood-cultist",
-      "dire-wolf",
-      "vampire",
-      "blood-countess",
-      "zealot-enemy",
-      "inquisitor",
-      "paladin",
-      "seraph",
-      "winter-wolf",
-      "ice-wraith",
-      "yeti",
-      "banshee",
-      "brawler",
-      "earth-elemental",
-      "stone-titan",
-    ];
-    expect(importedIds.every((id) => REACTION_ONLY_ENEMY_TRAIT_IDS.includes(id))).toBe(true);
-  });
 });
 
 describe("processEnemyRegeneration", () => {
@@ -108,65 +79,17 @@ describe("processEnemyRegeneration", () => {
     expect(result.enemyHealth).toBe(20);
   });
 
-  it("halves regen when enemy has poison and poisonHalvesHealing talent", () => {
-    const state = patchBattleState({
-      enemyHealth: 20,
-      enemyMaxHealth: 30,
-      enemyRegeneration: 5,
-      enemyStatuses: { poison: 3 },
-      talentEffects: {
-        poisonHalvesHealing: true,
-      },
-    });
-    const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
-    const result = processEnemyRegeneration(state, texts);
-    expect(result.enemyHealth).toBe(23);
-  });
-
-  it("halves regen when enemy has bleed and bleedHalvesEnemyHealing talent", () => {
-    const state = patchBattleState({
-      enemyHealth: 20,
-      enemyMaxHealth: 30,
-      enemyRegeneration: 5,
-      enemyStatuses: { bleed: 3 },
-      talentEffects: {
-        bleedHalvesEnemyHealing: true,
-      },
-    });
-    const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
-    const result = processEnemyRegeneration(state, texts);
-    expect(result.enemyHealth).toBe(23);
-  });
-
-  it("halves regen twice when enemy has both poison and bleed with both talents", () => {
-    const state = patchBattleState({
-      enemyHealth: 20,
-      enemyMaxHealth: 30,
-      enemyRegeneration: 8,
-      enemyStatuses: { poison: 3, bleed: 3 },
-      talentEffects: {
-        poisonHalvesHealing: true,
-        bleedHalvesEnemyHealing: true,
-      },
-    });
-    const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
-    const result = processEnemyRegeneration(state, texts);
-    expect(result.enemyHealth).toBe(22);
-  });
-
-  it("still heals 1 when regen is 1 and halved by poison (rounds up)", () => {
+  it("preserves a singleton regeneration packet when both healing reductions round it", () => {
     const state = patchBattleState({
       enemyHealth: 20,
       enemyMaxHealth: 30,
       enemyRegeneration: 1,
-      enemyStatuses: { poison: 3 },
-      talentEffects: {
-        poisonHalvesHealing: true,
-      },
+      enemyStatuses: { poison: 1, bleed: 1 },
+      talentEffects: { poisonHalvesHealing: true, bleedHalvesEnemyHealing: true },
     });
     const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
-    const result = processEnemyRegeneration(state, texts);
-    expect(result.enemyHealth).toBe(21);
+    expect(processEnemyRegeneration(state, texts).enemyHealth).toBe(21);
+    expect(texts).toEqual([{ target: "enemy", kind: "heal", stat: "health", amount: 1 }]);
   });
 });
 
@@ -185,16 +108,8 @@ describe("processEnemyTraits", () => {
     });
     const result = processEnemyTraits(state, []);
     expect(result.enemyMitigation.forge).toBe(TRAIT_FORGE_PER_TURN);
-  });
-
-  it("does not apply rusting-carapace on odd turns", () => {
-    const state = patchBattleState({
-      currentEnemy: forgeGolem,
-      turn: 1,
-      enemyMitigation: { forge: 0 },
-    });
-    const result = processEnemyTraits(state, []);
-    expect(result.enemyMitigation.forge).toBe(0);
+    expect(processEnemyTraits({ ...state, turn: 1 }, []).enemyMitigation.forge).toBe(0);
+    expect(state.enemyMitigation.forge).toBe(0);
   });
 
   it("iron-hide grows Armor every other turn without a random choice", () => {

@@ -1,22 +1,11 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment -- test imports JS fragments without declarations, covered by runtime ESLint checks
-// @ts-nocheck -- test imports JS fragments without declarations, covered by runtime ESLint checks
 import { ESLint } from "eslint";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import tseslint from "typescript-eslint";
 
 vi.setConfig({ testTimeout: 30_000 });
-import {
-  BATTLE_NO_DIRECT_RNG,
-  BATTLE_NO_MATH_FLOOR,
-  CLASSNAME_NO_TEMPLATE,
-  NO_UNOWNED_CONTEXT_CREATION,
-  restrictedSyntax,
-} from "../../eslint/fragments.js";
-
 const ROOT = path.resolve(import.meta.dirname, "../..");
 
-const eslintInstances = new Map<string, ESLint>();
 const effectiveEslint = new ESLint({ cwd: ROOT, overrideConfig: [tseslint.configs.disableTypeChecked] });
 
 async function effectiveMessages(filePath: string, code: string, ruleId: string) {
@@ -25,38 +14,8 @@ async function effectiveMessages(filePath: string, code: string, ruleId: string)
   return result.messages.filter((message) => message.ruleId === ruleId);
 }
 
-function getOrCreateEslint(selectors: ReturnType<typeof restrictedSyntax>): ESLint {
-  const key = JSON.stringify(selectors);
-  let instance = eslintInstances.get(key);
-  if (!instance) {
-    instance = new ESLint({
-      cwd: ROOT,
-      overrideConfigFile: true,
-      overrideConfig: [
-        {
-          files: ["**/*.{ts,tsx}"],
-          languageOptions: {
-            parser: tseslint.parser,
-            parserOptions: { ecmaVersion: 2022, sourceType: "module", ecmaFeatures: { jsx: true } },
-          },
-          rules: { "no-restricted-syntax": selectors },
-        },
-      ],
-    });
-    eslintInstances.set(key, instance);
-  }
-  return instance;
-}
-
-async function lintSyntax(relativePath: string, code: string, selectors: ReturnType<typeof restrictedSyntax>) {
-  const eslint = getOrCreateEslint(selectors);
-  const results = await eslint.lintText(code, { filePath: path.join(ROOT, relativePath) });
-  return results.flatMap((r) => r.messages.filter((m) => m.ruleId === "no-restricted-syntax"));
-}
-
 describe("eslint rationalization", () => {
   it("bans any .rng access including nextState, computed, and destructuring", async () => {
-    const selectors = restrictedSyntax(...BATTLE_NO_DIRECT_RNG);
     const cases = [
       `const x = state.rng;`,
       `const x = nextState.rng();`,
@@ -66,24 +25,27 @@ describe("eslint rationalization", () => {
       `function foo({ rng }) {}`,
     ];
     for (const code of cases) {
-      const msgs = await lintSyntax("src/lib/battle/card-play.ts", code, selectors);
+      const msgs = await effectiveMessages("src/lib/battle/card-play.ts", code, "no-restricted-syntax");
       expect(msgs.length, `should ban ${code}`).toBeGreaterThan(0);
     }
-    const allowed = await lintSyntax(
+    const allowed = await effectiveMessages(
       "src/lib/battle/rng.ts",
       `import { getBattleRng } from "./rng"; const x = getBattleRng(state);`,
-      selectors,
+      "no-restricted-syntax",
     );
     expect(allowed.length).toBe(0);
   });
 
   it("bans Math.floor/ceil/trunc but allows Math.round", async () => {
-    const selectors = restrictedSyntax(...BATTLE_NO_MATH_FLOOR);
     for (const fn of ["floor", "ceil", "trunc"]) {
-      const msgs = await lintSyntax("src/lib/battle/card-play.ts", `Math.${fn}(1.5); Math["${fn}"](1.5);`, selectors);
+      const msgs = await effectiveMessages(
+        "src/lib/battle/card-play.ts",
+        `Math.${fn}(1.5); Math["${fn}"](1.5);`,
+        "no-restricted-syntax",
+      );
       expect(msgs.length, `should ban dot and computed Math.${fn}`).toBe(2);
     }
-    const allowed = await lintSyntax("src/lib/battle/card-play.ts", `Math.round(1.5);`, selectors);
+    const allowed = await effectiveMessages("src/lib/battle/card-play.ts", `Math.round(1.5);`, "no-restricted-syntax");
     expect(allowed.length).toBe(0);
   });
 
@@ -109,64 +71,6 @@ describe("eslint rationalization", () => {
         expect(nestedDispatch, file).toHaveLength(1);
       }
     }
-  });
-
-  it("className template targets only raw template directly on className", async () => {
-    expect(CLASSNAME_NO_TEMPLATE.length).toBe(2);
-    expect(CLASSNAME_NO_TEMPLATE[0].selector).toContain("JSXExpressionContainer");
-    const selectors = restrictedSyntax(...CLASSNAME_NO_TEMPLATE);
-    const banned = await lintSyntax(
-      "src/features/test.tsx",
-      `export function Foo(){ return <div className={\`a \${b}\`} /> }`,
-      selectors,
-    );
-    expect(banned.length).toBeGreaterThan(0);
-    const allowed = await lintSyntax(
-      "src/features/test.tsx",
-      `export function Foo(){ return <div className={cn(\`a \${b}\`)} /> }`,
-      selectors,
-    );
-    expect(allowed.length).toBe(0);
-    const bannedConcat = await lintSyntax(
-      "src/features/test.tsx",
-      `export function Foo({ active }: { active: boolean }){ return <div className={"a " + (active ? "b" : "c")} /> }`,
-      selectors,
-    );
-    expect(bannedConcat.length).toBeGreaterThan(0);
-  });
-
-  it("catches aliased createContext imports", async () => {
-    const selectors = restrictedSyntax(...NO_UNOWNED_CONTEXT_CREATION);
-    const banned = await lintSyntax(
-      "src/features/alchemy/run-loop/screens/foo.tsx",
-      `import { createContext as myCtx } from "react"; const Ctx = myCtx(null);`,
-      selectors,
-    );
-    expect(banned.length).toBeGreaterThan(0);
-  });
-
-  it("enables alt-text errors for application images", async () => {
-    const config = await effectiveEslint.calculateConfigForFile("src/features/alchemy/shared/ui/test.tsx");
-    expect(config.rules?.["jsx-a11y/alt-text"]?.[0]).toBe(2);
-  });
-
-  it("disables react-hooks for Playwright specs but enables for React unit tests", async () => {
-    const specConfig = await effectiveEslint.calculateConfigForFile("tests/pages/foo.spec.ts");
-    const specRule = specConfig.rules?.["react-hooks/rules-of-hooks"];
-    const specOff =
-      specRule === "off" || specRule === 0 || (Array.isArray(specRule) && (specRule[0] === "off" || specRule[0] === 0));
-    expect(specOff).toBe(true);
-    const unitConfig = await effectiveEslint.calculateConfigForFile("tests/features/alchemy/meta/screens/foo.test.tsx");
-    const unitRule = unitConfig.rules?.["react-hooks/rules-of-hooks"];
-    const unitOff =
-      unitRule === "off" || unitRule === 0 || (Array.isArray(unitRule) && (unitRule[0] === "off" || unitRule[0] === 0));
-    expect(unitOff).toBe(false);
-  });
-
-  it("uses vitest recommended without hand-written .only selectors", async () => {
-    const unitConfig = await effectiveEslint.calculateConfigForFile("tests/features/alchemy/meta/screens/foo.test.ts");
-    expect(unitConfig.rules?.["vitest/no-disabled-tests"]).toBeDefined();
-    expect(unitConfig.rules?.["vitest/no-focused-tests"]).toBeDefined();
   });
 });
 

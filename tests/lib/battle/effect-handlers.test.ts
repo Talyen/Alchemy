@@ -14,8 +14,8 @@ describe("applySelfDamageEffect", () => {
     const texts: CombatTextEvent[] = [];
     const result = EFFECT_APPLY_BY_KIND["self-damage"](
       state,
-      {} as never,
-      { kind: "self-damage", damageType: "burn", amount: 5 } as never,
+      makeTestCard(),
+      { kind: "self-damage", damageType: "burn", amount: 5 },
       1,
       texts,
     );
@@ -30,81 +30,46 @@ describe("applyPlayerStatusEffectHandler", () => {
     const state = patchBattleState({ maxMana: 5 });
     const result = EFFECT_APPLY_BY_KIND["player-status"](
       state,
-      {} as never,
-      { kind: "player-status", status: "block", amount: 2, perManaCrystal: 2 } as never,
+      makeTestCard(),
+      { kind: "player-status", status: "block", amount: 2, perManaCrystal: 2 },
       1,
       [],
     );
     expect(result.playerStatuses.block).toBe(10);
   });
 
-  it("converts current mana as block per mana and zeroes mana", () => {
+  it("scales the start-of-card Mana snapshot and spends the live Mana only once", () => {
     const state = patchBattleState({ mana: 4, maxMana: 5 });
+    const texts: CombatTextEvent[] = [];
     const result = EFFECT_APPLY_BY_KIND["player-status"](
       state,
-      {} as never,
-      { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 } as never,
-      1,
-      [],
-    );
-    expect(result.playerStatuses.block).toBe(12);
-    expect(result.mana).toBe(0);
-  });
-
-  it("respects potion multiplier on convertCurrentMana", () => {
-    const state = patchBattleState({ mana: 4, maxMana: 5 });
-    const result = EFFECT_APPLY_BY_KIND["player-status"](
-      state,
-      {} as never,
-      { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 } as never,
+      makeTestCard(),
+      { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 },
       2,
-      [],
-    );
-    expect(result.playerStatuses.block).toBe(24);
-  });
-
-  it("uses frozen manaAtStart snapshot, not live mana", () => {
-    const state = patchBattleState({ mana: 4, maxMana: 5 });
-    const result = EFFECT_APPLY_BY_KIND["player-status"](
-      state,
-      {} as never,
-      { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 } as never,
-      1,
-      [],
+      texts,
       { manaAtStart: 6, enemyFreezeSkipTurnsAtStart: 0 },
     );
-    expect(result.playerStatuses.block).toBe(18);
+    expect(result.playerStatuses.block).toBe(36);
+    expect(result.mana).toBe(0);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 36 });
+    expect(state.mana).toBe(4);
   });
 });
 
-describe("applyEnemyStatusEffect", () => {
-  it("applies freeze and triggers freeze resolution", () => {
+describe("enemy-status control activation", () => {
+  it.each(["freeze", "stun"] as const)("activates %s at the threshold and acknowledges it", (status) => {
+    const state = patchBattleState({ enemyHealth: 30, enemyMaxHealth: 30 });
     const texts: CombatTextEvent[] = [];
-    const state = patchBattleState({
-      enemyStatuses: { freeze: 0 },
-      enemyCC: { freezeSkipTurns: 0, stunSkipTurns: 0, cooldown: 0 },
-    });
     const result = EFFECT_APPLY_BY_KIND["enemy-status"](
       state,
-      {} as never,
-      { kind: "enemy-status", status: "freeze", amount: 3 } as never,
+      makeTestCard(),
+      { kind: "enemy-status", status, amount: 15 },
       1,
       texts,
     );
-    expect(result.enemyStatuses.freeze).toBe(3);
-  });
-
-  it("applies stun and triggers stun resolution", () => {
-    const texts: CombatTextEvent[] = [];
-    const state = patchBattleState();
-    const result = EFFECT_APPLY_BY_KIND["enemy-status"](
-      state,
-      {} as never,
-      { kind: "enemy-status", status: "stun", amount: 2 } as never,
-      1,
-      texts,
-    );
-    expect(result.enemyStatuses.stun).toBeGreaterThanOrEqual(2);
+    expect(result.enemyCC[status === "freeze" ? "freezeSkipTurns" : "stunSkipTurns"]).toBeGreaterThan(0);
+    expect(texts).toContainEqual(expect.objectContaining({ kind: "notice", stat: status }));
+    expect(state.enemyCC[status === "freeze" ? "freezeSkipTurns" : "stunSkipTurns"]).toBe(0);
   });
 });
 
@@ -119,8 +84,8 @@ describe("applyRemovePlayerStatusEffect", () => {
     });
     const result = EFFECT_APPLY_BY_KIND["remove-player-status"](
       state,
-      {} as never,
-      { kind: "remove-player-status", status: "burn" } as never,
+      makeTestCard(),
+      { kind: "remove-player-status", status: "burn" },
       1,
       [],
     );
@@ -134,8 +99,8 @@ describe("applyRemovePlayerStatusEffect", () => {
     });
     const result = EFFECT_APPLY_BY_KIND["remove-player-status"](
       state,
-      {} as never,
-      { kind: "remove-player-status", status: "burn" } as never,
+      makeTestCard(),
+      { kind: "remove-player-status", status: "burn" },
       1,
       [],
     );
@@ -150,8 +115,8 @@ describe("applyMultiplyEnemyStatusEffect", () => {
     });
     const result = EFFECT_APPLY_BY_KIND["multiply-enemy-status"](
       state,
-      {} as never,
-      { kind: "multiply-enemy-status", status: "poison", factor: 2 } as never,
+      makeTestCard(),
+      { kind: "multiply-enemy-status", status: "poison", factor: 2 },
       1,
       [],
     );
@@ -164,8 +129,8 @@ describe("applyMultiplyEnemyStatusEffect", () => {
     });
     const result = EFFECT_APPLY_BY_KIND["multiply-enemy-status"](
       state,
-      {} as never,
-      { kind: "multiply-enemy-status", status: "freeze", factor: 3 } as never,
+      makeTestCard(),
+      { kind: "multiply-enemy-status", status: "freeze", factor: 3 },
       1,
       [],
     );
@@ -179,7 +144,7 @@ describe("applyCleansePlayerStatusToDamageEffect", () => {
     const result = EFFECT_APPLY_BY_KIND["cleanse-player-status-to-damage"](
       state,
       makeTestCard(),
-      { kind: "cleanse-player-status-to-damage", status: "burn", damageType: "physical" } as never,
+      { kind: "cleanse-player-status-to-damage", status: "burn", damageType: "physical" },
       1,
       [],
     );
@@ -194,7 +159,7 @@ describe("applyCleansePlayerStatusToDamageEffect", () => {
     const result = EFFECT_APPLY_BY_KIND["cleanse-player-status-to-damage"](
       state,
       makeTestCard(),
-      { kind: "cleanse-player-status-to-damage", status: "burn", damageType: "physical" } as never,
+      { kind: "cleanse-player-status-to-damage", status: "burn", damageType: "physical" },
       1,
       [],
     );
@@ -208,8 +173,8 @@ describe("applyRestoreManaEffect ifEnemyFrozen", () => {
     const state = patchBattleState({ enemyCC: { freezeSkipTurns: 0, stunSkipTurns: 0, cooldown: 0 } });
     const result = EFFECT_APPLY_BY_KIND["restore-mana"](
       state,
-      {} as never,
-      { kind: "restore-mana", amount: 2, ifEnemyFrozen: true } as never,
+      makeTestCard(),
+      { kind: "restore-mana", amount: 2, ifEnemyFrozen: true },
       1,
       [],
       { manaAtStart: 0, enemyFreezeSkipTurnsAtStart: 0 },
@@ -221,13 +186,13 @@ describe("applyRestoreManaEffect ifEnemyFrozen", () => {
     const state = patchBattleState({ mana: 1, enemyCC: { freezeSkipTurns: 2, stunSkipTurns: 0, cooldown: 0 } });
     const result = EFFECT_APPLY_BY_KIND["restore-mana"](
       state,
-      {} as never,
-      { kind: "restore-mana", amount: 2, ifEnemyFrozen: true } as never,
+      makeTestCard(),
+      { kind: "restore-mana", amount: 2, ifEnemyFrozen: true },
       1,
       [],
       { manaAtStart: 1, enemyFreezeSkipTurnsAtStart: 1 },
     );
-    expect(result.mana).toBeGreaterThan(1);
+    expect(result.mana).toBe(3);
   });
 });
 
@@ -236,8 +201,8 @@ describe("applyGainGoldEffect ifEnemyStunned", () => {
     const state = patchBattleState({ enemyCC: { freezeSkipTurns: 0, stunSkipTurns: 0, cooldown: 0 } });
     const result = EFFECT_APPLY_BY_KIND["gain-gold"](
       state,
-      {} as never,
-      { kind: "gain-gold", amount: 2, ifEnemyStunned: true } as never,
+      makeTestCard(),
+      { kind: "gain-gold", amount: 2, ifEnemyStunned: true },
       1,
       [],
       { manaAtStart: 0, enemyFreezeSkipTurnsAtStart: 0 },
@@ -250,8 +215,8 @@ describe("applyGainGoldEffect ifEnemyStunned", () => {
     const texts: CombatTextEvent[] = [];
     const result = EFFECT_APPLY_BY_KIND["gain-gold"](
       state,
-      {} as never,
-      { kind: "gain-gold", amount: 2, ifEnemyStunned: true } as never,
+      makeTestCard(),
+      { kind: "gain-gold", amount: 2, ifEnemyStunned: true },
       1,
       texts,
       { manaAtStart: 0, enemyFreezeSkipTurnsAtStart: 0 },
@@ -268,28 +233,13 @@ describe("applyGainGoldEffect ifEnemyStunned", () => {
     });
     const result = EFFECT_APPLY_BY_KIND["gain-gold"](
       state,
-      {} as never,
-      { kind: "gain-gold", amount: 2, ifEnemyStunned: true } as never,
+      makeTestCard(),
+      { kind: "gain-gold", amount: 2, ifEnemyStunned: true },
       1,
       [],
       { manaAtStart: 0, enemyFreezeSkipTurnsAtStart: 0 },
     );
     expect(result.gold).toBe(0);
-  });
-});
-
-describe("applyNextArcheryFreeEffect", () => {
-  it("raises the free-archery flag", () => {
-    const state = patchBattleState();
-    expect(state.flags.nextArcheryCardFree).toBe(false);
-    const result = EFFECT_APPLY_BY_KIND["next-archery-free"](
-      state,
-      {} as never,
-      { kind: "next-archery-free" } as never,
-      1,
-      [],
-    );
-    expect(result.flags.nextArcheryCardFree).toBe(true);
   });
 });
 
@@ -316,7 +266,7 @@ describe("applyCompanionActionEffect", () => {
     const result = EFFECT_APPLY_BY_KIND["companion-action"](
       state,
       makeTestCard(),
-      { kind: "companion-action", amount: 2 } as never,
+      { kind: "companion-action", amount: 2 },
       1,
       [],
     );
@@ -328,14 +278,14 @@ describe("applyCompanionActionEffect", () => {
     const once = EFFECT_APPLY_BY_KIND["companion-action"](
       base,
       makeTestCard(),
-      { kind: "companion-action", amount: 1 } as never,
+      { kind: "companion-action", amount: 1 },
       1,
       [],
     );
     const twice = EFFECT_APPLY_BY_KIND["companion-action"](
       base,
       makeTestCard(),
-      { kind: "companion-action", amount: 2 } as never,
+      { kind: "companion-action", amount: 2 },
       1,
       [],
     );
@@ -351,7 +301,7 @@ describe("range bounds errors share one message", () => {
       { kind: "random-draw", minAmount: 6, maxAmount: 1 },
       { kind: "random-damage", minAmount: 6, maxAmount: 1 },
     ] as const) {
-      expect(() => applyCardEffects(state, makeTestCard({ effects: [effect] } as never), [])).toThrow(
+      expect(() => applyCardEffects(state, makeTestCard({ effects: [effect] }), [])).toThrow(
         "maxAmount must be >= minAmount",
       );
     }

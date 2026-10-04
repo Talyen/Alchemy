@@ -22,7 +22,8 @@ export type ArmedFlagChipId =
   | "nextNatureCardFree"
   | "nextHolyCardFree"
   | "nextWishExtraChoice"
-  | "hawkEyeReady";
+  | "hawkEyeReady"
+  | "dodgeNextAttack";
 
 export type PendingPulseChipId = `pending-${DamageType}`;
 
@@ -176,6 +177,13 @@ export const augmentDefinitions: Record<AugmentId, AugmentDefinition> = {
     description: "Your next Nature card is free.",
     icon: keywordIcons.nature,
     colorClass: keywordDefinitions.nature.colorClass,
+  },
+  dodgeNextAttack: {
+    id: "dodgeNextAttack",
+    label: "Evasion",
+    description: "Dodge the next incoming attack.",
+    icon: keywordIcons.dodge,
+    colorClass: keywordDefinitions.dodge.colorClass,
   },
   ...pendingPulseDefinitions,
 } as Record<AugmentId, AugmentDefinition>;

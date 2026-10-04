@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { countUnlockedCombatTalents, resolveSimLoadout, simulateBattle, TIER_GOLD } from "@/lib/balance";
-import { buildTypicalGearEffects } from "@/lib/balance/gear-preset";
-import { buildSimCompanionBondLevels, companionIdsFromDeck } from "@/lib/balance/homestead-preset";
-import { createSeededRng } from "@/lib/rng";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
-import { characters, createEmptyTalentEffectManifest, getStartingDeck } from "@/lib/game-data";
+import { characters, createEmptyTalentEffectManifest } from "@/lib/game-data";
 import { makeTestCard } from "../../fixtures/cards";
 import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
 
@@ -36,18 +33,16 @@ describe("resolveSimLoadout", () => {
     const second = resolveSimLoadout({ preset: "late", characterId: "wizard", mode: "typical", seed: 42 });
     expect(first.gearEffects).toEqual(second.gearEffects);
   });
-});
 
-describe("buildTypicalGearEffects", () => {
-  it("returns empty gear for early", () => {
-    expect(buildTypicalGearEffects("rogue", "early", createSeededRng(1))).toEqual(defaultGearEffects);
-  });
-
-  it("rolls affinity-matching gear that is stable for a given rng seed", () => {
-    const first = buildTypicalGearEffects("ranger", "late", createSeededRng(88));
-    const second = buildTypicalGearEffects("ranger", "late", createSeededRng(88));
-    expect(first).toEqual(second);
-    expect(first).not.toEqual(defaultGearEffects);
+  it.each(["bare", "typical"] as const)("keeps %s loadouts independent between fights", (mode) => {
+    const options = { preset: "late" as const, characterId: "knight" as const, mode, seed: 11 };
+    const first = resolveSimLoadout(options);
+    const expected = structuredClone(first);
+    first.homesteadCombat.companionBondLevels.wolf = 999;
+    first.homesteadCombat.cardHealBonus.apple = 999;
+    first.gearEffects.maxHealth = 999;
+    first.coreTrinketIds.push("meteorite");
+    expect(resolveSimLoadout(options)).toEqual(expected);
   });
 });
 
@@ -150,26 +145,5 @@ describe("simulateBattle loadout", () => {
       policy: "random-playable",
     });
     expect(bare.playerMaxHealth).toBe(MAX_PLAYER_HEALTH + loadout.talentPointHealth);
-  });
-});
-
-describe("buildSimCompanionBondLevels", () => {
-  it("bonds companions found in the deck by preset tier", () => {
-    const deck = getStartingDeck("ranger");
-    const ids = companionIdsFromDeck(deck);
-    expect(ids.length).toBeGreaterThan(0);
-
-    const early = buildSimCompanionBondLevels(deck, "early");
-    const late = buildSimCompanionBondLevels(deck, "late");
-    for (const id of ids) {
-      expect(early[id]).toBe(1);
-      expect(late[id]).toBe(3);
-    }
-  });
-
-  it("leaves bond at zero for companions not in the deck", () => {
-    const deck = getStartingDeck("knight");
-    const bonds = buildSimCompanionBondLevels(deck, "late");
-    expect(bonds.wolf).toBe(0);
   });
 });

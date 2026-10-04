@@ -4,7 +4,7 @@ import {
   clearBattleOpeningState,
   commitDevBattleVictory,
 } from "@/features/alchemy/shared/stores/battle-commands";
-import { clearBattleStageMarks, markBattleStage } from "@/lib/performance/battle-stage-marks";
+import { clearBattleStageMarks, markBattleStage } from "@/lib/performance/marks";
 import { isPlayerDefeated, type BattleSnapshot, type ResolvedBattleTurn } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
 import { stopAllSfx } from "@/lib/audio";

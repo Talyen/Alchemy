@@ -1,112 +1,55 @@
-import { describe, expect, it } from "vitest";
-import { advanceStartupBar, computeStartupLoadTarget } from "@/app/startup-bar-progress";
-import { STARTUP_BAR_INCOMPLETE_CAP, STARTUP_LOAD_FONT_WEIGHT, STARTUP_LOAD_IMAGE_WEIGHT } from "@/lib/game-constants";
+import { expect, it } from "vitest";
+import { advanceStartupLoad, createStartupLoadState, type StartupLoadEvent } from "@/app/startup-load-state";
+import { STARTUP_BAR_INCOMPLETE_CAP } from "@/lib/game-constants";
 
-describe("computeStartupLoadTarget", () => {
-  it("weights image, font, and bootstrap work", () => {
-    expect(
-      computeStartupLoadTarget({
-        imageLoaded: 0,
-        imageTotal: 10,
-        imagesSettled: false,
-        fontsReady: false,
-        bootstrapReady: false,
-      }),
-    ).toBe(0);
-
-    expect(
-      computeStartupLoadTarget({
-        imageLoaded: 5,
-        imageTotal: 10,
-        imagesSettled: false,
-        fontsReady: true,
-        bootstrapReady: false,
-      }),
-    ).toBeCloseTo(STARTUP_LOAD_IMAGE_WEIGHT * 0.5 + STARTUP_LOAD_FONT_WEIGHT, 5);
-  });
-
-  it("treats an empty image list as fully loaded", () => {
-    expect(
-      computeStartupLoadTarget({
-        imageLoaded: 0,
-        imageTotal: 0,
-        imagesSettled: true,
-        fontsReady: true,
-        bootstrapReady: true,
-      }),
-    ).toBe(1);
-  });
-
-  it("caps below 1 until images, fonts, and bootstrap are all done", () => {
-    const target = computeStartupLoadTarget({
-      imageLoaded: 10,
-      imageTotal: 10,
-      imagesSettled: true,
-      fontsReady: true,
-      bootstrapReady: false,
-    });
-    expect(target).toBeLessThanOrEqual(STARTUP_BAR_INCOMPLETE_CAP);
-    expect(target).toBeCloseTo(STARTUP_LOAD_IMAGE_WEIGHT + STARTUP_LOAD_FONT_WEIGHT, 5);
-  });
-
-  it("reaches 1 only when every gate is complete", () => {
-    expect(
-      computeStartupLoadTarget({
-        imageLoaded: 10,
-        imageTotal: 10,
-        imagesSettled: true,
-        fontsReady: true,
-        bootstrapReady: true,
-      }),
-    ).toBe(1);
-  });
-
-  it("holds below full while the image request is still settling", () => {
-    expect(
-      computeStartupLoadTarget({
-        imageLoaded: 10,
-        imageTotal: 10,
-        imagesSettled: false,
-        fontsReady: true,
-        bootstrapReady: true,
-      }),
-    ).toBeLessThanOrEqual(STARTUP_BAR_INCOMPLETE_CAP);
-  });
+it("keeps the game hidden until image decode, fonts, bootstrap and minimum display time settle", () => {
+  const gates: StartupLoadEvent[] = [
+    { type: "images-settled" },
+    { type: "fonts-settled" },
+    { type: "bootstrap-ready", ready: true },
+    { type: "minimum-elapsed" },
+  ];
+  for (const missing of gates) {
+    let state = createStartupLoadState(10, false);
+    state = advanceStartupLoad(state, { type: "image-progress", loaded: 10, total: 10 });
+    for (const gate of gates) if (gate !== missing) state = advanceStartupLoad(state, gate);
+    for (let timestamp = 0; timestamp <= 5000; timestamp += 50)
+      state = advanceStartupLoad(state, { type: "frame", timestamp });
+    expect(state.ready, missing.type).toBe(false);
+    if (missing.type !== "minimum-elapsed") expect(state.display).toBeLessThanOrEqual(STARTUP_BAR_INCOMPLETE_CAP);
+    state = advanceStartupLoad(state, missing);
+    for (let timestamp = 5050; timestamp <= 10000; timestamp += 50)
+      state = advanceStartupLoad(state, { type: "frame", timestamp });
+    expect(state.ready, missing.type).toBe(true);
+    expect(advanceStartupLoad(state, { type: "bootstrap-ready", ready: false })).toBe(state);
+  }
 });
 
-describe("advanceStartupBar", () => {
-  it("chases the target without jumping to it in one frame", () => {
-    const next = advanceStartupBar(0, 0.016, 0.5, false);
-    expect(next).toBeGreaterThan(0);
-    expect(next).toBeLessThan(0.5);
-  });
-
-  it("never decreases", () => {
-    const next = advanceStartupBar(0.4, 0.016, 0.1, false);
-    expect(next).toBeGreaterThanOrEqual(0.4);
-  });
-
-  it("trickles toward the cap when display has caught the stalled target", () => {
-    const stalled = 0.2;
-    const next = advanceStartupBar(stalled, 0.25, stalled, false);
-    expect(next).toBeGreaterThan(stalled);
-    expect(next).toBeLessThanOrEqual(STARTUP_BAR_INCOMPLETE_CAP);
-  });
-
-  it("does not pass the incomplete cap until work is complete", () => {
-    let display = 0.9;
-    for (let i = 0; i < 40; i += 1) {
-      display = advanceStartupBar(display, 0.05, 0.9, false);
-    }
-    expect(display).toBeLessThanOrEqual(STARTUP_BAR_INCOMPLETE_CAP);
-  });
-
-  it("can fill to 1 once work is complete", () => {
-    let display = 0.9;
-    for (let i = 0; i < 40; i += 1) {
-      display = advanceStartupBar(display, 0.05, 1, true);
-    }
-    expect(display).toBeGreaterThan(0.99);
-    expect(display).toBeLessThanOrEqual(1);
-  });
+it("handles no artwork, falling targets and a delayed frame without reversing or skipping the loading animation", () => {
+  let state = createStartupLoadState(0, true);
+  state = advanceStartupLoad(state, { type: "fonts-settled" });
+  state = advanceStartupLoad(state, { type: "frame", timestamp: 0 });
+  state = advanceStartupLoad(state, { type: "frame", timestamp: 16 });
+  expect(state.display).toBeGreaterThan(0);
+  expect(state.display).toBeLessThan(0.5);
+  state = advanceStartupLoad(state, { type: "bootstrap-ready", ready: false });
+  const before = state.display;
+  state = advanceStartupLoad(state, { type: "frame", timestamp: 60_000 });
+  expect(state.display).toBeGreaterThanOrEqual(before);
+  expect(state.display).toBeLessThanOrEqual(STARTUP_BAR_INCOMPLETE_CAP);
+  expect(state.ready).toBe(false);
+  state = advanceStartupLoad(state, { type: "bootstrap-ready", ready: true });
+  for (let timestamp = 60_050; timestamp <= 65_000; timestamp += 50)
+    state = advanceStartupLoad(state, { type: "frame", timestamp });
+  expect(state.ready).toBe(false);
+  expect(state.display).toBeGreaterThan(STARTUP_BAR_INCOMPLETE_CAP);
+  const filledDisplay = state.display;
+  state = advanceStartupLoad(state, { type: "bootstrap-ready", ready: false });
+  state = advanceStartupLoad(state, { type: "frame", timestamp: 70_000 });
+  expect(state.display).toBe(filledDisplay);
+  expect(state.ready).toBe(false);
+  state = advanceStartupLoad(state, { type: "bootstrap-ready", ready: true });
+  state = advanceStartupLoad(state, { type: "minimum-elapsed" });
+  state = advanceStartupLoad(state, { type: "frame", timestamp: 70_050 });
+  expect(state.ready).toBe(true);
 });

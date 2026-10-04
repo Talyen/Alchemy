@@ -1,61 +1,9 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getVirtualResolutionLayout, useVirtualResolution } from "@/features/alchemy/shared/ui/use-virtual-resolution";
+import { useVirtualResolution } from "@/features/alchemy/shared/ui/use-virtual-resolution";
 
-describe("getVirtualResolutionLayout", () => {
-  it("keeps native 16:9 windows at scale 1", () => {
-    const layout = getVirtualResolutionLayout("16:9", 1920, 1080);
-    const transformScale = Number(layout.stageStyle.transform.match(/^scale\(([^)]+)\)$/)?.[1]);
-
-    expect(transformScale).toBe(1);
-    expect(parseFloat(layout.frameStyle.width)).toBe(1920);
-    expect(parseFloat(layout.frameStyle.height)).toBe(1080);
-    expect(layout.stagePixelRatio).toBe(1);
-  });
-
-  it("uses one proportional logical stage at 4K", () => {
-    const layout = getVirtualResolutionLayout("16:9", 3840, 2160);
-    const transformScale = Number(layout.stageStyle.transform.match(/^scale\(([^)]+)\)$/)?.[1]);
-
-    expect(layout.stagePixelRatio).toBe(1);
-    expect(layout.stageStyle.width).toBe("1920px");
-    expect(layout.stageStyle.height).toBe("1080px");
-    expect(transformScale).toBe(2);
-    expect(parseFloat(layout.frameStyle.width)).toBe(3840);
-    expect(parseFloat(layout.frameStyle.height)).toBe(2160);
-  });
-
-  it("preserves content proportions on large windows while filling the stage", () => {
-    const standard = getVirtualResolutionLayout("16:9", 1920, 1080);
-    const ultraHd = getVirtualResolutionLayout("16:9", 3840, 2160);
-
-    function fixedRemToFrameHeight(layout: ReturnType<typeof getVirtualResolutionLayout>) {
-      const transformScale = Number(layout.stageStyle.transform.match(/^scale\(([^)]+)\)$/)?.[1]);
-      const visualRem = 16 * transformScale * layout.stageContentScale;
-      return visualRem / parseFloat(layout.frameStyle.height);
-    }
-
-    expect(fixedRemToFrameHeight(ultraHd) / fixedRemToFrameHeight(standard)).toBeCloseTo(1, 8);
-  });
-
-  it("fits arbitrary browser viewports fluidly with zero letterbox in auto mode", () => {
-    const macbook = getVirtualResolutionLayout("auto", 1512, 982);
-    expect(macbook.aspectMode).toBe("narrow");
-    expect(parseFloat(macbook.frameStyle.width)).toBe(1512);
-    expect(parseFloat(macbook.frameStyle.height)).toBe(982);
-
-    const ultrawide = getVirtualResolutionLayout("auto", 3440, 1440);
-    expect(ultrawide.aspectMode).toBe("ultrawide");
-    expect(parseFloat(ultrawide.frameStyle.width)).toBe(3440);
-    expect(parseFloat(ultrawide.frameStyle.height)).toBe(1440);
-
-    const standard = getVirtualResolutionLayout("auto", 1920, 1080);
-    expect(standard.aspectMode).toBe("standard");
-    expect(parseFloat(standard.frameStyle.width)).toBe(1920);
-    expect(parseFloat(standard.frameStyle.height)).toBe(1080);
-  });
-});
-
+// Geometry and preference arithmetic live in display-sizing.test.ts. This
+// suite protects the browser subscription and animation-frame lifecycle.
 describe("useVirtualResolution", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -93,6 +41,7 @@ describe("useVirtualResolution", () => {
     expect(renders).toBe(2);
     expect(result.current.frameStyle.width).toBe("1280px");
     expect(result.current.frameStyle.height).toBe("720px");
+    expect(result.current.stageStyle.transform).toBe("scale(0.6666666666666666)");
   });
 
   it("skips renders for resize events whose dimensions did not change", () => {

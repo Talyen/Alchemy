@@ -24,23 +24,9 @@ type DamageCardInput = CardBaseInput & {
   lifesteal?: boolean;
   tags?: KeywordId[];
 };
-export function damageCard({
-  id,
-  title,
-  art,
-  damageType,
-  amount,
-  cost = 1,
-  lifesteal = false,
-  tags,
-}: DamageCardInput): BattleCard {
-  // Damage wording lives in describeCardEffects, so builders cannot drift from canonical text.
+export function damageCard({ damageType, amount, lifesteal = false, ...base }: DamageCardInput): BattleCard {
   return effectsCard({
-    id,
-    art,
-    cost,
-    ...(title === undefined ? {} : { title }),
-    ...(tags === undefined ? {} : { tags }),
+    ...base,
     effects: [{ kind: "damage", damageType, amount, ...(lifesteal ? { lifesteal: true } : {}) }],
   });
 }
@@ -69,7 +55,7 @@ export function effectsCard<const E extends BattleCardEffect[]>({
   describe,
   cost = 1,
 }: EffectsCardInput<E>): BattleCard {
-  const lines = describe ? describe(effects) : describeCardEffects(effects);
+  const lines = [...(describe ? describe(effects) : describeCardEffects(effects))];
   if (tags) lines.push(...tags.map((tag) => capitalizeWord(tag)));
   if (consume) lines.push(CONSUME_DESCRIPTION_LINE);
   return {

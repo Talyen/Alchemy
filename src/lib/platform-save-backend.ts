@@ -90,33 +90,31 @@ async function clearDesktop(
 }
 
 async function readDesktopCandidates(desktop: DesktopApi, recovery: boolean): Promise<SaveBackendReadResult> {
-  let localCandidates: string[] = [];
-  let localReadFailed: boolean;
+  const slot = recovery ? "recovery" : undefined;
+  let local = { candidates: [] as string[], localReadFailed: true };
   let localReadError: unknown;
   try {
-    const result = await desktop.readSaveSlot(recovery ? "recovery" : undefined);
-    localCandidates = result.candidates;
-    localReadFailed = result.localReadFailed;
-    if (localReadFailed) localReadError = new Error("Local save candidates could not be read completely");
+    local = await desktop.readSaveSlot(slot);
+    if (local.localReadFailed) localReadError = new Error("Local save candidates could not be read completely");
   } catch (error) {
-    localReadFailed = true;
     localReadError = error;
     logStorageFailure("Desktop save candidates could not be listed", error);
   }
 
   let cloudCandidate: string | null = null;
   try {
-    cloudCandidate = (await desktop.steamCloudRead?.(recovery ? "recovery" : undefined)) ?? null;
+    cloudCandidate = (await desktop.steamCloudRead?.(slot)) ?? null;
   } catch (error) {
     logStorageFailure("Steam Cloud read failed", error);
   }
 
-  if (localReadFailed && !cloudCandidate && localCandidates.length === 0) return { ok: false, error: localReadError };
+  if (local.localReadFailed && !cloudCandidate && local.candidates.length === 0)
+    return { ok: false, error: localReadError };
   return {
     ok: true,
     // Dedup keeps the local ring ahead of the Cloud mirror in first-seen order.
-    candidates: [...new Set(cloudCandidate ? [...localCandidates, cloudCandidate] : localCandidates)],
-    ...(localReadFailed ? { localReadFailed: true } : {}),
+    candidates: [...new Set(cloudCandidate ? [...local.candidates, cloudCandidate] : local.candidates)],
+    ...(local.localReadFailed ? { localReadFailed: true } : {}),
   };
 }
 

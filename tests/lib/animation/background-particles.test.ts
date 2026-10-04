@@ -1,5 +1,14 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { startBackgroundParticles } from "@/lib/animation/background-particles";
+
+const disconnectObserver = vi.fn();
+const cleanups: Array<() => void> = [];
+
+function startParticles(...args: Parameters<typeof startBackgroundParticles>) {
+  const cleanup = startBackgroundParticles(...args);
+  cleanups.push(cleanup);
+  return cleanup;
+}
 
 let resizeObserverCallback: ResizeObserverCallback | null = null;
 
@@ -9,14 +18,21 @@ class MockResizeObserver {
   }
   observe() {}
   unobserve() {}
-  disconnect() {}
+  disconnect = disconnectObserver;
 }
 
 beforeEach(() => {
   resizeObserverCallback = null;
+  disconnectObserver.mockClear();
   vi.stubGlobal("ResizeObserver", MockResizeObserver);
   vi.stubGlobal("devicePixelRatio", 1);
   vi.spyOn(document, "hasFocus").mockReturnValue(true);
+});
+
+afterEach(() => {
+  for (const cleanup of cleanups.splice(0)) cleanup();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 function makeMockCanvas(
@@ -71,7 +87,7 @@ describe("startBackgroundParticles", () => {
       frames.push(frame);
       return frames.length;
     });
-    const stop = startBackgroundParticles({ current: canvas }, "dust");
+    const stop = startParticles({ current: canvas }, "dust");
     frames[0]!(16.67);
     expect(setColor).toHaveBeenCalledTimes(1);
     expect(draws).toEqual(Array.from({ length: 20 }, () => ({ color: "rgba(200, 190, 175, 1)", alpha: 0.065 })));
@@ -99,7 +115,7 @@ describe("startBackgroundParticles", () => {
     });
     Object.defineProperty(canvas, "width", { get: () => width, set: writeWidth });
     Object.defineProperty(canvas, "height", { get: () => height, set: writeHeight });
-    const stop = startBackgroundParticles({ current: canvas }, "embers");
+    const stop = startParticles({ current: canvas }, "embers");
     resizeObserverCallback?.([], {} as ResizeObserver);
     resizeObserverCallback?.([], {} as ResizeObserver);
     expect(writeWidth).toHaveBeenCalledTimes(1);
@@ -112,61 +128,12 @@ describe("startBackgroundParticles", () => {
     stop();
   });
 
-  it("returns noop cleanup when canvas is null", () => {
-    const ref = { current: null };
-    const cleanup = startBackgroundParticles(ref as never, "embers");
-    expect(cleanup).toBeInstanceOf(Function);
-    expect(() => cleanup()).not.toThrow();
-  });
-
-  it("returns noop cleanup when canvas has no context", () => {
-    const { canvas } = makeMockCanvas();
-    vi.mocked(canvas.getContext).mockReturnValue(null);
-    const ref = { current: canvas };
-    const cleanup = startBackgroundParticles(ref as never, "embers");
-    expect(() => cleanup()).not.toThrow();
-  });
-
-  it("creates particles and runs animation loop for embers variant", () => {
-    const { canvas, ctx } = makeMockCanvas();
-    const ref = { current: canvas };
-    let calls = 0;
-    const rafSpy = vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
-      calls++;
-      if (calls <= 1) cb(performance.now());
-      return 1;
-    });
-
-    startBackgroundParticles(ref as never, "embers");
-
-    expect(ctx.clearRect).toHaveBeenCalled();
-    expect(canvas.width).toBeGreaterThan(0);
-    expect(canvas.height).toBeGreaterThan(0);
-
-    rafSpy.mockRestore();
-  });
-
-  it("creates particles for dust variant", () => {
-    const { canvas } = makeMockCanvas();
-    const ref = { current: canvas };
-    let calls = 0;
-    const rafSpy = vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
-      calls++;
-      if (calls <= 1) cb(performance.now());
-      return 1;
-    });
-
-    expect(() => startBackgroundParticles(ref as never, "dust")).not.toThrow();
-
-    rafSpy.mockRestore();
-  });
-
   it("caps the rendered-pixel backing store to protect high-DPR frame pacing", () => {
     vi.stubGlobal("devicePixelRatio", 2);
     const { canvas } = makeMockCanvas();
     const rafSpy = vi.spyOn(window, "requestAnimationFrame").mockReturnValue(1);
 
-    const cleanup = startBackgroundParticles({ current: canvas } as never, "embers");
+    const cleanup = startParticles({ current: canvas } as never, "embers");
 
     expect(canvas.width * canvas.height).toBeLessThanOrEqual(3_000_000);
     expect(canvas.width).toBeGreaterThan(1920);
@@ -180,7 +147,7 @@ describe("startBackgroundParticles", () => {
     const { canvas, ctx } = makeMockCanvas(undefined, { width: 3840, height: 2160 });
     const rafSpy = vi.spyOn(window, "requestAnimationFrame").mockReturnValue(1);
 
-    const cleanup = startBackgroundParticles({ current: canvas } as never, "embers");
+    const cleanup = startParticles({ current: canvas } as never, "embers");
 
     expect(canvas.width * canvas.height).toBeLessThanOrEqual(3_000_000);
     expect(canvas.width).toBeLessThan(3840);
@@ -194,7 +161,7 @@ describe("startBackgroundParticles", () => {
     const { canvas, ctx, parent } = makeMockCanvas(undefined, { width: 0, height: 0 });
     const rafSpy = vi.spyOn(window, "requestAnimationFrame").mockReturnValue(1);
 
-    const cleanup = startBackgroundParticles({ current: canvas } as never, "embers");
+    const cleanup = startParticles({ current: canvas } as never, "embers");
 
     expect(canvas.width).toBe(1);
     expect(canvas.height).toBe(1);
@@ -214,17 +181,6 @@ describe("startBackgroundParticles", () => {
     rafSpy.mockRestore();
   });
 
-  it("stops animation on cleanup", () => {
-    const { canvas } = makeMockCanvas();
-    const ref = { current: canvas };
-    const rafSpy = vi.spyOn(window, "requestAnimationFrame").mockReturnValue(99);
-
-    const cleanup = startBackgroundParticles(ref as never, "embers");
-    expect(() => cleanup()).not.toThrow();
-
-    rafSpy.mockRestore();
-  });
-
   it("parks the loop while unfocused and resumes on focus", () => {
     const { canvas, ctx } = makeMockCanvas();
     const ref = { current: canvas };
@@ -234,7 +190,7 @@ describe("startBackgroundParticles", () => {
       return rafCbs.length;
     });
 
-    startBackgroundParticles(ref as never, "embers");
+    const stop = startParticles(ref, "embers");
 
     rafCbs[rafCbs.length - 1]?.(performance.now());
     expect(ctx.clearRect).toHaveBeenCalledTimes(1);
@@ -251,55 +207,35 @@ describe("startBackgroundParticles", () => {
     rafCbs[rafCbs.length - 1]?.(performance.now());
     expect(ctx.clearRect).toHaveBeenCalledTimes(2);
 
-    rafSpy.mockRestore();
-  });
-
-  it("works with custom colors", () => {
-    const { canvas } = makeMockCanvas();
-    const ref = { current: canvas };
-    let calls = 0;
-    const rafSpy = vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
-      calls++;
-      if (calls <= 1) cb(performance.now());
-      return 1;
-    });
-
-    const customColors = ["rgba(255, 0, 0, X)"] as const;
-    expect(() => startBackgroundParticles(ref as never, "embers", customColors)).not.toThrow();
+    const cancel = vi.spyOn(window, "cancelAnimationFrame");
+    const scheduled = rafCbs.length;
+    stop();
+    stop();
+    expect(cancel).toHaveBeenCalledExactlyOnceWith(scheduled);
+    expect(disconnectObserver).toHaveBeenCalledOnce();
+    window.dispatchEvent(new Event("focus"));
+    resizeObserverCallback?.([], {} as ResizeObserver);
+    rafCbs[scheduled - 1]?.(performance.now());
+    expect(rafCbs).toHaveLength(scheduled);
+    expect(ctx.clearRect).toHaveBeenCalledTimes(2);
 
     rafSpy.mockRestore();
   });
 
-  it("works with alpha multiplier", () => {
-    const { canvas } = makeMockCanvas();
-    const ref = { current: canvas };
-    let calls = 0;
-    const rafSpy = vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
-      calls++;
-      if (calls <= 1) cb(performance.now());
-      return 1;
-    });
-
-    expect(() => startBackgroundParticles(ref as never, "embers", undefined, 0.5)).not.toThrow();
-
-    rafSpy.mockRestore();
-  });
-
-  it("draws the requested particleCount on the first frame", () => {
-    const { canvas, ctx } = makeMockCanvas();
-    const ref = { current: canvas };
-    let calls = 0;
-    const rafSpy = vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
-      calls++;
-      if (calls <= 1) cb(performance.now());
-      return 1;
-    });
-
-    startBackgroundParticles(ref as never, "embers", undefined, undefined, 7);
-
+  it("renders the requested count, custom color and alpha without leaking the next frame", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.5);
+    vi.spyOn(performance, "now").mockReturnValue(0);
+    const { canvas, ctx } = makeMockCanvas(undefined, { width: 200, height: 100 });
+    const frames: FrameRequestCallback[] = [];
+    vi.spyOn(window, "requestAnimationFrame").mockImplementation((frame) => frames.push(frame));
+    const stop = startParticles({ current: canvas }, "embers", ["rgba(255, 0, 0, X)"], 0.5, 7);
+    frames[0]!(16.67);
+    expect(ctx.fillStyle).toBe("rgba(255, 0, 0, 1)");
+    expect(ctx.globalAlpha).toBe(0.095);
     expect(ctx.arc).toHaveBeenCalledTimes(7);
     expect(ctx.fill).toHaveBeenCalledTimes(7);
-
-    rafSpy.mockRestore();
+    stop();
+    frames[1]!(33.34);
+    expect(ctx.fill).toHaveBeenCalledTimes(7);
   });
 });

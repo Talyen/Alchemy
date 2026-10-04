@@ -44,6 +44,17 @@ export function useAppKeyboardShortcuts({
     const previousFocus = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || !screenInteractiveRef.current)
         return;
+      if (
+        event.key === "Enter" &&
+        !event.repeat &&
+        event.target instanceof HTMLInputElement &&
+        event.target.type === "checkbox" &&
+        !event.target.disabled
+      ) {
+        event.preventDefault();
+        event.target.click();
+        return;
+      }
       if (event.key === "F7" && !event.repeat) {
         event.preventDefault();
         focusPreviousControl();

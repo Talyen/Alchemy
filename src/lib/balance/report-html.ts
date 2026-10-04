@@ -1,7 +1,13 @@
 import { enemyById, isEnemyId } from "@/lib/game-data";
 import { ANOMALY_THRESHOLD_BY_PRESET } from "./anomalies";
 import { formatLengthBand, formatWinRateBand, isLengthOutsideBand, isWinRateOutsideTypeBand } from "./findings-types";
-import { titleFor, type ReportEnemyType, type TitleLookupKind } from "./report-catalog";
+import {
+  REPORT_TIERS,
+  titleFor,
+  type ReportTierRecord,
+  type ReportEnemyType,
+  type TitleLookupKind,
+} from "./report-catalog";
 import { escapeHtml, formatPercent, renderReportPage } from "./report-layout";
 import { reportMethodologyLines } from "./report-methodology";
 import type { BalanceReportModel, PairedTierRow } from "./report-model";
@@ -18,6 +24,10 @@ function rateCells(cell: RateCell, enemyType?: ReportEnemyType): string {
   return `<td class="${winClass}">${percent(cell.winRate)}${winTarget}</td><td>${cell.wins} / ${cell.losses} / ${cell.timeouts}<div class="meta">n=${cell.n}</div></td><td>${percent(cell.timeoutRate)}</td><td class="${turnClass}">${cell.averageTurns.toFixed(1)}${turnTarget}</td><td>${cell.averageHealthRemaining.toFixed(0)}</td><td>${cell.averageEnemyAttacks.toFixed(1)}</td><td>${cell.averageEnemyAbilityUses.toFixed(1)}</td><td>${cell.averageEnemyAbilityActivations.toFixed(1)}</td><td>${percent(cell.winsBeforeEnemyAttackRate)}</td>`;
 }
 
+function tierRateCells(rates: ReportTierRecord<RateCell>, enemyType?: ReportEnemyType): string {
+  return REPORT_TIERS.map(({ preset }) => rateCells(rates[preset], enemyType)).join("");
+}
+
 function deltaCell(delta: PairedDelta): string {
   const cls = delta.noisy ? "noisy" : delta.delta >= 0 ? "pos" : "neg";
   const mark = delta.noisy ? " (noisy)" : "";
@@ -30,7 +40,7 @@ function pairedRows(rows: readonly PairedTierRow[], kind: TitleLookupKind): stri
   return rows
     .map(
       (row) =>
-        `<tr><td>${escapeHtml(titleFor(kind, row.id))}</td>${deltaCell(row.deltas.early)}${deltaCell(row.deltas.mid)}${deltaCell(row.deltas.late)}</tr>`,
+        `<tr><td>${escapeHtml(titleFor(kind, row.id))}</td>${REPORT_TIERS.map(({ preset }) => deltaCell(row.deltas[preset])).join("")}</tr>`,
     )
     .join("\n");
 }
@@ -57,23 +67,21 @@ export function renderBalanceReportHtml(model: BalanceReportModel, options: Repo
   const enemyRows = model.enemies
     .map((row) => {
       const type = isEnemyId(row.id) ? enemyById[row.id].enemyType : undefined;
-      return `<tr><td>${escapeHtml(titleFor("enemy", row.id))}</td>${rateCells(row.rates.early, type)}${rateCells(row.rates.mid, type)}${rateCells(row.rates.late, type)}</tr>`;
+      return `<tr><td>${escapeHtml(titleFor("enemy", row.id))}</td>${tierRateCells(row.rates, type)}</tr>`;
     })
     .join("\n");
 
   const classRows = model.classes
     .map((row) => {
-      const lateN = row.ratesByType.late.normal.winRate;
-      const lateE = row.ratesByType.late.elite.winRate;
-      const lateB = row.ratesByType.late.boss.winRate;
-      return `<tr><td>${escapeHtml(titleFor("character", row.id))}</td>${rateCells(row.rates.early)}${rateCells(row.rates.mid)}${rateCells(row.rates.late)}<td>${percent(lateN)}</td><td>${percent(lateE)}</td><td>${percent(lateB)}</td></tr>`;
+      const late = row.ratesByType.late;
+      return `<tr><td>${escapeHtml(titleFor("character", row.id))}</td>${tierRateCells(row.rates)}<td>${percent(late.normal.winRate)}</td><td>${percent(late.elite.winRate)}</td><td>${percent(late.boss.winRate)}</td></tr>`;
     })
     .join("\n");
 
   const matchupRows = model.classMatchups
     .map((row) => {
       const cards = row.topCardsLate.map((entry) => `${titleFor("card", entry.cardId)} (${entry.count})`).join(", ");
-      return `<tr><td>${escapeHtml(titleFor("character", row.characterId))}</td><td>${escapeHtml(titleFor("enemy", row.enemyId))}</td><td>${escapeHtml(row.enemyType)}</td>${rateCells(row.rates.early, row.enemyType)}${rateCells(row.rates.mid, row.enemyType)}${rateCells(row.rates.late, row.enemyType)}<td>${escapeHtml(cards)}</td></tr>`;
+      return `<tr><td>${escapeHtml(titleFor("character", row.characterId))}</td><td>${escapeHtml(titleFor("enemy", row.enemyId))}</td><td>${escapeHtml(row.enemyType)}</td>${tierRateCells(row.rates, row.enemyType)}<td>${escapeHtml(cards)}</td></tr>`;
     })
     .join("\n");
 
@@ -90,12 +98,10 @@ export function renderBalanceReportHtml(model: BalanceReportModel, options: Repo
 
   const metricRows = model.anomalyMetrics
     .map((row) => {
-      const cells = (["early", "mid", "late"] as const)
-        .map((tier) => {
-          const value = row.values[tier];
-          return `<td class="${value > ANOMALY_THRESHOLD_BY_PRESET[tier] ? "neg" : ""}">${value}</td>`;
-        })
-        .join("");
+      const cells = REPORT_TIERS.map(({ preset: tier }) => {
+        const value = row.values[tier];
+        return `<td class="${value > ANOMALY_THRESHOLD_BY_PRESET[tier] ? "neg" : ""}">${value}</td>`;
+      }).join("");
       return `<tr><td>${escapeHtml(row.field)}</td>${cells}</tr>`;
     })
     .join("\n");
@@ -103,6 +109,8 @@ export function renderBalanceReportHtml(model: BalanceReportModel, options: Repo
   const { meta } = model;
   const rateHeaderTier = (label: string) =>
     `<th>Win ${label}</th><th>Wins / Defeats / Timeouts ${label}</th><th>Timeout ${label}</th><th>Turns ${label}</th><th>HP ${label}</th><th>Enemy attacks ${label}</th><th>Ability uses ${label}</th><th>Trait activations ${label}</th><th>Wins before attack ${label}</th>`;
+
+  const rateHeader = REPORT_TIERS.map(({ label }) => rateHeaderTier(label)).join("");
 
   return renderReportPage({
     title: "Balance Report",
@@ -119,19 +127,19 @@ ${methodology}
 
 <h2>Enemy Rankings</h2>
 <p class="meta">Sorted by Late win rate ascending (hardest at top). Timeout and remaining HP distinguish stalls from true losses.</p>
-<div class="scroll"><table><thead><tr><th>Enemy</th>${rateHeaderTier("Early")}${rateHeaderTier("Mid")}${rateHeaderTier("Late")}</tr></thead><tbody>
+<div class="scroll"><table><thead><tr><th>Enemy</th>${rateHeader}</tr></thead><tbody>
 ${enemyRows}
 </tbody></table></div>
 
 <h2>Class Rankings</h2>
 <p class="meta">Overall rates weight Normal / Elite / Boss equally. Outcome counts retain actual battles and are not type-weighted. Late type split is raw win rate within that enemy type.</p>
-<div class="scroll"><table><thead><tr><th>Class</th>${rateHeaderTier("Early")}${rateHeaderTier("Mid")}${rateHeaderTier("Late")}<th>Late Normal</th><th>Late Elite</th><th>Late Boss</th></tr></thead><tbody>
+<div class="scroll"><table><thead><tr><th>Class</th>${rateHeader}<th>Late Normal</th><th>Late Elite</th><th>Late Boss</th></tr></thead><tbody>
 ${classRows}
 </tbody></table></div>
 
 <h2>Class Matchups</h2>
 <p class="meta">Per class vs each enemy. Late top cards are play counts from core scenarios.</p>
-<div class="scroll"><table><thead><tr><th>Class</th><th>Enemy</th><th>Type</th>${rateHeaderTier("Early")}${rateHeaderTier("Mid")}${rateHeaderTier("Late")}<th>Late top cards</th></tr></thead><tbody>
+<div class="scroll"><table><thead><tr><th>Class</th><th>Enemy</th><th>Type</th>${rateHeader}<th>Late top cards</th></tr></thead><tbody>
 ${matchupRows}
 </tbody></table></div>
 

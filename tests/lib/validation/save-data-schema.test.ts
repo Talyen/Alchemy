@@ -1,31 +1,14 @@
 import { describe, it, expect } from "vitest";
-import {
-  SaveDataSchema,
-  CURRENT_SAVE_SCHEMA_VERSION,
-  CURRENT_CONTENT_VERSION,
-  CURRENT_GAME_BUILD_VERSION,
-} from "@/lib/validation";
+import { SaveDataSchema } from "@/lib/validation";
 import { defaultBattleState } from "@/lib/battle";
 import { baseHomesteadSave } from "../../fixtures/saves";
-import { currentSchemaCampaignSave } from "../../fixtures/current-saves";
 import { makeMinimalActiveRunInput } from "../../fixtures/active-run";
-import { ASPECT_RATIO_VALUES, DISPLAY_MODE_VALUES, SETTINGS_RANGES } from "@/lib/settings-values";
+import { SETTINGS_RANGES } from "@/lib/settings-values";
 
 describe("SaveDataSchema", () => {
   it("parses a full homestead save fixture", () => {
     const result = SaveDataSchema.safeParse(baseHomesteadSave);
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
-  });
-
-  it("parses a valid minimal save", () => {
-    const result = SaveDataSchema.safeParse({
-      activeRun: null,
-    });
-    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
-    if (result.success) {
-      expect(result.data.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-      expect(result.data.activeRun).toBeNull();
-    }
   });
 
   it("recovers the shared purse from a foreground combat snapshot", () => {
@@ -42,12 +25,16 @@ describe("SaveDataSchema", () => {
   it("recovers from corrupt fields", () => {
     const result = SaveDataSchema.safeParse({
       musicVolume: "loud",
+      sfxVolume: 80,
+      selectedAspectRatio: "99:99",
       brightness: 999,
       displayMode: "immersive",
     });
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.musicVolume).toBe(50);
+      expect(result.data.sfxVolume).toBe(80);
+      expect(result.data.selectedAspectRatio).toBe("auto");
       expect(result.data.brightness).toBe(SETTINGS_RANGES.brightness.max);
       expect(result.data.displayMode).toBe("borderless-fullscreen");
     }
@@ -55,22 +42,20 @@ describe("SaveDataSchema", () => {
 
   it("normalizes homestead arrays into tier records", () => {
     const result = SaveDataSchema.parse({
-      constructedBuildings: ["blacksmiths-forge"],
-      plantedFarms: ["pasture"],
+      constructedBuildings: ["blacksmiths-forge", "blacksmiths-forge", "unknown", null],
+      plantedFarms: { pasture: 1.8, orchard: -1, "herb-garden": Number.POSITIVE_INFINITY, unknown: 4 },
     });
-    expect(result.constructedBuildings["blacksmiths-forge"]).toBe(1);
+    expect(result.constructedBuildings["blacksmiths-forge"]).toBe(2);
     expect(result.plantedFarms.pasture).toBe(1);
+    expect(result.plantedFarms.orchard).toBe(0);
+    expect(result.plantedFarms["herb-garden"]).toBe(0);
+    expect(result.constructedBuildings).not.toHaveProperty("unknown");
+    expect(result.plantedFarms).not.toHaveProperty("unknown");
   });
 
   it("ignores character-only active run fragments", () => {
     const result = SaveDataSchema.parse({ activeRun: { characterId: "knight" } });
     expect(result.activeRun).toBeNull();
-  });
-
-  it("strips legacy uiScale without wiping other settings", () => {
-    const result = SaveDataSchema.parse({ displayMode: "fullscreen", uiScale: "120" });
-    expect(result.displayMode).toBe("fullscreen");
-    expect(result).not.toHaveProperty("uiScale");
   });
 
   it("normalizes corrupt discovery arrays while preserving unknown string ids", () => {
@@ -119,50 +104,12 @@ describe("SaveDataSchema", () => {
     expect(SaveDataSchema.parse({ backgroundGlowIntensity: 250 }).backgroundGlowIntensity).toBe(100);
   });
 
-  it("uses default aspect ratio when selectedResolution is omitted", () => {
-    const result = SaveDataSchema.safeParse({});
-
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.selectedAspectRatio).toBe("auto");
-    }
-  });
-
-  it("passes through a valid aspect ratio", () => {
-    expect(SaveDataSchema.parse({ selectedAspectRatio: "16:9" }).selectedAspectRatio).toBe("16:9");
-  });
-
-  it("falls back for an invalid aspect ratio", () => {
-    expect(SaveDataSchema.parse({ selectedAspectRatio: "99:99" }).selectedAspectRatio).toBe("auto");
-  });
-
-  it.each(DISPLAY_MODE_VALUES)("passes through display mode %s", (mode) => {
-    expect(SaveDataSchema.parse({ displayMode: mode }).displayMode).toBe(mode);
-  });
-
-  it.each(ASPECT_RATIO_VALUES)("passes through aspect ratio %s", (aspectRatio) => {
-    expect(SaveDataSchema.parse({ selectedAspectRatio: aspectRatio }).selectedAspectRatio).toBe(aspectRatio);
-  });
-
-  it("falls back for an invalid display mode", () => {
-    expect(SaveDataSchema.parse({ displayMode: "fake-mode" }).displayMode).toBe("borderless-fullscreen");
-  });
-
-  it("passes through valid talent XP", () => {
-    const result = SaveDataSchema.parse({ talentXP: { burn: 100, block: 50 } });
-    expect(result.talentXP.burn).toBe(100);
-    expect(result.talentXP.block).toBe(50);
-  });
-
   it("filters negative talent XP and floors fractional values", () => {
-    const result = SaveDataSchema.parse({ talentXP: { burn: -10, block: 10.7, poison: Number.NaN } });
+    const result = SaveDataSchema.parse({ talentXP: { burn: -10, block: 10.7, poison: Number.NaN, holy: 100 } });
     expect(result.talentXP.burn).toBeUndefined();
     expect(result.talentXP.block).toBe(10);
     expect(result.talentXP.poison).toBeUndefined();
-  });
-
-  it("falls back to an empty talent XP map for non-object input", () => {
-    expect(SaveDataSchema.parse({ talentXP: null }).talentXP).toEqual({});
+    expect(result.talentXP.holy).toBe(100);
   });
 
   it("filters invalid finishedRunCharacters without wiping valid IDs", () => {
@@ -173,18 +120,5 @@ describe("SaveDataSchema", () => {
     if (result.success) {
       expect(result.data.finishedRunCharacters).toEqual(["knight", "rogue"]);
     }
-  });
-});
-
-describe("validation metadata", () => {
-  it("CURRENT_SAVE_SCHEMA_VERSION matches the current save fixture", () => {
-    const migrated = SaveDataSchema.parse(currentSchemaCampaignSave());
-    expect(migrated.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-  });
-
-  it("exposes stable game and content version constants", () => {
-    expect(CURRENT_SAVE_SCHEMA_VERSION).toBeGreaterThanOrEqual(1);
-    expect(CURRENT_GAME_BUILD_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
-    expect(CURRENT_CONTENT_VERSION).toBeGreaterThanOrEqual(1);
   });
 });

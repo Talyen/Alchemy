@@ -43,7 +43,6 @@ const domTypeScriptPatterns = [
   "tests/features/alchemy/shared/stores/profile-settings-stores.test.ts",
   "tests/features/alchemy/shared/stores/reset.test.ts",
   "tests/features/alchemy/shared/stores/run-domain-session.test.ts",
-  "tests/features/alchemy/shared/ui/ui-hooks.test.ts",
   "tests/features/alchemy/shared/utils/dev-mode.test.ts",
 ];
 const sharedProjectConfig = {

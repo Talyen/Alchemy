@@ -23,6 +23,7 @@ import {
   compactMarkdownTables,
   headingSlugs,
   readDocumentSection,
+  sectionPreview,
   stripFencedBlocks,
 } from "../../scripts/lib/agent/markdown-sections.mjs";
 
@@ -481,6 +482,8 @@ describe("agent discovery", () => {
       "## Visible",
       "~~~md",
       "## Hidden-tilde",
+      "~~~ still code",
+      "## Hidden-after-false-close",
       "```",
       "## Still-hidden",
       "~~~",
@@ -498,13 +501,25 @@ describe("agent discovery", () => {
     expect(slugs.has("also-visible")).toBe(true);
     expect(slugs.has("final")).toBe(true);
     expect(slugs.has("hidden-tilde")).toBe(false);
+    expect(slugs.has("hidden-after-false-close")).toBe(false);
     expect(slugs.has("still-hidden")).toBe(false);
     expect(slugs.has("hidden-nested")).toBe(false);
     const stripped = stripFencedBlocks(source);
     expect(stripped).toContain("## Visible");
     expect(stripped).toContain("## Also-visible");
     expect(stripped).not.toContain("Hidden-tilde");
+    expect(stripped).not.toContain("Hidden-after-false-close");
     expect(stripped).not.toContain("Hidden-nested");
+  });
+
+  it("keeps section pointers tied to source lines when a code example repeats a real heading", () => {
+    expect(
+      sectionPreview({
+        path: "guide.md",
+        start: 10,
+        text: "## Guide\nIntroduction\n~~~md\n### Details\n~~~\n### Details\nActual instructions",
+      }),
+    ).toEqual(["Overview: Introduction", "  guide.md:15: Details"]);
   });
 
   it("rejects ambiguous or incomplete command arguments", () => {

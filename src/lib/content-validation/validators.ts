@@ -6,19 +6,11 @@ import {
   talentPool,
 } from "@/lib/game-data";
 import { ENEMY_STATUS_IDS_LIST } from "@/lib/validation";
-import {
-  COMBAT_ENCOUNTER_TRAIT_IDS,
-  REWARD_ENCOUNTER_TRAIT_IDS,
-  ENCOUNTER_TRAITS,
-} from "../content-systems/encounter-traits";
+import { ENCOUNTER_TRAITS } from "../content-systems/encounter-traits";
 import { EncounterTraitContentSchema } from "./schemas";
 import { addDuplicateIssues, collectSchemaIssues, type Collector } from "./utils";
 
 export { validateTrinkets } from "./validators-cards";
-
-const encounterTraitIdList: readonly string[] = [...COMBAT_ENCOUNTER_TRAIT_IDS, ...REWARD_ENCOUNTER_TRAIT_IDS];
-const combatEncounterTraitIdSet = new Set<string>(COMBAT_ENCOUNTER_TRAIT_IDS);
-const rewardEncounterTraitIdSet = new Set<string>(REWARD_ENCOUNTER_TRAIT_IDS);
 
 export function validateTalents(collector: Collector): void {
   addDuplicateIssues(
@@ -58,37 +50,14 @@ export function validateKeywordsAndStatuses(collector: Collector): void {
   checkDuplicateDisplayOrder(collector);
 }
 
-function validateSingleEncounterTrait(
-  trait: { id: string; enemyTrait: { id: string }; category: string; modes: readonly unknown[] },
-  id: string,
-  collector: Collector,
-): void {
-  collectSchemaIssues(EncounterTraitContentSchema, trait, "encounter-traits", id, collector.error);
-  if (trait.id !== id)
-    collector.error("encounter-traits", id, `Encounter trait record key does not match id ${trait.id}`);
-  if (trait.enemyTrait.id !== id)
-    collector.error("encounter-traits", id, "Encounter trait enemyTrait id does not match definition id");
-  const idSet = trait.category === "combat" ? combatEncounterTraitIdSet : rewardEncounterTraitIdSet;
-  if ((trait.category === "combat" || trait.category === "reward") && !idSet.has(trait.id))
-    collector.error(
-      "encounter-traits",
-      id,
-      `${trait.category === "combat" ? "Combat" : "Reward"} encounter trait is missing from ${trait.category} id list`,
-    );
-  if (trait.category === "reward" && trait.modes.length === 0)
-    collector.error("encounter-traits", id, "Reward encounter trait has no compatible modes");
-}
-
 export function validateEncounterTraits(collector: Collector): void {
-  const definitionIds = new Set(Object.keys(ENCOUNTER_TRAITS));
-  const listedIds = new Set(encounterTraitIdList);
-  addDuplicateIssues(encounterTraitIdList, "encounter-traits", "encounter trait id", collector.error);
-  for (const id of listedIds) {
-    if (!definitionIds.has(id)) collector.error("encounter-traits", id, "Encounter trait id is missing a definition");
-  }
+  // ID lists derive from this catalog; schema validation owns shape and modes.
+  // These cross-field checks protect the identity used to attach battle traits.
   for (const [id, trait] of Object.entries(ENCOUNTER_TRAITS)) {
-    validateSingleEncounterTrait(trait, id, collector);
-    if (!listedIds.has(id))
-      collector.error("encounter-traits", id, "Encounter trait definition is missing from id lists");
+    collectSchemaIssues(EncounterTraitContentSchema, trait, "encounter-traits", id, collector.error);
+    if (trait.id !== id)
+      collector.error("encounter-traits", id, `Encounter trait record key does not match id ${trait.id}`);
+    if (trait.enemyTrait.id !== id)
+      collector.error("encounter-traits", id, "Encounter trait enemyTrait id does not match definition id");
   }
 }

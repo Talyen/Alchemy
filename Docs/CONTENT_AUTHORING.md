@@ -17,9 +17,9 @@ Persisted status changes follow the [save contract](../src/features/alchemy/shar
 1. Define card in the matching topical library — `src/lib/game-data/cards/library/` (`core.ts`, `archery.ts`, `consumables.ts`, `companions.ts`, or `defense.ts`); `cards.ts` assembles these groups
 2. Add effects (discriminated union on `kind`) — same card entry, `effects: [...]`
 3. Add art reference — `src/lib/game-data/assets.ts` (or `placeholderCard` while WIP)
-4. Register a card sound in `src/lib/audio/sound-registry.ts` (`cardSounds`), or record an intentionally silent card in `SILENT_CARD_IDS` in `tests/lib/audio/sound-registry.test.ts`; follow the [audio checklist](./AUDIO.md#change-checklist). Companion summon cards require sounds.
+4. Register a nonempty card sound in `src/lib/audio/sound-registry.ts` (`cardSounds`), including for Companion summon cards; follow the [audio checklist](./AUDIO.md#change-checklist). `tests/lib/audio/sound-registry.test.ts` enforces complete focal coverage; intentional silence applies only to the UI/service registrations documented by the audio owner.
 5. Build the entry with `card-builders.ts` (`effectsCard` generates `descriptionLines` from effects; chance, delayed, conditional, and combined clauses are generated too; a bespoke `describe(effects)` template must take values from its typed effects; `effectsCard` with `consume: true` takes multiple effects; summon cards derive their title from the companion). Raw literals are reserved for genuinely special cards (`mixed-potion`)
-6. Context-aware text — pure text `src/lib/game-data/card-description.ts` (only summon lines are recomputed with Bond/damage bonuses; `flatPhysicalDamage`/`potionPotency` are accepted but ignored), UI tokens `shared/ui/cards/card-description-ui.tsx`, homestead/talent context `shared/context/card-description-context.tsx` (wired in `App.tsx`)
+6. Context-aware text — pure text `src/lib/game-data/card-description.ts` (summon lines use Bond levels and the shared `CompanionDamageModifiers`; other amounts stay authored, with optional reaction previews), UI tokens `shared/ui/cards/card-description-ui.tsx`, homestead/talent context `shared/context/card-description-context.tsx` (wired in `App.tsx`)
 
 Card IDs are stable strings on `BattleCard`, not a separate union. The assembled
 `cardLibrary` rejects duplicate IDs. Removing or renaming IDs follows the
@@ -85,7 +85,7 @@ before handing off.
 - **1. Define entry in `enemyBestiary` (`id` becomes `EnemyId`)** — `src/lib/game-data/compendium/enemies.ts`
 - **2. Set `enemyType` (`normal`/`elite`/`boss`)** — same file
 - **3. Add traits as `{ id, title, description }` objects** — same file (logic lives in battle system)
-- **4. Register an attack sound or intentional silence** — `src/lib/audio/sound-registry.ts` (`enemyAttackSounds`), or `SILENT_ENEMY_IDS` in `tests/lib/audio/sound-registry.test.ts`; follow the [audio checklist](./AUDIO.md#change-checklist).
+- **4. Register a nonempty fallback attack sound** — `src/lib/audio/sound-registry.ts` (`enemyAttackSounds`); ability turns use the chosen card's focal cue first. Follow the [audio checklist](./AUDIO.md#change-checklist).
 - **5. Wildwood gauntlet bosses must also be listed in `WILDWOOD_BOSS_IDS`** — `src/lib/content-systems/wildwood/bosses.ts`
 
 ---
@@ -101,9 +101,9 @@ One definition powers a permanent Armory Trinket and a run-scoped **Boon**. Both
 
 ## Add a new companion
 
-Companion combat and descriptions share `getCompanionBondEffects()` in `src/lib/game-data/companions.ts`. Follow [Companion Bond rules](./GAME_RULES.md#companion-bond) for progression and displayed effects; Bond levels and costs retain their existing save representation.
+Companion combat and descriptions share `getModifiedCompanionEffects()` in `src/lib/game-data/companions.ts`, which applies Bond and the supplied damage modifiers together. Follow [Companion Bond rules](./GAME_RULES.md#companion-bond) for progression and displayed effects; Bond levels and costs retain their existing save representation.
 
-`defaultCompanionBondLevels` derives zero values from `companionLibrary`; talent and Homestead defaults both copy that map, so new Companions need no separate default registration. If Bond behavior differs from the shared scaling, update `getCompanionBondEffects()` and its descriptions together; change Homestead tiers or costs only when intended.
+`defaultCompanionBondLevels` derives zero values from `companionLibrary`; talent and Homestead defaults both copy that map, so new Companions need no separate default registration. If Bond behavior differs from the shared scaling, update `getModifiedCompanionEffects()` and its descriptions together; change Homestead tiers or costs only when intended.
 
 - **1. Add companion ID to `CompanionId` union** — `src/lib/game-data/types.ts`
 - **2. Add art via the [asset workflow § Add or replace game art](./WORKFLOWS-ASSETS.md#add-or-replace-game-art)** — `src/lib/game-data/assets.ts`

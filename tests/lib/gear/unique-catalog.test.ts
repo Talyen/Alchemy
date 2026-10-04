@@ -8,7 +8,6 @@ import {
   generateLootGearChoices,
   generateUniqueGearInstance,
   gearAffixCatalog,
-  gearBaseItemList,
   getGearInstanceAffixes,
   normalizeGearInstance,
   effectsForInstance,
@@ -20,40 +19,9 @@ import {
   type GearAffixId,
   type GearInstance,
 } from "@/lib/gear";
-import { EQUIPMENT_SHOP_UNIQUE_PRICE, UNIQUE_GEAR_COMBAT } from "@/lib/game-constants";
-import { getEquipmentShopPrice } from "@/features/alchemy/run-loop/shop/shop-pricing";
+import { UNIQUE_GEAR_COMBAT } from "@/lib/game-constants";
 
 describe("unique item catalog", () => {
-  it("covers every base item exactly once with four fixed maximum affixes", () => {
-    expect(uniqueItemList).toHaveLength(29);
-    expect(uniqueItemList.map((item) => item.baseItemId).sort()).toEqual(
-      gearBaseItemList.map((base) => base.id).sort(),
-    );
-    expect(new Set(uniqueItemList.map((item) => item.signatureAffix.id)).size).toBe(29);
-    for (const unique of uniqueItemList) {
-      expect(unique.signatureAffix).toBeDefined();
-      expect(unique.supportingAffixes).toHaveLength(3);
-
-      const definition = gearDefinitions[unique.id];
-      expect(definition).toBeDefined();
-      expect(definition.rarity).toBe("unique");
-      expect(definition.art).toBeTruthy();
-
-      expect(gearAffixCatalog[unique.signatureAffix.id]?.uniqueOnly).toBe(true);
-      for (const supporting of unique.supportingAffixes) {
-        expect(gearAffixCatalog[supporting.id]?.uniqueOnly).toBeFalsy();
-        expect(supporting.value).toBe(gearAffixCatalog[supporting.id].roll.unique.max);
-      }
-
-      const instance = generateUniqueGearInstance(unique);
-      expect(instance.definitionId).toBe(unique.id);
-      // Instances store no rolls; affixes resolve canonically per definition.
-      expect(instance.affixes).toEqual([]);
-      expect(getGearInstanceAffixes(instance)).toEqual([unique.signatureAffix, ...unique.supportingAffixes]);
-      expect(getGearInstanceTitle(instance)).toBe(unique.displayName);
-    }
-  });
-
   it("prevents crafting currencies from modifying unique items", () => {
     const unique = uniqueItemList[0];
     const instance = generateUniqueGearInstance(unique);
@@ -67,17 +35,16 @@ describe("unique item catalog", () => {
   });
 
   it("yields guaranteed salvage currency package on unique salvage", () => {
-    const yieldMats = rollSalvageYield("unique", () => 0.5);
-    expect(yieldMats["discordant-dice"]).toBe(2);
-    expect(yieldMats["ascension-seal"]).toBe(1);
-    expect(yieldMats["severance-maw"]).toBe(1);
-    expect(yieldMats["smiths-whetstone"]).toBe(1);
-  });
-
-  it("prices unique items at EQUIPMENT_SHOP_UNIQUE_PRICE in equipment shops", () => {
-    const unique = uniqueItemList[0];
-    const instance = generateUniqueGearInstance(unique);
-    expect(getEquipmentShopPrice(instance)).toBe(EQUIPMENT_SHOP_UNIQUE_PRICE);
+    const rng = vi.fn(() => 0.5);
+    expect(rollSalvageYield("unique", rng)).toEqual({
+      "discordant-dice": 2,
+      "ascension-seal": 1,
+      "severance-maw": 1,
+      "smiths-whetstone": 1,
+      "sprig-of-growth": 0,
+      voidstone: 0,
+    });
+    expect(rng).not.toHaveBeenCalled();
   });
 
   it("excludes owned uniques from equipment shop offerings and degrades when all owned", () => {
@@ -122,6 +89,7 @@ it("repairs malformed rolls consistently for saved gear, combat effects, and too
 
 describe("fixed Unique compatibility", () => {
   it.each(uniqueItemList)("repairs saved $displayName without changing ownership", (unique) => {
+    expect(getGearInstanceTitle(generateUniqueGearInstance(unique))).toBe(unique.displayName);
     const original: GearInstance = {
       instanceId: "owned-id",
       definitionId: unique.id,

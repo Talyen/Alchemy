@@ -60,33 +60,29 @@ export function buildBalanceBatchConfig(options: ReportRunOptions, config: Balan
 
 function assertMatchedPair(reference: BalanceBatchConfig, variant: BalanceBatchConfig, id: string): void {
   if (
-    reference.characterId !== variant.characterId ||
-    reference.enemyId !== variant.enemyId ||
-    reference.depth !== variant.depth ||
-    reference.talentPreset !== variant.talentPreset ||
-    reference.seed !== variant.seed ||
-    reference.iterations !== variant.iterations
+    (["characterId", "enemyId", "depth", "talentPreset", "seed", "iterations"] as const).some(
+      (key) => reference[key] !== variant[key],
+    )
   ) {
     throw new Error(`Balance sweep ${id} must use matched character, enemy, depth, tier, seed, and iterations`);
   }
 }
 
-type PairedStatsById = Map<string, Map<TalentPreset, PairedWinStats>>;
+type PairedStatsById = Map<string, Record<TalentPreset, PairedWinStats>>;
 
 function addComparison(collected: PairedStatsById, tier: TalentPreset, id: string, stats: PairedWinStats): void {
   let byTier = collected.get(id);
   if (!byTier) {
-    byTier = new Map<TalentPreset, PairedWinStats>();
+    byTier = reportTierRecord(emptyPairedWinStats);
     collected.set(id, byTier);
   }
-  const existing = byTier.get(tier);
-  byTier.set(tier, existing ? combinePairedWinStats([existing, stats]) : { ...stats });
+  byTier[tier] = combinePairedWinStats([byTier[tier], stats]);
 }
 
 function rowsFromComparisons(collected: PairedStatsById): PairedTierRow[] {
   return [...collected.entries()].map(([id, byTier]) => ({
     id,
-    deltas: reportTierRecord((tier) => makePairedDelta(id, byTier.get(tier) ?? emptyPairedWinStats())),
+    deltas: reportTierRecord((tier) => makePairedDelta(id, byTier[tier])),
   }));
 }
 

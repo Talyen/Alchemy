@@ -8,20 +8,14 @@ const SHIELD_BASE_ITEM_IDS = new Set(["leather-buckler", "kite-shield"]);
 const OFF_HAND_OFFENSIVE_BASE_ITEMS = new Set(["quiver", "spellbook"]);
 const JEWELRY_SLOTS = new Set<GearSlot>(["left-accessory", "right-accessory"]);
 
-function allowedAspectsForDefinition(def: GearDefinition): GearAffixAspect[] {
-  if (SHIELD_BASE_ITEM_IDS.has(def.baseItemId)) {
-    return ["offensive", "defensive"];
-  }
-  if (def.compatibleSlots.some((slot) => JEWELRY_SLOTS.has(slot))) {
-    return ["offensive", "defensive"];
-  }
-  if (def.compatibleSlots.includes("main-hand")) {
-    return ["offensive"];
-  }
-  if (def.compatibleSlots.includes("off-hand") && OFF_HAND_OFFENSIVE_BASE_ITEMS.has(def.baseItemId)) {
-    return ["offensive"];
-  }
-  return ["defensive"];
+/** null permits both aspects; ordinary weapons and armor permit one. */
+function requiredAspect(def: GearDefinition): GearAffixAspect | null {
+  if (SHIELD_BASE_ITEM_IDS.has(def.baseItemId) || def.compatibleSlots.some((slot) => JEWELRY_SLOTS.has(slot)))
+    return null;
+  return def.compatibleSlots.includes("main-hand") ||
+    (def.compatibleSlots.includes("off-hand") && OFF_HAND_OFFENSIVE_BASE_ITEMS.has(def.baseItemId))
+    ? "offensive"
+    : "defensive";
 }
 
 interface CachedAffixPool {
@@ -48,12 +42,12 @@ export function buildEligibleAffixPool(definition: GearDefinition): readonly Gea
     cached.affinityKeywords.every((keyword, index) => keyword === definition.affinityKeywords[index])
   )
     return cached.pool;
-  const allowedAspects = new Set(allowedAspectsForDefinition(definition));
+  const aspect = requiredAspect(definition);
   const pool = Object.freeze(
     gearAffixList.filter(
       (affix) =>
         !affix.uniqueOnly &&
-        allowedAspects.has(affix.aspect) &&
+        (aspect === null || affix.aspect === aspect) &&
         affixMatchesAffinity(affix, definition.affinityKeywords),
     ),
   );

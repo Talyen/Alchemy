@@ -112,7 +112,7 @@ export function buildPresetManifest(keywords: readonly KeywordId[], preset: Tale
     companionBondLevels: { ...cached.companionBondLevels },
     cardHealBonus: { ...cached.cardHealBonus },
     cardHealMultipliers: { ...cached.cardHealMultipliers },
-    healthThresholdArmor: [...cached.healthThresholdArmor],
+    healthThresholdArmor: cached.healthThresholdArmor.map((threshold) => ({ ...threshold })),
   };
 }
 

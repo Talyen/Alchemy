@@ -58,9 +58,6 @@ const damageEffectDefinition = {
       },
       { message: "Conditional damage cannot combine with another damage selector" },
     )
-    .refine((data) => !(data.equalToBlock && data.equalToArmor), {
-      message: "damage effect cannot have both equalToBlock and equalToArmor",
-    })
     .refine((data) => data.equalToBlockPercent === undefined || data.equalToBlock === true, {
       message: "equalToBlockPercent requires equalToBlock",
     })
@@ -72,15 +69,12 @@ const damageEffectDefinition = {
         message: "damage effect must have at most one of equalToBlock/equalToArmor/equalToForge/equalToGoldPercent",
       },
     )
-    .refine((data) => !(data.doubleIfEnemyBurning && data.tripleIfEnemyNotBurning), {
-      message: "damage effect cannot have both doubleIfEnemyBurning and tripleIfEnemyNotBurning",
-    })
-    .refine((data) => !(data.doubleIfEnemyBurning && data.doubleIfEnemyNotBurning), {
-      message: "damage effect cannot have both doubleIfEnemyBurning and doubleIfEnemyNotBurning",
-    })
-    .refine((data) => !(data.doubleIfEnemyNotBurning && data.tripleIfEnemyNotBurning), {
-      message: "damage effect cannot have both doubleIfEnemyNotBurning and tripleIfEnemyNotBurning",
-    })
+    .refine(
+      (data) =>
+        [data.doubleIfEnemyBurning, data.doubleIfEnemyNotBurning, data.tripleIfEnemyNotBurning].filter(Boolean)
+          .length <= 1,
+      { message: "damage effect must have at most one Burning damage multiplier" },
+    )
     .refine((data) => !(data.detonateAllBurn && data.detonateIfEnemyBurning), {
       message: "damage effect cannot have both detonateAllBurn and detonateIfEnemyBurning",
     }),

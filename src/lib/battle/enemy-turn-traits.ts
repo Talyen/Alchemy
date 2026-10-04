@@ -75,9 +75,22 @@ const enemyTraitTurnStartHandlers = new Map<string, EnemyTurnStartTrait>([
   ["stone-golem", { handler: makeMitigationHandler("block", 1), everyOtherTurn: false }],
 ]);
 
-const difficultyTurnStartHandlers = new Map<DifficultyModifier["kind"], EnemyTurnStartHandler>([
-  ["enemy-gains-forge-each-turn", makeMitigationHandler("forge", DIFFICULTY_FORGE_PER_TURN)],
-]);
+// Null means the modifier is handled during setup or damage resolution.
+// Exhaustiveness makes adding a difficulty kind require an explicit classification.
+const difficultyTurnStartHandlers = {
+  "enemy-gains-forge-each-turn": makeMitigationHandler("forge", DIFFICULTY_FORGE_PER_TURN),
+  "enemy-starting-armor": null,
+  "increase-enemy-physical-damage": null,
+  "increase-enemy-damage": null,
+  "increase-enemy-status": null,
+  "enemy-attacks-gain-leech": null,
+  "start-block": null,
+  "start-max-mana": null,
+  "gold-multiplier": null,
+  "start-companion": null,
+  "enemy-health-multiplier": null,
+  "enemy-damage-multiplier": null,
+} satisfies Record<DifficultyModifier["kind"], EnemyTurnStartHandler | null>;
 
 const PASSIVE_ONLY_TRAITS = new Set<string>([
   "brittle-bones",
@@ -107,43 +120,24 @@ const PASSIVE_ONLY_TRAITS = new Set<string>([
 
 const REACTION_ONLY_TRAITS: ReadonlySet<string> = new Set<string>([...REACTION_ONLY_IDS]);
 
-const PASSIVE_ONLY_MODIFIERS = new Set<DifficultyModifier["kind"]>([
-  "enemy-starting-armor",
-  "increase-enemy-physical-damage",
-  "increase-enemy-damage",
-  "increase-enemy-status",
-  "enemy-attacks-gain-leech",
-  "start-block",
-  "start-max-mana",
-  "gold-multiplier",
-  "start-companion",
-  "enemy-health-multiplier",
-  "enemy-damage-multiplier",
-]);
-
 export const ENEMY_TRAIT_TURN_START_HANDLER_IDS = [...enemyTraitTurnStartHandlers.keys()];
 
 export const PASSIVE_ONLY_ENEMY_TRAIT_IDS = [...PASSIVE_ONLY_TRAITS];
 
 export const REACTION_ONLY_ENEMY_TRAIT_IDS = [...REACTION_ONLY_TRAITS];
 
-export const DIFFICULTY_TURN_START_MODIFIER_KINDS = [...difficultyTurnStartHandlers.keys()];
-
-export const PASSIVE_ONLY_DIFFICULTY_MODIFIER_KINDS = [...PASSIVE_ONLY_MODIFIERS];
-
-const ALL_DIFFICULTY_MODIFIER_KINDS: Array<DifficultyModifier["kind"]> = [
-  ...DIFFICULTY_TURN_START_MODIFIER_KINDS,
-  ...PASSIVE_ONLY_DIFFICULTY_MODIFIER_KINDS,
-];
+const ALL_DIFFICULTY_MODIFIER_KINDS = Object.keys(difficultyTurnStartHandlers) as Array<DifficultyModifier["kind"]>;
+export const DIFFICULTY_TURN_START_MODIFIER_KINDS = ALL_DIFFICULTY_MODIFIER_KINDS.filter(
+  (kind) => difficultyTurnStartHandlers[kind] !== null,
+);
+export const PASSIVE_ONLY_DIFFICULTY_MODIFIER_KINDS = ALL_DIFFICULTY_MODIFIER_KINDS.filter(
+  (kind) => difficultyTurnStartHandlers[kind] === null,
+);
 
 function isEnemyTraitTurnStartCovered(traitId: string): boolean {
   return (
     enemyTraitTurnStartHandlers.has(traitId) || PASSIVE_ONLY_TRAITS.has(traitId) || REACTION_ONLY_TRAITS.has(traitId)
   );
-}
-
-function isDifficultyModifierTurnStartCovered(kind: DifficultyModifier["kind"]): boolean {
-  return difficultyTurnStartHandlers.has(kind) || PASSIVE_ONLY_MODIFIERS.has(kind);
 }
 
 export function collectUncoveredEnemyTraitIds(traitIds: Iterable<string>): string[] {
@@ -153,7 +147,7 @@ export function collectUncoveredEnemyTraitIds(traitIds: Iterable<string>): strin
 export function collectUncoveredDifficultyModifierKinds(
   kinds: Iterable<DifficultyModifier["kind"]> = ALL_DIFFICULTY_MODIFIER_KINDS,
 ): Array<DifficultyModifier["kind"]> {
-  return [...new Set(kinds)].filter((kind) => !isDifficultyModifierTurnStartCovered(kind));
+  return [...new Set(kinds)].filter((kind) => !Object.hasOwn(difficultyTurnStartHandlers, kind));
 }
 
 function reportHandlerFailure(source: string, err: unknown, context?: Record<string, unknown>): void {
@@ -187,17 +181,16 @@ function processDifficultyModifier(
   combatTexts: CombatTextEvent[],
   scalingBlocked: boolean,
 ): BattleState {
-  const handler = difficultyTurnStartHandlers.get(modifier.kind);
-  if (!handler) {
-    if (!PASSIVE_ONLY_MODIFIERS.has(modifier.kind)) {
-      console.warn(`[Battle] No turn-start handler for difficulty modifier: ${modifier.kind}`);
-      reportHandlerFailure(
-        `No turn-start handler for difficulty modifier ${modifier.kind}`,
-        new Error("uncovered difficulty modifier"),
-      );
-    }
+  if (!Object.hasOwn(difficultyTurnStartHandlers, modifier.kind)) {
+    console.warn(`[Battle] No turn-start handler for difficulty modifier: ${modifier.kind}`);
+    reportHandlerFailure(
+      `No turn-start handler for difficulty modifier ${modifier.kind}`,
+      new Error("uncovered difficulty modifier"),
+    );
     return state;
   }
+  const handler = difficultyTurnStartHandlers[modifier.kind];
+  if (!handler) return state;
   if (modifier.kind === "enemy-gains-forge-each-turn" && scalingBlocked) return state;
   return handler(state, combatTexts);
 }

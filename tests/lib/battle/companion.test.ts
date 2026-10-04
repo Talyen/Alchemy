@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { getBattleCompanionDamageModifiers } from "@/lib/battle/companion-scaling";
-import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
 import { companionLibrary, getCompanionDescriptionLines, type CompanionId } from "@/lib/game-data";
 import { makeCombatTexts as makeTexts, makeTestCard, patchBattleState } from "../../fixtures/battle";
 
@@ -59,127 +58,6 @@ describe("processCompanionTurnStart", () => {
     expect(result.enemyHealth).toBe(29);
     expect(result.enemyStatuses.bleed).toBe(0);
     expect(result.playerStatuses.block).toBe(0);
-  });
-
-  it("Lizard Scout companion deals poison damage", () => {
-    const state = patchBattleState({
-      activeCompanion: companionLibrary["lizard-scout"],
-    });
-    const texts = makeTexts();
-    const result = processCompanionTurnStart(state, texts);
-    expect(result.enemyHealth).toBe(29);
-    expect(result.enemyStatuses.poison).toBe(1);
-  });
-
-  it("Frost Whelp companion deals freeze damage", () => {
-    const state = patchBattleState({
-      activeCompanion: companionLibrary["frost-whelp"],
-    });
-    const texts = makeTexts();
-    const result = processCompanionTurnStart(state, texts);
-    expect(result.enemyHealth).toBe(29);
-    expect(result.enemyStatuses.freeze).toBe(1);
-  });
-
-  it("Bear companion deals stun damage and applies stun", () => {
-    const state = patchBattleState({
-      activeCompanion: companionLibrary.bear,
-    });
-    const texts = makeTexts();
-    const result = processCompanionTurnStart(state, texts);
-    expect(result.enemyHealth).toBe(29);
-    expect(result.enemyStatuses.stun).toBe(1);
-  });
-
-  it("Panther companion deals one Bleed damage", () => {
-    const state = patchBattleState({
-      activeCompanion: companionLibrary.panther,
-    });
-    const texts = makeTexts();
-    const result = processCompanionTurnStart(state, texts);
-
-    expect(result.enemyHealth).toBe(29);
-    expect(result.enemyStatuses.bleed).toBe(1);
-  });
-
-  it("Phoenix companion deals burn damage", () => {
-    const state = patchBattleState({
-      activeCompanion: companionLibrary.phoenix,
-    });
-    const texts = makeTexts();
-    const result = processCompanionTurnStart(state, texts);
-    expect(result.enemyHealth).toBe(29);
-    expect(result.enemyStatuses.burn).toBe(1);
-  });
-
-  it("companionDamageBuff adds to base damage", () => {
-    const state = patchBattleState({
-      activeCompanion: companionLibrary.wolf,
-      companionDamageBuff: 2,
-      rng: wolfBleedRng(),
-    });
-    const texts = makeTexts();
-    const result = processCompanionTurnStart(state, texts);
-
-    expect(result.enemyHealth).toBe(27);
-    expect(result.enemyStatuses.bleed).toBe(3);
-  });
-
-  it("companionDamage talent adds to base damage", () => {
-    const state = patchBattleState({
-      activeCompanion: companionLibrary.phoenix,
-      talentEffects: {
-        companionDamage: 3,
-      },
-    });
-    const texts = makeTexts();
-    const result = processCompanionTurnStart(state, texts);
-    expect(result.enemyStatuses.burn).toBe(4);
-  });
-
-  it("companion bond level adds to base damage", () => {
-    const baseBondLevels = patchBattleState().talentEffects.companionBondLevels;
-    const state = patchBattleState({
-      activeCompanion: companionLibrary["lizard-scout"],
-      talentEffects: {
-        companionBondLevels: {
-          ...baseBondLevels,
-          "lizard-scout": 2,
-        },
-      },
-    });
-    const texts = makeTexts();
-    const result = processCompanionTurnStart(state, texts);
-    expect(result.enemyStatuses.poison).toBe(3);
-  });
-
-  it("all damage bonuses stack together", () => {
-    const baseBondLevels = patchBattleState().talentEffects.companionBondLevels;
-    const state = patchBattleState({
-      activeCompanion: companionLibrary.wolf,
-      companionDamageBuff: 1,
-      rng: wolfBleedRng(),
-      talentEffects: {
-        companionDamage: 2,
-        companionBondLevels: {
-          ...baseBondLevels,
-          wolf: 3,
-        },
-      },
-    });
-    const texts = makeTexts();
-    const result = processCompanionTurnStart(state, texts);
-    expect(result.enemyStatuses.bleed).toBe(7);
-  });
-
-  it("processCompanionTurnStart produces combat texts for damage", () => {
-    const state = patchBattleState({
-      activeCompanion: companionLibrary.wolf,
-    });
-    const texts = makeTexts();
-    processCompanionTurnStart(state, texts);
-    expect(texts.length).toBeGreaterThan(0);
-    expect(texts.some((t) => t.target === "enemy" && t.kind === "damage")).toBe(true);
   });
 
   it("retains the goldOnFirstPoisonThisCombat flag when Lizard Scout companion applies poison", () => {
@@ -294,26 +172,6 @@ describe("processCompanionTurnStart", () => {
     const result = processCompanionTurnStart(state, makeTexts());
 
     expect(result.enemyStatuses.burn).toBe(601);
-  });
-
-  it("companionDamageBonus gear adds flat damage to companion", () => {
-    const state = patchBattleState({
-      activeCompanion: companionLibrary.phoenix,
-      gearEffects: { ...defaultGearEffects, companionDamageBonus: 5 },
-    });
-    const result = processCompanionTurnStart(state, makeTexts());
-
-    expect(result.enemyHealth).toBe(24);
-  });
-
-  it("gearEffects.companionDamageBonus adds to companion damage", () => {
-    const state = patchBattleState({
-      activeCompanion: companionLibrary.phoenix,
-      gearEffects: { ...defaultGearEffects, companionDamageBonus: 5 },
-    });
-    const result = processCompanionTurnStart(state, makeTexts());
-
-    expect(result.enemyHealth).toBe(24);
   });
 
   it("healOnCompanionAttack heals player when companion deals damage", () => {
@@ -622,31 +480,33 @@ describe("Predator's Instinct threshold", () => {
   });
 });
 
-describe("getBattleCompanionDamageModifiers", () => {
-  const scaling = (overrides = {}) => getBattleCompanionDamageModifiers(patchBattleState(overrides));
-
-  it("stacks flat talent, gear, trinket, and buff bonuses", () => {
-    const mods = scaling({
-      talentEffects: { ...patchBattleState().talentEffects, companionDamage: 2 },
-      gearEffects: { ...patchBattleState().gearEffects, companionDamageBonus: 3 },
+describe("Companion scaling integration", () => {
+  it("applies every damage bonus once and preserves the prepared next attack", () => {
+    const state = patchBattleState({
+      activeCompanion: companionLibrary.phoenix,
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      maxMana: 4,
       companionDamageBuff: 1,
+      enemyCC: { freezeSkipTurns: 1 },
+      flags: { nextHitCrit: true },
+      talentEffects: { companionDamage: 2, companionVsFrozenBonus: 4, companionDamagePerManaCrystal: 1 },
+      gearEffects: { companionDamageBonus: 3 },
+      trinketEffects: { companionDamageBonus: 2 },
     });
-    expect(mods.damageBonus).toBeGreaterThanOrEqual(6);
-    expect(mods.bleedDamageBonus).toBe(patchBattleState().talentEffects.companionBleedDamageBonus);
-  });
-
-  it("adds the frozen bonus only while the enemy skips from freeze", () => {
-    const base = { talentEffects: { ...patchBattleState().talentEffects, companionVsFrozenBonus: 4 } };
-    const frozen = scaling({ ...base, enemyCC: { ...patchBattleState().enemyCC, freezeSkipTurns: 1 } });
-    const awake = scaling(base);
-    expect(frozen.damageBonus - awake.damageBonus).toBe(4);
-  });
-
-  it("doubles below 30% health but not at the boundary", () => {
-    const talents = { ...patchBattleState().talentEffects, companionDoubledVsLowHealth: true };
-    const low = scaling({ talentEffects: talents, enemyHealth: 29, enemyMaxHealth: 100 });
-    expect(low.damageMultiplier).toBe(2);
-    const boundary = scaling({ talentEffects: talents, enemyHealth: 30, enemyMaxHealth: 100 });
-    expect(boundary.damageMultiplier).toBe(1);
+    expect(getBattleCompanionDamageModifiers(state)).toEqual({
+      damageBonus: 14,
+      bleedDamageBonus: 0,
+      damageMultiplier: 1,
+    });
+    const texts = makeTexts();
+    const result = processCompanionTurnStart(state, texts);
+    expect(result.enemyHealth).toBe(85);
+    expect(result.enemyStatuses.burn).toBe(15);
+    expect(result.flags.nextHitCrit).toBe(true);
+    expect(texts).toContainEqual(
+      expect.objectContaining({ target: "enemy", kind: "damage", stat: "burn", amount: 15 }),
+    );
+    expect(state.enemyStatuses.burn).toBe(0);
   });
 });

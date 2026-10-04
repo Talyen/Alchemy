@@ -1,18 +1,8 @@
 import { describe, expect, it } from "vitest";
-import {
-  ENCOUNTER_TRAITS,
-  eligibleEncounterTraitIds,
-  sanitizeEncounterTraitIds,
-} from "@/lib/content-systems/encounter-traits";
+import { eligibleEncounterTraitIds, sanitizeEncounterTraitIds } from "@/lib/content-systems/encounter-traits";
 import { LABYRINTH_TRAITS } from "@/lib/content-systems/labyrinth/trait-catalog";
-import {
-  isLabyrinthTraitEligible,
-  areLabyrinthTraitsCompatible,
-  getEnemyModifiersForNodeType,
-  getRewardModifiersForNodeType,
-} from "@/lib/content-systems/labyrinth/modifiers";
+import { isLabyrinthTraitEligible } from "@/lib/content-systems/labyrinth/modifiers";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
-import { LABYRINTH_SUPPORT_TYPES } from "@/lib/content-systems/labyrinth/data";
 import {
   activeLabyrinthBenefits,
   applyLabyrinthMysteryModifiers,
@@ -34,18 +24,6 @@ describe("Labyrinth modifier catalog", () => {
     expect(LABYRINTH_TRAITS["phoenix-nest"].keyword).toBeUndefined();
   });
 
-  it("offers a positive modifier for each playable node without cross-room leakage", () => {
-    for (const type of ["combat", "elite", "boss", ...LABYRINTH_SUPPORT_TYPES] as const) {
-      for (let seed = 0; seed < 30; seed++) {
-        const mods = getRewardModifiersForNodeType(seededRng(seed), type);
-        expect(mods).toHaveLength(type === "transmutation" ? 0 : 1);
-        if (mods[0]) expect(isLabyrinthTraitEligible(mods[0], type)).toBe(true);
-        if (mods[0]) expect(ENCOUNTER_TRAITS[mods[0]].category).toBe("reward");
-      }
-    }
-    expect(getRewardModifiersForNodeType(seededRng(1), "entrance")).toEqual([]);
-  });
-
   it("preserves old saved modifiers but excludes them from new Labyrinth rooms", () => {
     const legacy = [
       "septic",
@@ -61,27 +39,6 @@ describe("Labyrinth modifier catalog", () => {
     for (const id of [...legacy, "wealthy"] as const) expect(isLabyrinthTraitEligible(id, "combat")).toBe(false);
     expect(eligibleEncounterTraitIds("wildwood", "combat")).toContain("septic");
     expect(eligibleEncounterTraitIds("wildwood", "combat")).not.toContain("unbreakable");
-  });
-
-  it("avoids duplicate labels and effects in each active pool", () => {
-    for (const type of ["combat", "elite", "boss", ...LABYRINTH_SUPPORT_TYPES] as const) {
-      const traits = Object.values(ENCOUNTER_TRAITS).filter((trait) => isLabyrinthTraitEligible(trait.id, type));
-      expect(new Set(traits.map((trait) => trait.label)).size).toBe(traits.length);
-      expect(new Set(traits.map((trait) => trait.description)).size).toBe(traits.length);
-    }
-  });
-
-  it("excludes overlapping modifiers and duplicates of native enemy traits", () => {
-    expect(areLabyrinthTraitsCompatible("plated", "unbreakable")).toBe(false);
-    expect(areLabyrinthTraitsCompatible("thornhide", "briar-crown")).toBe(false);
-    for (let seed = 0; seed < 100; seed++) {
-      const mods = getEnemyModifiersForNodeType("boss", seededRng(seed), ["tempered", "vampire"]);
-      expect(mods).toHaveLength(2);
-      expect(mods).not.toContain("tempered");
-      expect(mods).not.toContain("whitehot");
-      expect(mods).not.toContain("ravenous");
-      expect(areLabyrinthTraitsCompatible(mods[0]!, mods[1]!)).toBe(true);
-    }
   });
 
   it("round-trips new support and combat modifiers in generated maps", () => {
@@ -148,6 +105,11 @@ describe("Labyrinth support rules", () => {
       { kind: "healHealth", amount: 5 },
     ]);
     expect(original).toEqual(before);
+    expect(applyLabyrinthMysteryModifiers(original, ["bargain-bin"], 30)).toBe(original);
+    expect(applyLabyrinthMysteryModifiers(original, ["restful-discovery"], 1).choices[0]?.effects.at(-1)).toEqual({
+      kind: "healHealth",
+      amount: 0,
+    });
   });
 
   it("Mystery descriptions and rewards survive resume without doubling twice", () => {

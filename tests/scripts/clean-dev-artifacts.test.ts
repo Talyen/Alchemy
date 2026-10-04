@@ -1,15 +1,8 @@
-import { mkdtempSync, mkdirSync, writeFileSync, existsSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync, rmSync, symlinkSync, lstatSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import {
-  BUILD_ARTIFACT_DIRS,
-  DEFAULT_ARTIFACT_DIRS,
-  formatBytes,
-  listArtifactDirsToRemove,
-  measurePath,
-  removePath,
-} from "../../scripts/lib/clean-dev-artifacts.mjs";
+import { listArtifactDirsToRemove, measurePath, removePath } from "../../scripts/lib/clean-dev-artifacts.mjs";
 import { parseCleanArgs } from "../../scripts/clean-dev-artifacts.mjs";
 
 const tempRoots: string[] = [];
@@ -40,26 +33,23 @@ describe("clean-dev-artifacts helpers", () => {
     ]);
   });
 
-  it("covers the documented default and build relative dirs", () => {
-    expect(DEFAULT_ARTIFACT_DIRS).toContain("test-results");
-    expect(DEFAULT_ARTIFACT_DIRS).toContain("node_modules/.vite");
-    expect(BUILD_ARTIFACT_DIRS).toEqual(["dist", "dist-demo", "release-desktop", "release-desktop-demo"]);
-  });
-
-  it("measures nested file sizes and removes trees", () => {
+  it("measures nested artifacts without following links or deleting their external targets", () => {
     const root = makeRoot();
+    const external = makeRoot();
     const dir = join(root, "reports");
-    mkdirSync(dir, { recursive: true });
+    mkdirSync(join(dir, "nested"), { recursive: true });
     writeFileSync(join(dir, "a.txt"), "abcd");
-    expect(measurePath(dir).bytes).toBe(4);
+    writeFileSync(join(dir, "nested", "b.txt"), "12345");
+    writeFileSync(join(external, "source.wav"), "protected source");
+    symlinkSync(external, join(dir, "external"));
+    symlinkSync(dir, join(dir, "cycle"));
+    const linkBytes = lstatSync(join(dir, "external")).size + lstatSync(join(dir, "cycle")).size;
+    expect(measurePath(dir)).toEqual({ path: dir, bytes: 9 + linkBytes });
+    expect(measurePath(join(dir, "a.txt")).bytes).toBe(4);
+    expect(measurePath(join(root, "missing")).bytes).toBe(0);
     removePath(dir);
     expect(existsSync(dir)).toBe(false);
-  });
-
-  it("formats byte sizes for logs", () => {
-    expect(formatBytes(500)).toBe("500B");
-    expect(formatBytes(2048)).toBe("2KB");
-    expect(formatBytes(5 * 1024 * 1024)).toBe("5.0MB");
+    expect(existsSync(join(external, "source.wav"))).toBe(true);
   });
 });
 

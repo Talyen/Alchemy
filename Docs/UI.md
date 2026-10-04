@@ -53,7 +53,7 @@ design, implementation, and review.
 ## Placement and boundaries
 
 - `src/components/ui/` owns generic Tailwind/Radix primitives with no game-domain knowledge. These components receive domain data through props and do not import `@/features` or subscribe to gameplay stores.
-- `src/features/alchemy/shared/ui/` owns reusable game widgets such as cards, choice buttons, status icons, actor panels, and map nodes. They receive run, battle, and session data through props. Presentation-only `ui-store` state is allowed.
+- `src/features/alchemy/shared/ui/` owns reusable game widgets such as cards, destination choices, item tiles, and inspection overlays. They receive run, battle, and session data through props. Presentation-only `ui-store` state is allowed. Battle status icons and combatant panels belong to `run-loop/battle/presentation/ui/`; Labyrinth map nodes belong to `run-loop/screens/labyrinth/`.
 - Screens and feature-local presentation stay with their owning feature until at least two feature domains need the same widget. Collection presentation belongs in `meta/screens/collection/`; shop purchase and service widgets belong in `run-loop/shop/ui/`. Mystery outcome badges belong in `run-loop/screens/mystery/`; Options panels, controls, and the error-log viewer belong in `meta/screens/options/`. Import shared widgets directly from their owning modules.
 - Static catalogs used by shared game widgets come from `shared/config/game-data-catalog.ts`, not the token `config/` barrel.
 

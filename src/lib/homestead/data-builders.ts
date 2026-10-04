@@ -1,4 +1,4 @@
-import type { HomesteadEffectManifest, HomesteadUpgradeItem, HomesteadUpgradeTier, MaterialInventory } from "./types";
+import type { HomesteadEffectManifest, HomesteadUpgradeItem, MaterialInventory } from "./types";
 import type { MaterialId } from "./types";
 import { emptyInventory } from "./inventory";
 
@@ -19,31 +19,6 @@ export function singleMaterialCosts(material: MaterialId): MaterialInventory[] {
 export type PerTierEffects =
   | Partial<HomesteadEffectManifest>
   | ((tierOneBased: number) => Partial<HomesteadEffectManifest>);
-
-function stackingTiers(
-  costs: readonly MaterialInventory[],
-  perTierEffects: PerTierEffects,
-  benefitForTier: (tierOneBased: number) => string,
-  nonCombatBenefitDescription?: string | ((tierOneBased: number) => string),
-): HomesteadUpgradeTier[] {
-  return costs.map((cost, index) => {
-    const tierOneBased = index + 1;
-    const effects = typeof perTierEffects === "function" ? perTierEffects(tierOneBased) : { ...perTierEffects };
-    return {
-      cost,
-      effects,
-      benefitDescription: benefitForTier(tierOneBased),
-      ...(nonCombatBenefitDescription
-        ? {
-            nonCombatBenefitDescription:
-              typeof nonCombatBenefitDescription === "function"
-                ? nonCombatBenefitDescription(tierOneBased)
-                : nonCombatBenefitDescription,
-          }
-        : {}),
-    };
-  });
-}
 
 // Shared four-tier cost ladders. Each returns fresh inventories so upgrades
 // never share mutable cost objects; values match the previously inlined
@@ -100,6 +75,22 @@ export function stackingUpgrade<TId extends string>(
   return {
     id,
     title,
-    tiers: stackingTiers(costs, perTierEffects, benefitForTier, nonCombatBenefitDescription),
+    tiers: costs.map((cost, index) => {
+      const tierOneBased = index + 1;
+      const effects = typeof perTierEffects === "function" ? perTierEffects(tierOneBased) : { ...perTierEffects };
+      return {
+        cost,
+        effects,
+        benefitDescription: benefitForTier(tierOneBased),
+        ...(nonCombatBenefitDescription
+          ? {
+              nonCombatBenefitDescription:
+                typeof nonCombatBenefitDescription === "function"
+                  ? nonCombatBenefitDescription(tierOneBased)
+                  : nonCombatBenefitDescription,
+            }
+          : {}),
+      };
+    }),
   };
 }

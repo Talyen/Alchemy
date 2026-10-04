@@ -33,18 +33,16 @@ describe("card builders", () => {
     ]);
   });
 
-  it("builds multi-effect consumables with a single Consume line", () => {
-    const card = effectsCard({
-      id: "mana-berries",
-      art: "mana-berries",
-      consume: true,
-      effects: [
-        { kind: "restore-mana", amount: 1 },
-        { kind: "draw-cards", amount: 1 },
-      ],
-    });
-    expect(card.descriptionLines).toEqual(["Gain 1 Mana", "Draw a card", "Consume"]);
-    expect(card.consume).toBe(true);
+  it("owns custom description lines so building or editing a variant cannot change another card", () => {
+    const authored = ["Restore 2 Health"];
+    const base = { id: "shared", art: "", effects: [{ kind: "heal" as const, amount: 2 }], describe: () => authored };
+    const tagged = effectsCard({ ...base, tags: ["nature"], consume: true });
+    const plain = effectsCard(base);
+    expect(tagged.descriptionLines).toEqual(["Restore 2 Health", "Nature", "Consume"]);
+    expect(plain.descriptionLines).toEqual(["Restore 2 Health"]);
+    tagged.descriptionLines[0] = "Changed";
+    plain.descriptionLines.push("Changed");
+    expect(authored).toEqual(["Restore 2 Health"]);
   });
 
   it("supports explicit lines for effects with no canonical phrasing", () => {

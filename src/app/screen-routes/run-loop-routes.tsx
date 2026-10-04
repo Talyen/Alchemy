@@ -174,6 +174,7 @@ function CampfireScreenRoute({ routeCommands }: RunLoopRouteCtx) {
       maxHealth={r.runMaxHealth}
       healFraction={healFraction}
       healingBonus={healingBonus}
+      modifiers={r.modifiers}
       runDeck={r.runDeck}
       visit={r.visit}
       potency={talentEffects.potionMixPotency}

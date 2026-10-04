@@ -5,7 +5,6 @@ const { simulateWinSeries } = vi.hoisted(() => ({ simulateWinSeries: vi.fn() }))
 vi.mock("@/lib/balance/simulator-batch", () => ({ simulateWinSeries }));
 
 import { runPairedSweep, type BalanceScenarioConfig } from "@/lib/balance/report-sweep-runner";
-import { makePairedDelta, pairedWinStats } from "@/lib/balance/report-rankings";
 import type { ReportRunOptions } from "@/lib/balance/report-options";
 
 const options: ReportRunOptions = {
@@ -69,30 +68,35 @@ describe("runPairedSweep", () => {
     });
     const rows = runPairedSweep(options, groups);
     expect(rows).toHaveLength(1);
-    expect(rows[0]!.deltas.early).toEqual(
-      makePairedDelta(
-        "same",
-        pairedWinStats(
-          Uint8Array.from([1, 0, 1, 1]),
-          Uint8Array.from([1, 1, 0, 1]),
-          Uint16Array.from([2, 8, 4, 5]),
-          Uint16Array.from([3, 6, 7, 5]),
-        ),
-      ),
-    );
+    expect(rows[0]!.deltas.early).toMatchObject({
+      n: 4,
+      delta: 0,
+      baseline: 0.75,
+      winRate: 0.75,
+      baselineTurns: 4.75,
+      treatmentTurns: 5.25,
+      turnDelta: 0.5,
+    });
     expect(rows[0]!.deltas.late).toMatchObject({ n: 2, delta: 1, turnDelta: -4 });
     expect(rows[0]!.deltas.mid.n).toBe(0);
   });
 
-  it("rejects mismatched fights before simulation", () => {
+  it.each<Partial<BalanceScenarioConfig>>([
+    { characterId: "rogue" },
+    { enemyId: "goblin" },
+    { depth: 2 },
+    { preset: "late" },
+    { seed: 43 },
+    { iterations: 3 },
+  ])("rejects a mismatched fight before simulation: %j", (mismatch) => {
     expect(() =>
       runPairedSweep(options, [
         {
           reference,
-          variants: [{ id: "wrong-seed", scenario: { ...reference, seed: reference.seed + 1 } }],
+          variants: [{ id: "mismatch", scenario: { ...reference, ...mismatch } }],
         },
       ]),
-    ).toThrow(/wrong-seed.*matched character, enemy, depth, tier, seed, and iterations/);
+    ).toThrow(/mismatch.*matched character, enemy, depth, tier, seed, and iterations/);
     expect(simulateWinSeries).not.toHaveBeenCalled();
   });
 });

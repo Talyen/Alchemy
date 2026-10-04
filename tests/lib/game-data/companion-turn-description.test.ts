@@ -34,7 +34,9 @@ describe("Bond descriptions", () => {
       ["library-owl", "Draw a Card each turn", "draw"],
     ] as const) {
       expect(getCompanionDescriptionLines(companionLibrary[id], level)).toEqual([
-        baseline + (level === 0 ? "" : `, with a ${level * 25}% chance to ${action} 1 more`),
+        baseline +
+          (level === 0 ? "" : `, with a ${level * 25}% chance to ${action} 1 more`) +
+          (id === "mana-moth" ? ", allowing overflow" : ""),
       ]);
     }
   });

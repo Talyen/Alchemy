@@ -87,45 +87,39 @@ export const TalentXPSchema = z.preprocess((val) => {
   return result;
 }, z.record(z.string(), z.number().int().nonnegative()).catch({}));
 
-function recordOfStringArraysSchema(defaultFactory?: () => Record<string, string[]>) {
-  return z.preprocess(
+export const UnlockedTalentsSchema = z
+  .preprocess(
     (val) => {
-      if (!val || typeof val !== "object") return defaultFactory?.() ?? {};
-      const result: Record<string, string[]> = { ...(defaultFactory?.() ?? {}) };
+      if (!val || typeof val !== "object") return {};
+      const result: Record<string, string[]> = {};
       for (const [key, ids] of Object.entries(val as Record<string, unknown>)) {
         if (Array.isArray(ids)) {
           result[key] = deduplicateStrings(ids);
-        } else if (defaultFactory) {
-          result[key] = result[key] ?? [];
         }
       }
       return result;
     },
     z.record(z.string(), z.array(z.string())).catch({}),
-  );
-}
-
-export const UnlockedTalentsSchema = recordOfStringArraysSchema().transform((data) =>
-  normalizeUnlockedTalents(data as UnlockedTalents),
-);
+  )
+  .transform((data) => normalizeUnlockedTalents(data as UnlockedTalents));
 
 const DIFFICULTY_ID_SET = new Set<DifficultyId>(DIFFICULTY_IDS);
 
-function normalizeCompletedDifficulties(data: Record<string, string[]>): Record<CharacterId, DifficultyId[]> {
+function normalizeCompletedDifficulties(data: unknown): Record<CharacterId, DifficultyId[]> {
+  const saved = data && typeof data === "object" ? (data as Record<string, unknown>) : {};
   const result = {} as Record<CharacterId, DifficultyId[]>;
   for (const characterId of CHARACTER_IDS) {
-    result[characterId] = deduplicateFromSet(data[characterId], DIFFICULTY_ID_SET);
+    result[characterId] = deduplicateFromSet(
+      Object.hasOwn(saved, characterId) ? saved[characterId] : undefined,
+      DIFFICULTY_ID_SET,
+    );
   }
   return result;
 }
 
-export const CompletedDifficultiesSchema = recordOfStringArraysSchema(() =>
-  Object.fromEntries(CHARACTER_IDS.map((id) => [id, [] as string[]])),
-).transform(normalizeCompletedDifficulties);
+export const CompletedDifficultiesSchema = z.unknown().transform(normalizeCompletedDifficulties);
 
-export const EMPTY_COMPLETED_DIFFICULTIES: Record<CharacterId, DifficultyId[]> = normalizeCompletedDifficulties(
-  Object.fromEntries(CHARACTER_IDS.map((id) => [id, []])),
-);
+export const EMPTY_COMPLETED_DIFFICULTIES: Record<CharacterId, DifficultyId[]> = normalizeCompletedDifficulties(null);
 
 function normalizeArrayInput(arr: unknown[]): Record<string, number> {
   const result: Record<string, number> = {};
@@ -136,33 +130,20 @@ function normalizeArrayInput(arr: unknown[]): Record<string, number> {
   return result;
 }
 
-function normalizeObjectInput(obj: Record<string, unknown>): Record<string, number> {
-  const result: Record<string, number> = {};
-  for (const [id, level] of Object.entries(obj)) {
-    result[id] = toFiniteNonNegativeInt(level) ?? 0;
-  }
-  return result;
-}
-
-function normalizeTierRecordInput(val: unknown): Record<string, number> {
-  if (Array.isArray(val)) return normalizeArrayInput(val);
-  if (val && typeof val === "object") return normalizeObjectInput(val as Record<string, unknown>);
-  return {};
-}
-
 export function createTierRecordSchema<T extends string>(
   items: ReadonlyArray<{ id: T; tiers: readonly unknown[] }>,
 ): z.ZodType<Record<T, number>> {
-  const maxTierById = new Map<T, number>(items.map((item) => [item.id, item.tiers.length]));
-  const validIds = items.map((item) => item.id);
-  return z
-    .preprocess((val) => normalizeTierRecordInput(val), z.record(z.string(), z.number().int().nonnegative().catch(0)))
-    .transform((data) => {
-      const result: Record<T, number> = {} as Record<T, number>;
-      for (const id of validIds) {
-        const maxTier = maxTierById.get(id) ?? 0;
-        result[id] = clamp(data[id] ?? 0, 0, maxTier);
-      }
-      return result;
-    });
+  return z.unknown().transform((val) => {
+    const data: Record<string, unknown> = Array.isArray(val)
+      ? normalizeArrayInput(val)
+      : val && typeof val === "object"
+        ? (val as Record<string, unknown>)
+        : {};
+    const result: Record<T, number> = {} as Record<T, number>;
+    for (const { id, tiers } of items) {
+      const level = Object.hasOwn(data, id) ? toFiniteNonNegativeInt(data[id]) : null;
+      result[id] = clamp(level ?? 0, 0, tiers.length);
+    }
+    return result;
+  });
 }

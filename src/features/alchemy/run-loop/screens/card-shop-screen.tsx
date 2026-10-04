@@ -41,6 +41,7 @@ export function CardShopScreen({
   onContinue: () => void;
 }) {
   const [removeMode, setRemoveMode] = useState(false);
+  const [removeError, setRemoveError] = useState("");
 
   return (
     <FadeSlot swapKey={removeMode ? "remove" : "browse"} className="h-full w-full">
@@ -49,15 +50,22 @@ export function CardShopScreen({
           {/* Bound the two-row fitting area in content units while keeping short-window controls reachable. */}
           <ScreenShell className="h-full max-h-[calc(70*var(--content-rem,1rem))] gap-6 overflow-hidden">
             <ScreenHeaderRow title="Remove Card" />
+            {removeError && <p role="alert">{removeError}</p>}
             <RemoveCardPanel
               runDeck={runDeck}
               gold={gold}
               removePrice={removePrice}
               fitHeight
               onConfirm={(index) => {
-                if (onRemoveCard(index)) setRemoveMode(false);
+                if (onRemoveCard(index)) {
+                  setRemoveError("");
+                  setRemoveMode(false);
+                } else setRemoveError("Could not remove this card. Check your Gold and choose a card again.");
               }}
-              onCancel={() => setRemoveMode(false)}
+              onCancel={() => {
+                setRemoveError("");
+                setRemoveMode(false);
+              }}
             />
           </ScreenShell>
         </div>

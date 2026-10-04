@@ -162,17 +162,28 @@ export function CorruptionScreen({
   const [selecting, setSelecting] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [page, setPage] = useState(0);
+  const [selectionDeck, setSelectionDeck] = useState(runDeck);
+  const [selectionNotice, setSelectionNotice] = useState("");
+  if (selectionDeck !== runDeck) {
+    setSelectionDeck(runDeck);
+    setSelectedIndex(null);
+    setPage(0);
+    setSelectionNotice(selecting && !result ? "Your deck changed. Choose a card to corrupt again." : "");
+  }
+  const selectedCard = selectedIndex === null ? undefined : runDeck[selectedIndex];
+  const canConfirm = selectedCard !== undefined && !selectedCard.corrupted;
 
   function cancelSelection() {
     setSelecting(false);
     setSelectedIndex(null);
     setPage(0);
+    setSelectionNotice("");
   }
 
   useCaptureEscapeCancel(selecting && !result ? cancelSelection : undefined);
 
   function handleConfirm() {
-    if (selectedIndex === null) return;
+    if (selectedIndex === null || !canConfirm) return;
     onCorrupt(selectedIndex);
   }
 
@@ -197,10 +208,14 @@ export function CorruptionScreen({
               <CorruptionDeckPicker
                 runDeck={runDeck}
                 selectedIndex={selectedIndex}
-                onSelect={setSelectedIndex}
+                onSelect={(index) => {
+                  setSelectedIndex(index);
+                  setSelectionNotice("");
+                }}
                 page={page}
                 onPageChange={setPage}
               />
+              {selectionNotice && <p role="status">{selectionNotice}</p>}
               <div className="flex justify-center gap-3">
                 <Button size="lg" variant="outline" onClick={cancelSelection}>
                   Cancel
@@ -209,7 +224,7 @@ export function CorruptionScreen({
                   icon={Dices}
                   accentClassName="text-red-400"
                   shineColor={SHINE_PALETTES.corruption}
-                  disabled={selectedIndex === null}
+                  disabled={!canConfirm}
                   onClick={handleConfirm}
                 >
                   Corrupt

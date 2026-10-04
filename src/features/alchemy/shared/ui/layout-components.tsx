@@ -7,20 +7,9 @@ import { ChromeIconButton } from "./chrome-icon-button";
 import { HamburgerTrigger } from "./navigation";
 import { useOptionalAppScreenChrome } from "@/app/app-screen-chrome-context";
 
-export function ScreenHeader({
-  title,
-  eyebrow,
-  className,
-}: {
-  title: ReactNode;
-  eyebrow?: ReactNode;
-  className?: string;
-}) {
+export function ScreenHeader({ title, className }: { title: ReactNode; className?: string }) {
   return (
     <div className={cn("flex flex-col items-center text-center", className)}>
-      {eyebrow ? (
-        <p className="mb-1 text-sm font-semibold tracking-[0.22em] text-gold-pale/60 uppercase">{eyebrow}</p>
-      ) : null}
       <h1 className={cn("font-sans", screenTitleClass)}>{title}</h1>
       <div className="mt-2 h-px w-44 bg-gradient-to-r from-transparent via-gold-pale/75 to-transparent" />
     </div>
@@ -29,24 +18,18 @@ export function ScreenHeader({
 
 export function ScreenHeaderRow({
   title,
-  eyebrow,
   leading,
   trailing,
   onBack,
   onMenu,
   className,
-  leadingClassName,
-  trailingClassName,
 }: {
   title: ReactNode;
-  eyebrow?: ReactNode;
   leading?: ReactNode;
   trailing?: ReactNode;
   onBack?: (() => void) | undefined;
   onMenu?: ((rect: DOMRect) => void) | undefined;
   className?: string;
-  leadingClassName?: string;
-  trailingClassName?: string;
 }) {
   const chrome = useOptionalAppScreenChrome();
   const effectiveBack = onBack ?? chrome?.onBack;
@@ -75,17 +58,14 @@ export function ScreenHeaderRow({
     <div className={cn("flex min-h-10 w-full items-center justify-center", className)}>
       <div className="flex w-full max-w-2xl flex-col items-center">
         <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center px-3">
-          <div className={cn("flex items-center gap-2", leadingClassName)}>
+          <div className="flex items-center gap-2">
             {leadingContent}
             {chrome?.deckInspection ? <DeckInspectButton {...chrome.deckInspection} /> : null}
           </div>
           <div className="flex min-w-0 flex-col items-center px-3 text-center">
-            {eyebrow ? (
-              <p className="mb-1 text-sm font-semibold tracking-[0.22em] text-gold-pale/60 uppercase">{eyebrow}</p>
-            ) : null}
             <h1 className={cn("text-center font-sans", screenTitleClass)}>{title}</h1>
           </div>
-          <div className={cn("flex items-center justify-end gap-2", trailingClassName)}>{trailingContent}</div>
+          <div className="flex items-center justify-end gap-2">{trailingContent}</div>
         </div>
         <div className="mt-2 h-px w-44 bg-gradient-to-r from-transparent via-gold-pale/75 to-transparent" />
       </div>
@@ -93,17 +73,10 @@ export function ScreenHeaderRow({
   );
 }
 
-export function PageLayout({ children, align = "center" }: { children: ReactNode; align?: "center" | "start" }) {
+export function PageLayout({ children }: { children: ReactNode }) {
   return (
     <div className="game-page-scroll h-full w-full overflow-x-hidden overflow-y-auto px-5 py-7">
-      <div
-        className={cn(
-          "flex min-h-full w-full flex-col items-center",
-          align === "start" ? "justify-start" : "justify-center",
-        )}
-      >
-        {children}
-      </div>
+      <div className="flex min-h-full w-full flex-col items-center justify-center">{children}</div>
     </div>
   );
 }
@@ -112,17 +85,13 @@ export function ScreenShell({
   children,
   className,
   maxWidthClass = "max-w-5xl",
-  minHeightClass = "min-h-0",
 }: {
   children: ReactNode;
   className?: string;
   maxWidthClass?: string;
-  minHeightClass?: string;
 }) {
   return (
-    <div
-      className={cn("mx-auto flex w-full flex-col", screenShellPaddingClass, minHeightClass, maxWidthClass, className)}
-    >
+    <div className={cn("mx-auto flex w-full flex-col", screenShellPaddingClass, "min-h-0", maxWidthClass, className)}>
       {children}
     </div>
   );
@@ -130,24 +99,18 @@ export function ScreenShell({
 
 export function TitledScreenShell({
   title,
-  eyebrow,
   children,
   className,
   maxWidthClass,
-  minHeightClass,
-  align,
   headerActions,
   leading,
   onBack,
   onMenu,
 }: {
   title: ReactNode;
-  eyebrow?: ReactNode;
   children: ReactNode;
   className?: string;
   maxWidthClass?: string;
-  minHeightClass?: string;
-  align?: "center" | "start";
   headerActions?: ReactNode;
   leading?: ReactNode;
   onBack?: (() => void) | undefined;
@@ -155,20 +118,9 @@ export function TitledScreenShell({
 }) {
   return (
     <div className="relative h-full w-full overflow-hidden">
-      <PageLayout {...(align ? { align } : {})}>
-        <ScreenShell
-          className={cn("relative z-10", className)}
-          {...(maxWidthClass ? { maxWidthClass } : {})}
-          {...(minHeightClass ? { minHeightClass } : {})}
-        >
-          <ScreenHeaderRow
-            title={title}
-            eyebrow={eyebrow}
-            leading={leading}
-            trailing={headerActions}
-            onBack={onBack}
-            onMenu={onMenu}
-          />
+      <PageLayout>
+        <ScreenShell className={cn("relative z-10", className)} {...(maxWidthClass ? { maxWidthClass } : {})}>
+          <ScreenHeaderRow title={title} leading={leading} trailing={headerActions} onBack={onBack} onMenu={onMenu} />
           {children}
         </ScreenShell>
       </PageLayout>

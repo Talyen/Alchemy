@@ -97,80 +97,39 @@ function StatusTooltip({
 }
 
 export function StatusIcon({ chip }: { chip: StatusChip }) {
-  if (chip.id === "haste") {
-    return <HasteStatusIcon value={chip.value} />;
-  }
-
-  if (chip.id === "phoenixFeather") {
-    const Icon = phoenixFeatherStatus.icon;
-    return (
-      <StatusChipShell
-        ariaLabel={phoenixFeatherStatus.label}
-        icon={<Icon className={cn(STATUS_ICON_CLASS, phoenixFeatherStatus.colorClass)} />}
-        tooltip={
-          <StatusTooltip
-            labelNode={<TooltipHeader className="mb-0">{phoenixFeatherStatus.label}</TooltipHeader>}
-            value={chip.value}
-            hideValue={chip.hideValue}
-            valueColorClass={phoenixFeatherStatus.colorClass}
-            description={renderColoredKeywords(phoenixFeatherStatus.description)}
-          />
-        }
-        plasmaColorPair={getPlasmaColorPairFromColors(phoenixFeatherStatus.shineColors)}
-      />
-    );
-  }
-
+  const haste = chip.id === "haste";
+  const phoenix = chip.id === "phoenixFeather";
   const augment = augmentDefinitions[chip.id as keyof typeof augmentDefinitions];
-  if (augment) {
-    return <AugmentStatusIcon chip={chip} augment={augment} />;
-  }
-
   const kw = chip.id as KeywordId;
-  const definition = keywordDefinitions[kw];
-  const Icon = keywordIcons[kw];
-
-  if (!definition || !Icon) {
-    return null;
-  }
-
+  const special = haste ? HASTE_STATUS : phoenix ? phoenixFeatherStatus : augment;
+  const definition = special ?? keywordDefinitions[kw];
+  const Icon = special?.icon ?? keywordIcons[kw];
+  if (!definition || !Icon) return null;
+  const hideValue = Boolean(!haste && special && chip.hideValue);
+  const plasmaColorPair = haste
+    ? HASTE_PLASMA_PAIR
+    : phoenix
+      ? getPlasmaColorPairFromColors(phoenixFeatherStatus.shineColors)
+      : augment
+        ? getPlasmaColorPair(getPlasmaKeywordsForText(`${augment.label} ${augment.description}`))
+        : getPlasmaColorPair([kw]);
   return (
     <StatusChipShell
-      ariaLabel={`${definition.label} ${chip.value}`}
+      ariaLabel={phoenix || hideValue ? definition.label : `${definition.label} ${chip.value}`}
       icon={<Icon className={cn(STATUS_ICON_CLASS, definition.colorClass)} />}
       tooltip={
         <StatusTooltip
-          labelNode={<KeywordTag keywordId={kw} className="text-sm sm:text-base" />}
+          labelNode={
+            special ? (
+              <TooltipHeader className="mb-0">{definition.label}</TooltipHeader>
+            ) : (
+              <KeywordTag keywordId={kw} className="text-sm sm:text-base" />
+            )
+          }
           value={chip.value}
+          hideValue={hideValue}
           valueColorClass={definition.colorClass}
-          description={renderColoredKeywords(definition.description)}
-        />
-      }
-      plasmaColorPair={getPlasmaColorPair([kw])}
-    />
-  );
-}
-
-function AugmentStatusIcon({
-  chip,
-  augment,
-}: {
-  chip: StatusChip;
-  augment: (typeof augmentDefinitions)[keyof typeof augmentDefinitions];
-}) {
-  const Icon = augment.icon;
-  const plasmaColorPair = getPlasmaColorPair(getPlasmaKeywordsForText(`${augment.label} ${augment.description}`));
-  return (
-    <StatusChipShell
-      ariaLabel={chip.hideValue ? augment.label : `${augment.label} ${chip.value}`}
-      icon={<Icon className={cn(STATUS_ICON_CLASS, augment.colorClass)} />}
-      tooltip={
-        <StatusTooltip
-          labelNode={<TooltipHeader className="mb-0">{augment.label}</TooltipHeader>}
-          value={chip.value}
-          hideValue={chip.hideValue}
-          valueColorClass={augment.colorClass}
-          description={renderColoredKeywords(augment.description)}
+          description={haste ? definition.description : renderColoredKeywords(definition.description)}
         />
       }
       plasmaColorPair={plasmaColorPair}
@@ -178,23 +137,12 @@ function AugmentStatusIcon({
   );
 }
 
-function HasteStatusIcon({ value }: { value: number }) {
-  return (
-    <StatusChipShell
-      ariaLabel={`Haste ${value}`}
-      icon={<Sparkles className={cn(STATUS_ICON_CLASS, "text-fuchsia-300")} />}
-      tooltip={
-        <StatusTooltip
-          labelNode={<TooltipHeader className="mb-0">Haste</TooltipHeader>}
-          value={value}
-          valueColorClass="text-fuchsia-300"
-          description="Skips the next enemy phase and grants another player turn."
-        />
-      }
-      plasmaColorPair={HASTE_PLASMA_PAIR}
-    />
-  );
-}
+const HASTE_STATUS = {
+  label: "Haste",
+  icon: Sparkles,
+  colorClass: "text-fuchsia-300",
+  description: "Skips the next enemy phase and grants another player turn.",
+};
 
 export function DeathsDoorStatusIcon() {
   return (

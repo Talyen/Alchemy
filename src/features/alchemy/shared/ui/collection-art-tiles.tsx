@@ -125,6 +125,7 @@ export interface GearTileProps {
   as?: "button" | "div" | undefined;
   selected?: boolean | undefined;
   disabled?: boolean | undefined;
+  ariaDisabled?: boolean | undefined;
   interactiveChrome?: boolean | undefined;
 
   shine?: boolean | undefined;
@@ -142,6 +143,7 @@ export function GearTile({
   as,
   selected,
   disabled,
+  ariaDisabled,
   interactiveChrome,
   shine = true,
   hoverKeywordShine = false,
@@ -174,6 +176,7 @@ export function GearTile({
       as={as}
       selected={selected}
       disabled={disabled}
+      ariaDisabled={ariaDisabled}
       interactiveChrome={interactiveChrome}
       onClick={onClick}
       ariaLabel={ariaLabel}

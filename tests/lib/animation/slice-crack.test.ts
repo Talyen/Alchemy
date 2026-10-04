@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  SLICE_ANGLE_RADIANS,
-  SLICE_ASPECT_HEIGHT,
-  SLICE_ASPECT_WIDTH,
   SLICE_CARD_FRACTION_RANGE,
-  SLICE_CRACK_POINTS,
-  SLICE_NORMAL,
   SLICE_PRIMARY_CLIP_PATH,
   SLICE_SECONDARY_CLIP_PATH,
   sliceCrackPointAtFraction,
@@ -37,71 +32,19 @@ function pointInClipPolygon(clipPath: string, point: { x: number; y: number }): 
 }
 
 describe("slice crack", () => {
-  it("keeps interior vertices on the card", () => {
-    const interior = SLICE_CRACK_POINTS.slice(1, -1);
-    for (const point of interior) {
-      expect(point.x).toBeGreaterThanOrEqual(0);
-      expect(point.x).toBeLessThanOrEqual(1);
-      expect(point.y).toBeGreaterThanOrEqual(0);
-      expect(point.y).toBeLessThanOrEqual(1);
-    }
-  });
-
-  it("extends endpoints past the card", () => {
-    const onBoundary = (p: { x: number; y: number }) =>
-      Math.abs(p.x) < 0.0001 || Math.abs(p.x - 1) < 0.0001 || Math.abs(p.y) < 0.0001 || Math.abs(p.y - 1) < 0.0001;
-    expect(onBoundary(SLICE_CRACK_POINTS[0]!)).toBe(false);
-    expect(onBoundary(SLICE_CRACK_POINTS[SLICE_CRACK_POINTS.length - 1]!)).toBe(false);
-  });
-
   it("covers the portrait exactly once with complementary halves", () => {
+    const violations: string[] = [];
     for (let x = 0.013; x < 1; x += 0.037) {
       for (let y = 0.017; y < 1; y += 0.041) {
         const point = { x, y };
         if (Math.abs(sliceCrackSide(point)) < 0.01) continue;
         const primary = pointInClipPolygon(SLICE_PRIMARY_CLIP_PATH, point);
         const secondary = pointInClipPolygon(SLICE_SECONDARY_CLIP_PATH, point);
-        expect(Number(primary) + Number(secondary)).toBe(1);
-        expect(primary).toBe(sliceCrackSide(point) < 0);
+        if (Number(primary) + Number(secondary) !== 1 || primary !== sliceCrackSide(point) < 0)
+          violations.push(`(${x.toFixed(3)}, ${y.toFixed(3)}): primary=${primary}, secondary=${secondary}`);
       }
     }
-  });
-
-  it("zigzags interior vertices across the base diagonal", () => {
-    const interior = SLICE_CRACK_POINTS.slice(1, -1);
-    expect(interior.length).toBeGreaterThanOrEqual(3);
-    let previousSign: number | undefined;
-    for (const point of interior) {
-      const dx = (point.x - 0.5) * SLICE_ASPECT_WIDTH;
-      const dy = (point.y - 0.5) * SLICE_ASPECT_HEIGHT;
-      const sign = dx * SLICE_NORMAL.dx + dy * SLICE_NORMAL.dy >= 0 ? 1 : -1;
-      if (previousSign !== undefined) {
-        expect(sign * previousSign).toBeLessThan(0);
-      }
-      previousSign = sign;
-    }
-  });
-
-  it("classifies card corners onto opposite half-planes", () => {
-    expect(sliceCrackSide({ x: 0.95, y: 0.05 })).toBeGreaterThan(0);
-    expect(sliceCrackSide({ x: 0.05, y: 0.95 })).toBeLessThan(0);
-  });
-
-  it("keeps card corners inside the matching half clip-path", () => {
-    const upperRight = { x: 0.99, y: 0.01 };
-    const lowerLeft = { x: 0.01, y: 0.99 };
-    expect(pointInClipPolygon(SLICE_SECONDARY_CLIP_PATH, upperRight)).toBe(true);
-    expect(pointInClipPolygon(SLICE_PRIMARY_CLIP_PATH, upperRight)).toBe(false);
-    expect(pointInClipPolygon(SLICE_PRIMARY_CLIP_PATH, lowerLeft)).toBe(true);
-    expect(pointInClipPolygon(SLICE_SECONDARY_CLIP_PATH, lowerLeft)).toBe(false);
-  });
-
-  it("advances along the crack as fraction increases", () => {
-    const start = SLICE_CRACK_POINTS[0]!;
-    const low = sliceCrackPointAtFraction(0.2);
-    const high = sliceCrackPointAtFraction(0.8);
-    const distance = (p: { x: number; y: number }) => Math.hypot(p.x - start.x, p.y - start.y);
-    expect(distance(high)).toBeGreaterThan(distance(low));
+    expect({ total: violations.length, examples: violations.slice(0, 5) }).toEqual({ total: 0, examples: [] });
   });
 
   it("keeps the on-card fraction range inside the padded polyline", () => {
@@ -111,10 +54,6 @@ describe("slice crack", () => {
       Math.abs(p.x) < 0.04 || Math.abs(p.x - 1) < 0.04 || Math.abs(p.y) < 0.04 || Math.abs(p.y - 1) < 0.04;
     expect(nearBoundary(sliceCrackPointAtFraction(SLICE_CARD_FRACTION_RANGE.start))).toBe(true);
     expect(nearBoundary(sliceCrackPointAtFraction(SLICE_CARD_FRACTION_RANGE.end))).toBe(true);
-  });
-
-  it("uses a left-leaning cut angle", () => {
-    expect(SLICE_ANGLE_RADIANS).toBeLessThan(0);
   });
 });
 

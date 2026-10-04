@@ -77,15 +77,16 @@ function choosePendingWishCards(state: BattleState): BattleState {
   return nextState;
 }
 
-const SCRATCH_COMBAT_TEXTS: CombatTextEvent[] = [];
-// Reused across non-tracking turns only: never retained by handlers and sims
-// run synchronously, so clearing + reusing is safe. Do not retain or re-enter.
+interface SimulationTracking {
+  cardsPlayed: Record<string, number> | null;
+  anomalies: BattleAnomalies | null;
+  combatTexts: CombatTextEvent[];
+}
 
 function playAutomatedTurn(
   state: BattleState,
   policy: BalancePlayPolicy,
-  cardsPlayed: Record<string, number> | null,
-  anomalies: BattleAnomalies | null,
+  { cardsPlayed, anomalies }: SimulationTracking,
 ): BattleState {
   let nextState = choosePendingWishCards(state);
 
@@ -130,24 +131,15 @@ function resolveTalentEffects(
   return mergeIntoManifest(base, homestead);
 }
 
-function runSimTurn(
-  state: BattleState,
-  policy: BalancePlayPolicy,
-  cardsPlayed: Record<string, number> | null,
-  anomalies: BattleAnomalies | null,
-): BattleState {
-  let turnCombatTexts: CombatTextEvent[];
-  if (anomalies) {
-    turnCombatTexts = [];
-  } else {
-    SCRATCH_COMBAT_TEXTS.length = 0;
-    turnCombatTexts = SCRATCH_COMBAT_TEXTS;
-  }
-  state = processCompanionTurnStart(state, turnCombatTexts);
-  if (anomalies) sampleAnomalies(state, turnCombatTexts, anomalies);
+function runSimTurn(state: BattleState, policy: BalancePlayPolicy, tracking: SimulationTracking): BattleState {
+  const { anomalies, combatTexts } = tracking;
+  // The buffer belongs to this simulation and is sampled before the next turn clears it.
+  combatTexts.length = 0;
+  state = processCompanionTurnStart(state, combatTexts);
+  if (anomalies) sampleAnomalies(state, combatTexts, anomalies);
   if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
 
-  state = playAutomatedTurn(state, policy, cardsPlayed, anomalies);
+  state = playAutomatedTurn(state, policy, tracking);
   if (anomalies) sampleAnomalies(state, [], anomalies);
   if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
 
@@ -193,7 +185,6 @@ function buildSimBattleConfig(config: BattleSimulationConfig, rng: () => number,
       rng,
       ...(config.appliesFightPacing === undefined ? {} : { appliesFightPacing: config.appliesFightPacing }),
     }),
-    playerDeck,
     playerMaxHealth,
     trinketIds,
   };
@@ -215,8 +206,8 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
   const maxTurns = config.maxTurns ?? DEFAULT_MAX_TURNS;
   const trackMetrics = config.trackMetrics !== false;
   const cardsPlayed: Record<string, number> | null = trackMetrics ? {} : null;
-  const trackAnomalies = config.trackAnomalies !== false;
-  const anomalies = trackAnomalies ? createEmptyAnomalies() : null;
+  const anomalies = config.trackAnomalies !== false ? createEmptyAnomalies() : null;
+  const tracking: SimulationTracking = { cardsPlayed, anomalies, combatTexts: [] };
 
   let state: BattleState = {
     ...initialState,
@@ -226,7 +217,7 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
 
   while (state.enemyHealth > 0 && !isPlayerDefeated(state) && turns < maxTurns) {
     turns += 1;
-    state = runSimTurn(state, policy, cardsPlayed, anomalies);
+    state = runSimTurn(state, policy, tracking);
   }
 
   const outcome: BattleSimulationOutcome =

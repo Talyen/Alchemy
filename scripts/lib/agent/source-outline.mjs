@@ -32,10 +32,16 @@ export function sourceOutline(rootDir, relativePath, { entries = false, tests = 
         : CONTENT_BUILDERS.get(sourcePath);
     const literalName = (node) =>
       node && (ts.isStringLiteral(node) || ts.isNumericLiteral(node) || ts.isIdentifier(node)) ? node.text : null;
+    const isWrapper = (node) =>
+      ts.isSatisfiesExpression(node) || ts.isAsExpression(node) || ts.isParenthesizedExpression(node);
     const unwrap = (node) => {
-      while (ts.isSatisfiesExpression(node) || ts.isAsExpression(node) || ts.isParenthesizedExpression(node))
-        node = node.expression;
+      while (isWrapper(node)) node = node.expression;
       return node;
+    };
+    const isCatalogRoot = (node) => {
+      let parent = node.parent;
+      while (isWrapper(parent)) parent = parent.parent;
+      return ts.isVariableDeclaration(parent);
     };
     const visit = (node) => {
       if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && builders?.has(node.expression.text)) {
@@ -54,11 +60,7 @@ export function sourceOutline(rootDir, relativePath, { entries = false, tests = 
           return; // The entry owns its nested configuration; do not index roll tiers or effects.
         }
         // Keyed catalogs are top-level variable initializers, not arbitrary nested objects.
-        if (
-          ts.isVariableDeclaration(node.parent) ||
-          (ts.isSatisfiesExpression(node.parent) && ts.isVariableDeclaration(node.parent.parent)) ||
-          (ts.isAsExpression(node.parent) && ts.isVariableDeclaration(node.parent.parent))
-        ) {
+        if (isCatalogRoot(node)) {
           for (const property of node.properties) {
             if (!ts.isPropertyAssignment(property)) continue;
             const value = unwrap(property.initializer);

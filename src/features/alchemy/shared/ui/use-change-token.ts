@@ -1,13 +1,11 @@
 import { useState } from "react";
 
 export function useChangeToken(value: number | string) {
-  const [previousValue, setPreviousValue] = useState(value);
-  const [token, setToken] = useState(0);
+  const [previous, setPrevious] = useState({ value, token: 0 });
 
-  if (!Object.is(previousValue, value)) {
-    setPreviousValue(value);
-    setToken((current) => current + 1);
+  if (!Object.is(previous.value, value)) {
+    setPrevious({ value, token: previous.token + 1 });
   }
 
-  return token;
+  return previous.token;
 }

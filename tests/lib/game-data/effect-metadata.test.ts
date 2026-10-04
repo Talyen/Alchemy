@@ -36,6 +36,38 @@ describe("repeated effect descriptions", () => {
 });
 
 describe("collectKeywordsFromBattleEffect", () => {
+  it("retains every nested outcome and conditional type in first-seen order without duplicate keywords", () => {
+    const effect: BattleCardEffect = {
+      kind: "chance",
+      probability: 0.5,
+      successEffects: [
+        {
+          kind: "repeat-over-turns",
+          remainingTurns: 2,
+          effects: [
+            {
+              kind: "damage",
+              damageType: "physical",
+              amount: 2,
+              damageTypePool: ["burn", "holy"],
+              lifesteal: true,
+              damageTypeIfTargetHasBlock: "nature",
+              damageTypeIfTargetFrozen: "burn",
+              amountIfTargetFrozen: 4,
+            },
+          ],
+        },
+      ],
+      failureEffects: [
+        { kind: "heal", amount: 3 },
+        { kind: "damage", damageType: "burn", amount: 1 },
+        { kind: "player-status", status: "haste", amount: 1 },
+      ],
+    };
+    const before = structuredClone(effect);
+    expect(collectKeywordsFromBattleEffect(effect)).toEqual(["burn", "holy", "leech", "nature", "health"]);
+    expect(effect).toEqual(before);
+  });
   it.each<BattleCardEffect>([
     { kind: "random-damage", minAmount: 1, maxAmount: 4, damageTypePool: ["burn", "holy"] },
     { kind: "player-status", status: "block", statusPool: ["block", "armor"], amount: 3 },
@@ -47,31 +79,6 @@ describe("collectKeywordsFromBattleEffect", () => {
     expect(collectKeywordsFromBattleEffect(effect)).toEqual(expected);
   });
 
-  it("returns damage type for a damage effect without lifesteal", () => {
-    const effect: BattleCardEffect = { kind: "damage", damageType: "physical", amount: 5 };
-    expect(collectKeywordsFromBattleEffect(effect)).toEqual(["physical"]);
-  });
-
-  it("includes leech for a damage effect with lifesteal", () => {
-    const effect: BattleCardEffect = { kind: "damage", damageType: "nature", amount: 3, lifesteal: true };
-    expect(collectKeywordsFromBattleEffect(effect)).toEqual(["nature", "leech"]);
-  });
-
-  it("excludes haste for player-status", () => {
-    const effect: BattleCardEffect = { kind: "player-status", status: "haste", amount: 1 };
-    expect(collectKeywordsFromBattleEffect(effect)).toEqual([]);
-  });
-
-  it("returns block for player-status block", () => {
-    const effect: BattleCardEffect = { kind: "player-status", status: "block", amount: 5 };
-    expect(collectKeywordsFromBattleEffect(effect)).toEqual(["block"]);
-  });
-
-  it("returns thorns for player-status thorns", () => {
-    const effect: BattleCardEffect = { kind: "player-status", status: "thorns", amount: 2 };
-    expect(collectKeywordsFromBattleEffect(effect)).toEqual(["thorns"]);
-  });
-
   it("includes every outcome keyword for a pooled player status", () => {
     const effect: BattleCardEffect = {
       kind: "player-status",
@@ -81,33 +88,6 @@ describe("collectKeywordsFromBattleEffect", () => {
     };
     expect(collectKeywordsFromBattleEffect(effect)).toEqual(["block", "forge", "armor"]);
     expect(effectDescriptionLine(effect)).toBe("Gain 5 Block, Forge, or Armor");
-  });
-
-  it("returns archery for next-archery-free", () => {
-    const effect: BattleCardEffect = { kind: "next-archery-free" };
-    expect(collectKeywordsFromBattleEffect(effect)).toEqual(["archery"]);
-  });
-
-  it("deduplicates keywords from chance effect branches", () => {
-    const inner: BattleCardEffect = { kind: "damage", damageType: "physical", amount: 2, lifesteal: true };
-    const effect: BattleCardEffect = {
-      kind: "chance",
-      probability: 0.5,
-      successEffects: [inner],
-      failureEffects: [inner],
-    };
-
-    expect(collectKeywordsFromBattleEffect(effect)).toEqual(["physical", "leech"]);
-  });
-
-  it("merges distinct keywords from success and failure branches", () => {
-    const effect: BattleCardEffect = {
-      kind: "chance",
-      probability: 0.5,
-      successEffects: [{ kind: "heal", amount: 3 }],
-      failureEffects: [{ kind: "gain-gold", amount: 5 }],
-    };
-    expect(collectKeywordsFromBattleEffect(effect)).toEqual(["health", "gold"]);
   });
 });
 

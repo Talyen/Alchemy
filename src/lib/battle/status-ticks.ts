@@ -173,20 +173,6 @@ function mitigatePlayerDot(state: BattleState, damage: number, status: "burn" | 
     : afterBlock;
 }
 
-function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
-  const damage = state.playerStatuses.burn;
-  if (damage <= 0) return state;
-  const reducedDamage = mitigatePlayerDot(state, damage, "burn");
-  return dealPlayerDotTick(state, reducedDamage, "burn", decayHalvedStatus(state.playerStatuses.burn), combatTexts);
-}
-
-function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
-  const damage = state.playerStatuses.poison;
-  if (damage <= 0) return state;
-  const reducedDamage = mitigatePlayerDot(state, damage, "poison");
-  return dealPlayerDotTick(state, reducedDamage, "poison", decayPoisonStacks(state.playerStatuses.poison), combatTexts);
-}
-
 function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.bleed;
   if (damage <= 0) {
@@ -226,8 +212,18 @@ export function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEv
   let nextState = state;
   // Burn and Poison settle their reactions before the next tick. Bleed is
   // followed by the shared end-of-tick settlement, including crowd control.
-  for (const tick of [tickPlayerBurn, tickPlayerPoison]) {
-    nextState = resolvePendingBattleReactions(tick(nextState, combatTexts), combatTexts);
+  for (const status of ["burn", "poison"] as const) {
+    const stacks = nextState.playerStatuses[status];
+    if (stacks > 0) {
+      nextState = dealPlayerDotTick(
+        nextState,
+        mitigatePlayerDot(nextState, stacks, status),
+        status,
+        status === "burn" ? decayHalvedStatus(stacks) : decayPoisonStacks(stacks),
+        combatTexts,
+      );
+    }
+    nextState = resolvePendingBattleReactions(nextState, combatTexts);
     if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) {
       return resolvePlayerEndOfTickReactions(nextState, combatTexts);
     }

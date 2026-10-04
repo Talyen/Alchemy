@@ -108,7 +108,7 @@ export function applyCardHitReactions(
   ) {
     nextState = applyLifestealAndPlayerHitTriggers(
       nextState,
-      modifiedDamage,
+      effect.damageType === "poison" ? facts.healthDamage : modifiedDamage,
       combatTexts,
       cardHealing && !!effect.lifesteal,
       !companionAttack && !!effect.lifesteal,

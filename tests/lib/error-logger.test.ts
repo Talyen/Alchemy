@@ -47,3 +47,21 @@ it("unsubscribes only its own registration when consumers share a sink", () => {
   logError("Unsubscribed", "storage");
   expect(shared).toHaveBeenCalledOnce();
 });
+
+it("delivers the current error to a stable subscriber snapshot when sinks change during reporting", () => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  const removed = vi.fn();
+  const added = vi.fn();
+  let unsubscribe = () => {};
+  registerErrorSink(() => {
+    unsubscribe();
+    registerErrorSink(added);
+  });
+  unsubscribe = registerErrorSink(removed);
+  logError("Current", "storage");
+  expect(removed).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ message: "Current" }));
+  expect(added).not.toHaveBeenCalled();
+  logError("Next", "battle");
+  expect(removed).toHaveBeenCalledOnce();
+  expect(added).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ message: "Next" }));
+});

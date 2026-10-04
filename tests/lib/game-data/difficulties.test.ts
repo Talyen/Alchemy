@@ -1,80 +1,44 @@
 import { describe, expect, it } from "vitest";
 import {
-  isDifficultyUnlocked,
+  DIFFICULTY_ORDER,
+  enemyById,
   getDifficultyModifiers,
-  getGoldMultiplier,
   getDifficultyXPMultiplier,
+  isDifficultyUnlocked,
 } from "@/lib/game-data";
+import { createBattleStartState } from "@/lib/battle/battle-setup";
+import { createSeededRng } from "@/lib/rng";
 
-describe("isDifficultyUnlocked", () => {
-  it("difficulty-1 is always unlocked with empty completed list", () => {
-    expect(isDifficultyUnlocked("difficulty-1", [])).toBe(true);
+describe("difficulty progression", () => {
+  it("opens only the first tier or a tier whose immediate predecessor is complete", () => {
+    for (const [index, difficulty] of DIFFICULTY_ORDER.entries()) {
+      expect(isDifficultyUnlocked(difficulty, []), difficulty).toBe(index === 0);
+      if (index === 0) continue;
+      const previous = DIFFICULTY_ORDER[index - 1]!;
+      expect(isDifficultyUnlocked(difficulty, [previous]), difficulty).toBe(true);
+      expect(
+        isDifficultyUnlocked(
+          difficulty,
+          DIFFICULTY_ORDER.filter((id) => id !== previous),
+        ),
+        difficulty,
+      ).toBe(false);
+    }
   });
 
-  it("difficulty-2 is locked when nothing is completed", () => {
-    expect(isDifficultyUnlocked("difficulty-2", [])).toBe(false);
-  });
-
-  it("difficulty-2 is unlocked when difficulty-1 is completed", () => {
-    expect(isDifficultyUnlocked("difficulty-2", ["difficulty-1"])).toBe(true);
-  });
-
-  it("difficulty-3 is locked when only difficulty-1 is completed", () => {
-    expect(isDifficultyUnlocked("difficulty-3", ["difficulty-1"])).toBe(false);
-  });
-
-  it("difficulty-3 is unlocked when difficulty-2 is completed", () => {
-    expect(isDifficultyUnlocked("difficulty-3", ["difficulty-1", "difficulty-2"])).toBe(true);
-  });
-});
-
-describe("difficulty modifiers", () => {
-  it.each([
-    ["difficulty-1", []],
-    [
-      "difficulty-2",
-      [
-        { kind: "enemy-health-multiplier", amount: 1.3 },
-        { kind: "enemy-damage-multiplier", amount: 1.3 },
-      ],
-    ],
-    [
-      "difficulty-3",
-      [
-        { kind: "enemy-health-multiplier", amount: 2.8 },
-        { kind: "enemy-damage-multiplier", amount: 1.6 },
-      ],
-    ],
-  ] as const)("resolves the shared %s combat modifiers", (difficulty, expected) => {
-    expect(getDifficultyModifiers("knight", difficulty)).toEqual(expected);
-  });
-
-  it("returns empty modifiers for an unknown difficulty", () => {
-    expect(getDifficultyModifiers("knight", "difficulty-999" as Parameters<typeof getDifficultyModifiers>[1])).toEqual(
-      [],
-    );
-  });
-
-  it("defaults Gold scaling when no modifier is present", () => {
-    expect(getGoldMultiplier("knight", null)).toBe(1);
-    expect(getGoldMultiplier("knight", "difficulty-3")).toBe(1);
-  });
-});
-
-describe("getDifficultyXPMultiplier", () => {
-  it("returns 1.0 when difficulty is null", () => {
-    expect(getDifficultyXPMultiplier(null)).toBe(1.0);
-  });
-
-  it("returns 1.0 for Novice (d1)", () => {
-    expect(getDifficultyXPMultiplier("difficulty-1")).toBe(1.0);
-  });
-
-  it("returns 1.3 for Adventurer (d2)", () => {
-    expect(getDifficultyXPMultiplier("difficulty-2")).toBe(1.3);
-  });
-
-  it("returns 1.6 for Legend (d3)", () => {
-    expect(getDifficultyXPMultiplier("difficulty-3")).toBe(1.6);
+  it("applies selected difficulty to actual enemy Health and keeps XP progression aligned", () => {
+    const enemy = enemyById.skeleton!;
+    const start = (difficulty: (typeof DIFFICULTY_ORDER)[number]) =>
+      createBattleStartState({
+        currentEnemy: enemy,
+        runDeck: [],
+        difficultyModifiers: getDifficultyModifiers("knight", difficulty),
+        rng: createSeededRng(1),
+        appliesFightPacing: false,
+      });
+    const novice = start("difficulty-1");
+    expect(start("difficulty-2").enemyMaxHealth).toBe(Math.round(novice.enemyMaxHealth * 1.3));
+    expect(start("difficulty-3").enemyMaxHealth).toBe(Math.round(novice.enemyMaxHealth * 2.8));
+    expect(DIFFICULTY_ORDER.map(getDifficultyXPMultiplier)).toEqual([1, 1.3, 1.6]);
   });
 });

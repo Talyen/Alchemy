@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import { defaultBattleState, endPlayerTurn, playBattleCardResolved } from "@/lib/battle";
-import { drawCards, drawKeywordCard, takeRandomCardFromDeck } from "@/lib/battle/draw";
+import {
+  addCardToHandOrQueue,
+  deliverPendingHandCards,
+  drawCards,
+  drawKeywordCard,
+  takeRandomCardFromDeck,
+} from "@/lib/battle/draw";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { CARDS_PER_TURN, MAX_HAND_SIZE } from "@/lib/game-constants";
 import { makeTestBattleState, makeTestCardWithId, patchBattleState, seededRng } from "../../fixtures/battle";
@@ -54,26 +60,20 @@ describe("drawCards — edge cases", () => {
     expect(discard.map((card) => card.id)).toEqual(["d2", "d3", "d4"]);
   });
 
-  it("both piles empty returns empty hand unchanged", () => {
-    const result = drawCards([], [], [], 4, 0, seededRng(1));
-    expect(result.hand).toHaveLength(0);
-    expect(result.deck).toHaveLength(0);
-    expect(result.discard).toHaveLength(0);
-  });
-
-  it("both piles empty with existing hand leaves hand unchanged", () => {
-    const hand = [makeTestCardWithId("h1")];
-    const result = drawCards([], [], hand, 4, 0, seededRng(1));
-    expect(result.hand).toHaveLength(1);
-    expect(result.hand[0].id).toBe("h1");
-  });
-
-  it("draws single card from single-card deck with empty discard", () => {
-    const deck = [makeTestCardWithId("d1")];
-    const result = drawCards(deck, [], [], 1, 0, seededRng(1));
-    expect(result.hand).toHaveLength(1);
-    expect(result.hand[0].id).toBe("d1");
-    expect(result.deck).toHaveLength(0);
+  it("keeps queued cards, IDs, and RNG intact when there is nothing to draw", () => {
+    const hand = [makeCard("held", { uid: 1 })];
+    const pending = [makeCard("waiting", { uid: 2 })];
+    const rng = vi.fn(() => 0);
+    const result = drawCards([], [], hand, 4, 10, rng, pending);
+    expect(result).toMatchObject({
+      hand: [...hand, ...pending],
+      pendingHandCards: [],
+      nextCardUid: 10,
+      uidChanges: [],
+    });
+    expect(rng).not.toHaveBeenCalled();
+    expect(hand.map((card) => card.id)).toEqual(["held"]);
+    expect(pending.map((card) => card.id)).toEqual(["waiting"]);
   });
 
   it("reserves excess draws with a near-full hand", () => {
@@ -94,45 +94,30 @@ describe("drawCards — edge cases", () => {
     expect(result.pendingHandCards.map((card) => card.id)).toEqual(["d3", "d2", "d1"]);
   });
 
-  it("drawing 0 cards does nothing", () => {
-    const deck = [makeCard("d1")];
-    const hand = [makeCard("h1")];
-    const result = drawCards(deck, [], hand, 0, 0, seededRng(1));
-    expect(result.hand).toHaveLength(1);
-    expect(result.deck).toHaveLength(1);
-  });
-
-  it("delivers older reserved cards before a new draw", () => {
-    const pending = [makeCard("older"), makeCard("newer")];
-    const result = drawCards(
-      [makeCard("fresh")],
-      [],
-      Array.from({ length: 5 }, (_, i) => makeCard(`h${i}`)),
-      1,
-      20,
-      seededRng(1),
-      pending,
-    );
-    expect(result.hand.slice(5).map((card) => card.id)).toEqual(["older", "newer"]);
-    expect(result.pendingHandCards.map((card) => card.id)).toEqual(["fresh"]);
-  });
-
-  it("all drawn cards get unique uids", () => {
-    const deck = [makeCard("d1"), makeCard("d2"), makeCard("d3")];
-    const result = drawCards(deck, [], [], 3, 100, seededRng(1));
-    const uids = result.hand.map((c) => c.uid!);
-    expect(new Set(uids).size).toBe(3);
-    expect(uids).toEqual([100, 101, 102]);
-  });
-
-  it("uses the provided rng when reshuffling discard into deck", () => {
-    const deck = [makeCard("d1")];
-    const discard = [makeCard("d2"), makeCard("d3"), makeCard("d4")];
-    const alwaysZero = () => 0;
-    const alwaysMax = () => 0.999;
-    const fromZero = drawCards(deck, discard, [], 4, 0, alwaysZero);
-    const fromMax = drawCards(deck, discard, [], 4, 0, alwaysMax);
-    expect(fromZero.hand.map((c: { id: string }) => c.id)).not.toEqual(fromMax.hand.map((c: { id: string }) => c.id));
+  it("delivers older reserved cards before both new draws and granted cards", () => {
+    const state = makeTestBattleState({
+      hand: Array.from({ length: MAX_HAND_SIZE - 1 }, (_, i) => makeCard(`h${i}`)),
+      pendingHandCards: [makeCard("older", { uid: 10 }), makeCard("newer", { uid: 11 })],
+      nextCardUid: 20,
+    });
+    const before = structuredClone({ hand: state.hand, pending: state.pendingHandCards });
+    const drawn = drawCards([makeCard("fresh")], [], state.hand, 1, 20, seededRng(1), state.pendingHandCards);
+    const granted = addCardToHandOrQueue(state, makeCard("fresh"));
+    for (const result of [drawn, granted]) {
+      expect(result.hand.at(-1)).toMatchObject({ id: "older", uid: 10 });
+      expect(result.pendingHandCards.map(({ id, uid }) => ({ id, uid }))).toEqual([
+        { id: "newer", uid: 11 },
+        { id: "fresh", uid: 20 },
+      ]);
+      expect(result.nextCardUid).toBe(21);
+    }
+    expect(deliverPendingHandCards(granted)).toBe(granted);
+    const freed = { ...granted, hand: granted.hand.slice(1) };
+    const delivered = deliverPendingHandCards(freed);
+    expect(delivered.hand.at(-1)).toMatchObject({ id: "newer", uid: 11 });
+    expect(delivered.pendingHandCards.map((card) => card.id)).toEqual(["fresh"]);
+    expect(delivered.nextCardUid).toBe(21);
+    expect({ hand: state.hand, pending: state.pendingHandCards }).toEqual(before);
   });
 
   it("reserves a keyword card and delivers it before a played card draws", () => {

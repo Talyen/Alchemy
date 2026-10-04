@@ -176,8 +176,5 @@ export function getUniqueAffixView(id: string): ReadonlyArray<Readonly<GearAffix
 }
 
 export function getUniqueAffixes(id: string): GearAffixRoll[] | undefined {
-  const definition = uniqueItemDefinitions.get(id);
-  return definition
-    ? [definition.signatureAffix, ...definition.supportingAffixes].map((affix) => ({ ...affix }))
-    : undefined;
+  return getUniqueAffixView(id)?.map((affix) => ({ ...affix }));
 }

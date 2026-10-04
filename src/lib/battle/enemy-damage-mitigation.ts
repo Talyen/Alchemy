@@ -42,6 +42,7 @@ function computeMitigatedDamage(
   remainingDamage: number,
   ignorePlayerMitigation: boolean,
   ignoreArmor: boolean,
+  protectionState: BattleState,
 ) {
   const armorMitigatesDamage =
     effect.damageType === "physical" ||
@@ -52,7 +53,7 @@ function computeMitigatedDamage(
   const scaledDamage = ignorePlayerMitigation
     ? rawDamage
     : scaleReceivedPlayerDamage(rawDamage, state.talentEffects, effect.damageType);
-  return mitigatePlayerCombatDamage(state, scaledDamage, effect.damageType, {
+  return mitigatePlayerCombatDamage(protectionState, scaledDamage, effect.damageType, {
     ignoreMitigation: ignorePlayerMitigation,
   });
 }
@@ -95,6 +96,7 @@ export function calculateBlockAndArmorMitigation(
   incomingDamage: number,
   combatTexts: CombatTextEvent[],
   options: EnemyDamageOptions,
+  protectionState = state,
 ) {
   let remainingDamage = incomingDamage;
   const blockMultiplier = blockAbsorptionMultiplier(state, effect);
@@ -132,6 +134,7 @@ export function calculateBlockAndArmorMitigation(
     remainingDamage,
     options.ignorePlayerMitigation === true,
     options.ignoreArmor === true,
+    protectionState,
   );
   return { remainingDamage, blockAbsorb, blockSpent, totalExtraBlock, actualDamage };
 }

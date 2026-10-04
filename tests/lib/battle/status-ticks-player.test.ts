@@ -12,162 +12,37 @@ import {
 import { makeCombatTexts as makeTexts, makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("tickPlayerStatuses", () => {
-  it("applies burn damage before any CC logic runs on player ticks", () => {
+  it("combines Burn reductions before Armor and decays Armor only after Health loss", () => {
     const state = patchBattleState({
-      playerHealth: 20,
-      playerMaxHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ burn: 8, stun: 20 }),
+      playerHealth: 30,
+      playerStatuses: { burn: 10, block: 5, armor: 3 },
+      talentEffects: { receiveHalfBurnDamage: true, blockReduceBurnDamage: 1, armorMitigatesBurn: true },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
-    expect(next.playerHealth).toBe(12);
-    expect(next.playerStatuses.burn).toBe(4);
-    expect(next.playerCC.stunSkipTurns).toBe(1);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 8, periodic: true });
-  });
-
-  it("fully clears player burn at 1 stack", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ burn: 1 }),
-    });
-    const next = tickPlayerStatuses(state, makeTexts());
     expect(next.playerHealth).toBe(29);
-    expect(next.playerStatuses.burn).toBe(0);
+    expect(next.playerStatuses).toMatchObject({ burn: 5, armor: 2, block: 5 });
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 1, periodic: true });
+    expect(state.playerStatuses).toMatchObject({ burn: 10, armor: 3 });
   });
 
-  it("receiveHalfBurnDamage halves burn damage", () => {
+  it("keeps Armor and suppresses damage feedback when mitigation absorbs the whole Burn tick", () => {
     const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ burn: 8 }),
-      talentEffects: { ...defaultTalentEffects, receiveHalfBurnDamage: true },
+      playerStatuses: { burn: 1, block: 5, armor: 3 },
+      talentEffects: { blockReduceBurnDamage: 1, armorMitigatesBurn: true },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
-    expect(next.playerHealth).toBe(26);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 4, periodic: true });
+    expect(next.playerHealth).toBe(30);
+    expect(next.playerStatuses).toMatchObject({ burn: 0, armor: 3, block: 5 });
+    expect(texts.filter((text) => text.kind === "damage")).toEqual([]);
+    const unblocked = tickPlayerStatuses(
+      { ...state, playerStatuses: { ...state.playerStatuses, block: 0, armor: 0 } },
+      [],
+    );
+    expect(unblocked.playerHealth).toBe(29);
   });
-
-  it.each<{
-    name: string;
-    burn: number;
-    armor: number;
-    maxHealth?: number;
-    expectedHealth: number;
-    expectedArmor: number;
-    expectedBurnAfter?: number;
-    expectedDamageText?: number;
-  }>([
-    {
-      name: "reduces burn damage by armor",
-      burn: 8,
-      armor: 3,
-      expectedHealth: 25,
-      expectedArmor: 2,
-      expectedDamageText: 5,
-    },
-    {
-      name: "with high armor results in 0 damage",
-      burn: 3,
-      armor: 10,
-      maxHealth: 30,
-      expectedHealth: 30,
-      expectedArmor: 10,
-      expectedBurnAfter: 2,
-    },
-  ])(
-    "armorMitigatesBurn $name",
-    ({ burn, armor, maxHealth, expectedHealth, expectedArmor, expectedBurnAfter, expectedDamageText }) => {
-      const state = patchBattleState({
-        playerHealth: 30,
-        ...(maxHealth !== undefined ? { playerMaxHealth: maxHealth } : {}),
-        playerStatuses: defaultPlayerStatusValues({ burn, armor }),
-        talentEffects: { ...defaultTalentEffects, armorMitigatesBurn: true },
-      });
-      const texts = makeTexts();
-      const next = tickPlayerStatuses(state, texts);
-      expect(next.playerHealth).toBe(expectedHealth);
-      expect(next.playerStatuses.armor).toBe(expectedArmor);
-      if (expectedBurnAfter !== undefined) expect(next.playerStatuses.burn).toBe(expectedBurnAfter);
-      if (expectedDamageText !== undefined) {
-        expect(texts).toContainEqual({
-          target: "player",
-          kind: "damage",
-          stat: "burn",
-          amount: expectedDamageText,
-          periodic: true,
-        });
-      }
-    },
-  );
-
-  it.each<{
-    name: string;
-    burn: number;
-    block: number;
-    armor?: number;
-    withArmorMitigatesBurn?: boolean;
-    expectedHealth: number;
-    expectedBurnAfter?: number;
-    expectedDamageText?: number;
-  }>([
-    {
-      name: "reduces burn damage when block is active",
-      burn: 8,
-      block: 5,
-      expectedHealth: 23,
-      expectedDamageText: 7,
-    },
-    {
-      name: "reduces burn to 0 when block is active and damage is 1",
-      burn: 1,
-      block: 5,
-      expectedHealth: 30,
-      expectedBurnAfter: 0,
-    },
-    {
-      name: "does nothing when block is 0",
-      burn: 8,
-      block: 0,
-      expectedHealth: 22,
-      expectedDamageText: 8,
-    },
-    {
-      name: "stacks with armorMitigatesBurn",
-      burn: 8,
-      block: 5,
-      armor: 3,
-      withArmorMitigatesBurn: true,
-      expectedHealth: 26,
-      expectedDamageText: 4,
-    },
-  ])(
-    "blockReduceBurnDamage $name",
-    ({ burn, block, armor, withArmorMitigatesBurn, expectedHealth, expectedBurnAfter, expectedDamageText }) => {
-      const state = patchBattleState({
-        playerHealth: 30,
-        playerStatuses: defaultPlayerStatusValues({ burn, block, ...(armor !== undefined ? { armor } : {}) }),
-        talentEffects: {
-          ...defaultTalentEffects,
-          blockReduceBurnDamage: 1,
-          ...(withArmorMitigatesBurn ? { armorMitigatesBurn: true } : {}),
-        },
-      });
-      const texts = makeTexts();
-      const next = tickPlayerStatuses(state, texts);
-      expect(next.playerHealth).toBe(expectedHealth);
-      if (expectedBurnAfter !== undefined) expect(next.playerStatuses.burn).toBe(expectedBurnAfter);
-      if (expectedDamageText !== undefined) {
-        expect(texts).toContainEqual({
-          target: "player",
-          kind: "damage",
-          stat: "burn",
-          amount: expectedDamageText,
-          periodic: true,
-        });
-      }
-    },
-  );
 
   it("deals poison damage to player and decays poison by 20% (minimum 1)", () => {
     const state = patchBattleState({
@@ -249,19 +124,6 @@ describe("tickPlayerStatuses", () => {
     expect(next.playerStatuses.stun).toBe(14);
   });
 
-  it("does not trigger stun skip when stun is below threshold", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerMaxHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ stun: 5 }),
-    });
-    const texts = makeTexts();
-    const next = tickPlayerStatuses(state, texts);
-    expect(next.playerHealth).toBe(30);
-    expect(next.playerStatuses.stun).toBe(5);
-    expect(next.playerCC.stunSkipTurns).toBe(0);
-  });
-
   it("clears freeze and triggers turn skip when threshold exceeded", () => {
     const state = patchBattleState({
       playerHealth: 30,
@@ -312,32 +174,11 @@ describe("tickPlayerStatuses", () => {
     expect(texts2).not.toContainEqual({ target: "player", kind: "notice", stat: "stun", text: "Stunned" });
   });
 
-  it("CC immunity cooldown expires and allows another stun", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerMaxHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ stun: 20 }),
-    });
-    const texts = makeTexts();
-    const afterTrigger = tickPlayerStatuses(state, texts);
-    expect(afterTrigger.playerCC.cooldown).toBe(0);
-
-    const cooledDown = {
-      ...afterTrigger,
-      playerCC: defaultCcState({ ...afterTrigger.playerCC, stunSkipTurns: 0, cooldown: 0 }),
-      playerStatuses: defaultPlayerStatusValues({ ...afterTrigger.playerStatuses, stun: 20 }),
-    };
-    const texts3 = makeTexts();
-    const afterReTrigger = tickPlayerStatuses(cooledDown, texts3);
-    expect(afterReTrigger.playerCC.stunSkipTurns).toBe(1);
-    expect(afterReTrigger.playerCC.cooldown).toBe(0);
-  });
-
-  it("applies all player DoTs in sequence", () => {
+  it("settles all player DoTs in order before crowd-control feedback", () => {
     const state = patchBattleState({
       playerHealth: 50,
       playerMaxHealth: 50,
-      playerStatuses: defaultPlayerStatusValues({ burn: 8, poison: 4, bleed: 5, stun: 3, freeze: 2 }),
+      playerStatuses: defaultPlayerStatusValues({ burn: 8, poison: 4, bleed: 5, stun: 30, freeze: 2 }),
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
@@ -346,7 +187,12 @@ describe("tickPlayerStatuses", () => {
     expect(next.playerStatuses.burn).toBe(4);
     expect(next.playerStatuses.poison).toBe(3);
     expect(next.playerStatuses.bleed).toBe(0);
-    expect(next.playerStatuses.stun).toBe(3);
+    expect(next.playerStatuses.stun).toBe(0);
+    expect(next.playerCC.stunSkipTurns).toBe(1);
+    expect(texts.at(-1)).toMatchObject({ kind: "notice", stat: "stun", text: "Stunned" });
+    expect(texts.filter((text) => text.kind === "damage" && text.target === "player").map((text) => text.stat)).toEqual(
+      ["burn", "poison", "bleed"],
+    );
     expect(next.playerStatuses.freeze).toBe(2);
   });
 

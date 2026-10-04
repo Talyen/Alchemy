@@ -57,17 +57,13 @@ export function validateTypography(collector: Collector): void {
     }
   }
 
-  for (const card of cardLibrary) {
-    check("cards", card.id, "Card title", card.title, { allowPeriod: true });
-    for (const line of card.descriptionLines) {
-      check("cards", card.id, "Card description", line);
-    }
-  }
-
-  for (const trinket of trinketLibrary) {
-    check("trinkets", trinket.id, "Trinket title", trinket.title, { allowPeriod: true });
-    for (const line of trinket.descriptionLines) {
-      check("trinkets", trinket.id, "Trinket description", line);
+  for (const [area, label, entries] of [
+    ["cards", "Card", cardLibrary],
+    ["trinkets", "Trinket", trinketLibrary],
+  ] as const) {
+    for (const entry of entries) {
+      check(area, entry.id, `${label} title`, entry.title, { allowPeriod: true });
+      for (const line of entry.descriptionLines) check(area, entry.id, `${label} description`, line);
     }
   }
 

@@ -71,6 +71,22 @@ describe("autoplay policy", () => {
     expect(getEffectiveDamageScore(refill, { ...state, flags: { ...state.flags, nextHolyCardFree: true } })).toBe(0);
   });
 
+  it("keeps prepared Dodge effects from poisoning card and Wish selection with a nonnumeric score", () => {
+    const card = makeTestCard({ cost: 0, effects: [{ kind: "dodge-next-attack" }, { kind: "draw-cards", amount: 1 }] });
+    const state = makeTestBattleState({ deck: [makeTestCard()] });
+    expect(getEffectiveDamageScore(card, state)).toBe(AUTOPLAY_EFFECT_SCORE.draw);
+    const attack = makeTestCard({ cost: 0, effects: [{ kind: "damage", damageType: "physical", amount: 1 }] });
+    expect(
+      pickHighestScoring(
+        [
+          { card: attack, index: 0 },
+          { card, index: 2 },
+        ],
+        (candidate) => getEffectiveDamageScore(candidate, state),
+      )?.index,
+    ).toBe(2);
+  });
+
   it("preserves nested chance defense, including resource conversion and capped healing", () => {
     const card = makeTestCard({
       effects: [

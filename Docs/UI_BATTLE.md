@@ -12,6 +12,12 @@ Death’s Door retains its skull. Draws, summons, and scheduled effects acknowle
 their actual outcome; a valid ineffective action can show its effect icon with 0.
 Nonzero results suppress redundant zero entries in the same action.
 
+Phoenix Feather revival shows its Feather notice and the Health restored, even
+when revival leaves the final Health unchanged. Rejected Stun/Freeze buildup
+during immunity pairs a shield icon with the affected status and an accessible
+immunity label; it does not play a successful control cue. Zero damage retains
+ineffective-action feedback without shaking a portrait.
+
 Matching additive entries can sum across effects, cards, and actions during the
 first 250 ms of the original burst. Match recipient, effect kind, resource/type,
 and gain/loss direction; keep preparation refreshes and non-additive values out

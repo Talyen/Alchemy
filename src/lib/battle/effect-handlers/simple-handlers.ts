@@ -23,8 +23,12 @@ const FLAG_EFFECTS = {
   "play-next-card-twice": "playNextCardTwice",
   "next-hit-poison": "nextHitPoison",
   "next-archery-free": "nextArcheryCardFree",
+  "dodge-next-attack": "dodgeNextAttack",
 } as const satisfies Record<
-  Extract<BattleCardEffect["kind"], `next-hit-${string}` | "play-next-card-twice" | "next-archery-free">,
+  Extract<
+    BattleCardEffect["kind"],
+    `next-hit-${string}` | "play-next-card-twice" | "next-archery-free" | "dodge-next-attack"
+  >,
   keyof BattleState["flags"]
 >;
 
@@ -42,6 +46,7 @@ const FLAG_HANDLERS = {
   "play-next-card-twice": applyFlagEffect,
   "next-hit-poison": applyFlagEffect,
   "next-archery-free": applyFlagEffect,
+  "dodge-next-attack": applyFlagEffect,
 } satisfies Pick<EffectHandlers, FlagEffectKind>;
 
 export const SIMPLE_HANDLERS = {

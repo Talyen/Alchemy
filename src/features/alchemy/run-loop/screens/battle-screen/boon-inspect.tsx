@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { Trophy, X } from "lucide-react";
 
 import { ChromeIconButton } from "../../../shared/ui/chrome-icon-button";
@@ -14,6 +14,7 @@ import { ScreenHeader } from "../../../shared/ui/layout-components";
 import { TrinketTile } from "../../../shared/ui/collection-art-tiles";
 import { usePaginatedRows } from "../../../shared/ui/use-paginated-rows";
 import { uniqueRunBoons } from "./unique-run-boons";
+import { useDialogFocus } from "../../../shared/ui/use-dialog-focus";
 
 const INSPECT_COLUMNS = 4;
 
@@ -57,11 +58,7 @@ export function BattleBoonInspectOverlay({
       testId="battle-boon-inspect-overlay"
       className="flex items-center justify-center px-6 py-8"
     >
-      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events -- only shields panel clicks from the backdrop; Close and Escape own dismissal */}
-      <div
-        className="alchemy-shell relative max-h-full w-fit max-w-full overflow-y-auto rounded-shell-screen border border-border/80 px-8 py-8"
-        onClick={(event) => event.stopPropagation()}
-      >
+      <BoonInspectPanel>
         <div className="grid w-full grid-cols-[calc(2.5*var(--content-rem,1rem))_1fr_calc(2.5*var(--content-rem,1rem))] items-start">
           <span />
           <ScreenHeader title="Boons" />
@@ -99,7 +96,26 @@ export function BattleBoonInspectOverlay({
             </div>
           </>
         )}
-      </div>
+      </BoonInspectPanel>
     </ModalOverlayShell>
+  );
+}
+
+function BoonInspectPanel({ children }: { children: ReactNode }) {
+  const { panelRef, handleKeyDown } = useDialogFocus();
+  return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Modal contains focus and shields its backdrop from content clicks
+    <div
+      ref={panelRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Boons"
+      tabIndex={-1}
+      onKeyDown={handleKeyDown}
+      className="alchemy-shell relative max-h-full w-fit max-w-full overflow-y-auto rounded-shell-screen border border-border/80 px-8 py-8"
+      onClick={(event) => event.stopPropagation()}
+    >
+      {children}
+    </div>
   );
 }

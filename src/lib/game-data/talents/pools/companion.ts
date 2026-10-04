@@ -43,14 +43,14 @@ export const companionTalents = [
   t(
     "companion-loyal",
     "Pack Weave",
-    "When you Dodge, your Companion has a 50% chance to attack",
+    "When you Dodge, your Companion has a 50% chance to act",
     "PawPrint",
     setEffect("companionAttacksOnDodge", true),
   ),
   t(
     "companion-watchdog",
     "Watchdog",
-    "When your Block is depleted while you're below half Health, your Companion attacks",
+    "When an enemy attack depletes your Block while you're below half Health, your Companion acts",
     "ShieldAlert",
     setEffect("companionAttackOnBlockDepletedBelowHalf", true),
   ),

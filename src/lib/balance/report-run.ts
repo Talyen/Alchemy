@@ -10,7 +10,7 @@ import {
   reportTierForPreset,
   reportTierRecord,
 } from "./report-catalog";
-import type { AnomalyMetricRow, AnomalyReportRow, BalanceReportModel } from "./report-model";
+import type { AnomalyMetricRow, AnomalyReportRow, BalanceReportModel, PairedTierRow } from "./report-model";
 import { rateCellFromBatch } from "./rate-statistics";
 import type { ReportRunOptions } from "./report-options";
 import { combineRateCells } from "./report-rankings";
@@ -104,7 +104,6 @@ function collectAnomalies(rows: CoreRow[]): { anomalies: AnomalyReportRow[]; met
       const anomalies = simulation.anomalies;
       for (const { key, label } of ANOMALY_METRICS) {
         const value = anomalies[key];
-        if (typeof value !== "number") continue;
         perTier[row.tier][key] = Math.max(perTier[row.tier][key] ?? 0, value);
         if (value <= threshold) continue;
         byField[key] ??= { field: label, maxValue: 0, battles: 0, peakScenario: "" };
@@ -147,6 +146,8 @@ export function buildBalanceReport(options: ReportRunOptions): BalanceReportMode
   const { anomalies, metrics } = withPhaseTiming("anomalies", () => collectAnomalies(core));
 
   const summary = withPhaseTiming("core rate summary", () => summarizeCoreRates(core));
+  const rankedSweep = (label: string, run: () => PairedTierRow[]) =>
+    withPhaseTiming(label, () => run().sort((a, b) => a.deltas.late.delta - b.deltas.late.delta));
   return {
     meta: {
       samplingMode: options.mode ?? "custom",
@@ -158,30 +159,14 @@ export function buildBalanceReport(options: ReportRunOptions): BalanceReportMode
       deckSeeds: options.deckSeeds,
     },
     ...summary,
-    boons: withPhaseTiming("boon sweep", () =>
-      runTrinketSweep(options).sort((a, b) => a.deltas.late.delta - b.deltas.late.delta),
-    ),
-    cardsIsolatedSkeleton: withPhaseTiming("card isolated (skeleton)", () =>
-      runCardSweepIsolated(options, "skeleton").sort((a, b) => a.deltas.late.delta - b.deltas.late.delta),
-    ),
-    cardsIsolatedElite: withPhaseTiming("card isolated (elite)", () =>
-      runCardSweepIsolated(options, "mimic").sort((a, b) => a.deltas.late.delta - b.deltas.late.delta),
-    ),
-    cardsInClass: withPhaseTiming("card in-class", () =>
-      runCardSweepInClass(options).sort((a, b) => a.deltas.late.delta - b.deltas.late.delta),
-    ),
-    talents: withPhaseTiming("talent sweep", () =>
-      runTalentSweep(options).sort((a, b) => a.deltas.late.delta - b.deltas.late.delta),
-    ),
-    companions: withPhaseTiming("companion sweep", () =>
-      runCompanionSweep(options).sort((a, b) => a.deltas.late.delta - b.deltas.late.delta),
-    ),
-    gear: withPhaseTiming("gear sweep", () =>
-      runGearSweep(options).sort((a, b) => a.deltas.late.delta - b.deltas.late.delta),
-    ),
-    affixes: withPhaseTiming("affix sweep", () =>
-      runAffixSweep(options).sort((a, b) => a.deltas.late.delta - b.deltas.late.delta),
-    ),
+    boons: rankedSweep("boon sweep", () => runTrinketSweep(options)),
+    cardsIsolatedSkeleton: rankedSweep("card isolated (skeleton)", () => runCardSweepIsolated(options, "skeleton")),
+    cardsIsolatedElite: rankedSweep("card isolated (elite)", () => runCardSweepIsolated(options, "mimic")),
+    cardsInClass: rankedSweep("card in-class", () => runCardSweepInClass(options)),
+    talents: rankedSweep("talent sweep", () => runTalentSweep(options)),
+    companions: rankedSweep("companion sweep", () => runCompanionSweep(options)),
+    gear: rankedSweep("gear sweep", () => runGearSweep(options)),
+    affixes: rankedSweep("affix sweep", () => runAffixSweep(options)),
     anomalies,
     anomalyMetrics: metrics,
   };

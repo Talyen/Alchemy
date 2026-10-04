@@ -94,10 +94,6 @@ function restoreRewardState(persisted: PersistedPendingReward): RewardState {
   };
 }
 
-function retainPendingReward(state: RewardState): RewardState | null {
-  return state.choices.length > 0 || hasSharedRewardValue(state) ? state : null;
-}
-
 export interface RestoredPendingReward {
   rewardState: RewardState | null;
   companionRewardCards: BattleCard[] | null;
@@ -111,7 +107,11 @@ export function restorePendingRewardBundle(persisted: PersistedPendingReward): R
     // Bonus-only bundles still need a primary shell so the reward flow can
     // advance to them. Preserve the empty Card reward used by that flow.
     rewardState:
-      retainPendingReward(restored) ?? (companions.length ? { ...restored, rewardType: "card", choices: [] } : null),
+      restored.choices.length || hasSharedRewardValue(restored)
+        ? restored
+        : companions.length
+          ? { ...restored, rewardType: "card", choices: [] }
+          : null,
     companionRewardCards: companions.length ? companions : null,
   };
 }

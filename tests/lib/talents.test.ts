@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  canUnlockTalent,
+  tryUnlockTalent,
+  getAllocatableTalentChoices,
   computeTalentPoints,
   computeStartingMaxHealth,
   xpToNextPoint,
@@ -80,4 +83,28 @@ describe("run-end talent XP", () => {
     expect(computeRunEndTalentXPSnapshot(run, 1)).toEqual({ physical: 3 });
     expect(mergeRunTalentXPIntoPermanent(run, { burn: 10 }, 1)).toEqual({ burn: 10, physical: 3 });
   });
+});
+
+it("spends earned points exactly once and rejects the next eligible Talent until more XP is earned", () => {
+  const first = getAllocatableTalentChoices("physical", [])[0]!;
+  expect(canUnlockTalent("physical", first.id, { physical: 19 }, {})).toEqual({
+    ok: false,
+    reason: "no-unspent-points",
+  });
+  expect(canUnlockTalent("physical", first.id, { physical: Number.NaN }, {})).toEqual({
+    ok: false,
+    reason: "no-unspent-points",
+  });
+  const result = tryUnlockTalent("physical", first.id, { physical: 20 }, {});
+  if (!result.unlockedTalents) throw new Error("Expected an earned Talent point");
+  expect(canUnlockTalent("physical", first.id, { physical: 20 }, result.unlockedTalents)).toEqual({
+    ok: false,
+    reason: "already-unlocked",
+  });
+  const next = getAllocatableTalentChoices("physical", result.unlockedTalents.physical!)[0]!;
+  expect(canUnlockTalent("physical", next.id, { physical: 59 }, result.unlockedTalents)).toEqual({
+    ok: false,
+    reason: "no-unspent-points",
+  });
+  expect(canUnlockTalent("physical", next.id, { physical: 60 }, result.unlockedTalents)).toEqual({ ok: true });
 });

@@ -37,22 +37,23 @@ function refillDeck(
   return { deck: shuffle(discard, rng), discard: [] };
 }
 
+function distributeHandCards(hand: BattleCard[], queued: BattleCard[]) {
+  const slots = Math.max(0, MAX_HAND_SIZE - hand.length);
+  return { hand: [...hand, ...queued.slice(0, slots)], pendingHandCards: queued.slice(slots) };
+}
+
 export function deliverPendingHandCards(state: BattleState): BattleState {
-  const slots = Math.max(0, MAX_HAND_SIZE - state.hand.length);
-  if (slots === 0 || state.pendingHandCards.length === 0) return state;
-  return {
-    ...state,
-    hand: [...state.hand, ...state.pendingHandCards.slice(0, slots)],
-    pendingHandCards: state.pendingHandCards.slice(slots),
-  };
+  if (state.hand.length >= MAX_HAND_SIZE || state.pendingHandCards.length === 0) return state;
+  return { ...state, ...distributeHandCards(state.hand, state.pendingHandCards) };
 }
 
 export function addCardToHandOrQueue(state: BattleState, card: BattleCard): BattleState {
-  const ready = deliverPendingHandCards(state);
-  const received = { ...card, uid: ready.nextCardUid };
-  return ready.hand.length < MAX_HAND_SIZE
-    ? { ...ready, hand: [...ready.hand, received], nextCardUid: ready.nextCardUid + 1 }
-    : { ...ready, pendingHandCards: [...ready.pendingHandCards, received], nextCardUid: ready.nextCardUid + 1 };
+  const received = { ...card, uid: state.nextCardUid };
+  return {
+    ...state,
+    ...distributeHandCards(state.hand, [...state.pendingHandCards, received]),
+    nextCardUid: state.nextCardUid + 1,
+  };
 }
 
 export function drawCards(
@@ -68,9 +69,7 @@ export function drawCards(
   // Only the deck is mutated. shuffle() owns a fresh array when refilling,
   // so the untouched discard can stay shared with the immutable input state.
   let nextDiscard = discard;
-  const slots = Math.max(0, MAX_HAND_SIZE - hand.length);
-  const nextHand = [...hand, ...pendingHandCards.slice(0, slots)];
-  const nextPendingHandCards = pendingHandCards.slice(slots);
+  const queuedCards = [...pendingHandCards];
   let uid = nextCardUid;
   const uidChanges: CardUidChange[] = [];
 
@@ -85,8 +84,7 @@ export function drawCards(
     const card = nextDeck.pop();
     if (!card) break;
     const drawn = { ...card, uid };
-    if (nextHand.length < MAX_HAND_SIZE) nextHand.push(drawn);
-    else nextPendingHandCards.push(drawn);
+    queuedCards.push(drawn);
     if (card.uid !== undefined) uidChanges.push({ previous: card.uid, next: uid });
     uid += 1;
   }
@@ -94,8 +92,7 @@ export function drawCards(
   return {
     deck: nextDeck,
     discard: nextDiscard,
-    hand: nextHand,
-    pendingHandCards: nextPendingHandCards,
+    ...distributeHandCards(hand, queuedCards),
     nextCardUid: uid,
     uidChanges,
   };
@@ -195,8 +192,7 @@ export function drawKeywordCard(
       ...ready,
       deck: refilled.deck.filter((_, i) => i !== index),
       discard: refilled.discard,
-      hand: ready.hand.length < MAX_HAND_SIZE ? [...ready.hand, card] : ready.hand,
-      pendingHandCards: ready.hand.length < MAX_HAND_SIZE ? ready.pendingHandCards : [...ready.pendingHandCards, card],
+      ...distributeHandCards(ready.hand, [...ready.pendingHandCards, card]),
       nextCardUid: ready.nextCardUid + 1,
       uniqueGear: remapDrawnCardBenefits(ready, [{ previous: deckCard.uid, next: card.uid }]),
     },

@@ -11,17 +11,9 @@ export interface FightPacingPoolMetrics {
   actualBurnFraction: number;
 }
 
-interface FightPacingClockConfig {
-  targetDuration: number;
-  maxRounds: number;
-  damageOverrunSpan: number;
-}
+type FightPacingClockConfig = (typeof FIGHT_PACING.clockByEnemyType)[EnemyType];
 
 const SPAN_EPSILON = 0.001;
-
-function fightPacingClockConfig(enemyType: EnemyType): FightPacingClockConfig {
-  return FIGHT_PACING.clockByEnemyType[enemyType];
-}
 
 export function fightPacingPoolMetrics(state: BattleState): FightPacingPoolMetrics {
   const playerMax = Math.max(1, state.playerMaxHealth);
@@ -87,7 +79,7 @@ export function fightPacingClockMultiplier(
   turn: number,
   enemyType: EnemyType,
 ): number {
-  const config = fightPacingClockConfig(enemyType);
+  const config = FIGHT_PACING.clockByEnemyType[enemyType];
   const scheduleBonus = fightPacingScheduleClockBonus(metrics, turn, config);
   const backstopBonus = fightPacingTurnBackstopBonus(turn, config);
   return 1 + Math.max(scheduleBonus, backstopBonus);
@@ -116,7 +108,7 @@ export function openingPacedDamage(amount: number, enemyType: EnemyType = "norma
   const bonus = fightPacingScheduleClockBonus(
     { playerFraction: 1, enemyFraction: 1, actualBurnFraction: 0 },
     1,
-    fightPacingClockConfig(enemyType),
+    FIGHT_PACING.clockByEnemyType[enemyType],
   );
   if (bonus === 0) return amount;
   return Math.round(amount * (1 + bonus));
@@ -130,7 +122,7 @@ export function paceCombatDamage(
 ): number {
   const paced = paceCombatMagnitude(state, amount, side, applyFightPacing);
   if (!applyFightPacing || !state.appliesFightPacing || amount <= 0) return paced;
-  const config = fightPacingClockConfig(state.currentEnemy.enemyType);
+  const config = FIGHT_PACING.clockByEnemyType[state.currentEnemy.enemyType];
   const overrun = Math.max(0, state.turn - config.targetDuration);
   return Math.round(paced * (1 + (overrun / config.damageOverrunSpan) ** 2));
 }

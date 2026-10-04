@@ -5,12 +5,14 @@ Electron, isolated temporary saves, muted audio, and hidden windows.
 Native page capture keeps the window hidden and normalizes Retina bitmaps to CSS
 viewport dimensions; the native content bounds and renderer viewport must match.
 It never requests native fullscreen or brings a window forward. Run browser,
-Electron, and full unit batches separately.
+Electron, and full unit batches separately. Local builds and screenshot suites
+require an explicit execution request under [Contributing](../../CONTRIBUTING.md#what-to-run-when-you-change);
+the compact runner below participates in the shared local test lane.
 
 ```sh
 npm run build:desktop
-npx playwright test --config playwright.layout-review.config.ts
-LAYOUT_REVIEW_PASS=stress LAYOUT_REVIEW_STRESS=1 npx playwright test --config playwright.layout-review.config.ts --grep 'size and aspect ratio stress'
+node scripts/run-compact.mjs playwright test --config playwright.layout-review.config.ts
+LAYOUT_REVIEW_PASS=stress LAYOUT_REVIEW_STRESS=1 node scripts/run-compact.mjs playwright test --config playwright.layout-review.config.ts --grep 'size and aspect ratio stress'
 node tests/layout-review/report.mjs
 ```
 

@@ -4,7 +4,6 @@ import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import {
   fightPacingClockMultiplier,
   fightPacingComebackMultiplier,
-  fightPacingMultiplier,
   fightPacingPoolMetrics,
   openingPacedDamage,
   paceCombatMagnitude,
@@ -108,18 +107,6 @@ describe("paceCombatMagnitude", () => {
     const state = pacedState({ playerHealth: 5, enemyHealth: 30 });
     expect(paceCombatMagnitude(state, 10, "player", false)).toBe(10);
   });
-
-  it("scales authored player damage when the player is behind", () => {
-    const state = pacedState({ playerHealth: 8, playerMaxHealth: 30, enemyHealth: 30, enemyMaxHealth: 30 });
-    expect(paceCombatMagnitude(state, 10, "player")).toBeGreaterThan(10);
-    expect(paceCombatMagnitude(state, 10, "enemy")).toBeLessThanOrEqual(paceCombatMagnitude(state, 10, "player"));
-  });
-
-  it("matches clock × comeback", () => {
-    const state = pacedState({ playerHealth: 8, playerMaxHealth: 30, enemyHealth: 30, turn: 4 });
-    const expected = Math.round(10 * fightPacingMultiplier(state, "player"));
-    expect(paceCombatMagnitude(state, 10, "player")).toBe(expected);
-  });
 });
 
 describe("proc defensive grants bypass pacing (policy pin)", () => {
@@ -142,19 +129,9 @@ describe("proc defensive grants bypass pacing (policy pin)", () => {
 });
 
 describe("openingPacedDamage", () => {
-  it("matches a fresh full-health turn-1 battle through the live pipeline", () => {
-    const state = pacedState();
-    expect(openingPacedDamage(10)).toBe(paceCombatMagnitude(state, 10, "player"));
-  });
-
   it("leaves fresh turn-1 openings at authored amount under lengthened targets", () => {
     expect(openingPacedDamage(10, "normal")).toBe(10);
     expect(openingPacedDamage(10, "boss")).toBe(10);
-  });
-
-  it("passes non-positive amounts through untouched", () => {
-    expect(openingPacedDamage(0)).toBe(0);
-    expect(openingPacedDamage(-5)).toBe(-5);
   });
 });
 

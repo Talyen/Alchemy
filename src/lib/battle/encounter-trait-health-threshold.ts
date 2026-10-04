@@ -24,12 +24,8 @@ export function processEncounterTraitHealthThreshold(
   const halfHealth = state.enemyMaxHealth / HALF_DIVISOR;
   const crossedHalfHealth =
     previousHealth >= halfHealth && state.enemyHealth <= halfHealth && previousHealth > state.enemyHealth;
-  if (
-    hasEnemyTrait(state, "second-wind") &&
-    !state.flags.secondWindTriggered &&
-    state.enemyHealth > 0 &&
-    crossedHalfHealth
-  ) {
+  if (state.enemyHealth <= 0 || !crossedHalfHealth) return state;
+  if (hasEnemyTrait(state, "second-wind") && !state.flags.secondWindTriggered) {
     state = applyEnemyHealingWithCombatText(
       { ...state, flags: { ...state.flags, secondWindTriggered: true } },
       Math.round(state.enemyMaxHealth * LABYRINTH_MODIFIER_CONFIG.secondWindHealing),
@@ -37,13 +33,7 @@ export function processEncounterTraitHealthThreshold(
       { skipFightPacing: true },
     );
   }
-  if (
-    state.enemyHealth <= 0 ||
-    !hasEnemyTrait(state, "divine-aegis") ||
-    state.flags.divineAegisTriggered ||
-    !crossedHalfHealth
-  )
-    return state;
+  if (!hasEnemyTrait(state, "divine-aegis") || state.flags.divineAegisTriggered) return state;
   let nextState = recordEnemyAbilityActivation(
     { ...state, flags: { ...state.flags, divineAegisTriggered: true } },
     "divine-aegis",

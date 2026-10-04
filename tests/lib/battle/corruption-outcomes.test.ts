@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { getCorruptionMutationGroups } from "@/lib/corruption/mutations";
 import { cardById } from "@/lib/game-data";
-import { makeStateWithFailedRolls } from "../../fixtures/battle";
+import { makeStateWithFailedRolls, makeTestCard } from "../../fixtures/battle";
 
 function corrupted(id: string, kind: string) {
   return getCorruptionMutationGroups(cardById[id]!).find((group) => group.kind === kind)!.mutations[0]!.card;
@@ -24,6 +24,35 @@ function play(id: string, kind: string) {
 }
 
 describe("corrupted effects in battle", () => {
+  it("excludes secondary gifts already present inside chance and scheduled branches", () => {
+    const card = makeTestCard({
+      descriptionLines: ["Conditional aid"],
+      effects: [
+        {
+          kind: "chance",
+          probability: 0.5,
+          successEffects: [{ kind: "heal", amount: 1 }],
+          failureEffects: [
+            {
+              kind: "repeat-over-turns",
+              remainingTurns: 2,
+              effects: [
+                { kind: "player-status", status: "block", amount: 1 },
+                { kind: "damage", damageType: "poison", amount: 1 },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    const before = structuredClone(card);
+    const secondary = getCorruptionMutationGroups(card).find((group) => group.kind === "secondary")!;
+    expect(secondary.mutations.map(({ card }) => card.effects.at(-1))).toEqual([
+      { kind: "damage", damageType: "burn", amount: 1 },
+    ]);
+    expect(card).toEqual(before);
+  });
+
   it("uses stronger damage and the added Block", () => {
     expect(play("slash", "strengthen").enemyHealth).toBe(94);
     const next = play("slash", "secondary");

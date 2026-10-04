@@ -162,18 +162,16 @@ function normalizeCombatResources(state: BattleSnapshot, defaults: BattleSnapsho
 }
 
 function normalizeCardPiles(state: BattleSnapshot, defaults: BattleSnapshot) {
-  const highestCardUid = [state.deck, state.hand, state.pendingHandCards, state.discard, state.exhausted].reduce(
-    (highest, cards) => cards.reduce((max, card) => Math.max(max, toFiniteNonNegativeInt(card.uid) ?? 0), highest),
-    0,
-  );
+  let highestCardUid = 0;
+  for (const pile of [state.deck, state.hand, state.pendingHandCards, state.discard, state.exhausted]) {
+    for (const card of pile) highestCardUid = Math.max(highestCardUid, toFiniteNonNegativeInt(card.uid) ?? 0);
+  }
+  const overflow = state.hand.slice(MAX_HAND_SIZE);
   return {
     cardsPlayedThisTurn: toFiniteNonNegativeInt(state.cardsPlayedThisTurn) ?? 0,
     nextCardUid: Math.max(toFiniteNonNegativeInt(state.nextCardUid) ?? defaults.nextCardUid, highestCardUid + 1),
-    hand: state.hand.length > MAX_HAND_SIZE ? state.hand.slice(0, MAX_HAND_SIZE) : state.hand,
-    pendingHandCards:
-      state.hand.length > MAX_HAND_SIZE
-        ? [...state.hand.slice(MAX_HAND_SIZE), ...state.pendingHandCards]
-        : state.pendingHandCards,
+    hand: overflow.length ? state.hand.slice(0, MAX_HAND_SIZE) : state.hand,
+    pendingHandCards: overflow.length ? [...overflow, ...state.pendingHandCards] : state.pendingHandCards,
   };
 }
 

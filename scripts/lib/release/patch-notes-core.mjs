@@ -135,26 +135,14 @@ function isImplementationLine(line) {
   return TECHNICAL_TERMS.some((term) => text.includes(term));
 }
 
-function firstSentence(paragraph) {
-  const trimmed = paragraph.trim();
-  if (trimmed.length < 15) return null;
-  const match = /^(.+?[.!?])(?:\s|$)/u.exec(trimmed);
-  return match ? match[1].trim() : trimmed;
-}
-
 function sentencesFromParagraph(paragraph) {
   const trimmed = paragraph.replace(/\n/gu, " ").trim();
   if (trimmed.length < 15) return [];
-
-  const parts = trimmed
+  const sentences = trimmed
     .split(/(?<=[.!?])\s+/u)
-    .map((part) => part.trim())
-    .filter((part) => part.length >= 15);
-
-  if (parts.length > 0) return parts;
-
-  const sentence = firstSentence(trimmed);
-  return sentence ? [sentence] : [];
+    .map((part) => part.trim());
+  const substantial = sentences.filter((part) => part.length >= 15);
+  return substantial.length > 0 ? substantial : [sentences[0]];
 }
 
 export function extractPlayerFacingLines(commit) {
@@ -163,26 +151,11 @@ export function extractPlayerFacingLines(commit) {
   const parsed = parseConventionalCommit(commit.subject);
   const cleaned = cleanCommitBody(commit.body);
   const scopePrefix = parsed.scope ? `**${parsed.scope}:** ` : "";
-  const lines = [];
-
-  if (cleaned) {
-    const bulletLines = cleaned.split("\n").filter((line) => /^\s*-\s+/.test(line));
-    if (bulletLines.length > 0) {
-      for (const line of bulletLines) {
-        const text = line.replace(/^\s*-\s+/, "").trim();
-        if (text.length >= 15) lines.push(`${scopePrefix}${text}`);
-      }
-    } else {
-      const paragraphs = cleaned.split(/\n\s*\n/u).filter(Boolean);
-      for (const paragraph of paragraphs) {
-        for (const sentence of sentencesFromParagraph(paragraph)) {
-          lines.push(`${scopePrefix}${sentence}`);
-        }
-      }
-    }
-  }
-
-  const playerLines = lines.filter((line) => !isImplementationLine(line));
+  const bullets = cleaned.split("\n").filter((line) => /^\s*-\s+/.test(line));
+  const bodyLines = bullets.length > 0
+    ? bullets.map((line) => line.replace(/^\s*-\s+/, "").trim()).filter((line) => line.length >= 15)
+    : cleaned.split(/\n\s*\n/u).flatMap(sentencesFromParagraph);
+  const playerLines = bodyLines.map((line) => `${scopePrefix}${line}`).filter((line) => !isImplementationLine(line));
   if (playerLines.length > 0) return playerLines;
 
   return [`${scopePrefix}${parsed.description}`];

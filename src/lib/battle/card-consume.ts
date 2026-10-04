@@ -65,14 +65,12 @@ function applyConsumeTalentRiders(
   }
   if (talents.poisonOnConsume > 0) {
     nextState = addEnemyStatus(nextState, "poison", talents.poisonOnConsume);
-    if (combatTexts) {
-      mergeCombatText(combatTexts, {
-        target: "enemy",
-        kind: "status",
-        stat: "poison",
-        amount: talents.poisonOnConsume,
-      });
-    }
+    mergeCombatText(combatTexts, {
+      target: "enemy",
+      kind: "status",
+      stat: "poison",
+      amount: talents.poisonOnConsume,
+    });
   }
   return nextState;
 }
@@ -131,18 +129,15 @@ export function handlePostPlayCardDestination(
   card: BattleCard,
   { triggerConsumeRiders = true, combatTexts = [], lastCardInHand = false, manaSpent = 0 }: CardDestinationContext = {},
 ): BattleState {
-  if (card.consume) {
-    let nextState = { ...state, exhausted: [...state.exhausted, card] };
-    if (triggerConsumeRiders) {
-      if (state.trinketEffects.runicQuillDrawOnConsume > 0) {
-        nextState = drawConsumeReward(nextState, state.trinketEffects.runicQuillDrawOnConsume, combatTexts);
-        if (isPlayerDefeated(nextState)) return nextState;
-      }
-      nextState = applyConsumeGearRiders(nextState, card, combatTexts, lastCardInHand, manaSpent, state.mana);
-      if (isPlayerDefeated(nextState)) return nextState;
-      nextState = applyConsumeTalentRiders(nextState, card, combatTexts, lastCardInHand);
-    }
-    return nextState;
+  if (!card.consume) return { ...state, discard: [...state.discard, card] };
+  let nextState = { ...state, exhausted: [...state.exhausted, card] };
+  if (!triggerConsumeRiders) return nextState;
+  if (state.trinketEffects.runicQuillDrawOnConsume > 0) {
+    nextState = drawConsumeReward(nextState, state.trinketEffects.runicQuillDrawOnConsume, combatTexts);
+    if (isPlayerDefeated(nextState)) return nextState;
   }
-  return { ...state, discard: [...state.discard, card] };
+  nextState = applyConsumeGearRiders(nextState, card, combatTexts, lastCardInHand, manaSpent, state.mana);
+  return isPlayerDefeated(nextState)
+    ? nextState
+    : applyConsumeTalentRiders(nextState, card, combatTexts, lastCardInHand);
 }

@@ -33,6 +33,7 @@ export function resolveScreenBackHandler({
   returnToRun,
   handleMainMenu,
   backFromOptions,
+  backFromDifficultySelect,
   goToScreen,
 }: {
   renderedScreen: Screen;
@@ -40,6 +41,7 @@ export function resolveScreenBackHandler({
   returnToRun: () => void;
   handleMainMenu: () => void;
   backFromOptions: () => void;
+  backFromDifficultySelect: () => void;
   goToScreen: (screen: Screen) => void;
 }): (() => void) | undefined {
   if (renderedScreen === "options") return backFromOptions;
@@ -58,7 +60,7 @@ export function resolveScreenBackHandler({
     return () => goToScreen("game-mode-select");
   }
   if (renderedScreen === "difficulty-select") {
-    return () => goToScreen("character-select");
+    return backFromDifficultySelect;
   }
   return undefined;
 }

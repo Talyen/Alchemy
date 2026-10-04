@@ -87,6 +87,18 @@ describe("canUnlockTalent", () => {
 });
 
 describe("computeTalentEffects", () => {
+  it("owns nested talent values so one battle cannot change later battles or the catalog", () => {
+    const unlocked = { armor: ["armor-mitigate-stun"], consume: ["consume-feast"] };
+    const first = computeTalentEffects(unlocked);
+    const expected = structuredClone(first);
+    first.healthThresholdArmor[0]!.amount = 999;
+    first.healthThresholdArmor.push({ threshold: 25, amount: 999 });
+    first.cardHealMultipliers.apple = 999;
+    expect(computeTalentEffects(unlocked)).toEqual(expected);
+    const operation = talentPool.find((talent) => talent.id === unlocked.armor[0])!.effects![0]!;
+    expect(operation).toMatchObject({ value: [{ threshold: 50, amount: 3 }] });
+  });
+
   it("returns empty effects with no unlocked talents", () => {
     const effects = computeTalentEffects({});
     expect(effects.flatPhysicalDamage).toBe(0);

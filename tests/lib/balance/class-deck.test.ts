@@ -71,6 +71,7 @@ describe("companion deck analysis", () => {
     const deck = [wolf, repeatedWolf, bear, ordinary];
 
     expect(companionIdsFromDeck(deck)).toEqual(["wolf", "phoenix", "bear"]);
+    expect(buildSimCompanionBondLevels(deck, "early")).toMatchObject({ wolf: 1, phoenix: 1, bear: 1, fox: 0 });
     expect(buildSimCompanionBondLevels(deck, "late")).toMatchObject({ wolf: 3, phoenix: 3, bear: 3, fox: 0 });
     expect(removeCompanionSummonFromDeck(deck, "wolf")).toEqual([bear, ordinary]);
     expect(removeCompanionSummonFromDeck(deck, "phoenix")).toEqual([repeatedWolf, bear, ordinary]);

@@ -19,16 +19,24 @@ describe("StatusIcon", () => {
     expect(screen.queryByText("2")).toBeNull();
   });
 
-  it("capitalizes keywords in the Thorns status tooltip", async () => {
-    render(<StatusIcon chip={{ id: "thorns", value: 2 }} />);
+  it("allows keyboard inspection of a counted keyword status", async () => {
+    render(<StatusIcon chip={{ id: "thorns", value: 2, hideValue: true }} />);
 
-    fireEvent.mouseEnter(screen.getByRole("button", { name: "Thorns 2" }));
+    fireEvent.focus(screen.getByRole("button", { name: "Thorns 2" }));
 
     await waitFor(() => {
       const tooltip = document.querySelector<HTMLElement>(".hover-popup-panel[data-visible]");
       expect(tooltip?.textContent).toContain("When hit, Consume Thorns to deal Nature damage");
       expect(tooltip?.textContent).not.toContain("consume");
     });
+    expect(screen.getByText("2")).toBeTruthy();
+  });
+
+  it("keeps Haste's remaining turns visible when other armed effects hide their values", async () => {
+    render(<StatusIcon chip={{ id: "haste", value: 3, hideValue: true }} />);
+    fireEvent.focus(screen.getByRole("button", { name: "Haste 3" }));
+    await waitFor(() => expect(screen.getByText("3")).toBeTruthy());
+    expect(screen.getByText("Skips the next enemy phase and grants another player turn.")).toBeTruthy();
   });
 
   it("presents Phoenix Feather as a status without a numeric badge", async () => {

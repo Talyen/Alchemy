@@ -67,6 +67,10 @@
     "hash": "8ad5013943f53c755dace9d41e0540c7",
     "outputHash": "1c332096e279af1c40bc565e1517c6af"
   },
+  "bellows-blast.webp": {
+    "hash": "65aae34e1121675add024d49a8cc300e",
+    "outputHash": "f34b0dd9c82566447addf0d94ebb244f"
+  },
   "blackjack.webp": {
     "hash": "3936f40a7285b04f64ad210600bde832",
     "outputHash": "5959b572da26e2a9bdd6b733b232d63e"
@@ -290,6 +294,10 @@
   "faustian-bargain.webp": {
     "hash": "9e8c28c32ab3435d044607691d9fcbc4",
     "outputHash": "9e39696dc69fbcee41530b8406d24893"
+  },
+  "feint.webp": {
+    "hash": "0dbf0d12d5cd3f7d0133ad8179987659",
+    "outputHash": "77ed56dc88c68446e0f113ed3ba32f9c"
   },
   "fire-arrow.webp": {
     "hash": "26bfc2f6a8079528715e589436a95f40",
@@ -995,6 +1003,10 @@
     "hash": "42371c4a67363c34b1f20a9fdda836c0",
     "outputHash": "d1a1bceda7284826cbc5fa3852f2fc16"
   },
+  "porcupine-quill.webp": {
+    "hash": "072979b018f8104bc492d816cb43ca23",
+    "outputHash": "41f52a854937ca49fd6d5b26f87758e0"
+  },
   "pounce.webp": {
     "hash": "023d5afd29284edddf924edff0f37aa7",
     "outputHash": "4bb7d1ac2f06a4d4c54f681bba11e58e"
@@ -1010,6 +1022,10 @@
   "pyromancer.webp": {
     "hash": "ba08734e9974b58d24125788179cdee8",
     "outputHash": "537b0a5f0bb2c2a116063d5dcbde214c"
+  },
+  "quench.webp": {
+    "hash": "924e02bc25cea3f2a7035ddca6708ba1",
+    "outputHash": "2c2fd28f18939e28192c87c721a4e54b"
   },
   "ranger.webp": {
     "hash": "f82dc2b81e6e18b2235ac5305cf9ae69",
@@ -1298,6 +1314,10 @@
   "thorn-mail.webp": {
     "hash": "eca0da26d397f5ef470e102da2842c92",
     "outputHash": "fff81ec0d8a4d2d2eb334ab48efbea16"
+  },
+  "thorn-whip.webp": {
+    "hash": "a30bb5c07e7cdd77644528e7503193ce",
+    "outputHash": "6d872839b475578f3b4d2cac58682a66"
   },
   "thunderstone.webp": {
     "hash": "1a3bf694cdd9a4c8e912bbaee1e82ee6",

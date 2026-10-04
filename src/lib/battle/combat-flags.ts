@@ -59,6 +59,7 @@ export const FLAG_DEFINITIONS = {
   nextPhysicalDealsBleed: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
   nextArcheryCardFree: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
   nextNatureCardFree: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
+  dodgeNextAttack: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
 
   enemyFirstHitDoubleUsed: { default: false as const, secondaryValue: null, lifetime: "combat" },
   legacyEnemyThornsReady: { default: false as const, secondaryValue: null, lifetime: "combat" },

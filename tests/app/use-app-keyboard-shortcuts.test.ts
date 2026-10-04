@@ -9,6 +9,27 @@ afterEach(() => {
 });
 
 describe("app Escape shortcuts", () => {
+  it("activates Options switches and inventory checkboxes with the Steam Input confirm key", () => {
+    renderHook(() =>
+      useAppKeyboardShortcuts({
+        renderedScreen: "options",
+        screenInteractive: true,
+        gameMenuOpen: false,
+        toggleGameMenu: vi.fn(),
+      }),
+    );
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    document.body.append(checkbox);
+    expect(fireEvent.keyDown(checkbox, { key: "Enter" })).toBe(false);
+    expect(checkbox.checked).toBe(true);
+    fireEvent.keyDown(checkbox, { key: "Enter", repeat: true });
+    expect(checkbox.checked).toBe(true);
+    checkbox.disabled = true;
+    fireEvent.keyDown(checkbox, { key: "Enter" });
+    expect(checkbox.checked).toBe(true);
+    checkbox.remove();
+  });
   it.each([true, false])("blocks navigation until the screen is interactive, with Back: %s", (hasBack) => {
     const onBack = vi.fn();
     const toggleGameMenu = vi.fn();

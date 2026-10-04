@@ -9,7 +9,9 @@
  * @returns {Promise<R[]>}
  */
 export async function mapPool(items, concurrency, mapper) {
-  const limit = Math.max(1, Math.min(concurrency, items.length || 1));
+  if (!Number.isSafeInteger(concurrency) || concurrency < 1) {
+    throw new RangeError("mapPool concurrency must be a positive safe integer");
+  }
   /** @type {R[]} */
   const results = new Array(items.length);
   let nextIndex = 0;
@@ -22,7 +24,7 @@ export async function mapPool(items, concurrency, mapper) {
     }
   }
 
-  const workers = Array.from({ length: Math.min(limit, items.length) }, () => worker());
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, () => worker());
   const settled = await Promise.allSettled(workers);
   const failures = settled.filter((result) => result.status === "rejected").map((result) => result.reason);
   if (failures.length > 0) {

@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
 
@@ -40,43 +41,59 @@ describe("PurchasableCardItem", () => {
     cleanup();
   });
 
-  it("shows the hover tooltip after purchase without interactive glow", () => {
-    render(<PurchasableCardItem card={card} price={40} gold={80} purchased onBuy={vi.fn()} />);
-
-    const button = screen.getByRole("button", { name: "Strike" });
-    expect(button).toHaveProperty("disabled", true);
-    expect(button.className).not.toMatch(/card-interactive-glow/);
-
-    fireEvent.mouseEnter(button.parentElement!);
-
-    const descriptionSpan = screen.getByText(/Deal/);
-    expect(descriptionSpan.closest(".hover-popup-panel")).toBeTruthy();
-  });
-
-  it("removes the glow when a successful purchase marks the slot as purchased", () => {
+  it("lets keyboard users buy once and keep inspecting the purchased card", async () => {
+    const user = userEvent.setup();
+    const onBuy = vi.fn();
     function ShopCardHarness() {
       const [purchased, setPurchased] = useState(false);
       return (
-        <PurchasableCardItem card={card} price={40} gold={80} purchased={purchased} onBuy={() => setPurchased(true)} />
+        <PurchasableCardItem
+          card={card}
+          price={40}
+          gold={80}
+          purchased={purchased}
+          onBuy={() => {
+            onBuy();
+            setPurchased(true);
+          }}
+        />
       );
     }
-
     render(<ShopCardHarness />);
-
-    const availableButton = screen.getByRole("button", { name: "Buy Strike" });
-    expect(availableButton.className).toMatch(/card-interactive-glow/);
-    fireEvent.mouseEnter(availableButton.parentElement!);
-    fireEvent.click(availableButton);
-
+    const button = screen.getByRole("button", { name: "Buy Strike" });
+    await user.tab();
+    expect(document.activeElement).toBe(button);
+    const descriptionSpan = screen.getByText(/Deal/);
+    expect(descriptionSpan.closest(".hover-popup-panel")).toBeTruthy();
+    await user.keyboard("{Enter}");
+    expect(onBuy).toHaveBeenCalledTimes(1);
     const purchasedButton = screen.getByRole("button", { name: "Strike" });
-    expect(purchasedButton).toHaveProperty("disabled", true);
+    expect(document.activeElement).toBe(purchasedButton);
+    expect(purchasedButton.getAttribute("aria-disabled")).toBe("true");
     expect(purchasedButton.className).not.toMatch(/card-interactive-glow/);
+    expect(screen.getByText("Purchased")).toBeTruthy();
+    await user.keyboard("{Enter}");
+    expect(onBuy).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(/Deal/).closest(".hover-popup-panel")).toBeTruthy();
   });
 });
 
 describe("PurchasableGearItem", () => {
   afterEach(() => {
     cleanup();
+  });
+
+  it("keeps unaffordable Gear keyboard-inspectable while preventing purchases", async () => {
+    const user = userEvent.setup();
+    const onBuy = vi.fn();
+    render(<PurchasableGearItem instance={testGearInstance} price={50} gold={20} purchased={false} onBuy={onBuy} />);
+    const button = screen.getByRole("button", { name: /Buy Longsword/ });
+    await user.tab();
+    expect(document.activeElement).toBe(button);
+    expect(button.getAttribute("aria-disabled")).toBe("true");
+    expect(await screen.findByRole("tooltip")).toBeTruthy();
+    await user.keyboard("{Enter}");
+    expect(onBuy).not.toHaveBeenCalled();
   });
 
   it("disables purchase and triggers onBuy when clicked and affordable", () => {
@@ -95,13 +112,17 @@ describe("PurchasableTrinketItem", () => {
     cleanup();
   });
 
-  it("disables button when unaffordable", () => {
+  it("keeps an unaffordable Trinket keyboard-inspectable while preventing purchases", async () => {
+    const user = userEvent.setup();
     const onBuy = vi.fn();
     render(<PurchasableTrinketItem trinket={testTrinket} price={50} gold={20} purchased={false} onBuy={onBuy} />);
 
     const button = screen.getByRole("button", { name: /Buy Meteorite/ });
-    expect(button).toHaveProperty("disabled", true);
-    fireEvent.click(button);
+    await user.tab();
+    expect(document.activeElement).toBe(button);
+    expect(button.getAttribute("aria-disabled")).toBe("true");
+    expect(await screen.findByRole("tooltip")).toBeTruthy();
+    await user.keyboard("{Enter}");
     expect(onBuy).not.toHaveBeenCalled();
   });
 });

@@ -30,12 +30,12 @@ export function PurchasableCardItem({
     <BattleCardButton
       card={card}
       onClick={canPurchase ? onBuy : undefined}
-      disabled={!canPurchase}
+      ariaDisabled={!canPurchase}
       ariaLabel={getShopItemAriaLabel(getCardDisplayTitle(card), purchased)}
       shimmerActive={false}
       shimmerToken={undefined}
-      shineColor={getCardInspectionShineColors(card)}
-      className={cn(widthClass, canPurchase && cardInteractiveGlowClass)}
+      shineColor={canPurchase ? getCardInspectionShineColors(card) : undefined}
+      className={cn(widthClass, canPurchase ? cardInteractiveGlowClass : "cursor-default grayscale")}
     >
       <ShopPriceChip price={price} purchased={purchased} purchaseState={purchaseState} />
     </BattleCardButton>
@@ -58,7 +58,7 @@ export function PurchasableGearItem({
       interactionKey="shop"
       as="button"
       shine={!purchased}
-      disabled={!canPurchase}
+      ariaDisabled={!canPurchase}
       onClick={canPurchase ? onBuy : undefined}
       ariaLabel={getShopItemAriaLabel(getGearInstanceTitle(instance), purchased)}
     >
@@ -83,7 +83,7 @@ export function PurchasableTrinketItem({
       interactionKey="shop"
       as="button"
       shine={!purchased}
-      disabled={!canPurchase}
+      ariaDisabled={!canPurchase}
       onClick={canPurchase ? onBuy : undefined}
       ariaLabel={getShopItemAriaLabel(trinket.title, purchased)}
     >

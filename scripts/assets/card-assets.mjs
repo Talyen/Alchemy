@@ -151,6 +151,11 @@ export const cardAssets = [
   { source: "Cards/Stargaze.jpeg", target: "stargaze.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Combustion.jpeg", target: "combustion.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Ray of Frost.jpeg", target: "ray-of-frost.webp", width: cardWidth, quality: cardQuality },
+  { source: "Cards/Thorn Whip.jpeg", target: "thorn-whip.webp", width: cardWidth, quality: cardQuality },
+  { source: "Cards/Porcupine Quill.jpeg", target: "porcupine-quill.webp", width: cardWidth, quality: cardQuality },
+  { source: "Cards/Feint.jpg", target: "feint.webp", width: cardWidth, quality: cardQuality },
+  { source: "Cards/Bellows Blast.jpeg", target: "bellows-blast.webp", width: cardWidth, quality: cardQuality },
+  { source: "Cards/Quench.jpeg", target: "quench.webp", width: cardWidth, quality: cardQuality },
   {
     source: "Cards/Placeholder Card.png",
     target: "placeholder-card.webp",

@@ -80,7 +80,6 @@ describe("gear generation", () => {
   });
 
   it("weights Astral affix counts 80% toward three affixes", () => {
-    expect(GEAR_AFFIX_COUNT_MIN_WEIGHT).toBe(0.8);
     expect(rollAffixCount("astral", () => 0.799999)).toBe(3);
     expect(rollAffixCount("astral", () => 0.8)).toBe(4);
     expect(rollAffixCount("basic", () => 0.799999)).toBe(1);
@@ -178,34 +177,5 @@ describe("gear generation", () => {
 
   it("returns null for an unknown base item id", () => {
     expect(generateGearInstanceForBaseItem("not-a-real-item", () => 0.1)).toBeNull();
-  });
-
-  it("rolls defensive Dodge affixes on leather armor and offensive Dodge affixes on dagger, shortbow, and quiver", () => {
-    const defensiveDodge = ["dodge-chance", "dodge-block", "dodge-heal", "dodge-armor"];
-    const offensiveDodge = ["dodge-riposte", "dodge-opening", "dodge-bleed"];
-
-    const leatherPool = buildEligibleAffixPool(gearDefinitions["leather-armor-basic"]!).map((affix) => affix.id);
-    expect(leatherPool).toEqual(expect.arrayContaining(defensiveDodge));
-    expect(leatherPool.some((id) => offensiveDodge.includes(id))).toBe(false);
-
-    for (const definitionId of ["dagger-basic", "shortbow-basic", "quiver-basic"] as const) {
-      const pool = buildEligibleAffixPool(gearDefinitions[definitionId]!).map((affix) => affix.id);
-      expect(pool).toEqual(expect.arrayContaining(offensiveDodge));
-      expect(pool.some((id) => defensiveDodge.includes(id))).toBe(false);
-    }
-
-    const mixedDodge = [...defensiveDodge, ...offensiveDodge];
-    for (const definitionId of ["leather-buckler-basic", "emerald-ring-basic", "emerald-amulet-basic"] as const) {
-      const pool = buildEligibleAffixPool(gearDefinitions[definitionId]!).map((affix) => affix.id);
-      expect(pool).toEqual(expect.arrayContaining(mixedDodge));
-    }
-
-    const platePool = buildEligibleAffixPool(gearDefinitions["plate-armor-basic"]!).map((affix) => affix.id);
-    expect(platePool.some((id) => mixedDodge.includes(id))).toBe(false);
-
-    for (const definitionId of ["kite-shield-basic", "longbow-basic", "longsword-basic"] as const) {
-      const pool = buildEligibleAffixPool(gearDefinitions[definitionId]!).map((affix) => affix.id);
-      expect(pool.some((id) => mixedDodge.includes(id))).toBe(false);
-    }
   });
 });

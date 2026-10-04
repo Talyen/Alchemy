@@ -1,3 +1,4 @@
+import { TOOLTIP_FADE_MS } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 import {
   cardInteractiveGlowClass,
@@ -7,14 +8,16 @@ import {
   gearArtAspectClass,
 } from "../../../../shared/config";
 import { useInteractiveCard } from "../../../../shared/ui/use-interactive-card";
-import { useTileHoverPopup } from "../../../../shared/ui/use-tile-hover-popup";
+import { useHoverVisible } from "../../../../shared/ui/use-hover-visible";
 
 export const ARMORY_GEAR_SLOT_TESTID = "armory-equipment-slot";
 export const ARMORY_TRINKET_SLOT_TESTID = "armory-trinket-slot";
 
 export function useArmorySlotHover(key: string) {
   const card = useInteractiveCard("armory", key);
-  const popup = useTileHoverPopup({
+  const popup = useHoverVisible({
+    holdMs: TOOLTIP_FADE_MS,
+    focusWithinGuard: true,
     interactive: true,
     isHovered: card.isHovered,
     onHoverStart: card.onHoverStart,

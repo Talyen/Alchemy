@@ -67,11 +67,17 @@ export function chooseMysteryOption(choice: MysteryChoice) {
     const goldSounds: Array<"gain" | "spend"> = [];
     const rng = createDraftRunRandomSource(draft, "events");
     for (const [index, effect] of offeredChoice.effects.entries()) {
+      const healthBefore = draft.run.activeRun.runPlayerHealth;
       const result = applyMysteryEffect(effect, { draft, rng });
       if (effect.kind === "gainMaterial" && result.materialAward) {
         resolvedEffects[index] = {
           ...effect,
           amount: result.materialAward.amount,
+        };
+      } else if (effect.kind === "healHealth") {
+        resolvedEffects[index] = {
+          kind: "healHealth",
+          amount: Math.max(0, draft.run.activeRun.runPlayerHealth - healthBefore),
         };
       }
       if (result.goldSound) goldSounds.push(result.goldSound);

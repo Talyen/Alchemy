@@ -34,36 +34,20 @@ export function listArtifactDirsToRemove(rootDir, options = {}) {
  * @returns {{ path: string, bytes: number }}
  */
 export function measurePath(absolutePath) {
-  const stats = fs.lstatSync(absolutePath, { throwIfNoEntry: false });
-  if (!stats) {
-    return { path: absolutePath, bytes: 0 };
-  }
-  if (stats.isFile() || stats.isSymbolicLink()) {
-    return { path: absolutePath, bytes: stats.size };
-  }
-
   let bytes = 0;
-  const stack = [absolutePath];
-  while (stack.length > 0) {
-    const current = stack.pop();
-    if (!current) continue;
-    let entries;
+  const pending = [absolutePath];
+  while (pending.length > 0) {
+    const current = pending.pop();
     try {
-      entries = fs.readdirSync(current, { withFileTypes: true });
-    } catch {
-      continue;
-    }
-    for (const entry of entries) {
-      const child = path.join(current, entry.name);
-      try {
-        if (entry.isDirectory()) {
-          stack.push(child);
-        } else if (entry.isFile() || entry.isSymbolicLink()) {
-          bytes += fs.lstatSync(child).size;
-        }
-      } catch {
-        // Race with concurrent writers; skip unreadable entries.
+      // lstat never follows links into source archives or back into this tree.
+      const stats = fs.lstatSync(current, { throwIfNoEntry: false });
+      if (!stats) continue;
+      if (stats.isFile() || stats.isSymbolicLink()) bytes += stats.size;
+      else if (stats.isDirectory()) {
+        for (const name of fs.readdirSync(current)) pending.push(path.join(current, name));
       }
+    } catch {
+      // Reports and caches can disappear or become unreadable during measurement.
     }
   }
   return { path: absolutePath, bytes };

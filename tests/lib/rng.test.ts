@@ -46,36 +46,24 @@ describe("sampleItems", () => {
     }
   });
 
-  it("preserves seeded sample order and subsequent draws without mutating the input", () => {
-    const items = Object.freeze(["a", "b", "c", "d", "e", "f"]);
-    const excluded = new Set(["b", "e"]);
-    // Reference the original full Fisher-Yates shuffle followed by a slice.
-    const referenceSample = (pool: readonly string[], count: number, rng: () => number) => {
-      if (count === 0) return [];
-      const shuffled = [...pool];
-      for (let index = shuffled.length - 1; index > 0; index--) {
-        const swapIndex = Math.floor(rng() * (index + 1));
-        [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex]!, shuffled[index]!];
-      }
-      return shuffled.slice(0, Math.min(count, shuffled.length));
-    };
-    for (const seed of [0, 1, 42, 0xffffffff]) {
-      for (const count of [0, 1, 3, 6, 10]) {
-        for (const skipExcluded of [false, true]) {
-          const actualRng = createSeededRng(seed);
-          const expectedRng = createSeededRng(seed);
-          const pool = skipExcluded ? items.filter((item) => !excluded.has(item)) : items;
-          const actual = skipExcluded
-            ? sampleItemsExcluding(items, count, actualRng, excluded, (item) => item)
-            : sampleItems(items, count, actualRng);
-          expect(actual).toEqual(referenceSample(pool, count, expectedRng));
-          expect(actualRng()).toBe(expectedRng());
-          expect(actual).not.toBe(items);
-        }
-      }
-    }
-    expect(items).toEqual(["a", "b", "c", "d", "e", "f"]);
-  });
+  it.each([
+    { count: 0, excluded: [], expected: [], next: 0.6011037519201636 },
+    { count: 2, excluded: [], expected: ["b", "a"], next: 0.5265925421845168 },
+    { count: 9, excluded: [], expected: ["b", "a", "e", "f", "c", "d"], next: 0.5265925421845168 },
+    { count: 2, excluded: ["b", "e"], expected: ["a", "f"], next: 0.6697340414393693 },
+  ])(
+    "preserves saved-run sample order and stream position: $count with $excluded excluded",
+    ({ count, excluded, expected, next }) => {
+      const items = Object.freeze(["a", "b", "c", "d", "e", "f"]);
+      const rng = createSeededRng(42);
+      const sample = excluded.length
+        ? sampleItemsExcluding(items, count, rng, new Set(excluded), (item) => item)
+        : sampleItems(items, count, rng);
+      expect(sample).toEqual(expected);
+      expect(rng()).toBe(next);
+      expect(items).toEqual(["a", "b", "c", "d", "e", "f"]);
+    },
+  );
 });
 
 describe("sampleItemsExcluding", () => {

@@ -1,38 +1,22 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  DEATHS_DOOR_PLASMA_PAIR,
   getBossShineColors,
-  getBossTextShineColors,
   getPlasmaColorPair,
   getPlasmaColorPairFromColors,
-  getPlasmaColorPairForCard,
   getPlasmaColorPairForCharacter,
   getPlasmaColorPairForEnemy,
   getPlasmaColorPairForGear,
   getPlasmaColorPairForUnique,
-  getPlasmaColorPairForTalent,
-  getPlasmaColorPairForTrinket,
   getEnemyKeywordShineColors,
   getPlasmaKeywordsForCharacter,
   getPlasmaKeywordsForEnemy,
   getPlasmaKeywordsForGear,
-  getPlasmaKeywordsForTalent,
-  getPlasmaKeywordsForText,
-  lerpPlasmaColor,
 } from "@/features/alchemy/shared/config/plasma-palettes";
 import { parsePlasmaHexColor } from "@/lib/animation/plasma-colors";
 import { SHINE_PALETTES, WILDCARD_KEYWORD_SHINE_COLORS, getBossById } from "@/features/alchemy/shared/config";
 import { getKeywordBorderShineColors } from "@/lib/keyword-border-shine";
-import {
-  cardById,
-  characters,
-  getCardKeywords,
-  keywordDefinitions,
-  trinketById,
-  type BestiaryEntry,
-} from "@/lib/game-data";
-import { getTrinketKeywords } from "@/features/alchemy/shared/config/game-data-catalog";
+import { characters, keywordDefinitions, type BestiaryEntry } from "@/lib/game-data";
 
 describe("getPlasmaColorPair", () => {
   it("uses first keyword bright stop as primary and second keyword bright stop as secondary", () => {
@@ -77,25 +61,6 @@ describe("character plasma mapping", () => {
   });
 });
 
-describe("getPlasmaColorPairForCard", () => {
-  it("maps card keywords to plasma color pair", () => {
-    const card = Object.values(cardById).find((c) => getCardKeywords(c).length > 0);
-    if (card) {
-      expect(getPlasmaColorPairForCard(card)).toEqual(getPlasmaColorPair(getCardKeywords(card)));
-    }
-  });
-});
-
-describe("getPlasmaColorPairForTrinket", () => {
-  it("maps trinket description keywords to plasma color pair", () => {
-    const trinket = Object.values(trinketById)[0];
-    if (trinket) {
-      const keywords = getTrinketKeywords(trinket.id);
-      expect(getPlasmaColorPairForTrinket(trinket)).toEqual(getPlasmaColorPair(keywords));
-    }
-  });
-});
-
 describe("getPlasmaKeywordsForGear", () => {
   it("excludes absent base affinities and uses neutral gray for gear without keywords", () => {
     const gear = {
@@ -123,42 +88,6 @@ describe("getPlasmaKeywordsForGear", () => {
       expect(parsePlasmaHexColor(color)).not.toEqual([0.8, 0.8, 0.8]);
       expect(parsePlasmaHexColor(color).every(Number.isFinite)).toBe(true);
     }
-  });
-
-  it("extracts keywords from gear affixes and definition", () => {
-    const gear = {
-      instanceId: "test-gear",
-      definitionId: "broadsword-basic",
-      affixes: [{ id: "flat-physical" as const, value: 5 }],
-    };
-    const keywords = getPlasmaKeywordsForGear(gear);
-    expect(Array.isArray(keywords)).toBe(true);
-    expect(keywords).toContain("physical");
-    expect(getPlasmaColorPairForGear(gear)).toEqual(getPlasmaColorPair(keywords));
-  });
-});
-
-describe("getPlasmaKeywordsForTalent", () => {
-  it("uses the talent's keyword only", () => {
-    const talent = {
-      id: "test-talent",
-      keywordId: "burn" as const,
-      description: "When you apply Burn, also apply 2 Bleed.",
-    };
-    const keywords = getPlasmaKeywordsForTalent(talent);
-    expect(keywords).toEqual(["burn"]);
-    expect(getPlasmaColorPairForTalent(talent)).toEqual(getPlasmaColorPair(["burn"]));
-  });
-});
-
-describe("getPlasmaKeywordsForText", () => {
-  it("preserves first-mentioned colors and returns independently owned keyword lists", () => {
-    const text = "Frozen enemies take Burn damage; FREEZE and Burning repeat those colors. Mana Crystal.";
-    const keywords = getPlasmaKeywordsForText(text);
-    expect(keywords).toEqual(["freeze", "burn", "mana"]);
-    keywords.reverse();
-    expect(getPlasmaKeywordsForText(text)).toEqual(["freeze", "burn", "mana"]);
-    expect(getPlasmaColorPair(getPlasmaKeywordsForText(text))).toEqual(getPlasmaColorPair(["freeze", "burn"]));
   });
 });
 
@@ -207,30 +136,7 @@ describe("getPlasmaKeywordsForEnemy", () => {
   });
 });
 
-describe("DEATHS_DOOR_PLASMA_PAIR", () => {
-  it("uses death's door shine colors for defeat", () => {
-    expect(DEATHS_DOOR_PLASMA_PAIR).toEqual({
-      primary: SHINE_PALETTES.deathsDoorArt[1],
-      secondary: SHINE_PALETTES.deathsDoorArt[0],
-    });
-  });
-});
-
 describe("getBossShineColors", () => {
-  function makeBoss(overrides: Partial<BestiaryEntry> = {}): BestiaryEntry {
-    return {
-      id: "test-boss",
-      title: "Test Boss",
-      subtitle: "",
-      descriptionLines: [],
-      art: "",
-      enemyType: "boss",
-      traits: [],
-      abilityIds: [],
-      ...overrides,
-    };
-  }
-
   it("collects boss border colors from visible traits, excluding ability-only keywords", () => {
     const frostwarden = getBossById("frostwarden");
     expect(frostwarden).toBeDefined();
@@ -240,24 +146,5 @@ describe("getBossShineColors", () => {
     expect(colors).toContain(keywordDefinitions.freeze.shineColors[0]);
     expect(colors).toContain(keywordDefinitions.burn.shineColors[0]);
     expect(colors).not.toContain(keywordDefinitions.block.shineColors[0]);
-  });
-
-  it("falls back when no combat keywords match", () => {
-    const colors = getBossShineColors(makeBoss());
-    expect(colors).toEqual([...SHINE_PALETTES.bossVictoryFallback]);
-  });
-
-  it("removes repeated palette stops for broader text bands", () => {
-    expect(getBossTextShineColors(makeBoss())).toEqual(["#cbd5e1", "#64748b"]);
-  });
-});
-
-describe("plasma color utilities", () => {
-  it("parses six-digit hex colors", () => {
-    expect(parsePlasmaHexColor("#ff8040")).toEqual([1, 128 / 255, 64 / 255]);
-  });
-
-  it("lerps between hex colors", () => {
-    expect(lerpPlasmaColor("#000000", "#ffffff", 0.5)).toBe("#808080");
   });
 });

@@ -1,3 +1,4 @@
+import { TOOLTIP_FADE_MS } from "@/lib/game-constants";
 import { type RefObject, type ReactNode } from "react";
 
 import { ShineBorder } from "@/components/ui/shine-border";
@@ -6,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { cardInteractiveGlowClass, cardShineFrameClass } from "../config";
 import { Surface } from "./surface";
 import { useInteractiveCard } from "./use-interactive-card";
-import { useTileHoverPopup } from "./use-tile-hover-popup";
+import { useHoverVisible } from "./use-hover-visible";
 
 export interface PopupContext {
   visible: boolean;
@@ -111,7 +112,9 @@ export function InteractiveArtTile({
         onHoverChange(false);
       }
     : onHoverEnd;
-  const { wrapperRef, showPopup, handleHoverStart, handleMouseLeave, handleBlur } = useTileHoverPopup({
+  const { wrapperRef, showPopup, handleHoverStart, handleMouseLeave, handleBlur } = useHoverVisible({
+    holdMs: TOOLTIP_FADE_MS,
+    focusWithinGuard: true,
     interactive,
     isHovered,
     onHoverStart: wrappedHoverStart,
@@ -120,7 +123,7 @@ export function InteractiveArtTile({
 
   const visual = resolveArtTileVisualState({
     interactive,
-    disabled,
+    disabled: disabled || ariaDisabled === true,
     interactiveChrome,
     selected,
     isHovered,
@@ -139,11 +142,18 @@ export function InteractiveArtTile({
       onMouseLeave={interactive ? handleMouseLeave : undefined}
     >
       {}
-      {/* eslint-disable-next-line react-hooks/refs -- popup trigger uses mutable ref provided by useTileHoverPopup */}
+      {/* eslint-disable-next-line react-hooks/refs -- popup trigger uses mutable ref provided by useHoverVisible */}
       {interactive && popup && showPopup ? popup({ visible: isHovered, triggerRef: wrapperRef }) : null}
       <Surface
         as={as}
-        className={cn(className, "group shadow-md", visual.shineClassName, visual.frameClassName, visual.glowClassName)}
+        className={cn(
+          className,
+          "group shadow-md",
+          ariaDisabled && "cursor-default grayscale",
+          visual.shineClassName,
+          visual.frameClassName,
+          visual.glowClassName,
+        )}
         shimmerActive={visual.activeShimmer}
         shimmerToken={visual.activeShimmerToken}
         overlay={
@@ -151,7 +161,9 @@ export function InteractiveArtTile({
         }
         selected={visual.surfaceSelected}
         disabled={disabled}
-        onClick={visual.canInteract ? onClick : undefined}
+        // Unavailable tiles may supply an explicit rejection handler; visual chrome
+        // must not suppress that feedback. Purchase callers omit their action.
+        onClick={interactive && !disabled ? onClick : undefined}
         {...(interactive ? { onFocus: handleHoverStart, onBlur: handleBlur } : {})}
         ariaLabel={ariaLabel ?? title}
         {...(ariaDisabled !== undefined ? { ariaDisabled } : {})}

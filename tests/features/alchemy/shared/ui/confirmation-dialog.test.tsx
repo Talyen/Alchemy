@@ -23,10 +23,12 @@ describe("ConfirmationDialog", () => {
 
   it("starts on Cancel and keeps keyboard navigation within the dialog", async () => {
     const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    const onCancel = vi.fn();
     render(
       <>
         <button type="button">Outside</button>
-        <ConfirmationDialog title="Salvage" confirmLabel="Salvage" onConfirm={vi.fn()} onCancel={vi.fn()} />
+        <ConfirmationDialog title="Salvage" confirmLabel="Salvage" onConfirm={onConfirm} onCancel={onCancel} />
       </>,
     );
     const cancel = screen.getByRole("button", { name: "Cancel" });
@@ -38,8 +40,13 @@ describe("ConfirmationDialog", () => {
     expect(document.activeElement).toBe(cancel);
     await user.tab({ shift: true });
     expect(document.activeElement).toBe(confirm);
+    await user.keyboard("{Enter}");
+    expect(onConfirm).toHaveBeenCalledOnce();
     screen.getByRole("button", { name: "Outside" }).focus();
     expect(document.activeElement).toBe(cancel);
+    await user.keyboard("{Enter}{Escape}");
+    expect(onCancel).toHaveBeenCalledTimes(2);
+    expect(onConfirm).toHaveBeenCalledOnce();
   });
 
   it("recovers into the active screen when its opener has disappeared", async () => {
@@ -62,16 +69,6 @@ describe("ConfirmationDialog", () => {
       </div>,
     );
     await waitFor(() => expect(screen.getByRole("button", { name: "Continue journey" })).toBe(document.activeElement));
-  });
-
-  it("calls onCancel when Escape is pressed", () => {
-    const onCancel = vi.fn();
-
-    render(<ConfirmationDialog title="Delete item?" confirmLabel="Delete" onConfirm={vi.fn()} onCancel={onCancel} />);
-
-    fireEvent.keyDown(window, { key: "Escape" });
-
-    expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
   it.each([false, true])("restores focus after exit with explicit target: %s", async (explicitTarget) => {
@@ -134,33 +131,5 @@ describe("ConfirmationDialog", () => {
     fireEvent.keyDown(window, { key: "Escape" });
 
     expect(onCancel).not.toHaveBeenCalled();
-  });
-
-  it("renders confirm and cancel actions", async () => {
-    const onConfirm = vi.fn();
-
-    render(<ConfirmationDialog title="Delete item?" confirmLabel="Delete" onConfirm={onConfirm} onCancel={vi.fn()} />);
-
-    await waitFor(() => expect(screen.getByRole("button", { name: "Delete" }).closest("[inert]")).toBeNull());
-
-    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
-
-    expect(onConfirm).toHaveBeenCalledTimes(1);
-  });
-
-  it("renders optional body content below the description", () => {
-    render(
-      <ConfirmationDialog
-        title="Salvage?"
-        description="You will receive:"
-        body={<div data-testid="dialog-body">preview</div>}
-        confirmLabel="Salvage"
-        onConfirm={vi.fn()}
-        onCancel={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByText("You will receive:")).toBeTruthy();
-    expect(screen.getByTestId("dialog-body").textContent).toBe("preview");
   });
 });

@@ -9,6 +9,7 @@ import {
 import { getCorruptionMutationGroups } from "@/lib/corruption/mutations";
 import { applyNumericCorruption, updateCardNumericValue } from "@/lib/corruption/numeric";
 import { cardById, cardLibrary, cloneBattleCard, describeCardEffects, type BattleCardEffect } from "@/lib/game-data";
+import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { createMixedPotion } from "@/lib/alchemist";
 import type { CORRUPTION_OUTCOME_WEIGHTS } from "@/lib/game-constants";
 import { makeTestCard } from "../../../fixtures/cards";
@@ -130,6 +131,7 @@ describe("card corruption outcomes", () => {
   it("removes Consume explicitly so it cannot return on hydration", () => {
     const next = outcome("health-potion", "reusable");
     expect(next.consume).toBe(false);
+    expect(hydrateCard(next).consume).toBe(false);
     expect(next.descriptionLines).toEqual(["Restore 8 Health"]);
     expect(next.effects).toEqual(cardById["health-potion"]!.effects);
   });
@@ -586,32 +588,10 @@ describe("corruptedValuePositions deduplication", () => {
 });
 
 describe("removeConsume highlight preservation", () => {
-  it("preserves prior corrupted value positions and shifts line indices when removing Consume", () => {
-    // Build a small consumable card with existing corrupted highlight positions.
-    const card = makeTestCard({
-      descriptionLines: ["Restore 4 Health", "Consume"],
-      effects: [{ kind: "heal", amount: 4 }],
-      consume: true,
-      corrupted: true,
-    });
-    // Simulate a prior corruption having marked the "4" on line 0.
-    (card as { corruptedValuePositions: Array<{ lineIndex: number; matchIndex: number }> }).corruptedValuePositions = [
-      { lineIndex: 0, matchIndex: 8 },
-    ];
-
-    const groups = getCorruptionMutationGroups(card);
-    const reusableGroup = groups.find((g) => g.kind === "reusable");
-    expect(reusableGroup).toBeDefined();
-    const reusable = reusableGroup!.mutations[0]!.card;
-    expect(reusable.consume).toBe(false);
-    expect(reusable.descriptionLines).toEqual(["Restore 4 Health"]);
-    // The prior highlight from line 0 must survive (Consume was on line 1).
-    expect(reusable.corruptedValuePositions).toEqual([{ lineIndex: 0, matchIndex: 8 }]);
-  });
-
   it("remaps highlights after every removed Consume line", () => {
     const card = makeTestCard({
-      descriptionLines: ["Consume", "Deal 6 Physical damage", "Consume", "Restore 4 Health"],
+      descriptionLines: ["Consume", "Deal 6 Physical damage", "Consume", "Restore 4 Health", "Consume"],
+      tags: ["physical", "consume"],
       effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
       consume: true,
       corruptedValuePositions: [
@@ -626,27 +606,9 @@ describe("removeConsume highlight preservation", () => {
       { lineIndex: 0, matchIndex: 5 },
       { lineIndex: 1, matchIndex: 8 },
     ]);
+    expect(reusable.consume).toBe(false);
+    expect(reusable.tags).toEqual(["physical"]);
+    expect(card.tags).toEqual(["physical", "consume"]);
     expect(card.corruptedValuePositions![2]!.lineIndex).toBe(3);
-  });
-
-  it("shifts line indices down when Consume precedes other lines", () => {
-    // Edge case: Consume is the first line (unusual but possible after addLine first=true).
-    const card = makeTestCard({
-      descriptionLines: ["Consume", "Deal 6 Physical damage"],
-      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-      consume: true,
-      corrupted: true,
-    });
-    (card as { corruptedValuePositions: Array<{ lineIndex: number; matchIndex: number }> }).corruptedValuePositions = [
-      { lineIndex: 1, matchIndex: 5 },
-    ];
-
-    const groups = getCorruptionMutationGroups(card);
-    const reusableGroup = groups.find((g) => g.kind === "reusable");
-    expect(reusableGroup).toBeDefined();
-    const reusable = reusableGroup!.mutations[0]!.card;
-    expect(reusable.descriptionLines).toEqual(["Deal 6 Physical damage"]);
-    // The highlight on what was line 1 must shift to line 0.
-    expect(reusable.corruptedValuePositions).toEqual([{ lineIndex: 0, matchIndex: 5 }]);
   });
 });

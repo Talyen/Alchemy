@@ -1,109 +1,73 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { delay, resolveGameDelay, TimerGroup } from "@/lib/animation/game-timer";
+import { delay, TimerGroup } from "@/lib/animation/game-timer";
 
-describe("game-timer", () => {
+describe("game timers", () => {
   beforeEach(() => {
     localStorage.clear();
     vi.useFakeTimers();
   });
-
   afterEach(() => {
     localStorage.clear();
     vi.useRealTimers();
   });
 
-  describe("resolveGameDelay", () => {
-    it("returns original ms when animations are enabled", () => {
-      expect(resolveGameDelay(500)).toBe(500);
-      expect(resolveGameDelay(0)).toBe(0);
-    });
-
-    it("returns 1ms when animations are disabled", () => {
-      localStorage.setItem("alchemy-disable-animations", "true");
-      expect(resolveGameDelay(500)).toBe(1);
-    });
+  it("cancels departed-screen work without canceling surviving work", () => {
+    const timers = new TimerGroup();
+    const departed = vi.fn();
+    const surviving = vi.fn();
+    const cancel = timers.setTimeout(departed, 100);
+    timers.setTimeout(surviving, 200);
+    cancel();
+    cancel();
+    vi.advanceTimersByTime(199);
+    expect(departed).not.toHaveBeenCalled();
+    expect(surviving).not.toHaveBeenCalled();
+    expect(timers.size).toBe(1);
+    vi.advanceTimersByTime(1);
+    expect(surviving).toHaveBeenCalledOnce();
+    expect(timers.size).toBe(0);
   });
 
-  describe("delay", () => {
-    it("resolves after the specified duration", async () => {
-      let resolved = false;
-      const promise = delay(200).then(() => {
-        resolved = true;
-      });
-
-      expect(resolved).toBe(false);
-      vi.advanceTimersByTime(199);
-      expect(resolved).toBe(false);
-      vi.advanceTimersByTime(1);
-      await promise;
-      expect(resolved).toBe(true);
-    });
-
-    it("resolves in 1ms when animations are disabled", async () => {
-      localStorage.setItem("alchemy-disable-animations", "true");
-      let resolved = false;
-      const promise = delay(1000).then(() => {
-        resolved = true;
-      });
-
-      vi.advanceTimersByTime(1);
-      await promise;
-      expect(resolved).toBe(true);
-    });
+  it("disposes callbacks scheduled by another callback and can be reused", () => {
+    const timers = new TimerGroup();
+    const stale = vi.fn();
+    const fresh = vi.fn();
+    timers.setTimeout(() => timers.setTimeout(stale, 100), 10);
+    vi.advanceTimersByTime(10);
+    timers.clearAll();
+    timers.clearAll();
+    timers.setTimeout(fresh, 20);
+    vi.advanceTimersByTime(100);
+    expect(stale).not.toHaveBeenCalled();
+    expect(fresh).toHaveBeenCalledOnce();
+    expect(timers.size).toBe(0);
+    expect(vi.getTimerCount()).toBe(0);
   });
 
-  describe("TimerGroup", () => {
-    it("schedules a timeout and executes the callback", () => {
+  it.each([false, true])(
+    "keeps game work and real-time deadlines distinct with animations disabled: %s",
+    async (disabled) => {
+      if (disabled) localStorage.setItem("alchemy-disable-animations", "true");
       const timers = new TimerGroup();
-      const fn = vi.fn();
-
-      timers.setTimeout(fn, 100);
-      expect(timers.size).toBe(1);
-
-      vi.advanceTimersByTime(100);
-      expect(fn).toHaveBeenCalledOnce();
-      expect(timers.size).toBe(0);
-    });
-
-    it("allows canceling an individual scheduled timeout", () => {
-      const timers = new TimerGroup();
-      const fn = vi.fn();
-
-      const cancel = timers.setTimeout(fn, 100);
-      expect(timers.size).toBe(1);
-
-      cancel();
-      expect(timers.size).toBe(0);
-
-      vi.advanceTimersByTime(100);
-      expect(fn).not.toHaveBeenCalled();
-    });
-
-    it("setGameTimeout scales delay with resolveGameDelay", () => {
-      localStorage.setItem("alchemy-disable-animations", "true");
-      const timers = new TimerGroup();
-      const fn = vi.fn();
-
-      timers.setGameTimeout(fn, 500);
-      vi.advanceTimersByTime(1);
-      expect(fn).toHaveBeenCalledOnce();
-    });
-
-    it("clearAll cancels all active timeouts in the group", () => {
-      const timers = new TimerGroup();
-      const fn1 = vi.fn();
-      const fn2 = vi.fn();
-
-      timers.setTimeout(fn1, 50);
-      timers.setTimeout(fn2, 100);
-      expect(timers.size).toBe(2);
-
+      const game = vi.fn();
+      const real = vi.fn();
+      const waiting = vi.fn();
+      timers.setGameTimeout(game, 500);
+      timers.setTimeout(real, 500);
+      const promise = delay(500).then(waiting);
+      await vi.advanceTimersByTimeAsync(disabled ? 1 : 499);
+      if (!disabled) {
+        expect(game).not.toHaveBeenCalled();
+        expect(waiting).not.toHaveBeenCalled();
+        await vi.advanceTimersByTimeAsync(1);
+      }
+      expect(game).toHaveBeenCalledOnce();
+      expect(waiting).toHaveBeenCalledOnce();
+      expect(real).toHaveBeenCalledTimes(disabled ? 0 : 1);
       timers.clearAll();
-      expect(timers.size).toBe(0);
-
-      vi.advanceTimersByTime(200);
-      expect(fn1).not.toHaveBeenCalled();
-      expect(fn2).not.toHaveBeenCalled();
-    });
-  });
+      await vi.advanceTimersByTimeAsync(500);
+      await promise;
+      expect(real).toHaveBeenCalledTimes(disabled ? 0 : 1);
+    },
+  );
 });

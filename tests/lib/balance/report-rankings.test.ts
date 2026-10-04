@@ -55,6 +55,9 @@ describe("paired delta noise", () => {
     expect(combined).toEqual(concatenated);
     expect(combined.turnSe).toBeGreaterThan(0);
     expect([first, second]).toEqual(original);
+    expect(combinePairedWinStats([])).toEqual(emptyPairedWinStats());
+    expect(combinePairedWinStats([first])).toEqual(first);
+    expect(combinePairedWinStats([first])).not.toBe(first);
   });
 
   it("marks empty and one-sample comparisons as insufficient", () => {

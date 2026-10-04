@@ -57,7 +57,7 @@ export function OptionsScreen({
         {showErrorLog ? (
           <ErrorLogViewer onClose={() => setShowErrorLog(false)} />
         ) : (
-          <ScreenShell maxWidthClass="max-w-4xl" minHeightClass="min-h-0" className="p-4">
+          <ScreenShell maxWidthClass="max-w-4xl" className="p-4">
             <ScreenHeaderRow title="Options" onBack={onBack} onMenu={onMenu} />
 
             <div className="mt-4 flex flex-wrap justify-center gap-2">

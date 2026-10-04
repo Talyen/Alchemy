@@ -128,6 +128,19 @@ function* inClassCardGroups(options: ReportRunOptions): Iterable<PairedSweepGrou
       const deckSeed = balanceScenarioSeed("card-in-class-deck", tier.preset, characterId);
       const affinity = characters[characterId].keywords;
       const baseDeck = buildClassSimDeck(characterId, tier.preset, deckSeed);
+      const variants = cardLibrary
+        .filter(
+          (card) =>
+            characterId === "wildcard" || getCardKeywords(card).length === 0 || cardMatchesAffinity(card, affinity),
+        )
+        .map((card) => {
+          const present = baseDeck.some((entry) => entry.id === card.id);
+          return {
+            id: card.id,
+            deck: present ? removeCardIdFromDeck(baseDeck, card.id) : insertCardIntoDeck(baseDeck, card),
+            referenceSide: present ? ("treatment" as const) : ("baseline" as const),
+          };
+        });
       for (const scenario of IN_CLASS_CARD_GAUNTLET) {
         const depth = tier.depthOffset + scenario.depthDelta;
         const fightSeed = balanceScenarioSeed("card-in-class-fight", tier.preset, characterId, scenario.enemyId, depth);
@@ -142,22 +155,11 @@ function* inClassCardGroups(options: ReportRunOptions): Iterable<PairedSweepGrou
         };
         yield {
           reference: { ...shared, deck: baseDeck },
-          variants: cardLibrary.flatMap((card) => {
-            const keywords = getCardKeywords(card);
-            const matches = characterId === "wildcard" || keywords.length === 0 || cardMatchesAffinity(card, affinity);
-            if (!matches) return [];
-            const alreadyInDeck = baseDeck.some((entry) => entry.id === card.id);
-            return [
-              {
-                id: card.id,
-                scenario: {
-                  ...shared,
-                  deck: alreadyInDeck ? removeCardIdFromDeck(baseDeck, card.id) : insertCardIntoDeck(baseDeck, card),
-                },
-                referenceSide: alreadyInDeck ? ("treatment" as const) : ("baseline" as const),
-              },
-            ];
-          }),
+          variants: variants.map(({ id, deck, referenceSide }) => ({
+            id,
+            scenario: { ...shared, deck },
+            referenceSide,
+          })),
         };
       }
     }
@@ -235,6 +237,8 @@ function* companionGroups(options: ReportRunOptions): Iterable<PairedSweepGroup>
         const alreadyInDeck = deckCompanions.includes(companionId);
         return [{ companionId, baselineDeck, treatmentDeck: insertCardIntoDeck(baselineDeck, card), alreadyInDeck }];
       });
+      const absent = specs.filter((spec) => !spec.alreadyInDeck);
+      const present = specs.filter((spec) => spec.alreadyInDeck);
       for (const scenario of BOON_GAUNTLET) {
         const depth = tier.depthOffset + scenario.depthDelta;
         const shared = {
@@ -245,7 +249,6 @@ function* companionGroups(options: ReportRunOptions): Iterable<PairedSweepGroup>
           seed: balanceScenarioSeed("companion-fight", tier.preset, characterId, scenario.enemyId, depth),
           iterations: options.pairedIterations,
         };
-        const absent = specs.filter((spec) => !spec.alreadyInDeck);
         if (absent.length > 0) {
           yield {
             reference: { ...shared, deck },
@@ -255,8 +258,7 @@ function* companionGroups(options: ReportRunOptions): Iterable<PairedSweepGroup>
             })),
           };
         }
-        for (const { companionId, baselineDeck, treatmentDeck, alreadyInDeck } of specs) {
-          if (!alreadyInDeck) continue;
+        for (const { companionId, baselineDeck, treatmentDeck } of present) {
           yield {
             reference: { ...shared, deck: baselineDeck },
             variants: [{ id: companionId, scenario: { ...shared, deck: treatmentDeck } }],

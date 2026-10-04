@@ -88,6 +88,8 @@ export const cardSounds: Record<string, string[]> = {
   maul: ["gut-kick.ogg"],
   blizzard: ["ice-throw-1.ogg"],
   combustion: ["fireball-1.ogg"],
+  "bellows-blast": ["fireball-02-e587c4fa-0-3000.ogg"],
+  quench: ["ice-in-water.ogg"],
   "fire-arrow": ["bow-attack-01-626d2d6d-0-3000.ogg"],
   "ice-shot": ["bow-attack-01-626d2d6d-0-3000.ogg"],
   "venom-arrow": ["bow-attack-02-d2ecb917-0-3000.ogg"],
@@ -111,6 +113,9 @@ export const cardSounds: Record<string, string[]> = {
   "pixie-dust": ["buff-pickup.ogg"],
   "mana-moth-companion": ["buff-pickup.ogg"],
   shadowstep: ["texture-whoosh-02-fast-02-1c520254-0-835.ogg"],
+  feint: ["texture-whoosh-02-fast-02-1c520254-0-835.ogg"],
+  "thorn-whip": ["swish-hit.ogg"],
+  "porcupine-quill": ["wood-breaking-cracking-snapping-breaking-peel-d8b1cf2e-0-1333.ogg"],
 };
 
 export const enemyAttackSounds: Record<string, string[]> = {

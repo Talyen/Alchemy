@@ -53,9 +53,9 @@ export function presentCombatTexts(
 ) {
   if (combatTexts.length === 0) return;
   presenter.showCombatTexts(combatTexts);
-  if (combatTexts.some((ct) => ct.kind === "damage" && ct.impact !== false && ct.target === "enemy"))
+  if (combatTexts.some((ct) => ct.kind === "damage" && ct.amount > 0 && ct.impact !== false && ct.target === "enemy"))
     presenter.shakeEnemy();
-  if (combatTexts.some((ct) => ct.kind === "damage" && ct.impact !== false && ct.target === "player"))
+  if (combatTexts.some((ct) => ct.kind === "damage" && ct.amount > 0 && ct.impact !== false && ct.target === "player"))
     presenter.shakePlayer();
   playCombatTextSounds(combatTexts, focalSound);
 }

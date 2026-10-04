@@ -41,12 +41,15 @@ export function addCorruptionEffect(
 }
 
 export function removeConsume(card: BattleCard): BattleCard {
-  const retainedLines = card.descriptionLines
-    .map((line, index) => ({ line, index }))
-    .filter(({ line }) => line !== "Consume");
-  const newLineIndices = new Map(retainedLines.map(({ index }, newIndex) => [index, newIndex]));
+  const descriptionLines: string[] = [];
+  const newLineIndices = card.descriptionLines.map((line) => {
+    if (line === "Consume") return undefined;
+    const lineIndex = descriptionLines.length;
+    descriptionLines.push(line);
+    return lineIndex;
+  });
   const positions = (card.corruptedValuePositions ?? []).flatMap((position) => {
-    const lineIndex = newLineIndices.get(position.lineIndex);
+    const lineIndex = newLineIndices[position.lineIndex];
     return lineIndex === undefined ? [] : [{ ...position, lineIndex }];
   });
   return {
@@ -54,7 +57,7 @@ export function removeConsume(card: BattleCard): BattleCard {
     corrupted: true,
     consume: false,
     ...(card.tags ? { tags: card.tags.filter((tag) => tag !== "consume") } : {}),
-    descriptionLines: retainedLines.map(({ line }) => line),
+    descriptionLines,
     corruptedValuePositions: positions,
   };
 }

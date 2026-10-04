@@ -7,7 +7,7 @@ import { delay } from "@/lib/animation/game-timer";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import type { createBattleSession } from "./battle-session";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import { markBattleStage } from "@/lib/performance/battle-stage-marks";
+import { markBattleStage } from "@/lib/performance/marks";
 import { isBattlePlaybackBlocked } from "./playback-gate";
 import { logBattleError, playCompanionSound, presentCombatTexts } from "./controller-utils";
 import type { createBattleTransferDeps } from "./battle-transfers";

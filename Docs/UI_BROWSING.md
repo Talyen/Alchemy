@@ -16,7 +16,7 @@ masking. Tile payloads are discriminated by `frameType`; catalog data stays
 available for locked-entry shine, while discovery gates tooltip details.
 
 Armory uses six-item pages and retains working order and page per hero and slot
-while mounted. Its bottom-center Search, Filters, and Sort toolbar keeps criteria
+while mounted. Its inventory-header Search, Filters, and Sort controls keep criteria
 per hero/slot. Filtering preserves hidden items in the complete working order;
 criteria changes and one-time sorting reset that category to page zero; equipment movement
 preserves positions according to [Armory ordering](./ARMORY.md#inventory-ordering-and-equipment-movement).
@@ -111,12 +111,15 @@ available height.
 
 Targeting cancellation treats icon descendants, including SVG paths, like their containing controls. Currency targeting survives clicks within the workspace and its recognized controls; salvage targeting survives clicks on salvageable items, the salvage toggle, and the crafting strip. Other clicks cancel targeting. Right-clicks on gear, Trinkets, equipment slots, and crafting currencies leave targeting active; other right-clicks cancel, suppressing the browser context menu only within the workspace. Escape, window blur, and hiding the document also cancel targeting. Activation clicks do not cancel the mode they enable, and cancellation listeners are active without a timer delay. Salvage confirmation owns its own dismissal while targeting listeners are suspended.
 
-Focusing the Armory browsing toolbar clears crafting/salvage targeting. The
-controlled filter panel opens above the toolbar, applies changes immediately,
-and dismisses on Escape, outside clicks, or keyboard focus leaving its controls.
-Escape closes the panel before navigating away and returns focus to Filters.
-Match counts and removable criteria chips occupy a reserved summary row so the
-six-item grid does not jump when criteria are added or removed.
+Focusing the Armory browsing controls clears crafting/salvage targeting. Search
+expands inline; Close or Escape clears it and returns focus to Search. Filters
+and Sort open panels below their buttons, bounded within the inventory panel.
+Both dismiss on Escape, outside clicks, or keyboard focus leaving their controls.
+Escape closes the panel before navigating away and returns focus to its opener.
+Filters apply immediately, remain open during selections, and highlight the
+Filters icon while criteria are active; Sort closes after a choice. There are no
+criteria chips or visible match counts. Empty filtered results explain that no
+items match; ordering and sort choices follow [Armory ordering](./ARMORY.md#inventory-ordering-and-equipment-movement).
 
 Crafting-strip, reward, and salvage-preview currency artwork uses 5 content rem so it follows Game Size. The floating pointer attachment keeps its 5 CSS rem cursor footprint; it is offset from the hit point, hides for touch and outside the workspace, and never intercepts input. Reward quantities are plain numbers; preview currencies are focusable information groups rather than action buttons.
 

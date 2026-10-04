@@ -95,7 +95,8 @@ describe("enemy interaction measurements", () => {
     });
     expect(batch.averageEnemyAttacks).toBe(1);
     expect(batch.averageEnemyAbilityUses).toBe(1);
-    expect(batch.averageEnemyAbilityActivations).toBe(2 / 3);
+    const activations = batch.results.filter((result) => !result.enemyAbilityUses.sunder).length;
+    expect(batch.averageEnemyAbilityActivations).toBe(activations / batch.iterations);
     expect(batch.winsBeforeEnemyAttackRate).toBe(0);
     for (const result of batch.results) {
       expect(Object.values(result.enemyAbilityUses).reduce((sum, count) => sum + count, 0)).toBe(1);
@@ -115,13 +116,13 @@ describe("enemy interaction measurements", () => {
     const withTracking = simulateBattle({ ...config, trackAnomalies: true });
     const withoutTracking = simulateBattle(config);
 
-    expect(withoutTracking.outcome).toBe(withTracking.outcome);
-    expect(withoutTracking.turns).toBe(withTracking.turns);
-    expect(withoutTracking.playerHealth).toBe(withTracking.playerHealth);
-    expect(withoutTracking.enemyHealth).toBe(withTracking.enemyHealth);
+    const { anomalies: trackedAnomalies, ...trackedBattle } = withTracking;
+    const { anomalies: emptyAnomalies, ...untrackedBattle } = withoutTracking;
+    expect(untrackedBattle).toEqual(trackedBattle);
+    expect(Object.isFrozen(emptyAnomalies)).toBe(true);
     // When trackAnomalies is false, returned anomalies is the frozen empty sentinel
     expect(withoutTracking.anomalies.maxSingleHitDamageToEnemy).toBe(0);
-    expect(withTracking.anomalies.maxSingleHitDamageToEnemy).toBeGreaterThan(0);
+    expect(trackedAnomalies.maxSingleHitDamageToEnemy).toBeGreaterThan(0);
   });
 
   it("adds talent and gear bonuses on top of an explicit playerMaxHealth base", () => {

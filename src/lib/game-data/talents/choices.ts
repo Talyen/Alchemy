@@ -39,24 +39,15 @@ export function countImplementedTalents(keywordId: KeywordId): number {
   return count;
 }
 
-function getTalentRowIndex(index: number): number {
-  let cumulative = 0;
-  for (const [row, size] of TALENT_ROW_SIZES.entries()) {
-    cumulative += size;
-    if (index < cumulative) return row;
-  }
-  return TALENT_ROW_SIZES.length - 1;
-}
-
 export function getTalentRows(keywordId: KeywordId): TalentDefinition[][] {
   return chunkIntoRows(getTalentsForKeyword(keywordId), TALENT_ROW_SIZES);
 }
 
 export function getAllocatableTalentChoices(keywordId: KeywordId, unlockedIds: string[]): TalentDefinition[] {
   const unlocked = new Set(unlockedIds);
-  const missing = getTalentsForKeyword(keywordId)
-    .map((talent, index) => ({ talent, row: getTalentRowIndex(index) }))
-    .filter(({ talent }) => !isTalentPlaceholder(talent) && !unlocked.has(talent.id));
-  const firstRow = missing[0]?.row;
-  return missing.filter(({ row }) => row === firstRow).map(({ talent }) => talent);
+  for (const row of getTalentRows(keywordId)) {
+    const missing = row.filter((talent) => !isTalentPlaceholder(talent) && !unlocked.has(talent.id));
+    if (missing.length) return missing;
+  }
+  return [];
 }

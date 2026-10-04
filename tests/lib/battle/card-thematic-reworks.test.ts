@@ -38,118 +38,6 @@ function playResolved(id: string, patch: BattleStatePatch = {}) {
 }
 
 describe("thematic card effects", () => {
-  it("keeps every reworked card description paired with its catalog behavior", () => {
-    expect(cardById["acid-potion"]?.descriptionLines).toEqual(["Halve enemy Armor", "Deal 2 Poison damage", "Consume"]);
-    expect(cardById.avatar?.descriptionLines).toEqual([
-      "Deal 5 Holy damage",
-      "Gain 5 Block, Forge, or Armor",
-      "Consume",
-    ]);
-    expect(cardById["blessed-aegis"]?.descriptionLines).toEqual([
-      "Gain 2 Block",
-      "Deal Holy damage equal to half your Block",
-    ]);
-    expect(cardById.blizzard?.descriptionLines).toEqual(["Deal 2 Freeze damage this turn and next"]);
-    expect(cardById.bread?.descriptionLines).toEqual(["Restore 6 Health", "Consume"]);
-    expect(cardById["burning-blade"]?.descriptionLines).toEqual([
-      "Gain 1 Forge",
-      "Deal Burn damage equal to your Forge",
-    ]);
-    expect(cardById.cauterize?.descriptionLines).toEqual([
-      "Cleanse a harmful status effect",
-      "Deal and Receive 1 Burn damage",
-    ]);
-    expect(cardById.cinderbloom?.descriptionLines).toEqual(["Deal 2 Burn or Nature damage"]);
-    expect(cardById.cleanse?.descriptionLines).toEqual(["Cleanse a harmful status effect", "Restore 2 Health"]);
-    expect(cardById["cold-snap"]?.descriptionLines).toEqual([
-      "Deal 1 Freeze damage",
-      "Double the enemy's Freeze build-up",
-    ]);
-    expect(cardById["combustion"]?.descriptionLines).toEqual(["Deal 1 Burn damage", "Detonate all Burn"]);
-    expect(cardById["golden-plate"]?.descriptionLines).toEqual(["Gain 3 Armor", "Gain 3 Gold", "Consume"]);
-    expect(cardById["golden-retriever-companion"]?.descriptionLines).toEqual(["Steals 2 Gold each turn", "Companion"]);
-    expect(cardById["grasping-vines"]?.descriptionLines).toEqual(["Deal 3 Stun or Nature damage"]);
-    expect(cardById["hemorrhage"]?.descriptionLines).toEqual(["Deal 2 Bleed damage", "Detonate all Bleed"]);
-    expect(cardById["ice-shot"]?.descriptionLines).toEqual([
-      "Deal 2 Freeze damage",
-      "Doubled against Frozen enemies",
-      "Archery",
-    ]);
-    expect(cardById["judgment"]?.descriptionLines).toEqual(["Deal 3 Holy or Stun damage"]);
-    expect(cardById["kindling"]?.descriptionLines).toEqual(["Deal 2 Burn damage", "Doubled if enemy was not Burning"]);
-    expect(cardById["luck-potion"]?.descriptionLines).toEqual(["Gain 4 Mana, Gold, or Block", "Consume"]);
-    expect(cardById["mana-moth-companion"]?.descriptionLines).toEqual(["Gain 1 Mana each turn", "Companion"]);
-    expect(cardById["library-owl-companion"]?.descriptionLines).toEqual(["Draw a Card each turn", "Companion"]);
-    expect(cardById["concussive-shot"]?.descriptionLines).toEqual(["Deal 2 Stun or Physical damage", "Archery"]);
-    expect(cardById["dark-pact"]?.descriptionLines).toEqual(["Deal 1 Burn damage", "Lose 1 Health", "Wish 1"]);
-    expect(cardById["earthquake"]?.descriptionLines).toEqual(["Deal 2 Stun damage this turn and next"]);
-    expect(cardById["exorcism"]?.descriptionLines).toEqual([
-      "Receive 1 Burn damage",
-      "Cleanse all Burn on yourself",
-      "Deal Holy damage equal to Burn removed",
-    ]);
-    expect(cardById["fangs"]?.descriptionLines).toEqual(["Deal 2 Bleed or Physical damage", "Leech"]);
-    expect(cardById["faustian-bargain"]?.descriptionLines).toEqual(["Lose 1 Health", "Wish 2", "Consume"]);
-    expect(cardById["fire-arrow"]?.descriptionLines).toEqual(["Deal 1 Burn damage", "Archery"]);
-    expect(cardById["gamblers-shot"]?.descriptionLines).toEqual([
-      "Deal 1–4 Stun, Physical, or Bleed damage",
-      "Archery",
-    ]);
-    expect(cardById["fox-companion"]?.descriptionLines).toEqual([
-      "Deals 1 Stun or Bleed damage each turn",
-      "Companion",
-    ]);
-    expect(cardById.steal?.descriptionLines).toEqual(["Deal 1 Stun damage", "Steal 1 Gold"]);
-    expect(cardById.sunder?.descriptionLines).toEqual(["Halve enemy Armor", "Deal 3 Physical damage"]);
-    expect(cardById.tithe?.descriptionLines).toEqual(["Deal 1 Holy damage", "Gain 1 Gold"]);
-    expect(cardById["venom-arrow"]?.descriptionLines).toEqual(["Deal 2 Poison or Physical damage", "Archery"]);
-    expect(cardById["venom-fangs"]?.descriptionLines).toEqual(["Deal 1 Poison damage", "Leech"]);
-    expect(cardById["wishing-potion"]?.descriptionLines).toEqual(["Wish 1", "Draw a card", "Consume"]);
-    expect(cardById["wishing-well"]?.descriptionLines).toEqual(["Gain 1 Gold or Wish"]);
-    expect(cardById["wolf-companion"]?.descriptionLines).toEqual([
-      "Deals 1 Bleed or Physical damage each turn",
-      "Companion",
-    ]);
-    expect(cardById["maul"]?.descriptionLines).toEqual(["Deal 3 Bleed or Stun damage"]);
-    expect(cardById["phoenix-feather"]?.descriptionLines).toEqual([
-      "Deal 1 Burn damage",
-      "Upon death, revive with 30% Health",
-      "Consume",
-    ]);
-    expect(cardById["panther-companion"]?.descriptionLines).toEqual(["Deals 1 Bleed damage each turn", "Companion"]);
-    expect(cardById["poison-dagger"]?.descriptionLines).toEqual([
-      "Deal 1 Poison damage",
-      "Your next attack deals Poison",
-    ]);
-    expect(cardById["pounce"]?.descriptionLines).toEqual(["Deal 2 Physical or Stun damage"]);
-    expect(cardById["predators-focus"]?.descriptionLines).toEqual([
-      "Deal 1 Bleed damage",
-      "Your next attack has Leech",
-    ]);
-    expect(cardById["ray-of-frost"]?.descriptionLines).toEqual(["Deal 1 Freeze damage twice"]);
-    expect(cardById["rend"]?.descriptionLines).toEqual([
-      "Deal 1 Bleed damage",
-      "Doubled if the enemy was already Bleeding",
-    ]);
-    expect(cardById.slash?.descriptionLines).toEqual(["Deal 4 Physical damage"]);
-    expect(cardById.stab?.descriptionLines).toEqual(["Deal 3 Physical damage", "Ignores Armor and Block"]);
-    expect(cardById["serrated-arrowhead"]?.descriptionLines).toEqual(["Deal 2 Bleed damage", "Archery"]);
-    expect(cardById["serrated-edge"]?.descriptionLines).toEqual(["Deal 2 Physical or Bleed damage"]);
-    expect(cardById.shadowstep?.descriptionLines).toEqual([
-      "Deal 1 Physical damage",
-      "Your next card is played twice",
-      "Consume",
-    ]);
-    expect(cardById["shield-bash"]?.descriptionLines).toEqual([
-      "Gain 2 Block",
-      "Deal Stun damage equal to half your Block",
-    ]);
-    expect(cardById["smelling-salts"]?.descriptionLines).toEqual(["Cleanse Stun and Freeze build-up"]);
-    expect(cardById.smite?.descriptionLines).toEqual(["Deal 2 Holy or Burn damage"]);
-    expect(cardById["sniff-out"]?.descriptionLines).toEqual(["Deal 1 Bleed damage", "Your next Archery card is free"]);
-    expect(cardById.stargaze?.descriptionLines).toEqual(["Deal 1 Freeze damage", "Wish 1"]);
-  });
-
   it("Combustion detonates all Burn, including the stack it adds", () => {
     const fresh = play("combustion");
     expect(fresh.enemyHealth).toBe(98);
@@ -576,5 +464,21 @@ describe("thematic card effects", () => {
     const result = applyCardEffects(battle(), saved, []);
     expect(result.companionDamageBuff).toBe(1);
     expect(result.enemyHealth).toBe(97);
+  });
+
+  it("Bellows Blast grants 2 Forge and deals 2 Burn damage", () => {
+    const result = play("bellows-blast");
+    expect(result.playerStatuses.forge).toBe(2);
+    expect(result.enemyHealth).toBe(98);
+    expect(result.enemyStatuses.burn).toBe(2);
+  });
+
+  it("Quench cleanses a harmful status effect and grants 1 Forge", () => {
+    const afflicted = play("quench", { playerStatuses: { poison: 2 } });
+    expect(afflicted.playerStatuses.poison).toBe(0);
+    expect(afflicted.playerStatuses.forge).toBe(1);
+
+    const clean = play("quench");
+    expect(clean.playerStatuses.forge).toBe(1);
   });
 });

@@ -1,7 +1,7 @@
 import { createEmptyTalentEffectManifest, type TalentEffectManifest } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { BASE_ENEMY_HEALTH, MAX_PLAYER_HEALTH } from "../game-constants";
-import { EMPTY_ENEMY_MITIGATION, type BattleState, type EnemyStatusValues, type PlayerStatusValues } from "./types";
+import { EMPTY_ENEMY_MITIGATION, type BattleState } from "./types";
 import { defaultTrinketEffects } from "../trinkets";
 import { defaultGearEffects } from "@/lib/gear";
 import { placeholderRng } from "@/lib/rng";
@@ -9,47 +9,6 @@ import { createInitialFlags } from "./combat-flags";
 import { createUniqueGearBattleState } from "./unique-gear-state";
 
 export const defaultTalentEffects: TalentEffectManifest = createEmptyTalentEffectManifest();
-
-const skeletonEnemy = {
-  id: "skeleton",
-  title: "Skeleton",
-  subtitle: "Placeholder — no battle should render this",
-  descriptionLines: ["This enemy should never appear in an active battle."],
-  art: "",
-  enemyType: "normal" as const,
-  traits: [],
-  abilityIds: ["slash", "bash", "block"],
-};
-
-function createEmptyPlayerStatuses(): PlayerStatusValues {
-  return {
-    block: 0,
-    armor: 0,
-    thorns: 0,
-    forge: 0,
-    haste: 0,
-    phoenixFeather: 0,
-    burn: 0,
-    poison: 0,
-    bleed: 0,
-    freeze: 0,
-    stun: 0,
-  } satisfies PlayerStatusValues;
-}
-
-function createEmptyEnemyStatuses(): EnemyStatusValues {
-  return {
-    burn: 0,
-    poison: 0,
-    bleed: 0,
-    freeze: 0,
-    stun: 0,
-    burnBonus: 0,
-    freezeBonus: 0,
-    thorns: 0,
-    onAttackBleed: 0,
-  } satisfies EnemyStatusValues;
-}
 
 export function defaultBattleState(): BattleState {
   return {
@@ -77,8 +36,30 @@ export function defaultBattleState(): BattleState {
     enemyMitigation: { ...EMPTY_ENEMY_MITIGATION },
     enemyRegeneration: 0,
     roomScalingMultiplier: 1,
-    playerStatuses: createEmptyPlayerStatuses(),
-    enemyStatuses: createEmptyEnemyStatuses(),
+    playerStatuses: {
+      block: 0,
+      armor: 0,
+      thorns: 0,
+      forge: 0,
+      haste: 0,
+      phoenixFeather: 0,
+      burn: 0,
+      poison: 0,
+      bleed: 0,
+      freeze: 0,
+      stun: 0,
+    },
+    enemyStatuses: {
+      burn: 0,
+      poison: 0,
+      bleed: 0,
+      freeze: 0,
+      stun: 0,
+      burnBonus: 0,
+      freezeBonus: 0,
+      thorns: 0,
+      onAttackBleed: 0,
+    },
     pendingBleedLeechHealing: 0,
     pendingCardBleedLeechHealing: 0,
     pendingEnemyBleedLeechHealing: 0,
@@ -89,7 +70,16 @@ export function defaultBattleState(): BattleState {
     wishQueue: [],
     activeCompanion: null,
     companionDamageBuff: 0,
-    currentEnemy: skeletonEnemy,
+    currentEnemy: {
+      id: "skeleton",
+      title: "Skeleton",
+      subtitle: "Placeholder — no battle should render this",
+      descriptionLines: ["This enemy should never appear in an active battle."],
+      art: "",
+      enemyType: "normal",
+      traits: [],
+      abilityIds: ["slash", "bash", "block"],
+    },
     talentEffects: createEmptyTalentEffectManifest(),
     trinketEffects: { ...defaultTrinketEffects },
     gearEffects: { ...defaultGearEffects },

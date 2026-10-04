@@ -6,7 +6,7 @@ export {
   getImmediateDefense,
   pickHighestScoring,
 } from "./autoplay-policy";
-export { getBattleCardPlayTarget, isAttackCard } from "./card-classification";
+export { getBattleCardPlayTarget, getBattleCardTransmutationRole, isAttackCard } from "./card-classification";
 export { canPlayCard, playBattleCardResolved, type CardPlayOptions } from "./card-play";
 export { projectEnemyDotDamage } from "./dot-resolve";
 export { mergeCombatText } from "./combat-text-events";

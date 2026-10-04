@@ -22,12 +22,7 @@ it("produces reproducible offer estimates with explicit route and collection ass
 it("rejects invalid sample counts", () => {
   expect(() => buildLootBalanceReport(0)).toThrow("positive integer");
   expect(() => buildLootBalanceReport(1.5)).toThrow("positive integer");
-});
-
-it("pins the explicit comparison route lengths", () => {
-  const report = buildLootBalanceReport(2);
-  expect(report.routeDefinitions.Labyrinth).toHaveLength(24);
-  expect(report.routeDefinitions.Wildwood).toHaveLength(24);
+  expect(() => buildLootBalanceReport(10_001)).toThrow("capped at 10,000");
 });
 
 it("marks gated sources unavailable below their depth thresholds", () => {

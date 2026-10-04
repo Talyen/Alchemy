@@ -54,7 +54,7 @@ export function selectBalanceFindings(candidates: readonly BalanceFinding[], cap
     omittedByBucket[finding.bucket] -= 1;
   }
   return {
-    findings: orderFindingsForDisplay(selected),
+    findings: selected,
     cap,
     omitted: Math.max(0, collapsed.length - selected.length),
     totalBeforeCap: collapsed.length,
@@ -73,45 +73,37 @@ function matchupEnemyId(finding: BalanceFinding): string {
 }
 
 function collapseMatchupClusters(ranked: readonly BalanceFinding[]): BalanceFinding[] {
-  const kept: BalanceFinding[] = [];
-  const groups = new Map<string, { best: BalanceFinding; count: number }>();
-  for (const finding of ranked) {
-    if (finding.scope !== "matchup") {
-      kept.push(finding);
-      continue;
-    }
-    const key = `${matchupEnemyId(finding)}:${finding.tier}:${finding.metric}:${finding.bucket}`;
-    const group = groups.get(key);
-    // Ranked input puts the representative first, including the ID tie-break.
-    if (group) group.count += 1;
-    else groups.set(key, { best: finding, count: 1 });
-  }
-  for (const { best, count } of groups.values()) {
-    if (count === 1) {
-      kept.push(best);
-      continue;
-    }
-    kept.push({
-      ...best,
-      clusterSize: count,
-      worstScenario: `${best.worstScenario} · worst of ${count} classes`,
-    });
-  }
-  return kept.sort(compareFindings);
+  const keyOf = (finding: BalanceFinding) =>
+    `${matchupEnemyId(finding)}:${finding.tier}:${finding.metric}:${finding.bucket}`;
+  const counts = new Map<string, number>();
+  // Ranked input already puts the representative first, including the ID tie-break.
+  const kept = ranked.filter((finding) => {
+    if (finding.scope !== "matchup") return true;
+    const key = keyOf(finding);
+    const count = counts.get(key) ?? 0;
+    counts.set(key, count + 1);
+    return count === 0;
+  });
+  return kept.map((finding) => {
+    const count = finding.scope === "matchup" ? counts.get(keyOf(finding))! : 1;
+    return count === 1
+      ? finding
+      : {
+          ...finding,
+          clusterSize: count,
+          worstScenario: `${finding.worstScenario} · worst of ${count} classes`,
+        };
+  });
 }
 
 function selectDiverseFindings(ranked: readonly BalanceFinding[], cap: number): BalanceFinding[] {
   const buckets = FINDING_BUCKET_ORDER.map((bucket) => ranked.filter((finding) => finding.bucket === bucket));
-  const shown: BalanceFinding[] = [];
-  for (let round = 0; shown.length < cap; round++) {
+  const selected = new Set<BalanceFinding>();
+  for (let round = 0; selected.size < cap; round++) {
     const next = buckets.flatMap((bucket) => bucket[round] ?? []);
     if (next.length === 0) break;
-    shown.push(...next.slice(0, cap - shown.length));
+    for (const finding of next.slice(0, cap - selected.size)) selected.add(finding);
   }
-  return shown;
-}
-
-function orderFindingsForDisplay(findings: readonly BalanceFinding[]): BalanceFinding[] {
-  // Round-robin selection already preserves ranking within each bucket.
-  return FINDING_BUCKET_ORDER.flatMap((bucket) => findings.filter((finding) => finding.bucket === bucket));
+  // The same buckets own fair selection and display order; no second grouping.
+  return buckets.flatMap((bucket) => bucket.filter((finding) => selected.has(finding)));
 }

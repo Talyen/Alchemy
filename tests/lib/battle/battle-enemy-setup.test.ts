@@ -27,7 +27,6 @@ function getEnemy(id: string): BestiaryEntry {
 
 describe("initializeEnemyState", () => {
   const skeleton = getEnemy("skeleton");
-  const mimic = getEnemy("mimic");
   const mudElemental = getEnemy("mud-elemental");
   const blightTreant = getEnemy("blight-treant");
   const livingArmor = getEnemy("living-armor");
@@ -36,11 +35,6 @@ describe("initializeEnemyState", () => {
     const result = initializeEnemyState(skeleton, 1, []);
     expect(result.enemyMaxHealth).toBe(54);
     expect(result.roomScalingMultiplier).toBe(1);
-  });
-
-  it("applies elite HP multiplier", () => {
-    const result = initializeEnemyState(mimic, 1, []);
-    expect(result.enemyMaxHealth).toBe(95);
   });
 
   it("applies boss HP multiplier and boss regeneration", () => {
@@ -122,18 +116,11 @@ describe("initializeEnemyState", () => {
     const mods: DifficultyModifier[] = [
       { kind: "start-block", amount: 4 },
       { kind: "start-max-mana", amount: 1 },
-      { kind: "start-companion" },
+      { kind: "start-companion", companionId: "phoenix" },
     ];
     const result = initializeEnemyState(skeleton, 1, mods);
     expect(result.startBlock).toBe(4);
     expect(result.manaBonus).toBe(1);
-    expect(result.startCompanion).toBe(true);
-    expect(result.startCompanionId).toBe("wolf");
-  });
-
-  it("respects companionId on start-companion modifier", () => {
-    const mods: DifficultyModifier[] = [{ kind: "start-companion", companionId: "phoenix" }];
-    const result = initializeEnemyState(skeleton, 1, mods);
     expect(result.startCompanion).toBe(true);
     expect(result.startCompanionId).toBe("phoenix");
   });

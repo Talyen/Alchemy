@@ -1,3 +1,4 @@
+import { EnemyTraits } from "@/features/alchemy/shared/ui/enemy-traits";
 import { TraitBox } from "@/features/alchemy/shared/ui/trait-box";
 import { Button } from "@/components/ui/button";
 import { LABYRINTH_NODE_META } from "@/features/alchemy/shared/config";
@@ -40,11 +41,9 @@ export function LabyrinthNodeInspector({ node, map, onEnter, onDescend }: Props)
             <h2 className="text-3xl font-semibold text-stone-100">{title}</h2>
           </div>
         </div>
-        {node.modifiers.length > 0 ? (
+        {enemy || node.modifiers.length > 0 ? (
           <div className="mt-5 space-y-4">
-            {node.modifiers.map((id) => (
-              <TraitBox key={id} trait={ENCOUNTER_TRAITS[id].enemyTrait} />
-            ))}
+            <EnemyTraits entry={enemy ?? { traits: [] }} modifiers={node.modifiers} />
           </div>
         ) : null}
         {node.rewardModifiers.length > 0 ? (

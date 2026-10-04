@@ -33,7 +33,10 @@ it("buys the offered identity and prevents a repeat purchase of its slot", async
   expect(onBuyGear).toHaveBeenCalledExactlyOnceWith(testGear, "iron-sword-1");
   rerender(view(["iron-sword-1"]));
   const purchased = screen.getByRole("button", { name: "Longsword" });
-  expect(purchased).toHaveProperty("disabled", true);
+  expect(purchased.getAttribute("aria-disabled")).toBe("true");
+  purchased.focus();
+  expect(document.activeElement).toBe(purchased);
+  await userEvent.keyboard("{Enter}");
   await userEvent.click(purchased);
   expect(onBuyGear).toHaveBeenCalledOnce();
 });

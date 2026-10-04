@@ -10,11 +10,12 @@ import {
 const DEFAULT_REPORT = "reports/vitest-timings.json";
 
 export function summarizeVitestReport(report, options = {}) {
-  const maxFailures = options.maxFailures ?? MAX_SUMMARY_FAILURES;
+  const maxFailures = Math.max(0, Math.trunc(options.maxFailures ?? MAX_SUMMARY_FAILURES) || 0);
   const rootDir = options.rootDir ?? process.cwd();
   const root = report && typeof report === "object" ? report : {};
   const testResults = Array.isArray(root.testResults) ? root.testResults : [];
   const failures = [];
+  let observedFailures = 0;
   const runnerErrors = [];
   if (!Array.isArray(root.testResults)) runnerErrors.push("Invalid Vitest report: missing testResults array");
   for (const fileResult of testResults) {
@@ -29,19 +30,19 @@ export function summarizeVitestReport(report, options = {}) {
       if (!assertion || typeof assertion !== "object") continue;
       const row = assertion;
       if (row.status !== "failed") continue;
-      const messages = Array.isArray(row.failureMessages)
-        ? row.failureMessages.filter((m) => typeof m === "string")
-        : [];
+      observedFailures++;
+      if (failures.length >= maxFailures) continue;
+      const message = Array.isArray(row.failureMessages) ? row.failureMessages.find((m) => typeof m === "string") : "";
       failures.push({
         file: fileName,
         title:
           typeof row.fullName === "string" ? row.fullName : typeof row.title === "string" ? row.title : "failed test",
-        message: firstSummaryLine(messages[0] ?? ""),
+        message: firstSummaryLine(message),
         routeHint: formatRouteHintLine(routeHintForPath(fileName, rootDir)),
       });
     }
   }
-  const numFailedTests = Number(root.numFailedTests) || failures.length;
+  const numFailedTests = Number(root.numFailedTests) || observedFailures;
   const numFailedTestSuites = Number(root.numFailedTestSuites) || 0;
   const failed = root.success === false || numFailedTests > 0 || numFailedTestSuites > 0 || runnerErrors.length > 0;
   if (failed && !numFailedTests && !runnerErrors.length)
@@ -54,7 +55,7 @@ export function summarizeVitestReport(report, options = {}) {
     numPassedTests: Number(root.numPassedTests) || 0,
     numFailedTests,
     numPendingTests: Number(root.numPendingTests) || 0,
-    failures: failures.slice(0, maxFailures),
+    failures,
   };
 }
 

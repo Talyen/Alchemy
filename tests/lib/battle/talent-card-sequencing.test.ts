@@ -1,12 +1,45 @@
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
+import { applyLeechHealing, applyLeechHitRewards } from "@/lib/battle/damage-rider-leech";
 import { companionLibrary } from "@/lib/game-data";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { makeTestCard } from "../../fixtures/cards";
 import * as talentBattle from "../../fixtures/talent-battle";
 
-describe("Talent talent card sequencing", () => {
+describe("Talent card sequencing", () => {
   const { talents, battle, attack, play } = talentBattle;
+
+  it("overhealed Leech keeps its Mana roll without awarding Health-restoration benefits or spending their RNG", () => {
+    const rng = vi.fn(() => 0);
+    const state = battle({
+      playerHealth: 30,
+      playerMaxHealth: 30,
+      mana: 0,
+      maxMana: 4,
+      rng,
+      talentEffects: { manaOnLeechChance: 50, leechGoldChance: 50 },
+      gearEffects: { leechBlockChance: 50, thornsOnLeechWithoutThorns: 3 },
+    });
+    const next = applyLeechHealing(state, 4, []);
+    expect(next.mana).toBe(1);
+    expect(next.playerHealth).toBe(30);
+    expect(next.playerStatuses).toMatchObject({ block: 0, thorns: 0 });
+    expect(next.gold).toBe(state.gold);
+    expect(rng).toHaveBeenCalledOnce();
+    expect(state.mana).toBe(0);
+  });
+
+  it("siphons one available enemy benefit without copying the other defenses", () => {
+    const state = battle({
+      rng: () => 0.99,
+      enemyMitigation: { forge: 0, armor: 2, block: 3 },
+      talentEffects: { trinketSiphonChance: 100 },
+    });
+    const next = applyLeechHitRewards(state, 1, []);
+    expect(next.enemyMitigation).toMatchObject({ forge: 0, armor: 2, block: 2 });
+    expect(next.playerStatuses).toMatchObject({ forge: 0, armor: 0, block: 1 });
+    expect(state.enemyMitigation.block).toBe(3);
+  });
 
   it("accumulates Coordinated Strike and spends it on only one Companion damage packet", () => {
     let state = battle({

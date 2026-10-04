@@ -21,7 +21,7 @@ export const bleedTalents = [
   t(
     "bleed-leech-chance",
     "Sanguine",
-    "Bleed damage has a 10% chance to Leech",
+    "Bleed hits have a 10% chance to Leech",
     "HeartPulse",
     setEffect("bleedLeechChance", 10),
   ),

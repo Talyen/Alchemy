@@ -57,7 +57,7 @@ export const holyTalents = [
   t(
     "holy-lifesteal",
     "Blessed Leech",
-    "Holy damage gains Leech while you're below half Health",
+    "Holy card hits gain Leech while you're below half Health",
     "HeartPulse",
     setEffect("holyLifestealPercent", 50),
   ),

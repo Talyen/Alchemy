@@ -17,10 +17,6 @@ function isGearAffixId(value: unknown): value is GearAffixId {
   return typeof value === "string" && Object.hasOwn(gearAffixCatalog, value);
 }
 
-function isAffixRollArray(value: readonly AffixRollInput[] | null | undefined): value is readonly AffixRollInput[] {
-  return Array.isArray(value);
-}
-
 export function resolveAffixEffects(affixes: readonly GearAffixRoll[]): GearEffectManifest {
   const effects = { ...defaultGearEffects };
   for (const roll of affixes) {
@@ -59,7 +55,7 @@ function forEachNormalizedAffixRoll(
   rarity: GearRarity | null | undefined,
   visit: (definition: GearAffixDefinition, value: number) => void,
 ): void {
-  if (!isAffixRollArray(rawAffixes)) return;
+  if (!Array.isArray(rawAffixes)) return;
   for (const entry of rawAffixes) {
     if (!entry || !isGearAffixId(entry.id)) continue;
     const definition = gearAffixCatalog[entry.id];
@@ -135,8 +131,4 @@ export function getGearInstanceTooltipEntries(
   const affixEntries = getGearAffixTooltipEntries(getGearInstanceAffixes(instance), definition?.rarity);
   if (affixEntries.length > 0) return affixEntries;
   return (definition?.descriptionLines ?? []).map((text, index) => ({ key: `definition-${index}`, text }));
-}
-
-export function getGearInstanceTooltipLines(instance: GearInstance): Array<{ key: string; text: string }> {
-  return getGearInstanceTooltipEntries(instance).map(({ key, text }) => ({ key, text }));
 }

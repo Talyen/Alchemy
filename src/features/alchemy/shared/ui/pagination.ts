@@ -1,9 +1,11 @@
 import { clamp } from "@/lib/math";
 
 export function getPagination(itemCount: number, page: number, pageSize: number) {
-  const size = Math.max(1, pageSize);
-  const totalPages = Math.max(1, Math.ceil(itemCount / size));
-  return { page: clamp(page, 0, totalPages - 1), totalPages, pageSize: size };
+  const size = Number.isFinite(pageSize) ? Math.max(1, Math.floor(pageSize)) : 1;
+  const count = Number.isFinite(itemCount) ? Math.max(0, Math.floor(itemCount)) : 0;
+  const totalPages = Math.max(1, Math.ceil(count / size));
+  const candidate = Number.isFinite(page) ? Math.floor(page) : 0;
+  return { page: clamp(candidate, 0, totalPages - 1), totalPages, pageSize: size };
 }
 
 export function anchoredPage(
@@ -20,7 +22,7 @@ export function anchoredPage(
 export function paginateRows<T>(items: readonly T[], page: number, pageSize: number, columns: number) {
   const { page: safePage, totalPages, pageSize: size } = getPagination(items.length, page, pageSize);
   const pageItems = items.slice(safePage * size, (safePage + 1) * size);
-  const columnCount = Math.max(1, columns);
+  const columnCount = Number.isFinite(columns) ? Math.max(1, Math.floor(columns)) : 1;
   const rows = Array.from({ length: Math.ceil(pageItems.length / columnCount) }, (_, rowIndex) =>
     pageItems.slice(rowIndex * columnCount, (rowIndex + 1) * columnCount),
   );

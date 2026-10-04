@@ -39,7 +39,7 @@ const keyed = { "two": { value: 3 }, three: { value: 4 } };`,
   it("retains stable IDs inside grouped and wrapped catalogs", () => {
     const root = fixture({
       "pool.ts":
-        'const grouped = { group: { one: {id: "one", roll: {basic: {min: 1}}}, two: [{id: "two"}] }, leaf: ({value: 3} as Entry) };',
+        'const grouped = (({ group: { one: {id: "one", roll: {basic: {min: 1}}}, two: [{id: "two"}] }, leaf: ({value: 3} as Entry) } as const) satisfies Catalog);',
     });
     expect(sourceOutline(root, "pool.ts", { entries: true }).map((entry) => entry.name)).toEqual([
       "one",

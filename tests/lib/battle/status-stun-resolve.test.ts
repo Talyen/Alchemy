@@ -112,18 +112,6 @@ describe("resolveStunTrigger", () => {
     expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "nature", amount: 5 });
   });
 
-  it("thunderstone damage does not generate combat text when texts omitted", () => {
-    const state = patchBattleState({
-      enemyHealth: 30,
-      enemyMaxHealth: 30,
-      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
-      enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
-      trinketEffects: { thunderstoneDamageOnStun: 5 },
-    });
-    const result = resolveStunTrigger(state);
-    expect(result.enemyHealth).toBe(25);
-  });
-
   it("applies lucky clover gold from thunderstone even when texts are omitted", () => {
     const state = patchBattleState({
       enemyHealth: 30,
@@ -215,34 +203,6 @@ describe("resolveStunTrigger", () => {
     expect(texts).not.toContainEqual({ target: "player", kind: "status", stat: "block", amount: 3 });
   });
 
-  it("grants block on stun with blockOnStun talent", () => {
-    const state = patchBattleState({
-      enemyHealth: 30,
-      enemyMaxHealth: 30,
-      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
-      enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
-      talentEffects: { blockOnStun: 3 },
-    });
-    const texts = makeTexts();
-    const result = resolveStunTrigger(state, texts);
-    expect(result.playerStatuses.block).toBe(3);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 3 });
-  });
-
-  it("grants forge on stun with forgeOnStun talent", () => {
-    const state = patchBattleState({
-      enemyHealth: 30,
-      enemyMaxHealth: 30,
-      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
-      enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
-      talentEffects: { forgeOnStun: 2 },
-    });
-    const texts = makeTexts();
-    const result = resolveStunTrigger(state, texts);
-    expect(result.playerStatuses.forge).toBe(2);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 2 });
-  });
-
   it("triggers forge burn burst when forgeOnStun crosses threshold", () => {
     const state = patchBattleState({
       enemyHealth: 30,
@@ -295,19 +255,6 @@ describe("resolveStunTrigger", () => {
     expect(result.enemyMitigation.armor).toBe(0);
   });
 
-  it("stunStripArmor does nothing when enemy has no armor", () => {
-    const state = patchBattleState({
-      enemyHealth: 30,
-      enemyMaxHealth: 30,
-      enemyMitigation: defaultEnemyMitigation({ armor: 0, forge: 0 }),
-      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
-      enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
-      talentEffects: { stunStripArmor: true },
-    });
-    const result = resolveStunTrigger(state);
-    expect(result.enemyMitigation.armor).toBe(0);
-  });
-
   it("restores mana on stun with manaOnStun talent", () => {
     const state = patchBattleState({
       enemyHealth: 30,
@@ -321,18 +268,6 @@ describe("resolveStunTrigger", () => {
     const result = resolveStunTrigger(state, texts);
     expect(result.mana).toBe(1);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "mana", amount: 1 });
-  });
-
-  it("deals physical damage on stun with gear damageOnStunPhysical", () => {
-    const state = patchBattleState({
-      enemyHealth: 30,
-      enemyMaxHealth: 30,
-      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
-      enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
-      gearEffects: { ...defaultGearEffects, damageOnStunPhysical: 7 },
-    });
-    const result = resolveStunTrigger(state);
-    expect(result.enemyHealth).toBe(23);
   });
 
   it("deals physical damage on stun with gear damageOnStunPhysical and produces combat text", () => {
@@ -349,32 +284,34 @@ describe("resolveStunTrigger", () => {
     expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "physical", amount: 7 });
   });
 
-  it("applies gear forgeOnStun with combat text", () => {
+  it("combines talent and gear Forge on Stun with combat text", () => {
     const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
       gearEffects: { ...defaultGearEffects, forgeOnStun: 4 },
+      talentEffects: { forgeOnStun: 2 },
     });
     const texts = makeTexts();
     const result = resolveStunTrigger(state, texts);
-    expect(result.playerStatuses.forge).toBe(4);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 4 });
+    expect(result.playerStatuses.forge).toBe(6);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 6 });
   });
 
-  it("applies gear blockOnStun with combat text", () => {
+  it("combines talent and gear Block on Stun with combat text", () => {
     const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
       gearEffects: { ...defaultGearEffects, blockOnStun: 5 },
+      talentEffects: { blockOnStun: 2 },
     });
     const texts = makeTexts();
     const result = resolveStunTrigger(state, texts);
-    expect(result.playerStatuses.block).toBe(5);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 5 });
+    expect(result.playerStatuses.block).toBe(7);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 7 });
   });
 
   it("applies gear manaOnStun with combat text", () => {

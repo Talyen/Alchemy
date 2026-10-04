@@ -62,43 +62,22 @@ describe("preloadImage", () => {
     await expect(promise).resolves.toBeUndefined();
   });
 
-  it("retries an image after a transient load error", async () => {
-    const src = uniqueUrl();
-    const first = preloadImage(src);
-    mockImageInstances[0].onerror?.();
-    await expect(first).resolves.toBeUndefined();
-
-    const retry = preloadImage(src);
-    expect(mockImageInstances).toHaveLength(2);
-    mockImageInstances[1].onload?.();
-    await retry;
-  });
-
-  it("settles stalled loads at the deadline and allows a retry", async () => {
+  it.each(["load", "decode", "timeout"] as const)("releases a failed %s warmup and allows a retry", async (failure) => {
     vi.useFakeTimers();
     const src = uniqueUrl();
-    const stalled = preloadImage(src);
-
-    await vi.advanceTimersByTimeAsync(IMAGE_PRELOAD_TIMEOUT_MS);
-    await expect(stalled).resolves.toBeUndefined();
-    expect(mockImageInstances[0].src).toBe("");
-
-    const retry = preloadImage(src);
-    expect(mockImageInstances).toHaveLength(2);
-    mockImageInstances[1].onload?.();
-    await retry;
-  });
-
-  it("allows a retry when browser decoding fails", async () => {
-    const src = uniqueUrl();
     const first = preloadImage(src);
-    vi.mocked(mockImageInstances[0].decode).mockRejectedValueOnce(new Error("decode failed"));
-    mockImageInstances[0].onload?.();
+    const failedImage = mockImageInstances[0];
+    if (failure === "load") failedImage.onerror();
+    else if (failure === "decode") {
+      failedImage.decode.mockRejectedValueOnce(new Error("decode failed"));
+      failedImage.onload();
+    } else await vi.advanceTimersByTimeAsync(IMAGE_PRELOAD_TIMEOUT_MS);
     await expect(first).resolves.toBeUndefined();
-
+    expect(failedImage.src).toBe("");
+    expect(vi.getTimerCount()).toBe(0);
     const retry = preloadImage(src);
     expect(mockImageInstances).toHaveLength(2);
-    mockImageInstances[1].onload?.();
+    mockImageInstances[1].onload();
     await retry;
   });
 
@@ -141,17 +120,26 @@ describe("preloadImage", () => {
     expect(mockImageInstances.every((image) => image.decode.mock.calls.length === 0)).toBe(true);
   });
 
-  it("does not let an old failure evict a replacement after reset", async () => {
+  it("does not let an old decode completion cache or evict a replacement after reset", async () => {
     const src = uniqueUrl();
     const old = preloadImage(src);
+    let finishDecode!: () => void;
+    mockImageInstances[0].decode.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finishDecode = resolve;
+        }),
+    );
+    mockImageInstances[0].onload();
     resetImagePreloadCache();
     const replacement = preloadImage(src);
-    expect(mockImageInstances).toHaveLength(2);
-    mockImageInstances[0].onerror?.();
+    finishDecode();
     await old;
     expect(preloadImage(src)).toBe(replacement);
-    mockImageInstances[1].onload?.();
+    expect(mockImageInstances).toHaveLength(2);
+    mockImageInstances[1].onload();
     await replacement;
+    expect(preloadImage(src)).toBe(replacement);
   });
 
   it("allows retrying an image that is already broken when its source is assigned", async () => {

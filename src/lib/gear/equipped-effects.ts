@@ -24,13 +24,7 @@ export function computeGearManifest(
   const characterLoadout = loadouts[characterId];
   if (!characterLoadout) return manifest;
 
-  const equippedIds = new Set(GEAR_SLOTS.map((slot) => characterLoadout[slot]));
-  equippedIds.delete(null);
-  if (equippedIds.size === 0) return manifest;
-  const byId = new Map<string, GearInstance>();
-  for (const item of inventory) {
-    if (equippedIds.has(item.instanceId)) byId.set(item.instanceId, item);
-  }
+  const byId = new Map(inventory.map((item) => [item.instanceId, item]));
 
   for (const slot of GEAR_SLOTS) {
     const instanceId = characterLoadout[slot];

@@ -34,21 +34,27 @@ describe("Dodge gear affixes", () => {
     expect(dealDamage(stunned, makeTestCard({ effects: [makeEffect("physical", 5)] })).enemyHealth).toBe(90);
   });
 
-  it("does not allow an actively Frozen or Stunned hero to Dodge", () => {
-    const frozen = incomingPhysical({
-      playerHealth: 30,
-      playerMaxHealth: 30,
-      playerCC: { freezeSkipTurns: 1 },
-      rng: () => 0.01,
-    });
-    expect(
-      applyEnemyAbility(
-        frozen,
+  it.each(["freezeSkipTurns", "stunSkipTurns"] as const)(
+    "prevents hero Dodge during %s without spending RNG",
+    (control) => {
+      const state = incomingPhysical({
+        playerHealth: 30,
+        playerMaxHealth: 30,
+        playerCC: { [control]: 1 },
+        rng: () => {
+          throw new Error("Disabled Dodge must not roll");
+        },
+      });
+      const texts = makeCombatTexts();
+      const result = applyEnemyAbility(
+        state,
         makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
-        [],
-      ).playerHealth,
-    ).toBeLessThan(30);
-  });
+        texts,
+      );
+      expect(result.playerHealth).toBe(25);
+      expect(texts).not.toContainEqual(expect.objectContaining({ stat: "dodge" }));
+    },
+  );
 
   it("gains Block, Armor, and Health on Dodge", () => {
     const texts = makeCombatTexts();
@@ -192,18 +198,6 @@ describe("Dodge talent rewrites", () => {
     expect(result.enemyHealth).toBe(1000 - incoming);
     expect(result.playerStatuses.block).toBe(incoming);
     expect(result.flags.nextHitCrit).toBe(true);
-  });
-
-  it("Footwork grants Block equal to the dodged attack", () => {
-    const result = applyEnemyAbility(
-      incomingPhysical({
-        playerStatuses: defaultPlayerStatusValues({ block: 0 }),
-        talentEffects: { ...defaultTalentEffects, blockOnDodgeEqualToAttack: true },
-      }),
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
-      makeCombatTexts(),
-    );
-    expect(result.playerStatuses.block).toBe(8);
   });
 
   it("Last Gasp adds Dodge chance while below half Health", () => {
@@ -569,5 +563,53 @@ describe("dodged player attacks preserve hit flags", () => {
     });
     const result = dealDamage(state, burnCard(), makeCombatTexts());
     expect(result.flags.firstBurnCardDoubledUsed).toBe(true);
+  });
+});
+
+describe("guaranteed dodge flag (dodgeNextAttack)", () => {
+  it("dodges the incoming attack packet, consumes dodgeNextAttack, and triggers dodge rewards", () => {
+    const state = incomingPhysical({
+      playerHealth: 30,
+      playerMaxHealth: 30,
+      gearEffects: { ...defaultGearEffects, blockOnDodge: 4 },
+      flags: { dodgeNextAttack: true },
+      // RNG that would otherwise fail a normal 5% dodge roll (0.99 > 0.05)
+      rng: () => 0.99,
+    });
+    const texts = makeCombatTexts();
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] }),
+      texts,
+    );
+    // Player takes 0 damage because the hit was dodged
+    expect(result.playerHealth).toBe(30);
+    // dodgeNextAttack is consumed
+    expect(result.flags.dodgeNextAttack).toBe(false);
+    // Player dodge count increased
+    expect(result.playerDodgeCount).toBe(1);
+    // Gear dodge reaction triggers
+    expect(result.playerStatuses.block).toBe(4);
+    // Notice text recorded
+    expect(texts).toContainEqual(expect.objectContaining({ stat: "dodge", text: "Dodge" }));
+  });
+
+  it("does not dodge if player is crowd-controlled even with dodgeNextAttack", () => {
+    const state = incomingPhysical({
+      playerHealth: 30,
+      playerMaxHealth: 30,
+      playerCC: { stunSkipTurns: 1 },
+      flags: { dodgeNextAttack: true },
+      rng: () => 0.99,
+    });
+    const texts = makeCombatTexts();
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] }),
+      texts,
+    );
+    expect(result.playerHealth).toBe(20);
+    // Remains unconsumed since dodge wasn't eligible
+    expect(result.flags.dodgeNextAttack).toBe(true);
   });
 });

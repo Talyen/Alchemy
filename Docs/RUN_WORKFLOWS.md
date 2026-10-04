@@ -66,8 +66,8 @@ Run outcome flows use [`run-end-commands.ts`](../src/features/alchemy/run-loop/r
 
 [`reset.ts`](../src/features/alchemy/shared/stores/reset.ts) owns test/teardown and Options wipe:
 
-- `resetTransientRunUi()` — UI hover/shimmer plus transient session fields.
-- `clearAllPersistentGameData()` — clears app options, permanent run/talent data, and homestead (Options “clear save”).
+- `resetTransientRunUi()` — test/boot helper that resets the UI store and transient session fields. It leaves battle state intact, so it is not safe for a live-run reset; use the outcome/lifecycle commands above.
+- `clearAllPersistentGameData()` — Options' Clear Save Data action. It first deletes save slots through `localWipe`; only acknowledged deletion resets settings, profile discoveries/unlocks, Talents, Homestead, Gear, and active-run state. Failure leaves memory unchanged. Device-local display sizes and demo-import initialization receipts survive under the [deletion contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#deletion).
 
 ## Gameplay command boundary
 
@@ -102,4 +102,4 @@ Resolve battle gameplay and commit its RNG/XP before starting presentation. Retu
 
 `navigation/alchemy-commands.ts` initializes fixed visit offers using the saved events RNG stream. Campfire and Transmutation activities own offers, completion, and result cards; the resume codec persists them independently of the visible menu. Returning or reloading must not regenerate an initialized visit.
 
-Brew and exchange commands validate the current activity, completion, source eligibility, and selected offers before writing. Payment, deck replacement, discovery, and visit use commit synchronously through the run-session write port. Campfire Rest and Brew are mutually exclusive. A completed Labyrinth support visit clears its pending node through the existing progression flow.
+Brew and exchange commands validate the current activity, completion, source eligibility, and selected offers before writing. Payment, deck replacement, discovery, and visit use commit synchronously through the run-session write port. Campfire Rest and Brew are mutually exclusive. The Campfire route passes active room modifiers to the screen so Hidden Purse and Herbal Hearth rewards are explained before Rest and acknowledged after completion, including resume; brewing does not claim those Rest rewards. A completed Labyrinth support visit clears its pending node through the existing progression flow.

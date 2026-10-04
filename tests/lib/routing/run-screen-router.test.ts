@@ -34,6 +34,8 @@ describe("getSteamRichPresenceLabel", () => {
     expect(getSteamRichPresenceLabel(ROUTE_SCREENS.SHOP, "runLoop")).toBe("Trading in Shop");
     expect(getSteamRichPresenceLabel(ROUTE_SCREENS.BATTLE, "runLoop")).toBe("In Combat");
     expect(getSteamRichPresenceLabel(ROUTE_SCREENS.MENU, "meta")).toBe("In Menu");
+    expect(getSteamRichPresenceLabel(ROUTE_SCREENS.TRANSMUTATION, "runLoop")).toBe("Transmuting a Card");
+    expect(getSteamRichPresenceLabel(ROUTE_SCREENS.WILDWOOD_REMOVAL, "runLoop")).toBe("Refining the Deck");
   });
 });
 

@@ -9,7 +9,7 @@ import {
   keywordDefinitions,
 } from "@/lib/game-data";
 import type { LucideIcon } from "lucide-react";
-import { Skull, Sparkles, Layers, Eraser, ShieldMinus, Clock } from "lucide-react";
+import { Skull, Sparkles, Layers, Eraser, ShieldMinus, ShieldCheck, Clock } from "lucide-react";
 import { keywordIcons } from "../config/metadata";
 import { phoenixFeatherStatus } from "../config/phoenix-feather-status";
 import { augmentDefinitions } from "../augment-definitions";
@@ -68,6 +68,7 @@ export function getCombatTextLeadingIcon(event: CombatTextEvent) {
   if (event.signal === "purge" || event.text === "Purged") return ShieldMinus;
   if (event.signal === "cleanse") return Eraser;
   if (event.signal === "prepared") return Sparkles;
+  if (event.signal === "immune") return ShieldCheck;
   return undefined;
 }
 
@@ -138,6 +139,7 @@ function buildArmedPlayerChips(state: BattleSnapshot): StatusChip[] {
   if (flags.nextWishExtraChoice) chips.push({ id: "nextWishExtraChoice", value: 1, hideValue: true });
   if (flags.nextHolyCardFree) chips.push({ id: "nextHolyCardFree", value: 1, hideValue: true });
   if (flags.nextNatureCardFree) chips.push({ id: "nextNatureCardFree", value: 1, hideValue: true });
+  if (flags.dodgeNextAttack) chips.push({ id: "dodgeNextAttack", value: 1, hideValue: true });
 
   const echoCount = state.pendingTurnStartEffects.filter((pulse) =>
     pulse.effects.some((effect) => effect.kind !== "damage"),

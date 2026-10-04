@@ -96,6 +96,29 @@ describe("report rendering and methodology", () => {
     anomalyMetrics: [{ field: "maxPlayerBurn", values: { early: 50, mid: 120, late: 250 } }],
   };
 
+  it("keeps distinct tier measurements under matching headers in every rate table", () => {
+    const rates = {
+      early: mockRateCell({ winRate: 0.11 }),
+      mid: mockRateCell({ winRate: 0.22 }),
+      late: mockRateCell({ winRate: 0.33 }),
+    };
+    const html = renderBalanceReportHtml(
+      {
+        ...model,
+        enemies: model.enemies.map((row) => ({ ...row, rates })),
+        classes: model.classes.map((row) => ({ ...row, rates })),
+        classMatchups: model.classMatchups.map((row) => ({ ...row, rates })),
+      },
+      options,
+    );
+    for (const heading of ["Enemy Rankings", "Class Rankings", "Class Matchups"]) {
+      const table = html.split(`<h2>${heading}</h2>`)[1]!.split("</table>")[0]!;
+      expect(table).toMatch(/Win Early[\s\S]*Win Mid[\s\S]*Win Late/);
+      const firstRow = table.split("<tbody>")[1]!.split("</tr>")[0]!;
+      expect(firstRow).toMatch(/11\.0%[\s\S]*22\.0%[\s\S]*33\.0%/);
+    }
+  });
+
   it("renders each paired comparison in its own section with ordered tiers and escaped catalog fallbacks", () => {
     const comparisons = [
       ["boons", "Boon Rankings"],
@@ -110,7 +133,7 @@ describe("report rendering and methodology", () => {
     for (const [key] of comparisons) {
       changed[key] = [
         {
-          id: `<${key}&>`,
+          id: `<"${key}"&>`,
           deltas: {
             early: mockPairedDelta({ delta: 0.1 }),
             mid: mockPairedDelta({ delta: -0.2 }),
@@ -122,9 +145,9 @@ describe("report rendering and methodology", () => {
     const html = renderBalanceReportHtml(changed, options);
     for (const [key, heading] of comparisons) {
       const section = html.split(`<h2>${heading}</h2>`)[1]!.split("<h2>")[0]!;
-      expect(section).toContain(`&lt;${key}&amp;&gt;`);
+      expect(section).toContain(`&lt;&quot;${key}&quot;&amp;&gt;`);
       expect(section).toMatch(/10\.0%[\s\S]*-20\.0%[\s\S]*30\.0% \(noisy\)/);
-      expect(section).not.toContain(`<${key}&>`);
+      expect(section).not.toContain(`<"${key}"&>`);
     }
     const exported = JSON.parse(renderBalanceReportJson(changed, options));
     for (const [key] of comparisons) expect(exported[key]).toEqual(changed[key]);

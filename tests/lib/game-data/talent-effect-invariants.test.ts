@@ -256,13 +256,16 @@ describe("talent effect invariants", () => {
     expect(invalid.map((t) => t.id)).toEqual([]);
   });
 
-  it("DEFAULT_TALENT_EFFECTS covers every TalentEffectManifest field", () => {
-    const _typeCheck: TalentEffectManifest = DEFAULT_TALENT_EFFECTS;
-    void _typeCheck;
-
-    const defaultKeys = Object.keys(DEFAULT_TALENT_EFFECTS).sort();
-    const emptyKeys = Object.keys(createEmptyTalentEffectManifest()).sort();
-    expect(defaultKeys).toEqual(emptyKeys);
+  it("isolates every mutable manifest default across battles", () => {
+    const first = createEmptyTalentEffectManifest();
+    const next = createEmptyTalentEffectManifest();
+    const before = structuredClone(next);
+    first.cardHealBonus.slash = 99;
+    first.cardHealMultipliers.slash = 99;
+    first.companionBondLevels.wolf = 99;
+    first.healthThresholdArmor.push({ threshold: 50, amount: 3 });
+    expect(next).toEqual(before);
+    expect(DEFAULT_TALENT_EFFECTS).toEqual(before);
   });
 });
 

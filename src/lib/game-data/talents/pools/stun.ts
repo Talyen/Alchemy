@@ -56,7 +56,7 @@ export const stunTalents = [
   t(
     "stun-threshold",
     "Concussive Force",
-    "Stun threshold reduced by 10%",
+    "Enemy Stun threshold is reduced by 10 percentage points",
     "Waves",
     setEffect("stunThresholdReduction", 0.1),
   ),

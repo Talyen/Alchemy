@@ -9,33 +9,25 @@ describe("parseBalanceReportOptions", () => {
     expect(parseBalanceReportOptions({}).appliesFightPacing).toBe(true);
     expect(() => parseBalanceReportOptions()).toThrow("ALCHEMY_BALANCE_PACING");
   });
-  it("defaults to a broad quick sweep", () => {
-    expect(parseBalanceReportOptions({})).toEqual({
-      mode: "quick",
-      iterations: 12,
-      pairedIterations: 5,
-      cardDeckSamples: 15,
-      deckSeeds: 1,
-      policy: "random-playable",
-      loadoutMode: "typical",
-      appliesFightPacing: true,
-      findingsCap: 100,
-    });
-  });
-
-  it("retains the original exhaustive sample counts explicitly", () => {
-    expect(parseBalanceReportOptions({ ALCHEMY_BALANCE_MODE: "full" })).toEqual({
-      mode: "full",
-      iterations: 100,
-      pairedIterations: 50,
-      cardDeckSamples: 33,
-      deckSeeds: 3,
-      policy: "random-playable",
-      loadoutMode: "typical",
-      appliesFightPacing: true,
-      findingsCap: 100,
-    });
-  });
+  it.each([
+    ["quick", 12, 5, 15, 1],
+    ["full", 100, 50, 33, 3],
+  ] as const)(
+    "sizes the %s sweep without changing policy or pacing defaults",
+    (mode, iterations, pairedIterations, cardDeckSamples, deckSeeds) => {
+      expect(parseBalanceReportOptions({ ALCHEMY_BALANCE_MODE: mode })).toEqual({
+        mode,
+        iterations,
+        pairedIterations,
+        cardDeckSamples,
+        deckSeeds,
+        policy: "random-playable",
+        loadoutMode: "typical",
+        appliesFightPacing: true,
+        findingsCap: 100,
+      });
+    },
+  );
 
   it("accepts every supported choice and derives sweep counts", () => {
     expect(
@@ -65,6 +57,7 @@ describe("parseBalanceReportOptions", () => {
     ["ALCHEMY_BALANCE_ITERATIONS", "0"],
     ["ALCHEMY_BALANCE_ITERATIONS", "-1"],
     ["ALCHEMY_BALANCE_ITERATIONS", "1.5"],
+    ["ALCHEMY_BALANCE_ITERATIONS", "9007199254740992"],
     ["ALCHEMY_BALANCE_MODE", "sample"],
     ["ALCHEMY_BALANCE_DECK_SEEDS", "many"],
     ["ALCHEMY_BALANCE_POLICY", "fast"],

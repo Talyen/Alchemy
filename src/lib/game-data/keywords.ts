@@ -87,7 +87,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
     id: "forge",
     label: "Forge",
     description:
-      "Each stack of Forge increases your Physical and Stun damage dealt by 1, lose 1 Forge when you deal damage",
+      "Each stack of Forge increases your Physical and Stun damage dealt by 1; lose 1 Forge when an attack deals damage that uses Forge",
     colorClass: "text-orange-300",
     borderClass: "border-orange-300",
     shineColors: ["#fdba74", "#ea580c", "#fdba74"],
@@ -104,7 +104,8 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   freeze: {
     id: "freeze",
     label: "Freeze",
-    description: "Builds toward Frozen; when buildup reaches half the target's Health, they lose their next turn",
+    description:
+      "Builds toward Frozen; normally triggers at half the hero's maximum Health or the enemy's Health before the hit, causing them to lose their next turn",
     colorClass: "text-cyan-300",
     borderClass: "border-cyan-300",
     shineColors: ["#67e8f9", "#06b6d4", "#67e8f9"],
@@ -136,7 +137,8 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   stun: {
     id: "stun",
     label: "Stun",
-    description: "Builds toward Stunned; when buildup reaches half the target's Health, they lose their next turn",
+    description:
+      "Builds toward Stunned; normally triggers at half the hero's maximum Health or the enemy's Health before the hit, causing them to lose their next turn",
     colorClass: "text-amber-300",
     borderClass: "border-amber-300",
     shineColors: ["#fcd34d", "#d97706", "#fcd34d"],
@@ -177,7 +179,8 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   wish: {
     id: "wish",
     label: "Wish",
-    description: "Choose one of three cards to add to your hand when there is room",
+    description:
+      "Choose a card from a Wish offer, normally three choices; chosen cards are queued when your hand is full",
     colorClass: "text-fuchsia-300",
     borderClass: "border-fuchsia-300",
     shineColors: ["#f0abfc", "#c026d3", "#f0abfc"],

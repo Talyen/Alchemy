@@ -3,83 +3,35 @@ import { getEffectiveCardDescriptionLines } from "@/lib/game-data";
 import { makeTestCard } from "../../fixtures/cards";
 
 describe("getEffectiveCardDescriptionLines", () => {
-  it("returns authored description lines unchanged when no context is given", () => {
-    const card = makeTestCard({ descriptionLines: ["Deal 5 Physical damage", "Gain 3 Block"] });
-    expect(getEffectiveCardDescriptionLines(card)).toEqual(["Deal 5 Physical damage", "Gain 3 Block"]);
-  });
-
-  it("shows base amounts for potions instead of potency-scaled amounts", () => {
+  it("preserves authored amounts and annotates brewed cards without mutating their copy", () => {
     const card = makeTestCard({
-      id: "health-potion",
-      descriptionLines: ["Restore 8 Health", "Gain 5 Block"],
-      effects: [
-        { kind: "heal", amount: 8 },
-        { kind: "player-status", status: "block", amount: 5 },
-      ],
+      brewed: true,
+      descriptionLines: ["Restore 8 Health", "Deal Holy damage equal to your Block", "Consume"],
     });
-    expect(getEffectiveCardDescriptionLines(card, { potionPotency: 2 })).toEqual(["Restore 8 Health", "Gain 5 Block"]);
+    const before = structuredClone(card);
+    const lines = getEffectiveCardDescriptionLines(card);
+    expect(lines).toEqual([...card.descriptionLines, "Brewed: cannot be brewed again"]);
+    lines[0] = "changed";
+    expect(card).toEqual(before);
   });
 
-  it("shows base damage instead of flat-bonus-adjusted damage", () => {
+  it("applies the shared Companion modifiers and preserves trailing copy with exactly one tag", () => {
     const card = makeTestCard({
-      descriptionLines: ["Deal 5 Physical damage"],
-      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
-    });
-    expect(getEffectiveCardDescriptionLines(card, { flatPhysicalDamage: 3 })).toEqual(["Deal 5 Physical damage"]);
-  });
-
-  it("shows Bond and damage bonuses with all companion effects", () => {
-    const card = makeTestCard({
-      descriptionLines: ["Deals 1 Bleed damage each turn", "Companion"],
+      descriptionLines: ["Old Companion amount", "Special rule", "Companion", "Companion"],
       effects: [{ kind: "summon-companion", companionId: "wolf" }],
     });
     expect(
       getEffectiveCardDescriptionLines(card, {
         companionBondLevels: { wolf: 2 },
-        companionDamage: 2,
-        companionDamageBonus: 1,
-        companionDamageBuff: 1,
+        companionDamageModifiers: { damageBonus: 4, bleedDamageBonus: 0, damageMultiplier: 1 },
       }),
-    ).toEqual(["Deals 7 Bleed or Physical damage each turn", "Companion"]);
-  });
-
-  it("keeps the Companion tag for malformed single-line summon descriptions", () => {
-    const card = makeTestCard({
-      descriptionLines: ["Deals 1 Bleed damage each turn"],
-      effects: [{ kind: "summon-companion", companionId: "wolf" }],
-    });
-    const lines = getEffectiveCardDescriptionLines(card);
-    expect(lines.at(-1)).toBe("Companion");
-    expect(lines.filter((line) => line === "Companion")).toHaveLength(1);
-  });
-
-  it("leaves scaled and conditional lines exactly as authored", () => {
-    const card = makeTestCard({
-      descriptionLines: [
-        "Deal Holy damage equal to your Block",
-        "Gain 2 Block per Mana Crystal",
-        "Deal 1 Freeze damage this turn and next turn",
-      ],
-    });
-    expect(getEffectiveCardDescriptionLines(card, { potionPotency: 3, flatPhysicalDamage: 5 })).toEqual([
-      "Deal Holy damage equal to your Block",
-      "Gain 2 Block per Mana Crystal",
-      "Deal 1 Freeze damage this turn and next turn",
+    ).toEqual(["Deals 7 Bleed or Physical damage each turn", "Special rule", "Companion"]);
+    expect(getEffectiveCardDescriptionLines({ ...card, descriptionLines: [] })).toEqual([
+      "Deals 1 Bleed or Physical damage each turn",
+      "Companion",
     ]);
   });
 
-  it("leaves non-matching lines unchanged", () => {
-    const card = makeTestCard({
-      descriptionLines: ["Consume", "A mysterious card"],
-      effects: [],
-    });
-    expect(getEffectiveCardDescriptionLines(card)).toEqual(["Consume", "A mysterious card"]);
-  });
-
-  it("returns empty array for empty description lines", () => {
-    const card = makeTestCard({ descriptionLines: [] });
-    expect(getEffectiveCardDescriptionLines(card)).toEqual([]);
-  });
   it("labels chance reaction previews conditionally and excludes scheduled hits", () => {
     const reactionPreview = { shatter: "Shatter: destroy all defenses", wildfire: "Wildfire: detonate 15 Burn" };
     const chance = makeTestCard({
@@ -89,12 +41,13 @@ describe("getEffectiveCardDescriptionLines", () => {
           kind: "chance",
           probability: 0.5,
           successEffects: [{ kind: "damage", damageType: "nature", amount: 4 }],
-          failureEffects: [],
+          failureEffects: [{ kind: "damage", damageType: "physical", amount: 2 }],
         },
       ],
     });
     expect(getEffectiveCardDescriptionLines(chance, { reactionPreview })).toEqual([
       "Random attack",
+      "If the Physical hit resolves: Shatter: destroy all defenses",
       "If the Nature hit resolves: Wildfire: detonate 15 Burn",
     ]);
     const scheduled = makeTestCard({

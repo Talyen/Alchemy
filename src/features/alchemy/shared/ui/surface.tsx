@@ -46,34 +46,7 @@ interface SurfaceProps {
   overlay?: ReactNode | undefined;
 }
 
-const SURFACE_CLASSES = "surface";
 const CLIP_CONTENTS_CLASS = "surface-clip relative w-full overflow-hidden";
-
-function surfaceClassName(
-  selected: boolean | undefined,
-  dragging: boolean | undefined,
-  disabled: boolean | undefined,
-  className: string | undefined,
-) {
-  return cn(
-    SURFACE_CLASSES,
-    selected && surfaceSelectedRingClass,
-    dragging && "opacity-0",
-    disabled && "cursor-default grayscale",
-    className,
-  );
-}
-
-function handleDivKeyDown(onDivClick: ((e?: SyntheticEvent<HTMLDivElement>) => void) | undefined) {
-  return onDivClick
-    ? (event: KeyboardEvent<HTMLDivElement>) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onDivClick(event);
-        }
-      }
-    : undefined;
-}
 
 export function Surface(props: SurfaceProps) {
   const {
@@ -109,8 +82,23 @@ export function Surface(props: SurfaceProps) {
   } = props;
 
   const surfaceStyle = { "--card-base-transform": baseTransform ?? staticCardTransform, ...style } as CSSProperties;
-  const klass = surfaceClassName(selected, dragging, disabled, className);
-  const hoveredAttr = hoverScaleActive ? "true" : undefined;
+  const sharedProps = {
+    "data-testid": testId,
+    "data-hovered": hoverScaleActive ? "true" : undefined,
+    "aria-current": ariaCurrent,
+    onFocus,
+    onBlur,
+    onMouseEnter,
+    onMouseLeave,
+    className: cn(
+      "surface",
+      selected && surfaceSelectedRingClass,
+      dragging && "opacity-0",
+      disabled && "cursor-default grayscale",
+      className,
+    ),
+    style: surfaceStyle,
+  };
   const divClick = onDivClick ?? onClick;
   const handleDivClick =
     divClick !== undefined
@@ -118,6 +106,12 @@ export function Surface(props: SurfaceProps) {
           if (!disabled) (divClick as (e?: SyntheticEvent<HTMLDivElement>) => void)(e);
         }
       : undefined;
+  function handleDivKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (handleDivClick && (event.key === "Enter" || event.key === " ")) {
+      event.preventDefault();
+      handleDivClick(event);
+    }
+  }
   const body = (
     <>
       {shimmerActive !== undefined ? (
@@ -131,23 +125,15 @@ export function Surface(props: SurfaceProps) {
   if (Component === "button") {
     return (
       <button
+        {...sharedProps}
         ref={buttonRef}
         type="button"
         aria-label={ariaLabel}
-        aria-current={ariaCurrent}
-        {...(ariaDisabled !== undefined ? { "aria-disabled": ariaDisabled } : {})}
-        {...(ariaPressed !== undefined ? { "aria-pressed": ariaPressed } : {})}
+        aria-disabled={ariaDisabled}
+        aria-pressed={ariaPressed}
         disabled={disabled}
         onClick={onClick}
         onPointerDown={onPointerDown}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-        data-testid={testId}
-        data-hovered={hoveredAttr}
-        className={klass}
-        style={surfaceStyle}
       >
         {body}
       </button>
@@ -156,23 +142,15 @@ export function Surface(props: SurfaceProps) {
 
   return (
     <div
+      {...sharedProps}
       ref={surfaceRef}
-      data-testid={testId}
-      data-hovered={hoveredAttr}
-      {...(dataCount !== undefined ? { "data-count": dataCount } : {})}
-      {...(disabled ? { "aria-disabled": "true" } : {})}
+      data-count={dataCount}
+      aria-disabled={disabled ? "true" : undefined}
       onClick={handleDivClick}
-      onKeyDown={handleDivKeyDown(handleDivClick)}
+      onKeyDown={handleDivClick ? handleDivKeyDown : undefined}
       tabIndex={(handleDivClick || onFocus) && !disabled ? 0 : undefined}
       role={handleDivClick ? "button" : onFocus ? "group" : undefined}
       aria-label={handleDivClick || onFocus ? ariaLabel : undefined}
-      onFocus={onFocus}
-      onBlur={onBlur}
-      aria-current={ariaCurrent}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      className={klass}
-      style={surfaceStyle}
     >
       {body}
     </div>

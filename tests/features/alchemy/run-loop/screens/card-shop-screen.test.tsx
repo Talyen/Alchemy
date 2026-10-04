@@ -71,7 +71,7 @@ describe("CardShopScreen remove mode", () => {
     expect(onRemoveCard).not.toHaveBeenCalled();
   });
 
-  it("stays in remove mode when removal fails", async () => {
+  it("explains a rejected removal and permits a successful retry", async () => {
     const user = userEvent.setup();
     const onRemoveCard = vi.fn(() => false);
     renderCardShop(onRemoveCard);
@@ -85,6 +85,11 @@ describe("CardShopScreen remove mode", () => {
 
     expect(onRemoveCard).toHaveBeenCalledWith(0);
     expect(screen.getByRole("heading", { name: "Remove Card" })).toBeTruthy();
+    expect(screen.getByRole("alert").textContent).toMatch(/could not.*remove/i);
+    onRemoveCard.mockReturnValueOnce(true);
+    await user.click(screen.getByRole("button", { name: /^Remove(?! Card)/i }));
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Remove Card" })).toBeNull();
   });
 
   it("returns to browse when removal succeeds", async () => {

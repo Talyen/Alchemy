@@ -163,7 +163,7 @@ function resolveEnemyDamageEffectCore(
   if (preDamageBlockStrip > 0)
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: preDamageBlockStrip });
 
-  const mitigation = calculateBlockAndArmorMitigation(hitState, effect, incomingDamage, combatTexts, options);
+  const mitigation = calculateBlockAndArmorMitigation(hitState, effect, incomingDamage, combatTexts, options, state);
 
   const hit = applyEnemyHealthHit(hitState, effect, attemptedDamage, mitigation, combatTexts);
   const { facts } = hit;
@@ -174,6 +174,7 @@ function resolveEnemyDamageEffectCore(
     effect,
     { ...facts, blockDepletedByStrip: preDamageBlockStrip > 0 && preDamageBlockStrip === state.playerStatuses.block },
     combatTexts,
+    state,
   );
   nextState = applyHealthLossTalentRewards(hitState, nextState, outcome.healthDamage, combatTexts);
 

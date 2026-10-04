@@ -134,12 +134,18 @@ export function isMysteryLootEligible(
 ): boolean {
   if (isLootEligible("astral", progress.depth)) return true;
   const owned = new Set(ownedTrinketIds);
-  const availableTrinkets = trinketLibrary.filter((entry) => !owned.has(entry.id)).length;
+  const availableTrinkets = trinketLibrary.reduce((count, entry) => count + Number(!owned.has(entry.id)), 0);
   return event.choices.every((choice) => {
-    if (choice.effects.some((effect) => effect.kind === "gainGeneratedGear" && effect.astral)) return false;
-    const namedIds = namedTrinketIds(choice.effects);
-    if (namedIds.some((id) => owned.has(id)) || new Set(namedIds).size !== namedIds.length) return false;
-    const randomCount = choice.effects.filter((effect) => effect.kind === "gainRandomTrinket").length;
-    return namedIds.length + randomCount <= availableTrinkets;
+    const reserved = new Set(owned);
+    let remaining = availableTrinkets;
+    for (const effect of choice.effects) {
+      if (effect.kind === "gainGeneratedGear" && effect.astral) return false;
+      if (effect.kind === "gainTrinket") {
+        if (reserved.has(effect.trinketId)) return false;
+        reserved.add(effect.trinketId);
+        remaining--;
+      } else if (effect.kind === "gainRandomTrinket") remaining--;
+    }
+    return remaining >= 0;
   });
 }

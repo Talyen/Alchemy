@@ -20,7 +20,8 @@ function trackFenceLine(line, fence) {
   const marker = FENCE_MARKER_RE.exec(line)?.[1];
   if (!marker) return fence;
   if (!fence) return marker;
-  if (marker[0] === fence[0] && marker.length >= fence.length) return null;
+  if (marker[0] === fence[0] && marker.length >= fence.length && /^ {0,3}(?:`{3,}|~{3,})[ \t]*$/u.test(line))
+    return null;
   return fence;
 }
 
@@ -83,17 +84,17 @@ export function stripFencedBlocks(source) {
   return kept.join("\n");
 }
 
-/** Map non-fence lines through `fn`, preserving fence blocks and original newlines. */
+/** Map non-fence lines through `fn(line, index)`, preserving blocks, source indices and newlines. */
 export function mapUnfencedLines(content, fn) {
   let fence = null;
   return content
     .split(/(\r?\n)/u)
-    .map((line) => {
+    .map((line, index) => {
       if (/^\r?\n$/u.test(line)) return line;
       const wasMarker = FENCE_MARKER_RE.test(line);
       fence = trackFenceLine(line, fence);
       if (wasMarker || fence) return line;
-      return fn(line);
+      return fn(line, index / 2);
     })
     .join("");
 }
@@ -155,24 +156,18 @@ export function compactMarkdownTables(source) {
 /** Overview and child locations for an oversized section, without pretending it was fully read. */
 export function sectionPreview(section) {
   const lines = section.text.split("\n");
-  const headings = [];
-  mapUnfencedLines(section.text, (line) => {
-    if (/^#{1,6}\s/u.test(line)) headings.push(line);
+  const pointers = [];
+  mapUnfencedLines(section.text, (line, lineIndex) => {
+    if (/^#{1,6}\s/u.test(line) && lineIndex > 0)
+      pointers.push({
+        index: lineIndex,
+        text: `  ${section.path}:${section.start + lineIndex}: ${line.replace(/^#+\s/u, "")}`,
+      });
     return line;
   });
-  const children = new Set(headings.slice(1));
-  const firstChild = lines.findIndex((line) => children.has(line));
-  const intro = lines
-    .slice(1, firstChild < 0 ? lines.length : firstChild)
-    .join("\n")
+  const intro = stripFencedBlocks(lines.slice(1, pointers[0]?.index ?? lines.length).join("\n"))
     .trim()
     .split(/\n\s*\n/u)[0];
   const overview = intro && Buffer.byteLength(intro) <= 800 ? `Overview: ${compactMarkdownTables(intro)}` : "";
-  let fence = null;
-  const pointers = lines.flatMap((line, index) => {
-    fence = trackFenceLine(line, fence);
-    if (fence || FENCE_MARKER_RE.test(line) || !children.has(line)) return [];
-    return [`  ${section.path}:${section.start + index}: ${line.replace(/^#+\s/u, "")}`];
-  });
-  return [overview, ...pointers].filter(Boolean);
+  return [overview, ...pointers.map((pointer) => pointer.text)].filter(Boolean);
 }

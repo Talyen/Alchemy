@@ -9,12 +9,6 @@ import {
 import { removePlayerArmor } from "@/lib/battle/status-helpers";
 import { makeTestCard } from "../../fixtures/cards";
 import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/battle";
-import {
-  defaultPlayerStatusValues,
-  defaultTalentEffects,
-  defaultTrinketManifest,
-  defaultCombatFlags,
-} from "../../fixtures/default-battle-state";
 
 describe("applyPlayerStatusEffect — armor talent thresholds", () => {
   it.each(["armor break", "overheal"])("applies Block gain rewards once after %s", (source) => {
@@ -37,21 +31,11 @@ describe("applyPlayerStatusEffect — armor talent thresholds", () => {
     expect(next.hand.map((card) => card.id)).toEqual([holy.id]);
   });
 
-  it("Armored Surge can grant Armor from a Block gain", () => {
-    const state = patchBattleState({
-      rng: () => 0,
-      talentEffects: { ...defaultTalentEffects, armorOnBlockChance: 100 },
-    });
-    const result = applyPlayerStatusEffect(state, { kind: "player-status", status: "block", amount: 3 }, makeTexts());
-    expect(result.playerStatuses.block).toBe(3);
-    expect(result.playerStatuses.armor).toBe(3);
-  });
-
   it("Reinforced doubles Armor and Purification cleanses one harmful status", () => {
     const state = patchBattleState({
       rng: () => 0,
-      playerStatuses: defaultPlayerStatusValues({ poison: 2, bleed: 2 }),
-      talentEffects: { ...defaultTalentEffects, armorDoubleChance: 100, armorCleanseChance: 100 },
+      playerStatuses: { poison: 2, bleed: 2 },
+      talentEffects: { armorDoubleChance: 100, armorCleanseChance: 100 },
     });
     const result = applyPlayerStatusEffect(state, { kind: "player-status", status: "armor", amount: 2 }, makeTexts());
     expect(result.playerStatuses.armor).toBe(4);
@@ -61,29 +45,20 @@ describe("applyPlayerStatusEffect — armor talent thresholds", () => {
 
   it("cleanses harmful statuses when armor crosses armorCleanseThreshold", () => {
     const state = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ burn: 4, armor: 1 }),
-      talentEffects: { ...defaultTalentEffects, armorCleanseThreshold: 5 },
+      playerStatuses: { burn: 4, armor: 1 },
+      talentEffects: { armorCleanseThreshold: 5 },
     });
     const texts = makeTexts();
     const result = applyPlayerStatusEffect(state, { kind: "player-status", status: "armor", amount: 5 }, texts);
     expect(result.playerStatuses.armor).toBe(6);
     expect(result.playerStatuses.burn).toBe(0);
   });
-
-  it("does not cleanse when armor stays below the threshold", () => {
-    const state = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ burn: 4, armor: 0 }),
-      talentEffects: { ...defaultTalentEffects, armorCleanseThreshold: 5 },
-    });
-    const result = applyPlayerStatusEffect(state, { kind: "player-status", status: "armor", amount: 2 }, makeTexts());
-    expect(result.playerStatuses.burn).toBe(4);
-  });
 });
 
 describe("removeHarmfulPlayerStatuses", () => {
   it("removes statuses in priority order", () => {
     const state = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ burn: 5, poison: 3, bleed: 2 }),
+      playerStatuses: { burn: 5, poison: 3, bleed: 2 },
     });
     const result = removeHarmfulPlayerStatuses(state, 2);
     expect(result.playerStatuses.burn).toBe(0);
@@ -91,20 +66,11 @@ describe("removeHarmfulPlayerStatuses", () => {
     expect(result.playerStatuses.bleed).toBe(2);
   });
 
-  it("does not heal with sinEater boon when not owned", () => {
-    const state = patchBattleState({
-      playerHealth: 20,
-      playerStatuses: defaultPlayerStatusValues({ burn: 5 }),
-    });
-    const result = removeHarmfulPlayerStatuses(state, 1);
-    expect(result.playerHealth).toBe(20);
-  });
-
   it("heals with sinEater for each removed status", () => {
     const state = patchBattleState({
       playerHealth: 20,
-      playerStatuses: defaultPlayerStatusValues({ burn: 5, poison: 3 }),
-      trinketEffects: defaultTrinketManifest({ sinEaterHealOnHarmfulStatusRemove: 4 }),
+      playerStatuses: { burn: 5, poison: 3 },
+      trinketEffects: { sinEaterHealOnHarmfulStatusRemove: 4 },
     });
     const texts = makeTexts();
     const result = removeHarmfulPlayerStatuses(state, 2, texts);
@@ -113,22 +79,12 @@ describe("removeHarmfulPlayerStatuses", () => {
     expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 8 });
   });
 
-  it("does nothing when no statuses to remove", () => {
-    const state = patchBattleState({
-      playerHealth: 20,
-      trinketEffects: defaultTrinketManifest({ sinEaterHealOnHarmfulStatusRemove: 4 }),
-    });
-    const result = removeHarmfulPlayerStatuses(state, 1);
-    expect(result.playerHealth).toBe(20);
-  });
-
   it("cleanse healing cannot grant Overflow Block", () => {
     const state = patchBattleState({
       playerHealth: 28,
       playerMaxHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ burn: 5, block: 2 }),
+      playerStatuses: { burn: 5, block: 2 },
       talentEffects: {
-        ...defaultTalentEffects,
         healOnStatusCleanse: 10,
         overhealToBlockRatio: 0.5,
       },
@@ -144,31 +100,9 @@ describe("removeHarmfulPlayerStatuses", () => {
 });
 
 describe("applyPlayerStatusEffect", () => {
-  it("adds the status amount to player", () => {
-    const state = patchBattleState();
-    const effect = { kind: "player-status" as const, status: "block" as const, amount: 5 };
-    const result = applyPlayerStatusEffect(state, effect, []);
-    expect(result.playerStatuses.block).toBe(5);
-  });
-
-  it("doubles armor when player is below half health and armorLowHealthBonusPercent is active", () => {
-    const state = patchBattleState({
-      playerHealth: 10,
-      playerMaxHealth: 30,
-      talentEffects: {
-        ...defaultTalentEffects,
-        armorLowHealthBonusPercent: 100,
-      },
-    });
-    const effect = { kind: "player-status" as const, status: "armor" as const, amount: 4 };
-    const result = applyPlayerStatusEffect(state, effect, []);
-    expect(result.playerStatuses.armor).toBe(8);
-  });
-
   it("doubles armor on first armor card when firstArmorCardDoubled is active", () => {
     const state = patchBattleState({
       talentEffects: {
-        ...defaultTalentEffects,
         firstArmorCardDoubled: true,
       },
     });
@@ -176,92 +110,35 @@ describe("applyPlayerStatusEffect", () => {
     const result = applyPlayerStatusEffect(state, effect, []);
     expect(result.playerStatuses.armor).toBe(8);
     expect(result.flags.firstArmorCardDoubledUsed).toBe(true);
+    expect(applyPlayerStatusEffect(result, effect, []).playerStatuses.armor).toBe(12);
   });
 
-  it("does not double armor on second armor card when flag is used", () => {
+  it("pays modified Block only when Armor crosses the threshold", () => {
     const state = patchBattleState({
-      talentEffects: {
-        ...defaultTalentEffects,
-        firstArmorCardDoubled: true,
-      },
-      flags: defaultCombatFlags({ firstArmorCardDoubledUsed: true }),
+      playerStatuses: { armor: 3 },
+      talentEffects: { armorBlockThreshold: 5, armorBlockAmount: 3 },
+      gearEffects: { flatBlockGained: 2 },
     });
-    const effect = { kind: "player-status" as const, status: "armor" as const, amount: 4 };
-    const result = applyPlayerStatusEffect(state, effect, []);
-    expect(result.playerStatuses.armor).toBe(4);
-  });
-
-  it("grants block when armor crosses armorBlockThreshold", () => {
-    const state = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ armor: 3 }),
-      talentEffects: {
-        ...defaultTalentEffects,
-        armorBlockThreshold: 5,
-        armorBlockAmount: 3,
-      },
-    });
-    const effect = { kind: "player-status" as const, status: "armor" as const, amount: 3 };
+    const effect = { kind: "player-status", status: "armor", amount: 1 } as const;
     const texts = makeTexts();
-    const result = applyPlayerStatusEffect(state, effect, texts);
-    expect(result.playerStatuses.armor).toBe(6);
-    expect(result.playerStatuses.block).toBe(3);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 3 });
-  });
-
-  it("includes flatBlockGained on armorBlockThreshold procs", () => {
-    const state = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ armor: 3 }),
-      talentEffects: {
-        ...defaultTalentEffects,
-        armorBlockThreshold: 5,
-        armorBlockAmount: 3,
-      },
-      gearEffects: { ...patchBattleState().gearEffects, flatBlockGained: 2 },
-    });
-    const effect = { kind: "player-status" as const, status: "armor" as const, amount: 3 };
-    const texts = makeTexts();
-    const result = applyPlayerStatusEffect(state, effect, texts);
-    expect(result.playerStatuses.block).toBe(5);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 5 });
-  });
-
-  it("does not grant block when armor does not cross threshold", () => {
-    const state = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ armor: 1 }),
-      talentEffects: {
-        ...defaultTalentEffects,
-        armorBlockThreshold: 5,
-        armorBlockAmount: 3,
-      },
-    });
-    const effect = { kind: "player-status" as const, status: "armor" as const, amount: 3 };
-    const result = applyPlayerStatusEffect(state, effect, []);
-    expect(result.playerStatuses.armor).toBe(4);
-    expect(result.playerStatuses.block).toBe(0);
+    const below = applyPlayerStatusEffect(state, effect, texts);
+    expect(below.playerStatuses).toMatchObject({ armor: 4, block: 0 });
+    const crossing = applyPlayerStatusEffect(below, effect, texts);
+    expect(crossing.playerStatuses).toMatchObject({ armor: 5, block: 5 });
+    const above = applyPlayerStatusEffect(crossing, effect, texts);
+    expect(above.playerStatuses).toMatchObject({ armor: 6, block: 5 });
+    expect(texts.filter((text) => text.stat === "block")).toEqual([
+      { target: "player", kind: "status", stat: "block", amount: 5 },
+    ]);
+    expect(state.playerStatuses).toMatchObject({ armor: 3, block: 0 });
   });
 });
 
 describe("applyPlayerDamageStatuses", () => {
-  it("adds burn stacks from incoming burn damage", () => {
-    const state = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ burn: 2 }),
-    });
-    const result = applyPlayerDamageStatuses(state, { damageType: "burn" }, 5);
-    expect(result.playerStatuses.burn).toBe(7);
-  });
-
-  it("adds bleed stacks from incoming bleed damage", () => {
-    const state = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ bleed: 2 }),
-    });
-    const result = applyPlayerDamageStatuses(state, { damageType: "bleed" }, 5);
-    expect(result.playerStatuses.bleed).toBe(7);
-  });
-
   it("adds freeze stacks equal to actual damage dealt, halved only once", () => {
     const state = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ freeze: 0 }),
-      talentEffects: { ...patchBattleState().talentEffects, receiveHalfFreezeDamage: true },
+      playerStatuses: { freeze: 0 },
+      talentEffects: { receiveHalfFreezeDamage: true },
     });
 
     const result = applyPlayerDamageStatuses(state, { damageType: "freeze" }, 5);
@@ -270,7 +147,7 @@ describe("applyPlayerDamageStatuses", () => {
 
   it("does nothing when actual damage is zero", () => {
     const state = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ burn: 3 }),
+      playerStatuses: { burn: 3 },
     });
     const result = applyPlayerDamageStatuses(state, { damageType: "burn" }, 0);
     expect(result).toBe(state);

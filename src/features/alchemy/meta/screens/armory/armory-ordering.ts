@@ -63,12 +63,11 @@ export function compareOrderRows(a: ArmoryOrderRow, b: ArmoryOrderRow, sort: Arm
 /** Keep surviving ids in manual order; append newly available rows in default order. */
 export function reconcileOrder(currentIds: readonly string[], rows: readonly ArmoryOrderRow[]): string[] {
   const available = new Set(rows.map((row) => row.id));
-  const surviving = currentIds.filter((id) => available.has(id));
-  const survivingSet = new Set(surviving);
+  const surviving = currentIds.filter((id) => available.delete(id));
   const newlyAvailable = rows
-    .filter((row) => !survivingSet.has(row.id))
+    .filter((row) => available.has(row.id))
     .sort((a, b) => compareOrderRows(a, b, "rarity"))
-    .map((row) => row.id);
+    .flatMap((row) => (available.delete(row.id) ? [row.id] : []));
   return [...surviving, ...newlyAvailable];
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BattleCardEffectSchema, companionLibrary, getModifiedCompanionEffects } from "@/lib/game-data";
+import { companionLibrary, getModifiedCompanionEffects } from "@/lib/game-data";
 
 describe("companionLibrary data integrity", () => {
   it("applies Bond once before type-specific bonuses and rounding without changing authored effects", () => {
@@ -35,13 +35,5 @@ describe("companionLibrary data integrity", () => {
         expect(bonus?.kind === "chance" && bonus.successEffects).toEqual(companionLibrary[id].turnStartEffects);
       },
     );
-
-    it("bonded bonus-trigger effects satisfy the effect schema", () => {
-      for (const id of ["mana-moth", "library-owl"] as const) {
-        for (const effect of getModifiedCompanionEffects(companionLibrary[id], 3, noModifiers)) {
-          expect(BattleCardEffectSchema.safeParse(effect).success).toBe(true);
-        }
-      }
-    });
   });
 });

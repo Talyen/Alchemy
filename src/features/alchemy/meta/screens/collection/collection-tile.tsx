@@ -1,3 +1,4 @@
+import { TOOLTIP_FADE_MS } from "@/lib/game-constants";
 import { isEditionCharacterAvailable } from "@/lib/game-edition";
 import { memo, useState, type RefObject } from "react";
 
@@ -31,7 +32,7 @@ import { GearItemTitle, TrinketItemTitle } from "../../../shared/ui/gear-item-ti
 import { HeroTooltip } from "../../../shared/ui/tooltips/hero-tooltip";
 import { Surface } from "../../../shared/ui/surface";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
-import { useTileHoverPopup } from "../../../shared/ui/use-tile-hover-popup";
+import { useHoverVisible } from "../../../shared/ui/use-hover-visible";
 
 interface CollectionTileProps {
   item: CollectionTileItem;
@@ -50,7 +51,9 @@ export const CollectionTile = memo(function CollectionTile({
   );
   const [flipped, setFlipped] = useState(false);
   const { wrapperRef, showPopup, visible, handleHoverStart, handleMouseMove, handleMouseLeave, handleBlur, dismiss } =
-    useTileHoverPopup({
+    useHoverVisible({
+      holdMs: TOOLTIP_FADE_MS,
+      focusWithinGuard: true,
       interactive: true,
       suspended: inspectionOpen,
       isHovered,

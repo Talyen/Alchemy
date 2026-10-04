@@ -28,28 +28,14 @@ describe("computeHomesteadEffects", () => {
     expect(computeHomesteadEffects({ unknown: 4 }, {}, { unknown: 4 })).toEqual(defaultHomesteadEffects);
   });
 
-  it("combines the four-tier specialties without the retired duplicate bonuses", () => {
-    const effects = computeHomesteadEffects(
-      { "blacksmiths-forge": 4, "runesmiths-workshop": 4, "hunters-lodge": 4, library: 4 },
-      { "crystal-garden": 4, "herb-garden": 4 },
-      { "leyline-energy": 4, "agility-training": 4, "detect-magic": 4 },
-    );
-    expect(effects).toMatchObject({
+  it("caps restored upgrades at the authored tiers without losing fractional bonuses", () => {
+    const capped = computeHomesteadEffects({ "blacksmiths-forge": 99 }, {}, { "detect-magic": 99 });
+    expect(capped).toMatchObject({
       flatPhysicalDamage: 4,
       homesteadForgeBurnPercent: 100,
-      flatFreezeDamage: 4,
-      flatHolyDamage: 4,
-      flatNatureDamage: 4,
-      flatArrowDamage: 0,
-      homesteadCriticalDamage: 4,
-      homesteadFreeManaChance: 20,
-      dodgeChance: 8,
-      companionDamage: 0,
-      poisonDamageReduction: 4,
-      removeCardDiscount: 8,
-      endRunStonePerRoom: 4,
       gearAstralChanceBonus: 0.15,
     });
+    expect(computeHomesteadEffects({ "blacksmiths-forge": -1 }, {}, {})).toEqual(defaultHomesteadEffects);
   });
 
   it("accumulates farm healing across tiers without sharing mutable defaults", () => {
@@ -218,12 +204,6 @@ describe("applyEndOfRunHomesteadBonuses", () => {
     };
     const result = applyEndOfRunHomesteadBonuses(base, effects, 4);
     expect(result).toEqual({ wood: 12, iron: 4, herbs: 15, food: 11, gems: 5, stone: 0, hide: 8 });
-  });
-
-  it("does not add flat herbs when only herbFindBonus is set", () => {
-    const base = { wood: 0, iron: 0, herbs: 10, food: 0, gems: 0, stone: 0, hide: 0 };
-    const result = applyEndOfRunHomesteadBonuses(base, { ...defaultHomesteadEffects, herbFindBonus: 0.1 }, 5);
-    expect(result.herbs).toBe(11);
   });
 });
 

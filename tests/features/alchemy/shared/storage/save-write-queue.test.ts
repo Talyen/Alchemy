@@ -56,14 +56,24 @@ describe("SaveWriteQueue", () => {
     expect(write).toHaveBeenCalledExactlyOnceWith(snapshot(1));
   });
 
-  it("coalesces requests before the runner starts", async () => {
+  it("coalesces each pending snapshot with its own writer, including replacements during a write", async () => {
     const queue = new SaveWriteQueue();
-    const write = vi.fn().mockResolvedValue("saved");
-    const first = queue.enqueue(snapshot(1), write);
-    const second = queue.enqueue(snapshot(2), write);
-    expect(await first).toBe("saved");
-    expect(await second).toBe("saved");
-    expect(write).toHaveBeenCalledExactlyOnceWith(snapshot(2));
+    const gate = deferred<SaveWriteOutcome>();
+    const firstWrite = vi.fn(() => gate.promise);
+    const replacedWrite = vi.fn().mockResolvedValue("failed");
+    const latestWrite = vi.fn().mockResolvedValue("saved");
+    const first = queue.enqueue(snapshot(1), replacedWrite);
+    const replacement = queue.enqueue(snapshot(2), firstWrite);
+    expect(first).toBe(replacement);
+    await Promise.resolve();
+    expect(firstWrite).toHaveBeenCalledExactlyOnceWith(snapshot(2));
+    const next = queue.enqueue(snapshot(3), replacedWrite);
+    expect(queue.enqueue(snapshot(4), latestWrite)).toBe(next);
+    gate.resolve("saved");
+    await expect(first).resolves.toBe("saved");
+    await expect(next).resolves.toBe("saved");
+    expect(latestWrite).toHaveBeenCalledExactlyOnceWith(snapshot(4));
+    expect(replacedWrite).not.toHaveBeenCalled();
   });
 
   it.each(["clear", "protection"])("%s cancels in-flight acknowledgement and pending writes", async (action) => {
@@ -98,10 +108,19 @@ describe("SaveWriteQueue", () => {
     const first = queue.enqueueClear(async () => ({ ok: true }));
     const second = queue.enqueueClear(() => gate.promise);
     await first;
+    expect(queue.isIdle).toBe(false);
+    let idle = false;
+    const settled = queue.waitForIdle().then(() => {
+      idle = true;
+    });
+    await Promise.resolve();
+    expect(idle).toBe(false);
     const write = vi.fn().mockResolvedValue("saved");
     expect(await queue.enqueue(snapshot(1), write)).toBe("skipped");
     gate.resolve({ ok: true });
     await second;
+    await settled;
+    expect(queue.isIdle).toBe(true);
     expect(await queue.enqueue(snapshot(2), write)).toBe("saved");
   });
 

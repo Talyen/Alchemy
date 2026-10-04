@@ -7,6 +7,7 @@ import { makeTestCard } from "../../fixtures/cards";
 import { BattleCardSchema } from "@/lib/validation/save-schemas/battle-card-schemas";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { createSeededRng } from "@/lib/rng";
+import { getBattleCardTransmutationRole } from "@/lib/battle/card-classification";
 describe("brewing and transmutation content", () => {
   it("creates distinct fixed Potion offers with a recovery or defense option", () => {
     const offers = createCampfirePotionOffers(createSeededRng(23));
@@ -96,9 +97,16 @@ describe("brewing and transmutation content", () => {
     Object.assign(chance.failureEffects[0], { amount: 99 });
     expect(card).toEqual(before);
   });
-  it("offers one explicit ordinary card role each with distinct identities", () => {
-    const offers = createTransmutationOffers(createSeededRng(51));
-    expect(offers.map((card) => card.transmutationRole)).toEqual(["attack", "defense", "utility"]);
-    expect(new Set(offers.map((card) => card.id)).size).toBe(3);
+  it("offers distinct attack, defense and utility cards that survive save hydration", () => {
+    for (const seed of [10, 25, 42, 51, 99, 1337]) {
+      const offers = createTransmutationOffers(createSeededRng(seed));
+      expect(offers.map((card) => card.transmutationRole ?? getBattleCardTransmutationRole(card))).toEqual([
+        "attack",
+        "defense",
+        "utility",
+      ]);
+      expect(new Set(offers.map((card) => card.id)).size).toBe(3);
+      expect(offers.map((card) => hydrateCard(BattleCardSchema.parse(card)))).toEqual(offers);
+    }
   });
 });

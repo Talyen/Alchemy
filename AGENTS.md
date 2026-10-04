@@ -4,14 +4,14 @@ Alchemy is a fantasy roguelite deckbuilder. Use plain language and player-facing
 
 ## Working style
 
-- Default to `npm run check -- <task-owned paths>`. `npm test` is bounded Node smoke; focused, dependency-related and full unit suites (including DOM) may run without approval via `npm run test:full -- <paths>`. Browser/Electron, coverage, mutation, profiling, full static checks, builds, packaging, `check:full` and `verify:full` require an explicit local-execution request. [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change) owns gate details.
+- Default to `npm run check -- <task-owned paths>`; documentation edits also run `npm run docs:check`. `npm test` is bounded Node smoke; focused, dependency-related and full unit suites (including DOM) may run without approval via `npm run test:full -- <paths>`. Browser/Electron, coverage, mutation, profiling, full static checks, builds, packaging, `check:full` and `verify:full` require an explicit local-execution request. [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change) owns gate details.
 - Add high-value tests by default and actively retire encountered low- and medium-value tests after checking their purpose and dependencies. Rare additions and borderline retention need a concrete reason; adding no test is valid. Follow [test value](./CONTRIBUTING.md#test-value-and-coverage-strategy) for selection, scoped retirement, and reporting.
 - Inspect working-tree status and relevant diffs before editing. Preserve existing work; re-read shared files when another session may be editing them. Ask only when intent or a safe merge is ambiguous.
-- Use the managed interactive browser command from [preview ownership](./CONTRIBUTING.md#agent-preview-ownership); it owns task sessions and automatic cleanup. Keep reviews authorized and reuse that session.
-- Complete requested behavior and blockers. Fix small, understood adjacent issues; report substantial independent findings. Avoid broad cleanup or an uncited [audit](./Docs/Audits/README.md). Decide routine details; ask about consequential unresolved choices.
+- For authorized interactive browser reviews, use `npm run agent:browser` from [preview ownership](./CONTRIBUTING.md#agent-preview-ownership) and reuse that session. Under Codex it tracks and cleans up task sessions automatically; other agents get the native passthrough, so close only sessions you opened and report any cleanup failure.
+- Complete requested behavior and blockers. Fix small, understood adjacent issues; report substantial independent findings. Avoid broad cleanup; run [audits](./Docs/Audits/README.md) only on request. Decide routine details; ask about consequential unresolved choices.
 - Reuse owners and libraries; justify new dependencies or abstractions with concrete consumers. Preserve behavior and external contracts.
-- Start unclear failures with the diagnostic summary and a specific hypothesis. Reassess unproductive approaches; consult [knowledge](./.agents/knowledge/index.md) when history helps. Record unresolved recurring friction and consequential lessons in [.agents/FRICTION_LOG.md](./.agents/FRICTION_LOG.md); reusable prevention belongs in its canonical owner. Routine fixes need no history entry.
-- Never clear existing work with destructive Git commands. If a guard stashes and blocks a command, inspect and apply its backup, verify recovery, then drop the backup. The guard is not authorization.
+- Start unclear failures with the compact run record or failure digest ([triage](./Docs/REFERENCE.md#failure-first-triage)) and a specific hypothesis. Reassess unproductive approaches; consult [knowledge](./.agents/knowledge/index.md) when history helps. Record unresolved recurring friction and consequential lessons in [.agents/FRICTION_LOG.md](./.agents/FRICTION_LOG.md); reusable prevention belongs in its canonical owner. Routine fixes need no history entry.
+- Never clear existing work with destructive Git commands. If the [Git safety guard](./scripts/README.md#worktree--git-safety) stashes and blocks a command, inspect and apply its backup, verify recovery, then drop the backup. The guard is not authorization.
 - For parallel implementation use `node scripts/agent-worktree.mjs create --task <slug>`; assign disjoint ownership and review integration.
 
 ## Find the owner
@@ -23,7 +23,8 @@ Read affected contracts and consumers; update the canonical owner when changing 
 - [Content](./Docs/CONTENT_AUTHORING.md), [battle rules](./Docs/GAME_RULES.md), [effect handlers](./src/lib/game-data/effects/BATTLE_HANDLERS.md).
 - [Assets](./Docs/WORKFLOWS-ASSETS.md), [Gear](./Docs/ARMORY.md), [unique items](./Docs/UNIQUE_ITEMS.md).
 - [UI](./Docs/UI.md), [audio](./Docs/AUDIO.md), [performance](./Docs/PERFORMANCE.md).
-- [Verification/tests](./CONTRIBUTING.md), [commands](./Docs/REFERENCE.md), [publishing](./Docs/RELEASE.md).
+- [Verification/tests](./CONTRIBUTING.md), [commands](./Docs/REFERENCE.md), [publishing](./Docs/RELEASE.md), [Steam demo](./Docs/STEAM_DEMO.md).
+- Otherwise, use the [documentation map](./README.md#documentation).
 
 Direct reads and scoped searches suffice. Optional discovery, bounded search and change-review commands live in [Agent discovery](./Docs/AGENT_DISCOVERY.md). Read surrounding code as needed; skip already-understood material and broad dumps.
 
@@ -47,4 +48,4 @@ Use [architect](./.agents/skills/architect/SKILL.md) for new or structurally rev
 
 Use the current checkout. Commit, push, branch or open a PR only when requested; never switch branches implicitly. Commits use Conventional Commits and the `User-Facing` trailer ([release policy](./Docs/RELEASE.md#changelog-release-time-only)); do not edit `CHANGELOG.md`.
 
-Confirm completion. Report results, checks actually run, limitations, incidental fixes, material test retirements and unresolved decisions without logs or diff dumps. Node/npm versions are in `package.json`.
+Confirm completion. Report results, checks actually run, limitations, incidental fixes, material test retirements and unresolved decisions without logs or diff dumps.

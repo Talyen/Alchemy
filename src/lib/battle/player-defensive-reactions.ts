@@ -162,6 +162,7 @@ export function applyPlayerDefensiveReactions(
     blockDepletedByStrip?: boolean;
   },
   combatTexts: CombatTextEvent[],
+  protectionState = facts.before,
 ): BattleState {
   const {
     before: state,
@@ -178,7 +179,7 @@ export function applyPlayerDefensiveReactions(
   if (
     nextState.enemyHealth > 0 &&
     nextState.playerHealth > 0 &&
-    !shouldBlockPreventStatusBuildup(state, effect.damageType)
+    !shouldBlockPreventStatusBuildup(protectionState, effect.damageType)
   ) {
     nextState = applyPlayerDamageStatuses(nextState, effect, actualDamage);
   }

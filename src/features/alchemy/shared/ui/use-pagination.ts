@@ -4,7 +4,7 @@ import { anchoredPage, getPagination } from "./pagination";
 export function usePagination(itemCount: number, pageSize: number, resetKey?: unknown, selectedIndex = -1) {
   const [state, setState] = useState({ resetKey, pageSize, page: 0 });
   const resetChanged = !Object.is(state.resetKey, resetKey);
-  const sizeChanged = state.pageSize !== pageSize;
+  const sizeChanged = !Object.is(state.pageSize, pageSize);
   const candidatePage = resetChanged
     ? 0
     : sizeChanged
@@ -44,8 +44,8 @@ export function useControlledPagination({
 }) {
   const [state, setState] = useState({ context, externalPage, page: externalPage, pageSize });
   const contextChanged = !Object.is(state.context, context);
-  const externalChanged = state.externalPage !== externalPage;
-  const sizeChanged = state.pageSize !== pageSize;
+  const externalChanged = !Object.is(state.externalPage, externalPage);
+  const sizeChanged = !Object.is(state.pageSize, pageSize);
 
   const candidatePage =
     contextChanged || externalChanged
@@ -68,7 +68,7 @@ export function useControlledPagination({
     }
     if (
       Object.is(notified.current?.context, context) &&
-      notified.current?.externalPage === externalPage &&
+      Object.is(notified.current?.externalPage, externalPage) &&
       notified.current?.page === page
     ) {
       return;

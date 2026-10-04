@@ -8,13 +8,25 @@ import { planTemplate, safePlanName } from "../../scripts/new-plan.mjs";
 import { parsePruneArgs, pruneTransientArtifacts } from "../../scripts/prune-transient-artifacts.mjs";
 
 describe("execution-plan contract", () => {
-  it("accepts scaffold metadata", () => {
-    const template = planTemplate("ExamplePlan", "2026-08-20");
-    const metadata = parsePlanMetadata(template);
-    expect(metadata.errors).toEqual([]);
-    expect(metadata.metadata.status).toBe("active");
-    expect(metadata.updated?.toISOString().slice(0, 10)).toBe("2026-08-20");
-  });
+  it.each(["active", "complete"])(
+    "refuses to archive conflicting %s plan metadata before moving any files",
+    (status) => {
+      const plansDir = fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-plan-conflict-"));
+      const content = planTemplate("Conflict", "2026-08-20").replace(
+        "status: active",
+        `status: ${status}\nstatus: complete`,
+      );
+      const source = path.join(plansDir, "Conflict.md");
+      try {
+        fs.writeFileSync(source, content);
+        expect(() => archiveTerminalPlans({ plansDir })).toThrow("duplicate metadata key status");
+        expect(fs.readFileSync(source, "utf8")).toBe(content);
+        expect(fs.existsSync(path.join(plansDir, "Archived"))).toBe(false);
+      } finally {
+        fs.rmSync(plansDir, { recursive: true, force: true });
+      }
+    },
+  );
 
   it("preserves prose and reference link destinations when archiving plans together", () => {
     const plansDir = fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-plan-links-"));

@@ -278,6 +278,8 @@ export function applyPlayerCombatDamage(
   if (nextHealth > 0) return { ...state, playerHealth: nextHealth };
   if (state.playerStatuses.phoenixFeather > 0) {
     const healAmount = Math.round(state.playerMaxHealth * CAMPFIRE_HEAL_FRACTION);
+    combatTexts?.push({ target: "player", kind: "notice", stat: "phoenixFeather", text: "Revived" });
+    combatTexts?.push({ target: "player", kind: "heal", stat: "health", amount: healAmount });
     return {
       ...state,
       playerHealth: healAmount,

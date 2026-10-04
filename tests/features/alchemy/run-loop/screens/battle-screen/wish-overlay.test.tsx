@@ -22,7 +22,11 @@ vi.mock("@/features/alchemy/shared/ui/cards/card-button", () => ({
       onClick: () => void;
       descriptionContext: CardDescriptionContext;
     }) => (
-      <button type="button" onClick={onClick} data-companion-damage={descriptionContext.companionDamage}>
+      <button
+        type="button"
+        onClick={onClick}
+        data-companion-damage={descriptionContext.companionDamageModifiers?.damageBonus}
+      >
         {ariaLabel}
       </button>
     ),

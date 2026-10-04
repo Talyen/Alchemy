@@ -25,13 +25,18 @@ describe("Surface", () => {
     expect(onDivClick).toHaveBeenCalledTimes(3);
   });
 
-  it("disables button when disabled", () => {
-    render(
-      <Surface as="button" disabled ariaLabel="Disabled">
-        x
-      </Surface>,
-    );
-    expect(screen.getByRole("button", { name: "Disabled" }).hasAttribute("disabled")).toBe(true);
+  it("uses native button activation and blocks it while disabled", async () => {
+    const onClick = vi.fn();
+    const { rerender } = render(<Surface as="button" onClick={onClick} ariaLabel="Open" />);
+    const user = userEvent.setup();
+    const button = screen.getByRole("button", { name: "Open" });
+    await user.tab();
+    await user.keyboard("{Enter} ");
+    expect(onClick).toHaveBeenCalledTimes(2);
+    rerender(<Surface as="button" disabled onClick={onClick} ariaLabel="Open" />);
+    await user.click(button);
+    await user.keyboard("{Enter} ");
+    expect(onClick).toHaveBeenCalledTimes(2);
   });
 
   it("prevents pointer and keyboard activation on a disabled div", async () => {

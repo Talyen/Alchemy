@@ -45,8 +45,15 @@ export const defenseCards: BattleCard[] = [
     id: "shadowstep",
     art: assetRefs.shadowstep,
     consume: true,
-    effects: [{ kind: "damage", damageType: "physical", amount: 1 }, { kind: "play-next-card-twice" }],
+    effects: [{ kind: "dodge-next-attack" }, { kind: "play-next-card-twice" }],
   }),
+  cardBuilders.effectsCard({
+    id: "feint",
+    art: assetRefs.feint,
+    consume: true,
+    effects: [{ kind: "dodge-next-attack" }, { kind: "draw-cards", amount: 1 }],
+  }),
+
   cardBuilders.effectsCard({
     id: "mana-shield",
     art: assetRefs.manaShield,

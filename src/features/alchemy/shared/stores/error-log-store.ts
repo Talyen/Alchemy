@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { ErrorSource, LogEntry } from "@/lib/error-logger";
 import { ERROR_SOURCE_IDS, registerErrorSink } from "@/lib/error-logger";
 import { createInstanceId } from "@/lib/utils";
+import { isStorageUnavailable, tryLocalStorageGetItem, tryLocalStorageSetItem } from "@/lib/storage-environment";
 
 const MAX_ERRORS = 100;
 const STORAGE_KEY = "alchemy-error-log";
@@ -72,25 +73,18 @@ export function parsePersistedErrorLog(raw: string | null): LoggedError[] {
 }
 
 function loadPersisted(): LoggedError[] {
-  if (typeof window === "undefined" || typeof localStorage === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return parsePersistedErrorLog(raw);
-  } catch {
-    // Avoid logError here: this store is itself an error sink, so reporting would recurse.
-    console.warn("[error-log] Failed to load persisted errors");
-    return [];
-  }
+  if (typeof window === "undefined") return [];
+  const stored = tryLocalStorageGetItem(STORAGE_KEY);
+  if (stored.ok) return parsePersistedErrorLog(stored.value);
+  // This store is an error sink: reporting through logError would recurse.
+  if (!isStorageUnavailable(stored.error)) console.warn("[error-log] Failed to load persisted errors");
+  return [];
 }
 
 function persist(errors: LoggedError[]): void {
-  if (typeof window === "undefined" || typeof localStorage === "undefined") return;
-  try {
-    localStorage.setItem(STORAGE_KEY, serializeErrorLog(errors));
-  } catch {
-    // Avoid logError here: this store is itself an error sink, so reporting would recurse.
-    console.warn("[error-log] Failed to persist errors");
-  }
+  if (typeof window === "undefined") return;
+  const stored = tryLocalStorageSetItem(STORAGE_KEY, serializeErrorLog(errors));
+  if (!stored.ok && !isStorageUnavailable(stored.error)) console.warn("[error-log] Failed to persist errors");
 }
 
 // Serialize each context once: a stateful toJSON can succeed on a probe and
@@ -106,16 +100,12 @@ function serializeErrorLog(errors: readonly LoggedError[]): string {
   return `[${entries.join(",")}]`;
 }
 
-function createLoggedErrorId(): string {
-  return `err_${createInstanceId()}`;
-}
-
 export const useErrorLogStore = create<ErrorLogStore>()((set) => ({
   errors: loadPersisted(),
 
   pushError: (entry: LogEntry) => {
     set((s) => {
-      const id = createLoggedErrorId();
+      const id = `err_${createInstanceId()}`;
       const logged: LoggedError = {
         id,
         timestamp: Date.now(),

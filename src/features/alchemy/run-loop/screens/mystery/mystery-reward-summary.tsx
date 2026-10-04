@@ -54,23 +54,17 @@ function MysteryCardRewardItem({ card }: { card: BattleCard }) {
   );
 }
 
-function MysteryTrinketRewardItem({ boon }: { boon: TrinketEntry }) {
+function MysteryEquipmentRewardItem({ item }: { item: TrinketEntry | GearInstance }) {
+  const gear = "instanceId" in item;
   return (
     <div className="flex flex-col items-center gap-3">
-      <TrinketTile trinket={boon} interactionKey="mystery-reward" temporary />
+      {gear ? (
+        <GearTile instance={item} interactionKey="mystery-reward" />
+      ) : (
+        <TrinketTile trinket={item} interactionKey="mystery-reward" temporary />
+      )}
       <p className={controlLabelClass}>
-        <TrinketItemTitle trinket={boon} />
-      </p>
-    </div>
-  );
-}
-
-function MysteryGearRewardItem({ instance }: { instance: GearInstance }) {
-  return (
-    <div className="flex flex-col items-center gap-3">
-      <GearTile instance={instance} interactionKey="mystery-reward" />
-      <p className={controlLabelClass}>
-        <GearItemTitle instance={instance} />
+        {gear ? <GearItemTitle instance={item} /> : <TrinketItemTitle trinket={item} />}
       </p>
     </div>
   );
@@ -100,12 +94,12 @@ function MysteryRewardEffectItem({
     }
     case "gainTrinket": {
       const boon = findTrinket(effect.trinketId);
-      return boon ? <MysteryTrinketRewardItem boon={boon} /> : null;
+      return boon ? <MysteryEquipmentRewardItem item={boon} /> : null;
     }
     case "gainRandomTrinket": {
       const boon = grantedTrinketId ? findTrinket(grantedTrinketId) : undefined;
-      if (boon) return <MysteryTrinketRewardItem boon={boon} />;
-      if (grantedGear) return <MysteryGearRewardItem instance={grantedGear} />;
+      const item = boon ?? grantedGear;
+      if (item) return <MysteryEquipmentRewardItem item={item} />;
       return <p className={cn(controlLabelClass, "text-balance")}>Gained a random Boon for this run</p>;
     }
     case "gainGeneratedGear":
@@ -113,7 +107,7 @@ function MysteryRewardEffectItem({
       const fallbackLabel =
         effect.kind === "gainGeneratedGear" ? "Added Gear to your Armory" : "Added random Gear to your Armory";
       if (!grantedGear) return <p className={cn(controlLabelClass, "text-balance")}>{fallbackLabel}</p>;
-      return <MysteryGearRewardItem instance={grantedGear} />;
+      return <MysteryEquipmentRewardItem item={grantedGear} />;
     }
     case "loseGold":
       return (

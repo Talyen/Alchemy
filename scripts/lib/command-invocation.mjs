@@ -53,18 +53,11 @@ export function resolveViteBin() {
 export function commandInvocation(command, args = []) {
   if (command === "node") return [process.execPath, args];
   if (command === "npm" || command === "npm.cmd") return [process.execPath, [npmCli(), ...args]];
-  if (command === "npx" || command === "npx.cmd") {
-    const [tool, ...forwarded] = args;
-    const relative = Object.hasOwn(LOCAL_CLIS, tool) ? LOCAL_CLIS[tool] : null;
-    if (!relative) throw new Error(`Unsupported local CLI: ${tool}`);
-    const cli = path.join(ROOT, "node_modules", relative);
-    if (!fs.existsSync(cli)) throw new Error(`Missing local CLI: ${cli} (run npm ci)`);
-    return [process.execPath, [cli, ...forwarded]];
+  const viaNpx = command === "npx" || command === "npx.cmd";
+  const [tool, ...forwarded] = viaNpx ? args : [command, ...args];
+  if (Object.hasOwn(LOCAL_CLIS, tool)) {
+    return [process.execPath, [resolveNodeCli(tool, LOCAL_CLIS[tool]), ...forwarded]];
   }
-  // Bare tool names are used by compact and CI runners too. Resolve them
-  // through Node so direct calls need neither npm's PATH nor Windows .cmd shims.
-  if (Object.hasOwn(LOCAL_CLIS, command)) {
-    return [process.execPath, [resolveNodeCli(command, LOCAL_CLIS[command]), ...args]];
-  }
+  if (viaNpx) throw new Error(`Unsupported local CLI: ${tool}`);
   return [command, args];
 }

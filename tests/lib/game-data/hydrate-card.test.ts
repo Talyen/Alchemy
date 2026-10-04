@@ -138,25 +138,6 @@ describe("saved card content restoration", () => {
     });
   });
 
-  it("does not share damage type pools between saved and restored cards", () => {
-    const arrow = cardById["astral-arrow"]!;
-    const saved: BattleCard = {
-      ...arrow,
-      effects: [{ kind: "damage", damageType: "holy", damageTypePool: ["freeze", "burn", "holy"], amount: 4 }],
-      descriptionLines: [...arrow.descriptionLines],
-    };
-    const restored = hydrateCard(saved);
-    const effect = restored.effects[0];
-    if (effect?.kind !== "damage" || !effect.damageTypePool) throw new Error("Expected pooled damage effect");
-    effect.damageTypePool.push("nature");
-    expect(saved.effects[0]).toEqual({
-      kind: "damage",
-      damageType: "holy",
-      damageTypePool: ["freeze", "burn", "holy"],
-      amount: 4,
-    });
-  });
-
   it("retains the saved damage bypass fields", () => {
     const stab = cardById.stab!;
     const saved: BattleCard = {
@@ -167,49 +148,13 @@ describe("saved card content restoration", () => {
     const restored = hydrateCard(saved);
     expect(restored.effects).toEqual(saved.effects);
   });
-
-  it("does not share random damage type pools between saved and restored cards", () => {
-    const gambler = cardById["gamblers-shot"]!;
-    const saved: BattleCard = {
-      ...gambler,
-      effects: [{ kind: "random-damage", minAmount: 1, maxAmount: 4, damageTypePool: ["stun", "physical", "bleed"] }],
-      descriptionLines: [...gambler.descriptionLines],
-    };
-    const restored = hydrateCard(saved);
-    const effect = restored.effects[0];
-    if (effect?.kind !== "random-damage" || !effect.damageTypePool)
-      throw new Error("Expected pooled random damage effect");
-    effect.damageTypePool.push("nature");
-    expect(saved.effects[0]).toEqual({
-      kind: "random-damage",
-      minAmount: 1,
-      maxAmount: 4,
-      damageTypePool: ["stun", "physical", "bleed"],
-    });
-  });
-
-  it("does not share player status pools between saved and restored cards", () => {
-    const avatar = cardById.avatar!;
-    const saved: BattleCard = {
-      ...avatar,
-      effects: [{ kind: "player-status", status: "block", statusPool: ["block", "forge", "armor"], amount: 5 }],
-      descriptionLines: ["Gain 5 Block, Forge, or Armor", "Consume"],
-    };
-    const restored = hydrateCard(saved);
-    const effect = restored.effects[0];
-    if (effect?.kind !== "player-status" || !effect.statusPool) throw new Error("Expected pooled player status effect");
-    effect.statusPool.push("thorns");
-    expect(saved.effects[0]).toEqual({
-      kind: "player-status",
-      status: "block",
-      statusPool: ["block", "forge", "armor"],
-      amount: 5,
-    });
-  });
 });
 
-describe("cloneBattleCard", () => {
-  it("isolates nested effects and tags from the shared source card", () => {
+describe("card copy isolation", () => {
+  it.each([
+    { name: "run cloning", copyCard: cloneBattleCard },
+    { name: "save restoration", copyCard: hydrateCard },
+  ])("isolates nested effects and card fields through $name", ({ copyCard }) => {
     const source: BattleCard = {
       ...cardById["slash"]!,
       tags: ["poison"],
@@ -223,7 +168,11 @@ describe("cloneBattleCard", () => {
             {
               kind: "repeat-over-turns",
               remainingTurns: 1,
-              effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
+              effects: [
+                { kind: "damage", damageType: "physical", damageTypePool: ["physical", "burn"], amount: 4 },
+                { kind: "random-damage", minAmount: 1, maxAmount: 4, damageTypePool: ["holy", "freeze"] },
+                { kind: "player-status", status: "block", statusPool: ["block", "forge"], amount: 5 },
+              ],
             },
           ],
           failureEffects: [{ kind: "gain-gold", amount: 3 }],
@@ -231,34 +180,28 @@ describe("cloneBattleCard", () => {
       ],
     };
     const before = structuredClone(source);
-    const clone = cloneBattleCard(source);
-    expect(clone).toEqual(source);
-    expect(clone).not.toBe(source);
-    expect(clone.effects).not.toBe(source.effects);
-    expect(clone.tags).not.toBe(source.tags);
+    const clone = copyCard(source);
+    expect(clone.effects).toEqual(source.effects);
+    expect(clone.descriptionLines).toEqual(source.descriptionLines);
+    if (copyCard === cloneBattleCard) expect(clone.tags).toEqual(source.tags);
     const cloneChance = clone.effects[0];
-    const sourceChance = source.effects[0];
-    if (cloneChance?.kind !== "chance" || sourceChance?.kind !== "chance") {
-      throw new Error("Expected chance effects");
-    }
-    expect(cloneChance.successEffects).not.toBe(sourceChance.successEffects);
-    expect(cloneChance.failureEffects).not.toBe(sourceChance.failureEffects);
+    if (cloneChance?.kind !== "chance") throw new Error("Expected chance effect");
     const cloneRepeat = cloneChance.successEffects[0];
-    const sourceRepeat = sourceChance.successEffects[0];
-    if (cloneRepeat?.kind !== "repeat-over-turns" || sourceRepeat?.kind !== "repeat-over-turns") {
-      throw new Error("Expected repeated effects");
-    }
-    expect(cloneRepeat).not.toBe(sourceRepeat);
-    expect(cloneRepeat.effects).not.toBe(sourceRepeat.effects);
+    if (cloneRepeat?.kind !== "repeat-over-turns") throw new Error("Expected repeated effect");
     const cloneDamage = cloneRepeat.effects[0];
     if (cloneDamage?.kind !== "damage") throw new Error("Expected damage effect");
     cloneDamage.amount = 99;
-    clone.tags!.push("burn");
+    cloneDamage.damageTypePool!.push("nature");
+    const randomDamage = cloneRepeat.effects[1];
+    const status = cloneRepeat.effects[2];
+    if (randomDamage?.kind !== "random-damage" || status?.kind !== "player-status")
+      throw new Error("Expected pooled effects");
+    randomDamage.damageTypePool!.push("nature");
+    status.statusPool!.push("thorns");
+    cloneChance.failureEffects.push({ kind: "heal", amount: 99 });
+    clone.descriptionLines.push("Changed");
+    clone.tags?.push("burn");
     clone.corruptedValuePositions![0]!.lineIndex = 99;
-    expect(source).toEqual(before);
-
-    const restored = hydrateCard(source);
-    restored.corruptedValuePositions![0]!.matchIndex = 99;
     expect(source).toEqual(before);
   });
 });

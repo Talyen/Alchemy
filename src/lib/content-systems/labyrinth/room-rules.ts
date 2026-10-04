@@ -52,6 +52,10 @@ export function applyLabyrinthMysteryModifiers(
 ): MysteryEvent {
   if (modifiers.length === 0) return event;
   const boostedKinds = MYSTERY_REWARDS.filter(([id]) => modifiers.includes(id)).map(([, kind]) => kind);
+  const healing = modifiers.includes("restful-discovery")
+    ? Math.round(maxHealth * LABYRINTH_MODIFIER_CONFIG.restfulDiscoveryHealing)
+    : null;
+  if (!boostedKinds.length && healing === null) return event;
   return {
     ...event,
     choices: event.choices.map((choice) => ({
@@ -63,14 +67,7 @@ export function applyLabyrinthMysteryModifiers(
           }
           return effect;
         }),
-        ...(modifiers.includes("restful-discovery")
-          ? [
-              {
-                kind: "healHealth" as const,
-                amount: Math.round(maxHealth * LABYRINTH_MODIFIER_CONFIG.restfulDiscoveryHealing),
-              },
-            ]
-          : []),
+        ...(healing === null ? [] : [{ kind: "healHealth" as const, amount: healing }]),
       ],
     })),
   };

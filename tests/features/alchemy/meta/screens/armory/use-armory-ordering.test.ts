@@ -48,39 +48,25 @@ describe("useArmoryOrdering", () => {
     effects: {},
   };
 
-  it("initializes gear with default sort (Unique -> Astral -> Basic, Name A-Z, ID)", () => {
-    const pickerItems = [swordBasic2, hatchetBasic, swordUnique, swordBasic1, swordAstral];
-    const { result } = renderHook(() =>
-      useArmoryOrdering({
-        characterId: "knight",
-        selectedSlot: "main-hand",
-        pickerItems,
-        ownedTrinkets: [],
-      }),
-    );
-
-    expect(result.current.orderedGear.map((i) => i.instanceId)).toEqual([
-      "sword-unique",
-      "sword-astral",
-      "hatchet-b1",
-      "sword-b1",
-      "sword-b2",
-    ]);
-    expect(result.current.safePage).toBe(0);
-  });
-
-  it("initializes trinkets with default sort (Name A-Z, ID)", () => {
-    const ownedTrinkets = [trinketB, trinketA];
-    const { result } = renderHook(() =>
-      useArmoryOrdering({
-        characterId: "knight",
-        selectedSlot: "trinket",
-        pickerItems: [],
-        ownedTrinkets,
-      }),
-    );
-
-    expect(result.current.orderedTrinkets.map((t) => t.id)).toEqual(["trinket-a", "trinket-b"]);
+  it("switches between Gear and Trinkets without leaking items that share the same identity", () => {
+    const gear = { ...swordBasic1, instanceId: trinketA.id };
+    const initial = {
+      characterId: "knight" as const,
+      selectedSlot: "main-hand" as "main-hand" | "trinket",
+      pickerItems: [gear, gear],
+      ownedTrinkets: [trinketB, trinketA],
+    };
+    const { result, rerender } = renderHook(useArmoryOrdering, { initialProps: initial });
+    expect(result.current.orderedGear).toEqual([gear]);
+    act(() => result.current.onSort("name"));
+    expect(result.current.orderedGear).toEqual([gear]);
+    expect(result.current.orderedTrinkets).toEqual([]);
+    rerender({ ...initial, selectedSlot: "trinket" });
+    expect(result.current.orderedTrinkets).toEqual([trinketA, trinketB]);
+    expect(result.current.orderedGear).toEqual([]);
+    rerender(initial);
+    expect(result.current.orderedGear).toEqual([gear]);
+    expect(result.current.orderedTrinkets).toEqual([]);
   });
 
   it("filters without losing hidden order and sorts the full category", () => {
@@ -192,30 +178,6 @@ describe("useArmoryOrdering", () => {
     rerender({ pool: [...items.filter((item) => item.instanceId !== "sword-12"), returned, unequipped, secondReturn] });
     expect(result.current.orderedGear[0]?.instanceId).toBe("second-return");
     expect(result.current.matchCount).toBe(0);
-  });
-
-  it("sorts on demand and resets to page 0", () => {
-    const items = [swordBasic1, hatchetBasic, swordAstral, swordUnique];
-    const { result } = renderHook(() =>
-      useArmoryOrdering({
-        characterId: "knight",
-        selectedSlot: "main-hand",
-        pickerItems: items,
-        ownedTrinkets: [],
-      }),
-    );
-
-    act(() => {
-      result.current.onSort("name");
-    });
-
-    expect(result.current.orderedGear.map((i) => i.instanceId)).toEqual([
-      "sword-astral", // Astral Longsword
-      "hatchet-b1", // Hatchet
-      "sword-b1", // Longsword
-      "sword-unique", // Oathkeeper
-    ]);
-    expect(result.current.safePage).toBe(0);
   });
 
   it("places the replaced item at the incoming item's position after inventory refresh", () => {

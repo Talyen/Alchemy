@@ -2,7 +2,6 @@ import { emptyAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as config from "@/features/alchemy/shared/config";
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
-import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { getRunAvailableDestinations } from "@/features/alchemy/shared/run-flow/destination-flow";
 import { getPreviousDestination } from "@/features/alchemy/shared/run-flow/resolve-available-destinations";
@@ -19,14 +18,32 @@ import {
   setRewardState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
-import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
+import { resetAllTestStores, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 beforeEach(() => {
-  resetTransientRunUi();
+  resetAllTestStores();
 });
 
 describe("run destination controller actions", () => {
+  it.each([CONTENT_SYSTEMS.CAMPAIGN, CONTENT_SYSTEMS.LABYRINTH])(
+    "continues or leaves Transmutation without trapping a %s run",
+    (contentSystemType) => {
+      setRunProgress({ contentSystemType });
+      setRunSession({ activity: { kind: "transmutation", data: emptyAlchemyVisit() } });
+      const navigateTo = vi.fn((_screen: string, prepare?: () => void) => prepare?.());
+      const labyrinthClearNode = vi.fn();
+      const rooms = readActiveRun().roomsEncountered;
+      createRunFlow(makeFlowHandlerDeps({ navigateTo, labyrinthClearNode })).advanceToNextDestination();
+      expect(navigateTo).toHaveBeenCalledWith(
+        contentSystemType === CONTENT_SYSTEMS.LABYRINTH ? ROUTE_SCREENS.LABYRINTH_MAP : ROUTE_SCREENS.DESTINATION,
+        expect.any(Function),
+      );
+      expect(readActiveRun().roomsEncountered).toBe(rooms + 1);
+      expect(labyrinthClearNode).toHaveBeenCalledTimes(contentSystemType === CONTENT_SYSTEMS.LABYRINTH ? 1 : 0);
+    },
+  );
+
   it("claimRewardChoice rejects a choice that is not offered", () => {
     dispatchRunSessionCommand((draft) => setRewardState(draft, createEmptyRewardState()));
 

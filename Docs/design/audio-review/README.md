@@ -124,9 +124,9 @@ hidden, or Stop all is pressed. Sequence repetition does not trigger gameplay.
 Browser autoplay restrictions or audio failures leave the board usable and show
 a visible message. Essential in-game feedback must continue to work under mute.
 
-## Coverage and proposal priorities
+## Coverage and first-pass proposal priorities
 
-The first pass covers **87 action categories, 105 cards, 39 enemies, 14 companions
+The first pass covered **87 action categories, 105 cards, 39 enemies, 14 companions
 and all 25 screens**, with 49 reusable families and 106 distinct candidate masters.
 Every card, enemy and companion has an explicit assignment; every battle/UI/
 stinger registration has a review row. Destination and keyword inventories are
@@ -134,7 +134,7 @@ also checked. New content without an assignment fails validation.
 
 | Review first            | Proposal                                                                                                                                        | Reason                                                                     |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Archery                 | Shared bow-release family, with elemental exceptions noted                                                                                      | Archery cards currently lack card-specific sounds                          |
+| Archery                 | Shared bow-release family, with elemental exceptions noted                                                                                      | At the first pass, Archery cards lacked card-specific sounds               |
 | Block and armor         | Medieval armor parry                                                                                                                            | Material match; compare gain and absorption separately                     |
 | Hero / enemy impact     | Short deep body hit                                                                                                                             | Avoid a sword identity on every damage source                              |
 | Potions and brewing     | Glass pour, bottle opening, fizz and gurgle                                                                                                     | Replace generic pickup/water treatment with alchemy materials              |
@@ -143,10 +143,12 @@ also checked. New content without an assignment fails validation.
 | Gold and transactions   | Coins in a sack / soft-surface coin drop                                                                                                        | Short tactile acknowledgment; avoid a second spend cue on the same service |
 | Victory / defeat        | Keep current harpsichord takes as the leading candidates                                                                                        | Existing recordings remain useful; replacements need a listening reason    |
 
-These are **metadata-based, unheard proposals**, not subjective approvals.
-Actual path, hash and decode verification cannot establish audible suitability.
-Long field recordings use explicitly labeled opening excerpts; final take
-selection, trimming, pitch, layering and loop seams require listening.
+These were **metadata-based, unheard proposals** at the first pass. The later
+listening decisions and installed results are recorded in the
+[installation record](./INSTALLATION.md); this table preserves the original
+review priorities. Path, hash and decode verification alone cannot establish
+audible suitability. New proposals still require listening for take selection,
+trimming, pitch, layering and loop seams.
 
 Matched previews use fixed gain toward −22 dB mean, capped at −1.5 dB peak and a
 +12 dB boost. They preserve dynamics. Original-level previews apply no gain.

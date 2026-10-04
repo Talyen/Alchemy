@@ -38,17 +38,26 @@ describe("CorruptionScreen", () => {
     cleanup();
   });
 
-  it("renders the intro view with corrupt and leave buttons", async () => {
+  it("requires a new selection when the deck changes instead of corrupting a different card", async () => {
     const user = userEvent.setup();
     const onExit = vi.fn();
-    render(<CorruptionScreen runDeck={[testSlash]} result={null} onCorrupt={vi.fn()} onExit={onExit} />);
-
-    expect(screen.getByRole("heading", { name: "Altar of Corruption" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Corrupt a Card/i })).toBeTruthy();
-    const leaveButton = screen.getByRole("button", { name: /Leave/i });
-    expect(leaveButton).toBeTruthy();
-
-    await user.click(leaveButton);
+    const onCorrupt = vi.fn();
+    const { rerender } = render(
+      <CorruptionScreen runDeck={[testSlash, testStab]} result={null} onCorrupt={onCorrupt} onExit={onExit} />,
+    );
+    await user.click(screen.getByRole("button", { name: "Corrupt a Card" }));
+    await user.click(screen.getByRole("button", { name: "Select Slash" }));
+    rerender(<CorruptionScreen runDeck={[testStab]} result={null} onCorrupt={onCorrupt} onExit={onExit} />);
+    const confirm = screen.getByRole("button", { name: "Corrupt" });
+    expect(confirm).toHaveProperty("disabled", true);
+    expect(screen.getByRole("status").textContent).toContain("Your deck changed");
+    await user.click(confirm);
+    expect(onCorrupt).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Select Stab" }));
+    await user.click(confirm);
+    expect(onCorrupt).toHaveBeenCalledWith(0);
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    await user.click(await screen.findByRole("button", { name: "Leave" }));
     expect(onExit).toHaveBeenCalledOnce();
   });
 

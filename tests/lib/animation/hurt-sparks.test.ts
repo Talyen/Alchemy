@@ -4,19 +4,6 @@ import { animateHurtSparks, createHurtSparks } from "@/lib/animation/hurt-sparks
 describe("hurt-sparks", () => {
   afterEach(() => vi.restoreAllMocks());
   describe("createHurtSparks", () => {
-    it("generates the requested number of sparks with initial alpha 1", () => {
-      const sparks = createHurtSparks(300, 200, 20);
-      expect(sparks).toHaveLength(20);
-      for (const spark of sparks) {
-        expect(spark.alpha).toBe(1);
-        expect(spark.size).toBeGreaterThan(0);
-        expect(spark.x).toBeGreaterThanOrEqual(0);
-        expect(spark.x).toBeLessThanOrEqual(300);
-        expect(spark.y).toBeGreaterThanOrEqual(0);
-        expect(spark.y).toBeLessThanOrEqual(200);
-      }
-    });
-
     it("samples from vertical edges when requested", () => {
       const sparks = createHurtSparks(
         300,
@@ -130,28 +117,26 @@ describe("hurt-sparks", () => {
       stop();
     });
 
-    it("runs particle loop and completes", () => {
-      let frameCallback: FrameRequestCallback | null = null;
-      vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
-        frameCallback = cb;
-        return 1;
+    it("stops drawing and completing after cancellation, even if a queued callback arrives", () => {
+      let frame!: FrameRequestCallback;
+      vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+        frame = callback;
+        return 7;
       });
-
-      const ctx = {
-        clearRect: vi.fn(),
-        fillRect: vi.fn(),
-        globalAlpha: 1,
-        fillStyle: "",
-      } as unknown as CanvasRenderingContext2D;
-
-      const sparks = createHurtSparks(100, 100, 5);
-      const onComplete = vi.fn();
-      const cancel = animateHurtSparks(ctx, sparks, 100, 100, 100, onComplete);
-
-      expect(frameCallback).not.toBeNull();
-      frameCallback!(performance.now() + 150);
-      expect(onComplete).toHaveBeenCalledOnce();
-      cancel();
+      const cancelFrame = vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => {});
+      const ctx = { clearRect: vi.fn(), fillRect: vi.fn() } as unknown as CanvasRenderingContext2D;
+      const complete = vi.fn();
+      const sparks = createHurtSparks(100, 100, 1);
+      const before = structuredClone(sparks);
+      const stop = animateHurtSparks(ctx, sparks, 100, 100, 100, complete);
+      stop();
+      stop();
+      frame(performance.now() + 200);
+      expect(cancelFrame).toHaveBeenCalledExactlyOnceWith(7);
+      expect(ctx.clearRect).not.toHaveBeenCalled();
+      expect(ctx.fillRect).not.toHaveBeenCalled();
+      expect(complete).not.toHaveBeenCalled();
+      expect(sparks).toEqual(before);
     });
   });
 });

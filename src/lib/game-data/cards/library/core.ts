@@ -242,6 +242,22 @@ export const coreCards: BattleCard[] = [
     ],
   }),
   cardBuilders.effectsCard({
+    id: "thorn-whip",
+    art: assetRefs.thornWhip,
+    effects: [
+      { kind: "damage", damageType: "nature", amount: 2 },
+      { kind: "player-status", status: "thorns", amount: 1 },
+    ],
+  }),
+  cardBuilders.effectsCard({
+    id: "porcupine-quill",
+    art: assetRefs.porcupineQuill,
+    effects: [
+      { kind: "player-status", status: "thorns", amount: 2 },
+      { kind: "companion-action", amount: 1 },
+    ],
+  }),
+  cardBuilders.effectsCard({
     id: "pack-tactics",
     art: assetRefs.packTactics,
     effects: [
@@ -341,5 +357,21 @@ export const coreCards: BattleCard[] = [
     id: "combustion",
     art: assetRefs.combustion,
     effects: [{ kind: "damage", damageType: "burn", amount: 1, detonateAllBurn: true }],
+  }),
+  cardBuilders.effectsCard({
+    id: "bellows-blast",
+    art: assetRefs.bellowsBlast,
+    effects: [
+      { kind: "player-status", status: "forge", amount: 2 },
+      { kind: "damage", damageType: "burn", amount: 2 },
+    ],
+  }),
+  cardBuilders.effectsCard({
+    id: "quench",
+    art: assetRefs.quench,
+    effects: [
+      { kind: "remove-harmful-status", amount: 1 },
+      { kind: "player-status", status: "forge", amount: 1 },
+    ],
   }),
 ];

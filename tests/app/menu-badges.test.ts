@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { hasAffordableHomesteadUpgrade, hasUnspentTalents } from "@/app/app-screen-chrome-context";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { getTalentTreeKeywordIds } from "@/lib/game-data";
+import { countImplementedTalents } from "@/lib/game-data";
 
 const RICH = { wood: 999, iron: 999, herbs: 999, food: 999, gems: 999, stone: 0, hide: 0 };
 
@@ -18,13 +18,15 @@ function freshProgress() {
 }
 
 describe("hasUnspentTalents", () => {
-  it("is false with no XP", () => {
+  it("signals spendable points without offering nonexistent Talents after a tree is complete", () => {
     expect(hasUnspentTalents({}, {})).toBe(false);
-  });
-
-  it("is true when a keyword earned more points than unlocked", () => {
-    const talentXP = Object.fromEntries(getTalentTreeKeywordIds().map((kw) => [kw, 1_000_000]));
+    const talentXP = { physical: 1_000_000 };
     expect(hasUnspentTalents(talentXP, {})).toBe(true);
+    expect(
+      hasUnspentTalents(talentXP, {
+        physical: Array.from({ length: countImplementedTalents("physical") }, (_, index) => `spent-${index}`),
+      }),
+    ).toBe(false);
   });
 });
 

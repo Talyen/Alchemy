@@ -13,12 +13,7 @@ import {
 } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { createRunStateRng, type RunRngState, type RunRngStream } from "@/lib/rng";
-import type {
-  ActiveCombatData,
-  MysteryVisitState,
-  ValidatedActiveRunData,
-  WildwoodDraftState,
-} from "./save-schemas/active-run";
+import type { ActiveCombatData, ValidatedActiveRunData } from "./save-schemas/active-run";
 import type { PersistedBattleCard } from "./save-schemas/battle-card-schemas";
 
 // Deliberate removals are recorded in TOMBSTONED_CARD_IDS for explicit
@@ -90,92 +85,6 @@ function normalizeLabyrinthModifiers(
   };
 }
 
-function repairCardChoices(
-  choices: PersistedBattleCard[],
-  args: {
-    canPick: boolean;
-    runDeck: BattleCard[];
-    rngState: RunRngState;
-    stream: RunRngStream;
-    count: number;
-    seedKeywords: KeywordId[];
-    alreadyOwned?: BattleCard[];
-  },
-): PersistedBattleCard[] {
-  const filtered = filterLiveCards(choices);
-  if (filtered.length > 0 || !args.canPick) return filtered;
-  const repaired = selectRewardCards(
-    args.runDeck,
-    getOfferableCardPool(),
-    args.count,
-    args.alreadyOwned ?? args.runDeck,
-    createRunStateRng(args.rngState, args.stream),
-    args.seedKeywords,
-  ).map(cloneBattleCard);
-  return repaired;
-}
-
-function repairWildwoodDraft(
-  data: ValidatedActiveRunData,
-  runDeck: BattleCard[],
-  rngState: RunRngState,
-): WildwoodDraftState | null {
-  if (data.contentSystemType !== "wildwood") return null;
-  const draft = data.wildwoodDraft;
-  if (!draft) return null;
-  return {
-    ...draft,
-    draftChoices: repairCardChoices(draft.draftChoices, {
-      canPick: draft.phase === "draft" && runDeck.length < DRAFT_ROUNDS,
-      runDeck,
-      rngState,
-      stream: "world",
-      count: DRAFT_CHOICES,
-      seedKeywords: characters[data.characterId].keywords,
-    }),
-  };
-}
-
-function repairStarterDraft(
-  data: ValidatedActiveRunData,
-  runDeck: BattleCard[],
-  rngState: RunRngState,
-): PersistedBattleCard[] | null {
-  if (data.contentSystemType === "wildwood") return null;
-  if (!data.starterDraftChoices) return null;
-  return repairCardChoices(data.starterDraftChoices, {
-    canPick: runDeck.length < DRAFT_ROUNDS,
-    runDeck,
-    rngState,
-    stream: "rewards",
-    count: DRAFT_CHOICES,
-    seedKeywords: [],
-  });
-}
-
-function repairMysteryVisit(
-  data: ValidatedActiveRunData,
-  runDeck: BattleCard[],
-  rngState: RunRngState,
-): MysteryVisitState | null {
-  if (data.currentScreen != null && data.currentScreen !== "mystery") return null;
-  const visit = data.mysteryVisit;
-  if (!visit) return null;
-  if (!visit.cardChoices) return { ...visit, cardChoices: null };
-  return {
-    ...visit,
-    cardChoices: repairCardChoices(visit.cardChoices, {
-      canPick: visit.chosenCardId == null,
-      runDeck,
-      rngState,
-      stream: "events",
-      count: MYSTERY_CARD_CHOICES,
-      seedKeywords: [],
-      alreadyOwned: [],
-    }),
-  };
-}
-
 function normalizeCorruptionResult(
   result: ValidatedActiveRunData["corruptionResult"],
 ): ValidatedActiveRunData["corruptionResult"] {
@@ -187,9 +96,60 @@ function normalizeCorruptionResult(
 export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedActiveRunData {
   const runDeck = filterLiveCards(data.runDeck);
   const rngState: RunRngState = { seed: data.rng.seed, counters: { ...data.rng.counters } };
-  const wildwoodDraft = repairWildwoodDraft(data, runDeck, rngState);
-  const starterDraftChoices = repairStarterDraft(data, runDeck, rngState);
-  const mysteryVisit = repairMysteryVisit(data, runDeck, rngState);
+  function repairChoices(
+    choices: PersistedBattleCard[],
+    {
+      canPick,
+      stream,
+      seedKeywords = [],
+      alreadyOwned = runDeck,
+      count = DRAFT_CHOICES,
+    }: {
+      canPick: boolean;
+      stream: RunRngStream;
+      seedKeywords?: KeywordId[];
+      alreadyOwned?: BattleCard[];
+      count?: number;
+    },
+  ): PersistedBattleCard[] {
+    const filtered = filterLiveCards(choices);
+    if (filtered.length > 0 || !canPick) return filtered;
+    return selectRewardCards(
+      runDeck,
+      getOfferableCardPool(),
+      count,
+      alreadyOwned,
+      createRunStateRng(rngState, stream),
+      seedKeywords,
+    ).map(cloneBattleCard);
+  }
+
+  const drafting = runDeck.length < DRAFT_ROUNDS;
+  const wildwood = data.contentSystemType === "wildwood" ? data.wildwoodDraft : null;
+  const wildwoodDraft = wildwood && {
+    ...wildwood,
+    draftChoices: repairChoices(wildwood.draftChoices, {
+      canPick: wildwood.phase === "draft" && drafting,
+      stream: "world",
+      seedKeywords: characters[data.characterId].keywords,
+    }),
+  };
+  const starterDraftChoices =
+    data.contentSystemType !== "wildwood" && data.starterDraftChoices
+      ? repairChoices(data.starterDraftChoices, { canPick: drafting, stream: "rewards" })
+      : null;
+  const visit = data.currentScreen == null || data.currentScreen === "mystery" ? data.mysteryVisit : null;
+  const mysteryVisit = visit && {
+    ...visit,
+    cardChoices: visit.cardChoices
+      ? repairChoices(visit.cardChoices, {
+          canPick: visit.chosenCardId == null,
+          stream: "events",
+          alreadyOwned: [],
+          count: MYSTERY_CARD_CHOICES,
+        })
+      : null,
+  };
   const rngCountersChanged = (Object.keys(rngState.counters) as RunRngStream[]).some(
     (stream) => rngState.counters[stream] !== data.rng.counters[stream],
   );

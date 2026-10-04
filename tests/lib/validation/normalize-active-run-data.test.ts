@@ -56,6 +56,7 @@ describe("ActiveRunDataSchema normalize", () => {
     expect(result.labyrinthPendingNode).toBeNull();
     expect(result.wildwoodDraft).toBeNull();
     expect(result.starterDraftChoices).toBeNull();
+    expect(result.activeCombat).toBeNull();
   });
 
   it("drops a labyrinth run whose map is missing", () => {
@@ -99,19 +100,6 @@ describe("ActiveRunDataSchema normalize", () => {
     });
     expect(result.activeCombat?.activeLabyrinthModifiers).toEqual(["septic"]);
     expect(result.activeCombat?.activeLabyrinthRewardModifiers).toEqual(["generous"]);
-  });
-
-  it("handles null activeCombat", () => {
-    const result = parseActiveRunData();
-    expect(result.activeCombat).toBeNull();
-  });
-
-  it("nulls wildwood draft outside wildwood runs", () => {
-    const result = parseActiveRunData({
-      contentSystemType: "campaign",
-      wildwoodDraft: makeWildwoodDraft(),
-    });
-    expect(result.wildwoodDraft).toBeNull();
   });
 
   it("nulls starter draft choices on wildwood runs", () => {
@@ -236,29 +224,21 @@ describe("ActiveRunDataSchema normalize", () => {
     expect(result.activeCombat?.battleState.turn).toBe(1);
   });
 
+  it.each(["mystery", null] as const)("preserves the saved Mystery offer for resume from %s", (currentScreen) => {
+    const result = parseActiveRunData({
+      currentScreen,
+      mysteryVisit: { event: testMysteryEvent, cardChoices: [liveCard] },
+    });
+    expect(result.mysteryVisit?.event).toEqual(testMysteryEvent);
+    expect(result.mysteryVisit?.cardChoices?.map((card) => card.id)).toEqual([liveCard.id]);
+  });
+
   it("nulls mysteryVisit when currentScreen is not mystery", () => {
     const result = parseActiveRunData({
       currentScreen: "shop",
       mysteryVisit: { event: testMysteryEvent, cardChoices: [liveCard] },
     });
     expect(result.mysteryVisit).toBeNull();
-  });
-
-  it("keeps mysteryVisit when currentScreen is mystery", () => {
-    const result = parseActiveRunData({
-      currentScreen: "mystery",
-      mysteryVisit: { event: testMysteryEvent, cardChoices: [liveCard] },
-    });
-    expect(result.mysteryVisit?.event).toEqual(testMysteryEvent);
-    expect(result.mysteryVisit?.cardChoices?.map((card) => card.id)).toEqual(["slash"]);
-  });
-
-  it("keeps mysteryVisit when currentScreen is unset so resume can infer mystery", () => {
-    const result = parseActiveRunData({
-      mysteryVisit: { event: testMysteryEvent, cardChoices: [liveCard] },
-    });
-    expect(result.currentScreen).toBeNull();
-    expect(result.mysteryVisit?.event).toEqual(testMysteryEvent);
   });
 });
 

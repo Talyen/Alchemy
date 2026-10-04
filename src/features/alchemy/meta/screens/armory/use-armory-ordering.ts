@@ -70,13 +70,16 @@ export function useArmoryOrdering({
   const [stored, setStored] = useState<Record<string, StoredCategory>>({});
   const [placeholderIndex, setPlaceholderIndex] = useState<number | null>(null);
 
-  // Maps for fast item lookup
-  const gearById = useMemo(() => new Map(pickerItems.map((item) => [item.instanceId, item])), [pickerItems]);
-  const trinketById = useMemo(() => new Map(ownedTrinkets.map((item) => [item.id, item])), [ownedTrinkets]);
-
-  const pool: readonly ArmoryOrderRow[] = useMemo(
-    () => (isTrinket ? ownedTrinkets.map(trinketOrderRow) : pickerItems.map(gearOrderRow)),
+  const pool = useMemo(
+    () =>
+      isTrinket
+        ? ownedTrinkets.map((item) => ({ ...trinketOrderRow(item), item }))
+        : pickerItems.map((item) => ({ ...gearOrderRow(item), item })),
     [isTrinket, pickerItems, ownedTrinkets],
+  );
+  const byId = useMemo(
+    () => new Map<string, GearInstance | TrinketEntry>(pool.map(({ id, item }) => [id, item])),
+    [pool],
   );
   const poolSet = useMemo(() => new Set(pool.map((row) => row.id)), [pool]);
 
@@ -91,12 +94,9 @@ export function useArmoryOrdering({
   // Keep the complete order separate from its current browsing projection.
   // Reconciliation writes the category during render; derive its projection
   // directly so it cannot retain a previous category's items.
-  const orderedGear = isTrinket
-    ? []
-    : orderedIds.map((id) => gearById.get(id)).filter((item): item is GearInstance => Boolean(item));
-  const orderedTrinkets = !isTrinket
-    ? []
-    : orderedIds.map((id) => trinketById.get(id)).filter((item): item is TrinketEntry => Boolean(item));
+  const orderedItems = orderedIds.flatMap((id) => byId.get(id) ?? []);
+  const orderedGear = orderedItems.filter((item): item is GearInstance => "instanceId" in item);
+  const orderedTrinkets = orderedItems.filter((item): item is TrinketEntry => !("instanceId" in item));
   const visibleGear = orderedGear.filter((item) => matchesGearFilters(item, filters));
   const visibleTrinkets = orderedTrinkets.filter((item) => matchesTrinketFilters(item, filters));
   const visibleIds = isTrinket ? visibleTrinkets.map((item) => item.id) : visibleGear.map((item) => item.instanceId);
@@ -141,10 +141,12 @@ export function useArmoryOrdering({
   // Explicit one-time sort
   const onSort = (option: ArmorySortOption) => {
     setPlaceholderIndex(null);
-    const sorted = [...pool]
-      .sort((a, b) => compareOrderRows(a, b, isTrinket && option === "rarity" ? "name" : option))
-      .map((row) => row.id);
-    commitOrder(sorted, 0);
+    const sorted = new Set(
+      [...pool]
+        .sort((a, b) => compareOrderRows(a, b, isTrinket && option === "rarity" ? "name" : option))
+        .map((row) => row.id),
+    );
+    commitOrder([...sorted], 0);
   };
 
   // Confirmed equipment mutations

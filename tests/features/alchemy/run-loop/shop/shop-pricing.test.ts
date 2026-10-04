@@ -1,19 +1,13 @@
 import { describe, expect, it } from "vitest";
-import {
-  getEquipmentShopPrice,
-  getShopBuyPrice,
-  getShopRefreshPrice,
-} from "@/features/alchemy/run-loop/shop/shop-pricing";
+import { getShopBuyPrice, getShopRefreshPrice } from "@/features/alchemy/run-loop/shop/shop-pricing";
 import {
   ALCHEMIST_REFRESH_PRICE,
   EQUIPMENT_SHOP_ASTRAL_PRICE,
   EQUIPMENT_SHOP_BASIC_PRICE,
   EQUIPMENT_SHOP_UNIQUE_PRICE,
-  SHOP_CARD_PRICE,
   SHOP_REFRESH_PRICE,
-  TRINKET_SHOP_TRINKET_PRICE,
 } from "@/lib/game-constants";
-import { cardById, cardLibrary, createEmptyTalentEffectManifest } from "@/lib/game-data";
+import { cardById, createEmptyTalentEffectManifest } from "@/lib/game-data";
 
 describe("shop-pricing", () => {
   it("stacks location, talent, Potion, and first-purchase discounts in the live quote", () => {
@@ -29,6 +23,8 @@ describe("shop-pricing", () => {
     expect(getShopBuyPrice("merchantCard", potion, context)).toBe(13);
     expect(getShopBuyPrice("merchantCard", cardById["slash"]!, context)).toBe(18);
     expect(getShopBuyPrice("trinket", null, context)).toBe(88);
+    expect(getShopBuyPrice("merchantCard", cardById["slash"]!, { ...context, modifiers: ["bargain-bin"] })).toBe(3);
+    expect(getShopBuyPrice("trinket", null, { ...context, modifiers: ["collectors-favor"] })).toBe(63);
   });
 
   it.each([
@@ -42,57 +38,11 @@ describe("shop-pricing", () => {
     expect(getShopRefreshPrice(kind, talents, 1)).toBe(basePrice);
     expect(getShopRefreshPrice(kind, restock, 1)).toBe(0);
     expect(getShopRefreshPrice(kind, restock, 0)).toBe(basePrice);
+    expect(getShopRefreshPrice(kind, restock, 1, [], true)).toBe(basePrice);
     for (const trait of ["fresh-curios", "fresh-batch"] as const) {
       expect(getShopRefreshPrice(kind, talents, 1, [trait])).toBe(trait === freeTrait ? 0 : basePrice);
       expect(getShopRefreshPrice(kind, talents, 0, [trait])).toBe(basePrice);
     }
-  });
-
-  it.each([
-    ["leather-armor-basic", EQUIPMENT_SHOP_BASIC_PRICE],
-    ["longsword-astral", EQUIPMENT_SHOP_ASTRAL_PRICE],
-    ["oathkeeper", EQUIPMENT_SHOP_UNIQUE_PRICE],
-  ] as const)("quotes %s at its rarity price without generating random fixtures", (definitionId, price) => {
-    const item = { instanceId: "item", definitionId, affixes: [] };
-    expect(getEquipmentShopPrice(item)).toBe(price);
-    expect(
-      getShopBuyPrice("gear", item, {
-        talentEffects: createEmptyTalentEffectManifest(),
-        runBoons: [],
-        firstPurchaseUsed: true,
-      }),
-    ).toBe(price);
-  });
-
-  it("getShopBuyPrice halves the merchant base price under bargain-bin before talent discounts", () => {
-    const card = cardById["strike"] ?? cardLibrary[0]!;
-    const talents = { ...createEmptyTalentEffectManifest(), shopCardDiscount: 5 };
-    expect(
-      getShopBuyPrice("merchantCard", card, { talentEffects: talents, runBoons: [], firstPurchaseUsed: true }),
-    ).toBe(SHOP_CARD_PRICE - 5);
-    expect(
-      getShopBuyPrice("merchantCard", card, {
-        talentEffects: talents,
-        runBoons: [],
-        firstPurchaseUsed: true,
-        modifiers: ["bargain-bin"],
-      }),
-    ).toBe(Math.round(SHOP_CARD_PRICE * 0.5) - 5);
-  });
-
-  it("getShopBuyPrice applies collectors-favor to trinkets", () => {
-    const talents = createEmptyTalentEffectManifest();
-    expect(getShopBuyPrice("trinket", null, { talentEffects: talents, runBoons: [], firstPurchaseUsed: true })).toBe(
-      TRINKET_SHOP_TRINKET_PRICE,
-    );
-    expect(
-      getShopBuyPrice("trinket", null, {
-        talentEffects: talents,
-        runBoons: [],
-        firstPurchaseUsed: true,
-        modifiers: ["collectors-favor"],
-      }),
-    ).toBe(Math.round(TRINKET_SHOP_TRINKET_PRICE * 0.75));
   });
 
   it("limits apprentice pricing to Basic gear even with unrelated shop traits present", () => {

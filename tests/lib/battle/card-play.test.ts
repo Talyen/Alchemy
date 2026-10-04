@@ -489,12 +489,21 @@ describe("reworked cards", () => {
     expect(result.state.playerStatuses).toMatchObject({ stun: 0, freeze: 0, poison: 2 });
   });
 
-  it("shadowstep deals damage, arms the next card twice, and Consumes", () => {
+  it("shadowstep arms a guaranteed dodge, arms the next card twice, and Consumes", () => {
     const card = { ...cardById.shadowstep };
     const result = playBattleCardResolved(makeState({ hand: [card] }), card.id, 0);
-    expect(result.state.enemyHealth).toBe(29);
+    expect(result.state.flags.dodgeNextAttack).toBe(true);
     expect(result.state.flags.playNextCardTwice).toBe(true);
     expect(result.state.exhausted).toContainEqual(expect.objectContaining({ id: "shadowstep" }));
+  });
+
+  it("feint arms a guaranteed dodge, draws a card, and Consumes", () => {
+    const card = { ...cardById.feint };
+    const drawCandidate = { ...cardById.slash };
+    const result = playBattleCardResolved(makeState({ hand: [card], deck: [drawCandidate] }), card.id, 0);
+    expect(result.state.flags.dodgeNextAttack).toBe(true);
+    expect(result.state.hand).toContainEqual(expect.objectContaining({ id: "slash" }));
+    expect(result.state.exhausted).toContainEqual(expect.objectContaining({ id: "feint" }));
   });
 
   it("ray-of-frost deals two immediate Freeze hits", () => {
@@ -525,6 +534,29 @@ describe("reworked cards", () => {
     const result = playBattleCardResolved(makeState({ hand: [card] }), card.id, 0);
     expect(result.state.playerStatuses.armor).toBe(1);
     expect(result.state.playerStatuses.thorns).toBe(2);
+  });
+
+  it("thorn-whip deals nature damage and grants thorns", () => {
+    const card = { ...cardById["thorn-whip"] };
+    const result = playBattleCardResolved(makeState({ hand: [card], enemyHealth: 20 }), card.id, 0);
+    expect(result.state.enemyHealth).toBe(18);
+    expect(result.state.playerStatuses.thorns).toBe(1);
+  });
+
+  it("porcupine-quill grants thorns and triggers a companion action", () => {
+    const card = { ...cardById["porcupine-quill"] };
+    const result = playBattleCardResolved(
+      makeState({
+        hand: [card],
+        activeCompanion: companionLibrary.wolf,
+        enemyHealth: 20,
+      }),
+      card.id,
+      0,
+    );
+    expect(result.state.playerStatuses.thorns).toBe(2);
+    // Wolf companion deals damage when acting
+    expect(result.state.enemyHealth).toBeLessThan(20);
   });
 
   it("luck-potion restores mana on a successful flip", () => {

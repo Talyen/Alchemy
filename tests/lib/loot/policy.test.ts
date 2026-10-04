@@ -3,7 +3,6 @@ import { LOOT_DEPTH_CURVES, LOOT_SOURCE_WEIGHTS } from "@/lib/game-constants";
 import {
   highestCompletedLootDifficulty,
   isLootEligible,
-  LOOT_KINDS,
   lootAccountMultiplier,
   lootDepthMultiplier,
   resolveLootWeights,
@@ -28,12 +27,18 @@ describe("shared loot policy", () => {
 
   it("opens each premium pool at its depth gate and interpolates instead of stepping", () => {
     for (const kind of ["astral", "trinket", "unique"] as const) {
-      const [first, second] = LOOT_DEPTH_CURVES[kind];
+      const [first] = LOOT_DEPTH_CURVES[kind];
       expect(isLootEligible(kind, first.depth - 1), kind).toBe(false);
       expect(lootDepthMultiplier(kind, first.depth), kind).toBe(first.weight);
-      expect(lootDepthMultiplier(kind, (first.depth + second.depth) / 2), kind).toBeCloseTo(
-        (first.weight + second.weight) / 2,
-      );
+      const curve = LOOT_DEPTH_CURVES[kind];
+      for (let index = 1; index < curve.length; index++) {
+        const before = curve[index - 1]!;
+        const after = curve[index]!;
+        expect(after.depth, `${kind} segment ${index}`).toBeGreaterThan(before.depth);
+        expect(lootDepthMultiplier(kind, (before.depth + after.depth) / 2), `${kind} segment ${index}`).toBeCloseTo(
+          (before.weight + after.weight) / 2,
+        );
+      }
       expect(lootDepthMultiplier(kind, 1000), kind).toBe(1);
     }
   });
@@ -58,7 +63,6 @@ describe("shared loot policy", () => {
       wizard: ["difficulty-3"],
     });
     expect(best).toBe("difficulty-3");
-    expect(highestCompletedLootDifficulty({ knight: [] })).toBeNull();
     expect(
       [null, "difficulty-1", "difficulty-2", "difficulty-3"].map((id) => lootAccountMultiplier(id as typeof best)),
     ).toEqual([1, 1.1, 1.2, 1.3]);
@@ -125,20 +129,13 @@ describe("shared loot policy", () => {
     expect(boosted).toEqual(plain);
   });
 
-  it("keeps the loot weight table and depth curves well-shaped", () => {
-    for (const [source, weights] of Object.entries(LOOT_SOURCE_WEIGHTS)) {
-      expect(Object.keys(weights).sort(), source).toEqual([...LOOT_KINDS].sort());
-      for (const [kind, weight] of Object.entries(weights)) {
-        expect(Number.isFinite(weight), `${source}.${kind}`).toBe(true);
-        expect(weight, `${source}.${kind}`).toBeGreaterThanOrEqual(0);
-      }
-    }
-    for (const [kind, curve] of Object.entries(LOOT_DEPTH_CURVES)) {
-      const depths = curve.map((point) => point.depth);
-      expect(
-        [...depths].sort((a, b) => a - b),
-        kind,
-      ).toEqual(depths);
-    }
+  it("fails explicitly when every reward pool is exhausted without consuming RNG", () => {
+    const unavailable = { card: false, basic: false, boon: false, astral: false, trinket: false, unique: false };
+    const weights = resolveLootWeights({ source: "boss", progress, available: unavailable });
+    const rng = () => {
+      throw new Error("Exhausted pools must not draw");
+    };
+    expect(() => rollLootGroup(weights, rng)).toThrow("Cannot select from an empty loot pool");
+    expect(() => rollLootGearRarity(weights, rng, unavailable)).toThrow("Cannot select from an empty loot pool");
   });
 });

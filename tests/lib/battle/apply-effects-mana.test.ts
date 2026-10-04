@@ -17,37 +17,21 @@ function applyManaEffect(
 }
 
 describe("applyEffectByKind (mana effects)", () => {
-  it("restores mana and emits combat text", () => {
-    const state = patchBattleState({ mana: 2, maxMana: 4 });
+  it("scales and caps potion Mana before paying healing for the actual gain", () => {
+    const state = patchBattleState({ mana: 0, maxMana: 4, playerHealth: 10, talentEffects: { healthPerMana: 2 } });
     const texts = makeTexts();
-    const effect = { kind: "restore-mana" as const, amount: 2 };
-    const result = applyManaEffect(state, effect, 1, texts);
+    const result = applyManaEffect(state, { kind: "restore-mana", amount: 3 }, 1.5, texts);
     expect(result.mana).toBe(4);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "mana", amount: 2 });
-  });
-
-  it("applies potion multiplier to restore-mana", () => {
-    const state = patchBattleState({ mana: 0, maxMana: 4 });
-    const texts = makeTexts();
-    const effect = { kind: "restore-mana" as const, amount: 3 };
-    const result = applyManaEffect(state, effect, 1.5, texts);
-
-    expect(result.mana).toBe(4);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "mana", amount: 4 });
-  });
-
-  it("heals on mana gain when healOnManaGain talent is active", () => {
-    const state = patchBattleState({
-      mana: 0,
-      maxMana: 4,
-      playerHealth: 20,
-      talentEffects: { healOnManaGain: 3 },
-    });
-    const texts = makeTexts();
-    const effect = { kind: "restore-mana" as const, amount: 1 };
-    const result = applyManaEffect(state, effect, 1, texts);
-    expect(result.playerHealth).toBe(23);
-    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 3 });
+    expect(result.playerHealth).toBe(18);
+    expect(texts).toEqual([
+      { target: "player", kind: "status", stat: "mana", amount: 4 },
+      { target: "player", kind: "heal", stat: "health", amount: 8 },
+    ]);
+    const cappedTexts = makeTexts();
+    const capped = applyManaEffect(result, { kind: "restore-mana", amount: 3 }, 1.5, cappedTexts);
+    expect(capped.playerHealth).toBe(18);
+    expect(cappedTexts).toEqual([]);
+    expect(state.mana).toBe(0);
   });
 
   it("loses mana without going below zero", () => {
@@ -65,20 +49,6 @@ describe("applyEffectByKind (mana effects)", () => {
     expect(texts).toEqual([]);
   });
 
-  it("reports only Mana Crystals actually lost at the minimum", () => {
-    const texts = makeTexts();
-    const state = patchBattleState({ mana: 2, maxMana: 2 });
-    applyManaEffect(state, { kind: "lose-max-mana", amount: 5 }, 1, texts);
-    expect(texts).toEqual([{ target: "player", kind: "damage", stat: "mana", amount: 2 - MIN_MAX_MANA_FLOOR }]);
-  });
-
-  it("does not report Mana Crystal loss at the minimum", () => {
-    const texts = makeTexts();
-    const state = patchBattleState({ mana: MIN_MAX_MANA_FLOOR, maxMana: MIN_MAX_MANA_FLOOR });
-    applyManaEffect(state, { kind: "lose-max-mana", amount: 1 }, 1, texts);
-    expect(texts).toEqual([]);
-  });
-
   it("gains max mana and current mana together", () => {
     const state = patchBattleState({ mana: 2, maxMana: 4 });
     const texts = makeTexts();
@@ -88,23 +58,17 @@ describe("applyEffectByKind (mana effects)", () => {
     expect(result.mana).toBe(4);
   });
 
-  it("reduces max mana and clamps current mana to the new cap", () => {
+  it("clamps Mana Crystals at the floor and emits only actual loss, then stays inert", () => {
+    const texts = makeTexts();
     const state = patchBattleState({ mana: 4, maxMana: 4 });
-    const texts = makeTexts();
-    const effect = { kind: "lose-max-mana" as const, amount: 2 };
-    const result = applyManaEffect(state, effect, 1, texts);
-    expect(result.maxMana).toBe(2);
-    expect(result.mana).toBe(2);
-    expect(result.maxMana).toBeGreaterThanOrEqual(MIN_MAX_MANA_FLOOR);
-  });
-
-  it("does not drop max mana below MIN_MAX_MANA_FLOOR", () => {
-    const state = patchBattleState({ mana: 1, maxMana: 1 });
-    const texts = makeTexts();
-    const effect = { kind: "lose-max-mana" as const, amount: 5 };
-    const result = applyManaEffect(state, effect, 1, texts);
+    const result = applyManaEffect(state, { kind: "lose-max-mana", amount: 5 }, 1, texts);
     expect(result.maxMana).toBe(MIN_MAX_MANA_FLOOR);
     expect(result.mana).toBe(MIN_MAX_MANA_FLOOR);
+    expect(texts).toEqual([{ target: "player", kind: "damage", stat: "mana", amount: 4 - MIN_MAX_MANA_FLOOR }]);
+    const emptyTexts = makeTexts();
+    expect(applyManaEffect(result, { kind: "lose-max-mana", amount: 1 }, 1, emptyTexts)).toBe(result);
+    expect(emptyTexts).toEqual([]);
+    expect(state.maxMana).toBe(4);
   });
 
   it("burns enemy when losing max mana with burnDamageOnManaCrystalLoss talent", () => {

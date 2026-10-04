@@ -106,41 +106,26 @@ export function summarizePlaywrightReport(report, options = {}) {
   const root = report && typeof report === "object" ? /** @type {Record<string, unknown>} */ (report) : {};
   const stats = root.stats && typeof root.stats === "object" ? /** @type {Record<string, unknown>} */ (root.stats) : {};
   const failures = [];
-  let total = 0;
-  let expected = 0;
-  let unexpected = 0;
-  let flaky = 0;
-  let skipped = 0;
-
-  for (const { spec, test } of testsInSuites(root.suites)) {
-    total += 1;
-    const status = test.status;
-    if (status === "expected") expected += 1;
-    else if (status === "unexpected") unexpected += 1;
-    else if (status === "flaky") flaky += 1;
-    else if (status === "skipped") skipped += 1;
-    if (status === "unexpected" || status === "flaky") {
-      const file = typeof spec.file === "string" ? spec.file : "unknown";
-      const line = Number(spec.line) || 0;
-      const identity = diagnosticIdentity({
-        rootDir,
-        file,
-        line,
-        project: typeof test.projectName === "string" ? test.projectName : "chromium",
-        title: typeof spec.title === "string" ? spec.title : "failed test",
-      });
-      const digestPath = failureDigestRelativePath(runId, identity.id);
-      failures.push({
-        file,
-        line,
-        title: identity.title,
-        status: typeof status === "string" ? status : "unexpected",
-        message: firstResultMessage(test.results),
-        digestPath: fs.existsSync(path.resolve(rootDir, digestPath)) ? digestPath : null,
-        routeHint: formatRouteHintLine(routeHintForPath(file, rootDir)),
-      });
-    }
+  const collected = collectPlaywrightTests(root);
+  for (const test of collected.allTests) {
+    if (test.status !== "unexpected" && test.status !== "flaky") continue;
+    const { file, line, project, status, errorMessage } = test;
+    const identity = diagnosticIdentity({ rootDir, file, line, project, title: test.title });
+    const digestPath = failureDigestRelativePath(runId, identity.id);
+    failures.push({
+      file,
+      line,
+      title: identity.title,
+      status,
+      message: errorMessage,
+      digestPath: fs.existsSync(path.resolve(rootDir, digestPath)) ? digestPath : null,
+      routeHint: formatRouteHintLine(routeHintForPath(file, rootDir)),
+    });
   }
+  const expected = collected.allTests.filter((test) => test.status === "expected").length;
+  const unexpected = collected.failedTests.length;
+  const flaky = collected.flakyTests.length;
+  const skipped = collected.skippedTests;
 
   const hasStats = Boolean(root.stats && typeof root.stats === "object");
   const runnerErrors = (Array.isArray(root.errors) ? root.errors : []).map((error) =>
@@ -155,7 +140,7 @@ export function summarizePlaywrightReport(report, options = {}) {
         Number(stats.unexpected ?? 0) +
         Number(stats.flaky ?? 0) +
         Number(stats.skipped ?? 0)
-      : total,
+      : collected.totalTests,
     expected: hasStats ? Number(stats.expected ?? 0) : expected,
     unexpected: hasStats ? Number(stats.unexpected ?? 0) : unexpected,
     flaky: hasStats ? Number(stats.flaky ?? 0) : flaky,

@@ -8,29 +8,21 @@ function assertPositiveIterations(iterations: number): void {
   }
 }
 
-function forEachSimulation(
-  config: BalanceBatchConfig,
-  visit: (result: ReturnType<typeof simulateBattle>) => void,
-): void {
+export function simulateBatch(config: BalanceBatchConfig): BalanceBatchResult {
   assertPositiveIterations(config.iterations);
   const baseSeed = config.seed ?? DEFAULT_SEED;
-  for (let index = 0; index < config.iterations; index += 1) {
-    visit(simulateBattle({ ...config, seed: baseSeed + index }));
-  }
-}
-
-export function simulateBatch(config: BalanceBatchConfig): BalanceBatchResult {
   let cardsPlayedTotal = 0;
   const cardPlayCounts: Record<string, number> = {};
   const results: BalanceBatchResult["results"] = [];
 
-  forEachSimulation(config, (result) => {
+  for (let index = 0; index < config.iterations; index += 1) {
+    const result = simulateBattle({ ...config, seed: baseSeed + index });
     results.push(result);
     cardsPlayedTotal += result.totalCardsPlayed;
     for (const [cardId, count] of Object.entries(result.cardsPlayed)) {
       cardPlayCounts[cardId] = (cardPlayCounts[cardId] ?? 0) + count;
     }
-  });
+  }
 
   const { n: iterations, ...rates } = summarizeBattleRates(results);
   return {
@@ -56,20 +48,20 @@ export interface WinSeries {
 
 export function simulateWinSeries(config: BalanceBatchConfig): WinSeries {
   assertPositiveIterations(config.iterations);
+  const baseSeed = config.seed ?? DEFAULT_SEED;
   const outcomes = new Uint8Array(config.iterations);
   const turns = new Uint16Array(config.iterations);
   let wins = 0;
   let totalTurns = 0;
-  let index = 0;
-  forEachSimulation({ ...config, trackAnomalies: false, trackMetrics: false }, (result) => {
+  for (let index = 0; index < config.iterations; index += 1) {
+    const result = simulateBattle({ ...config, seed: baseSeed + index, trackAnomalies: false, trackMetrics: false });
     turns[index] = result.turns;
     totalTurns += result.turns;
     if (result.outcome === "win") {
       outcomes[index] = 1;
       wins += 1;
     }
-    index += 1;
-  });
+  }
   return {
     outcomes,
     turns,

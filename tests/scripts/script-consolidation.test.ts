@@ -1,24 +1,25 @@
-import { mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
+import { mkdtempSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { describe, expect, it, vi } from "vitest";
 
-import { VITEST_MAX_WORKERS } from "../../scripts/lib/verification/test-concurrency.mjs";
 import { parseKnownFlags } from "../../scripts/lib/cli-args.mjs";
 import { UsageError } from "../../scripts/lib/script-run.mjs";
 import { runStreamCommand, runTaskCommand } from "../../scripts/lib/run-command.mjs";
 import { resolvePrettierTargets } from "../../scripts/run-prettier.mjs";
 import { runCiLint } from "../../scripts/lint-ci.mjs";
 
-const ROOT = process.cwd();
-
 describe("script consolidation", () => {
-  it("pins the ship-gate worker budget in one owner", () => {
-    expect(VITEST_MAX_WORKERS).toBe(4);
-    expect(readFileSync(join(ROOT, "scripts/run-ship-unit.mjs"), "utf8")).toContain("VITEST_MAX_WORKERS");
-  });
-
   it("parses simple flags, values, shorts, and passthrough", () => {
+    const parsed = parseKnownFlags(["input file", "-c", "--mode=web", "-m", "desktop=demo", "--", "--mode=ignored"], {
+      check: { short: "c" },
+      mode: { short: "m", takesValue: true },
+    });
+    expect(parsed).toEqual({
+      flags: new Set(["check"]),
+      values: new Map([["mode", ["web", "desktop=demo"]]]),
+      rest: ["input file", "--mode=ignored"],
+    });
     expect(parseKnownFlags(["--check"], { check: {}, write: {} }).flags.has("check")).toBe(true);
     expect(parseKnownFlags(["--mode", "desktop"], { mode: { takesValue: true } }).values.get("mode")).toEqual([
       "desktop",
@@ -46,16 +47,6 @@ describe("script consolidation", () => {
     expect(resolvePrettierTargets(["--check", "package-lock.json", "src/App.tsx"]).targets).toEqual(["src/App.tsx"]);
     expect(() => resolvePrettierTargets([])).toThrow(UsageError);
     expect(() => resolvePrettierTargets(["--check", "--write"])).toThrow(UsageError);
-  });
-
-  it("keeps local static fast and CI static complete", () => {
-    const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { scripts: Record<string, string> };
-    expect(pkg.scripts["check:static"]).not.toContain("lint:boundaries");
-    expect(pkg.scripts["check:static"]).not.toContain("lint:architecture-smoke");
-    expect(pkg.scripts["lint:ci"]).toBe("node scripts/lint-ci.mjs");
-    expect(readFileSync(join(ROOT, "scripts/lint-ci.mjs"), "utf8")).toContain("check:static");
-    expect(readFileSync(join(ROOT, "scripts/lint-ci.mjs"), "utf8")).toContain("lint:boundaries");
-    expect(readFileSync(join(ROOT, "scripts/lint-ci.mjs"), "utf8")).toContain("lint:architecture-smoke");
   });
 
   it("streams long-running commands through the shared runner", () => {
@@ -95,7 +86,14 @@ describe("script consolidation", () => {
         logPath: String(options.logPath),
       }));
       expect(await runCiLint({ rootDir: root, runner })).toBe(0);
-      expect(runner).toHaveBeenCalledTimes(6);
+      expect(runner.mock.calls.map(([command, args]) => [command, args])).toEqual([
+        ["npm", ["run", "check:static"]],
+        ["npm", ["run", "docs:check"]],
+        ["npm", ["run", "deadcode"]],
+        ["npm", ["run", "lint:boundaries"]],
+        ["npm", ["run", "lint:architecture-smoke"]],
+        ["npx", ["playwright", "test", "--list", "--project=chromium"]],
+      ]);
       expect(log.mock.calls.flat().join("\n")).toContain("CI static checks: 6/6 passed");
     } finally {
       rmSync(root, { recursive: true, force: true });

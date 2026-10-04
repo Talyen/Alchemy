@@ -29,36 +29,18 @@ export function parseKnownFlags(argv, spec = {}, { usage } = {}) {
       rest.push(...argv.slice(index + 1));
       break;
     }
-    if (arg.startsWith("--")) {
-      const equals = arg.indexOf("=");
-      const name = equals === -1 ? arg.slice(2) : arg.slice(2, equals);
-      const inline = equals === -1 ? null : arg.slice(equals + 1);
-      const definition = Object.hasOwn(spec, name) ? spec[name] : undefined;
+    const option = /^(--[^=]*|-.)(?:=([\s\S]*))?$/.exec(arg);
+    if (option) {
+      const label = option[1];
+      const name = label.startsWith("--") ? label.slice(2) : shortToLong.get(label.slice(1));
+      const definition = name && Object.hasOwn(spec, name) ? spec[name] : undefined;
       if (!definition) throw new UsageError(`Unknown option: ${arg}.${usage ? ` ${usage}` : ""}`);
-      if (definition.takesValue) {
-        if (inline != null) pushValue(name, inline, arg);
-        else pushValue(name, argv[++index], arg);
-      } else {
-        if (inline != null) throw new UsageError(`Option does not take a value: ${arg}.`);
+      const inline = option[2];
+      if (definition.takesValue) pushValue(name, inline ?? argv[++index], arg);
+      else {
+        if (inline !== undefined) throw new UsageError(`Option does not take a value: ${arg}.`);
         flags.add(name);
       }
-      continue;
-    }
-    if (arg.startsWith("-") && arg.length === 2) {
-      const name = shortToLong.get(arg.slice(1));
-      if (!name) throw new UsageError(`Unknown option: ${arg}.${usage ? ` ${usage}` : ""}`);
-      const definition = spec[name];
-      if (definition.takesValue) pushValue(name, argv[++index], arg);
-      else flags.add(name);
-      continue;
-    }
-    if (arg.startsWith("-") && !arg.startsWith("--") && arg.includes("=") && arg.indexOf("=") === 2) {
-      const shortChar = arg[1];
-      const name = shortToLong.get(shortChar);
-      if (!name) throw new UsageError(`Unknown option: ${arg}.${usage ? ` ${usage}` : ""}`);
-      const definition = spec[name];
-      if (!definition.takesValue) throw new UsageError(`Option does not take a value: ${arg}.`);
-      pushValue(name, arg.slice(3), arg);
       continue;
     }
     rest.push(arg);

@@ -9,7 +9,7 @@ import {
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import {
   countImplementedTalents,
-  getTalentKeywordProgress,
+  computeTalentPoints,
   getTalentTreeKeywordIds,
   type UnlockedTalents,
   type TalentXP,
@@ -46,8 +46,7 @@ const TALENT_TREE_KEYWORD_IMPLEMENTED_COUNTS = getTalentTreeKeywordIds().map((kw
 
 export function hasUnspentTalents(talentXP: TalentXP, unlockedTalents: UnlockedTalents): boolean {
   return TALENT_TREE_KEYWORD_IMPLEMENTED_COUNTS.some(({ kwId, count }) => {
-    const xp = talentXP[kwId] ?? 0;
-    return getTalentKeywordProgress(xp, (unlockedTalents[kwId] ?? []).length, count).hasUnspent;
+    return Math.min(computeTalentPoints(talentXP[kwId] ?? 0), count) > (unlockedTalents[kwId] ?? []).length;
   });
 }
 
@@ -68,11 +67,13 @@ export function hasAffordableHomesteadUpgrade(input: {
     discoveredCardIds,
   } = input;
 
-  if (buildings.some((b) => canUpgradeTierItem(b, constructedBuildings[b.id] ?? 0, materialInventory))) return true;
-
-  if (farmPlots.some((f) => canUpgradeTierItem(f, plantedFarms[f.id] ?? 0, materialInventory))) return true;
-
-  if (researchUpgrades.some((r) => canUpgradeTierItem(r, completedResearch[r.id] ?? 0, materialInventory))) return true;
+  for (const [items, levels] of [
+    [buildings, constructedBuildings],
+    [farmPlots, plantedFarms],
+    [researchUpgrades, completedResearch],
+  ] as const) {
+    if (items.some((item) => canUpgradeTierItem(item, levels[item.id] ?? 0, materialInventory))) return true;
+  }
 
   const discoveredSet = new Set(discoveredCardIds);
   return COMPANION_CARDS.some(({ id, companionId }) => {

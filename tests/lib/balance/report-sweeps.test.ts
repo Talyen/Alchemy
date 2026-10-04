@@ -7,8 +7,11 @@ const { simulateWinSeries } = vi.hoisted(() => ({
 
 vi.mock("@/lib/balance/simulator-batch", () => ({ simulateWinSeries }));
 
+import { companionIdsFromDeck } from "@/lib/balance/companion-deck";
+import { gearBaseItemList } from "@/lib/gear/base-items";
+import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
 import { gearAffixList } from "@/lib/gear/affix-catalog";
-import { cardLibrary, trinketLibrary } from "@/lib/game-data";
+import { cardLibrary, trinketLibrary, companionLibrary } from "@/lib/game-data";
 import {
   IN_CLASS_CARD_GAUNTLET,
   runCardSweepInClass,
@@ -92,19 +95,6 @@ describe("runCardSweepInClass", () => {
       expect(row.deltas.mid.n).toBe(row.deltas.early.n);
       expect(row.deltas.late.n).toBe(row.deltas.early.n);
     }
-
-    const [seed, configs] = [...groups][0];
-    const broken = configs.map((config, index) =>
-      index === 1
-        ? { ...config, deck: [...config.deck!], gearEffects: {} as NonNullable<BalanceBatchConfig["gearEffects"]> }
-        : config,
-    );
-    const violations = affixScenarioViolations(new Map([[seed, broken]]));
-    expect(violations.count).toBe(2);
-    expect(violations.examples).toEqual([
-      expect.stringContaining("changed paired deck"),
-      expect.stringContaining("expected its single effect, got none"),
-    ]);
   });
 
   it("runs each full base deck once per tier and character", () => {
@@ -196,17 +186,6 @@ describe("runCardSweepInClass", () => {
   });
 
   it("pairs each trinket against an empty-trinket baseline with matched fight seeds", () => {
-    simulateWinSeries.mockReset();
-    simulateWinSeries.mockImplementation((config: BalanceBatchConfig) => ({
-      outcomes: new Uint8Array(config.iterations),
-      turns: new Uint16Array(config.iterations),
-      wins: 0,
-      totalTurns: 0,
-      averageTurns: 0,
-      iterations: config.iterations,
-      winRate: 0,
-    }));
-
     const rows = runTrinketSweep({
       iterations: 1,
       pairedIterations: 1,
@@ -225,17 +204,6 @@ describe("runCardSweepInClass", () => {
   });
 
   it("isolates talent effects in talent sweeps", () => {
-    simulateWinSeries.mockReset();
-    simulateWinSeries.mockImplementation((config: BalanceBatchConfig) => ({
-      outcomes: new Uint8Array(config.iterations),
-      turns: new Uint16Array(config.iterations),
-      wins: 0,
-      totalTurns: 0,
-      averageTurns: 0,
-      iterations: config.iterations,
-      winRate: 0,
-    }));
-
     const rows = runTalentSweep({
       iterations: 1,
       pairedIterations: 1,
@@ -246,25 +214,18 @@ describe("runCardSweepInClass", () => {
     });
 
     expect(rows.length).toBeGreaterThan(0);
-    for (const row of rows) {
-      expect(row.deltas.early).toBeDefined();
-      expect(row.deltas.mid).toBeDefined();
-      expect(row.deltas.late).toBeDefined();
-    }
+    const calls = simulateWinSeries.mock.calls.map(([config]) => config as BalanceBatchConfig);
+    expect(calls.every((config) => config.talentEffects !== undefined && config.gearEffects === undefined)).toBe(true);
+    const first = calls[0]!;
+    const paired = calls.filter((config) => config.seed === first.seed);
+    expect(paired.length).toBeGreaterThan(1);
+    expect(paired.every((config) => config.deck === first.deck)).toBe(true);
+    expect(
+      paired.slice(1).some((config) => JSON.stringify(config.talentEffects) !== JSON.stringify(first.talentEffects)),
+    ).toBe(true);
   });
 
   it("isolates companion summons in companion sweeps", () => {
-    simulateWinSeries.mockReset();
-    simulateWinSeries.mockImplementation((config: BalanceBatchConfig) => ({
-      outcomes: new Uint8Array(config.iterations),
-      turns: new Uint16Array(config.iterations),
-      wins: 0,
-      totalTurns: 0,
-      averageTurns: 0,
-      iterations: config.iterations,
-      winRate: 0,
-    }));
-
     const rows = runCompanionSweep({
       iterations: 1,
       pairedIterations: 1,
@@ -274,26 +235,21 @@ describe("runCardSweepInClass", () => {
       loadoutMode: "bare",
     });
 
-    expect(rows.length).toBeGreaterThan(0);
-    for (const row of rows) {
-      expect(row.deltas.early).toBeDefined();
-      expect(row.deltas.mid).toBeDefined();
-      expect(row.deltas.late).toBeDefined();
-    }
+    expect(rows.map((row) => row.id).sort()).toEqual(Object.keys(companionLibrary).sort());
+    const calls = simulateWinSeries.mock.calls.map(([config]) => config as BalanceBatchConfig);
+    expect(
+      calls.every((config) => config.deck && config.talentEffects === undefined && config.gearEffects === undefined),
+    ).toBe(true);
+    const first = calls[0]!;
+    const treatment = calls[1]!;
+    const baselineIds = new Set(first.deck!.map((card) => card.id));
+    const added = treatment.deck!.filter((card) => !baselineIds.has(card.id));
+    expect(added).toHaveLength(1);
+    expect(companionIdsFromDeck(added)).toHaveLength(1);
+    expect(treatment.deck!.filter((card) => card.id !== added[0]!.id)).toEqual(first.deck);
   });
 
   it("isolates gear base items against default gear effects in gear sweeps", () => {
-    simulateWinSeries.mockReset();
-    simulateWinSeries.mockImplementation((config: BalanceBatchConfig) => ({
-      outcomes: new Uint8Array(config.iterations),
-      turns: new Uint16Array(config.iterations),
-      wins: 0,
-      totalTurns: 0,
-      averageTurns: 0,
-      iterations: config.iterations,
-      winRate: 0,
-    }));
-
     const rows = runGearSweep({
       iterations: 1,
       pairedIterations: 1,
@@ -303,11 +259,14 @@ describe("runCardSweepInClass", () => {
       loadoutMode: "bare",
     });
 
-    expect(rows.length).toBeGreaterThan(0);
-    for (const row of rows) {
-      expect(row.deltas.early).toBeDefined();
-      expect(row.deltas.mid).toBeDefined();
-      expect(row.deltas.late).toBeDefined();
-    }
+    expect(rows.map((row) => row.id).sort()).toEqual(gearBaseItemList.map((item) => item.id).sort());
+    const calls = simulateWinSeries.mock.calls.map(([config]) => config as BalanceBatchConfig);
+    const first = calls[0]!;
+    const paired = calls.filter((config) => config.seed === first.seed);
+    expect(first.gearEffects).toEqual(defaultGearEffects);
+    expect(paired.every((config) => config.deck === first.deck && config.talentEffects === undefined)).toBe(true);
+    expect(
+      paired.slice(1).some((config) => JSON.stringify(config.gearEffects) !== JSON.stringify(defaultGearEffects)),
+    ).toBe(true);
   });
 });

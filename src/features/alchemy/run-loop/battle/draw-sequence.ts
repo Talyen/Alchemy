@@ -3,7 +3,7 @@ import type { BattleCard } from "@/lib/game-data";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { getHandCardKey } from "./playable-hand";
 import { logBattleError } from "./controller-utils";
-import { markBattleStage } from "@/lib/performance/battle-stage-marks";
+import { markBattleStage } from "@/lib/performance/marks";
 import { type HiddenHandCardKeys } from "./playable-hand";
 import type { PlaybackLifetime } from "./playback-lifetime";
 

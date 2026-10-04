@@ -5,7 +5,6 @@ import { Switch } from "@/components/ui/switch";
 import { playUISound } from "@/lib/audio";
 import { controlLabelClass, controlDescriptionClass } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
-import type { AspectRatioOption, DisplayMode } from "../../../shared/types";
 
 export function SettingsSection({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -44,7 +43,7 @@ interface SettingsSelectProps<T extends string> {
   onChange: (value: T) => void;
 }
 
-function SettingsSelect<T extends string>({ id, label, value, options, onChange }: SettingsSelectProps<T>) {
+export function SettingsSelect<T extends string>({ id, label, value, options, onChange }: SettingsSelectProps<T>) {
   const selectDismiss = useSelectDismiss();
   return (
     <div className="options-settings-row">
@@ -71,46 +70,6 @@ function SettingsSelect<T extends string>({ id, label, value, options, onChange 
         </SelectContent>
       </Select>
     </div>
-  );
-}
-
-export function AspectRatioSelect({
-  selectedAspectRatio,
-  aspectRatioOptions,
-  onChange,
-}: {
-  selectedAspectRatio: AspectRatioOption;
-  aspectRatioOptions: ReadonlyArray<{ value: AspectRatioOption; label: string }>;
-  onChange: (aspectRatio: AspectRatioOption) => void;
-}) {
-  return (
-    <SettingsSelect
-      id="aspect-ratio"
-      label="Aspect Ratio"
-      value={selectedAspectRatio}
-      options={aspectRatioOptions}
-      onChange={onChange}
-    />
-  );
-}
-
-export function DisplayModeSelect({
-  displayMode,
-  displayModeOptions,
-  onChange,
-}: {
-  displayMode: DisplayMode;
-  displayModeOptions: ReadonlyArray<{ value: DisplayMode; label: string }>;
-  onChange: (mode: DisplayMode) => void;
-}) {
-  return (
-    <SettingsSelect
-      id="display-mode"
-      label="Display Mode"
-      value={displayMode}
-      options={displayModeOptions}
-      onChange={onChange}
-    />
   );
 }
 

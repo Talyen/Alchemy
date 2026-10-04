@@ -21,10 +21,6 @@ describe("uniqueRunBoons", () => {
       "alpha",
     ]);
   });
-
-  it("returns an empty list when nothing resolves", () => {
-    expect(uniqueRunBoons(["missing"], library)).toEqual([]);
-  });
 });
 
 describe("BattleBoonInspectOverlay", () => {

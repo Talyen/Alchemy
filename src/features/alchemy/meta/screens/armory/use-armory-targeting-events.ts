@@ -32,41 +32,6 @@ const SALVAGE_CLICK_REGIONS = [
   testIdSelectors("armory-salvage-toggle", "armory-crafting-strip"),
 ].join(",");
 
-function setupTargetingEventListeners(salvageMode: boolean, clearTargeting: () => void): () => void {
-  function handleClick(event: MouseEvent) {
-    const target = event.target instanceof Element ? event.target : null;
-    if (target?.closest(salvageMode ? SALVAGE_CLICK_REGIONS : CURRENCY_CLICK_REGIONS)) return;
-    clearTargeting();
-  }
-
-  function handleContextMenu(event: MouseEvent) {
-    const target = event.target instanceof Element ? event.target : null;
-    if (target?.closest(CONTEXT_MENU_REGIONS)) return;
-    if (target?.closest(WORKSPACE)) event.preventDefault();
-    clearTargeting();
-  }
-
-  function handleVisibilityChange() {
-    if (document.visibilityState === "hidden") clearTargeting();
-  }
-
-  const unsubscribeEscape = pushEscapeHandler({
-    id: "armory-targeting",
-    priority: ESCAPE_PRIORITY.ARMORY_TRANSIENT,
-    onEscape: () => clearTargeting(),
-  });
-  const lifetime = new AbortController();
-  const options = { signal: lifetime.signal };
-  document.addEventListener("click", handleClick, options);
-  document.addEventListener("contextmenu", handleContextMenu, options);
-  window.addEventListener("blur", clearTargeting, options);
-  document.addEventListener("visibilitychange", handleVisibilityChange, options);
-  return () => {
-    unsubscribeEscape();
-    lifetime.abort();
-  };
-}
-
 export function useArmoryTargetingEvents({
   salvageMode,
   activeCurrencyId,
@@ -75,9 +40,41 @@ export function useArmoryTargetingEvents({
 }: UseArmoryTargetingEventsOptions) {
   const clearTargetingRef = useLatestRef(clearTargeting);
 
+  const targetingActive = salvageMode || activeCurrencyId !== null;
+  const confirmingSalvage = salvageTarget !== null;
   useEffect(() => {
-    if (!salvageMode && !activeCurrencyId) return;
-    if (salvageTarget) return;
-    return setupTargetingEventListeners(salvageMode, () => clearTargetingRef.current());
-  }, [activeCurrencyId, clearTargetingRef, salvageMode, salvageTarget]);
+    if (!targetingActive || confirmingSalvage) return;
+    function handleClick(event: MouseEvent) {
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest(salvageMode ? SALVAGE_CLICK_REGIONS : CURRENCY_CLICK_REGIONS)) return;
+      clearTargetingRef.current();
+    }
+
+    function handleContextMenu(event: MouseEvent) {
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest(CONTEXT_MENU_REGIONS)) return;
+      if (target?.closest(WORKSPACE)) event.preventDefault();
+      clearTargetingRef.current();
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "hidden") clearTargetingRef.current();
+    }
+
+    const unsubscribeEscape = pushEscapeHandler({
+      id: "armory-targeting",
+      priority: ESCAPE_PRIORITY.ARMORY_TRANSIENT,
+      onEscape: () => clearTargetingRef.current(),
+    });
+    const lifetime = new AbortController();
+    const options = { signal: lifetime.signal };
+    document.addEventListener("click", handleClick, options);
+    document.addEventListener("contextmenu", handleContextMenu, options);
+    window.addEventListener("blur", () => clearTargetingRef.current(), options);
+    document.addEventListener("visibilitychange", handleVisibilityChange, options);
+    return () => {
+      unsubscribeEscape();
+      lifetime.abort();
+    };
+  }, [targetingActive, confirmingSalvage, clearTargetingRef, salvageMode]);
 }

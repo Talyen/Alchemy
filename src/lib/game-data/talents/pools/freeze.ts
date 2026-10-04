@@ -7,7 +7,7 @@ export const freezeTalents = [
   t(
     "freeze-threshold",
     "Bitter Cold",
-    "Enemy Freeze threshold is reduced by 10%",
+    "Enemy Freeze threshold is reduced by 10 percentage points",
     "ThermometerSnowflake",
     setEffect("freezeThresholdReduction", 0.1),
   ),

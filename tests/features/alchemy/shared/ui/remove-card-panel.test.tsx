@@ -24,6 +24,24 @@ describe("RemoveCardPanel", () => {
     resetEscapeStackForTests();
   });
 
+  it("requires a fresh selection when a changed deck puts a different card in the selected slot", async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    const { rerender } = render(<RemoveCardPanel runDeck={runDeck} onConfirm={onConfirm} />);
+    await user.click(screen.getByRole("button", { name: "Select shop card" }));
+    expect(screen.getByRole("button", { name: "Remove Card" })).toHaveProperty("disabled", false);
+
+    rerender(<RemoveCardPanel runDeck={[{ ...runDeck[0]!, id: "replacement" }]} onConfirm={onConfirm} />);
+    const remove = screen.getByRole("button", { name: "Remove Card" });
+    expect(remove).toHaveProperty("disabled", true);
+    expect(screen.getByRole("status").textContent).toMatch(/deck changed/i);
+    await user.click(remove);
+    expect(onConfirm).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Select shop card" }));
+    await user.click(remove);
+    expect(onConfirm).toHaveBeenCalledWith(0);
+  });
+
   it("calls onCancel on Escape and stops GameMenu from receiving the key", async () => {
     const user = userEvent.setup();
     const onCancel = vi.fn();

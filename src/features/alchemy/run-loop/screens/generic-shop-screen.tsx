@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { shopOfferingsSwapKey } from "../shop/shop-slot-keys";
 import { RefreshShopServiceButton, ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
 
@@ -33,8 +33,14 @@ export function GenericShopScreen<T>({
   extraServices,
   renderItem,
 }: GenericShopScreenProps<T>) {
+  const [purchaseFailed, setPurchaseFailed] = useState(false);
   return (
     <ShopBrowseShell title={title} gold={gold}>
+      {purchaseFailed && (
+        <p role="alert" className="text-center">
+          Could not complete this purchase. Check the current stock, price, and your Gold, then try again.
+        </p>
+      )}
       <ShopBrowseOfferings
         swapKey={shopOfferingsSwapKey(
           items.map((it, i) => getSlotKey(it, i)),
@@ -57,7 +63,11 @@ export function GenericShopScreen<T>({
           const slotKey = getSlotKey(item, i);
           const purchased = purchasedSlotKeys.includes(slotKey);
           const price = getPrice(item);
-          return <Fragment key={slotKey}>{renderItem(item, price, purchased, () => onBuy(item, slotKey))}</Fragment>;
+          return (
+            <Fragment key={slotKey}>
+              {renderItem(item, price, purchased, () => setPurchaseFailed(!onBuy(item, slotKey)))}
+            </Fragment>
+          );
         })}
       </ShopBrowseOfferings>
     </ShopBrowseShell>

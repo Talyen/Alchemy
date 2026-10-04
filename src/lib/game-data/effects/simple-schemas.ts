@@ -64,6 +64,10 @@ const nextArcheryFreeEffectDefinition = defineFlagEffect(
   "next-archery-free",
 ) satisfies EffectKindDefinition<"next-archery-free">;
 
+const dodgeNextAttackEffectDefinition = defineFlagEffect(
+  "dodge-next-attack",
+) satisfies EffectKindDefinition<"dodge-next-attack">;
+
 export const SIMPLE_EFFECT_DEFINITIONS = [
   summonCompanionEffectDefinition,
   buffCompanionEffectDefinition,
@@ -77,4 +81,5 @@ export const SIMPLE_EFFECT_DEFINITIONS = [
   playNextCardTwiceEffectDefinition,
   nextHitPoisonEffectDefinition,
   nextArcheryFreeEffectDefinition,
+  dodgeNextAttackEffectDefinition,
 ] as const;

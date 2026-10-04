@@ -65,19 +65,37 @@ export function tryDodgeEnemyAttackPacket(
   combatTexts: CombatTextEvent[],
   canDodge: boolean,
 ): BattleState | null {
+  const eligible = canDodge && state.playerCC.stunSkipTurns <= 0 && state.playerCC.freezeSkipTurns <= 0;
+  if (!eligible) return null;
+
+  if (state.flags.dodgeNextAttack) {
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "notice",
+      stat: "dodge",
+      text: STATUS_CONFIG.DODGE_NOTICE,
+    });
+    return {
+      ...state,
+      flags: { ...state.flags, dodgeNextAttack: false },
+      playerDodgeCount: state.playerDodgeCount + 1,
+      dodgeChanceFromDamage: 0,
+    };
+  }
+
   return tryDodgePacket(state, combatTexts, {
     target: "player",
     chance: getPlayerDodgeChance(state),
-    canDodge: canDodge && state.playerCC.stunSkipTurns <= 0 && state.playerCC.freezeSkipTurns <= 0,
+    canDodge: true,
   });
 }
 
 function enemyCanDodge(state: BattleState): boolean {
   if (state.enemyCC.stunSkipTurns > 0 || state.enemyCC.freezeSkipTurns > 0) return false;
-  if (state.gearEffects.poisonedAttacksPierce > 0 && state.enemyStatuses.poison > 0) return false;
-  if (state.talentEffects.poisonPreventsEnemyDodge && state.enemyStatuses.poison > 0) return false;
-  if (state.talentEffects.freezePreventsEnemyDodge && state.enemyCC.freezeSkipTurns > 0) return false;
-  return true;
+  return !(
+    state.enemyStatuses.poison > 0 &&
+    (state.gearEffects.poisonedAttacksPierce > 0 || state.talentEffects.poisonPreventsEnemyDodge)
+  );
 }
 
 export function tryDodgePlayerAttackPacket(state: BattleState, combatTexts: CombatTextEvent[]): BattleState | null {

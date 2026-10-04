@@ -8,6 +8,8 @@ root. This archive is versioned and is not a disposable build output.
 
 ## Artwork
 
+The canonical [Art style and generation prompts](../WORKFLOWS-ASSETS.md#art-style-and-generation-prompts) guide production art generation and category variants (characters, environments, gear, crafting currencies, and icons).
+
 The [Labyrinth fog-of-war studies](./art/labyrinth-fog-v1/README.md) contain six
 generic unexplored-node variants and their complete generation prompts.
 

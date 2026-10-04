@@ -3,7 +3,6 @@ import { readCombatFlag } from "./action-context";
 import { applyArmorReward, applyBlockReward, applyCardHealing } from "./status-player";
 import { hasEncounterBenefit } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
-import { type PlayerStatusId } from "@/lib/game-data";
 import {
   addEnemyStatus,
   addPlayerStatus,
@@ -12,7 +11,6 @@ import {
   resolvePlayerHealing,
   type BattleState,
   type CombatTextEvent,
-  type EnemyMitigation,
 } from "./types";
 import {
   addGoldWithCombatText,
@@ -64,7 +62,10 @@ export function applyLeechHealing(
   let restored = options.cardHealing
     ? applyCardHealing(state, healing, combatTexts, { skipFightPacing: true, allowOverhealBlock: false })
     : applyHealingWithCombatText(state, healing, combatTexts, { skipFightPacing: true });
-  if (actualHealing > 0 && state.playerStatuses.thorns === 0 && state.gearEffects.thornsOnLeechWithoutThorns > 0) {
+  if (actualHealing <= 0) {
+    return healing > 0 && !isPlayerDefeated(restored) ? applyLeechManaRider(restored, combatTexts) : restored;
+  }
+  if (state.playerStatuses.thorns === 0 && state.gearEffects.thornsOnLeechWithoutThorns > 0) {
     restored = addPlayerStatusWithCombatText(
       restored,
       "thorns",
@@ -72,7 +73,7 @@ export function applyLeechHealing(
       combatTexts,
     );
   }
-  if (actualHealing > 0 && belowHalf && state.gearEffects.stunOnLeechBelowHalfHealth > 0) {
+  if (belowHalf && state.gearEffects.stunOnLeechBelowHalfHealth > 0) {
     restored = resolveStunFollowUpHit(
       restored,
       state.gearEffects.stunOnLeechBelowHalfHealth,
@@ -80,10 +81,10 @@ export function applyLeechHealing(
       applyThunderstoneLeech,
     );
   }
-  if (actualHealing > 0 && rollBattleChance(state.gearEffects.leechBlockChance, state)) {
+  if (rollBattleChance(state.gearEffects.leechBlockChance, state)) {
     restored = applyBlockReward(restored, actualHealing, combatTexts, { skipFightPacing: true });
   }
-  if (belowHalf && state.talentEffects.leechBlockBelowHalfPercent > 0 && actualHealing > 0) {
+  if (belowHalf && state.talentEffects.leechBlockBelowHalfPercent > 0) {
     restored = applyBlockReward(
       restored,
       Math.round((actualHealing * state.talentEffects.leechBlockBelowHalfPercent) / PERCENT_DENOMINATOR),
@@ -94,7 +95,7 @@ export function applyLeechHealing(
   if (restoredToFull && state.talentEffects.manaOnLeechToFull > 0) {
     restored = gainManaWithCombatText(restored, state.talentEffects.manaOnLeechToFull, combatTexts);
   }
-  if (actualHealing > 0 && rollBattleChance(state.talentEffects.leechGoldChance, state)) {
+  if (rollBattleChance(state.talentEffects.leechGoldChance, state)) {
     restored = addGoldWithCombatText(restored, actualHealing, combatTexts);
   }
   if (restoredToFull && state.talentEffects.nextAttackPhysicalOnLeechToFull > 0) {
@@ -143,28 +144,20 @@ function applyLeechManaRider(state: BattleState, combatTexts: CombatTextEvent[])
 function applyLeechTrinketSiphonRider(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (!rollBattleChance(state.talentEffects.trinketSiphonChance, state)) return state;
   const mit = state.enemyMitigation;
-  const pool: Array<{ key: keyof EnemyMitigation; status: PlayerStatusId }> = (
-    [
-      ["forge", "forge"],
-      ["armor", "armor"],
-      ["block", "block"],
-    ] as const
-  )
-    .filter(([key]) => mit[key] > 0)
-    .map(([key, status]) => ({ key, status }));
+  const pool = (["forge", "armor", "block"] as const).filter((status) => mit[status] > 0);
   const steal = pickRandom(pool, getBattleRng(state));
   if (!steal) return state;
   const nextState = {
     ...state,
-    enemyMitigation: { ...mit, [steal.key]: Math.max(0, mit[steal.key] - 1) },
+    enemyMitigation: { ...mit, [steal]: Math.max(0, mit[steal] - 1) },
   };
-  if (steal.status === "armor") {
+  if (steal === "armor") {
     return applyArmorReward(nextState, 1, combatTexts);
   }
-  if (steal.status === "block") {
-    return addPlayerStatusWithCombatText(nextState, steal.status, 1, undefined, { skipFightPacing: true });
+  if (steal === "block") {
+    return addPlayerStatusWithCombatText(nextState, steal, 1, undefined, { skipFightPacing: true });
   }
-  return addPlayerStatus(nextState, steal.status, 1);
+  return addPlayerStatus(nextState, steal, 1);
 }
 
 export function applyLeechHitRewards(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {

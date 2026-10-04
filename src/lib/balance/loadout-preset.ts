@@ -1,6 +1,5 @@
 import { characters, type CharacterId } from "@/lib/game-data";
 import { MAX_HEALTH_PER_TALENT_POINT } from "@/lib/game-constants";
-import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { defaultGearEffects, type GearEffectManifest } from "@/lib/gear/gear-effect-manifest";
 import { createSeededRng } from "@/lib/rng";
@@ -53,24 +52,10 @@ export function resolveSimLoadout(options: {
   const gold = TIER_GOLD[options.preset] + (options.startGold ?? 0);
   const talentPointHealth = talentPointHealthForCharacter(options.characterId, options.preset);
 
-  if (options.mode === "bare") {
-    return {
-      mode: "bare",
-      gold,
-      homesteadCombat: {
-        ...defaultHomesteadEffects,
-        companionBondLevels: { ...defaultHomesteadEffects.companionBondLevels },
-        cardHealBonus: { ...defaultHomesteadEffects.cardHealBonus },
-      },
-      gearEffects: { ...defaultGearEffects },
-      coreTrinketIds: [],
-      talentPointHealth,
-    };
-  }
-
-  const homesteadCombat = buildTypicalHomesteadEffects(options.preset);
+  const typical = options.mode === "typical";
+  const homesteadCombat = buildTypicalHomesteadEffects(typical ? options.preset : "early");
   const gearEffects =
-    options.skipGear || options.preset === "early"
+    !typical || options.skipGear || options.preset === "early"
       ? { ...defaultGearEffects }
       : buildTypicalGearEffects(
           options.characterId,
@@ -80,12 +65,17 @@ export function resolveSimLoadout(options: {
         );
 
   return {
-    mode: "typical",
+    mode: options.mode,
     gold,
     homesteadCombat,
     gearEffects,
-    coreTrinketIds:
-      options.preset === "late" ? [...LATE_CORE_TRINKETS] : options.preset === "mid" ? [...MID_CORE_TRINKETS] : [],
+    coreTrinketIds: !typical
+      ? []
+      : options.preset === "late"
+        ? [...LATE_CORE_TRINKETS]
+        : options.preset === "mid"
+          ? [...MID_CORE_TRINKETS]
+          : [],
     talentPointHealth,
   };
 }

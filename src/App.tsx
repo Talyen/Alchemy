@@ -103,10 +103,12 @@ function AppMainContent({
   const homesteadBondedCompanions = useBondedCompanions();
   const cardDescriptionContext = useMemo(
     () => ({
-      flatPhysicalDamage: homesteadEffects.flatPhysicalDamage + talentEffects.flatPhysicalDamage,
-      companionDamage: homesteadEffects.companionDamage + talentEffects.companionDamage,
+      companionDamageModifiers: {
+        damageBonus: homesteadEffects.companionDamage + talentEffects.companionDamage,
+        bleedDamageBonus: 0,
+        damageMultiplier: 1,
+      },
       companionBondLevels: homesteadBondedCompanions,
-      potionPotency: talentEffects.potionPotency,
     }),
     [homesteadBondedCompanions, homesteadEffects, talentEffects],
   );

@@ -119,3 +119,23 @@ function effectTarget(effect: BattleCardEffect): "player" | "enemy" | null {
 export function getBattleCardPlayTarget(card: BattleCard): "player" | "enemy" {
   return classifyEffects(card.effects).playTarget;
 }
+
+export function getBattleCardTransmutationRole(card: Pick<BattleCard, "effects">): "attack" | "defense" | "utility" {
+  if (isAttackCard(card)) {
+    return "attack";
+  }
+
+  let hasDefense = false;
+  visitBattleCardEffects(card.effects, (effect) => {
+    if (effect.kind === "heal") {
+      hasDefense = true;
+    } else if (
+      effect.kind === "player-status" &&
+      (effect.status === "block" || effect.status === "armor" || effect.status === "thorns")
+    ) {
+      hasDefense = true;
+    }
+  });
+
+  return hasDefense ? "defense" : "utility";
+}

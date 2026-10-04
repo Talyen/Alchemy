@@ -2,7 +2,6 @@ import { emptyAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
 import { runActivityScreen, transitionRunActivity } from "@/lib/active-run-session";
 import { BATTLE_CARD_EFFECT_KINDS } from "@/lib/game-data/effects/registry";
 import { DAMAGE_TYPES } from "@/lib/game-data/types";
-import { MYSTERY_EFFECT_KINDS } from "@/lib/mystery";
 import { ROUTE_SCREEN_VALUES, isRunResumeScreen } from "@/lib/routing";
 import { describe, expect, it } from "vitest";
 import { readText } from "./helpers";
@@ -32,10 +31,6 @@ describe("exhaustive switch coverage", () => {
 
   it("damage-status-riders covers every DamageType", () => {
     assertContainsCases("src/lib/battle/damage-status-riders.ts", DAMAGE_TYPES);
-  });
-
-  it("mystery effect-order covers every MysteryEffect kind", () => {
-    assertContainsCases("src/lib/mystery/effect-order.ts", MYSTERY_EFFECT_KINDS);
   });
 
   it("maps every gameplay screen to an activity and preserves it across menu navigation", () => {

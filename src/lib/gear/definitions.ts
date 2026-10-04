@@ -18,17 +18,18 @@ export function gearDefinitionId(baseItemId: string, rarity: GearRarity): string
 // loudly instead (see validateGearDefinitions).
 export const missingGearArtDefinitionIds: string[] = [];
 
-function resolveGearArt(id: string, fallbackId?: string): string | undefined {
-  return (
-    gearArtByDefinitionId[id] ??
-    (fallbackId ? gearArtByDefinitionId[fallbackId] : undefined) ??
-    Object.values(gearArtByDefinitionId)[0]
-  );
-}
-
-function trackMissingArt(id: string, context: string): void {
-  console.warn(`Missing gear art for ${id} (${context}) - using fallback art`);
-  missingGearArtDefinitionIds.push(id);
+function resolveGearArt(id: string, baseItemId: GearBaseItemId, rarity: GearRarity): string | undefined {
+  const primaryId = rarity === "unique" ? gearDefinitionId(baseItemId, "astral") : id;
+  const fallbackId = gearDefinitionId(baseItemId, rarity === "basic" ? "astral" : "basic");
+  const art =
+    gearArtByDefinitionId[primaryId] ?? gearArtByDefinitionId[fallbackId] ?? Object.values(gearArtByDefinitionId)[0];
+  if (!art || art !== gearArtByDefinitionId[primaryId]) {
+    console.warn(
+      `Missing gear art for ${id} (base ${baseItemId}) - ${art ? "using fallback art" : "skipping definition"}`,
+    );
+    missingGearArtDefinitionIds.push(id);
+  }
+  return art;
 }
 
 function createDefinition(
@@ -55,13 +56,8 @@ function buildVariantDefinitions(): Record<string, GearDefinition> {
     const baseItem = gearBaseItems[baseItemId];
     for (const rarity of ["basic", "astral"] as const) {
       const id = gearDefinitionId(baseItemId, rarity);
-      const art = resolveGearArt(id, gearDefinitionId(baseItemId, rarity === "basic" ? "astral" : "basic"));
-      if (!art) {
-        console.warn(`Missing gear art for ${id} - skipping definition`);
-        missingGearArtDefinitionIds.push(id);
-        continue;
-      }
-      if (art !== gearArtByDefinitionId[id]) trackMissingArt(id, `base ${baseItemId}`);
+      const art = resolveGearArt(id, baseItemId, rarity);
+      if (!art) continue;
       variants[id] = createDefinition(baseItemId, rarity, {
         id,
         displayName: rarity === "astral" ? `Astral ${baseItem.displayName}` : baseItem.displayName,
@@ -74,18 +70,8 @@ function buildVariantDefinitions(): Record<string, GearDefinition> {
   for (const unique of uniqueItemList) {
     const baseItem = gearBaseItems[unique.baseItemId];
     if (!baseItem) continue;
-    const art = resolveGearArt(
-      gearDefinitionId(unique.baseItemId, "astral"),
-      gearDefinitionId(unique.baseItemId, "basic"),
-    );
-    if (!art) {
-      console.warn(`Missing gear art for unique ${unique.id} (base ${unique.baseItemId}) - skipping`);
-      missingGearArtDefinitionIds.push(unique.id);
-      continue;
-    }
-    if (art !== gearArtByDefinitionId[gearDefinitionId(unique.baseItemId, "astral")]) {
-      trackMissingArt(unique.id, `base ${unique.baseItemId}`);
-    }
+    const art = resolveGearArt(unique.id, unique.baseItemId, "unique");
+    if (!art) continue;
     variants[unique.id] = createDefinition(unique.baseItemId, "unique", {
       id: unique.id,
       displayName: unique.displayName,

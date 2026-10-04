@@ -60,6 +60,11 @@ describe("display sizing", () => {
     expect(layout.frameStyle.width).toBe("1280px");
     expect(layout.frameStyle.height).toBe("720px");
     expect(getVirtualResolutionLayout("16:9", 100, 60).frameStyle.width).toBe("100px");
+    const fourK = getVirtualResolutionLayout("16:9", 3840, 2160);
+    expect(fourK.stageStyle.width).toBe("1920px");
+    expect(fourK.stageStyle.height).toBe("1080px");
+    expect(fourK.stageStyle.transform).toBe("scale(2)");
+    expect(fourK.stagePixelRatio).toBe(1);
     const sameFrame = getVirtualResolutionLayout("auto", 1280, 720);
     expect(layout.contentScale).toBe(sameFrame.contentScale);
     for (const aspect of ["16:9", "16:10", "21:9"] as const) {

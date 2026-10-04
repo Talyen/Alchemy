@@ -1,4 +1,4 @@
-import { clearBattleStageMarks, battleStageMarkName } from "@/lib/performance/battle-stage-marks";
+import { clearBattleStageMarks, battleStageMarkName } from "@/lib/performance/marks";
 import { describe, expect, it, vi } from "vitest";
 import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
 import { runHandDrawSequence } from "@/features/alchemy/run-loop/battle/draw-sequence";

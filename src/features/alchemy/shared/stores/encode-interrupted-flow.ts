@@ -42,6 +42,15 @@ function encodeDestinationFlow(session: RunSession["session"]): InterruptedFlow 
   };
 }
 
+function hasUnclaimedRewardValue(state: RewardState, companionCards: readonly BattleCard[] | null): boolean {
+  return (
+    state.choices.length > 0 ||
+    Boolean(companionCards?.length) ||
+    state.gold > 0 ||
+    Object.values(state.materials).some((amount) => amount > 0)
+  );
+}
+
 export function encodeInterruptedFlow(
   session: RunSession["session"],
   currentScreen: Screen | null | undefined,
@@ -50,11 +59,13 @@ export function encodeInterruptedFlow(
     return encodeDestinationFlow(session);
   }
 
-  const pending = serializePendingReward(session.rewardFlow.state, session.rewardFlow.companionCards);
-  // serializePendingReward already returns null when there is nothing of value
-  // (no choices, no companion cards, no victory markers, no destinations, no
-  // gold/materials), so any non-null pending must survive — including
-  // gold/materials-only rewards with no card choices.
+  const { state, companionCards } = session.rewardFlow;
+  const hasUnclaimedValue = hasUnclaimedRewardValue(state, companionCards);
+  // Victory routing markers remain after a claim. They must not turn a map or support-room save into a new reward visit.
+  const pending =
+    currentScreen === "rewards" || hasUnclaimedValue ? serializePendingReward(state, companionCards) : null;
+  // Real gold/materials-only rewards must survive even without card choices.
+  // Marker-only bundles still carry the route while the reward screen settles.
   if (pending) {
     return { kind: "primary-reward", pending };
   }
@@ -129,14 +140,16 @@ function restorePrimaryPendingReward(
     !activeRun.trinketShopState &&
     !activeRun.equipmentShopState &&
     !activeRun.mysteryVisit &&
-    !activeRun.corruptionResult
+    !activeRun.corruptionResult &&
+    !(activeRun.campfireState?.offers.length || activeRun.campfireState?.completed) &&
+    !(activeRun.transmutationState?.offers.length || activeRun.transmutationState?.completed) &&
+    !(screen === "corruption" && !hasUnclaimedRewardValue(rewardState, companionRewardCards))
   ) {
     // A pending reward can only be claimed from the rewards screen (see
     // claimRunReward). When the save was written after the screen moved on —
     // e.g. a gold/materials-only reward with no card choices — resume where it
     // can be claimed instead of stranding it behind a stateless screen. A live
-    // battle owns the resume, and a persisted shop/mystery/corruption visit
-    // wins over the stranded reward.
+    // battle owns the resume, and a persisted room visit wins over the stranded reward.
     screen = "rewards";
   }
   return { rewardState, companionRewardCards, screen };

@@ -20,7 +20,7 @@ room to wrap. Placement recomputes width bounds when the stage or tooltip change
 size; position-only updates preserve the resolved width to avoid forced layout. Long
 descriptions can use available width to fit; tooltips never scroll or truncate.
 
-- Drive ordinary hover with `useHoverVisible()` and `triggerRef`. For card/tile grids that already track hover via `useInteractiveCard`, use `useTileHoverPopup` (a `useHoverVisible` preset with the shared `TOOLTIP_FADE_MS` hold) — see those hooks for the exact call shape.
+- Drive hover through `useHoverVisible()` and `triggerRef`. Card/tile grids that track hover via `useInteractiveCard` pass its `isHovered`, `onHoverStart`, and `onHoverEnd` to the same hook, with `holdMs: TOOLTIP_FADE_MS` and `focusWithinGuard: true` to preserve the exit fade and keyboard inspection.
 - Use `placement="side-start"` or `"side-end"` for explicitly side-anchored panels.
 - Use `maxWidthFraction` for small-window bounds.
 - Tooltip entrance fades and moves away from the trigger; exit fades with a return movement. [Component styles](../src/styles/components.css) own the offsets and easing, with durations from [motion constants](../src/lib/game-constants/ui-motion.ts). CSS `@starting-style` supplies the first-render entrance, and transitions reverse smoothly on re-hover. Hover remains immediate for rapid inspection. Keep `--tooltip-exit-duration` in sync with `TOOLTIP_FADE_MS`.
@@ -71,6 +71,9 @@ The shell retains outgoing children and layout classes, so clearing a payload or
 resetting pagination cannot change the closing panel. Reopening cancels removal and
 starts a fresh panel mount and artwork gate. Consumers retain action-specific guards
 such as Wish's single-selection latch and confirmation buttons' disabled state.
+Dialog focus containment belongs to the most recently opened interactive panel.
+Opening the pause menu over a pending Wish suspends the Wish's focus trap;
+closing the menu restores focus to the choice. Inert panels do not reclaim focus.
 Confirmation focus containment pauses while the panel is inert; focus returns
 to its existing target when the panel unmounts.
 

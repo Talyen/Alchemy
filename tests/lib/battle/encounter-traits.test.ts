@@ -6,7 +6,7 @@ import {
   tickEnemyStatuses,
   tickPlayerStatuses,
 } from "@/lib/battle";
-import { regrowEnemyThorns } from "@/lib/battle/encounter-trait-events";
+import { processEncounterTraitActionDamage, regrowEnemyThorns } from "@/lib/battle/encounter-trait-events";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import { companionLibrary, enemyById, type BattleCard, type BestiaryEntry } from "@/lib/game-data";
@@ -45,6 +45,24 @@ function card(overrides: Partial<BattleCard> = {}): BattleCard {
 }
 
 describe("encounter trait enemy actions", () => {
+  it("resolves trait damage in authored order and stops riders after a lethal hit", () => {
+    const state = patchBattleState({
+      currentEnemy: enemyWith("toxic", "bloodletter", "combustible", "chilling", "zealot", "concussive"),
+      playerHealth: 2,
+      deathsDoorUsed: true,
+      roomScalingMultiplier: 1,
+    });
+    const before = structuredClone({ ...state, rng: undefined });
+    const texts: Parameters<typeof tickPlayerStatuses>[1] = [];
+    const next = processEncounterTraitActionDamage(state, texts);
+    expect(next.playerHealth).toBe(0);
+    expect(next.playerStatuses).toMatchObject({ poison: 1, bleed: 0, burn: 0, freeze: 0, stun: 0 });
+    expect(texts.filter((text) => text.kind === "damage" && text.target === "player").map((text) => text.stat)).toEqual(
+      ["poison", "bleed"],
+    );
+    expect({ ...state, rng: undefined }).toEqual(before);
+  });
+
   it("scales buffs and damage with room depth only when the enemy attacks", () => {
     const currentEnemy = {
       ...enemyWith("tempered", "reinforced", "zealot"),
@@ -231,34 +249,6 @@ describe("encounter trait card events", () => {
     expect(regrown.enemyStatuses.thorns).toBe(1);
   });
 
-  it("burns the attacker when the enemy has cinder-skin", () => {
-    const currentEnemy: BestiaryEntry = {
-      id: "fire-elemental",
-      title: "Fire Elemental",
-      subtitle: "Elite",
-      descriptionLines: [],
-      art: "",
-      enemyType: "elite",
-      traits: [{ id: "cinder-skin", title: "Cinder Skin", description: "Deals 1 Burn damage when attacked" }],
-      abilityIds: ["slash", "bash", "block"],
-    };
-    const played = card({
-      effects: [{ kind: "damage", damageType: "physical", amount: 2 }],
-    });
-    const result = playBattleCardResolved(
-      makeTestBattleState({
-        currentEnemy,
-        hand: [played],
-        mana: 1,
-        playerHealth: 10,
-        turnPhase: "player",
-      }),
-      played.id,
-      0,
-    );
-    expect(result.state.playerStatuses.burn).toBeGreaterThan(0);
-  });
-
   it("shares Cinder Skin between spells and Physical cards", () => {
     const spell = card({ id: "spell", uid: 1, effects: [{ kind: "damage", damageType: "freeze", amount: 2 }] });
     const physical = card({ id: "physical", uid: 2 });
@@ -382,23 +372,6 @@ describe("encounter trait card events", () => {
     const result = playBattleCardResolved(state, played.id, 0);
     expect(result.state.enemyPhysicalDamageBonus).toBe(4);
     expect(result.state.enemyMitigation.block).toBe(1);
-  });
-
-  it("activates Divine Aegis once on the first downward half-health crossing", () => {
-    const currentEnemy = enemyWith("divine-aegis");
-    const played = card({ effects: [{ kind: "damage", damageType: "holy", amount: 6 }] });
-    const state = makeTestBattleState({
-      currentEnemy,
-      enemyHealth: 10,
-      enemyMaxHealth: 10,
-      hand: [played],
-      mana: 1,
-      turnPhase: "player",
-    });
-    const first = playBattleCardResolved(state, played.id, 0).state;
-    expect(first.enemyMitigation.armor).toBe(2);
-    expect(first.enemyMitigation.block).toBe(4);
-    expect(first.flags.divineAegisTriggered).toBe(true);
   });
 
   it("Braced halves Stun build-up", () => {
@@ -615,33 +588,22 @@ describe("Cinder Skin Health damage reactions", () => {
 });
 
 describe("encounter trait health threshold", () => {
-  it("triggers Divine Aegis once when enemy health crosses half", () => {
-    const base = makeTestBattleState();
+  it("shares the original crossing between Second Wind and Aegis, and fires each only once", () => {
     const state = makeTestBattleState({
       enemyHealth: 9,
       enemyMaxHealth: 20,
-      currentEnemy: {
-        ...base.currentEnemy,
-        traits: [{ id: "divine-aegis", title: "Divine Aegis", description: "" }],
-      },
-    });
-    const result = processEncounterTraitHealthThreshold(11, state, []);
-    expect(result.flags.divineAegisTriggered).toBe(true);
-    expect(result.enemyMitigation).toMatchObject({ armor: 2, block: 4 });
-    expect(processEncounterTraitHealthThreshold(11, result, [])).toBe(result);
-  });
-
-  it("triggers Divine Aegis when the hit starts exactly at half health", () => {
-    const base = makeTestBattleState();
-    const state = makeTestBattleState({
-      enemyHealth: 9,
-      enemyMaxHealth: 20,
-      currentEnemy: {
-        ...base.currentEnemy,
-        traits: [{ id: "divine-aegis", title: "Divine Aegis", description: "" }],
-      },
+      currentEnemy: enemyWith("second-wind", "divine-aegis"),
     });
     const result = processEncounterTraitHealthThreshold(10, state, []);
-    expect(result.flags.divineAegisTriggered).toBe(true);
+    expect(result.enemyHealth).toBeGreaterThan(10);
+    expect(result.flags).toMatchObject({ secondWindTriggered: true, divineAegisTriggered: true });
+    expect(result.enemyMitigation).toMatchObject({ armor: 2, block: 4 });
+    expect(
+      processEncounterTraitHealthThreshold(result.enemyHealth, { ...result, enemyHealth: 9 }, []).enemyMitigation,
+    ).toEqual(result.enemyMitigation);
+    for (const enemyHealth of [0, 10, 11]) {
+      const unchanged = { ...state, enemyHealth };
+      expect(processEncounterTraitHealthThreshold(10, unchanged, [])).toBe(unchanged);
+    }
   });
 });

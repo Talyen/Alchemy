@@ -15,12 +15,15 @@ import { trinketById } from "@/lib/game-data";
 import { gearDefinitions } from "@/lib/gear/definitions";
 import { repairShopOfferings } from "./shop-offering-repair";
 
-function hydrateRefreshableFields(data: RefreshableShopFields): RefreshableShopFields {
+function hydrateRefreshableFields(
+  data: RefreshableShopFields,
+  purchasedSlotKeys = data.purchasedSlotKeys ?? [],
+): RefreshableShopFields {
   return {
     refreshesLeft: data.refreshesLeft,
     freeRefreshUsed: data.freeRefreshUsed ?? false,
     firstPurchaseUsed: data.firstPurchaseUsed,
-    purchasedSlotKeys: data.purchasedSlotKeys ?? [],
+    purchasedSlotKeys,
   };
 }
 
@@ -56,7 +59,7 @@ export function hydrateTrinketShopState(data: PersistedTrinketShopState): Trinke
   );
   return {
     trinkets: repaired.items.map((id) => trinketById[id]!),
-    ...hydrateRefreshableFields({ ...data, purchasedSlotKeys: repaired.purchasedSlotKeys }),
+    ...hydrateRefreshableFields(data, repaired.purchasedSlotKeys),
   };
 }
 
@@ -69,6 +72,6 @@ export function hydrateEquipmentShopState(data: PersistedEquipmentShopState): Eq
   );
   return {
     gear: repaired.items,
-    ...hydrateRefreshableFields({ ...data, purchasedSlotKeys: repaired.purchasedSlotKeys }),
+    ...hydrateRefreshableFields(data, repaired.purchasedSlotKeys),
   };
 }

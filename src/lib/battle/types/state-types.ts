@@ -133,6 +133,7 @@ export type CombatTextStat =
   | "nextHitPoison"
   | "playNextCardTwice"
   | "nextArcheryCardFree"
+  | "dodgeNextAttack"
   | "draw"
   | "companion"
   | "wish"
@@ -157,7 +158,7 @@ interface NoticeCombatTextEvent {
   kind: "notice";
   stat: CombatTextStat;
   text: string;
-  signal?: "prepared" | "cleanse" | "purge";
+  signal?: "prepared" | "cleanse" | "purge" | "immune";
 }
 
 export type CombatTextEvent = NumericCombatTextEvent | NoticeCombatTextEvent;

@@ -41,26 +41,29 @@ describe("computeCardDamageToEnemy", () => {
     },
   );
 
-  it("doubles forge contribution for physical with expert blacksmith", () => {
+  it("stacks resource and flat bonuses once before Block and Armor, preserving input state", () => {
     const state = patchBattleState({
-      playerStatuses: { forge: 3 },
-      enemyMitigation: { block: 0, armor: 0 },
-      talentEffects: { ...defaultTalentEffects, forgeToPhysicalDamageMultiplier: 2 },
+      playerStatuses: { forge: 3, armor: 5, block: 10 },
+      enemyMitigation: { block: 4, armor: 3 },
+      enemyStatuses: { poison: 1, bleed: 1 },
+      talentEffects: {
+        forgeToPhysicalDamageMultiplier: 2,
+        armorPhysicalDamagePercent: 50,
+        blockToPhysicalDamageMultiplier: 0.5,
+        flatPhysicalDamage: 2,
+        poisonPhysicalBonus: 2,
+        bleedPhysicalBonus: 3,
+      },
+      gearEffects: { flatPhysicalDamage: 3 },
       rng: () => 0.99,
     });
-    const { modifiedDamage } = computeCardDamageToEnemy(state, physicalEffect);
-    expect(modifiedDamage).toBe(physicalEffect.amount + 3 * 2);
-  });
-
-  it("adds half block to physical via blockToPhysicalDamageMultiplier", () => {
-    const state = patchBattleState({
-      playerStatuses: { block: 10 },
-      enemyMitigation: { block: 0, armor: 0 },
-      talentEffects: { ...defaultTalentEffects, blockToPhysicalDamageMultiplier: 0.5 },
-      rng: () => 0.99,
-    });
-    const { modifiedDamage } = computeCardDamageToEnemy(state, physicalEffect);
-    expect(modifiedDamage).toBe(physicalEffect.amount + 5);
+    const texts = makeCombatTexts();
+    const result = dealDamage(state, makeTestCard({ effects: [physicalEffect] }), texts);
+    expect(result.enemyHealth).toBe(7);
+    expect(result.enemyMitigation).toEqual({ block: 0, armor: 2, forge: 0 });
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "physical", amount: 23 });
+    expect(state.enemyHealth).toBe(30);
+    expect(state.playerStatuses).toMatchObject({ forge: 3, armor: 5, block: 10 });
   });
 
   it("applies consumeDamageBonusPercent to non-burn consume damage", () => {

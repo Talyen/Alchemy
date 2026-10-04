@@ -81,7 +81,7 @@ export const difficultyConfigs: Record<CharacterId, ClassDifficultyConfig> = Obj
   ]),
 ) as Record<CharacterId, ClassDifficultyConfig>;
 
-export const DIFFICULTY_ORDER: DifficultyId[] = ["difficulty-1", "difficulty-2", "difficulty-3"];
+export const DIFFICULTY_ORDER: DifficultyId[] = GLOBAL_DIFFICULTIES.map((difficulty) => difficulty.id);
 
 export function isDifficultyUnlocked(difficultyId: DifficultyId, completedDifficulties: DifficultyId[]): boolean {
   const idx = DIFFICULTY_ORDER.indexOf(difficultyId);
@@ -103,9 +103,6 @@ export function getGoldMultiplier(characterId: CharacterId, difficultyId: Diffic
   return goldMod?.amount ?? 1;
 }
 
-const XP_MULTIPLIERS = new Map(GLOBAL_DIFFICULTIES.map((d) => [d.id, d.xpMultiplier ?? 1] as const));
-
 export function getDifficultyXPMultiplier(difficultyId: DifficultyId | null): number {
-  if (!difficultyId) return 1.0;
-  return XP_MULTIPLIERS.get(difficultyId) ?? 1.0;
+  return GLOBAL_DIFFICULTIES.find((difficulty) => difficulty.id === difficultyId)?.xpMultiplier ?? 1;
 }

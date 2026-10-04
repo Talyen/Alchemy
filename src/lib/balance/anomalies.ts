@@ -1,5 +1,6 @@
 import type { BattleSnapshot, CombatTextEvent } from "@/lib/battle";
 import type { TalentPreset } from "./simulator-types";
+import { createNumericManifest } from "@/lib/manifest-utils";
 
 export interface BattleAnomalies {
   enemyHealing: number;
@@ -45,7 +46,7 @@ interface StatusAnomalyMetric {
   read: (state: BattleSnapshot) => number;
 }
 
-const STATUS_ANOMALY_METRICS: StatusAnomalyMetric[] = [
+const STATUS_ANOMALY_METRICS = [
   { key: "maxPlayerBlock", label: "Block on Player", read: (s) => s.playerStatuses.block },
   { key: "maxPlayerArmor", label: "Armor on Player", read: (s) => s.playerStatuses.armor },
   { key: "maxPlayerThorns", label: "Thorns on Player", read: (s) => s.playerStatuses.thorns },
@@ -66,14 +67,14 @@ const STATUS_ANOMALY_METRICS: StatusAnomalyMetric[] = [
   { key: "maxEnemyFreezeBonus", label: "FreezeBonus on Enemy", read: (s) => s.enemyStatuses.freezeBonus },
   { key: "maxEnemyBurnBonus", label: "BurnBonus on Enemy", read: (s) => s.enemyStatuses.burnBonus },
   { key: "maxEnemyBlock", label: "Block on Enemy", read: (s) => s.enemyMitigation.block },
-];
+] as const satisfies readonly StatusAnomalyMetric[];
 
-export const ANOMALY_METRICS: Array<{ key: keyof BattleAnomalies; label: string }> = [
+export const ANOMALY_METRICS = [
   ...STATUS_ANOMALY_METRICS.map(({ key, label }) => ({ key, label })),
   { key: "maxSingleHitDamageToEnemy", label: "Player→Enemy Dmg" },
   { key: "maxSingleHitDamageToPlayer", label: "Enemy→Player Dmg" },
   { key: "maxSingleHeal", label: "Player Heal" },
-];
+] as const satisfies ReadonlyArray<{ key: NumericAnomalyKey; label: string }>;
 
 export type AnomalyPreset = TalentPreset;
 
@@ -87,40 +88,20 @@ export function getAnomalyThreshold(preset: AnomalyPreset): number {
   return ANOMALY_THRESHOLD_BY_PRESET[preset];
 }
 
+const EMPTY_ANOMALIES: BattleAnomalies = {
+  enemyHealing: 0,
+  heroHealthDamage: 0,
+  enemyBlockGranted: 0,
+  enemyArmorGranted: 0,
+  ...createNumericManifest(ANOMALY_METRICS.map(({ key }) => key)),
+  maxSingleHitDamageToEnemyStat: "",
+  maxSingleHitDamageToPlayerStat: "",
+  maxSingleHitDamageToEnemyCardId: "",
+  maxSingleHitDamageToPlayerCardId: "",
+};
+
 export function createEmptyAnomalies(): BattleAnomalies {
-  return {
-    enemyHealing: 0,
-    heroHealthDamage: 0,
-    enemyBlockGranted: 0,
-    enemyArmorGranted: 0,
-    maxPlayerBlock: 0,
-    maxPlayerArmor: 0,
-    maxPlayerThorns: 0,
-    maxPlayerForge: 0,
-    maxPlayerBurn: 0,
-    maxPlayerPoison: 0,
-    maxPlayerBleed: 0,
-    maxPlayerFreeze: 0,
-    maxPlayerStun: 0,
-    maxEnemyBurn: 0,
-    maxEnemyPoison: 0,
-    maxEnemyBleed: 0,
-    maxEnemyFreeze: 0,
-    maxEnemyStun: 0,
-    maxEnemyThorns: 0,
-    maxEnemyArmor: 0,
-    maxEnemyForge: 0,
-    maxEnemyFreezeBonus: 0,
-    maxEnemyBurnBonus: 0,
-    maxEnemyBlock: 0,
-    maxSingleHitDamageToEnemy: 0,
-    maxSingleHitDamageToPlayer: 0,
-    maxSingleHeal: 0,
-    maxSingleHitDamageToEnemyStat: "",
-    maxSingleHitDamageToPlayerStat: "",
-    maxSingleHitDamageToEnemyCardId: "",
-    maxSingleHitDamageToPlayerCardId: "",
-  };
+  return { ...EMPTY_ANOMALIES };
 }
 
 export function sampleAnomalies(
@@ -143,21 +124,14 @@ export function sampleAnomalies(
       !["block", "armor", "forge", "thorns", "mana", "gold", "gems"].includes(ct.stat)
     )
       anomalies.heroHealthDamage += ct.amount;
-    if (ct.kind !== "damage" && ct.kind !== "heal") continue;
-    if (ct.kind === "damage") {
-      if (ct.target === "enemy") {
-        if (ct.amount > anomalies.maxSingleHitDamageToEnemy) {
-          anomalies.maxSingleHitDamageToEnemy = ct.amount;
-          anomalies.maxSingleHitDamageToEnemyStat = ct.stat;
-          anomalies.maxSingleHitDamageToEnemyCardId = sourceCardId ?? "";
-        }
-      } else if (ct.amount > anomalies.maxSingleHitDamageToPlayer) {
-        anomalies.maxSingleHitDamageToPlayer = ct.amount;
-        anomalies.maxSingleHitDamageToPlayerStat = ct.stat;
-        anomalies.maxSingleHitDamageToPlayerCardId = sourceCardId ?? "";
-      }
-    } else {
+    if (ct.kind === "heal") {
       anomalies.maxSingleHeal = Math.max(anomalies.maxSingleHeal, ct.amount);
+    } else if (ct.kind === "damage") {
+      const peak = ct.target === "enemy" ? "maxSingleHitDamageToEnemy" : "maxSingleHitDamageToPlayer";
+      if (!(ct.amount > anomalies[peak])) continue;
+      anomalies[peak] = ct.amount;
+      anomalies[`${peak}Stat`] = ct.stat;
+      anomalies[`${peak}CardId`] = sourceCardId ?? "";
     }
   }
 }

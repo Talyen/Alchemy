@@ -57,7 +57,7 @@ export function LabyrinthMapScreen({
 
   return (
     <div className="h-full min-h-0 overflow-hidden">
-      <ScreenShell className="h-full min-h-0 gap-4" minHeightClass="min-h-0" maxWidthClass="max-w-none">
+      <ScreenShell className="h-full min-h-0 gap-4" maxWidthClass="max-w-none">
         <div className="shrink-0">
           <ScreenHeaderRow title="Labyrinth" />
         </div>

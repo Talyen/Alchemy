@@ -33,6 +33,7 @@ import {
 
 import { awardRunEndMaterials } from "@/features/alchemy/run-loop/run/run-materials";
 import { createCompleteActiveRunData, makeActiveRunData } from "./active-run-data-fixture";
+import { createEmptyRewardState, serializePendingReward } from "@/lib/active-run-session";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import {
   ACTIVE_RUN_PROGRESS_KEYS,
@@ -158,6 +159,15 @@ describe("initialize", () => {
 
   it("round-trips every active-run persistence region through the aggregate", () => {
     const activeRun = createCompleteActiveRunData();
+    activeRun.interruptedFlow = {
+      kind: "primary-reward",
+      pending: serializePendingReward({
+        ...createEmptyRewardState(["Mystery", "Card Shop"]),
+        gold: 7,
+        lastVictoryEnemyType: "elite",
+        lastVictoryContentSystem: "labyrinth",
+      })!,
+    };
 
     restoreRun(activeRun, { armor: 21 }, { armor: ["armor-1"] });
     const snapshot = snapshotRun();
@@ -183,10 +193,8 @@ describe("initialize", () => {
       runMaterialsEarned: activeRun.runMaterialsEarned,
       runObtainedItems: activeRun.runObtainedItems,
       currentScreen: "battle",
-      // The fixture carries unclaimed destinations while mid-battle: the
-      // encoder preserves them as a primary-reward interruption (dropping them
-      // was the old data-loss behavior), and decode keeps the live battle
-      // screen while retaining the reward in state.
+      // Actual unclaimed Gold survives alongside its routing data. Victory
+      // markers alone must not fabricate a new reward visit.
       interruptedFlow: { kind: "primary-reward" },
       shopState: null,
       alchemistState: null,
@@ -197,8 +205,9 @@ describe("initialize", () => {
     });
     expect(snapshot.rng).toEqual(activeRun.rng);
     if (snapshot.interruptedFlow.kind !== "primary-reward") {
-      throw new Error("Expected unclaimed destinations to survive as a primary-reward interruption");
+      throw new Error("Expected unclaimed Gold to survive as a primary-reward interruption");
     }
+    expect(snapshot.interruptedFlow.pending.gold).toBe(7);
     expect(snapshot.interruptedFlow.pending.destinations).toEqual(["Mystery", "Card Shop"]);
     expect(snapshot.activeCombat).toMatchObject({
       battleState: {

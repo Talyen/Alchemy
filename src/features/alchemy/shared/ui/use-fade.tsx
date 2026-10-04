@@ -108,20 +108,19 @@ export function FadeSlot({
   const isLive = shownKey === swapKey;
   const heldChildren = useHeldWhile(isLive, children);
   const heldClassName = useHeldWhile(isLive, className);
-  const heldStyle = useHeldWhile(isLive, (props as { style?: React.CSSProperties }).style);
-
-  const { style: _style, ...restProps } = props;
+  const { style, ...restProps } = props;
+  const heldStyle = useHeldWhile(isLive, style);
 
   return (
     <div
       ref={artworkRef}
       data-artwork-pending={artworkPending}
-      className={cn(fadePhaseClass(phase), isLive ? className : heldClassName)}
-      style={isLive ? _style : heldStyle}
+      className={cn(fadePhaseClass(phase), heldClassName)}
+      style={heldStyle}
       {...restProps}
       inert={!isLive || (artworkPending ?? restProps.inert)}
     >
-      <Fragment key={shownKey}>{isLive ? children : heldChildren}</Fragment>
+      <Fragment key={shownKey}>{heldChildren}</Fragment>
     </div>
   );
 }

@@ -2,16 +2,26 @@ import { useEffect, useRef, type KeyboardEvent, type RefObject } from "react";
 
 import { focusableControls, focusControl, focusScreenStart } from "./focus-navigation";
 
+// A desktop pause menu can cover a still-pending choice. Only the most recently
+// mounted interactive dialog may reclaim focus; covered dialogs stay resumable.
+const dialogPanels: HTMLDivElement[] = [];
+
 export function useDialogFocus(returnFocusRef?: RefObject<HTMLElement | null>) {
   const panelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const panel = panelRef.current;
+    if (!panel) return;
+    dialogPanels.push(panel);
+    const ownsFocus = () =>
+      dialogPanels.findLast((candidate) => candidate.isConnected && !candidate.closest("[inert]")) === panel;
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const returnTarget = returnFocusRef?.current ?? previous;
-    const cancel = panel?.querySelector<HTMLElement>("[data-dialog-cancel], [data-dialog-initial-focus]");
+    const cancel =
+      panel?.querySelector<HTMLElement>("[data-dialog-cancel], [data-dialog-initial-focus]") ??
+      panel?.querySelector<HTMLElement>("button:not(:disabled), [tabindex='0']");
     let frame = 0;
     const focusPanel = () => {
-      if (!panel?.isConnected || panel.closest("[inert]")) return;
+      if (!ownsFocus()) return;
       if (getComputedStyle(cancel ?? panel).visibility === "hidden") {
         frame = requestAnimationFrame(focusPanel);
         return;
@@ -28,11 +38,12 @@ export function useDialogFocus(returnFocusRef?: RefObject<HTMLElement | null>) {
     });
     if (content) observer.observe(content, { attributes: true, attributeFilter: ["inert"] });
     const keepFocus = (event: FocusEvent) => {
-      if (panel?.closest("[inert]")) return;
+      if (!ownsFocus()) return;
       if (event.target instanceof Node && !panel?.contains(event.target)) (cancel ?? panel)?.focus();
     };
     document.addEventListener("focusin", keepFocus);
     return () => {
+      dialogPanels.splice(dialogPanels.indexOf(panel), 1);
       observer.disconnect();
       cancelAnimationFrame(frame);
       document.removeEventListener("focusin", keepFocus);

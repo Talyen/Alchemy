@@ -23,7 +23,7 @@ export interface LogEntry {
 
 type LogSink = (entry: LogEntry) => void;
 
-let sinks: Array<{ sink: LogSink }> = [];
+const sinks = new Set<{ sink: LogSink }>();
 let logging = false;
 let droppedReentrantLogs = 0;
 
@@ -33,14 +33,14 @@ let droppedReentrantLogs = 0;
  */
 export function registerErrorSink(sink: LogSink): () => void {
   const registration = { sink };
-  sinks = [...sinks, registration];
+  sinks.add(registration);
   return () => {
-    sinks = sinks.filter((entry) => entry !== registration);
+    sinks.delete(registration);
   };
 }
 
 export function resetErrorSinksForTests(): void {
-  sinks = [];
+  sinks.clear();
 }
 
 export function logError(
@@ -64,7 +64,8 @@ export function logError(
     } catch {
       // A broken console adapter must not disable persistence or crash-reporting sinks.
     }
-    for (const { sink } of sinks) {
+    // Registrations made or removed by a sink affect the next error only.
+    for (const { sink } of [...sinks]) {
       try {
         sink(entry);
       } catch {

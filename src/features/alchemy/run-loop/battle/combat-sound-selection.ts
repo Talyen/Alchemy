@@ -18,6 +18,20 @@ const RESOURCE_PRIORITY = [
   "drawCards",
 ] as const;
 
+const STATUS_SOUNDS: Partial<Record<CombatTextEvent["stat"], BattleSound>> = {
+  forge: "forgeGain",
+  block: "blockGain",
+  thorns: "thornsGain",
+  gold: "gainGold",
+  wish: "wishAppear",
+  draw: "drawCards",
+};
+const PERIODIC_SOUNDS: Partial<Record<CombatTextEvent["stat"], BattleSound>> = {
+  burn: "burnTick",
+  poison: "poisonTick",
+  bleed: "bleedTick",
+};
+
 /** Amounts compete only within damage; Mana, Gold, and statuses use semantic priority. */
 export function selectCombatSound(events: CombatTextEvent[], hasFocalSound: boolean): BattleSound | undefined {
   const accents = new Set<BattleSound>();
@@ -47,27 +61,14 @@ export function selectCombatSound(events: CombatTextEvent[], hasFocalSound: bool
     }
     if (event.kind === "damage" && event.impact !== false) {
       if (event.critical) accents.add("critHit");
-      const sound: BattleSound =
-        event.periodic && event.stat === "burn"
-          ? "burnTick"
-          : event.periodic && event.stat === "poison"
-            ? "poisonTick"
-            : event.periodic && event.stat === "bleed"
-              ? "bleedTick"
-              : event.target === "enemy"
-                ? "enemyHit"
-                : event.stat === "block"
-                  ? "blockAbsorb"
-                  : "playerHit";
+      const sound =
+        (event.periodic ? PERIODIC_SOUNDS[event.stat] : undefined) ??
+        (event.target === "enemy" ? "enemyHit" : event.stat === "block" ? "blockAbsorb" : "playerHit");
       damage.set(sound, Math.max(damage.get(sound) ?? 0, event.amount));
     } else if (event.kind === "heal" && event.stat === "health") resources.add("playerHeal");
     else if (event.kind === "status" || event.kind === "multiply") {
-      if (event.stat === "forge") resources.add("forgeGain");
-      else if (event.stat === "block") resources.add("blockGain");
-      else if (event.stat === "thorns") resources.add("thornsGain");
-      else if (event.stat === "gold") resources.add("gainGold");
-      else if (event.stat === "wish") resources.add("wishAppear");
-      else if (event.stat === "draw") resources.add("drawCards");
+      const sound = STATUS_SOUNDS[event.stat];
+      if (sound) resources.add(sound);
     }
   }
   const accent = ACCENT_PRIORITY.find((sound) => accents.has(sound));

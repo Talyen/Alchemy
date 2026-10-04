@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { selectRewardCards } from "@/lib/game-data";
 import type { BattleCard } from "@/lib/game-data";
+import { createSeededRng } from "@/lib/rng";
 
 function card(overrides: Partial<BattleCard> = {}): BattleCard {
   return { id: "test", title: "Test", descriptionLines: [""], art: "", cost: 1, effects: [], ...overrides };
@@ -14,16 +15,6 @@ function physicalCard(id: string): BattleCard {
   return card({ id, effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
 }
 
-function mulberry32(seed: number): () => number {
-  let state = seed | 0;
-  return () => {
-    state = (state + 0x6d2b79f5) | 0;
-    let t = Math.imul(state ^ (state >>> 15), 1 | state);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
 describe("selectRewardCards", () => {
   it.each([
     { count: 1, ids: ["card-36"], nextRandom: 0.384123298805207 },
@@ -34,8 +25,7 @@ describe("selectRewardCards", () => {
       nextRandom: 0.25641172588802874,
     },
   ])("preserves ranked ties and RNG with $count rewards from a larger pool", ({ count, ids, nextRandom }) => {
-    // Captured from full stable sorting before introducing the bounded shortlist.
-    // Nine rewards also exercises the larger-request sort path.
+    // Pin the offered cards and next RNG value so a refactor cannot reroll later rewards.
     const pool = Array.from({ length: 40 }, (_, index) =>
       card({
         id: `card-${index}`,
@@ -47,7 +37,7 @@ describe("selectRewardCards", () => {
               : [],
       }),
     );
-    const rng = mulberry32(37);
+    const rng = createSeededRng(37);
     expect(selectRewardCards([pool[0]!], pool, count, [], rng, ["physical"]).map((entry) => entry.id)).toEqual(ids);
     expect(rng()).toBe(nextRandom);
   });
@@ -92,7 +82,7 @@ describe("selectRewardCards", () => {
     const deck = [physicalCard("strike-0"), ...(hasCompanion ? [companionCard("owned-wolf")] : [])];
     Object.freeze(pool);
     Object.freeze(deck);
-    const rng = mulberry32(seed);
+    const rng = createSeededRng(seed);
     const rewards = selectRewardCards(deck, pool, count, [card({ id: "strike-1" })], rng, ["health"]);
 
     expect(rewards.map((entry) => entry.id)).toEqual(ids);
@@ -141,51 +131,14 @@ describe("selectRewardCards", () => {
   });
 });
 
-describe("companionless boost", () => {
-  it("offers companions more often until the deck has one, then dampens them", () => {
-    const pool: BattleCard[] = [
-      companionCard("wolf-companion"),
-      ...Array.from({ length: 6 }, (_, index) => physicalCard(`slash-${index}`)),
-      ...Array.from({ length: 6 }, (_, index) => card({ id: `plain-${index}` })),
-    ];
-    const freshDeck = [physicalCard("stab"), physicalCard("jab")];
-    const companionDeck = [...freshDeck, companionCard("owned-wolf")];
-
-    function hitRate(deck: BattleCard[], trials: number): number {
-      let hits = 0;
-      for (let i = 0; i < trials; i += 1) {
-        const picked = selectRewardCards(deck, pool, 3, [], mulberry32(5000 + i));
-        if (picked.some((entry) => entry.id === "wolf-companion")) hits += 1;
-      }
-      return hits / trials;
-    }
-
-    const boosted = hitRate(freshDeck, 1000);
-    const normal = hitRate(companionDeck, 1000);
-    expect(boosted).toBeGreaterThan(normal + 0.1);
-  });
+it("keeps ordinary rewards when owned Companions are dampened out", () => {
+  const pool = [companionCard("wolf"), physicalCard("strike")];
+  const rewards = selectRewardCards([companionCard("owned-wolf")], pool, 3, [], () => 0.99);
+  expect(rewards.map((entry) => entry.id)).toEqual(["strike"]);
 });
 
-describe("owned companion dampening", () => {
-  it("offers companions about half as often once the deck has one", () => {
-    const pool: BattleCard[] = [
-      companionCard("wolf-companion"),
-      ...Array.from({ length: 12 }, (_, index) => physicalCard(`slash-${index}`)),
-    ];
-    const deck = [physicalCard("owned-stab"), companionCard("owned-wolf")];
-
-    function hitRate(trials: number): number {
-      let hits = 0;
-      for (let i = 0; i < trials; i += 1) {
-        const picked = selectRewardCards(deck, pool, 3, [], mulberry32(7000 + i));
-        if (picked.some((entry) => entry.id === "wolf-companion")) hits += 1;
-      }
-      return hits / trials;
-    }
-
-    const uniformBaseline = 3 / 13;
-    const rate = hitRate(3000);
-    expect(rate).toBeLessThan(uniformBaseline * 0.75);
-    expect(rate).toBeGreaterThan(uniformBaseline * 0.25);
-  });
+it("falls back to the original pool when dampening would leave no rewards", () => {
+  const pool = [companionCard("wolf"), companionCard("fox")];
+  const rewards = selectRewardCards([companionCard("owned-wolf")], pool, 3, [], () => 0.99);
+  expect(rewards.map((entry) => entry.id).sort()).toEqual(["fox", "wolf"]);
 });

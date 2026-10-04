@@ -8,20 +8,6 @@ export { getCorruptionTargetEffect } from "./effect-address";
 export { getEditableCorruptionTargets } from "./numeric-targets";
 export type { CorruptionTarget } from "./numeric-targets";
 
-// Declarative rules for lines that need word-to-digit or singular/plural normalization
-// after the raw numeric substitution. Each rule matches the replaced line and reformats it.
-const PLURAL_LINE_RULES: Array<{ pattern: RegExp; format: (value: number) => string }> = [
-  { pattern: /^Draw \d+ cards?$/i, format: (v) => (v === 1 ? "Draw a card" : `Draw ${v} cards`) },
-  {
-    pattern: /^Gain \d+ Mana Crystals?$/,
-    format: (v) => `Gain ${v} Mana Crystal${v === 1 ? "" : "s"}`,
-  },
-  {
-    pattern: /^Cleanse \d+ harmful status effects?$/,
-    format: (v) => `Cleanse ${v} harmful status effect${v === 1 ? "" : "s"}`,
-  },
-];
-
 export function replaceNumberAt(line: string, matchIndex: number, nextValue: number): string {
   if (line.startsWith("Your Companion acts ") && matchIndex === 20) {
     return `Your Companion acts ${nextValue === 1 ? "once" : nextValue === 2 ? "twice" : `${nextValue} times`}`;
@@ -33,9 +19,10 @@ export function replaceNumberAt(line: string, matchIndex: number, nextValue: num
   if (!match) return line;
   const replaced = `${line.slice(0, matchIndex)}${nextValue}${line.slice(matchIndex + match[0].length)}`;
   // Handle digit-to-word revert and singular/plural normalization.
-  for (const rule of PLURAL_LINE_RULES) {
-    if (rule.pattern.test(replaced)) return rule.format(nextValue);
-  }
+  if (/^Draw \d+ cards?$/i.test(replaced)) return nextValue === 1 ? "Draw a card" : `Draw ${nextValue} cards`;
+  if (/^Gain \d+ Mana Crystals?$/.test(replaced)) return `Gain ${nextValue} Mana Crystal${nextValue === 1 ? "" : "s"}`;
+  if (/^Cleanse \d+ harmful status effects?$/.test(replaced))
+    return `Cleanse ${nextValue} harmful status effect${nextValue === 1 ? "" : "s"}`;
   return replaced;
 }
 

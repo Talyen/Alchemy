@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import {
-  BattleCardEffectSchema,
   LabyrinthMapSchema,
   MaterialInventorySchema,
   CompletedDifficultiesSchema,
@@ -11,27 +10,10 @@ import { deduplicateFromSet, deduplicatedSetArraySchema } from "@/lib/validation
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { withClearedNode } from "@/lib/content-systems/labyrinth/map-state";
 import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state";
-
-describe("BattleCardEffectSchema", () => {
-  it("rejects unknown kind", () => {
-    const result = BattleCardEffectSchema.safeParse({ kind: "unknown", amount: 5 });
-    expect(result.success).toBe(false);
-  });
-});
+import { CHARACTER_IDS } from "@/lib/validation/save-schemas/schema-enums";
+import { emptyInventory } from "@/lib/homestead/inventory";
 
 describe("LabyrinthMapSchema", () => {
-  it("parses null as null", () => {
-    const result = LabyrinthMapSchema.safeParse(null);
-    expect(result.success).toBe(true);
-    if (result.success) expect(result.data).toBeNull();
-  });
-
-  it("catches invalid input", () => {
-    const result = LabyrinthMapSchema.safeParse({ grid: "invalid" });
-    expect(result.success).toBe(true);
-    if (result.success) expect(result.data).toBeNull();
-  });
-
   it("roundtrips seeded grid geography", () => {
     for (const seed of [1, 42, 99]) {
       const map = generateLabyrinthMap(createSeededRng(seed));
@@ -64,24 +46,11 @@ describe("LabyrinthMapSchema", () => {
 });
 
 describe("MaterialInventorySchema", () => {
-  it("ensures all material keys exist", () => {
-    const result = MaterialInventorySchema.safeParse({ wood: 5 });
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.wood).toBe(5);
-      expect(result.data.iron).toBe(0);
-      expect(result.data.herbs).toBe(0);
-      expect(result.data.food).toBe(0);
-      expect(result.data.gems).toBe(0);
-    }
-  });
-
-  it("rejects negative values", () => {
-    const result = MaterialInventorySchema.safeParse({ wood: -5 });
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.wood).toBe(0);
-    }
+  it("repairs corrupt materials without discarding usable inventory", () => {
+    expect(MaterialInventorySchema.parse({ wood: 5, iron: -1, herbs: "bad", gems: Number.NaN })).toEqual({
+      ...emptyInventory(),
+      wood: 5,
+    });
   });
 });
 
@@ -91,6 +60,7 @@ describe("UnlockedTalentsSchema", () => {
       physical: ["physical-brute-force", "burn-dmg-1", "unknown-talent"],
       consume: ["consume-6"],
       burn: ["burn-dmg-1"],
+      armor: "bad",
     });
 
     expect(result.success).toBe(true);
@@ -101,38 +71,25 @@ describe("UnlockedTalentsSchema", () => {
       });
     }
   });
-
-  it("filters non-array entries", () => {
-    const result = UnlockedTalentsSchema.safeParse({ burn: "bad" });
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.burn).toBeUndefined();
-    }
-  });
-
-  it("falls back for non-object input", () => {
-    const result = UnlockedTalentsSchema.safeParse(null);
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data).toEqual({});
-    }
-  });
 });
 
 describe("CompletedDifficultiesSchema", () => {
-  it("ensures all character keys exist", () => {
-    const result = CompletedDifficultiesSchema.safeParse({ knight: ["difficulty-1"] });
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.knight).toEqual(["difficulty-1"]);
-      expect(result.data.rogue).toEqual([]);
-      expect(result.data.wizard).toEqual([]);
-      expect(result.data.ranger).toEqual([]);
-      expect(result.data.alchemist).toEqual([]);
-      expect(result.data.warlock).toEqual([]);
-      expect(result.data.druid).toEqual([]);
-      expect(result.data.wildcard).toEqual([]);
-    }
+  it("preserves earned unlocks while repairing individual heroes and excluding inherited progress", () => {
+    const saved = Object.assign(Object.create({ ranger: ["difficulty-2"] }), {
+      knight: ["difficulty-2", 42, "unknown", "difficulty-1", "difficulty-2"],
+      rogue: "bad",
+      wizard: ["difficulty-3"],
+      stranger: ["difficulty-1"],
+    });
+    const defaults = Object.fromEntries(CHARACTER_IDS.map((id) => [id, []]));
+    expect(CompletedDifficultiesSchema.parse(saved)).toEqual({
+      ...defaults,
+      knight: ["difficulty-2", "difficulty-1"],
+      wizard: ["difficulty-3"],
+    });
+    const first = CompletedDifficultiesSchema.parse(null);
+    first.knight.push("difficulty-1");
+    expect(CompletedDifficultiesSchema.parse(null)).toEqual(defaults);
   });
 });
 

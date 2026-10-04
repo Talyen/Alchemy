@@ -9,6 +9,10 @@ function addNumericEffect(current: number, added: number): number {
   return Number.isInteger(sum) ? sum : Math.round(sum * 10000) / 10000;
 }
 
+function addCardHealBonuses(base: Record<string, number>, added: Record<string, number> = {}): void {
+  for (const [id, amount] of Object.entries(added)) base[id] = (base[id] ?? 0) + amount;
+}
+
 function applyTierEffects(base: HomesteadEffectManifest, partial?: Partial<HomesteadEffectManifest>): void {
   if (!partial) return;
   const { cardHealBonus, companionBondLevels, ...numericEffects } = partial;
@@ -16,9 +20,7 @@ function applyTierEffects(base: HomesteadEffectManifest, partial?: Partial<Homes
     const amount = numericEffects[key];
     if (typeof amount === "number") base[key] = addNumericEffect(base[key], amount);
   }
-  for (const [id, amount] of Object.entries(cardHealBonus ?? {})) {
-    base.cardHealBonus[id] = (base.cardHealBonus[id] ?? 0) + amount;
-  }
+  addCardHealBonuses(base.cardHealBonus, cardHealBonus);
   if (companionBondLevels) {
     const bonds = base.companionBondLevels;
     for (const id of Object.keys(companionBondLevels) as CompanionId[]) {
@@ -80,9 +82,7 @@ export function mergeIntoManifest(
     merged[key] = addNumericEffect(merged[key], homesteadEffects[key]);
   }
 
-  for (const [id, amount] of Object.entries(homesteadEffects.cardHealBonus)) {
-    merged.cardHealBonus[id] = (merged.cardHealBonus[id] ?? 0) + amount;
-  }
+  addCardHealBonuses(merged.cardHealBonus, homesteadEffects.cardHealBonus);
   for (const id of Object.keys(homesteadEffects.companionBondLevels) as CompanionId[]) {
     merged.companionBondLevels[id] = Math.max(
       merged.companionBondLevels[id] ?? 0,

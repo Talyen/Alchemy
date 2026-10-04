@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   evaluateBalanceFindings,
-  FINDINGS_CAP,
   emptyRateCell,
   makePairedDelta,
   renderBalanceFindingsHtml,
@@ -161,45 +160,10 @@ describe("evaluateBalanceFindings", () => {
   });
 
   it("skips noisy paired deltas and flags a far non-noisy card", () => {
-    const noisy: ReturnType<typeof makePairedDelta> = {
-      id: "cleanse",
-      delta: 0.01,
-      winRate: 0.51,
-      baseline: 0.5,
-      se: 0.1,
-      turnDelta: 0,
-      baselineTurns: 5,
-      treatmentTurns: 5,
-      turnSe: 0,
-      n: 20,
-      noisy: true,
-    };
-    const clustered: ReturnType<typeof makePairedDelta> = {
-      id: "slash",
-      delta: 0.05,
-      winRate: 0.55,
-      baseline: 0.5,
-      se: 0.01,
-      turnDelta: 0,
-      baselineTurns: 5,
-      treatmentTurns: 5,
-      turnSe: 0,
-      n: 400,
-      noisy: false,
-    };
-    const strong: ReturnType<typeof makePairedDelta> = {
-      id: "fangs",
-      delta: 0.4,
-      winRate: 0.9,
-      baseline: 0.5,
-      se: 0.02,
-      turnDelta: 0,
-      baselineTurns: 5,
-      treatmentTurns: 5,
-      turnSe: 0,
-      n: 400,
-      noisy: false,
-    };
+    const base = makePairedDelta("base", { ...emptyPairedWinStats(), n: 400 });
+    const noisy = { ...base, delta: 0.01, se: 0.1, n: 20, noisy: true };
+    const clustered = { ...base, delta: 0.05, se: 0.01, noisy: false };
+    const strong = { ...base, delta: 0.4, se: 0.02, noisy: false };
 
     const model = emptyModel();
     model.cardsIsolatedElite = [paired("cleanse", noisy), paired("slash", clustered), paired("fangs", strong)];
@@ -296,19 +260,6 @@ describe("evaluateBalanceFindings", () => {
     expect(result.findings.some((finding) => finding.id === "Player Heal")).toBe(false);
   });
 
-  it("caps the summary", () => {
-    const model = emptyModel();
-    model.anomalyMetrics = Array.from({ length: 120 }, (_, index) => ({
-      field: `metric-${index}`,
-      values: { early: 0, mid: 0, late: 500 },
-    }));
-    const result = evaluateBalanceFindings(model);
-    expect(result.findings.length).toBe(FINDINGS_CAP);
-    expect(result.omitted).toBeGreaterThan(0);
-    expect(result.totalBeforeCap).toBeGreaterThan(FINDINGS_CAP);
-    expect(result.shownByBucket.anomaly).toBe(FINDINGS_CAP);
-  });
-
   it("renders the effective findings cap consistently", () => {
     const model = emptyModel();
     model.anomalyMetrics = Array.from({ length: 10 }, (_, index) => ({
@@ -327,6 +278,10 @@ describe("evaluateBalanceFindings", () => {
     };
 
     expect(findings.cap).toBe(3);
+    expect(findings.findings).toHaveLength(3);
+    expect(findings.totalBeforeCap).toBe(10);
+    expect(findings.omitted).toBe(7);
+    expect(findings.shownByBucket.anomaly).toBe(3);
     expect(renderBalanceFindingsHtml(findings, model)).toContain("cap 3");
     expect(JSON.parse(renderBalanceFindingsJson(findings, model, options)).bands.cap).toBe(3);
   });

@@ -1,25 +1,23 @@
 import type { MysteryEffect } from "./types";
 
+const EFFECT_DISPLAY_RANK = {
+  gainXP: 0,
+  gainGold: 2,
+  loseGold: 2,
+  gainMaterial: 3,
+  addCard: 1,
+  chooseCard: 1,
+  healHealth: 1,
+  damageHealth: 1,
+  removeCard: 1,
+  gainTrinket: 1,
+  gainRandomTrinket: 1,
+  gainRandomGear: 1,
+  gainGeneratedGear: 1,
+} satisfies Record<MysteryEffect["kind"], number>;
+
 export function getMysteryEffectRank(effect: MysteryEffect): number {
-  switch (effect.kind) {
-    case "gainXP":
-      return 0;
-    case "gainGold":
-    case "loseGold":
-      return 2;
-    case "gainMaterial":
-      return 3;
-    case "addCard":
-    case "chooseCard":
-    case "healHealth":
-    case "damageHealth":
-    case "removeCard":
-    case "gainTrinket":
-    case "gainRandomTrinket":
-    case "gainRandomGear":
-    case "gainGeneratedGear":
-      return 1;
-  }
+  return EFFECT_DISPLAY_RANK[effect.kind];
 }
 
 export function sortMysteryEffectsByDisplayOrder(effects: readonly MysteryEffect[]): MysteryEffect[] {

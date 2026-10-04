@@ -60,6 +60,9 @@ describe("generate-patch-notes", () => {
     );
     expect(lines).toContain("**ui:** Add save migrations plus E2E and unit tests for crafting.");
     expect(lines.some((line) => line.includes("Co-authored-by"))).toBe(false);
+    expect(extractPlayerFacingLines({ subject: "fix: subject fallback", body: "Short one. Short two." })).toEqual([
+      "Short one.",
+    ]);
   });
 
   it("extracts markdown bullets from commit bodies", () => {

@@ -133,6 +133,12 @@ function canRemoveConsume(card: BattleCard): boolean {
   );
 }
 
+function secondaryEffectKey(effect: BattleCardEffect): string {
+  if (effect.kind === "damage") return `${effect.kind}:${effect.damageType}`;
+  if (effect.kind === "player-status") return `${effect.kind}:${effect.status}`;
+  return effect.kind;
+}
+
 export function getCorruptionMutationGroups(
   card: BattleCard,
   modifiers: readonly EncounterRewardTraitId[] = [],
@@ -162,21 +168,15 @@ export function getCorruptionMutationGroups(
       { kind: "damage", damageType: "poison", amount: damage },
       { kind: "damage", damageType: "burn", amount: damage },
     ];
+    const existingEffects = new Set<string>();
+    visitBattleCardEffects(card.effects, (effect) => {
+      existingEffects.add(secondaryEffectKey(effect));
+      return false;
+    });
     add(
       "secondary",
       secondary
-        .filter(
-          (effect) =>
-            !visitBattleCardEffects(
-              card.effects,
-              (existing) =>
-                existing.kind === effect.kind &&
-                (effect.kind !== "damage" || existing.kind !== "damage" || existing.damageType === effect.damageType) &&
-                (effect.kind !== "player-status" ||
-                  existing.kind !== "player-status" ||
-                  existing.status === effect.status),
-            ),
-        )
+        .filter((effect) => !existingEffects.has(secondaryEffectKey(effect)))
         .map((effect) => addCorruptionEffect(card, effect)),
     );
   }

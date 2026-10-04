@@ -32,7 +32,7 @@ export interface SettingsSaveFields {
   autoplayEnabled: boolean;
 }
 
-export interface SettingsStore extends SettingsSaveFields {
+export interface SettingsActions {
   setSelectedAspectRatio: (value: AspectRatioOption) => void;
   setDisplayMode: (value: DisplayMode) => void;
   setBrightness: (value: number) => void;
@@ -47,6 +47,8 @@ export interface SettingsStore extends SettingsSaveFields {
   setAutoplayEnabled: (value: boolean) => void;
   resetToDefaults: () => void;
 }
+
+export type SettingsStore = SettingsSaveFields & SettingsActions;
 
 export function createDefaultSettingsSaveFields(): SettingsSaveFields {
   return {
@@ -101,21 +103,11 @@ export const useSettingsStore = create<SettingsStore>()((set) => ({
   resetToDefaults: () => set({ ...createDefaultSettingsSaveFields() }),
 }));
 
-function selectSettingsSaveFields(state: Pick<SettingsStore, keyof SettingsSaveFields>): SettingsSaveFields {
-  return {
-    selectedAspectRatio: state.selectedAspectRatio,
-    displayMode: state.displayMode,
-    brightness: state.brightness,
-    backgroundParticlesIntensity: state.backgroundParticlesIntensity,
-    backgroundGlowIntensity: state.backgroundGlowIntensity,
-    musicVolume: state.musicVolume,
-    sfxVolume: state.sfxVolume,
-    masterVolume: state.masterVolume,
-    muteInBackground: state.muteInBackground,
-    autoEndTurn: state.autoEndTurn,
-    rememberAutoplayPreference: state.rememberAutoplayPreference,
-    autoplayEnabled: state.autoplayEnabled,
-  };
+// Defaults own the persisted field list; methods and unrelated save fields never encode.
+const SETTINGS_SAVE_KEYS = Object.keys(createDefaultSettingsSaveFields()) as Array<keyof SettingsSaveFields>;
+
+function selectSettingsSaveFields(state: SettingsSaveFields): SettingsSaveFields {
+  return Object.fromEntries(SETTINGS_SAVE_KEYS.map((key) => [key, state[key]])) as SettingsSaveFields;
 }
 
 export const settingsPersistenceCodec: StandalonePersistenceCodec<SettingsSaveFields> = {
@@ -141,23 +133,6 @@ export const settingsPersistenceCodec: StandalonePersistenceCodec<SettingsSaveFi
     });
   },
 };
-
-export type SettingsActions = Pick<
-  SettingsStore,
-  | "setSelectedAspectRatio"
-  | "setDisplayMode"
-  | "setBrightness"
-  | "setBackgroundParticlesIntensity"
-  | "setBackgroundGlowIntensity"
-  | "setMasterVolume"
-  | "setMusicVolume"
-  | "setSfxVolume"
-  | "setMuteInBackground"
-  | "setAutoEndTurn"
-  | "setRememberAutoplayPreference"
-  | "setAutoplayEnabled"
-  | "resetToDefaults"
->;
 
 function selectSettingsActions(state: SettingsStore): SettingsActions {
   return {

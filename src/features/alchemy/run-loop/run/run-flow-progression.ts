@@ -30,7 +30,16 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, completeRunV
   function advanceToNextDestination() {
     const activity = readRunSession().activity.kind;
     if (
-      !["campfire", "shop", "alchemist", "trinket-shop", "equipment-shop", "mystery", "corruption"].includes(activity)
+      ![
+        "campfire",
+        "transmutation",
+        "shop",
+        "alchemist",
+        "trinket-shop",
+        "equipment-shop",
+        "mystery",
+        "corruption",
+      ].includes(activity)
     )
       return;
     const labyrinth = readActiveRun().contentSystemType === CONTENT_SYSTEMS.LABYRINTH;

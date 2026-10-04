@@ -55,17 +55,13 @@ export function getPlasmaKeywordsForCharacter(id?: CharacterId | null): KeywordI
   return [...characters[id].keywords];
 }
 
-export function getPlasmaKeywordsForGear(gear: GearInstance): KeywordId[] {
-  return getGearInstanceKeywordIds(gear);
-}
+export const getPlasmaKeywordsForGear = getGearInstanceKeywordIds;
 
 export function getPlasmaKeywordsForTalent(talent: Pick<TalentDefinition, "keywordId">): KeywordId[] {
   return [talent.keywordId];
 }
 
-export function getPlasmaKeywordsForText(text: string): KeywordId[] {
-  return extractKeywordIds(text);
-}
+export const getPlasmaKeywordsForText = extractKeywordIds;
 
 export function getPlasmaColorPair(keywordIds: readonly KeywordId[]): PlasmaColorPair | null {
   const [firstId, secondId] = keywordIds;
@@ -134,12 +130,7 @@ export function getEnemyKeywordShineColors(
   return getInspectionKeywordShineColors(getEnemyTraitKeywordIds(entry, modifiers));
 }
 
-export function getBossShineColors(
-  boss: BestiaryEntry,
-  modifiers: readonly EncounterCombatTraitId[] = [],
-): readonly string[] {
-  return getEnemyKeywordShineColors(boss, modifiers);
-}
+export const getBossShineColors = getEnemyKeywordShineColors;
 
 export function getBossTextShineColors(boss: BestiaryEntry): readonly string[] {
   return [...new Set(getBossShineColors(boss))];

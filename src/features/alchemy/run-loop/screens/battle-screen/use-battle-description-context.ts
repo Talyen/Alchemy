@@ -32,7 +32,7 @@ export function useBattleDescriptionContext(state: BattleScreenState) {
 
   return useMemo(
     () => ({
-      ...state.talentEffects,
+      companionBondLevels: state.talentEffects.companionBondLevels,
       companionDamageModifiers,
       reactionPreview: {
         shatter: state.flags.shatterUsed

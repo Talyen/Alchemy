@@ -13,7 +13,7 @@ import {
 } from "@/lib/gear";
 import { GEAR_AFFIX_COUNT } from "@/lib/game-constants";
 import { GearDefinitionContentSchema, GearAffixContentSchema } from "./schemas";
-import { addDuplicateIssues, collectSchemaIssues, validateArt } from "./utils";
+import { addDuplicateIssues, collectSchemaIssues, validateLibraryBasics } from "./utils";
 import type { Collector } from "./utils";
 
 function validateGearAffixIds(collector: Collector): void {
@@ -45,8 +45,6 @@ function validateBaseItems(collector: Collector): void {
 
 function validateGearDefinitions(collector: Collector): void {
   for (const definition of gearDefinitionList) {
-    collectSchemaIssues(GearDefinitionContentSchema, definition, "gear", definition.id, collector.error);
-    validateArt("gear", definition.id, definition.art, collector.error, collector.warning);
     if (definition.rarity !== "unique" && !gearArtByDefinitionId[definition.id])
       collector.error("gear", definition.id, "Missing generated gear art mapping");
     if (definition.rarity === "unique" || !definition.rarity) continue;
@@ -129,12 +127,13 @@ export function validateGear(collector: Collector): void {
     "gear base item id",
     collector.error,
   );
-  addDuplicateIssues(
-    gearDefinitionList.map((d) => d.id),
-    "gear",
-    "gear definition id",
-    collector.error,
-  );
+  validateLibraryBasics(collector, {
+    area: "gear",
+    items: gearDefinitionList,
+    schema: GearDefinitionContentSchema,
+    artOf: (definition) => definition.art,
+    idLabel: "gear definition id",
+  });
 
   validateGearAffixIds(collector);
   validateBaseItems(collector);

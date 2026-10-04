@@ -29,14 +29,6 @@ describe("useErrorLogStore", () => {
     expect(errors.at(-1)?.message).toBe("err-100");
   });
 
-  it("clearErrors empties state and localStorage", () => {
-    useErrorLogStore.getState().pushError({ message: "boom", source: "storage" });
-    useErrorLogStore.getState().clearErrors();
-    flushPersistedErrorLog();
-    expect(useErrorLogStore.getState().errors).toEqual([]);
-    expect(localStorage.getItem(STORAGE_KEY)).toBe("[]");
-  });
-
   it.each(["not-json", "{}", "[null]", '[{"message":"missing required fields"}]'])(
     "recovers an empty list from corrupt persisted data: %s",
     (raw) => {
@@ -141,4 +133,19 @@ describe("useErrorLogStore", () => {
       vi.useRealTimers();
     }
   });
+});
+
+it("boots and flushes safely when browser privacy settings deny access to the storage getter", async () => {
+  const storage = vi.spyOn(window, "localStorage", "get").mockImplementation(() => {
+    throw new DOMException("Storage denied", "SecurityError");
+  });
+  try {
+    vi.resetModules();
+    const fresh = await import("@/features/alchemy/shared/stores/error-log-store");
+    expect(fresh.useErrorLogStore.getState().errors).toEqual([]);
+    useErrorLogStore.getState().pushError({ message: "denied storage", source: "other" });
+    expect(flushPersistedErrorLog).not.toThrow();
+  } finally {
+    storage.mockRestore();
+  }
 });

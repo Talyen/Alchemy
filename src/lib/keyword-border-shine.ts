@@ -12,23 +12,13 @@ export function getKeywordBorderShineColors(keywordIds: readonly KeywordId[]): r
   const uniqueKeywordIds = [...new Set(keywordIds)];
   if (uniqueKeywordIds.length === 0) return [];
 
-  if (uniqueKeywordIds.length === 1) {
-    const [keywordId] = uniqueKeywordIds;
-    return [...(keywordDefinitions[keywordId!]?.shineColors ?? [])];
-  }
-
-  const primaryColors: string[] = [];
-  for (const keywordId of uniqueKeywordIds) {
-    const [primary] = keywordDefinitions[keywordId]?.shineColors ?? [];
-    if (primary && !primaryColors.includes(primary)) {
-      primaryColors.push(primary);
-    }
-  }
+  const primaryColors = [
+    ...new Set(uniqueKeywordIds.flatMap((id) => keywordDefinitions[id]?.shineColors.slice(0, 1) ?? [])),
+  ];
 
   if (primaryColors.length === 0) return [];
   if (primaryColors.length === 1) {
-    const [keywordId] = uniqueKeywordIds;
-    return [...(keywordDefinitions[keywordId!]?.shineColors ?? [])];
+    return [...(keywordDefinitions[uniqueKeywordIds[0]!]?.shineColors ?? [])];
   }
 
   return [...primaryColors, primaryColors[0]!];

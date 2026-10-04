@@ -273,6 +273,14 @@ describe("asset-manifest-cache", () => {
 });
 
 describe("mapPool", () => {
+  it("rejects invalid concurrency before starting work instead of returning unprocessed holes", async () => {
+    const mapper = vi.fn(async (item: number) => item);
+    for (const concurrency of [0, -1, 1.5, NaN, Infinity]) {
+      await expect(mapPool([1, 2], concurrency, mapper)).rejects.toThrow("positive safe integer");
+    }
+    expect(mapper).not.toHaveBeenCalled();
+  });
+
   it("waits for workers and retains every worker failure", async () => {
     const first = new Error("first conversion failed");
     const second = new Error("second conversion failed");
@@ -300,19 +308,22 @@ describe("mapPool", () => {
   });
 
   it("preserves order and bounds concurrency", async () => {
-    let active = 0;
-    let maxActive = 0;
-    const results = await mapPool([1, 2, 3, 4, 5], 2, async (n) => {
-      active += 1;
-      maxActive = Math.max(maxActive, active);
-      await new Promise((resolve) => {
-        setTimeout(resolve, 10);
-      });
-      active -= 1;
-      return n * 2;
+    const gates = Array.from({ length: 3 }, () => Promise.withResolvers<void>());
+    const started: number[] = [];
+    const thirdStarted = Promise.withResolvers<void>();
+    const pending = mapPool([0, 1, 2], 2, async (index) => {
+      started.push(index);
+      if (index === 2) thirdStarted.resolve();
+      await gates[index]!.promise;
+      return index * 2;
     });
-    expect(results).toEqual([2, 4, 6, 8, 10]);
-    expect(maxActive).toBeLessThanOrEqual(2);
+    expect(started).toEqual([0, 1]);
+    gates[1]!.resolve();
+    await thirdStarted.promise;
+    expect(started).toEqual([0, 1, 2]);
+    gates[2]!.resolve();
+    gates[0]!.resolve();
+    expect(await pending).toEqual([0, 2, 4]);
   });
 });
 

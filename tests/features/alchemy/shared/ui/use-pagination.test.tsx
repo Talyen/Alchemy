@@ -21,6 +21,33 @@ it("keeps a partial last page and bounds empty or invalid capacities", () => {
   expect(anchoredPage(1, 8, 10, 40, 99)).toBe(0);
 });
 
+it("never drops or duplicates entries for fractional and non-finite pagination inputs", () => {
+  const items = [0, 1, 2, 3, 4];
+  const first = paginateRows(items, NaN, 2.9, 1.5);
+  const second = paginateRows(items, 1.9, 2.9, 1.5);
+  const third = paginateRows(items, 2, 2.9, Infinity);
+  expect([first, second, third].flatMap(({ rows }) => rows.flat())).toEqual(items);
+  expect(getPagination(Infinity, Infinity, NaN)).toEqual({ page: 0, totalPages: 1, pageSize: 1 });
+  expect(paginateRows(items, 0, Infinity, NaN).rows).toEqual([[0]]);
+});
+
+it("recovers from non-finite hook inputs without an endless render loop", () => {
+  const notify = vi.fn();
+  const { result, rerender } = renderHook(
+    ({ size }) => ({
+      local: usePagination(5, size),
+      controlled: useControlledPagination({ page: NaN, pageSize: size, itemCount: 5, onPageChange: notify }),
+    }),
+    { initialProps: { size: NaN }, wrapper: StrictMode },
+  );
+  expect(result.current.local.page).toBe(0);
+  expect(result.current.controlled.page).toBe(0);
+  rerender({ size: 2 });
+  expect(result.current.local.totalPages).toBe(3);
+  expect(result.current.controlled.totalPages).toBe(3);
+  expect(notify).toHaveBeenCalledExactlyOnceWith(0);
+});
+
 it("retains a selected entry on resize but resets when the picker context changes", () => {
   const { result, rerender } = renderHook(({ size, context }) => usePagination(40, size, context, 23), {
     initialProps: { size: 8, context: "weapon" },

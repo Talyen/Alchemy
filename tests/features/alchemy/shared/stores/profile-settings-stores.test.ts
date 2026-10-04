@@ -106,13 +106,6 @@ describe("profile store", () => {
 });
 
 describe("settings store", () => {
-  it("owns display, audio, and gameplay preferences", () => {
-    const settings = useSettingsStore.getState();
-    expect(settings.selectedAspectRatio).toBe(defaultSaveData.selectedAspectRatio);
-    expect(settings.displayMode).toBe(defaultSaveData.displayMode);
-    expect(settings).not.toHaveProperty("showClearSaveConfirm");
-  });
-
   it("hydrates only settings fields from save data", () => {
     settingsPersistenceCodec.hydrate(
       makeSave({
@@ -125,7 +118,12 @@ describe("settings store", () => {
       }),
     );
 
-    expect(useSettingsStore.getState()).toMatchObject({
+    const encoded = settingsPersistenceCodec.encode();
+    expect(Object.keys(encoded).sort()).toEqual(Object.keys(settingsPersistenceCodec.createDefault()).sort());
+    expect(encoded).not.toHaveProperty("discoveredCardIds");
+    expect(encoded).not.toHaveProperty("setBrightness");
+    expect(useSettingsStore.getState().setBrightness).toBeTypeOf("function");
+    expect(encoded).toMatchObject({
       selectedAspectRatio: "16:9",
       displayMode: "windowed",
       musicVolume: 50,

@@ -82,13 +82,7 @@ export function pairedWinStats(
 export function combinePairedWinStats(stats: readonly PairedWinStats[]): PairedWinStats {
   const combined = emptyPairedWinStats();
   for (const entry of stats) {
-    combined.n += entry.n;
-    combined.treatmentWins += entry.treatmentWins;
-    combined.baselineWins += entry.baselineWins;
-    combined.squaredDifferenceSum += entry.squaredDifferenceSum;
-    combined.treatmentTurns += entry.treatmentTurns;
-    combined.baselineTurns += entry.baselineTurns;
-    combined.squaredTurnDifferenceSum += entry.squaredTurnDifferenceSum;
+    for (const key of Object.keys(combined) as Array<keyof PairedWinStats>) combined[key] += entry[key];
   }
   return combined;
 }

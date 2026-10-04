@@ -22,6 +22,7 @@ describe("normalizePersistedBattleState", () => {
       deathsDoorGraceTurnsRemaining: 2.9,
       hand: Array.from({ length: MAX_HAND_SIZE + 1 }, (_, index) => ({ ...cardById.slash!, uid: index + 1 })),
       pendingHandCards: [{ ...cardById.block!, uid: 50 }],
+      exhausted: [{ ...cardById.slash!, uid: 80 }],
       nextCardUid: 1,
     };
     const before = structuredClone(saved);
@@ -41,7 +42,7 @@ describe("normalizePersistedBattleState", () => {
       deathsDoorUsed: true,
       deathsDoorTriggeredTurn: null,
       deathsDoorGraceTurnsRemaining: 2,
-      nextCardUid: 51,
+      nextCardUid: 81,
     });
     expect(normalized.hand).toHaveLength(MAX_HAND_SIZE);
     expect(normalized.pendingHandCards.map((card) => card.uid)).toEqual([MAX_HAND_SIZE + 1, 50]);

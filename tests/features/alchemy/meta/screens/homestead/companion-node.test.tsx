@@ -1,85 +1,45 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { CompanionCardNode } from "@/features/alchemy/meta/screens/homestead/companion-node";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import { cardLibrary } from "@/lib/game-data";
+import { cardById, defaultCompanionBondLevels } from "@/lib/game-data";
 
-const wolfCard = cardLibrary.find((c) =>
-  c.effects.some(
-    (e) => (e as { kind: string }).kind === "summon-companion" && (e as { companionId: string }).companionId === "wolf",
-  ),
-)!;
+const props = {
+  card: cardById["wolf-companion"]!,
+  discovered: true,
+  bondedCompanions: { ...defaultCompanionBondLevels },
+  materialInventory: emptyInventory(),
+};
 
-describe("CompanionCardNode", () => {
-  beforeEach(() => useUiStore.setState({ hoveredCardId: null, shimmerState: null }));
-  afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  useUiStore.getState().clearCardHover();
+});
 
-  it("renders grayscale when undiscovered and no tile button", () => {
-    const { container } = render(
-      <CompanionCardNode
-        card={wolfCard}
-        discovered={false}
-        bondedCompanions={{} as any}
-        materialInventory={emptyInventory()}
-        onBond={vi.fn()}
-      />,
-    );
-    const img = container.querySelector("img");
-    expect(img?.className).toContain("grayscale");
-    expect(img?.className).toContain("group-hover:grayscale-0");
-    expect(img?.className).toContain("group-hover:opacity-100");
-    expect(screen.queryByRole("button")).toBeNull();
-  });
+it("rejects an unaffordable bond and dispatches the right Companion when affordable", () => {
+  const onBond = vi.fn();
+  const { rerender } = render(<CompanionCardNode {...props} onBond={onBond} />);
+  fireEvent.click(screen.getByRole("button"));
+  expect(onBond).not.toHaveBeenCalled();
 
-  it("renders clickable art tile when discovered and affordable", () => {
-    const onBond = vi.fn();
-    const inventory = { ...emptyInventory(), food: 100 };
-    const { container } = render(
-      <CompanionCardNode
-        card={wolfCard}
-        discovered
-        bondedCompanions={{} as any}
-        materialInventory={inventory}
-        onBond={onBond}
-      />,
-    );
-    const btn = screen.getByRole("button");
-    expect(btn.getAttribute("aria-disabled")).toBe("false");
-    expect(container.querySelector(".card-interactive-glow")).toBeTruthy();
-    fireEvent.click(btn);
-    expect(onBond).toHaveBeenCalled();
-  });
+  rerender(<CompanionCardNode {...props} materialInventory={{ ...emptyInventory(), food: 100 }} onBond={onBond} />);
+  fireEvent.click(screen.getByRole("button"));
+  expect(onBond).toHaveBeenCalledExactlyOnceWith("wolf");
+});
 
-  it("keeps glow when unaffordable and ignores clicks", () => {
-    const onBond = vi.fn();
-    const { container } = render(
-      <CompanionCardNode
-        card={wolfCard}
-        discovered
-        bondedCompanions={{} as any}
-        materialInventory={emptyInventory()}
-        onBond={onBond}
-      />,
-    );
-    const btn = screen.getByRole("button");
-    expect(btn.getAttribute("aria-disabled")).toBe("true");
-    expect(container.querySelector(".card-interactive-glow")).toBeTruthy();
-    fireEvent.click(btn);
-    expect(onBond).not.toHaveBeenCalled();
-  });
-
-  it("renders art-only tile without button when complete", () => {
-    render(
-      <CompanionCardNode
-        card={wolfCard}
-        discovered
-        bondedCompanions={{ wolf: 3 } as any}
-        materialInventory={emptyInventory()}
-        onBond={vi.fn()}
-      />,
-    );
-    expect(screen.queryByRole("button")).toBeNull();
-    expect(screen.queryByText(wolfCard.title)).toBeNull();
-  });
+it.each([
+  { discovered: false, level: 0 },
+  { discovered: true, level: 3 },
+])("does not offer a bond for discovered=$discovered, level=$level", ({ discovered, level }) => {
+  render(
+    <CompanionCardNode
+      {...props}
+      discovered={discovered}
+      bondedCompanions={{ ...defaultCompanionBondLevels, wolf: level }}
+      materialInventory={{ ...emptyInventory(), food: 100 }}
+      onBond={vi.fn()}
+    />,
+  );
+  expect(screen.queryByRole("button")).toBeNull();
 });

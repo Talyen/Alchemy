@@ -45,7 +45,7 @@ export function hydrateMysteryVisit(data: PersistedMysteryVisit | null): Hydrate
   if (!data) return emptyHydratedMysteryVisit();
   return {
     mysteryEvent: data.event,
-    mysteryChosenChoice: hydratePersistedMysteryChoice(data.chosenChoice),
+    mysteryChosenChoice: data.chosenChoice,
     mysteryCardChoices: data.cardChoices,
     mysteryGrantedTrinketIds: data.grantedTrinketIds,
     mysteryGrantedGearInstances: data.grantedGear ?? [],
@@ -59,16 +59,12 @@ export function hydratePersistedMysteryVisit(
   if (!data) return null;
   return {
     event: { ...data.event, choices: data.event.choices.map(hydrateMysteryChoice) },
-    chosenChoice: hydratePersistedMysteryChoice(data.chosenChoice ?? null),
+    chosenChoice: data.chosenChoice ? hydrateMysteryChoice(data.chosenChoice) : null,
     cardChoices: data.cardChoices?.map(hydrateCard) ?? null,
     grantedTrinketIds: [...(data.grantedTrinketIds ?? [])],
     grantedGear: [...(data.grantedGear ?? [])],
     chosenCardId: data.chosenCardId ?? null,
   };
-}
-
-function hydratePersistedMysteryChoice(choice: PersistedMysteryChoiceInput | null): MysteryChoice | null {
-  return choice ? hydrateMysteryChoice(choice) : null;
 }
 
 function hydrateMysteryChoice(choice: PersistedMysteryChoiceInput): MysteryChoice {
@@ -77,22 +73,23 @@ function hydrateMysteryChoice(choice: PersistedMysteryChoiceInput): MysteryChoic
     effects: choice.effects.map((effect): MysteryEffect => {
       if (effect.kind === "gainXP") return { ...effect, keyword: effect.keyword as KeywordId };
       // Parsed optional fields may be explicitly undefined; live effects omit them.
-      if (effect.kind === "healHealth")
-        return {
-          kind: effect.kind,
-          amount: effect.amount,
-          ...(effect.chance !== undefined ? { chance: effect.chance } : {}),
-        };
-      if (effect.kind === "gainRandomTrinket")
-        return { kind: effect.kind, ...(effect.fromIds !== undefined ? { fromIds: effect.fromIds } : {}) };
+      if (effect.kind === "healHealth") {
+        const { chance, ...rest } = effect;
+        return chance === undefined ? rest : { ...rest, chance };
+      }
+      if (effect.kind === "gainRandomTrinket") {
+        const { fromIds, ...rest } = effect;
+        return fromIds === undefined ? rest : { ...rest, fromIds };
+      }
+      if (effect.kind === "chooseCard")
+        return effect.tag ? { kind: "chooseCard", tag: effect.tag as KeywordId } : { kind: "chooseCard" };
       if (effect.kind === "gainGeneratedGear")
         return {
           kind: effect.kind,
           baseItemId: effect.baseItemId,
           ...(effect.astral ? { astral: effect.astral } : {}),
         };
-      if (effect.kind !== "chooseCard") return effect;
-      return effect.tag ? { kind: "chooseCard", tag: effect.tag as KeywordId } : { kind: "chooseCard" };
+      return effect;
     }),
   };
 }

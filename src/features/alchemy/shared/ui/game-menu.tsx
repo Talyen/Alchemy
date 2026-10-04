@@ -1,5 +1,5 @@
 import { BookOpen, Cog, House, Shield, Swords, TreePine, WandSparkles } from "lucide-react";
-import { Fragment } from "react";
+import { Fragment, type ReactNode } from "react";
 import { getProgressionFeatureUnlockMessage } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import type { Screen } from "@/lib/routing";
@@ -7,6 +7,7 @@ import { controlLabelClass } from "../config/typography";
 import { useHeldWhile } from "./use-fade";
 import { LockedMenuItem } from "./locked-menu-item";
 import { ModalOverlayShell } from "./modal-overlay-shell";
+import { useDialogFocus } from "./use-dialog-focus";
 
 const GAME_MENU_CONFIG = {
   anchoredMenuOffsetPx: 8,
@@ -43,13 +44,37 @@ interface MenuItem {
 
 function anchoredMenuStyle(anchorRect: DOMRect): React.CSSProperties {
   const offset = GAME_MENU_CONFIG.anchoredMenuOffsetPx;
+  const top = Math.max(offset, Math.min(anchorRect.bottom + offset, window.innerHeight / 2));
   return {
-    right: Math.min(
-      window.innerWidth - anchorRect.right + offset,
-      window.innerWidth - GAME_MENU_CONFIG.anchoredMenuWidthPx,
+    right: Math.max(
+      offset,
+      Math.min(window.innerWidth - anchorRect.right + offset, window.innerWidth - GAME_MENU_CONFIG.anchoredMenuWidthPx),
     ),
-    top: anchorRect.bottom + offset,
+    top,
+    maxWidth: `calc(100vw - ${offset * 2}px)`,
+    maxHeight: `calc(100dvh - ${top + offset}px)`,
+    overflowY: "auto",
   };
+}
+
+function GameMenuPanel({ children }: { children: ReactNode }) {
+  const { panelRef, handleKeyDown } = useDialogFocus();
+  return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Modal contains focus and shields its backdrop from content clicks
+    <div
+      ref={panelRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Game menu"
+      tabIndex={-1}
+      data-testid="game-menu"
+      onKeyDown={handleKeyDown}
+      className="alchemy-shell w-full max-w-[calc(28.8023*var(--content-rem,1rem))] overflow-visible rounded-shell-dialog border border-border/80 px-5 py-4"
+      onClick={(event) => event.stopPropagation()}
+    >
+      {children}
+    </div>
+  );
 }
 
 export function GameMenu({
@@ -102,12 +127,7 @@ export function GameMenu({
   ];
 
   const panel = (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- only shields menu clicks from the backdrop; menu buttons own keyboard actions
-    <div
-      data-testid="game-menu"
-      className="alchemy-shell w-full max-w-[calc(28.8023*var(--content-rem,1rem))] overflow-visible rounded-shell-dialog border border-border/80 px-5 py-4"
-      onClick={(e) => e.stopPropagation()}
-    >
+    <GameMenuPanel>
       <div className="grid gap-0.5">
         {items.map(({ key, label, Icon, iconClassName, onSelect, lock, danger }) => {
           if (!onSelect || key === currentScreen) return null;
@@ -131,7 +151,7 @@ export function GameMenu({
           );
         })}
       </div>
-    </div>
+    </GameMenuPanel>
   );
 
   return (

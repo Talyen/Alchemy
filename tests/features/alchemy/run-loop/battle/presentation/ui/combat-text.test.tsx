@@ -23,6 +23,8 @@ describe("CombatTextRail", () => {
     { stat: "freeze", text: "Frozen", signal: undefined, icons: 1, label: "Frozen" },
     { stat: "armor", text: "Purged", signal: "purge", icons: 2, label: "Purged Armor" },
     { stat: "nextHitCrit", text: "", signal: "prepared", icons: 2, label: "Predator's Focus prepared" },
+    { stat: "freeze", text: "Immune to Freeze", signal: "immune", icons: 2, label: "Immune to Freeze" },
+    { stat: "phoenixFeather", text: "Revived", signal: undefined, icons: 1, label: "Revived" },
   ] as const)(
     "renders $stat notices as icons with readable accessible labels",
     ({ stat, text, signal, icons, label }) => {

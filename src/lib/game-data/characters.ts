@@ -119,7 +119,7 @@ export const characters: Record<CharacterId, CharacterDefinition> = {
       "bear-companion",
       "cinderbloom",
       "briar-shield",
-      "earthquake",
+      "thorn-whip",
     ]),
     keywords: ["mana", "nature", "companion"],
   },

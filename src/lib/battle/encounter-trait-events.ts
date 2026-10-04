@@ -20,15 +20,6 @@ import {
   type CombatTextEvent,
 } from "./types";
 
-function addEnemyStatusText(
-  state: BattleState,
-  field: "forge" | "armor" | "block",
-  amount: number,
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  return addEnemyMitigationWithCombatText(state, field, amount, combatTexts);
-}
-
 export function regrowEnemyThorns(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (state.flags.legacyEnemyThornsReady) return state;
   const nextState = setEnemyStatus(
@@ -42,17 +33,19 @@ export function regrowEnemyThorns(state: BattleState, combatTexts: CombatTextEve
 
 export function processEncounterTraitActionStart(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = hasEnemyTrait(state, "thorns") ? regrowEnemyThorns(state, combatTexts) : state;
-  if (hasEnemyTrait(nextState, "tempered")) {
-    nextState = recordEnemyAbilityActivation(nextState, "tempered");
-    nextState = addEnemyStatusText(nextState, "forge", scaleByRoomMultiplier(nextState, 1), combatTexts);
-  }
-  if (hasEnemyTrait(nextState, "plated")) {
-    nextState = recordEnemyAbilityActivation(nextState, "plated");
-    nextState = addEnemyStatusText(nextState, "armor", scaleByRoomMultiplier(nextState, 1), combatTexts);
-  }
-  if (hasEnemyTrait(nextState, "reinforced")) {
-    nextState = recordEnemyAbilityActivation(nextState, "reinforced");
-    nextState = addEnemyStatusText(nextState, "block", scaleByRoomMultiplier(nextState, 2), combatTexts);
+  for (const [trait, field, amount] of [
+    ["tempered", "forge", 1],
+    ["plated", "armor", 1],
+    ["reinforced", "block", 2],
+  ] as const) {
+    if (hasEnemyTrait(nextState, trait)) {
+      nextState = addEnemyMitigationWithCombatText(
+        recordEnemyAbilityActivation(nextState, trait),
+        field,
+        scaleByRoomMultiplier(nextState, amount),
+        combatTexts,
+      );
+    }
   }
   if (hasEnemyTrait(nextState, "overgrowth")) {
     if (isFreezeActiveForAspect(nextState, "regen")) return nextState;
@@ -110,24 +103,19 @@ export function processEncounterTraitActionDamage(state: BattleState, combatText
       combatTexts,
     );
   }
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
-  if (hasEnemyTrait(nextState, "toxic"))
-    nextState = dealTraitDamage(recordEnemyAbilityActivation(nextState, "toxic"), "poison", 1, combatTexts);
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
-  if (hasEnemyTrait(nextState, "bloodletter"))
-    nextState = dealTraitDamage(recordEnemyAbilityActivation(nextState, "bloodletter"), "bleed", 1, combatTexts);
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
-  if (hasEnemyTrait(nextState, "combustible"))
-    nextState = dealTraitDamage(recordEnemyAbilityActivation(nextState, "combustible"), "burn", 1, combatTexts);
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
-  if (hasEnemyTrait(nextState, "chilling"))
-    nextState = dealTraitDamage(recordEnemyAbilityActivation(nextState, "chilling"), "freeze", 1, combatTexts);
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
-  if (hasEnemyTrait(nextState, "zealot"))
-    nextState = dealTraitDamage(recordEnemyAbilityActivation(nextState, "zealot"), "holy", 2, combatTexts);
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
-  if (hasEnemyTrait(nextState, "concussive"))
-    nextState = dealTraitDamage(recordEnemyAbilityActivation(nextState, "concussive"), "stun", 1, combatTexts);
+  // These riders share resolution, but their order and defeat boundary are gameplay rules.
+  for (const [trait, damageType, amount] of [
+    ["toxic", "poison", 1],
+    ["bloodletter", "bleed", 1],
+    ["combustible", "burn", 1],
+    ["chilling", "freeze", 1],
+    ["zealot", "holy", 2],
+    ["concussive", "stun", 1],
+  ] as const) {
+    if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
+    if (hasEnemyTrait(nextState, trait))
+      nextState = dealTraitDamage(recordEnemyAbilityActivation(nextState, trait), damageType, amount, combatTexts);
+  }
   return nextState;
 }
 
@@ -146,7 +134,7 @@ export function processEncounterTraitCardAction(
   }
   if (options.cardPlayed !== false && isNatureCard(card) && hasEnemyTrait(nextState, "rooted")) {
     nextState = recordEnemyAbilityActivation(nextState, "rooted");
-    nextState = addEnemyStatusText(nextState, "block", scale(1), combatTexts);
+    nextState = addEnemyMitigationWithCombatText(nextState, "block", scale(1), combatTexts);
   }
   if (attackAttempted && nextState.enemyHealth > 0) {
     if (hasEnemyTrait(nextState, "thorns") && nextState.flags.legacyEnemyThornsReady) {

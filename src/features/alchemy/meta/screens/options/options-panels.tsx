@@ -1,14 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { aspectRatioOptions, displayModeOptions } from "@/features/alchemy/shared/config";
 import { DEVICE_DISPLAY_RANGES, SETTINGS_RANGES } from "@/lib/settings-values";
-import {
-  AspectRatioSelect,
-  DisplayModeSelect,
-  SettingsSlider,
-  SettingsToggle,
-  SettingsSection,
-  SettingsAction,
-} from "./settings-controls";
+import { SettingsSelect, SettingsSlider, SettingsToggle, SettingsSection, SettingsAction } from "./settings-controls";
 import type { AspectRatioOption, DisplayMode } from "../../../shared/types";
 
 export interface DisplayOptionsProps {
@@ -65,15 +58,19 @@ export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps 
     <div className="space-y-4">
       <SettingsSection title="Display">
         {display.showDisplayMode ? (
-          <DisplayModeSelect
-            displayMode={display.displayMode}
-            displayModeOptions={displayModeOptions}
+          <SettingsSelect
+            id="display-mode"
+            label="Display Mode"
+            value={display.displayMode}
+            options={displayModeOptions}
             onChange={display.onDisplayModeChange}
           />
         ) : null}
-        <AspectRatioSelect
-          selectedAspectRatio={display.selectedAspectRatio}
-          aspectRatioOptions={aspectRatioOptions}
+        <SettingsSelect
+          id="aspect-ratio"
+          label="Aspect Ratio"
+          value={display.selectedAspectRatio}
+          options={aspectRatioOptions}
           onChange={display.onAspectRatioChange}
         />
         <SettingsSlider

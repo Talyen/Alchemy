@@ -47,10 +47,9 @@ function applyTalentEffect(manifest: TalentEffectManifest, effect: TalentEffectO
   }
 
   const current = manifest[effect.field];
-  if (Array.isArray(current) && Array.isArray(effect.value)) {
-    Object.assign(manifest, { [effect.field]: [...current, ...effect.value] });
-    return;
-  }
-
-  Object.assign(manifest, { [effect.field]: effect.value });
+  // Catalog payloads outlive battles; each manifest owns its mutable values.
+  const value = typeof effect.value === "object" ? structuredClone(effect.value) : effect.value;
+  Object.assign(manifest, {
+    [effect.field]: Array.isArray(current) && Array.isArray(value) ? [...current, ...value] : value,
+  });
 }

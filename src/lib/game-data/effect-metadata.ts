@@ -1,7 +1,7 @@
 import { CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
 import { capitalizeWord } from "@/lib/utils";
 import { conditionalDamageDescription } from "./cards/conditional-damage-description";
-import { areBattleCardEffectsEqual } from "./effect-tree";
+import { areBattleCardEffectsEqual, effectChildren } from "./effect-tree";
 import { DAMAGE_TYPES } from "./types";
 import type { BattleCard, BattleCardEffect, EnemyStatusId, KeywordId } from "./types";
 
@@ -75,7 +75,7 @@ const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } =
         ? `Deal ${effect.minAmount}–${effect.maxAmount} ${joinOrOptions(effect.damageTypePool.map(capitalizeWord), true)} damage`
         : `Deal ${effect.minAmount}–${effect.maxAmount} Random damage`,
   },
-  chance: { keywords: (effect) => collectKeywordsFromChance(effect) },
+  chance: { keywords: (effect) => [...new Set(effectChildren(effect).flatMap(collectKeywordsFromBattleEffect))] },
   "player-status": {
     keywords: (effect) =>
       effect.statusPool
@@ -180,6 +180,7 @@ const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } =
   "play-next-card-twice": { keywords: () => [], describe: "Your next card is played twice" },
   "next-hit-poison": { keywords: () => [], describe: "Your next attack deals Poison" },
   "next-archery-free": { keywords: () => ["archery"], describe: "Your next Archery card is free" },
+  "dodge-next-attack": { keywords: () => ["dodge"], describe: "Dodge the next attack" },
 };
 
 export function effectDescriptionLine(effect: BattleCardEffect): string {
@@ -337,24 +338,7 @@ export function describeCardEffects(effects: readonly BattleCardEffect[]): strin
 }
 
 function dedupeKeywords(...iterables: readonly KeywordId[][]): KeywordId[] {
-  const seen = new Set<KeywordId>();
-  const result: KeywordId[] = [];
-  for (const arr of iterables) {
-    for (const kw of arr) {
-      if (!seen.has(kw)) {
-        seen.add(kw);
-        result.push(kw);
-      }
-    }
-  }
-  return result;
-}
-
-function collectKeywordsFromChance(effect: Extract<BattleCardEffect, { kind: "chance" }>): KeywordId[] {
-  return dedupeKeywords(
-    effect.successEffects.flatMap(collectKeywordsFromBattleEffect),
-    effect.failureEffects.flatMap(collectKeywordsFromBattleEffect),
-  );
+  return [...new Set(iterables.flat())];
 }
 
 export function collectKeywordsFromBattleEffect(effect: BattleCardEffect): KeywordId[] {

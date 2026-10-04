@@ -30,10 +30,6 @@ function applyStunTriggerBonuses(state: BattleState, combatTexts?: CombatTextEve
   );
 }
 
-function applyStunGearDamage(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
-  return applyGearCcPhysicalDamage(state, state.gearEffects.damageOnStunPhysical, combatTexts ?? []);
-}
-
 export type ThunderstoneLeech = (state: BattleState, damage: number, texts: CombatTextEvent[]) => BattleState;
 
 function applyStunTrinketEffects(
@@ -60,31 +56,15 @@ function applyStunTrinketEffects(
             state.gearEffects.natureLeechVsPoisoned > 0 && state.enemyStatuses.poison > 0
               ? leech(damagedState, healthDamage, texts)
               : damagedState;
-          return applyHitEpilogue(
-            applyNatureGoldReward(
-              applyLuckyCloverGold(applyNatureManaRefund(leeched, finalDamage, texts), finalDamage, texts),
-              healthDamage,
-              texts,
-            ),
-            previousHealth,
-            enemyWasAlive,
-            texts,
-          );
+          let rewarded = applyNatureManaRefund(leeched, finalDamage, texts);
+          rewarded = applyLuckyCloverGold(rewarded, finalDamage, texts);
+          rewarded = applyNatureGoldReward(rewarded, healthDamage, texts);
+          return applyHitEpilogue(rewarded, previousHealth, enemyWasAlive, texts);
         },
       },
     );
   }
   return nextState;
-}
-
-function applyStunUniqueGearEffects(
-  state: BattleState,
-  combatTexts: CombatTextEvent[] | undefined,
-  fromHolyDamage: boolean,
-): BattleState {
-  return fromHolyDamage && state.gearEffects.holyStunBuildupGold > 0
-    ? addGoldWithCombatText(state, state.gearEffects.holyStunBuildupGold, combatTexts ?? [])
-    : state;
 }
 
 export function resolveStunTriggerCore(
@@ -126,8 +106,10 @@ export function resolveStunTriggerCore(
     nextState = setFlag(recordEnemyAbilityActivation(nextState, "brawler"), "enemyBrawlerDamagePenalty", true);
   }
   nextState = applyStunTriggerBonuses(nextState, combatTexts);
-  nextState = applyStunGearDamage(nextState, combatTexts);
+  nextState = applyGearCcPhysicalDamage(nextState, nextState.gearEffects.damageOnStunPhysical, combatTexts ?? []);
   nextState = applyStunTrinketEffects(nextState, leech, combatTexts);
-  nextState = applyStunUniqueGearEffects(nextState, combatTexts, fromHolyDamage);
+  if (fromHolyDamage && nextState.gearEffects.holyStunBuildupGold > 0) {
+    nextState = addGoldWithCombatText(nextState, nextState.gearEffects.holyStunBuildupGold, combatTexts ?? []);
+  }
   return nextState;
 }

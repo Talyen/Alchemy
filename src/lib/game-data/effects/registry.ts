@@ -35,38 +35,28 @@ export const BATTLE_CARD_EFFECT_KINDS = [
   ...RECURSIVE_BATTLE_CARD_EFFECT_KINDS,
 ] as const satisfies readonly BattleCardEffectKind[];
 
-function createChanceEffectSchema(getEffectSchema: () => z.ZodType<BattleCardEffect>) {
-  return z.object({
+const [firstTemplate, ...restTemplates] = TEMPLATE_EFFECT_DEFINITIONS;
+const templateEffectSchema = z.discriminatedUnion("kind", [
+  firstTemplate.schema,
+  ...restTemplates.map((definition) => definition.schema),
+]);
+
+// Only the child arrays need lazy resolution; build each recursive schema once.
+// Zod permits explicit undefined for optional fields; the authored effect type
+// uses exact optional properties, so retain that narrowing at the schema boundary.
+export const BattleCardEffectSchema: z.ZodType<BattleCardEffect> = z.union([
+  templateEffectSchema,
+  z.object({
     kind: z.literal("chance"),
     probability: z.number().min(0).max(1),
-    successEffects: z.array(z.lazy(getEffectSchema)).min(1),
-    // Empty failureEffects means "no effect on failure" — the sanctioned shape
-    // for a bonus-trigger chance (bonded Mana Moth / Library Owl synthesize it
-    // at runtime). Authored cards keep non-empty branches via content validation.
-    failureEffects: z.array(z.lazy(getEffectSchema)),
-  });
-}
-
-function createRepeatOverTurnsEffectSchema(getEffectSchema: () => z.ZodType<BattleCardEffect>) {
-  return z.object({
+    successEffects: z.array(z.lazy(() => BattleCardEffectSchema)).min(1),
+    // Synthesized runtime bonuses may do nothing on failure. Content validation
+    // requires non-empty failure branches on authored cards.
+    failureEffects: z.array(z.lazy(() => BattleCardEffectSchema)),
+  }),
+  z.object({
     kind: z.literal("repeat-over-turns"),
     remainingTurns: z.number().int().min(1).max(10),
-    effects: z.array(z.lazy(getEffectSchema)),
-  });
-}
-
-type DiscriminableKindSchema = z.core.$ZodTypeDiscriminable<"kind">;
-
-function getTemplateEffectSchemas(): [DiscriminableKindSchema, ...DiscriminableKindSchema[]] {
-  const [first, ...rest] = TEMPLATE_EFFECT_DEFINITIONS;
-  return [first.schema, ...rest.map((def) => def.schema)];
-}
-
-const templateEffectSchemas = getTemplateEffectSchemas();
-const BattleCardEffectSchemaBase = z.discriminatedUnion("kind", templateEffectSchemas);
-
-export const BattleCardEffectSchema: z.ZodType<BattleCardEffect> = z.lazy(() => {
-  const ChanceEffectSchema = createChanceEffectSchema(() => BattleCardEffectSchema);
-  const RepeatOverTurnsEffectSchema = createRepeatOverTurnsEffectSchema(() => BattleCardEffectSchema);
-  return z.union([BattleCardEffectSchemaBase, ChanceEffectSchema, RepeatOverTurnsEffectSchema]);
-}) as z.ZodType<BattleCardEffect>;
+    effects: z.array(z.lazy(() => BattleCardEffectSchema)),
+  }),
+]) as z.ZodType<BattleCardEffect>;

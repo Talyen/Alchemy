@@ -2,12 +2,14 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TalentsScreen } from "@/features/alchemy/meta/screens/talents-screen";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
+import { ESCAPE_PRIORITY, pushEscapeHandler, resetEscapeStackForTests } from "@/app/escape-stack";
 
 describe("TalentsScreen", () => {
   installDisabledAnimationsForTests();
 
   afterEach(() => {
     cleanup();
+    resetEscapeStackForTests();
   });
 
   const defaultProps = {
@@ -31,10 +33,15 @@ describe("TalentsScreen", () => {
       expect(screen.getByRole("button", { name: "Back" })).toBeTruthy();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    const leaveScreen = vi.fn();
+    pushEscapeHandler({ id: "test-screen-back", priority: ESCAPE_PRIORITY.SCREEN_OVERLAY, onEscape: leaveScreen });
+    fireEvent.keyDown(window, { key: "Escape" });
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Select Physical Talents" })).toBeTruthy();
     });
+    expect(leaveScreen).not.toHaveBeenCalled();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(leaveScreen).toHaveBeenCalledOnce();
   });
 
   it("opens reset confirmation dialog and dispatches reset", async () => {

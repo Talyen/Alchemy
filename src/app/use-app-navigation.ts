@@ -85,7 +85,7 @@ export function useReturnToRunNavigation({
   run,
   renderedScreen,
 }: {
-  run: Pick<AlchemyRunCommands, "goToScreen" | "returnToBattle">;
+  run: Pick<AlchemyRunCommands, "goToScreen" | "returnToBattle" | "routeCommands">;
   renderedScreen: Screen;
 }) {
   const returnToRunScreen = useRunResumeScreen();
@@ -135,6 +135,7 @@ export function useReturnToRunNavigation({
     returnToRun,
     handleMainMenu,
     backFromOptions,
+    backFromDifficultySelect: run.routeCommands.runSetup.handleBackFromDifficultySelect,
     goToScreen: run.goToScreen,
   });
 

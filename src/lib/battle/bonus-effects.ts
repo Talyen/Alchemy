@@ -37,29 +37,21 @@ export function applyCrowdControlTriggerBonuses(
   if (forge > 0) {
     nextState = addForgeToPlayer(nextState, forge, combatTexts);
   }
-  if (bonuses.stripArmor) {
-    if (combatTexts && nextState.enemyMitigation.armor > 0) {
+  for (const [stat, enabled, strip] of [
+    ["armor", bonuses.stripArmor, stripEnemyArmor],
+    ["block", bonuses.stripBlock, stripEnemyBlock],
+  ] as const) {
+    if (!enabled) continue;
+    if (combatTexts && nextState.enemyMitigation[stat] > 0) {
       mergeCombatText(combatTexts, {
         target: "enemy",
         kind: "damage",
-        stat: "armor",
-        amount: nextState.enemyMitigation.armor,
+        stat,
+        amount: nextState.enemyMitigation[stat],
         impact: false,
       });
     }
-    nextState = stripEnemyArmor(nextState);
-  }
-  if (bonuses.stripBlock) {
-    if (combatTexts && nextState.enemyMitigation.block > 0) {
-      mergeCombatText(combatTexts, {
-        target: "enemy",
-        kind: "damage",
-        stat: "block",
-        amount: nextState.enemyMitigation.block,
-        impact: false,
-      });
-    }
-    nextState = stripEnemyBlock(nextState);
+    nextState = strip(nextState);
   }
   const mana = bonuses.mana ?? 0;
   if (mana > 0) {

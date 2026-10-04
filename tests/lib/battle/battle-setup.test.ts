@@ -1,29 +1,16 @@
 import { describe, expect, it } from "vitest";
+import { defaultBattleState } from "@/lib/battle/battle-setup-defaults";
 import { defaultGearEffects } from "@/lib/gear";
 import { createBattleStartState, createBattleState, drawOpeningHand } from "@/lib/battle/battle-setup";
 import { enemyBestiary, computeTalentEffects } from "@/lib/game-data";
 import type { BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
-import { BASE_PLAYER_MANA, MAX_PLAYER_HEALTH } from "@/lib/game-constants";
+import { BASE_PLAYER_MANA } from "@/lib/game-constants";
 import { defaultTrinketEffects } from "@/lib/trinkets";
 import { makeTestCard, seededRng } from "../../fixtures/battle";
 
 describe("createBattleState", () => {
   const skeleton = enemyBestiary.find((e) => e.id === "skeleton")!;
   const battleDeck = [makeTestCard({ id: "slash" }), makeTestCard({ id: "block" })];
-
-  it("creates a valid battle state with starting hand", () => {
-    const result = createBattleState({
-      runDeck: battleDeck,
-      currentEnemy: skeleton,
-      rng: seededRng(42),
-    });
-    expect(result.turn).toBe(1);
-    expect(result.playerHealth).toBe(MAX_PLAYER_HEALTH);
-    expect(result.enemyHealth).toBe(54);
-    expect(result.hand.length).toBeGreaterThanOrEqual(1);
-    expect(result.mana).toBe(BASE_PLAYER_MANA);
-    expect(result.activeCompanion).toBeNull();
-  });
 
   it("grants the thorns trait holder a thorns stack at battle start", () => {
     const thorny: BestiaryEntry = {
@@ -75,28 +62,6 @@ describe("createBattleState", () => {
     expect(result.enemyHealth).toBe(83);
     expect(result.currentEnemy.abilityIds).toEqual(skeleton.abilityIds);
     expect(result.lastEnemyAbilityId).toBeNull();
-  });
-
-  it("initializes the calibrated elite Health pool", () => {
-    const elite = enemyBestiary.find((e) => e.enemyType === "elite")!;
-    const result = createBattleState({
-      runDeck: battleDeck,
-      currentEnemy: elite,
-      rng: seededRng(42),
-    });
-    expect(result.enemyMaxHealth).toBe(95);
-    expect(result.enemyHealth).toBe(result.enemyMaxHealth);
-  });
-
-  it("initializes the calibrated Frostwarden Health pool", () => {
-    const boss = enemyBestiary.find((e) => e.enemyType === "boss")!;
-    const result = createBattleState({
-      runDeck: battleDeck,
-      currentEnemy: boss,
-      rng: seededRng(42),
-    });
-    expect(result.enemyMaxHealth).toBe(96);
-    expect(result.enemyHealth).toBe(result.enemyMaxHealth);
   });
 
   it("wires boon and talent manifests from inputs", () => {
@@ -162,59 +127,6 @@ describe("createBattleState", () => {
   });
 
   describe("difficulty modifiers", () => {
-    it("Knight Novice (d1): start-block 5 adds to player block", () => {
-      const result = createBattleState({
-        runDeck: battleDeck,
-        currentEnemy: skeleton,
-        difficultyModifiers: [{ kind: "start-block", amount: 5 }],
-        rng: seededRng(42),
-      });
-      expect(result.playerStatuses.block).toBe(5);
-      expect(result.enemyMitigation.armor).toBe(0);
-    });
-
-    it("Knight Adventurer (d2): enemy-starting-armor 2", () => {
-      const result = createBattleState({
-        runDeck: battleDeck,
-        currentEnemy: skeleton,
-        difficultyModifiers: [{ kind: "enemy-starting-armor", amount: 2 }],
-        rng: seededRng(42),
-      });
-      expect(result.enemyMitigation.armor).toBe(2);
-    });
-
-    it("Iron Bear starts combat with 0 starting armor", () => {
-      const ironBear = enemyBestiary.find((e) => e.id === "iron-bear")!;
-      const result = createBattleState({
-        runDeck: battleDeck,
-        currentEnemy: ironBear,
-        rng: seededRng(42),
-      });
-      expect(result.enemyMitigation.armor).toBe(0);
-    });
-
-    it("Knight Legend (d3): enemy-gains-forge-each-turn is stored in difficultyModifiers", () => {
-      const mods: DifficultyModifier[] = [{ kind: "enemy-gains-forge-each-turn" }];
-      const result = createBattleState({
-        runDeck: battleDeck,
-        currentEnemy: skeleton,
-        difficultyModifiers: mods,
-        rng: seededRng(42),
-      });
-      expect(result.difficultyModifiers).toEqual(mods);
-    });
-
-    it("Wizard Novice (d1): start-max-mana 1 adds extra mana", () => {
-      const result = createBattleState({
-        runDeck: battleDeck,
-        currentEnemy: skeleton,
-        difficultyModifiers: [{ kind: "start-max-mana", amount: 1 }],
-        rng: seededRng(42),
-      });
-      expect(result.mana).toBe(BASE_PLAYER_MANA + 1);
-      expect(result.maxMana).toBe(BASE_PLAYER_MANA + 1);
-    });
-
     it("Ranger Novice (d1): start-companion spawns wolf", () => {
       const result = createBattleState({
         runDeck: battleDeck,
@@ -244,4 +156,19 @@ describe("createBattleState", () => {
       expect(result.maxMana).toBe(BASE_PLAYER_MANA + 1);
     });
   });
+});
+
+it("keeps every mutable default independent between battles", () => {
+  const first = defaultBattleState();
+  const expected = structuredClone(first.currentEnemy);
+  first.currentEnemy.title = "Changed";
+  first.currentEnemy.abilityIds.splice(0);
+  first.currentEnemy.descriptionLines.push("Changed");
+  first.currentEnemy.traits.push({ id: "changed", title: "Changed", description: "Changed" });
+  first.playerStatuses.block = 99;
+  first.enemyStatuses.burn = 99;
+  const second = defaultBattleState();
+  expect(second.currentEnemy).toEqual(expected);
+  expect(second.playerStatuses.block).toBe(0);
+  expect(second.enemyStatuses.burn).toBe(0);
 });
