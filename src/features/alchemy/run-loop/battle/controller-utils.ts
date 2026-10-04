@@ -36,7 +36,7 @@ export function viewportRectToBattleSceneRect(rect: CardRect, sceneRect: BattleS
 
 export function playCompanionSound(companionId: string) {
   const soundCardId = COMPANION_SOUND_CARD_IDS[companionId];
-  if (soundCardId) return playCardSound(soundCardId);
+  return soundCardId ? playCardSound(soundCardId) : undefined;
 }
 
 export interface CombatTextPresenter {
@@ -62,7 +62,7 @@ export function presentCombatTexts(
 
 export function playCombatTextSounds(combatTexts: CombatTextEvent[], focalSound?: string) {
   const sound = selectCombatSound(combatTexts, focalSound !== undefined);
-  if (sound) playBattleEvent(sound, { excludeSound: focalSound });
+  if (sound) playBattleEvent(sound, focalSound === undefined ? {} : { excludeSound: focalSound });
 }
 
 export function transferCardIntervalSeconds(

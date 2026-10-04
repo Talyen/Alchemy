@@ -12,7 +12,7 @@ export interface SliceVec {
 }
 
 const SLICE_ANGLE_DEGREES = -30;
-export const SLICE_ANGLE_RADIANS = (SLICE_ANGLE_DEGREES * Math.PI) / 180;
+const SLICE_ANGLE_RADIANS = (SLICE_ANGLE_DEGREES * Math.PI) / 180;
 
 const SLICE_ALONG: SliceVec = {
   dx: Math.sin(SLICE_ANGLE_RADIANS),
@@ -24,8 +24,8 @@ export const SLICE_NORMAL: SliceVec = {
   dy: -Math.sin(SLICE_ANGLE_RADIANS),
 };
 
-export const SLICE_ASPECT_WIDTH = 256;
-export const SLICE_ASPECT_HEIGHT = 192;
+const SLICE_ASPECT_WIDTH = 256;
+const SLICE_ASPECT_HEIGHT = 192;
 const SLICE_SEGMENT_COUNT = 5;
 const SLICE_WOBBLE = 16;
 const END_PADDING = 24;
@@ -74,7 +74,7 @@ function buildPoints(): SlicePoint[] {
   return vertices;
 }
 
-export const SLICE_CRACK_POINTS: readonly SlicePoint[] = buildPoints();
+const SLICE_CRACK_POINTS: readonly SlicePoint[] = buildPoints();
 
 function segmentAspectLength(index: number): number {
   const a = SLICE_CRACK_POINTS[index];

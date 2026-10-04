@@ -39,7 +39,7 @@ export type ResearchId =
   | "wool-tailoring"
   | "agility-training";
 
-export interface HomesteadUpgradeTier {
+interface HomesteadUpgradeTier {
   cost: MaterialInventory;
   effects?: Partial<HomesteadEffectManifest>;
   benefitDescription: string;

@@ -1,13 +1,5 @@
 import { formatRouteHintLine, routeHintForPath } from "../agent/route-hints.mjs";
-import {
-  MAX_SUMMARY_FAILURES,
-  firstSummaryLine,
-  formatSummaryMarkdown,
-  missingReportMarkdown,
-  readJsonReport,
-} from "./report-summary.mjs";
-
-const DEFAULT_REPORT = "reports/vitest-timings.json";
+import { MAX_SUMMARY_FAILURES, firstSummaryLine, formatSummaryMarkdown } from "./report-summary.mjs";
 
 export function summarizeVitestReport(report, options = {}) {
   const maxFailures = Math.max(0, Math.trunc(options.maxFailures ?? MAX_SUMMARY_FAILURES) || 0);
@@ -80,10 +72,4 @@ export function formatVitestSummaryMarkdown(summary) {
     overflowCount: Math.max(0, summary.numFailedTests - summary.failures.length),
     emptyNote: summary.numFailedTests > 0 ? "_Failed tests present but not listed in JSON._" : "_No failed tests._",
   });
-}
-
-export function summarizeVitestFile(reportPath = DEFAULT_REPORT) {
-  const read = readJsonReport(reportPath);
-  if (!read) return missingReportMarkdown("## Vitest", reportPath);
-  return formatVitestSummaryMarkdown(summarizeVitestReport(read.data));
 }

@@ -1,7 +1,6 @@
 export type { MysteryChoice, MysteryEffect, MysteryEvent } from "./types";
-export { MYSTERY_EFFECT_KINDS } from "./types";
 export { getMysteryEffectRank, sortMysteryEffectsByDisplayOrder } from "./effect-order";
-export { findMysteryEvent, mysteryPool, pickMysteryEvent, pickResolvedMysteryEvent } from "./pool";
+export { findMysteryEvent, mysteryPool, pickResolvedMysteryEvent } from "./pool";
 export {
   eventHasUnresolvedRandomTrinket,
   pickMysteryTrinketGrantId,

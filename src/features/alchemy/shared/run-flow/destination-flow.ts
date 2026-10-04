@@ -86,7 +86,7 @@ export function getRunAvailableDestinations({
     : destinations;
 }
 
-export function lastOfferedIncludesCombat(lastOfferedDestinations: Destination[]): boolean {
+function lastOfferedIncludesCombat(lastOfferedDestinations: Destination[]): boolean {
   return lastOfferedDestinations.some(isCombatDestination);
 }
 
@@ -206,6 +206,6 @@ export function withSelectedBossForDestinations(
   return { ...rewardState, selectedBossId: null };
 }
 
-export function createDestinationRewardState(destinations: Destination[], rollBossEnemyId?: () => string): RewardState {
+function createDestinationRewardState(destinations: Destination[], rollBossEnemyId?: () => string): RewardState {
   return withSelectedBossForDestinations(destinations, createEmptyRewardState(destinations), rollBossEnemyId);
 }

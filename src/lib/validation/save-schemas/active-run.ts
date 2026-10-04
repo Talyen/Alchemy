@@ -60,7 +60,6 @@ const MysteryVisitObjectSchema = z.object({
   grantedGear: GearInstanceArraySchema.catch([]),
   chosenCardId: z.string().nullable().catch(null),
 });
-export type MysteryVisitState = z.output<typeof MysteryVisitObjectSchema>;
 const MysteryVisitPersistSchema = MysteryVisitObjectSchema.nullable().catch(null);
 
 const CorruptionResultPersistSchema = z
@@ -173,7 +172,6 @@ const WildwoodDraftObjectSchema = z.object({
   currentCombatTraitIds: EncounterCombatTraitArraySchema.catch([]),
   currentRewardTraitIds: EncounterRewardTraitArraySchema.catch([]),
 });
-export type WildwoodDraftState = z.output<typeof WildwoodDraftObjectSchema>;
 const WildwoodDraftStateSchema = WildwoodDraftObjectSchema.nullable().catch(null);
 
 const PersistedPendingRewardBaseSchema = {

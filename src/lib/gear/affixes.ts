@@ -56,7 +56,9 @@ function forEachNormalizedAffixRoll(
   visit: (definition: GearAffixDefinition, value: number) => void,
 ): void {
   if (!Array.isArray(rawAffixes)) return;
-  for (const entry of rawAffixes) {
+  // Array.isArray narrows readonly arrays to any[]; retain the input element contract.
+  const entries = rawAffixes as readonly AffixRollInput[];
+  for (const entry of entries) {
     if (!entry || !isGearAffixId(entry.id)) continue;
     const definition = gearAffixCatalog[entry.id];
     const value = normalizedAffixValue(entry.value, definition, rarity);

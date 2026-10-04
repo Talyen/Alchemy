@@ -175,17 +175,22 @@ describe("normalizePersistedBattleState", () => {
     const defaults = defaultBattleState();
     const normalized = normalizePersistedBattleState({
       currentEnemy: enemyById.skeleton,
-      playerStatuses: { block: 4, armor: -2, stun: Number.NaN, retiredDefense: 999 } as typeof defaults.playerStatuses,
-      enemyStatuses: { burn: 6, poison: Infinity, retiredStatus: 7 } as typeof defaults.enemyStatuses,
+      playerStatuses: {
+        block: 4,
+        armor: -2,
+        stun: Number.NaN,
+        retiredDefense: 999,
+      } as unknown as typeof defaults.playerStatuses,
+      enemyStatuses: { burn: 6, poison: Infinity, retiredStatus: 7 } as unknown as typeof defaults.enemyStatuses,
       gearEffects: {
         flatPhysicalDamage: Number.NaN,
         flatHolyDamage: -2,
         flatBurnDamage: 1.5,
         retiredDamage: 9,
-      } as typeof defaults.gearEffects,
+      } as unknown as typeof defaults.gearEffects,
       playerCC: { stunSkipTurns: -1 } as typeof defaults.playerCC,
-      enemyCC: { cooldown: Number.NaN, retiredControl: 4 } as typeof defaults.enemyCC,
-      enemyMitigation: { armor: -5, block: 3, retiredMitigation: 8 } as typeof defaults.enemyMitigation,
+      enemyCC: { cooldown: Number.NaN, retiredControl: 4 } as unknown as typeof defaults.enemyCC,
+      enemyMitigation: { armor: -5, block: 3, retiredMitigation: 8 } as unknown as typeof defaults.enemyMitigation,
     });
     expect(normalized.playerStatuses).toEqual({ ...defaults.playerStatuses, block: 4 });
     expect(normalized.enemyStatuses).toEqual({ ...defaults.enemyStatuses, burn: 6 });

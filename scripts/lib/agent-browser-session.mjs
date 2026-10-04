@@ -9,7 +9,10 @@ import { fileURLToPath } from "node:url";
 const execute = promisify(execFile);
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const launcher = path.join(ROOT, "scripts/agent-browser.mjs");
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const delay = (ms) =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 export function taskKey(env = process.env) {
   const id = env.CODEX_THREAD_ID ?? env.CODEX_SESSION_ID;
   return id ? createHash("sha256").update(id).digest("hex").slice(0, 20) : null;
@@ -160,7 +163,7 @@ export async function captureBrowser(session, root = ROOT, key = taskKey(), requ
   } catch (error) {
     if (error.code === "ENOENT") {
       if (!required) return;
-      throw new Error("Browser ownership PID file is missing; cleanup cannot be verified");
+      throw new Error("Browser ownership PID file is missing; cleanup cannot be verified", { cause: error });
     }
     throw error;
   }

@@ -8,10 +8,10 @@ import { runEndScreenRoutes } from "./run-end-routes";
 import type { Screen } from "@/lib/routing";
 import type { RenderAlchemyScreenProps } from "./route-ctx";
 
-export type ScreenRoute = (ctx: RenderAlchemyScreenProps) => ReactNode;
+type ScreenRoute = (ctx: RenderAlchemyScreenProps) => ReactNode;
 export type { RenderAlchemyScreenProps };
 
-export const SCREEN_ROUTES = {
+const SCREEN_ROUTES = {
   ...metaScreenRoutes,
   ...runSetupScreenRoutes,
   ...runLoopScreenRoutes,

@@ -85,7 +85,7 @@ export function fightPacingClockMultiplier(
   return 1 + Math.max(scheduleBonus, backstopBonus);
 }
 
-export function fightPacingMultiplier(state: BattleState, side: FightPacingSide): number {
+function fightPacingMultiplier(state: BattleState, side: FightPacingSide): number {
   const metrics = fightPacingPoolMetrics(state);
   const enemyType = state.currentEnemy.enemyType;
   return fightPacingClockMultiplier(metrics, state.turn, enemyType) * fightPacingComebackMultiplier(side, metrics);

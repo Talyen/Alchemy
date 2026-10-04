@@ -109,6 +109,7 @@ function effectTarget(effect: BattleCardEffect): "player" | "enemy" | null {
     case "play-next-card-twice":
     case "next-hit-poison":
     case "next-archery-free":
+    case "dodge-next-attack":
       return "player";
     case "chance":
     case "repeat-over-turns":

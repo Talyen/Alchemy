@@ -40,6 +40,7 @@ const MINIMAL_EFFECT_BY_KIND: Record<(typeof BATTLE_CARD_EFFECT_KINDS)[number], 
   "play-next-card-twice": { kind: "play-next-card-twice" },
   "next-hit-poison": { kind: "next-hit-poison" },
   "next-archery-free": { kind: "next-archery-free" },
+  "dodge-next-attack": { kind: "dodge-next-attack" },
   chance: {
     kind: "chance",
     probability: 0.5,

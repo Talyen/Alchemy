@@ -18,5 +18,3 @@ export interface VitestSummary {
 export function summarizeVitestReport(report: unknown, options?: { maxFailures?: number }): VitestSummary;
 
 export function formatVitestSummaryMarkdown(summary: VitestSummary): string;
-
-export function summarizeVitestFile(reportPath: string): string;

@@ -3,13 +3,7 @@ import path from "node:path";
 import { ensureRunId } from "./current-run.mjs";
 import { diagnosticIdentity, failureDigestRelativePath } from "./playwright-diagnostics.mjs";
 import { formatRouteHintLine, routeHintForPath } from "../agent/route-hints.mjs";
-import {
-  MAX_SUMMARY_FAILURES,
-  firstSummaryLine,
-  formatSummaryMarkdown,
-  missingReportMarkdown,
-  readJsonReport,
-} from "./report-summary.mjs";
+import { MAX_SUMMARY_FAILURES, firstSummaryLine, formatSummaryMarkdown } from "./report-summary.mjs";
 
 /**
  * @typedef {{ file: string, line: number, title: string, message: string, status: string, digestPath: string|null, routeHint: string }} PlaywrightFailure
@@ -174,10 +168,4 @@ export function formatPlaywrightSummaryMarkdown(summary) {
     emptyNote:
       summary.unexpected > 0 || summary.flaky > 0 ? "_Failures present but not listed in JSON._" : "_No failed tests._",
   });
-}
-
-export function summarizePlaywrightFile(reportPath, options = {}) {
-  const read = readJsonReport(reportPath);
-  if (!read) return missingReportMarkdown("## Playwright", reportPath);
-  return formatPlaywrightSummaryMarkdown(summarizePlaywrightReport(read.data, options));
 }

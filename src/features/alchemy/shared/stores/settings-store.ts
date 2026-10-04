@@ -107,7 +107,9 @@ export const useSettingsStore = create<SettingsStore>()((set) => ({
 const SETTINGS_SAVE_KEYS = Object.keys(createDefaultSettingsSaveFields()) as Array<keyof SettingsSaveFields>;
 
 function selectSettingsSaveFields(state: SettingsSaveFields): SettingsSaveFields {
-  return Object.fromEntries(SETTINGS_SAVE_KEYS.map((key) => [key, state[key]])) as SettingsSaveFields;
+  const selected = createDefaultSettingsSaveFields();
+  for (const key of SETTINGS_SAVE_KEYS) Object.assign(selected, { [key]: state[key] });
+  return selected;
 }
 
 export const settingsPersistenceCodec: StandalonePersistenceCodec<SettingsSaveFields> = {

@@ -130,7 +130,12 @@ export function getEnemyKeywordShineColors(
   return getInspectionKeywordShineColors(getEnemyTraitKeywordIds(entry, modifiers));
 }
 
-export const getBossShineColors = getEnemyKeywordShineColors;
+export function getBossShineColors(
+  boss: BestiaryEntry,
+  modifiers: readonly EncounterCombatTraitId[] = [],
+): readonly string[] {
+  return getEnemyKeywordShineColors(boss, modifiers);
+}
 
 export function getBossTextShineColors(boss: BestiaryEntry): readonly string[] {
   return [...new Set(getBossShineColors(boss))];

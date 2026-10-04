@@ -156,6 +156,7 @@ function ineffectiveEffectFeedback(effect: BattleCardEffect): CombatTextEvent | 
     case "play-next-card-twice":
     case "next-hit-poison":
     case "next-archery-free":
+    case "dodge-next-attack":
     case "chance":
     case "repeat-over-turns":
       return feedback;

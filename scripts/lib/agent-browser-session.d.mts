@@ -1,21 +1,25 @@
 export const ROOT: string;
-export type ProcessRow = {
+export interface ProcessRow {
   pid: number;
   parent: number;
   group: number;
   started: string;
   state: string;
   command: string;
-};
-export type BrowserGroup = { pid: number; started: string; members?: { pid: number; started: string }[] };
-export type BrowserRecord = {
+}
+export interface BrowserGroup {
+  pid: number;
+  started: string;
+  members?: Array<{ pid: number; started: string }>;
+}
+export interface BrowserRecord {
   task: string;
   daemon: { pid: number; started: string };
   groups: BrowserGroup[];
   session: string;
   closed: boolean;
   guardian?: { pid: number; started: string };
-};
+}
 export function taskKey(env?: NodeJS.ProcessEnv): string | null;
 export function browserSocketDirectory(env?: NodeJS.ProcessEnv): string;
 export function registry(root?: string): Promise<string>;

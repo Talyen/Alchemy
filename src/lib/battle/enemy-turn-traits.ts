@@ -14,7 +14,7 @@ import {
   TRAIT_FREEZE_BONUS_PER_TURN,
 } from "../game-constants";
 
-export function isEveryOtherTurnScalingTurn(state: { turn: number }): boolean {
+function isEveryOtherTurnScalingTurn(state: { turn: number }): boolean {
   return state.turn % 2 === 0;
 }
 

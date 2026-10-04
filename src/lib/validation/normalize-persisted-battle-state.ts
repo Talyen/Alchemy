@@ -37,12 +37,12 @@ function clampNonNegative(value: number, fallback: number): number {
   return Number.isFinite(value) && value >= 0 ? value : fallback;
 }
 
-function normalizeNonNegativeRecord<T extends { [K in keyof T]: number }>(
-  defaults: T,
-  saved: Partial<T> | undefined,
-): T {
+function normalizeNonNegativeRecord<K extends string>(
+  defaults: Record<K, number>,
+  saved: Partial<Record<K, number>> | undefined,
+): Record<K, number> {
   const merged = { ...defaults };
-  for (const key of Object.keys(defaults) as Array<keyof T>) {
+  for (const key of Object.keys(defaults) as K[]) {
     const value = saved?.[key];
     if (typeof value === "number" && Number.isFinite(value) && value >= 0) merged[key] = value;
   }

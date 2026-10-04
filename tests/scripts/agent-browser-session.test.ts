@@ -17,6 +17,14 @@ import {
   type BrowserRecord,
 } from "../../scripts/lib/agent-browser-session.mjs";
 
+function killTestGroup(pid: number): void {
+  try {
+    process.kill(-pid, "SIGKILL");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
+  }
+}
+
 describe.skipIf(process.platform === "win32")("managed browser ownership", () => {
   it("uses the launch socket directory and rejects unverified launch ownership", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "alchemy-browser-missing-"));
@@ -72,11 +80,7 @@ describe.skipIf(process.platform === "win32")("managed browser ownership", () =>
       expect(await processInfo(childPid)).toBeNull();
       expect((await readRecord(file))?.closed).toBe(true);
     } finally {
-      try {
-        process.kill(-leader.pid!, "SIGKILL");
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
-      }
+      killTestGroup(leader.pid!);
       await exit;
       await rm(directory, { recursive: true, force: true });
     }

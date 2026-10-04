@@ -4,9 +4,7 @@ import { clamp, lerp } from "@/lib/math";
 import { pickWeighted } from "@/lib/rng";
 
 export type LootSource = keyof typeof LOOT_SOURCE_WEIGHTS;
-/** Every loot kind in the source-weight tables. Tests assert each source carries exactly these keys. */
-export const LOOT_KINDS = ["card", "basic", "boon", "astral", "trinket", "unique"] as const;
-type LootKind = (typeof LOOT_KINDS)[number];
+type LootKind = keyof (typeof LOOT_SOURCE_WEIGHTS)[LootSource];
 /**
  * Fallback preference when scaling and pool filtering empty every weight.
  * Basic first so premium-only sources (e.g. an early boss) still offer Basic

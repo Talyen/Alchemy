@@ -40,6 +40,7 @@ describe("batchedPreload", () => {
     const load = vi.fn((item: number) => {
       if (item === 1) return Promise.reject(error);
       if (item === 2) throw error;
+      return undefined;
     });
     await expect(batchedPreload([1, 2, 3, 4], load, { batchSize: 3 })).rejects.toBe(error);
     expect(load.mock.calls).toEqual([[1], [2], [3]]);

@@ -38,5 +38,3 @@ export function summarizePlaywrightReport(
 ): PlaywrightSummary;
 
 export function formatPlaywrightSummaryMarkdown(summary: PlaywrightSummary): string;
-
-export function summarizePlaywrightFile(reportPath: string): string;

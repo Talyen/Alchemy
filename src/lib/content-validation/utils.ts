@@ -53,7 +53,7 @@ export function addDuplicateIssues(
   }
 }
 
-export function validateArt(
+function validateArt(
   area: ContentValidationArea,
   id: string,
   art: string,

@@ -1,4 +1,3 @@
-// Legacy alias: prefer importing from "@/lib/performance/marks" (or the
-// battle-stage-marks shim) directly. Kept so perf scenarios don't churn.
-export { battleStageMarkName, type BattleStageMark } from "../src/lib/performance/battle-stage-marks";
-export type { BattleStageMark as BattleStageMarkName } from "../src/lib/performance/battle-stage-marks";
+// Performance scenarios share the production User Timing names.
+export { battleStageMarkName, type BattleStageMark } from "../src/lib/performance/marks";
+export type { BattleStageMark as BattleStageMarkName } from "../src/lib/performance/marks";

@@ -143,7 +143,8 @@ describe("enemy trait queries", () => {
     expect(hasEnemyTrait(state, "vampire")).toBe(true);
     expect(hasEnemyTrait(state, "vampire", traits)).toBe(true);
     expect(hasEnemyTrait(state, "cleric", traits)).toBe(false);
-    expect(getEnemyTraitSet({ ...state, turn: state.turn + 1 })).toBe(traits);
+    const nextTurn = { ...state, turn: state.turn + 1 };
+    expect(getEnemyTraitSet(nextTurn)).toBe(traits);
     const replaced = { ...state, currentEnemy: { ...state.currentEnemy, traits: [] } };
     expect(hasEnemyTrait(replaced, "vampire")).toBe(false);
     expect(hasEnemyTrait(state, "vampire")).toBe(true);
