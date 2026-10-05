@@ -66,7 +66,13 @@ describe("player-facing card and trinket regressions", () => {
           ? playBattleCardResolved(state, card.id, 0).state
           : source === "thunderstone"
             ? resolveStunTrigger(state, [])
-            : resolveFollowUpHit(state, { source, damageType: "nature", amount: 20 }, []);
+            : resolveFollowUpHit(
+                state,
+                source === "player-follow-up"
+                  ? { source: "player-follow-up", damageType: "nature", amount: 20 }
+                  : { source: "talent-fixed", damageType: "nature", amount: 20 },
+                [],
+              );
       expect(result.enemyHealth).toBe(0);
       expect(result.gold).toBe(3);
     },
