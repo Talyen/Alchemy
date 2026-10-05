@@ -50,7 +50,6 @@ export const defenseCards: BattleCard[] = [
   cardBuilders.effectsCard({
     id: "feint",
     art: assetRefs.feint,
-    consume: true,
     effects: [{ kind: "dodge-next-attack" }, { kind: "draw-cards", amount: 1 }],
   }),
 

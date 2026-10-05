@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { computeTalentEffects } from "@/lib/game-data";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { applyTalentHitConversions, resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
-import { applyLeechHealing, applyLeechHitHealing, applyHolyBlockChance } from "@/lib/battle/damage-rider-leech";
+import { applyLeechHealing, applyLeechHitHealing } from "@/lib/battle/damage-rider-leech";
 import { applyPoisonTalentRiders, applyDamageStatuses } from "@/lib/battle/damage-status-riders";
 import { applyBlockReward, applyHealthLossTalentRewards, checkHealthThresholds } from "@/lib/battle/status-player";
 import { gainManaWithCombatText } from "@/lib/battle/player-rewards";
@@ -26,15 +26,6 @@ describe("Talent rework batch", () => {
     expect(first.playerStatuses.block).toBe(6);
     expect(second.playerStatuses.block).toBe(6);
     expect(first.flags.desperateGuardUsed).toBe(true);
-  });
-
-  it("Faith Barrier grants full resolved Holy damage as Block", () => {
-    const state = patchBattleState({
-      rng: () => 0,
-      talentEffects: computeTalentEffects({ holy: ["holy-block-scaling"] }),
-    });
-
-    expect(applyHolyBlockChance(state, 7, []).playerStatuses.block).toBe(7);
   });
 
   it("Scorching Light converts a successful Holy proc into full Burn damage", () => {

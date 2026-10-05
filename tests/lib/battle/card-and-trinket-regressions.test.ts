@@ -21,6 +21,79 @@ const drawingPotion = {
 };
 
 describe("player-facing card and trinket regressions", () => {
+  it.each(["card", "talent-fixed", "talent-derived", "reflection", "player-follow-up"] as const)(
+    "caps Holy rewards at Health lost through the %s hit path while retaining lethal rewards",
+    (source) => {
+      const card = makeTestCard({ effects: [{ kind: "damage", damageType: "holy", amount: 20 }] });
+      const state = patchBattleState({
+        hand: [card],
+        enemyHealth: 3,
+        enemyMaxHealth: 100,
+        enemyMitigation: { block: 4 },
+        playerHealth: 20,
+        playerMaxHealth: 40,
+        talentEffects: { holyBlockChance: 100, holyGoldChance: 100, holyReflectionBlockLostPercent: 100 },
+        gearEffects: { flatBlockGained: 2 },
+        rng: () => 0.99,
+      });
+      const result =
+        source === "card"
+          ? playBattleCardResolved(state, card.id, 0).state
+          : source === "reflection"
+            ? resolvePlayerHit(state, { source: "reflected-holy", blockLost: 20 }, [])
+            : resolveFollowUpHit(state, { source, damageType: "holy", amount: 20 }, []);
+      expect(result.enemyHealth).toBe(0);
+      expect(result.gold).toBe(source === "player-follow-up" ? 0 : 3);
+      expect(result.playerStatuses.block).toBe(5);
+    },
+  );
+
+  it.each(["card", "talent-fixed", "player-follow-up", "thunderstone"] as const)(
+    "Lucky Clover excludes overkill through the %s hit path",
+    (source) => {
+      const card = makeTestCard({ effects: [{ kind: "damage", damageType: "nature", amount: 20 }] });
+      const state = patchBattleState({
+        hand: [card],
+        enemyHealth: 3,
+        enemyMaxHealth: 100,
+        enemyMitigation: { block: 4 },
+        enemyStatuses: { stun: 100 },
+        trinketEffects: { luckyCloverGoldChance: 100, thunderstoneDamageOnStun: source === "thunderstone" ? 20 : 0 },
+        rng: () => 0.99,
+      });
+      const result =
+        source === "card"
+          ? playBattleCardResolved(state, card.id, 0).state
+          : source === "thunderstone"
+            ? resolveStunTrigger(state, [])
+            : resolveFollowUpHit(state, { source, damageType: "nature", amount: 20 }, []);
+      expect(result.enemyHealth).toBe(0);
+      expect(result.gold).toBe(3);
+    },
+  );
+
+  it.each([
+    { health: 100, block: 4, chance: 100, reward: 16 },
+    { health: 100, block: 20, chance: 100, reward: 0 },
+    { health: 3, block: 0, chance: 0, reward: 0 },
+  ])(
+    "preserves ordinary Holy reward chances and mitigation: $health/$block/$chance",
+    ({ health, block, chance, reward }) => {
+      const card = makeTestCard({ effects: [{ kind: "damage", damageType: "holy", amount: 20 }] });
+      const state = patchBattleState({
+        hand: [card],
+        enemyHealth: health,
+        enemyMaxHealth: 100,
+        enemyMitigation: { block },
+        talentEffects: { holyBlockChance: chance, holyGoldChance: chance },
+        rng: () => 0.99,
+      });
+      const result = playBattleCardResolved(state, card.id, 0).state;
+      expect(result.gold).toBe(reward);
+      expect(result.playerStatuses.block).toBe(reward);
+    },
+  );
+
   it("Rooted reacts once to a repeated Nature card whose damage is inside a chance branch", () => {
     const card = makeTestCard({
       effects: [

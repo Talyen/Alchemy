@@ -5,7 +5,11 @@ import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { chooseWishCard } from "@/lib/battle/wish";
 import { getEnemyAbilityPressure } from "@/lib/battle/battle-enemy-setup";
-import { applyNumericCorruption, getEditableCorruptionTargets } from "@/lib/corruption/numeric";
+import {
+  applyNumericCorruption,
+  getCorruptionTargetEffect,
+  getEditableCorruptionTargets,
+} from "@/lib/corruption/numeric";
 import { validateCardDescriptionParity } from "@/lib/content-validation/card-parity";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { BattleCardSchema } from "@/lib/validation/save-schemas/battle-card-schemas";
@@ -379,6 +383,7 @@ describe("thematic card effects", () => {
     expect(packTactics.descriptionLines).toEqual([
       "Your Companion acts twice",
       "If you don't have a Companion, Wish for one",
+      "Gain 2 Block",
     ]);
     expect(validateCardDescriptionParity(packTactics)).toEqual([]);
     expect(getCardKeywords(packTactics)).not.toContain("wish");
@@ -386,9 +391,11 @@ describe("thematic card effects", () => {
     expect(utility.gold).toBe(4);
     expect(utility.companionDamageBuff).toBe(0);
     expect(utility.wishOptions).toBeNull();
+    expect(utility.playerStatuses.block).toBe(2);
     const absent = play("pack-tactics");
     expect(absent.enemyHealth).toBe(100);
     expect(absent.companionDamageBuff).toBe(0);
+    expect(absent.playerStatuses.block).toBe(2);
     expect(absent.wishOptions).toHaveLength(3);
     expect(absent.wishOptions?.every((card) => card.effects.some((effect) => effect.kind === "summon-companion"))).toBe(
       true,
@@ -397,7 +404,7 @@ describe("thematic card effects", () => {
     expect(chooseWishCard(absent, chosen.id).hand.some((card) => card.id === chosen.id)).toBe(true);
     const lethal = play("pack-tactics", { activeCompanion: companionLibrary.wolf, enemyHealth: 1 });
     expect(lethal.enemyHealth).toBe(0);
-    expect(lethal.playerStatuses.block).toBe(0);
+    expect(lethal.playerStatuses.block).toBe(2);
     expect(lethal.wishOptions).toBeNull();
   });
 
@@ -426,11 +433,15 @@ describe("thematic card effects", () => {
       ["pack-tactics", "Your Companion acts 3 times", { kind: "companion-action", amount: 3 }],
     ] as const) {
       const original = cardById[id]!;
-      const targets = getEditableCorruptionTargets(original);
-      expect(targets).toHaveLength(1);
-      const changed = applyNumericCorruption(original, targets[0]!, 1);
+      const target = getEditableCorruptionTargets(original).find(
+        (entry) => getCorruptionTargetEffect(original, entry)?.kind === expected.kind,
+      )!;
+      const changed = applyNumericCorruption(original, target, 1);
       expect(changed.descriptionLines).toContain(line);
       expect(changed.effects).toEqual(expect.arrayContaining([expect.objectContaining(expected)]));
+      if (id === "pack-tactics") {
+        expect(changed.effects).toContainEqual({ kind: "player-status", status: "block", amount: 2 });
+      }
       expect(validateCardDescriptionParity(changed)).toEqual([]);
       expect(hydrateCard(BattleCardSchema.parse(JSON.parse(JSON.stringify(changed))))).toMatchObject({
         effects: changed.effects,

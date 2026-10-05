@@ -43,6 +43,76 @@ function useAbility(state: BattleState, id: string, texts: CombatTextEvent[] = [
 }
 
 describe("enemy repertoire", () => {
+  it.each([
+    { id: "slash", block: 0, roll: 0.99, remainingForge: 2 },
+    { id: "bash", block: 100, roll: 0.99, remainingForge: 2 },
+    { id: "burning-blade", block: 100, roll: 0.99, remainingForge: 3 },
+    { id: "slash", block: 0, roll: 0.01, remainingForge: 3 },
+    { id: "fireball", block: 0, roll: 0.99, remainingForge: 3 },
+  ])("spends enemy Forge only on landed Forge-using hits: $id/$block/$roll", ({ id, block, roll, remainingForge }) => {
+    const state = enemyState("iron-bear", {
+      enemyMitigation: { block: 0, armor: 0, forge: 3 },
+      playerStatuses: defaultPlayerStatusValues({ block }),
+      rng: () => roll,
+    });
+    const before = structuredClone(state.enemyMitigation);
+    const texts: CombatTextEvent[] = [];
+    const result = useAbility(state, id, texts);
+    expect(result.enemyMitigation.forge).toBe(remainingForge);
+    expect(state.enemyMitigation).toEqual(before);
+    expect(texts.filter((text) => text.target === "enemy" && text.kind === "damage" && text.stat === "forge")).toEqual(
+      remainingForge < (id === "burning-blade" ? 4 : 3)
+        ? [{ target: "enemy", kind: "damage", stat: "forge", amount: 1, impact: false }]
+        : [],
+    );
+    if (block > 0 || roll < 0.05) expect(result.playerHealth).toBe(state.playerHealth);
+  });
+
+  it("spends Forge per blocked packet and never below zero", () => {
+    const state = enemyState("iron-bear", {
+      enemyMitigation: { block: 0, armor: 0, forge: 1 },
+      playerStatuses: defaultPlayerStatusValues({ block: 100 }),
+    });
+    const card = makeTestCard({
+      effects: [
+        { kind: "damage", damageType: "physical", amount: 4 },
+        { kind: "damage", damageType: "physical", amount: 4 },
+      ],
+    });
+    const result = applyEnemyAbility(state, card, []);
+    expect(result.enemyMitigation.forge).toBe(0);
+    expect(result.playerHealth).toBe(state.playerHealth);
+    expect(result.playerStatuses.block).toBe(91);
+  });
+
+  it("spends Forge before a lethal Counterplate retaliation closes the attack", () => {
+    const state = enemyState("iron-bear", {
+      enemyHealth: 2,
+      enemyMitigation: { block: 0, armor: 0, forge: 3 },
+      playerStatuses: defaultPlayerStatusValues({ armor: 1 }),
+    });
+    state.gearEffects = { ...state.gearEffects, stunOnArmorLostToAttack: 4 };
+    const texts: CombatTextEvent[] = [];
+    const result = useAbility(state, "slash", texts);
+    expect(result.enemyHealth).toBe(0);
+    expect(result.enemyMitigation.forge).toBe(2);
+    const enemyDamage = texts.filter((text) => text.target === "enemy" && text.kind === "damage");
+    expect(enemyDamage.map((text) => text.stat)).toEqual(["forge", "stun"]);
+  });
+
+  it("Whitehot preserves Forge on blocked hits and Forge-based Burn", () => {
+    const state = enemyState("iron-bear", {
+      currentEnemy: {
+        ...enemyById["iron-bear"],
+        traits: [{ id: "whitehot", title: "Whitehot", description: "" }],
+      },
+      enemyMitigation: { block: 0, armor: 0, forge: 3 },
+      playerStatuses: defaultPlayerStatusValues({ block: 100 }),
+    });
+    expect(useAbility(state, "slash").enemyMitigation.forge).toBe(3);
+    expect(useAbility(state, "burning-blade").enemyMitigation.forge).toBe(4);
+  });
+
   it("Burning Blade paces its Forge grant before deriving its Burn damage", () => {
     const state = enemyState("pyromancer", {
       appliesFightPacing: true,
@@ -54,7 +124,7 @@ describe("enemy repertoire", () => {
     expect(expectedForge).toBeGreaterThan(4);
     const texts: CombatTextEvent[] = [];
     const result = useAbility(state, "burning-blade", texts);
-    expect(result.enemyMitigation.forge).toBe(expectedForge);
+    expect(result.enemyMitigation.forge).toBe(expectedForge - 1);
     expect(texts).toContainEqual({ target: "enemy", kind: "status", stat: "forge", amount: expectedForge });
   });
   it("assigns three distinct canonical, fully supported cards to every enemy", () => {

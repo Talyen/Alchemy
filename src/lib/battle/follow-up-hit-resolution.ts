@@ -103,10 +103,10 @@ function resolveDerivedFollowUp(
   }
   if (damageType === "holy") {
     if (!isPlayer) nextState = applyHolyLifesteal(nextState, resolved, combatTexts, hit.facts.eligibility);
-    nextState = applyHolyBlockChance(nextState, resolved, combatTexts);
+    nextState = applyHolyBlockChance(nextState, hit.facts.healthDamage, combatTexts);
     if (!isPlayer) {
       nextState = applyDamageBlock(nextState, resolved, combatTexts, hit.facts.eligibility);
-      nextState = applyHolyTithe(nextState, resolved, combatTexts);
+      nextState = applyHolyTithe(nextState, hit.facts.healthDamage, combatTexts);
     } else {
       nextState = applyBrassCenser(nextState, resolved, combatTexts, preHitHealth);
     }
@@ -131,7 +131,7 @@ function applyFollowUpNatureRiders(
   if (eligibility.gearEffects.natureLeechVsPoisoned > 0 && eligibility.enemyStatuses.poison > 0 && healthDamage > 0) {
     nextState = applyLifestealAndPlayerHitTriggers(nextState, healthDamage, combatTexts, false, false, preHitHealth);
   }
-  nextState = applyLuckyCloverGold(nextState, damage, combatTexts);
+  nextState = applyLuckyCloverGold(nextState, healthDamage, combatTexts);
   nextState = applyNatureGoldReward(nextState, healthDamage, combatTexts);
   return applyNatureManaRefund(nextState, damage, combatTexts);
 }

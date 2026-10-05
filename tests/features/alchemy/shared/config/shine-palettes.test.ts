@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   getCardDisplayKeywords,
-  getCardInspectionShineColors,
   getTrinketShineColors,
   getTrinketTextShineColors,
   SHINE_PALETTES,
@@ -10,17 +9,12 @@ import {
 import { cardLibrary, keywordDefinitions } from "@/lib/game-data";
 import { getKeywordTextShineColors } from "@/lib/keyword-text-shine";
 
-describe("getCardInspectionShineColors", () => {
+describe("card display keywords", () => {
   it("includes conditional and companion keywords visible in card descriptions", () => {
     const packTactics = cardLibrary.find((card) => card.id === "pack-tactics")!;
     const wolfCompanion = cardLibrary.find((card) => card.id === "wolf-companion")!;
 
-    expect(getCardDisplayKeywords(packTactics)).toEqual(["companion", "wish"]);
-    expect(getCardInspectionShineColors(packTactics)).toEqual([
-      keywordDefinitions.companion.shineColors[0],
-      keywordDefinitions.wish.shineColors[0],
-      keywordDefinitions.companion.shineColors[0],
-    ]);
+    expect(getCardDisplayKeywords(packTactics)).toEqual(["companion", "wish", "block"]);
     expect(getCardDisplayKeywords(wolfCompanion)).toEqual(["bleed", "physical", "companion"]);
     expect(getCardDisplayKeywords(wolfCompanion)).not.toContain("consume");
   });

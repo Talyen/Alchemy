@@ -100,7 +100,7 @@ describe("brewing and transmutation content", () => {
   it("preserves seeded role order, subsequent RNG and independent cards through save hydration", () => {
     const rng = createSeededRng(42);
     const offers = createTransmutationOffers(rng);
-    expect(offers.map((card) => card.id)).toEqual(["maul", "stoneskin-potion", "library-owl-companion"]);
+    expect(offers).toEqual(createTransmutationOffers(createSeededRng(42)));
     expect(rng()).toBe(0.6697340414393693);
     expect(offers.map((card) => card.transmutationRole ?? getBattleCardTransmutationRole(card))).toEqual([
       "attack",

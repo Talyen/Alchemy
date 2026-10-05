@@ -1,4 +1,5 @@
 import type { EnemyAttackEffect } from "@/lib/game-data";
+import { BATTLE_CONFIG } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
 import { mergeCombatText } from "./combat-text-events";
@@ -53,6 +54,29 @@ export interface EnemyDamageResult {
 }
 
 type EnemyMitigationResult = ReturnType<typeof calculateBlockAndArmorMitigation>;
+
+function spendEnemyForgeForHit(
+  state: BattleState,
+  effect: EnemyAttackEffect & { kind: "damage" },
+  landed: boolean,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  const forgeBasedBurn = effect.damageType === "burn" && "equalToForge" in effect && effect.equalToForge === true;
+  if (
+    !landed ||
+    hasEnemyTrait(state, "whitehot") ||
+    (effect.damageType !== "physical" && effect.damageType !== "stun" && !forgeBasedBurn) ||
+    state.enemyMitigation.forge <= 0
+  ) {
+    return state;
+  }
+  const spent = Math.min(state.enemyMitigation.forge, BATTLE_CONFIG.FORGE_DECAY_AMOUNT);
+  mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "forge", amount: spent, impact: false });
+  return {
+    ...state,
+    enemyMitigation: { ...state.enemyMitigation, forge: state.enemyMitigation.forge - spent },
+  };
+}
 
 interface EnemyHitFacts {
   readonly before: BattleState;
@@ -170,7 +194,7 @@ function resolveEnemyDamageEffectCore(
   const { blockLost, outcome } = facts;
   // Capture Health loss before threshold healing, then resolve retaliation only for survivors.
   let nextState = applyPlayerDefensiveReactions(
-    hit.state,
+    spendEnemyForgeForHit(hit.state, effect, outcome.landed, combatTexts),
     effect,
     { ...facts, blockDepletedByStrip: preDamageBlockStrip > 0 && preDamageBlockStrip === state.playerStatuses.block },
     combatTexts,

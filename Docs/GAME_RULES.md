@@ -72,7 +72,7 @@ Bond 0 preserves the baseline. Damage, healing, Gold, and Scarab Block gain +1 p
 - **Companion damage rewards** — Predator's Instinct doubles damage only strictly below 30% enemy Health, comparing against the unrounded threshold. Companion damage rewards use Health lost to its damage packets before enemy healing reactions; Second Wind cannot cancel those rewards, and utility actions cannot earn them through unrelated damage reactions.
 - **Companion card perks** — Whistle and Hunter's Bond use the card's Companion keyword, including Pack Tactics. Whistle makes the active Companion act after all effects of the card finish, including a newly summoned Companion. Both rewards occur once per card play, including automatic plays, never again for repeated or scheduled effects. Both `getCardKeywords` and `cardHasKeyword` use the full content keywords, including utility effects.
 - **Bonded** — Companion damage receives Forge exactly once for every damage type with Bonded, and spends Forge through normal attack decay. Without Bonded, existing damage-type Forge rules apply.
-- **Pack Tactics** — makes the active Companion act twice, including utility actions. Without an active Companion, it opens a normal Wish whose options are restricted to Companion summon cards; the chosen card enters the hand. Ordinary Companion bonuses and reaction cutoffs apply, and card-play rewards occur once.
+- **Pack Tactics** — makes the active Companion act twice, including utility actions. Without an active Companion, it opens a normal Wish whose options are restricted to Companion summon cards; the chosen card enters the hand. It then grants 2 Block. Ordinary Companion bonuses and reaction cutoffs apply, and card-play rewards occur once.
 
 ### Enemy abilities and traits
 
@@ -83,6 +83,7 @@ Bond 0 preserves the baseline. Damage, healing, Gold, and Scarab Block gain +1 p
 - **Selection** — `processEnemyAbility` uniformly selects one available card using world RNG, excluding `lastEnemyAbilityId`. The opening choice uses all three. Haste and crowd-control skips do not select cards or advance history. Recheck enemy crowd control after status ticks so a Paralytic Venom Stun skips the upcoming action without ticking statuses twice. Inspection never consumes RNG and does not reveal an upcoming action.
 - **Resolution** — `applyEnemyAbility` interprets self/opponent targets from the enemy's perspective without borrowing hero talents, Gear, mana, hand, or Gold. Room/difficulty scaling applies at resolution, keeping canonical card definitions immutable. Damage based on live Block or Forge skips a second room multiplier but still receives ability pressure and difficulty modifiers. Positive enemy ability damage has a minimum of 1 after room, progression, and difficulty scaling; zero-base effects retain their existing behavior, and defenses can still prevent all damage. Enemy benefits use enemy healing/mitigation owners; factor-based effects retain their authored factors. Multiplication feedback reports the added buildup, matching hero effects, and emits nothing when no buildup is added. A lethal counterattack stops remaining effects and follow-ups.
 - **Ability stages** — `enemy-turn-attack.ts` selects cards and sequences effects, `enemy-ability-damage.ts` resolves damage and once-per-ability hit rewards, and `enemy-ability-followups.ts` runs trait follow-ups after the effect sequence. `enemy-ability-context.ts` creates and records the shared per-ability hit facts so multi-hit abilities pay matching rewards once and apply follow-ups once. Keep hit and follow-up order, RNG draws, and combat text order when changing these stages.
+- **Enemy Forge spending** — each landed Physical, Stun, or Forge-based Burn damage packet spends 1 enemy Forge before defensive and hit rewards. Fully blocked hits spend Forge; dodges do not. Other damage types and ordinary Burn hits preserve Forge. Burning Blade gains Forge before reading it for its Burn hit, then spends 1 on landing. Whitehot prevents this spending; existing Forge grants and other enemy traits retain their rules.
 - **Enemy progression** — `game-constants/enemy-balance.ts` owns separate Health and ability-pressure curves by enemy type, with content-specific overrides. Elite ability pressure grows with diminishing returns at later depths. `battle-enemy-setup.ts` derives progression from the existing room multiplier; no hero identity, report tier, or additional saved field participates. Progression factors stop growing after depth 24 while ordinary room scaling continues. Health tuning applies only when creating a battle; saved Health, defenses, ability rosters, and action history remain intact. Block, Armor, healing, regeneration, and trait grants retain their existing scaling.
 
 #### Enemy reactions
@@ -138,10 +139,24 @@ Crowd-control triggers require both combatants to survive the hit. A lethal Stun
 
 ### Unique item interactions
 
+Tithe and Faith Barrier scale their Gold and Block rewards from enemy Health
+actually lost to Holy damage. Lucky Clover uses the same basis for Nature damage,
+including follow-ups and Thunderstone. Overkill and fully prevented hits cannot
+fund these rewards; lethal hits still can. Proc chances and ordinary reward
+bonuses remain unchanged. Other damage conversions and resource rewards retain
+their existing damage basis.
+
 [UNIQUE_ITEMS](./UNIQUE_ITEMS.md#combat-semantics) owns signatures, automatic-play
 limits, repeated damage, Blackfletch detonation, and saved battle-local opportunities.
 
 ### Strategic card conditions
+
+Rogue starts with Feint in place of Serrated Edge, retaining Steal, Blackjack,
+and Shadowstep. Feint costs 1 Mana, prepares a Dodge of the next attack packet,
+and draws one card. It returns to the discard rather than Consuming, so it can
+provide recurring evasion; repeated plays do not stack Dodge charges. Shadowstep
+still Consumes and can double Feint's draw. Damage over time and undodgeable
+reactions retain their existing rules.
 
 Shield Bash gains 2 Block, then deals Stun damage equal to half its live Block,
 rounded to the nearest whole number; it does not spend Block. Mana payment and

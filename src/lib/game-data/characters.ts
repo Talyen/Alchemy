@@ -35,15 +35,7 @@ export const characters: Record<CharacterId, CharacterDefinition> = {
     id: "rogue",
     name: "Rogue",
     role: "Skirmisher",
-    startingDeck: resolveDeck([
-      "steal",
-      "poison-dagger",
-      "stab",
-      "serrated-edge",
-      "blackjack",
-      "shadowstep",
-      "hemorrhage",
-    ]),
+    startingDeck: resolveDeck(["steal", "poison-dagger", "stab", "feint", "blackjack", "shadowstep", "hemorrhage"]),
     keywords: ["gold", "bleed", "poison"],
   },
   ranger: {

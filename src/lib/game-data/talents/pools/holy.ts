@@ -7,7 +7,7 @@ export const holyTalents = [
   t(
     "holy-block-scaling",
     "Faith Barrier",
-    "Holy damage has a 10% chance to also grant Block",
+    "Holy damage has a 10% chance to grant Block equal to enemy Health lost",
     "Shield",
     setEffect("holyBlockChance", 10),
   ),
@@ -46,7 +46,13 @@ export const holyTalents = [
     "Flame",
     setEffect("holyBurnDamageChance", 10),
   ),
-  t("holy-tithe", "Tithe", "Holy damage has a 10% chance to also grant Gold", "Cross", setEffect("holyGoldChance", 10)),
+  t(
+    "holy-tithe",
+    "Tithe",
+    "Holy damage has a 10% chance to grant Gold equal to enemy Health lost",
+    "Cross",
+    setEffect("holyGoldChance", 10),
+  ),
   t(
     "holy-block-grant",
     "Radiant Guard",

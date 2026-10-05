@@ -60,10 +60,10 @@ export function applyCrowdControlTriggerBonuses(
   return nextState;
 }
 
-export function applyLuckyCloverGold(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
-  if (state.trinketEffects.luckyCloverGoldChance <= 0 || damage <= 0) return state;
+export function applyLuckyCloverGold(state: BattleState, healthDamage: number, combatTexts: CombatTextEvent[]) {
+  if (state.trinketEffects.luckyCloverGoldChance <= 0 || healthDamage <= 0) return state;
   if (rollBattleChance(state.trinketEffects.luckyCloverGoldChance, state)) {
-    return addGoldWithCombatText(state, damage, combatTexts);
+    return addGoldWithCombatText(state, healthDamage, combatTexts);
   }
   return state;
 }

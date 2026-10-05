@@ -187,7 +187,8 @@ const trinketDefinitions = [
     "Lucky Clover",
     assetRefs.luckyClover,
     { luckyCloverGoldChance: 10 },
-    (effects) => `Nature damage has a ${effects.luckyCloverGoldChance}% chance to grant Gold equal to the damage dealt`,
+    (effects) =>
+      `Nature damage has a ${effects.luckyCloverGoldChance}% chance to grant Gold equal to enemy Health lost`,
   ),
 ];
 

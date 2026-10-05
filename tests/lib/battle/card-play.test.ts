@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { canPlayCard, playBattleCardResolved } from "@/lib/battle/card-play";
 import { defaultBattleState } from "@/lib/battle";
+import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
+import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { cardById, companionLibrary } from "@/lib/game-data";
 import { makeState as makeSharedState, makeTestCard, slashDeck } from "../../fixtures/battle";
 import { defaultTrinketManifest } from "../../fixtures/default-battle-state";
@@ -489,21 +491,48 @@ describe("reworked cards", () => {
     expect(result.state.playerStatuses).toMatchObject({ stun: 0, freeze: 0, poison: 2 });
   });
 
-  it("shadowstep arms a guaranteed dodge, arms the next card twice, and Consumes", () => {
-    const card = { ...cardById.shadowstep };
-    const result = playBattleCardResolved(makeState({ hand: [card] }), card.id, 0);
-    expect(result.state.flags.dodgeNextAttack).toBe(true);
-    expect(result.state.flags.playNextCardTwice).toBe(true);
-    expect(result.state.exhausted).toContainEqual(expect.objectContaining({ id: "shadowstep" }));
+  it("Feint returns through the draw cycle and evades one attack per play without Consume rewards", () => {
+    const card = { ...cardById.feint };
+    const initial = makeState({
+      hand: [card],
+      deck: [{ ...cardById.slash }],
+      rng: () => 0.99,
+    });
+    let state = { ...initial, talentEffects: { ...initial.talentEffects, forgeOnConsume: 3 } };
+    for (let play = 0; play < 2; play += 1) {
+      const index = state.hand.findIndex((entry) => entry.id === card.id);
+      const before = state;
+      state = playBattleCardResolved(state, card.id, index).state;
+      expect(state.mana).toBe(before.mana - 1);
+      expect(state.hand.map((entry) => entry.id)).toEqual(["slash"]);
+      expect(state.discard).toContainEqual(expect.objectContaining({ id: "feint" }));
+      expect(state.exhausted).not.toContainEqual(expect.objectContaining({ id: "feint" }));
+      expect(state.playerStatuses.forge).toBe(0);
+      const dodged = applyEnemyAbility(state, cardById.slash, []);
+      expect(dodged.playerHealth).toBe(state.playerHealth);
+      expect(dodged.flags.dodgeNextAttack).toBe(false);
+      const hit = applyEnemyAbility(dodged, cardById.slash, []);
+      expect(hit.playerHealth).toBeLessThan(dodged.playerHealth);
+      state = advanceToPlayerTurn(hit);
+    }
   });
 
-  it("feint arms a guaranteed dodge, draws a card, and Consumes", () => {
-    const card = { ...cardById.feint };
-    const drawCandidate = { ...cardById.slash };
-    const result = playBattleCardResolved(makeState({ hand: [card], deck: [drawCandidate] }), card.id, 0);
-    expect(result.state.flags.dodgeNextAttack).toBe(true);
-    expect(result.state.hand).toContainEqual(expect.objectContaining({ id: "slash" }));
-    expect(result.state.exhausted).toContainEqual(expect.objectContaining({ id: "feint" }));
+  it("Shadowstep Consumes and doubles reusable Feint's draw without making evasion stack", () => {
+    const shadowstep = { ...cardById.shadowstep };
+    const feint = { ...cardById.feint };
+    const initial = makeState({ hand: [shadowstep, feint], deck: slashDeck(2) });
+    const shadowed = playBattleCardResolved(initial, shadowstep.id, 0).state;
+    expect(shadowed.exhausted).toContainEqual(expect.objectContaining({ id: "shadowstep" }));
+    const result = playBattleCardResolved(shadowed, feint.id, 0).state;
+    expect(result.hand).toHaveLength(2);
+    expect(result.flags.playNextCardTwice).toBe(false);
+    expect(result.flags.dodgeNextAttack).toBe(true);
+    expect(result.discard).toContainEqual(expect.objectContaining({ id: "feint" }));
+    expect(result.exhausted).not.toContainEqual(expect.objectContaining({ id: "feint" }));
+    const dodged = applyEnemyAbility({ ...result, rng: () => 0.99 }, cardById.slash, []);
+    expect(dodged.playerHealth).toBe(result.playerHealth);
+    expect(dodged.flags.dodgeNextAttack).toBe(false);
+    expect(applyEnemyAbility(dodged, cardById.slash, []).playerHealth).toBeLessThan(dodged.playerHealth);
   });
 
   it("ray-of-frost deals two immediate Freeze hits", () => {

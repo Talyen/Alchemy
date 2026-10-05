@@ -18,6 +18,8 @@ describe("starting decks", () => {
         id,
       ).toEqual([]);
     }
+    const rogueIds = getStartingDeck("rogue").map((card) => card.id);
+    expect(rogueIds).toEqual(["steal", "poison-dagger", "stab", "feint", "blackjack", "shadowstep", "hemorrhage"]);
   });
 
   it("isolates changes in one run from the catalog and a later run", () => {

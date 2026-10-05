@@ -263,6 +263,7 @@ export const coreCards: BattleCard[] = [
     effects: [
       { kind: "companion-action", amount: 2 },
       { kind: "wish", amount: 1, companionIfAbsent: true },
+      { kind: "player-status", status: "block", amount: 2 },
     ],
   }),
   cardBuilders.effectsCard({

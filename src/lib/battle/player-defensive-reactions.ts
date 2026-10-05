@@ -1,5 +1,4 @@
 import type { EnemyAttackEffect } from "@/lib/game-data";
-import { BATTLE_CONFIG } from "../game-constants";
 import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./player-rewards";
 import { mergeCombatText } from "./combat-text-events";
 import { resolvePlayerHit } from "./hit-resolution";
@@ -12,7 +11,7 @@ import {
   shouldBlockPreventStatusBuildup,
 } from "./status-player";
 import type { BattleState, CombatTextEvent, CombatTextStat } from "./types";
-import { hasEnemyTrait, isPlayerDefeated, playerHealthLostToDamage } from "./types/state-helpers";
+import { isPlayerDefeated, playerHealthLostToDamage } from "./types/state-helpers";
 
 function applyVanguardCrestAfterBlock(
   state: BattleState,
@@ -24,19 +23,6 @@ function applyVanguardCrestAfterBlock(
     return state;
   }
   return addForgeToPlayer(state, state.trinketEffects.vanguardCrestForgeOnBlockAbsorb, combatTexts);
-}
-
-function applyEnemyForgeDecayOnHit(state: BattleState, actualDamage: number, damageType: string): BattleState {
-  if (hasEnemyTrait(state, "whitehot")) return state;
-  if (actualDamage <= 0 || (damageType !== "physical" && damageType !== "stun") || state.enemyMitigation.forge <= 0)
-    return state;
-  return {
-    ...state,
-    enemyMitigation: {
-      ...state.enemyMitigation,
-      forge: Math.max(0, state.enemyMitigation.forge - BATTLE_CONFIG.FORGE_DECAY_AMOUNT),
-    },
-  };
 }
 
 export function applyArmorLossAttackRetaliation(
@@ -62,7 +48,6 @@ function resolvePostDamageThresholds(
   blockAbsorb: number,
   remainingDamage: number,
   actualDamage: number,
-  damageType: string,
   combatTexts: CombatTextEvent[],
 ): BattleState {
   const healthAfterHit = state.playerHealth;
@@ -74,7 +59,6 @@ function resolvePostDamageThresholds(
   nextState = applyVanguardCrestAfterBlock(nextState, blockAbsorb, remainingDamage, combatTexts);
   nextState = checkHealthThresholds(prevHealth, healthAfterHit, nextState, combatTexts);
   nextState = applyArmorLossAttackRetaliation(nextState, armorLost, combatTexts);
-  nextState = applyEnemyForgeDecayOnHit(nextState, actualDamage, damageType);
   return nextState;
 }
 
@@ -190,7 +174,6 @@ export function applyPlayerDefensiveReactions(
     blockAbsorb,
     remainingDamage,
     actualDamage,
-    effect.damageType,
     combatTexts,
   );
   nextState = applyBlockDepletedHeal(

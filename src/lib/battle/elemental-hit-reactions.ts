@@ -26,7 +26,7 @@ export function applyNatureDamageRiders(
 ): BattleState {
   const { resolvedDamage: modifiedDamage, previousHealth: enemyHealthBeforeHit } = facts;
   if (modifiedDamage <= 0) return state;
-  let nextState = applyLuckyCloverGold(state, modifiedDamage, combatTexts);
+  let nextState = applyLuckyCloverGold(state, facts.healthDamage, combatTexts);
   nextState = applyNatureGoldReward(nextState, facts.healthDamage, combatTexts);
   nextState = applyNatureManaRefund(nextState, modifiedDamage, combatTexts);
   if (rollBattleChance(state.talentEffects.armorOnNatureDamageChance, state)) {
@@ -79,9 +79,9 @@ export function applyHolyDamageRiders(
   ) {
     nextState = applyBlockReward(nextState, state.gearEffects.blockOnHolyHitWithoutBlock, combatTexts);
   }
-  nextState = applyHolyBlockChance(nextState, damage, combatTexts);
+  nextState = applyHolyBlockChance(nextState, facts.healthDamage, combatTexts);
   nextState = applyDamageBlock(nextState, damage, combatTexts, eligibility);
-  nextState = applyHolyTithe(nextState, damage, combatTexts);
+  nextState = applyHolyTithe(nextState, facts.healthDamage, combatTexts);
 
   nextState = applyTalentHitConversions(nextState, "holy", damage, combatTexts);
 

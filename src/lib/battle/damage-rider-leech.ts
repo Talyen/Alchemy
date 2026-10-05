@@ -240,15 +240,15 @@ export function applyDamageBlock(
   return applyBlockReward(state, blockAmount, combatTexts, { skipFightPacing: true });
 }
 
-export function applyHolyBlockChance(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
-  if (damage <= 0 || !rollBattleChance(state.talentEffects.holyBlockChance, state)) return state;
-  return applyBlockReward(state, damage, combatTexts, { skipFightPacing: true });
+export function applyHolyBlockChance(state: BattleState, healthDamage: number, combatTexts: CombatTextEvent[]) {
+  if (healthDamage <= 0 || !rollBattleChance(state.talentEffects.holyBlockChance, state)) return state;
+  return applyBlockReward(state, healthDamage, combatTexts, { skipFightPacing: true });
 }
 
-export function applyHolyTithe(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
-  if (damage <= 0 || state.talentEffects.holyGoldChance <= 0) return state;
+export function applyHolyTithe(state: BattleState, healthDamage: number, combatTexts: CombatTextEvent[]) {
+  if (healthDamage <= 0 || state.talentEffects.holyGoldChance <= 0) return state;
   if (rollBattleChance(state.talentEffects.holyGoldChance, state)) {
-    return addGoldWithCombatText(state, damage, combatTexts);
+    return addGoldWithCombatText(state, healthDamage, combatTexts);
   }
   return state;
 }

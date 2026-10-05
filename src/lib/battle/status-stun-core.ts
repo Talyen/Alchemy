@@ -57,7 +57,7 @@ function applyStunTrinketEffects(
               ? leech(damagedState, healthDamage, texts)
               : damagedState;
           let rewarded = applyNatureManaRefund(leeched, finalDamage, texts);
-          rewarded = applyLuckyCloverGold(rewarded, finalDamage, texts);
+          rewarded = applyLuckyCloverGold(rewarded, healthDamage, texts);
           rewarded = applyNatureGoldReward(rewarded, healthDamage, texts);
           return applyHitEpilogue(rewarded, previousHealth, enemyWasAlive, texts);
         },
