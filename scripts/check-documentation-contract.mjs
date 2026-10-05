@@ -27,24 +27,17 @@ const PATH_TEMPLATE_CHARS = /[*?{}$<>"'`]/u;
 const markdownSourceCache = new Map();
 let repositoryFileCache = null;
 
-// History-only docs are exempt from content checks; reachability has its own
-// broader exemption below. Backticked references add plan/decision exemptions
-// because those records pin historical paths by design.
+// Release notes intentionally pin historical shipped paths; active plans carry
+// current work, so only their command/path prose is exempt from owner contracts.
 export function isHistoryOnlyDoc(relativePath) {
-  return relativePath === "CHANGELOG.md" || relativePath.startsWith(".agents/history/");
+  return relativePath === "CHANGELOG.md";
 }
 
-/** Superset of isHistoryOnlyDoc: transient plans and decision records pin old paths by design. */
 export function isHistoricalDoc(relativePath) {
-  return (
-    isHistoryOnlyDoc(relativePath) ||
-    relativePath.startsWith("Docs/Plans/") ||
-    relativePath === "Docs/Audits/decisions.md" ||
-    relativePath === ".agents/knowledge/skill-impact.md"
-  );
+  return isHistoryOnlyDoc(relativePath) || relativePath.startsWith("Docs/Plans/");
 }
 
-/** Reachability exemption: archives and agent-local records need no inbound owner links. */
+/** Reachability exemption: active plans and agent-local workflows need no inbound owner links. */
 export function isReachabilityExempt(relativePath) {
   return (
     relativePath === "CHANGELOG.md" || relativePath.startsWith("Docs/Plans/") || relativePath.startsWith(".agents/")
@@ -244,17 +237,6 @@ export function checkDurableDocumentReachability(rootDir = ROOT) {
   return [...documents.keys()].filter((relativePath) => !reachable.has(relativePath));
 }
 
-export function checkKnowledgeIndexCompleteness() {
-  const knowledgeDir = join(ROOT, ".agents", "knowledge", "patterns");
-  const indexPath = join(ROOT, ".agents", "knowledge", "index.md");
-  if (!existsSync(knowledgeDir) || !existsSync(indexPath)) return [];
-  const patterns = readdirSync(knowledgeDir).filter((name) => name.endsWith(".md"));
-  const indexSource = readFileSync(indexPath, "utf8");
-  return patterns
-    .filter((name) => !indexSource.includes(name))
-    .map((name) => `knowledge index missing: .agents/knowledge/patterns/${name}`);
-}
-
 export function checkSkillIndexCompleteness() {
   const skillsDir = join(ROOT, ".agents", "skills");
   const indexPath = join(skillsDir, "README.md");
@@ -285,7 +267,6 @@ export const DOCUMENTATION_CONTRACTS = [
   ["documented npm scripts", checkDocumentedNpmScripts],
   ["Markdown heading anchors", checkMarkdownHeadingAnchors],
   ["durable document reachability", checkDurableDocumentReachability],
-  ["knowledge index completeness", checkKnowledgeIndexCompleteness],
   ["skill index completeness", checkSkillIndexCompleteness],
   ["agent discovery catalog", () => validateContextCatalog(ROOT)],
 ];

@@ -94,13 +94,13 @@ Feature layout and run-state ownership:
 - `scripts/` — command entry points, asset registries and pipeline helpers in `scripts/assets/`, and other shared tooling in `scripts/lib/`; see the [script implementation map](./scripts/README.md)
 - `eslint/` — custom lint rules and import-boundary definitions composed by `eslint.config.js`
 - `Docs/`, `.agents/` — canonical project documentation, audit procedures, plans, and agent skills and lessons
-- `Docs/design/` — retained art studies, approval records, and UI mockups; see the [design archive](./Docs/design/README.md)
+- `Docs/design/` — current audio-review inputs; see [design inputs](./Docs/design/README.md)
 - `steam/` — Steam packaging and upload configuration
 
 Root configuration files remain beside `package.json` for tool discovery. Local
 outputs such as `dist/`, `dist-demo/`, `release-desktop/`, `release-desktop-demo/`, `reports/`, `playwright-report/`, and
 `test-results/` are ignored artifacts. `scratch/` and `output/` hold temporary local
-work; retained design materials belong in `Docs/design/`. Existing `npm run clean` and
+work; current tool inputs belong in `Docs/design/`; discard completed experiments. Existing `npm run clean` and
 `npm run prune:transient` commands manage disposable reports and caches.
 
 `npm run dev` prepares authored assets before starting Vite. Production builds
@@ -127,10 +127,9 @@ Start with the document for your question:
 | How do agents work here?                     | [AGENTS.md](./AGENTS.md), [Optional discovery tools](./Docs/AGENT_DISCOVERY.md), [Local skills](./.agents/skills/README.md)                              |
 
 [Audit guides](./Docs/Audits/README.md) are on-demand review procedures.
-The [October 2026 test value review](./Docs/TEST_VALUE_REVIEW.md) records portfolio classifications and low-value retirements.
-[Plans](./Docs/Plans/README.md), [design studies](./Docs/design/README.md), and
-[agent history](./.agents/history/README.md) retain context; they do not override
-current behavior and workflow owners.
+[Plans](./Docs/Plans/README.md) hold active work; [design inputs](./Docs/design/README.md)
+support current tools. Keep durable rules in their current owner and remove
+completed task records rather than archiving them.
 
 ### Keeping documentation useful
 
@@ -142,7 +141,7 @@ owners unless the prose needs them to explain behavior.
 
 When behavior changes, update its owner instead of appending a dated correction
 or another exception elsewhere. Remove obsolete guidance and redundant
-forwarding sections; preserve useful historical evidence as history. Keep
+forwarding sections; move useful rationale into its current owner and delete completed records. Keep
 checklists proportional to the task. `npm run docs:check` checks links, paths,
 commands, and discovery references; source review is still needed to establish
 that the instructions make sense. Documentation edits follow the same

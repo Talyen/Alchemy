@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { TRANSIENT_ARTIFACT_DIRS, formatBytes, removePath } from "./lib/clean-dev-artifacts.mjs";
+import { withArtifactGuard } from "./lib/artifact-guard.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -27,69 +28,113 @@ export function parsePruneArgs(argv) {
   return { days, dryRun };
 }
 
-function getFileStaleInfo(pathname, cutoff) {
-  try {
-    const stats = fs.lstatSync(pathname);
-    return { isStale: stats.mtimeMs < cutoff, bytes: stats.size };
-  } catch {
-    return { isStale: false, bytes: 0 };
-  }
-}
+// These directories contain independent runs; other report directories are a
+// single bundle so an old source/capture cannot disappear from a fresh result.
+const RUN_COLLECTIONS = new Set([
+  "reports/runs",
+  "reports/compact",
+  "reports/agent-diff",
+  "reports/agent-evals",
+  "reports/performance",
+  "test-results/failures",
+]);
 
-function pruneDirectory(pathname, cutoff, dryRun, removed, rootDir) {
-  let entries;
-  try {
-    entries = fs.readdirSync(pathname, { withFileTypes: true });
-  } catch {
-    return;
-  }
-  for (const entry of entries) {
-    const child = path.join(pathname, entry.name);
-    if (entry.isDirectory() && !entry.isSymbolicLink()) {
-      pruneDirectory(child, cutoff, dryRun, removed, rootDir);
-      let isEmpty;
-      try {
-        isEmpty = fs.readdirSync(child).length === 0;
-      } catch {
-        continue;
-      }
-      // Empty directories contain no evidence, so remove them regardless of
-      // mtime; the transient root itself is never passed through this branch.
-      if (isEmpty) {
-        removed.push({ path: path.relative(rootDir, child), bytes: 0 });
-        if (!dryRun) removePath(child);
-      }
-    } else {
-      const info = getFileStaleInfo(child, cutoff);
-      if (info.isStale) {
-        removed.push({ path: path.relative(rootDir, child), bytes: info.bytes });
-        if (!dryRun) removePath(child);
-      }
+function bundleInfo(pathname) {
+  const stats = fs.lstatSync(pathname);
+  let bytes = stats.size;
+  let newest = stats.mtimeMs;
+  if (stats.isDirectory() && !stats.isSymbolicLink()) {
+    bytes = 0;
+    for (const name of fs.readdirSync(pathname)) {
+      const child = bundleInfo(path.join(pathname, name));
+      bytes += child.bytes;
+      newest = Math.max(newest, child.newest);
     }
   }
+  return { bytes, newest };
 }
 
-export function pruneTransientArtifacts({
+/** Internal synchronous pruning; callers serialize it with the artifact guard. */
+export function pruneExpiredArtifacts({
   days = DEFAULT_DAYS,
   dryRun = false,
   now = Date.now(),
   rootDir = ROOT,
   transientDirs = TRANSIENT_DIRS,
 } = {}) {
+  if (!Number.isFinite(days) || days < 0) throw new Error("days must be non-negative");
   const cutoff = now - days * 86_400_000;
   const removed = [];
+  const consider = (pathname) => {
+    const info = bundleInfo(pathname);
+    if (info.newest < cutoff) {
+      removed.push({ path: path.relative(rootDir, pathname), bytes: info.bytes });
+      if (!dryRun) removePath(pathname);
+    }
+  };
   for (const relative of transientDirs) {
     const target = path.join(rootDir, relative);
-    if (fs.lstatSync(target, { throwIfNoEntry: false })?.isDirectory())
-      pruneDirectory(target, cutoff, dryRun, removed, rootDir);
+    const stats = fs.lstatSync(target, { throwIfNoEntry: false });
+    if (!stats?.isDirectory() || stats.isSymbolicLink()) continue;
+    for (const name of fs.readdirSync(target)) {
+      const child = path.join(target, name);
+      const relativeChild = path.relative(rootDir, child).replaceAll(path.sep, "/");
+      if (/^reports\/current-run\.(?:json|md)$/u.test(relativeChild)) continue;
+      const childStats = fs.lstatSync(child);
+      if (RUN_COLLECTIONS.has(relativeChild) && childStats.isDirectory() && !childStats.isSymbolicLink()) {
+        for (const run of fs.readdirSync(child)) consider(path.join(child, run));
+      } else consider(child);
+    }
   }
-  return { removed, bytes: removed.reduce((sum, entry) => sum + entry.bytes, 0) };
+  const reportsStats = fs.lstatSync(path.join(rootDir, "reports"), { throwIfNoEntry: false });
+  if (!transientDirs.includes("reports") || !reportsStats?.isDirectory() || reportsStats.isSymbolicLink())
+    return { removed, bytes: removed.reduce((sum, entry) => sum + entry.bytes, 0), skippedActive: false };
+  const pointer = path.join(rootDir, "reports/current-run.json");
+  if (fs.lstatSync(pointer, { throwIfNoEntry: false })?.isFile()) {
+    let run;
+    try {
+      run = JSON.parse(fs.readFileSync(pointer, "utf8")).runId;
+    } catch {
+      /* Expire malformed pointers normally. */
+    }
+    const valid = typeof run === "string" && /^[a-z0-9-]+$/u.test(run);
+    const runRelative = valid ? `reports/runs/${run}` : null;
+    const expired =
+      runRelative &&
+      (removed.some((entry) => entry.path.replaceAll(path.sep, "/") === runRelative) ||
+        !fs.existsSync(path.join(rootDir, runRelative, "run.json")));
+    for (const name of ["current-run.json", "current-run.md"]) {
+      const file = path.join(rootDir, "reports", name);
+      if (!fs.lstatSync(file, { throwIfNoEntry: false })) continue;
+      if (expired) {
+        removed.push({ path: path.relative(rootDir, file), bytes: fs.lstatSync(file).size });
+        if (!dryRun) removePath(file);
+      } else if (!valid) consider(file);
+    }
+  } else {
+    if (fs.lstatSync(pointer, { throwIfNoEntry: false })) consider(pointer);
+    const markdown = path.join(rootDir, "reports/current-run.md");
+    if (fs.lstatSync(markdown, { throwIfNoEntry: false })) consider(markdown);
+  }
+  return { removed, bytes: removed.reduce((sum, entry) => sum + entry.bytes, 0), skippedActive: false };
 }
 
-function main(argv = process.argv.slice(2)) {
+export async function pruneTransientArtifacts(options = {}) {
+  return withArtifactGuard(
+    options.rootDir ?? ROOT,
+    ({ active }) => (active ? { removed: [], bytes: 0, skippedActive: true } : pruneExpiredArtifacts(options)),
+    { dryRun: options.dryRun },
+  );
+}
+
+async function main(argv = process.argv.slice(2)) {
   try {
     const options = parsePruneArgs(argv);
-    const result = pruneTransientArtifacts(options);
+    const result = await pruneTransientArtifacts(options);
+    if (result.skippedActive) {
+      console.log("Artifact tool is active; pruning skipped.");
+      return 0;
+    }
     if (result.removed.length === 0) {
       console.log(`No transient artifacts older than ${options.days} day${options.days === 1 ? "" : "s"}.`);
       return 0;
@@ -105,4 +150,7 @@ function main(argv = process.argv.slice(2)) {
   }
 }
 
-if (isMainModule(import.meta.url)) process.exitCode = main();
+if (isMainModule(import.meta.url))
+  main().then((code) => {
+    process.exitCode = code;
+  });

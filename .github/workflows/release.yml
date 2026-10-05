@@ -69,7 +69,7 @@ jobs:
             reports/vitest-timings.json
             reports/current-run.*
             reports/runs/
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: ignore
 
   build:
@@ -112,7 +112,7 @@ jobs:
             reports/compact/
             reports/current-run.*
             reports/runs/
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: ignore
 
   e2e-full:
@@ -163,7 +163,7 @@ jobs:
         with:
           name: playwright-report-release-${{ matrix.shard }}-results
           path: reports/playwright-results.json
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: ignore
 
       - name: Upload Playwright report
@@ -177,7 +177,7 @@ jobs:
             reports/playwright-results.json
             reports/current-run.*
             reports/runs/
-          retention-days: 7
+          retention-days: 1
 
   demo-e2e:
     needs: [lint, test]
@@ -201,7 +201,7 @@ jobs:
             playwright-report/
             test-results/
             reports/
-          retention-days: 7
+          retention-days: 1
 
   package:
     outputs:
@@ -285,7 +285,7 @@ jobs:
             reports/compact/
             reports/current-run.*
             reports/runs/
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: ignore
 
   package-demo:
@@ -375,7 +375,7 @@ jobs:
             reports/compact/
             reports/current-run.*
             reports/runs/
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: ignore
 
   vercel-qa:

@@ -51,8 +51,7 @@ generated-source and curated-OGG inventory. The project owner's earlier
 [CC0](https://creativecommons.org/publicdomain/zero/1.0/) statement was recorded
 without pack names or license records. The approved sound replacements now have
 source paths, hashes, and excerpt boundaries in the
-[installation ledger](./Docs/design/audio-review/approved-choices.json), with
-processing details in the [installation record](./Docs/design/audio-review/INSTALLATION.md).
+[approved cue mappings](./Docs/design/audio-review/approved-choices.json), with processing inputs retained in those mappings.
 Those records identify recordings and listening decisions; they do not establish
 redistribution permission. Embedded tags such as `Pixel Combat` likewise identify
 a possible source without establishing its license. Resolve pack-specific

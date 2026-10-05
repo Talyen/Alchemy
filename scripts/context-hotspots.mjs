@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ROUTINE_EXPOSURE_BUDGET_BYTES } from "./lib/compact-output.mjs";
-import { isMainModule } from "./lib/is-main-module.mjs";
+import { defineScript } from "./lib/script-run.mjs";
 import { ROUTE_CONTEXT_BUDGETS } from "./lib/agent/route-context-budgets.mjs";
 import { measureAllRoutes, measureDiscoveryContexts } from "./measure-agent-context.mjs";
 import { readRecentRuns } from "./show-runs.mjs";
@@ -194,4 +194,4 @@ export function main(argv = process.argv.slice(2), rootDir = ROOT) {
   }
 }
 
-if (isMainModule(import.meta.url)) process.exitCode = main();
+defineScript(import.meta.url, () => main(), { artifacts: true });

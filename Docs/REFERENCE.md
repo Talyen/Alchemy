@@ -41,7 +41,7 @@ Outer test runners set `ALCHEMY_RUN_ID` once and pass it to child commands; CI d
 - Balance: `reports/balance-findings.html` and its JSON summary locate findings; open relevant matrix data under `reports/balance-full/` directly when needed.
 - Report pointer: `reports/current-run.md` and `.json` point to the latest run-specific record under `reports/runs/<run-id>/`. Use that pointer or `npm run runs:show -- --last 10` to locate an unknown run; known run artifacts can be opened directly.
 - Do not paste complete logs, traces, snapshots, generated bundles, or report directories into agent context when the digest identifies a narrower file or test.
-- Local transient artifacts are pruned automatically before dev preparation and remain available for test/performance investigation until explicitly pruned. Copy a failure artifact elsewhere only when an investigation genuinely needs to outlive the grace period; use `npm run prune:transient -- --dry-run` to inspect candidates.
+- Local diagnostics expire after 24 hours of inactivity. Dev preparation and normal report-tool exit prune expired bundles; active participating tools protect the transient tree. Regenerate expired reports when needed rather than maintaining a history archive; use `npm run prune:transient -- --dry-run` to inspect candidates.
 - Browser CI retains JSON results on every run and detailed diagnostics for failures or retries. Retention and other artifact policies are owned by the workflows; see the [E2E diagnostic contract](../tests/e2e/README.md#tags).
 
 ## Loot progression report

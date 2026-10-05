@@ -81,4 +81,4 @@ export async function runContentAudit() {
   });
 }
 
-defineScript(import.meta.url, () => runContentAudit());
+defineScript(import.meta.url, () => runContentAudit(), { artifacts: true });

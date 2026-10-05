@@ -3,6 +3,7 @@
 // Depends on scripts/lib/clean-dev-artifacts.mjs and scripts/stop-dev-server.mjs ownership guards.
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { withArtifactGuard } from "./lib/artifact-guard.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { STALE_TEST_PORTS } from "./lib/dev-port.mjs";
 import { stopStaleTestPorts } from "./stop-dev-server.mjs";
@@ -84,24 +85,33 @@ export async function runClean(options = {}) {
   const includeDevPort = options.includeDevPort === true;
   const dryRun = options.dryRun === true;
 
-  const targets = listArtifactDirsToRemove(rootDir, { builds });
-  let freedBytes = 0;
+  const { targets, freedBytes } = await withArtifactGuard(
+    rootDir,
+    ({ active }) => {
+      if (active) throw new Error("Artifact tool is active; cleanup refused to preserve its output.");
+      const targets = listArtifactDirsToRemove(rootDir, { builds });
+      let freedBytes = 0;
 
-  if (targets.length === 0) {
-    console.log("No matching artifact directories present.");
-  } else {
-    for (const absolutePath of targets) {
-      const measured = measurePath(absolutePath);
-      freedBytes += measured.bytes;
-      const relative = path.relative(rootDir, absolutePath) || absolutePath;
-      if (dryRun) {
-        console.log(`[dry-run] Would remove ${relative} (${formatBytes(measured.bytes)})`);
-        continue;
+      if (targets.length === 0) {
+        console.log("No matching artifact directories present.");
+      } else {
+        for (const absolutePath of targets) {
+          const measured = measurePath(absolutePath);
+          freedBytes += measured.bytes;
+          const relative = path.relative(rootDir, absolutePath) || absolutePath;
+          if (dryRun) {
+            console.log(`[dry-run] Would remove ${relative} (${formatBytes(measured.bytes)})`);
+            continue;
+          }
+          removePath(absolutePath);
+          console.log(`Removed ${relative} (${formatBytes(measured.bytes)})`);
+        }
       }
-      removePath(absolutePath);
-      console.log(`Removed ${relative} (${formatBytes(measured.bytes)})`);
-    }
-  }
+
+      return { targets, freedBytes };
+    },
+    { dryRun },
+  );
 
   if (processes) {
     await stopStaleTestPorts({ projectRoot: rootDir, includeDevPort, dryRun });

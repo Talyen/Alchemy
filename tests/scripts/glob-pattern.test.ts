@@ -23,7 +23,7 @@ describe("globToRegExp", () => {
     const re = globToRegExp("Docs/**");
     expect(re.test("Docs")).toBe(true);
     expect(re.test("Docs/Plans")).toBe(true);
-    expect(re.test("Docs/Plans/Archived/foo.md")).toBe(true);
+    expect(re.test("Docs/Plans/Example.md")).toBe(true);
     expect(re.test("Other/Docs/foo.md")).toBe(false);
   });
 

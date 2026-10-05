@@ -199,19 +199,14 @@ describe.each(cases)("outer %s", () => {
   it("omits discovery noise while preserving explicit access and import inventories", () => {
     const files = {
       "Docs/Plans/current.md": "needle",
-      "Docs/Plans/Archived/old.md": "needle",
-      ".agents/history/old.md": "needle",
       "src/catalog.generated.ts": "needle",
       "src/assets/.asset-hashes.json": "needle",
       "src/current.ts": "needle",
     };
-    const root = fixture({ ...files, ".rgignore": "*.generated.*\nDocs/Plans/Archived/\n" });
+    const root = fixture({ ...files, ".rgignore": "*.generated.*\n" });
     expect(repositorySearch(root, { pattern: "needle" })).toEqual(["Docs/Plans/current.md", "src/current.ts"]);
     for (const file of Object.keys(files))
       expect(repositorySearch(root, { pattern: "needle", paths: [file] })).toEqual([file]);
-    expect(repositorySearch(root, { pattern: "needle", paths: ["Docs/Plans/Archived"] })).toEqual([
-      "Docs/Plans/Archived/old.md",
-    ]);
     expect(repositorySearch(root, { pattern: "needle", paths: ["src"], includeExcluded: true })).toContain(
       "src/catalog.generated.ts",
     );
@@ -313,8 +308,8 @@ it("keeps isolated worktree documentation out of repository reachability checks"
     "README.md": "[Guide](./Docs/guide.md)",
     "Docs/guide.md": "Reachable guide",
     "Docs/orphan.md": "Actual orphan",
-    "Docs/Plans/Archived/Old.md": "Exempt archived plan",
-    ".agents/history/old.md": "Exempt agent history",
+    "Docs/Plans/Active.md": "Active plan",
+    ".agents/evals/README.md": "Reusable evaluation workflow",
     ".worktrees/eval/README.md": "Isolated checkout",
     ".worktrees/eval/Docs/unlinked.md": "Not this repository's documentation",
   });

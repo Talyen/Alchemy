@@ -6,7 +6,7 @@ import { resolveSelectedPaths } from "./lib/verification/changed-paths.mjs";
 import { recordAgentEvent, readExposure } from "./lib/agent/agent-events.mjs";
 import { incrementalContext, relatedLocations } from "./lib/agent/agent-discovery.mjs";
 import { compactMarkdownTables, sectionPreview } from "./lib/agent/markdown-sections.mjs";
-import { isMainModule } from "./lib/is-main-module.mjs";
+import { defineScript } from "./lib/script-run.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 export const CONTEXT_OUTPUT_BYTES = 12_000;
@@ -246,4 +246,4 @@ export function main(argv = process.argv.slice(2)) {
   }
 }
 
-if (isMainModule(import.meta.url)) process.exitCode = main();
+defineScript(import.meta.url, () => main(), { artifacts: true });

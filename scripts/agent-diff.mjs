@@ -3,7 +3,7 @@ import fs from "node:fs";
 import { devNull } from "node:os";
 import path from "node:path";
 import { runGit, toRepoRelative } from "./lib/repository-paths.mjs";
-import { isMainModule } from "./lib/is-main-module.mjs";
+import { defineScript } from "./lib/script-run.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const GENERATED =
@@ -129,4 +129,4 @@ export function main(argv = process.argv.slice(2), root = ROOT) {
     return 1;
   }
 }
-if (isMainModule(import.meta.url)) process.exitCode = main();
+defineScript(import.meta.url, () => main(), { artifacts: true });

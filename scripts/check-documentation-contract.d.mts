@@ -12,8 +12,6 @@ export function checkMarkdownHeadingAnchors(): string[];
 
 export function checkDurableDocumentReachability(rootDir?: string): string[];
 
-export function checkKnowledgeIndexCompleteness(): string[];
-
 export function checkSkillIndexCompleteness(): string[];
 
 export function checkDocumentationContracts(): string[];

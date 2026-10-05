@@ -250,7 +250,7 @@ describe("build failure visibility", () => {
       "reports/compact/",
       "reports/current-run.*",
       "reports/runs/",
-      "retention-days: 7",
+      "retention-days: 1",
       "if-no-files-found: ignore",
     ]) {
       expect(upload).toContain(entry);

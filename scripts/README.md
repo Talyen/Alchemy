@@ -136,16 +136,31 @@ shared `runStreamCommand` runner instead of bounded `runCommand` capture or raw
 run `npm run predev` first when using that command. Desktop development runs
 the same preparation and adds Steam App ID synchronization.
 
-## Cleanup (`clean` = explicit reset, `prune:transient` = age-based GC)
+## Cleanup (`clean` = explicit reset, `prune:transient` = expiry)
 
-`npm run clean` removes local reports and the Vite cache. `npm run clean:all`
-also removes build outputs and stops Alchemy-owned test-server processes; add
-`--include-dev-port` with `--processes` to include the development server
-(passing it alone warns and does nothing). `npm run prune:transient`
-deletes stale local artifacts by age. Neither command removes shared Playwright
-browser caches.
-Age-based pruning skips symlinked transient roots as well as nested symlink traversal.
-Both share `lib/clean-dev-artifacts.mjs` transient roots.
+`npm run clean` removes local reports and Vite cache; `--builds` adds rebuildable
+build outputs. `--processes` stops Alchemy-owned test listeners;
+`--include-dev-port` also selects the normal dev port, only with `--processes`.
+`--all` combines builds and processes. Use `--dry-run` to preview deletion.
+
+`npm run prune:transient` expires diagnostic bundles after 24 hours of inactivity;
+`--days=<number>` changes the cutoff. Runs under `reports/runs`, `compact`,
+`agent-diff`, `agent-evals`, `performance` and test failure collections expire
+independently; other report directories expire as complete bundles. Fresh
+children preserve older siblings. Stale current-run pointers are removed when
+their run disappears. Roots and nested symlinks are never traversed.
+
+Report-producing CLIs register process-owned guards and prune on normal idle
+exit. Pruning skips the transient tree while another participating tool is
+active; explicit cleanup refuses deletion. Registration and deletion share a
+short OS-released mutex on `127.0.0.1:48158`. Abandoned guards are recovered only after confirming
+the owner is dead; unreadable ownership remains protected. No processes are
+terminated for artifact cleanup. Raw tools launched outside the wrappers need
+manual coordination. Dry runs change no files.
+
+Both commands share `lib/clean-dev-artifacts.mjs` roots. Build outputs, production
+sources, release packages and scratch/output experiments are outside automatic
+expiry. Inspect unfinished experiments before deleting them explicitly.
 
 ## Worktree / git safety
 

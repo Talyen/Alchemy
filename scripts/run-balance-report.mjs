@@ -55,4 +55,4 @@ export async function runBalanceReport(env = process.env) {
   });
 }
 
-defineScript(import.meta.url, () => runBalanceReport());
+defineScript(import.meta.url, () => runBalanceReport(), { artifacts: true });

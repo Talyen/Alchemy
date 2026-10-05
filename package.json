@@ -53,7 +53,7 @@
     "measure:agent-context": "node scripts/measure-agent-context.mjs",
     "context:hotspots": "node scripts/context-hotspots.mjs",
     "new:plan": "node scripts/new-plan.mjs",
-    "archive:plans": "node scripts/archive-plans.mjs",
+    "finish:plans": "node scripts/finish-plans.mjs",
     "plans:check": "node scripts/check-docs.mjs --plans-only",
     "docs:check": "node scripts/check-docs.mjs",
     "docs:check:final": "node scripts/check-docs.mjs --final",

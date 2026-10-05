@@ -176,7 +176,7 @@ jobs:
             reports/vitest-timings.json
             reports/current-run.*
             reports/runs/
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: ignore
 
   build:
@@ -215,7 +215,7 @@ jobs:
             reports/compact/
             reports/current-run.*
             reports/runs/
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: ignore
 
   e2e:
@@ -268,7 +268,7 @@ jobs:
         with:
           name: playwright-report-critical-${{ matrix.shard }}-results
           path: reports/playwright-results-${{ matrix.shard }}.json
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: ignore
 
       - name: Upload Playwright report
@@ -282,7 +282,7 @@ jobs:
             reports/playwright-results-${{ matrix.shard }}.json
             reports/current-run.*
             reports/runs/
-          retention-days: 7
+          retention-days: 1
 
   ship-gate:
     needs: changes
@@ -321,7 +321,7 @@ jobs:
             reports/compact/
             reports/current-run.*
             reports/runs/
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: ignore
 
   assets:
@@ -412,7 +412,7 @@ jobs:
             reports/compact/
             reports/current-run.*
             reports/runs/
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: ignore
 
   electron-e2e:
@@ -471,7 +471,7 @@ jobs:
         with:
           name: playwright-report-electron-results
           path: reports/playwright-electron-results.json
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: ignore
 
       - name: Upload Electron Playwright report
@@ -485,4 +485,4 @@ jobs:
             reports/playwright-electron-results.json
             reports/current-run.*
             reports/runs/
-          retention-days: 7
+          retention-days: 1

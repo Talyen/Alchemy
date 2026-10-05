@@ -13,7 +13,7 @@
  */
 import path from "node:path";
 import fs from "node:fs";
-import { isMainModule } from "./lib/is-main-module.mjs";
+import { defineScript } from "./lib/script-run.mjs";
 import { fileURLToPath } from "node:url";
 import { commandExposure, tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
 import { ensureRunId, writeCurrentRun } from "./lib/verification/current-run.mjs";
@@ -152,13 +152,4 @@ export async function runAudits(argv = process.argv.slice(2), { rootDir = ROOT, 
   return 0;
 }
 
-if (isMainModule(import.meta.url)) {
-  runAudits()
-    .then((code) => {
-      process.exitCode = code;
-    })
-    .catch((error) => {
-      console.error(error.message);
-      process.exitCode = 1;
-    });
-}
+defineScript(import.meta.url, () => runAudits(), { artifacts: true });

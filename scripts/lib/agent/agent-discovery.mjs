@@ -26,13 +26,7 @@ function matchesSearchGlob(file, glob) {
   return globToRegExp(glob).test(file);
 }
 
-const DISCOVERY_NOISE = [
-  "Docs/Plans/Archived/**",
-  ".agents/history/**",
-  "**/*.generated.*",
-  "src/lib/game-data/gear-art.generated.ts",
-  "**/.asset-hashes.json",
-];
+const DISCOVERY_NOISE = ["**/*.generated.*", "src/lib/game-data/gear-art.generated.ts", "**/.asset-hashes.json"];
 
 function searchExclusions(root, options) {
   // File inventories feed the import graph too; filtering noise belongs to text discovery.

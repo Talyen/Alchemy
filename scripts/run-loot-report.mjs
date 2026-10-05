@@ -58,4 +58,4 @@ export async function runLootReport({ samples = parseLootSamples(process.env.ALC
   });
 }
 
-defineScript(import.meta.url, () => runLootReport());
+defineScript(import.meta.url, () => runLootReport(), { artifacts: true });

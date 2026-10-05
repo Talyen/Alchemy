@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { describe, expect, it, vi, afterEach } from "vitest";
 import {
   buildMappings,
+  loadGameInventory,
   parseCatalog,
   readLibraryCatalog,
   validateMappings,
@@ -332,4 +333,19 @@ it("a shared enemy/companion selection overrides independent choices and survive
   expect(restoreChoices(mappings, { "companion:wolf": records["companion:wolf"] })).toEqual({});
   manifest.sharedChoices["enemy:boss"] = "companion:wolf";
   expect(() => validateMappings(manifest, inventory, catalog)).toThrow(/Invalid shared sound choice/);
+});
+
+it("keeps the current Sound desk manifest aligned with live catalogs and registrations", async () => {
+  const manifest = JSON.parse(
+    await readFile(new URL("../../Docs/design/audio-review/mappings.json", import.meta.url), "utf8"),
+  ) as ReviewManifest;
+  const catalog = [
+    ...new Map(
+      manifest.families
+        .flatMap((family) => family.candidates)
+        .map((candidate) => [candidate.assetId, { asset_id: candidate.assetId, path: candidate.path }]),
+    ).values(),
+  ];
+  const inventory = await loadGameInventory();
+  expect(() => validateMappings(manifest, inventory, catalog)).not.toThrow();
 });

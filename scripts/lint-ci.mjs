@@ -4,7 +4,7 @@ import path from "node:path";
 import { ensureRunId } from "./lib/verification/current-run.mjs";
 import { completionCounts, failureSummary } from "./lib/compact-output.mjs";
 import { runCommandAsync } from "./lib/run-command.mjs";
-import { isMainModule } from "./lib/is-main-module.mjs";
+import { defineScript } from "./lib/script-run.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const STEPS = [
@@ -44,8 +44,4 @@ export async function runCiLint({ rootDir = ROOT, runner = runCommandAsync } = {
   return failed === 0 ? 0 : 1;
 }
 
-if (isMainModule(import.meta.url)) {
-  runCiLint().then((code) => {
-    process.exitCode = code;
-  });
-}
+defineScript(import.meta.url, () => runCiLint(), { artifacts: true });

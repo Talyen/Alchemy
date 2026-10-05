@@ -7,7 +7,7 @@ import { withReportServer } from "./lib/vite-report-server.mjs";
 import { createHash } from "node:crypto";
 import { REPO_ROOT, runGit } from "./lib/repository-paths.mjs";
 
-defineScript(import.meta.url, async () => {
+async function main() {
   const args = process.argv.slice(2);
   const arg = (key, fallback) => {
     const i = args.indexOf(`--${key}`);
@@ -259,4 +259,6 @@ defineScript(import.meta.url, async () => {
     );
     process.exitCode = 1;
   }
-});
+}
+
+defineScript(import.meta.url, main, { artifacts: true });

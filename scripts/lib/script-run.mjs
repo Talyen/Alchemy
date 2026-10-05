@@ -1,3 +1,6 @@
+import path from "node:path";
+import { registerArtifactSession } from "./artifact-guard.mjs";
+import { pruneExpiredArtifacts } from "../prune-transient-artifacts.mjs";
 import { isMainModule } from "./is-main-module.mjs";
 
 /**
@@ -25,7 +28,7 @@ export class UsageError extends Error {
  * @param {string} importMetaUrl `import.meta.url` of the calling module
  * @param {() => unknown} fn entry function
  */
-export function defineScript(importMetaUrl, fn) {
+export function defineScript(importMetaUrl, fn, { artifacts = false } = {}) {
   if (!isMainModule(importMetaUrl)) return;
   const report = (error) => {
     console.error(error instanceof Error ? error.message : error);
@@ -35,7 +38,10 @@ export function defineScript(importMetaUrl, fn) {
     if (typeof res === "number") process.exitCode = res;
   };
   try {
-    const result = fn();
+    const rootDir = path.resolve(import.meta.dirname, "../..");
+    const result = artifacts
+      ? registerArtifactSession(rootDir, () => pruneExpiredArtifacts({ rootDir })).then(fn)
+      : fn();
     if (result && typeof result.then === "function") {
       result.then(handleResult, report);
     } else {

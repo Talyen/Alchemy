@@ -8,7 +8,7 @@ import { resolveRoutePlan } from "./lib/verification/change-routes.mjs";
 import { parseChangedPathsArgs, resolveSelectedPaths } from "./lib/verification/changed-paths.mjs";
 import { COMMANDS, DOCS_CHECK_KEY } from "./lib/verification/test-commands.mjs";
 import { ensureRunId, writeCurrentRun } from "./lib/verification/current-run.mjs";
-import { isMainModule } from "./lib/is-main-module.mjs";
+import { defineScript } from "./lib/script-run.mjs";
 import { runCommand } from "./lib/run-command.mjs";
 import { recordAgentEvent } from "./lib/agent/agent-events.mjs";
 import { captureVerificationInputs, createVerificationCache } from "./lib/verification/verification-cache.mjs";
@@ -188,7 +188,4 @@ export function main(argv = process.argv.slice(2)) {
   }
 }
 
-if (isMainModule(import.meta.url)) {
-  const code = main();
-  if (code !== 0) process.exitCode = code;
-}
+defineScript(import.meta.url, () => main(), { artifacts: true });

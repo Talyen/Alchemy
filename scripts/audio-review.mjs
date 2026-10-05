@@ -191,4 +191,4 @@ async function main() {
   process.once("SIGTERM", stop);
 }
 
-defineScript(import.meta.url, main);
+defineScript(import.meta.url, main, { artifacts: true });

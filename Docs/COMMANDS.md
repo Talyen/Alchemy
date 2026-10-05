@@ -32,7 +32,7 @@ includes and when it applies.
 | Publish a release                  | `npm run release`                  | Gates, commit/tag, push and CI watch; follow [Release](./RELEASE.md)                              |
 
 Use [Agent discovery](./AGENT_DISCOVERY.md) for optional lookup/measurement
-commands and [Plans](./Plans/README.md) for plan creation and archiving.
+commands and [Plans](./Plans/README.md) for plan creation and completion.
 `npm run docs:check:final` is only for intentionally closing every plan in the
 repository; documentation handoff uses `docs:check` plus the task-scoped `check`.
 
@@ -63,9 +63,8 @@ directory within an edition, so run them sequentially.
 
 `npm run clean` removes local diagnostics and the Vite cache (explicit reset);
 add `-- --builds` to remove build outputs. `npm run clean:all` also stops
-Alchemy-owned test-server processes. `npm run prune:transient` removes only stale
-files by age. Its exact
-options are owned by `scripts/prune-transient-artifacts.mjs`; reset options
+Alchemy-owned test-server processes. `npm run prune:transient` expires diagnostic bundles after 24 hours of inactivity.
+Its exact options are owned by `scripts/prune-transient-artifacts.mjs`; reset options
 belong to `scripts/clean-dev-artifacts.mjs`. Neither command manages shared
 Playwright caches.
 

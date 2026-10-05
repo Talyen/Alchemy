@@ -2,18 +2,6 @@
 
 Re-runnable one-shot guides for coding agents. An audit is neither a project tracker nor standing product requirements. Run one only when the user cites it; do not treat uncited audits as backlog.
 
-Past dispositions live in [decisions.md](decisions.md). Check it before confirming a candidate; do not re-propose a dispositioned item unless the evidence has changed. Rows written before the 2026 pack restructure cite the former numbered audits:
-
-| Former guide                                                                                                                                  | Now                                                      |
-| --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| 01-AsyncRace, 02-BehaviorHardening, 03-BugHunting                                                                                             | [RuntimeCorrectnessAudit.md](RuntimeCorrectnessAudit.md) |
-| 04-ChangeLocalityContextEfficiency, 05-DeadCode, 08-DualPathRetention, 09-DuplicateFeatureSurface, 11-InelegantSlop, 14-StateGravityOwnership | [SimplificationAudit.md](SimplificationAudit.md)         |
-| 10-E2ETestQuality, 17-UnitTest                                                                                                                | [TestQualityAudit.md](TestQualityAudit.md)               |
-| 06-DesignSystemConsistency, 16-UIInteractionFeedback                                                                                          | [UIConsistencyAudit.md](UIConsistencyAudit.md)           |
-
-DocumentationStaleness, SideEffectSurface, Performance, and TypeSafety are new
-in the 2026 pack (no former-name mapping).
-
 ## Shared contract
 
 Read this contract with the requested guides. The guides offer investigative lenses, not checklists to satisfy or authority to override the user's scope and current repository owners. Reviewing or editing the guides does not itself request execution of the audits.
@@ -24,7 +12,7 @@ Choose discovery methods from the question being investigated: player-flow inspe
 
 Start where risk and evidence are strongest. On repeat passes, changed paths and previously uncertain areas are useful starting points when a reliable baseline exists; do not assume earlier coverage. For a full audit, inspect every scope area and representative important flows, including unchanged code. Report what was inspected, sampled, or unavailable; do not describe sampling as exhaustive proof.
 
-For each candidate, establish the expected behavior or ownership rule, trace the actual behavior and consumers, and look for counterevidence: intentional variants, compatibility needs, existing validation, framework guarantees, or a ledger disposition. When docs, tests, and implementation disagree, resolve intent through current owners and focused history. A historical ledger row does not override a changed invariant.
+For each candidate, establish the expected behavior or ownership rule, trace the actual behavior and consumers, and look for counterevidence: intentional variants, compatibility needs, existing validation, framework guarantees, or a current owner rationale. When docs, tests, and implementation disagree, resolve intent through current owners and focused history. Current invariants govern the finding.
 
 A confirmed finding needs concrete evidence (a reachable failure, violated contract, or demonstrated maintenance cost), its impact, a remedy, and verification that would expose the original problem. A deterministic code-path argument can establish a defect when reproduction is impractical; state the remaining uncertainty. Separate unconfirmed leads from findings.
 
@@ -38,11 +26,11 @@ Follow confirmed causes through callers, callees, siblings, tests, schemas, docs
 
 Implement justified fixes within the user's authorization, including structural remedies when supported by evidence and verification. Follow the repository's skill routing for new contracts. If a consequential product, compatibility, or architecture choice remains unresolved, present the evidence and concrete options; continue independent work. Audit headings do not grant authority for unrelated balance, copy, layout, save-policy, or dependency changes, and do not require reapproval of already authorized work.
 
-### Finish and retain useful evidence
+### Finish
 
 Verify the changed behavior as well as running the required gates; report material test retirements under the shared test value policy. Report findings fixed, unresolved confirmed issues, important uncertainty or coverage limits, and checks actually run. Use before/after measures when they substantiate the finding, such as latency or the number of independently maintained rules; do not require metrics for every fix. An unavailable check limits the conclusion, rather than proving success or invalidating all other evidence.
 
-Keep run results in the handoff, not the guides. Rejected/deferred proposals and intentionally kept borderline candidates get a concise row in [decisions.md](decisions.md); routine non-findings do not need entries.
+Keep run results in the handoff, not the guides. Move enduring rationale into its current owner; do not retain completed audit ledgers or rejected-proposal histories. Keep only genuinely unresolved choices below.
 
 ### Automate stable invariants
 
@@ -72,3 +60,10 @@ Leave alone unless the owning architecture doc changes: battle RNG injection; pe
 Verify with the path-scoped gates for the touched area in [CONTRIBUTING.md](../../CONTRIBUTING.md). Prefer existing gates over invented absolute metrics; audit heuristics are not additional gates. When toolchain pieces are absent, state exactly which checks were skipped and why — never fail an audit solely because Electron, Steam credentials, or a full ship build is unavailable.
 
 Standing conventions: [CONTRIBUTING.md](../../CONTRIBUTING.md), [ARCHITECTURE.md](../ARCHITECTURE.md), [AGENTS.md](../../AGENTS.md). Optional measurable sweep: `npm run audit:all` (`npm run content:audit` is a content-catalog check, outside this pack).
+
+## Unresolved decisions
+
+Critical active-run save fields currently use tolerant envelope repair. Changing
+Gold, Health or deck validation to reject repaired values requires a player-data
+product decision; re-evaluate when that repair policy is explicitly decided.
+Current recovery ownership: [save compatibility](../../src/features/alchemy/shared/storage/MIGRATIONS.md#load-selection).

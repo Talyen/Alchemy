@@ -4,8 +4,6 @@ Raw Assets/
 src/assets/optimized/
 public/sounds/
 public/Music/
-Docs/Plans/Archived/
-.agents/history/
 *.generated.*
 src/lib/game-data/gear-art.generated.ts
 .asset-hashes.json

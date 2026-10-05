@@ -103,9 +103,8 @@ entries still need scoped search. Parsing never executes content.
 For tests, `--tests` lists suite-qualified names and `--test "suite > case"`
 reads matches with pointers to imports, shared setup and hooks. Parameterized
 names remain unexpanded; dynamic names are labeled. Read surrounding code when
-those pointers are insufficient. Earlier [investigation trials](../.agents/evals/results/context-efficiency-2026-09-11.md)
-found that targeted test excerpts could increase total reading; use this option
-only when it helps the investigation.
+those pointers are insufficient. Targeted excerpts can increase total reading; use this option only when it
+helps the investigation.
 
 ## Optional context controls
 
@@ -139,7 +138,7 @@ regular expressions. Truncation is explicit; narrow the search or use scoped
 Default searches respect ignore files and exclude raw assets, reports, build
 outputs, changelog, lockfiles, dependencies, Git data and worktrees. Explicit
 paths plus `--include-excluded` allow those artifacts. Broad searches also omit
-archived plans, agent history, generated source and asset hashes; an explicit
+generated source and asset hashes; an explicit
 path into those categories includes them without the flag. Current plans,
 canonical docs and authored manifests remain searchable. Dependency-hint
 inventories remain complete.
@@ -161,7 +160,7 @@ Direct `lint`, `typecheck`, `typecheck:all`, and `deadcode` commands retain full
 
 ## Terminal search and change review
 
-`.rgignore` keeps raw media, generated catalogs, asset hashes, archived plans and lockfiles out of ordinary `rg` discovery. Use `rg --no-ignore-dot <pattern> <explicit-path>` to inspect them. Git inventories, asset validation and the custom discovery import graph remain complete; the wrapper owns its exclusions independently.
+`.rgignore` keeps raw media, generated catalogs, asset hashes, lockfiles out of ordinary `rg` discovery. Use `rg --no-ignore-dot <pattern> <explicit-path>` to inspect them. Git inventories, asset validation and the custom discovery import graph remain complete; the wrapper owns its exclusions independently.
 
 `npm run review:diff -- [paths...]` prints selected patches first, then changed-path counts by top-level directory. It retains the complete working-tree inventory and selected patches under `reports/agent-diff/`; unrelated filenames no longer consume the patch preview budget. Staged and unstaged changes remain separate, including reversals between the two. Generated/media patches are summarized by path; use `npm run review:diff -- --full <path>` to retain their full patches too. Large patches remain in the linked report rather than filling the terminal. Omitted output is not completed review. Directory counts do not establish review of unrelated changes; read the complete inventory when reviewing the whole checkout.
 

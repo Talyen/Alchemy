@@ -5,20 +5,20 @@
 Gate composition, CI tiers, and reuse policy live in
 [CONTRIBUTING](../CONTRIBUTING.md#static-build-and-ci-policy).
 
-| Concern                                    | Implementation owner                                                                                                                                                                                  |
-| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Completion orchestration                   | `check.mjs`                                                                                                                                                                                           |
-| Local smoke and opt-in full test selection | `verify-changed.mjs` + `run-local-tests.mjs`                                                                                                                                                          |
-| Finished-step exposure/digest reporting    | `lib/run-step.mjs` (shared by `check` + `verify`)                                                                                                                                                     |
-| Path parsing and classification            | `lib/verification/changed-paths.mjs` + `lib/verification/change-routes.mjs`                                                                                                                           |
-| Documentation contracts and plan metadata  | `check-docs.mjs` (also serves `plans:check` via `--plans-only` and `docs:check:final` via `--final`), `check-documentation-contract.mjs`, `lib/plan-checks.mjs` (`archive-plans.mjs` shares that lib) |
-| Passing unit receipts                      | `lib/verification/verification-cache.mjs`                                                                                                                                                             |
-| Bundle budgets                             | `lib/verification/bundle-budget.mjs`                                                                                                                                                                  |
-| Full and staged formatting                 | `run-prettier.mjs` + `prettier-paths.mjs` + `.prettierignore` (`PRETTIER_NEVER_FORMAT_RE` is the staged-path subset; `.prettierignore` also covers build outputs)                                     |
-| Plan creation and archiving                | `new-plan.mjs` + `archive-plans.mjs`; [plan lifecycle](../Docs/Plans/README.md#task-handoff)                                                                                                          |
-| Selection byte budgets                     | `lib/agent/selection-budgets.mjs` (`INLINE_ARGS_BYTES` for check paths.json spill vs `RELATED_SELECTION_BYTES` for verify unit-all fallback; same value, different meanings)                          |
-| Test concurrency                           | `lib/verification/test-concurrency.mjs` (`VITEST_MAX_WORKERS` for related, ship, and full unit runs via `vitest.config.ts`; local smoke uses `vitest.local.config.ts`)                                |
-| Overlapping local test runs                | `lib/verification/local-test-lane.mjs` (used by `run-compact.mjs` and `run-ship-unit.mjs`)                                                                                                            |
+| Concern                                    | Implementation owner                                                                                                                                                                                 |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Completion orchestration                   | `check.mjs`                                                                                                                                                                                          |
+| Local smoke and opt-in full test selection | `verify-changed.mjs` + `run-local-tests.mjs`                                                                                                                                                         |
+| Finished-step exposure/digest reporting    | `lib/run-step.mjs` (shared by `check` + `verify`)                                                                                                                                                    |
+| Path parsing and classification            | `lib/verification/changed-paths.mjs` + `lib/verification/change-routes.mjs`                                                                                                                          |
+| Documentation contracts and plan metadata  | `check-docs.mjs` (also serves `plans:check` via `--plans-only` and `docs:check:final` via `--final`), `check-documentation-contract.mjs`, `lib/plan-checks.mjs` (`finish-plans.mjs` shares that lib) |
+| Passing unit receipts                      | `lib/verification/verification-cache.mjs`                                                                                                                                                            |
+| Bundle budgets                             | `lib/verification/bundle-budget.mjs`                                                                                                                                                                 |
+| Full and staged formatting                 | `run-prettier.mjs` + `prettier-paths.mjs` + `.prettierignore` (`PRETTIER_NEVER_FORMAT_RE` is the staged-path subset; `.prettierignore` also covers build outputs)                                    |
+| Plan creation and completion               | `new-plan.mjs` + `finish-plans.mjs`; [plan lifecycle](../Docs/Plans/README.md#task-handoff)                                                                                                          |
+| Selection byte budgets                     | `lib/agent/selection-budgets.mjs` (`INLINE_ARGS_BYTES` for check paths.json spill vs `RELATED_SELECTION_BYTES` for verify unit-all fallback; same value, different meanings)                         |
+| Test concurrency                           | `lib/verification/test-concurrency.mjs` (`VITEST_MAX_WORKERS` for related, ship, and full unit runs via `vitest.config.ts`; local smoke uses `vitest.local.config.ts`)                               |
+| Overlapping local test runs                | `lib/verification/local-test-lane.mjs` (used by `run-compact.mjs` and `run-ship-unit.mjs`)                                                                                                           |
 
 `lib/repository-paths.mjs` normalizes selections for checks and discovery. Relative
 and absolute paths inside the checkout are equivalent. Directory selections use
@@ -30,7 +30,7 @@ because it must exec the real binary past its own shim. Release writes keep
 logged inherit flows via `command-invocation.mjs`; release reads use `runGit`.
 Route glob matching precompiles `ROUTES` + shared build patterns once instead
 of per file. The `documentation` route covers `Docs/**` so check classification
-(`isDocumentationPath`) and verify routing agree on docs images and archives.
+(`isDocumentationPath`) and verify routing agree on documentation images.
 
 ## Local verification profiles
 
@@ -73,10 +73,10 @@ per-file fact walk (`links`, backticked candidates, script names) plus one
 Markdown helper (`lib/agent/markdown-sections.mjs`) and one exemption owner per scope
 (`isHistoryOnlyDoc` / `isHistoricalDoc` / `isReachabilityExempt` in
 `check-documentation-contract.mjs`); route context budgets live in
-`lib/agent/route-context-budgets.mjs`. Current-file checks cover E2E paths as well as other source references. Instruction
-history is advisory and does not require an entry for each skill or knowledge edit.
-Repository-relative matching uses forward slashes on every platform, including
-history and archived-plan exemptions.
+`lib/agent/route-context-budgets.mjs`. Current-file checks cover E2E paths as well as other source references. Keep current workflow rules and unresolved issues rather than instruction histories.
+Repository-relative matching uses forward slashes on every platform; only release
+notes retain historical-file exemptions, while active plans are exempt from owner
+path contracts.
 
 ## Build and test selection
 

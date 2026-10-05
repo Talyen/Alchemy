@@ -55,4 +55,4 @@ async function runCompactCommand(command, args, rootDir) {
   return status;
 }
 
-defineScript(import.meta.url, () => runCompact(process.argv.slice(2)));
+defineScript(import.meta.url, () => runCompact(process.argv.slice(2)), { artifacts: true });

@@ -15,7 +15,7 @@ import {
   topSlowestTests,
 } from "./lib/verification/playwright-summary.mjs";
 
-import { isMainModule } from "./lib/is-main-module.mjs";
+import { defineScript } from "./lib/script-run.mjs";
 
 function main(argv = process.argv.slice(2)) {
   const runId = ensureRunId("e2e-audit");
@@ -233,11 +233,4 @@ function main(argv = process.argv.slice(2)) {
   return failed ? result.status || 1 : 0;
 }
 
-if (isMainModule(import.meta.url)) {
-  try {
-    process.exitCode = main();
-  } catch (error) {
-    console.error(error instanceof Error ? error.message : error);
-    process.exitCode = 1;
-  }
-}
+defineScript(import.meta.url, () => main(), { artifacts: true });

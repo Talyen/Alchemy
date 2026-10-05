@@ -6,7 +6,7 @@ import { writeCurrentRun } from "./lib/verification/current-run.mjs";
 import { formatPlaywrightSummaryMarkdown, summarizePlaywrightReport } from "./lib/verification/playwright-summary.mjs";
 import { formatVitestSummaryMarkdown, summarizeVitestReport } from "./lib/verification/vitest-summary.mjs";
 import { missingReportMarkdown, readJsonReport } from "./lib/verification/report-summary.mjs";
-import { isMainModule } from "./lib/is-main-module.mjs";
+import { defineScript } from "./lib/script-run.mjs";
 
 const DEFAULT_VITEST_REPORT = "reports/vitest-timings.json";
 const DEFAULT_PLAYWRIGHT_REPORT = "reports/playwright-results.json";
@@ -186,4 +186,4 @@ function main() {
   if (playwright) publishPlaywright(playwrightPath);
 }
 
-if (isMainModule(import.meta.url)) main();
+defineScript(import.meta.url, () => main(), { artifacts: true });

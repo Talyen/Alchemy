@@ -27,4 +27,5 @@ jobs:
         with:
           name: headless-playthroughs
           path: reports/playthrough/
+          retention-days: 1
           if-no-files-found: ignore

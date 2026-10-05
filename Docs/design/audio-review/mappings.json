@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "direction": "Tactile fantasy",
-  "libraryRootDefault": "/Users/ryanmcintire/Documents/Asset Library/Sounds",
-  "reviewPolicy": "Approved choices are archived in approved-export.json and approved-choices.json. Current references reflect installed registrations.",
+  "libraryRootDefault": "/Users/ryanmcintire/Documents/Documents - Ryan’s MacBook Air/Asset Library/Sounds",
+  "reviewPolicy": "Current references reflect installed registrations. Approved cue mappings remain working inputs in approved-choices.json; discard completed exports and review histories.",
   "families": [
     {
       "id": "paper",
@@ -2922,7 +2922,12 @@
       "golden-retriever-companion": "coins",
       "shield-scarab-companion": "parry",
       "library-owl-companion": "battle-focus-companion-library-owl",
-      "fox-companion": "beast"
+      "fox-companion": "beast",
+      "thorn-whip": "nature",
+      "porcupine-quill": "wood",
+      "bellows-blast": "fire",
+      "quench": "ice",
+      "feint": "transition"
     },
     "enemies": {
       "forge-golem": "forge",

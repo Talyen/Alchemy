@@ -45,7 +45,7 @@ jobs:
             reports/compact/
             reports/current-run.*
             reports/runs/
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: ignore
 
   e2e-web:
@@ -99,7 +99,7 @@ jobs:
         with:
           name: playwright-report-nightly-web-${{ matrix.shard }}-results
           path: reports/playwright-results.json
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: ignore
 
       - name: Upload Playwright report
@@ -113,7 +113,7 @@ jobs:
             reports/playwright-results.json
             reports/current-run.*
             reports/runs/
-          retention-days: 7
+          retention-days: 1
 
   performance-discovery:
     name: Seeded desktop performance discovery (${{ matrix.slot }})
@@ -178,7 +178,7 @@ jobs:
           path: |
             reports/performance/
             reports/current-run.*
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: ignore
 
   ship-gate-full:
@@ -228,7 +228,7 @@ jobs:
         with:
           name: playwright-report-nightly-electron-results
           path: reports/playwright-electron-results.json
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: ignore
 
       - name: Upload Electron Playwright report
@@ -242,7 +242,7 @@ jobs:
             reports/playwright-electron-results.json
             reports/current-run.*
             reports/runs/
-          retention-days: 7
+          retention-days: 1
 
       - name: Retain build failure diagnostics
         if: failure()
@@ -253,7 +253,7 @@ jobs:
             reports/compact/
             reports/current-run.*
             reports/runs/
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: ignore
 
   deadcode-entry-exports:
@@ -296,7 +296,7 @@ jobs:
         with:
           name: coverage-report
           path: coverage/
-          retention-days: 7
+          retention-days: 1
 
   mutation:
     name: Battle mutation
@@ -321,5 +321,5 @@ jobs:
         with:
           name: mutation-report
           path: reports/mutation/
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: ignore

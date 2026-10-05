@@ -1,4 +1,4 @@
-/** Shared execution-plan checks under Docs/Plans/ (used by check-docs and archive-plans CLIs). */
+/** Shared execution-plan checks under Docs/Plans/ (used by check-docs and finish-plans CLIs). */
 import fs from "node:fs";
 import path from "node:path";
 import { isoDate, PLANS_DIR, PLAN_STALE_DAYS, PLAN_STATUSES, REQUIRED_PLAN_KEYS } from "./plan-contract.mjs";
@@ -64,12 +64,12 @@ function checkPlans({ final = false, today = new Date() } = {}) {
     const { metadata, updated } = result;
     if (metadata.status === "complete" || metadata.status === "cancelled") {
       failures.push(
-        `${relative}: ${metadata.status} plans belong in Docs/Plans/Archived — run \`npm run archive:plans\``,
+        `${relative}: ${metadata.status} plans must be removed — run \`npm run finish:plans -- <filename>\``,
       );
       continue;
     }
     if (updated.getTime() <= today.getTime() - PLAN_STALE_DAYS * 86_400_000) {
-      warnings.push(`${relative}: not updated since ${metadata.updated}; finish and archive it or refresh \`updated\``);
+      warnings.push(`${relative}: not updated since ${metadata.updated}; finish and remove it or refresh \`updated\``);
     }
     if (final) failures.push(`${relative}: plan remains active at final handoff; complete or cancel it first`);
   }

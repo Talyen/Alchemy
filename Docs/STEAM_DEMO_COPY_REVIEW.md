@@ -72,51 +72,6 @@ isolated temporary Electron profile: `menu.png`, `modes.png`, `heroes.png`,
 boss test run through the normal combat, reward, and settlement flow; reward
 quantities are illustrative rather than a representative balance sample.
 
-## Archived approved feature showcase
-
-The earlier equal six-panel image used these approved labels: **More Heroes**, **More
-Campaign Acts**, **The Labyrinth**, **Wildwood Draft**, **Cards & Talents**, and
-**Homestead & Armory**. The last two communicate ongoing depth, not exclusive
-full-game access. Later-act bosses are shown as approved.
-
-That composition has been superseded by the [selected user-supplied promo image](#selected-user-supplied-promo-image). The marketing image occupies the largest available screen area beneath the compact
-heading. Wishlist on Steam is the primary gold CTA; Main Menu is the secondary
-outline button to its right. The earlier composition had no additional headline
-or descriptive copy baked into it, and its accessible text repeated those six labels.
-
-Editable composition, original source inventory, and regeneration command:
-[showcase source](./design/steam-demo-showcase/README.md).
-
-## Archived showcase revisions
-
-Two earlier alternatives explored a fractured hero ribbon and a fractured hero
-mosaic. Proposed panels replaced Cards & Talents with Boons, Trinkets, Uniques,
-Crafting, and gave Homestead a separate panel. All seven catalog bosses are
-shown under the provisional truthful label Boss Battles: current Campaign boss
-selection uses a shared pool, with no Act 1-only exclusion.
-
-Proposed stat labels were **100+ Cards**, **200+ Talents**, **25+ Uniques**, and
-**20+ Trinkets**. These refer to overall catalog content, not exclusive demo
-unlocks. The retained catalog snapshots counted 105, 200, 29, and 24 respectively; recheck live catalogs before reusing the claims.
-
-These studies are archived alternatives; the selected user-supplied image is the
-current game artwork. **Wishlist on Steam** remains the CTA on the menu and marketing screen.
-
-[Draft layouts and source facts](./design/steam-demo-showcase/revisions/README.md).
-
-### Round 3 archived layouts
-
-[Expanded mosaic and boss gallery](./design/steam-demo-showcase/revisions/round-3/README.md)
-are archived alternatives. They include all eight heroes and integrated
-number-plus statistics. Library was the approved temporary stand-in for the
-missing Moonlit Observatory artwork in this round.
-
-### Round 4 archived layouts
-
-[Quiet gallery and editorial collage](./design/steam-demo-showcase/revisions/round-4/README.md)
-omit statistics and keep only feature captions. The original artwork, eight heroes,
-and seven bosses are preserved. The selected user-supplied promo supersedes these studies.
-
 ## Selected user-supplied promo image
 
 The user selected `Raw Assets/Marketing/Unlock Full Game Demo Promo.jpg` as the
@@ -127,5 +82,4 @@ size fitting between the heading and action row; it never crops or stretches.
 
 Accessible text repeats the supplied image's labels: More Bosses, Wildwood Draft,
 The Labyrinth, More Heroes, 200+ Talents, Trinkets & Uniques, Build a Homestead.
-Earlier generated/composited designs remain archived proposals; they are no
-longer the shipping image. Wishlist on Steam and Main Menu retain their actions.
+Wishlist on Steam and Main Menu retain their actions.

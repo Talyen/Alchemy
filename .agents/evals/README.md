@@ -62,18 +62,13 @@ Before splitting a large catalog, correlate repeated-read events with the existi
 - [Button interaction](./tasks/ui-button-default/README.md)
 - [Dirty checkout](./tasks/dirty-checkout/README.md)
 
-Keep older baselines immutable. When game evolution requires a new baseline, change the pin and task version together and start a new comparison cohort. `tasks.json` pins the coding-task catalog (v1); investigation cohorts pin their own bases in their result docs. Evaluation records under `reports/` follow normal transient-artifact retention; preserve comparison summaries with the instruction-change evidence before cleanup when they need to survive it. What survives pruning is the result-doc counters, decisions, and setup exclusions; raw streams, prompts, manifests, and checkout locations under `reports/` are transient. Historical instruction and friction evidence lives in [history](../history/README.md); it is not a default preread.
-
-## Recorded results
-
-[September 11 context-efficiency trials](./results/context-efficiency-2026-09-11.md) record category-level measurements, setup exclusions, and the rejected test-navigation prototype.
-
-[September 12 discovery-context trials](./results/context-discovery-2026-09-12.md) record battle/run-state adoption and the excluded concurrent-edit setup.
-
-[September 12 instruction-guidance trials](./results/instruction-guidance-2026-09-12.md) record the proportional-discovery and skill-simplification comparison, including mixed token results and the excluded sandbox setup.
-
-[October 2 optional-retrieval trials](./results/optional-retrieval-2026-10-02.md) record smaller discovery/diff responses, increased whole-task token usage, the removed startup hint, and the excluded global-settings drift.
-
-[October 2 retrieval follow-up trials](./results/retrieval-followup-2026-10-02.md) isolate status, checkpoints, diagnostics, routing and root instructions; record mixed costs, unused capabilities and the excluded incomplete checkpoint evidence.
-
-[October 2 repository-efficiency trials](./results/repository-efficiency-2026-10-02.md) record independent helper/classification comparisons, mixed whole-investigation costs, optional-tool uptake and preserved enforcement.
+Keep reusable baselines immutable. When game evolution requires a new baseline,
+change the pin and task version together and start a new comparison cohort.
+`tasks.json` pins the coding-task catalog (v1); investigation cohorts record
+their base in their transient evaluation manifest. Evaluation records under
+`reports/` expire after 24 hours of inactivity. Keep
+current evaluation scenarios and acceptance criteria; move reusable conclusions
+into their owner, then remove completed comparisons and instruction histories.
+Smaller excerpts and passing correctness checks alone do not establish whole-task
+efficiency. Compare complete tasks and check actual feature adoption before
+claiming a benefit; unavailable host telemetry remains unobserved.

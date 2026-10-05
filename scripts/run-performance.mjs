@@ -16,7 +16,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { writeCurrentRun } from "./lib/verification/current-run.mjs";
 import { PERF_PREVIEW_PORT } from "./lib/dev-port.mjs";
-import { isMainModule } from "./lib/is-main-module.mjs";
+import { defineScript } from "./lib/script-run.mjs";
 import { checkEnvironmentCompatibility, compareReports, renderComparisonTable } from "../performance/compare-model.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -359,14 +359,15 @@ async function main() {
     summary: result.status === 0 ? "Performance profiling completed." : "Performance profiling failed.",
   });
 
-  process.exit(result.status ?? 1);
+  return result.status ?? 1;
 }
 
-if (isMainModule(import.meta.url)) {
-  try {
-    await main();
-  } catch (error) {
-    console.error(error.message);
-    process.exitCode = 2;
-  }
-}
+defineScript(
+  import.meta.url,
+  () =>
+    main().catch((error) => {
+      console.error(error.message);
+      return 2;
+    }),
+  { artifacts: true },
+);

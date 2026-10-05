@@ -13,6 +13,8 @@ import {
   resolveSelectedPaths,
   resolvePushPaths,
 } from "./lib/verification/changed-paths.mjs";
+import { registerArtifactSession } from "./lib/artifact-guard.mjs";
+import { pruneExpiredArtifacts } from "./prune-transient-artifacts.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { runGit } from "./lib/repository-paths.mjs";
 import { runCommandAsync } from "./lib/run-command.mjs";
@@ -326,7 +328,8 @@ if (isMainModule(import.meta.url)) {
       process.exitCode = 2;
     }
   });
-  runCheck()
+  registerArtifactSession(ROOT, () => pruneExpiredArtifacts({ rootDir: ROOT }))
+    .then(() => runCheck())
     .then(async (code) => {
       await closeTaskBrowsers();
       cleanupFinished = true;
