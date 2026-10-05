@@ -1,4 +1,4 @@
-import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import type { RunTransaction } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   addMaterialsToStockpile,
   addGold,
@@ -21,7 +21,6 @@ import { applyEndOfRunHomesteadBonuses } from "@/lib/homestead/material-rewards"
 export const AWARD_MATERIALS_CALL_SITES = [
   "src/features/alchemy/run-loop/navigation/mystery-flow.ts",
   "src/features/alchemy/run-loop/run/reward-commands.ts",
-  "src/features/alchemy/run-loop/run/victory-commands.ts",
   "src/features/alchemy/shared/stores/gear-session-command.ts",
 ] as const;
 
@@ -31,7 +30,7 @@ export const AWARD_MATERIALS_CALL_SITES = [
  * `session.runEndCurrencies`, and clears both tallies. Returns ONLY the
  * homestead bonus portion; the run total lives in `session.runEndMaterials`.
  */
-export function awardRunEndMaterials(draft: GameplayDraft): MaterialInventory {
+export function awardRunEndMaterials(draft: RunTransaction): MaterialInventory {
   const runState = draft.run.activeRun;
   const runProfile = draft.runProfile;
   const rooms = Math.max(0, runState.roomsEncountered);

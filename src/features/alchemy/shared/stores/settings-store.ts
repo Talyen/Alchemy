@@ -1,140 +1,23 @@
-import { create } from "zustand";
+import type { AspectRatioOption } from "@/features/alchemy/shared/types";
+import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
-import type { AspectRatioOption, DisplayMode } from "@/features/alchemy/shared/types";
+import { defaultGameSession } from "./default-game-session";
+import { sessionRuntime } from "./session-runtime";
 import {
-  DEFAULT_BACKGROUND_GLOW_PCT,
-  DEFAULT_BACKGROUND_PARTICLES_PCT,
-  DEFAULT_BRIGHTNESS_PCT,
-  DEFAULT_MASTER_VOLUME_PCT,
-  DEFAULT_MUSIC_VOLUME_PCT,
-  DEFAULT_SFX_VOLUME_PCT,
-} from "@/lib/game-constants";
-import type { StandalonePersistenceCodec } from "./persistence-codec";
-import {
-  clampBrightnessPct,
-  clampSpecialEffectsPct,
-  clampVolumePct,
-  resolveAutoplayEnabled,
-} from "@/lib/settings-values";
-
-export interface SettingsSaveFields {
-  selectedAspectRatio: AspectRatioOption;
-  displayMode: DisplayMode;
-  brightness: number;
-  backgroundParticlesIntensity: number;
-  backgroundGlowIntensity: number;
-  musicVolume: number;
-  sfxVolume: number;
-  masterVolume: number;
-  muteInBackground: boolean;
-  autoEndTurn: boolean;
-  rememberAutoplayPreference: boolean;
-  autoplayEnabled: boolean;
-}
-
-export interface SettingsActions {
-  setSelectedAspectRatio: (value: AspectRatioOption) => void;
-  setDisplayMode: (value: DisplayMode) => void;
-  setBrightness: (value: number) => void;
-  setBackgroundParticlesIntensity: (value: number) => void;
-  setBackgroundGlowIntensity: (value: number) => void;
-  setMusicVolume: (value: number) => void;
-  setSfxVolume: (value: number) => void;
-  setMasterVolume: (value: number) => void;
-  setMuteInBackground: (value: boolean) => void;
-  setAutoEndTurn: (value: boolean) => void;
-  setRememberAutoplayPreference: (value: boolean) => void;
-  setAutoplayEnabled: (value: boolean) => void;
-  resetToDefaults: () => void;
-}
-
-export type SettingsStore = SettingsSaveFields & SettingsActions;
-
-export function createDefaultSettingsSaveFields(): SettingsSaveFields {
-  return {
-    selectedAspectRatio: "auto",
-    displayMode: "borderless-fullscreen",
-    brightness: DEFAULT_BRIGHTNESS_PCT,
-    backgroundParticlesIntensity: DEFAULT_BACKGROUND_PARTICLES_PCT,
-    backgroundGlowIntensity: DEFAULT_BACKGROUND_GLOW_PCT,
-    musicVolume: DEFAULT_MUSIC_VOLUME_PCT,
-    sfxVolume: DEFAULT_SFX_VOLUME_PCT,
-    masterVolume: DEFAULT_MASTER_VOLUME_PCT,
-    muteInBackground: true,
-    autoEndTurn: true,
-    rememberAutoplayPreference: false,
-    autoplayEnabled: false,
-  };
-}
-
-export function preferredAutoplayEnabled(fields: {
-  rememberAutoplayPreference: boolean;
-  autoplayEnabled: boolean;
-}): boolean {
-  return resolveAutoplayEnabled(fields);
-}
-
-// Live writes clamp through the shared settings-values helpers (the same
-// ranges the save schema enforces on load), so in-memory state can never hold
-// an out-of-range value that load would silently repair.
-export const useSettingsStore = create<SettingsStore>()((set) => ({
-  ...createDefaultSettingsSaveFields(),
-
-  setSelectedAspectRatio: (selectedAspectRatio) => set({ selectedAspectRatio }),
-  setDisplayMode: (displayMode) => set({ displayMode }),
-  setBrightness: (brightness) => set({ brightness: clampBrightnessPct(brightness) }),
-  setBackgroundParticlesIntensity: (backgroundParticlesIntensity) =>
-    set({ backgroundParticlesIntensity: clampSpecialEffectsPct(backgroundParticlesIntensity) }),
-  setBackgroundGlowIntensity: (backgroundGlowIntensity) =>
-    set({ backgroundGlowIntensity: clampSpecialEffectsPct(backgroundGlowIntensity) }),
-  setMusicVolume: (musicVolume) => set({ musicVolume: clampVolumePct(musicVolume) }),
-  setSfxVolume: (sfxVolume) => set({ sfxVolume: clampVolumePct(sfxVolume) }),
-  setMasterVolume: (masterVolume) => set({ masterVolume: clampVolumePct(masterVolume) }),
-  setMuteInBackground: (muteInBackground) => set({ muteInBackground }),
-  setAutoEndTurn: (autoEndTurn) => set({ autoEndTurn }),
-  setRememberAutoplayPreference: (rememberAutoplayPreference) =>
-    set((state) => ({
-      rememberAutoplayPreference,
-      // Intentional: turning remember off clears the stored autoplay choice
-      // (pinned by profile-settings-stores test), it does not pause it.
-      autoplayEnabled: rememberAutoplayPreference ? state.autoplayEnabled : false,
-    })),
-  setAutoplayEnabled: (autoplayEnabled) => set({ autoplayEnabled }),
-  resetToDefaults: () => set({ ...createDefaultSettingsSaveFields() }),
-}));
-
-// Defaults own the persisted field list; methods and unrelated save fields never encode.
-const SETTINGS_SAVE_KEYS = Object.keys(createDefaultSettingsSaveFields()) as Array<keyof SettingsSaveFields>;
-
-function selectSettingsSaveFields(state: SettingsSaveFields): SettingsSaveFields {
-  const selected = createDefaultSettingsSaveFields();
-  for (const key of SETTINGS_SAVE_KEYS) Object.assign(selected, { [key]: state[key] });
-  return selected;
-}
-
-export const settingsPersistenceCodec: StandalonePersistenceCodec<SettingsSaveFields> = {
-  createDefault: createDefaultSettingsSaveFields,
-  // Pure selection: the live invariant is owned by the setters above (which
-  // clamp on every write), load repair by SaveDataSchema, and direct-hydrate
-  // safety by hydrate below. Encode adds no further derivation.
-  encode: () => selectSettingsSaveFields(useSettingsStore.getState()),
-  hydrate: (fields) => {
-    const selected = selectSettingsSaveFields(fields);
-    useSettingsStore.setState({
-      ...selected,
-      brightness: clampBrightnessPct(selected.brightness),
-      backgroundParticlesIntensity: clampSpecialEffectsPct(selected.backgroundParticlesIntensity),
-      backgroundGlowIntensity: clampSpecialEffectsPct(selected.backgroundGlowIntensity),
-      musicVolume: clampVolumePct(selected.musicVolume),
-      sfxVolume: clampVolumePct(selected.sfxVolume),
-      masterVolume: clampVolumePct(selected.masterVolume),
-      // Load repair: a stored "on" with remember off hydrates to off, matching
-      // SaveDataSchema. Turning remember off at runtime clears the stored
-      // choice instead (see setRememberAutoplayPreference above).
-      autoplayEnabled: resolveAutoplayEnabled(selected),
-    });
-  },
-};
+  createSettingsPersistenceCodec,
+  selectSettingsSaveFields,
+  type SettingsActions,
+  type SettingsSaveFields,
+  type SettingsStore,
+} from "./settings-state";
+export { createDefaultSettingsSaveFields, preferredAutoplayEnabled } from "./settings-state";
+export type { SettingsActions, SettingsSaveFields, SettingsStore } from "./settings-state";
+const applicationStore = sessionRuntime(defaultGameSession).settings;
+export const useSettingsStore = Object.assign(
+  <T>(selector: (state: SettingsStore) => T): T => useStore(applicationStore, selector),
+  applicationStore,
+);
+export const settingsPersistenceCodec = createSettingsPersistenceCodec(applicationStore);
 
 function selectSettingsActions(state: SettingsStore): SettingsActions {
   return {

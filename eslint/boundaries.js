@@ -76,7 +76,42 @@ export const BOUNDARY_CONFIGS = [
     ["src/features/alchemy/shared/stores/**", "src/lib/game-data/assets.generated.ts"],
   ),
   scope(["src/features/alchemy/shared/stores/**/*.{ts,tsx}"], [BARREL_PATTERNS], GAMEPLAY_NO_UNSAFE_RANDOM_PICK),
+  // Bootstrap hydrates all codecs atomically. Only raw dispatch is exempt;
+  // the aggregate, write internals, and other source restrictions still apply.
+  scope(
+    ["src/features/alchemy/shared/storage/persistence.ts"],
+    SOURCE_IMPORT_PATTERNS.map((patterns) =>
+      patterns === DOMAIN_STORE_PATTERNS ? DOMAIN_STORE_PATTERNS.slice(0, 1) : patterns,
+    ),
+  ),
+  // Save transport adapters can reach their owning runtime, but not raw drafts.
+  scope(
+    ["src/features/alchemy/shared/storage/io.ts"],
+    SOURCE_IMPORT_PATTERNS.map((patterns) =>
+      patterns === DOMAIN_STORE_PATTERNS
+        ? DOMAIN_STORE_PATTERNS.map((pattern) => ({
+            ...pattern,
+            group: pattern.group.filter((group) => group !== "**/session-runtime"),
+          }))
+        : patterns,
+    ),
+  ),
   scope(["src/lib/**/*.{ts,tsx}"], libPatterns, LIB_NO_FRAMEWORK_PATHS),
+  scope(["src/lib/balance/**/*.ts"], libPatterns, [
+    ...LIB_NO_FRAMEWORK_PATHS,
+    {
+      name: "@/lib/battle",
+      importNames: [
+        "createBattleStartState",
+        "createBattleState",
+        "drawOpeningHand",
+        "endPlayerTurn",
+        "processCompanionTurnStart",
+      ],
+      message:
+        "Balance policies select actions; use resolveBattleStart and resolveBattleTurn for battle lifecycle rules.",
+    },
+  ]),
   scope(["src/lib/game-data/**/*.{ts,tsx}"], [...catalogPatterns, NO_DIRECT_ASSET_IMPORT], LIB_NO_FRAMEWORK_PATHS),
   scope(
     ["src/lib/battle/**/*.{ts,tsx}"],

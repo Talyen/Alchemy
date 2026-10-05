@@ -1,6 +1,8 @@
 import {
   BattleCardEffectSchema,
-  effectDescriptionLine,
+  createEffectDescription,
+  getCardDescription,
+  withCardDescription,
   visitBattleCardEffects,
   type BattleCard,
   type BattleCardEffect,
@@ -84,8 +86,6 @@ function plainTarget(card: BattleCard, targets: CorruptionTarget[]): CorruptionT
 function conversionMutations(card: BattleCard, target: CorruptionTarget | undefined): BattleCard[] {
   const effect = card.effects[0];
   if (!target || effect?.kind !== "damage") return [];
-  const oldLine = effectDescriptionLine(effect);
-  if (card.descriptionLines[target.lineIndex] !== oldLine) return [];
   const types = Object.keys(CORRUPTION_DAMAGE_BASELINES) as DamageType[];
   return types
     .filter((type) => type !== effect.damageType)
@@ -97,20 +97,22 @@ function conversionMutations(card: BattleCard, target: CorruptionTarget | undefi
         ),
       );
       const converted = { ...effect, damageType, amount };
-      const descriptionLines = [...card.descriptionLines];
-      descriptionLines[target.lineIndex] = effectDescriptionLine(converted);
-      return {
-        ...card,
-        corrupted: true,
-        descriptionLines,
-        effects: [converted],
-        corruptedValuePositions: [
-          ...(card.corruptedValuePositions ?? []).filter(
-            (position) => position.lineIndex !== target.lineIndex || position.matchIndex !== target.matchIndex,
-          ),
-          { lineIndex: target.lineIndex, matchIndex: target.matchIndex },
-        ],
+      const description = [...getCardDescription(card)];
+      description[target.lineIndex] = createEffectDescription([converted])[0]!;
+      description[target.lineIndex] = {
+        ...description[target.lineIndex],
+        parts: description[target.lineIndex].parts.map((part) =>
+          typeof part === "string" ? part : { ...part, corrupted: true },
+        ),
       };
+      return withCardDescription(
+        {
+          ...card,
+          corrupted: true,
+          effects: [converted],
+        },
+        description,
+      );
     });
 }
 
@@ -194,7 +196,7 @@ export function getCorruptionMutationGroups(
       add("mana", [addCorruptionEffect(card, { kind: "restore-mana", amount })]);
     }
     const effect = card.effects[0];
-    if (effect && effect.kind === "damage" && !effect.lifesteal && !card.descriptionLines.includes("Leech")) {
+    if (effect && effect.kind === "damage" && !effect.lifesteal) {
       add("leech", [addCorruptionLine({ ...card, effects: [{ ...effect, lifesteal: true }] }, "Leech")]);
     }
     add("consume", [
@@ -202,6 +204,7 @@ export function getCorruptionMutationGroups(
         ...addCorruptionLine(
           applyNumericCorruption(card, target, target.value * (CORRUPTION_CONSUME_MULTIPLIER - 1)),
           "Consume",
+          "consume",
         ),
         consume: true,
       },

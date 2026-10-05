@@ -1,11 +1,13 @@
+import { awardMaterialsDuringRun } from "./run-homestead";
+import { emptyInventory } from "@/lib/homestead/inventory";
 import { addRunGoldEarned } from "./run-recap";
 import { battleSnapshot, type BattleSnapshot, type BattleState } from "@/lib/battle";
 import { current, isDraft } from "immer";
-import type { GameplayDraft } from "../run-session-command";
+import type { GameplayDraft } from "../gameplay-command";
 import { createInitialBattleFields } from "../run-domain-types";
 import { createDraftRunRandomSource } from "./run-progress";
 import { syncBattleGoldFromPurse } from "./run-gold";
-import { prepareRunNavigation } from "./run-navigation";
+import { setRunProgressActivity } from "./run-session";
 
 // ── Battle ───────────────────────────────────────────────────────────────────
 
@@ -59,7 +61,7 @@ export function initializeActiveBattle(draft: GameplayDraft, battleState: Battle
   battle.battleState = hydrated;
   battle.battleStartState = hydrated;
   battle.hasActiveBattle = true;
-  prepareRunNavigation(draft, "battle");
+  setRunProgressActivity(draft, "battle");
   syncBattleGoldFromPurse(draft);
 }
 
@@ -72,4 +74,10 @@ export function commitResolvedBattle(draft: GameplayDraft, before: BattleSnapsho
     addRunGoldEarned(draft, Math.max(0, goldDelta));
     draft.runProfile.gold = gold;
   }
+}
+
+export function settlePendingBattleMaterials(draft: GameplayDraft): void {
+  const materials = draft.battle.battleState.pendingMaterials;
+  if (Object.values(materials).some((amount) => amount > 0)) awardMaterialsDuringRun(draft, materials);
+  draft.battle.battleState.pendingMaterials = emptyInventory();
 }

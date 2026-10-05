@@ -21,7 +21,7 @@ import { cardById, cardLibrary, getStartingDeck } from "@/lib/game-data";
 import { findMysteryEvent } from "@/lib/mystery";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { ANCIENT_ALTAR_MYSTERY_VISIT } from "./active-run-data-fixture";
-import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, createGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import {
   beginRewardClaim as mutateBeginRewardClaim,
   setCompanionRewardCards as mutateCompanionRewardCards,
@@ -33,15 +33,33 @@ import {
 import { setSyncedBattleState as mutateSyncedBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
 import { resetProgress as mutateResetProgress } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetRunDomainStore, setRunProgress } from "../../../../helpers/run-domain-store-test";
-const resetProgress = createRunSessionCommand(mutateResetProgress);
-const setSyncedBattleState = createRunSessionCommand(mutateSyncedBattleState);
-const setHasActiveRun = createRunSessionCommand(mutateHasActiveRun);
-const setHasActiveBattle = createRunSessionCommand(mutateHasActiveBattle);
-const setRewardState = createRunSessionCommand(mutateRewardState);
-const beginRewardClaim = createRunSessionCommand(mutateBeginRewardClaim);
-const setCompanionRewardCards = createRunSessionCommand(mutateCompanionRewardCards);
-const initializeActiveBattle = createRunSessionCommand(restoreActiveBattle);
-const setScreen = createRunSessionCommand(mutateSetScreen);
+const resetProgress = createGameplayCommand((...args: Parameters<typeof mutateResetProgress>) =>
+  acceptCommand(mutateResetProgress(...args)),
+);
+const setSyncedBattleState = createGameplayCommand((...args: Parameters<typeof mutateSyncedBattleState>) =>
+  acceptCommand(mutateSyncedBattleState(...args)),
+);
+const setHasActiveRun = createGameplayCommand((...args: Parameters<typeof mutateHasActiveRun>) =>
+  acceptCommand(mutateHasActiveRun(...args)),
+);
+const setHasActiveBattle = createGameplayCommand((...args: Parameters<typeof mutateHasActiveBattle>) =>
+  acceptCommand(mutateHasActiveBattle(...args)),
+);
+const setRewardState = createGameplayCommand((...args: Parameters<typeof mutateRewardState>) =>
+  acceptCommand(mutateRewardState(...args)),
+);
+const beginRewardClaim = createGameplayCommand((...args: Parameters<typeof mutateBeginRewardClaim>) =>
+  acceptCommand(mutateBeginRewardClaim(...args)),
+);
+const setCompanionRewardCards = createGameplayCommand((...args: Parameters<typeof mutateCompanionRewardCards>) =>
+  acceptCommand(mutateCompanionRewardCards(...args)),
+);
+const initializeActiveBattle = createGameplayCommand((...args: Parameters<typeof restoreActiveBattle>) =>
+  acceptCommand(restoreActiveBattle(...args)),
+);
+const setScreen = createGameplayCommand((...args: Parameters<typeof mutateSetScreen>) =>
+  acceptCommand(mutateSetScreen(...args)),
+);
 
 beforeEach(() => {
   resetRunDomainStore();

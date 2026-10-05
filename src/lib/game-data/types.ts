@@ -102,6 +102,7 @@ export interface BattleCard {
   uid?: number;
   title: string;
   descriptionLines: string[];
+  description?: import("./card-description-model").CardDescription;
   art: string;
   cost: number;
   consume?: boolean;

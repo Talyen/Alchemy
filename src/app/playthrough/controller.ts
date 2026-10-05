@@ -1,45 +1,55 @@
-import { createRunFlowEngine } from "@/features/alchemy/shell/run-flow-engine";
-import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
-import { readRunAvailableDestinations } from "@/features/alchemy/shell/run-destination-wiring";
-import { createScreenNavigation } from "@/features/alchemy/shell/screen-navigation";
-import { createBattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
-import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
 import { createLabyrinthController } from "@/features/alchemy/run-loop/run/labyrinth-controller";
-import { createLabyrinthNodeRouting } from "@/features/alchemy/shell/labyrinth-node-routing";
-import { readActiveRunScreen, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
+import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
+import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
+import { createBattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import {
-  prepareRunScreen,
-  showRunScreen,
   prepareLabyrinthRoomTraits,
   resetCorruptionVisit,
+  showRunScreen,
 } from "@/features/alchemy/shared/stores/navigation-commands";
+import { readActiveRunScreen, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
+import { createLabyrinthNodeRouting } from "@/features/alchemy/shell/labyrinth-node-routing";
+import { readRunAvailableDestinations } from "@/features/alchemy/shell/run-destination-wiring";
+import { createRunFlowEngine } from "@/features/alchemy/shell/run-flow-engine";
+import { createScreenNavigation } from "@/features/alchemy/shell/screen-navigation";
 import { computeTalentEffects } from "@/lib/game-data";
 
-export function createPlaythroughController() {
-  const navigation = createScreenNavigation({
-    readScreen: readActiveRunScreen,
-    prepareScreen: prepareRunScreen,
-    showScreen: showRunScreen,
-  });
+export function createPlaythroughController(gameSession: GameSession = defaultGameSession) {
+  const navigation = createScreenNavigation(
+    {
+      readScreen: () => readActiveRunScreen(gameSession),
+      showScreen: (arg0: Parameters<typeof showRunScreen>[0]) => showRunScreen(arg0, gameSession),
+    },
+    gameSession,
+  );
   const transition: typeof navigation.transition = (screen, options) =>
     navigation.transition(screen, { ...options, immediate: true });
   const navigateTo: typeof navigation.navigateTo = (screen, prepare) => transition(screen, prepare ? { prepare } : {});
   const resumeTo: typeof navigation.resumeTo = (screen, prepare) => navigation.resumeTo(screen, prepare, true);
-  const outcomes = createRunOutcomes({
-    actions: { navigateTo, transition, clearCardHover: () => {} },
-    getAvailableDestinations: readRunAvailableDestinations,
-  });
+  const outcomes = createRunOutcomes(
+    {
+      actions: { navigateTo, transition, clearCardHover: () => {} },
+      getAvailableDestinations: (arg0?: Parameters<typeof readRunAvailableDestinations>[0]) =>
+        readRunAvailableDestinations(arg0, gameSession),
+    },
+    gameSession,
+  );
   const battle = createBattleStartCommands(({ outcome }) => {
     if (outcome === "victory") outcomes.victory.handleBattleVictory();
     if (outcome === "defeat") outcomes.defeat.handleBattleDefeat();
-  });
+  }, gameSession);
   // Pricing manifests are refreshed for every call, including after between-run spending.
   const shop = () =>
-    createShopActions({
-      talentEffects: computeTalentEffects(readRunProfile().unlockedTalents),
-      homesteadEffects: readRunProfile().effects,
-    });
-  const labyrinth = createLabyrinthController();
+    createShopActions(
+      {
+        talentEffects: computeTalentEffects(readRunProfile(gameSession).unlockedTalents),
+        homesteadEffects: readRunProfile(gameSession).effects,
+      },
+      gameSession,
+    );
+  const labyrinth = createLabyrinthController(gameSession);
   const flow = createRunFlowEngine(
     {
       navigateTo,
@@ -51,15 +61,22 @@ export function createPlaythroughController() {
       labyrinthClearNode: labyrinth.onNodeCleared,
     },
     outcomes,
+    gameSession,
   );
-  const nodes = createLabyrinthNodeRouting({
-    navigateTo,
-    labyrinth,
-    battle,
-    nav: flow,
-    shop: { initialize: (kind) => shop().initialize(kind) },
-    prepareRoomTraits: prepareLabyrinthRoomTraits,
-    corruption: { reset: resetCorruptionVisit },
-  });
+  const nodes = createLabyrinthNodeRouting(
+    {
+      navigateTo,
+      labyrinth,
+      battle,
+      nav: flow,
+      shop: { initialize: (kind) => shop().initialize(kind) },
+      prepareRoomTraits: (
+        arg0: Parameters<typeof prepareLabyrinthRoomTraits>[0],
+        arg1: Parameters<typeof prepareLabyrinthRoomTraits>[1],
+      ) => prepareLabyrinthRoomTraits(arg0, arg1, gameSession),
+      corruption: { reset: () => resetCorruptionVisit(gameSession) },
+    },
+    gameSession,
+  );
   return { flow, shop, labyrinth, nodes };
 }

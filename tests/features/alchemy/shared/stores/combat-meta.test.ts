@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { deriveCombatMeta, type CombatMeta } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 import { computeTalentEffects } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
@@ -10,11 +10,11 @@ beforeEach(() => resetAllTestStores());
 
 describe("deriveCombatMeta", () => {
   it("derives combat manifests and active trinkets from one command draft", () => {
-    const combatMeta: CombatMeta = dispatchRunSessionCommand((draft) => {
+    const combatMeta: CombatMeta = dispatchGameplayCommand((draft) => {
       draft.run.activeRun.runBoons = ["bone-charm"];
       draft.gear.equippedTrinkets[draft.run.activeRun.characterId] = "meteorite";
       draft.runProfile.effects.flatPhysicalDamage = 2;
-      return deriveCombatMeta(draft);
+      return acceptCommand(deriveCombatMeta(draft));
     });
 
     expect(combatMeta.activeTrinketIds).toEqual(["bone-charm", "meteorite"]);
@@ -23,19 +23,19 @@ describe("deriveCombatMeta", () => {
   });
 
   it("dedupes a trinket shared by run boons and the equipped loadout", () => {
-    const combatMeta = dispatchRunSessionCommand((draft) => {
+    const combatMeta = dispatchGameplayCommand((draft) => {
       draft.run.activeRun.runBoons = ["bone-charm"];
       draft.gear.equippedTrinkets[draft.run.activeRun.characterId] = "bone-charm";
-      return deriveCombatMeta(draft);
+      return acceptCommand(deriveCombatMeta(draft));
     });
 
     expect(combatMeta.activeTrinketIds).toEqual(["bone-charm"]);
   });
 
   it("matches direct gear and talent manifest computations", () => {
-    const { combatMeta, expectedTalent, expectedGear } = dispatchRunSessionCommand((draft) => {
+    const { combatMeta, expectedTalent, expectedGear } = dispatchGameplayCommand((draft) => {
       draft.runProfile.effects.flatPhysicalDamage = 3;
-      return {
+      return acceptCommand({
         combatMeta: deriveCombatMeta(draft),
         expectedTalent: mergeIntoManifest(
           computeTalentEffects(draft.runProfile.unlockedTalents),
@@ -46,7 +46,7 @@ describe("deriveCombatMeta", () => {
           flattenGearInventories(draft.gear.inventories),
           draft.gear.loadouts,
         ),
-      };
+      });
     });
 
     expect(combatMeta.talentEffects).toEqual(expectedTalent);

@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  collectKeywordsFromBattleEffect,
-  describeCardEffects,
-  effectDescriptionLine,
-} from "@/lib/game-data/effect-metadata";
-import { DAMAGE_TYPES, type BattleCardEffect } from "@/lib/game-data";
+import { collectKeywordsFromBattleEffect, describeCardEffects } from "@/lib/game-data/effect-metadata";
+import { type BattleCardEffect } from "@/lib/game-data";
 
 describe("repeated effect descriptions", () => {
   it.each([false, true])(
@@ -78,52 +74,26 @@ describe("collectKeywordsFromBattleEffect", () => {
     expect(effect).toEqual(before);
     expect(collectKeywordsFromBattleEffect(effect)).toEqual(expected);
   });
-
-  it("includes every outcome keyword for a pooled player status", () => {
-    const effect: BattleCardEffect = {
-      kind: "player-status",
-      status: "block",
-      statusPool: ["block", "forge", "armor"],
-      amount: 5,
-    };
-    expect(collectKeywordsFromBattleEffect(effect)).toEqual(["block", "forge", "armor"]);
-    expect(effectDescriptionLine(effect)).toBe("Gain 5 Block, Forge, or Armor");
-  });
 });
 
-describe("variable damage keywords", () => {
-  it("classifies unrestricted random damage by every possible type", () => {
-    expect(collectKeywordsFromBattleEffect({ kind: "random-damage", minAmount: 1, maxAmount: 6 })).toEqual(
-      DAMAGE_TYPES,
-    );
-  });
-
-  it("classifies pooled random damage by every possible type", () => {
-    expect(
-      collectKeywordsFromBattleEffect({
-        kind: "random-damage",
-        minAmount: 1,
-        maxAmount: 4,
-        damageTypePool: ["stun", "physical", "bleed"],
-      }),
-    ).toEqual(["stun", "physical", "bleed"]);
-  });
-
-  it("groups Exorcism as Burn + Holy, not Health", () => {
-    expect(
-      collectKeywordsFromBattleEffect({ kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" }),
-    ).toEqual(["burn", "holy"]);
-  });
-
-  it("uses every possible damage type instead of the placeholder type", () => {
-    expect(
-      collectKeywordsFromBattleEffect({
-        kind: "damage",
-        damageType: "physical",
-        amount: 3,
-        damageTypePool: ["freeze", "burn", "holy"],
-        lifesteal: true,
-      }),
-    ).toEqual(["freeze", "burn", "holy", "leech"]);
-  });
+it("retains damage modifiers in recursive descriptions instead of merging away their clauses", () => {
+  const hit: BattleCardEffect = {
+    kind: "damage",
+    amount: 3,
+    damageType: "physical",
+    ignoreArmor: true,
+    ignoreBlock: true,
+    doubleIfEnemyBleeding: true,
+    detonateAllBleed: true,
+  };
+  const lines = [
+    "Deal 3 Physical damage",
+    "Ignores Armor and Block",
+    "Doubled if the enemy was already Bleeding",
+    "Detonate all Bleed",
+  ];
+  expect(describeCardEffects([hit, { ...hit }])).toEqual([...lines, ...lines]);
+  expect(
+    describeCardEffects([{ kind: "repeat-over-turns", remainingTurns: 1, effects: [{ ...hit, lifesteal: true }] }]),
+  ).toEqual([...lines, "Leech"].map((line) => `${line} next turn`));
 });

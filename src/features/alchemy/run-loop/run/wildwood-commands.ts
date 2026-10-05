@@ -1,13 +1,20 @@
-import { playUISound } from "@/lib/audio";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+  rejectCommand,
+  snapshotTransactionValue,
+} from "@/features/alchemy/shared/stores/run-session-command";
 import {
   createDraftRunRandomSource,
-  prepareRunNavigation,
   setPendingCharacterId,
   setRunDeck,
+  setRunProgressActivity,
   setWildwoodDraft,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import {
   canCompleteWildwoodDraft,
@@ -20,57 +27,90 @@ import {
   removeWildwoodCard,
 } from "@/lib/content-systems/wildwood/gauntlet";
 import { ROUTE_SCREENS } from "@/lib/routing";
-export function prepareWildwoodBoss(removeIndex?: number) {
-  return dispatchRunSessionCommand((draft) => {
-    const state = draft.session.wildwoodDraft;
-    const deck = draft.run.activeRun.runDeck;
-    if (!state || !canPrepareNextWildwoodBoss(state, deck.length)) return null;
-    const nextDeck = removeIndex === undefined ? deck : removeWildwoodCard(state, deck, removeIndex);
-    if (!nextDeck) return null;
-    const prepared = prepareNextWildwoodBoss(state, deck.length, createDraftRunRandomSource(draft, "world"));
-    if (!prepared) return null;
-    const battle = enterWildwoodBattle(prepared.state);
-    if (!battle) return null;
-    if (removeIndex !== undefined) setRunDeck(draft, nextDeck);
-    setWildwoodDraft(draft, battle);
-    prepareRunNavigation(draft, ROUTE_SCREENS.BATTLE);
-    return { bossId: prepared.bossId, modifierId: prepared.modifierId };
-  });
+export function prepareWildwoodBoss(removeIndex?: number, gameSession: GameSession = defaultGameSession) {
+  return dispatchRunSessionCommand(
+    (draft) => {
+      const state = draft.session.wildwoodDraft;
+      const deck = draft.run.activeRun.runDeck;
+      if (!state || !canPrepareNextWildwoodBoss(snapshotTransactionValue(state), deck.length))
+        return rejectCommand("Wildwood action is unavailable", null);
+      const nextDeck =
+        removeIndex === undefined
+          ? deck
+          : removeWildwoodCard(snapshotTransactionValue(state), snapshotTransactionValue(deck), removeIndex);
+      if (!nextDeck) return rejectCommand("Wildwood action is unavailable", null);
+      const prepared = prepareNextWildwoodBoss(
+        snapshotTransactionValue(state),
+        deck.length,
+        createDraftRunRandomSource(draft, "world"),
+      );
+      if (!prepared) return rejectCommand("Wildwood action is unavailable", null);
+      const battle = enterWildwoodBattle(prepared.state);
+      if (!battle) return rejectCommand("Wildwood action is unavailable", null);
+      if (removeIndex !== undefined) setRunDeck(draft, nextDeck);
+      setWildwoodDraft(draft, battle);
+      setRunProgressActivity(draft, ROUTE_SCREENS.BATTLE);
+      return acceptCommand({ bossId: prepared.bossId, modifierId: prepared.modifierId });
+    },
+    undefined,
+    gameSession,
+  );
 }
-export function chooseWildwoodDraftCard(cardId: string): void {
-  const picked = dispatchRunSessionCommand((draft) => {
-    const state = draft.session.wildwoodDraft;
-    const activeRun = draft.run.activeRun;
-    if (activeRun.contentSystemType !== CONTENT_SYSTEMS.WILDWOOD || !state) return false;
-    if (!offeredWildwoodDraftCard(state, activeRun.runDeck, cardId)) return false;
-    const pick = pickWildwoodDraftCard(
-      state,
-      activeRun.characterId,
-      activeRun.runDeck,
-      cardId,
-      createDraftRunRandomSource(draft, "world"),
-    );
-    if (!pick) return false;
-    appendCardToRunWithDiscovery(draft, pick.card);
-    setWildwoodDraft(draft, pick.state);
-    return true;
-  });
-  if (picked) playUISound("draftSelect");
+export function chooseWildwoodDraftCard(cardId: string, gameSession: GameSession = defaultGameSession): void {
+  const picked = dispatchRunSessionCommand(
+    (draft) => {
+      const state = draft.session.wildwoodDraft;
+      const activeRun = draft.run.activeRun;
+      if (activeRun.contentSystemType !== CONTENT_SYSTEMS.WILDWOOD || !state)
+        return rejectCommand("Wildwood action is unavailable", false);
+      if (
+        !offeredWildwoodDraftCard(snapshotTransactionValue(state), snapshotTransactionValue(activeRun.runDeck), cardId)
+      )
+        return rejectCommand("Wildwood action is unavailable", false);
+      const pick = pickWildwoodDraftCard(
+        snapshotTransactionValue(state),
+        activeRun.characterId,
+        snapshotTransactionValue(activeRun.runDeck),
+        cardId,
+        createDraftRunRandomSource(draft, "world"),
+      );
+      if (!pick) return rejectCommand("Wildwood action is unavailable", false);
+      appendCardToRunWithDiscovery(draft, pick.card);
+      setWildwoodDraft(draft, pick.state);
+      return acceptCommand(true);
+    },
+    undefined,
+    gameSession,
+  );
+  if (picked) sessionFeedback(gameSession).playUISound("draftSelect");
 }
-export function completeWildwoodDraft(): boolean {
-  return dispatchRunSessionCommand((draft) => {
-    const state = draft.session.wildwoodDraft;
-    const runDeck = draft.run.activeRun.runDeck;
-    if (!state || !canCompleteWildwoodDraft(state, runDeck.length)) return false;
-    setPendingCharacterId(draft, null);
-    return true;
-  });
+export function completeWildwoodDraft(gameSession: GameSession = defaultGameSession): boolean {
+  return dispatchRunSessionCommand(
+    (draft) => {
+      const state = draft.session.wildwoodDraft;
+      const runDeck = draft.run.activeRun.runDeck;
+      if (!state || !canCompleteWildwoodDraft(snapshotTransactionValue(state), runDeck.length))
+        return rejectCommand("Wildwood action is unavailable", false);
+      setPendingCharacterId(draft, null);
+      return acceptCommand(true);
+    },
+    undefined,
+    gameSession,
+  );
 }
-export function prepareWildwoodRemoval(): void {
-  dispatchRunSessionCommand((draft) => {
-    const current = draft.session.wildwoodDraft;
-    if (!current) return;
-    const next = enterWildwoodRemoval(current);
-    if (next) setWildwoodDraft(draft, next);
-  });
+export function prepareWildwoodRemoval(gameSession: GameSession = defaultGameSession): void {
+  dispatchRunSessionCommand(
+    (draft) => {
+      const current = draft.session.wildwoodDraft;
+      if (!current) return rejectCommand("There is no Wildwood draft", undefined);
+      const next = enterWildwoodRemoval(snapshotTransactionValue(current));
+      if (!next) return rejectCommand("Wildwood removal is unavailable", undefined);
+      setWildwoodDraft(draft, next);
+      setRunProgressActivity(draft, "wildwood-removal");
+
+      return acceptCommand();
+    },
+    undefined,
+    gameSession,
+  );
 }

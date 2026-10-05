@@ -1,34 +1,21 @@
-import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import { pruneUnknownCompanions } from "@/features/alchemy/shared/stores/homestead-actions";
+import { rebindLiveRunMeta } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
   createInitialPermanentFields,
   type PermanentProgressFields,
 } from "@/features/alchemy/shared/stores/run-state-init";
-import { rebindLiveRunMeta } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { type GameplayPersistenceCodec } from "./persistence-codec";
+import { computeHomesteadEffects } from "@/lib/homestead/effects";
+import { defaultGameSession } from "./default-game-session";
+import type { GameSession } from "./game-session-types";
 import { readGameplayState } from "./gameplay-state-store";
+import { type GameplayPersistenceCodec } from "./persistence-codec";
+import { RUN_PROFILE_SAVE_KEYS } from "./run-profile-save-fields";
 
 export type RunProfileSaveFields = Omit<PermanentProgressFields, "effects">;
 
 type RunProfileSnapshot = PermanentProgressFields;
 
-// Explicit save shape: adding a field to PermanentProgressFields fails the
-// exhaustiveness check below until the save contract is updated deliberately.
-// `effects` is derived on hydrate and never persisted.
-export const RUN_PROFILE_SAVE_KEYS = [
-  "gold",
-  "talentXP",
-  "unlockedTalents",
-  "materialInventory",
-  "constructedBuildings",
-  "plantedFarms",
-  "completedResearch",
-  "bondedCompanions",
-] as const satisfies ReadonlyArray<keyof RunProfileSaveFields>;
-
-type MissingSaveKeys = Exclude<keyof RunProfileSaveFields, (typeof RUN_PROFILE_SAVE_KEYS)[number]>;
-const _assertAllSaveKeysListed: MissingSaveKeys extends never ? true : never = true;
-void _assertAllSaveKeysListed;
+export { RUN_PROFILE_SAVE_KEYS } from "./run-profile-save-fields";
 
 function encodeRunProfileSnapshot(snapshot: RunProfileSaveFields): RunProfileSaveFields {
   return Object.fromEntries(RUN_PROFILE_SAVE_KEYS.map((key) => [key, snapshot[key]])) as RunProfileSaveFields;
@@ -38,13 +25,14 @@ function createDefaultRunProfileSaveFields(): RunProfileSaveFields {
   return encodeRunProfileSnapshot(createInitialPermanentFields());
 }
 
-function readPermanentProgressForSave(): RunProfileSnapshot {
-  return readGameplayState().runProfile;
+function readPermanentProgressForSave(gameSession: GameSession = defaultGameSession): RunProfileSnapshot {
+  return readGameplayState(gameSession).runProfile;
 }
 
 export const runProfilePersistenceCodec: GameplayPersistenceCodec<RunProfileSaveFields> = {
   createDefault: createDefaultRunProfileSaveFields,
-  encode: () => encodeRunProfileSnapshot(readPermanentProgressForSave()),
+  encode: (gameSession: GameSession = defaultGameSession) =>
+    encodeRunProfileSnapshot(readPermanentProgressForSave(gameSession)),
   hydrate: (fields, draft) => {
     const prunedCompanions = pruneUnknownCompanions({ ...fields.bondedCompanions });
     draft.runProfile = {

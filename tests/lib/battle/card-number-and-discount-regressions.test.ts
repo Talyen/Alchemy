@@ -4,6 +4,7 @@ import { applyNumericCorruption, getEditableCorruptionTargets } from "@/lib/corr
 import { buildWishOptions } from "@/lib/battle/wish";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
+import { addCorruptionEffect } from "@/lib/corruption/card-edits";
 import { patchBattleState } from "../../fixtures/battle";
 
 describe("card number and discount regressions", () => {
@@ -70,11 +71,7 @@ describe("card number and discount regressions", () => {
 
   it("keeps a shared conditional number separate from an equal-valued added effect", () => {
     const original = cardById.maul!;
-    const card = {
-      ...original,
-      descriptionLines: [...original.descriptionLines, "Gain 3 Gold"],
-      effects: [...original.effects, { kind: "gain-gold" as const, amount: 3 }],
-    };
+    const card = addCorruptionEffect(original, { kind: "gain-gold", amount: 3 });
     const targets = getEditableCorruptionTargets(card);
     expect(targets).toHaveLength(2);
     const changed = applyNumericCorruption(card, targets[1]!, 1);

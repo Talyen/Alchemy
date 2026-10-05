@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { commitBattleWish, commitCardPlay } from "@/features/alchemy/shared/stores/battle-commands";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { setDiscoveredCardIds, setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
 import { cardById } from "@/lib/game-data";
@@ -19,7 +19,7 @@ describe("battle Wish discovery", () => {
       .filter((card) => card.id !== chosen.id && card.id !== stillMissing.id)
       .map((card) => card.id);
     const wish = { ...cardById.wish!, uid: 10 };
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       setHasActiveRun(draft, true);
       setDiscoveredCardIds(draft, discovered);
       initializeActiveBattle(
@@ -32,6 +32,8 @@ describe("battle Wish discovery", () => {
           talentEffects: { wishUndiscoveredCards: true },
         }),
       );
+
+      return acceptCommand();
     });
     expect(commitBattleWish(chosen.id)).not.toBeNull();
     expect(readGameplayState().profile.discoveredCardIds).toContain(chosen.id);
@@ -42,7 +44,7 @@ describe("battle Wish discovery", () => {
   it("Roads Not Taken discovers its bonus card even when both cards enter the hand queue", () => {
     const chosen = cardById["wolf-companion"]!;
     const bonus = cardById["fox-companion"]!;
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       setHasActiveRun(draft, true);
       setDiscoveredCardIds(draft, []);
       initializeActiveBattle(
@@ -53,6 +55,8 @@ describe("battle Wish discovery", () => {
           talentEffects: { declinedWishCardChance: 100 },
         }),
       );
+
+      return acceptCommand();
     });
     const after = commitBattleWish(chosen.id);
     expect(after?.pendingHandCards.map((card) => card.id)).toEqual([chosen.id, bonus.id]);

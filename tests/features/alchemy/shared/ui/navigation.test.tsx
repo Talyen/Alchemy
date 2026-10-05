@@ -1,69 +1,40 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
-
+import userEvent from "@testing-library/user-event";
+import { afterEach, expect, it, vi } from "vitest";
 import { FlankingPagination, PaginationControls } from "@/features/alchemy/shared/ui/navigation";
 
-describe("PaginationControls", () => {
-  afterEach(cleanup);
+afterEach(cleanup);
 
-  it("navigates forward and backward when multiple pages exist", () => {
-    const onPageChange = vi.fn();
-    render(<PaginationControls page={1} totalPages={3} onPageChange={onPageChange} />);
-
-    const prev = screen.getByRole("button", { name: "Previous page" });
-    const next = screen.getByRole("button", { name: "Next page" });
-
-    expect(prev).not.toHaveProperty("disabled", true);
-    expect(next).not.toHaveProperty("disabled", true);
-
-    fireEvent.click(prev);
-    expect(onPageChange).toHaveBeenCalledWith(0);
-
-    fireEvent.click(next);
-    expect(onPageChange).toHaveBeenCalledWith(2);
-  });
-
-  it("disables prev on first page and next on last page", () => {
-    const { rerender } = render(<PaginationControls page={0} totalPages={2} onPageChange={vi.fn()} />);
-    expect(screen.getByRole("button", { name: "Previous page" })).toHaveProperty("disabled", true);
-    expect(screen.getByRole("button", { name: "Next page" })).toHaveProperty("disabled", false);
-
-    rerender(<PaginationControls page={1} totalPages={2} onPageChange={vi.fn()} />);
-    expect(screen.getByRole("button", { name: "Previous page" })).toHaveProperty("disabled", false);
-    expect(screen.getByRole("button", { name: "Next page" })).toHaveProperty("disabled", true);
-  });
-});
-
-describe("FlankingPagination", () => {
-  afterEach(cleanup);
-
-  it("hides pagination buttons when totalPages <= 1", () => {
-    const { container } = render(
-      <FlankingPagination page={0} totalPages={1} onPageChange={vi.fn()}>
-        <div>Child content</div>
-      </FlankingPagination>,
+it.each([false, true])("dispatches page changes and blocks boundary activation (flanking: %s)", async (flanking) => {
+  const onPageChange = vi.fn();
+  const controls = (page: number, totalPages = 3) =>
+    flanking ? (
+      <FlankingPagination page={page} totalPages={totalPages} onPageChange={onPageChange}>
+        Content
+      </FlankingPagination>
+    ) : (
+      <PaginationControls page={page} totalPages={totalPages} onPageChange={onPageChange} />
     );
-
-    expect(screen.getByText("Child content")).toBeTruthy();
-    const buttons = container.querySelectorAll("button");
-    expect(buttons[0]?.className).toContain("invisible");
-    expect(buttons[0]?.className).toContain("pointer-events-none");
-    expect(buttons[1]?.className).toContain("invisible");
-    expect(buttons[1]?.className).toContain("pointer-events-none");
-  });
-
-  it("triggers onPageChange when visible arrows are clicked", () => {
-    const onPageChange = vi.fn();
-    render(
-      <FlankingPagination page={1} totalPages={3} onPageChange={onPageChange}>
-        <div>Page 2</div>
-      </FlankingPagination>,
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "Previous page" }));
-    expect(onPageChange).toHaveBeenCalledWith(0);
-
-    fireEvent.click(screen.getByRole("button", { name: "Next page" }));
-    expect(onPageChange).toHaveBeenCalledWith(2);
-  });
+  const { rerender } = render(controls(0));
+  const previous = screen.getByRole("button", { name: "Previous page" });
+  const next = screen.getByRole("button", { name: "Next page" });
+  fireEvent.click(previous);
+  expect(onPageChange).not.toHaveBeenCalled();
+  const user = userEvent.setup();
+  await user.tab();
+  expect(document.activeElement).toBe(next);
+  await user.keyboard("{Enter}");
+  expect(onPageChange.mock.calls).toEqual([[1]]);
+  rerender(controls(2));
+  fireEvent.click(next);
+  fireEvent.click(previous);
+  expect(onPageChange.mock.calls).toEqual([[1], [1]]);
+  rerender(controls(0, 1));
+  expect(screen.queryByRole("button")).toBeNull();
+  for (const button of document.querySelectorAll("button")) {
+    expect(button.disabled).toBe(true);
+    expect(button.tabIndex).toBe(-1);
+    fireEvent.click(button);
+  }
+  expect(onPageChange).toHaveBeenCalledTimes(2);
 });

@@ -6,7 +6,7 @@ import { restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readActiveRunScreen, readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { mutateGearForTest, resetAllTestStores, resetGearForTest } from "../../../../helpers/run-domain-store-test";
 import { makeActiveRunData } from "./active-run-data-fixture";
-import { cardById, trinketLibrary } from "@/lib/game-data";
+import { cardById, trinketLibrary, cardMagnitude, withCardDescription } from "@/lib/game-data";
 import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage/save-candidates";
 import { makeMinimalActiveRunInput } from "../../../../fixtures/active-run";
@@ -31,15 +31,27 @@ describe("saved battle card recovery", () => {
         corrupted: true,
         corruptedValuePositions: [{ lineIndex: 0, matchIndex: 8 }],
       };
-      const healthy = {
-        ...card,
-        uid: 2,
-        cost: 0,
-        effects: [{ kind: "heal", amount: 9 }],
-        descriptionLines: ["Restore 9 Health"],
-        corrupted: true,
-        corruptedValuePositions: [{ lineIndex: 0, matchIndex: 8 }],
-      };
+      const healthy = withCardDescription(
+        {
+          ...card,
+          uid: 2,
+          cost: 0,
+          effects: [{ kind: "heal", amount: 9 }],
+          descriptionLines: ["Restore 9 Health"],
+          corrupted: true,
+          corruptedValuePositions: [{ lineIndex: 0, matchIndex: 8 }],
+        },
+        [
+          {
+            role: "effect",
+            parts: [
+              "Restore ",
+              cardMagnitude({ kind: "heal", effectIndex: 0, field: "amount" }, { corrupted: true }),
+              " Health",
+            ],
+          },
+        ],
+      );
       const cards = [damaged, healthy];
       const battleState = {
         ...makeTestBattleState(),

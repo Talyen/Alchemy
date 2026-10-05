@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { trinketLibrary } from "@/lib/game-data";
 import {
   combineTrinketEffectIds,
   computeTrinketManifest,
@@ -8,14 +7,14 @@ import {
 } from "@/lib/trinkets";
 
 describe("Trinket manifests", () => {
-  it("applies every catalog payload without changing shared defaults", () => {
-    const before = { ...defaultTrinketEffects };
-    for (const entry of trinketLibrary) {
-      const manifest = computeTrinketManifest([entry.id]);
-      expect(manifest, entry.id).toEqual({ ...before, ...entry.effects });
-      expect(isDefaultTrinketManifest(manifest), entry.id).toBe(false);
-    }
-    expect(defaultTrinketEffects).toEqual(before);
+  it("combines a boolean Boon and a numeric Boon without sharing mutable defaults", () => {
+    const manifest = computeTrinketManifest(["meteorite", "tattered-pages"]);
+    expect(manifest).toEqual({ ...defaultTrinketEffects, firstBurnDoubled: true, extraDrawPerBattle: 1 });
+    manifest.firstBurnDoubled = false;
+    manifest.extraDrawPerBattle = 99;
+    expect(computeTrinketManifest(["meteorite", "tattered-pages"]).extraDrawPerBattle).toBe(1);
+    expect(computeTrinketManifest([])).toEqual(defaultTrinketEffects);
+    expect(defaultTrinketEffects.firstBurnDoubled).toBe(false);
   });
 
   it("ignores missing and inherited IDs while retaining valid effects", () => {

@@ -1,9 +1,10 @@
 import { vi } from "vitest";
 import { useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import {
-  dispatchRunSessionCommand,
+  acceptCommand,
+  dispatchGameplayCommand,
   type SynchronousResult,
-} from "@/features/alchemy/shared/stores/run-session-command";
+} from "@/features/alchemy/shared/stores/gameplay-command";
 import {
   createInitialBattleFields,
   createInitialRunDomainData,
@@ -51,34 +52,33 @@ export function resetRunDomainStore(): void {
 }
 
 export function resetRunProgressSlice(): void {
-  dispatchRunSessionCommand((draft) => {
+  dispatchGameplayCommand((draft) => {
     draft.run.activeRun = createInitialActiveRunFields(null);
     draft.run.initialized = false;
     draft.runProfile = createInitialPermanentFields();
+
+    return acceptCommand();
   });
 }
 
 export function resetRunSessionSlice(): void {
-  dispatchRunSessionCommand((draft) => clearTransientSession(draft));
+  dispatchGameplayCommand((draft) => acceptCommand(clearTransientSession(draft)));
 }
 
 export function resetRunNavigationSlice(): void {
-  dispatchRunSessionCommand((draft) => setScreen(draft, "menu"));
+  dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "menu")));
 }
 
 export function resetRunBattleSlice(): void {
-  dispatchRunSessionCommand((draft) => initializeActiveBattle(draft, null));
+  dispatchGameplayCommand((draft) => acceptCommand(initializeActiveBattle(draft, null)));
 }
 
 export function resetProfileForTest(): void {
-  dispatchRunSessionCommand((draft) => resetToDefaults(draft));
+  dispatchGameplayCommand((draft) => acceptCommand(resetToDefaults(draft)));
 }
 
-export function mutateGearForTest<T>(
-  mutate: (gear: GearDraftView) => T & SynchronousResult<T>,
-  syncRunHealth?: boolean,
-): T {
-  return dispatchGearMutationWithRunHealthSync<T>(syncRunHealth === undefined ? { mutate } : { mutate, syncRunHealth });
+export function mutateGearForTest<T>(mutate: (gear: GearDraftView) => T & SynchronousResult<T>): T {
+  return dispatchGearMutationWithRunHealthSync<T>({ mutate });
 }
 
 export function resetGearForTest(): void {
@@ -136,7 +136,7 @@ const runProgressKeyGuards: Readonly<{
 void runProgressKeyGuards;
 
 export function setRunProgress(partial: Partial<RunStateFields>, replace = false): void {
-  dispatchRunSessionCommand((draft) => {
+  dispatchGameplayCommand((draft) => {
     if (replace) {
       draft.run.activeRun = createInitialActiveRunFields(null);
       draft.run.initialized = false;
@@ -153,6 +153,8 @@ export function setRunProgress(partial: Partial<RunStateFields>, replace = false
       }
     }
     if (partial.initialized !== undefined) draft.run.initialized = partial.initialized;
+
+    return acceptCommand();
   });
 }
 
@@ -166,7 +168,7 @@ export function setRunSession(
   },
   replace = false,
 ): void {
-  dispatchRunSessionCommand((draft) => {
+  dispatchGameplayCommand((draft) => {
     if (replace) Object.assign(draft.session, createInitialSessionFields());
     if (partial.hasActiveRun !== undefined) setHasActiveRun(draft, partial.hasActiveRun);
     if (partial.rewardState !== undefined) setRewardState(draft, partial.rewardState);
@@ -182,5 +184,7 @@ export function setRunSession(
         (draft.session as unknown as Record<string, unknown>)[key] = partial[key];
       }
     }
+
+    return acceptCommand();
   });
 }

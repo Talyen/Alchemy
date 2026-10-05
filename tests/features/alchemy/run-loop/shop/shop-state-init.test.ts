@@ -4,7 +4,6 @@ import {
   createInitialShopState as createInitialShopStateImpl,
   createInitialAlchemistState as createInitialAlchemistStateImpl,
   createInitialTrinketShopState as createInitialTrinketShopStateImpl,
-  createInitialEquipmentShopState as createInitialEquipmentShopStateImpl,
   resampleCardShopOfferings,
   resampleTrinketShopOfferings,
   resampleEquipmentShopOfferings,
@@ -17,6 +16,7 @@ import {
   EQUIPMENT_SHOP_OFFERED,
 } from "@/lib/game-constants";
 import { trinketLibrary } from "@/lib/game-data";
+import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { gearDefinitions } from "@/lib/gear";
 
 import { makeEffect, makeTestCardWithId } from "../../../../fixtures/battle";
@@ -25,10 +25,28 @@ const testRng = () => 0.5;
 const createInitialShopState = () => createInitialShopStateImpl([], testRng);
 const createInitialAlchemistState = () => createInitialAlchemistStateImpl([], testRng);
 const createInitialTrinketShopState = (rng: () => number = testRng) => createInitialTrinketShopStateImpl(rng);
-const createInitialEquipmentShopState = (rng: () => number = testRng) =>
-  createInitialEquipmentShopStateImpl(rng, lootProgress);
 
 describe("shop-state-init", () => {
+  it.each([
+    {
+      room: "Merchant",
+      offers: () => createInitialShopState().cards,
+      pool: getOfferableCardPool,
+      count: SHOP_CARDS_OFFERED,
+    },
+    {
+      room: "Alchemist",
+      offers: () => createInitialAlchemistState().potions,
+      pool: getStandardPotionPool,
+      count: ALCHEMIST_POTIONS_OFFERED,
+    },
+  ])("opens $room with a full, distinct shelf from its eligible catalog", ({ offers, pool, count }) => {
+    const shelf = offers();
+    const eligible = new Set(pool().map((card) => card.id));
+    expect(shelf).toHaveLength(count);
+    expect(new Set(shelf.map((card) => card.id)).size).toBe(count);
+    expect(shelf.every((card) => eligible.has(card.id))).toBe(true);
+  });
   it.each([
     { name: "enough novel cards", currentCount: 1, novelCount: 3 },
     { name: "one novel card", currentCount: 3, novelCount: 1 },
@@ -57,32 +75,6 @@ describe("shop-state-init", () => {
     expect(new Set(refreshed.map((item) => gearDefinitions[item.definitionId]!.baseItemId)).size).toBe(3);
     expect(refreshed.every((item) => gearDefinitions[item.definitionId]!.rarity === "astral")).toBe(true);
   });
-  it("createInitialShopState samples correct number of shop cards", () => {
-    expect(createInitialShopState().cards.length).toBe(SHOP_CARDS_OFFERED);
-  });
-
-  it("createInitialShopState resets purchase flags", () => {
-    const shop = createInitialShopState();
-    expect(shop.removeUsed).toBe(false);
-    expect(shop.firstPurchaseUsed).toBe(false);
-    expect(shop.refreshesLeft).toBeGreaterThan(0);
-  });
-
-  it("createInitialAlchemistState samples correct number of potions", () => {
-    expect(createInitialAlchemistState().potions.length).toBe(ALCHEMIST_POTIONS_OFFERED);
-  });
-
-  it("createInitialAlchemistState filters to only potion cards", () => {
-    for (const potion of createInitialAlchemistState().potions) {
-      expect(potion.id).toMatch(/-potion$/);
-      expect(potion.id).not.toBe("mixed-potion");
-      expect(potion.id.startsWith("mixed-potion-")).toBe(false);
-    }
-  });
-
-  it("createInitialTrinketShopState samples three trinkets", () => {
-    expect(createInitialTrinketShopState().trinkets.length).toBe(TRINKET_SHOP_OFFERED);
-  });
 
   it("restocks around owned trinkets instead of offering them", () => {
     const owned = trinketLibrary[0];
@@ -91,13 +83,6 @@ describe("shop-state-init", () => {
     const offerings = resampleTrinketShopOfferings(() => 0, lootProgress, [ownedId]);
     expect(offerings).toHaveLength(TRINKET_SHOP_OFFERED);
     expect(offerings.map((entry) => entry.id)).not.toContain(ownedId);
-  });
-
-  it("shortens the shelf when fewer unowned trinkets remain than slots", () => {
-    const keep = trinketLibrary.slice(0, 2).map((entry) => entry.id);
-    const owned = trinketLibrary.filter((entry) => !keep.includes(entry.id)).map((entry) => entry.id);
-    const offerings = resampleTrinketShopOfferings(() => 0, lootProgress, owned);
-    expect(offerings.map((entry) => entry.id).sort()).toEqual([...keep].sort());
   });
 
   it("excludes the current trinket shelf when enough alternatives remain", () => {
@@ -146,10 +131,6 @@ describe("shop-state-init", () => {
 
     expect(offerings).toHaveLength(TRINKET_SHOP_OFFERED);
     expect(new Set(offerings.map((entry) => entry.id))).toEqual(eligibleIds);
-  });
-
-  it("createInitialEquipmentShopState samples three gear pieces", () => {
-    expect(createInitialEquipmentShopState().gear.length).toBe(EQUIPMENT_SHOP_OFFERED);
   });
 
   it("round-trips trinket shop state through persistence helpers", () => {

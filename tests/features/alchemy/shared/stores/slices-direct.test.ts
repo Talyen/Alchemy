@@ -5,7 +5,7 @@ import type { BattleCard } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 import { createRunRngState } from "@/lib/rng";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import {
   addRunMaterialsEarned,
   awardMysteryXP,
@@ -41,8 +41,8 @@ beforeEach(() => {
 
 describe("battle write-port", () => {
   it("initializeActiveBattle records the start state and activates combat", () => {
-    dispatchRunSessionCommand((draft) =>
-      initializeActiveBattle(draft, { ...defaultBattleState(), turn: 6, playerHealth: 11 }),
+    dispatchGameplayCommand((draft) =>
+      acceptCommand(initializeActiveBattle(draft, { ...defaultBattleState(), turn: 6, playerHealth: 11 })),
     );
     const state = readBattle();
     expect(state.hasActiveBattle).toBe(true);
@@ -52,9 +52,11 @@ describe("battle write-port", () => {
   });
 
   it("initializing with null clears every combat field", () => {
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       initializeActiveBattle(draft, { ...defaultBattleState(), turn: 2 });
       initializeActiveBattle(draft, null);
+
+      return acceptCommand();
     });
     const state = readBattle();
     expect(state.hasActiveBattle).toBe(false);
@@ -64,8 +66,10 @@ describe("battle write-port", () => {
   });
 
   it("setSyncedBattleState replaces state and drops stale display overrides", () => {
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       setSyncedBattleState(draft, { ...defaultBattleState(), playerHealth: 7 });
+
+      return acceptCommand();
     });
     const state = readBattle();
     expect(state.battleState.playerHealth).toBe(7);
@@ -75,17 +79,17 @@ describe("battle write-port", () => {
 
 describe("navigation write-port", () => {
   it("setScreen accepts direct values and updater functions", () => {
-    dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.BATTLE));
+    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.BATTLE)));
     expect(readActiveRunScreen()).toBe("battle");
-    dispatchRunSessionCommand((draft) =>
-      setScreen(draft, (prev) => (prev === "battle" ? ROUTE_SCREENS.REWARDS : prev)),
+    dispatchGameplayCommand((draft) =>
+      acceptCommand(setScreen(draft, (prev) => (prev === "battle" ? ROUTE_SCREENS.REWARDS : prev))),
     );
     expect(readActiveRunScreen()).toBe("rewards");
   });
 
   it("resetNavigation returns to the menu from any screen", () => {
-    dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.SHOP));
-    dispatchRunSessionCommand((draft) => setScreen(draft, "menu"));
+    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.SHOP)));
+    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "menu")));
     expect(readActiveRunScreen()).toBe("menu");
   });
 });
@@ -101,42 +105,50 @@ describe("session write-port", () => {
   };
 
   it("gates beginRewardClaim on one claim at a time so empty skips can finalize", () => {
-    expect(dispatchRunSessionCommand((draft) => beginRewardClaim(draft))).toBe(true);
+    expect(dispatchGameplayCommand((draft) => acceptCommand(beginRewardClaim(draft)))).toBe(true);
     expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(true);
-    expect(dispatchRunSessionCommand((draft) => beginRewardClaim(draft))).toBe(false);
+    expect(dispatchGameplayCommand((draft) => acceptCommand(beginRewardClaim(draft)))).toBe(false);
 
-    dispatchRunSessionCommand((draft) => releaseRewardClaim(draft));
+    dispatchGameplayCommand((draft) => acceptCommand(releaseRewardClaim(draft)));
     expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(false);
 
-    dispatchRunSessionCommand((draft) => setCompanionRewardCards(draft, [rewardCard]));
-    expect(dispatchRunSessionCommand((draft) => beginRewardClaim(draft))).toBe(true);
+    dispatchGameplayCommand((draft) => acceptCommand(setCompanionRewardCards(draft, [rewardCard])));
+    expect(dispatchGameplayCommand((draft) => acceptCommand(beginRewardClaim(draft)))).toBe(true);
     expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(true);
-    expect(dispatchRunSessionCommand((draft) => beginRewardClaim(draft))).toBe(false);
+    expect(dispatchGameplayCommand((draft) => acceptCommand(beginRewardClaim(draft)))).toBe(false);
 
-    dispatchRunSessionCommand((draft) => releaseRewardClaim(draft));
+    dispatchGameplayCommand((draft) => acceptCommand(releaseRewardClaim(draft)));
     expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(false);
   });
 
   it("validates destination claims against offered destinations", () => {
-    expect(dispatchRunSessionCommand((draft) => beginDestinationClaim(draft, DESTINATIONS.MYSTERY))).toBe(false);
+    expect(dispatchGameplayCommand((draft) => acceptCommand(beginDestinationClaim(draft, DESTINATIONS.MYSTERY)))).toBe(
+      false,
+    );
     expect(readRunSession().rewardFlow.claim).toEqual({ kind: "idle" });
 
-    dispatchRunSessionCommand((draft) =>
-      setRewardState(draft, { ...createEmptyRewardState([DESTINATIONS.MYSTERY]), gold: 30 }),
+    dispatchGameplayCommand((draft) =>
+      acceptCommand(setRewardState(draft, { ...createEmptyRewardState([DESTINATIONS.MYSTERY]), gold: 30 })),
     );
-    expect(dispatchRunSessionCommand((draft) => beginDestinationClaim(draft, DESTINATIONS.MYSTERY))).toBe(true);
+    expect(dispatchGameplayCommand((draft) => acceptCommand(beginDestinationClaim(draft, DESTINATIONS.MYSTERY)))).toBe(
+      true,
+    );
     expect(readRunSession().rewardFlow.claim).toEqual({ kind: "destination", destination: DESTINATIONS.MYSTERY });
-    expect(dispatchRunSessionCommand((draft) => beginDestinationClaim(draft, DESTINATIONS.CAMPFIRE))).toBe(false);
+    expect(dispatchGameplayCommand((draft) => acceptCommand(beginDestinationClaim(draft, DESTINATIONS.CAMPFIRE)))).toBe(
+      false,
+    );
 
-    dispatchRunSessionCommand((draft) => cancelDestinationClaim(draft));
+    dispatchGameplayCommand((draft) => acceptCommand(cancelDestinationClaim(draft)));
     expect(readRunSession().rewardFlow.claim).toEqual({ kind: "idle" });
   });
 
   it("clearTransientSession restores initial transient fields", () => {
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       setHasActiveRun(draft, true);
       setPendingCharacterId(draft, "rogue");
       clearTransientSession(draft);
+
+      return acceptCommand();
     });
     const cleared = readRunSession();
     expect(cleared.hasActiveRun).toBe(false);
@@ -149,8 +161,8 @@ describe("session write-port", () => {
 describe("progress write-port", () => {
   it("nextRunRandom advances per-stream counters independently within [0, 1)", () => {
     setRunProgress({ rng: createRunRngState(() => 0.5) });
-    const first = dispatchRunSessionCommand((draft) => nextRunRandom(draft, "rewards"));
-    const second = dispatchRunSessionCommand((draft) => nextRunRandom(draft, "rewards"));
+    const first = dispatchGameplayCommand((draft) => acceptCommand(nextRunRandom(draft, "rewards")));
+    const second = dispatchGameplayCommand((draft) => acceptCommand(nextRunRandom(draft, "rewards")));
     expect(first).toBeGreaterThanOrEqual(0);
     expect(first).toBeLessThan(1);
     expect(second).not.toBe(first);
@@ -159,9 +171,11 @@ describe("progress write-port", () => {
   });
 
   it("addRunMaterialsEarned aggregates across grants and clear empties the tally", () => {
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       addRunMaterialsEarned(draft, { wood: 2, iron: 0, herbs: 1, food: 0, gems: 0, stone: 0, hide: 0 });
       addRunMaterialsEarned(draft, { wood: 3, iron: 1, herbs: 0, food: 0, gems: 2, stone: 0, hide: 0 });
+
+      return acceptCommand();
     });
     expect(readActiveRun().runMaterialsEarned).toEqual({
       ...emptyInventory(),
@@ -170,15 +184,17 @@ describe("progress write-port", () => {
       herbs: 1,
       gems: 2,
     });
-    dispatchRunSessionCommand((draft) => clearRunMaterialsEarned(draft));
+    dispatchGameplayCommand((draft) => acceptCommand(clearRunMaterialsEarned(draft)));
     expect(readActiveRun().runMaterialsEarned).toEqual(emptyInventory());
   });
 
   it("recordRunObtainedItem appends gear and trinket grants in order", () => {
     const instance = { instanceId: "obtained-armor", definitionId: "leather-armor-basic" as const, affixes: [] };
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       recordRunObtainedItem(draft, { kind: "gear", instance });
       recordRunObtainedItem(draft, { kind: "trinket", trinketId: "bone-charm" });
+
+      return acceptCommand();
     });
     expect(readActiveRun().runObtainedItems).toEqual([
       { kind: "gear", instance },
@@ -188,10 +204,12 @@ describe("progress write-port", () => {
 
   it("resetProgress preserves character while clearing run-scoped tallies", () => {
     setRunProgress({ characterId: "rogue" });
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       awardMysteryXP(draft, "burn", 50);
       setRoomsEncountered(draft, 7);
       resetProgress(draft);
+
+      return acceptCommand();
     });
     const reset = readActiveRun();
     expect(reset.characterId).toBe("rogue");

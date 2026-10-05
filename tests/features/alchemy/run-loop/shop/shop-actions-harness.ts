@@ -3,6 +3,7 @@ import { beforeEach } from "vitest";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
 import { createEmptyTalentEffectManifest, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
 import {
+  acceptCommand,
   dispatchRunSessionCommand,
   createRunSessionCommand,
 } from "@/features/alchemy/shared/stores/run-session-command";
@@ -28,10 +29,18 @@ import { makeEffect } from "../../../../fixtures/battle";
 
 const lootProgress = { depth: 24, highestCompletedDifficulty: null };
 
-export const setShopState = createRunSessionCommand(mutateShopState);
-export const setAlchemistState = createRunSessionCommand(mutateAlchemistState);
-export const setTrinketShopState = createRunSessionCommand(mutateTrinketShopState);
-export const setEquipmentShopState = createRunSessionCommand(mutateEquipmentShopState);
+export const setShopState = createRunSessionCommand((...args: Parameters<typeof mutateShopState>) =>
+  acceptCommand(mutateShopState(...args)),
+);
+export const setAlchemistState = createRunSessionCommand((...args: Parameters<typeof mutateAlchemistState>) =>
+  acceptCommand(mutateAlchemistState(...args)),
+);
+export const setTrinketShopState = createRunSessionCommand((...args: Parameters<typeof mutateTrinketShopState>) =>
+  acceptCommand(mutateTrinketShopState(...args)),
+);
+export const setEquipmentShopState = createRunSessionCommand((...args: Parameters<typeof mutateEquipmentShopState>) =>
+  acceptCommand(mutateEquipmentShopState(...args)),
+);
 
 const testRng = () => 0.5;
 const defaultTalentEffects: TalentEffectManifest = createEmptyTalentEffectManifest();
@@ -61,7 +70,7 @@ export function buildActions(
 ) {
   const trinketIds = overrides?.trinketIds;
   if (trinketIds) {
-    dispatchRunSessionCommand((draft) => setRunBoons(draft, trinketIds));
+    dispatchRunSessionCommand((draft) => acceptCommand(setRunBoons(draft, trinketIds)));
   }
   const talentEffects = { ...defaultTalentEffects, ...overrides?.talentEffects };
   return createShopActions({
@@ -80,5 +89,7 @@ beforeEach(() => {
   dispatchRunSessionCommand((draft) => {
     setCurrentAct(draft, 3);
     setDestinationIndexInAct(draft, 7);
+
+    return acceptCommand();
   });
 });

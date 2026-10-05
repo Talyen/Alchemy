@@ -1,4 +1,6 @@
-import { playUISound } from "@/lib/audio";
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 import { REWARD_ROUTES, ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import type { FinalizeRewardResult } from "../navigation/reward-flow";
 import { claimRunReward, finishRewardClaim } from "./reward-commands";
@@ -41,15 +43,16 @@ export function createRewardHandlers(
     completeRunVictory,
     handleActComplete,
   }: { completeRunVictory: CompleteRunVictory; handleActComplete: HandleActComplete },
+  gameSession: GameSession = defaultGameSession,
 ) {
   function finishRewards(choiceId: string | null) {
-    const commit = claimRunReward(choiceId);
+    const commit = claimRunReward(choiceId, gameSession);
     if (!commit) return;
     const { result, isWildwood } = commit;
 
-    const releaseClaim = finishRewardClaim;
+    const releaseClaim = () => finishRewardClaim(gameSession);
 
-    if (result.selectedReward) playUISound("talentUnlock");
+    if (result.selectedReward) sessionFeedback(gameSession).playUISound("talentUnlock");
     deps.actions.clearCardHover();
     if (isWildwood && result.route !== REWARD_ROUTES.COMPANION_REWARD) {
       deps.actions.wildwoodRewardComplete(releaseClaim);

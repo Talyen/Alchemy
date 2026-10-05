@@ -10,8 +10,6 @@ import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
 import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { prepareRunNavigation } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createScreenNavigation } from "@/features/alchemy/shell/screen-navigation";
 import { readActivityData } from "@/lib/active-run-session";
 beforeEach(resetAllTestStores);
@@ -107,7 +105,6 @@ it("ignores another Rest click while the completed campfire is fading out", () =
   });
   const navigation = createScreenNavigation({
     readScreen: () => "campfire",
-    prepareScreen: (screen) => dispatchRunSessionCommand((draft) => prepareRunNavigation(draft, screen)),
     showScreen: vi.fn(),
   });
   const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo: navigation.navigateTo }));

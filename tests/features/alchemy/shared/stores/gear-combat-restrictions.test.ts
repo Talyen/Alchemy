@@ -5,7 +5,7 @@ import {
   dispatchGearMutationWithRunHealthSync,
   dispatchGearSalvageWithMaterialGrant,
 } from "@/features/alchemy/shared/stores/gear-session-command";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import type { GearInstance } from "@/lib/gear";
 
@@ -25,9 +25,11 @@ describe("combat equipment protection", () => {
         gear.addCurrencies({ "ascension-seal": 3 });
       },
     });
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.session.activity = { kind: "idle" };
       draft.battle.hasActiveBattle = true;
+
+      return acceptCommand();
     });
   });
 
@@ -69,17 +71,42 @@ describe("combat equipment protection", () => {
     expect(readGameplayState().battle.battleState.gearEffects).toEqual(manifest);
   });
 
+  it("rolls back earlier Gear writes when a later operation returns false or null", () => {
+    const before = readGameplayState();
+    expect(
+      dispatchGearMutationWithRunHealthSync({
+        mutate: (gear) => {
+          gear.addCurrencies({ voidstone: 1 });
+          return gear.unequip("knight", "main-hand");
+        },
+      }),
+    ).toBe(false);
+    expect(readGameplayState()).toBe(before);
+
+    expect(
+      dispatchGearSalvageWithMaterialGrant((gear) => {
+        gear.addCurrencies({ voidstone: 1 });
+        return gear.salvage(sword.instanceId);
+      }),
+    ).toBeNull();
+    expect(readGameplayState()).toBe(before);
+  });
+
   it("keeps a pending lethal transition reserved until the battle lifecycle ends", () => {
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.battle.battleState.enemyHealth = 0;
+
+      return acceptCommand();
     });
     expect(deriveGearCombatRestrictions(readGameplayState())).toEqual({
       characters: { knight: ["campaign"] },
       gear: { [sword.instanceId]: "knight" },
       trinkets: { "brass-censer": "knight" },
     });
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.battle.hasActiveBattle = false;
+
+      return acceptCommand();
     });
     expect(deriveGearCombatRestrictions(readGameplayState())).toEqual({ characters: {}, gear: {}, trinkets: {} });
   });

@@ -69,7 +69,7 @@ describe("Armory transfer orchestration", () => {
       const { result, onEquip } = setup({ geometry: mode !== "missing geometry" });
       act(() => result.current.transfers.handleEquipGear(incoming));
       expect(onEquip).toHaveBeenCalledOnce();
-      const ids = result.current.ordering.orderedGear.map((item) => item.instanceId);
+      const ids = result.current.ordering.visibleGear.map((item) => item.instanceId);
       expect(ids.indexOf(offhand.instanceId)).toBe(ids.indexOf(replaced.instanceId) + 1);
       expect(result.current.ordering.placeholderLocalIndex).toBeNull();
       expect(result.current.transfers.flyingItems.length).toBe(mode === "animated" ? 3 : 0);
@@ -86,9 +86,9 @@ describe("Armory transfer orchestration", () => {
 
   it("leaves inventory order and artwork alone when the command is rejected", () => {
     const { result } = setup({ success: false });
-    const before = result.current.ordering.orderedGear;
+    const before = result.current.ordering.visibleGear;
     act(() => result.current.transfers.handleEquipGear(incoming));
-    expect(result.current.ordering.orderedGear).toEqual(before);
+    expect(result.current.ordering.visibleGear).toEqual(before);
     expect(result.current.transfers.flyingItems).toEqual([]);
     expect(result.current.transfers.hiddenArtworkIds.size).toBe(0);
   });

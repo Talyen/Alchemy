@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { readActiveRun, readRunProfile, readRunRevision } from "@/features/alchemy/shared/stores/run-reads";
 import {
   addMaterialsToStockpile,
@@ -22,10 +22,12 @@ beforeEach(() => {
 
 describe("homestead write commands", () => {
   it("awardMaterialsDuringRun writes the stockpile and the run tally; stockpile grants skip the tally", () => {
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       setHasActiveRun(draft, true);
       awardMaterialsDuringRun(draft, { ...emptyInventory(), wood: 2 });
       addMaterialsToStockpile(draft, { ...emptyInventory(), wood: 1, iron: 3 });
+
+      return acceptCommand();
     });
 
     expect(readRunProfile().materialInventory.wood).toBe(3);
@@ -35,11 +37,11 @@ describe("homestead write commands", () => {
   });
 
   it("failed construction writes nothing and leaves live health untouched", () => {
-    const healthBefore = dispatchRunSessionCommand((draft) => {
+    const healthBefore = dispatchGameplayCommand((draft) => {
       setHasActiveRun(draft, true);
       const built = constructBuilding(draft, "blacksmiths-forge");
       expect(built).toBe(false);
-      return draft.run.activeRun.runMaxHealth;
+      return acceptCommand(draft.run.activeRun.runMaxHealth);
     });
 
     expect(readRunProfile().materialInventory).toEqual(emptyInventory());
@@ -47,13 +49,15 @@ describe("homestead write commands", () => {
   });
 
   it("rejects bonding an undiscovered companion without changing progression or food", () => {
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       addMaterialsToStockpile(draft, { ...emptyInventory(), food: 50 });
       setDiscoveredCardIds(draft, ["bear-companion"]);
+
+      return acceptCommand();
     });
     const revision = readRunRevision();
 
-    expect(dispatchRunSessionCommand((draft) => bondCompanion(draft, "wolf"))).toBe(false);
+    expect(dispatchGameplayCommand((draft) => acceptCommand(bondCompanion(draft, "wolf")))).toBe(false);
     expect(readRunRevision()).toBe(revision);
     expect(readRunProfile().materialInventory.food).toBe(50);
     expect(readRunProfile().bondedCompanions.wolf).toBe(0);
@@ -61,12 +65,14 @@ describe("homestead write commands", () => {
   });
 
   it("bonds a discovered companion through the command", () => {
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       addMaterialsToStockpile(draft, { ...emptyInventory(), food: 50 });
       setDiscoveredCardIds(draft, ["wolf-companion"]);
+
+      return acceptCommand();
     });
 
-    expect(dispatchRunSessionCommand((draft) => bondCompanion(draft, "wolf"))).toBe(true);
+    expect(dispatchGameplayCommand((draft) => acceptCommand(bondCompanion(draft, "wolf")))).toBe(true);
     expect(readRunProfile().materialInventory.food).toBe(30);
     expect(readRunProfile().bondedCompanions.wolf).toBe(1);
     expect(readRunProfile().effects.companionBondLevels.wolf).toBe(1);
@@ -89,7 +95,7 @@ describe("four-tier Homestead persistence and settlement", () => {
   });
 
   it("settles Stone and alternating Wish currency through the proper wallets", () => {
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.run.activeRun.contentSystemType = CONTENT_SYSTEMS.LABYRINTH;
       draft.run.activeRun.roomsEncountered = 3;
       draft.runProfile.effects = {
@@ -105,11 +111,13 @@ describe("four-tier Homestead persistence and settlement", () => {
       expect(granted.gems).toBe(28);
       expect(draft.runProfile.gold - before).toBe(20);
       expect(draft.session.runEndMaterials.stone).toBe(12);
+
+      return acceptCommand();
     });
   });
 
   it("pays Wildwood Materials and Gold with the usual Homestead rules", () => {
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.run.activeRun.contentSystemType = CONTENT_SYSTEMS.WILDWOOD;
       draft.run.activeRun.roomsEncountered = 3;
       draft.runProfile.effects = {
@@ -121,6 +129,8 @@ describe("four-tier Homestead persistence and settlement", () => {
       const before = draft.runProfile.gold;
       expect(awardRunEndMaterials(draft)).toEqual({ ...emptyInventory(), stone: 12, gems: 4 });
       expect(draft.runProfile.gold - before).toBe(20);
+
+      return acceptCommand();
     });
   });
 });

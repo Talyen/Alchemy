@@ -91,8 +91,8 @@ function createEmptyActiveRunCollections(): Pick<
   };
 }
 
-function createFreshRunRngState(): RunRngState {
-  return createRunRngState(generateRunSeed());
+function createFreshRunRngState(generateSeed: () => number): RunRngState {
+  return createRunRngState(generateSeed());
 }
 
 // Explicit seed seam for new runs: crypto-random per run (persisted in
@@ -107,6 +107,10 @@ export function setTestRunSeedOverride(seed: number | null): void {
 
 export function generateRunSeed(): number {
   if (testRunSeedOverride !== null) return testRunSeedOverride >>> 0;
+  return generateRandomRunSeed();
+}
+
+export function generateRandomRunSeed(): number {
   if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
     return crypto.getRandomValues(new Uint32Array(1))[0] as number;
   }
@@ -115,7 +119,10 @@ export function generateRunSeed(): number {
   return (Date.now() + Math.imul(fallbackRunSeedCounter, 0x9e37_79b9)) >>> 0;
 }
 
-function createFreshActiveRunFields(characterId: CharacterId): ActiveRunProgressFields {
+function createFreshActiveRunFields(
+  characterId: CharacterId,
+  generateSeed: () => number = generateRunSeed,
+): ActiveRunProgressFields {
   return {
     characterId,
     runDeck: getStartingDeck(characterId),
@@ -130,11 +137,11 @@ function createFreshActiveRunFields(characterId: CharacterId): ActiveRunProgress
     ...createEmptyActiveRunCollections(),
     selectedDifficulty: null,
     contentSystemType: "campaign",
-    rng: createFreshRunRngState(),
+    rng: createFreshRunRngState(generateSeed),
   };
 }
 
-function createResumeActiveRunFields(activeRun: ActiveRunData): ActiveRunProgressFields {
+function createResumeActiveRunFields(activeRun: ActiveRunData, generateSeed: () => number): ActiveRunProgressFields {
   const empty = createEmptyActiveRunCollections();
   return {
     runHistory: (activeRun.runHistory ?? []).map((room) => ({ ...room })),
@@ -154,7 +161,7 @@ function createResumeActiveRunFields(activeRun: ActiveRunData): ActiveRunProgres
     encounteredRunEnemyIds: [...activeRun.encounteredRunEnemyIds],
     selectedDifficulty: activeRun.selectedDifficulty,
     contentSystemType: activeRun.contentSystemType,
-    rng: activeRun.rng ?? createFreshRunRngState(),
+    rng: activeRun.rng ?? createFreshRunRngState(generateSeed),
     runTalentXP: activeRun.runTalentXP ?? empty.runTalentXP,
     runMaterialsEarned: activeRun.runMaterialsEarned ?? empty.runMaterialsEarned,
     runCurrenciesEarned: activeRun.runCurrenciesEarned ?? empty.runCurrenciesEarned,
@@ -165,9 +172,10 @@ function createResumeActiveRunFields(activeRun: ActiveRunData): ActiveRunProgres
 export function createInitialActiveRunFields(
   initialActiveRun: ActiveRunData | null,
   fallbackCharacterId: CharacterId = "knight",
+  generateSeed: () => number = generateRunSeed,
 ): ActiveRunProgressFields {
-  if (!initialActiveRun) return createFreshActiveRunFields(fallbackCharacterId);
-  return createResumeActiveRunFields(initialActiveRun);
+  if (!initialActiveRun) return createFreshActiveRunFields(fallbackCharacterId, generateSeed);
+  return createResumeActiveRunFields(initialActiveRun, generateSeed);
 }
 
 export function createInitialPermanentFields(): PermanentProgressFields {

@@ -52,11 +52,5 @@ const TYPICAL_HOMESTEAD_CACHE: Record<TalentPreset, HomesteadEffectManifest> = {
 };
 
 export function buildTypicalHomesteadEffects(preset: TalentPreset): HomesteadEffectManifest {
-  // The cache template is shared: return a copy so callers can never mutate it.
-  const cached = TYPICAL_HOMESTEAD_CACHE[preset];
-  return {
-    ...cached,
-    companionBondLevels: { ...cached.companionBondLevels },
-    cardHealBonus: { ...cached.cardHealBonus },
-  };
+  return structuredClone(TYPICAL_HOMESTEAD_CACHE[preset]);
 }

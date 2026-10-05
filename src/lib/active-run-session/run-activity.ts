@@ -22,17 +22,15 @@ export interface RunActivityData {
 }
 
 type VisitActivity = { [K in keyof RunActivityData]: { kind: K; data: RunActivityData[K] } }[keyof RunActivityData];
-const STATELESS_RUN_SCREENS = [
-  "battle",
-  "rewards",
-  "destination",
-  "labyrinth-map",
-  "wildwood-removal",
-  "draft-deck",
-  "difficulty-select",
-] as const;
-type ProgressActivityKind = (typeof STATELESS_RUN_SCREENS)[number];
-export type RunActivity = { kind: "inactive" | "idle" | ProgressActivityKind } | VisitActivity;
+export type RunProgressActivityKind =
+  | "battle"
+  | "rewards"
+  | "destination"
+  | "labyrinth-map"
+  | "wildwood-removal"
+  | "draft-deck"
+  | "difficulty-select";
+export type RunActivity = { kind: "inactive" | "idle" | RunProgressActivityKind } | VisitActivity;
 
 function deepFreeze<T>(obj: T): T {
   if (obj === null || typeof obj !== "object") return obj;
@@ -74,16 +72,4 @@ export function isActiveRunActivity(activity: RunActivity): boolean {
 
 export function runActivityScreen(activity: RunActivity): Screen | null {
   return activity.kind === "idle" || activity.kind === "inactive" ? null : activity.kind;
-}
-
-export function transitionRunActivity(activity: RunActivity, screen: Screen): RunActivity {
-  if (activity.kind === screen) return activity;
-  if (Object.hasOwn(VISIT_FACTORIES, screen)) {
-    const factory = VISIT_FACTORIES[screen as keyof RunActivityData];
-    return { kind: screen as keyof RunActivityData, data: factory() } as RunActivity;
-  }
-  if (STATELESS_RUN_SCREENS.includes(screen as ProgressActivityKind)) {
-    return { kind: screen as ProgressActivityKind };
-  }
-  return activity;
 }

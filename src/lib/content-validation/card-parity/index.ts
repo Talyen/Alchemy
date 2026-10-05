@@ -86,10 +86,10 @@ function diffMechanicLines(card: BattleCard, expectedMechanic: string[]): Conten
 
 export function validateCardDescriptionParity(card: BattleCard): ContentValidationIssue[] {
   const warnings = checkTagWarnings(card);
-  // Placeholder template and companion summons have no canonical mechanic
-  // phrasing; preserve the previous lenient pass with tag warnings only.
+  // Summon summaries describe the Companion's actions rather than this card's
+  // magnitude fields. Preserve tag-only validation, including added effects.
   if (card.id === MIXED_POTION_CARD_ID) return warnings;
-  if (card.effects.length > 0 && card.effects.every((effect) => effect.kind === "summon-companion")) return warnings;
+  if (flattenEffects(card.effects).some((effect) => effect.kind === "summon-companion")) return warnings;
   let expected: string[];
   try {
     expected = describeCardEffects(card.effects);

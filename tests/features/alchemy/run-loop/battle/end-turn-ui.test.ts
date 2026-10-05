@@ -7,7 +7,7 @@ import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfers";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
@@ -32,7 +32,7 @@ function makeUi(rejectDraw = false, onDraw?: (ctx: BattleControllerContext) => v
     hand: slashDeck(3),
     deck: slashDeck(8),
   });
-  dispatchRunSessionCommand((draft) => initializeActiveBattle(draft, initial));
+  dispatchGameplayCommand((draft) => acceptCommand(initializeActiveBattle(draft, initial)));
   let releaseDiscard!: () => void;
   const discard = new Promise<void>((resolve) => {
     releaseDiscard = resolve;
@@ -92,17 +92,19 @@ describe("End Turn execution and playback", () => {
   it("keeps a focal enemy ability cue on the terminal playback shortcut", () => {
     const { ui } = makeUi();
     vi.mocked(playCardSound).mockReturnValue("slash.ogg");
-    dispatchRunSessionCommand((draft) =>
-      initializeActiveBattle(
-        draft,
-        patchBattleState({
-          playerHealth: 1,
-          deathsDoorUsed: true,
-          gearEffects: { dodgeChance: -100 },
-          currentEnemy: { abilityIds: ["slash"] },
-          enemyHealth: 1000,
-          enemyMaxHealth: 1000,
-        }),
+    dispatchGameplayCommand((draft) =>
+      acceptCommand(
+        initializeActiveBattle(
+          draft,
+          patchBattleState({
+            playerHealth: 1,
+            deathsDoorUsed: true,
+            gearEffects: { dodgeChance: -100 },
+            currentEnemy: { abilityIds: ["slash"] },
+            enemyHealth: 1000,
+            enemyMaxHealth: 1000,
+          }),
+        ),
       ),
     );
     ui.handleEndTurn();
@@ -135,13 +137,13 @@ describe("End Turn execution and playback", () => {
     try {
       let finishCardDraw = () => {};
       const { ui, ctx, releaseDiscard } = makeUi(false, (context) => {
-        finishCardDraw = context.playback.beginDraw(context.playback.id);
+        finishCardDraw = context.playback.beginDraw(context.playback.id, "card");
         context.getPresentation().setHiddenHandCardKeys(() => ["drawing-card"]);
       });
       ui.handleEndTurn();
       releaseDiscard();
       await vi.runAllTimersAsync();
-      expect(ctx.playback.pendingDraws).toBe(1);
+      expect(ctx.playback.pendingCardDraws).toBe(1);
       expect(useBattlePresentationStore.getState().hiddenHandCardKeys).toEqual(["drawing-card"]);
       expect(useBattlePresentationStore.getState().cardTransferInProgress).toBe(true);
       finishCardDraw();

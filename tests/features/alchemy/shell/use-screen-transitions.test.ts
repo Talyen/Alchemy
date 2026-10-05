@@ -3,7 +3,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useScreenTransitions } from "@/features/alchemy/shell/use-screen-transitions";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
 import { resetRunDomainStore, setRunSession } from "../../../helpers/run-domain-store-test";
-import { readRunResumeScreen } from "@/features/alchemy/shared/stores/run-reads";
+import { readRunResumeScreen, readActiveRunScreen } from "@/features/alchemy/shared/stores/run-reads";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { setRunProgressActivity, resetNavigation } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { showRunScreen } from "@/features/alchemy/shared/stores/navigation-commands";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { emptyShopState, createEmptyRewardState } from "@/lib/active-run-session";
+import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
+import { dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
+import { defaultBattleState } from "@/lib/battle";
+import "../../../helpers/mock-audio";
 import { createScreenNavigation } from "@/features/alchemy/shell/screen-navigation";
 beforeEach(() => {
   vi.useFakeTimers();
@@ -12,12 +22,10 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 function navigation() {
-  const prepareScreen = vi.fn();
   const showScreen = vi.fn();
   return {
-    prepareScreen,
     showScreen,
-    ...createScreenNavigation({ readScreen: () => "battle", prepareScreen, showScreen }),
+    ...createScreenNavigation({ readScreen: () => "battle", showScreen }),
   };
 }
 
@@ -27,7 +35,6 @@ describe("screen navigation", () => {
     const showScreen = vi.fn();
     const nav = createScreenNavigation({
       readScreen: () => "battle",
-      prepareScreen: vi.fn(),
       showScreen,
       onPendingChange,
     });
@@ -48,7 +55,6 @@ describe("screen navigation", () => {
     const prepare = vi.fn(() => expect(nav.showScreen).not.toHaveBeenCalled());
     nav.navigateTo("rewards", prepare);
     expect(prepare).toHaveBeenCalledOnce();
-    expect(nav.prepareScreen).toHaveBeenCalledExactlyOnceWith("rewards");
     expect(nav.showScreen).not.toHaveBeenCalled();
     vi.advanceTimersByTime(NAVIGATION_DELAY_MS);
     expect(nav.showScreen).toHaveBeenCalledExactlyOnceWith("rewards");
@@ -61,7 +67,6 @@ describe("screen navigation", () => {
     nav.transition("rewards", { guard: () => false, prepare });
     vi.runAllTimers();
     expect(prepare).not.toHaveBeenCalled();
-    expect(nav.prepareScreen).not.toHaveBeenCalled();
     expect(nav.showScreen).not.toHaveBeenCalled();
   });
 
@@ -72,7 +77,6 @@ describe("screen navigation", () => {
         throw new Error("failed");
       }),
     ).toThrow("failed");
-    expect(nav.prepareScreen).not.toHaveBeenCalled();
     expect(vi.getTimerCount()).toBe(0);
   });
 
@@ -80,7 +84,6 @@ describe("screen navigation", () => {
     const nav = navigation();
     nav.navigateTo("rewards", () => nav.navigateTo("menu"));
     vi.runAllTimers();
-    expect(nav.prepareScreen).toHaveBeenCalledExactlyOnceWith("menu");
     expect(nav.showScreen).toHaveBeenCalledExactlyOnceWith("menu");
   });
 
@@ -98,7 +101,11 @@ describe("screen navigation", () => {
     setRunSession({ hasActiveRun: true });
     const show = vi.fn();
     const { result, unmount } = renderHook(() => useScreenTransitions("battle", show), { reactStrictMode: true });
-    act(() => result.current.navigateTo("rewards"));
+    act(() =>
+      result.current.navigateTo("rewards", () =>
+        dispatchRunSessionCommand((transaction) => acceptCommand(setRunProgressActivity(transaction, "rewards"))),
+      ),
+    );
     expect(readRunResumeScreen()).toBe("rewards");
     unmount();
     vi.runAllTimers();
@@ -109,16 +116,13 @@ describe("screen navigation", () => {
   it("rejects transitions outside the screen policy", () => {
     const nav = navigation();
     expect(() => nav.navigateTo("character-select")).toThrow("Disallowed screen transition");
-    expect(nav.prepareScreen).not.toHaveBeenCalled();
   });
 
   it("resumes a saved run through the same delayed preparation and cancellation path", () => {
-    const prepareScreen = vi.fn();
     const showScreen = vi.fn();
-    const nav = createScreenNavigation({ readScreen: () => "collection", prepareScreen, showScreen });
+    const nav = createScreenNavigation({ readScreen: () => "collection", showScreen });
     expect(() => nav.navigateTo("rewards")).toThrow("Disallowed screen transition");
     nav.resumeTo("rewards");
-    expect(prepareScreen).toHaveBeenCalledExactlyOnceWith("rewards");
     expect(showScreen).not.toHaveBeenCalled();
     nav.cancelPending();
     vi.runAllTimers();
@@ -129,7 +133,49 @@ describe("screen navigation", () => {
   it("treats a guarded no-op as silent even on a disallowed edge", () => {
     const nav = navigation();
     expect(() => nav.transition("character-select", { guard: () => false })).not.toThrow();
-    expect(nav.prepareScreen).not.toHaveBeenCalled();
     expect(nav.showScreen).not.toHaveBeenCalled();
   });
 });
+
+// Exercise the real store writers: presentation must not create visits or alter saves.
+it.each(["idle", "shop", "rewards", "battle"] as const)(
+  "preserves %s gameplay through display, reset, cancellation, and supersession",
+  (kind) => {
+    setRunSession({ hasActiveRun: true, rewardState: { ...createEmptyRewardState(), gold: 25 } });
+    if (kind !== "idle")
+      dispatchRunSessionCommand((transaction) => acceptCommand(setRunProgressActivity(transaction, "rewards")));
+    if (kind === "shop")
+      setRunSession({
+        activity: { kind, data: { ...emptyShopState(), refreshesLeft: 1, purchasedSlotKeys: ["bought-slot"] } },
+      });
+    if (kind === "battle") {
+      // Store-owned battle setup needs the raw draft; this fixture preserves the same owner as production.
+      dispatchGameplayCommand((draft) => acceptCommand(initializeActiveBattle(draft, defaultBattleState())));
+    }
+    const before = readGameplayState();
+    const save = snapshotRun();
+    function assertGameplayUnchanged() {
+      const after = readGameplayState();
+      expect(after.session).toBe(before.session);
+      expect(after.battle).toBe(before.battle);
+      expect(after.run.activeRun).toBe(before.run.activeRun);
+      expect(after.runProfile).toBe(before.runProfile);
+      expect(snapshotRun()).toEqual(save);
+    }
+    showRunScreen("mystery");
+    assertGameplayUnchanged();
+    dispatchRunSessionCommand((transaction) => acceptCommand(resetNavigation(transaction)));
+    assertGameplayUnchanged();
+    const nav = createScreenNavigation({ readScreen: readActiveRunScreen, showScreen: showRunScreen });
+    nav.resumeTo("shop");
+    nav.cancelPending();
+    vi.runAllTimers();
+    expect(readActiveRunScreen()).toBe("menu");
+    assertGameplayUnchanged();
+    nav.resumeTo("shop");
+    nav.resumeTo("rewards", undefined, true);
+    vi.runAllTimers();
+    expect(readActiveRunScreen()).toBe("rewards");
+    assertGameplayUnchanged();
+  },
+);

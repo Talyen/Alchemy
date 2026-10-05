@@ -125,8 +125,13 @@ export const BATTLE_NO_FEATURES = [
 /** @type {ImportPattern[]} */
 export const DOMAIN_STORE_PATTERNS = [
   {
-    group: ["**/gameplay-state-store", "@/features/alchemy/shared/stores/gameplay-state-store"],
+    group: ["**/gameplay-state-store", "**/gameplay-state", "@/features/alchemy/shared/stores/gameplay-state-store"],
     message: "Import capability reads, writes, commands, or run-lifecycle instead of the low-level gameplay aggregate.",
+  },
+  {
+    group: ["**/gameplay-command", "**/transaction-internal", "**/readonly-view", "**/session-runtime"],
+    message:
+      "Raw gameplay drafts and read-facade internals are store-owned; use readonly transactions and domain operations.",
   },
 ];
 

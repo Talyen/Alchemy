@@ -1,10 +1,10 @@
 import "../../../../helpers/mock-audio";
 import "../../../../helpers/mock-flush-save";
-import { renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { defaultBattleState } from "@/lib/battle";
-import { ROUTE_SCREENS } from "@/lib/routing";
-import { createEmptyRewardState, readActivityData } from "@/lib/active-run-session";
+import { awardRunEndMaterials } from "@/features/alchemy/run-loop/run/run-materials";
+import { saveAlchemySaveData } from "@/features/alchemy/shared/storage";
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { createGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
+import { subscribeGameplayCommits } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import {
   abandonRun,
   applyRunDefeatTeardown,
@@ -13,24 +13,6 @@ import {
   syncRunToBattleStart as mutateRunToBattleStart,
   teardownRun,
 } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { awardRunEndMaterials } from "@/features/alchemy/run-loop/run/run-materials";
-import { finalizeRunXP as mutateFinalizeRunXP } from "@/features/alchemy/shared/stores/run-session-write-port";
-import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
-import { subscribeGameplayCommits } from "@/features/alchemy/shared/stores/gameplay-state-store";
-import {
-  createRunSessionCommand,
-  subscribeRunSessionCommits,
-} from "@/features/alchemy/shared/stores/run-session-command";
-import {
-  setHasActiveBattle as mutateHasActiveBattle,
-  setHasActiveRun as mutateHasActiveRun,
-  setRewardState as mutateRewardState,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
-import {
-  initializeActiveBattle as mutateInitializeActiveBattle,
-  setSyncedBattleState as mutateSyncedBattleState,
-} from "@/features/alchemy/shared/stores/write/run-battle";
-import { emptyInventory } from "@/lib/homestead/inventory";
 import {
   readActiveRun,
   readActiveRunScreen,
@@ -39,21 +21,52 @@ import {
   useRunSessionBattleContext,
   useRunSessionNavigationSlice,
 } from "@/features/alchemy/shared/stores/run-reads";
-import { saveAlchemySaveData } from "@/features/alchemy/shared/storage";
+import {
+  acceptCommand,
+  createRunSessionCommand,
+  subscribeRunSessionCommits,
+  type RunTransaction,
+} from "@/features/alchemy/shared/stores/run-session-command";
+import {
+  finalizeRunXP as mutateFinalizeRunXP,
+  setHasActiveBattle as mutateHasActiveBattle,
+  setHasActiveRun as mutateHasActiveRun,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  initializeActiveBattle as mutateInitializeActiveBattle,
+  setSyncedBattleState as mutateSyncedBattleState,
+} from "@/features/alchemy/shared/stores/write/run-battle";
+import { createEmptyRewardState, readActivityData } from "@/lib/active-run-session";
 import { playDefeat, stopAllSfx } from "@/lib/audio";
+import { defaultBattleState } from "@/lib/battle";
+import { emptyInventory } from "@/lib/homestead/inventory";
+import { ROUTE_SCREENS } from "@/lib/routing";
+import { renderHook } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   resetRunBattleSlice,
   resetRunDomainStore,
   resetRunSessionSlice,
   setRunProgress,
 } from "../../../../helpers/run-domain-store-test";
-const syncBattleToRun = createRunSessionCommand(mutateBattleToRun);
-const syncRunToBattleStart = createRunSessionCommand(mutateRunToBattleStart);
-const initializeActiveBattle = createRunSessionCommand(mutateInitializeActiveBattle);
-const setSyncedBattleState = createRunSessionCommand(mutateSyncedBattleState);
-const setHasActiveBattle = createRunSessionCommand(mutateHasActiveBattle);
-const setHasActiveRun = createRunSessionCommand(mutateHasActiveRun);
-const setRewardState = createRunSessionCommand(mutateRewardState);
+const syncBattleToRun = createRunSessionCommand((...args: Parameters<typeof mutateBattleToRun>) =>
+  acceptCommand(mutateBattleToRun(...args)),
+);
+const syncRunToBattleStart = createRunSessionCommand((...args: Parameters<typeof mutateRunToBattleStart>) =>
+  acceptCommand(mutateRunToBattleStart(...args)),
+);
+const initializeActiveBattle = createGameplayCommand((...args: Parameters<typeof mutateInitializeActiveBattle>) =>
+  acceptCommand(mutateInitializeActiveBattle(...args)),
+);
+const setSyncedBattleState = createGameplayCommand((...args: Parameters<typeof mutateSyncedBattleState>) =>
+  acceptCommand(mutateSyncedBattleState(...args)),
+);
+const setHasActiveBattle = createRunSessionCommand((...args: Parameters<typeof mutateHasActiveBattle>) =>
+  acceptCommand(mutateHasActiveBattle(...args)),
+);
+const setHasActiveRun = createRunSessionCommand((...args: Parameters<typeof mutateHasActiveRun>) =>
+  acceptCommand(mutateHasActiveRun(...args)),
+);
 
 beforeEach(() => {
   resetRunDomainStore();
@@ -73,23 +86,11 @@ describe("session slice", () => {
     expect(readRunSession().rewardFlow.state).toEqual(createEmptyRewardState());
     expect(readRunSession().hasActiveRun).toBe(false);
   });
-
-  it("setRewardState accepts direct values and updaters", () => {
-    setRewardState({ ...createEmptyRewardState(), gold: 50 });
-    expect(readRunSession().rewardFlow.state.gold).toBe(50);
-    setRewardState((prev) => ({ ...prev, gold: prev.gold + 25 }));
-    expect(readRunSession().rewardFlow.state.gold).toBe(75);
-  });
 });
 
 describe("battle slice", () => {
   beforeEach(() => {
     resetRunBattleSlice();
-  });
-
-  it("initializes battleState and hasActiveBattle defaults", () => {
-    expect(readBattle().battleState).not.toBeNull();
-    expect(readBattle().hasActiveBattle).toBe(false);
   });
 
   it("hydrates and resets active battle", () => {
@@ -144,7 +145,10 @@ describe("run transitions", () => {
     });
     expect(readRunSession().hasActiveRun).toBe(false);
     await vi.waitFor(() => {
-      expect(saveAlchemySaveData).toHaveBeenCalledWith(expect.objectContaining({ activeRun: null }));
+      expect(saveAlchemySaveData).toHaveBeenCalledWith(
+        expect.objectContaining({ activeRun: null }),
+        defaultGameSession,
+      );
     });
   });
 
@@ -181,7 +185,7 @@ describe("run transitions", () => {
     setHasActiveBattle(true);
     const awardRunEndMaterials = vi.fn(() => emptyInventory());
     const finalizeRunXP = vi.fn();
-    const clearCombatState = (draft: GameplayDraft) => mutateHasActiveBattle(draft, false);
+    const clearCombatState = (draft: RunTransaction) => mutateHasActiveBattle(draft, false);
     const clearCombatPresentation = vi.fn();
     const commits: Array<{ hasActiveRun: boolean; hasActiveBattle: boolean }> = [];
     const unsubscribe = subscribeRunSessionCommits(() => {
@@ -202,7 +206,10 @@ describe("run transitions", () => {
     expect(awardRunEndMaterials).toHaveBeenCalledOnce();
     expect(finalizeRunXP).toHaveBeenCalledOnce();
     await vi.waitFor(() => {
-      expect(saveAlchemySaveData).toHaveBeenCalledWith(expect.objectContaining({ activeRun: null }));
+      expect(saveAlchemySaveData).toHaveBeenCalledWith(
+        expect.objectContaining({ activeRun: null }),
+        defaultGameSession,
+      );
     });
     expect(commits).toEqual([{ hasActiveRun: false, hasActiveBattle: false }]);
     expect(clearCombatPresentation).toHaveBeenCalledOnce();

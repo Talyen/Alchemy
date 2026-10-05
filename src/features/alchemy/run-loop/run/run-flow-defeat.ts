@@ -1,14 +1,16 @@
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { BATTLE_END_TRANSITION_DELAY_MS } from "@/lib/game-constants";
 import { ROUTE_SCREENS } from "@/lib/routing";
+import { abandonCurrentRun, completeRunDefeat } from "./run-end-commands";
 import type { RunOutcomeDeps } from "./run-flow";
-import { completeRunDefeat, abandonCurrentRun } from "./run-end-commands";
 export { clearCombatState } from "./run-end-commands";
 
-export function createDefeatHandlers(deps: RunOutcomeDeps) {
-  const finalizeDefeat = completeRunDefeat;
+export function createDefeatHandlers(deps: RunOutcomeDeps, gameSession: GameSession = defaultGameSession) {
+  const finalizeDefeat = () => completeRunDefeat(gameSession);
 
   function endRunAndShowGameOver() {
     finalizeDefeat();
@@ -18,13 +20,13 @@ export function createDefeatHandlers(deps: RunOutcomeDeps) {
   function handleBattleDefeat() {
     deps.actions.transition(ROUTE_SCREENS.GAME_OVER, {
       delayMs: resolveGameDelay(BATTLE_END_TRANSITION_DELAY_MS),
-      guard: () => readRunSession().hasActiveRun,
+      guard: () => readRunSession(gameSession).hasActiveRun,
       prepare: finalizeDefeat,
     });
   }
 
   function isLabyrinthRun() {
-    return readActiveRun().contentSystemType === CONTENT_SYSTEMS.LABYRINTH;
+    return readActiveRun(gameSession).contentSystemType === CONTENT_SYSTEMS.LABYRINTH;
   }
 
   function endLabyrinthRun() {
@@ -33,7 +35,7 @@ export function createDefeatHandlers(deps: RunOutcomeDeps) {
   }
 
   function handleAbandonRun() {
-    const ended = abandonCurrentRun();
+    const ended = abandonCurrentRun(gameSession);
     if (!ended) return;
     deps.actions.transition(ROUTE_SCREENS.GAME_OVER, { immediate: true });
   }

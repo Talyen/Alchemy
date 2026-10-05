@@ -33,6 +33,22 @@ describe("playTurnFrames", () => {
     vi.clearAllMocks();
   });
 
+  it("presents Dark Recovery earned at the next player turn", async () => {
+    const before = patchBattleState({ mana: 0, talentEffects: { manaAfterEmptyTurn: 1 }, rng: () => 0.99 });
+    const turn = endPlayerTurn(before);
+    const presentation = makePresentation();
+    await playTurnFrames(
+      [{ before: battleSnapshot(before), turn, companion: null }],
+      3,
+      makeDrawSequenceDeps({ isSessionActive: () => true }),
+      presentation,
+    );
+    expect(turn.state.mana).toBe(turn.state.maxMana + 1);
+    expect(presentation.showCombatTexts).toHaveBeenCalledWith(
+      expect.arrayContaining([{ target: "player", kind: "status", stat: "mana", amount: 1 }]),
+    );
+  });
+
   it("reveals haste frames without enemy presentation", async () => {
     const frame = makeHasteFrame();
     const presentation = makePresentation();

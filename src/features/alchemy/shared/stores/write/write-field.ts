@@ -1,4 +1,4 @@
-import type { GameplayDraft } from "../run-session-command";
+import type { GameplayDraft } from "../gameplay-command";
 
 export type FieldUpdate<T> = T | ((previous: T) => T);
 

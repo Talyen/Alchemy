@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/persistence";
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import { setHasActiveRun, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetAllTestStores } from "../helpers/run-domain-store-test";
@@ -26,6 +26,8 @@ describe("resolveActiveRunForSave", () => {
     dispatchRunSessionCommand((draft) => {
       setHasActiveRun(draft, false);
       setScreen(draft, ROUTE_SCREENS.GAME_OVER);
+
+      return acceptCommand();
     });
 
     const activeRun = resolveActiveRunForSave(readHasActiveRun());
@@ -40,6 +42,8 @@ describe("resolveActiveRunForSave", () => {
     dispatchRunSessionCommand((draft) => {
       setHasActiveRun(draft, true);
       setScreen(draft, ROUTE_SCREENS.DESTINATION);
+
+      return acceptCommand();
     });
 
     const activeRun = resolveActiveRunForSave(readHasActiveRun());
@@ -56,6 +60,8 @@ describe("resolveActiveRunForSave", () => {
     dispatchRunSessionCommand((draft) => {
       setHasActiveRun(draft, false);
       setScreen(draft, ROUTE_SCREENS.GAME_OVER);
+
+      return acceptCommand();
     });
 
     setRunProgress({ gold: 100 });

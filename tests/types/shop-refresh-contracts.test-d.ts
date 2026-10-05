@@ -1,11 +1,11 @@
 import { createShopRefreshAction, initializeShop } from "@/features/alchemy/run-loop/shop/shop-commands-core";
 import type { AlchemistState } from "@/lib/active-run-session";
 import { setRunActivityData } from "@/features/alchemy/shared/stores/run-session-write-port";
-import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import type { RunTransaction } from "@/features/alchemy/shared/stores/run-session-command";
 import type { TalentEffectManifest } from "@/lib/game-data";
 
 declare const alchemistState: AlchemistState;
-declare const draft: GameplayDraft;
+declare const draft: RunTransaction;
 declare const talents: TalentEffectManifest;
 
 createShopRefreshAction({

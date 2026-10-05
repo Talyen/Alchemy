@@ -1,35 +1,38 @@
-import { effectDescriptionLine, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
-
-const trailingKeywords: ReadonlySet<string> = new Set(["Consume", "Archery", "Leech", "Companion"]);
+import {
+  createEffectDescription,
+  getCardDescription,
+  mapCardDescriptionReferences,
+  withCardDescription,
+  type BattleCard,
+  type BattleCardEffect,
+  type CardDescription,
+} from "@/lib/game-data";
 
 export function countCorruptionEffectLines(card: BattleCard): number {
-  return card.descriptionLines.filter((line) => !trailingKeywords.has(line)).length;
+  return getCardDescription(card).filter((line) => line.role === "effect").length;
 }
 
-export function addCorruptionLine(
+function insertDescription(
   card: BattleCard,
-  line: string,
-  effect?: BattleCardEffect,
-  placement: "first" | "before-keywords" = "before-keywords",
+  added: CardDescription,
+  effects: BattleCardEffect[],
+  placement: "first" | "before-keywords",
 ): BattleCard {
-  const first = placement === "first";
-  const keywordIndex =
-    line === "Consume" ? -1 : card.descriptionLines.findIndex((entry) => trailingKeywords.has(entry));
-  const lineIndex = first ? 0 : keywordIndex < 0 ? card.descriptionLines.length : keywordIndex;
-  const descriptionLines = [...card.descriptionLines];
-  descriptionLines.splice(lineIndex, 0, line);
-  const positions = (card.corruptedValuePositions ?? []).map((pos) => ({
-    ...pos,
-    lineIndex: pos.lineIndex >= lineIndex ? pos.lineIndex + 1 : pos.lineIndex,
-  }));
-  for (const match of line.matchAll(/\d+/g)) positions.push({ lineIndex, matchIndex: match.index });
-  return {
-    ...card,
-    corrupted: true,
-    descriptionLines,
-    effects: effect ? (first ? [effect, ...card.effects] : [...card.effects, effect]) : [...card.effects],
-    corruptedValuePositions: positions,
-  };
+  const description = getCardDescription(card);
+  const keywordIndex = description.findIndex((line) => line.role !== "effect");
+  const lineIndex = placement === "first" ? 0 : keywordIndex < 0 ? description.length : keywordIndex;
+  return withCardDescription({ ...card, corrupted: true, effects }, [
+    ...description.slice(0, lineIndex),
+    ...added,
+    ...description.slice(lineIndex),
+  ]);
+}
+
+export function addCorruptionLine(card: BattleCard, line: string, role: "keyword" | "consume" = "keyword"): BattleCard {
+  // Consume remains the final keyword; other keyword lines precede it.
+  if (role === "consume")
+    return withCardDescription({ ...card, corrupted: true }, [...getCardDescription(card), { parts: [line], role }]);
+  return insertDescription(card, [{ parts: [line], role }], card.effects, "before-keywords");
 }
 
 export function addCorruptionEffect(
@@ -37,27 +40,34 @@ export function addCorruptionEffect(
   effect: BattleCardEffect,
   placement: "first" | "before-keywords" = "before-keywords",
 ): BattleCard {
-  return addCorruptionLine(card, effectDescriptionLine(effect), effect, placement);
+  const first = placement === "first";
+  const effects = first ? [effect, ...card.effects] : [...card.effects, effect];
+  const description = mapCardDescriptionReferences(getCardDescription(card), (reference) => ({
+    ...reference,
+    effectIndex: reference.effectIndex + (first ? 1 : 0),
+  }));
+  const added = mapCardDescriptionReferences(
+    createEffectDescription([effect]),
+    (reference) => ({
+      ...reference,
+      effectIndex: first ? 0 : card.effects.length,
+    }),
+    `added/${card.effects.length}`,
+  ).map((line) => ({
+    ...line,
+    parts: line.parts.map((part) => (typeof part === "string" ? part : { ...part, corrupted: true })),
+  }));
+  return insertDescription({ ...card, description }, added, effects, placement);
 }
 
 export function removeConsume(card: BattleCard): BattleCard {
-  const descriptionLines: string[] = [];
-  const newLineIndices = card.descriptionLines.map((line) => {
-    if (line === "Consume") return undefined;
-    const lineIndex = descriptionLines.length;
-    descriptionLines.push(line);
-    return lineIndex;
-  });
-  const positions = (card.corruptedValuePositions ?? []).flatMap((position) => {
-    const lineIndex = newLineIndices[position.lineIndex];
-    return lineIndex === undefined ? [] : [{ ...position, lineIndex }];
-  });
-  return {
-    ...card,
-    corrupted: true,
-    consume: false,
-    ...(card.tags ? { tags: card.tags.filter((tag) => tag !== "consume") } : {}),
-    descriptionLines,
-    corruptedValuePositions: positions,
-  };
+  return withCardDescription(
+    {
+      ...card,
+      corrupted: true,
+      consume: false,
+      ...(card.tags ? { tags: card.tags.filter((tag) => tag !== "consume") } : {}),
+    },
+    getCardDescription(card).filter((line) => line.role !== "consume"),
+  );
 }

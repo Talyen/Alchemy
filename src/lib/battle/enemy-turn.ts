@@ -138,10 +138,13 @@ function resolveEnemyTurn(state: BattleState): Exclude<EndPlayerTurnResolution, 
     enemyResolutionCombatTexts,
     skipped ? "skip" : "attack",
   );
-  const combatTexts = [...enemyTurnStartCombatTexts, ...enemyResolutionCombatTexts];
+  // Playback consumes the phase batches, so next-turn rewards must also join
+  // the final phase rather than existing only in the combined engine result.
+  const finalized = finalizePlayerTurn(result.state, enemyResolutionCombatTexts, { manaAtTurnEnd: state.mana });
   return {
     kind: skipped ? "skipped" : "standard",
-    ...finalizePlayerTurn(result.state, combatTexts, { manaAtTurnEnd: state.mana }),
+    ...finalized,
+    combatTexts: [...enemyTurnStartCombatTexts, ...finalized.combatTexts],
     enemyTurnStartState,
     enemyTurnStartCombatTexts,
     enemyResolutionCombatTexts,
@@ -203,10 +206,16 @@ function snapshotTurn(turn: EndPlayerTurnResolution): EndPlayerTurnResolution<Ba
 }
 
 /** Resolve until input is possible again; presentation never advances combat or draws RNG. */
-export function resolveBattleTurn(snapshot: BattleSnapshot, context: BattleResolutionContext): ResolvedBattleTurn {
+export function resolveBattleTurn(
+  snapshot: BattleSnapshot,
+  context: BattleResolutionContext,
+  options?: { maxTurns: number },
+): ResolvedBattleTurn {
   let state: BattleState = { ...snapshot, ...context };
   const frames: BattleTurnFrame[] = [];
-  while (state.enemyHealth > 0 && !isPlayerDefeated(state)) {
+  // Balance fights have a round budget, including forced skips. Live commands
+  // omit it and continue until player input is possible or combat ends.
+  while (state.enemyHealth > 0 && !isPlayerDefeated(state) && frames.length < (options?.maxTurns ?? Infinity)) {
     const before = battleSnapshot(state);
     const turn = endPlayerTurn(state);
     state = turn.state;

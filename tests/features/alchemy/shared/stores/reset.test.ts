@@ -1,4 +1,5 @@
-import { describe, expect, it, beforeEach, vi } from "vitest";
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/alchemy/shared/storage", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/alchemy/shared/storage")>();
@@ -8,17 +9,19 @@ vi.mock("@/features/alchemy/shared/storage", async (importOriginal) => {
   };
 });
 
-import { clearAlchemySaveData, defaultSaveData } from "@/features/alchemy/shared/storage";
-import { DEVICE_DISPLAY_STORAGE_KEY, readDeviceDisplayPreferences } from "@/features/alchemy/shared/storage";
-import { clearAllPersistentGameData, resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
-import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import {
+  clearAlchemySaveData,
+  defaultSaveData,
+  DEVICE_DISPLAY_STORAGE_KEY,
+  readDeviceDisplayPreferences,
+} from "@/features/alchemy/shared/storage";
 import {
   flushDeviceDisplayPreferences,
   initDeviceDisplayPreferences,
   useDeviceDisplayStore,
 } from "@/features/alchemy/shared/stores/device-display-store";
-import { ROUTE_SCREENS } from "@/lib/routing";
+import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
+import { clearAllPersistentGameData, resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import {
   readActiveRun,
   readActiveRunScreen,
@@ -26,15 +29,17 @@ import {
   readRunProfile,
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-reads";
-import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
-import { emptyInventory } from "@/lib/homestead/inventory";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   addMaterialsToStockpile,
   setDiscoveredCardIds,
   setHasActiveBattle,
   setHasActiveRun,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { emptyInventory } from "@/lib/homestead/inventory";
+import { ROUTE_SCREENS } from "@/lib/routing";
 import { resetProfileForTest, resetRunDomainStore, setRunProgress } from "../../../../helpers/run-domain-store-test";
 
 const mockedClearSave = vi.mocked(clearAlchemySaveData);
@@ -55,12 +60,14 @@ describe("clearAllPersistentGameData", () => {
     dispatchRunSessionCommand((draft) => {
       addMaterialsToStockpile(draft, { wood: 10, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
       setDiscoveredCardIds(draft, ["card-a"]);
+
+      return acceptCommand();
     });
     setRunProgress({ unlockedTalents: { physical: ["test-talent"] } });
 
     await expect(clearAllPersistentGameData()).resolves.toBe(true);
 
-    expect(mockedClearSave).toHaveBeenCalledWith("localWipe");
+    expect(mockedClearSave).toHaveBeenCalledWith("localWipe", defaultGameSession);
     expect(readRunProfile().materialInventory).toEqual(emptyInventory());
     expect(readRunProfile().unlockedTalents).toEqual({});
     expect(readProfileStore().discoveredCardIds).toEqual(defaultSaveData.discoveredCardIds);
@@ -71,6 +78,8 @@ describe("clearAllPersistentGameData", () => {
     dispatchRunSessionCommand((draft) => {
       setHasActiveRun(draft, true);
       setHasActiveBattle(draft, true);
+
+      return acceptCommand();
     });
 
     await expect(clearAllPersistentGameData()).resolves.toBe(true);
@@ -103,6 +112,8 @@ describe("clearAllPersistentGameData", () => {
     dispatchRunSessionCommand((draft) => {
       addMaterialsToStockpile(draft, { wood: 10, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
       setDiscoveredCardIds(draft, ["card-a"]);
+
+      return acceptCommand();
     });
     setRunProgress({ unlockedTalents: { physical: ["test-talent"] } });
 

@@ -1,4 +1,5 @@
-import { createEmptyAnomalies, sampleAnomalies } from "@/lib/balance/anomalies";
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import {
   readActiveRun,
   readActiveRunScreen,
@@ -6,6 +7,7 @@ import {
   readRunProfile,
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-reads";
+import { createEmptyAnomalies, sampleAnomalies } from "@/lib/balance/anomalies";
 import { snapshotBattle, snapshotRunProgress } from "./telemetry";
 import type { CareerConfig, CareerResult, PlayerChoice } from "./types";
 
@@ -50,10 +52,11 @@ export function recordBattleStart(
   step: number,
   completed: number,
   observedBattleKeys: Set<string>,
+  gameSession: GameSession = defaultGameSession,
 ) {
-  const activeBattle = readBattle();
+  const activeBattle = readBattle(gameSession);
   if (!activeBattle.hasActiveBattle) return;
-  const activeRun = readActiveRun();
+  const activeRun = readActiveRun(gameSession);
   const state = activeBattle.battleState;
   const battleKey = `${completed}:${activeRun.roomsEncountered}:${state.currentEnemy.id}`;
   if (observedBattleKeys.has(battleKey)) return;
@@ -61,8 +64,12 @@ export function recordBattleStart(
   result.telemetry.battleSnapshots.push(snapshotBattle(step, completed, activeRun.roomsEncountered, "start", state));
 }
 
-export function recordObservation(result: CareerResult, options: PlayerChoice[]) {
-  const activeBattle = readBattle();
+export function recordObservation(
+  result: CareerResult,
+  options: PlayerChoice[],
+  gameSession: GameSession = defaultGameSession,
+) {
+  const activeBattle = readBattle(gameSession);
   if (!activeBattle.hasActiveBattle) return;
   const state = activeBattle.battleState;
   sampleAnomalies(state, [], result.telemetry.anomalies);
@@ -74,11 +81,17 @@ export function recordObservation(result: CareerResult, options: PlayerChoice[])
     result.telemetry.cards[option.id]!.playable++;
 }
 
-export function recordChosenAction(result: CareerResult, step: number, completed: number, choice: PlayerChoice) {
+export function recordChosenAction(
+  result: CareerResult,
+  step: number,
+  completed: number,
+  choice: PlayerChoice,
+  gameSession: GameSession = defaultGameSession,
+) {
   if (choice.kind === "play") result.telemetry.cards[choice.id]!.chosen++;
   if (choice.kind !== "settle") return;
-  const state = readBattle().battleState;
-  const room = readActiveRun().roomsEncountered;
+  const state = readBattle(gameSession).battleState;
+  const room = readActiveRun(gameSession).roomsEncountered;
   result.telemetry.battleSnapshots.push(snapshotBattle(step, completed, room, "settle", state));
   result.telemetry.battles.push({
     enemy: state.currentEnemy.id,
@@ -96,11 +109,12 @@ export function recordCommittedAction(
   completed: number,
   choice: PlayerChoice,
   maxTurns: number,
+  gameSession: GameSession = defaultGameSession,
 ) {
   result.coverage[choice.kind] = (result.coverage[choice.kind] ?? 0) + 1;
-  const run = readActiveRun();
-  const profile = readRunProfile();
-  const session = readRunSession();
+  const run = readActiveRun(gameSession);
+  const profile = readRunProfile(gameSession);
+  const session = readRunSession(gameSession);
   for (const value of [
     profile.gold,
     run.runPlayerHealth,
@@ -110,7 +124,7 @@ export function recordCommittedAction(
     if (!Number.isFinite(value) || value < 0) throw new Error(`Invariant: invalid resource ${value}`);
   }
   if (session.rewardFlow.claim.kind !== "idle") throw new Error("Invariant: orphaned reward/destination claim");
-  if (readBattle().hasActiveBattle && readBattle().battleState.turn > maxTurns)
+  if (readBattle(gameSession).hasActiveBattle && readBattle(gameSession).battleState.turn > maxTurns)
     throw new Error("Incomplete: battle turn budget exhausted");
 
   if (!["play", "wish", "end-turn"].includes(choice.kind)) {
@@ -142,7 +156,7 @@ export function recordCommittedAction(
     )
   )
     result.telemetry.milestones[`${choice.kind}:${choice.id}`] ??= completed;
-  const battleState = readBattle().battleState;
+  const battleState = readBattle(gameSession).battleState;
   for (const value of [
     battleState.playerHealth,
     battleState.enemyHealth,
@@ -160,8 +174,9 @@ export function recordRunOutcome(
   step: number,
   choice: PlayerChoice,
   { run, profile }: ReturnType<typeof recordCommittedAction>,
+  gameSession: GameSession = defaultGameSession,
 ) {
-  const screen = readActiveRunScreen();
+  const screen = readActiveRunScreen(gameSession);
   if (screen !== "game-over" && screen !== "run-victory") return;
   result.outcomes.push({
     outcome: choice.kind === "horizon" ? "horizon" : screen === "run-victory" ? "victory" : "defeat",

@@ -12,7 +12,7 @@ import {
 } from "@/lib/game-data";
 import { EMPTY_CRAFTING_CURRENCIES, normalizeCraftingCurrencies } from "@/lib/gear/crafting-ids";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
+import { MATERIAL_IDS } from "@/lib/homestead/types";
 import { filterValidDestinations } from "@/lib/routing";
 import { ASPECT_RATIO_VALUES, DISPLAY_MODE_VALUES } from "@/lib/settings-values";
 import { z } from "zod";
@@ -28,13 +28,6 @@ export const CHARACTER_IDS = toNonEmptyTuple(Object.keys(characters) as Characte
 const DIFFICULTY_IDS = toNonEmptyTuple(DIFFICULTY_ORDER as readonly DifficultyId[], "Difficulty IDs");
 
 export const MATERIAL_ZERO_INVENTORY = emptyInventory();
-
-function createMaterialInventoryShape() {
-  return MATERIAL_IDS.reduce(
-    (shape, id) => ({ ...shape, [id]: z.number().int().nonnegative().catch(0) }),
-    {} as Record<MaterialId, z.ZodCatch<z.ZodNumber>>,
-  );
-}
 
 export const CharacterIdSchema = z.enum(CHARACTER_IDS);
 export const DifficultyIdSchema = z.enum(DIFFICULTY_IDS);
@@ -75,7 +68,14 @@ export const CraftingCurrencyInventorySchema = z
   .catch(CRAFTING_CURRENCY_ZERO_INVENTORY)
   .transform((inventory) => normalizeCraftingCurrencies(inventory));
 
-export const MaterialInventorySchema = z.object(createMaterialInventoryShape()).catch(() => emptyInventory());
+export const MaterialInventorySchema = z
+  .object(
+    Object.fromEntries(MATERIAL_IDS.map((id) => [id, z.number().int().nonnegative().catch(0)])) as Record<
+      (typeof MATERIAL_IDS)[number],
+      z.ZodCatch<z.ZodNumber>
+    >,
+  )
+  .catch(() => emptyInventory());
 
 export const TalentXPSchema = z.preprocess((val) => {
   if (!val || typeof val !== "object") return {};

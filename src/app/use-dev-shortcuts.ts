@@ -1,7 +1,7 @@
 import { playUISound } from "@/lib/audio";
 import { discoverCardIds, discoverTrinketIds, discoverUniqueIds } from "@/features/alchemy/shared/stores/profile-store";
 import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/reset";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   setEncounteredEnemyIds,
   setFinishedRunCharacters,
@@ -45,6 +45,8 @@ export function useDevShortcuts(run: Pick<AlchemyRunCommands, "resetRunState" | 
       );
       setFinishedRunCharacters(draft, ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"]);
       setMaterials(draft, { wood: 99, stone: 99, iron: 99, food: 99, herbs: 99, hide: 99, gems: 99 });
+
+      return acceptCommand();
     });
     unlockAllTalents();
   }, [unlockAllTalents]);

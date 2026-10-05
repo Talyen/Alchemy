@@ -1,11 +1,11 @@
-import { act, renderHook } from "@testing-library/react";
-import { useScreenTransitions } from "@/features/alchemy/shell/use-screen-transitions";
 import "../../../../helpers/mock-audio";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
-import { createVictoryHandlers } from "@/features/alchemy/run-loop/run/run-flow-victory";
 import { clearCombatState } from "@/features/alchemy/run-loop/run/run-flow-defeat";
+import { createVictoryHandlers } from "@/features/alchemy/run-loop/run/run-flow-victory";
 import { awardRunEndMaterials } from "@/features/alchemy/run-loop/run/run-materials";
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
+import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readActiveRun, readBattle, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import {
   addRunCurrenciesEarned,
@@ -13,16 +13,16 @@ import {
   setHasActiveBattle,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
-import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
-import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
-import { emptyInventory } from "@/lib/homestead/inventory";
-import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { useScreenTransitions } from "@/features/alchemy/shell/use-screen-transitions";
 import { playGoldGain } from "@/lib/audio";
-import { BATTLE_END_TRANSITION_DELAY_MS } from "@/lib/game-constants";
-import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
+import { BATTLE_END_TRANSITION_DELAY_MS } from "@/lib/game-constants";
+import { emptyInventory } from "@/lib/homestead/inventory";
+import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
+import { act, renderHook } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { resetAllTestStores, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
+import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
 vi.mock("@/features/alchemy/shared/stores/run-lifecycle", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/run-lifecycle")>();
   return {
@@ -34,7 +34,7 @@ vi.mock("@/features/alchemy/shared/stores/run-lifecycle", async (importOriginal)
 beforeEach(() => {
   resetAllTestStores();
   setRunSession({ hasActiveRun: true, activity: { kind: "rewards" } });
-  dispatchRunSessionCommand((draft) => setHasActiveBattle(draft, true));
+  dispatchGameplayCommand((draft) => acceptCommand(setHasActiveBattle(draft, true)));
 });
 
 describe("createRunFlow victory paths", () => {
@@ -69,12 +69,16 @@ describe("createRunFlow victory paths", () => {
 
   it("awardRunEndMaterials applies homestead end-of-run per-room bonuses", () => {
     setRunProgress({ roomsEncountered: 4, currentAct: 1 });
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.runProfile.effects.endRunHerbsPerRoom = 1;
+
+      return acceptCommand();
     });
     const herbsBefore = readRunProfile().materialInventory.herbs;
 
-    const mats = dispatchRunSessionCommand(awardRunEndMaterials);
+    const mats = dispatchGameplayCommand((...args: Parameters<typeof awardRunEndMaterials>) =>
+      acceptCommand(awardRunEndMaterials(...args)),
+    );
 
     expect(mats.herbs).toBe(4);
     expect(readRunProfile().materialInventory.herbs).toBe(herbsBefore + 4);
@@ -83,9 +87,13 @@ describe("createRunFlow victory paths", () => {
 
   it("awardRunEndMaterials includes materials collected during the run on the summary", () => {
     setRunProgress({ roomsEncountered: 2, currentAct: 1 });
-    dispatchRunSessionCommand((draft) => addRunMaterialsEarned(draft, { ...emptyInventory(), wood: 5, herbs: 2 }));
+    dispatchGameplayCommand((draft) =>
+      acceptCommand(addRunMaterialsEarned(draft, { ...emptyInventory(), wood: 5, herbs: 2 })),
+    );
 
-    dispatchRunSessionCommand(awardRunEndMaterials);
+    dispatchGameplayCommand((...args: Parameters<typeof awardRunEndMaterials>) =>
+      acceptCommand(awardRunEndMaterials(...args)),
+    );
 
     expect(readRunSession().runEndMaterials.wood).toBe(5);
     expect(readRunSession().runEndMaterials.herbs).toBe(2);
@@ -94,12 +102,16 @@ describe("createRunFlow victory paths", () => {
 
   it("awardRunEndMaterials returns only the homestead bonus while the summary holds the run total", () => {
     setRunProgress({ roomsEncountered: 2, currentAct: 1 });
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.runProfile.effects.endRunHerbsPerRoom = 1;
       addRunMaterialsEarned(draft, { ...emptyInventory(), wood: 5 });
+
+      return acceptCommand();
     });
 
-    const bonus = dispatchRunSessionCommand(awardRunEndMaterials);
+    const bonus = dispatchGameplayCommand((...args: Parameters<typeof awardRunEndMaterials>) =>
+      acceptCommand(awardRunEndMaterials(...args)),
+    );
 
     expect(bonus.wood).toBe(0);
     expect(bonus.herbs).toBe(2);
@@ -109,11 +121,15 @@ describe("createRunFlow victory paths", () => {
 
   it("awardRunEndMaterials snapshots salvaged currencies into the recap and clears the tally", () => {
     setRunProgress({ roomsEncountered: 2, currentAct: 1 });
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       addRunCurrenciesEarned(draft, { "discordant-dice": 2 });
+
+      return acceptCommand();
     });
 
-    dispatchRunSessionCommand(awardRunEndMaterials);
+    dispatchGameplayCommand((...args: Parameters<typeof awardRunEndMaterials>) =>
+      acceptCommand(awardRunEndMaterials(...args)),
+    );
 
     expect(readRunSession().runEndCurrencies["discordant-dice"]).toBe(2);
     expect(readActiveRun().runCurrenciesEarned["discordant-dice"]).toBe(0);
@@ -122,7 +138,9 @@ describe("createRunFlow victory paths", () => {
   it("awardRunEndMaterials adds no homestead bonus with default effects", () => {
     setRunProgress({ roomsEncountered: 6, currentAct: 2 });
 
-    const mats = dispatchRunSessionCommand(awardRunEndMaterials);
+    const mats = dispatchGameplayCommand((...args: Parameters<typeof awardRunEndMaterials>) =>
+      acceptCommand(awardRunEndMaterials(...args)),
+    );
 
     expect(mats).toEqual(emptyInventory());
     expect(readRunSession().runEndMaterials).toEqual(emptyInventory());
@@ -130,15 +148,21 @@ describe("createRunFlow victory paths", () => {
 
   it("Wildwood run end includes collected Materials and Homestead bonuses", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.WILDWOOD, roomsEncountered: 12 });
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.runProfile.effects.endRunHerbsPerRoom = 2;
+
+      return acceptCommand();
     });
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       addRunMaterialsEarned(draft, { ...emptyInventory(), wood: 5 });
       addRunCurrenciesEarned(draft, { "discordant-dice": 2 });
+
+      return acceptCommand();
     });
 
-    const materials = dispatchRunSessionCommand(awardRunEndMaterials);
+    const materials = dispatchGameplayCommand((...args: Parameters<typeof awardRunEndMaterials>) =>
+      acceptCommand(awardRunEndMaterials(...args)),
+    );
 
     expect(materials).toEqual({ ...emptyInventory(), herbs: 24 });
     expect(readRunSession().runEndMaterials).toEqual({ ...emptyInventory(), herbs: 24, wood: 5 });
@@ -147,8 +171,8 @@ describe("createRunFlow victory paths", () => {
   });
 
   it("clearCombatState clears battle flag", () => {
-    dispatchRunSessionCommand((draft) => setHasActiveBattle(draft, true));
-    dispatchRunSessionCommand(clearCombatState);
+    dispatchGameplayCommand((draft) => acceptCommand(setHasActiveBattle(draft, true)));
+    dispatchGameplayCommand((...args: Parameters<typeof clearCombatState>) => acceptCommand(clearCombatState(...args)));
     expect(readBattle().hasActiveBattle).toBe(false);
   });
 
@@ -165,6 +189,7 @@ describe("createRunFlow victory paths", () => {
         finalizeRunXP: expect.any(Function),
         clearCombatState,
       }),
+      defaultGameSession,
     );
   });
 
@@ -185,6 +210,7 @@ describe("createRunFlow victory paths", () => {
         finalizeRunXP: expect.any(Function),
         clearCombatState,
       }),
+      defaultGameSession,
     );
   });
 
@@ -302,6 +328,7 @@ describe("createRunFlow victory paths", () => {
       runMaxHealth: 20,
     });
     setRunSession({
+      activity: { kind: "battle" },
       wildwoodDraft: {
         phase: "battle",
         draftChoices: [],
@@ -315,6 +342,7 @@ describe("createRunFlow victory paths", () => {
     const handlers = createVictoryHandlers(makeFlowHandlerDeps());
     handlers.commitVictoryResult();
     expect(readRunSession().wildwoodDraft?.phase).toBe("reward");
+    expect(readRunSession().activity.kind).toBe("rewards");
   });
 
   it("plays gold gain SFX when Wildwood victory persists in-combat gold", () => {
@@ -325,13 +353,16 @@ describe("createRunFlow victory paths", () => {
       runPlayerHealth: 20,
       runMaxHealth: 20,
     });
-    dispatchRunSessionCommand((draft) =>
-      setSyncedBattleState(draft, {
-        ...readBattle().battleState,
-        gold: 15,
-      }),
+    dispatchGameplayCommand((draft) =>
+      acceptCommand(
+        setSyncedBattleState(draft, {
+          ...readBattle().battleState,
+          gold: 15,
+        }),
+      ),
     );
     setRunSession({
+      activity: { kind: "battle" },
       wildwoodDraft: {
         phase: "battle",
         draftChoices: [],

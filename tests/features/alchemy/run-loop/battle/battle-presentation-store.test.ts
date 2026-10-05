@@ -14,7 +14,7 @@ import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { patchBattleState, makeTestCard } from "../../../../fixtures/battle";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setHasActiveBattle, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 
@@ -184,6 +184,8 @@ describe("battle-presentation-store", () => {
     dispatchRunSessionCommand((draft) => {
       setHasActiveBattle(draft, true);
       setScreen(draft, ROUTE_SCREENS.BATTLE);
+
+      return acceptCommand();
     });
     return useBattlePresentationStore.getState().showCombatTexts;
   }
@@ -400,7 +402,7 @@ describe("battle-presentation-store", () => {
     await vi.advanceTimersByTimeAsync(COMBAT_TEXT_LIFETIME_MS - 300);
     expect(useBattlePresentationStore.getState().floatingCombatBursts).toHaveLength(1);
     useBattlePresentationStore.getState().resetPresentation();
-    dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.COLLECTION));
+    dispatchRunSessionCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.COLLECTION)));
     show([{ target: "enemy", kind: "damage", stat: "physical", amount: 9 }]);
     await vi.advanceTimersByTimeAsync(COMBAT_TEXT_LIFETIME_MS);
     expect(useBattlePresentationStore.getState().floatingCombatBursts).toEqual([]);

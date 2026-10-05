@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { isDeckInspectionVisible, useCardInspection } from "@/app/use-card-inspection";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { makeTestCard } from "../fixtures/battle";
 import { getEffectiveCardDescriptionLines } from "@/lib/game-data/card-description";
@@ -22,12 +22,14 @@ const base = {
 beforeEach(() => {
   resetAllTestStores();
   useBattlePresentationStore.getState().resetPresentation();
-  dispatchRunSessionCommand((draft) => {
+  dispatchGameplayCommand((draft) => {
     draft.session.activity = { kind: "idle" };
     draft.battle.hasActiveBattle = true;
     draft.battle.battleState.enemyHealth = 30;
     draft.battle.battleState.playerHealth = 30;
     draft.battle.battleState.turnPhase = "player";
+
+    return acceptCommand();
   });
 });
 afterEach(cleanup);
@@ -38,16 +40,20 @@ describe("run card inspection", () => {
       effects: [{ kind: "summon-companion", companionId: "phoenix" }],
       descriptionLines: ["old", "Companion"],
     });
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.battle.battleState.gearEffects.companionDamageBonus = 4;
+
+      return acceptCommand();
     });
     const { result } = renderHook(() => useCardInspection(base));
     expect(getEffectiveCardDescriptionLines(summon, result.current.battleDescriptionContext!)[0]).toBe(
       "Deals 5 Burn damage each turn",
     );
     act(() =>
-      dispatchRunSessionCommand((draft) => {
+      dispatchGameplayCommand((draft) => {
         draft.battle.battleState.gearEffects.companionDamageBonus = 8;
+
+        return acceptCommand();
       }),
     );
     expect(getEffectiveCardDescriptionLines(summon, result.current.battleDescriptionContext!)[0]).toBe(
@@ -69,10 +75,12 @@ describe("run card inspection", () => {
     const consumed = makeTestCard({ id: "apple", uid: 1, consume: true });
     const drawn = makeTestCard({ id: "slash", uid: 2 });
     const generated = makeTestCard({ id: "block", uid: 3 });
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.run.activeRun.runDeck = [consumed, drawn];
       draft.battle.battleState.deck = [drawn];
       draft.battle.battleState.discard = [generated];
+
+      return acceptCommand();
     });
     const before = readGameplayState();
     const { result } = renderHook(() => useCardInspection(base));
@@ -88,13 +96,15 @@ describe("run card inspection", () => {
   });
 
   it.each(["enemy", "wish", "transfer", "dead", "card-play"])("rejects inspection during %s", (reason) => {
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       if (reason === "enemy") draft.battle.battleState.turnPhase = "enemy";
       if (reason === "wish") draft.battle.battleState.wishOptions = [makeTestCard()];
       if (reason === "dead") {
         draft.battle.battleState.playerHealth = 0;
         draft.battle.battleState.deathsDoorActive = false;
       }
+
+      return acceptCommand();
     });
     if (reason === "transfer") useBattlePresentationStore.setState({ cardTransferInProgress: true });
     const { result } = renderHook(() =>
@@ -113,8 +123,10 @@ describe("run card inspection", () => {
     rerender(base);
     act(() => result.current.onOpen("deck"));
     act(() =>
-      dispatchRunSessionCommand((draft) => {
+      dispatchGameplayCommand((draft) => {
         draft.battle.hasActiveBattle = false;
+
+        return acceptCommand();
       }),
     );
     expect(useUiStore.getState().cardInspection).toBeNull();

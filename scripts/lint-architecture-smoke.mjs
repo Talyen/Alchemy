@@ -87,6 +87,22 @@ function ruleIsError(setting) {
 export async function main() {
   assertArchitectureSmokeFiles();
   await Promise.all(filesToPreload.map((f) => getConfig(f)));
+  const balanceImports = await calculateImports("src/lib/balance/simulator.ts");
+  const balanceStages = balanceImports.paths?.find((entry) => entry.name === "@/lib/battle")?.importNames ?? [];
+  for (const name of [
+    "createBattleStartState",
+    "createBattleState",
+    "drawOpeningHand",
+    "endPlayerTurn",
+    "processCompanionTurnStart",
+  ]) {
+    assert.ok(balanceStages.includes(name), `Balance must use shared lifecycle resolution instead of ${name}`);
+  }
+  assertImportGroup(
+    balanceImports,
+    "@/features/**",
+    "balance must remain React-free and independent of feature stores",
+  );
 
   const battleConfig = await getConfig("src/lib/battle/card-play.ts");
   const battleImports = restrictedImports(battleConfig);
@@ -184,6 +200,29 @@ export async function main() {
     assertImportGroup(runLoopImports, restriction, "run-loop battle");
   }
 
+  for (const [label, imports] of [
+    ["feature command", runSetupImports],
+    ["shop", await calculateImports("src/features/alchemy/run-loop/shop/shop-commands-core.ts")],
+    ["route", routeImports],
+  ]) {
+    for (const restriction of ["gameplay-command", "transaction-internal", "readonly-view", "session-runtime"]) {
+      assertImportGroup(imports, restriction, label);
+    }
+  }
+  const hydrationImports = await calculateImports("src/features/alchemy/shared/storage/persistence.ts");
+  assertImportGroup(hydrationImports, "gameplay-state-store", "hydration");
+  assert.ok(
+    !patternGroups(hydrationImports).some((group) => group.includes("gameplay-command")),
+    "bootstrap hydration must retain its scoped raw-dispatch exception",
+  );
+
+  const ioImports = await calculateImports("src/features/alchemy/shared/storage/io.ts");
+  assertImportGroup(ioImports, "gameplay-command", "save IO");
+  assertImportGroup(ioImports, "transaction-internal", "save IO");
+  assert.ok(
+    !patternGroups(ioImports).some((group) => group.includes("session-runtime")),
+    "save IO must retain access to its instance transport",
+  );
   const runLoopScreenImports = await calculateImports("src/features/alchemy/run-loop/screens/destination-screen.tsx");
   assertImportGroup(runLoopScreenImports, "run-loop/run", "run-loop screen");
   const shopImports = await calculateImports("src/features/alchemy/run-loop/shop/create-shop-actions.ts");

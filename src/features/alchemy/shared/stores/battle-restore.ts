@@ -9,7 +9,7 @@ import {
   type BattleSnapshot,
 } from "@/lib/battle";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
-import type { GameplayDraft } from "./run-session-command";
+import type { GameplayDraft } from "./gameplay-command";
 import { awardBattleDodgeXP } from "./write/run-progress";
 import { initializeActiveBattle, commitResolvedBattle, withDraftWorldBattleRng } from "./write/run-battle";
 

@@ -1,42 +1,48 @@
+import { mutateGearWithFlush, salvageGearWithFlush } from "@/features/alchemy/meta/screens/armory/armory-commands";
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
+import { purchaseTalent } from "@/features/alchemy/shared/stores/navigation-commands";
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
-import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { flushSaveAfterGearMutation } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import {
+  acceptCommand,
+  createRunSessionCommand,
+  rejectCommand,
+} from "@/features/alchemy/shared/stores/run-session-command";
+import {
+  bondCompanion,
+  completeResearch,
   constructBuilding,
   plantFarm,
-  completeResearch,
-  bondCompanion,
-  unlockTalent,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
-import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
-import { mutateGearWithFlush, salvageGearWithFlush } from "@/features/alchemy/meta/screens/armory/armory-commands";
-import { flushSaveAfterGearMutation } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
-  talentPool,
   canUnlockTalent,
-  isProgressionFeatureUnlocked,
+  cardLibrary,
   isCharacterUnlocked,
   isGameModeUnlocked,
-  cardLibrary,
+  isProgressionFeatureUnlocked,
+  talentPool,
 } from "@/lib/game-data";
-import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
-import { companionTierItems } from "@/lib/homestead/companions";
-import { canUpgradeTierItem } from "@/lib/homestead/upgrades";
 import {
-  gearDefinitions,
+  canApplyCraftingCurrency,
+  CRAFTING_CURRENCY_LIST,
   equipGear,
-  type GearInstance,
   flattenGearInventories,
   GEAR_SLOTS,
+  gearDefinitions,
   isGearCompatibleWithLoadoutSlot,
-  CRAFTING_CURRENCY_LIST,
-  canApplyCraftingCurrency,
+  type GearInstance,
 } from "@/lib/gear";
+import { companionTierItems } from "@/lib/homestead/companions";
+import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
+import { canUpgradeTierItem } from "@/lib/homestead/upgrades";
 import type { createSeededRng } from "@/lib/rng";
-import type { CareerConfig } from "./types";
-import type { createPlaythroughController } from "./controller";
-import type { OfferChoice } from "./choice-catalog";
 import { scoreStrategyKeyword } from "./archetype-policy";
+import type { OfferChoice } from "./choice-catalog";
+import type { createPlaythroughController } from "./controller";
+import type { CareerConfig } from "./types";
 
 interface MetaOfferContext {
   config: CareerConfig;
@@ -46,26 +52,56 @@ interface MetaOfferContext {
   craftingRandom: ReturnType<typeof createSeededRng>;
 }
 
-export function offerMetaChoices({ config, flow, offer, crafted, craftingRandom }: MetaOfferContext): void {
-  const profile = readRunProfile();
+export function offerMetaChoices(
+  { config, flow, offer, crafted, craftingRandom }: MetaOfferContext,
+  gameSession: GameSession = defaultGameSession,
+): void {
+  const profile = readRunProfile(gameSession);
   const keywordAffinity = (keyword: Parameters<typeof scoreStrategyKeyword>[2]) =>
-    scoreStrategyKeyword(config.policy, config.hero, keyword, readActiveRun().runDeck);
-  const finished = readProfileStore().finishedRunCharacters;
+    scoreStrategyKeyword(config.policy, config.hero, keyword, readActiveRun(gameSession).runDeck);
+  const finished = readProfileStore(gameSession).finishedRunCharacters;
   if (!isCharacterUnlocked(config.hero, finished) || !isGameModeUnlocked(config.mode, finished))
     throw new Error(
       "Unsupported configuration: hero or mode is locked; use an explicitly labeled fixture or earn the unlock",
     );
   if (isProgressionFeatureUnlocked("homestead", finished)) {
-    const discoveredCardIds = new Set(readProfileStore().discoveredCardIds);
+    const discoveredCardIds = new Set(readProfileStore(gameSession).discoveredCardIds);
     for (const item of buildings)
       if (canUpgradeTierItem(item, profile.constructedBuildings[item.id], profile.materialInventory))
-        offer("building", item.id, 4, () => createRunSessionCommand(constructBuilding)(item.id));
+        offer("building", item.id, 4, () =>
+          createRunSessionCommand(
+            (...args: Parameters<typeof constructBuilding>) => {
+              const ok = constructBuilding(...args);
+              return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
+            },
+            undefined,
+            gameSession,
+          )(item.id),
+        );
     for (const item of farmPlots)
       if (canUpgradeTierItem(item, profile.plantedFarms[item.id], profile.materialInventory))
-        offer("farm", item.id, 3, () => createRunSessionCommand(plantFarm)(item.id));
+        offer("farm", item.id, 3, () =>
+          createRunSessionCommand(
+            (...args: Parameters<typeof plantFarm>) => {
+              const ok = plantFarm(...args);
+              return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
+            },
+            undefined,
+            gameSession,
+          )(item.id),
+        );
     for (const item of researchUpgrades)
       if (canUpgradeTierItem(item, profile.completedResearch[item.id], profile.materialInventory))
-        offer("research", item.id, 3, () => createRunSessionCommand(completeResearch)(item.id));
+        offer("research", item.id, 3, () =>
+          createRunSessionCommand(
+            (...args: Parameters<typeof completeResearch>) => {
+              const ok = completeResearch(...args);
+              return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
+            },
+            undefined,
+            gameSession,
+          )(item.id),
+        );
     for (const item of companionTierItems)
       if (
         canUpgradeTierItem(item, profile.bondedCompanions[item.id], profile.materialInventory) &&
@@ -75,16 +111,25 @@ export function offerMetaChoices({ config, flow, offer, crafted, craftingRandom 
             card.effects.some((effect) => effect.kind === "summon-companion" && effect.companionId === item.id),
         )
       )
-        offer("bond", item.id, 3, () => createRunSessionCommand(bondCompanion)(item.id));
+        offer("bond", item.id, 3, () =>
+          createRunSessionCommand(
+            (...args: Parameters<typeof bondCompanion>) => {
+              const ok = bondCompanion(...args);
+              return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
+            },
+            undefined,
+            gameSession,
+          )(item.id),
+        );
   }
   if (isProgressionFeatureUnlocked("talents", finished)) {
     for (const talent of talentPool)
       if (canUnlockTalent(talent.keywordId, talent.id, profile.talentXP, profile.unlockedTalents).ok)
         offer("talent", talent.id, 3 + keywordAffinity(talent.keywordId), () =>
-          createRunSessionCommand(unlockTalent)(talent.keywordId, talent.id),
+          purchaseTalent(talent.keywordId, talent.id, gameSession),
         );
   }
-  const gear = readGearState();
+  const gear = readGearState(gameSession);
   const inventory = flattenGearInventories(gear.inventories);
   const loadout = gear.loadouts[config.hero];
   const gearScore = (item: GearInstance) => 1 + item.affixes.reduce((sum, affix) => sum + Math.max(0, affix.value), 0);
@@ -108,8 +153,9 @@ export function offerMetaChoices({ config, flow, offer, crafted, craftingRandom 
       )
         offer("equip", `${slot}:${item.instanceId}`, 2, () =>
           mutateGearWithFlush(
-            () => flushSaveAfterGearMutation(null),
+            () => flushSaveAfterGearMutation(null, gameSession),
             (state) => state.equip(config.hero, slot, item),
+            gameSession,
           ),
         );
     }
@@ -122,8 +168,9 @@ export function offerMetaChoices({ config, flow, offer, crafted, craftingRandom 
         offer("craft", `${currency.id}:${item.instanceId}`, 1, () => {
           crafted.add(item.instanceId);
           return mutateGearWithFlush(
-            () => flushSaveAfterGearMutation(null),
+            () => flushSaveAfterGearMutation(null, gameSession),
             (state) => state.applyCurrency(currency.id, item.instanceId, { rng: craftingRandom }),
+            gameSession,
           );
         });
   }
@@ -133,15 +180,16 @@ export function offerMetaChoices({ config, flow, offer, crafted, craftingRandom 
       inventory.some((other) => other.definitionId === item.definitionId && gearScore(other) > gearScore(item))
     )
       offer("salvage", item.instanceId, 1, () =>
-        salvageGearWithFlush(() => flushSaveAfterGearMutation(null), item.instanceId),
+        salvageGearWithFlush(() => flushSaveAfterGearMutation(null, gameSession), item.instanceId, gameSession),
       );
   }
   if (!gear.equippedTrinkets[config.hero])
     for (const id of gear.ownedTrinketIds)
       offer("equip-trinket", id, 2, () =>
         mutateGearWithFlush(
-          () => flushSaveAfterGearMutation(null),
+          () => flushSaveAfterGearMutation(null, gameSession),
           (state) => state.equipTrinket(config.hero, id),
+          gameSession,
         ),
       );
   offer("start", config.mode, 0, () => {

@@ -20,4 +20,11 @@ export * from "./types";
 
 export { areBattleCardEffectsEqual, effectChildren, mapEffectChildren, visitBattleCardEffects } from "./effect-tree";
 
-export { canonicalCardDescriptionMatches, describeCardEffects, effectDescriptionLine } from "./effect-metadata";
+export {
+  canonicalCardDescriptionMatches,
+  createEffectDescription,
+  describeCardEffects,
+  effectDescriptionLine,
+  getCardDescription,
+} from "./effect-metadata";
+export * from "./card-description-model";

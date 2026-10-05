@@ -21,7 +21,6 @@ interface MusicCatalogEntry {
   files: readonly string[];
   bossId?: string;
   skipSeconds?: number;
-  isBoss: boolean;
 }
 
 /**
@@ -30,32 +29,26 @@ interface MusicCatalogEntry {
  * same table so boss id, files, and volume treatment cannot drift apart.
  */
 const MUSIC_CATALOG: Record<string, MusicCatalogEntry> = {
-  [MUSIC_KEYS.MENU]: { files: ["Menu 1.mp3", "Menu 2.mp3", "Menu 3.mp3", "Menu 4.mp3"], isBoss: false },
+  [MUSIC_KEYS.MENU]: { files: ["Menu 1.mp3", "Menu 2.mp3", "Menu 3.mp3", "Menu 4.mp3"] },
   [MUSIC_KEYS.BATTLE]: {
     files: ["Battle 1.mp3", "Battle 2.mp3", "Battle 3.mp3", "Battle 4.mp3", "Battle 5.mp3"],
-    isBoss: false,
   },
-  [MUSIC_KEYS.BOSS_FORGE_GOLEM]: { files: ["The Forge Golem.mp3"], bossId: "forge-golem", isBoss: true },
-  [MUSIC_KEYS.BOSS_FROSTWARDEN]: { files: ["The Frostwarden.mp3"], bossId: "frostwarden", isBoss: true },
-  [MUSIC_KEYS.BOSS_BLIGHT_TREANT]: { files: ["The Blight Treant.mp3"], bossId: "blight-treant", isBoss: true },
+  [MUSIC_KEYS.BOSS_FORGE_GOLEM]: { files: ["The Forge Golem.mp3"], bossId: "forge-golem" },
+  [MUSIC_KEYS.BOSS_FROSTWARDEN]: { files: ["The Frostwarden.mp3"], bossId: "frostwarden" },
+  [MUSIC_KEYS.BOSS_BLIGHT_TREANT]: { files: ["The Blight Treant.mp3"], bossId: "blight-treant" },
   [MUSIC_KEYS.BOSS_IRON_BEAR]: {
     files: ["The Iron Bear.mp3"],
     bossId: "iron-bear",
     skipSeconds: 6,
-    isBoss: true,
   },
 };
-
-const BOSS_ID_TO_KEY: ReadonlyMap<string, string> = new Map(
-  Object.entries(MUSIC_CATALOG).flatMap(([key, entry]) => (entry.bossId ? [[entry.bossId, key] as const] : [])),
-);
 
 export function allRegisteredMusicFiles(): string[] {
   return Object.values(MUSIC_CATALOG).flatMap((entry) => entry.files);
 }
 
 export function getBossMusicKey(bossId: string): string | undefined {
-  return BOSS_ID_TO_KEY.get(bossId);
+  return Object.entries(MUSIC_CATALOG).find(([, entry]) => entry.bossId === bossId)?.[0];
 }
 
 /**
@@ -106,7 +99,7 @@ function applyTrackVolume(track: MusicTrackRecord, fadeGain = track.fadeGain): v
     musicVolume: audioState.musicVolume,
     masterVolume: audioState.masterVolume,
     fadeGain: track.fadeGain,
-    isBoss: MUSIC_CATALOG[track.key]?.isBoss ?? false,
+    isBoss: MUSIC_CATALOG[track.key]?.bossId !== undefined,
   });
 }
 
@@ -201,7 +194,7 @@ export function isMusicPaused(): boolean {
 }
 
 export function playMusicImmediate(key: string): void {
-  if (!MUSIC_CATALOG[key]) return;
+  if (!Object.hasOwn(MUSIC_CATALOG, key)) return;
   const track = resolveTrack(key);
   if (!track) return;
   bossPreviewKey = null;
@@ -210,7 +203,7 @@ export function playMusicImmediate(key: string): void {
 }
 
 export function playMusic(key: string): void {
-  if (!MUSIC_CATALOG[key]) return;
+  if (!Object.hasOwn(MUSIC_CATALOG, key)) return;
   bossPreviewKey = null;
   if (playback.phase === "fading-out" && playback.destination === key) return;
   if (playback.phase === "fading-out" && playback.track.key === key) {
@@ -219,7 +212,7 @@ export function playMusic(key: string): void {
     activateTrack(track, 1);
     return;
   }
-  if (playback.phase !== "idle" && playback.track.key === key && playback.phase !== "fading-out") {
+  if (playback.phase !== "idle" && playback.track.key === key) {
     if (playback.phase === "paused") {
       cancelTransition();
       activateTrack(playback.track, 1);
@@ -296,7 +289,7 @@ export function resetMusicRuntimeForTests(): void {
  */
 export function previewBossMusic(key: string): void {
   if (bossPreviewKey === key && !isMusicPaused()) return;
-  if (!MUSIC_CATALOG[key]) return;
+  if (!Object.hasOwn(MUSIC_CATALOG, key)) return;
   playMusic(key);
   bossPreviewKey = key;
 }

@@ -1,8 +1,5 @@
-import { emptyAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
-import { runActivityScreen, transitionRunActivity } from "@/lib/active-run-session";
 import { BATTLE_CARD_EFFECT_KINDS } from "@/lib/game-data/effects/registry";
 import { DAMAGE_TYPES } from "@/lib/game-data/types";
-import { ROUTE_SCREEN_VALUES, isRunResumeScreen } from "@/lib/routing";
 import { describe, expect, it } from "vitest";
 import { readText } from "./helpers";
 
@@ -31,12 +28,5 @@ describe("exhaustive switch coverage", () => {
 
   it("damage-status-riders covers every DamageType", () => {
     assertContainsCases("src/lib/battle/damage-status-riders.ts", DAMAGE_TYPES);
-  });
-
-  it("maps every gameplay screen to an activity and preserves it across menu navigation", () => {
-    for (const screen of ROUTE_SCREEN_VALUES) {
-      const next = transitionRunActivity({ kind: "campfire", data: emptyAlchemyVisit() }, screen);
-      expect(runActivityScreen(next), screen).toBe(isRunResumeScreen(screen) ? screen : "campfire");
-    }
   });
 });

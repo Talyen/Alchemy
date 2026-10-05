@@ -14,7 +14,7 @@ import {
   setRunProgress,
   setRunSession,
 } from "../../../../helpers/run-domain-store-test";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import {
   handleCollectionTabChange,
   setDiscoveredCardIds,
@@ -43,7 +43,7 @@ describe("persistence coordinator", () => {
       gear.addTrinket("tattered-pages");
       gear.addInstance({ instanceId: "new-reward", definitionId: "longsword-basic", affixes: [] }, "knight");
     });
-    dispatchRunSessionCommand((draft) => setDiscoveredCardIds(draft, ["slash", "bash"]));
+    dispatchGameplayCommand((draft) => acceptCommand(setDiscoveredCardIds(draft, ["slash", "bash"])));
     const encoded = encodePersistenceFields();
     expect(encoded.ownedTrinketIds).toContain("tattered-pages");
     expect(encoded.gearInventories.knight.some((gear) => gear.instanceId === "new-reward")).toBe(true);
@@ -63,7 +63,7 @@ describe("persistence coordinator", () => {
     });
 
     useUiStore.getState().setShowClearSaveConfirm(true);
-    dispatchRunSessionCommand((draft) => handleCollectionTabChange(draft, "bestiary"));
+    dispatchGameplayCommand((draft) => acceptCommand(handleCollectionTabChange(draft, "bestiary")));
 
     const encoded = encodePersistenceFields();
 
@@ -92,10 +92,10 @@ describe("persistence coordinator", () => {
     const unsubscribe = subscribeAlchemyPersistence(listener);
 
     useSettingsStore.getState().setMusicVolume(42);
-    dispatchRunSessionCommand((draft) => setDiscoveredCardIds(draft, ["slash"]));
+    dispatchGameplayCommand((draft) => acceptCommand(setDiscoveredCardIds(draft, ["slash"])));
     mutateGearForTest((gear) => gear.addCurrencies({ voidstone: 1 }));
-    dispatchRunSessionCommand((draft) =>
-      setRunProfileMaterials(draft, { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 }),
+    dispatchGameplayCommand((draft) =>
+      acceptCommand(setRunProfileMaterials(draft, { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 })),
     );
 
     expect(listener).toHaveBeenCalledTimes(4);
@@ -110,13 +110,13 @@ describe("persistence coordinator", () => {
     const unsubscribe = subscribeAlchemyPersistence(listener);
 
     useUiStore.getState().setShowClearSaveConfirm(true);
-    dispatchRunSessionCommand((draft) => handleCollectionTabChange(draft, "bestiary"));
-    dispatchRunSessionCommand((draft) => setScreen(draft, "collection"));
-    dispatchRunSessionCommand((draft) => setSelectedLabyrinthNodeId(draft, "node-1"));
+    dispatchGameplayCommand((draft) => acceptCommand(handleCollectionTabChange(draft, "bestiary")));
+    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "collection")));
+    dispatchGameplayCommand((draft) => acceptCommand(setSelectedLabyrinthNodeId(draft, "node-1")));
 
     expect(listener).not.toHaveBeenCalled();
 
-    dispatchRunSessionCommand((draft) => setDiscoveredCardIds(draft, ["slash"]));
+    dispatchGameplayCommand((draft) => acceptCommand(setDiscoveredCardIds(draft, ["slash"])));
     expect(listener).toHaveBeenCalledOnce();
     unsubscribe();
   });
@@ -126,11 +126,15 @@ describe("persistence coordinator", () => {
     const unsubscribe = subscribeAlchemyPersistence(listener);
 
     setRunSession({ rewardClaimInFlight: true });
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.battle.battleStartState = { ...draft.battle.battleState };
+
+      return acceptCommand();
     });
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.runProfile.effects = { ...draft.runProfile.effects };
+
+      return acceptCommand();
     });
     expect(listener).not.toHaveBeenCalled();
 
@@ -175,12 +179,14 @@ describe("persistence coordinator", () => {
     const listener = vi.fn();
     const unsubscribe = subscribeAlchemyPersistence(listener);
 
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       setGold(draft, 42);
       setHasActiveRun(draft, true);
       setDiscoveredCardIds(draft, ["slash"]);
       addGearCurrencies(draft.gear, { voidstone: 1 });
       setRunProfileMaterials(draft, { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
+
+      return acceptCommand();
     });
 
     expect(listener).toHaveBeenCalledOnce();

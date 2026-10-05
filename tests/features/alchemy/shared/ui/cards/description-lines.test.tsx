@@ -4,21 +4,21 @@ import { DescriptionLines } from "@/features/alchemy/shared/ui/cards/card-descri
 
 describe("DescriptionLines", () => {
   it("keeps corruption offsets across keyword tokens and description lines", () => {
-    const lines = ["Deal 12 Physical damage and gain 3 Block", "Gain 4 Armor and 5 Block"];
+    const lines = ["Deal 12 physical damage and gain 12 Block", "Gain 4 Armor and 5 Block"];
     const { container } = render(
       <DescriptionLines
         lines={lines}
         idPrefix="offsets"
         card={{
           corruptedValuePositions: [
-            { lineIndex: 0, matchIndex: lines[0]!.indexOf("3") },
+            { lineIndex: 0, matchIndex: lines[0]!.lastIndexOf("12") },
             { lineIndex: 1, matchIndex: lines[1]!.indexOf("5") },
           ],
         }}
       />,
     );
-    expect([...container.querySelectorAll(".text-destructive")].map((span) => span.textContent)).toEqual(["3", "5"]);
-    expect(container.textContent).toBe(lines.join(""));
+    expect([...container.querySelectorAll(".text-destructive")].map((span) => span.textContent)).toEqual(["12", "5"]);
+    expect(container.textContent).toBe(lines.join("").replace("physical", "Physical"));
     expect([...container.querySelectorAll(".font-semibold")].map((span) => span.textContent)).toEqual([
       "Physical",
       "Block",

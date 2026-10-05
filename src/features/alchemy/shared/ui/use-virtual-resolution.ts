@@ -18,16 +18,20 @@ function useViewportSize(active: boolean) {
   useEffect(() => {
     if (!active) return;
     let frameId: number | null = null;
-
+    function update() {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      setViewportSize((current) =>
+        current.width === width && current.height === height ? current : { width, height },
+      );
+    }
+    // Bypass mode has no subscription; catch up when the scaled stage returns.
+    update();
     function handleResize() {
       if (frameId !== null) return;
       frameId = window.requestAnimationFrame(() => {
         frameId = null;
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        setViewportSize((current) =>
-          current.width === width && current.height === height ? current : { width, height },
-        );
+        update();
       });
     }
     window.addEventListener("resize", handleResize);

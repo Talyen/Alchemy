@@ -3,7 +3,7 @@ import { computeGearManifest, flattenGearInventories, type GearEffectManifest } 
 import { combineTrinketEffectIds, computeTrinketManifest } from "@/lib/trinkets";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { computeRunMaxHealth } from "../../run-flow/run-max-health";
-import type { GameplayDraft } from "../run-session-command";
+import type { GameplayDraft } from "../gameplay-command";
 import { syncBattleGoldFromPurse } from "./run-gold";
 
 // ── Live meta rebind ─────────────────────────────────────────────────────────

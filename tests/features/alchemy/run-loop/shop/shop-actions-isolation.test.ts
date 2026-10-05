@@ -1,3 +1,4 @@
+import "../../../../helpers/mock-audio";
 import { describe, expect, it, vi } from "vitest";
 import { shopItemSlotKey } from "@/features/alchemy/run-loop/shop/shop-slot-keys";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";

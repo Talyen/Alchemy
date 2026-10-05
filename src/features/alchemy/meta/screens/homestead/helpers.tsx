@@ -130,16 +130,16 @@ export const BUILDING_GOAL_ITEMS: readonly GoalItem[] = buildings.map((data) => 
 export const FARM_GOAL_ITEMS: readonly GoalItem[] = farmPlots.map((data) => ({ kind: "farm", data }));
 export const RESEARCH_GOAL_ITEMS: readonly GoalItem[] = researchUpgrades.map((data) => ({ kind: "research", data }));
 
-const upgradeShineColorsCache = new Map<string, readonly string[]>();
+const upgradeShineColorsCache = new WeakMap<GoalItem["data"]["tiers"], readonly string[]>();
 
 export function getHomesteadUpgradeShineColors(item: GoalItem): readonly string[] {
-  const cached = upgradeShineColorsCache.get(item.data.id);
+  const cached = upgradeShineColorsCache.get(item.data.tiers);
   if (cached) return cached;
   const text = item.data.tiers
     .flatMap((tier) => [tier.benefitDescription, tier.nonCombatBenefitDescription ?? ""])
     .filter(Boolean)
     .join("\n");
   const colors = getInspectionKeywordShineColors(extractKeywordIds(text));
-  upgradeShineColorsCache.set(item.data.id, colors);
+  upgradeShineColorsCache.set(item.data.tiers, colors);
   return colors;
 }

@@ -1,3 +1,4 @@
+import type { GearDraftView } from "@/features/alchemy/shared/stores/gear-store-types";
 import { describe, expectTypeOf, it } from "vitest";
 import type { BattleCard } from "@/lib/game-data";
 import type { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
@@ -5,9 +6,12 @@ import type { AlchemyRunCommands } from "@/features/alchemy/shell/route-commands
 import type { RunFlowHandlerDeps } from "@/features/alchemy/run-loop/run/run-flow";
 import type { RunScreenDataByScreen } from "@/features/alchemy/shared/stores/run-screen-data";
 import {
+  acceptCommand,
+  rejectCommand,
+  type CommandOutcome,
   dispatchRunSessionCommand,
   createRunSessionCommand,
-  type GameplayDraft,
+  type RunTransaction,
 } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   dispatchGearMutationWithRunHealthSync,
@@ -16,15 +20,15 @@ import {
 
 declare const asyncMutation: () => Promise<void>;
 declare const maybeAsyncMutation: () => number | PromiseLike<number>;
-declare const draft: GameplayDraft;
+declare const draft: RunTransaction;
 
 type WritePort = typeof import("@/features/alchemy/shared/stores/run-session-write-port");
-// Pure (non-mutating) helpers are exempt from the draft-first rule.
+// Pure (non-mutating) helpers are exempt from the transaction-first rule.
 type PureWriteHelper = "cloneRunObtainedItem";
 type NonDraftFirstWrite = Exclude<
   {
     [Key in keyof WritePort]: WritePort[Key] extends (...args: infer Args) => unknown
-      ? Args extends [GameplayDraft, ...unknown[]]
+      ? Args extends [RunTransaction, ...unknown[]]
         ? never
         : Key
       : never;
@@ -46,7 +50,47 @@ describe("run architecture type contracts", () => {
     >().toEqualTypeOf<never>();
   });
 
+  it("keeps progress activity changes separate from display and visit entry", () => {
+    type Kind = Parameters<WritePort["setRunProgressActivity"]>[1];
+    expectTypeOf<Extract<Kind, "menu" | "options" | "shop" | "mystery" | "inactive">>().toEqualTypeOf<never>();
+    expectTypeOf<Extract<Kind, "battle" | "draft-deck" | "difficulty-select">>().toEqualTypeOf<
+      "battle" | "draft-deck" | "difficulty-select"
+    >();
+  });
+
+  it("rejects writes through transaction and Gear reads", () => {
+    dispatchRunSessionCommand((transaction) => {
+      // @ts-expect-error -- only the Gold owner can change the purse
+      transaction.runProfile.gold = 100;
+      // @ts-expect-error -- combat results commit through battle commands
+      transaction.battle.battleState.enemyHealth = 0;
+      // @ts-expect-error -- arrays are deeply readonly
+      transaction.run.activeRun.runDeck.push({} as BattleCard);
+      // @ts-expect-error -- nested Gear data cannot bypass combat locks
+      transaction.gear.loadouts.knight.body = null;
+      return acceptCommand();
+    });
+    dispatchGearMutationWithRunHealthSync({
+      mutate: (gear: GearDraftView) => {
+        // @ts-expect-error -- exposed inventory is a read capability
+        gear.inventories.knight.push({});
+        // @ts-expect-error -- nested instance data is readonly too
+        gear.inventories.knight[0]!.affixes[0]!.value = 99;
+        // @ts-expect-error -- loadout edits must use equip/unequip
+        gear.loadouts.knight.body = null;
+      },
+    });
+  });
+
   it("rejects asynchronous results at every generic command entry point", () => {
+    // @ts-expect-error -- command acceptance must be explicit
+    dispatchRunSessionCommand(() => false);
+    // @ts-expect-error -- factories require explicit command outcomes
+    createRunSessionCommand(() => null);
+    // @ts-expect-error -- accepted payloads cannot contain Promises
+    acceptCommand(asyncMutation());
+    // @ts-expect-error -- rejected payloads cannot contain Promises
+    rejectCommand("Async payload", maybeAsyncMutation());
     // @ts-expect-error -- commands cannot return Promises
     dispatchRunSessionCommand(asyncMutation);
     // @ts-expect-error -- a union containing a thenable is still asynchronous
@@ -66,16 +110,18 @@ describe("run architecture type contracts", () => {
   });
 
   it("preserves synchronous command results and factory arguments", () => {
-    expectTypeOf(dispatchRunSessionCommand((): void => undefined)).toEqualTypeOf<void>();
-    expectTypeOf(dispatchRunSessionCommand(() => 7)).toEqualTypeOf<number>();
-    expectTypeOf(dispatchRunSessionCommand((): number | null => null)).toEqualTypeOf<number | null>();
-    expectTypeOf(dispatchRunSessionCommand(() => ({ gold: 7 }))).toEqualTypeOf<{ gold: number }>();
-    dispatchRunSessionCommand(() => ({ gold: 7 }), {
+    expectTypeOf(dispatchRunSessionCommand(() => acceptCommand())).toEqualTypeOf<void>();
+    expectTypeOf(dispatchRunSessionCommand(() => acceptCommand<number>(7))).toEqualTypeOf<number>();
+    expectTypeOf(
+      dispatchRunSessionCommand((): CommandOutcome<number | null> => rejectCommand("Unavailable", null)),
+    ).toEqualTypeOf<number | null>();
+    expectTypeOf(dispatchRunSessionCommand(() => acceptCommand({ gold: 7 }))).toEqualTypeOf<{ gold: number }>();
+    dispatchRunSessionCommand(() => acceptCommand({ gold: 7 }), {
       afterCommit: (result) => {
         expectTypeOf(result).toEqualTypeOf<{ gold: number }>();
       },
     });
-    const command = createRunSessionCommand((_draft, gold: number, label: string) => ({ gold, label }));
+    const command = createRunSessionCommand((_draft, gold: number, label: string) => acceptCommand({ gold, label }));
     expectTypeOf(command).toEqualTypeOf<(gold: number, label: string) => { gold: number; label: string }>();
     expectTypeOf(dispatchGearMutationWithRunHealthSync({ mutate: () => true })).toEqualTypeOf<boolean>();
     expectTypeOf(mutateGearWithRunHealthSync(draft, { mutate: (): number | null => null })).toEqualTypeOf<
@@ -83,7 +129,7 @@ describe("run architecture type contracts", () => {
     >();
   });
 
-  it("keeps every gameplay write-port mutation draft-first", () => {
+  it("keeps every gameplay write-port mutation transaction-first", () => {
     expectTypeOf<NonDraftFirstWrite>().toEqualTypeOf<never>();
   });
 

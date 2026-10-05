@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
 import { createRunRngState } from "@/lib/rng";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { restoreActiveBattle as initializeActiveBattle } from "@/features/alchemy/shared/stores/battle-restore";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { makeTestCardWithId } from "../../../../fixtures/battle";
@@ -25,7 +25,9 @@ describe("continue-end-turn resume RNG", () => {
       discard,
     };
 
-    dispatchRunSessionCommand((draft) => initializeActiveBattle(draft, enemyPhase, { kind: "continue-end-turn" }));
+    dispatchGameplayCommand((draft) =>
+      acceptCommand(initializeActiveBattle(draft, enemyPhase, { kind: "continue-end-turn" })),
+    );
 
     expect(readGameplayState().battle.battleState).not.toHaveProperty("rng");
 

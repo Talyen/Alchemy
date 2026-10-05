@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { deepFreeze } from "@/features/alchemy/shared/stores/store-utils";
 import { readGameplayState, useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   setFinishedRunCharacters,
   setGold,
@@ -23,6 +23,8 @@ describe("aggregate read ports", () => {
       setHasActiveBattle(draft, true);
       setRunProfileMaterials(draft, { wood: 4, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
       setFinishedRunCharacters(draft, ["knight"]);
+
+      return acceptCommand();
     });
 
     expect(readRunProfile().gold).toBe(23);
@@ -41,7 +43,7 @@ describe("aggregate read ports", () => {
   });
 
   it("deep-freezes nested read values in development", () => {
-    dispatchRunSessionCommand((draft) => setHasActiveRun(draft, true));
+    dispatchRunSessionCommand((draft) => acceptCommand(setHasActiveRun(draft, true)));
 
     const session = readRunSession();
     expect(Object.isFrozen(session)).toBe(true);

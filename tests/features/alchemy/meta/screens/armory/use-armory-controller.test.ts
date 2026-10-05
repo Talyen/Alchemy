@@ -2,7 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
 import { mutateGearForTest, resetAllTestStores } from "../../../../../helpers/run-domain-store-test";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   setHasActiveBattle,
   setHasActiveRun,
@@ -45,7 +45,7 @@ describe("useArmoryController", () => {
     const { result } = renderHook(() => useArmoryController());
 
     act(() => {
-      dispatchRunSessionCommand((draft) => setMaterials(draft, emptyInventory()));
+      dispatchRunSessionCommand((draft) => acceptCommand(setMaterials(draft, emptyInventory())));
       expect(result.current.onSalvage(armor.instanceId)).toBe(true);
     });
 
@@ -65,13 +65,15 @@ describe("useArmoryController", () => {
       dispatchRunSessionCommand((draft) => {
         initializeActiveRun(draft, null, "knight");
         setHasActiveRun(draft, true);
+
+        return acceptCommand();
       });
     });
     act(() => {
       expect(result.current.onEquip("knight", "body", armor)).toBe(true);
     });
     expect(flushSaveAfterGearMutation).toHaveBeenLastCalledWith(expect.objectContaining({ characterId: "knight" }));
-    act(() => dispatchRunSessionCommand((draft) => setHasActiveRun(draft, false)));
+    act(() => dispatchRunSessionCommand((draft) => acceptCommand(setHasActiveRun(draft, false))));
     act(() => result.current.onUnequip("knight", "body"));
     expect(flushSaveAfterGearMutation).toHaveBeenLastCalledWith(null);
   });
@@ -90,6 +92,8 @@ describe("useArmoryController", () => {
       setRunMaxHealth(draft, 30);
       setRunPlayerHealth(draft, 30);
       setHasActiveRun(draft, true);
+
+      return acceptCommand();
     });
 
     const { result } = renderHook(() => useArmoryController());
@@ -101,7 +105,7 @@ describe("useArmoryController", () => {
     expect(readActiveRun().runMaxHealth).toBe(30);
     expect(readActiveRun().runPlayerHealth).toBe(30);
 
-    dispatchRunSessionCommand((draft) => setHasActiveRun(draft, false));
+    dispatchRunSessionCommand((draft) => acceptCommand(setHasActiveRun(draft, false)));
   });
 
   it("counts homestead salvage toward run-earned materials during an active run", () => {
@@ -113,6 +117,8 @@ describe("useArmoryController", () => {
       initializeActiveRun(draft, null, "knight");
       setHasActiveRun(draft, true);
       setMaterials(draft, emptyInventory());
+
+      return acceptCommand();
     });
 
     const { result } = renderHook(() => useArmoryController());
@@ -125,7 +131,7 @@ describe("useArmoryController", () => {
     expect(readActiveRun().runMaterialsEarned.iron).toBe(9);
     expect(readActiveRun().runCurrenciesEarned).toEqual(computeSalvageYield(armor).currencies);
 
-    dispatchRunSessionCommand((draft) => setHasActiveRun(draft, false));
+    dispatchRunSessionCommand((draft) => acceptCommand(setHasActiveRun(draft, false)));
   });
 
   it("spawns dev gear through the HP-sync command path", () => {
@@ -151,6 +157,8 @@ describe("useArmoryController", () => {
     dispatchRunSessionCommand((draft) => {
       setHasActiveRun(draft, true);
       setHasActiveBattle(draft, true);
+
+      return acceptCommand();
     });
 
     const { result } = renderHook(() => useArmoryController());
@@ -163,7 +171,7 @@ describe("useArmoryController", () => {
     expect(readGearState().loadouts.knight.body).toBeNull();
     expect(flushSaveAfterGearMutation).not.toHaveBeenCalled();
 
-    dispatchRunSessionCommand((draft) => setHasActiveBattle(draft, false));
+    dispatchRunSessionCommand((draft) => acceptCommand(setHasActiveBattle(draft, false)));
   });
 
   it("flushes after successful equip, unequip, trinket, and currency mutations", () => {

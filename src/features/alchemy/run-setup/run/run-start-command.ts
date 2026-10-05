@@ -1,3 +1,4 @@
+import { snapshotTransactionValue } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   isEditionCharacterAvailable,
   isEditionModeAvailable,
@@ -9,7 +10,7 @@ import { computeTalentEffects, type BattleCard, type CharacterId, type Difficult
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 import { discoverCardIds } from "@/features/alchemy/shared/stores/profile-store";
-import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import type { RunTransaction } from "@/features/alchemy/shared/stores/run-session-command";
 import { applyRunStartSnapshot, grantStartGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createRunStartSnapshot, type RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 
@@ -25,7 +26,7 @@ interface ApplyRunStartOptions {
 }
 
 export function createDraftRunStartSnapshot(
-  draft: GameplayDraft,
+  draft: RunTransaction,
   { characterId, contentSystemType, difficultyId, draftedDeck }: CreateRunStartSnapshotInput,
 ): RunStartSnapshot {
   if (
@@ -37,10 +38,10 @@ export function createDraftRunStartSnapshot(
     throw new Error("This run is unavailable");
   }
   const talentXP = draft.runProfile.talentXP;
-  const talentStartGold = computeTalentEffects(draft.runProfile.unlockedTalents).startGold;
+  const talentStartGold = computeTalentEffects(snapshotTransactionValue(draft.runProfile.unlockedTalents)).startGold;
   const gearMaxHealthBonus = computeGearManifest(
     characterId,
-    flattenGearInventories(draft.gear.inventories),
+    flattenGearInventories(snapshotTransactionValue(draft.gear.inventories)),
     draft.gear.loadouts,
   ).maxHealth;
   const homesteadMaxHealthBonus = draft.runProfile.effects.runMaxHealthBonus;
@@ -102,7 +103,7 @@ export function isDifficultySelectContinuation(input: {
 }
 
 export function applyRunStartToDraft(
-  draft: GameplayDraft,
+  draft: RunTransaction,
   snapshot: RunStartSnapshot,
   options: ApplyRunStartOptions = {},
 ): ApplyRunStartResult {

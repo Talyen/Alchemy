@@ -1,6 +1,7 @@
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { findGearEquippedCharacter, findGearInventoryOwner, gearDefinitions } from "@/lib/gear";
-import { deriveGearCombatRestrictions } from "./gear-combat-restrictions";
-import type { GearDraftView } from "./gear-store-types";
+import { dispatchGameplayCommand, type GameplayDraft } from "./gameplay-command";
 import {
   addGearCurrencies,
   addGearInstance,
@@ -14,13 +15,23 @@ import {
   unequipGearInstance,
   unequipPermanentTrinket,
 } from "./gear-actions";
+import { deriveGearCombatRestrictions } from "./gear-combat-restrictions";
+import type { GearDraftView } from "./gear-store-types";
 import { discoverUniqueIds } from "./profile-store";
-import { dispatchRunSessionCommand, type GameplayDraft, type SynchronousResult } from "./run-session-command";
-import { addMaterialsToStockpile, addRunCurrenciesEarned, awardMaterialsDuringRun } from "./run-session-write-port";
-import { rebindLiveRunMeta } from "./run-session-write-port";
+import { createReadonlyView, snapshotReadonlyValue, unwrapReadonlyValue } from "./readonly-view";
+import type { RunTransaction } from "./run-session-command";
+import { acceptCommand, rejectCommand, type SynchronousResult } from "./run-session-command";
+import {
+  addMaterialsToStockpile,
+  addRunCurrenciesEarned,
+  awardMaterialsDuringRun,
+  rebindLiveRunMeta,
+} from "./run-session-write-port";
+import { transactionDraft } from "./transaction-internal";
 
 function gearCommandView(state: GameplayDraft, markMutated: () => void): GearDraftView {
   const gear = state.gear;
+  const read = createReadonlyView(gear);
   const restrictions = deriveGearCombatRestrictions(state);
   // Second tier of the lock policy (see deriveGearCombatRestrictions):
   // restrictions.gear only tracks equipped items of the locked hero; an
@@ -43,23 +54,31 @@ function gearCommandView(state: GameplayDraft, markMutated: () => void): GearDra
   };
   return {
     get inventories() {
-      return gear.inventories;
+      return read.inventories;
     },
     get loadouts() {
-      return gear.loadouts;
+      return read.loadouts;
     },
     get ownedTrinketIds() {
-      return gear.ownedTrinketIds;
+      return read.ownedTrinketIds;
     },
     get equippedTrinkets() {
-      return gear.equippedTrinkets;
+      return read.equippedTrinkets;
     },
     get craftingCurrencies() {
-      return gear.craftingCurrencies;
+      return read.craftingCurrencies;
     },
     initialize: (inventories, loadouts, craftingCurrencies, ownedTrinketIds, equippedTrinkets) => {
+      if (state.battle.hasActiveBattle) throw new Error("Cannot initialize Gear during combat");
       markMutated();
-      initializeGear(gear, inventories, loadouts, craftingCurrencies, ownedTrinketIds, equippedTrinkets);
+      initializeGear(
+        gear,
+        snapshotReadonlyValue(inventories),
+        snapshotReadonlyValue(loadouts),
+        craftingCurrencies,
+        ownedTrinketIds ? [...ownedTrinketIds] : undefined,
+        equippedTrinkets ? snapshotReadonlyValue(equippedTrinkets) : undefined,
+      );
     },
     addInstance: (instance, characterId) => {
       markMutated();
@@ -100,33 +119,45 @@ function gearCommandView(state: GameplayDraft, markMutated: () => void): GearDra
       addGearCurrencies(gear, currencies);
     },
     reset: () => {
+      if (state.battle.hasActiveBattle) throw new Error("Cannot reset Gear during combat");
       markMutated();
       resetGear(gear);
     },
   };
 }
 
-export function dispatchGearMutationWithRunHealthSync<T>(options: {
-  mutate: (gear: GearDraftView) => T & SynchronousResult<T>;
-  syncRunHealth?: boolean;
-}): T {
-  return dispatchRunSessionCommand<T>((draft) => mutateGearWithRunHealthSync<T>(draft, options));
+export function dispatchGearMutationWithRunHealthSync<T>(
+  options: {
+    mutate: (gear: GearDraftView) => T & SynchronousResult<T>;
+  },
+  gameSession: GameSession = defaultGameSession,
+): T {
+  return dispatchGameplayCommand<T>(
+    (draft) => {
+      const result = unwrapReadonlyValue(mutateGearWithRunHealthSync<T>(draft, options));
+      return result === false || result === null
+        ? rejectCommand<T>("Gear action was rejected", result)
+        : acceptCommand<T>(result);
+    },
+    undefined,
+    gameSession,
+  );
 }
 
 export function mutateGearWithRunHealthSync<T>(
-  draft: GameplayDraft,
+  transaction: RunTransaction,
   options: {
     mutate: (gear: GearDraftView) => T & SynchronousResult<T>;
-    syncRunHealth?: boolean | undefined;
   },
 ): T & SynchronousResult<T> {
+  const draft = transactionDraft(transaction);
   let mutated = false;
   const result = options.mutate(
     gearCommandView(draft, () => {
       mutated = true;
     }),
   );
-  if (mutated && (options.syncRunHealth ?? draft.session.activity.kind !== "inactive")) {
+  if (mutated && draft.session.activity.kind !== "inactive") {
     rebindLiveRunMeta(draft);
   }
   return result;
@@ -134,17 +165,21 @@ export function mutateGearWithRunHealthSync<T>(
 
 export function dispatchGearSalvageWithMaterialGrant(
   mutate: (gear: GearDraftView) => ReturnType<GearDraftView["salvage"]>,
-  options?: { syncRunHealth?: boolean | undefined },
+  gameSession: GameSession = defaultGameSession,
 ): ReturnType<GearDraftView["salvage"]> {
-  return dispatchRunSessionCommand((draft) => {
-    const salvageResult = mutateGearWithRunHealthSync(draft, { mutate, syncRunHealth: options?.syncRunHealth });
-    if (!salvageResult) return null;
-    if (draft.session.activity.kind !== "inactive") {
-      awardMaterialsDuringRun(draft, salvageResult.yieldedMaterials);
-      addRunCurrenciesEarned(draft, salvageResult.yieldedCurrencies);
-    } else {
-      addMaterialsToStockpile(draft, salvageResult.yieldedMaterials);
-    }
-    return salvageResult;
-  });
+  return dispatchGameplayCommand(
+    (draft) => {
+      const salvageResult = mutateGearWithRunHealthSync(draft, { mutate });
+      if (!salvageResult) return rejectCommand("Gear cannot be salvaged", null);
+      if (draft.session.activity.kind !== "inactive") {
+        awardMaterialsDuringRun(draft, salvageResult.yieldedMaterials);
+        addRunCurrenciesEarned(draft, salvageResult.yieldedCurrencies);
+      } else {
+        addMaterialsToStockpile(draft, salvageResult.yieldedMaterials);
+      }
+      return acceptCommand(salvageResult);
+    },
+    undefined,
+    gameSession,
+  );
 }

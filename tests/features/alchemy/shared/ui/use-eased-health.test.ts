@@ -35,6 +35,14 @@ describe("useEasedHealth", () => {
 
     rerender({ from: 20, to: 30, active: true });
     expect(frames.size).toBe(1);
+    act(() => {
+      const [id, callback] = frames.entries().next().value!;
+      frames.delete(id);
+      callback(100);
+    });
+    expect(result.current.progressHealth).toBeGreaterThan(20);
+    rerender({ from: 10, to: 30, active: true });
+    expect(result.current.progressHealth).toBe(10);
     rerender({ from: 22, to: 30, active: false });
     expect(result.current.displayHealth).toBe(22);
     expect(frames.size).toBe(0);

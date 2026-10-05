@@ -1,28 +1,9 @@
 import { defaultCompanionBondLevels } from "@/lib/game-data";
-import type { HomesteadEffectManifest } from "./types";
+import { HOMESTEAD_BATTLE_NUMERIC_KEYS, type HomesteadEffectManifest } from "./types";
+import { createNumericManifest } from "@/lib/manifest-utils";
 
 export const defaultHomesteadEffects: HomesteadEffectManifest = {
-  flatPhysicalDamage: 0,
-  flatHolyDamage: 0,
-  physicalDamageReduction: 0,
-  homesteadCriticalDamage: 0,
-  homesteadHealing: 0,
-  homesteadLeechHealing: 0,
-  homesteadPotionBonus: 0,
-  homesteadFreeManaChance: 0,
-  homesteadForgeBurnPercent: 0,
-  dodgeChance: 0,
-  wishExtraChoiceChance: 0,
-  companionDamage: 0,
-  flatBurnDamage: 0,
-  flatArrowDamage: 0,
-  flatFreezeDamage: 0,
-  flatNatureDamage: 0,
-  startBlock: 0,
-  burnDamageReduction: 0,
-  freezeDamageReduction: 0,
-  poisonDamageReduction: 0,
-  runMaxHealthBonus: 0,
+  ...createNumericManifest(HOMESTEAD_BATTLE_NUMERIC_KEYS),
   companionBondLevels: { ...defaultCompanionBondLevels },
   cardHealBonus: {},
   herbFindBonus: 0,

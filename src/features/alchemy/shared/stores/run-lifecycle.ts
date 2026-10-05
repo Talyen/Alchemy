@@ -1,16 +1,22 @@
-import { isEditionRunAvailable } from "@/lib/game-edition";
-import { playDefeat, stopAllSfx } from "@/lib/audio";
-import { current, isDraft } from "immer";
-import type { ActiveRunData, RunRecap } from "@/lib/active-run-session";
-import type { Screen } from "@/lib/routing";
-import type { TalentXP, UnlockedTalents } from "@/lib/game-data";
 import { buildAlchemySaveDataFromStores, saveAlchemySaveData } from "@/features/alchemy/shared/storage";
+import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
+import type { ActiveRunData, RunRecap } from "@/lib/active-run-session";
+import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
+import type { TalentXP, UnlockedTalents } from "@/lib/game-data";
+import { isEditionRunAvailable } from "@/lib/game-edition";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { logStorageFailure } from "@/lib/storage-logging";
 import type { MaterialInventory } from "@/lib/homestead/types";
+import type { Screen } from "@/lib/routing";
+import { logStorageFailure } from "@/lib/storage-logging";
+import { current, isDraft } from "immer";
+import { defaultGameSession } from "./default-game-session";
+import type { GameSession } from "./game-session-types";
+import { dispatchGameplayCommand, type GameplayDraft } from "./gameplay-command";
 import { getRunSession, readRunResumeScreen } from "./run-reads";
+import { applyRestoreRunToDraft } from "./run-restore";
 import { encodeRunResumeSnapshot } from "./run-resume-codec";
-import { dispatchRunSessionCommand, type GameplayDraft } from "./run-session-command";
+import type { RunTransaction } from "./run-session-command";
+import { acceptCommand, rejectCommand } from "./run-session-command";
 import {
   applyTalentState,
   captureRunRecap,
@@ -27,37 +33,50 @@ import {
   setRunEndMaterials,
   setRunPlayerHealth,
 } from "./run-session-write-port";
+import { sessionRuntime } from "./session-runtime";
+import { openRunTransaction } from "./transaction-internal";
 import { initializeActiveBattle } from "./write/run-battle";
-import { applyRestoreRunToDraft } from "./run-restore";
-import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
-import { useUiStore } from "./ui-store";
 
 export function restoreRun(
   activeRun: ActiveRunData | null,
   talentXP: TalentXP,
   unlockedTalents: UnlockedTalents,
+  gameSession: GameSession = defaultGameSession,
 ): void {
-  dispatchRunSessionCommand((draft) => {
-    applyTalentState(draft, talentXP, unlockedTalents);
-    applyRestoreRunToDraft(draft, activeRun && isEditionRunAvailable(activeRun) ? activeRun : null);
-  });
+  dispatchGameplayCommand(
+    (draft) => {
+      applyTalentState(draft, talentXP, unlockedTalents);
+      applyRestoreRunToDraft(draft, activeRun && isEditionRunAvailable(activeRun) ? activeRun : null);
+
+      return acceptCommand();
+    },
+    undefined,
+    gameSession,
+  );
 }
 
-export function resolveActiveRunForSave(hasActiveRun: boolean, screen?: Screen): ActiveRunData | null {
-  return hasActiveRun ? snapshotRun(screen) : null;
+export function resolveActiveRunForSave(
+  hasActiveRun: boolean,
+  screen?: Screen,
+  gameSession: GameSession = defaultGameSession,
+): ActiveRunData | null {
+  return hasActiveRun ? snapshotRun(screen, gameSession) : null;
 }
 
-export function snapshotRun(screen?: Screen): ActiveRunData {
-  return encodeRunResumeSnapshot(getRunSession(), screen ?? readRunResumeScreen() ?? undefined);
+export function snapshotRun(screen?: Screen, gameSession: GameSession = defaultGameSession): ActiveRunData {
+  return encodeRunResumeSnapshot(
+    getRunSession(undefined, gameSession),
+    screen ?? readRunResumeScreen(gameSession) ?? undefined,
+  );
 }
 
-export function syncRunToBattleStart(draft: GameplayDraft, playerHealth?: number): number {
+export function syncRunToBattleStart(draft: RunTransaction, playerHealth?: number): number {
   const startingHealth = playerHealth ?? draft.run.activeRun.runPlayerHealth;
   setRunPlayerHealth(draft, startingHealth);
   return startingHealth;
 }
 
-export function syncBattleToRun(draft: GameplayDraft, options?: { playerHealth?: number }): void {
+export function syncBattleToRun(draft: RunTransaction, options?: { playerHealth?: number }): void {
   const health = options?.playerHealth ?? draft.battle.battleState.playerHealth;
   setRunPlayerHealth(draft, health);
 }
@@ -69,15 +88,25 @@ export function clearActiveRunInDraft(draft: GameplayDraft): void {
   initializeActiveBattle(draft, null);
 }
 
-export function teardownRun(): void {
-  dispatchRunSessionCommand((draft) => {
-    clearActiveRunInDraft(draft);
-  });
-  clearBattleUiState();
-  notifyRunTeardown();
+export function teardownRun(gameSession: GameSession = defaultGameSession): void {
+  dispatchGameplayCommand(
+    (draft) => {
+      clearActiveRunInDraft(draft);
+
+      return acceptCommand();
+    },
+    undefined,
+    gameSession,
+  );
+  clearBattleUiState(gameSession);
+  notifyRunTeardown(gameSession);
 }
 
-function flushSave(activeRun: ActiveRunData | null, message: string): void {
+function flushSave(
+  activeRun: ActiveRunData | null,
+  message: string,
+  gameSession: GameSession = defaultGameSession,
+): void {
   // Immediate fast path: run-end and gear mutations need durability without
   // waiting for the autosave debounce. Shares the storage owner’s queue (and the
   // snapshot builder) with the debounced autosave, so overlapping writes
@@ -86,7 +115,7 @@ function flushSave(activeRun: ActiveRunData | null, message: string): void {
   // by the same store commit retries on failure. The rejection handler is
   // defensive only, so an unexpected throw still reports instead of going
   // unhandled.
-  void saveAlchemySaveData(buildAlchemySaveDataFromStores(activeRun)).then(
+  void saveAlchemySaveData(buildAlchemySaveDataFromStores(activeRun, gameSession), gameSession).then(
     (outcome) => {
       if (outcome === "failed") logStorageFailure(message);
     },
@@ -96,18 +125,21 @@ function flushSave(activeRun: ActiveRunData | null, message: string): void {
   );
 }
 
-function flushSaveAfterRunEnd(): void {
-  flushSave(null, "Failed to flush save after run end");
+function flushSaveAfterRunEnd(gameSession: GameSession = defaultGameSession): void {
+  flushSave(null, "Failed to flush save after run end", gameSession);
 }
 
-export function flushSaveAfterGearMutation(activeRun: ActiveRunData | null): void {
-  flushSave(activeRun, "Failed to flush save after gear mutation");
+export function flushSaveAfterGearMutation(
+  activeRun: ActiveRunData | null,
+  gameSession: GameSession = defaultGameSession,
+): void {
+  flushSave(activeRun, "Failed to flush save after gear mutation", gameSession);
 }
 
 function finalizeRunEndSessionState(
   options: {
-    awardRunEndMaterials: (draft: GameplayDraft) => MaterialInventory;
-    finalizeRunXP: (draft: GameplayDraft) => void;
+    awardRunEndMaterials: (transaction: RunTransaction) => MaterialInventory;
+    finalizeRunXP: (transaction: RunTransaction) => void;
   },
   draft: GameplayDraft,
   ending: RunRecap["ending"],
@@ -124,9 +156,15 @@ function finalizeRunEndSessionState(
     return [...prev, activeChar];
   });
 
-  const homesteadBonus = options.awardRunEndMaterials(draft);
-  captureRunRecap(draft, ending);
-  options.finalizeRunXP(draft);
+  const scope = openRunTransaction(draft);
+  let homesteadBonus: MaterialInventory;
+  try {
+    homesteadBonus = options.awardRunEndMaterials(scope.transaction);
+    captureRunRecap(draft, ending);
+    options.finalizeRunXP(scope.transaction);
+  } finally {
+    scope.close();
+  }
   setRunEndItems(draft, draft.run.activeRun.runObtainedItems.map(cloneRunObtainedItem));
   if (draft.run.activeRun.contentSystemType === CONTENT_SYSTEMS.LABYRINTH) {
     const floor = draft.session.labyrinthMap?.currentFloor ?? null;
@@ -137,25 +175,35 @@ function finalizeRunEndSessionState(
   return homesteadBonus;
 }
 
-export function finalizeRunEndSession(options: {
-  awardRunEndMaterials: (draft: GameplayDraft) => MaterialInventory;
-  finalizeRunXP: (draft: GameplayDraft) => void;
-}): MaterialInventory {
-  return dispatchRunSessionCommand((draft) => finalizeRunEndSessionState(options, draft, "victory"), {
-    afterCommit: () => {
-      flushSaveAfterRunEnd();
+export function finalizeRunEndSession(
+  options: {
+    awardRunEndMaterials: (transaction: RunTransaction) => MaterialInventory;
+    finalizeRunXP: (transaction: RunTransaction) => void;
+  },
+  gameSession: GameSession = defaultGameSession,
+): MaterialInventory {
+  return dispatchGameplayCommand(
+    (draft) => acceptCommand(finalizeRunEndSessionState(options, draft, "victory")),
+    {
+      afterCommit: () => {
+        flushSaveAfterRunEnd(gameSession);
+      },
     },
-  });
+    gameSession,
+  );
 }
 
 /** Manual termination shares earned progression, but does not simulate a defeat. */
-export function abandonRun(options: {
-  awardRunEndMaterials: (draft: GameplayDraft) => MaterialInventory;
-  finalizeRunXP: (draft: GameplayDraft) => void;
-}): boolean {
-  return dispatchRunSessionCommand(
+export function abandonRun(
+  options: {
+    awardRunEndMaterials: (transaction: RunTransaction) => MaterialInventory;
+    finalizeRunXP: (transaction: RunTransaction) => void;
+  },
+  gameSession: GameSession = defaultGameSession,
+): boolean {
+  return dispatchGameplayCommand(
     (draft) => {
-      if (draft.session.activity.kind === "inactive") return false;
+      if (draft.session.activity.kind === "inactive") return rejectCommand("There is no active run to abandon", false);
       finalizeRunEndSessionState(options, draft, "abandoned");
       // The outgoing battle still renders until the route transition completes.
       // Retain its last snapshot, but remove all resumable activity and continuations.
@@ -177,27 +225,30 @@ export function abandonRun(options: {
       setRunEndItems(draft, runEndItems);
       setRunEndLabyrinthFloor(draft, runEndLabyrinthFloor);
       setHasActiveBattle(draft, false);
-      return true;
+      return acceptCommand(true);
     },
     {
-      afterCommit: (ended) => {
-        if (!ended) return;
-        stopAllSfx();
-        clearBattlePresentationUi();
-        notifyRunTeardown();
-        flushSaveAfterRunEnd();
+      afterCommit: () => {
+        sessionFeedback(gameSession).stopAllSfx();
+        clearBattlePresentationUi(gameSession);
+        notifyRunTeardown(gameSession);
+        flushSaveAfterRunEnd(gameSession);
       },
     },
+    gameSession,
   );
 }
 
-export function applyRunDefeatTeardown(options: {
-  awardRunEndMaterials: (draft: GameplayDraft) => MaterialInventory;
-  finalizeRunXP: (draft: GameplayDraft) => void;
-  clearCombatState: (draft: GameplayDraft) => void;
-  clearCombatPresentation?: () => void;
-}): void {
-  dispatchRunSessionCommand(
+export function applyRunDefeatTeardown(
+  options: {
+    awardRunEndMaterials: (transaction: RunTransaction) => MaterialInventory;
+    finalizeRunXP: (transaction: RunTransaction) => void;
+    clearCombatState: (transaction: RunTransaction) => void;
+    clearCombatPresentation?: () => void;
+  },
+  gameSession: GameSession = defaultGameSession,
+): void {
+  dispatchGameplayCommand(
     (draft) => {
       finalizeRunEndSessionState(
         {
@@ -207,63 +258,51 @@ export function applyRunDefeatTeardown(options: {
         draft,
         "death",
       );
-      options.clearCombatState(draft);
+      const scope = openRunTransaction(draft);
+      try {
+        options.clearCombatState(scope.transaction);
+      } finally {
+        scope.close();
+      }
+
+      return acceptCommand();
     },
     {
       afterCommit: () => {
-        flushSaveAfterRunEnd();
-        stopAllSfx();
-        playDefeat();
+        flushSaveAfterRunEnd(gameSession);
+        sessionFeedback(gameSession).stopAllSfx();
+        sessionFeedback(gameSession).playDefeat();
         options.clearCombatPresentation?.();
       },
     },
+    gameSession,
   );
 }
 
-type LifecycleListener = () => void;
-
-function createLifecycleChannel() {
-  const listeners = new Set<LifecycleListener>();
-  return {
-    on(listener: LifecycleListener): () => void {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
-    emit(): void {
-      listeners.forEach((listener) => listener());
-    },
-  };
+export function onRunTeardown(listener: () => void, gameSession: GameSession = defaultGameSession): () => void {
+  const runtime = sessionRuntime(gameSession);
+  return runtime.track(runtime.teardown.on(listener));
+}
+export function onClearBattlePresentation(
+  listener: () => void,
+  gameSession: GameSession = defaultGameSession,
+): () => void {
+  const runtime = sessionRuntime(gameSession);
+  return runtime.track(runtime.clearPresentation.on(listener));
 }
 
-const runTeardownChannel = createLifecycleChannel();
-const clearPresentationChannel = createLifecycleChannel();
-
-export function onRunTeardown(listener: LifecycleListener): () => void {
-  return runTeardownChannel.on(listener);
+export function clearBattleUi(gameSession: GameSession = defaultGameSession): void {
+  dispatchGameplayCommand((draft) => acceptCommand(setHasActiveBattle(draft, false)), undefined, gameSession);
+  clearBattlePresentationUi(gameSession);
 }
 
-export function onClearBattlePresentation(listener: LifecycleListener): () => void {
-  return clearPresentationChannel.on(listener);
+function clearBattleUiState(gameSession: GameSession = defaultGameSession): void {
+  sessionRuntime(gameSession).feedback.clearBattleUi();
 }
-
-export function clearBattleUi(): void {
-  dispatchRunSessionCommand((draft) => setHasActiveBattle(draft, false));
-  clearBattlePresentationUi();
+export function clearBattlePresentationUi(gameSession: GameSession = defaultGameSession): void {
+  clearBattleUiState(gameSession);
+  sessionRuntime(gameSession).clearPresentation.emit();
 }
-
-function clearBattleUiState(): void {
-  useUiStore.getState().setCardInspection(null);
-  useUiStore.getState().setEnemyInspectionOpen(false);
-  useUiStore.getState().clearCardHover();
-}
-
-export function clearBattlePresentationUi(): void {
-  clearBattleUiState();
-  clearPresentationChannel.emit();
-}
-
-function notifyRunTeardown(): void {
-  runTeardownChannel.emit();
+function notifyRunTeardown(gameSession: GameSession = defaultGameSession): void {
+  sessionRuntime(gameSession).teardown.emit();
 }

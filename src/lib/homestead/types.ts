@@ -1,8 +1,7 @@
 import type { TalentEffectManifest } from "@/lib/game-data";
 
-export type MaterialId = "wood" | "stone" | "iron" | "food" | "herbs" | "hide" | "gems";
-
-export const MATERIAL_IDS: [MaterialId, ...MaterialId[]] = ["wood", "stone", "iron", "food", "herbs", "hide", "gems"];
+export const MATERIAL_IDS = ["wood", "stone", "iron", "food", "herbs", "hide", "gems"] as const;
+export type MaterialId = (typeof MATERIAL_IDS)[number];
 
 export const materialLabels: Record<MaterialId, string> = {
   wood: "Wood",

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/navigation/mystery-event-navigation";
 import { resetAllTestStores, setRunProgress } from "../../../helpers/run-domain-store-test";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setMysteryCardChoices, setMysteryEvent } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { cardLibrary } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
@@ -30,7 +30,7 @@ describe("mystery transactional guards", () => {
       ["restful-discovery"],
       30,
     );
-    dispatchRunSessionCommand((draft) => setMysteryEvent(draft, event));
+    dispatchRunSessionCommand((draft) => acceptCommand(setMysteryEvent(draft, event)));
     const choice = readActivityData(readRunSession().activity, "mystery").mysteryEvent!.choices[0]!;
     renderMysteryNav().hook.result.current.handleMysteryChoice(choice);
     expect(readActiveRun().runPlayerHealth).toBe(30);
@@ -47,6 +47,8 @@ describe("mystery transactional guards", () => {
     act(() => {
       dispatchRunSessionCommand((draft) => {
         setMysteryCardChoices(draft, offered);
+
+        return acceptCommand();
       });
     });
     const beforeDeck = readActiveRun().runDeck.length;
@@ -67,6 +69,8 @@ describe("mystery transactional guards", () => {
     act(() => {
       dispatchRunSessionCommand((draft) => {
         setMysteryCardChoices(draft, offered);
+
+        return acceptCommand();
       });
     });
     let first: boolean | undefined;

@@ -1,5 +1,5 @@
 import { validateCardDescriptionParity } from "@/lib/content-validation/card-parity";
-import { canonicalCardDescriptionMatches } from "@/lib/game-data";
+import { canonicalCardDescriptionMatches, cardMagnitude, type CardDescription } from "@/lib/game-data";
 import { damageCard, effectsCard } from "@/lib/game-data/cards/card-builders";
 import { describe, expect, it } from "vitest";
 
@@ -34,7 +34,13 @@ describe("card builders", () => {
   });
 
   it("owns custom description lines so building or editing a variant cannot change another card", () => {
-    const authored = ["Restore 2 Health"];
+    const authored: CardDescription = [
+      {
+        parts: ["Restore ", cardMagnitude({ kind: "heal", effectIndex: 0, field: "amount" }), " Health"],
+        role: "effect",
+      },
+    ];
+    const before = structuredClone(authored);
     const base = { id: "shared", art: "", effects: [{ kind: "heal" as const, amount: 2 }], describe: () => authored };
     const tagged = effectsCard({ ...base, tags: ["nature"], consume: true });
     const plain = effectsCard(base);
@@ -42,7 +48,8 @@ describe("card builders", () => {
     expect(plain.descriptionLines).toEqual(["Restore 2 Health"]);
     tagged.descriptionLines[0] = "Changed";
     plain.descriptionLines.push("Changed");
-    expect(authored).toEqual(["Restore 2 Health"]);
+    tagged.description![0]!.parts[0] = "Changed";
+    expect(authored).toEqual(before);
   });
 
   it("supports explicit lines for effects with no canonical phrasing", () => {
@@ -57,8 +64,17 @@ describe("card builders", () => {
           failureEffects: [{ kind: "damage", damageType: "bleed", amount: 3 }],
         },
       ],
-      describe: ([effect]) => [
-        `Deal ${effect.successEffects[0]!.amount} Stun or ${effect.failureEffects[0]!.amount} Bleed damage at random`,
+      describe: () => [
+        {
+          parts: [
+            "Deal ",
+            cardMagnitude({ effectIndex: 0, effectPath: [0], kind: "damage", field: "amount" }),
+            " Stun or ",
+            cardMagnitude({ effectIndex: 0, effectPath: [1], kind: "damage", field: "amount" }),
+            " Bleed damage at random",
+          ],
+          role: "effect",
+        },
       ],
     });
     expect(card.descriptionLines).toEqual(["Deal 3 Stun or 3 Bleed damage at random"]);

@@ -1,33 +1,33 @@
-import {
-  equipGear,
-  flattenGearInventories,
-  findGearInventoryOwner,
-  pruneOrphanGearLoadouts,
-  salvageGear,
-  unequipGear,
-  applyCraftingCurrency,
-  addCraftingCurrencies,
-  normalizeCraftingCurrencies,
-  createEmptyEquippedTrinkets,
-  createEmptyGearInventories,
-  createEmptyGearLoadouts,
-  EMPTY_CRAFTING_CURRENCIES,
-  GEAR_CHARACTER_IDS,
-  normalizeEquippedTrinkets,
-} from "@/lib/gear";
+import type { CharacterId } from "@/lib/game-data";
+import { isTrinketId } from "@/lib/game-data";
 import type {
   CraftingCurrencyId,
+  EquippedTrinkets,
   GearInstance,
   GearInventories,
   GearLoadouts,
   GearSlot,
-  EquippedTrinkets,
 } from "@/lib/gear";
-import type { CharacterId } from "@/lib/game-data";
+import {
+  addCraftingCurrencies,
+  applyCraftingCurrency,
+  createEmptyEquippedTrinkets,
+  createEmptyGearInventories,
+  createEmptyGearLoadouts,
+  EMPTY_CRAFTING_CURRENCIES,
+  equipGear,
+  findGearInventoryOwner,
+  flattenGearInventories,
+  GEAR_CHARACTER_IDS,
+  normalizeCraftingCurrencies,
+  normalizeEquippedTrinkets,
+  pruneOrphanGearLoadouts,
+  salvageGear,
+  unequipGear,
+} from "@/lib/gear";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Draft } from "immer";
-import type { GearStateFields } from "./gear-store-types";
-import { isTrinketId } from "@/lib/game-data";
+import type { GearSaveFields, GearStateFields } from "./gear-store-types";
 
 export function createInitialGearState(): GearStateFields {
   return {
@@ -172,4 +172,15 @@ export function addGearCurrencies(
 
 export function resetGear(gear: Draft<GearStateFields>): void {
   Object.assign(gear, createInitialGearState());
+}
+
+export function createDefaultGearSaveFields(): GearSaveFields {
+  const initial = createInitialGearState();
+  return {
+    gearInventories: initial.inventories,
+    gearLoadouts: initial.loadouts,
+    ownedTrinketIds: initial.ownedTrinketIds,
+    equippedTrinkets: initial.equippedTrinkets,
+    craftingCurrencies: initial.craftingCurrencies,
+  };
 }

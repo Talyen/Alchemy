@@ -18,7 +18,7 @@ Persisted status changes follow the [save contract](../src/features/alchemy/shar
 2. Add effects (discriminated union on `kind`) — same card entry, `effects: [...]`
 3. Add art reference — `src/lib/game-data/assets.ts` (or `placeholderCard` while WIP)
 4. Register a nonempty card sound in `src/lib/audio/sound-registry.ts` (`cardSounds`), including for Companion summon cards; follow the [audio checklist](./AUDIO.md#change-checklist). `tests/lib/audio/sound-registry.test.ts` enforces complete focal coverage; intentional silence applies only to the UI/service registrations documented by the audio owner.
-5. Build the entry with `card-builders.ts` (`effectsCard` generates `descriptionLines` from effects; chance, delayed, conditional, and combined clauses are generated too; a bespoke `describe(effects)` template must take values from its typed effects; `effectsCard` with `consume: true` takes multiple effects; summon cards derive their title from the companion). Raw literals are reserved for genuinely special cards (`mixed-potion`)
+5. Build the entry with `card-builders.ts` (`effectsCard` generates a structured `description` and rendered `descriptionLines` from effects; chance, delayed, conditional, and combined clauses are generated too; a bespoke `describe(effects)` returns typed description lines with explicit magnitude references; `effectsCard` with `consume: true` takes multiple effects; summon cards derive their title from the companion). Raw literals are reserved for genuinely special cards (`mixed-potion`)
 6. Context-aware text — pure text `src/lib/game-data/card-description.ts` (summon lines use Bond levels and the shared `CompanionDamageModifiers`; other amounts stay authored, with optional reaction previews), UI tokens `shared/ui/cards/card-description-ui.tsx`, homestead/talent context `shared/context/card-description-context.tsx` (wired in `App.tsx`)
 
 Card IDs are stable strings on `BattleCard`, not a separate union. The assembled
@@ -31,8 +31,21 @@ catalog, so a catalog rebalance alone does not replace saved effects. This is
 not a requirement to retain obsolete card mechanics; retire incompatible
 development snapshots through the save owner when current rules require it.
 Strong Spirits and Alchemist mixing render their scaled Potion effects through
-`describeCardEffects` in `effect-metadata.ts`; add Potion wording there rather
-than changing numeric text in the mixer.
+`createEffectDescription` through `effect-metadata.ts`; add Potion wording in
+`effect-description.ts` rather than changing numeric text in the mixer.
+
+Structured descriptions live in `card-description-model.ts`. Each line declares
+its `effect`, `keyword`, or `consume` role. Numeric parts use `cardMagnitude`
+with an effect index, optional nested path, kind, and numeric field; shared values
+explicitly list all references, including derived multipliers. Magnitudes retain
+their identities when effects move; mixing and added effects scope new identities
+to prevent collisions. For example, a
+custom Gold line uses `{ role: "effect", parts: ["Steal ",
+cardMagnitude({ effectIndex: 1, kind: "gain-gold", field: "amount" }), " Gold"] }`.
+Plain text is display-only and cannot create an editable magnitude. Corruption
+and Powerful Wish consume these references, never English wording or equal-value
+matching. Update cards through `withCardDescription` so strings and highlight
+offsets render from the same model; do not edit numeric prose independently.
 
 Cards in `cardLibrary` are automatically included in card shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration. Exclude a card with `excludeFromOfferPool: true` (`mixed-potion` is the current example). Distillation-eligible Potions are the explicit `POTION_CARD_IDS` list in `cards/card-pools.ts` — a new brew must be added there deliberately; Mana Berries, Mana Crystals, Apple, and Bread are intentionally excluded.
 
@@ -95,7 +108,7 @@ before handing off.
 One definition powers a permanent Armory Trinket and a run-scoped **Boon**. Both reveal one Collection entry; Boons occupy no slot. `combineTrinketEffectIds` deduplicates matching forms.
 
 1. Add data/art in `game-data/compendium/trinkets.ts` and `game-data/assets.ts`. Use `defineTrinket` with its effects and a description formatter. Interpolate numeric amounts from the formatter's typed effects; do not repeat balance values in prose.
-2. Reuse existing effects when they express the new Trinket. Only for a new effect, extend `TrinketManifest` and `defaultTrinketEffects` in `src/lib/game-data/trinket-manifest.ts` and wire its battle/run consumers; check Boon exclusions. Content validation derives effect field types from these defaults and requires at least one active effect.
+2. Reuse existing effects when they express the new Trinket. Only for a new effect, add its default to `defaultTrinketEffects` in `src/lib/game-data/trinket-manifest.ts` and wire its battle/run consumers; check Boon exclusions. `TrinketManifest` and content validation derive effect field types from these defaults and requires at least one active effect.
 3. Content validation uses that same description definition to check the complete trigger and outcome, required effect keys, and boolean mechanics. No separate parity rule is needed. Keep meaningful regressions in `tests/lib/content-validation/trinket-validation.test.ts`; run `npm run content:audit` before handing off.
 4. Verify Gear-aggregate ownership/equip plus permanent and ephemeral UI/discovery.
 
@@ -142,7 +155,7 @@ New keywords still follow [Add a new keyword](./CONTENT_AUTHORING.md#add-a-new-k
 
 1. Add `BuildingId` / `FarmId` / `ResearchId` — `src/lib/homestead/types.ts`
 2. Define the item in `src/lib/homestead/data.ts` with `stackingUpgrade` from `data-builders.ts`. Supply four authored tier costs, reusing a matching cost ladder when appropriate, plus per-tier incremental effects and cumulative description callbacks. Upgrades with unequal tier increments pass a per-tier effect builder `(tierOneBased) => effects` instead of a flat object, as Detect Magic does for its Astral chance.
-3. Add effect keys only when existing keys cannot express the upgrade — `HomesteadEffectManifest` + `HOMESTEAD_BATTLE_*_KEYS` in `types.ts`; defaults in `defaults.ts`
+3. Add effect keys only when existing keys cannot express the upgrade — `HomesteadEffectManifest` + `HOMESTEAD_BATTLE_*_KEYS` in `types.ts`. Battle numeric defaults derive from that key list; meta and record defaults live in `defaults.ts`
 4. Companion bond tiers (if companion) — `src/lib/homestead/companions.ts` (`COMPANION_BOND_TIERS` + `companionTierItems`) + `src/lib/game-data/companions.ts`
 5. Art & palette — Add `helpers.tsx:itemArt` entry in `src/features/alchemy/meta/screens/homestead/helpers.tsx` + art via the [asset workflow](./WORKFLOWS-ASSETS.md#add-or-replace-game-art)
 6. Change layout constants only for an intended layout change — `HOMESTEAD_CONFIG` in `helpers.tsx` (companion page size, aspect ratios)

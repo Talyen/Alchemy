@@ -1,27 +1,34 @@
-import { releaseRewardClaim } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
   appendBoonToRunWithDiscovery,
   appendCardToRunWithDiscovery,
   grantGearToRunWithRecord,
   grantTrinketToRunWithRecord,
 } from "@/features/alchemy/shared/stores/deck-mutations";
-import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+  rejectCommand,
+  snapshotTransactionValue,
+  type RunTransaction,
+} from "@/features/alchemy/shared/stores/run-session-command";
 import {
   awardMaterialsDuringRun,
   beginRewardClaim,
   createDraftRunRandomSource,
-  prepareRunNavigation,
+  releaseRewardClaim,
   setCompanionRewardCards,
   setRewardState,
+  setRunProgressActivity,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resolveRewardChoice, type ResolvedRewardChoice } from "@/lib/active-run-session";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { REWARD_ROUTES } from "@/lib/routing";
-import { current } from "immer";
 import { finalizeRewardState, getRandomPotionCard } from "../navigation/reward-flow";
 import { getActiveRewardModifiersForContentSystem, shouldGrantAlchemistReward } from "../navigation/reward-math";
 
-export function applyRewardSelection({ reward, draft }: { reward: ResolvedRewardChoice; draft: GameplayDraft }) {
+export function applyRewardSelection({ reward, draft }: { reward: ResolvedRewardChoice; draft: RunTransaction }) {
   switch (reward.rewardType) {
     case "card":
       appendCardToRunWithDiscovery(draft, reward.choice);
@@ -38,66 +45,74 @@ export function applyRewardSelection({ reward, draft }: { reward: ResolvedReward
   }
 }
 
-export function applyAlchemistPotion({ draft, rng }: { draft: GameplayDraft; rng: () => number }) {
+export function applyAlchemistPotion({ draft, rng }: { draft: RunTransaction; rng: () => number }) {
   const potion = getRandomPotionCard(rng);
   if (!potion) return;
   appendCardToRunWithDiscovery(draft, potion);
 }
 
-export function claimRunReward(choiceId: string | null) {
-  return dispatchRunSessionCommand((draft) => {
-    const session = draft.session;
-    if (session.activity.kind !== "rewards") return null;
-    // Skipping is only permitted for card rewards (or when no choices are offered).
-    // Non-card rewards (gear, trinket, boon) must be claimed with an explicit choice,
-    // so a null claim there is rejected and the rewards screen stays put (matching the UI).
-    const rewardState = session.rewardFlow.state;
-    if (
-      choiceId === null
-        ? rewardState.rewardType !== "card" && rewardState.choices.length > 0
-        : !resolveRewardChoice(rewardState, choiceId)
-    )
-      return null;
-    if (!beginRewardClaim(draft)) return null;
-    const contentSystemType = draft.run.activeRun.contentSystemType;
+export function claimRunReward(choiceId: string | null, gameSession: GameSession = defaultGameSession) {
+  return dispatchRunSessionCommand(
+    (draft) => {
+      const session = draft.session;
+      if (session.activity.kind !== "rewards") return rejectCommand("Reward cannot be claimed", null);
+      // Skipping is only permitted for card rewards (or when no choices are offered).
+      // Non-card rewards (gear, trinket, boon) must be claimed with an explicit choice,
+      // so a null claim there is rejected and the rewards screen stays put (matching the UI).
+      const rewardState = session.rewardFlow.state;
+      if (
+        choiceId === null
+          ? rewardState.rewardType !== "card" && rewardState.choices.length > 0
+          : !resolveRewardChoice(snapshotTransactionValue(rewardState), choiceId)
+      )
+        return rejectCommand("Reward cannot be claimed", null);
+      if (!beginRewardClaim(draft)) return rejectCommand("Reward cannot be claimed", null);
+      const contentSystemType = draft.run.activeRun.contentSystemType;
 
-    const grantAlchemistReward = shouldGrantAlchemistReward(
-      getActiveRewardModifiersForContentSystem(
-        contentSystemType,
-        contentSystemType === CONTENT_SYSTEMS.WILDWOOD
-          ? (session.wildwoodDraft?.currentRewardTraitIds ?? [])
-          : session.activeLabyrinthRewardModifiers,
-      ),
-    );
-    const result = finalizeRewardState({
-      rewardState: { ...current(session.rewardFlow.state), selectedId: choiceId },
-      companionRewardCards: session.rewardFlow.companionCards ? current(session.rewardFlow.companionCards) : null,
-    });
-
-    const isWildwood = contentSystemType === CONTENT_SYSTEMS.WILDWOOD;
-    awardMaterialsDuringRun(draft, result.materials);
-
-    if (result.selectedReward) {
-      applyRewardSelection({
-        reward: result.selectedReward,
-        draft,
+      const grantAlchemistReward = shouldGrantAlchemistReward(
+        getActiveRewardModifiersForContentSystem(
+          contentSystemType,
+          snapshotTransactionValue(
+            contentSystemType === CONTENT_SYSTEMS.WILDWOOD
+              ? (session.wildwoodDraft?.currentRewardTraitIds ?? [])
+              : session.activeLabyrinthRewardModifiers,
+          ),
+        ),
+      );
+      const result = finalizeRewardState({
+        rewardState: { ...snapshotTransactionValue(session.rewardFlow.state), selectedId: choiceId },
+        companionRewardCards: session.rewardFlow.companionCards
+          ? snapshotTransactionValue(session.rewardFlow.companionCards)
+          : null,
       });
-    }
-    if (grantAlchemistReward && result.route !== REWARD_ROUTES.COMPANION_REWARD) {
-      applyAlchemistPotion({
-        draft,
-        rng: createDraftRunRandomSource(draft, "rewards"),
-      });
-    }
 
-    setRewardState(draft, result.nextRewardState);
-    if (result.clearCompanionRewardCards) setCompanionRewardCards(draft, null);
-    if (!isWildwood && result.route === REWARD_ROUTES.DESTINATION) prepareRunNavigation(draft, "destination");
-    if (!isWildwood && result.route === REWARD_ROUTES.LABYRINTH_MAP) prepareRunNavigation(draft, "labyrinth-map");
-    return { result, isWildwood };
-  });
+      const isWildwood = contentSystemType === CONTENT_SYSTEMS.WILDWOOD;
+      awardMaterialsDuringRun(draft, result.materials);
+
+      if (result.selectedReward) {
+        applyRewardSelection({
+          reward: result.selectedReward,
+          draft,
+        });
+      }
+      if (grantAlchemistReward && result.route !== REWARD_ROUTES.COMPANION_REWARD) {
+        applyAlchemistPotion({
+          draft,
+          rng: createDraftRunRandomSource(draft, "rewards"),
+        });
+      }
+
+      setRewardState(draft, result.nextRewardState);
+      if (result.clearCompanionRewardCards) setCompanionRewardCards(draft, null);
+      if (!isWildwood && result.route === REWARD_ROUTES.DESTINATION) setRunProgressActivity(draft, "destination");
+      if (!isWildwood && result.route === REWARD_ROUTES.LABYRINTH_MAP) setRunProgressActivity(draft, "labyrinth-map");
+      return acceptCommand({ result, isWildwood });
+    },
+    undefined,
+    gameSession,
+  );
 }
 
-export function finishRewardClaim(): void {
-  dispatchRunSessionCommand((draft) => releaseRewardClaim(draft));
+export function finishRewardClaim(gameSession: GameSession = defaultGameSession): void {
+  dispatchRunSessionCommand((draft) => acceptCommand(releaseRewardClaim(draft)), undefined, gameSession);
 }

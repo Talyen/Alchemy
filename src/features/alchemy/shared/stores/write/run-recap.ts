@@ -1,7 +1,7 @@
 import type { RunRecap } from "@/lib/active-run-session";
 import { cloneBattleCard } from "@/lib/game-data";
 import type { Destination } from "@/lib/routing";
-import type { GameplayDraft } from "../run-session-command";
+import type { GameplayDraft } from "../gameplay-command";
 
 /** Stable visit IDs deduplicate unresolved-room re-entry and restored continuations. */
 export function recordRunRoom(draft: GameplayDraft, destination: Destination, id: string): boolean {

@@ -1,3 +1,4 @@
+import { dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   computeVictoryRewardState,
@@ -16,7 +17,7 @@ import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import { createRunRngState, createRunStateRng } from "@/lib/rng";
 import type { Destination } from "@/lib/routing";
 import { getAvailableDestinations } from "@/lib/routing/destination-availability";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
@@ -597,7 +598,7 @@ describe("commitVictoryRewards", () => {
   }
 
   function commit(result: VictoryRewardsResult = victoryResult(), deps = commitDeps()) {
-    return dispatchRunSessionCommand((draft) => commitVictoryRewards(draft, result, deps, testRng));
+    return dispatchRunSessionCommand((draft) => acceptCommand(commitVictoryRewards(draft, result, deps, testRng)));
   }
 
   it("applies max health before writing healed player health", () => {
@@ -625,28 +626,23 @@ describe("commitVictoryRewards", () => {
     ).toBe(true);
   });
 
-  it("adds pending gems materials to homestead", () => {
+  it.each(["campaign", "wildwood"] as const)("settles committed pending Gems once for %s", (contentSystemType) => {
     const materials = { ...emptyInventory(), gems: 2 };
-    commit(
-      victoryResult(),
-      commitDeps({
-        battleState: baseBattleState({ pendingMaterials: materials }),
-      }),
-    );
+    dispatchGameplayCommand((draft) => {
+      draft.session.activity = { kind: "idle" };
+      draft.run.activeRun.contentSystemType = contentSystemType;
+      draft.battle.hasActiveBattle = true;
+      draft.battle.battleState.pendingMaterials = materials;
+      return acceptCommand();
+    });
+    const deps = commitDeps({ contentSystemType });
+    commit(victoryResult(), deps);
     expect(readGameplayState().runProfile.materialInventory.gems).toBe(2);
-  });
-
-  it("awards pending Gems for Wildwood victories", () => {
-    const materials = { ...emptyInventory(), gems: 2 };
-    commit(
-      victoryResult(),
-      commitDeps({
-        battleState: baseBattleState({ pendingMaterials: materials }),
-        contentSystemType: "wildwood",
-      }),
-    );
-
+    expect(readGameplayState().run.activeRun.runMaterialsEarned.gems).toBe(2);
+    expect(readGameplayState().battle.battleState.pendingMaterials).toEqual(emptyInventory());
+    commit(victoryResult(), deps);
     expect(readGameplayState().runProfile.materialInventory.gems).toBe(2);
+    expect(readGameplayState().run.activeRun.runMaterialsEarned.gems).toBe(2);
   });
 
   it("persists in-combat gold into the purse for wildwood victories", () => {

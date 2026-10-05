@@ -17,7 +17,11 @@ import {
   useProfileCollectionSlice,
   useProfileDiscoverySlice,
 } from "@/features/alchemy/shared/stores/profile-store";
-import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import {
+  acceptCommand,
+  rejectCommand,
+  createRunSessionCommand,
+} from "@/features/alchemy/shared/stores/run-session-command";
 import {
   bondCompanion,
   completeResearch,
@@ -35,12 +39,28 @@ import {
 import type { MetaRouteCtx } from "./route-ctx";
 import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
 
-const setCollectionPageCommand = createRunSessionCommand(setCollectionPage);
-const handleCollectionTabChangeCommand = createRunSessionCommand(handleCollectionTabChange);
-const constructBuildingCommand = createRunSessionCommand(constructBuilding);
-const plantFarmCommand = createRunSessionCommand(plantFarm);
-const completeResearchCommand = createRunSessionCommand(completeResearch);
-const bondCompanionCommand = createRunSessionCommand(bondCompanion);
+const setCollectionPageCommand = createRunSessionCommand((...args: Parameters<typeof setCollectionPage>) =>
+  acceptCommand(setCollectionPage(...args)),
+);
+const handleCollectionTabChangeCommand = createRunSessionCommand(
+  (...args: Parameters<typeof handleCollectionTabChange>) => acceptCommand(handleCollectionTabChange(...args)),
+);
+const constructBuildingCommand = createRunSessionCommand((...args: Parameters<typeof constructBuilding>) => {
+  const ok = constructBuilding(...args);
+  return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
+});
+const plantFarmCommand = createRunSessionCommand((...args: Parameters<typeof plantFarm>) => {
+  const ok = plantFarm(...args);
+  return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
+});
+const completeResearchCommand = createRunSessionCommand((...args: Parameters<typeof completeResearch>) => {
+  const ok = completeResearch(...args);
+  return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
+});
+const bondCompanionCommand = createRunSessionCommand((...args: Parameters<typeof bondCompanion>) => {
+  const ok = bondCompanion(...args);
+  return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
+});
 
 function MenuScreenRoute({ routeCommands }: MetaRouteCtx) {
   const commands = routeCommands.meta;

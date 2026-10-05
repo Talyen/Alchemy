@@ -1,4 +1,4 @@
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { patchBattleState } from "../../../../fixtures/battle";
@@ -112,8 +112,10 @@ describe("alchemy visit transactions and resume", () => {
   });
   it("preserves spent reaction opportunities in a current battle save", () => {
     setRunSession({ activity: { kind: "battle" } });
-    dispatchRunSessionCommand((draft) =>
-      initializeActiveBattle(draft, patchBattleState({ flags: { shatterUsed: true, wildfireUsed: true } })),
+    dispatchGameplayCommand((draft) =>
+      acceptCommand(
+        initializeActiveBattle(draft, patchBattleState({ flags: { shatterUsed: true, wildfireUsed: true } })),
+      ),
     );
     reload();
     expect(readGameplayState().battle.battleState.flags).toMatchObject({ shatterUsed: true, wildfireUsed: true });

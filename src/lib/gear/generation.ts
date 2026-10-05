@@ -1,8 +1,9 @@
 import { rollLootGearRarity, type LootAvailability, type LootWeights } from "@/lib/loot";
 import { pickRandom, sampleItems } from "@/lib/rng";
+import { createInstanceId } from "@/lib/utils";
 import { gearBaseItemList } from "./base-items";
 import { gearDefinitionId, gearDefinitions } from "./definitions";
-import { generateUniqueGearInstance, createRolledGearInstance } from "./instances";
+import { createRolledGearInstance, generateUniqueGearInstance } from "./instances";
 import { getGearLootAvailability } from "./loot-availability";
 import type { GearInstance, GearRarity } from "./types";
 import { uniqueItemList } from "./unique-catalog";
@@ -24,6 +25,7 @@ interface GenerateGearOfferingsOptions {
   fallbackUniqueToAstral?: boolean;
   fillCount?: boolean;
   baseItemIds?: readonly string[];
+  createId?: () => string;
 }
 
 function generateGearOfferings({
@@ -34,6 +36,7 @@ function generateGearOfferings({
   fallbackUniqueToAstral = true,
   fillCount = false,
   baseItemIds,
+  createId = createInstanceId,
 }: GenerateGearOfferingsOptions): GearInstance[] {
   const allowed = baseItemIds === undefined ? null : new Set(baseItemIds);
   // Catalog order owns seeded sampling; caller order and duplicates do not.
@@ -68,7 +71,7 @@ function generateGearOfferings({
       const unique = pickRandom(availableUniques, rng);
       if (unique) {
         reservedBases.set(unique.baseItemId, "unique");
-        choices.push(generateUniqueGearInstance(unique));
+        choices.push(generateUniqueGearInstance(unique, createId));
         continue;
       }
       if (!fallbackUniqueToAstral) break;
@@ -80,7 +83,7 @@ function generateGearOfferings({
     reservedBases.set(base.id, "ordinary");
     const definition = gearDefinitions[gearDefinitionId(base.id, rarity)];
     if (!definition) break;
-    choices.push(createRolledGearInstance(definition, rng));
+    choices.push(createRolledGearInstance(definition, rng, createId));
   }
 
   return choices;
@@ -93,6 +96,7 @@ export function generateLootGearChoices(
   ownedUniqueIds: ReadonlySet<string> = new Set(),
   baseItemIds?: readonly string[],
   fillCount = false,
+  createId: () => string = createInstanceId,
 ): GearInstance[] {
   return generateGearOfferings({
     count,
@@ -101,6 +105,7 @@ export function generateLootGearChoices(
     ownedUniqueIds,
     ...(baseItemIds === undefined ? {} : { baseItemIds }),
     fillCount,
+    createId,
   });
 }
 
@@ -111,6 +116,7 @@ export function generateGearRewardChoicesForRarity(
   ownedUniqueIds: ReadonlySet<string> = new Set(),
   baseItemIds?: readonly string[],
   fillCount = false,
+  createId: () => string = createInstanceId,
 ): GearInstance[] {
   return generateGearOfferings({
     count,
@@ -120,6 +126,7 @@ export function generateGearRewardChoicesForRarity(
     fallbackUniqueToAstral: false,
     ...(baseItemIds === undefined ? {} : { baseItemIds }),
     fillCount,
+    createId,
   });
 }
 
@@ -127,6 +134,7 @@ export function generateGearRewardChoicesForRarities(
   rarities: readonly GearRarity[],
   rng: () => number,
   ownedUniqueIds: ReadonlySet<string> = new Set(),
+  createId: () => string = createInstanceId,
 ): GearInstance[] {
   return generateGearOfferings({
     count: rarities.length,
@@ -137,5 +145,6 @@ export function generateGearRewardChoicesForRarities(
       return rarity;
     },
     ownedUniqueIds,
+    createId,
   });
 }

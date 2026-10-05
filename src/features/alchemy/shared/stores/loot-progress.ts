@@ -1,13 +1,17 @@
+import { snapshotTransactionValue } from "@/features/alchemy/shared/stores/run-session-command";
 import { campaignLootDepth, createLootProgress, labyrinthLootDepth, type LootProgress } from "@/lib/loot";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
-import type { GameplayDraft } from "./run-session-command";
+import type { RunTransaction } from "./run-session-command";
 
-export function resolveDraftLootProgress(draft: GameplayDraft): LootProgress {
+export function resolveDraftLootProgress(draft: RunTransaction): LootProgress {
   const run = draft.run.activeRun;
   switch (run.contentSystemType) {
     case CONTENT_SYSTEMS.LABYRINTH:
       return createLootProgress(
-        labyrinthLootDepth(draft.session.labyrinthMap, draft.session.activeLabyrinthPendingNode),
+        labyrinthLootDepth(
+          snapshotTransactionValue(draft.session.labyrinthMap),
+          draft.session.activeLabyrinthPendingNode,
+        ),
         draft.profile.completedDifficulties,
       );
     case CONTENT_SYSTEMS.WILDWOOD:

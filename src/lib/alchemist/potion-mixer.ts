@@ -9,9 +9,12 @@ import type { BattleCard, BattleCardEffect } from "../game-data";
 import {
   areBattleCardEffectsEqual,
   cloneBattleCard,
-  describeCardEffects,
+  createEffectDescription,
+  carryCardDescriptionMarks,
+  getCardDescription,
+  mapCardDescriptionReferences,
+  withCardDescription,
   isMixedPotionCard,
-  isRecursiveBattleCardEffectKind,
   mapEffectChildren,
   mixedPotion,
 } from "../game-data";
@@ -36,9 +39,6 @@ function scaledAmount(amount: number, multiplier: number, potencyBonus: number):
 }
 
 function scalePotionEffect(effect: BattleCardEffect, multiplier: number, potencyBonus: number): BattleCardEffect {
-  if (isRecursiveBattleCardEffectKind(effect.kind)) {
-    return mapEffectChildren(effect, (child) => scalePotionEffect(child, multiplier, potencyBonus));
-  }
   if (effect.kind === "random-draw" || effect.kind === "random-damage") {
     return {
       ...effect,
@@ -49,12 +49,12 @@ function scalePotionEffect(effect: BattleCardEffect, multiplier: number, potency
   if ("amount" in effect && typeof effect.amount === "number") {
     return { ...effect, amount: scaledAmount(effect.amount, multiplier, potencyBonus) };
   }
-  return { ...effect };
+  return mapEffectChildren(effect, (child) => scalePotionEffect(child, multiplier, potencyBonus));
 }
 
 function scaledPotionParts(card: BattleCard, multiplier: number, potencyBonus: number) {
   const effects = card.effects.map((effect) => scalePotionEffect(effect, multiplier, potencyBonus));
-  return { effects, descriptionLines: describeCardEffects(effects) };
+  return { effects, description: createEffectDescription(effects) };
 }
 
 export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyBonus: number = 0): BattleCard {
@@ -70,16 +70,35 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyB
     scaledPotionParts(card, sameCard ? 2 : 1, potencyBonus),
   );
 
-  return cloneBattleCard({
-    id: `${MIXED_POTION_CARD_ID}-${cardA.id}-${cardA.uid ?? 0}-${cardB.id}-${cardB.uid ?? 0}`,
-    title: MIXED_POTION_TITLE,
-    descriptionLines: [...parts.flatMap((part) => part.descriptionLines), CONSUME_DESCRIPTION_LINE],
-    art: mixedPotion,
-    cost: MIXED_POTION_COST,
-    consume: true,
-    brewed: true,
-    effects: parts.flatMap((part) => part.effects),
+  let effectOffset = 0;
+  const description = parts.flatMap((part) => {
+    const offset = effectOffset;
+    effectOffset += part.effects.length;
+    return mapCardDescriptionReferences(
+      part.description,
+      (reference) => ({
+        ...reference,
+        effectIndex: reference.effectIndex + offset,
+      }),
+      `ingredient/${offset}`,
+    );
   });
+  description.push({ parts: [CONSUME_DESCRIPTION_LINE], role: "consume" });
+  return cloneBattleCard(
+    withCardDescription(
+      {
+        id: `${MIXED_POTION_CARD_ID}-${cardA.id}-${cardA.uid ?? 0}-${cardB.id}-${cardB.uid ?? 0}`,
+        title: MIXED_POTION_TITLE,
+        descriptionLines: [],
+        art: mixedPotion,
+        cost: MIXED_POTION_COST,
+        consume: true,
+        brewed: true,
+        effects: parts.flatMap((part) => part.effects),
+      },
+      description,
+    ),
+  );
 }
 
 export function tryCreateMixedPotion(
@@ -99,10 +118,16 @@ export function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: numbe
 }
 
 export function doublePotionPotency(card: BattleCard): BattleCard {
-  const { effects, descriptionLines } = scaledPotionParts(card, 2, 0);
-  return cloneBattleCard({
-    ...card,
-    effects,
-    descriptionLines: [...descriptionLines, ...(card.consume ? [CONSUME_DESCRIPTION_LINE] : [])],
-  });
+  const { effects, description } = scaledPotionParts(card, 2, 0);
+  const markedDescription = carryCardDescriptionMarks(getCardDescription(card), description);
+  if (card.consume) markedDescription.push({ parts: [CONSUME_DESCRIPTION_LINE], role: "consume" });
+  return cloneBattleCard(
+    withCardDescription(
+      {
+        ...card,
+        effects,
+      },
+      markedDescription,
+    ),
+  );
 }

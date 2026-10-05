@@ -1,33 +1,4 @@
-export interface TrinketManifest {
-  extraDrawPerBattle: number;
-  brassCenserProcChance: number;
-  firstBurnDoubled: boolean;
-  boneCharmHealOnKill: number;
-  forgeStunThreshold: number;
-  forgeStunAmount: number;
-  frozenHeartDamage: number;
-  ironwoodBucklerThornsOnBlock: number;
-  runicQuillDrawOnConsume: number;
-  sinEaterHealOnHarmfulStatusRemove: number;
-  vanguardCrestForgeOnBlockAbsorb: number;
-  parasiticBloomLeechChance: number;
-  cutpurseGoldOnBleed: number;
-  wishingWellGoldOnWish: number;
-  plagueDoctorPoisonCleanse: number;
-  mortarPestlePoisonOnPotionUse: number;
-  sunderingArmorPiercing: number;
-  resonantChimeCardsRequired: number;
-  resonantChimeMana: number;
-  smugglersMapGoldBonus: number;
-  grovesFavorThornsOnHealthRestore: number;
-  merchantsFavorDiscount: number;
-  companionDamageBonus: number;
-  freezeDurationExtension: number;
-  thunderstoneDamageOnStun: number;
-  luckyCloverGoldChance: number;
-}
-
-export const defaultTrinketEffects: TrinketManifest = {
+export const defaultTrinketEffects = {
   extraDrawPerBattle: 0,
   brassCenserProcChance: 0,
   firstBurnDoubled: false,
@@ -55,3 +26,5 @@ export const defaultTrinketEffects: TrinketManifest = {
   thunderstoneDamageOnStun: 0,
   luckyCloverGoldChance: 0,
 };
+
+export type TrinketManifest = typeof defaultTrinketEffects;

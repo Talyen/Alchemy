@@ -55,12 +55,7 @@ function upgradeWishCard(card: BattleCard): BattleCard {
   return targets.reduce((next, target) => {
     const effect = getCorruptionTargetEffect(next, target);
     // An upgrade must not raise a cost, including a shared Deal/Receive amount.
-    if (
-      !effect ||
-      ["lose-health", "self-damage", "lose-mana", "lose-max-mana"].includes(effect.kind) ||
-      next.descriptionLines[target.lineIndex]?.startsWith("Deal and Receive ")
-    )
-      return next;
+    if (!effect || target.affectsCost) return next;
     return updateCardNumericValue(next, target, target.value + 1);
   }, card);
 }

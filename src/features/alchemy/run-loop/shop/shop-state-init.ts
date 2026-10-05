@@ -1,10 +1,3 @@
-import { isLootEligible, resolveLootWeights, type LootProgress } from "@/lib/loot";
-import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
-import { labyrinthCardShopPool } from "@/lib/content-systems/labyrinth/room-rules";
-import { doublePotionPotency } from "@/lib/alchemist";
-import { gearBaseItemList } from "@/lib/gear/base-items";
-import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
-import { selectRewardCards, type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import {
   emptyAlchemistState,
   emptyEquipmentShopState,
@@ -15,21 +8,28 @@ import {
   type ShopState,
   type TrinketShopState,
 } from "@/lib/active-run-session";
+import { doublePotionPotency } from "@/lib/alchemist";
+import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
+import { labyrinthCardShopPool } from "@/lib/content-systems/labyrinth/room-rules";
 import {
-  SHOP_CARDS_OFFERED,
   ALCHEMIST_POTIONS_OFFERED,
-  TRINKET_SHOP_OFFERED,
   EQUIPMENT_SHOP_OFFERED,
+  SHOP_CARDS_OFFERED,
+  TRINKET_SHOP_OFFERED,
 } from "@/lib/game-constants";
+import { selectRewardCards, trinketLibrary, type BattleCard, type TrinketEntry } from "@/lib/game-data";
+import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import {
   gearDefinitions,
-  generateLootGearChoices,
   generateGearRewardChoicesForRarity,
+  generateLootGearChoices,
   getGearLootAvailability,
   type GearInstance,
 } from "@/lib/gear";
-import { trinketLibrary } from "@/lib/game-data";
+import { gearBaseItemList } from "@/lib/gear/base-items";
+import { isLootEligible, resolveLootWeights, type LootProgress } from "@/lib/loot";
 import { sampleItemsExcluding } from "@/lib/rng";
+import { createInstanceId } from "@/lib/utils";
 
 export type { AlchemistState, EquipmentShopState, ShopState, TrinketShopState };
 
@@ -92,6 +92,7 @@ export function resampleEquipmentShopOfferings(
   ownedUniqueIds?: ReadonlySet<string>,
   modifiers: readonly EncounterRewardTraitId[] = [],
   currentItems: readonly GearInstance[] = [],
+  createId: () => string = createInstanceId,
 ): GearInstance[] {
   const baseItems = modifiers.includes("bowyer")
     ? ["shortbow", "longbow", "recurve-bow"]
@@ -103,15 +104,23 @@ export function resampleEquipmentShopOfferings(
   );
   const novelBases = baseItems.filter((id) => !currentBases.has(id));
   const sample = (count: number, baseItemIds: readonly string[]) => {
-    const weights = resolveLootWeights({
-      source: "equipment",
-      progress: lootProgress,
-      astralChanceBonus: gearAstralChanceBonus,
-      available: getGearLootAvailability(ownedUniqueIds, baseItemIds),
-    });
-    return modifiers.includes("masterwork")
-      ? generateGearRewardChoicesForRarity(count, "astral", rng, ownedUniqueIds, baseItemIds, true)
-      : generateLootGearChoices(count, rng, weights, ownedUniqueIds, baseItemIds, true);
+    if (modifiers.includes("masterwork")) {
+      return generateGearRewardChoicesForRarity(count, "astral", rng, ownedUniqueIds, baseItemIds, true, createId);
+    }
+    return generateLootGearChoices(
+      count,
+      rng,
+      resolveLootWeights({
+        source: "equipment",
+        progress: lootProgress,
+        astralChanceBonus: gearAstralChanceBonus,
+        available: getGearLootAvailability(ownedUniqueIds, baseItemIds),
+      }),
+      ownedUniqueIds,
+      baseItemIds,
+      true,
+      createId,
+    );
   };
   const novel = sample(Math.min(EQUIPMENT_SHOP_OFFERED, novelBases.length), novelBases);
   if (novel.length >= EQUIPMENT_SHOP_OFFERED) return novel;
@@ -158,9 +167,18 @@ export function createInitialEquipmentShopState(
   gearAstralChanceBonus = 0,
   ownedUniqueIds?: ReadonlySet<string>,
   modifiers: readonly EncounterRewardTraitId[] = [],
+  createId: () => string = createInstanceId,
 ): EquipmentShopState {
   return {
     ...emptyEquipmentShopState(),
-    gear: resampleEquipmentShopOfferings(rng, lootProgress, gearAstralChanceBonus, ownedUniqueIds, modifiers),
+    gear: resampleEquipmentShopOfferings(
+      rng,
+      lootProgress,
+      gearAstralChanceBonus,
+      ownedUniqueIds,
+      modifiers,
+      [],
+      createId,
+    ),
   };
 }

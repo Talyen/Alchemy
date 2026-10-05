@@ -4,7 +4,7 @@ import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-s
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { battleStageMarkName, markBattleStage } from "@/lib/performance/marks";
 import { defaultBattleState } from "@/lib/battle";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { setHasActiveBattle, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
@@ -34,9 +34,11 @@ function makeSession() {
 
 beforeEach(() => {
   resetBattlePresentationAndRun();
-  dispatchRunSessionCommand((draft) => {
+  dispatchGameplayCommand((draft) => {
     setHasActiveBattle(draft, true);
     setScreen(draft, ROUTE_SCREENS.BATTLE);
+
+    return acceptCommand();
   });
 });
 
@@ -69,9 +71,11 @@ describe("createBattleSession", () => {
   it("keeps the current session active during victory grace after the battle flag clears", () => {
     const { session, playback } = makeSession();
     playback.finish();
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       setHasActiveBattle(draft, false);
       setSyncedBattleState(draft, { ...defaultBattleState(), enemyHealth: 0 });
+
+      return acceptCommand();
     });
     expect(session.isCurrentBattleSession(1)).toBe(true);
   });
@@ -79,9 +83,11 @@ describe("createBattleSession", () => {
   it("rejects a stale session id even during victory grace", () => {
     const { session, playback } = makeSession();
     playback.finish();
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       setHasActiveBattle(draft, false);
       setSyncedBattleState(draft, { ...defaultBattleState(), enemyHealth: 0 });
+
+      return acceptCommand();
     });
     expect(session.isCurrentBattleSession(2)).toBe(false);
   });
@@ -141,9 +147,11 @@ describe("createBattleSession", () => {
   it("runIfSessionActive succeeds during victory grace when hasActiveBattle is false", () => {
     const { session, playback } = makeSession();
     playback.finish();
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       setHasActiveBattle(draft, false);
       setSyncedBattleState(draft, { ...defaultBattleState(), enemyHealth: 0 });
+
+      return acceptCommand();
     });
 
     const fn = vi.fn(() => "ok");

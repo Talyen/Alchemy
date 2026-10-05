@@ -4,10 +4,11 @@ import {
   readActivityData,
   type HydratedMysteryVisit,
   type RunActivityData,
+  type RunProgressActivityKind,
 } from "@/lib/active-run-session";
 import { enterWildwoodReward } from "@/lib/content-systems/wildwood/gauntlet";
 import { DESTINATIONS, type Destination } from "@/lib/routing";
-import type { GameplayDraft } from "../run-session-command";
+import type { GameplayDraft } from "../gameplay-command";
 import { createInitialSessionFields, type RunRewardFlow, type RunSessionFields } from "../run-domain-types";
 import { type FieldUpdate, defineDraftSetter } from "./write-field";
 import { setCompletedDestinations, setDestinationIndexInAct, setDestinationOfferState } from "./run-progress";
@@ -29,6 +30,13 @@ export const setStarterDraftChoices = defineSessionSetter("starterDraftChoices")
 export function setHasActiveRun(draft: GameplayDraft, active: boolean): void {
   if (!active) draft.session.activity = { kind: "inactive" };
   else if (draft.session.activity.kind === "inactive") draft.session.activity = { kind: "idle" };
+}
+
+/** Domain commands establish resumable progress before presentation changes. */
+export function setRunProgressActivity(draft: GameplayDraft, kind: RunProgressActivityKind): void {
+  if (draft.session.activity.kind !== "inactive" && draft.session.activity.kind !== kind) {
+    draft.session.activity = { kind };
+  }
 }
 
 export function clearTransientSession(draft: GameplayDraft): void {
@@ -138,6 +146,7 @@ export function abandonLabyrinthCorruptionVisit(draft: GameplayDraft): void {
   setCorruptionResult(draft, null);
   draft.session.activeLabyrinthPendingNode = null;
   draft.session.selectedLabyrinthNodeId = null;
+  setRunProgressActivity(draft, "labyrinth-map");
 }
 
 export function abandonMysteryDestinationVisit(draft: GameplayDraft): void {

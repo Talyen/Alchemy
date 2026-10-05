@@ -36,6 +36,14 @@ function deltaCell(delta: PairedDelta): string {
   return `<td class="${cls}">${percent(delta.delta)}${mark}<div class="meta">SE ${percent(delta.se)} · n=${delta.n}</div>${turns}</td>`;
 }
 
+function rateSection(title: string, explanation: string, headers: string, rows: string): string {
+  return `<h2>${title}</h2>
+<p class="meta">${explanation}</p>
+<div class="scroll"><table><thead><tr>${headers}</tr></thead><tbody>
+${rows}
+</tbody></table></div>`;
+}
+
 function pairedRows(rows: readonly PairedTierRow[], kind: TitleLookupKind): string {
   return rows
     .map(
@@ -125,23 +133,11 @@ ${methodology}
 <p>Anomaly thresholds Early ${ANOMALY_THRESHOLD_BY_PRESET.early} / Mid ${ANOMALY_THRESHOLD_BY_PRESET.mid} / Late ${ANOMALY_THRESHOLD_BY_PRESET.late}.</p>
 </div>
 
-<h2>Enemy Rankings</h2>
-<p class="meta">Sorted by Late win rate ascending (hardest at top). Timeout and remaining HP distinguish stalls from true losses.</p>
-<div class="scroll"><table><thead><tr><th>Enemy</th>${rateHeader}</tr></thead><tbody>
-${enemyRows}
-</tbody></table></div>
+${rateSection("Enemy Rankings", "Sorted by Late win rate ascending (hardest at top). Timeout and remaining HP distinguish stalls from true losses.", `<th>Enemy</th>${rateHeader}`, enemyRows)}
 
-<h2>Class Rankings</h2>
-<p class="meta">Overall rates weight Normal / Elite / Boss equally. Outcome counts retain actual battles and are not type-weighted. Late type split is raw win rate within that enemy type.</p>
-<div class="scroll"><table><thead><tr><th>Class</th>${rateHeader}<th>Late Normal</th><th>Late Elite</th><th>Late Boss</th></tr></thead><tbody>
-${classRows}
-</tbody></table></div>
+${rateSection("Class Rankings", "Overall rates weight Normal / Elite / Boss equally. Outcome counts retain actual battles and are not type-weighted. Late type split is raw win rate within that enemy type.", `<th>Class</th>${rateHeader}<th>Late Normal</th><th>Late Elite</th><th>Late Boss</th>`, classRows)}
 
-<h2>Class Matchups</h2>
-<p class="meta">Per class vs each enemy. Late top cards are play counts from core scenarios.</p>
-<div class="scroll"><table><thead><tr><th>Class</th><th>Enemy</th><th>Type</th>${rateHeader}<th>Late top cards</th></tr></thead><tbody>
-${matchupRows}
-</tbody></table></div>
+${rateSection("Class Matchups", "Per class vs each enemy. Late top cards are play counts from core scenarios.", `<th>Class</th><th>Enemy</th><th>Type</th>${rateHeader}<th>Late top cards</th>`, matchupRows)}
 
 ${pairedSection("Boon Rankings", "Paired delta vs no-boon baseline (same deck/seed/matchup). Noisy = |delta| < 2 SE.", model.boons, "boon")}
 ${pairedSection("Card Rankings — isolated vs Skeleton", "Target card + 9 random others vs random 10-card baseline. Paired seeds.", model.cardsIsolatedSkeleton, "card")}

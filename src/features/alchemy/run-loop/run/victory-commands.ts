@@ -1,27 +1,34 @@
 import { rollFreshBossId } from "@/features/alchemy/shared/config";
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
-import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { syncBattleToRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
-  awardMaterialsDuringRun,
+  acceptCommand,
+  dispatchRunSessionCommand,
+  rejectCommand,
+  snapshotTransactionValue,
+  type RunTransaction,
+} from "@/features/alchemy/shared/stores/run-session-command";
+import {
   addRunGoldEarned,
   completeRunRoom,
+  createDraftInstanceIdSource,
   createDraftRunRandomSource,
   enterWildwoodVictory,
-  prepareRunNavigation,
   setCompanionRewardCards,
   setDestinationOfferState,
   setGold,
   setHasActiveBattle,
   setRewardState,
   setRunMaxHealth,
+  setRunProgressActivity,
+  settlePendingBattleMaterials,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { BattleSnapshot } from "@/lib/battle";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { getOwnedUniqueDefinitionIds } from "@/lib/gear";
-import { emptyInventory } from "@/lib/homestead/inventory";
-import type { MaterialInventory } from "@/lib/homestead/types";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { getCompanionCardChoices } from "../navigation/reward-flow";
 import { shouldGrantCompanionReward } from "../navigation/reward-math";
@@ -34,20 +41,13 @@ export interface CommitVictoryRewardsDeps {
   contentSystemType: ContentSystemId;
 }
 
-function hasAnyPendingMaterial(materials: MaterialInventory): boolean {
-  return Object.values(materials).some((value) => value > 0);
-}
-
 export function commitVictoryRewards(
-  draft: GameplayDraft,
+  draft: RunTransaction,
   result: VictoryRewardsResult,
   deps: CommitVictoryRewardsDeps,
   rng: () => number,
 ): boolean {
-  if (hasAnyPendingMaterial(deps.battleState.pendingMaterials)) {
-    awardMaterialsDuringRun(draft, deps.battleState.pendingMaterials);
-  }
-  draft.battle.battleState.pendingMaterials = { ...emptyInventory() };
+  settlePendingBattleMaterials(draft);
 
   completeRunRoom(draft);
   addRunGoldEarned(draft, Math.max(0, result.persistedGold - draft.runProfile.gold));
@@ -72,11 +72,14 @@ export function commitVictoryRewards(
   return result.goldEarned > 0;
 }
 
-export function createVictoryCommand(getAvailableDestinations: RunOutcomeDeps["getAvailableDestinations"]) {
-  function computeVictoryResult(draft: GameplayDraft) {
+export function createVictoryCommand(
+  getAvailableDestinations: RunOutcomeDeps["getAvailableDestinations"],
+  gameSession: GameSession = defaultGameSession,
+) {
+  function computeVictoryResult(draft: RunTransaction) {
     const runState = draft.run.activeRun;
     const runProfile = draft.runProfile;
-    const battleState = draft.battle.battleState;
+    const battleState = snapshotTransactionValue(draft.battle.battleState);
     const rewardTraits =
       runState.contentSystemType === CONTENT_SYSTEMS.WILDWOOD
         ? (draft.session.wildwoodDraft?.currentRewardTraitIds ?? [])
@@ -84,16 +87,17 @@ export function createVictoryCommand(getAvailableDestinations: RunOutcomeDeps["g
     return computeVictoryRewards(
       {
         lootProgress: resolveDraftLootProgress(draft),
+        createInstanceId: createDraftInstanceIdSource(draft),
         characterId: runState.characterId,
         selectedDifficulty: runState.selectedDifficulty,
-        unlockedTalents: runProfile.unlockedTalents,
-        runDeck: runState.runDeck,
-        runBoons: runState.runBoons,
+        unlockedTalents: snapshotTransactionValue(runProfile.unlockedTalents),
+        runDeck: snapshotTransactionValue(runState.runDeck),
+        runBoons: snapshotTransactionValue(runState.runBoons),
         equippedTrinketId: draft.gear.equippedTrinkets[runState.characterId],
         ownedTrinketIds: [...draft.gear.ownedTrinketIds],
-        ownedUniqueIds: getOwnedUniqueDefinitionIds(draft.gear.inventories),
+        ownedUniqueIds: getOwnedUniqueDefinitionIds(snapshotTransactionValue(draft.gear.inventories)),
         contentSystemType: runState.contentSystemType,
-        activeLabyrinthRewardModifiers: rewardTraits,
+        activeLabyrinthRewardModifiers: snapshotTransactionValue(rewardTraits),
         battleState,
         purseGold: draft.runProfile.gold,
         runMaxHealth: runState.runMaxHealth,
@@ -102,7 +106,7 @@ export function createVictoryCommand(getAvailableDestinations: RunOutcomeDeps["g
         getAvailableDestinations: getAvailableDestinations,
         rollBossEnemyId: () => rollFreshBossId(createDraftRunRandomSource(draft, "world")),
         destinationOfferState: {
-          lastOfferedDestinations: runState.lastOfferedDestinations,
+          lastOfferedDestinations: snapshotTransactionValue(runState.lastOfferedDestinations),
           roundsSinceOffered: runState.destinationRoundsSinceOffered,
         },
       },
@@ -112,26 +116,30 @@ export function createVictoryCommand(getAvailableDestinations: RunOutcomeDeps["g
   }
 
   function commitVictoryResult() {
-    return dispatchRunSessionCommand((draft) => {
-      if (!draft.battle.hasActiveBattle) return null;
-      const committedResult = computeVictoryResult(draft);
-      const battleState = draft.battle.battleState;
-      const runState = draft.run.activeRun;
-      const goldGained = commitVictoryRewards(
-        draft,
-        committedResult,
-        {
-          battleState,
-          contentSystemType: runState.contentSystemType,
-        },
-        createDraftRunRandomSource(draft, "rewards"),
-      );
-      if (runState.contentSystemType === CONTENT_SYSTEMS.WILDWOOD) {
-        enterWildwoodVictory(draft);
-      }
-      prepareRunNavigation(draft, ROUTE_SCREENS.REWARDS);
-      return goldGained;
-    });
+    return dispatchRunSessionCommand(
+      (draft) => {
+        if (!draft.battle.hasActiveBattle) return rejectCommand("There is no active battle to finish", null);
+        const committedResult = computeVictoryResult(draft);
+        const battleState = snapshotTransactionValue(draft.battle.battleState);
+        const runState = draft.run.activeRun;
+        const goldGained = commitVictoryRewards(
+          draft,
+          committedResult,
+          {
+            battleState,
+            contentSystemType: runState.contentSystemType,
+          },
+          createDraftRunRandomSource(draft, "rewards"),
+        );
+        if (runState.contentSystemType === CONTENT_SYSTEMS.WILDWOOD) {
+          enterWildwoodVictory(draft);
+        }
+        setRunProgressActivity(draft, ROUTE_SCREENS.REWARDS);
+        return acceptCommand(goldGained);
+      },
+      undefined,
+      gameSession,
+    );
   }
 
   return commitVictoryResult;

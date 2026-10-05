@@ -1,4 +1,5 @@
 export * from "./battle-setup";
+export { resolveBattleStart, type ResolvedBattleStart } from "./battle-start";
 export {
   AUTOPLAY_EFFECT_SCORE,
   getEffectiveDamageScore,

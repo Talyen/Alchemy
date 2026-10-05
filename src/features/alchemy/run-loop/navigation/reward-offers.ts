@@ -1,5 +1,6 @@
-import { isLootEligible, resolveLootWeights, rollLootGroup, type LootProgress, type LootSource } from "@/lib/loot";
+import type { BoonRewardState, CardRewardState, GearRewardState, TrinketRewardState } from "@/lib/active-run-session";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
+import { LABYRINTH_REWARD_CONFIG, REWARD_CARD_CHOICES } from "@/lib/game-constants";
 import {
   getCardKeywords,
   getOfferableCardPool,
@@ -8,8 +9,6 @@ import {
   trinketLibrary,
   type BattleCard,
 } from "@/lib/game-data";
-import { LABYRINTH_REWARD_CONFIG, REWARD_CARD_CHOICES } from "@/lib/game-constants";
-import { pickRandom, sampleItems } from "@/lib/rng";
 import {
   gearBaseItemList,
   generateGearRewardChoicesForRarity,
@@ -17,7 +16,8 @@ import {
   getGearLootAvailability,
   getRewardLootAvailability,
 } from "@/lib/gear";
-import type { BoonRewardState, CardRewardState, GearRewardState, TrinketRewardState } from "@/lib/active-run-session";
+import { isLootEligible, resolveLootWeights, rollLootGroup, type LootProgress, type LootSource } from "@/lib/loot";
+import { pickRandom, sampleItems } from "@/lib/rng";
 
 export type RewardOffer =
   | Pick<CardRewardState, "rewardType" | "choices">
@@ -29,6 +29,7 @@ export interface RewardOfferInput {
   source: LootSource;
   lootProgress: LootProgress;
   rng: () => number;
+  createInstanceId?: (() => string) | undefined;
   runDeck?: BattleCard[];
   gearAstralChanceBonus?: number;
   ownedTrinketIds?: readonly string[];
@@ -84,6 +85,7 @@ export function createRewardOffer({
   excludedBoonIds = [],
   ownedUniqueIds = new Set(),
   rewardModifiers = [],
+  createInstanceId,
 }: RewardOfferInput): RewardOffer {
   const cards = getOfferableCardPool();
   // "boon" and "trinket" rewards draw from the same trinketLibrary with
@@ -107,14 +109,30 @@ export function createRewardOffer({
       const gearAvailable = getGearLootAvailability(ownedUniqueIds, baseIds);
       if (baseIds.length === 0 || (!gearAvailable.basic && !gearAvailable.astral)) break;
       const weights = weightsFor({ ...gearAvailable, card: false, boon: false, trinket: false, unique: false });
-      const choices = generateLootGearChoices(REWARD_CARD_CHOICES, rng, weights, ownedUniqueIds, baseIds, true);
+      const choices = generateLootGearChoices(
+        REWARD_CARD_CHOICES,
+        rng,
+        weights,
+        ownedUniqueIds,
+        baseIds,
+        true,
+        createInstanceId,
+      );
       if (choices.length > 0) return { rewardType: "gear", choices };
       break;
     }
     if (modifier === "astral-hoard" || modifier === "unique-hoard") {
       const rarity = modifier === "astral-hoard" ? "astral" : "unique";
       if (!isLootEligible(rarity, lootProgress.depth) || availability[rarity] === false) break;
-      const choices = generateGearRewardChoicesForRarity(REWARD_CARD_CHOICES, rarity, rng, ownedUniqueIds);
+      const choices = generateGearRewardChoicesForRarity(
+        REWARD_CARD_CHOICES,
+        rarity,
+        rng,
+        ownedUniqueIds,
+        undefined,
+        false,
+        createInstanceId,
+      );
       if (choices.length > 0) return { rewardType: "gear", choices };
       break;
     }
@@ -132,7 +150,15 @@ export function createRewardOffer({
     case "gear":
       return {
         rewardType: "gear",
-        choices: generateLootGearChoices(REWARD_CARD_CHOICES, rng, weights, ownedUniqueIds),
+        choices: generateLootGearChoices(
+          REWARD_CARD_CHOICES,
+          rng,
+          weights,
+          ownedUniqueIds,
+          undefined,
+          false,
+          createInstanceId,
+        ),
       };
     case "trinket":
       return {

@@ -5,7 +5,7 @@ import type {
   MaterialInventory as ProfileMaterialInventory,
   ResearchId,
 } from "@/lib/homestead/types";
-import type { GameplayDraft } from "../run-session-command";
+import type { GameplayDraft } from "../gameplay-command";
 import * as homestead from "../homestead-actions";
 import { rebindLiveRunMeta } from "./live-meta";
 import { addRunMaterialsEarned } from "./run-progress";

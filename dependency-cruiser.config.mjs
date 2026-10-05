@@ -50,7 +50,21 @@ export default {
       severity: "error",
       comment: "Only shared/stores may import the authoritative gameplay aggregate directly.",
       from: { pathNot: "^src/features/alchemy/shared/stores/" },
-      to: { path: "^src/features/alchemy/shared/stores/gameplay-state-store\\.ts$" },
+      to: { path: "^src/features/alchemy/shared/stores/(gameplay-state-store|gameplay-state)\\.ts$" },
+    },
+    {
+      name: "game-session-runtime-is-internal",
+      severity: "error",
+      comment: "Session consumers bind capability ports; only stores and persistence adapters reach runtime state.",
+      from: { pathNot: "^src/features/alchemy/shared/(stores/|storage/(io|persistence)\\.ts$)" },
+      to: { path: "^src/features/alchemy/shared/stores/session-runtime\\.ts$" },
+    },
+    {
+      name: "gameplay-mutation-is-internal",
+      severity: "error",
+      comment: "Feature commands use readonly transactions and domain operations; hydration is trusted infrastructure.",
+      from: { pathNot: "^src/features/alchemy/shared/(stores/|storage/persistence\\.ts$)" },
+      to: { path: "^src/features/alchemy/shared/stores/(gameplay-command|transaction-internal|readonly-view)\\.ts$" },
     },
   ],
   options: {

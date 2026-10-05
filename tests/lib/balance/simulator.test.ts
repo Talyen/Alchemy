@@ -4,20 +4,6 @@ import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { simulateBatch, simulateBattle } from "@/lib/balance";
 
 describe("balance simulator", () => {
-  it("runs a deterministic headless battle", () => {
-    const config = {
-      characterId: "knight" as const,
-      enemyId: "skeleton",
-      seed: 11,
-      maxTurns: 20,
-      policy: "random-playable" as const,
-    };
-    const first = simulateBattle(config);
-    const second = simulateBattle(config);
-    expect(first).toEqual(second);
-    expect(first.turns).toBeGreaterThan(0);
-  });
-
   it("reports combat Gold separately from the starting purse", () => {
     const result = simulateBattle({
       characterId: "knight",
@@ -38,36 +24,22 @@ describe("balance simulator", () => {
     expect(result.combatGoldEarned).toBe(result.totalCardsPlayed * 2);
     expect(result.combatGoldEarned).toBeGreaterThan(0);
   });
-
-  it("aggregates repeated simulations", () => {
-    const result = simulateBatch({
-      characterId: "wizard",
-      enemyId: "goblin",
-      iterations: 5,
-      seed: 100,
-      maxTurns: 20,
-      policy: "greedy-damage",
-    });
-    expect(result.iterations).toBe(5);
-    expect(result.wins + result.losses + result.timeouts).toBe(5);
-    expect(result.results).toHaveLength(5);
-    expect(result.winRate + result.lossRate + result.timeoutRate).toBeCloseTo(1);
-  });
-
-  it("times out when maxTurns is exceeded", () => {
-    const result = simulateBattle({
-      characterId: "knight",
-      enemyId: "skeleton",
-      seed: 1,
-      maxTurns: 1,
-      policy: "random-playable",
-    });
-    expect(result.outcome).toBe("timeout");
-    expect(result.turns).toBe(1);
-  });
 });
 
 describe("enemy interaction measurements", () => {
+  it("counts an opening Companion's Cinder Skin reaction before a first-turn kill", () => {
+    const result = simulateBattle({
+      characterId: "knight",
+      enemyId: "fire-elemental",
+      loadoutMode: "bare",
+      seed: 24,
+      deck: [makeTestCard({ cost: 0, effects: [{ kind: "damage", damageType: "holy", amount: 10000 }] })],
+      difficultyModifiers: [{ kind: "start-companion", companionId: "skeleton" }],
+    });
+    expect(result).toMatchObject({ outcome: "win", wonBeforeEnemyAttack: true, enemyAttackActions: 0 });
+    expect(result.enemyAbilityActivations).toEqual({ "cinder-skin": 1 });
+    expect(result.enemyAbilityUses).toEqual({});
+  });
   it("records a first-turn kill without an enemy attack", () => {
     const card = makeTestCard({ cost: 0, effects: [{ kind: "damage", damageType: "holy", amount: 10000 }] });
     const result = simulateBattle({

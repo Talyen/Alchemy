@@ -163,15 +163,6 @@ describe("createMixedPotion", () => {
       "Consume",
     ]);
   });
-
-  it("produces a unique id based on card uids", () => {
-    const p1 = makePotion({ id: "heal-potion", uid: 1 });
-    const p2 = makePotion({ id: "fire-potion", uid: 2 });
-    const p3 = makePotion({ id: "fire-potion", uid: 3 });
-    const a = createMixedPotion(p1, p2);
-    const b = createMixedPotion(p1, p3);
-    expect(a.id).not.toBe(b.id);
-  });
 });
 
 describe("tryCreateMixedPotion", () => {

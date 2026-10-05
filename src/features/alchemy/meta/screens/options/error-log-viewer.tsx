@@ -116,30 +116,20 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
               {expandedId === e.id && (
                 <div className="mt-3 space-y-2 border-t border-border/40 pt-3">
                   <p className="text-sm break-words whitespace-pre-wrap text-foreground">{e.message}</p>
-                  {e.stack ? (
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground">Stack:</p>
-                      <pre className="mt-1 rounded-lg bg-black/30 p-2 text-xs break-all whitespace-pre-wrap text-foreground/80">
-                        {e.stack}
-                      </pre>
-                    </div>
-                  ) : null}
-                  {e.componentStack ? (
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground">Component Stack:</p>
-                      <pre className="mt-1 rounded-lg bg-black/30 p-2 text-xs break-all whitespace-pre-wrap text-foreground/80">
-                        {e.componentStack}
-                      </pre>
-                    </div>
-                  ) : null}
-                  {e.context ? (
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground">Context:</p>
-                      <pre className="mt-1 rounded-lg bg-black/30 p-2 text-xs break-all whitespace-pre-wrap text-foreground/80">
-                        {displayContext(e.context, 2)}
-                      </pre>
-                    </div>
-                  ) : null}
+                  {[
+                    { label: "Stack", text: e.stack },
+                    { label: "Component Stack", text: e.componentStack },
+                    { label: "Context", text: e.context ? displayContext(e.context, 2) : undefined },
+                  ].map(({ label, text }) =>
+                    text ? (
+                      <div key={label}>
+                        <p className="text-xs font-semibold text-muted-foreground">{label}:</p>
+                        <pre className="mt-1 rounded-lg bg-black/30 p-2 text-xs break-all whitespace-pre-wrap text-foreground/80">
+                          {text}
+                        </pre>
+                      </div>
+                    ) : null,
+                  )}
                 </div>
               )}
             </div>

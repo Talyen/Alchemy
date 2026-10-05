@@ -8,7 +8,7 @@ import { createRunFlowEngine } from "@/features/alchemy/shell/run-flow-engine";
 import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
 import { readRunAvailableDestinations } from "@/features/alchemy/shell/run-destination-wiring";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun, readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { setHasActiveBattle, setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { makeTestCard } from "../../../fixtures/battle";
@@ -82,6 +82,8 @@ describe("createRunFlowEngine", () => {
     dispatchRunSessionCommand((draft) => {
       setHasActiveRun(draft, true);
       setHasActiveBattle(draft, true);
+
+      return acceptCommand();
     });
     const navigateTo = vi.fn((_screen: string, onCommit?: () => void) => onCommit?.());
     const cancelPending = vi.fn();

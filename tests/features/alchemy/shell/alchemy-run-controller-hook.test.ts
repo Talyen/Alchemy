@@ -3,7 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readBattle, readHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import {
   setGold,
@@ -50,6 +50,8 @@ describe("useAlchemyRunController", () => {
       setHasActiveRun(draft, true);
       setHasActiveBattle(draft, true);
       setScreen(draft, ROUTE_SCREENS.BATTLE);
+
+      return acceptCommand();
     });
     const { result } = renderController();
 
@@ -82,7 +84,7 @@ describe("useAlchemyRunController", () => {
     const initialRenders = renders;
 
     act(() => {
-      dispatchRunSessionCommand((draft) => setGold(draft, 17));
+      dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 17)));
     });
 
     expect(renders).toBe(initialRenders);

@@ -1,8 +1,3 @@
-import type { LootProgress } from "@/lib/loot";
-import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
-import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
-import { ENEMY_TYPES, type BattleCard } from "@/lib/game-data";
-import { REWARD_ROUTES, type Destination, type RewardRoute } from "@/lib/routing";
 import {
   createEmptyRewardState,
   resolveRewardChoice,
@@ -11,7 +6,12 @@ import {
   type RewardState,
 } from "@/lib/active-run-session";
 import type { BattleSnapshot } from "@/lib/battle";
+import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
+import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
+import { ENEMY_TYPES, type BattleCard } from "@/lib/game-data";
 import type { MaterialInventory } from "@/lib/homestead/types";
+import type { LootProgress } from "@/lib/loot";
+import { REWARD_ROUTES, type Destination, type RewardRoute } from "@/lib/routing";
 import { createRewardOffer } from "./reward-offers";
 
 export { getCompanionCardChoices, getRandomPotionCard } from "./reward-offers";
@@ -36,6 +36,7 @@ interface RewardPayoutInput {
   goldPayout: number;
   materials: MaterialInventory;
   rng: () => number;
+  createInstanceId?: (() => string) | undefined;
   excludedBoonIds?: string[];
   gearAstralChanceBonus?: number;
   ownedTrinketIds?: string[];
@@ -111,6 +112,7 @@ export function createBossRewardState(input: BossRewardInput): RewardState {
 export interface WildwoodRewardInput {
   runDeck: BattleCard[];
   rng: () => number;
+  createInstanceId?: (() => string) | undefined;
   lootProgress: LootProgress;
   gearAstralChanceBonus?: number;
   excludedBoonIds?: readonly string[];
@@ -126,6 +128,7 @@ export function createWildwoodRewardState({
   excludedBoonIds = [],
   ownedTrinketIds = [],
   ownedUniqueIds = new Set(),
+  createInstanceId,
 }: WildwoodRewardInput): RewardState {
   return {
     ...createEmptyRewardState(),
@@ -138,6 +141,7 @@ export function createWildwoodRewardState({
       excludedBoonIds,
       ownedTrinketIds,
       ownedUniqueIds,
+      createInstanceId,
     }),
   };
 }

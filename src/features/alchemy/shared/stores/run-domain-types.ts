@@ -19,8 +19,8 @@ import type {
 } from "@/lib/content-systems/types";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { BattleCard, CharacterId, TalentXP } from "@/lib/game-data";
-import { emptyInventory } from "@/lib/homestead/inventory";
 import { EMPTY_CRAFTING_CURRENCIES, type CraftingCurrencyId } from "@/lib/gear";
+import { emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Destination, Screen } from "@/lib/routing";
 
@@ -76,9 +76,9 @@ export function createInitialBattleFields(): RunDomainBattleState {
   };
 }
 
-export function createInitialRunDomainData(): RunDomainDataState {
+export function createInitialRunDomainData(generateSeed?: () => number): RunDomainDataState {
   return {
-    activeRun: createInitialActiveRunFields(null),
+    activeRun: createInitialActiveRunFields(null, "knight", generateSeed),
     initialized: false,
     navigation: { screen: "menu" },
   };

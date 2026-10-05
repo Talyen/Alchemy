@@ -1,13 +1,18 @@
-import { playUISound } from "@/lib/audio";
-import { isEditionModeAvailable } from "@/lib/game-edition";
 import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import {
   isBossOnlyDestinationOffer,
   restoreOrCreateDestinationRewardState,
 } from "@/features/alchemy/shared/run-flow/destination-flow";
-import { readActiveRun, readHasActiveBattle, readHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
-import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { readActiveRun, readHasActiveBattle, readHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+  snapshotTransactionValue,
+  type RunTransaction,
+} from "@/features/alchemy/shared/stores/run-session-command";
 import {
   createDraftRunRandomSource,
   setDestinationOfferState,
@@ -15,12 +20,14 @@ import {
   setPendingContentSystemType,
   setRewardState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
+import { isEditionModeAvailable } from "@/lib/game-edition";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import type { ContentSystemNavigationDeps } from "./content-system-navigation-types";
 
 function restoreResumedCampaignDestinations(
-  draft: GameplayDraft,
+  draft: RunTransaction,
   getAvailableDestinations: ContentSystemNavigationDeps["getAvailableDestinations"],
 ): void {
   const active = draft.run.activeRun;
@@ -28,7 +35,7 @@ function restoreResumedCampaignDestinations(
   if (reward.destinations.length > 0 && (!isBossOnlyDestinationOffer(reward.destinations) || reward.selectedBossId))
     return;
   setRewardState(draft, (prev) =>
-    restoreOrCreateDestinationRewardState(prev, {
+    restoreOrCreateDestinationRewardState(snapshotTransactionValue(prev), {
       availableDestinations: getAvailableDestinations({
         currentHealth: active.runPlayerHealth,
         currentGold: draft.runProfile.gold,
@@ -36,7 +43,7 @@ function restoreResumedCampaignDestinations(
         maxHealth: active.runMaxHealth,
       }),
       offerState: {
-        lastOfferedDestinations: active.lastOfferedDestinations,
+        lastOfferedDestinations: snapshotTransactionValue(active.lastOfferedDestinations),
         roundsSinceOffered: active.destinationRoundsSinceOffered,
       },
       rollBossEnemyId: () => rollFreshBossId(createDraftRunRandomSource(draft, "world")),
@@ -46,25 +53,44 @@ function restoreResumedCampaignDestinations(
   );
 }
 
-export function createRunResumeNavigation(deps: ContentSystemNavigationDeps) {
+export function createRunResumeNavigation(
+  deps: ContentSystemNavigationDeps,
+  gameSession: GameSession = defaultGameSession,
+) {
   function resumeRun() {
-    if (!readHasActiveRun()) return;
-    const mode = readActiveRun().contentSystemType;
-    dispatchRunSessionCommand((draft) => {
-      setPendingContentSystemType(draft, mode);
-      setPendingCharacterId(draft, null);
-    });
-    const screen = snapshotRun().currentScreen;
+    if (!readHasActiveRun(gameSession)) return;
+    const mode = readActiveRun(gameSession).contentSystemType;
+    dispatchRunSessionCommand(
+      (draft) => {
+        setPendingContentSystemType(draft, mode);
+        setPendingCharacterId(draft, null);
+
+        return acceptCommand();
+      },
+      undefined,
+      gameSession,
+    );
+    const screen = snapshotRun(undefined, gameSession).currentScreen;
     if (!screen) return;
-    playUISound("resumeRun");
+    sessionFeedback(gameSession).playUISound("resumeRun");
     // Card hover clears universally on navigation (see run-flow-engine).
     if (screen === ROUTE_SCREENS.DESTINATION && mode === CONTENT_SYSTEMS.CAMPAIGN) {
       deps.resumeTo(screen, () => {
-        dispatchRunSessionCommand((draft) => {
-          restoreResumedCampaignDestinations(draft, deps.getAvailableDestinations);
-        });
+        dispatchRunSessionCommand(
+          (draft) => {
+            restoreResumedCampaignDestinations(draft, deps.getAvailableDestinations);
+
+            return acceptCommand();
+          },
+          undefined,
+          gameSession,
+        );
       });
-    } else if (screen === ROUTE_SCREENS.BATTLE && mode === CONTENT_SYSTEMS.WILDWOOD && !readHasActiveBattle()) {
+    } else if (
+      screen === ROUTE_SCREENS.BATTLE &&
+      mode === CONTENT_SYSTEMS.WILDWOOD &&
+      !readHasActiveBattle(gameSession)
+    ) {
       deps.onResumeWildwood();
     } else {
       deps.resumeTo(screen);
@@ -73,14 +99,20 @@ export function createRunResumeNavigation(deps: ContentSystemNavigationDeps) {
 
   function beginContentSystem(systemId: ContentSystemId) {
     if (!isEditionModeAvailable(systemId)) return;
-    if (readHasActiveRun()) {
+    if (readHasActiveRun(gameSession)) {
       resumeRun();
       return;
     }
-    dispatchRunSessionCommand((draft) => {
-      setPendingCharacterId(draft, null);
-      setPendingContentSystemType(draft, systemId);
-    });
+    dispatchRunSessionCommand(
+      (draft) => {
+        setPendingCharacterId(draft, null);
+        setPendingContentSystemType(draft, systemId);
+
+        return acceptCommand();
+      },
+      undefined,
+      gameSession,
+    );
     deps.navigateTo(ROUTE_SCREENS.CHARACTER_SELECT);
   }
 

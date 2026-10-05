@@ -1,12 +1,14 @@
-import { playUISound } from "@/lib/audio";
-import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/navigation/mystery-event-navigation";
 import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/corruption-flow";
+import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/navigation/mystery-event-navigation";
 import type { RunFlowShellActions, RunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
 import { createWildwoodGauntletFlow } from "@/features/alchemy/run-loop/run/wildwood-gauntlet-flow";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
-import { readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
-import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { leaveLabyrinthCorruption } from "@/features/alchemy/shared/stores/navigation-commands";
+import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
+import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { clearRunCardHover } from "./run-destination-wiring";
@@ -22,8 +24,9 @@ export function createRunFlowEngine(
     labyrinthClearNode,
   }: RunFlowEngineDeps,
   outcomes: RunOutcomes,
+  gameSession: GameSession = defaultGameSession,
 ) {
-  const clearCardHover = clearRunCardHover;
+  const clearCardHover = () => clearRunCardHover(gameSession);
   // Universal hover rule (approved): every flow navigation clears card hover
   // unless explicitly opted out. Factories receive the wrapped navigate so
   // Wildwood resume, mystery, and content-system paths cannot leave tooltips.
@@ -35,22 +38,31 @@ export function createRunFlowEngine(
     clearCardHover();
     rawResumeTo(nextScreen, prepareNavigation);
   };
-  const wildwood = createWildwoodGauntletFlow({
-    navigateTo,
-    resumeTo,
-    startBossById: battle.startBossById,
-    clearCardHover,
-  });
-  const contentNav = createContentSystemNavigation({
-    navigateTo,
-    resumeTo,
-    startBattle: battle.startBattle,
-    getAvailableDestinations: outcomes.getAvailableDestinations,
-    onResumeWildwood: wildwood.resumeWildwoodRun,
-  });
-  const mystery = createMysteryEventNavigation({
-    navigateTo,
-  });
+  const wildwood = createWildwoodGauntletFlow(
+    {
+      navigateTo,
+      resumeTo,
+      startBossById: battle.startBossById,
+      clearCardHover,
+    },
+    gameSession,
+  );
+  const contentNav = createContentSystemNavigation(
+    {
+      navigateTo,
+      resumeTo,
+      startBattle: battle.startBattle,
+      getAvailableDestinations: outcomes.getAvailableDestinations,
+      onResumeWildwood: wildwood.resumeWildwoodRun,
+    },
+    gameSession,
+  );
+  const mystery = createMysteryEventNavigation(
+    {
+      navigateTo,
+    },
+    gameSession,
+  );
   const actions: RunFlowShellActions = {
     navigateTo,
     transition,
@@ -67,19 +79,22 @@ export function createRunFlowEngine(
   };
   const flowHandlers = outcomes.connect(actions);
   function returnToLabyrinthMap() {
-    navigateTo(ROUTE_SCREENS.LABYRINTH_MAP, leaveLabyrinthCorruption);
+    navigateTo(ROUTE_SCREENS.LABYRINTH_MAP, () => leaveLabyrinthCorruption(gameSession));
   }
-  const corruption = createCorruptionFlowHandlers({
-    advanceToNextDestination: flowHandlers.advanceToNextDestination,
-    returnToCurrentDestination: flowHandlers.returnToCurrentDestination,
-    returnToLabyrinthMap,
-    isLabyrinthRun: () => readActiveRun().contentSystemType === CONTENT_SYSTEMS.LABYRINTH,
-  });
+  const corruption = createCorruptionFlowHandlers(
+    {
+      advanceToNextDestination: flowHandlers.advanceToNextDestination,
+      returnToCurrentDestination: flowHandlers.returnToCurrentDestination,
+      returnToLabyrinthMap,
+      isLabyrinthRun: () => readActiveRun(gameSession).contentSystemType === CONTENT_SYSTEMS.LABYRINTH,
+    },
+    gameSession,
+  );
   function resetRunState() {
     cancelPending();
-    clearBattlePresentationUi();
+    clearBattlePresentationUi(gameSession);
     // navigateTo already clears card hover via the universal rule above.
-    navigateTo(ROUTE_SCREENS.MENU, teardownRun);
+    navigateTo(ROUTE_SCREENS.MENU, () => teardownRun(gameSession));
   }
   return {
     getAvailableDestinations: outcomes.getAvailableDestinations,
@@ -91,7 +106,7 @@ export function createRunFlowEngine(
     endLabyrinthRun: flowHandlers.endLabyrinthRun,
     handleAbandonRun: () => {
       cancelPending();
-      playUISound("destructiveConfirm");
+      sessionFeedback(gameSession).playUISound("destructiveConfirm");
       flowHandlers.handleAbandonRun();
     },
     handleCharacterSelect: contentNav.handleCharacterSelect,

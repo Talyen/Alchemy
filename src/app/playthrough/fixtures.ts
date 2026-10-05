@@ -1,14 +1,18 @@
-import { createDefaultSaveData } from "@/features/alchemy/shared/storage";
-import { hydrateAlchemyPersistenceFields } from "@/features/alchemy/shared/storage";
+import { createDefaultSaveData, hydrateAlchemyPersistenceFields } from "@/features/alchemy/shared/storage";
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { characters } from "@/lib/game-data";
 import { ACTS_PER_RUN, DESTINATIONS_PER_ACT } from "@/lib/game-constants";
 import type { CharacterId } from "@/lib/game-data";
-import { createPlaythroughController } from "./controller";
+import { characters } from "@/lib/game-data";
 import { snapshotCareer } from "./career";
+import { createPlaythroughController } from "./controller";
 
 /** Fixture grants are never labeled as earned fresh-save progression. */
-export function createPlaythroughFixture(name: "unlocked-v1" | "victory-v1" | "economy-v1") {
+export function createPlaythroughFixture(
+  name: "unlocked-v1" | "victory-v1" | "economy-v1",
+  gameSession: GameSession = defaultGameSession,
+) {
   if (!["unlocked-v1", "economy-v1", "victory-v1"].includes(name)) throw new Error(`Unknown fixture: ${name}`);
   const save = createDefaultSaveData();
   save.finishedRunCharacters = Object.keys(characters) as CharacterId[];
@@ -26,14 +30,14 @@ export function createPlaythroughFixture(name: "unlocked-v1" | "victory-v1" | "e
     return save;
   }
   if (name === "unlocked-v1") return save;
-  hydrateAlchemyPersistenceFields(save);
-  restoreRun(null, save.talentXP, save.unlockedTalents);
-  const { flow } = createPlaythroughController();
+  hydrateAlchemyPersistenceFields(save, gameSession);
+  restoreRun(null, save.talentXP, save.unlockedTalents, gameSession);
+  const { flow } = createPlaythroughController(gameSession);
   flow.goToScreen("game-mode-select");
   flow.beginCampaign();
   flow.handleCharacterSelect("knight");
   flow.handleDifficultySelect("difficulty-1");
-  const fixture = structuredClone(snapshotCareer());
+  const fixture = structuredClone(snapshotCareer(gameSession));
   if (!fixture.activeRun?.activeCombat) throw new Error("Fixture did not start combat");
   fixture.activeRun.currentAct = ACTS_PER_RUN;
   fixture.activeRun.destinationIndexInAct = DESTINATIONS_PER_ACT;

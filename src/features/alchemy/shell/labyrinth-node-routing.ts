@@ -1,6 +1,9 @@
 import { initializeAlchemyVisit } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
-import type { ShopActions } from "@/features/alchemy/run-loop/shop/shop-action-types";
 import type { LabyrinthController } from "@/features/alchemy/run-loop/run/labyrinth-controller";
+import type { ShopActions } from "@/features/alchemy/run-loop/shop/shop-action-types";
+import type { BattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import type {
   EncounterCombatTraitId,
   EncounterRewardTraitId,
@@ -8,7 +11,6 @@ import type {
   LabyrinthNodeType,
 } from "@/lib/content-systems/types";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
-import type { BattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
 
 interface LabyrinthNodeRoutingDeps {
   prepareRoomTraits: (combat: EncounterCombatTraitId[], rewards: EncounterRewardTraitId[]) => void;
@@ -20,7 +22,10 @@ interface LabyrinthNodeRoutingDeps {
   corruption: { reset: () => void };
 }
 
-export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
+export function createLabyrinthNodeRouting(
+  deps: LabyrinthNodeRoutingDeps,
+  gameSession: GameSession = defaultGameSession,
+) {
   const rooms: Record<
     Exclude<LabyrinthNodeType, "entrance" | "mystery">,
     { screen: Screen; initialize?: (node: LabyrinthNode) => void }
@@ -37,8 +42,11 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
       screen: ROUTE_SCREENS.BATTLE,
       initialize: (node) => deps.battle.startBossBattle({ modifiers: [], enemyId: node.enemyId }),
     },
-    rest: { screen: ROUTE_SCREENS.CAMPFIRE, initialize: () => initializeAlchemyVisit("campfire") },
-    transmutation: { screen: ROUTE_SCREENS.TRANSMUTATION, initialize: () => initializeAlchemyVisit("transmutation") },
+    rest: { screen: ROUTE_SCREENS.CAMPFIRE, initialize: () => initializeAlchemyVisit("campfire", gameSession) },
+    transmutation: {
+      screen: ROUTE_SCREENS.TRANSMUTATION,
+      initialize: () => initializeAlchemyVisit("transmutation", gameSession),
+    },
     corruption: { screen: ROUTE_SCREENS.CORRUPTION, initialize: () => deps.corruption.reset() },
     shop: { screen: ROUTE_SCREENS.SHOP, initialize: () => deps.shop.initialize("merchant") },
     alchemist: { screen: ROUTE_SCREENS.ALCHEMIST, initialize: () => deps.shop.initialize("alchemist") },

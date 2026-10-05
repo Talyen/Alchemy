@@ -1,7 +1,7 @@
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
-  prepareRunNavigation,
+  setRunProgressActivity,
   setRewardState,
   setShopState,
   setScreen,
@@ -64,7 +64,7 @@ describe("screen hook coverage", () => {
 describe("screen-specific run data hooks", () => {
   it.each(["game-over", "run-victory"] as const)("retains the %s summary while teardown clears the run", (screen) => {
     setRunSession({ runEndTalentXP: { physical: 25 }, runEndLabyrinthFloor: 7 });
-    dispatchRunSessionCommand((draft) => setScreen(draft, screen));
+    dispatchRunSessionCommand((draft) => acceptCommand(setScreen(draft, screen)));
     const { result } = renderHook(() => useRunEndScreenData());
     const shown = result.current;
     act(() => teardownRun());
@@ -77,7 +77,7 @@ describe("screen-specific run data hooks", () => {
     setRunSession({ activity: { kind: "labyrinth-map" }, selectedLabyrinthNodeId: "room-1" });
     const { result } = renderHook(() => useLabyrinthMapScreenData());
     act(() => {
-      dispatchRunSessionCommand((draft) => prepareRunNavigation(draft, "shop"));
+      dispatchRunSessionCommand((draft) => acceptCommand(setShopState(draft, emptyShopState())));
       setRunSession({ selectedLabyrinthNodeId: null });
     });
     expect(readRunSession().selectedLabyrinthNodeId).toBeNull();
@@ -115,7 +115,9 @@ describe("screen-specific run data hooks", () => {
     });
 
     act(() => {
-      dispatchRunSessionCommand((draft) => setRewardState(draft, { ...readRunSession().rewardFlow.state }));
+      dispatchRunSessionCommand((draft) =>
+        acceptCommand(setRewardState(draft, { ...readRunSession().rewardFlow.state })),
+      );
     });
 
     expect(renders).toBe(1);
@@ -128,9 +130,13 @@ describe("screen-specific run data hooks", () => {
       renders += 1;
       return useShopScreenData();
     });
-    act(() => dispatchRunSessionCommand((draft) => setShopState(draft, { ...emptyShopState(), refreshesLeft: 0 })));
+    act(() =>
+      dispatchRunSessionCommand((draft) =>
+        acceptCommand(setShopState(draft, { ...emptyShopState(), refreshesLeft: 0 })),
+      ),
+    );
     const outgoing = result.current;
-    act(() => dispatchRunSessionCommand((draft) => prepareRunNavigation(draft, "destination")));
+    act(() => dispatchRunSessionCommand((draft) => acceptCommand(setRunProgressActivity(draft, "destination"))));
     expect(readRunSession().activity).toEqual({ kind: "destination" });
     expect(result.current).toBe(outgoing);
     expect(result.current.shopState.refreshesLeft).toBe(0);
@@ -140,7 +146,7 @@ describe("screen-specific run data hooks", () => {
     expect(result.current.gold).toBe(42);
     expect(renders).toBe(inactiveRenders);
 
-    act(() => dispatchRunSessionCommand((draft) => setShopState(draft, emptyShopState())));
+    act(() => dispatchRunSessionCommand((draft) => acceptCommand(setShopState(draft, emptyShopState()))));
     expect(result.current).not.toBe(outgoing);
     expect(result.current.shopState.refreshesLeft).toBe(emptyShopState().refreshesLeft);
     expect(result.current.gold).toBe(99);

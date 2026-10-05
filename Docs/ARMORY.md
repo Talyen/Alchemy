@@ -139,12 +139,14 @@ Homestead mutation timing remains unchanged.
 
 ### Write paths
 
+`GearDraftView` exposes deeply readonly inventories, instances, loadouts, and currencies. Call its methods to mutate Gear so combat locks, discovery, and live Health rebinding stay together. Synchronization cannot be disabled by feature callers. Initialization and reset are bootstrap operations and reject execution during combat.
+
 There is no external `useGearStore` hook. Gear mutations run against a `GearDraftView` of the aggregate state and commit through session commands. Which wrapper to use:
 
-- **Outside a run command (Armory screen, dev spawn)** — `dispatchGearMutationWithRunHealthSync({ mutate, syncRunHealth? })`
-- **Inside an existing command (shop buy, rewards, mystery)** — `mutateGearWithRunHealthSync(draft, { mutate, syncRunHealth? })`
+- **Outside a run command (Armory screen, dev spawn)** — `dispatchGearMutationWithRunHealthSync({ mutate })`
+- **Inside an existing command (shop buy, rewards, mystery)** — `mutateGearWithRunHealthSync(transaction, { mutate })`
 
-After a Gear change, `rebindLiveRunMeta` synchronizes health when a run is active, unless the caller explicitly overrides `syncRunHealth`. Unchanged or rejected mutations do not rebind. `mutate` receives a `GearDraftView` handle and may edit any character's loadout (for example Armory browsing another hero while a run is in progress): `(state) => state.equip(loadoutCharacterId, slot, instance)`.
+After a Gear change, `rebindLiveRunMeta` synchronizes health when a run is active. Unchanged or rejected mutations do not rebind. `mutate` receives a `GearDraftView` handle and may edit any character's loadout (for example Armory browsing another hero while a run is in progress): `(state) => state.equip(loadoutCharacterId, slot, instance)`.
 
 1. **Equip / Unequip** — `dispatchGearMutationWithRunHealthSync({ mutate: (state) => state.equip(characterId, slot, instance) })` and `(state) => state.unequip(characterId, slot)`.
 2. **Salvage** — preview with `computeSalvageYield` (definition `salvageValue` homestead materials + crafting currencies drawn from the existing rarity table using a seed derived from the stable instance ID). Reopening, reloading, and changing affixes do not reroll rewards; upgrading rarity uses the new rarity table. Confirm calls `dispatchGearSalvageWithMaterialGrant((state) => state.salvage(instanceId))`, which recomputes the same deterministic yield in the store rather than trusting the preview value, then HP-syncs and grants homestead materials in the same command via `awardMaterialsDuringRun` (active run) or `addMaterialsToStockpile` (meta). Confirm always pays exactly the preview.

@@ -1,3 +1,4 @@
+import type { Immutable } from "immer";
 import type { CharacterId } from "@/lib/game-data";
 import type {
   CraftingCurrencyId,
@@ -17,26 +18,24 @@ export interface GearSaveFields {
   craftingCurrencies: Record<CraftingCurrencyId, number>;
 }
 
-export type GearStateFields = Pick<
-  GearDraftView,
-  "inventories" | "loadouts" | "ownedTrinketIds" | "equippedTrinkets" | "craftingCurrencies"
->;
-
-// Per-command draft view over the aggregate's gear slice (not a Zustand store:
-// it borrows the live draft, enforces combat reservations, and reports whether
-// it wrote). Constructed fresh for each gear command by gear-session-command.
-export interface GearDraftView {
+export interface GearStateFields {
   inventories: GearInventories;
   loadouts: GearLoadouts;
   ownedTrinketIds: string[];
   equippedTrinkets: EquippedTrinkets;
   craftingCurrencies: Record<CraftingCurrencyId, number>;
+}
+
+// Per-command draft view over the aggregate's gear slice (not a Zustand store:
+// it borrows the live draft, enforces combat reservations, and reports whether
+// it wrote). Constructed fresh for each gear command by gear-session-command.
+export interface GearDraftView extends Immutable<GearStateFields> {
   initialize: (
-    inventories: GearInventories,
-    loadouts: GearLoadouts,
+    inventories: Immutable<GearInventories>,
+    loadouts: Immutable<GearLoadouts>,
     craftingCurrencies?: Partial<Record<CraftingCurrencyId, number>>,
-    ownedTrinketIds?: string[],
-    equippedTrinkets?: EquippedTrinkets,
+    ownedTrinketIds?: readonly string[],
+    equippedTrinkets?: Immutable<EquippedTrinkets>,
   ) => void;
   addInstance: (instance: GearInstance, characterId: CharacterId) => void;
   equip: (characterId: CharacterId, slot: GearSlot, instance: GearInstance) => boolean;

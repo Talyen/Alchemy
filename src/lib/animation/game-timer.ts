@@ -10,18 +10,30 @@ export function resolveGameDelay(ms: number): number {
   return isAnimationDisabled() ? ANIMATION_DISABLED_DURATION : ms;
 }
 
+export interface TimerClock {
+  setTimeout: (callback: () => void, delay: number) => ReturnType<typeof setTimeout> | number;
+  clearTimeout: (timer: ReturnType<typeof setTimeout> | number) => void;
+}
+
 export class TimerGroup {
-  private ids = new Set<ReturnType<typeof setTimeout>>();
+  private ids = new Set<ReturnType<typeof setTimeout> | number>();
+
+  constructor(
+    private readonly clock: TimerClock = {
+      setTimeout: (callback, delay) => globalThis.setTimeout(callback, delay),
+      clearTimeout: (timer) => globalThis.clearTimeout(timer),
+    },
+  ) {}
 
   setTimeout(fn: () => void, ms: number): () => void {
-    const id = setTimeout(() => {
+    const id = this.clock.setTimeout(() => {
       this.ids.delete(id);
       fn();
     }, ms);
     this.ids.add(id);
     return () => {
       this.ids.delete(id);
-      clearTimeout(id);
+      this.clock.clearTimeout(id);
     };
   }
 
@@ -35,7 +47,7 @@ export class TimerGroup {
 
   clearAll() {
     for (const id of this.ids) {
-      clearTimeout(id);
+      this.clock.clearTimeout(id);
     }
     this.ids.clear();
   }

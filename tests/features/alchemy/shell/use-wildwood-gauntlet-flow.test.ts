@@ -10,6 +10,7 @@ import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { createWildwoodGauntletFlow } from "@/features/alchemy/run-loop/run/wildwood-gauntlet-flow";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { prepareWildwoodRemoval } from "@/features/alchemy/run-loop/run/wildwood-commands";
 import { cardById } from "@/lib/game-data";
 describe("Wildwood reward selection", () => {
   beforeEach(() => {
@@ -33,6 +34,25 @@ describe("Wildwood reward selection", () => {
     expect(readRunSession().rewardFlow.state.selectedId).toBeNull();
     expect(readRunSession().wildwoodDraft).toEqual(wildwoodDraft);
   });
+  it("makes Wildwood removal resumable before its screen is shown", () => {
+    setRunProgress({
+      contentSystemType: CONTENT_SYSTEMS.WILDWOOD,
+      runDeck: Array.from({ length: 9 }, (_, uid) => ({ ...cardById["slash"]!, uid })),
+    });
+    setRunSession({
+      activity: { kind: "rewards" },
+      wildwoodDraft: { ...createInitialWildwoodDraftState("knight", () => 0.5), phase: "reward" },
+    });
+    prepareWildwoodRemoval();
+    expect(readRunSession().activity.kind).toBe("wildwood-removal");
+    const save = snapshotRun();
+    expect(save.currentScreen).toBe("wildwood-removal");
+    restoreRun(save, {}, {});
+    expect(readRunSession().activity.kind).toBe("wildwood-removal");
+    expect(readRunSession().wildwoodDraft?.phase).toBe("removal");
+    expect(readActiveRun().rng).toEqual(save.rng);
+  });
+
   it("commits removal and the next boss once without waiting for a rendered screen", () => {
     setRunProgress({
       contentSystemType: CONTENT_SYSTEMS.WILDWOOD,

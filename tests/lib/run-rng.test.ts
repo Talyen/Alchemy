@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { createRunRngState, createRunStateRng, createRunStreamRng, nextRunRngValue, stepRunRng } from "@/lib/rng";
 import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
   createInitialActiveRunFields,
@@ -67,13 +67,17 @@ describe("run RNG", () => {
 
   it("continues the exact sequence after snapshot and restore", () => {
     setRunProgress({ rng: createRunRngState(42) });
-    const first = dispatchRunSessionCommand((draft) => createDraftRunRandomSource(draft, "rewards")());
+    const first = dispatchRunSessionCommand((draft) => acceptCommand(createDraftRunRandomSource(draft, "rewards")()));
     const snapshot = snapshotRun("destination");
-    const expectedNext = dispatchRunSessionCommand((draft) => createDraftRunRandomSource(draft, "rewards")());
+    const expectedNext = dispatchRunSessionCommand((draft) =>
+      acceptCommand(createDraftRunRandomSource(draft, "rewards")()),
+    );
 
     restoreRun(snapshot, {}, {});
 
-    expect(dispatchRunSessionCommand((draft) => createDraftRunRandomSource(draft, "rewards")())).toBe(expectedNext);
+    expect(dispatchRunSessionCommand((draft) => acceptCommand(createDraftRunRandomSource(draft, "rewards")()))).toBe(
+      expectedNext,
+    );
     expect(first).not.toBe(expectedNext);
   });
 

@@ -22,16 +22,14 @@ export function useEasedHealth({
 }) {
   const reducedMotion = useReducedMotionPreference();
   const animationDuration = reducedMotion ? 0 : durationMs;
-  const [animatedHealth, setAnimatedHealth] = useState(from);
-  const [syncedInput, setSyncedInput] = useState({ active, from });
+  const [animation, setAnimation] = useState({ active, from, health: from });
   const onFinishedRef = useLatestRef(onFinished);
 
-  if (syncedInput.active !== active || syncedInput.from !== from) {
-    setSyncedInput({ active, from });
-    setAnimatedHealth(from);
+  if (animation.active !== active || animation.from !== from) {
+    setAnimation({ active, from, health: from });
   }
 
-  const shownHealth = active ? animatedHealth : from;
+  const shownHealth = active ? animation.health : from;
 
   useEffect(() => {
     if (!active) return;
@@ -41,7 +39,7 @@ export function useEasedHealth({
     function animate(now: number) {
       const progress = animationDuration <= 0 ? 1 : clamp01((now - startTime) / animationDuration);
       const eased = easing === "linear" ? progress : 1 - Math.pow(1 - progress, 3);
-      setAnimatedHealth(from + (to - from) * eased);
+      setAnimation({ active, from, health: from + (to - from) * eased });
       if (progress < 1) {
         frame = requestAnimationFrame(animate);
       } else {

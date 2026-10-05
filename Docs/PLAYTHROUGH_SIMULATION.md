@@ -2,7 +2,9 @@
 
 The Node runner acts through production battle commands, run navigation, rewards,
 shops, mysteries, corruption, homestead, talents, and Armory operations. It never
-mounts React or renders the game. Each career runs in a fresh child process;
+mounts React or renders the game. Each career owns an independent game session,
+including its settings, deterministic inputs, persistence, and subscriptions. The
+CLI runs each career in a fresh child process;
 progress persists between that career's runs. The parent watchdog also terminates
 synchronous hangs.
 
@@ -74,6 +76,14 @@ recorded actions. Rejection tests cover stale cards, duplicate rewards/purchases
 unaffordable purchases, repeated mystery outcomes, and interruption without a
 forced final write. Controlled execution and post-commit failures prove rollback
 versus committed-state failure capture and fresh-process replay.
+
+`createPlaythroughController(session)` binds production flows to the supplied
+session. `runCareer` creates and disposes its own runtime by default. The worker
+supplies a recorded runtime for checkpoint/replay evidence. Deterministic clocks,
+Gear IDs, and new-run seeds are injected into that runtime; workers do not patch
+process globals. In-process isolation tests interleave careers and compare their
+journals and final saves with sequential execution. Fresh-process replay remains
+separate protection for bootstrap and interruption behavior.
 
 Replay uses recorded actions, canonical state hashes, command revisions, run RNG
 in save/checkpoint data, deterministic ID/clock inputs, and code/content identity

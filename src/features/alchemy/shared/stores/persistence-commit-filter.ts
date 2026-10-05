@@ -1,34 +1,41 @@
-import { createDefaultSettingsSaveFields, useSettingsStore, type SettingsSaveFields } from "./settings-store";
+import { defaultGameSession } from "./default-game-session";
+import type { GameSession } from "./game-session-types";
+import { type GameplayState } from "./gameplay-state-store";
 import { createDefaultProfileSaveFields, type ProfileSaveFields } from "./profile-store-types";
+import type {
+  RunDomainBattleState,
+  RunDomainDataState,
+  RunSessionFields,
+  TRANSIENT_RUN_KEYS,
+} from "./run-domain-types";
+import { RUN_PROFILE_SAVE_KEYS } from "./run-profile-codec";
 import {
   LABYRINTH_GATED_SESSION_KEYS,
   NON_WILDWOOD_GATED_SESSION_KEY,
   type TRANSIENT_SESSION_KEYS,
   WILDWOOD_GATED_SESSION_KEY,
 } from "./run-resume-codec";
-import type {
-  TRANSIENT_RUN_KEYS,
-  RunDomainBattleState,
-  RunDomainDataState,
-  RunSessionFields,
-} from "./run-domain-types";
-import { RUN_PROFILE_SAVE_KEYS } from "./run-profile-codec";
-import { useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
+import { sessionRuntime } from "./session-runtime";
+import { createDefaultSettingsSaveFields, type SettingsSaveFields } from "./settings-store";
 
 // Dirty-tracking for persistence: fires only for persisted inputs. A new run,
 // battle, or session field must be classified below before typecheck passes.
 // The classifications follow encodeRunResumeSnapshot in run-resume-codec.ts.
-export function subscribePersistenceCommits(listener: () => void): () => void {
-  const unsubscribeSettings = useSettingsStore.subscribe((state, previous) => {
+export function subscribePersistenceCommits(
+  listener: () => void,
+  gameSession: GameSession = defaultGameSession,
+): () => void {
+  const runtime = sessionRuntime(gameSession);
+  const unsubscribeSettings = runtime.settings.subscribe((state, previous) => {
     if (!fieldsEqual(previous, state, SETTINGS_SAVE_KEYS)) listener();
   });
-  const unsubscribeGameplay = useGameplayStateStore.subscribe((state, previous) => {
+  const unsubscribeGameplay = runtime.gameplay.subscribe((state, previous) => {
     if (!gameplayPersistedInputsEqual(previous, state)) listener();
   });
-  return () => {
+  return runtime.track(() => {
     unsubscribeSettings();
     unsubscribeGameplay();
-  };
+  });
 }
 
 // Settings save keys derive from the defaults factory (same pattern as

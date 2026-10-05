@@ -12,7 +12,7 @@ import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/b
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import { createRunRngState } from "@/lib/rng";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 
 beforeEach(() => {
   resetRunBattleSlice();
@@ -41,8 +41,10 @@ describe("createBattleInit", () => {
     setRunProgress({ roomsEncountered: 0, runPlayerHealth: 30, runMaxHealth: 30 });
     const testEffects = { ...defaultHomesteadEffects, flatPhysicalDamage: 2 };
     const init = makeInit();
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.runProfile.effects = testEffects;
+
+      return acceptCommand();
     });
 
     init.startBattle({ enemyType: "normal" });

@@ -56,7 +56,7 @@ export {
   isActiveRunActivity,
   readActivityData,
   runActivityScreen,
-  transitionRunActivity,
   type RunActivity,
   type RunActivityData,
+  type RunProgressActivityKind,
 } from "./run-activity";

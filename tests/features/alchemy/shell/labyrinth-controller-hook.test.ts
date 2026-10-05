@@ -2,7 +2,7 @@ import { act } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { gridLabyrinthMapFixture } from "../../../fixtures/labyrinth-map";
 import { createLabyrinthController } from "@/features/alchemy/run-loop/run/labyrinth-controller";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import {
   completeRunRoom,
@@ -18,7 +18,7 @@ function firstReachableId() {
 
 beforeEach(() => {
   resetTransientRunUi();
-  dispatchRunSessionCommand((draft) => setLabyrinthMap(draft, gridLabyrinthMapFixture()));
+  dispatchGameplayCommand((draft) => acceptCommand(setLabyrinthMap(draft, gridLabyrinthMapFixture())));
 });
 
 describe("Labyrinth commands", () => {
@@ -107,9 +107,11 @@ describe("Labyrinth commands", () => {
     });
     expect(readRunSession().labyrinthMap!.currentFloor).toBe(1);
     act(() => {
-      dispatchRunSessionCommand((draft) => {
+      dispatchGameplayCommand((draft) => {
         draft.session.labyrinthMap!.nodes[boss.id]!.cleared = true;
         draft.session.labyrinthMap!.currentNodeId = boss.id;
+
+        return acceptCommand();
       });
       controller.descend();
       controller.descend();
@@ -127,9 +129,11 @@ describe("Labyrinth commands", () => {
   });
 
   it("does not move or clear a room when its destination fails to open", () => {
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       setHasActiveRun(draft, true);
       draft.run.activeRun.runHistory = [];
+
+      return acceptCommand();
     });
     const controller = createLabyrinthController();
     const target = firstReachableId();
@@ -148,14 +152,16 @@ describe("Labyrinth commands", () => {
   });
 
   it("records the room before an opening attack can complete it", () => {
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       setHasActiveRun(draft, true);
       draft.run.activeRun.contentSystemType = "labyrinth";
       draft.run.activeRun.runHistory = [];
+
+      return acceptCommand();
     });
     const controller = createLabyrinthController();
     controller.selectNode(firstReachableId());
-    controller.enterSelectedNode(() => dispatchRunSessionCommand((draft) => completeRunRoom(draft)));
+    controller.enterSelectedNode(() => dispatchGameplayCommand((draft) => acceptCommand(completeRunRoom(draft))));
     expect(readActiveRun().runHistory).toEqual([
       expect.objectContaining({
         id: `labyrinth:1:${firstReachableId()}`,
@@ -167,7 +173,7 @@ describe("Labyrinth commands", () => {
 
   it("passes the selected corruption chamber with its room modifiers", () => {
     const corruptionId = firstReachableId();
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       setHasActiveRun(draft, true);
       draft.run.activeRun.contentSystemType = "labyrinth";
       draft.run.activeRun.runHistory = [];
@@ -175,6 +181,8 @@ describe("Labyrinth commands", () => {
       node.type = "corruption";
       node.rewardModifiers = ["blood-rite"];
       delete node.enemyId;
+
+      return acceptCommand();
     });
     const onStartCorruption = vi.fn();
     const controller = createLabyrinthController();

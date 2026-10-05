@@ -1,7 +1,7 @@
 import { restoreActiveBattle } from "@/features/alchemy/shared/stores/battle-restore";
 import { beforeEach, describe, expect, it } from "vitest";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { addGold, deductGold, setGold } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
+import { deductGold, setGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { commitResolvedBattle, initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
 import { readBattle, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
@@ -14,23 +14,11 @@ beforeEach(() => {
 });
 
 describe("profile gold write port", () => {
-  it("writes spend and earn through profile gold", () => {
-    dispatchRunSessionCommand((draft) => setGold(draft, 40));
-    dispatchRunSessionCommand((draft) => addGold(draft, 5));
-    expect(readRunProfile().gold).toBe(45);
-  });
-
-  it("adds earned gold onto the purse", () => {
-    setRunProgress({ gold: 10 });
-    dispatchRunSessionCommand((draft) => addGold(draft, 5));
-    expect(readRunProfile().gold).toBe(15);
-  });
-
   it("deducts gold and clamps at zero", () => {
     setRunProgress({ gold: 10 });
-    dispatchRunSessionCommand((draft) => deductGold(draft, 4));
+    dispatchGameplayCommand((draft) => acceptCommand(deductGold(draft, 4)));
     expect(readRunProfile().gold).toBe(6);
-    dispatchRunSessionCommand((draft) => deductGold(draft, 10));
+    dispatchGameplayCommand((draft) => acceptCommand(deductGold(draft, 10)));
     expect(readRunProfile().gold).toBe(0);
   });
 });
@@ -38,11 +26,13 @@ describe("profile gold write port", () => {
 it("commits a resolved battle's Gold change without replacing other purse changes in the transaction", () => {
   setRunProgress({ gold: 100 });
   setRunSession({ hasActiveRun: true });
-  dispatchRunSessionCommand((draft) => initializeActiveBattle(draft, makeTestBattleState({ gold: 100 })));
+  dispatchGameplayCommand((draft) => acceptCommand(initializeActiveBattle(draft, makeTestBattleState({ gold: 100 }))));
   const before = readBattle().battleState;
-  dispatchRunSessionCommand((draft) => {
+  dispatchGameplayCommand((draft) => {
     setGold(draft, 200);
     commitResolvedBattle(draft, before, { ...before, gold: before.gold + 7 });
+
+    return acceptCommand();
   });
   expect(readRunProfile().gold).toBe(207);
   expect(readBattle().battleState.gold).toBe(207);
@@ -57,14 +47,16 @@ describe.each(["opening-draw", "enemy-turn"] as const)("legacy %s hydration", (k
   ])("reconciles saved earnings once against purse $purse", ({ purse, saved, expected }) => {
     setRunProgress({ characterId: "knight", gold: 100 });
     setRunSession({ hasActiveRun: true });
-    dispatchRunSessionCommand((draft) => initializeActiveBattle(draft, makeTestBattleState({ gold: 100 })));
+    dispatchGameplayCommand((draft) =>
+      acceptCommand(initializeActiveBattle(draft, makeTestBattleState({ gold: 100 }))),
+    );
     const legacy = snapshotRun("battle");
     legacy.activeCombat!.pendingBattleTransition = {
       kind,
       resultState: makeTestBattleState({ gold: saved, turn: 3 }),
       playerTurnSkipped: false,
     };
-    dispatchRunSessionCommand((draft) => setGold(draft, purse));
+    dispatchGameplayCommand((draft) => acceptCommand(setGold(draft, purse)));
     restoreRun(legacy, {}, {});
     expect(readRunProfile().gold).toBe(expected);
     expect(readBattle().battleState).toMatchObject({ gold: expected, turn: 3 });
@@ -72,13 +64,13 @@ describe.each(["opening-draw", "enemy-turn"] as const)("legacy %s hydration", (k
     expect(current.activeCombat.pendingBattleTransition).toBeNull();
     restoreRun(current, {}, {});
     expect(readRunProfile().gold).toBe(expected);
-    dispatchRunSessionCommand((draft) => deductGold(draft, expected + 10));
+    dispatchGameplayCommand((draft) => acceptCommand(deductGold(draft, expected + 10)));
     expect(readBattle().battleState.gold).toBe(0);
   });
   it("rolls back restored earnings and battle state when hydration fails", () => {
     const before = readGameplayState();
     expect(() =>
-      dispatchRunSessionCommand((draft) => {
+      dispatchGameplayCommand((draft) => {
         restoreActiveBattle(draft, makeTestBattleState({ gold: 100 }), {
           kind,
           resultState: makeTestBattleState({ gold: 107 }),

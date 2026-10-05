@@ -1,27 +1,24 @@
-import {
-  createBattleStartState,
-  drawOpeningHand,
-  isPlayerDefeated,
-  processCompanionTurnStart,
-  type CombatTextEvent,
-} from "@/lib/battle";
-import { getDifficultyModifiers, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
-import { getBossById, getCurrentEnemy, getBossEnemy, enemyById, isEnemyId } from "@/features/alchemy/shared/config";
-import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import { enemyById, getBossById, getBossEnemy, getCurrentEnemy, isEnemyId } from "@/features/alchemy/shared/config";
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { dispatchGameplayCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/gameplay-command";
+import { syncRunToBattleStart } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { acceptCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   createDraftRunRandomSource,
+  deriveCombatMeta,
+  recordRunRoom,
   setEncounteredEnemyIds,
   setEncounteredRunEnemyIds,
   setRoomsEncountered,
-  recordRunRoom,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { initializeActiveBattle } from "./write/run-battle";
-import { syncRunToBattleStart } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { resolveBattleStart, type CombatTextEvent } from "@/lib/battle";
+import { appendEncounterTraits } from "@/lib/content-systems/encounter-traits";
+import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
+import { getDifficultyModifiers, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
 import { DESTINATIONS } from "@/lib/routing";
 import { appendUnique } from "@/lib/utils";
-import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
-import { appendEncounterTraits } from "@/lib/content-systems/encounter-traits";
-import { deriveCombatMeta } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { commitResolvedBattle, initializeActiveBattle } from "./write/run-battle";
 
 import { logError } from "@/lib/error-logger";
 
@@ -47,12 +44,15 @@ interface BossByIdOptions extends Pick<BattleStartOptions, "modifiers"> {
 
 export type BattleStartCommands = ReturnType<typeof createBattleStartCommands>;
 
-export function createBattleStartCommands(onStarted: (result: BattleStarted) => void) {
+export function createBattleStartCommands(
+  onStarted: (result: BattleStarted) => void,
+  gameSession: GameSession = defaultGameSession,
+) {
   function beginBattle(
     resolveEnemy: (draft: GameplayDraft) => BestiaryEntry,
     options: Pick<BattleStartOptions, "modifiers">,
   ) {
-    dispatchRunSessionCommand(
+    dispatchGameplayCommand(
       (draft) => {
         const enemy = resolveEnemy(draft);
         const startingHealth = syncRunToBattleStart(draft);
@@ -62,33 +62,29 @@ export function createBattleStartCommands(onStarted: (result: BattleStarted) => 
         const encounterTraitIds = run.contentSystemType === "labyrinth" ? draft.session.activeLabyrinthModifiers : [];
         const battleEnemy = encounterTraitIds.length > 0 ? appendEncounterTraits(enemy, encounterTraitIds) : enemy;
         const combatMeta = deriveCombatMeta(draft);
-        let nextBattleState = createBattleStartState({
-          runDeck: run.runDeck,
-          gold: draft.runProfile.gold,
-          totalRooms: nextRoomsEncountered,
-          currentEnemy: battleEnemy,
-          playerHealth: startingHealth,
-          talentEffects: combatMeta.talentEffects,
-          discoveredCardIds: draft.profile.discoveredCardIds,
-          maxHealth: run.runMaxHealth,
-          trinketIds: combatMeta.activeTrinketIds,
-          gearEffects: combatMeta.gearEffects,
-          difficultyModifiers:
-            options.modifiers ??
-            (run.selectedDifficulty ? getDifficultyModifiers(run.characterId, run.selectedDifficulty) : []),
-          contentSystemType: run.contentSystemType,
-          encounterBenefits: draft.session.activeLabyrinthRewardModifiers,
-          rng: createDraftRunRandomSource(draft, "world"),
-        });
-        const companionTexts: CombatTextEvent[] = [];
-        const companionId = nextBattleState.activeCompanion?.id ?? null;
-        if (companionId) {
-          nextBattleState = processCompanionTurnStart(nextBattleState, companionTexts);
-          if (nextBattleState.encounterBenefits.includes("eager-pack"))
-            nextBattleState = processCompanionTurnStart(nextBattleState, companionTexts);
-        }
-        const openingDrawState = drawOpeningHand(nextBattleState);
-        initializeActiveBattle(draft, openingDrawState);
+        const startingGold = draft.runProfile.gold;
+        const opening = resolveBattleStart(
+          {
+            runDeck: run.runDeck,
+            gold: startingGold,
+            totalRooms: nextRoomsEncountered,
+            currentEnemy: battleEnemy,
+            playerHealth: startingHealth,
+            talentEffects: combatMeta.talentEffects,
+            discoveredCardIds: draft.profile.discoveredCardIds,
+            maxHealth: run.runMaxHealth,
+            trinketIds: combatMeta.activeTrinketIds,
+            gearEffects: combatMeta.gearEffects,
+            difficultyModifiers:
+              options.modifiers ??
+              (run.selectedDifficulty ? getDifficultyModifiers(run.characterId, run.selectedDifficulty) : []),
+            contentSystemType: run.contentSystemType,
+            encounterBenefits: draft.session.activeLabyrinthRewardModifiers,
+          },
+          { rng: createDraftRunRandomSource(draft, "world") },
+        );
+        initializeActiveBattle(draft, opening.state);
+        commitResolvedBattle(draft, { ...opening.state, gold: startingGold }, opening.state);
         if (run.contentSystemType !== "labyrinth" && draft.session.rewardFlow.claim.kind !== "destination") {
           const destination =
             enemy.enemyType === "boss"
@@ -101,31 +97,32 @@ export function createBattleStartCommands(onStarted: (result: BattleStarted) => 
         setEncounteredRunEnemyIds(draft, (current) => appendUnique(current, enemy.id));
         setEncounteredEnemyIds(draft, (current) => appendUnique(current, enemy.id));
 
-        const startingTexts: CombatTextEvent[] = [...companionTexts];
-        if (nextBattleState.enemyMitigation.armor > 0) {
+        const startingTexts = [...(opening.companion?.texts ?? [])];
+        if (opening.state.enemyMitigation.armor > 0) {
           startingTexts.push({
             target: "enemy",
             kind: "status",
             stat: "armor",
-            amount: nextBattleState.enemyMitigation.armor,
+            amount: opening.state.enemyMitigation.armor,
           });
         }
-        if (nextBattleState.enemyMitigation.block > 0) {
+        if (opening.state.enemyMitigation.block > 0) {
           startingTexts.push({
             target: "enemy",
             kind: "status",
             stat: "block",
-            amount: nextBattleState.enemyMitigation.block,
+            amount: opening.state.enemyMitigation.block,
           });
         }
-        const outcome: "victory" | "defeat" | null = isPlayerDefeated(nextBattleState)
-          ? "defeat"
-          : nextBattleState.enemyHealth <= 0
-            ? "victory"
-            : null;
-        return { startingTexts, companionId, outcome, openingCardIds: openingDrawState.hand.map((card) => card.id) };
+        return acceptCommand({
+          startingTexts,
+          companionId: opening.companion?.id ?? null,
+          outcome: opening.outcome,
+          openingCardIds: opening.state.hand.map((card) => card.id),
+        });
       },
       { afterCommit: onStarted },
+      gameSession,
     );
   }
 

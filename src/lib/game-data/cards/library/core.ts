@@ -2,6 +2,7 @@ import type { BattleCard } from "../../types";
 import { CONSUME_DESCRIPTION_LINE } from "@/lib/game-constants";
 import * as assetRefs from "../../assets";
 import * as cardBuilders from "../card-builders";
+import { cardMagnitude } from "../../card-description-model";
 
 export const coreCards: BattleCard[] = [
   cardBuilders.damageCard({ id: "slash", art: assetRefs.slash, damageType: "physical", amount: 4 }),
@@ -64,6 +65,10 @@ export const coreCards: BattleCard[] = [
     id: "mixed-potion",
     title: "Mixed Potion",
     descriptionLines: ["Mixed at an Alchemist's Shop", CONSUME_DESCRIPTION_LINE],
+    description: [
+      { parts: ["Mixed at an Alchemist's Shop"], role: "effect" },
+      { parts: [CONSUME_DESCRIPTION_LINE], role: "consume" },
+    ],
     art: assetRefs.mixedPotion,
     cost: 1,
     consume: true,
@@ -158,7 +163,16 @@ export const coreCards: BattleCard[] = [
       { kind: "damage", damageType: "stun", amount: 1 },
       { kind: "gain-gold", amount: 1 },
     ],
-    describe: ([damage, gold]) => [`Deal ${damage.amount} Stun damage`, `Steal ${gold.amount} Gold`],
+    describe: () => [
+      {
+        parts: ["Deal ", cardMagnitude({ effectIndex: 0, kind: "damage", field: "amount" }), " Stun damage"],
+        role: "effect",
+      },
+      {
+        parts: ["Steal ", cardMagnitude({ effectIndex: 1, kind: "gain-gold", field: "amount" }), " Gold"],
+        role: "effect",
+      },
+    ],
   }),
   cardBuilders.effectsCard({
     id: "burning-blade",

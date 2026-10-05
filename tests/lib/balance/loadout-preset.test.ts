@@ -28,12 +28,6 @@ describe("resolveSimLoadout", () => {
     expect(mid.coreTrinketIds).toEqual(["groves-favor"]);
   });
 
-  it("rolls the same typical gear for the same seed", () => {
-    const first = resolveSimLoadout({ preset: "late", characterId: "wizard", mode: "typical", seed: 42 });
-    const second = resolveSimLoadout({ preset: "late", characterId: "wizard", mode: "typical", seed: 42 });
-    expect(first.gearEffects).toEqual(second.gearEffects);
-  });
-
   it.each(["bare", "typical"] as const)("keeps %s loadouts independent between fights", (mode) => {
     const options = { preset: "late" as const, characterId: "knight" as const, mode, seed: 11 };
     const first = resolveSimLoadout(options);

@@ -1,13 +1,13 @@
 import { SAVE_KEY, SAVE_RECOVERY_KEY } from "@/lib/game-constants";
 import { type SaveBackend } from "@/lib/platform-save-backend";
 
-import type { SaveData, UnstampedSaveData } from "./types";
-import { selectSaveCandidates, type SaveLoadState } from "./save-candidates";
-import { createDefaultSaveData } from "./defaults";
-import { SaveWriteQueue, type SaveWriteOutcome } from "./save-write-queue";
-import { logStorageFailure } from "@/lib/storage-logging";
 import { IS_DEMO, isEditionRunAvailable } from "@/lib/game-edition";
+import { logStorageFailure } from "@/lib/storage-logging";
+import { createDefaultSaveData } from "./defaults";
 import { prepareDemoProgressImport } from "./demo-progress-import";
+import { selectSaveCandidates, type SaveLoadState } from "./save-candidates";
+import { SaveWriteQueue, type SaveWriteOutcome } from "./save-write-queue";
+import type { SaveData, UnstampedSaveData } from "./types";
 
 export class SaveStorage {
   private readonly queue = new SaveWriteQueue();
@@ -15,7 +15,10 @@ export class SaveStorage {
   private writeKey = SAVE_KEY;
   private demoInitialization: Promise<SaveLoadState | null> | null = null;
 
-  constructor(private backend: SaveBackend) {}
+  constructor(
+    private backend: SaveBackend,
+    private readonly now: () => number = () => Date.now(),
+  ) {}
 
   configureBackend(backend: SaveBackend): void {
     if (!this.queue.isIdle || this.queue.isClearPending || this.pendingLoads > 0) {
@@ -108,7 +111,7 @@ export class SaveStorage {
 
   private trySerializeSaveSnapshot(data: UnstampedSaveData, context: "" | " during page exit"): string | null {
     try {
-      return serializeSaveSnapshot(data);
+      return serializeSaveSnapshot(data, this.now());
     } catch (error) {
       logStorageFailure(`Save data could not be serialized${context}`, error);
       return null;

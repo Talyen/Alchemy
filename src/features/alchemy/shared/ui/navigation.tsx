@@ -4,6 +4,39 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ChromeIconButton } from "./chrome-icon-button";
 
+interface PaginationProps {
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  className?: string;
+}
+
+function PageArrow({
+  page,
+  totalPages,
+  onPageChange,
+  direction,
+  className,
+  hidden = false,
+}: PaginationProps & { direction: -1 | 1; hidden?: boolean }) {
+  const previous = direction === -1;
+  const Icon = previous ? ChevronLeft : ChevronRight;
+  return (
+    <Button
+      aria-label={previous ? "Previous page" : "Next page"}
+      aria-hidden={hidden || undefined}
+      tabIndex={hidden ? -1 : undefined}
+      className={cn(className, hidden && "pointer-events-none invisible")}
+      variant="outline"
+      size="icon"
+      disabled={hidden || (previous ? page === 0 : page >= totalPages - 1)}
+      onClick={() => onPageChange(page + direction)}
+    >
+      <Icon className="h-5 w-5" />
+    </Button>
+  );
+}
+
 export function PaginationControls({
   page,
   totalPages,
@@ -11,13 +44,9 @@ export function PaginationControls({
   size = "sm",
   reserveSpace = false,
   className,
-}: {
-  page: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
+}: PaginationProps & {
   size?: "sm" | "default";
   reserveSpace?: boolean;
-  className?: string;
 }) {
   const showControls = totalPages > 1;
   const buttonClass = size === "sm" ? "h-11 w-11" : "h-14 w-14";
@@ -30,26 +59,20 @@ export function PaginationControls({
     <div className={cn("mt-4 flex w-full items-center justify-center gap-4", minHeightClass, widthClass, className)}>
       {showControls ? (
         <>
-          <Button
-            aria-label="Previous page"
+          <PageArrow
+            page={page}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+            direction={-1}
             className={buttonClass}
-            variant="outline"
-            size="icon"
-            disabled={page === 0}
-            onClick={() => onPageChange(page - 1)}
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          <Button
-            aria-label="Next page"
+          />
+          <PageArrow
+            page={page}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+            direction={1}
             className={buttonClass}
-            variant="outline"
-            size="icon"
-            disabled={page >= totalPages - 1}
-            onClick={() => onPageChange(page + 1)}
-          >
-            <ChevronRight className="h-5 w-5" />
-          </Button>
+          />
         </>
       ) : null}
     </div>
@@ -62,43 +85,15 @@ export function FlankingPagination({
   onPageChange,
   children,
   className,
-}: {
-  page: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-  children: ReactNode;
-  className?: string;
-}) {
+}: PaginationProps & { children: ReactNode }) {
   const showControls = totalPages > 1;
-  const buttonClass = "h-11 w-11";
+  const arrowProps = { page, totalPages, onPageChange, hidden: !showControls, className: "h-11 w-11" };
 
   return (
     <div className={cn("flex w-full items-center justify-center gap-3", className)}>
-      <Button
-        aria-label="Previous page"
-        aria-hidden={!showControls}
-        tabIndex={showControls ? undefined : -1}
-        className={cn(buttonClass, !showControls && "pointer-events-none invisible")}
-        variant="outline"
-        size="icon"
-        disabled={!showControls || page === 0}
-        onClick={() => onPageChange(page - 1)}
-      >
-        <ChevronLeft className="h-5 w-5" />
-      </Button>
+      <PageArrow {...arrowProps} direction={-1} />
       <div className="min-w-0 flex-1">{children}</div>
-      <Button
-        aria-label="Next page"
-        aria-hidden={!showControls}
-        tabIndex={showControls ? undefined : -1}
-        className={cn(buttonClass, !showControls && "pointer-events-none invisible")}
-        variant="outline"
-        size="icon"
-        disabled={!showControls || page >= totalPages - 1}
-        onClick={() => onPageChange(page + 1)}
-      >
-        <ChevronRight className="h-5 w-5" />
-      </Button>
+      <PageArrow {...arrowProps} direction={1} />
     </div>
   );
 }

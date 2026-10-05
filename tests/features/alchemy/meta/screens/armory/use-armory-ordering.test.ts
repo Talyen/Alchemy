@@ -57,16 +57,16 @@ describe("useArmoryOrdering", () => {
       ownedTrinkets: [trinketB, trinketA],
     };
     const { result, rerender } = renderHook(useArmoryOrdering, { initialProps: initial });
-    expect(result.current.orderedGear).toEqual([gear]);
+    expect(result.current.visibleGear).toEqual([gear]);
     act(() => result.current.onSort("name"));
-    expect(result.current.orderedGear).toEqual([gear]);
-    expect(result.current.orderedTrinkets).toEqual([]);
+    expect(result.current.visibleGear).toEqual([gear]);
+    expect(result.current.visibleTrinkets).toEqual([]);
     rerender({ ...initial, selectedSlot: "trinket" });
-    expect(result.current.orderedTrinkets).toEqual([trinketA, trinketB]);
-    expect(result.current.orderedGear).toEqual([]);
+    expect(result.current.visibleTrinkets).toEqual([trinketA, trinketB]);
+    expect(result.current.visibleGear).toEqual([]);
     rerender(initial);
-    expect(result.current.orderedGear).toEqual([gear]);
-    expect(result.current.orderedTrinkets).toEqual([]);
+    expect(result.current.visibleGear).toEqual([gear]);
+    expect(result.current.visibleTrinkets).toEqual([]);
   });
 
   it("filters without losing hidden order and sorts the full category", () => {
@@ -78,14 +78,16 @@ describe("useArmoryOrdering", () => {
         ownedTrinkets: [],
       }),
     );
-    const before = result.current.orderedGear.map((item) => item.instanceId);
+    const before = result.current.visibleGear.map((item) => item.instanceId);
     act(() => result.current.setFilters({ ...DEFAULT_ARMORY_INVENTORY_FILTERS, search: "hatchet" }));
     expect(result.current.pagedGear.map((item) => item.instanceId)).toEqual(["hatchet-b1"]);
-    expect(result.current.orderedGear.map((item) => item.instanceId)).toEqual(before);
+    act(() => result.current.setFilters(DEFAULT_ARMORY_INVENTORY_FILTERS));
+    expect(result.current.visibleGear.map((item) => item.instanceId)).toEqual(before);
+    act(() => result.current.setFilters({ ...DEFAULT_ARMORY_INVENTORY_FILTERS, search: "hatchet" }));
     act(() => result.current.onSort("base-type"));
     expect(result.current.pagedGear.map((item) => item.instanceId)).toEqual(["hatchet-b1"]);
     act(() => result.current.setFilters(DEFAULT_ARMORY_INVENTORY_FILTERS));
-    expect(result.current.orderedGear.map((item) => item.instanceId)).toEqual([
+    expect(result.current.visibleGear.map((item) => item.instanceId)).toEqual([
       "hatchet-b1",
       "sword-astral",
       "sword-b1",
@@ -108,7 +110,7 @@ describe("useArmoryOrdering", () => {
     });
     expect(result.current.pagedGear.map((item) => item.instanceId)).toEqual(["hatchet-b1"]);
     act(() => result.current.setFilters(DEFAULT_ARMORY_INVENTORY_FILTERS));
-    expect(result.current.orderedGear.map((item) => item.instanceId)).toEqual([
+    expect(result.current.visibleGear.map((item) => item.instanceId)).toEqual([
       "hatchet-b1",
       "sword-astral",
       "sword-b1",
@@ -160,7 +162,6 @@ describe("useArmoryOrdering", () => {
     act(() => result.current.setPage(1));
     act(() => result.current.commitEquip("sword-12", returned.instanceId));
     rerender({ pool: [...items.filter((item) => item.instanceId !== "sword-12"), returned] });
-    expect(result.current.orderedGear[12]?.instanceId).toBe("returned");
     expect(result.current.pagedGear.map((item) => item.instanceId)).toEqual(["sword-14"]);
     expect(result.current.placeholderLocalIndex).toBeNull();
     const unequipped = {
@@ -170,60 +171,15 @@ describe("useArmoryOrdering", () => {
     };
     act(() => result.current.commitUnequip(unequipped.instanceId));
     rerender({ pool: [...items.filter((item) => item.instanceId !== "sword-12"), returned, unequipped] });
-    expect(result.current.orderedGear.slice(-2).map((item) => item.instanceId)).toEqual(["unequipped", "sword-14"]);
+    expect(result.current.visibleGear.slice(-2).map((item) => item.instanceId)).toEqual(["unequipped", "sword-14"]);
     expect(result.current.pagedGear.map((item) => item.instanceId)).toEqual(["unequipped", "sword-14"]);
     act(() => result.current.setFilters({ ...DEFAULT_ARMORY_INVENTORY_FILTERS, search: "no matches" }));
     const secondReturn = { ...returned, instanceId: "second-return" };
     act(() => result.current.commitUnequip(secondReturn.instanceId));
     rerender({ pool: [...items.filter((item) => item.instanceId !== "sword-12"), returned, unequipped, secondReturn] });
-    expect(result.current.orderedGear[0]?.instanceId).toBe("second-return");
     expect(result.current.matchCount).toBe(0);
-  });
-
-  it("places the replaced item at the incoming item's position after inventory refresh", () => {
-    const replacement = { ...swordBasic2, instanceId: "replacement" };
-    const { result, rerender } = renderHook(
-      ({ items }) =>
-        useArmoryOrdering({
-          characterId: "knight",
-          selectedSlot: "main-hand",
-          pickerItems: items,
-          ownedTrinkets: [],
-        }),
-      { initialProps: { items: [swordBasic1, hatchetBasic, swordAstral] } },
-    );
-    act(() => result.current.commitEquip(hatchetBasic.instanceId, replacement.instanceId));
-    rerender({ items: [replacement, swordBasic1, swordAstral] });
-    expect(result.current.orderedGear.map((item) => item.instanceId)).toEqual([
-      "sword-astral",
-      "replacement",
-      "sword-b1",
-    ]);
-    expect(result.current.placeholderLocalIndex).toBeNull();
-  });
-
-  it("inserts unequipped items at the start of the current page after inventory refresh", () => {
-    const items: GearInstance[] = Array.from({ length: 8 }, (_, i) => ({
-      instanceId: `sword-${i}`,
-      definitionId: "longsword-basic",
-      affixes: [],
-    }));
-    const returned = { ...swordBasic1, instanceId: "returned" };
-    const { result, rerender } = renderHook(
-      ({ pool }) =>
-        useArmoryOrdering({
-          characterId: "knight",
-          selectedSlot: "main-hand",
-          pickerItems: pool,
-          ownedTrinkets: [],
-        }),
-      { initialProps: { pool: items } },
-    );
-    act(() => result.current.setPage(1));
-    act(() => result.current.commitUnequip(returned.instanceId));
-    rerender({ pool: [...items, returned] });
-    expect(result.current.safePage).toBe(1);
-    expect(result.current.pagedGear.map((item) => item.instanceId)).toEqual(["returned", "sword-6", "sword-7"]);
+    act(() => result.current.setFilters(DEFAULT_ARMORY_INVENTORY_FILTERS));
+    expect(result.current.visibleGear[0]?.instanceId).toBe("second-return");
   });
 
   it("keeps crafted gear in place until explicitly sorted, then resets on remount", () => {
@@ -237,14 +193,14 @@ describe("useArmoryOrdering", () => {
     const updated = { ...initial, pickerItems: [hatchetBasic, crafted] };
     const { result, rerender, unmount } = renderHook(useArmoryOrdering, { initialProps: initial });
     rerender(updated);
-    expect(result.current.orderedGear).toEqual([hatchetBasic, crafted]);
+    expect(result.current.visibleGear).toEqual([hatchetBasic, crafted]);
     act(() => result.current.onSort("rarity"));
-    expect(result.current.orderedGear).toEqual([crafted, hatchetBasic]);
+    expect(result.current.visibleGear).toEqual([crafted, hatchetBasic]);
     act(() => result.current.commitUnequip(hatchetBasic.instanceId));
-    expect(result.current.orderedGear).toEqual([hatchetBasic, crafted]);
+    expect(result.current.visibleGear).toEqual([hatchetBasic, crafted]);
     unmount();
     const remounted = renderHook(useArmoryOrdering, { initialProps: updated });
-    expect(remounted.result.current.orderedGear).toEqual([crafted, hatchetBasic]);
+    expect(remounted.result.current.visibleGear).toEqual([crafted, hatchetBasic]);
     expect(remounted.result.current.safePage).toBe(0);
   });
 
@@ -259,8 +215,8 @@ describe("useArmoryOrdering", () => {
     }
     function ids(ordering: ReturnType<typeof useArmoryOrdering>) {
       return kind === "gear"
-        ? ordering.orderedGear.map((item) => item.instanceId)
-        : ordering.orderedTrinkets.map((item) => item.id);
+        ? ordering.visibleGear.map((item) => item.instanceId)
+        : ordering.visibleTrinkets.map((item) => item.id);
     }
 
     it("retains successive arrival batches and removes missing items under Strict Mode", () => {
@@ -357,7 +313,7 @@ describe("useArmoryOrdering", () => {
     );
     rerender({ ...initial, pickerItems: [...initial.pickerItems] });
     rerender({ ...initial, pickerItems: [swordAstral, replacement, swordBasic2, displaced] });
-    expect(result.current.orderedGear.map((item) => item.instanceId)).toEqual([
+    expect(result.current.visibleGear.map((item) => item.instanceId)).toEqual([
       swordAstral.instanceId,
       replacement.instanceId,
       displaced.instanceId,

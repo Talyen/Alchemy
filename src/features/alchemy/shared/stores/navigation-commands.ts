@@ -1,27 +1,64 @@
-import { createRunSessionCommand, dispatchRunSessionCommand } from "./run-session-command";
-import { prepareRunNavigation, setScreen } from "./write/run-navigation";
+import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/types";
+import { defaultGameSession } from "./default-game-session";
+import type { GameSession } from "./game-session-types";
+import { dispatchGameplayCommand } from "./gameplay-command";
+import { acceptCommand, rejectCommand } from "./run-session-command";
+import { resetUnlockedTalents, unlockAllTalents, unlockTalent } from "./write/run-meta";
+import { setScreen } from "./write/run-navigation";
 import {
   abandonLabyrinthCorruptionVisit,
   setActiveLabyrinthModifiers,
   setActiveLabyrinthRewardModifiers,
-  setCorruptionResult,
+  setRunActivityData,
 } from "./write/run-session";
-import { resetUnlockedTalents, unlockAllTalents, unlockTalent } from "./write/run-meta";
-import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/types";
 
-export const showRunScreen = createRunSessionCommand(setScreen);
-export const prepareRunScreen = createRunSessionCommand(prepareRunNavigation);
-export const purchaseTalent = createRunSessionCommand(unlockTalent);
-export const resetTalentUnlocks = createRunSessionCommand(resetUnlockedTalents);
-export const unlockTalentsForDevelopment = createRunSessionCommand(unlockAllTalents);
-export const leaveLabyrinthCorruption = createRunSessionCommand(abandonLabyrinthCorruptionVisit);
-export const resetCorruptionVisit = () => dispatchRunSessionCommand((draft) => setCorruptionResult(draft, null));
+export function showRunScreen(screen: Parameters<typeof setScreen>[1], gameSession: GameSession = defaultGameSession) {
+  dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, screen)), undefined, gameSession);
+}
+export function purchaseTalent(
+  keyword: Parameters<typeof unlockTalent>[1],
+  talent: Parameters<typeof unlockTalent>[2],
+  gameSession: GameSession = defaultGameSession,
+) {
+  dispatchGameplayCommand(
+    (draft) =>
+      unlockTalent(draft, keyword, talent) ? acceptCommand() : rejectCommand("Talent cannot be unlocked", undefined),
+    undefined,
+    gameSession,
+  );
+}
+export function resetTalentUnlocks(gameSession: GameSession = defaultGameSession) {
+  dispatchGameplayCommand((draft) => acceptCommand(resetUnlockedTalents(draft)), undefined, gameSession);
+}
+export function unlockTalentsForDevelopment(gameSession: GameSession = defaultGameSession) {
+  dispatchGameplayCommand((draft) => acceptCommand(unlockAllTalents(draft)), undefined, gameSession);
+}
+export function leaveLabyrinthCorruption(gameSession: GameSession = defaultGameSession) {
+  dispatchGameplayCommand((draft) => acceptCommand(abandonLabyrinthCorruptionVisit(draft)), undefined, gameSession);
+}
+export function resetCorruptionVisit(gameSession: GameSession = defaultGameSession) {
+  dispatchGameplayCommand(
+    (draft) => acceptCommand(setRunActivityData(draft, "corruption", null)),
+    undefined,
+    gameSession,
+  );
+}
 
 /** Both sets belong to one room; publish them together, including empty clears. */
-export function prepareLabyrinthRoomTraits(combat: EncounterCombatTraitId[], rewards: EncounterRewardTraitId[]): void {
-  dispatchRunSessionCommand((draft) => {
-    if (combat.length || draft.session.activeLabyrinthModifiers.length) setActiveLabyrinthModifiers(draft, combat);
-    if (rewards.length || draft.session.activeLabyrinthRewardModifiers.length)
-      setActiveLabyrinthRewardModifiers(draft, rewards);
-  });
+export function prepareLabyrinthRoomTraits(
+  combat: EncounterCombatTraitId[],
+  rewards: EncounterRewardTraitId[],
+  gameSession: GameSession = defaultGameSession,
+): void {
+  dispatchGameplayCommand(
+    (draft) => {
+      if (combat.length || draft.session.activeLabyrinthModifiers.length) setActiveLabyrinthModifiers(draft, combat);
+      if (rewards.length || draft.session.activeLabyrinthRewardModifiers.length)
+        setActiveLabyrinthRewardModifiers(draft, rewards);
+
+      return acceptCommand();
+    },
+    undefined,
+    gameSession,
+  );
 }

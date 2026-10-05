@@ -12,7 +12,7 @@ import type { LucideIcon } from "lucide-react";
 import { Skull, Sparkles, Layers, Eraser, ShieldMinus, ShieldCheck, Clock } from "lucide-react";
 import { keywordIcons } from "../config/metadata";
 import { phoenixFeatherStatus } from "../config/phoenix-feather-status";
-import { augmentDefinitions } from "../augment-definitions";
+import { ARMED_PLAYER_CHIP_IDS, augmentDefinitions } from "../augment-definitions";
 import type { CombatImpactCue, StatusChip, FloatingCombatText } from "../types";
 
 const ENEMY_MITIGATION_DISPLAY_ORDER: ReadonlyArray<keyof BattleSnapshot["enemyMitigation"]> = [
@@ -119,21 +119,6 @@ function insertAfterBuffTier(chips: StatusChip[], additions: StatusChip[]): Stat
   }
   return [...chips.slice(0, insertAt), ...additions, ...chips.slice(insertAt)];
 }
-
-const ARMED_PLAYER_CHIP_IDS = [
-  "hawkEyeReady",
-  "playNextCardTwice",
-  "nextHitCrit",
-  "nextHitLeech",
-  "nextHitPoison",
-  "nextHitPhysicalBonus",
-  "nextPhysicalDealsBleed",
-  "nextArcheryCardFree",
-  "nextWishExtraChoice",
-  "nextHolyCardFree",
-  "nextNatureCardFree",
-  "dodgeNextAttack",
-] as const satisfies ReadonlyArray<keyof BattleSnapshot["flags"] & StatusChip["id"]>;
 
 function buildArmedPlayerChips(state: BattleSnapshot): StatusChip[] {
   const chips: StatusChip[] = [];

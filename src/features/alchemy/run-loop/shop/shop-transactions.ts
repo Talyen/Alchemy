@@ -1,7 +1,14 @@
-import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+  rejectCommand,
+  type RunTransaction,
+} from "@/features/alchemy/shared/stores/run-session-command";
 import { deductGold, readDraftGold } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { playGoldSpend, playUISound } from "@/lib/audio";
+import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
+import { type playUISound } from "@/lib/audio";
 
 export interface ShopTransactionResult<T = undefined> {
   committed: boolean;
@@ -9,26 +16,36 @@ export interface ShopTransactionResult<T = undefined> {
   value: T;
 }
 
-function playShopSpendFeedback(result: Pick<ShopTransactionResult<unknown>, "committed" | "price">): void {
-  if (result.committed && result.price > 0) playGoldSpend();
+function playShopSpendFeedback(
+  result: Pick<ShopTransactionResult<unknown>, "committed" | "price">,
+  gameSession: GameSession = defaultGameSession,
+): void {
+  if (result.committed && result.price > 0) sessionFeedback(gameSession).playGoldSpend();
 }
 
 export function runShopTransaction<T>(
   activity: "shop" | "alchemist" | "trinket-shop" | "equipment-shop",
-  recipe: (draft: GameplayDraft) => ShopTransactionResult<T>,
+  recipe: (draft: RunTransaction) => ShopTransactionResult<T>,
   successSound?: Parameters<typeof playUISound>[0],
+  gameSession: GameSession = defaultGameSession,
 ): ShopTransactionResult<T | undefined> {
-  const result = dispatchRunSessionCommand((draft) =>
-    draft.session.activity.kind === activity ? recipe(draft) : null,
+  const result = dispatchRunSessionCommand(
+    (draft) => {
+      if (draft.session.activity.kind !== activity) return rejectCommand("Shop visit is no longer active", null);
+      const result = recipe(draft);
+      return result.committed ? acceptCommand(result) : rejectCommand("Shop action was rejected", result);
+    },
+    undefined,
+    gameSession,
   );
   if (!result) return { committed: false, price: 0, value: undefined };
-  playShopSpendFeedback(result);
-  if (result.committed && successSound) playUISound(successSound);
+  playShopSpendFeedback(result, gameSession);
+  if (result.committed && successSound) sessionFeedback(gameSession).playUISound(successSound);
   return result;
 }
 
 interface CommitShopServiceInput<T> {
-  draft: GameplayDraft;
+  draft: RunTransaction;
   price: number;
   guard: boolean;
   failureValue: T;

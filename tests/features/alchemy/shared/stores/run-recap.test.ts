@@ -8,7 +8,7 @@ import { createBattleStartCommands } from "@/features/alchemy/shared/stores/batt
 import { gridLabyrinthMapFixture } from "../../../../fixtures/labyrinth-map";
 import { getStartingDeck } from "@/lib/game-data";
 import { DESTINATIONS } from "@/lib/routing";
-import { dispatchRunSessionCommand as command } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand as command } from "@/features/alchemy/shared/stores/gameplay-command";
 import { readActiveRun, readRunSession, readCardInspectionData } from "@/features/alchemy/shared/stores/run-reads";
 import {
   abandonRun,
@@ -45,7 +45,7 @@ import { resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
 const endOptions = { awardRunEndMaterials, finalizeRunXP };
 beforeEach(() => {
   resetRunDomainStore();
-  command((draft) => setHasActiveRun(draft, true));
+  command((draft) => acceptCommand(setHasActiveRun(draft, true)));
 });
 
 describe("run recap", () => {
@@ -58,13 +58,15 @@ describe("run recap", () => {
       initializeActiveBattle(draft, { ...defaultBattleState(), gold: 450 });
       setBattleState(draft, { ...draft.battle.battleState, gold: 457 });
       setBattleState(draft, { ...draft.battle.battleState });
+
+      return acceptCommand();
     });
     expect(readActiveRun().runGoldEarned).toBe(27);
     const saved = parseActiveRun(snapshotRun())!;
     expect(saved.runGoldEarned).toBe(27);
     restoreRun(saved, {}, {});
     expect(readActiveRun().runGoldEarned).toBe(27);
-    command((draft) => addGold(draft, 5));
+    command((draft) => acceptCommand(addGold(draft, 5)));
     abandonRun(endOptions);
     expect(readRunSession().runRecap?.gold).toBe(32);
     expect(abandonRun(endOptions)).toBe(false);
@@ -84,6 +86,8 @@ describe("run recap", () => {
       setRewardState(draft, (state) => ({ ...state, destinations: [DESTINATIONS.BOSS_COMBAT] }));
       beginDestinationClaim(draft, DESTINATIONS.BOSS_COMBAT);
       commitDestinationClaim(draft, DESTINATIONS.BOSS_COMBAT);
+
+      return acceptCommand();
     });
     const saved = parseActiveRun(snapshotRun())!;
     expect(saved.runHistory.map((room) => [room.act, room.destination, room.completed])).toEqual([
@@ -100,12 +104,16 @@ describe("run recap", () => {
       draft.run.activeRun.runDeck = getStartingDeck("knight");
       draft.run.activeRun.runBoons = ["bone-charm"];
       recordRunRoom(draft, DESTINATIONS.NORMAL_COMBAT, "first");
+
+      return acceptCommand();
     });
     abandonRun(endOptions);
     command((draft) => {
       draft.run.activeRun.runDeck = [];
       draft.run.activeRun.runBoons = [];
       setScreen(draft, "game-over");
+
+      return acceptCommand();
     });
     expect(readCardInspectionData().runDeck.length).toBeGreaterThan(0);
     expect(readRunSession().runRecap).toMatchObject({ ending: "abandoned", boons: ["bone-charm"] });
@@ -120,6 +128,8 @@ describe("run recap", () => {
       addGold(draft, 20);
       recordRunRoom(draft, DESTINATIONS.CAMPFIRE, "new");
       recordRunRoom(draft, DESTINATIONS.CAMPFIRE, "new");
+
+      return acceptCommand();
     });
     abandonRun(endOptions);
     expect(readRunSession().runRecap).toMatchObject({ gold: null, partial: true });
@@ -135,10 +145,12 @@ it("records distinct Wildwood boss attempts and keeps the trail through resume",
       phase: "battle",
       currentBossId: "forge-golem",
     };
+
+    return acceptCommand();
   });
   const battle = createBattleStartCommands(() => {});
   battle.startBossById({ bossId: "forge-golem" });
-  command((draft) => completeRunRoom(draft));
+  command((draft) => acceptCommand(completeRunRoom(draft)));
   battle.startBossById({ bossId: "forge-golem" });
   const saved = parseActiveRun(snapshotRun())!;
   expect(saved.runHistory.map((room) => [room.destination, room.completed])).toEqual([
@@ -160,6 +172,8 @@ it("deduplicates unresolved Labyrinth rooms and completes the revisited room rat
     recordRunRoom(draft, DESTINATIONS.CORRUPTION, `labyrinth:1:${first}`);
     setActiveLabyrinthPendingNode(draft, first);
     completeRunRoom(draft);
+
+    return acceptCommand();
   });
   expect(readActiveRun().runHistory.map((room) => [room.floor, room.completed])).toEqual([
     [1, true],
@@ -182,6 +196,8 @@ it("completes and marks a revisited campaign room by identity", () => {
     abandonMysteryDestinationVisit(draft);
     enter(DESTINATIONS.CORRUPTION);
     completeRunRoom(draft);
+
+    return acceptCommand();
   });
   expect(readActiveRun().runHistory.map((room) => room.completed)).toEqual([true, false]);
   abandonRun(endOptions);

@@ -1,7 +1,13 @@
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import {
+  registerSessionCleanup,
+  sessionClock,
+  sessionFeedback,
+} from "@/features/alchemy/shared/stores/session-capabilities";
 import { TimerGroup } from "@/lib/animation/game-timer";
-import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
-import { playUISound } from "@/lib/audio";
 import type { UISound } from "@/lib/audio";
+import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
 import {
   assertRunResumeTransitionAllowed,
   assertScreenTransitionAllowed,
@@ -16,22 +22,23 @@ export interface ScreenNavigation {
   cancelPending: () => void;
 }
 
-export function createScreenNavigation({
-  readScreen,
-  prepareScreen,
-  showScreen,
-  onPendingChange,
-}: {
-  readScreen: () => Screen;
-  prepareScreen: (screen: Screen) => void;
-  showScreen: (screen: Screen) => void;
-  onPendingChange?: (pending: boolean) => void;
-}): ScreenNavigation {
-  const timers = new TimerGroup();
+export function createScreenNavigation(
+  {
+    readScreen,
+    showScreen,
+    onPendingChange,
+  }: {
+    readScreen: () => Screen;
+    showScreen: (screen: Screen) => void;
+    onPendingChange?: (pending: boolean) => void;
+  },
+  gameSession: GameSession = defaultGameSession,
+): ScreenNavigation {
+  const timers = new TimerGroup(sessionClock(gameSession));
   // Revision protocol: cancelPending bumps revision and clears timers.
   // transition snapshots it, runs prepare (which may redirect via a nested
   // navigateTo and bump revision), then drops the stale outer request.
-  // Gameplay (prepareScreen) commits synchronously; only presentation waits.
+  // Explicit domain preparation commits synchronously; only presentation waits.
   let revision = 0;
 
   function cancelPending() {
@@ -51,8 +58,7 @@ export function createScreenNavigation({
     const requestedRevision = revision;
     options.prepare?.();
     if (requestedRevision !== revision) return;
-    prepareScreen(screen);
-    if (feedback && previousScreen !== screen) playUISound(feedback);
+    if (feedback && previousScreen !== screen) sessionFeedback(gameSession).playUISound(feedback);
     onPendingChange?.(true);
     const show = () => {
       if (requestedRevision !== revision) return;
@@ -70,6 +76,7 @@ export function createScreenNavigation({
     transitionTo(screen, options, false);
   }
 
+  registerSessionCleanup(gameSession, cancelPending);
   return {
     navigateTo: (screen, prepare) => transitionTo(screen, prepare ? { prepare } : {}, false, "navigate"),
     resumeTo: (screen, prepare, immediate = false) =>

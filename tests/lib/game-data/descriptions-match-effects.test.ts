@@ -18,24 +18,7 @@ describe("card descriptions vs effects", () => {
       if (!summon) continue;
 
       const companion = companionLibrary[summon.companionId];
-      const turnEffect = companion.turnStartEffects[0];
-      expect(turnEffect, `${card.id} companion missing turn-start effect`).toBeDefined();
-
-      const companionLine = card.descriptionLines.find(
-        (l) =>
-          /^Deals \d+/.test(l) ||
-          /^Restores \d+/.test(l) ||
-          /^Grants \d+/.test(l) ||
-          /^Cleanses \d+/.test(l) ||
-          /^Steals \d+/.test(l) ||
-          /^Gains? \d+ Block/.test(l) ||
-          /^Gain \d+ Mana/.test(l) ||
-          /^Draw (?:\d+|a) /.test(l) ||
-          / or /.test(l),
-      );
-      expect(companionLine, `${card.id} missing companion turn line`).toBeDefined();
-      expect(companionLine).toBe(getCompanionDescriptionLines(companion)[0]);
-      expect(card.descriptionLines.some((l) => l === "Companion")).toBe(true);
+      expect(card.descriptionLines, card.id).toEqual([...getCompanionDescriptionLines(companion), "Companion"]);
     }
   });
 });

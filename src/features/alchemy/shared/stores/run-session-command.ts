@@ -1,59 +1,45 @@
-import { produce } from "immer";
-import type { Draft } from "immer";
-import { subscribeGameplayCommits, useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
-import { deepFreezeInDev } from "./store-utils";
+import type { CommandOutcome, SynchronousResult } from "./command-outcome";
+import { defaultGameSession } from "./default-game-session";
+import type { GameSession } from "./game-session-types";
+import { dispatchGameplayCommand, subscribeRunSessionCommits } from "./gameplay-command";
+import { unwrapReadonlyValue } from "./readonly-view";
+import type { RunTransaction } from "./run-transaction";
+import { openRunTransaction } from "./transaction-internal";
 
-export type GameplayDraft = Draft<GameplayState>;
+export { acceptCommand, rejectCommand } from "./command-outcome";
+export type { CommandOutcome, SynchronousResult } from "./command-outcome";
+export { snapshotReadonlyValue as snapshotTransactionValue } from "./readonly-view";
+export { subscribeRunSessionCommits };
 
-export type SynchronousResult<T> = T extends PromiseLike<unknown> ? never : T;
-
-let inCommand = false;
+export type { RunTransaction } from "./run-transaction";
 
 export function dispatchRunSessionCommand<T>(
-  execute: (draft: GameplayDraft) => T & SynchronousResult<T>,
+  execute: (transaction: RunTransaction) => CommandOutcome<T> & { value: SynchronousResult<T> },
   options?: { afterCommit?: (result: T) => void },
+  gameSession: GameSession = defaultGameSession,
 ): T {
-  if (inCommand) {
-    throw new Error("dispatchRunSessionCommand: nested command is not allowed (execute must not dispatch)");
-  }
-  inCommand = true;
-  let result!: T;
-  try {
-    const base = useGameplayStateStore.getState();
-    const next = produce(base, (draft: GameplayDraft) => {
-      result = execute(draft);
-      if (
-        result !== null &&
-        (typeof result === "object" || typeof result === "function") &&
-        "then" in result &&
-        typeof result.then === "function"
-      ) {
-        void Promise.resolve(result).catch(() => undefined);
-        throw new Error(
-          "dispatchRunSessionCommand: commands must be synchronous; move asynchronous work outside the command",
-        );
+  return dispatchGameplayCommand<T>(
+    (draft) => {
+      const scope = openRunTransaction(draft);
+      try {
+        const outcome = execute(scope.transaction);
+        return outcome !== null && typeof outcome === "object" && "value" in outcome
+          ? { ...outcome, value: unwrapReadonlyValue(outcome.value) }
+          : outcome;
+      } finally {
+        scope.close();
       }
-    });
-
-    if (next !== base) {
-      const published = { ...next, revision: base.revision + 1 };
-      deepFreezeInDev(published);
-      useGameplayStateStore.setState(published, true);
-    }
-  } finally {
-    inCommand = false;
-  }
-  options?.afterCommit?.(result);
-  return result;
+    },
+    options,
+    gameSession,
+  );
 }
 
 export function createRunSessionCommand<Args extends unknown[], Ret>(
-  mutate: (draft: GameplayDraft, ...args: Args) => Ret & SynchronousResult<Ret>,
+  mutate: (transaction: RunTransaction, ...args: Args) => CommandOutcome<Ret> & { value: SynchronousResult<Ret> },
   options?: { afterCommit?: (result: Ret) => void },
+  gameSession: GameSession = defaultGameSession,
 ): (...args: Args) => Ret {
-  return (...args) => dispatchRunSessionCommand<Ret>((draft) => mutate(draft, ...args), options);
-}
-
-export function subscribeRunSessionCommits(listener: (revision: number) => void): () => void {
-  return subscribeGameplayCommits(listener);
+  return (...args) =>
+    dispatchRunSessionCommand<Ret>((transaction) => mutate(transaction, ...args), options, gameSession);
 }

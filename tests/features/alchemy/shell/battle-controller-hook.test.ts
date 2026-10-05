@@ -6,7 +6,7 @@ import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { setHasActiveBattle, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetAllTestStores } from "../../../helpers/run-domain-store-test";
@@ -153,6 +153,8 @@ describe("useBattleController", () => {
     dispatchRunSessionCommand((draft) => {
       setHasActiveBattle(draft, true);
       setScreen(draft, ROUTE_SCREENS.BATTLE);
+
+      return acceptCommand();
     });
 
     const { rerender } = renderBattleController(ROUTE_SCREENS.BATTLE);

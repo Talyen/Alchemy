@@ -5,30 +5,16 @@ import { withReportServer } from "./lib/vite-report-server.mjs";
 defineScript(import.meta.url, async () => {
   const [input, output, journal] = process.argv.slice(2);
   const request = JSON.parse(readFileSync(input, "utf8"));
-  // Process-local platform inputs; never installed in the shipping application.
-  let id = 0;
-  Object.defineProperty(globalThis, "crypto", {
-    configurable: true,
-    value: { randomUUID: () => `00000000-0000-4000-8000-${(++id).toString(16).padStart(12, "0")}` },
-  });
-  Date.now = () => 1_800_000_000_000;
   await withReportServer(async (server) => {
     const { runCareer } = await server.ssrLoadModule("/src/app/playthrough/career.ts");
+    const { createCareerRuntime } = await server.ssrLoadModule("/src/app/playthrough/career-runtime.ts");
+    const runtime = createCareerRuntime(request.config.seed, request.config.initialSave, request.runtimeInputs);
     if (request.fixture) {
       const { createPlaythroughFixture } = await server.ssrLoadModule("/src/app/playthrough/fixtures.ts");
-      request.config.initialSave = createPlaythroughFixture(request.fixture);
-    }
-    if (request.runtimeInputs) id = request.runtimeInputs.idCounter;
-    else if (request.config.initialSave) {
-      // Imported harness saves may already own deterministic IDs. Continue
-      // their sequence so newly dropped gear cannot collide with saved items.
-      for (const match of JSON.stringify(request.config.initialSave).matchAll(
-        /00000000-0000-4000-8000-([0-9a-f]{12})/g,
-      ))
-        id = Math.max(id, Number.parseInt(match[1], 16));
+      request.config.initialSave = createPlaythroughFixture(request.fixture, runtime.session);
     }
     const { createDefaultSaveData } = await server.ssrLoadModule("/src/features/alchemy/shared/storage/defaults.ts");
-    const runtimeInputs = { idCounter: id, clock: 1_800_000_000_000, policyVersion: 1 };
+    const runtimeInputs = runtime.snapshot();
     writeFileSync(
       `${output}.start`,
       JSON.stringify({
@@ -55,10 +41,11 @@ defineScript(import.meta.url, async () => {
             save: (bytes) =>
               writeFileSync(
                 `${output}.checkpoint`,
-                JSON.stringify({ bytes, runtimeInputs: { ...runtimeInputs, idCounter: id } }),
+                JSON.stringify({ bytes, runtimeInputs: runtime.snapshot() }),
               ),
           }
         : undefined,
+      runtime,
     );
     result.runtimeInputs = runtimeInputs;
     writeFileSync(output, JSON.stringify(result, null, 2));

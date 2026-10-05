@@ -1,6 +1,7 @@
 import { mapEffectChildren } from "../effect-tree";
 import type { BattleCard } from "../types";
 import { cardById } from "./library/cards";
+import { mapCardDescriptionReferences } from "../card-description-model";
 
 export type SavedCard = BattleCard;
 
@@ -31,6 +32,11 @@ export function cloneBattleCard(card: BattleCard): BattleCard {
     ...card,
     descriptionLines: [...card.descriptionLines],
     effects: card.effects.map(cloneEffect),
+    ...(card.description
+      ? {
+          description: mapCardDescriptionReferences(card.description, (reference) => reference),
+        }
+      : {}),
     ...(card.tags ? { tags: [...card.tags] } : {}),
     ...(card.corruptedValuePositions
       ? { corruptedValuePositions: card.corruptedValuePositions.map((position) => ({ ...position })) }
@@ -49,7 +55,7 @@ export function hydrateCard(savedCard: SavedCard): BattleCard {
     savedCard.descriptionLines.length > 0 &&
     savedCard.descriptionLines.every((line) => typeof line === "string");
   const content = keepSavedContent ? savedCard : libraryCard;
-  const { consume: catalogConsume, ...catalogMetadata } = libraryCard;
+  const { consume: catalogConsume, description: _catalogDescription, ...catalogMetadata } = libraryCard;
   // Missing Consume meant reusable in complete saved content, even if the catalog now Consumes.
   const consume = savedCard.consume ?? (keepSavedContent ? undefined : catalogConsume);
 
@@ -57,6 +63,7 @@ export function hydrateCard(savedCard: SavedCard): BattleCard {
     ...catalogMetadata,
     descriptionLines: content.descriptionLines,
     effects: content.effects,
+    ...(content.description ? { description: content.description } : {}),
     cost: hydrateCost(savedCard, libraryCard),
     ...(consume !== undefined && { consume }),
     ...(savedCard.brewed !== undefined && { brewed: savedCard.brewed }),

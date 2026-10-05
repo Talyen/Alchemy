@@ -11,7 +11,7 @@ import {
   useSettingsStore,
 } from "@/features/alchemy/shared/stores/settings-store";
 import { defaultSaveData, type SaveData } from "@/features/alchemy/shared/storage";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import {
   handleCollectionTabChange,
   resetToDefaults,
@@ -40,17 +40,19 @@ describe("profile store", () => {
   });
 
   it("hydrates only profile fields from save data", () => {
-    dispatchRunSessionCommand((draft) =>
-      profilePersistenceCodec.hydrate(
-        makeSave({
-          discoveredCardIds: ["card-a"],
-          encounteredEnemyIds: ["goblin"],
-          completedDifficulties: {
-            ...defaultSaveData.completedDifficulties,
-            knight: ["difficulty-1"],
-          },
-        }),
-        draft,
+    dispatchGameplayCommand((draft) =>
+      acceptCommand(
+        profilePersistenceCodec.hydrate(
+          makeSave({
+            discoveredCardIds: ["card-a"],
+            encounteredEnemyIds: ["goblin"],
+            completedDifficulties: {
+              ...defaultSaveData.completedDifficulties,
+              knight: ["difficulty-1"],
+            },
+          }),
+          draft,
+        ),
       ),
     );
 
@@ -61,11 +63,13 @@ describe("profile store", () => {
   });
 
   it("supports functional discovery updates and collection navigation", () => {
-    dispatchRunSessionCommand((draft) => {
-      setDiscoveredCardIds(draft, (previous: string[]) => [...previous, "card-a"]);
+    dispatchGameplayCommand((draft) => {
+      setDiscoveredCardIds(draft, (previous: readonly string[]) => [...previous, "card-a"]);
       setCollectionPage(draft, "bestiary", 2);
       setCollectionPage(draft, "cards", -1);
       handleCollectionTabChange(draft, "bestiary");
+
+      return acceptCommand();
     });
 
     expect(readProfileStore()).toMatchObject({
@@ -76,10 +80,12 @@ describe("profile store", () => {
   });
 
   it("resets persisted and transient profile state", () => {
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       setDiscoveredCardIds(draft, ["card-a"]);
       handleCollectionTabChange(draft, "trinkets");
       resetToDefaults(draft);
+
+      return acceptCommand();
     });
 
     expect(readProfileStore().discoveredCardIds).toEqual(defaultSaveData.discoveredCardIds);
@@ -134,7 +140,7 @@ describe("settings store", () => {
   });
 
   it("updates and resets preferences independently from profile state", () => {
-    dispatchRunSessionCommand((draft) => setDiscoveredCardIds(draft, ["card-a"]));
+    dispatchGameplayCommand((draft) => acceptCommand(setDiscoveredCardIds(draft, ["card-a"])));
     const settings = useSettingsStore.getState();
     settings.setBrightness(120);
     settings.setMasterVolume(75);

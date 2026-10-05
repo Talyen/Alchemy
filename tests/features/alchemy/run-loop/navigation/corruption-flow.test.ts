@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/corruption-flow";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   abandonLabyrinthCorruptionVisit,
   setActiveLabyrinthPendingNode,
@@ -32,12 +32,14 @@ describe("corruption destination exit", () => {
   it("handleCorruptionExit advances after a corruption result", () => {
     const card = makeTestCard({ id: "slash" });
     dispatchRunSessionCommand((draft) =>
-      setCorruptionResult(draft, {
-        originalCard: card,
-        corruptedCard: { ...card, corrupted: true },
-        transformed: false,
-        delta: -1,
-      }),
+      acceptCommand(
+        setCorruptionResult(draft, {
+          originalCard: card,
+          corruptedCard: { ...card, corrupted: true },
+          transformed: false,
+          delta: -1,
+        }),
+      ),
     );
 
     const advanceToNextDestination = vi.fn();
@@ -61,6 +63,8 @@ describe("corruption destination exit", () => {
         transformed: false,
         delta: -1,
       });
+
+      return acceptCommand();
     });
 
     createCorruptionFlowHandlers({
@@ -98,8 +102,10 @@ describe("corruption destination exit", () => {
         transformed: false,
         delta: 1,
       });
+
+      return acceptCommand();
     });
-    dispatchRunSessionCommand((draft) => abandonLabyrinthCorruptionVisit(draft));
+    dispatchRunSessionCommand((draft) => acceptCommand(abandonLabyrinthCorruptionVisit(draft)));
 
     expect(readRunSession().activeLabyrinthPendingNode).toBeNull();
     expect(readRunSession().selectedLabyrinthNodeId).toBeNull();

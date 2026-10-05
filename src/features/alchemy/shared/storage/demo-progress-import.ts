@@ -1,11 +1,11 @@
 import type { DemoImportSource } from "@/lib/desktop-api";
-export type { DemoImportSource } from "@/lib/desktop-api";
+import { createDefaultGearSaveFields } from "../stores/gear-actions";
+import { createDefaultProfileSaveFields } from "../stores/profile-store-types";
+import { RUN_PROFILE_SAVE_KEYS } from "../stores/run-profile-save-fields";
 import { createDefaultSaveData } from "./defaults";
 import { selectSaveCandidates } from "./save-candidates";
 import type { SaveData, UnstampedSaveData } from "./types";
-import { RUN_PROFILE_SAVE_KEYS } from "../stores/run-profile-codec";
-import { profilePersistenceCodec } from "../stores/profile-store";
-import { gearPersistenceCodec } from "../stores/gear-store";
+export type { DemoImportSource } from "@/lib/desktop-api";
 
 /** Copy one validated profile, never add currencies or replay run settlement. */
 export function prepareDemoProgressImport(source: DemoImportSource): UnstampedSaveData | null {
@@ -17,8 +17,8 @@ export function prepareDemoProgressImport(source: DemoImportSource): UnstampedSa
   result.steamAccountId = loaded.data.steamAccountId;
   const keys = [
     ...RUN_PROFILE_SAVE_KEYS,
-    ...Object.keys(profilePersistenceCodec.createDefault()).filter((key) => key !== "completedDifficulties"),
-    ...Object.keys(gearPersistenceCodec.createDefault()),
+    ...Object.keys(createDefaultProfileSaveFields()).filter((key) => key !== "completedDifficulties"),
+    ...Object.keys(createDefaultGearSaveFields()),
   ] as Array<keyof SaveData>;
   // Field owners define the permanent profile; settings and activity are excluded.
   for (const key of keys) Object.assign(result, { [key]: structuredClone(loaded.data[key]) });

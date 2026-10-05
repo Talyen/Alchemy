@@ -1,4 +1,8 @@
 import {
+  emptyAlchemistState,
+  emptyEquipmentShopState,
+  emptyShopState,
+  emptyTrinketShopState,
   hydrateAlchemistState,
   hydrateEquipmentShopState,
   hydrateMysteryVisit,
@@ -7,21 +11,21 @@ import {
   runActivityScreen,
   serializeMysteryVisit,
   serializeTrinketShopState,
-  transitionRunActivity,
   type ActiveRunData,
   type LabyrinthPendingNodeId,
   type PersistedBattleTransition,
   type RewardState,
   type RunActivity,
 } from "@/lib/active-run-session";
+import { emptyAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
 import { battleSnapshot } from "@/lib/battle";
 import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthMap } from "@/lib/content-systems/types";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { BattleCard } from "@/lib/game-data";
 import { type Screen } from "@/lib/routing";
 import { decodeInterruptedFlow, encodeInterruptedFlow, inferActiveRunScreen } from "./encode-interrupted-flow";
-import type { RunSession } from "./run-reads";
 import type { RunSessionFields } from "./run-domain-types";
+import type { RunSession } from "./run-reads";
 import { ACTIVE_RUN_PROGRESS_KEYS, createInitialActiveRunFields, type ActiveRunProgressFields } from "./run-state-init";
 
 export interface DecodedRunResumeSession {
@@ -85,7 +89,7 @@ export const NON_WILDWOOD_GATED_SESSION_KEY = "starterDraftChoices" as const sat
 export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): ActiveRunData {
   const { run, session, battle } = source;
   const activity = session.activity;
-  const currentScreen = runActivityScreen(activity) ?? screen ?? source.screen;
+  const currentScreen = runActivityScreen(activity) ?? screen ?? null;
   const progress = pickActiveRunProgress(run);
   const isLabyrinth = progress.contentSystemType === "labyrinth";
   // An active terminal snapshot still needs outcome settlement after restore.
@@ -133,7 +137,10 @@ function preferTopLevelModifiers<T>(
   return combat ? [...combat] : [];
 }
 
-export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunResumeSnapshot {
+export function decodeRunResumeSnapshot(
+  activeRun: ActiveRunData,
+  generateSeed?: () => number,
+): DecodedRunResumeSnapshot {
   let screen = inferActiveRunScreen(activeRun);
   let rewardState: RewardState | null = null;
   let companionRewardCards: BattleCard[] | null = null;
@@ -148,7 +155,7 @@ export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunRes
   const activity = decodeRunActivity(activeRun, screen);
 
   return {
-    progress: createInitialActiveRunFields(activeRun),
+    progress: createInitialActiveRunFields(activeRun, "knight", generateSeed),
     screen,
     pendingBattleTransition: activeRun.activeCombat?.pendingBattleTransition ?? null,
     session: {
@@ -171,22 +178,56 @@ export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunRes
   };
 }
 
+// Screen-to-activity inference is confined to decoding the existing save format.
 function decodeRunActivity(activeRun: ActiveRunData, screen: Screen): RunActivity {
-  if (screen === "shop" && activeRun.shopState) return { kind: "shop", data: hydrateShopState(activeRun.shopState) };
-  if (screen === "alchemist" && activeRun.alchemistState)
-    return { kind: "alchemist", data: hydrateAlchemistState(activeRun.alchemistState) };
-  if (screen === "trinket-shop" && activeRun.trinketShopState)
-    return { kind: "trinket-shop", data: hydrateTrinketShopState(activeRun.trinketShopState) };
-  if (screen === "equipment-shop" && activeRun.equipmentShopState)
-    return { kind: "equipment-shop", data: hydrateEquipmentShopState(activeRun.equipmentShopState) };
-  if (screen === "mystery")
-    return {
-      kind: screen,
-      data: hydrateMysteryVisit(activeRun.mysteryVisit),
-    };
-  if (screen === "campfire" && activeRun.campfireState) return { kind: screen, data: activeRun.campfireState };
-  if (screen === "transmutation" && activeRun.transmutationState)
-    return { kind: screen, data: activeRun.transmutationState };
-  if (screen === "corruption") return { kind: screen, data: activeRun.corruptionResult };
-  return transitionRunActivity({ kind: "idle" }, screen);
+  switch (screen) {
+    case "shop":
+      return { kind: screen, data: activeRun.shopState ? hydrateShopState(activeRun.shopState) : emptyShopState() };
+    case "alchemist":
+      return {
+        kind: screen,
+        data: activeRun.alchemistState ? hydrateAlchemistState(activeRun.alchemistState) : emptyAlchemistState(),
+      };
+    case "trinket-shop":
+      return {
+        kind: screen,
+        data: activeRun.trinketShopState
+          ? hydrateTrinketShopState(activeRun.trinketShopState)
+          : emptyTrinketShopState(),
+      };
+    case "equipment-shop":
+      return {
+        kind: screen,
+        data: activeRun.equipmentShopState
+          ? hydrateEquipmentShopState(activeRun.equipmentShopState)
+          : emptyEquipmentShopState(),
+      };
+    case "mystery":
+      return { kind: screen, data: hydrateMysteryVisit(activeRun.mysteryVisit) };
+    case "campfire":
+      return { kind: screen, data: activeRun.campfireState ?? emptyAlchemyVisit() };
+    case "transmutation":
+      return { kind: screen, data: activeRun.transmutationState ?? emptyAlchemyVisit() };
+    case "corruption":
+      return { kind: screen, data: activeRun.corruptionResult };
+    case "battle":
+    case "rewards":
+    case "destination":
+    case "labyrinth-map":
+    case "wildwood-removal":
+    case "draft-deck":
+    case "difficulty-select":
+      return { kind: screen };
+    case "menu":
+    case "game-mode-select":
+    case "character-select":
+    case "options":
+    case "collection":
+    case "talents":
+    case "homestead":
+    case "armory":
+    case "game-over":
+    case "run-victory":
+      return { kind: "idle" };
+  }
 }

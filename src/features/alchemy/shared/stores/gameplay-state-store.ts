@@ -1,37 +1,24 @@
-import { create } from "zustand";
-import { createInitialRunDomainData, createInitialSessionFields, createInitialBattleFields } from "./run-domain-types";
-import { createInitialPermanentFields } from "./run-state-init";
-import { createInitialProfileState } from "./profile-store-types";
-import { createInitialGearState } from "./gear-actions";
-import type { RunDomainDataState, RunDomainBattleState, RunSessionFields } from "./run-domain-types";
-import type { PermanentProgressFields } from "./run-state-init";
-import type { GearStateFields } from "./gear-store-types";
-import type { ProfileStateFields } from "./profile-store-types";
+import { useStore } from "zustand";
+import { defaultGameSession } from "./default-game-session";
+import type { GameSession } from "./game-session-types";
+import type { GameplayState } from "./gameplay-state";
+import { sessionRuntime } from "./session-runtime";
+export type { GameplayState } from "./gameplay-state";
 
-export interface GameplayState {
-  revision: number;
-  run: RunDomainDataState;
-  session: RunSessionFields;
-  battle: RunDomainBattleState;
-  runProfile: PermanentProgressFields;
-  profile: ProfileStateFields;
-  gear: GearStateFields;
+const applicationStore = sessionRuntime(defaultGameSession).gameplay;
+export const useGameplayStateStore = Object.assign(
+  <T>(selector: (state: GameplayState) => T): T => useStore(applicationStore, selector),
+  applicationStore,
+);
+
+export function readGameplayState(gameSession: GameSession = defaultGameSession): GameplayState {
+  return sessionRuntime(gameSession).gameplay.getState();
 }
 
-export const useGameplayStateStore = create<GameplayState>()(() => ({
-  revision: 0,
-  run: createInitialRunDomainData(),
-  session: createInitialSessionFields(),
-  battle: createInitialBattleFields(),
-  runProfile: createInitialPermanentFields(),
-  profile: createInitialProfileState(),
-  gear: createInitialGearState(),
-}));
-
-export function readGameplayState(): GameplayState {
-  return useGameplayStateStore.getState();
-}
-
-export function subscribeGameplayCommits(listener: (revision: number) => void): () => void {
-  return useGameplayStateStore.subscribe((state) => listener(state.revision));
+export function subscribeGameplayCommits(
+  listener: (revision: number) => void,
+  gameSession: GameSession = defaultGameSession,
+): () => void {
+  const runtime = sessionRuntime(gameSession);
+  return runtime.track(runtime.gameplay.subscribe((state) => listener(state.revision)));
 }

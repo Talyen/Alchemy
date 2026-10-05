@@ -1,12 +1,18 @@
-import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { ROUTE_SCREENS } from "@/lib/routing";
-import type { CompleteRunVictory, RunFlowHandlerDeps } from "./run-flow";
 import { createProgressionCommands } from "./progression-commands";
+import type { CompleteRunVictory, RunFlowHandlerDeps } from "./run-flow";
 
-export function createProgressionHandlers(deps: RunFlowHandlerDeps, completeRunVictory: CompleteRunVictory) {
-  const commands = createProgressionCommands(deps.getAvailableDestinations);
+export function createProgressionHandlers(
+  deps: RunFlowHandlerDeps,
+  completeRunVictory: CompleteRunVictory,
+  gameSession: GameSession = defaultGameSession,
+) {
+  const commands = createProgressionCommands(deps.getAvailableDestinations, gameSession);
   const prepareDestinationScreen = commands.prepareDestinationScreen;
   function prepareNextDestination(index?: number, onCommitted?: () => void) {
     deps.actions.navigateTo(ROUTE_SCREENS.DESTINATION, () => {
@@ -17,7 +23,7 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, completeRunV
   }
   function handleActComplete(prepareNavigation?: () => void) {
     const complete = commands.completeAct();
-    clearBattlePresentationUi();
+    clearBattlePresentationUi(gameSession);
     if (complete) completeRunVictory(prepareNavigation);
     else prepareNextDestination(0, prepareNavigation);
   }
@@ -28,7 +34,7 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, completeRunV
     });
   }
   function advanceToNextDestination() {
-    const activity = readRunSession().activity.kind;
+    const activity = readRunSession(gameSession).activity.kind;
     if (
       ![
         "campfire",
@@ -42,10 +48,10 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, completeRunV
       ].includes(activity)
     )
       return;
-    const labyrinth = readActiveRun().contentSystemType === CONTENT_SYSTEMS.LABYRINTH;
+    const labyrinth = readActiveRun(gameSession).contentSystemType === CONTENT_SYSTEMS.LABYRINTH;
     deps.actions.navigateTo(labyrinth ? ROUTE_SCREENS.LABYRINTH_MAP : ROUTE_SCREENS.DESTINATION, () => {
       commands.completeDestination();
-      clearBattlePresentationUi();
+      clearBattlePresentationUi(gameSession);
       if (labyrinth) deps.actions.labyrinthClearNode();
       else prepareDestinationScreen();
     });

@@ -71,11 +71,11 @@ Run outcome flows use [`run-end-commands.ts`](../src/features/alchemy/run-loop/r
 
 ## Gameplay command boundary
 
-Ownership and anti-patterns: [RUN_STATE.md § Run state](./RUN_STATE.md#run-state). Keep the command synchronous; put audio, navigation, timers, and presentation cleanup in `afterCommit`. Pass the draft to every gameplay mutator. This outer-boundary example awards an already bonus-adjusted material amount and passes it to presentation feedback after commit:
+Ownership and anti-patterns: [RUN_STATE.md § Run state](./RUN_STATE.md#run-state). Keep the command synchronous; put audio, navigation, timers, and presentation cleanup in `afterCommit`. Pass the draft to every gameplay mutator and return an explicit `acceptCommand(value)` or `rejectCommand(reason, fallback)`. Rejection discards all writes and RNG draws and skips `afterCommit`; the dispatcher returns the supplied value or fallback. This outer-boundary example awards an already bonus-adjusted material amount and passes it to presentation feedback after commit:
 
 ```ts
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { awardMaterialsDuringRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 
 export function awardMaterialReward(
@@ -85,7 +85,7 @@ export function awardMaterialReward(
   dispatchRunSessionCommand(
     (draft) => {
       awardMaterialsDuringRun(draft, materials);
-      return materials;
+      return acceptCommand(materials);
     },
     { afterCommit: onAwarded },
   );

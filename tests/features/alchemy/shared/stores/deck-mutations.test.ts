@@ -5,7 +5,7 @@ import {
   appendBoonToRunWithDiscovery,
 } from "@/features/alchemy/shared/stores/deck-mutations";
 import type { BattleCard } from "@/lib/game-data";
-import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import type { GameplayDraft } from "@/features/alchemy/shared/stores/gameplay-command";
 
 const discoveryMocks = vi.hoisted(() => ({
   discoverCardIds: vi.fn(),

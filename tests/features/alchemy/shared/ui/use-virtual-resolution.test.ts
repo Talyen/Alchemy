@@ -7,6 +7,7 @@ import { useVirtualResolution } from "@/features/alchemy/shared/ui/use-virtual-r
 describe("useVirtualResolution", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   function setViewport(width: number, height: number) {
@@ -44,24 +45,14 @@ describe("useVirtualResolution", () => {
     expect(result.current.stageStyle.transform).toBe("scale(0.6666666666666666)");
   });
 
-  it("skips renders for resize events whose dimensions did not change", () => {
+  it("uses the latest viewport when leaving bypass mode after unsubscribed resizes", () => {
     setViewport(1920, 1080);
-    let frame: FrameRequestCallback | null = null;
-    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
-      frame = callback;
-      return 1;
-    });
-    vi.stubGlobal("cancelAnimationFrame", vi.fn());
-    let renders = 0;
-    renderHook(() => {
-      renders += 1;
-      return useVirtualResolution("16:9");
-    });
-
+    const { result, rerender } = renderHook((bypass) => useVirtualResolution("16:9", bypass), { initialProps: true });
+    setViewport(1280, 720);
     window.dispatchEvent(new Event("resize"));
-    act(() => frame?.(performance.now()));
-
-    expect(renders).toBe(1);
+    rerender(false);
+    expect(result.current.frameStyle.width).toBe("1280px");
+    expect(result.current.frameStyle.height).toBe("720px");
   });
 
   it("cancels a pending resize frame on unmount and does not subscribe in bypass mode", () => {

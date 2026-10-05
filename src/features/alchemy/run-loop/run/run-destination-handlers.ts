@@ -1,20 +1,22 @@
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { ENEMY_TYPES } from "@/lib/game-data";
+import { DESTINATIONS, ROUTE_SCREENS, type Destination } from "@/lib/routing";
 import { initializeAlchemyVisit } from "../navigation/alchemy-commands";
 import type { RunFlowShellActions } from "./run-flow";
-import { DESTINATIONS, ROUTE_SCREENS, type Destination } from "@/lib/routing";
-import { ENEMY_TYPES } from "@/lib/game-data";
 
 export type DestinationRouteDeps = Pick<
   RunFlowShellActions,
   "navigateTo" | "beginMysteryEvent" | "initializeShop" | "startBattle" | "startBoss"
 > & { resetCorruption: () => void };
 
-const DESTINATION_HANDLERS: Record<Destination, (deps: DestinationRouteDeps) => void> = {
-  [DESTINATIONS.CAMPFIRE]: (deps) => {
-    initializeAlchemyVisit("campfire");
+const DESTINATION_HANDLERS: Record<Destination, (deps: DestinationRouteDeps, gameSession: GameSession) => void> = {
+  [DESTINATIONS.CAMPFIRE]: (deps, gameSession) => {
+    initializeAlchemyVisit("campfire", gameSession);
     deps.navigateTo(ROUTE_SCREENS.CAMPFIRE);
   },
-  [DESTINATIONS.TRANSMUTATION]: (deps) => {
-    initializeAlchemyVisit("transmutation");
+  [DESTINATIONS.TRANSMUTATION]: (deps, gameSession) => {
+    initializeAlchemyVisit("transmutation", gameSession);
     deps.navigateTo(ROUTE_SCREENS.TRANSMUTATION);
   },
   [DESTINATIONS.CARD_SHOP]: (deps) => {
@@ -52,9 +54,13 @@ const DESTINATION_HANDLERS: Record<Destination, (deps: DestinationRouteDeps) => 
   },
 };
 
-export function routeDestinationChoice(destination: Destination, deps: DestinationRouteDeps) {
+export function routeDestinationChoice(
+  destination: Destination,
+  deps: DestinationRouteDeps,
+  gameSession: GameSession = defaultGameSession,
+) {
   // Unknown destinations fall back to normal combat rather than throwing, so a
   // content gap still yields a playable battle instead of a stuck screen.
   const handler = DESTINATION_HANDLERS[destination] ?? DESTINATION_HANDLERS[DESTINATIONS.NORMAL_COMBAT];
-  handler(deps);
+  handler(deps, gameSession);
 }

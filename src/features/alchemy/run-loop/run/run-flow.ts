@@ -1,7 +1,9 @@
 import type { ShopKind } from "@/features/alchemy/run-loop/shop/shop-action-types";
 import type { DestinationOptionsInput } from "@/features/alchemy/shared/run-flow";
-import type { DifficultyModifier } from "@/lib/game-data";
 import type { BattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import type { DifficultyModifier } from "@/lib/game-data";
 import type { Destination, Screen, ScreenTransitionOptions } from "@/lib/routing";
 import { createDefeatHandlers } from "./run-flow-defeat";
 import { createDestinationScreenHandlers } from "./run-flow-destination-screen";
@@ -39,33 +41,45 @@ export interface RunOutcomeDeps {
   getAvailableDestinations: RunFlowHandlerDeps["getAvailableDestinations"];
 }
 
-export function createRunOutcomes(deps: RunOutcomeDeps) {
-  const victory = createVictoryHandlers(deps);
-  const defeat = createDefeatHandlers(deps);
+export function createRunOutcomes(deps: RunOutcomeDeps, gameSession: GameSession = defaultGameSession) {
+  const victory = createVictoryHandlers(deps, gameSession);
+  const defeat = createDefeatHandlers(deps, gameSession);
   return {
     victory,
     defeat,
     getAvailableDestinations: deps.getAvailableDestinations,
     connect(actions: RunFlowShellActions) {
-      return composeRunFlow({ actions, getAvailableDestinations: deps.getAvailableDestinations }, { victory, defeat });
+      return composeRunFlow(
+        { actions, getAvailableDestinations: deps.getAvailableDestinations },
+        { victory, defeat },
+        gameSession,
+      );
     },
   };
 }
 
 export type RunOutcomes = ReturnType<typeof createRunOutcomes>;
 
-export function createRunFlow(deps: RunFlowHandlerDeps) {
-  return createRunOutcomes(deps).connect(deps.actions);
+export function createRunFlow(deps: RunFlowHandlerDeps, gameSession: GameSession = defaultGameSession) {
+  return createRunOutcomes(deps, gameSession).connect(deps.actions);
 }
 
-function composeRunFlow(deps: RunFlowHandlerDeps, outcomes: Pick<RunOutcomes, "victory" | "defeat">) {
+function composeRunFlow(
+  deps: RunFlowHandlerDeps,
+  outcomes: Pick<RunOutcomes, "victory" | "defeat">,
+  gameSession: GameSession = defaultGameSession,
+) {
   const { victory, defeat } = outcomes;
-  const progression = createProgressionHandlers(deps, victory.completeRunVictory);
-  const destination = createDestinationScreenHandlers(deps, progression.advanceToNextDestination);
-  const rewards = createRewardHandlers(deps, {
-    completeRunVictory: victory.completeRunVictory,
-    handleActComplete: progression.handleActComplete,
-  });
+  const progression = createProgressionHandlers(deps, victory.completeRunVictory, gameSession);
+  const destination = createDestinationScreenHandlers(deps, progression.advanceToNextDestination, gameSession);
+  const rewards = createRewardHandlers(
+    deps,
+    {
+      completeRunVictory: victory.completeRunVictory,
+      handleActComplete: progression.handleActComplete,
+    },
+    gameSession,
+  );
 
   return {
     handleBattleVictory: victory.handleBattleVictory,

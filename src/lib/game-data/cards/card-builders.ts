@@ -1,7 +1,8 @@
 import { CONSUME_DESCRIPTION_LINE } from "@/lib/game-constants";
 import { capitalizeWord } from "@/lib/utils";
 import { companionLibrary } from "../companions";
-import { describeCardEffects } from "../effect-metadata";
+import { createEffectDescription } from "../effect-metadata";
+import { mapCardDescriptionReferences, withCardDescription, type CardDescription } from "../card-description-model";
 import type { BattleCard, BattleCardEffect, DamageType, KeywordId } from "../types";
 import { getCompanionDescriptionLines } from "./companion-turn-description";
 
@@ -41,7 +42,7 @@ export function playerStatusCard({ status, amount, ...base }: PlayerStatusCardIn
 
 type EffectsCardInput<E extends BattleCardEffect[]> = CardBaseInput & {
   effects: E;
-  describe?: (effects: E) => string[];
+  describe?: (effects: E) => CardDescription;
   tags?: KeywordId[];
   consume?: boolean;
 };
@@ -55,19 +56,25 @@ export function effectsCard<const E extends BattleCardEffect[]>({
   describe,
   cost = 1,
 }: EffectsCardInput<E>): BattleCard {
-  const lines = [...(describe ? describe(effects) : describeCardEffects(effects))];
-  if (tags) lines.push(...tags.map((tag) => capitalizeWord(tag)));
-  if (consume) lines.push(CONSUME_DESCRIPTION_LINE);
-  return {
-    id,
-    title: deriveTitle(id, title),
-    descriptionLines: lines,
-    art,
-    cost,
-    ...(tags ? { tags } : {}),
-    ...(consume ? { consume: true } : {}),
-    effects,
-  };
+  const description = mapCardDescriptionReferences(
+    describe ? describe(effects) : createEffectDescription(effects),
+    (reference) => reference,
+  );
+  if (tags) description.push(...tags.map((tag) => ({ parts: [capitalizeWord(tag)], role: "keyword" as const })));
+  if (consume) description.push({ parts: [CONSUME_DESCRIPTION_LINE], role: "consume" });
+  return withCardDescription(
+    {
+      id,
+      title: deriveTitle(id, title),
+      descriptionLines: [],
+      art,
+      cost,
+      ...(tags ? { tags } : {}),
+      ...(consume ? { consume: true } : {}),
+      effects,
+    },
+    description,
+  );
 }
 
 type SummonCompanionCardInput = CardBaseInput & { companionId: import("../types").CompanionId };
@@ -87,6 +94,10 @@ export function summonCompanionCard({ id, title, art, companionId, cost = 1 }: S
     id,
     title: title ?? companionTitle ?? deriveTitle(id),
     descriptionLines,
+    description: descriptionLines.map((line, index) => ({
+      parts: [line],
+      role: index === descriptionLines.length - 1 ? "keyword" : "effect",
+    })),
     art,
     cost,
     consume: true,

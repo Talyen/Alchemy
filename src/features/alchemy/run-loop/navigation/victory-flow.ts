@@ -47,6 +47,7 @@ import {
 } from "./reward-math";
 
 export interface VictoryRewardsInput {
+  createInstanceId?: (() => string) | undefined;
   lootProgress: LootProgress;
   characterId: CharacterId;
   selectedDifficulty: DifficultyId | null;
@@ -134,6 +135,7 @@ export function computeVictoryRewardState(
     | "equippedTrinketId"
     | "ownedTrinketIds"
     | "ownedUniqueIds"
+    | "createInstanceId"
     | "battleState"
     | "rollBossEnemyId"
   > & {
@@ -153,6 +155,7 @@ export function computeVictoryRewardState(
     goldPayout: input.goldPayout,
     materials: input.materials,
     rng,
+    createInstanceId: input.createInstanceId,
     excludedBoonIds: activeTrinketEffectIds,
     ownedTrinketIds: input.ownedTrinketIds ?? [],
     ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
@@ -270,6 +273,7 @@ export function computeVictoryRewards(
       rewardState: {
         ...createWildwoodRewardState({
           runDeck: input.runDeck,
+          createInstanceId: input.createInstanceId,
           rng,
           lootProgress: input.lootProgress,
           gearAstralChanceBonus: input.homesteadEffects.gearAstralChanceBonus,
@@ -296,6 +300,7 @@ export function computeVictoryRewards(
   const rewardState = computeVictoryRewardState(
     {
       lootProgress: input.lootProgress,
+      createInstanceId: input.createInstanceId,
       runDeck: input.runDeck,
       runBoons: input.runBoons,
       equippedTrinketId: input.equippedTrinketId ?? null,

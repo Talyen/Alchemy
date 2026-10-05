@@ -21,13 +21,16 @@ import { applyTalentState as mutateApplyTalentState } from "@/features/alchemy/s
 import { mutateGearForTest } from "../../../../helpers/run-domain-store-test";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
 import {
-  createRunSessionCommand,
-  dispatchRunSessionCommand,
-} from "@/features/alchemy/shared/stores/run-session-command";
+  acceptCommand,
+  createGameplayCommand,
+  dispatchGameplayCommand,
+} from "@/features/alchemy/shared/stores/gameplay-command";
 import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
 import { patchBattleState } from "../../../../fixtures/battle";
 import { rebindLiveRunMeta } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { computeTalentPoints, type BattleCard } from "@/lib/game-data";
+import { purchaseTalent } from "@/features/alchemy/shared/stores/navigation-commands";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import {
   readActiveRun,
   readBattle,
@@ -47,19 +50,45 @@ import {
   RUN_SNAPSHOT_FIELD_KEYS,
 } from "@/features/alchemy/shared/stores/run-state-init";
 
-const syncGearRunHealth = createRunSessionCommand(rebindLiveRunMeta);
-const applyRunStartSnapshot = createRunSessionCommand(mutateRunStartSnapshot);
-const finalizeRunXP = createRunSessionCommand(mutateFinalizeRunXP);
-const unlockAllTalents = createRunSessionCommand(mutateUnlockAllTalents);
-const initializeActiveRun = createRunSessionCommand(mutateInitializeActiveRun);
-const applyTalentState = createRunSessionCommand(mutateApplyTalentState);
-const awardCardXP = createRunSessionCommand(mutateAwardCardXP);
-const awardMysteryXP = createRunSessionCommand(mutateAwardMysteryXP);
-const unlockTalent = createRunSessionCommand(mutateUnlockTalent);
-const resetUnlockedTalents = createRunSessionCommand(mutateResetUnlockedTalents);
-const resetRunXP = createRunSessionCommand(mutateResetRunXP);
-const resetProgress = createRunSessionCommand(mutateResetProgress);
-const clearPermanentData = createRunSessionCommand(mutateClearPermanentData);
+const syncGearRunHealth = createGameplayCommand((...args: Parameters<typeof rebindLiveRunMeta>) =>
+  acceptCommand(rebindLiveRunMeta(...args)),
+);
+const applyRunStartSnapshot = createGameplayCommand((...args: Parameters<typeof mutateRunStartSnapshot>) =>
+  acceptCommand(mutateRunStartSnapshot(...args)),
+);
+const finalizeRunXP = createGameplayCommand((...args: Parameters<typeof mutateFinalizeRunXP>) =>
+  acceptCommand(mutateFinalizeRunXP(...args)),
+);
+const unlockAllTalents = createGameplayCommand((...args: Parameters<typeof mutateUnlockAllTalents>) =>
+  acceptCommand(mutateUnlockAllTalents(...args)),
+);
+const initializeActiveRun = createGameplayCommand((...args: Parameters<typeof mutateInitializeActiveRun>) =>
+  acceptCommand(mutateInitializeActiveRun(...args)),
+);
+const applyTalentState = createGameplayCommand((...args: Parameters<typeof mutateApplyTalentState>) =>
+  acceptCommand(mutateApplyTalentState(...args)),
+);
+const awardCardXP = createGameplayCommand((...args: Parameters<typeof mutateAwardCardXP>) =>
+  acceptCommand(mutateAwardCardXP(...args)),
+);
+const awardMysteryXP = createGameplayCommand((...args: Parameters<typeof mutateAwardMysteryXP>) =>
+  acceptCommand(mutateAwardMysteryXP(...args)),
+);
+const unlockTalent = createGameplayCommand((...args: Parameters<typeof mutateUnlockTalent>) =>
+  acceptCommand(mutateUnlockTalent(...args)),
+);
+const resetUnlockedTalents = createGameplayCommand((...args: Parameters<typeof mutateResetUnlockedTalents>) =>
+  acceptCommand(mutateResetUnlockedTalents(...args)),
+);
+const resetRunXP = createGameplayCommand((...args: Parameters<typeof mutateResetRunXP>) =>
+  acceptCommand(mutateResetRunXP(...args)),
+);
+const resetProgress = createGameplayCommand((...args: Parameters<typeof mutateResetProgress>) =>
+  acceptCommand(mutateResetProgress(...args)),
+);
+const clearPermanentData = createGameplayCommand((...args: Parameters<typeof mutateClearPermanentData>) =>
+  acceptCommand(mutateClearPermanentData(...args)),
+);
 
 beforeEach(() => {
   resetRunDomainStore();
@@ -368,8 +397,10 @@ describe("unlockTalent", () => {
   });
 
   it("rejects unlock without unspent points", () => {
-    unlockTalent("burn", "burn-dmg-1");
-    expect(readRunProfile().unlockedTalents.burn).toBeUndefined();
+    setRunSession({ hasActiveRun: true });
+    const before = readGameplayState();
+    purchaseTalent("burn", "burn-dmg-1");
+    expect(readGameplayState()).toBe(before);
   });
 
   it("rejects out-of-order unlocks", () => {
@@ -402,10 +433,12 @@ describe("resetUnlockedTalents", () => {
   it("refunds allocations and removes live combat bonuses while preserving XP and Homestead effects", () => {
     setRunProgress({ talentXP: { health: 100 }, unlockedTalents: { health: ["health-heal-boost"] } });
     setRunSession({ hasActiveRun: true });
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.runProfile.effects.homesteadHealing = 2;
       initializeActiveBattle(draft, patchBattleState({ playerHealth: 15 }));
       rebindLiveRunMeta(draft);
+
+      return acceptCommand();
     });
     expect(readBattle().battleState.talentEffects.healMultiplier).toBe(1.1);
     const before = readBattle().battleState;

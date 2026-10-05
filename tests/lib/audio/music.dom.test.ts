@@ -286,11 +286,16 @@ it("does not play in a non-player host", () => {
   expect(lastFakeAudio()).toMatchObject({ paused: true, muted: true });
 });
 
-it("warns when playback stays blocked", async () => {
-  const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-  installFakeAudio({ rejectPlay: true });
+it("ignores inherited catalog keys without interrupting playback or creating preview ownership", () => {
   playMusicImmediate(MUSIC_KEYS.MENU);
-  await Promise.resolve();
-  expect(warn).toHaveBeenCalledWith("Music playback blocked until user interaction");
-  warn.mockRestore();
+  const menu = lastFakeAudio()!;
+  for (const key of ["constructor", "toString", "__proto__"]) {
+    playMusic(key);
+    playMusicImmediate(key);
+    previewBossMusic(key);
+  }
+  endBossPreview();
+  expect(vi.getTimerCount()).toBe(0);
+  expect(createdFakeAudio).toEqual([menu]);
+  expect(menu).toMatchObject({ paused: false, volume: 0.5 * MUSIC_MASTER_GAIN });
 });

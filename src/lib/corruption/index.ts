@@ -4,7 +4,7 @@ import { CORRUPTION_TRANSFORM_CHANCE_FRACTION } from "@/lib/game-constants";
 import { pickRandom, pickWeighted } from "@/lib/rng";
 import { getCorruptionMutationGroups, type CorruptionMutationGroup } from "./mutations";
 
-export { getEditableCorruptionTargets, replaceNumberAt, updateCardNumericValue } from "./numeric";
+export { getEditableCorruptionTargets, updateCardNumericValue } from "./numeric";
 
 export interface CorruptionResult {
   originalCard: BattleCard;

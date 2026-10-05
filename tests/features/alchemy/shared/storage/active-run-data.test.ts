@@ -7,7 +7,7 @@ import { decodeRunResumeSnapshot, encodeRunResumeSnapshot } from "@/features/alc
 import { createInitialActiveRunFields } from "@/features/alchemy/shared/stores/run-state-init";
 import { getRunSession, readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import type { Screen } from "@/lib/routing";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { ANCIENT_ALTAR_MYSTERY_VISIT, makeActiveRunData } from "../stores/active-run-data-fixture";
@@ -16,9 +16,11 @@ function encodeState(screen?: Screen): ActiveRunData {
 }
 
 function writeBattle(partial: { hasActiveBattle?: boolean; battleState?: BattleState }) {
-  dispatchRunSessionCommand((draft) => {
+  dispatchGameplayCommand((draft) => {
     if (partial.hasActiveBattle !== undefined) draft.battle.hasActiveBattle = partial.hasActiveBattle;
     if (partial.battleState !== undefined) draft.battle.battleState = partial.battleState;
+
+    return acceptCommand();
   });
 }
 
@@ -307,8 +309,8 @@ describe("encodeRunResumeSnapshot", () => {
   });
 
   it("persists destination resume fields", () => {
-    dispatchRunSessionCommand((draft) =>
-      setRewardState(draft, (prev) => ({ ...prev, destinations: ["Campfire", "Card Shop"] })),
+    dispatchGameplayCommand((draft) =>
+      acceptCommand(setRewardState(draft, (prev) => ({ ...prev, destinations: ["Campfire", "Card Shop"] }))),
     );
 
     const result = encodeState("destination");

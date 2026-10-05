@@ -106,14 +106,7 @@ export function buildPresetManifest(keywords: readonly KeywordId[], preset: Tale
     cached = computeTalentEffects(buildPresetUnlockedTalents(keywords, preset));
     PRESET_MANIFEST_CACHE.set(key, cached);
   }
-  // The cache template is shared: return a copy so callers can never mutate it.
-  return {
-    ...cached,
-    companionBondLevels: { ...cached.companionBondLevels },
-    cardHealBonus: { ...cached.cardHealBonus },
-    cardHealMultipliers: { ...cached.cardHealMultipliers },
-    healthThresholdArmor: cached.healthThresholdArmor.map((threshold) => ({ ...threshold })),
-  };
+  return structuredClone(cached);
 }
 
 export function withTalent(unlocked: UnlockedTalents, talent: TalentDefinition): UnlockedTalents {

@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { createBattleDevOutcomes, isVictoryGraceActive } from "@/features/alchemy/run-loop/battle/battle-session";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
 import { defaultBattleState } from "@/lib/battle";
@@ -18,7 +18,7 @@ function makeDevOutcomes(screen: string) {
 
 beforeEach(() => {
   resetBattlePresentationAndRun();
-  dispatchRunSessionCommand((draft) => setSyncedBattleState(draft, defaultBattleState()));
+  dispatchGameplayCommand((draft) => acceptCommand(setSyncedBattleState(draft, defaultBattleState())));
 });
 
 describe("skipCombatDevMode", () => {

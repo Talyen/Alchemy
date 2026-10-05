@@ -56,6 +56,13 @@ below answers isolated combat questions; neither runner verifies the rendered UI
 
 Headless battle simulator for overpowered or underpowered cards, classes, enemies, talents, companions, trinkets, gear, and individual item affixes. It runs isolated fights through the real battle engine (no browser, no React) using simple play policies. Its results describe the selected automated play policy, not human skill or a full run/map/shop simulation. Skipped during normal `npm test` runs.
 
+The simulator shares opening resolution and complete turn resolution with live
+commands. Forced player skips count toward `maxTurns` and never grant an extra
+Companion action. Combat uses the seeded `world` stream; card and Wish decisions
+use a separate policy RNG. Replaying the same decisions from the same battle
+inputs therefore preserves combat outcomes and RNG counters. Existing report
+baselines may change when rerun with these lifecycle and RNG corrections.
+
 ```sh
 npm run balance:sim
 

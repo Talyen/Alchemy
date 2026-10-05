@@ -7,11 +7,14 @@ import { gearDefinitionId, gearDefinitions } from "./definitions";
 import { GEAR_RARITIES, type GearAffixRoll, type GearDefinition, type GearInstance, type GearRarity } from "./types";
 import { uniqueItemList, type UniqueItemDefinition } from "./unique-catalog";
 
-export function generateUniqueGearInstance(uniqueDef: UniqueItemDefinition): GearInstance {
+export function generateUniqueGearInstance(
+  uniqueDef: UniqueItemDefinition,
+  createId: () => string = createInstanceId,
+): GearInstance {
   // Unique affixes are canonical per definition (see getUniqueAffixes); the
   // instance stores no rolls so saved items can never diverge from the catalog.
   return {
-    instanceId: createInstanceId(),
+    instanceId: createId(),
     definitionId: uniqueDef.id,
     affixes: [],
   };
@@ -31,36 +34,48 @@ export function rollAffixCount(rarity: GearRarity, rng: () => number): number {
   );
 }
 
-export function createGearInstance(definition: GearDefinition, affixes: GearAffixRoll[] = []): GearInstance {
+export function createGearInstance(
+  definition: GearDefinition,
+  affixes: GearAffixRoll[] = [],
+  createId: () => string = createInstanceId,
+): GearInstance {
   return {
-    instanceId: createInstanceId(),
+    instanceId: createId(),
     definitionId: definition.id,
     affixes,
   };
 }
 
-export function createRolledGearInstance(definition: GearDefinition, rng: () => number): GearInstance {
+export function createRolledGearInstance(
+  definition: GearDefinition,
+  rng: () => number,
+  createId: () => string = createInstanceId,
+): GearInstance {
   const affixCount = rollAffixCount(definition.rarity ?? "basic", rng);
-  return createGearInstance(definition, rollAffixes(definition, affixCount, rng));
+  return createGearInstance(definition, rollAffixes(definition, affixCount, rng), createId);
 }
 
 export function generateGearInstanceForBaseItem(
   baseItemId: string,
   rng: () => number,
   rarity: "basic" | "astral" = "basic",
+  createId: () => string = createInstanceId,
 ): GearInstance | null {
   if (!Object.hasOwn(gearBaseItems, baseItemId)) return null;
   const baseItem = gearBaseItems[baseItemId as GearBaseItemId];
   const definition = gearDefinitions[gearDefinitionId(baseItem.id, rarity)];
   if (!definition) return null;
-  return createRolledGearInstance(definition, rng);
+  return createRolledGearInstance(definition, rng, createId);
 }
 
-export function generateDevRandomGearInstance(rng: () => number): GearInstance {
+export function generateDevRandomGearInstance(
+  rng: () => number,
+  createId: () => string = createInstanceId,
+): GearInstance {
   const rarity = pickRandom(GEAR_RARITIES, rng) ?? "basic";
   if (rarity === "unique") {
     const unique = pickRandom(uniqueItemList, rng);
-    if (unique) return generateUniqueGearInstance(unique);
+    if (unique) return generateUniqueGearInstance(unique, createId);
   }
   // A missed Unique roll (exhausted pool) falls back to Astral, never to a
   // nonexistent "<base>-unique" definition.
@@ -71,5 +86,5 @@ export function generateDevRandomGearInstance(rng: () => number): GearInstance {
     gearDefinitions[gearDefinitionId(baseItem.id, fallbackRarity)] ??
     gearDefinitions[gearDefinitionId(baseItem.id, "basic")];
   if (!definition?.rarity) throw new Error(`Missing gear definition for ${baseItem.id}`);
-  return createRolledGearInstance(definition, rng);
+  return createRolledGearInstance(definition, rng, createId);
 }

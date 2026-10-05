@@ -1,14 +1,7 @@
 import { MATERIAL_IDS, type MaterialInventory } from "./types";
+import { createNumericManifest } from "@/lib/manifest-utils";
 
-export const EMPTY_INVENTORY: Readonly<MaterialInventory> = Object.freeze({
-  wood: 0,
-  stone: 0,
-  iron: 0,
-  food: 0,
-  herbs: 0,
-  hide: 0,
-  gems: 0,
-});
+export const EMPTY_INVENTORY: Readonly<MaterialInventory> = Object.freeze(createNumericManifest(MATERIAL_IDS));
 
 export function emptyInventory(): MaterialInventory {
   return { ...EMPTY_INVENTORY };

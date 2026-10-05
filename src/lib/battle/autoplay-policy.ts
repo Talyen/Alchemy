@@ -1,8 +1,14 @@
 import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import type { BattleSnapshot } from "./types/state-types";
-import { harmfulPlayerStatusIds, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
+import {
+  getModifiedCompanionEffects,
+  harmfulPlayerStatusIds,
+  type BattleCard,
+  type BattleCardEffect,
+} from "@/lib/game-data";
 import { halveRounded, scalePercent } from "./amount-helpers";
 import { computeEffectiveCost } from "./card-cost-rules";
+import { getBattleCompanionDamageModifiers } from "./companion-scaling";
 
 const SCORED_ENEMY_STATUSES = new Set(["burn", "poison", "bleed", "stun", "freeze"]);
 // Live autoplay scoring. Game-design owned: changing these weights changes
@@ -101,13 +107,24 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, manaRoom: 
       );
     case "restore-mana":
       return Math.min(effect.amount, effect.allowOverflow ? effect.amount : manaRoom) * AUTOPLAY_EFFECT_SCORE.mana;
+    case "gain-max-mana":
+      return effect.amount * AUTOPLAY_EFFECT_SCORE.mana;
     case "summon-companion":
       return AUTOPLAY_EFFECT_SCORE.summon;
     case "buff-companion":
       return effect.amount * AUTOPLAY_EFFECT_SCORE.companionBuff;
     case "companion-action":
       return state.activeCompanion
-        ? effect.amount * scoreEffects(state.activeCompanion.turnStartEffects, state, manaRoom)
+        ? effect.amount *
+            scoreEffects(
+              getModifiedCompanionEffects(
+                state.activeCompanion,
+                state.talentEffects.companionBondLevels?.[state.activeCompanion.id] ?? 0,
+                getBattleCompanionDamageModifiers(state),
+              ),
+              state,
+              manaRoom,
+            )
         : 0;
     case "multiply-enemy-status": {
       const current = state.enemyStatuses[effect.status] ?? 0;
@@ -120,18 +137,18 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, manaRoom: 
           ? state.enemyMitigation.armor
           : Math.min(effect.amount ?? 0, state.enemyMitigation.armor);
     case "next-hit-crit":
-      return AUTOPLAY_EFFECT_SCORE.criticalHit;
+      return state.flags.nextHitCrit ? 0 : AUTOPLAY_EFFECT_SCORE.criticalHit;
     case "next-hit-leech":
       return 0;
     case "play-next-card-twice":
-      return AUTOPLAY_EFFECT_SCORE.repeatCard;
+      return state.flags.playNextCardTwice ? 0 : AUTOPLAY_EFFECT_SCORE.repeatCard;
     case "wish":
-      return AUTOPLAY_EFFECT_SCORE.wish;
+      return effect.companionIfAbsent && state.activeCompanion ? 0 : effect.amount * AUTOPLAY_EFFECT_SCORE.wish;
+    case "remove-player-status":
+      return state.playerStatuses[effect.status] > 0 ? AUTOPLAY_EFFECT_SCORE.cleanse : 0;
     case "lose-mana":
     case "lose-max-mana":
-    case "gain-max-mana":
     case "gain-gold":
-    case "remove-player-status":
     case "self-damage":
     case "lose-health":
     case "cleanse-player-status-to-damage":
@@ -172,6 +189,10 @@ function immediateDefenseFromEffects(effects: readonly BattleCardEffect[], state
       // Stateless heuristic: a full cleanse counts nominally; fixed counts its amount.
       return total + (effect.amount ?? 1) * AUTOPLAY_EFFECT_SCORE.cleanse;
     }
+    if (effect.kind === "remove-player-status") {
+      return total + (!state || state.playerStatuses[effect.status] > 0 ? AUTOPLAY_EFFECT_SCORE.cleanse : 0);
+    }
+    if (effect.kind === "dodge-next-attack") return total + (state?.flags.dodgeNextAttack ? 0 : 1);
     return total;
   }, 0);
 }

@@ -76,7 +76,7 @@ export class PlaybackLifetime {
     return this.controller.signal;
   }
   get pendingDraws() {
-    return this.draws;
+    return this.draws + this.cardDraws;
   }
   get pendingCardDraws() {
     return this.cardDraws;

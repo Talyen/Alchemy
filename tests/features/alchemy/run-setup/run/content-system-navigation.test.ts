@@ -6,9 +6,10 @@ import { DEFAULT_CAMPAIGN_DIFFICULTY_ID, DRAFT_ROUNDS } from "@/lib/game-constan
 import { makeTestCard } from "../../../../fixtures/battle";
 import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import {
-  dispatchRunSessionCommand,
+  acceptCommand,
+  dispatchGameplayCommand,
   subscribeRunSessionCommits,
-} from "@/features/alchemy/shared/stores/run-session-command";
+} from "@/features/alchemy/shared/stores/gameplay-command";
 import { readActiveRun, readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
@@ -68,8 +69,10 @@ describe("createContentSystemNavigation", () => {
 
   it("sends a veteran hero to difficulty select", () => {
     setRunSession({ pendingContentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.profile.completedDifficulties.knight = [DEFAULT_CAMPAIGN_DIFFICULTY_ID];
+
+      return acceptCommand();
     });
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps);
@@ -86,6 +89,7 @@ describe("createContentSystemNavigation", () => {
         const map = readRunSession().labyrinthMap;
         expect(map).not.toBeNull();
         expect(map && Object.keys(map.nodes).some((id) => canEnterLabyrinthNode(map, id))).toBe(true);
+        expect(readRunSession().activity.kind).toBe("labyrinth-map");
       }),
     });
     const nav = createContentSystemNavigation(deps);
@@ -104,6 +108,7 @@ describe("createContentSystemNavigation", () => {
     nav.handleCharacterSelect("knight");
     expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DRAFT_DECK);
     expect(readActiveRun().contentSystemType).toBe(CONTENT_SYSTEMS.WILDWOOD);
+    expect(readRunSession().activity.kind).toBe("draft-deck");
     expect(readActiveRun().runDeck).toEqual([]);
     expect(readRunSession().hasActiveRun).toBe(true);
     expect(readRunSession().wildwoodDraft?.draftChoices).toHaveLength(3);
@@ -112,8 +117,10 @@ describe("createContentSystemNavigation", () => {
   it("returns to battle when resuming the same content system with an active battle", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
     setRunSession({ hasActiveRun: true });
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.battle.hasActiveBattle = true;
+
+      return acceptCommand();
     });
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps);
@@ -126,12 +133,14 @@ describe("createContentSystemNavigation", () => {
     (mode) => {
       setRunProgress({ contentSystemType: mode, characterId: "knight" });
       setRunSession({ hasActiveRun: true });
-      dispatchRunSessionCommand((draft) => {
+      dispatchGameplayCommand((draft) => {
         draft.battle.hasActiveBattle = true;
         draft.battle.battleState = makeTestBattleState({ turn: 4 });
         setScreen(draft, ROUTE_SCREENS.BATTLE);
+
+        return acceptCommand();
       });
-      dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.MENU));
+      dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.MENU)));
       const deps = makeDeps();
       const nav = createContentSystemNavigation(deps);
       const begin = { campaign: nav.beginCampaign, labyrinth: nav.beginLabyrinth, wildwood: nav.beginWildwood };
@@ -196,6 +205,7 @@ describe("createContentSystemNavigation", () => {
     expect(readRunSession().hasActiveRun).toBe(true);
     expect(readActiveRun().characterId).toBe("wildcard");
     expect(readActiveRun().runDeck).toEqual([]);
+    expect(readRunSession().activity.kind).toBe("draft-deck");
     expect(readRunSession().starterDraftChoices).toHaveLength(3);
   });
 
@@ -204,7 +214,8 @@ describe("createContentSystemNavigation", () => {
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps);
     nav.handleCharacterSelect("wildcard");
-    dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.DRAFT_DECK));
+    setRunSession({ activity: { kind: "draft-deck" } });
+    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DRAFT_DECK)));
     for (let round = 0; round < DRAFT_ROUNDS; round += 1) {
       const choice = readRunSession().starterDraftChoices?.[0];
       expect(choice).toBeDefined();
@@ -301,7 +312,8 @@ describe("createContentSystemNavigation", () => {
     const nav = createContentSystemNavigation(deps);
     nav.beginLabyrinth();
     expect(deps.resumeTo).toHaveBeenCalledWith(ROUTE_SCREENS.DRAFT_DECK);
-    dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.DRAFT_DECK));
+    setRunSession({ activity: { kind: "draft-deck" } });
+    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DRAFT_DECK)));
     nav.handleStandardDraftComplete();
     expect(readRunSession().labyrinthMap).not.toBeNull();
     const map = readRunSession().labyrinthMap;
@@ -326,20 +338,23 @@ describe("createContentSystemNavigation", () => {
     });
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps);
-    dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.DRAFT_DECK));
+    setRunSession({ activity: { kind: "draft-deck" } });
+    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DRAFT_DECK)));
     nav.handleStandardDraftComplete();
     expect(readRunSession().labyrinthMap).not.toBeNull();
     expect(readActiveRun().contentSystemType).toBe(CONTENT_SYSTEMS.LABYRINTH);
     expect(deps.navigateTo).toHaveBeenLastCalledWith(ROUTE_SCREENS.LABYRINTH_MAP);
   });
 
-  it("uses the standard draft owner to start a wildcard campaign", () => {
+  it("starts a veteran Wildcard campaign after returning from difficulty select to draft confirmation", () => {
     const draftedCards = Array.from({ length: DRAFT_ROUNDS }, (_, index) =>
       makeTestCard({ id: `campaign-draft-${index}` }),
     );
     // A veteran wildcard skips the novice auto-start and continues to difficulty select.
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.profile.completedDifficulties.wildcard = [DEFAULT_CAMPAIGN_DIFFICULTY_ID];
+
+      return acceptCommand();
     });
     setRunProgress({
       characterId: "wildcard",
@@ -356,12 +371,22 @@ describe("createContentSystemNavigation", () => {
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps);
 
-    dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.DRAFT_DECK));
+    setRunSession({ activity: { kind: "draft-deck" } });
+    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DRAFT_DECK)));
     nav.handleStandardDraftComplete();
     expect(readRunSession().starterDraftChoices).toBeNull();
+    expect(readRunSession().activity.kind).toBe("difficulty-select");
     expect(() => nav.handleStandardDraftComplete()).not.toThrow();
     expect(deps.navigateTo).toHaveBeenCalledExactlyOnceWith(ROUTE_SCREENS.DIFFICULTY_SELECT);
-    dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.DIFFICULTY_SELECT));
+    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DIFFICULTY_SELECT)));
+    nav.handleBackFromDifficultySelect();
+    expect(readRunSession().activity.kind).toBe("draft-deck");
+    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DRAFT_DECK)));
+    nav.handleStandardDraftComplete();
+    expect(readRunSession().activity.kind).toBe("difficulty-select");
+    expect(readActiveRun().runDeck).toEqual(draftedCards);
+    expect(deps.startBattle).not.toHaveBeenCalled();
+    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DIFFICULTY_SELECT)));
     nav.handleDifficultySelect(DEFAULT_CAMPAIGN_DIFFICULTY_ID);
 
     expect(readActiveRun().contentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
@@ -380,7 +405,7 @@ describe("createContentSystemNavigation", () => {
       runMaxHealth: 30,
     });
     setRunSession({ hasActiveRun: true });
-    dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.DESTINATION));
+    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DESTINATION)));
     const getAvailableDestinations = vi.fn(() => [DESTINATIONS.NORMAL_COMBAT]);
     const deps = makeDeps({ getAvailableDestinations });
     createContentSystemNavigation(deps).resumeRun();

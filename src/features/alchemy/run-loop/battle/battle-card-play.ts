@@ -117,7 +117,6 @@ export function createBattleCardPlay(
     options?: { silentReject?: boolean },
   ): boolean {
     clearStaleAutoplayPreview();
-    getPresentation().setDisplayedBattle(null);
     const currentState = getBattle().battleState;
     if (card.uid !== undefined) {
       index = currentState.hand.findIndex((candidate) => candidate.uid === card.uid && candidate.id === card.id);
@@ -132,6 +131,7 @@ export function createBattleCardPlay(
       if (!options?.silentReject) playUISound("error");
       return false;
     }
+    getPresentation().setDisplayedBattle(null);
     session.checkBattleEnd(played.state, sessionNum);
     ctx.playback.beginAction();
     if (isAttackCard(card)) {
@@ -212,9 +212,13 @@ export function createBattleCardPlay(
   }
 
   async function handleAutoplayWish(card: BattleCard, control: AutoplayCardControl): Promise<boolean> {
-    return runAutoplayWithPreview(control, getHoverId("wish", card.id), () =>
-      commitWishChoice(card, "autoplay wish choice"),
-    );
+    const options = getBattle().battleState.wishOptions;
+    return runAutoplayWithPreview(control, getHoverId("wish", card.id), () => {
+      // A manual choice can advance the queue while this preview is waiting.
+      // The same catalog card may also appear in the next, separate Wish.
+      if (getBattle().battleState.wishOptions !== options) return false;
+      return commitWishChoice(card, "autoplay wish choice");
+    });
   }
 
   function handleWishChoice(card: BattleCard) {

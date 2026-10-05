@@ -6,7 +6,7 @@ import { toActiveRunData } from "@/lib/active-run-session";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { ActiveRunDataSchema } from "@/lib/validation/save-schemas/active-run";
 import { getDifficultyXPMultiplier } from "@/lib/game-data";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { finalizeRunXP, awardBattleDodgeXP } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { initializeActiveBattle, setBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
 import { readActiveRun, readBattle, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
@@ -27,12 +27,14 @@ describe("Dodge XP commits", () => {
       playerDodgeCount: 4,
       currentEnemy: { abilityIds: ["ray-of-frost", "slash", "block"] },
     });
-    dispatchRunSessionCommand((draft) => initializeActiveBattle(draft, state));
+    dispatchGameplayCommand((draft) => acceptCommand(initializeActiveBattle(draft, state)));
     const result = endPlayerTurn(state);
     if (result.kind === "haste") throw new Error("Expected an enemy turn");
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       awardBattleDodgeXP(draft, state, result.state);
       setBattleState(draft, result.state);
+
+      return acceptCommand();
     });
     expect(readActiveRun().runTalentXP.dodge).toBe(2);
     expect(readBattle().battleState.playerDodgeCount).toBe(6);
@@ -50,7 +52,7 @@ describe("Dodge XP commits", () => {
     expect(readActiveRun().runTalentXP.dodge).toBe(2);
 
     const multiplier = getDifficultyXPMultiplier(readActiveRun().selectedDifficulty);
-    dispatchRunSessionCommand((draft) => finalizeRunXP(draft));
+    dispatchGameplayCommand((draft) => acceptCommand(finalizeRunXP(draft)));
     expect(readRunProfile().talentXP.dodge).toBe(Math.round(2 * multiplier));
     expect(readActiveRun().runTalentXP).toEqual({});
   });
@@ -64,9 +66,11 @@ describe("Dodge XP commits", () => {
     const result = endPlayerTurn(state);
     if (result.kind === "haste") throw new Error("Expected an enemy turn");
     expect(result.state.enemyHealth).toBe(0);
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       awardBattleDodgeXP(draft, state, result.state);
       setBattleState(draft, result.state);
+
+      return acceptCommand();
     });
     expect(readActiveRun().runTalentXP.dodge).toBe(1);
     expect(readBattle()).not.toHaveProperty("pendingBattleTransition");
@@ -77,7 +81,7 @@ describe("Dodge XP commits", () => {
     const result = endPlayerTurn(state);
     if (result.kind === "haste") throw new Error("Expected an enemy turn");
     expect(() =>
-      dispatchRunSessionCommand((draft) => {
+      dispatchGameplayCommand((draft) => {
         awardBattleDodgeXP(draft, state, result.state);
         setBattleState(draft, result.state);
         throw new Error("abort");

@@ -12,7 +12,7 @@ import {
   hydrateAlchemyPersistenceFields,
 } from "@/features/alchemy/shared/storage";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readActiveRunScreen, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { resetAllTestStores, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
@@ -22,7 +22,7 @@ beforeEach(resetAllTestStores);
 
 function createNavigation(startBattle = vi.fn()) {
   const navigateTo = (screen: Screen, onCommit?: () => void) => {
-    dispatchRunSessionCommand((draft) => setScreen(draft, screen));
+    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, screen)));
     onCommit?.();
   };
   return createContentSystemNavigation({
@@ -39,7 +39,7 @@ function startMode(nav: ReturnType<typeof createNavigation>, mode: ContentSystem
   begin[mode]();
   if (mode === "campaign") {
     nav.initializeRunForDifficulty("knight", DEFAULT_CAMPAIGN_DIFFICULTY_ID);
-    dispatchRunSessionCommand((draft) => setScreen(draft, "destination"));
+    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "destination")));
   } else {
     nav.handleCharacterSelect("knight");
   }
@@ -62,7 +62,7 @@ describe("saved mode navigation", () => {
       const nav = createNavigation();
       startMode(nav, mode);
       const checkpoint = snapshotRun();
-      dispatchRunSessionCommand((draft) => setScreen(draft, "menu"));
+      dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "menu")));
       nav.beginCampaign();
       nav.handleCharacterSelect("rogue");
       expect(snapshotRun()).toEqual(checkpoint);
@@ -77,7 +77,7 @@ describe("saved mode navigation", () => {
     nav.handleCharacterSelect("wildcard");
     setRunProgress({ runDeck: Array.from({ length: DRAFT_ROUNDS }, () => getStartingDeck("knight")[0]!) });
     setRunSession({ starterDraftChoices: [] });
-    dispatchRunSessionCommand((draft) => setScreen(draft, "menu"));
+    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "menu")));
     nav.beginCampaign();
     reloadSavedRuns();
     nav.resumeRun();
@@ -100,7 +100,7 @@ describe("saved mode navigation", () => {
     }
     expect(readRunSession().starterDraftChoices).toEqual([]);
 
-    dispatchRunSessionCommand((draft) => setScreen(draft, "menu"));
+    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "menu")));
     nav.handleStandardDraftComplete();
     expect(startBattle).not.toHaveBeenCalled();
     reloadSavedRuns();
@@ -119,8 +119,10 @@ describe("saved mode navigation", () => {
   });
 
   it("sends a veteran Campaign Wildcard to Difficulty Select only after confirming a reloaded draft", () => {
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.profile.completedDifficulties.wildcard = [DEFAULT_CAMPAIGN_DIFFICULTY_ID];
+
+      return acceptCommand();
     });
     const startBattle = vi.fn();
     const nav = createNavigation(startBattle);
@@ -132,7 +134,7 @@ describe("saved mode navigation", () => {
       nav.handleStarterDraftPick(choice!.id);
     }
 
-    dispatchRunSessionCommand((draft) => setScreen(draft, "menu"));
+    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "menu")));
     reloadSavedRuns();
     nav.resumeRun();
     expect(readActiveRunScreen()).toBe("draft-deck");
@@ -170,7 +172,7 @@ describe("saved mode navigation", () => {
         setRunSession({ rewardState: { ...createEmptyRewardState(), choices: [card], gold: 7 } });
       }
       const checkpoint = snapshotRun();
-      dispatchRunSessionCommand((draft) => setScreen(draft, "menu"));
+      dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "menu")));
       expect(snapshotRun()).toEqual(checkpoint);
       nav.beginCampaign();
       reloadSavedRuns();

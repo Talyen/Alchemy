@@ -161,9 +161,10 @@ describe("one-Mana card tradeoffs", () => {
     },
   );
 
-  it("preserves valid legacy Prayer and modified Ray of Frost content as complete saved units", () => {
+  it("preserves reusable Prayer without bindings and modified Ray of Frost content as complete saved units", () => {
+    const { description: _description, ...prayer } = cardById.prayer!;
     const oldPrayer = {
-      ...cardById.prayer!,
+      ...prayer,
       consume: false,
       descriptionLines: ["Wish 1", "Restore 3 Health"],
       uid: 42,

@@ -1,9 +1,9 @@
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
-import { emptyInventory } from "@/lib/homestead/inventory";
-import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear";
-import type { CharacterId } from "@/lib/game-data";
 import type { ActiveRunData } from "@/lib/active-run-session";
-import type { GameplayDraft } from "../run-session-command";
+import type { CharacterId } from "@/lib/game-data";
+import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear";
+import { emptyInventory } from "@/lib/homestead/inventory";
+import { gameplayDraftRuntime, type GameplayDraft } from "../gameplay-command";
 import { createInitialActiveRunFields, runFieldsFromSnapshot, type ActiveRunProgressFields } from "../run-state-init";
 import { setHasActiveRun } from "./run-session";
 
@@ -11,7 +11,7 @@ import { setHasActiveRun } from "./run-session";
 
 export function resetProgress(draft: GameplayDraft): void {
   draft.run.activeRun = {
-    ...createInitialActiveRunFields(null, draft.run.activeRun.characterId),
+    ...createInitialActiveRunFields(null, draft.run.activeRun.characterId, gameplayDraftRuntime(draft).generateRunSeed),
     runTalentXP: {},
   };
   draft.run.initialized = false;
@@ -22,7 +22,11 @@ export function initializeActiveRun(
   activeRun: ActiveRunData | null,
   fallbackCharacterId: CharacterId = "knight",
 ): void {
-  draft.run.activeRun = createInitialActiveRunFields(activeRun, fallbackCharacterId);
+  draft.run.activeRun = createInitialActiveRunFields(
+    activeRun,
+    fallbackCharacterId,
+    gameplayDraftRuntime(draft).generateRunSeed,
+  );
   draft.run.initialized = true;
 }
 

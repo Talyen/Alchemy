@@ -1,6 +1,8 @@
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 import { readActivityData } from "@/lib/active-run-session";
-import { playUISound } from "@/lib/audio";
 import { corruptRunCard } from "./corruption-commands";
 export interface CorruptionFlowDeps {
   advanceToNextDestination: () => void;
@@ -9,15 +11,15 @@ export interface CorruptionFlowDeps {
   isLabyrinthRun?: () => boolean;
 }
 
-export function createCorruptionFlowHandlers(deps: CorruptionFlowDeps) {
+export function createCorruptionFlowHandlers(deps: CorruptionFlowDeps, gameSession: GameSession = defaultGameSession) {
   function handleCorruptCard(cardIndex: number) {
-    const activity = readRunSession().activity;
+    const activity = readRunSession(gameSession).activity;
     if (activity.kind !== "corruption" || readActivityData(activity, "corruption")) return;
-    if (corruptRunCard(cardIndex)) playUISound("musicBoxMystery");
+    if (corruptRunCard(cardIndex, gameSession)) sessionFeedback(gameSession).playUISound("musicBoxMystery");
   }
 
   function handleCorruptionExit() {
-    if (readActivityData(readRunSession().activity, "corruption")) {
+    if (readActivityData(readRunSession(gameSession).activity, "corruption")) {
       deps.advanceToNextDestination();
       return;
     }

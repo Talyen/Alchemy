@@ -6,7 +6,7 @@ import { addCraftingCurrencies, EMPTY_CRAFTING_CURRENCIES, type CraftingCurrency
 import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory as ProfileMaterialInventory } from "@/lib/homestead/types";
 import { createRunStateRng, stepRunRng, type Rng, type RunRngStream } from "@/lib/rng";
-import type { GameplayDraft } from "../run-session-command";
+import type { GameplayDraft } from "../gameplay-command";
 import type { ActiveRunProgressFields } from "../run-state-init";
 import { defineDraftSetter } from "./write-field";
 

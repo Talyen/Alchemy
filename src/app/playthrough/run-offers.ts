@@ -1,32 +1,33 @@
-import {
-  readActiveRun,
-  readBattle,
-  readRunProfile,
-  readRunSession,
-  readActiveRunScreen,
-} from "@/features/alchemy/shared/stores/run-reads";
-import { commitCardPlay, commitBattleWish } from "@/features/alchemy/shared/stores/battle-commands";
-import { commitEndTurn } from "@/features/alchemy/run-loop/battle/battle-session";
 import { PLAYABLE_HAND_OPTIONS } from "@/features/alchemy/run-loop/battle/playable-hand";
 import { cardSlotKeyOf, gearSlotKeyOf } from "@/features/alchemy/run-loop/shop/shop-commands-core";
 import { shopItemSlotKey } from "@/features/alchemy/run-loop/shop/shop-slot-keys";
+import { commitBattleWish, commitCardPlay, commitEndTurn } from "@/features/alchemy/shared/stores/battle-commands";
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import {
+  readActiveRun,
+  readActiveRunScreen,
+  readBattle,
+  readRunProfile,
+  readRunSession,
+} from "@/features/alchemy/shared/stores/run-reads";
+import { getRewardChoiceId } from "@/lib/active-run-session";
 import {
   canPlayCard,
-  isPlayerDefeated,
   getEffectiveDamageScore,
   getImmediateDamage,
   getImmediateDefense,
+  isPlayerDefeated,
   type BattleSnapshot,
   type CombatTextEvent,
 } from "@/lib/battle";
-import { getRewardChoiceId } from "@/lib/active-run-session";
-import { characters, type BattleCard } from "@/lib/game-data";
 import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-generation";
 import { canDescendFromLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state";
-import type { CareerConfig, PlayerChoice } from "./types";
-import type { createPlaythroughController } from "./controller";
+import { characters, type BattleCard } from "@/lib/game-data";
 import { scoreArchetypeRemoval, scoreStrategyCard } from "./archetype-policy";
 import type { OfferChoice } from "./choice-catalog";
+import type { createPlaythroughController } from "./controller";
+import type { CareerConfig, PlayerChoice } from "./types";
 
 interface RunOfferContext {
   config: CareerConfig;
@@ -36,12 +37,15 @@ interface RunOfferContext {
   recordBattle: (state: BattleSnapshot, texts: CombatTextEvent[], card?: string) => void;
 }
 
-export function offerRunChoices({ config, controller, offer, choices, recordBattle }: RunOfferContext): void {
+export function offerRunChoices(
+  { config, controller, offer, choices, recordBattle }: RunOfferContext,
+  gameSession: GameSession = defaultGameSession,
+): void {
   const { flow, shop, labyrinth, nodes } = controller;
-  const run = readActiveRun();
-  const session = readRunSession();
-  const profile = readRunProfile();
-  const screen = readActiveRunScreen();
+  const run = readActiveRun(gameSession);
+  const session = readRunSession(gameSession);
+  const profile = readRunProfile(gameSession);
+  const screen = readActiveRunScreen(gameSession);
   const affinity = (card: BattleCard) => scoreStrategyCard(config.policy, config.hero, card, run.runDeck);
   const combatScore = (card: BattleCard, state: BattleSnapshot) => {
     switch (config.combatPolicy) {
@@ -67,7 +71,7 @@ export function offerRunChoices({ config, controller, offer, choices, recordBatt
   const activity = session.activity;
   switch (activity.kind) {
     case "battle": {
-      const state = readBattle().battleState;
+      const state = readBattle(gameSession).battleState;
       if (isPlayerDefeated(state)) offer("settle", "defeat", 1, flow.handleBattleDefeat);
       else if (state.enemyHealth <= 0) offer("settle", "victory", 1, flow.handleBattleVictory);
       else if (state.wishOptions?.length)
@@ -76,7 +80,7 @@ export function offerRunChoices({ config, controller, offer, choices, recordBatt
             "wish",
             card.id,
             affinity(card) + getEffectiveDamageScore(card, state),
-            () => commitBattleWish(card.id),
+            () => commitBattleWish(card.id, gameSession),
             index,
           ),
         );
@@ -88,7 +92,7 @@ export function offerRunChoices({ config, controller, offer, choices, recordBatt
               card.id,
               combatScore(card, state),
               () => {
-                const result = commitCardPlay(index, card.id);
+                const result = commitCardPlay(index, card.id, gameSession);
                 if (result) recordBattle(result.state, result.combatTexts, card.id);
                 return result;
               },
@@ -97,7 +101,7 @@ export function offerRunChoices({ config, controller, offer, choices, recordBatt
         });
         if (!choices.length)
           offer("end-turn", "turn", 0, () => {
-            const result = commitEndTurn();
+            const result = commitEndTurn(gameSession);
             for (const frame of result.frames) {
               recordBattle(frame.turn.state, frame.turn.combatTexts);
               if (frame.companion) recordBattle(frame.companion.state, frame.companion.texts);

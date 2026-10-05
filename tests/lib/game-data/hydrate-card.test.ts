@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import { cardById, type BattleCard } from "@/lib/game-data";
 import { cloneBattleCard, hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { BattleCardSchema } from "@/lib/validation/save-schemas/battle-card-schemas";
+import { removeConsume } from "@/lib/corruption/card-edits";
 
 const libraryCard = cardById["molten-bulwark"]!;
+const { description: _description, ...unboundLibraryCard } = libraryCard;
 const modifiedCard: BattleCard = {
-  ...libraryCard,
+  ...unboundLibraryCard,
   title: "Old title",
   art: "old-art",
   cost: 0,
@@ -24,25 +26,14 @@ describe("saved card content restoration", () => {
     expect(hydrateCard(invalid)).toBe(invalid);
   });
 
-  it("does not add catalog Consume to a complete reusable saved Roll the Dice", () => {
-    const legacy: BattleCard = {
-      ...cardById["roll-the-dice"]!,
-      descriptionLines: ["Deal 3 Random damage or gain 3 Gold"],
-      effects: [
-        {
-          kind: "chance",
-          probability: 0.5,
-          successEffects: [{ kind: "random-damage", minAmount: 3, maxAmount: 3 }],
-          failureEffects: [{ kind: "gain-gold", amount: 3 }],
-        },
-      ],
-    };
-    delete legacy.consume;
-    const restored = hydrateCard(BattleCardSchema.parse(JSON.parse(JSON.stringify(legacy))));
-    expect(restored).toEqual(legacy);
+  it("does not add catalog Consume to complete reusable Bread when the saved flag is absent", () => {
+    const reusable = removeConsume(cardById.bread!);
+    delete reusable.consume;
+    const restored = hydrateCard(BattleCardSchema.parse(JSON.parse(JSON.stringify(reusable))));
+    expect(restored).toEqual(reusable);
     expect(restored.consume).toBeUndefined();
     expect(hydrateCard(restored)).toEqual(restored);
-    expect(hydrateCard({ ...legacy, effects: [] }).consume).toBe(true);
+    expect(hydrateCard({ ...reusable, effects: [] }).consume).toBe(true);
   });
 
   it.each([
@@ -103,7 +94,7 @@ describe("saved card content restoration", () => {
 
   it("preserves nested effects without sharing recursive effect objects", () => {
     const saved: BattleCard = {
-      ...libraryCard,
+      ...unboundLibraryCard,
       effects: [
         {
           kind: "chance",

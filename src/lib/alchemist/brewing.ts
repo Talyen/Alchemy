@@ -2,7 +2,10 @@ import { getStandardPotionPool, isStandardPotionCard } from "@/lib/game-data/car
 import {
   areBattleCardEffectsEqual,
   cloneBattleCard,
-  describeCardEffects,
+  createEffectDescription,
+  carryCardDescriptionMarks,
+  getCardDescription,
+  withCardDescription,
   mapEffectChildren,
   type BattleCard,
   type BattleCardEffect,
@@ -43,12 +46,18 @@ export function strengthenPotion(card: BattleCard): BattleCard | null {
   if (!isBrewablePotion(card)) return null;
   const effects = card.effects.map(strengthenEffect);
   if (effects.every((effect, index) => areBattleCardEffectsEqual(effect, card.effects[index]!))) return null;
-  return cloneBattleCard({
-    ...card,
-    brewed: true,
-    effects,
-    descriptionLines: [...describeCardEffects(effects), ...(card.consume ? [CONSUME_DESCRIPTION_LINE] : [])],
-  });
+  const description = carryCardDescriptionMarks(getCardDescription(card), createEffectDescription(effects));
+  if (card.consume) description.push({ parts: [CONSUME_DESCRIPTION_LINE], role: "consume" });
+  return cloneBattleCard(
+    withCardDescription(
+      {
+        ...card,
+        brewed: true,
+        effects,
+      },
+      description,
+    ),
+  );
 }
 export function createCampfirePotionOffers(rng: () => number): BattleCard[] {
   const pool = shuffle(getStandardPotionPool(), rng);

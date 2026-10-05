@@ -1,29 +1,11 @@
 import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
-import { resolveLootWeights } from "@/lib/loot";
-import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
-import { cardById, getCardKeywords, selectRewardCards, type BattleCard, type KeywordId } from "@/lib/game-data";
-import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
-import {
-  appendCardToRunWithDiscovery,
-  appendBoonToRunWithDiscovery,
-  grantGearToRunWithRecord,
-} from "../../shared/stores/deck-mutations";
-import type { MaterialId } from "@/lib/homestead/types";
-import { computeMysteryMaterialReward } from "@/lib/homestead/material-rewards";
-import {
-  generateGearInstanceForBaseItem,
-  generateLootGearChoices,
-  getGearLootAvailability,
-  getOwnedUniqueDefinitionIds,
-} from "@/lib/gear";
-import { pickMysteryTrinketGrantId, type MysteryEffect } from "@/lib/mystery";
-import { combineTrinketEffectIds } from "@/lib/trinkets";
-import { gearBaseItemList } from "@/lib/gear/base-items";
-import { pickRandom, rngInt } from "@/lib/rng";
+import type { RunTransaction } from "@/features/alchemy/shared/stores/run-session-command";
+import { snapshotTransactionValue } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   addGold,
   awardMaterialsDuringRun,
   awardMysteryXP,
+  createDraftInstanceIdSource,
   deductGold,
   setMysteryCardChoices,
   setMysteryGrantedGearInstances,
@@ -31,7 +13,27 @@ import {
   setRunDeck,
   setRunPlayerHealth,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
+import { cardById, getCardKeywords, selectRewardCards, type BattleCard, type KeywordId } from "@/lib/game-data";
+import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
+import {
+  generateGearInstanceForBaseItem,
+  generateLootGearChoices,
+  getGearLootAvailability,
+  getOwnedUniqueDefinitionIds,
+} from "@/lib/gear";
+import { gearBaseItemList } from "@/lib/gear/base-items";
+import { computeMysteryMaterialReward } from "@/lib/homestead/material-rewards";
+import type { MaterialId } from "@/lib/homestead/types";
+import { resolveLootWeights } from "@/lib/loot";
+import { pickMysteryTrinketGrantId, type MysteryEffect } from "@/lib/mystery";
+import { pickRandom, rngInt } from "@/lib/rng";
+import { combineTrinketEffectIds } from "@/lib/trinkets";
+import {
+  appendBoonToRunWithDiscovery,
+  appendCardToRunWithDiscovery,
+  grantGearToRunWithRecord,
+} from "../../shared/stores/deck-mutations";
 
 export interface MysteryEffectResult {
   followUp: "choose-card" | null;
@@ -40,7 +42,7 @@ export interface MysteryEffectResult {
 }
 
 export interface MysteryEffectContext {
-  draft: GameplayDraft;
+  draft: RunTransaction;
   rng: () => number;
 }
 
@@ -64,7 +66,7 @@ function offerMysteryCardChoices(
   setMysteryCardChoices(
     context.draft,
     selectRewardCards(
-      context.draft.run.activeRun.runDeck,
+      snapshotTransactionValue(context.draft.run.activeRun.runDeck),
       getMysteryCardChoicePool(effect.tag),
       MYSTERY_CARD_CHOICES,
       [],
@@ -98,9 +100,9 @@ function gainRandomMysteryGear(context: MysteryEffectContext, forceAstral = fals
 }
 
 function gainMysteryGeneratedGear(baseItemId: string, context: MysteryEffectContext, forceAstral = false) {
-  const ownedUniqueIds = getOwnedUniqueDefinitionIds(context.draft.gear.inventories);
+  const ownedUniqueIds = getOwnedUniqueDefinitionIds(snapshotTransactionValue(context.draft.gear.inventories));
   const instance = forceAstral
-    ? generateGearInstanceForBaseItem(baseItemId, context.rng, "astral")
+    ? generateGearInstanceForBaseItem(baseItemId, context.rng, "astral", createDraftInstanceIdSource(context.draft))
     : generateLootGearChoices(
         1,
         context.rng,
@@ -112,6 +114,8 @@ function gainMysteryGeneratedGear(baseItemId: string, context: MysteryEffectCont
         }),
         ownedUniqueIds,
         [baseItemId],
+        false,
+        createDraftInstanceIdSource(context.draft),
       )[0];
   if (!instance) {
     // The base item has no definition for the rolled rarity; granting nothing

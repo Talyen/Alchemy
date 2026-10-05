@@ -1,6 +1,6 @@
 import { addRunGoldEarned } from "./run-recap";
 import { getGoldMultiplier } from "@/lib/game-data";
-import type { GameplayDraft } from "../run-session-command";
+import type { GameplayDraft } from "../gameplay-command";
 
 // ── Gold (purse ⇄ battle mirror) ─────────────────────────────────────────────
 // `runProfile.gold` is the purse; `battleState.gold` mirrors it while a battle

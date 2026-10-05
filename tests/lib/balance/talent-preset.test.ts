@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   buildPresetUnlockedTalents,
   buildPresetManifest,
-  countUnlockedCombatTalents,
   isCombatTalent,
   talentsInTreeOrder,
   LATE_AFFINITY_TALENT_CAP,
@@ -51,20 +50,19 @@ describe("buildPresetUnlockedTalents", () => {
     expect((unlocked.holy ?? []).length).toBeLessThanOrEqual(LATE_AFFINITY_TALENT_CAP);
     expect(unlocked.holy).toContain("holy-gold-scaling");
   });
-
-  it("counts every unlocked combat talent as a spent point", () => {
-    expect(countUnlockedCombatTalents(["poison", "bleed", "gold"], "early")).toBe(0);
-    expect(countUnlockedCombatTalents(["poison", "bleed", "gold"], "mid")).toBeGreaterThan(5);
-  });
 });
 
 it.each(["early", "late"] as const)("keeps %s simulation manifests isolated from earlier callers", (preset) => {
-  const first = buildPresetManifest(["consume"], preset);
+  const first = buildPresetManifest(["health"], preset);
   const expected = structuredClone(first);
   first.flatPhysicalDamage = 999;
   first.companionBondLevels.wolf = 999;
   first.cardHealBonus.apple = 999;
   first.cardHealMultipliers.apple = 999;
+  if (preset === "late") {
+    expect(first.healthThresholdBlockOnce).toEqual({ threshold: 50, amount: 6 });
+    first.healthThresholdBlockOnce!.amount = 999;
+  }
   first.healthThresholdArmor.push({ threshold: 0.5, amount: 999 });
-  expect(buildPresetManifest(["consume"], preset)).toEqual(expected);
+  expect(buildPresetManifest(["health"], preset)).toEqual(expected);
 });

@@ -14,7 +14,7 @@ import { createSeededRng } from "@/lib/rng";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { decodeRunResumeSnapshot } from "@/features/alchemy/shared/stores/run-resume-codec";
 import { runProfilePersistenceCodec } from "@/features/alchemy/shared/stores/run-profile-codec";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
   setCompanionRewardCards,
@@ -120,7 +120,7 @@ describe("homestead hydrate parity", () => {
       ...defaults,
       bondedCompanions: { "no-such-companion": 1 } as unknown as typeof defaults.bondedCompanions,
     };
-    dispatchRunSessionCommand((draft) => runProfilePersistenceCodec.hydrate(fields, draft));
+    dispatchGameplayCommand((draft) => acceptCommand(runProfilePersistenceCodec.hydrate(fields, draft)));
     expect(readGameplayState().runProfile.bondedCompanions).toEqual({});
   });
 
@@ -128,10 +128,12 @@ describe("homestead hydrate parity", () => {
     setRunSession({ hasActiveRun: true });
     const before = readActiveRun().runMetaMaxHealth;
     const defaults = runProfilePersistenceCodec.createDefault();
-    dispatchRunSessionCommand((draft) =>
-      runProfilePersistenceCodec.hydrate(
-        { ...defaults, plantedFarms: { ...defaults.plantedFarms, "chicken-coop": 1 } },
-        draft,
+    dispatchGameplayCommand((draft) =>
+      acceptCommand(
+        runProfilePersistenceCodec.hydrate(
+          { ...defaults, plantedFarms: { ...defaults.plantedFarms, "chicken-coop": 1 } },
+          draft,
+        ),
       ),
     );
     expect(readActiveRun().runMetaMaxHealth).toBe(before + 5);
@@ -164,9 +166,11 @@ describe("interrupted mid-claim rewards", () => {
       expect(snap.interruptedFlow.pending.gold).toBe(0);
     }
 
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       setRewardState(draft, createEmptyRewardState());
       setCompanionRewardCards(draft, null);
+
+      return acceptCommand();
     });
     restoreRun(snap, {}, {});
 
@@ -295,9 +299,11 @@ describe("primary reward resume", () => {
 describe("shop persistence", () => {
   it("keeps only the latest shop visit even while an earlier screen is displayed", () => {
     setRunSession({ hasActiveRun: true });
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       setShopState(draft, emptyShopState());
       setEquipmentShopState(draft, emptyEquipmentShopState());
+
+      return acceptCommand();
     });
     const snap = snapshotRun(ROUTE_SCREENS.SHOP);
     expect(snap.currentScreen).toBe("equipment-shop");
@@ -336,8 +342,10 @@ describe("victory-handoff persistence", () => {
   it("keeps the terminal battle until its outcome is settled", () => {
     setRunProgress({ characterId: "knight", contentSystemType: "campaign" });
     setRunSession({ hasActiveRun: true });
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       initializeActiveBattle(draft, { ...defaultBattleState(), enemyHealth: 0 });
+
+      return acceptCommand();
     });
 
     const snap = snapshotRun();
@@ -373,4 +381,30 @@ describe("gold-only interrupted rewards", () => {
     expect(restored.gold).toBe(12);
     expect(restored.materials).toEqual({ ...emptyInventory(), wood: 2 });
   });
+});
+
+it.each([
+  "shop",
+  "alchemist",
+  "trinket-shop",
+  "equipment-shop",
+  "campfire",
+  "transmutation",
+  "corruption",
+  "mystery",
+  "rewards",
+  "destination",
+  "labyrinth-map",
+  "wildwood-removal",
+  "draft-deck",
+  "difficulty-select",
+] as const)("decodes the saved %s location without navigation initialization", (screen) => {
+  const saved = { ...snapshotRun(), currentScreen: screen, interruptedFlow: { kind: "none" as const } };
+  const first = decodeRunResumeSnapshot(saved);
+  const second = decodeRunResumeSnapshot(saved);
+  expect(first.session.activity.kind).toBe(screen);
+  if ("data" in first.session.activity && first.session.activity.data !== null) {
+    expect(first.session.activity).toEqual(second.session.activity);
+    expect(first.session.activity.data).not.toBe((second.session.activity as typeof first.session.activity).data);
+  }
 });

@@ -5,9 +5,9 @@ import { eventHasUnresolvedRandomTrinket, repairUnresolvedMysteryTrinkets } from
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
 import { repairPersistedTrinketManifest } from "@/lib/validation";
-import { rebindLiveRunMeta } from "./run-session-write-port";
+import { restoreActiveBattle } from "./battle-restore";
+import { gameplayDraftRuntime, type GameplayDraft } from "./gameplay-command";
 import { decodeRunResumeSnapshot, type DecodedRunResumeSession } from "./run-resume-codec";
-import type { GameplayDraft } from "./run-session-command";
 import {
   abandonMysteryDestinationVisit,
   clearMysteryVisitState,
@@ -15,6 +15,7 @@ import {
   createDraftRunRandomSource,
   initializeActiveRun,
   initializeFromResumeSnapshot,
+  rebindLiveRunMeta,
   setActiveLabyrinthModifiers,
   setActiveLabyrinthPendingNode,
   setActiveLabyrinthRewardModifiers,
@@ -23,11 +24,11 @@ import {
   setLabyrinthMap,
   setMysteryEvent,
   setRewardState,
+  setRunProgressActivity,
   setScreen,
   setStarterDraftChoices,
   setWildwoodDraft,
 } from "./run-session-write-port";
-import { restoreActiveBattle } from "./battle-restore";
 
 function repairRestoredTrinketShop(state: TrinketShopState, ownedIds: readonly string[]): TrinketShopState {
   const owned = new Set(ownedIds);
@@ -76,7 +77,7 @@ function restoreRunSession(draft: GameplayDraft, decoded: DecodedRunResumeSessio
 
 export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRunData | null): void {
   draft.session.activity = { kind: "inactive" };
-  const decoded = activeRun ? decodeRunResumeSnapshot(activeRun) : null;
+  const decoded = activeRun ? decodeRunResumeSnapshot(activeRun, gameplayDraftRuntime(draft).generateRunSeed) : null;
   if (decoded) initializeFromResumeSnapshot(draft, decoded.progress);
   else initializeActiveRun(draft, null);
 
@@ -95,9 +96,7 @@ export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRu
 
   clearTransientSession(draft);
   setHasActiveRun(draft, true);
-  // Order matters: install the decoded activity first, then navigate. setScreen
-  // re-syncs the activity to the screen via prepareRunNavigation, which is an
-  // identity for the matching visit and repairs stale activity/screen pairs.
+  // Hydration owns the activity; showing the decoded screen only changes display navigation.
   if (decoded) restoreRunSession(draft, decoded.session);
   if (resumeScreen) setScreen(draft, resumeScreen);
   const mysteryEvent = readActivityData(draft.session.activity, "mystery").mysteryEvent;
@@ -118,6 +117,7 @@ export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRu
   if (resumeScreen === "mystery" && !mysteryEvent) {
     abandonMysteryDestinationVisit(draft);
     clearMysteryVisitState(draft);
+    setRunProgressActivity(draft, "destination");
     setScreen(draft, ROUTE_SCREENS.DESTINATION);
   }
   rebindLiveRunMeta(draft);

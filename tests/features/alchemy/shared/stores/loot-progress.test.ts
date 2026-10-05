@@ -2,13 +2,13 @@ import { DESTINATIONS } from "@/lib/routing";
 import {
   beginDestinationClaim,
   commitDestinationClaim,
-  prepareRunNavigation,
+  setRunProgressActivity,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import "../../../../helpers/mock-audio";
 import "../../../../helpers/mock-flush-save";
 import { beforeEach, describe, expect, it } from "vitest";
 import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
@@ -20,7 +20,10 @@ import { resetRunDomainStore, setRunProgress } from "../../../../helpers/run-dom
 import { gridLabyrinthMapFixture } from "../../../../fixtures/labyrinth-map";
 beforeEach(() => resetRunDomainStore());
 
-const progress = () => dispatchRunSessionCommand(resolveDraftLootProgress);
+const progress = () =>
+  dispatchGameplayCommand((...args: Parameters<typeof resolveDraftLootProgress>) =>
+    acceptCommand(resolveDraftLootProgress(...args)),
+  );
 const actions = () =>
   createShopActions({
     talentEffects: createEmptyTalentEffectManifest(),
@@ -30,8 +33,10 @@ const actions = () =>
 describe("loot progression at run boundaries", () => {
   it("uses destination progress rather than battle count and applies account clears to other heroes", () => {
     setRunProgress({ currentAct: 1, destinationIndexInAct: 3, roomsEncountered: 1, characterId: "wizard" });
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.profile.completedDifficulties.knight = ["difficulty-2"];
+
+      return acceptCommand();
     });
     expect(progress()).toEqual({ depth: 4, highestCompletedDifficulty: "difficulty-2" });
     setRunProgress({ roomsEncountered: 20 });
@@ -42,9 +47,11 @@ describe("loot progression at run boundaries", () => {
 
   it("keeps Campaign loot depth stable before and after the destination transition commits", () => {
     setRunProgress({ currentAct: 1, destinationIndexInAct: 2, gold: 999 });
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.session.rewardFlow.state = createEmptyRewardState([DESTINATIONS.GEAR_SHOP]);
       expect(beginDestinationClaim(draft, DESTINATIONS.GEAR_SHOP)).toBe(true);
+
+      return acceptCommand();
     });
     expect(progress().depth).toBe(4);
     const shop = actions();
@@ -54,8 +61,10 @@ describe("loot progression at run boundaries", () => {
         (item) => gearDefinitions[item.definitionId].rarity === "astral",
       ),
     ).toBe(true);
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       expect(commitDestinationClaim(draft, DESTINATIONS.GEAR_SHOP)).toBe(true);
+
+      return acceptCommand();
     });
     expect(progress().depth).toBe(4);
     expect(shop.equipment.refresh()).toBe(true);
@@ -73,9 +82,11 @@ describe("loot progression at run boundaries", () => {
     const cleared = Object.values(map.nodes).find((node) => node.type === "rest")!;
     cleared.cleared = true;
     setRunProgress({ contentSystemType: "labyrinth", gold: 999 });
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.session.labyrinthMap = map;
       draft.session.activeLabyrinthPendingNode = pending.id;
+
+      return acceptCommand();
     });
     expect(progress().depth).toBe(2);
     const shop = actions();
@@ -98,11 +109,13 @@ describe("loot progression at run boundaries", () => {
       destinationIndexInAct: 0,
     });
     const choices = generateGearRewardChoicesForRarity(3, "unique", () => 0.2);
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.session.activity = { kind: "idle" };
       draft.run.navigation.screen = "rewards";
-      prepareRunNavigation(draft, "rewards");
+      setRunProgressActivity(draft, "rewards");
       draft.session.rewardFlow.state = { ...createEmptyRewardState(), rewardType: "gear", choices };
+
+      return acceptCommand();
     });
     const rngBefore = readActiveRun().rng;
     for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -124,12 +137,13 @@ describe("loot progression at run boundaries", () => {
     });
     const map = gridLabyrinthMapFixture();
     const pending = Object.values(map.nodes).find((node) => node.type === "trinket-shop")!;
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.session.activity = { kind: "idle" };
       draft.session.labyrinthMap = map;
       draft.session.activeLabyrinthPendingNode = pending.id;
       draft.run.navigation.screen = "trinket-shop";
-      prepareRunNavigation(draft, "trinket-shop");
+
+      return acceptCommand();
     });
     const shop = actions();
     shop.trinket.initialize();
@@ -155,13 +169,14 @@ describe("loot progression at run boundaries", () => {
     const map = gridLabyrinthMapFixture();
     const pending = Object.values(map.nodes).find((node) => node.type === "equipment-shop")!;
     pending.rewardModifiers = ["masterwork"];
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.session.activity = { kind: "idle" };
       draft.session.labyrinthMap = map;
       draft.session.activeLabyrinthPendingNode = pending.id;
       draft.session.activeLabyrinthRewardModifiers = ["masterwork"];
       draft.run.navigation.screen = "equipment-shop";
-      prepareRunNavigation(draft, "equipment-shop");
+
+      return acceptCommand();
     });
     const shop = actions();
     shop.equipment.initialize();

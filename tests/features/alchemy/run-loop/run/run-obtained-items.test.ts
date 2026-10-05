@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
 import type { GearInstance } from "@/lib/gear";
@@ -23,6 +23,8 @@ describe("applyRewardSelection obtained-item recap", () => {
   it("records permanent trinket rewards", () => {
     dispatchRunSessionCommand((draft) => {
       applyRewardSelection({ reward: { rewardType: "trinket", choice: boneCharm }, draft });
+
+      return acceptCommand();
     });
 
     expect(readGearState().ownedTrinketIds).toContain("bone-charm");
@@ -33,6 +35,8 @@ describe("applyRewardSelection obtained-item recap", () => {
   it("records gear rewards", () => {
     dispatchRunSessionCommand((draft) => {
       applyRewardSelection({ reward: { rewardType: "gear", choice: armor }, draft });
+
+      return acceptCommand();
     });
 
     expect(readGearState().inventories.knight).toContainEqual(armor);
@@ -42,6 +46,8 @@ describe("applyRewardSelection obtained-item recap", () => {
   it("does not record boon rewards", () => {
     dispatchRunSessionCommand((draft) => {
       applyRewardSelection({ reward: { rewardType: "boon", choice: boneCharm }, draft });
+
+      return acceptCommand();
     });
 
     expect(readActiveRun().runBoons).toEqual(["bone-charm"]);

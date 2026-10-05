@@ -9,7 +9,7 @@ import {
   tryUnlockTalent,
   xpThresholdForPoints,
 } from "@/lib/game-data";
-import type { GameplayDraft } from "../run-session-command";
+import type { GameplayDraft } from "../gameplay-command";
 import { createInitialProfileState, type ProfileStateFields } from "../profile-store-types";
 import { createInitialPermanentFields } from "../run-state-init";
 import { rebindLiveRunMeta } from "./live-meta";
@@ -18,10 +18,12 @@ import { defineDraftSetter } from "./write-field";
 
 // ── Meta (talents, XP merge, collection) ─────────────────────────────────────
 
-export function unlockTalent(draft: GameplayDraft, keywordId: KeywordId, talentId: string): void {
+export function unlockTalent(draft: GameplayDraft, keywordId: KeywordId, talentId: string): boolean {
   const result = tryUnlockTalent(keywordId, talentId, draft.runProfile.talentXP, draft.runProfile.unlockedTalents);
-  if (result.unlockedTalents) draft.runProfile.unlockedTalents = result.unlockedTalents;
+  if (!result.unlockedTalents) return false;
+  draft.runProfile.unlockedTalents = result.unlockedTalents;
   rebindLiveRunMeta(draft);
+  return true;
 }
 
 export function resetUnlockedTalents(draft: GameplayDraft): void {

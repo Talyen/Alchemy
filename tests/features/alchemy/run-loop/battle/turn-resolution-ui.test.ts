@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { resolveBattleTurn } from "@/lib/battle";
 import { companionLibrary } from "@/lib/game-data";
 import { commitEndTurn } from "@/features/alchemy/run-loop/battle/battle-session";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
@@ -47,8 +47,10 @@ describe("resolved turns", () => {
   });
 
   it("commits a Haste turn without leaving a logical continuation for its draw animation", () => {
-    dispatchRunSessionCommand((draft) =>
-      initializeActiveBattle(draft, patchBattleState({ playerStatuses: { haste: 1 }, deck: slashDeck(8) })),
+    dispatchGameplayCommand((draft) =>
+      acceptCommand(
+        initializeActiveBattle(draft, patchBattleState({ playerStatuses: { haste: 1 }, deck: slashDeck(8) })),
+      ),
     );
     const result = commitEndTurn();
     expect(result.frames[0]?.turn.kind).toBe("haste");

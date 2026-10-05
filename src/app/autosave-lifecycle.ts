@@ -7,16 +7,19 @@ import {
   waitForPendingSaveWrites,
   type SaveWriteOutcome,
 } from "@/features/alchemy/shared/storage";
-import { readHasActiveRun, readRunPhase } from "@/features/alchemy/shared/stores/run-reads";
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { readHasActiveRun, readRunPhase } from "@/features/alchemy/shared/stores/run-reads";
+import { registerSessionCleanup, sessionClock } from "@/features/alchemy/shared/stores/session-capabilities";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
-import { logStorageFailure } from "@/lib/storage-logging";
 import {
   AUTOSAVE_DEBOUNCE_MS,
   AUTOSAVE_MAX_WAIT_MS,
   AUTOSAVE_RETRY_COOLDOWN_MS,
   BATTLE_AUTOSAVE_DEBOUNCE_MS,
 } from "@/lib/game-constants";
+import { logStorageFailure } from "@/lib/storage-logging";
 import { createAutosaveScheduler } from "./autosave-scheduler";
 
 export interface AutosaveClock {
@@ -27,20 +30,17 @@ export interface AutosaveClock {
 
 export function createAlchemyAutosaveLifecycle(
   enabled: () => boolean = () => true,
-  clock: AutosaveClock = {
-    now: Date.now,
-    // Native browser timers must not receive the injected clock as their receiver.
-    setTimeout: (callback, delay) => globalThis.setTimeout(callback, delay),
-    clearTimeout: (timer) => globalThis.clearTimeout(timer),
-  },
+  clock?: AutosaveClock,
+  gameSession: GameSession = defaultGameSession,
 ) {
+  const runtimeClock = clock ?? sessionClock(gameSession);
   let pendingWrite: Promise<void> = Promise.resolve();
   let timer: ReturnType<AutosaveClock["setTimeout"]> | null = null;
   const scheduler = createAutosaveScheduler(AUTOSAVE_MAX_WAIT_MS, AUTOSAVE_RETRY_COOLDOWN_MS);
   let mounted = true;
 
   const cancelTimer = () => {
-    if (timer !== null) clock.clearTimeout(timer);
+    if (timer !== null) runtimeClock.clearTimeout(timer);
     timer = null;
   };
 
@@ -52,15 +52,15 @@ export function createAlchemyAutosaveLifecycle(
   const schedule = () => {
     cancelTimer();
     if (!mounted || !enabled()) return;
-    const now = clock.now();
+    const now = runtimeClock.now();
     const debounceMs = isAnimationDisabled()
       ? 0
-      : readRunPhase() === "battle"
+      : readRunPhase(gameSession) === "battle"
         ? BATTLE_AUTOSAVE_DEBOUNCE_MS
         : AUTOSAVE_DEBOUNCE_MS;
     const delay = scheduler.nextDelay(now, debounceMs);
     if (delay === null) return;
-    timer = clock.setTimeout(() => {
+    timer = runtimeClock.setTimeout(() => {
       timer = null;
       flush();
     }, delay);
@@ -78,8 +78,8 @@ export function createAlchemyAutosaveLifecycle(
     // revision, or the scheduler would stall with no completion to recover it.
     let save;
     try {
-      const activeRun = resolveActiveRunForSave(readHasActiveRun());
-      save = buildAlchemySaveDataFromStores(activeRun);
+      const activeRun = resolveActiveRunForSave(readHasActiveRun(gameSession), undefined, gameSession);
+      save = buildAlchemySaveDataFromStores(activeRun, gameSession);
     } catch (error) {
       logStorageFailure("Autosave snapshot could not be built", error);
       schedule();
@@ -90,41 +90,46 @@ export function createAlchemyAutosaveLifecycle(
     cancelTimer();
     const complete = (outcome: SaveWriteOutcome) => {
       if (!mounted || !enabled()) return;
-      const action = scheduler.complete(submission, outcome, clock.now());
+      const action = scheduler.complete(submission, outcome, runtimeClock.now());
       if (action === "cancel") cancelTimer();
       // After a partial save, keep a fresher timer set by newer changes;
       // after a failed write the stored retryAt is stale, so always reschedule.
       else if (action === "schedule" && (outcome !== "saved" || timer === null)) schedule();
     };
-    const outcome = terminal ? saveAlchemySaveDataForExit(save) : saveAlchemySaveData(save);
+    const outcome = terminal ? saveAlchemySaveDataForExit(save, gameSession) : saveAlchemySaveData(save, gameSession);
     pendingWrite = outcome.then(complete);
   };
 
   const triggerSave = () => {
     if (!enabled()) return;
-    scheduler.markDirty(clock.now());
+    scheduler.markDirty(runtimeClock.now());
     schedule();
   };
 
-  const unsubscribeCancellation = subscribeSaveCancellation(cancelPending);
-  const unsubscribePersistence = subscribeAlchemyPersistence(triggerSave);
+  const unsubscribeCancellation = subscribeSaveCancellation(cancelPending, gameSession);
+  const unsubscribePersistence = subscribeAlchemyPersistence(triggerSave, gameSession);
 
+  const dispose = (saveOnExit = true) => {
+    unsubscribePersistence();
+    try {
+      if (saveOnExit) flush(true);
+    } finally {
+      mounted = false;
+      cancelTimer();
+      unsubscribeCancellation();
+    }
+  };
+  const release = registerSessionCleanup(gameSession, () => dispose(false));
   return {
     flush,
     async drain() {
       flush();
       await pendingWrite;
-      await waitForPendingSaveWrites();
+      await waitForPendingSaveWrites(gameSession);
     },
     dispose(saveOnExit = true) {
-      unsubscribePersistence();
-      try {
-        if (saveOnExit) flush(true);
-      } finally {
-        mounted = false;
-        cancelTimer();
-        unsubscribeCancellation();
-      }
+      dispose(saveOnExit);
+      release();
     },
   };
 }

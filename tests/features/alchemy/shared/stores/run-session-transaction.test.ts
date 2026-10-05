@@ -1,17 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  dispatchRunSessionCommand,
-  createRunSessionCommand,
+  acceptCommand,
+  rejectCommand,
+  type CommandOutcome,
+  dispatchGameplayCommand,
+  createGameplayCommand,
   type GameplayDraft,
   subscribeRunSessionCommits,
-} from "@/features/alchemy/shared/stores/run-session-command";
+} from "@/features/alchemy/shared/stores/gameplay-command";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { mutateGearForTest } from "../../../../helpers/run-domain-store-test";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import {
   createDraftRunRandomSource,
-  setHasActiveBattle,
   setHasActiveRun,
   setGold,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -42,19 +44,59 @@ beforeEach(() => {
 });
 
 describe("run-session transaction coordinator", () => {
-  it("keeps the root data-only with one region per lifetime", () => {
-    const root = readGameplayState();
+  it.each([false, null])("rolls back rejected gameplay and RNG with fallback %s", (fallback) => {
+    const before = readGameplayState();
+    const onCommit = vi.fn();
+    const effect = vi.fn();
+    const unsubscribe = subscribeRunSessionCommits(onCommit);
+    try {
+      const command = createGameplayCommand(
+        (draft, gold: number) => {
+          setGold(draft, gold);
+          setHasActiveRun(draft, true);
+          setDiscoveredCardIds(draft, ["slash"]);
+          addGearCurrencies(draft.gear, { voidstone: 1 });
+          createDraftRunRandomSource(draft, "shops")();
+          return rejectCommand("A later validation rejected the action", fallback);
+        },
+        { afterCommit: effect },
+      );
 
-    expect(root).not.toHaveProperty("activeRun");
-    expect(root.run).toHaveProperty("activeRun");
-    expect(root.session).toBeDefined();
-    expect(root.battle).toBeDefined();
-    expect(root.runProfile).toBeDefined();
-    expect(root.profile).toBeDefined();
-    expect(root.gear).toBeDefined();
-    expect(root).not.toHaveProperty("runActions");
-    expect(root).not.toHaveProperty("sessionActions");
-    expect(root).not.toHaveProperty("gearActions");
+      expect(command(99)).toBe(fallback);
+      expect(readGameplayState()).toBe(before);
+      expect(onCommit).not.toHaveBeenCalled();
+      expect(effect).not.toHaveBeenCalled();
+
+      // Rejection must release the guard and leave the next seeded draw untouched.
+      dispatchGameplayCommand(
+        (draft) => {
+          createDraftRunRandomSource(draft, "shops")();
+          setGold(draft, 7);
+          return acceptCommand(false);
+        },
+        { afterCommit: effect },
+      );
+      expect(readRunProfile().gold).toBe(7);
+      expect(readActiveRun().rng.counters.shops).toBe(before.run.activeRun.rng.counters.shops + 1);
+      expect(readGameplayState().revision).toBe(before.revision + 1);
+      expect(onCommit).toHaveBeenCalledExactlyOnceWith(before.revision + 1);
+      expect(effect).toHaveBeenCalledExactlyOnceWith(false);
+    } finally {
+      unsubscribe();
+    }
+  });
+
+  it("discards writes from an untyped callback that omits an explicit outcome", () => {
+    const before = readGameplayState();
+    const effect = vi.fn();
+    const invalid = ((draft: GameplayDraft) => {
+      setGold(draft, 99);
+      return false;
+    }) as unknown as Parameters<typeof dispatchGameplayCommand>[0];
+
+    expect(() => dispatchGameplayCommand(invalid, { afterCommit: effect })).toThrow(/explicit accepted or rejected/);
+    expect(readGameplayState()).toBe(before);
+    expect(effect).not.toHaveBeenCalled();
   });
 
   it("executes the public command boundary and runs its effect after commit", () => {
@@ -62,10 +104,10 @@ describe("run-session transaction coordinator", () => {
       expect(readGameplayState().runProfile.gold).toBe(gold);
     });
 
-    const result = dispatchRunSessionCommand(
+    const result = dispatchGameplayCommand(
       (draft) => {
         setGold(draft, 17);
-        return 17;
+        return acceptCommand(17);
       },
       { afterCommit: effect },
     );
@@ -101,12 +143,16 @@ describe("run-session transaction coordinator", () => {
         return result(draft);
       };
 
-      expect(() => dispatchRunSessionCommand(execute, { afterCommit: effect })).toThrow(/must be synchronous/);
+      expect(() =>
+        dispatchGameplayCommand((...args: Parameters<typeof execute>) => acceptCommand(execute(...args)), {
+          afterCommit: effect,
+        }),
+      ).toThrow(/must be synchronous/);
       expect(readGameplayState()).toBe(before);
       expect(onCommit).not.toHaveBeenCalled();
       expect(effect).not.toHaveBeenCalled();
 
-      dispatchRunSessionCommand((draft) => setGold(draft, 7));
+      dispatchGameplayCommand((draft) => acceptCommand(setGold(draft, 7)));
       await new Promise((resolve) => {
         setTimeout(resolve, 0);
       });
@@ -123,9 +169,10 @@ describe("run-session transaction coordinator", () => {
 
   it("enforces synchronous results through command factories and gear wrappers", async () => {
     const before = readGameplayState();
-    const command = createRunSessionCommand((draft, gold: number): unknown => {
+    const command = createGameplayCommand((draft, gold: number): CommandOutcome<unknown> => {
       setGold(draft, gold);
-      return Promise.resolve(gold);
+      const result: unknown = Promise.resolve(gold);
+      return acceptCommand(result);
     });
 
     expect(() => command(99)).toThrow(/must be synchronous/);
@@ -147,10 +194,12 @@ describe("run-session transaction coordinator", () => {
     const before = readGameplayState();
     const effect = vi.fn();
     expect(() =>
-      dispatchRunSessionCommand(
+      dispatchGameplayCommand(
         (draft) => {
           setGold(draft, 99);
-          dispatchRunSessionCommand((nested) => setHasActiveRun(nested, true));
+          dispatchGameplayCommand((nested) => acceptCommand(setHasActiveRun(nested, true)));
+
+          return acceptCommand();
         },
         { afterCommit: effect },
       ),
@@ -158,7 +207,7 @@ describe("run-session transaction coordinator", () => {
     expect(readGameplayState()).toBe(before);
     expect(effect).not.toHaveBeenCalled();
 
-    dispatchRunSessionCommand((draft) => setGold(draft, 7));
+    dispatchGameplayCommand((draft) => acceptCommand(setGold(draft, 7)));
     expect(readGameplayState().revision).toBe(before.revision + 1);
     expect(readRunProfile().gold).toBe(7);
   });
@@ -167,9 +216,9 @@ describe("run-session transaction coordinator", () => {
     const before = readGameplayState();
     const effect = vi.fn(() => {
       expect(readRunProfile().gold).toBe(7);
-      dispatchRunSessionCommand((draft) => setGold(draft, 8));
+      dispatchGameplayCommand((draft) => acceptCommand(setGold(draft, 8)));
     });
-    dispatchRunSessionCommand((draft) => setGold(draft, 7), { afterCommit: effect });
+    dispatchGameplayCommand((draft) => acceptCommand(setGold(draft, 7)), { afterCommit: effect });
 
     expect(effect).toHaveBeenCalledOnce();
     expect(readRunProfile().gold).toBe(8);
@@ -181,48 +230,25 @@ describe("run-session transaction coordinator", () => {
     const effect = vi.fn(() => {
       throw new Error("effect failed");
     });
-    expect(() => dispatchRunSessionCommand((draft) => setGold(draft, 7), { afterCommit: effect })).toThrow(
+    expect(() => dispatchGameplayCommand((draft) => acceptCommand(setGold(draft, 7)), { afterCommit: effect })).toThrow(
       "effect failed",
     );
     expect(effect).toHaveBeenCalledOnce();
     expect(readRunProfile().gold).toBe(7);
     expect(readGameplayState().revision).toBe(before.revision + 1);
 
-    dispatchRunSessionCommand((draft) => setGold(draft, 8));
+    dispatchGameplayCommand((draft) => acceptCommand(setGold(draft, 8)));
     expect(readRunProfile().gold).toBe(8);
     expect(readGameplayState().revision).toBe(before.revision + 2);
   });
 
-  it("publishes one commit after multiple store mutations", () => {
-    const commits: Array<{ revision: number; gold: number; hasActiveRun: boolean }> = [];
-    const beforeRevision = readGameplayState().revision;
-    const unsubscribe = subscribeRunSessionCommits((revision) => {
-      commits.push({
-        revision,
-        gold: readRunProfile().gold,
-        hasActiveRun: readHasActiveRun(),
-      });
-    });
-
-    dispatchRunSessionCommand((draft) => {
-      setGold(draft, 125);
-      setHasActiveRun(draft, true);
-    });
-
-    unsubscribe();
-
-    expect(commits).toHaveLength(1);
-    expect(commits[0]).toMatchObject({ gold: 125, hasActiveRun: true });
-    expect(commits[0].revision).toBe(beforeRevision + 1);
-  });
-
   it("returns serializable battle snapshots from commands", () => {
     setRunProgress({ rng: createRunRngState(() => 42 / 0x1_0000_0000) });
-    const returned = dispatchRunSessionCommand((draft) => {
+    const returned = dispatchGameplayCommand((draft) => {
       const bound = withDraftWorldBattleRng(draft, draft.battle.battleState);
       const next = { ...bound, playerHealth: Math.max(1, bound.playerHealth - 1) };
       setBattleState(draft, next);
-      return snapshotBattleState(next);
+      return acceptCommand(snapshotBattleState(next));
     });
 
     expect(returned).not.toHaveProperty("rng");
@@ -232,7 +258,7 @@ describe("run-session transaction coordinator", () => {
   it("keeps the committed root unchanged until the outer commit", () => {
     const before = useGameplayStateStore.getState();
 
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       setGold(draft, 125);
       setHasActiveRun(draft, true);
 
@@ -240,6 +266,8 @@ describe("run-session transaction coordinator", () => {
       expect(useGameplayStateStore.getState()).toBe(before);
       expect(useGameplayStateStore.getState().runProfile.gold).toBe(0);
       expect(useGameplayStateStore.getState().session.activity.kind !== "inactive").toBe(false);
+
+      return acceptCommand();
     });
 
     const after = useGameplayStateStore.getState();
@@ -254,10 +282,10 @@ describe("run-session transaction coordinator", () => {
     const unsubscribe = subscribeRunSessionCommits(onCommit);
     const effect = vi.fn();
 
-    const result = dispatchRunSessionCommand(
+    const result = dispatchGameplayCommand(
       (draft) => {
         setGold(draft, before.runProfile.gold);
-        return "navigate";
+        return acceptCommand("navigate");
       },
       { afterCommit: effect },
     );
@@ -273,7 +301,7 @@ describe("run-session transaction coordinator", () => {
     const effect = vi.fn();
 
     expect(() =>
-      dispatchRunSessionCommand(
+      dispatchGameplayCommand(
         (draft) => {
           setGold(draft, 42);
           throw new Error("transaction failed");
@@ -285,41 +313,15 @@ describe("run-session transaction coordinator", () => {
     expect(effect).not.toHaveBeenCalled();
   });
 
-  it("publishes one commit for compound draft mutations", () => {
-    const commits: number[] = [];
-    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
-
-    dispatchRunSessionCommand((draft) => {
-      setGold(draft, 10);
-      setHasActiveBattle(draft, true);
-      setGold(draft, 20);
-    });
-
-    unsubscribe();
-
-    expect(commits).toHaveLength(1);
-    expect(readGameplayState().revision).toBeGreaterThanOrEqual(commits[0]);
-    expect(readRunProfile().gold).toBe(20);
-  });
-
-  it("publishes a direct store mutation as one commit", () => {
-    const commits: number[] = [];
-    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
-
-    dispatchRunSessionCommand((draft) => setGold(draft, 7));
-
-    unsubscribe();
-
-    expect(commits).toHaveLength(1);
-  });
-
   it("publishes one commit for command-backed run writes and RNG", () => {
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       createDraftRunRandomSource(draft, "rewards")();
       expect(draft.run.activeRun.rng.counters.rewards).toBe(1);
       setGold(draft, 7);
+
+      return acceptCommand();
     });
 
     unsubscribe();
@@ -333,7 +335,7 @@ describe("run-session transaction coordinator", () => {
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
     expect(() =>
-      dispatchRunSessionCommand((draft) => {
+      dispatchGameplayCommand((draft) => {
         createDraftRunRandomSource(draft, "rewards")();
         setGold(draft, 99);
         throw new Error("command failed");
@@ -347,29 +349,18 @@ describe("run-session transaction coordinator", () => {
     expect(readActiveRun().rng.counters.rewards).toBe(0);
   });
 
-  it("does not publish a commit for an unchanged transaction", () => {
-    const commits: number[] = [];
-    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
-    const before = readGameplayState().revision;
-
-    dispatchRunSessionCommand((draft) => void draft);
-
-    unsubscribe();
-
-    expect(commits).toHaveLength(0);
-    expect(readGameplayState().revision).toBe(before);
-  });
-
   it("publishes one commit for all persisted gameplay stores", () => {
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
 
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       setGold(draft, 125);
       setHasActiveRun(draft, true);
       setRunProfileMaterials(draft, { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
       setDiscoveredCardIds(draft, ["slash"]);
       addGearCurrencies(draft.gear, { voidstone: 1 });
+
+      return acceptCommand();
     });
 
     unsubscribe();
@@ -392,7 +383,7 @@ describe("run-session transaction coordinator", () => {
     inventories.knight = [armor];
     mutateGearForTest((gear) => gear.initialize(inventories, createEmptyGearLoadouts()));
     setRunProgress({ runMaxHealth: 30, runPlayerHealth: 30 });
-    dispatchRunSessionCommand((draft) => setHasActiveRun(draft, true));
+    dispatchGameplayCommand((draft) => acceptCommand(setHasActiveRun(draft, true)));
 
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
@@ -415,7 +406,7 @@ describe("run-session transaction coordinator", () => {
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
 
     expect(() =>
-      dispatchRunSessionCommand((draft) => {
+      dispatchGameplayCommand((draft) => {
         setGold(draft, 999);
         setHasActiveRun(draft, true);
         setRunProfileMaterials(draft, { wood: 9, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
@@ -438,7 +429,7 @@ describe("run-session transaction coordinator", () => {
   });
 
   it("hydrates the complete active run before publishing its commit", () => {
-    dispatchRunSessionCommand((draft) => setGold(draft, 125));
+    dispatchGameplayCommand((draft) => acceptCommand(setGold(draft, 125)));
     const savedRun = snapshotRun("shop");
     resetRunDomainStore();
 

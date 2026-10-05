@@ -1,5 +1,7 @@
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { isActiveRunActivity, readActivityData, runActivityScreen } from "@/lib/active-run-session";
-import { isPlayerDefeated, getBattleCompanionDamageModifiers, type BattleSnapshot } from "@/lib/battle";
+import { getBattleCompanionDamageModifiers, isPlayerDefeated, type BattleSnapshot } from "@/lib/battle";
 import type { ContentSystemId, EncounterCombatTraitId } from "@/lib/content-systems/types";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type {
@@ -58,39 +60,43 @@ export type BattleReadView = Readonly<RunDomainBattleState>;
 function useShallowRunSelector<T>(selector: (state: GameplayState) => T): T {
   return useGameplayStateStore(useShallow(selector));
 }
-export function readActiveRun(): ActiveRunReadView {
-  return deepFreezeInDev(pickActiveRunView(readGameplayState().run));
+export function readActiveRun(gameSession: GameSession = defaultGameSession): ActiveRunReadView {
+  return deepFreezeInDev(pickActiveRunView(readGameplayState(gameSession).run));
 }
-export function readRunProfile(): RunProfileReadView {
-  return deepFreezeInDev({ ...readGameplayState().runProfile });
+export function readRunProfile(gameSession: GameSession = defaultGameSession): RunProfileReadView {
+  return deepFreezeInDev({ ...readGameplayState(gameSession).runProfile });
 }
-export function readRunSession(): RunSessionReadView {
-  const session = readGameplayState().session;
+export function readRunSession(gameSession: GameSession = defaultGameSession): RunSessionReadView {
+  const session = readGameplayState(gameSession).session;
   return deepFreezeInDev({ ...session, hasActiveRun: isActiveRunActivity(session.activity) });
 }
-export function readShopFirstPurchaseUsed(shop: ShopSessionStateKey): boolean {
-  return readActivityData(readGameplayState().session.activity, SHOP_VISIT_BY_STATE_KEY[shop]).firstPurchaseUsed;
+export function readShopFirstPurchaseUsed(
+  shop: ShopSessionStateKey,
+  gameSession: GameSession = defaultGameSession,
+): boolean {
+  return readActivityData(readGameplayState(gameSession).session.activity, SHOP_VISIT_BY_STATE_KEY[shop])
+    .firstPurchaseUsed;
 }
-export function readBattle(): BattleReadView {
-  return deepFreezeInDev({ ...readGameplayState().battle });
+export function readBattle(gameSession: GameSession = defaultGameSession): BattleReadView {
+  return deepFreezeInDev({ ...readGameplayState(gameSession).battle });
 }
-export function readRunRevision(): number {
-  return readGameplayState().revision;
+export function readRunRevision(gameSession: GameSession = defaultGameSession): number {
+  return readGameplayState(gameSession).revision;
 }
-export function readRunInitialized(): boolean {
-  return readGameplayState().run.initialized;
+export function readRunInitialized(gameSession: GameSession = defaultGameSession): boolean {
+  return readGameplayState(gameSession).run.initialized;
 }
-export function readHasActiveRun(): boolean {
-  return isActiveRunActivity(readGameplayState().session.activity);
+export function readHasActiveRun(gameSession: GameSession = defaultGameSession): boolean {
+  return isActiveRunActivity(readGameplayState(gameSession).session.activity);
 }
-export function readHasActiveBattle(): boolean {
-  return readGameplayState().battle.hasActiveBattle;
+export function readHasActiveBattle(gameSession: GameSession = defaultGameSession): boolean {
+  return readGameplayState(gameSession).battle.hasActiveBattle;
 }
-export function readActiveRunScreen(): Screen {
-  return readGameplayState().run.navigation.screen;
+export function readActiveRunScreen(gameSession: GameSession = defaultGameSession): Screen {
+  return readGameplayState(gameSession).run.navigation.screen;
 }
-export function readRunResumeScreen(): Screen | null {
-  const state = readGameplayState();
+export function readRunResumeScreen(gameSession: GameSession = defaultGameSession): Screen | null {
+  const state = readGameplayState(gameSession);
   return isActiveRunActivity(state.session.activity) ? runActivityScreen(state.session.activity) : null;
 }
 export function useRunResumeScreen(): Screen | null {
@@ -98,8 +104,8 @@ export function useRunResumeScreen(): Screen | null {
     isActiveRunActivity(state.session.activity) ? runActivityScreen(state.session.activity) : null,
   );
 }
-export function readRunPhase(): RunPhase {
-  const state = readGameplayState();
+export function readRunPhase(gameSession: GameSession = defaultGameSession): RunPhase {
+  const state = readGameplayState(gameSession);
   return getRunPhase(state.run.navigation.screen, state.battle.hasActiveBattle);
 }
 
@@ -287,8 +293,8 @@ export function getRunSessionFromState(state: GameplayState, screen?: Screen): R
     battle,
   };
 }
-export function getRunSession(screen?: Screen): RunSession {
-  return getRunSessionFromState(readGameplayState(), screen);
+export function getRunSession(screen?: Screen, gameSession: GameSession = defaultGameSession): RunSession {
+  return getRunSessionFromState(readGameplayState(gameSession), screen);
 }
 
 function selectCardInspectionData(state: GameplayState) {
@@ -323,6 +329,6 @@ export function useCardInspectionData() {
   return useShallowRunSelector(selectCardInspectionData);
 }
 
-export function readCardInspectionData() {
-  return selectCardInspectionData(readGameplayState());
+export function readCardInspectionData(gameSession: GameSession = defaultGameSession) {
+  return selectCardInspectionData(readGameplayState(gameSession));
 }

@@ -18,7 +18,19 @@ export interface TokenizedTextOptions {
 }
 
 export function renderTokenizedDescription(text: string, options?: TokenizedTextOptions): ReactNode[] {
+  return renderDescription(text, options);
+}
+
+function renderDescription(
+  text: string,
+  options?: Omit<TokenizedTextOptions, "renderPlain"> & {
+    renderPlain?: (text: string, key: number, offset: number) => ReactNode;
+  },
+): ReactNode[] {
+  let offset = 0;
   return tokenizeDescription(text).map((part, index) => {
+    const start = offset;
+    offset += part.text.length;
     if (part.keywordId) {
       const render = options?.renderKeyword;
       return render ? (
@@ -30,7 +42,7 @@ export function renderTokenizedDescription(text: string, options?: TokenizedText
       );
     }
     const renderPlain = options?.renderPlain;
-    return renderPlain ? renderPlain(part.text, index) : <Fragment key={index}>{part.text}</Fragment>;
+    return renderPlain ? renderPlain(part.text, index, start) : <Fragment key={index}>{part.text}</Fragment>;
   });
 }
 
@@ -94,37 +106,20 @@ export function DescriptionLines({
   const content = useMemo(
     () =>
       lines.map((line, lineIndex) => {
-        const parts = tokenizeDescription(line);
         const corruptedOffsets = getCorruptedValueOffsets(
           corruptedValuePositions ? { corruptedValuePositions } : undefined,
           lineIndex,
         );
-        let runningLength = 0;
 
         return (
           <div key={`${idPrefix}-${lineIndex}-${line}`} className={tooltipBodyLineClass}>
-            {parts.map((part, index) => {
-              const offset = runningLength;
-              runningLength += part.text.length;
-              if (part.keywordId) {
-                return (
-                  <span
-                    key={`${idPrefix}-${lineIndex}-${index}`}
-                    className={cn(keywordDefinitions[part.keywordId]?.colorClass, "font-semibold")}
-                  >
-                    {part.text}
+            {renderDescription(line, {
+              renderPlain: (text, key, offset) =>
+                splitCorruptedNumericParts(text, offset, corruptedOffsets).map((fragment, index) => (
+                  <span key={`${key}-${index}`} className={fragment.corrupted ? "text-destructive" : undefined}>
+                    {fragment.text}
                   </span>
-                );
-              }
-              return splitCorruptedNumericParts(part.text, offset, corruptedOffsets).map((frag, fi) =>
-                frag.corrupted ? (
-                  <span key={`${idPrefix}-${lineIndex}-${index}-${fi}`} className="text-destructive">
-                    {frag.text}
-                  </span>
-                ) : (
-                  <span key={`${idPrefix}-${lineIndex}-${index}-${fi}`}>{frag.text}</span>
-                ),
-              );
+                )),
             })}
           </div>
         );

@@ -5,7 +5,7 @@ import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { getRunAvailableDestinations } from "@/features/alchemy/shared/run-flow/destination-flow";
 import { getPreviousDestination } from "@/features/alchemy/shared/run-flow/resolve-available-destinations";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import {
   beginDestinationClaim,
@@ -40,12 +40,15 @@ describe("run destination controller actions", () => {
         expect.any(Function),
       );
       expect(readActiveRun().roomsEncountered).toBe(rooms + 1);
+      expect(readRunSession().activity.kind).toBe(
+        contentSystemType === CONTENT_SYSTEMS.LABYRINTH ? "labyrinth-map" : "destination",
+      );
       expect(labyrinthClearNode).toHaveBeenCalledTimes(contentSystemType === CONTENT_SYSTEMS.LABYRINTH ? 1 : 0);
     },
   );
 
   it("claimRewardChoice rejects a choice that is not offered", () => {
-    dispatchRunSessionCommand((draft) => setRewardState(draft, createEmptyRewardState()));
+    dispatchRunSessionCommand((draft) => acceptCommand(setRewardState(draft, createEmptyRewardState())));
 
     const handlers = createRunFlow(makeFlowHandlerDeps());
     handlers.claimRewardChoice("slash");
@@ -57,10 +60,12 @@ describe("run destination controller actions", () => {
     vi.spyOn(config, "rollFreshBossId").mockReturnValue("mimic");
 
     dispatchRunSessionCommand((draft) =>
-      setRewardState(draft, {
-        ...createEmptyRewardState(),
-        destinations: [DESTINATIONS.BOSS_COMBAT],
-      }),
+      acceptCommand(
+        setRewardState(draft, {
+          ...createEmptyRewardState(),
+          destinations: [DESTINATIONS.BOSS_COMBAT],
+        }),
+      ),
     );
 
     createRunFlow(makeFlowHandlerDeps()).prepareDestinationScreen();
@@ -83,6 +88,7 @@ describe("run destination controller actions", () => {
     commit?.();
 
     expect(readActiveRun().roomsEncountered).toBe(1);
+    expect(readRunSession().activity.kind).toBe("destination");
   });
 
   it("advanceToNextDestination samples the next picker at the live destination index after a non-combat continue", () => {
@@ -178,6 +184,8 @@ describe("run destination controller actions", () => {
         ]);
         setMysteryChosenCardId(draft, "slash");
         setMysteryChosenChoice(draft, { label: "Leave", effects: [] });
+
+        return acceptCommand();
       });
 
       const labyrinthClearNode = vi.fn();
@@ -201,7 +209,7 @@ describe("run destination controller actions", () => {
       lastOfferedDestinations: offered,
       destinationRoundsSinceOffered: { [DESTINATIONS.CAMPFIRE]: 0 },
     });
-    dispatchRunSessionCommand((draft) => setRewardState(draft, createEmptyRewardState()));
+    dispatchRunSessionCommand((draft) => acceptCommand(setRewardState(draft, createEmptyRewardState())));
 
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
     createRunFlow(makeFlowHandlerDeps({ navigateTo })).returnToCurrentDestination();
@@ -224,8 +232,12 @@ describe("run destination controller actions", () => {
       completedDestinations: [DESTINATIONS.NORMAL_COMBAT],
       lastOfferedDestinations: offered,
     });
-    dispatchRunSessionCommand((draft) => setRewardState(draft, { ...createEmptyRewardState(), destinations: offered }));
-    expect(dispatchRunSessionCommand((draft) => beginDestinationClaim(draft, DESTINATIONS.CORRUPTION))).toBe(true);
+    dispatchRunSessionCommand((draft) =>
+      acceptCommand(setRewardState(draft, { ...createEmptyRewardState(), destinations: offered })),
+    );
+    expect(
+      dispatchRunSessionCommand((draft) => acceptCommand(beginDestinationClaim(draft, DESTINATIONS.CORRUPTION))),
+    ).toBe(true);
 
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
     createRunFlow(makeFlowHandlerDeps({ navigateTo })).returnToCurrentDestination();
@@ -245,7 +257,9 @@ describe("run destination controller actions", () => {
       completedDestinations: [],
       lastOfferedDestinations: [],
     });
-    dispatchRunSessionCommand((draft) => setRewardState(draft, { ...createEmptyRewardState(), destinations: offered }));
+    dispatchRunSessionCommand((draft) =>
+      acceptCommand(setRewardState(draft, { ...createEmptyRewardState(), destinations: offered })),
+    );
 
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
     createRunFlow(makeFlowHandlerDeps({ navigateTo })).handleDestinationChoice(DESTINATIONS.CORRUPTION);

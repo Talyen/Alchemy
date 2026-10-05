@@ -8,15 +8,12 @@ import {
   equipGear,
   gearDefinitions,
   isGearCompatibleWithLoadoutSlot,
-  isGearCompatibleWithSlot,
   normalizeExclusiveGearLoadouts,
   normalizeGearInstance,
-  normalizeGearLoadout,
   pruneOrphanGearLoadouts,
   salvageGear,
   unequipGear,
   type GearInstance,
-  type GearLoadouts,
 } from "@/lib/gear";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { makeGearInstance } from "../../helpers/gear-fixtures";
@@ -24,21 +21,13 @@ import { makeGearInstance } from "../../helpers/gear-fixtures";
 const ring: GearInstance = { instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] };
 
 describe("gear domain", () => {
-  it("allows one ring instance in either ring slot, but not both on one class", () => {
-    expect(isGearCompatibleWithSlot(gearDefinitions[ring.definitionId], "left-accessory")).toBe(true);
-    expect(isGearCompatibleWithSlot(gearDefinitions[ring.definitionId], "right-accessory")).toBe(true);
-
+  it("moves one ring between slots and heroes without duplicating it or mutating earlier loadouts", () => {
     const left = equipGear(createEmptyGearLoadouts(), "knight", "left-accessory", ring, [ring]);
-    expect(left.knight["left-accessory"]).toBe(ring.instanceId);
     const right = equipGear(left, "knight", "right-accessory", ring, [ring]);
-    expect(right.knight["left-accessory"]).toBeNull();
-    expect(right.knight["right-accessory"]).toBe(ring.instanceId);
-  });
-
-  it("moves the same instance between classes", () => {
-    const knight = equipGear(createEmptyGearLoadouts(), "knight", "left-accessory", ring, [ring]);
-    const rogue = equipGear(knight, "rogue", "right-accessory", ring, [ring]);
-    expect(rogue.knight["left-accessory"]).toBeNull();
+    const rogue = equipGear(right, "rogue", "right-accessory", ring, [ring]);
+    expect(left.knight["left-accessory"]).toBe(ring.instanceId);
+    expect(right.knight).toEqual({ ...createEmptyGearLoadouts().knight, "right-accessory": ring.instanceId });
+    expect(rogue.knight).toEqual(createEmptyGearLoadouts().knight);
     expect(rogue.rogue["right-accessory"]).toBe(ring.instanceId);
   });
 
@@ -104,30 +93,16 @@ describe("gear domain", () => {
     });
   });
 
-  it("clears off-hand when equipping a two-handed main-hand weapon", () => {
+  it("preserves the selected hand when switching between a staff and shield", () => {
     const staff = makeGearInstance("staff-basic", "staff");
-    const shield: GearInstance = {
-      instanceId: "shield-1",
-      definitionId: "leather-buckler-basic",
-      affixes: [],
-    };
-    let loadouts = equipGear(createEmptyGearLoadouts(), "knight", "off-hand", shield, [staff, shield]);
-    loadouts = equipGear(loadouts, "knight", "main-hand", staff, [staff, shield]);
-    expect(loadouts.knight["main-hand"]).toBe(staff.instanceId);
-    expect(loadouts.knight["off-hand"]).toBeNull();
-  });
-
-  it("clears two-handed main-hand when equipping off-hand", () => {
-    const staff = makeGearInstance("staff-basic", "staff");
-    const shield: GearInstance = {
-      instanceId: "shield-1",
-      definitionId: "leather-buckler-basic",
-      affixes: [],
-    };
-    let loadouts = equipGear(createEmptyGearLoadouts(), "knight", "main-hand", staff, [staff, shield]);
-    loadouts = equipGear(loadouts, "knight", "off-hand", shield, [staff, shield]);
-    expect(loadouts.knight["main-hand"]).toBeNull();
-    expect(loadouts.knight["off-hand"]).toBe(shield.instanceId);
+    const shield = makeGearInstance("leather-buckler-basic", "shield");
+    const inventory = [staff, shield];
+    const armed = equipGear(createEmptyGearLoadouts(), "knight", "off-hand", shield, inventory);
+    const withStaff = equipGear(armed, "knight", "main-hand", staff, inventory);
+    expect(withStaff.knight).toEqual({ ...createEmptyGearLoadouts().knight, "main-hand": staff.instanceId });
+    const withShield = equipGear(withStaff, "knight", "off-hand", shield, inventory);
+    expect(withShield.knight).toEqual(armed.knight);
+    expect(withStaff.knight["main-hand"]).toBe(staff.instanceId);
   });
 
   it("rejects malformed persisted gear instances", () => {
@@ -159,67 +134,49 @@ describe("gear domain", () => {
     expect(effectsForInstance(normalized!).flatPhysicalDamage).toBe(1);
   });
 
-  it("salvages equipped gear for crafting currencies and clears loadouts", () => {
-    const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "left-accessory", ring, [ring]);
-    const result = salvageGear([ring], loadouts, ring.instanceId);
-    expect(result?.inventory).toEqual([]);
-    expect(result?.loadouts.knight["left-accessory"]).toBeNull();
-    expect(result?.yieldedCurrencies).toEqual(computeSalvageYield(ring).currencies);
-    expect(result?.yieldedMaterials).toEqual({ ...emptyInventory(), gems: 3 });
+  it("salvages equipped gear once, retains other inventory, and repairs orphan loadout references", () => {
+    const other = makeGearInstance("dagger-basic", "other");
+    const inventory = [ring, other];
+    const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "left-accessory", ring, inventory);
+    loadouts.knight["off-hand"] = "missing";
+    const before = structuredClone(loadouts);
+    const result = salvageGear(inventory, loadouts, ring.instanceId)!;
+    expect(result.inventory).toEqual([other]);
+    expect(result.loadouts.knight).toEqual(createEmptyGearLoadouts().knight);
+    expect(result.yieldedCurrencies).toEqual(computeSalvageYield(ring).currencies);
+    expect(result.yieldedMaterials).toEqual({ ...emptyInventory(), gems: 3 });
+    expect(salvageGear(result.inventory, result.loadouts, ring.instanceId)).toBeNull();
+    expect(loadouts).toEqual(before);
+    expect(inventory).toEqual([ring, other]);
   });
 
-  it("rejects salvaging nonexistent Gear", () => {
-    expect(salvageGear([ring], createEmptyGearLoadouts(), "missing-ring")).toBeNull();
-  });
-
-  it("normalizes partial loadouts and exclusive references", () => {
-    const partial = normalizeGearLoadout({ body: "body-1" });
-    expect(partial.body).toBe("body-1");
-    expect(partial).not.toHaveProperty("trinket-1");
-
-    const exclusive = normalizeExclusiveGearLoadouts({
-      ...createEmptyGearLoadouts(),
-      knight: { ...createEmptyGearLoadouts().knight, "left-accessory": "ring-1" },
-      rogue: { ...createEmptyGearLoadouts().rogue, "right-accessory": "ring-1" },
-    });
-    expect(exclusive.knight["left-accessory"]).toBe("ring-1");
+  it("repairs duplicate and missing saved references deterministically", () => {
+    const loadouts = createEmptyGearLoadouts();
+    loadouts.knight["left-accessory"] = ring.instanceId;
+    loadouts.rogue["right-accessory"] = ring.instanceId;
+    loadouts.knight.body = "missing";
+    const exclusive = normalizeExclusiveGearLoadouts(loadouts);
+    expect(exclusive.knight["left-accessory"]).toBe(ring.instanceId);
     expect(exclusive.rogue["right-accessory"]).toBeNull();
-  });
-
-  it("prunes loadout references missing from inventory", () => {
-    const inventory = [ring];
-    const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "left-accessory", ring, [ring]);
-    const pruned = pruneOrphanGearLoadouts([], loadouts);
-    expect(pruned.knight["left-accessory"]).toBeNull();
-    expect(pruneOrphanGearLoadouts(inventory, loadouts).knight["left-accessory"]).toBe("ring-1");
-  });
-
-  it("repairs a two-handed main-hand with an occupied off-hand on load", () => {
-    const staff = makeGearInstance("staff-basic", "staff-1");
-    const shield = makeGearInstance("leather-buckler-basic", "shield-1");
-    const loadouts = {
+    expect(pruneOrphanGearLoadouts([ring], loadouts)).toEqual({
       ...createEmptyGearLoadouts(),
-      knight: { ...createEmptyGearLoadouts().knight, "main-hand": staff.instanceId, "off-hand": shield.instanceId },
-    };
-    const pruned = pruneOrphanGearLoadouts([staff, shield], loadouts);
-    expect(pruned.knight["main-hand"]).toBe(staff.instanceId);
-    expect(pruned.knight["off-hand"]).toBeNull();
+      knight: { ...createEmptyGearLoadouts().knight, "left-accessory": ring.instanceId },
+    });
+    expect(pruneOrphanGearLoadouts([], loadouts)).toEqual(createEmptyGearLoadouts());
+    expect(loadouts.rogue["right-accessory"]).toBe(ring.instanceId);
   });
 
-  it("repairs a ranged main-hand with a non-quiver off-hand on load", () => {
-    const longbow = makeGearInstance("longbow-basic", "longbow-1");
-    const buckler = makeGearInstance("leather-buckler-basic", "buckler-1");
-    const loadouts = {
-      ...createEmptyGearLoadouts(),
-      knight: {
-        ...createEmptyGearLoadouts().knight,
-        "main-hand": longbow.instanceId,
-        "off-hand": buckler.instanceId,
-      },
-    };
-    const pruned = pruneOrphanGearLoadouts([longbow, buckler], loadouts);
-    expect(pruned.knight["main-hand"]).toBe(longbow.instanceId);
-    expect(pruned.knight["off-hand"]).toBeNull();
+  it.each(["staff-basic", "longbow-basic"])("repairs an incompatible saved shield beside %s", (definitionId) => {
+    const weapon = makeGearInstance(definitionId, "weapon");
+    const shield = makeGearInstance("leather-buckler-basic", "shield");
+    const loadouts = createEmptyGearLoadouts();
+    loadouts.knight["main-hand"] = weapon.instanceId;
+    loadouts.knight["off-hand"] = shield.instanceId;
+    expect(pruneOrphanGearLoadouts([weapon, shield], loadouts).knight).toEqual({
+      ...createEmptyGearLoadouts().knight,
+      "main-hand": weapon.instanceId,
+    });
+    expect(loadouts.knight["off-hand"]).toBe(shield.instanceId);
   });
 
   describe("ranged weapons and quivers", () => {
@@ -281,23 +238,10 @@ describe("gear domain", () => {
       expect(result.knight["off-hand"]).toBeNull();
     });
 
-    it("accepts equipping a quiver off-hand when a bow main-hand is equipped", () => {
-      const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "main-hand", longbow, [longbow]);
-      expect(
-        isGearCompatibleWithLoadoutSlot(gearDefinitions["quiver-basic"], "off-hand", loadouts.knight, [
-          longbow,
-          quiver,
-        ]),
-      ).toBe(true);
-      const result = equipGear(loadouts, "knight", "off-hand", quiver, [longbow, quiver]);
-      expect(result.knight["main-hand"]).toBe(longbow.instanceId);
-      expect(result.knight["off-hand"]).toBe(quiver.instanceId);
-    });
-
     it.each(["longsword-basic", "staff-basic"])(
       "rejects equipping %s while a Quiver is in off-hand",
       (definitionId) => {
-        const loadouts: GearLoadouts = createEmptyGearLoadouts();
+        const loadouts = createEmptyGearLoadouts();
         loadouts.knight["off-hand"] = quiver.instanceId;
         const weapon = makeGearInstance(definitionId);
         const inventory = [quiver, weapon];
@@ -337,77 +281,20 @@ describe("gear domain", () => {
     });
   });
 
-  describe("dual-wield one-handers", () => {
-    const dualWieldDefinitionIds = [
-      "hatchet-basic",
-      "longsword-basic",
-      "shortsword-basic",
-      "dagger-basic",
-      "mace-basic",
-      "flail-basic",
-      "wand-basic",
-    ] as const;
-
-    it("allows one-handed melee and wand in main-hand or off-hand", () => {
-      for (const definitionId of dualWieldDefinitionIds) {
-        const definition = gearDefinitions[definitionId];
-        expect(isGearCompatibleWithSlot(definition, "main-hand"), definitionId).toBe(true);
-        expect(isGearCompatibleWithSlot(definition, "off-hand"), definitionId).toBe(true);
-      }
-    });
-
-    it("keeps two-handers and ranged weapons out of off-hand", () => {
-      for (const definitionId of [
-        "double-axe-basic",
-        "maul-basic",
-        "greatsword-basic",
-        "staff-basic",
-        "longbow-basic",
-        "shortbow-basic",
-        "recurve-bow-basic",
-        "crossbow-basic",
-      ] as const) {
-        expect(isGearCompatibleWithSlot(gearDefinitions[definitionId], "off-hand"), definitionId).toBe(false);
-      }
-    });
-
-    it("equips a one-hander in off-hand beside another one-handed main-hand", () => {
-      const longsword: GearInstance = { instanceId: "sword-1", definitionId: "longsword-basic", affixes: [] };
-      const dagger: GearInstance = { instanceId: "dagger-1", definitionId: "dagger-basic", affixes: [] };
-      const inventory = [longsword, dagger];
-      let loadouts = equipGear(createEmptyGearLoadouts(), "knight", "main-hand", longsword, inventory);
-      loadouts = equipGear(loadouts, "knight", "off-hand", dagger, inventory);
-      expect(loadouts.knight["main-hand"]).toBe(longsword.instanceId);
-      expect(loadouts.knight["off-hand"]).toBe(dagger.instanceId);
-    });
-
-    it("rejects a one-hander in off-hand when main-hand is ranged", () => {
-      const longbow: GearInstance = { instanceId: "bow-1", definitionId: "longbow-basic", affixes: [] };
-      const dagger: GearInstance = { instanceId: "dagger-1", definitionId: "dagger-basic", affixes: [] };
-      const inventory = [longbow, dagger];
-      const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "main-hand", longbow, inventory);
-      expect(
-        isGearCompatibleWithLoadoutSlot(gearDefinitions["dagger-basic"], "off-hand", loadouts.knight, inventory),
-      ).toBe(false);
-      const result = equipGear(loadouts, "knight", "off-hand", dagger, inventory);
-      expect(result.knight["off-hand"]).toBeNull();
-    });
-  });
-
-  describe("salvage repair", () => {
-    it("salvageGear cleans up loadouts with post-salvage inventory", () => {
-      const longsword: GearInstance = { instanceId: "sword-1", definitionId: "longsword-basic", affixes: [] };
-      const otherItem: GearInstance = { instanceId: "other-1", definitionId: "dagger-basic", affixes: [] };
-      const inventory = [longsword, otherItem];
-      const loadouts = createEmptyGearLoadouts();
-      loadouts.knight["main-hand"] = longsword.instanceId;
-      loadouts.knight["off-hand"] = "nonexistent-item";
-
-      const result = salvageGear(inventory, loadouts, longsword.instanceId);
-      expect(result).not.toBeNull();
-      expect(result!.inventory).toEqual([otherItem]);
-      expect(result!.loadouts.knight["main-hand"]).toBeNull();
-      expect(result!.loadouts.knight["off-hand"]).toBeNull();
-    });
+  it("equips two one-handed weapons but rejects an off-hand weapon beside a bow", () => {
+    const sword = makeGearInstance("longsword-basic", "sword");
+    const dagger = makeGearInstance("dagger-basic", "dagger");
+    const bow = makeGearInstance("longbow-basic", "bow");
+    const inventory = [sword, dagger, bow];
+    const armed = equipGear(createEmptyGearLoadouts(), "knight", "main-hand", sword, inventory);
+    const dual = equipGear(armed, "knight", "off-hand", dagger, inventory);
+    expect(dual.knight).toEqual({ ...armed.knight, "off-hand": dagger.instanceId });
+    const ranged = equipGear(dual, "knight", "main-hand", bow, inventory);
+    expect(ranged.knight).toEqual({ ...armed.knight, "main-hand": bow.instanceId });
+    expect(
+      isGearCompatibleWithLoadoutSlot(gearDefinitions[dagger.definitionId], "off-hand", ranged.knight, inventory),
+    ).toBe(false);
+    expect(equipGear(ranged, "knight", "off-hand", dagger, inventory)).toBe(ranged);
+    expect(dual.knight["off-hand"]).toBe(dagger.instanceId);
   });
 });

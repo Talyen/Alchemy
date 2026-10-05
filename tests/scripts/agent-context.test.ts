@@ -117,7 +117,7 @@ describe("agent discovery", () => {
         "src/features/alchemy/shared/stores/run-session-command.ts",
         "run-command",
         "Command atomicity",
-        "returning `false`",
+        "rejectCommand(reason, fallback)",
       ],
     ]) {
       const selected = selectContext([file]);

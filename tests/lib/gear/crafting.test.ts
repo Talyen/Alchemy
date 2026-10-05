@@ -92,20 +92,14 @@ describe("crafting currency logic", () => {
     expect(rng).not.toHaveBeenCalled();
   });
 
-  it("preserves frozen salvage payouts across reload and affix changes", () => {
+  it("preserves deterministic salvage payouts across reload and affix changes", () => {
     const original = item([physical]);
     const preview = computeSalvageYield(original);
     expect(computeSalvageYield(JSON.parse(JSON.stringify(original)))).toEqual(preview);
     expect(computeSalvageYield({ ...original, affixes: [maxPhysical] })).toEqual(preview);
-    // A distinct supplied payout catches accidental recomputation; supplying
-    // the ordinary preview would agree with a reroll of the deterministic seed.
-    const frozen = {
-      currencies: { ...preview.currencies, voidstone: 42 },
-      materials: { ...preview.materials, gems: 17 },
-    };
-    const result = salvageGear([original], createEmptyGearLoadouts(), original.instanceId, frozen);
-    expect(result?.yieldedCurrencies).toEqual(frozen.currencies);
-    expect(result?.yieldedMaterials).toEqual(frozen.materials);
+    const result = salvageGear([original], createEmptyGearLoadouts(), original.instanceId);
+    expect(result?.yieldedCurrencies).toEqual(preview.currencies);
+    expect(result?.yieldedMaterials).toEqual(preview.materials);
   });
 
   it("retains uncataloged affix ids during an upgrade without offering to enhance them", () => {

@@ -1,4 +1,7 @@
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
+import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { snapshotTransactionValue } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   createDraftRunRandomSource,
   setRunDeck,
@@ -22,39 +25,48 @@ import { resolveDraftShopModifiers, resolveReadShopModifiers } from "./shop-pric
 import { createInitialShopState, merchantShopPool, resampleCardShopOfferings } from "./shop-state-init";
 import { commitShopService, runShopTransaction } from "./shop-transactions";
 
-export function createMerchantShopCommands({
-  talentEffects,
-  homesteadEffects,
-}: {
-  talentEffects: TalentEffectManifest;
-  homesteadEffects: Pick<HomesteadEffectManifest, "removeCardDiscount">;
-}): MerchantShopCommands {
-  const { buy: buyCard, getBuyPrice: getCardBuyPrice } = createShopPurchaseActions({
-    activity: "shop",
+export function createMerchantShopCommands(
+  {
     talentEffects,
-    itemsOf: (state) => state.cards,
-    slotKeyOf: cardSlotKeyOf,
-    idOf: (item) => item.id,
-    priceOf: (card, context) => getShopBuyPrice("merchantCard", card, context),
-    acquire: appendCardToRunWithDiscovery,
-  });
+    homesteadEffects,
+  }: {
+    talentEffects: TalentEffectManifest;
+    homesteadEffects: Pick<HomesteadEffectManifest, "removeCardDiscount">;
+  },
+  gameSession: GameSession = defaultGameSession,
+): MerchantShopCommands {
+  const { buy: buyCard, getBuyPrice: getCardBuyPrice } = createShopPurchaseActions(
+    {
+      activity: "shop",
+      talentEffects,
+      itemsOf: (state) => state.cards,
+      slotKeyOf: cardSlotKeyOf,
+      idOf: (item) => item.id,
+      priceOf: (card, context) => getShopBuyPrice("merchantCard", card, context),
+      acquire: appendCardToRunWithDiscovery,
+    },
+    gameSession,
+  );
   const getRemoveCardPrice = () =>
-    computeRemoveCardPrice(talentEffects, resolveReadShopModifiers(), homesteadEffects.removeCardDiscount);
-  const getRefreshPrice = createGetRefreshPrice("shop", talentEffects);
+    computeRemoveCardPrice(talentEffects, resolveReadShopModifiers(gameSession), homesteadEffects.removeCardDiscount);
+  const getRefreshPrice = createGetRefreshPrice("shop", talentEffects, gameSession);
 
-  const initialize = initializeShop("shop", (draft) =>
-    createInitialShopState(
-      draft.run.activeRun.runDeck,
-      createDraftRunRandomSource(draft, "shops"),
-      resolveDraftShopModifiers(draft),
-    ),
+  const initialize = initializeShop(
+    "shop",
+    (draft) =>
+      createInitialShopState(
+        snapshotTransactionValue(draft.run.activeRun.runDeck),
+        createDraftRunRandomSource(draft, "shops"),
+        resolveDraftShopModifiers(draft),
+      ),
+    gameSession,
   );
 
   function removeCard(index: number): boolean {
     return runShopTransaction(
       "shop",
       (draft) => {
-        const state = readActivityData(draft.session.activity, "shop");
+        const state = readActivityData(snapshotTransactionValue(draft.session.activity), "shop");
         const price = computeRemoveCardPrice(
           talentEffects,
           resolveDraftShopModifiers(draft),
@@ -74,23 +86,27 @@ export function createMerchantShopCommands({
         });
       },
       "shopRemove",
+      gameSession,
     ).committed;
   }
 
-  const refresh = createShopRefreshAction({
-    activity: "shop",
-    talentEffects,
-    resample: (draft, state, modifiers) => ({
-      ...state,
-      cards: resampleCardShopOfferings(
-        draft.run.activeRun.runDeck,
-        merchantShopPool(modifiers),
-        state.cards,
-        SHOP_CARDS_OFFERED,
-        createDraftRunRandomSource(draft, "shops"),
-      ),
-    }),
-  });
+  const refresh = createShopRefreshAction(
+    {
+      activity: "shop",
+      talentEffects,
+      resample: (draft, state, modifiers) => ({
+        ...state,
+        cards: resampleCardShopOfferings(
+          snapshotTransactionValue(draft.run.activeRun.runDeck),
+          merchantShopPool(modifiers),
+          state.cards,
+          SHOP_CARDS_OFFERED,
+          createDraftRunRandomSource(draft, "shops"),
+        ),
+      }),
+    },
+    gameSession,
+  );
 
   return { initialize, buyCard, removeCard, refresh, getCardBuyPrice, getRemoveCardPrice, getRefreshPrice };
 }

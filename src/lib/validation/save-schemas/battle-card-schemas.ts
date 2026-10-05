@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { BattleCardEffectSchema } from "@/lib/game-data";
+import { BattleCardEffectSchema, renderCardDescription } from "@/lib/game-data";
+import { parseSavedCardDescription } from "./card-description-schema";
 import { recordNestedValidationWarnings, type ValidationError } from "./validation-utils";
 
 function parseSavedEffectList(values: unknown[]): {
@@ -34,6 +35,7 @@ export const BattleCardSchema = z
     uid: z.number().int().optional(),
     title: z.string().default(""),
     descriptionLines: z.array(z.unknown()).catch([]),
+    description: z.unknown().optional(),
     art: z.string().default(""),
     // -1 marks a corrupt/unparseable cost that survived load repair; runtime
     // treats it as broken data, never as a playable cost.
@@ -58,12 +60,15 @@ export const BattleCardSchema = z
   .transform((saved) => {
     const described = cloneSavedDescriptionLines(saved.descriptionLines);
     const effects = parseSavedEffectList(saved.effects);
+    const description = parseSavedCardDescription(saved.description, effects.values);
+    const rendered = description ? renderCardDescription(effects.values, description) : undefined;
     const corruptedValuePositions = saved.corruptedValuePositions?.filter((position) => position !== null);
     const cost = Number.isInteger(saved.cost) && saved.cost >= 0 ? saved.cost : -1;
     const result = {
       id: saved.id,
       title: saved.title,
-      descriptionLines: described.values ?? [],
+      descriptionLines: rendered?.descriptionLines ?? described.values ?? [],
+      ...(description ? { description } : {}),
       art: saved.art,
       cost,
       effects: effects.values,
@@ -72,9 +77,21 @@ export const BattleCardSchema = z
       ...(saved.brewed !== undefined ? { brewed: saved.brewed } : {}),
       ...(saved.corrupted !== undefined ? { corrupted: saved.corrupted } : {}),
       ...(saved.baseTitle !== undefined ? { baseTitle: saved.baseTitle } : {}),
-      ...(corruptedValuePositions && corruptedValuePositions.length > 0 ? { corruptedValuePositions } : {}),
+      ...(rendered
+        ? rendered.corruptedValuePositions.length
+          ? { corruptedValuePositions: rendered.corruptedValuePositions }
+          : {}
+        : corruptedValuePositions && corruptedValuePositions.length > 0
+          ? { corruptedValuePositions }
+          : {}),
     };
-    recordNestedValidationWarnings([...described.errors, ...effects.errors]);
+    recordNestedValidationWarnings([
+      ...described.errors,
+      ...effects.errors,
+      ...(saved.description !== undefined && !description
+        ? [{ path: "description", message: "invalid effect bindings were discarded" }]
+        : []),
+    ]);
     return result;
   });
 

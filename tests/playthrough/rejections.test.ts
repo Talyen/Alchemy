@@ -7,7 +7,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { talentPool, canUnlockTalent } from "@/lib/game-data";
 import { resetAllTestStores } from "../helpers/run-domain-store-test";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { readBattle, readRunSession, readRunProfile, readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import { setGold, setMaterials, setRunDeck, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
@@ -15,7 +15,7 @@ import { createPlaythroughController } from "@/app/playthrough/controller";
 import { commitCardPlay } from "@/features/alchemy/shared/stores/battle-commands";
 import { cardSlotKeyOf } from "@/features/alchemy/run-loop/shop/shop-commands-core";
 import { claimRunReward } from "@/features/alchemy/run-loop/run/reward-commands";
-import { getRewardChoiceId } from "@/lib/active-run-session";
+import { getRewardChoiceId, parseActiveRun } from "@/lib/active-run-session";
 import { buildings } from "@/lib/homestead/data";
 import { constructBuilding } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
@@ -57,12 +57,12 @@ describe("retained headless rejection and persistence contracts", () => {
     if (activity.kind !== "shop") throw new Error("Shop not initialized");
     const card = activity.data.cards[0]!;
     const key = cardSlotKeyOf(card, 0);
-    dispatchRunSessionCommand((draft) => setGold(draft, 10000));
+    dispatchGameplayCommand((draft) => acceptCommand(setGold(draft, 10000)));
     expect(shop.buyCard(card, key)).toBe(true);
     const after = stateDigest();
     expect(shop.buyCard(card, key)).toBe(false);
     expect(stateDigest()).toBe(after);
-    dispatchRunSessionCommand((draft) => setGold(draft, 0));
+    dispatchGameplayCommand((draft) => acceptCommand(setGold(draft, 0)));
     const second = activity.data.cards[1]!;
     const poor = stateDigest();
     expect(shop.buyCard(second, cardSlotKeyOf(second, 1))).toBe(false);
@@ -71,7 +71,9 @@ describe("retained headless rejection and persistence contracts", () => {
 
   it("locks a claimed reward and rejects stale and duplicate claims", () => {
     const { flow } = start();
-    dispatchRunSessionCommand((draft) => setBattleState(draft, { ...readBattle().battleState, enemyHealth: 0 }));
+    dispatchGameplayCommand((draft) =>
+      acceptCommand(setBattleState(draft, { ...readBattle().battleState, enemyHealth: 0 })),
+    );
     flow.handleBattleVictory();
     const before = stateDigest();
     expect(claimRunReward("not-offered")).toBeNull();
@@ -88,9 +90,9 @@ describe("retained headless rejection and persistence contracts", () => {
   it("settles mystery once even with an empty deck and preserves homestead upgrades", () => {
     const { flow } = start();
     // Targeted setup, deliberately separate from earned-career sampling.
-    dispatchRunSessionCommand((draft) => setScreen(draft, "destination"));
+    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "destination")));
     flow.beginMysteryEvent();
-    dispatchRunSessionCommand((draft) => setRunDeck(draft, []));
+    dispatchGameplayCommand((draft) => acceptCommand(setRunDeck(draft, [])));
     const visit = readRunSession().activity;
     if (visit.kind !== "mystery") throw new Error("Missing mystery");
     const choice = visit.data.mysteryEvent!.choices[0]!;
@@ -99,8 +101,8 @@ describe("retained headless rejection and persistence contracts", () => {
     flow.handleMysteryChoice(choice);
     expect(stateDigest()).toBe(after);
     const building = buildings[0]!;
-    dispatchRunSessionCommand((draft) => setMaterials(draft, building.tiers[0]!.cost));
-    expect(dispatchRunSessionCommand((draft) => constructBuilding(draft, building.id))).toBe(true);
+    dispatchGameplayCommand((draft) => acceptCommand(setMaterials(draft, building.tiers[0]!.cost)));
+    expect(dispatchGameplayCommand((draft) => acceptCommand(constructBuilding(draft, building.id)))).toBe(true);
     expect(readRunProfile().constructedBuildings[building.id]).toBe(1);
   });
 
@@ -108,10 +110,12 @@ describe("retained headless rejection and persistence contracts", () => {
     const talent = talentPool.find(
       (entry) => canUnlockTalent(entry.keywordId, entry.id, { [entry.keywordId]: 1000 }, {}).ok,
     )!;
-    dispatchRunSessionCommand((draft) => applyTalentState(draft, { [talent.keywordId]: 1000 }, {}));
-    dispatchRunSessionCommand((draft) => unlockTalent(draft, talent.keywordId, talent.id));
+    dispatchGameplayCommand((draft) => acceptCommand(applyTalentState(draft, { [talent.keywordId]: 1000 }, {})));
+    dispatchGameplayCommand((draft) => acceptCommand(unlockTalent(draft, talent.keywordId, talent.id)));
     expect(readRunProfile().unlockedTalents[talent.keywordId]).toContain(talent.id);
-    dispatchRunSessionCommand(resetUnlockedTalents);
+    dispatchGameplayCommand((...args: Parameters<typeof resetUnlockedTalents>) =>
+      acceptCommand(resetUnlockedTalents(...args)),
+    );
     expect(readRunProfile().unlockedTalents).toEqual({});
     expect(readRunProfile().talentXP[talent.keywordId]).toBe(1000);
   });
@@ -177,7 +181,7 @@ describe("retained headless rejection and persistence contracts", () => {
     start();
     await lifecycle.drain();
     const checkpoint = bytes;
-    dispatchRunSessionCommand((draft) => setGold(draft, 123));
+    dispatchGameplayCommand((draft) => acceptCommand(setGold(draft, 123)));
     lifecycle.dispose(false);
     expect(bytes).toBe(checkpoint);
     const loaded = await loadAlchemySaveState();
@@ -185,7 +189,9 @@ describe("retained headless rejection and persistence contracts", () => {
     restoreRun(loaded.data.activeRun, loaded.data.talentXP, loaded.data.unlockedTalents);
     expect(readRunProfile().gold).toBe(loaded.data.gold);
     expect(readActiveRun().rng).toEqual(loaded.data.activeRun!.rng);
-    expect(snapshotCareer().activeRun?.activeCombat).toEqual(
+    // Restore rehydrates catalog metadata; compare every persisted combat field
+    // through the save parser rather than comparing wire cards to runtime cards.
+    expect(parseActiveRun(snapshotCareer().activeRun)?.activeCombat).toEqual(
       JSON.parse(JSON.stringify(loaded.data.activeRun!.activeCombat)),
     );
   });

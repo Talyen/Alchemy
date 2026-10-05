@@ -7,9 +7,10 @@ import { createEmptyRewardState } from "@/lib/active-run-session";
 import { DEFAULT_CAMPAIGN_DIFFICULTY_ID } from "@/lib/game-constants";
 import { DESTINATIONS, type Destination, type Screen } from "@/lib/routing";
 import {
-  dispatchRunSessionCommand,
+  acceptCommand,
+  dispatchGameplayCommand,
   subscribeRunSessionCommits,
-} from "@/features/alchemy/shared/stores/run-session-command";
+} from "@/features/alchemy/shared/stores/gameplay-command";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { setRewardState, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
@@ -58,7 +59,7 @@ describe("boss rolls in run commands", () => {
 
   it("commits a seeded destination offer and its pity history together", () => {
     startCampaign(DESTINATIONS.NORMAL_COMBAT);
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       draft.run.activeRun.rng = createRunRngState(1234);
       draft.run.activeRun.lastOfferedDestinations = [DESTINATIONS.NORMAL_COMBAT];
       draft.run.activeRun.destinationRoundsSinceOffered = {
@@ -66,6 +67,8 @@ describe("boss rolls in run commands", () => {
         [DESTINATIONS.MYSTERY]: 3,
         [DESTINATIONS.CAMPFIRE]: 1,
       };
+
+      return acceptCommand();
     });
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
@@ -99,10 +102,12 @@ describe("boss rolls in run commands", () => {
     { offer: DESTINATIONS.BOSS_COMBAT, savedBossId: null, worldDraws: 1 },
   ])("resuming $offer with boss $savedBossId uses $worldDraws world draw", ({ offer, savedBossId, worldDraws }) => {
     const deps = startCampaign(DESTINATIONS.NORMAL_COMBAT);
-    dispatchRunSessionCommand((draft) => {
+    dispatchGameplayCommand((draft) => {
       setRewardState(draft, { ...createEmptyRewardState([offer]), selectedBossId: savedBossId });
       setScreen(draft, "destination");
       setScreen(draft, "menu");
+
+      return acceptCommand();
     });
     const before = readActiveRun().rng.counters.world;
     createRunResumeNavigation(deps).resumeRun();

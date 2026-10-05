@@ -5,7 +5,7 @@ import { RewardsScreen } from "@/features/alchemy/run-loop/screens/rewards-scree
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { type BattleCard } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
@@ -24,11 +24,13 @@ beforeEach(() => {
   useUiStore.setState({ hoveredCardId: null, shimmerState: null, plasmaInteraction: null });
   resetRunSessionSlice();
   dispatchRunSessionCommand((draft) =>
-    setRewardState(draft, {
-      ...createEmptyRewardState(),
-      rewardType: "card",
-      choices: [testCard],
-    }),
+    acceptCommand(
+      setRewardState(draft, {
+        ...createEmptyRewardState(),
+        rewardType: "card",
+        choices: [testCard],
+      }),
+    ),
   );
 });
 

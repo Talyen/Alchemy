@@ -2,7 +2,7 @@ import "../../../../helpers/mock-audio";
 import { beforeEach, describe, expect, it } from "vitest";
 import { battleSnapshot } from "@/lib/battle";
 import { createRunRngState } from "@/lib/rng";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { commitEndTurn } from "@/features/alchemy/run-loop/battle/battle-session";
@@ -17,7 +17,7 @@ beforeEach(() => {
 
 function openBattle() {
   const state = makeTestBattleState({ turnPhase: "player", enemyHealth: 30 });
-  dispatchRunSessionCommand((draft) => initializeActiveBattle(draft, state));
+  dispatchGameplayCommand((draft) => acceptCommand(initializeActiveBattle(draft, state)));
 }
 
 describe("commitEndTurn", () => {
