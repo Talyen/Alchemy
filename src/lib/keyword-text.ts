@@ -1,4 +1,5 @@
 import type { KeywordId } from "@/lib/game-data";
+import { memoizeShortText } from "./memoize-short-text";
 
 const KEYWORD_WORDS: Record<KeywordId, readonly string[]> = {
   dodge: ["Dodge", "Dodges", "Dodged", "Dodging"],
@@ -40,26 +41,12 @@ export const keywordPattern = new RegExp(
   "gi",
 );
 
-const MAX_KEYWORD_CACHE_ENTRIES = 256;
-const MAX_CACHED_KEYWORD_TEXT_LENGTH = 1024;
-const keywordIdsCache = new Map<string, readonly KeywordId[]>();
+const cachedKeywordIds = memoizeShortText(parseKeywordIds);
 
 export function extractKeywordIds(text: string): KeywordId[] {
   // Descriptions recur across cards, traits and equipment. Bound numeric
   // variants and long input, and keep the mutable result owned by the caller.
-  if (text.length > MAX_CACHED_KEYWORD_TEXT_LENGTH) return parseKeywordIds(text);
-  let keywords = keywordIdsCache.get(text);
-  if (keywords) {
-    keywordIdsCache.delete(text);
-  } else {
-    keywords = parseKeywordIds(text);
-    if (keywordIdsCache.size >= MAX_KEYWORD_CACHE_ENTRIES) {
-      const oldest = keywordIdsCache.keys().next().value;
-      if (oldest !== undefined) keywordIdsCache.delete(oldest);
-    }
-  }
-  keywordIdsCache.set(text, keywords);
-  return [...keywords];
+  return [...cachedKeywordIds(text)];
 }
 
 function parseKeywordIds(text: string): KeywordId[] {

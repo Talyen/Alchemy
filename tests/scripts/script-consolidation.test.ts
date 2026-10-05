@@ -11,32 +11,22 @@ import { runCiLint } from "../../scripts/lint-ci.mjs";
 
 describe("script consolidation", () => {
   it("parses simple flags, values, shorts, and passthrough", () => {
-    const parsed = parseKnownFlags(["input file", "-c", "--mode=web", "-m", "desktop=demo", "--", "--mode=ignored"], {
-      check: { short: "c" },
-      mode: { short: "m", takesValue: true },
-    });
+    const parsed = parseKnownFlags(
+      ["input file", "--check", "-c", "--mode=web", "--mode", "desktop=demo", "-m=native", "--", "--mode=ignored"],
+      {
+        check: { short: "c" },
+        mode: { short: "m", takesValue: true },
+      },
+    );
     expect(parsed).toEqual({
       flags: new Set(["check"]),
-      values: new Map([["mode", ["web", "desktop=demo"]]]),
+      values: new Map([["mode", ["web", "desktop=demo", "native"]]]),
       rest: ["input file", "--mode=ignored"],
     });
-    expect(parseKnownFlags(["--check"], { check: {}, write: {} }).flags.has("check")).toBe(true);
-    expect(parseKnownFlags(["--mode", "desktop"], { mode: { takesValue: true } }).values.get("mode")).toEqual([
-      "desktop",
-    ]);
-    expect(parseKnownFlags(["--mode=desktop"], { mode: { takesValue: true } }).values.get("mode")).toEqual(["desktop"]);
-    expect(parseKnownFlags(["-m", "desktop"], { mode: { short: "m", takesValue: true } }).values.get("mode")).toEqual([
-      "desktop",
-    ]);
-    expect(parseKnownFlags(["--check", "--", "--not-a-flag"], { check: {} }).rest).toEqual(["--not-a-flag"]);
-    expect(() => parseKnownFlags(["--bogus"], { check: {} })).toThrow(UsageError);
-    for (const name of ["constructor", "toString", "__proto__"]) {
-      expect(() => parseKnownFlags([`--${name}`], { check: {} }), name).toThrow(UsageError);
+    for (const option of ["--bogus", "-mc", "--=oops", "--constructor", "--toString", "--__proto__", "--check=true"]) {
+      expect(() => parseKnownFlags([option], { check: { short: "c" } }), option).toThrow(UsageError);
     }
     expect(() => parseKnownFlags(["--mode"], { mode: { takesValue: true } })).toThrow(UsageError);
-    expect(parseKnownFlags(["-p=5173"], { port: { short: "p", takesValue: true } }).values.get("port")).toEqual([
-      "5173",
-    ]);
     expect(() => parseKnownFlags(["--mode=desktop"], { check: {} })).toThrow(UsageError);
     expect(() => parseKnownFlags(["-m=desktop"], { check: {} })).toThrow(UsageError);
   });

@@ -116,7 +116,7 @@ export function usePortaledTooltipPlacement(
     update();
     let frame: number | null = null;
     const scheduleUpdate = () => {
-      if (frame !== null) cancelAnimationFrame(frame);
+      if (frame !== null) return;
       frame = requestAnimationFrame(() => {
         frame = null;
         update();

@@ -26,7 +26,7 @@ import {
   SHOP_REMOVE_PRICE,
   TRINKET_SHOP_TRINKET_PRICE,
 } from "@/lib/game-constants";
-import { cardById } from "@/lib/game-data";
+import { cardById, trinketLibrary } from "@/lib/game-data";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import type { GearInstance } from "@/lib/gear";
 import { gearDefinitions } from "@/lib/gear";
@@ -448,6 +448,32 @@ describe("equipment shop actions", () => {
 });
 
 describe("trinket shop actions", () => {
+  it.each([false, true])(
+    "does not charge for an empty refresh after collecting the last Trinket during this visit: %s",
+    (buyLast) => {
+      setRunProgress({ gold: 999 });
+      mutateGearForTest((gear) => {
+        for (const trinket of trinketLibrary.slice(buyLast ? 1 : 0)) gear.addTrinket(trinket.id);
+      });
+      const actions = buildActions();
+      actions.trinket.initialize();
+      if (buyLast) {
+        const trinket = trinketLibrary[0]!;
+        expect(actions.trinket.buy(trinket, shopItemSlotKey(trinket.id, 0))).toBe(true);
+        expect(readActivityData(readRunSession().activity, "trinket-shop").refreshesLeft).toBe(0);
+      } else {
+        expect(readActivityData(readRunSession().activity, "trinket-shop").trinkets).toEqual([]);
+      }
+      const beforeGold = readRunProfile().gold;
+      const beforeSession = readRunSession();
+      const beforeRun = readActiveRun();
+      expect(actions.trinket.refresh()).toBe(false);
+      expect(readRunProfile().gold).toBe(beforeGold);
+      expect(readRunSession()).toEqual(beforeSession);
+      expect(readActiveRun()).toEqual(beforeRun);
+    },
+  );
+
   describe("trinket shop", () => {
     it("adds a permanent trinket on purchase without granting a boon", () => {
       setRunProgress({ gold: 999 });

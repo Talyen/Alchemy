@@ -2,9 +2,30 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, describe, expect, it } from "vitest";
 
 import { StatusIcon } from "@/features/alchemy/run-loop/battle/presentation/ui/status-icons";
+import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
+import { cardById, computeTalentEffects } from "@/lib/game-data";
+import { getPlayerStatusChips } from "@/features/alchemy/shared/utils/battle";
+import { patchBattleState } from "../../../../../../fixtures/battle";
 
 describe("StatusIcon", () => {
   afterEach(cleanup);
+
+  it("describes the armed Parting Cut as half damage, matching the talent earned on Dodge", async () => {
+    const state = patchBattleState({
+      talentEffects: computeTalentEffects({ bleed: ["bleed-physical-bonus"] }),
+      flags: { dodgeNextAttack: true },
+      rng: () => 0.99,
+    });
+    const dodged = applyEnemyAbility(state, cardById.slash!, []);
+    const chip = getPlayerStatusChips(dodged).find((entry) => entry.id === "nextPhysicalDealsBleed")!;
+    render(<StatusIcon chip={chip} />);
+    fireEvent.focus(screen.getByRole("button", { name: "Parting Cut" }));
+    await waitFor(() => {
+      expect(document.querySelector(".hover-popup-panel")?.textContent).toContain(
+        "Your next Physical card deals half its damage as Bleed damage.",
+      );
+    });
+  });
 
   it("presents Control Immunity without a numeric badge", async () => {
     render(<StatusIcon chip={{ id: "ccImmunity", value: 2, hideValue: true }} />);

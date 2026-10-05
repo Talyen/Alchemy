@@ -21,14 +21,16 @@ const ENEMY_MITIGATION_DISPLAY_ORDER: ReadonlyArray<keyof BattleSnapshot["enemyM
   "forge",
 ];
 
+function combatStatPresentation(stat: CombatTextEvent["stat"]) {
+  if (stat === "phoenixFeather") return phoenixFeatherStatus;
+  return augmentDefinitions[stat as keyof typeof augmentDefinitions] ?? keywordDefinitions[stat as KeywordId];
+}
+
 export function getCombatTextColorClass(event: CombatTextEvent): string {
   if (event.stat === "deathsDoor") return "text-red-200";
   if (event.kind === "heal") return "text-green-400";
-  if (event.stat === "phoenixFeather") return phoenixFeatherStatus.colorClass;
-  const augment = augmentDefinitions[event.stat as keyof typeof augmentDefinitions];
-  if (augment) return augment.colorClass;
-  const kw = keywordDefinitions[event.stat as KeywordId];
-  if (kw) return kw.colorClass;
+  const presentation = combatStatPresentation(event.stat);
+  if (presentation) return presentation.colorClass;
   if (event.stat === "haste") return "text-fuchsia-300";
   return "text-muted-foreground";
 }
@@ -55,12 +57,10 @@ const combatTextIconClasses: Record<string, LucideIcon> = {
 
 export function getCombatTextIcon(event: CombatTextEvent) {
   if (event.kind === "heal") return keywordIcons.health;
-  if (event.stat === "phoenixFeather") return phoenixFeatherStatus.icon;
-  const augment = augmentDefinitions[event.stat as keyof typeof augmentDefinitions];
-  if (augment) return augment.icon;
-  const kw = keywordIcons[event.stat as KeywordId];
-  if (kw) return kw;
-  return combatTextIconClasses[event.stat];
+  const presentation = combatStatPresentation(event.stat);
+  return presentation && "icon" in presentation
+    ? presentation.icon
+    : (keywordIcons[event.stat as KeywordId] ?? combatTextIconClasses[event.stat]);
 }
 
 export function getCombatTextLeadingIcon(event: CombatTextEvent) {
@@ -73,10 +73,7 @@ export function getCombatTextLeadingIcon(event: CombatTextEvent) {
 }
 
 export function getCombatTextAccessibleLabel(event: FloatingCombatText): string {
-  const augment = augmentDefinitions[event.stat as keyof typeof augmentDefinitions];
-  const keyword = keywordDefinitions[event.stat as KeywordId];
-  const label =
-    event.stat === "phoenixFeather" ? phoenixFeatherStatus.label : (augment?.label ?? keyword?.label ?? event.stat);
+  const label = combatStatPresentation(event.stat)?.label ?? event.stat;
   if (event.kind === "notice") {
     if (event.signal === "purge" || event.text === "Purged") return `Purged ${label}`;
     if (event.signal === "cleanse") return `Cleansed ${label}`;
@@ -123,23 +120,33 @@ function insertAfterBuffTier(chips: StatusChip[], additions: StatusChip[]): Stat
   return [...chips.slice(0, insertAt), ...additions, ...chips.slice(insertAt)];
 }
 
+const ARMED_PLAYER_CHIP_IDS = [
+  "hawkEyeReady",
+  "playNextCardTwice",
+  "nextHitCrit",
+  "nextHitLeech",
+  "nextHitPoison",
+  "nextHitPhysicalBonus",
+  "nextPhysicalDealsBleed",
+  "nextArcheryCardFree",
+  "nextWishExtraChoice",
+  "nextHolyCardFree",
+  "nextNatureCardFree",
+  "dodgeNextAttack",
+] as const satisfies ReadonlyArray<keyof BattleSnapshot["flags"] & StatusChip["id"]>;
+
 function buildArmedPlayerChips(state: BattleSnapshot): StatusChip[] {
   const chips: StatusChip[] = [];
   const { flags } = state;
-  if (flags.hawkEyeReady) chips.push({ id: "hawkEyeReady", value: 1, hideValue: true });
-  if (flags.playNextCardTwice) chips.push({ id: "playNextCardTwice", value: 1, hideValue: true });
-  if (flags.nextHitCrit) chips.push({ id: "nextHitCrit", value: 1, hideValue: true });
-  if (flags.nextHitLeech) chips.push({ id: "nextHitLeech", value: 1, hideValue: true });
-  if (flags.nextHitPoison) chips.push({ id: "nextHitPoison", value: 1, hideValue: true });
-  if (flags.nextHitPhysicalBonus > 0) {
-    chips.push({ id: "nextHitPhysicalBonus", value: flags.nextHitPhysicalBonus });
+  for (const id of ARMED_PLAYER_CHIP_IDS) {
+    const value = flags[id];
+    if (value === true || (typeof value === "number" && value > 0))
+      chips.push({
+        id,
+        value: value === true ? 1 : value,
+        ...(id === "nextHitPhysicalBonus" ? {} : { hideValue: true }),
+      });
   }
-  if (flags.nextPhysicalDealsBleed) chips.push({ id: "nextPhysicalDealsBleed", value: 1, hideValue: true });
-  if (flags.nextArcheryCardFree) chips.push({ id: "nextArcheryCardFree", value: 1, hideValue: true });
-  if (flags.nextWishExtraChoice) chips.push({ id: "nextWishExtraChoice", value: 1, hideValue: true });
-  if (flags.nextHolyCardFree) chips.push({ id: "nextHolyCardFree", value: 1, hideValue: true });
-  if (flags.nextNatureCardFree) chips.push({ id: "nextNatureCardFree", value: 1, hideValue: true });
-  if (flags.dodgeNextAttack) chips.push({ id: "dodgeNextAttack", value: 1, hideValue: true });
 
   const echoCount = state.pendingTurnStartEffects.filter((pulse) =>
     pulse.effects.some((effect) => effect.kind !== "damage"),

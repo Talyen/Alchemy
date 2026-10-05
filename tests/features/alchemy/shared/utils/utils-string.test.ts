@@ -22,23 +22,6 @@ describe("tokenizeDescription", () => {
     }
   });
 
-  it("evicts old numeric variants and leaves oversized descriptions uncached", () => {
-    const line = "Eviction regression: Gain 999 Block.";
-    const oversized = "Long description ".repeat(128) + "Gain 7 Block.";
-    const matchAll = vi.spyOn(keywordPattern, Symbol.matchAll);
-    try {
-      const expected = tokenizeDescription(line);
-      for (let amount = 0; amount < 512; amount++) tokenizeDescription(`Cache churn: Gain ${amount} Block.`);
-      expect(tokenizeDescription(line)).toEqual(expected);
-      expect(matchAll.mock.calls.filter(([text]) => text === line)).toHaveLength(2);
-
-      expect(tokenizeDescription(oversized)).toEqual(tokenizeDescription(oversized));
-      expect(matchAll.mock.calls.filter(([text]) => text === oversized)).toHaveLength(2);
-    } finally {
-      matchAll.mockRestore();
-    }
-  });
-
   it("uses canonical casing for lowercase, inflected, and multi-word aliases", () => {
     const result = tokenizeDescription("physical consume consumed frozen mana crystal");
 

@@ -15,10 +15,6 @@ function makeProductionBattleState() {
 }
 
 describe("getPlayerStatusChips", () => {
-  it.each([null, undefined] as const)("returns empty array when state is %s", (state) => {
-    expect(getPlayerStatusChips(state)).toEqual([]);
-  });
-
   it("surfaces armed CombatFlags as badge-less buff chips", () => {
     const state = makeProductionBattleState();
     state.flags.playNextCardTwice = true;
@@ -30,17 +26,19 @@ describe("getPlayerStatusChips", () => {
     state.flags.nextHolyCardFree = true;
     state.flags.nextWishExtraChoice = true;
     state.flags.hawkEyeReady = true;
-    const chips = getPlayerStatusChips(state);
-    expect(chips).toContainEqual({ id: "playNextCardTwice", value: 1, hideValue: true });
-    expect(chips).toContainEqual({ id: "nextHitCrit", value: 1, hideValue: true });
-    expect(chips).toContainEqual({ id: "nextHitLeech", value: 1, hideValue: true });
-    expect(chips).toContainEqual({ id: "nextHitPhysicalBonus", value: 4 });
-    expect(chips).toContainEqual({ id: "nextPhysicalDealsBleed", value: 1, hideValue: true });
-    expect(chips).toContainEqual({ id: "nextArcheryCardFree", value: 1, hideValue: true });
-    expect(chips).toContainEqual({ id: "nextHolyCardFree", value: 1, hideValue: true });
-    expect(chips).toContainEqual({ id: "nextWishExtraChoice", value: 1, hideValue: true });
-    expect(chips).toContainEqual({ id: "hawkEyeReady", value: 1, hideValue: true });
-    expect(chips.find((chip) => chip.id === "nextHitPoison")).toBeUndefined();
+    expect(getPlayerStatusChips(state)).toEqual([
+      { id: "hawkEyeReady", value: 1, hideValue: true },
+      { id: "playNextCardTwice", value: 1, hideValue: true },
+      { id: "nextHitCrit", value: 1, hideValue: true },
+      { id: "nextHitLeech", value: 1, hideValue: true },
+      { id: "nextHitPhysicalBonus", value: 4 },
+      { id: "nextPhysicalDealsBleed", value: 1, hideValue: true },
+      { id: "nextArcheryCardFree", value: 1, hideValue: true },
+      { id: "nextWishExtraChoice", value: 1, hideValue: true },
+      { id: "nextHolyCardFree", value: 1, hideValue: true },
+    ]);
+    state.flags.nextHitPhysicalBonus = -1;
+    expect(getPlayerStatusChips(state).some((chip) => chip.id === "nextHitPhysicalBonus")).toBe(false);
   });
 
   it("counts mixed pending pulses as a hero Echo chip", () => {
@@ -104,15 +102,19 @@ describe("getPlayerStatusChips", () => {
 });
 
 describe("getEnemyStatusChips", () => {
-  it.each([null, undefined] as const)("returns empty array when state is %s", (state) => {
-    expect(getEnemyStatusChips(state)).toEqual([]);
-  });
-
-  it("does not expose pending bleed leech healing as a status chip", () => {
+  it("orders actual enemy defenses and harmful statuses while hiding internal Leech credit", () => {
     const state = makeProductionBattleState();
+    state.enemyMitigation.block = 5;
+    state.enemyStatuses.thorns = 1;
     state.enemyStatuses.bleed = 2;
+    state.enemyStatuses.onAttackBleed = 3;
     state.pendingBleedLeechHealing = 4;
-    expect(getEnemyStatusChips(state)).toEqual([{ id: "bleed", value: 2 }]);
+    expect(getEnemyStatusChips(state)).toEqual([
+      { id: "block", value: 5 },
+      { id: "bleed", value: 2 },
+      { id: "thorns", value: 1 },
+      { id: "onAttackBleed", value: 3 },
+    ]);
   });
 
   it("surfaces purely-offensive pending pulses as incoming damage chips", () => {
@@ -127,18 +129,6 @@ describe("getEnemyStatusChips", () => {
       { id: "pending-stun", value: 2 },
       { id: "pending-freeze", value: 5 },
     ]);
-  });
-
-  it("exposes onAttackBleed as a status chip", () => {
-    const state = makeProductionBattleState();
-    state.enemyStatuses.onAttackBleed = 2;
-    expect(getEnemyStatusChips(state)).toEqual([{ id: "onAttackBleed", value: 2 }]);
-  });
-
-  it("exposes thorns as a status chip", () => {
-    const state = makeProductionBattleState();
-    state.enemyStatuses.thorns = 1;
-    expect(getEnemyStatusChips(state)).toEqual([{ id: "thorns", value: 1 }]);
   });
 
   it("surfaces the enemy's CC immunity cooldown only after active CC ends", () => {

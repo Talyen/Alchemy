@@ -1,140 +1,58 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  hasVisibleWindowArea,
-  isAppInBackground,
-  isNonPlayerAudioHost,
-  shouldTreatAsBackground,
-} from "@/lib/audio/host";
+import { afterEach, expect, it, vi } from "vitest";
+import { isAppInBackground, isNonPlayerAudioHost } from "@/lib/audio/host";
 
-function stubWindowSize({
-  innerWidth,
-  innerHeight,
-  outerWidth,
-  outerHeight,
-}: {
-  innerWidth: number;
-  innerHeight: number;
-  outerWidth: number;
-  outerHeight: number;
-}) {
-  Object.defineProperty(window, "innerWidth", { configurable: true, value: innerWidth });
-  Object.defineProperty(window, "innerHeight", { configurable: true, value: innerHeight });
-  Object.defineProperty(window, "outerWidth", { configurable: true, value: outerWidth });
-  Object.defineProperty(window, "outerHeight", { configurable: true, value: outerHeight });
-}
-
-const originalWindowSize = {
+const originalSize = {
   innerWidth: window.innerWidth,
   innerHeight: window.innerHeight,
   outerWidth: window.outerWidth,
   outerHeight: window.outerHeight,
 };
-
-function restoreWindowSize() {
-  Object.defineProperty(window, "innerWidth", { configurable: true, value: originalWindowSize.innerWidth });
-  Object.defineProperty(window, "innerHeight", { configurable: true, value: originalWindowSize.innerHeight });
-  Object.defineProperty(window, "outerWidth", { configurable: true, value: originalWindowSize.outerWidth });
-  Object.defineProperty(window, "outerHeight", { configurable: true, value: originalWindowSize.outerHeight });
+const originalHidden = Object.getOwnPropertyDescriptor(document, "hidden");
+function setSize(size: typeof originalSize) {
+  Object.defineProperties(
+    window,
+    Object.fromEntries(Object.entries(size).map(([key, value]) => [key, { configurable: true, value }])),
+  );
 }
 
-describe("isNonPlayerAudioHost", () => {
-  afterEach(() => {
-    restoreWindowSize();
-    vi.unstubAllGlobals();
-    vi.restoreAllMocks();
-    delete window.alchemyDesktop;
-  });
-
-  it("treats a normal browser window as a player host", () => {
-    stubWindowSize({ innerWidth: 1280, innerHeight: 720, outerWidth: 1280, outerHeight: 720 });
-    vi.stubGlobal("navigator", { ...navigator, userAgent: "Mozilla/5.0 Chrome/120.0.0.0" });
-    expect(isNonPlayerAudioHost()).toBe(false);
-  });
-
-  it("treats headless Chromium as a non-player host", () => {
-    stubWindowSize({ innerWidth: 1280, innerHeight: 720, outerWidth: 1280, outerHeight: 720 });
-    vi.stubGlobal("navigator", { ...navigator, userAgent: "Mozilla/5.0 HeadlessChrome/152.0.0.0" });
-    expect(isNonPlayerAudioHost()).toBe(true);
-  });
-
-  it("treats WebDriver browsers as non-player hosts", () => {
-    stubWindowSize({ innerWidth: 1280, innerHeight: 720, outerWidth: 1280, outerHeight: 720 });
-    vi.stubGlobal("navigator", { ...navigator, userAgent: "Mozilla/5.0 Chrome/120.0.0.0", webdriver: true });
-    expect(isNonPlayerAudioHost()).toBe(true);
-  });
-
-  it("treats Electron without alchemyDesktop as a non-player host", () => {
-    stubWindowSize({ innerWidth: 1280, innerHeight: 720, outerWidth: 1280, outerHeight: 720 });
-    vi.stubGlobal("navigator", { ...navigator, userAgent: "Mozilla/5.0 Electron/28.0.0" });
-    expect(isNonPlayerAudioHost()).toBe(true);
-  });
-
-  it("treats Alchemy desktop Electron as a player host", () => {
-    stubWindowSize({ innerWidth: 1280, innerHeight: 720, outerWidth: 1280, outerHeight: 720 });
-    vi.stubGlobal("navigator", { ...navigator, userAgent: "Mozilla/5.0 Electron/28.0.0" });
-    window.alchemyDesktop = { isDesktop: true } as Window["alchemyDesktop"];
-    expect(isNonPlayerAudioHost()).toBe(false);
-  });
-
-  it("treats a laid-out window with zero outer size as undisplayed", () => {
-    stubWindowSize({ innerWidth: 1920, innerHeight: 1080, outerWidth: 0, outerHeight: 0 });
-    vi.stubGlobal("navigator", { ...navigator, userAgent: "Mozilla/5.0 Chrome/120.0.0.0" });
-    expect(isNonPlayerAudioHost()).toBe(true);
-  });
-
-  it("does not treat a zero-size document as undisplayed", () => {
-    stubWindowSize({ innerWidth: 0, innerHeight: 0, outerWidth: 0, outerHeight: 0 });
-    vi.stubGlobal("navigator", { ...navigator, userAgent: "Mozilla/5.0 Chrome/120.0.0.0" });
-    expect(isNonPlayerAudioHost()).toBe(false);
-  });
+afterEach(() => {
+  setSize(originalSize);
+  if (originalHidden) Object.defineProperty(document, "hidden", originalHidden);
+  else Reflect.deleteProperty(document, "hidden");
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+  delete window.alchemyDesktop;
 });
 
-describe("hasVisibleWindowArea", () => {
-  afterEach(restoreWindowSize);
-
-  it("requires at least a 2px laid-out area", () => {
-    stubWindowSize({ innerWidth: 1280, innerHeight: 720, outerWidth: 1280, outerHeight: 720 });
-    expect(hasVisibleWindowArea()).toBe(true);
-    stubWindowSize({ innerWidth: 1, innerHeight: 720, outerWidth: 1280, outerHeight: 720 });
-    expect(hasVisibleWindowArea()).toBe(false);
-  });
+it.each([
+  { userAgent: "Chrome", webdriver: false, desktop: false, hiddenWindow: false, player: true },
+  { userAgent: "HeadlessChrome", webdriver: false, desktop: false, hiddenWindow: false, player: false },
+  { userAgent: "Chrome", webdriver: true, desktop: false, hiddenWindow: false, player: false },
+  { userAgent: "Electron", webdriver: false, desktop: false, hiddenWindow: false, player: false },
+  { userAgent: "Electron", webdriver: false, desktop: true, hiddenWindow: false, player: true },
+  { userAgent: "Chrome", webdriver: false, desktop: false, hiddenWindow: true, player: false },
+])("allows sound only on visible player hosts: $userAgent, desktop=$desktop, hidden=$hiddenWindow", (input) => {
+  setSize({ innerWidth: 1280, innerHeight: 720, outerWidth: input.hiddenWindow ? 0 : 1280, outerHeight: 720 });
+  vi.stubGlobal("navigator", { userAgent: input.userAgent, webdriver: input.webdriver });
+  if (input.desktop) window.alchemyDesktop = { isDesktop: true } as Window["alchemyDesktop"];
+  expect(isNonPlayerAudioHost()).toBe(!input.player);
 });
 
-describe("shouldTreatAsBackground", () => {
-  const foreground = { hidden: false, hasFocus: true, hasVisibleArea: true };
-
-  it("treats a hidden document as background", () => {
-    expect(shouldTreatAsBackground({ ...foreground, hidden: true })).toBe(true);
-  });
-
-  it("treats window blur as background even when the document stays visible", () => {
-    expect(shouldTreatAsBackground({ ...foreground, eventType: "blur" })).toBe(true);
-  });
-
-  it("treats window focus as foreground when the document is visible", () => {
-    expect(shouldTreatAsBackground({ ...foreground, eventType: "focus" })).toBe(false);
-  });
-
-  it("treats a window without a visible area as background", () => {
-    expect(shouldTreatAsBackground({ ...foreground, hasVisibleArea: false })).toBe(true);
-  });
-
-  it("treats an unfocused visible window as background", () => {
-    expect(shouldTreatAsBackground({ ...foreground, hasFocus: false })).toBe(true);
-  });
-
-  it("treats a focused visible window as foreground", () => {
-    expect(shouldTreatAsBackground(foreground)).toBe(false);
-  });
-});
-
-describe("isAppInBackground", () => {
-  afterEach(() => {
-    Object.defineProperty(document, "hidden", { configurable: true, value: false });
-  });
-
-  it("reads the live document state", () => {
-    Object.defineProperty(document, "hidden", { configurable: true, value: true });
-    expect(isAppInBackground()).toBe(true);
-  });
+it("reads lifecycle state with hidden and minimized windows taking precedence over focus", () => {
+  setSize({ innerWidth: 1280, innerHeight: 720, outerWidth: 1280, outerHeight: 720 });
+  Object.defineProperty(document, "hidden", { configurable: true, value: false });
+  const focus = vi.spyOn(document, "hasFocus").mockReturnValue(true);
+  expect(isAppInBackground()).toBe(false);
+  expect(isAppInBackground({ type: "blur" })).toBe(true);
+  focus.mockReturnValue(false);
+  expect(isAppInBackground()).toBe(true);
+  expect(isAppInBackground({ type: "focus" })).toBe(false);
+  Object.defineProperty(document, "hidden", { configurable: true, value: true });
+  expect(isAppInBackground({ type: "focus" })).toBe(true);
+  Object.defineProperty(document, "hidden", { configurable: true, value: false });
+  setSize({ innerWidth: 1, innerHeight: 720, outerWidth: 1280, outerHeight: 720 });
+  expect(isAppInBackground({ type: "focus" })).toBe(true);
+  setSize({ innerWidth: 0, innerHeight: 0, outerWidth: 0, outerHeight: 0 });
+  vi.stubGlobal("navigator", { userAgent: "Chrome" });
+  expect(isNonPlayerAudioHost()).toBe(false);
 });

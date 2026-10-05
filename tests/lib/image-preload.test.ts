@@ -176,20 +176,20 @@ describe("preloadImage", () => {
 });
 
 describe("preloadImagesInBatches", () => {
-  it("waits for each bounded batch and yields before starting the next", async () => {
+  it.each([2, NaN])("waits for a bounded batch of %s and yields before starting the next", async (batchSize) => {
+    const capacity = Number.isNaN(batchSize) ? 4 : batchSize;
     const frameCallbacks = installRafStub();
-    const srcs = [uniqueUrl(), uniqueUrl(), uniqueUrl()];
-    const promise = preloadImagesInBatches(srcs, 2);
+    const srcs = Array.from({ length: capacity + 1 }, uniqueUrl);
+    const promise = preloadImagesInBatches(srcs, batchSize);
 
-    expect(mockImageInstances).toHaveLength(2);
-    mockImageInstances[0].onload?.();
-    mockImageInstances[1].onload?.();
+    expect(mockImageInstances).toHaveLength(capacity);
+    for (const image of mockImageInstances) image.onload();
     await vi.waitFor(() => expect(frameCallbacks).toHaveLength(1));
-    expect(mockImageInstances).toHaveLength(2);
+    expect(mockImageInstances).toHaveLength(capacity);
 
     frameCallbacks[0]!(performance.now());
-    await vi.waitFor(() => expect(mockImageInstances).toHaveLength(3));
-    mockImageInstances[2].onload?.();
+    await vi.waitFor(() => expect(mockImageInstances).toHaveLength(capacity + 1));
+    mockImageInstances.at(-1)!.onload();
     await expect(promise).resolves.toBeUndefined();
   });
 

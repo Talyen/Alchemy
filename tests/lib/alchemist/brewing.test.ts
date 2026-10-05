@@ -97,16 +97,20 @@ describe("brewing and transmutation content", () => {
     Object.assign(chance.failureEffects[0], { amount: 99 });
     expect(card).toEqual(before);
   });
-  it("offers distinct attack, defense and utility cards that survive save hydration", () => {
-    for (const seed of [10, 25, 42, 51, 99, 1337]) {
-      const offers = createTransmutationOffers(createSeededRng(seed));
-      expect(offers.map((card) => card.transmutationRole ?? getBattleCardTransmutationRole(card))).toEqual([
-        "attack",
-        "defense",
-        "utility",
-      ]);
-      expect(new Set(offers.map((card) => card.id)).size).toBe(3);
-      expect(offers.map((card) => hydrateCard(BattleCardSchema.parse(card)))).toEqual(offers);
-    }
+  it("preserves seeded role order, subsequent RNG and independent cards through save hydration", () => {
+    const rng = createSeededRng(42);
+    const offers = createTransmutationOffers(rng);
+    expect(offers.map((card) => card.id)).toEqual(["maul", "stoneskin-potion", "library-owl-companion"]);
+    expect(rng()).toBe(0.6697340414393693);
+    expect(offers.map((card) => card.transmutationRole ?? getBattleCardTransmutationRole(card))).toEqual([
+      "attack",
+      "defense",
+      "utility",
+    ]);
+    expect(offers.map((card) => hydrateCard(BattleCardSchema.parse(card)))).toEqual(offers);
+    const catalogCard = cardById[offers[0].id]!;
+    const before = structuredClone(catalogCard);
+    Object.assign(offers[0].effects[0], { amount: 999 });
+    expect(catalogCard).toEqual(before);
   });
 });

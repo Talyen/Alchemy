@@ -44,10 +44,14 @@ export const DAMAGE_HANDLERS = {
     return dealDamageToEnemy(state, card, adjustedEffect, combatTexts, context);
   },
   "self-damage": (state, _card, effect, _potionMult, combatTexts) => {
-    const { state: postDamage, healthLost } = dealSelfDamage(state, effect.amount, effect.damageType, combatTexts);
+    const {
+      state: postDamage,
+      healthLost,
+      healthAfterDamage,
+    } = dealSelfDamage(state, effect.amount, effect.damageType, combatTexts);
     const thresholded = checkHealthThresholds(
       state.playerHealth,
-      postDamage.playerHealth,
+      healthAfterDamage,
       addPlayerStatus(postDamage, effect.damageType, healthLost),
       combatTexts,
     );

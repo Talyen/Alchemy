@@ -52,11 +52,12 @@ export interface AppBackgroundInput {
  * background-mute wiring.
  */
 export function shouldTreatAsBackground(input: AppBackgroundInput): boolean {
-  if (input.hidden) return true;
-  if (input.eventType === "blur") return true;
-  if (!input.hasVisibleArea) return true;
-  if (input.eventType === "focus") return false;
-  return !input.hasFocus;
+  return (
+    input.hidden ||
+    input.eventType === "blur" ||
+    !input.hasVisibleArea ||
+    (input.eventType !== "focus" && !input.hasFocus)
+  );
 }
 
 /** DOM-reading wrapper for app lifecycle wiring. Pure logic lives in `shouldTreatAsBackground`. */

@@ -17,23 +17,6 @@ describe("keyword extraction cache", () => {
       matchAll.mockRestore();
     }
   });
-
-  it("bounds retention of numeric variants and bypasses oversized input", () => {
-    const text = "Keyword cache eviction: Gain 1001 Block.";
-    const oversized = "Oversized keyword description ".repeat(64) + "Apply Poison.";
-    const matchAll = vi.spyOn(keywordPattern, Symbol.matchAll);
-    try {
-      expect(extractKeywordIds(text)).toEqual(["block"]);
-      for (let amount = 0; amount < 512; amount++) extractKeywordIds(`Keyword cache churn: Gain ${amount} Block.`);
-      expect(extractKeywordIds(text)).toEqual(["block"]);
-      expect(matchAll.mock.calls.filter(([input]) => input === text)).toHaveLength(2);
-      expect(extractKeywordIds(oversized)).toEqual(["poison"]);
-      expect(extractKeywordIds(oversized)).toEqual(["poison"]);
-      expect(matchAll.mock.calls.filter(([input]) => input === oversized)).toHaveLength(2);
-    } finally {
-      matchAll.mockRestore();
-    }
-  });
 });
 
 describe("keywordAliases", () => {

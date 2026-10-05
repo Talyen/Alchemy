@@ -3,6 +3,7 @@ import {
   cardHasDamageType,
   cardHasKeyword,
   getBattleCardPlayTarget,
+  getBattleCardTransmutationRole,
   hasDamageEffect,
   isAttackCard,
   isNatureCard,
@@ -36,6 +37,7 @@ describe("card classification", () => {
       if (first === "target") expect(getBattleCardPlayTarget(card)).toBe("player");
       else expect(cardHasDamageType(card, "burn")).toBe(true);
       expect(isAttackCard(card)).toBe(true);
+      expect(getBattleCardTransmutationRole(card)).toBe("attack");
       expect(getBattleCardPlayTarget(card)).toBe("player");
       for (const type of ["physical", "holy", "burn"]) expect(cardHasDamageType(card, type)).toBe(true);
       expect(cardHasDamageType(card, "freeze")).toBe(false);
@@ -44,11 +46,14 @@ describe("card classification", () => {
 
   it("refreshes classifications when effects change while cost-only variants retain their classifications", () => {
     const card = makeTestCard({ effects: [{ kind: "heal", amount: 1 }] });
+    expect(getBattleCardTransmutationRole(card)).toBe("defense");
     expect(isAttackCard(card)).toBe(false);
     expect(cardHasDamageType(card, "burn")).toBe(false);
     const costVariant = { ...card, cost: 0 };
     card.effects = [{ kind: "damage", damageType: "burn", amount: 2 }];
     expect(isAttackCard(card)).toBe(true);
+    expect(getBattleCardTransmutationRole(card)).toBe("attack");
+    expect(getBattleCardTransmutationRole(costVariant)).toBe("defense");
     expect(cardHasDamageType(card, "burn")).toBe(true);
     expect(isAttackCard(costVariant)).toBe(false);
     expect(cardHasDamageType(costVariant, "burn")).toBe(false);
@@ -104,5 +109,9 @@ describe("card classification", () => {
     expect(cardHasKeyword(card, "archery")).toBe(true);
     expect(cardHasKeyword(card, "missing")).toBe(false);
     expect(isNatureCard(card)).toBe(true);
+    expect(getBattleCardTransmutationRole(card)).toBe("defense");
+    expect(getBattleCardTransmutationRole(makeTestCard({ effects: [{ kind: "gain-gold", amount: 2 }] }))).toBe(
+      "utility",
+    );
   });
 });

@@ -204,7 +204,7 @@ function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], 
   };
   if (state.gearEffects.dodgeSpendsPreservedBlock > 0 && state.playerStatuses.block > 0) {
     const spent = halveRounded(state.playerStatuses.block);
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: spent });
+    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: spent, impact: false });
     nextState = setPlayerStatus(nextState, "block", state.playerStatuses.block - spent);
     nextState = applyBlockDepletionForgeReward(state, nextState, combatTexts);
     nextState = resolveSecondaryAction(nextState, "retaliation", (current) =>

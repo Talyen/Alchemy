@@ -194,6 +194,39 @@ describe("findBestPlayableHandCard", () => {
     expect(findBestPlayableHandCard(state)).toBeNull();
   });
 
+  it.each([
+    { kind: "repeat", deathsDoorActive: false },
+    { kind: "multiple-costs", deathsDoorActive: false },
+    { kind: "repeat", deathsDoorActive: true },
+    { kind: "multiple-costs", deathsDoorActive: true },
+  ])(
+    "spends Phoenix Feather only once for $kind with Death's Door active=$deathsDoorActive",
+    ({ kind, deathsDoorActive }) => {
+      const base = cardById["blood-offering"]!;
+      const offering = makeTestCard({
+        ...base,
+        descriptionLines: ["Lose 10 Health", ...base.descriptionLines.slice(1)],
+        effects: [
+          ...base.effects.map((effect) => (effect.kind === "lose-health" ? { ...effect, amount: 10 } : effect)),
+          ...(kind === "multiple-costs" ? [{ kind: "lose-health" as const, amount: 10 }] : []),
+        ],
+      });
+      const state = greedyState([offering], {
+        playerHealth: 1,
+        playerMaxHealth: 30,
+        deathsDoorUsed: true,
+        deathsDoorActive,
+        playerStatuses: { ...defaultBattleState().playerStatuses, phoenixFeather: 1 },
+        flags: { ...defaultBattleState().flags, playNextCardTwice: kind === "repeat" },
+      });
+      expect(playBattleCardResolved({ ...state, rng: () => 0.99 }, offering.id, 0).state.playerHealth).toBe(0);
+      expect(findBestPlayableHandCard(state)).toBeNull();
+      expect(handHasPlayableCard(state)).toBe(true);
+      if (kind === "repeat")
+        expect(findBestPlayableHandCard({ ...state, flags: defaultBattleState().flags })?.card.id).toBe(offering.id);
+    },
+  );
+
   it("does not prioritize Mana Shield as defense when a free play would convert zero Mana", () => {
     const shield = cardById["mana-shield"]!;
     const hit = strongHit;

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { deepFreeze } from "@/features/alchemy/shared/stores/store-utils";
 import { readGameplayState, useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
@@ -46,5 +47,15 @@ describe("aggregate read ports", () => {
     expect(Object.isFrozen(session)).toBe(true);
     expect(Object.isFrozen(session.rewardFlow.state)).toBe(true);
     expect(Object.isFrozen(session.rewardFlow.state.destinations)).toBe(true);
+    const child = { progress: [1] };
+    const shallow = Object.freeze({ child });
+    deepFreeze(shallow);
+    expect(() => child.progress.push(2)).toThrow(TypeError);
+    const key = { id: 1 };
+    const tree = { map: new Map([[key, shallow]]), set: new Set([child]), self: null as unknown };
+    tree.self = tree;
+    expect(deepFreeze(tree)).toBe(tree);
+    expect(Object.isFrozen(key)).toBe(true);
+    expect(deepFreeze(tree)).toBe(tree);
   });
 });

@@ -25,6 +25,14 @@ function trackFenceLine(line, fence) {
   return fence;
 }
 
+function* unfencedLines(lines) {
+  let fence = null;
+  for (const [index, line] of lines.entries()) {
+    fence = trackFenceLine(line.replace(/\r$/u, ""), fence);
+    if (!FENCE_MARKER_RE.test(line) && !fence) yield { line, index };
+  }
+}
+
 export function extractMarkdownLinkTargets(source) {
   const targets = [];
   for (const match of source.matchAll(/\[[^\]]*\]\(([^)]+)\)/gu)) {
@@ -56,11 +64,7 @@ function headingPlainText(raw) {
 export function headingSlugs(source) {
   const slugs = new Set();
   const seen = new Map();
-  let fence = null;
-  for (const line of source.split("\n")) {
-    fence = trackFenceLine(line, fence);
-    if (FENCE_MARKER_RE.test(line)) continue;
-    if (fence) continue;
+  for (const { line } of unfencedLines(source.split("\n"))) {
     const match = /^(#{1,6})\s+(.+?)\s*#*\s*$/u.exec(line);
     if (!match?.[2]) continue;
     const base = githubHeadingSlug(headingPlainText(match[2]));
@@ -74,39 +78,23 @@ export function headingSlugs(source) {
 
 /** Source with fenced code blocks removed (backticked paths inside examples are not repo refs). */
 export function stripFencedBlocks(source) {
-  const kept = [];
-  let fence = null;
-  for (const line of source.split("\n")) {
-    const isMarker = FENCE_MARKER_RE.test(line);
-    fence = trackFenceLine(line, fence);
-    if (!isMarker && !fence) kept.push(line);
-  }
-  return kept.join("\n");
+  return Array.from(unfencedLines(source.split("\n")), ({ line }) => line).join("\n");
 }
 
 /** Map non-fence lines through `fn(line, index)`, preserving blocks, source indices and newlines. */
 export function mapUnfencedLines(content, fn) {
-  let fence = null;
-  return content
-    .split(/(\r?\n)/u)
-    .map((line, index) => {
-      if (/^\r?\n$/u.test(line)) return line;
-      const wasMarker = FENCE_MARKER_RE.test(line);
-      fence = trackFenceLine(line, fence);
-      if (wasMarker || fence) return line;
-      return fn(line, index / 2);
-    })
-    .join("");
+  const parts = content.split(/(\r?\n)/u);
+  for (const { line, index } of unfencedLines(parts.filter((_part, index) => index % 2 === 0))) {
+    parts[index * 2] = fn(line, index);
+  }
+  return parts.join("");
 }
 
 /** Read a heading-delimited section of a repo document, ignoring headings inside fenced blocks. */
 export function readDocumentSection(rootDir, relativePath, heading = null) {
   const source = fs.readFileSync(path.join(rootDir, relativePath), "utf8");
   const lines = source.split(/\r?\n/u);
-  let fence = null;
-  const headings = lines.flatMap((line, index) => {
-    fence = trackFenceLine(line, fence);
-    if (FENCE_MARKER_RE.test(line) || fence) return [];
+  const headings = Array.from(unfencedLines(lines)).flatMap(({ line, index }) => {
     const match = /^(#{1,6})\s+(.+?)\s*#*\s*$/u.exec(line);
     return match ? [{ index, level: match[1].length, title: match[2] }] : [];
   });

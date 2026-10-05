@@ -51,29 +51,30 @@ describe("RewardsScreen", () => {
     expect(readRunSession().rewardFlow.state.selectedId).toBeNull();
   });
 
-  it("disables claim actions while a reward claim is in flight", () => {
+  it("keeps locked rewards inspectable while blocking pointer and keyboard claims and Skip", async () => {
+    const onClaimReward = vi.fn();
+    const onSkip = vi.fn();
+    const user = userEvent.setup();
     render(
       <RewardsScreen
-        rewardState={{
-          ...readRunSession().rewardFlow.state,
-          selectedId: "slash",
-        }}
+        rewardState={readRunSession().rewardFlow.state}
         claimInFlight
-        onSkip={vi.fn()}
-        onClaimReward={vi.fn()}
+        onSkip={onSkip}
+        onClaimReward={onClaimReward}
       />,
     );
 
-    const addButtons = screen.getAllByRole("button", { name: /select slash/i });
-    expect(addButtons.length).toBeGreaterThan(0);
-    for (const button of addButtons) {
-      expect(button).toHaveProperty("disabled", true);
-    }
-    const skipButtons = screen.getAllByRole("button", { name: /skip/i });
-    expect(skipButtons.length).toBeGreaterThan(0);
-    for (const button of skipButtons) {
-      expect(button).toHaveProperty("disabled", true);
-    }
+    const reward = screen.getByRole("button", { name: /select slash/i });
+    expect(reward.getAttribute("aria-disabled")).toBe("true");
+    await user.tab();
+    expect(document.activeElement).toBe(reward);
+    await user.keyboard("{Enter} ");
+    await user.click(reward);
+    expect(onClaimReward).not.toHaveBeenCalled();
+    const skip = screen.getByRole("button", { name: /skip/i });
+    expect(skip).toHaveProperty("disabled", true);
+    await user.click(skip);
+    expect(onSkip).not.toHaveBeenCalled();
   });
 
   it("shows Found resources with the reward choices", () => {

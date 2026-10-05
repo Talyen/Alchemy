@@ -5,11 +5,10 @@ import { syncActiveHtmlSfxPlayback } from "./sfx";
 import { clamp01 } from "../math";
 import { syncScreenAmbience } from "./ambience";
 
-function applyMuteToElements(mutedHost: boolean) {
+function syncPlaybackSettings() {
   syncActiveHtmlSfxPlayback();
   syncMusicSettings();
   syncScreenAmbience();
-  if (audioState.muted && mutedHost) pauseAllMusic();
 }
 
 export function setMuted(value: boolean) {
@@ -17,15 +16,13 @@ export function setMuted(value: boolean) {
   // setMuted must also stay correct when it runs before init (or in tests).
   const mutedHost = audioState.hostForcesMute || isNonPlayerAudioHost();
   audioState.muted = value || mutedHost;
-  applyMuteToElements(mutedHost);
+  syncPlaybackSettings();
+  if (mutedHost) pauseAllMusic();
 }
 
 export function initAudioHost() {
   audioState.hostForcesMute = isNonPlayerAudioHost();
-  if (audioState.hostForcesMute) {
-    audioState.muted = true;
-    applyMuteToElements(true);
-  }
+  if (audioState.hostForcesMute) setMuted(true);
 }
 
 export function setSfxVolume(value: number) {
@@ -36,14 +33,10 @@ export function setSfxVolume(value: number) {
 
 export function setMasterVolume(value: number) {
   audioState.masterVolume = clamp01(value);
-  syncActiveHtmlSfxPlayback();
-  syncScreenAmbience();
-
-  syncMusicSettings();
+  syncPlaybackSettings();
 }
 
 export function setMusicVolume(value: number) {
   audioState.musicVolume = clamp01(value);
-
   syncMusicSettings();
 }

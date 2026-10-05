@@ -1,7 +1,8 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { BattleCardButton } from "@/features/alchemy/shared/ui/cards/card-button";
+import { SelectableCard } from "@/features/alchemy/shared/ui/cards/selectable-card";
 import type { BattleCard } from "@/lib/game-data/index";
 
 const card: BattleCard = {
@@ -31,23 +32,18 @@ describe("BattleCardButton", () => {
     expect(button.dataset.hovered).toBeUndefined();
   });
 
-  it("pairs keyword shine without glow only while eligible for hover", () => {
-    const props = {
-      ariaLabel: "Test Card",
-      shimmerActive: false,
-      shimmerToken: undefined,
-      onHoverStart: () => {},
-      onHoverEnd: () => {},
-      card,
-      shineColor: ["#ff0000", "#00ff00"],
-      scaleOnHover: false,
-    };
-    const { container, rerender } = render(<BattleCardButton {...props} hovered />);
-    expect(container.querySelector(".shine-border")).not.toBeNull();
-    expect(container.querySelector(".shine-border")?.hasAttribute("data-glow")).toBe(false);
-    for (const state of [{ hovered: false }, { hovered: true, disabled: true }, { hovered: true, dragging: true }]) {
-      rerender(<BattleCardButton {...props} {...state} />);
-      expect(container.querySelector(".shine-border")).toBeNull();
-    }
+  it("keeps unavailable card choices inspectable by keyboard without selecting them", () => {
+    const onSelect = vi.fn();
+    const { rerender } = render(<SelectableCard card={card} isSelected={false} disabled onSelect={onSelect} />);
+    const button = screen.getByRole("button", { name: "Select Test Card" });
+    act(() => button.focus());
+    expect(document.activeElement).toBe(button);
+    expect(button.getAttribute("aria-disabled")).toBe("true");
+    expect(screen.getByRole("tooltip").textContent).toContain("Test description.");
+    fireEvent.click(button);
+    expect(onSelect).not.toHaveBeenCalled();
+    rerender(<SelectableCard card={card} isSelected={false} onSelect={onSelect} />);
+    fireEvent.click(button);
+    expect(onSelect).toHaveBeenCalledOnce();
   });
 });

@@ -110,7 +110,7 @@ export function dealSelfDamage(
   amount: number,
   statLabel: EnemyStatusDamageId | "health",
   combatTexts: CombatTextEvent[],
-): { state: BattleState; healthLost: number } {
+): { state: BattleState; healthLost: number; healthAfterDamage: number } {
   const healthCost = statLabel === "health";
   const scaled = healthCost
     ? amount
@@ -139,6 +139,7 @@ export function dealSelfDamage(
   return {
     state: healthCost ? postDamage : decayArmorAfterDamage(postDamage, resolvedDamage, "player", combatTexts),
     healthLost,
+    healthAfterDamage: postDamage.playerHealth,
   };
 }
 

@@ -63,7 +63,7 @@ function applyEnemyEffect(
           ? state.playerStatuses.armor
           : Math.min(state.playerStatuses.armor, scaleByRoomMultiplier(state, effect.amount ?? 0));
       if (amount <= 0) return state;
-      mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "armor", amount });
+      mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "armor", amount, impact: false });
       const removed = removePlayerArmor(state, amount, combatTexts);
       return applyArmorLossAttackRetaliation(removed, amount, combatTexts);
     }

@@ -20,11 +20,17 @@ import {
 import { applyTalentState as mutateApplyTalentState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { mutateGearForTest } from "../../../../helpers/run-domain-store-test";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
-import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import {
+  createRunSessionCommand,
+  dispatchRunSessionCommand,
+} from "@/features/alchemy/shared/stores/run-session-command";
+import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
+import { patchBattleState } from "../../../../fixtures/battle";
 import { rebindLiveRunMeta } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { computeTalentPoints, type BattleCard } from "@/lib/game-data";
 import {
   readActiveRun,
+  readBattle,
   readActiveRunScreen,
   readRunInitialized,
   readRunProfile,
@@ -393,10 +399,22 @@ describe("unlockAllTalents", () => {
 });
 
 describe("resetUnlockedTalents", () => {
-  it("clears all unlocked talents", () => {
-    unlockTalent("burn", "talent-1");
+  it("refunds allocations and removes live combat bonuses while preserving XP and Homestead effects", () => {
+    setRunProgress({ talentXP: { health: 100 }, unlockedTalents: { health: ["health-heal-boost"] } });
+    setRunSession({ hasActiveRun: true });
+    dispatchRunSessionCommand((draft) => {
+      draft.runProfile.effects.homesteadHealing = 2;
+      initializeActiveBattle(draft, patchBattleState({ playerHealth: 15 }));
+      rebindLiveRunMeta(draft);
+    });
+    expect(readBattle().battleState.talentEffects.healMultiplier).toBe(1.1);
+    const before = readBattle().battleState;
     resetUnlockedTalents();
     expect(readRunProfile().unlockedTalents).toEqual({});
+    expect(readRunProfile().talentXP).toEqual({ health: 100 });
+    expect(readBattle().battleState.talentEffects).toMatchObject({ healMultiplier: 1, homesteadHealing: 2 });
+    expect(readBattle().battleState.playerHealth).toBe(before.playerHealth);
+    expect(readBattle().battleState.hand).toEqual(before.hand);
   });
 });
 

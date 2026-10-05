@@ -260,31 +260,19 @@ export function buildPatchNotesMarkdown(version, commits, knownIssues = []) {
 
 export function parseChangelogCommits(sectionMarkdown) {
   const commits = [];
-  const lines = sectionMarkdown.split("\n");
-  let index = 0;
-
-  while (index < lines.length) {
-    const line = lines[index];
-    if (!line.startsWith("- ")) {
-      index += 1;
-      continue;
+  let current;
+  for (const line of sectionMarkdown.split("\n")) {
+    if (line.startsWith("- ")) {
+      current = { subject: line.slice(2).trim(), body: [] };
+      commits.push(current);
+    } else if (current && line.startsWith("  ")) {
+      current.body.push(line.slice(2));
+    } else {
+      current = undefined;
     }
-
-    const subject = line.slice(2).trim();
-    index += 1;
-    const bodyLines = [];
-    while (index < lines.length && lines[index].startsWith("  ")) {
-      bodyLines.push(lines[index].slice(2));
-      index += 1;
-    }
-    while (index < lines.length && lines[index] === "") {
-      index += 1;
-    }
-
-    commits.push({ subject, body: bodyLines.join("\n") });
   }
 
-  return commits;
+  return commits.map(({ subject, body }) => ({ subject, body: body.join("\n") }));
 }
 
 export function extractChangelogSection(content, heading) {

@@ -83,8 +83,6 @@ export function useAppAudioEffects({
     };
   }, []);
 
-  const initialScreenRef = useRef(true);
-
   useEffect(() => {
     setScreenAmbience(screen);
     return stopScreenAmbience;
@@ -104,12 +102,6 @@ export function useAppAudioEffects({
 
   useEffect(() => {
     screenRef.current = screen;
-    if (initialScreenRef.current) {
-      // Bootstrap already started menu music; skip the first screen effect so
-      // cold start doesn't restart the track.
-      initialScreenRef.current = false;
-      return;
-    }
     playMusic(pickMusicKey(screen));
   }, [screen]);
 

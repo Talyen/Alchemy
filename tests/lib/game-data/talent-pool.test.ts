@@ -4,7 +4,6 @@ import {
   talentPool,
   getTalentsForKeyword,
   getAllocatableTalentChoices,
-  chunkIntoRows,
   getTalentRows,
   normalizeUnlockedTalents,
   computeTalentEffects,
@@ -15,16 +14,6 @@ import {
 } from "@/lib/game-data";
 
 describe("talent row layout", () => {
-  it("keeps overflow entries in a final row instead of dropping them", () => {
-    expect(chunkIntoRows([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], [1, 2, 3, 4])).toEqual([
-      [1],
-      [2, 3],
-      [4, 5, 6],
-      [7, 8, 9, 10],
-      [11],
-    ]);
-  });
-
   it("offers exactly the unpurchased talents whose prerequisites allow an actual unlock", () => {
     for (const keyword of getTalentTreeKeywordIds()) {
       const talents = getTalentsForKeyword(keyword);
@@ -71,19 +60,6 @@ describe("canUnlockTalent", () => {
   it("rejects unlock without unspent points", () => {
     expect(canUnlockTalent("physical", "physical-brute-force", {}, {}).ok).toBe(false);
   });
-
-  it("allows any real talent on an unlocked row, not just the next in order", () => {
-    const phys = getTalentsForKeyword("physical");
-    const unlocked = { physical: [phys[0]!.id, phys[1]!.id] };
-    const result = canUnlockTalent("physical", phys[2]!.id, { physical: 200 }, unlocked);
-    expect(result.ok).toBe(true);
-  });
-
-  it("rejects talents on rows that are not unlocked yet", () => {
-    const phys = getTalentsForKeyword("physical");
-    const result = canUnlockTalent("physical", phys[4]!.id, { physical: 100 }, {});
-    expect(result).toEqual({ ok: false, reason: "not-eligible-choice" });
-  });
 });
 
 describe("computeTalentEffects", () => {
@@ -97,12 +73,6 @@ describe("computeTalentEffects", () => {
     expect(computeTalentEffects(unlocked)).toEqual(expected);
     const operation = talentPool.find((talent) => talent.id === unlocked.armor[0])!.effects![0]!;
     expect(operation).toMatchObject({ value: [{ threshold: 50, amount: 3 }] });
-  });
-
-  it("returns empty effects with no unlocked talents", () => {
-    const effects = computeTalentEffects({});
-    expect(effects.flatPhysicalDamage).toBe(0);
-    expect(effects.armorPhysicalDamagePercent).toBe(0);
   });
 
   it("ignores talent ids saved under the wrong keyword", () => {

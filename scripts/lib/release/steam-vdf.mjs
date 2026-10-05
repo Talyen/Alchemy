@@ -5,13 +5,14 @@ import { join } from "node:path";
 import { steamContentRoot } from "./desktop-artifact.mjs";
 
 export function substituteSteamVdf(template, env) {
-  const buildOutput = (env.BUILD_OUTPUT ?? "").replaceAll("\\", "/");
-  const contentRoot = (env.CONTENT_ROOT ?? "").replaceAll("\\", "/");
-  return template
-    .replaceAll("${STEAM_APP_ID}", env.STEAM_APP_ID ?? "0")
-    .replaceAll("${STEAM_DEPOT_ID}", env.STEAM_DEPOT_ID ?? "0")
-    .replaceAll("${BUILD_OUTPUT}", buildOutput)
-    .replaceAll("${CONTENT_ROOT}", contentRoot);
+  const values = {
+    STEAM_APP_ID: env.STEAM_APP_ID ?? "0",
+    STEAM_DEPOT_ID: env.STEAM_DEPOT_ID ?? "0",
+    BUILD_OUTPUT: (env.BUILD_OUTPUT ?? "").replaceAll("\\", "/"),
+    CONTENT_ROOT: (env.CONTENT_ROOT ?? "").replaceAll("\\", "/"),
+  };
+  // A callback inserts literal paths once, including dollar signs and placeholder-like folder names.
+  return template.replace(/\$\{(STEAM_APP_ID|STEAM_DEPOT_ID|BUILD_OUTPUT|CONTENT_ROOT)\}/gu, (_match, key) => values[key]);
 }
 
 export function writeSteamBuildVdfs(root, env) {

@@ -123,7 +123,7 @@ function ineffectiveEffectFeedback(effect: BattleCardEffect): CombatTextEvent | 
     case "remove-harmful-status":
     case "remove-player-status":
     case "cleanse-player-status-to-damage":
-      return null; // Cleanse handlers own their ineffective-action notices.
+      return { target: "player", kind: "notice", stat: "cleanse", text: "Nothing to Cleanse" };
     case "damage":
       return { ...feedback, target: "enemy", kind: "damage", stat: effect.damageType };
     case "enemy-status":
@@ -172,6 +172,9 @@ export function applyCardEffects(
     enemyFreezeSkipTurnsAtStart: state.enemyCC.freezeSkipTurns,
   },
 ): BattleState {
+  // Earlier turn-start actions share the output rail, but cannot acknowledge
+  // this card or Companion's ineffective action on its behalf.
+  const effectTexts: CombatTextEvent[] = [];
   const potionMult =
     isPotionCard(card) && card.consume && !state.action?.repeatActive
       ? state.talentEffects.potionPotency + (isMixedPotionCard(card) ? state.talentEffects.mixedPotionPotency : 0)
@@ -179,19 +182,20 @@ export function applyCardEffects(
   const result = resolveBattleSequence(
     state,
     card.effects,
-    combatTexts,
-    (currentState, effect) => applySingleEffect(currentState, card, effect, potionMult, combatTexts, context),
+    effectTexts,
+    (currentState, effect) => applySingleEffect(currentState, card, effect, potionMult, effectTexts, context),
     { kind: "each-step", settle: resolvePendingBattleReactions },
   );
   const primary = card.effects[0];
   if (
-    combatTexts.length === 0 &&
+    effectTexts.length === 0 &&
     !isPlayerDefeated(state) &&
     primary &&
     (hasEffectApplyHandler(primary.kind) || isRecursiveBattleCardEffectKind(primary.kind))
   ) {
     const feedback = ineffectiveEffectFeedback(primary);
-    if (feedback) mergeCombatText(combatTexts, feedback);
+    if (feedback && (feedback.target === "player" || state.enemyHealth > 0)) mergeCombatText(effectTexts, feedback);
   }
+  for (const event of effectTexts) mergeCombatText(combatTexts, event);
   return result;
 }

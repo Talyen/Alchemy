@@ -105,17 +105,19 @@ export function applyMaterialFindBonus(
   return { ...materials, herbs: Math.round(materials.herbs * (1 + effects.herbFindBonus)) };
 }
 
+const END_RUN_MATERIAL_YIELDS = {
+  stone: "endRunStonePerRoom",
+  herbs: "endRunHerbsPerRoom",
+  food: "endRunFoodPerRoom",
+  hide: "endRunHidePerRoom",
+  gems: "endRunGemsPerRoom",
+  iron: "endRunIronPerRoom",
+  wood: "endRunWoodPerRoom",
+} as const satisfies Record<MaterialId, keyof HomesteadEffectManifest>;
+
 type EndOfRunHomesteadEffects = Pick<
   HomesteadEffectManifest,
-  | "endRunStonePerRoom"
-  | "endRunWishPerRoom"
-  | "endRunFoodPerRoom"
-  | "endRunHerbsPerRoom"
-  | "endRunHidePerRoom"
-  | "endRunGemsPerRoom"
-  | "endRunIronPerRoom"
-  | "endRunWoodPerRoom"
-  | "herbFindBonus"
+  (typeof END_RUN_MATERIAL_YIELDS)[MaterialId] | "endRunWishPerRoom" | "herbFindBonus"
 >;
 
 export function applyEndOfRunHomesteadBonuses(
@@ -124,19 +126,11 @@ export function applyEndOfRunHomesteadBonuses(
   roomsEncountered: number,
 ): MaterialInventory {
   const roomCount = Math.max(0, roomsEncountered);
-  const withFlatYields = {
-    ...base,
-    stone: base.stone + (effects.endRunStonePerRoom ?? 0) * roomCount,
-    herbs: base.herbs + (effects.endRunHerbsPerRoom ?? 0) * roomCount,
-    food: base.food + (effects.endRunFoodPerRoom ?? 0) * roomCount,
-    hide: base.hide + (effects.endRunHidePerRoom ?? 0) * roomCount,
-    gems:
-      base.gems +
-      (effects.endRunGemsPerRoom ?? 0) * roomCount +
-      (effects.endRunWishPerRoom ?? 0) * Math.floor(roomCount / 2),
-    iron: base.iron + (effects.endRunIronPerRoom ?? 0) * roomCount,
-    wood: base.wood + (effects.endRunWoodPerRoom ?? 0) * roomCount,
-  };
+  const withFlatYields = { ...base };
+  for (const material of MATERIAL_IDS) {
+    withFlatYields[material] += (effects[END_RUN_MATERIAL_YIELDS[material]] ?? 0) * roomCount;
+  }
+  withFlatYields.gems += (effects.endRunWishPerRoom ?? 0) * Math.floor(roomCount / 2);
   return applyMaterialFindBonus(withFlatYields, effects);
 }
 

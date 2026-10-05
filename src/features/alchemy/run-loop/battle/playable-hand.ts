@@ -8,7 +8,7 @@ import {
 } from "@/lib/battle";
 import { getCardKeywords, type BattleCard } from "@/lib/game-data";
 import type { BattleCardEffect } from "@/lib/game-data";
-import { HALF_DIVISOR } from "@/lib/game-constants";
+import { CAMPFIRE_HEAL_FRACTION, HALF_DIVISOR } from "@/lib/game-constants";
 
 import { PLAYABLE_HAND_OPTIONS } from "../../shared/config/battle-input";
 export { PLAYABLE_HAND_OPTIONS };
@@ -41,8 +41,46 @@ function immediateSelfDamage(effects: readonly BattleCardEffect[]): number {
   }, 0);
 }
 
+interface SelfCostOutcome {
+  health: number;
+  phoenixFeather: boolean;
+}
+
+/** Conservatively ignore healing and mitigation, but spend death prevention once in effect order. */
+function selfCostOutcomes(
+  effects: readonly BattleCardEffect[],
+  outcomes: SelfCostOutcome[],
+  revivedHealth: number,
+): SelfCostOutcome[] {
+  for (const effect of effects) {
+    if (effect.kind === "lose-health" || effect.kind === "self-damage") {
+      outcomes = outcomes.map((outcome) => {
+        if (outcome.health <= 0 || effect.amount <= 0) return outcome;
+        if (effect.amount >= outcome.health && outcome.phoenixFeather) {
+          return { health: revivedHealth, phoenixFeather: false };
+        }
+        return { ...outcome, health: Math.max(0, outcome.health - effect.amount) };
+      });
+    } else if (effect.kind === "chance") {
+      const branches = [
+        ...(effect.probability > 0 ? selfCostOutcomes(effect.successEffects, outcomes, revivedHealth) : []),
+        ...(effect.probability < 1 ? selfCostOutcomes(effect.failureEffects, outcomes, revivedHealth) : []),
+      ];
+      // At most two meaningful worst cases: Feather retained or already spent.
+      outcomes = [false, true].flatMap((phoenixFeather) => {
+        const matching = branches.filter((outcome) => outcome.phoenixFeather === phoenixFeather);
+        return matching.length
+          ? [{ health: Math.min(...matching.map((outcome) => outcome.health)), phoenixFeather }]
+          : [];
+      });
+    }
+  }
+  return outcomes;
+}
+
 function hasPotentialLethalSelfCost(card: BattleCard, state: BattleSnapshot): boolean {
-  if (!state.deathsDoorUsed || state.deathsDoorActive || state.playerStatuses.phoenixFeather > 0) return false;
+  // Feather revival ends Death's Door protection before any remaining costs.
+  if (!state.deathsDoorUsed || (state.deathsDoorActive && state.playerStatuses.phoenixFeather <= 0)) return false;
   const selfDamage = immediateSelfDamage(card.effects);
   if (selfDamage >= 0 && selfDamage * 2 < state.playerHealth) return false;
 
@@ -58,7 +96,11 @@ function hasPotentialLethalSelfCost(card: BattleCard, state: BattleSnapshot): bo
       if (keyword === "wish") return state.talentEffects.wishCardPlayTwiceChance > 0;
       return false;
     });
-  return selfDamage * (mayRepeat ? 2 : 1) >= state.playerHealth;
+  if (state.playerStatuses.phoenixFeather <= 0) return selfDamage * (mayRepeat ? 2 : 1) >= state.playerHealth;
+  const revivedHealth = Math.round(state.playerMaxHealth * CAMPFIRE_HEAL_FRACTION);
+  const first = selfCostOutcomes(card.effects, [{ health: state.playerHealth, phoenixFeather: true }], revivedHealth);
+  const outcomes = mayRepeat ? selfCostOutcomes(card.effects, first, revivedHealth) : first;
+  return outcomes.some((outcome) => outcome.health <= 0);
 }
 
 /**

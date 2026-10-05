@@ -227,6 +227,20 @@ describe("useAppAudioEffects mute-in-background", () => {
   });
 
   it.each([
+    { screen: "menu" as Screen, enemyId: "skeleton", enemyType: "normal", musicKey: MUSIC_KEYS.MENU },
+    { screen: "battle" as Screen, enemyId: "forge-golem", enemyType: "boss", musicKey: MUSIC_KEYS.BOSS_FORGE_GOLEM },
+  ])(
+    "starts $musicKey on initial mount without waiting for another input or navigation",
+    ({ screen, enemyId, enemyType, musicKey }) => {
+      battleActive.value = screen === "battle";
+      battleActive.enemyId = enemyId;
+      battleActive.enemyType = enemyType;
+      renderAudio(false, screen);
+      expect(playMusic).toHaveBeenCalledExactlyOnceWith(musicKey);
+    },
+  );
+
+  it.each([
     { enemyId: "skeleton", enemyType: "normal", musicKey: MUSIC_KEYS.BATTLE },
     { enemyId: "forge-golem", enemyType: "boss", musicKey: MUSIC_KEYS.BOSS_FORGE_GOLEM },
   ])(

@@ -8,12 +8,12 @@ export function isTransmutableCard(card: BattleCard): boolean {
 }
 
 export function createTransmutationOffers(rng: () => number): BattleCard[] {
-  const pool = getOfferableCardPool();
+  const pools: Record<"attack" | "defense" | "utility", BattleCard[]> = { attack: [], defense: [], utility: [] };
+  for (const card of getOfferableCardPool()) {
+    pools[card.transmutationRole ?? getBattleCardTransmutationRole(card)].push(card);
+  }
   return (["attack", "defense", "utility"] as const).flatMap((role) => {
-    const card = pickRandom(
-      pool.filter((card) => (card.transmutationRole ?? getBattleCardTransmutationRole(card)) === role),
-      rng,
-    );
+    const card = pickRandom(pools[role], rng);
     // Inferred roles select offers; keep catalog metadata unchanged so hydration
     // restores the same cards without requiring extra persisted fields.
     return card ? [cloneBattleCard(card)] : [];

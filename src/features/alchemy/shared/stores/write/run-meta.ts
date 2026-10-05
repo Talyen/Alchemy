@@ -26,6 +26,7 @@ export function unlockTalent(draft: GameplayDraft, keywordId: KeywordId, talentI
 
 export function resetUnlockedTalents(draft: GameplayDraft): void {
   draft.runProfile.unlockedTalents = {};
+  rebindLiveRunMeta(draft);
 }
 
 export function unlockAllTalents(draft: GameplayDraft): void {

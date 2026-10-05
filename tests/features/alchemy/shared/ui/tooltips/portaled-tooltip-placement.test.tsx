@@ -102,4 +102,35 @@ describe("usePortaledTooltipPlacement", () => {
     unmount();
     expect(stop).toHaveBeenCalledTimes(2);
   });
+
+  it("coalesces repeated resize notifications into one frame and disposes it on unmount", () => {
+    let remeasure!: () => void;
+    vi.spyOn(floatingUi, "autoUpdate").mockImplementation((_trigger, _tooltip, update) => {
+      remeasure = update;
+      return () => {};
+    });
+    const compute = vi.spyOn(floatingUi, "computePosition").mockResolvedValue({
+      x: 0,
+      y: 0,
+      placement: "top",
+      strategy: "fixed",
+      middlewareData: {},
+    });
+    const frames: FrameRequestCallback[] = [];
+    vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => frames.push(callback));
+    const cancel = vi.spyOn(window, "cancelAnimationFrame");
+    const { unmount } = render(<Harness placement="above" />);
+    act(() => {
+      remeasure();
+      remeasure();
+      remeasure();
+    });
+    expect(frames).toHaveLength(1);
+    expect(cancel).not.toHaveBeenCalled();
+    act(() => frames[0]!(0));
+    expect(compute).toHaveBeenCalledTimes(2);
+    act(() => remeasure());
+    unmount();
+    expect(cancel).toHaveBeenCalledExactlyOnceWith(2);
+  });
 });

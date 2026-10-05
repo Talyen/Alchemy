@@ -476,7 +476,7 @@ describe("agent discovery", () => {
     }
   });
 
-  it("tracks fences by character and length across every markdown helper", () => {
+  it.each(["\n", "\r\n"])("tracks fences by character and length with %j newlines", (newline) => {
     // A ~~~ block is never closed by ```, and a ```` block survives an inner ``` pair.
     const source = [
       "## Visible",
@@ -495,15 +495,9 @@ describe("agent discovery", () => {
       "still hidden",
       "````",
       "## Final",
-    ].join("\n");
+    ].join(newline);
     const slugs = headingSlugs(source);
-    expect(slugs.has("visible")).toBe(true);
-    expect(slugs.has("also-visible")).toBe(true);
-    expect(slugs.has("final")).toBe(true);
-    expect(slugs.has("hidden-tilde")).toBe(false);
-    expect(slugs.has("hidden-after-false-close")).toBe(false);
-    expect(slugs.has("still-hidden")).toBe(false);
-    expect(slugs.has("hidden-nested")).toBe(false);
+    expect([...slugs]).toEqual(["visible", "also-visible", "final"]);
     const stripped = stripFencedBlocks(source);
     expect(stripped).toContain("## Visible");
     expect(stripped).toContain("## Also-visible");

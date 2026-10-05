@@ -13,6 +13,8 @@ describe("eligible affix pool caching", () => {
     const pool = buildEligibleAffixPool(definition);
     const rolls = rollAffixes(definition, 2, createSeededRng(17));
     definition.displayName = "Renamed Dagger";
+    definition.baseItemId = "shortsword";
+    definition.compatibleSlots.reverse();
     expect(buildEligibleAffixPool(definition)).toBe(pool);
     expect(Object.isFrozen(pool)).toBe(true);
     expect(rollAffixes(definition, 2, createSeededRng(17))).toEqual(rolls);

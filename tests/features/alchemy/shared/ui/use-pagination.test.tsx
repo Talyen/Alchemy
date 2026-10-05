@@ -29,6 +29,8 @@ it("never drops or duplicates entries for fractional and non-finite pagination i
   expect([first, second, third].flatMap(({ rows }) => rows.flat())).toEqual(items);
   expect(getPagination(Infinity, Infinity, NaN)).toEqual({ page: 0, totalPages: 1, pageSize: 1 });
   expect(paginateRows(items, 0, Infinity, NaN).rows).toEqual([[0]]);
+  expect(anchoredPage(2, 2.9, 1.9, 20)).toBe(4);
+  expect(anchoredPage(2, 2, Infinity, 20, 7)).toBe(7);
 });
 
 it("recovers from non-finite hook inputs without an endless render loop", () => {

@@ -19,8 +19,7 @@ function requiredAspect(def: GearDefinition): GearAffixAspect | null {
 }
 
 interface CachedAffixPool {
-  baseItemId: string;
-  compatibleSlots: readonly GearSlot[];
+  aspect: GearAffixAspect | null;
   affinityKeywords: readonly string[];
   pool: readonly GearAffixDefinition[];
 }
@@ -30,19 +29,17 @@ interface CachedAffixPool {
 const eligibleAffixPoolCache = new WeakMap<GearDefinition, CachedAffixPool>();
 
 export function buildEligibleAffixPool(definition: GearDefinition): readonly GearAffixDefinition[] {
+  const aspect = requiredAspect(definition);
   const cached = eligibleAffixPoolCache.get(definition);
   // Compare values rather than just array identity: callers can edit custom
   // definitions in place. Stable lookups need no sorting or temporary arrays.
   if (
     cached &&
-    cached.baseItemId === definition.baseItemId &&
-    cached.compatibleSlots.length === definition.compatibleSlots.length &&
-    cached.compatibleSlots.every((slot, index) => slot === definition.compatibleSlots[index]) &&
+    cached.aspect === aspect &&
     cached.affinityKeywords.length === definition.affinityKeywords.length &&
     cached.affinityKeywords.every((keyword, index) => keyword === definition.affinityKeywords[index])
   )
     return cached.pool;
-  const aspect = requiredAspect(definition);
   const pool = Object.freeze(
     gearAffixList.filter(
       (affix) =>
@@ -52,8 +49,7 @@ export function buildEligibleAffixPool(definition: GearDefinition): readonly Gea
     ),
   );
   eligibleAffixPoolCache.set(definition, {
-    baseItemId: definition.baseItemId,
-    compatibleSlots: [...definition.compatibleSlots],
+    aspect,
     affinityKeywords: [...definition.affinityKeywords],
     pool,
   });

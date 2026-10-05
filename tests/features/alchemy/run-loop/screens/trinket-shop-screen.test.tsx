@@ -15,6 +15,28 @@ const testTrinket: TrinketEntry = {
 installReadyArtworkForTests();
 afterEach(cleanup);
 
+it("explains the completed collection and disables a refresh of the empty shelf", async () => {
+  const onRefresh = vi.fn();
+  render(
+    <TrinketShopScreen
+      gold={100}
+      trinkets={[]}
+      refreshesLeft={1}
+      purchasedSlotKeys={[]}
+      getTrinketPrice={() => 50}
+      refreshPrice={15}
+      onBuyTrinket={() => false}
+      onRefresh={onRefresh}
+      onContinue={() => {}}
+    />,
+  );
+  expect(screen.getByRole("status").textContent).toContain("All Trinkets have been collected");
+  const refresh = screen.getByRole("button", { name: /Refresh/ });
+  expect((refresh as HTMLButtonElement).disabled).toBe(true);
+  await userEvent.click(refresh);
+  expect(onRefresh).not.toHaveBeenCalled();
+});
+
 it("buys the offered identity and prevents a repeat purchase of its slot", async () => {
   const onBuyTrinket = vi.fn(() => true);
   const view = (purchasedSlotKeys: string[]) => (

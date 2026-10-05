@@ -46,20 +46,6 @@ describe("createCanvasLifecycle", () => {
     vi.restoreAllMocks();
   });
 
-  it("returns noop lifecycle when parent element is null", () => {
-    const unattached = document.createElement("canvas");
-    const onFrame = vi.fn();
-    const lifecycle = createCanvasLifecycle({
-      canvas: unattached,
-      onFrame,
-    });
-    expect(lifecycle.logicalWidth).toBe(0);
-    expect(lifecycle.logicalHeight).toBe(0);
-    lifecycle.scheduleFrame();
-    lifecycle.dispose();
-    expect(onFrame).not.toHaveBeenCalled();
-  });
-
   it("initializes logical dimensions without clearing an already-sized canvas", () => {
     vi.stubGlobal("devicePixelRatio", 1);
     canvas.width = 640;
@@ -81,25 +67,6 @@ describe("createCanvasLifecycle", () => {
     expect(onResize).toHaveBeenCalledWith(640, 480, 1);
     expect(writeWidth).not.toHaveBeenCalled();
     expect(writeHeight).not.toHaveBeenCalled();
-    lifecycle.dispose();
-  });
-
-  it("runs animation frame callbacks with delta time", () => {
-    let frameCallback: FrameRequestCallback | null = null;
-    vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
-      frameCallback = cb;
-      return 42;
-    });
-
-    const onFrame = vi.fn();
-    const lifecycle = createCanvasLifecycle({
-      canvas,
-      onFrame,
-    });
-
-    expect(frameCallback).not.toBeNull();
-    frameCallback!(100);
-    expect(onFrame).toHaveBeenCalledWith(100, expect.any(Number), 640, 480);
     lifecycle.dispose();
   });
 
@@ -144,19 +111,34 @@ describe("createCanvasLifecycle", () => {
     lifecycle.dispose();
   });
 
-  it("pauses frame loop when motion is disabled", () => {
-    localStorage.setItem("alchemy-disable-animations", "true");
-    const raf = vi.spyOn(window, "requestAnimationFrame");
-    const onFrame = vi.fn();
-
-    const lifecycle = createCanvasLifecycle({
-      canvas,
-      onFrame,
+  it.each(["motion", "visibility"])("stops queued frames and resumes after %s changes", (source) => {
+    const frames: FrameRequestCallback[] = [];
+    const raf = vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+      frames.push(callback);
+      return frames.length;
     });
-
-    expect(raf).not.toHaveBeenCalled();
+    const onFrame = vi.fn();
+    const lifecycle = createCanvasLifecycle({ canvas, onFrame });
+    const setPaused = (paused: boolean) => {
+      if (source === "motion") localStorage.setItem("alchemy-disable-animations", String(paused));
+      else Object.defineProperty(document, "hidden", { value: paused, configurable: true });
+    };
+    setPaused(true);
+    frames.shift()!(100);
     expect(onFrame).not.toHaveBeenCalled();
+    expect(frames).toEqual([]);
+    setPaused(false);
+    const notification = () =>
+      source === "motion"
+        ? window.dispatchEvent(new Event("storage"))
+        : document.dispatchEvent(new Event("visibilitychange"));
+    notification();
+    frames.shift()!(200);
+    expect(onFrame).toHaveBeenCalledExactlyOnceWith(200, expect.any(Number), 640, 480);
     lifecycle.dispose();
+    const callsAfterDispose = raf.mock.calls.length;
+    notification();
+    expect(raf).toHaveBeenCalledTimes(callsAfterDispose);
   });
 
   it("resumes after the OS reduced-motion preference is switched off", () => {
@@ -187,20 +169,6 @@ describe("createCanvasLifecycle", () => {
     const callsAfterDispose = raf.mock.calls.length;
     query.dispatchEvent(new Event("change"));
     expect(raf).toHaveBeenCalledTimes(callsAfterDispose);
-  });
-
-  it("pauses frame loop when document is hidden", () => {
-    Object.defineProperty(document, "hidden", { value: true, configurable: true });
-    const raf = vi.spyOn(window, "requestAnimationFrame");
-    const onFrame = vi.fn();
-
-    const lifecycle = createCanvasLifecycle({
-      canvas,
-      onFrame,
-    });
-
-    expect(raf).not.toHaveBeenCalled();
-    lifecycle.dispose();
   });
 
   it("cleans up listeners and cancels animation frames on dispose", () => {

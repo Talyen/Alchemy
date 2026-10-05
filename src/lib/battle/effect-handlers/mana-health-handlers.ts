@@ -44,7 +44,7 @@ export const MANA_HEALTH_HANDLERS = {
     const mana = Math.max(0, state.mana - effect.amount);
     const manaLost = state.mana - mana;
     if (manaLost > 0)
-      mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "mana", amount: manaLost });
+      mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "mana", amount: manaLost, impact: false });
     return { ...state, mana };
   },
   "gain-max-mana": (state, _card, effect, _potionMult, combatTexts) => {
@@ -61,7 +61,13 @@ export const MANA_HEALTH_HANDLERS = {
     const maxMana = Math.max(MIN_MAX_MANA_FLOOR, state.maxMana - effect.amount);
     const crystalsLost = state.maxMana - maxMana;
     if (crystalsLost <= 0) return state;
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "mana", amount: crystalsLost });
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "damage",
+      stat: "mana",
+      amount: crystalsLost,
+      impact: false,
+    });
     return burnEnemyOnManaCrystalLoss(
       { ...state, maxMana, mana: Math.min(maxMana, state.mana) },
       crystalsLost,

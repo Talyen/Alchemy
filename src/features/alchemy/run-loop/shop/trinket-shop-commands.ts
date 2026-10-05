@@ -1,7 +1,10 @@
 import { grantTrinketToRunWithRecord } from "@/features/alchemy/shared/stores/deck-mutations";
 import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
-import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
-import type { TalentEffectManifest } from "@/lib/game-data";
+import {
+  createDraftRunRandomSource,
+  setTrinketShopState,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { trinketLibrary, type TalentEffectManifest } from "@/lib/game-data";
 import { isLootEligible } from "@/lib/loot";
 import type { TrinketShopCommands } from "./shop-action-types";
 import {
@@ -27,7 +30,12 @@ export function createTrinketShopCommands({
     idOf: (item) => item.id,
     priceOf: (_trinket, context) => getShopBuyPrice("trinket", null, context),
     isAvailable: (draft, offered) => !draft.gear.ownedTrinketIds.includes(offered.id),
-    acquire: (draft, offered) => grantTrinketToRunWithRecord(draft, offered.id),
+    acquire: (draft, offered) => {
+      grantTrinketToRunWithRecord(draft, offered.id);
+      if (trinketLibrary.every((trinket) => draft.gear.ownedTrinketIds.includes(trinket.id))) {
+        setTrinketShopState(draft, (state) => ({ ...state, refreshesLeft: 0 }));
+      }
+    },
   });
   const getRefreshPrice = createGetRefreshPrice("trinket-shop", talentEffects);
 
@@ -38,7 +46,9 @@ export function createTrinketShopCommands({
   const refresh = createShopRefreshAction({
     activity: "trinket-shop",
     talentEffects,
-    guard: (draft) => isLootEligible("trinket", resolveDraftLootProgress(draft).depth),
+    guard: (draft) =>
+      isLootEligible("trinket", resolveDraftLootProgress(draft).depth) &&
+      trinketLibrary.some((trinket) => !draft.gear.ownedTrinketIds.includes(trinket.id)),
     resample: (draft, state) => ({
       ...state,
       trinkets: resampleTrinketShopOfferings(

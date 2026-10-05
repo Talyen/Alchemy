@@ -40,7 +40,7 @@ describe("applyEffectByKind (mana effects)", () => {
     const effect = { kind: "lose-mana" as const, amount: 3 };
     const result = applyManaEffect(state, effect, 1, texts);
     expect(result.mana).toBe(0);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "mana", amount: 1 });
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "mana", amount: 1, impact: false });
   });
 
   it("does not report Mana loss when already empty", () => {
@@ -64,7 +64,9 @@ describe("applyEffectByKind (mana effects)", () => {
     const result = applyManaEffect(state, { kind: "lose-max-mana", amount: 5 }, 1, texts);
     expect(result.maxMana).toBe(MIN_MAX_MANA_FLOOR);
     expect(result.mana).toBe(MIN_MAX_MANA_FLOOR);
-    expect(texts).toEqual([{ target: "player", kind: "damage", stat: "mana", amount: 4 - MIN_MAX_MANA_FLOOR }]);
+    expect(texts).toEqual([
+      { target: "player", kind: "damage", stat: "mana", amount: 4 - MIN_MAX_MANA_FLOOR, impact: false },
+    ]);
     const emptyTexts = makeTexts();
     expect(applyManaEffect(result, { kind: "lose-max-mana", amount: 1 }, 1, emptyTexts)).toBe(result);
     expect(emptyTexts).toEqual([]);

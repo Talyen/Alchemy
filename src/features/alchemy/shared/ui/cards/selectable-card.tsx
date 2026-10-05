@@ -112,14 +112,18 @@ function SelectableCardSurface({
 }) {
   const buttonProps = {
     card,
-    shineColor,
-    disabled,
-    onClick: onSelect,
+    shineColor: disabled ? undefined : shineColor,
+    ariaDisabled: disabled,
+    scaleOnHover: !disabled,
+    onClick: () => {
+      if (!disabled) onSelect();
+    },
     ariaLabel: `Select ${getCardDisplayTitle(card)}`,
     selected: chrome === "corruption" ? false : isSelected,
     className: cn(
       widthClass ?? DEFAULT_WIDTH_BY_CHROME[chrome],
-      cardInteractiveGlowClass,
+      !disabled && cardInteractiveGlowClass,
+      disabled && "cursor-default grayscale",
       chrome === "corruption" && isSelected && "card-interactive-selected-danger",
     ),
     wrapperClassName: "relative flex justify-center",

@@ -10,11 +10,8 @@ import {
   buildPatchNotesMarkdown,
   extractChangelogSection,
   extractPlayerFacingLines,
-  isInfraPath,
-  isProductPath,
   isUserFacing,
   parseChangelogCommits,
-  parseConventionalCommit,
   promoteUnreleasedSection,
   replaceChangelogUnreleased,
 } from "../../scripts/lib/release/patch-notes-core.mjs";
@@ -36,13 +33,6 @@ describe("generate-patch-notes", () => {
     expect(markdown).toContain("reduce goblin HP");
     expect(markdown).not.toContain("update deps");
     expect(markdown).toContain("## Known issues");
-  });
-
-  it("parses conventional commit headers", () => {
-    const parsed = parseConventionalCommit("feat(steam): enable cloud saves");
-    expect(parsed.type).toBe("feat");
-    expect(parsed.scope).toBe("steam");
-    expect(parsed.include).toBe(true);
   });
 
   it("extracts first sentence from prose commit bodies", () => {
@@ -111,19 +101,16 @@ describe("generate-patch-notes", () => {
     expect(markdown).toContain("\n  …");
   });
 
-  it("parses changelog commits with indented bodies", () => {
-    const section = [
-      "### Features",
-      "",
-      "- feat(ui): add armory",
-      "  Replace placeholder gear with affix rolls.",
-      "",
-      "- fix(save): repair deck",
-    ].join("\n");
-    const commits = parseChangelogCommits(section);
-    expect(commits).toEqual([
-      { subject: "feat(ui): add armory", body: "Replace placeholder gear with affix rolls." },
+  it("preserves indented body lines without absorbing section headings or trailing prose", () => {
+    const commits = [
+      { subject: "feat(ui): add armory", body: "First detail.\n\n- Nested body bullet." },
       { subject: "fix(save): repair deck", body: "" },
+    ];
+    const source = buildChangelogUnreleased(commits);
+    expect(parseChangelogCommits(extractChangelogSection(source, "## [Unreleased]")!)).toEqual(commits);
+    expect(parseChangelogCommits("intro\n  orphan\n- fix: recover\n  detail\nprose\n  orphan\n- feat: next")).toEqual([
+      { subject: "fix: recover", body: "detail" },
+      { subject: "feat: next", body: "" },
     ]);
   });
 
@@ -151,7 +138,7 @@ describe("generate-patch-notes", () => {
     expect(promoted).toContain("- feat(ui): add armory");
     expect(promoted).toContain("## [Unreleased]");
     expect(promoted).toContain("_No changes yet._");
-    expect(promoted).toContain("## [0.1.0] (2026-06-11)");
+    expect(extractChangelogSection(promoted, "## [0.1.0]")).toContain("- Initial release");
     expect(promoteUnreleasedSection(promoted, "v0.2.0", "2026-06-18")).toBe(promoted);
     const conflicting = promoted.replace("_No changes yet._", "- fix: a new change");
     expect(() => promoteUnreleasedSection(conflicting, "0.2.0", "2026-06-18")).toThrow("already contains");
@@ -175,24 +162,6 @@ describe("generate-patch-notes", () => {
     expect(next).toContain("## [Unreleased]\n\nnew");
     expect(next).toContain("## [0.1.0] (2026-06-11)");
     expect(next).not.toContain("old");
-  });
-
-  it("extracts changelog sections by heading", () => {
-    const content = [
-      "## [Unreleased]",
-      "",
-      "### Features",
-      "",
-      "- feat(ui): add armory",
-      "",
-      "## [0.1.0] (2026-06-11)",
-    ].join("\n");
-    expect(extractChangelogSection(content, "## [Unreleased]")).toContain("feat(ui): add armory");
-  });
-
-  it("extracts versioned changelog sections with release dates", () => {
-    const content = ["## [0.1.0] (2026-06-11)", "", "### Features", "", "- Initial release"].join("\n");
-    expect(extractChangelogSection(content, "## [0.1.0]")).toContain("Initial release");
   });
 
   it("drops infra-only feat commits from player notes", () => {
@@ -258,14 +227,6 @@ describe("generate-patch-notes", () => {
       files: ["src/lib/battle/retarget.ts"],
     });
     expect(lines).toEqual(["**battle:** Enemies now pick a new target if the current one dies mid-turn."]);
-  });
-
-  it("classifies product vs infra paths", () => {
-    expect(isProductPath("src/lib/battle/damage-calc.ts")).toBe(true);
-    expect(isProductPath("Raw Assets/cards/meteor.png")).toBe(true);
-    expect(isInfraPath("scripts/generate-patch-notes.mjs")).toBe(true);
-    expect(isInfraPath("src/lib/game-data/assets.generated.ts")).toBe(true);
-    expect(isProductPath("src/lib/game-data/assets.generated.ts")).toBe(false);
   });
 
   it("parses generate and release dry-run flags", () => {

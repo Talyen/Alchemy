@@ -270,7 +270,7 @@ function applyFreezeStatusRider(
       skipFightPacing: true,
     });
   }
-  return tryTriggerEnemyFreeze(state, nextState, combatTexts, preHitHealth);
+  return tryTriggerEnemyFreeze(eligibility, nextState, combatTexts, preHitHealth);
 }
 
 function applyPhysicalStatusRider(

@@ -153,7 +153,7 @@ export const augmentDefinitions: Record<AugmentId, AugmentDefinition> = {
   nextPhysicalDealsBleed: {
     id: "nextPhysicalDealsBleed",
     label: "Parting Cut",
-    description: "Your next Physical card deals Bleed damage equal to its damage.",
+    description: "Your next Physical card deals half its damage as Bleed damage.",
     icon: keywordIcons.bleed,
     colorClass: keywordDefinitions.bleed.colorClass,
   },

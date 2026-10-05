@@ -194,6 +194,8 @@ describe("applyEndOfRunHomesteadBonuses", () => {
     const base = { wood: 4, iron: 0, herbs: 10, food: 3, gems: 1, stone: 0, hide: 0 };
     const effects = {
       ...defaultHomesteadEffects,
+      endRunStonePerRoom: 3,
+      endRunWishPerRoom: 2,
       endRunFoodPerRoom: 2,
       endRunHerbsPerRoom: 1,
       endRunHidePerRoom: 2,
@@ -203,7 +205,10 @@ describe("applyEndOfRunHomesteadBonuses", () => {
       herbFindBonus: 0.1,
     };
     const result = applyEndOfRunHomesteadBonuses(base, effects, 4);
-    expect(result).toEqual({ wood: 12, iron: 4, herbs: 15, food: 11, gems: 5, stone: 0, hide: 8 });
+    expect(result).toEqual({ wood: 12, iron: 4, herbs: 15, food: 11, gems: 9, stone: 12, hide: 8 });
+    expect(applyEndOfRunHomesteadBonuses(base, effects, 3).gems).toBe(6);
+    expect(applyEndOfRunHomesteadBonuses(base, effects, -1)).toEqual({ ...base, herbs: 11 });
+    expect(base).toEqual({ wood: 4, iron: 0, herbs: 10, food: 3, gems: 1, stone: 0, hide: 0 });
   });
 });
 

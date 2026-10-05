@@ -30,7 +30,7 @@ export function TrinketShopScreen({
       title="Trinket Shop"
       gold={gold}
       items={trinkets}
-      refreshesLeft={refreshesLeft}
+      refreshesLeft={trinkets.length > 0 ? refreshesLeft : 0}
       refreshPrice={refreshPrice}
       purchasedSlotKeys={purchasedSlotKeys}
       getSlotKey={(t, i) => shopItemSlotKey(t.id, i)}
@@ -38,6 +38,7 @@ export function TrinketShopScreen({
       onBuy={onBuyTrinket}
       onRefresh={onRefresh}
       onContinue={onContinue}
+      extraServices={trinkets.length === 0 ? <p role="status">All Trinkets have been collected.</p> : undefined}
       renderItem={(trinket, price, purchased, onBuy) => (
         <PurchasableTrinketItem trinket={trinket} price={price} gold={gold} purchased={purchased} onBuy={onBuy} />
       )}

@@ -10,6 +10,7 @@ import {
 interface EffectClassification {
   damageTypes: ReadonlySet<string>;
   playTarget: "player" | "enemy";
+  transmutationRole: "attack" | "defense" | "utility";
 }
 
 // All derived classification belongs to the immutable effect tree. Card
@@ -21,10 +22,16 @@ function classifyEffects(effects: readonly BattleCardEffect[]): EffectClassifica
   if (cached) return cached;
   const damageTypes = new Set<string>();
   let playTarget: "player" | "enemy" | null = null;
+  let hasDefense = false;
   visitBattleCardEffects(effects, (effect) => {
     // Targeting uses the first concrete effect; damage queries include the
     // whole tree, even when later effects target the other side.
     playTarget ??= effectTarget(effect);
+    if (
+      effect.kind === "heal" ||
+      (effect.kind === "player-status" && ["block", "armor", "thorns"].includes(effect.status))
+    )
+      hasDefense = true;
     if (effect.kind === "damage") {
       if (effect.damageTypeIfTargetHasBlock) damageTypes.add(effect.damageTypeIfTargetHasBlock);
       if (effect.damageTypeIfTargetFrozen) damageTypes.add(effect.damageTypeIfTargetFrozen);
@@ -37,7 +44,11 @@ function classifyEffects(effects: readonly BattleCardEffect[]): EffectClassifica
       for (const type of effect.damageTypePool?.length ? effect.damageTypePool : DAMAGE_TYPES) damageTypes.add(type);
     }
   });
-  const classification: EffectClassification = { damageTypes, playTarget: playTarget ?? "enemy" };
+  const classification: EffectClassification = {
+    damageTypes,
+    playTarget: playTarget ?? "enemy",
+    transmutationRole: damageTypes.size > 0 ? "attack" : hasDefense ? "defense" : "utility",
+  };
   EFFECT_CLASSIFICATION_CACHE.set(effects, classification);
   return classification;
 }
@@ -122,21 +133,5 @@ export function getBattleCardPlayTarget(card: BattleCard): "player" | "enemy" {
 }
 
 export function getBattleCardTransmutationRole(card: Pick<BattleCard, "effects">): "attack" | "defense" | "utility" {
-  if (isAttackCard(card)) {
-    return "attack";
-  }
-
-  let hasDefense = false;
-  visitBattleCardEffects(card.effects, (effect) => {
-    if (effect.kind === "heal") {
-      hasDefense = true;
-    } else if (
-      effect.kind === "player-status" &&
-      (effect.status === "block" || effect.status === "armor" || effect.status === "thorns")
-    ) {
-      hasDefense = true;
-    }
-  });
-
-  return hasDefense ? "defense" : "utility";
+  return classifyEffects(card.effects).transmutationRole;
 }

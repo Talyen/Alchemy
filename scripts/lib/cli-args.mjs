@@ -29,21 +29,20 @@ export function parseKnownFlags(argv, spec = {}, { usage } = {}) {
       rest.push(...argv.slice(index + 1));
       break;
     }
-    const option = /^(--[^=]*|-.)(?:=([\s\S]*))?$/.exec(arg);
-    if (option) {
-      const label = option[1];
-      const name = label.startsWith("--") ? label.slice(2) : shortToLong.get(label.slice(1));
-      const definition = name && Object.hasOwn(spec, name) ? spec[name] : undefined;
-      if (!definition) throw new UsageError(`Unknown option: ${arg}.${usage ? ` ${usage}` : ""}`);
-      const inline = option[2];
-      if (definition.takesValue) pushValue(name, inline ?? argv[++index], arg);
-      else {
-        if (inline !== undefined) throw new UsageError(`Option does not take a value: ${arg}.`);
-        flags.add(name);
-      }
+    const option = /^(-[^=]*)(?:=([\s\S]*))?$/.exec(arg);
+    if (!option || arg === "-") {
+      rest.push(arg);
       continue;
     }
-    rest.push(arg);
+    const [, label, inline] = option;
+    const name = label.startsWith("--") ? label.slice(2) : shortToLong.get(label.slice(1));
+    const definition = name && Object.hasOwn(spec, name) ? spec[name] : undefined;
+    if (!definition) throw new UsageError(`Unknown option: ${arg}.${usage ? ` ${usage}` : ""}`);
+    if (definition.takesValue) pushValue(name, inline ?? argv[++index], arg);
+    else {
+      if (inline !== undefined) throw new UsageError(`Option does not take a value: ${arg}.`);
+      flags.add(name);
+    }
   }
   return { flags, values, rest };
 }

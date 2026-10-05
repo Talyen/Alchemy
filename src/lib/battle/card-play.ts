@@ -160,7 +160,7 @@ export function playBattleCardResolved(
   };
   const manaSpent = Math.min(paymentState.mana, effectiveCost);
   if (blockCost > 0)
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: blockCost });
+    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: blockCost, impact: false });
   const stripped: BattleState = {
     ...paymentState,
     hand: paymentState.hand.filter((_, handIndex) => handIndex !== index),

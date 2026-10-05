@@ -10,6 +10,36 @@ afterEach(() => {
 });
 
 describe("useHoverVisible", () => {
+  it("keeps inspection visible until both pointer and keyboard focus leave", () => {
+    function InspectionHover() {
+      const { wrapperRef, handleHoverStart, handleMouseLeave, handleBlur, visible } = useHoverVisible();
+      return (
+        <div ref={wrapperRef} data-testid="wrapper" onMouseEnter={handleHoverStart} onMouseLeave={handleMouseLeave}>
+          <button onFocus={handleHoverStart} onBlur={handleBlur}>
+            Inspect
+          </button>
+          <span data-testid="visible">{String(visible)}</span>
+        </div>
+      );
+    }
+    render(<InspectionHover />);
+    const wrapper = screen.getByTestId("wrapper");
+    const trigger = screen.getByRole("button", { name: "Inspect" });
+    fireEvent.mouseEnter(wrapper);
+    fireEvent.focus(trigger);
+    fireEvent.mouseLeave(wrapper);
+    expect(screen.getByTestId("visible").textContent).toBe("true");
+    fireEvent.blur(trigger);
+    expect(screen.getByTestId("visible").textContent).toBe("false");
+
+    fireEvent.focus(trigger);
+    fireEvent.mouseEnter(wrapper);
+    fireEvent.blur(trigger);
+    expect(screen.getByTestId("visible").textContent).toBe("true");
+    fireEvent.mouseLeave(wrapper);
+    expect(screen.getByTestId("visible").textContent).toBe("false");
+  });
+
   it("dismisses for inspection without flashing back on focus restoration", () => {
     function InspectionHover() {
       const [open, setOpen] = useState(false);
@@ -64,18 +94,6 @@ describe("useHoverVisible", () => {
     rerender(false);
     act(() => vi.advanceTimersByTime(160));
     expect(result.current.showPopup).toBe(false);
-  });
-
-  it("keeps a focused popup open on mouse leave but closes it on blur", () => {
-    const { result } = renderHook(() => useHoverVisible({ focusWithinGuard: true }));
-    const wrapper = document.createElement("div");
-    result.current.wrapperRef.current = wrapper;
-    vi.spyOn(wrapper, "matches").mockImplementation((selector) => selector === ":focus-within");
-    act(() => result.current.onMouseEnter());
-    act(() => result.current.onMouseLeave());
-    expect(result.current.visible).toBe(true);
-    act(() => result.current.onBlurCapture());
-    expect(result.current.visible).toBe(false);
   });
 
   it("suppresses disabled hover callbacks and hides even a held controlled popup", () => {

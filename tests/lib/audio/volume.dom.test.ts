@@ -3,6 +3,9 @@ import { initAudioHost, setMuted, setSfxVolume, setMasterVolume, setMusicVolume 
 import { audioState } from "@/lib/audio/state";
 import { MUSIC_KEYS, MUSIC_MASTER_GAIN } from "@/lib/game-constants";
 import { playMusic, playMusicImmediate } from "@/lib/audio/music";
+import { setScreenAmbience } from "@/lib/audio/ambience";
+import { playBattleEvent } from "@/lib/audio/sfx";
+import { SFX_AMBIENCE_VOLUME } from "@/lib/game-constants";
 import { lastFakeAudio } from "../../helpers/fake-audio";
 import { installCleanAudio } from "../../helpers/audio-fixture";
 
@@ -19,18 +22,6 @@ afterEach(() => {
 });
 
 describe("setMuted", () => {
-  it("sets muted on audioState", () => {
-    setMuted(true);
-    expect(audioState.muted).toBe(true);
-  });
-
-  it("mutes the current music element", () => {
-    playMusicImmediate(MUSIC_KEYS.MENU);
-    const el = lastFakeAudio()!;
-    setMuted(true);
-    expect(el.muted).toBe(true);
-  });
-
   it("unmutes the current music element on a player host", () => {
     playMusicImmediate(MUSIC_KEYS.MENU);
     const el = lastFakeAudio()!;
@@ -55,45 +46,7 @@ describe("setMuted", () => {
   });
 });
 
-describe("setSfxVolume", () => {
-  it("sets sfxVolume within bounds", () => {
-    setSfxVolume(0.5);
-    expect(audioState.sfxVolume).toBe(0.5);
-  });
-
-  it("clamps above max", () => {
-    setSfxVolume(1.5);
-    expect(audioState.sfxVolume).toBe(1);
-  });
-
-  it("clamps below min", () => {
-    setSfxVolume(-0.5);
-    expect(audioState.sfxVolume).toBe(0);
-  });
-});
-
 describe("setMasterVolume", () => {
-  it("sets masterVolume on audioState", () => {
-    setMasterVolume(0.5);
-    expect(audioState.masterVolume).toBe(0.5);
-  });
-
-  it("updates current music volume", () => {
-    playMusicImmediate(MUSIC_KEYS.MENU);
-    const el = lastFakeAudio()!;
-    audioState.musicVolume = 0.5;
-    setMasterVolume(0.5);
-    expect(el.volume).toBe(0.5 * 0.5 * MUSIC_MASTER_GAIN);
-  });
-
-  it("preserves the boss volume boost", () => {
-    playMusicImmediate(MUSIC_KEYS.BOSS_FORGE_GOLEM);
-    const el = lastFakeAudio()!;
-    audioState.musicVolume = 0.5;
-    setMasterVolume(0.5);
-    expect(el.volume).toBe(0.5 * 0.5 * MUSIC_MASTER_GAIN * 2);
-  });
-
   it("preserves the outgoing fade gain when master volume changes during a crossfade", () => {
     vi.useFakeTimers();
 
@@ -111,28 +64,6 @@ describe("setMasterVolume", () => {
 });
 
 describe("setMusicVolume", () => {
-  it("sets musicVolume", () => {
-    setMusicVolume(0.2);
-    expect(audioState.musicVolume).toBe(0.2);
-  });
-
-  it("updates current music element volume", () => {
-    playMusicImmediate(MUSIC_KEYS.MENU);
-    const el = lastFakeAudio()!;
-    audioState.masterVolume = 0.5;
-    audioState.musicVolume = 0.5;
-    setMusicVolume(0.5);
-    expect(el.volume).toBe(0.5 * 0.5 * MUSIC_MASTER_GAIN);
-  });
-
-  it("preserves the boss volume boost", () => {
-    playMusicImmediate(MUSIC_KEYS.BOSS_FORGE_GOLEM);
-    const el = lastFakeAudio()!;
-    audioState.masterVolume = 0.5;
-    setMusicVolume(0.5);
-    expect(el.volume).toBe(0.5 * 0.5 * MUSIC_MASTER_GAIN * 2);
-  });
-
   it("preserves the incoming fade gain when music volume changes", () => {
     vi.useFakeTimers();
 
@@ -146,4 +77,23 @@ describe("setMusicVolume", () => {
 
     playMusicImmediate(MUSIC_KEYS.MENU);
   });
+});
+
+it("applies channel limits to live music, sound effects and ambience independently", () => {
+  playMusicImmediate(MUSIC_KEYS.BOSS_FORGE_GOLEM);
+  const music = lastFakeAudio()!;
+  playBattleEvent("playerHeal", { volume: 0.5 });
+  const sfx = lastFakeAudio()!;
+  setScreenAmbience("campfire");
+  const ambience = lastFakeAudio()!;
+  setMasterVolume(0.5);
+  setSfxVolume(2);
+  setMusicVolume(0.25);
+  expect(music.volume).toBeCloseTo(0.25 * 0.5 * MUSIC_MASTER_GAIN * 2);
+  expect(sfx.volume).toBeCloseTo(0.5 * 0.5);
+  expect(ambience.volume).toBeCloseTo(SFX_AMBIENCE_VOLUME * 0.5);
+  setSfxVolume(-1);
+  expect(sfx.volume).toBe(0);
+  expect(ambience.volume).toBe(0);
+  expect(music.volume).toBeCloseTo(0.25 * 0.5 * MUSIC_MASTER_GAIN * 2);
 });

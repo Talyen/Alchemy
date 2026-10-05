@@ -37,12 +37,11 @@ export function preloadImage(src: string): Promise<void> {
   image.src = src;
   const lifetime = new AbortController();
   const promise = waitForImage(image, lifetime.signal).then((ready) => {
+    // Reset aborts the old lifetime before a replacement can start.
+    if (lifetime.signal.aborted) return;
     // Failed or timed-out warmups should not keep fetching or decoding an
     // orphaned image. Visible artwork has its own image element.
     if (!ready) image.removeAttribute("src");
-    // Pending work must stay deduplicated even when the completed LRU is full.
-    // Identity also prevents a completion after reset from caching stale work.
-    if (imageLoads.get(src)?.promise !== promise) return;
     imageLoads.delete(src);
     if (!ready) return;
     if (loadedImages.size >= MAX_IMAGE_CACHE_SIZE) {
@@ -73,7 +72,7 @@ export async function preloadImagesInBatches(
       onProgress?.(loaded, total);
     },
     {
-      batchSize: Math.max(1, Math.floor(batchSize)),
+      batchSize,
       yieldBetweenBatches: yieldToAnimationFrame,
     },
   );
