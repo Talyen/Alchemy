@@ -7,7 +7,7 @@ const MIN_VISIBLE_WINDOW_PX = 2;
  * True when the window has a visible laid-out area. Shared by the audio-host
  * check below and the background-mute wiring so the threshold lives in one place.
  */
-export function hasVisibleWindowArea(): boolean {
+function hasVisibleWindowArea(): boolean {
   if (typeof window === "undefined") return false;
   const innerW = window.innerWidth;
   const innerH = window.innerHeight;
