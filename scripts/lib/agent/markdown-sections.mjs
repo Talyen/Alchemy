@@ -1,7 +1,7 @@
 /** Shared Markdown link/heading/fence/section helpers for docs tooling.
  *
  * Single owner for fence tracking, heading slugs, and document section reads
- * so link checks, plan archiving, and discovery section reads cannot drift
+ * so link checks and discovery section reads cannot drift
  * apart again.
  */
 import fs from "node:fs";
@@ -82,7 +82,7 @@ export function stripFencedBlocks(source) {
 }
 
 /** Map non-fence lines through `fn(line, index)`, preserving blocks, source indices and newlines. */
-export function mapUnfencedLines(content, fn) {
+function mapUnfencedLines(content, fn) {
   const parts = content.split(/(\r?\n)/u);
   for (const { line, index } of unfencedLines(parts.filter((_part, index) => index % 2 === 0))) {
     parts[index * 2] = fn(line, index);
