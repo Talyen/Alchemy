@@ -98,12 +98,10 @@ function conversionMutations(card: BattleCard, target: CorruptionTarget | undefi
       );
       const converted = { ...effect, damageType, amount };
       const description = [...getCardDescription(card)];
-      description[target.lineIndex] = createEffectDescription([converted])[0]!;
+      const line = createEffectDescription([converted])[0]!;
       description[target.lineIndex] = {
-        ...description[target.lineIndex],
-        parts: description[target.lineIndex].parts.map((part) =>
-          typeof part === "string" ? part : { ...part, corrupted: true },
-        ),
+        ...line,
+        parts: line.parts.map((part) => (typeof part === "string" ? part : { ...part, corrupted: true })),
       };
       return withCardDescription(
         {

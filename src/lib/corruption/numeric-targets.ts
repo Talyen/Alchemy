@@ -6,7 +6,7 @@ import {
 } from "@/lib/game-data";
 import type { NumericEffectAddress } from "./effect-address";
 
-export type NumericEffectEdit = CardMagnitudeReference & { expectedValue: number; multiplier: 1 | 2 };
+type NumericEffectEdit = CardMagnitudeReference & { expectedValue: number; multiplier: 1 | 2 };
 
 export interface CorruptionTarget extends NumericEffectAddress {
   id: string;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { canPlayCard, playBattleCardResolved } from "@/lib/battle";
-import { cardById, companionLibrary } from "@/lib/game-data";
+import { cardById, companionLibrary, defaultCompanionBondLevels } from "@/lib/game-data";
 import { findBestPlayableHandCard } from "@/features/alchemy/run-loop/battle/playable-hand";
 import { makeTestCard, patchBattleState } from "../../../../fixtures/battle";
 
@@ -50,7 +50,7 @@ describe("autoplay effect regressions", () => {
   it("uses Bond and equipment damage when choosing an active Companion action", () => {
     const state = readyBattle({
       activeCompanion: companionLibrary.skeleton,
-      talentEffects: { companionBondLevels: { skeleton: 3 } },
+      talentEffects: { companionBondLevels: { ...defaultCompanionBondLevels, skeleton: 3 } },
       trinketEffects: { companionDamageBonus: 1 },
       hand: [
         makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 7 }] }),

@@ -16,8 +16,6 @@ import { createRewardOffer } from "./reward-offers";
 
 export { getCompanionCardChoices, getRandomPotionCard } from "./reward-offers";
 
-export type FinalizeRewardRoute = RewardRoute;
-
 export interface FinalizeRewardInput {
   rewardState: RewardState;
   companionRewardCards: BattleCard[] | null;
@@ -28,7 +26,7 @@ export interface FinalizeRewardResult {
   materials: MaterialInventory;
   nextRewardState: CardRewardState;
   clearCompanionRewardCards: boolean;
-  route: FinalizeRewardRoute;
+  route: RewardRoute;
 }
 
 interface RewardPayoutInput {
@@ -61,7 +59,7 @@ export function createNextRewardState(rewardState: RewardState): CardRewardState
   };
 }
 
-function resolveRewardRoute(contentSystemType: ContentSystemId, currentEnemyType: string): FinalizeRewardRoute {
+function resolveRewardRoute(contentSystemType: ContentSystemId, currentEnemyType: string): RewardRoute {
   if (contentSystemType === CONTENT_SYSTEMS.LABYRINTH) {
     return REWARD_ROUTES.LABYRINTH_MAP;
   }

@@ -15,7 +15,7 @@ export interface SessionClock {
   clearTimeout: (timer: ReturnType<typeof setTimeout> | number) => void;
 }
 
-export type SessionAudio = Pick<
+type SessionAudio = Pick<
   typeof Audio,
   "playUISound" | "playGoldGain" | "playGoldSpend" | "playVictory" | "playRunVictory" | "playDefeat" | "stopAllSfx"
 >;

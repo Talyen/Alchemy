@@ -39,10 +39,7 @@ defineScript(import.meta.url, async () => {
         ? {
             at: request.checkpointAt,
             save: (bytes) =>
-              writeFileSync(
-                `${output}.checkpoint`,
-                JSON.stringify({ bytes, runtimeInputs: runtime.snapshot() }),
-              ),
+              writeFileSync(`${output}.checkpoint`, JSON.stringify({ bytes, runtimeInputs: runtime.snapshot() })),
           }
         : undefined,
       runtime,
