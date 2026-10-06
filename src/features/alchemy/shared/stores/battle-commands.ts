@@ -73,11 +73,11 @@ export function commitEndTurn(gameSession: GameSession): ResolvedBattleTurn | nu
   );
 }
 
-export function clearBattleOpeningState(gameSession: GameSession): void {
+function clearBattleOpeningState(gameSession: GameSession): void {
   dispatchGameplayCommand((draft) => acceptCommand(setBattleStartState(draft, null)), undefined, gameSession);
 }
 
-export function commitDevBattleVictory(gameSession: GameSession): void {
+function commitDevBattleVictory(gameSession: GameSession): void {
   if (!import.meta.env.DEV) return;
   dispatchGameplayCommand(
     (draft) => {
