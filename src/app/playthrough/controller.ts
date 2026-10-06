@@ -4,11 +4,7 @@ import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-
 import { createBattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
 import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import {
-  prepareLabyrinthRoomTraits,
-  resetCorruptionVisit,
-  showRunScreen,
-} from "@/features/alchemy/shared/stores/navigation-commands";
+import { showRunScreen } from "@/features/alchemy/shared/stores/navigation-commands";
 import { readActiveRunScreen, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { createLabyrinthNodeRouting } from "@/features/alchemy/shell/labyrinth-node-routing";
 import { readRunAvailableDestinations } from "@/features/alchemy/shell/run-destination-wiring";
@@ -57,7 +53,6 @@ export function createPlaythroughController(gameSession: GameSession = defaultGa
       transition,
       cancelPending: navigation.cancelPending,
       battle,
-      initializeShop: (kind) => shop().initialize(kind),
       labyrinthClearNode: labyrinth.onNodeCleared,
     },
     outcomes,
@@ -67,14 +62,7 @@ export function createPlaythroughController(gameSession: GameSession = defaultGa
     {
       navigateTo,
       labyrinth,
-      battle,
-      nav: flow,
-      shop: { initialize: (kind) => shop().initialize(kind) },
-      prepareRoomTraits: (
-        arg0: Parameters<typeof prepareLabyrinthRoomTraits>[0],
-        arg1: Parameters<typeof prepareLabyrinthRoomTraits>[1],
-      ) => prepareLabyrinthRoomTraits(arg0, arg1, gameSession),
-      corruption: { reset: () => resetCorruptionVisit(gameSession) },
+      presentBattleStart: battle.presentBattleStart,
     },
     gameSession,
   );

@@ -1,16 +1,12 @@
 import "../../../helpers/mock-audio";
+import { setBattleActiveForTest as setHasActiveBattle } from "../../../helpers/run-domain-store-test";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readBattle, readHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
-import {
-  setGold,
-  setHasActiveBattle,
-  setHasActiveRun,
-  setScreen,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setGold, setHasActiveRun, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import {
   resetRunBattleSlice,

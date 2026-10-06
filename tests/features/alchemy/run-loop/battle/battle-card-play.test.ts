@@ -1,9 +1,10 @@
+import "../../../../helpers/mock-audio";
+import { replaceBattleForTest as setSyncedBattleState } from "../../../../helpers/run-domain-store-test";
 import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
 import { act, renderHook } from "@testing-library/react";
 import { useBattleAutoplay } from "@/features/alchemy/run-loop/battle/use-battle-autoplay";
 import { battleSnapshot } from "@/lib/battle";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import "../../../../helpers/mock-audio";
 import { describe, expect, it, vi, beforeEach, type Mock } from "vitest";
 import type { MouseEvent } from "react";
 import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-card-play";
@@ -12,7 +13,7 @@ import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-s
 import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfers";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
+
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { makeTestCard } from "../../../../fixtures/battle";

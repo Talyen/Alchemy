@@ -1,5 +1,6 @@
 import "../../../../helpers/mock-audio";
 import "../../../../helpers/mock-flush-save";
+import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
 import { beforeEach, describe, expect, it } from "vitest";
 import { restoreRun, snapshotRun, finalizeRunEndSession } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
@@ -25,7 +26,7 @@ import {
   createGameplayCommand,
   dispatchGameplayCommand,
 } from "@/features/alchemy/shared/stores/gameplay-command";
-import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
+
 import { patchBattleState } from "../../../../fixtures/battle";
 import { rebindLiveRunMeta } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { computeTalentPoints, type BattleCard } from "@/lib/game-data";

@@ -1,6 +1,6 @@
 import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { clearBattleUi } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
@@ -34,7 +34,7 @@ export function createVictoryHandlers(deps: RunOutcomeDeps, gameSession: GameSes
   }
 
   function completeRunVictory(prepareNavigation?: () => void) {
-    clearBattleUi(gameSession);
+    clearBattlePresentationUi(gameSession);
     commitRunVictory(gameSession);
     sessionFeedback(gameSession).playRunVictory();
     deps.actions.navigateTo(ROUTE_SCREENS.RUN_VICTORY, prepareNavigation);

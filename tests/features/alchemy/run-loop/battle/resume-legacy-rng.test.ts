@@ -1,3 +1,4 @@
+import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { beforeEach, describe, expect, it } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
 import { createRunRngState } from "@/lib/rng";
@@ -29,12 +30,12 @@ describe("continue-end-turn resume RNG", () => {
       acceptCommand(initializeActiveBattle(draft, enemyPhase, { kind: "continue-end-turn" })),
     );
 
-    expect(readGameplayState().battle.battleState).not.toHaveProperty("rng");
+    expect(readBattle().battleState).not.toHaveProperty("rng");
 
-    const recovered = readGameplayState().battle.battleState;
+    const recovered = readBattle().battleState;
     expect(recovered.turnPhase).toBe("player");
     expect(recovered.hand.length).toBeGreaterThan(0);
     expect(readGameplayState().run.activeRun.rng.counters.world).toBeGreaterThan(worldBefore);
-    expect(readGameplayState().battle).not.toHaveProperty("pendingBattleTransition");
+    expect(readBattle()).not.toHaveProperty("pendingBattleTransition");
   });
 });

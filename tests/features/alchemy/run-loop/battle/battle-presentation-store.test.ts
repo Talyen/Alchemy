@@ -1,3 +1,4 @@
+import { setBattleActiveForTest as setHasActiveBattle } from "../../../../helpers/run-domain-store-test";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION_MS } from "@/lib/game-constants";
@@ -15,7 +16,7 @@ import { patchBattleState, makeTestCard } from "../../../../fixtures/battle";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setHasActiveBattle, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 
 describe("battle-presentation-store", () => {

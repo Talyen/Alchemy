@@ -102,6 +102,7 @@ export function offerRunChoices(
         if (!choices.length)
           offer("end-turn", "turn", 0, () => {
             const result = commitEndTurn(gameSession);
+            if (!result) return null;
             for (const frame of result.frames) {
               recordBattle(frame.turn.state, frame.turn.combatTexts);
               if (frame.companion) recordBattle(frame.companion.state, frame.companion.texts);

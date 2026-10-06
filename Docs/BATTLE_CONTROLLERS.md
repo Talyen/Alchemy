@@ -16,11 +16,11 @@ At interaction time, those callbacks resolve gameplay before presentation:
 ```text
 BattleScreen action → supplied battle command → command draft → lib/battle
                     → committed snapshot + detached frames → presentation playback
-BattleScreenRoute → useBattleScreenRouteData → displayed frame or committed snapshot
+BattleScreenRoute → useBattleScreenRouteData → displayed frame, active combat, or retained outgoing display
                   → useBattlePlayback → autoplay / auto-end-turn / playback binding
 ```
 
-- `useAlchemyRunController` exposes battle **commands** on `routeCommands.battle`. Battle **display** is local to `BattleScreenRoute` via `useBattleScreenRouteData`, which selects the current presentation frame or the committed snapshot.
+- `useAlchemyRunController` exposes battle **commands** on `routeCommands.battle`. Battle **display** is local to `BattleScreenRoute` via `useBattleScreenRouteData`, which selects the current presentation frame or active combat and retains its outgoing data during settlement and fades. `createBattleSession` publishes the terminal presentation frame before calling an outcome command; clearing feedback cannot replace the outgoing enemy or hand with default data.
 - Autoplay / auto-end-turn **ticks** live in `useBattlePlayback` on that route. Session autoplay on/off lives in `useBattleController`. Playback how-to: [WORKFLOWS § Change battle playback](./WORKFLOWS.md#change-battle-playback).
 - Presentation leaves subscribe to `battle-presentation-store`. Teardown follows committed store `screen !== "battle"` (not `renderedScreen`). `App.tsx` passes `routeCommands` through `renderAlchemyScreenRoute`. Run/battle bindings stay on props; the allowed providers are `AppScreenChromeProvider` and `CardDescriptionProvider`, while presentation-only state may use `ui-store`. See [Content authoring § Add a new card](./CONTENT_AUTHORING.md#add-a-new-card) for card-description context.
 
@@ -36,6 +36,15 @@ Companions and drawing in the engine; the start command settles its Gold delta
 against the live purse and records earnings in the same transaction before
 publishing presentation feedback. Random boss selection and explicit
 boss validation remain separate commands.
+Campaign and Labyrinth enter through `enterRunRoom`, composing the same battle
+initialization operation with room progress and traits inside one transaction.
+The shell schedules Battle after acceptance and then calls `presentBattleStart`
+with detached opening feedback. If a Companion immediately ends combat, its
+outcome navigation supersedes the Battle request; history already exists when
+victory or defeat settles. Destination and Labyrinth map routing allow Rewards
+directly when opening combat ends before the Battle fade commits.
+Initialization errors roll back room entry; later
+presentation errors retain the complete committed room.
 
 Readiness and saving use [Boot and loading](./ARCHITECTURE.md#boot-and-loading) and the [Persistence API](./RUN_STATE.md#persistence-api).
 

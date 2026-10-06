@@ -11,11 +11,7 @@ import { stopAllSfx } from "@/lib/audio";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import type { BattleControllerContext } from "./battle-context";
 
-export function isVictoryGraceActive(screen: Screen, enemyHealth: number, victoryDefeatHandled: boolean): boolean {
-  return screen === "battle" && enemyHealth <= 0 && victoryDefeatHandled;
-}
-
-export function commitEndTurn(): ResolvedBattleTurn {
+export function commitEndTurn(): ResolvedBattleTurn | null {
   markBattleStage("resolve-start");
   try {
     return commitBattleEndTurn();
@@ -26,7 +22,7 @@ export function commitEndTurn(): ResolvedBattleTurn {
 
 export function createBattleDevOutcomes(ctx: BattleControllerContext, session: ReturnType<typeof createBattleSession>) {
   function skipCombatDevMode() {
-    if (!import.meta.env.DEV || ctx.screen !== "battle") return;
+    if (!import.meta.env.DEV || ctx.screen !== "battle" || !readBattle().hasActiveBattle) return;
     session.resetBattleSession();
     commitDevBattleVictory();
     session.handleVictoryDefeat("victory");
@@ -43,7 +39,7 @@ export function createBattleSession(ctx: BattleControllerContext) {
     if (!ctx.playback.isCurrent(session)) return false;
     const store = getStore();
 
-    return store.hasActiveBattle || (ctx.playback.finishing && store.battleState.enemyHealth <= 0);
+    return store.hasActiveBattle || ctx.playback.finishing;
   }
 
   function getBattleAbortSignal(): AbortSignal {
@@ -61,6 +57,7 @@ export function createBattleSession(ctx: BattleControllerContext) {
 
   function handleVictoryDefeat(kind: "victory" | "defeat") {
     if (ctx.playback.finish()) {
+      getPresentationStore().setDisplayedBattle(getStore().battleState);
       if (kind === "victory") ctx.onBattleVictory?.();
       else ctx.onBattleDefeat?.();
     }
@@ -127,7 +124,7 @@ export function createBattleSession(ctx: BattleControllerContext) {
     if (active) {
       ctx.playback.activate();
       checkBattleEnd(getStore().battleState, ctx.playback.id);
-    } else if (!isVictoryGraceActive(screen, getStore().battleState.enemyHealth, ctx.playback.finishing)) {
+    } else if (!ctx.playback.finishing) {
       resetBattleSession();
       ctx.playback.cancel();
       clearBattlePresentationUi();

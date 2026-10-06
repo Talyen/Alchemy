@@ -1,7 +1,13 @@
 import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { isActiveRunActivity, readActivityData, runActivityScreen } from "@/lib/active-run-session";
-import { getBattleCompanionDamageModifiers, isPlayerDefeated, type BattleSnapshot } from "@/lib/battle";
+import {
+  battleSnapshot,
+  defaultBattleState,
+  getBattleCompanionDamageModifiers,
+  isPlayerDefeated,
+  type BattleSnapshot,
+} from "@/lib/battle";
 import type { ContentSystemId, EncounterCombatTraitId } from "@/lib/content-systems/types";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type {
@@ -17,10 +23,10 @@ import { getRunPhase, type Destination, type RunPhase, type Screen } from "@/lib
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { readGameplayState, useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
-import type { RunDomainBattleState, RunSessionFields } from "./run-domain-types";
+import type { RunSessionFields } from "./run-domain-types";
 import type { PermanentProgressFields } from "./run-state-init";
 import { pickActiveRunView, type ActiveRunReadView } from "./run-state-init";
-import { deepFreezeInDev } from "./store-utils";
+import { deepFreeze, deepFreezeInDev } from "./store-utils";
 
 export interface ContentNavigationRunPort {
   contentSystemType: ContentSystemId;
@@ -55,7 +61,19 @@ function selectContentNavigationFields(state: GameplayState): ContentNavigationR
 export type { ActiveRunReadView } from "./run-state-init";
 export type RunProfileReadView = Readonly<PermanentProgressFields>;
 export type RunSessionReadView = Readonly<RunSessionFields> & { readonly hasActiveRun: boolean };
-export type BattleReadView = Readonly<RunDomainBattleState>;
+export interface BattleReadView {
+  readonly hasActiveBattle: boolean;
+  readonly battleState: BattleSnapshot;
+  readonly battleStartState: BattleSnapshot | null;
+}
+
+const emptyBattle = deepFreeze(battleSnapshot(defaultBattleState()));
+function selectBattle(state: Pick<GameplayState, "session">): BattleReadView {
+  const activity = state.session.activity;
+  return activity.kind === "battle"
+    ? { hasActiveBattle: true, ...activity.data }
+    : { hasActiveBattle: false, battleState: emptyBattle, battleStartState: null };
+}
 
 function useShallowRunSelector<T>(selector: (state: GameplayState) => T): T {
   return useGameplayStateStore(useShallow(selector));
@@ -78,7 +96,7 @@ export function readShopFirstPurchaseUsed(
     .firstPurchaseUsed;
 }
 export function readBattle(gameSession: GameSession = defaultGameSession): BattleReadView {
-  return deepFreezeInDev({ ...readGameplayState(gameSession).battle });
+  return deepFreezeInDev(selectBattle(readGameplayState(gameSession)));
 }
 export function readRunRevision(gameSession: GameSession = defaultGameSession): number {
   return readGameplayState(gameSession).revision;
@@ -90,7 +108,7 @@ export function readHasActiveRun(gameSession: GameSession = defaultGameSession):
   return isActiveRunActivity(readGameplayState(gameSession).session.activity);
 }
 export function readHasActiveBattle(gameSession: GameSession = defaultGameSession): boolean {
-  return readGameplayState(gameSession).battle.hasActiveBattle;
+  return readGameplayState(gameSession).session.activity.kind === "battle";
 }
 export function readActiveRunScreen(gameSession: GameSession = defaultGameSession): Screen {
   return readGameplayState(gameSession).run.navigation.screen;
@@ -106,7 +124,7 @@ export function useRunResumeScreen(): Screen | null {
 }
 export function readRunPhase(gameSession: GameSession = defaultGameSession): RunPhase {
   const state = readGameplayState(gameSession);
-  return getRunPhase(state.run.navigation.screen, state.battle.hasActiveBattle);
+  return getRunPhase(state.run.navigation.screen, state.session.activity.kind === "battle");
 }
 
 export function useTalentEffects(): TalentEffectManifest {
@@ -142,10 +160,10 @@ export function selectAutosaveAllowed(
 }
 
 export function useAutosaveAllowed(screen: Screen): boolean {
-  return useGameplayStateStore((state) => selectAutosaveAllowed(state, screen));
+  return useGameplayStateStore((state) => selectAutosaveAllowed({ battle: selectBattle(state) }, screen));
 }
 export function useHasActiveBattle(): boolean {
-  return useGameplayStateStore((state) => state.battle.hasActiveBattle);
+  return useGameplayStateStore((state) => state.session.activity.kind === "battle");
 }
 export function useHasActiveRun(): boolean {
   return useGameplayStateStore((state) => isActiveRunActivity(state.session.activity));
@@ -153,7 +171,7 @@ export function useHasActiveRun(): boolean {
 export function useForegroundResumeKind(): "battle" | "run" | null {
   return useGameplayStateStore((state) => {
     if (!isActiveRunActivity(state.session.activity)) return null;
-    return state.battle.hasActiveBattle ? "battle" : "run";
+    return state.session.activity.kind === "battle" ? "battle" : "run";
   });
 }
 
@@ -243,13 +261,13 @@ function pickRunSessionBattleSlice(battle: {
   };
 }
 function useRunSessionBattleSlice(): RunSessionBattleSlice {
-  return useShallowRunSelector((state) => pickRunSessionBattleSlice(state.battle));
+  return useShallowRunSelector((state) => pickRunSessionBattleSlice(selectBattle(state)));
 }
 export function useBattleClusterState(): { gold: number; hasWishOptions: boolean } {
   return useGameplayStateStore(
     useShallow((state) => ({
-      gold: state.battle.battleState.gold,
-      hasWishOptions: Boolean(state.battle.battleState.wishOptions),
+      gold: selectBattle(state).battleState.gold,
+      hasWishOptions: Boolean(selectBattle(state).battleState.wishOptions),
     })),
   );
 }
@@ -264,7 +282,7 @@ export function useRunSessionBattleContext(screen?: Screen): RunSessionBattleCon
 export function useRunSessionNavigationSlice(screen?: Screen): RunSessionNavigationSlice {
   const session = useShallowRunSelector((state) => ({
     screen: state.run.navigation.screen,
-    hasActiveBattle: state.battle.hasActiveBattle,
+    hasActiveBattle: state.session.activity.kind === "battle",
     hasActiveRun: isActiveRunActivity(state.session.activity),
     pendingCharacterId: state.session.pendingCharacterId,
     pendingContentSystemType: state.session.pendingContentSystemType,
@@ -283,7 +301,7 @@ export function useRunSessionNavigationSlice(screen?: Screen): RunSessionNavigat
 }
 export function getRunSessionFromState(state: GameplayState, screen?: Screen): RunSession {
   const resolvedScreen = screen ?? state.run.navigation.screen;
-  const battle = pickRunSessionBattleSlice(state.battle);
+  const battle = pickRunSessionBattleSlice(selectBattle(state));
   const { talentXP, unlockedTalents } = state.runProfile;
   return {
     screen: resolvedScreen,
@@ -300,7 +318,7 @@ export function getRunSession(screen?: Screen, gameSession: GameSession = defaul
 function selectCardInspectionData(state: GameplayState) {
   const isRecap = state.run.navigation.screen === "game-over" || state.run.navigation.screen === "run-victory";
   const run = state.run.activeRun;
-  const battle = state.battle.battleState;
+  const battle = selectBattle(state).battleState;
   const companionModifiers = getBattleCompanionDamageModifiers(battle);
   return {
     runDeck: isRecap && state.session.runRecap ? state.session.runRecap.deck : run.runDeck,
@@ -308,9 +326,9 @@ function selectCardInspectionData(state: GameplayState) {
     characterId: run.characterId,
     mode: run.contentSystemType,
     hasActiveRun: isActiveRunActivity(state.session.activity),
-    hasActiveBattle: state.battle.hasActiveBattle,
+    hasActiveBattle: state.session.activity.kind === "battle",
     battleReady:
-      state.battle.hasActiveBattle &&
+      state.session.activity.kind === "battle" &&
       battle.turnPhase === "player" &&
       !battle.wishOptions &&
       battle.enemyHealth > 0 &&

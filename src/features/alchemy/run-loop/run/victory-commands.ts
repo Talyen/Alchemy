@@ -16,20 +16,16 @@ import {
   createDraftInstanceIdSource,
   createDraftRunRandomSource,
   enterWildwoodVictory,
-  setCompanionRewardCards,
   setDestinationOfferState,
   setGold,
-  setHasActiveBattle,
-  setRewardState,
   setRunMaxHealth,
-  setRunProgressActivity,
+  settleBattleVictory,
   settlePendingBattleMaterials,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import type { BattleSnapshot } from "@/lib/battle";
+import { isPlayerDefeated, type BattleSnapshot } from "@/lib/battle";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { getOwnedUniqueDefinitionIds } from "@/lib/gear";
-import { ROUTE_SCREENS } from "@/lib/routing";
 import { getCompanionCardChoices } from "../navigation/reward-flow";
 import { shouldGrantCompanionReward } from "../navigation/reward-math";
 import type { VictoryRewardsResult } from "../navigation/victory-flow";
@@ -57,18 +53,18 @@ export function commitVictoryRewards(
   }
   syncBattleToRun(draft, { playerHealth: result.playerHealth });
 
-  setRewardState(draft, {
-    ...result.rewardState,
-    lastVictoryEnemyType: deps.battleState.currentEnemy.enemyType,
-    lastVictoryContentSystem: deps.contentSystemType,
-  });
   setDestinationOfferState(draft, result.destinationOfferState);
-  if (shouldGrantCompanionReward(result.labyrinthRewardModifiers)) {
-    setCompanionRewardCards(draft, getCompanionCardChoices(rng, result.labyrinthRewardModifiers));
-  } else {
-    setCompanionRewardCards(draft, null);
-  }
-  setHasActiveBattle(draft, false);
+  settleBattleVictory(
+    draft,
+    {
+      ...result.rewardState,
+      lastVictoryEnemyType: deps.battleState.currentEnemy.enemyType,
+      lastVictoryContentSystem: deps.contentSystemType,
+    },
+    shouldGrantCompanionReward(result.labyrinthRewardModifiers)
+      ? getCompanionCardChoices(rng, result.labyrinthRewardModifiers)
+      : null,
+  );
   return result.goldEarned > 0;
 }
 
@@ -79,7 +75,8 @@ export function createVictoryCommand(
   function computeVictoryResult(draft: RunTransaction) {
     const runState = draft.run.activeRun;
     const runProfile = draft.runProfile;
-    const battleState = snapshotTransactionValue(draft.battle.battleState);
+    if (draft.session.activity.kind !== "battle") throw new Error("Victory requires an active battle");
+    const battleState = snapshotTransactionValue(draft.session.activity.data.battleState);
     const rewardTraits =
       runState.contentSystemType === CONTENT_SYSTEMS.WILDWOOD
         ? (draft.session.wildwoodDraft?.currentRewardTraitIds ?? [])
@@ -118,9 +115,11 @@ export function createVictoryCommand(
   function commitVictoryResult() {
     return dispatchRunSessionCommand(
       (draft) => {
-        if (!draft.battle.hasActiveBattle) return rejectCommand("There is no active battle to finish", null);
+        if (draft.session.activity.kind !== "battle") return rejectCommand("There is no active battle to finish", null);
+        const state = draft.session.activity.data.battleState;
+        if (state.enemyHealth > 0 || isPlayerDefeated(state)) return rejectCommand("Battle has not been won", null);
         const committedResult = computeVictoryResult(draft);
-        const battleState = snapshotTransactionValue(draft.battle.battleState);
+        const battleState = snapshotTransactionValue(draft.session.activity.data.battleState);
         const runState = draft.run.activeRun;
         const goldGained = commitVictoryRewards(
           draft,
@@ -134,7 +133,6 @@ export function createVictoryCommand(
         if (runState.contentSystemType === CONTENT_SYSTEMS.WILDWOOD) {
           enterWildwoodVictory(draft);
         }
-        setRunProgressActivity(draft, ROUTE_SCREENS.REWARDS);
         return acceptCommand(goldGained);
       },
       undefined,

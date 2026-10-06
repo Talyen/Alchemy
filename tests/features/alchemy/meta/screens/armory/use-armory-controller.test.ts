@@ -1,10 +1,10 @@
+import { setBattleActiveForTest as setHasActiveBattle } from "../../../../../helpers/run-domain-store-test";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
 import { mutateGearForTest, resetAllTestStores } from "../../../../../helpers/run-domain-store-test";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
-  setHasActiveBattle,
   setHasActiveRun,
   setMaterials,
   setRunMaxHealth,

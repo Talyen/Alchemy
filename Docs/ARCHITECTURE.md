@@ -102,10 +102,17 @@ Controller construction, route props, and playback: [Battle controllers](./BATTL
 
 The [session capability reference](./RUN_STATE.md#session-capability-ports) lists controller, route, and domain entry points together. Use the [battle path](#battle-path), [shop commands](#shop-commands), and [run setup ownership](#run-setup-ownership) sections for their distinct execution contracts.
 
-Labyrinth room entry has one callback: `labyrinth-controller.ts` validates and
-records the selected room, then passes its snapshot to `shell/labyrinth-node-routing.ts`.
-The shell owns room routing and prepares traits before destination initialization.
-The controller cancels pending entry and its history record if opening throws.
+Campaign and Labyrinth room entry share `run-loop/run/room-entry-commands.ts`.
+`enterRunRoom` validates the offered destination or selected reachable node, then
+commits its activity, encounter traits, seeded initialization, room history, and
+progress in one transaction. Campaign keeps its destination claim inside that
+transaction so loot depth includes the entering room. Labyrinth records its node
+before resolving opening combat. Failed initialization publishes nothing.
+`labyrinth-controller.ts` delegates selected-node entry to that command;
+`shell/labyrinth-node-routing.ts` and the Campaign flow receive detached results.
+`run-destination-handlers.ts` schedules the display before presenting opening
+battle feedback, allowing an immediate Companion outcome to supersede Battle.
+Presentation failure or cancellation leaves complete, resumable gameplay.
 
 ### Run loop overview
 
@@ -148,8 +155,9 @@ layers live beside their leaves (`card-ghost-overlay.tsx`,
 Each shop supplies typed shelf selection, item identity, pricing, and acquisition
 rules; the shared purchase owner uses that pricing rule for both displayed quotes
 and commits, validating and acquiring the live shelf item inside the transaction.
-Pure shelf samplers live in `shop-state-init.ts`. `shop-commands-core.ts` owns
-initialization, purchase validation, and the complete refresh recipe; the activity
+Pure shelf samplers live in `shop-state-init.ts`. `shop-initialization.ts` owns the shared transaction-level initialization used by
+room entry and standalone shop commands. `shop-commands-core.ts` owns
+purchase validation and the complete refresh recipe; the activity
 selects pricing and the typed `setRunActivityData` write target. Callers supply
 shop-specific sampling and acquisition rules without wiring separate state writers.
 `runShopTransaction` owns guarded dispatch and success feedback:
@@ -217,11 +225,12 @@ One loading experience at cold start, then navigation through the shared fade โ€
 
 Path-specific test commands: [CONTRIBUTING.md ยง What to run](../CONTRIBUTING.md#what-to-run-when-you-change).
 
-Manual End Run clears resumable activity and pending work immediately, but keeps
-the final battle snapshot available to the outgoing screen until the route
-transition completes. Clearing it to default enemy/card data early can render
-invalid artwork during the exit frame. The inactive activity excludes the
-snapshot from saves, and the next run/battle initializes fresh state.
+Manual End Run clears resumable activity and pending work immediately. The battle
+route retains its outgoing display snapshot until the fade completes, while
+active combat is removed from gameplay. Commands cannot resolve that retained
+frame, and saves cannot include it. Outcome playback hands its final frame to
+presentation before victory or defeat settlement. The next battle initializes
+fresh state.
 
 ## Headless playthrough tooling
 

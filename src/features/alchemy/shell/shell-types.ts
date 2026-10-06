@@ -1,4 +1,3 @@
-import type { ShopKind } from "@/features/alchemy/run-loop/shop/shop-action-types";
 import type { BattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
 import type { Screen, ScreenTransitionOptions } from "@/lib/routing";
 
@@ -9,6 +8,5 @@ export interface RunFlowEngineDeps {
   transition: (nextScreen: Screen, options?: ScreenTransitionOptions) => void;
   cancelPending: () => void;
   battle: BattleStartCommands;
-  initializeShop: (kind: ShopKind) => void;
   labyrinthClearNode: () => void;
 }

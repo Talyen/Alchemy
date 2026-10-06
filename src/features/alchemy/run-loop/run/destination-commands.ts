@@ -8,9 +8,6 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   addGold,
-  beginDestinationClaim,
-  cancelDestinationClaim,
-  commitDestinationClaim,
   createDraftRunRandomSource,
   setAlchemyVisit,
   setRunPlayerHealth,
@@ -19,31 +16,8 @@ import { getCampfireHealFraction, getCampfireRestHealth } from "@/lib/campfire-h
 import { activeLabyrinthBenefits, labyrinthCampfireHealing } from "@/lib/content-systems/labyrinth/room-rules";
 import { LABYRINTH_MODIFIER_CONFIG } from "@/lib/game-constants";
 import { computeTalentEffects } from "@/lib/game-data";
-import { DESTINATIONS, type Destination } from "@/lib/routing";
 import { applyAlchemistPotion } from "./reward-commands";
 
-export function claimDestination(destination: Destination, gameSession: GameSession = defaultGameSession) {
-  return dispatchRunSessionCommand(
-    (draft) => {
-      if (!beginDestinationClaim(draft, destination)) return rejectCommand("Destination action is unavailable", null);
-      return acceptCommand({
-        selectedBossId: destination === DESTINATIONS.BOSS_COMBAT ? draft.session.rewardFlow.state.selectedBossId : null,
-      });
-    },
-    undefined,
-    gameSession,
-  );
-}
-export function finishDestinationClaim(destination: Destination, gameSession: GameSession = defaultGameSession) {
-  return dispatchRunSessionCommand(
-    (draft) => acceptCommand(commitDestinationClaim(draft, destination)),
-    undefined,
-    gameSession,
-  );
-}
-export function cancelClaimedDestination(gameSession: GameSession = defaultGameSession) {
-  dispatchRunSessionCommand((draft) => acceptCommand(cancelDestinationClaim(draft)), undefined, gameSession);
-}
 export function restAtCampfire(gameSession: GameSession = defaultGameSession) {
   return dispatchRunSessionCommand(
     (draft) => {

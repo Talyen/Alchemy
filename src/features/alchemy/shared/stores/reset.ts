@@ -13,10 +13,9 @@ import {
 } from "./run-session-write-port";
 import { sessionRuntime } from "./session-runtime";
 
-// Test/boot helper only: resets the UI store and clears the transient session
-// without touching battle state. Not mid-battle safe (a live battle and its
-// pending transition survive under fresh UI) — use the lifecycle teardown
-// paths for in-run resets.
+// Test/boot helper only: resets UI and session activity, including combat.
+// It does not settle progression or cancel battle playback; use lifecycle
+// teardown paths for in-run resets.
 export function resetTransientRunUi(gameSession: GameSession = defaultGameSession) {
   sessionRuntime(gameSession).feedback.resetTransientUi();
   dispatchGameplayCommand((draft) => acceptCommand(clearTransientSession(draft)), undefined, gameSession);

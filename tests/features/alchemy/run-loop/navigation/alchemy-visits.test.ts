@@ -1,8 +1,9 @@
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
-import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
-import { patchBattleState } from "../../../../fixtures/battle";
 import "../../../../helpers/mock-audio";
+import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
+import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
+
+import { patchBattleState } from "../../../../fixtures/battle";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   initializeAlchemyVisit,
@@ -111,14 +112,13 @@ describe("alchemy visit transactions and resume", () => {
     expect(shop.strengthenPotion(2)).toBeNull();
   });
   it("preserves spent reaction opportunities in a current battle save", () => {
-    setRunSession({ activity: { kind: "battle" } });
     dispatchGameplayCommand((draft) =>
       acceptCommand(
         initializeActiveBattle(draft, patchBattleState({ flags: { shatterUsed: true, wildfireUsed: true } })),
       ),
     );
     reload();
-    expect(readGameplayState().battle.battleState.flags).toMatchObject({ shatterUsed: true, wildfireUsed: true });
+    expect(readBattle().battleState.flags).toMatchObject({ shatterUsed: true, wildfireUsed: true });
   });
   it("free brewing modifiers apply to Strengthen without spending Gold", () => {
     setRunProgress({ contentSystemType: "labyrinth", gold: 0 });

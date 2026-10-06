@@ -1,16 +1,10 @@
-import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/types";
 import { defaultGameSession } from "./default-game-session";
 import type { GameSession } from "./game-session-types";
 import { dispatchGameplayCommand } from "./gameplay-command";
 import { acceptCommand, rejectCommand } from "./run-session-command";
 import { resetUnlockedTalents, unlockAllTalents, unlockTalent } from "./write/run-meta";
 import { setScreen } from "./write/run-navigation";
-import {
-  abandonLabyrinthCorruptionVisit,
-  setActiveLabyrinthModifiers,
-  setActiveLabyrinthRewardModifiers,
-  setRunActivityData,
-} from "./write/run-session";
+import { abandonLabyrinthCorruptionVisit, setRunActivityData } from "./write/run-session";
 
 export function showRunScreen(screen: Parameters<typeof setScreen>[1], gameSession: GameSession = defaultGameSession) {
   dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, screen)), undefined, gameSession);
@@ -39,25 +33,6 @@ export function leaveLabyrinthCorruption(gameSession: GameSession = defaultGameS
 export function resetCorruptionVisit(gameSession: GameSession = defaultGameSession) {
   dispatchGameplayCommand(
     (draft) => acceptCommand(setRunActivityData(draft, "corruption", null)),
-    undefined,
-    gameSession,
-  );
-}
-
-/** Both sets belong to one room; publish them together, including empty clears. */
-export function prepareLabyrinthRoomTraits(
-  combat: EncounterCombatTraitId[],
-  rewards: EncounterRewardTraitId[],
-  gameSession: GameSession = defaultGameSession,
-): void {
-  dispatchGameplayCommand(
-    (draft) => {
-      if (combat.length || draft.session.activeLabyrinthModifiers.length) setActiveLabyrinthModifiers(draft, combat);
-      if (rewards.length || draft.session.activeLabyrinthRewardModifiers.length)
-        setActiveLabyrinthRewardModifiers(draft, rewards);
-
-      return acceptCommand();
-    },
     undefined,
     gameSession,
   );

@@ -26,7 +26,6 @@ import {
   prepareNextWildwoodBoss,
   removeWildwoodCard,
 } from "@/lib/content-systems/wildwood/gauntlet";
-import { ROUTE_SCREENS } from "@/lib/routing";
 export function prepareWildwoodBoss(removeIndex?: number, gameSession: GameSession = defaultGameSession) {
   return dispatchRunSessionCommand(
     (draft) => {
@@ -49,7 +48,6 @@ export function prepareWildwoodBoss(removeIndex?: number, gameSession: GameSessi
       if (!battle) return rejectCommand("Wildwood action is unavailable", null);
       if (removeIndex !== undefined) setRunDeck(draft, nextDeck);
       setWildwoodDraft(draft, battle);
-      setRunProgressActivity(draft, ROUTE_SCREENS.BATTLE);
       return acceptCommand({ bossId: prepared.bossId, modifierId: prepared.modifierId });
     },
     undefined,

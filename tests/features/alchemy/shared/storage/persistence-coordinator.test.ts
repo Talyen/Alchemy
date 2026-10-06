@@ -1,3 +1,4 @@
+import { getBattleForTest } from "../../../../helpers/run-domain-store-test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   encodePersistenceFields,
@@ -122,12 +123,13 @@ describe("persistence coordinator", () => {
   });
 
   it("ignores claim locks and battle presentation snapshots while saving reward payload changes", () => {
+    dispatchGameplayCommand((draft) => acceptCommand(getBattleForTest(draft)));
     const listener = vi.fn();
     const unsubscribe = subscribeAlchemyPersistence(listener);
 
     setRunSession({ rewardClaimInFlight: true });
     dispatchGameplayCommand((draft) => {
-      draft.battle.battleStartState = { ...draft.battle.battleState };
+      getBattleForTest(draft).battleStartState = { ...getBattleForTest(draft).battleState };
 
       return acceptCommand();
     });

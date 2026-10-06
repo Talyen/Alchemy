@@ -1,3 +1,4 @@
+import { getBattleForTest, setBattleActiveForTest } from "../../../../helpers/run-domain-store-test";
 import { battleSnapshot } from "@/lib/battle";
 import { beforeEach, describe, expect, it } from "vitest";
 import { defaultBattleState, type BattleState } from "@/lib/battle";
@@ -17,8 +18,8 @@ function encodeState(screen?: Screen): ActiveRunData {
 
 function writeBattle(partial: { hasActiveBattle?: boolean; battleState?: BattleState }) {
   dispatchGameplayCommand((draft) => {
-    if (partial.hasActiveBattle !== undefined) draft.battle.hasActiveBattle = partial.hasActiveBattle;
-    if (partial.battleState !== undefined) draft.battle.battleState = partial.battleState;
+    if (partial.hasActiveBattle !== undefined) setBattleActiveForTest(draft, partial.hasActiveBattle);
+    if (partial.battleState !== undefined) getBattleForTest(draft).battleState = partial.battleState;
 
     return acceptCommand();
   });

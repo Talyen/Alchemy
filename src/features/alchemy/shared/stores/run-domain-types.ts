@@ -10,7 +10,6 @@ import {
   type RunObtainedItem,
   type RunRecap,
 } from "@/lib/active-run-session";
-import { battleSnapshot, defaultBattleState, type BattleSnapshot } from "@/lib/battle";
 import type {
   ContentSystemId,
   EncounterCombatTraitId,
@@ -23,13 +22,6 @@ import { EMPTY_CRAFTING_CURRENCIES, type CraftingCurrencyId } from "@/lib/gear";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Destination, Screen } from "@/lib/routing";
-
-export interface RunDomainBattleState {
-  battleState: BattleSnapshot;
-
-  battleStartState: BattleSnapshot | null;
-  hasActiveBattle: boolean;
-}
 
 export interface RunDomainDataState {
   activeRun: ActiveRunProgressFields;
@@ -65,14 +57,6 @@ export function createInitialSessionFields(): RunSessionFields {
     labyrinthMap: null,
     wildwoodDraft: null,
     starterDraftChoices: null,
-  };
-}
-
-export function createInitialBattleFields(): RunDomainBattleState {
-  return {
-    battleState: battleSnapshot(defaultBattleState()),
-    battleStartState: null,
-    hasActiveBattle: false,
   };
 }
 

@@ -20,7 +20,6 @@ export function createRunFlowEngine(
     transition,
     cancelPending,
     battle,
-    initializeShop,
     labyrinthClearNode,
   }: RunFlowEngineDeps,
   outcomes: RunOutcomes,
@@ -67,13 +66,7 @@ export function createRunFlowEngine(
     navigateTo,
     transition,
     labyrinthClearNode,
-    initializeShop,
-    startBattle: battle.startBattle,
-    startBoss: (opts) => {
-      if (opts?.bossId && battle.startBossById({ bossId: opts.bossId, modifiers: opts.modifiers })) return;
-      battle.startBossBattle();
-    },
-    beginMysteryEvent: mystery.beginMysteryEvent,
+    presentBattleStart: battle.presentBattleStart,
     wildwoodRewardComplete: wildwood.handleWildwoodRewardComplete,
     clearCardHover,
   };

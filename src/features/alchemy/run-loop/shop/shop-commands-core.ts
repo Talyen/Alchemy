@@ -1,11 +1,6 @@
 import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import {
-  acceptCommand,
-  dispatchRunSessionCommand,
-  snapshotTransactionValue,
-  type RunTransaction,
-} from "@/features/alchemy/shared/stores/run-session-command";
+import { snapshotTransactionValue, type RunTransaction } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   createDraftRunRandomSource,
   deductGold,
@@ -40,19 +35,6 @@ const SHOP_STATE_KEY: Record<ShopActivity, ShopSessionStateKey> = {
   "trinket-shop": "trinketShopState",
   "equipment-shop": "equipmentShopState",
 };
-
-export function initializeShop<K extends ShopActivity>(
-  activity: K,
-  createInitial: (draft: RunTransaction) => RunActivityData[NoInfer<K>],
-  gameSession: GameSession = defaultGameSession,
-): () => void {
-  return () =>
-    dispatchRunSessionCommand(
-      (draft) => acceptCommand(setRunActivityData(draft, activity, createInitial(draft))),
-      undefined,
-      gameSession,
-    );
-}
 
 export function createGetRefreshPrice(
   activity: ShopActivity,

@@ -9,6 +9,7 @@ import {
   dispatchRunSessionCommand,
   rejectCommand,
   snapshotTransactionValue,
+  type RunTransaction,
 } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   clearMysteryVisitState,
@@ -28,40 +29,36 @@ import { cardById } from "@/lib/game-data";
 import { isMysteryLootEligible, pickResolvedMysteryEvent, type MysteryChoice } from "@/lib/mystery";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
 export function beginMysteryVisit(gameSession: GameSession = defaultGameSession): void {
-  dispatchRunSessionCommand(
-    (draft) => {
-      clearMysteryVisitState(draft);
-      // Shared "events" stream with corruption and run-restore mystery repair:
-      // sequential draws stay deterministic for saves, so keep sharing rather
-      // than splitting streams.
-      const rng = createDraftRunRandomSource(draft, "events");
-      const modifiers = activeLabyrinthBenefits(
-        draft.run.activeRun.contentSystemType,
-        draft.session.activeLabyrinthRewardModifiers,
-      );
-      const ownedTrinkets = combineTrinketEffectIds(
-        draft.run.activeRun.runBoons,
-        draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
-      );
-      const lootProgress = resolveDraftLootProgress(draft);
-      setMysteryEvent(
-        draft,
-        applyLabyrinthMysteryModifiers(
-          pickResolvedMysteryEvent(
-            rng,
-            ownedTrinkets,
-            (event) =>
-              isLabyrinthMysteryEligible(event, modifiers) && isMysteryLootEligible(event, lootProgress, ownedTrinkets),
-          ),
-          modifiers,
-          draft.run.activeRun.runMaxHealth,
-        ),
-      );
+  dispatchRunSessionCommand((draft) => acceptCommand(beginMysteryVisitInTransaction(draft)), undefined, gameSession);
+}
 
-      return acceptCommand();
-    },
-    undefined,
-    gameSession,
+export function beginMysteryVisitInTransaction(draft: RunTransaction): void {
+  clearMysteryVisitState(draft);
+  // Shared "events" stream with corruption and run-restore mystery repair:
+  // sequential draws stay deterministic for saves, so keep sharing rather
+  // than splitting streams.
+  const rng = createDraftRunRandomSource(draft, "events");
+  const modifiers = activeLabyrinthBenefits(
+    draft.run.activeRun.contentSystemType,
+    draft.session.activeLabyrinthRewardModifiers,
+  );
+  const ownedTrinkets = combineTrinketEffectIds(
+    draft.run.activeRun.runBoons,
+    draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
+  );
+  const lootProgress = resolveDraftLootProgress(draft);
+  setMysteryEvent(
+    draft,
+    applyLabyrinthMysteryModifiers(
+      pickResolvedMysteryEvent(
+        rng,
+        ownedTrinkets,
+        (event) =>
+          isLabyrinthMysteryEligible(event, modifiers) && isMysteryLootEligible(event, lootProgress, ownedTrinkets),
+      ),
+      modifiers,
+      draft.run.activeRun.runMaxHealth,
+    ),
   );
 }
 export function chooseMysteryOption(choice: MysteryChoice, gameSession: GameSession = defaultGameSession) {

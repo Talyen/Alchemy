@@ -1,5 +1,7 @@
-import { emptyAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
 import "../../../../helpers/mock-audio";
+import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
+import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
+import { emptyAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { defaultBattleState } from "@/lib/battle";
@@ -22,7 +24,7 @@ import {
   setRewardState,
   setShopState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
+
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
@@ -357,7 +359,7 @@ describe("victory-handoff persistence", () => {
 
     resetRunDomainStore();
     restoreRun(snap, {}, {});
-    expect(readGameplayState().battle.battleState.enemyHealth).toBe(0);
+    expect(readBattle().battleState.enemyHealth).toBe(0);
   });
 });
 

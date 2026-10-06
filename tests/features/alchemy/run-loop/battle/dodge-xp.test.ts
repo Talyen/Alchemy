@@ -1,5 +1,6 @@
 import "../../../../helpers/mock-audio";
 import "../../../../helpers/mock-flush-save";
+import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
 import { beforeEach, describe, expect, it } from "vitest";
 import { endPlayerTurn } from "@/lib/battle";
 import { toActiveRunData } from "@/lib/active-run-session";
@@ -8,7 +9,7 @@ import { ActiveRunDataSchema } from "@/lib/validation/save-schemas/active-run";
 import { getDifficultyXPMultiplier } from "@/lib/game-data";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { finalizeRunXP, awardBattleDodgeXP } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { initializeActiveBattle, setBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
+import { setBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
 import { readActiveRun, readBattle, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { snapshotRun, restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { incomingPhysical } from "../../../../fixtures/battle";
@@ -63,6 +64,7 @@ describe("Dodge XP commits", () => {
       enemyHealth: 1,
       talentEffects: { physicalOnDodgeEqualToAttack: true },
     });
+    dispatchGameplayCommand((draft) => acceptCommand(initializeActiveBattle(draft, state)));
     const result = endPlayerTurn(state);
     if (result.kind === "haste") throw new Error("Expected an enemy turn");
     expect(result.state.enemyHealth).toBe(0);
@@ -78,6 +80,7 @@ describe("Dodge XP commits", () => {
 
   it("rolls XP back together with a failed battle command", () => {
     const state = incomingPhysical({ rng: () => 0 });
+    dispatchGameplayCommand((draft) => acceptCommand(initializeActiveBattle(draft, state)));
     const result = endPlayerTurn(state);
     if (result.kind === "haste") throw new Error("Expected an enemy turn");
     expect(() =>

@@ -1,3 +1,4 @@
+import { setBattleActiveForTest, getBattleForTest } from "../helpers/run-domain-store-test";
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { isDeckInspectionVisible, useCardInspection } from "@/app/use-card-inspection";
@@ -24,10 +25,10 @@ beforeEach(() => {
   useBattlePresentationStore.getState().resetPresentation();
   dispatchGameplayCommand((draft) => {
     draft.session.activity = { kind: "idle" };
-    draft.battle.hasActiveBattle = true;
-    draft.battle.battleState.enemyHealth = 30;
-    draft.battle.battleState.playerHealth = 30;
-    draft.battle.battleState.turnPhase = "player";
+    setBattleActiveForTest(draft, true);
+    getBattleForTest(draft).battleState.enemyHealth = 30;
+    getBattleForTest(draft).battleState.playerHealth = 30;
+    getBattleForTest(draft).battleState.turnPhase = "player";
 
     return acceptCommand();
   });
@@ -41,7 +42,7 @@ describe("run card inspection", () => {
       descriptionLines: ["old", "Companion"],
     });
     dispatchGameplayCommand((draft) => {
-      draft.battle.battleState.gearEffects.companionDamageBonus = 4;
+      getBattleForTest(draft).battleState.gearEffects.companionDamageBonus = 4;
 
       return acceptCommand();
     });
@@ -51,7 +52,7 @@ describe("run card inspection", () => {
     );
     act(() =>
       dispatchGameplayCommand((draft) => {
-        draft.battle.battleState.gearEffects.companionDamageBonus = 8;
+        getBattleForTest(draft).battleState.gearEffects.companionDamageBonus = 8;
 
         return acceptCommand();
       }),
@@ -77,8 +78,8 @@ describe("run card inspection", () => {
     const generated = makeTestCard({ id: "block", uid: 3 });
     dispatchGameplayCommand((draft) => {
       draft.run.activeRun.runDeck = [consumed, drawn];
-      draft.battle.battleState.deck = [drawn];
-      draft.battle.battleState.discard = [generated];
+      getBattleForTest(draft).battleState.deck = [drawn];
+      getBattleForTest(draft).battleState.discard = [generated];
 
       return acceptCommand();
     });
@@ -97,11 +98,11 @@ describe("run card inspection", () => {
 
   it.each(["enemy", "wish", "transfer", "dead", "card-play"])("rejects inspection during %s", (reason) => {
     dispatchGameplayCommand((draft) => {
-      if (reason === "enemy") draft.battle.battleState.turnPhase = "enemy";
-      if (reason === "wish") draft.battle.battleState.wishOptions = [makeTestCard()];
+      if (reason === "enemy") getBattleForTest(draft).battleState.turnPhase = "enemy";
+      if (reason === "wish") getBattleForTest(draft).battleState.wishOptions = [makeTestCard()];
       if (reason === "dead") {
-        draft.battle.battleState.playerHealth = 0;
-        draft.battle.battleState.deathsDoorActive = false;
+        getBattleForTest(draft).battleState.playerHealth = 0;
+        getBattleForTest(draft).battleState.deathsDoorActive = false;
       }
 
       return acceptCommand();
@@ -124,7 +125,7 @@ describe("run card inspection", () => {
     act(() => result.current.onOpen("deck"));
     act(() =>
       dispatchGameplayCommand((draft) => {
-        draft.battle.hasActiveBattle = false;
+        setBattleActiveForTest(draft, false);
 
         return acceptCommand();
       }),

@@ -1,3 +1,7 @@
+import {
+  setBattleActiveForTest as setHasActiveBattle,
+  replaceBattleForTest as setSyncedBattleState,
+} from "../../../../helpers/run-domain-store-test";
 import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
@@ -5,8 +9,8 @@ import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/b
 import { battleStageMarkName, markBattleStage } from "@/lib/performance/marks";
 import { defaultBattleState } from "@/lib/battle";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
-import { setHasActiveBattle, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
+import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
+
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";

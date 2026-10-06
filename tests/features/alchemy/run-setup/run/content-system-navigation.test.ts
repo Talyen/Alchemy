@@ -1,4 +1,5 @@
 import "../../../../helpers/mock-audio";
+import { setBattleActiveForTest, getBattleForTest } from "../../../../helpers/run-domain-store-test";
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
@@ -118,7 +119,7 @@ describe("createContentSystemNavigation", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
     setRunSession({ hasActiveRun: true });
     dispatchGameplayCommand((draft) => {
-      draft.battle.hasActiveBattle = true;
+      setBattleActiveForTest(draft, true);
 
       return acceptCommand();
     });
@@ -134,8 +135,8 @@ describe("createContentSystemNavigation", () => {
       setRunProgress({ contentSystemType: mode, characterId: "knight" });
       setRunSession({ hasActiveRun: true });
       dispatchGameplayCommand((draft) => {
-        draft.battle.hasActiveBattle = true;
-        draft.battle.battleState = makeTestBattleState({ turn: 4 });
+        setBattleActiveForTest(draft, true);
+        getBattleForTest(draft).battleState = makeTestBattleState({ turn: 4 });
         setScreen(draft, ROUTE_SCREENS.BATTLE);
 
         return acceptCommand();

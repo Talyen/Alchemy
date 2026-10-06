@@ -1,3 +1,4 @@
+import { createShopInitializer } from "./shop-initialization";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
 import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
@@ -18,11 +19,10 @@ import {
   createGetRefreshPrice,
   createShopPurchaseActions,
   createShopRefreshAction,
-  initializeShop,
 } from "./shop-commands-core";
 import { computeRemoveCardPrice, getShopBuyPrice } from "./shop-pricing";
 import { resolveDraftShopModifiers, resolveReadShopModifiers } from "./shop-pricing-context";
-import { createInitialShopState, merchantShopPool, resampleCardShopOfferings } from "./shop-state-init";
+import { merchantShopPool, resampleCardShopOfferings } from "./shop-state-init";
 import { commitShopService, runShopTransaction } from "./shop-transactions";
 
 export function createMerchantShopCommands(
@@ -51,16 +51,7 @@ export function createMerchantShopCommands(
     computeRemoveCardPrice(talentEffects, resolveReadShopModifiers(gameSession), homesteadEffects.removeCardDiscount);
   const getRefreshPrice = createGetRefreshPrice("shop", talentEffects, gameSession);
 
-  const initialize = initializeShop(
-    "shop",
-    (draft) =>
-      createInitialShopState(
-        snapshotTransactionValue(draft.run.activeRun.runDeck),
-        createDraftRunRandomSource(draft, "shops"),
-        resolveDraftShopModifiers(draft),
-      ),
-    gameSession,
-  );
+  const initialize = createShopInitializer("merchant", gameSession);
 
   function removeCard(index: number): boolean {
     return runShopTransaction(

@@ -20,7 +20,6 @@ import {
   setActiveLabyrinthPendingNode,
   setActiveLabyrinthRewardModifiers,
   setCompanionRewardCards,
-  setHasActiveRun,
   setLabyrinthMap,
   setMysteryEvent,
   setRewardState,
@@ -76,28 +75,22 @@ function restoreRunSession(draft: GameplayDraft, decoded: DecodedRunResumeSessio
 }
 
 export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRunData | null): void {
-  draft.session.activity = { kind: "inactive" };
+  clearTransientSession(draft);
   const decoded = activeRun ? decodeRunResumeSnapshot(activeRun, gameplayDraftRuntime(draft).generateRunSeed) : null;
   if (decoded) initializeFromResumeSnapshot(draft, decoded.progress);
   else initializeActiveRun(draft, null);
 
+  if (!activeRun || !decoded) return;
+  restoreRunSession(draft, decoded.session);
   const battleState =
-    activeRun?.activeCombat?.battleState != null
+    activeRun.activeCombat?.battleState != null
       ? repairPersistedTrinketManifest(
           activeRun.activeCombat.battleState,
           combineTrinketEffectIds(activeRun.runBoons, draft.gear.equippedTrinkets[activeRun.characterId]),
         )
       : null;
-  const pending = decoded?.pendingBattleTransition ?? null;
-  restoreActiveBattle(draft, battleState, pending);
-
-  const resumeScreen = decoded?.screen ?? null;
-  if (!activeRun) return;
-
-  clearTransientSession(draft);
-  setHasActiveRun(draft, true);
-  // Hydration owns the activity; showing the decoded screen only changes display navigation.
-  if (decoded) restoreRunSession(draft, decoded.session);
+  restoreActiveBattle(draft, battleState, decoded.pendingBattleTransition);
+  const resumeScreen = decoded.screen;
   if (resumeScreen) setScreen(draft, resumeScreen);
   const mysteryEvent = readActivityData(draft.session.activity, "mystery").mysteryEvent;
   if (mysteryEvent && eventHasUnresolvedRandomTrinket(mysteryEvent)) {

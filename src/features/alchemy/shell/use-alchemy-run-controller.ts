@@ -13,8 +13,6 @@ import {
   purchaseTalent,
   resetTalentUnlocks,
   unlockTalentsForDevelopment,
-  prepareLabyrinthRoomTraits,
-  resetCorruptionVisit,
 } from "@/features/alchemy/shared/stores/navigation-commands";
 import { useCallback, useMemo } from "react";
 import { getRunPhase } from "@/lib/routing";
@@ -69,12 +67,11 @@ export function useAlchemyRunController(): AlchemyRunCommands {
           transition,
           cancelPending,
           battle,
-          initializeShop: shop.initialize,
           labyrinthClearNode: labyrinth.onNodeCleared,
         },
         outcomes,
       ),
-    [navigateTo, resumeTo, transition, cancelPending, battle, labyrinth, outcomes, shop.initialize],
+    [navigateTo, resumeTo, transition, cancelPending, battle, labyrinth, outcomes],
   );
 
   const runPhase = getRunPhase(screen, battle.hasActiveBattle);
@@ -86,15 +83,11 @@ export function useAlchemyRunController(): AlchemyRunCommands {
   const nodeRouting = useMemo(
     () =>
       createLabyrinthNodeRouting({
-        prepareRoomTraits: prepareLabyrinthRoomTraits,
         navigateTo,
         labyrinth,
-        battle,
-        nav: { beginMysteryEvent: nav.beginMysteryEvent },
-        shop,
-        corruption: { reset: resetCorruptionVisit },
+        presentBattleStart: battle.presentBattleStart,
       }),
-    [navigateTo, labyrinth, battle, nav.beginMysteryEvent, shop],
+    [navigateTo, labyrinth, battle.presentBattleStart],
   );
 
   const handleEndRun = useCallback(() => {

@@ -1,6 +1,10 @@
-import { restoreActiveBattle } from "@/features/alchemy/shared/stores/battle-restore";
 import "../../../../helpers/mock-audio";
 import "../../../../helpers/mock-flush-save";
+import {
+  setBattleActiveForTest as mutateHasActiveBattle,
+  replaceBattleForTest as mutateSyncedBattleState,
+} from "../../../../helpers/run-domain-store-test";
+import { restoreActiveBattle } from "@/features/alchemy/shared/stores/battle-restore";
 import { beforeEach, describe, expect, it } from "vitest";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { ActiveRunDataSchema } from "@/lib/validation/save-schemas/active-run";
@@ -25,12 +29,11 @@ import { acceptCommand, createGameplayCommand } from "@/features/alchemy/shared/
 import {
   beginRewardClaim as mutateBeginRewardClaim,
   setCompanionRewardCards as mutateCompanionRewardCards,
-  setHasActiveBattle as mutateHasActiveBattle,
   setHasActiveRun as mutateHasActiveRun,
   setRewardState as mutateRewardState,
   setScreen as mutateSetScreen,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setSyncedBattleState as mutateSyncedBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
+
 import { resetProgress as mutateResetProgress } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetRunDomainStore, setRunProgress } from "../../../../helpers/run-domain-store-test";
 const resetProgress = createGameplayCommand((...args: Parameters<typeof mutateResetProgress>) =>
@@ -70,11 +73,11 @@ describe("session facade API", () => {
     teardownRun();
     resetProgress();
     setRunProgress({ runPlayerHealth: 18, runMaxHealth: 24, gold: 40, initialized: true });
-    setSyncedBattleState({ ...defaultBattleState(), playerHealth: 10, gold: 7 });
     setHasActiveRun(true);
   });
 
   it("getRunSession aggregates run, battle, and session fields for orchestration", () => {
+    setSyncedBattleState({ ...defaultBattleState(), playerHealth: 10, gold: 7 });
     const session = getRunSession(ROUTE_SCREENS.MENU);
     expect(session.run.runPlayerHealth).toBe(18);
     expect(session.run.gold).toBe(40);

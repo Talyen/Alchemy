@@ -1,5 +1,8 @@
-import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
 import "../../../../helpers/mock-audio";
+import { getRunSessionFromState } from "@/features/alchemy/shared/stores/run-reads";
+import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
+import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
+import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
 import { playBattleEvent, playCardSound } from "@/lib/audio";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/end-turn-ui";
@@ -8,7 +11,7 @@ import type { createBattleSession } from "@/features/alchemy/run-loop/battle/bat
 import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfers";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
-import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
+
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { patchBattleState, slashDeck } from "../../../../fixtures/battle";
@@ -79,11 +82,15 @@ describe("End Turn execution and playback", () => {
     const before = readGameplayState();
     ui.handleEndTurn();
     const resolved = readGameplayState();
-    expect(resolved.battle.battleState.turn).toBeGreaterThan(before.battle.battleState.turn);
-    expect(resolved.battle).not.toHaveProperty("pendingBattleTransition");
+    expect(getRunSessionFromState(resolved).battle.battleState.turn).toBeGreaterThan(
+      getRunSessionFromState(before).battle.battleState.turn,
+    );
+    expect(getRunSessionFromState(resolved).battle).not.toHaveProperty("pendingBattleTransition");
     expect(resolved.revision).toBe(before.revision + 1);
     expect(ctx.playback.cardPlayInProgress).toBe(true);
-    expect(useBattlePresentationStore.getState().displayedBattle).toBe(before.battle.battleState);
+    expect(useBattlePresentationStore.getState().displayedBattle).toBe(
+      getRunSessionFromState(before).battle.battleState,
+    );
     ui.handleEndTurn();
     expect(readGameplayState()).toBe(resolved);
     expect(vi.mocked(playBattleEvent).mock.calls.filter(([event]) => event === "endTurn")).toHaveLength(1);
@@ -108,7 +115,7 @@ describe("End Turn execution and playback", () => {
       ),
     );
     ui.handleEndTurn();
-    expect(readGameplayState().battle.battleState.playerHealth).toBe(0);
+    expect(readBattle().battleState.playerHealth).toBe(0);
     expect(playCardSound).toHaveBeenCalledExactlyOnceWith("slash");
     expect(vi.mocked(playBattleEvent).mock.calls.some(([event]) => event === "playerHit")).toBe(false);
   });
@@ -160,7 +167,7 @@ describe("End Turn execution and playback", () => {
     releaseDiscard();
     await vi.waitFor(() => expect(ctx.playback.cardPlayInProgress).toBe(false));
     expect(readGameplayState()).toBe(resolved);
-    expect(resolved.battle.battleState.turnPhase).toBe("player");
+    expect(getRunSessionFromState(resolved).battle.battleState.turnPhase).toBe("player");
   });
 
   it("rejects End Turn while inspecting cards without advancing RNG", () => {

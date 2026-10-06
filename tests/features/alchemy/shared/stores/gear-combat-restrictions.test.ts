@@ -1,3 +1,5 @@
+import { setBattleActiveForTest, getBattleForTest } from "../../../../helpers/run-domain-store-test";
+import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { deriveGearCombatRestrictions } from "@/features/alchemy/shared/stores/gear-combat-restrictions";
@@ -27,7 +29,7 @@ describe("combat equipment protection", () => {
     });
     dispatchGameplayCommand((draft) => {
       draft.session.activity = { kind: "idle" };
-      draft.battle.hasActiveBattle = true;
+      setBattleActiveForTest(draft, true);
 
       return acceptCommand();
     });
@@ -60,7 +62,7 @@ describe("combat equipment protection", () => {
   });
 
   it("allows unused shared gear and acquisitions without changing the battle equipment", () => {
-    const manifest = readGameplayState().battle.battleState.gearEffects;
+    const manifest = readBattle().battleState.gearEffects;
     expect(dispatchGearMutationWithRunHealthSync({ mutate: (gear) => gear.equip("rogue", "main-hand", spare) })).toBe(
       true,
     );
@@ -68,7 +70,7 @@ describe("combat equipment protection", () => {
       mutate: (gear) => gear.addInstance({ ...spare, instanceId: "reward" }, "knight"),
     });
     expect(readGameplayState().gear.loadouts.knight["main-hand"]).toBe(sword.instanceId);
-    expect(readGameplayState().battle.battleState.gearEffects).toEqual(manifest);
+    expect(readBattle().battleState.gearEffects).toEqual(manifest);
   });
 
   it("rolls back earlier Gear writes when a later operation returns false or null", () => {
@@ -94,7 +96,7 @@ describe("combat equipment protection", () => {
 
   it("keeps a pending lethal transition reserved until the battle lifecycle ends", () => {
     dispatchGameplayCommand((draft) => {
-      draft.battle.battleState.enemyHealth = 0;
+      getBattleForTest(draft).battleState.enemyHealth = 0;
 
       return acceptCommand();
     });
@@ -104,7 +106,7 @@ describe("combat equipment protection", () => {
       trinkets: { "brass-censer": "knight" },
     });
     dispatchGameplayCommand((draft) => {
-      draft.battle.hasActiveBattle = false;
+      setBattleActiveForTest(draft, false);
 
       return acceptCommand();
     });

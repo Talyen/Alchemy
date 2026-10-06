@@ -17,11 +17,6 @@ export function recordRunRoom(draft: GameplayDraft, destination: Destination, id
   return true;
 }
 
-export function cancelRunRoomEntry(draft: GameplayDraft, id: string): void {
-  const run = draft.run.activeRun;
-  run.runHistory = run.runHistory.filter((room) => room.id !== id);
-}
-
 function currentRunRoom(draft: GameplayDraft) {
   const run = draft.run.activeRun;
   const nodeId = draft.session.activeLabyrinthPendingNode;

@@ -20,7 +20,6 @@ import {
   setCorruptionResult,
   setCurrentAct,
   setDestinationIndexInAct,
-  setHasActiveBattle,
   setRewardState,
   setRoomsEncountered,
   setRunProgressActivity,
@@ -92,7 +91,6 @@ export function createProgressionCommands(
     completeAct: () =>
       dispatchRunSessionCommand(
         (draft) => {
-          setHasActiveBattle(draft, false);
           const run = draft.run.activeRun;
           if (run.currentAct >= (IS_DEMO ? GAME_EDITION_POLICY.campaignActs : ACTS_PER_RUN)) {
             const selectedDifficulty = run.selectedDifficulty;

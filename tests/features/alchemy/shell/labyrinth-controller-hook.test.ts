@@ -1,222 +1,86 @@
-import { act } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { gridLabyrinthMapFixture } from "../../../fixtures/labyrinth-map";
+import { resetAllTestStores, setRunProgress, setRunSession } from "../../../helpers/run-domain-store-test";
 import { createLabyrinthController } from "@/features/alchemy/run-loop/run/labyrinth-controller";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import {
-  completeRunRoom,
-  setHasActiveRun,
-  setLabyrinthMap,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
-import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
-import { DESTINATIONS } from "@/lib/routing";
+import { getStartingDeck } from "@/lib/game-data";
 
-function firstReachableId() {
-  return "labyrinth-floor-1-n0";
-}
-
+const target = "labyrinth-floor-1-n0";
 beforeEach(() => {
-  resetTransientRunUi();
-  dispatchGameplayCommand((draft) => acceptCommand(setLabyrinthMap(draft, gridLabyrinthMapFixture())));
+  resetAllTestStores();
+  setRunProgress({ contentSystemType: "labyrinth", runDeck: getStartingDeck("knight") });
+  setRunSession({ activity: { kind: "labyrinth-map" }, labyrinthMap: gridLabyrinthMapFixture() });
 });
 
 describe("Labyrinth commands", () => {
-  it("select then enter records a pending node and routes combat nodes", () => {
-    const onStartBattle = vi.fn();
+  it("enters and clears a room once, preserving history and map progress", () => {
     const controller = createLabyrinthController();
-    const target = firstReachableId();
-
-    let entered = false;
-    act(() => {
-      controller.selectNode(target);
-      entered = controller.enterSelectedNode(onStartBattle);
-    });
-
-    expect(entered).toBe(true);
-    expect(readRunSession().activeLabyrinthPendingNode).toBe(target);
-    expect(onStartBattle).toHaveBeenCalledOnce();
-  });
-
-  it("onNodeCleared marks the pending node cleared", () => {
-    const controller = createLabyrinthController();
-    const target = firstReachableId();
-
-    act(() => {
-      controller.selectNode(target);
-      controller.enterSelectedNode(vi.fn());
-      controller.onNodeCleared();
-    });
-
+    controller.selectNode(target);
+    expect(controller.enterSelectedNode()?.screen).toBe("battle");
+    const entered = readRunSession();
+    expect(entered.activeLabyrinthPendingNode).toBe(target);
+    expect(controller.enterSelectedNode()).toBeNull();
+    expect(readRunSession().activity).toBe(entered.activity);
+    controller.onNodeCleared();
     expect(readRunSession().activeLabyrinthPendingNode).toBeNull();
     expect(readRunSession().labyrinthMap!.nodes[target]?.cleared).toBe(true);
     expect(readRunSession().labyrinthMap!.currentNodeId).toBe(target);
-  });
-
-  it("enterSelectedNode rejects a second enter while a node is pending", () => {
-    const onStartBattle = vi.fn();
-    const controller = createLabyrinthController();
-    const target = firstReachableId();
-
-    let first = false;
-    let second = true;
-    act(() => {
-      controller.selectNode(target);
-      first = controller.enterSelectedNode(onStartBattle);
-      second = controller.enterSelectedNode(onStartBattle);
-    });
-
-    expect(first).toBe(true);
-    expect(second).toBe(false);
-    expect(onStartBattle).toHaveBeenCalledOnce();
+    expect(readActiveRun().runHistory).toEqual([expect.objectContaining({ completed: true })]);
   });
 
   it("inspects the distant boss without entering it", () => {
     const controller = createLabyrinthController();
-    const map = readRunSession().labyrinthMap!;
-    const locked = Object.values(map.nodes).find((node) => node.type === "boss");
-    expect(locked).toBeDefined();
-
-    let entered = true;
-    act(() => {
-      controller.selectNode(firstReachableId());
-      controller.selectNode(locked!.id);
-      entered = controller.enterSelectedNode(vi.fn());
-    });
-
-    expect(readRunSession().selectedLabyrinthNodeId).toBe(locked!.id);
-    expect(entered).toBe(false);
+    const locked = Object.values(readRunSession().labyrinthMap!.nodes).find((node) => node.type === "boss")!;
+    controller.selectNode(target);
+    controller.selectNode(locked.id);
+    expect(readRunSession().selectedLabyrinthNodeId).toBe(locked.id);
+    expect(controller.enterSelectedNode()).toBeNull();
     expect(readRunSession().activeLabyrinthPendingNode).toBeNull();
   });
 
   it.each(["labyrinth-floor-1-n4", "missing-node"])("rejects undiscovered or missing selection %s", (nodeId) => {
     const controller = createLabyrinthController();
-    act(() => {
-      controller.selectNode(firstReachableId());
-      controller.selectNode(nodeId);
-    });
+    controller.selectNode(target);
+    controller.selectNode(nodeId);
     expect(readRunSession().selectedLabyrinthNodeId).toBeNull();
+    expect(controller.enterSelectedNode()).toBeNull();
   });
 
   it("descends once from a completed boss and rejects prior-floor entry", () => {
     const controller = createLabyrinthController();
     const boss = Object.values(readRunSession().labyrinthMap!.nodes).find((node) => node.type === "boss")!;
-    act(() => {
-      controller.selectNode(boss.id);
-      controller.descend();
-    });
+    controller.selectNode(boss.id);
+    controller.descend();
     expect(readRunSession().labyrinthMap!.currentFloor).toBe(1);
-    act(() => {
-      dispatchGameplayCommand((draft) => {
-        draft.session.labyrinthMap!.nodes[boss.id]!.cleared = true;
-        draft.session.labyrinthMap!.currentNodeId = boss.id;
-
-        return acceptCommand();
-      });
-      controller.descend();
-      controller.descend();
+    dispatchGameplayCommand((draft) => {
+      draft.session.labyrinthMap!.nodes[boss.id]!.cleared = true;
+      draft.session.labyrinthMap!.currentNodeId = boss.id;
+      return acceptCommand();
     });
+    controller.descend();
+    controller.descend();
     const next = readRunSession().labyrinthMap!;
     expect(next.currentFloor).toBe(2);
     expect(next.floors).toHaveLength(2);
     expect(next.nodes[next.currentNodeId]?.type).toBe("entrance");
-    act(() => {
-      controller.selectNode(boss.id);
-      controller.descend();
-    });
+    controller.selectNode(boss.id);
+    controller.descend();
     expect(readRunSession().selectedLabyrinthNodeId).toBeNull();
     expect(readRunSession().labyrinthMap).toBe(next);
   });
 
-  it("does not move or clear a room when its destination fails to open", () => {
-    dispatchGameplayCommand((draft) => {
-      setHasActiveRun(draft, true);
-      draft.run.activeRun.runHistory = [];
-
-      return acceptCommand();
-    });
+  it("enters a discovered branch without moving through completed rooms", () => {
     const controller = createLabyrinthController();
-    const target = firstReachableId();
-    act(() => controller.selectNode(target));
-    expect(() =>
-      act(() =>
-        controller.enterSelectedNode(() => {
-          throw new Error("Cannot start battle");
-        }),
-      ),
-    ).toThrow("Cannot start battle");
-    expect(readRunSession().activeLabyrinthPendingNode).toBeNull();
-    expect(readRunSession().labyrinthMap!.currentNodeId).toBe("labyrinth-floor-1-entrance");
-    expect(readRunSession().labyrinthMap!.nodes[target]!.cleared).toBe(false);
-    expect(readActiveRun().runHistory).toEqual([]);
-  });
-
-  it("records the room before an opening attack can complete it", () => {
-    dispatchGameplayCommand((draft) => {
-      setHasActiveRun(draft, true);
-      draft.run.activeRun.contentSystemType = "labyrinth";
-      draft.run.activeRun.runHistory = [];
-
-      return acceptCommand();
-    });
-    const controller = createLabyrinthController();
-    controller.selectNode(firstReachableId());
-    controller.enterSelectedNode(() => dispatchGameplayCommand((draft) => acceptCommand(completeRunRoom(draft))));
-    expect(readActiveRun().runHistory).toEqual([
-      expect.objectContaining({
-        id: `labyrinth:1:${firstReachableId()}`,
-        destination: DESTINATIONS.NORMAL_COMBAT,
-        completed: true,
-      }),
-    ]);
-  });
-
-  it("passes the selected corruption chamber with its room modifiers", () => {
-    const corruptionId = firstReachableId();
-    dispatchGameplayCommand((draft) => {
-      setHasActiveRun(draft, true);
-      draft.run.activeRun.contentSystemType = "labyrinth";
-      draft.run.activeRun.runHistory = [];
-      const node = draft.session.labyrinthMap!.nodes[corruptionId]!;
-      node.type = "corruption";
-      node.rewardModifiers = ["blood-rite"];
-      delete node.enemyId;
-
-      return acceptCommand();
-    });
-    const onStartCorruption = vi.fn();
-    const controller = createLabyrinthController();
-
-    let entered = false;
-    act(() => {
-      controller.selectNode(corruptionId);
-      entered = controller.enterSelectedNode(onStartCorruption);
-    });
-
-    expect(entered).toBe(true);
-    expect(onStartCorruption).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "corruption", rewardModifiers: ["blood-rite"] }),
-    );
-    expect(readRunSession().activeLabyrinthPendingNode).toBe(corruptionId);
-    expect(readActiveRun().runHistory).toEqual([
-      expect.objectContaining({ destination: DESTINATIONS.CORRUPTION, completed: false }),
-    ]);
-  });
-  it("enters a previously discovered branch without moving through completed rooms", () => {
-    const controller = createLabyrinthController();
-    const handlers = vi.fn();
-    act(() => {
-      controller.selectNode(firstReachableId());
-      controller.enterSelectedNode(handlers);
-      controller.onNodeCleared();
-      controller.selectNode("labyrinth-floor-1-n3");
-      controller.enterSelectedNode(handlers);
-    });
-    expect(handlers).toHaveBeenNthCalledWith(1, expect.objectContaining({ type: "combat" }));
-    expect(handlers).toHaveBeenNthCalledWith(2, expect.objectContaining({ type: "rest" }));
+    controller.selectNode(target);
+    controller.enterSelectedNode();
+    controller.onNodeCleared();
+    setRunSession({ activity: { kind: "labyrinth-map" } });
+    controller.selectNode("labyrinth-floor-1-n3");
+    expect(controller.enterSelectedNode()?.screen).toBe("campfire");
     expect(readRunSession().activeLabyrinthPendingNode).toBe("labyrinth-floor-1-n3");
-    expect(readRunSession().labyrinthMap!.currentNodeId).toBe(firstReachableId());
-    act(() => controller.onNodeCleared());
+    expect(readRunSession().labyrinthMap!.currentNodeId).toBe(target);
+    controller.onNodeCleared();
     expect(readRunSession().labyrinthMap!.currentNodeId).toBe("labyrinth-floor-1-n3");
   });
 });

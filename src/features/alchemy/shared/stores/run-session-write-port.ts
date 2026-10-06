@@ -27,6 +27,7 @@ import type { RunTransaction } from "./run-session-command";
 import { transactionDraft, transactionOperation } from "./transaction-internal";
 import * as meta from "./write/live-meta";
 import * as battle from "./write/run-battle";
+import * as battleStart from "./write/battle-start";
 import * as gold from "./write/run-gold";
 import * as homestead from "./write/run-homestead";
 import * as initialization from "./write/run-init";
@@ -35,6 +36,8 @@ import * as navigation from "./write/run-navigation";
 import * as progress from "./write/run-progress";
 import * as recap from "./write/run-recap";
 import * as session from "./write/run-session";
+
+export const initializeBattle = transactionOperation(battleStart.initializeBattle);
 
 export const addGold = transactionOperation(gold.addGold);
 export const deductGold = transactionOperation(gold.deductGold);
@@ -102,7 +105,8 @@ export function setRunActivityData<K extends keyof RunActivityData>(
 export const setStarterDraftChoices = transactionOperation(session.setStarterDraftChoices);
 export const setTrinketShopState = transactionOperation(session.setTrinketShopState);
 export const setWildwoodDraft = transactionOperation(session.setWildwoodDraft);
-export const setHasActiveBattle = transactionOperation(battle.setHasActiveBattle);
+export const enterBattle = transactionOperation(battle.enterBattle);
+export const settleBattleVictory = transactionOperation(battle.settleBattleVictory);
 export const setRunProgressActivity = transactionOperation(session.setRunProgressActivity);
 export const resetNavigation = transactionOperation(navigation.resetNavigation);
 export const setScreen = transactionOperation(navigation.setScreen);
@@ -156,7 +160,6 @@ export const setFinishedRunCharacters = transactionOperation(profile.setFinished
 export const unlockAllTalents = transactionOperation(profile.unlockAllTalents);
 export const unlockTalent = transactionOperation(profile.unlockTalent);
 export const recordRunRoom = transactionOperation(recap.recordRunRoom);
-export const cancelRunRoomEntry = transactionOperation(recap.cancelRunRoomEntry);
 export const completeRunRoom = transactionOperation(recap.completeRunRoom);
 export const addRunGoldEarned = transactionOperation(recap.addRunGoldEarned);
 export const captureRunRecap = transactionOperation(recap.captureRunRecap);

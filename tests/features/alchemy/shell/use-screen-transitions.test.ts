@@ -1,3 +1,5 @@
+import "../../../helpers/mock-audio";
+import { initializeBattleForTest as initializeActiveBattle } from "../../../helpers/run-domain-store-test";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useScreenTransitions } from "@/features/alchemy/shell/use-screen-transitions";
@@ -10,10 +12,9 @@ import { showRunScreen } from "@/features/alchemy/shared/stores/navigation-comma
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { emptyShopState, createEmptyRewardState } from "@/lib/active-run-session";
-import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
+
 import { dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { defaultBattleState } from "@/lib/battle";
-import "../../../helpers/mock-audio";
 import { createScreenNavigation } from "@/features/alchemy/shell/screen-navigation";
 beforeEach(() => {
   vi.useFakeTimers();
@@ -157,7 +158,7 @@ it.each(["idle", "shop", "rewards", "battle"] as const)(
     function assertGameplayUnchanged() {
       const after = readGameplayState();
       expect(after.session).toBe(before.session);
-      expect(after.battle).toBe(before.battle);
+      expect(after.session.activity).toBe(before.session.activity);
       expect(after.run.activeRun).toBe(before.run.activeRun);
       expect(after.runProfile).toBe(before.runProfile);
       expect(snapshotRun()).toEqual(save);

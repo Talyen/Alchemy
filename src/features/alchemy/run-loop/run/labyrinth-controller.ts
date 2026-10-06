@@ -1,3 +1,4 @@
+import { enterRunRoom, type RunRoomEntered } from "./room-entry-commands";
 import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import {
@@ -7,27 +8,23 @@ import {
   snapshotTransactionValue,
 } from "@/features/alchemy/shared/stores/run-session-command";
 import {
-  cancelRunRoomEntry,
   completeRunRoom,
   createDraftRunRandomSource,
-  recordRunRoom,
   setActiveLabyrinthPendingNode,
   setLabyrinthMap,
   setSelectedLabyrinthNodeId,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { LABYRINTH_TYPE_TO_DESTINATION } from "@/lib/content-systems/labyrinth/data";
-import { canEnterLabyrinthNode, expandBeyondBoss } from "@/lib/content-systems/labyrinth/map-generation";
+import { expandBeyondBoss } from "@/lib/content-systems/labyrinth/map-generation";
 import {
   canDescendFromLabyrinthNode,
   canInspectLabyrinthNode,
   withClearedNode,
 } from "@/lib/content-systems/labyrinth/map-state";
-import type { LabyrinthNode } from "@/lib/content-systems/types";
 import { logError } from "@/lib/error-logger";
 export interface LabyrinthController {
   selectNode: (nodeId: string) => void;
   deselectNode: () => void;
-  enterSelectedNode: (openRoom: (node: LabyrinthNode) => void) => boolean;
+  enterSelectedNode: () => RunRoomEntered | null;
   descend: () => void;
   onNodeCleared: () => void;
 }
@@ -54,45 +51,7 @@ export function createLabyrinthController(gameSession: GameSession = defaultGame
       gameSession,
     );
   };
-  const enterSelectedNode = (openRoom: (node: LabyrinthNode) => void): boolean => {
-    const entry = dispatchRunSessionCommand(
-      (draft) => {
-        const session = draft.session;
-        if (session.activeLabyrinthPendingNode) return rejectCommand("Labyrinth node is unavailable", null);
-        const nodeId = session.selectedLabyrinthNodeId;
-        if (!nodeId) return rejectCommand("Labyrinth node is unavailable", null);
-        const map = session.labyrinthMap;
-        if (!map) return rejectCommand("Labyrinth node is unavailable", null);
-        const node = map.nodes[nodeId];
-        if (!node || !canEnterLabyrinthNode(snapshotTransactionValue(map), nodeId))
-          return rejectCommand("Labyrinth node is unavailable", null);
-        setActiveLabyrinthPendingNode(draft, nodeId);
-        const visitId = `labyrinth:${map.currentFloor}:${nodeId}`;
-        const recorded =
-          node.type !== "entrance" && recordRunRoom(draft, LABYRINTH_TYPE_TO_DESTINATION[node.type], visitId);
-        return acceptCommand({ node: snapshotTransactionValue(node), visitId, recorded });
-      },
-      undefined,
-      gameSession,
-    );
-    if (!entry) return false;
-    try {
-      openRoom(entry.node);
-    } catch (error) {
-      dispatchRunSessionCommand(
-        (draft) => {
-          setActiveLabyrinthPendingNode(draft, null);
-          if (entry.recorded) cancelRunRoomEntry(draft, entry.visitId);
-
-          return acceptCommand();
-        },
-        undefined,
-        gameSession,
-      );
-      throw error;
-    }
-    return true;
-  };
+  const enterSelectedNode = () => enterRunRoom({ kind: "labyrinth" }, gameSession);
   const onNodeCleared = () => {
     const pending = dispatchRunSessionCommand(
       (draft) => {

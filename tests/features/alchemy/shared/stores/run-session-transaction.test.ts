@@ -1,3 +1,5 @@
+import { getBattleForTest } from "../../../../helpers/run-domain-store-test";
+import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   acceptCommand,
@@ -245,14 +247,14 @@ describe("run-session transaction coordinator", () => {
   it("returns serializable battle snapshots from commands", () => {
     setRunProgress({ rng: createRunRngState(() => 42 / 0x1_0000_0000) });
     const returned = dispatchGameplayCommand((draft) => {
-      const bound = withDraftWorldBattleRng(draft, draft.battle.battleState);
+      const bound = withDraftWorldBattleRng(draft, getBattleForTest(draft).battleState);
       const next = { ...bound, playerHealth: Math.max(1, bound.playerHealth - 1) };
       setBattleState(draft, next);
       return acceptCommand(snapshotBattleState(next));
     });
 
     expect(returned).not.toHaveProperty("rng");
-    expect(readGameplayState().battle.battleState).not.toHaveProperty("rng");
+    expect(readBattle().battleState).not.toHaveProperty("rng");
   });
 
   it("keeps the committed root unchanged until the outer commit", () => {

@@ -1,8 +1,9 @@
+import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
 import { restoreActiveBattle } from "@/features/alchemy/shared/stores/battle-restore";
 import { beforeEach, describe, expect, it } from "vitest";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { deductGold, setGold } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { commitResolvedBattle, initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
+import { commitResolvedBattle } from "@/features/alchemy/shared/stores/write/run-battle";
 import { readBattle, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";

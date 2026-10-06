@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { defaultBattleState } from "@/lib/battle";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import type { BattleCard } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -22,59 +21,16 @@ import {
   setRoomsEncountered,
   setScreen,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
+
 import { setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
+
 import { nextRunRandom, resetProgress } from "@/features/alchemy/shared/stores/run-session-write-port";
-import {
-  readActiveRun,
-  readActiveRunScreen,
-  readBattle,
-  readRunSession,
-} from "@/features/alchemy/shared/stores/run-reads";
+import { readActiveRun, readActiveRunScreen, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 
 beforeEach(() => {
   resetAllTestStores();
-});
-
-describe("battle write-port", () => {
-  it("initializeActiveBattle records the start state and activates combat", () => {
-    dispatchGameplayCommand((draft) =>
-      acceptCommand(initializeActiveBattle(draft, { ...defaultBattleState(), turn: 6, playerHealth: 11 })),
-    );
-    const state = readBattle();
-    expect(state.hasActiveBattle).toBe(true);
-    expect(state.battleStartState?.turn).toBe(6);
-    expect(state.battleStartState).toEqual(state.battleState);
-    expect(state).not.toHaveProperty("pendingTransitionResumeRequired");
-  });
-
-  it("initializing with null clears every combat field", () => {
-    dispatchGameplayCommand((draft) => {
-      initializeActiveBattle(draft, { ...defaultBattleState(), turn: 2 });
-      initializeActiveBattle(draft, null);
-
-      return acceptCommand();
-    });
-    const state = readBattle();
-    expect(state.hasActiveBattle).toBe(false);
-    expect(state.battleStartState).toBeNull();
-    expect(state).not.toHaveProperty("pendingBattleTransition");
-    expect(state).not.toHaveProperty("pendingTransitionResumeRequired");
-  });
-
-  it("setSyncedBattleState replaces state and drops stale display overrides", () => {
-    dispatchGameplayCommand((draft) => {
-      setSyncedBattleState(draft, { ...defaultBattleState(), playerHealth: 7 });
-
-      return acceptCommand();
-    });
-    const state = readBattle();
-    expect(state.battleState.playerHealth).toBe(7);
-    expect(state.hasActiveBattle).toBe(false);
-  });
 });
 
 describe("navigation write-port", () => {

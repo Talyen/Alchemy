@@ -250,6 +250,7 @@ describe("run destination controller actions", () => {
   });
 
   it("commitDestinationClaim seeds lastOfferedDestinations so Leave can restore an injected picker", () => {
+    setRunSession({ activity: { kind: "destination" } });
     const offered = [DESTINATIONS.CORRUPTION];
     setRunProgress({
       destinationIndexInAct: 0,

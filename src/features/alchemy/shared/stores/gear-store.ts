@@ -64,7 +64,6 @@ export function useGearCombatRestrictions() {
       activityKind: s.session.activity.kind,
       characterId: s.run.activeRun.characterId,
       contentSystemType: s.run.activeRun.contentSystemType,
-      hasActiveBattle: s.battle.hasActiveBattle,
       loadouts: s.gear.loadouts,
       equippedTrinkets: s.gear.equippedTrinkets,
     })),
@@ -74,7 +73,6 @@ export function useGearCombatRestrictions() {
       deriveGearCombatRestrictions({
         session: { activity: { kind: selection.activityKind } },
         run: { activeRun: { characterId: selection.characterId, contentSystemType: selection.contentSystemType } },
-        battle: { hasActiveBattle: selection.hasActiveBattle },
         gear: { loadouts: selection.loadouts, equippedTrinkets: selection.equippedTrinkets },
       }),
     [selection],

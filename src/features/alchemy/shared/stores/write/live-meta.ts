@@ -37,8 +37,8 @@ function applyDerivedMaxHealth(draft: GameplayDraft, gearBonus: number): void {
 }
 
 function rebindBattleState(draft: GameplayDraft, combatMeta: CombatMeta): void {
-  if (!draft.battle.hasActiveBattle) return;
-  const battle = draft.battle.battleState;
+  if (draft.session.activity.kind !== "battle") return;
+  const battle = draft.session.activity.data.battleState;
   battle.gearEffects = combatMeta.gearEffects;
   battle.trinketEffects = computeTrinketManifest(combatMeta.activeTrinketIds);
   battle.talentEffects = combatMeta.talentEffects;

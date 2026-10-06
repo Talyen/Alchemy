@@ -8,6 +8,7 @@ import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../hel
 import { makeFlowHandlerDeps } from "../../../helpers/run-flow-handler-deps";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { ROUTE_SCREENS } from "@/lib/routing";
+import { createBattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
 import { createWildwoodGauntletFlow } from "@/features/alchemy/run-loop/run/wildwood-gauntlet-flow";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { prepareWildwoodRemoval } from "@/features/alchemy/run-loop/run/wildwood-commands";
@@ -63,7 +64,7 @@ describe("Wildwood reward selection", () => {
       activity: { kind: "wildwood-removal" },
       wildwoodDraft: { ...createInitialWildwoodDraftState("knight", () => 0.5), phase: "removal" },
     });
-    const startBoss = vi.fn(() => true);
+    const startBoss = vi.fn(createBattleStartCommands(() => {}).startBossById);
     const flow = createWildwoodGauntletFlow({
       navigateTo: vi.fn(),
       resumeTo: vi.fn(),

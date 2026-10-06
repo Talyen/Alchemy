@@ -1,18 +1,14 @@
 import "../../../../helpers/mock-audio";
+import { replaceBattleForTest as setSyncedBattleState } from "../../../../helpers/run-domain-store-test";
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
-import { clearCombatState } from "@/features/alchemy/run-loop/run/run-flow-defeat";
 import { createVictoryHandlers } from "@/features/alchemy/run-loop/run/run-flow-victory";
 import { awardRunEndMaterials } from "@/features/alchemy/run-loop/run/run-materials";
 import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readActiveRun, readBattle, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import {
-  addRunCurrenciesEarned,
-  addRunMaterialsEarned,
-  setHasActiveBattle,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
+import { addRunCurrenciesEarned, addRunMaterialsEarned } from "@/features/alchemy/shared/stores/run-session-write-port";
+
 import { useScreenTransitions } from "@/features/alchemy/shell/use-screen-transitions";
 import { playGoldGain } from "@/lib/audio";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
@@ -34,7 +30,6 @@ vi.mock("@/features/alchemy/shared/stores/run-lifecycle", async (importOriginal)
 beforeEach(() => {
   resetAllTestStores();
   setRunSession({ hasActiveRun: true, activity: { kind: "rewards" } });
-  dispatchGameplayCommand((draft) => acceptCommand(setHasActiveBattle(draft, true)));
 });
 
 describe("createRunFlow victory paths", () => {
@@ -170,12 +165,6 @@ describe("createRunFlow victory paths", () => {
     expect(readActiveRun().runMaterialsEarned).toEqual(emptyInventory());
   });
 
-  it("clearCombatState clears battle flag", () => {
-    dispatchGameplayCommand((draft) => acceptCommand(setHasActiveBattle(draft, true)));
-    dispatchGameplayCommand((...args: Parameters<typeof clearCombatState>) => acceptCommand(clearCombatState(...args)));
-    expect(readBattle().hasActiveBattle).toBe(false);
-  });
-
   it("handleBattleDefeat invokes applyRunDefeatTeardown for campaign", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
     const transition = vi.fn();
@@ -187,7 +176,6 @@ describe("createRunFlow victory paths", () => {
       expect.objectContaining({
         awardRunEndMaterials,
         finalizeRunXP: expect.any(Function),
-        clearCombatState,
       }),
       defaultGameSession,
     );
@@ -208,7 +196,6 @@ describe("createRunFlow victory paths", () => {
       expect.objectContaining({
         awardRunEndMaterials,
         finalizeRunXP: expect.any(Function),
-        clearCombatState,
       }),
       defaultGameSession,
     );
@@ -321,6 +308,9 @@ describe("createRunFlow victory paths", () => {
   });
 
   it("commits Wildwood reward handoff in the victory command draft", () => {
+    dispatchGameplayCommand((draft) =>
+      acceptCommand(setSyncedBattleState(draft, { ...readBattle().battleState, enemyHealth: 0 })),
+    );
     setRunProgress({
       contentSystemType: CONTENT_SYSTEMS.WILDWOOD,
       runDeck: [],
@@ -328,7 +318,6 @@ describe("createRunFlow victory paths", () => {
       runMaxHealth: 20,
     });
     setRunSession({
-      activity: { kind: "battle" },
       wildwoodDraft: {
         phase: "battle",
         draftChoices: [],
@@ -358,11 +347,11 @@ describe("createRunFlow victory paths", () => {
         setSyncedBattleState(draft, {
           ...readBattle().battleState,
           gold: 15,
+          enemyHealth: 0,
         }),
       ),
     );
     setRunSession({
-      activity: { kind: "battle" },
       wildwoodDraft: {
         phase: "battle",
         draftChoices: [],
@@ -530,87 +519,5 @@ describe("createRunFlow victory paths", () => {
     expect(companionChoices.map((card) => ("id" in card ? card.id : card.instanceId))).toEqual([companion.id]);
     expect(readRunSession().rewardFlow.state.selectedId).toBeNull();
     expect(readRunSession().rewardFlow.state.gold).toBe(0);
-  });
-
-  it("handleDestinationChoice ignores a second call after destinations are cleared", () => {
-    setRunProgress({
-      contentSystemType: CONTENT_SYSTEMS.CAMPAIGN,
-      completedDestinations: [],
-      destinationIndexInAct: 0,
-    });
-    setRunSession({
-      rewardState: {
-        choices: [],
-        gold: 0,
-        materials: emptyInventory(),
-        selectedId: null,
-        destinations: [DESTINATIONS.CAMPFIRE, DESTINATIONS.CARD_SHOP],
-        rewardType: "card",
-        selectedBossId: null,
-        lastVictoryEnemyType: null,
-        lastVictoryContentSystem: null,
-      },
-    });
-    const navigateTo = vi.fn();
-    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo }));
-
-    handlers.handleDestinationChoice(DESTINATIONS.CAMPFIRE);
-    const remountedHandlers = createRunFlow(makeFlowHandlerDeps({ navigateTo }));
-    remountedHandlers.handleDestinationChoice(DESTINATIONS.CAMPFIRE);
-    remountedHandlers.handleDestinationChoice(DESTINATIONS.CARD_SHOP);
-
-    expect(navigateTo).toHaveBeenCalledTimes(1);
-    expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.CAMPFIRE, expect.any(Function));
-
-    expect(readActiveRun().completedDestinations).toEqual([]);
-    expect(readActiveRun().destinationIndexInAct).toBe(0);
-    expect(readRunSession().rewardFlow.claim).toEqual({ kind: "destination", destination: DESTINATIONS.CAMPFIRE });
-    expect(readRunSession().rewardFlow.state.destinations).toEqual([DESTINATIONS.CAMPFIRE, DESTINATIONS.CARD_SHOP]);
-
-    const onCommit = navigateTo.mock.calls[0][1] as () => void;
-    onCommit();
-
-    expect(readActiveRun().completedDestinations).toEqual([DESTINATIONS.CAMPFIRE]);
-    expect(readActiveRun().destinationIndexInAct).toBe(1);
-    expect(readRunSession().rewardFlow.state.destinations).toEqual([]);
-    expect(readRunSession().rewardFlow.claim).toEqual({ kind: "idle" });
-  });
-
-  it("handleDestinationChoice defers mystery destination commit until screen commit", () => {
-    setRunProgress({
-      contentSystemType: CONTENT_SYSTEMS.CAMPAIGN,
-      completedDestinations: [],
-      destinationIndexInAct: 0,
-    });
-    setRunSession({
-      rewardState: {
-        choices: [],
-        gold: 0,
-        materials: emptyInventory(),
-        selectedId: null,
-        destinations: [DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE],
-        rewardType: "card",
-        selectedBossId: null,
-        lastVictoryEnemyType: null,
-        lastVictoryContentSystem: null,
-      },
-    });
-    const beginMysteryEvent = vi.fn();
-    const handlers = createRunFlow(makeFlowHandlerDeps({ beginMysteryEvent }));
-
-    handlers.handleDestinationChoice(DESTINATIONS.MYSTERY);
-
-    expect(beginMysteryEvent).toHaveBeenCalledTimes(1);
-    expect(beginMysteryEvent).toHaveBeenCalledWith(expect.any(Function));
-    expect(readRunSession().rewardFlow.claim).toEqual({ kind: "destination", destination: DESTINATIONS.MYSTERY });
-    expect(readRunSession().rewardFlow.state.destinations).toEqual([DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE]);
-    expect(readActiveRun().completedDestinations).toEqual([]);
-
-    const onCommit = beginMysteryEvent.mock.calls[0]![0] as () => void;
-    onCommit();
-
-    expect(readActiveRun().completedDestinations).toEqual([DESTINATIONS.MYSTERY]);
-    expect(readRunSession().rewardFlow.state.destinations).toEqual([]);
-    expect(readRunSession().rewardFlow.claim).toEqual({ kind: "idle" });
   });
 });

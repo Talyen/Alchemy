@@ -1,3 +1,4 @@
+import { createShopInitializer } from "./shop-initialization";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
 import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
@@ -22,11 +23,10 @@ import {
   createGetRefreshPrice,
   createShopPurchaseActions,
   createShopRefreshAction,
-  initializeShop,
 } from "./shop-commands-core";
 import { computeMixPotionPrice, getShopBuyPrice } from "./shop-pricing";
 import { resolveDraftShopModifiers, resolveReadShopModifiers } from "./shop-pricing-context";
-import { applyStrongSpiritsToPotions, createInitialAlchemistState, resampleCardShopOfferings } from "./shop-state-init";
+import { applyStrongSpiritsToPotions, resampleCardShopOfferings } from "./shop-state-init";
 import { commitShopService, runShopTransaction } from "./shop-transactions";
 
 export function createAlchemistShopCommands(
@@ -55,16 +55,7 @@ export function createAlchemistShopCommands(
     computeMixPotionPrice(talentEffects, resolveReadShopModifiers(gameSession), homesteadEffects.mixPotionDiscount);
   const getRefreshPrice = createGetRefreshPrice("alchemist", talentEffects, gameSession);
 
-  const initialize = initializeShop(
-    "alchemist",
-    (draft) =>
-      createInitialAlchemistState(
-        snapshotTransactionValue(draft.run.activeRun.runDeck),
-        createDraftRunRandomSource(draft, "shops"),
-        resolveDraftShopModifiers(draft),
-      ),
-    gameSession,
-  );
+  const initialize = createShopInitializer("alchemist", gameSession);
 
   function brewPotion(
     prepare: (deck: BattleCard[]) => { potion: BattleCard; deck: BattleCard[] } | null,

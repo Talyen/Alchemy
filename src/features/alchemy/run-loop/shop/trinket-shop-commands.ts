@@ -1,3 +1,4 @@
+import { createShopInitializer } from "./shop-initialization";
 import { grantTrinketToRunWithRecord } from "@/features/alchemy/shared/stores/deck-mutations";
 import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
@@ -9,15 +10,10 @@ import {
 import { trinketLibrary, type TalentEffectManifest } from "@/lib/game-data";
 import { isLootEligible } from "@/lib/loot";
 import type { TrinketShopCommands } from "./shop-action-types";
-import {
-  createGetRefreshPrice,
-  createShopPurchaseActions,
-  createShopRefreshAction,
-  initializeShop,
-} from "./shop-commands-core";
+import { createGetRefreshPrice, createShopPurchaseActions, createShopRefreshAction } from "./shop-commands-core";
 import { getShopBuyPrice } from "./shop-pricing";
 import { shopItemSlotKey } from "./shop-slot-keys";
-import { createInitialTrinketShopState, resampleTrinketShopOfferings } from "./shop-state-init";
+import { resampleTrinketShopOfferings } from "./shop-state-init";
 
 export function createTrinketShopCommands(
   {
@@ -47,11 +43,7 @@ export function createTrinketShopCommands(
   );
   const getRefreshPrice = createGetRefreshPrice("trinket-shop", talentEffects, gameSession);
 
-  const initialize = initializeShop(
-    "trinket-shop",
-    (draft) => createInitialTrinketShopState(createDraftRunRandomSource(draft, "shops"), draft.gear.ownedTrinketIds),
-    gameSession,
-  );
+  const initialize = createShopInitializer("trinket", gameSession);
 
   const refresh = createShopRefreshAction(
     {

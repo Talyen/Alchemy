@@ -1,5 +1,9 @@
 import "../../../../helpers/mock-audio";
 import "../../../../helpers/mock-flush-save";
+import {
+  setBattleActiveForTest as mutateHasActiveBattle,
+  replaceBattleForTest as mutateSyncedBattleState,
+} from "../../../../helpers/run-domain-store-test";
 import { awardRunEndMaterials } from "@/features/alchemy/run-loop/run/run-materials";
 import { saveAlchemySaveData } from "@/features/alchemy/shared/storage";
 import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
@@ -25,17 +29,12 @@ import {
   acceptCommand,
   createRunSessionCommand,
   subscribeRunSessionCommits,
-  type RunTransaction,
 } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   finalizeRunXP as mutateFinalizeRunXP,
-  setHasActiveBattle as mutateHasActiveBattle,
   setHasActiveRun as mutateHasActiveRun,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import {
-  initializeActiveBattle as mutateInitializeActiveBattle,
-  setSyncedBattleState as mutateSyncedBattleState,
-} from "@/features/alchemy/shared/stores/write/run-battle";
+
 import { createEmptyRewardState, readActivityData } from "@/lib/active-run-session";
 import { playDefeat, stopAllSfx } from "@/lib/audio";
 import { defaultBattleState } from "@/lib/battle";
@@ -43,20 +42,12 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  resetRunBattleSlice,
-  resetRunDomainStore,
-  resetRunSessionSlice,
-  setRunProgress,
-} from "../../../../helpers/run-domain-store-test";
+import { resetRunDomainStore, resetRunSessionSlice, setRunProgress } from "../../../../helpers/run-domain-store-test";
 const syncBattleToRun = createRunSessionCommand((...args: Parameters<typeof mutateBattleToRun>) =>
   acceptCommand(mutateBattleToRun(...args)),
 );
 const syncRunToBattleStart = createRunSessionCommand((...args: Parameters<typeof mutateRunToBattleStart>) =>
   acceptCommand(mutateRunToBattleStart(...args)),
-);
-const initializeActiveBattle = createGameplayCommand((...args: Parameters<typeof mutateInitializeActiveBattle>) =>
-  acceptCommand(mutateInitializeActiveBattle(...args)),
 );
 const setSyncedBattleState = createGameplayCommand((...args: Parameters<typeof mutateSyncedBattleState>) =>
   acceptCommand(mutateSyncedBattleState(...args)),
@@ -85,20 +76,6 @@ describe("session slice", () => {
   it("starts with empty reward state and no active run", () => {
     expect(readRunSession().rewardFlow.state).toEqual(createEmptyRewardState());
     expect(readRunSession().hasActiveRun).toBe(false);
-  });
-});
-
-describe("battle slice", () => {
-  beforeEach(() => {
-    resetRunBattleSlice();
-  });
-
-  it("hydrates and resets active battle", () => {
-    initializeActiveBattle({ ...defaultBattleState(), turn: 4, playerHealth: 9 });
-    expect(readBattle().hasActiveBattle).toBe(true);
-    expect(readBattle()).not.toHaveProperty("pendingTransitionResumeRequired");
-    initializeActiveBattle(null);
-    expect(readBattle().hasActiveBattle).toBe(false);
   });
 });
 
@@ -185,7 +162,6 @@ describe("run transitions", () => {
     setHasActiveBattle(true);
     const awardRunEndMaterials = vi.fn(() => emptyInventory());
     const finalizeRunXP = vi.fn();
-    const clearCombatState = (draft: RunTransaction) => mutateHasActiveBattle(draft, false);
     const clearCombatPresentation = vi.fn();
     const commits: Array<{ hasActiveRun: boolean; hasActiveBattle: boolean }> = [];
     const unsubscribe = subscribeRunSessionCommits(() => {
@@ -198,7 +174,6 @@ describe("run transitions", () => {
     applyRunDefeatTeardown({
       awardRunEndMaterials,
       finalizeRunXP,
-      clearCombatState,
       clearCombatPresentation,
     });
     unsubscribe();

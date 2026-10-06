@@ -7,6 +7,7 @@ import {
   dispatchRunSessionCommand,
   rejectCommand,
   snapshotTransactionValue,
+  type RunTransaction,
 } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   createDraftRunRandomSource,
@@ -26,22 +27,22 @@ export function initializeAlchemyVisit(
   gameSession: GameSession = defaultGameSession,
 ): void {
   dispatchRunSessionCommand(
-    (draft) => {
-      const visit = readActivityData(snapshotTransactionValue(draft.session.activity), kind);
-      if (draft.session.activity.kind === kind && (visit.offers.length || visit.completed)) return acceptCommand();
-      const rng = createDraftRunRandomSource(draft, "events");
-      setAlchemyVisit(draft, kind, {
-        offers: kind === "campfire" ? createCampfirePotionOffers(rng) : createTransmutationOffers(rng),
-        result: null,
-        original: null,
-        completed: false,
-      });
-
-      return acceptCommand();
-    },
+    (draft) => acceptCommand(initializeAlchemyVisitInTransaction(draft, kind)),
     undefined,
     gameSession,
   );
+}
+
+export function initializeAlchemyVisitInTransaction(draft: RunTransaction, kind: "campfire" | "transmutation"): void {
+  const visit = readActivityData(snapshotTransactionValue(draft.session.activity), kind);
+  if (draft.session.activity.kind === kind && (visit.offers.length || visit.completed)) return;
+  const rng = createDraftRunRandomSource(draft, "events");
+  setAlchemyVisit(draft, kind, {
+    offers: kind === "campfire" ? createCampfirePotionOffers(rng) : createTransmutationOffers(rng),
+    result: null,
+    original: null,
+    completed: false,
+  });
 }
 export function brewAtCampfire(
   operation: BrewOperation,

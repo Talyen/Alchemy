@@ -6,7 +6,6 @@ import {
   type SynchronousResult,
 } from "@/features/alchemy/shared/stores/gameplay-command";
 import {
-  createInitialBattleFields,
   createInitialRunDomainData,
   createInitialSessionFields,
   type RunSessionFields,
@@ -31,8 +30,37 @@ import {
   setRewardState,
   setCompanionRewardCards,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
+import { defaultBattleState, battleSnapshot, type BattleSnapshot } from "@/lib/battle";
+import type { RunTransaction } from "@/features/alchemy/shared/stores/run-session-command";
+import { transactionDraft } from "@/features/alchemy/shared/stores/transaction-internal";
+
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
+
+/** Fixtures establish a complete activity; production callers use validated lifecycle commands. */
+export function initializeBattleForTest(transaction: RunTransaction, snapshot: BattleSnapshot | null): void {
+  const draft = transactionDraft(transaction);
+  if (snapshot) {
+    const state = battleSnapshot(snapshot);
+    draft.session.activity = { kind: "battle", data: { battleState: state, battleStartState: state } };
+  } else if (draft.session.activity.kind === "battle") draft.session.activity = { kind: "idle" };
+}
+
+export function setBattleActiveForTest(transaction: RunTransaction, active: boolean): void {
+  const draft = transactionDraft(transaction);
+  if (active && draft.session.activity.kind !== "battle") initializeBattleForTest(transaction, defaultBattleState());
+  else if (!active) initializeBattleForTest(transaction, null);
+}
+
+export function getBattleForTest(transaction: RunTransaction) {
+  setBattleActiveForTest(transaction, true);
+  const draft = transactionDraft(transaction);
+  if (draft.session.activity.kind !== "battle") throw new Error("Missing fixture battle");
+  return draft.session.activity.data;
+}
+
+export function replaceBattleForTest(transaction: RunTransaction, snapshot: BattleSnapshot): void {
+  getBattleForTest(transaction).battleState = battleSnapshot(snapshot);
+}
 type RunStateFields = ActiveRunProgressFields & PermanentProgressFields & { initialized: boolean };
 
 export function resetRunDomainStore(): void {
@@ -42,7 +70,6 @@ export function resetRunDomainStore(): void {
       revision,
       run: createInitialRunDomainData(),
       session: createInitialSessionFields(),
-      battle: createInitialBattleFields(),
       runProfile: createInitialPermanentFields(),
       profile: createInitialProfileState(),
       gear: createInitialGearState(),
@@ -70,7 +97,7 @@ export function resetRunNavigationSlice(): void {
 }
 
 export function resetRunBattleSlice(): void {
-  dispatchGameplayCommand((draft) => acceptCommand(initializeActiveBattle(draft, null)));
+  dispatchGameplayCommand((draft) => acceptCommand(initializeBattleForTest(draft, null)));
 }
 
 export function resetProfileForTest(): void {

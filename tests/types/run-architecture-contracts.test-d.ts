@@ -37,6 +37,13 @@ type NonDraftFirstWrite = Exclude<
 >;
 
 describe("run architecture type contracts", () => {
+  it("requires combat data with battle activity and removes independently writable battle flags", () => {
+    // @ts-expect-error -- a battle activity must carry its committed combat
+    const incomplete: RunTransaction["session"]["activity"] = { kind: "battle" };
+    void incomplete;
+    expectTypeOf<Extract<keyof RunTransaction, "battle">>().toEqualTypeOf<never>();
+    expectTypeOf<Extract<keyof WritePort, "setHasActiveBattle" | "initializeActiveBattle">>().toEqualTypeOf<never>();
+  });
   it("keeps raw battle replacement and RNG binding out of the feature write port", () => {
     expectTypeOf<
       Extract<
@@ -52,9 +59,11 @@ describe("run architecture type contracts", () => {
 
   it("keeps progress activity changes separate from display and visit entry", () => {
     type Kind = Parameters<WritePort["setRunProgressActivity"]>[1];
-    expectTypeOf<Extract<Kind, "menu" | "options" | "shop" | "mystery" | "inactive">>().toEqualTypeOf<never>();
-    expectTypeOf<Extract<Kind, "battle" | "draft-deck" | "difficulty-select">>().toEqualTypeOf<
-      "battle" | "draft-deck" | "difficulty-select"
+    expectTypeOf<
+      Extract<Kind, "menu" | "options" | "shop" | "mystery" | "inactive" | "battle">
+    >().toEqualTypeOf<never>();
+    expectTypeOf<Extract<Kind, "draft-deck" | "difficulty-select">>().toEqualTypeOf<
+      "draft-deck" | "difficulty-select"
     >();
   });
 
@@ -62,8 +71,10 @@ describe("run architecture type contracts", () => {
     dispatchRunSessionCommand((transaction) => {
       // @ts-expect-error -- only the Gold owner can change the purse
       transaction.runProfile.gold = 100;
-      // @ts-expect-error -- combat results commit through battle commands
-      transaction.battle.battleState.enemyHealth = 0;
+      if (transaction.session.activity.kind === "battle") {
+        // @ts-expect-error -- combat results commit through battle commands
+        transaction.session.activity.data.battleState.enemyHealth = 0;
+      }
       // @ts-expect-error -- arrays are deeply readonly
       transaction.run.activeRun.runDeck.push({} as BattleCard);
       // @ts-expect-error -- nested Gear data cannot bypass combat locks

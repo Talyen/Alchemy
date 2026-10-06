@@ -25,7 +25,6 @@ import {
   resetNavigation,
   resetProgress,
   setFinishedRunCharacters,
-  setHasActiveBattle,
   setHasActiveRun,
   setRunEndCurrencies,
   setRunEndItems,
@@ -35,7 +34,6 @@ import {
 } from "./run-session-write-port";
 import { sessionRuntime } from "./session-runtime";
 import { openRunTransaction } from "./transaction-internal";
-import { initializeActiveBattle } from "./write/run-battle";
 
 export function restoreRun(
   activeRun: ActiveRunData | null,
@@ -77,7 +75,10 @@ export function syncRunToBattleStart(draft: RunTransaction, playerHealth?: numbe
 }
 
 export function syncBattleToRun(draft: RunTransaction, options?: { playerHealth?: number }): void {
-  const health = options?.playerHealth ?? draft.battle.battleState.playerHealth;
+  const health =
+    options?.playerHealth ??
+    (draft.session.activity.kind === "battle" ? draft.session.activity.data.battleState.playerHealth : null);
+  if (health === null) throw new Error("Battle Health synchronization requires an active battle");
   setRunPlayerHealth(draft, health);
 }
 
@@ -85,7 +86,6 @@ export function clearActiveRunInDraft(draft: GameplayDraft): void {
   resetProgress(draft);
   resetNavigation(draft);
   clearTransientSession(draft);
-  initializeActiveBattle(draft, null);
 }
 
 export function teardownRun(gameSession: GameSession = defaultGameSession): void {
@@ -205,9 +205,8 @@ export function abandonRun(
     (draft) => {
       if (draft.session.activity.kind === "inactive") return rejectCommand("There is no active run to abandon", false);
       finalizeRunEndSessionState(options, draft, "abandoned");
-      // The outgoing battle still renders until the route transition completes.
-      // Retain its last snapshot, but remove all resumable activity and continuations.
-      // clearTransientSession resets the whole session, so preserve the recap
+      // The battle route retains its outgoing display; ending activity removes
+      // command access to combat immediately. Preserve the recap
       // snapshot: manual End Run always shows the End Run screen. Copy the
       // values first so the recap never holds revoked draft proxies.
       const runRecap = isDraft(draft.session.runRecap) ? current(draft.session.runRecap) : draft.session.runRecap;
@@ -224,7 +223,6 @@ export function abandonRun(
       draft.session.runEndTalentXP = runEndTalentXP;
       setRunEndItems(draft, runEndItems);
       setRunEndLabyrinthFloor(draft, runEndLabyrinthFloor);
-      setHasActiveBattle(draft, false);
       return acceptCommand(true);
     },
     {
@@ -243,7 +241,6 @@ export function applyRunDefeatTeardown(
   options: {
     awardRunEndMaterials: (transaction: RunTransaction) => MaterialInventory;
     finalizeRunXP: (transaction: RunTransaction) => void;
-    clearCombatState: (transaction: RunTransaction) => void;
     clearCombatPresentation?: () => void;
   },
   gameSession: GameSession = defaultGameSession,
@@ -258,13 +255,6 @@ export function applyRunDefeatTeardown(
         draft,
         "death",
       );
-      const scope = openRunTransaction(draft);
-      try {
-        options.clearCombatState(scope.transaction);
-      } finally {
-        scope.close();
-      }
-
       return acceptCommand();
     },
     {
@@ -289,11 +279,6 @@ export function onClearBattlePresentation(
 ): () => void {
   const runtime = sessionRuntime(gameSession);
   return runtime.track(runtime.clearPresentation.on(listener));
-}
-
-export function clearBattleUi(gameSession: GameSession = defaultGameSession): void {
-  dispatchGameplayCommand((draft) => acceptCommand(setHasActiveBattle(draft, false)), undefined, gameSession);
-  clearBattlePresentationUi(gameSession);
 }
 
 function clearBattleUiState(gameSession: GameSession = defaultGameSession): void {

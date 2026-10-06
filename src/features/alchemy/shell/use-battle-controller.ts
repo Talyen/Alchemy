@@ -142,6 +142,7 @@ export function useBattleController({
       toggleBoonInspect,
       closeBoonInspect,
       isCardPlayInProgress: () => ctx.playback.cardPlayInProgress,
+      presentBattleStart: actions.init.presentBattleStart,
       startBattle: actions.init.startBattle,
       startBossBattle: actions.init.startBossBattle,
       startBossById: actions.init.startBossById,

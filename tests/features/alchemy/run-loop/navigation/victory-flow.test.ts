@@ -1,3 +1,5 @@
+import { setBattleActiveForTest, getBattleForTest } from "../../../../helpers/run-domain-store-test";
+import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -576,6 +578,7 @@ describe("computeVictoryRewards", () => {
 });
 
 describe("commitVictoryRewards", () => {
+  beforeEach(() => dispatchGameplayCommand((draft) => acceptCommand(getBattleForTest(draft))));
   function victoryResult(overrides: Partial<VictoryRewardsResult> = {}): VictoryRewardsResult {
     return {
       goldEarned: 20,
@@ -631,18 +634,18 @@ describe("commitVictoryRewards", () => {
     dispatchGameplayCommand((draft) => {
       draft.session.activity = { kind: "idle" };
       draft.run.activeRun.contentSystemType = contentSystemType;
-      draft.battle.hasActiveBattle = true;
-      draft.battle.battleState.pendingMaterials = materials;
+      setBattleActiveForTest(draft, true);
+      getBattleForTest(draft).battleState.pendingMaterials = materials;
       return acceptCommand();
     });
     const deps = commitDeps({ contentSystemType });
     commit(victoryResult(), deps);
     expect(readGameplayState().runProfile.materialInventory.gems).toBe(2);
     expect(readGameplayState().run.activeRun.runMaterialsEarned.gems).toBe(2);
-    expect(readGameplayState().battle.battleState.pendingMaterials).toEqual(emptyInventory());
-    commit(victoryResult(), deps);
-    expect(readGameplayState().runProfile.materialInventory.gems).toBe(2);
-    expect(readGameplayState().run.activeRun.runMaterialsEarned.gems).toBe(2);
+    expect(readBattle().battleState.pendingMaterials).toEqual(emptyInventory());
+    const settled = readGameplayState();
+    expect(() => commit(victoryResult(), deps)).toThrow("active battle");
+    expect(readGameplayState()).toBe(settled);
   });
 
   it("persists in-combat gold into the purse for wildwood victories", () => {

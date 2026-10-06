@@ -18,11 +18,10 @@ export interface GearCombatRestrictions {
 export function deriveGearCombatRestrictions(state: {
   run: { activeRun: Pick<GameplayState["run"]["activeRun"], "characterId" | "contentSystemType"> };
   session: { activity: Pick<GameplayState["session"]["activity"], "kind"> };
-  battle: Pick<GameplayState["battle"], "hasActiveBattle">;
   gear: Pick<GameplayState["gear"], "loadouts" | "equippedTrinkets">;
 }): GearCombatRestrictions {
   const restrictions: GearCombatRestrictions = { characters: {}, gear: {}, trinkets: {} };
-  if (state.session.activity.kind === "inactive" || !state.battle.hasActiveBattle) return restrictions;
+  if (state.session.activity.kind !== "battle") return restrictions;
   const { characterId, contentSystemType } = state.run.activeRun;
   restrictions.characters[characterId] = [contentSystemType];
   for (const instanceId of Object.values(state.gear.loadouts[characterId])) {

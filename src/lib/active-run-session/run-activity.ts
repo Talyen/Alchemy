@@ -1,4 +1,5 @@
 import { emptyAlchemyVisit, type AlchemyVisit } from "./alchemy-visits";
+import type { BattleSnapshot } from "@/lib/battle";
 import type { CorruptionResult } from "@/lib/corruption";
 import type { Screen } from "@/lib/routing";
 import { emptyHydratedMysteryVisit, type HydratedMysteryVisit } from "./mystery-visit-persistence";
@@ -23,14 +24,21 @@ export interface RunActivityData {
 
 type VisitActivity = { [K in keyof RunActivityData]: { kind: K; data: RunActivityData[K] } }[keyof RunActivityData];
 export type RunProgressActivityKind =
-  | "battle"
   | "rewards"
   | "destination"
   | "labyrinth-map"
   | "wildwood-removal"
   | "draft-deck"
   | "difficulty-select";
-export type RunActivity = { kind: "inactive" | "idle" | RunProgressActivityKind } | VisitActivity;
+interface ActiveBattle {
+  battleState: BattleSnapshot;
+  battleStartState: BattleSnapshot | null;
+}
+
+export type RunActivity =
+  | { kind: "inactive" | "idle" | RunProgressActivityKind }
+  | { kind: "battle"; data: ActiveBattle }
+  | VisitActivity;
 
 function deepFreeze<T>(obj: T): T {
   if (obj === null || typeof obj !== "object") return obj;

@@ -3,8 +3,8 @@ import { createInitialGearState } from "./gear-actions";
 import type { GearStateFields } from "./gear-store-types";
 import type { ProfileStateFields } from "./profile-store-types";
 import { createInitialProfileState } from "./profile-store-types";
-import type { RunDomainBattleState, RunDomainDataState, RunSessionFields } from "./run-domain-types";
-import { createInitialBattleFields, createInitialRunDomainData, createInitialSessionFields } from "./run-domain-types";
+import type { RunDomainDataState, RunSessionFields } from "./run-domain-types";
+import { createInitialRunDomainData, createInitialSessionFields } from "./run-domain-types";
 import type { PermanentProgressFields } from "./run-state-init";
 import { createInitialPermanentFields } from "./run-state-init";
 
@@ -12,7 +12,6 @@ export interface GameplayState {
   revision: number;
   run: RunDomainDataState;
   session: RunSessionFields;
-  battle: RunDomainBattleState;
   runProfile: PermanentProgressFields;
   profile: ProfileStateFields;
   gear: GearStateFields;
@@ -23,7 +22,6 @@ export function createGameplayStore(generateSeed: () => number) {
     revision: 0,
     run: createInitialRunDomainData(generateSeed),
     session: createInitialSessionFields(),
-    battle: createInitialBattleFields(),
     runProfile: createInitialPermanentFields(),
     profile: createInitialProfileState(),
     gear: createInitialGearState(),

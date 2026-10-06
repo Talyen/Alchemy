@@ -1,5 +1,9 @@
 import "../../../../helpers/mock-audio";
 import "../../../../helpers/mock-flush-save";
+import {
+  initializeBattleForTest as initializeActiveBattle,
+  getBattleForTest,
+} from "../../../../helpers/run-domain-store-test";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { defaultBattleState } from "@/lib/battle";
@@ -26,7 +30,6 @@ import {
   recordRunRoom,
   completeRunRoom,
   finalizeRunXP,
-  setHasActiveBattle,
   setRewardState,
   beginDestinationClaim,
   commitDestinationClaim,
@@ -39,7 +42,7 @@ import {
   abandonCorruptionDestinationVisit,
   abandonMysteryDestinationVisit,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { initializeActiveBattle, setBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
+import { setBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
 import { resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
 
 const endOptions = { awardRunEndMaterials, finalizeRunXP };
@@ -56,8 +59,8 @@ describe("run recap", () => {
       addGold(draft, 20);
       deductGold(draft, 100);
       initializeActiveBattle(draft, { ...defaultBattleState(), gold: 450 });
-      setBattleState(draft, { ...draft.battle.battleState, gold: 457 });
-      setBattleState(draft, { ...draft.battle.battleState });
+      setBattleState(draft, { ...getBattleForTest(draft).battleState, gold: 457 });
+      setBattleState(draft, { ...getBattleForTest(draft).battleState });
 
       return acceptCommand();
     });
@@ -95,7 +98,7 @@ describe("run recap", () => {
       [2, DESTINATIONS.BOSS_COMBAT, false],
     ]);
     restoreRun(saved, {}, {});
-    applyRunDefeatTeardown({ ...endOptions, clearCombatState: (draft) => setHasActiveBattle(draft, false) });
+    applyRunDefeatTeardown(endOptions);
     expect(readRunSession().runRecap).toMatchObject({ ending: "death", rooms: saved.runHistory });
   });
 
@@ -150,7 +153,11 @@ it("records distinct Wildwood boss attempts and keeps the trail through resume",
   });
   const battle = createBattleStartCommands(() => {});
   battle.startBossById({ bossId: "forge-golem" });
-  command((draft) => acceptCommand(completeRunRoom(draft)));
+  command((draft) => {
+    completeRunRoom(draft);
+    draft.session.activity = { kind: "idle" };
+    return acceptCommand();
+  });
   battle.startBossById({ bossId: "forge-golem" });
   const saved = parseActiveRun(snapshotRun())!;
   expect(saved.runHistory.map((room) => [room.destination, room.completed])).toEqual([

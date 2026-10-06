@@ -1,3 +1,5 @@
+import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
+import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   acceptCommand,
@@ -15,7 +17,7 @@ import {
   setRunDeck,
   setRunActivityData,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
+
 import {
   dispatchGearMutationWithRunHealthSync,
   mutateGearWithRunHealthSync,
@@ -37,7 +39,8 @@ const forbiddenWrites: Array<[string, (transaction: RunTransaction) => void]> = 
   [
     "battle results",
     (transaction) => {
-      Reflect.set(transaction.battle.battleState, "enemyHealth", 0);
+      if (transaction.session.activity.kind !== "battle") throw new Error("Fixture battle is missing");
+      Reflect.set(transaction.session.activity.data.battleState, "enemyHealth", 0);
     },
   ],
   [
@@ -62,6 +65,7 @@ const forbiddenWrites: Array<[string, (transaction: RunTransaction) => void]> = 
 
 describe("feature transaction capabilities", () => {
   it.each(forbiddenWrites)("rolls back earlier operations and RNG when an untyped caller writes %s", (_name, write) => {
+    dispatchGameplayCommand((draft) => acceptCommand(initializeActiveBattle(draft, makeTestBattleState())));
     const before = readGameplayState();
     const effect = vi.fn();
     const commit = vi.fn();
@@ -104,9 +108,13 @@ describe("feature transaction capabilities", () => {
       addGold(transaction, 5);
       expect(transaction.runProfile.gold).toBe(100 + expectedEarned);
       deductGold(transaction, 3);
-      expect(transaction.battle.battleState.gold).toBe(transaction.runProfile.gold);
+      if (transaction.session.activity.kind !== "battle") throw new Error("Fixture battle is missing");
+      expect(transaction.session.activity.data.battleState.gold).toBe(transaction.runProfile.gold);
       expect(transaction.run.activeRun.runGoldEarned).toBe(expectedEarned);
-      return acceptCommand({ purse: transaction.runProfile.gold, battle: transaction.battle.battleState });
+      return acceptCommand({
+        purse: transaction.runProfile.gold,
+        battle: transaction.session.activity.data.battleState,
+      });
     });
     unsubscribe();
     expect(commit).toHaveBeenCalledExactlyOnceWith(before.revision + 1);
@@ -200,6 +208,6 @@ describe("feature transaction capabilities", () => {
       dispatchGearMutationWithRunHealthSync({ mutate: (gear) => gear.initialize(gear.inventories, gear.loadouts) }),
     ).toThrow(/during combat/);
     expect(readGameplayState()).toBe(before);
-    expect(readGameplayState().battle.battleState.playerMaxHealth).toBe(37);
+    expect(readBattle().battleState.playerMaxHealth).toBe(37);
   });
 });

@@ -11,7 +11,7 @@ import {
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import type { GameplayDraft } from "./gameplay-command";
 import { awardBattleDodgeXP } from "./write/run-progress";
-import { initializeActiveBattle, commitResolvedBattle, withDraftWorldBattleRng } from "./write/run-battle";
+import { commitResolvedBattle, withDraftWorldBattleRng } from "./write/run-battle";
 
 function hydrateBattleState(battleState: BattleSnapshot): BattleSnapshot {
   // Piles are re-hydrated against the card catalog so resumed battles pick up
@@ -38,20 +38,23 @@ export function restoreActiveBattle(
   pending: PersistedBattleTransition | null = null,
 ): void {
   if (!snapshot) {
-    initializeActiveBattle(draft, null);
+    if (draft.session.activity.kind === "battle") draft.session.activity = { kind: "idle" };
     return;
   }
   const before = battleSnapshot(hydrateBattleState(snapshot));
-  initializeActiveBattle(draft, before);
+  draft.session.activity = {
+    kind: "battle",
+    data: { battleState: battleSnapshot(before), battleStartState: battleSnapshot(before) },
+  };
   rebindLiveRunMeta(draft);
   if (!pending) return;
   // Saved result gold is relative to the saved input, not today's permanent purse.
   let state =
     "resultState" in pending
       ? battleSnapshot(hydrateBattleState(pending.resultState))
-      : isDraft(draft.battle.battleState)
-        ? current(draft.battle.battleState)
-        : draft.battle.battleState;
+      : isDraft(draft.session.activity.data.battleState)
+        ? current(draft.session.activity.data.battleState)
+        : draft.session.activity.data.battleState;
   if ("resultState" in pending) state = { ...state, gold: draft.runProfile.gold + state.gold - before.gold };
   const input = { ...before, gold: draft.runProfile.gold };
   if (pending.kind === "continue-end-turn" || ("playerTurnSkipped" in pending && pending.playerTurnSkipped)) {
@@ -62,7 +65,9 @@ export function restoreActiveBattle(
     state = battleSnapshot(processCompanionTurnStart(withDraftWorldBattleRng(draft, state), []));
   }
   commitResolvedBattle(draft, input, state);
-  draft.battle.battleStartState = battleSnapshot(
-    isDraft(draft.battle.battleState) ? current(draft.battle.battleState) : draft.battle.battleState,
+  draft.session.activity.data.battleStartState = battleSnapshot(
+    isDraft(draft.session.activity.data.battleState)
+      ? current(draft.session.activity.data.battleState)
+      : draft.session.activity.data.battleState,
   );
 }

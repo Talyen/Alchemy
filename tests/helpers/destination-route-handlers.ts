@@ -1,17 +1,5 @@
 import { vi } from "vitest";
-import type { DestinationRouteDeps } from "@/features/alchemy/run-loop/run/run-destination-handlers";
 import type { RewardRouteDeps } from "@/features/alchemy/run-loop/run/run-flow-rewards";
-
-export function makeDestinationRouteDeps(): DestinationRouteDeps {
-  return {
-    navigateTo: vi.fn(),
-    beginMysteryEvent: vi.fn(),
-    initializeShop: vi.fn(),
-    startBattle: vi.fn(),
-    startBoss: vi.fn(),
-    resetCorruption: vi.fn(),
-  };
-}
 
 export function makeRewardRouteDeps(): RewardRouteDeps {
   return {

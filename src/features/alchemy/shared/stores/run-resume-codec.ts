@@ -87,20 +87,21 @@ export const WILDWOOD_GATED_SESSION_KEY = "wildwoodDraft" as const satisfies key
 export const NON_WILDWOOD_GATED_SESSION_KEY = "starterDraftChoices" as const satisfies keyof RunSessionFields;
 
 export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): ActiveRunData {
-  const { run, session, battle } = source;
+  const { run, session } = source;
   const activity = session.activity;
   const currentScreen = runActivityScreen(activity) ?? screen ?? null;
   const progress = pickActiveRunProgress(run);
   const isLabyrinth = progress.contentSystemType === "labyrinth";
   // An active terminal snapshot still needs outcome settlement after restore.
-  const activeCombat = battle.hasActiveBattle
-    ? {
-        battleState: battleSnapshot(battle.battleState),
-        pendingBattleTransition: null,
-        activeLabyrinthModifiers: isLabyrinth ? session.activeLabyrinthModifiers : [],
-        activeLabyrinthRewardModifiers: isLabyrinth ? session.activeLabyrinthRewardModifiers : [],
-      }
-    : null;
+  const activeCombat =
+    activity.kind === "battle"
+      ? {
+          battleState: battleSnapshot(activity.data.battleState),
+          pendingBattleTransition: null,
+          activeLabyrinthModifiers: isLabyrinth ? session.activeLabyrinthModifiers : [],
+          activeLabyrinthRewardModifiers: isLabyrinth ? session.activeLabyrinthRewardModifiers : [],
+        }
+      : null;
 
   const snapshot: ActiveRunData = {
     ...progress,
@@ -211,6 +212,9 @@ function decodeRunActivity(activeRun: ActiveRunData, screen: Screen): RunActivit
     case "corruption":
       return { kind: screen, data: activeRun.corruptionResult };
     case "battle":
+      return activeRun.activeCombat
+        ? { kind: "battle", data: { battleState: activeRun.activeCombat.battleState, battleStartState: null } }
+        : { kind: "idle" };
     case "rewards":
     case "destination":
     case "labyrinth-map":

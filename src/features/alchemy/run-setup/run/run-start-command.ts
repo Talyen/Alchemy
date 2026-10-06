@@ -122,7 +122,7 @@ export function applyRunStartToDraft(
       snapshotCharacterId: snapshot.characterId,
       activeContentSystemType: isFreshStart ? null : draft.run.activeRun.contentSystemType,
       snapshotContentSystemType: snapshot.contentSystemType,
-      hasActiveBattle: draft.battle.hasActiveBattle,
+      hasActiveBattle: draft.session.activity.kind === "battle",
       activityKind: draft.session.activity.kind,
     })
   ) {

@@ -1,9 +1,7 @@
-import type { ShopKind } from "@/features/alchemy/run-loop/shop/shop-action-types";
 import type { DestinationOptionsInput } from "@/features/alchemy/shared/run-flow";
-import type { BattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
+import type { BattleStarted } from "@/features/alchemy/shared/stores/battle-start-commands";
 import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import type { DifficultyModifier } from "@/lib/game-data";
 import type { Destination, Screen, ScreenTransitionOptions } from "@/lib/routing";
 import { createDefeatHandlers } from "./run-flow-defeat";
 import { createDestinationScreenHandlers } from "./run-flow-destination-screen";
@@ -15,12 +13,7 @@ export interface RunFlowShellActions {
   navigateTo: (screen: Screen, prepareNavigation?: () => void) => void;
   transition: (screen: Screen, options?: ScreenTransitionOptions) => void;
   labyrinthClearNode: () => void;
-  initializeShop: (kind: ShopKind) => void;
-  startBattle: BattleStartCommands["startBattle"];
-
-  startBoss: (opts?: { bossId?: string | null; modifiers?: DifficultyModifier[] }) => void;
-
-  beginMysteryEvent: (prepareNavigation?: () => void) => void;
+  presentBattleStart: (result: BattleStarted) => void;
   wildwoodRewardComplete: (prepareNavigation?: () => void) => void;
   clearCardHover: () => void;
 }

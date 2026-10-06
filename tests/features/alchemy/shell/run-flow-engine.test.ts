@@ -1,4 +1,5 @@
 import "../../../helpers/mock-audio";
+import { setBattleActiveForTest as setHasActiveBattle } from "../../../helpers/run-domain-store-test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS, type Screen, type ScreenTransitionOptions } from "@/lib/routing";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
@@ -10,7 +11,7 @@ import { readRunAvailableDestinations } from "@/features/alchemy/shell/run-desti
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun, readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { setHasActiveBattle, setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { makeTestCard } from "../../../fixtures/battle";
 import { resetAllTestStores, setRunProgress, setRunSession } from "../../../helpers/run-domain-store-test";
 
@@ -36,17 +37,15 @@ function makeEngine({
   startBattle = vi.fn(),
   startBossBattle = vi.fn(),
   startBossById = vi.fn(),
-  initializeShop = vi.fn(),
   labyrinthClearNode = vi.fn(),
 }: {
   navigateTo?: TestNavigate;
   resumeTo?: TestNavigate;
   transition?: TestTransition;
   cancelPending?: () => void;
-  startBattle?: () => void;
-  startBossBattle?: () => void;
+  startBattle?: BattleStartCommands["startBattle"];
+  startBossBattle?: BattleStartCommands["startBossBattle"];
   startBossById?: BattleStartCommands["startBossById"];
-  initializeShop?: () => void;
   labyrinthClearNode?: () => void;
 } = {}) {
   return createRunFlowEngine(
@@ -59,8 +58,8 @@ function makeEngine({
         startBattle,
         startBossBattle,
         startBossById,
+        presentBattleStart: vi.fn(),
       },
-      initializeShop,
       labyrinthClearNode,
     },
     makeOutcomes(navigateTo, transition),

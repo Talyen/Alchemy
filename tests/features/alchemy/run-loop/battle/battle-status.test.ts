@@ -1,12 +1,14 @@
+import { replaceBattleForTest as setSyncedBattleState } from "../../../../helpers/run-domain-store-test";
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { createBattleDevOutcomes, isVictoryGraceActive } from "@/features/alchemy/run-loop/battle/battle-session";
+import { createBattleDevOutcomes } from "@/features/alchemy/run-loop/battle/battle-session";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
+
 import { defaultBattleState } from "@/lib/battle";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
+import { setRunSession } from "../../../../helpers/run-domain-store-test";
 
 function makeDevOutcomes(screen: string) {
   const resetBattleSession = vi.fn();
@@ -40,22 +42,12 @@ describe("skipCombatDevMode", () => {
 
     expect(handleVictoryDefeat).not.toHaveBeenCalled();
   });
-});
 
-describe("isVictoryGraceActive", () => {
-  it("is true on battle screen after victory with enemy at zero", () => {
-    expect(isVictoryGraceActive("battle", 0, true)).toBe(true);
-  });
-
-  it("is false before victory is handled", () => {
-    expect(isVictoryGraceActive("battle", 0, false)).toBe(false);
-  });
-
-  it("is false after leaving battle screen", () => {
-    expect(isVictoryGraceActive("rewards", 0, true)).toBe(false);
-  });
-
-  it("is false on defeat when enemy is still alive", () => {
-    expect(isVictoryGraceActive("battle", 30, true)).toBe(false);
+  it("ignores a stale Skip Combat action without replacing the outgoing presentation", () => {
+    const { api, resetBattleSession, handleVictoryDefeat } = makeDevOutcomes("battle");
+    setRunSession({ hasActiveRun: false });
+    api.skipCombatDevMode();
+    expect(resetBattleSession).not.toHaveBeenCalled();
+    expect(handleVictoryDefeat).not.toHaveBeenCalled();
   });
 });

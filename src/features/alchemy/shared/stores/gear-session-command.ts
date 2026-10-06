@@ -69,7 +69,7 @@ function gearCommandView(state: GameplayDraft, markMutated: () => void): GearDra
       return read.craftingCurrencies;
     },
     initialize: (inventories, loadouts, craftingCurrencies, ownedTrinketIds, equippedTrinkets) => {
-      if (state.battle.hasActiveBattle) throw new Error("Cannot initialize Gear during combat");
+      if (state.session.activity.kind === "battle") throw new Error("Cannot initialize Gear during combat");
       markMutated();
       initializeGear(
         gear,
@@ -119,7 +119,7 @@ function gearCommandView(state: GameplayDraft, markMutated: () => void): GearDra
       addGearCurrencies(gear, currencies);
     },
     reset: () => {
-      if (state.battle.hasActiveBattle) throw new Error("Cannot reset Gear during combat");
+      if (state.session.activity.kind === "battle") throw new Error("Cannot reset Gear during combat");
       markMutated();
       resetGear(gear);
     },

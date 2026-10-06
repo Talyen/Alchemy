@@ -1,4 +1,5 @@
 import "../../../helpers/mock-audio";
+import { setBattleActiveForTest as setHasActiveBattle } from "../../../helpers/run-domain-store-test";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
@@ -8,11 +9,12 @@ import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/b
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import { setHasActiveBattle, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { resetAllTestStores } from "../../../helpers/run-domain-store-test";
+import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { resetAllTestStores, setRunSession } from "../../../helpers/run-domain-store-test";
 
 beforeEach(() => {
   resetAllTestStores();
+  setRunSession({ hasActiveRun: true });
   useSettingsStore.setState(useSettingsStore.getInitialState(), true);
 });
 

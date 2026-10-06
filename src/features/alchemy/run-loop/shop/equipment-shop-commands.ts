@@ -1,3 +1,4 @@
+import { createShopInitializer } from "./shop-initialization";
 import { grantGearToRunWithRecord } from "@/features/alchemy/shared/stores/deck-mutations";
 import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
@@ -15,11 +16,9 @@ import {
   createShopPurchaseActions,
   createShopRefreshAction,
   gearSlotKeyOf,
-  initializeShop,
 } from "./shop-commands-core";
 import { getShopBuyPrice } from "./shop-pricing";
-import { resolveDraftShopModifiers } from "./shop-pricing-context";
-import { createInitialEquipmentShopState, resampleEquipmentShopOfferings } from "./shop-state-init";
+import { resampleEquipmentShopOfferings } from "./shop-state-init";
 
 export function createEquipmentShopCommands(
   {
@@ -45,19 +44,7 @@ export function createEquipmentShopCommands(
   );
   const getRefreshPrice = createGetRefreshPrice("equipment-shop", talentEffects, gameSession);
 
-  const initialize = initializeShop(
-    "equipment-shop",
-    (draft) =>
-      createInitialEquipmentShopState(
-        createDraftRunRandomSource(draft, "shops"),
-        resolveDraftLootProgress(draft),
-        gearAstralChanceBonus,
-        getOwnedUniqueDefinitionIds(snapshotTransactionValue(draft.gear.inventories)),
-        resolveDraftShopModifiers(draft),
-        createDraftInstanceIdSource(draft),
-      ),
-    gameSession,
-  );
+  const initialize = createShopInitializer("equipment", gameSession, gearAstralChanceBonus);
 
   const refresh = createShopRefreshAction(
     {

@@ -4,19 +4,10 @@ import { addRunGoldEarned } from "./run-recap";
 import { battleSnapshot, type BattleSnapshot, type BattleState } from "@/lib/battle";
 import { current, isDraft } from "immer";
 import type { GameplayDraft } from "../gameplay-command";
-import { createInitialBattleFields } from "../run-domain-types";
+import type { RewardState } from "@/lib/active-run-session";
+import type { BattleCard } from "@/lib/game-data";
 import { createDraftRunRandomSource } from "./run-progress";
 import { syncBattleGoldFromPurse } from "./run-gold";
-import { setRunProgressActivity } from "./run-session";
-
-// ── Battle ───────────────────────────────────────────────────────────────────
-
-function syncPurseFromBattleGold(draft: GameplayDraft): void {
-  if (!draft.battle.hasActiveBattle) return;
-  const gold = Math.max(0, draft.battle.battleState.gold);
-  addRunGoldEarned(draft, Math.max(0, gold - draft.runProfile.gold));
-  draft.runProfile.gold = gold;
-}
 
 export const snapshotBattleState = battleSnapshot;
 
@@ -25,59 +16,66 @@ export function withDraftWorldBattleRng(draft: GameplayDraft, battleState: Battl
   return { ...snapshot, rng: createDraftRunRandomSource(draft, "world") };
 }
 
-export function setSyncedBattleState(
+function activeBattle(draft: GameplayDraft) {
+  if (draft.session.activity.kind !== "battle") throw new Error("Battle mutation requires an active battle");
+  return draft.session.activity.data;
+}
+
+function setSyncedBattleState(
   draft: GameplayDraft,
   action: BattleSnapshot | ((previous: BattleSnapshot) => BattleSnapshot),
 ): void {
-  const previous = draft.battle.battleState;
-  draft.battle.battleState = battleSnapshot(typeof action === "function" ? action(previous) : action);
+  const battle = activeBattle(draft);
+  battle.battleState = battleSnapshot(typeof action === "function" ? action(battle.battleState) : action);
 }
 
 export function setBattleState(
   draft: GameplayDraft,
   action: BattleSnapshot | ((previous: BattleSnapshot) => BattleSnapshot),
 ): void {
-  // setSyncedBattleState already strips runtime-only fields via battleSnapshot;
-  // do not snapshot twice.
   setSyncedBattleState(draft, action);
-  syncPurseFromBattleGold(draft);
+  const gold = Math.max(0, activeBattle(draft).battleState.gold);
+  addRunGoldEarned(draft, Math.max(0, gold - draft.runProfile.gold));
+  draft.runProfile.gold = gold;
 }
 
 export function setBattleStartState(draft: GameplayDraft, state: BattleSnapshot | null): void {
-  draft.battle.battleStartState = state ? battleSnapshot(state) : null;
+  if (draft.session.activity.kind !== "battle") return;
+  draft.session.activity.data.battleStartState = state ? battleSnapshot(state) : null;
 }
 
-export function setHasActiveBattle(draft: GameplayDraft, active: boolean | ((previous: boolean) => boolean)): void {
-  draft.battle.hasActiveBattle = typeof active === "function" ? active(draft.battle.hasActiveBattle) : active;
-}
-
-export function initializeActiveBattle(draft: GameplayDraft, battleState: BattleSnapshot | null): void {
-  if (!battleState) {
-    Object.assign(draft.battle, createInitialBattleFields());
-    return;
-  }
-  const hydrated = battleSnapshot(battleState);
-  const battle = draft.battle;
-  battle.battleState = hydrated;
-  battle.battleStartState = hydrated;
-  battle.hasActiveBattle = true;
-  setRunProgressActivity(draft, "battle");
+/** Enter combat only from a live non-combat activity; hydration sets its validated activity directly. */
+export function enterBattle(draft: GameplayDraft, state: BattleSnapshot): boolean {
+  if (draft.session.activity.kind === "inactive" || draft.session.activity.kind === "battle") return false;
+  const snapshot = battleSnapshot(state);
+  draft.session.activity = { kind: "battle", data: { battleState: snapshot, battleStartState: snapshot } };
   syncBattleGoldFromPurse(draft);
+  return true;
+}
+
+/** Rewards replace combat in one operation; no independently writable active flag remains. */
+export function settleBattleVictory(
+  draft: GameplayDraft,
+  state: RewardState,
+  companionCards: BattleCard[] | null,
+): void {
+  activeBattle(draft);
+  draft.session.rewardFlow = { state, companionCards, claim: { kind: "idle" } };
+  draft.session.activity = { kind: "rewards" };
 }
 
 /** Commit engine output as a resource change, never as a replacement of the live purse. */
 export function commitResolvedBattle(draft: GameplayDraft, before: BattleSnapshot, after: BattleSnapshot): void {
   const goldDelta = after.gold - before.gold;
-  const gold = draft.battle.hasActiveBattle ? Math.max(0, draft.runProfile.gold + goldDelta) : after.gold;
+  const gold = Math.max(0, draft.runProfile.gold + goldDelta);
   setSyncedBattleState(draft, { ...after, gold });
-  if (draft.battle.hasActiveBattle) {
-    addRunGoldEarned(draft, Math.max(0, goldDelta));
-    draft.runProfile.gold = gold;
-  }
+  addRunGoldEarned(draft, Math.max(0, goldDelta));
+  draft.runProfile.gold = gold;
 }
 
 export function settlePendingBattleMaterials(draft: GameplayDraft): void {
-  const materials = draft.battle.battleState.pendingMaterials;
+  const battle = activeBattle(draft);
+  const materials = battle.battleState.pendingMaterials;
   if (Object.values(materials).some((amount) => amount > 0)) awardMaterialsDuringRun(draft, materials);
-  draft.battle.battleState.pendingMaterials = emptyInventory();
+  battle.battleState.pendingMaterials = emptyInventory();
 }

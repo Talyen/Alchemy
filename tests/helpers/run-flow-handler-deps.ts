@@ -2,10 +2,6 @@ import type { RunFlowHandlerDeps, RunFlowShellActions } from "@/features/alchemy
 export type MakeFlowHandlerDepsOverrides = Partial<RunFlowHandlerDeps> &
   Partial<RunFlowShellActions> & {
     onLabyrinthClearNode?: () => void;
-    onInitShop?: () => void;
-    onInitAlchemist?: () => void;
-    onInitTrinketShop?: () => void;
-    onInitEquipmentShop?: () => void;
     onWildwoodRewardComplete?: RunFlowShellActions["wildwoodRewardComplete"];
   };
 
@@ -15,41 +11,19 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
     actions: actionsOverride,
     navigateTo = () => {},
     transition = () => {},
+    presentBattleStart = () => {},
     labyrinthClearNode,
-    initializeShop,
-    startBattle = () => {},
-    startBoss = () => {},
-    beginMysteryEvent = () => {},
     wildwoodRewardComplete,
     onLabyrinthClearNode = () => {},
-    onInitShop = () => {},
-    onInitAlchemist = () => {},
-    onInitTrinketShop = () => {},
-    onInitEquipmentShop = () => {},
     onWildwoodRewardComplete = () => {},
   } = overrides;
-
   const actions: RunFlowShellActions = actionsOverride ?? {
     navigateTo,
     transition,
+    presentBattleStart,
     labyrinthClearNode: labyrinthClearNode ?? onLabyrinthClearNode,
-    initializeShop:
-      initializeShop ??
-      ((kind) => {
-        if (kind === "merchant") onInitShop();
-        else if (kind === "alchemist") onInitAlchemist();
-        else if (kind === "trinket") onInitTrinketShop();
-        else onInitEquipmentShop();
-      }),
-    startBattle,
-    startBoss,
-    beginMysteryEvent,
     wildwoodRewardComplete: wildwoodRewardComplete ?? onWildwoodRewardComplete,
     clearCardHover: overrides.clearCardHover ?? (() => {}),
   };
-
-  return {
-    actions,
-    getAvailableDestinations,
-  };
+  return { actions, getAvailableDestinations };
 }

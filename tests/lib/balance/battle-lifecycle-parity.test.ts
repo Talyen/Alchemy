@@ -1,4 +1,5 @@
 import "../../helpers/mock-audio";
+import { initializeBattleForTest as initializeActiveBattle } from "../../helpers/run-domain-store-test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as battle from "@/lib/battle";
 import * as random from "@/lib/rng";
@@ -7,7 +8,7 @@ import { commitBattleWish, commitCardPlay, commitEndTurn } from "@/features/alch
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { createBattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
-import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
+
 import { readActiveRun, readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { resetRunDomainStore } from "../../helpers/run-domain-store-test";
 import { makeTestCard } from "../../fixtures/battle";

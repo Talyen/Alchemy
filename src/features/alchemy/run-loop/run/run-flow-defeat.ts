@@ -7,7 +7,6 @@ import { BATTLE_END_TRANSITION_DELAY_MS } from "@/lib/game-constants";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { abandonCurrentRun, completeRunDefeat } from "./run-end-commands";
 import type { RunOutcomeDeps } from "./run-flow";
-export { clearCombatState } from "./run-end-commands";
 
 export function createDefeatHandlers(deps: RunOutcomeDeps, gameSession: GameSession = defaultGameSession) {
   const finalizeDefeat = () => completeRunDefeat(gameSession);

@@ -1,3 +1,4 @@
+import { setBattleActiveForTest as setHasActiveBattle } from "../../../../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -33,7 +34,6 @@ import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/sha
 import {
   addMaterialsToStockpile,
   setDiscoveredCardIds,
-  setHasActiveBattle,
   setHasActiveRun,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";

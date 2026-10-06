@@ -12,8 +12,8 @@ export function readDraftGold(draft: GameplayDraft): number {
 }
 
 export function syncBattleGoldFromPurse(draft: GameplayDraft): void {
-  if (!draft.battle.hasActiveBattle) return;
-  draft.battle.battleState.gold = draft.runProfile.gold;
+  if (draft.session.activity.kind !== "battle") return;
+  draft.session.activity.data.battleState.gold = draft.runProfile.gold;
 }
 
 export function setGold(draft: GameplayDraft, action: number | ((previous: number) => number)): void {

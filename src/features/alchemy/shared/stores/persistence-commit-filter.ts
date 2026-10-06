@@ -2,12 +2,7 @@ import { defaultGameSession } from "./default-game-session";
 import type { GameSession } from "./game-session-types";
 import { type GameplayState } from "./gameplay-state-store";
 import { createDefaultProfileSaveFields, type ProfileSaveFields } from "./profile-store-types";
-import type {
-  RunDomainBattleState,
-  RunDomainDataState,
-  RunSessionFields,
-  TRANSIENT_RUN_KEYS,
-} from "./run-domain-types";
+import type { RunDomainDataState, RunSessionFields, TRANSIENT_RUN_KEYS } from "./run-domain-types";
 import { RUN_PROFILE_SAVE_KEYS } from "./run-profile-codec";
 import {
   LABYRINTH_GATED_SESSION_KEYS,
@@ -49,7 +44,6 @@ const SETTINGS_SAVE_KEYS = Object.keys(createDefaultSettingsSaveFields()) as Arr
 const PROFILE_SAVE_KEYS = Object.keys(createDefaultProfileSaveFields()) as Array<keyof ProfileSaveFields>;
 
 type ClassifiedRunKey = "activeRun" | (typeof TRANSIENT_RUN_KEYS)[number];
-type ClassifiedBattleKey = "battleState" | "hasActiveBattle" | "battleStartState";
 type ClassifiedSessionKey =
   | "activity"
   | "rewardFlow"
@@ -57,14 +51,17 @@ type ClassifiedSessionKey =
   | (typeof LABYRINTH_GATED_SESSION_KEYS)[number]
   | typeof WILDWOOD_GATED_SESSION_KEY
   | typeof NON_WILDWOOD_GATED_SESSION_KEY;
+type MissingCombatKey = Exclude<
+  keyof Extract<RunSessionFields["activity"], { kind: "battle" }>["data"],
+  "battleState" | "battleStartState"
+>;
 type MissingRunKey = Exclude<keyof RunDomainDataState, ClassifiedRunKey>;
-type MissingBattleKey = Exclude<keyof RunDomainBattleState, ClassifiedBattleKey>;
 type MissingSessionKey = Exclude<keyof RunSessionFields, ClassifiedSessionKey>;
 const allFieldsClassified: Readonly<{
+  combat: MissingCombatKey extends never ? true : never;
   run: MissingRunKey extends never ? true : never;
-  battle: MissingBattleKey extends never ? true : never;
   session: MissingSessionKey extends never ? true : never;
-}> = { run: true, battle: true, session: true };
+}> = { combat: true, run: true, session: true };
 void allFieldsClassified;
 
 function fieldsEqual<T extends object>(previous: T, next: T, keys: ReadonlyArray<keyof T>): boolean {
@@ -83,7 +80,10 @@ function sessionPersistedInputsEqual(
   // state + companionCards (see encodeInterruptedFlow).
   if (!Object.is(previous.rewardFlow.state, next.rewardFlow.state)) return false;
   if (!Object.is(previous.rewardFlow.companionCards, next.rewardFlow.companionCards)) return false;
-  if (!Object.is(previous.activity, next.activity)) return false;
+  if (previous.activity.kind === "battle" && next.activity.kind === "battle") {
+    // The opening playback snapshot is transient; only combat itself reaches saves.
+    if (!Object.is(previous.activity.data.battleState, next.activity.data.battleState)) return false;
+  } else if (!Object.is(previous.activity, next.activity)) return false;
   if (previousMode === "labyrinth" && !fieldsEqual(previous, next, LABYRINTH_GATED_SESSION_KEYS)) return false;
   if (previousMode === "wildwood") {
     return Object.is(previous[WILDWOOD_GATED_SESSION_KEY], next[WILDWOOD_GATED_SESSION_KEY]);
@@ -95,8 +95,6 @@ function gameplayPersistedInputsEqual(previous: GameplayState, next: GameplaySta
   if (previous === next) return true;
   if (!fieldsEqual(previous.runProfile, next.runProfile, RUN_PROFILE_SAVE_KEYS)) return false;
   if (!Object.is(previous.gear, next.gear)) return false;
-  if (!Object.is(previous.battle.battleState, next.battle.battleState)) return false;
-  if (previous.battle.hasActiveBattle !== next.battle.hasActiveBattle) return false;
   if (!fieldsEqual(previous.profile, next.profile, PROFILE_SAVE_KEYS)) return false;
   if (!Object.is(previous.run.activeRun, next.run.activeRun)) return false;
   return sessionPersistedInputsEqual(

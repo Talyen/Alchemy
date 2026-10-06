@@ -1,9 +1,10 @@
 import "../../../../helpers/mock-audio";
+import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
 import { beforeEach, describe, expect, it } from "vitest";
 import { battleSnapshot } from "@/lib/battle";
 import { createRunRngState } from "@/lib/rng";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
-import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
+
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { commitEndTurn } from "@/features/alchemy/run-loop/battle/battle-session";
 import { makeTestBattleState } from "../../../../fixtures/battle";
@@ -24,6 +25,7 @@ describe("commitEndTurn", () => {
   it("commits the resolved turn and clears any pending transition", () => {
     openBattle();
     const result = commitEndTurn();
+    if (!result) throw new Error("Expected a committed turn");
     expect(result.frames.length).toBeGreaterThan(0);
     expect(readBattle().battleState).toEqual(battleSnapshot(result.state));
     expect(readBattle()).not.toHaveProperty("pendingBattleTransition");

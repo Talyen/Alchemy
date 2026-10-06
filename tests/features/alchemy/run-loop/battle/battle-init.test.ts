@@ -6,7 +6,7 @@ import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { computeTalentEffects } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { enemyBestiary } from "@/lib/game-data";
-import { resetRunBattleSlice, resetRunProgressSlice, setRunProgress } from "../../../../helpers/run-domain-store-test";
+import { resetRunDomainStore, setRunSession, setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { readActiveRun, readBattle, readRunRevision } from "@/features/alchemy/shared/stores/run-reads";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
@@ -15,8 +15,8 @@ import { createRunRngState } from "@/lib/rng";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 
 beforeEach(() => {
-  resetRunBattleSlice();
-  resetRunProgressSlice();
+  resetRunDomainStore();
+  setRunSession({ hasActiveRun: true });
 });
 
 describe("createBattleInit", () => {

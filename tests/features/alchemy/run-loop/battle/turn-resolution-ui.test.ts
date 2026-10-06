@@ -1,11 +1,12 @@
 import "../../../../helpers/mock-audio";
+import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
+import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { beforeEach, describe, expect, it } from "vitest";
 import { resolveBattleTurn } from "@/lib/battle";
 import { companionLibrary } from "@/lib/game-data";
 import { commitEndTurn } from "@/features/alchemy/run-loop/battle/battle-session";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
-import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
+
 import { resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
 import { patchBattleState, slashDeck, seededRng } from "../../../../fixtures/battle";
 
@@ -53,8 +54,9 @@ describe("resolved turns", () => {
       ),
     );
     const result = commitEndTurn();
+    if (!result) throw new Error("Expected a committed turn");
     expect(result.frames[0]?.turn.kind).toBe("haste");
-    expect(readGameplayState().battle).not.toHaveProperty("pendingBattleTransition");
-    expect(readGameplayState().battle.battleState).toEqual(result.state);
+    expect(readBattle()).not.toHaveProperty("pendingBattleTransition");
+    expect(readBattle().battleState).toEqual(result.state);
   });
 });
