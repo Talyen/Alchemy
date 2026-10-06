@@ -75,12 +75,14 @@ Ownership and anti-patterns: [RUN_STATE.md § Run state](./RUN_STATE.md#run-stat
 
 ```ts
 import type { MaterialInventory } from "@/lib/homestead/types";
+import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { awardMaterialsDuringRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 
 export function awardMaterialReward(
   materials: MaterialInventory,
   onAwarded: (awarded: MaterialInventory) => void,
+  session: GameSession,
 ): void {
   dispatchRunSessionCommand(
     (draft) => {
@@ -88,6 +90,7 @@ export function awardMaterialReward(
       return acceptCommand(materials);
     },
     { afterCommit: onAwarded },
+    session,
   );
 }
 ```

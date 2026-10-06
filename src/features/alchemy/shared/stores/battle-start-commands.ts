@@ -1,3 +1,4 @@
+import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
 import { getBossById } from "@/features/alchemy/shared/config";
 import { logError } from "@/lib/error-logger";
 import type {
@@ -7,7 +8,6 @@ import type {
   BossBattleStartOptions,
   BossByIdOptions,
 } from "./battle-start-types";
-import { defaultGameSession } from "./default-game-session";
 import type { GameSession } from "./game-session-types";
 import { acceptCommand, dispatchRunSessionCommand, rejectCommand } from "./run-session-command";
 import { initializeBattle } from "./run-session-write-port";
@@ -15,10 +15,7 @@ import { initializeBattle } from "./run-session-write-port";
 export type { BattleStarted, BattleStartOptions } from "./battle-start-types";
 export type BattleStartCommands = ReturnType<typeof createBattleStartCommands>;
 
-export function createBattleStartCommands(
-  onStarted: (result: BattleStarted) => void,
-  gameSession: GameSession = defaultGameSession,
-) {
+export function createBattleStartCommands(onStarted: (result: BattleStarted) => void, gameSession: GameSession) {
   function beginBattle(request: BattleStartRequest) {
     return dispatchRunSessionCommand(
       (transaction) => {
@@ -48,5 +45,10 @@ export function createBattleStartCommands(
     }
     return beginBattle({ kind: "boss-by-id", options }) !== null;
   }
-  return { startBattle, startBossBattle, startBossById, presentBattleStart: onStarted };
+  return bindSessionCapabilities(gameSession, {
+    startBattle,
+    startBossBattle,
+    startBossById,
+    presentBattleStart: onStarted,
+  });
 }

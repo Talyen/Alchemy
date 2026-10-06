@@ -1,7 +1,6 @@
 import type { CharacterId, DifficultyId } from "@/lib/game-data";
 import { appendUniqueMany } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
-import { defaultGameSession } from "./default-game-session";
 import type { GameSession } from "./game-session-types";
 import { readGameplayState, useGameplayStateStore } from "./gameplay-state-store";
 import { type GameplayPersistenceCodec } from "./persistence-codec";
@@ -33,8 +32,7 @@ function cloneProfileSaveFields(fields: ProfileSaveFields): ProfileSaveFields {
 
 export const profilePersistenceCodec: GameplayPersistenceCodec<ProfileSaveFields> = {
   createDefault: createDefaultProfileSaveFields,
-  encode: (gameSession: GameSession = defaultGameSession) =>
-    cloneProfileSaveFields(readGameplayState(gameSession).profile),
+  encode: (gameSession: GameSession) => cloneProfileSaveFields(readGameplayState(gameSession).profile),
   hydrate: (fields, draft) => Object.assign(draft.profile, cloneProfileSaveFields(fields)),
 };
 
@@ -50,7 +48,7 @@ export type ProfileReadView = Pick<
   | "finishedRunCharacters"
 >;
 
-export function readProfileStore(gameSession: GameSession = defaultGameSession): ProfileReadView {
+export function readProfileStore(gameSession: GameSession): ProfileReadView {
   // Live references: arrays/objects below alias the committed aggregate (the
   // codec clones on encode). Never mutate the result outside a
   // dispatchRunSessionCommand draft.

@@ -1,5 +1,4 @@
 import { createDefaultSaveData, hydrateAlchemyPersistenceFields } from "@/features/alchemy/shared/storage";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { ACTS_PER_RUN, DESTINATIONS_PER_ACT } from "@/lib/game-constants";
@@ -9,10 +8,7 @@ import { snapshotCareer } from "./career";
 import { createPlaythroughController } from "./controller";
 
 /** Fixture grants are never labeled as earned fresh-save progression. */
-export function createPlaythroughFixture(
-  name: "unlocked-v1" | "victory-v1" | "economy-v1",
-  gameSession: GameSession = defaultGameSession,
-) {
+export function createPlaythroughFixture(name: "unlocked-v1" | "victory-v1" | "economy-v1", gameSession: GameSession) {
   if (!["unlocked-v1", "economy-v1", "victory-v1"].includes(name)) throw new Error(`Unknown fixture: ${name}`);
   const save = createDefaultSaveData();
   save.finishedRunCharacters = Object.keys(characters) as CharacterId[];

@@ -196,6 +196,7 @@ Enforced in `eslint.config.js` (composition in `eslint/fragments.js` + `eslint/b
 
 - `src/lib/**` must not import `@/features/**`
 - Source modules must remain acyclic; reusable battle rules and reactions live below turn/card orchestrators
+- The application singleton is created in `app/application-session.ts`; reusable commands and headless careers require explicit sessions or bound capabilities (see [Session ownership](./RUN_STATE.md#session-ownership)).
 - `gameplay-state.ts`, `gameplay-state-store.ts`, and `session-runtime.ts` are internal to `shared/stores/`; other layers use capability hooks, reads, writes, commands, and `run-lifecycle`
 - Raw dispatch and transaction draft lookup stay inside `shared/stores/`, with `shared/storage/persistence.ts` allowed to dispatch bootstrap hydration. Feature command callbacks receive deeply readonly transaction reads and write through the existing domain operations.
 - Feature adapters import reads, lifecycle operations, and intent-level commands. Draft dispatch and `run-session-write-port` belong to command owners, not shell or playback wiring.

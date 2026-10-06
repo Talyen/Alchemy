@@ -1,4 +1,5 @@
 import "../../../../helpers/mock-audio";
+
 import { describe, expect, it, vi } from "vitest";
 import { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfers";
 import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
@@ -6,6 +7,8 @@ import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle
 import type { CardTransfer } from "@/features/alchemy/shared/types";
 import { CARD_TRANSFER_CONFIG } from "@/lib/game-constants";
 import { makeTestCardWithId } from "../../../../fixtures/battle";
+import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
+import { defaultGameSession } from "@/app/application-session";
 
 function makeTransfers() {
   const playback = new PlaybackLifetime();
@@ -18,6 +21,7 @@ function makeTransfers() {
     setCardTransferInProgress: vi.fn(),
   };
   const ctx = {
+    battle: createBattleCapabilities(defaultGameSession),
     playback,
     getPresentation: () => presentation,
     battleSceneRef: { current: null },

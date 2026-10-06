@@ -244,3 +244,46 @@ it("checks mouse-only actions and focusable controls hidden from assistive techn
     expect(await effectiveMessages(file, `export const view = ${allowed};`, rule), rule).toEqual([]);
   }
 });
+
+it("keeps the shipping singleton out of reusable domains and headless careers", async () => {
+  for (const file of [
+    "src/features/alchemy/run-loop/shop/create-shop-actions.ts",
+    "src/features/alchemy/shared/stores/battle-commands.ts",
+    "src/features/alchemy/shared/storage/bootstrap-save-state.ts",
+    "src/app/playthrough/controller.ts",
+    "src/app/autosave-lifecycle.ts",
+  ]) {
+    for (const code of [
+      'import { defaultGameSession } from "@/app/application-session";',
+      'export { defaultGameSession } from "@/app/application-session";',
+      'const session = import("@/app/application-session");',
+    ]) {
+      expect(await effectiveMessages(file, code, "alchemy/session-ownership"), `${file}: ${code}`).toHaveLength(1);
+    }
+  }
+  for (const file of ["src/app/use-app-save-state.ts", "src/features/alchemy/shell/use-battle-controller.ts"]) {
+    expect(
+      await effectiveMessages(
+        file,
+        'import { defaultGameSession } from "@/app/application-session";',
+        "alchemy/session-ownership",
+      ),
+    ).toHaveLength(0);
+  }
+});
+
+it("requires explicit sessions in functions and callback contracts", async () => {
+  const file = "src/features/alchemy/shared/stores/battle-commands.ts";
+  const imported = 'import type { GameSession as Career } from "./game-session-types";';
+  for (const code of [
+    "function command(session?: Career) {}",
+    "const command = (session: Career = fallback) => {};",
+    "type Command = (session?: Career) => void;",
+    "interface Commands { endTurn(session?: Career): void; }",
+  ]) {
+    expect(await effectiveMessages(file, imported + code, "alchemy/session-ownership"), code).toHaveLength(1);
+  }
+  expect(
+    await effectiveMessages(file, imported + "function command(session: Career) {}", "alchemy/session-ownership"),
+  ).toHaveLength(0);
+});

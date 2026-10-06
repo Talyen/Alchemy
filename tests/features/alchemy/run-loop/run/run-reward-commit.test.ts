@@ -1,4 +1,5 @@
 import "../../../../helpers/mock-audio";
+
 import { beforeEach, expect, it } from "vitest";
 import { claimRunReward } from "@/features/alchemy/run-loop/run/reward-commands";
 import { readActiveRun, readRunSession, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
@@ -9,6 +10,7 @@ import { createEmptyRewardState } from "@/lib/active-run-session";
 import { cardById } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { DESTINATIONS } from "@/lib/routing";
+import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(resetRunDomainStore);
 
@@ -27,28 +29,30 @@ it.each(["campaign", "labyrinth"] as const)(
         lastVictoryContentSystem: mode,
       },
     });
-    const before = readGameplayState();
-    expect(claimRunReward(card.id)).not.toBeNull();
+    const before = readGameplayState(defaultGameSession);
+    expect(claimRunReward(card.id, defaultGameSession)).not.toBeNull();
     const expected = mode === "campaign" ? "destination" : "labyrinth-map";
-    expect(readGameplayState().revision).toBe(before.revision + 1);
-    expect(readRunSession().activity.kind).toBe(expected);
-    expect(readActiveRun().runDeck.map((item) => item.id)).toEqual([
+    expect(readGameplayState(defaultGameSession).revision).toBe(before.revision + 1);
+    expect(readRunSession(defaultGameSession).activity.kind).toBe(expected);
+    expect(readActiveRun(defaultGameSession).runDeck.map((item) => item.id)).toEqual([
       ...before.run.activeRun.runDeck.map((item) => item.id),
       card.id,
     ]);
-    expect(readGameplayState().profile.discoveredCardIds).toContain(card.id);
-    expect(readRunProfile().materialInventory.herbs).toBe(before.runProfile.materialInventory.herbs + 3);
-    const save = snapshotRun();
+    expect(readGameplayState(defaultGameSession).profile.discoveredCardIds).toContain(card.id);
+    expect(readRunProfile(defaultGameSession).materialInventory.herbs).toBe(
+      before.runProfile.materialInventory.herbs + 3,
+    );
+    const save = snapshotRun(undefined, defaultGameSession);
     expect(save.currentScreen).toBe(expected);
-    expect(claimRunReward(card.id)).toBeNull();
-    expect(snapshotRun()).toEqual(save);
-    restoreRun(save, {}, {});
-    expect(readRunSession().activity.kind).toBe(expected);
-    expect(readActiveRun().runDeck.map((item) => item.id)).toEqual([
+    expect(claimRunReward(card.id, defaultGameSession)).toBeNull();
+    expect(snapshotRun(undefined, defaultGameSession)).toEqual(save);
+    restoreRun(save, {}, {}, defaultGameSession);
+    expect(readRunSession(defaultGameSession).activity.kind).toBe(expected);
+    expect(readActiveRun(defaultGameSession).runDeck.map((item) => item.id)).toEqual([
       ...before.run.activeRun.runDeck.map((item) => item.id),
       card.id,
     ]);
-    expect(readActiveRun().rng).toEqual(save.rng);
+    expect(readActiveRun(defaultGameSession).rng).toEqual(save.rng);
   },
 );
 
@@ -57,7 +61,7 @@ it("rejects an unavailable reward without changing activity, grants, or RNG", ()
     activity: { kind: "rewards" },
     rewardState: { ...createEmptyRewardState(), choices: [cardById["slash"]!] },
   });
-  const before = readGameplayState();
-  expect(claimRunReward("not-offered")).toBeNull();
-  expect(readGameplayState()).toBe(before);
+  const before = readGameplayState(defaultGameSession);
+  expect(claimRunReward("not-offered", defaultGameSession)).toBeNull();
+  expect(readGameplayState(defaultGameSession)).toBe(before);
 });

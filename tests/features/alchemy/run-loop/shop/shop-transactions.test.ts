@@ -1,4 +1,5 @@
 import "../../../../helpers/mock-audio";
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createShopRefreshAction } from "@/features/alchemy/run-loop/shop/shop-commands-core";
 import { applyStrongSpiritsToPotions } from "@/features/alchemy/run-loop/shop/shop-state-init";
@@ -18,8 +19,11 @@ import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-sta
 import { createDraftRunRandomSource, deductGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { runShopTransaction } from "@/features/alchemy/run-loop/shop/shop-transactions";
 import { playGoldSpend, playUISound } from "@/lib/audio";
-const setShopState = createRunSessionCommand((...args: Parameters<typeof mutateShopState>) =>
-  acceptCommand(mutateShopState(...args)),
+import { defaultGameSession } from "@/app/application-session";
+const setShopState = createRunSessionCommand(
+  (...args: Parameters<typeof mutateShopState>) => acceptCommand(mutateShopState(...args)),
+  undefined,
+  defaultGameSession,
 );
 
 beforeEach(() => {
@@ -33,9 +37,9 @@ describe("shop refresh transaction", () => {
   it("rolls back payment, shelf changes, and RNG when a recipe rejects after writing", () => {
     setRunProgress({ gold: 100 });
     setShopState({ ...emptyShopState(), cards: newItems, refreshesLeft: 1 });
-    const before = readGameplayState();
+    const before = readGameplayState(defaultGameSession);
     const onCommit = vi.fn();
-    const unsubscribe = subscribeRunSessionCommits(onCommit);
+    const unsubscribe = subscribeRunSessionCommits(onCommit, defaultGameSession);
     vi.mocked(playGoldSpend).mockClear();
     vi.mocked(playUISound).mockClear();
     try {
@@ -48,10 +52,11 @@ describe("shop refresh transaction", () => {
           return { committed: false, price: 25, value: null };
         },
         "shopRefresh",
+        defaultGameSession,
       );
 
       expect(result).toEqual({ committed: false, price: 25, value: null });
-      expect(readGameplayState()).toBe(before);
+      expect(readGameplayState(defaultGameSession)).toBe(before);
       expect(onCommit).not.toHaveBeenCalled();
       expect(playGoldSpend).not.toHaveBeenCalled();
       expect(playUISound).not.toHaveBeenCalled();
@@ -71,27 +76,30 @@ describe("shop refresh transaction", () => {
       purchasedSlotKeys: ["health-potion-0"],
     });
     const commits: number[] = [];
-    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
+    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision), defaultGameSession);
 
     const expectedItems = applyStrongSpiritsToPotions(newItems, ["strong-spirits"]);
-    const refreshed = createShopRefreshAction({
-      activity: "shop",
-      talentEffects,
-      resample: (_draft, state) => ({ ...state, cards: expectedItems }),
-    })();
+    const refreshed = createShopRefreshAction(
+      {
+        activity: "shop",
+        talentEffects,
+        resample: (_draft, state) => ({ ...state, cards: expectedItems }),
+      },
+      defaultGameSession,
+    )();
     unsubscribe();
 
     expect(refreshed).toBe(true);
     expect(expectedItems).not.toEqual(newItems);
     expect(commits).toHaveLength(1);
-    expect(readRunProfile().gold).toBe(5);
-    expect(readActivityData(readRunSession().activity, "shop").cards).toEqual(expectedItems);
-    expect(readActivityData(readRunSession().activity, "shop")).toMatchObject({
+    expect(readRunProfile(defaultGameSession).gold).toBe(5);
+    expect(readActivityData(readRunSession(defaultGameSession).activity, "shop").cards).toEqual(expectedItems);
+    expect(readActivityData(readRunSession(defaultGameSession).activity, "shop")).toMatchObject({
       firstPurchaseUsed: true,
       removeUsed: true,
     });
-    expect(readActivityData(readRunSession().activity, "shop").refreshesLeft).toBe(0);
-    expect(readActivityData(readRunSession().activity, "shop").purchasedSlotKeys).toEqual([]);
+    expect(readActivityData(readRunSession(defaultGameSession).activity, "shop").refreshesLeft).toBe(0);
+    expect(readActivityData(readRunSession(defaultGameSession).activity, "shop").purchasedSlotKeys).toEqual([]);
   });
 
   it.each([
@@ -106,18 +114,18 @@ describe("shop refresh transaction", () => {
       firstPurchaseUsed: true,
       purchasedSlotKeys: ["health-potion-0"],
     });
-    const previousSession = readRunSession();
+    const previousSession = readRunSession(defaultGameSession);
     const resample = vi.fn(() => ({ ...emptyShopState(), cards: newItems }));
     const commits: number[] = [];
-    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
+    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision), defaultGameSession);
 
-    const refreshed = createShopRefreshAction({ activity: "shop", talentEffects, resample })();
+    const refreshed = createShopRefreshAction({ activity: "shop", talentEffects, resample }, defaultGameSession)();
     unsubscribe();
 
     expect(refreshed).toBe(false);
     expect(commits).toHaveLength(0);
-    expect(readRunProfile().gold).toBe(gold);
+    expect(readRunProfile(defaultGameSession).gold).toBe(gold);
     expect(resample).not.toHaveBeenCalled();
-    expect(readRunSession()).toEqual(previousSession);
+    expect(readRunSession(defaultGameSession)).toEqual(previousSession);
   });
 });

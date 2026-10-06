@@ -1,4 +1,5 @@
 import "../../../../helpers/mock-audio";
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.hoisted(() => vi.stubGlobal("__ALCHEMY_EDITION__", "demo"));
 import { isEditionRunAvailable } from "@/lib/game-edition";
@@ -16,6 +17,7 @@ import {
 import { snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { DESTINATIONS } from "@/lib/routing";
 import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
+import { defaultGameSession } from "@/app/application-session";
 
 function deps() {
   return {
@@ -29,17 +31,17 @@ function deps() {
 beforeEach(resetAllTestStores);
 describe("demo command boundaries", () => {
   it("rejects excluded characters, modes, difficulty and locked heroes without granting starting Gold", () => {
-    const start = createNewRunInitialization(deps());
+    const start = createNewRunInitialization(deps(), defaultGameSession);
     expect(() => start.initializeRunForDifficulty("wizard", "difficulty-1")).toThrow("unavailable");
     expect(() => start.initializeRunForDifficulty("rogue", "difficulty-1")).toThrow("unavailable");
     expect(() => start.initializeRunForDifficulty("knight", "difficulty-2")).toThrow("unavailable");
     expect(() => start.initializeLabyrinthRun("knight")).toThrow("unavailable");
-    expect(readHasActiveRun()).toBe(false);
-    expect(readActiveRun().currentAct).toBe(1);
+    expect(readHasActiveRun(defaultGameSession)).toBe(false);
+    expect(readActiveRun(defaultGameSession).currentAct).toBe(1);
   });
   it("blocks stale mode and character callbacks", () => {
     const navigation = deps();
-    const flow = createContentSystemNavigation(navigation);
+    const flow = createContentSystemNavigation(navigation, defaultGameSession);
     flow.beginLabyrinth();
     flow.beginWildwood();
     expect(navigation.navigateTo).not.toHaveBeenCalled();
@@ -48,41 +50,41 @@ describe("demo command boundaries", () => {
     expect(navigation.startBattle).not.toHaveBeenCalled();
   });
   it("ends Act 1 without recording a full Campaign win", () => {
-    createNewRunInitialization(deps()).initializeRunForDifficulty("knight", "difficulty-1");
-    expect(createProgressionCommands(deps().getAvailableDestinations).completeAct()).toBe(true);
-    expect(readActiveRun().currentAct).toBe(1);
-    expect(readProfileStore().completedDifficulties.knight).toEqual([]);
-    completeRunVictory();
-    expect(readHasActiveRun()).toBe(false);
-    expect(readProfileStore().finishedRunCharacters).toEqual(["knight"]);
-    completeRunVictory();
-    expect(readProfileStore().finishedRunCharacters).toEqual(["knight"]);
+    createNewRunInitialization(deps(), defaultGameSession).initializeRunForDifficulty("knight", "difficulty-1");
+    expect(createProgressionCommands(deps().getAvailableDestinations, defaultGameSession).completeAct()).toBe(true);
+    expect(readActiveRun(defaultGameSession).currentAct).toBe(1);
+    expect(readProfileStore(defaultGameSession).completedDifficulties.knight).toEqual([]);
+    completeRunVictory(defaultGameSession);
+    expect(readHasActiveRun(defaultGameSession)).toBe(false);
+    expect(readProfileStore(defaultGameSession).finishedRunCharacters).toEqual(["knight"]);
+    completeRunVictory(defaultGameSession);
+    expect(readProfileStore(defaultGameSession).finishedRunCharacters).toEqual(["knight"]);
   });
   it.each([completeRunVictory, completeRunDefeat, abandonCurrentRun])(
     "keeps earned character unlocks after every ending",
     (endRun) => {
-      const start = createNewRunInitialization(deps());
+      const start = createNewRunInitialization(deps(), defaultGameSession);
       start.initializeRunForDifficulty("knight", "difficulty-1");
-      endRun();
+      endRun(defaultGameSession);
       start.initializeRunForDifficulty("rogue", "difficulty-1");
-      endRun();
+      endRun(defaultGameSession);
       start.initializeRunForDifficulty("ranger", "difficulty-1");
-      expect(readActiveRun().characterId).toBe("ranger");
-      expect(readProfileStore().finishedRunCharacters).toEqual(["knight", "rogue"]);
+      expect(readActiveRun(defaultGameSession).characterId).toBe("ranger");
+      expect(readProfileStore(defaultGameSession).finishedRunCharacters).toEqual(["knight", "rogue"]);
     },
   );
   it("preserves valid resume and drops excluded activity without settlement", () => {
-    createNewRunInitialization(deps()).initializeRunForDifficulty("knight", "difficulty-1");
-    const snapshot = snapshotRun();
+    createNewRunInitialization(deps(), defaultGameSession).initializeRunForDifficulty("knight", "difficulty-1");
+    const snapshot = snapshotRun(undefined, defaultGameSession);
     expect(isEditionRunAvailable(snapshot)).toBe(true);
     resetAllTestStores();
-    restoreRun(snapshot, {}, {});
-    expect(readHasActiveRun()).toBe(true);
-    expect(snapshotRun().rng).toEqual(snapshot.rng);
+    restoreRun(snapshot, {}, {}, defaultGameSession);
+    expect(readHasActiveRun(defaultGameSession)).toBe(true);
+    expect(snapshotRun(undefined, defaultGameSession).rng).toEqual(snapshot.rng);
     resetAllTestStores();
-    restoreRun({ ...snapshot, currentAct: 2 }, {}, {});
-    expect(readHasActiveRun()).toBe(false);
-    expect(readProfileStore().finishedRunCharacters).toEqual([]);
+    restoreRun({ ...snapshot, currentAct: 2 }, {}, {}, defaultGameSession);
+    expect(readHasActiveRun(defaultGameSession)).toBe(false);
+    expect(readProfileStore(defaultGameSession).finishedRunCharacters).toEqual([]);
     expect(isEditionRunAvailable({ ...snapshot, contentSystemType: "labyrinth" })).toBe(false);
   });
 });

@@ -1,4 +1,4 @@
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
@@ -8,7 +8,7 @@ import { ROUTE_SCREENS } from "@/lib/routing";
 import { abandonCurrentRun, completeRunDefeat } from "./run-end-commands";
 import type { RunOutcomeDeps } from "./run-flow";
 
-export function createDefeatHandlers(deps: RunOutcomeDeps, gameSession: GameSession = defaultGameSession) {
+export function createDefeatHandlers(deps: RunOutcomeDeps, gameSession: GameSession) {
   const finalizeDefeat = () => completeRunDefeat(gameSession);
 
   function endRunAndShowGameOver() {
@@ -39,10 +39,10 @@ export function createDefeatHandlers(deps: RunOutcomeDeps, gameSession: GameSess
     deps.actions.transition(ROUTE_SCREENS.GAME_OVER, { immediate: true });
   }
 
-  return {
+  return bindSessionCapabilities(gameSession, {
     endRunAndShowGameOver,
     handleBattleDefeat,
     handleAbandonRun,
     endLabyrinthRun,
-  };
+  });
 }

@@ -9,18 +9,24 @@ import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { defaultBattleState } from "@/lib/battle";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { setRunSession } from "../../../../helpers/run-domain-store-test";
+import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
+import { defaultGameSession } from "@/app/application-session";
 
 function makeDevOutcomes(screen: string) {
   const resetBattleSession = vi.fn();
   const handleVictoryDefeat = vi.fn();
   const session = { resetBattleSession, handleVictoryDefeat } as unknown as ReturnType<typeof createBattleSession>;
-  const ctx = { screen } as unknown as BattleControllerContext;
+  const ctx = { screen, battle: createBattleCapabilities(defaultGameSession) } as unknown as BattleControllerContext;
   return { api: createBattleDevOutcomes(ctx, session), resetBattleSession, handleVictoryDefeat };
 }
 
 beforeEach(() => {
   resetBattlePresentationAndRun();
-  dispatchGameplayCommand((draft) => acceptCommand(setSyncedBattleState(draft, defaultBattleState())));
+  dispatchGameplayCommand(
+    (draft) => acceptCommand(setSyncedBattleState(draft, defaultBattleState())),
+    undefined,
+    defaultGameSession,
+  );
 });
 
 describe("skipCombatDevMode", () => {
@@ -30,7 +36,7 @@ describe("skipCombatDevMode", () => {
     api.skipCombatDevMode();
 
     expect(handleVictoryDefeat).toHaveBeenCalledWith("victory");
-    const state = readBattle().battleState;
+    const state = readBattle(defaultGameSession).battleState;
     expect(state.enemyHealth).toBe(0);
     expect(state.wishOptions).toBeNull();
   });

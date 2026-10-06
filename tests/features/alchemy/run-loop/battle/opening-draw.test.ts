@@ -5,6 +5,8 @@ import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/b
 import { makeTestCardWithId } from "../../../../fixtures/battle";
 import { makeDrawSequenceDeps } from "./turn-orchestration-fixture";
 import { installImmediateRafForTests } from "./battle-test-reset";
+import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
+import { defaultGameSession } from "@/app/application-session";
 
 const scheduleAutoEndTurn = vi.fn();
 const initial = {
@@ -34,7 +36,10 @@ describe("opening hand playback", () => {
           }),
       ),
     });
-    const ctx = { playback: { id: 3, completeAction: vi.fn(), scheduleAutoEndTurn } };
+    const ctx = {
+      battle: { read: () => ({ ...createBattleCapabilities(defaultGameSession).read(), ...domain }) },
+      playback: { id: 3, completeAction: vi.fn(), scheduleAutoEndTurn },
+    };
     const transfers = { getDrawSequenceDeps: () => drawDeps };
     const playback = playBattleOpeningDraw(ctx, transfers);
     await vi.waitFor(() => expect(drawDeps.animateDrawnHand).toHaveBeenCalledOnce());
@@ -52,6 +57,7 @@ describe("opening hand playback", () => {
     const drawDeps = makeDrawSequenceDeps({ animateDrawnHand: vi.fn(async () => {}) });
     const setOpeningDrawPending = vi.fn();
     const ctx = {
+      battle: { read: () => ({ ...createBattleCapabilities(defaultGameSession).read(), ...domain }) },
       playback: { id: 3, completeAction: vi.fn(), scheduleAutoEndTurn },
       getPresentation: () => ({ openingDrawPending: true, setOpeningDrawPending }),
     };

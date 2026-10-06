@@ -1,4 +1,5 @@
 import "../helpers/mock-audio";
+
 import { cleanup, fireEvent, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useReturnToRunNavigation } from "@/app/use-app-navigation";
@@ -7,6 +8,7 @@ import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import { createMockRouteCommands } from "../helpers/run-controller";
 import { resetAllTestStores, setRunProgress, setRunSession } from "../helpers/run-domain-store-test";
+import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(resetAllTestStores);
 afterEach(() => {
@@ -19,13 +21,16 @@ describe("difficulty Back navigation", () => {
     setRunProgress({ characterId: "wildcard" });
     setRunSession({ hasActiveRun: true, activity: { kind: "difficulty-select" } });
     const navigateTo = vi.fn();
-    const commands = createContentSystemNavigation({
-      navigateTo,
-      resumeTo: vi.fn(),
-      startBattle: vi.fn(),
-      getAvailableDestinations: () => [],
-      onResumeWildwood: vi.fn(),
-    });
+    const commands = createContentSystemNavigation(
+      {
+        navigateTo,
+        resumeTo: vi.fn(),
+        startBattle: vi.fn(),
+        getAvailableDestinations: () => [],
+        onResumeWildwood: vi.fn(),
+      },
+      defaultGameSession,
+    );
     const routeCommands = createMockRouteCommands();
     routeCommands.runSetup.handleBackFromDifficultySelect = commands.handleBackFromDifficultySelect;
     const run = { routeCommands, goToScreen: navigateTo, returnToBattle: vi.fn() };

@@ -1,4 +1,5 @@
 import "../../../../helpers/mock-audio";
+
 import { replaceBattleForTest as setSyncedBattleState } from "../../../../helpers/run-domain-store-test";
 import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
 import { act, renderHook } from "@testing-library/react";
@@ -62,6 +63,8 @@ vi.mock("@/lib/animation/animation-prefs", async (importOriginal) => ({
 import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
 
 import { awardCardXP } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
+import { defaultGameSession } from "@/app/application-session";
 
 const autoplayControl = { signal: new AbortController().signal, canCommit: () => true };
 
@@ -71,6 +74,7 @@ function makeDeps(overrides: Partial<BattleControllerContext> = {}) {
   const scheduleAutoEndTurnMock = vi.spyOn(playback, "scheduleAutoEndTurn");
   const ctx = {
     screen: "battle" as const,
+    battle: createBattleCapabilities(defaultGameSession),
     playback,
     handCardRefs: { current: {} },
     playerPanelRef: { current: null },
@@ -139,13 +143,17 @@ describe("createBattleCardPlay", () => {
   it("a rejected stale click preserves the snapshot currently being presented", () => {
     const card = { ...makeTestCard({ cost: 1 }), uid: 1 };
     const state = makeTestBattleState({ hand: [card], mana: 0 });
-    dispatchGameplayCommand((draft) => acceptCommand(setSyncedBattleState(draft, state)));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setSyncedBattleState(draft, state)),
+      undefined,
+      defaultGameSession,
+    );
     const shown = battleSnapshot({ ...state, mana: 2 });
     useBattlePresentationStore.getState().setDisplayedBattle(shown);
     const { ctx, session, transferDeps } = makeDeps();
     clickCard(createBattleCardPlay(ctx, session, transferDeps).handleCardClick, card, 0);
     expect(useBattlePresentationStore.getState().displayedBattle).toBe(shown);
-    expect(readBattle().battleState.mana).toBe(0);
+    expect(readBattle(defaultGameSession).battleState.mana).toBe(0);
   });
 
   it("a stale autoplay preview cannot choose the same catalog card from the next queued Wish", async () => {
@@ -154,16 +162,20 @@ describe("createBattleCardPlay", () => {
     try {
       const first = makeTestCard({ id: "slash" });
       const state = makeTestBattleState({ wishOptions: [first], wishQueue: [[first]] });
-      dispatchGameplayCommand((draft) => acceptCommand(setSyncedBattleState(draft, state)));
+      dispatchGameplayCommand(
+        (draft) => acceptCommand(setSyncedBattleState(draft, state)),
+        undefined,
+        defaultGameSession,
+      );
       const { ctx, session, transferDeps } = makeDeps();
       const actions = createBattleCardPlay(ctx, session, transferDeps);
-      const offered = readBattle().battleState.wishOptions![0]!;
+      const offered = readBattle(defaultGameSession).battleState.wishOptions![0]!;
       const pending = actions.handleAutoplayWish(offered, autoplayControl);
       actions.handleWishChoice(offered);
       await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
       await expect(pending).resolves.toBe(false);
-      expect(readBattle().battleState.hand).toHaveLength(1);
-      expect(readBattle().battleState.wishOptions).toEqual([first]);
+      expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(1);
+      expect(readBattle(defaultGameSession).battleState.wishOptions).toEqual([first]);
     } finally {
       vi.mocked(shouldReduceMotion).mockReturnValue(true);
       vi.useRealTimers();
@@ -187,7 +199,11 @@ describe("createBattleCardPlay", () => {
         playerHealth: 20,
         playerStatuses: { ...base.playerStatuses, burn },
       });
-      dispatchGameplayCommand((draft) => acceptCommand(setSyncedBattleState(draft, state)));
+      dispatchGameplayCommand(
+        (draft) => acceptCommand(setSyncedBattleState(draft, state)),
+        undefined,
+        defaultGameSession,
+      );
 
       const { ctx, session, transferDeps } = makeDeps();
       clickCard(createBattleCardPlay(ctx, session, transferDeps).handleCardClick, { ...cleanse, uid: 1 }, 0);
@@ -207,14 +223,18 @@ describe("createBattleCardPlay", () => {
       mana: 3,
       enemyHealth: 30,
     });
-    dispatchGameplayCommand((draft) => acceptCommand(setSyncedBattleState(draft, state)));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setSyncedBattleState(draft, state)),
+      undefined,
+      defaultGameSession,
+    );
 
     const { ctx, session, transferDeps, awardCardXP } = makeDeps();
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...slash, uid: 1 }, 0);
 
-    expect(readBattle().battleState.hand.length).toBe(0);
-    expect(readBattle().battleState.enemyHealth).toBeLessThan(30);
+    expect(readBattle(defaultGameSession).battleState.hand.length).toBe(0);
+    expect(readBattle(defaultGameSession).battleState.enemyHealth).toBeLessThan(30);
     await vi.waitFor(() => {
       expect(ctx.playback.scheduleAutoEndTurn).toHaveBeenCalled();
     });
@@ -229,13 +249,17 @@ describe("createBattleCardPlay", () => {
   it("rejects stale manual and autoplay callbacks while inspecting", async () => {
     const slash = { ...makeTestCard({ id: "slash", cost: 1 }), uid: 1 };
     const state = makeTestBattleState({ hand: [slash], mana: 3, enemyHealth: 30 });
-    dispatchGameplayCommand((draft) => acceptCommand(setSyncedBattleState(draft, state)));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setSyncedBattleState(draft, state)),
+      undefined,
+      defaultGameSession,
+    );
     const { ctx, session, transferDeps, awardCardXP } = makeDeps();
     const { handleCardClick, handleAutoplayCard } = createBattleCardPlay(ctx, session, transferDeps);
     useUiStore.getState().setCardInspection("deck");
     clickCard(handleCardClick, slash, 0);
     await expect(handleAutoplayCard(slash, 0, autoplayControl)).resolves.toBe(false);
-    expect(readBattle().battleState).toEqual(battleSnapshot(state));
+    expect(readBattle(defaultGameSession).battleState).toEqual(battleSnapshot(state));
     expect(awardCardXP).not.toHaveBeenCalled();
   });
 
@@ -249,13 +273,17 @@ describe("createBattleCardPlay", () => {
       hand: [{ ...expensive, uid: 2 }],
       mana: 1,
     });
-    dispatchGameplayCommand((draft) => acceptCommand(setSyncedBattleState(draft, state)));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setSyncedBattleState(draft, state)),
+      undefined,
+      defaultGameSession,
+    );
 
     const { ctx, session, transferDeps, awardCardXP } = makeDeps();
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...expensive, uid: 2 }, 0);
 
-    expect(readBattle().battleState).toEqual(battleSnapshot(state));
+    expect(readBattle(defaultGameSession).battleState).toEqual(battleSnapshot(state));
     expect(ctx.playback.scheduleAutoEndTurn).not.toHaveBeenCalled();
     expect(awardCardXP).not.toHaveBeenCalled();
     expect(playUISound).toHaveBeenCalledWith("error");
@@ -274,13 +302,17 @@ describe("createBattleCardPlay", () => {
       playerHealth: 0,
       deathsDoorActive: false,
     });
-    dispatchGameplayCommand((draft) => acceptCommand(setSyncedBattleState(draft, state)));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setSyncedBattleState(draft, state)),
+      undefined,
+      defaultGameSession,
+    );
 
     const { ctx, session, transferDeps } = makeDeps();
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...slash, uid: 3 }, 0);
 
-    expect(readBattle().battleState.enemyHealth).toBe(state.enemyHealth);
+    expect(readBattle(defaultGameSession).battleState.enemyHealth).toBe(state.enemyHealth);
     expect(playUISound).toHaveBeenCalledWith("error");
   });
 
@@ -295,15 +327,19 @@ describe("createBattleCardPlay", () => {
       mana: 3,
       enemyHealth: 30,
     });
-    dispatchGameplayCommand((draft) => acceptCommand(setSyncedBattleState(draft, state)));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setSyncedBattleState(draft, state)),
+      undefined,
+      defaultGameSession,
+    );
     useBattlePresentationStore.getState().setCardTransferInProgress(true);
 
     const { ctx, session, transferDeps, awardCardXP } = makeDeps();
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...slash, uid: 5 }, 0);
 
-    expect(readBattle().battleState.hand).toHaveLength(0);
-    expect(readBattle().battleState.mana).toBe(2);
+    expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(0);
+    expect(readBattle(defaultGameSession).battleState.mana).toBe(2);
     expectAwardedCard(awardCardXP, "slash");
     expect(playUISound).not.toHaveBeenCalled();
   });
@@ -324,39 +360,44 @@ describe("createBattleCardPlay", () => {
       });
     const first = makeTestCard({ id: "slash", uid: 11, cost: 1 });
     const second = makeTestCard({ id: "slash", uid: 12, cost: 1 });
-    dispatchGameplayCommand((draft) =>
-      acceptCommand(
-        setSyncedBattleState(
-          draft,
-          makeTestBattleState({
-            hand: [first, second],
-            mana: 3,
-            enemyHealth: 100,
-          }),
+    dispatchGameplayCommand(
+      (draft) =>
+        acceptCommand(
+          setSyncedBattleState(
+            draft,
+            makeTestBattleState({
+              hand: [first, second],
+              mana: 3,
+              enemyHealth: 100,
+            }),
+          ),
         ),
-      ),
+      undefined,
+      defaultGameSession,
     );
     const { ctx, session, transferDeps } = makeDeps();
     const { handleAutoplayCard } = createBattleCardPlay(ctx, session, transferDeps);
     await expect(handleAutoplayCard(first, 0, autoplayControl)).resolves.toBe(true);
     await expect(handleAutoplayCard(second, 1, autoplayControl)).resolves.toBe(true);
-    expect(readBattle().battleState.mana).toBe(1);
-    expect(readBattle().battleState.hand).toHaveLength(0);
+    expect(readBattle(defaultGameSession).battleState.mana).toBe(1);
+    expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(0);
     await expect(handleAutoplayCard(first, 0, autoplayControl)).resolves.toBe(false);
     settled[1]!();
     expect(ctx.playback.cardPlayInProgress).toBe(true);
     expect(session.checkBattleEnd).toHaveBeenCalledTimes(2);
     settled[0]!();
     expect(ctx.playback.cardPlayInProgress).toBe(false);
-    expect(session.checkBattleEnd).toHaveBeenCalledWith(readBattle().battleState, 1);
-    expect(ctx.playback.scheduleAutoEndTurn).toHaveBeenCalledWith(readBattle().battleState);
+    expect(session.checkBattleEnd).toHaveBeenCalledWith(readBattle(defaultGameSession).battleState, 1);
+    expect(ctx.playback.scheduleAutoEndTurn).toHaveBeenCalledWith(readBattle(defaultGameSession).battleState);
     expect(playUISound).not.toHaveBeenCalled();
   });
 
   it("keeps the hand closed once End Turn has started", async () => {
     const card = makeTestCard({ id: "slash", uid: 1, cost: 0 });
-    dispatchGameplayCommand((draft) =>
-      acceptCommand(setSyncedBattleState(draft, makeTestBattleState({ hand: [card] }))),
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setSyncedBattleState(draft, makeTestBattleState({ hand: [card] }))),
+      undefined,
+      defaultGameSession,
     );
     const { ctx, session, transferDeps } = makeDeps({
       playback: (() => {
@@ -367,7 +408,7 @@ describe("createBattleCardPlay", () => {
     });
     const actions = createBattleCardPlay(ctx, session, transferDeps);
     await expect(actions.handleAutoplayCard(card, 0, autoplayControl)).resolves.toBe(false);
-    expect(readBattle().battleState.hand).toHaveLength(1);
+    expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(1);
   });
 
   it("rejects plays for cards still animating into the hand", () => {
@@ -381,7 +422,11 @@ describe("createBattleCardPlay", () => {
       mana: 3,
       enemyHealth: 30,
     });
-    dispatchGameplayCommand((draft) => acceptCommand(setSyncedBattleState(draft, state)));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setSyncedBattleState(draft, state)),
+      undefined,
+      defaultGameSession,
+    );
     useBattlePresentationStore.getState().setCardTransferInProgress(true);
     useBattlePresentationStore.getState().setHiddenHandCardKeys(() => ["slash-6"]);
 
@@ -389,7 +434,7 @@ describe("createBattleCardPlay", () => {
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...slash, uid: 6 }, 0);
 
-    expect(readBattle().battleState).toEqual(battleSnapshot(state));
+    expect(readBattle(defaultGameSession).battleState).toEqual(battleSnapshot(state));
     expect(awardCardXP).not.toHaveBeenCalled();
     expect(playUISound).toHaveBeenCalledWith("error");
   });
@@ -405,7 +450,11 @@ describe("createBattleCardPlay", () => {
       mana: 3,
       enemyHealth: 0,
     });
-    dispatchGameplayCommand((draft) => acceptCommand(setSyncedBattleState(draft, state)));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setSyncedBattleState(draft, state)),
+      undefined,
+      defaultGameSession,
+    );
 
     const onBattleVictory = vi.fn();
     const { ctx, transferDeps, awardCardXP } = makeDeps({ onBattleVictory });
@@ -414,9 +463,9 @@ describe("createBattleCardPlay", () => {
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...slash, uid: 4 }, 0);
 
-    expect(readBattle().battleState.hand.length).toBe(0);
-    expect(readBattle().battleState.discard).toHaveLength(1);
-    expect(readBattle().battleState.mana).toBe(2);
+    expect(readBattle(defaultGameSession).battleState.hand.length).toBe(0);
+    expect(readBattle(defaultGameSession).battleState.discard).toHaveLength(1);
+    expect(readBattle(defaultGameSession).battleState.mana).toBe(2);
     expectAwardedCard(awardCardXP, "slash");
     expect(onBattleVictory).toHaveBeenCalledOnce();
     expect(ctx.playback.canAcceptInput()).toBe(false);
@@ -434,14 +483,18 @@ describe("createBattleCardPlay", () => {
       mana: 3,
       enemyHealth: 30,
     });
-    dispatchGameplayCommand((draft) => acceptCommand(setSyncedBattleState(draft, state)));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setSyncedBattleState(draft, state)),
+      undefined,
+      defaultGameSession,
+    );
 
     const { ctx, session, transferDeps, awardCardXP } = makeDeps();
     const { handleAutoplayCard } = createBattleCardPlay(ctx, session, transferDeps);
     const played = await handleAutoplayCard({ ...slash, uid: 7 }, 0, autoplayControl);
 
     expect(played).toBe(true);
-    expect(readBattle().battleState.hand.length).toBe(0);
+    expect(readBattle(defaultGameSession).battleState.hand.length).toBe(0);
     expectAwardedCard(awardCardXP, "slash");
     expect(playUISound).not.toHaveBeenCalled();
   });
@@ -459,7 +512,11 @@ describe("createBattleCardPlay", () => {
       mana: 3,
       enemyHealth: 30,
     });
-    dispatchGameplayCommand((draft) => acceptCommand(setSyncedBattleState(draft, state)));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setSyncedBattleState(draft, state)),
+      undefined,
+      defaultGameSession,
+    );
 
     const { ctx, session, transferDeps } = makeDeps();
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
@@ -470,7 +527,7 @@ describe("createBattleCardPlay", () => {
     const request = vi.mocked(runBattleDraw).mock.calls[0]![0];
     expect(request.oldHand).toHaveLength(1);
     expect(request.newState.hand.find((card) => card.id === "slash")).toBeDefined();
-    const drawn = readBattle().battleState.hand.find((card) => card.id === "slash");
+    const drawn = readBattle(defaultGameSession).battleState.hand.find((card) => card.id === "slash");
     expect(drawn).toBeDefined();
     expect(useBattlePresentationStore.getState().playerAttackToken).toBe(0);
   });
@@ -484,10 +541,16 @@ describe("createBattleCardPlay", () => {
         cost: 1,
         effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
       });
-      dispatchGameplayCommand((draft) =>
-        acceptCommand(
-          setSyncedBattleState(draft, makeTestBattleState({ hand: [{ ...slash, uid: 7 }], mana: 3, enemyHealth: 30 })),
-        ),
+      dispatchGameplayCommand(
+        (draft) =>
+          acceptCommand(
+            setSyncedBattleState(
+              draft,
+              makeTestBattleState({ hand: [{ ...slash, uid: 7 }], mana: 3, enemyHealth: 30 }),
+            ),
+          ),
+        undefined,
+        defaultGameSession,
       );
 
       const { ctx, session, transferDeps } = makeDeps();
@@ -499,7 +562,7 @@ describe("createBattleCardPlay", () => {
       await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
       await expect(pending).resolves.toBe(true);
       expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
-      expect(readBattle().battleState.hand).toHaveLength(0);
+      expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(0);
     } finally {
       vi.useRealTimers();
       vi.mocked(shouldReduceMotion).mockReturnValue(true);
@@ -517,20 +580,23 @@ describe("createBattleCardPlay", () => {
       cost: 1,
       effects: [{ kind: "damage", damageType: "physical", amount: 9 }],
     });
-    dispatchGameplayCommand((draft) =>
-      acceptCommand(
-        setSyncedBattleState(
-          draft,
-          makeTestBattleState({ hand: [], mana: 3, enemyHealth: 30, wishOptions: [weak, strong] }),
+    dispatchGameplayCommand(
+      (draft) =>
+        acceptCommand(
+          setSyncedBattleState(
+            draft,
+            makeTestBattleState({ hand: [], mana: 3, enemyHealth: 30, wishOptions: [weak, strong] }),
+          ),
         ),
-      ),
+      undefined,
+      defaultGameSession,
     );
 
     const { ctx, session, transferDeps } = makeDeps();
     const { handleAutoplayWish } = createBattleCardPlay(ctx, session, transferDeps);
 
     await expect(handleAutoplayWish(strong, autoplayControl)).resolves.toBe(true);
-    const next = readBattle().battleState;
+    const next = readBattle(defaultGameSession).battleState;
     expect(playUISound).toHaveBeenCalledWith("selection");
     expect(next.wishOptions).toBeNull();
     expect(next.hand.map((card) => card.id)).toEqual(["strong-wish"]);
@@ -549,13 +615,17 @@ describe("createBattleCardPlay", () => {
       effects: [{ kind: "damage", damageType: "physical", amount: 9 }],
     });
     const initialState = makeTestBattleState({ hand: [], mana: 3, enemyHealth: 30, wishOptions: [offered] });
-    dispatchGameplayCommand((draft) => acceptCommand(setSyncedBattleState(draft, initialState)));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setSyncedBattleState(draft, initialState)),
+      undefined,
+      defaultGameSession,
+    );
 
     const { ctx, session, transferDeps } = makeDeps();
     const { handleAutoplayWish } = createBattleCardPlay(ctx, session, transferDeps);
 
     await expect(handleAutoplayWish(stale, autoplayControl)).resolves.toBe(false);
-    expect(readBattle().battleState).toEqual(battleSnapshot(initialState));
+    expect(readBattle(defaultGameSession).battleState).toEqual(battleSnapshot(initialState));
     expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
   });
 
@@ -568,10 +638,16 @@ describe("createBattleCardPlay", () => {
         cost: 1,
         effects: [{ kind: "damage", damageType: "physical", amount: 9 }],
       });
-      dispatchGameplayCommand((draft) =>
-        acceptCommand(
-          setSyncedBattleState(draft, makeTestBattleState({ hand: [], mana: 3, enemyHealth: 30, wishOptions: [wish] })),
-        ),
+      dispatchGameplayCommand(
+        (draft) =>
+          acceptCommand(
+            setSyncedBattleState(
+              draft,
+              makeTestBattleState({ hand: [], mana: 3, enemyHealth: 30, wishOptions: [wish] }),
+            ),
+          ),
+        undefined,
+        defaultGameSession,
       );
 
       const { ctx, session, transferDeps } = makeDeps();
@@ -582,7 +658,7 @@ describe("createBattleCardPlay", () => {
       await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
       await expect(pending).resolves.toBe(true);
       expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
-      expect(readBattle().battleState.wishOptions).toBeNull();
+      expect(readBattle(defaultGameSession).battleState.wishOptions).toBeNull();
     } finally {
       vi.useRealTimers();
       vi.mocked(shouldReduceMotion).mockReturnValue(true);
@@ -598,10 +674,16 @@ describe("createBattleCardPlay", () => {
         cost: 1,
         effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
       });
-      dispatchGameplayCommand((draft) =>
-        acceptCommand(
-          setSyncedBattleState(draft, makeTestBattleState({ hand: [{ ...slash, uid: 7 }], mana: 3, enemyHealth: 30 })),
-        ),
+      dispatchGameplayCommand(
+        (draft) =>
+          acceptCommand(
+            setSyncedBattleState(
+              draft,
+              makeTestBattleState({ hand: [{ ...slash, uid: 7 }], mana: 3, enemyHealth: 30 }),
+            ),
+          ),
+        undefined,
+        defaultGameSession,
       );
 
       const { ctx, session, transferDeps, awardCardXP } = makeDeps();
@@ -613,7 +695,7 @@ describe("createBattleCardPlay", () => {
       await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
       await expect(pending).resolves.toBe(false);
       expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
-      expect(readBattle().battleState.hand).toHaveLength(1);
+      expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(1);
       expect(awardCardXP).not.toHaveBeenCalled();
     } finally {
       vi.useRealTimers();
@@ -628,7 +710,11 @@ describe("createBattleCardPlay", () => {
       vi.useFakeTimers();
       const slash = makeTestCard({ id: "slash", uid: 7, cost: 1 });
       const initialState = makeTestBattleState({ hand: [slash], mana: 3, enemyHealth: 30 });
-      dispatchGameplayCommand((draft) => acceptCommand(setSyncedBattleState(draft, initialState)));
+      dispatchGameplayCommand(
+        (draft) => acceptCommand(setSyncedBattleState(draft, initialState)),
+        undefined,
+        defaultGameSession,
+      );
       const { ctx, session, transferDeps } = makeDeps();
       const actions = createBattleCardPlay(ctx, session, transferDeps);
       const gate = { current: { hiddenHandCardKeys: [], cardTransferInProgress: false } };
@@ -639,7 +725,7 @@ describe("createBattleCardPlay", () => {
             gameMenuOpen,
             screen: "battle",
             hasActiveBattle: true,
-            battleState: readBattle().battleState,
+            battleState: readBattle(defaultGameSession).battleState,
             isCardPlayInProgress: () => ctx.playback.cardPlayInProgress,
             playCard: actions.handleAutoplayCard,
             playWish: actions.handleAutoplayWish,
@@ -654,7 +740,7 @@ describe("createBattleCardPlay", () => {
         await act(async () => {
           await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
         });
-        expect(readBattle().battleState).toEqual(battleSnapshot(initialState));
+        expect(readBattle(defaultGameSession).battleState).toEqual(battleSnapshot(initialState));
         expect(awardCardXP).not.toHaveBeenCalled();
         expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
         if (interruption !== "unmount") {
@@ -662,7 +748,7 @@ describe("createBattleCardPlay", () => {
           await act(async () => {
             await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS + 50);
           });
-          expect(readBattle().battleState.hand).toHaveLength(0);
+          expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(0);
         }
       } finally {
         unmount();
@@ -678,10 +764,13 @@ describe("createBattleCardPlay", () => {
       cost: 1,
       effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
     });
-    dispatchGameplayCommand((draft) =>
-      acceptCommand(
-        setSyncedBattleState(draft, makeTestBattleState({ hand: [{ ...slash, uid: 9 }], mana: 3, enemyHealth: 30 })),
-      ),
+    dispatchGameplayCommand(
+      (draft) =>
+        acceptCommand(
+          setSyncedBattleState(draft, makeTestBattleState({ hand: [{ ...slash, uid: 9 }], mana: 3, enemyHealth: 30 })),
+        ),
+      undefined,
+      defaultGameSession,
     );
     useUiStore.getState().setAutoplayPreviewCardId("hand-slash-9");
 
@@ -690,7 +779,7 @@ describe("createBattleCardPlay", () => {
     clickCard(handleCardClick, { ...slash, uid: 9 }, 0);
 
     expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
-    expect(readBattle().battleState.hand).toHaveLength(0);
+    expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(0);
   });
 
   it("does not telegraph a player lunge for non-damage cards", () => {
@@ -704,7 +793,11 @@ describe("createBattleCardPlay", () => {
       mana: 3,
       enemyHealth: 30,
     });
-    dispatchGameplayCommand((draft) => acceptCommand(setSyncedBattleState(draft, state)));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setSyncedBattleState(draft, state)),
+      undefined,
+      defaultGameSession,
+    );
 
     const { ctx, session, transferDeps } = makeDeps();
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);

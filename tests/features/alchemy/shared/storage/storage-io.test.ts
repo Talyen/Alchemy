@@ -19,6 +19,7 @@ import {
   playableSaveCandidate,
 } from "../../../../helpers/save-candidate-fixtures";
 import { installStorageIoTestHooks } from "../../../../helpers/storage-io-test-setup";
+import { defaultGameSession } from "@/app/application-session";
 
 const mockStorage: Record<string, string> = {};
 const mockLocalStorage = {
@@ -67,7 +68,7 @@ describe("storage io", () => {
   });
 
   it("loadAlchemySaveState returns defaults when localStorage empty", async () => {
-    const data = (await loadAlchemySaveState()).data;
+    const data = (await loadAlchemySaveState(defaultGameSession)).data;
     expect(data.selectedAspectRatio).toBe("auto");
     expect(data.activeRun).toBeNull();
   });
@@ -76,21 +77,24 @@ describe("storage io", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const error = new Error("Storage unavailable");
     const write = vi.fn().mockResolvedValue({ ok: true });
-    configureSaveBackend({
-      readCandidates: async () => {
-        if (failure === "thrown") throw error;
-        return { ok: false, error };
+    configureSaveBackend(
+      {
+        readCandidates: async () => {
+          if (failure === "thrown") throw error;
+          return { ok: false, error };
+        },
+        write,
+        writeSync: () => null,
+        clear: async () => ({ ok: true }),
       },
-      write,
-      writeSync: () => null,
-      clear: async () => ({ ok: true }),
-    });
+      defaultGameSession,
+    );
 
-    const loaded = await loadAlchemySaveState();
+    const loaded = await loadAlchemySaveState(defaultGameSession);
 
     expect(loaded.status.kind).toBe("unavailable");
     expect(loaded.data).toEqual(defaultSaveData);
-    expect(await saveAlchemySaveData(defaultSaveData)).toBe("saved");
+    expect(await saveAlchemySaveData(defaultSaveData, defaultGameSession)).toBe("saved");
     expect(write).toHaveBeenCalledWith(SAVE_RECOVERY_KEY, expect.any(String));
   });
 
@@ -111,7 +115,7 @@ describe("storage io", () => {
         ],
       },
     });
-    const loaded = await loadAlchemySaveState();
+    const loaded = await loadAlchemySaveState(defaultGameSession);
     expect(loaded.status.kind).toBe("ok");
     expect(loaded.status.kind === "ok" ? loaded.status.warnings : undefined).toEqual(
       expect.arrayContaining([expect.stringMatching(/Card content "effects\[0\]" was repaired/)]),
@@ -123,9 +127,9 @@ describe("storage io", () => {
   it("loadAlchemySaveState returns defaults on corrupt JSON", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mockStorage[SAVE_KEY] = "not-json";
-    const data = (await loadAlchemySaveState()).data;
+    const data = (await loadAlchemySaveState(defaultGameSession)).data;
     expect(data.selectedAspectRatio).toBe("auto");
-    expect((await loadAlchemySaveState()).status.kind).toBe("corrupt");
+    expect((await loadAlchemySaveState(defaultGameSession)).status.kind).toBe("corrupt");
     expect(console.error).toHaveBeenCalledWith(
       expect.stringContaining("Save candidate JSON parse failed"),
       expect.anything(),
@@ -137,7 +141,7 @@ describe("storage io", () => {
   it("returns corrupt for a non-object JSON root", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mockStorage[SAVE_KEY] = "null";
-    const loaded = await loadAlchemySaveState();
+    const loaded = await loadAlchemySaveState(defaultGameSession);
 
     expect(loaded.data).toEqual(defaultSaveData);
     expect(loaded.status.kind).toBe("corrupt");
@@ -152,14 +156,14 @@ describe("storage io", () => {
   it("loadAlchemySaveState loads valid save data", async () => {
     vi.spyOn(console, "info").mockImplementation(() => {});
     mockStorage[SAVE_KEY] = JSON.stringify({ musicVolume: 50, sfxVolume: 50 });
-    const data = (await loadAlchemySaveState()).data;
+    const data = (await loadAlchemySaveState(defaultGameSession)).data;
     expect(data.musicVolume).toBe(50);
   });
 
   it("loadAlchemySaveState loads campaign fixture from localStorage", async () => {
     vi.spyOn(console, "info").mockImplementation(() => {});
     mockStorage[SAVE_KEY] = JSON.stringify(currentSchemaCampaignSave());
-    const loaded = await loadAlchemySaveState();
+    const loaded = await loadAlchemySaveState(defaultGameSession);
 
     expect(loaded.status.kind).toBe("ok");
     expect(loaded.data.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
@@ -174,7 +178,7 @@ describe("storage io", () => {
     expect(loaded.data.gold).toBe(42);
     expect(loaded.data.materialInventory).toEqual({ ...emptyInventory(), wood: 4, iron: 2 });
 
-    await saveAlchemySaveData(loaded.data);
+    await saveAlchemySaveData(loaded.data, defaultGameSession);
     const reloaded = JSON.parse(mockStorage[SAVE_KEY]);
     expect(reloaded.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
     expect(reloaded.discoveredCardIds).toEqual(["slash", "block", "bash"]);
@@ -185,7 +189,7 @@ describe("storage io", () => {
   it("does not report warnings for harmless save defaults", async () => {
     vi.spyOn(console, "info").mockImplementation(() => {});
     mockStorage[SAVE_KEY] = JSON.stringify({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION, musicVolume: 50 });
-    const loaded = await loadAlchemySaveState();
+    const loaded = await loadAlchemySaveState(defaultGameSession);
 
     expect(loaded.status.kind).toBe("ok");
     expect(loaded.status.kind === "ok" ? loaded.status.warnings : []).toBeUndefined();
@@ -200,7 +204,7 @@ describe("storage io", () => {
       craftingCurrencies: "corrupt",
       materialInventory: "corrupt",
     });
-    const loaded = await loadAlchemySaveState();
+    const loaded = await loadAlchemySaveState(defaultGameSession);
 
     expect(loaded.status.kind).toBe("ok");
     const warnings = loaded.status.kind === "ok" ? (loaded.status.warnings ?? []) : [];
@@ -230,12 +234,12 @@ describe("storage io", () => {
         labyrinthMap: null,
       },
     });
-    const loaded = await loadAlchemySaveState();
+    const loaded = await loadAlchemySaveState(defaultGameSession);
 
     expect(loaded.status.kind).toBe("ok");
     expect(loaded.status.kind === "ok" ? loaded.status.warnings : []).toContain("active run could not be restored");
 
-    await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] });
+    await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] }, defaultGameSession);
     expect(JSON.parse(mockStorage[SAVE_KEY]).discoveredCardIds).toEqual(["slash"]);
     expect(JSON.parse(mockStorage[SAVE_KEY]).activeRun).toBeNull();
   });
@@ -258,7 +262,7 @@ describe("storage io", () => {
       },
     });
 
-    const loaded = await loadAlchemySaveState();
+    const loaded = await loadAlchemySaveState(defaultGameSession);
 
     expect(loaded.status.kind).toBe("ok");
     expect(loaded.data.activeRun).not.toBeNull();
@@ -270,11 +274,11 @@ describe("storage io", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mockStorage[SAVE_KEY] = payload;
 
-    const loaded = await loadAlchemySaveState();
+    const loaded = await loadAlchemySaveState(defaultGameSession);
 
     expect(loaded.data).toEqual(defaultSaveData);
     expect(loaded.status).toEqual(expectedStatus);
-    await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] });
+    await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] }, defaultGameSession);
     expect(mockStorage[SAVE_KEY]).toBe(payload);
     expect(JSON.parse(mockStorage[SAVE_RECOVERY_KEY]).discoveredCardIds).toEqual(["slash"]);
   });
@@ -283,10 +287,12 @@ describe("storage io", () => {
     const newerPrimary = futureSaveCandidate(2000);
     mockStorage[SAVE_KEY] = newerPrimary;
 
-    expect((await loadAlchemySaveState()).status.kind).toBe("unsupported-newer-schema");
-    expect(await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] })).toBe("saved");
+    expect((await loadAlchemySaveState(defaultGameSession)).status.kind).toBe("unsupported-newer-schema");
+    expect(await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] }, defaultGameSession)).toBe(
+      "saved",
+    );
 
-    const resumed = await loadAlchemySaveState();
+    const resumed = await loadAlchemySaveState(defaultGameSession);
     expect(resumed.status.kind).toBe("ok");
     expect(resumed.data.discoveredCardIds).toEqual(["slash"]);
     expect(mockStorage[SAVE_KEY]).toBe(newerPrimary);
@@ -298,11 +304,11 @@ describe("storage io", () => {
       const compatibleBackup = playableSaveCandidate(1000);
       const { writeSave } = setupDesktopSaveCandidates([payload, compatibleBackup]);
 
-      const loaded = await loadAlchemySaveState();
+      const loaded = await loadAlchemySaveState(defaultGameSession);
 
       expect(loaded.status.kind).toBe("ok");
       expect(loaded.data.lastSavedAt).toBe(1000);
-      await saveAlchemySaveData(loaded.data);
+      await saveAlchemySaveData(loaded.data, defaultGameSession);
       expect(writeSave).toHaveBeenCalledWith(expect.any(String), "recovery");
       expect(writeSave).not.toHaveBeenCalledWith(expect.any(String), undefined);
     },
@@ -314,11 +320,11 @@ describe("storage io", () => {
     const compatibleOlderBackup = playableSaveCandidate(1000);
     const { writeSave } = setupDesktopSaveCandidates(["not-valid-json", futureBackup, compatibleOlderBackup]);
 
-    const loaded = await loadAlchemySaveState();
+    const loaded = await loadAlchemySaveState(defaultGameSession);
 
     expect(loaded.status.kind).toBe("ok");
     expect(loaded.data.lastSavedAt).toBe(1000);
-    await saveAlchemySaveData(loaded.data);
+    await saveAlchemySaveData(loaded.data, defaultGameSession);
     expect(writeSave).toHaveBeenCalledWith(expect.any(String), "recovery");
   });
 
@@ -327,11 +333,11 @@ describe("storage io", () => {
     const futureBackup = futureSaveCandidate(undefined);
     const { writeSave } = setupDesktopSaveCandidates([compatibleSave, futureBackup]);
 
-    const loaded = await loadAlchemySaveState();
+    const loaded = await loadAlchemySaveState(defaultGameSession);
 
     expect(loaded.status.kind).toBe("ok");
     expect(loaded.data.discoveredCardIds).toEqual(["slash"]);
-    await saveAlchemySaveData(loaded.data);
+    await saveAlchemySaveData(loaded.data, defaultGameSession);
     expect(writeSave).toHaveBeenCalledOnce();
   });
 
@@ -343,7 +349,7 @@ describe("storage io", () => {
 
     setupMockWindowDesktop({ saveCandidates: [corruptLocal, validFromBackup], steamName: null });
 
-    const loaded = await loadAlchemySaveState();
+    const loaded = await loadAlchemySaveState(defaultGameSession);
 
     expect(loaded.status.kind).toBe("ok");
     expect(loaded.data.discoveredCardIds).toEqual(["slash", "block"]);
@@ -353,7 +359,7 @@ describe("storage io", () => {
     const legacy = JSON.stringify(currentSchemaCampaignSave());
     const desktop = setupMockWindowDesktop({ saveCandidates: [legacy] });
 
-    await loadAlchemySaveState();
+    await loadAlchemySaveState(defaultGameSession);
 
     expect(desktop.writeSave).not.toHaveBeenCalled();
   });
@@ -363,7 +369,7 @@ describe("storage io", () => {
 
     setupMockWindowDesktop({ saveCandidates: ["garbage", "also-garbage"], steamName: null });
 
-    const loaded = await loadAlchemySaveState();
+    const loaded = await loadAlchemySaveState(defaultGameSession);
 
     expect(loaded.status.kind).toBe("corrupt");
     expect(console.error).toHaveBeenCalledWith(

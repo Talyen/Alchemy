@@ -1,4 +1,4 @@
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import {
   registerSessionCleanup,
@@ -32,7 +32,7 @@ export function createScreenNavigation(
     showScreen: (screen: Screen) => void;
     onPendingChange?: (pending: boolean) => void;
   },
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ): ScreenNavigation {
   const timers = new TimerGroup(sessionClock(gameSession));
   // Revision protocol: cancelPending bumps revision and clears timers.
@@ -77,11 +77,11 @@ export function createScreenNavigation(
   }
 
   registerSessionCleanup(gameSession, cancelPending);
-  return {
+  return bindSessionCapabilities(gameSession, {
     navigateTo: (screen, prepare) => transitionTo(screen, prepare ? { prepare } : {}, false, "navigate"),
     resumeTo: (screen, prepare, immediate = false) =>
       transitionTo(screen, prepare ? { prepare, immediate } : { immediate }, true, "resumeRun"),
     transition,
     cancelPending,
-  };
+  });
 }

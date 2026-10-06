@@ -1,6 +1,5 @@
 import { applyMysteryEffect } from "@/features/alchemy/run-loop/navigation/mystery-flow";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
@@ -28,7 +27,7 @@ import {
 import { cardById } from "@/lib/game-data";
 import { isMysteryLootEligible, pickResolvedMysteryEvent, type MysteryChoice } from "@/lib/mystery";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
-export function beginMysteryVisit(gameSession: GameSession = defaultGameSession): void {
+export function beginMysteryVisit(gameSession: GameSession): void {
   dispatchRunSessionCommand((draft) => acceptCommand(beginMysteryVisitInTransaction(draft)), undefined, gameSession);
 }
 
@@ -61,7 +60,7 @@ export function beginMysteryVisitInTransaction(draft: RunTransaction): void {
     ),
   );
 }
-export function chooseMysteryOption(choice: MysteryChoice, gameSession: GameSession = defaultGameSession) {
+export function chooseMysteryOption(choice: MysteryChoice, gameSession: GameSession) {
   const activity = readRunSession(gameSession).activity;
   // The choice object belongs to one resolved visit. A retained screen from an
   // earlier visit must not apply its effects to the current one.
@@ -101,7 +100,7 @@ export function chooseMysteryOption(choice: MysteryChoice, gameSession: GameSess
     gameSession,
   );
 }
-export function chooseMysteryCard(cardId: string, gameSession: GameSession = defaultGameSession): boolean {
+export function chooseMysteryCard(cardId: string, gameSession: GameSession): boolean {
   return dispatchRunSessionCommand(
     (draft) => {
       if (readActivityData(snapshotTransactionValue(draft.session.activity), "mystery").mysteryChosenCardId !== null)

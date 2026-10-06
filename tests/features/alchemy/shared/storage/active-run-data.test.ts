@@ -12,17 +12,22 @@ import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/share
 import { setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { ANCIENT_ALTAR_MYSTERY_VISIT, makeActiveRunData } from "../stores/active-run-data-fixture";
+import { defaultGameSession } from "@/app/application-session";
 function encodeState(screen?: Screen): ActiveRunData {
-  return encodeRunResumeSnapshot(getRunSession(screen), screen);
+  return encodeRunResumeSnapshot(getRunSession(screen, defaultGameSession), screen);
 }
 
 function writeBattle(partial: { hasActiveBattle?: boolean; battleState?: BattleState }) {
-  dispatchGameplayCommand((draft) => {
-    if (partial.hasActiveBattle !== undefined) setBattleActiveForTest(draft, partial.hasActiveBattle);
-    if (partial.battleState !== undefined) getBattleForTest(draft).battleState = partial.battleState;
+  dispatchGameplayCommand(
+    (draft) => {
+      if (partial.hasActiveBattle !== undefined) setBattleActiveForTest(draft, partial.hasActiveBattle);
+      if (partial.battleState !== undefined) getBattleForTest(draft).battleState = partial.battleState;
 
-    return acceptCommand();
-  });
+      return acceptCommand();
+    },
+    undefined,
+    defaultGameSession,
+  );
 }
 
 beforeEach(() => {
@@ -60,7 +65,7 @@ describe("encodeRunResumeSnapshot", () => {
       runDeck,
       runPlayerHealth: 18,
       runMaxHealth: 32,
-      runMetaMaxHealth: readActiveRun().runMetaMaxHealth,
+      runMetaMaxHealth: readActiveRun(defaultGameSession).runMetaMaxHealth,
       roomsEncountered: 4,
       currentAct: 2,
       destinationIndexInAct: 1,
@@ -72,7 +77,7 @@ describe("encodeRunResumeSnapshot", () => {
       runTalentXP: {},
       selectedDifficulty: null,
       contentSystemType: "campaign",
-      rng: readActiveRun().rng,
+      rng: readActiveRun(defaultGameSession).rng,
       labyrinthMap: null,
       labyrinthPendingNode: null,
       activeLabyrinthModifiers: [],
@@ -115,7 +120,7 @@ describe("encodeRunResumeSnapshot", () => {
       activity: {
         kind: "shop",
         data: {
-          ...readActivityData(readRunSession().activity, "shop"),
+          ...readActivityData(readRunSession(defaultGameSession).activity, "shop"),
           cards: [card],
         },
       },
@@ -134,7 +139,7 @@ describe("encodeRunResumeSnapshot", () => {
         setRunSession({
           activity: {
             kind: "shop",
-            data: { ...readActivityData(readRunSession().activity, "shop"), cards: [card] },
+            data: { ...readActivityData(readRunSession(defaultGameSession).activity, "shop"), cards: [card] },
           },
         });
       },
@@ -149,7 +154,7 @@ describe("encodeRunResumeSnapshot", () => {
         setRunSession({
           activity: {
             kind: "alchemist",
-            data: { ...readActivityData(readRunSession().activity, "alchemist"), potions: [card] },
+            data: { ...readActivityData(readRunSession(defaultGameSession).activity, "alchemist"), potions: [card] },
           },
         });
       },
@@ -165,7 +170,7 @@ describe("encodeRunResumeSnapshot", () => {
           activity: {
             kind: "trinket-shop",
             data: {
-              ...readActivityData(readRunSession().activity, "trinket-shop"),
+              ...readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop"),
               trinkets: [trinket],
             },
           },
@@ -182,7 +187,7 @@ describe("encodeRunResumeSnapshot", () => {
           activity: {
             kind: "equipment-shop",
             data: {
-              ...readActivityData(readRunSession().activity, "equipment-shop"),
+              ...readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop"),
               gear: [{ instanceId: "shelf-1", definitionId: "leather-armor-basic", affixes: [] }],
             },
           },
@@ -310,8 +315,10 @@ describe("encodeRunResumeSnapshot", () => {
   });
 
   it("persists destination resume fields", () => {
-    dispatchGameplayCommand((draft) =>
-      acceptCommand(setRewardState(draft, (prev) => ({ ...prev, destinations: ["Campfire", "Card Shop"] }))),
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setRewardState(draft, (prev) => ({ ...prev, destinations: ["Campfire", "Card Shop"] }))),
+      undefined,
+      defaultGameSession,
     );
 
     const result = encodeState("destination");
@@ -382,7 +389,7 @@ describe("encodeRunResumeSnapshot", () => {
       },
     });
 
-    const offered = readActivityData(readRunSession().activity, "mystery").mysteryEvent;
+    const offered = readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryEvent;
     const result = encodeState("mystery");
     const decoded = decodeRunResumeSnapshot(result);
 

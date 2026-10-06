@@ -1,3 +1,8 @@
+import { createRunFlowEngine } from "@/features/alchemy/shell/run-flow-engine";
+import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
+import { createRunRouteActions } from "@/features/alchemy/shell/run-route-actions";
+import { createBattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
+
 import { registerSessionCleanup } from "@/features/alchemy/shared/stores/session-capabilities";
 import { createAlchemyAutosaveLifecycle } from "@/app/autosave-lifecycle";
 import { snapshotCareer, stateDigest } from "@/app/playthrough/career-persistence";
@@ -30,6 +35,7 @@ import { showRunScreen } from "@/features/alchemy/shared/stores/navigation-comma
 import { readActiveRunScreen } from "@/features/alchemy/shared/stores/run-reads";
 import type { SaveBackend } from "@/lib/platform-save-backend";
 import { describe, expect, it, vi } from "vitest";
+import { defaultGameSession } from "@/app/application-session";
 
 function memoryBackend() {
   const bytes = new Map<string, string>();
@@ -102,6 +108,68 @@ function playReadyCard(session: GameSession) {
 }
 
 describe("independent game sessions", () => {
+  it.each(["outcomes", "battle", "battle outcome", "navigation", "navigation cancellation", "labyrinth"] as const)(
+    "rejects mixed-career %s before publishing state or scheduling navigation",
+    async (foreignCapability) => {
+      const a = start(31, 1000);
+      const b = start(32, 2000);
+      const transition = vi.fn();
+      const navigateTo = vi.fn();
+      const runActions = createRunRouteActions(a.session);
+      const actions = { transition, navigateTo, clearCardHover: runActions.clearCardHover };
+      try {
+        const beforeA = stateDigest(a.session);
+        const beforeB = stateDigest(b.session);
+        const application = readGameplayState(defaultGameSession);
+        const outcomes = createRunOutcomes(
+          {
+            actions: foreignCapability === "outcomes" ? { transition, navigateTo, clearCardHover: () => {} } : actions,
+            getAvailableDestinations:
+              foreignCapability === "outcomes"
+                ? createRunRouteActions(b.session).getAvailableDestinations
+                : runActions.getAvailableDestinations,
+          },
+          foreignCapability === "outcomes" ? b.session : a.session,
+        );
+        const foreignNavigation = createScreenNavigation(
+          {
+            readScreen: () => readActiveRunScreen(b.session),
+            showScreen: (screen) => showRunScreen(screen, b.session),
+          },
+          b.session,
+        );
+        expect(() =>
+          createRunFlowEngine(
+            {
+              navigateTo: foreignCapability === "navigation" ? foreignNavigation.navigateTo : navigateTo,
+              resumeTo: vi.fn(),
+              transition,
+              cancelPending:
+                foreignCapability === "navigation cancellation" ? foreignNavigation.cancelPending : vi.fn(),
+              battle: createBattleStartCommands(
+                foreignCapability === "battle outcome" ? b.controller.flow.handleBattleVictory : () => {},
+                foreignCapability === "battle" ? b.session : a.session,
+              ),
+              labyrinthClearNode:
+                foreignCapability === "labyrinth"
+                  ? b.controller.labyrinth.onNodeCleared
+                  : a.controller.labyrinth.onNodeCleared,
+            },
+            outcomes,
+            a.session,
+          ),
+        ).toThrow(/different game sessions/);
+        expect(stateDigest(a.session)).toBe(beforeA);
+        expect(stateDigest(b.session)).toBe(beforeB);
+        expect(readGameplayState(defaultGameSession)).toBe(application);
+        expect(transition).not.toHaveBeenCalled();
+        expect(navigateTo).not.toHaveBeenCalled();
+      } finally {
+        await Promise.all([a.session.dispose(), b.session.dispose()]);
+      }
+    },
+  );
+
   it("cancels only the owning session's deferred navigation using its injected clock", async () => {
     const create = (failCleanup = false) => {
       let id = 0;
@@ -150,7 +218,7 @@ describe("independent game sessions", () => {
     }
   });
   it("interleaves production combat, purchases and gear generation without changing another career or the application", async () => {
-    const application = readGameplayState();
+    const application = readGameplayState(defaultGameSession);
     const a = start(7, 1000);
     const b = start(19, 2000);
     const bCommits = vi.fn();
@@ -195,7 +263,7 @@ describe("independent game sessions", () => {
           ),
         ).toBe(true);
       }
-      expect(readGameplayState()).toBe(application);
+      expect(readGameplayState(defaultGameSession)).toBe(application);
     } finally {
       await Promise.all([a.session.dispose(), b.session.dispose()]);
     }
@@ -288,7 +356,10 @@ describe("independent game sessions", () => {
       expect(aTeardown).toHaveBeenCalledOnce();
       expect(bTeardown).not.toHaveBeenCalled();
       expect(stateDigest(b.session)).toBe(beforeB);
+      const retainedEndTurn = a.controller.battle.endTurn;
       await a.session.dispose();
+      expect(() => retainedEndTurn()).toThrow(/disposed/);
+      expect(stateDigest(b.session)).toBe(beforeB);
       teardownRun(b.session);
       expect(bTeardown).toHaveBeenCalledOnce();
       expect(aTeardown).toHaveBeenCalledOnce();

@@ -1,4 +1,5 @@
 import "../../../../helpers/mock-audio";
+
 import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
 import { beforeEach, describe, expect, it } from "vitest";
 import { battleSnapshot } from "@/lib/battle";
@@ -9,6 +10,8 @@ import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { commitEndTurn } from "@/features/alchemy/run-loop/battle/battle-session";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
+import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
+import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(() => {
   resetRunDomainStore();
@@ -18,16 +21,20 @@ beforeEach(() => {
 
 function openBattle() {
   const state = makeTestBattleState({ turnPhase: "player", enemyHealth: 30 });
-  dispatchGameplayCommand((draft) => acceptCommand(initializeActiveBattle(draft, state)));
+  dispatchGameplayCommand(
+    (draft) => acceptCommand(initializeActiveBattle(draft, state)),
+    undefined,
+    defaultGameSession,
+  );
 }
 
 describe("commitEndTurn", () => {
   it("commits the resolved turn and clears any pending transition", () => {
     openBattle();
-    const result = commitEndTurn();
+    const result = commitEndTurn(createBattleCapabilities(defaultGameSession));
     if (!result) throw new Error("Expected a committed turn");
     expect(result.frames.length).toBeGreaterThan(0);
-    expect(readBattle().battleState).toEqual(battleSnapshot(result.state));
-    expect(readBattle()).not.toHaveProperty("pendingBattleTransition");
+    expect(readBattle(defaultGameSession).battleState).toEqual(battleSnapshot(result.state));
+    expect(readBattle(defaultGameSession)).not.toHaveProperty("pendingBattleTransition");
   });
 });

@@ -3,7 +3,6 @@ import {
   isBossOnlyDestinationOffer,
   restoreOrCreateDestinationRewardState,
 } from "@/features/alchemy/shared/run-flow/destination-flow";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readActiveRun, readHasActiveBattle, readHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
@@ -53,10 +52,7 @@ function restoreResumedCampaignDestinations(
   );
 }
 
-export function createRunResumeNavigation(
-  deps: ContentSystemNavigationDeps,
-  gameSession: GameSession = defaultGameSession,
-) {
+export function createRunResumeNavigation(deps: ContentSystemNavigationDeps, gameSession: GameSession) {
   function resumeRun() {
     if (!readHasActiveRun(gameSession)) return;
     const mode = readActiveRun(gameSession).contentSystemType;

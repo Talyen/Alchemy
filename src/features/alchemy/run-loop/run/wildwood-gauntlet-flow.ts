@@ -1,6 +1,5 @@
 import { wildwoodPhaseToScreen } from "@/features/alchemy/shared/run-flow/wildwood-screen-routing";
 import type { BattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
@@ -23,7 +22,7 @@ interface WildwoodGauntletFlowOptions {
 }
 export function createWildwoodGauntletFlow(
   { navigateTo, resumeTo, startBossById, clearCardHover }: WildwoodGauntletFlowOptions,
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ) {
   const startNextWildwoodBoss = (prepareNavigation?: () => void, removeIndex?: number) => {
     const started = prepareWildwoodBoss(removeIndex, gameSession);

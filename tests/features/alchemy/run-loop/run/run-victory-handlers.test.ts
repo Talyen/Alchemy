@@ -3,7 +3,7 @@ import { replaceBattleForTest as setSyncedBattleState } from "../../../../helper
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { createVictoryHandlers } from "@/features/alchemy/run-loop/run/run-flow-victory";
 import { awardRunEndMaterials } from "@/features/alchemy/run-loop/run/run-materials";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readActiveRun, readBattle, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
@@ -19,6 +19,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { resetAllTestStores, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
+import { defaultGameSession } from "@/app/application-session";
 vi.mock("@/features/alchemy/shared/stores/run-lifecycle", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/run-lifecycle")>();
   return {
@@ -52,123 +53,157 @@ describe("createRunFlow victory paths", () => {
       companionRewardCards: [{ ...card, id: "wolf-companion" }],
     });
     const navigateTo = vi.fn();
-    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo }));
+    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession);
     if (skip) handlers.skipRewards();
     else handlers.claimRewardChoice(card.id);
     const onCommit = navigateTo.mock.calls[0]![1] as () => void;
     onCommit();
     if (skip) handlers.skipRewards();
     else handlers.claimRewardChoice("wolf-companion");
-    expect(readActiveRun().runDeck.filter((entry) => entry.id.endsWith("-potion"))).toHaveLength(1);
+    expect(readActiveRun(defaultGameSession).runDeck.filter((entry) => entry.id.endsWith("-potion"))).toHaveLength(1);
   });
 
   it("awardRunEndMaterials applies homestead end-of-run per-room bonuses", () => {
     setRunProgress({ roomsEncountered: 4, currentAct: 1 });
-    dispatchGameplayCommand((draft) => {
-      draft.runProfile.effects.endRunHerbsPerRoom = 1;
+    dispatchGameplayCommand(
+      (draft) => {
+        draft.runProfile.effects.endRunHerbsPerRoom = 1;
 
-      return acceptCommand();
-    });
-    const herbsBefore = readRunProfile().materialInventory.herbs;
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    const herbsBefore = readRunProfile(defaultGameSession).materialInventory.herbs;
 
-    const mats = dispatchGameplayCommand((...args: Parameters<typeof awardRunEndMaterials>) =>
-      acceptCommand(awardRunEndMaterials(...args)),
+    const mats = dispatchGameplayCommand(
+      (...args: Parameters<typeof awardRunEndMaterials>) => acceptCommand(awardRunEndMaterials(...args)),
+      undefined,
+      defaultGameSession,
     );
 
     expect(mats.herbs).toBe(4);
-    expect(readRunProfile().materialInventory.herbs).toBe(herbsBefore + 4);
-    expect(readRunSession().runEndMaterials.herbs).toBe(4);
+    expect(readRunProfile(defaultGameSession).materialInventory.herbs).toBe(herbsBefore + 4);
+    expect(readRunSession(defaultGameSession).runEndMaterials.herbs).toBe(4);
   });
 
   it("awardRunEndMaterials includes materials collected during the run on the summary", () => {
     setRunProgress({ roomsEncountered: 2, currentAct: 1 });
-    dispatchGameplayCommand((draft) =>
-      acceptCommand(addRunMaterialsEarned(draft, { ...emptyInventory(), wood: 5, herbs: 2 })),
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(addRunMaterialsEarned(draft, { ...emptyInventory(), wood: 5, herbs: 2 })),
+      undefined,
+      defaultGameSession,
     );
 
-    dispatchGameplayCommand((...args: Parameters<typeof awardRunEndMaterials>) =>
-      acceptCommand(awardRunEndMaterials(...args)),
+    dispatchGameplayCommand(
+      (...args: Parameters<typeof awardRunEndMaterials>) => acceptCommand(awardRunEndMaterials(...args)),
+      undefined,
+      defaultGameSession,
     );
 
-    expect(readRunSession().runEndMaterials.wood).toBe(5);
-    expect(readRunSession().runEndMaterials.herbs).toBe(2);
-    expect(readActiveRun().runMaterialsEarned).toEqual(emptyInventory());
+    expect(readRunSession(defaultGameSession).runEndMaterials.wood).toBe(5);
+    expect(readRunSession(defaultGameSession).runEndMaterials.herbs).toBe(2);
+    expect(readActiveRun(defaultGameSession).runMaterialsEarned).toEqual(emptyInventory());
   });
 
   it("awardRunEndMaterials returns only the homestead bonus while the summary holds the run total", () => {
     setRunProgress({ roomsEncountered: 2, currentAct: 1 });
-    dispatchGameplayCommand((draft) => {
-      draft.runProfile.effects.endRunHerbsPerRoom = 1;
-      addRunMaterialsEarned(draft, { ...emptyInventory(), wood: 5 });
+    dispatchGameplayCommand(
+      (draft) => {
+        draft.runProfile.effects.endRunHerbsPerRoom = 1;
+        addRunMaterialsEarned(draft, { ...emptyInventory(), wood: 5 });
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
 
-    const bonus = dispatchGameplayCommand((...args: Parameters<typeof awardRunEndMaterials>) =>
-      acceptCommand(awardRunEndMaterials(...args)),
+    const bonus = dispatchGameplayCommand(
+      (...args: Parameters<typeof awardRunEndMaterials>) => acceptCommand(awardRunEndMaterials(...args)),
+      undefined,
+      defaultGameSession,
     );
 
     expect(bonus.wood).toBe(0);
     expect(bonus.herbs).toBe(2);
-    expect(readRunSession().runEndMaterials.wood).toBe(5);
-    expect(readRunSession().runEndMaterials.herbs).toBe(2);
+    expect(readRunSession(defaultGameSession).runEndMaterials.wood).toBe(5);
+    expect(readRunSession(defaultGameSession).runEndMaterials.herbs).toBe(2);
   });
 
   it("awardRunEndMaterials snapshots salvaged currencies into the recap and clears the tally", () => {
     setRunProgress({ roomsEncountered: 2, currentAct: 1 });
-    dispatchGameplayCommand((draft) => {
-      addRunCurrenciesEarned(draft, { "discordant-dice": 2 });
+    dispatchGameplayCommand(
+      (draft) => {
+        addRunCurrenciesEarned(draft, { "discordant-dice": 2 });
 
-      return acceptCommand();
-    });
-
-    dispatchGameplayCommand((...args: Parameters<typeof awardRunEndMaterials>) =>
-      acceptCommand(awardRunEndMaterials(...args)),
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
     );
 
-    expect(readRunSession().runEndCurrencies["discordant-dice"]).toBe(2);
-    expect(readActiveRun().runCurrenciesEarned["discordant-dice"]).toBe(0);
+    dispatchGameplayCommand(
+      (...args: Parameters<typeof awardRunEndMaterials>) => acceptCommand(awardRunEndMaterials(...args)),
+      undefined,
+      defaultGameSession,
+    );
+
+    expect(readRunSession(defaultGameSession).runEndCurrencies["discordant-dice"]).toBe(2);
+    expect(readActiveRun(defaultGameSession).runCurrenciesEarned["discordant-dice"]).toBe(0);
   });
 
   it("awardRunEndMaterials adds no homestead bonus with default effects", () => {
     setRunProgress({ roomsEncountered: 6, currentAct: 2 });
 
-    const mats = dispatchGameplayCommand((...args: Parameters<typeof awardRunEndMaterials>) =>
-      acceptCommand(awardRunEndMaterials(...args)),
+    const mats = dispatchGameplayCommand(
+      (...args: Parameters<typeof awardRunEndMaterials>) => acceptCommand(awardRunEndMaterials(...args)),
+      undefined,
+      defaultGameSession,
     );
 
     expect(mats).toEqual(emptyInventory());
-    expect(readRunSession().runEndMaterials).toEqual(emptyInventory());
+    expect(readRunSession(defaultGameSession).runEndMaterials).toEqual(emptyInventory());
   });
 
   it("Wildwood run end includes collected Materials and Homestead bonuses", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.WILDWOOD, roomsEncountered: 12 });
-    dispatchGameplayCommand((draft) => {
-      draft.runProfile.effects.endRunHerbsPerRoom = 2;
+    dispatchGameplayCommand(
+      (draft) => {
+        draft.runProfile.effects.endRunHerbsPerRoom = 2;
 
-      return acceptCommand();
-    });
-    dispatchGameplayCommand((draft) => {
-      addRunMaterialsEarned(draft, { ...emptyInventory(), wood: 5 });
-      addRunCurrenciesEarned(draft, { "discordant-dice": 2 });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    dispatchGameplayCommand(
+      (draft) => {
+        addRunMaterialsEarned(draft, { ...emptyInventory(), wood: 5 });
+        addRunCurrenciesEarned(draft, { "discordant-dice": 2 });
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
 
-    const materials = dispatchGameplayCommand((...args: Parameters<typeof awardRunEndMaterials>) =>
-      acceptCommand(awardRunEndMaterials(...args)),
+    const materials = dispatchGameplayCommand(
+      (...args: Parameters<typeof awardRunEndMaterials>) => acceptCommand(awardRunEndMaterials(...args)),
+      undefined,
+      defaultGameSession,
     );
 
     expect(materials).toEqual({ ...emptyInventory(), herbs: 24 });
-    expect(readRunSession().runEndMaterials).toEqual({ ...emptyInventory(), herbs: 24, wood: 5 });
-    expect(readRunSession().runEndCurrencies["discordant-dice"]).toBe(2);
-    expect(readActiveRun().runMaterialsEarned).toEqual(emptyInventory());
+    expect(readRunSession(defaultGameSession).runEndMaterials).toEqual({ ...emptyInventory(), herbs: 24, wood: 5 });
+    expect(readRunSession(defaultGameSession).runEndCurrencies["discordant-dice"]).toBe(2);
+    expect(readActiveRun(defaultGameSession).runMaterialsEarned).toEqual(emptyInventory());
   });
 
   it("handleBattleDefeat invokes applyRunDefeatTeardown for campaign", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
     const transition = vi.fn();
-    const handlers = createRunFlow(makeFlowHandlerDeps({ transition }));
+    const handlers = createRunFlow(makeFlowHandlerDeps({ transition }), defaultGameSession);
     handlers.handleBattleDefeat();
     expect(applyRunDefeatTeardown).not.toHaveBeenCalled();
     transition.mock.calls[0][1].prepare();
@@ -184,7 +219,7 @@ describe("createRunFlow victory paths", () => {
   it("handleBattleDefeat ends a labyrinth run like campaign", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.LABYRINTH });
     const transition = vi.fn();
-    const handlers = createRunFlow(makeFlowHandlerDeps({ transition }));
+    const handlers = createRunFlow(makeFlowHandlerDeps({ transition }), defaultGameSession);
     handlers.handleBattleDefeat();
     expect(applyRunDefeatTeardown).not.toHaveBeenCalled();
     expect(transition).toHaveBeenCalledWith(
@@ -207,7 +242,10 @@ describe("createRunFlow victory paths", () => {
       setRunSession({ hasActiveRun: true });
       const setScreen = vi.fn();
       const { result } = renderHook(() => useScreenTransitions(ROUTE_SCREENS.BATTLE, setScreen));
-      const handlers = createRunFlow(makeFlowHandlerDeps({ transition: result.current.transition }));
+      const handlers = createRunFlow(
+        makeFlowHandlerDeps({ transition: result.current.transition }),
+        defaultGameSession,
+      );
       act(() => handlers.handleBattleDefeat());
       act(() => vi.advanceTimersByTime(BATTLE_END_TRANSITION_DELAY_MS - 1));
       expect(setScreen).not.toHaveBeenCalled();
@@ -228,16 +266,16 @@ describe("createRunFlow victory paths", () => {
     (contentSystemType) => {
       setRunProgress({ contentSystemType, runTalentXP: { physical: 10 }, gold: 42 });
       const transition = vi.fn();
-      const handlers = createRunFlow(makeFlowHandlerDeps({ transition }));
+      const handlers = createRunFlow(makeFlowHandlerDeps({ transition }), defaultGameSession);
       handlers.handleAbandonRun();
-      expect(readRunSession().hasActiveRun).toBe(false);
-      expect(readBattle().hasActiveBattle).toBe(false);
-      expect(readRunProfile().gold).toBe(42);
-      expect(readRunSession().runEndTalentXP.physical).toBeGreaterThan(0);
-      const profile = structuredClone(readRunProfile());
+      expect(readRunSession(defaultGameSession).hasActiveRun).toBe(false);
+      expect(readBattle(defaultGameSession).hasActiveBattle).toBe(false);
+      expect(readRunProfile(defaultGameSession).gold).toBe(42);
+      expect(readRunSession(defaultGameSession).runEndTalentXP.physical).toBeGreaterThan(0);
+      const profile = structuredClone(readRunProfile(defaultGameSession));
       const transitionsAfterFirst = transition.mock.calls.length;
       handlers.handleAbandonRun();
-      expect(readRunProfile()).toEqual(profile);
+      expect(readRunProfile(defaultGameSession)).toEqual(profile);
       expect(transition).toHaveBeenCalledWith(ROUTE_SCREENS.GAME_OVER, { immediate: true });
       expect(transition).not.toHaveBeenCalledWith(ROUTE_SCREENS.MENU, expect.anything());
       expect(transition.mock.calls.length).toBe(transitionsAfterFirst);
@@ -251,6 +289,7 @@ describe("createRunFlow victory paths", () => {
       makeFlowHandlerDeps({
         transition,
       }),
+      defaultGameSession,
     );
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.LABYRINTH });
     handlers.endLabyrinthRun();
@@ -294,22 +333,25 @@ describe("createRunFlow victory paths", () => {
     });
     const navigateTo = vi.fn();
     const onWildwoodRewardComplete = vi.fn();
-    const woodBefore = readRunProfile().materialInventory.wood;
+    const woodBefore = readRunProfile(defaultGameSession).materialInventory.wood;
 
-    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo, onWildwoodRewardComplete }));
+    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo, onWildwoodRewardComplete }), defaultGameSession);
     handlers.skipRewards();
 
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.REWARDS, expect.any(Function));
     expect(onWildwoodRewardComplete).not.toHaveBeenCalled();
-    expect(readRunProfile().materialInventory.wood).toBe(woodBefore + 2);
+    expect(readRunProfile(defaultGameSession).materialInventory.wood).toBe(woodBefore + 2);
     (navigateTo.mock.calls[0]![1] as () => void)();
     handlers.skipRewards();
-    expect(readRunProfile().materialInventory.wood).toBe(woodBefore + 2);
+    expect(readRunProfile(defaultGameSession).materialInventory.wood).toBe(woodBefore + 2);
   });
 
   it("commits Wildwood reward handoff in the victory command draft", () => {
-    dispatchGameplayCommand((draft) =>
-      acceptCommand(setSyncedBattleState(draft, { ...readBattle().battleState, enemyHealth: 0 })),
+    dispatchGameplayCommand(
+      (draft) =>
+        acceptCommand(setSyncedBattleState(draft, { ...readBattle(defaultGameSession).battleState, enemyHealth: 0 })),
+      undefined,
+      defaultGameSession,
     );
     setRunProgress({
       contentSystemType: CONTENT_SYSTEMS.WILDWOOD,
@@ -328,10 +370,10 @@ describe("createRunFlow victory paths", () => {
         currentRewardTraitIds: [],
       },
     });
-    const handlers = createVictoryHandlers(makeFlowHandlerDeps());
+    const handlers = createVictoryHandlers(makeFlowHandlerDeps(), defaultGameSession);
     handlers.commitVictoryResult();
-    expect(readRunSession().wildwoodDraft?.phase).toBe("reward");
-    expect(readRunSession().activity.kind).toBe("rewards");
+    expect(readRunSession(defaultGameSession).wildwoodDraft?.phase).toBe("reward");
+    expect(readRunSession(defaultGameSession).activity.kind).toBe("rewards");
   });
 
   it("plays gold gain SFX when Wildwood victory persists in-combat gold", () => {
@@ -342,14 +384,17 @@ describe("createRunFlow victory paths", () => {
       runPlayerHealth: 20,
       runMaxHealth: 20,
     });
-    dispatchGameplayCommand((draft) =>
-      acceptCommand(
-        setSyncedBattleState(draft, {
-          ...readBattle().battleState,
-          gold: 15,
-          enemyHealth: 0,
-        }),
-      ),
+    dispatchGameplayCommand(
+      (draft) =>
+        acceptCommand(
+          setSyncedBattleState(draft, {
+            ...readBattle(defaultGameSession).battleState,
+            gold: 15,
+            enemyHealth: 0,
+          }),
+        ),
+      undefined,
+      defaultGameSession,
     );
     setRunSession({
       wildwoodDraft: {
@@ -363,7 +408,7 @@ describe("createRunFlow victory paths", () => {
       },
     });
 
-    createVictoryHandlers(makeFlowHandlerDeps()).commitVictoryResult();
+    createVictoryHandlers(makeFlowHandlerDeps(), defaultGameSession).commitVictoryResult();
 
     expect(playGoldGain).toHaveBeenCalledOnce();
   });
@@ -386,8 +431,8 @@ describe("createRunFlow victory paths", () => {
       companionRewardCards: null,
     });
     const navigateTo = vi.fn();
-    createRunFlow(makeFlowHandlerDeps({ navigateTo })).skipRewards();
-    expect(readActiveRun().runDeck).toEqual([]);
+    createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession).skipRewards();
+    expect(readActiveRun(defaultGameSession).runDeck).toEqual([]);
     expect(navigateTo).toHaveBeenCalledTimes(1);
   });
 
@@ -409,8 +454,8 @@ describe("createRunFlow victory paths", () => {
       },
       companionRewardCards: null,
     });
-    createRunFlow(makeFlowHandlerDeps()).claimRewardChoice(second.id);
-    expect(readActiveRun().runDeck.map((card) => card.id)).toEqual([second.id]);
+    createRunFlow(makeFlowHandlerDeps(), defaultGameSession).claimRewardChoice(second.id);
+    expect(readActiveRun(defaultGameSession).runDeck.map((card) => card.id)).toEqual([second.id]);
   });
 
   it("claimRewardChoice ignores a second call while claim is in flight", () => {
@@ -442,22 +487,22 @@ describe("createRunFlow victory paths", () => {
       companionRewardCards: null,
     });
     const navigateTo = vi.fn();
-    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo }));
+    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession);
 
     handlers.claimRewardChoice("reward-card");
-    createRunFlow(makeFlowHandlerDeps({ navigateTo })).claimRewardChoice("reward-card");
+    createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession).claimRewardChoice("reward-card");
 
-    expect(readActiveRun().runDeck).toHaveLength(1);
+    expect(readActiveRun(defaultGameSession).runDeck).toHaveLength(1);
     expect(navigateTo).toHaveBeenCalledTimes(1);
-    expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(true);
+    expect(readRunSession(defaultGameSession).rewardFlow.claim.kind === "reward").toBe(true);
 
-    expect(readRunSession().rewardFlow.state.destinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
-    expect(readRunSession().rewardFlow.state.choices).toEqual([]);
+    expect(readRunSession(defaultGameSession).rewardFlow.state.destinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
+    expect(readRunSession(defaultGameSession).rewardFlow.state.choices).toEqual([]);
 
     const onCommit = navigateTo.mock.calls[0][1] as () => void;
     onCommit();
-    expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(false);
-    expect(readRunSession().rewardFlow.state.choices).toEqual([]);
+    expect(readRunSession(defaultGameSession).rewardFlow.claim.kind === "reward").toBe(false);
+    expect(readRunSession(defaultGameSession).rewardFlow.state.choices).toEqual([]);
   });
 
   it("claimRewardChoice commits the companion handoff before navigation", () => {
@@ -498,26 +543,26 @@ describe("createRunFlow victory paths", () => {
       companionRewardCards: [companion],
     });
     const navigateTo = vi.fn();
-    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo }));
+    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession);
 
     handlers.claimRewardChoice("reward-card");
 
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.REWARDS, expect.any(Function));
-    expect(readActiveRun().runDeck.map((card) => card.id)).toEqual([primary.id]);
-    expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(true);
+    expect(readActiveRun(defaultGameSession).runDeck.map((card) => card.id)).toEqual([primary.id]);
+    expect(readRunSession(defaultGameSession).rewardFlow.claim.kind === "reward").toBe(true);
 
-    expect(readRunSession().rewardFlow.state.choices).toEqual([companion]);
-    expect(readRunSession().rewardFlow.companionCards).toBeNull();
+    expect(readRunSession(defaultGameSession).rewardFlow.state.choices).toEqual([companion]);
+    expect(readRunSession(defaultGameSession).rewardFlow.companionCards).toBeNull();
 
     const onCommit = navigateTo.mock.calls[0]![1] as () => void;
     onCommit();
 
-    expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(false);
-    expect(readRunSession().rewardFlow.companionCards).toBeNull();
-    const companionChoices = readRunSession().rewardFlow.state.choices;
+    expect(readRunSession(defaultGameSession).rewardFlow.claim.kind === "reward").toBe(false);
+    expect(readRunSession(defaultGameSession).rewardFlow.companionCards).toBeNull();
+    const companionChoices = readRunSession(defaultGameSession).rewardFlow.state.choices;
     expect(companionChoices.every((card) => "id" in card)).toBe(true);
     expect(companionChoices.map((card) => ("id" in card ? card.id : card.instanceId))).toEqual([companion.id]);
-    expect(readRunSession().rewardFlow.state.selectedId).toBeNull();
-    expect(readRunSession().rewardFlow.state.gold).toBe(0);
+    expect(readRunSession(defaultGameSession).rewardFlow.state.selectedId).toBeNull();
+    expect(readRunSession(defaultGameSession).rewardFlow.state.gold).toBe(0);
   });
 });

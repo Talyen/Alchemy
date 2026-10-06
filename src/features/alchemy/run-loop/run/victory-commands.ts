@@ -1,5 +1,4 @@
 import { rollFreshBossId } from "@/features/alchemy/shared/config";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
 import { syncBattleToRun } from "@/features/alchemy/shared/stores/run-lifecycle";
@@ -70,7 +69,7 @@ export function commitVictoryRewards(
 
 export function createVictoryCommand(
   getAvailableDestinations: RunOutcomeDeps["getAvailableDestinations"],
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ) {
   function computeVictoryResult(draft: RunTransaction) {
     const runState = draft.run.activeRun;

@@ -28,6 +28,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
+import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(() => {
   resetAllTestStores();
@@ -64,11 +65,11 @@ describe("screen hook coverage", () => {
 describe("screen-specific run data hooks", () => {
   it.each(["game-over", "run-victory"] as const)("retains the %s summary while teardown clears the run", (screen) => {
     setRunSession({ runEndTalentXP: { physical: 25 }, runEndLabyrinthFloor: 7 });
-    dispatchRunSessionCommand((draft) => acceptCommand(setScreen(draft, screen)));
+    dispatchRunSessionCommand((draft) => acceptCommand(setScreen(draft, screen)), undefined, defaultGameSession);
     const { result } = renderHook(() => useRunEndScreenData());
     const shown = result.current;
-    act(() => teardownRun());
-    expect(readRunSession().runEndTalentXP).toEqual({});
+    act(() => teardownRun(defaultGameSession));
+    expect(readRunSession(defaultGameSession).runEndTalentXP).toEqual({});
     expect(result.current).toBe(shown);
     expect(result.current.runEndLabyrinthFloor).toBe(7);
   });
@@ -77,10 +78,14 @@ describe("screen-specific run data hooks", () => {
     setRunSession({ activity: { kind: "labyrinth-map" }, selectedLabyrinthNodeId: "room-1" });
     const { result } = renderHook(() => useLabyrinthMapScreenData());
     act(() => {
-      dispatchRunSessionCommand((draft) => acceptCommand(setShopState(draft, emptyShopState())));
+      dispatchRunSessionCommand(
+        (draft) => acceptCommand(setShopState(draft, emptyShopState())),
+        undefined,
+        defaultGameSession,
+      );
       setRunSession({ selectedLabyrinthNodeId: null });
     });
-    expect(readRunSession().selectedLabyrinthNodeId).toBeNull();
+    expect(readRunSession(defaultGameSession).selectedLabyrinthNodeId).toBeNull();
     expect(result.current.selectedLabyrinthNodeId).toBe("room-1");
   });
   it("returns only the exact fields owned by the shop screen", () => {
@@ -90,7 +95,7 @@ describe("screen-specific run data hooks", () => {
     expect(result.current).toEqual({
       gold: 42,
       runDeck: [],
-      shopState: readActivityData(readRunSession().activity, "shop"),
+      shopState: readActivityData(readRunSession(defaultGameSession).activity, "shop"),
     });
     expect(result.current).not.toHaveProperty("rewardState");
   });
@@ -99,7 +104,7 @@ describe("screen-specific run data hooks", () => {
     const { result } = renderHook(() => useRewardsScreenData());
 
     expect(result.current).toEqual({
-      rewardState: readRunSession().rewardFlow.state,
+      rewardState: readRunSession(defaultGameSession).rewardFlow.state,
       rewardClaimInFlight: false,
     });
     expect(result.current).not.toHaveProperty("runGold");
@@ -115,8 +120,10 @@ describe("screen-specific run data hooks", () => {
     });
 
     act(() => {
-      dispatchRunSessionCommand((draft) =>
-        acceptCommand(setRewardState(draft, { ...readRunSession().rewardFlow.state })),
+      dispatchRunSessionCommand(
+        (draft) => acceptCommand(setRewardState(draft, { ...readRunSession(defaultGameSession).rewardFlow.state })),
+        undefined,
+        defaultGameSession,
       );
     });
 
@@ -131,13 +138,21 @@ describe("screen-specific run data hooks", () => {
       return useShopScreenData();
     });
     act(() =>
-      dispatchRunSessionCommand((draft) =>
-        acceptCommand(setShopState(draft, { ...emptyShopState(), refreshesLeft: 0 })),
+      dispatchRunSessionCommand(
+        (draft) => acceptCommand(setShopState(draft, { ...emptyShopState(), refreshesLeft: 0 })),
+        undefined,
+        defaultGameSession,
       ),
     );
     const outgoing = result.current;
-    act(() => dispatchRunSessionCommand((draft) => acceptCommand(setRunProgressActivity(draft, "destination"))));
-    expect(readRunSession().activity).toEqual({ kind: "destination" });
+    act(() =>
+      dispatchRunSessionCommand(
+        (draft) => acceptCommand(setRunProgressActivity(draft, "destination")),
+        undefined,
+        defaultGameSession,
+      ),
+    );
+    expect(readRunSession(defaultGameSession).activity).toEqual({ kind: "destination" });
     expect(result.current).toBe(outgoing);
     expect(result.current.shopState.refreshesLeft).toBe(0);
     const inactiveRenders = renders;
@@ -146,7 +161,13 @@ describe("screen-specific run data hooks", () => {
     expect(result.current.gold).toBe(42);
     expect(renders).toBe(inactiveRenders);
 
-    act(() => dispatchRunSessionCommand((draft) => acceptCommand(setShopState(draft, emptyShopState()))));
+    act(() =>
+      dispatchRunSessionCommand(
+        (draft) => acceptCommand(setShopState(draft, emptyShopState())),
+        undefined,
+        defaultGameSession,
+      ),
+    );
     expect(result.current).not.toBe(outgoing);
     expect(result.current.shopState.refreshesLeft).toBe(emptyShopState().refreshesLeft);
     expect(result.current.gold).toBe(99);

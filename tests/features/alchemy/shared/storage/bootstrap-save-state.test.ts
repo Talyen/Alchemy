@@ -4,6 +4,7 @@ import { bootstrapAlchemySaveState } from "@/features/alchemy/shared/storage";
 import { defaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { saveAlchemySaveData } from "@/features/alchemy/shared/storage";
 import { installStorageIoTestHooks } from "../../../../helpers/storage-io-test-setup";
+import { defaultGameSession } from "@/app/application-session";
 
 const globalWithWindow = globalThis as unknown as { window?: object };
 
@@ -21,7 +22,7 @@ describe("bootstrapAlchemySaveState", () => {
   it("initializes Steam before loading on desktop", async () => {
     const desktop = setupMockWindowDesktop();
 
-    await bootstrapAlchemySaveState();
+    await bootstrapAlchemySaveState(defaultGameSession);
 
     expect(desktop.steamGetName).toHaveBeenCalled();
     expect(desktop.readSaveSlot).toHaveBeenCalled();
@@ -39,8 +40,8 @@ describe("bootstrapAlchemySaveState", () => {
       return true;
     });
 
-    await bootstrapAlchemySaveState();
-    await saveAlchemySaveData(defaultSaveData);
+    await bootstrapAlchemySaveState(defaultGameSession);
+    await saveAlchemySaveData(defaultSaveData, defaultGameSession);
 
     expect(order).toEqual(["local", "cloud"]);
   });

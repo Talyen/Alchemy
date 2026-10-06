@@ -1,4 +1,5 @@
 import "../../helpers/mock-audio";
+
 import { initializeBattleForTest as initializeActiveBattle } from "../../helpers/run-domain-store-test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as battle from "@/lib/battle";
@@ -12,6 +13,7 @@ import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { readActiveRun, readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { resetRunDomainStore } from "../../helpers/run-domain-store-test";
 import { makeTestCard } from "../../fixtures/battle";
+import { defaultGameSession } from "@/app/application-session";
 
 type Action = (
   | { kind: "play"; cardId: string; index: number }
@@ -74,46 +76,59 @@ function recordSimulation(config: BattleSimulationConfig, patch: Partial<battle.
 
 function replaySimulation(config: BattleSimulationConfig, patch: Partial<battle.BattleSnapshot> = {}) {
   const { result, actions, opening, originalOpening, openingOptions, openingCounter } = recordSimulation(config, patch);
-  dispatchGameplayCommand((draft) => {
-    const run = draft.run.activeRun;
-    run.characterId = config.characterId;
-    draft.session.activity = { kind: "idle" };
-    run.rng = random.createRunRngState(config.seed ?? 1);
-    run.roomsEncountered = (openingOptions.totalRooms ?? 0) - 1;
-    run.runDeck = openingOptions.runDeck;
-    run.runPlayerHealth = openingOptions.playerHealth!;
-    run.runMaxHealth = openingOptions.maxHealth!;
-    run.runBoons = openingOptions.trinketIds ?? [];
-    draft.runProfile.gold = openingOptions.gold ?? 0;
-    draft.runProfile.unlockedTalents = {};
-    draft.runProfile.effects = { ...defaultHomesteadEffects };
-    draft.profile.discoveredCardIds = [];
-    return acceptCommand();
-  });
-  createBattleStartCommands(() => {}).startBattle({
+  dispatchGameplayCommand(
+    (draft) => {
+      const run = draft.run.activeRun;
+      run.characterId = config.characterId;
+      draft.session.activity = { kind: "idle" };
+      run.rng = random.createRunRngState(config.seed ?? 1);
+      run.roomsEncountered = (openingOptions.totalRooms ?? 0) - 1;
+      run.runDeck = openingOptions.runDeck;
+      run.runPlayerHealth = openingOptions.playerHealth!;
+      run.runMaxHealth = openingOptions.maxHealth!;
+      run.runBoons = openingOptions.trinketIds ?? [];
+      draft.runProfile.gold = openingOptions.gold ?? 0;
+      draft.runProfile.unlockedTalents = {};
+      draft.runProfile.effects = { ...defaultHomesteadEffects };
+      draft.profile.discoveredCardIds = [];
+      return acceptCommand();
+    },
+    undefined,
+    defaultGameSession,
+  );
+  createBattleStartCommands(() => {}, defaultGameSession).startBattle({
     enemyId: config.enemyId,
     modifiers: config.difficultyModifiers ?? [],
   });
   // Live battles omit report instrumentation; all gameplay and RNG must agree.
   const { battleMetrics: _metrics, ...openingGameplay } = originalOpening;
-  expect(readBattle().battleState, "opening snapshot").toEqual(openingGameplay);
-  expect(readActiveRun().rng.counters.world, "opening world RNG").toBe(openingCounter);
-  expect(readActiveRun().runGoldEarned, "opening Gold earnings").toBe(
+  expect(readBattle(defaultGameSession).battleState, "opening snapshot").toEqual(openingGameplay);
+  expect(readActiveRun(defaultGameSession).rng.counters.world, "opening world RNG").toBe(openingCounter);
+  expect(readActiveRun(defaultGameSession).runGoldEarned, "opening Gold earnings").toBe(
     originalOpening.gold - (openingOptions.gold ?? 0),
   );
-  dispatchGameplayCommand((draft) => {
-    draft.run.activeRun.rng = random.createRunRngState(config.seed ?? 1);
-    draft.run.activeRun.rng.counters.world = openingCounter;
-    draft.runProfile.gold = opening.gold;
-    initializeActiveBattle(draft, opening);
-    return acceptCommand();
-  });
+  dispatchGameplayCommand(
+    (draft) => {
+      draft.run.activeRun.rng = random.createRunRngState(config.seed ?? 1);
+      draft.run.activeRun.rng.counters.world = openingCounter;
+      draft.runProfile.gold = opening.gold;
+      initializeActiveBattle(draft, opening);
+      return acceptCommand();
+    },
+    undefined,
+    defaultGameSession,
+  );
   for (const [index, action] of actions.entries()) {
-    if (action.kind === "play") expect(commitCardPlay(action.index, action.cardId)).not.toBeNull();
-    else if (action.kind === "wish") expect(commitBattleWish(action.cardId)).not.toBeNull();
-    else commitEndTurn();
-    expect(readBattle().battleState, `snapshot after action ${index}: ${action.kind}`).toEqual(action.state);
-    expect(readActiveRun().rng.counters.world, `world RNG after action ${index}: ${action.kind}`).toBe(action.counter);
+    if (action.kind === "play") expect(commitCardPlay(action.index, action.cardId, defaultGameSession)).not.toBeNull();
+    else if (action.kind === "wish") expect(commitBattleWish(action.cardId, defaultGameSession)).not.toBeNull();
+    else commitEndTurn(defaultGameSession);
+    expect(readBattle(defaultGameSession).battleState, `snapshot after action ${index}: ${action.kind}`).toEqual(
+      action.state,
+    );
+    expect(
+      readActiveRun(defaultGameSession).rng.counters.world,
+      `world RNG after action ${index}: ${action.kind}`,
+    ).toBe(action.counter);
   }
   return { result, actions };
 }

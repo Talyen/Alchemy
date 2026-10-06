@@ -1,4 +1,7 @@
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
+import { readBattle } from "./run-reads";
+import { clearBattlePresentationUi } from "./run-lifecycle";
+import { createBattleStartCommands, type BattleStarted } from "./battle-start-commands";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { discoverCardIds } from "@/features/alchemy/shared/stores/profile-store";
@@ -18,7 +21,7 @@ import { PLAYABLE_HAND_OPTIONS } from "../config/battle-input";
 import { awardBattleDodgeXP, createDraftRunRandomSource } from "./run-session-write-port";
 import { commitResolvedBattle, setBattleStartState, setBattleState, withDraftWorldBattleRng } from "./write/run-battle";
 
-export function commitCardPlay(index: number, cardId: string, gameSession: GameSession = defaultGameSession) {
+export function commitCardPlay(index: number, cardId: string, gameSession: GameSession) {
   return dispatchGameplayCommand(
     (draft) => {
       if (draft.session.activity.kind !== "battle") return rejectCommand("There is no active battle", null);
@@ -36,7 +39,7 @@ export function commitCardPlay(index: number, cardId: string, gameSession: GameS
   );
 }
 
-export function commitBattleWish(cardId: string, gameSession: GameSession = defaultGameSession) {
+export function commitBattleWish(cardId: string, gameSession: GameSession) {
   return dispatchGameplayCommand(
     (draft) => {
       if (draft.session.activity.kind !== "battle") return rejectCommand("There is no active battle", null);
@@ -53,7 +56,7 @@ export function commitBattleWish(cardId: string, gameSession: GameSession = defa
   );
 }
 
-export function commitEndTurn(gameSession: GameSession = defaultGameSession): ResolvedBattleTurn | null {
+export function commitEndTurn(gameSession: GameSession): ResolvedBattleTurn | null {
   return dispatchGameplayCommand(
     (draft) => {
       if (draft.session.activity.kind !== "battle") return rejectCommand("There is no active battle", null);
@@ -70,11 +73,11 @@ export function commitEndTurn(gameSession: GameSession = defaultGameSession): Re
   );
 }
 
-export function clearBattleOpeningState(gameSession: GameSession = defaultGameSession): void {
+export function clearBattleOpeningState(gameSession: GameSession): void {
   dispatchGameplayCommand((draft) => acceptCommand(setBattleStartState(draft, null)), undefined, gameSession);
 }
 
-export function commitDevBattleVictory(gameSession: GameSession = defaultGameSession): void {
+export function commitDevBattleVictory(gameSession: GameSession): void {
   if (!import.meta.env.DEV) return;
   dispatchGameplayCommand(
     (draft) => {
@@ -87,3 +90,19 @@ export function commitDevBattleVictory(gameSession: GameSession = defaultGameSes
     gameSession,
   );
 }
+
+export function createBattleCapabilities(gameSession: GameSession) {
+  return bindSessionCapabilities(gameSession, {
+    read: () => readBattle(gameSession),
+    playCard: (index: number, cardId: string) => commitCardPlay(index, cardId, gameSession),
+    chooseWish: (cardId: string) => commitBattleWish(cardId, gameSession),
+    endTurn: () => commitEndTurn(gameSession),
+    clearOpening: () => clearBattleOpeningState(gameSession),
+    devVictory: () => commitDevBattleVictory(gameSession),
+    clearPresentation: () => clearBattlePresentationUi(gameSession),
+    createStartCommands: (onStarted: (result: BattleStarted) => void) =>
+      createBattleStartCommands(onStarted, gameSession),
+  });
+}
+
+export type BattleCapabilities = ReturnType<typeof createBattleCapabilities>;

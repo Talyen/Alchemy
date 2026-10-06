@@ -3,12 +3,15 @@ import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/naviga
 import type { RunFlowShellActions, RunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
 import { createWildwoodGauntletFlow } from "@/features/alchemy/run-loop/run/wildwood-gauntlet-flow";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { leaveLabyrinthCorruption } from "@/features/alchemy/shared/stores/navigation-commands";
 import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
-import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
+import {
+  assertSessionOwnership,
+  bindSessionCapabilities,
+  sessionFeedback,
+} from "@/features/alchemy/shared/stores/session-capabilities";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { clearRunCardHover } from "./run-destination-wiring";
@@ -23,8 +26,18 @@ export function createRunFlowEngine(
     labyrinthClearNode,
   }: RunFlowEngineDeps,
   outcomes: RunOutcomes,
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ) {
+  assertSessionOwnership(
+    gameSession,
+    outcomes,
+    battle,
+    rawNavigateTo,
+    rawResumeTo,
+    transition,
+    cancelPending,
+    labyrinthClearNode,
+  );
   const clearCardHover = () => clearRunCardHover(gameSession);
   // Universal hover rule (approved): every flow navigation clears card hover
   // unless explicitly opted out. Factories receive the wrapped navigate so
@@ -89,7 +102,7 @@ export function createRunFlowEngine(
     // navigateTo already clears card hover via the universal rule above.
     navigateTo(ROUTE_SCREENS.MENU, () => teardownRun(gameSession));
   }
-  return {
+  return bindSessionCapabilities(gameSession, {
     getAvailableDestinations: outcomes.getAvailableDestinations,
     advanceToNextDestination: flowHandlers.advanceToNextDestination,
     beginCampaign: contentNav.beginCampaign,
@@ -130,5 +143,5 @@ export function createRunFlowEngine(
     continueFromRunEnd: resetRunState,
     handleBattleVictory: flowHandlers.handleBattleVictory,
     handleBattleDefeat: flowHandlers.handleBattleDefeat,
-  };
+  });
 }

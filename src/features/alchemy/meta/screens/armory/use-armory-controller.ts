@@ -1,3 +1,4 @@
+import { defaultGameSession } from "@/app/application-session";
 import type { CharacterId } from "@/lib/game-data";
 import {
   generateDevRandomGearInstance,
@@ -22,7 +23,7 @@ import type { GearDraftView } from "@/features/alchemy/shared/stores/gear-store-
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 
 function mutateGearWithFlushAlways(flush: () => void, mutate: (state: GearDraftView) => void): void {
-  dispatchGearMutationWithRunHealthSync<void>({ mutate });
+  dispatchGearMutationWithRunHealthSync<void>({ mutate }, defaultGameSession);
   flush();
 }
 
@@ -53,26 +54,30 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
   // an explicit rng so the source stays visible at the call site.
   const rng = options?.rng ?? Math.random;
 
-  const flush = () => flushSaveAfterGearMutation(resolveActiveRunForSave(hasActiveRun));
+  const flush = () =>
+    flushSaveAfterGearMutation(
+      resolveActiveRunForSave(hasActiveRun, undefined, defaultGameSession),
+      defaultGameSession,
+    );
   const controller: ArmoryController = {
     ...gear,
     finishedRunCharacters,
     combatRestrictions,
     onEquip: (characterId, slot, instance) =>
-      mutateGearWithFlush(flush, (state) => state.equip(characterId, slot, instance)),
+      mutateGearWithFlush(flush, (state) => state.equip(characterId, slot, instance), defaultGameSession),
     onUnequip: (characterId, slot) => {
-      mutateGearWithFlush(flush, (state) => state.unequip(characterId, slot));
+      mutateGearWithFlush(flush, (state) => state.unequip(characterId, slot), defaultGameSession);
     },
     onEquipTrinket: (characterId, trinketId) => {
-      mutateGearWithFlush(flush, (state) => state.equipTrinket(characterId, trinketId));
+      mutateGearWithFlush(flush, (state) => state.equipTrinket(characterId, trinketId), defaultGameSession);
     },
     onUnequipTrinket: (characterId) => {
-      mutateGearWithFlush(flush, (state) => state.unequipTrinket(characterId));
+      mutateGearWithFlush(flush, (state) => state.unequipTrinket(characterId), defaultGameSession);
     },
     // The store recomputes the deterministic yield shown in the confirmation.
-    onSalvage: (instanceId) => salvageGearWithFlush(flush, instanceId),
+    onSalvage: (instanceId) => salvageGearWithFlush(flush, instanceId, defaultGameSession),
     onApplyCurrency: (currencyId, instanceId) =>
-      mutateGearWithFlush(flush, (state) => state.applyCurrency(currencyId, instanceId, { rng })),
+      mutateGearWithFlush(flush, (state) => state.applyCurrency(currencyId, instanceId, { rng }), defaultGameSession),
   };
   if (isAlchemyDevBuild()) {
     controller.onSpawnDevGear = (characterId) => {

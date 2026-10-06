@@ -10,6 +10,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-state-init";
 import { resetRunDomainStore } from "../helpers/run-domain-store-test";
 import { setRunProgress } from "../helpers/run-domain-store-test";
+import { defaultGameSession } from "@/app/application-session";
 
 function drawSequence(seed: number, stream: "rewards" | "destinations", count: number): number[] {
   const state = createRunRngState(seed);
@@ -67,17 +68,27 @@ describe("run RNG", () => {
 
   it("continues the exact sequence after snapshot and restore", () => {
     setRunProgress({ rng: createRunRngState(42) });
-    const first = dispatchRunSessionCommand((draft) => acceptCommand(createDraftRunRandomSource(draft, "rewards")()));
-    const snapshot = snapshotRun("destination");
-    const expectedNext = dispatchRunSessionCommand((draft) =>
-      acceptCommand(createDraftRunRandomSource(draft, "rewards")()),
+    const first = dispatchRunSessionCommand(
+      (draft) => acceptCommand(createDraftRunRandomSource(draft, "rewards")()),
+      undefined,
+      defaultGameSession,
+    );
+    const snapshot = snapshotRun("destination", defaultGameSession);
+    const expectedNext = dispatchRunSessionCommand(
+      (draft) => acceptCommand(createDraftRunRandomSource(draft, "rewards")()),
+      undefined,
+      defaultGameSession,
     );
 
-    restoreRun(snapshot, {}, {});
+    restoreRun(snapshot, {}, {}, defaultGameSession);
 
-    expect(dispatchRunSessionCommand((draft) => acceptCommand(createDraftRunRandomSource(draft, "rewards")()))).toBe(
-      expectedNext,
-    );
+    expect(
+      dispatchRunSessionCommand(
+        (draft) => acceptCommand(createDraftRunRandomSource(draft, "rewards")()),
+        undefined,
+        defaultGameSession,
+      ),
+    ).toBe(expectedNext);
     expect(first).not.toBe(expectedNext);
   });
 

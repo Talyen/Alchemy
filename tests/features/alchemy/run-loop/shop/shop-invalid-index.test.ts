@@ -1,4 +1,5 @@
 import "../../../../helpers/mock-audio";
+
 import { describe, expect, it } from "vitest";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
@@ -11,19 +12,20 @@ import {
   setShopState,
 } from "./shop-actions-harness";
 import { readActivityData } from "@/lib/active-run-session";
+import { defaultGameSession } from "@/app/application-session";
 describe("shop invalid index guards", () => {
   describe("merchant removeCard", () => {
     it("is no-op for fractional, NaN, Infinity and does not charge gold or consume slot", () => {
       setRunProgress({ gold: 999, runDeck: [makeCard({ id: "a" }), makeCard({ id: "b" })] });
       setShopState(createInitialShopState());
       const actions = buildActions();
-      const beforeGold = readRunProfile().gold;
+      const beforeGold = readRunProfile(defaultGameSession).gold;
       expect(actions.merchant.removeCard(0.5 as unknown as number)).toBe(false);
       expect(actions.merchant.removeCard(NaN)).toBe(false);
       expect(actions.merchant.removeCard(Infinity as unknown as number)).toBe(false);
-      expect(readRunProfile().gold).toBe(beforeGold);
-      expect(readActivityData(readRunSession().activity, "shop").removeUsed).toBe(false);
-      expect(readActiveRun().runDeck).toHaveLength(2);
+      expect(readRunProfile(defaultGameSession).gold).toBe(beforeGold);
+      expect(readActivityData(readRunSession(defaultGameSession).activity, "shop").removeUsed).toBe(false);
+      expect(readActiveRun(defaultGameSession).runDeck).toHaveLength(2);
     });
 
     it("is no-op for stale out-of-range index", () => {
@@ -31,7 +33,7 @@ describe("shop invalid index guards", () => {
       setShopState(createInitialShopState());
       const actions = buildActions();
       expect(actions.merchant.removeCard(5)).toBe(false);
-      expect(readRunProfile().gold).toBe(999);
+      expect(readRunProfile(defaultGameSession).gold).toBe(999);
     });
 
     it("duplicate callback after success is no-op", () => {
@@ -39,10 +41,10 @@ describe("shop invalid index guards", () => {
       setShopState(createInitialShopState());
       const actions = buildActions();
       expect(actions.merchant.removeCard(0)).toBe(true);
-      const goldAfter = readRunProfile().gold;
+      const goldAfter = readRunProfile(defaultGameSession).gold;
       expect(actions.merchant.removeCard(0)).toBe(false);
-      expect(readRunProfile().gold).toBe(goldAfter);
-      expect(readActiveRun().runDeck).toHaveLength(1);
+      expect(readRunProfile(defaultGameSession).gold).toBe(goldAfter);
+      expect(readActiveRun(defaultGameSession).runDeck).toHaveLength(1);
     });
   });
 
@@ -66,8 +68,8 @@ describe("shop invalid index guards", () => {
       expect(actions.alchemist.mixPotions(NaN, 1)).toBeNull();
       expect(actions.alchemist.mixPotions(0, 0)).toBeNull();
       expect(actions.alchemist.mixPotions(0, 5)).toBeNull();
-      expect(readRunProfile().gold).toBe(999);
-      expect(readActivityData(readRunSession().activity, "alchemist").mixUsed).toBe(false);
+      expect(readRunProfile(defaultGameSession).gold).toBe(999);
+      expect(readActivityData(readRunSession(defaultGameSession).activity, "alchemist").mixUsed).toBe(false);
     });
   });
 });

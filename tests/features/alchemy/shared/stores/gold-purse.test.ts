@@ -9,6 +9,7 @@ import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-sta
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { makeTestBattleState } from "../../../../fixtures/battle";
+import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(() => {
   resetRunDomainStore();
@@ -17,27 +18,35 @@ beforeEach(() => {
 describe("profile gold write port", () => {
   it("deducts gold and clamps at zero", () => {
     setRunProgress({ gold: 10 });
-    dispatchGameplayCommand((draft) => acceptCommand(deductGold(draft, 4)));
-    expect(readRunProfile().gold).toBe(6);
-    dispatchGameplayCommand((draft) => acceptCommand(deductGold(draft, 10)));
-    expect(readRunProfile().gold).toBe(0);
+    dispatchGameplayCommand((draft) => acceptCommand(deductGold(draft, 4)), undefined, defaultGameSession);
+    expect(readRunProfile(defaultGameSession).gold).toBe(6);
+    dispatchGameplayCommand((draft) => acceptCommand(deductGold(draft, 10)), undefined, defaultGameSession);
+    expect(readRunProfile(defaultGameSession).gold).toBe(0);
   });
 });
 
 it("commits a resolved battle's Gold change without replacing other purse changes in the transaction", () => {
   setRunProgress({ gold: 100 });
   setRunSession({ hasActiveRun: true });
-  dispatchGameplayCommand((draft) => acceptCommand(initializeActiveBattle(draft, makeTestBattleState({ gold: 100 }))));
-  const before = readBattle().battleState;
-  dispatchGameplayCommand((draft) => {
-    setGold(draft, 200);
-    commitResolvedBattle(draft, before, { ...before, gold: before.gold + 7 });
+  dispatchGameplayCommand(
+    (draft) => acceptCommand(initializeActiveBattle(draft, makeTestBattleState({ gold: 100 }))),
+    undefined,
+    defaultGameSession,
+  );
+  const before = readBattle(defaultGameSession).battleState;
+  dispatchGameplayCommand(
+    (draft) => {
+      setGold(draft, 200);
+      commitResolvedBattle(draft, before, { ...before, gold: before.gold + 7 });
 
-    return acceptCommand();
-  });
-  expect(readRunProfile().gold).toBe(207);
-  expect(readBattle().battleState.gold).toBe(207);
-  expect(readBattle()).not.toHaveProperty("pendingBattleTransition");
+      return acceptCommand();
+    },
+    undefined,
+    defaultGameSession,
+  );
+  expect(readRunProfile(defaultGameSession).gold).toBe(207);
+  expect(readBattle(defaultGameSession).battleState.gold).toBe(207);
+  expect(readBattle(defaultGameSession)).not.toHaveProperty("pendingBattleTransition");
 });
 
 describe.each(["opening-draw", "enemy-turn"] as const)("legacy %s hydration", (kind) => {
@@ -48,38 +57,44 @@ describe.each(["opening-draw", "enemy-turn"] as const)("legacy %s hydration", (k
   ])("reconciles saved earnings once against purse $purse", ({ purse, saved, expected }) => {
     setRunProgress({ characterId: "knight", gold: 100 });
     setRunSession({ hasActiveRun: true });
-    dispatchGameplayCommand((draft) =>
-      acceptCommand(initializeActiveBattle(draft, makeTestBattleState({ gold: 100 }))),
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(initializeActiveBattle(draft, makeTestBattleState({ gold: 100 }))),
+      undefined,
+      defaultGameSession,
     );
-    const legacy = snapshotRun("battle");
+    const legacy = snapshotRun("battle", defaultGameSession);
     legacy.activeCombat!.pendingBattleTransition = {
       kind,
       resultState: makeTestBattleState({ gold: saved, turn: 3 }),
       playerTurnSkipped: false,
     };
-    dispatchGameplayCommand((draft) => acceptCommand(setGold(draft, purse)));
-    restoreRun(legacy, {}, {});
-    expect(readRunProfile().gold).toBe(expected);
-    expect(readBattle().battleState).toMatchObject({ gold: expected, turn: 3 });
-    const current = JSON.parse(JSON.stringify(snapshotRun("battle")));
+    dispatchGameplayCommand((draft) => acceptCommand(setGold(draft, purse)), undefined, defaultGameSession);
+    restoreRun(legacy, {}, {}, defaultGameSession);
+    expect(readRunProfile(defaultGameSession).gold).toBe(expected);
+    expect(readBattle(defaultGameSession).battleState).toMatchObject({ gold: expected, turn: 3 });
+    const current = JSON.parse(JSON.stringify(snapshotRun("battle", defaultGameSession)));
     expect(current.activeCombat.pendingBattleTransition).toBeNull();
-    restoreRun(current, {}, {});
-    expect(readRunProfile().gold).toBe(expected);
-    dispatchGameplayCommand((draft) => acceptCommand(deductGold(draft, expected + 10)));
-    expect(readBattle().battleState.gold).toBe(0);
+    restoreRun(current, {}, {}, defaultGameSession);
+    expect(readRunProfile(defaultGameSession).gold).toBe(expected);
+    dispatchGameplayCommand((draft) => acceptCommand(deductGold(draft, expected + 10)), undefined, defaultGameSession);
+    expect(readBattle(defaultGameSession).battleState.gold).toBe(0);
   });
   it("rolls back restored earnings and battle state when hydration fails", () => {
-    const before = readGameplayState();
+    const before = readGameplayState(defaultGameSession);
     expect(() =>
-      dispatchGameplayCommand((draft) => {
-        restoreActiveBattle(draft, makeTestBattleState({ gold: 100 }), {
-          kind,
-          resultState: makeTestBattleState({ gold: 107 }),
-          playerTurnSkipped: false,
-        });
-        throw new Error("abort restore");
-      }),
+      dispatchGameplayCommand(
+        (draft) => {
+          restoreActiveBattle(draft, makeTestBattleState({ gold: 100 }), {
+            kind,
+            resultState: makeTestBattleState({ gold: 107 }),
+            playerTurnSkipped: false,
+          });
+          throw new Error("abort restore");
+        },
+        undefined,
+        defaultGameSession,
+      ),
     ).toThrow("abort restore");
-    expect(readGameplayState()).toBe(before);
+    expect(readGameplayState(defaultGameSession)).toBe(before);
   });
 });

@@ -1,4 +1,3 @@
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import {
   acceptCommand,
@@ -18,7 +17,7 @@ import { LABYRINTH_MODIFIER_CONFIG } from "@/lib/game-constants";
 import { computeTalentEffects } from "@/lib/game-data";
 import { applyAlchemistPotion } from "./reward-commands";
 
-export function restAtCampfire(gameSession: GameSession = defaultGameSession) {
+export function restAtCampfire(gameSession: GameSession) {
   return dispatchRunSessionCommand(
     (draft) => {
       if (draft.session.activity.kind !== "campfire" || draft.session.activity.data.completed)

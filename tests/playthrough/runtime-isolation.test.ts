@@ -6,6 +6,7 @@ import { createDefaultSaveData } from "@/features/alchemy/shared/storage";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { registerSessionCleanup } from "@/features/alchemy/shared/stores/session-capabilities";
 import { describe, expect, it, vi } from "vitest";
+import { defaultGameSession } from "@/app/application-session";
 
 describe("career runtime ownership", () => {
   it("disposes the career session when its initial save cannot load", async () => {
@@ -43,7 +44,7 @@ describe("career runtime ownership", () => {
     }
   });
   it("reproduces sequential careers when two production careers interleave in one process", async () => {
-    const application = readGameplayState();
+    const application = readGameplayState(defaultGameSession);
     const originalNow = Date.now;
     const originalUUID = globalThis.crypto.randomUUID;
     const base: CareerConfig = {
@@ -57,7 +58,7 @@ describe("career runtime ownership", () => {
       maxTurns: 100,
       policy: "archetype",
       combatPolicy: "greedy-effective-damage",
-      initialSave: createPlaythroughFixture("economy-v1"),
+      initialSave: createPlaythroughFixture("economy-v1", defaultGameSession),
     };
     const other: CareerConfig = { ...base, seed: 8, mode: "wildwood", resumeAt: 7 };
     const expected = [await runCareer(base), await runCareer(other)];
@@ -69,7 +70,7 @@ describe("career runtime ownership", () => {
       expect(career.journal).toEqual(expected[index]!.journal);
       expect(career.outcomes).toEqual(expected[index]!.outcomes);
     }
-    expect(readGameplayState()).toBe(application);
+    expect(readGameplayState(defaultGameSession)).toBe(application);
     expect(Date.now).toBe(originalNow);
     expect(globalThis.crypto.randomUUID).toBe(originalUUID);
   });

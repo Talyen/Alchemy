@@ -1,4 +1,3 @@
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { readEquippedTrinketId } from "@/features/alchemy/shared/stores/gear-store";
 import type { ShopSessionStateKey } from "@/features/alchemy/shared/stores/run-reads";
@@ -12,9 +11,7 @@ import type { ShopBuyPriceContext } from "./shop-pricing";
 
 export type { ShopSessionStateKey };
 
-export function resolveReadShopModifiers(
-  gameSession: GameSession = defaultGameSession,
-): readonly EncounterRewardTraitId[] {
+export function resolveReadShopModifiers(gameSession: GameSession): readonly EncounterRewardTraitId[] {
   const run = readActiveRun(gameSession);
   return (
     activeLabyrinthBenefits(run.contentSystemType, readRunSession(gameSession).activeLabyrinthRewardModifiers) ?? []
@@ -30,7 +27,7 @@ export function resolveDraftShopModifiers(draft: RunTransaction): readonly Encou
 export function resolveReadShopPricingContext(
   talentEffects: TalentEffectManifest,
   shopKey: ShopSessionStateKey,
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ): ShopBuyPriceContext {
   const run = readActiveRun(gameSession);
   return {

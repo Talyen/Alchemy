@@ -1,3 +1,4 @@
+import { defaultGameSession } from "@/app/application-session";
 import { TransmutationScreen } from "@/features/alchemy/run-loop/screens/transmutation-screen";
 import { initializeAlchemyVisit } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
 import { labyrinthCampfireHealing } from "@/lib/content-systems/labyrinth/room-rules";
@@ -164,7 +165,7 @@ function DestinationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 function CampfireScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.destinations;
   const r = useCampfireScreenData();
-  useEffect(() => initializeAlchemyVisit("campfire"), []);
+  useEffect(() => initializeAlchemyVisit("campfire", defaultGameSession), []);
   const healingBonus = useHomesteadEffects().homesteadHealing;
   const talentEffects = useTalentEffects();
   const healFraction = labyrinthCampfireHealing(getCampfireHealFraction(talentEffects.campfireHealBonus), r.modifiers);
@@ -300,7 +301,7 @@ function CorruptionScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 function TransmutationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.transmutation;
   const r = useTransmutationScreenData();
-  useEffect(() => initializeAlchemyVisit("transmutation"), []);
+  useEffect(() => initializeAlchemyVisit("transmutation", defaultGameSession), []);
   return (
     <TransmutationScreen
       runDeck={r.runDeck}

@@ -1,7 +1,7 @@
 import * as audio from "@/lib/audio";
-import { generateRunSeed } from "./run-state-init";
-import { createSessionRuntime } from "./session-runtime";
-import { useUiStore } from "./ui-store";
+import { generateRunSeed } from "@/features/alchemy/shared/stores/run-state-init";
+import { createSessionRuntime } from "@/features/alchemy/shared/stores/session-runtime";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 
 /** The shipping application owns one session; independent consumers create their own. */
 export const defaultGameSession = createSessionRuntime(

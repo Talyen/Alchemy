@@ -5,7 +5,6 @@ import {
   type PermanentProgressFields,
 } from "@/features/alchemy/shared/stores/run-state-init";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
-import { defaultGameSession } from "./default-game-session";
 import type { GameSession } from "./game-session-types";
 import { readGameplayState } from "./gameplay-state-store";
 import { type GameplayPersistenceCodec } from "./persistence-codec";
@@ -25,14 +24,13 @@ function createDefaultRunProfileSaveFields(): RunProfileSaveFields {
   return encodeRunProfileSnapshot(createInitialPermanentFields());
 }
 
-function readPermanentProgressForSave(gameSession: GameSession = defaultGameSession): RunProfileSnapshot {
+function readPermanentProgressForSave(gameSession: GameSession): RunProfileSnapshot {
   return readGameplayState(gameSession).runProfile;
 }
 
 export const runProfilePersistenceCodec: GameplayPersistenceCodec<RunProfileSaveFields> = {
   createDefault: createDefaultRunProfileSaveFields,
-  encode: (gameSession: GameSession = defaultGameSession) =>
-    encodeRunProfileSnapshot(readPermanentProgressForSave(gameSession)),
+  encode: (gameSession: GameSession) => encodeRunProfileSnapshot(readPermanentProgressForSave(gameSession)),
   hydrate: (fields, draft) => {
     const prunedCompanions = pruneUnknownCompanions({ ...fields.bondedCompanions });
     draft.runProfile = {

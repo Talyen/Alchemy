@@ -4,7 +4,6 @@ import {
   grantGearToRunWithRecord,
   grantTrinketToRunWithRecord,
 } from "@/features/alchemy/shared/stores/deck-mutations";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import {
   acceptCommand,
@@ -51,7 +50,7 @@ export function applyAlchemistPotion({ draft, rng }: { draft: RunTransaction; rn
   appendCardToRunWithDiscovery(draft, potion);
 }
 
-export function claimRunReward(choiceId: string | null, gameSession: GameSession = defaultGameSession) {
+export function claimRunReward(choiceId: string | null, gameSession: GameSession) {
   return dispatchRunSessionCommand(
     (draft) => {
       const session = draft.session;
@@ -113,6 +112,6 @@ export function claimRunReward(choiceId: string | null, gameSession: GameSession
   );
 }
 
-export function finishRewardClaim(gameSession: GameSession = defaultGameSession): void {
+export function finishRewardClaim(gameSession: GameSession): void {
   dispatchRunSessionCommand((draft) => acceptCommand(releaseRewardClaim(draft)), undefined, gameSession);
 }

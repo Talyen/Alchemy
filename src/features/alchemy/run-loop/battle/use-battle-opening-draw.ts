@@ -1,4 +1,3 @@
-import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import type { Screen } from "@/lib/routing";
 import { useCallback, useEffect } from "react";
 import type { BattleControllerContext } from "./battle-context";
@@ -7,6 +6,7 @@ import { runBattleDraw } from "./draw-sequence";
 import type { createBattleTransferDeps } from "./battle-transfers";
 
 export interface BattleOpeningDrawContext {
+  battle: Pick<BattleControllerContext["battle"], "read">;
   playback: Pick<BattleControllerContext["playback"], "id" | "completeAction" | "scheduleAutoEndTurn">;
   getPresentation?: () => Pick<BattlePresentationPort, "openingDrawPending" | "setOpeningDrawPending">;
 }
@@ -15,7 +15,7 @@ export async function playBattleOpeningDraw(
   ctx: BattleOpeningDrawContext,
   transferDeps: Pick<ReturnType<typeof createBattleTransferDeps>, "getDrawSequenceDeps">,
 ): Promise<boolean> {
-  const current = readBattle();
+  const current = ctx.battle.read();
   const presentation = ctx.getPresentation?.() ?? useBattlePresentationStore.getState();
   if (!presentation.openingDrawPending) return false;
   presentation.setOpeningDrawPending(false);
@@ -31,7 +31,7 @@ export async function playBattleOpeningDraw(
   });
   if (sessionNum === ctx.playback.id) {
     ctx.playback.completeAction(sessionNum);
-    ctx.playback.scheduleAutoEndTurn(readBattle().battleState);
+    ctx.playback.scheduleAutoEndTurn(ctx.battle.read().battleState);
   }
   return completed;
 }

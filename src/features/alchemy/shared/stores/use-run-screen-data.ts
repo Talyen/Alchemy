@@ -1,3 +1,4 @@
+import { defaultGameSession } from "@/app/application-session";
 import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { readGameplayState, useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
@@ -17,7 +18,7 @@ function useRetainedScreenData<S extends RunDataScreen>(screen: S): RunScreenDat
       return active ? select(state) : null;
     }),
   );
-  const [shown, setShown] = useState(() => data ?? select(readGameplayState()));
+  const [shown, setShown] = useState(() => data ?? select(readGameplayState(defaultGameSession)));
   // Retain the outgoing route's last active slice while its successor fades in.
   // Inactive routes select null, so later gameplay writes cannot update that slice.
   if (data !== null && shown !== data) setShown(data);

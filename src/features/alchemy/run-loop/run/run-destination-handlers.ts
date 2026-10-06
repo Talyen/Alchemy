@@ -1,5 +1,4 @@
 import type { BattleStarted } from "@/features/alchemy/shared/stores/battle-start-commands";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
@@ -13,7 +12,7 @@ export interface RoomPresentation {
 export function presentRunRoomEntry(
   entry: RunRoomEntered,
   presentation: RoomPresentation,
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ): void {
   // Opening Companion actions can settle the battle immediately. Their outcome
   // navigation must supersede this initial display request, including headless play.

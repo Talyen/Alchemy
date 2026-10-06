@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { readRunAvailableDestinations } from "@/features/alchemy/shell/run-destination-wiring";
 import { DESTINATIONS } from "@/lib/routing";
 import { resetAllTestStores, setRunProgress } from "../../../helpers/run-domain-store-test";
+import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(() => {
   resetAllTestStores();
@@ -17,7 +18,7 @@ describe("readRunAvailableDestinations", () => {
       runMaxHealth: 30,
       gold: 100,
     });
-    const result = readRunAvailableDestinations();
+    const result = readRunAvailableDestinations(undefined, defaultGameSession);
     expect(result).toContain(DESTINATIONS.NORMAL_COMBAT);
     expect(result).not.toContain(DESTINATIONS.BOSS_COMBAT);
   });
@@ -31,7 +32,7 @@ describe("readRunAvailableDestinations", () => {
       runMaxHealth: 30,
       gold: 100,
     });
-    expect(readRunAvailableDestinations()).toEqual([DESTINATIONS.BOSS_COMBAT]);
+    expect(readRunAvailableDestinations(undefined, defaultGameSession)).toEqual([DESTINATIONS.BOSS_COMBAT]);
   });
 
   it("forwards destination overrides to the pure helper", () => {
@@ -43,6 +44,8 @@ describe("readRunAvailableDestinations", () => {
       runMaxHealth: 30,
       gold: 100,
     });
-    expect(readRunAvailableDestinations({ destinationIndexInAct: 7 })).toEqual([DESTINATIONS.BOSS_COMBAT]);
+    expect(readRunAvailableDestinations({ destinationIndexInAct: 7 }, defaultGameSession)).toEqual([
+      DESTINATIONS.BOSS_COMBAT,
+    ]);
   });
 });

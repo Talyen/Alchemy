@@ -29,6 +29,7 @@ import { addGearCurrencies } from "@/features/alchemy/shared/stores/gear-actions
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { createEmptyGearInventories, generateUniqueGearInstance, getUniqueItemDefinition } from "@/lib/gear";
+import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(() => {
   useSettingsStore.setState(useSettingsStore.getInitialState(), true);
@@ -38,35 +39,46 @@ beforeEach(() => {
 
 describe("persistence coordinator", () => {
   it("keeps hydrated profile fields from overwriting later inventory, discovery and settings changes", () => {
-    hydrateAlchemyPersistenceFields(defaultSaveData);
+    hydrateAlchemyPersistenceFields(defaultSaveData, defaultGameSession);
     useSettingsStore.getState().setMusicVolume(12);
     mutateGearForTest((gear) => {
       gear.addTrinket("tattered-pages");
       gear.addInstance({ instanceId: "new-reward", definitionId: "longsword-basic", affixes: [] }, "knight");
     });
-    dispatchGameplayCommand((draft) => acceptCommand(setDiscoveredCardIds(draft, ["slash", "bash"])));
-    const encoded = encodePersistenceFields();
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setDiscoveredCardIds(draft, ["slash", "bash"])),
+      undefined,
+      defaultGameSession,
+    );
+    const encoded = encodePersistenceFields(defaultGameSession);
     expect(encoded.ownedTrinketIds).toContain("tattered-pages");
     expect(encoded.gearInventories.knight.some((gear) => gear.instanceId === "new-reward")).toBe(true);
     expect(encoded.discoveredCardIds).toEqual(["slash", "bash"]);
     expect(encoded.musicVolume).toBe(12);
-    expect(readRunProfile()).not.toHaveProperty("ownedTrinketIds");
-    expect(readRunProfile()).not.toHaveProperty("musicVolume");
+    expect(readRunProfile(defaultGameSession)).not.toHaveProperty("ownedTrinketIds");
+    expect(readRunProfile(defaultGameSession)).not.toHaveProperty("musicVolume");
   });
 
   it("round-trips domain-owned save fields without transient UI state", () => {
-    hydrateAlchemyPersistenceFields({
-      ...defaultSaveData,
-      musicVolume: 37,
-      discoveredCardIds: ["slash"],
-      talentXP: { burn: 25 },
-      materialInventory: { wood: 4, iron: 3, herbs: 2, food: 1, gems: 0, stone: 0, hide: 0 },
-    });
+    hydrateAlchemyPersistenceFields(
+      {
+        ...defaultSaveData,
+        musicVolume: 37,
+        discoveredCardIds: ["slash"],
+        talentXP: { burn: 25 },
+        materialInventory: { wood: 4, iron: 3, herbs: 2, food: 1, gems: 0, stone: 0, hide: 0 },
+      },
+      defaultGameSession,
+    );
 
     useUiStore.getState().setShowClearSaveConfirm(true);
-    dispatchGameplayCommand((draft) => acceptCommand(handleCollectionTabChange(draft, "bestiary")));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(handleCollectionTabChange(draft, "bestiary")),
+      undefined,
+      defaultGameSession,
+    );
 
-    const encoded = encodePersistenceFields();
+    const encoded = encodePersistenceFields(defaultGameSession);
 
     expect(encoded.musicVolume).toBe(37);
     expect(encoded.discoveredCardIds).toEqual(["slash"]);
@@ -77,26 +89,38 @@ describe("persistence coordinator", () => {
   });
 
   it("hydrates derived homestead effects from persisted source fields", () => {
-    hydrateAlchemyPersistenceFields({
-      ...defaultSaveData,
-      constructedBuildings: {
-        ...defaultSaveData.constructedBuildings,
-        "blacksmiths-forge": 1,
+    hydrateAlchemyPersistenceFields(
+      {
+        ...defaultSaveData,
+        constructedBuildings: {
+          ...defaultSaveData.constructedBuildings,
+          "blacksmiths-forge": 1,
+        },
       },
-    });
+      defaultGameSession,
+    );
 
-    expect(readRunProfile().effects.flatPhysicalDamage).toBeGreaterThan(0);
+    expect(readRunProfile(defaultGameSession).effects.flatPhysicalDamage).toBeGreaterThan(0);
   });
 
   it("subscribes to every persistence owner through one cleanup", () => {
     const listener = vi.fn();
-    const unsubscribe = subscribeAlchemyPersistence(listener);
+    const unsubscribe = subscribeAlchemyPersistence(listener, defaultGameSession);
 
     useSettingsStore.getState().setMusicVolume(42);
-    dispatchGameplayCommand((draft) => acceptCommand(setDiscoveredCardIds(draft, ["slash"])));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setDiscoveredCardIds(draft, ["slash"])),
+      undefined,
+      defaultGameSession,
+    );
     mutateGearForTest((gear) => gear.addCurrencies({ voidstone: 1 }));
-    dispatchGameplayCommand((draft) =>
-      acceptCommand(setRunProfileMaterials(draft, { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 })),
+    dispatchGameplayCommand(
+      (draft) =>
+        acceptCommand(
+          setRunProfileMaterials(draft, { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 }),
+        ),
+      undefined,
+      defaultGameSession,
     );
 
     expect(listener).toHaveBeenCalledTimes(4);
@@ -108,46 +132,66 @@ describe("persistence coordinator", () => {
 
   it("stays silent for transient-only commits that cannot change a snapshot", () => {
     const listener = vi.fn();
-    const unsubscribe = subscribeAlchemyPersistence(listener);
+    const unsubscribe = subscribeAlchemyPersistence(listener, defaultGameSession);
 
     useUiStore.getState().setShowClearSaveConfirm(true);
-    dispatchGameplayCommand((draft) => acceptCommand(handleCollectionTabChange(draft, "bestiary")));
-    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "collection")));
-    dispatchGameplayCommand((draft) => acceptCommand(setSelectedLabyrinthNodeId(draft, "node-1")));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(handleCollectionTabChange(draft, "bestiary")),
+      undefined,
+      defaultGameSession,
+    );
+    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "collection")), undefined, defaultGameSession);
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setSelectedLabyrinthNodeId(draft, "node-1")),
+      undefined,
+      defaultGameSession,
+    );
 
     expect(listener).not.toHaveBeenCalled();
 
-    dispatchGameplayCommand((draft) => acceptCommand(setDiscoveredCardIds(draft, ["slash"])));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setDiscoveredCardIds(draft, ["slash"])),
+      undefined,
+      defaultGameSession,
+    );
     expect(listener).toHaveBeenCalledOnce();
     unsubscribe();
   });
 
   it("ignores claim locks and battle presentation snapshots while saving reward payload changes", () => {
-    dispatchGameplayCommand((draft) => acceptCommand(getBattleForTest(draft)));
+    dispatchGameplayCommand((draft) => acceptCommand(getBattleForTest(draft)), undefined, defaultGameSession);
     const listener = vi.fn();
-    const unsubscribe = subscribeAlchemyPersistence(listener);
+    const unsubscribe = subscribeAlchemyPersistence(listener, defaultGameSession);
 
     setRunSession({ rewardClaimInFlight: true });
-    dispatchGameplayCommand((draft) => {
-      getBattleForTest(draft).battleStartState = { ...getBattleForTest(draft).battleState };
+    dispatchGameplayCommand(
+      (draft) => {
+        getBattleForTest(draft).battleStartState = { ...getBattleForTest(draft).battleState };
 
-      return acceptCommand();
-    });
-    dispatchGameplayCommand((draft) => {
-      draft.runProfile.effects = { ...draft.runProfile.effects };
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    dispatchGameplayCommand(
+      (draft) => {
+        draft.runProfile.effects = { ...draft.runProfile.effects };
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
     expect(listener).not.toHaveBeenCalled();
 
-    setRunSession({ rewardState: { ...readRunSession().rewardFlow.state, gold: 1 } });
+    setRunSession({ rewardState: { ...readRunSession(defaultGameSession).rewardFlow.state, gold: 1 } });
     expect(listener).toHaveBeenCalledOnce();
     unsubscribe();
   });
 
   it("only saves mode-specific session fields while that mode is active", () => {
     const listener = vi.fn();
-    const unsubscribe = subscribeAlchemyPersistence(listener);
+    const unsubscribe = subscribeAlchemyPersistence(listener, defaultGameSession);
 
     setRunSession({ activeLabyrinthModifiers: [] });
     expect(listener).not.toHaveBeenCalled();
@@ -179,20 +223,24 @@ describe("persistence coordinator", () => {
 
   it("coalesces every gameplay persistence owner into one session signal", () => {
     const listener = vi.fn();
-    const unsubscribe = subscribeAlchemyPersistence(listener);
+    const unsubscribe = subscribeAlchemyPersistence(listener, defaultGameSession);
 
-    dispatchGameplayCommand((draft) => {
-      setGold(draft, 42);
-      setHasActiveRun(draft, true);
-      setDiscoveredCardIds(draft, ["slash"]);
-      addGearCurrencies(draft.gear, { voidstone: 1 });
-      setRunProfileMaterials(draft, { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
+    dispatchGameplayCommand(
+      (draft) => {
+        setGold(draft, 42);
+        setHasActiveRun(draft, true);
+        setDiscoveredCardIds(draft, ["slash"]);
+        addGearCurrencies(draft.gear, { voidstone: 1 });
+        setRunProfileMaterials(draft, { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
 
     expect(listener).toHaveBeenCalledOnce();
-    expect(readRunProfile().gold).toBe(42);
+    expect(readRunProfile(defaultGameSession).gold).toBe(42);
     unsubscribe();
   });
 
@@ -203,13 +251,16 @@ describe("persistence coordinator", () => {
     const inventories = createEmptyGearInventories();
     inventories.knight = [unique];
 
-    hydrateAlchemyPersistenceFields({
-      ...defaultSaveData,
-      discoveredUniqueIds: [],
-      gearInventories: inventories,
-    });
+    hydrateAlchemyPersistenceFields(
+      {
+        ...defaultSaveData,
+        discoveredUniqueIds: [],
+        gearInventories: inventories,
+      },
+      defaultGameSession,
+    );
 
-    expect(readProfileStore().discoveredUniqueIds).toEqual(["wardbreaker"]);
+    expect(readProfileStore(defaultGameSession).discoveredUniqueIds).toEqual(["wardbreaker"]);
   });
 
   it("hydrates schema-repaired data without throwing or keeping damage", () => {
@@ -220,9 +271,9 @@ describe("persistence coordinator", () => {
       gold: -5,
     });
 
-    expect(() => hydrateAlchemyPersistenceFields(repaired)).not.toThrow();
+    expect(() => hydrateAlchemyPersistenceFields(repaired, defaultGameSession)).not.toThrow();
 
-    const encoded = encodePersistenceFields();
+    const encoded = encodePersistenceFields(defaultGameSession);
     expect(encoded.gearInventories.knight).toEqual([]);
     expect(encoded.ownedTrinketIds).toEqual([]);
     expect(encoded.gold).toBe(0);

@@ -14,8 +14,6 @@ import { runBattleDraw } from "./draw-sequence";
 import { type createBattleSession } from "./battle-session";
 import type { createBattleTransferDeps } from "./battle-transfers";
 import type { AutoplayCardControl, BattleControllerContext } from "./battle-context";
-import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import { commitCardPlay, commitBattleWish } from "@/features/alchemy/shared/stores/battle-commands";
 
 export function createBattleCardPlay(
   ctx: BattleControllerContext,
@@ -23,7 +21,7 @@ export function createBattleCardPlay(
   transferDeps: ReturnType<typeof createBattleTransferDeps>,
 ) {
   let autoplayPreviewSequence = 0;
-  const getBattle = () => readBattle();
+  const getBattle = () => ctx.battle.read();
   const getPresentation = () => ctx.getPresentation();
 
   function finishDrawSequence(sessionNum: number) {
@@ -126,7 +124,7 @@ export function createBattleCardPlay(
       return false;
     }
     const sessionNum = ctx.playback.id;
-    const played = commitCardPlay(index, card.id);
+    const played = ctx.battle.playCard(index, card.id);
     if (!played) {
       if (!options?.silentReject) playUISound("error");
       return false;
@@ -202,7 +200,7 @@ export function createBattleCardPlay(
   function commitWishChoice(card: BattleCard, errorContext: string): boolean {
     const currentState = getBattle().battleState;
     if (!currentState.wishOptions?.some((option) => option.id === card.id)) return false;
-    const newState = commitBattleWish(card.id);
+    const newState = ctx.battle.chooseWish(card.id);
     if (!newState) return false;
     playUISound("selection");
     const sessionNum = ctx.playback.id;

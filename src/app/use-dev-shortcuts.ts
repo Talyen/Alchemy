@@ -1,3 +1,4 @@
+import { defaultGameSession } from "@/app/application-session";
 import { playUISound } from "@/lib/audio";
 import { discoverCardIds, discoverTrinketIds, discoverUniqueIds } from "@/features/alchemy/shared/stores/profile-store";
 import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/reset";
@@ -16,7 +17,7 @@ import { useCallback } from "react";
 export function useDevShortcuts(run: Pick<AlchemyRunCommands, "resetRunState" | "unlockAllTalents">) {
   const { resetRunState, unlockAllTalents } = run;
   const clearSaveData = useCallback(() => {
-    void clearAllPersistentGameData().then((cleared) => {
+    void clearAllPersistentGameData(defaultGameSession).then((cleared) => {
       if (cleared) {
         playUISound("destructiveConfirm");
         resetRunState();
@@ -26,28 +27,32 @@ export function useDevShortcuts(run: Pick<AlchemyRunCommands, "resetRunState" | 
 
   const unlockAllDevMode = useCallback(() => {
     if (!isAlchemyDevBuild()) return;
-    dispatchRunSessionCommand((draft) => {
-      discoverCardIds(
-        draft,
-        cardLibrary.map((card) => card.id),
-      );
-      setEncounteredEnemyIds(
-        draft,
-        enemyBestiary.map((enemy) => enemy.id),
-      );
-      discoverTrinketIds(
-        draft,
-        trinketLibrary.map((boon) => boon.id),
-      );
-      discoverUniqueIds(
-        draft,
-        uniqueItemList.map((unique) => unique.id),
-      );
-      setFinishedRunCharacters(draft, ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"]);
-      setMaterials(draft, { wood: 99, stone: 99, iron: 99, food: 99, herbs: 99, hide: 99, gems: 99 });
+    dispatchRunSessionCommand(
+      (draft) => {
+        discoverCardIds(
+          draft,
+          cardLibrary.map((card) => card.id),
+        );
+        setEncounteredEnemyIds(
+          draft,
+          enemyBestiary.map((enemy) => enemy.id),
+        );
+        discoverTrinketIds(
+          draft,
+          trinketLibrary.map((boon) => boon.id),
+        );
+        discoverUniqueIds(
+          draft,
+          uniqueItemList.map((unique) => unique.id),
+        );
+        setFinishedRunCharacters(draft, ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"]);
+        setMaterials(draft, { wood: 99, stone: 99, iron: 99, food: 99, herbs: 99, hide: 99, gems: 99 });
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
     unlockAllTalents();
   }, [unlockAllTalents]);
 

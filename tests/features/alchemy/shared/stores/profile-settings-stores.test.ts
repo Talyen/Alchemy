@@ -18,6 +18,7 @@ import {
   setCollectionPage,
   setDiscoveredCardIds,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { defaultGameSession } from "@/app/application-session";
 
 function makeSave(overrides: Partial<SaveData> = {}): SaveData {
   return { ...defaultSaveData, ...overrides };
@@ -30,7 +31,7 @@ beforeEach(() => {
 
 describe("profile store", () => {
   it("owns persistent discoveries, completion, and collection view state", () => {
-    const profile = readProfileStore();
+    const profile = readProfileStore(defaultGameSession);
     expect(profile.discoveredCardIds).toEqual([]);
     expect(profile.encounteredEnemyIds).toEqual([]);
     expect(profile.discoveredTrinketIds).toEqual([]);
@@ -40,39 +41,46 @@ describe("profile store", () => {
   });
 
   it("hydrates only profile fields from save data", () => {
-    dispatchGameplayCommand((draft) =>
-      acceptCommand(
-        profilePersistenceCodec.hydrate(
-          makeSave({
-            discoveredCardIds: ["card-a"],
-            encounteredEnemyIds: ["goblin"],
-            completedDifficulties: {
-              ...defaultSaveData.completedDifficulties,
-              knight: ["difficulty-1"],
-            },
-          }),
-          draft,
+    dispatchGameplayCommand(
+      (draft) =>
+        acceptCommand(
+          profilePersistenceCodec.hydrate(
+            makeSave({
+              discoveredCardIds: ["card-a"],
+              encounteredEnemyIds: ["goblin"],
+              completedDifficulties: {
+                ...defaultSaveData.completedDifficulties,
+                knight: ["difficulty-1"],
+              },
+            }),
+            draft,
+          ),
         ),
-      ),
+      undefined,
+      defaultGameSession,
     );
 
-    const profile = readProfileStore();
+    const profile = readProfileStore(defaultGameSession);
     expect(profile.discoveredCardIds).toEqual(["card-a"]);
     expect(profile.encounteredEnemyIds).toEqual(["goblin"]);
     expect(profile.completedDifficulties.knight).toEqual(["difficulty-1"]);
   });
 
   it("supports functional discovery updates and collection navigation", () => {
-    dispatchGameplayCommand((draft) => {
-      setDiscoveredCardIds(draft, (previous: readonly string[]) => [...previous, "card-a"]);
-      setCollectionPage(draft, "bestiary", 2);
-      setCollectionPage(draft, "cards", -1);
-      handleCollectionTabChange(draft, "bestiary");
+    dispatchGameplayCommand(
+      (draft) => {
+        setDiscoveredCardIds(draft, (previous: readonly string[]) => [...previous, "card-a"]);
+        setCollectionPage(draft, "bestiary", 2);
+        setCollectionPage(draft, "cards", -1);
+        handleCollectionTabChange(draft, "bestiary");
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
 
-    expect(readProfileStore()).toMatchObject({
+    expect(readProfileStore(defaultGameSession)).toMatchObject({
       discoveredCardIds: ["card-a"],
       collectionTab: "bestiary",
       collectionPages: { heroes: 0, cards: 0, bestiary: 2, trinkets: 0, uniques: 0 },
@@ -80,25 +88,31 @@ describe("profile store", () => {
   });
 
   it("resets persisted and transient profile state", () => {
-    dispatchGameplayCommand((draft) => {
-      setDiscoveredCardIds(draft, ["card-a"]);
-      handleCollectionTabChange(draft, "trinkets");
-      resetToDefaults(draft);
+    dispatchGameplayCommand(
+      (draft) => {
+        setDiscoveredCardIds(draft, ["card-a"]);
+        handleCollectionTabChange(draft, "trinkets");
+        resetToDefaults(draft);
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
 
-    expect(readProfileStore().discoveredCardIds).toEqual(defaultSaveData.discoveredCardIds);
-    expect(readProfileStore().collectionTab).toBe("heroes");
+    expect(readProfileStore(defaultGameSession).discoveredCardIds).toEqual(defaultSaveData.discoveredCardIds);
+    expect(readProfileStore(defaultGameSession).collectionTab).toBe("heroes");
   });
 
   it("covers every character in the registry with completion buckets", () => {
-    expect(Object.keys(readProfileStore().completedDifficulties).sort()).toEqual(Object.keys(characters).sort());
+    expect(Object.keys(readProfileStore(defaultGameSession).completedDifficulties).sort()).toEqual(
+      Object.keys(characters).sort(),
+    );
   });
 
   it("setState from getInitialState only writes data fields onto the aggregate", () => {
     resetProfileForTest();
-    const encoded = profilePersistenceCodec.encode();
+    const encoded = profilePersistenceCodec.encode(defaultGameSession);
     expect(encoded).toEqual({
       discoveredCardIds: [],
       encounteredEnemyIds: [],
@@ -107,7 +121,7 @@ describe("profile store", () => {
       completedDifficulties: expect.any(Object),
       finishedRunCharacters: [],
     });
-    expect(readProfileStore()).not.toHaveProperty("setDiscoveredCardIds");
+    expect(readProfileStore(defaultGameSession)).not.toHaveProperty("setDiscoveredCardIds");
   });
 });
 
@@ -140,7 +154,11 @@ describe("settings store", () => {
   });
 
   it("updates and resets preferences independently from profile state", () => {
-    dispatchGameplayCommand((draft) => acceptCommand(setDiscoveredCardIds(draft, ["card-a"])));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setDiscoveredCardIds(draft, ["card-a"])),
+      undefined,
+      defaultGameSession,
+    );
     const settings = useSettingsStore.getState();
     settings.setBrightness(120);
     settings.setMasterVolume(75);
@@ -148,7 +166,7 @@ describe("settings store", () => {
 
     expect(useSettingsStore.getState().brightness).toBe(defaultSaveData.brightness);
     expect(useSettingsStore.getState().masterVolume).toBe(defaultSaveData.masterVolume);
-    expect(readProfileStore().discoveredCardIds).toEqual(["card-a"]);
+    expect(readProfileStore(defaultGameSession).discoveredCardIds).toEqual(["card-a"]);
   });
 
   it("clamps numeric preferences to the save-schema ranges on write", () => {

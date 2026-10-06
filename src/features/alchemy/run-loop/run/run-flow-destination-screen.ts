@@ -1,4 +1,3 @@
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { type Destination } from "@/lib/routing";
@@ -10,7 +9,7 @@ import type { AdvanceToNextDestination, RunFlowHandlerDeps } from "./run-flow";
 export function createDestinationScreenHandlers(
   deps: RunFlowHandlerDeps,
   advanceToNextDestination: AdvanceToNextDestination,
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ) {
   function handleDestinationChoice(destination: Destination) {
     const entry = enterRunRoom({ kind: "campaign", destination }, gameSession);

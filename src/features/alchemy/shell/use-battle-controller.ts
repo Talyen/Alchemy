@@ -1,3 +1,6 @@
+import { assertSessionOwnership } from "@/features/alchemy/shared/stores/session-capabilities";
+import { defaultGameSession } from "@/app/application-session";
+import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
 import { playUISound } from "@/lib/audio";
 import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-card-play";
 import { useBattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
@@ -35,6 +38,10 @@ export function useBattleController({
   measureElementRect = defaultMeasureElementRect,
   measureVisualCardRect = defaultMeasureVisualCardRect,
 }: UseBattleControllerProps) {
+  assertSessionOwnership(
+    defaultGameSession,
+    ...[onBattleVictory, onBattleDefeat].filter((callback) => callback !== undefined),
+  );
   const hasActiveBattle = useHasActiveBattle();
 
   const [isAutoplayEnabled, setIsAutoplayEnabledState] = useState(() =>
@@ -74,7 +81,9 @@ export function useBattleController({
     setBoonInspectOpen(false);
   }, [updateAutoplayEnabled]);
 
+  const battle = useMemo(() => createBattleCapabilities(defaultGameSession), []);
   const ctx = useBattleControllerContext({
+    battle,
     screen,
     setHoveredCardId,
     onBattleVictory,

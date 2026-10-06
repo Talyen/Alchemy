@@ -1,5 +1,5 @@
 import { useStore } from "zustand";
-import { defaultGameSession } from "./default-game-session";
+import { defaultGameSession } from "@/app/application-session";
 import type { GameSession } from "./game-session-types";
 import type { GameplayState } from "./gameplay-state";
 import { sessionRuntime } from "./session-runtime";
@@ -11,14 +11,11 @@ export const useGameplayStateStore = Object.assign(
   applicationStore,
 );
 
-export function readGameplayState(gameSession: GameSession = defaultGameSession): GameplayState {
+export function readGameplayState(gameSession: GameSession): GameplayState {
   return sessionRuntime(gameSession).gameplay.getState();
 }
 
-export function subscribeGameplayCommits(
-  listener: (revision: number) => void,
-  gameSession: GameSession = defaultGameSession,
-): () => void {
+export function subscribeGameplayCommits(listener: (revision: number) => void, gameSession: GameSession): () => void {
   const runtime = sessionRuntime(gameSession);
   return runtime.track(runtime.gameplay.subscribe((state) => listener(state.revision)));
 }

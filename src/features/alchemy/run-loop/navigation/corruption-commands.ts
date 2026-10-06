@@ -1,4 +1,3 @@
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import {
   acceptCommand,
@@ -15,7 +14,7 @@ import { corruptDeckCard } from "@/lib/corruption";
 import { cardLibrary, type BattleCard } from "@/lib/game-data";
 import { discoverCardIds } from "../../shared/stores/profile-store";
 
-export function corruptRunCard(cardIndex: number, gameSession: GameSession = defaultGameSession) {
+export function corruptRunCard(cardIndex: number, gameSession: GameSession) {
   return dispatchRunSessionCommand(
     (nextDraft) => {
       if (nextDraft.session.activity.kind !== "corruption" || nextDraft.session.activity.data)

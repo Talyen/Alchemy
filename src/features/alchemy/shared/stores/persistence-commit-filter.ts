@@ -1,4 +1,3 @@
-import { defaultGameSession } from "./default-game-session";
 import type { GameSession } from "./game-session-types";
 import { type GameplayState } from "./gameplay-state-store";
 import { createDefaultProfileSaveFields, type ProfileSaveFields } from "./profile-store-types";
@@ -16,10 +15,7 @@ import { createDefaultSettingsSaveFields, type SettingsSaveFields } from "./sett
 // Dirty-tracking for persistence: fires only for persisted inputs. A new run,
 // battle, or session field must be classified below before typecheck passes.
 // The classifications follow encodeRunResumeSnapshot in run-resume-codec.ts.
-export function subscribePersistenceCommits(
-  listener: () => void,
-  gameSession: GameSession = defaultGameSession,
-): () => void {
+export function subscribePersistenceCommits(listener: () => void, gameSession: GameSession): () => void {
   const runtime = sessionRuntime(gameSession);
   const unsubscribeSettings = runtime.settings.subscribe((state, previous) => {
     if (!fieldsEqual(previous, state, SETTINGS_SAVE_KEYS)) listener();

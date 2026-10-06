@@ -1,6 +1,5 @@
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 import { createStarterDraftChoices } from "@/features/alchemy/shared/run-flow/starter-draft";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { sampleAndApplyDestinationOffer } from "@/features/alchemy/shared/stores/destination-offer-command";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import {
@@ -70,7 +69,7 @@ interface RunStartOutcome {
   playGoldSound: boolean;
 }
 
-function afterRunStartCommitted(outcome: RunStartOutcome, gameSession: GameSession = defaultGameSession): void {
+function afterRunStartCommitted(outcome: RunStartOutcome, gameSession: GameSession): void {
   sessionFeedback(gameSession).playUISound("newRun");
   if (outcome.playGoldSound) sessionFeedback(gameSession).playGoldGain();
 }
@@ -79,8 +78,8 @@ function afterRunStartCommitted(outcome: RunStartOutcome, gameSession: GameSessi
 // starts only commit state here and play committed side effects afterwards.
 function commitRunStart(
   mutate: (draft: RunTransaction) => RunStartOutcome,
-  afterCommit?: () => void,
-  gameSession: GameSession = defaultGameSession,
+  afterCommit: (() => void) | undefined,
+  gameSession: GameSession,
 ): void {
   dispatchRunSessionCommand(
     (...args: Parameters<typeof mutate>) => acceptCommand(mutate(...args)),
@@ -94,10 +93,7 @@ function commitRunStart(
   );
 }
 
-export function createNewRunInitialization(
-  deps: ContentSystemNavigationDeps,
-  gameSession: GameSession = defaultGameSession,
-) {
+export function createNewRunInitialization(deps: ContentSystemNavigationDeps, gameSession: GameSession) {
   function initializeRunForDifficulty(characterId: CharacterId, difficultyId: DifficultyId) {
     commitRunStart(
       (draft) => {

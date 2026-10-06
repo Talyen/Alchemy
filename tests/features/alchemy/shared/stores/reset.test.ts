@@ -1,5 +1,5 @@
 import { setBattleActiveForTest as setHasActiveBattle } from "../../../../helpers/run-domain-store-test";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/alchemy/shared/storage", async (importOriginal) => {
@@ -41,6 +41,7 @@ import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { resetProfileForTest, resetRunDomainStore, setRunProgress } from "../../../../helpers/run-domain-store-test";
+import { defaultGameSession } from "@/app/application-session";
 
 const mockedClearSave = vi.mocked(clearAlchemySaveData);
 
@@ -50,44 +51,52 @@ beforeEach(() => {
   resetProfileForTest();
   useSettingsStore.setState(useSettingsStore.getInitialState());
   resetRunDomainStore();
-  resetTransientRunUi();
+  resetTransientRunUi(defaultGameSession);
   localStorage.removeItem(DEVICE_DISPLAY_STORAGE_KEY);
   initDeviceDisplayPreferences();
 });
 
 describe("clearAllPersistentGameData", () => {
   it("wipes app, run permanent data, and homestead after a successful disk clear", async () => {
-    dispatchRunSessionCommand((draft) => {
-      addMaterialsToStockpile(draft, { wood: 10, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
-      setDiscoveredCardIds(draft, ["card-a"]);
+    dispatchRunSessionCommand(
+      (draft) => {
+        addMaterialsToStockpile(draft, { wood: 10, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
+        setDiscoveredCardIds(draft, ["card-a"]);
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
     setRunProgress({ unlockedTalents: { physical: ["test-talent"] } });
 
-    await expect(clearAllPersistentGameData()).resolves.toBe(true);
+    await expect(clearAllPersistentGameData(defaultGameSession)).resolves.toBe(true);
 
     expect(mockedClearSave).toHaveBeenCalledWith("localWipe", defaultGameSession);
-    expect(readRunProfile().materialInventory).toEqual(emptyInventory());
-    expect(readRunProfile().unlockedTalents).toEqual({});
-    expect(readProfileStore().discoveredCardIds).toEqual(defaultSaveData.discoveredCardIds);
-    expect(readProfileStore().discoveredCardIds).not.toContain("card-a");
+    expect(readRunProfile(defaultGameSession).materialInventory).toEqual(emptyInventory());
+    expect(readRunProfile(defaultGameSession).unlockedTalents).toEqual({});
+    expect(readProfileStore(defaultGameSession).discoveredCardIds).toEqual(defaultSaveData.discoveredCardIds);
+    expect(readProfileStore(defaultGameSession).discoveredCardIds).not.toContain("card-a");
   });
 
   it("tears down the live run, session, and battle alongside the wipe", async () => {
-    dispatchRunSessionCommand((draft) => {
-      setHasActiveRun(draft, true);
-      setHasActiveBattle(draft, true);
+    dispatchRunSessionCommand(
+      (draft) => {
+        setHasActiveRun(draft, true);
+        setHasActiveBattle(draft, true);
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
 
-    await expect(clearAllPersistentGameData()).resolves.toBe(true);
+    await expect(clearAllPersistentGameData(defaultGameSession)).resolves.toBe(true);
 
-    expect(readRunSession().hasActiveRun).toBe(false);
-    expect(readBattle().hasActiveBattle).toBe(false);
-    expect(readActiveRun().roomsEncountered).toBe(0);
-    expect(readActiveRunScreen()).toBe(ROUTE_SCREENS.MENU);
+    expect(readRunSession(defaultGameSession).hasActiveRun).toBe(false);
+    expect(readBattle(defaultGameSession).hasActiveBattle).toBe(false);
+    expect(readActiveRun(defaultGameSession).roomsEncountered).toBe(0);
+    expect(readActiveRunScreen(defaultGameSession)).toBe(ROUTE_SCREENS.MENU);
   });
 
   it("closes the clear-save dialog but preserves device display sizes on wipe", async () => {
@@ -96,7 +105,7 @@ describe("clearAllPersistentGameData", () => {
     useDeviceDisplayStore.getState().setTooltipSizePercent(120);
     flushDeviceDisplayPreferences();
 
-    await expect(clearAllPersistentGameData()).resolves.toBe(true);
+    await expect(clearAllPersistentGameData(defaultGameSession)).resolves.toBe(true);
 
     // The dialog is transient UI and closes with the wipe; device sizes live
     // outside the versioned save and survive it (Reset Options is their reset).
@@ -109,19 +118,23 @@ describe("clearAllPersistentGameData", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mockedClearSave.mockResolvedValue(false);
     useUiStore.getState().setShowClearSaveConfirm(true);
-    dispatchRunSessionCommand((draft) => {
-      addMaterialsToStockpile(draft, { wood: 10, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
-      setDiscoveredCardIds(draft, ["card-a"]);
+    dispatchRunSessionCommand(
+      (draft) => {
+        addMaterialsToStockpile(draft, { wood: 10, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
+        setDiscoveredCardIds(draft, ["card-a"]);
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
     setRunProgress({ unlockedTalents: { physical: ["test-talent"] } });
 
-    await expect(clearAllPersistentGameData()).resolves.toBe(false);
+    await expect(clearAllPersistentGameData(defaultGameSession)).resolves.toBe(false);
 
-    expect(readRunProfile().materialInventory.wood).toBe(10);
-    expect(readRunProfile().unlockedTalents).toEqual({ physical: ["test-talent"] });
-    expect(readProfileStore().discoveredCardIds).toContain("card-a");
+    expect(readRunProfile(defaultGameSession).materialInventory.wood).toBe(10);
+    expect(readRunProfile(defaultGameSession).unlockedTalents).toEqual({ physical: ["test-talent"] });
+    expect(readProfileStore(defaultGameSession).discoveredCardIds).toContain("card-a");
     expect(useUiStore.getState().showClearSaveConfirm).toBe(true);
   });
 });

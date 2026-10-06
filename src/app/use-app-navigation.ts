@@ -1,3 +1,4 @@
+import { defaultGameSession } from "@/app/application-session";
 import { getDesktopApi } from "@/lib/desktop-api";
 import {
   rememberNonOptionsScreen,
@@ -40,7 +41,7 @@ export function useGameMenuState() {
   useEffect(
     () =>
       getDesktopApi()?.onExternalFocusLost?.(() => {
-        if (readActiveRunScreen() === "battle") openGameMenu();
+        if (readActiveRunScreen(defaultGameSession) === "battle") openGameMenu();
       }),
     [openGameMenu],
   );

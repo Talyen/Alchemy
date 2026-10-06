@@ -1,14 +1,10 @@
 import {
-  buildAlchemySaveDataFromStores,
-  configureSaveBackend,
+  createSessionPersistence,
+  snapshotSessionSave,
   evaluateSaveCandidates,
-  hydrateAlchemyPersistenceFields,
-  loadAlchemySaveState,
   type UnstampedSaveData,
 } from "@/features/alchemy/shared/storage";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { resolveActiveRunForSave, restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
   readActiveRunScreen,
   readBattle,
@@ -22,11 +18,8 @@ import { isDeepStrictEqual } from "node:util";
 import { createAlchemyAutosaveLifecycle } from "../autosave-lifecycle";
 import type { CareerResult } from "./types";
 
-export function snapshotCareer(gameSession: GameSession = defaultGameSession) {
-  return buildAlchemySaveDataFromStores(
-    resolveActiveRunForSave(readHasActiveRun(gameSession), undefined, gameSession),
-    gameSession,
-  );
+export function snapshotCareer(gameSession: GameSession) {
+  return snapshotSessionSave(gameSession);
 }
 
 function canonicalJson(value: unknown): string {
@@ -37,7 +30,7 @@ function canonicalJson(value: unknown): string {
   );
 }
 
-export function stateDigest(gameSession: GameSession = defaultGameSession) {
+export function stateDigest(gameSession: GameSession) {
   return createHash("sha256")
     .update(
       canonicalJson({
@@ -49,36 +42,30 @@ export function stateDigest(gameSession: GameSession = defaultGameSession) {
     .digest("hex");
 }
 
-export async function createCareerPersistence(
-  initialSave: UnstampedSaveData,
-  gameSession: GameSession = defaultGameSession,
-) {
+export async function createCareerPersistence(initialSave: UnstampedSaveData, gameSession: GameSession) {
   let bytes: string | null = JSON.stringify(initialSave);
-  configureSaveBackend(
-    {
-      readCandidates() {
-        return Promise.resolve({ ok: true, candidates: bytes ? [bytes] : [] });
-      },
-      write(_key, value) {
-        bytes = value;
-        return Promise.resolve({ ok: true });
-      },
-      writeSync(_key, value) {
-        bytes = value;
-        return { ok: true };
-      },
-      clear() {
-        bytes = null;
-        return Promise.resolve({ ok: true });
-      },
+  const persistence = createSessionPersistence(gameSession);
+  persistence.configure({
+    readCandidates() {
+      return Promise.resolve({ ok: true, candidates: bytes ? [bytes] : [] });
     },
-    gameSession,
-  );
-  const loaded = await loadAlchemySaveState(gameSession);
+    write(_key, value) {
+      bytes = value;
+      return Promise.resolve({ ok: true });
+    },
+    writeSync(_key, value) {
+      bytes = value;
+      return { ok: true };
+    },
+    clear() {
+      bytes = null;
+      return Promise.resolve({ ok: true });
+    },
+  });
+  const loaded = await persistence.load();
   if (loaded.status.kind !== "ok" || loaded.status.warnings?.length)
     throw new Error(`Initial save invalid: ${JSON.stringify(loaded.status)}`);
-  hydrateAlchemyPersistenceFields(loaded.data, gameSession);
-  restoreRun(loaded.data.activeRun, loaded.data.talentXP, loaded.data.unlockedTalents, gameSession);
+  persistence.restore(loaded.data);
 
   // Deliberate checkpoints flush explicitly. No machine-speed timer may save
   // before a requested interruption; the worker controls the simulation clock.
@@ -110,7 +97,7 @@ export async function createCareerPersistence(
       resumeAt?: number,
     ) {
       const validationStarted = performance.now();
-      const save = snapshotCareer(gameSession);
+      const save = persistence.snapshot();
       const check = evaluateSaveCandidates([JSON.stringify({ ...save, lastSavedAt: 1 })]);
       if (check.status.kind !== "ok" || check.status.warnings?.length)
         throw new Error(`Invariant: save repair ${JSON.stringify(check.status)}`);
@@ -131,11 +118,10 @@ export async function createCareerPersistence(
         throw new Error("Invariant: acknowledged persistence differs from gameplay snapshot");
       if (checkpoint?.at === step + 1) checkpoint.save(bytes);
       if (resumeAt === step + 1) {
-        const persisted = await loadAlchemySaveState(gameSession);
+        const persisted = await persistence.load();
         if (persisted.status.kind !== "ok" || persisted.status.warnings?.length)
           throw new Error("Acknowledged save failed to load");
-        hydrateAlchemyPersistenceFields(persisted.data, gameSession);
-        restoreRun(persisted.data.activeRun, persisted.data.talentXP, persisted.data.unlockedTalents, gameSession);
+        persistence.restore(persisted.data);
         result.resumeChecks++;
       }
     },

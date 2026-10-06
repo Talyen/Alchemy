@@ -1,4 +1,3 @@
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { isActiveRunActivity, readActivityData, runActivityScreen } from "@/lib/active-run-session";
 import {
@@ -78,42 +77,39 @@ function selectBattle(state: Pick<GameplayState, "session">): BattleReadView {
 function useShallowRunSelector<T>(selector: (state: GameplayState) => T): T {
   return useGameplayStateStore(useShallow(selector));
 }
-export function readActiveRun(gameSession: GameSession = defaultGameSession): ActiveRunReadView {
+export function readActiveRun(gameSession: GameSession): ActiveRunReadView {
   return deepFreezeInDev(pickActiveRunView(readGameplayState(gameSession).run));
 }
-export function readRunProfile(gameSession: GameSession = defaultGameSession): RunProfileReadView {
+export function readRunProfile(gameSession: GameSession): RunProfileReadView {
   return deepFreezeInDev({ ...readGameplayState(gameSession).runProfile });
 }
-export function readRunSession(gameSession: GameSession = defaultGameSession): RunSessionReadView {
+export function readRunSession(gameSession: GameSession): RunSessionReadView {
   const session = readGameplayState(gameSession).session;
   return deepFreezeInDev({ ...session, hasActiveRun: isActiveRunActivity(session.activity) });
 }
-export function readShopFirstPurchaseUsed(
-  shop: ShopSessionStateKey,
-  gameSession: GameSession = defaultGameSession,
-): boolean {
+export function readShopFirstPurchaseUsed(shop: ShopSessionStateKey, gameSession: GameSession): boolean {
   return readActivityData(readGameplayState(gameSession).session.activity, SHOP_VISIT_BY_STATE_KEY[shop])
     .firstPurchaseUsed;
 }
-export function readBattle(gameSession: GameSession = defaultGameSession): BattleReadView {
+export function readBattle(gameSession: GameSession): BattleReadView {
   return deepFreezeInDev(selectBattle(readGameplayState(gameSession)));
 }
-export function readRunRevision(gameSession: GameSession = defaultGameSession): number {
+export function readRunRevision(gameSession: GameSession): number {
   return readGameplayState(gameSession).revision;
 }
-export function readRunInitialized(gameSession: GameSession = defaultGameSession): boolean {
+export function readRunInitialized(gameSession: GameSession): boolean {
   return readGameplayState(gameSession).run.initialized;
 }
-export function readHasActiveRun(gameSession: GameSession = defaultGameSession): boolean {
+export function readHasActiveRun(gameSession: GameSession): boolean {
   return isActiveRunActivity(readGameplayState(gameSession).session.activity);
 }
-export function readHasActiveBattle(gameSession: GameSession = defaultGameSession): boolean {
+export function readHasActiveBattle(gameSession: GameSession): boolean {
   return readGameplayState(gameSession).session.activity.kind === "battle";
 }
-export function readActiveRunScreen(gameSession: GameSession = defaultGameSession): Screen {
+export function readActiveRunScreen(gameSession: GameSession): Screen {
   return readGameplayState(gameSession).run.navigation.screen;
 }
-export function readRunResumeScreen(gameSession: GameSession = defaultGameSession): Screen | null {
+export function readRunResumeScreen(gameSession: GameSession): Screen | null {
   const state = readGameplayState(gameSession);
   return isActiveRunActivity(state.session.activity) ? runActivityScreen(state.session.activity) : null;
 }
@@ -122,7 +118,7 @@ export function useRunResumeScreen(): Screen | null {
     isActiveRunActivity(state.session.activity) ? runActivityScreen(state.session.activity) : null,
   );
 }
-export function readRunPhase(gameSession: GameSession = defaultGameSession): RunPhase {
+export function readRunPhase(gameSession: GameSession): RunPhase {
   const state = readGameplayState(gameSession);
   return getRunPhase(state.run.navigation.screen, state.session.activity.kind === "battle");
 }
@@ -311,7 +307,7 @@ export function getRunSessionFromState(state: GameplayState, screen?: Screen): R
     battle,
   };
 }
-export function getRunSession(screen?: Screen, gameSession: GameSession = defaultGameSession): RunSession {
+export function getRunSession(screen: Screen | undefined, gameSession: GameSession): RunSession {
   return getRunSessionFromState(readGameplayState(gameSession), screen);
 }
 
@@ -347,6 +343,6 @@ export function useCardInspectionData() {
   return useShallowRunSelector(selectCardInspectionData);
 }
 
-export function readCardInspectionData(gameSession: GameSession = defaultGameSession) {
+export function readCardInspectionData(gameSession: GameSession) {
   return selectCardInspectionData(readGameplayState(gameSession));
 }

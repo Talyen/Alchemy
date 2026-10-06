@@ -110,13 +110,33 @@ A session owns one career: permanent progression plus its sole active run. Its o
 reads and intent-level commands. Independent sessions do not share aggregates,
 settings, command guards, storage queues, failure status, or lifecycle channels.
 
-Imperative reads, commands, and controller factories take an optional final session
-argument. Omitting it retains the application’s default-session API. Factories bind
-that argument through every nested operation and deferred callback; capture the session
-explicitly when passing a capability as a callback. Preserve optional argument
-positions, for example `(options) => readRunAvailableDestinations(options, session)`. React hooks subscribe to
-the application session without an additional provider. Runtime internals remain
-store-owned, with scoped exceptions for the save IO and hydration adapters.
+Imperative reads, commands, codecs, storage operations, and controller factories
+require an explicit final `GameSession`; they never fall back to another career.
+For preceding optional inputs, pass `undefined` when omitted, for example
+`dispatchRunSessionCommand(execute, undefined, session)`. Domain operations inside
+an open transaction continue to take the transaction, not another session.
+
+Bind capabilities once at controller composition: `createBattleCapabilities`
+provides combat reads and commands; `createRunRouteActions` provides navigation
+reads and route actions; `createShopActions` binds shop operations; and
+`createSessionPersistence` binds snapshots, restore, subscriptions, and save IO.
+Deferred playback consumes `BattleControllerContext.battle`, so it cannot choose a
+career implicitly. Bound methods retain ownership when passed individually and
+reject use after disposal. `bindSessionCapabilities` and `assertSessionOwnership`
+keep ownership private in `session-capabilities.ts`. Flow and Labyrinth routing
+reject mixed-session outcomes, navigation, battle commands, and node callbacks
+before they can mutate gameplay. Pure presentation callbacks need no session.
+Outcome handlers remain constructed before battle controllers; their separate
+composition is checked rather than replaced with late callback binding.
+
+The singleton is constructed only in `app/application-session.ts`. React hooks
+subscribe to that application's session without an additional provider. The
+explicit shipping adapter list in `eslint/session-ownership.js` covers application hooks,
+routes, and presentation adapters, including those under feature directories. The ESLint
+session-ownership rule and dependency boundary prevent reusable domain modules
+and headless playthroughs from importing the singleton; ESLint also rejects
+optional or defaulted session parameters. Runtime internals remain store-owned,
+with scoped exceptions for save IO, hydration, and singleton construction.
 
 `runtimeInputs` supplies the clock, new-run seed generator, and Gear instance ID
 source. Gameplay RNG remains persisted on the run and changes inside transactions.

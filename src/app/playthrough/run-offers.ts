@@ -1,13 +1,10 @@
 import { PLAYABLE_HAND_OPTIONS } from "@/features/alchemy/run-loop/battle/playable-hand";
 import { cardSlotKeyOf, gearSlotKeyOf } from "@/features/alchemy/run-loop/shop/shop-commands-core";
 import { shopItemSlotKey } from "@/features/alchemy/run-loop/shop/shop-slot-keys";
-import { commitBattleWish, commitCardPlay, commitEndTurn } from "@/features/alchemy/shared/stores/battle-commands";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import {
   readActiveRun,
   readActiveRunScreen,
-  readBattle,
   readRunProfile,
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-reads";
@@ -39,9 +36,9 @@ interface RunOfferContext {
 
 export function offerRunChoices(
   { config, controller, offer, choices, recordBattle }: RunOfferContext,
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ): void {
-  const { flow, shop, labyrinth, nodes } = controller;
+  const { flow, shop, labyrinth, nodes, battle } = controller;
   const run = readActiveRun(gameSession);
   const session = readRunSession(gameSession);
   const profile = readRunProfile(gameSession);
@@ -71,7 +68,7 @@ export function offerRunChoices(
   const activity = session.activity;
   switch (activity.kind) {
     case "battle": {
-      const state = readBattle(gameSession).battleState;
+      const state = battle.read().battleState;
       if (isPlayerDefeated(state)) offer("settle", "defeat", 1, flow.handleBattleDefeat);
       else if (state.enemyHealth <= 0) offer("settle", "victory", 1, flow.handleBattleVictory);
       else if (state.wishOptions?.length)
@@ -80,7 +77,7 @@ export function offerRunChoices(
             "wish",
             card.id,
             affinity(card) + getEffectiveDamageScore(card, state),
-            () => commitBattleWish(card.id, gameSession),
+            () => battle.chooseWish(card.id),
             index,
           ),
         );
@@ -92,7 +89,7 @@ export function offerRunChoices(
               card.id,
               combatScore(card, state),
               () => {
-                const result = commitCardPlay(index, card.id, gameSession);
+                const result = battle.playCard(index, card.id);
                 if (result) recordBattle(result.state, result.combatTexts, card.id);
                 return result;
               },
@@ -101,7 +98,7 @@ export function offerRunChoices(
         });
         if (!choices.length)
           offer("end-turn", "turn", 0, () => {
-            const result = commitEndTurn(gameSession);
+            const result = battle.endTurn();
             if (!result) return null;
             for (const frame of result.frames) {
               recordBattle(frame.turn.state, frame.turn.combatTexts);

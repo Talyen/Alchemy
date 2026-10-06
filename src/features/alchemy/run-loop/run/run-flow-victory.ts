@@ -1,4 +1,4 @@
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
@@ -10,7 +10,7 @@ import { completeRunVictory as commitRunVictory } from "./run-end-commands";
 import type { RunOutcomeDeps } from "./run-flow";
 import { createVictoryCommand } from "./victory-commands";
 
-export function createVictoryHandlers(deps: RunOutcomeDeps, gameSession: GameSession = defaultGameSession) {
+export function createVictoryHandlers(deps: RunOutcomeDeps, gameSession: GameSession) {
   const commit = createVictoryCommand(deps.getAvailableDestinations, gameSession);
   function commitVictoryResult() {
     const goldGained = commit();
@@ -40,9 +40,9 @@ export function createVictoryHandlers(deps: RunOutcomeDeps, gameSession: GameSes
     deps.actions.navigateTo(ROUTE_SCREENS.RUN_VICTORY, prepareNavigation);
   }
 
-  return {
+  return bindSessionCapabilities(gameSession, {
     commitVictoryResult,
     handleBattleVictory,
     completeRunVictory,
-  };
+  });
 }

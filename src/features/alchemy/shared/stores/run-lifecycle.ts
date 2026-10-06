@@ -1,4 +1,5 @@
-import { buildAlchemySaveDataFromStores, saveAlchemySaveData } from "@/features/alchemy/shared/storage";
+import { buildAlchemySaveDataFromStores } from "../storage/persistence";
+import { saveAlchemySaveData } from "../storage/io";
 import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 import type { ActiveRunData, RunRecap } from "@/lib/active-run-session";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
@@ -9,7 +10,6 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Screen } from "@/lib/routing";
 import { logStorageFailure } from "@/lib/storage-logging";
 import { current, isDraft } from "immer";
-import { defaultGameSession } from "./default-game-session";
 import type { GameSession } from "./game-session-types";
 import { dispatchGameplayCommand, type GameplayDraft } from "./gameplay-command";
 import { getRunSession, readRunResumeScreen } from "./run-reads";
@@ -39,7 +39,7 @@ export function restoreRun(
   activeRun: ActiveRunData | null,
   talentXP: TalentXP,
   unlockedTalents: UnlockedTalents,
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ): void {
   dispatchGameplayCommand(
     (draft) => {
@@ -55,13 +55,13 @@ export function restoreRun(
 
 export function resolveActiveRunForSave(
   hasActiveRun: boolean,
-  screen?: Screen,
-  gameSession: GameSession = defaultGameSession,
+  screen: Screen | undefined,
+  gameSession: GameSession,
 ): ActiveRunData | null {
   return hasActiveRun ? snapshotRun(screen, gameSession) : null;
 }
 
-export function snapshotRun(screen?: Screen, gameSession: GameSession = defaultGameSession): ActiveRunData {
+export function snapshotRun(screen: Screen | undefined, gameSession: GameSession): ActiveRunData {
   return encodeRunResumeSnapshot(
     getRunSession(undefined, gameSession),
     screen ?? readRunResumeScreen(gameSession) ?? undefined,
@@ -88,7 +88,7 @@ export function clearActiveRunInDraft(draft: GameplayDraft): void {
   clearTransientSession(draft);
 }
 
-export function teardownRun(gameSession: GameSession = defaultGameSession): void {
+export function teardownRun(gameSession: GameSession): void {
   dispatchGameplayCommand(
     (draft) => {
       clearActiveRunInDraft(draft);
@@ -102,11 +102,7 @@ export function teardownRun(gameSession: GameSession = defaultGameSession): void
   notifyRunTeardown(gameSession);
 }
 
-function flushSave(
-  activeRun: ActiveRunData | null,
-  message: string,
-  gameSession: GameSession = defaultGameSession,
-): void {
+function flushSave(activeRun: ActiveRunData | null, message: string, gameSession: GameSession): void {
   // Immediate fast path: run-end and gear mutations need durability without
   // waiting for the autosave debounce. Shares the storage owner’s queue (and the
   // snapshot builder) with the debounced autosave, so overlapping writes
@@ -125,14 +121,11 @@ function flushSave(
   );
 }
 
-function flushSaveAfterRunEnd(gameSession: GameSession = defaultGameSession): void {
+function flushSaveAfterRunEnd(gameSession: GameSession): void {
   flushSave(null, "Failed to flush save after run end", gameSession);
 }
 
-export function flushSaveAfterGearMutation(
-  activeRun: ActiveRunData | null,
-  gameSession: GameSession = defaultGameSession,
-): void {
+export function flushSaveAfterGearMutation(activeRun: ActiveRunData | null, gameSession: GameSession): void {
   flushSave(activeRun, "Failed to flush save after gear mutation", gameSession);
 }
 
@@ -180,7 +173,7 @@ export function finalizeRunEndSession(
     awardRunEndMaterials: (transaction: RunTransaction) => MaterialInventory;
     finalizeRunXP: (transaction: RunTransaction) => void;
   },
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ): MaterialInventory {
   return dispatchGameplayCommand(
     (draft) => acceptCommand(finalizeRunEndSessionState(options, draft, "victory")),
@@ -199,7 +192,7 @@ export function abandonRun(
     awardRunEndMaterials: (transaction: RunTransaction) => MaterialInventory;
     finalizeRunXP: (transaction: RunTransaction) => void;
   },
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ): boolean {
   return dispatchGameplayCommand(
     (draft) => {
@@ -243,7 +236,7 @@ export function applyRunDefeatTeardown(
     finalizeRunXP: (transaction: RunTransaction) => void;
     clearCombatPresentation?: () => void;
   },
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ): void {
   dispatchGameplayCommand(
     (draft) => {
@@ -269,25 +262,22 @@ export function applyRunDefeatTeardown(
   );
 }
 
-export function onRunTeardown(listener: () => void, gameSession: GameSession = defaultGameSession): () => void {
+export function onRunTeardown(listener: () => void, gameSession: GameSession): () => void {
   const runtime = sessionRuntime(gameSession);
   return runtime.track(runtime.teardown.on(listener));
 }
-export function onClearBattlePresentation(
-  listener: () => void,
-  gameSession: GameSession = defaultGameSession,
-): () => void {
+export function onClearBattlePresentation(listener: () => void, gameSession: GameSession): () => void {
   const runtime = sessionRuntime(gameSession);
   return runtime.track(runtime.clearPresentation.on(listener));
 }
 
-function clearBattleUiState(gameSession: GameSession = defaultGameSession): void {
+function clearBattleUiState(gameSession: GameSession): void {
   sessionRuntime(gameSession).feedback.clearBattleUi();
 }
-export function clearBattlePresentationUi(gameSession: GameSession = defaultGameSession): void {
+export function clearBattlePresentationUi(gameSession: GameSession): void {
   clearBattleUiState(gameSession);
   sessionRuntime(gameSession).clearPresentation.emit();
 }
-function notifyRunTeardown(gameSession: GameSession = defaultGameSession): void {
+function notifyRunTeardown(gameSession: GameSession): void {
   sessionRuntime(gameSession).teardown.emit();
 }

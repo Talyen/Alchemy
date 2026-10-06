@@ -3,7 +3,6 @@ import {
   type NoviceCampaignStartDeps,
 } from "@/features/alchemy/shared/run-flow/campaign-start";
 import { createStarterDraftChoices } from "@/features/alchemy/shared/run-flow/starter-draft";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { discoverCardIds, readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import {
@@ -54,7 +53,7 @@ import { isDifficultySelectContinuation } from "./run-start-command";
 function buildNoviceCampaignDeps(
   deps: ContentSystemNavigationDeps,
   initializeRunForDifficulty: NoviceCampaignStartDeps["initializeRunForDifficulty"],
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ): NoviceCampaignStartDeps {
   return {
     completedDifficulties: IS_DEMO ? {} : readProfileStore(gameSession).completedDifficulties,
@@ -77,10 +76,7 @@ function unexpectedContentSystem(
   deps.navigateTo(ROUTE_SCREENS.MENU);
 }
 
-export function createContentSystemNavigation(
-  deps: ContentSystemNavigationDeps,
-  gameSession: GameSession = defaultGameSession,
-) {
+export function createContentSystemNavigation(deps: ContentSystemNavigationDeps, gameSession: GameSession) {
   const { initializeRunForDifficulty, initializeLabyrinthRun, initializeWildwoodRun, initializeStarterDraftRun } =
     createNewRunInitialization(deps, gameSession);
   const { resumeRun, beginContentSystem } = createRunResumeNavigation(deps, gameSession);

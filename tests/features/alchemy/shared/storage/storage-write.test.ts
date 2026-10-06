@@ -17,6 +17,7 @@ import {
   teardownMockWindow,
 } from "../../../../helpers/desktop-save-mock-helper";
 import { installStorageIoTestHooks } from "../../../../helpers/storage-io-test-setup";
+import { defaultGameSession } from "@/app/application-session";
 
 const globalWithWindow = globalThis as unknown as { window?: object };
 const mockStorage: Record<string, string> = {};
@@ -44,7 +45,7 @@ describe("storage io", () => {
 
   it("saveAlchemySaveData writes to localStorage", async () => {
     const data: SaveData = { ...defaultSaveData, selectedAspectRatio: "16:9" };
-    expect(await saveAlchemySaveData(data)).toBe("saved");
+    expect(await saveAlchemySaveData(data, defaultGameSession)).toBe("saved");
     const written = JSON.parse(mockStorage[SAVE_KEY]) as SaveData;
     expect(written.selectedAspectRatio).toBe("16:9");
     expect(written.lastSavedAt).toBeGreaterThan(0);
@@ -59,36 +60,42 @@ describe("storage io", () => {
   it.each(["reported", "thrown"])("returns failed for a %s backend write failure", async (failure) => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const error = new Error("disk unavailable");
-    configureSaveBackend({
-      readCandidates: async () => ({ ok: true, candidates: [] }),
-      write: async () => {
-        if (failure === "thrown") throw error;
-        return { ok: false, error };
+    configureSaveBackend(
+      {
+        readCandidates: async () => ({ ok: true, candidates: [] }),
+        write: async () => {
+          if (failure === "thrown") throw error;
+          return { ok: false, error };
+        },
+        writeSync: () => null,
+        clear: async () => ({ ok: true }),
       },
-      writeSync: () => null,
-      clear: async () => ({ ok: true }),
-    });
-    expect(await saveAlchemySaveData(defaultSaveData)).toBe("failed");
+      defaultGameSession,
+    );
+    expect(await saveAlchemySaveData(defaultSaveData, defaultGameSession)).toBe("failed");
     expect(vi.mocked(console.error).mock.calls[0]?.[0]).toContain("Save data could not be written");
   });
 
   it("reports serialization failure without invoking the backend", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const write = vi.fn();
-    configureSaveBackend({
-      readCandidates: async () => ({ ok: true, candidates: [] }),
-      write,
-      writeSync: () => null,
-      clear: async () => ({ ok: true }),
-    });
+    configureSaveBackend(
+      {
+        readCandidates: async () => ({ ok: true, candidates: [] }),
+        write,
+        writeSync: () => null,
+        clear: async () => ({ ok: true }),
+      },
+      defaultGameSession,
+    );
     const data = {
       ...defaultSaveData,
       toJSON: () => {
         throw new Error("serialization");
       },
     };
-    expect(await saveAlchemySaveData(data)).toBe("failed");
-    expect(await saveAlchemySaveDataForExit(data)).toBe("failed");
+    expect(await saveAlchemySaveData(data, defaultGameSession)).toBe("failed");
+    expect(await saveAlchemySaveDataForExit(data, defaultGameSession)).toBe("failed");
     expect(write).not.toHaveBeenCalled();
   });
 
@@ -98,13 +105,16 @@ describe("storage io", () => {
     const gate = new Promise<{ ok: true } | { ok: false; error: string }>((resolve) => {
       release = resolve;
     });
-    configureSaveBackend({
-      readCandidates: async () => ({ ok: true, candidates: [] }),
-      write: () => gate,
-      writeSync: () => null,
-      clear: async () => ({ ok: true }),
-    });
-    const completion = saveAlchemySaveDataForExit(defaultSaveData);
+    configureSaveBackend(
+      {
+        readCandidates: async () => ({ ok: true, candidates: [] }),
+        write: () => gate,
+        writeSync: () => null,
+        clear: async () => ({ ok: true }),
+      },
+      defaultGameSession,
+    );
+    const completion = saveAlchemySaveDataForExit(defaultSaveData, defaultGameSession);
     expect(completion).toBeInstanceOf(Promise);
     let completed = false;
     void Promise.resolve(completion).then(() => {
@@ -117,9 +127,9 @@ describe("storage io", () => {
   });
 
   it("terminal browser flush supersedes a queued stale snapshot", async () => {
-    const pending = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["stale"] });
+    const pending = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["stale"] }, defaultGameSession);
 
-    await saveAlchemySaveDataForExit({ ...defaultSaveData, discoveredCardIds: ["latest"] });
+    await saveAlchemySaveDataForExit({ ...defaultSaveData, discoveredCardIds: ["latest"] }, defaultGameSession);
     await pending;
 
     expect(JSON.parse(mockStorage[SAVE_KEY]).discoveredCardIds).toEqual(["latest"]);
@@ -131,25 +141,28 @@ describe("storage io", () => {
     const writeGate = new Promise<void>((resolve) => {
       releaseWrite = resolve;
     });
-    configureSaveBackend({
-      readCandidates: async () => ({ ok: true, candidates: [] }),
-      write: async (_key, value) => {
-        await writeGate;
-        storage[SAVE_KEY] = value;
-        return { ok: true };
+    configureSaveBackend(
+      {
+        readCandidates: async () => ({ ok: true, candidates: [] }),
+        write: async (_key, value) => {
+          await writeGate;
+          storage[SAVE_KEY] = value;
+          return { ok: true };
+        },
+        clear: async () => ({ ok: true }),
+        writeSync: (_key, value) => {
+          storage[SAVE_KEY] = value;
+          return { ok: true };
+        },
       },
-      clear: async () => ({ ok: true }),
-      writeSync: (_key, value) => {
-        storage[SAVE_KEY] = value;
-        return { ok: true };
-      },
-    });
+      defaultGameSession,
+    );
 
-    const pending = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["stale"] });
+    const pending = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["stale"] }, defaultGameSession);
     await Promise.resolve();
     await Promise.resolve();
 
-    const exit = saveAlchemySaveDataForExit({ ...defaultSaveData, discoveredCardIds: ["latest"] });
+    const exit = saveAlchemySaveDataForExit({ ...defaultSaveData, discoveredCardIds: ["latest"] }, defaultGameSession);
     releaseWrite?.();
     await Promise.all([pending, exit]);
 
@@ -162,21 +175,24 @@ describe("storage io", () => {
       releaseClear = resolve;
     });
     const writeSync = vi.fn().mockReturnValue({ ok: true });
-    configureSaveBackend({
-      readCandidates: async () => ({ ok: true, candidates: [] }),
-      write: async () => ({ ok: true }),
-      clear: async () => {
-        await clearGate;
-        return { ok: true };
+    configureSaveBackend(
+      {
+        readCandidates: async () => ({ ok: true, candidates: [] }),
+        write: async () => ({ ok: true }),
+        clear: async () => {
+          await clearGate;
+          return { ok: true };
+        },
+        writeSync,
       },
-      writeSync,
-    });
-
-    const pendingClear = clearAlchemySaveData();
-    await Promise.resolve();
-    await expect(saveAlchemySaveDataForExit({ ...defaultSaveData, discoveredCardIds: ["resurrect"] })).resolves.toBe(
-      "skipped",
+      defaultGameSession,
     );
+
+    const pendingClear = clearAlchemySaveData(undefined, defaultGameSession);
+    await Promise.resolve();
+    await expect(
+      saveAlchemySaveDataForExit({ ...defaultSaveData, discoveredCardIds: ["resurrect"] }, defaultGameSession),
+    ).resolves.toBe("skipped");
     expect(writeSync).not.toHaveBeenCalled();
     releaseClear?.();
     await pendingClear;
@@ -184,7 +200,7 @@ describe("storage io", () => {
 
   it("clearAlchemySaveData removes key from localStorage", async () => {
     mockStorage[SAVE_KEY] = "some-data";
-    await expect(clearAlchemySaveData()).resolves.toBe(true);
+    await expect(clearAlchemySaveData(undefined, defaultGameSession)).resolves.toBe(true);
     expect(mockStorage[SAVE_KEY]).toBeUndefined();
   });
 
@@ -204,11 +220,11 @@ describe("storage io", () => {
       } as unknown as Storage,
     };
 
-    const loaded = await loadAlchemySaveState();
+    const loaded = await loadAlchemySaveState(defaultGameSession);
     expect(loaded.data).toEqual(defaultSaveData);
     expect(loaded.status.kind).toBe("unavailable");
-    await expect(saveAlchemySaveData(defaultSaveData)).resolves.toBe("failed");
-    await expect(clearAlchemySaveData()).resolves.not.toThrow();
+    await expect(saveAlchemySaveData(defaultSaveData, defaultGameSession)).resolves.toBe("failed");
+    await expect(clearAlchemySaveData(undefined, defaultGameSession)).resolves.not.toThrow();
   });
 
   it("coalesces overlapping saveAlchemySaveData writes to the latest snapshot", async () => {
@@ -230,13 +246,13 @@ describe("storage io", () => {
       return true;
     });
 
-    const first = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["first"] });
+    const first = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["first"] }, defaultGameSession);
 
     await Promise.resolve();
     await Promise.resolve();
 
-    const second = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["second"] });
-    const third = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["third"] });
+    const second = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["second"] }, defaultGameSession);
+    const third = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["third"] }, defaultGameSession);
 
     releaseFirstWrite?.();
     await Promise.all([first, second, third]);
@@ -265,11 +281,11 @@ describe("storage io", () => {
     desktop.writeSave = writeSave;
     const clearSave = desktop.clearSave;
 
-    const pendingSave = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["stale"] });
+    const pendingSave = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["stale"] }, defaultGameSession);
     await writeStarted;
     expect(writeSave).toHaveBeenCalledOnce();
 
-    const pendingClear = clearAlchemySaveData();
+    const pendingClear = clearAlchemySaveData(undefined, defaultGameSession);
     await Promise.resolve();
     expect(clearSave).not.toHaveBeenCalled();
 
@@ -286,10 +302,10 @@ describe("storage io", () => {
     const desktop = setupMockWindowDesktop({ saveCandidates: [playablePayload], steamName: "PlayerOne" });
     desktop.steamCloudDelete.mockResolvedValue(false);
 
-    const loaded = await bootstrapAlchemySaveState();
+    const loaded = await bootstrapAlchemySaveState(defaultGameSession);
     expect(loaded.status.kind).toBe("ok");
 
-    await expect(clearAlchemySaveData()).resolves.toBe(false);
+    await expect(clearAlchemySaveData(undefined, defaultGameSession)).resolves.toBe(false);
     expect(desktop.clearSave).not.toHaveBeenCalled();
   });
 
@@ -299,10 +315,10 @@ describe("storage io", () => {
     const desktop = setupMockWindowDesktop({ saveCandidates: [playablePayload], steamName: "PlayerOne" });
     desktop.steamCloudDelete.mockResolvedValue(false);
 
-    const loaded = await bootstrapAlchemySaveState();
+    const loaded = await bootstrapAlchemySaveState(defaultGameSession);
     expect(loaded.status.kind).toBe("ok");
 
-    await expect(clearAlchemySaveData("localWipe")).resolves.toBe(true);
+    await expect(clearAlchemySaveData("localWipe", defaultGameSession)).resolves.toBe(true);
     expect(desktop.clearSave).toHaveBeenCalledOnce();
   });
 });

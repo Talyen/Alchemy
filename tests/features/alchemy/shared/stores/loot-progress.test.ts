@@ -1,4 +1,5 @@
 import "../../../../helpers/mock-audio";
+
 import "../../../../helpers/mock-flush-save";
 import { DESTINATIONS } from "@/lib/routing";
 import {
@@ -18,26 +19,36 @@ import { createEmptyRewardState, readActivityData, shopItemSlotKey } from "@/lib
 import { gearDefinitions, generateGearRewardChoicesForRarity } from "@/lib/gear";
 import { resetRunDomainStore, setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { gridLabyrinthMapFixture } from "../../../../fixtures/labyrinth-map";
+import { defaultGameSession } from "@/app/application-session";
 beforeEach(() => resetRunDomainStore());
 
 const progress = () =>
-  dispatchGameplayCommand((...args: Parameters<typeof resolveDraftLootProgress>) =>
-    acceptCommand(resolveDraftLootProgress(...args)),
+  dispatchGameplayCommand(
+    (...args: Parameters<typeof resolveDraftLootProgress>) => acceptCommand(resolveDraftLootProgress(...args)),
+    undefined,
+    defaultGameSession,
   );
 const actions = () =>
-  createShopActions({
-    talentEffects: createEmptyTalentEffectManifest(),
-    homesteadEffects: { ...defaultHomesteadEffects, gearAstralChanceBonus: 1 },
-  });
+  createShopActions(
+    {
+      talentEffects: createEmptyTalentEffectManifest(),
+      homesteadEffects: { ...defaultHomesteadEffects, gearAstralChanceBonus: 1 },
+    },
+    defaultGameSession,
+  );
 
 describe("loot progression at run boundaries", () => {
   it("uses destination progress rather than battle count and applies account clears to other heroes", () => {
     setRunProgress({ currentAct: 1, destinationIndexInAct: 3, roomsEncountered: 1, characterId: "wizard" });
-    dispatchGameplayCommand((draft) => {
-      draft.profile.completedDifficulties.knight = ["difficulty-2"];
+    dispatchGameplayCommand(
+      (draft) => {
+        draft.profile.completedDifficulties.knight = ["difficulty-2"];
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
     expect(progress()).toEqual({ depth: 4, highestCompletedDifficulty: "difficulty-2" });
     setRunProgress({ roomsEncountered: 20 });
     expect(progress().depth).toBe(4);
@@ -47,30 +58,38 @@ describe("loot progression at run boundaries", () => {
 
   it("keeps Campaign loot depth stable before and after the destination transition commits", () => {
     setRunProgress({ currentAct: 1, destinationIndexInAct: 2, gold: 999 });
-    dispatchGameplayCommand((draft) => {
-      draft.session.rewardFlow.state = createEmptyRewardState([DESTINATIONS.GEAR_SHOP]);
-      expect(beginDestinationClaim(draft, DESTINATIONS.GEAR_SHOP)).toBe(true);
+    dispatchGameplayCommand(
+      (draft) => {
+        draft.session.rewardFlow.state = createEmptyRewardState([DESTINATIONS.GEAR_SHOP]);
+        expect(beginDestinationClaim(draft, DESTINATIONS.GEAR_SHOP)).toBe(true);
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
     expect(progress().depth).toBe(4);
     const shop = actions();
     shop.equipment.initialize();
     expect(
-      readActivityData(readRunSession().activity, "equipment-shop").gear.every(
+      readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop").gear.every(
         (item) => gearDefinitions[item.definitionId].rarity === "astral",
       ),
     ).toBe(true);
-    dispatchGameplayCommand((draft) => {
-      expect(commitDestinationClaim(draft, DESTINATIONS.GEAR_SHOP)).toBe(true);
+    dispatchGameplayCommand(
+      (draft) => {
+        expect(commitDestinationClaim(draft, DESTINATIONS.GEAR_SHOP)).toBe(true);
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
     expect(progress().depth).toBe(4);
     expect(shop.equipment.refresh()).toBe(true);
     expect(progress().depth).toBe(4);
     expect(
-      readActivityData(readRunSession().activity, "equipment-shop").gear.every(
+      readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop").gear.every(
         (item) => gearDefinitions[item.definitionId].rarity === "astral",
       ),
     ).toBe(true);
@@ -82,23 +101,27 @@ describe("loot progression at run boundaries", () => {
     const cleared = Object.values(map.nodes).find((node) => node.type === "rest")!;
     cleared.cleared = true;
     setRunProgress({ contentSystemType: "labyrinth", gold: 999 });
-    dispatchGameplayCommand((draft) => {
-      draft.session.labyrinthMap = map;
-      draft.session.activeLabyrinthPendingNode = pending.id;
+    dispatchGameplayCommand(
+      (draft) => {
+        draft.session.labyrinthMap = map;
+        draft.session.activeLabyrinthPendingNode = pending.id;
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
     expect(progress().depth).toBe(2);
     const shop = actions();
     shop.equipment.initialize();
     expect(shop.equipment.refresh()).toBe(true);
     expect(progress().depth).toBe(2);
     expect(
-      readActivityData(readRunSession().activity, "equipment-shop").gear.every(
+      readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop").gear.every(
         (item) => gearDefinitions[item.definitionId].rarity === "basic",
       ),
     ).toBe(true);
-    expect(readRunSession().labyrinthMap?.nodes[pending.id].cleared).toBe(false);
+    expect(readRunSession(defaultGameSession).labyrinthMap?.nodes[pending.id].cleared).toBe(false);
   });
 
   it("preserves premium pending rewards at early depth across repeated saves without consuming RNG", () => {
@@ -109,20 +132,24 @@ describe("loot progression at run boundaries", () => {
       destinationIndexInAct: 0,
     });
     const choices = generateGearRewardChoicesForRarity(3, "unique", () => 0.2);
-    dispatchGameplayCommand((draft) => {
-      draft.session.activity = { kind: "idle" };
-      draft.run.navigation.screen = "rewards";
-      setRunProgressActivity(draft, "rewards");
-      draft.session.rewardFlow.state = { ...createEmptyRewardState(), rewardType: "gear", choices };
+    dispatchGameplayCommand(
+      (draft) => {
+        draft.session.activity = { kind: "idle" };
+        draft.run.navigation.screen = "rewards";
+        setRunProgressActivity(draft, "rewards");
+        draft.session.rewardFlow.state = { ...createEmptyRewardState(), rewardType: "gear", choices };
 
-      return acceptCommand();
-    });
-    const rngBefore = readActiveRun().rng;
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    const rngBefore = readActiveRun(defaultGameSession).rng;
     for (let attempt = 0; attempt < 2; attempt += 1) {
-      const saved = snapshotRun();
-      restoreRun(saved, {}, {});
-      expect(readRunSession().rewardFlow.state.choices).toEqual(choices);
-      expect(readActiveRun().rng).toEqual(rngBefore);
+      const saved = snapshotRun(undefined, defaultGameSession);
+      restoreRun(saved, {}, {}, defaultGameSession);
+      expect(readRunSession(defaultGameSession).rewardFlow.state.choices).toEqual(choices);
+      expect(readActiveRun(defaultGameSession).rng).toEqual(rngBefore);
       expect(progress().depth).toBe(1);
     }
   });
@@ -137,24 +164,28 @@ describe("loot progression at run boundaries", () => {
     });
     const map = gridLabyrinthMapFixture();
     const pending = Object.values(map.nodes).find((node) => node.type === "trinket-shop")!;
-    dispatchGameplayCommand((draft) => {
-      draft.session.activity = { kind: "idle" };
-      draft.session.labyrinthMap = map;
-      draft.session.activeLabyrinthPendingNode = pending.id;
-      draft.run.navigation.screen = "trinket-shop";
+    dispatchGameplayCommand(
+      (draft) => {
+        draft.session.activity = { kind: "idle" };
+        draft.session.labyrinthMap = map;
+        draft.session.activeLabyrinthPendingNode = pending.id;
+        draft.run.navigation.screen = "trinket-shop";
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
     const shop = actions();
     shop.trinket.initialize();
-    const offered = readActivityData(readRunSession().activity, "trinket-shop").trinkets;
+    const offered = readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop").trinkets;
     expect(offered).toHaveLength(3);
-    restoreRun(snapshotRun(), {}, {});
-    expect(readActivityData(readRunSession().activity, "trinket-shop").trinkets).toEqual(offered);
+    restoreRun(snapshotRun(undefined, defaultGameSession), {}, {}, defaultGameSession);
+    expect(readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop").trinkets).toEqual(offered);
     expect(shop.trinket.buy(offered[0], shopItemSlotKey(offered[0].id, 0))).toBe(true);
-    const gold = readRunProfile().gold;
+    const gold = readRunProfile(defaultGameSession).gold;
     expect(shop.trinket.refresh()).toBe(false);
-    expect(readRunProfile().gold).toBe(gold);
+    expect(readRunProfile(defaultGameSession).gold).toBe(gold);
     expect(progress().depth).toBe(1);
   });
 
@@ -169,30 +200,34 @@ describe("loot progression at run boundaries", () => {
     const map = gridLabyrinthMapFixture();
     const pending = Object.values(map.nodes).find((node) => node.type === "equipment-shop")!;
     pending.rewardModifiers = ["masterwork"];
-    dispatchGameplayCommand((draft) => {
-      draft.session.activity = { kind: "idle" };
-      draft.session.labyrinthMap = map;
-      draft.session.activeLabyrinthPendingNode = pending.id;
-      draft.session.activeLabyrinthRewardModifiers = ["masterwork"];
-      draft.run.navigation.screen = "equipment-shop";
+    dispatchGameplayCommand(
+      (draft) => {
+        draft.session.activity = { kind: "idle" };
+        draft.session.labyrinthMap = map;
+        draft.session.activeLabyrinthPendingNode = pending.id;
+        draft.session.activeLabyrinthRewardModifiers = ["masterwork"];
+        draft.run.navigation.screen = "equipment-shop";
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
     const shop = actions();
     shop.equipment.initialize();
-    const offered = readActivityData(readRunSession().activity, "equipment-shop").gear;
-    const saved = snapshotRun();
-    restoreRun(saved, {}, {});
-    expect(readActivityData(readRunSession().activity, "equipment-shop").gear).toEqual(offered);
+    const offered = readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop").gear;
+    const saved = snapshotRun(undefined, defaultGameSession);
+    restoreRun(saved, {}, {}, defaultGameSession);
+    expect(readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop").gear).toEqual(offered);
     expect(shop.equipment.refresh()).toBe(true);
     expect(
-      readActivityData(readRunSession().activity, "equipment-shop").gear.every(
+      readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop").gear.every(
         (item) => gearDefinitions[item.definitionId].rarity === "astral",
       ),
     ).toBe(true);
-    const gold = readRunProfile().gold;
+    const gold = readRunProfile(defaultGameSession).gold;
     expect(shop.trinket.refresh()).toBe(false);
-    expect(readRunProfile().gold).toBe(gold);
+    expect(readRunProfile(defaultGameSession).gold).toBe(gold);
     expect(progress().depth).toBe(1);
   });
 });

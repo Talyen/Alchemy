@@ -1,4 +1,3 @@
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import {
   readActiveRun,
@@ -52,7 +51,7 @@ export function recordBattleStart(
   step: number,
   completed: number,
   observedBattleKeys: Set<string>,
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ) {
   const activeBattle = readBattle(gameSession);
   if (!activeBattle.hasActiveBattle) return;
@@ -64,11 +63,7 @@ export function recordBattleStart(
   result.telemetry.battleSnapshots.push(snapshotBattle(step, completed, activeRun.roomsEncountered, "start", state));
 }
 
-export function recordObservation(
-  result: CareerResult,
-  options: PlayerChoice[],
-  gameSession: GameSession = defaultGameSession,
-) {
+export function recordObservation(result: CareerResult, options: PlayerChoice[], gameSession: GameSession) {
   const activeBattle = readBattle(gameSession);
   if (!activeBattle.hasActiveBattle) return;
   const state = activeBattle.battleState;
@@ -86,7 +81,7 @@ export function recordChosenAction(
   step: number,
   completed: number,
   choice: PlayerChoice,
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ) {
   if (choice.kind === "play") result.telemetry.cards[choice.id]!.chosen++;
   if (choice.kind !== "settle") return;
@@ -109,7 +104,7 @@ export function recordCommittedAction(
   completed: number,
   choice: PlayerChoice,
   maxTurns: number,
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ) {
   result.coverage[choice.kind] = (result.coverage[choice.kind] ?? 0) + 1;
   const run = readActiveRun(gameSession);
@@ -174,7 +169,7 @@ export function recordRunOutcome(
   step: number,
   choice: PlayerChoice,
   { run, profile }: ReturnType<typeof recordCommittedAction>,
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ) {
   const screen = readActiveRunScreen(gameSession);
   if (screen !== "game-over" && screen !== "run-victory") return;

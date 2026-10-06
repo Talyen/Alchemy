@@ -1,6 +1,5 @@
 import { clearAlchemySaveData } from "@/features/alchemy/shared/storage";
 import { logStorageFailure } from "@/lib/storage-logging";
-import { defaultGameSession } from "./default-game-session";
 import type { GameSession } from "./game-session-types";
 import { dispatchGameplayCommand } from "./gameplay-command";
 import { resetGear } from "./gear-actions";
@@ -16,12 +15,12 @@ import { sessionRuntime } from "./session-runtime";
 // Test/boot helper only: resets UI and session activity, including combat.
 // It does not settle progression or cancel battle playback; use lifecycle
 // teardown paths for in-run resets.
-export function resetTransientRunUi(gameSession: GameSession = defaultGameSession) {
+export function resetTransientRunUi(gameSession: GameSession) {
   sessionRuntime(gameSession).feedback.resetTransientUi();
   dispatchGameplayCommand((draft) => acceptCommand(clearTransientSession(draft)), undefined, gameSession);
 }
 
-export async function clearAllPersistentGameData(gameSession: GameSession = defaultGameSession): Promise<boolean> {
+export async function clearAllPersistentGameData(gameSession: GameSession): Promise<boolean> {
   const runtime = sessionRuntime(gameSession);
   if (runtime.persistentClearInFlight) return false;
   runtime.persistentClearInFlight = true;

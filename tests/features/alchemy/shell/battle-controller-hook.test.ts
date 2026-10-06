@@ -1,4 +1,5 @@
 import "../../../helpers/mock-audio";
+
 import { setBattleActiveForTest as setHasActiveBattle } from "../../../helpers/run-domain-store-test";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,6 +12,7 @@ import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/sha
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetAllTestStores, setRunSession } from "../../../helpers/run-domain-store-test";
+import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(() => {
   resetAllTestStores();
@@ -38,9 +40,9 @@ describe("useBattleController", () => {
       rerender({ screen: ROUTE_SCREENS.BATTLE });
     });
 
-    expect(readBattle().hasActiveBattle).toBe(true);
-    expect(readBattle().battleState.playerHealth).toBeGreaterThan(0);
-    expect(readBattle().battleState).not.toEqual(defaultBattleState());
+    expect(readBattle(defaultGameSession).hasActiveBattle).toBe(true);
+    expect(readBattle(defaultGameSession).battleState.playerHealth).toBeGreaterThan(0);
+    expect(readBattle(defaultGameSession).battleState).not.toEqual(defaultBattleState());
     expect(result.current.hasActiveBattle).toBe(true);
   });
 
@@ -152,12 +154,16 @@ describe("useBattleController", () => {
 
   it("clears floating combat text and other VFX when leaving battle screen with active combat", async () => {
     vi.useFakeTimers();
-    dispatchRunSessionCommand((draft) => {
-      setHasActiveBattle(draft, true);
-      setScreen(draft, ROUTE_SCREENS.BATTLE);
+    dispatchRunSessionCommand(
+      (draft) => {
+        setHasActiveBattle(draft, true);
+        setScreen(draft, ROUTE_SCREENS.BATTLE);
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
 
     const { rerender } = renderBattleController(ROUTE_SCREENS.BATTLE);
 

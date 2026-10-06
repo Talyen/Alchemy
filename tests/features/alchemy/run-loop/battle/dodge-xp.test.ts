@@ -1,4 +1,5 @@
 import "../../../../helpers/mock-audio";
+
 import "../../../../helpers/mock-flush-save";
 import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -14,6 +15,7 @@ import { readActiveRun, readBattle, readRunProfile } from "@/features/alchemy/sh
 import { snapshotRun, restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { incomingPhysical } from "../../../../fixtures/battle";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
+import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(() => {
   resetRunDomainStore();
@@ -28,34 +30,42 @@ describe("Dodge XP commits", () => {
       playerDodgeCount: 4,
       currentEnemy: { abilityIds: ["ray-of-frost", "slash", "block"] },
     });
-    dispatchGameplayCommand((draft) => acceptCommand(initializeActiveBattle(draft, state)));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(initializeActiveBattle(draft, state)),
+      undefined,
+      defaultGameSession,
+    );
     const result = endPlayerTurn(state);
     if (result.kind === "haste") throw new Error("Expected an enemy turn");
-    dispatchGameplayCommand((draft) => {
-      awardBattleDodgeXP(draft, state, result.state);
-      setBattleState(draft, result.state);
+    dispatchGameplayCommand(
+      (draft) => {
+        awardBattleDodgeXP(draft, state, result.state);
+        setBattleState(draft, result.state);
 
-      return acceptCommand();
-    });
-    expect(readActiveRun().runTalentXP.dodge).toBe(2);
-    expect(readBattle().battleState.playerDodgeCount).toBe(6);
-    expect(readBattle()).not.toHaveProperty("pendingBattleTransition");
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    expect(readActiveRun(defaultGameSession).runTalentXP.dodge).toBe(2);
+    expect(readBattle(defaultGameSession).battleState.playerDodgeCount).toBe(6);
+    expect(readBattle(defaultGameSession)).not.toHaveProperty("pendingBattleTransition");
 
-    const save = ActiveRunDataSchema.parse(JSON.parse(JSON.stringify(snapshotRun("battle"))));
+    const save = ActiveRunDataSchema.parse(JSON.parse(JSON.stringify(snapshotRun("battle", defaultGameSession))));
     resetRunDomainStore();
-    restoreRun(toActiveRunData(save), {}, {});
-    expect(readActiveRun().runTalentXP.dodge).toBe(2);
-    restoreRun(snapshotRun("battle"), {}, {});
-    expect(readBattle().battleState.playerDodgeCount).toBe(6);
-    expect(readBattle().battleState.lastEnemyAbilityId).toBe("ray-of-frost");
-    expect(readActiveRun().runTalentXP.dodge).toBe(2);
-    restoreRun(snapshotRun("battle"), {}, {});
-    expect(readActiveRun().runTalentXP.dodge).toBe(2);
+    restoreRun(toActiveRunData(save), {}, {}, defaultGameSession);
+    expect(readActiveRun(defaultGameSession).runTalentXP.dodge).toBe(2);
+    restoreRun(snapshotRun("battle", defaultGameSession), {}, {}, defaultGameSession);
+    expect(readBattle(defaultGameSession).battleState.playerDodgeCount).toBe(6);
+    expect(readBattle(defaultGameSession).battleState.lastEnemyAbilityId).toBe("ray-of-frost");
+    expect(readActiveRun(defaultGameSession).runTalentXP.dodge).toBe(2);
+    restoreRun(snapshotRun("battle", defaultGameSession), {}, {}, defaultGameSession);
+    expect(readActiveRun(defaultGameSession).runTalentXP.dodge).toBe(2);
 
-    const multiplier = getDifficultyXPMultiplier(readActiveRun().selectedDifficulty);
-    dispatchGameplayCommand((draft) => acceptCommand(finalizeRunXP(draft)));
-    expect(readRunProfile().talentXP.dodge).toBe(Math.round(2 * multiplier));
-    expect(readActiveRun().runTalentXP).toEqual({});
+    const multiplier = getDifficultyXPMultiplier(readActiveRun(defaultGameSession).selectedDifficulty);
+    dispatchGameplayCommand((draft) => acceptCommand(finalizeRunXP(draft)), undefined, defaultGameSession);
+    expect(readRunProfile(defaultGameSession).talentXP.dodge).toBe(Math.round(2 * multiplier));
+    expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
   });
 
   it("awards a Dodge whose Riposte ends combat", () => {
@@ -64,33 +74,49 @@ describe("Dodge XP commits", () => {
       enemyHealth: 1,
       talentEffects: { physicalOnDodgeEqualToAttack: true },
     });
-    dispatchGameplayCommand((draft) => acceptCommand(initializeActiveBattle(draft, state)));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(initializeActiveBattle(draft, state)),
+      undefined,
+      defaultGameSession,
+    );
     const result = endPlayerTurn(state);
     if (result.kind === "haste") throw new Error("Expected an enemy turn");
     expect(result.state.enemyHealth).toBe(0);
-    dispatchGameplayCommand((draft) => {
-      awardBattleDodgeXP(draft, state, result.state);
-      setBattleState(draft, result.state);
+    dispatchGameplayCommand(
+      (draft) => {
+        awardBattleDodgeXP(draft, state, result.state);
+        setBattleState(draft, result.state);
 
-      return acceptCommand();
-    });
-    expect(readActiveRun().runTalentXP.dodge).toBe(1);
-    expect(readBattle()).not.toHaveProperty("pendingBattleTransition");
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    expect(readActiveRun(defaultGameSession).runTalentXP.dodge).toBe(1);
+    expect(readBattle(defaultGameSession)).not.toHaveProperty("pendingBattleTransition");
   });
 
   it("rolls XP back together with a failed battle command", () => {
     const state = incomingPhysical({ rng: () => 0 });
-    dispatchGameplayCommand((draft) => acceptCommand(initializeActiveBattle(draft, state)));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(initializeActiveBattle(draft, state)),
+      undefined,
+      defaultGameSession,
+    );
     const result = endPlayerTurn(state);
     if (result.kind === "haste") throw new Error("Expected an enemy turn");
     expect(() =>
-      dispatchGameplayCommand((draft) => {
-        awardBattleDodgeXP(draft, state, result.state);
-        setBattleState(draft, result.state);
-        throw new Error("abort");
-      }),
+      dispatchGameplayCommand(
+        (draft) => {
+          awardBattleDodgeXP(draft, state, result.state);
+          setBattleState(draft, result.state);
+          throw new Error("abort");
+        },
+        undefined,
+        defaultGameSession,
+      ),
     ).toThrow("abort");
-    expect(readActiveRun().runTalentXP.dodge).toBeUndefined();
+    expect(readActiveRun(defaultGameSession).runTalentXP.dodge).toBeUndefined();
   });
 });
 

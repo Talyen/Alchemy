@@ -28,6 +28,7 @@ import { nextRunRandom, resetProgress } from "@/features/alchemy/shared/stores/r
 import { readActiveRun, readActiveRunScreen, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
+import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(() => {
   resetAllTestStores();
@@ -35,18 +36,28 @@ beforeEach(() => {
 
 describe("navigation write-port", () => {
   it("setScreen accepts direct values and updater functions", () => {
-    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.BATTLE)));
-    expect(readActiveRunScreen()).toBe("battle");
-    dispatchGameplayCommand((draft) =>
-      acceptCommand(setScreen(draft, (prev) => (prev === "battle" ? ROUTE_SCREENS.REWARDS : prev))),
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.BATTLE)),
+      undefined,
+      defaultGameSession,
     );
-    expect(readActiveRunScreen()).toBe("rewards");
+    expect(readActiveRunScreen(defaultGameSession)).toBe("battle");
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setScreen(draft, (prev) => (prev === "battle" ? ROUTE_SCREENS.REWARDS : prev))),
+      undefined,
+      defaultGameSession,
+    );
+    expect(readActiveRunScreen(defaultGameSession)).toBe("rewards");
   });
 
   it("resetNavigation returns to the menu from any screen", () => {
-    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.SHOP)));
-    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "menu")));
-    expect(readActiveRunScreen()).toBe("menu");
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.SHOP)),
+      undefined,
+      defaultGameSession,
+    );
+    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "menu")), undefined, defaultGameSession);
+    expect(readActiveRunScreen(defaultGameSession)).toBe("menu");
   });
 });
 
@@ -61,52 +72,85 @@ describe("session write-port", () => {
   };
 
   it("gates beginRewardClaim on one claim at a time so empty skips can finalize", () => {
-    expect(dispatchGameplayCommand((draft) => acceptCommand(beginRewardClaim(draft)))).toBe(true);
-    expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(true);
-    expect(dispatchGameplayCommand((draft) => acceptCommand(beginRewardClaim(draft)))).toBe(false);
+    expect(
+      dispatchGameplayCommand((draft) => acceptCommand(beginRewardClaim(draft)), undefined, defaultGameSession),
+    ).toBe(true);
+    expect(readRunSession(defaultGameSession).rewardFlow.claim.kind === "reward").toBe(true);
+    expect(
+      dispatchGameplayCommand((draft) => acceptCommand(beginRewardClaim(draft)), undefined, defaultGameSession),
+    ).toBe(false);
 
-    dispatchGameplayCommand((draft) => acceptCommand(releaseRewardClaim(draft)));
-    expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(false);
+    dispatchGameplayCommand((draft) => acceptCommand(releaseRewardClaim(draft)), undefined, defaultGameSession);
+    expect(readRunSession(defaultGameSession).rewardFlow.claim.kind === "reward").toBe(false);
 
-    dispatchGameplayCommand((draft) => acceptCommand(setCompanionRewardCards(draft, [rewardCard])));
-    expect(dispatchGameplayCommand((draft) => acceptCommand(beginRewardClaim(draft)))).toBe(true);
-    expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(true);
-    expect(dispatchGameplayCommand((draft) => acceptCommand(beginRewardClaim(draft)))).toBe(false);
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setCompanionRewardCards(draft, [rewardCard])),
+      undefined,
+      defaultGameSession,
+    );
+    expect(
+      dispatchGameplayCommand((draft) => acceptCommand(beginRewardClaim(draft)), undefined, defaultGameSession),
+    ).toBe(true);
+    expect(readRunSession(defaultGameSession).rewardFlow.claim.kind === "reward").toBe(true);
+    expect(
+      dispatchGameplayCommand((draft) => acceptCommand(beginRewardClaim(draft)), undefined, defaultGameSession),
+    ).toBe(false);
 
-    dispatchGameplayCommand((draft) => acceptCommand(releaseRewardClaim(draft)));
-    expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(false);
+    dispatchGameplayCommand((draft) => acceptCommand(releaseRewardClaim(draft)), undefined, defaultGameSession);
+    expect(readRunSession(defaultGameSession).rewardFlow.claim.kind === "reward").toBe(false);
   });
 
   it("validates destination claims against offered destinations", () => {
-    expect(dispatchGameplayCommand((draft) => acceptCommand(beginDestinationClaim(draft, DESTINATIONS.MYSTERY)))).toBe(
-      false,
-    );
-    expect(readRunSession().rewardFlow.claim).toEqual({ kind: "idle" });
+    expect(
+      dispatchGameplayCommand(
+        (draft) => acceptCommand(beginDestinationClaim(draft, DESTINATIONS.MYSTERY)),
+        undefined,
+        defaultGameSession,
+      ),
+    ).toBe(false);
+    expect(readRunSession(defaultGameSession).rewardFlow.claim).toEqual({ kind: "idle" });
 
-    dispatchGameplayCommand((draft) =>
-      acceptCommand(setRewardState(draft, { ...createEmptyRewardState([DESTINATIONS.MYSTERY]), gold: 30 })),
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setRewardState(draft, { ...createEmptyRewardState([DESTINATIONS.MYSTERY]), gold: 30 })),
+      undefined,
+      defaultGameSession,
     );
-    expect(dispatchGameplayCommand((draft) => acceptCommand(beginDestinationClaim(draft, DESTINATIONS.MYSTERY)))).toBe(
-      true,
-    );
-    expect(readRunSession().rewardFlow.claim).toEqual({ kind: "destination", destination: DESTINATIONS.MYSTERY });
-    expect(dispatchGameplayCommand((draft) => acceptCommand(beginDestinationClaim(draft, DESTINATIONS.CAMPFIRE)))).toBe(
-      false,
-    );
+    expect(
+      dispatchGameplayCommand(
+        (draft) => acceptCommand(beginDestinationClaim(draft, DESTINATIONS.MYSTERY)),
+        undefined,
+        defaultGameSession,
+      ),
+    ).toBe(true);
+    expect(readRunSession(defaultGameSession).rewardFlow.claim).toEqual({
+      kind: "destination",
+      destination: DESTINATIONS.MYSTERY,
+    });
+    expect(
+      dispatchGameplayCommand(
+        (draft) => acceptCommand(beginDestinationClaim(draft, DESTINATIONS.CAMPFIRE)),
+        undefined,
+        defaultGameSession,
+      ),
+    ).toBe(false);
 
-    dispatchGameplayCommand((draft) => acceptCommand(cancelDestinationClaim(draft)));
-    expect(readRunSession().rewardFlow.claim).toEqual({ kind: "idle" });
+    dispatchGameplayCommand((draft) => acceptCommand(cancelDestinationClaim(draft)), undefined, defaultGameSession);
+    expect(readRunSession(defaultGameSession).rewardFlow.claim).toEqual({ kind: "idle" });
   });
 
   it("clearTransientSession restores initial transient fields", () => {
-    dispatchGameplayCommand((draft) => {
-      setHasActiveRun(draft, true);
-      setPendingCharacterId(draft, "rogue");
-      clearTransientSession(draft);
+    dispatchGameplayCommand(
+      (draft) => {
+        setHasActiveRun(draft, true);
+        setPendingCharacterId(draft, "rogue");
+        clearTransientSession(draft);
 
-      return acceptCommand();
-    });
-    const cleared = readRunSession();
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    const cleared = readRunSession(defaultGameSession);
     expect(cleared.hasActiveRun).toBe(false);
     expect(cleared.rewardFlow.claim.kind).not.toBe("reward");
     expect(cleared.rewardFlow.claim).toEqual({ kind: "idle" });
@@ -117,42 +161,58 @@ describe("session write-port", () => {
 describe("progress write-port", () => {
   it("nextRunRandom advances per-stream counters independently within [0, 1)", () => {
     setRunProgress({ rng: createRunRngState(() => 0.5) });
-    const first = dispatchGameplayCommand((draft) => acceptCommand(nextRunRandom(draft, "rewards")));
-    const second = dispatchGameplayCommand((draft) => acceptCommand(nextRunRandom(draft, "rewards")));
+    const first = dispatchGameplayCommand(
+      (draft) => acceptCommand(nextRunRandom(draft, "rewards")),
+      undefined,
+      defaultGameSession,
+    );
+    const second = dispatchGameplayCommand(
+      (draft) => acceptCommand(nextRunRandom(draft, "rewards")),
+      undefined,
+      defaultGameSession,
+    );
     expect(first).toBeGreaterThanOrEqual(0);
     expect(first).toBeLessThan(1);
     expect(second).not.toBe(first);
-    expect(readActiveRun().rng.counters.rewards).toBe(2);
-    expect(readActiveRun().rng.counters.world).toBe(0);
+    expect(readActiveRun(defaultGameSession).rng.counters.rewards).toBe(2);
+    expect(readActiveRun(defaultGameSession).rng.counters.world).toBe(0);
   });
 
   it("addRunMaterialsEarned aggregates across grants and clear empties the tally", () => {
-    dispatchGameplayCommand((draft) => {
-      addRunMaterialsEarned(draft, { wood: 2, iron: 0, herbs: 1, food: 0, gems: 0, stone: 0, hide: 0 });
-      addRunMaterialsEarned(draft, { wood: 3, iron: 1, herbs: 0, food: 0, gems: 2, stone: 0, hide: 0 });
+    dispatchGameplayCommand(
+      (draft) => {
+        addRunMaterialsEarned(draft, { wood: 2, iron: 0, herbs: 1, food: 0, gems: 0, stone: 0, hide: 0 });
+        addRunMaterialsEarned(draft, { wood: 3, iron: 1, herbs: 0, food: 0, gems: 2, stone: 0, hide: 0 });
 
-      return acceptCommand();
-    });
-    expect(readActiveRun().runMaterialsEarned).toEqual({
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    expect(readActiveRun(defaultGameSession).runMaterialsEarned).toEqual({
       ...emptyInventory(),
       wood: 5,
       iron: 1,
       herbs: 1,
       gems: 2,
     });
-    dispatchGameplayCommand((draft) => acceptCommand(clearRunMaterialsEarned(draft)));
-    expect(readActiveRun().runMaterialsEarned).toEqual(emptyInventory());
+    dispatchGameplayCommand((draft) => acceptCommand(clearRunMaterialsEarned(draft)), undefined, defaultGameSession);
+    expect(readActiveRun(defaultGameSession).runMaterialsEarned).toEqual(emptyInventory());
   });
 
   it("recordRunObtainedItem appends gear and trinket grants in order", () => {
     const instance = { instanceId: "obtained-armor", definitionId: "leather-armor-basic" as const, affixes: [] };
-    dispatchGameplayCommand((draft) => {
-      recordRunObtainedItem(draft, { kind: "gear", instance });
-      recordRunObtainedItem(draft, { kind: "trinket", trinketId: "bone-charm" });
+    dispatchGameplayCommand(
+      (draft) => {
+        recordRunObtainedItem(draft, { kind: "gear", instance });
+        recordRunObtainedItem(draft, { kind: "trinket", trinketId: "bone-charm" });
 
-      return acceptCommand();
-    });
-    expect(readActiveRun().runObtainedItems).toEqual([
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    expect(readActiveRun(defaultGameSession).runObtainedItems).toEqual([
       { kind: "gear", instance },
       { kind: "trinket", trinketId: "bone-charm" },
     ]);
@@ -160,14 +220,18 @@ describe("progress write-port", () => {
 
   it("resetProgress preserves character while clearing run-scoped tallies", () => {
     setRunProgress({ characterId: "rogue" });
-    dispatchGameplayCommand((draft) => {
-      awardMysteryXP(draft, "burn", 50);
-      setRoomsEncountered(draft, 7);
-      resetProgress(draft);
+    dispatchGameplayCommand(
+      (draft) => {
+        awardMysteryXP(draft, "burn", 50);
+        setRoomsEncountered(draft, 7);
+        resetProgress(draft);
 
-      return acceptCommand();
-    });
-    const reset = readActiveRun();
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    const reset = readActiveRun(defaultGameSession);
     expect(reset.characterId).toBe("rogue");
     expect(reset.runTalentXP).toEqual({});
     expect(reset.roomsEncountered).toBe(0);

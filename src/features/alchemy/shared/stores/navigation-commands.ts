@@ -1,4 +1,3 @@
-import { defaultGameSession } from "./default-game-session";
 import type { GameSession } from "./game-session-types";
 import { dispatchGameplayCommand } from "./gameplay-command";
 import { acceptCommand, rejectCommand } from "./run-session-command";
@@ -6,13 +5,13 @@ import { resetUnlockedTalents, unlockAllTalents, unlockTalent } from "./write/ru
 import { setScreen } from "./write/run-navigation";
 import { abandonLabyrinthCorruptionVisit } from "./write/run-session";
 
-export function showRunScreen(screen: Parameters<typeof setScreen>[1], gameSession: GameSession = defaultGameSession) {
+export function showRunScreen(screen: Parameters<typeof setScreen>[1], gameSession: GameSession) {
   dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, screen)), undefined, gameSession);
 }
 export function purchaseTalent(
   keyword: Parameters<typeof unlockTalent>[1],
   talent: Parameters<typeof unlockTalent>[2],
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ) {
   dispatchGameplayCommand(
     (draft) =>
@@ -21,12 +20,12 @@ export function purchaseTalent(
     gameSession,
   );
 }
-export function resetTalentUnlocks(gameSession: GameSession = defaultGameSession) {
+export function resetTalentUnlocks(gameSession: GameSession) {
   dispatchGameplayCommand((draft) => acceptCommand(resetUnlockedTalents(draft)), undefined, gameSession);
 }
-export function unlockTalentsForDevelopment(gameSession: GameSession = defaultGameSession) {
+export function unlockTalentsForDevelopment(gameSession: GameSession) {
   dispatchGameplayCommand((draft) => acceptCommand(unlockAllTalents(draft)), undefined, gameSession);
 }
-export function leaveLabyrinthCorruption(gameSession: GameSession = defaultGameSession) {
+export function leaveLabyrinthCorruption(gameSession: GameSession) {
   dispatchGameplayCommand((draft) => acceptCommand(abandonLabyrinthCorruptionVisit(draft)), undefined, gameSession);
 }

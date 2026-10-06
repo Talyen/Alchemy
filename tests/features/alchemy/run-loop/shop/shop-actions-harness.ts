@@ -1,4 +1,5 @@
 import "../../../../helpers/mock-audio";
+
 import { beforeEach } from "vitest";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
 import { createEmptyTalentEffectManifest, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
@@ -26,20 +27,29 @@ import {
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { makeTestCard } from "../../../../fixtures/cards";
 import { makeEffect } from "../../../../fixtures/battle";
+import { defaultGameSession } from "@/app/application-session";
 
 const lootProgress = { depth: 24, highestCompletedDifficulty: null };
 
-export const setShopState = createRunSessionCommand((...args: Parameters<typeof mutateShopState>) =>
-  acceptCommand(mutateShopState(...args)),
+export const setShopState = createRunSessionCommand(
+  (...args: Parameters<typeof mutateShopState>) => acceptCommand(mutateShopState(...args)),
+  undefined,
+  defaultGameSession,
 );
-export const setAlchemistState = createRunSessionCommand((...args: Parameters<typeof mutateAlchemistState>) =>
-  acceptCommand(mutateAlchemistState(...args)),
+export const setAlchemistState = createRunSessionCommand(
+  (...args: Parameters<typeof mutateAlchemistState>) => acceptCommand(mutateAlchemistState(...args)),
+  undefined,
+  defaultGameSession,
 );
-export const setTrinketShopState = createRunSessionCommand((...args: Parameters<typeof mutateTrinketShopState>) =>
-  acceptCommand(mutateTrinketShopState(...args)),
+export const setTrinketShopState = createRunSessionCommand(
+  (...args: Parameters<typeof mutateTrinketShopState>) => acceptCommand(mutateTrinketShopState(...args)),
+  undefined,
+  defaultGameSession,
 );
-export const setEquipmentShopState = createRunSessionCommand((...args: Parameters<typeof mutateEquipmentShopState>) =>
-  acceptCommand(mutateEquipmentShopState(...args)),
+export const setEquipmentShopState = createRunSessionCommand(
+  (...args: Parameters<typeof mutateEquipmentShopState>) => acceptCommand(mutateEquipmentShopState(...args)),
+  undefined,
+  defaultGameSession,
 );
 
 const testRng = () => 0.5;
@@ -70,26 +80,33 @@ export function buildActions(
 ) {
   const trinketIds = overrides?.trinketIds;
   if (trinketIds) {
-    dispatchRunSessionCommand((draft) => acceptCommand(setRunBoons(draft, trinketIds)));
+    dispatchRunSessionCommand((draft) => acceptCommand(setRunBoons(draft, trinketIds)), undefined, defaultGameSession);
   }
   const talentEffects = { ...defaultTalentEffects, ...overrides?.talentEffects };
-  return createShopActions({
-    talentEffects,
-    homesteadEffects: {
-      ...defaultHomesteadEffects,
-      gearAstralChanceBonus: overrides?.gearAstralChanceBonus ?? 0,
-      ...overrides?.homesteadEffects,
+  return createShopActions(
+    {
+      talentEffects,
+      homesteadEffects: {
+        ...defaultHomesteadEffects,
+        gearAstralChanceBonus: overrides?.gearAstralChanceBonus ?? 0,
+        ...overrides?.homesteadEffects,
+      },
     },
-  });
+    defaultGameSession,
+  );
 }
 
 beforeEach(() => {
   resetAllTestStores();
   resetGearForTest();
-  dispatchRunSessionCommand((draft) => {
-    setCurrentAct(draft, 3);
-    setDestinationIndexInAct(draft, 7);
+  dispatchRunSessionCommand(
+    (draft) => {
+      setCurrentAct(draft, 3);
+      setDestinationIndexInAct(draft, 7);
 
-    return acceptCommand();
-  });
+      return acceptCommand();
+    },
+    undefined,
+    defaultGameSession,
+  );
 });

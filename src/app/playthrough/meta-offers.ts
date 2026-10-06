@@ -1,5 +1,4 @@
 import { mutateGearWithFlush, salvageGearWithFlush } from "@/features/alchemy/meta/screens/armory/armory-commands";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
 import { purchaseTalent } from "@/features/alchemy/shared/stores/navigation-commands";
@@ -54,7 +53,7 @@ interface MetaOfferContext {
 
 export function offerMetaChoices(
   { config, flow, offer, crafted, craftingRandom }: MetaOfferContext,
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ): void {
   const profile = readRunProfile(gameSession);
   const keywordAffinity = (keyword: Parameters<typeof scoreStrategyKeyword>[2]) =>

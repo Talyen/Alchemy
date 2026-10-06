@@ -1,3 +1,4 @@
+import { defaultGameSession } from "@/app/application-session";
 import {
   createCombatFeedback,
   createCombatFeedbackState,
@@ -67,7 +68,7 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
     let ghostIdCounter = 0;
     const feedback = createCombatFeedback({
       update: (reduce) => set(reduce),
-      isVisible: () => readBattle().hasActiveBattle && readRunPhase() === "battle",
+      isVisible: () => readBattle(defaultGameSession).hasActiveBattle && readRunPhase(defaultGameSession) === "battle",
       now: () => Date.now(),
     });
     return {
@@ -118,10 +119,10 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
 
 onClearBattlePresentation(() => {
   useBattlePresentationStore.getState().resetPresentation();
-});
+}, defaultGameSession);
 
 onRunTeardown(() => {
   useBattlePresentationStore.getState().resetPresentation();
-});
+}, defaultGameSession);
 
 export type BattlePresentationPort = ReturnType<typeof useBattlePresentationStore.getState>;

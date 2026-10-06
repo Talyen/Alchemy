@@ -1,3 +1,4 @@
+import { APPLICATION_SESSION_ADAPTERS } from "./eslint/session-ownership.js";
 // Cruiser mirrors the layer-isolation subset of eslint/boundaries.js.
 // Full boundary table (GAME_DATA_NO_BATTLE, LIB_NO_FRAMEWORK, WRITE_PORT, etc.) is enforced via eslint;
 // see eslint/boundaries.js + eslint.config.js for the complete source of truth.
@@ -33,6 +34,14 @@ const [META_RUN_LOOP, META_RUN_SETUP] = META_NO_RUN_LOOP;
 export default {
   forbidden: [
     {
+      name: "application-session-is-an-adapter",
+      severity: "error",
+      from: {
+        pathNot: [...APPLICATION_SESSION_ADAPTERS.map((file) => `^${file.replaceAll(".", "\\.")}$`)],
+      },
+      to: { path: "^src/app/application-session\\.ts$" },
+    },
+    {
       name: "no-circular",
       severity: "error",
       comment: "Keep leaf battle and data modules independent from the orchestrators that consume them.",
@@ -56,7 +65,12 @@ export default {
       name: "game-session-runtime-is-internal",
       severity: "error",
       comment: "Session consumers bind capability ports; only stores and persistence adapters reach runtime state.",
-      from: { pathNot: "^src/features/alchemy/shared/(stores/|storage/(io|persistence)\\.ts$)" },
+      from: {
+        pathNot: [
+          "^src/features/alchemy/shared/(stores/|storage/(io|persistence)\\.ts$)",
+          "^src/app/application-session\\.ts$",
+        ],
+      },
       to: { path: "^src/features/alchemy/shared/stores/session-runtime\\.ts$" },
     },
     {

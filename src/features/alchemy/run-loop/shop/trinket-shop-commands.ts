@@ -1,6 +1,6 @@
+import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
 import { createShopInitializer } from "./shop-initialization";
 import { grantTrinketToRunWithRecord } from "@/features/alchemy/shared/stores/deck-mutations";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
 import {
@@ -21,7 +21,7 @@ export function createTrinketShopCommands(
   }: {
     talentEffects: TalentEffectManifest;
   },
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ): TrinketShopCommands {
   const { buy, getBuyPrice } = createShopPurchaseActions(
     {
@@ -65,5 +65,5 @@ export function createTrinketShopCommands(
     gameSession,
   );
 
-  return { initialize, buy, refresh, getBuyPrice, getRefreshPrice };
+  return bindSessionCapabilities(gameSession, { initialize, buy, refresh, getBuyPrice, getRefreshPrice });
 }

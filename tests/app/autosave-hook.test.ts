@@ -9,10 +9,11 @@ import { configureSaveBackend, resetStorageIoForTests } from "@/features/alchemy
 import { resetAllTestStores } from "../helpers/run-domain-store-test";
 import { deferred } from "../helpers/deferred";
 import type { SaveBackend } from "@/lib/platform-save-backend";
+import { defaultGameSession } from "@/app/application-session";
 
 function changeGold(gold: number) {
   act(() => {
-    dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, gold)));
+    dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, gold)), undefined, defaultGameSession);
   });
 }
 
@@ -25,18 +26,21 @@ async function advance(ms: number) {
 function installBackend() {
   const write = vi.fn<SaveBackend["write"]>().mockResolvedValue({ ok: true });
   const writeSync = vi.fn<SaveBackend["writeSync"]>().mockReturnValue({ ok: true });
-  configureSaveBackend({
-    readCandidates: async () => ({ ok: true, candidates: [] }),
-    write,
-    writeSync,
-    clear: async () => ({ ok: true }),
-  });
+  configureSaveBackend(
+    {
+      readCandidates: async () => ({ ok: true, candidates: [] }),
+      write,
+      writeSync,
+      clear: async () => ({ ok: true }),
+    },
+    defaultGameSession,
+  );
   return { write, writeSync };
 }
 
 describe("useAlchemyAutosaveFromStores", () => {
   beforeEach(async () => {
-    await resetStorageIoForTests();
+    await resetStorageIoForTests(defaultGameSession);
     resetAllTestStores();
     vi.spyOn(console, "error").mockImplementation(() => {});
     vi.useFakeTimers();
@@ -45,7 +49,7 @@ describe("useAlchemyAutosaveFromStores", () => {
 
   afterEach(async () => {
     cleanup();
-    await resetStorageIoForTests();
+    await resetStorageIoForTests(defaultGameSession);
     window.localStorage.clear();
     vi.restoreAllMocks();
     vi.useRealTimers();
@@ -69,12 +73,16 @@ describe("useAlchemyAutosaveFromStores", () => {
     renderHook(() => useAlchemyAutosaveFromStores(true));
 
     act(() => {
-      dispatchRunSessionCommand((draft) => {
-        setHasActiveRun(draft, true);
-        setGold(draft, 91);
+      dispatchRunSessionCommand(
+        (draft) => {
+          setHasActiveRun(draft, true);
+          setGold(draft, 91);
 
-        return acceptCommand();
-      });
+          return acceptCommand();
+        },
+        undefined,
+        defaultGameSession,
+      );
       window.dispatchEvent(new PageTransitionEvent("pagehide"));
     });
 
@@ -195,11 +203,11 @@ describe("useAlchemyAutosaveFromStores", () => {
     await advance(500);
     if (action === "clear")
       await act(async () => {
-        await clearAlchemySaveData();
+        await clearAlchemySaveData(undefined, defaultGameSession);
       });
     if (action === "protection")
       act(() => {
-        setWritesDisabled(true);
+        setWritesDisabled(true, defaultGameSession);
       });
     if (action === "disabled") hook.rerender({ enabled: false });
     await advance(20_000);
@@ -255,7 +263,7 @@ describe("useAlchemyAutosaveFromStores", () => {
     changeGold(10);
     await advance(500);
     await act(async () => {
-      const clearing = clearAlchemySaveData();
+      const clearing = clearAlchemySaveData(undefined, defaultGameSession);
       gate.resolve({ ok: true });
       await clearing;
     });

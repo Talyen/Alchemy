@@ -1,4 +1,5 @@
 import "../../../../helpers/mock-audio";
+
 import { setBattleActiveForTest, getBattleForTest } from "../../../../helpers/run-domain-store-test";
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
@@ -20,6 +21,7 @@ import { getStartingDeck } from "@/lib/game-data";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state";
 import { logError } from "@/lib/error-logger";
+import { defaultGameSession } from "@/app/application-session";
 
 vi.mock("@/lib/error-logger", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/error-logger")>()),
@@ -47,16 +49,16 @@ function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNaviga
 describe("createContentSystemNavigation", () => {
   it("beginCampaign routes to character select when no active run", () => {
     const deps = makeDeps();
-    const nav = createContentSystemNavigation(deps);
+    const nav = createContentSystemNavigation(deps, defaultGameSession);
     nav.beginCampaign();
-    expect(readRunSession().pendingContentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
+    expect(readRunSession(defaultGameSession).pendingContentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
     expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.CHARACTER_SELECT);
   });
 
   it("auto-starts the default battle for a hero new to the campaign", () => {
     setRunSession({ pendingContentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
     const deps = makeDeps();
-    const nav = createContentSystemNavigation(deps);
+    const nav = createContentSystemNavigation(deps, defaultGameSession);
     nav.handleCharacterSelect("knight");
     expect(deps.startBattle).toHaveBeenCalledExactlyOnceWith({
       enemyType: "normal",
@@ -64,67 +66,75 @@ describe("createContentSystemNavigation", () => {
       enemyId: "skeleton",
     });
     expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE, expect.any(Function));
-    expect(readActiveRun().contentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
-    expect(readActiveRun().characterId).toBe("knight");
+    expect(readActiveRun(defaultGameSession).contentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
+    expect(readActiveRun(defaultGameSession).characterId).toBe("knight");
   });
 
   it("sends a veteran hero to difficulty select", () => {
     setRunSession({ pendingContentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
-    dispatchGameplayCommand((draft) => {
-      draft.profile.completedDifficulties.knight = [DEFAULT_CAMPAIGN_DIFFICULTY_ID];
+    dispatchGameplayCommand(
+      (draft) => {
+        draft.profile.completedDifficulties.knight = [DEFAULT_CAMPAIGN_DIFFICULTY_ID];
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
     const deps = makeDeps();
-    const nav = createContentSystemNavigation(deps);
+    const nav = createContentSystemNavigation(deps, defaultGameSession);
     nav.handleCharacterSelect("knight");
     expect(deps.startBattle).not.toHaveBeenCalled();
     expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DIFFICULTY_SELECT);
-    expect(readRunSession().pendingCharacterId).toBe("knight");
+    expect(readRunSession(defaultGameSession).pendingCharacterId).toBe("knight");
   });
 
   it("initializeLabyrinthRun creates enterable chambers before navigating to the map", () => {
     setRunSession({ pendingContentSystemType: CONTENT_SYSTEMS.LABYRINTH });
     const deps = makeDeps({
       navigateTo: vi.fn(() => {
-        const map = readRunSession().labyrinthMap;
+        const map = readRunSession(defaultGameSession).labyrinthMap;
         expect(map).not.toBeNull();
         expect(map && Object.keys(map.nodes).some((id) => canEnterLabyrinthNode(map, id))).toBe(true);
-        expect(readRunSession().activity.kind).toBe("labyrinth-map");
+        expect(readRunSession(defaultGameSession).activity.kind).toBe("labyrinth-map");
       }),
     });
-    const nav = createContentSystemNavigation(deps);
+    const nav = createContentSystemNavigation(deps, defaultGameSession);
     nav.handleCharacterSelect("knight");
     expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.LABYRINTH_MAP);
-    expect(readActiveRun().contentSystemType).toBe(CONTENT_SYSTEMS.LABYRINTH);
-    const map = readRunSession().labyrinthMap;
+    expect(readActiveRun(defaultGameSession).contentSystemType).toBe(CONTENT_SYSTEMS.LABYRINTH);
+    const map = readRunSession(defaultGameSession).labyrinthMap;
     nav.beginLabyrinth();
-    expect(readRunSession().labyrinthMap).toBe(map);
+    expect(readRunSession(defaultGameSession).labyrinthMap).toBe(map);
   });
 
   it("initializeWildwoodRun creates a resumable draft and navigates to draft deck", () => {
     setRunSession({ pendingContentSystemType: CONTENT_SYSTEMS.WILDWOOD });
     const deps = makeDeps();
-    const nav = createContentSystemNavigation(deps);
+    const nav = createContentSystemNavigation(deps, defaultGameSession);
     nav.handleCharacterSelect("knight");
     expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DRAFT_DECK);
-    expect(readActiveRun().contentSystemType).toBe(CONTENT_SYSTEMS.WILDWOOD);
-    expect(readRunSession().activity.kind).toBe("draft-deck");
-    expect(readActiveRun().runDeck).toEqual([]);
-    expect(readRunSession().hasActiveRun).toBe(true);
-    expect(readRunSession().wildwoodDraft?.draftChoices).toHaveLength(3);
+    expect(readActiveRun(defaultGameSession).contentSystemType).toBe(CONTENT_SYSTEMS.WILDWOOD);
+    expect(readRunSession(defaultGameSession).activity.kind).toBe("draft-deck");
+    expect(readActiveRun(defaultGameSession).runDeck).toEqual([]);
+    expect(readRunSession(defaultGameSession).hasActiveRun).toBe(true);
+    expect(readRunSession(defaultGameSession).wildwoodDraft?.draftChoices).toHaveLength(3);
   });
 
   it("returns to battle when resuming the same content system with an active battle", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
     setRunSession({ hasActiveRun: true });
-    dispatchGameplayCommand((draft) => {
-      setBattleActiveForTest(draft, true);
+    dispatchGameplayCommand(
+      (draft) => {
+        setBattleActiveForTest(draft, true);
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
     const deps = makeDeps();
-    const nav = createContentSystemNavigation(deps);
+    const nav = createContentSystemNavigation(deps, defaultGameSession);
     nav.beginCampaign();
     expect(deps.resumeTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE);
   });
@@ -134,32 +144,40 @@ describe("createContentSystemNavigation", () => {
     (mode) => {
       setRunProgress({ contentSystemType: mode, characterId: "knight" });
       setRunSession({ hasActiveRun: true });
-      dispatchGameplayCommand((draft) => {
-        setBattleActiveForTest(draft, true);
-        getBattleForTest(draft).battleState = makeTestBattleState({ turn: 4 });
-        setScreen(draft, ROUTE_SCREENS.BATTLE);
+      dispatchGameplayCommand(
+        (draft) => {
+          setBattleActiveForTest(draft, true);
+          getBattleForTest(draft).battleState = makeTestBattleState({ turn: 4 });
+          setScreen(draft, ROUTE_SCREENS.BATTLE);
 
-        return acceptCommand();
-      });
-      dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.MENU)));
+          return acceptCommand();
+        },
+        undefined,
+        defaultGameSession,
+      );
+      dispatchGameplayCommand(
+        (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.MENU)),
+        undefined,
+        defaultGameSession,
+      );
       const deps = makeDeps();
-      const nav = createContentSystemNavigation(deps);
+      const nav = createContentSystemNavigation(deps, defaultGameSession);
       const begin = { campaign: nav.beginCampaign, labyrinth: nav.beginLabyrinth, wildwood: nav.beginWildwood };
       begin[mode]();
       expect(deps.resumeTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE);
       expect(deps.onResumeWildwood).not.toHaveBeenCalled();
-      expect(readBattle().battleState.turn).toBe(4);
+      expect(readBattle(defaultGameSession).battleState.turn).toBe(4);
     },
   );
 
   it("initializeRunForDifficulty discovers starter deck on a fresh save", () => {
     const deps = makeDeps();
-    const nav = createContentSystemNavigation(deps);
+    const nav = createContentSystemNavigation(deps, defaultGameSession);
     const knightStarterIds = getStartingDeck("knight").map((card) => card.id);
 
     nav.initializeRunForDifficulty("knight", DEFAULT_CAMPAIGN_DIFFICULTY_ID);
 
-    expect(readProfileStore().discoveredCardIds).toEqual(knightStarterIds);
+    expect(readProfileStore(defaultGameSession).discoveredCardIds).toEqual(knightStarterIds);
   });
 
   it("commits the initial destination offer and reward together", () => {
@@ -168,9 +186,9 @@ describe("createContentSystemNavigation", () => {
     const deps = makeDeps({
       getAvailableDestinations,
     });
-    const nav = createContentSystemNavigation(deps);
+    const nav = createContentSystemNavigation(deps, defaultGameSession);
     const commits: number[] = [];
-    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
+    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision), defaultGameSession);
 
     nav.initializeRunForDifficulty("knight", DEFAULT_CAMPAIGN_DIFFICULTY_ID);
 
@@ -183,42 +201,46 @@ describe("createContentSystemNavigation", () => {
       destinationIndexInAct: 0,
       maxHealth: expect.any(Number),
     });
-    expect(readRunSession().rewardFlow.state.destinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
-    expect(readActiveRun().lastOfferedDestinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
+    expect(readRunSession(defaultGameSession).rewardFlow.state.destinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
+    expect(readActiveRun(defaultGameSession).lastOfferedDestinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
   });
 
   it("initializeWildwoodRun does not discover the normal starter deck", () => {
     setRunSession({ pendingContentSystemType: CONTENT_SYSTEMS.WILDWOOD });
     const deps = makeDeps();
-    const nav = createContentSystemNavigation(deps);
+    const nav = createContentSystemNavigation(deps, defaultGameSession);
     nav.handleCharacterSelect("knight");
 
-    expect(readProfileStore().discoveredCardIds).toEqual([]);
+    expect(readProfileStore(defaultGameSession).discoveredCardIds).toEqual([]);
   });
 
   it("starts a resumable campaign Wildcard draft with seeded choices", () => {
     setRunSession({ pendingContentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
     const deps = makeDeps();
-    const nav = createContentSystemNavigation(deps);
+    const nav = createContentSystemNavigation(deps, defaultGameSession);
     nav.handleCharacterSelect("wildcard");
     expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DRAFT_DECK);
-    expect(readRunSession().pendingCharacterId).toBe("wildcard");
-    expect(readRunSession().hasActiveRun).toBe(true);
-    expect(readActiveRun().characterId).toBe("wildcard");
-    expect(readActiveRun().runDeck).toEqual([]);
-    expect(readRunSession().activity.kind).toBe("draft-deck");
-    expect(readRunSession().starterDraftChoices).toHaveLength(3);
+    expect(readRunSession(defaultGameSession).pendingCharacterId).toBe("wildcard");
+    expect(readRunSession(defaultGameSession).hasActiveRun).toBe(true);
+    expect(readActiveRun(defaultGameSession).characterId).toBe("wildcard");
+    expect(readActiveRun(defaultGameSession).runDeck).toEqual([]);
+    expect(readRunSession(defaultGameSession).activity.kind).toBe("draft-deck");
+    expect(readRunSession(defaultGameSession).starterDraftChoices).toHaveLength(3);
   });
 
   it("starts a novice Wildcard campaign against Skeleton after the draft", () => {
     setRunSession({ pendingContentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
     const deps = makeDeps();
-    const nav = createContentSystemNavigation(deps);
+    const nav = createContentSystemNavigation(deps, defaultGameSession);
     nav.handleCharacterSelect("wildcard");
     setRunSession({ activity: { kind: "draft-deck" } });
-    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DRAFT_DECK)));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DRAFT_DECK)),
+      undefined,
+      defaultGameSession,
+    );
     for (let round = 0; round < DRAFT_ROUNDS; round += 1) {
-      const choice = readRunSession().starterDraftChoices?.[0];
+      const choice = readRunSession(defaultGameSession).starterDraftChoices?.[0];
       expect(choice).toBeDefined();
       nav.handleStarterDraftPick(choice!.id);
     }
@@ -246,7 +268,7 @@ describe("createContentSystemNavigation", () => {
     });
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN, characterId: "wildcard" });
     const deps = makeDeps();
-    const nav = createContentSystemNavigation(deps);
+    const nav = createContentSystemNavigation(deps, defaultGameSession);
     nav.beginCampaign();
     expect(deps.resumeTo).toHaveBeenCalledWith(ROUTE_SCREENS.DRAFT_DECK);
   });
@@ -254,30 +276,30 @@ describe("createContentSystemNavigation", () => {
   it("appends a starter-draft pick and rolls the next seeded choices", () => {
     setRunSession({ pendingContentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
     const deps = makeDeps();
-    const nav = createContentSystemNavigation(deps);
+    const nav = createContentSystemNavigation(deps, defaultGameSession);
     nav.handleCharacterSelect("wildcard");
-    const firstChoices = readRunSession().starterDraftChoices;
+    const firstChoices = readRunSession(defaultGameSession).starterDraftChoices;
     expect(firstChoices).toHaveLength(3);
     const picked = firstChoices![0]!;
     nav.handleStarterDraftPick(picked.id);
-    expect(readActiveRun().runDeck.map((card) => card.id)).toEqual([picked.id]);
-    expect(readRunSession().starterDraftChoices).toHaveLength(3);
-    expect(readRunSession().starterDraftChoices?.some((card) => card.id === picked.id)).toBe(false);
+    expect(readActiveRun(defaultGameSession).runDeck.map((card) => card.id)).toEqual([picked.id]);
+    expect(readRunSession(defaultGameSession).starterDraftChoices).toHaveLength(3);
+    expect(readRunSession(defaultGameSession).starterDraftChoices?.some((card) => card.id === picked.id)).toBe(false);
   });
 
   it("rejects starter-draft picks that are not in the current offer", () => {
     setRunSession({ pendingContentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
     const deps = makeDeps();
-    const nav = createContentSystemNavigation(deps);
+    const nav = createContentSystemNavigation(deps, defaultGameSession);
     nav.handleCharacterSelect("wildcard");
     nav.handleStarterDraftPick("not-offered");
-    expect(readActiveRun().runDeck).toEqual([]);
+    expect(readActiveRun(defaultGameSession).runDeck).toEqual([]);
     expect(logError).toHaveBeenCalledWith(expect.stringContaining("handleStarterDraftPick"), expect.anything());
   });
 
   it("logs and returns when completing a draft without an active run", () => {
     const deps = makeDeps();
-    const nav = createContentSystemNavigation(deps);
+    const nav = createContentSystemNavigation(deps, defaultGameSession);
     nav.handleStandardDraftComplete();
     expect(deps.navigateTo).not.toHaveBeenCalled();
     expect(logError).toHaveBeenCalledWith(expect.stringContaining("handleStandardDraftComplete"), expect.anything());
@@ -286,15 +308,15 @@ describe("createContentSystemNavigation", () => {
   it("keeps an empty starter-draft offer after the final pick so labyrinth can resume to draft confirm", () => {
     setRunSession({ pendingContentSystemType: CONTENT_SYSTEMS.LABYRINTH });
     const deps = makeDeps();
-    const nav = createContentSystemNavigation(deps);
+    const nav = createContentSystemNavigation(deps, defaultGameSession);
     nav.handleCharacterSelect("wildcard");
     for (let round = 0; round < DRAFT_ROUNDS; round += 1) {
-      const choices = readRunSession().starterDraftChoices;
+      const choices = readRunSession(defaultGameSession).starterDraftChoices;
       expect(choices?.length).toBeGreaterThan(0);
       nav.handleStarterDraftPick(choices![0]!.id);
     }
-    expect(readActiveRun().runDeck).toHaveLength(DRAFT_ROUNDS);
-    expect(readRunSession().starterDraftChoices).toEqual([]);
+    expect(readActiveRun(defaultGameSession).runDeck).toHaveLength(DRAFT_ROUNDS);
+    expect(readRunSession(defaultGameSession).starterDraftChoices).toEqual([]);
   });
 
   it("resumes a completed labyrinth Wildcard draft to the draft screen until run init", () => {
@@ -310,17 +332,21 @@ describe("createContentSystemNavigation", () => {
       starterDraftChoices: [],
     });
     const deps = makeDeps();
-    const nav = createContentSystemNavigation(deps);
+    const nav = createContentSystemNavigation(deps, defaultGameSession);
     nav.beginLabyrinth();
     expect(deps.resumeTo).toHaveBeenCalledWith(ROUTE_SCREENS.DRAFT_DECK);
     setRunSession({ activity: { kind: "draft-deck" } });
-    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DRAFT_DECK)));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DRAFT_DECK)),
+      undefined,
+      defaultGameSession,
+    );
     nav.handleStandardDraftComplete();
-    expect(readRunSession().labyrinthMap).not.toBeNull();
-    const map = readRunSession().labyrinthMap;
+    expect(readRunSession(defaultGameSession).labyrinthMap).not.toBeNull();
+    const map = readRunSession(defaultGameSession).labyrinthMap;
     expect(() => nav.handleStandardDraftComplete()).not.toThrow();
-    expect(readRunSession().labyrinthMap).toBe(map);
-    expect(readActiveRun().runDeck).toEqual(drafted);
+    expect(readRunSession(defaultGameSession).labyrinthMap).toBe(map);
+    expect(readActiveRun(defaultGameSession).runDeck).toEqual(drafted);
     expect(deps.navigateTo).toHaveBeenLastCalledWith(ROUTE_SCREENS.LABYRINTH_MAP);
     expect(deps.navigateTo).toHaveBeenCalledTimes(1);
   });
@@ -338,12 +364,16 @@ describe("createContentSystemNavigation", () => {
       starterDraftChoices: [],
     });
     const deps = makeDeps();
-    const nav = createContentSystemNavigation(deps);
+    const nav = createContentSystemNavigation(deps, defaultGameSession);
     setRunSession({ activity: { kind: "draft-deck" } });
-    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DRAFT_DECK)));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DRAFT_DECK)),
+      undefined,
+      defaultGameSession,
+    );
     nav.handleStandardDraftComplete();
-    expect(readRunSession().labyrinthMap).not.toBeNull();
-    expect(readActiveRun().contentSystemType).toBe(CONTENT_SYSTEMS.LABYRINTH);
+    expect(readRunSession(defaultGameSession).labyrinthMap).not.toBeNull();
+    expect(readActiveRun(defaultGameSession).contentSystemType).toBe(CONTENT_SYSTEMS.LABYRINTH);
     expect(deps.navigateTo).toHaveBeenLastCalledWith(ROUTE_SCREENS.LABYRINTH_MAP);
   });
 
@@ -352,11 +382,15 @@ describe("createContentSystemNavigation", () => {
       makeTestCard({ id: `campaign-draft-${index}` }),
     );
     // A veteran wildcard skips the novice auto-start and continues to difficulty select.
-    dispatchGameplayCommand((draft) => {
-      draft.profile.completedDifficulties.wildcard = [DEFAULT_CAMPAIGN_DIFFICULTY_ID];
+    dispatchGameplayCommand(
+      (draft) => {
+        draft.profile.completedDifficulties.wildcard = [DEFAULT_CAMPAIGN_DIFFICULTY_ID];
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
     setRunProgress({
       characterId: "wildcard",
       contentSystemType: CONTENT_SYSTEMS.CAMPAIGN,
@@ -370,28 +404,44 @@ describe("createContentSystemNavigation", () => {
       starterDraftChoices: [],
     });
     const deps = makeDeps();
-    const nav = createContentSystemNavigation(deps);
+    const nav = createContentSystemNavigation(deps, defaultGameSession);
 
     setRunSession({ activity: { kind: "draft-deck" } });
-    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DRAFT_DECK)));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DRAFT_DECK)),
+      undefined,
+      defaultGameSession,
+    );
     nav.handleStandardDraftComplete();
-    expect(readRunSession().starterDraftChoices).toBeNull();
-    expect(readRunSession().activity.kind).toBe("difficulty-select");
+    expect(readRunSession(defaultGameSession).starterDraftChoices).toBeNull();
+    expect(readRunSession(defaultGameSession).activity.kind).toBe("difficulty-select");
     expect(() => nav.handleStandardDraftComplete()).not.toThrow();
     expect(deps.navigateTo).toHaveBeenCalledExactlyOnceWith(ROUTE_SCREENS.DIFFICULTY_SELECT);
-    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DIFFICULTY_SELECT)));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DIFFICULTY_SELECT)),
+      undefined,
+      defaultGameSession,
+    );
     nav.handleBackFromDifficultySelect();
-    expect(readRunSession().activity.kind).toBe("draft-deck");
-    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DRAFT_DECK)));
+    expect(readRunSession(defaultGameSession).activity.kind).toBe("draft-deck");
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DRAFT_DECK)),
+      undefined,
+      defaultGameSession,
+    );
     nav.handleStandardDraftComplete();
-    expect(readRunSession().activity.kind).toBe("difficulty-select");
-    expect(readActiveRun().runDeck).toEqual(draftedCards);
+    expect(readRunSession(defaultGameSession).activity.kind).toBe("difficulty-select");
+    expect(readActiveRun(defaultGameSession).runDeck).toEqual(draftedCards);
     expect(deps.startBattle).not.toHaveBeenCalled();
-    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DIFFICULTY_SELECT)));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DIFFICULTY_SELECT)),
+      undefined,
+      defaultGameSession,
+    );
     nav.handleDifficultySelect(DEFAULT_CAMPAIGN_DIFFICULTY_ID);
 
-    expect(readActiveRun().contentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
-    expect(readActiveRun().runDeck).toEqual(draftedCards);
+    expect(readActiveRun(defaultGameSession).contentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
+    expect(readActiveRun(defaultGameSession).runDeck).toEqual(draftedCards);
     expect(deps.startBattle).toHaveBeenCalledExactlyOnceWith({
       enemyType: "normal",
       modifiers: expect.any(Array),
@@ -406,10 +456,14 @@ describe("createContentSystemNavigation", () => {
       runMaxHealth: 30,
     });
     setRunSession({ hasActiveRun: true });
-    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DESTINATION)));
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DESTINATION)),
+      undefined,
+      defaultGameSession,
+    );
     const getAvailableDestinations = vi.fn(() => [DESTINATIONS.NORMAL_COMBAT]);
     const deps = makeDeps({ getAvailableDestinations });
-    createContentSystemNavigation(deps).resumeRun();
+    createContentSystemNavigation(deps, defaultGameSession).resumeRun();
     const prepare = vi.mocked(deps.resumeTo).mock.calls[0]?.[1];
     expect(prepare).toBeTypeOf("function");
     prepare?.();

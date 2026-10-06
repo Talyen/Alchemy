@@ -1,4 +1,3 @@
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { readActiveRunScreen, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import type { BattleSnapshot, CombatTextEvent } from "@/lib/battle";
@@ -12,7 +11,7 @@ import type { CareerConfig, PlayerChoice } from "./types";
 export function createCareerActor(
   config: CareerConfig,
   recordBattle: (state: BattleSnapshot, texts: CombatTextEvent[], card?: string) => void = () => {},
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ) {
   const controller = createPlaythroughController(gameSession);
   const { flow } = controller;

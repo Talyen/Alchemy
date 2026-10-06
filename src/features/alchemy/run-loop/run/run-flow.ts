@@ -1,6 +1,6 @@
+import { assertSessionOwnership, bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
 import type { DestinationOptionsInput } from "@/features/alchemy/shared/run-flow";
 import type { BattleStarted } from "@/features/alchemy/shared/stores/battle-start-commands";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import type { Destination, Screen, ScreenTransitionOptions } from "@/lib/routing";
 import { createDefeatHandlers } from "./run-flow-defeat";
@@ -34,33 +34,35 @@ export interface RunOutcomeDeps {
   getAvailableDestinations: RunFlowHandlerDeps["getAvailableDestinations"];
 }
 
-export function createRunOutcomes(deps: RunOutcomeDeps, gameSession: GameSession = defaultGameSession) {
+export function createRunOutcomes(deps: RunOutcomeDeps, gameSession: GameSession) {
+  assertSessionOwnership(gameSession, deps.actions, deps.getAvailableDestinations);
   const victory = createVictoryHandlers(deps, gameSession);
   const defeat = createDefeatHandlers(deps, gameSession);
-  return {
+  return bindSessionCapabilities(gameSession, {
     victory,
     defeat,
     getAvailableDestinations: deps.getAvailableDestinations,
     connect(actions: RunFlowShellActions) {
+      assertSessionOwnership(gameSession, actions);
       return composeRunFlow(
         { actions, getAvailableDestinations: deps.getAvailableDestinations },
         { victory, defeat },
         gameSession,
       );
     },
-  };
+  });
 }
 
 export type RunOutcomes = ReturnType<typeof createRunOutcomes>;
 
-export function createRunFlow(deps: RunFlowHandlerDeps, gameSession: GameSession = defaultGameSession) {
+export function createRunFlow(deps: RunFlowHandlerDeps, gameSession: GameSession) {
   return createRunOutcomes(deps, gameSession).connect(deps.actions);
 }
 
 function composeRunFlow(
   deps: RunFlowHandlerDeps,
   outcomes: Pick<RunOutcomes, "victory" | "defeat">,
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ) {
   const { victory, defeat } = outcomes;
   const progression = createProgressionHandlers(deps, victory.completeRunVictory, gameSession);
@@ -74,7 +76,7 @@ function composeRunFlow(
     gameSession,
   );
 
-  return {
+  return bindSessionCapabilities(gameSession, {
     handleBattleVictory: victory.handleBattleVictory,
     handleBattleDefeat: defeat.handleBattleDefeat,
     handleAbandonRun: defeat.handleAbandonRun,
@@ -87,5 +89,5 @@ function composeRunFlow(
     advanceToNextDestination: progression.advanceToNextDestination,
     returnToCurrentDestination: progression.returnToCurrentDestination,
     handleCampfireContinue: destination.handleCampfireContinue,
-  };
+  });
 }

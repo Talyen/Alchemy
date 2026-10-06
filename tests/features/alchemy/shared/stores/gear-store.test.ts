@@ -18,6 +18,7 @@ import {
   dispatchGearMutationWithRunHealthSync,
   dispatchGearSalvageWithMaterialGrant,
 } from "@/features/alchemy/shared/stores/gear-session-command";
+import { defaultGameSession } from "@/app/application-session";
 
 function knightInventories(...items: GearInstance[]) {
   const inventories = createEmptyGearInventories();
@@ -43,8 +44,8 @@ describe("gear-store", () => {
     const loadouts = createEmptyGearLoadouts();
     loadouts.knight["left-accessory"] = ring.instanceId;
     mutateGearForTest((gear) => gear.initialize(knightInventories(ring), loadouts));
-    expect(readGearState().inventories.knight).toEqual([ring]);
-    expect(readGearState().loadouts.knight["left-accessory"]).toBe("ring-1");
+    expect(readGearState(defaultGameSession).inventories.knight).toEqual([ring]);
+    expect(readGearState(defaultGameSession).loadouts.knight["left-accessory"]).toBe("ring-1");
     resetGearForTest();
   });
 
@@ -52,13 +53,13 @@ describe("gear-store", () => {
     resetGearForTest();
     mutateGearForTest((gear) => gear.addInstance(ring, "knight"));
     mutateGearForTest((gear) => gear.equip("knight", "left-accessory", ring));
-    expect(readGearState().loadouts.knight["left-accessory"]).toBe("ring-1");
+    expect(readGearState(defaultGameSession).loadouts.knight["left-accessory"]).toBe("ring-1");
 
     const salvaged = mutateGearForTest((gear) => gear.salvage(ring.instanceId));
     expect(salvaged).not.toBeNull();
-    expect(readGearState().inventories.knight).toEqual([]);
-    expect(readGearState().loadouts.knight["left-accessory"]).toBeNull();
-    expect(flattenGearInventories(readGearState().inventories)).toEqual([]);
+    expect(readGearState(defaultGameSession).inventories.knight).toEqual([]);
+    expect(readGearState(defaultGameSession).loadouts.knight["left-accessory"]).toBeNull();
+    expect(flattenGearInventories(readGearState(defaultGameSession).inventories)).toEqual([]);
     resetGearForTest();
   });
 
@@ -68,22 +69,22 @@ describe("gear-store", () => {
     mutateGearForTest((gear) => gear.initialize(knightInventories(ring, ringB), createEmptyGearLoadouts()));
     mutateGearForTest((gear) => gear.equip("knight", "left-accessory", ring));
     mutateGearForTest((gear) => gear.equip("knight", "left-accessory", ringB));
-    expect(readGearState().loadouts.knight["left-accessory"]).toBe("ring-2");
+    expect(readGearState(defaultGameSession).loadouts.knight["left-accessory"]).toBe("ring-2");
     resetGearForTest();
   });
 
   it("reports armory lock state from inventory and trinkets", () => {
     resetGearForTest();
-    expect(readHasAnyOwnedGear()).toBe(false);
+    expect(readHasAnyOwnedGear(defaultGameSession)).toBe(false);
     mutateGearForTest((gear) => gear.addInstance(armor, "knight"));
-    expect(readHasAnyOwnedGear()).toBe(true);
+    expect(readHasAnyOwnedGear(defaultGameSession)).toBe(true);
     resetGearForTest();
     mutateGearForTest((gear) => gear.addInstance(armor, "wildcard"));
-    expect(readHasAnyOwnedGear()).toBe(true);
+    expect(readHasAnyOwnedGear(defaultGameSession)).toBe(true);
     resetGearForTest();
-    expect(readHasAnyOwnedGear()).toBe(false);
+    expect(readHasAnyOwnedGear(defaultGameSession)).toBe(false);
     mutateGearForTest((gear) => gear.addTrinket("bone-charm"));
-    expect(readHasAnyOwnedGear()).toBe(true);
+    expect(readHasAnyOwnedGear(defaultGameSession)).toBe(true);
     resetGearForTest();
   });
 
@@ -91,13 +92,13 @@ describe("gear-store", () => {
     resetGearForTest();
     expect(mutateGearForTest((gear) => gear.addTrinket("bone-charm"))).toBe(true);
     expect(mutateGearForTest((gear) => gear.addTrinket("bone-charm"))).toBe(false);
-    expect(readGearState().ownedTrinketIds).toEqual(["bone-charm"]);
+    expect(readGearState(defaultGameSession).ownedTrinketIds).toEqual(["bone-charm"]);
 
     expect(mutateGearForTest((gear) => gear.equipTrinket("knight", "bone-charm"))).toBe(true);
-    expect(readGearState().equippedTrinkets.knight).toBe("bone-charm");
+    expect(readGearState(defaultGameSession).equippedTrinkets.knight).toBe("bone-charm");
     expect(mutateGearForTest((gear) => gear.equipTrinket("rogue", "bone-charm"))).toBe(true);
-    expect(readGearState().equippedTrinkets.knight).toBeNull();
-    expect(readGearState().equippedTrinkets.rogue).toBe("bone-charm");
+    expect(readGearState(defaultGameSession).equippedTrinkets.knight).toBeNull();
+    expect(readGearState(defaultGameSession).equippedTrinkets.rogue).toBe("bone-charm");
   });
 
   it("rejects unknown or unowned permanent trinkets", () => {
@@ -113,14 +114,17 @@ describe("gear-store", () => {
     if (!uniqueDef) throw new Error("missing wardbreaker unique");
     const unique = generateUniqueGearInstance(uniqueDef);
 
-    dispatchGearMutationWithRunHealthSync({
-      mutate: (gear) => gear.addInstance(unique, "knight"),
-    });
-    expect(readProfileStore().discoveredUniqueIds).toEqual(["wardbreaker"]);
+    dispatchGearMutationWithRunHealthSync(
+      {
+        mutate: (gear) => gear.addInstance(unique, "knight"),
+      },
+      defaultGameSession,
+    );
+    expect(readProfileStore(defaultGameSession).discoveredUniqueIds).toEqual(["wardbreaker"]);
 
-    dispatchGearSalvageWithMaterialGrant((gear) => gear.salvage(unique.instanceId));
-    expect(flattenGearInventories(readGearState().inventories)).toEqual([]);
-    expect(readProfileStore().discoveredUniqueIds).toEqual(["wardbreaker"]);
+    dispatchGearSalvageWithMaterialGrant((gear) => gear.salvage(unique.instanceId), defaultGameSession);
+    expect(flattenGearInventories(readGearState(defaultGameSession).inventories)).toEqual([]);
+    expect(readProfileStore(defaultGameSession).discoveredUniqueIds).toEqual(["wardbreaker"]);
     resetGearForTest();
   });
 
@@ -128,25 +132,28 @@ describe("gear-store", () => {
     resetGearForTest();
     const loadouts = createEmptyGearLoadouts();
     loadouts.knight["left-accessory"] = "missing-ring";
-    dispatchGameplayCommand((draft) =>
-      acceptCommand(
-        gearPersistenceCodec.hydrate(
-          {
-            gearInventories: createEmptyGearInventories(),
-            gearLoadouts: loadouts,
-            ownedTrinketIds: ["bone-charm", "bogus-trinket"],
-            equippedTrinkets: { ...createEmptyEquippedTrinkets(), knight: "bone-charm", rogue: "bone-charm" },
-            craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
-          },
-          draft,
+    dispatchGameplayCommand(
+      (draft) =>
+        acceptCommand(
+          gearPersistenceCodec.hydrate(
+            {
+              gearInventories: createEmptyGearInventories(),
+              gearLoadouts: loadouts,
+              ownedTrinketIds: ["bone-charm", "bogus-trinket"],
+              equippedTrinkets: { ...createEmptyEquippedTrinkets(), knight: "bone-charm", rogue: "bone-charm" },
+              craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
+            },
+            draft,
+          ),
         ),
-      ),
+      undefined,
+      defaultGameSession,
     );
 
-    expect(readGearState().loadouts.knight["left-accessory"]).toBeNull();
-    expect(readGearState().ownedTrinketIds).toEqual(["bone-charm"]);
-    expect(readGearState().equippedTrinkets.knight).toBe("bone-charm");
-    expect(readGearState().equippedTrinkets.rogue).toBeNull();
+    expect(readGearState(defaultGameSession).loadouts.knight["left-accessory"]).toBeNull();
+    expect(readGearState(defaultGameSession).ownedTrinketIds).toEqual(["bone-charm"]);
+    expect(readGearState(defaultGameSession).equippedTrinkets.knight).toBe("bone-charm");
+    expect(readGearState(defaultGameSession).equippedTrinkets.rogue).toBeNull();
     resetGearForTest();
   });
 });

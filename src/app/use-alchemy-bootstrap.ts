@@ -1,3 +1,4 @@
+import { defaultGameSession } from "@/app/application-session";
 import { useEffect, useState } from "react";
 import {
   buildAlchemySaveDataFromStores,
@@ -20,7 +21,7 @@ async function maybeWipeLocalSaveFromQuery(): Promise<void> {
   // Exact `=1` match: a bare flag or `=0` must not wipe. Local-first wipe so
   // a Cloud hiccup cannot leave local progress behind on a dev reset.
   if (url.searchParams.get("wipeLocalSave") !== "1") return;
-  const cleared = await clearAlchemySaveData("localWipe");
+  const cleared = await clearAlchemySaveData("localWipe", defaultGameSession);
   if (!cleared) return;
   url.searchParams.delete("wipeLocalSave");
   const next = `${url.pathname}${url.search}${url.hash}`;
@@ -43,7 +44,7 @@ export function useAlchemyBootstrap(): SaveLoadState | null {
       let result: SaveLoadState;
       // A Steam setup failure must not prevent local loading or normal play.
       try {
-        await configureAlchemySaveBackend();
+        await configureAlchemySaveBackend(defaultGameSession);
       } catch (error) {
         logStorageFailure("Save backend setup failed", error);
       }
@@ -56,20 +57,24 @@ export function useAlchemyBootstrap(): SaveLoadState | null {
       }
       if (cancelled) return;
       try {
-        result = await loadAlchemySaveState();
+        result = await loadAlchemySaveState(defaultGameSession);
       } catch (error) {
         if (cancelled) return;
         logStorageFailure("Save bootstrap failed", error);
-        routeWritesToRecovery();
+        routeWritesToRecovery(defaultGameSession);
         result = { data: createDefaultSaveData(), status: { kind: "unavailable" } };
       }
       if (cancelled) return;
-      hydrateAlchemyPersistenceFields(result.data);
-      if (!readRunInitialized()) {
-        restoreRun(result.data.activeRun, result.data.talentXP, result.data.unlockedTalents);
+      hydrateAlchemyPersistenceFields(result.data, defaultGameSession);
+      if (!readRunInitialized(defaultGameSession)) {
+        restoreRun(result.data.activeRun, result.data.talentXP, result.data.unlockedTalents, defaultGameSession);
         if (needsRestoredBattlePersistence(result.data.activeRun)) {
           const outcome = await saveAlchemySaveData(
-            buildAlchemySaveDataFromStores(resolveActiveRunForSave(readHasActiveRun())),
+            buildAlchemySaveDataFromStores(
+              resolveActiveRunForSave(readHasActiveRun(defaultGameSession), undefined, defaultGameSession),
+              defaultGameSession,
+            ),
+            defaultGameSession,
           );
           if (outcome === "failed") logStorageFailure("Restored battle transition could not be persisted");
         }

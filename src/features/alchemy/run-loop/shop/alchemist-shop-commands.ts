@@ -1,6 +1,6 @@
+import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
 import { createShopInitializer } from "./shop-initialization";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { discoverCardIds } from "@/features/alchemy/shared/stores/profile-store";
 import { snapshotTransactionValue } from "@/features/alchemy/shared/stores/run-session-command";
@@ -37,7 +37,7 @@ export function createAlchemistShopCommands(
     talentEffects: TalentEffectManifest;
     homesteadEffects: Pick<HomesteadEffectManifest, "mixPotionDiscount">;
   },
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ): AlchemistShopCommands {
   const { buy: buyPotion, getBuyPrice: getPotionBuyPrice } = createShopPurchaseActions(
     {
@@ -135,7 +135,7 @@ export function createAlchemistShopCommands(
     gameSession,
   );
 
-  return {
+  return bindSessionCapabilities(gameSession, {
     initialize,
     buyPotion,
     mixPotions,
@@ -144,5 +144,5 @@ export function createAlchemistShopCommands(
     getPotionBuyPrice,
     getMixPrice,
     getRefreshPrice,
-  };
+  });
 }

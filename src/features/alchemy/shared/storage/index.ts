@@ -18,3 +18,5 @@ export {
   readDeviceDisplayPreferences,
   writeDeviceDisplayPreferences,
 } from "./device-display-preferences";
+
+export { createSessionPersistence, snapshotSessionSave } from "./session-persistence";

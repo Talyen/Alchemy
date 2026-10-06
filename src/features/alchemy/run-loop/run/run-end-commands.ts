@@ -1,4 +1,3 @@
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import {
   abandonRun,
@@ -10,15 +9,15 @@ import { finalizeRunXP } from "@/features/alchemy/shared/stores/run-session-writ
 import { awardRunEndMaterials } from "./run-materials";
 
 const settlement = { awardRunEndMaterials, finalizeRunXP };
-export function completeRunVictory(gameSession: GameSession = defaultGameSession): void {
+export function completeRunVictory(gameSession: GameSession): void {
   finalizeRunEndSession(settlement, gameSession);
 }
-export function completeRunDefeat(gameSession: GameSession = defaultGameSession): void {
+export function completeRunDefeat(gameSession: GameSession): void {
   applyRunDefeatTeardown(
     { ...settlement, clearCombatPresentation: () => clearBattlePresentationUi(gameSession) },
     gameSession,
   );
 }
-export function abandonCurrentRun(gameSession: GameSession = defaultGameSession): boolean {
+export function abandonCurrentRun(gameSession: GameSession): boolean {
   return abandonRun(settlement, gameSession);
 }

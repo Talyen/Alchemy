@@ -1,4 +1,3 @@
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
@@ -11,7 +10,7 @@ export interface CorruptionFlowDeps {
   isLabyrinthRun?: () => boolean;
 }
 
-export function createCorruptionFlowHandlers(deps: CorruptionFlowDeps, gameSession: GameSession = defaultGameSession) {
+export function createCorruptionFlowHandlers(deps: CorruptionFlowDeps, gameSession: GameSession) {
   function handleCorruptCard(cardIndex: number) {
     const activity = readRunSession(gameSession).activity;
     if (activity.kind !== "corruption" || readActivityData(activity, "corruption")) return;

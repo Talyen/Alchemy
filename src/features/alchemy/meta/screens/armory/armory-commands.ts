@@ -1,4 +1,3 @@
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import {
   dispatchGearMutationWithRunHealthSync,
@@ -10,18 +9,14 @@ import type { SynchronousResult } from "@/features/alchemy/shared/stores/run-ses
 export function mutateGearWithFlush<T>(
   flush: () => void,
   mutate: (state: GearDraftView) => T & SynchronousResult<T>,
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ): T {
   const result = dispatchGearMutationWithRunHealthSync<T>({ mutate }, gameSession);
   if (result) flush();
   return result;
 }
 
-export function salvageGearWithFlush(
-  flush: () => void,
-  instanceId: string,
-  gameSession: GameSession = defaultGameSession,
-): boolean {
+export function salvageGearWithFlush(flush: () => void, instanceId: string, gameSession: GameSession): boolean {
   const result = dispatchGearSalvageWithMaterialGrant((state) => state.salvage(instanceId), gameSession);
   if (result) flush();
   return Boolean(result);

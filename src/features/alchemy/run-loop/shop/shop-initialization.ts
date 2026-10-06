@@ -1,4 +1,3 @@
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
 import {
@@ -66,7 +65,7 @@ export function initializeShopVisit(
 
 export function createShopInitializer(
   kind: ShopKind,
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
   gearAstralChanceBonus?: number,
 ): () => void {
   return () =>

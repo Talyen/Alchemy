@@ -1,4 +1,3 @@
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 import { type MysteryChoice } from "@/lib/mystery";
@@ -11,7 +10,7 @@ export function createMysteryEventNavigation(
   }: {
     navigateTo: (nextScreen: Screen, prepareNavigation?: () => void) => void;
   },
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ) {
   function beginMysteryEvent(prepareNavigation?: () => void) {
     beginMysteryVisit(gameSession);

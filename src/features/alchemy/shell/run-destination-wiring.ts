@@ -1,12 +1,11 @@
 import { resolveAvailableDestinations, type DestinationOptionsInput } from "@/features/alchemy/shared/run-flow";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { readHasAnyOwnedGear, readHasUnownedTrinkets } from "@/features/alchemy/shared/stores/gear-store";
 import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 
 /** Shared hover-clear used by every shell navigation path. */
-export function clearRunCardHover(gameSession: GameSession = defaultGameSession): void {
+export function clearRunCardHover(gameSession: GameSession): void {
   sessionFeedback(gameSession).clearCardHover();
 }
 
@@ -15,10 +14,7 @@ export function clearRunCardHover(gameSession: GameSession = defaultGameSession)
  * The pure filtering helper lives in `shared/run-flow/destination-flow.ts`
  * (`getRunAvailableDestinations`); this wrapper only maps store reads to it.
  */
-export function readRunAvailableDestinations(
-  options: DestinationOptionsInput = {},
-  gameSession: GameSession = defaultGameSession,
-) {
+export function readRunAvailableDestinations(options: DestinationOptionsInput = {}, gameSession: GameSession) {
   const active = readActiveRun(gameSession);
   return resolveAvailableDestinations({
     currentAct: active.currentAct,

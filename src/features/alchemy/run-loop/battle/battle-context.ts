@@ -1,3 +1,4 @@
+import type { BattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
 import { PlaybackLifetime } from "./playback-lifetime";
 import { useRef, useMemo, useLayoutEffect, useState } from "react";
 import type { BattleCard } from "@/lib/game-data";
@@ -22,6 +23,7 @@ export type AutoplayWishHandler = (card: BattleCard, control: AutoplayCardContro
 export type { BattlePlaybackBind } from "./playback-lifetime";
 
 export interface BattleControllerContextProps {
+  battle: BattleCapabilities;
   screen: Screen;
   setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
   onBattleVictory?: (() => void) | undefined;

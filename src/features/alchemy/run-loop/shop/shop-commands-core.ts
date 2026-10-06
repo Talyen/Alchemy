@@ -1,4 +1,3 @@
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { snapshotTransactionValue, type RunTransaction } from "@/features/alchemy/shared/stores/run-session-command";
 import {
@@ -39,7 +38,7 @@ const SHOP_STATE_KEY: Record<ShopActivity, ShopSessionStateKey> = {
 export function createGetRefreshPrice(
   activity: ShopActivity,
   talentEffects: TalentEffectManifest,
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ): (refreshesLeft: number, modifiers?: ShopRefreshModifiers, freeRefreshUsed?: boolean) => number {
   return (refreshesLeft, modifiers = resolveReadShopModifiers(gameSession), freeRefreshUsed = false) =>
     getShopRefreshPrice(REFRESH_KIND[activity], talentEffects, refreshesLeft, modifiers, freeRefreshUsed);
@@ -61,7 +60,7 @@ export function createShopRefreshAction<K extends ShopActivity>(
     ) => RunActivityData[NoInfer<K>];
     guard?: (draft: RunTransaction, state: RunActivityData[NoInfer<K>]) => boolean;
   },
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ): () => boolean {
   return () =>
     runShopTransaction(
@@ -130,7 +129,7 @@ interface ShopPurchaseConfig<K extends ShopActivity> {
 
 export function createShopPurchaseActions<K extends ShopActivity>(
   config: ShopPurchaseConfig<K>,
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ): {
   buy: (requested: ShopItemByActivity[K], slotKey: string) => boolean;
   getBuyPrice: (item: ShopItemByActivity[K]) => number;

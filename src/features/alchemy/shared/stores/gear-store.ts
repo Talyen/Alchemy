@@ -3,7 +3,6 @@ import { trinketLibrary } from "@/lib/game-data";
 import { GEAR_CHARACTER_IDS } from "@/lib/gear";
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { defaultGameSession } from "./default-game-session";
 import type { GameSession } from "./game-session-types";
 import { readGameplayState, useGameplayStateStore } from "./gameplay-state-store";
 import { createDefaultGearSaveFields, initializeGear } from "./gear-actions";
@@ -34,7 +33,7 @@ function cloneGearLoadouts(loadouts: GearSaveFields["gearLoadouts"]): GearSaveFi
 
 export const gearPersistenceCodec: GameplayPersistenceCodec<GearSaveFields> = {
   createDefault: createDefaultGearSaveFields,
-  encode: (gameSession: GameSession = defaultGameSession) => {
+  encode: (gameSession: GameSession) => {
     const state = readGameplayState(gameSession).gear;
     return {
       gearInventories: cloneGearInventories(state.inventories),
@@ -95,12 +94,12 @@ function hasAnyOwnedGear(inventories: GearStateFields["inventories"], ownedTrink
   return ownedTrinketIds.length > 0 || GEAR_CHARACTER_IDS.some((id) => inventories[id].length > 0);
 }
 
-export function readHasAnyOwnedGear(gameSession: GameSession = defaultGameSession): boolean {
+export function readHasAnyOwnedGear(gameSession: GameSession): boolean {
   const gear = readGameplayState(gameSession).gear;
   return hasAnyOwnedGear(gear.inventories, gear.ownedTrinketIds);
 }
 
-export function readGearState(gameSession: GameSession = defaultGameSession): GearStateFields {
+export function readGearState(gameSession: GameSession): GearStateFields {
   // Live references (see readProfileStore): the codec clones on encode. Never
   // mutate the result outside a dispatchRunSessionCommand draft.
   const gear = readGameplayState(gameSession).gear;
@@ -113,13 +112,10 @@ export function readGearState(gameSession: GameSession = defaultGameSession): Ge
   };
 }
 
-export function readHasUnownedTrinkets(gameSession: GameSession = defaultGameSession): boolean {
+export function readHasUnownedTrinkets(gameSession: GameSession): boolean {
   return readGameplayState(gameSession).gear.ownedTrinketIds.length < trinketLibrary.length;
 }
 
-export function readEquippedTrinketId(
-  characterId: CharacterId,
-  gameSession: GameSession = defaultGameSession,
-): string | null {
+export function readEquippedTrinketId(characterId: CharacterId, gameSession: GameSession): string | null {
   return readGameplayState(gameSession).gear.equippedTrinkets[characterId];
 }

@@ -1,4 +1,5 @@
 import "../../../helpers/mock-audio";
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/navigation/mystery-event-navigation";
 import { resetAllTestStores, resetProfileForTest } from "../../../helpers/run-domain-store-test";
@@ -15,9 +16,10 @@ import { playGoldGain, playGoldSpend, playUISound } from "@/lib/audio";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { emptyHydratedMysteryVisit, hydrateMysteryVisit, readActivityData } from "@/lib/active-run-session";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
+import { defaultGameSession } from "@/app/application-session";
 const act = (fn: () => void) => fn();
 function renderMysteryNav(navigateTo = vi.fn((_screen: Screen, onCommit?: () => void) => onCommit?.())) {
-  const nav = createMysteryEventNavigation({ navigateTo });
+  const nav = createMysteryEventNavigation({ navigateTo }, defaultGameSession);
   return { result: { current: nav }, navigateTo };
 }
 
@@ -31,7 +33,7 @@ function offerChoices(choices: MysteryChoice[]): MysteryChoice[] {
       },
     },
   });
-  return readActivityData(readRunSession().activity, "mystery").mysteryEvent!.choices;
+  return readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryEvent!.choices;
 }
 
 beforeEach(() => {
@@ -43,7 +45,7 @@ beforeEach(() => {
 describe("createMysteryEventNavigation", () => {
   it("records the Herbs actually awarded, including the Homestead find bonus", () => {
     setRunProgress({ effects: { ...defaultHomesteadEffects, herbFindBonus: 0.5 } });
-    const before = readRunProfile().materialInventory.herbs;
+    const before = readRunProfile(defaultGameSession).materialInventory.herbs;
     const { result } = renderMysteryNav();
     const choice = offerChoices([
       {
@@ -54,10 +56,10 @@ describe("createMysteryEventNavigation", () => {
 
     act(() => result.current.handleMysteryChoice(choice));
 
-    expect(readRunProfile().materialInventory.herbs - before).toBe(5);
-    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenChoice?.effects).toEqual([
-      { kind: "gainMaterial", material: "herbs", amount: 5 },
-    ]);
+    expect(readRunProfile(defaultGameSession).materialInventory.herbs - before).toBe(5);
+    expect(
+      readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryChosenChoice?.effects,
+    ).toEqual([{ kind: "gainMaterial", material: "herbs", amount: 5 }]);
     expect(choice.effects[0]).toEqual({ kind: "gainMaterial", material: "herbs", amount: 3 });
   });
 
@@ -68,19 +70,23 @@ describe("createMysteryEventNavigation", () => {
       result.current.beginMysteryEvent();
     });
 
-    expect(readActivityData(readRunSession().activity, "mystery").mysteryEvent).not.toBeNull();
-    expect(readActivityData(readRunSession().activity, "mystery").mysteryCardChoices).toBeNull();
-    expect(readActivityData(readRunSession().activity, "mystery").mysteryGrantedTrinketIds).toEqual([]);
-    expect(readActivityData(readRunSession().activity, "mystery").mysteryGrantedGearInstances).toEqual([]);
-    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenCardId).toBeNull();
-    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenChoice).toBeNull();
+    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryEvent).not.toBeNull();
+    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryCardChoices).toBeNull();
+    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryGrantedTrinketIds).toEqual(
+      [],
+    );
+    expect(
+      readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryGrantedGearInstances,
+    ).toEqual([]);
+    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryChosenCardId).toBeNull();
+    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryChosenChoice).toBeNull();
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.MYSTERY, undefined);
     expect(playUISound).toHaveBeenCalledWith("musicBoxMystery");
   });
 
   it("awards and records Wildwood mystery Materials", () => {
     setRunProgress({ contentSystemType: "wildwood" });
-    const before = readRunProfile().materialInventory.wood;
+    const before = readRunProfile(defaultGameSession).materialInventory.wood;
     const { result } = renderMysteryNav();
     const choice = offerChoices([
       {
@@ -91,10 +97,10 @@ describe("createMysteryEventNavigation", () => {
 
     act(() => result.current.handleMysteryChoice(choice));
 
-    expect(readRunProfile().materialInventory.wood).toBe(before + 3);
-    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenChoice?.effects).toEqual([
-      { kind: "gainMaterial", material: "wood", amount: 3 },
-    ]);
+    expect(readRunProfile(defaultGameSession).materialInventory.wood).toBe(before + 3);
+    expect(
+      readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryChosenChoice?.effects,
+    ).toEqual([{ kind: "gainMaterial", material: "wood", amount: 3 }]);
   });
 
   it("plays gold sounds only after the choice commits", () => {
@@ -102,10 +108,10 @@ describe("createMysteryEventNavigation", () => {
     const { result } = renderMysteryNav();
     const commits: number[] = [];
     vi.mocked(playGoldGain).mockImplementationOnce(() => {
-      expect(readRunProfile().gold).toBe(25);
+      expect(readRunProfile(defaultGameSession).gold).toBe(25);
     });
     vi.mocked(playGoldSpend).mockImplementationOnce(() => {
-      expect(readRunProfile().gold).toBe(25);
+      expect(readRunProfile(defaultGameSession).gold).toBe(25);
     });
 
     const choice = offerChoices([
@@ -117,7 +123,7 @@ describe("createMysteryEventNavigation", () => {
         ],
       },
     ])[0]!;
-    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
+    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision), defaultGameSession);
 
     act(() => {
       result.current.handleMysteryChoice(choice);
@@ -142,25 +148,27 @@ describe("createMysteryEventNavigation", () => {
       result.current.handleMysteryChoice(otherChoice!);
     });
 
-    expect(readRunProfile().gold).toBe(30);
-    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenChoice?.label).toBe("Take");
+    expect(readRunProfile(defaultGameSession).gold).toBe(30);
+    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryChosenChoice?.label).toBe(
+      "Take",
+    );
   });
 
   it("rejects invented choices without a commit, reward, RNG draw, or sound", () => {
     const { result } = renderMysteryNav();
     const offered = offerChoices([{ label: "Take", effects: [{ kind: "gainGold", amount: 10 }] }])[0]!;
-    const beforeRevision = readRunRevision();
-    const beforeRng = readActiveRun().rng;
-    const beforeGold = readRunProfile().gold;
+    const beforeRevision = readRunRevision(defaultGameSession);
+    const beforeRng = readActiveRun(defaultGameSession).rng;
+    const beforeGold = readRunProfile(defaultGameSession).gold;
 
     act(() => {
       result.current.handleMysteryChoice({ ...offered, effects: [...offered.effects] });
     });
 
-    expect(readRunRevision()).toBe(beforeRevision);
-    expect(readActiveRun().rng).toEqual(beforeRng);
-    expect(readRunProfile().gold).toBe(beforeGold);
-    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenChoice).toBeNull();
+    expect(readRunRevision(defaultGameSession)).toBe(beforeRevision);
+    expect(readActiveRun(defaultGameSession).rng).toEqual(beforeRng);
+    expect(readRunProfile(defaultGameSession).gold).toBe(beforeGold);
+    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryChosenChoice).toBeNull();
     expect(playGoldGain).not.toHaveBeenCalled();
   });
 
@@ -168,14 +176,14 @@ describe("createMysteryEventNavigation", () => {
     const { result } = renderMysteryNav();
     const oldChoice = offerChoices([{ label: "Take", effects: [{ kind: "gainGold", amount: 10 }] }])[0]!;
     const currentChoice = offerChoices([{ label: "Take", effects: [{ kind: "gainGold", amount: 10 }] }])[0]!;
-    const beforeRevision = readRunRevision();
+    const beforeRevision = readRunRevision(defaultGameSession);
 
     act(() => result.current.handleMysteryChoice(oldChoice));
-    expect(readRunRevision()).toBe(beforeRevision);
-    expect(readRunProfile().gold).toBe(0);
+    expect(readRunRevision(defaultGameSession)).toBe(beforeRevision);
+    expect(readRunProfile(defaultGameSession).gold).toBe(0);
 
     act(() => result.current.handleMysteryChoice(currentChoice));
-    expect(readRunProfile().gold).toBe(10);
+    expect(readRunProfile(defaultGameSession).gold).toBe(10);
   });
 
   it("accepts the offered choice from a hydrated Mystery visit", () => {
@@ -188,13 +196,15 @@ describe("createMysteryEventNavigation", () => {
       chosenCardId: null,
     });
     setRunSession({ activity: { kind: "mystery", data: visit } });
-    const choice = readActivityData(readRunSession().activity, "mystery").mysteryEvent!.choices[0]!;
+    const choice = readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryEvent!.choices[0]!;
     const { result } = renderMysteryNav();
 
     act(() => result.current.handleMysteryChoice(choice));
 
-    expect(readRunProfile().gold).toBe(20);
-    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenChoice?.label).toBe("Take the Gold");
+    expect(readRunProfile(defaultGameSession).gold).toBe(20);
+    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryChosenChoice?.label).toBe(
+      "Take the Gold",
+    );
   });
 
   it("handleMysteryChooseCard ignores a second pick", async () => {
@@ -204,11 +214,15 @@ describe("createMysteryEventNavigation", () => {
     const { setMysteryCardChoices } = await import("@/features/alchemy/shared/stores/run-session-write-port");
     const { cardById } = await import("@/lib/game-data");
     act(() => {
-      dispatchRunSessionCommand((draft) => {
-        setMysteryCardChoices(draft, [cardById["slash"], cardById["block"]].filter(Boolean) as never);
+      dispatchRunSessionCommand(
+        (draft) => {
+          setMysteryCardChoices(draft, [cardById["slash"], cardById["block"]].filter(Boolean) as never);
 
-        return acceptCommand();
-      });
+          return acceptCommand();
+        },
+        undefined,
+        defaultGameSession,
+      );
     });
 
     act(() => {
@@ -216,7 +230,7 @@ describe("createMysteryEventNavigation", () => {
       result.current.handleMysteryChooseCard("block");
     });
 
-    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenCardId).toBe("slash");
+    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryChosenCardId).toBe("slash");
   });
 
   it("rolls back state and skips gold sounds when a later effect throws", () => {
@@ -235,14 +249,14 @@ describe("createMysteryEventNavigation", () => {
       }),
     ).toThrow(/Unhandled mystery effect kind/);
 
-    expect(readRunProfile().gold).toBe(20);
+    expect(readRunProfile(defaultGameSession).gold).toBe(20);
     expect(playGoldGain).not.toHaveBeenCalled();
     expect(playGoldSpend).not.toHaveBeenCalled();
   });
 
   it("awards trailing material rewards even when choice triggers card selection", () => {
     const { result } = renderMysteryNav();
-    const beforeWood = readRunProfile().materialInventory.wood;
+    const beforeWood = readRunProfile(defaultGameSession).materialInventory.wood;
     const choice = offerChoices([
       {
         label: "Study and Gather",
@@ -257,7 +271,7 @@ describe("createMysteryEventNavigation", () => {
       result.current.handleMysteryChoice(choice);
     });
 
-    expect(readRunProfile().materialInventory.wood).toBe(beforeWood + 3);
-    expect(readActivityData(readRunSession().activity, "mystery").mysteryCardChoices).not.toBeNull();
+    expect(readRunProfile(defaultGameSession).materialInventory.wood).toBe(beforeWood + 3);
+    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryCardChoices).not.toBeNull();
   });
 });

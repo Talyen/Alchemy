@@ -1,5 +1,4 @@
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { discoverCardIds } from "@/features/alchemy/shared/stores/profile-store";
 import {
@@ -22,10 +21,7 @@ import { createTransmutationOffers, isTransmutableCard } from "@/lib/alchemist/t
 import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import { cloneBattleCard, computeTalentEffects, type BattleCard } from "@/lib/game-data";
 
-export function initializeAlchemyVisit(
-  kind: "campfire" | "transmutation",
-  gameSession: GameSession = defaultGameSession,
-): void {
+export function initializeAlchemyVisit(kind: "campfire" | "transmutation", gameSession: GameSession): void {
   dispatchRunSessionCommand(
     (draft) => acceptCommand(initializeAlchemyVisitInTransaction(draft, kind)),
     undefined,
@@ -44,10 +40,7 @@ export function initializeAlchemyVisitInTransaction(draft: RunTransaction, kind:
     completed: false,
   });
 }
-export function brewAtCampfire(
-  operation: BrewOperation,
-  gameSession: GameSession = defaultGameSession,
-): BattleCard | null {
+export function brewAtCampfire(operation: BrewOperation, gameSession: GameSession): BattleCard | null {
   const brewed = dispatchRunSessionCommand(
     (draft) => {
       if (draft.session.activity.kind !== "campfire" || draft.session.activity.data.completed)
@@ -89,11 +82,7 @@ export function brewAtCampfire(
   if (brewed) sessionFeedback(gameSession).playUISound("campBrew");
   return brewed;
 }
-export function transmuteCard(
-  sourceIndex: number,
-  offerIndex: number,
-  gameSession: GameSession = defaultGameSession,
-): BattleCard | null {
+export function transmuteCard(sourceIndex: number, offerIndex: number, gameSession: GameSession): BattleCard | null {
   return dispatchRunSessionCommand(
     (draft) => {
       if (draft.session.activity.kind !== "transmutation" || draft.session.activity.data.completed)

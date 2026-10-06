@@ -1,20 +1,13 @@
-import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-lifecycle";
-import {
-  commitEndTurn as commitBattleEndTurn,
-  clearBattleOpeningState,
-  commitDevBattleVictory,
-} from "@/features/alchemy/shared/stores/battle-commands";
 import { clearBattleStageMarks, markBattleStage } from "@/lib/performance/marks";
 import { isPlayerDefeated, type BattleSnapshot, type ResolvedBattleTurn } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
 import { stopAllSfx } from "@/lib/audio";
-import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import type { BattleControllerContext } from "./battle-context";
 
-export function commitEndTurn(): ResolvedBattleTurn | null {
+export function commitEndTurn(battle: BattleControllerContext["battle"]): ResolvedBattleTurn | null {
   markBattleStage("resolve-start");
   try {
-    return commitBattleEndTurn();
+    return battle.endTurn();
   } finally {
     markBattleStage("resolve-end");
   }
@@ -22,9 +15,9 @@ export function commitEndTurn(): ResolvedBattleTurn | null {
 
 export function createBattleDevOutcomes(ctx: BattleControllerContext, session: ReturnType<typeof createBattleSession>) {
   function skipCombatDevMode() {
-    if (!import.meta.env.DEV || ctx.screen !== "battle" || !readBattle().hasActiveBattle) return;
+    if (!import.meta.env.DEV || ctx.screen !== "battle" || !ctx.battle.read().hasActiveBattle) return;
     session.resetBattleSession();
-    commitDevBattleVictory();
+    ctx.battle.devVictory();
     session.handleVictoryDefeat("victory");
   }
 
@@ -32,7 +25,7 @@ export function createBattleDevOutcomes(ctx: BattleControllerContext, session: R
 }
 
 export function createBattleSession(ctx: BattleControllerContext) {
-  const getStore = () => readBattle();
+  const getStore = () => ctx.battle.read();
   const getPresentationStore = () => ctx.getPresentation();
 
   function isCurrentBattleSession(session: number) {
@@ -94,7 +87,7 @@ export function createBattleSession(ctx: BattleControllerContext) {
 
   function resetBattleSession() {
     prepareBattleSessionForStart();
-    clearBattleOpeningState();
+    ctx.battle.clearOpening();
   }
 
   function prepareBattleSessionForStart() {
@@ -117,7 +110,7 @@ export function createBattleSession(ctx: BattleControllerContext) {
       // only an actual departure, never the newly prepared opening sequence.
       if (leavingBattle) {
         ctx.playback.cancel();
-        clearBattlePresentationUi();
+        ctx.battle.clearPresentation();
       }
       return;
     }
@@ -127,7 +120,7 @@ export function createBattleSession(ctx: BattleControllerContext) {
     } else if (!ctx.playback.finishing) {
       resetBattleSession();
       ctx.playback.cancel();
-      clearBattlePresentationUi();
+      ctx.battle.clearPresentation();
     }
   }
 

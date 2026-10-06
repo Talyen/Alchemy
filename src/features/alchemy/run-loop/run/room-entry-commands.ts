@@ -1,6 +1,5 @@
 import { getBossById } from "@/features/alchemy/shared/config";
 import type { BattleStarted, BattleStartRequest } from "@/features/alchemy/shared/stores/battle-start-types";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import {
   acceptCommand,
@@ -81,10 +80,7 @@ function initializeRoom(
   }
 }
 
-export function enterRunRoom(
-  request: RunRoomRequest,
-  gameSession: GameSession = defaultGameSession,
-): RunRoomEntered | null {
+export function enterRunRoom(request: RunRoomRequest, gameSession: GameSession): RunRoomEntered | null {
   return dispatchRunSessionCommand(
     (draft) => {
       const unavailable = () => rejectCommand("Room entry is unavailable", null);

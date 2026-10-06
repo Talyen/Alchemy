@@ -1,5 +1,4 @@
-import { brewAtCampfire, transmuteCard } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
-import { restAtCampfire } from "@/features/alchemy/run-loop/run/destination-commands";
+import { defaultGameSession } from "@/app/application-session";
 import type { AlchemyRouteCommands, AlchemyRunCommands } from "./route-commands";
 import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
@@ -9,15 +8,10 @@ import {
   useHomesteadEffects,
   useTalentEffects,
 } from "@/features/alchemy/shared/stores/run-reads";
-import {
-  purchaseTalent,
-  resetTalentUnlocks,
-  unlockTalentsForDevelopment,
-} from "@/features/alchemy/shared/stores/navigation-commands";
 import { useCallback, useMemo } from "react";
 import { getRunPhase } from "@/lib/routing";
 import { createLabyrinthNodeRouting } from "./labyrinth-node-routing";
-import { clearRunCardHover, readRunAvailableDestinations } from "./run-destination-wiring";
+import { createRunRouteActions } from "./run-route-actions";
 import { useBattleController } from "./use-battle-controller";
 import { createLabyrinthController } from "@/features/alchemy/run-loop/run/labyrinth-controller";
 import { createRunFlowEngine } from "./run-flow-engine";
@@ -25,6 +19,7 @@ import { useScreenTransitions } from "./use-screen-transitions";
 import { useSteamRichPresence } from "./use-steam-rich-presence";
 
 export function useAlchemyRunController(): AlchemyRunCommands {
+  const runActions = useMemo(() => createRunRouteActions(defaultGameSession), []);
   const homesteadEffects = useHomesteadEffects();
   const talentEffects = useTalentEffects();
   const characterId = useActiveRunCharacterId();
@@ -33,11 +28,14 @@ export function useAlchemyRunController(): AlchemyRunCommands {
 
   const outcomes = useMemo(
     () =>
-      createRunOutcomes({
-        actions: { navigateTo, transition, clearCardHover: clearRunCardHover },
-        getAvailableDestinations: readRunAvailableDestinations,
-      }),
-    [navigateTo, transition],
+      createRunOutcomes(
+        {
+          actions: { navigateTo, transition, clearCardHover: runActions.clearCardHover },
+          getAvailableDestinations: runActions.getAvailableDestinations,
+        },
+        defaultGameSession,
+      ),
+    [navigateTo, transition, runActions],
   );
   const battle = useBattleController({
     screen,
@@ -50,13 +48,16 @@ export function useAlchemyRunController(): AlchemyRunCommands {
   const removeCardDiscount = homesteadEffects.removeCardDiscount;
   const shop = useMemo(
     () =>
-      createShopActions({
-        talentEffects,
-        homesteadEffects: { gearAstralChanceBonus, mixPotionDiscount, removeCardDiscount },
-      }),
+      createShopActions(
+        {
+          talentEffects,
+          homesteadEffects: { gearAstralChanceBonus, mixPotionDiscount, removeCardDiscount },
+        },
+        defaultGameSession,
+      ),
     [talentEffects, gearAstralChanceBonus, mixPotionDiscount, removeCardDiscount],
   );
-  const labyrinth = useMemo(() => createLabyrinthController(), []);
+  const labyrinth = useMemo(() => createLabyrinthController(defaultGameSession), []);
 
   const nav = useMemo(
     () =>
@@ -70,6 +71,7 @@ export function useAlchemyRunController(): AlchemyRunCommands {
           labyrinthClearNode: labyrinth.onNodeCleared,
         },
         outcomes,
+        defaultGameSession,
       ),
     [navigateTo, resumeTo, transition, cancelPending, battle, labyrinth, outcomes],
   );
@@ -82,11 +84,14 @@ export function useAlchemyRunController(): AlchemyRunCommands {
 
   const nodeRouting = useMemo(
     () =>
-      createLabyrinthNodeRouting({
-        navigateTo,
-        labyrinth,
-        presentBattleStart: battle.presentBattleStart,
-      }),
+      createLabyrinthNodeRouting(
+        {
+          navigateTo,
+          labyrinth,
+          presentBattleStart: battle.presentBattleStart,
+        },
+        defaultGameSession,
+      ),
     [navigateTo, labyrinth, battle.presentBattleStart],
   );
 
@@ -103,8 +108,8 @@ export function useAlchemyRunController(): AlchemyRunCommands {
         beginCampaign: nav.beginCampaign,
         beginLabyrinth: nav.beginLabyrinth,
         beginWildwood: nav.beginWildwood,
-        unlockTalent: purchaseTalent,
-        resetUnlockedTalents: resetTalentUnlocks,
+        unlockTalent: runActions.purchaseTalent,
+        resetUnlockedTalents: runActions.resetTalentUnlocks,
       },
       runSetup: {
         goToScreen: nav.goToScreen,
@@ -131,8 +136,8 @@ export function useAlchemyRunController(): AlchemyRunCommands {
           prepare: nav.prepareDestinationScreen,
           choose: nav.handleDestinationChoice,
           continueCampfire: nav.handleCampfireContinue,
-          rest: restAtCampfire,
-          brew: brewAtCampfire,
+          rest: runActions.restAtCampfire,
+          brew: runActions.brewAtCampfire,
         },
         wildwood: {
           removeCard: nav.handleWildwoodRemoveCard,
@@ -144,7 +149,7 @@ export function useAlchemyRunController(): AlchemyRunCommands {
           handleChooseCard: nav.handleMysteryChooseCard,
           handleContinue: nav.handleMysteryContinue,
         },
-        transmutation: { exchange: transmuteCard, continue: nav.advanceToNextDestination },
+        transmutation: { exchange: runActions.transmuteCard, continue: nav.advanceToNextDestination },
         corruption: {
           handleCorruptCard: nav.handleCorruptCard,
           handleExit: nav.handleCorruptionExit,
@@ -155,7 +160,7 @@ export function useAlchemyRunController(): AlchemyRunCommands {
         continueFromRunEnd: nav.continueFromRunEnd,
       },
     }),
-    [nav, nodeRouting, labyrinth, shop, battle],
+    [nav, nodeRouting, labyrinth, shop, battle, runActions],
   );
 
   return {
@@ -163,7 +168,7 @@ export function useAlchemyRunController(): AlchemyRunCommands {
     navigationPending,
     homesteadEffects,
     routeCommands,
-    unlockAllTalents: unlockTalentsForDevelopment,
+    unlockAllTalents: runActions.unlockTalentsForDevelopment,
     returnToBattle: nav.returnToBattle,
     goToScreen: nav.goToScreen,
     handleEndRun,

@@ -217,6 +217,7 @@ export default tseslint.config(
     files: ["src/**/*.{ts,tsx}"],
     rules: {
       "alchemy/no-run-earned-add-materials": "error",
+      "alchemy/session-ownership": "error",
       "alchemy/no-unowned-web-storage": "error",
     },
   },

@@ -1,4 +1,5 @@
 import "../../../../helpers/mock-audio";
+
 import "../../../../helpers/mock-flush-save";
 import { beforeEach, describe, expect, it } from "vitest";
 import { readActivityData, shopItemSlotKey } from "@/lib/active-run-session";
@@ -11,6 +12,7 @@ import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage/save-candidates";
 import { makeMinimalActiveRunInput } from "../../../../fixtures/active-run";
 import { makeTestBattleState } from "../../../../fixtures/battle";
+import { defaultGameSession } from "@/app/application-session";
 const ownedTrinket = trinketLibrary[0]!;
 const otherTrinket = trinketLibrary[1]!;
 
@@ -77,8 +79,8 @@ describe("saved battle card recovery", () => {
       const reloaded = evaluateSaveCandidates([JSON.stringify(loaded.data)]);
       expect(reloaded.data.activeRun).not.toBeNull();
       if (!reloaded.data.activeRun) throw new Error("Expected restored active run");
-      restoreRun(reloaded.data.activeRun, {}, {});
-      const restored = readBattle();
+      restoreRun(reloaded.data.activeRun, {}, {}, defaultGameSession);
+      const restored = readBattle(defaultGameSession);
       const expected = [{ ...card, uid: 1 }, healthy];
       for (const state of [restored.battleState]) {
         expect(state.deck).toEqual(expected);
@@ -114,12 +116,13 @@ describe("run restore shop offering repair", () => {
       }),
       {},
       {},
+      defaultGameSession,
     );
 
-    const shop = readActivityData(readRunSession().activity, "trinket-shop");
+    const shop = readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop");
     expect(shop.trinkets.map((entry) => entry.id)).toEqual([otherTrinket.id]);
     expect(shop.purchasedSlotKeys).toEqual([shopItemSlotKey(otherTrinket.id, 0)]);
-    expect(readActiveRunScreen()).toBe("trinket-shop");
+    expect(readActiveRunScreen(defaultGameSession)).toBe("trinket-shop");
   });
 
   it("leaves an exhausted restored Trinket Shop as a sold-out shelf", () => {
@@ -141,13 +144,14 @@ describe("run restore shop offering repair", () => {
       }),
       {},
       {},
+      defaultGameSession,
     );
 
-    const shop = readActivityData(readRunSession().activity, "trinket-shop");
+    const shop = readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop");
     expect(shop.trinkets).toEqual([]);
     expect(shop.purchasedSlotKeys).toEqual([]);
     expect(shop.refreshesLeft).toBe(0);
-    expect(readActiveRunScreen()).toBe("trinket-shop");
+    expect(readActiveRunScreen(defaultGameSession)).toBe("trinket-shop");
   });
 
   it("strips owned unique gear from a restored Gear Shop", () => {
@@ -170,9 +174,10 @@ describe("run restore shop offering repair", () => {
       }),
       {},
       {},
+      defaultGameSession,
     );
 
-    const shop = readActivityData(readRunSession().activity, "equipment-shop");
+    const shop = readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop");
     expect(shop.gear.map((item) => item.instanceId)).toEqual(["shelf-basic"]);
     expect(shop.purchasedSlotKeys).toEqual(["shelf-basic"]);
   });

@@ -9,6 +9,7 @@ import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/b
 import { makeTestCard } from "../fixtures/battle";
 import { getEffectiveCardDescriptionLines } from "@/lib/game-data/card-description";
 import { resetAllTestStores } from "../helpers/run-domain-store-test";
+import { defaultGameSession } from "@/app/application-session";
 
 const base = {
   screen: "battle" as const,
@@ -23,15 +24,19 @@ const base = {
 beforeEach(() => {
   resetAllTestStores();
   useBattlePresentationStore.getState().resetPresentation();
-  dispatchGameplayCommand((draft) => {
-    draft.session.activity = { kind: "idle" };
-    setBattleActiveForTest(draft, true);
-    getBattleForTest(draft).battleState.enemyHealth = 30;
-    getBattleForTest(draft).battleState.playerHealth = 30;
-    getBattleForTest(draft).battleState.turnPhase = "player";
+  dispatchGameplayCommand(
+    (draft) => {
+      draft.session.activity = { kind: "idle" };
+      setBattleActiveForTest(draft, true);
+      getBattleForTest(draft).battleState.enemyHealth = 30;
+      getBattleForTest(draft).battleState.playerHealth = 30;
+      getBattleForTest(draft).battleState.turnPhase = "player";
 
-    return acceptCommand();
-  });
+      return acceptCommand();
+    },
+    undefined,
+    defaultGameSession,
+  );
 });
 afterEach(cleanup);
 
@@ -41,21 +46,29 @@ describe("run card inspection", () => {
       effects: [{ kind: "summon-companion", companionId: "phoenix" }],
       descriptionLines: ["old", "Companion"],
     });
-    dispatchGameplayCommand((draft) => {
-      getBattleForTest(draft).battleState.gearEffects.companionDamageBonus = 4;
+    dispatchGameplayCommand(
+      (draft) => {
+        getBattleForTest(draft).battleState.gearEffects.companionDamageBonus = 4;
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
     const { result } = renderHook(() => useCardInspection(base));
     expect(getEffectiveCardDescriptionLines(summon, result.current.battleDescriptionContext!)[0]).toBe(
       "Deals 5 Burn damage each turn",
     );
     act(() =>
-      dispatchGameplayCommand((draft) => {
-        getBattleForTest(draft).battleState.gearEffects.companionDamageBonus = 8;
+      dispatchGameplayCommand(
+        (draft) => {
+          getBattleForTest(draft).battleState.gearEffects.companionDamageBonus = 8;
 
-        return acceptCommand();
-      }),
+          return acceptCommand();
+        },
+        undefined,
+        defaultGameSession,
+      ),
     );
     expect(getEffectiveCardDescriptionLines(summon, result.current.battleDescriptionContext!)[0]).toBe(
       "Deals 9 Burn damage each turn",
@@ -76,14 +89,18 @@ describe("run card inspection", () => {
     const consumed = makeTestCard({ id: "apple", uid: 1, consume: true });
     const drawn = makeTestCard({ id: "slash", uid: 2 });
     const generated = makeTestCard({ id: "block", uid: 3 });
-    dispatchGameplayCommand((draft) => {
-      draft.run.activeRun.runDeck = [consumed, drawn];
-      getBattleForTest(draft).battleState.deck = [drawn];
-      getBattleForTest(draft).battleState.discard = [generated];
+    dispatchGameplayCommand(
+      (draft) => {
+        draft.run.activeRun.runDeck = [consumed, drawn];
+        getBattleForTest(draft).battleState.deck = [drawn];
+        getBattleForTest(draft).battleState.discard = [generated];
 
-      return acceptCommand();
-    });
-    const before = readGameplayState();
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    const before = readGameplayState(defaultGameSession);
     const { result } = renderHook(() => useCardInspection(base));
     act(() => result.current.onOpen("discard"));
     expect(result.current.selected).toBe("discard");
@@ -93,20 +110,24 @@ describe("run card inspection", () => {
       ["block"],
     ]);
     act(() => result.current.close());
-    expect(readGameplayState()).toBe(before);
+    expect(readGameplayState(defaultGameSession)).toBe(before);
   });
 
   it.each(["enemy", "wish", "transfer", "dead", "card-play"])("rejects inspection during %s", (reason) => {
-    dispatchGameplayCommand((draft) => {
-      if (reason === "enemy") getBattleForTest(draft).battleState.turnPhase = "enemy";
-      if (reason === "wish") getBattleForTest(draft).battleState.wishOptions = [makeTestCard()];
-      if (reason === "dead") {
-        getBattleForTest(draft).battleState.playerHealth = 0;
-        getBattleForTest(draft).battleState.deathsDoorActive = false;
-      }
+    dispatchGameplayCommand(
+      (draft) => {
+        if (reason === "enemy") getBattleForTest(draft).battleState.turnPhase = "enemy";
+        if (reason === "wish") getBattleForTest(draft).battleState.wishOptions = [makeTestCard()];
+        if (reason === "dead") {
+          getBattleForTest(draft).battleState.playerHealth = 0;
+          getBattleForTest(draft).battleState.deathsDoorActive = false;
+        }
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
     if (reason === "transfer") useBattlePresentationStore.setState({ cardTransferInProgress: true });
     const { result } = renderHook(() =>
       useCardInspection({ ...base, isCardPlayInProgress: () => reason === "card-play" }),
@@ -124,11 +145,15 @@ describe("run card inspection", () => {
     rerender(base);
     act(() => result.current.onOpen("deck"));
     act(() =>
-      dispatchGameplayCommand((draft) => {
-        setBattleActiveForTest(draft, false);
+      dispatchGameplayCommand(
+        (draft) => {
+          setBattleActiveForTest(draft, false);
 
-        return acceptCommand();
-      }),
+          return acceptCommand();
+        },
+        undefined,
+        defaultGameSession,
+      ),
     );
     expect(useUiStore.getState().cardInspection).toBeNull();
   });

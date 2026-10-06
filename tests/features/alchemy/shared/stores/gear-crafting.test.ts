@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createEmptyGearInventories, createEmptyGearLoadouts, equipGear, type GearInstance } from "@/lib/gear";
 import { mutateGearForTest, resetGearForTest } from "../../../../helpers/run-domain-store-test";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
+import { defaultGameSession } from "@/app/application-session";
 
 const item: GearInstance = {
   instanceId: "crafted-sword",
@@ -23,10 +24,10 @@ afterEach(resetGearForTest);
 describe("gear crafting transactions", () => {
   it("changes only the owned item, charges once, and preserves equipment and previous snapshots", () => {
     initialize();
-    const before = readGearState();
+    const before = readGearState(defaultGameSession);
     const original = structuredClone(before);
     expect(mutateGearForTest((gear) => gear.applyCurrency("voidstone", item.instanceId, { rng: () => 0 }))).toBe(true);
-    const after = readGearState();
+    const after = readGearState(defaultGameSession);
     expect(after.inventories.knight).toEqual([{ ...item, affixes: [] }]);
     expect(after.inventories.rogue).toBe(before.inventories.rogue);
     expect(after.loadouts.knight["main-hand"]).toBe(item.instanceId);
@@ -35,7 +36,7 @@ describe("gear crafting transactions", () => {
 
     const rng = vi.fn(() => 0);
     expect(mutateGearForTest((gear) => gear.applyCurrency("voidstone", item.instanceId, { rng }))).toBe(false);
-    expect(readGearState()).toEqual(after);
+    expect(readGearState(defaultGameSession)).toEqual(after);
     expect(rng).not.toHaveBeenCalled();
   });
 
@@ -43,24 +44,24 @@ describe("gear crafting transactions", () => {
     "rejects an %s craft without payment or RNG",
     (reason) => {
       initialize(reason === "ineligible" ? { ...item, affixes: [] } : item, reason === "unaffordable" ? 0 : 1);
-      const before = structuredClone(readGearState());
+      const before = structuredClone(readGearState(defaultGameSession));
       const rng = vi.fn(() => 0);
       expect(
         mutateGearForTest((gear) =>
           gear.applyCurrency("voidstone", reason === "missing" ? "absent" : item.instanceId, { rng }),
         ),
       ).toBe(false);
-      expect(readGearState()).toEqual(before);
+      expect(readGearState(defaultGameSession)).toEqual(before);
       expect(rng).not.toHaveBeenCalled();
     },
   );
 
   it("salvages equipped gear once, returns readable payouts, and preserves the other owner's inventory", () => {
     initialize();
-    const before = readGearState();
+    const before = readGearState(defaultGameSession);
     const original = structuredClone(before);
     const result = mutateGearForTest((gear) => gear.salvage(item.instanceId))!;
-    const after = readGearState();
+    const after = readGearState(defaultGameSession);
     expect(after.inventories.knight).toEqual([]);
     expect(after.inventories.rogue).toBe(before.inventories.rogue);
     expect(after.loadouts.knight["main-hand"]).toBeNull();
@@ -72,6 +73,6 @@ describe("gear crafting transactions", () => {
     }
     expect(before).toEqual(original);
     expect(mutateGearForTest((gear) => gear.salvage(item.instanceId))).toBeNull();
-    expect(readGearState()).toEqual(after);
+    expect(readGearState(defaultGameSession)).toEqual(after);
   });
 });

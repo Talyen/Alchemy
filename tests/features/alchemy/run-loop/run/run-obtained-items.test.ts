@@ -7,6 +7,7 @@ import { trinketLibrary } from "@/lib/game-data";
 import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import { setRunSession } from "../../../../helpers/run-domain-store-test";
 import { applyRewardSelection } from "@/features/alchemy/run-loop/run/reward-commands";
+import { defaultGameSession } from "@/app/application-session";
 const armor: GearInstance = {
   instanceId: "reward-armor",
   definitionId: "leather-armor-basic",
@@ -21,36 +22,48 @@ describe("applyRewardSelection obtained-item recap", () => {
   });
 
   it("records permanent trinket rewards", () => {
-    dispatchRunSessionCommand((draft) => {
-      applyRewardSelection({ reward: { rewardType: "trinket", choice: boneCharm }, draft });
+    dispatchRunSessionCommand(
+      (draft) => {
+        applyRewardSelection({ reward: { rewardType: "trinket", choice: boneCharm }, draft });
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
 
-    expect(readGearState().ownedTrinketIds).toContain("bone-charm");
-    expect(readActiveRun().runObtainedItems).toEqual([{ kind: "trinket", trinketId: "bone-charm" }]);
-    expect(readActiveRun().runBoons).not.toContain("bone-charm");
+    expect(readGearState(defaultGameSession).ownedTrinketIds).toContain("bone-charm");
+    expect(readActiveRun(defaultGameSession).runObtainedItems).toEqual([{ kind: "trinket", trinketId: "bone-charm" }]);
+    expect(readActiveRun(defaultGameSession).runBoons).not.toContain("bone-charm");
   });
 
   it("records gear rewards", () => {
-    dispatchRunSessionCommand((draft) => {
-      applyRewardSelection({ reward: { rewardType: "gear", choice: armor }, draft });
+    dispatchRunSessionCommand(
+      (draft) => {
+        applyRewardSelection({ reward: { rewardType: "gear", choice: armor }, draft });
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
 
-    expect(readGearState().inventories.knight).toContainEqual(armor);
-    expect(readActiveRun().runObtainedItems).toEqual([{ kind: "gear", instance: armor }]);
+    expect(readGearState(defaultGameSession).inventories.knight).toContainEqual(armor);
+    expect(readActiveRun(defaultGameSession).runObtainedItems).toEqual([{ kind: "gear", instance: armor }]);
   });
 
   it("does not record boon rewards", () => {
-    dispatchRunSessionCommand((draft) => {
-      applyRewardSelection({ reward: { rewardType: "boon", choice: boneCharm }, draft });
+    dispatchRunSessionCommand(
+      (draft) => {
+        applyRewardSelection({ reward: { rewardType: "boon", choice: boneCharm }, draft });
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
 
-    expect(readActiveRun().runBoons).toEqual(["bone-charm"]);
-    expect(readActiveRun().runObtainedItems).toEqual([]);
+    expect(readActiveRun(defaultGameSession).runBoons).toEqual(["bone-charm"]);
+    expect(readActiveRun(defaultGameSession).runObtainedItems).toEqual([]);
   });
 });

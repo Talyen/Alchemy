@@ -1,4 +1,5 @@
 import "../../../../helpers/mock-audio";
+
 import { getRunSessionFromState } from "@/features/alchemy/shared/stores/run-reads";
 import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
@@ -17,6 +18,8 @@ import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { patchBattleState, slashDeck } from "../../../../fixtures/battle";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { makeDrawSequenceDeps } from "./turn-orchestration-fixture";
+import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
+import { defaultGameSession } from "@/app/application-session";
 
 vi.mock("@/lib/animation/animation-prefs", () => ({ isAnimationDisabled: () => false }));
 
@@ -35,12 +38,17 @@ function makeUi(rejectDraw = false, onDraw?: (ctx: BattleControllerContext) => v
     hand: slashDeck(3),
     deck: slashDeck(8),
   });
-  dispatchGameplayCommand((draft) => acceptCommand(initializeActiveBattle(draft, initial)));
+  dispatchGameplayCommand(
+    (draft) => acceptCommand(initializeActiveBattle(draft, initial)),
+    undefined,
+    defaultGameSession,
+  );
   let releaseDiscard!: () => void;
   const discard = new Promise<void>((resolve) => {
     releaseDiscard = resolve;
   });
   const ctx = {
+    battle: createBattleCapabilities(defaultGameSession),
     screen: "battle",
     playback: new PlaybackLifetime(),
     getPresentation: () => useBattlePresentationStore.getState(),
@@ -79,9 +87,9 @@ function makeUi(rejectDraw = false, onDraw?: (ctx: BattleControllerContext) => v
 describe("End Turn execution and playback", () => {
   it("commits before discard playback and blocks a second End Turn", () => {
     const { ui, ctx } = makeUi();
-    const before = readGameplayState();
+    const before = readGameplayState(defaultGameSession);
     ui.handleEndTurn();
-    const resolved = readGameplayState();
+    const resolved = readGameplayState(defaultGameSession);
     expect(getRunSessionFromState(resolved).battle.battleState.turn).toBeGreaterThan(
       getRunSessionFromState(before).battle.battleState.turn,
     );
@@ -92,30 +100,33 @@ describe("End Turn execution and playback", () => {
       getRunSessionFromState(before).battle.battleState,
     );
     ui.handleEndTurn();
-    expect(readGameplayState()).toBe(resolved);
+    expect(readGameplayState(defaultGameSession)).toBe(resolved);
     expect(vi.mocked(playBattleEvent).mock.calls.filter(([event]) => event === "endTurn")).toHaveLength(1);
   });
 
   it("keeps a focal enemy ability cue on the terminal playback shortcut", () => {
     const { ui } = makeUi();
     vi.mocked(playCardSound).mockReturnValue("slash.ogg");
-    dispatchGameplayCommand((draft) =>
-      acceptCommand(
-        initializeActiveBattle(
-          draft,
-          patchBattleState({
-            playerHealth: 1,
-            deathsDoorUsed: true,
-            gearEffects: { dodgeChance: -100 },
-            currentEnemy: { abilityIds: ["slash"] },
-            enemyHealth: 1000,
-            enemyMaxHealth: 1000,
-          }),
+    dispatchGameplayCommand(
+      (draft) =>
+        acceptCommand(
+          initializeActiveBattle(
+            draft,
+            patchBattleState({
+              playerHealth: 1,
+              deathsDoorUsed: true,
+              gearEffects: { dodgeChance: -100 },
+              currentEnemy: { abilityIds: ["slash"] },
+              enemyHealth: 1000,
+              enemyMaxHealth: 1000,
+            }),
+          ),
         ),
-      ),
+      undefined,
+      defaultGameSession,
     );
     ui.handleEndTurn();
-    expect(readBattle().battleState.playerHealth).toBe(0);
+    expect(readBattle(defaultGameSession).battleState.playerHealth).toBe(0);
     expect(playCardSound).toHaveBeenCalledExactlyOnceWith("slash");
     expect(vi.mocked(playBattleEvent).mock.calls.some(([event]) => event === "playerHit")).toBe(false);
   });
@@ -127,10 +138,10 @@ describe("End Turn execution and playback", () => {
       try {
         const { ui, ctx, releaseDiscard } = makeUi(rejectDraw);
         ui.handleEndTurn();
-        const resolved = readGameplayState();
+        const resolved = readGameplayState(defaultGameSession);
         releaseDiscard();
         await vi.runAllTimersAsync();
-        expect(readGameplayState()).toBe(resolved);
+        expect(readGameplayState(defaultGameSession)).toBe(resolved);
         expect(ctx.playback.cardPlayInProgress).toBe(false);
         expect(useBattlePresentationStore.getState().displayedBattle).toBeNull();
       } finally {
@@ -162,19 +173,19 @@ describe("End Turn execution and playback", () => {
   it("cancelling presentation on another screen leaves a playable result", async () => {
     const { ui, ctx, releaseDiscard } = makeUi();
     ui.handleEndTurn();
-    const resolved = readGameplayState();
+    const resolved = readGameplayState(defaultGameSession);
     ctx.screen = "collection";
     releaseDiscard();
     await vi.waitFor(() => expect(ctx.playback.cardPlayInProgress).toBe(false));
-    expect(readGameplayState()).toBe(resolved);
+    expect(readGameplayState(defaultGameSession)).toBe(resolved);
     expect(getRunSessionFromState(resolved).battle.battleState.turnPhase).toBe("player");
   });
 
   it("rejects End Turn while inspecting cards without advancing RNG", () => {
     const { ui } = makeUi();
     useUiStore.getState().setCardInspection("discard");
-    const before = readGameplayState();
+    const before = readGameplayState(defaultGameSession);
     ui.handleEndTurn();
-    expect(readGameplayState()).toBe(before);
+    expect(readGameplayState(defaultGameSession)).toBe(before);
   });
 });

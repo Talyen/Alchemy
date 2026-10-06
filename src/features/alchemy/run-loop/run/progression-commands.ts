@@ -1,6 +1,5 @@
 import { getBossById, rollFreshBossId } from "@/features/alchemy/shared/config";
 import { isBossOnlyDestinationOffer } from "@/features/alchemy/shared/run-flow/destination-flow";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { sampleAndApplyDestinationOffer } from "@/features/alchemy/shared/stores/destination-offer-command";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
@@ -31,7 +30,7 @@ import type { RunFlowHandlerDeps } from "./run-flow";
 
 export function createProgressionCommands(
   getAvailableDestinations: RunFlowHandlerDeps["getAvailableDestinations"],
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ) {
   function clearCompletedDestinationState(draft: RunTransaction) {
     completeRunRoom(draft);

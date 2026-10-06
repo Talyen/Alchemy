@@ -1,4 +1,5 @@
 import "../../../helpers/mock-audio";
+
 import { initializeBattleForTest as initializeActiveBattle } from "../../../helpers/run-domain-store-test";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -16,6 +17,7 @@ import { emptyShopState, createEmptyRewardState } from "@/lib/active-run-session
 import { dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { defaultBattleState } from "@/lib/battle";
 import { createScreenNavigation } from "@/features/alchemy/shell/screen-navigation";
+import { defaultGameSession } from "@/app/application-session";
 beforeEach(() => {
   vi.useFakeTimers();
   resetRunDomainStore();
@@ -26,7 +28,7 @@ function navigation() {
   const showScreen = vi.fn();
   return {
     showScreen,
-    ...createScreenNavigation({ readScreen: () => "battle", showScreen }),
+    ...createScreenNavigation({ readScreen: () => "battle", showScreen }, defaultGameSession),
   };
 }
 
@@ -34,11 +36,14 @@ describe("screen navigation", () => {
   it("reports pending navigation until commit or cancellation, including redirects", () => {
     const onPendingChange = vi.fn();
     const showScreen = vi.fn();
-    const nav = createScreenNavigation({
-      readScreen: () => "battle",
-      showScreen,
-      onPendingChange,
-    });
+    const nav = createScreenNavigation(
+      {
+        readScreen: () => "battle",
+        showScreen,
+        onPendingChange,
+      },
+      defaultGameSession,
+    );
     nav.navigateTo("rewards");
     expect(onPendingChange).toHaveBeenLastCalledWith(true);
     nav.cancelPending();
@@ -104,14 +109,18 @@ describe("screen navigation", () => {
     const { result, unmount } = renderHook(() => useScreenTransitions("battle", show), { reactStrictMode: true });
     act(() =>
       result.current.navigateTo("rewards", () =>
-        dispatchRunSessionCommand((transaction) => acceptCommand(setRunProgressActivity(transaction, "rewards"))),
+        dispatchRunSessionCommand(
+          (transaction) => acceptCommand(setRunProgressActivity(transaction, "rewards")),
+          undefined,
+          defaultGameSession,
+        ),
       ),
     );
-    expect(readRunResumeScreen()).toBe("rewards");
+    expect(readRunResumeScreen(defaultGameSession)).toBe("rewards");
     unmount();
     vi.runAllTimers();
     expect(show).not.toHaveBeenCalled();
-    expect(readRunResumeScreen()).toBe("rewards");
+    expect(readRunResumeScreen(defaultGameSession)).toBe("rewards");
   });
 
   it("rejects transitions outside the screen policy", () => {
@@ -121,7 +130,7 @@ describe("screen navigation", () => {
 
   it("resumes a saved run through the same delayed preparation and cancellation path", () => {
     const showScreen = vi.fn();
-    const nav = createScreenNavigation({ readScreen: () => "collection", showScreen });
+    const nav = createScreenNavigation({ readScreen: () => "collection", showScreen }, defaultGameSession);
     expect(() => nav.navigateTo("rewards")).toThrow("Disallowed screen transition");
     nav.resumeTo("rewards");
     expect(showScreen).not.toHaveBeenCalled();
@@ -144,39 +153,57 @@ it.each(["idle", "shop", "rewards", "battle"] as const)(
   (kind) => {
     setRunSession({ hasActiveRun: true, rewardState: { ...createEmptyRewardState(), gold: 25 } });
     if (kind !== "idle")
-      dispatchRunSessionCommand((transaction) => acceptCommand(setRunProgressActivity(transaction, "rewards")));
+      dispatchRunSessionCommand(
+        (transaction) => acceptCommand(setRunProgressActivity(transaction, "rewards")),
+        undefined,
+        defaultGameSession,
+      );
     if (kind === "shop")
       setRunSession({
         activity: { kind, data: { ...emptyShopState(), refreshesLeft: 1, purchasedSlotKeys: ["bought-slot"] } },
       });
     if (kind === "battle") {
       // Store-owned battle setup needs the raw draft; this fixture preserves the same owner as production.
-      dispatchGameplayCommand((draft) => acceptCommand(initializeActiveBattle(draft, defaultBattleState())));
+      dispatchGameplayCommand(
+        (draft) => acceptCommand(initializeActiveBattle(draft, defaultBattleState())),
+        undefined,
+        defaultGameSession,
+      );
     }
-    const before = readGameplayState();
-    const save = snapshotRun();
+    const before = readGameplayState(defaultGameSession);
+    const save = snapshotRun(undefined, defaultGameSession);
     function assertGameplayUnchanged() {
-      const after = readGameplayState();
+      const after = readGameplayState(defaultGameSession);
       expect(after.session).toBe(before.session);
       expect(after.session.activity).toBe(before.session.activity);
       expect(after.run.activeRun).toBe(before.run.activeRun);
       expect(after.runProfile).toBe(before.runProfile);
-      expect(snapshotRun()).toEqual(save);
+      expect(snapshotRun(undefined, defaultGameSession)).toEqual(save);
     }
-    showRunScreen("mystery");
+    showRunScreen("mystery", defaultGameSession);
     assertGameplayUnchanged();
-    dispatchRunSessionCommand((transaction) => acceptCommand(resetNavigation(transaction)));
+    dispatchRunSessionCommand(
+      (transaction) => acceptCommand(resetNavigation(transaction)),
+      undefined,
+      defaultGameSession,
+    );
     assertGameplayUnchanged();
-    const nav = createScreenNavigation({ readScreen: readActiveRunScreen, showScreen: showRunScreen });
+    const nav = createScreenNavigation(
+      {
+        readScreen: () => readActiveRunScreen(defaultGameSession),
+        showScreen: (screen) => showRunScreen(screen, defaultGameSession),
+      },
+      defaultGameSession,
+    );
     nav.resumeTo("shop");
     nav.cancelPending();
     vi.runAllTimers();
-    expect(readActiveRunScreen()).toBe("menu");
+    expect(readActiveRunScreen(defaultGameSession)).toBe("menu");
     assertGameplayUnchanged();
     nav.resumeTo("shop");
     nav.resumeTo("rewards", undefined, true);
     vi.runAllTimers();
-    expect(readActiveRunScreen()).toBe("rewards");
+    expect(readActiveRunScreen(defaultGameSession)).toBe("rewards");
     assertGameplayUnchanged();
   },
 );

@@ -1,4 +1,5 @@
 import "../../../helpers/mock-audio";
+
 import { setBattleActiveForTest as setHasActiveBattle } from "../../../helpers/run-domain-store-test";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -14,6 +15,7 @@ import {
   resetRunProgressSlice,
   setRunProgress,
 } from "../../../helpers/run-domain-store-test";
+import { defaultGameSession } from "@/app/application-session";
 vi.mock("@/lib/platform", () => ({
   setSteamRichPresence: vi.fn(),
 }));
@@ -23,7 +25,7 @@ beforeEach(() => {
   setRunProgress({ initialized: true });
   resetRunNavigationSlice();
   resetRunBattleSlice();
-  resetTransientRunUi();
+  resetTransientRunUi(defaultGameSession);
 });
 
 describe("useAlchemyRunController", () => {
@@ -42,13 +44,17 @@ describe("useAlchemyRunController", () => {
 
   it("resetRunState tears down run stores when navigating to menu", () => {
     vi.useFakeTimers();
-    dispatchRunSessionCommand((draft) => {
-      setHasActiveRun(draft, true);
-      setHasActiveBattle(draft, true);
-      setScreen(draft, ROUTE_SCREENS.BATTLE);
+    dispatchRunSessionCommand(
+      (draft) => {
+        setHasActiveRun(draft, true);
+        setHasActiveBattle(draft, true);
+        setScreen(draft, ROUTE_SCREENS.BATTLE);
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
     const { result } = renderController();
 
     act(() => {
@@ -60,8 +66,8 @@ describe("useAlchemyRunController", () => {
     act(() => {});
     vi.useRealTimers();
 
-    expect(readHasActiveRun()).toBe(false);
-    expect(readBattle().hasActiveBattle).toBe(false);
+    expect(readHasActiveRun(defaultGameSession)).toBe(false);
+    expect(readBattle(defaultGameSession).hasActiveBattle).toBe(false);
   });
 
   it("keeps routeCommands identity across a no-op rerender", () => {
@@ -80,7 +86,7 @@ describe("useAlchemyRunController", () => {
     const initialRenders = renders;
 
     act(() => {
-      dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 17)));
+      dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 17)), undefined, defaultGameSession);
     });
 
     expect(renders).toBe(initialRenders);

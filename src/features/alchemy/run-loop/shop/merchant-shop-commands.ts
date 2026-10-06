@@ -1,6 +1,6 @@
+import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
 import { createShopInitializer } from "./shop-initialization";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { snapshotTransactionValue } from "@/features/alchemy/shared/stores/run-session-command";
 import {
@@ -33,7 +33,7 @@ export function createMerchantShopCommands(
     talentEffects: TalentEffectManifest;
     homesteadEffects: Pick<HomesteadEffectManifest, "removeCardDiscount">;
   },
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ): MerchantShopCommands {
   const { buy: buyCard, getBuyPrice: getCardBuyPrice } = createShopPurchaseActions(
     {
@@ -99,5 +99,13 @@ export function createMerchantShopCommands(
     gameSession,
   );
 
-  return { initialize, buyCard, removeCard, refresh, getCardBuyPrice, getRemoveCardPrice, getRefreshPrice };
+  return bindSessionCapabilities(gameSession, {
+    initialize,
+    buyCard,
+    removeCard,
+    refresh,
+    getCardBuyPrice,
+    getRemoveCardPrice,
+    getRefreshPrice,
+  });
 }

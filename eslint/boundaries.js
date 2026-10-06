@@ -86,7 +86,7 @@ export const BOUNDARY_CONFIGS = [
   ),
   // Save transport adapters can reach their owning runtime, but not raw drafts.
   scope(
-    ["src/features/alchemy/shared/storage/io.ts"],
+    ["src/features/alchemy/shared/storage/io.ts", "src/app/application-session.ts"],
     SOURCE_IMPORT_PATTERNS.map((patterns) =>
       patterns === DOMAIN_STORE_PATTERNS
         ? DOMAIN_STORE_PATTERNS.map((pattern) => ({

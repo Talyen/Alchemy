@@ -1,4 +1,5 @@
 import "../../../../helpers/mock-audio";
+
 import { describe, expect, it, vi } from "vitest";
 import { shopItemSlotKey } from "@/features/alchemy/run-loop/shop/shop-slot-keys";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
@@ -27,6 +28,7 @@ import { playGoldSpend, playUISound } from "@/lib/audio";
 import type { GearInstance } from "@/lib/gear";
 import { createRunRngState } from "@/lib/rng";
 import { readActivityData } from "@/lib/active-run-session";
+import { defaultGameSession } from "@/app/application-session";
 type Actions = ReturnType<typeof buildActions>;
 
 const basicGear: GearInstance = {
@@ -49,16 +51,20 @@ const shops = [
       });
     },
     buy: (actions: Actions) => {
-      const card = requiredItem(readActivityData(readRunSession().activity, "shop").cards[0], "merchant card");
+      const card = requiredItem(
+        readActivityData(readRunSession(defaultGameSession).activity, "shop").cards[0],
+        "merchant card",
+      );
       return actions.merchant.buyCard(card, shopItemSlotKey(card.id, 0));
     },
     refresh: (actions: Actions) => actions.merchant.refresh(),
-    read: () => readActivityData(readRunSession().activity, "shop"),
+    read: () => readActivityData(readRunSession(defaultGameSession).activity, "shop"),
     buyPrice: SHOP_CARD_PRICE as number | null,
     refreshPrice: SHOP_REFRESH_PRICE,
-    offeringIds: () => readActivityData(readRunSession().activity, "shop").cards.map((card) => card.id),
+    offeringIds: () =>
+      readActivityData(readRunSession(defaultGameSession).activity, "shop").cards.map((card) => card.id),
 
-    replayIds: () => readActivityData(readRunSession().activity, "shop").cards.map((card) => card.id),
+    replayIds: () => readActivityData(readRunSession(defaultGameSession).activity, "shop").cards.map((card) => card.id),
     restockDedup: true,
     initialize: (actions: Actions) => actions.merchant.initialize(),
     replayRefresh: true,
@@ -77,17 +83,19 @@ const shops = [
     },
     buy: (actions: Actions) => {
       const potion = requiredItem(
-        readActivityData(readRunSession().activity, "alchemist").potions[0],
+        readActivityData(readRunSession(defaultGameSession).activity, "alchemist").potions[0],
         "alchemist potion",
       );
       return actions.alchemist.buyPotion(potion, shopItemSlotKey(potion.id, 0));
     },
     refresh: (actions: Actions) => actions.alchemist.refresh(),
-    read: () => readActivityData(readRunSession().activity, "alchemist"),
+    read: () => readActivityData(readRunSession(defaultGameSession).activity, "alchemist"),
     buyPrice: ALCHEMIST_POTION_PRICE as number | null,
     refreshPrice: ALCHEMIST_REFRESH_PRICE,
-    offeringIds: () => readActivityData(readRunSession().activity, "alchemist").potions.map((card) => card.id),
-    replayIds: () => readActivityData(readRunSession().activity, "alchemist").potions.map((card) => card.id),
+    offeringIds: () =>
+      readActivityData(readRunSession(defaultGameSession).activity, "alchemist").potions.map((card) => card.id),
+    replayIds: () =>
+      readActivityData(readRunSession(defaultGameSession).activity, "alchemist").potions.map((card) => card.id),
     restockDedup: true,
     initialize: (actions: Actions) => actions.alchemist.initialize(),
     replayRefresh: true,
@@ -106,17 +114,19 @@ const shops = [
     },
     buy: (actions: Actions) => {
       const trinket = requiredItem(
-        readActivityData(readRunSession().activity, "trinket-shop").trinkets[0],
+        readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop").trinkets[0],
         "trinket offering",
       );
       return actions.trinket.buy(trinket, shopItemSlotKey(trinket.id, 0));
     },
     refresh: (actions: Actions) => actions.trinket.refresh(),
-    read: () => readActivityData(readRunSession().activity, "trinket-shop"),
+    read: () => readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop"),
     buyPrice: TRINKET_SHOP_TRINKET_PRICE as number | null,
     refreshPrice: SHOP_REFRESH_PRICE,
-    offeringIds: () => readActivityData(readRunSession().activity, "trinket-shop").trinkets.map((entry) => entry.id),
-    replayIds: () => readActivityData(readRunSession().activity, "trinket-shop").trinkets.map((entry) => entry.id),
+    offeringIds: () =>
+      readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop").trinkets.map((entry) => entry.id),
+    replayIds: () =>
+      readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop").trinkets.map((entry) => entry.id),
     restockDedup: true,
     initialize: (actions: Actions) => actions.trinket.initialize(),
     replayRefresh: true,
@@ -139,19 +149,23 @@ const shops = [
     },
     buy: (actions: Actions) => {
       const instance = requiredItem(
-        readActivityData(readRunSession().activity, "equipment-shop").gear[0],
+        readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop").gear[0],
         "gear offering",
       );
       return actions.equipment.buy(instance, instance.instanceId);
     },
     refresh: (actions: Actions) => actions.equipment.refresh(),
-    read: () => readActivityData(readRunSession().activity, "equipment-shop"),
+    read: () => readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop"),
     buyPrice: null as number | null,
     refreshPrice: SHOP_REFRESH_PRICE,
     offeringIds: () =>
-      readActivityData(readRunSession().activity, "equipment-shop").gear.map((item) => item.instanceId),
+      readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop").gear.map(
+        (item) => item.instanceId,
+      ),
     replayIds: () =>
-      readActivityData(readRunSession().activity, "equipment-shop").gear.map((item) => item.definitionId),
+      readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop").gear.map(
+        (item) => item.definitionId,
+      ),
     restockDedup: false,
     initialize: (actions: Actions) => actions.equipment.initialize(),
     replayRefresh: true,
@@ -165,15 +179,15 @@ describe("shop action isolation", () => {
       shop.seed();
       const actions = buildActions();
       const price = shop.buyPrice ?? actions.equipment.getBuyPrice(basicGear);
-      const deckBefore = readActiveRun().runDeck.length;
+      const deckBefore = readActiveRun(defaultGameSession).runDeck.length;
 
       expect(shop.buy(actions)).toBe(true);
-      expect(readRunProfile().gold).toBe(999 - price);
+      expect(readRunProfile(defaultGameSession).gold).toBe(999 - price);
       expect(shop.read().firstPurchaseUsed).toBe(true);
       expect(shop.read().purchasedSlotKeys.length).toBeGreaterThan(0);
       expect(playGoldSpend).toHaveBeenCalledOnce();
       if (shop.name === "merchant") {
-        expect(readActiveRun().runDeck.length).toBe(deckBefore + 1);
+        expect(readActiveRun(defaultGameSession).runDeck.length).toBe(deckBefore + 1);
       }
     });
 
@@ -182,12 +196,12 @@ describe("shop action isolation", () => {
       shop.seed();
       const actions = buildActions();
       const commits: number[] = [];
-      const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
+      const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision), defaultGameSession);
 
       expect(shop.buy(actions)).toBe(false);
       unsubscribe();
 
-      expect(readRunProfile().gold).toBe(0);
+      expect(readRunProfile(defaultGameSession).gold).toBe(0);
       expect(commits).toHaveLength(0);
       expect(playGoldSpend).not.toHaveBeenCalled();
     });
@@ -201,12 +215,12 @@ describe("shop action isolation", () => {
       const keysAfterFirst = [...shop.read().purchasedSlotKeys];
       vi.mocked(playGoldSpend).mockClear();
       const commits: number[] = [];
-      const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
+      const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision), defaultGameSession);
 
       expect(shop.buy(actions)).toBe(false);
       unsubscribe();
 
-      expect(readRunProfile().gold).toBe(999 - price);
+      expect(readRunProfile(defaultGameSession).gold).toBe(999 - price);
       expect(shop.read().purchasedSlotKeys).toEqual(keysAfterFirst);
       expect(commits).toHaveLength(0);
       expect(playGoldSpend).not.toHaveBeenCalled();
@@ -219,13 +233,13 @@ describe("shop action isolation", () => {
       shop.seedRefresh();
       const actions = buildActions();
       const commits: number[] = [];
-      const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
+      const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision), defaultGameSession);
 
       expect(shop.refresh(actions)).toBe(true);
       unsubscribe();
 
       expect(shop.read().refreshesLeft).toBe(0);
-      expect(readRunProfile().gold).toBe(999 - shop.refreshPrice);
+      expect(readRunProfile(defaultGameSession).gold).toBe(999 - shop.refreshPrice);
       expect(shop.read().purchasedSlotKeys).toEqual([]);
       expect(commits).toHaveLength(1);
       expect(playGoldSpend).toHaveBeenCalledOnce();
@@ -237,7 +251,7 @@ describe("shop action isolation", () => {
       shop.seedNoRefresh();
       const actions = buildActions();
       const commits: number[] = [];
-      const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
+      const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision), defaultGameSession);
 
       expect(shop.refresh(actions)).toBe(false);
       unsubscribe();
@@ -300,16 +314,19 @@ describe("shop action isolation", () => {
     it("a stale merchant purchase cannot spend gold after entering the alchemist", () => {
       setRunProgress({ gold: 999 });
       setShopState(createInitialShopState());
-      const card = requiredItem(readActivityData(readRunSession().activity, "shop").cards[0], "merchant card");
+      const card = requiredItem(
+        readActivityData(readRunSession(defaultGameSession).activity, "shop").cards[0],
+        "merchant card",
+      );
       setAlchemistState(createInitialAlchemistState());
       const actions = buildActions();
       expect(actions.merchant.buyCard(card, shopItemSlotKey(card.id, 0))).toBe(false);
       expect(actions.merchant.refresh()).toBe(false);
       expect(actions.merchant.removeCard(0)).toBe(false);
-      expect(readRunProfile().gold).toBe(999);
-      expect(readRunSession().activity.kind).toBe("alchemist");
+      expect(readRunProfile(defaultGameSession).gold).toBe(999);
+      expect(readRunSession(defaultGameSession).activity.kind).toBe("alchemist");
 
-      expect(readActivityData(readRunSession().activity, "alchemist").firstPurchaseUsed).toBe(false);
+      expect(readActivityData(readRunSession(defaultGameSession).activity, "alchemist").firstPurchaseUsed).toBe(false);
     });
   });
 });

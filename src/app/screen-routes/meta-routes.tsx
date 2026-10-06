@@ -1,3 +1,4 @@
+import { defaultGameSession } from "@/app/application-session";
 import { playUISound } from "@/lib/audio";
 import { IS_DEMO } from "@/lib/game-edition";
 import { openFullGameWishlist } from "@/lib/platform";
@@ -39,28 +40,48 @@ import {
 import type { MetaRouteCtx } from "./route-ctx";
 import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
 
-const setCollectionPageCommand = createRunSessionCommand((...args: Parameters<typeof setCollectionPage>) =>
-  acceptCommand(setCollectionPage(...args)),
+const setCollectionPageCommand = createRunSessionCommand(
+  (...args: Parameters<typeof setCollectionPage>) => acceptCommand(setCollectionPage(...args)),
+  undefined,
+  defaultGameSession,
 );
 const handleCollectionTabChangeCommand = createRunSessionCommand(
   (...args: Parameters<typeof handleCollectionTabChange>) => acceptCommand(handleCollectionTabChange(...args)),
+  undefined,
+  defaultGameSession,
 );
-const constructBuildingCommand = createRunSessionCommand((...args: Parameters<typeof constructBuilding>) => {
-  const ok = constructBuilding(...args);
-  return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
-});
-const plantFarmCommand = createRunSessionCommand((...args: Parameters<typeof plantFarm>) => {
-  const ok = plantFarm(...args);
-  return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
-});
-const completeResearchCommand = createRunSessionCommand((...args: Parameters<typeof completeResearch>) => {
-  const ok = completeResearch(...args);
-  return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
-});
-const bondCompanionCommand = createRunSessionCommand((...args: Parameters<typeof bondCompanion>) => {
-  const ok = bondCompanion(...args);
-  return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
-});
+const constructBuildingCommand = createRunSessionCommand(
+  (...args: Parameters<typeof constructBuilding>) => {
+    const ok = constructBuilding(...args);
+    return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
+  },
+  undefined,
+  defaultGameSession,
+);
+const plantFarmCommand = createRunSessionCommand(
+  (...args: Parameters<typeof plantFarm>) => {
+    const ok = plantFarm(...args);
+    return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
+  },
+  undefined,
+  defaultGameSession,
+);
+const completeResearchCommand = createRunSessionCommand(
+  (...args: Parameters<typeof completeResearch>) => {
+    const ok = completeResearch(...args);
+    return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
+  },
+  undefined,
+  defaultGameSession,
+);
+const bondCompanionCommand = createRunSessionCommand(
+  (...args: Parameters<typeof bondCompanion>) => {
+    const ok = bondCompanion(...args);
+    return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
+  },
+  undefined,
+  defaultGameSession,
+);
 
 function MenuScreenRoute({ routeCommands }: MetaRouteCtx) {
   const commands = routeCommands.meta;

@@ -1,4 +1,3 @@
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
@@ -10,7 +9,7 @@ import type { CompleteRunVictory, RunFlowHandlerDeps } from "./run-flow";
 export function createProgressionHandlers(
   deps: RunFlowHandlerDeps,
   completeRunVictory: CompleteRunVictory,
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ) {
   const commands = createProgressionCommands(deps.getAvailableDestinations, gameSession);
   const prepareDestinationScreen = commands.prepareDestinationScreen;

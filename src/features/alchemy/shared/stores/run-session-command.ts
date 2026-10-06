@@ -1,5 +1,4 @@
 import type { CommandOutcome, SynchronousResult } from "./command-outcome";
-import { defaultGameSession } from "./default-game-session";
 import type { GameSession } from "./game-session-types";
 import { dispatchGameplayCommand, subscribeRunSessionCommits } from "./gameplay-command";
 import { unwrapReadonlyValue } from "./readonly-view";
@@ -15,8 +14,8 @@ export type { RunTransaction } from "./run-transaction";
 
 export function dispatchRunSessionCommand<T>(
   execute: (transaction: RunTransaction) => CommandOutcome<T> & { value: SynchronousResult<T> },
-  options?: { afterCommit?: (result: T) => void },
-  gameSession: GameSession = defaultGameSession,
+  options: { afterCommit?: (result: T) => void } | undefined,
+  gameSession: GameSession,
 ): T {
   return dispatchGameplayCommand<T>(
     (draft) => {
@@ -37,8 +36,8 @@ export function dispatchRunSessionCommand<T>(
 
 export function createRunSessionCommand<Args extends unknown[], Ret>(
   mutate: (transaction: RunTransaction, ...args: Args) => CommandOutcome<Ret> & { value: SynchronousResult<Ret> },
-  options?: { afterCommit?: (result: Ret) => void },
-  gameSession: GameSession = defaultGameSession,
+  options: { afterCommit?: (result: Ret) => void } | undefined,
+  gameSession: GameSession,
 ): (...args: Args) => Ret {
   return (...args) =>
     dispatchRunSessionCommand<Ret>((transaction) => mutate(transaction, ...args), options, gameSession);

@@ -18,6 +18,7 @@ import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/share
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
+import { defaultGameSession } from "@/app/application-session";
 
 describe("battle-presentation-store", () => {
   beforeEach(resetBattlePresentationAndRun);
@@ -153,7 +154,7 @@ describe("battle-presentation-store", () => {
       variant: "activate",
     });
     expect(useBattlePresentationStore.getState().cardGhosts).toHaveLength(1);
-    teardownRun();
+    teardownRun(defaultGameSession);
     expect(useBattlePresentationStore.getState().cardGhosts).toEqual([]);
   });
 
@@ -170,7 +171,7 @@ describe("battle-presentation-store", () => {
       delay: 0,
       variant: "activate",
     });
-    clearBattlePresentationUi();
+    clearBattlePresentationUi(defaultGameSession);
     const s = useBattlePresentationStore.getState();
     expect(s.cardGhosts).toEqual([]);
     expect(s.playerImpactCue).toBeNull();
@@ -182,12 +183,16 @@ describe("battle-presentation-store", () => {
 
   function activateBattle() {
     vi.useFakeTimers();
-    dispatchRunSessionCommand((draft) => {
-      setHasActiveBattle(draft, true);
-      setScreen(draft, ROUTE_SCREENS.BATTLE);
+    dispatchRunSessionCommand(
+      (draft) => {
+        setHasActiveBattle(draft, true);
+        setScreen(draft, ROUTE_SCREENS.BATTLE);
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
     return useBattlePresentationStore.getState().showCombatTexts;
   }
 
@@ -403,7 +408,11 @@ describe("battle-presentation-store", () => {
     await vi.advanceTimersByTimeAsync(COMBAT_TEXT_LIFETIME_MS - 300);
     expect(useBattlePresentationStore.getState().floatingCombatBursts).toHaveLength(1);
     useBattlePresentationStore.getState().resetPresentation();
-    dispatchRunSessionCommand((draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.COLLECTION)));
+    dispatchRunSessionCommand(
+      (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.COLLECTION)),
+      undefined,
+      defaultGameSession,
+    );
     show([{ target: "enemy", kind: "damage", stat: "physical", amount: 9 }]);
     await vi.advanceTimersByTimeAsync(COMBAT_TEXT_LIFETIME_MS);
     expect(useBattlePresentationStore.getState().floatingCombatBursts).toEqual([]);

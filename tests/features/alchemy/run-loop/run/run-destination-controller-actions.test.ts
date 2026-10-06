@@ -21,6 +21,7 @@ import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
 import { resetAllTestStores, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
+import { defaultGameSession } from "@/app/application-session";
 beforeEach(() => {
   resetAllTestStores();
 });
@@ -33,14 +34,17 @@ describe("run destination controller actions", () => {
       setRunSession({ activity: { kind: "transmutation", data: emptyAlchemyVisit() } });
       const navigateTo = vi.fn((_screen: string, prepare?: () => void) => prepare?.());
       const labyrinthClearNode = vi.fn();
-      const rooms = readActiveRun().roomsEncountered;
-      createRunFlow(makeFlowHandlerDeps({ navigateTo, labyrinthClearNode })).advanceToNextDestination();
+      const rooms = readActiveRun(defaultGameSession).roomsEncountered;
+      createRunFlow(
+        makeFlowHandlerDeps({ navigateTo, labyrinthClearNode }),
+        defaultGameSession,
+      ).advanceToNextDestination();
       expect(navigateTo).toHaveBeenCalledWith(
         contentSystemType === CONTENT_SYSTEMS.LABYRINTH ? ROUTE_SCREENS.LABYRINTH_MAP : ROUTE_SCREENS.DESTINATION,
         expect.any(Function),
       );
-      expect(readActiveRun().roomsEncountered).toBe(rooms + 1);
-      expect(readRunSession().activity.kind).toBe(
+      expect(readActiveRun(defaultGameSession).roomsEncountered).toBe(rooms + 1);
+      expect(readRunSession(defaultGameSession).activity.kind).toBe(
         contentSystemType === CONTENT_SYSTEMS.LABYRINTH ? "labyrinth-map" : "destination",
       );
       expect(labyrinthClearNode).toHaveBeenCalledTimes(contentSystemType === CONTENT_SYSTEMS.LABYRINTH ? 1 : 0);
@@ -48,28 +52,35 @@ describe("run destination controller actions", () => {
   );
 
   it("claimRewardChoice rejects a choice that is not offered", () => {
-    dispatchRunSessionCommand((draft) => acceptCommand(setRewardState(draft, createEmptyRewardState())));
+    dispatchRunSessionCommand(
+      (draft) => acceptCommand(setRewardState(draft, createEmptyRewardState())),
+      undefined,
+      defaultGameSession,
+    );
 
-    const handlers = createRunFlow(makeFlowHandlerDeps());
+    const handlers = createRunFlow(makeFlowHandlerDeps(), defaultGameSession);
     handlers.claimRewardChoice("slash");
-    expect(readRunSession().rewardFlow.state.selectedId).toBeNull();
-    expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(false);
+    expect(readRunSession(defaultGameSession).rewardFlow.state.selectedId).toBeNull();
+    expect(readRunSession(defaultGameSession).rewardFlow.claim.kind === "reward").toBe(false);
   });
 
   it("prepareDestinationScreen sets boss id for boss-only destinations", () => {
     vi.spyOn(config, "rollFreshBossId").mockReturnValue("mimic");
 
-    dispatchRunSessionCommand((draft) =>
-      acceptCommand(
-        setRewardState(draft, {
-          ...createEmptyRewardState(),
-          destinations: [DESTINATIONS.BOSS_COMBAT],
-        }),
-      ),
+    dispatchRunSessionCommand(
+      (draft) =>
+        acceptCommand(
+          setRewardState(draft, {
+            ...createEmptyRewardState(),
+            destinations: [DESTINATIONS.BOSS_COMBAT],
+          }),
+        ),
+      undefined,
+      defaultGameSession,
     );
 
-    createRunFlow(makeFlowHandlerDeps()).prepareDestinationScreen();
-    expect(readRunSession().rewardFlow.state.selectedBossId).toBe("mimic");
+    createRunFlow(makeFlowHandlerDeps(), defaultGameSession).prepareDestinationScreen();
+    expect(readRunSession(defaultGameSession).rewardFlow.state.selectedBossId).toBe("mimic");
   });
 
   it("continues from campfire through the progression handler", () => {
@@ -78,17 +89,17 @@ describe("run destination controller actions", () => {
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => {
       commit = onCommitted;
     });
-    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo }));
+    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession);
 
     handlers.handleCampfireContinue();
 
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DESTINATION, expect.any(Function));
-    expect(readActiveRun().roomsEncountered).toBe(0);
+    expect(readActiveRun(defaultGameSession).roomsEncountered).toBe(0);
 
     commit?.();
 
-    expect(readActiveRun().roomsEncountered).toBe(1);
-    expect(readRunSession().activity.kind).toBe("destination");
+    expect(readActiveRun(defaultGameSession).roomsEncountered).toBe(1);
+    expect(readRunSession(defaultGameSession).activity.kind).toBe("destination");
   });
 
   it("advanceToNextDestination samples the next picker at the live destination index after a non-combat continue", () => {
@@ -109,12 +120,13 @@ describe("run destination controller actions", () => {
           return [DESTINATIONS.BOSS_COMBAT];
         },
       }),
+      defaultGameSession,
     );
 
     handlers.advanceToNextDestination();
 
     expect(captured.at(-1)?.destinationIndexInAct).toBe(7);
-    expect(readRunSession().rewardFlow.state.destinations).toEqual([DESTINATIONS.BOSS_COMBAT]);
+    expect(readRunSession(defaultGameSession).rewardFlow.state.destinations).toEqual([DESTINATIONS.BOSS_COMBAT]);
   });
 
   it("advanceToNextDestination carries the live index so Corruption suppression applies after a non-combat continue", () => {
@@ -137,15 +149,16 @@ describe("run destination controller actions", () => {
             hasAnyOwnedGear: true,
             previousDestination: getPreviousDestination(
               opts?.destinationIndexInAct ?? 0,
-              readActiveRun().completedDestinations,
+              readActiveRun(defaultGameSession).completedDestinations,
             ),
           }),
       }),
+      defaultGameSession,
     );
 
     handlers.advanceToNextDestination();
 
-    const offered = readRunSession().rewardFlow.state.destinations;
+    const offered = readRunSession(defaultGameSession).rewardFlow.state.destinations;
     expect(offered.length).toBeGreaterThan(0);
     expect(offered).not.toContain(DESTINATIONS.CORRUPTION);
   });
@@ -167,33 +180,40 @@ describe("run destination controller actions", () => {
     "advanceToNextDestination clears leftover mystery visit state ($name)",
     ({ contentSystemType, expectedScreen, expectLabyrinthClear }) => {
       setRunProgress({ contentSystemType });
-      dispatchRunSessionCommand((draft) => {
-        setMysteryEvent(draft, {
-          id: "stale-event",
-          title: "Stale Event",
-          art: "",
-          narrative: "Should be cleared on continue.",
-          choices: [{ label: "Leave", effects: [] }],
-        });
-        setMysteryCardChoices(draft, [
-          { id: "slash", title: "Slash", descriptionLines: [""], art: "", cost: 1, effects: [] },
-        ]);
-        setMysteryGrantedTrinketIds(draft, ["bone-charm"]);
-        setMysteryGrantedGearInstances(draft, [
-          { instanceId: "stale-gear", definitionId: "dagger-basic", affixes: [] },
-        ]);
-        setMysteryChosenCardId(draft, "slash");
-        setMysteryChosenChoice(draft, { label: "Leave", effects: [] });
+      dispatchRunSessionCommand(
+        (draft) => {
+          setMysteryEvent(draft, {
+            id: "stale-event",
+            title: "Stale Event",
+            art: "",
+            narrative: "Should be cleared on continue.",
+            choices: [{ label: "Leave", effects: [] }],
+          });
+          setMysteryCardChoices(draft, [
+            { id: "slash", title: "Slash", descriptionLines: [""], art: "", cost: 1, effects: [] },
+          ]);
+          setMysteryGrantedTrinketIds(draft, ["bone-charm"]);
+          setMysteryGrantedGearInstances(draft, [
+            { instanceId: "stale-gear", definitionId: "dagger-basic", affixes: [] },
+          ]);
+          setMysteryChosenCardId(draft, "slash");
+          setMysteryChosenChoice(draft, { label: "Leave", effects: [] });
 
-        return acceptCommand();
-      });
+          return acceptCommand();
+        },
+        undefined,
+        defaultGameSession,
+      );
 
       const labyrinthClearNode = vi.fn();
       const navigateTo = vi.fn((_screen: string, prepare?: () => void) => prepare?.());
-      const roomsBeforeExit = readActiveRun().roomsEncountered;
-      createRunFlow(makeFlowHandlerDeps({ navigateTo, labyrinthClearNode })).advanceToNextDestination();
-      expect(readRunSession().activity.kind).not.toBe("mystery");
-      expect(readActiveRun().roomsEncountered).toBe(roomsBeforeExit + 1);
+      const roomsBeforeExit = readActiveRun(defaultGameSession).roomsEncountered;
+      createRunFlow(
+        makeFlowHandlerDeps({ navigateTo, labyrinthClearNode }),
+        defaultGameSession,
+      ).advanceToNextDestination();
+      expect(readRunSession(defaultGameSession).activity.kind).not.toBe("mystery");
+      expect(readActiveRun(defaultGameSession).roomsEncountered).toBe(roomsBeforeExit + 1);
       expect(navigateTo.mock.calls[0]?.[0]).toBe(expectedScreen);
       if (expectLabyrinthClear) expect(labyrinthClearNode).toHaveBeenCalledOnce();
       else expect(labyrinthClearNode).not.toHaveBeenCalled();
@@ -209,18 +229,22 @@ describe("run destination controller actions", () => {
       lastOfferedDestinations: offered,
       destinationRoundsSinceOffered: { [DESTINATIONS.CAMPFIRE]: 0 },
     });
-    dispatchRunSessionCommand((draft) => acceptCommand(setRewardState(draft, createEmptyRewardState())));
+    dispatchRunSessionCommand(
+      (draft) => acceptCommand(setRewardState(draft, createEmptyRewardState())),
+      undefined,
+      defaultGameSession,
+    );
 
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
-    createRunFlow(makeFlowHandlerDeps({ navigateTo })).returnToCurrentDestination();
+    createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession).returnToCurrentDestination();
 
-    expect(readActiveRun().roomsEncountered).toBe(3);
-    expect(readActiveRun().destinationIndexInAct).toBe(1);
-    expect(readActiveRun().completedDestinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
-    expect(readActiveRun().destinationRoundsSinceOffered).toEqual({
+    expect(readActiveRun(defaultGameSession).roomsEncountered).toBe(3);
+    expect(readActiveRun(defaultGameSession).destinationIndexInAct).toBe(1);
+    expect(readActiveRun(defaultGameSession).completedDestinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
+    expect(readActiveRun(defaultGameSession).destinationRoundsSinceOffered).toEqual({
       [DESTINATIONS.CAMPFIRE]: 0,
     });
-    expect(readRunSession().rewardFlow.state.destinations).toEqual(offered);
+    expect(readRunSession(defaultGameSession).rewardFlow.state.destinations).toEqual(offered);
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DESTINATION, expect.any(Function));
   });
 
@@ -232,21 +256,27 @@ describe("run destination controller actions", () => {
       completedDestinations: [DESTINATIONS.NORMAL_COMBAT],
       lastOfferedDestinations: offered,
     });
-    dispatchRunSessionCommand((draft) =>
-      acceptCommand(setRewardState(draft, { ...createEmptyRewardState(), destinations: offered })),
+    dispatchRunSessionCommand(
+      (draft) => acceptCommand(setRewardState(draft, { ...createEmptyRewardState(), destinations: offered })),
+      undefined,
+      defaultGameSession,
     );
     expect(
-      dispatchRunSessionCommand((draft) => acceptCommand(beginDestinationClaim(draft, DESTINATIONS.CORRUPTION))),
+      dispatchRunSessionCommand(
+        (draft) => acceptCommand(beginDestinationClaim(draft, DESTINATIONS.CORRUPTION)),
+        undefined,
+        defaultGameSession,
+      ),
     ).toBe(true);
 
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
-    createRunFlow(makeFlowHandlerDeps({ navigateTo })).returnToCurrentDestination();
+    createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession).returnToCurrentDestination();
 
-    expect(readRunSession().rewardFlow.claim).toEqual({ kind: "idle" });
-    expect(readActiveRun().roomsEncountered).toBe(3);
-    expect(readActiveRun().destinationIndexInAct).toBe(1);
-    expect(readActiveRun().completedDestinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
-    expect(readRunSession().rewardFlow.state.destinations).toEqual(offered);
+    expect(readRunSession(defaultGameSession).rewardFlow.claim).toEqual({ kind: "idle" });
+    expect(readActiveRun(defaultGameSession).roomsEncountered).toBe(3);
+    expect(readActiveRun(defaultGameSession).destinationIndexInAct).toBe(1);
+    expect(readActiveRun(defaultGameSession).completedDestinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
+    expect(readRunSession(defaultGameSession).rewardFlow.state.destinations).toEqual(offered);
   });
 
   it("commitDestinationClaim seeds lastOfferedDestinations so Leave can restore an injected picker", () => {
@@ -258,20 +288,24 @@ describe("run destination controller actions", () => {
       completedDestinations: [],
       lastOfferedDestinations: [],
     });
-    dispatchRunSessionCommand((draft) =>
-      acceptCommand(setRewardState(draft, { ...createEmptyRewardState(), destinations: offered })),
+    dispatchRunSessionCommand(
+      (draft) => acceptCommand(setRewardState(draft, { ...createEmptyRewardState(), destinations: offered })),
+      undefined,
+      defaultGameSession,
     );
 
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
-    createRunFlow(makeFlowHandlerDeps({ navigateTo })).handleDestinationChoice(DESTINATIONS.CORRUPTION);
+    createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession).handleDestinationChoice(
+      DESTINATIONS.CORRUPTION,
+    );
 
-    expect(readActiveRun().lastOfferedDestinations).toEqual(offered);
-    expect(readActiveRun().completedDestinations).toEqual([DESTINATIONS.CORRUPTION]);
+    expect(readActiveRun(defaultGameSession).lastOfferedDestinations).toEqual(offered);
+    expect(readActiveRun(defaultGameSession).completedDestinations).toEqual([DESTINATIONS.CORRUPTION]);
 
-    createRunFlow(makeFlowHandlerDeps({ navigateTo })).returnToCurrentDestination();
+    createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession).returnToCurrentDestination();
 
-    expect(readRunSession().rewardFlow.state.destinations).toEqual(offered);
-    expect(readActiveRun().destinationIndexInAct).toBe(0);
-    expect(readActiveRun().completedDestinations).toEqual([]);
+    expect(readRunSession(defaultGameSession).rewardFlow.state.destinations).toEqual(offered);
+    expect(readActiveRun(defaultGameSession).destinationIndexInAct).toBe(0);
+    expect(readActiveRun(defaultGameSession).completedDestinations).toEqual([]);
   });
 });

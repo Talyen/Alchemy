@@ -1,4 +1,3 @@
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 import { REWARD_ROUTES, ROUTE_SCREENS, type Screen } from "@/lib/routing";
@@ -43,7 +42,7 @@ export function createRewardHandlers(
     completeRunVictory,
     handleActComplete,
   }: { completeRunVictory: CompleteRunVictory; handleActComplete: HandleActComplete },
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ) {
   function finishRewards(choiceId: string | null) {
     const commit = claimRunReward(choiceId, gameSession);

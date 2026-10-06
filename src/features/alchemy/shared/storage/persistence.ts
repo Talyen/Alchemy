@@ -7,14 +7,13 @@ import { runProfilePersistenceCodec } from "@/features/alchemy/shared/stores/run
 import type { ActiveRunData } from "@/lib/active-run-session";
 import { getOwnedUniqueDefinitionIds } from "@/lib/gear";
 import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
-import { defaultGameSession } from "../stores/default-game-session";
 import type { GameSession } from "../stores/game-session-types";
 import { sessionRuntime } from "../stores/session-runtime";
 import type { AlchemyPersistenceFields, UnstampedSaveData } from "./types";
 
 export type { AlchemyPersistenceFields } from "./types";
 
-export function encodePersistenceFields(gameSession: GameSession = defaultGameSession): AlchemyPersistenceFields {
+export function encodePersistenceFields(gameSession: GameSession): AlchemyPersistenceFields {
   return {
     ...sessionRuntime(gameSession).settingsCodec.encode(),
     ...profilePersistenceCodec.encode(gameSession),
@@ -29,10 +28,7 @@ function unionOwnedUniquesIntoDiscovered(draft: GameplayDraft): void {
   discoverUniqueIds(draft, [...owned]);
 }
 
-export function hydrateAlchemyPersistenceFields(
-  fields: AlchemyPersistenceFields,
-  gameSession: GameSession = defaultGameSession,
-): void {
+export function hydrateAlchemyPersistenceFields(fields: AlchemyPersistenceFields, gameSession: GameSession): void {
   sessionRuntime(gameSession).settingsCodec.hydrate(fields);
   dispatchGameplayCommand(
     (draft) => {
@@ -48,16 +44,13 @@ export function hydrateAlchemyPersistenceFields(
   );
 }
 
-export function subscribeAlchemyPersistence(
-  listener: () => void,
-  gameSession: GameSession = defaultGameSession,
-): () => void {
+export function subscribeAlchemyPersistence(listener: () => void, gameSession: GameSession): () => void {
   return subscribePersistenceCommits(listener, gameSession);
 }
 
 export function buildAlchemySaveDataFromStores(
   activeRun: ActiveRunData | null,
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ): UnstampedSaveData {
   // Single save join point: flat persistence fields (settings/profile/gear/run
   // profile codecs) plus the active-run resume snapshot from run-lifecycle's

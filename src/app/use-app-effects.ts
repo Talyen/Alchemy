@@ -1,3 +1,4 @@
+import { defaultGameSession } from "@/app/application-session";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { MUSIC_KEYS } from "@/lib/game-constants";
 import {
@@ -34,7 +35,7 @@ interface AppAudioEffectsOptions {
 
 function pickMusicKey(screen: Screen): string {
   if (screen !== "battle") return MUSIC_KEYS.MENU;
-  const battleStore = readBattle();
+  const battleStore = readBattle(defaultGameSession);
   if (!battleStore.hasActiveBattle) return MUSIC_KEYS.BATTLE;
   const enemy = battleStore.battleState.currentEnemy;
   if (enemy.enemyType !== "boss") return MUSIC_KEYS.BATTLE;

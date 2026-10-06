@@ -1,5 +1,4 @@
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { readActiveRunScreen, readRunRevision } from "@/features/alchemy/shared/stores/run-reads";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
@@ -38,7 +37,7 @@ function validateConfig(config: CareerConfig) {
     throw new Error("Seed must be an unsigned 32-bit integer");
 }
 
-function injectDiagnosticFault(config: CareerConfig, step: number, gameSession: GameSession = defaultGameSession) {
+function injectDiagnosticFault(config: CareerConfig, step: number, gameSession: GameSession) {
   if (config.diagnosticFault?.at !== step) return;
   const fault = config.diagnosticFault;
   dispatchRunSessionCommand(

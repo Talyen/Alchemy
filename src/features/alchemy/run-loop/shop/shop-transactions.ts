@@ -1,4 +1,3 @@
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import {
   acceptCommand,
@@ -18,7 +17,7 @@ export interface ShopTransactionResult<T = undefined> {
 
 function playShopSpendFeedback(
   result: Pick<ShopTransactionResult<unknown>, "committed" | "price">,
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ): void {
   if (result.committed && result.price > 0) sessionFeedback(gameSession).playGoldSpend();
 }
@@ -26,8 +25,8 @@ function playShopSpendFeedback(
 export function runShopTransaction<T>(
   activity: "shop" | "alchemist" | "trinket-shop" | "equipment-shop",
   recipe: (draft: RunTransaction) => ShopTransactionResult<T>,
-  successSound?: Parameters<typeof playUISound>[0],
-  gameSession: GameSession = defaultGameSession,
+  successSound: Parameters<typeof playUISound>[0] | undefined,
+  gameSession: GameSession,
 ): ShopTransactionResult<T | undefined> {
   const result = dispatchRunSessionCommand(
     (draft) => {

@@ -1,7 +1,6 @@
 import type { Draft } from "immer";
 import { produce } from "immer";
 import type { CommandOutcome, SynchronousResult } from "./command-outcome";
-import { defaultGameSession } from "./default-game-session";
 import type { GameSession } from "./game-session-types";
 import type { GameplayState } from "./gameplay-state";
 import { subscribeGameplayCommits } from "./gameplay-state-store";
@@ -33,8 +32,8 @@ function assertSynchronousResult(result: unknown): void {
 
 export function dispatchGameplayCommand<T>(
   execute: (draft: GameplayDraft) => CommandOutcome<T> & { value: SynchronousResult<T> },
-  options?: { afterCommit?: (result: T) => void },
-  gameSession: GameSession = defaultGameSession,
+  options: { afterCommit?: (result: T) => void } | undefined,
+  gameSession: GameSession,
 ): T {
   const runtime = sessionRuntime(gameSession);
   if (runtime.inCommand) {
@@ -72,16 +71,13 @@ export function dispatchGameplayCommand<T>(
 
 export function createGameplayCommand<Args extends unknown[], Ret>(
   mutate: (draft: GameplayDraft, ...args: Args) => CommandOutcome<Ret> & { value: SynchronousResult<Ret> },
-  options?: { afterCommit?: (result: Ret) => void },
-  gameSession: GameSession = defaultGameSession,
+  options: { afterCommit?: (result: Ret) => void } | undefined,
+  gameSession: GameSession,
 ): (...args: Args) => Ret {
   return (...args) => dispatchGameplayCommand<Ret>((draft) => mutate(draft, ...args), options, gameSession);
 }
 
-export function subscribeRunSessionCommits(
-  listener: (revision: number) => void,
-  gameSession: GameSession = defaultGameSession,
-): () => void {
+export function subscribeRunSessionCommits(listener: (revision: number) => void, gameSession: GameSession): () => void {
   return subscribeGameplayCommits(listener, gameSession);
 }
 

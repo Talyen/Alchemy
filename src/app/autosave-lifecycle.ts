@@ -1,16 +1,6 @@
-import {
-  buildAlchemySaveDataFromStores,
-  saveAlchemySaveData,
-  saveAlchemySaveDataForExit,
-  subscribeAlchemyPersistence,
-  subscribeSaveCancellation,
-  waitForPendingSaveWrites,
-  type SaveWriteOutcome,
-} from "@/features/alchemy/shared/storage";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
+import { createSessionPersistence, type SaveWriteOutcome } from "@/features/alchemy/shared/storage";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { readHasActiveRun, readRunPhase } from "@/features/alchemy/shared/stores/run-reads";
+import { readRunPhase } from "@/features/alchemy/shared/stores/run-reads";
 import { registerSessionCleanup, sessionClock } from "@/features/alchemy/shared/stores/session-capabilities";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import {
@@ -30,9 +20,10 @@ export interface AutosaveClock {
 
 export function createAlchemyAutosaveLifecycle(
   enabled: () => boolean = () => true,
-  clock?: AutosaveClock,
-  gameSession: GameSession = defaultGameSession,
+  clock: AutosaveClock | undefined,
+  gameSession: GameSession,
 ) {
+  const persistence = createSessionPersistence(gameSession);
   const runtimeClock = clock ?? sessionClock(gameSession);
   let pendingWrite: Promise<void> = Promise.resolve();
   let timer: ReturnType<AutosaveClock["setTimeout"]> | null = null;
@@ -78,8 +69,7 @@ export function createAlchemyAutosaveLifecycle(
     // revision, or the scheduler would stall with no completion to recover it.
     let save;
     try {
-      const activeRun = resolveActiveRunForSave(readHasActiveRun(gameSession), undefined, gameSession);
-      save = buildAlchemySaveDataFromStores(activeRun, gameSession);
+      save = persistence.snapshot();
     } catch (error) {
       logStorageFailure("Autosave snapshot could not be built", error);
       schedule();
@@ -96,7 +86,7 @@ export function createAlchemyAutosaveLifecycle(
       // after a failed write the stored retryAt is stale, so always reschedule.
       else if (action === "schedule" && (outcome !== "saved" || timer === null)) schedule();
     };
-    const outcome = terminal ? saveAlchemySaveDataForExit(save, gameSession) : saveAlchemySaveData(save, gameSession);
+    const outcome = terminal ? persistence.writeOnExit(save) : persistence.write(save);
     pendingWrite = outcome.then(complete);
   };
 
@@ -106,8 +96,8 @@ export function createAlchemyAutosaveLifecycle(
     schedule();
   };
 
-  const unsubscribeCancellation = subscribeSaveCancellation(cancelPending, gameSession);
-  const unsubscribePersistence = subscribeAlchemyPersistence(triggerSave, gameSession);
+  const unsubscribeCancellation = persistence.subscribeCancellation(cancelPending);
+  const unsubscribePersistence = persistence.subscribe(triggerSave);
 
   const dispose = (saveOnExit = true) => {
     unsubscribePersistence();
@@ -125,7 +115,7 @@ export function createAlchemyAutosaveLifecycle(
     async drain() {
       flush();
       await pendingWrite;
-      await waitForPendingSaveWrites(gameSession);
+      await persistence.waitForWrites();
     },
     dispose(saveOnExit = true) {
       dispose(saveOnExit);

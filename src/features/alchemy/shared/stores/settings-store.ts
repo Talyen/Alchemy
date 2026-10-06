@@ -1,7 +1,7 @@
 import type { AspectRatioOption } from "@/features/alchemy/shared/types";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
-import { defaultGameSession } from "./default-game-session";
+import { defaultGameSession } from "@/app/application-session";
 import { sessionRuntime } from "./session-runtime";
 import {
   createSettingsPersistenceCodec,

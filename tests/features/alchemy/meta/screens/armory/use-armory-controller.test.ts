@@ -17,6 +17,7 @@ import { createEmptyGearInventories, type GearInstance } from "@/lib/gear";
 import { computeSalvageYield, EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { flushSaveAfterGearMutation } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { defaultGameSession } from "@/app/application-session";
 
 vi.mock("@/app/app-screen-chrome-context", () => ({
   useAppScreenChrome: () => ({ returnToRunScreen: null }),
@@ -45,14 +46,18 @@ describe("useArmoryController", () => {
     const { result } = renderHook(() => useArmoryController());
 
     act(() => {
-      dispatchRunSessionCommand((draft) => acceptCommand(setMaterials(draft, emptyInventory())));
+      dispatchRunSessionCommand(
+        (draft) => acceptCommand(setMaterials(draft, emptyInventory())),
+        undefined,
+        defaultGameSession,
+      );
       expect(result.current.onSalvage(armor.instanceId)).toBe(true);
     });
 
-    expect(flushSaveAfterGearMutation).toHaveBeenCalledWith(null);
-    expect(readRunProfile().materialInventory.iron).toBe(9);
-    expect(readActiveRun().runMaterialsEarned.iron).toBe(0);
-    expect(readActiveRun().runCurrenciesEarned).toEqual(EMPTY_CRAFTING_CURRENCIES);
+    expect(flushSaveAfterGearMutation).toHaveBeenCalledWith(null, defaultGameSession);
+    expect(readRunProfile(defaultGameSession).materialInventory.iron).toBe(9);
+    expect(readActiveRun(defaultGameSession).runMaterialsEarned.iron).toBe(0);
+    expect(readActiveRun(defaultGameSession).runCurrenciesEarned).toEqual(EMPTY_CRAFTING_CURRENCIES);
   });
 
   it("uses the current run state when flushing after a controller rerender", () => {
@@ -62,20 +67,29 @@ describe("useArmoryController", () => {
     mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
     const { result } = renderHook(() => useArmoryController());
     act(() => {
-      dispatchRunSessionCommand((draft) => {
-        initializeActiveRun(draft, null, "knight");
-        setHasActiveRun(draft, true);
+      dispatchRunSessionCommand(
+        (draft) => {
+          initializeActiveRun(draft, null, "knight");
+          setHasActiveRun(draft, true);
 
-        return acceptCommand();
-      });
+          return acceptCommand();
+        },
+        undefined,
+        defaultGameSession,
+      );
     });
     act(() => {
       expect(result.current.onEquip("knight", "body", armor)).toBe(true);
     });
-    expect(flushSaveAfterGearMutation).toHaveBeenLastCalledWith(expect.objectContaining({ characterId: "knight" }));
-    act(() => dispatchRunSessionCommand((draft) => acceptCommand(setHasActiveRun(draft, false))));
+    expect(flushSaveAfterGearMutation).toHaveBeenLastCalledWith(
+      expect.objectContaining({ characterId: "knight" }),
+      defaultGameSession,
+    );
+    act(() =>
+      dispatchRunSessionCommand((draft) => acceptCommand(setHasActiveRun(draft, false)), undefined, defaultGameSession),
+    );
     act(() => result.current.onUnequip("knight", "body"));
-    expect(flushSaveAfterGearMutation).toHaveBeenLastCalledWith(null);
+    expect(flushSaveAfterGearMutation).toHaveBeenLastCalledWith(null, defaultGameSession);
   });
 
   it("syncs health for the active-run character when editing another loadout", () => {
@@ -87,14 +101,18 @@ describe("useArmoryController", () => {
     const inventories = createEmptyGearInventories();
     inventories.rogue = [armor];
     mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
-    dispatchRunSessionCommand((draft) => {
-      initializeActiveRun(draft, null, "knight");
-      setRunMaxHealth(draft, 30);
-      setRunPlayerHealth(draft, 30);
-      setHasActiveRun(draft, true);
+    dispatchRunSessionCommand(
+      (draft) => {
+        initializeActiveRun(draft, null, "knight");
+        setRunMaxHealth(draft, 30);
+        setRunPlayerHealth(draft, 30);
+        setHasActiveRun(draft, true);
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
 
     const { result } = renderHook(() => useArmoryController());
 
@@ -102,10 +120,10 @@ describe("useArmoryController", () => {
       result.current.onEquip("rogue", "body", armor);
     });
 
-    expect(readActiveRun().runMaxHealth).toBe(30);
-    expect(readActiveRun().runPlayerHealth).toBe(30);
+    expect(readActiveRun(defaultGameSession).runMaxHealth).toBe(30);
+    expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(30);
 
-    dispatchRunSessionCommand((draft) => acceptCommand(setHasActiveRun(draft, false)));
+    dispatchRunSessionCommand((draft) => acceptCommand(setHasActiveRun(draft, false)), undefined, defaultGameSession);
   });
 
   it("counts homestead salvage toward run-earned materials during an active run", () => {
@@ -113,13 +131,17 @@ describe("useArmoryController", () => {
     const inventories = createEmptyGearInventories();
     inventories.knight = [armor];
     mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
-    dispatchRunSessionCommand((draft) => {
-      initializeActiveRun(draft, null, "knight");
-      setHasActiveRun(draft, true);
-      setMaterials(draft, emptyInventory());
+    dispatchRunSessionCommand(
+      (draft) => {
+        initializeActiveRun(draft, null, "knight");
+        setHasActiveRun(draft, true);
+        setMaterials(draft, emptyInventory());
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
 
     const { result } = renderHook(() => useArmoryController());
 
@@ -127,11 +149,11 @@ describe("useArmoryController", () => {
       expect(result.current.onSalvage(armor.instanceId)).toBe(true);
     });
 
-    expect(readRunProfile().materialInventory.iron).toBe(9);
-    expect(readActiveRun().runMaterialsEarned.iron).toBe(9);
-    expect(readActiveRun().runCurrenciesEarned).toEqual(computeSalvageYield(armor).currencies);
+    expect(readRunProfile(defaultGameSession).materialInventory.iron).toBe(9);
+    expect(readActiveRun(defaultGameSession).runMaterialsEarned.iron).toBe(9);
+    expect(readActiveRun(defaultGameSession).runCurrenciesEarned).toEqual(computeSalvageYield(armor).currencies);
 
-    dispatchRunSessionCommand((draft) => acceptCommand(setHasActiveRun(draft, false)));
+    dispatchRunSessionCommand((draft) => acceptCommand(setHasActiveRun(draft, false)), undefined, defaultGameSession);
   });
 
   it("spawns dev gear through the HP-sync command path", () => {
@@ -145,7 +167,7 @@ describe("useArmoryController", () => {
       result.current.onSpawnDevGear?.("knight");
     });
 
-    expect(readGearState().inventories.knight).toHaveLength(1);
+    expect(readGearState(defaultGameSession).inventories.knight).toHaveLength(1);
     expect(flushSaveAfterGearMutation).toHaveBeenCalled();
   });
 
@@ -154,12 +176,16 @@ describe("useArmoryController", () => {
     const inventories = createEmptyGearInventories();
     inventories.knight = [armor];
     mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
-    dispatchRunSessionCommand((draft) => {
-      setHasActiveRun(draft, true);
-      setHasActiveBattle(draft, true);
+    dispatchRunSessionCommand(
+      (draft) => {
+        setHasActiveRun(draft, true);
+        setHasActiveBattle(draft, true);
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
 
     const { result } = renderHook(() => useArmoryController());
     expect(result.current.combatRestrictions.characters.knight).toEqual(["campaign"]);
@@ -168,10 +194,14 @@ describe("useArmoryController", () => {
       expect(result.current.onEquip("knight", "body", armor)).toBe(false);
     });
 
-    expect(readGearState().loadouts.knight.body).toBeNull();
+    expect(readGearState(defaultGameSession).loadouts.knight.body).toBeNull();
     expect(flushSaveAfterGearMutation).not.toHaveBeenCalled();
 
-    dispatchRunSessionCommand((draft) => acceptCommand(setHasActiveBattle(draft, false)));
+    dispatchRunSessionCommand(
+      (draft) => acceptCommand(setHasActiveBattle(draft, false)),
+      undefined,
+      defaultGameSession,
+    );
   });
 
   it("flushes after successful equip, unequip, trinket, and currency mutations", () => {

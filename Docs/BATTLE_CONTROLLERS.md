@@ -11,6 +11,12 @@ useAlchemyRunController → useBattleController → routeCommands.battle
 App → renderAlchemyScreenRoute → BattleScreenRoute → BattleScreen (command props)
 ```
 
+`useBattleController` binds `createBattleCapabilities` once and passes it as
+`BattleControllerContext.battle` to the playback factories. Card, Wish, end-turn,
+opening-draw, and cancellation callbacks read and command that bound career;
+they never import the application singleton. Session ownership is checked when
+flow factories connect outcomes and gameplay callbacks.
+
 At interaction time, those callbacks resolve gameplay before presentation:
 
 ```text

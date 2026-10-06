@@ -1,8 +1,11 @@
+import { defaultGameSession } from "./application-session";
 import { useSyncExternalStore } from "react";
-import { getSaveWriteFailure, subscribeSaveWriteFailure } from "@/features/alchemy/shared/storage";
+import { createSessionPersistence } from "@/features/alchemy/shared/storage";
+
+const persistence = createSessionPersistence(defaultGameSession);
 
 export function SaveWriteNotice() {
-  const failed = useSyncExternalStore(subscribeSaveWriteFailure, getSaveWriteFailure, () => false);
+  const failed = useSyncExternalStore(persistence.subscribeFailure, persistence.readFailure, () => false);
   if (!failed) return null;
   return (
     <div

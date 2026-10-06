@@ -24,6 +24,7 @@ import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-sta
 import { resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { commitVictoryRewards, type CommitVictoryRewardsDeps } from "@/features/alchemy/run-loop/run/victory-commands";
+import { defaultGameSession } from "@/app/application-session";
 beforeEach(() => resetRunDomainStore());
 
 vi.mock("@/features/alchemy/shared/run-flow/destination-flow", async (importOriginal) => {
@@ -578,7 +579,9 @@ describe("computeVictoryRewards", () => {
 });
 
 describe("commitVictoryRewards", () => {
-  beforeEach(() => dispatchGameplayCommand((draft) => acceptCommand(getBattleForTest(draft))));
+  beforeEach(() =>
+    dispatchGameplayCommand((draft) => acceptCommand(getBattleForTest(draft)), undefined, defaultGameSession),
+  );
   function victoryResult(overrides: Partial<VictoryRewardsResult> = {}): VictoryRewardsResult {
     return {
       goldEarned: 20,
@@ -601,13 +604,17 @@ describe("commitVictoryRewards", () => {
   }
 
   function commit(result: VictoryRewardsResult = victoryResult(), deps = commitDeps()) {
-    return dispatchRunSessionCommand((draft) => acceptCommand(commitVictoryRewards(draft, result, deps, testRng)));
+    return dispatchRunSessionCommand(
+      (draft) => acceptCommand(commitVictoryRewards(draft, result, deps, testRng)),
+      undefined,
+      defaultGameSession,
+    );
   }
 
   it("applies max health before writing healed player health", () => {
     setRunProgress({ runPlayerHealth: 30, runMaxHealth: 30 });
     commit(victoryResult({ playerHealth: 31, maxHealthDelta: 1 }));
-    const run = readGameplayState().run.activeRun;
+    const run = readGameplayState(defaultGameSession).run.activeRun;
     expect(run.runMaxHealth).toBe(31);
     expect(run.runPlayerHealth).toBe(31);
   });
@@ -631,21 +638,25 @@ describe("commitVictoryRewards", () => {
 
   it.each(["campaign", "wildwood"] as const)("settles committed pending Gems once for %s", (contentSystemType) => {
     const materials = { ...emptyInventory(), gems: 2 };
-    dispatchGameplayCommand((draft) => {
-      draft.session.activity = { kind: "idle" };
-      draft.run.activeRun.contentSystemType = contentSystemType;
-      setBattleActiveForTest(draft, true);
-      getBattleForTest(draft).battleState.pendingMaterials = materials;
-      return acceptCommand();
-    });
+    dispatchGameplayCommand(
+      (draft) => {
+        draft.session.activity = { kind: "idle" };
+        draft.run.activeRun.contentSystemType = contentSystemType;
+        setBattleActiveForTest(draft, true);
+        getBattleForTest(draft).battleState.pendingMaterials = materials;
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
     const deps = commitDeps({ contentSystemType });
     commit(victoryResult(), deps);
-    expect(readGameplayState().runProfile.materialInventory.gems).toBe(2);
-    expect(readGameplayState().run.activeRun.runMaterialsEarned.gems).toBe(2);
-    expect(readBattle().battleState.pendingMaterials).toEqual(emptyInventory());
-    const settled = readGameplayState();
+    expect(readGameplayState(defaultGameSession).runProfile.materialInventory.gems).toBe(2);
+    expect(readGameplayState(defaultGameSession).run.activeRun.runMaterialsEarned.gems).toBe(2);
+    expect(readBattle(defaultGameSession).battleState.pendingMaterials).toEqual(emptyInventory());
+    const settled = readGameplayState(defaultGameSession);
     expect(() => commit(victoryResult(), deps)).toThrow("active battle");
-    expect(readGameplayState()).toBe(settled);
+    expect(readGameplayState(defaultGameSession)).toBe(settled);
   });
 
   it("persists in-combat gold into the purse for wildwood victories", () => {
@@ -656,7 +667,7 @@ describe("commitVictoryRewards", () => {
       testRng,
     );
     const goldGained = commit(result, commitDeps({ battleState, contentSystemType: "wildwood" }));
-    expect(readGameplayState().runProfile.gold).toBe(30);
+    expect(readGameplayState(defaultGameSession).runProfile.gold).toBe(30);
     expect(goldGained).toBe(true);
   });
 
@@ -681,7 +692,7 @@ describe("commitVictoryRewards", () => {
       }),
     );
     expect(goldResult.persistedGold).toBe(40);
-    expect(readGameplayState().runProfile.gold).toBe(goldResult.persistedGold);
+    expect(readGameplayState(defaultGameSession).runProfile.gold).toBe(goldResult.persistedGold);
     expect(goldGained).toBe(true);
   });
 
@@ -697,7 +708,7 @@ describe("commitVictoryRewards", () => {
         contentSystemType: "labyrinth",
       }),
     );
-    expect(readGameplayState().session.rewardFlow.state).toMatchObject({
+    expect(readGameplayState(defaultGameSession).session.rewardFlow.state).toMatchObject({
       lastVictoryEnemyType: "boss",
       lastVictoryContentSystem: "labyrinth",
     });

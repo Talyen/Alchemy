@@ -7,6 +7,7 @@ import {
 } from "../../../../helpers/desktop-save-mock-helper";
 import { playableSaveCandidate } from "../../../../helpers/save-candidate-fixtures";
 import { installStorageIoTestHooks } from "../../../../helpers/storage-io-test-setup";
+import { defaultGameSession } from "@/app/application-session";
 
 const mockStorage: Record<string, string> = {};
 const mockLocalStorage = {
@@ -41,7 +42,7 @@ describe("storage io", () => {
       });
       desktop.steamCloudRead.mockResolvedValue(cloudSave);
 
-      const loaded = await loadAlchemySaveState();
+      const loaded = await loadAlchemySaveState(defaultGameSession);
 
       expect(loaded.data.discoveredCardIds).toEqual(["slash", "block"]);
       expect(loaded.status.kind).toBe("ok");
@@ -57,7 +58,7 @@ describe("storage io", () => {
       });
       desktop.steamCloudRead.mockResolvedValue(cloudSave);
 
-      const loaded = await loadAlchemySaveState();
+      const loaded = await loadAlchemySaveState(defaultGameSession);
 
       expect(loaded.data.discoveredCardIds).toEqual(["slash"]);
     });
@@ -72,7 +73,7 @@ describe("storage io", () => {
       });
       desktop.steamCloudRead.mockResolvedValue(cloudSave);
 
-      const loaded = await loadAlchemySaveState();
+      const loaded = await loadAlchemySaveState(defaultGameSession);
 
       expect(loaded.data.discoveredCardIds).toEqual(["slash", "block"]);
       expect(loaded.data.lastSavedAt).toBe(2000);
@@ -86,7 +87,7 @@ describe("storage io", () => {
       });
       desktop.steamCloudRead.mockResolvedValue("not-valid-json");
 
-      const loaded = await loadAlchemySaveState();
+      const loaded = await loadAlchemySaveState(defaultGameSession);
 
       expect(loaded.status.kind).toBe("ok");
       expect(loaded.data.discoveredCardIds).toEqual(["slash"]);

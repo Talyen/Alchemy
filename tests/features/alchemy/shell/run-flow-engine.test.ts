@@ -1,4 +1,5 @@
 import "../../../helpers/mock-audio";
+
 import { setBattleActiveForTest as setHasActiveBattle } from "../../../helpers/run-domain-store-test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS, type Screen, type ScreenTransitionOptions } from "@/lib/routing";
@@ -14,6 +15,7 @@ import { readActiveRun, readBattle, readRunSession } from "@/features/alchemy/sh
 import { setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { makeTestCard } from "../../../fixtures/battle";
 import { resetAllTestStores, setRunProgress, setRunSession } from "../../../helpers/run-domain-store-test";
+import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(() => {
   resetAllTestStores();
@@ -23,10 +25,13 @@ type TestNavigate = (screen: Screen, prepare?: () => void) => void;
 type TestTransition = (screen: Screen, options?: ScreenTransitionOptions) => void;
 
 function makeOutcomes(navigateTo: TestNavigate, transition: TestTransition) {
-  return createRunOutcomes({
-    actions: { navigateTo, transition, clearCardHover: () => {} },
-    getAvailableDestinations: readRunAvailableDestinations,
-  });
+  return createRunOutcomes(
+    {
+      actions: { navigateTo, transition, clearCardHover: () => {} },
+      getAvailableDestinations: (options) => readRunAvailableDestinations(options, defaultGameSession),
+    },
+    defaultGameSession,
+  );
 }
 
 function makeEngine({
@@ -63,6 +68,7 @@ function makeEngine({
       labyrinthClearNode,
     },
     makeOutcomes(navigateTo, transition),
+    defaultGameSession,
   );
 }
 
@@ -78,12 +84,16 @@ describe("createRunFlowEngine", () => {
   });
 
   it("resetRunState tears down run stores when navigating to menu", () => {
-    dispatchRunSessionCommand((draft) => {
-      setHasActiveRun(draft, true);
-      setHasActiveBattle(draft, true);
+    dispatchRunSessionCommand(
+      (draft) => {
+        setHasActiveRun(draft, true);
+        setHasActiveBattle(draft, true);
 
-      return acceptCommand();
-    });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
     const navigateTo = vi.fn((_screen: string, onCommit?: () => void) => onCommit?.());
     const cancelPending = vi.fn();
 
@@ -92,8 +102,8 @@ describe("createRunFlowEngine", () => {
 
     expect(cancelPending).toHaveBeenCalledOnce();
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.MENU, expect.any(Function));
-    expect(readRunSession().hasActiveRun).toBe(false);
-    expect(readBattle().hasActiveBattle).toBe(false);
+    expect(readRunSession(defaultGameSession).hasActiveRun).toBe(false);
+    expect(readBattle(defaultGameSession).hasActiveBattle).toBe(false);
   });
 
   it("routes completed Wildwood drafts through the Wildwood owner", () => {
@@ -114,9 +124,9 @@ describe("createRunFlowEngine", () => {
     const engine = makeEngine({ navigateTo, startBossById });
     engine.handleWildwoodDraftComplete();
 
-    expect(readActiveRun().runDeck).toEqual(draftedCards);
-    expect(readRunSession().pendingCharacterId).toBeNull();
-    expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "battle" });
+    expect(readActiveRun(defaultGameSession).runDeck).toEqual(draftedCards);
+    expect(readRunSession(defaultGameSession).pendingCharacterId).toBeNull();
+    expect(readRunSession(defaultGameSession).wildwoodDraft).toMatchObject({ phase: "battle" });
     expect(startBossById).toHaveBeenCalledOnce();
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE, undefined);
   });
@@ -133,7 +143,7 @@ describe("createRunFlowEngine", () => {
     const engine = makeEngine({ startBossById });
     engine.handleWildwoodRemoveCard(1);
 
-    expect(readActiveRun().runDeck.map((card) => card.id)).toEqual([
+    expect(readActiveRun(defaultGameSession).runDeck.map((card) => card.id)).toEqual([
       "wildwood-removal-0",
       "wildwood-removal-2",
       "wildwood-removal-3",
@@ -142,7 +152,7 @@ describe("createRunFlowEngine", () => {
       "wildwood-removal-6",
       "wildwood-removal-7",
     ]);
-    expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "battle" });
+    expect(readRunSession(defaultGameSession).wildwoodDraft).toMatchObject({ phase: "battle" });
     expect(startBossById).toHaveBeenCalledOnce();
   });
 
@@ -160,8 +170,8 @@ describe("createRunFlowEngine", () => {
     engine.handleWildwoodSkipRemoval();
     engine.handleWildwoodSkipRemoval();
 
-    expect(readActiveRun().runDeck).toEqual(runDeck);
-    expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "battle" });
+    expect(readActiveRun(defaultGameSession).runDeck).toEqual(runDeck);
+    expect(readRunSession(defaultGameSession).wildwoodDraft).toMatchObject({ phase: "battle" });
     expect(navigateTo).toHaveBeenCalledOnce();
   });
 
@@ -181,8 +191,8 @@ describe("createRunFlowEngine", () => {
     const engine = makeEngine({ startBossById });
     engine.handleWildwoodDraftComplete();
 
-    expect(readRunSession().pendingCharacterId).toBe("knight");
-    expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "draft" });
+    expect(readRunSession(defaultGameSession).pendingCharacterId).toBe("knight");
+    expect(readRunSession(defaultGameSession).wildwoodDraft).toMatchObject({ phase: "draft" });
     expect(startBossById).not.toHaveBeenCalled();
   });
 
@@ -203,7 +213,7 @@ describe("createRunFlowEngine", () => {
     const engine = makeEngine({ navigateTo, startBossById });
     engine.handleWildwoodDraftComplete();
 
-    expect(readRunSession().pendingCharacterId).toBeNull();
+    expect(readRunSession(defaultGameSession).pendingCharacterId).toBeNull();
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE, undefined);
   });
 });

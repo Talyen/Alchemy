@@ -10,6 +10,7 @@ import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { resetRunSessionSlice } from "../../../../helpers/run-domain-store-test";
+import { defaultGameSession } from "@/app/application-session";
 
 const testCard: BattleCard = {
   id: "slash",
@@ -23,14 +24,17 @@ const testCard: BattleCard = {
 beforeEach(() => {
   useUiStore.setState({ hoveredCardId: null, shimmerState: null, plasmaInteraction: null });
   resetRunSessionSlice();
-  dispatchRunSessionCommand((draft) =>
-    acceptCommand(
-      setRewardState(draft, {
-        ...createEmptyRewardState(),
-        rewardType: "card",
-        choices: [testCard],
-      }),
-    ),
+  dispatchRunSessionCommand(
+    (draft) =>
+      acceptCommand(
+        setRewardState(draft, {
+          ...createEmptyRewardState(),
+          rewardType: "card",
+          choices: [testCard],
+        }),
+      ),
+    undefined,
+    defaultGameSession,
   );
 });
 
@@ -44,13 +48,17 @@ describe("RewardsScreen", () => {
     const onClaimReward = vi.fn();
 
     render(
-      <RewardsScreen rewardState={readRunSession().rewardFlow.state} onSkip={vi.fn()} onClaimReward={onClaimReward} />,
+      <RewardsScreen
+        rewardState={readRunSession(defaultGameSession).rewardFlow.state}
+        onSkip={vi.fn()}
+        onClaimReward={onClaimReward}
+      />,
     );
 
     await user.click(screen.getByRole("button", { name: /select slash/i }));
 
     expect(onClaimReward).toHaveBeenCalledWith("slash");
-    expect(readRunSession().rewardFlow.state.selectedId).toBeNull();
+    expect(readRunSession(defaultGameSession).rewardFlow.state.selectedId).toBeNull();
   });
 
   it("keeps locked rewards inspectable while blocking pointer and keyboard claims and Skip", async () => {
@@ -59,7 +67,7 @@ describe("RewardsScreen", () => {
     const user = userEvent.setup();
     render(
       <RewardsScreen
-        rewardState={readRunSession().rewardFlow.state}
+        rewardState={readRunSession(defaultGameSession).rewardFlow.state}
         claimInFlight
         onSkip={onSkip}
         onClaimReward={onClaimReward}
@@ -99,7 +107,11 @@ describe("RewardsScreen", () => {
 
   it("swaps reward choices with their content after the outgoing fade", async () => {
     const { rerender } = render(
-      <RewardsScreen rewardState={readRunSession().rewardFlow.state} onSkip={vi.fn()} onClaimReward={vi.fn()} />,
+      <RewardsScreen
+        rewardState={readRunSession(defaultGameSession).rewardFlow.state}
+        onSkip={vi.fn()}
+        onClaimReward={vi.fn()}
+      />,
     );
 
     expect(screen.getByRole("heading", { name: "Choose a Reward" })).toBeTruthy();
@@ -145,7 +157,13 @@ describe("RewardsScreen", () => {
   });
 
   it("shows card effect description on hover and keyboard focus of a reward choice", async () => {
-    render(<RewardsScreen rewardState={readRunSession().rewardFlow.state} onSkip={vi.fn()} onClaimReward={vi.fn()} />);
+    render(
+      <RewardsScreen
+        rewardState={readRunSession(defaultGameSession).rewardFlow.state}
+        onSkip={vi.fn()}
+        onClaimReward={vi.fn()}
+      />,
+    );
 
     const button = screen.getByRole("button", { name: /select slash/i });
     const wrapper = button.parentElement as HTMLElement;

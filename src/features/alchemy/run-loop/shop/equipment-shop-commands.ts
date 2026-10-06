@@ -1,6 +1,6 @@
+import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
 import { createShopInitializer } from "./shop-initialization";
 import { grantGearToRunWithRecord } from "@/features/alchemy/shared/stores/deck-mutations";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
 import { snapshotTransactionValue } from "@/features/alchemy/shared/stores/run-session-command";
@@ -28,7 +28,7 @@ export function createEquipmentShopCommands(
     talentEffects: TalentEffectManifest;
     gearAstralChanceBonus: number;
   },
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ): EquipmentShopCommands {
   const { buy, getBuyPrice } = createShopPurchaseActions(
     {
@@ -66,5 +66,5 @@ export function createEquipmentShopCommands(
     gameSession,
   );
 
-  return { initialize, buy, refresh, getBuyPrice, getRefreshPrice };
+  return bindSessionCapabilities(gameSession, { initialize, buy, refresh, getBuyPrice, getRefreshPrice });
 }

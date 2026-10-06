@@ -2,7 +2,6 @@ import type { BattleCard } from "@/lib/game-data";
 import { CARD_TRANSFER_CONFIG } from "@/lib/game-constants";
 import { playBattleEvent } from "@/lib/audio";
 import type { CardRect, CardTransfer } from "../../shared/types";
-import { readBattle } from "../../shared/stores/run-reads";
 import type { BattleControllerContext } from "./battle-context";
 import type { HandDrawSequenceDeps } from "./draw-sequence";
 import { runPlaybackTask } from "./playback-task";
@@ -23,7 +22,7 @@ export function createBattleTransferDeps(
     ctx.measureVisualCardRect(ctx.handCardRefs.current[cardKey] ?? null, scene());
 
   function playTransferSound(delaySeconds = 0) {
-    const hasActiveBattle = readBattle().hasActiveBattle;
+    const hasActiveBattle = ctx.battle.read().hasActiveBattle;
     if (!hasActiveBattle) return;
     playBattleEvent("drawTransfer", { volume: CARD_TRANSFER_CONFIG.soundVolume, delay: delaySeconds });
   }

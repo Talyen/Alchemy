@@ -1,4 +1,5 @@
 import "../../../../helpers/mock-audio";
+
 import "../../../../helpers/mock-flush-save";
 import {
   initializeBattleForTest as initializeActiveBattle,
@@ -44,169 +45,211 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
 import { resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
+import { defaultGameSession } from "@/app/application-session";
 
 const endOptions = { awardRunEndMaterials, finalizeRunXP };
 beforeEach(() => {
   resetRunDomainStore();
-  command((draft) => acceptCommand(setHasActiveRun(draft, true)));
+  command((draft) => acceptCommand(setHasActiveRun(draft, true)), undefined, defaultGameSession);
 });
 
 describe("run recap", () => {
   it("counts grants and committed battle Gold once, excluding starting purse and spending across resume", () => {
-    command((draft) => {
-      setGold(draft, 500);
-      grantStartGold(draft, 30);
-      addGold(draft, 20);
-      deductGold(draft, 100);
-      initializeActiveBattle(draft, { ...defaultBattleState(), gold: 450 });
-      setBattleState(draft, { ...getBattleForTest(draft).battleState, gold: 457 });
-      setBattleState(draft, { ...getBattleForTest(draft).battleState });
+    command(
+      (draft) => {
+        setGold(draft, 500);
+        grantStartGold(draft, 30);
+        addGold(draft, 20);
+        deductGold(draft, 100);
+        initializeActiveBattle(draft, { ...defaultBattleState(), gold: 450 });
+        setBattleState(draft, { ...getBattleForTest(draft).battleState, gold: 457 });
+        setBattleState(draft, { ...getBattleForTest(draft).battleState });
 
-      return acceptCommand();
-    });
-    expect(readActiveRun().runGoldEarned).toBe(27);
-    const saved = parseActiveRun(snapshotRun())!;
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    expect(readActiveRun(defaultGameSession).runGoldEarned).toBe(27);
+    const saved = parseActiveRun(snapshotRun(undefined, defaultGameSession))!;
     expect(saved.runGoldEarned).toBe(27);
-    restoreRun(saved, {}, {});
-    expect(readActiveRun().runGoldEarned).toBe(27);
-    command((draft) => acceptCommand(addGold(draft, 5)));
-    abandonRun(endOptions);
-    expect(readRunSession().runRecap?.gold).toBe(32);
-    expect(abandonRun(endOptions)).toBe(false);
-    expect(readRunSession().runRecap?.gold).toBe(32);
+    restoreRun(saved, {}, {}, defaultGameSession);
+    expect(readActiveRun(defaultGameSession).runGoldEarned).toBe(27);
+    command((draft) => acceptCommand(addGold(draft, 5)), undefined, defaultGameSession);
+    abandonRun(endOptions, defaultGameSession);
+    expect(readRunSession(defaultGameSession).runRecap?.gold).toBe(32);
+    expect(abandonRun(endOptions, defaultGameSession)).toBe(false);
+    expect(readRunSession(defaultGameSession).runRecap?.gold).toBe(32);
   });
 
   it("keeps campaign room order across acts without duplicating claims", () => {
-    command((draft) => {
-      setRewardState(draft, (state) => ({ ...state, destinations: [DESTINATIONS.CAMPFIRE] }));
-      beginDestinationClaim(draft, DESTINATIONS.CAMPFIRE);
-      expect(commitDestinationClaim(draft, DESTINATIONS.CAMPFIRE)).toBe(true);
-      expect(commitDestinationClaim(draft, DESTINATIONS.CAMPFIRE)).toBe(false);
-      completeRunRoom(draft);
-      setCurrentAct(draft, 2);
-      setCompletedDestinations(draft, []);
-      setDestinationIndexInAct(draft, 0);
-      setRewardState(draft, (state) => ({ ...state, destinations: [DESTINATIONS.BOSS_COMBAT] }));
-      beginDestinationClaim(draft, DESTINATIONS.BOSS_COMBAT);
-      commitDestinationClaim(draft, DESTINATIONS.BOSS_COMBAT);
+    command(
+      (draft) => {
+        setRewardState(draft, (state) => ({ ...state, destinations: [DESTINATIONS.CAMPFIRE] }));
+        beginDestinationClaim(draft, DESTINATIONS.CAMPFIRE);
+        expect(commitDestinationClaim(draft, DESTINATIONS.CAMPFIRE)).toBe(true);
+        expect(commitDestinationClaim(draft, DESTINATIONS.CAMPFIRE)).toBe(false);
+        completeRunRoom(draft);
+        setCurrentAct(draft, 2);
+        setCompletedDestinations(draft, []);
+        setDestinationIndexInAct(draft, 0);
+        setRewardState(draft, (state) => ({ ...state, destinations: [DESTINATIONS.BOSS_COMBAT] }));
+        beginDestinationClaim(draft, DESTINATIONS.BOSS_COMBAT);
+        commitDestinationClaim(draft, DESTINATIONS.BOSS_COMBAT);
 
-      return acceptCommand();
-    });
-    const saved = parseActiveRun(snapshotRun())!;
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    const saved = parseActiveRun(snapshotRun(undefined, defaultGameSession))!;
     expect(saved.runHistory.map((room) => [room.act, room.destination, room.completed])).toEqual([
       [1, DESTINATIONS.CAMPFIRE, true],
       [2, DESTINATIONS.BOSS_COMBAT, false],
     ]);
-    restoreRun(saved, {}, {});
-    applyRunDefeatTeardown(endOptions);
-    expect(readRunSession().runRecap).toMatchObject({ ending: "death", rooms: saved.runHistory });
+    restoreRun(saved, {}, {}, defaultGameSession);
+    applyRunDefeatTeardown(endOptions, defaultGameSession);
+    expect(readRunSession(defaultGameSession).runRecap).toMatchObject({ ending: "death", rooms: saved.runHistory });
   });
 
   it("preserves a detached deck and Boon snapshot after voluntary ending", () => {
-    command((draft) => {
-      draft.run.activeRun.runDeck = getStartingDeck("knight");
-      draft.run.activeRun.runBoons = ["bone-charm"];
-      recordRunRoom(draft, DESTINATIONS.NORMAL_COMBAT, "first");
+    command(
+      (draft) => {
+        draft.run.activeRun.runDeck = getStartingDeck("knight");
+        draft.run.activeRun.runBoons = ["bone-charm"];
+        recordRunRoom(draft, DESTINATIONS.NORMAL_COMBAT, "first");
 
-      return acceptCommand();
-    });
-    abandonRun(endOptions);
-    command((draft) => {
-      draft.run.activeRun.runDeck = [];
-      draft.run.activeRun.runBoons = [];
-      setScreen(draft, "game-over");
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    abandonRun(endOptions, defaultGameSession);
+    command(
+      (draft) => {
+        draft.run.activeRun.runDeck = [];
+        draft.run.activeRun.runBoons = [];
+        setScreen(draft, "game-over");
 
-      return acceptCommand();
-    });
-    expect(readCardInspectionData().runDeck.length).toBeGreaterThan(0);
-    expect(readRunSession().runRecap).toMatchObject({ ending: "abandoned", boons: ["bone-charm"] });
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    expect(readCardInspectionData(defaultGameSession).runDeck.length).toBeGreaterThan(0);
+    expect(readRunSession(defaultGameSession).runRecap).toMatchObject({ ending: "abandoned", boons: ["bone-charm"] });
   });
 
   it("uses honest unknown totals for older saves while continuing to record subsequent rooms", () => {
-    const { runHistory: _history, runHistoryPartial: _partial, runGoldEarned: _gold, ...old } = snapshotRun();
+    const {
+      runHistory: _history,
+      runHistoryPartial: _partial,
+      runGoldEarned: _gold,
+      ...old
+    } = snapshotRun(undefined, defaultGameSession);
     const restored = parseActiveRun(old)!;
     expect(restored).toMatchObject({ runHistory: [], runHistoryPartial: true, runGoldEarned: null });
-    restoreRun(restored, {}, {});
-    command((draft) => {
-      addGold(draft, 20);
-      recordRunRoom(draft, DESTINATIONS.CAMPFIRE, "new");
-      recordRunRoom(draft, DESTINATIONS.CAMPFIRE, "new");
+    restoreRun(restored, {}, {}, defaultGameSession);
+    command(
+      (draft) => {
+        addGold(draft, 20);
+        recordRunRoom(draft, DESTINATIONS.CAMPFIRE, "new");
+        recordRunRoom(draft, DESTINATIONS.CAMPFIRE, "new");
 
-      return acceptCommand();
-    });
-    abandonRun(endOptions);
-    expect(readRunSession().runRecap).toMatchObject({ gold: null, partial: true });
-    expect(readRunSession().runRecap?.rooms).toHaveLength(1);
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    abandonRun(endOptions, defaultGameSession);
+    expect(readRunSession(defaultGameSession).runRecap).toMatchObject({ gold: null, partial: true });
+    expect(readRunSession(defaultGameSession).runRecap?.rooms).toHaveLength(1);
   });
 });
 
 it("records distinct Wildwood boss attempts and keeps the trail through resume", () => {
-  command((draft) => {
-    draft.run.activeRun.contentSystemType = "wildwood";
-    draft.session.wildwoodDraft = {
-      ...createInitialWildwoodDraftState("knight", () => 0.5),
-      phase: "battle",
-      currentBossId: "forge-golem",
-    };
+  command(
+    (draft) => {
+      draft.run.activeRun.contentSystemType = "wildwood";
+      draft.session.wildwoodDraft = {
+        ...createInitialWildwoodDraftState("knight", () => 0.5),
+        phase: "battle",
+        currentBossId: "forge-golem",
+      };
 
-    return acceptCommand();
-  });
-  const battle = createBattleStartCommands(() => {});
+      return acceptCommand();
+    },
+    undefined,
+    defaultGameSession,
+  );
+  const battle = createBattleStartCommands(() => {}, defaultGameSession);
   battle.startBossById({ bossId: "forge-golem" });
-  command((draft) => {
-    completeRunRoom(draft);
-    draft.session.activity = { kind: "idle" };
-    return acceptCommand();
-  });
+  command(
+    (draft) => {
+      completeRunRoom(draft);
+      draft.session.activity = { kind: "idle" };
+      return acceptCommand();
+    },
+    undefined,
+    defaultGameSession,
+  );
   battle.startBossById({ bossId: "forge-golem" });
-  const saved = parseActiveRun(snapshotRun())!;
+  const saved = parseActiveRun(snapshotRun(undefined, defaultGameSession))!;
   expect(saved.runHistory.map((room) => [room.destination, room.completed])).toEqual([
     [DESTINATIONS.BOSS_COMBAT, true],
     [DESTINATIONS.BOSS_COMBAT, false],
   ]);
-  restoreRun(saved, {}, {});
-  expect(readActiveRun().runHistory).toEqual(saved.runHistory);
+  restoreRun(saved, {}, {}, defaultGameSession);
+  expect(readActiveRun(defaultGameSession).runHistory).toEqual(saved.runHistory);
 });
 
 it("deduplicates unresolved Labyrinth rooms and completes the revisited room rather than the last entry", () => {
-  command((draft) => {
-    draft.run.activeRun.contentSystemType = "labyrinth";
-    setLabyrinthMap(draft, gridLabyrinthMapFixture());
-    const first = "labyrinth-floor-1-n0";
-    const second = "labyrinth-floor-1-n1";
-    recordRunRoom(draft, DESTINATIONS.CORRUPTION, `labyrinth:1:${first}`);
-    recordRunRoom(draft, DESTINATIONS.CARD_SHOP, `labyrinth:1:${second}`);
-    recordRunRoom(draft, DESTINATIONS.CORRUPTION, `labyrinth:1:${first}`);
-    setActiveLabyrinthPendingNode(draft, first);
-    completeRunRoom(draft);
+  command(
+    (draft) => {
+      draft.run.activeRun.contentSystemType = "labyrinth";
+      setLabyrinthMap(draft, gridLabyrinthMapFixture());
+      const first = "labyrinth-floor-1-n0";
+      const second = "labyrinth-floor-1-n1";
+      recordRunRoom(draft, DESTINATIONS.CORRUPTION, `labyrinth:1:${first}`);
+      recordRunRoom(draft, DESTINATIONS.CARD_SHOP, `labyrinth:1:${second}`);
+      recordRunRoom(draft, DESTINATIONS.CORRUPTION, `labyrinth:1:${first}`);
+      setActiveLabyrinthPendingNode(draft, first);
+      completeRunRoom(draft);
 
-    return acceptCommand();
-  });
-  expect(readActiveRun().runHistory.map((room) => [room.floor, room.completed])).toEqual([
+      return acceptCommand();
+    },
+    undefined,
+    defaultGameSession,
+  );
+  expect(readActiveRun(defaultGameSession).runHistory.map((room) => [room.floor, room.completed])).toEqual([
     [1, true],
     [1, false],
   ]);
-  abandonRun(endOptions);
-  expect(readRunSession().runRecap?.endingRoomId).toBe("labyrinth:1:labyrinth-floor-1-n0");
+  abandonRun(endOptions, defaultGameSession);
+  expect(readRunSession(defaultGameSession).runRecap?.endingRoomId).toBe("labyrinth:1:labyrinth-floor-1-n0");
 });
 
 it("completes and marks a revisited campaign room by identity", () => {
-  command((draft) => {
-    const enter = (destination: typeof DESTINATIONS.CORRUPTION | typeof DESTINATIONS.MYSTERY) => {
-      setRewardState(draft, (state) => ({ ...state, destinations: [destination] }));
-      beginDestinationClaim(draft, destination);
-      commitDestinationClaim(draft, destination);
-    };
-    enter(DESTINATIONS.CORRUPTION);
-    abandonCorruptionDestinationVisit(draft);
-    enter(DESTINATIONS.MYSTERY);
-    abandonMysteryDestinationVisit(draft);
-    enter(DESTINATIONS.CORRUPTION);
-    completeRunRoom(draft);
+  command(
+    (draft) => {
+      const enter = (destination: typeof DESTINATIONS.CORRUPTION | typeof DESTINATIONS.MYSTERY) => {
+        setRewardState(draft, (state) => ({ ...state, destinations: [destination] }));
+        beginDestinationClaim(draft, destination);
+        commitDestinationClaim(draft, destination);
+      };
+      enter(DESTINATIONS.CORRUPTION);
+      abandonCorruptionDestinationVisit(draft);
+      enter(DESTINATIONS.MYSTERY);
+      abandonMysteryDestinationVisit(draft);
+      enter(DESTINATIONS.CORRUPTION);
+      completeRunRoom(draft);
 
-    return acceptCommand();
-  });
-  expect(readActiveRun().runHistory.map((room) => room.completed)).toEqual([true, false]);
-  abandonRun(endOptions);
-  expect(readRunSession().runRecap?.endingRoomId).toBe(`campaign:1:1:${DESTINATIONS.CORRUPTION}`);
+      return acceptCommand();
+    },
+    undefined,
+    defaultGameSession,
+  );
+  expect(readActiveRun(defaultGameSession).runHistory.map((room) => room.completed)).toEqual([true, false]);
+  abandonRun(endOptions, defaultGameSession);
+  expect(readRunSession(defaultGameSession).runRecap?.endingRoomId).toBe(`campaign:1:1:${DESTINATIONS.CORRUPTION}`);
 });

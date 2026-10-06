@@ -1,5 +1,4 @@
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import {
   acceptCommand,
@@ -26,7 +25,7 @@ import {
   prepareNextWildwoodBoss,
   removeWildwoodCard,
 } from "@/lib/content-systems/wildwood/gauntlet";
-export function prepareWildwoodBoss(removeIndex?: number, gameSession: GameSession = defaultGameSession) {
+export function prepareWildwoodBoss(removeIndex: number | undefined, gameSession: GameSession) {
   return dispatchRunSessionCommand(
     (draft) => {
       const state = draft.session.wildwoodDraft;
@@ -54,7 +53,7 @@ export function prepareWildwoodBoss(removeIndex?: number, gameSession: GameSessi
     gameSession,
   );
 }
-export function chooseWildwoodDraftCard(cardId: string, gameSession: GameSession = defaultGameSession): void {
+export function chooseWildwoodDraftCard(cardId: string, gameSession: GameSession): void {
   const picked = dispatchRunSessionCommand(
     (draft) => {
       const state = draft.session.wildwoodDraft;
@@ -82,7 +81,7 @@ export function chooseWildwoodDraftCard(cardId: string, gameSession: GameSession
   );
   if (picked) sessionFeedback(gameSession).playUISound("draftSelect");
 }
-export function completeWildwoodDraft(gameSession: GameSession = defaultGameSession): boolean {
+export function completeWildwoodDraft(gameSession: GameSession): boolean {
   return dispatchRunSessionCommand(
     (draft) => {
       const state = draft.session.wildwoodDraft;
@@ -96,7 +95,7 @@ export function completeWildwoodDraft(gameSession: GameSession = defaultGameSess
     gameSession,
   );
 }
-export function prepareWildwoodRemoval(gameSession: GameSession = defaultGameSession): void {
+export function prepareWildwoodRemoval(gameSession: GameSession): void {
   dispatchRunSessionCommand(
     (draft) => {
       const current = draft.session.wildwoodDraft;

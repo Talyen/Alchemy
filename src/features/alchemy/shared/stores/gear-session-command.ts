@@ -1,4 +1,3 @@
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { findGearEquippedCharacter, findGearInventoryOwner, gearDefinitions } from "@/lib/gear";
 import { dispatchGameplayCommand, type GameplayDraft } from "./gameplay-command";
@@ -130,7 +129,7 @@ export function dispatchGearMutationWithRunHealthSync<T>(
   options: {
     mutate: (gear: GearDraftView) => T & SynchronousResult<T>;
   },
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ): T {
   return dispatchGameplayCommand<T>(
     (draft) => {
@@ -165,7 +164,7 @@ export function mutateGearWithRunHealthSync<T>(
 
 export function dispatchGearSalvageWithMaterialGrant(
   mutate: (gear: GearDraftView) => ReturnType<GearDraftView["salvage"]>,
-  gameSession: GameSession = defaultGameSession,
+  gameSession: GameSession,
 ): ReturnType<GearDraftView["salvage"]> {
   return dispatchGameplayCommand(
     (draft) => {

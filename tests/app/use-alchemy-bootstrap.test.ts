@@ -12,6 +12,7 @@ import { restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readRunInitialized } from "@/features/alchemy/shared/stores/run-reads";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 import { useAlchemyBootstrap } from "@/app/use-alchemy-bootstrap";
+import { defaultGameSession } from "@/app/application-session";
 
 vi.mock("@/features/alchemy/shared/storage", async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
@@ -87,7 +88,7 @@ describe("useAlchemyBootstrap", () => {
 
     expect(calls).toEqual(["stores", "run"]);
     expect(hook.current).toBe(result);
-    expect(restoreRun).toHaveBeenCalledWith(null, { armor: 12 }, defaultSaveData.unlockedTalents);
+    expect(restoreRun).toHaveBeenCalledWith(null, { armor: 12 }, defaultSaveData.unlockedTalents, defaultGameSession);
   });
 
   it("does not replace an aggregate that was initialized before bootstrap completed", async () => {
@@ -101,7 +102,7 @@ describe("useAlchemyBootstrap", () => {
       await Promise.resolve();
     });
 
-    expect(hydrateAlchemyPersistenceFields).toHaveBeenCalledWith(defaultSaveData);
+    expect(hydrateAlchemyPersistenceFields).toHaveBeenCalledWith(defaultSaveData, defaultGameSession);
     expect(restoreRun).not.toHaveBeenCalled();
     expect(hook.current).toBe(result);
   });
@@ -117,7 +118,7 @@ describe("useAlchemyBootstrap", () => {
       await Promise.resolve();
     });
 
-    expect(hydrateAlchemyPersistenceFields).toHaveBeenCalledWith(defaultSaveData);
+    expect(hydrateAlchemyPersistenceFields).toHaveBeenCalledWith(defaultSaveData, defaultGameSession);
     expect(restoreRun).toHaveBeenCalled();
     expect(routeWritesToRecovery).toHaveBeenCalledOnce();
     expect(hook.current?.status).toEqual({ kind: "unavailable" });
@@ -136,7 +137,7 @@ describe("useAlchemyBootstrap", () => {
       await Promise.resolve();
     });
 
-    expect(clearAlchemySaveData).toHaveBeenCalledExactlyOnceWith("localWipe");
+    expect(clearAlchemySaveData).toHaveBeenCalledExactlyOnceWith("localWipe", defaultGameSession);
     expect(new URL(window.location.href).searchParams.has("wipeLocalSave")).toBe(false);
     expect(configureAlchemySaveBackend).toHaveBeenCalledOnce();
     // Backend configuration precedes the wipe, which precedes the load.
@@ -185,7 +186,7 @@ describe("useAlchemyBootstrap", () => {
         await Promise.resolve();
       });
 
-      expect(hydrateAlchemyPersistenceFields).toHaveBeenCalledWith(defaultSaveData);
+      expect(hydrateAlchemyPersistenceFields).toHaveBeenCalledWith(defaultSaveData, defaultGameSession);
       expect(restoreRun).toHaveBeenCalled();
       expect(hook.current).toBe(result);
     },

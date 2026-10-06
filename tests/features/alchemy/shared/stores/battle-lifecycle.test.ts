@@ -1,4 +1,5 @@
 import "../../../../helpers/mock-audio";
+
 import "../../../../helpers/mock-flush-save";
 import { beforeEach, expect, it, vi } from "vitest";
 import { commitBattleWish, commitCardPlay, commitEndTurn } from "@/features/alchemy/shared/stores/battle-commands";
@@ -20,30 +21,35 @@ import { parseActiveRun } from "@/lib/active-run-session";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { regressionBattle } from "../../../../fixtures/battle";
 import { initializeBattleForTest, resetAllTestStores } from "../../../../helpers/run-domain-store-test";
+import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(resetAllTestStores);
 
 it("rejects every battle command after End Run without changing progress, RNG, or revision", () => {
   const slash = { ...cardById.slash!, uid: 1 };
-  dispatchRunSessionCommand((transaction) => {
-    initializeBattleForTest(transaction, regressionBattle({ hand: [slash], mana: 10, wishOptions: [slash] }));
-    return acceptCommand();
-  });
-  expect(abandonRun({ awardRunEndMaterials, finalizeRunXP })).toBe(true);
-  const before = readGameplayState();
+  dispatchRunSessionCommand(
+    (transaction) => {
+      initializeBattleForTest(transaction, regressionBattle({ hand: [slash], mana: 10, wishOptions: [slash] }));
+      return acceptCommand();
+    },
+    undefined,
+    defaultGameSession,
+  );
+  expect(abandonRun({ awardRunEndMaterials, finalizeRunXP }, defaultGameSession)).toBe(true);
+  const before = readGameplayState(defaultGameSession);
   const commit = vi.fn();
-  const unsubscribe = subscribeRunSessionCommits(commit);
+  const unsubscribe = subscribeRunSessionCommits(commit, defaultGameSession);
   const started = vi.fn();
-  const start = createBattleStartCommands(started);
+  const start = createBattleStartCommands(started, defaultGameSession);
   try {
-    expect(commitCardPlay(0, slash.id)).toBeNull();
-    expect(commitBattleWish(slash.id)).toBeNull();
-    expect(commitEndTurn()).toBeNull();
+    expect(commitCardPlay(0, slash.id, defaultGameSession)).toBeNull();
+    expect(commitBattleWish(slash.id, defaultGameSession)).toBeNull();
+    expect(commitEndTurn(defaultGameSession)).toBeNull();
     expect(start.startBattle({ enemyId: "goblin" })).toBeNull();
     expect(start.startBossById({ bossId: "forge-golem" })).toBe(false);
-    expect(readGameplayState()).toBe(before);
-    expect(readBattle().hasActiveBattle).toBe(false);
-    expect(snapshotRun().activeCombat).toBeNull();
+    expect(readGameplayState(defaultGameSession)).toBe(before);
+    expect(readBattle(defaultGameSession).hasActiveBattle).toBe(false);
+    expect(snapshotRun(undefined, defaultGameSession).activeCombat).toBeNull();
     expect(commit).not.toHaveBeenCalled();
     expect(started).not.toHaveBeenCalled();
   } finally {
@@ -52,51 +58,59 @@ it("rejects every battle command after End Run without changing progress, RNG, o
 });
 
 it("starts combat only once and preserves its activity while visiting the Menu", () => {
-  dispatchRunSessionCommand((transaction) => {
-    setHasActiveRun(transaction, true);
-    setRunDeck(transaction, getStartingDeck("knight"));
-    return acceptCommand();
-  });
+  dispatchRunSessionCommand(
+    (transaction) => {
+      setHasActiveRun(transaction, true);
+      setRunDeck(transaction, getStartingDeck("knight"));
+      return acceptCommand();
+    },
+    undefined,
+    defaultGameSession,
+  );
   const started = vi.fn();
-  const start = createBattleStartCommands(started);
+  const start = createBattleStartCommands(started, defaultGameSession);
   expect(start.startBattle({ enemyId: "goblin" })).not.toBeNull();
-  const before = readGameplayState();
+  const before = readGameplayState(defaultGameSession);
   expect(start.startBattle({ enemyId: "goblin" })).toBeNull();
-  expect(readGameplayState()).toBe(before);
+  expect(readGameplayState(defaultGameSession)).toBe(before);
   expect(started).toHaveBeenCalledOnce();
-  expect(snapshotRun("menu")).toMatchObject({
+  expect(snapshotRun("menu", defaultGameSession)).toMatchObject({
     currentScreen: "battle",
-    activeCombat: { battleState: readBattle().battleState },
+    activeCombat: { battleState: readBattle(defaultGameSession).battleState },
   });
 });
 
 it("resumes an unsettled victory and commits its rewards exactly once before presentation navigation", () => {
-  dispatchRunSessionCommand((transaction) => {
-    initializeBattleForTest(
-      transaction,
-      regressionBattle({ enemyHealth: 0, pendingMaterials: { ...emptyInventory(), gems: 2 } }),
-    );
-    return acceptCommand();
-  });
-  const saved = parseActiveRun(JSON.parse(JSON.stringify(snapshotRun("battle"))))!;
+  dispatchRunSessionCommand(
+    (transaction) => {
+      initializeBattleForTest(
+        transaction,
+        regressionBattle({ enemyHealth: 0, pendingMaterials: { ...emptyInventory(), gems: 2 } }),
+      );
+      return acceptCommand();
+    },
+    undefined,
+    defaultGameSession,
+  );
+  const saved = parseActiveRun(JSON.parse(JSON.stringify(snapshotRun("battle", defaultGameSession))))!;
   expect(saved.activeCombat?.battleState.enemyHealth).toBe(0);
-  restoreRun(saved, {}, {});
-  const settle = createVictoryCommand(() => [DESTINATIONS.CAMPFIRE]);
-  const before = readGameplayState();
+  restoreRun(saved, {}, {}, defaultGameSession);
+  const settle = createVictoryCommand(() => [DESTINATIONS.CAMPFIRE], defaultGameSession);
+  const before = readGameplayState(defaultGameSession);
   expect(settle()).not.toBeNull();
-  const committed = readGameplayState();
+  const committed = readGameplayState(defaultGameSession);
   expect(committed.revision).toBe(before.revision + 1);
   expect(committed.runProfile.materialInventory.gems).toBe(before.runProfile.materialInventory.gems + 2);
-  expect(readRunSession().activity.kind).toBe("rewards");
-  expect(readBattle().hasActiveBattle).toBe(false);
-  expect(snapshotRun("battle")).toMatchObject({ currentScreen: "rewards", activeCombat: null });
+  expect(readRunSession(defaultGameSession).activity.kind).toBe("rewards");
+  expect(readBattle(defaultGameSession).hasActiveBattle).toBe(false);
+  expect(snapshotRun("battle", defaultGameSession)).toMatchObject({ currentScreen: "rewards", activeCombat: null });
   expect(settle()).toBeNull();
-  expect(readGameplayState()).toBe(committed);
+  expect(readGameplayState(defaultGameSession)).toBe(committed);
 
-  const rewardSave = parseActiveRun(JSON.parse(JSON.stringify(snapshotRun("battle"))))!;
-  restoreRun(rewardSave, {}, {});
-  const resumed = readGameplayState();
+  const rewardSave = parseActiveRun(JSON.parse(JSON.stringify(snapshotRun("battle", defaultGameSession))))!;
+  restoreRun(rewardSave, {}, {}, defaultGameSession);
+  const resumed = readGameplayState(defaultGameSession);
   expect(settle()).toBeNull();
-  expect(readGameplayState()).toBe(resumed);
-  expect(readRunSession().rewardFlow.state).toEqual(committed.session.rewardFlow.state);
+  expect(readGameplayState(defaultGameSession)).toBe(resumed);
+  expect(readRunSession(defaultGameSession).rewardFlow.state).toEqual(committed.session.rewardFlow.state);
 });

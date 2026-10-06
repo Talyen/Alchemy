@@ -1,5 +1,6 @@
 import { emptyAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
 import "../../../../helpers/mock-audio";
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
@@ -12,6 +13,7 @@ import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-st
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { createScreenNavigation } from "@/features/alchemy/shell/screen-navigation";
 import { readActivityData } from "@/lib/active-run-session";
+import { defaultGameSession } from "@/app/application-session";
 beforeEach(resetAllTestStores);
 
 describe("Labyrinth destination modifiers", () => {
@@ -22,8 +24,8 @@ describe("Labyrinth destination modifiers", () => {
     setRunProgress({ contentSystemType: "labyrinth", runPlayerHealth: 5, runMaxHealth: 30 });
     setRunSession({ activity: { kind: "campfire", data: emptyAlchemyVisit() }, activeLabyrinthRewardModifiers: [id] });
     const navigateTo = vi.fn((_screen: string, commit?: () => void) => commit?.());
-    createRunFlow(makeFlowHandlerDeps({ navigateTo })).handleCampfireContinue();
-    expect(readActiveRun().runPlayerHealth).toBe(health);
+    createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession).handleCampfireContinue();
+    expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(health);
   });
 
   it("Hidden Purse adds Gold and Herbal Hearth adds a real Potion", () => {
@@ -32,16 +34,16 @@ describe("Labyrinth destination modifiers", () => {
       activity: { kind: "campfire", data: emptyAlchemyVisit() },
       activeLabyrinthRewardModifiers: ["hidden-purse"],
     });
-    const handlers = createRunFlow(makeFlowHandlerDeps());
+    const handlers = createRunFlow(makeFlowHandlerDeps(), defaultGameSession);
     handlers.handleCampfireContinue();
-    expect(readRunProfile().gold).toBe(15);
+    expect(readRunProfile(defaultGameSession).gold).toBe(15);
     setRunSession({
       activity: { kind: "campfire", data: emptyAlchemyVisit() },
       activeLabyrinthRewardModifiers: ["herbal-hearth"],
     });
     handlers.handleCampfireContinue();
-    expect(readActiveRun().runDeck).toHaveLength(1);
-    expect(getStandardPotionPool().map((card) => card.id)).toContain(readActiveRun().runDeck[0]!.id);
+    expect(readActiveRun(defaultGameSession).runDeck).toHaveLength(1);
+    expect(getStandardPotionPool().map((card) => card.id)).toContain(readActiveRun(defaultGameSession).runDeck[0]!.id);
   });
 
   it("Campfire selectors keep stable modifier references across renders", () => {
@@ -62,17 +64,17 @@ describe("Labyrinth destination modifiers", () => {
       activity: { kind: "campfire", data: emptyAlchemyVisit() },
       activeLabyrinthRewardModifiers: ["golden-omen"],
     });
-    const { result } = renderHook(() => createMysteryEventNavigation({ navigateTo: vi.fn() }));
+    const { result } = renderHook(() => createMysteryEventNavigation({ navigateTo: vi.fn() }, defaultGameSession));
     act(() => result.current.beginMysteryEvent());
-    const choice = readActivityData(readRunSession().activity, "mystery").mysteryEvent!.choices.find((entry) =>
-      entry.effects.some((effect) => effect.kind === "gainGold"),
+    const choice = readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryEvent!.choices.find(
+      (entry) => entry.effects.some((effect) => effect.kind === "gainGold"),
     )!;
     const gold = choice.effects.reduce((total, effect) => total + (effect.kind === "gainGold" ? effect.amount : 0), 0);
     expect(gold).toBeGreaterThanOrEqual(40);
     act(() => result.current.handleMysteryChoice(choice));
-    expect(readRunProfile().gold).toBe(gold);
+    expect(readRunProfile(defaultGameSession).gold).toBe(gold);
     act(() => result.current.handleMysteryChoice(choice));
-    expect(readRunProfile().gold).toBe(gold);
+    expect(readRunProfile(defaultGameSession).gold).toBe(gold);
   });
 
   it("Restful Discovery includes its healing in the existing event outcome", () => {
@@ -81,12 +83,12 @@ describe("Labyrinth destination modifiers", () => {
       activity: { kind: "campfire", data: emptyAlchemyVisit() },
       activeLabyrinthRewardModifiers: ["restful-discovery"],
     });
-    const { result } = renderHook(() => createMysteryEventNavigation({ navigateTo: vi.fn() }));
+    const { result } = renderHook(() => createMysteryEventNavigation({ navigateTo: vi.fn() }, defaultGameSession));
     act(() => result.current.beginMysteryEvent());
-    const choice = readActivityData(readRunSession().activity, "mystery").mysteryEvent!.choices[0]!;
+    const choice = readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryEvent!.choices[0]!;
     expect(choice.effects.at(-1)).toEqual({ kind: "healHealth", amount: 15 });
     act(() => result.current.handleMysteryChoice(choice));
-    expect(readActiveRun().runPlayerHealth).toBeGreaterThanOrEqual(20);
+    expect(readActiveRun(defaultGameSession).runPlayerHealth).toBeGreaterThanOrEqual(20);
   });
 });
 
@@ -103,16 +105,19 @@ it("ignores another Rest click while the completed campfire is fading out", () =
     activity: { kind: "campfire", data: emptyAlchemyVisit() },
     activeLabyrinthRewardModifiers: ["hidden-purse"],
   });
-  const navigation = createScreenNavigation({
-    readScreen: () => "campfire",
-    showScreen: vi.fn(),
-  });
-  const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo: navigation.navigateTo }));
+  const navigation = createScreenNavigation(
+    {
+      readScreen: () => "campfire",
+      showScreen: vi.fn(),
+    },
+    defaultGameSession,
+  );
+  const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo: navigation.navigateTo }), defaultGameSession);
   handlers.handleCampfireContinue();
-  const health = readActiveRun().runPlayerHealth;
+  const health = readActiveRun(defaultGameSession).runPlayerHealth;
   handlers.handleCampfireContinue();
   navigation.cancelPending();
-  expect(readRunProfile().gold).toBe(15);
-  expect(readActiveRun().roomsEncountered).toBe(1);
-  expect(readActiveRun().runPlayerHealth).toBe(health);
+  expect(readRunProfile(defaultGameSession).gold).toBe(15);
+  expect(readActiveRun(defaultGameSession).roomsEncountered).toBe(1);
+  expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(health);
 });

@@ -104,6 +104,12 @@ export async function main() {
     "balance must remain React-free and independent of feature stores",
   );
 
+  const sessionConfig = await getConfig("src/features/alchemy/run-loop/shop/create-shop-actions.ts");
+  assert.ok(
+    ruleIsError(alchemyRule(sessionConfig, "session-ownership")),
+    "reusable commands must enforce session ownership",
+  );
+
   const battleConfig = await getConfig("src/lib/battle/card-play.ts");
   const battleImports = restrictedImports(battleConfig);
   const battleSyntax = restrictedSyntax(battleConfig);

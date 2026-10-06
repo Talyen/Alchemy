@@ -1,5 +1,5 @@
+import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
 import { enterRunRoom, type RunRoomEntered } from "./room-entry-commands";
-import { defaultGameSession } from "@/features/alchemy/shared/stores/default-game-session";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import {
   acceptCommand,
@@ -28,7 +28,7 @@ export interface LabyrinthController {
   descend: () => void;
   onNodeCleared: () => void;
 }
-export function createLabyrinthController(gameSession: GameSession = defaultGameSession): LabyrinthController {
+export function createLabyrinthController(gameSession: GameSession): LabyrinthController {
   const selectNode = (nodeId: string) => {
     dispatchRunSessionCommand(
       (draft) => {
@@ -98,5 +98,5 @@ export function createLabyrinthController(gameSession: GameSession = defaultGame
       gameSession,
     );
   };
-  return { selectNode, deselectNode, enterSelectedNode, descend, onNodeCleared };
+  return bindSessionCapabilities(gameSession, { selectNode, deselectNode, enterSelectedNode, descend, onNodeCleared });
 }

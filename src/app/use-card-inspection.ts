@@ -1,3 +1,4 @@
+import { defaultGameSession } from "@/app/application-session";
 import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import { isRunLoopScreen, type Screen } from "@/lib/routing";
 import type { CardInspectionView } from "@/features/alchemy/shared/types";
@@ -99,7 +100,7 @@ export function useCardInspection({
   const onOpen = useCallback(
     (view: CardInspectionView) => {
       if (!canOpen) return;
-      const current = readCardInspectionData();
+      const current = readCardInspectionData(defaultGameSession);
       if (current.mode !== data.mode || current.characterId !== data.characterId || current.runSeed !== data.runSeed)
         return;
       if (!current.hasActiveBattle && view !== "deck") return;

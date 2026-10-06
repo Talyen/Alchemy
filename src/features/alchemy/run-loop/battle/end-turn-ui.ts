@@ -6,7 +6,6 @@ import { COMPANION_ATTACK_DELAY_MS, ENEMY_ATTACK_RECOVERY_DELAY_MS, ENEMY_PHASE_
 import { delay } from "@/lib/animation/game-timer";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import type { createBattleSession } from "./battle-session";
-import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { markBattleStage } from "@/lib/performance/marks";
 import { isBattlePlaybackBlocked } from "./playback-gate";
 import { logBattleError, playCompanionSound, presentCombatTexts } from "./controller-utils";
@@ -91,7 +90,7 @@ export function createBattleEndTurnUi(
   transferDeps: ReturnType<typeof createBattleTransferDeps>,
 ) {
   function handleEndTurn() {
-    const battle = readBattle();
+    const battle = ctx.battle.read();
     const currentState = battle.battleState;
     const presentation = ctx.getPresentation();
     if (
@@ -110,7 +109,7 @@ export function createBattleEndTurnUi(
 
     // Commit before starting any animation. Failed resolution leaves both gameplay and presentation untouched.
     const sessionNum = ctx.playback.id;
-    const result = commitEndTurn();
+    const result = commitEndTurn(ctx.battle);
     if (!result) return;
     playBattleEvent("endTurn");
     ctx.playback.clearAutoEndTurn();
@@ -183,7 +182,7 @@ export function createBattleEndTurnUi(
           if (ctx.playback.pendingDraws === 0) {
             presentation.resetHandTransferUi();
             ctx.playback.completeAction(sessionNum);
-            ctx.playback.scheduleAutoEndTurn(readBattle().battleState);
+            ctx.playback.scheduleAutoEndTurn(ctx.battle.read().battleState);
           }
         });
       }
