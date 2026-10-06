@@ -1,4 +1,4 @@
-import { createShopRefreshAction, initializeShop } from "@/features/alchemy/run-loop/shop/shop-commands-core";
+import { createShopRefreshAction } from "@/features/alchemy/run-loop/shop/shop-commands-core";
 import type { AlchemistState } from "@/lib/active-run-session";
 import { setRunActivityData } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { RunTransaction } from "@/features/alchemy/shared/stores/run-session-command";
@@ -14,9 +14,6 @@ createShopRefreshAction({
   // @ts-expect-error -- a Card Shop refresh must return a card shelf and its service state
   resample: () => alchemistState,
 });
-
-// @ts-expect-error -- initialization uses the same activity-to-state contract as refresh
-initializeShop("shop", () => alchemistState);
 
 createShopRefreshAction({
   activity: "shop",

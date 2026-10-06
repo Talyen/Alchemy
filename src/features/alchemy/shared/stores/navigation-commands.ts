@@ -4,7 +4,7 @@ import { dispatchGameplayCommand } from "./gameplay-command";
 import { acceptCommand, rejectCommand } from "./run-session-command";
 import { resetUnlockedTalents, unlockAllTalents, unlockTalent } from "./write/run-meta";
 import { setScreen } from "./write/run-navigation";
-import { abandonLabyrinthCorruptionVisit, setRunActivityData } from "./write/run-session";
+import { abandonLabyrinthCorruptionVisit } from "./write/run-session";
 
 export function showRunScreen(screen: Parameters<typeof setScreen>[1], gameSession: GameSession = defaultGameSession) {
   dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, screen)), undefined, gameSession);
@@ -29,11 +29,4 @@ export function unlockTalentsForDevelopment(gameSession: GameSession = defaultGa
 }
 export function leaveLabyrinthCorruption(gameSession: GameSession = defaultGameSession) {
   dispatchGameplayCommand((draft) => acceptCommand(abandonLabyrinthCorruptionVisit(draft)), undefined, gameSession);
-}
-export function resetCorruptionVisit(gameSession: GameSession = defaultGameSession) {
-  dispatchGameplayCommand(
-    (draft) => acceptCommand(setRunActivityData(draft, "corruption", null)),
-    undefined,
-    gameSession,
-  );
 }
