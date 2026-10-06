@@ -4,11 +4,11 @@ import path from "node:path";
 import { createReadStream } from "node:fs";
 
 import { writeTextIfChanged } from "../lib/write-text-if-changed.mjs";
-import { MANIFEST_BASENAME } from "./asset-constants.mjs";
+import { ASSET_SCHEMA_VERSION, MANIFEST_BASENAME } from "./asset-constants.mjs";
 import { mapPool } from "../lib/map-pool.mjs";
 
 /**
- * @typedef {{ hash: string, outputHash?: string, owner?: string }} ManifestEntry
+ * @typedef {{ hash: string, outputHash?: string, owner?: string, selectionHash?: string }} ManifestEntry
  */
 
 /**
@@ -35,6 +35,13 @@ async function hashFile(filePath, hash = createHash("sha256")) {
   // Truncated to 128 bits: ample against accidental collisions for a local
   // freshness cache while keeping manifests compact.
   return hash.digest("hex").slice(0, 32);
+}
+
+/** Source selection and settings can be checked without the source bytes. */
+export function selectionHash(selection, settings) {
+  return createHash("sha256")
+    .update(JSON.stringify(canonicalize({ selection, settings, schema: ASSET_SCHEMA_VERSION })))
+    .digest("hex");
 }
 
 /**
@@ -159,6 +166,7 @@ function normalizeManifestEntry(value) {
     return {
       hash: /** @type {string} */ (record.hash),
       ...(typeof record.outputHash === "string" ? { outputHash: record.outputHash } : {}),
+      ...(typeof record.selectionHash === "string" ? { selectionHash: record.selectionHash } : {}),
       ...(typeof record.owner === "string" ? { owner: record.owner } : {}),
     };
   }

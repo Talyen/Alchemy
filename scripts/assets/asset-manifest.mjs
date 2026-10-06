@@ -15,6 +15,7 @@ export async function validateAssetRegistry(entries, { sourceDir } = {}) {
   try {
     await validateRegistryEntries(entries, {
       sourceDir,
+      allowSourceAliases: true,
       checkExport: true,
       targetPattern: /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*\.webp$/,
       label: "Asset registry",

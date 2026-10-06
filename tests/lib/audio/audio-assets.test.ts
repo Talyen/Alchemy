@@ -19,10 +19,8 @@ import { validateMusicRegistry } from "../../../scripts/assets/music-assets.mjs"
 
 const rootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const soundsDir = path.join(rootDir, "public/sounds");
-const rawSoundsDir = path.join(rootDir, "Raw Assets/Sound Effects");
 const musicDir = path.join(rootDir, "public/Music");
 
-const hasRawSounds = existsSync(rawSoundsDir);
 const declaredSounds = new Set([...generatedSoundAssets.map(({ target }) => target), ...curatedSoundFiles]);
 
 describe("registered music assets", () => {
@@ -53,7 +51,7 @@ describe("registered music assets", () => {
 
 describe("registered SFX assets", () => {
   it("keeps generated and curated ownership structurally valid", async () => {
-    await expect(validateSoundAssetRegistry(hasRawSounds ? { sourceDir: rawSoundsDir } : {})).resolves.toBeUndefined();
+    await expect(validateSoundAssetRegistry()).resolves.toBeUndefined();
   });
 
   it("declares every runtime sound and keeps every declared OGG on disk", () => {

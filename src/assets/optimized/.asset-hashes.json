@@ -1,1414 +1,1767 @@
 {
   "acid-potion.webp": {
     "hash": "aa58d81f08df8875fb9267964ae11e3f",
-    "outputHash": "80290dcb424c326baafa326d7f696c81"
+    "outputHash": "80290dcb424c326baafa326d7f696c81",
+    "selectionHash": "1d5564d6c35ab8fd8afb57ce15865b1d10c6dbf75f30381b72e633242aef9a78"
   },
   "agility-training.webp": {
     "hash": "4708803687c68a1fffbe73c6dc6c405c",
-    "outputHash": "dd8bc3be526462c9cfaf6791cf9a3445"
+    "outputHash": "dd8bc3be526462c9cfaf6791cf9a3445",
+    "selectionHash": "392e758fddbfd3b66a11e5e23615a300f5fdab7cd2803e079534ca50d6404787"
   },
   "alchemist-shop.webp": {
     "hash": "043cd1d748e0ac2e8e0da93d6232f05a",
-    "outputHash": "c15c25de02d6fcda15870abb61d7d684"
+    "outputHash": "c15c25de02d6fcda15870abb61d7d684",
+    "selectionHash": "f0e29fb2012fe8a7a3745e500a44fb6c1efa1511e4e2e995ab67eaa889e99941"
   },
   "alchemist.webp": {
     "hash": "bc2f9f43e9786a0770fc0df48ebfb234",
-    "outputHash": "95908696ae34e403f65d990651e07211"
+    "outputHash": "95908696ae34e403f65d990651e07211",
+    "selectionHash": "800070e0a72538d568e6475d81d156c357ead55d5e2cb33b3a3404774da865e8"
   },
   "alchemy-lab.webp": {
     "hash": "0347b44a9cb96b513a8ebcc238935e28",
-    "outputHash": "5ca826433650f815655a9a1021228198"
+    "outputHash": "5ca826433650f815655a9a1021228198",
+    "selectionHash": "8ea997b684cfaf78bb7c5d6b961a166e910187f4b0c94aa97fc25c152984b5dc"
   },
   "alchemy-logo.webp": {
     "hash": "77c96e18ac81852948fcb7c80d6385a4",
-    "outputHash": "d68d45d1d2d680dd80fc55a987b0d052"
+    "outputHash": "d68d45d1d2d680dd80fc55a987b0d052",
+    "selectionHash": "e5e86b48d1a95e938c1b2d0a84c975b53cefb2247a72cfe77d60b29cee046249"
   },
   "anvil.webp": {
     "hash": "02ffe9d28e670d3b0e07374fd1007713",
-    "outputHash": "867924a709d74f585253247cebe191a8"
+    "outputHash": "867924a709d74f585253247cebe191a8",
+    "selectionHash": "d69d5774b4c35578fe0726babdf306c2db0540b456965fdf5539d35b7e5190e6"
   },
   "apple.webp": {
     "hash": "561d4bbbc1e96a6e5da1314e9fedcc01",
-    "outputHash": "3440d700faba72670014d0cec05e2153"
+    "outputHash": "3440d700faba72670014d0cec05e2153",
+    "selectionHash": "f835a2d6b9ee7344b91fc9fbc3988782128f5585158a3969f3efc007121fa2a1"
   },
   "archery-range.webp": {
     "hash": "c0ef6143fc3f71d7c8ecb717ac70de0a",
-    "outputHash": "6148f0a2d64b488e0d3179fd7546b1d8"
+    "outputHash": "6148f0a2d64b488e0d3179fd7546b1d8",
+    "selectionHash": "22f9ca363344d2ccfd98c65696840f0ed386a0bc992e8bfecdcd8235a4a39132"
   },
   "armory-salvage.webp": {
     "hash": "a35f5e2f4b01220265fdbc59ce485fbd",
-    "outputHash": "5087b2bcfcfbcfc3b14ff98445d91a95"
+    "outputHash": "5087b2bcfcfbcfc3b14ff98445d91a95",
+    "selectionHash": "8b68eb5cfa07d136a9050d14f6e66ed60a5a10055152cc2312637dcf843b051c"
   },
   "astral-arrow.webp": {
     "hash": "c6b14fb453c6a857a482f38ab8ecccd7",
-    "outputHash": "1f5c82bad426eba9392aba13251f8787"
+    "outputHash": "1f5c82bad426eba9392aba13251f8787",
+    "selectionHash": "b155f4f62a6bcd5a7f5ef67003976c6fb92c4a72420173fda0bfbc460418491d"
   },
   "avatar.webp": {
     "hash": "aa9e5d3ae2ca6bf666981a689d96081f",
-    "outputHash": "3fc32ce987c5e45ce14142b42617d62d"
+    "outputHash": "3fc32ce987c5e45ce14142b42617d62d",
+    "selectionHash": "ef6bcf16dceeae00fe714c3eaefc49b4b7fdcf21933f1912be4a8fb049ac46d2"
   },
   "bandit.webp": {
     "hash": "7fdd582065b2692f588a1642d0797a47",
-    "outputHash": "57e4757df0ca9564ec70510a2c787dc8"
+    "outputHash": "57e4757df0ca9564ec70510a2c787dc8",
+    "selectionHash": "d74c0e8dd7d82859b28bb98c137abc072ae85731bb78062c9ab62497a94c7ef0"
   },
   "banshee.webp": {
     "hash": "4a69f94328ac0401b0084511546e5669",
-    "outputHash": "6b5ec65c6c882774da51f68b954fa3da"
+    "outputHash": "6b5ec65c6c882774da51f68b954fa3da",
+    "selectionHash": "ba07f213558e38dac16c34fb7b345e9d9eea8a1c00273ce23cd6897b96239ff6"
   },
   "bash.webp": {
     "hash": "cdd08c4439116403d03053205aead188",
-    "outputHash": "f8129b11f7401559a7e65733d002dac0"
+    "outputHash": "f8129b11f7401559a7e65733d002dac0",
+    "selectionHash": "fe9f9fdbe3ca44250c4cba24895c79a088525f688c1c1f15fa3d6f4e2066062a"
   },
   "battle-mana-crystal.webp": {
     "hash": "81af874f5f69308947f42b18d207d6ec",
-    "outputHash": "4f94fa5011472369d990bee7c43756b9"
+    "outputHash": "4f94fa5011472369d990bee7c43756b9",
+    "selectionHash": "3dec069ff54a572fac90e64dfde5ed8195bcb84fc280c4ffc79607aea69ba16c"
   },
   "bear-companion.webp": {
     "hash": "8ad5013943f53c755dace9d41e0540c7",
-    "outputHash": "1c332096e279af1c40bc565e1517c6af"
+    "outputHash": "1c332096e279af1c40bc565e1517c6af",
+    "selectionHash": "bd1c80d4a031a43b06490a6ee227f557946c09c92f5b138122cbe80dc989df37"
   },
   "bellows-blast.webp": {
     "hash": "65aae34e1121675add024d49a8cc300e",
-    "outputHash": "f34b0dd9c82566447addf0d94ebb244f"
+    "outputHash": "f34b0dd9c82566447addf0d94ebb244f",
+    "selectionHash": "d1b8c119d56020c1eef3192b9e300cbbd7ee09005aa0d42e4a210892985222ac"
   },
   "blackjack.webp": {
     "hash": "3936f40a7285b04f64ad210600bde832",
-    "outputHash": "5959b572da26e2a9bdd6b733b232d63e"
+    "outputHash": "5959b572da26e2a9bdd6b733b232d63e",
+    "selectionHash": "9a8ab154b44cdad17d20631c31b00fa1014a6006013cf15a4545adb2da3f270d"
   },
   "blacksmiths-forge.webp": {
     "hash": "e468065b81e8ece66ed874947eb5c593",
-    "outputHash": "e11d328b2fafacc61b521923237697a5"
+    "outputHash": "e11d328b2fafacc61b521923237697a5",
+    "selectionHash": "10bd82dd3d1b25a7a3e46b5864e7595ac498288ff1f61d4d37af607b46a4e82d"
   },
   "blessed-aegis.webp": {
     "hash": "493d848da872642a43938cdc8c3d1593",
-    "outputHash": "aebf8ed74adbaf424b5f9335af74f35e"
+    "outputHash": "aebf8ed74adbaf424b5f9335af74f35e",
+    "selectionHash": "de300362c6d6a6978b9c6302eb0bec8829ee29d8355c420394ecd4beb3f8a189"
   },
   "blizzard.webp": {
     "hash": "9a608b48466b38e519c11d38f9a361b2",
-    "outputHash": "344349957a05fc7fd76a6d62c9e4d925"
+    "outputHash": "344349957a05fc7fd76a6d62c9e4d925",
+    "selectionHash": "f315fcee117c40313fc3f6470e53c94ddee771b38ad500bad07bd8ac8c38cd0d"
   },
   "block.webp": {
     "hash": "deb9c7caeb5ac3582905709f2cf51b5a",
-    "outputHash": "8f3bee53d375977ab19608f25eea67a5"
+    "outputHash": "8f3bee53d375977ab19608f25eea67a5",
+    "selectionHash": "c382b3d565d48cdf4fa9eea8973804e91f641b0d393aade0d1bc74aeb9c6ab47"
   },
   "blood-cultist.webp": {
     "hash": "cfac58b18eef2b9bd572041163583ae4",
-    "outputHash": "cfe09362f3d3c9b7850561277722ef90"
+    "outputHash": "cfe09362f3d3c9b7850561277722ef90",
+    "selectionHash": "c11359bfe4811a90d0e373740bdd6151ef70c36923a6c447260dd9dcf8488353"
   },
   "blood-offering.webp": {
     "hash": "e2f436d9e39a8a12f86a8fd17c35a4fd",
-    "outputHash": "547f6d4d5741f4d2bc2fbf7518fe12da"
+    "outputHash": "547f6d4d5741f4d2bc2fbf7518fe12da",
+    "selectionHash": "ce24e8dec09f530479f056e47cf8ca9bb86e9d1aa3a6b9858aa6603672e7bbbf"
   },
   "bloodthorn.webp": {
     "hash": "cecff7c19a870539ee0d15af97e80b31",
-    "outputHash": "6896e5b3baa4783ae7d2b16670ab90a3"
+    "outputHash": "6896e5b3baa4783ae7d2b16670ab90a3",
+    "selectionHash": "ac43f44a8288be379b0a0209b0d02cd31025cd10f1b4fa5c5d3dc2222ef6683d"
   },
   "bone-charm.webp": {
     "hash": "e69b013188279380352b3b89623d8fd6",
-    "outputHash": "721b61ea8c709449980fe24c812df7f7"
+    "outputHash": "721b61ea8c709449980fe24c812df7f7",
+    "selectionHash": "75720a29405f1d323160c8b60225492f825374f11c9c6c12a4bca267a63d4315"
   },
   "botanical-distillation.webp": {
     "hash": "bb776240f83743a078d954ae0e3f0569",
-    "outputHash": "370279730bacb3ef3e4fd18e1065b8cc"
+    "outputHash": "370279730bacb3ef3e4fd18e1065b8cc",
+    "selectionHash": "84b9ae7e4c101a227bc2daa4e58d5f586a9e9912efc157138e47fd0c8466169a"
   },
   "bounty-shot.webp": {
     "hash": "891a12650243929d77b10c02a3ecc166",
-    "outputHash": "dd647352b3e08e1a5770cd4409325efc"
+    "outputHash": "dd647352b3e08e1a5770cd4409325efc",
+    "selectionHash": "5c5a997ab870f4cbbc5a140f3c64651dfdb30eb3f430a22bf9a7c7b7a5549193"
   },
   "brass-censer.webp": {
     "hash": "ca075f83d2e93e028f9f55d0c0ed0853",
-    "outputHash": "34f42205cab3c99d31db5bf41b4e5bcb"
+    "outputHash": "34f42205cab3c99d31db5bf41b4e5bcb",
+    "selectionHash": "a52b34024516a9da3a918dda96cafe29b48cba4a0c2fda4dba0b985e075c5c9f"
   },
   "brawler.webp": {
     "hash": "87ea3932ba3965af34a92a69a1a87c28",
-    "outputHash": "dbf9e9e9802f653525f01697fadc5e38"
+    "outputHash": "dbf9e9e9802f653525f01697fadc5e38",
+    "selectionHash": "1eeeeb29a9157bf449f219222dbf6b0fffb3a21f56a056874a292d33c22e8066"
   },
   "bread.webp": {
     "hash": "808d41f113be281b2fdf29268a908488",
-    "outputHash": "008f8601512c94cc4a4c2dd9b98f4033"
+    "outputHash": "008f8601512c94cc4a4c2dd9b98f4033",
+    "selectionHash": "a435686509c9aa3291f0b0552c77cdb9db9c124fac9f034d777fe33cd6dae5fb"
   },
   "briar-shield.webp": {
     "hash": "d00c21af0331a98a62699ba75d7e915d",
-    "outputHash": "43f6cea200f08085b551d2ebb84011c3"
+    "outputHash": "43f6cea200f08085b551d2ebb84011c3",
+    "selectionHash": "495576ce8faf4407b3364fa03bcd86b8747eb59ef1ad3d7d6daf9f63e0a818cd"
   },
   "burning-blade.webp": {
     "hash": "48ab5624c215e590014943081ca61a80",
-    "outputHash": "56bdfa7b4e96dfd18fe59bd6f2445fde"
+    "outputHash": "56bdfa7b4e96dfd18fe59bd6f2445fde",
+    "selectionHash": "7a6ec27a20cd330e71d746b51a2c6b1e3aed4b1991c9aee3d2d0ca505a855b63"
   },
   "campfire.webp": {
     "hash": "8e81f374cce9efe4ea7a882b7c02e0ba",
-    "outputHash": "01aa25c63a0fcc622484eaaa4877bece"
+    "outputHash": "01aa25c63a0fcc622484eaaa4877bece",
+    "selectionHash": "c5c2b98e1b2a7a997e5d99fea121d135e6b17bacae4de8ed120383b39c037823"
   },
   "card-back.webp": {
     "hash": "5276bac489860588bd6c7c5045658471",
-    "outputHash": "08373185233625b13ecee642c5c9c72d"
+    "outputHash": "08373185233625b13ecee642c5c9c72d",
+    "selectionHash": "c43b8978e193931fc6db72b1213493090608b67820e318ba2b2c0544769064a4"
   },
   "caustic-jab.webp": {
     "hash": "22d7cad5190feffd0aaf57d7e2f1a01b",
-    "outputHash": "782286d2097e71e67ed3814032cfa0fe"
+    "outputHash": "782286d2097e71e67ed3814032cfa0fe",
+    "selectionHash": "38a4e17bae81d6775ce0d4627cbfd8ed60e39ef27eb48b2fe51c8f9fab0b0143"
   },
   "cauterize.webp": {
     "hash": "ac0c401790c137194c762d161131f504",
-    "outputHash": "6e761557fa3240b4ddac54e53294c9ca"
+    "outputHash": "6e761557fa3240b4ddac54e53294c9ca",
+    "selectionHash": "08660fab6339420514e3e6e5d0dc064d580ff3603efd5fd2a682b9d85da266ea"
   },
   "chicken-coop.webp": {
     "hash": "3e4b905d9242de1bea8af267fe5a592e",
-    "outputHash": "c2121f8e37581b3f4f8592e4573659c8"
+    "outputHash": "c2121f8e37581b3f4f8592e4573659c8",
+    "selectionHash": "eced4d596d62ef27df464d5043f79f3ec84cf5a6f7fffa088044c2b009b94f44"
   },
   "cinderbloom.webp": {
     "hash": "ea99f24497c1b2aae4912a20be611664",
-    "outputHash": "3f5d014897592459fe9db0435c23f61f"
+    "outputHash": "3f5d014897592459fe9db0435c23f61f",
+    "selectionHash": "79ddfc1d61eb56918c0b5ac8631100b00d0e87d94c5daf1e8cb703ae337a7f9a"
   },
   "cleanse.webp": {
     "hash": "4608c070e8340f720559cda2cc4d7df6",
-    "outputHash": "0b1983f314b166ba8f18a2e97cbbfb3e"
+    "outputHash": "0b1983f314b166ba8f18a2e97cbbfb3e",
+    "selectionHash": "7b56b5fb2e7f6b4862280c6c108b7f819d5fb82fc8d02767ee289ae2e5a4c0c3"
   },
   "cleric.webp": {
     "hash": "7fa287652387592629fe1122397cfc7e",
-    "outputHash": "37fe80f192b8fc28e9a173f9b4004ebb"
+    "outputHash": "37fe80f192b8fc28e9a173f9b4004ebb",
+    "selectionHash": "ea9e055fb18f6785a62bf31582a498b617e4f190a232c04c726fbab65454bda1"
   },
   "cold-snap.webp": {
     "hash": "a687af57245f06a47a54aa5703fe42c6",
-    "outputHash": "70bfc52855a13b6443cacb97f6704d04"
+    "outputHash": "70bfc52855a13b6443cacb97f6704d04",
+    "selectionHash": "f05979f730d8a5814134c2173117188039c3d99acdbaf8ae1d24358e7924e042"
   },
   "combustion.webp": {
     "hash": "73bf16f6bb9aed10c2c58ced460edcb8",
-    "outputHash": "14583a6ffa50eceeebff7ebba87a18f8"
+    "outputHash": "14583a6ffa50eceeebff7ebba87a18f8",
+    "selectionHash": "50f274f3703101fc5819b7b671e039cee70984b95f01101368c48a9e3cac6d78"
   },
   "companion-sanctuary.webp": {
     "hash": "ed96fcbaa3e6c10c5a353662fa41a77c",
-    "outputHash": "6950f376367b97116f0dd3defd9f5ca3"
+    "outputHash": "6950f376367b97116f0dd3defd9f5ca3",
+    "selectionHash": "5437de797e6ea58d5597973c808fe379f59bab21552aa042dd34ca6322cd2fbb"
   },
   "companions-collar.webp": {
     "hash": "8b50dffb5b86d0d50ed6235ff3545770",
-    "outputHash": "dc3b5e88eefae5564d35a0ac118f50de"
+    "outputHash": "dc3b5e88eefae5564d35a0ac118f50de",
+    "selectionHash": "e94590e631801a289a153ac60cebf77815df5a5f53dc9c05c30f8e4645588e36"
   },
   "concussive-shot.webp": {
     "hash": "a0b0894f2acaa393d7f901d968bb351f",
-    "outputHash": "dc60f3211d8975e3d097c743028ad7eb"
+    "outputHash": "dc60f3211d8975e3d097c743028ad7eb",
+    "selectionHash": "fd31210b188cf0d51f0e4b74b26bc907bfd427d31a16c65026db34499b34c660"
   },
   "corruption-altar.webp": {
     "hash": "c011b1b1805121d4b7ab1e219a61bc51",
-    "outputHash": "55bfff0469f459d8b8d53f980e08f37e"
+    "outputHash": "55bfff0469f459d8b8d53f980e08f37e",
+    "selectionHash": "a4cb2c1926c271f741bad6a4e949930d7611a85d220e2ca59dc0d63ef4fa8a78"
   },
   "crafting-ascension-seal.webp": {
     "hash": "cd067ec23729f0c2f731040d17109543",
-    "outputHash": "115f3a1ef1e712bee63ff831b44bf93f"
+    "outputHash": "115f3a1ef1e712bee63ff831b44bf93f",
+    "selectionHash": "d0f7470575e7aa5fa4a624fcb32dfa1e5a13fdce454a995e79b49628b83ae4d2"
   },
   "crafting-discordant-dice.webp": {
     "hash": "aae07a555810ca63574d7386ffa6a09a",
-    "outputHash": "8277ba30ca9cae498b79b0b7d5a0235c"
+    "outputHash": "8277ba30ca9cae498b79b0b7d5a0235c",
+    "selectionHash": "95ed07423d8c7850824d206878caa068dd507c2f5efd33b549b3a1a1f05de130"
   },
   "crafting-severance-maw.webp": {
     "hash": "b1dea85cf86897a966a6b26b75576c6d",
-    "outputHash": "9297f4f6c55aa6042649af4236fc6181"
+    "outputHash": "9297f4f6c55aa6042649af4236fc6181",
+    "selectionHash": "09096a12ef04430e4805941ddca9924186ee97f5b5a5df79ac40cc62923a953c"
   },
   "crafting-smiths-whetstone.webp": {
     "hash": "e45dcd93fbe8352b1798d965f22769fd",
-    "outputHash": "5375937aedd68bb09052b082c595ef17"
+    "outputHash": "5375937aedd68bb09052b082c595ef17",
+    "selectionHash": "54867659b970debd86f2340264395903315b4e6152a062aef93c138bb67ee9fe"
   },
   "crafting-sprig-of-growth.webp": {
     "hash": "166bdc9d4ec8051a9caa2c52efe0c344",
-    "outputHash": "1a8b890628304db56701a64f2b5918b5"
+    "outputHash": "1a8b890628304db56701a64f2b5918b5",
+    "selectionHash": "66423d7974580c41d058af6c2a7c4a758a0e20d1874c901fa47738be1cc80d0a"
   },
   "crafting-voidstone.webp": {
     "hash": "f043d0b4e3abb644bd0f8514de504c93",
-    "outputHash": "bc73e443e395193d5ac82fc544c9e598"
+    "outputHash": "bc73e443e395193d5ac82fc544c9e598",
+    "selectionHash": "29cda8f24d83c483c293feb54939dc800ffd7a077451be4324594b62f34b1c42"
   },
   "crystal-bulwark.webp": {
     "hash": "a83ecd1a5b811ed9ef1903a79151a617",
-    "outputHash": "cc5dd097ddac6a674157db343f33a4f6"
+    "outputHash": "cc5dd097ddac6a674157db343f33a4f6",
+    "selectionHash": "833b13d51625f5f2edb31076cddd0655f2f16bb97b6ecf4e55734f72fddadea1"
   },
   "crystal-garden.webp": {
     "hash": "08599ab32c95cddb20ec81f9741a31da",
-    "outputHash": "0e8514748657dab8e4ce2995c3edd5d1"
+    "outputHash": "0e8514748657dab8e4ce2995c3edd5d1",
+    "selectionHash": "3af903b936683e4f67e6f60e98718e6afaa68b5625ae3914cedff74d5b632954"
   },
   "culinary-arts.webp": {
     "hash": "b376525a0ab6e07340357789214d0e2b",
-    "outputHash": "adc75597f25486fd1bcd5a37c19d60bd"
+    "outputHash": "adc75597f25486fd1bcd5a37c19d60bd",
+    "selectionHash": "8bec68dc6e67bfb23a654544699f5e0f15fefce370f19a61d94580d2148bfa8c"
   },
   "cutpurse-knife.webp": {
     "hash": "23ab107de0a835cdd8560ad6d7dc57e6",
-    "outputHash": "871814d4e87588644b286ba27b470b99"
+    "outputHash": "871814d4e87588644b286ba27b470b99",
+    "selectionHash": "6429f8b3bb3c39a58cadb351f16920894efc41abc4d23af7246bf9488f029a98"
   },
   "dark-pact.webp": {
     "hash": "38340b7bd08256781c3dea001aa11896",
-    "outputHash": "f902ddb435f303bc886fa449b17590eb"
+    "outputHash": "f902ddb435f303bc886fa449b17590eb",
+    "selectionHash": "bc360c6ebe2c939f2dba8a85b0967de5569306469d00489324bb18e7c0321f5d"
   },
   "demo-feature-showcase.webp": {
     "hash": "50de3e2941c9c9d84c45f1513d6f4af9",
-    "outputHash": "18c553571923d00922af849b75269aa9"
+    "outputHash": "18c553571923d00922af849b75269aa9",
+    "selectionHash": "2241c857dcc22606012f2fccd745a3693ff66f2179271495c73d983de62021ab"
   },
   "detect-magic.webp": {
     "hash": "cdbdf6a898a014cfec319bdb09b1c210",
-    "outputHash": "15bc52e043c1b9acddfa23c661681f7e"
+    "outputHash": "15bc52e043c1b9acddfa23c661681f7e",
+    "selectionHash": "f6855944734670c867c74652e1d4a289dbce89550384e28818cd55eb4d891c1d"
   },
   "difficulty-1.webp": {
     "hash": "af220497b2d92084954f049e879a2fbf",
-    "outputHash": "193ac3c06051d6a1f575ceca2ea4764f"
+    "outputHash": "193ac3c06051d6a1f575ceca2ea4764f",
+    "selectionHash": "d0ef48f72b9b8f73c64f4206abff8bbc58eafd3cc4c72a53d6271fe3c84b453a"
   },
   "difficulty-2.webp": {
     "hash": "6d3bc7b59ab20995ba07aa4e82caf1e5",
-    "outputHash": "cd959bfe5b2769688aa4d315e69c38af"
+    "outputHash": "cd959bfe5b2769688aa4d315e69c38af",
+    "selectionHash": "20f6111f336077e32293f9973a1c5affd3a1ada1622aacf0907997a297cf47e1"
   },
   "difficulty-3.webp": {
     "hash": "738fcfeef1bd8ab39f2ab1e54a896704",
-    "outputHash": "66850a7bb53a25be700125b89a429cc5"
+    "outputHash": "66850a7bb53a25be700125b89a429cc5",
+    "selectionHash": "12ca0841b61f3a53b8bbe93947bb6460179917628e01678bad59f9116c3a3fe7"
   },
   "dire-wolf.webp": {
     "hash": "4e6f38baec53e874dda873673ac21490",
-    "outputHash": "d3dd1e2b7b88425a7e2521ecee113436"
+    "outputHash": "d3dd1e2b7b88425a7e2521ecee113436",
+    "selectionHash": "d3f4a34bac5f9a4c0166cc4beb60f749e88f987b179fa746bef723f466caf284"
   },
   "discard-pile.webp": {
     "hash": "1435887cede6b4de988aeedf201760c3",
-    "outputHash": "96404f02f506b3ce26e4b200667a77d4"
+    "outputHash": "96404f02f506b3ce26e4b200667a77d4",
+    "selectionHash": "b5abe6ae73ff08bacb2e314e5c5125bd467ca12b55c09eddd52d66dfb57c6094"
   },
   "draw-pile.webp": {
     "hash": "10d86b2666a2b6479aa49cc28ce821da",
-    "outputHash": "9bea82c589a7c1e44331ae4244c77213"
+    "outputHash": "9bea82c589a7c1e44331ae4244c77213",
+    "selectionHash": "7fed08b00026e7f6d8d2f0161ef7f843660e741126d89a8eabf4bad65eed1666"
   },
   "druid.webp": {
     "hash": "fd7fd12f3c166e3c149c7ebe1e0b3b9c",
-    "outputHash": "ea93d1c24812c41fee15342fd5219217"
+    "outputHash": "ea93d1c24812c41fee15342fd5219217",
+    "selectionHash": "7e17a14340b52b4b012589d05f41b8c0019591facdbdcf0c6756293a0423de90"
   },
   "earth-elemental.webp": {
     "hash": "9fe6d08f8f845e3d04473c68f3a03253",
-    "outputHash": "31e4f131bcbae90e5ffe2c66d2afba5d"
+    "outputHash": "31e4f131bcbae90e5ffe2c66d2afba5d",
+    "selectionHash": "7d89dd3fd3e751000724fa5955aa0964f7a126956597a22a25bf77e50a97bd5a"
   },
   "earthquake.webp": {
     "hash": "9f6e4cd7a52e82c809fca727e781afc0",
-    "outputHash": "60439852ed3177953a69a5f8fb3cc293"
+    "outputHash": "60439852ed3177953a69a5f8fb3cc293",
+    "selectionHash": "26c79f586492648802d2e54d64472a0b46cc2d234704d5042bc68036cdfaf028"
   },
   "elite-enemy.webp": {
     "hash": "2e4e79b33d974983216edd6fdd10f5a9",
-    "outputHash": "504fde12728069a25d45da3e5499477b"
+    "outputHash": "504fde12728069a25d45da3e5499477b",
+    "selectionHash": "545f6bc7fb8066c5b05a79e5d42ea6d16fb12abef7ba689d5a702b3326eaa5d9"
   },
   "exorcism.webp": {
     "hash": "8bbdf3ea3cfedcd863484364abcdaa34",
-    "outputHash": "10b03d0c1f35edc8356e4ea779f5b85b"
+    "outputHash": "10b03d0c1f35edc8356e4ea779f5b85b",
+    "selectionHash": "faf19aa233bb5c50cea159c5e86121f5f9215704314bdd3ae9a15e92072f5ee7"
   },
   "fangs.webp": {
     "hash": "7939b0170e7ae4824a7fa8656d7d37d6",
-    "outputHash": "ee6b23cec77fe511bd7b651d7f050b62"
+    "outputHash": "ee6b23cec77fe511bd7b651d7f050b62",
+    "selectionHash": "890ac85725137b4e9f591643d541466c6ce289272be6f3b7e0836c2ea33e6747"
   },
   "faustian-bargain.webp": {
     "hash": "9e8c28c32ab3435d044607691d9fcbc4",
-    "outputHash": "9e39696dc69fbcee41530b8406d24893"
+    "outputHash": "9e39696dc69fbcee41530b8406d24893",
+    "selectionHash": "f3333ccc1cd3964efd4ed6e99379921aa332f37caca0143e2f2e2a21bec01de9"
   },
   "feint.webp": {
     "hash": "0dbf0d12d5cd3f7d0133ad8179987659",
-    "outputHash": "77ed56dc88c68446e0f113ed3ba32f9c"
+    "outputHash": "77ed56dc88c68446e0f113ed3ba32f9c",
+    "selectionHash": "6baf288ef793c774a84aaa276d6cad40fef83f715aa1a05ea7746c39d5d34909"
   },
   "fire-arrow.webp": {
     "hash": "26bfc2f6a8079528715e589436a95f40",
-    "outputHash": "1db79db1cb1f4eb239a39897fe4ce209"
+    "outputHash": "1db79db1cb1f4eb239a39897fe4ce209",
+    "selectionHash": "d10cec75b26a7d199168327b770bca8909f1275f3a002a2f0d77d40ab5bef4b6"
   },
   "fire-elemental.webp": {
     "hash": "65954c2466bb0d336c002569dcb74f70",
-    "outputHash": "bb0ec0e6012ae6d8547a18c8256c58df"
+    "outputHash": "bb0ec0e6012ae6d8547a18c8256c58df",
+    "selectionHash": "4def0dcee3d3790e70077ff0c2e9f7745f094a388a87c7ed830b60a826f0b8c4"
   },
   "fire-imp.webp": {
     "hash": "57c905b4f573e2d4cdddef81f82c3290",
-    "outputHash": "a080a8b2942e21557799deddeb82bd8e"
+    "outputHash": "a080a8b2942e21557799deddeb82bd8e",
+    "selectionHash": "409e3f8ea7585d9c08df40998c1c78833d1e75aba2aada04f39778d029e05d82"
   },
   "fireball.webp": {
     "hash": "de97aeec2dbe60c51b3357db38231dd0",
-    "outputHash": "b879f9aabb1055ee5c736e9094a0f938"
+    "outputHash": "b879f9aabb1055ee5c736e9094a0f938",
+    "selectionHash": "5aa8350a26c37975f845e0086084a6c91a6c208039d19f95b61bad5a9c415956"
   },
   "fox-companion.webp": {
     "hash": "82b0038b32679b77d1731ac8482b61a7",
-    "outputHash": "ece58975abda74eea898fe4d9799b3a1"
+    "outputHash": "ece58975abda74eea898fe4d9799b3a1",
+    "selectionHash": "0bdd1145eb630eac9e6ec7d8799bd51d741dcfafcb859044a2b973367b9b452a"
   },
   "frost-elemental.webp": {
     "hash": "7204f5130e0443cf274efb886eedd07d",
-    "outputHash": "0e68446eb1fd2c89ac2cd41a20372425"
+    "outputHash": "0e68446eb1fd2c89ac2cd41a20372425",
+    "selectionHash": "936dbe79e414b2885cf8066fdff0e1289b500d0e1277b4754e4f7434536af226"
   },
   "frost-whelp-companion.webp": {
     "hash": "1965e79d19d09c504dbdedffbfd2f6cc",
-    "outputHash": "8919e8707953187c42164e1694e60553"
+    "outputHash": "8919e8707953187c42164e1694e60553",
+    "selectionHash": "8e1fd4c9a76619a82a9d12186741f639578fc3882701fb60e58cdd29f5109150"
   },
   "frostbolt.webp": {
     "hash": "4902737cc7c4d213a4208b6974601810",
-    "outputHash": "1df7d448057b68ef584b7735b6e96f84"
+    "outputHash": "1df7d448057b68ef584b7735b6e96f84",
+    "selectionHash": "b5d3c97af5384ebc2d45c46e210384390b65fe42129ffb7cd8c0d4f036a79e88"
   },
   "frozen-pocketwatch.webp": {
     "hash": "179fa24f70c3333526ee2459a206894f",
-    "outputHash": "3573c73cc8122372a4eb3782631b39c8"
+    "outputHash": "3573c73cc8122372a4eb3782631b39c8",
+    "selectionHash": "ce1d30edc56914197bd54eddf32289a6d0df1b8474a902330961284346ac1551"
   },
   "gamblers-shot.webp": {
     "hash": "ddcad16d389cb8fbb8620a9091f11199",
-    "outputHash": "37755c2e5a56779c59c9a8e022984f80"
+    "outputHash": "37755c2e5a56779c59c9a8e022984f80",
+    "selectionHash": "134efc1b12e3c780cea03d0664d6af62603e7a60f03ffe3f1e41b24aa810f371"
   },
   "gear-crossbow-astral.webp": {
     "hash": "b70a384e8d596bb1102d1135a7083baf",
-    "outputHash": "ecb14c689a1d61cbf798fef24da306ff"
+    "outputHash": "ecb14c689a1d61cbf798fef24da306ff",
+    "selectionHash": "23602132a776d5fb34bbc70c3f6beed492355cb6bffe896bc0607862be706d54"
   },
   "gear-crossbow-basic.webp": {
     "hash": "a6a945af736a172b2b4d515c3b27e55b",
-    "outputHash": "5134de4f67beb267470195acb0d737d1"
+    "outputHash": "5134de4f67beb267470195acb0d737d1",
+    "selectionHash": "453251fe440912bae23e642c0ae708a6d328c0226ae1af3e259914810dea946e"
   },
   "gear-dagger-astral.webp": {
     "hash": "8236b18fda0305a0f72d1edcd4cd855d",
-    "outputHash": "d08d01dcd5a9d2d9891ee09514fb2e26"
+    "outputHash": "d08d01dcd5a9d2d9891ee09514fb2e26",
+    "selectionHash": "4d30667633d9886af47517f022fb8a289c283867c6bb2d08e383c1e0d8ce7ed1"
   },
   "gear-dagger-basic.webp": {
     "hash": "11ab12fb024012e1118d1bf6f77b8ac2",
-    "outputHash": "6455d14e1f3cea807b091c657de82ead"
+    "outputHash": "6455d14e1f3cea807b091c657de82ead",
+    "selectionHash": "d3903ba1f74ac2322ea9fd60dfc82f9f8c02398c9534bdc03a592e01e2f646bb"
   },
   "gear-double-axe-astral.webp": {
     "hash": "cb768f008b056703aef76dc49ed3dc4a",
-    "outputHash": "a460fac99ac7ab8c8b2b8e7104701ea5"
+    "outputHash": "a460fac99ac7ab8c8b2b8e7104701ea5",
+    "selectionHash": "31bedba6686d70c111ed91549ec2227fd163856dfd0815d438f2958d1f236721"
   },
   "gear-double-axe-basic.webp": {
     "hash": "72dba536ca5d74939aef19ea0e080d8e",
-    "outputHash": "da7307ff937d812a63e2696bf7ac9a9b"
+    "outputHash": "da7307ff937d812a63e2696bf7ac9a9b",
+    "selectionHash": "3449a028bdf38fec674d9736132500a6a4a24e8c86501906c7766b834fcea33d"
   },
   "gear-emerald-amulet-astral.webp": {
     "hash": "04aadceba15aabf6af34bd5f6714316d",
-    "outputHash": "ef89b91927743cab997969e592ec9ea2"
+    "outputHash": "ef89b91927743cab997969e592ec9ea2",
+    "selectionHash": "8ecee207ad52ef56c94cd043cf9c74283dd8dfeaf6155da51c46210d9720fb80"
   },
   "gear-emerald-amulet-basic.webp": {
     "hash": "4ce322ad0fc7aace05ee67a98dd101db",
-    "outputHash": "fe399e24e213e69ab94e049faa7fea64"
+    "outputHash": "fe399e24e213e69ab94e049faa7fea64",
+    "selectionHash": "fac0b0af1f24224d631fed28f63539d229626c51af98a7d9435f6b7c13530129"
   },
   "gear-emerald-ring-astral.webp": {
     "hash": "eb50b56285fe6c21823af80db4102582",
-    "outputHash": "734fdf4d205ed55589a2128d666e5069"
+    "outputHash": "734fdf4d205ed55589a2128d666e5069",
+    "selectionHash": "65bdc98bd7b8f0973a5c0c585ffc6ffc6da968be9a6c9de161da54f9829e1c40"
   },
   "gear-emerald-ring-basic.webp": {
     "hash": "e641db9f7288d5ded868e5ac9cb082d2",
-    "outputHash": "ccb7f34ebf44818d5f8e747865c094f7"
+    "outputHash": "ccb7f34ebf44818d5f8e747865c094f7",
+    "selectionHash": "eeda12068af45db91b3958e0c73aa87d6c0ca1dbf31363d32b9399ca51cc2d27"
   },
   "gear-flail-astral.webp": {
     "hash": "86a841571cd74e11ed680b4eab2aca59",
-    "outputHash": "564784ebe903a07fa6053857aec11c6c"
+    "outputHash": "564784ebe903a07fa6053857aec11c6c",
+    "selectionHash": "de9ea7ccd6ce8b26710a05e8fd1788a881a35c3426ea50a3121b4e767f010996"
   },
   "gear-flail-basic.webp": {
     "hash": "5bc83ecd58589fb3c01084cc35c3e7b5",
-    "outputHash": "83f0fcaf4a71a92c81d2bfb27003f736"
+    "outputHash": "83f0fcaf4a71a92c81d2bfb27003f736",
+    "selectionHash": "547e53e422397510763d6a264b35f9bc641fdcbf7dd8f15f6036b4a98a5c6483"
   },
   "gear-greatsword-astral.webp": {
     "hash": "bc91f519c3da831b386c5892b168ca9b",
-    "outputHash": "68572937dc4b6f21491572aef2089dc6"
+    "outputHash": "68572937dc4b6f21491572aef2089dc6",
+    "selectionHash": "4a2f5d6f211c17c84e1c130d41fb346ccb8fdd69d7baaffd7bae1bc66159661e"
   },
   "gear-greatsword-basic.webp": {
     "hash": "31ff16d555fe685f0cca588e5a794788",
-    "outputHash": "224ebd24b4571f1ac810ef439aea074c"
+    "outputHash": "224ebd24b4571f1ac810ef439aea074c",
+    "selectionHash": "f5d66d70e6692daae5e79533b72de08c5dbcc67fa18601ab0981b6fbdc6f3d96"
   },
   "gear-hatchet-astral.webp": {
     "hash": "50c473008ef1343d4f2f56cdb85090a8",
-    "outputHash": "e6aa2cdd44be85fb6c497ce0e5602a49"
+    "outputHash": "e6aa2cdd44be85fb6c497ce0e5602a49",
+    "selectionHash": "ee90b482b099fc2e3da91ee292bcee1a5087a724c7228b7c681e9a8bab2b5b41"
   },
   "gear-hatchet-basic.webp": {
     "hash": "dc7d3a6bd5845070bed6d46b71de2da0",
-    "outputHash": "93ac1e78e305f2b9cf27bf547998f30d"
+    "outputHash": "93ac1e78e305f2b9cf27bf547998f30d",
+    "selectionHash": "ddc2708e0045565e6ef0f72f8ebfdf5bb23ad312cc6e04e69561f52157b4e8fc"
   },
   "gear-kite-shield-astral.webp": {
     "hash": "54e5aa93f09641f8966bef803e9b79b4",
-    "outputHash": "dfa79c1813c05ceb6ecb7b7191ae6ea2"
+    "outputHash": "dfa79c1813c05ceb6ecb7b7191ae6ea2",
+    "selectionHash": "5a02ce449c3a34c3e765f4dd4bceda08aef1f2a8a549bc27468f372fbbbfc865"
   },
   "gear-kite-shield-basic.webp": {
     "hash": "f319095c96d3e28bc546a6eee8a8cf12",
-    "outputHash": "41e5da9b62ed4153f705bb6803e05c51"
+    "outputHash": "41e5da9b62ed4153f705bb6803e05c51",
+    "selectionHash": "3c9481279654df31e0995282313d327cb9f010c73f6fffdc39799c8b3b752dc6"
   },
   "gear-leather-armor-astral.webp": {
     "hash": "fcee7d7dc49a3da221f66bf0ca178038",
-    "outputHash": "d53c896be740b1af4ac73282c77d9e11"
+    "outputHash": "d53c896be740b1af4ac73282c77d9e11",
+    "selectionHash": "ac290cfdb7685800d9b8618fd15d69fb487968f65a08549f65f3c4833050cbcd"
   },
   "gear-leather-armor-basic.webp": {
     "hash": "924113892deb3dcfac4d6a7f95a4fa70",
-    "outputHash": "d1f6ec913b60b7c758933e58ae02116f"
+    "outputHash": "d1f6ec913b60b7c758933e58ae02116f",
+    "selectionHash": "332c5cb1e74c3daae5b2057d312168347debdadceeef547fea8a08b0e9fdd383"
   },
   "gear-leather-buckler-astral.webp": {
     "hash": "23cf69640a3b749c5a61de65ba3b7c98",
-    "outputHash": "0d1b6c7c05c2e11733c54605060bee1c"
+    "outputHash": "0d1b6c7c05c2e11733c54605060bee1c",
+    "selectionHash": "ca815043dd09105ddfdec6e657d934a327fc98a95ca9ceacf20fe52b1bac42af"
   },
   "gear-leather-buckler-basic.webp": {
     "hash": "01030f6c03ddfc30f54106b4f501d2ff",
-    "outputHash": "8262d2f5ab46005f468c507aeba9d65e"
+    "outputHash": "8262d2f5ab46005f468c507aeba9d65e",
+    "selectionHash": "c0224c869b29c31aaebf8fa6673e1d7b19d76a6796428d22f60a57ac60555780"
   },
   "gear-longbow-astral.webp": {
     "hash": "9efb5a8b32c6d54a1296cb0f85408349",
-    "outputHash": "071962033fa853cc894b1a4c42a0c924"
+    "outputHash": "071962033fa853cc894b1a4c42a0c924",
+    "selectionHash": "2d808e2818ff1acbb14bc23ba91b3cbda47b34f524a3e4c021163d8196292ce9"
   },
   "gear-longbow-basic.webp": {
     "hash": "69f67e7d69c5546a3854c5a3b7c94c31",
-    "outputHash": "6a65ceb9b4d7dd8d57cbc72427f43096"
+    "outputHash": "6a65ceb9b4d7dd8d57cbc72427f43096",
+    "selectionHash": "ee2b54fdcb6e23e3e52c544c6fb77ffe4a3db81cd425be541bef33701f591e0f"
   },
   "gear-longsword-astral.webp": {
     "hash": "e3e5019d7747097ee1416f2f84e44587",
-    "outputHash": "1c3c0b99d46920ca73b555991036ee62"
+    "outputHash": "1c3c0b99d46920ca73b555991036ee62",
+    "selectionHash": "08176f51466c52ed93a2ca4c4a5f1df4a2ac8d3c58f5c412e7e0b31ada8ab8f1"
   },
   "gear-longsword-basic.webp": {
     "hash": "05782680f9015cb8f854ad4b04a74401",
-    "outputHash": "d7bb7179c62e519400bdceb53a60f863"
+    "outputHash": "d7bb7179c62e519400bdceb53a60f863",
+    "selectionHash": "b95b95246d4474f2deb4a73455f75a876df0db5a1001d0c288822a3bfed7dd09"
   },
   "gear-mace-astral.webp": {
     "hash": "504ef92d1a8417956bb472f1977cf5f2",
-    "outputHash": "12c0f144a6725cb620799195d7fb3f97"
+    "outputHash": "12c0f144a6725cb620799195d7fb3f97",
+    "selectionHash": "a228f6cbcb5198181a7788f519e630161c14de565ed98f42cfbb68e877a86939"
   },
   "gear-mace-basic.webp": {
     "hash": "9c4811e1876d5a35a7e05d35f2c1bb94",
-    "outputHash": "7808f92af084c993881214d5fdcb4c44"
+    "outputHash": "7808f92af084c993881214d5fdcb4c44",
+    "selectionHash": "f0f79efb8cdf7ae06ee2a917b353a0108fcc219033588b6d5caba83e889e208b"
   },
   "gear-maul-astral.webp": {
     "hash": "9b031f923252a3f16cf17a46aa4a819e",
-    "outputHash": "7b6cfcd63499bf43ae1caf134bcb9215"
+    "outputHash": "7b6cfcd63499bf43ae1caf134bcb9215",
+    "selectionHash": "cc2d6a66a079d8ac5f81c7b54e8c7cc554c44351ffb8a8cdb4f1aa29138acdc4"
   },
   "gear-maul-basic.webp": {
     "hash": "711f153cb3d08f8c1660574cb4b8e26b",
-    "outputHash": "455b11eeae9fb28b24a3d4939b763abf"
+    "outputHash": "455b11eeae9fb28b24a3d4939b763abf",
+    "selectionHash": "1ae56d9695c8bc0a56f961414efa801f78784d1cc2d8da4e66be4f31bb61824b"
   },
   "gear-plate-armor-astral.webp": {
     "hash": "e7295473d6fec65a5cfec0fedc0dd293",
-    "outputHash": "cfa6d4e2e159bfce040636b6a3280405"
+    "outputHash": "cfa6d4e2e159bfce040636b6a3280405",
+    "selectionHash": "8e2adc6c505a0492a65db2e480b9cb36052e695f04d6b25f76d705969b8ac928"
   },
   "gear-plate-armor-basic.webp": {
     "hash": "60a32e02d61b3ad88e3d52c16fff0552",
-    "outputHash": "790f62dbfec0ce1b27b32eb906e71129"
+    "outputHash": "790f62dbfec0ce1b27b32eb906e71129",
+    "selectionHash": "4e3a957fd03025067f2550e09d158a13c1f088f8590f782a53cc8ba32e76ab8a"
   },
   "gear-quiver-astral.webp": {
     "hash": "16288c84bd2b5438e49325cf57c7f24a",
-    "outputHash": "0525230ac5a386fad6f1aef03f27735c"
+    "outputHash": "0525230ac5a386fad6f1aef03f27735c",
+    "selectionHash": "48f0cce61eb42c51d5fed492b2976870b06d88b1f5de2aa9696357c803ff5a47"
   },
   "gear-quiver-basic.webp": {
     "hash": "5c1e82294378266bba250f8b86d727da",
-    "outputHash": "917e4c878774979c032bfd2a05b4d736"
+    "outputHash": "917e4c878774979c032bfd2a05b4d736",
+    "selectionHash": "fdc7540f20bfd92bb7594d32ab4ec10be209d28a27393142007e03e8cd88622e"
   },
   "gear-recurve-bow-astral.webp": {
     "hash": "1c1927d2adca2f80c6af24acbf8162f2",
-    "outputHash": "c06fdf21774d78937ff794302b39517a"
+    "outputHash": "c06fdf21774d78937ff794302b39517a",
+    "selectionHash": "4f50188e221ddd73803d47e0be0072bfa95001f90e5c90b56f620340a7c3d825"
   },
   "gear-recurve-bow-basic.webp": {
     "hash": "12a574e93840184508ac10bbc833f02f",
-    "outputHash": "bfda190413274e79c9a378a60e2930bf"
+    "outputHash": "bfda190413274e79c9a378a60e2930bf",
+    "selectionHash": "555b86585b3eda968bb8558e00beaf65371d8739dfb2fa3ba59adda2cb05b464"
   },
   "gear-ruby-amulet-astral.webp": {
     "hash": "29aaefaadc8774789e93bc3f89e555f2",
-    "outputHash": "acf2f0c3e9d317942d83a83468c16dde"
+    "outputHash": "acf2f0c3e9d317942d83a83468c16dde",
+    "selectionHash": "edcf2f7440df1dd114207d6bebaccea01deb60e6e57a24ccc94bc4470ac055d2"
   },
   "gear-ruby-amulet-basic.webp": {
     "hash": "2e7271614dc8f5e1c97a0fcbe87efa62",
-    "outputHash": "0bc9af46e478f6c7d61684ffe922d677"
+    "outputHash": "0bc9af46e478f6c7d61684ffe922d677",
+    "selectionHash": "61afe78a41646699b77204f099fa56f6430329b36d954a83bbe416e56de68920"
   },
   "gear-ruby-ring-astral.webp": {
     "hash": "9f76180a6e093bd996276912d19c8d67",
-    "outputHash": "108ee31a5238ea3c92d2027f2ffa56fe"
+    "outputHash": "108ee31a5238ea3c92d2027f2ffa56fe",
+    "selectionHash": "78fd1e73f239783f7ba2d89efb360d4c49984225b27bbc105b359898a5faba3f"
   },
   "gear-ruby-ring-basic.webp": {
     "hash": "3be3742a369f2034c78247963987bec5",
-    "outputHash": "b8f80b17b73e88474cb62241dee300e9"
+    "outputHash": "b8f80b17b73e88474cb62241dee300e9",
+    "selectionHash": "1ce0d125bfdfddca15459e68b898e4e2fc57a62420130757d37bdee906ed1e39"
   },
   "gear-sapphire-amulet-astral.webp": {
     "hash": "a7ccb5a23e7bd8329f7925d675447762",
-    "outputHash": "fd8aa722f43d357b0502484e6dc2e50b"
+    "outputHash": "fd8aa722f43d357b0502484e6dc2e50b",
+    "selectionHash": "c86cbe2965390a25033f16e17d40e88deef5508afe4a3c78215304122423e6ed"
   },
   "gear-sapphire-amulet-basic.webp": {
     "hash": "949f27133b36612d0f6f72ee1fdd3dd5",
-    "outputHash": "e8b04ce68de1c1dc1a32412e37d1ee86"
+    "outputHash": "e8b04ce68de1c1dc1a32412e37d1ee86",
+    "selectionHash": "da36c316c6e640c94698ad2b5651cba1d38c92c006a5ae3daaf41ca842a2ac89"
   },
   "gear-sapphire-ring-astral.webp": {
     "hash": "c04b1d15cfc22e2de40effe4c325b66c",
-    "outputHash": "f48b497c937836e513deed7fee68b372"
+    "outputHash": "f48b497c937836e513deed7fee68b372",
+    "selectionHash": "c5fbd3a66a3e8b2def5fae03cd9d89011deb92c8edba49c54dad183998ccb252"
   },
   "gear-sapphire-ring-basic.webp": {
     "hash": "3828e66204c26d9f550d953b606d7402",
-    "outputHash": "423b949552701b45f9595eb8a9f87b1c"
+    "outputHash": "423b949552701b45f9595eb8a9f87b1c",
+    "selectionHash": "0a00701efe494f39e0bab831ccc6e2c9b1173cd1900aa2d610e5797cb76ce1f2"
   },
   "gear-shortbow-astral.webp": {
     "hash": "c1d1b4c01467775a3a620b07f2ad2ba7",
-    "outputHash": "9f3c75813f03f60b7a363c48a8203ac5"
+    "outputHash": "9f3c75813f03f60b7a363c48a8203ac5",
+    "selectionHash": "88ee43c57631a30453171cc0cef2e21230876899bd6c9cd8f8894e3b1984ae32"
   },
   "gear-shortbow-basic.webp": {
     "hash": "c1e078ee080840c52aefe23855e49440",
-    "outputHash": "b690c1df12e5755aa52de6a4eb6a0f68"
+    "outputHash": "b690c1df12e5755aa52de6a4eb6a0f68",
+    "selectionHash": "11735664b6ed7d34fc9bbad623af8b79695cfbc21c6eccdc7b1c735dfbb47dc3"
   },
   "gear-shortsword-astral.webp": {
     "hash": "cfecde52fb323465aacb26e489402b3f",
-    "outputHash": "2ed0dda402d3814f0d443b7f94d3c86f"
+    "outputHash": "2ed0dda402d3814f0d443b7f94d3c86f",
+    "selectionHash": "3514afe5767e81cf74f71d84991baeb8403f293c73884fe89c5f67ef2fe3643c"
   },
   "gear-shortsword-basic.webp": {
     "hash": "93b195666948926d0c59ba48a594c1e1",
-    "outputHash": "739a2853fdb9402c88713bfd2bd1fe2e"
+    "outputHash": "739a2853fdb9402c88713bfd2bd1fe2e",
+    "selectionHash": "91d65d49ee394211bee947d14aa457060946e66b1cb118a5d1fe28414e04e8f2"
   },
   "gear-slot-accessory.webp": {
     "hash": "dc183b1b020de1ca3c4eccc23aab6f23",
-    "outputHash": "ed2711e620c0b8b4c42dfa235b6760d0"
+    "outputHash": "ed2711e620c0b8b4c42dfa235b6760d0",
+    "selectionHash": "48dcf8ac2c2b0770999f8020a3f2b744a37fcf77a70153d0ec8642910afd36cd"
   },
   "gear-slot-body.webp": {
     "hash": "c5d0e8b97fe9c7f79119d05f0c70a4c0",
-    "outputHash": "b7f276e49290d72808c4d38c4982c23e"
+    "outputHash": "b7f276e49290d72808c4d38c4982c23e",
+    "selectionHash": "4eb4c856fb6e1cbe37432651281b374429f5f5b7311da996679c9a10b4bbb954"
   },
   "gear-slot-trinket.webp": {
     "hash": "8697b52548d498f11eaa61b518ef01a7",
-    "outputHash": "722934bb269ca091d2a37141fc1d1d78"
+    "outputHash": "722934bb269ca091d2a37141fc1d1d78",
+    "selectionHash": "af52a7062f3d72ccddd2cbda0bb94c4970eed1abfd6524298bb84c0bfde57340"
   },
   "gear-slot-weapon.webp": {
     "hash": "9ef06aa77b11548810e37ede2cbf1525",
-    "outputHash": "8bd2c6ed7a769ca38814bb2031a2cc60"
+    "outputHash": "8bd2c6ed7a769ca38814bb2031a2cc60",
+    "selectionHash": "f0dc6dce8c0258985a03a74262f74367a35778782f0aa5aef7e21b419baf2e28"
   },
   "gear-spellbook-astral.webp": {
     "hash": "ee83c594565ccf0edff68cff8434a750",
-    "outputHash": "da2846ab28c69239c9db5487d14f8627"
+    "outputHash": "da2846ab28c69239c9db5487d14f8627",
+    "selectionHash": "d33ed6b9f3f33fd765fe661b3cf8fd9e03018434c224ad31ee4c7bb830533389"
   },
   "gear-spellbook-basic.webp": {
     "hash": "3448966e5876ba84ea01bdc2bde6bcec",
-    "outputHash": "ea58295df20df728919e121931ee305c"
+    "outputHash": "ea58295df20df728919e121931ee305c",
+    "selectionHash": "30dae30d01b16889a756cace32b9b9998e8c96a4ed81f2ae495aa5bd53e45b25"
   },
   "gear-staff-astral.webp": {
     "hash": "277a223bb257f956c112dc616f98a5c9",
-    "outputHash": "a85f0bb7e4b2c373a09e50cb812b34ba"
+    "outputHash": "a85f0bb7e4b2c373a09e50cb812b34ba",
+    "selectionHash": "9036266fa3b3bd900c4fe50c3b56161147161986456e3c5f1a353d9a0a9034e6"
   },
   "gear-staff-basic.webp": {
     "hash": "1247001900efa30195354546e85f3f5e",
-    "outputHash": "68c812c764fce22bd0e96d59e3620e05"
+    "outputHash": "68c812c764fce22bd0e96d59e3620e05",
+    "selectionHash": "076f6cef66fb7bef587321d635c0b56baf2dd8dd87f80e3897f46ca0a900e647"
   },
   "gear-topaz-amulet-astral.webp": {
     "hash": "8610872f0de63586582d2e9e1dde50dd",
-    "outputHash": "907cb563d7f70ee979dd9b6dc22255a7"
+    "outputHash": "907cb563d7f70ee979dd9b6dc22255a7",
+    "selectionHash": "020df77f98225c0937f85e83f362e2316ab5e8dc9a2426a490a4ee0b869ed733"
   },
   "gear-topaz-amulet-basic.webp": {
     "hash": "79196210283890d765627d4d2bcb8d66",
-    "outputHash": "b73cfb6ca26fcc30735883714bd46034"
+    "outputHash": "b73cfb6ca26fcc30735883714bd46034",
+    "selectionHash": "5cdb2e8496879c0af25d555e8f68e9b2399a5a7aa63cc05b4d62e95760c7a6c0"
   },
   "gear-topaz-ring-astral.webp": {
     "hash": "4b21704bc72edf517fe6ddc2f772da3e",
-    "outputHash": "89ddf91f6fb056da867410c63f78b0e4"
+    "outputHash": "89ddf91f6fb056da867410c63f78b0e4",
+    "selectionHash": "f6fde41c3223caa6ba8311d9e72a8e3fc0d6f0886c03be8adef110dbe64bc814"
   },
   "gear-topaz-ring-basic.webp": {
     "hash": "1845815136267032577d276c21e0fa16",
-    "outputHash": "b8de1a6eff8d4f5c1ba7f546575a4621"
+    "outputHash": "b8de1a6eff8d4f5c1ba7f546575a4621",
+    "selectionHash": "9b976d099c0d5e55d5838dbe913f2fbd01481c24270d39247becd6e62abedcfb"
   },
   "gear-wand-astral.webp": {
     "hash": "99b30475cc973cbbc1fc3a92b0ecb5f2",
-    "outputHash": "003661f6dc31af8d37388f6924669fa9"
+    "outputHash": "003661f6dc31af8d37388f6924669fa9",
+    "selectionHash": "f46ba369eee8d6ddf5e949c8fea998cabffe1538eaebd51eb842611cebab883a"
   },
   "gear-wand-basic.webp": {
     "hash": "b14511883e7c975b44e6e713445c27a8",
-    "outputHash": "1b74b1a2101342d61496184b6618878f"
+    "outputHash": "1b74b1a2101342d61496184b6618878f",
+    "selectionHash": "4bd2f53ab96a7cdab64e0c1c2626ec56893a92365c617251421f606c3a302b86"
   },
   "giant-snake.webp": {
     "hash": "b29f2cf58510e135d24ebe4a17582e53",
-    "outputHash": "fb2b2f9f2562226d2a5eeff6019377ac"
+    "outputHash": "fb2b2f9f2562226d2a5eeff6019377ac",
+    "selectionHash": "958ca4efe38b832c9d0a55dc1d64edac353d84864ed6da711e0d8970c71f113f"
   },
   "giant-spider.webp": {
     "hash": "2836e6882d9fac64e0140b4af281ffa2",
-    "outputHash": "c8cd64863ef218a1e82592692763b54b"
+    "outputHash": "c8cd64863ef218a1e82592692763b54b",
+    "selectionHash": "55eb703600e29fe676de8a96d0f15af9a5b1bc6fa222729d4b3d0796e411303e"
   },
   "glacial-ward.webp": {
     "hash": "7baffd4d6c28a00166bf711f517aee24",
-    "outputHash": "64984c63f06c91a80f9f9970d5a7c441"
+    "outputHash": "64984c63f06c91a80f9f9970d5a7c441",
+    "selectionHash": "0318da32c3df90db6189bc25b242c2c06063243d9ab380575aad5cd491b91a7f"
   },
   "goblin.webp": {
     "hash": "5155667eb26a8b365383ca4874c9f89f",
-    "outputHash": "a487c0080993a9c7ff832277ed65f2ed"
+    "outputHash": "a487c0080993a9c7ff832277ed65f2ed",
+    "selectionHash": "27f664a38cc92d7f72fe04294a1705c26f48edef4318b7acc58000985369c365"
   },
   "golden-plate.webp": {
     "hash": "d5ec6243f447ccc8a7391fc9faf20759",
-    "outputHash": "08a647ffa13688dfb1aa559aa9ef6a58"
+    "outputHash": "08a647ffa13688dfb1aa559aa9ef6a58",
+    "selectionHash": "01e5917cb5788e4f2ed462ce5a72069e4d501320d1e298516d4d0355a9d6ca7a"
   },
   "golden-retriever-companion.webp": {
     "hash": "dec0572746c4cd779eb96afdec125e17",
-    "outputHash": "f85d31ef86fe048ac2b4799dfc95dc31"
+    "outputHash": "f85d31ef86fe048ac2b4799dfc95dc31",
+    "selectionHash": "a0c1102622b24973dd88d2d9463420709388267916e303c6ce555a01fe1244ed"
   },
   "grasping-vines.webp": {
     "hash": "f0acd4eec453d1d4565b6e1992c8705d",
-    "outputHash": "cd9b0ddb164b2f78288fd27d524817dc"
+    "outputHash": "cd9b0ddb164b2f78288fd27d524817dc",
+    "selectionHash": "77add9592b17226cc40f61e7b722ee8ea799bda6fdf2e6a97388b5080f2119c1"
   },
   "groves-favor.webp": {
     "hash": "428f95ed2f5f6d8f60ae2b27a7c94847",
-    "outputHash": "1d8c4cbc2512efa5f4887024ba1d4891"
+    "outputHash": "1d8c4cbc2512efa5f4887024ba1d4891",
+    "selectionHash": "c8bce5314965172c80b63036c05940d47a310d9976bfd58ee86ce3a5654bb881"
   },
   "haste.webp": {
     "hash": "af1ffcbedd507d7b7bdb75fca5fcc79c",
-    "outputHash": "fd1fb4e4c5803997230b597c50f76f9f"
+    "outputHash": "fd1fb4e4c5803997230b597c50f76f9f",
+    "selectionHash": "aefbd3bd46d861dfd1fb5458e85b6a6210c30d585c5d93e690fd0c4e5a6c937e"
   },
   "heal.webp": {
     "hash": "b7d73f2cb4ff9c4cc8e1218d771d4e24",
-    "outputHash": "c1aadba87958659dc2b50a159b28ef65"
+    "outputHash": "c1aadba87958659dc2b50a159b28ef65",
+    "selectionHash": "95425de3e2d5642bccf5f8d8983282ef93fd1ee3a8ef0172b33f6167a833d1e6"
   },
   "health-potion.webp": {
     "hash": "c7627c2ca4a84a72437d270a9df4e5cb",
-    "outputHash": "26ae1259c8b2f739b320931cb1b03378"
+    "outputHash": "26ae1259c8b2f739b320931cb1b03378",
+    "selectionHash": "14104eee56004eccbb59371b7b11a6480c0ce1337aad5f372ec793d3ae9bfbf1"
   },
   "hellhound.webp": {
     "hash": "6a2e76428ce4e5616c25608fa8a44de2",
-    "outputHash": "6e9c404fc1554719ce524ddd4ea169e9"
+    "outputHash": "6e9c404fc1554719ce524ddd4ea169e9",
+    "selectionHash": "a74f59f660b8cfc8eca67b002b8c96cb20821d203637f1cd2f8d6a0d531ad76e"
   },
   "hemorrhage.webp": {
     "hash": "fd8bde6eeed15b98102664bd89f45c6a",
-    "outputHash": "96dbde71802935c2798874d1f0ea08af"
+    "outputHash": "96dbde71802935c2798874d1f0ea08af",
+    "selectionHash": "77493b16a99aba56289e1b09bd7f63fbca4e6816ed938be5aaf77c3fe4abca30"
   },
   "herb-garden.webp": {
     "hash": "7e1fb17d452a92c50f828433b58874a7",
-    "outputHash": "a0a03da39d85708dac7017dde650e5fe"
+    "outputHash": "a0a03da39d85708dac7017dde650e5fe",
+    "selectionHash": "6d85a843b425e65b59b0cf007951db2597276c8ac374f3ebc3bf2c9734e336a7"
   },
   "holy-radiance.webp": {
     "hash": "a243330e98d69460f3ad1ffc381f0595",
-    "outputHash": "25588d18b58bbf9eecc3270b89996e5a"
+    "outputHash": "25588d18b58bbf9eecc3270b89996e5a",
+    "selectionHash": "2f443479bd14cced88d87aaa8e9396fec3939097f69d51d3f58c7aaa2d1c1c33"
   },
   "homestead-wishing-well.webp": {
     "hash": "a4d30044a667762f0d9e8d0a9e5dfe2b",
-    "outputHash": "1a63257f17622df20d745561515984eb"
+    "outputHash": "1a63257f17622df20d745561515984eb",
+    "selectionHash": "3470ab0016a403a451e43e8e85d1b48a422deb9f7a9fc85d7c1ffb516145e348"
   },
   "hunters-lodge.webp": {
     "hash": "648b2f3b270dab3c1f257e195ed7a23d",
-    "outputHash": "d49506b7238b4cee1e32e826180397a6"
+    "outputHash": "d49506b7238b4cee1e32e826180397a6",
+    "selectionHash": "94b87d7c088864a760e9b2bcf41d9cf70555c7fe528cfcecc793268ba64881f8"
   },
   "ice-shot.webp": {
     "hash": "57b77ea768839f9c31ebfacbdd529f4a",
-    "outputHash": "15ffb8513924be5e45e8fe9404ea4837"
+    "outputHash": "15ffb8513924be5e45e8fe9404ea4837",
+    "selectionHash": "d05cd4fff4cd59ece7344d14c6758bc4e43bf40c152a27dd8a2cbf0f4f2b29a8"
   },
   "ice-wraith.webp": {
     "hash": "f62255560f6dcf0efad83e3ad6bee965",
-    "outputHash": "a10607af79efd5380c49968d02ccfd0b"
+    "outputHash": "a10607af79efd5380c49968d02ccfd0b",
+    "selectionHash": "60eb37e18d7be12cee07b64b4dea0b14e8055dd4cb2b04906542033d90e11771"
   },
   "icy-heart.webp": {
     "hash": "66fb4cca4c2afc74837d8e6b99f682e5",
-    "outputHash": "e3cfd1970519dd1de46442e8f7182309"
+    "outputHash": "e3cfd1970519dd1de46442e8f7182309",
+    "selectionHash": "0f96291c747f1bd788a8afa6f91d441038c347e5ca22a73ce06e1844f573a0a7"
   },
   "inquisitor.webp": {
     "hash": "f23a76aa8fd0c7202a8243b3244f5369",
-    "outputHash": "88c2c7fb23e5baef66466130ba8ba9cc"
+    "outputHash": "88c2c7fb23e5baef66466130ba8ba9cc",
+    "selectionHash": "c7b7cbad4e005ec123c489ecdf4f19f2c4bdf6fe71ada6d7f03d9bac4ecb52a1"
   },
   "iron-bear.webp": {
     "hash": "53746c12efec68837bcfb841cbb89a11",
-    "outputHash": "0613fd227a2bf73e6131783345be50b4"
+    "outputHash": "0613fd227a2bf73e6131783345be50b4",
+    "selectionHash": "949966b7ba81bf842fdc0b190097722c166a0b7f9554d676776919a6319e08c6"
   },
   "ironwood-buckler.webp": {
     "hash": "6b5e1cfe5851ff68cbcfad3f4c8152ef",
-    "outputHash": "5eb2a27699be63e082957233ac592710"
+    "outputHash": "5eb2a27699be63e082957233ac592710",
+    "selectionHash": "e2708c7f66e1bfbc2576f5aa744d93571916c65ac00d2c61e7010610e1fadb62"
   },
   "judgment.webp": {
     "hash": "50aa3ffc163fe0d77e8ff25b64391d8a",
-    "outputHash": "67971a54c7c2c012bb6bc0469f3278cd"
+    "outputHash": "67971a54c7c2c012bb6bc0469f3278cd",
+    "selectionHash": "9060d3a7b16c703e42d12a39f012db02c4d89d78c0180bc4838f6eb09e1899eb"
   },
   "kindling.webp": {
     "hash": "747dc9bee7d53bdd27ad7bc0b56a2eb7",
-    "outputHash": "ba8a8d74fa65ea807abb360095081472"
+    "outputHash": "ba8a8d74fa65ea807abb360095081472",
+    "selectionHash": "8551cdc38776e8f70f66ae2880c106dbe2e8a35fa748acc37e92d1446b636bb1"
   },
   "knight.webp": {
     "hash": "5091c73d139d36c8119a1cdb773323a5",
-    "outputHash": "9df663ffa3e3f52def5597b201e39e1d"
+    "outputHash": "9df663ffa3e3f52def5597b201e39e1d",
+    "selectionHash": "ade56d938c6f1a442b501ebe17f8ff97e7e387e50fbd27798f77e9b144ccb444"
   },
   "labyrinth-shrouded-descending-steps.webp": {
     "hash": "21cfa731b9094153b2891041c3b28774",
-    "outputHash": "28bdae4d78a341d4e3edf8568a155297"
+    "outputHash": "28bdae4d78a341d4e3edf8568a155297",
+    "selectionHash": "e0b2beaeabf8e13341e60917c482ade14e4c528aeda61e504502c1798ed4f92a"
   },
   "labyrinth-shrouded-forgotten-pillars.webp": {
     "hash": "7ea3b55ece8aa61c5236d24fbeceab31",
-    "outputHash": "795a805884d492c21fd687457b88f1c5"
+    "outputHash": "795a805884d492c21fd687457b88f1c5",
+    "selectionHash": "27fad11264ad42798289671566879fce25888d29a1086048e4e6336e79ec2776"
   },
   "labyrinth-shrouded-hidden-chamber.webp": {
     "hash": "0220cb43f22464b49d46ac93dce53223",
-    "outputHash": "c651557d8faabf98f3793b0597b3eb32"
+    "outputHash": "c651557d8faabf98f3793b0597b3eb32",
+    "selectionHash": "38674da857f71ce6636dafbecbacf2a1557ee29d21d0fad8d7da9eb0d495a0ed"
   },
   "labyrinth-shrouded-shrouded-passage.webp": {
     "hash": "4d00957e7a906db13c28a07b7c92d8de",
-    "outputHash": "c75c63bf937a590c008b7e2434dea45c"
+    "outputHash": "c75c63bf937a590c008b7e2434dea45c",
+    "selectionHash": "f2fea6347a75a552c9412256389851964edb50d28f809ab9fd1520550b6cebb4"
   },
   "labyrinth-shrouded-vanishing-bridge.webp": {
     "hash": "124cae8d95dae2ea5f99ec7d2363950f",
-    "outputHash": "025c02a7d92dcb285a3a9ff63a213847"
+    "outputHash": "025c02a7d92dcb285a3a9ff63a213847",
+    "selectionHash": "fda88885f992f67ee541cb5282564457a8ef27d87b3503087f0f83fd76f2289a"
   },
   "labyrinth-shrouded-veiled-arch.webp": {
     "hash": "6f650ec850fd5fe00f77e6853e80c95a",
-    "outputHash": "c9e744c23f8da95747b6fd077f9d9ae3"
+    "outputHash": "c9e744c23f8da95747b6fd077f9d9ae3",
+    "selectionHash": "3c44b00883058011ab24d2b047fb1c79ec561835ae96e9356c85de37eb630cbd"
   },
   "leyline-energy.webp": {
     "hash": "65a6de69e35e91c52a34c669529ad4ac",
-    "outputHash": "9c501975f4120f5e65f527f19b2d9e46"
+    "outputHash": "9c501975f4120f5e65f527f19b2d9e46",
+    "selectionHash": "1aa347e306f88c95053c4ef755d5d0c24de2339c5b866cbcd343cc76af848030"
   },
   "library-owl-companion.webp": {
     "hash": "63c888a4df6c080768f574a414948c91",
-    "outputHash": "f5e016e0acc8533e44a6c598fdd341cc"
+    "outputHash": "f5e016e0acc8533e44a6c598fdd341cc",
+    "selectionHash": "da25d3b15238265668486ed1b4372a25e1422135ef222dfdae86d2f31d7dea0b"
   },
   "library.webp": {
     "hash": "4307bb9cd82ae95dd334edf4f97fa330",
-    "outputHash": "8bcdd5d8d4894c006101f21dbeb7f7bc"
+    "outputHash": "8bcdd5d8d4894c006101f21dbeb7f7bc",
+    "selectionHash": "ff9ebe26a9480a52b401d0d4455eab5f495cf223aff9d85d947537d31a718649"
   },
   "lightning-arrow.webp": {
     "hash": "81dbd36930209cb7468ad9fc08240be2",
-    "outputHash": "d584e0088f0f057cec603da5ff406ef0"
+    "outputHash": "d584e0088f0f057cec603da5ff406ef0",
+    "selectionHash": "5321fd482ecc7be27b491023ab336bd4383261cef64f836b0c241902cb8e8537"
   },
   "lightning-bolt.webp": {
     "hash": "5e772325dad6b21b82ed7d8fdb5f8686",
-    "outputHash": "529c3db3a831e94cd8a4b61c2abbce52"
+    "outputHash": "529c3db3a831e94cd8a4b61c2abbce52",
+    "selectionHash": "ca29d86ca16bc3facec7c7f108637018a769d3a11e08ce1f4710aa5ad880561d"
   },
   "living-armor.webp": {
     "hash": "b743d672796b7e9ab7114e53e2813a93",
-    "outputHash": "5901192cc79af4d10f5359218ba41b7e"
+    "outputHash": "5901192cc79af4d10f5359218ba41b7e",
+    "selectionHash": "faded5dbe8489fa24351f98b4680c3834a9a967e07b0c7aa3b5ff4db9e48778d"
   },
   "lizard-scout-companion.webp": {
     "hash": "045f04b968a41c0999315a48f5b07307",
-    "outputHash": "750950cc88b41ff4b7e19747e731e0b2"
+    "outputHash": "750950cc88b41ff4b7e19747e731e0b2",
+    "selectionHash": "1077e2a21c56eb787ca0bc87ef34a324cceb13e7a083e795de87d11c48e80fbd"
   },
   "luck-potion.webp": {
     "hash": "f24b1019639487164b86e8a248f9c219",
-    "outputHash": "0b9c41764fa404f967104ef0373197bd"
+    "outputHash": "0b9c41764fa404f967104ef0373197bd",
+    "selectionHash": "3f94fb4a0f6bd8d31bd56157a18e44bd8776ccaff3c53443978a9b9e54cb8ef9"
   },
   "lucky-clover.webp": {
     "hash": "fcd0401edd0de2577782cbcfc42ca029",
-    "outputHash": "799c9df3fe38d94ad6250287c6b0d1ed"
+    "outputHash": "799c9df3fe38d94ad6250287c6b0d1ed",
+    "selectionHash": "9d3d472cffb0fb6e9120f94c44167e7500ddca30dc1f2d83bd599cd826221ba1"
   },
   "mana-berries.webp": {
     "hash": "e8d832500fe7ab2c48894f885c8e0eb3",
-    "outputHash": "e4568cb2d3953254cecd89326e7f8d71"
+    "outputHash": "e4568cb2d3953254cecd89326e7f8d71",
+    "selectionHash": "a3f80252ba5881127521c2db0e381c030c43e0da2062c30c812fc1df212fcd47"
   },
   "mana-crystal.webp": {
     "hash": "e5ccf5839f8f6b4e374dee62af6c1d16",
-    "outputHash": "bf1fc0a45c91bd8feee3a26ff3190da3"
+    "outputHash": "bf1fc0a45c91bd8feee3a26ff3190da3",
+    "selectionHash": "14e2076232f6418c5b08dfaf827d669b08349859c9b078c8ef6e1f53623fb984"
   },
   "mana-moth-companion.webp": {
     "hash": "e784b64236e0d6fbbc635f068bfd553b",
-    "outputHash": "eb248fc13d6e42cfadc4b24819c34b3f"
+    "outputHash": "eb248fc13d6e42cfadc4b24819c34b3f",
+    "selectionHash": "f09423e5e8bb4e858c6be612493408e214ba9f91ecb5d893303b1c822845c90d"
   },
   "mana-potion.webp": {
     "hash": "9e412cb7323d17cd9bc3ff4700f0ba50",
-    "outputHash": "66547369575e24e2d5ba54771886f2af"
+    "outputHash": "66547369575e24e2d5ba54771886f2af",
+    "selectionHash": "4d41648ebc051b12e120fa6285e12171cbf6e902edd2d34c2d8f10836aa235e2"
   },
   "mana-shield.webp": {
     "hash": "4cee6a0382a7ab6ef90bf8efb1517aac",
-    "outputHash": "a381fe37daf519d2996ef3a838618a8d"
+    "outputHash": "a381fe37daf519d2996ef3a838618a8d",
+    "selectionHash": "9850853fc97ee6163c673d9ea83a52a4fe8839e51ca0e8cc866c8b8c70e69c51"
   },
   "maul.webp": {
     "hash": "bf254e2367e8cf261a3187fa2e2b4898",
-    "outputHash": "c1167071fd68d04831592fd734f8b618"
+    "outputHash": "c1167071fd68d04831592fd734f8b618",
+    "selectionHash": "d961a4c8f6e6852513411f20c2079c7ff254c35efc0d6c817f5c401873df8146"
   },
   "merchant-shop.webp": {
     "hash": "90cee6a14097b1a57a50d56230cbc946",
-    "outputHash": "d7561e490ad3c17f7da936b47ee306d3"
+    "outputHash": "d7561e490ad3c17f7da936b47ee306d3",
+    "selectionHash": "b9e44e6ad06ec5cf984d1b4f08db50d9bace5d31c00409d9d65d14441420721e"
   },
   "merchants-favor.webp": {
     "hash": "930d97cbd4c884dd909c9c0830ba0c87",
-    "outputHash": "5323eb57de518b0d596a8ba8705b5b9b"
+    "outputHash": "5323eb57de518b0d596a8ba8705b5b9b",
+    "selectionHash": "e0261ca003bddd757cde32607416e8c8afd29c5fd5428e9e6fb70663c8ed3242"
   },
   "meteor.webp": {
     "hash": "06a7419b56091cf040522e20d64e1480",
-    "outputHash": "094480dbdaee8ce22dd76c109c5d5ee2"
+    "outputHash": "094480dbdaee8ce22dd76c109c5d5ee2",
+    "selectionHash": "4326b15635538ba034b6232b712481a0e9ec92a319340efaf799db654408bee7"
   },
   "meteorite.webp": {
     "hash": "3ec3c42a9c10f8dc7fb1542e06906b29",
-    "outputHash": "4504b4b70873a9df25a5e81187bed537"
+    "outputHash": "4504b4b70873a9df25a5e81187bed537",
+    "selectionHash": "7deb4c554ac97a0e02a52884744c2a970823a80e9415fcf73b3db8fed20b5438"
   },
   "mimic.webp": {
     "hash": "e3f5f5820d6f1b1ff04940e8e2e486d6",
-    "outputHash": "b909de861686da4d9fddbaf6b25db642"
+    "outputHash": "b909de861686da4d9fddbaf6b25db642",
+    "selectionHash": "521896578969cc0466bcaf90baabaa127d2700e6ff224cd103838f9ac30c98cb"
   },
   "mixed-potion.webp": {
     "hash": "fb4c1c058ae4537917692fc015d5d253",
-    "outputHash": "ef61f89bde7e1697a7b9ea340f8c6a9d"
+    "outputHash": "ef61f89bde7e1697a7b9ea340f8c6a9d",
+    "selectionHash": "44afe6d46dd513969da213c5059decec787979a79152496bfabbb4863c9a1cec"
   },
   "molten-bulwark.webp": {
     "hash": "b8759dd74172f08b8ed60298f2dcffef",
-    "outputHash": "be6b96d5f7b26aad0908be77e968938e"
+    "outputHash": "be6b96d5f7b26aad0908be77e968938e",
+    "selectionHash": "e4fd0dc531266b91bf2f4054ddeddb51509c02179a80dd858a8a43b1a549cf99"
   },
   "mortar-and-pestle.webp": {
     "hash": "b4c3dec860177f7ea22f6ba562aad151",
-    "outputHash": "1c1dc2463e71e9a3929492eca2fe4bb0"
+    "outputHash": "1c1dc2463e71e9a3929492eca2fe4bb0",
+    "selectionHash": "ae366851c89bb7d025517f6c8c61d7a60f1231879df3f5a1ebbf9c26415aedb7"
   },
   "mud-elemental.webp": {
     "hash": "da354271b97a893a5de479cef4bde49e",
-    "outputHash": "87a9bfc47fdc04be5c25d5c670d42225"
+    "outputHash": "87a9bfc47fdc04be5c25d5c670d42225",
+    "selectionHash": "650d6fe43abefcedcd57677d757eb836eb8d0ec2c7510b6aa9959e8824d70a6e"
   },
   "mycology-cellar.webp": {
     "hash": "442841e157623aac21dbe83f73b96333",
-    "outputHash": "e18243934449f79fdf24dbe8f26d6d42"
+    "outputHash": "e18243934449f79fdf24dbe8f26d6d42",
+    "selectionHash": "39d429f6b964bfaafd3590e102399f8e99540ed57bd479ecfb51106d26473544"
   },
   "mystery-abandoned-study.webp": {
     "hash": "3362a82c3b5373a7eb641cf284025972",
-    "outputHash": "dbbbf863dacfcd9c3af37b9d14011b65"
+    "outputHash": "dbbbf863dacfcd9c3af37b9d14011b65",
+    "selectionHash": "b3dce9d788294f10ee51c27d0dbb0f0f7ebbb07f4399064257a46fad75ae7c75"
   },
   "mystery-ancient-altar.webp": {
     "hash": "88eae9e8a2c9216e6aaa45702ff9328b",
-    "outputHash": "7ce01439221aa2dd83ac67dc56dda3f9"
+    "outputHash": "7ce01439221aa2dd83ac67dc56dda3f9",
+    "selectionHash": "b59caa84345bd71b62728a18ce73f5ce737b58a7269ade161c07ca2cc4ccd030"
   },
   "mystery-crystal-garden.webp": {
     "hash": "99b946204ca0a1e61509c9346125873a",
-    "outputHash": "aab37ad9c4d23651614c14db9cbe750d"
+    "outputHash": "aab37ad9c4d23651614c14db9cbe750d",
+    "selectionHash": "3b2e630aa8e4a4a625cfd61e91ba4b94c3d3e7bcf28c7f96b6bb1d5d5a0597d9"
   },
   "mystery-crystal-geode.webp": {
     "hash": "dd6363e8a0c8eb5398852c01f9beb7b0",
-    "outputHash": "99baaba91bbcbb046ffcce36a168e765"
+    "outputHash": "99baaba91bbcbb046ffcce36a168e765",
+    "selectionHash": "350c10f8d2f4e65faac2d638000077318205aa38d6220a71f554ff225a917d08"
   },
   "mystery-enchanted-spring.webp": {
     "hash": "a19909d3edc73152ca8ba64507ecaebf",
-    "outputHash": "101ae06deaccf948af04a10da1dafb5a"
+    "outputHash": "101ae06deaccf948af04a10da1dafb5a",
+    "selectionHash": "30bb8d6f12c7129871c0b502f80486863ea4842c3be39c25f7bcf7a6144b6830"
   },
   "mystery-fairy-ring.webp": {
     "hash": "068c3d6a4c6e8adc586ebfd75973a6e4",
-    "outputHash": "8a443e4a98053bd507b87df035cbd15b"
+    "outputHash": "8a443e4a98053bd507b87df035cbd15b",
+    "selectionHash": "aa0675eb83d3d20417fe96f2b8b26cde08d7e5d6cf7357579695f77e82febe29"
   },
   "mystery-forgotten-hoard.webp": {
     "hash": "e678eb11498507e1c0eb8c5b32c22407",
-    "outputHash": "14699f43f6032e6644a0574d27a9a32c"
+    "outputHash": "14699f43f6032e6644a0574d27a9a32c",
+    "selectionHash": "329c4b273254b18d159f12c614b680b71dc6c52ac94100de3aba47d52ee92c02"
   },
   "mystery-fungal-grotto.webp": {
     "hash": "f47b1d22848cc9b38fa44786352113b3",
-    "outputHash": "b97426e9e154254fcfb1d019db30998f"
+    "outputHash": "b97426e9e154254fcfb1d019db30998f",
+    "selectionHash": "7dd17ba650f0c8d29f896e825dd23851a074b177b3aad5dc2614949810bb7495"
   },
   "mystery-hidden-cache.webp": {
     "hash": "4ef08a286dc1d25dd7f63e36839dfa6b",
-    "outputHash": "5b475a6b78250d604cd4df5cb818cd50"
+    "outputHash": "5b475a6b78250d604cd4df5cb818cd50",
+    "selectionHash": "426152aa2b97555ea4cc24ac15a1507fc11d4a65a81fdfc74c644e6ded2aa6e5"
   },
   "mystery-hunters-lodge.webp": {
     "hash": "a1f694b5c6d1acdb8ca8cb2efa5172dd",
-    "outputHash": "1911b7af950dd2f7281ec6e3121cda05"
+    "outputHash": "1911b7af950dd2f7281ec6e3121cda05",
+    "selectionHash": "8c5a53114685c12166f83d4cd3db11332483470f9c646290c81445d78089fc06"
   },
   "mystery-mana-berries.webp": {
     "hash": "2bddc76bb3dc7ff5f32190937d160184",
-    "outputHash": "cbba7f61d9cb2fc36abde8b0daec4860"
+    "outputHash": "cbba7f61d9cb2fc36abde8b0daec4860",
+    "selectionHash": "9d4a3ad676f92ff2dbf7a311e5ffba69a7fc5bf488d43e7f34a2b683a4e88894"
   },
   "mystery-medicinal-herb-garden.webp": {
     "hash": "3b52e7851bd856002b42d42db740a576",
-    "outputHash": "a95da15bbfc1ae7289d12ba032080df9"
+    "outputHash": "a95da15bbfc1ae7289d12ba032080df9",
+    "selectionHash": "a2dd79fb3c6297c7936ca889c6fdabdde12e3d01ddfa35cd16c3d09c8e3da2c7"
   },
   "mystery-meteorite-crash.webp": {
     "hash": "7c32fd722a7623462c46e2e652df7a96",
-    "outputHash": "9fdb36fbaa6694db14dff184c04088de"
+    "outputHash": "9fdb36fbaa6694db14dff184c04088de",
+    "selectionHash": "d2de5d3481fbce0d50a3ec90279e728ebdb85e626bf29af1971ac2c8c4ff608c"
   },
   "mystery-mountain-pass.webp": {
     "hash": "19c70aeae95b16c4806dcb49a42feb30",
-    "outputHash": "ab7ec193d0fad17a3c28496dd8982510"
+    "outputHash": "ab7ec193d0fad17a3c28496dd8982510",
+    "selectionHash": "8caf38663d648684533c7ab5fbe225671ef487d57161fc6461d2acc142798083"
   },
   "mystery-murky-pond.webp": {
     "hash": "9fd4f10e95d8b1ab8f0e8a034fe86366",
-    "outputHash": "6bddbec261488ff0fcd5418632925fb4"
+    "outputHash": "6bddbec261488ff0fcd5418632925fb4",
+    "selectionHash": "9cf8eeadcab086964bfd5fb77aa224d952de55e7e85415c585950614d7e19390"
   },
   "mystery-mysterious-tome.webp": {
     "hash": "812a9bee5693416336ababf943dcc815",
-    "outputHash": "d502e79d87333e4d296a38517063fe37"
+    "outputHash": "d502e79d87333e4d296a38517063fe37",
+    "selectionHash": "3462b634632b6485d8c190deda0ef67c6537ff103c6587c8771595154326c18f"
   },
   "mystery-necromancers-offer.webp": {
     "hash": "993dd1bc5536adb85863a18595e93bf1",
-    "outputHash": "1191bbea2458d0c09a335b9964047ac8"
+    "outputHash": "1191bbea2458d0c09a335b9964047ac8",
+    "selectionHash": "fe811f796d05775ded60dcca5b4e6d39acc329aace05aca4e6fd8d60fc78dfd1"
   },
   "mystery-overgrown-temple.webp": {
     "hash": "4c2377212864ec7579368f6aa1b95b10",
-    "outputHash": "a4474a944b4d174ac1d17d37173f8fea"
+    "outputHash": "a4474a944b4d174ac1d17d37173f8fea",
+    "selectionHash": "2851f25befe1ea834120fb20e0508749a6e7a9725f475c10b5227aed03d14ccd"
   },
   "mystery-roadside-censer.webp": {
     "hash": "ec4c220a6b4b150115548425a4a2be0c",
-    "outputHash": "c55bf37a027595f7ec5f3cd775f5bfcc"
+    "outputHash": "c55bf37a027595f7ec5f3cd775f5bfcc",
+    "selectionHash": "50b2fdf60b21a0e2c3336dc20fb0704cbc09e6596c2c225387f3a290d3f45c12"
   },
   "mystery-sacred-grove.webp": {
     "hash": "0fee376e2bd4e611d15bb312c19333f1",
-    "outputHash": "9ceb241d8a80260fc32eb4fdbdb3e64f"
+    "outputHash": "9ceb241d8a80260fc32eb4fdbdb3e64f",
+    "selectionHash": "e515959798a2d2343d5d9d6e8e0b6acf9c3964be31d5a6c86bec24bd5117b394"
   },
   "mystery-the-phoenix.webp": {
     "hash": "2e67140dd25da7cd41659fbc547e9261",
-    "outputHash": "9f6306fe0c3c6480974c1db3137971f6"
+    "outputHash": "9f6306fe0c3c6480974c1db3137971f6",
+    "selectionHash": "1c2fdb291b65806adfd23d3c45f0ea542f585fdb90b212654222949204a59e4b"
   },
   "mystery-the-wolf.webp": {
     "hash": "c0acf3af1d26c549669708ba319df055",
-    "outputHash": "465e96b7312e29e8f1f10ab370431ace"
+    "outputHash": "465e96b7312e29e8f1f10ab370431ace",
+    "selectionHash": "93e102653cc1124c895b8e50dc0a2cad622f8cb604fe1fbcdb910876f53a978b"
   },
   "mystery-wisdom-tree.webp": {
     "hash": "5dd094d7fc70d38afca849bbb823121b",
-    "outputHash": "2cb3878d839549827e2681d95e350532"
+    "outputHash": "2cb3878d839549827e2681d95e350532",
+    "selectionHash": "39a728a37519377ebbf77b6d445b8c78bf6ed24e9cea6edba37af9bd5c23f8d1"
   },
   "mystery.webp": {
     "hash": "84006b22570e0cc374f3616efadc5dc1",
-    "outputHash": "a018f125d300d4771fe91fecd9cb79ea"
+    "outputHash": "a018f125d300d4771fe91fecd9cb79ea",
+    "selectionHash": "36516abd7c974ee9e47850624d61d3eda7c1d21b7d6a267aa226f7a1ddc80e4f"
   },
   "necromancer.webp": {
     "hash": "7c508bfb15c98f43bd0cabc3c62d9828",
-    "outputHash": "b2b31dd302473d3bd79ddc198911e413"
+    "outputHash": "b2b31dd302473d3bd79ddc198911e413",
+    "selectionHash": "1a813e5e58150f9f944cef016ddea0c11a5b1ed39314cd00c9bae8b731952c27"
   },
   "normal-enemy.webp": {
     "hash": "6681df2ac1c5410a45ffa7de0ea2f277",
-    "outputHash": "1c0d397dc5bd51ebbd8504f89359645b"
+    "outputHash": "1c0d397dc5bd51ebbd8504f89359645b",
+    "selectionHash": "fece025a95ba2218c6d9fd392fcc82cd4342270abe8c088c951a71d139a4e272"
   },
   "obsidian-hammer.webp": {
     "hash": "97a0a68b4f865edca216a52ed31d231b",
-    "outputHash": "741fa02218b606b88928255a00b6e896"
+    "outputHash": "741fa02218b606b88928255a00b6e896",
+    "selectionHash": "9162ed896c31c867627ea59f2b5c3e2494a6d5efc572cfbdd1a0ffa3231933f1"
   },
   "ogre.webp": {
     "hash": "60530b5d1c96a3d654ac6326b88476ea",
-    "outputHash": "74efa192ee1548443784890ef04c6162"
+    "outputHash": "74efa192ee1548443784890ef04c6162",
+    "selectionHash": "8b4ebd6fc55c197b3d5e16fe7b77525f1d7594e0a35a3a832f2096869b8e8792"
   },
   "orchard.webp": {
     "hash": "92173b893814d66b320923827a43d7e9",
-    "outputHash": "b0378606d48dfa8604d5efa0e73d2851"
+    "outputHash": "b0378606d48dfa8604d5efa0e73d2851",
+    "selectionHash": "83499e3fa914ab8e3f9bc4b59a0e08c3ac3229f2c26798d55c8e073d69fc683e"
   },
   "pack-tactics.webp": {
     "hash": "151b0c43a6c76b869db0495cc9cc834a",
-    "outputHash": "e8c554460c10acd84869332d5ed15436"
+    "outputHash": "e8c554460c10acd84869332d5ed15436",
+    "selectionHash": "4ff61266943270bc1803ed1ab62b1c78c13aad88ff8e5a006c5336ce6454e3d0"
   },
   "paladin.webp": {
     "hash": "c7d0ddd0261b85d54b6c5ae19048c628",
-    "outputHash": "9cc1d7a3e1d840247ca61c764bbeef4e"
+    "outputHash": "9cc1d7a3e1d840247ca61c764bbeef4e",
+    "selectionHash": "2cd45c5cbbf09bd67022bf15ce66462819f8afa04a9c15712c1fc6ccce55911d"
   },
   "panacea-potion.webp": {
     "hash": "a8e69bf4379492675283aafdfa1a7fbc",
-    "outputHash": "992cc8446c68cdb493a5e412921aee4a"
+    "outputHash": "992cc8446c68cdb493a5e412921aee4a",
+    "selectionHash": "15bcf959c18e5bc3e599eace7e421dd36594f9fa66e4fb18e127105f01c1ba6d"
   },
   "panther-companion.webp": {
     "hash": "5028907583f1a19a9332ada833a5ad28",
-    "outputHash": "7f8fbe40c1d7a489a4ec33507b93f65f"
+    "outputHash": "7f8fbe40c1d7a489a4ec33507b93f65f",
+    "selectionHash": "8c15dd019fe9f43a57c07419a4c82fe10c714f2cc97afd9ebbcf0308ebbdc4c0"
   },
   "parasitic-bloom.webp": {
     "hash": "6f44ba69ed844834ac14fbceca9d8291",
-    "outputHash": "c33b021c66c5d31edbd54a998ee4e556"
+    "outputHash": "c33b021c66c5d31edbd54a998ee4e556",
+    "selectionHash": "3ff8cb510f1874f3688769bd5e20ec4d2f1334af75f05395dd7299073b486191"
   },
   "pasture.webp": {
     "hash": "98ba79a831e83616fa02305a7890627f",
-    "outputHash": "f222da4d4f30f4a7b43d03dc2c298d74"
+    "outputHash": "f222da4d4f30f4a7b43d03dc2c298d74",
+    "selectionHash": "17bc95f9347b9f21784693144fdd9c660729a0a72f9bbbdaf63808a0690eb23e"
   },
   "phoenix-companion.webp": {
     "hash": "8892f2285fca026dd1943d9fa258ba05",
-    "outputHash": "f94b0f38cb04f3b3d24b378e45561843"
+    "outputHash": "f94b0f38cb04f3b3d24b378e45561843",
+    "selectionHash": "d7a2f973eec6b6825d81af1ca346bb5556285505f7da9043be5523aefc10d57d"
   },
   "phoenix-feather.webp": {
     "hash": "b9ecd6734a767891e191e257c58b9dda",
-    "outputHash": "0d7b298d198bf9f081843f75898d1e8a"
+    "outputHash": "0d7b298d198bf9f081843f75898d1e8a",
+    "selectionHash": "119750191f3b0972fa7be07cb0ddc5208f04c13f4d6935230af5dddfab46b996"
   },
   "pixie-companion.webp": {
     "hash": "925acf4af964026771a5fdcdf2295e96",
-    "outputHash": "a05df1facec26b41b355af5f0fb25a46"
+    "outputHash": "a05df1facec26b41b355af5f0fb25a46",
+    "selectionHash": "07282c553d38a98003f900136cafd9475f312ea992a1f9a71e070ad625cdc39f"
   },
   "pixie-dust.webp": {
     "hash": "538be62b4401ddcf4e1834baae4e10ce",
-    "outputHash": "45970f766bf7ea2dccc2a186f39a1a97"
+    "outputHash": "45970f766bf7ea2dccc2a186f39a1a97",
+    "selectionHash": "701f7c3edc2592b373357b2372cb374ea8dd878533c4ab0c914402c7f8b7cfe3"
   },
   "placeholder-card.webp": {
     "hash": "4432c1e2ffa0899c81066f777c66e116",
-    "outputHash": "27644a1c72a71074e8126b3ebadf50ec"
+    "outputHash": "27644a1c72a71074e8126b3ebadf50ec",
+    "selectionHash": "549d4746ef469fd40f0d762beed434a053b91e55ef84f538779708607a97fc45"
   },
   "placeholder-difficulty.webp": {
     "hash": "cce1721e082587f04a99c1a89f2ba02a",
-    "outputHash": "b1bbfe44a8f8cf472906e99cd7d42f40"
+    "outputHash": "b1bbfe44a8f8cf472906e99cd7d42f40",
+    "selectionHash": "c8c9da5bb44f477100bb2a854d840b1fa2af1e5ae848f8a8b16a6431966fc788"
   },
   "placeholder-enemy.webp": {
     "hash": "cce1721e082587f04a99c1a89f2ba02a",
-    "outputHash": "b1bbfe44a8f8cf472906e99cd7d42f40"
+    "outputHash": "b1bbfe44a8f8cf472906e99cd7d42f40",
+    "selectionHash": "ba4db72850216b593603218eb9fb513e5e8afb953a594a929fe3e25401e74483"
   },
   "plague-doctor.webp": {
     "hash": "b1a3fab9225ff171b234e5bfc56fa332",
-    "outputHash": "6b8403a09b3ab2dfffe38c730335bf34"
+    "outputHash": "6b8403a09b3ab2dfffe38c730335bf34",
+    "selectionHash": "4fe985da36c7ddd93719faa1d4b61e993ad02f08039d4ce9360d385c38c7524a"
   },
   "plague-doctors-mask.webp": {
     "hash": "acd5448410e61cce9528f417fd2be146",
-    "outputHash": "8f1f72e3fd8b2f459a8af08b4142f842"
+    "outputHash": "8f1f72e3fd8b2f459a8af08b4142f842",
+    "selectionHash": "b4258504039bd8f01059067f6dc1f90606605ccd39a2996c2b2c44011c1bbb4e"
   },
   "plate-mail.webp": {
     "hash": "31051d27402df81ca4cd5b46c15e9db0",
-    "outputHash": "df8bfed6deb4562d34c433ec83fb3c22"
+    "outputHash": "df8bfed6deb4562d34c433ec83fb3c22",
+    "selectionHash": "f33e1200cb693d5ae7cfd62376dd93a7f0674d8099cdab3afb5f2b20a3d2f4e1"
   },
   "pointer-c-shaded.webp": {
     "hash": "e2214aa2986f1c78730b5c92dd1b9186",
-    "outputHash": "15a40eece7de9de3ef6b71663767eabb"
+    "outputHash": "15a40eece7de9de3ef6b71663767eabb",
+    "selectionHash": "704c1f4028a72cda50e71b9529938393c98e6b18b699157418265778d314a0aa"
   },
   "poison-dagger.webp": {
     "hash": "42371c4a67363c34b1f20a9fdda836c0",
-    "outputHash": "d1a1bceda7284826cbc5fa3852f2fc16"
+    "outputHash": "d1a1bceda7284826cbc5fa3852f2fc16",
+    "selectionHash": "f1a135605df69dd5b2e2c2f500687ebab99bf98145c588b8617cf9220a7125f7"
   },
   "porcupine-quill.webp": {
     "hash": "072979b018f8104bc492d816cb43ca23",
-    "outputHash": "41f52a854937ca49fd6d5b26f87758e0"
+    "outputHash": "41f52a854937ca49fd6d5b26f87758e0",
+    "selectionHash": "068d222492b79db7a27335a1538d746a07fce44f41175c4ad6da327c68ffcee0"
   },
   "pounce.webp": {
     "hash": "023d5afd29284edddf924edff0f37aa7",
-    "outputHash": "4bb7d1ac2f06a4d4c54f681bba11e58e"
+    "outputHash": "4bb7d1ac2f06a4d4c54f681bba11e58e",
+    "selectionHash": "29258592628b097b61ac1dbbfe57ef257c577c2124f463dd75f6606473504fc8"
   },
   "prayer.webp": {
     "hash": "778804314cbc40709b6dcc091b08bb54",
-    "outputHash": "7daebd1f8c1e4b393b4d7d40b115e5f6"
+    "outputHash": "7daebd1f8c1e4b393b4d7d40b115e5f6",
+    "selectionHash": "33b0e992341df592b6d1ad20f2f6463d3fa4f8ffe5d62535ed611d07df003ad6"
   },
   "predators-focus.webp": {
     "hash": "5d176fb2ae5ad4332705f05dbd088ed4",
-    "outputHash": "28a34d8aeb6f6ef1729fde860932071c"
+    "outputHash": "28a34d8aeb6f6ef1729fde860932071c",
+    "selectionHash": "aa4f24e631cd2f07e004350a6f084734ea5512d00212fe7a8f9b4f0f710cf553"
   },
   "pyromancer.webp": {
     "hash": "ba08734e9974b58d24125788179cdee8",
-    "outputHash": "537b0a5f0bb2c2a116063d5dcbde214c"
+    "outputHash": "537b0a5f0bb2c2a116063d5dcbde214c",
+    "selectionHash": "2dd2a4a6d49d1db074bb93a87e61759d629b93820628b228d6124ffae6e72820"
   },
   "quench.webp": {
     "hash": "924e02bc25cea3f2a7035ddca6708ba1",
-    "outputHash": "2c2fd28f18939e28192c87c721a4e54b"
+    "outputHash": "2c2fd28f18939e28192c87c721a4e54b",
+    "selectionHash": "28b9911e9c82f7a92676b938e35986292b9bd91b5c0cbceb740c4f09a696ea44"
   },
   "ranger.webp": {
     "hash": "f82dc2b81e6e18b2235ac5305cf9ae69",
-    "outputHash": "6d29938ef21f8691168e3c197753d6c0"
+    "outputHash": "6d29938ef21f8691168e3c197753d6c0",
+    "selectionHash": "168f6cd496447456b118e9b10c9ae01845a45b7108a4459a6290bcbfd2bc297e"
   },
   "ray-of-frost.webp": {
     "hash": "6552e3a1459346750c9ef469c1249082",
-    "outputHash": "019971c5b1c52ab5d6e070d53ecfa544"
+    "outputHash": "019971c5b1c52ab5d6e070d53ecfa544",
+    "selectionHash": "3183926ef9eca6b48e1bb8d08f83669ca9170f736cb39c81c26c94ce9326a781"
   },
   "rend.webp": {
     "hash": "1072d74008137e2c1665e0bc3b611922",
-    "outputHash": "d38a00bb48fe7329f827718704bb1f62"
+    "outputHash": "d38a00bb48fe7329f827718704bb1f62",
+    "selectionHash": "654517800d10ae3797d80b1f8152edcfd8db38f26e1d953800dc722de26da437"
   },
   "resonant-chimes.webp": {
     "hash": "b572ec7911e21c2ce66b8d9891883473",
-    "outputHash": "1c27013c6d552683f945a83220ce17fb"
+    "outputHash": "1c27013c6d552683f945a83220ce17fb",
+    "selectionHash": "97f3de8cddb52f4d3ebe1d057da38084e4dfd1dff569b242facdfae102d553e5"
   },
   "resource-food.webp": {
     "hash": "2b30e4e45f9d6f99421e2d9a52a2e796",
-    "outputHash": "8ed80f307beab258f3af013f782debbb"
+    "outputHash": "8ed80f307beab258f3af013f782debbb",
+    "selectionHash": "34dccf5992b871cf7913ee21b20b16e119b13fe4a17295f6c4d2da76210226b2"
   },
   "resource-gems.webp": {
     "hash": "d7d2d5b0853506ef73184b764039ab89",
-    "outputHash": "9f849807e0c2ce6888275f8000ba81ca"
+    "outputHash": "9f849807e0c2ce6888275f8000ba81ca",
+    "selectionHash": "b8778d58fdf8fb2161cdca330add21268833bdd2a9476aa5293b015f66e41fb9"
   },
   "resource-gold.webp": {
     "hash": "f7384b3f85fb174b7f1d9ede37879f2f",
-    "outputHash": "0f5d9fcfe2630419fdcb3860708a9262"
+    "outputHash": "0f5d9fcfe2630419fdcb3860708a9262",
+    "selectionHash": "1f926478aee5bb9d70f643296758ca4d039d88b774cfa1a696e9e101af53ca9c"
   },
   "resource-herbs.webp": {
     "hash": "6652cf852b01bef4d0b62ec67504a7a2",
-    "outputHash": "4991820ff0836d8ea5becdf9584875e0"
+    "outputHash": "4991820ff0836d8ea5becdf9584875e0",
+    "selectionHash": "865c140b41c2a0b3387ae6acd0335d84589dfc196928780f1c7ec6d8e4be6b3d"
   },
   "resource-hide.webp": {
     "hash": "8d2bc5427f1de631e7bb4f2e6cdd53b3",
-    "outputHash": "d082d4d08ca745bf0169fdab88924a8c"
+    "outputHash": "d082d4d08ca745bf0169fdab88924a8c",
+    "selectionHash": "c26939b603c12eb015efb4b25673fd98882997727ca0cb1492f1c51e44b026e8"
   },
   "resource-iron.webp": {
     "hash": "cf366f8f4486e0cd725ea44346189b74",
-    "outputHash": "a52f6a096d3bb005f7ca14b2b73b60dd"
+    "outputHash": "a52f6a096d3bb005f7ca14b2b73b60dd",
+    "selectionHash": "000ef0637575e5d65d285433f123cea6baa395dc0af9184bbfaaf3d3b1efba6f"
   },
   "resource-stone.webp": {
     "hash": "9bbcc6846e4c4e13a6afdd89e358b444",
-    "outputHash": "8632017ab2a8c1f55cf158c95ee2a3ca"
+    "outputHash": "8632017ab2a8c1f55cf158c95ee2a3ca",
+    "selectionHash": "110a6518467ed4700544339eb94d33db317e2e0f2fecee407a5ce3eb05f5f22a"
   },
   "resource-wood.webp": {
     "hash": "e0ccf1b4f5ad7458b934fecc8485be0e",
-    "outputHash": "1376937f9534cc401eacdaa38b260434"
+    "outputHash": "1376937f9534cc401eacdaa38b260434",
+    "selectionHash": "99691a0ec9063b2f59642656559c2044450ec4f9c6299da2ee9612daddb0419c"
   },
   "risen-skeleton-companion.webp": {
     "hash": "4970a95cb9277695a8457cdc1ccb307c",
-    "outputHash": "253f39b42ecdd69e793df006d8fe56b2"
+    "outputHash": "253f39b42ecdd69e793df006d8fe56b2",
+    "selectionHash": "7e7d263953de6f30c64b3d0b51996035ee796e8640668f4461f7f513c3c62abf"
   },
   "rogue.webp": {
     "hash": "284033726cb2773524a860a2a80c859e",
-    "outputHash": "9383c538344d4cb68d74d47d76dc10a4"
+    "outputHash": "9383c538344d4cb68d74d47d76dc10a4",
+    "selectionHash": "08e87064088f6964ecc79d8b1ad2500fa0d7b20534e1fc96d84ed2767300247e"
   },
   "roll-the-dice.webp": {
     "hash": "66665178ddc3f1b7e438e988b9608bd6",
-    "outputHash": "9229b5e176411bd1ddd477456807d4d7"
+    "outputHash": "9229b5e176411bd1ddd477456807d4d7",
+    "selectionHash": "d3536f9df53b9243c3887d0f7d274c62fd1ba5c023b011d4b1340cc0fd6e60bc"
   },
   "runesmiths-workshop.webp": {
     "hash": "f7f325a4ecf4380b6612b0883508945e",
-    "outputHash": "1fd360046ffc5d09f9a9c704f87c1d95"
+    "outputHash": "1fd360046ffc5d09f9a9c704f87c1d95",
+    "selectionHash": "a4a1ef9dc06145f91dd953b53fa51a9f99bbe8015710083ffda071eac79244a3"
   },
   "runic-quill.webp": {
     "hash": "b771e0c83ea8aa1a2aa48eaa6deca789",
-    "outputHash": "597e526f85bf9657c3620df3bc9a72d8"
+    "outputHash": "597e526f85bf9657c3620df3bc9a72d8",
+    "selectionHash": "ac9ab0347810bd7483a507716b3962ce90f791d46aa1db5c2a36618f66d5aef2"
   },
   "sanctified-plate.webp": {
     "hash": "268b5bbb1a4ea9b798740df39aa396e9",
-    "outputHash": "93fd695dfeb5533d5f48529422534d07"
+    "outputHash": "93fd695dfeb5533d5f48529422534d07",
+    "selectionHash": "78f41ecfbd7da176b8ecc9ac5fcd8d0966f596cc556e778675da7120df56501c"
   },
   "sap-arrow.webp": {
     "hash": "372cf599ed92923c54bd696af6d00465",
-    "outputHash": "32adb0c7ce7337bfd060eddc6cfa7352"
+    "outputHash": "32adb0c7ce7337bfd060eddc6cfa7352",
+    "selectionHash": "b822f830a56a8902e12e2d661fdadbe500583ee62b274fcd97660dda7c343197"
   },
   "serrated-arrowhead.webp": {
     "hash": "f9f1393bf5193f2d07124aec03a5a449",
-    "outputHash": "970a49a9c0874c92f318d2bcbca84196"
+    "outputHash": "970a49a9c0874c92f318d2bcbca84196",
+    "selectionHash": "cc41635623ba7bbe85d3f4b050b9c0ee402e259d480e26f101fe472f07a80c9b"
   },
   "serrated-edge.webp": {
     "hash": "d012e0b4a353d162b60f19c78f7c01b3",
-    "outputHash": "d2be5c2bd942b410074ae5975f8cbb08"
+    "outputHash": "d2be5c2bd942b410074ae5975f8cbb08",
+    "selectionHash": "d0bb34f1c4d88e89abdd51173e6985990debd7ef10e9d61dd8c16d33c0181e99"
   },
   "shadowstep.webp": {
     "hash": "cfb5e9e7fca7bd479ff53890451a4fee",
-    "outputHash": "fc349fbbb3dbab5288887856341c919e"
+    "outputHash": "fc349fbbb3dbab5288887856341c919e",
+    "selectionHash": "4f4d8008d61e60e750fc7905edacde3b4b93adf6cab4f4350d88e0f533284739"
   },
   "shield-bash.webp": {
     "hash": "23074e4d575b52aba9e4c765d91d9bee",
-    "outputHash": "bc7ebaca6397a719cbf31e78fdb72985"
+    "outputHash": "bc7ebaca6397a719cbf31e78fdb72985",
+    "selectionHash": "2bf91d6180d3859a0ebb0ebf3a9c97477f8e3e486bc2ec6360341c6174066190"
   },
   "shield-scarab-companion.webp": {
     "hash": "eed1984f95c3e49889e8e4c412718113",
-    "outputHash": "c0e00494aa6e71e343282c177aa41e74"
+    "outputHash": "c0e00494aa6e71e343282c177aa41e74",
+    "selectionHash": "a1397b93298574b5310231dae08e139391ae2dceedbddb1945e693a59f9553a4"
   },
   "sin-eaters-lantern.webp": {
     "hash": "4d1cfbec9459dfb3a146d1a72340f9bd",
-    "outputHash": "c26c05186c2d5816e8044b9f00d23f7b"
+    "outputHash": "c26c05186c2d5816e8044b9f00d23f7b",
+    "selectionHash": "612d1e004320693ab46b85718b8a0b896d18d9fc560dc3a82be03890cb21f7c2"
   },
   "skeleton.webp": {
     "hash": "2c8711f72c321cde6e8a8bb626d55c08",
-    "outputHash": "56134d7635eeeabf51761851dd9b5467"
+    "outputHash": "56134d7635eeeabf51761851dd9b5467",
+    "selectionHash": "1f1c3737993ceb3529d3a911276328309395d40c5e2e81001c994944b47133b4"
   },
   "slash.webp": {
     "hash": "b197933f74070dd4e2b242a9e5ca6ccd",
-    "outputHash": "c9b25538af51efa17c10492eca6657c0"
+    "outputHash": "c9b25538af51efa17c10492eca6657c0",
+    "selectionHash": "afd8a57c0bb141333e003e21e185658ef3c79b567cd75a6ba25a2f671b477841"
   },
   "slime.webp": {
     "hash": "fdf492da9be28495e29eb54c89107ed3",
-    "outputHash": "cde4d63c917013b6485cdd8294fe47e7"
+    "outputHash": "cde4d63c917013b6485cdd8294fe47e7",
+    "selectionHash": "f62b1a660da8a8909e255f86a63fa7a687daea436226709301a8119cb57362a9"
   },
   "smelling-salts.webp": {
     "hash": "f4074032a517bf828b3bf3f6c7304979",
-    "outputHash": "5fd6f65e97926edb2197b7abd36cefde"
+    "outputHash": "5fd6f65e97926edb2197b7abd36cefde",
+    "selectionHash": "e3ae6d356498272781c8d8c59c7d6cd76347f97607bdd675f215dfba9bd7aa84"
   },
   "smite.webp": {
     "hash": "5203dbaf4d06f1d201bcbc97537d56a1",
-    "outputHash": "0138e57404a1aec992148bb434554c3d"
+    "outputHash": "0138e57404a1aec992148bb434554c3d",
+    "selectionHash": "98b0560eb0b3a751eaaeb20433ef98ff300670ce1b6d04c4eed372380cdc8b43"
   },
   "smugglers-map.webp": {
     "hash": "44a0a4584b3f287e0602c44b31dbd1cf",
-    "outputHash": "5c528e4fe475b5137817d452c8e67a85"
+    "outputHash": "5c528e4fe475b5137817d452c8e67a85",
+    "selectionHash": "e96122ee18389468accd38fc7528456e93e205440444f416b0264bce1bbc8847"
   },
   "sniff-out.webp": {
     "hash": "9e09cf9262d830477bda0375ac03f291",
-    "outputHash": "f692c68e006556eebf840b46ebabc793"
+    "outputHash": "f692c68e006556eebf840b46ebabc793",
+    "selectionHash": "23e4ada946219ce3b375603e2ef99ac2be99b24c7082d48e642c905f94844a8c"
   },
   "sparring-grounds.webp": {
     "hash": "59fc356559500d7cce758a5d617d276f",
-    "outputHash": "c61a0bf16e9d4f78c9a0b220b3b856d0"
+    "outputHash": "c61a0bf16e9d4f78c9a0b220b3b856d0",
+    "selectionHash": "43d6e8d8885c9ea81b7ba0dec37edb13386ce2f1a8fe7ab58f4dea4d8e2fe6f0"
   },
   "spiked-shield.webp": {
     "hash": "7cdcf51e5c112582584aa8d71b966786",
-    "outputHash": "d7dcd4bd17fa924f8869fb78ccd875e7"
+    "outputHash": "d7dcd4bd17fa924f8869fb78ccd875e7",
+    "selectionHash": "eefaf1b1949417deb0499f78df4baec3e486d171315d4edbdf4b1eb9022e95ee"
   },
   "stab.webp": {
     "hash": "25e5bbc4e69d3a5ebb3bd3da78ec987f",
-    "outputHash": "ee3ed97114c00ed1b47004e705cca955"
+    "outputHash": "ee3ed97114c00ed1b47004e705cca955",
+    "selectionHash": "1e9c51dae735fbdd7f60cee090783971493bb5ac5bd3189c789ae66ed7ea16f6"
   },
   "stargaze.webp": {
     "hash": "0df5e2aaab49f93e56392f9a9cd9f997",
-    "outputHash": "997cb0d2b74456460f3aa1f14bb74c89"
+    "outputHash": "997cb0d2b74456460f3aa1f14bb74c89",
+    "selectionHash": "48b4bc3776416c842957320df53c57b9af787cbe1bac74b69b2107549ad569f7"
   },
   "steal.webp": {
     "hash": "5fc33dcf44dce7a4ae78ca9f8751f977",
-    "outputHash": "18aedb37bc577fd9645fea31c3b5123c"
+    "outputHash": "18aedb37bc577fd9645fea31c3b5123c",
+    "selectionHash": "7819ec4c785ea43ac6263d865dacbe9d214eb78f1c1893bd4d28883216a46d95"
   },
   "stone-golem.webp": {
     "hash": "32c0e774727501a3f5482503206adbbb",
-    "outputHash": "815e6e4d8013f4c55081198a0d9be04d"
+    "outputHash": "815e6e4d8013f4c55081198a0d9be04d",
+    "selectionHash": "1de86ae1c4c3b33834c9d8b03d5ec3dce01c5feb33bdcba3e8a63da5b900c418"
   },
   "stoneskin-potion.webp": {
     "hash": "d1599f6ba2e1cf13b03b2dec58469b02",
-    "outputHash": "16f4626e9f3c29cdf99f9c48f7d1db50"
+    "outputHash": "16f4626e9f3c29cdf99f9c48f7d1db50",
+    "selectionHash": "57c15509a7a333ad5db928bdb39d8e54469aaf384e12b36d930904e1bda3a463"
   },
   "sunburst.webp": {
     "hash": "db38afd9fcb571aded85d165c7959722",
-    "outputHash": "50513638c1a8ae5d8bd5cd7861af0853"
+    "outputHash": "50513638c1a8ae5d8bd5cd7861af0853",
+    "selectionHash": "f9e01cd466008b1b6f59f8f84f2d7711c950b48e275a66368ebb7fb1561cede5"
   },
   "sunder.webp": {
     "hash": "de53c008d5491e148ea72b1f5d70b73f",
-    "outputHash": "7efc61d26435cdd202a4ce039c076a69"
+    "outputHash": "7efc61d26435cdd202a4ce039c076a69",
+    "selectionHash": "8665e50c349f1a45e75ba5e02d39540472eb8820548e89964a9a72fe2609e1df"
   },
   "sundering-charm.webp": {
     "hash": "6605270ca04fdcbfad8339f7d4f2884e",
-    "outputHash": "0c3dc045453aa58a31697dd8b7bd482f"
+    "outputHash": "0c3dc045453aa58a31697dd8b7bd482f",
+    "selectionHash": "22bd6bc7cd62d68d1ae36dcf835813ead5a3825cf36ccab3ec5f52afe5a1da06"
   },
   "talent-archery.webp": {
     "hash": "af7739e4c5af57dd78e441707f47bf27",
-    "outputHash": "f3fe885db6439c4450cb222183d18693"
+    "outputHash": "f3fe885db6439c4450cb222183d18693",
+    "selectionHash": "1f43fd54fe28d77474498206af28ba290b9736daaee88b290a275a07f4ee0847"
   },
   "talent-armor.webp": {
     "hash": "7b1ed0473c23bd3d2135ad34b8d355b6",
-    "outputHash": "58e05a4c1584ee5cb9a5225038d79a0d"
+    "outputHash": "58e05a4c1584ee5cb9a5225038d79a0d",
+    "selectionHash": "b467bebe10fd5f4aa49807b15f24f89225f7f034c1ab78503ff65938d3bc6b49"
   },
   "talent-bleed.webp": {
     "hash": "f036f7f67d4542d0f7103a8958284469",
-    "outputHash": "f5394ea620c001c968cc6e663c24a9b9"
+    "outputHash": "f5394ea620c001c968cc6e663c24a9b9",
+    "selectionHash": "b785c04667a9244c942d4886492d90ec84d87ba7ad9a632bc91c217c35b29577"
   },
   "talent-block.webp": {
     "hash": "b2bb0ac4c4252df807cc00a44c858f08",
-    "outputHash": "a44e71309db81d75a22daee623cd3ffc"
+    "outputHash": "a44e71309db81d75a22daee623cd3ffc",
+    "selectionHash": "37c97751f401b8ff3e777e88860767f920fd014df0b4812506a3105aee4a2e97"
   },
   "talent-burn.webp": {
     "hash": "d7c419fa6ca73c1d0b2de9b225edefee",
-    "outputHash": "cb9698ca8f681f473505cc59e86cb48a"
+    "outputHash": "cb9698ca8f681f473505cc59e86cb48a",
+    "selectionHash": "05335ed16a1d59facebaca7b474c363a82ddb208aac15612ff48bd2e06aa0c99"
   },
   "talent-companion.webp": {
     "hash": "3bffc514cad6227e5efbff03b406840b",
-    "outputHash": "11b3e9797121fe56d9ccdcf80cc40604"
+    "outputHash": "11b3e9797121fe56d9ccdcf80cc40604",
+    "selectionHash": "ab1667139c152597a44e5a5b1f91adb042af7f8eff3b39a5cd14d1d033be8d6b"
   },
   "talent-consume.webp": {
     "hash": "398bd35b78222c87870799176c8e3b69",
-    "outputHash": "a36cc9df934c055ff150e965f498221e"
+    "outputHash": "a36cc9df934c055ff150e965f498221e",
+    "selectionHash": "2f9c3198a3a1e9d452a93271f98c35b61993fe29646f32c93c88deaf8a6d0e6f"
   },
   "talent-dodge.webp": {
     "hash": "233f11b615e04132fff88cc06f6e72b9",
-    "outputHash": "b35dbf480cbe393b4f482d7635e68a4c"
+    "outputHash": "b35dbf480cbe393b4f482d7635e68a4c",
+    "selectionHash": "28bb8fb9e056f25d1f77c880b550b555e9c35bd20d76d9d4e123e1a45842cb94"
   },
   "talent-forge.webp": {
     "hash": "926ee4725dc7ac651c64ae0090625f96",
-    "outputHash": "1f40a36d5d9cc70cc07ced2467f0f483"
+    "outputHash": "1f40a36d5d9cc70cc07ced2467f0f483",
+    "selectionHash": "dd299fbb73dae0f88acec2f6af881233971d6bcd09a8247ee318f5486f12cdfd"
   },
   "talent-freeze.webp": {
     "hash": "3d69e99946e5c33b65169ac911d5ef7f",
-    "outputHash": "73429df482a0a4cb4de9b1ecfb59df27"
+    "outputHash": "73429df482a0a4cb4de9b1ecfb59df27",
+    "selectionHash": "949cde7e7d085d343a0544f4ce1a3a7e1f6218db9b6cfa7f9c4dbbcbb508e84f"
   },
   "talent-gold.webp": {
     "hash": "98af14cf40cc16f898cab642c5e4e210",
-    "outputHash": "550c255c0451aabe548dc5ea595d1a3d"
+    "outputHash": "550c255c0451aabe548dc5ea595d1a3d",
+    "selectionHash": "2a452df0004a5935025dc0cbfe5c720e6db2cdde04462f48d65a3e6dbd4a0342"
   },
   "talent-health.webp": {
     "hash": "2a3ef3a5cad2ae0bf2d84b64e8289151",
-    "outputHash": "79a101fa4a4db0705630ce54b59eb42e"
+    "outputHash": "79a101fa4a4db0705630ce54b59eb42e",
+    "selectionHash": "b2d2a76f0326344eee931a12ebd5d769f16b91579f8914cdb7cc0c14133ffb73"
   },
   "talent-holy.webp": {
     "hash": "428051d32a3743f61364fa02fa37e5c6",
-    "outputHash": "f569c98fd404973c5dce302149695539"
+    "outputHash": "f569c98fd404973c5dce302149695539",
+    "selectionHash": "700ae01025b98bd1de1fa617d706730fd84bfe24a66f6dfa0ca53afe432c3724"
   },
   "talent-leech.webp": {
     "hash": "55b1918cb1235e24dc810204f2b4ad81",
-    "outputHash": "7bd953c13ce7a4ac096363adcadbc0ed"
+    "outputHash": "7bd953c13ce7a4ac096363adcadbc0ed",
+    "selectionHash": "890e93828e55f60e91a791abbb9feba445268b70966417b64e0f63a8f7d50e14"
   },
   "talent-mana.webp": {
     "hash": "00117f611eaf4339e172ea0d7718139e",
-    "outputHash": "a764934c1b281eb3d0876c05c810c037"
+    "outputHash": "a764934c1b281eb3d0876c05c810c037",
+    "selectionHash": "0d1a42e43450bc09253cf31124bc34549e9a88ffdecc329bce325c200fe0c525"
   },
   "talent-nature.webp": {
     "hash": "bdb81604b9f4f985c99e092003a8fc8a",
-    "outputHash": "cae9eaf177c637da9b05bea9bb088e40"
+    "outputHash": "cae9eaf177c637da9b05bea9bb088e40",
+    "selectionHash": "01b1fc79a28d2c20db420b0c5012a7b4c3254228bb8d839468de3cc41837a099"
   },
   "talent-physical.webp": {
     "hash": "b38e1c5c8b1ecb3d82601d21d1b9237c",
-    "outputHash": "30ea537b7e963d845e9600a0de62b7ef"
+    "outputHash": "30ea537b7e963d845e9600a0de62b7ef",
+    "selectionHash": "15ab1656d078395d0b1f67ee8a7bc0e62e016a4793d87b25babd56492ca1219d"
   },
   "talent-poison.webp": {
     "hash": "97439adb4d957a1cbc863efdb38b005c",
-    "outputHash": "4c6d38d4178b5f781d513568655bae3e"
+    "outputHash": "4c6d38d4178b5f781d513568655bae3e",
+    "selectionHash": "1c62c5e615f4d9e4c9160cf002298ea19121c44c4c6656bdd8e618f2d969abb6"
   },
   "talent-stun.webp": {
     "hash": "e1b11a55d7b194138b8ee2f80a771ae0",
-    "outputHash": "4701b47a3c8295e443a79120516e36d4"
+    "outputHash": "4701b47a3c8295e443a79120516e36d4",
+    "selectionHash": "27bdfad8e2fcb16ceec529d710e237e2a4c7ec4868defb5396dbe73a5bc1a8bb"
   },
   "talent-wish.webp": {
     "hash": "99fc2e2d7a866fe2fbdc0f4b5fa50df7",
-    "outputHash": "70cac45c32cad25d69dad062a16f67e0"
+    "outputHash": "70cac45c32cad25d69dad062a16f67e0",
+    "selectionHash": "68da81a30e69f0a0d1a1c3a85f9bf6e140b2a7ba3878865a8c9bc9eecaa56fbd"
   },
   "tattered-pages.webp": {
     "hash": "70c6ca50875d99b49d5aae89bf288882",
-    "outputHash": "ef42b8ba36da8df1724d44672b612f32"
+    "outputHash": "ef42b8ba36da8df1724d44672b612f32",
+    "selectionHash": "577a0106359a3428e1c08ed959929a3b4272dd9b698514c99e7103ba61e513cb"
   },
   "the-blight-treant.webp": {
     "hash": "9fb66fc5e877d1d07a4861651d30b777",
-    "outputHash": "e32c0f9860a36e19578fa1c7aaf064c8"
+    "outputHash": "e32c0f9860a36e19578fa1c7aaf064c8",
+    "selectionHash": "721b2eaf24b3212fcd6f7a916165c9fefb62bbf801f5863a828c81cd557e1687"
   },
   "the-blood-countess.webp": {
     "hash": "97c208fb6698b07be2ed5e0a6d1a26f7",
-    "outputHash": "792084f66c6c7b3021ea22ef5028ad5b"
+    "outputHash": "792084f66c6c7b3021ea22ef5028ad5b",
+    "selectionHash": "10d4d5d088daf16bd16300b5ba936db0e3b9150413295549bc955077909e4ca7"
   },
   "the-campaign.webp": {
     "hash": "a9b625d56700cd4c9c06ff2cce983261",
-    "outputHash": "c43f95c61220143ed0bc848929fcb188"
+    "outputHash": "c43f95c61220143ed0bc848929fcb188",
+    "selectionHash": "9826f7aaf867f653db0a7210b28130357cd1f28a3eb966b520ecc1957f4a1f8b"
   },
   "the-forge-golem.webp": {
     "hash": "588cde0e6f066ceb536a88547c2badcc",
-    "outputHash": "58132859f77db04162e56631a1d711ff"
+    "outputHash": "58132859f77db04162e56631a1d711ff",
+    "selectionHash": "9febeecd5ecd49809305f4d7d04a64dd7f2c31f32a21f28aa021c55381c0b37f"
   },
   "the-frostwarden.webp": {
     "hash": "3aa2eb08e367f8b8040ecd7f01e21812",
-    "outputHash": "cebbcb03ba6af4d5cbe14b76d0977cd0"
+    "outputHash": "cebbcb03ba6af4d5cbe14b76d0977cd0",
+    "selectionHash": "d67a44b4020f452d498721292454e2cdb73c8b7283d681f529b5552ca35d0a11"
   },
   "the-labyrinth.webp": {
     "hash": "3e361d6e0e96ad9fc5f741c5c80703e2",
-    "outputHash": "af99f6b0f88a8a03a65b9bc36c38abb5"
+    "outputHash": "af99f6b0f88a8a03a65b9bc36c38abb5",
+    "selectionHash": "05f5605b91eb2a5b1cfd1cf3fd05cdf2a93404022d9d88d6b30412a2a41ffbc9"
   },
   "the-seraph.webp": {
     "hash": "63f0953347abf914efdd2875b6ad018b",
-    "outputHash": "a7bbbaba897264ff446beb840755e1bd"
+    "outputHash": "a7bbbaba897264ff446beb840755e1bd",
+    "selectionHash": "a6f821b96ca1f2abeacd784ec2ab1bb0b9ce5c9b824230cf31ddb4bb35379b48"
   },
   "the-stone-titan.webp": {
     "hash": "1c74bc0e9fa908977bd7341853ade38b",
-    "outputHash": "4c5baced4548d9d291a6cd6643b9a235"
+    "outputHash": "4c5baced4548d9d291a6cd6643b9a235",
+    "selectionHash": "1213a2dbded6efe7211c7976e0759d3fed84171e292d93ffebb23e02614b4dff"
   },
   "thorn-mail.webp": {
     "hash": "eca0da26d397f5ef470e102da2842c92",
-    "outputHash": "fff81ec0d8a4d2d2eb334ab48efbea16"
+    "outputHash": "fff81ec0d8a4d2d2eb334ab48efbea16",
+    "selectionHash": "4f0a14748ea32794fbf68fe3f70536b321b8df418c7d7379e24588e3886f9155"
   },
   "thorn-whip.webp": {
     "hash": "a30bb5c07e7cdd77644528e7503193ce",
-    "outputHash": "6d872839b475578f3b4d2cac58682a66"
+    "outputHash": "6d872839b475578f3b4d2cac58682a66",
+    "selectionHash": "633accc5c3780731acdf96c1cc82550aa9d04260fe208d1779e36926439483b3"
   },
   "thunderstone.webp": {
     "hash": "1a3bf694cdd9a4c8e912bbaee1e82ee6",
-    "outputHash": "1d66585c63d0e8b52ba40f6f2226df4c"
+    "outputHash": "1d66585c63d0e8b52ba40f6f2226df4c",
+    "selectionHash": "817ba1a5e07a19ca1edeaca48428d673e1e0c2b01614c11160bd0bf4f83683cd"
   },
   "tithe.webp": {
     "hash": "8dff00bba12ff8b40ea6b51e41f745aa",
-    "outputHash": "7413bd3780be4a197d87a120ae8011fd"
+    "outputHash": "7413bd3780be4a197d87a120ae8011fd",
+    "selectionHash": "974776ffd32d9b08b8b0b5de8f2f3177838c47c665b154da609f7758e6c5be57"
   },
   "transmutation-crucible.webp": {
     "hash": "60e93876d1d190f7449de4f37017c10a",
-    "outputHash": "fe93ece0c830c895c4c6fe9d76b399e1"
+    "outputHash": "fe93ece0c830c895c4c6fe9d76b399e1",
+    "selectionHash": "76734ab23f505ba47d6364dbd31921c7ed046a9735bf521867971a770546ded5"
   },
   "vampire.webp": {
     "hash": "b09c3ff059a34d06db6439e74879855b",
-    "outputHash": "13916063de1a0e7aa9801668e2485b7c"
+    "outputHash": "13916063de1a0e7aa9801668e2485b7c",
+    "selectionHash": "b246892ddca8661a33d9da8157a6a8e9a8821a0512fcdabd34655c67906f0229"
   },
   "vanguards-crest.webp": {
     "hash": "c4f6874c5b2624fc118bb3654be1e183",
-    "outputHash": "7b90ae10c2f7713befabee66f5abef6c"
+    "outputHash": "7b90ae10c2f7713befabee66f5abef6c",
+    "selectionHash": "0466fb2bbebb68fcdd0b9a7d7f9bf5b4e27293778508d125165260b7040d7839"
   },
   "venom-arrow.webp": {
     "hash": "a52639f815df60e29bb10bea0892f6c1",
-    "outputHash": "6e7b0ff5e928d00a8ed01fc88f90226a"
+    "outputHash": "6e7b0ff5e928d00a8ed01fc88f90226a",
+    "selectionHash": "fd76ce77399cc6139945aaa38718ba8f4b8e92904d83aff6b516447ba1443a04"
   },
   "venom-fangs.webp": {
     "hash": "8dad98e44e86be267d9cf332a4d77527",
-    "outputHash": "9b5b95e16599970ad428abff689ef052"
+    "outputHash": "9b5b95e16599970ad428abff689ef052",
+    "selectionHash": "d794572143d03f4a721d13461aadd5e3c5f30288fa0c393fb3dad91890239ab4"
   },
   "warlock.webp": {
     "hash": "4e8c429725f8cf3d61c9afe1ef55ab03",
-    "outputHash": "056934393b1df6948eedc711b79ff0fb"
+    "outputHash": "056934393b1df6948eedc711b79ff0fb",
+    "selectionHash": "aaddcc3953bef28326d0a011de960fa64c092c384f811885ff3776810d699637"
   },
   "wheat-field.webp": {
     "hash": "01ad8955794149cd28688b71bf285a24",
-    "outputHash": "9603b650f9bcfe334e575f653fef86dd"
+    "outputHash": "9603b650f9bcfe334e575f653fef86dd",
+    "selectionHash": "f94cc8250439c74619a83bde373fd296592d73d02e229edd427f61c9249510e1"
   },
   "wildcard.webp": {
     "hash": "72a07a6e8da53419ed9714f0e9cfab52",
-    "outputHash": "1cde2fd9c881e26ee61afcf9d3466912"
+    "outputHash": "1cde2fd9c881e26ee61afcf9d3466912",
+    "selectionHash": "21d7749e26689549a6058a6691d96c5863d9f3387f77742fcc78a87859b6b3c5"
   },
   "wildwood-draft.webp": {
     "hash": "8346b3240b899951645b65a85952735f",
-    "outputHash": "d980c96be19cc17b42d905021cc74187"
+    "outputHash": "d980c96be19cc17b42d905021cc74187",
+    "selectionHash": "47b0f020d219b7a9885651c5f4699c73ceda0ca7f17d300efe5a445efa34e13c"
   },
   "will-o-wisp-companion.webp": {
     "hash": "97bc462b75a9dda0ef927748cbf09045",
-    "outputHash": "4e6c1cccb8f19d9df39c1a65c87ccf3a"
+    "outputHash": "4e6c1cccb8f19d9df39c1a65c87ccf3a",
+    "selectionHash": "3043a7a0b5d219ffd51222b565853fbae3db8a58277852321e686e37b27e1567"
   },
   "will-o-wisp.webp": {
     "hash": "36d21f17ebfe8dff832fe7f30af3f4fa",
-    "outputHash": "0800dad4bea9b1d97f9865d8467fed6c"
+    "outputHash": "0800dad4bea9b1d97f9865d8467fed6c",
+    "selectionHash": "99dc84947e1a3cfa459f0287ca383b7214987388bed9008547573fc8098b2702"
   },
   "winter-wolf.webp": {
     "hash": "64353d4788294363d33e132fc6ebbd4e",
-    "outputHash": "051caf906e1f1cf39f3d4580d948a6c5"
+    "outputHash": "051caf906e1f1cf39f3d4580d948a6c5",
+    "selectionHash": "99dc48f78d128208c93bf898bf0dfea1a08ce178cbc1c14379f537b8e348850a"
   },
   "wish.webp": {
     "hash": "cb6c7574a532d5a17eb73c9f6d1accb0",
-    "outputHash": "d0c499bb61ad973ce09812634bd6a950"
+    "outputHash": "d0c499bb61ad973ce09812634bd6a950",
+    "selectionHash": "289fc129c23b2e5f7de1fec89258eac5e47cf77cac43545d5dca8842c610930b"
   },
   "wishing-potion.webp": {
     "hash": "76f17eb5a9694649bfaeedf7f970bcfd",
-    "outputHash": "fa130f570fa9fe761692cabc8c3f5b58"
+    "outputHash": "fa130f570fa9fe761692cabc8c3f5b58",
+    "selectionHash": "25b22e190113230d4f4debb222b449bdc1e105a5f273b5a3b6e5b17e4d58b8a4"
   },
   "wishing-well-coin.webp": {
     "hash": "f423f93173cd8185622def19cc3433c2",
-    "outputHash": "7def5a39a5c613434f85b620166b55d7"
+    "outputHash": "7def5a39a5c613434f85b620166b55d7",
+    "selectionHash": "0b457a4e2f701f31e332786755118c4fda5031a479c0870374b0293ce36f9fd1"
   },
   "wishing-well.webp": {
     "hash": "62cb1763aa3958c48f924af51aae9621",
-    "outputHash": "14f2e7edf8a6e0a8a965f06e1ad4e140"
+    "outputHash": "14f2e7edf8a6e0a8a965f06e1ad4e140",
+    "selectionHash": "1fd36ffd8d79ccd56dc562d20dcdb7c5bc130b057870be14ea6b690f7df86751"
   },
   "wizard.webp": {
     "hash": "71327b15296cf5a9266a30a435974c2a",
-    "outputHash": "d3a53d2683a46bc22018e7709348cb6d"
+    "outputHash": "d3a53d2683a46bc22018e7709348cb6d",
+    "selectionHash": "5a0c274e7b19bc5ab017eb1c8a5fa39808bdd5e3916ac882a763208591f7ee29"
   },
   "wolf-companion.webp": {
     "hash": "5d60c6e42b778214b819982419f02b90",
-    "outputHash": "1673166ea133524c60c02269cb5f30eb"
+    "outputHash": "1673166ea133524c60c02269cb5f30eb",
+    "selectionHash": "abff3041b466d198bec643f3074105b4be15bf841edffd7125e2c10c8834f810"
   },
   "wool-tailoring.webp": {
     "hash": "d697f22f12d0fb9f947c6d65a503cf98",
-    "outputHash": "1fe58e6d2380fdb51425a1c84ed48e0b"
+    "outputHash": "1fe58e6d2380fdb51425a1c84ed48e0b",
+    "selectionHash": "3f86afc7b959ffbb6076e105343518a78a9f909ccbfea3d66c4ec6f074f408f0"
   },
   "yeti.webp": {
     "hash": "97dcef58f5238e6a4a19bb02cf182bd2",
-    "outputHash": "9c6fe0f64d6c11c1c1bc3b270b000732"
+    "outputHash": "9c6fe0f64d6c11c1c1bc3b270b000732",
+    "selectionHash": "b1e970dbb96edd008e25d349da9f99341c6dff0c1f6802aa0815ab69dee715d3"
   },
   "zealot.webp": {
     "hash": "029f6358ec5f60d94c460a838e39eac3",
-    "outputHash": "8c66cb9f16c29ee82bee0d2d094d8064"
+    "outputHash": "8c66cb9f16c29ee82bee0d2d094d8064",
+    "selectionHash": "d783fcf45b0f0462b209554979644bbe2c0e39a1f2ec1343c9330766e67de990"
   }
 }

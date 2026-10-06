@@ -1,10 +1,11 @@
 import { optimizationFailures, runAllOptimizePipelinesSettled } from "./optimize-pipelines.mjs";
 import { syncArtBarrels } from "./sync-art-barrels.mjs";
 import { syncVersionMetadata } from "./sync-version-metadata.mjs";
+import { preflightSelectedSources } from "./assets/check-asset-outputs.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 /**
- * Single in-process orchestrator for predev/prebuild asset prep.
+ * Single in-process orchestrator for explicit local asset preparation.
  * The three transform pipelines (art, sounds, music) are independent — they write
  * to disjoint output directories — so they run concurrently via the shared
  * OPTIMIZE_PIPELINES table. Art must finish before the art barrels sync because
@@ -25,6 +26,7 @@ export async function prepareAssets() {
     return;
   }
 
+  await preflightSelectedSources();
   const results = await runAllOptimizePipelinesSettled();
   const artResult = results.find((result) => result.key === "art");
   const failures = optimizationFailures(results);

@@ -12,10 +12,7 @@ vi.mock("../../scripts/assets/asset-pipeline-runner.mjs", async (importOriginal)
   return {
     ...original,
     resolveRootDir: () => fixture.root,
-    resolvePipelinePaths: (
-      _url: string,
-      options: { sourceSubpath: string[]; managedKey: "art" | "sounds" | "music" },
-    ) =>
+    resolvePipelinePaths: (_url: string, options: { managedKey: "art" | "sounds" | "music" }) =>
       original.resolvePipelinePaths(
         pathToFileURL(nodePath.join(fixture.root, "scripts", "mock-entry.mjs")).href,
         options,
@@ -54,6 +51,7 @@ async function convert(args: string[]) {
 describe("sound manifest publication", () => {
   beforeEach(async () => {
     rmSync(fixture.root, { recursive: true, force: true });
+    vi.stubEnv("ASSET_LIBRARY_ROOT", sourceDir);
     await mkdir(sourceDir, { recursive: true });
     await mkdir(outputDir, { recursive: true });
     await writeFile(path.join(sourceDir, "raw.ogg"), "raw audio");
@@ -194,7 +192,7 @@ describe("sound manifest publication", () => {
     await writeFile(path.join(outputDir, "generated.mp3"), "old fallback");
     fixture.convert.mockClear();
     vi.mocked(writeFile).mockClear();
-    await expect(optimizeSounds()).resolves.toMatchObject({ ok: false });
+    await expect(optimizeSounds()).rejects.toThrow("Cannot read Asset Library source");
     expect(fixture.convert).not.toHaveBeenCalled();
     expect(manifestWrites()).toHaveLength(0);
     expect(await readFile(manifestPath, "utf8")).toBe(before);

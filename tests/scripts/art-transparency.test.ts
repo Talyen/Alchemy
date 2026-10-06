@@ -16,16 +16,22 @@ vi.mock("../../scripts/assets/asset-pipeline-runner.mjs", async (importOriginal)
   return {
     ...original,
     resolveRootDir: () => fixture.root,
-    resolvePipelinePaths: (
-      _url: string,
-      options: { sourceSubpath: string[]; managedKey: "art" | "sounds" | "music" },
-    ) =>
+    resolvePipelinePaths: (_url: string, options: { managedKey: "art" | "sounds" | "music" }) =>
       original.resolvePipelinePaths(pathToFileURL(path.join(fixture.root, "scripts", "mock-entry.mjs")).href, options),
   };
 });
 vi.mock("../../scripts/assets/asset-manifest.mjs", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../scripts/assets/asset-manifest.mjs")>()),
   staticAssets: [fixture.icon],
+}));
+
+vi.mock("../../scripts/assets/gear-assets.mjs", () => ({
+  gearAssets: ["Body", "Weapon", "Accessory", "Trinket"].map((slot) => ({
+    source: `Gear/Gear Slot Backgrounds/${slot} Slot.png`,
+    target: `gear-slot-${slot.toLowerCase()}.webp`,
+    width: 16,
+    quality: 80,
+  })),
 }));
 
 fixture.root = mkdtempSync(path.join(tmpdir(), "alchemy-alpha-"));
@@ -67,6 +73,7 @@ async function snapshotOutputs() {
 afterAll(() => rmSync(fixture.root, { recursive: true, force: true }));
 beforeEach(async () => {
   rmSync(fixture.root, { recursive: true, force: true });
+  vi.stubEnv("ASSET_LIBRARY_ROOT", rawDir);
   fixture.icon.width = 16;
   fixture.icon.requiresTransparency = true;
   const slots = path.join(rawDir, "Gear/Gear Slot Backgrounds");

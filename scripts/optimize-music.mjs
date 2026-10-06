@@ -1,17 +1,17 @@
 import { copyFile } from "node:fs/promises";
 import path from "node:path";
 
-import { processFreshEntry } from "./assets/asset-manifest-cache.mjs";
+import { assetLibraryRoot, requireAssetSources } from "./assets/asset-library.mjs";
+import { selectionHash, processFreshEntry } from "./assets/asset-manifest-cache.mjs";
 import {
   ASSET_SCHEMA_VERSION,
   MANIFEST_BASENAME,
   MUSIC_COPY_CONCURRENCY,
   MUSIC_SETTINGS,
 } from "./assets/asset-constants.mjs";
-import { MUSIC_FILE_EXTENSIONS, validateMusicRegistry } from "./assets/music-assets.mjs";
+import { musicAssets, validateMusicRegistry } from "./assets/music-assets.mjs";
 import {
   ensureOutputDir,
-  readSourceDir,
   resolvePipelinePaths,
   runManifestPipeline,
   writeStagedOutput,
@@ -19,29 +19,21 @@ import {
 import { runPipelineScript, UsageError } from "./lib/script-run.mjs";
 import { parseKnownFlags } from "./lib/cli-args.mjs";
 
-async function discoverAudioFiles(dir) {
-  const entries = await readSourceDir(dir);
-  return entries
-    .filter((entry) => entry.isFile() && MUSIC_FILE_EXTENSIONS.has(path.extname(entry.name).toLowerCase()))
-    .map((entry) => entry.name)
-    .sort();
-}
-
-const { sourceDir, outputDir, manifestPath } = resolvePipelinePaths(import.meta.url, {
-  sourceSubpath: ["Raw Assets", "Music"],
+const { outputDir, manifestPath } = resolvePipelinePaths(import.meta.url, {
   managedKey: "music",
 });
 
 const SCHEMA_VERSION = ASSET_SCHEMA_VERSION;
 
 export async function optimizeMusic({ check = false } = {}) {
-  const files = await discoverAudioFiles(sourceDir);
+  const files = musicAssets;
   if (files.length === 0) {
-    const msg = `No music files found in ${sourceDir}.`;
+    const msg = "No music selected in music-assets.mjs.";
     console.error(msg);
     return { ok: false, error: msg };
   }
   await validateMusicRegistry(files);
+  await requireAssetSources(files);
 
   await ensureOutputDir(outputDir, { check });
 
@@ -53,8 +45,8 @@ export async function optimizeMusic({ check = false } = {}) {
     label: "music file",
     concurrency: MUSIC_COPY_CONCURRENCY,
     processEntry: async (file, storedEntry) => {
-      const sourcePath = path.join(sourceDir, file);
-      const outputPath = path.join(outputDir, file);
+      const sourcePath = path.join(assetLibraryRoot(), file.source);
+      const outputPath = path.join(outputDir, file.target);
 
       const { fresh, entry } = await processFreshEntry(
         sourcePath,
@@ -65,7 +57,10 @@ export async function optimizeMusic({ check = false } = {}) {
         () => writeStagedOutput(outputPath, (temporaryPath) => copyFile(sourcePath, temporaryPath)),
         { check },
       );
-      return { message: `${file} ${fresh ? "already up to date" : "copied"}`, entry };
+      return {
+        message: `${file.target} ${fresh ? "already up to date" : "copied"}`,
+        entry: { ...entry, selectionHash: selectionHash(file, MUSIC_SETTINGS) },
+      };
     },
     check,
     skipLabel: "music manifest write and orphan sweep",

@@ -2,6 +2,7 @@ export interface ManifestEntry {
   hash: string;
   outputHash?: string;
   owner?: string;
+  selectionHash?: string;
 }
 
 export function computeContentHash(
@@ -49,3 +50,5 @@ export function processManifestEntries<T, R extends { entry?: ManifestEntry | nu
   nextManifest: Record<string, ManifestEntry>;
   failed: boolean;
 }>;
+
+export function selectionHash(selection: unknown, settings: unknown): string;

@@ -1,3 +1,4 @@
+vi.mock("../../scripts/assets/check-asset-outputs.mjs", () => ({ preflightSelectedSources: vi.fn() }));
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../scripts/optimize-assets.mjs", () => ({ optimizeAssets: vi.fn() }));
@@ -11,12 +12,14 @@ const { optimizeSounds } = await import("../../scripts/optimize-sounds.mjs");
 const { optimizeMusic } = await import("../../scripts/optimize-music.mjs");
 const { syncArtBarrels } = await import("../../scripts/sync-art-barrels.mjs");
 const { syncVersionMetadata } = await import("../../scripts/sync-version-metadata.mjs");
+const { preflightSelectedSources } = await import("../../scripts/assets/check-asset-outputs.mjs");
 const { prepareAssets } = await import("../../scripts/prepare-assets.mjs");
 const { runAllOptimizePipelines } = await import("../../scripts/optimize-pipelines.mjs");
 
 describe("asset pipeline orchestration", () => {
   beforeEach(() => {
     vi.stubEnv("ALCHEMY_SKIP_ASSETS", "");
+    vi.mocked(preflightSelectedSources).mockReset().mockResolvedValue(undefined);
     vi.mocked(optimizeAssets).mockReset().mockResolvedValue({ ok: true });
     vi.mocked(optimizeSounds).mockReset().mockResolvedValue({ ok: true });
     vi.mocked(optimizeMusic).mockReset().mockResolvedValue({ ok: true });
@@ -27,6 +30,15 @@ describe("asset pipeline orchestration", () => {
   });
 
   afterEach(() => vi.unstubAllEnvs());
+
+  it("stops all publishing and pruning when any selected source is unavailable", async () => {
+    const failure = new Error("selected music source unavailable");
+    vi.mocked(preflightSelectedSources).mockRejectedValue(failure);
+    await expect(prepareAssets()).rejects.toBe(failure);
+    for (const work of [optimizeAssets, optimizeSounds, optimizeMusic, syncArtBarrels, syncVersionMetadata]) {
+      expect(work).not.toHaveBeenCalled();
+    }
+  });
 
   it("reports audio and synchronization failures together without mutating thrown errors", async () => {
     const soundError = new Error("encoder broke");
@@ -70,6 +82,7 @@ describe("asset pipeline orchestration", () => {
   it("honors explicit preparation skip mode", async () => {
     vi.stubEnv("ALCHEMY_SKIP_ASSETS", "1");
     await prepareAssets();
+    expect(preflightSelectedSources).not.toHaveBeenCalled();
     expect(optimizeAssets).not.toHaveBeenCalled();
     expect(optimizeSounds).not.toHaveBeenCalled();
     expect(optimizeMusic).not.toHaveBeenCalled();

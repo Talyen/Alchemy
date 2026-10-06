@@ -21,6 +21,7 @@ import { runCommandAsync } from "./lib/run-command.mjs";
 import { closeTaskBrowsers, taskKey } from "./lib/agent-browser-session.mjs";
 import { INLINE_ARGS_BYTES } from "./lib/agent/selection-budgets.mjs";
 import { filterPrettierPaths } from "./prettier-paths.mjs";
+import { resolveRoutes } from "./lib/verification/change-routes.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -139,7 +140,15 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
     formatPaths.length > 0 &&
     formatPaths.length <= 50 &&
     formatPaths.every((file) => fs.statSync(path.join(ROOT, file)).size <= 256_000);
+  const assetPush = argv.includes("--pre-push") && resolveRoutes(paths).some((route) => route.id === "assets");
   const definitions = [
+    {
+      key: "asset-sources",
+      label: assetPush ? "local asset source freshness" : "committed asset integrity",
+      command: "npm",
+      args: ["run", assetPush ? "assets:check" : "assets:check:outputs"],
+      enabled: argv.includes("--pre-push"),
+    },
     {
       key: "verification",
       label: "changed-path verification",

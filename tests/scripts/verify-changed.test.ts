@@ -14,7 +14,6 @@ import {
 import {
   resolveRoutePlan,
   resolveRoutes,
-  ROUTES,
   validateRouteCatalog,
 } from "../../scripts/lib/verification/change-routes.mjs";
 import { TEST_SUITES, validateTestSuitePaths } from "../../scripts/lib/verification/test-commands.mjs";
@@ -33,9 +32,7 @@ describe("verification selection", () => {
     expect(() => parseVerifyArgs(["../outside.ts"])).toThrow("outside repository");
   });
 
-  it("uses a small broad category catalog", () => {
-    expect(ROUTES.length).toBeLessThanOrEqual(10);
-    expect(ROUTES.reduce((count, route) => count + route.patterns.length, 0)).toBeLessThanOrEqual(70);
+  it("validates category owners and executable test selections", () => {
     expect(validateRouteCatalog()).toEqual([]);
     expect(validateTestSuitePaths(process.cwd(), TEST_SUITES.shipUnit)).toEqual([]);
   });

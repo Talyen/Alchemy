@@ -144,7 +144,7 @@ Use matched [agent evaluations](./.agents/evals/README.md) for uncertain workflo
 | `npm run check:static`            | Generated outputs, formatting, source/test types, and ESLint (fast local static; no boundary subset double-run)                              |
 | `npm run lint:ci`                 | The canonical every-push static aggregate: `check:static`, docs, dead code, import boundaries, architecture smoke, and Playwright collection |
 | `npm run build` / `build:desktop` | Pure generated-output-validating web or desktop build                                                                                        |
-| `npm run assets:check`            | Read-only authored-asset freshness check                                                                                                     |
+| `npm run assets:check`            | Read-only local Asset Library source freshness check                                                                                         |
 | `npm run test:e2e:critical`       | Every-push representative player journeys                                                                                                    |
 
 Independent static checks finish even when a sibling fails, including the nested
@@ -155,12 +155,14 @@ and link to numbered full-log locations. Exit status identifies a failed checker
 when its diagnostic format is unrecognized, retain bounded output from both ends
 instead of reducing the summary to its exit footer.
 
+Asset-related pre-push checks also run `npm run assets:check` and require the selected local library sources. Code-only pushes do not require the library.
+
 Builds only validate generated outputs and never prepare or rewrite tracked
-sources. `npm run dev` prepares assets through its `predev` lifecycle; use the
+sources. `npm run dev` validates committed outputs through its `predev` lifecycle; use the
 explicit `sync:*` and asset authoring commands when intentionally regenerating
 outputs for a build.
 
-Every pull request and push to `main` runs the static aggregate, full Vitest, one web build plus preview smoke, and the critical browser suite. Prepared assets, desktop packaging, and Electron tests remain path-gated. Dependency setup skips Electron downloads by default; only packaging and Electron test jobs install the binary. Installed Electron binaries use exact lockfile-specific caches without fallback to an older dependency set. Browser setup installs OS dependencies even when browser binaries are cached. Asset freshness jobs use a full checkout. CI topology is owned solely by `.github/workflows/`; local test selection is owned by the broad categories in `scripts/lib/verification/change-routes.mjs`.
+Every pull request and push to `main` runs the static aggregate, full Vitest, one web build plus preview smoke, and the critical browser suite. Prepared assets, desktop packaging, and Electron tests remain path-gated. Dependency setup skips Electron downloads by default; only packaging and Electron test jobs install the binary. Installed Electron binaries use exact lockfile-specific caches without fallback to an older dependency set. Browser setup installs OS dependencies even when browser binaries are cached. Prepared-output integrity jobs use committed selections and outputs without Asset Library. CI topology is owned solely by `.github/workflows/`; local test selection is owned by the broad categories in `scripts/lib/verification/change-routes.mjs`.
 
 External GitHub Actions in workflows and composite actions use full commit SHAs,
 with version comments for review. Resolve pins from the action's own repository;

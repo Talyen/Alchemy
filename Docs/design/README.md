@@ -1,6 +1,6 @@
 # Current design inputs
 
-Production artwork and audio masters live in `Raw Assets/`; importing and
+Production artwork and audio masters live in the external Asset Library; importing and
 optimization belong to [asset workflows](../WORKFLOWS-ASSETS.md).
 
 The Sound desk consumes [curated mappings](./audio-review/mappings.json) and

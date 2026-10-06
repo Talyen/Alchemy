@@ -7,7 +7,7 @@ import { syncGenerated } from "./sync-generated.mjs";
 
 function printHelp() {
   console.log(`Usage: node scripts/assets.mjs [command]
-  Canonical asset CLI (predev runs --prepare over the same pipeline).
+  Canonical asset CLI (asset preparation is local and explicit).
   --prepare (default)  Run full asset prep (art+sounds+music+art barrels+version)
   --optimize           Run art/sound/music optimization only (skips barrel sync)
   --sync               Run barrel sync only (art barrels + version metadata;
@@ -17,19 +17,23 @@ function printHelp() {
                        default mode) this is the full read-only check, same as
                        npm run assets:check. With --optimize/--sync it checks
                        only that stage (per-stage { check: true }).
+  --outputs-only       With --check, validate committed outputs without Asset Library
   --help               Show this help
   ALCHEMY_SKIP_ASSETS=1 skips mutating commands in this CLI (--check still
   verifies and therefore errors under the skip).`);
 }
 
-const KNOWN_FLAGS = new Set(["--prepare", "--optimize", "--sync", "--check", "--help", "-h"]);
+const KNOWN_FLAGS = new Set(["--prepare", "--optimize", "--sync", "--check", "--outputs-only", "--help", "-h"]);
 
 export function parseAssetArgs(argv) {
   const unknown = argv.filter((arg) => !KNOWN_FLAGS.has(arg));
   if (unknown.length > 0) throw new Error(`Unknown argument: ${unknown.join(", ")}`);
   const modes = ["--prepare", "--optimize", "--sync"].filter((flag) => argv.includes(flag));
   if (modes.length > 1) throw new Error("Conflicting asset modes.");
+  if (argv.includes("--outputs-only") && (!argv.includes("--check") || modes.some((mode) => mode !== "--prepare")))
+    throw new Error("--outputs-only requires the full --check mode.");
   return {
+    outputsOnly: argv.includes("--outputs-only"),
     help: argv.includes("--help") || argv.includes("-h"),
     check: argv.includes("--check"),
     mode: modes[0] ?? "--prepare",
@@ -68,7 +72,7 @@ export async function runAssetCommand(options) {
     return;
   }
   if (options.check) {
-    await checkPreparedAssets();
+    await checkPreparedAssets({ outputsOnly: options.outputsOnly });
     return;
   }
   await prepareAssets();

@@ -1,3 +1,4 @@
+import { assetLibraryRoot, requireAssetSources } from "./assets/asset-library.mjs";
 import { execFile } from "node:child_process";
 import { copyFile, readdir } from "node:fs/promises";
 import path from "node:path";
@@ -15,6 +16,7 @@ import {
   validateSoundAssetRegistry,
 } from "./assets/sound-assets.mjs";
 import {
+  selectionHash,
   commitManifest,
   isOutputFresh,
   processFreshEntry,
@@ -45,8 +47,7 @@ import { mapPool } from "./lib/map-pool.mjs";
 
 const execFileAsync = promisify(execFile);
 
-const { sourceDir, outputDir, manifestPath } = resolvePipelinePaths(import.meta.url, {
-  sourceSubpath: ["Raw Assets", "Sound Effects"],
+const { outputDir, manifestPath } = resolvePipelinePaths(import.meta.url, {
   managedKey: "sounds",
 });
 
@@ -54,7 +55,7 @@ const SCHEMA_VERSION = ASSET_SCHEMA_VERSION;
 const TRANSFORM_CONCURRENCY = SOUND_TRANSFORM_CONCURRENCY;
 
 async function optimizeSound({ source, target }, storedEntry, check) {
-  const sourcePath = path.join(sourceDir, source);
+  const sourcePath = path.join(assetLibraryRoot(), source);
   const outputPath = path.join(outputDir, target);
   const ext = path.extname(source).toLowerCase();
   const settings = soundTransformSettings(ext);
@@ -69,7 +70,7 @@ async function optimizeSound({ source, target }, storedEntry, check) {
   );
   return {
     message: `${target} ${fresh ? "already up to date" : settings.mode === "copy" ? "copied" : "converted"}`,
-    entry,
+    entry: { ...entry, selectionHash: selectionHash({ source, target }, settings) },
   };
 }
 
@@ -107,7 +108,8 @@ export async function optimizeSounds({ check = false } = {}) {
   }
 
   await ensureOutputDir(outputDir, { check });
-  await validateSoundAssetRegistry({ sourceDir });
+  await validateSoundAssetRegistry();
+  await requireAssetSources(generatedSoundAssets);
 
   const pipeline = await runManifestPipeline({
     entries: generatedSoundAssets,
@@ -185,6 +187,7 @@ async function ensureMp3Fallbacks(previousManifest, managedOggs, check) {
         curatedOggEntries[ogg] = {
           ...(oggFresh ? storedOgg : await withOutputHash(oggEntry, oggPath)),
           owner,
+          selectionHash: selectionHash({ source: ogg, target: ogg }, CURATED_SOUND_SETTINGS),
         };
       }
 
@@ -208,6 +211,7 @@ async function ensureMp3Fallbacks(previousManifest, managedOggs, check) {
       } else {
         mp3Entries[mp3Name] = { ...stored, owner };
       }
+      mp3Entries[mp3Name].selectionHash = selectionHash({ source: ogg, target: mp3Name }, MP3_FALLBACK_SETTINGS);
     } catch (error) {
       if (error instanceof Error && error.message.startsWith("Missing curated sound:")) throw error;
       const detail = error instanceof Error ? error.message : String(error);

@@ -1,3 +1,10 @@
 export const MUSIC_FILE_EXTENSIONS: ReadonlySet<string>;
 
-export function validateMusicRegistry(files: string[]): Promise<string[]>;
+export interface MusicAssetEntry {
+  source: string;
+  target: string;
+}
+
+export function validateMusicRegistry<T extends string | MusicAssetEntry>(files: T[]): Promise<T[]>;
+
+export const musicAssets: MusicAssetEntry[];

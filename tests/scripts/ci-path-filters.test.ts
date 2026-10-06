@@ -82,6 +82,10 @@ const PATH_CASES: Array<[string, string[], string[]]> = [
   ["tests/e2e/specs/save-persistence.spec.ts", ["browser-test"], []],
   ["scripts/sync-generated.mjs", ["assets", "tooling"], ["assets"]],
   ["scripts/prepare-assets.mjs", ["assets", "tooling"], ["assets", "desktop_renderer"]],
+  ["scripts/check-prepared-assets.mjs", ["assets", "tooling"], ["assets"]],
+  ["scripts/generate-icons.mjs", ["assets", "tooling"], ["assets"]],
+  ["desktop/icons/icon.png", ["assets", "desktop"], ["assets", "desktop", "desktop_renderer"]],
+  ["public/icon-512.png", ["assets", "runtime"], ["assets"]],
   ["scripts/sync-art-barrels.mjs", ["assets", "tooling"], ["assets"]],
   // Release/desktop sync helpers share the sync-* prefix but reproduce no
   // committed asset output: tooling route only, no CI gate.

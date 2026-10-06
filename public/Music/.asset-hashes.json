@@ -1,54 +1,67 @@
 {
   "Battle 1.mp3": {
     "hash": "06df2c860984c0db7872fe2239af7cd8",
-    "outputHash": "d711edee632295069a00456d1d6587f3"
+    "outputHash": "d711edee632295069a00456d1d6587f3",
+    "selectionHash": "9611b6b37d43cfd32ce01f51b1309f023c19dd1127221ad80883947575eaf0b7"
   },
   "Battle 2.mp3": {
     "hash": "31fb5010f722d59d8bcf92df50e862a4",
-    "outputHash": "7ce58a8b2183c0cf43f1327955f7b4cd"
+    "outputHash": "7ce58a8b2183c0cf43f1327955f7b4cd",
+    "selectionHash": "a13f91f78c35e0d9033b336655139667a273c6f41cd21bc4f8e680198b5f0847"
   },
   "Battle 3.mp3": {
     "hash": "fa1b16361526e00e590001084d1ee589",
-    "outputHash": "154205a5367f0562d1c1e44cd650d204"
+    "outputHash": "154205a5367f0562d1c1e44cd650d204",
+    "selectionHash": "83f080084c764c745f598e27eaf0df53692bec1427277ab35a675538fb98341a"
   },
   "Battle 4.mp3": {
     "hash": "8c158cdbc90d9ca77f327d815f635e50",
-    "outputHash": "c3d971c235141d7518d0529a6a6a4519"
+    "outputHash": "c3d971c235141d7518d0529a6a6a4519",
+    "selectionHash": "a9e2b5e5919d4eb5049e9f1861c14ede796a0785928e161f8828174cd28a6e40"
   },
   "Battle 5.mp3": {
     "hash": "9136c9925e13f0599a599db65a233bd2",
-    "outputHash": "5b3248b80702632882133f6cdc5606d7"
+    "outputHash": "5b3248b80702632882133f6cdc5606d7",
+    "selectionHash": "af922ebb34ea78d8e32f2962d3f9f474f8fe42dbbba42372a47c4859e92b919b"
   },
   "Menu 1.mp3": {
     "hash": "f14dd3a8bb9a2cd4bf55ffc7018bd723",
-    "outputHash": "bbc16afff927bf8492d495f1b6de0a9f"
+    "outputHash": "bbc16afff927bf8492d495f1b6de0a9f",
+    "selectionHash": "d65aa660ec1dab82ff2d779d3b1e276f3e43152dd339816a2ee9431a00100668"
   },
   "Menu 2.mp3": {
     "hash": "4f123b27e46e67373aaa7a80ea5a7e99",
-    "outputHash": "2c6750f1608d5d55cd45b4a158c989f8"
+    "outputHash": "2c6750f1608d5d55cd45b4a158c989f8",
+    "selectionHash": "2a4cfeed70a17ab72b7fd586275b052b4314ce79bae5e3b96153b56c32ef4767"
   },
   "Menu 3.mp3": {
     "hash": "9e84b36ab25a69c8e5be36a490879e1c",
-    "outputHash": "69e73ed823c7001c212eacca5da4763f"
+    "outputHash": "69e73ed823c7001c212eacca5da4763f",
+    "selectionHash": "9fd1bc7939c836dda1edf8393c102bd776280e5a170bfdd3cf51cb91749acc90"
   },
   "Menu 4.mp3": {
     "hash": "ac118144e51f2472b7522ba0c423ebd2",
-    "outputHash": "27a73b88523deff2ffb3e5649474bcd8"
+    "outputHash": "27a73b88523deff2ffb3e5649474bcd8",
+    "selectionHash": "f18d536b8bd82932504a301643d2825875ef4fa9c69cf162faebfe2189163893"
   },
   "The Blight Treant.mp3": {
     "hash": "bcb6dda10014b71578957d040dbf06ef",
-    "outputHash": "56464355707bea1b6932b1fe107345a4"
+    "outputHash": "56464355707bea1b6932b1fe107345a4",
+    "selectionHash": "a3113c7a36130cf7d58e8f54e9e8268d8e49d2df62e7d0c2d611b33b3cc0fddb"
   },
   "The Forge Golem.mp3": {
     "hash": "87ba00ec78e61bbe2d43723063d8249d",
-    "outputHash": "9e25e4c4cf704232857ad71d86355330"
+    "outputHash": "9e25e4c4cf704232857ad71d86355330",
+    "selectionHash": "778a55799e5fcdf5872292f76f8f682f1196eaaacd42e6a4756725334d7cbdbc"
   },
   "The Frostwarden.mp3": {
     "hash": "be8a4c2a9b69ee8faae1486b849b55f5",
-    "outputHash": "80011a5374d03a5879b5563f4e30e7de"
+    "outputHash": "80011a5374d03a5879b5563f4e30e7de",
+    "selectionHash": "046dffe113b0556dd8d16ab754b3e357a4414b0a1e77268cfcbb9c123ddc4e2d"
   },
   "The Iron Bear.mp3": {
     "hash": "569b984dbdba73354d149448078c9db8",
-    "outputHash": "f9b94ebc9aca6ee40e93a3d7935ef20d"
+    "outputHash": "f9b94ebc9aca6ee40e93a3d7935ef20d",
+    "selectionHash": "b1c9deefa759404947e2a26447465e4cdef225e4090117dbb734b2cca2f5e81a"
   }
 }

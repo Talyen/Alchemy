@@ -1,9 +1,16 @@
 import { randomUUID } from "node:crypto";
+import fs from "node:fs";
 import { readFileSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { captureSourceDigest, parseCheckArgs, runCheck as runFullCheck } from "../../scripts/check.mjs";
+import { resolvePushPaths } from "../../scripts/lib/verification/changed-paths.mjs";
+
+vi.mock("../../scripts/lib/verification/changed-paths.mjs", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../scripts/lib/verification/changed-paths.mjs")>()),
+  resolvePushPaths: vi.fn(),
+}));
 
 const runCheck = (...args: Parameters<typeof runFullCheck>) => runFullCheck([...(args[0] ?? []), "--full"], args[1]);
 
@@ -24,6 +31,26 @@ describe("full source-aware completion gate", () => {
   it("selects identical package gates regardless of path spelling", () => {
     for (const file of ["./package.json", resolve("package.json"), "scripts/../package.json"]) {
       expect(parseCheckArgs([file])).toEqual(["package.json"]);
+    }
+  });
+
+  it("requires source freshness for asset helpers and icons while keeping code-only pushes source-free", async () => {
+    const read = vi.spyOn(fs, "readFileSync");
+    const cases: Array<[string, string]> = [
+      ["scripts/check-prepared-assets.mjs", "assets:check"],
+      ["scripts/lib/process-helpers.mjs", "assets:check"],
+      ["scripts/generate-icons.mjs", "assets:check"],
+      ["public/icon-512.png", "assets:check"],
+      ["src/App.tsx", "assets:check:outputs"],
+    ];
+    for (const [file, expected] of cases) {
+      read.mockReturnValueOnce("");
+      vi.mocked(resolvePushPaths).mockReturnValueOnce([file]);
+      const runner = vi.fn((..._args: unknown[]) => 0);
+      expect(await runFullCheck(["--pre-push"], { runner, captureDigest: () => ({ head: "abc", hash: "same" }) })).toBe(
+        0,
+      );
+      expect(runner.mock.calls[0]).toEqual([expect.any(String), "npm", ["run", expected], expect.any(Object)]);
     }
   });
 

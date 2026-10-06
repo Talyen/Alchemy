@@ -8,6 +8,7 @@ export async function validateRegistryEntries(
   entries,
   {
     sourceDir,
+    allowSourceAliases = false,
     targetKey = "target",
     checkExport = false,
     sourcePattern,
@@ -29,7 +30,7 @@ export async function validateRegistryEntries(
   for (const entry of entries) {
     const source = entry.source;
     const target = entry[targetKey];
-    if (source && sources.has(dedupeKey(source))) {
+    if (!allowSourceAliases && source && sources.has(dedupeKey(source))) {
       const prev = sources.get(dedupeKey(source));
       errors.push(`Duplicate asset source "${source}" (${prev} and ${target}).`);
     }

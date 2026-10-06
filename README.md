@@ -90,7 +90,7 @@ Feature layout and run-state ownership:
 - `src/features/alchemy/` — React UI (`meta`, `run-setup`, `run-loop`, `shell`, `shared`)
 - `tests/` — unit tests grouped by source owner; browser specs in `tests/e2e/specs/`, Electron checks in `tests/electron/`, and desktop unit tests in `tests/desktop/`; shared fixtures, page objects, and helpers support multiple suites
 - `performance/` — browser and desktop measurement scenarios and reporting tools; runtime instrumentation lives in `src/lib/performance/`
-- `Raw Assets/`, `src/assets/`, `public/` — authored inputs, bundled assets, and public assets; [asset workflows](./Docs/WORKFLOWS-ASSETS.md) identify generated outputs
+- Asset Library (external), `src/assets/`, `public/` — raw masters, bundled assets, and public assets; [asset workflows](./Docs/WORKFLOWS-ASSETS.md) identify generated outputs
 - `scripts/` — command entry points, asset registries and pipeline helpers in `scripts/assets/`, and other shared tooling in `scripts/lib/`; see the [script implementation map](./scripts/README.md)
 - `eslint/` — custom lint rules and import-boundary definitions composed by `eslint.config.js`
 - `Docs/`, `.agents/` — canonical project documentation, audit procedures, plans, and agent skills and lessons
@@ -103,7 +103,7 @@ outputs such as `dist/`, `dist-demo/`, `release-desktop/`, `release-desktop-demo
 work; current tool inputs belong in `Docs/design/`; discard completed experiments. Existing `npm run clean` and
 `npm run prune:transient` commands manage disposable reports and caches.
 
-`npm run dev` prepares authored assets before starting Vite. Production builds
+`npm run dev` validates committed prepared assets before starting Vite. Production builds
 only validate committed generated outputs and never rewrite tracked sources.
 Use the explicit authoring and `sync:*` commands in
 [`Docs/WORKFLOWS-ASSETS.md`](./Docs/WORKFLOWS-ASSETS.md) when intentionally

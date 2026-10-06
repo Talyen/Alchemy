@@ -1,3 +1,4 @@
+import { resolveAssetSource } from "../assets/asset-library.mjs";
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
@@ -29,7 +30,7 @@ export async function currentSoundIdentity(root, files) {
         const source = generated.get(file);
         if (source) {
           try {
-            hashes.push(await hashFile(containedPath(path.join(root, "Raw Assets/Sound Effects"), source)));
+            hashes.push(await hashFile(resolveAssetSource(source)));
           } catch (error) {
             if (error.code !== "ENOENT") throw error;
           }

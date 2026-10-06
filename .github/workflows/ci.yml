@@ -29,7 +29,6 @@ jobs:
           fetch-depth: 0
           sparse-checkout: |
             /*
-            !Raw Assets
           sparse-checkout-cone-mode: false
 
       # workflow_dispatch has no diff base; gated jobs run unconditionally there.
@@ -102,10 +101,11 @@ jobs:
               - ".github/**"
               - "package.json"
               - "package-lock.json"
-              - "Raw Assets/**"
               - "scripts/assets/**"
               - "scripts/prepare-assets.mjs"
               - "scripts/check-prepared-assets.mjs"
+              - "scripts/generate-icons.mjs"
+              - "desktop/icons/**"
               - "scripts/optimize-assets.mjs"
               - "scripts/optimize-sounds.mjs"
               - "scripts/optimize-music.mjs"
@@ -116,6 +116,10 @@ jobs:
               - "scripts/lib/process-helpers.mjs"
               - "src/assets/optimized/**"
               - "public/sounds/**"
+              - "public/favicon*"
+              - "public/icon-*"
+              - "public/apple-touch-icon.png"
+              - "public/site.webmanifest"
               - "public/Music/**"
               - "src/lib/game-data/assets.generated.ts"
               - "src/lib/game-data/gear-art.generated.ts"
@@ -128,7 +132,6 @@ jobs:
           fetch-depth: 0
           sparse-checkout: |
             /*
-            !Raw Assets
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
@@ -156,7 +159,6 @@ jobs:
           fetch-depth: 0
           sparse-checkout: |
             /*
-            !Raw Assets
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
@@ -187,7 +189,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !Raw Assets
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
@@ -233,7 +234,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !Raw Assets
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
@@ -295,7 +295,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !Raw Assets
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
@@ -334,7 +333,7 @@ jobs:
 
       - uses: ./.github/actions/setup
       - name: Assert committed outputs match preparation
-        run: npm run assets:check
+        run: npm run assets:check:outputs
 
   desktop-build:
     needs: [changes, ship-gate]
@@ -352,7 +351,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !Raw Assets
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
@@ -425,7 +423,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !Raw Assets
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup

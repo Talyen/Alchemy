@@ -17,10 +17,7 @@ vi.mock("../../scripts/assets/asset-pipeline-runner.mjs", async (importOriginal)
     resolveRootDir: () => fixture.root,
     // resolvePipelinePaths closes over the real resolver internally, so route
     // it through the fixture root explicitly.
-    resolvePipelinePaths: (
-      _url: string,
-      options: { sourceSubpath: string[]; managedKey: "art" | "sounds" | "music" },
-    ) =>
+    resolvePipelinePaths: (_url: string, options: { managedKey: "art" | "sounds" | "music" }) =>
       original.resolvePipelinePaths(pathToFileURL(path.join(fixture.root, "scripts", "mock-entry.mjs")).href, options),
   };
 });
@@ -30,6 +27,21 @@ vi.mock("../../scripts/assets/asset-manifest.mjs", async (importOriginal) => ({
     { source: "a.png", target: "a.webp", width: 16, quality: 80 },
     { source: "b.png", target: "b.webp", width: 16, quality: 80 },
   ],
+}));
+vi.mock("../../scripts/assets/gear-assets.mjs", () => ({
+  gearAssets: [
+    { source: "Gear/Sword - Basic.png", target: "gear-sword-basic.webp", width: 16, quality: 80 },
+    ...["Body", "Weapon", "Accessory", "Trinket"].map((slot) => ({
+      source: `Gear/Gear Slot Backgrounds/${slot} Slot.png`,
+      target: `gear-slot-${slot.toLowerCase()}.webp`,
+      width: 16,
+      quality: 80,
+    })),
+  ],
+}));
+vi.mock("../../scripts/assets/music-assets.mjs", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../scripts/assets/music-assets.mjs")>()),
+  musicAssets: ["a", "b"].map((name) => ({ source: `Music/${name}.ogg`, target: `${name}.ogg` })),
 }));
 vi.mock("sharp", () => ({
   default: (source: string) => ({
@@ -58,6 +70,7 @@ vi.mock("node:fs/promises", async (importOriginal) => {
 fixture.root = mkdtempSync(path.join(tmpdir(), "alchemy-art-music-"));
 const { optimizeAssets } = await import("../../scripts/optimize-assets.mjs");
 const { optimizeMusic } = await import("../../scripts/optimize-music.mjs");
+const { musicAssets } = await import("../../scripts/assets/music-assets.mjs");
 const rawDir = path.join(fixture.root, "Raw Assets");
 const gearDir = path.join(rawDir, "Gear");
 const slotDir = path.join(gearDir, "Gear Slot Backgrounds");
@@ -70,6 +83,7 @@ afterAll(() => rmSync(fixture.root, { recursive: true, force: true }));
 
 beforeEach(async () => {
   rmSync(fixture.root, { recursive: true, force: true });
+  vi.stubEnv("ASSET_LIBRARY_ROOT", rawDir);
   await mkdir(slotDir, { recursive: true });
   await mkdir(musicDir, { recursive: true });
   for (const slot of slots) await writeFile(path.join(slotDir, `${slot} Slot.png`), slot);
@@ -241,55 +255,42 @@ describe.each([
   });
 });
 
-describe("source discovery failures", () => {
+describe("explicit library selection", () => {
+  it("rejects music selections that escape the output directory or disguise a copied format before any write", async () => {
+    const asset = musicAssets[0]!;
+    const original = { ...asset };
+    try {
+      for (const target of ["../outside.ogg", "nested/track.ogg", "/tmp/track.ogg", "track.mp3"]) {
+        asset.target = target;
+        await expect(optimizeMusic()).rejects.toThrow(/Invalid target|copied without conversion/);
+        expect(copyFile).not.toHaveBeenCalled();
+        expect(writeFile).not.toHaveBeenCalled();
+        await expect(readdir(musicOutput)).rejects.toMatchObject({ code: "ENOENT" });
+      }
+    } finally {
+      Object.assign(asset, original);
+    }
+  });
+
   it.each([
-    { label: "Gear", optimize: optimizeAssets, source: gearDir, output: artOutput },
-    { label: "music", optimize: optimizeMusic, source: musicDir, output: musicOutput },
-  ])("preserves $label outputs and reports directory read errors", async ({ optimize, source, output }) => {
+    { optimize: optimizeAssets, source: gearDir, output: artOutput },
+    { optimize: optimizeMusic, source: musicDir, output: musicOutput },
+  ])("preserves every output when a selected source is unavailable", async ({ optimize, source, output }) => {
     await optimize();
-    const manifestPath = path.join(output, ".asset-hashes.json");
-    const before = await readFile(manifestPath, "utf8");
     const files = await readdir(output);
-    const error = Object.assign(new Error(`EACCES: scandir ${source}`), { code: "EACCES", path: source });
-    vi.mocked(readdir).mockRejectedValueOnce(error);
-    fixture.transform.mockClear();
-    vi.mocked(copyFile).mockClear();
-    vi.mocked(writeFile).mockClear();
-    await expect(optimize()).rejects.toBe(error);
-    expect(await readFile(manifestPath, "utf8")).toBe(before);
-    expect(await readdir(output)).toEqual(files);
-    expect(writeFile).not.toHaveBeenCalled();
-    expect(copyFile).not.toHaveBeenCalled();
-    expect(fixture.transform).not.toHaveBeenCalled();
-  });
-
-  it.each([
-    { label: "Gear", optimize: optimizeAssets, source: gearDir, output: artOutput },
-    { label: "music", optimize: optimizeMusic, source: musicDir, output: musicOutput },
-  ])("reports a missing $label source before creating outputs", async ({ optimize, source, output }) => {
+    const before = await Promise.all(files.map((file) => readFile(path.join(output, file))));
     await rm(source, { recursive: true });
-    await expect(optimize()).rejects.toMatchObject({ code: "ENOENT", path: source });
-    await expect(readdir(output)).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(optimize()).rejects.toThrow("Cannot read Asset Library source");
+    expect(await readdir(output)).toEqual(files);
+    expect(await Promise.all(files.map((file) => readFile(path.join(output, file))))).toEqual(before);
   });
 
-  it("rejects a readable music directory with no supported files before creating outputs", async () => {
-    await rm(musicDir, { recursive: true });
-    await mkdir(musicDir);
-    await writeFile(path.join(musicDir, "notes.txt"), "not audio");
-    await expect(optimizeMusic()).resolves.toEqual({ ok: false, error: `No music files found in ${musicDir}.` });
-    await expect(readdir(musicOutput)).rejects.toMatchObject({ code: "ENOENT" });
-  });
-
-  it("rejects missing required slot art before creating outputs", async () => {
-    await rm(path.join(slotDir, "Body Slot.png"));
-    await expect(optimizeAssets()).rejects.toThrow("Missing background art for slot: body");
-    await expect(readdir(artOutput)).rejects.toMatchObject({ code: "ENOENT" });
-  });
-
-  it("still accepts a readable Gear directory with only slot backgrounds", async () => {
-    await rm(path.join(gearDir, "Sword - Basic.png"));
-    await expect(optimizeAssets()).resolves.toEqual({ ok: true });
-    expect(await readdir(artOutput)).not.toContain("gear-sword-basic.webp");
-    for (const slot of slots) expect(await readdir(artOutput)).toContain(`gear-slot-${slot.toLowerCase()}.webp`);
+  it("does not include newly added library files", async () => {
+    await writeFile(path.join(gearDir, "Unused - Basic.png"), "unused art");
+    await writeFile(path.join(musicDir, "unused.ogg"), "unused music");
+    await optimizeAssets();
+    await optimizeMusic();
+    expect(await readdir(artOutput)).not.toContain("gear-unused-basic.webp");
+    expect(await readdir(musicOutput)).not.toContain("unused.ogg");
   });
 });

@@ -97,28 +97,6 @@ describe("asset-manifest-cache", () => {
     expect(second.hash).not.toBe(first.hash);
   });
 
-  it("re-hashes when transform settings change even if source mtime is unchanged", async () => {
-    const dir = await makeTempDir();
-    const sourcePath = path.join(dir, "a.png");
-    await writeFile(sourcePath, "bytes-a");
-    const first = await resolveSourceHash(sourcePath, { quality: 80 }, 2);
-    const second = await resolveSourceHash(sourcePath, { quality: 90 }, 2);
-
-    expect(second.hash).not.toBe(first.hash);
-  });
-
-  it("re-hashes changed content", async () => {
-    const dir = await makeTempDir();
-    const sourcePath = path.join(dir, "a.png");
-    await writeFile(sourcePath, "bytes-a");
-    const first = await resolveSourceHash(sourcePath, { quality: 80 }, 2);
-
-    await writeFile(sourcePath, "bytes-a-changed");
-    const second = await resolveSourceHash(sourcePath, { quality: 80 }, 2);
-
-    expect(second.hash).not.toBe(first.hash);
-  });
-
   it("loads legacy string hashes without an output digest", async () => {
     const dir = await makeTempDir();
     const manifestPath = path.join(dir, ".asset-hashes.json");

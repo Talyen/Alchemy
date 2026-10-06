@@ -1,4 +1,4 @@
-import { mkdir, readdir, rename, rm } from "node:fs/promises";
+import { mkdir, rename, rm } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -22,14 +22,12 @@ export function getManagedManifestPath(rootDir, managedKey) {
 }
 
 /**
- * Shared directory layout for the art/sound/music optimizers: authoring
- * sources, managed outputs, and the hash manifest that tracks them.
+ * Repository-local output directories and manifests; raw sources resolve separately through Asset Library.
  */
-export function resolvePipelinePaths(importMetaUrl, { sourceSubpath, managedKey }) {
+export function resolvePipelinePaths(importMetaUrl, { managedKey }) {
   const rootDir = resolveRootDir(importMetaUrl);
   return {
     rootDir,
-    sourceDir: path.join(rootDir, ...sourceSubpath),
     outputDir: path.join(rootDir, MANAGED_DIRS[managedKey].dir),
     manifestPath: getManagedManifestPath(rootDir, managedKey),
   };
@@ -49,28 +47,6 @@ export async function writeStagedOutput(outputPath, transform) {
     await rename(temporaryPath, outputPath);
   } finally {
     await rm(temporaryPath, { force: true });
-  }
-}
-
-/**
- * Read a source directory, wrapping a missing checkout with its context while
- * preserving the original `code`/`path` so freshness tests can match on them.
- * Other filesystem errors propagate untouched.
- */
-export async function readSourceDir(
-  dir,
-  context = "This checkout may exclude raw sources; asset prep requires the full Raw Assets/ tree.",
-) {
-  try {
-    return await readdir(dir, { withFileTypes: true });
-  } catch (error) {
-    if (error?.code === "ENOENT") {
-      const wrapped = new Error(`Missing Raw Assets source "${dir}". ${context}`, { cause: error });
-      wrapped.code = error.code;
-      wrapped.path = error.path ?? dir;
-      throw wrapped;
-    }
-    throw error;
   }
 }
 

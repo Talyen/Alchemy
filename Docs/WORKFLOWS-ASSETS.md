@@ -14,6 +14,14 @@ commands below support narrower iteration. Review generated changes and run the
 read-only freshness check before handoff. Pipeline maintenance must also preserve the
 failure and freshness contracts below.
 
+## Local library and CI
+
+Both games default to `~/Documents/Asset Library`; set `ASSET_LIBRARY_ROOT` for a different local location. Sources are library-relative paths beneath `2d Assets/Game Sources`, `Sounds/Game Sources`, or `Video/Game Sources`. Artwork is organized by subject under Characters, Actions, Items, Places, Interface, Animation, and Branding. Alternate versions share a subject folder with descriptive filenames; each game's manifests select the version it uses. Audio and video retain their existing organization. New approved revisions use distinct filenames and are adopted explicitly through each game's selection manifest.
+
+Run `npm run assets` after source/selection edits, then `npm run assets:check`. App icons retain their focused `npm run generate:icons` command; source and output checks include its preparation record. Narrow optimizers remain available. Download selected files in Finder when iCloud has offloaded them. Full preparation reads all selected sources before publishing or pruning anything; missing sources preserve existing outputs. Asset-related pushes require a local source check.
+
+Ordinary development and builds use committed outputs. `predev` and hosted CI run `npm run assets:check:outputs`; this deliberately does not establish raw-source freshness. CI neither downloads the library nor regenerates media. Prepared manifests retain independent source/settings hashes, selection fingerprints, and output hashes.
+
 ## Art style and generation prompts
 
 Alchemy's visual identity is anchored by its **Master Action-Anime Art Style**.
@@ -73,7 +81,7 @@ Create a single game inventory icon. Square composition, genuinely transparent b
 
 ## Add or replace game art
 
-1. Put the raw file under the matching `Raw Assets/` directory.
+1. Put the raw master in the local Asset Library and use a library-relative source reference.
 2. Register source, target, width, and quality in the topical manifest under
    `scripts/assets/` (`core`, `content`, `card`, or `talent`) using presets from `scripts/assets/asset-constants.mjs` (`WIDTH`/`QUALITY`). Talent portraits belong in `talent-assets.mjs`.
 3. Run `npm run assets:optimize:art` followed by `npm run sync:art` for
@@ -92,14 +100,14 @@ Do not add exports to generated files by hand. The hash schema salt lives in
 
 ## Resource and battle UI masters
 
-Production authoring sources live under `Raw Assets/`. Keep pending approval
+Production authoring sources live in the iCloud-backed local Asset Library. Keep pending approval
 material only while its decision is open; once selected work is installed, remove
 superseded studies, approval transcripts and duplicate sources. Use ignored
 `output/` or `scratch/` for temporary experiments. Current tool inputs are listed
 in [design inputs](./design/README.md).
 
-Homestead resource masters live in `Raw Assets/Homestead/Resources/`; crafting
-currency PNG masters live in `Raw Assets/Crafting/`. Resources and battle Mana
+Homestead resource masters live in `2d Assets/Game Sources/Items/Resources/`; crafting
+currency PNG masters live in `2d Assets/Game Sources/Items/Crafting/`. Resources and battle Mana
 use transparent backgrounds, while crafting currencies retain their illustrated
 dark backgrounds. Check the actual alpha channel before importing transparent
 art: a visible checkerboard may be baked into an opaque image.
@@ -108,19 +116,19 @@ Set `requiresTransparency: true` in the owning art manifest when an image must h
 
 Also inspect approved artwork against light and dark backgrounds. The pixel check rejects opaque checkerboards and empty images but cannot prove that every background pixel is correct. If reference-based image generation repeatedly paints a checkerboard into the image, regenerate without image references using the approved visual description, then repeat pixel and visual checks. Current approved masters remain the authoring sources.
 
-`Raw Assets/Misc/Card Back.png` is the single card used in transfer animations.
+`2d Assets/Game Sources/Interface/Card Elements/Card Back.png` is the single card used in transfer animations.
 `Draw Pile.png` (active compass stack, leaning left) and `Discard Pile.png`
 (spent/dormant compass stack, leaning right) are distinct compositions, not
 mirrors; both retain transparent margins and a 3:4 canvas. Keep pile artwork
 separate from the single-card master so animations never show a stack.
-`Misc/Mana Crystal.png` generates `battle-mana-crystal.webp` for the Mana display;
+`2d Assets/Game Sources/Items/Resources/Mana Crystal - Transparent.png` generates `battle-mana-crystal.webp` for the Mana display;
 it is distinct from the playable Mana Crystals card artwork. Available crystals
 use the full image, spent crystals use 20% opacity, and overflow crystals retain
 their brighter glow.
 
 ## Add or replace Gear art
 
-1. Name source files `Raw Assets/Gear/{Name} - {Basic|Astral}.jpeg` (PNG and
+1. Name source files `{Name} - {Basic|Astral}.jpeg` in Asset Library and select them in `scripts/assets/gear-assets.mjs` (PNG and
    `.jpg` variants accepted by the optimizer; filename slugging lives in
    `scripts/assets/gear-filenames.mjs`).
 2. Run `npm run assets:optimize:art`.
@@ -135,9 +143,7 @@ run when `assets.generated.ts` is stale. Full preparation runs the combined
 synchronization automatically.
 
 Gear slot backgrounds use `{Slot name} Slot.{jpeg|jpg|png}` under
-`Raw Assets/Gear/Gear Slot Backgrounds/`; the optimizer throws on unknown slot
-names and on missing `body`/`weapon`/`accessory`/`trinket` backgrounds (strict
-mode — use `--check` or CI to enforce).
+`2d Assets/Game Sources/Interface/Gear Slots/`. Select all four `body`/`weapon`/`accessory`/`trinket` backgrounds in `gear-assets.mjs`; generated-art validation rejects missing slot targets.
 
 ## Add or replace sound
 
@@ -171,11 +177,11 @@ preparation command before handoff.
 
 ## Add or replace music
 
-Place supported audio files under `Raw Assets/Music/` and run
+Select library-relative sources and stable output filenames in `scripts/assets/music-assets.mjs`, then run
 `npm run assets:optimize:music`. Music is copied without transcoding into
 `public/Music/`. The optimizer removes files without a corresponding source;
 there is no curated-source exception for music. Filenames are validated for
-duplicates and supported extensions by `scripts/assets/music-assets.mjs`.
+duplicates and supported extensions by `scripts/assets/music-assets.mjs`. Output targets must be basenames, and their extensions must match the selected source because this pipeline does not transcode.
 Register playable tracks in `src/lib/audio/music.ts`. Its
 `allRegisteredMusicFiles()` list is cross-checked against `public/Music/` by
 `tests/lib/audio/audio-assets.test.ts`.
@@ -201,8 +207,7 @@ outputs after source changes.
 Before handoff, run the read-only freshness check. It validates source/settings
 hashes, output bytes, manifest inventories, orphan files, and generated code,
 including version metadata. It never converts, copies, writes, or deletes assets.
-It requires the full `Raw Assets/` checkout; CI jobs running this check must not
-exclude raw sources. Regenerate stale outputs explicitly with `npm run assets`:
+It requires the selected Asset Library sources locally. CI uses `npm run assets:check:outputs`, which checks selection/settings fingerprints, output bytes, inventories and generated code without reading raw sources. Regenerate stale outputs explicitly with `npm run assets`:
 
 ```sh
 npm run assets:check
@@ -225,21 +230,21 @@ git diff -- src/assets/optimized public/sounds public/Music \
   src/lib/game-data/assets.generated.ts src/lib/game-data/gear-art.generated.ts
 ```
 
-Commit the intended generated outputs with their authoring-source changes.
+Commit the intended generated outputs and selection manifest changes. Raw masters stay outside Git.
 
 ## Pipeline overview
 
-| Asset kind    | Authoring source                             | Generated output                                           | Registry / consumer                                   |
-| ------------- | -------------------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------- |
-| Game art      | `Raw Assets/` + `scripts/assets/*.mjs`       | `src/assets/optimized/`                                    | `assets.generated.ts` → `src/lib/game-data/assets.ts` |
-| Gear art      | `Raw Assets/Gear/`                           | Optimized WebP + `src/lib/game-data/gear-art.generated.ts` | Gear definitions by stable definition ID              |
-| Sound effects | `Raw Assets/Sound Effects/` + sound manifest | `public/sounds/` OGG and MP3 fallbacks                     | `src/lib/audio/sound-registry.ts`                     |
-| Music         | `Raw Assets/Music/`                          | `public/Music/`                                            | Audio owners under `src/lib/audio/`                   |
+| Asset kind    | Authoring source                       | Generated output                                           | Registry / consumer                                   |
+| ------------- | -------------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------- |
+| Game art      | Asset Library + `scripts/assets/*.mjs` | `src/assets/optimized/`                                    | `assets.generated.ts` → `src/lib/game-data/assets.ts` |
+| Gear art      | Asset Library + `gear-assets.mjs`      | Optimized WebP + `src/lib/game-data/gear-art.generated.ts` | Gear definitions by stable definition ID              |
+| Sound effects | Asset Library + sound manifest         | `public/sounds/` OGG and MP3 fallbacks                     | `src/lib/audio/sound-registry.ts`                     |
+| Music         | Asset Library + music selection        | `public/Music/`                                            | Audio owners under `src/lib/audio/`                   |
 
 Build version stamping (`src/lib/validation/metadata.generated.ts` via `npm run sync:version`) is owned by the release pipeline ([RELEASE_SETUP](./RELEASE_SETUP.md)); it is not an art authoring source. Full preparation refreshes it as an independent step alongside the art barrels, so a failed art sync never blocks the version stamp and vice versa — failures from either are reported together.
 
 `scripts/prepare-assets.mjs` is the full pipeline (invoked via the canonical
-`node scripts/assets.mjs --prepare` CLI, which also powers `predev`). Art, sound, and music
+`node scripts/assets.mjs --prepare` CLI for explicit local preparation). Art, sound, and music
 optimization run concurrently and report every failure (settled, not fail-fast)
 because their outputs are disjoint; generated
 art and Gear barrels update whenever art succeeds, even if sound or music fail,
@@ -253,16 +258,16 @@ Each pipeline publishes its complete hash manifest only after all of its process
 succeeds. Discovery or processing failures preserve the previous manifest and skip
 orphan deletion. Successful output files may still advance during a failed run;
 output hashes are checked on retry. `assets:check` reports stale outputs without
-changing them. Source-directory read errors retain their filesystem error and
-path rather than being treated as empty asset collections.
+changing them. Unreadable selected sources fail before processing; their diagnostic identifies the library-relative path and retains the filesystem error as its cause.
 
 ## Authoring models
 
 Three authoring shapes coexist by design:
 
-- **Static manifest** — `scripts/assets/{core,card,content,talent}-assets.mjs` declare `{source,target,width,quality}`. Used for cards, talents, boons, destinations, etc. where every target is explicitly registered and validated for duplicate `source`/`target`/`exportName`. Width/quality presets, Sharp defaults, schema version, and audio settings live in `scripts/assets/asset-constants.mjs`.
-- **Filesystem discovery** — `Raw Assets/Gear/` (`{Name} - {Basic|Astral}.jpeg`) and `Raw Assets/Music/` are discovered at optimization time. Gear filenames encode rarity; music needs no per-target quality. No hand-maintained manifest entry. Malformed gear filenames throw (strict, like slot backgrounds) instead of warn+skip. Gear slugging and filename patterns live in `scripts/assets/gear-filenames.mjs`, shared by the optimizer and its tests. Every output directory is fully managed: manifest keys are the complete inventory and anything else is swept as an orphan. Sounds is the only pipeline with committed files that have no raw source (curated OGGs), tracked as manifest entries with a `curated` owner rather than directory exceptions.
-- **Mixed manifest + curated** — `scripts/assets/sound-assets.mjs` lists `generatedSoundAssets` (WAV→OGG with loudnorm) plus `curatedSoundFiles` (committed OGG without source). The optimizer owns `public/sounds/` and tags each hash manifest entry with `owner: generated|curated`.
+- **Static manifest** — `scripts/assets/{core,card,content,talent}-assets.mjs` declare `{source,target,width,quality}`. Used for cards, talents, boons, destinations, etc. where every target is explicitly registered and validated for duplicate targets and export names. Shared sources may produce distinct targets. Width/quality presets, Sharp defaults, schema version, and audio settings live in `scripts/assets/asset-constants.mjs`.
+- **Explicit Gear and Music selections** — `scripts/assets/gear-assets.mjs` and `music-assets.mjs` select sources and stable targets. Adding files to Asset Library does not change a game's inventory. Every output directory is fully managed; unregistered outputs are swept only after successful preparation. All current sound masters live in Asset Library; OGG masters are copied unchanged and receive MP3 fallbacks.
+
+- **Sound manifest** — `scripts/assets/sound-assets.mjs` lists `generatedSoundAssets` (WAV→OGG with loudnorm) plus the legacy `curatedSoundFiles` fallback (currently empty; all production masters are external). The optimizer owns `public/sounds/` and tags each hash manifest entry with `owner: generated|curated`.
 
 ## Content freshness and filesystem failures
 
@@ -304,8 +309,8 @@ filesystem write failures do not provide transactional rollback.
 
 The fast generated check requires every static target and all four Gear slot
 backgrounds, and checks that every referenced optimized asset is a regular file.
-It does not decode or hash media, run conversions, or require `Raw Assets/`.
+It does not decode or hash media, run conversions, or require Asset Library.
 Full preparation and `assets:check` remain responsible for raw-source freshness
-and the complete discovered per-item Gear inventory. Filesystem failures retain
+and the complete selected per-item Gear inventory. Filesystem failures retain
 their original errors; structural errors identify the manifest and offending
 entry or missing targets.

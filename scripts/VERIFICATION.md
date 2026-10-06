@@ -63,8 +63,8 @@ will run it through the static aggregate.
 `lint:ci` adds docs + deadcode + boundaries + architecture-smoke + Playwright
 collection, so the boundary subset is not double-run on every full static
 invocation. Generated-output validation stays layered by design: fast
-`sync-generated --check` (barrels + version), full `assets:check` (prepared
-outputs), and the pre-build guard in `build-verified.mjs` share one
+`sync-generated --check` (barrels + version), `assets:check:outputs` (prepared
+outputs without the library), local `assets:check` (raw-source freshness), and the pre-build guard in `build-verified.mjs` share one
 `syncGenerated` implementation.
 
 Documentation and ESLint inventories exclude isolated `.worktrees/` checkouts,

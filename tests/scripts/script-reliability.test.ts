@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
+import sharp from "sharp";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { commandInvocation, resolveBuilderBin, resolveViteBin } from "../../scripts/lib/command-invocation.mjs";
 import { runCommand, runCommandAsync } from "../../scripts/lib/run-command.mjs";
@@ -466,6 +467,14 @@ describe("script execution reliability", () => {
     expect(parseAssetArgs(["--check"])).toMatchObject({ check: true, mode: "--prepare" });
     expect(parseAssetArgs(["--optimize", "--check"])).toMatchObject({ check: true, mode: "--optimize" });
     expect(parseAssetArgs(["--sync", "--check"])).toMatchObject({ check: true, mode: "--sync" });
+    expect(parseAssetArgs(["--check", "--outputs-only"])).toMatchObject({ check: true, outputsOnly: true });
+    for (const args of [
+      ["--outputs-only"],
+      ["--outputs-only", "--check", "--sync"],
+      ["--outputs-only", "--check", "--optimize"],
+    ]) {
+      expect(() => parseAssetArgs(args)).toThrow("requires the full --check mode");
+    }
     expect(() => parseAssetArgs(["--bogus"])).toThrow("Unknown argument");
     expect(() => parseAssetArgs(["--prepare", "--optimize"])).toThrow("Conflicting asset modes");
     for (const argv of [
@@ -494,8 +503,16 @@ describe("script execution reliability", () => {
     const source = path.join(root, "Raw Assets/Music/theme.ogg");
     fs.mkdirSync(path.dirname(source), { recursive: true });
     fs.writeFileSync(source, "authored music");
+    fs.writeFileSync(
+      path.join(root, "scripts/assets/music-assets.mjs"),
+      `export const musicAssets = [{source: "Music/theme.ogg", target: "theme.ogg"}]; export async function validateMusicRegistry(files) { return files; }`,
+    );
     const run = (script: string, ...args: string[]) =>
-      spawnSync(process.execPath, [path.join(root, "scripts", script), ...args], { cwd: root, encoding: "utf8" });
+      spawnSync(process.execPath, [path.join(root, "scripts", script), ...args], {
+        cwd: root,
+        encoding: "utf8",
+        env: { ...process.env, ASSET_LIBRARY_ROOT: path.join(root, "Raw Assets") },
+      });
 
     for (const script of ["optimize-assets.mjs", "optimize-music.mjs", "optimize-sounds.mjs"]) {
       for (const arg of ["--chek", "unexpected"]) {
@@ -517,6 +534,41 @@ describe("script execution reliability", () => {
     fs.writeFileSync(source, "changed music");
     expect(run("optimize-music.mjs", "--check").status).toBe(1);
     expect([output, manifest].map((file) => fs.readFileSync(file))).toEqual(before);
+  });
+
+  it("generates icons from the selected library master and records outputs that verify without that library", async () => {
+    const root = fixture();
+    fs.cpSync(path.join(ROOT, "scripts"), path.join(root, "scripts"), { recursive: true });
+    fs.symlinkSync(path.join(ROOT, "node_modules"), path.join(root, "node_modules"), "junction");
+    const registry = path.join(root, "scripts/assets/icon-assets.mjs");
+    fs.writeFileSync(
+      registry,
+      fs
+        .readFileSync(registry, "utf8")
+        .replace(/export const iconSource = "[^"]+";/u, 'export const iconSource = "chosen/icon.png";'),
+    );
+    const library = path.join(root, "external library");
+    fs.mkdirSync(path.join(library, "chosen"), { recursive: true });
+    await sharp({ create: { width: 32, height: 32, channels: 4, background: "red" } })
+      .png()
+      .toFile(path.join(library, "chosen/icon.png"));
+    const generated = spawnSync(process.execPath, [path.join(root, "scripts/generate-icons.mjs")], {
+      cwd: root,
+      encoding: "utf8",
+      env: { ...process.env, ASSET_LIBRARY_ROOT: library },
+    });
+    expect(generated.status, generated.stderr).toBe(0);
+    fs.rmSync(library, { recursive: true });
+    const checked = spawnSync(
+      process.execPath,
+      [
+        "--input-type=module",
+        "-e",
+        "import { checkIconAssets } from './scripts/assets/icon-assets.mjs'; await checkIconAssets(process.cwd(), { outputsOnly: true });",
+      ],
+      { cwd: root, encoding: "utf8", env: { ...process.env, ASSET_LIBRARY_ROOT: library } },
+    );
+    expect(checked.status, checked.stderr).toBe(0);
   });
 
   it("finds nested TS/TSX suites and rejects missing, empty, and non-test selections", () => {

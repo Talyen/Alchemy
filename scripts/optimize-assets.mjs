@@ -2,118 +2,34 @@ import path from "node:path";
 
 import sharp from "sharp";
 
+import { gearAssets } from "./assets/gear-assets.mjs";
+import { assetLibraryRoot, requireAssetSources } from "./assets/asset-library.mjs";
+import { selectionHash } from "./assets/asset-manifest-cache.mjs";
 import { staticAssets, validateAssetRegistry } from "./assets/asset-manifest.mjs";
 import { processFreshEntry } from "./assets/asset-manifest-cache.mjs";
 import {
   ART_TRANSFORM_CONCURRENCY,
   ASSET_SCHEMA_VERSION,
-  ART_PRESETS,
   MANIFEST_BASENAME,
   SHARP_DEFAULTS,
 } from "./assets/asset-constants.mjs";
 import {
   ensureOutputDir,
-  readSourceDir,
   resolvePipelinePaths,
   runManifestPipeline,
   writeStagedOutput,
 } from "./assets/asset-pipeline-runner.mjs";
-import { GEAR_FILE_PATTERN, GEAR_SLOT_IDS, SLOT_BACKGROUND_PATTERN, toGearTarget } from "./assets/gear-filenames.mjs";
 import { runPipelineScript, UsageError } from "./lib/script-run.mjs";
 import { parseKnownFlags } from "./lib/cli-args.mjs";
 
-const { sourceDir, outputDir, manifestPath } = resolvePipelinePaths(import.meta.url, {
-  sourceSubpath: ["Raw Assets"],
+const { outputDir, manifestPath } = resolvePipelinePaths(import.meta.url, {
   managedKey: "art",
 });
 
 const SCHEMA_VERSION = ASSET_SCHEMA_VERSION;
 const TRANSFORM_CONCURRENCY = ART_TRANSFORM_CONCURRENCY;
 
-const gearPreset = ART_PRESETS.gear;
-const gearAssetWidth = gearPreset.width;
-const gearAssetQuality = gearPreset.quality;
-
-/** OS metadata files are never authoring sources. */
-const IGNORED_SOURCE_FILES = new Set(["thumbs.db", "desktop.ini", ".ds_store"]);
-
-async function discoverFiles({ dir, pattern, validate }) {
-  const entries = await readSourceDir(dir);
-
-  const discovered = [];
-  for (const entry of entries) {
-    if (!entry.isFile()) continue;
-    if (entry.name.startsWith(".")) continue;
-    if (IGNORED_SOURCE_FILES.has(entry.name.toLowerCase())) continue;
-    const match = entry.name.match(pattern);
-    if (!match) {
-      const skip = validate.skip?.(entry.name);
-      if (skip) continue;
-      throw new Error(validate.malformed(entry.name));
-    }
-    const asset = validate.map(match, entry.name);
-    if (asset) discovered.push(asset);
-  }
-  validate.check?.(discovered);
-  return discovered;
-}
-
-async function discoverGearAssets() {
-  return discoverFiles({
-    dir: path.join(sourceDir, "Gear"),
-    pattern: GEAR_FILE_PATTERN,
-    validate: {
-      skip: (name) => name.toLowerCase().includes("placeholder"),
-      malformed: (name) => `[gear] Malformed gear file: ${name} (expected "{Name} - {Basic|Astral}.{jpeg|jpg|png}")`,
-      map: (match, fileName) => {
-        const [, displayName, rarity] = match;
-        return {
-          source: `Gear/${fileName}`,
-          target: toGearTarget(displayName, rarity),
-          width: gearAssetWidth,
-          quality: gearAssetQuality,
-        };
-      },
-    },
-  });
-}
-
-async function discoverGearSlotBackgrounds() {
-  const foundSlotIds = new Set();
-  const discovered = await discoverFiles({
-    dir: path.join(sourceDir, "Gear", "Gear Slot Backgrounds"),
-    pattern: SLOT_BACKGROUND_PATTERN,
-    validate: {
-      malformed: (name) =>
-        `[gear-slot] Malformed slot background file: ${name} (expected "{Slot} Slot.{jpeg|jpg|png}")`,
-      map: (match, fileName) => {
-        const displayName = match[1].trim().toLowerCase();
-        if (!GEAR_SLOT_IDS.includes(displayName)) {
-          throw new Error(
-            `[gear-slot] Unknown slot background name: ${match[1]} (allowed: ${GEAR_SLOT_IDS.join(", ")})`,
-          );
-        }
-        foundSlotIds.add(displayName);
-        return {
-          source: `Gear/Gear Slot Backgrounds/${fileName}`,
-          target: `gear-slot-${displayName}.webp`,
-          width: gearAssetWidth,
-          quality: gearAssetQuality,
-        };
-      },
-    },
-  });
-
-  for (const slotId of GEAR_SLOT_IDS) {
-    if (!foundSlotIds.has(slotId)) {
-      throw new Error(`[gear-slot] Missing background art for slot: ${slotId}`);
-    }
-  }
-
-  return discovered;
-}
-
-function artTransformSettings({ width, quality, requiresTransparency = false }) {
+export function artTransformSettings({ width, quality, requiresTransparency = false }) {
   return {
     width,
     quality,
@@ -147,7 +63,7 @@ async function validateTransparency(filename, label) {
  * @param {import("./assets/asset-manifest-cache.mjs").ManifestEntry | undefined} storedEntry
  */
 async function optimizeAsset(asset, storedEntry, check) {
-  const sourcePath = path.join(sourceDir, asset.source);
+  const sourcePath = path.join(assetLibraryRoot(), asset.source);
   const outputPath = path.join(outputDir, asset.target);
   const settings = artTransformSettings(asset);
   // Source validation stays ahead of the freshness gate: an invalid source
@@ -173,14 +89,16 @@ async function optimizeAsset(asset, storedEntry, check) {
   // cannot eyeball, so a corrupted output with a matching manifest hash must
   // still fail rather than ship broken transparency silently.
   if (fresh && asset.requiresTransparency) await validateTransparency(outputPath, `Prepared ${asset.target}`);
-  return { message: `${asset.target} ${fresh ? "already up to date" : "optimized"}`, entry };
+  return {
+    message: `${asset.target} ${fresh ? "already up to date" : "optimized"}`,
+    entry: { ...entry, selectionHash: selectionHash(asset, settings) },
+  };
 }
 
 export async function optimizeAssets({ check = false } = {}) {
-  const gearAssets = await discoverGearAssets();
-  const gearSlotBackgrounds = await discoverGearSlotBackgrounds();
-  const allAssets = [...staticAssets, ...gearAssets, ...gearSlotBackgrounds];
-  await validateAssetRegistry(allAssets, { sourceDir });
+  const allAssets = [...staticAssets, ...gearAssets];
+  await validateAssetRegistry(allAssets);
+  await requireAssetSources(allAssets);
 
   await ensureOutputDir(outputDir, { check });
 
@@ -198,7 +116,7 @@ export async function optimizeAssets({ check = false } = {}) {
   if (!result.ok) return result;
 
   console.log(
-    `${check ? "Checked" : "Optimized"} ${result.results.length} art assets (${gearAssets.length} gear, ${gearSlotBackgrounds.length} gear slot backgrounds).`,
+    `${check ? "Checked" : "Optimized"} ${result.results.length} art assets (${gearAssets.length} gear and slot backgrounds).`,
   );
   return { ok: true };
 }

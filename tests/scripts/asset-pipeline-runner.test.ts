@@ -6,7 +6,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ensureOutputDir,
   getManagedManifestPath,
-  readSourceDir,
   resolvePipelinePaths,
   resolveRootDir,
   runManifestPipeline,
@@ -26,21 +25,19 @@ async function makeTempDir() {
 }
 
 describe("resolvePipelinePaths", () => {
-  it("derives matching source, output, and manifest paths per pipeline", () => {
+  it("derives matching output and manifest paths per pipeline", () => {
     const url = new URL("file:///repo/scripts/optimize-assets.mjs").href;
-    expect(resolvePipelinePaths(url, { sourceSubpath: ["Raw Assets"], managedKey: "art" })).toEqual({
+    expect(resolvePipelinePaths(url, { managedKey: "art" })).toEqual({
       rootDir: path.resolve("/repo"),
-      sourceDir: path.join(path.resolve("/repo"), "Raw Assets"),
       outputDir: path.join(path.resolve("/repo"), "src/assets/optimized"),
       manifestPath: path.join(path.resolve("/repo"), "src/assets/optimized", ".asset-hashes.json"),
     });
     const sounds = resolvePipelinePaths(url, {
-      sourceSubpath: ["Raw Assets", "Sound Effects"],
       managedKey: "sounds",
     });
     expect(sounds.outputDir).toBe(path.join(path.resolve("/repo"), "public/sounds"));
     expect(sounds.manifestPath).toBe(getManagedManifestPath(path.resolve("/repo"), "sounds"));
-    const music = resolvePipelinePaths(url, { sourceSubpath: ["Raw Assets", "Music"], managedKey: "music" });
+    const music = resolvePipelinePaths(url, { managedKey: "music" });
     expect(music.outputDir).toBe(path.join(path.resolve("/repo"), "public/Music"));
   });
 
@@ -58,23 +55,6 @@ describe("ensureOutputDir", () => {
     const untouched = path.join(dir, "check-only");
     await expect(ensureOutputDir(untouched, { check: true })).resolves.toBeUndefined();
     await expect(readdir(untouched)).rejects.toMatchObject({ code: "ENOENT" });
-  });
-});
-
-describe("readSourceDir", () => {
-  it("wraps a missing checkout with its code and path", async () => {
-    const dir = await makeTempDir();
-    const missing = path.join(dir, "nope");
-    const failure = await readSourceDir(missing).catch((error: unknown) => error);
-    expect(failure).toBeInstanceOf(Error);
-    expect(failure).toMatchObject({ code: "ENOENT", path: missing });
-    expect((failure as Error).message).toContain("Missing Raw Assets source");
-  });
-
-  it("reads entries and rethrows non-missing errors untouched", async () => {
-    const dir = await makeTempDir();
-    await writeFile(path.join(dir, "a.ogg"), "a");
-    expect((await readSourceDir(dir, "custom context")).map((entry) => entry.name)).toEqual(["a.ogg"]);
   });
 });
 

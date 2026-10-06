@@ -10,11 +10,12 @@ includes and when it applies.
 
 | Task                               | Command                            | Notes                                                                                             |
 | ---------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Develop in the browser             | `npm run dev`                      | Prepares assets, then starts Vite                                                                 |
+| Develop in the browser             | `npm run dev`                      | Validates committed assets, then starts Vite                                                      |
 | Develop in Electron                | `npm run dev:desktop`              | Starts the desktop shell                                                                          |
 | Build the web renderer             | `npm run build`                    | Validates generated outputs; does not rewrite them or run typecheck                               |
 | Regenerate assets                  | `npm run assets`                   | [Asset workflow](./WORKFLOWS-ASSETS.md) covers narrower operations                                |
-| Check asset freshness              | `npm run assets:check`             | Read-only; requires raw sources                                                                   |
+| Check local asset freshness        | `npm run assets:check`             | Read-only; requires selected local Asset Library sources                                          |
+| Check prepared outputs             | `npm run assets:check:outputs`     | Read-only; does not require Asset Library; used by CI                                             |
 | Run local smoke                    | `npm test`                         | Fixed Node-only suites; accepts no test-path arguments                                            |
 | Run unit tests                     | `npm run test:full -- <path>`      | Omit paths for the full unit suite; agents may run unit tests without approval                    |
 | Run lightweight checks during work | `npm run verify -- --diff`         | Add `--plan` to preview selection                                                                 |
@@ -55,9 +56,10 @@ directory within an edition, so run them sequentially.
 
 **Local build and checker overrides:**
 
+- `ASSET_LIBRARY_ROOT` — overrides the local Asset Library location; defaults to `~/Documents/Asset Library`.
 - `ALCHEMY_SKIP_ASSETS=1` — only for direct asset-preparation invocation; semantics owned by
   [`WORKFLOWS-ASSETS.md`](./WORKFLOWS-ASSETS.md#skip-mode-and-verification).
-- `ALCHEMY_ENABLE_CHECKER=1` — opt-in to the in-Vite `vite-plugin-checker` typecheck (off by default so `npm run dev` stays snappy; use `npm run typecheck:watch`, `npm run dev:checked`, or this flag when you need live type errors). Run `npm run predev` before `npm run dev:checked`, which starts Vite directly without the preparation lifecycle. `ALCHEMY_SKIP_CHECKER=1` is a hard off used by the Playwright preview server.
+- `ALCHEMY_ENABLE_CHECKER=1` — opt-in to the in-Vite `vite-plugin-checker` typecheck (off by default so `npm run dev` stays snappy; use `npm run typecheck:watch`, `npm run dev:checked`, or this flag when you need live type errors). Run `npm run predev` before `npm run dev:checked`, which starts Vite directly without the committed-output validation lifecycle. `ALCHEMY_SKIP_CHECKER=1` is a hard off used by the Playwright preview server.
 - `ALCHEMY_SKIP_SOURCEMAP=1` — opt-out of hidden sourcemaps for `mode=desktop` builds when fast local iterate is preferred; rejected for releases with Sentry reporting. `npm run clean -- --builds` removes existing build outputs and their maps.
 - `ALCHEMY_CHECK_SKIP_BUILD=1` — skip web/desktop builds, their bundle budgets, and preview smoke in the opt-in `npm run check:full`; the default `check` already omits them. CI and ship gates still build.
 

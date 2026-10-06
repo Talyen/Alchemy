@@ -24,7 +24,7 @@
     "assets:check": "node scripts/assets.mjs --check",
     "audio:review": "node scripts/audio-review.mjs",
     "agent:browser": "node scripts/agent-browser.mjs",
-    "predev": "node scripts/prune-transient-artifacts.mjs && node scripts/stop-dev-server.mjs && node scripts/assets.mjs --prepare",
+    "predev": "node scripts/prune-transient-artifacts.mjs && node scripts/stop-dev-server.mjs && npm run assets:check:outputs",
     "predev:desktop": "npm run predev && node scripts/sync-steam-appid.mjs",
     "dev": "vite",
     "dev:checked": "cross-env ALCHEMY_ENABLE_CHECKER=1 vite",
@@ -69,7 +69,7 @@
     "test:ship:unit": "node scripts/run-ship-unit.mjs",
     "test:ship:e2e": "node scripts/run-compact.mjs playwright test tests/e2e/specs/save-persistence.spec.ts tests/e2e/specs/save-error-paths.spec.ts --project=chromium",
     "test:ship:desktop": "node scripts/run-compact.mjs playwright test --config playwright.electron.config.ts",
-    "check:ship": "npm run lint:ci && npm run test:ship:unit && npm run assets:check && npm run build:desktop && npm run check:bundle",
+    "check:ship": "npm run lint:ci && npm run test:ship:unit && npm run assets:check:outputs && npm run build:desktop && npm run check:bundle",
     "check:ship:full": "npm run check:ship && npm run test:ship:e2e",
     "verify:release-version": "node scripts/verify-release.mjs --skip-package",
     "verify:release": "node scripts/verify-release.mjs",
@@ -128,7 +128,8 @@
     "demo:playtest": "node scripts/play-demo.mjs",
     "test:full": "node scripts/run-compact.mjs vitest run",
     "check:full": "node scripts/check.mjs --full",
-    "verify:full": "node scripts/verify-changed.mjs --full"
+    "verify:full": "node scripts/verify-changed.mjs --full",
+    "assets:check:outputs": "node scripts/assets.mjs --check --outputs-only"
   },
   "dependencies": {
     "@floating-ui/dom": "^1.8.0",

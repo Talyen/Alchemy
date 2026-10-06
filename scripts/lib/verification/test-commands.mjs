@@ -114,9 +114,9 @@ export const COMMANDS = Object.freeze({
   },
   "assets-check": {
     label: "prepared asset verification",
-    reason: "asset sources and helpers reproduce committed outputs",
+    reason: "committed selections, settings, output bytes and generated code are consistent",
     command: NPM,
-    args: ["run", "assets:check"],
+    args: ["run", "assets:check:outputs"],
   },
   "docs-check": {
     label: "documentation checks",

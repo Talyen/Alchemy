@@ -22,7 +22,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !Raw Assets
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
@@ -64,7 +63,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !Raw Assets
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
@@ -129,7 +127,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !Raw Assets
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
@@ -265,7 +262,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !Raw Assets
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
@@ -282,7 +278,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !Raw Assets
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
@@ -307,7 +302,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !Raw Assets
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup

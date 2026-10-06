@@ -1,4 +1,7 @@
-// Generates web, desktop, and Apple platform icon assets from Raw Assets/Icons/Alchemy Icon Master.png
+import { isMainModule } from "./lib/is-main-module.mjs";
+import { checkIconAssets, iconSource } from "./assets/icon-assets.mjs";
+import { resolveAssetSource } from "./assets/asset-library.mjs";
+// Generates web, desktop, and Apple platform icon assets from the selected master in Asset Library
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -6,16 +9,9 @@ import sharp from "sharp";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
-const masterPath = path.join(root, "Raw Assets", "Icons", "Alchemy Icon Master.png");
+const masterPath = resolveAssetSource(iconSource);
 const publicDir = path.join(root, "public");
 const desktopIconsDir = path.join(root, "desktop", "icons");
-
-if (!fs.existsSync(masterPath)) {
-  throw new Error(`Master icon not found at: ${masterPath}`);
-}
-
-fs.mkdirSync(publicDir, { recursive: true });
-fs.mkdirSync(desktopIconsDir, { recursive: true });
 
 function createIco(images) {
   const count = images.length;
@@ -44,6 +40,10 @@ function createIco(images) {
 }
 
 async function generate() {
+  if (!fs.existsSync(masterPath))
+    throw new Error("Download the icon master in Asset Library or set ASSET_LIBRARY_ROOT.");
+  fs.mkdirSync(publicDir, { recursive: true });
+  fs.mkdirSync(desktopIconsDir, { recursive: true });
   console.log("Generating icon assets from:", masterPath);
 
   // 1. Resized PNG buffers with sharp
@@ -183,10 +183,12 @@ async function generate() {
   await fs.promises.writeFile(path.join(desktopIconsDir, "icon-1024.png"), pngBuffers[1024]);
   console.log("Wrote desktop/icons/icon.ico, desktop/icons/icon.png, desktop/icons/icon-1024.png");
 
+  await checkIconAssets(root, { record: true });
   console.log("All icons generated successfully!");
 }
 
-generate().catch((err) => {
-  console.error("Error generating icons:", err);
-  process.exit(1);
-});
+if (isMainModule(import.meta.url))
+  generate().catch((err) => {
+    console.error("Error generating icons:", err);
+    process.exit(1);
+  });

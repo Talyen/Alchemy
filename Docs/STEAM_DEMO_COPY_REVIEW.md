@@ -74,7 +74,7 @@ quantities are illustrative rather than a representative balance sample.
 
 ## Selected user-supplied promo image
 
-The user selected `Raw Assets/Marketing/Unlock Full Game Demo Promo.jpg` as the
+The user selected `2d Assets/Game Sources/Branding/Marketing/Unlock Full Game Demo Promo.jpg` as the
 in-game marketing artwork. It was moved unchanged from Downloads. Its native
 dimensions are 2752×1536, slightly wider than exact 16:9. The screen preserves
 the full image and its native ratio with proportional containment at the largest

@@ -32,3 +32,6 @@ release-notes/
 # Demo edition build artifacts
 dist-demo/
 release-desktop-demo/
+
+# Raw masters live in the external Asset Library.
+/Raw Assets/

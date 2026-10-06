@@ -22,7 +22,6 @@ jobs:
           fetch-depth: 0
           sparse-checkout: |
             /*
-            !Raw Assets
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
@@ -49,7 +48,6 @@ jobs:
           fetch-depth: 0
           sparse-checkout: |
             /*
-            !Raw Assets
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
@@ -80,7 +78,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !Raw Assets
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
@@ -131,7 +128,6 @@ jobs:
         with:
           sparse-checkout: |
             /*
-            !Raw Assets
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
@@ -239,7 +235,7 @@ jobs:
           RELEASE_VERSION: ${{ github.ref_name }}
 
       - name: Assert committed outputs match preparation
-        run: npm run assets:check
+        run: npm run assets:check:outputs
 
       - name: Build desktop installers
         run: npm run dist:desktop
@@ -324,7 +320,7 @@ jobs:
           RELEASE_VERSION: ${{ github.ref_name }}
 
       - name: Assert committed outputs match preparation
-        run: npm run assets:check
+        run: npm run assets:check:outputs
 
       - name: Build desktop installers
         run: npm run dist:desktop

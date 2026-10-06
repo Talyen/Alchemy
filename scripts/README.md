@@ -20,7 +20,7 @@ skip mode; keep that validation at each entry point.
 
 | Concern                                    | Implementation owner                                                                                                                                                                                                                                                                                      |
 | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Asset CLI and preparation                  | `assets.mjs` → `prepare-assets.mjs` (canonical surface; `npm run assets:check` is `assets.mjs --check`; direct `optimize-*.mjs` calls are the supported iteration shortcut behind `assets:optimize[:art\|:sounds\|:music]`)                                                                               |
+| Asset CLI and preparation                  | `assets.mjs` → `prepare-assets.mjs` (canonical surface; `npm run assets:check` is the local source check; `assets:check:outputs` adds `--outputs-only` for CI; direct `optimize-*.mjs` calls are the supported iteration shortcut behind `assets:optimize[:art\|:sounds\|:music]`)                        |
 | Art, sound, and music optimization         | `optimize-pipelines.mjs` → `optimize-assets.mjs`, `optimize-sounds.mjs`, `optimize-music.mjs` via `assets/asset-pipeline-runner.mjs`                                                                                                                                                                      |
 | Generated art barrels and version metadata | `sync-generated.mjs` → `sync-art-barrels.mjs`, `sync-version-metadata.mjs` (`sync:art` syncs both barrels; `sync:gear-art` alone refuses stale `assets.generated.ts`; `sync:version` stamps the build version alone; `prepare`/`assets:check` sync art barrels and version metadata as independent steps) |
 | Fast generated-output validation           | `sync-generated.mjs --check`                                                                                                                                                                                                                                                                              |
@@ -131,7 +131,7 @@ shared `runStreamCommand` runner instead of bounded `runCommand` capture or raw
 
 ## Development
 
-`npm run dev` runs asset preparation and port cleanup through `predev`.
+`npm run dev` runs committed-output validation and port cleanup through `predev`.
 `npm run dev:checked` starts Vite with the live TypeScript checker directly;
 run `npm run predev` first when using that command. Desktop development runs
 the same preparation and adds Steam App ID synchronization.
