@@ -1,5 +1,3 @@
-export const MUSIC_FILE_EXTENSIONS: ReadonlySet<string>;
-
 export interface MusicAssetEntry {
   source: string;
   target: string;

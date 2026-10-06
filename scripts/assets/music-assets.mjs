@@ -1,8 +1,6 @@
 import path from "node:path";
 import { validateRegistryEntries } from "./registry-validation.mjs";
 
-export const MUSIC_FILE_EXTENSIONS = new Set([".mp3", ".ogg", ".wav"]);
-
 /**
  * Music is copied unchanged. Validate both explicit selections and filename
  * inventories before publishing into the fully managed output directory.
