@@ -167,13 +167,13 @@ describe("Brass Censer", () => {
     const state = patchBattleState({
       rng: rolls(0.99, 0.99, 0.1, 0.9),
       playerHealth: 10,
+      mana: 0,
       trinketEffects: { brassCenserProcChance: 20 },
-      talentEffects: { firstLeechCardDoubled: true, leechPoisonChance: 100 },
+      talentEffects: { leechDesperateMultiplier: 100, manaOnLeechChance: 100 },
     });
     const result = dealDamage(state, holyCard());
     expect(result.playerHealth).toBe(16);
-    expect(result.flags.firstLeechCardDoubledUsed).toBe(true);
-    expect(result.enemyStatuses.poison).toBe(6);
+    expect(result.mana).toBe(1);
   });
 
   it("uses Holy damage after Block and applies Burn modifiers separately", () => {

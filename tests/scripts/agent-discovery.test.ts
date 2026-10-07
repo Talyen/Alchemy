@@ -231,6 +231,28 @@ describe.each(cases)("outer %s", () => {
     }
   });
 
+  it("normalizes explicit search paths and rejects outside selections with or without ripgrep", () => {
+    const root = fixture({ "src/owner.ts": "needle\nneedle" });
+    for (const fallback of [false, true]) {
+      if (fallback) vi.stubEnv("PATH", "");
+      for (const paths of [
+        [path.join(root, "src")],
+        ["src/../src"],
+        ["src\\owner.ts"],
+        [".", path.join(root, "src"), "src\\owner.ts"],
+      ]) {
+        expect(repositorySearch(root, { pattern: "needle", paths })).toEqual(["src/owner.ts"]);
+        expect(repositorySearch(root, { pattern: "needle", paths, excerpts: true })).toEqual([
+          { path: "src/owner.ts", start: 1, end: 1, text: "needle" },
+          { path: "src/owner.ts", start: 2, end: 2, text: "needle" },
+        ]);
+      }
+      expect(() => repositorySearch(root, { pattern: "needle", paths: [path.dirname(root)] })).toThrow(
+        "outside repository",
+      );
+    }
+  });
+
   it("derives consumers, tests and fixture imports through aliases and reexports", () => {
     const root = fixture({
       "tsconfig.json": JSON.stringify({ compilerOptions: { paths: { "@/*": ["./src/*"] } } }),
@@ -316,10 +338,18 @@ it("keeps isolated worktree documentation out of repository reachability checks"
   expect(checkDurableDocumentReachability(root)).toEqual(["Docs/orphan.md"]);
 });
 
-it("extracts the tail of large outputs within budget and preserves UTF-8 boundaries", () => {
-  const largeOutput = "a".repeat(100_000) + "\nfinal message: all tests completed";
+it.each(["a", "界", "🐉"])("extracts large %s output tails within budget without splitting Unicode", (character) => {
+  const largeOutput = character.repeat(100_000) + "\nfinal message: all tests completed";
   const tail = tailOutput(largeOutput, 200);
   expect(Buffer.byteLength(tail)).toBeLessThanOrEqual(200);
   expect(tail).toContain("final message: all tests completed");
-  expect(tail).toMatch(/^\[\.\.\.\d+ bytes omitted\.\.\.\]\n/);
+  const [, omitted, suffix] = /^\[\.\.\.(\d+) bytes omitted\.\.\.\]\n([\s\S]*)$/u.exec(tail)!;
+  expect(Buffer.byteLength(largeOutput) - Buffer.byteLength(suffix!)).toBe(Number(omitted));
+  expect(Buffer.from(tail).toString("utf8")).toBe(tail);
+  expect(
+    suffix
+      ?.replace(/\nfinal message: all tests completed$/u, "")
+      .split(character)
+      .join(""),
+  ).toBe("");
 });

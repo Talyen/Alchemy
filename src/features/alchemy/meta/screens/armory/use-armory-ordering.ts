@@ -94,15 +94,21 @@ export function useArmoryOrdering({
   // Keep the complete order separate from its current browsing projection.
   // Reconciliation writes the category during render; derive its projection
   // directly so it cannot retain a previous category's items.
-  const visibleItems = orderedIds.flatMap((id) => {
+  const visibleGear: GearInstance[] = [];
+  const visibleTrinkets: TrinketEntry[] = [];
+  const visibleIds: string[] = [];
+  for (const id of orderedIds) {
     const item = byId.get(id);
-    if (!item) return [];
-    const matches = "instanceId" in item ? matchesGearFilters(item, filters) : matchesTrinketFilters(item, filters);
-    return matches ? [item] : [];
-  });
-  const visibleGear = visibleItems.filter((item): item is GearInstance => "instanceId" in item);
-  const visibleTrinkets = visibleItems.filter((item): item is TrinketEntry => !("instanceId" in item));
-  const visibleIds = isTrinket ? visibleTrinkets.map((item) => item.id) : visibleGear.map((item) => item.instanceId);
+    if (!item) continue;
+    if ("instanceId" in item) {
+      if (!matchesGearFilters(item, filters)) continue;
+      visibleGear.push(item);
+    } else {
+      if (!matchesTrinketFilters(item, filters)) continue;
+      visibleTrinkets.push(item);
+    }
+    visibleIds.push(id);
+  }
   const { page: safePage, totalPages } = getPagination(visibleIds.length, storedPage, ARMORY_PAGE_SIZE);
   // Persist clamping so later inventory growth cannot restore an obsolete page.
   if (reconciled !== entry || safePage !== storedPage) {

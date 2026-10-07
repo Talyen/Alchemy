@@ -5,9 +5,9 @@ import { renderCardDescription, type CardDescription } from "./card-description-
 import { DAMAGE_TYPES } from "./types";
 import type { BattleCard, BattleCardEffect, EnemyStatusId, KeywordId } from "./types";
 
-interface EffectPresentation<K extends BattleCardEffect["kind"]> {
-  keywords: (effect: Extract<BattleCardEffect, { kind: K }>) => KeywordId[];
-}
+type EffectPresentation<K extends BattleCardEffect["kind"]> = (
+  effect: Extract<BattleCardEffect, { kind: K }>,
+) => KeywordId[];
 
 const ENEMY_STATUS_KEYWORDS: ReadonlySet<EnemyStatusId> = new Set(["burn", "poison", "bleed", "freeze", "stun"]);
 
@@ -16,77 +16,49 @@ function isKeywordEnemyStatus(status: EnemyStatusId): status is Extract<EnemySta
 }
 
 const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } = {
-  damage: {
-    keywords: (effect) =>
-      dedupeKeywords(
-        effect.damageTypePool?.length ? effect.damageTypePool : [effect.damageType],
-        effect.lifesteal ? ["leech"] : [],
-        effect.damageTypeIfTargetHasBlock ? [effect.damageTypeIfTargetHasBlock] : [],
-        effect.damageTypeIfTargetFrozen ? [effect.damageTypeIfTargetFrozen] : [],
-        effect.blockCost !== undefined ? ["block"] : [],
-      ),
-  },
-  "cleanse-player-status-to-damage": { keywords: (effect) => [effect.status, effect.damageType] },
-  "random-damage": {
-    keywords: (effect) => [...(effect.damageTypePool?.length ? effect.damageTypePool : DAMAGE_TYPES)],
-  },
-  chance: { keywords: (effect) => [...new Set(effectChildren(effect).flatMap(collectKeywordsFromBattleEffect))] },
-  "player-status": {
-    keywords: (effect) =>
-      effect.statusPool
-        ? [...effect.statusPool]
-        : effect.status !== "haste" && effect.status !== "phoenixFeather"
-          ? [effect.status]
-          : [],
-  },
-  "enemy-status": {
-    keywords: (effect) => (isKeywordEnemyStatus(effect.status) ? [effect.status] : []),
-  },
-  heal: { keywords: () => ["health"] },
-  "restore-mana": {
-    keywords: () => ["mana"],
-  },
-  "lose-mana": { keywords: () => ["mana"] },
-  "lose-max-mana": { keywords: () => ["mana"] },
-  "gain-max-mana": { keywords: () => ["mana"] },
-  "gain-gold": {
-    keywords: () => ["gold"],
-  },
-  wish: {
-    keywords: (effect) => (effect.companionIfAbsent ? [] : ["wish"]),
-  },
-  "summon-companion": { keywords: () => ["companion"] },
-  "buff-companion": { keywords: () => ["companion"] },
-  "companion-action": {
-    keywords: () => ["companion"],
-  },
-  "random-draw": { keywords: () => [] },
-  "remove-harmful-status": {
-    keywords: () => [],
-  },
-  "lose-health": { keywords: () => ["health"] },
-  "draw-cards": {
-    keywords: () => [],
-  },
-  "remove-enemy-armor": {
-    keywords: () => ["armor"],
-  },
-  "multiply-enemy-status": {
-    keywords: (effect) => [effect.status],
-  },
-  "remove-player-status": {
-    keywords: (effect) => [effect.status],
-  },
-  "self-damage": {
-    keywords: (effect) => [effect.damageType],
-  },
-  "repeat-over-turns": { keywords: (effect) => effect.effects.flatMap(collectKeywordsFromBattleEffect) },
-  "next-hit-crit": { keywords: () => [] },
-  "next-hit-leech": { keywords: () => ["leech"] },
-  "play-next-card-twice": { keywords: () => [] },
-  "next-hit-poison": { keywords: () => [] },
-  "next-archery-free": { keywords: () => ["archery"] },
-  "dodge-next-attack": { keywords: () => ["dodge"] },
+  damage: (effect) =>
+    dedupeKeywords(
+      effect.damageTypePool?.length ? effect.damageTypePool : [effect.damageType],
+      effect.lifesteal ? ["leech"] : [],
+      effect.damageTypeIfTargetHasBlock ? [effect.damageTypeIfTargetHasBlock] : [],
+      effect.damageTypeIfTargetFrozen ? [effect.damageTypeIfTargetFrozen] : [],
+      effect.blockCost !== undefined ? ["block"] : [],
+    ),
+  "cleanse-player-status-to-damage": (effect) => [effect.status, effect.damageType],
+  "random-damage": (effect) => [...(effect.damageTypePool?.length ? effect.damageTypePool : DAMAGE_TYPES)],
+  chance: (effect) => [...new Set(effectChildren(effect).flatMap(collectKeywordsFromBattleEffect))],
+  "player-status": (effect) =>
+    effect.statusPool
+      ? [...effect.statusPool]
+      : effect.status !== "haste" && effect.status !== "phoenixFeather"
+        ? [effect.status]
+        : [],
+  "enemy-status": (effect) => (isKeywordEnemyStatus(effect.status) ? [effect.status] : []),
+  heal: () => ["health"],
+  "restore-mana": () => ["mana"],
+  "lose-mana": () => ["mana"],
+  "lose-max-mana": () => ["mana"],
+  "gain-max-mana": () => ["mana"],
+  "gain-gold": () => ["gold"],
+  wish: (effect) => (effect.companionIfAbsent ? [] : ["wish"]),
+  "summon-companion": () => ["companion"],
+  "buff-companion": () => ["companion"],
+  "companion-action": () => ["companion"],
+  "random-draw": () => [],
+  "remove-harmful-status": () => [],
+  "lose-health": () => ["health"],
+  "draw-cards": () => [],
+  "remove-enemy-armor": () => ["armor"],
+  "multiply-enemy-status": (effect) => [effect.status],
+  "remove-player-status": (effect) => [effect.status],
+  "self-damage": (effect) => [effect.damageType],
+  "repeat-over-turns": (effect) => effect.effects.flatMap(collectKeywordsFromBattleEffect),
+  "next-hit-crit": () => [],
+  "next-hit-leech": () => ["leech"],
+  "play-next-card-twice": () => [],
+  "next-hit-poison": () => [],
+  "next-archery-free": () => ["archery"],
+  "dodge-next-attack": () => ["dodge"],
 };
 
 export { createEffectDescription } from "./effect-description";
@@ -115,7 +87,7 @@ function dedupeKeywords(...iterables: readonly KeywordId[][]): KeywordId[] {
 }
 
 export function collectKeywordsFromBattleEffect(effect: BattleCardEffect): KeywordId[] {
-  return PRESENTATION[effect.kind].keywords(effect as never);
+  return PRESENTATION[effect.kind](effect as never);
 }
 
 /** Exact canonical text needs no second number parser. Custom and saved wording still uses parity rules. */

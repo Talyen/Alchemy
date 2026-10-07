@@ -10,7 +10,7 @@ export function searchMain(argv = process.argv.slice(2), root = ROOT) {
   try {
     if (argv.length === 1 && argv[0] === "--help") {
       console.log(
-        "Usage: npm run search -- [--excerpts] [--regex] [--include-excluded] <pattern> [paths...]\nBroad searches omit archives, agent history, generated source and asset hashes; name those paths explicitly to include them. --include-excluded also includes ignored artifacts and requires a path.",
+        "Usage: npm run search -- [--excerpts] [--regex] [--include-excluded] <pattern> [paths...]\nBroad searches omit raw assets, reports, generated source and asset hashes; name those paths explicitly to include them. --include-excluded also includes ignored artifacts and requires a path.",
       );
       return 0;
     }

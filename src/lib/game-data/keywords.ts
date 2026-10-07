@@ -28,6 +28,15 @@ export function getCardKeywords(card: BattleCard): KeywordId[] {
   return [...keywords];
 }
 
+/** Predicate callers can use the immutable cache without copying its array. */
+export function cardHasKeyword(card: BattleCard, keyword: string): boolean {
+  return (
+    (keyword === "consume" && !!card.consume) ||
+    (card.tags?.includes(keyword as KeywordId) ?? false) ||
+    cachedEffectKeywords(card.effects).includes(keyword as KeywordId)
+  );
+}
+
 export function getCompanionKeywords(companion: CompanionDefinition): KeywordId[] {
   return [...cachedEffectKeywords(companion.turnStartEffects)];
 }

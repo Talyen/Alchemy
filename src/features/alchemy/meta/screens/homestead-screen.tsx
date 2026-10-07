@@ -5,7 +5,7 @@ import { PaginationControls } from "../../shared/ui/navigation";
 import { getPagination } from "../../shared/ui/pagination";
 import { FadeSlot } from "../../shared/ui/use-fade";
 import { playUISound } from "@/lib/audio";
-import { cardLibrary, type CompanionId } from "@/lib/game-data";
+import { cardLibrary, visitBattleCardEffects, type CompanionId } from "@/lib/game-data";
 import { COLLECTION_BESTIARY_REFERENCE_WIDTH, COLLECTION_CARD_REFERENCE_WIDTH } from "../../shared/config";
 import {
   BUILDING_GOAL_ITEMS,
@@ -20,7 +20,9 @@ import {
 import { CompanionCardNode } from "./homestead/companion-node";
 import { HomesteadUpgradeNode } from "./homestead/upgrade-node";
 
-const companionCards = cardLibrary.filter((c) => c.effects.some((e) => e.kind === "summon-companion"));
+const companionCards = cardLibrary.filter((card) =>
+  visitBattleCardEffects(card.effects, (effect) => effect.kind === "summon-companion"),
+);
 
 export function HomesteadScreen({
   gold = 0,
@@ -70,27 +72,12 @@ export function HomesteadScreen({
   const upgradeItems =
     tab === "buildings" ? BUILDING_GOAL_ITEMS : tab === "farm" ? FARM_GOAL_ITEMS : RESEARCH_GOAL_ITEMS;
   const upgradeLevels = tab === "buildings" ? constructedBuildings : tab === "farm" ? plantedFarms : completedResearch;
-  const { page: safeUpgradePage, totalPages: upgradePages } = getPagination(
-    upgradeItems.length,
-    upgradePage,
-    HOMESTEAD_CONFIG.upgradePageSize,
-  );
-  const visibleUpgradeItems = upgradeItems.slice(
-    safeUpgradePage * HOMESTEAD_CONFIG.upgradePageSize,
-    (safeUpgradePage + 1) * HOMESTEAD_CONFIG.upgradePageSize,
-  );
-
-  const { page: safeCompanionPage, totalPages: companionPages } = getPagination(
-    companionCards.length,
-    companionPage,
-    HOMESTEAD_CONFIG.companionPageSize,
-  );
-  const visibleCompanionCards = companionCards.slice(
-    safeCompanionPage * HOMESTEAD_CONFIG.companionPageSize,
-    (safeCompanionPage + 1) * HOMESTEAD_CONFIG.companionPageSize,
-  );
   const isCompanions = tab === "companions";
   const columns = isCompanions ? 4 : 3;
+  const items = isCompanions ? companionCards : upgradeItems;
+  const pageSize = isCompanions ? HOMESTEAD_CONFIG.companionPageSize : HOMESTEAD_CONFIG.upgradePageSize;
+  const { page, totalPages } = getPagination(items.length, isCompanions ? companionPage : upgradePage, pageSize);
+  const pageItems = items.slice(page * pageSize, (page + 1) * pageSize);
   const tileWidth = isCompanions ? COLLECTION_CARD_REFERENCE_WIDTH : COLLECTION_BESTIARY_REFERENCE_WIDTH;
   const rowWidth = columns * tileWidth + (columns - 1) * 20 + 0.5;
 
@@ -115,51 +102,45 @@ export function HomesteadScreen({
           <HomesteadTabs activeTab={tab} onSelectTab={handleSelectTab} />
 
           <FadeSlot
-            swapKey={isCompanions ? `companions-${safeCompanionPage}` : `${tab}-${safeUpgradePage}`}
+            swapKey={isCompanions ? `companions-${page}` : `${tab}-${page}`}
             className="mx-auto w-full overflow-visible"
           >
             <div
               className="mx-auto flex max-w-full flex-wrap justify-center gap-x-5 gap-y-8"
               style={{ width: `calc(${rowWidth}px * var(--content-scale, 1))` }}
             >
-              {isCompanions
-                ? visibleCompanionCards.map((card) => (
-                    <div
-                      key={card.id}
-                      className="max-w-full shrink-0"
-                      style={{ width: `calc(${tileWidth}px * var(--content-scale, 1))` }}
-                    >
-                      <CompanionCardNode
-                        card={card}
-                        discovered={discoveredIds.has(card.id)}
-                        bondedCompanions={bondedCompanions}
-                        materialInventory={materialInventory}
-                        onBond={handleBondCompanion}
-                      />
-                    </div>
-                  ))
-                : visibleUpgradeItems.map((item) => (
-                    <div
-                      key={item.data.id}
-                      className="max-w-full shrink-0"
-                      style={{ width: `calc(${tileWidth}px * var(--content-scale, 1))` }}
-                    >
-                      <HomesteadUpgradeNode
-                        item={item}
-                        currentLevel={(upgradeLevels as Record<string, number>)[item.data.id] ?? 0}
-                        materialInventory={materialInventory}
-                        onAction={handleAction}
-                      />
-                    </div>
-                  ))}
+              {pageItems.map((item) => (
+                <div
+                  key={"kind" in item ? item.data.id : item.id}
+                  className="max-w-full shrink-0"
+                  style={{ width: `calc(${tileWidth}px * var(--content-scale, 1))` }}
+                >
+                  {"kind" in item ? (
+                    <HomesteadUpgradeNode
+                      item={item}
+                      currentLevel={(upgradeLevels as Record<string, number>)[item.data.id] ?? 0}
+                      materialInventory={materialInventory}
+                      onAction={handleAction}
+                    />
+                  ) : (
+                    <CompanionCardNode
+                      card={item}
+                      discovered={discoveredIds.has(item.id)}
+                      bondedCompanions={bondedCompanions}
+                      materialInventory={materialInventory}
+                      onBond={handleBondCompanion}
+                    />
+                  )}
+                </div>
+              ))}
             </div>
           </FadeSlot>
 
-          {(isCompanions ? companionPages : upgradePages) > 1 ? (
+          {totalPages > 1 ? (
             <div className="mx-auto flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
               <PaginationControls
-                page={isCompanions ? safeCompanionPage : safeUpgradePage}
-                totalPages={isCompanions ? companionPages : upgradePages}
+                page={page}
+                totalPages={totalPages}
                 onPageChange={isCompanions ? setCompanionPage : setUpgradePage}
                 size="default"
                 className="mt-0"

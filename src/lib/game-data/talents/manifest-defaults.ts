@@ -34,8 +34,6 @@ export const DEFAULT_TALENT_EFFECTS = {
   physicalLeechVsStunned: false,
   forgeOnPhysicalVsFrozen: 0,
   cleanseBelowHealthPercent: 0,
-  leechBlockBelowHalfPercent: 0,
-  leechHolyDamageVsLowHealth: 0,
   leechCardDamageVsLowHealthPercent: 0,
   armorOnPotionCard: 0,
   armorOnBlockChance: 0,
@@ -64,10 +62,8 @@ export const DEFAULT_TALENT_EFFECTS = {
   drawOnBleedDamageChance: 0,
   naturePoisonDamageChance: 0,
   holyBurnDamageChance: 0,
-  leechPoisonDamageChance: 0,
   archeryBleedDamageChance: 0,
   physicalBleedDamageChance: 0,
-  leechBleedDamageChance: 0,
 
   manaNextTurnOnWish: 0,
   holyReflectionBlockLostPercent: 0,
@@ -82,7 +78,6 @@ export const DEFAULT_TALENT_EFFECTS = {
   blockPerDeclinedWishCard: 0,
   leechGoldChance: 0,
   manaOnLeechToFull: 0,
-  nextAttackPhysicalOnLeechToFull: 0,
   drawPhysicalOnBleedTick: false,
   drawOnDodge: 0,
   wishExtraChoices: 0,
@@ -360,15 +355,8 @@ export const DEFAULT_TALENT_EFFECTS = {
   bleedHalvesEnemyHealing: false,
   partingCutOnDodge: false,
 
-  firstLeechCardDoubled: false,
   leechDesperateMultiplier: 0,
-  leechMissingHealthStep: 0,
-  leechBleedChance: 0,
-  leechExecuteMultiplier: 0,
   manaOnLeechChance: 0,
-  trinketSiphonChance: 0,
-  leechPoisonChance: 0,
-  blockEnemyLeech: false,
   natureLeechChance: 0,
 };
 

@@ -10,6 +10,7 @@ import {
   type PairedTierRow,
   type RateCell,
 } from "@/lib/balance";
+import { enemyById } from "@/lib/game-data";
 import { collectBalanceFindings } from "@/lib/balance/findings-collector";
 import { emptyPairedWinStats } from "@/lib/balance/report-rankings";
 
@@ -73,6 +74,8 @@ describe("evaluateBalanceFindings", () => {
       { id: "iron-bear", rates: rates(cell({ winRate: 0.65 }), cell({ winRate: 0.65 }), cell({ winRate: 0.65 })) },
     ];
     const findings = evaluateBalanceFindings(model).findings;
+    const bearHint = findings.find((entry) => entry.id === "iron-bear")?.causeHint;
+    for (const trait of enemyById["iron-bear"].traits) expect(bearHint).toContain(trait.description);
     for (const id of ["skeleton", "mimic", "iron-bear"]) {
       expect(
         findings

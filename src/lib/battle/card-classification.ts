@@ -1,11 +1,12 @@
 import {
-  getCardKeywords,
+  cardHasKeyword,
   DAMAGE_TYPES,
   visitBattleCardEffects,
   type BattleCard,
   type BattleCardEffect,
-  type KeywordId,
 } from "@/lib/game-data";
+
+export { cardHasKeyword } from "@/lib/game-data/keywords";
 
 interface EffectClassification {
   damageTypes: ReadonlySet<string>;
@@ -63,10 +64,6 @@ export function isAttackCard(card: Pick<BattleCard, "effects">): boolean {
 
 export function cardHasDamageType(card: BattleCard, damageType: string): boolean {
   return classifyEffects(card.effects).damageTypes.has(damageType);
-}
-
-export function cardHasKeyword(card: BattleCard, keyword: string): boolean {
-  return getCardKeywords(card).includes(keyword as KeywordId);
 }
 
 export function isNatureCard(card: BattleCard): boolean {

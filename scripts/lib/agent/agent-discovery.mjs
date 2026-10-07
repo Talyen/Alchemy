@@ -28,15 +28,16 @@ function matchesSearchGlob(file, glob) {
 
 const DISCOVERY_NOISE = ["**/*.generated.*", "src/lib/game-data/gear-art.generated.ts", "**/.asset-hashes.json"];
 
-function searchExclusions(root, options) {
+function searchExclusions(options) {
   // File inventories feed the import graph too; filtering noise belongs to text discovery.
   if (options.pattern === undefined) return EXCLUSIONS;
-  const explicit = options.paths.map((file) => toRepoRelative(root, file));
   return [
     ...EXCLUSIONS,
     ...DISCOVERY_NOISE.filter(
       (glob) =>
-        !explicit.some((file) => matchesSearchGlob(file, glob) || (glob.endsWith("/**") && file === glob.slice(0, -3))),
+        !options.paths.some(
+          (file) => matchesSearchGlob(file, glob) || (glob.endsWith("/**") && file === glob.slice(0, -3)),
+        ),
     ),
   ];
 }
@@ -44,6 +45,12 @@ function searchExclusions(root, options) {
 function isExcluded(file, exclusions = EXCLUSIONS) {
   return exclusions.some(
     (glob) => matchesSearchGlob(file, glob) || (glob.endsWith("/**") && file === glob.slice(0, -3)),
+  );
+}
+
+function uniqueExcerpts(entries) {
+  return [...new Map(entries.map((entry) => [JSON.stringify([entry.path, entry.start]), entry])).values()].sort(
+    (a, b) => a.path.localeCompare(b.path) || a.start - b.start,
   );
 }
 
@@ -58,8 +65,7 @@ function collectFilesFromFilesystem(root, paths, includeExcluded, exclusions) {
     } else if (entry.isFile()) files.push(relative);
   };
   for (const file of paths) {
-    const relative = toRepoRelative(root, file);
-    const absolute = path.join(root, relative);
+    const absolute = path.join(root, file);
     if (!fs.existsSync(absolute)) throw new Error(`Search path does not exist: ${file}`);
     visit(absolute);
   }
@@ -67,15 +73,7 @@ function collectFilesFromFilesystem(root, paths, includeExcluded, exclusions) {
 }
 
 function collectFilesFromGit(root, paths, exclusions) {
-  const result = runGit(root, [
-    "ls-files",
-    "--cached",
-    "--others",
-    "--exclude-standard",
-    "-z",
-    "--",
-    ...paths.map((file) => toRepoRelative(root, file)),
-  ]);
+  const result = runGit(root, ["ls-files", "--cached", "--others", "--exclude-standard", "-z", "--", ...paths]);
   if (result.error || result.status !== 0) return null;
   return result.stdout
     .split("\0")
@@ -88,12 +86,11 @@ function collectFilesFromGit(root, paths, exclusions) {
 }
 
 function searchWithoutRipgrep(root, options) {
-  const exclusions = searchExclusions(root, options);
-  const normalizedPaths = options.paths.map((file) => toRepoRelative(root, file));
+  const exclusions = searchExclusions(options);
   const files = options.includeExcluded
-    ? collectFilesFromFilesystem(root, normalizedPaths, true)
-    : (collectFilesFromGit(root, normalizedPaths, exclusions) ??
-      collectFilesFromFilesystem(root, normalizedPaths, false, exclusions));
+    ? collectFilesFromFilesystem(root, options.paths, true)
+    : (collectFilesFromGit(root, options.paths, exclusions) ??
+      collectFilesFromFilesystem(root, options.paths, false, exclusions));
   if (options.pattern === undefined) return files;
   const expression = options.regex ? new RegExp(options.pattern) : null;
   const results = [];
@@ -114,20 +111,17 @@ function searchWithoutRipgrep(root, options) {
     if (options.excerpts) results.push(...matches);
     else if (matches.length) results.push(file);
   }
-  return options.excerpts ? results : [...new Set(results)].sort();
+  return options.excerpts ? uniqueExcerpts(results) : [...new Set(results)].sort();
 }
 
 export function repositorySearch(
   root,
   { pattern, paths = ["."], excerpts = false, includeExcluded = false, regex = false } = {},
 ) {
+  // Normalize once for both engines, before exclusions or filesystem access.
+  paths = [...new Set(paths.map((file) => toRepoRelative(root, file)))];
   if (!includeExcluded && pattern !== undefined && paths.length > 1) {
-    const isNoisePath = (file) => {
-      const relative = toRepoRelative(root, file);
-      return DISCOVERY_NOISE.some(
-        (glob) => matchesSearchGlob(relative, glob) || (glob.endsWith("/**") && relative === glob.slice(0, -3)),
-      );
-    };
+    const isNoisePath = (file) => isExcluded(file, DISCOVERY_NOISE);
     const explicitNoise = paths.filter(isNoisePath);
     const broad = paths.filter((file) => !isNoisePath(file));
     if (explicitNoise.length && broad.length) {
@@ -136,16 +130,14 @@ export function repositorySearch(
         repositorySearch(root, { pattern, paths: selected, excerpts, regex }),
       );
       if (!excerpts) return [...new Set(results)].sort();
-      return [...new Map(results.map((entry) => [JSON.stringify([entry.path, entry.start]), entry])).values()].sort(
-        (a, b) => a.path.localeCompare(b.path) || a.start - b.start,
-      );
+      return uniqueExcerpts(results);
     }
   }
   // Own exclusions explicitly: .rgignore is for interactive discovery and must
   // not hide generated modules from import graphs or explicit noise-path reads.
   const args = ["--hidden", "--no-ignore-dot", "--color", "never"];
   if (includeExcluded) args.push("--no-ignore");
-  else for (const glob of searchExclusions(root, { paths, pattern })) args.push("-g", `!${glob}`);
+  else for (const glob of searchExclusions({ paths, pattern })) args.push("-g", `!${glob}`);
   if (pattern === undefined) args.push("--files", "-0");
   else {
     args.push(...(excerpts ? ["--json"] : ["--files-with-matches", "-0"]));
@@ -167,18 +159,19 @@ export function repositorySearch(
           .map((file) => file.replace(/^\.\//u, "")),
       ),
     ].sort();
-  return result.stdout
-    .split(/\r?\n/u)
-    .filter(Boolean)
-    .map((line) => JSON.parse(line))
-    .filter((event) => event.type === "match" && event.data.path.text && event.data.lines.text)
-    .map(({ data }) => ({
-      path: data.path.text.replace(/^\.\//u, ""),
-      start: data.line_number,
-      end: data.line_number,
-      text: data.lines.text.replace(/\r?\n$/u, ""),
-    }))
-    .sort((a, b) => a.path.localeCompare(b.path) || a.start - b.start);
+  return uniqueExcerpts(
+    result.stdout
+      .split(/\r?\n/u)
+      .filter(Boolean)
+      .map((line) => JSON.parse(line))
+      .filter((event) => event.type === "match" && event.data.path.text && event.data.lines.text)
+      .map(({ data }) => ({
+        path: data.path.text.replace(/^\.\//u, ""),
+        start: data.line_number,
+        end: data.line_number,
+        text: data.lines.text.replace(/\r?\n$/u, ""),
+      })),
+  );
 }
 
 export function incrementalContext(root, session, sections, { refresh = false } = {}) {

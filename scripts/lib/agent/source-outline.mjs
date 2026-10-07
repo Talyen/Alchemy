@@ -80,9 +80,13 @@ export function sourceOutline(rootDir, relativePath, { entries = false, tests = 
     visit(file);
     return found;
   }
+  const bindingNames = (name) =>
+    ts.isIdentifier(name)
+      ? [name.text]
+      : name.elements.flatMap((element) => (ts.isBindingElement(element) ? bindingNames(element.name) : []));
   return file.statements.flatMap((statement) => {
     const names = ts.isVariableStatement(statement)
-      ? statement.declarationList.declarations.map((declaration) => declaration.name.getText(file))
+      ? statement.declarationList.declarations.flatMap((declaration) => bindingNames(declaration.name))
       : statement.name
         ? [statement.name.getText(file)]
         : [];

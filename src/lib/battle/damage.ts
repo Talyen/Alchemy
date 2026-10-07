@@ -127,10 +127,6 @@ export function dealDamageToEnemy(
     context?.damageEffects?.push({ ...packet, amount: packet.amount + sequenceBonus });
   // Attempt-scoped bonuses precede Dodge; next-hit bonuses are spent only on contact.
   const bonuses = consumeAttackBonuses(context);
-  bonuses.physical += bonuses.sanguine;
-  if (bonuses.sanguine > 0) {
-    state = { ...state, flags: { ...state.flags, sanguinePhysicalBonus: 0 } };
-  }
   const consumed = consumeAttackPacketFlags(state, resolvedEffect);
   const { packet, applyPartingCut } = consumed;
   const baseDamageBonus =

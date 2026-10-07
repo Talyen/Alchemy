@@ -139,7 +139,8 @@ optional or defaulted session parameters. Runtime internals remain store-owned,
 with scoped exceptions for save IO, hydration, and singleton construction.
 
 `runtimeInputs` supplies the clock, new-run seed generator, and Gear instance ID
-source. Gameplay RNG remains persisted on the run and changes inside transactions.
+source. Runtime-input and feedback methods are captured with their supplied object's receiver,
+so plain-object and class-based implementations behave alike. Gameplay RNG remains persisted on the run and changes inside transactions.
 ID generation reaches pure loot helpers through `createDraftInstanceIdSource`;
 those helpers do not import the runtime. The legacy test seed override affects only
 the default application adapter. New isolated tests inject their own seed source.

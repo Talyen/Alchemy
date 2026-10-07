@@ -35,14 +35,6 @@ function emitGainedStatusText(
   mergeCombatText(combatTexts, { target: "player", kind: "status", stat, amount: gained });
 }
 
-function emitOverhealBlockText(
-  stateBefore: Pick<BattleState, "playerStatuses">,
-  stateAfter: Pick<BattleState, "playerStatuses">,
-  combatTexts: CombatTextEvent[],
-) {
-  emitGainedStatusText(stateBefore, stateAfter, "block", combatTexts);
-}
-
 function resolveHealingWithFeedback(
   state: BattleState,
   amount: number,
@@ -54,7 +46,7 @@ function resolveHealingWithFeedback(
     if (healing.effective > 0) {
       mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healing.effective });
     }
-    emitOverhealBlockText(state, healing.state, combatTexts);
+    emitGainedStatusText(state, healing.state, "block", combatTexts);
     emitGainedStatusText(state, healing.state, "thorns", combatTexts);
   }
   return healing;
@@ -86,13 +78,12 @@ export function applyHealingWithCombatText(
 ): BattleState {
   if (amount <= 0) return state;
   const healAmount = options?.skipFightPacing ? amount : paceCombatMagnitude(state, amount, "player");
-  const prevState = state;
   const healing = resolveHealingWithFeedback(state, healAmount, combatTexts, options?.allowOverhealBlock);
   const nextState = healing.state;
   const actualHeal = healing.restored;
   const reacted = applyBlockGainRewards(
     applyBloodCountessHealingReaction(nextState, actualHeal, combatTexts),
-    nextState.playerStatuses.block - prevState.playerStatuses.block,
+    nextState.playerStatuses.block - state.playerStatuses.block,
     combatTexts ?? [],
   );
   return applyRestorativeCleanse(reacted, actualHeal, combatTexts);

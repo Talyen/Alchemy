@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, readFile, writeFile, rm, symlink } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, readdir, writeFile, rm, symlink } from "node:fs/promises";
 import path from "node:path";
 import { tmpdir } from "node:os";
 import { describe, expect, it, vi, afterEach } from "vitest";
@@ -16,7 +16,7 @@ import { createReviewPlayer, type ReviewAudio } from "../../scripts/audio-review
 import { importChoices, restoreChoices, buildChoicesExport } from "../../scripts/audio-review/choices.mjs";
 import { prepareReviewMedia } from "../../scripts/lib/audio-review-media.mjs";
 
-it("fades the selected excerpt's edges without silencing audio after a late start", async () => {
+it("shares identical excerpts across source IDs and fades their edges without silencing a late start", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "alchemy-audio-excerpt-"));
   try {
     const samples = 48_000;
@@ -34,20 +34,42 @@ it("fades the selected excerpt's edges without silencing audio after a late star
     wave.write("data", 36);
     wave.writeUInt32LE(samples * 2, 40);
     for (let sample = 0; sample < samples; sample++) wave.writeInt16LE(8192, 44 + sample * 2);
-    await writeFile(path.join(root, "constant.wav"), wave);
+    const comment = Buffer.from("recording provenance ".repeat(64) + "\0");
+    const info = Buffer.alloc(20 + comment.length + (comment.length % 2));
+    info.write("LIST");
+    info.writeUInt32LE(info.length - 8, 4);
+    info.write("INFOICMT", 8);
+    info.writeUInt32LE(comment.length, 16);
+    comment.copy(info, 20);
+    const taggedWave = Buffer.concat([wave.subarray(0, 36), info, wave.subarray(36)]);
+    taggedWave.writeUInt32LE(taggedWave.length - 8, 4);
+    await writeFile(path.join(root, "constant.wav"), taggedWave);
+    await writeFile(path.join(root, "renamed.wav"), taggedWave);
     const output = path.join(root, "previews");
-    const result = await prepareReviewMedia({
+    const options = {
       root,
       libraryRoot: root,
       output,
       mappings: [
         {
           currentFiles: [],
-          candidates: [{ assetId: "constant", path: "constant.wav", start: 0.25, duration: 0.1, note: "fixture" }],
+          candidates: [
+            { assetId: "constant", path: "constant.wav", start: 0.25, duration: 0.1, note: "fixture" },
+            { assetId: "renamed", path: "renamed.wav", start: 0.25, duration: 0.1, note: "same recording" },
+          ],
         },
       ],
-    });
+    };
+    const result = await prepareReviewMedia(options);
     expect(result.failures).toEqual([]);
+    expect(result.media["renamed:0.25:0.1"]).toMatchObject({
+      id: "renamed:0.25:0.1",
+      sourcePath: path.join(root, "renamed.wav"),
+      available: true,
+      duration: 0.1,
+      original: result.media["constant:0.25:0.1"].original,
+      matched: result.media["constant:0.25:0.1"].matched,
+    });
     const preview = await readFile(path.join(output, result.media["constant:0.25:0.1"].original!));
     let offset = 12;
     while (preview.toString("ascii", offset, offset + 4) !== "data") {
@@ -59,6 +81,12 @@ it("fades the selected excerpt's edges without silencing audio after a late star
     expect(pcm.readInt16LE(0)).toBe(0);
     expect(pcm.readInt16LE(2400 * 4)).toBeGreaterThan(5000);
     expect(Math.abs(pcm.readInt16LE(pcm.length - 2))).toBeLessThan(100);
+    const cacheName = (await readdir(path.join(output, "media"))).find((file) => file.endsWith(".json"))!;
+    const cachePath = path.join(output, "media", cacheName);
+    const cached = JSON.parse(await readFile(cachePath, "utf8"));
+    cached.duration = (preview.length - 78) / (48000 * 2 * 2);
+    await writeFile(cachePath, JSON.stringify(cached));
+    expect(await prepareReviewMedia(options)).toEqual(result);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

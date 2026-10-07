@@ -24,7 +24,7 @@ export function applyNatureDamageRiders(
   combatTexts: CombatTextEvent[],
   alreadyLeeches = false,
 ): BattleState {
-  const { resolvedDamage: modifiedDamage, previousHealth: enemyHealthBeforeHit } = facts;
+  const { resolvedDamage: modifiedDamage } = facts;
   if (modifiedDamage <= 0) return state;
   let nextState = applyLuckyCloverGold(state, facts.healthDamage, combatTexts);
   nextState = applyNatureGoldReward(nextState, facts.healthDamage, combatTexts);
@@ -45,7 +45,6 @@ export function applyNatureDamageRiders(
       nextState,
       guaranteedLeech ? facts.healthDamage : modifiedDamage,
       combatTexts,
-      enemyHealthBeforeHit,
       guaranteedLeech,
     );
   }
@@ -67,7 +66,7 @@ export function applyHolyDamageRiders(
   combatTexts: CombatTextEvent[],
   heroAttack = true,
 ) {
-  const { resolvedDamage: damage, previousHealth: enemyHealthBeforeHit, eligibility } = facts;
+  const { resolvedDamage: damage, eligibility } = facts;
   if (damage <= 0) return state;
   let nextState = applyHolyLifesteal(state, damage, combatTexts, eligibility);
   if (
@@ -89,5 +88,5 @@ export function applyHolyDamageRiders(
     nextState = applyWishEffect(nextState, card, 1, combatTexts, { kind: "enclosing-action" });
   }
 
-  return applyBrassCenser(nextState, damage, combatTexts, enemyHealthBeforeHit);
+  return applyBrassCenser(nextState, damage, combatTexts);
 }

@@ -54,16 +54,6 @@ describe("prepareTalentCardPlay attack bonuses", () => {
     expect(burn.attackBonuses.bleed).toBe(0);
   });
 
-  it("carries sanguine bonus only on attacks", () => {
-    const state = patchBattleState({ flags: { sanguinePhysicalBonus: 7 } });
-    const texts = makeCombatTexts();
-    expect(prepareTalentCardPlay(state, attackCard(), texts).attackBonuses.sanguine).toBe(7);
-    const blockCard = makeTestCard({
-      effects: [{ kind: "player-status", status: "block", amount: 5 }],
-    });
-    expect(prepareTalentCardPlay(state, blockCard, texts).attackBonuses.sanguine).toBe(0);
-  });
-
   it("banks companion bonus on physical cards and tracks last-card keywords", () => {
     const state = patchBattleState({ talentEffects: talents({ companionNextAttackOnPhysical: 2 }) });
     const result = prepareTalentCardPlay(state, attackCard(), makeCombatTexts());

@@ -57,12 +57,26 @@ describe("OptionsScreen", () => {
     cleanup();
   });
 
-  it("calls onBack when the Back button is clicked", () => {
-    const onBack = vi.fn();
-    render(<OptionsScreen {...defaultProps} onBack={onBack} />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Back" }));
-    expect(onBack).toHaveBeenCalledTimes(1);
+  it("keeps volume controls independent and lets players mute background audio", async () => {
+    const audio = {
+      ...defaultProps.audio,
+      onMasterVolumeChange: vi.fn(),
+      onMusicVolumeChange: vi.fn(),
+      onSfxVolumeChange: vi.fn(),
+      onMuteInBackgroundChange: vi.fn(),
+    };
+    render(<OptionsScreen {...defaultProps} audio={audio} />);
+    fireEvent.click(screen.getByRole("button", { name: "Sound" }));
+    fireEvent.change(await screen.findByRole("slider", { name: "Music Volume" }), { target: { value: "40" } });
+    expect(audio.onMusicVolumeChange).toHaveBeenCalledExactlyOnceWith(40);
+    expect(audio.onMasterVolumeChange).not.toHaveBeenCalled();
+    expect(audio.onSfxVolumeChange).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByRole("slider", { name: "Overall Volume" }), { target: { value: "60" } });
+    fireEvent.change(screen.getByRole("slider", { name: "Sound Effects Volume" }), { target: { value: "20" } });
+    expect(audio.onMasterVolumeChange).toHaveBeenCalledExactlyOnceWith(60);
+    expect(audio.onSfxVolumeChange).toHaveBeenCalledExactlyOnceWith(20);
+    fireEvent.click(screen.getByRole("switch", { name: "Mute in Background" }));
+    expect(audio.onMuteInBackgroundChange).toHaveBeenCalledExactlyOnceWith(true);
   });
 
   it("groups display options and reports background intensity changes", () => {

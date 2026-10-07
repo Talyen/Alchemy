@@ -281,16 +281,18 @@ export function applyPlayerStatusFromAttack(
 ): BattleState {
   const status = effect.status;
   const amount = effect.amount;
-  if (harmfulPlayerStatusIds.includes(status)) {
-    if (shouldBlockPreventStatusBuildup(state, status)) return state;
-    return addPlayerStatusWithCombatText(state, status, scaleBleedStatus(status, amount), combatTexts, {
+  const harmful = harmfulPlayerStatusIds.includes(status);
+  if (harmful && shouldBlockPreventStatusBuildup(state, status)) return state;
+  if (status === "block") return applyBlockReward(state, amount, combatTexts, { skipFightPacing: true });
+  return addPlayerStatusWithCombatText(
+    state,
+    status,
+    harmful ? scaleBleedStatus(status, amount) : amount,
+    combatTexts,
+    {
       skipFightPacing: true,
-    });
-  }
-  if (status === "block") {
-    return applyBlockReward(state, amount, combatTexts, { skipFightPacing: true });
-  }
-  return addPlayerStatusWithCombatText(state, status, amount, combatTexts, { skipFightPacing: true });
+    },
+  );
 }
 
 export {

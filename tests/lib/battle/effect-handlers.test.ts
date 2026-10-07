@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { applyCardEffects, applyEffectByKind, EFFECT_APPLY_BY_KIND } from "@/lib/battle/effect-handlers/registry";
-import { companionLibrary } from "@/lib/game-data";
+import { cardById, companionLibrary } from "@/lib/game-data";
+import { applyNumericCorruption, getEditableCorruptionTargets } from "@/lib/corruption/numeric";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("applySelfDamageEffect", () => {
@@ -26,34 +27,42 @@ describe("applySelfDamageEffect", () => {
 });
 
 describe("applyPlayerStatusEffectHandler", () => {
-  it("applies perManaCrystal scaling", () => {
+  it.each([2, 0])("uses perManaCrystal scaling %i instead of the fallback amount", (perManaCrystal) => {
     const state = patchBattleState({ maxMana: 5 });
     const result = EFFECT_APPLY_BY_KIND["player-status"](
       state,
       makeTestCard(),
-      { kind: "player-status", status: "block", amount: 2, perManaCrystal: 2 },
+      { kind: "player-status", status: "block", amount: 2, perManaCrystal },
       1,
       [],
     );
-    expect(result.playerStatuses.block).toBe(10);
+    expect(result.playerStatuses.block).toBe(5 * perManaCrystal);
   });
 
-  it("scales the start-of-card Mana snapshot and spends the live Mana only once", () => {
-    const state = patchBattleState({ mana: 4, maxMana: 5 });
-    const texts: CombatTextEvent[] = [];
-    const result = EFFECT_APPLY_BY_KIND["player-status"](
-      state,
-      makeTestCard(),
-      { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 },
-      2,
-      texts,
-      { manaAtStart: 6, enemyFreezeSkipTurnsAtStart: 0 },
-    );
-    expect(result.playerStatuses.block).toBe(36);
-    expect(result.mana).toBe(0);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 36 });
-    expect(state.mana).toBe(4);
-  });
+  it.each([3, 0])(
+    "scales the start-of-card Mana by %i and spends live Mana even for a zero factor",
+    (convertCurrentMana) => {
+      const original = cardById["mana-shield"]!;
+      const target = getEditableCorruptionTargets(original).find((entry) => entry.field === "convertCurrentMana")!;
+      const card = applyNumericCorruption(original, target, convertCurrentMana - target.value);
+      const effect = card.effects[0]!;
+      if (effect.kind !== "player-status") throw new Error("Expected Mana Shield's status effect");
+      const state = patchBattleState({ mana: 4, maxMana: 5 });
+      const texts: CombatTextEvent[] = [];
+      const result = EFFECT_APPLY_BY_KIND["player-status"](state, card, effect, 2, texts, {
+        manaAtStart: 6,
+        enemyFreezeSkipTurnsAtStart: 0,
+      });
+      expect(result.playerStatuses.block).toBe(12 * convertCurrentMana);
+      expect(result.mana).toBe(0);
+      expect(texts).toEqual(
+        convertCurrentMana > 0
+          ? [{ target: "player", kind: "status", stat: "block", amount: 12 * convertCurrentMana }]
+          : [],
+      );
+      expect(state.mana).toBe(4);
+    },
+  );
 });
 
 describe("enemy-status control activation", () => {

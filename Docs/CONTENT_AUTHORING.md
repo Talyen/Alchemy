@@ -180,6 +180,7 @@ Homestead screens (like all screen directories) are excluded from `vitest` cover
 1. Extend `KeywordId` in `src/lib/game-data/types.ts`, then add the label, description, and colors to `keywordDefinitions` in `src/lib/game-data/keywords.ts`.
 2. Add the keyword's icon to `keywordIcons` in `src/features/alchemy/shared/config/metadata.ts`. Register its display wording and inflections in `src/lib/keyword-text.ts` so descriptions, item shine, and tooltips recognize it; `shared/config/keywords.ts` only re-exports that tokenizer.
 3. Make `getCardKeywords` report it through effect metadata in `src/lib/game-data/effect-metadata.ts` or an explicit card tag. This same classification drives card display and ordinary card-play XP.
+   `cardHasKeyword` shares that cache for single-keyword queries; use it when no keyword array is needed.
 4. Ordinary XP already flows through `awardCardXP` in `src/features/alchemy/shared/stores/write/run-progress.ts`; add a separate trigger there only when the mechanic needs one, as Dodge does. `src/lib/game-data/talents/progression.ts` owns point math, not event triggering. Add its talent tree through [Add a new talent](#add-a-new-talent).
 
 Keyword labels and descriptions must pass the typography rules (no em dashes; descriptions stay period-free — see `src/lib/content-validation/validators-typography.ts`). Run `npm run content:audit` before handing off.

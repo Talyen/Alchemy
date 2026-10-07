@@ -185,22 +185,6 @@ describe("applyEnemyAbility: attack", () => {
     expect(texts).toContainEqual({ target: "enemy", kind: "heal", stat: "health", amount: 3 });
   });
 
-  it("does not heal enemy on lifesteal when blockEnemyLeech talent is active", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerStatuses: { block: 0, armor: 0 },
-      enemyHealth: 20,
-      enemyMaxHealth: 30,
-      talentEffects: { blockEnemyLeech: true },
-    });
-    const result = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5, lifesteal: true }] }),
-      makeTexts(),
-    );
-    expect(result.enemyHealth).toBe(20);
-  });
-
   it("armor reduces Stun ability damage", () => {
     const state = patchBattleState({
       playerHealth: 30,

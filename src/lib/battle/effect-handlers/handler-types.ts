@@ -5,7 +5,6 @@ export interface AttackBonuses {
   flat: number;
   physical: number;
   bleed: number;
-  sanguine?: number;
 }
 
 export interface CardEffectResolutionContext {
@@ -22,9 +21,9 @@ export interface CardEffectResolutionContext {
   guaranteedCrit?: boolean;
 }
 
-export function consumeAttackBonuses(context: CardEffectResolutionContext | undefined): Required<AttackBonuses> {
-  const bonuses = { flat: 0, physical: 0, bleed: 0, sanguine: 0, ...context?.attackBonuses };
-  if (context?.attackBonuses) Object.assign(context.attackBonuses, { flat: 0, physical: 0, bleed: 0, sanguine: 0 });
+export function consumeAttackBonuses(context: CardEffectResolutionContext | undefined): AttackBonuses {
+  const bonuses = { flat: 0, physical: 0, bleed: 0, ...context?.attackBonuses };
+  if (context?.attackBonuses) Object.assign(context.attackBonuses, { flat: 0, physical: 0, bleed: 0 });
   return bonuses;
 }
 

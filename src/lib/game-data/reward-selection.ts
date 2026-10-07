@@ -1,10 +1,11 @@
 import { REWARD_SELECTION_CONFIG, REWARD_RANDOM_CHANCE_FRACTION } from "../game-constants";
 import { pickRandom, shuffle } from "@/lib/rng";
 import { getCardKeywords } from "./keywords";
+import { visitBattleCardEffects } from "./effect-tree";
 import type { BattleCard, KeywordId } from "./types";
 
 function isCompanionCard(card: Pick<BattleCard, "effects">): boolean {
-  return card.effects?.some((effect) => effect.kind === "summon-companion") ?? false;
+  return visitBattleCardEffects(card.effects, (effect) => effect.kind === "summon-companion");
 }
 
 export function deckHasCompanionCard(deck: ReadonlyArray<Pick<BattleCard, "effects">>): boolean {

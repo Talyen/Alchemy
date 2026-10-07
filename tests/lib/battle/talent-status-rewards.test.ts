@@ -11,28 +11,6 @@ import * as talentBattle from "../../fixtures/talent-battle";
 describe("Talent talent status rewards", () => {
   const { talents, battle, attack, play } = talentBattle;
 
-  it("Sanguine Overflow survives an unselected attack branch until an attack is attempted", () => {
-    const state = battle({ flags: { sanguinePhysicalBonus: 3 } });
-    const missed = play(
-      state,
-      makeTestCard({
-        effects: [
-          {
-            kind: "chance",
-            probability: 0,
-            successEffects: [{ kind: "damage", damageType: "physical", amount: 2 }],
-            failureEffects: [],
-          },
-        ],
-      }),
-    );
-    expect(missed.flags.sanguinePhysicalBonus).toBe(3);
-    const after = play(missed, attack("next"));
-    expect(missed.enemyHealth - after.enemyHealth).toBe(5);
-    expect(after.flags.sanguinePhysicalBonus).toBe(0);
-    expect(play({ ...missed, rng: () => 0 }, attack("dodged")).flags.sanguinePhysicalBonus).toBe(0);
-  });
-
   it.each(["poison", "bleed"] as const)(
     "boosts Leech against %s without doubling the bonus for two afflictions",
     (status) => {

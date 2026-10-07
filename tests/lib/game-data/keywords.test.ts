@@ -1,19 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { cardLibrary, companionLibrary, type KeywordId } from "@/lib/game-data";
-import { filterKeywordsForTalentXP, getCardKeywords, getCompanionKeywords } from "@/lib/game-data/keywords";
+import {
+  cardHasKeyword,
+  filterKeywordsForTalentXP,
+  getCardKeywords,
+  getCompanionKeywords,
+} from "@/lib/game-data/keywords";
 import { makeTestCard } from "../../fixtures/cards";
 
 describe("keywordDefinitions", () => {
   it("keeps only catalog keywords eligible for Talent XP", () => {
     const keywords = ["burn", "constructor", "__proto__", "toString", "health"] as KeywordId[];
     expect(filterKeywordsForTalentXP(keywords)).toEqual(["burn", "health"]);
-  });
-
-  it("includes archery from card tags", () => {
-    const fireArrow = cardLibrary.find((card) => card.id === "fire-arrow");
-    expect(fireArrow).toBeDefined();
-    expect(getCardKeywords(fireArrow!)).toContain("archery");
-    expect(getCardKeywords(fireArrow!)).toContain("burn");
   });
 });
 
@@ -22,10 +20,21 @@ it("keeps card-specific keywords separate and refreshes them when effects are re
   const variant = makeTestCard({ ...card, consume: true, tags: ["archery"] });
   expect(getCardKeywords(card)).toEqual(["health"]);
   expect(getCardKeywords(variant)).toEqual(["health", "consume", "archery"]);
+  expect(cardHasKeyword(card, "health")).toBe(true);
+  expect(cardHasKeyword(card, "consume")).toBe(false);
+  expect(cardHasKeyword(variant, "consume")).toBe(true);
+  expect(cardHasKeyword(variant, "archery")).toBe(true);
   expect(getCardKeywords(card)).toEqual(["health"]);
   card.effects = [{ kind: "damage", damageType: "burn", amount: 3 }];
   expect(getCardKeywords(card)).toEqual(["burn"]);
   expect(getCardKeywords(variant)).toEqual(["health", "consume", "archery"]);
+  expect(cardHasKeyword(card, "health")).toBe(false);
+  expect(cardHasKeyword(card, "burn")).toBe(true);
+  variant.consume = false;
+  variant.tags = [];
+  expect(cardHasKeyword(variant, "consume")).toBe(false);
+  expect(cardHasKeyword(variant, "archery")).toBe(false);
+  expect(cardHasKeyword(variant, "health")).toBe(true);
 });
 
 it("keeps returned keywords independent of shared card and Companion caches", () => {

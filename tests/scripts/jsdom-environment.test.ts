@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { builtinEnvironments } from "vitest/environments";
+import { builtinEnvironments } from "vitest/runtime";
 import environment from "../jsdom-environment";
 
 afterEach(() => vi.restoreAllMocks());

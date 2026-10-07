@@ -16,7 +16,7 @@ export interface TimerClock {
 }
 
 export class TimerGroup {
-  private ids = new Set<ReturnType<typeof setTimeout> | number>();
+  private readonly pending = new Set<() => void>();
 
   constructor(
     private readonly clock: TimerClock = {
@@ -27,14 +27,15 @@ export class TimerGroup {
 
   setTimeout(fn: () => void, ms: number): () => void {
     const id = this.clock.setTimeout(() => {
-      this.ids.delete(id);
+      if (!this.pending.delete(cancel)) return;
       fn();
     }, ms);
-    this.ids.add(id);
-    return () => {
-      this.ids.delete(id);
-      this.clock.clearTimeout(id);
+    // Timer IDs may be reused; an old cancellation must not remove new work.
+    const cancel = () => {
+      if (this.pending.delete(cancel)) this.clock.clearTimeout(id);
     };
+    this.pending.add(cancel);
+    return cancel;
   }
 
   setGameTimeout(fn: () => void, ms: number): () => void {
@@ -42,13 +43,10 @@ export class TimerGroup {
   }
 
   get size(): number {
-    return this.ids.size;
+    return this.pending.size;
   }
 
   clearAll() {
-    for (const id of this.ids) {
-      this.clock.clearTimeout(id);
-    }
-    this.ids.clear();
+    for (const cancel of this.pending) cancel();
   }
 }

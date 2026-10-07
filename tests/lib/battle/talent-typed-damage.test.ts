@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { cardById, computeTalentEffects, type DamageType } from "@/lib/game-data";
 import { resolveFollowUpHit, tryTalentTypedHit } from "@/lib/battle/follow-up-hit-resolution";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
-import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/follow-up-hit-resolution";
 import { payKillPayouts } from "@/lib/battle/player-rewards";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
@@ -74,12 +73,6 @@ describe("talent damage conversions", () => {
     expect(next.enemyStatuses.bleed).toBe(2);
   });
 
-  it("Leech can trigger both damage types without those secondary hits triggering further procs", () => {
-    const next = applyLifestealAndPlayerHitTriggers(battle({ talentEffects: converted }), 8, []);
-    expect(next.enemyHealth).toBe(100);
-    expect(next.enemyStatuses).toMatchObject({ bleed: 0, poison: 0 });
-  });
-
   it("does not apply a chance proc on a failed roll or zero damage", () => {
     const initial = battle({ rng: () => 0.99 });
     expect(tryTalentTypedHit(initial, 10, "burn", 8, [])).toBe(initial);
@@ -91,7 +84,7 @@ describe("talent damage conversions", () => {
       appliesFightPacing: true,
       turn: 20,
       playerStatuses: { forge: 50 },
-      flags: { nextHitCrit: true, nextHitPhysicalBonus: 40, sanguinePhysicalBonus: 3 },
+      flags: { nextHitCrit: true, nextHitPhysicalBonus: 40 },
       enemyCC: { freezeSkipTurns: 1 },
       enemyStatuses: { poison: 2 },
       talentEffects: {

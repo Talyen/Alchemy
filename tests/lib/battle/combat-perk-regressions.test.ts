@@ -3,7 +3,6 @@ import { applyEnemyHealingWithCombatText } from "@/lib/battle/enemy-healing";
 import { processEnemyDamageEffect, applyEnemyLeechHealing } from "@/lib/battle/enemy-attack-damage";
 import { processEnemyRegeneration } from "@/lib/battle/enemy-turn-traits";
 import { processEncounterTraitActionStart } from "@/lib/battle/encounter-trait-events";
-import { processEncounterTraitHealthThreshold } from "@/lib/battle/encounter-trait-health-threshold";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
@@ -83,25 +82,6 @@ describe("combat perk regressions", () => {
     });
     const result = playBattleCardResolved(state, card.id, 0).state;
     expect(result.playerStatuses.forge).toBe(2);
-  });
-
-  it("Second Wind does not suppress Divine Aegis on the same Health crossing", () => {
-    const state = patchBattleState({
-      enemyHealth: 40,
-      enemyMaxHealth: 100,
-      currentEnemy: {
-        traits: [
-          { id: "second-wind", title: "Second Wind", description: "" },
-          { id: "divine-aegis", title: "Divine Aegis", description: "" },
-        ],
-      },
-    });
-    const result = processEncounterTraitHealthThreshold(60, state, []);
-    expect(result.enemyHealth).toBe(60);
-    expect(result.flags.secondWindTriggered).toBe(true);
-    expect(result.flags.divineAegisTriggered).toBe(true);
-    expect(result.enemyMitigation).toMatchObject({ armor: 2, block: 4 });
-    expect(processEncounterTraitHealthThreshold(60, result, [])).toBe(result);
   });
 
   it("Sanguine Gear increases Companion Leech", () => {

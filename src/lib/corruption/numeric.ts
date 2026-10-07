@@ -18,27 +18,27 @@ export function updateCardNumericValue(card: BattleCard, target: CorruptionTarge
   if (target.field === "equalToGoldPercent") nextValue = Math.min(PERCENT_DENOMINATOR, nextValue);
   if (nextValue === target.value) return card;
   const description = getCardDescription(card);
-  const tokens = description
-    .flatMap((line) => line.parts)
-    .filter((part) => typeof part !== "string" && part.id === target.id);
-  if (
-    !tokens.length ||
-    tokens.some(
-      (token) =>
-        typeof token !== "string" &&
-        (token.references.length !== target.edits.length ||
-          token.references.some((reference, index) => {
-            const edit = target.edits[index]!;
-            return (
-              effectAddressKey(reference) !== effectAddressKey(edit) ||
-              reference.kind !== edit.kind ||
-              reference.field !== edit.field ||
-              (reference.multiplier ?? 1) !== edit.multiplier
-            );
-          })),
-    )
-  )
-    return card;
+  let foundToken = false;
+  for (const line of description) {
+    for (const token of line.parts) {
+      if (typeof token === "string" || token.id !== target.id) continue;
+      foundToken = true;
+      if (
+        token.references.length !== target.edits.length ||
+        token.references.some((reference, index) => {
+          const edit = target.edits[index]!;
+          return (
+            effectAddressKey(reference) !== effectAddressKey(edit) ||
+            reference.kind !== edit.kind ||
+            reference.field !== edit.field ||
+            (reference.multiplier ?? 1) !== edit.multiplier
+          );
+        })
+      )
+        return card;
+    }
+  }
+  if (!foundToken) return card;
   // Validate the complete shared plan before copying; one stale branch rejects
   // the whole edit. Nothing depends on the wording or rendered character offset.
   const editsByAddress = new Map<string, Array<(typeof target.edits)[number]>>();

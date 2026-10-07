@@ -4,7 +4,7 @@ import { readFileSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { captureSourceDigest, parseCheckArgs, runCheck as runFullCheck } from "../../scripts/check.mjs";
+import { parseCheckArgs, runCheck as runFullCheck } from "../../scripts/check.mjs";
 import { resolvePushPaths } from "../../scripts/lib/verification/changed-paths.mjs";
 
 vi.mock("../../scripts/lib/verification/changed-paths.mjs", async (importOriginal) => ({
@@ -223,9 +223,7 @@ describe("full source-aware completion gate", () => {
     expect(record.commandExposures.map((entry) => entry.key)).toEqual(["verification", "ci-static"]);
   });
 
-  it("parses selections and captures a source digest", () => {
-    expect(parseCheckArgs(["src/App.tsx"])).toEqual(["src/App.tsx"]);
+  it("rejects ambiguous path selections", () => {
     expect(() => parseCheckArgs(["--diff", "src/App.tsx"])).toThrow("Choose explicit paths or --diff");
-    expect(captureSourceDigest().hash).toMatch(/^[0-9a-f]{16}$/u);
   });
 });

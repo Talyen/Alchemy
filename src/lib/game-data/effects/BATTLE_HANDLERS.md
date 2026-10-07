@@ -20,7 +20,7 @@ Snapshot semantics: normal card play freezes `manaAtStart` pre-payment and `enem
 
 ## Ordering and semantics
 
-- `player-status` with `convertCurrentMana` interprets the value as **block per mana** (`manaAtStart * convertCurrentMana`), zeroes mana, and respects `manaAtStart` snapshot from `CardEffectResolutionContext` (frozen before any effect mutates `state.mana`). `perManaCrystal` uses live `maxMana`.
+- `player-status` with `convertCurrentMana` interprets the value as **block per mana** (`manaAtStart * convertCurrentMana`), zeroes mana, and respects `manaAtStart` snapshot from `CardEffectResolutionContext` (frozen before any effect mutates `state.mana`). `perManaCrystal` uses live `maxMana`. A defined zero coefficient yields zero gain; Mana conversion still spends Mana.
 - `restore-mana` may opt into `allowOverflow` for temporary extra Mana (Mana Moth). Omission preserves capped restoration; restoration never removes existing overflow. This does not add Mana Crystals.
 - `restore-mana` with `ifEnemyFrozen` compares live `enemyCC.freezeSkipTurns` against the frozen `enemyFreezeSkipTurnsAtStart` — so a `damage`→`freeze` earlier on the same card enables the restore, but only if the threshold was crossed by that card's own effects.
 - `damage` with `equalToBlock`/`equalToArmor`/`equalToGoldPercent` takes its base from the live resource and applicable Forge. [player-damage-base.ts](../../battle/player-damage-base.ts) then includes shared conditional, Archery, attack, Potion, and Consume packet bonuses, but bypasses the per-type flat/scaling handlers. Normal damage multipliers, pacing, critical strikes, and defenses still apply.

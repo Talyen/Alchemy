@@ -90,8 +90,9 @@ export function tailOutput(output, maxBytes = 4_000) {
   if (rawBytes <= maxBytes) return normalized;
   let prefix = `[...${rawBytes} bytes omitted...]\n`;
   let suffix = "";
-  const allCodePoints = Array.from(normalized);
-  const codePoints = allCodePoints.length > maxBytes ? allCodePoints.slice(-maxBytes) : allCodePoints;
+  // Only the tail can fit. Two UTF-16 units per code point keep the slice
+  // boundary out of the retained suffix without expanding the entire log.
+  const codePoints = Array.from(normalized.slice(-maxBytes * 2)).slice(-maxBytes);
   for (let pass = 0; pass < 2; pass += 1) {
     let remaining = Math.max(0, maxBytes - Buffer.byteLength(prefix, "utf8"));
     let start = codePoints.length;

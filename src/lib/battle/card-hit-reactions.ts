@@ -112,7 +112,6 @@ export function applyCardHitReactions(
       combatTexts,
       cardHealing && !!effect.lifesteal,
       !companionAttack && !!effect.lifesteal,
-      previousHealth,
     );
   }
 

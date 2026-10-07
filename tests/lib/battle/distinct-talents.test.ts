@@ -16,7 +16,6 @@ import { prepareTalentCardPlay } from "@/lib/battle/talent-card-play";
 import { applyDodgeTalentStatuses } from "@/lib/battle/dodge-talent-rewards";
 import { applyHealthThresholdCleanse, removeHarmfulPlayerStatuses } from "@/lib/battle/status-player";
 import { applyLeechHitHealing } from "@/lib/battle/damage-rider-leech";
-import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/follow-up-hit-resolution";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { computeCardPayment } from "@/lib/battle/card-cost-rules";
@@ -239,38 +238,6 @@ describe("distinct talent conditions", () => {
     expect(applyLeechHitHealing(battle({ talentEffects: effects, playerHealth: 20 }), 8, []).playerHealth).toBe(24);
     expect(applyLeechHitHealing(battle({ talentEffects: effects, playerHealth: 5 }), 100, []).playerHealth).toBe(40);
     expect(applyLeechHitHealing(battle({ talentEffects: effects }), 0, []).playerHealth).toBe(10);
-  });
-
-  it.each(["physical", "nature", "holy"] as const)(
-    "legacy Cull the Weak checks Health before a %s hit obtains Leech",
-    (type) => {
-      const initial = battle({
-        enemyHealth: 53,
-        talentEffects: { leechHolyDamageVsLowHealth: 1, natureLeechChance: 100 },
-        trinketEffects: { brassCenserProcChance: type === "holy" ? 100 : 0 },
-        rng: () => 0.75,
-      });
-      const effect = { kind: "damage" as const, damageType: type, amount: 4, lifesteal: type === "physical" };
-      expect(
-        resolvePlayerHit(initial, { source: "card-attack", card: physical, effect, resolvedDamage: 4 }, []).enemyHealth,
-      ).toBe(49);
-      expect(
-        resolvePlayerHit(
-          { ...initial, enemyHealth: 49 },
-          { source: "card-attack", card: physical, effect, resolvedDamage: 4 },
-          [],
-        ).enemyHealth,
-      ).toBe(44);
-    },
-  );
-
-  it("legacy Cull the Weak adds Holy damage without recursively triggering another Leech hit", () => {
-    const effects = { ...talents("Blessed Leech"), leechHolyDamageVsLowHealth: 1 };
-    const initial = battle({ talentEffects: effects, enemyHealth: 49 });
-    expect(applyLifestealAndPlayerHitTriggers(initial, 8, []).enemyHealth).toBe(48);
-    expect(
-      applyLifestealAndPlayerHitTriggers(battle({ talentEffects: effects, enemyHealth: 50 }), 8, []).enemyHealth,
-    ).toBe(50);
   });
 });
 

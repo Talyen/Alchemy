@@ -1,4 +1,4 @@
-import { builtinEnvironments, type Environment } from "vitest/environments";
+import { builtinEnvironments, type Environment } from "vitest/runtime";
 
 export default {
   ...builtinEnvironments.jsdom,

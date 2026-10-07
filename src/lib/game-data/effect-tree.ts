@@ -13,7 +13,11 @@ export function visitBattleCardEffects(
   visit: (effect: BattleCardEffect) => boolean | void,
 ): boolean {
   for (const effect of effects) {
-    if (visit(effect) || visitBattleCardEffects(effectChildren(effect), visit)) return true;
+    if (visit(effect)) return true;
+    if (effect.kind === "chance") {
+      if (visitBattleCardEffects(effect.successEffects, visit) || visitBattleCardEffects(effect.failureEffects, visit))
+        return true;
+    } else if (effect.kind === "repeat-over-turns" && visitBattleCardEffects(effect.effects, visit)) return true;
   }
   return false;
 }

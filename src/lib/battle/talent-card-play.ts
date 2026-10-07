@@ -9,7 +9,6 @@ import {
   applyCleanseHeals,
   applyPlayerStatusEffect,
 } from "./status-player";
-import { isAttackCard } from "./card-classification";
 import { applyDrawResult, drawFromState } from "./draw";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
@@ -22,7 +21,6 @@ function computeTalentAttackBonuses(
   keywords: string[],
   archery: boolean,
   physical: boolean,
-  attack: boolean,
 ): NonNullable<CardEffectResolutionContext["attackBonuses"]> {
   const talents = state.talentEffects;
   return {
@@ -32,7 +30,6 @@ function computeTalentAttackBonuses(
       (archery && state.playerStatuses.block === 0 ? talents.archeryPhysicalWithoutBlock : 0) +
       (keywords.includes("poison") && state.enemyStatuses.poison > 0 ? talents.poisonCardPhysicalVsPoisoned : 0),
     bleed: physical && state.flags.previousCardWasNature ? talents.physicalAfterNatureBleedDamage : 0,
-    sanguine: attack ? state.flags.sanguinePhysicalBonus : 0,
   };
 }
 
@@ -149,10 +146,9 @@ export function prepareTalentCardPlay(
   const physical = keywords.includes("physical");
   const archery = keywords.includes("archery");
   const nature = keywords.includes("nature");
-  const attack = isAttackCard(card);
   const talents = state.talentEffects;
 
-  const attackBonuses = computeTalentAttackBonuses(state, keywords, archery, physical, attack);
+  const attackBonuses = computeTalentAttackBonuses(state, keywords, archery, physical);
   const eligibility = options.eligibility ?? state;
   let nextState = applyTalentDrawTriggers(state, keywords, archery, combatTexts, eligibility);
   if (isPlayerDefeated(nextState)) return { attackBonuses, state: nextState };

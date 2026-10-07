@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { computeTalentEffects, type BattleCard } from "@/lib/game-data";
-import type { CombatTextEvent } from "@/lib/battle";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { applyWishEffect } from "@/lib/battle/wish";
@@ -123,16 +122,17 @@ describe("Cull the Weak", () => {
 });
 
 describe("feedback talent save compatibility", () => {
-  it("defaults additive fields while retaining legacy Holy/Wish and Leech/Holy behavior", () => {
+  it("defaults additive fields and preserves Holy/Wish while dropping retired Leech/Holy behavior", () => {
     const saved = JSON.parse(
       JSON.stringify(
         battle({
           enemyHealth: 40,
-          talentEffects: { holyWishChance: 100, leechHolyDamageVsLowHealth: 1 },
+          talentEffects: { holyWishChance: 100 },
         }),
       ),
     );
     delete saved.flags.nextWishExtraChoice;
+    saved.talentEffects.leechHolyDamageVsLowHealth = 1;
     delete saved.talentEffects.wishExtraChoiceAfterHolyCard;
     delete saved.talentEffects.leechCardDamageVsLowHealthPercent;
     const restored = { ...PersistedBattleStateSchema.parse(saved), rng: () => 0.99 };
@@ -140,13 +140,8 @@ describe("feedback talent save compatibility", () => {
     expect(restored.talentEffects.wishExtraChoiceAfterHolyCard).toBe(false);
     expect(restored.talentEffects.leechCardDamageVsLowHealthPercent).toBe(0);
     expect(play(restored, holy).state.wishOptions).toHaveLength(WISH_CHOICE_COUNT);
-    const legacyTexts: CombatTextEvent[] = [];
-    const hit = applyLifestealAndPlayerHitTriggers(restored, 8, legacyTexts);
-    expect(hit.enemyHealth).toBeLessThan(restored.enemyHealth);
-    expect(legacyTexts).toContainEqual(expect.objectContaining({ target: "enemy", stat: "holy", kind: "damage" }));
-    const withoutLegacy = { ...restored, talentEffects: { ...restored.talentEffects, leechHolyDamageVsLowHealth: 0 } };
-    expect(applyLifestealAndPlayerHitTriggers(withoutLegacy, 8, []).enemyHealth).toBe(restored.enemyHealth);
+    expect(restored.talentEffects).not.toHaveProperty("leechHolyDamageVsLowHealth");
+    expect(applyLifestealAndPlayerHitTriggers(restored, 8, []).enemyHealth).toBe(restored.enemyHealth);
     expect(intervention.holyWishChance).toBe(10);
-    expect(cull.leechHolyDamageVsLowHealth).toBe(0);
   });
 });

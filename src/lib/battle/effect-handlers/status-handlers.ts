@@ -31,10 +31,10 @@ export const STATUS_HANDLERS = {
   "player-status": (state, _card, effect, potionMult, combatTexts, context) => {
     let adjustedAmount = effect.amount;
     let nextState = state;
-    if (effect.convertCurrentMana) {
+    if (effect.convertCurrentMana !== undefined) {
       adjustedAmount = (context?.manaAtStart ?? state.mana) * effect.convertCurrentMana;
       nextState = { ...state, mana: 0 };
-    } else if (effect.perManaCrystal) {
+    } else if (effect.perManaCrystal !== undefined) {
       adjustedAmount = effect.perManaCrystal * state.maxMana;
     }
     adjustedAmount = applyPotionMultiplier(adjustedAmount, potionMult);

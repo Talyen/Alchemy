@@ -63,6 +63,7 @@ describe("visitBattleCardEffects", () => {
   it.each([
     { match: "repeat-over-turns", expected: ["chance", "repeat-over-turns"] },
     { match: "heal", expected: ["chance", "repeat-over-turns", "heal"] },
+    { match: "gain-gold", expected: ["chance", "repeat-over-turns", "heal", "damage", "gain-gold"] },
   ])("stops the whole walk at $match", ({ match, expected }) => {
     const visited: Array<BattleCardEffect["kind"]> = [];
     const stopped = visitBattleCardEffects(nestedEffects(), (effect) => {

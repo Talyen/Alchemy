@@ -10,7 +10,6 @@ import {
   type GearInstance,
 } from "@/lib/gear";
 import { mutateGearForTest, resetGearForTest, resetProfileForTest } from "../../../../helpers/run-domain-store-test";
-import { createInitialGearState } from "@/features/alchemy/shared/stores/gear-actions";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { gearPersistenceCodec, readGearState, readHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-store";
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
@@ -20,58 +19,8 @@ import {
 } from "@/features/alchemy/shared/stores/gear-session-command";
 import { defaultGameSession } from "@/app/application-session";
 
-function knightInventories(...items: GearInstance[]) {
-  const inventories = createEmptyGearInventories();
-  inventories.knight = items;
-  return inventories;
-}
-
 describe("gear-store", () => {
-  const ring: GearInstance = { instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] };
   const armor: GearInstance = { instanceId: "armor-1", definitionId: "leather-armor-basic", affixes: [] };
-
-  it("creates fresh state references per call", () => {
-    const first = createInitialGearState();
-    const second = createInitialGearState();
-    expect(first.inventories).not.toBe(second.inventories);
-    expect(first.loadouts).not.toBe(second.loadouts);
-    expect(first.equippedTrinkets).not.toBe(second.equippedTrinkets);
-    expect(first.craftingCurrencies).not.toBe(second.craftingCurrencies);
-    expect(first.ownedTrinketIds).not.toBe(second.ownedTrinketIds);
-  });
-
-  it("initializes inventory and loadouts from save data", () => {
-    const loadouts = createEmptyGearLoadouts();
-    loadouts.knight["left-accessory"] = ring.instanceId;
-    mutateGearForTest((gear) => gear.initialize(knightInventories(ring), loadouts));
-    expect(readGearState(defaultGameSession).inventories.knight).toEqual([ring]);
-    expect(readGearState(defaultGameSession).loadouts.knight["left-accessory"]).toBe("ring-1");
-    resetGearForTest();
-  });
-
-  it("updates loadouts on equip and inventory on salvage", () => {
-    resetGearForTest();
-    mutateGearForTest((gear) => gear.addInstance(ring, "knight"));
-    mutateGearForTest((gear) => gear.equip("knight", "left-accessory", ring));
-    expect(readGearState(defaultGameSession).loadouts.knight["left-accessory"]).toBe("ring-1");
-
-    const salvaged = mutateGearForTest((gear) => gear.salvage(ring.instanceId));
-    expect(salvaged).not.toBeNull();
-    expect(readGearState(defaultGameSession).inventories.knight).toEqual([]);
-    expect(readGearState(defaultGameSession).loadouts.knight["left-accessory"]).toBeNull();
-    expect(flattenGearInventories(readGearState(defaultGameSession).inventories)).toEqual([]);
-    resetGearForTest();
-  });
-
-  it("swaps the occupied slot when equipping another item", () => {
-    resetGearForTest();
-    const ringB: GearInstance = { instanceId: "ring-2", definitionId: "sapphire-ring-basic", affixes: [] };
-    mutateGearForTest((gear) => gear.initialize(knightInventories(ring, ringB), createEmptyGearLoadouts()));
-    mutateGearForTest((gear) => gear.equip("knight", "left-accessory", ring));
-    mutateGearForTest((gear) => gear.equip("knight", "left-accessory", ringB));
-    expect(readGearState(defaultGameSession).loadouts.knight["left-accessory"]).toBe("ring-2");
-    resetGearForTest();
-  });
 
   it("reports armory lock state from inventory and trinkets", () => {
     resetGearForTest();

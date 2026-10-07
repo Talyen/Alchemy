@@ -152,7 +152,11 @@ npm run audio:review -- --check
 `--check` checks content coverage, current source identity, candidate file paths
 and hashes without writing previews. Generation converts and decodes both
 preview levels before publishing them. Source hashes and output hashes protect
-the preview cache. Local snapshots expire after 24 hours when no artifact tool is active; regenerate them when missing. Missing or undecodable selected media fails generation;
+the preview cache. Identical recordings with the same excerpt share one conversion,
+even under different source IDs, while retaining each source's identity and provenance.
+Preview duration comes from PCM audio data, so embedded recording metadata cannot
+inflate it; cache hits recompute duration from the verified bytes as well.
+Local snapshots expire after 24 hours when no artifact tool is active; regenerate them when missing. Missing or undecodable selected media fails generation;
 the generated board still exposes the failure for inspection. Unselected stale
 catalog paths are reported separately.
 

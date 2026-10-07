@@ -52,7 +52,7 @@ describe("ModalOverlayShell", () => {
   });
 
   it("only handles Escape while open and rendered", () => {
-    const onClose = vi.fn();
+    let onClose = vi.fn();
     const underlying = vi.fn();
     pushEscapeHandler({ id: "underlying", priority: 0, onEscape: underlying });
     const overlay = (open: boolean, mount: boolean) => (
@@ -82,6 +82,14 @@ describe("ModalOverlayShell", () => {
     fireEvent.keyDown(window, { key: "Escape" });
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(underlying).toHaveBeenCalledTimes(4);
+
+    rerender(overlay(true, true));
+    const previousClose = onClose;
+    onClose = vi.fn();
+    rerender(overlay(true, true));
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(previousClose).toHaveBeenCalledTimes(1);
   });
 
   it("retains visuals without actions during exit and cancels removal on reopen", async () => {

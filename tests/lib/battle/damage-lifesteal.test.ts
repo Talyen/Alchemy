@@ -1,57 +1,24 @@
 import { describe, expect, it } from "vitest";
 import { patchBattleState } from "../../fixtures/battle";
-import { defaultTalentEffects } from "../../fixtures/default-battle-state";
 import { dealDamage, makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
-import { computeLeechHeal } from "@/lib/battle/damage-rider-leech";
 import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/follow-up-hit-resolution";
 
-describe("computeLeechHeal rounding", () => {
-  it("returns zero for non-positive damage", () => {
-    expect(computeLeechHeal(0)).toBe(0);
-    expect(computeLeechHeal(-4)).toBe(0);
-  });
-
-  it("heals for half the triggering damage rounded", () => {
-    expect(computeLeechHeal(4)).toBe(2);
-    expect(computeLeechHeal(5)).toBe(3);
-  });
-});
-
 describe("dealDamageToEnemy — lifesteal", () => {
-  it("heals player when effect has lifesteal", () => {
+  it.each([
+    [5, 1],
+    [10, 0.5],
+  ])("rounds damage %i Leech and its healing multiplier %s separately", (damage, multiplier) => {
     const state = patchBattleState({
       rng: () => 0.99,
       playerHealth: 20,
-      gold: 50,
-      talentEffects: { ...defaultTalentEffects, healMultiplier: 0.5 },
+      talentEffects: { healMultiplier: multiplier },
     });
-    const card = makeTestCard({ effects: [makeEffect("physical", 10, { lifesteal: true })] });
-    const result = dealDamage(state, card);
+    const card = makeTestCard({ effects: [makeEffect("physical", damage, { lifesteal: true })] });
+    const texts = makeCombatTexts();
+    const result = dealDamage(state, card, texts);
     expect(result.playerHealth).toBe(23);
-  });
-});
-
-describe("applyLifestealAndPlayerHitTriggers — leechMissingHealthStep", () => {
-  it("adds rounded missing-health chunks on top of base leech (half rounds up)", () => {
-    const state = patchBattleState({
-      rng: () => 0.99,
-      playerHealth: 20,
-      talentEffects: { ...defaultTalentEffects, leechMissingHealthStep: 4 },
-    });
-    const texts = makeCombatTexts();
-    const result = applyLifestealAndPlayerHitTriggers(state, 6, texts);
-    expect(result.playerHealth).toBe(26);
-  });
-
-  it("floors partial chunks below the step size", () => {
-    const state = patchBattleState({
-      rng: () => 0.99,
-      playerHealth: 20,
-      talentEffects: { ...defaultTalentEffects, leechMissingHealthStep: 7 },
-    });
-    const texts = makeCombatTexts();
-    const result = applyLifestealAndPlayerHitTriggers(state, 6, texts);
-    expect(result.playerHealth).toBe(24);
+    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 3 });
+    expect(state.playerHealth).toBe(20);
   });
 });
 
@@ -63,13 +30,5 @@ describe("low-health Leech bonuses", () => {
       talentEffects: { leechDesperateMultiplier: 20 },
     });
     expect(applyLifestealAndPlayerHitTriggers(desperate, 10, []).playerHealth - health).toBe(health < 15 ? 6 : 5);
-    const execute = patchBattleState({
-      playerHealth: 1,
-      playerMaxHealth: 30,
-      enemyHealth: health,
-      enemyMaxHealth: 30,
-      talentEffects: { leechExecuteMultiplier: 20 },
-    });
-    expect(applyLifestealAndPlayerHitTriggers(execute, 10, []).playerHealth).toBe(health < 15 ? 7 : 6);
   });
 });

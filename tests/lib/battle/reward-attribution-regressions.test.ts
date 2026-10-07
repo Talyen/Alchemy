@@ -49,32 +49,32 @@ describe("reward attribution regressions", () => {
     expect(result.playerStatuses.block).toBe(0);
   });
 
-  it("Sanguine Overflow does not arm when kill rewards, rather than Leech, fill Health", () => {
+  it("Sanguine Overflow grants no Mana when kill rewards, rather than Leech, fill Health", () => {
     const state = patchBattleState({
       playerHealth: 80,
       playerMaxHealth: 100,
       enemyHealth: 1,
       currentEnemy: { traits: [bloodCountess] },
       gearEffects: { healOnKill: 20 },
-      talentEffects: { nextAttackPhysicalOnLeechToFull: 2 },
+      mana: 0,
+      talentEffects: { manaOnLeechToFull: 1 },
     });
     const result = applyLeechHealing(state, 4, []);
     expect(result.playerHealth).toBe(100);
-    expect(result.flags.sanguinePhysicalBonus).toBe(0);
+    expect(result.mana).toBe(0);
   });
 
-  it("Desperate Siphon grants Block only for Health restored by Leech", () => {
+  it("Leeching Gear grants Block only for Health restored by Leech", () => {
     const state = patchBattleState({
       playerHealth: 20,
       playerMaxHealth: 100,
       enemyHealth: 1,
       currentEnemy: { traits: [bloodCountess] },
-      gearEffects: { healOnKill: 20 },
-      talentEffects: { leechBlockBelowHalfPercent: 25 },
+      gearEffects: { healOnKill: 20, leechBlockChance: 100 },
     });
     const result = applyLeechHealing(state, 4, []);
     expect(result.playerHealth).toBe(44);
-    expect(result.playerStatuses.block).toBe(1);
+    expect(result.playerStatuses.block).toBe(4);
   });
 
   it("Companion rewards stop when Thorns kills the hero", () => {

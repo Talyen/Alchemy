@@ -325,7 +325,6 @@ describe("Deep Siphon", () => {
   it("boosts every explicit card Leech, including repeated effects", () => {
     const next = play(battle({ talentEffects: leechTalents, flags: { playNextCardTwice: true } }), leech);
     expect(next.playerHealth).toBe(22);
-    expect(next.flags.firstLeechCardDoubledUsed).toBe(false);
   });
 
   it("does not boost incidental Leech or let it spend the card bonus", () => {

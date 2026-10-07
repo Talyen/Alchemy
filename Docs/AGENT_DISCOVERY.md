@@ -95,7 +95,8 @@ npm run context -- --outline src/lib/battle/card-play.ts --symbol playBattleCard
 ```
 
 An outline locates declarations; `--symbol <name>` reads one. Oversized symbols
-return locations instead of full dumps. `--entries` lists literal content IDs
+return locations instead of full dumps. Destructured bindings use their local
+names, including aliases and nested object or array bindings. `--entries` lists literal content IDs
 and top-level keyed entries; `--entry <id>` reads matches, including duplicate
 IDs. Talent and affix builders are recognized, but computed IDs and dynamic
 entries still need scoped search. Parsing never executes content.
@@ -142,6 +143,10 @@ generated source and asset hashes; an explicit
 path into those categories includes them without the flag. Current plans,
 canonical docs and authored manifests remain searchable. Dependency-hint
 inventories remain complete.
+
+Paths resolve inside the checkout, including absolute paths and equivalent
+relative spellings. Results always use repository-relative paths, with the same
+behavior when ripgrep is unavailable. Outside selections are rejected.
 
 ## Verification reuse
 

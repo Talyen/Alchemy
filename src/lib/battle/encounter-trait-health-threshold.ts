@@ -27,7 +27,7 @@ export function processEncounterTraitHealthThreshold(
   if (state.enemyHealth <= 0 || !crossedHalfHealth) return state;
   if (hasEnemyTrait(state, "second-wind") && !state.flags.secondWindTriggered) {
     state = applyEnemyHealingWithCombatText(
-      { ...state, flags: { ...state.flags, secondWindTriggered: true } },
+      recordEnemyAbilityActivation({ ...state, flags: { ...state.flags, secondWindTriggered: true } }, "second-wind"),
       Math.round(state.enemyMaxHealth * LABYRINTH_MODIFIER_CONFIG.secondWindHealing),
       combatTexts,
       { skipFightPacing: true },

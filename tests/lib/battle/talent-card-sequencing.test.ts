@@ -1,6 +1,6 @@
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
-import { applyLeechHealing, applyLeechHitRewards } from "@/lib/battle/damage-rider-leech";
+import { applyLeechHealing } from "@/lib/battle/damage-rider-leech";
 import { companionLibrary } from "@/lib/game-data";
 import { describe, expect, it, vi } from "vitest";
 import { makeTestCard } from "../../fixtures/cards";
@@ -27,18 +27,6 @@ describe("Talent card sequencing", () => {
     expect(next.gold).toBe(state.gold);
     expect(rng).toHaveBeenCalledOnce();
     expect(state.mana).toBe(0);
-  });
-
-  it("siphons one available enemy benefit without copying the other defenses", () => {
-    const state = battle({
-      rng: () => 0.99,
-      enemyMitigation: { forge: 0, armor: 2, block: 3 },
-      talentEffects: { trinketSiphonChance: 100 },
-    });
-    const next = applyLeechHitRewards(state, 1, []);
-    expect(next.enemyMitigation).toMatchObject({ forge: 0, armor: 2, block: 2 });
-    expect(next.playerStatuses).toMatchObject({ forge: 0, armor: 0, block: 1 });
-    expect(state.enemyMitigation.block).toBe(3);
   });
 
   it("accumulates Coordinated Strike and spends it on only one Companion damage packet", () => {

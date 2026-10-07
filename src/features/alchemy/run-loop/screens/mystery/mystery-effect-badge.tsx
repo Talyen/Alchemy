@@ -14,7 +14,7 @@ import {
   matTextColor,
 } from "../../../shared/ui/material-icons";
 import { ShineText } from "../../../shared/ui/shine-text";
-import { KeywordToken, renderTokenizedDescription } from "../../../shared/ui/cards/card-description-ui";
+import { renderMultilineTokenizedDescription } from "../../../shared/ui/cards/card-description-ui";
 import { TooltipChip, TooltipHeader } from "../../../shared/ui/tooltips/tooltip-panel";
 import { sortMysteryEffectsByDisplayOrder } from "@/lib/mystery";
 import type { MysteryEffect } from "@/lib/mystery";
@@ -23,15 +23,6 @@ import { gearBaseItems, getUniqueGearTextShineColors, getUniqueItemDefinition } 
 const PERCENTAGE_MULTIPLIER = 100;
 
 const mysteryShineTextProps = { className: "font-bold", fallbackClassName: "text-foreground" } as const;
-
-function renderInteractiveKeywords(text: string) {
-  return renderTokenizedDescription(text, {
-    renderKeyword: (partText, keywordId, key) => (
-      <KeywordToken key={key} keywordId={keywordId} matchedText={partText} />
-    ),
-    renderPlain: (partText, key) => <span key={key}>{partText}</span>,
-  });
-}
 
 export function MysteryEffectBadge({
   effect,
@@ -73,7 +64,7 @@ export function MysteryEffectBadge({
     case "healHealth": {
       const chanceSuffix =
         effect.chance !== undefined ? ` (${Math.round(effect.chance * PERCENTAGE_MULTIPLIER)}% chance)` : "";
-      return <span>{renderInteractiveKeywords(`Restore ${effect.amount} Health${chanceSuffix}`)}</span>;
+      return <span>{renderMultilineTokenizedDescription(`Restore ${effect.amount} Health${chanceSuffix}`)}</span>;
     }
     case "damageHealth": {
       return (
@@ -82,7 +73,7 @@ export function MysteryEffectBadge({
     }
     case "gainXP": {
       const label = keywordDefinitions[effect.keyword]?.label ?? effect.keyword;
-      return <span>{renderInteractiveKeywords(`Gain ${effect.amount} ${label} XP`)}</span>;
+      return <span>{renderMultilineTokenizedDescription(`Gain ${effect.amount} ${label} XP`)}</span>;
     }
     case "addCard": {
       const card = findCard?.(effect.cardId);
@@ -108,7 +99,7 @@ export function MysteryEffectBadge({
         : `Choose 1 of ${MYSTERY_CARD_CHOICES} cards`;
       return (
         <span className={cn("text-sm text-muted-foreground", !tooltip && "text-pretty")}>
-          {renderInteractiveKeywords(`${chooseLabel}${tooltip ? " to add to your deck" : ""}`)}
+          {renderMultilineTokenizedDescription(`${chooseLabel}${tooltip ? " to add to your deck" : ""}`)}
         </span>
       );
     }
@@ -165,19 +156,19 @@ export function MysteryEffectBadge({
           ? getKeywordBorderShineColors(keywords)
           : [];
 
-      if (tooltip) {
-        const titleNode =
-          colors.length > 0 ? (
+      return (
+        <span className={cn("text-sm text-muted-foreground", !tooltip && "text-pretty")}>
+          Add{" "}
+          {tooltip ? (
             <ShineText colors={colors} {...mysteryShineTextProps}>
               {title}
             </ShineText>
           ) : (
-            <span className="font-bold text-foreground">{title}</span>
-          );
-        return <span className="text-sm text-muted-foreground">Add {titleNode} to your Armory</span>;
-      }
-
-      return <span className="text-sm text-pretty text-muted-foreground">Add {title} to your Armory</span>;
+            title
+          )}
+          {" to your Armory"}
+        </span>
+      );
     }
     case "removeCard": {
       return <span className="text-sm text-muted-foreground">Remove a random card</span>;

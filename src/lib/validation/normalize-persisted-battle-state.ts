@@ -113,33 +113,14 @@ function normalizeCombatFlags(
   defaults: BattleSnapshot["flags"],
   saved: Partial<BattleSnapshot["flags"]> | undefined,
 ): BattleSnapshot["flags"] {
-  const flags = { ...defaults, ...saved };
-  const savedFlags: Record<string, unknown> = saved ?? {};
-  // Only these transient signals require an exact boolean; every other saved
-  // flag keeps its persisted value via the manifest merge above.
-  for (const key of [
-    "hawkEyeReady",
-    "shatterUsed",
-    "wildfireUsed",
-    "pendingCinderSkinReaction",
-    "nextWishExtraChoice",
-    "previousCardWasArchery",
-    "previousCardWasNature",
-    "firstBurnCardFreeUsed",
-    "archerySecondCardActive",
-  ] as const) {
-    flags[key] = savedFlags[key] === true;
-  }
-  for (const key of [
-    "companionNextAttackBonus",
-    "sanguinePhysicalBonus",
-    "darkRecoveryMana",
-    "pendingWishMana",
-    "archeryCardsPlayedThisTurn",
-  ] as const) {
-    flags[key] = clampNonNegative(flags[key], 0);
-  }
-  return flags;
+  const stored: Record<string, unknown> = saved ?? {};
+  return Object.fromEntries(
+    Object.entries(defaults).map(([key, fallback]) => {
+      const value = Object.hasOwn(stored, key) ? stored[key] : undefined;
+      if (typeof fallback === "boolean") return [key, typeof value === "boolean" ? value : fallback];
+      return [key, typeof value === "number" ? clampNonNegative(value, fallback) : fallback];
+    }),
+  ) as BattleSnapshot["flags"];
 }
 
 function normalizeCombatResources(state: BattleSnapshot, defaults: BattleSnapshot) {

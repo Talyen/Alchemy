@@ -28,31 +28,11 @@ describe("keywordAliases", () => {
   });
 });
 
-describe("keywordPattern", () => {
-  it("recognizes Dodge inflections without matching unrelated words", () => {
-    expect("Dodge Dodges Dodged Dodging dodgeball dodger".match(keywordPattern)).toEqual([
-      "Dodge",
-      "Dodges",
-      "Dodged",
-      "Dodging",
-    ]);
-    expect(extractKeywordIds("Dodged and Dodging")).toEqual(["dodge"]);
-  });
-  it("matches case-insensitive phrases and preserves first occurrence order", () => {
-    const text = "physical STUN Block; Gain 1 Mana Crystal and 2 Mana; Burning and Poisoned";
-    expect(text.match(keywordPattern)).toEqual([
-      "physical",
-      "STUN",
-      "Block",
-      "Mana Crystal",
-      "Mana",
-      "Burning",
-      "Poisoned",
-    ]);
-    expect(extractKeywordIds(text)).toEqual(["physical", "stun", "block", "mana", "burn", "poison"]);
-  });
-});
-
-it("recognizes Consumed without matching parts of unrelated words", () => {
-  expect(extractKeywordIds("Consumed cards Consume, Consumed again; unconsumed")).toEqual(["consume"]);
+it("recognizes inflections and phrases in first occurrence order without matching word fragments", () => {
+  expect(
+    extractKeywordIds(
+      "Dodged and Dodging; dodgeball dodger; physical STUN Block; Mana Crystal, Mana; Burning Poisoned; Consumed unconsumed",
+    ),
+  ).toEqual(["dodge", "physical", "stun", "block", "mana", "burn", "poison", "consume"]);
+  expect(extractKeywordIds("dodgeball dodger unconsumed")).toEqual([]);
 });

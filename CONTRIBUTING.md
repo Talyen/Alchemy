@@ -23,6 +23,10 @@ Use explicit task-owned paths in a mixed checkout. `--diff` selects the complete
 
 Focused, dependency-related, and full unit tests, including DOM unit tests, may run locally without user approval. Use `npm run test:full -- <paths>` for focused suites or `npm run test:full` for the full unit suite. Broader local validation still requires an explicit user request: `npm run check:full -- --diff` and `npm run verify:full -- --diff` include checks beyond unit tests. Browser/Electron, coverage, mutation, profiling, builds, and full static commands remain opt-ins. Do not substitute a direct Playwright invocation to bypass that policy. Release workflows remain fully verified in CI.
 
+Use `rg --files tests` to locate unfamiliar suite paths. Vitest arguments are
+filters: a passing mixed selection can ignore a misspelled path while another
+matches, so confirm the reported file count before claiming that scope passed.
+
 One-shot Vitest and Playwright commands through `run-compact.mjs`, including
 full/focused unit tests and the full verifier's related/changed selections, share
 one local test lane with the ship unit runner across checkouts on the same host.

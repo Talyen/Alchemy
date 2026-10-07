@@ -22,7 +22,7 @@ import {
   normalizeCraftingCurrencies,
   normalizeEquippedTrinkets,
   pruneOrphanGearLoadouts,
-  salvageGear,
+  computeSalvageYield,
   unequipGear,
 } from "@/lib/gear";
 import type { MaterialInventory } from "@/lib/homestead/types";
@@ -129,15 +129,14 @@ export function salvageGearInstance(
   // Yield is always recomputed authoritatively: the preview shown in the
   // confirm dialog is deterministic (seeded by instance ID), so preview and
   // payout agree without trusting a frozen client value.
-  const result = salvageGear(flattenGearInventories(gear.inventories), gear.loadouts, instanceId);
-  if (!result) return null;
-  gear.inventories[owner] = gear.inventories[owner].filter((item) => item.instanceId !== instanceId);
-  gear.loadouts = result.loadouts;
-  gear.craftingCurrencies = addCraftingCurrencies(gear.craftingCurrencies, result.yieldedCurrencies);
-  return {
-    yieldedCurrencies: result.yieldedCurrencies,
-    yieldedMaterials: result.yieldedMaterials,
-  };
+  const inventory = gear.inventories[owner];
+  const instance = inventory.find((item) => item.instanceId === instanceId);
+  if (!instance) return null;
+  const { currencies: yieldedCurrencies, materials: yieldedMaterials } = computeSalvageYield(instance);
+  gear.inventories[owner] = inventory.filter((item) => item.instanceId !== instanceId);
+  gear.loadouts = pruneOrphanGearLoadouts(flattenGearInventories(gear.inventories), gear.loadouts);
+  gear.craftingCurrencies = addCraftingCurrencies(gear.craftingCurrencies, yieldedCurrencies);
+  return { yieldedCurrencies, yieldedMaterials };
 }
 
 export function applyGearCurrency(

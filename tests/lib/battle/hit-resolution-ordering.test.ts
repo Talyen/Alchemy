@@ -1,23 +1,22 @@
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import { applyCardEffects, type CombatTextEvent } from "@/lib/battle";
 import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
 import { applyBlockedAttackRetaliation } from "@/lib/battle/player-defensive-reactions";
-import { makeTestCard, patchBattleState, seededRng } from "../../fixtures/battle";
+import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
-it("finishes nested Archery hits before the parent payout without adding random draws", () => {
-  const rng = seededRng(42);
+it("settles an Obsidian Hammer kill before paying the parent Leech without adding random draws", () => {
+  const rng = vi.fn(() => 0.99);
   const state = patchBattleState({
     rng,
-    enemyHealth: 24,
+    enemyHealth: 22,
     enemyMaxHealth: 40,
     playerHealth: 10,
     playerMaxHealth: 30,
-    playerStatuses: { forge: 2 },
-    talentEffects: { archeryPlayTwiceChance: 100, physicalBleedChance: 50, leechPoisonDamageChance: 50 },
+    playerStatuses: { forge: 8 },
+    trinketEffects: { forgeStunThreshold: 4, forgeStunAmount: 1 },
     gearEffects: { goldOnKill: 2 },
   });
   const card = makeTestCard({
-    tags: ["archery"],
     effects: [{ kind: "damage", damageType: "physical", amount: 6, lifesteal: true }],
   });
   const texts: CombatTextEvent[] = [];
@@ -26,19 +25,20 @@ it("finishes nested Archery hits before the parent payout without adding random 
     enemyFreezeSkipTurnsAtStart: 0,
     origin: "played-card",
   });
-  expect(result).toEqual({
-    ...state,
-    enemyHealth: 10,
-    playerHealth: 16,
-    playerStatuses: { ...state.playerStatuses, forge: 0 },
-    enemyStatuses: { ...state.enemyStatuses, poison: 2 },
+  expect(result).toMatchObject({
+    enemyHealth: 0,
+    playerHealth: 17,
+    gold: state.gold + 2,
+    playerStatuses: { forge: 7 },
+    flags: { killRewardsPaid: true },
   });
   expect(texts).toEqual([
-    { target: "player", kind: "heal", stat: "health", amount: 6 },
-    { target: "enemy", kind: "damage", stat: "poison", amount: 2 },
-    { target: "enemy", kind: "damage", stat: "physical", amount: 12 },
+    { target: "enemy", kind: "damage", stat: "stun", amount: 8 },
+    { target: "player", kind: "status", stat: "gold", amount: 2 },
+    { target: "player", kind: "heal", stat: "health", amount: 7 },
+    { target: "enemy", kind: "damage", stat: "physical", amount: 14 },
   ]);
-  expect(rng()).toBe(0.3452291004359722);
+  expect(rng).toHaveBeenCalledTimes(3);
 });
 
 it("preserves Holy reflection reward timing and does not spend Forge", () => {

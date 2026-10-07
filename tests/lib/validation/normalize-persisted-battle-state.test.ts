@@ -111,12 +111,20 @@ describe("normalizePersistedBattleState", () => {
     },
   );
 
-  it("fills missing gear and flag manifests from defaults", () => {
+  it("fills missing gear and flag manifests from defaults and drops retired flags", () => {
     const saved = {
       ...defaultBattleState(),
       turn: 4,
       gearEffects: { flatPhysicalDamage: 3 } as ReturnType<typeof defaultBattleState>["gearEffects"],
-      flags: { divineAegisTriggered: true } as ReturnType<typeof defaultBattleState>["flags"],
+      flags: {
+        divineAegisTriggered: true,
+        nextHitCrit: "false",
+        nextHitPhysicalBonus: "invalid",
+        playNextCardTwice: 1,
+        nextCardCostReduction: -3,
+        sanguinePhysicalBonus: 5,
+        firstLeechCardDoubledUsed: true,
+      } as ReturnType<typeof defaultBattleState>["flags"],
     };
 
     const normalized = normalizePersistedBattleState(saved);
@@ -137,17 +145,19 @@ describe("normalizePersistedBattleState", () => {
         archeryHolyDamageVsFrozen: 2,
         blockOnConsume: 4,
         cardHealMultipliers: { apple: 1, bread: 1 },
+        trinketSiphonChance: 100,
+        leechBleedChance: 100,
+        leechPoisonChance: 100,
         unknownTalentEffect: 9,
       } as typeof defaults.talentEffects,
     });
 
-    expect(normalized.talentEffects.holyReflectionBlockLostPercent).toBe(30);
-    expect(normalized.talentEffects.burnDamagePerManaCrystal).toBe(MANABURN_DAMAGE_PERCENT);
-    expect(normalized.talentEffects).not.toHaveProperty("holyOnAttackBlocked");
-    expect(normalized.talentEffects).not.toHaveProperty("archeryHolyDamageVsFrozen");
-    expect(normalized.talentEffects).not.toHaveProperty("blockOnConsume");
-    expect(normalized.talentEffects.cardHealMultipliers).toEqual({ apple: 1, bread: 1 });
-    expect(normalized.talentEffects).not.toHaveProperty("unknownTalentEffect");
+    expect(normalized.talentEffects).toEqual({
+      ...defaults.talentEffects,
+      holyReflectionBlockLostPercent: 30,
+      burnDamagePerManaCrystal: MANABURN_DAMAGE_PERCENT,
+      cardHealMultipliers: { apple: 1, bread: 1 },
+    });
     expect(normalizePersistedBattleState(normalized).talentEffects).toEqual(normalized.talentEffects);
   });
 

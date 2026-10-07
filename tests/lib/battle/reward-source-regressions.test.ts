@@ -8,15 +8,17 @@ import { applyHealingWithCombatText } from "@/lib/battle/player-rewards";
 import { companionLibrary } from "@/lib/game-data";
 
 describe("combat reward sources", () => {
-  it("Blood Debt increases healing from queued Bleed Leech", () => {
+  it("Blood Debt grants Gold for Health restored by queued Bleed Leech", () => {
     const state = patchBattleState({
       playerHealth: 10,
       playerMaxHealth: 26,
       enemyStatuses: { bleed: 4 },
       pendingBleedLeechHealing: 4,
-      talentEffects: { leechMissingHealthStep: 8 },
+      talentEffects: { leechGoldChance: 100 },
     });
-    expect(tickEnemyStatuses(state, []).playerHealth).toBe(14);
+    const next = tickEnemyStatuses(state, []);
+    expect(next.playerHealth).toBe(12);
+    expect(next.gold - state.gold).toBe(2);
   });
 
   it("Mana Siphon and Siphoning gear reward Poison Leech", () => {

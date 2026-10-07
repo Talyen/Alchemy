@@ -114,27 +114,15 @@ export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps 
 export function AudioOptionsPanel({ audio }: { audio: AudioOptionsProps }) {
   return (
     <SettingsSection title="Audio">
-      <SettingsSlider
-        label="Overall Volume"
-        value={audio.masterVolume}
-        onChange={audio.onMasterVolumeChange}
-        min={SETTINGS_RANGES.volume.min}
-        max={SETTINGS_RANGES.volume.max}
-      />
-      <SettingsSlider
-        label="Music Volume"
-        value={audio.musicVolume}
-        onChange={audio.onMusicVolumeChange}
-        min={SETTINGS_RANGES.volume.min}
-        max={SETTINGS_RANGES.volume.max}
-      />
-      <SettingsSlider
-        label="Sound Effects Volume"
-        value={audio.sfxVolume}
-        onChange={audio.onSfxVolumeChange}
-        min={SETTINGS_RANGES.volume.min}
-        max={SETTINGS_RANGES.volume.max}
-      />
+      {(
+        [
+          ["Overall Volume", audio.masterVolume, audio.onMasterVolumeChange],
+          ["Music Volume", audio.musicVolume, audio.onMusicVolumeChange],
+          ["Sound Effects Volume", audio.sfxVolume, audio.onSfxVolumeChange],
+        ] as const
+      ).map(([label, value, onChange]) => (
+        <SettingsSlider key={label} label={label} value={value} onChange={onChange} {...SETTINGS_RANGES.volume} />
+      ))}
       <SettingsToggle
         label="Mute in Background"
         checked={audio.muteInBackground}

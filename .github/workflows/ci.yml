@@ -377,7 +377,6 @@ jobs:
         with:
           name: dist-desktop
           path: dist/
-          compression-level: 0
 
       - name: Build desktop renderer
         if: steps.renderer-download.outcome != 'success'
@@ -431,7 +430,6 @@ jobs:
         with:
           name: dist-desktop
           path: dist/
-          compression-level: 0
 
       - name: Cache Electron binary
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6

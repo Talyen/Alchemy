@@ -1,7 +1,7 @@
 import { resolveAssetSource } from "../assets/asset-library.mjs";
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import ffmpegPath from "ffmpeg-static";
@@ -11,6 +11,24 @@ import { mapPool } from "./map-pool.mjs";
 
 const execute = promisify(execFile);
 const PREVIEW_VERSION = 3;
+const PREVIEW_SAMPLE_RATE = 48_000;
+const PREVIEW_CHANNELS = 2;
+
+function previewDuration(wave) {
+  if (wave.toString("ascii", 0, 4) !== "RIFF" || wave.toString("ascii", 8, 12) !== "WAVE")
+    throw new Error("Invalid preview WAV");
+  // Metadata chunks vary in size; RIFF pads each chunk to an even boundary.
+  for (let offset = 12; offset + 8 <= wave.length; ) {
+    const size = wave.readUInt32LE(offset + 4);
+    if (offset + 8 + size > wave.length) throw new Error("Truncated preview WAV");
+    if (wave.toString("ascii", offset, offset + 4) === "data") {
+      if (size === 0) throw new Error("Empty preview excerpt");
+      return size / (PREVIEW_SAMPLE_RATE * PREVIEW_CHANNELS * 2);
+    }
+    offset += 8 + size + (size % 2);
+  }
+  throw new Error("Preview WAV has no audio data");
+}
 
 export async function currentSoundIdentity(root, files) {
   const generated = new Map(generatedSoundAssets.map(({ source, target }) => [target, source]));
@@ -56,6 +74,81 @@ async function encode(args) {
   return execute(ffmpegPath, ["-hide_banner", "-nostdin", ...args], { maxBuffer: 2 * 1024 * 1024, timeout: 120000 });
 }
 
+async function preparePreview(source, output, key) {
+  const original = `media/${key}-original.wav`;
+  const matched = `media/${key}-matched.wav`;
+  const cachePath = path.join(output, "media", `${key}.json`);
+  try {
+    const cached = JSON.parse(await readFile(cachePath, "utf8"));
+    const originalBytes = await readFile(path.join(output, original));
+    // Verify cached bytes as well as source identity; a partial cache must regenerate.
+    if (
+      cached.originalHash === createHash("sha256").update(originalBytes).digest("hex") &&
+      cached.matchedHash === (await hashFile(path.join(output, matched)))
+    ) {
+      return { ...cached, duration: previewDuration(originalBytes), original, matched };
+    }
+  } catch (error) {
+    if (error.code && error.code !== "ENOENT") throw error;
+  }
+  const temporaryOriginal = path.join(output, `${original}.partial.wav`);
+  const temporaryMatched = path.join(output, `${matched}.partial.wav`);
+  try {
+    const { stderr } = await encode([
+      "-y",
+      // Seek before decoding so fades use the excerpt's timestamps.
+      // Output seeking would apply the fades to the master before trimming.
+      "-ss",
+      String(source.start),
+      "-i",
+      source.sourcePath,
+      ...(source.duration ? ["-t", String(source.duration)] : []),
+      "-vn",
+      "-af",
+      source.duration
+        ? `afade=t=in:d=0.005,afade=t=out:st=${Math.max(0, source.duration - 0.005)}:d=0.005,volumedetect`
+        : "volumedetect",
+      "-ar",
+      String(PREVIEW_SAMPLE_RATE),
+      "-ac",
+      String(PREVIEW_CHANNELS),
+      "-c:a",
+      "pcm_s16le",
+      temporaryOriginal,
+    ]);
+    const meanDb = Number(stderr.match(/mean_volume: (-?[\d.]+) dB/)?.[1] ?? NaN);
+    const peakDb = Number(stderr.match(/max_volume: (-?[\d.]+) dB/)?.[1] ?? NaN);
+    const gainDb = comparisonGain(meanDb, peakDb);
+    await encode(["-y", "-i", temporaryOriginal, "-af", `volume=${gainDb}dB`, "-c:a", "pcm_s16le", temporaryMatched]);
+    // Decode both produced files before publishing either preview.
+    await encode(["-v", "error", "-i", temporaryOriginal, "-f", "null", "-"]);
+    await encode(["-v", "error", "-i", temporaryMatched, "-f", "null", "-"]);
+    const originalBytes = await readFile(temporaryOriginal);
+    const metadata = {
+      duration: previewDuration(originalBytes),
+      gainDb,
+      meanDb: Number.isFinite(meanDb) ? meanDb : null,
+      peakDb: Number.isFinite(peakDb) ? peakDb : null,
+      originalHash: createHash("sha256").update(originalBytes).digest("hex"),
+      matchedHash: await hashFile(temporaryMatched),
+      processing:
+        "48 kHz stereo 16-bit PCM preview. Original level has no gain change. Matched level uses fixed gain toward −22 dB mean, capped at −1.5 dB peak and +12 dB boost; dynamics preserved. Excerpts have 5 ms edge fades; they are not final edits or validated loops.",
+    };
+    await rename(temporaryOriginal, path.join(output, original));
+    await rename(temporaryMatched, path.join(output, matched));
+    await writeFile(cachePath, `${JSON.stringify(metadata)}\n`);
+    return { ...metadata, original, matched };
+  } finally {
+    await Promise.all(
+      [temporaryOriginal, temporaryMatched].map((file) =>
+        unlink(file).catch((error) => {
+          if (error.code !== "ENOENT") throw error;
+        }),
+      ),
+    );
+  }
+}
+
 export async function prepareReviewMedia({ root, libraryRoot, output, mappings, checkOnly = false }) {
   const sources = new Map();
   const current = [...new Set(mappings.flatMap((mapping) => mapping.currentFiles))];
@@ -78,6 +171,8 @@ export async function prepareReviewMedia({ root, libraryRoot, output, mappings, 
         expectedHash: candidate.storedSha256,
       });
     }
+  // Source aliases share one encoding promise as well as one persistent cache key.
+  const previews = new Map();
   const media = {};
   const failures = [];
   if (!checkOnly) {
@@ -110,89 +205,12 @@ export async function prepareReviewMedia({ root, libraryRoot, output, mappings, 
         .update(JSON.stringify([sourceHash, source.start, source.duration, PREVIEW_VERSION]))
         .digest("hex")
         .slice(0, 24);
-      const original = `media/${key}-original.wav`;
-      const matched = `media/${key}-matched.wav`;
-      const cachePath = path.join(output, "media", `${key}.json`);
-      try {
-        const cached = JSON.parse(await readFile(cachePath, "utf8"));
-        // Verify cached bytes as well as source identity; a partial cache must regenerate.
-        if (
-          cached.originalHash === (await hashFile(path.join(output, original))) &&
-          cached.matchedHash === (await hashFile(path.join(output, matched)))
-        ) {
-          media[source.id] = { ...item, ...cached, available: true, original, matched };
-          return;
-        }
-      } catch (error) {
-        if (error.code && error.code !== "ENOENT") throw error;
+      let preview = previews.get(key);
+      if (!preview) {
+        preview = preparePreview(source, output, key);
+        previews.set(key, preview);
       }
-      const temporaryOriginal = path.join(output, `${original}.partial.wav`);
-      const temporaryMatched = path.join(output, `${matched}.partial.wav`);
-      try {
-        const { stderr } = await encode([
-          "-y",
-          // Seek before decoding so fades use the excerpt's timestamps.
-          // Output seeking would apply the fades to the master before trimming.
-          "-ss",
-          String(source.start),
-          "-i",
-          source.sourcePath,
-          ...(source.duration ? ["-t", String(source.duration)] : []),
-          "-vn",
-          "-af",
-          source.duration
-            ? `afade=t=in:d=0.005,afade=t=out:st=${Math.max(0, source.duration - 0.005)}:d=0.005,volumedetect`
-            : "volumedetect",
-          "-ar",
-          "48000",
-          "-ac",
-          "2",
-          "-c:a",
-          "pcm_s16le",
-          temporaryOriginal,
-        ]);
-        const meanDb = Number(stderr.match(/mean_volume: (-?[\d.]+) dB/)?.[1] ?? NaN);
-        const peakDb = Number(stderr.match(/max_volume: (-?[\d.]+) dB/)?.[1] ?? NaN);
-        const gainDb = comparisonGain(meanDb, peakDb);
-        await encode([
-          "-y",
-          "-i",
-          temporaryOriginal,
-          "-af",
-          `volume=${gainDb}dB`,
-          "-c:a",
-          "pcm_s16le",
-          temporaryMatched,
-        ]);
-        // Decode both produced files before publishing either preview.
-        await encode(["-v", "error", "-i", temporaryOriginal, "-f", "null", "-"]);
-        await encode(["-v", "error", "-i", temporaryMatched, "-f", "null", "-"]);
-        const { size } = await stat(temporaryOriginal);
-        if (size < 100) throw new Error("Empty preview excerpt");
-        const duration = (size - 78) / (48000 * 2 * 2);
-        const metadata = {
-          duration: Math.max(0, duration),
-          gainDb,
-          meanDb: Number.isFinite(meanDb) ? meanDb : null,
-          peakDb: Number.isFinite(peakDb) ? peakDb : null,
-          originalHash: await hashFile(temporaryOriginal),
-          matchedHash: await hashFile(temporaryMatched),
-          processing:
-            "48 kHz stereo 16-bit PCM preview. Original level has no gain change. Matched level uses fixed gain toward −22 dB mean, capped at −1.5 dB peak and +12 dB boost; dynamics preserved. Excerpts have 5 ms edge fades; they are not final edits or validated loops.",
-        };
-        await rename(temporaryOriginal, path.join(output, original));
-        await rename(temporaryMatched, path.join(output, matched));
-        await writeFile(cachePath, `${JSON.stringify(metadata)}\n`);
-        media[source.id] = { ...item, ...metadata, available: true, original, matched };
-      } finally {
-        await Promise.all(
-          [temporaryOriginal, temporaryMatched].map((file) =>
-            unlink(file).catch((error) => {
-              if (error.code !== "ENOENT") throw error;
-            }),
-          ),
-        );
-      }
+      media[source.id] = { ...item, ...(await preview), available: true };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       media[source.id] = { ...item, available: false, error: message };

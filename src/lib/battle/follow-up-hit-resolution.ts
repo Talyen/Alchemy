@@ -4,7 +4,6 @@ import type { DamageType, TalentEffectManifest } from "@/lib/game-data";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import {
   BRASS_CENSER_SPLIT_CHANCE_PERCENT,
-  HALF_DIVISOR,
   TALENT_CONVERSION_BLEED_FRACTION,
   TALENT_CONVERSION_DEFAULT_FRACTION,
 } from "../game-constants";
@@ -22,9 +21,9 @@ import {
   applyHolyBlockChance,
   applyHolyTithe,
   applyLeechHitHealing,
-  applyLeechHitRewards,
   applyThunderstoneLeech,
 } from "./damage-rider-leech";
+export { applyLeechHitHealing as applyLifestealAndPlayerHitTriggers } from "./damage-rider-leech";
 import { resolveTypedEnemyHit } from "./typed-hit-resolution";
 import { resolveStunFollowUpHit } from "./stun-follow-up-hit";
 import { type BattleState, type CombatTextEvent } from "./types";
@@ -89,17 +88,9 @@ function resolveDerivedFollowUp(
     ...(isPlayer ? { onPoisonDamage: tryPoisonStunProc } : {}),
   });
   onDamageDealt?.(hit.facts.healthDamage);
-  const preHitHealth = hit.facts.previousHealth;
   let nextState = hit.state;
   if (damageType === "nature") {
-    nextState = applyFollowUpNatureRiders(
-      nextState,
-      resolved,
-      hit.facts.healthDamage,
-      preHitHealth,
-      state,
-      combatTexts,
-    );
+    nextState = applyFollowUpNatureRiders(nextState, resolved, hit.facts.healthDamage, state, combatTexts);
   }
   if (damageType === "holy") {
     if (!isPlayer) nextState = applyHolyLifesteal(nextState, resolved, combatTexts, hit.facts.eligibility);
@@ -108,7 +99,7 @@ function resolveDerivedFollowUp(
       nextState = applyDamageBlock(nextState, resolved, combatTexts, hit.facts.eligibility);
       nextState = applyHolyTithe(nextState, hit.facts.healthDamage, combatTexts);
     } else {
-      nextState = applyBrassCenser(nextState, resolved, combatTexts, preHitHealth);
+      nextState = applyBrassCenser(nextState, resolved, combatTexts);
     }
   }
   if (damageType === "burn" && (isPlayer ? hit.facts.healthDamage > 0 : true)) {
@@ -123,13 +114,12 @@ function applyFollowUpNatureRiders(
   state: BattleState,
   damage: number,
   healthDamage: number,
-  preHitHealth: number,
   eligibility: BattleState,
   combatTexts: CombatTextEvent[],
 ): BattleState {
   let nextState = state;
   if (eligibility.gearEffects.natureLeechVsPoisoned > 0 && eligibility.enemyStatuses.poison > 0 && healthDamage > 0) {
-    nextState = applyLifestealAndPlayerHitTriggers(nextState, healthDamage, combatTexts, false, false, preHitHealth);
+    nextState = applyLeechHitHealing(nextState, healthDamage, combatTexts);
   }
   nextState = applyLuckyCloverGold(nextState, healthDamage, combatTexts);
   nextState = applyNatureGoldReward(nextState, healthDamage, combatTexts);
@@ -142,17 +132,12 @@ export function tryPoisonStunProc(state: BattleState, damage: number, combatText
   return resolveFollowUpHit(state, { source: "talent-derived", damageType: "stun", amount: damage }, combatTexts);
 }
 
-export function applyBrassCenser(
-  state: BattleState,
-  damage: number,
-  combatTexts: CombatTextEvent[],
-  enemyHealthBeforeHit = state.enemyHealth,
-): BattleState {
+export function applyBrassCenser(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
   if (damage <= 0 || !rollBattleChance(state.trinketEffects.brassCenserProcChance, state)) return state;
   if (rollPercent(BRASS_CENSER_SPLIT_CHANCE_PERCENT, getBattleRng(state))) {
     return resolveFollowUpHit(state, { source: "player-follow-up", damageType: "burn", amount: damage }, combatTexts);
   }
-  return applyLifestealAndPlayerHitTriggers(state, damage, combatTexts, false, false, enemyHealthBeforeHit);
+  return applyLeechHitHealing(state, damage, combatTexts);
 }
 
 function resolveTalentFollowUp(
@@ -183,41 +168,19 @@ export function tryTalentTypedHit(
   );
 }
 
-export function applyLifestealAndPlayerHitTriggers(
-  state: BattleState,
-  damage: number,
-  combatTexts: CombatTextEvent[],
-  cardHealing = false,
-  cardLeech = cardHealing,
-  enemyHealthBeforeHit = state.enemyHealth,
-): BattleState {
-  if (damage <= 0) return state;
-  let nextState = applyLeechHitHealing(state, damage, combatTexts, cardHealing, cardLeech);
-  nextState = applyTalentHitConversions(nextState, "leech", damage, combatTexts);
-  if (enemyHealthBeforeHit < state.enemyMaxHealth / HALF_DIVISOR) {
-    nextState = resolveFollowUpHit(
-      nextState,
-      { source: "talent-fixed", damageType: "holy", amount: state.talentEffects.leechHolyDamageVsLowHealth },
-      combatTexts,
-    );
-  }
-  return applyLeechHitRewards(nextState, damage, combatTexts);
-}
-
 export function applyNatureLeech(
   state: BattleState,
   damage: number,
   combatTexts: CombatTextEvent[],
-  enemyHealthBeforeHit = state.enemyHealth,
   guaranteed = false,
 ) {
   if (damage <= 0) return state;
   const leechChance = state.talentEffects.natureLeechChance + state.gearEffects.natureLeechChance;
   if (!guaranteed && (leechChance <= 0 || !rollBattleChance(leechChance, state))) return state;
-  return applyLifestealAndPlayerHitTriggers(state, damage, combatTexts, false, false, enemyHealthBeforeHit);
+  return applyLeechHitHealing(state, damage, combatTexts);
 }
 
-type ConversionSource = "physical" | "bleed" | "nature" | "holy" | "leech";
+type ConversionSource = "physical" | "bleed" | "nature" | "holy";
 type NumericTalentEffect = {
   [K in keyof TalentEffectManifest]: TalentEffectManifest[K] extends number ? K : never;
 }[keyof TalentEffectManifest];
@@ -235,10 +198,6 @@ const TALENT_HIT_CONVERSIONS: Record<ConversionSource, readonly HitConversion[]>
     { chance: "natureBleedChance", target: "bleed" },
   ],
   holy: [{ chance: "holyBurnDamageChance", target: "burn", fraction: 1 }],
-  leech: [
-    { chance: "leechBleedDamageChance", target: "bleed" },
-    { chance: "leechPoisonDamageChance", target: "poison" },
-  ],
 };
 
 export function applyTalentHitConversions(

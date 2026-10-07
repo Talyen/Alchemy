@@ -3,101 +3,43 @@ import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { applyPlayerStatusFromAttack } from "@/lib/battle/status-player";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { patchBattleState } from "../../fixtures/battle";
-import {
-  defaultPlayerStatusValues,
-  defaultTalentEffects,
-  defaultTrinketManifest,
-} from "../../fixtures/default-battle-state";
+import { defaultTrinketManifest } from "../../fixtures/default-battle-state";
 
 describe("applyPlayerStatusFromAttack", () => {
-  describe("direct harmful statuses (burn, poison, bleed)", () => {
-    it.each([
-      { status: "burn", expectedAmount: 5 },
-      { status: "poison", expectedAmount: 5 },
-      { status: "bleed", expectedAmount: 5 },
-    ] as const)("applies $status status from enemy attack", ({ status, expectedAmount }) => {
-      const state = patchBattleState();
-      const texts: CombatTextEvent[] = [];
-      const effect = { kind: "player-status" as const, status, amount: 5 };
-      const result = applyPlayerStatusFromAttack(state, effect, texts);
-      expect(result.playerStatuses[status]).toBe(expectedAmount);
-
-      expect(texts).toEqual([]);
-    });
-
-    it("does not mutate original state", () => {
-      const state = patchBattleState();
-      const texts: CombatTextEvent[] = [];
-      applyPlayerStatusFromAttack(state, { kind: "player-status", status: "burn", amount: 3 }, texts);
-      expect(state.playerStatuses.burn).toBe(0);
-    });
+  it.each([
+    { status: "bleed", talentKey: "blockPreventsBleed" },
+    { status: "poison", talentKey: "blockPreventsPoison" },
+  ] as const)("blocks $status only while its prevention talent and Block are both active", ({ status, talentKey }) => {
+    const state = patchBattleState({ playerStatuses: { block: 5 }, talentEffects: { [talentKey]: true } });
+    const before = structuredClone({ statuses: state.playerStatuses, talents: state.talentEffects });
+    const effect = { kind: "player-status", status, amount: 4 } as const;
+    const texts: CombatTextEvent[] = [];
+    expect(applyPlayerStatusFromAttack(state, effect, texts)).toBe(state);
+    expect(texts).toEqual([]);
+    const unblocked = { ...state, playerStatuses: { ...state.playerStatuses, block: 0 } };
+    const withoutTalent = { ...state, talentEffects: { ...state.talentEffects, [talentKey]: false } };
+    expect(applyPlayerStatusFromAttack(unblocked, effect, texts).playerStatuses[status]).toBe(4);
+    expect(applyPlayerStatusFromAttack(withoutTalent, effect, texts).playerStatuses[status]).toBe(4);
+    expect(applyPlayerStatusFromAttack(state, { ...effect, status: "burn" }, texts).playerStatuses.burn).toBe(4);
+    expect({ statuses: state.playerStatuses, talents: state.talentEffects }).toEqual(before);
   });
 
-  describe("beneficial statuses (armor, block, forge, haste)", () => {
-    it.each(["armor", "block", "forge", "haste"] as const)(
-      "applies %s status from enemy attack with status combat text kind",
-      (status) => {
-        const state = patchBattleState();
-        const texts: CombatTextEvent[] = [];
-        const effect = { kind: "player-status" as const, status, amount: 4 };
-        const result = applyPlayerStatusFromAttack(state, effect, texts);
-        expect(result.playerStatuses[status as keyof typeof result.playerStatuses]).toBe(4);
-        expect(texts).toEqual([{ target: "player", kind: "status", stat: status, amount: 4 }]);
-      },
-    );
-
-    it("adds beneficial status to existing stack", () => {
-      const state = patchBattleState({
-        playerStatuses: defaultPlayerStatusValues({ armor: 3 }),
-      });
-      const texts: CombatTextEvent[] = [];
-      const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status: "armor", amount: 2 }, texts);
-      expect(result.playerStatuses.armor).toBe(5);
+  it("routes attack-granted Block through its bonuses once while other beneficial statuses retain their own stacks", () => {
+    const state = patchBattleState({
+      playerStatuses: { block: 3, armor: 2 },
+      gearEffects: { flatBlockGained: 2 },
+      trinketEffects: { ironwoodBucklerThornsOnBlock: 1 },
     });
-  });
-
-  describe("block prevents status via talents", () => {
-    it.each([
-      { status: "bleed" as const, talentKey: "blockPreventsBleed" as const },
-      { status: "poison" as const, talentKey: "blockPreventsPoison" as const },
-    ] as const)("prevents $status when player has block and $talentKey talent", ({ status, talentKey }) => {
-      const state = patchBattleState({
-        playerStatuses: defaultPlayerStatusValues({ block: 5 }),
-        talentEffects: { ...defaultTalentEffects, [talentKey]: true },
-      });
-      const texts: CombatTextEvent[] = [];
-      const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status, amount: 4 }, texts);
-      expect(result.playerStatuses[status as keyof typeof result.playerStatuses]).toBe(0);
-      expect(texts).toEqual([]);
-    });
-
-    it.each([
-      { status: "bleed" as const, talentKey: "blockPreventsBleed" as const },
-      { status: "poison" as const, talentKey: "blockPreventsPoison" as const },
-    ] as const)("does not block $status when talent is inactive even with block", ({ status, talentKey }) => {
-      const state = patchBattleState({
-        playerStatuses: defaultPlayerStatusValues({ block: 5 }),
-        talentEffects: { ...defaultTalentEffects, [talentKey]: false },
-      });
-      const texts: CombatTextEvent[] = [];
-      const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status, amount: 4 }, texts);
-      expect(result.playerStatuses[status as keyof typeof result.playerStatuses]).toBe(4);
-    });
-
-    it("does not block burn even with block and talents", () => {
-      const state = patchBattleState({
-        playerStatuses: defaultPlayerStatusValues({ block: 5 }),
-        talentEffects: {
-          ...defaultTalentEffects,
-
-          blockPreventsBleed: true,
-          blockPreventsPoison: true,
-        },
-      });
-      const texts: CombatTextEvent[] = [];
-      const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status: "burn", amount: 3 }, texts);
-      expect(result.playerStatuses.burn).toBe(3);
-    });
+    const texts: CombatTextEvent[] = [];
+    const blocked = applyPlayerStatusFromAttack(state, { kind: "player-status", status: "block", amount: 4 }, texts);
+    expect(blocked.playerStatuses).toMatchObject({ block: 9, armor: 2, thorns: 1 });
+    expect(texts).toEqual([
+      { target: "player", kind: "status", stat: "block", amount: 6 },
+      { target: "player", kind: "status", stat: "thorns", amount: 1 },
+    ]);
+    const armored = applyPlayerStatusFromAttack(blocked, { kind: "player-status", status: "armor", amount: 4 }, texts);
+    expect(armored.playerStatuses).toMatchObject({ block: 9, armor: 6, thorns: 1 });
+    expect(state.playerStatuses).toMatchObject({ block: 3, armor: 2, thorns: 0 });
   });
 
   it("the Mask allows incoming Poison before cleansing on the next turn", () => {

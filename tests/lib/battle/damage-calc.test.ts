@@ -210,18 +210,4 @@ describe("resolved card damage", () => {
     expect(sundered.enemyMitigation.armor).toBe(2);
     expect(dealDamage(state, makeTestCard({ effects: [makeEffect("burn", 10)] })).enemyHealth).toBe(20);
   });
-
-  it.each([
-    ["physical", "armor"],
-    ["nature", "forge"],
-  ] as const)("siphons enemy %s-hit %s to the hero without duplicating the benefit", (damageType, stat) => {
-    const state = patchBattleState({
-      enemyMitigation: { [stat]: 5 },
-      talentEffects: { trinketSiphonChance: 100 },
-      rng: () => 0.1,
-    });
-    const result = dealDamage(state, makeTestCard({ effects: [makeEffect(damageType, 10, { lifesteal: true })] }));
-    expect(result.enemyMitigation[stat]).toBe(stat === "armor" ? 3 : 4);
-    expect(result.playerStatuses[stat]).toBe(1);
-  });
 });

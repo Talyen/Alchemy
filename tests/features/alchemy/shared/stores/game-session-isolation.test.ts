@@ -9,7 +9,11 @@ import { snapshotCareer, stateDigest } from "@/app/playthrough/career-persistenc
 import { createPlaythroughController } from "@/app/playthrough/controller";
 import { cardSlotKeyOf } from "@/features/alchemy/run-loop/shop/shop-commands-core";
 import { PLAYABLE_HAND_OPTIONS } from "@/features/alchemy/shared/config/battle-input";
-import { createDefaultSaveData, loadAlchemySaveState } from "@/features/alchemy/shared/storage";
+import {
+  createDefaultSaveData,
+  createSessionPersistence,
+  loadAlchemySaveState,
+} from "@/features/alchemy/shared/storage";
 import { commitCardPlay, commitEndTurn } from "@/features/alchemy/shared/stores/battle-commands";
 import { createGameSession, type GameSession, type SessionClock } from "@/features/alchemy/shared/stores/game-session";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
@@ -79,19 +83,28 @@ function controlledClock(now: number): SessionClock {
   return { now: () => now, setTimeout: () => ++id, clearTimeout: () => {} };
 }
 
+class ControlledRuntimeInputs {
+  #id = 0;
+  readonly clock: SessionClock;
+  constructor(private readonly seed: number) {
+    this.clock = controlledClock(seed);
+  }
+  generateRunSeed() {
+    return this.seed;
+  }
+  createInstanceId() {
+    return `session-${this.seed}-gear-${++this.#id}`;
+  }
+}
+
 function start(seed: number, gold: number, backend?: SaveBackend) {
   const initialSave = createDefaultSaveData();
   initialSave.gold = gold;
   initialSave.musicVolume = seed;
-  let id = 0;
   const session = createGameSession({
     initialSave,
     ...(backend ? { saveBackend: backend } : {}),
-    runtimeInputs: {
-      generateRunSeed: () => seed,
-      createInstanceId: () => `session-${seed}-gear-${++id}`,
-      clock: controlledClock(seed),
-    },
+    runtimeInputs: new ControlledRuntimeInputs(seed),
   });
   const controller = createPlaythroughController(session);
   controller.flow.goToScreen("game-mode-select");
@@ -170,23 +183,39 @@ describe("independent game sessions", () => {
     },
   );
 
-  it("cancels only the owning session's deferred navigation using its injected clock", async () => {
+  it("keeps class-based runtime inputs isolated for saves, feedback, navigation, and cleanup", async () => {
+    class Feedback {
+      readonly sounds: string[] = [];
+      playUISound(sound: string) {
+        this.sounds.push(sound);
+      }
+    }
+    class Clock implements SessionClock {
+      #id = 0;
+      #time = 1;
+      readonly callbacks = new Map<number, () => void>();
+      now() {
+        return this.#time;
+      }
+      advance(now: number) {
+        this.#time = now;
+      }
+      setTimeout(callback: () => void) {
+        this.callbacks.set(++this.#id, callback);
+        return this.#id;
+      }
+      clearTimeout(timer: ReturnType<typeof setTimeout> | number) {
+        this.callbacks.delete(Number(timer));
+      }
+    }
     const create = (failCleanup = false) => {
-      let id = 0;
-      const callbacks = new Map<number, () => void>();
+      const clock = new Clock();
+      const feedback = new Feedback();
+      const transport = memoryBackend();
       const session = createGameSession({
-        runtimeInputs: {
-          clock: {
-            now: () => 1,
-            setTimeout: (callback) => {
-              callbacks.set(++id, callback);
-              return id;
-            },
-            clearTimeout: (timer) => {
-              callbacks.delete(Number(timer));
-            },
-          },
-        },
+        saveBackend: transport.backend,
+        runtimeInputs: { clock },
+        feedback,
       });
       if (failCleanup)
         registerSessionCleanup(session, () => {
@@ -199,13 +228,24 @@ describe("independent game sessions", () => {
         },
         session,
       );
-      return { session, navigation, callbacks };
+      return { session, navigation, clock, feedback, callbacks: clock.callbacks, bytes: transport.bytes };
     };
     const a = create(true);
     const b = create();
     try {
+      a.clock.advance(17);
+      for (const [career, expectedTime] of [
+        [a, 17],
+        [b, 1],
+      ] as const) {
+        const persistence = createSessionPersistence(career.session);
+        await expect(persistence.write(persistence.snapshot())).resolves.toBe("saved");
+        expect(JSON.parse(career.bytes.get(SAVE_KEY)!).lastSavedAt).toBe(expectedTime);
+      }
       a.navigation.navigateTo("game-mode-select");
       b.navigation.navigateTo("game-mode-select");
+      expect(a.feedback.sounds).toEqual(["navigate"]);
+      expect(b.feedback.sounds).toEqual(["navigate"]);
       expect(a.callbacks.size).toBe(1);
       expect(b.callbacks.size).toBe(1);
       await expect(a.session.dispose()).rejects.toThrow("Game session cleanup failed");

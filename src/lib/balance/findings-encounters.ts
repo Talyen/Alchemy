@@ -19,19 +19,10 @@ import { REPORT_ENEMY_TYPES, REPORT_TIERS, titleFor } from "./report-catalog";
 import type { BalanceReportModel, ClassMatchupRow, TierRateRow } from "./report-model";
 import type { RateCell } from "./report-rankings";
 
-const ENEMY_CAUSE_HINTS: Record<string, string> = {
-  "iron-bear": "Iron Hide grants 1 Armor every other enemy turn.",
-  frostwarden: "Glacial Surge: half Freeze, 30% more Burn, +1 Freeze damage every other turn up to +2.",
-  "forge-golem": "Rusting Carapace grants Forge every other turn; starts with Block.",
-  "blight-treant": "Regeneration plus Burn vulnerability.",
-  "fire-elemental": "Cinder Skin deals Burn when attacked.",
-  "living-armor": "Starts combat with Armor; 25% less Bleed.",
-  slime: "Amorphous: 10% less Physical and Poison.",
-  necromancer: "Fangs, Bloodthorn, and Rend; double Holy damage received.",
-};
-
 function enemyCauseHint(id: string): Pick<FindingContext, "causeHint"> {
-  const causeHint = ENEMY_CAUSE_HINTS[id];
+  const causeHint = isEnemyId(id)
+    ? enemyById[id].traits.map((trait) => `${trait.title}: ${trait.description}`).join("; ")
+    : "";
   return causeHint ? { causeHint } : {};
 }
 
@@ -77,7 +68,7 @@ function collectRateFindings({
       observed: cell.winRate,
       band: formatWinRateBand(enemyType),
       recommendation: hardBoss
-        ? "Boss win rate is below 70%."
+        ? `Boss win rate is below ${(WIN_RATE_BAND_BY_TYPE.boss.min * 100).toFixed(0)}%.`
         : `Win rate is ${tooLow ? "below" : "above"} the ${enemyType} band.`,
     });
   }

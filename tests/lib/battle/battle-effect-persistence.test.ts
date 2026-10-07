@@ -14,8 +14,10 @@ describe("Talent battle effect persistence", () => {
         previousCardWasArchery: true,
         previousCardWasNature: true,
         companionNextAttackBonus: 4,
-        sanguinePhysicalBonus: 3,
         darkRecoveryMana: 1,
+        nextHitCrit: true,
+        nextHitPhysicalBonus: 3,
+        nextCardCostReduction: 99,
       },
     });
     const saved = JSON.parse(JSON.stringify(state));
@@ -24,8 +26,10 @@ describe("Talent battle effect persistence", () => {
       "previousCardWasArchery",
       "previousCardWasNature",
       "companionNextAttackBonus",
-      "sanguinePhysicalBonus",
       "darkRecoveryMana",
+      "nextHitCrit",
+      "nextHitPhysicalBonus",
+      "nextCardCostReduction",
     ])
       delete saved.flags[key];
     expect(PersistedBattleStateSchema.parse(saved).flags).toEqual(battle().flags);

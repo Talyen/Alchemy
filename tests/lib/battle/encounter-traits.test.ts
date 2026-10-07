@@ -161,10 +161,7 @@ describe("encounter trait enemy actions", () => {
     expect(second.pendingEnemyBleedLeechHealing).toBe(0);
   });
 
-  it.each([
-    ["anti-Leech talents", { blockEnemyLeech: true }, 0],
-    ["Freeze regeneration blocking", { freezeBlocksRegen: true }, 1],
-  ] as const)("Flesheater respects %s on its hit and Bleed tick", (_label, talentOverrides, enemyFreezeSkipTurns) => {
+  it("Flesheater respects Freeze regeneration blocking on its hit and Bleed tick", () => {
     const currentEnemy = enemyWith("flesheater");
     const base = makeTestBattleState();
     const first = endPlayerTurn(
@@ -172,8 +169,8 @@ describe("encounter trait enemy actions", () => {
         currentEnemy,
         enemyHealth: 10,
         enemyMaxHealth: 20,
-        enemyCC: { stunSkipTurns: 0, freezeSkipTurns: enemyFreezeSkipTurns, cooldown: 0 },
-        talentEffects: { ...base.talentEffects, ...talentOverrides },
+        enemyCC: { stunSkipTurns: 0, freezeSkipTurns: 1, cooldown: 0 },
+        talentEffects: { ...base.talentEffects, freezeBlocksRegen: true },
       }),
     ).state;
     expect(first.enemyHealth).toBe(10);
@@ -590,6 +587,7 @@ describe("Cinder Skin Health damage reactions", () => {
 describe("encounter trait health threshold", () => {
   it("shares the original crossing between Second Wind and Aegis, and fires each only once", () => {
     const state = makeTestBattleState({
+      battleMetrics: { enemyAttackActions: 0, enemyAbilityActivations: {} },
       enemyHealth: 9,
       enemyMaxHealth: 20,
       currentEnemy: enemyWith("second-wind", "divine-aegis"),
@@ -598,9 +596,12 @@ describe("encounter trait health threshold", () => {
     expect(result.enemyHealth).toBeGreaterThan(10);
     expect(result.flags).toMatchObject({ secondWindTriggered: true, divineAegisTriggered: true });
     expect(result.enemyMitigation).toMatchObject({ armor: 2, block: 4 });
-    expect(
-      processEncounterTraitHealthThreshold(result.enemyHealth, { ...result, enemyHealth: 9 }, []).enemyMitigation,
-    ).toEqual(result.enemyMitigation);
+    expect(result.battleMetrics?.enemyAbilityActivations).toEqual({ "second-wind": 1, "divine-aegis": 1 });
+    expect(state.battleMetrics?.enemyAbilityActivations).toEqual({});
+    const recrossed = processEncounterTraitHealthThreshold(result.enemyHealth, { ...result, enemyHealth: 9 }, []);
+    expect(recrossed.enemyMitigation).toEqual(result.enemyMitigation);
+    expect(recrossed.enemyHealth).toBe(9);
+    expect(recrossed.battleMetrics?.enemyAbilityActivations).toEqual(result.battleMetrics?.enemyAbilityActivations);
     for (const enemyHealth of [0, 10, 11]) {
       const unchanged = { ...state, enemyHealth };
       expect(processEncounterTraitHealthThreshold(10, unchanged, [])).toBe(unchanged);

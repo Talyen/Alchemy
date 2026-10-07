@@ -11,6 +11,17 @@ const nativeClock: SessionClock = {
   clearTimeout: (timer) => globalThis.clearTimeout(timer),
 };
 
+/** Capture declared methods while preserving prototype providers and their receiver. */
+function bindRuntimeMethods<T extends object>(defaults: T, source?: Partial<T>): T {
+  const bound = { ...defaults };
+  if (!source) return bound;
+  for (const key of Object.keys(defaults) as Array<keyof T>) {
+    const method = source[key];
+    if (typeof method === "function") bound[key] = method.bind(source) as T[keyof T];
+  }
+  return bound;
+}
+
 function createLifecycleChannel() {
   const listeners = new Set<() => void>();
   return {
@@ -28,24 +39,29 @@ function createLifecycleChannel() {
 }
 
 function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolean) {
-  const clock = { ...(options.runtimeInputs?.clock ?? nativeClock) };
-  const generateRunSeed = options.runtimeInputs?.generateRunSeed ?? generateRandomRunSeed;
+  const clock = bindRuntimeMethods(nativeClock, options.runtimeInputs?.clock);
+  const { generateRunSeed, createInstanceId: instanceIdSource } = bindRuntimeMethods(
+    { generateRunSeed: generateRandomRunSeed, createInstanceId },
+    options.runtimeInputs,
+  );
   const cleanups = new Set<() => void>();
   const settings = createSettingsStore();
-  const feedback: SessionFeedback = {
-    playUISound: () => {},
-    playGoldGain: () => {},
-    playGoldSpend: () => {},
-    playVictory: () => {},
-    playRunVictory: () => {},
-    playDefeat: () => {},
-    stopAllSfx: () => {},
-    clearCardHover: () => {},
-    clearBattleUi: () => {},
-    clearSaveConfirmation: () => {},
-    resetTransientUi: () => {},
-    ...options.feedback,
-  };
+  const feedback = bindRuntimeMethods<SessionFeedback>(
+    {
+      playUISound: () => {},
+      playGoldGain: () => {},
+      playGoldSpend: () => {},
+      playVictory: () => {},
+      playRunVictory: () => {},
+      playDefeat: () => {},
+      stopAllSfx: () => {},
+      clearCardHover: () => {},
+      clearBattleUi: () => {},
+      clearSaveConfirmation: () => {},
+      resetTransientUi: () => {},
+    },
+    options.feedback,
+  );
   return {
     gameplay: createGameplayStore(generateRunSeed),
     settings,
@@ -53,7 +69,7 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
     io: createSaveIo(options.saveBackend, clock.now, allowPlatformStorage),
     clock,
     generateRunSeed,
-    createInstanceId: options.runtimeInputs?.createInstanceId ?? createInstanceId,
+    createInstanceId: instanceIdSource,
     feedback,
     inCommand: false,
     persistentClearInFlight: false,

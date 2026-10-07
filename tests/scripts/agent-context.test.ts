@@ -427,7 +427,7 @@ describe("agent discovery", () => {
     try {
       fs.writeFileSync(
         path.join(root, "owner.ts"),
-        'import x from "x";\nexport function score() {\n  return 42;\n}\nconst pool = [1, 2];\n',
+        'import x from "x";\nexport function score() {\n  return 42;\n}\nconst pool = [1, 2];\nconst { original: local, nested: { secret }, ...rest } = explode();\nconst [first, , { third }] = explode();\n',
       );
       expect(sourceOutline(root, "owner.ts")).toEqual([
         expect.objectContaining({
@@ -437,7 +437,12 @@ describe("agent discovery", () => {
           text: "export function score() {\n  return 42;\n}",
         }),
         expect.objectContaining({ name: "pool", start: 5, end: 5 }),
+        ...["local", "secret", "rest"].map((name) => expect.objectContaining({ name, start: 6, end: 6 })),
+        ...["first", "third"].map((name) => expect.objectContaining({ name, start: 7, end: 7 })),
       ]);
+      expect(renderSourceOutline(sourceOutline(root, "owner.ts"), "secret").text).toContain(
+        "const { original: local, nested: { secret }, ...rest } = explode();",
+      );
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }

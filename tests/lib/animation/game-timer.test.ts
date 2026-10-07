@@ -44,6 +44,33 @@ describe("game timers", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it("ignores late callbacks from cancelled work while letting a reused group finish once", () => {
+    const callbacks: Array<() => void> = [];
+    const timers = new TimerGroup({
+      setTimeout: (callback) => {
+        callbacks.push(callback);
+        return 1;
+      },
+      clearTimeout: vi.fn(),
+    });
+    const stale = vi.fn();
+    const cancelStale = timers.setTimeout(stale, 10);
+    cancelStale();
+    timers.setTimeout(stale, 20);
+    timers.clearAll();
+    const fresh = vi.fn();
+    timers.setTimeout(fresh, 30);
+    cancelStale();
+    callbacks[0]!();
+    callbacks[1]!();
+    expect(stale).not.toHaveBeenCalled();
+    expect(fresh).not.toHaveBeenCalled();
+    callbacks[2]!();
+    callbacks[2]!();
+    expect(fresh).toHaveBeenCalledOnce();
+    expect(timers.size).toBe(0);
+  });
+
   it.each([false, true])(
     "keeps game work and real-time deadlines distinct with animations disabled: %s",
     async (disabled) => {

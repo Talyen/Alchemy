@@ -32,7 +32,6 @@ export function applyEnemyLeechHealing(
   combatTexts: CombatTextEvent[],
 ): BattleState {
   if (isFreezeActiveForAspect(state, "regen")) return state;
-  if (state.talentEffects.blockEnemyLeech) return state;
   const healAmount = computeLeechHeal(actualDamage);
   if (healAmount <= 0) return state;
   return applyEnemyHealingWithCombatText(state, healAmount, combatTexts, { skipFightPacing: true });
