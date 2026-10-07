@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_ARMORY_INVENTORY_FILTERS,
   matchesGearFilters,
@@ -21,7 +21,25 @@ const filters = (patch: Partial<ArmoryInventoryFilters>): ArmoryInventoryFilters
   ...patch,
 });
 
+afterEach(() => vi.restoreAllMocks());
+
 describe("Armory inventory matching", () => {
+  it("matches English item names regardless of the host's Turkish case rules", () => {
+    const lower = String.prototype.toLocaleLowerCase;
+    vi.spyOn(String.prototype, "toLocaleLowerCase").mockImplementation(function (this: string, locales) {
+      return lower.call(this, locales ?? "tr");
+    });
+    const trinket: TrinketEntry = {
+      id: "charm",
+      title: "Icy Charm",
+      art: "",
+      descriptionLines: ["Gain Block after Freeze."],
+      effects: {},
+    };
+    expect(matchesTrinketFilters(trinket, filters({ search: "icy" }))).toBe(true);
+    expect(matchesTrinketFilters(trinket, filters({ search: "ICY" }))).toBe(true);
+  });
+
   it("combines normalized search words, rarity, and keywords", () => {
     const criteria = filters({
       search: "  PHYSICAL   longsword ",

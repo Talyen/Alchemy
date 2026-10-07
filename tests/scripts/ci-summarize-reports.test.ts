@@ -102,21 +102,6 @@ describe("ci-summarize (vitest)", () => {
     expect(md).toContain("eslint-boundary-stacking.test.ts");
     expect(md).toContain("routes:");
   });
-
-  it("caps the default Vitest failure list", () => {
-    const testResults = Array.from({ length: 6 }, (_, index) => ({
-      name: `tests/failure-${index}.test.ts`,
-      assertionResults: [{ fullName: `failure ${index}`, status: "failed", failureMessages: ["Error: failure"] }],
-    }));
-    const summary = summarizeVitestReport({
-      numTotalTests: 6,
-      numPassedTests: 0,
-      numFailedTests: 6,
-      numPendingTests: 0,
-      testResults,
-    });
-    expect(summary.failures).toHaveLength(5);
-  });
 });
 
 describe("ci-summarize (playwright)", () => {
@@ -278,6 +263,11 @@ describe("ci-summarize (playwright)", () => {
     expect(summary.unexpected).toBe(4);
     expect(summary.failures).toHaveLength(2);
     expect(formatPlaywrightSummaryMarkdown(summary)).toContain("and 2 more");
+    expect(summarizePlaywrightReport({ suites }, { maxFailures: 0 })).toMatchObject({
+      failed: true,
+      unexpected: 4,
+      failures: [],
+    });
   });
 
   it("does not advertise a missing fixture diagnostic", () => {

@@ -47,6 +47,8 @@ background particles, combatant status effects, and keyword plasma use its resiz
 frame pacing, and pause/resume policy. The canvas owns backing dimensions; unchanged
 sizes must not clear its drawing state. Disposal aborts event listeners, cancels
 the queued frame, and disconnects resize observation; late callbacks do nothing.
+Stun and Freeze presentation rebuilds when the shared motion preference changes,
+switching between a static overlay with no tilt and the animated effect.
 
 ## Battle motion
 
@@ -79,6 +81,8 @@ arrival, marking the activation. At most six flight ghosts overlap; the oldest
 sheds first. Motion-disabled preferences skip the flight.
 Autoplay flashes the hover lift, scale, and shine for a beat before committing,
 without the description popup; reduced motion plays instantly with no preview.
+Cancelling or restarting the battle clears its pending autoplay preview immediately
+and prevents that preview from committing a card or Wish choice.
 
 Draw and discard use a continuous eased arc with a height of 10% of the card,
 straightening and scaling to the measured destination while flipping between

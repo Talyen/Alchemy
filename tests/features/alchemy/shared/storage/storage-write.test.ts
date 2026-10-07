@@ -6,7 +6,7 @@ import {
   saveAlchemySaveDataForExit,
 } from "@/features/alchemy/shared/storage";
 import { defaultSaveData } from "@/features/alchemy/shared/storage/defaults";
-import { configureSaveBackend, serializeSaveSnapshot } from "@/features/alchemy/shared/storage/io";
+import { configureSaveBackend } from "@/features/alchemy/shared/storage/io";
 import type { SaveData } from "@/features/alchemy/shared/storage/types";
 import { SAVE_KEY } from "@/lib/game-constants";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -49,12 +49,6 @@ describe("storage io", () => {
     const written = JSON.parse(mockStorage[SAVE_KEY]) as SaveData;
     expect(written.selectedAspectRatio).toBe("16:9");
     expect(written.lastSavedAt).toBeGreaterThan(0);
-  });
-
-  it("stamps one lastSavedAt per physical write so exit divergence is pinnable", () => {
-    const { lastSavedAt: _dropped, ...snapshot } = defaultSaveData;
-    expect(JSON.parse(serializeSaveSnapshot(snapshot, 1000)).lastSavedAt).toBe(1000);
-    expect(JSON.parse(serializeSaveSnapshot(snapshot, 2000)).lastSavedAt).toBe(2000);
   });
 
   it.each(["reported", "thrown"])("returns failed for a %s backend write failure", async (failure) => {

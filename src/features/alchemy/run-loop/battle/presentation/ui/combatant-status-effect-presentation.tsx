@@ -1,8 +1,9 @@
 import { type ReactNode, useLayoutEffect, useRef } from "react";
 
+import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
 import type { ActiveCcKeyword } from "@/features/alchemy/shared/utils";
 import { startCombatantStatusEffectLoop } from "@/lib/animation/combatant-status-effect-loop";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/cn";
 
 interface CombatantStatusEffectPresentationProps {
   keyword: ActiveCcKeyword | null;
@@ -17,6 +18,7 @@ export function CombatantStatusEffectPresentation({
 }: CombatantStatusEffectPresentationProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wobbleRef = useRef<HTMLDivElement>(null);
+  const reducedMotion = useReducedMotionPreference();
 
   useLayoutEffect(() => {
     const wobbleNode = wobbleRef.current;
@@ -42,7 +44,7 @@ export function CombatantStatusEffectPresentation({
       stop();
       if (wobbleNode) wobbleNode.style.transform = "";
     };
-  }, [keyword]);
+  }, [keyword, reducedMotion]);
 
   if (!keyword) {
     return <>{children}</>;

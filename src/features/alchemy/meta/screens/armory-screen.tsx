@@ -14,6 +14,7 @@ import {
   craftingCurrencyBlockedReason,
   findGearEquippedCharacter,
   flattenGearInventories,
+  GEAR_CHARACTER_IDS,
   getGearInstanceTitle,
   type ArmorySlot,
   type CraftingCurrencyId,
@@ -66,6 +67,16 @@ export function ArmoryScreen({
     () => new Map(sharedInventory.map((item) => [item.instanceId, item])),
     [sharedInventory],
   );
+  const modificationReservations = useMemo(() => {
+    // Combat spares may move to another loadout, but crafting and salvage
+    // remain frozen for every item owned by the hero in Combat.
+    const reserved = Object.assign(Object.create(null) as Record<string, CharacterId>, combatRestrictions.gear);
+    for (const owner of GEAR_CHARACTER_IDS) {
+      if (!combatRestrictions.characters[owner]?.length) continue;
+      for (const item of inventories[owner]) reserved[item.instanceId] = owner;
+    }
+    return reserved;
+  }, [combatRestrictions, inventories]);
   const loadout = loadouts[characterId];
   const requiredCharacterId = getRequiredPreviousCharacter(characterId);
   const locked = !isCharacterUnlocked(characterId, finishedRunCharacters);
@@ -159,7 +170,7 @@ export function ArmoryScreen({
 
   const beginSalvage = (instance: GearInstance) => {
     requireEditable(() => {
-      if (combatRestrictions.gear[instance.instanceId]) return;
+      if (modificationReservations[instance.instanceId]) return;
       setNotice("");
       setCraftingResult(null);
       confirmSalvage({ instance, yield: computeSalvageYield(instance) });
@@ -168,7 +179,7 @@ export function ArmoryScreen({
 
   const handleApplyCurrency = (instance: GearInstance) => {
     requireEditable(() => {
-      if (!activeCurrencyId || combatRestrictions.gear[instance.instanceId]) return;
+      if (!activeCurrencyId || modificationReservations[instance.instanceId]) return;
       const reason = craftingCurrencyBlockedReason(activeCurrencyId, instance);
       if (reason) {
         setNotice(reason);
@@ -245,13 +256,14 @@ export function ArmoryScreen({
               <ArmoryEquipmentPanel
                 loadout={loadout}
                 inventoryById={inventoryById}
+                modificationReservations={modificationReservations}
                 equippedTrinket={equippedTrinket}
                 selectedSlot={selectedSlot}
                 targeting={{ editable, salvageMode, activeCurrencyId, craftingResult }}
                 hiddenArtworkSlots={hiddenArtworkSlots}
                 salvageButtonRef={salvageButtonRef}
                 craftingCurrencies={craftingCurrencies}
-                hasSalvageableGear={sharedInventory.some((item) => !combatRestrictions.gear[item.instanceId])}
+                hasSalvageableGear={sharedInventory.some((item) => !modificationReservations[item.instanceId])}
                 lockedCharacterName={locked && requiredCharacterId ? characters[requiredCharacterId].name : null}
                 onSelectSlot={handleSlotSelect}
                 onUnequipSlot={handleSlotUnequip}
@@ -267,7 +279,8 @@ export function ArmoryScreen({
                 }}
               />
               <ArmoryPickerPanel
-                combatRestrictions={combatRestrictions}
+                reservedGear={salvageMode || activeCurrencyId ? modificationReservations : combatRestrictions.gear}
+                reservedTrinkets={combatRestrictions.trinkets}
                 selectedSlot={selectedSlot}
                 characterId={characterId}
                 pickerItems={ordering.visibleGear}

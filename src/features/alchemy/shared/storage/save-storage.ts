@@ -14,6 +14,7 @@ export class SaveStorage {
   private pendingLoads = 0;
   private writeKey = SAVE_KEY;
   private demoInitialization: Promise<SaveLoadState | null> | null = null;
+  private lastSavedAt = 0;
 
   constructor(
     private backend: SaveBackend,
@@ -50,6 +51,7 @@ export class SaveStorage {
     await this.queue.reset();
     this.demoInitialization = null;
     this.writeKey = SAVE_KEY;
+    this.lastSavedAt = 0;
   }
 
   async load(): Promise<SaveLoadState> {
@@ -81,6 +83,7 @@ export class SaveStorage {
       }
       if (loaded.data.activeRun && !isEditionRunAvailable(loaded.data.activeRun)) loaded.data.activeRun = null;
       this.writeKey = useRecovery ? SAVE_RECOVERY_KEY : SAVE_KEY;
+      this.lastSavedAt = Math.max(this.lastSavedAt, loaded.data.lastSavedAt);
       this.setWritesDisabled(false);
       return loaded;
     } finally {
@@ -111,7 +114,14 @@ export class SaveStorage {
 
   private trySerializeSaveSnapshot(data: UnstampedSaveData, context: "" | " during page exit"): string | null {
     try {
-      return serializeSaveSnapshot(data, this.now());
+      // Slot selection keeps the first candidate on ties. New progress must
+      // outrank the loaded save and older writes even if the clock stalls or rewinds.
+      const savedAt = Math.max(Math.floor(this.now()), this.lastSavedAt + 1);
+      if (!Number.isSafeInteger(savedAt)) throw new Error("Save timestamp exceeds the supported integer range");
+      const payload: SaveData = { ...data, lastSavedAt: savedAt };
+      const serialized = JSON.stringify(payload);
+      this.lastSavedAt = savedAt;
+      return serialized;
     } catch (error) {
       logStorageFailure(`Save data could not be serialized${context}`, error);
       return null;
@@ -206,12 +216,4 @@ export class SaveStorage {
     }
     return cleared;
   }
-}
-
-// Exported for tests: each physical write stamps its own `lastSavedAt`, so
-// the sync exit write and a trailing queued write for the same snapshot can
-// carry different timestamps by design. Pass an explicit `now` to pin that.
-export function serializeSaveSnapshot(data: UnstampedSaveData, now: number = Date.now()): string {
-  const payload: SaveData = { ...data, lastSavedAt: now };
-  return JSON.stringify(payload);
 }

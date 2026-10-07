@@ -134,14 +134,21 @@ describe("alchemist shop actions", () => {
       ]);
     });
 
-    it("returns null for out-of-bounds indices", () => {
-      setRunProgress({ gold: 999, runDeck: [makeCard()] });
+    it("rejects invalid indices without spending Gold, changing the deck or consuming the service", () => {
+      setRunProgress({ gold: 999, runDeck: [cardById["health-potion"]!, cardById["mana-potion"]!] });
       setAlchemistState(createInitialAlchemistState());
       const actions = buildActions();
-
-      expect(actions.alchemist.mixPotions(-1, 0)).toBeNull();
-      expect(actions.alchemist.mixPotions(0, 5)).toBeNull();
+      const beforeRun = readActiveRun(defaultGameSession);
+      const beforeVisit = readRunSession(defaultGameSession);
+      for (const index of [-1, 5, 0.5, NaN, Infinity]) {
+        expect(actions.alchemist.mixPotions(index, 1)).toBeNull();
+        expect(actions.alchemist.mixPotions(0, index)).toBeNull();
+      }
       expect(actions.alchemist.mixPotions(0, 0)).toBeNull();
+      expect(readActiveRun(defaultGameSession)).toEqual(beforeRun);
+      expect(readRunSession(defaultGameSession)).toEqual(beforeVisit);
+      expect(readRunProfile(defaultGameSession).gold).toBe(999);
+      expect(playUISound).not.toHaveBeenCalled();
     });
 
     it("does not charge gold or consume the mix slot when the mix fails", () => {
@@ -238,29 +245,23 @@ describe("merchant shop actions", () => {
       expect(readActiveRun(defaultGameSession).runDeck).toHaveLength(1);
       expect(readActiveRun(defaultGameSession).runDeck[0].id).toBe("b");
       expect(readActivityData(readRunSession(defaultGameSession).activity, "shop").removeUsed).toBe(true);
-      expect(playUISound).toHaveBeenCalledWith("shopRemove");
+      expect(actions.merchant.removeCard(0)).toBe(false);
+      expect(readRunProfile(defaultGameSession).gold).toBe(999 - SHOP_REMOVE_PRICE);
+      expect(readActiveRun(defaultGameSession).runDeck.map((card) => card.id)).toEqual(["b"]);
+      expect(playUISound).toHaveBeenCalledExactlyOnceWith("shopRemove");
     });
 
-    it("does nothing when removeUsed is already true", () => {
-      setRunProgress({ gold: 999 });
-      setShopState({ ...createInitialShopState(), removeUsed: true });
-      const actions = buildActions();
-
-      actions.merchant.removeCard(0);
-
-      expect(readRunProfile(defaultGameSession).gold).toBe(999);
-      expect(playUISound).not.toHaveBeenCalled();
-    });
-
-    it("does nothing for out-of-bounds index", () => {
-      setRunProgress({ gold: 999, runDeck: [makeCard()] });
+    it("rejects invalid indices without spending Gold, changing the deck or consuming the service", () => {
+      const deck = [makeCard({ id: "a" }), makeCard({ id: "b" })];
+      setRunProgress({ gold: 999, runDeck: deck });
       setShopState(createInitialShopState());
       const actions = buildActions();
-
-      actions.merchant.removeCard(-1);
-      actions.merchant.removeCard(5);
-
+      const beforeVisit = readRunSession(defaultGameSession);
+      for (const index of [-1, 5, 0.5, NaN, Infinity]) expect(actions.merchant.removeCard(index)).toBe(false);
       expect(readRunProfile(defaultGameSession).gold).toBe(999);
+      expect(readActiveRun(defaultGameSession).runDeck).toEqual(deck);
+      expect(readRunSession(defaultGameSession)).toEqual(beforeVisit);
+      expect(playUISound).not.toHaveBeenCalled();
     });
   });
   describe("merchants-favor first-purchase discount", () => {

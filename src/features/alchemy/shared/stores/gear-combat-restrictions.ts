@@ -20,7 +20,12 @@ export function deriveGearCombatRestrictions(state: {
   session: { activity: Pick<GameplayState["session"]["activity"], "kind"> };
   gear: Pick<GameplayState["gear"], "loadouts" | "equippedTrinkets">;
 }): GearCombatRestrictions {
-  const restrictions: GearCombatRestrictions = { characters: {}, gear: {}, trinkets: {} };
+  const restrictions: GearCombatRestrictions = {
+    characters: {},
+    // Instance IDs are opaque strings, including ordinary object property names.
+    gear: Object.create(null) as Record<string, CharacterId>,
+    trinkets: {},
+  };
   if (state.session.activity.kind !== "battle") return restrictions;
   const { characterId, contentSystemType } = state.run.activeRun;
   restrictions.characters[characterId] = [contentSystemType];

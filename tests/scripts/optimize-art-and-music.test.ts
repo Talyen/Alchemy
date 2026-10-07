@@ -1,5 +1,5 @@
 import { mkdtempSync, rmSync } from "node:fs";
-import { copyFile, mkdir, readFile, readdir, rm, utimes, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, readdir, rename, rm, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -115,7 +115,7 @@ describe.each([
   const manifestPath = path.join(output, ".asset-hashes.json");
   const manifestWrites = () => vi.mocked(writeFile).mock.calls.filter(([file]) => file === manifestPath);
 
-  it("publishes a complete manifest and skips writes and processing on an unchanged run", async () => {
+  it("publishes a complete manifest and follows moved sources without writes or reprocessing", async () => {
     await expect(optimize()).resolves.toEqual({ ok: true });
     expect(manifestWrites()).toHaveLength(1);
     const before = await readFile(manifestPath, "utf8");
@@ -125,6 +125,7 @@ describe.each([
     vi.mocked(writeFile).mockClear();
     vi.mocked(copyFile).mockClear();
     fixture.transform.mockClear();
+    await rename(path.join(source, `a.${input}`), path.join(source, `renamed.${input}`));
     await expect(optimize()).resolves.toEqual({ ok: true });
     expect(await readFile(manifestPath, "utf8")).toBe(before);
     expect(manifestWrites()).toHaveLength(0);

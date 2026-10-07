@@ -119,6 +119,36 @@ describe("SaveStorage ownership", () => {
     ]);
   });
 
+  it.each(["save", "saveForExit"] as const)(
+    "keeps newer recovery progress after %s with a repeated or backward clock",
+    async (operation) => {
+      const slots = new Map<string, string>();
+      let failPrimary = false;
+      let now = 1000;
+      const write = (key: string, bytes: string) => {
+        if (failPrimary && key === SAVE_KEY) return { ok: false as const, error: "primary unavailable" };
+        slots.set(key, bytes);
+        return { ok: true as const };
+      };
+      const storageBackend: SaveBackend = {
+        readCandidates: async (key) => ({ ok: true, candidates: slots.has(key) ? [slots.get(key)!] : [] }),
+        write: async (key, bytes) => write(key, bytes),
+        writeSync: write,
+        clear: async () => ({ ok: true }),
+      };
+      const storage = new SaveStorage(storageBackend, () => now);
+      expect(await storage.save({ ...createDefaultSaveData(), gold: 8 })).toBe("saved");
+      failPrimary = true;
+      expect(await storage[operation]({ ...createDefaultSaveData(), gold: 9 })).toBe("saved");
+      const resumed = new SaveStorage(storageBackend, () => now);
+      const loaded = await resumed.load();
+      expect(loaded.data.gold).toBe(9);
+      now = 900;
+      expect(await resumed.save({ ...loaded.data, gold: 10 })).toBe("saved");
+      expect((await new SaveStorage(storageBackend).load()).data.gold).toBe(10);
+    },
+  );
+
   it("tries the recovery slot when a synchronous exit write throws", async () => {
     const storageBackend = backend();
     storageBackend.writeSync.mockImplementation((key) => {

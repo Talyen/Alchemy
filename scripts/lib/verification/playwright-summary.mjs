@@ -94,7 +94,7 @@ export function topSlowestTests(allTests, count = 10) {
 }
 
 export function summarizePlaywrightReport(report, options = {}) {
-  const maxFailures = options.maxFailures ?? MAX_SUMMARY_FAILURES;
+  const maxFailures = Math.max(0, Math.trunc(options.maxFailures ?? MAX_SUMMARY_FAILURES) || 0);
   const rootDir = options.rootDir ?? process.cwd();
   const runId = options.runId ?? ensureRunId("playwright");
   const root = report && typeof report === "object" ? /** @type {Record<string, unknown>} */ (report) : {};
@@ -103,6 +103,7 @@ export function summarizePlaywrightReport(report, options = {}) {
   const collected = collectPlaywrightTests(root);
   for (const test of collected.allTests) {
     if (test.status !== "unexpected" && test.status !== "flaky") continue;
+    if (failures.length >= maxFailures) break;
     const { file, line, project, status, errorMessage } = test;
     const identity = diagnosticIdentity({ rootDir, file, line, project, title: test.title });
     const digestPath = failureDigestRelativePath(runId, identity.id);
@@ -139,7 +140,7 @@ export function summarizePlaywrightReport(report, options = {}) {
     unexpected: hasStats ? Number(stats.unexpected ?? 0) : unexpected,
     flaky: hasStats ? Number(stats.flaky ?? 0) : flaky,
     skipped: hasStats ? Number(stats.skipped ?? 0) : skipped,
-    failures: failures.slice(0, maxFailures),
+    failures,
   };
 }
 

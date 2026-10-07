@@ -16,9 +16,9 @@ const SUMMARY_MESSAGE_CHARS = 240;
 
 /** First display line of a failure message, capped for summaries. */
 export function firstSummaryLine(message) {
-  return String(message ?? "")
-    .split("\n")[0]
-    .slice(0, SUMMARY_MESSAGE_CHARS);
+  const text = String(message ?? "");
+  const newline = text.indexOf("\n");
+  return text.slice(0, newline < 0 ? SUMMARY_MESSAGE_CHARS : Math.min(newline, SUMMARY_MESSAGE_CHARS));
 }
 
 /**

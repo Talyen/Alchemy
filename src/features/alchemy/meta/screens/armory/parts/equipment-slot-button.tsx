@@ -8,6 +8,7 @@ import {
   type GearSlot,
 } from "@/lib/gear";
 import { cn } from "@/lib/utils";
+import type { CharacterId } from "@/lib/game-data";
 import { memo } from "react";
 import { getPlasmaColorPairForGear } from "../../../../shared/config";
 import { Surface } from "../../../../shared/ui/surface";
@@ -24,6 +25,7 @@ import { SLOT_ARIA_LABELS } from "./slot-labels";
 export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   slot,
   instance,
+  reservedBy,
   selected,
   editable,
   salvageMode,
@@ -38,6 +40,7 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
 }: {
   slot: GearSlot;
   instance: GearInstance | undefined;
+  reservedBy?: CharacterId | undefined;
   selected: boolean;
   editable: boolean;
   salvageMode: boolean;
@@ -54,6 +57,7 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   const shineColors = instance ? getAstralShineColors(instance) : undefined;
   const target = getArmoryItemInteraction({
     instance,
+    reservedBy,
     salvageMode,
     activeCurrencyId,
     editable,
@@ -98,6 +102,7 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
       <Surface
         as="button"
         ariaLabel={ariaLabel}
+        {...(reservedBy ? { ariaDisabled: true } : {})}
         ariaPressed={selected}
         overlay={
           showShine && shineColors ? (

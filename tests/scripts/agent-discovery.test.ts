@@ -6,7 +6,7 @@ import { searchMain } from "../../scripts/agent-search.mjs";
 import { checkDurableDocumentReachability } from "../../scripts/check-documentation-contract.mjs";
 import { sourceOutline } from "../../scripts/lib/agent/agent-context.mjs";
 import { incrementalContext, relatedLocations, repositorySearch } from "../../scripts/lib/agent/agent-discovery.mjs";
-import { failureSummary, tailOutput } from "../../scripts/lib/compact-output.mjs";
+import { failureSummary, sanitizeOutput, tailOutput } from "../../scripts/lib/compact-output.mjs";
 
 const roots: string[] = [];
 function fixture(files: Record<string, string>) {
@@ -280,6 +280,11 @@ describe.each(cases)("outer %s", () => {
     });
     // A repository-root selection seeds every file instead of matching none.
     expect(relatedLocations(root, ["."]).tests).toContain("tests/owner.test.ts");
+    // A later scan must see edited imports and newly created modules.
+    fs.writeFileSync(path.join(root, "src/replacement.ts"), "export const value = 2;");
+    fs.writeFileSync(path.join(root, "src/index.ts"), 'export { value } from "./replacement";');
+    expect(relatedLocations(root, ["src/owner.ts"]).tests).toEqual(["tests/z-direct.test.ts"]);
+    expect(relatedLocations(root, ["src/replacement.ts"]).tests).toEqual(["tests/owner.test.ts"]);
   });
 
   it("preserves failures in the middle of noisy logs, with exact full-log line references", () => {
@@ -352,4 +357,17 @@ it.each(["a", "界", "🐉"])("extracts large %s output tails within budget with
       .split(character)
       .join(""),
   ).toBe("");
+});
+
+it.each([
+  { terminator: "BEL", ending: "\u0007" },
+  { terminator: "ST", ending: "\u001B\\" },
+])("keeps diagnostic labels while removing $terminator terminal hyperlinks", ({ ending }) => {
+  const label = "FAIL tests/example.test.ts > save recovery";
+  const output = `\u001B]8;;file:///${"x".repeat(2048)}${ending}${label}\u001B]8;;${ending}\nAssertionError: progress was lost`;
+  expect(sanitizeOutput(output)).toBe(`${label}\nAssertionError: progress was lost`);
+  const summary = failureSummary(output, 500);
+  expect(summary).toContain(label);
+  expect(summary).toContain("AssertionError: progress was lost");
+  expect(summary).not.toContain("file://");
 });

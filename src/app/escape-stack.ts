@@ -59,9 +59,6 @@ function maybeRemoveListener() {
 }
 
 export function pushEscapeHandler(handler: EscapeHandler): () => void {
-  if (handlers.has(handler.id)) {
-    handlers.delete(handler.id);
-  }
   const entry: EscapeHandlerEntry = { ...handler, seq: nextSeq++ };
   handlers.set(handler.id, entry);
   refreshSortedCache();

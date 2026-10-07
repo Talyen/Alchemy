@@ -65,13 +65,13 @@ describe("autosave scheduler", () => {
     expect(scheduler.nextDelay(12_000, 500)).toBeNull();
   });
 
-  it("does not let an older success clear a newer failure's cooldown", () => {
+  it.each(["write", "snapshot"])("does not let an older success clear a newer %s failure's cooldown", (failure) => {
     const scheduler = createAutosaveScheduler(10_000);
     scheduler.markDirty(1_000);
     const older = scheduler.submit(false)!;
     scheduler.markDirty(2_000);
-    const newer = scheduler.submit(false)!;
-    expect(scheduler.complete(newer, "failed", 3_000)).toBe("schedule");
+    if (failure === "write") expect(scheduler.complete(scheduler.submit(false)!, "failed", 3_000)).toBe("schedule");
+    else scheduler.failSnapshot(3_000, false);
     expect(scheduler.complete(older, "saved", 4_000)).toBe("schedule");
     expect(scheduler.nextDelay(4_000, 0)).toBe(9_000);
     expect(scheduler.submit(false)).not.toBeNull();
@@ -128,13 +128,19 @@ describe("autosave scheduler", () => {
     expect(scheduler.submit(true)).not.toBeNull();
   });
 
-  it("retries a failed exit on the timer while repeated exit signals stay latched", () => {
-    const scheduler = createAutosaveScheduler(10_000);
-    scheduler.markDirty(100);
-    expect(scheduler.complete(scheduler.submit(true)!, "failed", 200)).toBe("schedule");
-    expect(scheduler.submit(true)).toBeNull();
-    expect(scheduler.nextDelay(200, 0)).toBe(10_000);
-    expect(scheduler.complete(scheduler.submit(false)!, "saved", 10_200)).toBe("cancel");
-    expect(scheduler.nextDelay(10_200, 500)).toBeNull();
-  });
+  it.each(["timer", "pending write"])(
+    "recovers a failed exit using %s while repeated exit signals stay latched",
+    (recovery) => {
+      const scheduler = createAutosaveScheduler(10_000);
+      scheduler.markDirty(100);
+      const pending = recovery === "pending write" ? scheduler.submit(false)! : null;
+      expect(scheduler.complete(scheduler.submit(true)!, "failed", 200)).toBe("schedule");
+      expect(scheduler.submit(true)).toBeNull();
+      expect(scheduler.nextDelay(200, 0)).toBe(10_000);
+      expect(scheduler.complete(pending ?? scheduler.submit(false)!, "saved", 10_200)).toBe("cancel");
+      expect(scheduler.nextDelay(10_200, 500)).toBeNull();
+      scheduler.markDirty(20_000);
+      expect(scheduler.nextDelay(20_000, 500)).toBe(500);
+    },
+  );
 });

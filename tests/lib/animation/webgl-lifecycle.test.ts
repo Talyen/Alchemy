@@ -16,19 +16,35 @@ describe("attachWebGLContextLifecycle", () => {
     vi.restoreAllMocks();
   });
 
-  it("invokes start on initialization and reports availability", () => {
-    const stop = vi.fn();
+  it("releases each renderer once across context loss, restoration and disposal", () => {
+    const firstStop = vi.fn();
+    const restoredStop = vi.fn();
+    const start = vi.fn().mockReturnValueOnce(firstStop).mockReturnValueOnce(restoredStop);
     const onAvailabilityChange = vi.fn();
-
     const detach = attachWebGLContextLifecycle({
       canvas,
-      start: () => stop,
+      start,
       onAvailabilityChange,
+      contextLostErrorMessage: "Context was lost",
     });
 
-    expect(onAvailabilityChange).toHaveBeenCalledWith(true);
+    const lostEvent = new Event("webglcontextlost", { cancelable: true });
+    canvas.dispatchEvent(lostEvent);
+    expect(lostEvent.defaultPrevented).toBe(true);
+    expect(firstStop).toHaveBeenCalledOnce();
+    expect(logError).toHaveBeenCalledWith("Context was lost", "other");
+    canvas.dispatchEvent(new Event("webglcontextrestored"));
+    expect(onAvailabilityChange.mock.calls).toEqual([[true], [false], [true]]);
+    expect(start).toHaveBeenCalledTimes(2);
+
     detach();
-    expect(stop).toHaveBeenCalledOnce();
+    detach();
+    canvas.dispatchEvent(new Event("webglcontextlost", { cancelable: true }));
+    canvas.dispatchEvent(new Event("webglcontextrestored"));
+    expect(firstStop).toHaveBeenCalledOnce();
+    expect(restoredStop).toHaveBeenCalledOnce();
+    expect(start).toHaveBeenCalledTimes(2);
+    expect(onAvailabilityChange).toHaveBeenCalledTimes(3);
   });
 
   it("logs unavailable error when start returns null", () => {
@@ -44,47 +60,5 @@ describe("attachWebGLContextLifecycle", () => {
     expect(onAvailabilityChange).toHaveBeenCalledWith(false);
     expect(logError).toHaveBeenCalledWith("WebGL failed to initialize", "other");
     detach();
-  });
-
-  it("handles webglcontextlost by stopping resources and notifying availability", () => {
-    const stop = vi.fn();
-    const onAvailabilityChange = vi.fn();
-
-    const detach = attachWebGLContextLifecycle({
-      canvas,
-      start: () => stop,
-      onAvailabilityChange,
-      contextLostErrorMessage: "Context was lost",
-    });
-
-    const lostEvent = new Event("webglcontextlost", { cancelable: true });
-    canvas.dispatchEvent(lostEvent);
-
-    expect(lostEvent.defaultPrevented).toBe(true);
-    expect(stop).toHaveBeenCalledOnce();
-    expect(onAvailabilityChange).toHaveBeenLastCalledWith(false);
-    expect(logError).toHaveBeenCalledWith("Context was lost", "other");
-
-    detach();
-  });
-
-  it("handles webglcontextrestored by re-invoking start", () => {
-    const stop1 = vi.fn();
-    const stop2 = vi.fn();
-    let invocation = 0;
-    const onAvailabilityChange = vi.fn();
-
-    const detach = attachWebGLContextLifecycle({
-      canvas,
-      start: () => (++invocation === 1 ? stop1 : stop2),
-      onAvailabilityChange,
-    });
-
-    canvas.dispatchEvent(new Event("webglcontextlost", { cancelable: true }));
-    canvas.dispatchEvent(new Event("webglcontextrestored"));
-
-    expect(onAvailabilityChange).toHaveBeenLastCalledWith(true);
-    detach();
-    expect(stop2).toHaveBeenCalledOnce();
   });
 });

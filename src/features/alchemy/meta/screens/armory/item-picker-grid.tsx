@@ -101,7 +101,7 @@ export function ItemPickerGrid({
       swapKey={slot}
       fillerTestId="armory-inventory-filler"
       renderItem={(item) => {
-        const reservedBy = reservedGear[item.instanceId];
+        const reservedBy = Object.hasOwn(reservedGear, item.instanceId) ? reservedGear[item.instanceId] : undefined;
         const isArtHidden = hiddenArtworkIds?.has(item.instanceId) ?? false;
         const reservationReason = reservedReasonFor(reservedBy ?? null);
         const definition = gearDefinitions[item.definitionId];

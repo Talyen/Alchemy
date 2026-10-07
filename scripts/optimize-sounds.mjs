@@ -1,4 +1,4 @@
-import { assetLibraryRoot, requireAssetSources } from "./assets/asset-library.mjs";
+import { resolveAssetSource, requireAssetSources } from "./assets/asset-library.mjs";
 import { execFile } from "node:child_process";
 import { copyFile, readdir } from "node:fs/promises";
 import path from "node:path";
@@ -55,7 +55,7 @@ const SCHEMA_VERSION = ASSET_SCHEMA_VERSION;
 const TRANSFORM_CONCURRENCY = SOUND_TRANSFORM_CONCURRENCY;
 
 async function optimizeSound({ source, target }, storedEntry, check) {
-  const sourcePath = path.join(assetLibraryRoot(), source);
+  const sourcePath = resolveAssetSource(source);
   const outputPath = path.join(outputDir, target);
   const ext = path.extname(source).toLowerCase();
   const settings = soundTransformSettings(ext);
@@ -109,7 +109,10 @@ export async function optimizeSounds({ check = false } = {}) {
 
   await ensureOutputDir(outputDir, { check });
   await validateSoundAssetRegistry();
-  await requireAssetSources(generatedSoundAssets);
+  await requireAssetSources(generatedSoundAssets, {
+    manifestPath,
+    settingsFor: ({ source }) => soundTransformSettings(path.extname(source).toLowerCase()),
+  });
 
   const pipeline = await runManifestPipeline({
     entries: generatedSoundAssets,

@@ -17,7 +17,6 @@ export interface SaveData extends AlchemyPersistenceFields {
 
 /**
  * Snapshot assembled from stores before persistence. `lastSavedAt` is stamped
- * by the I/O seam per physical write (see io.ts `serializeSaveSnapshot`), so
- * builders never invent one.
+ * when SaveStorage serializes a payload. Builders never invent one.
  */
 export type UnstampedSaveData = Omit<SaveData, "lastSavedAt">;

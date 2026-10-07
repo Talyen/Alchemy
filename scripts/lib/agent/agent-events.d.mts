@@ -1,3 +1,5 @@
+export function hashContent(text: string): string;
+
 export function readExposure(section: {
   path: string;
   start: number;

@@ -20,6 +20,8 @@ Both games default to `~/Documents/Asset Library`; set `ASSET_LIBRARY_ROOT` for 
 
 Run `npm run assets` after source/selection edits, then `npm run assets:check`. App icons retain their focused `npm run generate:icons` command; source and output checks include its preparation record. Narrow optimizers remain available. Download selected files in Finder when iCloud has offloaded them. Full preparation reads all selected sources before publishing or pruning anything; missing sources preserve existing outputs. Asset-related pushes require a local source check.
 
+Selected files may be moved between folders or renamed within the configured library without updating manifests. Preparation, narrow optimizers, local source checks, and icon generation automatically search for missing paths and resolve the original bytes using the existing preparation receipt. Same-name alternatives never substitute for the recorded revision; byte-identical duplicates use a deterministic path. Recovery does not move files, rewrite selections, or change prepared outputs. Searches stay inside `ASSET_LIBRARY_ROOT` and do not follow symlinks. Unreadable or iCloud-offloaded files still need downloading; deleted or changed sources, missing receipts, and changed selections/recipes fail safely. Moving the entire library still requires updating `ASSET_LIBRARY_ROOT`.
+
 Ordinary development and builds use committed outputs. `predev` and hosted CI run `npm run assets:check:outputs`; this deliberately does not establish raw-source freshness. CI neither downloads the library nor regenerates media. Prepared manifests retain independent source/settings hashes, selection fingerprints, and output hashes.
 
 ## Art style and generation prompts

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { InteractiveArtTile } from "@/features/alchemy/shared/ui/interactive-art-tile";
 import { TOOLTIP_FADE_MS } from "@/lib/game-constants";
+import userEvent from "@testing-library/user-event";
 
 function renderTile() {
   return render(
@@ -83,8 +84,9 @@ describe("InteractiveArtTile hover popup", () => {
     expect(screen.queryByTestId("tile-popup")).toBeNull();
   });
 
-  it("keeps the hover popup without glow chrome when the tile is disabled", () => {
-    render(
+  it("keeps unavailable tiles inspectable and preserves explicit rejection feedback", async () => {
+    const onRejected = vi.fn();
+    const tile = (disabled: boolean) => (
       <InteractiveArtTile
         id="sold-ring"
         interactionKey="shop"
@@ -94,10 +96,13 @@ describe("InteractiveArtTile hover popup", () => {
         imageClassName=""
         as="button"
         interactiveChrome={false}
-        disabled
+        disabled={disabled}
+        ariaDisabled
+        onClick={onRejected}
         popup={({ visible }) => <div data-testid="tile-popup">{visible ? "shown" : "hidden"}</div>}
-      />,
+      />
     );
+    const { rerender } = render(tile(true));
 
     const button = screen.getByRole("button", { name: "Ruby Ring" });
     expect(button).toHaveProperty("disabled", true);
@@ -105,5 +110,13 @@ describe("InteractiveArtTile hover popup", () => {
 
     fireEvent.mouseEnter(button.parentElement!);
     expect(screen.getByTestId("tile-popup").textContent).toBe("shown");
+    rerender(tile(false));
+    expect(button.disabled).toBe(false);
+    expect(button.getAttribute("aria-disabled")).toBe("true");
+    const user = userEvent.setup();
+    await user.tab();
+    expect(document.activeElement).toBe(button);
+    await user.keyboard("{Enter} ");
+    expect(onRejected).toHaveBeenCalledTimes(2);
   });
 });

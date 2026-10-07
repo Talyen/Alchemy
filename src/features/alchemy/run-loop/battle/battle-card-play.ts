@@ -98,10 +98,10 @@ export function createBattleCardPlay(
     commit: () => boolean | Promise<boolean>,
   ): Promise<boolean> {
     const sessionNum = ctx.playback.id;
-    if (control.signal.aborted || !control.canCommit()) return false;
+    if (!ctx.playback.isCurrent(sessionNum) || control.signal.aborted || !control.canCommit()) return false;
     const clearPreview = await previewAutoplayChoice(control, previewId);
     try {
-      if (sessionNum !== ctx.playback.id || control.signal.aborted || !control.canCommit()) return false;
+      if (!ctx.playback.isCurrent(sessionNum) || control.signal.aborted || !control.canCommit()) return false;
       return await commit();
     } finally {
       clearPreview();
@@ -170,6 +170,7 @@ export function createBattleCardPlay(
       }
     };
     if (!shouldReduceMotion()) {
+      const battleSignal = ctx.playback.signal;
       const ui = useUiStore.getState();
       ui.setAutoplayPreviewCardId(previewId);
       ui.maybeTriggerShimmer(previewId);
@@ -177,11 +178,14 @@ export function createBattleCardPlay(
         const finish = () => {
           clearTimeout(timer);
           control.signal.removeEventListener("abort", finish);
-          if (control.signal.aborted) clearPreview();
+          battleSignal.removeEventListener("abort", finish);
+          if (control.signal.aborted || battleSignal.aborted) clearPreview();
           resolve();
         };
         const timer = setTimeout(finish, resolveGameDelay(AUTOPLAY_PREVIEW_MS));
         control.signal.addEventListener("abort", finish, { once: true });
+        battleSignal.addEventListener("abort", finish, { once: true });
+        if (control.signal.aborted || battleSignal.aborted) finish();
       });
     }
     return clearPreview;

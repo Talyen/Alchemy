@@ -122,6 +122,61 @@ describe("ArmoryScreen core", () => {
     expect(onEquip).toHaveBeenCalledWith("knight", "body", expect.objectContaining({ instanceId: "gear-body" }));
   });
 
+  it("allows borrowing a combat hero's spare but protects it from crafting and salvage", async () => {
+    const user = userEvent.setup();
+    const spare = { instanceId: "combat-spare", definitionId: "longsword-basic", affixes: [] };
+    const free = { ...spare, instanceId: "free-sword" };
+    const inventories = createArmoryInventories([free]);
+    inventories.rogue = [spare];
+    const onEquip = vi.fn(() => false);
+    const onApplyCurrency = vi.fn(() => true);
+    const onSalvage = vi.fn(() => true);
+    const onUnequip = vi.fn();
+    const { props, rerender } = renderArmoryScreen({
+      inventories,
+      onEquip,
+      onApplyCurrency,
+      onSalvage,
+      onUnequip,
+      craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES, "ascension-seal": 1 },
+      combatRestrictions: { characters: { rogue: ["labyrinth"] }, gear: {}, trinkets: {} },
+    });
+    const button = (id: string) =>
+      within(document.querySelector<HTMLElement>(`[data-instance-id="${id}"]`)!).getByRole("button");
+    expect(button(spare.instanceId).getAttribute("aria-disabled")).toBe("false");
+    await user.click(button(spare.instanceId));
+    expect(onEquip).toHaveBeenCalledWith("knight", "main-hand", spare);
+
+    await user.click(screen.getByRole("button", { name: /^Use Ascension Seal/ }));
+    expect(button(spare.instanceId).getAttribute("aria-disabled")).toBe("true");
+    expect(button(spare.instanceId).getAttribute("aria-label")).toContain("Reserved for Rogue");
+    expect(button(free.instanceId).getAttribute("aria-disabled")).toBe("false");
+    await user.click(button(spare.instanceId));
+    expect(onApplyCurrency).not.toHaveBeenCalled();
+
+    await user.click(screen.getByLabelText("Salvage"));
+    expect(button(spare.instanceId).getAttribute("aria-disabled")).toBe("true");
+    await user.click(button(spare.instanceId));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(onSalvage).not.toHaveBeenCalled();
+
+    await user.click(screen.getByLabelText("Salvage"));
+    const borrowed = createEmptyGearLoadouts();
+    borrowed.knight["main-hand"] = spare.instanceId;
+    rerender(<ArmoryScreen {...props} loadouts={borrowed} />);
+    const slot = screen.getByLabelText("Main-hand equipment slot");
+    expect(slot.getAttribute("aria-disabled")).toBe("true");
+    await user.click(slot);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    await user.click(screen.getByRole("button", { name: /^Use Ascension Seal/ }));
+    await user.click(slot);
+    expect(onApplyCurrency).not.toHaveBeenCalled();
+    await user.keyboard("{Escape}");
+    expect(slot.hasAttribute("aria-disabled")).toBe(false);
+    await user.click(slot);
+    expect(onUnequip).toHaveBeenCalledWith("knight", "main-hand");
+  });
+
   it("paginates matching inventory to six items per page", async () => {
     const user = userEvent.setup();
     const items = Array.from({ length: 7 }, (_, index) => ({

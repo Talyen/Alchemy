@@ -10,6 +10,9 @@ import { resetAllTestStores } from "../helpers/run-domain-store-test";
 import { deferred } from "../helpers/deferred";
 import type { SaveBackend } from "@/lib/platform-save-backend";
 import { defaultGameSession } from "@/app/application-session";
+import * as runLifecycle from "@/features/alchemy/shared/stores/run-lifecycle";
+import { AUTOSAVE_RETRY_COOLDOWN_MS } from "@/lib/game-constants";
+import { createAlchemyAutosaveLifecycle } from "@/app/autosave-lifecycle";
 
 function changeGold(gold: number) {
   act(() => {
@@ -66,6 +69,71 @@ describe("useAlchemyAutosaveFromStores", () => {
     const written = JSON.parse(write.mock.calls[0]![1]);
     expect(written.gold).toBe(77);
     expect(written.lastSavedAt).toBeGreaterThan(0);
+  });
+
+  it("backs off snapshot failures and saves the latest progress after recovery", async () => {
+    const { write, writeSync } = installBackend();
+    const snapshot = vi.spyOn(runLifecycle, "resolveActiveRunForSave").mockImplementation(() => {
+      throw new Error("snapshot failed");
+    });
+    renderHook(() => useAlchemyAutosaveFromStores());
+    changeGold(8);
+    await advance(500);
+    expect(snapshot).toHaveBeenCalledOnce();
+    act(() => {
+      window.dispatchEvent(new PageTransitionEvent("pagehide"));
+      window.dispatchEvent(new Event("beforeunload"));
+    });
+    expect(snapshot).toHaveBeenCalledTimes(2);
+    localStorage.setItem("alchemy-disable-animations", "true");
+    changeGold(9);
+    await advance(100);
+    expect(snapshot).toHaveBeenCalledTimes(2);
+    expect(write).not.toHaveBeenCalled();
+    expect(writeSync).not.toHaveBeenCalled();
+
+    snapshot.mockRestore();
+    await advance(AUTOSAVE_RETRY_COOLDOWN_MS - 100);
+    expect(write).toHaveBeenCalledOnce();
+    expect(JSON.parse(write.mock.calls[0]![1]).gold).toBe(9);
+    await advance(AUTOSAVE_RETRY_COOLDOWN_MS);
+    expect(write).toHaveBeenCalledOnce();
+  });
+
+  it("ignores cancelled timer callbacks and disposed flushes without losing newer scheduled work", async () => {
+    const { write } = installBackend();
+    const callbacks: Array<() => void> = [];
+    const lifecycle = createAlchemyAutosaveLifecycle(
+      undefined,
+      {
+        now: () => Date.now(),
+        setTimeout: (callback) => {
+          callbacks.push(callback);
+          return 1;
+        },
+        clearTimeout: vi.fn(),
+      },
+      defaultGameSession,
+    );
+    try {
+      changeGold(8);
+      changeGold(9);
+      callbacks[0]!();
+      await advance(0);
+      expect(write).not.toHaveBeenCalled();
+      callbacks[1]!();
+      await advance(0);
+      expect(write).toHaveBeenCalledOnce();
+      expect(JSON.parse(write.mock.calls[0]![1]).gold).toBe(9);
+      changeGold(10);
+      lifecycle.dispose(false);
+      callbacks[2]!();
+      lifecycle.flush(true);
+      await advance(0);
+      expect(write).toHaveBeenCalledOnce();
+    } finally {
+      lifecycle.dispose(false);
+    }
   });
 
   it("flushes the latest dirty snapshot on pagehide before the debounce expires", () => {

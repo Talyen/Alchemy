@@ -15,19 +15,23 @@ export function recordAgentEvent(rootDir, event, env = process.env) {
   );
 }
 
+export function hashContent(text) {
+  return crypto.createHash("sha256").update(text).digest("hex");
+}
+
 export function readExposure(section) {
   return {
     kind: "read",
     path: section.path,
     start: section.start,
     end: section.end,
-    contentHash: crypto.createHash("sha256").update(section.text).digest("hex"),
+    contentHash: hashContent(section.text),
     bytes: Buffer.byteLength(section.text, "utf8"),
     lines: section.text
       .split(/\r?\n/u)
       .map((text, index) => ({
         line: section.start + index,
-        hash: crypto.createHash("sha256").update(text).digest("hex"),
+        hash: hashContent(text),
         bytes: Buffer.byteLength(text, "utf8"),
       }))
       .filter((line) => line.line <= section.end),

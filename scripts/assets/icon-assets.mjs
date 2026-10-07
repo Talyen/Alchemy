@@ -34,7 +34,11 @@ export async function checkIconAssets(root, { outputsOnly = false, record = fals
   const fingerprint = selectionHash({ source: iconSource, outputs: iconOutputs }, settings);
   let sourceHash;
   if (!outputsOnly) {
-    await requireAssetSources([{ source: iconSource }]);
+    await requireAssetSources([{ source: iconSource, target: iconOutputs[0] }], {
+      manifestPath: filename,
+      settingsFor: () => settings,
+      selectionFor: () => ({ source: iconSource, outputs: iconOutputs }),
+    });
     sourceHash = await computeContentHash(resolveAssetSource(iconSource), settings, ASSET_SCHEMA_VERSION);
   }
   if (!record && JSON.stringify(Object.keys(manifest).sort()) !== JSON.stringify([...iconOutputs].sort())) {

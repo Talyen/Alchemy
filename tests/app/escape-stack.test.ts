@@ -6,67 +6,47 @@ describe("escape-stack", () => {
     resetEscapeStackForTests();
   });
 
-  it("runs the highest-priority handler and stops lower ones", () => {
-    const dialog = vi.fn();
-    const modal = vi.fn();
-    const armory = vi.fn();
-    const menu = vi.fn();
-
-    pushEscapeHandler({ id: "menu", priority: ESCAPE_PRIORITY.APP_MENU, onEscape: menu });
-    pushEscapeHandler({ id: "armory", priority: ESCAPE_PRIORITY.ARMORY_TRANSIENT, onEscape: armory });
-    pushEscapeHandler({ id: "modal", priority: ESCAPE_PRIORITY.MODAL, onEscape: modal });
-    pushEscapeHandler({ id: "dialog", priority: ESCAPE_PRIORITY.DIALOG, onEscape: dialog });
-
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-
-    expect(dialog).toHaveBeenCalledTimes(1);
-    expect(modal).not.toHaveBeenCalled();
-    expect(armory).not.toHaveBeenCalled();
-    expect(menu).not.toHaveBeenCalled();
+  it("dismisses one layer per Escape and promotes the next eligible layer", () => {
+    const layers = [
+      { id: "menu", priority: ESCAPE_PRIORITY.APP_MENU, onEscape: vi.fn() },
+      { id: "screen", priority: ESCAPE_PRIORITY.SCREEN_OVERLAY, onEscape: vi.fn() },
+      { id: "armory", priority: ESCAPE_PRIORITY.ARMORY_TRANSIENT, onEscape: vi.fn() },
+      { id: "modal", priority: ESCAPE_PRIORITY.MODAL, onEscape: vi.fn() },
+      { id: "dialog", priority: ESCAPE_PRIORITY.DIALOG, onEscape: vi.fn() },
+      { id: "select", priority: ESCAPE_PRIORITY.SELECT, onEscape: vi.fn() },
+    ];
+    const remove = layers.map(pushEscapeHandler);
+    for (let index = layers.length - 1; index >= 0; index--) {
+      const event = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
+      window.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(true);
+      expect(layers[index]!.onEscape).toHaveBeenCalledOnce();
+      for (const lower of layers.slice(0, index)) expect(lower.onEscape).not.toHaveBeenCalled();
+      remove[index]!();
+    }
+    const empty = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
+    window.dispatchEvent(empty);
+    expect(empty.defaultPrevented).toBe(false);
+    for (const layer of layers) expect(layer.onEscape).toHaveBeenCalledOnce();
   });
 
-  it("runs a screen overlay before the app menu", () => {
-    const overlay = vi.fn();
-    const menu = vi.fn();
-
-    pushEscapeHandler({ id: "menu", priority: ESCAPE_PRIORITY.APP_MENU, onEscape: menu });
-    pushEscapeHandler({ id: "overlay", priority: ESCAPE_PRIORITY.SCREEN_OVERLAY, onEscape: overlay });
-
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-
-    expect(overlay).toHaveBeenCalledTimes(1);
-    expect(menu).not.toHaveBeenCalled();
-  });
-
-  it("falls through to armory-transient before app-menu", () => {
-    const armory = vi.fn();
-    const menu = vi.fn();
-
-    pushEscapeHandler({ id: "menu", priority: ESCAPE_PRIORITY.APP_MENU, onEscape: menu });
-    pushEscapeHandler({ id: "armory", priority: ESCAPE_PRIORITY.ARMORY_TRANSIENT, onEscape: armory });
-
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-
-    expect(armory).toHaveBeenCalledTimes(1);
-    expect(menu).not.toHaveBeenCalled();
-  });
-
-  it("unsubscribing a handler promotes the next priority", () => {
-    const modal = vi.fn();
-    const menu = vi.fn();
-
-    const unsubscribeModal = pushEscapeHandler({
-      id: "modal",
-      priority: ESCAPE_PRIORITY.MODAL,
-      onEscape: modal,
-    });
-    pushEscapeHandler({ id: "menu", priority: ESCAPE_PRIORITY.APP_MENU, onEscape: menu });
-
-    unsubscribeModal();
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-
-    expect(modal).not.toHaveBeenCalled();
-    expect(menu).toHaveBeenCalledTimes(1);
+  it("keeps the latest equal-priority registration when an older registration cleans up", () => {
+    const older = vi.fn();
+    const newer = vi.fn();
+    const removed = pushEscapeHandler({ id: "modal", priority: ESCAPE_PRIORITY.MODAL, onEscape: older });
+    const replacement = pushEscapeHandler({ id: "modal", priority: ESCAPE_PRIORITY.MODAL, onEscape: newer });
+    const top = pushEscapeHandler({ id: "other", priority: ESCAPE_PRIORITY.MODAL, onEscape: older });
+    removed();
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(older).toHaveBeenCalledOnce();
+    expect(newer).not.toHaveBeenCalled();
+    top();
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(newer).toHaveBeenCalledOnce();
+    replacement();
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(newer).toHaveBeenCalledOnce();
+    expect(older).toHaveBeenCalledOnce();
   });
 
   it("falls through when the top handler declines", () => {

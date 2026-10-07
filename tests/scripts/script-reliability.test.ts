@@ -558,6 +558,16 @@ describe("script execution reliability", () => {
       env: { ...process.env, ASSET_LIBRARY_ROOT: library },
     });
     expect(generated.status, generated.stderr).toBe(0);
+    const receipt = path.join(root, "desktop/icons/.asset-hashes.json");
+    const before = fs.readFileSync(receipt);
+    fs.renameSync(path.join(library, "chosen/icon.png"), path.join(library, "renamed.png"));
+    const recovered = spawnSync(process.execPath, [path.join(root, "scripts/generate-icons.mjs")], {
+      cwd: root,
+      encoding: "utf8",
+      env: { ...process.env, ASSET_LIBRARY_ROOT: library },
+    });
+    expect(recovered.status, recovered.stderr).toBe(0);
+    expect(fs.readFileSync(receipt)).toEqual(before);
     fs.rmSync(library, { recursive: true });
     const checked = spawnSync(
       process.execPath,

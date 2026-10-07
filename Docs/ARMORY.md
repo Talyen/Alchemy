@@ -106,8 +106,10 @@ silent with no persistent banner. Inventory is
 browsed across characters: Gear and permanent Trinkets equipped by a reserved
 hero cannot be taken by another hero, and no item owned by or equipped on the
 reserved hero can be crafted or salvaged from any tab — including unequipped
-items in their inventory, which the store boundary blocks even when reached
-through another hero's tab. Unused items owned by other heroes remain
+items in their inventory. Those spares can still be equipped by another hero.
+When crafting or salvage is armed, both inventory tiles and borrowed equipment
+slots show the inventory owner's reservation before an attempt reaches the store.
+Disarming the tool restores normal browsing and unequipping for that other hero. Unused items owned by other heroes remain
 editable through other heroes’ tabs. Acquisition adds inventory normally.
 
 The gear command boundary (`gear-session-command.ts` via `dispatchGearMutationWithRunHealthSync` / `dispatchGearSalvageWithMaterialGrant`) enforces the same reservations before running the mutator;

@@ -106,6 +106,18 @@ describe("combat equipment protection", () => {
     expect(readBattle(defaultGameSession).battleState.gearEffects).toEqual(manifest);
   });
 
+  it.each(["constructor", "__proto__"])("treats opaque %s item IDs as ordinary shared spares", (instanceId) => {
+    const item = { ...spare, instanceId };
+    dispatchGearMutationWithRunHealthSync({ mutate: (gear) => gear.addInstance(item, "knight") }, defaultGameSession);
+    expect(
+      dispatchGearMutationWithRunHealthSync(
+        { mutate: (gear) => gear.equip("rogue", "main-hand", item) },
+        defaultGameSession,
+      ),
+    ).toBe(true);
+    expect(readGameplayState(defaultGameSession).gear.loadouts.rogue["main-hand"]).toBe(instanceId);
+  });
+
   it("rolls back earlier Gear writes when a later operation returns false or null", () => {
     const before = readGameplayState(defaultGameSession);
     expect(

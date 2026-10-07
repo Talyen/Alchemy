@@ -12,11 +12,11 @@ import { TrinketPickerGrid } from "./trinket-picker-grid";
 import { FadeSlot } from "../../../shared/ui/use-fade";
 import type { ArmorySortOption } from "./armory-ordering";
 
-import type { GearCombatRestrictions } from "../../../shared/stores/gear-store";
 import type { ArmoryItemActions, ArmoryTargeting } from "./armory-screen-types";
 
 interface ArmoryPickerPanelProps {
-  combatRestrictions: GearCombatRestrictions;
+  reservedGear: Record<string, CharacterId>;
+  reservedTrinkets: Record<string, CharacterId>;
   selectedSlot: ArmorySlot;
   characterId: CharacterId;
   pickerItems: GearInstance[];
@@ -45,7 +45,8 @@ interface ArmoryPickerPanelProps {
 }
 
 export function ArmoryPickerPanel({
-  combatRestrictions,
+  reservedGear,
+  reservedTrinkets,
   selectedSlot,
   characterId,
   pickerItems,
@@ -108,7 +109,7 @@ export function ArmoryPickerPanel({
         </div>
         {selectedSlot === "trinket" ? (
           <TrinketPickerGrid
-            reservedTrinkets={combatRestrictions.trinkets}
+            reservedTrinkets={reservedTrinkets}
             characterId={characterId}
             noMatches={totalCount > 0 && matchCount === 0}
             trinkets={ownedTrinkets}
@@ -121,7 +122,7 @@ export function ArmoryPickerPanel({
           />
         ) : (
           <ItemPickerGrid
-            reservedGear={combatRestrictions.gear}
+            reservedGear={reservedGear}
             slot={selectedSlot}
             noMatches={totalCount > 0 && matchCount === 0}
             items={pickerItems}

@@ -22,20 +22,22 @@ export function createAutosaveScheduler(maxWaitMs: number, retryCooldownMs: numb
   let acknowledgedRevision = 0;
   let submittedRevision = 0;
   let schedulerEpoch = 0;
-  let terminalSubmittedRevision = 0;
+  let exitAttemptedRevision = 0;
   let dirtySince = 0;
   let retryAt = 0;
+  let retryRevision = 0;
 
   function cancel() {
     schedulerEpoch++;
-    revision = acknowledgedRevision = submittedRevision = dirtySince = retryAt = terminalSubmittedRevision = 0;
+    revision = acknowledgedRevision = submittedRevision = retryRevision = exitAttemptedRevision = 0;
+    dirtySince = retryAt = 0;
   }
 
   function canSubmit(terminal: boolean): boolean {
     // Peek without mutating so callers can skip snapshot work when idle.
     // Exit-once latch: back-to-back pagehide/beforeunload/visibilitychange for
     // the same revision submit once; the next markDirty moves revision forward.
-    if (terminal && revision === terminalSubmittedRevision) return false;
+    if (terminal && revision === exitAttemptedRevision) return false;
     return revision > acknowledgedRevision && (terminal || revision > submittedRevision);
   }
 
@@ -54,12 +56,19 @@ export function createAutosaveScheduler(maxWaitMs: number, retryCooldownMs: numb
       // New changes and shorter debounces cannot bypass a failure cooldown.
       return Math.max(retryAt - now, clamp(maxWaitDelay, 0, debounceMs));
     },
+    failSnapshot(now: number, terminal: boolean) {
+      // No write was submitted; retain dirty progress while sharing the
+      // failure cooldown and the one-attempt-per-revision exit latch.
+      retryAt = now + retryCooldownMs;
+      retryRevision = revision;
+      if (terminal) exitAttemptedRevision = revision;
+    },
     submit(terminal: boolean): SaveSubmission | null {
       if (!canSubmit(terminal)) {
         return null;
       }
       submittedRevision = revision;
-      if (terminal) terminalSubmittedRevision = revision;
+      if (terminal) exitAttemptedRevision = revision;
       return { revision, schedulerEpoch };
     },
     complete(submission: SaveSubmission, outcome: SaveWriteOutcome, now: number): AutosaveCompletionAction {
@@ -70,13 +79,17 @@ export function createAutosaveScheduler(maxWaitMs: number, retryCooldownMs: numb
       }
       if (outcome === "saved") {
         acknowledgedRevision = Math.max(acknowledgedRevision, submission.revision);
-        if (submission.revision === submittedRevision) retryAt = 0;
+        submittedRevision = Math.max(submittedRevision, acknowledgedRevision);
+        // A covering write clears backoff; an older success cannot undo a
+        // newer snapshot or write failure's cooldown.
+        if (acknowledgedRevision >= retryRevision) retryAt = retryRevision = 0;
         return acknowledgedRevision === revision ? "cancel" : "schedule";
       }
       // Only the latest unacknowledged submission can rewind the write gate.
       if (submission.revision > acknowledgedRevision && submission.revision === submittedRevision) {
         submittedRevision = acknowledgedRevision;
         retryAt = now + retryCooldownMs;
+        retryRevision = submission.revision;
         return "schedule";
       }
       return "ignore";

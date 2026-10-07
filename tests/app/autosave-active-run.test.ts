@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/persistence";
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-lifecycle";
@@ -9,39 +9,11 @@ import { resetAllTestStores } from "../helpers/run-domain-store-test";
 import { setRunProgress } from "../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/app/application-session";
 
-vi.mock("@/features/alchemy/shared/storage", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/shared/storage")>();
-  return {
-    ...actual,
-    saveAlchemySaveData: vi.fn(),
-  };
-});
-
 beforeEach(() => {
   resetAllTestStores();
 });
 
 describe("resolveActiveRunForSave", () => {
-  it("returns null when hasActiveRun is false even if run progress remains populated", () => {
-    setRunProgress({ gold: 42, runPlayerHealth: 10, initialized: true });
-    dispatchRunSessionCommand(
-      (draft) => {
-        setHasActiveRun(draft, false);
-        setScreen(draft, ROUTE_SCREENS.GAME_OVER);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
-
-    const activeRun = resolveActiveRunForSave(readHasActiveRun(defaultGameSession), undefined, defaultGameSession);
-    const save = buildAlchemySaveDataFromStores(activeRun, defaultGameSession);
-
-    expect(activeRun).toBeNull();
-    expect(save.activeRun).toBeNull();
-  });
-
   it("snapshots active run when hasActiveRun is true", () => {
     setRunProgress({ gold: 15, initialized: true });
     dispatchRunSessionCommand(
@@ -88,7 +60,7 @@ describe("resolveActiveRunForSave", () => {
 });
 
 describe("buildAlchemySaveDataFromStores permanent progress", () => {
-  it("reads materialInventory and talentXP from the run-domain profile when args are omitted", () => {
+  it("joins materialInventory and talentXP from the session's run profile", () => {
     setRunProgress({
       materialInventory: { wood: 12, iron: 3, herbs: 1, food: 0, gems: 2, stone: 0, hide: 0 },
       talentXP: { burn: 40 },

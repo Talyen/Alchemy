@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
-import { readExposure } from "./agent-events.mjs";
+import { hashContent } from "./agent-events.mjs";
 import { globToRegExp } from "../glob-pattern.mjs";
 import { runGit, toRepoRelative } from "../repository-paths.mjs";
 
@@ -185,12 +185,12 @@ export function incrementalContext(root, session, sections, { refresh = false } 
     } catch {}
   }
   const key = (section) => JSON.stringify([section.path, section.heading ?? null, section.start, section.end]);
-  const pending = sections.filter((section) => seen[key(section)] !== readExposure(section).contentHash);
+  const pending = sections.filter((section) => seen[key(section)] !== hashContent(section.text));
   return {
     sections: pending,
     omitted: sections.length - pending.length,
     remember(included) {
-      for (const section of included) seen[key(section)] = readExposure(section).contentHash;
+      for (const section of included) seen[key(section)] = hashContent(section.text);
       fs.mkdirSync(path.dirname(filename), { recursive: true });
       fs.writeFileSync(filename, JSON.stringify({ version: 1, seen }) + "\n");
     },
@@ -201,9 +201,15 @@ export function relatedLocations(root, selectedPaths, limit = 6) {
   const ts = require("typescript");
   const configPath = ts.findConfigFile(root, ts.sys.fileExists);
   const config = configPath ? ts.readConfigFile(configPath, ts.sys.readFile).config : {};
-  const options = ts.parseJsonConfigFileContent(config, ts.sys, root).options;
+  const options = { ...ts.parseJsonConfigFileContent(config, ts.sys, root).options, allowJs: true };
+  // Share filesystem resolution work within this scan, never across edits.
+  const resolutionCache = ts.createModuleResolutionCache(
+    root,
+    (file) => (ts.sys.useCaseSensitiveFileNames ? file : file.toLowerCase()),
+    options,
+  );
   const files = repositorySearch(root).filter((file) => /\.(?:[cm]?[jt]sx?)$/u.test(file));
-  // Full-repo import graph: no cache by design (always current). Selections
+  // Rebuild the full-repo import graph each scan so edits remain visible. Selections
   // are capped so a pathological checkout fails fast instead of hanging.
   const RELATED_SCAN_MAX_FILES = 20_000;
   if (files.length > RELATED_SCAN_MAX_FILES) {
@@ -218,7 +224,7 @@ export function relatedLocations(root, selectedPaths, limit = 6) {
     const fullPath = path.join(root, file);
     const imports = ts.preProcessFile(fs.readFileSync(fullPath, "utf8"), true, true).importedFiles;
     const resolved = imports.flatMap(({ fileName }) => {
-      const target = ts.resolveModuleName(fileName, fullPath, { ...options, allowJs: true }, ts.sys).resolvedModule;
+      const target = ts.resolveModuleName(fileName, fullPath, options, ts.sys, resolutionCache).resolvedModule;
       const relative = target && toRepoRelative(root, target.resolvedFileName, { onOutside: "keep-relative" });
       return relative && known.has(relative) ? [relative] : [];
     });

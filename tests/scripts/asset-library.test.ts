@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import sharp from "sharp";
@@ -40,7 +40,7 @@ vi.mock("../../scripts/assets/asset-pipeline-runner.mjs", async (importOriginal)
 });
 fixture.root = await mkdtemp(path.join(os.tmpdir(), "alchemy-library-checkout-"));
 const { optimizeAssets } = await import("../../scripts/optimize-assets.mjs");
-const { checkAssetOutputs } = await import("../../scripts/assets/check-asset-outputs.mjs");
+const { checkAssetOutputs, preflightSelectedSources } = await import("../../scripts/assets/check-asset-outputs.mjs");
 const { resolveAssetSource, assetLibraryRoot } = await import("../../scripts/assets/asset-library.mjs");
 let directory: string;
 let library: string;
@@ -94,6 +94,44 @@ it("detects local source changes and preserves prepared files when a selected so
   expect(await readFile(output)).toEqual(before);
 });
 
+it("automatically follows folder moves and renames without changing selections or prepared bytes", async () => {
+  const output = path.join(fixture.root, "src/assets/optimized/selected.webp");
+  const receipt = path.join(fixture.root, "src/assets/optimized/.asset-hashes.json");
+  const before = await readFile(output);
+  const beforeReceipt = await readFile(receipt);
+  await mkdir(path.join(library, "reorganized"));
+  await rename(path.join(library, "selected.png"), path.join(library, "reorganized/renamed.png"));
+  // A same-named replacement must never win over the original bytes.
+  await writeFile(path.join(library, "reorganized/selected.png"), "different revision");
+  await expect(preflightSelectedSources(fixture.root)).resolves.toBeUndefined();
+  await expect(optimizeAssets({ check: true })).resolves.toEqual({ ok: true });
+  expect(resolveAssetSource(selection.asset.source)).toBe(path.join(library, "reorganized/renamed.png"));
+  await rename(path.join(library, "reorganized/renamed.png"), path.join(library, "moved-again.png"));
+  await expect(optimizeAssets()).resolves.toEqual({ ok: true });
+  expect(await readFile(output)).toEqual(before);
+  expect(await readFile(receipt)).toEqual(beforeReceipt);
+  expect(selection.asset.source).toBe("selected.png");
+  // Restoring the canonical source makes explicit revisions take precedence.
+  await writeFile(path.join(library, "selected.png"), "changed");
+  await expect(optimizeAssets({ check: true })).resolves.toMatchObject({ ok: false });
+});
+
+it("does not recover through symlinks or receipts belonging to another selection/recipe", async () => {
+  const { symlink } = await import("node:fs/promises");
+  const output = path.join(fixture.root, "src/assets/optimized/selected.webp");
+  const before = await readFile(output);
+  await rename(path.join(library, "selected.png"), path.join(directory, "original.png"));
+  await symlink(path.join(directory, "original.png"), path.join(library, "linked.png"));
+  await expect(optimizeAssets()).rejects.toThrow("No verified moved source");
+  await rename(path.join(directory, "original.png"), path.join(library, "renamed.png"));
+  selection.asset.width = 32;
+  await expect(optimizeAssets()).rejects.toThrow("No verified moved source");
+  selection.asset.width = 16;
+  selection.asset.source = "another-selection.png";
+  await expect(optimizeAssets()).rejects.toThrow("No verified moved source");
+  expect(await readFile(output)).toEqual(before);
+});
+
 it("resolves an external root and prevents absolute or escaping references", () => {
   expect(assetLibraryRoot()).toBe(library);
   expect(resolveAssetSource("selected.png")).toBe(path.join(library, "selected.png"));
@@ -115,6 +153,9 @@ it("verifies application icons without sources and catches recipe, source, or ou
     await writeFile(output, target);
   }
   await checkIconAssets(fixture.root, { record: true });
+  await rename(master, path.join(library, "renamed-icon.png"));
+  await expect(checkIconAssets(fixture.root)).resolves.toBeUndefined();
+  await rename(path.join(library, "renamed-icon.png"), master);
   vi.stubEnv("ASSET_LIBRARY_ROOT", path.join(directory, "unavailable"));
   await expect(checkIconAssets(fixture.root, { outputsOnly: true })).resolves.toBeUndefined();
   await writeFile(generator, "updated recipe");

@@ -1,5 +1,5 @@
 import { mkdtempSync, rmSync } from "node:fs";
-import { mkdir, readFile, readdir, utimes, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rename, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -83,6 +83,7 @@ describe("sound manifest publication", () => {
     await optimizeSounds();
     vi.mocked(writeFile).mockClear();
     fixture.convert.mockClear();
+    await rename(path.join(sourceDir, "raw.ogg"), path.join(sourceDir, "renamed.ogg"));
     await expect(optimizeSounds({ check: true })).resolves.toEqual({ ok: true });
     expect(writeFile).not.toHaveBeenCalled();
     await writeFile(path.join(outputDir, name), "changed bytes");

@@ -1,7 +1,7 @@
 import { copyFile } from "node:fs/promises";
 import path from "node:path";
 
-import { assetLibraryRoot, requireAssetSources } from "./assets/asset-library.mjs";
+import { resolveAssetSource, requireAssetSources } from "./assets/asset-library.mjs";
 import { selectionHash, processFreshEntry } from "./assets/asset-manifest-cache.mjs";
 import {
   ASSET_SCHEMA_VERSION,
@@ -33,7 +33,7 @@ export async function optimizeMusic({ check = false } = {}) {
     return { ok: false, error: msg };
   }
   await validateMusicRegistry(files);
-  await requireAssetSources(files);
+  await requireAssetSources(files, { manifestPath, settingsFor: () => MUSIC_SETTINGS });
 
   await ensureOutputDir(outputDir, { check });
 
@@ -45,7 +45,7 @@ export async function optimizeMusic({ check = false } = {}) {
     label: "music file",
     concurrency: MUSIC_COPY_CONCURRENCY,
     processEntry: async (file, storedEntry) => {
-      const sourcePath = path.join(assetLibraryRoot(), file.source);
+      const sourcePath = resolveAssetSource(file.source);
       const outputPath = path.join(outputDir, file.target);
 
       const { fresh, entry } = await processFreshEntry(

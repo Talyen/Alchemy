@@ -2,22 +2,6 @@ const DESTRUCTIVE = new Set(["reset", "checkout", "restore", "clean", "switch", 
 
 const GLOBAL_OPTIONS_WITH_VALUE = new Set(["-c", "--git-dir", "--work-tree", "--namespace", "-C"]);
 
-const GLOBAL_OPTIONS_NO_VALUE = new Set([
-  "--help",
-  "--version",
-  "--html-path",
-  "--man-path",
-  "--info-path",
-  "--paginate",
-  "--no-pager",
-  "--no-replace-objects",
-  "--bare",
-  "--literal-pathspecs",
-  "--glob-pathspecs",
-  "--noglob-pathspecs",
-  "--icase-pathspecs",
-]);
-
 export function extractSubcommand(argv) {
   let i = 0;
   while (i < argv.length) {
@@ -29,14 +13,6 @@ export function extractSubcommand(argv) {
         continue;
       }
       if (arg.includes("=")) {
-        i += 1;
-        continue;
-      }
-      if (GLOBAL_OPTIONS_NO_VALUE.has(arg)) {
-        i += 1;
-        continue;
-      }
-      if (arg.startsWith("-C") && arg.length > 2) {
         i += 1;
         continue;
       }
@@ -62,7 +38,7 @@ export function isDestructive(parsedArgs) {
   }
   if (subcommand === "checkout") {
     if (args.includes("--")) return true;
-    if (args.includes("-f") || args.includes("--force")) return true;
+    if (hasForceFlag(args)) return true;
     if (args.includes(".")) return true;
     return false;
   }
@@ -84,10 +60,13 @@ export function isDestructive(parsedArgs) {
     return args.some((a) => a.startsWith("-") && a.includes("f"));
   }
   if (subcommand === "switch") {
-    return args.includes("-f") || args.includes("--force") || args.includes("--discard-changes");
+    return hasForceFlag(args) || args.includes("--discard-changes");
   }
   if (subcommand === "branch") {
-    return args.includes("-D");
+    return (
+      args.some((arg) => /^-[qrvadfD]*D[qrvadfD]*$/u.test(arg)) ||
+      (hasForceFlag(args) && args.some((arg) => arg === "--delete" || /^-[qrvadf]*d[qrvadf]*$/u.test(arg)))
+    );
   }
   if (subcommand === "push") {
     let options = true;
@@ -107,4 +86,10 @@ export function isDestructive(parsedArgs) {
     return false;
   }
   return false;
+}
+
+function hasForceFlag(args) {
+  // Only valueless short flags may cluster: -bfeature and -cfeature name a
+  // branch and must not be mistaken for an embedded force flag.
+  return args.some((arg) => arg === "--force" || /^-[qmdtlfp23varD]*f[qmdtlfp23varDf]*$/u.test(arg));
 }

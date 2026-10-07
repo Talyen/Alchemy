@@ -1,6 +1,6 @@
 import type { RefObject } from "react";
 import { Lock } from "lucide-react";
-import type { TrinketEntry } from "@/lib/game-data";
+import type { CharacterId, TrinketEntry } from "@/lib/game-data";
 import type { ArmorySlot, CraftingCurrencyId, GearInstance, GearLoadout, GearSlot } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { collectionGridGapXClass, sectionTitleClass } from "../../../shared/config";
@@ -14,6 +14,7 @@ import { TrinketSlotButton } from "./parts/trinket-slot-button";
 interface ArmoryEquipmentPanelProps {
   loadout: GearLoadout;
   inventoryById: ReadonlyMap<string, GearInstance>;
+  modificationReservations: Record<string, CharacterId>;
   equippedTrinket: TrinketEntry | undefined;
   selectedSlot: ArmorySlot;
   targeting: ArmoryTargeting;
@@ -35,6 +36,7 @@ interface ArmoryEquipmentPanelProps {
 export function ArmoryEquipmentPanel({
   loadout,
   inventoryById,
+  modificationReservations,
   equippedTrinket,
   selectedSlot,
   targeting,
@@ -87,6 +89,9 @@ export function ArmoryEquipmentPanel({
               key={slot}
               slot={slot}
               instance={instance}
+              reservedBy={
+                instanceId && (salvageMode || activeCurrencyId) ? modificationReservations[instanceId] : undefined
+              }
               selected={selectedSlot === slot}
               editable={editable}
               salvageMode={salvageMode}

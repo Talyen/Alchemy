@@ -1,4 +1,5 @@
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { staticAssets, validateAssetRegistry } from "./asset-manifest.mjs";
 import { gearAssets } from "./gear-assets.mjs";
 import { musicAssets, validateMusicRegistry } from "./music-assets.mjs";
@@ -21,8 +22,17 @@ import { commitManifest, loadManifest, computeOutputHash, selectionHash } from "
 import { artTransformSettings } from "../optimize-assets.mjs";
 import { requireAssetSources } from "./asset-library.mjs";
 
-export async function preflightSelectedSources() {
-  await requireAssetSources([...staticAssets, ...gearAssets, ...generatedSoundAssets, ...musicAssets]);
+export async function preflightSelectedSources(rootDir = fileURLToPath(new URL("../../", import.meta.url))) {
+  for (const [kind, entries, settingsFor] of [
+    ["art", [...staticAssets, ...gearAssets], artTransformSettings],
+    ["sounds", generatedSoundAssets, ({ source }) => soundTransformSettings(path.extname(source).toLowerCase())],
+    ["music", musicAssets, () => MUSIC_SETTINGS],
+  ]) {
+    await requireAssetSources(entries, {
+      manifestPath: path.join(rootDir, MANAGED_DIRS[kind].dir, MANIFEST_BASENAME),
+      settingsFor,
+    });
+  }
 }
 
 /** Check committed selections, settings and bytes; never inspect external sources. */

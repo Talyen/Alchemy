@@ -2,7 +2,7 @@ import { TOOLTIP_FADE_MS } from "@/lib/game-constants";
 import { type RefObject, type ReactNode } from "react";
 
 import { ShineBorder } from "@/components/ui/shine-border";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/cn";
 
 import { cardInteractiveGlowClass, cardShineFrameClass } from "../config";
 import { Surface } from "./surface";
@@ -37,44 +37,6 @@ interface InteractiveArtTileProps {
   children?: ReactNode | undefined;
 
   onHoverChange?: ((hovered: boolean) => void) | undefined;
-}
-
-interface TileVisualResolutionProps {
-  interactive: boolean;
-  disabled: boolean;
-  interactiveChrome: boolean;
-  selected: boolean;
-  isHovered: boolean;
-  shineColor: string | readonly string[] | null | undefined;
-  shineOnHover: boolean;
-  showGlowOverride?: boolean | undefined;
-  shimmerActive: boolean;
-  shimmerToken?: number | undefined;
-}
-
-function resolveArtTileVisualState(props: TileVisualResolutionProps) {
-  const canInteract = props.interactive && !props.disabled;
-  const shineColors: string | readonly string[] =
-    props.shineColor == null ? [] : Array.isArray(props.shineColor) ? props.shineColor : [props.shineColor];
-  const showShine =
-    shineColors.length > 0 && !props.disabled && (!props.shineOnHover || (props.interactive && props.isHovered));
-  const showGlow = props.showGlowOverride ?? (props.interactiveChrome && canInteract);
-
-  const shineClassName = showShine ? (props.shineOnHover ? "card-art-shine" : cardShineFrameClass) : undefined;
-  const glowClassName = showGlow ? cardInteractiveGlowClass : undefined;
-  const frameClassName = props.interactiveChrome ? "card-art-frame border border-border/80" : undefined;
-
-  return {
-    canInteract,
-    shineColors,
-    showShine,
-    activeShimmer: canInteract && props.shimmerActive,
-    activeShimmerToken: canInteract ? props.shimmerToken : undefined,
-    surfaceSelected: props.interactiveChrome && props.selected,
-    shineClassName,
-    glowClassName,
-    frameClassName,
-  };
 }
 
 export function InteractiveArtTile({
@@ -121,18 +83,15 @@ export function InteractiveArtTile({
     onHoverEnd: wrappedHoverEnd,
   });
 
-  const visual = resolveArtTileVisualState({
-    interactive,
-    disabled: disabled || ariaDisabled === true,
-    interactiveChrome,
-    selected,
-    isHovered,
-    shineColor,
-    shineOnHover,
-    showGlowOverride,
-    shimmerActive,
-    shimmerToken,
-  });
+  const unavailable = disabled || ariaDisabled === true;
+  const canInteract = interactive && !unavailable;
+  const shineColors: string | readonly string[] =
+    shineColor == null ? [] : Array.isArray(shineColor) ? shineColor : [shineColor];
+  const showShine = shineColors.length > 0 && !unavailable && (!shineOnHover || (interactive && isHovered));
+  const showGlow = showGlowOverride ?? (interactiveChrome && canInteract);
+  const shineClassName = showShine ? (shineOnHover ? "card-art-shine" : cardShineFrameClass) : undefined;
+  const glowClassName = showGlow ? cardInteractiveGlowClass : undefined;
+  const frameClassName = interactiveChrome ? "card-art-frame border border-border/80" : undefined;
 
   return (
     <div
@@ -141,7 +100,6 @@ export function InteractiveArtTile({
       onMouseEnter={interactive ? handleHoverStart : undefined}
       onMouseLeave={interactive ? handleMouseLeave : undefined}
     >
-      {}
       {/* eslint-disable-next-line react-hooks/refs -- popup trigger uses mutable ref provided by useHoverVisible */}
       {interactive && popup && showPopup ? popup({ visible: isHovered, triggerRef: wrapperRef }) : null}
       <Surface
@@ -150,16 +108,14 @@ export function InteractiveArtTile({
           className,
           "group shadow-md",
           ariaDisabled && "cursor-default grayscale",
-          visual.shineClassName,
-          visual.frameClassName,
-          visual.glowClassName,
+          shineClassName,
+          frameClassName,
+          glowClassName,
         )}
-        shimmerActive={visual.activeShimmer}
-        shimmerToken={visual.activeShimmerToken}
-        overlay={
-          visual.showShine ? <ShineBorder shineColor={visual.shineColors} borderWidth={2} className="z-20" /> : null
-        }
-        selected={visual.surfaceSelected}
+        shimmerActive={canInteract && shimmerActive}
+        shimmerToken={canInteract ? shimmerToken : undefined}
+        overlay={showShine ? <ShineBorder shineColor={shineColors} borderWidth={2} className="z-20" /> : null}
+        selected={interactiveChrome && selected}
         disabled={disabled}
         // Unavailable tiles may supply an explicit rejection handler; visual chrome
         // must not suppress that feedback. Purchase callers omit their action.

@@ -39,7 +39,7 @@ export function createInstanceId(): string {
 export function appendUniqueMany<T>(items: T[], additions: readonly T[]): T[];
 export function appendUniqueMany<T>(items: readonly T[], additions: readonly T[]): readonly T[];
 export function appendUniqueMany<T>(items: readonly T[], additions: readonly T[]): readonly T[] {
-  if (additions.length === 0) return items;
+  if (additions.length === 0 || (additions.length === 1 && items.includes(additions[0]!))) return items;
   const set = new Set(items);
   const originalSize = set.size;
   for (const add of additions) set.add(add);

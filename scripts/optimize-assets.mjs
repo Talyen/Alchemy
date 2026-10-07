@@ -3,7 +3,7 @@ import path from "node:path";
 import sharp from "sharp";
 
 import { gearAssets } from "./assets/gear-assets.mjs";
-import { assetLibraryRoot, requireAssetSources } from "./assets/asset-library.mjs";
+import { resolveAssetSource, requireAssetSources } from "./assets/asset-library.mjs";
 import { selectionHash } from "./assets/asset-manifest-cache.mjs";
 import { staticAssets, validateAssetRegistry } from "./assets/asset-manifest.mjs";
 import { processFreshEntry } from "./assets/asset-manifest-cache.mjs";
@@ -63,7 +63,7 @@ async function validateTransparency(filename, label) {
  * @param {import("./assets/asset-manifest-cache.mjs").ManifestEntry | undefined} storedEntry
  */
 async function optimizeAsset(asset, storedEntry, check) {
-  const sourcePath = path.join(assetLibraryRoot(), asset.source);
+  const sourcePath = resolveAssetSource(asset.source);
   const outputPath = path.join(outputDir, asset.target);
   const settings = artTransformSettings(asset);
   // Source validation stays ahead of the freshness gate: an invalid source
@@ -98,7 +98,7 @@ async function optimizeAsset(asset, storedEntry, check) {
 export async function optimizeAssets({ check = false } = {}) {
   const allAssets = [...staticAssets, ...gearAssets];
   await validateAssetRegistry(allAssets);
-  await requireAssetSources(allAssets);
+  await requireAssetSources(allAssets, { manifestPath, settingsFor: artTransformSettings });
 
   await ensureOutputDir(outputDir, { check });
 
