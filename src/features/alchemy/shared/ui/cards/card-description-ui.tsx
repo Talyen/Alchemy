@@ -64,7 +64,7 @@ export function renderMultilineTokenizedDescription(text: string): ReactNode[] {
   ));
 }
 
-export function KeywordToken({ keywordId, matchedText }: { keywordId: KeywordId; matchedText: string }) {
+function KeywordToken({ keywordId, matchedText }: { keywordId: KeywordId; matchedText: string }) {
   const definition = keywordDefinitions[keywordId];
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
     useHoverVisible<HTMLSpanElement>();

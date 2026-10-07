@@ -124,7 +124,7 @@ describe("normalizePersistedBattleState", () => {
         nextCardCostReduction: -3,
         sanguinePhysicalBonus: 5,
         firstLeechCardDoubledUsed: true,
-      } as ReturnType<typeof defaultBattleState>["flags"],
+      } as unknown as ReturnType<typeof defaultBattleState>["flags"],
     };
 
     const normalized = normalizePersistedBattleState(saved);
