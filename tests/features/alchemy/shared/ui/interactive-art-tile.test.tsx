@@ -111,7 +111,7 @@ describe("InteractiveArtTile hover popup", () => {
     fireEvent.mouseEnter(button.parentElement!);
     expect(screen.getByTestId("tile-popup").textContent).toBe("shown");
     rerender(tile(false));
-    expect(button.disabled).toBe(false);
+    expect(button).toHaveProperty("disabled", false);
     expect(button.getAttribute("aria-disabled")).toBe("true");
     const user = userEvent.setup();
     await user.tab();
