@@ -6,7 +6,6 @@ import {
   addPlayerStatusWithCombatText,
   applyHealingWithCombatText,
   payKillPayouts,
-  applyArmorStatusEffect,
 } from "@/lib/battle/player-rewards";
 import type { GearEffectManifest } from "@/lib/gear";
 import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
@@ -208,21 +207,4 @@ describe("Arcane Mending from bonus Mana", () => {
     });
     expect(gainManaWithCombatText(state, 3, []).playerHealth).toBe(10);
   });
-});
-
-it("settles simultaneous Armor thresholds in order and does not reward an already-crossed threshold", () => {
-  const state = patchBattleState({
-    playerStatuses: { armor: 3, burn: 2 },
-    talentEffects: { armorBlockThreshold: 5, armorBlockAmount: 2, armorCleanseThreshold: 5 },
-    trinketEffects: { ironwoodBucklerThornsOnBlock: 1 },
-    gearEffects: { blockOnCleanse: 1 },
-  });
-  const texts = makeTexts();
-  const next = applyArmorStatusEffect(state, 2, texts);
-  expect(next.playerStatuses).toMatchObject({ armor: 5, burn: 0, block: 3, thorns: 2 });
-  expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 3 });
-  expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "burn", signal: "cleanse", text: "" });
-  const second = applyArmorStatusEffect(next, 1, []);
-  expect(second.playerStatuses).toMatchObject({ armor: 6, block: 3, thorns: 2 });
-  expect(state.playerStatuses).toMatchObject({ armor: 3, burn: 2, block: 0, thorns: 0 });
 });

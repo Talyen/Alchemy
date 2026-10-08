@@ -58,11 +58,45 @@ describe("waitForStableHandCardRect", () => {
     }
   }
 
-  it("resolves once the measured rect stops moving", async () => {
-    const deps = makeDeps();
+  it("waits for size as well as position to settle before drawing a card", async () => {
+    const measureHandCard = vi
+      .fn()
+      .mockReturnValueOnce(rectA)
+      .mockReturnValueOnce({ ...rectA, width: 90 })
+      .mockReturnValueOnce({ ...rectA, width: 90, height: 135 })
+      .mockReturnValue(rectB);
+    const deps = makeDeps({ measureHandCard });
     const pending = waitForStableHandCardRect("slash-1", fallback, deps);
-    flushFrames(500);
-    await expect(pending).resolves.toEqual(rectA);
+    const completed = vi.fn();
+    void pending.then(completed);
+    flushFrames(3);
+    await Promise.resolve();
+    expect(completed).not.toHaveBeenCalled();
+    flushFrames(3);
+    await expect(pending).resolves.toEqual(rectB);
+  });
+
+  it("waits for a missing hand slot and restarts stability after a measurement gap", async () => {
+    const measureHandCard = vi
+      .fn()
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce(rectA)
+      .mockReturnValueOnce(rectA)
+      .mockReturnValueOnce(null)
+      .mockReturnValue(rectB);
+    const pending = waitForStableHandCardRect("slash-1", fallback, makeDeps({ measureHandCard }));
+    const completed = vi.fn();
+    void pending.then(completed);
+    flushFrames(3);
+    await Promise.resolve();
+    expect(completed).not.toHaveBeenCalled();
+    flushFrames(5);
+    await Promise.resolve();
+    expect(completed).not.toHaveBeenCalled();
+    flushFrames(1);
+    await expect(pending).resolves.toEqual(rectB);
   });
 
   it("resolves with the live measurement when cancellation wins the race", async () => {
@@ -92,6 +126,13 @@ describe("waitForStableHandCardRect", () => {
     await expect(pending).resolves.toEqual(rectA);
   });
 
+  it("keeps the frame limit as a fallback when a hand slot never mounts", async () => {
+    const pending = waitForStableHandCardRect("slash-1", fallback, makeDeps({ measureHandCard: () => null }));
+    flushFrames(500);
+    await expect(pending).resolves.toEqual(fallback);
+    expect(rafQueue).toEqual([]);
+  });
+
   it("rejects a failed frame measurement and cancels the remaining timeout", async () => {
     const clearTimeout = vi.fn();
     const unregister = vi.fn();
@@ -110,4 +151,32 @@ describe("waitForStableHandCardRect", () => {
     expect(unregister).toHaveBeenCalledOnce();
     expect(rafQueue).toEqual([]);
   });
+
+  it.each(["registration", "timeout"])(
+    "cleans up synchronous settlement during %s without starting frames",
+    async (seam) => {
+      const unregister = vi.fn();
+      const clearTimeout = vi.fn();
+      const scheduleTimeout = vi.fn((callback: () => void) => {
+        if (seam === "timeout") callback();
+        return clearTimeout;
+      });
+      const pending = waitForStableHandCardRect(
+        "slash-1",
+        fallback,
+        makeDeps({
+          registerCancel: (callback) => {
+            if (seam === "registration") callback();
+            return unregister;
+          },
+          scheduleTimeout,
+        }),
+      );
+      await expect(pending).resolves.toEqual(rectA);
+      expect(unregister).toHaveBeenCalledOnce();
+      expect(scheduleTimeout).toHaveBeenCalledTimes(seam === "timeout" ? 1 : 0);
+      expect(clearTimeout).toHaveBeenCalledTimes(seam === "timeout" ? 1 : 0);
+      expect(rafQueue).toEqual([]);
+    },
+  );
 });

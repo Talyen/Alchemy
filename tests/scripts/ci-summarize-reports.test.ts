@@ -83,7 +83,7 @@ describe("ci-summarize (vitest)", () => {
             {
               fullName: "eslint architecture boundary stacking > meta screen files lint clean",
               status: "failed",
-              failureMessages: ["Error: Test timed out in 5000ms.\n    at ..."],
+              failureMessages: ["\n\u001b[31mError: Test timed out in 5000ms.\u001b[0m\n    at ..."],
             },
             { fullName: "ok", status: "passed", failureMessages: [] },
           ],
@@ -175,7 +175,7 @@ describe("ci-summarize (playwright)", () => {
                 {
                   status: "unexpected",
                   projectName: "chromium",
-                  results: [{ errors: [{ message: "Chromium failure\nstack" }] }],
+                  results: [{ errors: [{ message: "\n\u001b[31mChromium failure\u001b[0m\nstack" }] }],
                 },
                 {
                   status: "flaky",
@@ -221,6 +221,8 @@ describe("ci-summarize (playwright)", () => {
     };
 
     expect(summarizePlaywrightReport(report)).toMatchObject({
+      failed: true,
+      runnerErrors: ["Invalid Playwright report: 1 test has an unknown outcome"],
       total: 5,
       expected: 1,
       unexpected: 1,
@@ -233,7 +235,7 @@ describe("ci-summarize (playwright)", () => {
     });
     expect(collectPlaywrightTests(report)).toMatchObject({
       totalTests: 5,
-      passedTests: 3,
+      passedTests: 2,
       skippedTests: 1,
       allTests: [
         { title: "parent" },
@@ -376,6 +378,52 @@ describe("current-run pointer", () => {
 });
 
 describe("Playwright failure diagnostics", () => {
+  it("keeps suite-qualified failures distinct and links each JSON result to its exact digest", () => {
+    const root = temporaryRoot("pw-suite-identity-");
+    const runId = "qualified-test-run";
+    const file = "tests/e2e/specs/repeated.spec.ts";
+    const suites = ["Campaign", "Labyrinth"].map((suite) => ({
+      title: suite,
+      specs: [
+        {
+          title: "resumes",
+          file: "repeated.spec.ts",
+          line: 9,
+          tests: [{ status: "unexpected", projectName: "chromium" }],
+        },
+      ],
+    }));
+    const digests = suites.map(
+      (suite) =>
+        writeFailureDiagnostic(
+          root,
+          buildFailureDiagnostic({
+            rootDir: root,
+            runId,
+            title: `${suite.title} > resumes`,
+            file,
+            line: 9,
+            project: "chromium",
+            status: "failed",
+            duration: 10,
+          }),
+        ).digestPath,
+    );
+    for (const repository of ["/home/runner/work/Alchemy/Alchemy", "C:\\work\\Alchemy"]) {
+      const summary = summarizePlaywrightReport(
+        {
+          config: { configFile: `${repository}/playwright.config.ts`, rootDir: `${repository}/tests/e2e/specs` },
+          suites: [{ title: "repeated.spec.ts", suites }],
+        },
+        { rootDir: root, runId },
+      );
+      expect(summary.failures.map((failure) => failure.title)).toEqual(["Campaign > resumes", "Labyrinth > resumes"]);
+      expect(summary.failures.map((failure) => path.resolve(root, failure.digestPath!))).toEqual(digests);
+      expect(summary.failures.map((failure) => failure.file)).toEqual([file, file]);
+    }
+    expect(new Set(digests).size).toBe(2);
+  });
+
   it("bounds warning floods and accessibility output", () => {
     const diagnostic = buildFailureDiagnostic({
       runId: "playwright-context-run",

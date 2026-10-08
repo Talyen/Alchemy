@@ -33,22 +33,18 @@ check-mode `ENOENT` maps to stale errors),
 `assets/gear-filenames.mjs` (single owner for gear slugging/patterns, slot IDs, WebP/gear classification), `assets/music-assets.mjs` (music filename registry).
 Manifest paths derive from `MANAGED_DIRS` + `MANIFEST_BASENAME` via `getManagedManifestPath` (`getOptimizedManifestPath` is the art-specific alias used by barrel sync).
 
-## Agent discovery and evaluation
+## Agent owner lookup
 
 `agent-diff.mjs` owns `review:diff` and `review:status`: complete inventories on disk, bounded task patches/status in the terminal. Generated/media details expand with `--full <path>`.
 
-| Concern                                                             | Implementation owner              |
-| ------------------------------------------------------------------- | --------------------------------- |
-| Owner sections and implementation entry points                      | `lib/agent/agent-context.mjs`     |
-| Markdown fences, headings, and section extraction                   | `lib/agent/markdown-sections.mjs` |
-| Bounded search, related-file hints, and disposable context sessions | `lib/agent/agent-discovery.mjs`   |
-| Preread measurement                                                 | `measure-agent-context.mjs`       |
-| Evaluation records and comparison                                   | `agent-eval.mjs`                  |
+| Concern                                           | Implementation owner              |
+| ------------------------------------------------- | --------------------------------- |
+| Owner sections and implementation entry points    | `lib/agent/agent-context.mjs`     |
+| Markdown fences, headings, and section extraction | `lib/agent/markdown-sections.mjs` |
 
-Source declarations, authored entries, and optional test navigation are parsed in `lib/agent/source-outline.mjs`; `agent-context.mjs` owns bounded rendering. `run-compact.mjs`, `lib/run-command.mjs`, and `lib/compact-output.mjs` provide the shared one-shot command policy: compact summaries by default, complete logs on disk, and explicit live output for interactive work. `lint-ci.mjs` applies that policy to the aggregate static gate so direct CI checks do not dump every collected browser test.
+`run-compact.mjs`, `lib/run-command.mjs`, and `lib/compact-output.mjs` own compact one-shot diagnostics and complete logs.
 
-[Agent discovery](../Docs/AGENT_DISCOVERY.md#agent-discovery) documents command options
-and limitations; [evaluations](../.agents/evals/README.md) owns pinned setup and
+[Agent discovery](../Docs/AGENT_DISCOVERY.md) documents command options
 interpretation. Discovery metadata must reference canonical prose rather than
 copying it, and it does not own verification selection. The search fallback skips deleted
 tracked files and files removed during a search, while other read errors fail.
@@ -87,12 +83,10 @@ Packaged Windows startup: `smoke-desktop.mjs` resolves the artifact and invokes
 selector is supplied, including with `--verbose`. `npm run audit:all` is the
 same sweep via `audit.mjs --all` (thin forward, not a separate entry).
 Pass a focused selector after
-the npm separator (`npm run audit -- --types|--amplification|--content|--hotspots`)
 to dispatch one probe instead. `--all` is the periodic sweep, not literally
-every audit — use `--hotspots` separately. Gating probes: knip, depcruise, eslint complexity,
 content-audit. Advisory trend probes (always exit 0):
 `audit-type-escapes.mjs`, `audit-change-amplification.mjs` — direction signals, see
-`Docs/Audits/TypeSafetyAudit.md`. `context-hotspots` / `runs:show` are advisory process
+`Docs/Audits/TypeSafetyAudit.md`. `runs:show` is advisory process
 evidence and never block handoff.
 
 ## Test / E2E
@@ -145,7 +139,7 @@ build outputs. `--processes` stops Alchemy-owned test listeners;
 
 `npm run prune:transient` expires diagnostic bundles after 24 hours of inactivity;
 `--days=<number>` changes the cutoff. Runs under `reports/runs`, `compact`,
-`agent-diff`, `agent-evals`, `performance` and test failure collections expire
+`agent-diff`, `performance` and test failure collections expire
 independently; other report directories expire as complete bundles. Fresh
 children preserve older siblings. Stale current-run pointers are removed when
 their run disappears. Roots and nested symlinks are never traversed.
@@ -153,7 +147,9 @@ their run disappears. Roots and nested symlinks are never traversed.
 Report-producing CLIs register process-owned guards and prune on normal idle
 exit. Pruning skips the transient tree while another participating tool is
 active; explicit cleanup refuses deletion. Registration and deletion share a
-short OS-released mutex on `127.0.0.1:48158`. Abandoned guards are recovered only after confirming
+short OS-released loopback mutex keyed by the checkout's real path. Separate
+checkouts do not share a fixed port; a port collision fails without deleting
+artifacts. The mutex remains held until its operation settles. Abandoned guards are recovered only after confirming
 the owner is dead; unreadable ownership remains protected. No processes are
 terminated for artifact cleanup. Raw tools launched outside the wrappers need
 manual coordination. Dry runs change no files.

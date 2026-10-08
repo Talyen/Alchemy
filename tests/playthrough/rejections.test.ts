@@ -1,3 +1,4 @@
+import { savedActivityData } from "../fixtures/run-activity";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createPlaythroughFixture } from "@/app/playthrough/fixtures";
 import {
@@ -224,8 +225,8 @@ describe("retained headless rejection and persistence contracts", () => {
     expect(readActiveRun(defaultGameSession).rng).toEqual(loaded.data.activeRun!.rng);
     // Restore rehydrates catalog metadata; compare every persisted combat field
     // through the save parser rather than comparing wire cards to runtime cards.
-    expect(parseActiveRun(snapshotCareer(defaultGameSession).activeRun)?.activeCombat).toEqual(
-      JSON.parse(JSON.stringify(loaded.data.activeRun!.activeCombat)),
+    expect(savedActivityData(parseActiveRun(snapshotCareer(defaultGameSession).activeRun), "battle")).toEqual(
+      JSON.parse(JSON.stringify(savedActivityData(loaded.data.activeRun!, "battle"))),
     );
   });
 });

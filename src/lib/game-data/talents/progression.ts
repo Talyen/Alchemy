@@ -10,7 +10,7 @@ import type { KeywordId } from "../types";
 
 export type TalentXP = Partial<Record<KeywordId, number>>;
 
-export function xpForNextPoint(currentPoints: number): number {
+function xpForNextPoint(currentPoints: number): number {
   return (currentPoints + 1) * XP_BASE_PER_POINT;
 }
 
@@ -23,7 +23,7 @@ export function computeTalentPoints(xp: number): number {
   return Math.floor((-1 + Math.sqrt(1 + XP_ROOT_DIVISOR * xp)) / 2);
 }
 
-export function computeTotalTalentPoints(talentXP: TalentXP): number {
+function computeTotalTalentPoints(talentXP: TalentXP): number {
   return Object.values(talentXP).reduce((sum, xp) => sum + computeTalentPoints(xp ?? 0), 0);
 }
 

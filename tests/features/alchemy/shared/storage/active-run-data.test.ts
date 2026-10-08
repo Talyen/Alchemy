@@ -1,3 +1,4 @@
+import { savedActivityFixture, savedActivityData } from "../../../../fixtures/run-activity";
 import { getBattleForTest, setBattleActiveForTest } from "../../../../helpers/run-domain-store-test";
 import { battleSnapshot } from "@/lib/battle";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -6,7 +7,7 @@ import { getStartingDeck, trinketLibrary } from "@/lib/game-data";
 import { emptyHydratedMysteryVisit, readActivityData, type ActiveRunData } from "@/lib/active-run-session";
 import { decodeRunResumeSnapshot, encodeRunResumeSnapshot } from "@/features/alchemy/shared/stores/run-resume-codec";
 import { createInitialActiveRunFields } from "@/features/alchemy/shared/stores/run-state-init";
-import { getRunSession, readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { getRunSession, readActiveRun, readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import type { Screen } from "@/lib/routing";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -14,7 +15,7 @@ import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../
 import { ANCIENT_ALTAR_MYSTERY_VISIT, makeActiveRunData } from "../stores/active-run-data-fixture";
 import { defaultGameSession } from "@/app/application-session";
 function encodeState(screen?: Screen): ActiveRunData {
-  return encodeRunResumeSnapshot(getRunSession(screen, defaultGameSession), screen);
+  return encodeRunResumeSnapshot(getRunSession(screen, defaultGameSession));
 }
 
 function writeBattle(partial: { hasActiveBattle?: boolean; battleState?: BattleState }) {
@@ -32,6 +33,7 @@ function writeBattle(partial: { hasActiveBattle?: boolean; battleState?: BattleS
 
 beforeEach(() => {
   resetRunDomainStore();
+  setRunSession({ hasActiveRun: true, activity: { kind: "destination" } });
 });
 
 describe("encodeRunResumeSnapshot", () => {
@@ -82,17 +84,6 @@ describe("encodeRunResumeSnapshot", () => {
       labyrinthPendingNode: null,
       activeLabyrinthModifiers: [],
       activeLabyrinthRewardModifiers: [],
-      activeCombat: null,
-      currentScreen: "destination",
-      interruptedFlow: { kind: "none" },
-      shopState: null,
-      alchemistState: null,
-      trinketShopState: null,
-      equipmentShopState: null,
-      mysteryVisit: null,
-      corruptionResult: null,
-      campfireState: null,
-      transmutationState: null,
       wildwoodDraft: null,
       starterDraftChoices: null,
       runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 },
@@ -105,13 +96,8 @@ describe("encodeRunResumeSnapshot", () => {
         "smiths-whetstone": 0,
       },
       runObtainedItems: [],
+      activity: savedActivityFixture("destination"),
     });
-  });
-
-  it("includes contentSystemType field defaulting to campaign", () => {
-    const result = encodeState("menu");
-
-    expect(result.contentSystemType).toBe("campaign");
   });
 
   it("drops shop offerings once the player leaves the shop activity", () => {
@@ -126,9 +112,9 @@ describe("encodeRunResumeSnapshot", () => {
       },
     });
 
-    expect(encodeState("shop").shopState?.cards).toHaveLength(1);
+    expect(savedActivityData(encodeState("shop"), "shop")?.cards).toHaveLength(1);
     setRunSession({ activity: { kind: "destination" } });
-    expect(encodeState("destination").shopState).toBeNull();
+    expect(savedActivityData(encodeState("destination"), "shop")).toBeNull();
   });
 
   it.each([
@@ -143,9 +129,11 @@ describe("encodeRunResumeSnapshot", () => {
           },
         });
       },
-      active: (encoded: ActiveRunData) => encoded.shopState?.cards?.length === 1,
+      active: (encoded: ActiveRunData) => savedActivityData(encoded, "shop")?.cards?.length === 1,
       idle: (encoded: ActiveRunData) =>
-        encoded.alchemistState === null && encoded.trinketShopState === null && encoded.equipmentShopState === null,
+        savedActivityData(encoded, "alchemist") === null &&
+        savedActivityData(encoded, "trinket-shop") === null &&
+        savedActivityData(encoded, "equipment-shop") === null,
     },
     {
       screen: "alchemist" as const,
@@ -158,9 +146,11 @@ describe("encodeRunResumeSnapshot", () => {
           },
         });
       },
-      active: (encoded: ActiveRunData) => encoded.alchemistState?.potions?.length === 1,
+      active: (encoded: ActiveRunData) => savedActivityData(encoded, "alchemist")?.potions?.length === 1,
       idle: (encoded: ActiveRunData) =>
-        encoded.shopState === null && encoded.trinketShopState === null && encoded.equipmentShopState === null,
+        savedActivityData(encoded, "shop") === null &&
+        savedActivityData(encoded, "trinket-shop") === null &&
+        savedActivityData(encoded, "equipment-shop") === null,
     },
     {
       screen: "trinket-shop" as const,
@@ -176,9 +166,11 @@ describe("encodeRunResumeSnapshot", () => {
           },
         });
       },
-      active: (encoded: ActiveRunData) => encoded.trinketShopState?.trinketIds?.length === 1,
+      active: (encoded: ActiveRunData) => savedActivityData(encoded, "trinket-shop")?.trinketIds?.length === 1,
       idle: (encoded: ActiveRunData) =>
-        encoded.shopState === null && encoded.alchemistState === null && encoded.equipmentShopState === null,
+        savedActivityData(encoded, "shop") === null &&
+        savedActivityData(encoded, "alchemist") === null &&
+        savedActivityData(encoded, "equipment-shop") === null,
     },
     {
       screen: "equipment-shop" as const,
@@ -193,9 +185,11 @@ describe("encodeRunResumeSnapshot", () => {
           },
         });
       },
-      active: (encoded: ActiveRunData) => encoded.equipmentShopState?.gear?.length === 1,
+      active: (encoded: ActiveRunData) => savedActivityData(encoded, "equipment-shop")?.gear?.length === 1,
       idle: (encoded: ActiveRunData) =>
-        encoded.shopState === null && encoded.alchemistState === null && encoded.trinketShopState === null,
+        savedActivityData(encoded, "shop") === null &&
+        savedActivityData(encoded, "alchemist") === null &&
+        savedActivityData(encoded, "trinket-shop") === null,
     },
   ])("keeps only $screen offerings", ({ screen, seed, active, idle }) => {
     seed();
@@ -204,21 +198,15 @@ describe("encodeRunResumeSnapshot", () => {
     expect(idle(encoded)).toBe(true);
   });
 
-  it("can set contentSystemType to labyrinth", () => {
-    setRunProgress({ contentSystemType: "labyrinth" });
-
-    const result = encodeState("menu");
-
-    expect(result.contentSystemType).toBe("labyrinth");
-  });
-
-  it("persists active campaign combat state", () => {
+  it("persists active campaign combat while leaving measurements in the live battle", () => {
     const battleState = { ...defaultBattleState(), turn: 3, playerHealth: 12 };
-    writeBattle({ hasActiveBattle: true, battleState });
+    const measurements = { enemyAttackActions: 2, enemyAbilityActivations: { "iron-hide": 1 } };
+    writeBattle({ hasActiveBattle: true, battleState: { ...battleState, battleMetrics: measurements } });
 
     const result = encodeState();
 
-    expect(result.activeCombat?.battleState).toEqual(battleSnapshot(battleState));
+    expect(savedActivityData(result, "battle")?.battleState).toEqual(battleSnapshot(battleState));
+    expect(readBattle(defaultGameSession).battleState.battleMetrics).toEqual(measurements);
   });
 
   it("persists the current state during enemy phase instead of reverting to battle start", () => {
@@ -227,9 +215,9 @@ describe("encodeRunResumeSnapshot", () => {
 
     const result = encodeState();
 
-    expect(result.activeCombat?.battleState).toEqual(battleSnapshot(enemyPhaseState));
-    expect(result.activeCombat!.battleState.turn).toBe(2);
-    expect(result.activeCombat!.battleState.turnPhase).toBe("enemy");
+    expect(savedActivityData(result, "battle")?.battleState).toEqual(battleSnapshot(enemyPhaseState));
+    expect(savedActivityData(result, "battle")!.battleState.turn).toBe(2);
+    expect(savedActivityData(result, "battle")!.battleState.turnPhase).toBe("enemy");
   });
 
   it("preserves enemy-phase battle state when no pending transition exists", () => {
@@ -239,10 +227,9 @@ describe("encodeRunResumeSnapshot", () => {
     });
 
     const activeRun = encodeState();
-    const decoded = decodeRunResumeSnapshot(activeRun);
+    expect(decodeRunResumeSnapshot(activeRun).session.activity.kind).toBe("battle");
 
-    expect(decoded.pendingBattleTransition).toBeNull();
-    expect(activeRun.activeCombat?.battleState.turnPhase).toBe("enemy");
+    expect(savedActivityData(activeRun, "battle")?.battleState.turnPhase).toBe("enemy");
   });
 
   it("persists labyrinth pending node and modifiers during combat", () => {
@@ -257,8 +244,8 @@ describe("encodeRunResumeSnapshot", () => {
     const result = encodeState();
 
     expect(result.labyrinthPendingNode).toBe("labyrinth-floor-1-n0");
-    expect(result.activeCombat?.activeLabyrinthModifiers).toEqual(["tempered"]);
-    expect(result.activeCombat?.activeLabyrinthRewardModifiers).toEqual(["generous"]);
+    expect(result.activeLabyrinthModifiers).toEqual(["tempered"]);
+    expect(result.activeLabyrinthRewardModifiers).toEqual(["generous"]);
   });
 
   it("preserves an active terminal battle until victory settles", () => {
@@ -269,8 +256,7 @@ describe("encodeRunResumeSnapshot", () => {
 
     const result = encodeState();
 
-    expect(result.activeCombat?.pendingBattleTransition).toBeNull();
-    expect(result.activeCombat?.battleState).toBeDefined();
+    expect(savedActivityData(result, "battle")?.battleState).toBeDefined();
   });
 
   it("preserves an active terminal battle until defeat settles", () => {
@@ -287,8 +273,7 @@ describe("encodeRunResumeSnapshot", () => {
 
     const result = encodeState();
 
-    expect(result.activeCombat?.pendingBattleTransition).toBeNull();
-    expect(result.activeCombat?.battleState).toBeDefined();
+    expect(savedActivityData(result, "battle")?.battleState).toBeDefined();
   });
 
   it("persists runTalentXP", () => {
@@ -323,14 +308,15 @@ describe("encodeRunResumeSnapshot", () => {
 
     const result = encodeState("destination");
 
-    expect(result.currentScreen).toBe("destination");
-    expect(result.interruptedFlow).toEqual({
-      kind: "destination",
-      destinations: ["Campfire", "Card Shop"],
-      selectedBossId: null,
-      lastVictoryEnemyType: null,
-      lastVictoryContentSystem: null,
-    });
+    expect(result.activity.kind).toBe("destination");
+    expect(result.activity).toEqual(
+      savedActivityFixture("destination", {
+        destinations: ["Campfire", "Card Shop"],
+        selectedBossId: null,
+        lastVictoryEnemyType: null,
+        lastVictoryContentSystem: null,
+      }),
+    );
   });
 
   it("persists Wildwood Draft phase state", () => {
@@ -393,7 +379,7 @@ describe("encodeRunResumeSnapshot", () => {
     const result = encodeState("mystery");
     const decoded = decodeRunResumeSnapshot(result);
 
-    expect(result.mysteryVisit?.event).toEqual(offered);
+    expect(savedActivityData(result, "mystery")?.event).toEqual(offered);
     expect(readActivityData(decoded.session.activity, "mystery").mysteryEvent).toEqual(offered);
     expect(readActivityData(decoded.session.activity, "mystery").mysteryChosenChoice?.label).toBe("Take the Offering");
   });
@@ -420,7 +406,7 @@ describe("encodeRunResumeSnapshot", () => {
     const result = encodeState("destination");
     const decoded = decodeRunResumeSnapshot(result);
 
-    expect(result.mysteryVisit).toBeNull();
+    expect(savedActivityData(result, "mystery")).toBeNull();
     expect(readActivityData(decoded.session.activity, "mystery").mysteryEvent).toBeNull();
     expect(readActivityData(decoded.session.activity, "mystery").mysteryChosenChoice).toBeNull();
   });
@@ -438,7 +424,7 @@ describe("encodeRunResumeSnapshot", () => {
 
     const result = encodeState("corruption");
 
-    expect(result.corruptionResult).toEqual(corruptionResult);
+    expect(savedActivityData(result, "corruption")).toEqual(corruptionResult);
     expect(readActivityData(decodeRunResumeSnapshot(result).session.activity, "corruption")).toEqual(corruptionResult);
   });
 
@@ -457,7 +443,7 @@ describe("encodeRunResumeSnapshot", () => {
     const result = encodeState("destination");
     const decoded = decodeRunResumeSnapshot(result);
 
-    expect(result.corruptionResult).toBeNull();
+    expect(savedActivityData(result, "corruption")).toBeNull();
     expect(readActivityData(decoded.session.activity, "corruption")).toBeNull();
   });
 });

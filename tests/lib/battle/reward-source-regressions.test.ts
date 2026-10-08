@@ -45,16 +45,19 @@ describe("combat reward sources", () => {
     expect(dealDamage(state, card).mana).toBe(2);
   });
 
-  it("Golden Crucible Forge triggers Overheat without scaling the Gold conversion", () => {
+  it("Golden Crucible converts Gold without gain bonuses, pacing, or retired threshold reactions", () => {
     const state = regressionBattle({
-      playerStatuses: { forge: 0 },
-      talentEffects: { forgeBurnThreshold: 5, forgeBurnDamage: 2 },
+      playerHealth: 10,
+      playerStatuses: { forge: 0, burn: 1 },
+      appliesFightPacing: true,
+      talentEffects: { forgeBurningBonusPercent: 100, forgeDoubleChance: 100, forgeLowHealthBonusPercent: 100 },
       gearEffects: { goldGrantsForgeAndHoly: 1 },
     });
     const result = applyCardEffects(state, makeTestCard({ effects: [{ kind: "gain-gold", amount: 5 }] }), []);
     expect(result.playerStatuses.forge).toBe(5);
-    expect(result.enemyHealth).toBe(state.enemyHealth - 2);
-    expect(result.enemyStatuses.burn).toBe(2);
+    expect(result.gold).toBe(state.gold + 5);
+    expect(result.enemyHealth).toBe(state.enemyHealth);
+    expect(result.enemyStatuses.burn).toBe(0);
   });
 
   it("Second Wind cannot cancel legacy Companion damage rewards", () => {

@@ -37,8 +37,8 @@ describe("Vitest projects", () => {
     ["tests/app/example.dom.test.ts", "dom", "jsdom"],
     ["tests/app/use-example.test.ts", "dom", "jsdom"],
     ["tests/app/example-hook.test.ts", "dom", "jsdom"],
-    ["tests/lib/platform-save-backend.test.ts", "dom", "jsdom"],
-    ["tests/lib/animation/game-timer.test.ts", "dom", "jsdom"],
+    ["tests/lib/platform-save-backend.dom.test.ts", "dom", "jsdom"],
+    ["tests/lib/animation/game-timer.dom.test.ts", "dom", "jsdom"],
   ])("runs %s in %s", (file, name, environment) => {
     expect(assignments(file)).toMatchObject([
       { name, environment: environment === "jsdom" ? "./tests/jsdom-environment.ts" : environment },

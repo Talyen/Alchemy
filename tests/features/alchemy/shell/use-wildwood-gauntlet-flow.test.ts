@@ -12,7 +12,6 @@ import { ROUTE_SCREENS } from "@/lib/routing";
 import { createBattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
 import { createWildwoodGauntletFlow } from "@/features/alchemy/run-loop/run/wildwood-gauntlet-flow";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { prepareWildwoodRemoval } from "@/features/alchemy/run-loop/run/wildwood-commands";
 import { cardById } from "@/lib/game-data";
 import { defaultGameSession } from "@/app/application-session";
 describe("Wildwood reward selection", () => {
@@ -37,25 +36,6 @@ describe("Wildwood reward selection", () => {
     expect(readRunSession(defaultGameSession).rewardFlow.state.selectedId).toBeNull();
     expect(readRunSession(defaultGameSession).wildwoodDraft).toEqual(wildwoodDraft);
   });
-  it("makes Wildwood removal resumable before its screen is shown", () => {
-    setRunProgress({
-      contentSystemType: CONTENT_SYSTEMS.WILDWOOD,
-      runDeck: Array.from({ length: 9 }, (_, uid) => ({ ...cardById["slash"]!, uid })),
-    });
-    setRunSession({
-      activity: { kind: "rewards" },
-      wildwoodDraft: { ...createInitialWildwoodDraftState("knight", () => 0.5), phase: "reward" },
-    });
-    prepareWildwoodRemoval(defaultGameSession);
-    expect(readRunSession(defaultGameSession).activity.kind).toBe("wildwood-removal");
-    const save = snapshotRun(undefined, defaultGameSession);
-    expect(save.currentScreen).toBe("wildwood-removal");
-    restoreRun(save, {}, {}, defaultGameSession);
-    expect(readRunSession(defaultGameSession).activity.kind).toBe("wildwood-removal");
-    expect(readRunSession(defaultGameSession).wildwoodDraft?.phase).toBe("removal");
-    expect(readActiveRun(defaultGameSession).rng).toEqual(save.rng);
-  });
-
   it("commits removal and the next boss once without waiting for a rendered screen", () => {
     setRunProgress({
       contentSystemType: CONTENT_SYSTEMS.WILDWOOD,
@@ -66,12 +46,12 @@ describe("Wildwood reward selection", () => {
       activity: { kind: "wildwood-removal" },
       wildwoodDraft: { ...createInitialWildwoodDraftState("knight", () => 0.5), phase: "removal" },
     });
-    const startBoss = vi.fn(createBattleStartCommands(() => {}, defaultGameSession).startBossById);
+    const presentBattleStart = vi.fn();
     const flow = createWildwoodGauntletFlow(
       {
         navigateTo: vi.fn(),
         resumeTo: vi.fn(),
-        startBossById: startBoss,
+        presentBattleStart,
         clearCardHover: vi.fn(),
       },
       defaultGameSession,
@@ -79,9 +59,9 @@ describe("Wildwood reward selection", () => {
     flow.handleWildwoodRemoveCard(0);
     expect(readActiveRun(defaultGameSession).runDeck.map((card) => card.uid)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
     expect(readRunSession(defaultGameSession).wildwoodDraft?.phase).toBe("battle");
-    const snapshot = snapshotRun(undefined, defaultGameSession);
+    const snapshot = snapshotRun(defaultGameSession);
     flow.handleWildwoodRemoveCard(0);
-    expect(startBoss).toHaveBeenCalledOnce();
+    expect(presentBattleStart).toHaveBeenCalledOnce();
     expect(readActiveRun(defaultGameSession).rng).toEqual(snapshot.rng);
     restoreRun(snapshot, {}, {}, defaultGameSession);
     expect(readRunSession(defaultGameSession).wildwoodDraft).toEqual(snapshot.wildwoodDraft);
@@ -89,9 +69,11 @@ describe("Wildwood reward selection", () => {
     expect(readActiveRun(defaultGameSession).runDeck).toEqual(snapshot.runDeck);
   });
 
-  it("uses the resume route when recreating a pending Wildwood battle", () => {
+  it("resumes a committed Wildwood battle without recreating it or consuming RNG", () => {
+    setRunProgress({ contentSystemType: "wildwood", runDeck: [cardById.slash!] });
     setRunSession({
       hasActiveRun: true,
+      activity: { kind: "draft-deck" },
       wildwoodDraft: {
         ...createInitialWildwoodDraftState("knight", () => 0.5),
         phase: "battle",
@@ -99,18 +81,22 @@ describe("Wildwood reward selection", () => {
         currentCombatTraitIds: ["tempered"],
       },
     });
-    const navigateTo = vi.fn();
-    const resumeTo = vi.fn();
-    const startBossById = vi.fn(() => true);
+    createBattleStartCommands(() => {}, defaultGameSession).startBossById({
+      bossId: "forge-golem",
+      wildwoodModifierId: "tempered",
+    });
+    const before = snapshotRun(defaultGameSession);
+    const navigateTo = vi.fn(),
+      resumeTo = vi.fn(),
+      presentBattleStart = vi.fn();
     const flow = createWildwoodGauntletFlow(
-      { navigateTo, resumeTo, startBossById, clearCardHover: vi.fn() },
+      { navigateTo, resumeTo, presentBattleStart, clearCardHover: vi.fn() },
       defaultGameSession,
     );
-
     flow.resumeWildwoodRun();
-
-    expect(startBossById).toHaveBeenCalledWith({ bossId: "forge-golem", wildwoodModifierId: "tempered" });
     expect(resumeTo).toHaveBeenCalledExactlyOnceWith(ROUTE_SCREENS.BATTLE);
     expect(navigateTo).not.toHaveBeenCalled();
+    expect(presentBattleStart).not.toHaveBeenCalled();
+    expect(snapshotRun(defaultGameSession)).toEqual(before);
   });
 });

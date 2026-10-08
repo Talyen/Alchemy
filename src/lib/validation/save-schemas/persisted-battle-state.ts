@@ -2,8 +2,16 @@ import { EncounterRewardTraitArraySchema } from "./labyrinth-schemas";
 import { z } from "zod";
 import { defaultBattleState, type BattleSnapshot } from "@/lib/battle";
 import { normalizePersistedBattleState } from "../normalize-persisted-battle-state";
-import { isEnemyId, keywordDefinitions, type KeywordId } from "@/lib/game-data";
-import { BattleCardEffectSchema, parseSavedCardArray, savedCardArraySchema } from "./battle-card-schemas";
+import {
+  BattleCardEffectSchema,
+  CompanionIdSchema,
+  EnemyStatusIdSchema,
+  isEnemyId,
+  keywordDefinitions,
+  type DifficultyModifier,
+  type KeywordId,
+} from "@/lib/game-data";
+import { parseSavedCardArray, savedCardArraySchema } from "./battle-card-schemas";
 import { UniqueGearBattleStateSchema } from "./unique-gear-state";
 import { recordNestedValidationWarnings } from "./validation-utils";
 
@@ -12,6 +20,32 @@ import { recordNestedValidationWarnings } from "./validation-utils";
 // read from this snapshot; collections use fresh literals below so parses
 // never share references.
 const battleFallbacks = defaultBattleState();
+
+const difficultyModifierSchema = z
+  .discriminatedUnion("kind", [
+    z.object({ kind: z.literal("enemy-starting-armor"), amount: z.number() }),
+    z.object({ kind: z.literal("enemy-gains-forge-each-turn") }),
+    z.object({ kind: z.literal("increase-enemy-physical-damage"), amount: z.number() }),
+    z.object({ kind: z.literal("increase-enemy-damage"), amount: z.number() }),
+    z.object({
+      kind: z.literal("increase-enemy-status"),
+      status: EnemyStatusIdSchema.exclude(["stun"]),
+      amount: z.number(),
+    }),
+    z.object({ kind: z.literal("enemy-attacks-gain-leech") }),
+    z.object({ kind: z.literal("start-block"), amount: z.number() }),
+    z.object({ kind: z.literal("start-max-mana"), amount: z.number() }),
+    z.object({ kind: z.literal("gold-multiplier"), amount: z.number() }),
+    z.object({ kind: z.literal("start-companion"), companionId: CompanionIdSchema.optional() }),
+    z.object({ kind: z.literal("enemy-health-multiplier"), amount: z.number() }),
+    z.object({ kind: z.literal("enemy-damage-multiplier"), amount: z.number() }),
+  ])
+  .transform((modifier): DifficultyModifier => {
+    if (modifier.kind !== "start-companion") return modifier;
+    return modifier.companionId === undefined
+      ? { kind: modifier.kind }
+      : { kind: modifier.kind, companionId: modifier.companionId };
+  });
 
 const pendingTurnStartEffectSchema = z.object({
   remainingTurns: z.number().int().positive(),
@@ -54,9 +88,6 @@ const PersistedBattleStateWireSchema = z.looseObject({
       }),
     )
     .catch([]),
-  pendingForgeThresholds: z
-    .array(z.object({ previousForge: z.number().int().nonnegative(), nextForge: z.number().int().nonnegative() }))
-    .catch([]),
   mana: z.number().catch(battleFallbacks.mana),
   maxMana: z.number().catch(battleFallbacks.maxMana),
   gold: z.number().catch(battleFallbacks.gold),
@@ -76,7 +107,15 @@ const PersistedBattleStateWireSchema = z.looseObject({
   uniqueGear: UniqueGearBattleStateSchema,
   encounterBenefits: EncounterRewardTraitArraySchema,
   discoveredCardIds: z.array(z.unknown()).catch([]),
-  difficultyModifiers: z.array(z.unknown()).catch([]),
+  difficultyModifiers: z
+    .array(z.unknown())
+    .transform((modifiers) =>
+      modifiers.flatMap((modifier) => {
+        const result = difficultyModifierSchema.safeParse(modifier);
+        return result.success ? [result.data] : [];
+      }),
+    )
+    .catch([]),
 });
 
 // A battle block without any card piles is a fragment, not a fight: repair

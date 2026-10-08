@@ -42,7 +42,7 @@ export interface CardMagnitude {
 }
 
 export type CardDescriptionPart = string | CardMagnitude;
-export interface CardDescriptionLine {
+interface CardDescriptionLine {
   parts: CardDescriptionPart[];
   role: "effect" | "keyword" | "consume";
 }
@@ -69,7 +69,7 @@ export function getCardEffect(
   return effect;
 }
 
-export function cardMagnitudeValue(effects: readonly BattleCardEffect[], magnitude: CardMagnitude): number | null {
+function cardMagnitudeValue(effects: readonly BattleCardEffect[], magnitude: CardMagnitude): number | null {
   let value: number | null = null;
   for (const reference of magnitude.references) {
     const effect = getCardEffect(effects, reference);

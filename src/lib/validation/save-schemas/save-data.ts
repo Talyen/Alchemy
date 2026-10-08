@@ -166,7 +166,10 @@ export const SaveDataSchema = z
       // loadout references are pruned against the restored inventory.
       // save-candidates.ts suppresses warnings for the gold override because
       // it is intentional, not damage.
-      gold: resolvePersistedGold(save.gold, save.activeRun?.activeCombat?.battleState.gold),
+      gold: resolvePersistedGold(
+        save.gold,
+        save.activeRun?.activity.kind === "battle" ? save.activeRun.activity.data.battleState.gold : undefined,
+      ),
       autoplayEnabled: resolveAutoplayEnabled(save),
       gearLoadouts: pruneOrphanGearLoadouts(flatInventory, save.gearLoadouts),
     };

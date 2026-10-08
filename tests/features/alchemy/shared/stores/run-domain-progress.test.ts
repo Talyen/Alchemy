@@ -42,7 +42,7 @@ import {
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-reads";
 
-import { awardRunEndMaterials } from "@/features/alchemy/run-loop/run/run-materials";
+import { awardRunEndMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createCompleteActiveRunData, makeActiveRunData } from "./active-run-data-fixture";
 import { createEmptyRewardState, serializePendingReward } from "@/lib/active-run-session";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
@@ -52,6 +52,7 @@ import {
   RUN_SNAPSHOT_FIELD_KEYS,
 } from "@/features/alchemy/shared/stores/run-state-init";
 import { defaultGameSession } from "@/app/application-session";
+import { savedActivityFixture } from "../../../../fixtures/run-activity";
 
 const syncGearRunHealth = createGameplayCommand(
   (...args: Parameters<typeof rebindLiveRunMeta>) => acceptCommand(rebindLiveRunMeta(...args)),
@@ -218,16 +219,16 @@ describe("initialize", () => {
   });
 
   it("restores navigation screen via restoreRun", () => {
-    const activeRun = makeActiveRunData({ currentScreen: "shop" });
+    const activeRun = makeActiveRunData({ activity: savedActivityFixture("shop") });
     restoreRun(activeRun, {}, {}, defaultGameSession);
     expect(readActiveRunScreen(defaultGameSession)).toBe("shop");
   });
 
   it("round-trips every active-run persistence region through the aggregate", () => {
     const activeRun = createCompleteActiveRunData();
-    activeRun.interruptedFlow = {
-      kind: "primary-reward",
-      pending: serializePendingReward({
+    activeRun.activity = {
+      kind: "rewards",
+      data: serializePendingReward({
         ...createEmptyRewardState(["Mystery", "Card Shop"]),
         gold: 7,
         lastVictoryEnemyType: "elite",
@@ -236,7 +237,7 @@ describe("initialize", () => {
     };
 
     restoreRun(activeRun, { armor: 21 }, { armor: ["armor-1"] }, defaultGameSession);
-    const snapshot = snapshotRun(undefined, defaultGameSession);
+    const snapshot = snapshotRun(defaultGameSession);
 
     expect(Object.keys(snapshot).sort()).toEqual(Object.keys(activeRun).sort());
     expect(snapshot).toMatchObject({
@@ -258,33 +259,16 @@ describe("initialize", () => {
       runTalentXP: activeRun.runTalentXP,
       runMaterialsEarned: activeRun.runMaterialsEarned,
       runObtainedItems: activeRun.runObtainedItems,
-      currentScreen: "battle",
-      // Actual unclaimed Gold survives alongside its routing data. Victory
-      // markers alone must not fabricate a new reward visit.
-      interruptedFlow: { kind: "primary-reward" },
-      shopState: null,
-      alchemistState: null,
-      trinketShopState: null,
-      equipmentShopState: null,
-      mysteryVisit: activeRun.mysteryVisit,
-      corruptionResult: activeRun.corruptionResult,
+      activity: activeRun.activity,
     });
     expect(snapshot.rng).toEqual(activeRun.rng);
-    if (snapshot.interruptedFlow.kind !== "primary-reward") {
+    if (snapshot.activity.kind !== "rewards") {
       throw new Error("Expected unclaimed Gold to survive as a primary-reward interruption");
     }
-    expect(snapshot.interruptedFlow.pending.gold).toBe(7);
-    expect(snapshot.interruptedFlow.pending.destinations).toEqual(["Mystery", "Card Shop"]);
-    expect(snapshot.activeCombat).toMatchObject({
-      battleState: {
-        turn: (activeRun.activeCombat?.battleState.turn ?? 0) + 1,
-        playerHealth: activeRun.activeCombat?.battleState.playerHealth,
-        turnPhase: "player",
-      },
-      pendingBattleTransition: null,
-      activeLabyrinthModifiers: activeRun.activeCombat?.activeLabyrinthModifiers,
-      activeLabyrinthRewardModifiers: activeRun.activeCombat?.activeLabyrinthRewardModifiers,
-    });
+    expect(snapshot.activity.data.gold).toBe(7);
+    expect(snapshot.activity.data.destinations).toEqual(["Mystery", "Card Shop"]);
+    expect(snapshot.activeLabyrinthModifiers).toEqual(activeRun.activeLabyrinthModifiers);
+    expect(snapshot.activeLabyrinthRewardModifiers).toEqual(activeRun.activeLabyrinthRewardModifiers);
   });
 });
 

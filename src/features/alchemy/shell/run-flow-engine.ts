@@ -17,27 +17,11 @@ import { ROUTE_SCREENS } from "@/lib/routing";
 import { clearRunCardHover } from "./run-destination-wiring";
 import type { RunFlowEngineDeps } from "./shell-types";
 export function createRunFlowEngine(
-  {
-    navigateTo: rawNavigateTo,
-    resumeTo: rawResumeTo,
-    transition,
-    cancelPending,
-    battle,
-    labyrinthClearNode,
-  }: RunFlowEngineDeps,
+  { navigateTo: rawNavigateTo, resumeTo: rawResumeTo, transition, cancelPending, battle }: RunFlowEngineDeps,
   outcomes: RunOutcomes,
   gameSession: GameSession,
 ) {
-  assertSessionOwnership(
-    gameSession,
-    outcomes,
-    battle,
-    rawNavigateTo,
-    rawResumeTo,
-    transition,
-    cancelPending,
-    labyrinthClearNode,
-  );
+  assertSessionOwnership(gameSession, outcomes, battle, rawNavigateTo, rawResumeTo, transition, cancelPending);
   const clearCardHover = () => clearRunCardHover(gameSession);
   // Universal hover rule (approved): every flow navigation clears card hover
   // unless explicitly opted out. Factories receive the wrapped navigate so
@@ -54,7 +38,7 @@ export function createRunFlowEngine(
     {
       navigateTo,
       resumeTo,
-      startBossById: battle.startBossById,
+      presentBattleStart: battle.presentBattleStart,
       clearCardHover,
     },
     gameSession,
@@ -78,9 +62,7 @@ export function createRunFlowEngine(
   const actions: RunFlowShellActions = {
     navigateTo,
     transition,
-    labyrinthClearNode,
     presentBattleStart: battle.presentBattleStart,
-    wildwoodRewardComplete: wildwood.handleWildwoodRewardComplete,
     clearCardHover,
   };
   const flowHandlers = outcomes.connect(actions);

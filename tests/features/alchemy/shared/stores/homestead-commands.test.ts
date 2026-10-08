@@ -10,7 +10,7 @@ import {
   setHasActiveRun,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { SaveDataSchema } from "@/lib/validation/save-schemas/save-data";
-import { awardRunEndMaterials } from "@/features/alchemy/run-loop/run/run-materials";
+import { awardRunEndMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { emptyInventory } from "@/lib/homestead/inventory";

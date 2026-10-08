@@ -37,12 +37,31 @@ describe("setMuted", () => {
     playMusicImmediate(MUSIC_KEYS.MENU);
     const el = lastFakeAudio()!;
     initAudioHost();
-    expect(audioState.hostForcesMute).toBe(true);
     setMuted(false);
     expect(audioState.muted).toBe(true);
     expect(el.muted).toBe(true);
     expect(el.pause).toHaveBeenCalled();
     vi.unstubAllGlobals();
+  });
+
+  it("can unmute and play feedback after an initially undisplayed window becomes visible", () => {
+    const outerWidth = Object.getOwnPropertyDescriptor(window, "outerWidth")!;
+    try {
+      Object.defineProperty(window, "outerWidth", { configurable: true, value: 0 });
+      playMusicImmediate(MUSIC_KEYS.MENU);
+      const music = lastFakeAudio()!;
+      initAudioHost();
+      setMuted(false);
+      expect(audioState.muted).toBe(true);
+      Object.defineProperty(window, "outerWidth", outerWidth);
+      setMuted(false);
+      expect(audioState.muted).toBe(false);
+      expect(music.muted).toBe(false);
+      playBattleEvent("playerHeal");
+      expect(lastFakeAudio()!.play).toHaveBeenCalledOnce();
+    } finally {
+      Object.defineProperty(window, "outerWidth", outerWidth);
+    }
   });
 });
 

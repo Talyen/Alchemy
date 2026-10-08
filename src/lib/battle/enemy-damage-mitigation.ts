@@ -83,13 +83,8 @@ export function prepareEnemyDamage(
     return Math.round(paceCombatDamage(state, damage, "enemy"));
   };
   const attemptedDamage = scale(baseDamage + elementalBonus);
-  const reduction = options.ignorePlayerMitigation
-    ? 0
-    : state.enemyStatuses.poison > 0
-      ? state.talentEffects.poisonReducesEnemyDamage
-      : 0;
   const manaMitigated = options.ignorePlayerMitigation ? attemptedDamage : reduceDamageByMana(state, attemptedDamage);
-  return { attemptedDamage, incomingDamage: Math.max(0, manaMitigated - reduction) };
+  return { attemptedDamage, incomingDamage: manaMitigated };
 }
 
 export function calculateBlockAndArmorMitigation(

@@ -75,7 +75,6 @@ export const DESTINATIONS_PER_ACT = 8;
 export const ACTS_PER_RUN = 3;
 export const DEFAULT_CAMPAIGN_DIFFICULTY_ID = "difficulty-1";
 export const SHOP_MIN_GOLD = 40;
-export const CAMPFIRE_HEALTH_THRESHOLD = 0.8;
 export const ELITE_HEALTH_THRESHOLD = 0.5;
 export const SHOP_CARDS_OFFERED = 3;
 export const SHOP_REFRESHES = 1;

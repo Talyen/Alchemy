@@ -32,6 +32,7 @@ it("swaps to the latest target once, without showing or firing callbacks for a c
     (target) => useSequentialFadeSwap({ target, durationMs: MOTION_FADE_MS, onSwap }),
     { initialProps: "a" },
   );
+  expect(result.current).toEqual({ shown: "a", phase: "idle" });
   rerender("b");
   expect(result.current).toEqual({ shown: "a", phase: "exit" });
   act(() => vi.advanceTimersByTime(MOTION_FADE_MS / 2));

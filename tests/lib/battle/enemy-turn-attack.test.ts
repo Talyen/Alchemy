@@ -94,21 +94,6 @@ describe("applyEnemyAbility: attack", () => {
     expect(result.playerHealth).toBe(25);
   });
 
-  it("reduces incoming damage when enemy is poisoned and poisonReducesEnemyDamage is active", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerStatuses: { block: 0, armor: 0 },
-      enemyStatuses: { poison: 3 },
-      talentEffects: { poisonReducesEnemyDamage: 2 },
-    });
-    const result = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 7 }] }),
-      makeTexts(),
-    );
-    expect(result.playerHealth).toBe(25);
-  });
-
   it("increases block absorption for physical hits with blockAbsorbPhysicalBonus", () => {
     const state = patchBattleState({
       playerHealth: 30,

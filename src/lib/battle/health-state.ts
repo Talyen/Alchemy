@@ -67,10 +67,6 @@ export function mitigatePlayerCombatDamage(
   if (!Number.isFinite(damage) || damage <= 0) return 0;
   let reducedDamage = damage;
   if (!options?.ignoreMitigation) {
-    reducedDamage -= state.talentEffects.damageReduction;
-    if (state.activeCompanion && state.talentEffects.damageReductionWithCompanion > 0) {
-      reducedDamage -= state.talentEffects.damageReductionWithCompanion;
-    }
     reducedDamage -= flatDamageReduction(state.talentEffects, damageType);
     reducedDamage = Math.max(0, reducedDamage);
     reducedDamage = applyGearDamageResistance(reducedDamage, damageType, state.gearEffects);

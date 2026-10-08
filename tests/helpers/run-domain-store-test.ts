@@ -42,7 +42,7 @@ export function initializeBattleForTest(transaction: RunTransaction, snapshot: B
   const draft = transactionDraft(transaction);
   if (snapshot) {
     const state = battleSnapshot(snapshot);
-    draft.session.activity = { kind: "battle", data: { battleState: state, battleStartState: state } };
+    draft.session.activity = { kind: "battle", data: { battleState: state } };
   } else if (draft.session.activity.kind === "battle") draft.session.activity = { kind: "idle" };
 }
 
@@ -211,7 +211,11 @@ export function setRunSession(
   dispatchGameplayCommand(
     (draft) => {
       if (replace) Object.assign(draft.session, createInitialSessionFields());
-      if (partial.hasActiveRun !== undefined) setHasActiveRun(draft, partial.hasActiveRun);
+      if (partial.hasActiveRun !== undefined) {
+        setHasActiveRun(draft, partial.hasActiveRun);
+        if (partial.hasActiveRun && draft.session.activity.kind === "idle")
+          draft.session.activity = { kind: "destination" };
+      }
       if (partial.rewardState !== undefined) setRewardState(draft, partial.rewardState);
       if (partial.companionRewardCards !== undefined) setCompanionRewardCards(draft, partial.companionRewardCards);
       if (partial.rewardClaimInFlight !== undefined)

@@ -34,7 +34,6 @@ const RUN_COLLECTIONS = new Set([
   "reports/runs",
   "reports/compact",
   "reports/agent-diff",
-  "reports/agent-evals",
   "reports/performance",
   "test-results/failures",
 ]);

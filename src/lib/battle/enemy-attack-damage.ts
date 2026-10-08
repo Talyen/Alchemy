@@ -4,10 +4,10 @@ import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
 import { mergeCombatText } from "./combat-text-events";
 import { computeLeechHeal } from "./damage-rider-leech";
-import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-traits";
+import { scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
-import { applyForgeThresholdRewards, applyHealthLossTalentRewards } from "./status-player";
+import { applyHealthLossTalentRewards } from "./status-player";
 import type { BattleState, CombatTextEvent } from "./types";
 import { applyPlayerCombatDamage, isPlayerDefeated, playerHealthLostToDamage } from "./health-state";
 import { getEnemyTraitSet, hasEnemyTrait } from "./encounter-trait-state";
@@ -26,7 +26,6 @@ export function applyEnemyLeechHealing(
   actualDamage: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  if (isFreezeActiveForAspect(state, "regen")) return state;
   const healAmount = computeLeechHeal(actualDamage);
   if (healAmount <= 0) return state;
   return applyEnemyHealingWithCombatText(state, healAmount, combatTexts, { skipFightPacing: true });
@@ -186,11 +185,13 @@ function resolveEnemyDamageEffectCore(
   const hit = applyEnemyHealthHit(hitState, effect, attemptedDamage, mitigation, combatTexts);
   const { facts } = hit;
   const { blockLost, outcome } = facts;
+  const attackBlockLost = blockLost + preDamageBlockStrip;
+  const isBlockDepleted = state.playerStatuses.block > 0 && attackBlockLost >= state.playerStatuses.block;
   // Capture Health loss before threshold healing, then resolve retaliation only for survivors.
   let nextState = applyPlayerDefensiveReactions(
     spendEnemyForgeForHit(hit.state, effect, outcome.landed, combatTexts),
     effect,
-    { ...facts, blockDepletedByStrip: preDamageBlockStrip > 0 && preDamageBlockStrip === state.playerStatuses.block },
+    { ...facts, preDamageBlockStrip, attackBlockLost, isBlockDepleted },
     combatTexts,
     state,
   );
@@ -203,14 +204,8 @@ function resolveEnemyDamageEffectCore(
 
   nextState = applyEnemyHitLeech(nextState, effect, facts, combatTexts);
 
-  const attackBlockLost = blockLost + preDamageBlockStrip;
   if (attackBlockLost > 0 && options.triggerBlockRetaliation) {
-    nextState = applyBlockedAttackRetaliation(
-      nextState,
-      attackBlockLost,
-      combatTexts,
-      attackBlockLost >= state.playerStatuses.block,
-    );
+    nextState = applyBlockedAttackRetaliation(nextState, attackBlockLost, combatTexts, isBlockDepleted);
   }
 
   if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...fullOutcome };
@@ -262,18 +257,7 @@ function resolvePendingEmberwakeDamage(state: BattleState, combatTexts: CombatTe
 
 export function resolvePendingBattleReactions(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
-  while (
-    nextState.pendingForgeThresholds.length > 0 ||
-    nextState.flags.pendingCinderSkinReaction ||
-    nextState.flags.pendingEmberwakeDamage
-  ) {
-    const thresholds = nextState.pendingForgeThresholds;
-    if (thresholds.length > 0) {
-      nextState = { ...nextState, pendingForgeThresholds: [] };
-      for (const { previousForge, nextForge } of thresholds) {
-        nextState = applyForgeThresholdRewards(nextState, previousForge, nextForge, combatTexts);
-      }
-    }
+  while (nextState.flags.pendingCinderSkinReaction || nextState.flags.pendingEmberwakeDamage) {
     nextState = resolvePendingCinderSkinReaction(nextState, combatTexts);
     nextState = resolvePendingEmberwakeDamage(nextState, combatTexts);
   }

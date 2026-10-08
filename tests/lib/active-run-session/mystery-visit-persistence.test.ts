@@ -1,3 +1,4 @@
+import { savedActivityFixture, savedActivityData } from "../../fixtures/run-activity";
 import { describe, expect, it } from "vitest";
 import {
   emptyHydratedMysteryVisit,
@@ -42,17 +43,10 @@ describe("Mystery visit resume", () => {
     let persisted = serializeMysteryVisit(visit);
     for (let resume = 0; resume < 2; resume++) {
       const restored = parseActiveRun(
-        JSON.parse(
-          JSON.stringify(
-            makeMinimalActiveRunInput({
-              currentScreen: "mystery",
-              mysteryVisit: persisted,
-            }),
-          ),
-        ),
+        JSON.parse(JSON.stringify(makeMinimalActiveRunInput({ activity: savedActivityFixture("mystery", persisted) }))),
       );
       expect(restored).not.toBeNull();
-      const hydrated = hydrateMysteryVisit(restored!.mysteryVisit);
+      const hydrated = hydrateMysteryVisit(savedActivityData(restored!, "mystery"));
       expect(hydrated).toEqual(visit);
       persisted = serializeMysteryVisit(hydrated);
     }
@@ -61,8 +55,7 @@ describe("Mystery visit resume", () => {
   it("preserves a pending untagged card choice without inventing a chosen reward", () => {
     const restored = parseActiveRun(
       makeMinimalActiveRunInput({
-        currentScreen: "mystery",
-        mysteryVisit: {
+        activity: savedActivityFixture("mystery", {
           event: {
             id: "saved",
             title: "Saved",
@@ -85,10 +78,10 @@ describe("Mystery visit resume", () => {
           grantedTrinketIds: [],
           grantedGear: [],
           chosenCardId: null,
-        },
+        }),
       }),
     );
-    const visit = hydrateMysteryVisit(restored!.mysteryVisit);
+    const visit = hydrateMysteryVisit(savedActivityData(restored!, "mystery"));
     const effects = [
       { kind: "chooseCard" },
       { kind: "healHealth", amount: 5 },

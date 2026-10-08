@@ -4,8 +4,12 @@ import {
   restoreOrCreateDestinationRewardState,
 } from "@/features/alchemy/shared/run-flow/destination-flow";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { readActiveRun, readHasActiveBattle, readHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
+import {
+  readActiveRun,
+  readHasActiveBattle,
+  readHasActiveRun,
+  readRunResumeScreen,
+} from "@/features/alchemy/shared/stores/run-reads";
 import {
   acceptCommand,
   dispatchRunSessionCommand,
@@ -66,22 +70,17 @@ export function createRunResumeNavigation(deps: ContentSystemNavigationDeps, gam
       undefined,
       gameSession,
     );
-    const screen = snapshotRun(undefined, gameSession).currentScreen;
+    const screen = readRunResumeScreen(gameSession);
     if (!screen) return;
     sessionFeedback(gameSession).playUISound("resumeRun");
     // Card hover clears universally on navigation (see run-flow-engine).
     if (screen === ROUTE_SCREENS.DESTINATION && mode === CONTENT_SYSTEMS.CAMPAIGN) {
-      deps.resumeTo(screen, () => {
-        dispatchRunSessionCommand(
-          (draft) => {
-            restoreResumedCampaignDestinations(draft, deps.getAvailableDestinations);
-
-            return acceptCommand();
-          },
-          undefined,
-          gameSession,
-        );
-      });
+      dispatchRunSessionCommand(
+        (draft) => acceptCommand(restoreResumedCampaignDestinations(draft, deps.getAvailableDestinations)),
+        undefined,
+        gameSession,
+      );
+      deps.resumeTo(screen);
     } else if (
       screen === ROUTE_SCREENS.BATTLE &&
       mode === CONTENT_SYSTEMS.WILDWOOD &&

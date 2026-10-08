@@ -1,3 +1,4 @@
+import { savedActivityFixture } from "../fixtures/run-activity";
 import { destinationLabel } from "@/lib/routing/destinations";
 import { expect, type Page } from "@playwright/test";
 import type { BattleCard } from "@/lib/game-data/types";
@@ -6,7 +7,7 @@ import { DestinationPage } from "../pages/destination-page";
 import { RewardPage } from "../pages/reward-page";
 import { makeStartingDeck } from "./cards";
 import { navigateToGame, resumeCampaignRun } from "./navigation";
-import { injectSaveState, destinationInterruptedFlow } from "./save-injection";
+import { injectSaveState } from "./save-injection";
 import type { DestinationName } from "./types";
 
 export async function enableFastMode(page: Page) {
@@ -27,7 +28,14 @@ export async function startAtDestination(
     runDeck: makeStartingDeck(),
     ...overrides,
     ...(options.forceDestination
-      ? { currentScreen: "destination", interruptedFlow: destinationInterruptedFlow([options.forceDestination]) }
+      ? {
+          activity: savedActivityFixture("destination", {
+            destinations: [options.forceDestination],
+            selectedBossId: null,
+            lastVictoryEnemyType: null,
+            lastVictoryContentSystem: null,
+          }),
+        }
       : {}),
   });
   await navigateToGame(page);
@@ -47,8 +55,12 @@ export async function startBattleWithDeck(page: Page, deck: BattleCard[], overri
     runDeck: deck,
     runPlayerHealth: 30,
     runMaxHealth: 30,
-    currentScreen: "destination",
-    interruptedFlow: destinationInterruptedFlow(["Normal Combat"]),
+    activity: savedActivityFixture("destination", {
+      destinations: ["Normal Combat"],
+      selectedBossId: null,
+      lastVictoryEnemyType: null,
+      lastVictoryContentSystem: null,
+    }),
     ...overrides,
   });
   await navigateToGame(page);

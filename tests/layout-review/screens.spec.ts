@@ -1,3 +1,4 @@
+import { savedActivityFixture } from "../fixtures/run-activity";
 import { expect, test, type ElectronApplication, type Page } from "@playwright/test";
 import { launchElectronApp, getElectronMainWindow } from "../electron/electron-helpers";
 import { MenuPage } from "../pages/menu-page";
@@ -133,7 +134,6 @@ test("run setup and draft", async () => {
   await expect(page.getByRole("heading", { name: "A Knight's Journey" })).toBeVisible();
   await shot("difficulty-select");
   await injectSaveState(page, {
-    currentScreen: "draft-deck",
     contentSystemType: "wildwood",
     selectedDifficulty: null,
     runDeck: makeStartingDeck().slice(0, 5),
@@ -146,6 +146,7 @@ test("run setup and draft", async () => {
       currentCombatTraitIds: [],
       currentRewardTraitIds: [],
     },
+    activity: savedActivityFixture("draft-deck"),
   });
   await expect(page.getByRole("heading", { name: "Draft a Deck" })).toBeVisible();
   await shot("draft-deck");
@@ -321,7 +322,6 @@ test("additional pickers tooltips and end states", async () => {
   await shot("confirmation-reset-talents");
   await click("Cancel");
   await injectSaveState(page, {
-    currentScreen: "wildwood-removal",
     contentSystemType: "wildwood",
     selectedDifficulty: null,
     runDeck: deck,
@@ -334,14 +334,14 @@ test("additional pickers tooltips and end states", async () => {
       currentCombatTraitIds: [],
       currentRewardTraitIds: [],
     },
+    activity: savedActivityFixture("wildwood-removal"),
   });
   await expect(page.getByRole("heading", { name: "Refine Your Deck" })).toBeVisible();
   await shot("wildwood-removal");
   const choice = { label: "Take the Scroll", effects: [{ kind: "chooseCard" }] };
   await injectSaveState(page, {
-    currentScreen: "mystery",
     runDeck: deck,
-    mysteryVisit: {
+    activity: savedActivityFixture("mystery", {
       event: {
         id: "review-scroll",
         title: "Forgotten Scrolls",
@@ -354,7 +354,7 @@ test("additional pickers tooltips and end states", async () => {
       grantedTrinketIds: [],
       grantedGear: [],
       chosenCardId: null,
-    },
+    }),
   });
   await expect(page.getByRole("heading", { name: "Choose a Card" })).toBeVisible();
   await shot("mystery-card-picker");
@@ -549,23 +549,19 @@ test("services crafting and dense recap", async () => {
   await expect(page.getByRole("heading", { name: "Wish", exact: true })).toBeVisible();
   await shot("wish-choice");
   await injectSaveState(page, {
-    currentScreen: "rewards",
     runDeck: deck,
-    interruptedFlow: {
-      kind: "companion-reward",
-      pending: {
-        rewardType: "card",
-        choiceIds: ["slash"],
-        companionChoiceIds: ["wolf-companion", "bear-companion"],
-        selectedId: null,
-        gold: 0,
-        materials: {},
-        destinations: ["Campfire"],
-        selectedBossId: null,
-        lastVictoryEnemyType: "normal",
-        lastVictoryContentSystem: "campaign",
-      },
-    },
+    activity: savedActivityFixture("rewards", {
+      rewardType: "card",
+      choiceIds: ["slash"],
+      companionChoiceIds: ["wolf-companion", "bear-companion"],
+      selectedId: null,
+      gold: 0,
+      materials: {},
+      destinations: ["Campfire"],
+      selectedBossId: null,
+      lastVictoryEnemyType: "normal",
+      lastVictoryContentSystem: "campaign",
+    }),
   });
   await expect(page.getByRole("heading", { name: "Victory", exact: true })).toBeVisible();
   await shot("rewards-companion");

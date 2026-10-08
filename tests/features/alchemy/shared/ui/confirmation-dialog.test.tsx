@@ -114,22 +114,4 @@ describe("ConfirmationDialog", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(document.activeElement).toBe(explicitTarget ? returnFocusRef.current : opener);
   });
-
-  it("does not call onCancel on Escape when dismissOnEscape is false", () => {
-    const onCancel = vi.fn();
-
-    render(
-      <ConfirmationDialog
-        title="Delete item?"
-        confirmLabel="Delete"
-        dismissOnEscape={false}
-        onConfirm={vi.fn()}
-        onCancel={onCancel}
-      />,
-    );
-
-    fireEvent.keyDown(window, { key: "Escape" });
-
-    expect(onCancel).not.toHaveBeenCalled();
-  });
 });

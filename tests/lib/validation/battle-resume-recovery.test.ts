@@ -1,7 +1,8 @@
+import { savedActivityFixture, savedActivityData } from "../../fixtures/run-activity";
 import { describe, expect, it } from "vitest";
 import { cardById, companionLibrary } from "@/lib/game-data";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
-import { applyDrawResult, drawFromState } from "@/lib/battle/draw";
+import { applyDrawResult, deliverPendingHandCards, drawFromState } from "@/lib/battle/draw";
 import { advanceToPlayerTurn, resolveDeathsDoorGraceExpiry } from "@/lib/battle/player-turn-transition";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { applyEnemyHealingWithCombatText } from "@/lib/battle/enemy-healing";
@@ -26,13 +27,18 @@ function resume(overrides: Record<string, unknown> = {}) {
 }
 
 describe("damaged battle save recovery", () => {
-  it("keeps new draws distinct when the saved draw counter trails existing cards", () => {
+  it("delivers saved reserved cards once and keeps new draws distinct after repairing their counter", () => {
     const restored = resume({
       hand: [{ ...cardById.slash!, uid: 1 }],
       pendingHandCards: [{ ...cardById.block!, uid: 20 }],
       nextCardUid: 1,
     });
-    const drawn = applyDrawResult(restored, drawFromState(restored, 1));
+    const delivered = deliverPendingHandCards(restored);
+    expect(delivered.hand.map((card) => card.uid)).toEqual([1, 20]);
+    expect(delivered.hand[1]).toBe(restored.pendingHandCards[0]);
+    expect(delivered.pendingHandCards).toEqual([]);
+    expect(deliverPendingHandCards(delivered)).toBe(delivered);
+    const drawn = applyDrawResult(delivered, drawFromState(delivered, 1));
     expect(drawn.hand.map((card) => card.uid)).toEqual([1, 20, 21]);
     expect(drawn.nextCardUid).toBe(22);
   });
@@ -99,10 +105,12 @@ describe("damaged battle save recovery", () => {
     const broken = { ...mixed, cost: -1, effects: [], descriptionLines: [] };
     const restored = parseActiveRunData({
       runDeck: [broken, cardById.slash!],
-      activeCombat: { battleState: { ...patchBattleState(), hand: [broken], deck: [cardById.slash!] } },
+      activity: savedActivityFixture("battle", {
+        battleState: { ...patchBattleState(), hand: [broken], deck: [cardById.slash!] },
+      }),
     });
     expect(restored.runDeck.map((card) => card.id)).toEqual(["slash"]);
-    expect(restored.activeCombat!.battleState.hand).toEqual([]);
+    expect(savedActivityData(restored, "battle")!.battleState.hand).toEqual([]);
     expect(parseActiveRunData({ runDeck: [mixed] }).runDeck[0]?.effects).toEqual(mixed.effects);
   });
 

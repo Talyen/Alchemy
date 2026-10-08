@@ -1,3 +1,4 @@
+import { savedActivityData } from "../../fixtures/run-activity";
 import { expect, test } from "../../fixtures/e2e";
 import { injectActiveBattle, makeCard, makeGoblinBattleState, readSavedGame, seedRandom } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
@@ -20,10 +21,12 @@ test("rapid End Turn advances once, damages the player, and restores the hand", 
   await expect.poll(() => battle.playerHealth()).toBeLessThan(health);
   await expect(battle.hand).toHaveCount(4);
   await expect(battle.endTurnBtn).toBeEnabled({ timeout: 15_000 });
-  await expect.poll(async () => (await readSavedGame(page)).activeRun?.activeCombat?.battleState.turn).toBe(3);
+  await expect
+    .poll(async () => savedActivityData((await readSavedGame(page)).activeRun, "battle")?.battleState.turn)
+    .toBe(3);
   const after = await battle.playerHealth();
   await page.getByRole("button", { name: "View Deck · 6 cards" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   expect(await battle.playerHealth()).toBe(after);
-  expect((await readSavedGame(page)).activeRun?.activeCombat?.battleState.turn).toBe(3);
+  expect(savedActivityData((await readSavedGame(page)).activeRun, "battle")?.battleState.turn).toBe(3);
 });

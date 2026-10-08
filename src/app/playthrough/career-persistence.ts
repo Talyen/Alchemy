@@ -65,7 +65,7 @@ export async function createCareerPersistence(initialSave: UnstampedSaveData, ga
   const loaded = await persistence.load();
   if (loaded.status.kind !== "ok" || loaded.status.warnings?.length)
     throw new Error(`Initial save invalid: ${JSON.stringify(loaded.status)}`);
-  persistence.restore(loaded.data);
+  persistence.restore(loaded.data, { restoreActions: loaded.restoreActions });
 
   // Deliberate checkpoints flush explicitly. No machine-speed timer may save
   // before a requested interruption; the worker controls the simulation clock.
@@ -121,7 +121,7 @@ export async function createCareerPersistence(initialSave: UnstampedSaveData, ga
         const persisted = await persistence.load();
         if (persisted.status.kind !== "ok" || persisted.status.warnings?.length)
           throw new Error("Acknowledged save failed to load");
-        persistence.restore(persisted.data);
+        persistence.restore(persisted.data, { restoreActions: persisted.restoreActions });
         result.resumeChecks++;
       }
     },

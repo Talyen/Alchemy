@@ -158,21 +158,20 @@ describe("persistence coordinator", () => {
     unsubscribe();
   });
 
-  it("ignores claim locks and battle presentation snapshots while saving reward payload changes", () => {
+  it("ignores claim locks and derived effects while saving reward payload changes", () => {
     dispatchGameplayCommand((draft) => acceptCommand(getBattleForTest(draft)), undefined, defaultGameSession);
-    const listener = vi.fn();
-    const unsubscribe = subscribeAlchemyPersistence(listener, defaultGameSession);
-
-    setRunSession({ rewardClaimInFlight: true });
     dispatchGameplayCommand(
       (draft) => {
-        getBattleForTest(draft).battleStartState = { ...getBattleForTest(draft).battleState };
-
+        draft.session.activity = { kind: "rewards" };
         return acceptCommand();
       },
       undefined,
       defaultGameSession,
     );
+    const listener = vi.fn();
+    const unsubscribe = subscribeAlchemyPersistence(listener, defaultGameSession);
+
+    setRunSession({ rewardClaimInFlight: true });
     dispatchGameplayCommand(
       (draft) => {
         draft.runProfile.effects = { ...draft.runProfile.effects };

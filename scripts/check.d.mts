@@ -1,4 +1,7 @@
-export function captureSourceDigest(): { head: string; hash: string };
+export function captureSourceDigest(options?: { paths?: string[]; rootDir?: string; inputs?: readonly string[] }): {
+  head: string;
+  hash: string;
+};
 
 export function parseCheckArgs(argv: string[]): string[];
 

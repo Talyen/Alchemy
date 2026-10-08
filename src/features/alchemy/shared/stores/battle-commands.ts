@@ -19,7 +19,7 @@ import {
 import { current } from "immer";
 import { PLAYABLE_HAND_OPTIONS } from "../config/battle-input";
 import { awardBattleDodgeXP, createDraftRunRandomSource } from "./run-session-write-port";
-import { commitResolvedBattle, setBattleStartState, setBattleState, withDraftWorldBattleRng } from "./write/run-battle";
+import { commitResolvedBattle, setBattleState, withDraftWorldBattleRng } from "./write/run-battle";
 
 export function commitCardPlay(index: number, cardId: string, gameSession: GameSession) {
   return dispatchGameplayCommand(
@@ -73,10 +73,6 @@ export function commitEndTurn(gameSession: GameSession): ResolvedBattleTurn | nu
   );
 }
 
-function clearBattleOpeningState(gameSession: GameSession): void {
-  dispatchGameplayCommand((draft) => acceptCommand(setBattleStartState(draft, null)), undefined, gameSession);
-}
-
 function commitDevBattleVictory(gameSession: GameSession): void {
   if (!import.meta.env.DEV) return;
   dispatchGameplayCommand(
@@ -97,7 +93,6 @@ export function createBattleCapabilities(gameSession: GameSession) {
     playCard: (index: number, cardId: string) => commitCardPlay(index, cardId, gameSession),
     chooseWish: (cardId: string) => commitBattleWish(cardId, gameSession),
     endTurn: () => commitEndTurn(gameSession),
-    clearOpening: () => clearBattleOpeningState(gameSession),
     devVictory: () => commitDevBattleVictory(gameSession),
     clearPresentation: () => clearBattlePresentationUi(gameSession),
     createStartCommands: (onStarted: (result: BattleStarted) => void) =>

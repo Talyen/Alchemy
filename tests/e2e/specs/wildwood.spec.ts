@@ -1,3 +1,4 @@
+import { savedActivityFixture } from "../../fixtures/run-activity";
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
 import { BattlePage } from "../../pages/battle-page";
@@ -35,7 +36,7 @@ function wildwoodBossState(overrides: Record<string, unknown> = {}) {
   return {
     contentSystemType: "wildwood",
     selectedDifficulty: null,
-    currentScreen: "draft-deck",
+    activity: savedActivityFixture("draft-deck"),
     runPlayerHealth: 30,
     runMaxHealth: 30,
     runDeck: Array.from({ length: 5 }, () => ({
@@ -55,22 +56,6 @@ function wildwoodRewardFlow(overrides: Record<string, unknown> = {}) {
   return {
     contentSystemType: "wildwood",
     selectedDifficulty: null,
-    currentScreen: "rewards",
-    interruptedFlow: {
-      kind: "primary-reward",
-      pending: {
-        rewardType: "card",
-        choiceIds: ["slash", "bash", "block"],
-        companionChoiceIds: [],
-        selectedId: null,
-        gold: 0,
-        materials: { wood: 0, iron: 0, herbs: 0, food: 0, gems: 0 },
-        destinations: [],
-        selectedBossId: null,
-        lastVictoryEnemyType: "boss",
-        lastVictoryContentSystem: "wildwood",
-      },
-    },
     runPlayerHealth: 10,
     runMaxHealth: 30,
     runDeck: Array.from({ length: 6 }, () => ({ ...bossKiller })),
@@ -79,6 +64,18 @@ function wildwoodRewardFlow(overrides: Record<string, unknown> = {}) {
       draftChoices: [],
       remainingBossIds: ["iron-bear"],
       previousBossId: "forge-golem",
+    }),
+    activity: savedActivityFixture("rewards", {
+      rewardType: "card",
+      choiceIds: ["slash", "bash", "block"],
+      companionChoiceIds: [],
+      selectedId: null,
+      gold: 0,
+      materials: { wood: 0, iron: 0, herbs: 0, food: 0, gems: 0 },
+      destinations: [],
+      selectedBossId: null,
+      lastVictoryEnemyType: "boss",
+      lastVictoryContentSystem: "wildwood",
     }),
     ...overrides,
   };
@@ -174,7 +171,7 @@ test.describe("Wildwood Draft", () => {
     await expect(battle.hand.first()).toBeVisible({ timeout: 10000 });
   });
 
-  test("reloading a Wildwood reward save keeps interruptedFlow choices", critical, async ({ page, fastBattle }) => {
+  test("reloading a Wildwood reward save keeps reward activity choices", critical, async ({ page, fastBattle }) => {
     void fastBattle;
     await injectSaveState(page, wildwoodRewardFlow());
     await page.goto("/");
@@ -182,7 +179,7 @@ test.describe("Wildwood Draft", () => {
 
     const choiceIdsBefore = await page.evaluate((saveKey) => {
       const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      return save.activeRun?.interruptedFlow?.pending?.choiceIds ?? [];
+      return save.activeRun.activity?.pending?.choiceIds ?? [];
     }, SAVE_KEY);
     expect(choiceIdsBefore).toEqual(["slash", "bash", "block"]);
 
@@ -191,7 +188,7 @@ test.describe("Wildwood Draft", () => {
 
       const choiceIdsAfter = await resumed.evaluate((saveKey) => {
         const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-        return save.activeRun?.interruptedFlow?.pending?.choiceIds ?? [];
+        return save.activeRun.activity?.pending?.choiceIds ?? [];
       }, SAVE_KEY);
       expect(choiceIdsAfter).toEqual(["slash", "bash", "block"]);
     });

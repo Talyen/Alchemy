@@ -2,7 +2,6 @@ export interface AuditSelection {
   hasTypes: boolean;
   hasAmplification: boolean;
   hasContent: boolean;
-  hasHotspots: boolean;
   hasAll: boolean;
   forwardedArgs: string[];
 }

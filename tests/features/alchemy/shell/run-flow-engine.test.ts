@@ -42,7 +42,6 @@ function makeEngine({
   startBattle = vi.fn(),
   startBossBattle = vi.fn(),
   startBossById = vi.fn(),
-  labyrinthClearNode = vi.fn(),
 }: {
   navigateTo?: TestNavigate;
   resumeTo?: TestNavigate;
@@ -51,7 +50,6 @@ function makeEngine({
   startBattle?: BattleStartCommands["startBattle"];
   startBossBattle?: BattleStartCommands["startBossBattle"];
   startBossById?: BattleStartCommands["startBossById"];
-  labyrinthClearNode?: () => void;
 } = {}) {
   return createRunFlowEngine(
     {
@@ -65,7 +63,6 @@ function makeEngine({
         startBossById,
         presentBattleStart: vi.fn(),
       },
-      labyrinthClearNode,
     },
     makeOutcomes(navigateTo, transition),
     defaultGameSession,
@@ -127,7 +124,7 @@ describe("createRunFlowEngine", () => {
     expect(readActiveRun(defaultGameSession).runDeck).toEqual(draftedCards);
     expect(readRunSession(defaultGameSession).pendingCharacterId).toBeNull();
     expect(readRunSession(defaultGameSession).wildwoodDraft).toMatchObject({ phase: "battle" });
-    expect(startBossById).toHaveBeenCalledOnce();
+    expect(readBattle(defaultGameSession).hasActiveBattle).toBe(true);
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE, undefined);
   });
 
@@ -153,7 +150,7 @@ describe("createRunFlowEngine", () => {
       "wildwood-removal-7",
     ]);
     expect(readRunSession(defaultGameSession).wildwoodDraft).toMatchObject({ phase: "battle" });
-    expect(startBossById).toHaveBeenCalledOnce();
+    expect(readBattle(defaultGameSession).hasActiveBattle).toBe(true);
   });
 
   it("commits a skipped Wildwood removal before the battle screen swap", () => {

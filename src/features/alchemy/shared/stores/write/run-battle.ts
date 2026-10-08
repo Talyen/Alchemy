@@ -9,8 +9,6 @@ import type { BattleCard } from "@/lib/game-data";
 import { createDraftRunRandomSource } from "./run-progress";
 import { syncBattleGoldFromPurse } from "./run-gold";
 
-export const snapshotBattleState = battleSnapshot;
-
 export function withDraftWorldBattleRng(draft: GameplayDraft, battleState: BattleSnapshot): BattleState {
   const snapshot = isDraft(battleState) ? current(battleState) : battleState;
   return { ...snapshot, rng: createDraftRunRandomSource(draft, "world") };
@@ -39,16 +37,11 @@ export function setBattleState(
   draft.runProfile.gold = gold;
 }
 
-export function setBattleStartState(draft: GameplayDraft, state: BattleSnapshot | null): void {
-  if (draft.session.activity.kind !== "battle") return;
-  draft.session.activity.data.battleStartState = state ? battleSnapshot(state) : null;
-}
-
 /** Enter combat only from a live non-combat activity; hydration sets its validated activity directly. */
 export function enterBattle(draft: GameplayDraft, state: BattleSnapshot): boolean {
   if (draft.session.activity.kind === "inactive" || draft.session.activity.kind === "battle") return false;
   const snapshot = battleSnapshot(state);
-  draft.session.activity = { kind: "battle", data: { battleState: snapshot, battleStartState: snapshot } };
+  draft.session.activity = { kind: "battle", data: { battleState: snapshot } };
   syncBattleGoldFromPurse(draft);
   return true;
 }

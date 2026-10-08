@@ -231,7 +231,7 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
     }),
     [],
   );
-  const startFreeze = battleTalents.startFreeze + battleGearEffects.startFreeze;
+  const startFreeze = battleGearEffects.startFreeze;
   let started = healedState;
   if (startFreeze > 0 && started.enemyHealth > 0 && started.playerHealth > 0) {
     started = resolvePendingBattleReactions(

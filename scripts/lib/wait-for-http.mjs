@@ -19,8 +19,13 @@ export async function waitForHttp(url, options = {}) {
       const response = await fetch(url, {
         signal: AbortSignal.timeout(Math.max(1, Math.min(requestTimeoutMs, remainingMs))),
       });
-      if (accept(response)) return response;
-      await response.body?.cancel();
+      let accepted = false;
+      try {
+        accepted = accept(response);
+      } finally {
+        if (!accepted) await response.body?.cancel();
+      }
+      if (accepted) return response;
     } catch (error) {
       lastError = error;
     }

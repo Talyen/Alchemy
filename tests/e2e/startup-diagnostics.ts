@@ -1,5 +1,40 @@
 import type { Page, Request, Response } from "@playwright/test";
 
+async function readWithDeadline<T>(read: () => Promise<T>): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      read(),
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(() => reject(new Error("page did not answer within 2 seconds")), 2_000);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/** Capture failure context without letting an unresponsive renderer hold fixture teardown. */
+export async function captureFailureContext(page: Page, record: (message: string) => void) {
+  let accessibilitySnapshot = "";
+  try {
+    accessibilitySnapshot = await page.ariaSnapshot({ mode: "ai", depth: 8, timeout: 2_000 });
+  } catch (error) {
+    record(
+      `[Diagnostic] Accessibility snapshot unavailable: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  let htmlFallback = "";
+  if (!accessibilitySnapshot) {
+    try {
+      htmlFallback = await readWithDeadline(() => page.content());
+    } catch (error) {
+      htmlFallback = `Unable to fetch page HTML: ${error instanceof Error ? error.message : String(error)}`;
+    }
+  }
+  return { accessibilitySnapshot, htmlFallback };
+}
+
 /** Attach before navigation; share the fixture's bounded log and failure artifact. */
 export function collectStartupDiagnostics(
   page: Page,
@@ -53,9 +88,8 @@ export function collectStartupDiagnostics(
       for (const [request, start] of [...pending].slice(0, 5))
         record(`[Pending ${Math.round(now - start)}ms] ${location(request)}`);
       if (pending.size > 5) record(`[Pending] ${pending.size - 5} more tracked requests omitted from digest`);
-      let timeout: ReturnType<typeof setTimeout> | undefined;
       try {
-        const timing = await Promise.race([
+        const timing = await readWithDeadline(() =>
           page.evaluate(() => {
             const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
             return navigation
@@ -68,15 +102,10 @@ export function collectStartupDiagnostics(
                 }
               : null;
           }),
-          new Promise<never>((_, reject) => {
-            timeout = setTimeout(() => reject(new Error("page did not answer within 2 seconds")), 2_000);
-          }),
-        ]);
+        );
         record(`[Navigation timing] ${timing ? JSON.stringify(timing) : "unavailable"}`);
       } catch (error) {
         record(`[Navigation timing] unavailable: ${error instanceof Error ? error.message : String(error)}`);
-      } finally {
-        clearTimeout(timeout);
       }
     },
   };

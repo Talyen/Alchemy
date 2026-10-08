@@ -160,25 +160,6 @@ describe("encounter trait enemy actions", () => {
     expect(second.enemyHealth).toBe(12);
     expect(second.pendingEnemyBleedLeechHealing).toBe(0);
   });
-
-  it("Flesheater respects Freeze regeneration blocking on its hit and Bleed tick", () => {
-    const currentEnemy = enemyWith("flesheater");
-    const base = makeTestBattleState();
-    const first = endPlayerTurn(
-      makeTestBattleState({
-        currentEnemy,
-        enemyHealth: 10,
-        enemyMaxHealth: 20,
-        enemyCC: { stunSkipTurns: 0, freezeSkipTurns: 1, cooldown: 0 },
-        talentEffects: { ...base.talentEffects, freezeBlocksRegen: true },
-      }),
-    ).state;
-    expect(first.enemyHealth).toBe(10);
-
-    const second = tickPlayerStatuses(first, []);
-    expect(second.enemyHealth).toBe(10);
-    expect(second.pendingEnemyBleedLeechHealing).toBe(0);
-  });
 });
 
 describe("encounter trait card events", () => {

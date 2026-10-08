@@ -20,6 +20,7 @@ import { gridLabyrinthMapFixture } from "../../../fixtures/labyrinth-map";
 import { resetAllTestStores, setRunProgress, setRunSession } from "../../../helpers/run-domain-store-test";
 import { makeFlowHandlerDeps } from "../../../helpers/run-flow-handler-deps";
 import { defaultGameSession } from "@/app/application-session";
+import { savedActivityData } from "../../../fixtures/run-activity";
 
 const nodeId = "labyrinth-floor-1-n0";
 beforeEach(resetAllTestStores);
@@ -86,14 +87,14 @@ it.each(["campaign", "labyrinth"] as const)(
     const committed = readGameplayState(defaultGameSession);
     expect(committed.revision).toBe(before.revision + 1);
     expect(readRunSession(defaultGameSession).activity.kind).toBe("shop");
-    const saved = snapshotRun(undefined, defaultGameSession);
-    expect(saved.currentScreen).toBe("shop");
+    const saved = snapshotRun(defaultGameSession);
+    expect(saved.activity.kind).toBe("shop");
     expect(saved.runHistory).toHaveLength(1);
-    expect(saved.shopState!.cards.length).toBeGreaterThan(0);
+    expect(savedActivityData(saved, "shop")!.cards.length).toBeGreaterThan(0);
     navigation.cancelPending();
     vi.runAllTimers();
     expect(readGameplayState(defaultGameSession)).toBe(committed);
-    expect(snapshotRun(undefined, defaultGameSession)).toEqual(saved);
+    expect(snapshotRun(defaultGameSession)).toEqual(saved);
     expect(presentBattleStart).not.toHaveBeenCalled();
   },
 );
@@ -121,8 +122,8 @@ it.each(["campaign", "labyrinth"] as const)(
           ).handleLabyrinthNodeEnter;
     expect(action).toThrow("Display unavailable");
     expect(readRunSession(defaultGameSession).activity.kind).toBe("shop");
-    const saved = snapshotRun(undefined, defaultGameSession);
-    expect(saved.currentScreen).toBe("shop");
+    const saved = snapshotRun(defaultGameSession);
+    expect(saved.activity.kind).toBe("shop");
     expect(saved.runHistory).toHaveLength(1);
     if (mode === "campaign") {
       expect(saved.destinationIndexInAct).toBe(1);
@@ -196,8 +197,8 @@ it.each([
   }
   expect(readActiveRunScreen(defaultGameSession)).toBe("rewards");
   expect(readRunSession(defaultGameSession).activity.kind).toBe("rewards");
-  const saved = snapshotRun(undefined, defaultGameSession);
-  expect(saved.activeCombat).toBeNull();
+  const saved = snapshotRun(defaultGameSession);
+  expect(savedActivityData(saved, "battle")).toBeNull();
   expect(saved.runHistory).toEqual([
     expect.objectContaining({ destination: DESTINATIONS.NORMAL_COMBAT, completed: true }),
   ]);

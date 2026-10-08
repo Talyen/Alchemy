@@ -33,7 +33,7 @@ describe("defense and resource regressions", () => {
         playerHealth: 30,
         enemyHealth: 10,
         enemyMaxHealth: 30,
-        talentEffects: { damageReduction: 4 },
+        gearEffects: { resistBurn: 67, resistPoison: 67, resistBleed: 67, resistStun: 67, resistFreeze: 67 },
       });
       const result = processEnemyDamageEffect(state, { kind: "damage", damageType, amount: 6, lifesteal: true }, []);
       expect(result.playerHealth).toBe(28);
@@ -87,59 +87,6 @@ describe("defense and resource regressions", () => {
     const result = tickPlayerStatuses(state, []);
     expect(result.playerHealth).toBe(state.playerHealth);
     expect(result.playerStatuses.armor).toBe(2);
-  });
-
-  it("Overheat deals immediate Burn damage when Anvil crosses four Forge", () => {
-    const card = cardById.anvil!;
-    const state = patchBattleState({
-      hand: [card],
-      enemyHealth: 30,
-      enemyMaxHealth: 30,
-      playerStatuses: { forge: 2 },
-      talentEffects: { forgeBurnThreshold: 4, forgeBurnDamage: 8 },
-      rng: () => 0.99,
-    });
-    const result = playBattleCardResolved(state, card.id, 0).state;
-    expect(result.enemyHealth).toBe(22);
-    expect(result.enemyStatuses.burn).toBe(8);
-  });
-
-  it("Overheat preserves the next card's bonuses and pays kill rewards once", () => {
-    const card = cardById.anvil!;
-    const state = patchBattleState({
-      hand: [card],
-      playerHealth: 10,
-      playerMaxHealth: 30,
-      enemyHealth: 8,
-      enemyMaxHealth: 30,
-      playerStatuses: { forge: 2 },
-      talentEffects: { forgeBurnThreshold: 4, forgeBurnDamage: 8, firstBurnCardBonusMultiplier: 2 },
-      flags: { nextHitCrit: true },
-      gearEffects: { goldOnKill: 3 },
-      trinketEffects: { boneCharmHealOnKill: 2 },
-      rng: () => 0.99,
-    });
-    const result = playBattleCardResolved(state, card.id, 0).state;
-    expect(result.enemyHealth).toBe(0);
-    expect(result.playerHealth).toBe(12);
-    expect(result.gold).toBe(state.gold + 3);
-    expect(result.flags.nextHitCrit).toBe(true);
-    expect(result.flags.firstBurnCardDoubledUsed).toBe(false);
-  });
-
-  it("Overheat respects Burn resistance for immediate damage and buildup", () => {
-    const card = cardById.anvil!;
-    const state = patchBattleState({
-      hand: [card],
-      enemyHealth: 30,
-      enemyMaxHealth: 30,
-      currentEnemy: { traits: [{ id: "burn-resistance", title: "Burn resistance", description: "" }] },
-      playerStatuses: { forge: 2 },
-      talentEffects: { forgeBurnThreshold: 4, forgeBurnDamage: 8 },
-    });
-    const result = playBattleCardResolved(state, card.id, 0).state;
-    expect(result.enemyHealth).toBe(26);
-    expect(result.enemyStatuses.burn).toBe(4);
   });
 
   it("Meteor preserves overflow Mana when no Mana Crystal can be lost", () => {

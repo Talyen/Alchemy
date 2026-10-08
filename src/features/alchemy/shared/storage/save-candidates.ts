@@ -10,6 +10,7 @@ import {
   isUnsupportedFutureContentData,
   isUnsupportedFutureSaveData,
   migrateSupportedSaveData,
+  legacyRunNeedsAbandonment,
   type ParsedSaveData,
 } from "@/lib/validation";
 import { createDefaultSaveData } from "./defaults";
@@ -23,7 +24,10 @@ type SaveLoadStatus =
   | { kind: "unsupported-newer-content"; detectedContentVersion: number }
   | { kind: "corrupt" };
 
+export type SaveRestoreAction = "abandon-active-run";
+
 export interface SaveLoadState {
+  restoreActions?: readonly SaveRestoreAction[];
   importedDemoProgress?: boolean;
   data: SaveData;
   status: SaveLoadStatus;
@@ -58,13 +62,18 @@ function collectSaveRepairWarnings(raw: Record<string, unknown>, normalized: Par
     warnings.push("active run could not be restored");
   }
   const rawActiveRun = isPlainObject(raw.activeRun) ? raw.activeRun : undefined;
-  if (rawActiveRun?.activeCombat != null && normalized.activeRun && !normalized.activeRun.activeCombat) {
+  if (
+    (rawActiveRun?.activeCombat != null || recordActivity(rawActiveRun).kind === "battle") &&
+    normalized.activeRun &&
+    normalized.activeRun.activity.kind !== "battle"
+  ) {
     warnings.push("battle could not be restored");
   }
   const rawGold = raw.gold;
   // Live combat gold intentionally overrides the purse (see SaveDataSchema
   // resolvePersistedGold); that override is not a repair.
-  const rawCombatCandidate = rawActiveRun?.activeCombat;
+  const rawCombatCandidate =
+    recordActivity(rawActiveRun).kind === "battle" ? recordActivity(rawActiveRun).data : rawActiveRun?.activeCombat;
   const rawCombat = isPlainObject(rawCombatCandidate) ? rawCombatCandidate : undefined;
   const rawBattleCandidate = rawCombat?.battleState;
   const rawBattle = isPlainObject(rawBattleCandidate) ? rawBattleCandidate : undefined;
@@ -112,6 +121,10 @@ function getFutureSaveStatus(parsed: unknown): SaveLoadStatus | null {
     return { kind: "unsupported-newer-content", detectedContentVersion: getRawContentVersion(parsed) };
   }
   return null;
+}
+
+function recordActivity(run: Record<string, unknown> | undefined): Record<string, unknown> {
+  return isPlainObject(run?.activity) ? run.activity : {};
 }
 
 export interface SaveCandidateSelection {
@@ -173,6 +186,9 @@ export function selectSaveCandidates(
       warnings.push(`Card content "${note.path}" was repaired: ${note.message}`);
     }
     state = {
+      ...(playable.data.activeRun && legacyRunNeedsAbandonment(playable.raw)
+        ? { restoreActions: ["abandon-active-run" as const] }
+        : {}),
       data: {
         ...playable.data,
         activeRun: playable.data.activeRun ? toActiveRunData(playable.data.activeRun) : null,

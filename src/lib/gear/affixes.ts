@@ -94,10 +94,6 @@ export function rollAffixValue(def: GearAffixDefinition, rarity: GearRarity, rng
   return range.min + rngInt(rng, span);
 }
 
-export function getGearAffixDisplayName(affixId: GearAffixId): string {
-  return gearAffixCatalog[affixId]?.name ?? affixId;
-}
-
 export function getGearAffixTooltipEntries(
   affixes: readonly GearAffixRoll[],
   rarity?: GearRarity | null,

@@ -1,3 +1,4 @@
+import { savedActivityFixture } from "./run-activity";
 import { ActiveRunDataSchema } from "@/lib/validation";
 
 // Fixture roles: makeMinimalActiveRunInput is the base for ad-hoc run payloads,
@@ -20,6 +21,7 @@ const BASE_RUN_TEMPLATE = {
 export function makeMinimalActiveRunInput(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     ...BASE_RUN_TEMPLATE,
+    activity: savedActivityFixture("destination"),
     completedDestinations: [],
     runDeck: [],
     runBoons: [],

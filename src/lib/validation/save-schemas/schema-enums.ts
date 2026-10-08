@@ -4,6 +4,7 @@ import {
   DIFFICULTY_ORDER,
   ENEMY_STATUS_DISPLAY_ORDER,
   ENEMY_TYPE_VALUES,
+  keywordDefinitions,
   normalizeUnlockedTalents,
   type CharacterId,
   type DifficultyId,
@@ -81,6 +82,7 @@ export const TalentXPSchema = z.preprocess((val) => {
   if (!val || typeof val !== "object") return {};
   const result: Record<string, number> = {};
   for (const [key, xp] of Object.entries(val as Record<string, unknown>)) {
+    if (!Object.hasOwn(keywordDefinitions, key)) continue;
     const floored = toFiniteNonNegativeInt(xp);
     if (floored !== null) result[key] = floored;
   }

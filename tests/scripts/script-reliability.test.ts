@@ -360,7 +360,7 @@ describe("script execution reliability", () => {
     expect(() => resolvePushPaths(root, "")).toThrow("Could not inspect push revisions");
   });
 
-  it("selects the working tree for --diff while ignoring committed history", () => {
+  it("keeps working-tree selection focused and supports clean shallow checkouts", () => {
     const root = repository();
     fs.writeFileSync(path.join(root, "history.ts"), "history");
     commit(root);
@@ -379,6 +379,13 @@ describe("script execution reliability", () => {
     expect(resolveSelectedPaths(root, { flags: diff, paths: [] }).sort()).toEqual(
       ["game.ts", "staged.ts", "untracked.ts"].sort(),
     );
+    const shallow = fixture();
+    git(root, "clone", "--quiet", "--depth=1", pathToFileURL(root).href, shallow);
+    expect(git(shallow, "rev-parse", "--is-shallow-repository")).toBe("true");
+    // Without parent history, the HEAD fallback conservatively selects its entire tree.
+    expect(resolveSelectedPaths(shallow, { flags: diff, paths: [] }).sort()).toEqual(
+      ["game.ts", "history.ts", "staged.ts", "untracked.ts"].sort(),
+    );
   });
 
   it("keeps deleted paths for verification while fallback search reads only surviving files", () => {
@@ -391,13 +398,12 @@ describe("script execution reliability", () => {
       cp.spawnSync = (command, ...args) => command === 'rg'
         ? {error: Object.assign(new Error('missing rg'), {code:'ENOENT'})} : spawn(command, ...args);
       syncBuiltinESMExports();
-      const {repositorySearch} = await import(${JSON.stringify(pathToFileURL(path.join(ROOT, "scripts/lib/agent/agent-discovery.mjs")).href)});
       const {expandRepositoryPaths} = await import(${JSON.stringify(pathToFileURL(path.join(ROOT, "scripts/lib/repository-paths.mjs")).href)});
       const root = ${JSON.stringify(root)};
-      console.log(JSON.stringify({selected: expandRepositoryPaths(root, ['.']), found: repositorySearch(root, {pattern: 'needle'})}));`;
+      console.log(JSON.stringify({selected: expandRepositoryPaths(root, ['.'])}));`;
     const result = spawnSync(process.execPath, ["--input-type=module", "-e", source], { encoding: "utf8" });
     expect(result.status, result.stderr).toBe(0);
-    expect(JSON.parse(result.stdout)).toEqual({ selected: ["alive.ts", "game.ts"], found: ["alive.ts"] });
+    expect(JSON.parse(result.stdout)).toEqual({ selected: ["alive.ts", "game.ts"] });
   });
 
   it("leaves dirty work and the stash untouched for a Git clean dry run", () => {
@@ -597,9 +603,43 @@ describe("script execution reliability", () => {
 });
 
 describe("E2E audit outcomes", () => {
+  it.each(["missing", "expired", "future-dated"])("never launches tests to replace a %s reused report", (state) => {
+    const root = fixture();
+    fs.writeFileSync(
+      path.join(root, "package.json"),
+      JSON.stringify({
+        scripts: { "test:e2e:timings": "node -e \"require('node:fs').writeFileSync('tests-started', '')\"" },
+      }),
+    );
+    if (state !== "missing") {
+      fs.mkdirSync(path.join(root, "reports"));
+      const report = path.join(root, "reports/e2e-results.json");
+      fs.writeFileSync(report, JSON.stringify({ suites: [] }));
+      const time = new Date(Date.now() + (state === "expired" ? -2 : 2) * 60 * 60 * 1000);
+      fs.utimesSync(report, time, time);
+    }
+    const result = spawnSync(process.execPath, [path.join(ROOT, "scripts/analyze-e2e.mjs"), "--reuse-timings"], {
+      cwd: root,
+      encoding: "utf8",
+      timeout: 10_000,
+    });
+    expect(result.status, result.stderr).toBe(1);
+    expect(result.stderr).toContain("no tests were executed");
+    expect(fs.existsSync(path.join(root, "tests-started"))).toBe(false);
+    expect(JSON.parse(fs.readFileSync(path.join(root, "reports/current-run.json"), "utf8"))).toMatchObject({
+      status: "failed",
+      command: "npm run test:e2e:audit -- --reuse-timings",
+    });
+  });
+
   it.each([
     { name: "corrupt JSON", report: "{broken", failed: true },
     { name: "unexpected test", report: JSON.stringify({ suites: [], stats: { unexpected: 1 } }), failed: true },
+    {
+      name: "missing test outcome",
+      report: JSON.stringify({ suites: [{ specs: [{ title: "unfinished test", tests: [{}] }] }] }),
+      failed: true,
+    },
     {
       name: "setup error",
       report: JSON.stringify({ suites: [], errors: [{ message: "Setup failed" }] }),
@@ -619,7 +659,11 @@ describe("E2E audit outcomes", () => {
     expect(result.status, result.stderr).toBe(failed ? 1 : 0);
     const record = JSON.parse(fs.readFileSync(path.join(root, "reports/current-run.json"), "utf8")) as {
       status: string;
+      commandExposures: Array<{ key: string; command: string }>;
     };
     expect(record.status).toBe(failed ? "failed" : "passed");
+    expect(record.commandExposures).toEqual([
+      expect.objectContaining({ key: "e2e-report-analysis", command: "npm run test:e2e:audit -- --reuse-timings" }),
+    ]);
   });
 });

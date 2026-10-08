@@ -22,7 +22,6 @@ export const FLAG_DEFINITIONS = {
   firstHolyCardFreeUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
   firstBurnCardFreeUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
   firstBurnCardDoubledUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
-  firstArmorCardDoubledUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
   firstPoisonCardFreeUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
   firstBleedCardFreeUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
   firstBurnTrinketDoubledUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },

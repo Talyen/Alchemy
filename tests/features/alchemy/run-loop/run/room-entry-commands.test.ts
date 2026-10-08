@@ -81,7 +81,7 @@ it.each(["campaign", "labyrinth"] as const)(
     for (const [destination, nodeType, screen] of cases) {
       const game = session(mode, destination, nodeType);
       const before = readGameplayState(game);
-      const observe = vi.fn(() => snapshotRun(undefined, game));
+      const observe = vi.fn(() => snapshotRun(game));
       const unsubscribe = subscribeRunSessionCommits(observe, game);
       const result = enter(mode, destination, game);
       expect(result?.screen, destination).toBe(screen);
@@ -109,14 +109,14 @@ it.each(["campaign", "labyrinth"] as const)(
       expect(readGameplayState(game), destination).toBe(committed);
       expect(observe, destination).toHaveBeenCalledOnce();
       unsubscribe();
-      const saved = parseActiveRun(JSON.parse(JSON.stringify(snapshotRun("menu", game))))!;
+      const saved = parseActiveRun(JSON.parse(JSON.stringify(snapshotRun(game))))!;
       expect(saved, destination).not.toBeNull();
-      expect(saved.currentScreen, destination).toBe(screen);
+      expect(saved.activity.kind, destination).toBe(screen);
       const restored = createGameSession();
       sessions.push(restored);
       restoreRun(saved, {}, {}, restored);
       expect(readRunSession(restored).activity, destination).toEqual(committed.session.activity);
-      expect(parseActiveRun(JSON.parse(JSON.stringify(snapshotRun(undefined, restored)))), destination).toEqual(saved);
+      expect(parseActiveRun(JSON.parse(JSON.stringify(snapshotRun(restored)))), destination).toEqual(saved);
     }
   },
 );
@@ -137,7 +137,7 @@ it.each(["campaign", "labyrinth"] as const)(
     });
     expect(() => enter(mode, DESTINATIONS.GEAR_SHOP, game)).toThrow("Shelf preparation failed");
     expect(readGameplayState(game)).toBe(before);
-    expect(snapshotRun(undefined, game).currentScreen).toBe(mode === "campaign" ? "destination" : "labyrinth-map");
+    expect(snapshotRun(game).activity.kind).toBe(mode === "campaign" ? "destination" : "labyrinth-map");
     expect(committed).not.toHaveBeenCalled();
     unsubscribe();
     vi.restoreAllMocks();

@@ -33,8 +33,6 @@ export const HALF_DIVISOR = 2;
 
 export const LEECH_HEAL_FRACTION = 0.5;
 
-export const FIRST_EFFECT_MULTIPLIER = 2;
-
 export const MANABURN_DAMAGE_PERCENT = 20;
 export const BLACKFLETCH_EXECUTE_HEALTH_PERCENT = 30;
 

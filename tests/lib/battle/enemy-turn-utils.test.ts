@@ -121,8 +121,8 @@ describe("Health threshold rewards", () => {
           { threshold: 50, amount: 5 },
           { threshold: 25, amount: 3 },
         ],
-        flatArmorAmount: 1,
       },
+      gearEffects: { flatArmorGained: 1 },
     });
     const texts: CombatTextEvent[] = [];
     const mid = checkHealthThresholds(80, 40, state, texts);

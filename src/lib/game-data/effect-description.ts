@@ -35,7 +35,7 @@ function childAddress(address: CardEffectAddress, child: number): CardEffectAddr
   return { effectIndex: address.effectIndex, effectPath: [...(address.effectPath ?? []), child] };
 }
 
-export function createConditionalDamageLine(
+function createConditionalDamageLine(
   effect: BattleCardEffect,
   address: CardEffectAddress,
 ): CardDescriptionPart[] | undefined {

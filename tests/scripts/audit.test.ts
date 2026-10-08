@@ -12,7 +12,6 @@ describe("parseAuditArgs", () => {
       hasTypes: false,
       hasAmplification: false,
       hasContent: false,
-      hasHotspots: false,
       hasAll: false,
       forwardedArgs: [],
     });
@@ -23,16 +22,10 @@ describe("parseAuditArgs", () => {
     expect(parseAuditArgs(["--types"]).hasTypes).toBe(true);
     expect(parseAuditArgs(["--amplification"]).hasAmplification).toBe(true);
     expect(parseAuditArgs(["--content"]).hasContent).toBe(true);
-    expect(parseAuditArgs(["--hotspots"]).hasHotspots).toBe(true);
   });
 
   it("forwards recognized child probe options", () => {
     expect(parseAuditArgs(["--all", "--verbose"]).forwardedArgs).toEqual(["--verbose"]);
-    expect(parseAuditArgs(["--hotspots", "--json"]).forwardedArgs).toEqual(["--json"]);
-    expect(parseAuditArgs(["--hotspots", "--last", "10"]).forwardedArgs).toEqual(["--last", "10"]);
-    expect(parseAuditArgs(["--hotspots", "--last=10"]).forwardedArgs).toEqual(["--last=10"]);
-    expect(parseAuditArgs(["--hotspots", "--run-id", "xyz"]).forwardedArgs).toEqual(["--run-id", "xyz"]);
-    expect(parseAuditArgs(["--hotspots", "--", "--custom-flag"]).forwardedArgs).toEqual(["--custom-flag"]);
   });
 
   it("allows help flags through for the caller to handle", () => {
@@ -42,11 +35,11 @@ describe("parseAuditArgs", () => {
 
   it("rejects conflicting selections", () => {
     expect(() => parseAuditArgs(["--all", "--types"])).toThrow("--all cannot be combined");
-    expect(() => parseAuditArgs(["--all", "--hotspots"])).toThrow("--all cannot be combined");
     expect(() => parseAuditArgs(["--types", "--content"])).toThrow("choose only one");
   });
 
   it("rejects unknown options and stray arguments", () => {
+    expect(() => parseAuditArgs(["--hotspots"])).toThrow("Unknown option");
     expect(() => parseAuditArgs(["--bogus"])).toThrow("Unknown option or argument: --bogus");
     expect(() => parseAuditArgs(["types"])).toThrow("Unknown option or argument: types");
   });
@@ -58,7 +51,6 @@ describe("parseAuditArgs", () => {
     expect(resolveAuditScript(parseAuditArgs(["--types"]))).toBe("scripts/audit-type-escapes.mjs");
     expect(resolveAuditScript(parseAuditArgs(["--amplification"]))).toBe("scripts/audit-change-amplification.mjs");
     expect(resolveAuditScript(parseAuditArgs(["--content"]))).toBe("scripts/content-audit.mjs");
-    expect(resolveAuditScript(parseAuditArgs(["--hotspots"]))).toBe("scripts/context-hotspots.mjs");
   });
 
   it("keeps npm audit argument forwarding compatible with focused audits", () => {

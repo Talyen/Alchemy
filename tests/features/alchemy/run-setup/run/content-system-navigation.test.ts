@@ -260,6 +260,7 @@ describe("createContentSystemNavigation", () => {
     setRunProgress({ characterId: "wildcard", contentSystemType: CONTENT_SYSTEMS.CAMPAIGN, runDeck: [] });
     setRunSession({
       hasActiveRun: true,
+      activity: { kind: "draft-deck" },
       starterDraftChoices: [
         makeTestCard({ id: "draft-a" }),
         makeTestCard({ id: "draft-b" }),
@@ -328,6 +329,7 @@ describe("createContentSystemNavigation", () => {
     });
     setRunSession({
       hasActiveRun: true,
+      activity: { kind: "draft-deck" },
       pendingContentSystemType: CONTENT_SYSTEMS.LABYRINTH,
       starterDraftChoices: [],
     });
@@ -464,9 +466,7 @@ describe("createContentSystemNavigation", () => {
     const getAvailableDestinations = vi.fn(() => [DESTINATIONS.NORMAL_COMBAT]);
     const deps = makeDeps({ getAvailableDestinations });
     createContentSystemNavigation(deps, defaultGameSession).resumeRun();
-    const prepare = vi.mocked(deps.resumeTo).mock.calls[0]?.[1];
-    expect(prepare).toBeTypeOf("function");
-    prepare?.();
+    expect(deps.resumeTo).toHaveBeenCalledWith(ROUTE_SCREENS.DESTINATION);
     expect(getAvailableDestinations).toHaveBeenCalledWith({
       currentHealth: 12,
       currentGold: expect.any(Number),

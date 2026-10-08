@@ -59,26 +59,6 @@ export function dealEnemyScaledDamage(
   return applyElementalDamageManaRestore(resolved, stat, hit.healthDamage, combatTexts);
 }
 
-// Shared closer for scaled burn hits that also stack burn: forge bursts,
-// consume burn, and mana-crystal-loss burn previously each re-assembled this
-// riders chain with only the damage source varying.
-export function dealScaledBurnWithStacks(
-  state: BattleState,
-  baseDamage: number,
-  combatTexts: CombatTextEvent[],
-  options: { multiplier?: number } = {},
-): BattleState {
-  if (baseDamage <= 0 || state.enemyHealth <= 0) return state;
-  const preHitHealth = state.enemyHealth;
-  return dealEnemyScaledDamage(state, baseDamage, "burn", combatTexts, {
-    ...options,
-    riders: (damaged, finalDamage, texts) => {
-      const burning = addEnemyStatus(damaged, "burn", finalDamage);
-      return applyHitEpilogue(burning, preHitHealth, preHitHealth > 0, texts);
-    },
-  });
-}
-
 export function applyGearCcPhysicalDamage(
   state: BattleState,
   gearDamage: number,

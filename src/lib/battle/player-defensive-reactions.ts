@@ -143,6 +143,9 @@ export function applyPlayerDefensiveReactions(
     before: BattleState;
     mitigation: { blockAbsorb: number; remainingDamage: number; actualDamage: number };
     blockLost: number;
+    preDamageBlockStrip?: number;
+    attackBlockLost?: number;
+    isBlockDepleted?: boolean;
     blockDepletedByStrip?: boolean;
   },
   combatTexts: CombatTextEvent[],
@@ -153,6 +156,7 @@ export function applyPlayerDefensiveReactions(
     mitigation: { blockAbsorb, remainingDamage, actualDamage },
     blockLost,
     blockDepletedByStrip,
+    isBlockDepleted: factsBlockDepleted,
   } = facts;
   const prevHealth = state.playerHealth;
   if (blockAbsorb > 0 && state.gearEffects.blockReadiesFreePhysical > 0) {
@@ -176,12 +180,10 @@ export function applyPlayerDefensiveReactions(
     actualDamage,
     combatTexts,
   );
-  nextState = applyBlockDepletedHeal(
-    state,
-    nextState,
-    combatTexts,
-    blockDepletedByStrip === true || (blockLost > 0 && blockLost === state.playerStatuses.block),
-  );
+  const isBlockDepleted =
+    factsBlockDepleted ??
+    (blockDepletedByStrip === true || (blockLost > 0 && blockLost === state.playerStatuses.block));
+  nextState = applyBlockDepletedHeal(protectionState, nextState, combatTexts, isBlockDepleted);
 
   return nextState;
 }

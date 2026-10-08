@@ -39,8 +39,8 @@ Motion tokens live in `src/lib/game-constants/ui-motion.ts` (`MOTION_FADE_MS`, `
 Campfire snapshots the starting and restored Health when Rest is pressed. Its number
 and bar share an eased refill, then hold the exact result before continuing. Keep
 that snapshot through the outgoing screen fade so applying the heal cannot restart
-the visible refill. Use `CAMPFIRE_ANIMATION_MS` and `CAMPFIRE_CONTINUE_DELAY_MS` from
-[battle timing](../src/lib/game-constants/battle-timing.ts).
+the visible refill. Use `CAMPFIRE_ANIMATION_MS` from
+[ui-motion](../src/lib/game-constants/ui-motion.ts).
 
 Canvas decorations share [the canvas lifecycle](../src/lib/animation/canvas-lifecycle.ts):
 background particles, combatant status effects, and keyword plasma use its resize,

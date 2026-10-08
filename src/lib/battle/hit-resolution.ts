@@ -131,9 +131,6 @@ function applyCardArcheryReactions(
     resolvedDamage,
     combatTexts,
   );
-  if (rollBattleChance(facts.eligibility.talentEffects.archeryBleedChance, nextState)) {
-    nextState = addEnemyStatus(nextState, "bleed", resolvedDamage);
-  }
   nextState = applyArcheryDetonate(nextState, combatTexts);
   return nextState;
 }
@@ -154,7 +151,7 @@ function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts
   nextState = applyIronGuardReward(nextState, effect.damageType, facts.healthDamage, combatTexts);
   if (effect.damageType === "bleed") nextState = applyBleedDamageDraw(nextState, facts.healthDamage, combatTexts);
 
-  nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy");
+  nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy", combatTexts);
 
   // Reactions stay depth-first: Archery's extra hit finishes before the outer hit's payout.
   nextState = applyCardHitReactions(nextState, request, facts, combatTexts);

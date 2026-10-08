@@ -1,9 +1,9 @@
-import { readCombatFlag, resolveSecondaryAction } from "./action-context";
+import { resolveSecondaryAction } from "./action-context";
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import { rollBattleChance } from "./chance-roll";
 import { drawKeywordCard } from "./draw";
-import { applyPercentBonus, crossesGainThreshold } from "./amount-helpers";
-import { FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR } from "../game-constants";
+import { applyPercentBonus } from "./amount-helpers";
+import { HALF_DIVISOR } from "../game-constants";
 import { mergeCombatText } from "./combat-text-events";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
@@ -177,17 +177,7 @@ export function addGoldWithCombatText(
     nextState = applyHealingWithCombatText(nextState, nextState.gearEffects.healOnCombatGoldGain, combatTexts ?? []);
   }
   if (state.gearEffects.goldGrantsForgeAndHoly <= 0 || state.playerStatuses.forge > 0) return nextState;
-  const previousForge = nextState.playerStatuses.forge;
-  nextState = addPlayerStatusWithCombatText(nextState, "forge", scaledGold, combatTexts, { skipFightPacing: true });
-  const nextForge = nextState.playerStatuses.forge;
-  const thresholds = [
-    state.talentEffects.forgeBurnThreshold,
-    state.talentEffects.forgeStripArmorThreshold,
-    state.talentEffects.forgeBlockThreshold,
-  ];
-  return thresholds.some((threshold) => threshold > 0 && previousForge < threshold && nextForge >= threshold)
-    ? { ...nextState, pendingForgeThresholds: [...nextState.pendingForgeThresholds, { previousForge, nextForge }] }
-    : nextState;
+  return addPlayerStatusWithCombatText(nextState, "forge", scaledGold, combatTexts, { skipFightPacing: true });
 }
 
 function applyKillHeal(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
@@ -339,25 +329,6 @@ export function removeHarmfulPlayerStatuses(state: BattleState, amount: number, 
   return applyCleanseHeals(nextState, combatTexts, removed);
 }
 
-function applyArmorTalentChecks(state: BattleState, amount: number, combatTexts: CombatTextEvent[]) {
-  if (state.playerHealth < state.playerMaxHealth / HALF_DIVISOR) {
-    amount = applyPercentBonus(amount, state.talentEffects.armorLowHealthBonusPercent);
-  }
-  if (state.talentEffects.firstArmorCardDoubled && !readCombatFlag(state, "firstArmorCardDoubledUsed")) {
-    amount *= FIRST_EFFECT_MULTIPLIER;
-    state = setFlag(state, "firstArmorCardDoubledUsed", true);
-  }
-  const armorAmount = rollBattleChance(state.talentEffects.armorDoubleChance, state) ? amount * 2 : amount;
-  const newArmor = state.playerStatuses.armor + armorAmount;
-  if (crossesGainThreshold(state.playerStatuses.armor, newArmor, state.talentEffects.armorBlockThreshold)) {
-    state = applyBlockReward(state, state.talentEffects.armorBlockAmount, combatTexts);
-  }
-  if (crossesGainThreshold(state.playerStatuses.armor, newArmor, state.talentEffects.armorCleanseThreshold)) {
-    state = removeHarmfulPlayerStatuses(state, Number.POSITIVE_INFINITY, combatTexts);
-  }
-  return { state, amount: armorAmount };
-}
-
 export function applyArmorStatusEffect(
   state: BattleState,
   amount: number,
@@ -365,13 +336,10 @@ export function applyArmorStatusEffect(
 ): BattleState {
   if (amount <= 0) return state;
   const armorBefore = state.playerStatuses.armor;
-  const checked = applyArmorTalentChecks(
-    state,
-    amount + state.talentEffects.flatArmorAmount + state.gearEffects.flatArmorGained,
-    combatTexts,
-  );
-  state = checked.state;
-  amount = checked.amount;
+  amount += state.gearEffects.flatArmorGained;
+  if (state.playerHealth < state.playerMaxHealth / HALF_DIVISOR)
+    amount = applyPercentBonus(amount, state.talentEffects.armorLowHealthBonusPercent);
+  if (rollBattleChance(state.talentEffects.armorDoubleChance, state)) amount *= 2;
   mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "armor", amount });
   const nextState = addPlayerStatus(state, "armor", amount);
   const armorGained = nextState.playerStatuses.armor - armorBefore;

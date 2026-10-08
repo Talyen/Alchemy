@@ -44,7 +44,6 @@ export type RunSessionReadView = Readonly<RunSessionFields> & { readonly hasActi
 export interface BattleReadView {
   readonly hasActiveBattle: boolean;
   readonly battleState: BattleSnapshot;
-  readonly battleStartState: BattleSnapshot | null;
 }
 
 const emptyBattle = deepFreeze(battleSnapshot(defaultBattleState()));
@@ -52,7 +51,7 @@ function selectBattle(state: Pick<GameplayState, "session">): BattleReadView {
   const activity = state.session.activity;
   return activity.kind === "battle"
     ? { hasActiveBattle: true, ...activity.data }
-    : { hasActiveBattle: false, battleState: emptyBattle, battleStartState: null };
+    : { hasActiveBattle: false, battleState: emptyBattle };
 }
 
 function useShallowRunSelector<T>(selector: (state: GameplayState) => T): T {

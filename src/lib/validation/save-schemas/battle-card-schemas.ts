@@ -25,8 +25,6 @@ function cloneSavedDescriptionLines(values: unknown[]): { values: string[] | nul
   return { values: [...values], errors: [] };
 }
 
-export { BattleCardEffectSchema };
-
 export type PersistedBattleCard = z.output<typeof BattleCardSchema>;
 
 export const BattleCardSchema = z

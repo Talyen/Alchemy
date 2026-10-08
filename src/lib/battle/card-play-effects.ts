@@ -1,5 +1,5 @@
 import { rollBattleChance } from "./chance-roll";
-import { readCombatFlag } from "./action-context";
+import { readCombatFlag, writeCombatFlag } from "./action-context";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { prepareTalentCardPlay } from "./talent-card-play";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
@@ -185,7 +185,7 @@ export function applyResonantChimeTrinket(state: BattleState, combatTexts: Comba
   ) {
     const afterMana = gainManaWithCombatText(state, resonantChimeMana, combatTexts);
     if (afterMana.mana <= state.mana) return state;
-    return { ...afterMana, flags: { ...state.flags, resonantChimeUsedThisTurn: true } };
+    return writeCombatFlag(afterMana, "resonantChimeUsedThisTurn", true);
   }
   return state;
 }

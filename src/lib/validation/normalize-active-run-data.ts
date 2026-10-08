@@ -1,6 +1,5 @@
 import { repairShopOfferings } from "@/lib/active-run-session/shop-offering-repair";
 import type { BattleSnapshot } from "@/lib/battle";
-import type { ContentSystemId } from "@/lib/content-systems/types";
 import { DRAFT_CHOICES, DRAFT_ROUNDS, MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import {
   cardById,
@@ -13,7 +12,7 @@ import {
 } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { createRunStateRng, type RunRngState, type RunRngStream } from "@/lib/rng";
-import type { ActiveCombatData, ValidatedActiveRunData } from "./save-schemas/active-run";
+import type { ValidatedActiveRunData } from "./save-schemas/active-run";
 import type { PersistedBattleCard } from "./save-schemas/battle-card-schemas";
 
 // Deliberate removals are recorded in TOMBSTONED_CARD_IDS for explicit
@@ -49,48 +48,6 @@ function filterLiveBattleState(state: BattleSnapshot): BattleSnapshot {
     wishOptions,
     wishQueue,
   };
-}
-
-function normalizeActiveCombat(combat: ActiveCombatData, contentSystemType: ContentSystemId): ActiveCombatData {
-  const isLabyrinth = contentSystemType === "labyrinth";
-  return {
-    ...combat,
-    activeLabyrinthModifiers: isLabyrinth ? combat.activeLabyrinthModifiers : [],
-    activeLabyrinthRewardModifiers: isLabyrinth ? combat.activeLabyrinthRewardModifiers : [],
-    battleState: filterLiveBattleState(combat.battleState),
-    pendingBattleTransition: filterLiveTransition(combat.pendingBattleTransition),
-  };
-}
-
-function filterLiveTransition(transition: ActiveCombatData["pendingBattleTransition"]) {
-  if (!transition || (transition.kind !== "enemy-turn" && transition.kind !== "opening-draw")) return transition;
-  return { ...transition, resultState: filterLiveBattleState(transition.resultState) };
-}
-
-function normalizeLabyrinthModifiers(
-  data: ValidatedActiveRunData,
-): Pick<ValidatedActiveRunData, "activeLabyrinthModifiers" | "activeLabyrinthRewardModifiers"> {
-  if (data.contentSystemType !== "labyrinth") {
-    return { activeLabyrinthModifiers: [], activeLabyrinthRewardModifiers: [] };
-  }
-  return {
-    activeLabyrinthModifiers:
-      data.activeLabyrinthModifiers.length > 0
-        ? data.activeLabyrinthModifiers
-        : (data.activeCombat?.activeLabyrinthModifiers ?? []),
-    activeLabyrinthRewardModifiers:
-      data.activeLabyrinthRewardModifiers.length > 0
-        ? data.activeLabyrinthRewardModifiers
-        : (data.activeCombat?.activeLabyrinthRewardModifiers ?? []),
-  };
-}
-
-function normalizeCorruptionResult(
-  result: ValidatedActiveRunData["corruptionResult"],
-): ValidatedActiveRunData["corruptionResult"] {
-  if (!result) return result;
-  if (!isRecoverableCard(result.originalCard) || !isRecoverableCard(result.corruptedCard)) return null;
-  return result;
 }
 
 export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedActiveRunData {
@@ -138,7 +95,7 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
     data.contentSystemType !== "wildwood" && data.starterDraftChoices
       ? repairChoices(data.starterDraftChoices, { canPick: drafting, stream: "rewards" })
       : null;
-  const visit = data.currentScreen == null || data.currentScreen === "mystery" ? data.mysteryVisit : null;
+  const visit = data.activity.kind === "mystery" ? data.activity.data : null;
   const mysteryVisit = visit && {
     ...visit,
     cardChoices: visit.cardChoices
@@ -154,11 +111,30 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
     (stream) => rngState.counters[stream] !== data.rng.counters[stream],
   );
 
-  const shop =
-    data.shopState && repairShopOfferings(data.shopState.cards, data.shopState.purchasedSlotKeys, isRecoverableCard);
-  const alchemist =
-    data.alchemistState &&
-    repairShopOfferings(data.alchemistState.potions, data.alchemistState.purchasedSlotKeys, isRecoverableCard);
+  let activity = data.activity;
+  if (activity.kind === "battle")
+    activity = { ...activity, data: { battleState: filterLiveBattleState(activity.data.battleState) } };
+  if (activity.kind === "shop") {
+    const repaired = repairShopOfferings(activity.data.cards, activity.data.purchasedSlotKeys, isRecoverableCard);
+    activity = {
+      ...activity,
+      data: { ...activity.data, cards: repaired.items, purchasedSlotKeys: repaired.purchasedSlotKeys },
+    };
+  }
+  if (activity.kind === "alchemist") {
+    const repaired = repairShopOfferings(activity.data.potions, activity.data.purchasedSlotKeys, isRecoverableCard);
+    activity = {
+      ...activity,
+      data: { ...activity.data, potions: repaired.items, purchasedSlotKeys: repaired.purchasedSlotKeys },
+    };
+  }
+  if (activity.kind === "mystery" && mysteryVisit) activity = { ...activity, data: mysteryVisit };
+  if (
+    activity.kind === "corruption" &&
+    activity.data &&
+    (!isRecoverableCard(activity.data.originalCard) || !isRecoverableCard(activity.data.corruptedCard))
+  )
+    activity = { ...activity, data: null };
 
   return {
     ...data,
@@ -168,19 +144,10 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
     runDeck,
     labyrinthMap: data.contentSystemType === "labyrinth" ? data.labyrinthMap : null,
     labyrinthPendingNode: data.contentSystemType === "labyrinth" ? data.labyrinthPendingNode : null,
-    ...normalizeLabyrinthModifiers(data),
+    activeLabyrinthModifiers: data.contentSystemType === "labyrinth" ? data.activeLabyrinthModifiers : [],
+    activeLabyrinthRewardModifiers: data.contentSystemType === "labyrinth" ? data.activeLabyrinthRewardModifiers : [],
     wildwoodDraft,
     starterDraftChoices,
-    activeCombat: data.activeCombat ? normalizeActiveCombat(data.activeCombat, data.contentSystemType) : null,
-    shopState:
-      data.shopState && shop
-        ? { ...data.shopState, cards: shop.items, purchasedSlotKeys: shop.purchasedSlotKeys }
-        : null,
-    alchemistState:
-      data.alchemistState && alchemist
-        ? { ...data.alchemistState, potions: alchemist.items, purchasedSlotKeys: alchemist.purchasedSlotKeys }
-        : null,
-    corruptionResult: normalizeCorruptionResult(data.corruptionResult),
-    mysteryVisit,
+    activity,
   };
 }

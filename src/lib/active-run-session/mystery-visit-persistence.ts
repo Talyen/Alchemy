@@ -5,7 +5,7 @@ import type { MysteryChoice, MysteryEffect, MysteryEvent } from "@/lib/mystery";
 import type { PersistedMysteryVisit } from "./types";
 import type { ParsedActiveRunData } from "@/lib/validation";
 
-type PersistedMysteryVisitInput = NonNullable<ParsedActiveRunData["mysteryVisit"]>;
+type PersistedMysteryVisitInput = NonNullable<Extract<ParsedActiveRunData["activity"], { kind: "mystery" }>["data"]>;
 type PersistedMysteryChoiceInput = PersistedMysteryVisitInput["event"]["choices"][number];
 
 export interface HydratedMysteryVisit {

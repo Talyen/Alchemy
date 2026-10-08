@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  combineTrinketEffectIds,
-  computeTrinketManifest,
-  defaultTrinketEffects,
-  isDefaultTrinketManifest,
-} from "@/lib/trinkets";
+import { combineTrinketEffectIds, computeTrinketManifest, defaultTrinketEffects } from "@/lib/trinkets";
 
 describe("Trinket manifests", () => {
   it("combines a boolean Boon and a numeric Boon without sharing mutable defaults", () => {
@@ -19,7 +14,7 @@ describe("Trinket manifests", () => {
 
   it("ignores missing and inherited IDs while retaining valid effects", () => {
     expect(computeTrinketManifest([])).toEqual(defaultTrinketEffects);
-    expect(isDefaultTrinketManifest(computeTrinketManifest(["missing", "constructor", "__proto__"]))).toBe(true);
+    expect(computeTrinketManifest(["missing", "constructor", "__proto__"])).toEqual(defaultTrinketEffects);
     expect(
       computeTrinketManifest(["missing", "brass-censer", "toString", "tattered-pages", "sundering-charm"]),
     ).toEqual({

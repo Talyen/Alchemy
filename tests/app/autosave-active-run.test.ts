@@ -3,8 +3,12 @@ import { ROUTE_SCREENS } from "@/lib/routing";
 import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/persistence";
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { readHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
-import { setHasActiveRun, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
+
+import {
+  setHasActiveRun,
+  setRunProgressActivity,
+  setScreen,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetAllTestStores } from "../helpers/run-domain-store-test";
 import { setRunProgress } from "../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/app/application-session";
@@ -14,11 +18,12 @@ beforeEach(() => {
 });
 
 describe("resolveActiveRunForSave", () => {
-  it("snapshots active run when hasActiveRun is true", () => {
+  it("snapshots the live activity independently of presentation navigation", () => {
     setRunProgress({ gold: 15, initialized: true });
     dispatchRunSessionCommand(
       (draft) => {
         setHasActiveRun(draft, true);
+        setRunProgressActivity(draft, "destination");
         setScreen(draft, ROUTE_SCREENS.DESTINATION);
 
         return acceptCommand();
@@ -27,13 +32,13 @@ describe("resolveActiveRunForSave", () => {
       defaultGameSession,
     );
 
-    const activeRun = resolveActiveRunForSave(readHasActiveRun(defaultGameSession), undefined, defaultGameSession);
+    const activeRun = resolveActiveRunForSave(defaultGameSession);
     const save = buildAlchemySaveDataFromStores(activeRun, defaultGameSession);
 
     expect(activeRun).not.toBeNull();
     expect(activeRun).not.toHaveProperty("runGold");
     expect(save.gold).toBe(15);
-    expect(activeRun?.currentScreen).toBe(ROUTE_SCREENS.DESTINATION);
+    expect(activeRun?.activity.kind).toBe(ROUTE_SCREENS.DESTINATION);
   });
 
   it("does not resurrect active run after defeat when a later store write occurs on game-over", () => {
@@ -51,10 +56,7 @@ describe("resolveActiveRunForSave", () => {
 
     setRunProgress({ gold: 100 });
 
-    const save = buildAlchemySaveDataFromStores(
-      resolveActiveRunForSave(readHasActiveRun(defaultGameSession), undefined, defaultGameSession),
-      defaultGameSession,
-    );
+    const save = buildAlchemySaveDataFromStores(resolveActiveRunForSave(defaultGameSession), defaultGameSession);
     expect(save.activeRun).toBeNull();
   });
 });

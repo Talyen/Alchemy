@@ -146,7 +146,7 @@ describe("loot progression at run boundaries", () => {
     );
     const rngBefore = readActiveRun(defaultGameSession).rng;
     for (let attempt = 0; attempt < 2; attempt += 1) {
-      const saved = snapshotRun(undefined, defaultGameSession);
+      const saved = snapshotRun(defaultGameSession);
       restoreRun(saved, {}, {}, defaultGameSession);
       expect(readRunSession(defaultGameSession).rewardFlow.state.choices).toEqual(choices);
       expect(readActiveRun(defaultGameSession).rng).toEqual(rngBefore);
@@ -180,7 +180,7 @@ describe("loot progression at run boundaries", () => {
     shop.trinket.initialize();
     const offered = readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop").trinkets;
     expect(offered).toHaveLength(3);
-    restoreRun(snapshotRun(undefined, defaultGameSession), {}, {}, defaultGameSession);
+    restoreRun(snapshotRun(defaultGameSession), {}, {}, defaultGameSession);
     expect(readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop").trinkets).toEqual(offered);
     expect(shop.trinket.buy(offered[0], shopItemSlotKey(offered[0].id, 0))).toBe(true);
     const gold = readRunProfile(defaultGameSession).gold;
@@ -216,7 +216,7 @@ describe("loot progression at run boundaries", () => {
     const shop = actions();
     shop.equipment.initialize();
     const offered = readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop").gear;
-    const saved = snapshotRun(undefined, defaultGameSession);
+    const saved = snapshotRun(defaultGameSession);
     restoreRun(saved, {}, {}, defaultGameSession);
     expect(readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop").gear).toEqual(offered);
     expect(shop.equipment.refresh()).toBe(true);

@@ -75,12 +75,12 @@ describe("demo command boundaries", () => {
   );
   it("preserves valid resume and drops excluded activity without settlement", () => {
     createNewRunInitialization(deps(), defaultGameSession).initializeRunForDifficulty("knight", "difficulty-1");
-    const snapshot = snapshotRun(undefined, defaultGameSession);
+    const snapshot = snapshotRun(defaultGameSession);
     expect(isEditionRunAvailable(snapshot)).toBe(true);
     resetAllTestStores();
     restoreRun(snapshot, {}, {}, defaultGameSession);
     expect(readHasActiveRun(defaultGameSession)).toBe(true);
-    expect(snapshotRun(undefined, defaultGameSession).rng).toEqual(snapshot.rng);
+    expect(snapshotRun(defaultGameSession).rng).toEqual(snapshot.rng);
     resetAllTestStores();
     restoreRun({ ...snapshot, currentAct: 2 }, {}, {}, defaultGameSession);
     expect(readHasActiveRun(defaultGameSession)).toBe(false);

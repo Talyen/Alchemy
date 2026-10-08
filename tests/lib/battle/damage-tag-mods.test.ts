@@ -99,7 +99,7 @@ describe("computeBaseDamage — archery tag", () => {
     const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      talentEffects: { ...defaultTalentEffects, archeryBleedChance: 100 },
+      talentEffects: { ...defaultTalentEffects, archeryBleedDamageChance: 100 },
       rng: () => 0.1,
     });
     const result = dealDamage(state, card);

@@ -73,14 +73,14 @@ describe("card and turn reaction ordering", () => {
       const card = cardById.fireball!;
       const result = playBattleCardResolved(
         battle({
-          enemyHealth: 10,
+          enemyHealth: 9,
           enemyMaxHealth: 10,
           playerHealth: 1,
           deathsDoorUsed: !protectedHero,
           hand: [card],
           currentEnemy: { traits: [{ id: "cinder-skin", title: "Cinder Skin", description: "" }] },
           playerStatuses: { forge: 2 },
-          talentEffects: { forgeOnBurnCard: 1, forgeBurnThreshold: 3, forgeBurnDamage: 1 },
+          flags: { pendingCinderSkinReaction: true },
         }),
         card.id,
         0,

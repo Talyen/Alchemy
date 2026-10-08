@@ -3,7 +3,6 @@ import { applyPlayerStatusFromAttack } from "@/lib/battle/status-player";
 import { describe, expect, it } from "vitest";
 import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/battle";
 import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
-import { defaultCcState } from "../../fixtures/default-battle-state";
 
 describe("applyEnemyAbility: status", () => {
   it("applies burn status rider on burn damage dealt", () => {
@@ -78,23 +77,6 @@ describe("applyEnemyAbility: status", () => {
     );
     expect(result.playerHealth).toBe(24);
     expect(result.playerStatuses.freeze).toBe(6);
-  });
-
-  it("does not heal enemy on lifesteal when freeze blocks regen", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerStatuses: { block: 0, armor: 0 },
-      enemyHealth: 20,
-      enemyMaxHealth: 30,
-      enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
-      talentEffects: { freezeBlocksRegen: true },
-    });
-    const result = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5, lifesteal: true }] }),
-      makeTexts(),
-    );
-    expect(result.enemyHealth).toBe(20);
   });
 
   it("applies player-status attack effects", () => {

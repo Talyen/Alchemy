@@ -4,7 +4,7 @@ import path from "node:path";
 import { globToRegExp } from "../glob-pattern.mjs";
 import { expandRepositoryPaths, REPO_ROOT as ROOT_DIR, toRepoRelative } from "../repository-paths.mjs";
 import { COMMANDS } from "./test-commands.mjs";
-import { RELATED_SELECTION_BYTES } from "../agent/selection-budgets.mjs";
+import { RELATED_SELECTION_BYTES } from "./selection-budgets.mjs";
 import { readDocumentSection } from "../agent/markdown-sections.mjs";
 
 function doc(pathname, heading = null, reason = "owner documentation") {
@@ -41,7 +41,7 @@ export function isDocumentationPath(filePath) {
   return filePath.endsWith(".md") || /^(Docs|\.agents|\.cursor)\//u.test(filePath);
 }
 
-export const ROUTES = Object.freeze([
+const ROUTES = Object.freeze([
   route(
     "documentation",
     ["*.md", "**/*.md", "Docs/**", ".agents/**", ".cursor/**"],
@@ -154,7 +154,7 @@ export const ROUTES = Object.freeze([
     ],
     ["unit-tooling"],
     [doc("Docs/REFERENCE.md", "Tooling ownership", "tooling commands")],
-    "scripts/measure-agent-context.mjs",
+    "scripts/check.mjs",
   ),
   route(
     "runtime",
@@ -266,7 +266,7 @@ export function resolveRoutePlan(paths) {
   // A first push can select the entire tree. Full unit coverage is cheaper and
   // safer than shell-sized batches of overlapping dependency-related commands.
   // Budget is intentionally separate from the inline CLI-arg budget in check.mjs
-  // (see lib/agent/selection-budgets.mjs: same value, different meaning).
+  // (see lib/verification/selection-budgets.mjs: same value, different meaning).
   if (Buffer.byteLength(JSON.stringify([...relatedInputs, ...changedTests])) > RELATED_SELECTION_BYTES) {
     for (const key of keys) if (key === "related" || key.startsWith("unit-")) keys.delete(key);
     keys.add("unit-all");

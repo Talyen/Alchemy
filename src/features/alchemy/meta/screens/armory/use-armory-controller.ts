@@ -11,7 +11,7 @@ import {
 } from "@/lib/gear";
 import { resolveActiveRunForSave, flushSaveAfterGearMutation } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
-import { useHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
+
 import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
 import {
   useGearArmorySlice,
@@ -48,17 +48,12 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
   const gear = useGearArmorySlice();
   const combatRestrictions = useGearCombatRestrictions();
   const finishedRunCharacters = useFinishedRunCharacters();
-  const hasActiveRun = useHasActiveRun();
   // Profile-lifetime randomness is intentional here (see Docs/ARMORY.md): crafting
   // and dev spawning must not consume a run RNG stream. Gear actions still require
   // an explicit rng so the source stays visible at the call site.
   const rng = options?.rng ?? Math.random;
 
-  const flush = () =>
-    flushSaveAfterGearMutation(
-      resolveActiveRunForSave(hasActiveRun, undefined, defaultGameSession),
-      defaultGameSession,
-    );
+  const flush = () => flushSaveAfterGearMutation(resolveActiveRunForSave(defaultGameSession), defaultGameSession);
   const controller: ArmoryController = {
     ...gear,
     finishedRunCharacters,

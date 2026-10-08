@@ -14,8 +14,9 @@ export async function runWithBalanceServer({ rootDir, command, artifacts, summar
       mkdirSync(resolve(file.directory), { recursive: true });
       writeFileSync(resolve(file.directory, file.name), file.contents, "utf8");
     }
-    console.info(summary(result));
-    writeCurrentRun({ rootDir, status: "passed", command, artifacts, summary: summary(result) });
+    const message = summary(result);
+    console.info(message);
+    writeCurrentRun({ rootDir, status: "passed", command, artifacts, summary: message });
     return result.report;
   });
 }

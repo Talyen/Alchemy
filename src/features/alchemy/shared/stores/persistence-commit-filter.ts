@@ -47,10 +47,7 @@ type ClassifiedSessionKey =
   | (typeof LABYRINTH_GATED_SESSION_KEYS)[number]
   | typeof WILDWOOD_GATED_SESSION_KEY
   | typeof NON_WILDWOOD_GATED_SESSION_KEY;
-type MissingCombatKey = Exclude<
-  keyof Extract<RunSessionFields["activity"], { kind: "battle" }>["data"],
-  "battleState" | "battleStartState"
->;
+type MissingCombatKey = Exclude<keyof Extract<RunSessionFields["activity"], { kind: "battle" }>["data"], "battleState">;
 type MissingRunKey = Exclude<keyof RunDomainDataState, ClassifiedRunKey>;
 type MissingSessionKey = Exclude<keyof RunSessionFields, ClassifiedSessionKey>;
 const allFieldsClassified: Readonly<{
@@ -73,11 +70,17 @@ function sessionPersistedInputsEqual(
   if (previousMode !== nextMode) return false;
   if (previous === next) return true;
   // The reward claim gate is routing-only; the persisted reward payload is
-  // state + companionCards (see encodeInterruptedFlow).
-  if (!Object.is(previous.rewardFlow.state, next.rewardFlow.state)) return false;
-  if (!Object.is(previous.rewardFlow.companionCards, next.rewardFlow.companionCards)) return false;
+  // state + companionCards while a rewards activity is selected.
+  if (
+    previous.activity.kind === "rewards" ||
+    next.activity.kind === "rewards" ||
+    previous.activity.kind === "destination" ||
+    next.activity.kind === "destination"
+  ) {
+    if (!Object.is(previous.rewardFlow.state, next.rewardFlow.state)) return false;
+    if (!Object.is(previous.rewardFlow.companionCards, next.rewardFlow.companionCards)) return false;
+  }
   if (previous.activity.kind === "battle" && next.activity.kind === "battle") {
-    // The opening playback snapshot is transient; only combat itself reaches saves.
     if (!Object.is(previous.activity.data.battleState, next.activity.data.battleState)) return false;
   } else if (!Object.is(previous.activity, next.activity)) return false;
   if (previousMode === "labyrinth" && !fieldsEqual(previous, next, LABYRINTH_GATED_SESSION_KEYS)) return false;

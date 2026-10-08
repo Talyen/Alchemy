@@ -26,9 +26,3 @@ single coordinated run still stalls, record collection timing and host pressure
 before changing gameplay or test timeouts. Do not terminate another session's
 processes. Prevention lives in
 [the test policy](../CONTRIBUTING.md#what-to-run-when-you-change).
-
-Scoped handoff checks can repeatedly fail their final source-staleness guard
-while another session edits the shared checkout: a task can pass smoke and selected-file formatting but observe different
-checkout-wide digests at completion. The guard in `scripts/check.mjs` hashes
-all dirty paths even when the check selects explicit task paths. Retry after checkout writes settle; do not bypass the
-guard or stop another session.

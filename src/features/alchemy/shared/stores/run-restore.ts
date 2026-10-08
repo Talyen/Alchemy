@@ -4,7 +4,6 @@ import { gearDefinitions, getOwnedUniqueDefinitionIds } from "@/lib/gear";
 import { eventHasUnresolvedRandomTrinket, repairUnresolvedMysteryTrinkets } from "@/lib/mystery";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
-import { repairPersistedTrinketManifest } from "@/lib/validation";
 import { restoreActiveBattle } from "./battle-restore";
 import { gameplayDraftRuntime, type GameplayDraft } from "./gameplay-command";
 import { decodeRunResumeSnapshot, type DecodedRunResumeSession } from "./run-resume-codec";
@@ -82,14 +81,7 @@ export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRu
 
   if (!activeRun || !decoded) return;
   restoreRunSession(draft, decoded.session);
-  const battleState =
-    activeRun.activeCombat?.battleState != null
-      ? repairPersistedTrinketManifest(
-          activeRun.activeCombat.battleState,
-          combineTrinketEffectIds(activeRun.runBoons, draft.gear.equippedTrinkets[activeRun.characterId]),
-        )
-      : null;
-  restoreActiveBattle(draft, battleState, decoded.pendingBattleTransition);
+  restoreActiveBattle(draft, activeRun.activity.kind === "battle" ? activeRun.activity.data.battleState : null);
   const resumeScreen = decoded.screen;
   if (resumeScreen) setScreen(draft, resumeScreen);
   const mysteryEvent = readActivityData(draft.session.activity, "mystery").mysteryEvent;

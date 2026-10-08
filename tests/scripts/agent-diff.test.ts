@@ -19,6 +19,11 @@ it("retains both change layers, renames, deletions, untracked files and generate
   write("reversed.ts", "original\n");
   write("rename.ts", "rename\n");
   write("delete.ts", "delete\n");
+  write("move-only.ts", "unchanged move content\n");
+  write("edited-move.ts", "edited move original\n");
+  write("mode-only.ts", "changed executable mode\n");
+  write("anchor.ts", "unchanged tracked content\n");
+  if (process.platform !== "win32") fs.chmodSync(path.join(root, "mode-only.ts"), 0o755);
   git("add", ".");
   git(
     "-c",
@@ -36,9 +41,19 @@ it("retains both change layers, renames, deletions, untracked files and generate
   write("reversed.ts", "original\n");
   git("mv", "rename.ts", "renamed.ts");
   fs.unlinkSync(path.join(root, "delete.ts"));
+  fs.renameSync(path.join(root, "move-only.ts"), path.join(root, "moved-only.ts"));
+  fs.renameSync(path.join(root, "edited-move.ts"), path.join(root, "edited-moved.ts"));
+  write("edited-moved.ts", "edited move original\nchanged after moving\n");
+  fs.renameSync(path.join(root, "mode-only.ts"), path.join(root, "mode-moved.ts"));
+  // Git tracks the user executable bit; a group-only executable is not equivalent.
+  if (process.platform !== "win32") fs.chmodSync(path.join(root, "mode-moved.ts"), 0o654);
   write("new.ts", "new\n".repeat(2000));
   write("binary.png", Buffer.from([0, 1, 2]));
   write("catalog.generated.ts", "generated detail\n");
+  const statusBefore = git("status", "--porcelain=v1", "-z");
+  const indexBefore = fs.readFileSync(path.join(root, ".git/index"));
+  const stale = new Date(Date.now() - 5_000);
+  fs.utimesSync(path.join(root, "anchor.ts"), stale, stale);
   const result = reviewDiff(root, { budget: 2000 });
   const report = fs.readFileSync(result.report, "utf8");
   expect(Buffer.byteLength(result.text)).toBeLessThanOrEqual(2000);
@@ -55,6 +70,20 @@ it("retains both change layers, renames, deletions, untracked files and generate
   ])
     expect(report).toContain(item);
   expect(report).not.toContain("generated detail");
+  expect(report).toContain("Exact unstaged move");
+  expect(report).not.toContain("unchanged move content");
+  expect(report).toContain("+changed after moving");
+  if (process.platform !== "win32") expect(report).toContain("changed executable mode");
+  const moved = reviewDiff(root, { paths: ["move-only.ts"], budget: 1200 });
+  expect(moved.text).toContain('"moved-only.ts" <- "move-only.ts"');
+  expect(moved.text).toContain("Exact unstaged move");
+  expect(fs.readFileSync(reviewDiff(root, { full: true, paths: ["moved-only.ts"] }).report, "utf8")).toContain(
+    "+unchanged move content",
+  );
+  expect(fs.readFileSync(path.join(root, ".git/index")).equals(indexBefore), "Review changed the real Git index").toBe(
+    true,
+  );
+  expect(git("status", "--porcelain=v1", "-z")).toEqual(statusBefore);
   const expanded = fs.readFileSync(reviewDiff(root, { full: true, paths: ["catalog.generated.ts"] }).report, "utf8");
   expect(expanded).toContain("+generated detail");
   expect(expanded).toContain("reversed.ts");

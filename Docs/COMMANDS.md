@@ -70,4 +70,4 @@ Its exact options are owned by `scripts/prune-transient-artifacts.mjs`; reset op
 belong to `scripts/clean-dev-artifacts.mjs`. Neither command manages shared
 Playwright caches.
 
-One-shot test commands retain full logs and emit bounded summaries. Use `npm run test:verbose`, `npm run test:e2e:verbose`, `npm run test:watch`, or `npm run test:e2e:debug` for raw output or interactive work. Gates that already capture output bypass the inner compact wrapper. Formatting emits a summary and full-log location; content audits group failures by area with bounded examples.
+One-shot test commands retain full logs and emit bounded summaries. Use `npm run test:full:verbose`, `npm run test:e2e:verbose`, `npm run test:watch`, or `npm run test:e2e:debug` for raw output or interactive work. Gates that already capture output bypass the inner compact wrapper. Formatting emits a summary and full-log location; content audits group failures by area with bounded examples.

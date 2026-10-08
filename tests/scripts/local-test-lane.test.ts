@@ -1,8 +1,28 @@
 import net from "node:net";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
+import { setTimeout as delay } from "node:timers/promises";
 import { expect, it } from "vitest";
 import { acquireLocalTestLane, usesLocalTestLane } from "../../scripts/lib/verification/local-test-lane.mjs";
+
+async function reclaimReleasedPort(port: number) {
+  // A sibling fixture can receive this ephemeral port after release. Only
+  // reclamation retries; occupied-lane rejection below stays immediate.
+  const deadline = Date.now() + 1_000;
+  for (;;) {
+    try {
+      return await acquireLocalTestLane(port);
+    } catch (error) {
+      if (
+        !(error instanceof Error) ||
+        !error.message.startsWith("Local test lane is occupied") ||
+        Date.now() >= deadline
+      )
+        throw error;
+      await delay(10);
+    }
+  }
+}
 
 it("rejects an overlapping run without disturbing its owner, then permits reuse after release", async () => {
   const first = await acquireLocalTestLane(0);
@@ -12,7 +32,7 @@ it("rejects an overlapping run without disturbing its owner, then permits reuse 
   } finally {
     await first.release();
   }
-  const next = await acquireLocalTestLane(first.port);
+  const next = await reclaimReleasedPort(first.port);
   await next.release();
 });
 
@@ -52,7 +72,7 @@ const lane = await acquireLocalTestLane(0); console.log(lane.port);`,
     await expect(acquireLocalTestLane(port)).rejects.toThrow("no tests were started");
     child.kill("SIGTERM");
     await exited;
-    const replacement = await acquireLocalTestLane(port);
+    const replacement = await reclaimReleasedPort(port);
     await replacement.release();
   } finally {
     if (child.exitCode === null && child.signalCode === null) child.kill("SIGTERM");

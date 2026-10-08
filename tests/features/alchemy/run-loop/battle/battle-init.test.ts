@@ -23,7 +23,6 @@ beforeEach(() => {
 
 describe("createBattleInit", () => {
   const resetBattleSession = vi.fn();
-  const prepareBattleSessionForStart = vi.fn();
 
   function makeInit() {
     const ctx = {
@@ -34,7 +33,6 @@ describe("createBattleInit", () => {
 
     const session = {
       resetBattleSession,
-      prepareBattleSessionForStart,
     } as unknown as ReturnType<typeof createBattleSession>;
 
     return createBattleInit(ctx, session);
@@ -78,7 +76,7 @@ describe("createBattleInit", () => {
     expect(battlePresentation.getState().openingDrawPending).toBe(true);
     expect(battlePresentation.getState().cardTransferInProgress).toBe(true);
     expect(readActiveRun(defaultGameSession).encounteredRunEnemyIds).toContain(enemyId);
-    expect(prepareBattleSessionForStart).toHaveBeenCalled();
+    expect(resetBattleSession).toHaveBeenCalled();
   });
 
   it("uses the live purse while honoring explicit enemy and empty difficulty overrides", () => {
@@ -105,12 +103,12 @@ describe("createBattleInit", () => {
     const before = readBattle(defaultGameSession);
     const run = readActiveRun(defaultGameSession);
     const revision = readRunRevision(defaultGameSession);
-    const presentationCalls = prepareBattleSessionForStart.mock.calls.length;
+    const presentationCalls = resetBattleSession.mock.calls.length;
     expect(makeInit().startBossById({ bossId: "unknown-boss" })).toBe(false);
     expect(readBattle(defaultGameSession)).toEqual(before);
     expect(readActiveRun(defaultGameSession)).toEqual(run);
     expect(readRunRevision(defaultGameSession)).toBe(revision);
-    expect(prepareBattleSessionForStart).toHaveBeenCalledTimes(presentationCalls);
+    expect(resetBattleSession).toHaveBeenCalledTimes(presentationCalls);
   });
 
   it("appendUnique avoids duplicate encountered enemy ids", () => {

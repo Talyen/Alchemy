@@ -121,7 +121,7 @@ function playReadyCard(session: GameSession) {
 }
 
 describe("independent game sessions", () => {
-  it.each(["outcomes", "battle", "battle outcome", "navigation", "navigation cancellation", "labyrinth"] as const)(
+  it.each(["outcomes", "battle", "battle outcome", "navigation", "navigation cancellation"] as const)(
     "rejects mixed-career %s before publishing state or scheduling navigation",
     async (foreignCapability) => {
       const a = start(31, 1000);
@@ -163,10 +163,6 @@ describe("independent game sessions", () => {
                 foreignCapability === "battle outcome" ? b.controller.flow.handleBattleVictory : () => {},
                 foreignCapability === "battle" ? b.session : a.session,
               ),
-              labyrinthClearNode:
-                foreignCapability === "labyrinth"
-                  ? b.controller.labyrinth.onNodeCleared
-                  : a.controller.labyrinth.onNodeCleared,
             },
             outcomes,
             a.session,

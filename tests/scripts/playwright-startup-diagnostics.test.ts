@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
 import type { Page, Request } from "@playwright/test";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { collectStartupDiagnostics } from "../e2e/startup-diagnostics";
+import { captureFailureContext, collectStartupDiagnostics } from "../e2e/startup-diagnostics";
 import {
   buildFailureDiagnostic,
   MAX_DIAGNOSTIC_BYTES,
@@ -27,6 +27,27 @@ function fixture() {
 afterEach(() => vi.useRealTimers());
 
 describe("browser startup evidence", () => {
+  it("uses accessibility evidence without requesting HTML, and bounds an unresponsive HTML fallback", async () => {
+    vi.useFakeTimers();
+    const logs: string[] = [];
+    const page = {
+      ariaSnapshot: vi.fn().mockResolvedValue('- button "Play"'),
+      content: vi.fn(() => new Promise<string>(() => {})),
+    };
+    const capture = () => captureFailureContext(page as unknown as Page, (message) => logs.push(message));
+    await expect(capture()).resolves.toEqual({ accessibilitySnapshot: '- button "Play"', htmlFallback: "" });
+    expect(page.content).not.toHaveBeenCalled();
+    page.ariaSnapshot.mockRejectedValueOnce(new Error("renderer unavailable"));
+    const pending = capture();
+    await vi.advanceTimersByTimeAsync(2_000);
+    await expect(pending).resolves.toEqual({
+      accessibilitySnapshot: "",
+      htmlFallback: "Unable to fetch page HTML: page did not answer within 2 seconds",
+    });
+    expect(logs).toEqual(["[Diagnostic] Accessibility snapshot unavailable: renderer unavailable"]);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it("records pending, failed and HTTP-error modules, timing and mode, then removes its listeners", async () => {
     const { events, logs, diagnostics } = fixture();
     const completed = request("completed.ts");

@@ -6,6 +6,7 @@ import { once } from "node:events";
 import { afterEach, expect, it } from "vitest";
 import { parsePruneArgs, pruneTransientArtifacts } from "../../scripts/prune-transient-artifacts.mjs";
 import { registerArtifactSession, withArtifactGuard } from "../../scripts/lib/artifact-guard.mjs";
+import { deferred } from "../helpers/deferred";
 
 const DAY = 86_400_000;
 const now = Date.now();
@@ -122,6 +123,31 @@ it("serializes concurrent registrations and protects silent output until every o
   owners[1]!();
   expect((await pruneTransientArtifacts({ rootDir, now })).skippedActive).toBe(false);
   expect(fs.existsSync(old)).toBe(false);
+});
+
+it("holds the mutex through async work while an independent checkout can proceed", async () => {
+  const first = fixture();
+  const second = fixture();
+  const entered = deferred<void>();
+  const finish = deferred<void>();
+  const holding = withArtifactGuard(first.rootDir, async () => {
+    entered.resolve();
+    await finish.promise;
+  });
+  await Promise.race([entered.promise, holding]);
+  let overlapping = false;
+  const waiting = withArtifactGuard(first.rootDir, () => {
+    overlapping = true;
+  });
+  try {
+    await withArtifactGuard(second.rootDir, () => {
+      expect(overlapping).toBe(false);
+    });
+  } finally {
+    finish.resolve();
+    await Promise.all([holding, waiting]);
+  }
+  expect(overlapping).toBe(true);
 });
 
 it("recovers a killed owner's guard only after exit, without mutating it during dry runs", async () => {

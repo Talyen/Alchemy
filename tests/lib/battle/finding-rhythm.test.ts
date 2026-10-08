@@ -80,7 +80,7 @@ describe("Finding Rhythm", () => {
       { ...state, playerStatuses: { ...state.playerStatuses, block: 100 } },
       { ...state, playerStatuses: { ...state.playerStatuses, armor: 100 } },
       { ...state, gearEffects: { ...state.gearEffects, resistPhysical: 100 } },
-      { ...state, talentEffects: { ...state.talentEffects, damageReduction: 100 } },
+      { ...state, talentEffects: { ...state.talentEffects, physicalDamageReduction: 100 } },
     ]) {
       const result = applyEnemyAbility(
         protectedState,

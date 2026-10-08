@@ -1,15 +1,17 @@
+import { makeActiveRunData } from "./active-run-data-fixture";
+import { savedActivityFixture, savedActivityData } from "../../../../fixtures/run-activity";
 import "../../../../helpers/mock-audio";
 
 import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import { emptyAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { defaultBattleState } from "@/lib/battle";
 import { cardLibrary, getCardKeywords } from "@/lib/game-data";
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
-import { finalizeRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
+
 import { createEmptyRewardState, emptyEquipmentShopState, emptyShopState } from "@/lib/active-run-session";
 import { canEnterLabyrinthNode, withClearedNode } from "@/lib/content-systems/labyrinth/map-state";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
@@ -54,7 +56,7 @@ describe("labyrinth modifier persistence", () => {
     const backtracked = { ...completed, currentNodeId: map.currentNodeId };
     const pending = Object.values(backtracked.nodes).find((node) => canEnterLabyrinthNode(backtracked, node.id))!;
     setRunSession({ labyrinthMap: backtracked, activeLabyrinthPendingNode: pending.id });
-    const snap = snapshotRun(ROUTE_SCREENS.CAMPFIRE, defaultGameSession);
+    const snap = snapshotRun(defaultGameSession);
     expect(snap.labyrinthMap?.currentNodeId).toBe(map.currentNodeId);
     expect(snap.labyrinthMap?.nodes[target.id]?.cleared).toBe(true);
     const decoded = decodeRunResumeSnapshot(snap);
@@ -64,56 +66,14 @@ describe("labyrinth modifier persistence", () => {
   it("keeps expedition twists on saves made outside combat", () => {
     startLabyrinthRun();
 
-    const snap = snapshotRun(ROUTE_SCREENS.LABYRINTH_MAP, defaultGameSession);
-    expect(snap.activeCombat).toBeNull();
+    const snap = snapshotRun(defaultGameSession);
+    expect(savedActivityData(snap, "battle")).toBeNull();
     expect(snap.activeLabyrinthModifiers).toEqual(["septic"]);
     expect(snap.activeLabyrinthRewardModifiers).toEqual(["generous"]);
 
     const decoded = decodeRunResumeSnapshot(snap);
     expect(decoded.session.activeLabyrinthModifiers).toEqual(["septic"]);
     expect(decoded.session.activeLabyrinthRewardModifiers).toEqual(["generous"]);
-  });
-
-  it("returns to the map when a saved battle could not be restored", () => {
-    startLabyrinthRun();
-    const saved = snapshotRun(ROUTE_SCREENS.LABYRINTH_MAP, defaultGameSession);
-    const decoded = decodeRunResumeSnapshot({ ...saved, currentScreen: "battle", activeCombat: null });
-    expect(decoded.screen).toBe("labyrinth-map");
-  });
-
-  it("backfills twists from legacy combat parcels", () => {
-    startLabyrinthRun();
-
-    const snap = snapshotRun(ROUTE_SCREENS.LABYRINTH_MAP, defaultGameSession);
-    const decoded = decodeRunResumeSnapshot({
-      ...snap,
-      activeLabyrinthModifiers: [],
-      activeLabyrinthRewardModifiers: [],
-      activeCombat: {
-        battleState: defaultBattleState(),
-        pendingBattleTransition: null,
-        activeLabyrinthModifiers: ["septic"],
-        activeLabyrinthRewardModifiers: ["generous"],
-      },
-    });
-    expect(decoded.session.activeLabyrinthModifiers).toEqual(["septic"]);
-    expect(decoded.session.activeLabyrinthRewardModifiers).toEqual(["generous"]);
-  });
-
-  it("prefers expedition twists over divergent combat parcels", () => {
-    startLabyrinthRun();
-
-    const snap = snapshotRun(ROUTE_SCREENS.LABYRINTH_MAP, defaultGameSession);
-    const decoded = decodeRunResumeSnapshot({
-      ...snap,
-      activeCombat: {
-        battleState: defaultBattleState(),
-        pendingBattleTransition: null,
-        activeLabyrinthModifiers: ["caustic"],
-        activeLabyrinthRewardModifiers: ["generous"],
-      },
-    });
-    expect(decoded.session.activeLabyrinthModifiers).toEqual(["septic"]);
   });
 });
 
@@ -166,15 +126,15 @@ describe("interrupted mid-claim rewards", () => {
     expect(readRunSession(defaultGameSession).rewardFlow.claim.kind === "reward").toBe(true);
     const claimedDeck = readActiveRun(defaultGameSession).runDeck;
 
-    const snap = snapshotRun(ROUTE_SCREENS.REWARDS, defaultGameSession);
-    expect(snap.interruptedFlow.kind).toBe("primary-reward");
-    if (snap.interruptedFlow.kind === "primary-reward") {
-      expect(snap.interruptedFlow.pending.rewardType).toBe("card");
-      if (snap.interruptedFlow.pending.rewardType === "card") {
-        expect(snap.interruptedFlow.pending.choiceIds).toEqual([companion.id]);
+    const snap = snapshotRun(defaultGameSession);
+    expect(snap.activity.kind).toBe("rewards");
+    if (snap.activity.kind === "rewards") {
+      expect(snap.activity.data.rewardType).toBe("card");
+      if (snap.activity.data.rewardType === "card") {
+        expect(snap.activity.data.choiceIds).toEqual([companion.id]);
       }
-      expect(snap.interruptedFlow.pending.companionChoiceIds).toEqual([]);
-      expect(snap.interruptedFlow.pending.gold).toBe(0);
+      expect(snap.activity.data.companionChoiceIds).toEqual([]);
+      expect(snap.activity.data.gold).toBe(0);
     }
 
     dispatchGameplayCommand(
@@ -219,7 +179,7 @@ describe.each(["companion", "archery", "wish", "nature"] as const)("%s bonus rew
       rewardState: { ...createEmptyRewardState(), choices },
       companionRewardCards: bonusDisplayed ? null : bonuses,
     });
-    const snap = snapshotRun(ROUTE_SCREENS.REWARDS, defaultGameSession);
+    const snap = snapshotRun(defaultGameSession);
     resetRunDomainStore();
     restoreRun(snap, {}, {}, defaultGameSession);
 
@@ -228,50 +188,6 @@ describe.each(["companion", "archery", "wish", "nature"] as const)("%s bonus rew
     expect(readRunSession(defaultGameSession).rewardFlow.state.choices).toEqual(choices);
     expect(readRunSession(defaultGameSession).rewardFlow.companionCards).toEqual(bonusDisplayed ? null : bonuses);
     expect(readActiveRun(defaultGameSession).rng).toEqual(snap.rng);
-  });
-
-  it("restores an interrupted bonus handoff when primary choices are unavailable without awarding loot", () => {
-    expect(bonuses.length).toBeGreaterThan(0);
-    startLabyrinthRun();
-    setRunSession({
-      rewardClaimInFlight: true,
-      rewardState: {
-        ...createEmptyRewardState(),
-        choices: [{ ...bonuses[0]!, id: "no-such-primary-card" }],
-        selectedId: "no-such-primary-card",
-        gold: 7,
-        materials: { ...emptyInventory(), wood: 3 },
-        lastVictoryContentSystem: "labyrinth",
-        lastVictoryEnemyType: "elite",
-      },
-      companionRewardCards: bonuses,
-    });
-    const snap = snapshotRun(ROUTE_SCREENS.REWARDS, defaultGameSession);
-    // Older builds could persist an awarded primary bundle while its bonus handoff waited for a fade.
-    if (snap.interruptedFlow.kind !== "primary-reward") throw new Error("Expected pending reward fixture");
-    snap.interruptedFlow = { kind: "companion-reward", pending: snap.interruptedFlow.pending };
-    resetRunDomainStore();
-    const profileBefore = readGameplayState(defaultGameSession).runProfile;
-    restoreRun(snap, {}, {}, defaultGameSession);
-
-    expect(readGameplayState(defaultGameSession).run.navigation.screen).toBe(ROUTE_SCREENS.REWARDS);
-    expect(readRunSession(defaultGameSession).rewardFlow.state).toEqual({
-      ...createEmptyRewardState(),
-      choices: bonuses,
-      lastVictoryContentSystem: "labyrinth",
-      lastVictoryEnemyType: "elite",
-    });
-    expect(readRunSession(defaultGameSession).rewardFlow.companionCards).toBeNull();
-    expect(readGameplayState(defaultGameSession).runProfile.gold).toBe(profileBefore.gold);
-    expect(readGameplayState(defaultGameSession).runProfile.materialInventory).toEqual(profileBefore.materialInventory);
-    expect(readActiveRun(defaultGameSession).runMaterialsEarned).toEqual(snap.runMaterialsEarned);
-    expect(readActiveRun(defaultGameSession).rng).toEqual(snap.rng);
-    expect(
-      finalizeRewardState({
-        rewardState: readRunSession(defaultGameSession).rewardFlow.state,
-        companionRewardCards: null,
-      }).materials,
-    ).toEqual(emptyInventory());
   });
 });
 
@@ -290,8 +206,8 @@ describe("primary reward resume", () => {
       },
       companionRewardCards: null,
     });
-    const snap = snapshotRun(ROUTE_SCREENS.REWARDS, defaultGameSession);
-    expect(snap.interruptedFlow.kind).toBe("primary-reward");
+    const snap = snapshotRun(defaultGameSession);
+    expect(snap.activity.kind).toBe("rewards");
     resetRunDomainStore();
     restoreRun(snap, {}, {}, defaultGameSession);
 
@@ -302,7 +218,7 @@ describe("primary reward resume", () => {
     expect(restored.materials).toEqual({ ...emptyInventory(), wood: 3 });
     expect(restored.lastVictoryContentSystem).toBe("labyrinth");
     expect(restored.lastVictoryEnemyType).toBe("elite");
-    const retrySnapshot = snapshotRun(ROUTE_SCREENS.REWARDS, defaultGameSession);
+    const retrySnapshot = snapshotRun(defaultGameSession);
     resetRunDomainStore();
     restoreRun(retrySnapshot, {}, {}, defaultGameSession);
     expect(readRunSession(defaultGameSession).rewardFlow.state).toEqual(restored);
@@ -327,25 +243,20 @@ describe("shop persistence", () => {
       undefined,
       defaultGameSession,
     );
-    const snap = snapshotRun(ROUTE_SCREENS.SHOP, defaultGameSession);
-    expect(snap.currentScreen).toBe("equipment-shop");
-    expect(snap.shopState).toBeNull();
-    expect(snap.alchemistState).toBeNull();
-    expect(snap.trinketShopState).toBeNull();
-    expect(snap.equipmentShopState).not.toBeNull();
+    const snap = snapshotRun(defaultGameSession);
+    expect(snap.activity.kind).toBe("equipment-shop");
+    expect(savedActivityData(snap, "shop")).toBeNull();
+    expect(savedActivityData(snap, "alchemist")).toBeNull();
+    expect(savedActivityData(snap, "trinket-shop")).toBeNull();
+    expect(savedActivityData(snap, "equipment-shop")).not.toBeNull();
     restoreRun(snap, {}, {}, defaultGameSession);
     expect(readRunSession(defaultGameSession).activity.kind).toBe("equipment-shop");
   });
 
   it("serializes no shop when no visit is active", () => {
     setRunSession({ hasActiveRun: true });
-    const snapshot = snapshotRun(undefined, defaultGameSession);
-    expect(snapshot).toMatchObject({
-      shopState: null,
-      alchemistState: null,
-      trinketShopState: null,
-      equipmentShopState: null,
-    });
+    const snapshot = snapshotRun(defaultGameSession);
+    expect(snapshot).toMatchObject({ activity: savedActivityFixture("destination") });
   });
 });
 
@@ -355,7 +266,7 @@ describe("wildwood starter drafts", () => {
     setRunProgress({ characterId: "knight", contentSystemType: "wildwood" });
     setRunSession({ hasActiveRun: true, starterDraftChoices: [primary] });
 
-    const snap = snapshotRun(ROUTE_SCREENS.DESTINATION, defaultGameSession);
+    const snap = snapshotRun(defaultGameSession);
     expect(snap.starterDraftChoices).toBeNull();
   });
 });
@@ -374,38 +285,16 @@ describe("victory-handoff persistence", () => {
       defaultGameSession,
     );
 
-    const snap = snapshotRun(undefined, defaultGameSession);
+    const snap = snapshotRun(defaultGameSession);
     // Without the combat shell the continuation would be lost with it.
-    expect(snap.activeCombat?.pendingBattleTransition).toBeNull();
+    expect(savedActivityData(snap, "battle")?.battleState.enemyHealth).toBe(0);
 
     const decoded = decodeRunResumeSnapshot(snap);
-    expect(decoded.pendingBattleTransition).toBeNull();
+    expect(decoded.session.activity.kind).toBe("battle");
 
     resetRunDomainStore();
     restoreRun(snap, {}, {}, defaultGameSession);
     expect(readBattle(defaultGameSession).battleState.enemyHealth).toBe(0);
-  });
-});
-
-describe("gold-only interrupted rewards", () => {
-  it("encodes a gold/materials-only pending reward when the current screen is not rewards", () => {
-    setRunProgress({ characterId: "knight", contentSystemType: "campaign" });
-    setRunSession({
-      hasActiveRun: true,
-      activity: { kind: "campfire", data: emptyAlchemyVisit() },
-      rewardState: { ...createEmptyRewardState(), gold: 12, materials: { ...emptyInventory(), wood: 2 } },
-      companionRewardCards: null,
-    });
-
-    const snap = snapshotRun(ROUTE_SCREENS.CAMPFIRE, defaultGameSession);
-    expect(snap.interruptedFlow.kind).toBe("primary-reward");
-
-    resetRunDomainStore();
-    restoreRun(snap, {}, {}, defaultGameSession);
-    expect(readGameplayState(defaultGameSession).run.navigation.screen).toBe(ROUTE_SCREENS.REWARDS);
-    const restored = readRunSession(defaultGameSession).rewardFlow.state;
-    expect(restored.gold).toBe(12);
-    expect(restored.materials).toEqual({ ...emptyInventory(), wood: 2 });
   });
 });
 
@@ -425,16 +314,11 @@ it.each([
   "draft-deck",
   "difficulty-select",
 ] as const)("decodes the saved %s location without navigation initialization", (screen) => {
-  const saved = {
-    ...snapshotRun(undefined, defaultGameSession),
-    currentScreen: screen,
-    interruptedFlow: { kind: "none" as const },
-  };
+  const saved = makeActiveRunData({ activity: savedActivityFixture(screen) });
   const first = decodeRunResumeSnapshot(saved);
   const second = decodeRunResumeSnapshot(saved);
   expect(first.session.activity.kind).toBe(screen);
   if ("data" in first.session.activity && first.session.activity.data !== null) {
     expect(first.session.activity).toEqual(second.session.activity);
-    expect(first.session.activity.data).not.toBe((second.session.activity as typeof first.session.activity).data);
   }
 });

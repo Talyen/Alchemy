@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   addForgeToPlayer,
   applyCardHealing,
@@ -10,7 +10,7 @@ import { removePlayerArmor } from "@/lib/battle/status-helpers";
 import { makeTestCard } from "../../fixtures/cards";
 import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/battle";
 
-describe("applyPlayerStatusEffect — armor talent thresholds", () => {
+describe("Armor gain rewards", () => {
   it.each(["armor break", "overheal"])("applies Block gain rewards once after %s", (source) => {
     const holy = makeTestCard({ id: "holy-draw", tags: ["holy"] });
     const state = patchBattleState({
@@ -41,17 +41,6 @@ describe("applyPlayerStatusEffect — armor talent thresholds", () => {
     expect(result.playerStatuses.armor).toBe(4);
     expect(result.playerStatuses.poison).toBe(0);
     expect(result.playerStatuses.bleed).toBe(2);
-  });
-
-  it("cleanses harmful statuses when armor crosses armorCleanseThreshold", () => {
-    const state = patchBattleState({
-      playerStatuses: { burn: 4, armor: 1 },
-      talentEffects: { armorCleanseThreshold: 5 },
-    });
-    const texts = makeTexts();
-    const result = applyPlayerStatusEffect(state, { kind: "player-status", status: "armor", amount: 5 }, texts);
-    expect(result.playerStatuses.armor).toBe(6);
-    expect(result.playerStatuses.burn).toBe(0);
   });
 });
 
@@ -99,41 +88,6 @@ describe("removeHarmfulPlayerStatuses", () => {
   });
 });
 
-describe("applyPlayerStatusEffect", () => {
-  it("doubles armor on first armor card when firstArmorCardDoubled is active", () => {
-    const state = patchBattleState({
-      talentEffects: {
-        firstArmorCardDoubled: true,
-      },
-    });
-    const effect = { kind: "player-status" as const, status: "armor" as const, amount: 4 };
-    const result = applyPlayerStatusEffect(state, effect, []);
-    expect(result.playerStatuses.armor).toBe(8);
-    expect(result.flags.firstArmorCardDoubledUsed).toBe(true);
-    expect(applyPlayerStatusEffect(result, effect, []).playerStatuses.armor).toBe(12);
-  });
-
-  it("pays modified Block only when Armor crosses the threshold", () => {
-    const state = patchBattleState({
-      playerStatuses: { armor: 3 },
-      talentEffects: { armorBlockThreshold: 5, armorBlockAmount: 3 },
-      gearEffects: { flatBlockGained: 2 },
-    });
-    const effect = { kind: "player-status", status: "armor", amount: 1 } as const;
-    const texts = makeTexts();
-    const below = applyPlayerStatusEffect(state, effect, texts);
-    expect(below.playerStatuses).toMatchObject({ armor: 4, block: 0 });
-    const crossing = applyPlayerStatusEffect(below, effect, texts);
-    expect(crossing.playerStatuses).toMatchObject({ armor: 5, block: 5 });
-    const above = applyPlayerStatusEffect(crossing, effect, texts);
-    expect(above.playerStatuses).toMatchObject({ armor: 6, block: 5 });
-    expect(texts.filter((text) => text.stat === "block")).toEqual([
-      { target: "player", kind: "status", stat: "block", amount: 5 },
-    ]);
-    expect(state.playerStatuses).toMatchObject({ armor: 3, block: 0 });
-  });
-});
-
 describe("applyPlayerDamageStatuses", () => {
   it("adds freeze stacks equal to actual damage dealt, halved only once", () => {
     const state = patchBattleState({
@@ -154,90 +108,25 @@ describe("applyPlayerDamageStatuses", () => {
   });
 });
 
-describe("applyPlayerStatusEffect — forge integration", () => {
-  it("flatForgeGained increases forge from card effects", () => {
-    const state = patchBattleState({
-      talentEffects: { flatForgeGained: 1 },
-    });
-    const effect = { kind: "player-status" as const, status: "forge" as const, amount: 3 };
-    const texts = makeTexts();
-    const result = applyPlayerStatusEffect(state, effect, texts);
-    expect(result.playerStatuses.forge).toBe(4);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 4 });
+it("Tempered Guard reads Forge after Overheat and Intensify modify its gain", () => {
+  const state = patchBattleState({
+    playerStatuses: { forge: 5, burn: 1 },
+    talentEffects: { forgeBlockPercent: 50, forgeBurningBonusPercent: 100, forgeDoubleChance: 100 },
   });
-
-  it("forgeBlockBurst respects forgeBlockPercent synergy", () => {
-    const state = patchBattleState({
-      playerStatuses: { forge: 5 },
-      talentEffects: {
-        forgeBlockPercent: 100,
-        forgeBlockThreshold: 6,
-        forgeBlockAmount: 10,
-      },
-    });
-    const effect = { kind: "player-status" as const, status: "forge" as const, amount: 2 };
-    const result = applyPlayerStatusEffect(state, effect, []);
-    expect(result.playerStatuses.forge).toBe(7);
-    expect(result.playerStatuses.block).toBe(17);
-  });
-});
-
-describe("forge threshold boundaries", () => {
-  it("preserves all rewards and combat text order when one gain crosses every threshold", () => {
-    const state = patchBattleState({
-      playerStatuses: { forge: 3 },
-      enemyMitigation: { armor: 5 },
-      talentEffects: {
-        forgeBurnThreshold: 4,
-        forgeBurnDamage: 2,
-        forgeStripArmorThreshold: 5,
-        forgeBlockThreshold: 6,
-        forgeBlockAmount: 7,
-      },
-    });
-    const texts = makeTexts();
-    const result = addForgeToPlayer(state, 3, texts);
-    expect(result.playerStatuses.forge).toBe(6);
-    expect(result.enemyStatuses.burn).toBe(2);
-    expect(result.enemyMitigation.armor).toBe(0);
-    expect(result.playerStatuses.block).toBe(7);
-    expect(texts).toEqual([
-      { target: "enemy", kind: "damage", stat: "burn", amount: 2 },
-      { target: "player", kind: "status", stat: "block", amount: 7 },
-      { target: "player", kind: "status", stat: "forge", amount: 3 },
-    ]);
-    expect(state.playerStatuses.forge).toBe(3);
-    expect(state.enemyMitigation.armor).toBe(5);
-  });
-
-  it("forge burn burst does NOT fire when oldForge exactly equals threshold (4 -> 7, threshold 4)", () => {
-    const state = patchBattleState({
-      playerStatuses: { forge: 4 },
-      talentEffects: { forgeBurnThreshold: 4, forgeBurnDamage: 7 },
-    });
-    const effect = { kind: "player-status" as const, status: "forge" as const, amount: 3 };
-    const result = applyPlayerStatusEffect(state, effect, []);
-    expect(result.playerStatuses.forge).toBe(7);
-    expect(result.enemyStatuses.burn).toBe(0);
-  });
-
-  it("forge block burst does NOT re-fire above threshold (7 -> 9, threshold 6)", () => {
-    const state = patchBattleState({
-      playerStatuses: { forge: 7 },
-      talentEffects: { forgeBlockThreshold: 6, forgeBlockAmount: 10 },
-    });
-    const effect = { kind: "player-status" as const, status: "forge" as const, amount: 2 };
-    const result = applyPlayerStatusEffect(state, effect, []);
-    expect(result.playerStatuses.forge).toBe(9);
-    expect(result.playerStatuses.block).toBe(0);
-  });
+  const forged = applyPlayerStatusEffect(state, { kind: "player-status", status: "forge", amount: 2 }, []);
+  const guarded = applyPlayerStatusEffect(forged, { kind: "player-status", status: "block", amount: 2 }, []);
+  expect(forged.playerStatuses.forge).toBe(13);
+  expect(guarded.playerStatuses.block).toBe(9);
+  expect(state.playerStatuses.forge).toBe(5);
 });
 
 describe("addForgeToPlayer", () => {
   it("does nothing when amount is zero after modifiers", () => {
-    const state = patchBattleState();
+    const rng = vi.fn(() => 0.5);
+    const state = patchBattleState({ rng, talentEffects: { forgeDoubleChance: 10 } });
     const result = addForgeToPlayer(state, 0);
     expect(result).toBe(state);
+    expect(rng).not.toHaveBeenCalled();
   });
 });
 

@@ -65,20 +65,6 @@ describe("processEnemyRegeneration", () => {
     expect(texts.some((t) => t.kind === "heal")).toBe(true);
   });
 
-  it("no-ops when freeze blocks regen", () => {
-    const state = patchBattleState({
-      enemyHealth: 20,
-      enemyMaxHealth: 30,
-      enemyRegeneration: 3,
-      enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
-      talentEffects: {
-        freezeBlocksRegen: true,
-      },
-    });
-    const result = processEnemyRegeneration(state, []);
-    expect(result.enemyHealth).toBe(20);
-  });
-
   it("preserves a singleton regeneration packet when both healing reductions round it", () => {
     const state = patchBattleState({
       enemyHealth: 20,
@@ -156,18 +142,6 @@ describe("processEnemyTraits", () => {
       stat: "forge",
       amount: DIFFICULTY_FORGE_PER_TURN,
     });
-  });
-
-  it("skips scaling traits when freeze prevents enemy scaling", () => {
-    const state = patchBattleState({
-      currentEnemy: forgeGolem,
-      turn: 2,
-      enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
-      enemyMitigation: { forge: 0 },
-      talentEffects: { freezePreventsEnemyScaling: true },
-    });
-    const result = processEnemyTraits(state, []);
-    expect(result.enemyMitigation.forge).toBe(0);
   });
 
   it("does not run handlers for passive-only regeneration trait", () => {

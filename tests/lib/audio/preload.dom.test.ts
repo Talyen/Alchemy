@@ -1,13 +1,7 @@
 import { battleEventSounds } from "@/lib/audio/sound-registry";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { getSoundUrl } from "@/lib/audio";
-import {
-  preloadSound,
-  preloadSounds,
-  preloadAllSounds,
-  preloadBattleSounds,
-  resetSoundPreloadCache,
-} from "@/lib/audio/preload";
+import { preloadSounds, preloadAllSounds, preloadBattleSounds, resetSoundPreloadCache } from "@/lib/audio/preload";
 import { audioState } from "@/lib/audio/state";
 import { createdFakeAudio, soundedFakeAudio, installFakeAudio } from "../../helpers/fake-audio";
 import { installCleanAudio } from "../../helpers/audio-fixture";
@@ -129,25 +123,6 @@ describe("preloadSounds", () => {
     el.onerror?.();
     preloadSounds(["a.ogg"]);
     expect(soundedFakeAudio()).toHaveLength(1);
-  });
-
-  it("warms a single sound via preloadSound", () => {
-    preloadSound("single-sound.ogg");
-    const warmed = createdFakeAudio.filter((el) => el.preload === "auto");
-    expect(warmed).toHaveLength(1);
-    expect(warmed[0]?.src).toContain("single-sound.");
-  });
-
-  it("cancels stall timers when resetSoundPreloadCache is called", () => {
-    vi.useFakeTimers();
-    preloadSound("stall-test.ogg");
-    expect(soundedFakeAudio()).toHaveLength(1);
-
-    resetSoundPreloadCache();
-    // Advancing past the 30-second stall timer should not trigger any errors or unhandled events
-    vi.advanceTimersByTime(35_000);
-
-    vi.useRealTimers();
   });
 });
 

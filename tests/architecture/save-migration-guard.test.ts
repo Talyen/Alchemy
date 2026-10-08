@@ -1,3 +1,4 @@
+import { savedActivityFixture, savedActivityData } from "../fixtures/run-activity";
 import { describe, expect, it } from "vitest";
 import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage/save-candidates";
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
@@ -13,21 +14,20 @@ describe("supported save baseline", () => {
         ...saved,
         activeRun: {
           ...saved.activeRun,
-          currentScreen: null,
           mysteryVisit: { ...saved.activeRun.mysteryVisit, eventId: "removed-mystery-event" },
         },
       }),
     ]);
     expect(loaded.status.kind).toBe("ok");
-    expect(loaded.data.activeRun?.currentScreen).toBe("mystery");
-    expect(loaded.data.activeRun?.mysteryVisit).toBeNull();
+    expect(loaded.data.activeRun?.activity.kind).toBe("mystery");
+    expect(savedActivityData(loaded.data.activeRun, "mystery")).toBeNull();
   });
 
   it("loads a version 19 Mystery offer with its resolved Boon and Labyrinth reward", () => {
     const loaded = evaluateSaveCandidates([JSON.stringify(version19MysterySave())]);
     expect(loaded.status.kind).toBe("ok");
     expect(loaded.data.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-    const event = loaded.data.activeRun?.mysteryVisit?.event;
+    const event = savedActivityData(loaded.data.activeRun, "mystery")?.event;
     expect(event?.id).toBe("fairy-ring");
     expect(event?.choices[0]?.effects).toContainEqual(
       expect.objectContaining({ kind: "gainGeneratedGear", astral: true }),
@@ -38,7 +38,7 @@ describe("supported save baseline", () => {
 
   it("keeps a current Mystery offer even when its choices differ from the live pool", () => {
     const migrated = evaluateSaveCandidates([JSON.stringify(version19MysterySave())]).data;
-    const visit = migrated.activeRun?.mysteryVisit;
+    const visit = savedActivityData(migrated.activeRun, "mystery");
     if (!migrated.activeRun || !visit) throw new Error("Mystery migration fixture did not load");
     const offered = {
       ...visit.event,
@@ -46,11 +46,11 @@ describe("supported save baseline", () => {
     };
     const saved = {
       ...migrated,
-      activeRun: { ...migrated.activeRun, mysteryVisit: { ...visit, event: offered } },
+      activeRun: { ...migrated.activeRun, activity: savedActivityFixture("mystery", { ...visit, event: offered }) },
     };
 
     const loaded = evaluateSaveCandidates([JSON.stringify(saved)]);
-    expect(loaded.data.activeRun?.mysteryVisit?.event).toEqual(offered);
+    expect(savedActivityData(loaded.data.activeRun, "mystery")?.event).toEqual(offered);
     expect(loaded.data.gold).toBe(migrated.gold);
   });
 
@@ -61,13 +61,16 @@ describe("supported save baseline", () => {
       ...migrated,
       activeRun: {
         ...migrated.activeRun,
-        mysteryVisit: { ...migrated.activeRun.mysteryVisit, event: { id: "fairy-ring", choices: "invalid" } },
+        activity: savedActivityFixture("mystery", {
+          ...savedActivityData(migrated.activeRun, "mystery")!,
+          event: { id: "fairy-ring", choices: "invalid" },
+        }),
       },
     };
 
     const loaded = evaluateSaveCandidates([JSON.stringify(saved)]);
     expect(loaded.data.activeRun).not.toBeNull();
-    expect(loaded.data.activeRun?.mysteryVisit).toBeNull();
+    expect(savedActivityData(loaded.data.activeRun, "mystery")).toBeNull();
   });
 
   it.each([0, 11, 18])("rejects disposable schema %s before permissive defaults", (saveSchemaVersion) => {
@@ -92,7 +95,7 @@ describe("supported save baseline", () => {
     const second = SaveDataSchema.parse(JSON.parse(JSON.stringify(first)));
     expect(second).toEqual(first);
     expect(second.activeRun).not.toBeNull();
-    expect(second.activeRun?.activeCombat).not.toBeNull();
+    expect(savedActivityData(second.activeRun, "battle")).not.toBeNull();
     expect(second).not.toHaveProperty("parkedRuns");
     expect(second).not.toHaveProperty("runRecency");
   });

@@ -5,24 +5,27 @@ import { diagnosticIdentity, failureDigestRelativePath } from "./playwright-diag
 import { formatRouteHintLine, routeHintForPath } from "../agent/route-hints.mjs";
 import { MAX_SUMMARY_FAILURES, firstSummaryLine, formatSummaryMarkdown } from "./report-summary.mjs";
 
+const TEST_OUTCOMES = new Set(["expected", "unexpected", "flaky", "skipped"]);
+
 /**
  * @typedef {{ file: string, line: number, title: string, message: string, status: string, digestPath: string|null, routeHint: string }} PlaywrightFailure
  * @typedef {{ total: number, expected: number, unexpected: number, flaky: number, skipped: number, failures: PlaywrightFailure[], failed: boolean, runnerErrors: string[] }} PlaywrightSummary
  */
 
-function* testsInSuites(suites) {
+function* testsInSuites(suites, parents = [], fileLevel = true) {
   if (!Array.isArray(suites)) return;
   for (const suite of suites) {
     if (!suite || typeof suite !== "object") continue;
+    const titles = !fileLevel && typeof suite.title === "string" ? [...parents, suite.title] : parents;
     if (Array.isArray(suite.specs)) {
       for (const spec of suite.specs) {
         if (!spec || typeof spec !== "object" || !Array.isArray(spec.tests)) continue;
         for (const test of spec.tests) {
-          if (test && typeof test === "object") yield { spec, test };
+          if (test && typeof test === "object") yield { spec, test, titles };
         }
       }
     }
-    yield* testsInSuites(suite.suites);
+    yield* testsInSuites(suite.suites, titles, false);
   }
 }
 
@@ -42,6 +45,16 @@ function firstResultMessage(results) {
   return "";
 }
 
+function reportFile(file, config) {
+  if (typeof config?.rootDir !== "string" || typeof config.configFile !== "string") return file;
+  // Alchemy's Playwright configs live at the repository root. JSON paths are
+  // relative to testDir; anchor through configFile so downloaded CI reports
+  // remain portable across checkouts and Windows/Linux path spellings.
+  const normalize = (value) => value.replaceAll("\\", "/");
+  const directory = path.posix.relative(path.posix.dirname(normalize(config.configFile)), normalize(config.rootDir));
+  return path.posix.normalize(path.posix.join(directory, normalize(file)));
+}
+
 /**
  * Flatten Playwright's nested JSON report into the test-level model used by audits.
  * @param {unknown} report
@@ -56,14 +69,14 @@ export function collectPlaywrightTests(report) {
   let passedTests = 0;
   let skippedTests = 0;
 
-  for (const { spec, test } of testsInSuites(root.suites)) {
+  for (const { spec, test, titles } of testsInSuites(root.suites)) {
     const status = typeof test.status === "string" ? test.status : "unknown";
     const duration = Array.isArray(test.results)
       ? test.results.reduce((sum, result) => sum + (Number(result?.duration) || 0), 0)
       : 0;
     const testInfo = {
-      title: typeof spec.title === "string" ? spec.title : "unknown test",
-      file: typeof spec.file === "string" ? spec.file : "unknown",
+      title: [...titles, typeof spec.title === "string" ? spec.title : "unknown test"].filter(Boolean).join(" > "),
+      file: typeof spec.file === "string" ? reportFile(spec.file, root.config) : "unknown",
       line: Number(spec.line) || 0,
       duration,
       status,
@@ -79,7 +92,7 @@ export function collectPlaywrightTests(report) {
     else if (status === "flaky") {
       flakyTests.push(testInfo);
       passedTests += 1;
-    } else passedTests += 1;
+    } else if (status === "expected") passedTests += 1;
   }
 
   return { allTests, totalTests, passedTests, skippedTests, failedTests, flakyTests };
@@ -127,6 +140,11 @@ export function summarizePlaywrightReport(report, options = {}) {
     firstSummaryLine(String(error?.message ?? error?.value ?? error)),
   );
   if (!Array.isArray(root.suites)) runnerErrors.push("Invalid Playwright report: missing suites array");
+  const unknown = collected.allTests.filter((test) => !TEST_OUTCOMES.has(test.status)).length;
+  if (unknown)
+    runnerErrors.push(
+      `Invalid Playwright report: ${unknown} ${unknown === 1 ? "test has" : "tests have"} an unknown outcome`,
+    );
   return {
     failed: unexpected > 0 || Number(stats.unexpected) > 0 || runnerErrors.length > 0,
     runnerErrors: runnerErrors.slice(0, maxFailures),

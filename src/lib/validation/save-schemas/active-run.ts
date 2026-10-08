@@ -1,7 +1,6 @@
 import { sanitizeWildwoodBossId, sanitizeWildwoodBossIds } from "@/lib/content-systems/wildwood/bosses";
 import { shopItemSlotKey } from "@/lib/active-run-session/shop-offering-repair";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { ROUTE_SCREEN_VALUES } from "@/lib/routing";
 import { z } from "zod";
 import { normalizeActiveRunData } from "../normalize-active-run-data";
 import { BattleCardSchema, parseSavedCardEntries, savedCardArraySchema } from "./battle-card-schemas";
@@ -60,7 +59,6 @@ const MysteryVisitObjectSchema = z.object({
   grantedGear: GearInstanceArraySchema.catch([]),
   chosenCardId: z.string().nullable().catch(null),
 });
-const MysteryVisitPersistSchema = MysteryVisitObjectSchema.nullable().catch(null);
 
 const CorruptionResultPersistSchema = z
   .object({
@@ -71,31 +69,6 @@ const CorruptionResultPersistSchema = z
   })
   .nullable()
   .catch(null);
-
-const PersistedBattleTransitionSchema = z
-  .union([
-    z.object({
-      kind: z.literal("opening-draw"),
-      resultState: PersistedBattleStateSchema,
-    }),
-    z.object({
-      kind: z.literal("enemy-turn"),
-      resultState: PersistedBattleStateSchema,
-      playerTurnSkipped: z.boolean(),
-    }),
-    z.object({ kind: z.literal("continue-end-turn") }),
-  ])
-  .nullable()
-  .catch(null);
-
-const ActiveCombatObjectSchema = z.object({
-  battleState: PersistedBattleStateSchema,
-  pendingBattleTransition: PersistedBattleTransitionSchema,
-  activeLabyrinthModifiers: EncounterCombatTraitArraySchema,
-  activeLabyrinthRewardModifiers: EncounterRewardTraitArraySchema,
-});
-export type ActiveCombatData = z.output<typeof ActiveCombatObjectSchema>;
-const ActiveCombatDataSchema = ActiveCombatObjectSchema.nullable().catch(null);
 
 const WildwoodBossIdListSchema = z.array(z.string()).transform((ids) => sanitizeWildwoodBossIds(ids));
 const OptionalWildwoodBossIdSchema = z
@@ -125,15 +98,12 @@ function repairSavedShopCards(cards: unknown[], purchasedSlotKeys: string[], pat
   };
 }
 
-const AlchemyVisitSchema = z
-  .object({
-    offers: savedCardArraySchema("alchemyVisit.offers"),
-    result: BattleCardSchema.nullable(),
-    original: BattleCardSchema.nullable(),
-    completed: z.boolean(),
-  })
-  .nullable()
-  .catch(null);
+const AlchemyVisitObjectSchema = z.object({
+  offers: savedCardArraySchema("alchemyVisit.offers"),
+  result: BattleCardSchema.nullable(),
+  original: BattleCardSchema.nullable(),
+  completed: z.boolean(),
+});
 
 const ShopObjectSchema = createShopObjectSchema({
   cards: z.array(z.unknown()),
@@ -142,7 +112,6 @@ const ShopObjectSchema = createShopObjectSchema({
   ...state,
   ...repairSavedShopCards(state.cards, state.purchasedSlotKeys, "shopState.cards"),
 }));
-const ShopPersistSchema = ShopObjectSchema.nullable().catch(null);
 
 const AlchemistObjectSchema = createShopObjectSchema({
   potions: z.array(z.unknown()),
@@ -151,17 +120,14 @@ const AlchemistObjectSchema = createShopObjectSchema({
   const repaired = repairSavedShopCards(state.potions, state.purchasedSlotKeys, "alchemistState.potions");
   return { ...state, potions: repaired.cards, purchasedSlotKeys: repaired.purchasedSlotKeys };
 });
-const AlchemistPersistSchema = AlchemistObjectSchema.nullable().catch(null);
 
 const TrinketShopObjectSchema = createShopObjectSchema({
   trinketIds: z.array(z.string()),
 });
-const TrinketShopPersistSchema = TrinketShopObjectSchema.nullable().catch(null);
 
 const EquipmentShopObjectSchema = createShopObjectSchema({
   gear: GearInstanceArraySchema,
 });
-const EquipmentShopPersistSchema = EquipmentShopObjectSchema.nullable().catch(null);
 
 const WildwoodDraftObjectSchema = z.object({
   phase: z.enum(["draft", "battle", "reward", "removal"]),
@@ -208,24 +174,31 @@ const PersistedPendingRewardUnionSchema = z.discriminatedUnion("rewardType", [
 
 export type PersistedPendingReward = z.infer<typeof PersistedPendingRewardUnionSchema>;
 
-const InterruptedFlowDestinationSchema = z.object({
-  kind: z.literal("destination"),
-  destinations: DestinationArraySchema,
-  selectedBossId: z.string().nullable().catch(null),
-  lastVictoryEnemyType: EnemyTypeSchema.nullable().catch(null),
-  lastVictoryContentSystem: ContentSystemIdSchema.nullable().catch(null),
-});
-
-const InterruptedFlowSchema = z
-  .discriminatedUnion("kind", [
-    z.object({ kind: z.literal("none") }),
-    z.object({ kind: z.literal("primary-reward"), pending: PersistedPendingRewardUnionSchema }),
-    z.object({ kind: z.literal("companion-reward"), pending: PersistedPendingRewardUnionSchema }),
-    InterruptedFlowDestinationSchema,
-  ])
-  .catch({ kind: "none" as const });
-
-export type InterruptedFlow = z.infer<typeof InterruptedFlowSchema>;
+const PersistedRunActivitySchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("battle"), data: z.object({ battleState: PersistedBattleStateSchema }) }),
+  z.object({ kind: z.literal("rewards"), data: PersistedPendingRewardUnionSchema }),
+  z.object({
+    kind: z.literal("destination"),
+    data: z.object({
+      destinations: DestinationArraySchema,
+      selectedBossId: z.string().nullable().catch(null),
+      lastVictoryEnemyType: EnemyTypeSchema.nullable().catch(null),
+      lastVictoryContentSystem: ContentSystemIdSchema.nullable().catch(null),
+    }),
+  }),
+  z.object({ kind: z.literal("shop"), data: ShopObjectSchema }),
+  z.object({ kind: z.literal("alchemist"), data: AlchemistObjectSchema }),
+  z.object({ kind: z.literal("trinket-shop"), data: TrinketShopObjectSchema }),
+  z.object({ kind: z.literal("equipment-shop"), data: EquipmentShopObjectSchema }),
+  z.object({ kind: z.literal("mystery"), data: MysteryVisitObjectSchema.nullable().catch(null) }),
+  z.object({ kind: z.literal("corruption"), data: CorruptionResultPersistSchema }),
+  z.object({ kind: z.literal("campfire"), data: AlchemyVisitObjectSchema }),
+  z.object({ kind: z.literal("transmutation"), data: AlchemyVisitObjectSchema }),
+  z.object({ kind: z.literal("draft-deck") }),
+  z.object({ kind: z.literal("difficulty-select") }),
+  z.object({ kind: z.literal("labyrinth-map") }),
+  z.object({ kind: z.literal("wildwood-removal") }),
+]);
 
 const ActiveRunDataObjectSchema = z.object({
   ...RunProgressSchema.shape,
@@ -235,17 +208,7 @@ const ActiveRunDataObjectSchema = z.object({
   activeLabyrinthRewardModifiers: EncounterRewardTraitArraySchema,
   wildwoodDraft: WildwoodDraftStateSchema,
   starterDraftChoices: savedCardArraySchema("starterDraftChoices").nullable().catch(null),
-  activeCombat: ActiveCombatDataSchema.catch(null),
-  currentScreen: z.enum(ROUTE_SCREEN_VALUES).nullable().catch(null),
-  interruptedFlow: InterruptedFlowSchema,
-  shopState: ShopPersistSchema,
-  alchemistState: AlchemistPersistSchema,
-  trinketShopState: TrinketShopPersistSchema,
-  equipmentShopState: EquipmentShopPersistSchema,
-  mysteryVisit: MysteryVisitPersistSchema,
-  corruptionResult: CorruptionResultPersistSchema,
-  campfireState: AlchemyVisitSchema,
-  transmutationState: AlchemyVisitSchema,
+  activity: PersistedRunActivitySchema,
 });
 
 export type ValidatedActiveRunData = z.output<typeof ActiveRunDataObjectSchema>;
@@ -255,7 +218,7 @@ export const ActiveRunDataSchema = ActiveRunDataObjectSchema.transform(normalize
     (data) =>
       data.contentSystemType !== "labyrinth" ||
       data.labyrinthMap !== null ||
-      (data.characterId === "wildcard" && data.starterDraftChoices !== null && data.activeCombat === null),
+      (data.characterId === "wildcard" && data.starterDraftChoices !== null && data.activity.kind !== "battle"),
     { message: "Labyrinth runs require a valid labyrinth map or an unfinished Wildcard starter draft" },
   )
   .refine((data) => data.contentSystemType !== "wildwood" || data.wildwoodDraft !== null, {

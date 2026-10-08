@@ -119,9 +119,9 @@ Presentation failure or cancellation leaves complete, resumable gameplay.
 `run-loop/` splits each outcome into three layers: pure computation in
 `navigation/` (`reward-flow`, `reward-offers`, `victory-flow`, `mystery-flow`, `reward-math`),
 store commits in domain command modules (`reward-commands`, `victory-commands`, `destination-commands`, `progression-commands`, `wildwood-commands`, and `run-end-commands`), and
-navigation plus sound in `run-flow-*.ts` shells composed by `run/run-flow.ts`.
+navigation plus sound in `run/run-flow.ts`, with separate victory/defeat handlers needed before battle construction.
 `shell/run-flow-engine.ts` wires the factories to route actions. Reading order
-for a change: `run-flow.ts` → the `run-flow-*` file for the outcome → its
+for a change: `run-flow.ts` → its
 `*-commands` → the `navigation/` pure function. Victory Gold is settled once in
 `reward-math.ts` through `victory-flow.ts`; the saved purse and every reward
 screen derive from that same settlement. `reward-flow.ts` receives the settled
@@ -131,7 +131,7 @@ choice sampling. It returns a typed offer without run settlement fields;
 `reward-flow.ts` adds the reward state defaults, settled Gold, Materials, destinations,
 and post-claim routing.
 
-Single owners to know: `run/run-materials.ts` owns the run-earned Material grant
+Single owners to know: `shared/stores/run-materials.ts` owns the run-earned Material grant
 site inventory and end-of-run Material totals across all three modes;
 `battle/playback-gate.ts` owns the shared Card, Wish, and auto-end-turn gate
 (`isBattlePlaybackBlocked`, `usePlaybackBlocked`). `use-battle-autoplay.ts` selects
@@ -142,7 +142,7 @@ owns explicit playback phases, binding readiness, cancellation, timers, transfer
 is shared even when callers copy dependencies to strengthen a screen guard.
 `battle/battle-transfers.ts` supplies DOM measurements, sound, and timed transfer wiring.
 `battle/battle-session.ts` adapts that lifetime to presentation and delegates turn
-commit to `shared/stores/battle-commands.ts`; legacy recovery stays inside `shared/stores/battle-restore.ts`. Battle start
+commit to `shared/stores/battle-commands.ts`; restore hydrates committed snapshots; legacy activity conversion stays in the save migration. Battle start
 uses `shared/stores/battle-start-commands.ts` and then arms presentation. Fight feedback (floating numbers + shake + sound) is
 unified in `presentCombatTexts` in `battle/controller-utils.ts`; card overlay
 layers live beside their leaves (`card-ghost-overlay.tsx`,
@@ -218,7 +218,7 @@ One loading experience at cold start, then navigation through the shared fade �
 | Screen JS | `src/app/screen-routes/`                                                       | Static imports — **no** `React.lazy()`                                                                                                  |
 | SFX       | `use-app-effects.ts`                                                           | Critical sounds eager; rest on idle                                                                                                     |
 
-`StartupLoadingScreen` shows the wordmark filling left to right with the CTA gold (`text-primary`) over the 3s minimum display, rotating loading phrases below (`startup-loading-screen.tsx`) — no progress bar. The determinate readout lives on as the screen's `progressbar` ARIA value, still a smoothed meter of art decode, fonts, and save bootstrap (`startup-bar-progress.ts`) — not a timed CSS fill. `startup-load-state.ts` owns the reveal decision; `use-initial-load-ready.ts` supplies browser preload, font, timer, and animation-frame events. Reveal waits until that work has settled, the 3s minimum display has elapsed, **and** the eased display has caught 100%. A rejected essential art preload is logged and treated as settled so startup can continue. Deferred per-item gear art starts decoding as soon as essential art settles so it overlaps the minimum window, continuing in the background after reveal if unfinished. The pre-React `index.html` track uses an indeterminate gold comet (no progress, no header) until React mounts.
+`StartupLoadingScreen` shows the wordmark filling left to right with the CTA gold (`text-primary`) over the 3s minimum display, rotating loading phrases below (`startup-loading-screen.tsx`) — no progress bar. The determinate readout lives on as the screen's `progressbar` ARIA value, still a smoothed meter of art decode, fonts, and save bootstrap (`startup-load-state.ts`) — not a timed CSS fill. `startup-load-state.ts` owns the reveal decision; `use-initial-load-ready.ts` supplies browser preload, font, timer, and animation-frame events. Reveal waits until that work has settled, the 3s minimum display has elapsed, **and** the eased display has caught 100%. A rejected essential art preload is logged and treated as settled so startup can continue. Deferred per-item gear art starts decoding as soon as essential art settles so it overlaps the minimum window, continuing in the background after reveal if unfinished. The pre-React `index.html` track uses an indeterminate gold comet (no progress, no header) until React mounts.
 
 **Do not add:** `React.lazy()` on route screens; lazy game art; per-screen spinners for assets in `allGameArt`.
 

@@ -15,8 +15,6 @@ export interface VerificationCommand {
 
 export const SHARED_BUILD_PATTERNS: readonly string[];
 
-export const ROUTES: readonly VerificationRoute[];
-
 export function validateRouteCatalog(options?: { rootDir?: string }): string[];
 
 export function resolveRoutes(paths: string[]): VerificationRoute[];

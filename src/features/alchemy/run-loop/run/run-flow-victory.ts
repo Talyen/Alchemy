@@ -35,7 +35,7 @@ export function createVictoryHandlers(deps: RunOutcomeDeps, gameSession: GameSes
 
   function completeRunVictory(prepareNavigation?: () => void) {
     clearBattlePresentationUi(gameSession);
-    commitRunVictory(gameSession);
+    if (readRunSession(gameSession).hasActiveRun) commitRunVictory(gameSession);
     sessionFeedback(gameSession).playRunVictory();
     deps.actions.navigateTo(ROUTE_SCREENS.RUN_VICTORY, prepareNavigation);
   }

@@ -23,17 +23,27 @@ describe("waitForHttp", () => {
     );
   });
 
-  it("releases rejected response bodies before retrying", async () => {
-    vi.useFakeTimers();
-    const cancel = vi.fn(async () => {});
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => ({ ok: false, body: { cancel } })),
-    );
-    const waiting = waitForHttp("http://localhost:1234", { timeoutMs: 10, pollMs: 10 });
-    const outcome = waiting.catch((error: unknown) => error);
-    await vi.advanceTimersByTimeAsync(10);
-    expect(await outcome).toEqual(expect.objectContaining({ message: expect.stringContaining("Timed out") }));
-    expect(cancel).toHaveBeenCalledOnce();
-  });
+  it.each(["rejected status", "throwing validation"])(
+    "releases response bodies after %s before retrying",
+    async (failure) => {
+      vi.useFakeTimers();
+      const cancel = vi.fn(async () => {});
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => ({ ok: false, body: { cancel } })),
+      );
+      const waiting = waitForHttp("http://localhost:1234", {
+        timeoutMs: 10,
+        pollMs: 10,
+        accept: (response) => {
+          if (failure === "throwing validation") throw new Error("invalid response");
+          return response.ok;
+        },
+      });
+      const outcome = waiting.catch((error: unknown) => error);
+      await vi.advanceTimersByTimeAsync(10);
+      expect(await outcome).toEqual(expect.objectContaining({ message: expect.stringContaining("Timed out") }));
+      expect(cancel).toHaveBeenCalledOnce();
+    },
+  );
 });

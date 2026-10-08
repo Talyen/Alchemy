@@ -23,8 +23,8 @@ describe("support room resume after claiming combat rewards", () => {
         lastVictoryContentSystem: "labyrinth",
       },
     });
-    const saved = snapshotRun(undefined, defaultGameSession);
-    expect(saved.interruptedFlow.kind).toBe("none");
+    const saved = snapshotRun(defaultGameSession);
+    expect(saved.activity.kind).toBe(kind);
     restoreRun(saved, {}, {}, defaultGameSession);
     expect(readRunSession(defaultGameSession).activity.kind).toBe(kind);
   });
@@ -42,7 +42,7 @@ describe("support room resume after claiming combat rewards", () => {
           lastVictoryContentSystem: "campaign",
         },
       });
-      const saved = snapshotRun(undefined, defaultGameSession);
+      const saved = snapshotRun(defaultGameSession);
       restoreRun(saved, {}, {}, defaultGameSession);
       expect(readRunSession(defaultGameSession).activity).toEqual({ kind, data: visit });
     },

@@ -4,7 +4,7 @@ import {
   setBattleActiveForTest as mutateHasActiveBattle,
   replaceBattleForTest as mutateSyncedBattleState,
 } from "../../../../helpers/run-domain-store-test";
-import { awardRunEndMaterials } from "@/features/alchemy/run-loop/run/run-materials";
+import { awardRunEndMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { saveAlchemySaveData } from "@/features/alchemy/shared/storage";
 
 import { createGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";

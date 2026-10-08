@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AWARD_MATERIALS_CALL_SITES } from "@/features/alchemy/run-loop/run/run-materials";
+import { AWARD_MATERIALS_CALL_SITES } from "@/features/alchemy/shared/stores/run-materials";
 import { listNonTestSourceFiles, matchingFiles } from "./helpers";
 
 // Positive counterpart to the alchemy/no-run-earned-add-materials lint (which

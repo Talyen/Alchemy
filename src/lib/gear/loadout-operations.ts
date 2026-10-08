@@ -11,7 +11,7 @@ import {
   type GearSlot,
 } from "./types";
 
-export function isGearCompatibleWithSlot(definition: GearDefinition, slot: GearSlot): boolean {
+function isGearCompatibleWithSlot(definition: GearDefinition, slot: GearSlot): boolean {
   return definition.compatibleSlots.includes(slot);
 }
 

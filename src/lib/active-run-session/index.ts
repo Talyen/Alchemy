@@ -39,10 +39,9 @@ export type {
 } from "./shop-session-types";
 export type {
   ActiveRunData,
-  InterruptedFlow,
   LabyrinthPendingNodeId,
   PersistedAlchemistState,
-  PersistedBattleTransition,
+  PersistedRunActivity,
   PersistedEquipmentShopState,
   PersistedMysteryVisit,
   PersistedPendingReward,

@@ -1,3 +1,4 @@
+import { savedActivityFixture } from "../../fixtures/run-activity";
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
 import { critical, slow } from "../../playwright-tags";
@@ -74,7 +75,6 @@ test("shows an empty draft and updates the viewer after each pick", async ({ pag
   await injectSaveState(page, {
     contentSystemType: "wildwood",
     selectedDifficulty: null,
-    currentScreen: "draft-deck",
     runDeck: [],
     wildwoodDraft: {
       phase: "draft",
@@ -85,6 +85,7 @@ test("shows an empty draft and updates the viewer after each pick", async ({ pag
       currentCombatTraitIds: [],
       currentRewardTraitIds: [],
     },
+    activity: savedActivityFixture("draft-deck"),
   });
   await page.goto("/");
   await page.getByRole("button", { name: "View Deck · 0 cards" }).click();

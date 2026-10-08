@@ -1,3 +1,4 @@
+import { savedActivityFixture, savedActivityData } from "../../fixtures/run-activity";
 import { describe, it, expect } from "vitest";
 import { makeWildwoodDraft, parseActiveRunData, tombstonedCard, tombstonedCard2 } from "../../fixtures/active-run";
 import { createRunRngState, createSeededRng, stepRunRng } from "@/lib/rng";
@@ -115,19 +116,18 @@ describe("ActiveRunDataSchema empty-choice repair", () => {
   it("re-offers mystery cardChoices when all tombstoned and awaiting pick", () => {
     const rng = makeRng();
     const result = parseActiveRunData({
-      currentScreen: "mystery",
       runDeck: [{ id: "slash", effects: [] }],
       rng,
-      mysteryVisit: {
+      activity: savedActivityFixture("mystery", {
         event: findMysteryEvent("ancient-altar")!,
         chosenChoice: null,
         cardChoices: [tombstonedCard, tombstonedCard, tombstonedCard],
         grantedTrinketIds: [],
         grantedGear: [],
         chosenCardId: null,
-      },
+      }),
     });
-    const visit = result.mysteryVisit!;
+    const visit = savedActivityData(result, "mystery")!;
     expect(visit.cardChoices!.length).toBe(3);
     for (const card of visit.cardChoices!) expect(isTombstonedCardId(card.id)).toBe(false);
     expect(result.rng.counters.events).toBeGreaterThan(0);
@@ -136,19 +136,18 @@ describe("ActiveRunDataSchema empty-choice repair", () => {
   it("does not re-offer mystery when already picked", () => {
     const rng = makeRng();
     const result = parseActiveRunData({
-      currentScreen: "mystery",
       runDeck: [{ id: "slash", effects: [] }],
       rng,
-      mysteryVisit: {
+      activity: savedActivityFixture("mystery", {
         event: findMysteryEvent("ancient-altar")!,
         chosenChoice: null,
         cardChoices: [tombstonedCard, tombstonedCard, tombstonedCard],
         grantedTrinketIds: [],
         grantedGear: [],
         chosenCardId: "slash",
-      },
+      }),
     });
-    expect(result.mysteryVisit?.cardChoices).toEqual([]);
+    expect(savedActivityData(result, "mystery")?.cardChoices).toEqual([]);
     expect(result.rng.counters.events).toBe(0);
   });
 

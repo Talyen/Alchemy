@@ -16,6 +16,7 @@ import { ROUTE_SCREENS } from "@/lib/routing";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
+import { readRunRevision } from "@/features/alchemy/shared/stores/run-reads";
 
 function makeSession() {
   const playback = new PlaybackLifetime();
@@ -112,32 +113,31 @@ describe("createBattleSession", () => {
     expect(session.isCurrentBattleSession(2)).toBe(false);
   });
 
-  it("resetBattleSession bumps session id and cancels transfers", () => {
+  it("resetBattleSession cancels presentation without publishing a gameplay change", () => {
     const { session, playback } = makeSession();
     const cancel = vi.fn();
     playback.registerCancel(cancel);
+    const revision = readRunRevision(defaultGameSession);
     session.resetBattleSession();
     expect(playback.id).toBe(2);
     expect(cancel).toHaveBeenCalled();
+    expect(readRunRevision(defaultGameSession)).toBe(revision);
   });
 
-  it.each(["prepareBattleSessionForStart", "resetBattleSession"] as const)(
-    "%s releases marks from the previous battle session",
-    (reset) => {
-      const { session } = makeSession();
-      const name = battleStageMarkName("draw-end");
-      performance.clearMarks(name);
-      markBattleStage("draw-end");
-      markBattleStage("draw-end");
-      session.clearAllBattleTimeouts();
-      expect(performance.getEntriesByName(name, "mark")).toHaveLength(2);
-      session[reset]();
-      expect(performance.getEntriesByName(name, "mark")).toHaveLength(0);
-      markBattleStage("draw-end");
-      expect(performance.getEntriesByName(name, "mark")).toHaveLength(1);
-      performance.clearMarks(name);
-    },
-  );
+  it("resetBattleSession releases marks from the previous battle session", () => {
+    const { session } = makeSession();
+    const name = battleStageMarkName("draw-end");
+    performance.clearMarks(name);
+    markBattleStage("draw-end");
+    markBattleStage("draw-end");
+    session.clearAllBattleTimeouts();
+    expect(performance.getEntriesByName(name, "mark")).toHaveLength(2);
+    session.resetBattleSession();
+    expect(performance.getEntriesByName(name, "mark")).toHaveLength(0);
+    markBattleStage("draw-end");
+    expect(performance.getEntriesByName(name, "mark")).toHaveLength(1);
+    performance.clearMarks(name);
+  });
 
   it("resetBattleSession clears portrait impact cues", () => {
     battlePresentation.setState({

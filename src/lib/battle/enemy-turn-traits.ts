@@ -21,21 +21,12 @@ function isEveryOtherTurnScalingTurn(state: { turn: number }): boolean {
   return state.turn % 2 === 0;
 }
 
-type FreezeAspect = "regen" | "scaling";
-
-export function isFreezeActiveForAspect(state: BattleState, aspect: FreezeAspect): boolean {
-  if (state.enemyCC.freezeSkipTurns <= 0) return false;
-  if (aspect === "regen") return state.talentEffects.freezeBlocksRegen;
-  return state.talentEffects.freezePreventsEnemyScaling;
-}
-
 export function scaleByRoomMultiplier(state: BattleState, value: number): number {
   return Math.round(value * state.roomScalingMultiplier);
 }
 
 export function processEnemyRegeneration(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (state.enemyRegeneration <= 0) return state;
-  if (isFreezeActiveForAspect(state, "regen")) return state;
   let nextState = applyEnemyHealingWithCombatText(state, state.enemyRegeneration, combatTexts);
   if (nextState.enemyHealth > state.enemyHealth && hasEnemyTrait(state, "regeneration"))
     nextState = recordEnemyAbilityActivation(nextState, "regeneration");
@@ -167,7 +158,8 @@ function processTraitHandler(
   const traitHandler = enemyTraitTurnStartHandlers.get(trait.id);
   if (traitHandler) {
     if (traitHandler.everyOtherTurn && !isEveryOtherTurnScalingTurn(state)) return state;
-    return traitHandler.handler(recordEnemyAbilityActivation(state, trait.id), combatTexts);
+    const updated = traitHandler.handler(state, combatTexts);
+    return updated === state ? state : recordEnemyAbilityActivation(updated, trait.id);
   }
   if (!PASSIVE_ONLY_TRAITS.has(trait.id) && !REACTION_ONLY_TRAITS.has(trait.id)) {
     console.warn(`[Battle] No turn-start handler for trait: ${trait.id}`);
@@ -182,7 +174,6 @@ function processDifficultyModifier(
   modifier: DifficultyModifier,
   state: BattleState,
   combatTexts: CombatTextEvent[],
-  scalingBlocked: boolean,
 ): BattleState {
   if (!Object.hasOwn(difficultyTurnStartHandlers, modifier.kind)) {
     console.warn(`[Battle] No turn-start handler for difficulty modifier: ${modifier.kind}`);
@@ -194,28 +185,23 @@ function processDifficultyModifier(
   }
   const handler = difficultyTurnStartHandlers[modifier.kind];
   if (!handler) return state;
-  if (modifier.kind === "enemy-gains-forge-each-turn" && scalingBlocked) return state;
   return handler(state, combatTexts);
 }
 
 export function processEnemyTraits(state: BattleState, combatTexts: CombatTextEvent[]) {
   let nextState = state;
-  const scalingBlocked = isFreezeActiveForAspect(nextState, "scaling");
-
-  if (!scalingBlocked) {
-    for (const trait of nextState.currentEnemy.traits) {
-      try {
-        nextState = processTraitHandler(trait, nextState, combatTexts);
-      } catch (err) {
-        if (import.meta.env.DEV) throw err;
-        reportHandlerFailure(`Enemy trait handler for ${trait.id}`, err);
-      }
+  for (const trait of nextState.currentEnemy.traits) {
+    try {
+      nextState = processTraitHandler(trait, nextState, combatTexts);
+    } catch (err) {
+      if (import.meta.env.DEV) throw err;
+      reportHandlerFailure(`Enemy trait handler for ${trait.id}`, err);
     }
   }
 
   for (const modifier of nextState.difficultyModifiers) {
     try {
-      nextState = processDifficultyModifier(modifier, nextState, combatTexts, scalingBlocked);
+      nextState = processDifficultyModifier(modifier, nextState, combatTexts);
     } catch (err) {
       if (import.meta.env.DEV) throw err;
       reportHandlerFailure(`Difficulty modifier handler for ${modifier.kind}`, err, { kind: modifier.kind });

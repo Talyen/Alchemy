@@ -5,12 +5,13 @@ import {
   dispatchRunSessionCommand,
   rejectCommand,
   snapshotTransactionValue,
+  type RunTransaction,
 } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   createDraftRunRandomSource,
+  initializeBattle,
   setPendingCharacterId,
   setRunDeck,
-  setRunProgressActivity,
   setWildwoodDraft,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
@@ -19,40 +20,50 @@ import {
   canCompleteWildwoodDraft,
   canPrepareNextWildwoodBoss,
   enterWildwoodBattle,
-  enterWildwoodRemoval,
   offeredWildwoodDraftCard,
   pickWildwoodDraftCard,
   prepareNextWildwoodBoss,
   removeWildwoodCard,
 } from "@/lib/content-systems/wildwood/gauntlet";
+export function prepareWildwoodBossInDraft(draft: RunTransaction, removeIndex?: number) {
+  const state = draft.session.wildwoodDraft;
+  const deck = draft.run.activeRun.runDeck;
+  if (!state || !canPrepareNextWildwoodBoss(snapshotTransactionValue(state), deck.length)) return null;
+  const nextDeck =
+    removeIndex === undefined
+      ? deck
+      : removeWildwoodCard(snapshotTransactionValue(state), snapshotTransactionValue(deck), removeIndex);
+  if (!nextDeck) return null;
+  const prepared = prepareNextWildwoodBoss(
+    snapshotTransactionValue(state),
+    deck.length,
+    createDraftRunRandomSource(draft, "world"),
+  );
+  if (!prepared) return null;
+  const battle = enterWildwoodBattle(prepared.state);
+  if (!battle) return null;
+  if (removeIndex !== undefined) setRunDeck(draft, nextDeck);
+  setWildwoodDraft(draft, battle);
+  return { bossId: prepared.bossId, modifierId: prepared.modifierId };
+}
 export function prepareWildwoodBoss(removeIndex: number | undefined, gameSession: GameSession) {
   return dispatchRunSessionCommand(
     (draft) => {
-      const state = draft.session.wildwoodDraft;
-      const deck = draft.run.activeRun.runDeck;
-      if (!state || !canPrepareNextWildwoodBoss(snapshotTransactionValue(state), deck.length))
-        return rejectCommand("Wildwood action is unavailable", null);
-      const nextDeck =
-        removeIndex === undefined
-          ? deck
-          : removeWildwoodCard(snapshotTransactionValue(state), snapshotTransactionValue(deck), removeIndex);
-      if (!nextDeck) return rejectCommand("Wildwood action is unavailable", null);
-      const prepared = prepareNextWildwoodBoss(
-        snapshotTransactionValue(state),
-        deck.length,
-        createDraftRunRandomSource(draft, "world"),
-      );
-      if (!prepared) return rejectCommand("Wildwood action is unavailable", null);
-      const battle = enterWildwoodBattle(prepared.state);
-      if (!battle) return rejectCommand("Wildwood action is unavailable", null);
-      if (removeIndex !== undefined) setRunDeck(draft, nextDeck);
-      setWildwoodDraft(draft, battle);
-      return acceptCommand({ bossId: prepared.bossId, modifierId: prepared.modifierId });
+      const result = prepareWildwoodBossInDraft(draft, removeIndex);
+      if (!result) return rejectCommand("Wildwood action is unavailable", null);
+      const battleStarted = initializeBattle(draft, {
+        kind: "boss-by-id",
+        options: { bossId: result.bossId, wildwoodModifierId: result.modifierId },
+      });
+      return battleStarted
+        ? acceptCommand({ ...result, battleStarted })
+        : rejectCommand("Wildwood battle cannot start", null);
     },
     undefined,
     gameSession,
   );
 }
+
 export function chooseWildwoodDraftCard(cardId: string, gameSession: GameSession): void {
   const picked = dispatchRunSessionCommand(
     (draft) => {
@@ -90,22 +101,6 @@ export function completeWildwoodDraft(gameSession: GameSession): boolean {
         return rejectCommand("Wildwood action is unavailable", false);
       setPendingCharacterId(draft, null);
       return acceptCommand(true);
-    },
-    undefined,
-    gameSession,
-  );
-}
-export function prepareWildwoodRemoval(gameSession: GameSession): void {
-  dispatchRunSessionCommand(
-    (draft) => {
-      const current = draft.session.wildwoodDraft;
-      if (!current) return rejectCommand("There is no Wildwood draft", undefined);
-      const next = enterWildwoodRemoval(snapshotTransactionValue(current));
-      if (!next) return rejectCommand("Wildwood removal is unavailable", undefined);
-      setWildwoodDraft(draft, next);
-      setRunProgressActivity(draft, "wildwood-removal");
-
-      return acceptCommand();
     },
     undefined,
     gameSession,

@@ -48,7 +48,6 @@ const DAMAGE_MODIFIER_SOURCES: Record<DamageType, DamageModifierSources> = {
     talentBonus: "flatNatureDamage",
     gearBonus: "flatNatureDamage",
     gearResistance: "resistNature",
-    talentReduction: "natureDamageReduction",
     talentHalfDamage: "receiveHalfNatureDamage",
   },
   poison: {
@@ -80,23 +79,14 @@ export function flatDamageReduction(talents: TalentEffectManifest, type: string 
   return key ? (talents[key] ?? 0) : 0;
 }
 
-export function receivesHalfDamage(talents: TalentEffectManifest, type: string | undefined): boolean {
-  const key = sources(type)?.talentHalfDamage;
-  return key ? talents[key] : false;
-}
-
-export function gearResistancePercent(gear: GearEffectManifest, type: string | undefined): number {
-  const key = sources(type)?.gearResistance;
-  return key ? gear[key] : 0;
-}
-
 export function scaleReceivedPlayerDamage(
   damage: number,
   talentEffects: BattleSnapshot["talentEffects"],
   damageType: string | undefined,
 ): number {
   if (damage <= 0) return damage;
-  return receivesHalfDamage(talentEffects, damageType) ? halveRounded(damage) : damage;
+  const key = sources(damageType)?.talentHalfDamage;
+  return key && talentEffects[key] ? halveRounded(damage) : damage;
 }
 
 export function applyGearDamageResistance(
@@ -104,6 +94,6 @@ export function applyGearDamageResistance(
   damageType: string | undefined,
   gear: GearEffectManifest,
 ): number {
-  const resist = gearResistancePercent(gear, damageType);
-  return applyPercentReduction(damage, resist, PERCENT_DENOMINATOR);
+  const key = sources(damageType)?.gearResistance;
+  return applyPercentReduction(damage, key ? gear[key] : 0, PERCENT_DENOMINATOR);
 }

@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
-import { checkHealthThresholds } from "@/lib/battle/status-player";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("gameplay interaction regressions", () => {
@@ -44,7 +43,7 @@ describe("gameplay interaction regressions", () => {
     expect(result.enemyMitigation.forge).toBe(2);
   });
 
-  it.each([0, 3])("Freeze blocks regeneration and %i pending Leech throughout its last skipped turn", (bleed) => {
+  it.each([0, 3])("the last Frozen turn still resolves regeneration and %i pending Bleed Leech once", (bleed) => {
     const state = patchBattleState({
       rng: () => 0.99,
       enemyHealth: 50,
@@ -53,16 +52,12 @@ describe("gameplay interaction regressions", () => {
       playerStatuses: { bleed },
       pendingEnemyBleedLeechHealing: bleed,
       enemyCC: { freezeSkipTurns: 1 },
-      talentEffects: { freezeBlocksRegen: true },
       deck: [makeTestCard()],
     });
     const result = endPlayerTurn(state).state;
     expect(result.enemyCC.freezeSkipTurns).toBe(0);
-    expect(result.enemyHealth).toBe(50);
-    expect(
-      endPlayerTurn({ ...state, talentEffects: { ...state.talentEffects, freezeBlocksRegen: false } }).state
-        .enemyHealth,
-    ).toBe(55 + Math.round(bleed / 2));
+    expect(result.enemyHealth).toBe(55 + Math.round(bleed / 2));
+    expect(result.pendingEnemyBleedLeechHealing).toBe(0);
   });
 
   it("Mortar and Pestle preserves the critical hit reserved for the next attack", () => {
@@ -78,16 +73,5 @@ describe("gameplay interaction regressions", () => {
     const result = playBattleCardResolved(state, potion.id, 0).state;
     expect(result.enemyHealth).toBe(98);
     expect(result.flags.nextHitCrit).toBe(true);
-  });
-
-  it("Steadfast preserves the first Armor card bonus for the card itself", () => {
-    const state = patchBattleState({
-      playerHealth: 49,
-      playerMaxHealth: 100,
-      talentEffects: { healthThresholdArmor: [{ threshold: 50, amount: 3 }], firstArmorCardDoubled: true },
-    });
-    const result = checkHealthThresholds(50, 49, state, []);
-    expect(result.playerStatuses.armor).toBe(3);
-    expect(result.flags.firstArmorCardDoubledUsed).toBe(false);
   });
 });

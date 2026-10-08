@@ -28,18 +28,16 @@ describe("combat reward ordering", () => {
     expect(result.exhausted).toContainEqual(card);
   });
 
-  it("Dodge Armor receives Reinforced and Last Stand and triggers Armored Surge", () => {
+  it("Footwork Block triggers Armored Surge with Reinforced and Last Stand", () => {
     const state = patchBattleState({
       rng: () => 0.01,
       playerHealth: 10,
       playerMaxHealth: 40,
       talentEffects: {
-        armorOnDodge: 1,
-        flatArmorAmount: 1,
+        dodgeBlockAmount: 2,
+        armorOnBlockChance: 100,
+        armorDoubleChance: 100,
         armorLowHealthBonusPercent: 100,
-        firstArmorCardDoubled: true,
-        armorBlockThreshold: 4,
-        armorBlockAmount: 8,
       },
     });
     const result = applyEnemyAbility(
@@ -47,9 +45,8 @@ describe("combat reward ordering", () => {
       makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 2 }] }),
       [],
     );
-    expect(result.playerStatuses.armor).toBe(4);
-    expect(result.playerStatuses.block).toBe(8);
-    expect(result.flags.firstArmorCardDoubledUsed).toBe(false);
+    expect(result.playerStatuses.armor).toBe(8);
+    expect(result.playerStatuses.block).toBe(2);
   });
 
   it.each([true, false])(

@@ -2,16 +2,16 @@ import { setBattleActiveForTest as setHasActiveBattle } from "../../../../helper
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/features/alchemy/shared/storage", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/shared/storage")>();
+vi.mock("@/features/alchemy/shared/storage/io", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/shared/storage/io")>();
   return {
     ...actual,
     clearAlchemySaveData: vi.fn(),
   };
 });
 
+import { clearAlchemySaveData } from "@/features/alchemy/shared/storage/io";
 import {
-  clearAlchemySaveData,
   defaultSaveData,
   DEVICE_DISPLAY_STORAGE_KEY,
   readDeviceDisplayPreferences,
@@ -42,6 +42,7 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { resetProfileForTest, resetRunDomainStore, setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/app/application-session";
+import { deferred } from "../../../../helpers/deferred";
 
 const mockedClearSave = vi.mocked(clearAlchemySaveData);
 
@@ -57,18 +58,23 @@ beforeEach(() => {
 });
 
 describe("clearAllPersistentGameData", () => {
-  it("wipes app, run permanent data, and homestead after a successful disk clear", async () => {
+  it("clears progression and live combat together while preserving device display sizes", async () => {
     dispatchRunSessionCommand(
       (draft) => {
         addMaterialsToStockpile(draft, { wood: 10, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
         setDiscoveredCardIds(draft, ["card-a"]);
-
+        setHasActiveRun(draft, true);
+        setHasActiveBattle(draft, true);
         return acceptCommand();
       },
       undefined,
       defaultGameSession,
     );
     setRunProgress({ unlockedTalents: { physical: ["test-talent"] } });
+    useUiStore.getState().setShowClearSaveConfirm(true);
+    useDeviceDisplayStore.getState().setGameSizePercent(85);
+    useDeviceDisplayStore.getState().setTooltipSizePercent(120);
+    flushDeviceDisplayPreferences();
 
     await expect(clearAllPersistentGameData(defaultGameSession)).resolves.toBe(true);
 
@@ -77,41 +83,31 @@ describe("clearAllPersistentGameData", () => {
     expect(readRunProfile(defaultGameSession).unlockedTalents).toEqual({});
     expect(readProfileStore(defaultGameSession).discoveredCardIds).toEqual(defaultSaveData.discoveredCardIds);
     expect(readProfileStore(defaultGameSession).discoveredCardIds).not.toContain("card-a");
-  });
-
-  it("tears down the live run, session, and battle alongside the wipe", async () => {
-    dispatchRunSessionCommand(
-      (draft) => {
-        setHasActiveRun(draft, true);
-        setHasActiveBattle(draft, true);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
-
-    await expect(clearAllPersistentGameData(defaultGameSession)).resolves.toBe(true);
-
     expect(readRunSession(defaultGameSession).hasActiveRun).toBe(false);
     expect(readBattle(defaultGameSession).hasActiveBattle).toBe(false);
     expect(readActiveRun(defaultGameSession).roomsEncountered).toBe(0);
     expect(readActiveRunScreen(defaultGameSession)).toBe(ROUTE_SCREENS.MENU);
-  });
-
-  it("closes the clear-save dialog but preserves device display sizes on wipe", async () => {
-    useUiStore.getState().setShowClearSaveConfirm(true);
-    useDeviceDisplayStore.getState().setGameSizePercent(85);
-    useDeviceDisplayStore.getState().setTooltipSizePercent(120);
-    flushDeviceDisplayPreferences();
-
-    await expect(clearAllPersistentGameData(defaultGameSession)).resolves.toBe(true);
-
     // The dialog is transient UI and closes with the wipe; device sizes live
     // outside the versioned save and survive it (Reset Options is their reset).
     expect(useUiStore.getState().showClearSaveConfirm).toBe(false);
     expect(useDeviceDisplayStore.getState()).toMatchObject({ gameSizePercent: 85, tooltipSizePercent: 120 });
     expect(readDeviceDisplayPreferences()).toMatchObject({ gameSizePercent: 85, tooltipSizePercent: 120 });
+  });
+
+  it("rejects a second clear while the disk operation is pending, then releases the guard after failure", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const disk = deferred<boolean>();
+    mockedClearSave.mockReturnValueOnce(disk.promise);
+    useUiStore.getState().setShowClearSaveConfirm(true);
+    const first = clearAllPersistentGameData(defaultGameSession);
+    await expect(clearAllPersistentGameData(defaultGameSession)).resolves.toBe(false);
+    expect(mockedClearSave).toHaveBeenCalledOnce();
+    expect(useUiStore.getState().showClearSaveConfirm).toBe(true);
+    disk.resolve(false);
+    await expect(first).resolves.toBe(false);
+    await expect(clearAllPersistentGameData(defaultGameSession)).resolves.toBe(true);
+    expect(mockedClearSave).toHaveBeenCalledTimes(2);
+    expect(useUiStore.getState().showClearSaveConfirm).toBe(false);
   });
 
   it("leaves memory intact when the disk wipe fails", async () => {

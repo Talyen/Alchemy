@@ -105,20 +105,22 @@ describe("Unique Gear damage forge", () => {
     expect(advanceToPlayerTurn(restored).playerStatuses.forge).toBe(5);
   });
 
-  it("Patient Edge recovery triggers crossed Forge thresholds without multiplying the recovered amount", () => {
+  it("Patient Edge restores attack spending once without gain bonuses or fight pacing", () => {
     const initial = battle({
       gearEffects: { recoverSpentForge: 1 },
-      playerStatuses: { forge: 5 },
+      playerStatuses: { forge: 5, burn: 1 },
+      playerHealth: 10,
+      appliesFightPacing: true,
       enemyMitigation: { armor: 4 },
       uniqueGear: { spentForge: 1 },
-      talentEffects: { flatForgeGained: 3, forgeStripArmorThreshold: 6, forgeBlockThreshold: 6, forgeBlockAmount: 10 },
+      talentEffects: { forgeBurningBonusPercent: 100, forgeDoubleChance: 100, forgeLowHealthBonusPercent: 100 },
     });
     const restored = advanceToPlayerTurn(initial);
     expect(restored.playerStatuses.forge).toBe(6);
-    expect(restored.enemyMitigation.armor).toBe(0);
-    expect(restored.playerStatuses.block).toBe(10);
+    expect(restored.enemyMitigation.armor).toBe(4);
+    expect(restored.playerStatuses.block).toBe(0);
     expect(restored.uniqueGear.spentForge).toBe(0);
-    expect(advanceToPlayerTurn(restored).playerStatuses.block).toBe(5);
+    expect(advanceToPlayerTurn(restored).playerStatuses.forge).toBe(6);
   });
 
   it("Golden Crucible grants actual Gold as Forge, spends no Gold, and strengthens Holy", () => {

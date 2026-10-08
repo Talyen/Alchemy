@@ -1,3 +1,4 @@
+import { setRunProgressActivity } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderHook, act, cleanup } from "@testing-library/react";
 import { useAlchemyAutosaveFromStores } from "@/app/use-app-save-state";
@@ -142,6 +143,7 @@ describe("useAlchemyAutosaveFromStores", () => {
       dispatchRunSessionCommand(
         (draft) => {
           setHasActiveRun(draft, true);
+          setRunProgressActivity(draft, "destination");
           setGold(draft, 91);
 
           return acceptCommand();

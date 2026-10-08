@@ -1,8 +1,7 @@
+import { savedActivityFixture, savedActivityData } from "../../../../fixtures/run-activity";
 import { describe, expect, it } from "vitest";
 import { parseActiveRun } from "@/lib/active-run-session";
-import { normalizeSaveData } from "../../../../helpers/parse-save-for-tests";
 import { defaultBattleState } from "@/lib/battle";
-import { repairPersistedTrinketManifest } from "@/lib/validation/normalize-persisted-battle-state";
 import { cardLibrary, enemyById } from "@/lib/game-data";
 import { makeRunCandidate } from "../../../../fixtures/active-run";
 import { gridLabyrinthMapFixture } from "../../../../fixtures/labyrinth-map";
@@ -49,7 +48,7 @@ describe("parseActiveRun", () => {
     expect(result!.selectedDifficulty).toBe("difficulty-1");
     expect(result!.encounteredRunEnemyIds).toEqual([]);
     expect(result!.labyrinthMap).toBeNull();
-    expect(result!.activeCombat).toBeNull();
+    expect(savedActivityData(result!, "battle")).toBeNull();
   });
 
   it("normalizes encountered run enemy IDs", () => {
@@ -199,35 +198,11 @@ describe("parseActiveRun", () => {
 
   it("normalizes valid active combat data", () => {
     const battleState = { ...defaultBattleState(), turn: 2, playerHealth: 11 };
-    const result = parseActiveRun(makeRunCandidate({ activeCombat: { battleState } }));
+    const result = parseActiveRun(makeRunCandidate({ activity: savedActivityFixture("battle", { battleState }) }));
 
-    expect(result!.activeCombat?.battleState.turn).toBe(2);
-    expect(result!.activeCombat?.battleState.playerHealth).toBe(11);
+    expect(savedActivityData(result!, "battle")?.battleState.turn).toBe(2);
+    expect(savedActivityData(result!, "battle")?.battleState.playerHealth).toBe(11);
     expect(result!.labyrinthPendingNode).toBeNull();
-  });
-
-  it("reconciles default trinketEffects from runBoons on resume", () => {
-    const battleState = defaultBattleState();
-    const legacyBattleState = { ...battleState };
-    delete (legacyBattleState as { trinketEffects?: unknown }).trinketEffects;
-
-    const migrated = normalizeSaveData({
-      saveSchemaVersion: 3,
-      activeRun: {
-        ...makeRunCandidate({
-          runBoons: ["bone-charm"],
-          activeCombat: { battleState: legacyBattleState },
-        }),
-      },
-    });
-
-    const parsedBattle = migrated.activeRun?.activeCombat?.battleState;
-    expect(parsedBattle).toBeTruthy();
-
-    expect(parsedBattle!.trinketEffects.boneCharmHealOnKill).toBe(0);
-    expect(
-      repairPersistedTrinketManifest(parsedBattle!, migrated.activeRun!.runBoons).trinketEffects.boneCharmHealOnKill,
-    ).toBe(3);
   });
 
   it("normalizes nested battle defaults and removes retired encounter traits", () => {
@@ -245,19 +220,23 @@ describe("parseActiveRun", () => {
       },
     };
 
-    const result = parseActiveRun(makeRunCandidate({ activeCombat: { battleState: legacyBattleState } }));
+    const result = parseActiveRun(
+      makeRunCandidate({ activity: savedActivityFixture("battle", { battleState: legacyBattleState }) }),
+    );
 
-    expect(result!.activeCombat?.battleState.flags.divineAegisTriggered).toBe(false);
-    expect(result!.activeCombat?.battleState.currentEnemy.traits.map((trait) => trait.id)).toEqual([
+    expect(savedActivityData(result!, "battle")?.battleState.flags.divineAegisTriggered).toBe(false);
+    expect(savedActivityData(result!, "battle")?.battleState.currentEnemy.traits.map((trait) => trait.id)).toEqual([
       "regeneration",
       "tempered",
     ]);
   });
 
   it("drops invalid active combat data", () => {
-    const result = parseActiveRun(makeRunCandidate({ activeCombat: { battleState: { turn: 2 } } }));
+    const result = parseActiveRun(
+      makeRunCandidate({ activity: savedActivityFixture("battle", { battleState: { turn: 2 } }) }),
+    );
 
-    expect(result!.activeCombat).toBeNull();
+    expect(savedActivityData(result!, "battle")).toBeNull();
   });
 });
 
@@ -309,17 +288,19 @@ describe("parseActiveRun with labyrinth map", () => {
         contentSystemType: "labyrinth",
         labyrinthMap: map as unknown as Record<string, unknown>,
         labyrinthPendingNode: combat.id,
-        activeCombat: {
+        activeLabyrinthModifiers: ["tempered", "unknown"],
+        activeLabyrinthRewardModifiers: ["generous"],
+        activity: savedActivityFixture("battle", {
           battleState: defaultBattleState(),
           activeLabyrinthModifiers: ["tempered", "unknown"],
           activeLabyrinthRewardModifiers: ["generous"],
-        },
+        }),
       }),
     );
 
     expect(result!.labyrinthPendingNode).toBe(combat.id);
-    expect(result!.activeCombat?.activeLabyrinthModifiers).toEqual(["tempered"]);
-    expect(result!.activeCombat?.activeLabyrinthRewardModifiers).toEqual(["generous"]);
+    expect(result!.activeLabyrinthModifiers).toEqual(["tempered"]);
+    expect(result!.activeLabyrinthRewardModifiers).toEqual(["generous"]);
   });
 });
 

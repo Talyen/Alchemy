@@ -281,8 +281,8 @@ describe("enemy card effects", () => {
     const base = enemyState();
     const state = {
       ...base,
-      talentEffects: { ...base.talentEffects, flatPhysicalDamage: 100, flatArmorAmount: 100, forgeBlockPercent: 100 },
-      gearEffects: { ...base.gearEffects, flatBlockGained: 100 },
+      talentEffects: { ...base.talentEffects, flatPhysicalDamage: 100, armorDoubleChance: 100, forgeBlockPercent: 100 },
+      gearEffects: { ...base.gearEffects, flatBlockGained: 100, flatArmorGained: 100 },
       playerStatuses: { ...base.playerStatuses, forge: 100 },
     };
     const cardBefore = JSON.stringify(cardById["shield-bash"]);

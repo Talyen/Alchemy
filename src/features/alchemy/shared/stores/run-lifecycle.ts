@@ -1,31 +1,32 @@
+import { settleRunEnd } from "./write/run-end";
+import { setScreen } from "./write/run-navigation";
 import { buildAlchemySaveDataFromStores } from "../storage/persistence";
 import { saveAlchemySaveData } from "../storage/io";
 import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
-import type { ActiveRunData, RunRecap } from "@/lib/active-run-session";
-import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
+import type { ActiveRunData } from "@/lib/active-run-session";
+
 import type { TalentXP, UnlockedTalents } from "@/lib/game-data";
 import { isEditionRunAvailable } from "@/lib/game-edition";
-import { emptyInventory } from "@/lib/homestead/inventory";
+
 import type { MaterialInventory } from "@/lib/homestead/types";
-import type { Screen } from "@/lib/routing";
+
 import { logStorageFailure } from "@/lib/storage-logging";
 import { current, isDraft } from "immer";
 import type { GameSession } from "./game-session-types";
 import { dispatchGameplayCommand, type GameplayDraft } from "./gameplay-command";
-import { getRunSession, readRunResumeScreen } from "./run-reads";
+import { getRunSession, readHasActiveRun } from "./run-reads";
 import { applyRestoreRunToDraft } from "./run-restore";
 import { encodeRunResumeSnapshot } from "./run-resume-codec";
 import type { RunTransaction } from "./run-session-command";
 import { acceptCommand, rejectCommand } from "./run-session-command";
 import {
   applyTalentState,
-  captureRunRecap,
+  awardRunEndMaterials,
+  finalizeRunXP,
   clearTransientSession,
   cloneRunObtainedItem,
   resetNavigation,
   resetProgress,
-  setFinishedRunCharacters,
-  setHasActiveRun,
   setRunEndCurrencies,
   setRunEndItems,
   setRunEndLabyrinthFloor,
@@ -33,39 +34,42 @@ import {
   setRunPlayerHealth,
 } from "./run-session-write-port";
 import { sessionRuntime } from "./session-runtime";
-import { openRunTransaction } from "./transaction-internal";
 
 export function restoreRun(
   activeRun: ActiveRunData | null,
   talentXP: TalentXP,
   unlockedTalents: UnlockedTalents,
   gameSession: GameSession,
+  options?: { abandonIncompatibleBattle?: boolean },
 ): void {
   dispatchGameplayCommand(
     (draft) => {
       applyTalentState(draft, talentXP, unlockedTalents);
       applyRestoreRunToDraft(draft, activeRun && isEditionRunAvailable(activeRun) ? activeRun : null);
 
-      return acceptCommand();
+      const abandoned = Boolean(
+        options?.abandonIncompatibleBattle &&
+        activeRun &&
+        abandonRunInDraft(draft, { awardRunEndMaterials, finalizeRunXP }),
+      );
+      if (abandoned) setScreen(draft, "game-over");
+      return acceptCommand(abandoned);
     },
-    undefined,
+    {
+      afterCommit: (abandoned) => {
+        if (abandoned) afterAbandonRun(gameSession);
+      },
+    },
     gameSession,
   );
 }
 
-export function resolveActiveRunForSave(
-  hasActiveRun: boolean,
-  screen: Screen | undefined,
-  gameSession: GameSession,
-): ActiveRunData | null {
-  return hasActiveRun ? snapshotRun(screen, gameSession) : null;
+export function resolveActiveRunForSave(gameSession: GameSession): ActiveRunData | null {
+  return readHasActiveRun(gameSession) ? snapshotRun(gameSession) : null;
 }
 
-export function snapshotRun(screen: Screen | undefined, gameSession: GameSession): ActiveRunData {
-  return encodeRunResumeSnapshot(
-    getRunSession(undefined, gameSession),
-    screen ?? readRunResumeScreen(gameSession) ?? undefined,
-  );
+export function snapshotRun(gameSession: GameSession): ActiveRunData {
+  return encodeRunResumeSnapshot(getRunSession(undefined, gameSession));
 }
 
 export function syncRunToBattleStart(draft: RunTransaction, playerHealth?: number): number {
@@ -117,51 +121,12 @@ function flushSave(activeRun: ActiveRunData | null, message: string, gameSession
   );
 }
 
-function flushSaveAfterRunEnd(gameSession: GameSession): void {
+export function flushSaveAfterRunEnd(gameSession: GameSession): void {
   flushSave(null, "Failed to flush save after run end", gameSession);
 }
 
 export function flushSaveAfterGearMutation(activeRun: ActiveRunData | null, gameSession: GameSession): void {
   flushSave(activeRun, "Failed to flush save after gear mutation", gameSession);
-}
-
-function finalizeRunEndSessionState(
-  options: {
-    awardRunEndMaterials: (transaction: RunTransaction) => MaterialInventory;
-    finalizeRunXP: (transaction: RunTransaction) => void;
-  },
-  draft: GameplayDraft,
-  ending: RunRecap["ending"],
-): MaterialInventory {
-  const session = draft.session;
-
-  if (session.activity.kind === "inactive") {
-    return emptyInventory();
-  }
-
-  const activeChar = draft.run.activeRun.characterId;
-  setFinishedRunCharacters(draft, (prev) => {
-    if (prev.includes(activeChar)) return prev;
-    return [...prev, activeChar];
-  });
-
-  const scope = openRunTransaction(draft);
-  let homesteadBonus: MaterialInventory;
-  try {
-    homesteadBonus = options.awardRunEndMaterials(scope.transaction);
-    captureRunRecap(draft, ending);
-    options.finalizeRunXP(scope.transaction);
-  } finally {
-    scope.close();
-  }
-  setRunEndItems(draft, draft.run.activeRun.runObtainedItems.map(cloneRunObtainedItem));
-  if (draft.run.activeRun.contentSystemType === CONTENT_SYSTEMS.LABYRINTH) {
-    const floor = draft.session.labyrinthMap?.currentFloor ?? null;
-    setRunEndLabyrinthFloor(draft, floor);
-  }
-
-  setHasActiveRun(draft, false);
-  return homesteadBonus;
 }
 
 export function finalizeRunEndSession(
@@ -172,7 +137,7 @@ export function finalizeRunEndSession(
   gameSession: GameSession,
 ): MaterialInventory {
   return dispatchGameplayCommand(
-    (draft) => acceptCommand(finalizeRunEndSessionState(options, draft, "victory")),
+    (draft) => acceptCommand(settleRunEnd(options, draft, "victory")),
     {
       afterCommit: () => {
         flushSaveAfterRunEnd(gameSession);
@@ -191,39 +156,43 @@ export function abandonRun(
   gameSession: GameSession,
 ): boolean {
   return dispatchGameplayCommand(
-    (draft) => {
-      if (draft.session.activity.kind === "inactive") return rejectCommand("There is no active run to abandon", false);
-      finalizeRunEndSessionState(options, draft, "abandoned");
-      // The battle route retains its outgoing display; ending activity removes
-      // command access to combat immediately. Preserve the recap
-      // snapshot: manual End Run always shows the End Run screen. Copy the
-      // values first so the recap never holds revoked draft proxies.
-      const runRecap = isDraft(draft.session.runRecap) ? current(draft.session.runRecap) : draft.session.runRecap;
-      const runEndMaterials = { ...draft.session.runEndMaterials };
-      const runEndCurrencies = { ...draft.session.runEndCurrencies };
-      const runEndTalentXP = { ...draft.session.runEndTalentXP };
-      const runEndItems = draft.session.runEndItems.map(cloneRunObtainedItem);
-      const runEndLabyrinthFloor = draft.session.runEndLabyrinthFloor;
-      clearTransientSession(draft);
-      draft.session.runRecap = runRecap;
-      setRunEndMaterials(draft, runEndMaterials);
-      setRunEndCurrencies(draft, runEndCurrencies);
-      // No write-port setter: finalizeRunXP owns runEndTalentXP.
-      draft.session.runEndTalentXP = runEndTalentXP;
-      setRunEndItems(draft, runEndItems);
-      setRunEndLabyrinthFloor(draft, runEndLabyrinthFloor);
-      return acceptCommand(true);
-    },
-    {
-      afterCommit: () => {
-        sessionFeedback(gameSession).stopAllSfx();
-        clearBattlePresentationUi(gameSession);
-        notifyRunTeardown(gameSession);
-        flushSaveAfterRunEnd(gameSession);
-      },
-    },
+    (draft) =>
+      abandonRunInDraft(draft, options)
+        ? acceptCommand(true)
+        : rejectCommand("There is no active run to abandon", false),
+    { afterCommit: () => afterAbandonRun(gameSession) },
     gameSession,
   );
+}
+
+function afterAbandonRun(gameSession: GameSession): void {
+  sessionFeedback(gameSession).stopAllSfx();
+  clearBattlePresentationUi(gameSession);
+  notifyRunTeardown(gameSession);
+  flushSaveAfterRunEnd(gameSession);
+}
+function abandonRunInDraft(draft: GameplayDraft, options: Parameters<typeof abandonRun>[0]): boolean {
+  if (draft.session.activity.kind === "inactive") return false;
+  settleRunEnd(options, draft, "abandoned");
+  // The battle route retains its outgoing display; ending activity removes
+  // command access to combat immediately. Preserve the recap
+  // snapshot: manual End Run always shows the End Run screen. Copy the
+  // values first so the recap never holds revoked draft proxies.
+  const runRecap = isDraft(draft.session.runRecap) ? current(draft.session.runRecap) : draft.session.runRecap;
+  const runEndMaterials = { ...draft.session.runEndMaterials };
+  const runEndCurrencies = { ...draft.session.runEndCurrencies };
+  const runEndTalentXP = { ...draft.session.runEndTalentXP };
+  const runEndItems = draft.session.runEndItems.map(cloneRunObtainedItem);
+  const runEndLabyrinthFloor = draft.session.runEndLabyrinthFloor;
+  clearTransientSession(draft);
+  draft.session.runRecap = runRecap;
+  setRunEndMaterials(draft, runEndMaterials);
+  setRunEndCurrencies(draft, runEndCurrencies);
+  // No write-port setter: finalizeRunXP owns runEndTalentXP.
+  draft.session.runEndTalentXP = runEndTalentXP;
+  setRunEndItems(draft, runEndItems);
+  setRunEndLabyrinthFloor(draft, runEndLabyrinthFloor);
+  return true;
 }
 
 export function applyRunDefeatTeardown(
@@ -236,7 +205,7 @@ export function applyRunDefeatTeardown(
 ): void {
   dispatchGameplayCommand(
     (draft) => {
-      finalizeRunEndSessionState(
+      settleRunEnd(
         {
           awardRunEndMaterials: options.awardRunEndMaterials,
           finalizeRunXP: options.finalizeRunXP,

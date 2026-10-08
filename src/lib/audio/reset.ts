@@ -13,7 +13,6 @@ import { stopScreenAmbience } from "./ambience";
  */
 export function resetAudioRuntimeForTests(): void {
   audioState.muted = false;
-  audioState.hostForcesMute = false;
   resetHtmlSfxRuntime();
   resetMusicRuntimeForTests();
   resetSoundPreloadCache();

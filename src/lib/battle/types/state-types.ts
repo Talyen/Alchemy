@@ -95,7 +95,6 @@ export interface BattleSnapshot {
   flags: CombatFlags;
   uniqueGear: UniqueGearBattleState;
   pendingTurnStartEffects: PendingTurnStartPulse[];
-  pendingForgeThresholds: Array<{ previousForge: number; nextForge: number }>;
   discoveredCardIds: string[];
   cardsPlayedThisTurn: number;
   nextCardUid: number;

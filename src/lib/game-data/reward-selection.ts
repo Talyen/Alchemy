@@ -8,7 +8,7 @@ function isCompanionCard(card: Pick<BattleCard, "effects">): boolean {
   return visitBattleCardEffects(card.effects, (effect) => effect.kind === "summon-companion");
 }
 
-export function deckHasCompanionCard(deck: ReadonlyArray<Pick<BattleCard, "effects">>): boolean {
+function deckHasCompanionCard(deck: ReadonlyArray<Pick<BattleCard, "effects">>): boolean {
   return deck.some(isCompanionCard);
 }
 

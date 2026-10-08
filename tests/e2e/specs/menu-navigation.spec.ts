@@ -10,7 +10,6 @@ import {
   readSavedGame,
   withSavedGame,
   enableLoadingScreen,
-  failOnRuntimeErrors,
   injectHomestead,
 } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
@@ -49,15 +48,9 @@ test.describe("Menu", () => {
     await expect
       .poll(() => page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? "{}").activeRun, SAVE_KEY))
       .toBeNull();
-    const reloaded = await page.context().newPage();
-    const errors = failOnRuntimeErrors(reloaded);
-    try {
-      await reloaded.goto("/");
+    await withSavedGame(page, async (reloaded) => {
       await expect(reloaded.getByRole("button", { name: "Play", exact: true })).toBeVisible();
-      expect(errors).toEqual([]);
-    } finally {
-      await reloaded.close();
-    }
+    });
   });
 
   test("Labyrinth resumes unchanged after menu and meta visits", async ({ page }) => {

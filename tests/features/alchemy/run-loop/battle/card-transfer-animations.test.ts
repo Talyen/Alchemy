@@ -3,6 +3,7 @@ import { animateDiscardedHand, animateDrawnHand } from "@/features/alchemy/run-l
 import type { CardTransferAnimationDeps } from "@/features/alchemy/run-loop/battle/card-transfer-animations";
 import { makeTestCardWithId } from "../../../../fixtures/battle";
 import { installImmediateRafForTests } from "./battle-test-reset";
+import { deferred } from "../../../../helpers/deferred";
 
 const pileRect = { x: 0, y: 0, width: 40, height: 60 };
 const handRect = { x: 100, y: 200, width: 80, height: 120 };
@@ -89,17 +90,27 @@ describe("animateDiscardedHand", () => {
 describe("animateDrawnHand", () => {
   installImmediateRafForTests();
 
-  it("unhides each drawn card after transfer completes", async () => {
+  it("reveals only the transferred card after landing, preserving other hidden cards", async () => {
+    const landing = deferred<void>();
+    let hidden: readonly string[] = ["slash-1", "block-2", "anvil-3"];
     const deps = makeDeps({
       runCardTransfer: vi.fn(async (_transfer, onComplete) => {
+        await landing.promise;
         onComplete?.();
       }),
+      setHiddenHandCardKeys: (update) => {
+        hidden = [...update(hidden)];
+      },
     });
     const drawn = [makeTestCardWithId("block", { uid: 2 })];
     const hand = [makeTestCardWithId("slash", { uid: 1 }), ...drawn];
 
-    await animateDrawnHand(drawn, hand, 1, deps);
-
-    expect(deps.setHiddenHandCardKeys).toHaveBeenCalled();
+    const pending = animateDrawnHand(drawn, hand, 1, deps);
+    await Promise.resolve();
+    expect(deps.runCardTransfer).toHaveBeenCalledOnce();
+    expect(hidden).toEqual(["slash-1", "block-2", "anvil-3"]);
+    landing.resolve();
+    await pending;
+    expect(hidden).toEqual(["slash-1", "anvil-3"]);
   });
 });

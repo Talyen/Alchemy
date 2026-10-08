@@ -21,15 +21,8 @@ function main(argv = process.argv.slice(2)) {
   const runId = ensureRunId("e2e-audit");
   console.log(`Run: ${runId}`);
 
-  console.log("=========================================");
-  console.log("🚀 Starting E2E Test Suite Audit...");
-  console.log("=========================================");
-
-  // Ensure reports directory exists
   const reportsDir = path.join(process.cwd(), "reports");
-  if (!fs.existsSync(reportsDir)) {
-    fs.mkdirSync(reportsDir, { recursive: true });
-  }
+  fs.mkdirSync(reportsDir, { recursive: true });
 
   // Markdown links inside reports/e2e-audit-report.md must be relative to that file.
   function linkFromReport(targetPath) {
@@ -39,18 +32,30 @@ function main(argv = process.argv.slice(2)) {
   // Run Playwright E2E tests with JSON reporter outputting to reports/e2e-results.json
   const verbose = argv.includes("--verbose");
   const reuseTimings = argv.includes("--reuse-timings");
-  console.log("Running Playwright test suite; a compact summary will be shown when it finishes...");
+  const auditCommand = `npm run test:e2e:audit${reuseTimings ? " -- --reuse-timings" : ""}`;
   const extraArgs = argv.filter((arg) => arg !== "--verbose" && arg !== "--reuse-timings");
   let result;
   let reportFailed;
   const existingReport = path.join(reportsDir, "e2e-results.json");
   if (reuseTimings && extraArgs.length) throw new Error("--reuse-timings cannot be combined with Playwright arguments");
-  const canReuse =
-    reuseTimings && fs.existsSync(existingReport) && Date.now() - fs.statSync(existingReport).mtimeMs < 60 * 60 * 1000;
-  if (canReuse) {
+  if (reuseTimings) {
+    const age = Date.now() - (fs.statSync(existingReport, { throwIfNoEntry: false })?.mtimeMs ?? -Infinity);
+    if (age < 0 || age >= 60 * 60 * 1000) {
+      const summary = "--reuse-timings requires an E2E report less than one hour old; no tests were executed.";
+      writeCurrentRun({
+        rootDir: process.cwd(),
+        runId,
+        status: "failed",
+        command: auditCommand,
+        artifacts: [{ path: existingReport, role: "secondary" }],
+        summary,
+      });
+      throw new Error(summary);
+    }
     console.log(`Reusing ${existingReport}; no tests executed.`);
     result = { status: 0, output: `Reused ${existingReport}`, elapsedMs: 0 };
   } else {
+    console.log("Running Playwright test suite; a compact summary will be shown when it finishes...");
     // A failed launch must not pick up a report left by an earlier run.
     fs.rmSync(existingReport, { force: true });
     result = runCommand("npm", ["run", "test:e2e:timings", "--", ...extraArgs], {
@@ -72,9 +77,9 @@ function main(argv = process.argv.slice(2)) {
 
   const reportPath = path.join(reportsDir, "e2e-results.json");
   const e2eCommandExposure = commandExposure({
-    key: "test:e2e:timings",
-    label: "Playwright E2E timings",
-    command: `npm run test:e2e:timings -- ${extraArgs.join(" ")}`.trim(),
+    key: reuseTimings ? "e2e-report-analysis" : "test:e2e:timings",
+    label: reuseTimings ? "existing E2E report analysis" : "Playwright E2E timings",
+    command: reuseTimings ? auditCommand : `npm run test:e2e:timings -- ${extraArgs.join(" ")}`.trim(),
     result,
     exposedOutput: exposedCommandOutput,
     budgetBytes: verbose ? null : undefined,
@@ -84,7 +89,7 @@ function main(argv = process.argv.slice(2)) {
     writeCurrentRun({
       rootDir: process.cwd(),
       status: "failed",
-      command: "npm run test:e2e:audit",
+      command: auditCommand,
       artifacts: ["reports/e2e-results.json"],
       commandExposures: [e2eCommandExposure],
       summary: "Playwright JSON report was not generated.",
@@ -212,7 +217,7 @@ function main(argv = process.argv.slice(2)) {
   writeCurrentRun({
     rootDir: process.cwd(),
     status: failed ? "failed" : "passed",
-    command: "npm run test:e2e:audit",
+    command: auditCommand,
     artifacts: [
       { path: "reports/e2e-audit-report.md", role: "primary" },
       ...(failureIndex.failures.length > 0
@@ -226,7 +231,11 @@ function main(argv = process.argv.slice(2)) {
       { path: "test-results", role: "secondary" },
     ],
     commandExposures: [e2eCommandExposure],
-    summary: !failed ? "E2E audit completed." : "E2E audit failed; inspect the first failure digest.",
+    summary: failed
+      ? "E2E audit failed; inspect the first failure digest."
+      : reuseTimings
+        ? "Existing E2E report analyzed; no tests executed."
+        : "E2E audit completed.",
   });
 
   // Exit with the code returned by Playwright to preserve CI pipelines

@@ -56,7 +56,7 @@ describe("alchemy ESLint plugin", () => {
     );
     expect(banned.length).toBeGreaterThan(0);
     const allowed = await lintRule(
-      "src/features/alchemy/run-loop/run/run-materials.ts",
+      "src/features/alchemy/shared/stores/write/run-end.ts",
       `import { addMaterialsToStockpile } from "@/features/alchemy/shared/stores/run-session-write-port";\naddMaterialsToStockpile({} as never, {} as never);\n`,
       "no-run-earned-add-materials",
     );

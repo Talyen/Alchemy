@@ -1,3 +1,4 @@
+import { savedActivityFixture } from "./run-activity";
 import { saveEnvelopeFixture } from "./saves";
 import { gridLabyrinthMapFixture } from "./labyrinth-map";
 
@@ -29,7 +30,6 @@ export function currentSchemaCampaignSave() {
       ],
       runHistoryPartial: false,
       runGoldEarned: 35,
-      currentScreen: "destination",
       runDeck: [
         {
           id: "slash",
@@ -49,6 +49,7 @@ export function currentSchemaCampaignSave() {
       runBoons: ["bone-charm"],
       selectedDifficulty: "difficulty-1",
       contentSystemType: "campaign",
+      activity: savedActivityFixture("destination"),
     },
     materialInventory: { wood: 4, iron: 2 },
     constructedBuildings: { "blacksmiths-forge": 1 },

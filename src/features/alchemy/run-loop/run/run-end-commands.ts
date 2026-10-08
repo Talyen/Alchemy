@@ -6,7 +6,7 @@ import {
   finalizeRunEndSession,
 } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { finalizeRunXP } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { awardRunEndMaterials } from "./run-materials";
+import { awardRunEndMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
 
 const settlement = { awardRunEndMaterials, finalizeRunXP };
 export function completeRunVictory(gameSession: GameSession): void {

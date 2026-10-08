@@ -11,7 +11,7 @@ import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 import type { BattleState, BattleSnapshot, CombatTextEvent } from "./types";
 import { isPlayerDefeated } from "./health-state";
 import { processEnemyAbility } from "./enemy-turn-attack";
-import { isFreezeActiveForAspect, processEnemyRegeneration, processEnemyTraits } from "./enemy-turn-traits";
+import { processEnemyRegeneration, processEnemyTraits } from "./enemy-turn-traits";
 import { processEncounterTraitActionDamage, processEncounterTraitActionStart } from "./encounter-trait-events";
 import {
   advanceToPlayerTurn,
@@ -85,8 +85,6 @@ function resolveEnemyPostTickResolution(
 ): { state: BattleState; afterAbilityState?: BattleState } {
   let nextState = processEncounterTraitActionStart(state, texts);
   nextState = processEnemyTraits(nextState, texts);
-  // The last Frozen turn still suppresses regeneration before control expires.
-  const regenerationBlocked = isFreezeActiveForAspect(nextState, "regen");
   let afterAbilityState: BattleState | undefined;
   if (mode === "attack") {
     nextState = processEnemyAbility(nextState, texts);
@@ -94,10 +92,6 @@ function resolveEnemyPostTickResolution(
     if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return { state: nextState, afterAbilityState };
   } else {
     nextState = reduceSkipTurns(nextState, texts);
-  }
-  // This turn's Bleed Leech is also suppressed when the last Frozen turn expires.
-  if (regenerationBlocked && nextState.pendingEnemyBleedLeechHealing > 0) {
-    nextState = { ...nextState, pendingEnemyBleedLeechHealing: 0 };
   }
   nextState = tickPlayerStatuses(nextState, texts);
   if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) {
@@ -108,7 +102,7 @@ function resolveEnemyPostTickResolution(
   }
   if (isPlayerDefeated(nextState)) return { state: nextState, ...(afterAbilityState ? { afterAbilityState } : {}) };
   nextState = resolveDeathsDoorGraceExpiry(nextState, texts);
-  if (!regenerationBlocked) nextState = processEnemyRegeneration(nextState, texts);
+  nextState = processEnemyRegeneration(nextState, texts);
   if (afterAbilityState === undefined) return { state: nextState };
   return { state: nextState, afterAbilityState };
 }

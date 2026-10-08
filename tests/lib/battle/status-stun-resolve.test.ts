@@ -11,12 +11,7 @@ import {
   patchBattleState,
 } from "../../fixtures/battle";
 import { defaultGearEffects } from "@/lib/gear";
-import {
-  defaultEnemyMitigation,
-  defaultCcState,
-  defaultPlayerStatusValues,
-  defaultEnemyStatusValues,
-} from "../../fixtures/default-battle-state";
+import { defaultEnemyMitigation, defaultCcState, defaultEnemyStatusValues } from "../../fixtures/default-battle-state";
 
 describe("resolveStunTrigger", () => {
   it("does nothing when stun is below threshold", () => {
@@ -202,45 +197,6 @@ describe("resolveStunTrigger", () => {
     expect(result.enemyHealth).toBe(30);
     expect(result.playerStatuses.block).toBe(0);
     expect(texts).not.toContainEqual({ target: "player", kind: "status", stat: "block", amount: 3 });
-  });
-
-  it("triggers forge burn burst when forgeOnStun crosses threshold", () => {
-    const state = patchBattleState({
-      enemyHealth: 30,
-      enemyMaxHealth: 30,
-      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
-      playerStatuses: defaultPlayerStatusValues({ forge: 0 }),
-      enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
-      talentEffects: {
-        forgeOnStun: 5,
-        forgeBurnThreshold: 4,
-        forgeBurnDamage: 8,
-      },
-    });
-    const texts = makeTexts();
-    const result = resolveStunTrigger(state, texts);
-    expect(result.playerStatuses.forge).toBe(5);
-    expect(result.enemyStatuses.burn).toBe(8);
-
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "burn", amount: 8 });
-  });
-
-  it("does not trigger forge burn burst when forge stays below threshold", () => {
-    const state = patchBattleState({
-      enemyHealth: 30,
-      enemyMaxHealth: 30,
-      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
-      playerStatuses: defaultPlayerStatusValues({ forge: 0 }),
-      enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
-      talentEffects: {
-        forgeOnStun: 2,
-        forgeBurnThreshold: 4,
-        forgeBurnDamage: 8,
-      },
-    });
-    const result = resolveStunTrigger(state);
-    expect(result.playerStatuses.forge).toBe(2);
-    expect(result.enemyStatuses.burn).toBe(0);
   });
 
   it("strips enemy armor on stun with stunStripArmor talent", () => {

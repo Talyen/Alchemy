@@ -6,14 +6,19 @@ import { cardById } from "@/lib/game-data";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("card costs and turn-start effects", () => {
-  it("pays a corrupted card's Health cost despite damage reduction", () => {
+  it("pays a corrupted card's Health cost despite Aetherward", () => {
     const card = makeTestCard({
       effects: [
         { kind: "lose-health", amount: 2 },
         { kind: "heal", amount: 4 },
       ],
     });
-    const state = patchBattleState({ hand: [card], playerHealth: 10, talentEffects: { damageReduction: 5 } });
+    const state = patchBattleState({
+      hand: [card],
+      playerHealth: 10,
+      mana: 3,
+      gearEffects: { damageReductionPerMana: 1 },
+    });
     const result = playBattleCardResolved(state, card.id, 0).state;
     expect(result.playerHealth).toBe(12);
   });

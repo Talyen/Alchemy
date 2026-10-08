@@ -63,11 +63,6 @@ const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } =
 
 export { createEffectDescription } from "./effect-description";
 
-export function effectDescriptionLine(effect: BattleCardEffect): string {
-  return renderCardDescription([effect], [{ parts: createEffectLine(effect, { effectIndex: 0 }), role: "effect" }])
-    .descriptionLines[0]!;
-}
-
 export function describeCardEffects(effects: readonly BattleCardEffect[]): string[] {
   return renderCardDescription(effects, createEffectDescription(effects)).descriptionLines;
 }

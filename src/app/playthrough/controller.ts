@@ -60,7 +60,6 @@ export function createPlaythroughController(gameSession: GameSession) {
       transition,
       cancelPending: navigation.cancelPending,
       battle,
-      labyrinthClearNode: labyrinth.onNodeCleared,
     },
     outcomes,
     gameSession,

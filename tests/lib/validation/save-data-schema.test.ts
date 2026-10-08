@@ -1,9 +1,12 @@
+import { savedActivityFixture } from "../../fixtures/run-activity";
 import { describe, it, expect } from "vitest";
 import { SaveDataSchema } from "@/lib/validation";
 import { defaultBattleState } from "@/lib/battle";
 import { baseHomesteadSave } from "../../fixtures/saves";
 import { makeMinimalActiveRunInput } from "../../fixtures/active-run";
 import { SETTINGS_RANGES } from "@/lib/settings-values";
+import { computeStartingMaxHealth } from "@/lib/game-data";
+import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 
 describe("SaveDataSchema", () => {
   it("parses a full homestead save fixture", () => {
@@ -15,7 +18,7 @@ describe("SaveDataSchema", () => {
     const result = SaveDataSchema.safeParse({
       gold: 0,
       activeRun: makeMinimalActiveRunInput({
-        activeCombat: { battleState: { ...defaultBattleState(), gold: 80 } },
+        activity: savedActivityFixture("battle", { battleState: { ...defaultBattleState(), gold: 80 } }),
       }),
     });
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
@@ -104,12 +107,15 @@ describe("SaveDataSchema", () => {
     expect(SaveDataSchema.parse({ backgroundGlowIntensity: 250 }).backgroundGlowIntensity).toBe(100);
   });
 
-  it("filters negative talent XP and floors fractional values", () => {
-    const result = SaveDataSchema.parse({ talentXP: { burn: -10, block: 10.7, poison: Number.NaN, holy: 100 } });
-    expect(result.talentXP.burn).toBeUndefined();
-    expect(result.talentXP.block).toBe(10);
-    expect(result.talentXP.poison).toBeUndefined();
-    expect(result.talentXP.holy).toBe(100);
+  it("repairs profile and run XP without granting Health for unknown keywords", () => {
+    const damagedXP = { burn: -10, block: 10.7, poison: Number.NaN, holy: 100, retiredKeyword: 10_000 };
+    const result = SaveDataSchema.parse({
+      talentXP: damagedXP,
+      activeRun: makeMinimalActiveRunInput({ runTalentXP: damagedXP }),
+    });
+    expect(computeStartingMaxHealth(result.talentXP)).toBe(MAX_PLAYER_HEALTH + 2);
+    expect(result.talentXP).toEqual({ block: 10, holy: 100 });
+    expect(result.activeRun?.runTalentXP).toEqual(result.talentXP);
   });
 
   it("filters invalid finishedRunCharacters without wiping valid IDs", () => {

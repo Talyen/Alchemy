@@ -1,3 +1,4 @@
+import * as ending from "./write/run-end";
 import { gameplayDraftRuntime } from "./gameplay-command";
 // Canonical gameplay write seam: commands write through these transaction operations.
 //
@@ -168,4 +169,9 @@ export const settlePendingBattleMaterials = transactionOperation(battle.settlePe
 
 export function createDraftInstanceIdSource(transaction: RunTransaction): () => string {
   return gameplayDraftRuntime(transactionDraft(transaction)).createInstanceId;
+}
+
+export const awardRunEndMaterials = transactionOperation(ending.awardRunEndMaterials);
+export function settleRunVictory(transaction: RunTransaction): void {
+  ending.settleRunEnd(undefined, transactionDraft(transaction), "victory");
 }

@@ -1,3 +1,4 @@
+import { setRunProgressActivity } from "@/features/alchemy/shared/stores/run-session-write-port";
 import "../../../../helpers/mock-audio";
 
 import "../../../../helpers/mock-flush-save";
@@ -21,7 +22,7 @@ import {
   restoreRun,
   snapshotRun,
 } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { awardRunEndMaterials } from "@/features/alchemy/run-loop/run/run-materials";
+import { awardRunEndMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
   addGold,
   grantStartGold,
@@ -50,7 +51,15 @@ import { defaultGameSession } from "@/app/application-session";
 const endOptions = { awardRunEndMaterials, finalizeRunXP };
 beforeEach(() => {
   resetRunDomainStore();
-  command((draft) => acceptCommand(setHasActiveRun(draft, true)), undefined, defaultGameSession);
+  command(
+    (draft) => {
+      setHasActiveRun(draft, true);
+      setRunProgressActivity(draft, "destination");
+      return acceptCommand();
+    },
+    undefined,
+    defaultGameSession,
+  );
 });
 
 describe("run recap", () => {
@@ -71,7 +80,7 @@ describe("run recap", () => {
       defaultGameSession,
     );
     expect(readActiveRun(defaultGameSession).runGoldEarned).toBe(27);
-    const saved = parseActiveRun(snapshotRun(undefined, defaultGameSession))!;
+    const saved = parseActiveRun(snapshotRun(defaultGameSession))!;
     expect(saved.runGoldEarned).toBe(27);
     restoreRun(saved, {}, {}, defaultGameSession);
     expect(readActiveRun(defaultGameSession).runGoldEarned).toBe(27);
@@ -102,7 +111,7 @@ describe("run recap", () => {
       undefined,
       defaultGameSession,
     );
-    const saved = parseActiveRun(snapshotRun(undefined, defaultGameSession))!;
+    const saved = parseActiveRun(snapshotRun(defaultGameSession))!;
     expect(saved.runHistory.map((room) => [room.act, room.destination, room.completed])).toEqual([
       [1, DESTINATIONS.CAMPFIRE, true],
       [2, DESTINATIONS.BOSS_COMBAT, false],
@@ -146,7 +155,7 @@ describe("run recap", () => {
       runHistoryPartial: _partial,
       runGoldEarned: _gold,
       ...old
-    } = snapshotRun(undefined, defaultGameSession);
+    } = snapshotRun(defaultGameSession);
     const restored = parseActiveRun(old)!;
     expect(restored).toMatchObject({ runHistory: [], runHistoryPartial: true, runGoldEarned: null });
     restoreRun(restored, {}, {}, defaultGameSession);
@@ -194,7 +203,7 @@ it("records distinct Wildwood boss attempts and keeps the trail through resume",
     defaultGameSession,
   );
   battle.startBossById({ bossId: "forge-golem" });
-  const saved = parseActiveRun(snapshotRun(undefined, defaultGameSession))!;
+  const saved = parseActiveRun(snapshotRun(defaultGameSession))!;
   expect(saved.runHistory.map((room) => [room.destination, room.completed])).toEqual([
     [DESTINATIONS.BOSS_COMBAT, true],
     [DESTINATIONS.BOSS_COMBAT, false],

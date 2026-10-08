@@ -1,3 +1,4 @@
+import { savedActivityFixture, savedActivityData } from "../../fixtures/run-activity";
 import { describe, expect, it } from "vitest";
 import { parseActiveRun } from "@/lib/active-run-session";
 import { cardById, cardLibrary } from "@/lib/game-data";
@@ -15,15 +16,19 @@ describe("expanded corruption persistence", () => {
     const originalCard = { ...cardById[id]!, uid: 42 };
     const corruptedCard = { ...mutation.card, uid: 42 };
     const raw = makeMinimalActiveRunInput({
-      currentScreen: "corruption",
       runDeck: [corruptedCard],
-      corruptionResult: { originalCard, corruptedCard, transformed: false, delta: mutation.delta },
+      activity: savedActivityFixture("corruption", {
+        originalCard,
+        corruptedCard,
+        transformed: false,
+        delta: mutation.delta,
+      }),
     });
     const first = parseActiveRun(JSON.parse(JSON.stringify(raw)));
     expect(first).not.toBeNull();
     const second = parseActiveRun(JSON.parse(JSON.stringify(first)));
     expect(second).toEqual(first);
-    for (const restored of [second?.runDeck[0], second?.corruptionResult?.corruptedCard]) {
+    for (const restored of [second?.runDeck[0], savedActivityData(second, "corruption")?.corruptedCard]) {
       expect(restored?.effects).toEqual(corruptedCard.effects);
       expect(restored?.descriptionLines).toEqual(corruptedCard.descriptionLines);
       expect(restored?.consume).toBe(corruptedCard.consume);

@@ -24,12 +24,12 @@ describe("applyPlayerCombatDamage", () => {
     expect(playerHealthLostToDamage(state, result)).toBe(10);
   });
 
-  it("applies base damage reduction", () => {
+  it("applies Homestead Physical damage reduction", () => {
     const state = patchBattleState({
       playerHealth: 30,
-      talentEffects: { damageReduction: 3 },
+      talentEffects: { physicalDamageReduction: 3 },
     });
-    const result = applyPlayerCombatDamage(state, 10, "hostile");
+    const result = applyPlayerCombatDamage(state, 10, "hostile", "physical");
     expect(result.playerHealth).toBe(23);
   });
 
@@ -60,15 +60,6 @@ describe("applyPlayerCombatDamage", () => {
     expect(result.playerHealth).toBe(20);
   });
 
-  it("applies nature damage reduction", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      talentEffects: { natureDamageReduction: 3 },
-    });
-    const result = applyPlayerCombatDamage(state, 10, "hostile", "nature");
-    expect(result.playerHealth).toBe(23);
-  });
-
   it("applies poison damage reduction", () => {
     const state = patchBattleState({
       playerHealth: 30,
@@ -81,7 +72,7 @@ describe("applyPlayerCombatDamage", () => {
   it("can bypass player mitigation for trait-authored damage", () => {
     const state = patchBattleState({
       playerHealth: 30,
-      talentEffects: { damageReduction: 3, burnDamageReduction: 5 },
+      talentEffects: { burnDamageReduction: 5 },
     });
     const result = applyPlayerCombatDamage(state, 10, "hostile", "burn", { ignoreMitigation: true });
     expect(result.playerHealth).toBe(20);

@@ -4,15 +4,17 @@ import { devNull } from "node:os";
 import path from "node:path";
 import { runGit, toRepoRelative } from "./lib/repository-paths.mjs";
 import { defineScript } from "./lib/script-run.mjs";
+import { INLINE_ARGS_BYTES } from "./lib/verification/selection-budgets.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const GENERATED =
   /(?:^Raw Assets\/|^src\/assets\/optimized\/|^public\/(?:sounds|Music)\/|\.generated\.|(?:^|\/)\.asset-hashes\.json$|^src\/lib\/game-data\/gear-art\.ts$|(?:^|\/)package-lock\.json$)/u;
 
 function git(root, args, accepted = [0]) {
-  const result = runGit(root, ["--literal-pathspecs", "--no-pager", ...args]);
+  // Status may refresh index metadata; a review must not take optional write locks.
+  const result = runGit(root, ["--no-optional-locks", "--literal-pathspecs", "--no-pager", ...args]);
   if (result.error || !accepted.includes(result.status))
-    throw new Error(result.error?.message ?? result.stderr.trim() ?? "Git diff failed");
+    throw new Error(result.error?.message || result.stderr.trim() || "Git diff failed");
   return result.stdout;
 }
 
@@ -30,23 +32,69 @@ function inventory(root) {
   return entries;
 }
 
+/** Match small ordinary files without staging or scanning large unrelated untracked artifacts. */
+function exactUnstagedMoves(root, entries) {
+  const deleted = entries.filter((entry) => entry.status === " D" && !GENERATED.test(entry.file));
+  const added = entries.filter((entry) => {
+    if (entry.status !== "??" || GENERATED.test(entry.file)) return false;
+    const stats = fs.lstatSync(path.join(root, entry.file), { throwIfNoEntry: false });
+    return stats?.isFile() && stats.size <= 256_000;
+  });
+  const moves = new Map();
+  if (!deleted.length || !added.length) return moves;
+  if (Buffer.byteLength(JSON.stringify([...deleted, ...added].map((entry) => entry.file))) > INLINE_ARGS_BYTES)
+    return moves;
+  const sources = new Map();
+  for (const record of git(root, ["ls-files", "--stage", "-z", "--", ...deleted.map((entry) => entry.file)]).split(
+    "\0",
+  )) {
+    const match = /^(100644|100755) ([a-f0-9]+) 0\t([\s\S]+)$/u.exec(record);
+    if (!match) continue;
+    const key = `${match[1]}:${match[2]}`;
+    const names = sources.get(key) ?? [];
+    names.push(match[3]);
+    sources.set(key, names);
+  }
+  // No -w: hashing reads files without adding objects or changing the index.
+  const hashes = git(root, ["hash-object", "--no-filters", "--", ...added.map((entry) => entry.file)])
+    .trim()
+    .split(/\r?\n/u);
+  if (hashes.length !== added.length) throw new Error("Could not identify untracked move contents");
+  for (const [index, entry] of added.entries()) {
+    const mode = fs.lstatSync(path.join(root, entry.file)).mode & 0o100 ? "100755" : "100644";
+    const from = sources.get(`${mode}:${hashes[index]}`)?.shift();
+    if (from) moves.set(entry.file, from);
+  }
+  return moves;
+}
+
 /** Complete status is retained even when path selection or output limits hide patches. */
 export function reviewDiff(root = ROOT, { paths = [], full = false, statusOnly = false, budget = null } = {}) {
   budget ??= statusOnly ? 4_000 : 12_000;
   const selected = paths.map((file) => toRepoRelative(root, file));
   const entries = inventory(root);
+  const moves = full || statusOnly ? new Map() : exactUnstagedMoves(root, entries);
+  const destinations = new Map([...moves].map(([file, from]) => [from, file]));
   const isSelected = ({ file, from }) =>
     !selected.length ||
-    [file, from]
+    [file, from, moves.get(file), destinations.get(file)]
       .filter(Boolean)
       .some((name) => selected.some((p) => p === "." || name === p || name.startsWith(`${p}/`)));
   const patches = [];
-  for (const entry of entries) {
+  for (const original of entries) {
+    if (destinations.has(original.file)) continue;
+    const entry = { ...original, from: original.from ?? moves.get(original.file) };
     const names = [entry.file, entry.from].filter(Boolean);
     if (!isSelected(entry)) continue;
     const label = `${entry.status} ${JSON.stringify(entry.file)}${entry.from ? ` <- ${JSON.stringify(entry.from)}` : ""}`;
     if (statusOnly) {
       if (selected.length) patches.push(label);
+      continue;
+    }
+    if (moves.has(entry.file)) {
+      patches.push(
+        `${label}\nExact unstaged move; contents and executable mode unchanged. Use --full to inspect contents.`,
+      );
       continue;
     }
     if (!full && names.some((file) => GENERATED.test(file))) {

@@ -32,7 +32,6 @@ export type RunProgressActivityKind =
   | "difficulty-select";
 interface ActiveBattle {
   battleState: BattleSnapshot;
-  battleStartState: BattleSnapshot | null;
 }
 
 export type RunActivity =

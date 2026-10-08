@@ -18,7 +18,7 @@ describe("useBattleScreenRouteData", () => {
       ...prev,
       session: {
         ...prev.session,
-        activity: { kind: "battle", data: { battleState, battleStartState: null } },
+        activity: { kind: "battle", data: { battleState } },
         activeLabyrinthModifiers: ["tempered"],
       },
       run: {

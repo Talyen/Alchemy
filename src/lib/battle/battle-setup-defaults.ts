@@ -87,7 +87,6 @@ export function defaultBattleState(): BattleState {
     flags: createInitialFlags(),
     uniqueGear: createUniqueGearBattleState(),
     pendingTurnStartEffects: [],
-    pendingForgeThresholds: [],
     discoveredCardIds: [],
     cardsPlayedThisTurn: 0,
     nextCardUid: 0,

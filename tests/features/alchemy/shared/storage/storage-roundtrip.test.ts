@@ -1,3 +1,4 @@
+import { savedActivityFixture } from "../../../../fixtures/run-activity";
 import { describe, expect, it } from "vitest";
 import { createSeededRng } from "@/lib/rng";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -50,10 +51,8 @@ describe("save JSON round trips", () => {
         contentSystemType: "campaign",
         labyrinthMap: null,
         labyrinthPendingNode: null,
-        activeCombat: null,
-        currentScreen: null,
-        interruptedFlow: { kind: "none" },
         runTalentXP: { burn: 12, poison: 8 },
+        activity: savedActivityFixture("destination"),
       } as never,
     });
     const { reParsed } = roundTrip(original);
@@ -81,27 +80,26 @@ describe("save JSON round trips", () => {
         contentSystemType: "campaign",
         labyrinthMap: null,
         labyrinthPendingNode: null,
-        activeCombat: null,
-        currentScreen: "destination",
-        interruptedFlow: {
+        runTalentXP: {},
+        activity: savedActivityFixture("destination", {
           kind: "destination",
           destinations: ["Campfire", "Mystery", "Card Shop"],
           selectedBossId: null,
           lastVictoryEnemyType: null,
           lastVictoryContentSystem: null,
-        },
-        runTalentXP: {},
+        }),
       } as never,
     });
     const { reParsed } = roundTrip(original);
-    expect(reParsed.activeRun?.currentScreen).toBe("destination");
-    expect(reParsed.activeRun?.interruptedFlow).toEqual({
-      kind: "destination",
-      destinations: ["Campfire", "Mystery", "Card Shop"],
-      selectedBossId: null,
-      lastVictoryEnemyType: null,
-      lastVictoryContentSystem: null,
-    });
+    expect(reParsed.activeRun?.activity.kind).toBe("destination");
+    expect(reParsed.activeRun?.activity).toEqual(
+      savedActivityFixture("destination", {
+        destinations: ["Campfire", "Mystery", "Card Shop"],
+        selectedBossId: null,
+        lastVictoryEnemyType: null,
+        lastVictoryContentSystem: null,
+      }),
+    );
   });
 
   it("labyrinth map round-trips through JSON serialize/deserialize", () => {
@@ -122,10 +120,8 @@ describe("save JSON round trips", () => {
         contentSystemType: "labyrinth",
         labyrinthMap,
         labyrinthPendingNode: null,
-        activeCombat: null,
-        currentScreen: null,
-        interruptedFlow: { kind: "none" },
         runTalentXP: {},
+        activity: savedActivityFixture("destination"),
       } as never,
     });
     const { reParsed } = roundTrip(original);

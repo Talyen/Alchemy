@@ -20,7 +20,7 @@ describe("status decay", () => {
 });
 
 describe("enemy damage multipliers", () => {
-  it("combines native vulnerabilities and one ward with live Stun and Freeze, without leaking cached products", () => {
+  it("combines native vulnerabilities and one ward with live Stun, without leaking cached products", () => {
     const state = patchBattleState({
       currentEnemy: {
         traits: ["holy-vulnerability", "minor-holy-vulnerability", "sunward", "sunward"].map((id) => ({
@@ -29,15 +29,15 @@ describe("enemy damage multipliers", () => {
           description: "",
         })),
       },
-      talentEffects: { stunDoubleDamage: true, freezeDoubleDamage: true },
+      talentEffects: { stunDoubleDamage: true },
     });
     const nativeAndWard = 2 * 1.3 * 0.5;
     expect(getEnemyDamageMultiplier(state, "holy")).toBe(nativeAndWard);
     expect(getEnemyDamageMultiplier(state, "physical")).toBe(1);
     const controlled = { ...state, enemyCC: { ...state.enemyCC, stunSkipTurns: 1, freezeSkipTurns: 1 } };
-    expect(getEnemyDamageMultiplier(controlled, "holy")).toBe(nativeAndWard * 4);
+    expect(getEnemyDamageMultiplier(controlled, "holy")).toBe(nativeAndWard * 2);
     const replaced = { ...controlled, currentEnemy: { ...controlled.currentEnemy, traits: [] } };
-    expect(getEnemyDamageMultiplier(replaced, "holy")).toBe(4);
+    expect(getEnemyDamageMultiplier(replaced, "holy")).toBe(2);
     expect(getEnemyDamageMultiplier(state, "holy")).toBe(nativeAndWard);
   });
 });

@@ -12,7 +12,7 @@ import type { GearInstance } from "./types";
 const UNIQUE_SHINE_COLORS = [UI_GOLD.light, UI_GOLD.base, UI_GOLD.deep, UI_GOLD.pale, UI_GOLD.light] as const;
 const UNIQUE_TEXT_SHINE_COLORS = [UI_GOLD.pale, `color-mix(in srgb, ${UI_GOLD.pale} 55%, transparent)`] as const;
 
-export function selectTextShineKeywordIds(
+function selectTextShineKeywordIds(
   instanceKeywordIds: readonly KeywordId[],
   affinityKeywords: readonly KeywordId[],
 ): KeywordId[] {
@@ -63,7 +63,7 @@ export function getGearDefinitionShineColors(definition: GearDefinition): readon
   return borderShineColors(keywords);
 }
 
-export function getGearInstanceShineColors(instance: GearInstance): readonly string[] {
+function getGearInstanceShineColors(instance: GearInstance): readonly string[] {
   const definition = gearDefinitions[instance.definitionId];
   if (!definition || (definition.rarity !== "unique" && definition.rarity !== "astral")) return [];
   return borderShineColors(getGearInstanceKeywordIds(instance));

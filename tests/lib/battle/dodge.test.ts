@@ -279,7 +279,7 @@ describe("Dodge talent rewrites", () => {
       enemyMaxHealth: 30,
       enemyMitigation: { armor: 0, block: 7, forge: 0 },
       enemyStatuses: defaultEnemyStatusValues({ freeze: 15 }),
-      talentEffects: { ...defaultTalentEffects, freezeStripBlock: true, freezePreventsEnemyDodge: true },
+      talentEffects: { ...defaultTalentEffects, freezeStripBlock: true },
     });
     const frozen = applyDamageStatuses(freezeState, { kind: "damage", damageType: "freeze", amount: 10 }, 10, []);
     expect(frozen.enemyMitigation.block).toBe(0);

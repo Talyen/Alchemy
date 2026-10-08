@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAppAudioEffects } from "@/app/use-app-effects";
 import {
   invalidateCacheForKey,
-  isAppInBackground,
   isMusicPaused,
   isNonPlayerAudioHost,
   playMusic,
@@ -41,39 +40,6 @@ vi.mock("@/lib/audio", async (importOriginal) => ({
   invalidateCacheForKey: vi.fn(),
   isNonPlayerAudioHost: vi.fn(() => false),
 }));
-
-describe("isAppInBackground", () => {
-  afterEach(() => {
-    Object.defineProperty(document, "hidden", { configurable: true, value: false });
-    vi.unstubAllGlobals();
-  });
-
-  it("treats a hidden document as background", () => {
-    Object.defineProperty(document, "hidden", { configurable: true, value: true });
-    expect(isAppInBackground()).toBe(true);
-  });
-
-  it("treats window blur as background even when the document stays visible", () => {
-    Object.defineProperty(document, "hidden", { configurable: true, value: false });
-    expect(isAppInBackground({ type: "blur" })).toBe(true);
-  });
-
-  it("treats window focus as foreground when the document is visible", () => {
-    Object.defineProperty(document, "hidden", { configurable: true, value: false });
-    expect(isAppInBackground({ type: "focus" })).toBe(false);
-  });
-
-  it("does not wait for a click to treat a focused visible window as foreground", () => {
-    Object.defineProperty(document, "hidden", { configurable: true, value: false });
-    const hasFocus = vi.spyOn(Document.prototype, "hasFocus").mockReturnValue(true);
-    vi.stubGlobal("navigator", {
-      ...navigator,
-      userActivation: { hasBeenActive: false, isActive: false },
-    });
-    expect(isAppInBackground()).toBe(false);
-    hasFocus.mockRestore();
-  });
-});
 
 describe("useAppAudioEffects mute-in-background", () => {
   let unmountAudio: (() => void) | undefined;
@@ -199,6 +165,24 @@ describe("useAppAudioEffects mute-in-background", () => {
     hasFocus.mockRestore();
   });
 
+  it("resumes the current boss track when an undisplayed window becomes audible again", () => {
+    battleActive.value = true;
+    battleActive.enemyId = "forge-golem";
+    battleActive.enemyType = "boss";
+    renderAudio(false, "battle");
+    // Finish startup recovery, so restoring the window cannot rely on its gesture listeners.
+    act(() => window.dispatchEvent(new Event("pointerdown")));
+    vi.mocked(playMusic).mockClear();
+    vi.mocked(isNonPlayerAudioHost).mockReturnValue(true);
+    act(() => window.dispatchEvent(new Event("resize")));
+    expect(playMusic).not.toHaveBeenCalled();
+    vi.mocked(isMusicPaused).mockReturnValue(true);
+    vi.mocked(isNonPlayerAudioHost).mockReturnValue(false);
+    act(() => window.dispatchEvent(new Event("focus")));
+    expect(setMuted).toHaveBeenLastCalledWith(false);
+    expect(playMusic).toHaveBeenCalledExactlyOnceWith(MUSIC_KEYS.BOSS_FORGE_GOLEM);
+  });
+
   it("syncs settings percentages as fractional volumes", () => {
     renderAudio(true);
     expect(setMasterVolume).toHaveBeenCalledWith(0.5);
@@ -281,6 +265,22 @@ describe("useAppAudioEffects mute-in-background", () => {
     });
 
     expect(playMusicImmediate).toHaveBeenCalledWith(MUSIC_KEYS.MENU);
+    hasFocus.mockRestore();
+  });
+
+  it("keeps gesture recovery available until music starts, then stops intercepting later inputs", () => {
+    const hasFocus = vi.spyOn(Document.prototype, "hasFocus").mockReturnValue(true);
+    vi.mocked(isMusicPaused).mockReturnValue(true);
+    renderAudio(true);
+    act(() => window.dispatchEvent(new Event("pointerdown")));
+    // A blocked first attempt leaves the music paused for the next gesture.
+    act(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" })));
+    expect(playMusicImmediate).toHaveBeenCalledTimes(2);
+    vi.mocked(isMusicPaused).mockReturnValue(false);
+    act(() => window.dispatchEvent(new Event("pointerdown")));
+    vi.mocked(isMusicPaused).mockReturnValue(true);
+    act(() => window.dispatchEvent(new Event("pointerdown")));
+    expect(playMusicImmediate).toHaveBeenCalledTimes(2);
     hasFocus.mockRestore();
   });
 });

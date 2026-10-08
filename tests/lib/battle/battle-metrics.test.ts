@@ -2,7 +2,8 @@ import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
-import { processEnemyTraits } from "@/lib/battle/enemy-turn-traits";
+import { processEnemyRegeneration, processEnemyTraits } from "@/lib/battle/enemy-turn-traits";
+import { processEncounterTraitActionStart } from "@/lib/battle/encounter-trait-events";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { normalizePersistedBattleState } from "@/lib/validation/normalize-persisted-battle-state";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
@@ -57,7 +58,7 @@ describe("battle measurements", () => {
     expect(stunned.battleMetrics?.enemyAttackActions).toBe(0);
   });
 
-  it("records Iron Hide only on its scheduled turns and respects Freeze suppression", () => {
+  it("records Iron Hide only on its scheduled turns, including while Frozen", () => {
     const base = patchBattleState();
     const state = {
       ...base,
@@ -72,10 +73,41 @@ describe("battle measurements", () => {
       ...state,
       turn: 2,
       enemyCC: { ...state.enemyCC, freezeSkipTurns: 1 },
-      talentEffects: { ...state.talentEffects, freezePreventsEnemyScaling: true },
     };
-    expect(processEnemyTraits(frozen, []).battleMetrics?.enemyAbilityActivations).toEqual({});
+    expect(processEnemyTraits(frozen, []).battleMetrics?.enemyAbilityActivations).toEqual({ "iron-hide": 1 });
     expect(state.battleMetrics).toEqual(metrics());
+  });
+
+  it("counts Glacial Surge only while its scheduled gain can increase Freeze Bonus", () => {
+    const state = patchBattleState({
+      turn: 2,
+      battleMetrics: metrics(),
+      currentEnemy: { traits: [{ id: "glacial-shell", title: "Glacial Surge", description: "" }] },
+    });
+    const first = processEnemyTraits(state, []);
+    const second = processEnemyTraits({ ...first, turn: 4 }, []);
+    expect(second.enemyStatuses.freezeBonus).toBe(2);
+    expect(second.battleMetrics?.enemyAbilityActivations).toEqual({ "glacial-shell": 2 });
+    const capped = { ...second, turn: 6 };
+    expect(processEnemyTraits(capped, [])).toBe(capped);
+  });
+
+  it("counts healing traits only when they restore Health, without changing combat", () => {
+    const resolve = (state: ReturnType<typeof patchBattleState>) =>
+      processEnemyRegeneration(processEncounterTraitActionStart(state, []), []);
+    for (const health of [20, 30]) {
+      const state = patchBattleState({
+        enemyHealth: health,
+        enemyMaxHealth: 30,
+        enemyRegeneration: 3,
+        currentEnemy: { traits: ["overgrowth", "regeneration"].map((id) => ({ id, title: id, description: "" })) },
+      });
+      const measured = resolve({ ...state, battleMetrics: metrics() });
+      const { battleMetrics, ...combat } = measured;
+      expect(battleMetrics?.enemyAbilityActivations).toEqual(health === 30 ? {} : { overgrowth: 1, regeneration: 1 });
+      expect(combat).toEqual(resolve(state));
+      expect(measured.enemyHealth).toBe(Math.min(30, health + 4));
+    }
   });
 
   it("drops simulation-only measurements when loading a battle save", () => {

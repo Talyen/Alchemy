@@ -33,21 +33,15 @@ describe("run destination controller actions", () => {
       setRunProgress({ contentSystemType });
       setRunSession({ activity: { kind: "transmutation", data: emptyAlchemyVisit() } });
       const navigateTo = vi.fn((_screen: string, prepare?: () => void) => prepare?.());
-      const labyrinthClearNode = vi.fn();
       const rooms = readActiveRun(defaultGameSession).roomsEncountered;
-      createRunFlow(
-        makeFlowHandlerDeps({ navigateTo, labyrinthClearNode }),
-        defaultGameSession,
-      ).advanceToNextDestination();
+      createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession).advanceToNextDestination();
       expect(navigateTo).toHaveBeenCalledWith(
         contentSystemType === CONTENT_SYSTEMS.LABYRINTH ? ROUTE_SCREENS.LABYRINTH_MAP : ROUTE_SCREENS.DESTINATION,
-        expect.any(Function),
       );
       expect(readActiveRun(defaultGameSession).roomsEncountered).toBe(rooms + 1);
       expect(readRunSession(defaultGameSession).activity.kind).toBe(
         contentSystemType === CONTENT_SYSTEMS.LABYRINTH ? "labyrinth-map" : "destination",
       );
-      expect(labyrinthClearNode).toHaveBeenCalledTimes(contentSystemType === CONTENT_SYSTEMS.LABYRINTH ? 1 : 0);
     },
   );
 
@@ -93,8 +87,8 @@ describe("run destination controller actions", () => {
 
     handlers.handleCampfireContinue();
 
-    expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DESTINATION, expect.any(Function));
-    expect(readActiveRun(defaultGameSession).roomsEncountered).toBe(0);
+    expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DESTINATION);
+    expect(readActiveRun(defaultGameSession).roomsEncountered).toBe(1);
 
     commit?.();
 
@@ -178,7 +172,7 @@ describe("run destination controller actions", () => {
     },
   ])(
     "advanceToNextDestination clears leftover mystery visit state ($name)",
-    ({ contentSystemType, expectedScreen, expectLabyrinthClear }) => {
+    ({ contentSystemType, expectedScreen }) => {
       setRunProgress({ contentSystemType });
       dispatchRunSessionCommand(
         (draft) => {
@@ -205,18 +199,12 @@ describe("run destination controller actions", () => {
         defaultGameSession,
       );
 
-      const labyrinthClearNode = vi.fn();
       const navigateTo = vi.fn((_screen: string, prepare?: () => void) => prepare?.());
       const roomsBeforeExit = readActiveRun(defaultGameSession).roomsEncountered;
-      createRunFlow(
-        makeFlowHandlerDeps({ navigateTo, labyrinthClearNode }),
-        defaultGameSession,
-      ).advanceToNextDestination();
+      createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession).advanceToNextDestination();
       expect(readRunSession(defaultGameSession).activity.kind).not.toBe("mystery");
       expect(readActiveRun(defaultGameSession).roomsEncountered).toBe(roomsBeforeExit + 1);
       expect(navigateTo.mock.calls[0]?.[0]).toBe(expectedScreen);
-      if (expectLabyrinthClear) expect(labyrinthClearNode).toHaveBeenCalledOnce();
-      else expect(labyrinthClearNode).not.toHaveBeenCalled();
     },
   );
 
@@ -245,7 +233,7 @@ describe("run destination controller actions", () => {
       [DESTINATIONS.CAMPFIRE]: 0,
     });
     expect(readRunSession(defaultGameSession).rewardFlow.state.destinations).toEqual(offered);
-    expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DESTINATION, expect.any(Function));
+    expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DESTINATION);
   });
 
   it("returnToCurrentDestination cancels an uncommitted Corruption claim without advancing", () => {

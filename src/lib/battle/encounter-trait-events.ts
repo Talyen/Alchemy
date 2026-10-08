@@ -6,7 +6,7 @@ import { applyEnemyHealingWithCombatText } from "./enemy-healing";
 import { mergeCombatText } from "./combat-text-events";
 import { processEnemyDamageEffect, resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-threshold";
-import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-traits";
+import { scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { SEPTIC_SPLIT_CHANCE_PERCENT } from "../game-constants";
 import { removePlayerArmor } from "./status-helpers";
@@ -45,9 +45,8 @@ export function processEncounterTraitActionStart(state: BattleState, combatTexts
     }
   }
   if (hasEnemyTrait(nextState, "overgrowth")) {
-    if (isFreezeActiveForAspect(nextState, "regen")) return nextState;
-    nextState = recordEnemyAbilityActivation(nextState, "overgrowth");
-    nextState = applyEnemyHealingWithCombatText(nextState, scaleByRoomMultiplier(nextState, 1), combatTexts);
+    const healed = applyEnemyHealingWithCombatText(nextState, scaleByRoomMultiplier(nextState, 1), combatTexts);
+    nextState = healed === nextState ? nextState : recordEnemyAbilityActivation(healed, "overgrowth");
   }
   return nextState;
 }

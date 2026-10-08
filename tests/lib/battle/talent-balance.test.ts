@@ -122,24 +122,19 @@ describe("repeatability-based talent balance", () => {
     expect(addForgeToPlayer(tiny, 1).playerStatuses.forge).toBe(1);
   });
 
-  it("uses fixed Forge threshold rewards and Armored Surge on Block gains", () => {
+  it("feeds Overheat's Forge through Tempered Guard into Armored Surge", () => {
     const talents = computeTalentEffects({
-      forge: ["forge-burn-burst", "forge-strength-6", "forge-to-block"],
+      forge: ["forge-burn-burst", "forge-to-block"],
       armor: ["armor-block-burst"],
     });
-    const first = addForgeToPlayer(battle({ talentEffects: talents, playerStatuses: { forge: 3 } }), 5);
-    expect(first.enemyHealth).toBe(100);
-    expect(first.playerStatuses.block).toBe(0);
-    const recross = addForgeToPlayer({ ...first, playerStatuses: { ...first.playerStatuses, forge: 3 } }, 1);
-    expect(recross.enemyHealth).toBe(100);
-    const armor = applyPlayerStatusEffect(
-      battle({ talentEffects: talents, rng: () => 0 }),
-      { kind: "player-status", status: "block", amount: 8 },
-      [],
+    const forged = addForgeToPlayer(
+      battle({ talentEffects: talents, rng: () => 0, playerStatuses: { forge: 3, burn: 1 } }),
+      5,
     );
-    expect(armor.playerStatuses.armor).toBe(8);
-    const ordinaryBlock = applyPlayerStatusEffect(first, { kind: "player-status", status: "block", amount: 2 }, []);
-    expect(ordinaryBlock.playerStatuses.block).toBe(6);
+    const guarded = applyPlayerStatusEffect(forged, { kind: "player-status", status: "block", amount: 2 }, []);
+    expect(forged.playerStatuses.forge).toBe(13);
+    expect(guarded.playerStatuses).toMatchObject({ forge: 13, block: 9, armor: 9 });
+    expect(guarded.enemyHealth).toBe(100);
   });
 
   it("guarantees the next Physical Crit and spends Parting Cut on the next attack", () => {

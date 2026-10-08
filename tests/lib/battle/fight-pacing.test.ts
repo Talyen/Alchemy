@@ -225,15 +225,13 @@ describe("fight pacing in combat pipelines", () => {
 });
 
 describe("Forge gain pacing", () => {
-  it("scales Forge before evaluating threshold rewards", () => {
-    const base = patchBattleState();
+  it("scales an ordinary Forge gain and its feedback", () => {
     const state = pacedState({
       playerHealth: 8,
       playerMaxHealth: 30,
       enemyHealth: 30,
       enemyMaxHealth: 30,
       turn: 1,
-      talentEffects: { ...base.talentEffects, forgeBurnThreshold: 11, forgeBurnDamage: 3 },
     });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(
@@ -242,8 +240,8 @@ describe("Forge gain pacing", () => {
       texts,
     );
     expect(result.playerStatuses.forge).toBe(12);
-    expect(result.enemyStatuses.burn).toBe(4);
-    expect(result.enemyHealth).toBe(state.enemyHealth - 4);
+    expect(result.enemyStatuses.burn).toBe(0);
+    expect(result.enemyHealth).toBe(state.enemyHealth);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 12 });
     expect(state.playerStatuses.forge).toBe(0);
   });

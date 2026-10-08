@@ -1,3 +1,13 @@
+import { canOfferWildwoodRemoval, enterWildwoodRemoval } from "@/lib/content-systems/wildwood/gauntlet";
+import { flushSaveAfterRunEnd } from "@/features/alchemy/shared/stores/run-lifecycle";
+import {
+  clearLabyrinthNodeInDraft,
+  completeActInDraft,
+  prepareDestinationInDraft,
+  prepareNextDestinationInDraft,
+} from "./progression-commands";
+import { prepareWildwoodBossInDraft } from "./wildwood-commands";
+import type { RunFlowHandlerDeps } from "./run-flow";
 import {
   appendBoonToRunWithDiscovery,
   appendCardToRunWithDiscovery,
@@ -14,6 +24,9 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   awardMaterialsDuringRun,
+  initializeBattle,
+  settleRunVictory,
+  setWildwoodDraft,
   beginRewardClaim,
   createDraftRunRandomSource,
   releaseRewardClaim,
@@ -23,7 +36,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resolveRewardChoice, type ResolvedRewardChoice } from "@/lib/active-run-session";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
-import { REWARD_ROUTES } from "@/lib/routing";
+import { REWARD_ROUTES, ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { finalizeRewardState, getRandomPotionCard } from "../navigation/reward-flow";
 import { getActiveRewardModifiersForContentSystem, shouldGrantAlchemistReward } from "../navigation/reward-math";
 
@@ -50,7 +63,11 @@ export function applyAlchemistPotion({ draft, rng }: { draft: RunTransaction; rn
   appendCardToRunWithDiscovery(draft, potion);
 }
 
-export function claimRunReward(choiceId: string | null, gameSession: GameSession) {
+export function claimRunReward(
+  choiceId: string | null,
+  gameSession: GameSession,
+  getAvailableDestinations?: RunFlowHandlerDeps["getAvailableDestinations"],
+) {
   return dispatchRunSessionCommand(
     (draft) => {
       const session = draft.session;
@@ -105,9 +122,61 @@ export function claimRunReward(choiceId: string | null, gameSession: GameSession
       if (result.clearCompanionRewardCards) setCompanionRewardCards(draft, null);
       if (!isWildwood && result.route === REWARD_ROUTES.DESTINATION) setRunProgressActivity(draft, "destination");
       if (!isWildwood && result.route === REWARD_ROUTES.LABYRINTH_MAP) setRunProgressActivity(draft, "labyrinth-map");
-      return acceptCommand({ result, isWildwood });
+      let nextScreen: Screen = ROUTE_SCREENS.REWARDS;
+      let runEnded = false;
+      let battleStarted: ReturnType<typeof initializeBattle> = null;
+      if (result.route !== REWARD_ROUTES.COMPANION_REWARD) {
+        if (
+          !isWildwood &&
+          (result.route === REWARD_ROUTES.LABYRINTH_VICTORY || result.route === REWARD_ROUTES.WILDWOOD_VICTORY)
+        ) {
+          settleRunVictory(draft);
+          runEnded = true;
+          nextScreen = ROUTE_SCREENS.RUN_VICTORY;
+        } else if (isWildwood) {
+          if (canOfferWildwoodRemoval(draft.run.activeRun.runDeck.length)) {
+            const removal =
+              session.wildwoodDraft && enterWildwoodRemoval(snapshotTransactionValue(session.wildwoodDraft));
+            if (!removal) return rejectCommand("Wildwood reward cannot advance", null);
+            setWildwoodDraft(draft, removal);
+            setRunProgressActivity(draft, "wildwood-removal");
+            nextScreen = ROUTE_SCREENS.WILDWOOD_REMOVAL;
+          } else {
+            const prepared = prepareWildwoodBossInDraft(draft);
+            if (!prepared) return rejectCommand("Wildwood reward cannot advance", null);
+            battleStarted = initializeBattle(draft, {
+              kind: "boss-by-id",
+              options: { bossId: prepared.bossId, wildwoodModifierId: prepared.modifierId },
+            });
+            if (!battleStarted) return rejectCommand("Wildwood battle cannot start", null);
+            nextScreen = ROUTE_SCREENS.BATTLE;
+          }
+        } else if (result.route === REWARD_ROUTES.ACT_COMPLETE) {
+          if (completeActInDraft(draft)) {
+            settleRunVictory(draft);
+            runEnded = true;
+            nextScreen = ROUTE_SCREENS.RUN_VICTORY;
+          } else {
+            if (!getAvailableDestinations)
+              return rejectCommand("Act advancement requires the bound destination sampler", null);
+            prepareNextDestinationInDraft(draft, getAvailableDestinations, 0);
+            nextScreen = ROUTE_SCREENS.DESTINATION;
+          }
+        } else if (result.route === REWARD_ROUTES.LABYRINTH_MAP) {
+          clearLabyrinthNodeInDraft(draft);
+          nextScreen = ROUTE_SCREENS.LABYRINTH_MAP;
+        } else {
+          prepareDestinationInDraft(draft);
+          nextScreen = ROUTE_SCREENS.DESTINATION;
+        }
+      }
+      return acceptCommand({ result, isWildwood, nextScreen, runEnded, battleStarted });
     },
-    undefined,
+    {
+      afterCommit: (committed) => {
+        if (committed?.runEnded) flushSaveAfterRunEnd(gameSession);
+      },
+    },
     gameSession,
   );
 }

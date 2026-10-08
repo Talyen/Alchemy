@@ -77,10 +77,7 @@ export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta:
     delta > 0
       ? halveRounded(delta)
       : delta;
-  let nextState = {
-    ...state,
-    enemyStatuses: { ...state.enemyStatuses, [status]: state.enemyStatuses[status] + traitAdjustedDelta },
-  };
+  let nextState = setEnemyStatus(state, status, state.enemyStatuses[status] + traitAdjustedDelta);
 
   if (
     status === "poison" &&

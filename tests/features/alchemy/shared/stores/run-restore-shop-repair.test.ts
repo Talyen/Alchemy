@@ -13,6 +13,7 @@ import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage/save-c
 import { makeMinimalActiveRunInput } from "../../../../fixtures/active-run";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { defaultGameSession } from "@/app/application-session";
+import { savedActivityFixture } from "../../../../fixtures/run-activity";
 const ownedTrinket = trinketLibrary[0]!;
 const otherTrinket = trinketLibrary[1]!;
 
@@ -65,12 +66,11 @@ describe("saved battle card recovery", () => {
         wishQueue: [cards],
       };
       const activeRun = makeMinimalActiveRunInput({
-        currentScreen: "battle",
         runDeck: cards,
-        activeCombat: {
+        activity: savedActivityFixture("battle", {
           battleState,
           pendingBattleTransition: { kind, resultState: battleState, playerTurnSkipped: false },
-        },
+        }),
       });
       const loaded = evaluateSaveCandidates([
         JSON.stringify({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION, activeRun }),
@@ -105,14 +105,13 @@ describe("run restore shop offering repair", () => {
 
     restoreRun(
       makeActiveRunData({
-        currentScreen: "trinket-shop",
-        trinketShopState: {
+        activity: savedActivityFixture("trinket-shop", {
           trinketIds: [ownedTrinket.id, otherTrinket.id],
           refreshesLeft: 1,
           freeRefreshUsed: false,
           firstPurchaseUsed: true,
           purchasedSlotKeys: [shopItemSlotKey(otherTrinket.id, 1)],
-        },
+        }),
       }),
       {},
       {},
@@ -133,14 +132,13 @@ describe("run restore shop offering repair", () => {
 
     restoreRun(
       makeActiveRunData({
-        currentScreen: "trinket-shop",
-        trinketShopState: {
+        activity: savedActivityFixture("trinket-shop", {
           trinketIds: [ownedTrinket.id, otherTrinket.id],
           refreshesLeft: 0,
           freeRefreshUsed: false,
           firstPurchaseUsed: true,
           purchasedSlotKeys: [shopItemSlotKey(ownedTrinket.id, 0)],
-        },
+        }),
       }),
       {},
       {},
@@ -163,14 +161,13 @@ describe("run restore shop offering repair", () => {
     restoreRun(
       makeActiveRunData({
         characterId: "knight",
-        currentScreen: "equipment-shop",
-        equipmentShopState: {
+        activity: savedActivityFixture("equipment-shop", {
           gear: [shelfUnique, shelfBasic],
           refreshesLeft: 1,
           freeRefreshUsed: false,
           firstPurchaseUsed: true,
           purchasedSlotKeys: ["shelf-basic", "shelf-wardbreaker"],
-        },
+        }),
       }),
       {},
       {},

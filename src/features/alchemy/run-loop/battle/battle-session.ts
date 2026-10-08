@@ -86,11 +86,6 @@ export function createBattleSession(ctx: BattleControllerContext) {
   }
 
   function resetBattleSession() {
-    prepareBattleSessionForStart();
-    ctx.battle.clearOpening();
-  }
-
-  function prepareBattleSessionForStart() {
     ctx.playback.restart();
     clearBattleStageMarks();
     stopBattleFeedback();
@@ -135,6 +130,5 @@ export function createBattleSession(ctx: BattleControllerContext) {
     clearTransferHandles,
     clearAllBattleTimeouts,
     resetBattleSession,
-    prepareBattleSessionForStart,
   };
 }

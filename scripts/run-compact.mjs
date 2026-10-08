@@ -14,7 +14,7 @@ export { completionCounts };
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const USAGE =
-  "Usage: npm run compact -- <command> [args...] (one-shot commands only; use normal commands for watch/debug sessions)";
+  "Usage: npm run compact -- [--live] <command> [args...] (one-shot commands only; use normal commands for watch/debug sessions)";
 
 export async function runCompact(argv, rootDir = ROOT) {
   if (argv[0] === "--") argv = argv.slice(1);
@@ -22,23 +22,25 @@ export async function runCompact(argv, rootDir = ROOT) {
     console.log(USAGE);
     return 0;
   }
+  const live = argv[0] === "--live";
+  if (live) argv = argv.slice(1);
   const [command, ...args] = argv;
   if (!command || command.startsWith("--")) throw new UsageError(USAGE);
   const lane = usesLocalTestLane(command, args) ? await acquireLocalTestLane() : null;
   try {
-    return await runCompactCommand(command, args, rootDir);
+    return await runCompactCommand(command, args, rootDir, live);
   } finally {
     await lane?.release();
   }
 }
 
-async function runCompactCommand(command, args, rootDir) {
+async function runCompactCommand(command, args, rootDir, live = false) {
   const env = usesLocalTestLane(command, args)
     ? { ...process.env, RAYON_NUM_THREADS: process.env.RAYON_NUM_THREADS ?? "1" }
     : process.env;
   // The outer gate already owns full logs and diagnostics. Interactive flags
   // retain their normal terminal behavior even through a one-shot npm entry.
-  if (process.env.ALCHEMY_OUTPUT_CAPTURED === "1" || isInteractiveTestCommand(args)) {
+  if (live || process.env.ALCHEMY_OUTPUT_CAPTURED === "1" || isInteractiveTestCommand(args)) {
     return runStreamCommand(command, args, { cwd: rootDir, env }).status ?? 1;
   }
   const logPath = path.join(rootDir, "reports", "compact", createRunId("compact"), "output.log");

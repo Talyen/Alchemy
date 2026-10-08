@@ -1,3 +1,5 @@
+import { migrateVersion20 } from "./run-activity";
+export { legacyRunNeedsAbandonment } from "./run-activity";
 import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "../metadata";
 import { toFiniteNonNegativeInt } from "../save-schemas/validation-utils";
 import { applyLabyrinthMysteryModifiers } from "@/lib/content-systems/labyrinth/room-rules";
@@ -50,6 +52,7 @@ function migrateVersion19(save: Record<string, unknown>): Record<string, unknown
 
 const saveMigrations: Record<number, (save: Record<string, unknown>) => Record<string, unknown>> = {
   19: migrateVersion19,
+  20: migrateVersion20,
 };
 
 export function migrateSupportedSaveData(raw: unknown): unknown {

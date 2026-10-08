@@ -25,9 +25,9 @@ Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-sess
 Campaign, Labyrinth, and Wildwood victories grant enemy-based Materials through the same reward flow; Wildwood shows them beside Gold on its existing Victory screen and includes them in the run-end summary.
 
 1. Route combat payouts through `computeCombatMaterialReward()` and mystery grants through `computeMysteryMaterialReward()` (both in `@/lib/homestead/material-rewards`); they own herb-find, scavenger/herbalist, and elite/boss ordering per the policy table there. Do not reimplement the sequence at the call site.
-2. Call `awardMaterialsDuringRun(draft, materials)` inside the owning command (`run-loop/run/victory-commands.ts`, `run-loop/run/reward-commands.ts`, `run-loop/navigation/mystery-flow.ts`, or Armory salvage in `shared/stores/gear-session-command.ts`). The canonical site list is `AWARD_MATERIALS_CALL_SITES` in `run-loop/run/run-materials.ts`, enforced by `tests/architecture/run-materials-award-guard.test.ts`; new grant paths must extend it there.
-3. Reuse the run-end display: `awardRunEndMaterials` in `run-loop/run/run-materials.ts`, used by both defeat and victory flows, merges `runMaterialsEarned` and `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`.
-4. Check `tests/features/alchemy/run-loop/run/run-victory-handlers.test.ts` and the affected mystery/reward-flow tests when adding a new source.
+2. Call `awardMaterialsDuringRun(draft, materials)` inside the owning command (`run-loop/run/victory-commands.ts`, `run-loop/run/reward-commands.ts`, `run-loop/navigation/mystery-flow.ts`, or Armory salvage in `shared/stores/gear-session-command.ts`). The canonical site list is `AWARD_MATERIALS_CALL_SITES` in `shared/stores/run-materials.ts`, enforced by `tests/architecture/run-materials-award-guard.test.ts`; new grant paths must extend it there.
+3. Reuse the run-end display: `awardRunEndMaterials` in the write port (implementation in `shared/stores/write/run-end.ts`), used by both defeat and victory flows, merges `runMaterialsEarned` and `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`.
+4. Check `tests/features/alchemy/run-loop/run/run-victory-handlers.dom.test.ts` and the affected mystery/reward-flow tests when adding a new source.
 
 **Do not** call `addMaterialsToStockpile()` on the run profile store directly from run-loop or mystery code for player loot.
 
@@ -47,7 +47,7 @@ Destination eligibility uses health and maximum health after victory bonuses and
 
 - **1. Add route constant** — `src/lib/routing/reward-routes.ts` → `REWARD_ROUTES`, re-exported from `@/lib/routing`
 - **2. Compute route after rewards** — `src/features/alchemy/run-loop/navigation/reward-flow.ts` (`finalizeRewardState` / related; import `@/features/alchemy/run-loop/navigation/reward-flow`)
-- **3. Handle transition** — `run-loop/run/run-flow-rewards.ts` (`executeRewardRouteTransition`) for reward routing; `shell/run-flow-engine.ts` (`createRunFlowEngine`) for shell wiring of all flow factories
+- **3. Handle transition** — `run-loop/run/run-flow.ts` (presentation of committed reward transitions) for reward routing; `shell/run-flow-engine.ts` (`createRunFlowEngine`) for shell wiring of all flow factories
 - **4. Tests** — `tests/features/alchemy/run-loop/navigation/reward-flow.test.ts`; victory-flow tests if end-of-run
 
 ---
@@ -97,7 +97,7 @@ export function awardMaterialReward(
 
 Inside an existing reward, shop, or mystery command, call the mutator with that command's draft instead of dispatching another command. Keep the existing claim guard and reward finalization in the owning flow.
 
-Resolve battle gameplay and commit its RNG/XP before starting presentation. Return detached frames for playback; never commit gameplay from a draw or animation callback. `activeCombat.pendingBattleTransition` is retained only for consuming older saves, not for authoring new animation flows.
+Resolve battle gameplay and commit its RNG/XP before starting presentation. Return detached frames for playback; never commit gameplay from a draw or animation callback. Older activity fields are read only by migration; unfinished legacy combat is abandoned after winner selection, without executing obsolete rules.
 
 ---
 

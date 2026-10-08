@@ -34,6 +34,6 @@ export function resolveAvailableDestinations(input: ResolveAvailableDestinations
     hasAnyOwnedGear: options.hasAnyOwnedGear ?? input.hasAnyOwnedGear,
     hasUnownedTrinkets:
       (options.hasUnownedTrinkets ?? input.hasUnownedTrinkets ?? true) &&
-      isLootEligible("trinket", campaignLootDepth(input.currentAct, destinationIndexInAct + 1)),
+      isLootEligible("trinket", campaignLootDepth(options.currentAct ?? input.currentAct, destinationIndexInAct + 1)),
   });
 }

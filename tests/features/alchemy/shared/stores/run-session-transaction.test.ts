@@ -1,3 +1,4 @@
+import { emptyShopState } from "@/lib/active-run-session";
 import { getBattleForTest } from "../../../../helpers/run-domain-store-test";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -19,11 +20,7 @@ import {
   setHasActiveRun,
   setGold,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import {
-  setBattleState,
-  withDraftWorldBattleRng,
-  snapshotBattleState,
-} from "@/features/alchemy/shared/stores/write/run-battle";
+import { setBattleState, withDraftWorldBattleRng } from "@/features/alchemy/shared/stores/write/run-battle";
 import {
   setDiscoveredCardIds,
   setMaterials as setRunProfileMaterials,
@@ -41,6 +38,7 @@ import {
 import { createRunRngState } from "@/lib/rng";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
 import { defaultGameSession } from "@/app/application-session";
+import { battleSnapshot } from "@/lib/battle";
 
 beforeEach(() => {
   resetRunDomainStore();
@@ -273,13 +271,14 @@ describe("run-session transaction coordinator", () => {
         const bound = withDraftWorldBattleRng(draft, getBattleForTest(draft).battleState);
         const next = { ...bound, playerHealth: Math.max(1, bound.playerHealth - 1) };
         setBattleState(draft, next);
-        return acceptCommand(snapshotBattleState(next));
+        return acceptCommand(battleSnapshot(next));
       },
       undefined,
       defaultGameSession,
     );
 
     expect(returned).not.toHaveProperty("rng");
+    expect(() => JSON.stringify(returned)).not.toThrow();
     expect(readBattle(defaultGameSession).battleState).not.toHaveProperty("rng");
   });
 
@@ -483,7 +482,8 @@ describe("run-session transaction coordinator", () => {
 
   it("hydrates the complete active run before publishing its commit", () => {
     dispatchGameplayCommand((draft) => acceptCommand(setGold(draft, 125)), undefined, defaultGameSession);
-    const savedRun = snapshotRun("shop", defaultGameSession);
+    setRunSession({ activity: { kind: "shop", data: emptyShopState() } });
+    const savedRun = snapshotRun(defaultGameSession);
     resetRunDomainStore();
 
     const commits: Array<{ gold: number; hasActiveRun: boolean; screen: string }> = [];

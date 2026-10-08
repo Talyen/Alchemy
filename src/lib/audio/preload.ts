@@ -49,10 +49,6 @@ export function resetSoundPreloadCache() {
   resetSoundUrlCache();
 }
 
-export function preloadSound(name: string): void {
-  preloadSounds([name]);
-}
-
 export function preloadSounds(names: readonly string[] | string[]) {
   if (typeof Audio === "undefined") return;
   for (const name of names) {

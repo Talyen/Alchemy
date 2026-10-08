@@ -5,7 +5,6 @@ import type { BattleCardEffect, DamageType, EnemyAttackEffect, PlayerStatusId } 
 import type { BattleState, CombatTextEvent } from "./types";
 import { addPlayerStatus, setPlayerStatus } from "./status-state";
 import { effectivePlayerHealingAmount, isPlayerDefeated } from "./health-state";
-import { stripEnemyArmor } from "./enemy-mitigation-state";
 import {
   addPlayerStatusWithCombatText,
   applyHealingWithCombatText,
@@ -17,9 +16,7 @@ import {
 import { mergeCombatText } from "./combat-text-events";
 import { BLEED_STATUS_MULTIPLIER, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
 import { paceCombatMagnitude } from "./fight-pacing";
-import { dealScaledBurnWithStacks } from "./scaled-damage";
-import { getEnemyDamageMultiplier } from "./status-helpers";
-import { applyPercentBonus, crossesGainThreshold } from "./amount-helpers";
+import { applyPercentBonus } from "./amount-helpers";
 import { clamp } from "@/lib/math";
 
 export function applyCardHealing(
@@ -134,7 +131,7 @@ export function addForgeToPlayer(
   options?: { skipFightPacing?: boolean },
 ): BattleState {
   if (baseAmount <= 0) return state;
-  let amount = baseAmount + state.talentEffects.flatForgeGained;
+  let amount = baseAmount;
   if (state.playerStatuses.burn > 0 && state.talentEffects.forgeBurningBonusPercent > 0) {
     amount = applyPercentBonus(amount, state.talentEffects.forgeBurningBonusPercent);
   }
@@ -146,10 +143,7 @@ export function addForgeToPlayer(
   }
   if (!options?.skipFightPacing) amount = paceCombatMagnitude(state, amount, "player");
   if (amount <= 0) return state;
-  const oldForge = state.playerStatuses.forge;
-  const newForge = oldForge + amount;
-  let nextState = addPlayerStatus(state, "forge", amount);
-  nextState = applyForgeThresholdRewards(nextState, oldForge, newForge, combatTexts);
+  const nextState = addPlayerStatus(state, "forge", amount);
   if (combatTexts) {
     mergeCombatText(combatTexts, {
       target: "player",
@@ -178,42 +172,13 @@ export function spendPlayerForgeForAttack(
     : next;
 }
 
-/** Restore after the turn reset so threshold rewards belong to the new turn. */
+/** Restore attack spending once without applying Forge gain bonuses. */
 export function restoreSpentPlayerForge(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
   const amount = state.uniqueGear.spentForge;
   if (amount <= 0) return state;
   const cleared = { ...state, uniqueGear: { ...state.uniqueGear, spentForge: 0 } };
   if (state.gearEffects.recoverSpentForge <= 0) return cleared;
-  const previousForge = state.playerStatuses.forge;
-  const restored = addPlayerStatusWithCombatText(cleared, "forge", amount, combatTexts, { skipFightPacing: true });
-  return applyForgeThresholdRewards(restored, previousForge, restored.playerStatuses.forge, combatTexts);
-}
-
-export function applyForgeThresholdRewards(
-  state: BattleState,
-  oldForge: number,
-  newForge: number,
-  combatTexts?: CombatTextEvent[],
-): BattleState {
-  const { forgeBurnThreshold, forgeStripArmorThreshold, forgeBlockThreshold } = state.talentEffects;
-  let nextState = state;
-  // Burn resolves before stripping Armor and granting Block, including any
-  // Forge earned by the Burn itself. Thresholds use this gain's original span.
-  if (crossesGainThreshold(oldForge, newForge, forgeBurnThreshold) && nextState.enemyHealth > 0) {
-    const burned = dealScaledBurnWithStacks(nextState, nextState.talentEffects.forgeBurnDamage, combatTexts ?? [], {
-      multiplier: getEnemyDamageMultiplier(nextState, "burn"),
-    });
-    nextState =
-      nextState.enemyStatuses.burn === 0 &&
-      burned.enemyHealth < nextState.enemyHealth &&
-      burned.gearEffects.forgeOnBurnVsUnburned > 0
-        ? addForgeToPlayer(burned, burned.gearEffects.forgeOnBurnVsUnburned, combatTexts)
-        : burned;
-  }
-  if (crossesGainThreshold(oldForge, newForge, forgeStripArmorThreshold)) nextState = stripEnemyArmor(nextState);
-  if (crossesGainThreshold(oldForge, newForge, forgeBlockThreshold))
-    nextState = applyBlockReward(nextState, nextState.talentEffects.forgeBlockAmount, combatTexts ?? []);
-  return nextState;
+  return addPlayerStatusWithCombatText(cleared, "forge", amount, combatTexts, { skipFightPacing: true });
 }
 
 export function applyPlayerStatusEffect(

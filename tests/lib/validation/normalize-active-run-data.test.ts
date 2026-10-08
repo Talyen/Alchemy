@@ -1,3 +1,4 @@
+import { savedActivityFixture, savedActivityData } from "../../fixtures/run-activity";
 import { describe, it, expect } from "vitest";
 import { ActiveRunDataSchema } from "@/lib/validation";
 import { createMixedPotion } from "@/lib/alchemist";
@@ -27,7 +28,7 @@ describe("ActiveRunDataSchema normalize", () => {
     const mixed = createMixedPotion(cardById["health-potion"]!, cardById["mana-potion"]!);
     const result = parseActiveRunData({
       runDeck: [mixed, tombstonedCard],
-      activeCombat: {
+      activity: savedActivityFixture("battle", {
         battleState: {
           ...defaultBattleState(),
           deck: [{ ...mixed, uid: 1 }],
@@ -36,11 +37,11 @@ describe("ActiveRunDataSchema normalize", () => {
           discard: [{ ...mixed, uid: 4 }],
           exhausted: [{ ...mixed, uid: 5 }],
         },
-      },
+      }),
     });
     expect(result.runDeck.map((card) => card.id)).toEqual([mixed.id]);
     expect(result.runDeck[0]?.effects).toEqual(mixed.effects);
-    const battle = result.activeCombat!.battleState;
+    const battle = savedActivityData(result, "battle")!.battleState;
     for (const pile of [battle.deck, battle.hand, battle.pendingHandCards, battle.discard, battle.exhausted]) {
       expect(pile).toHaveLength(1);
       expect(pile[0]?.id).toBe(mixed.id);
@@ -56,7 +57,7 @@ describe("ActiveRunDataSchema normalize", () => {
     expect(result.labyrinthPendingNode).toBeNull();
     expect(result.wildwoodDraft).toBeNull();
     expect(result.starterDraftChoices).toBeNull();
-    expect(result.activeCombat).toBeNull();
+    expect(savedActivityData(result, "battle")).toBeNull();
   });
 
   it("drops a labyrinth run whose map is missing", () => {
@@ -77,29 +78,31 @@ describe("ActiveRunDataSchema normalize", () => {
   it("strips labyrinth modifiers for campaign mode", () => {
     const result = parseActiveRunData({
       contentSystemType: "campaign",
-      activeCombat: {
+      activity: savedActivityFixture("battle", {
         battleState: { ...defaultBattleState() },
         activeLabyrinthModifiers: ["mod1"],
         activeLabyrinthRewardModifiers: ["mod2"],
-      },
+      }),
     });
-    expect(result.activeCombat).not.toBeNull();
-    expect(result.activeCombat?.activeLabyrinthModifiers).toEqual([]);
-    expect(result.activeCombat?.activeLabyrinthRewardModifiers).toEqual([]);
+    expect(savedActivityData(result, "battle")).not.toBeNull();
+    expect(result.activeLabyrinthModifiers).toEqual([]);
+    expect(result.activeLabyrinthRewardModifiers).toEqual([]);
   });
 
   it("keeps labyrinth modifiers for labyrinth mode", () => {
     const result = parseActiveRunData({
       contentSystemType: "labyrinth",
+      activeLabyrinthModifiers: ["septic"],
+      activeLabyrinthRewardModifiers: ["generous"],
       labyrinthMap: generateLabyrinthMap(createSeededRng(1)),
-      activeCombat: {
+      activity: savedActivityFixture("battle", {
         battleState: { ...defaultBattleState() },
         activeLabyrinthModifiers: ["septic"],
         activeLabyrinthRewardModifiers: ["generous"],
-      },
+      }),
     });
-    expect(result.activeCombat?.activeLabyrinthModifiers).toEqual(["septic"]);
-    expect(result.activeCombat?.activeLabyrinthRewardModifiers).toEqual(["generous"]);
+    expect(result.activeLabyrinthModifiers).toEqual(["septic"]);
+    expect(result.activeLabyrinthRewardModifiers).toEqual(["generous"]);
   });
 
   it("nulls starter draft choices on wildwood runs", () => {
@@ -126,7 +129,7 @@ describe("ActiveRunDataSchema normalize", () => {
       runDeck: fullDeck,
       starterDraftChoices: [tombstonedCard],
       wildwoodDraft: makeWildwoodDraft({ draftChoices: [tombstonedCard] }),
-      activeCombat: {
+      activity: savedActivityFixture("battle", {
         battleState: {
           ...defaultBattleState(),
           deck: [liveCard, tombstonedCard],
@@ -137,17 +140,14 @@ describe("ActiveRunDataSchema normalize", () => {
           wishOptions: [tombstonedCard],
           wishQueue: [[liveCard], [tombstonedCard, liveCard]],
         },
-      },
-      shopState: { cards: [liveCard, tombstonedCard] },
-      alchemistState: { potions: [tombstonedCard] },
-      mysteryVisit: { event: testMysteryEvent, cardChoices: [tombstonedCard], chosenCardId: "slash" },
+      }),
     });
 
     expect(result.runDeck.map((card) => card.id)).toEqual(Array(DRAFT_ROUNDS).fill("slash"));
     expect(result.starterDraftChoices).toBeNull();
     expect(result.wildwoodDraft?.draftChoices).toEqual([]);
 
-    const state = result.activeCombat!.battleState;
+    const state = savedActivityData(result, "battle")!.battleState;
     expect(state.deck.map((card) => card.id)).toEqual(["slash"]);
     expect(state.hand).toEqual([]);
     expect(state.pendingHandCards.map((card) => card.id)).toEqual([liveCard.id]);
@@ -155,104 +155,98 @@ describe("ActiveRunDataSchema normalize", () => {
     expect(state.exhausted).toEqual([]);
     expect(state.wishOptions?.map((card) => card.id)).toEqual([liveCard.id]);
     expect(state.wishQueue.map((queue) => queue.map((card) => card.id))).toEqual([[liveCard.id]]);
-
-    expect(result.shopState?.cards.map((card) => card.id)).toEqual(["slash"]);
-    expect(result.alchemistState?.potions).toEqual([]);
-    expect(result.mysteryVisit?.cardChoices).toEqual([]);
   });
-
-  it("remaps shop purchasedSlotKeys when a tombstonedCard offering is dropped", () => {
-    const result = parseActiveRunData({
-      shopState: {
-        cards: [tombstonedCard, liveCard],
-        purchasedSlotKeys: ["slash-1"],
-        refreshesLeft: 1,
-      },
-      alchemistState: {
-        potions: [tombstonedCard, liveCard],
-        purchasedSlotKeys: ["slash-1"],
-        mixUsed: false,
-      },
-    });
-
-    expect(result.shopState?.cards.map((card) => card.id)).toEqual(["slash"]);
-    expect(result.shopState?.purchasedSlotKeys).toEqual(["slash-0"]);
-    expect(result.alchemistState?.potions.map((card) => card.id)).toEqual(["slash"]);
-    expect(result.alchemistState?.purchasedSlotKeys).toEqual(["slash-0"]);
-  });
+  it.each(["shop", "alchemist"] as const)(
+    "remaps shop purchasedSlotKeys when a tombstonedCard offering is dropped (%s)",
+    (kind) => {
+      const result = parseActiveRunData({
+        activity: savedActivityFixture(kind, {
+          [kind === "shop" ? "cards" : "potions"]: [tombstonedCard, liveCard],
+          purchasedSlotKeys: ["slash-1"],
+          refreshesLeft: 1,
+        }),
+      });
+      if (result.activity.kind !== "shop" && result.activity.kind !== "alchemist") throw new Error("Expected shelf");
+      const cards = result.activity.kind === "shop" ? result.activity.data.cards : result.activity.data.potions;
+      expect(cards.map((card) => card.id)).toEqual(["slash"]);
+      expect(result.activity.data.purchasedSlotKeys).toEqual(["slash-0"]);
+    },
+  );
 
   it("drops malformed wishQueue entries instead of aborting the parse", () => {
     const result = parseActiveRunData({
-      activeCombat: {
+      activity: savedActivityFixture("battle", {
         battleState: { ...defaultBattleState(), wishOptions: [null], wishQueue: [[liveCard], "junk", 7] },
-      },
+      }),
     });
-    expect(result.activeCombat?.battleState.wishOptions?.map((card) => card.id)).toEqual([liveCard.id]);
-    expect(result.activeCombat?.battleState.wishQueue).toEqual([]);
+    expect(savedActivityData(result, "battle")?.battleState.wishOptions?.map((card) => card.id)).toEqual([liveCard.id]);
+    expect(savedActivityData(result, "battle")?.battleState.wishQueue).toEqual([]);
   });
 
   it("closes an emptied Wish prompt when no valid queued choice remains", () => {
     const result = parseActiveRunData({
-      activeCombat: {
+      activity: savedActivityFixture("battle", {
         battleState: { ...defaultBattleState(), wishOptions: [null], wishQueue: [[{ id: 42 }]] },
-      },
+      }),
     });
-    expect(result.activeCombat?.battleState.wishOptions).toBeNull();
-    expect(result.activeCombat?.battleState.wishQueue).toEqual([]);
+    expect(savedActivityData(result, "battle")?.battleState.wishOptions).toBeNull();
+    expect(savedActivityData(result, "battle")?.battleState.wishQueue).toEqual([]);
   });
 
-  it("preserves purchased slots when a malformed shop card is removed", () => {
-    const result = parseActiveRunData({
-      shopState: { cards: [null, liveCard], purchasedSlotKeys: ["slash-1"] },
-      alchemistState: { potions: [{ id: 42 }, liveCard], purchasedSlotKeys: ["slash-1"] },
-    });
-    expect(result.shopState?.cards.map((card) => card.id)).toEqual(["slash"]);
-    expect(result.shopState?.purchasedSlotKeys).toEqual(["slash-0"]);
-    expect(result.alchemistState?.potions.map((card) => card.id)).toEqual(["slash"]);
-    expect(result.alchemistState?.purchasedSlotKeys).toEqual(["slash-0"]);
-  });
+  it.each(["shop", "alchemist"] as const)(
+    "preserves purchased slots when a malformed shop card is removed (%s)",
+    (kind) => {
+      const result = parseActiveRunData({
+        activity: savedActivityFixture(kind, {
+          [kind === "shop" ? "cards" : "potions"]: [null, liveCard],
+          purchasedSlotKeys: ["slash-1"],
+          refreshesLeft: 1,
+        }),
+      });
+      if (result.activity.kind !== "shop" && result.activity.kind !== "alchemist") throw new Error("Expected shelf");
+      const cards = result.activity.kind === "shop" ? result.activity.data.cards : result.activity.data.potions;
+      expect(cards.map((card) => card.id)).toEqual(["slash"]);
+      expect(result.activity.data.purchasedSlotKeys).toEqual(["slash-0"]);
+    },
+  );
 
   it("preserves activeCombat when battle scalars are corrupt", () => {
     const result = parseActiveRunData({
-      activeCombat: {
+      activity: savedActivityFixture("battle", {
         battleState: { ...defaultBattleState(), mana: "four", gold: -5, turn: 0 },
-      },
+      }),
     });
-    expect(result.activeCombat).not.toBeNull();
-    expect(result.activeCombat?.battleState.mana).toBe(0);
-    expect(result.activeCombat?.battleState.gold).toBe(0);
-    expect(result.activeCombat?.battleState.turn).toBe(1);
+    expect(savedActivityData(result, "battle")).not.toBeNull();
+    expect(savedActivityData(result, "battle")?.battleState.mana).toBe(0);
+    expect(savedActivityData(result, "battle")?.battleState.gold).toBe(0);
+    expect(savedActivityData(result, "battle")?.battleState.turn).toBe(1);
   });
 
-  it.each(["mystery", null] as const)("preserves the saved Mystery offer for resume from %s", (currentScreen) => {
+  it("preserves the saved Mystery offer for resume", () => {
     const result = parseActiveRunData({
-      currentScreen,
-      mysteryVisit: { event: testMysteryEvent, cardChoices: [liveCard] },
+      activity: savedActivityFixture("mystery", { event: testMysteryEvent, cardChoices: [liveCard] }),
     });
-    expect(result.mysteryVisit?.event).toEqual(testMysteryEvent);
-    expect(result.mysteryVisit?.cardChoices?.map((card) => card.id)).toEqual([liveCard.id]);
+    expect(savedActivityData(result, "mystery")?.event).toEqual(testMysteryEvent);
+    expect(savedActivityData(result, "mystery")?.cardChoices?.map((card) => card.id)).toEqual([liveCard.id]);
   });
 
   it("nulls mysteryVisit when currentScreen is not mystery", () => {
-    const result = parseActiveRunData({
-      currentScreen: "shop",
-      mysteryVisit: { event: testMysteryEvent, cardChoices: [liveCard] },
-    });
-    expect(result.mysteryVisit).toBeNull();
+    const result = parseActiveRunData({ activity: savedActivityFixture("shop") });
+    expect(savedActivityData(result, "mystery")).toBeNull();
   });
 });
 
 it("preserves an active Wish and queued choices until the active choice is resolved", () => {
   const result = parseActiveRunData({
-    activeCombat: {
+    activity: savedActivityFixture("battle", {
       battleState: {
         ...defaultBattleState(),
         wishOptions: [liveCard, tombstonedCard],
         wishQueue: [[tombstonedCard], [liveCard]],
       },
-    },
+    }),
   });
-  const state = result.activeCombat!.battleState;
+  const state = savedActivityData(result, "battle")!.battleState;
   expect(state.wishOptions?.map((card) => card.id)).toEqual([liveCard.id]);
   expect(state.wishQueue.map((queue) => queue.map((card) => card.id))).toEqual([[liveCard.id]]);
 });

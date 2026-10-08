@@ -45,10 +45,6 @@ export function toRepoRelative(rootDir, file, { onOutside = "throw" } = {}) {
   throw new Error(`Path is outside repository: ${file}`);
 }
 
-function normalizeRepositoryPath(rootDir, file) {
-  return toRepoRelative(rootDir, file);
-}
-
 /** List tracked + untracked repository files via Git's inventory. Throws on Git failure. */
 export function listRepositoryFiles(rootDir) {
   const result = runGit(rootDir, ["ls-files", "--cached", "--others", "--exclude-standard", "-z"]);
@@ -62,7 +58,7 @@ export function expandRepositoryPaths(rootDir, paths) {
   let inventory;
   const selected = new Set();
   for (const file of paths) {
-    const relative = normalizeRepositoryPath(rootDir, file);
+    const relative = toRepoRelative(rootDir, file);
     if (!statSync(path.resolve(rootDir, relative), { throwIfNoEntry: false })?.isDirectory()) {
       selected.add(relative);
       continue;

@@ -5,13 +5,10 @@ import {
   getRandomPotionCard,
   finalizeRewardState,
 } from "@/features/alchemy/run-loop/navigation/reward-flow";
-import { executeRewardRouteTransition } from "@/features/alchemy/run-loop/run/run-flow-rewards";
 import { createEmptyRewardState, type BoonRewardState } from "@/lib/active-run-session";
 import * as cardPools from "@/lib/game-data/cards/card-pools";
 import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { makeRewardRouteDeps } from "../../../../helpers/destination-route-handlers";
-import { ROUTE_SCREENS } from "@/lib/routing";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 
 describe("reward flow orchestration", () => {
@@ -254,46 +251,6 @@ describe("reward flow orchestration", () => {
       } finally {
         poolSpy.mockRestore();
       }
-    });
-  });
-
-  describe("executeRewardRouteTransition", () => {
-    function makeHandlers() {
-      return makeRewardRouteDeps();
-    }
-
-    it("routes companion rewards back to the rewards screen with the settle hook", () => {
-      const handlers = makeHandlers();
-      executeRewardRouteTransition("companion-reward", handlers);
-      expect(handlers.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.REWARDS, handlers.releaseClaim);
-    });
-
-    it("routes labyrinth map rewards to the labyrinth screen", () => {
-      const handlers = makeHandlers();
-      executeRewardRouteTransition("labyrinth-map", handlers);
-      expect(handlers.labyrinthClearNode).toHaveBeenCalledOnce();
-      expect(handlers.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.LABYRINTH_MAP, handlers.releaseClaim);
-    });
-
-    it("routes wildwood victory through completeRunVictory", () => {
-      const handlers = makeHandlers();
-      executeRewardRouteTransition("wildwood-victory", handlers);
-      expect(handlers.completeRunVictory).toHaveBeenCalledWith(handlers.releaseClaim);
-      expect(handlers.navigateTo).not.toHaveBeenCalled();
-    });
-
-    it("routes act completion without navigation, releasing only the claim", () => {
-      const handlers = makeHandlers();
-      executeRewardRouteTransition("act-complete", handlers);
-      expect(handlers.handleActComplete).toHaveBeenCalledWith(handlers.releaseClaim);
-      expect(handlers.releaseClaim).not.toHaveBeenCalled();
-      expect(handlers.navigateTo).not.toHaveBeenCalled();
-    });
-
-    it("routes campaign rewards to destination", () => {
-      const handlers = makeHandlers();
-      executeRewardRouteTransition("destination", handlers);
-      expect(handlers.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DESTINATION, handlers.releaseClaim);
     });
   });
 });

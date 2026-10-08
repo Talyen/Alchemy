@@ -7,7 +7,7 @@ const ANSI_PATTERN = new RegExp(String.raw`\u001B(?:\][^\u0007]*?(?:\u0007|\u001
 
 // eslint-disable-next-line no-control-regex -- intentional control-char strip for terminal output
 const NON_PRINTABLE_PATTERN = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/gu;
-export const ROUTINE_EXPOSURE_BUDGET_BYTES = 4_096;
+const ROUTINE_EXPOSURE_BUDGET_BYTES = 4_096;
 
 /** Recognize runner totals without exposing every passing test line. */
 export function completionCounts(output) {
@@ -130,20 +130,16 @@ function diagnosticIndexes(lines) {
   const diagnostic =
     /(?:\bFAIL\s|(?:Assertion|Type|Reference|Syntax)?Error:|error TS\d+|\berror\s{2,}|\d+:\d+\s+(?:error|warning)\b|^\s*(?:Expected|Received)|^\s*[−+-]\s+(?:Expected|Received)|\[warn\]|Unused (?:files|exports|dependencies)|Unlisted dependencies)/u;
   const selected = new Set();
+  let sourceIndex;
   for (const [offset, { text }] of lines.entries()) {
+    if (
+      /^(?:\/|[A-Za-z]:[\\/]|(?:src|tests|scripts)\/).*\.[cm]?[jt]sx?$/u.test(
+        text.replace(/^(?:\[[^\]]+\]\s*)*/u, "").trim(),
+      )
+    )
+      sourceIndex = offset;
     if (!diagnostic.test(text)) continue;
-    if (/\d+:\d+\s+(?:error|warning)\b/u.test(text)) {
-      for (let previous = offset - 1; previous >= 0; previous--) {
-        if (
-          /^(?:\/|[A-Za-z]:[\\/]|(?:src|tests|scripts)\/).*\.[cm]?[jt]sx?$/u.test(
-            lines[previous].text.replace(/^(?:\[[^\]]+\]\s*)*/u, "").trim(),
-          )
-        ) {
-          selected.add(previous);
-          break;
-        }
-      }
-    }
+    if (sourceIndex !== undefined && /\d+:\d+\s+(?:error|warning)\b/u.test(text)) selected.add(sourceIndex);
     for (let nearby = Math.max(0, offset - 1); nearby <= Math.min(lines.length - 1, offset + 10); nearby++)
       selected.add(nearby);
   }

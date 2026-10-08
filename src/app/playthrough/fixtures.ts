@@ -34,10 +34,10 @@ export function createPlaythroughFixture(name: "unlocked-v1" | "victory-v1" | "e
   flow.handleCharacterSelect("knight");
   flow.handleDifficultySelect("difficulty-1");
   const fixture = structuredClone(snapshotCareer(gameSession));
-  if (!fixture.activeRun?.activeCombat) throw new Error("Fixture did not start combat");
+  if (fixture.activeRun?.activity.kind !== "battle") throw new Error("Fixture did not start combat");
   fixture.activeRun.currentAct = ACTS_PER_RUN;
   fixture.activeRun.destinationIndexInAct = DESTINATIONS_PER_ACT;
-  fixture.activeRun.activeCombat.battleState.enemyHealth = 0;
-  fixture.activeRun.activeCombat.battleState.currentEnemy.enemyType = "boss";
+  fixture.activeRun.activity.data.battleState.enemyHealth = 0;
+  fixture.activeRun.activity.data.battleState.currentEnemy.enemyType = "boss";
   return fixture;
 }

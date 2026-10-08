@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { sanitizeOutput } from "../compact-output.mjs";
 
 /**
  * Shared report-summary model for the Vitest and Playwright CI summaries.
@@ -16,7 +17,7 @@ const SUMMARY_MESSAGE_CHARS = 240;
 
 /** First display line of a failure message, capped for summaries. */
 export function firstSummaryLine(message) {
-  const text = String(message ?? "");
+  const text = sanitizeOutput(String(message ?? "")).trimStart();
   const newline = text.indexOf("\n");
   return text.slice(0, newline < 0 ? SUMMARY_MESSAGE_CHARS : Math.min(newline, SUMMARY_MESSAGE_CHARS));
 }

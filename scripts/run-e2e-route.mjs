@@ -2,97 +2,38 @@
 import path from "node:path";
 import { runTaskCommand } from "./lib/run-command.mjs";
 import { existsSync } from "node:fs";
+import { isMainModule } from "./lib/is-main-module.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
+function e2eRoute(label, specs, grep) {
+  return Object.freeze({
+    label,
+    args: Object.freeze([
+      "playwright",
+      "test",
+      ...specs.map((spec) => `tests/e2e/specs/${spec}.spec.ts`),
+      ...(grep ? ["--grep", grep] : []),
+      "--project=chromium",
+    ]),
+  });
+}
+
 export const E2E_ROUTES = Object.freeze({
-  audio: Object.freeze({
-    label: "audio Playwright flow",
-    args: ["playwright", "test", "tests/e2e/specs/audio-sfx.spec.ts", "--project", "chromium"],
-  }),
-  gear: Object.freeze({
-    label: "gear Playwright flows",
-    args: ["playwright", "test", "tests/e2e/specs/armory.spec.ts", "--project", "chromium"],
-  }),
-  mystery: Object.freeze({
-    label: "mystery Playwright flow",
-    args: [
-      "playwright",
-      "test",
-      "tests/e2e/specs/destination-progression.spec.ts",
-      "-g",
-      "Mystery",
-      "--project",
-      "chromium",
-    ],
-  }),
-  homestead: Object.freeze({
-    label: "homestead Playwright flow",
-    args: ["playwright", "test", "tests/e2e/specs/homestead-flow.spec.ts", "--project", "chromium"],
-  }),
-  collection: Object.freeze({
-    label: "collection Playwright flow",
-    args: ["playwright", "test", "tests/e2e/specs/collection.spec.ts", "--project", "chromium"],
-  }),
-  talents: Object.freeze({
-    label: "talents Playwright flow",
-    args: ["playwright", "test", "tests/e2e/specs/talents-flow.spec.ts", "--project", "chromium"],
-  }),
-  options: Object.freeze({
-    label: "options Playwright flow",
-    args: [
-      "playwright",
-      "test",
-      "tests/e2e/specs/menu-navigation.spec.ts",
-      "-g",
-      "controller-equivalent options",
-      "--project",
-      "chromium",
-    ],
-  }),
-  locks: Object.freeze({
-    label: "progression locks Playwright flow",
-    args: [
-      "playwright",
-      "test",
-      "tests/e2e/specs/menu-navigation.spec.ts",
-      "-g",
-      "Progression Locks",
-      "--project",
-      "chromium",
-    ],
-  }),
-  shop: Object.freeze({
-    label: "shop Playwright flow",
-    args: ["playwright", "test", "tests/e2e/specs/shop-and-rewards.spec.ts", "--project", "chromium"],
-  }),
-  battle: Object.freeze({
-    label: "battle Playwright flows",
-    args: ["playwright", "test", "tests/e2e/specs/core-gameplay.spec.ts", "--project", "chromium"],
-  }),
-  save: Object.freeze({
-    label: "save Playwright flows",
-    args: [
-      "playwright",
-      "test",
-      "tests/e2e/specs/save-persistence.spec.ts",
-      "tests/e2e/specs/save-error-paths.spec.ts",
-      "--project",
-      "chromium",
-    ],
-  }),
-  labyrinth: Object.freeze({
-    label: "labyrinth Playwright flow",
-    args: ["playwright", "test", "tests/e2e/specs/labyrinth.spec.ts", "--project", "chromium"],
-  }),
-  wildwood: Object.freeze({
-    label: "wildwood Playwright flow",
-    args: ["playwright", "test", "tests/e2e/specs/wildwood.spec.ts", "--project", "chromium"],
-  }),
-  outcomes: Object.freeze({
-    label: "run-outcome Playwright flows",
-    args: ["playwright", "test", "tests/e2e/specs/run-outcomes.spec.ts", "--project", "chromium"],
-  }),
+  audio: e2eRoute("audio Playwright flow", ["audio-sfx"]),
+  gear: e2eRoute("gear Playwright flows", ["armory"]),
+  mystery: e2eRoute("mystery Playwright flow", ["destination-progression"], "Mystery"),
+  homestead: e2eRoute("homestead Playwright flow", ["homestead-flow"]),
+  collection: e2eRoute("collection Playwright flow", ["collection"]),
+  talents: e2eRoute("talents Playwright flow", ["talents-flow"]),
+  options: e2eRoute("options Playwright flow", ["menu-navigation"], "controller-equivalent options"),
+  locks: e2eRoute("progression locks Playwright flow", ["menu-navigation"], "Progression Locks"),
+  shop: e2eRoute("shop Playwright flow", ["shop-and-rewards"]),
+  battle: e2eRoute("battle Playwright flows", ["core-gameplay"]),
+  save: e2eRoute("save Playwright flows", ["save-persistence", "save-error-paths"]),
+  labyrinth: e2eRoute("labyrinth Playwright flow", ["labyrinth"]),
+  wildwood: e2eRoute("wildwood Playwright flow", ["wildwood"]),
+  outcomes: e2eRoute("run-outcome Playwright flows", ["run-outcomes"]),
 });
 
 const E2E_ROUTE_ALIASES = Object.freeze({
@@ -124,9 +65,7 @@ export function resolveE2eRoute(route) {
   return Object.hasOwn(E2E_ROUTES, normalized) ? E2E_ROUTES[normalized] : undefined;
 }
 
-const invokedAsCli = (process.argv[1] ?? "").includes("run-e2e-route.mjs");
-
-if (invokedAsCli) {
+if (isMainModule(import.meta.url)) {
   const route = process.argv[2];
   if (!route || route === "--help" || route === "-h") {
     printHelp();

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getRunPhase, isRunLoopScreen, ROUTE_SCREENS } from "@/lib/routing";
 import { getSteamRichPresenceLabel } from "@/lib/routing/run-phase-presence";
-import { wildwoodPhaseToScreen } from "@/features/alchemy/shared/run-flow/wildwood-screen-routing";
 
 describe("run-screen-router", () => {
   it("classifies run loop screens", () => {
@@ -36,14 +35,5 @@ describe("getSteamRichPresenceLabel", () => {
     expect(getSteamRichPresenceLabel(ROUTE_SCREENS.MENU, "meta")).toBe("In Menu");
     expect(getSteamRichPresenceLabel(ROUTE_SCREENS.TRANSMUTATION, "runLoop")).toBe("Transmuting a Card");
     expect(getSteamRichPresenceLabel(ROUTE_SCREENS.WILDWOOD_REMOVAL, "runLoop")).toBe("Refining the Deck");
-  });
-});
-
-describe("wildwoodPhaseToScreen", () => {
-  it("maps every live phase to the matching resume screen", () => {
-    expect(wildwoodPhaseToScreen("draft")).toBe("draft-deck");
-    expect(wildwoodPhaseToScreen("battle")).toBe("battle");
-    expect(wildwoodPhaseToScreen("reward")).toBe("rewards");
-    expect(wildwoodPhaseToScreen("removal")).toBe("wildwood-removal");
   });
 });

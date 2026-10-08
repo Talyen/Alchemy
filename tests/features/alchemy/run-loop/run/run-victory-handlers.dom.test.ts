@@ -2,7 +2,7 @@ import "../../../../helpers/mock-audio";
 import { replaceBattleForTest as setSyncedBattleState } from "../../../../helpers/run-domain-store-test";
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { createVictoryHandlers } from "@/features/alchemy/run-loop/run/run-flow-victory";
-import { awardRunEndMaterials } from "@/features/alchemy/run-loop/run/run-materials";
+import { awardRunEndMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
 
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-lifecycle";
@@ -332,14 +332,12 @@ describe("createRunFlow victory paths", () => {
       },
     });
     const navigateTo = vi.fn();
-    const onWildwoodRewardComplete = vi.fn();
     const woodBefore = readRunProfile(defaultGameSession).materialInventory.wood;
 
-    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo, onWildwoodRewardComplete }), defaultGameSession);
+    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession);
     handlers.skipRewards();
 
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.REWARDS, expect.any(Function));
-    expect(onWildwoodRewardComplete).not.toHaveBeenCalled();
     expect(readRunProfile(defaultGameSession).materialInventory.wood).toBe(woodBefore + 2);
     (navigateTo.mock.calls[0]![1] as () => void)();
     handlers.skipRewards();

@@ -8,5 +8,4 @@ export interface RunFlowEngineDeps {
   transition: (nextScreen: Screen, options?: ScreenTransitionOptions) => void;
   cancelPending: () => void;
   battle: BattleStartCommands;
-  labyrinthClearNode: () => void;
 }

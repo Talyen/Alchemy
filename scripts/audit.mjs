@@ -6,28 +6,22 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-const SELECTORS = new Set(["--all", "--types", "--amplification", "--content", "--hotspots"]);
+const SELECTORS = new Set(["--all", "--types", "--amplification", "--content"]);
 const HELP_FLAGS = new Set(["--help", "-h"]);
-const FORWARDABLE_FLAGS = new Set(["--verbose", "--json", "--check", "--last", "--run-id", "--min-bytes"]);
-
-function isAllowedForwarded(arg, prev) {
-  if (FORWARDABLE_FLAGS.has(arg)) return true;
-  if (arg.startsWith("--last=") || arg.startsWith("--run-id=") || arg.startsWith("--min-bytes=")) return true;
-  if (prev === "--last" || prev === "--run-id" || prev === "--min-bytes") return true;
-  return false;
+const FORWARDABLE_FLAGS = new Set(["--verbose", "--json", "--check"]);
+function isAllowedForwarded(arg) {
+  return FORWARDABLE_FLAGS.has(arg);
 }
 
 function printHelp() {
   console.log(`Usage: node scripts/audit.mjs [selector] [options]
   --all (default)    Periodic measurable sweep (knip, depcruise, complexity, type-escapes, amplification, content)
-                         NOTE: --all is the periodic sweep, not literally every audit — use --hotspots separately.
+                         NOTE: --all is the periodic sweep, not literally every audit.
                          Type-escape and amplification probes are advisory trends (always exit 0).
                          Accepts --verbose to stream child output.
   --types              Run type-escape audit only
   --amplification      Run change-amplification audit only
   --content            Run content audit only
-  --hotspots           Run context hotspots (route preread budgets + command exposure)
-                         Accepts --last <n>, --run-id <id>, --min-bytes <n>, --json, --check
   --help               Show this help`);
 }
 
@@ -64,21 +58,18 @@ export function parseAuditArgs(argv) {
   const hasTypes = selected.includes("--types");
   const hasAmplification = selected.includes("--amplification");
   const hasContent = selected.includes("--content");
-  const hasHotspots = selected.includes("--hotspots");
   const hasAll = selected.includes("--all");
-  const specificCount = [hasTypes, hasAmplification, hasContent, hasHotspots].filter(Boolean).length;
+  const specificCount = [hasTypes, hasAmplification, hasContent].filter(Boolean).length;
   if (hasAll && specificCount > 0)
-    throw new Error("Conflicting options: --all cannot be combined with --types/--amplification/--content/--hotspots");
-  if (specificCount > 1)
-    throw new Error("Conflicting options: choose only one of --types/--amplification/--content/--hotspots");
-  return { hasTypes, hasAmplification, hasContent, hasHotspots, hasAll, forwardedArgs };
+    throw new Error("Conflicting options: --all cannot be combined with --types/--amplification/--content");
+  if (specificCount > 1) throw new Error("Conflicting options: choose only one of --types/--amplification/--content");
+  return { hasTypes, hasAmplification, hasContent, hasAll, forwardedArgs };
 }
 
 export function resolveAuditScript(parsed) {
   if (parsed.hasTypes) return "scripts/audit-type-escapes.mjs";
   if (parsed.hasAmplification) return "scripts/audit-change-amplification.mjs";
   if (parsed.hasContent) return "scripts/content-audit.mjs";
-  if (parsed.hasHotspots) return "scripts/context-hotspots.mjs";
   return "scripts/audit-all.mjs";
 }
 

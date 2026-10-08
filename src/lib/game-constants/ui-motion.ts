@@ -6,7 +6,6 @@ export const TOOLTIP_FADE_MS = 120;
 
 export const NAVIGATION_DELAY_MS = 100;
 export const CAMPFIRE_ANIMATION_MS = 1200;
-export const CAMPFIRE_CONTINUE_DELAY_MS = 800;
 
 export const INITIAL_LOAD_MIN_DURATION_MS = 3000;
 export const FONT_PRELOAD_TIMEOUT_MS = 10_000;

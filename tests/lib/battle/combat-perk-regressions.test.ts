@@ -59,17 +59,17 @@ describe("combat perk regressions", () => {
     expect(fullHealthTexts).toEqual([]);
   });
 
-  it("Vanguard's Crest applies Forge bonuses and threshold rewards", () => {
+  it("Vanguard's Crest applies Overheat and Intensify to absorbed-hit Forge", () => {
     const state = patchBattleState({
-      playerStatuses: { block: 5, forge: 2 },
+      playerStatuses: { block: 5, forge: 2, burn: 1 },
       trinketEffects: { vanguardCrestForgeOnBlockAbsorb: 1 },
-      talentEffects: { flatForgeGained: 1, forgeBurnThreshold: 4, forgeBurnDamage: 8 },
+      talentEffects: { forgeBurningBonusPercent: 100, forgeDoubleChance: 100 },
     });
     const result = processEnemyDamageEffect(state, { kind: "damage", damageType: "physical", amount: 5 }, []);
     expect(result.playerHealth).toBe(state.playerHealth);
-    expect(result.playerStatuses.forge).toBe(4);
-    expect(result.enemyHealth).toBe(state.enemyHealth - 8);
-    expect(result.enemyStatuses.burn).toBe(8);
+    expect(result.playerStatuses.forge).toBe(6);
+    expect(result.enemyHealth).toBe(state.enemyHealth);
+    expect(result.enemyStatuses.burn).toBe(0);
   });
 
   it("Forge from Burn damage receives Forge gain bonuses", () => {
@@ -78,7 +78,8 @@ describe("combat perk regressions", () => {
       hand: [card],
       rng: () => 0.99,
       gearEffects: { forgeOnBurnVsUnburned: 1 },
-      talentEffects: { flatForgeGained: 1 },
+      playerStatuses: { burn: 1 },
+      talentEffects: { forgeBurningBonusPercent: 100 },
     });
     const result = playBattleCardResolved(state, card.id, 0).state;
     expect(result.playerStatuses.forge).toBe(2);

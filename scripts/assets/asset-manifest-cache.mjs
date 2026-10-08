@@ -20,12 +20,11 @@ function canonicalize(value) {
     return value.map(canonicalize);
   }
   if (value && typeof value === "object") {
-    /** @type {Record<string, unknown>} */
-    const sorted = {};
-    for (const key of Object.keys(value).sort()) {
-      sorted[key] = canonicalize(/** @type {Record<string, unknown>} */ (value)[key]);
-    }
-    return sorted;
+    return Object.fromEntries(
+      Object.keys(value)
+        .sort()
+        .map((key) => [key, canonicalize(/** @type {Record<string, unknown>} */ (value)[key])]),
+    );
   }
   return value;
 }
@@ -174,14 +173,6 @@ function normalizeManifestEntry(value) {
 }
 
 /**
- * @param {unknown} value
- * @returns {ManifestEntry | null}
- */
-function parseManifestEntry(value) {
-  return normalizeManifestEntry(value);
-}
-
-/**
  * @param {string} manifestPath
  * @returns {Promise<Record<string, ManifestEntry>>}
  */
@@ -193,7 +184,7 @@ export async function loadManifest(manifestPath) {
       /** @type {Record<string, ManifestEntry>} */
       const entries = {};
       for (const [key, value] of Object.entries(parsed)) {
-        const entry = parseManifestEntry(value);
+        const entry = normalizeManifestEntry(value);
         if (entry) {
           entries[key] = entry;
         }

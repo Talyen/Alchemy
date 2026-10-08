@@ -12,17 +12,15 @@ function syncPlaybackSettings() {
 }
 
 export function setMuted(value: boolean) {
-  // Read the host once: initAudioHost caches it in hostForcesMute, but
-  // setMuted must also stay correct when it runs before init (or in tests).
-  const mutedHost = audioState.hostForcesMute || isNonPlayerAudioHost();
+  // Window visibility can change after startup; host muting cannot be latched.
+  const mutedHost = isNonPlayerAudioHost();
   audioState.muted = value || mutedHost;
   syncPlaybackSettings();
   if (mutedHost) pauseAllMusic();
 }
 
 export function initAudioHost() {
-  audioState.hostForcesMute = isNonPlayerAudioHost();
-  if (audioState.hostForcesMute) setMuted(true);
+  setMuted(audioState.muted);
 }
 
 export function setSfxVolume(value: number) {

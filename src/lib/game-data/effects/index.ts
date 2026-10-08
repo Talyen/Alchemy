@@ -6,9 +6,4 @@ export {
   isRecursiveBattleCardEffectKind,
   type BattleCardEffectKind,
 } from "./registry";
-export {
-  ENEMY_STATUS_DAMAGE_IDS,
-  ENEMY_STATUS_IDS,
-  EnemyStatusDamageIdSchema,
-  EnemyStatusIdSchema,
-} from "./shared-schemas";
+export { CompanionIdSchema, EnemyStatusIdSchema } from "./shared-schemas";

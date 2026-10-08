@@ -1,11 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { battleSnapshot, defaultBattleState } from "@/lib/battle";
+import { battleSnapshot, defaultBattleState, endPlayerTurn } from "@/lib/battle";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
-import type { TrinketManifest } from "@/lib/battle/types";
-import { computeTrinketManifest } from "@/lib/trinkets";
 import { cardById, enemyById } from "@/lib/game-data";
 import { MANABURN_DAMAGE_PERCENT, MAX_HAND_SIZE, MIN_MAX_MANA_FLOOR } from "@/lib/game-constants";
-import { normalizePersistedBattleState, repairPersistedTrinketManifest } from "@/lib/validation";
+import { normalizePersistedBattleState } from "@/lib/validation";
 
 describe("normalizePersistedBattleState", () => {
   it("repairs related fields consistently without mutating the saved battle", () => {
@@ -124,6 +122,7 @@ describe("normalizePersistedBattleState", () => {
         nextCardCostReduction: -3,
         sanguinePhysicalBonus: 5,
         firstLeechCardDoubledUsed: true,
+        firstArmorCardDoubledUsed: true,
       } as unknown as ReturnType<typeof defaultBattleState>["flags"],
     };
 
@@ -144,6 +143,26 @@ describe("normalizePersistedBattleState", () => {
         holyOnAttackBlocked: 6,
         archeryHolyDamageVsFrozen: 2,
         blockOnConsume: 4,
+        armorBlockThreshold: 5,
+        armorBlockAmount: 3,
+        armorCleanseThreshold: 5,
+        flatArmorAmount: 2,
+        firstArmorCardDoubled: true,
+        forgeBurnThreshold: 4,
+        forgeBurnDamage: 8,
+        forgeStripArmorThreshold: 5,
+        flatForgeGained: 1,
+        forgeBlockThreshold: 4,
+        forgeBlockAmount: 3,
+        freezeDoubleDamage: true,
+        freezeBlocksRegen: true,
+        freezePreventsEnemyScaling: true,
+        freezePreventsEnemyDodge: true,
+        startFreeze: 3,
+        damageReduction: 3,
+        damageReductionWithCompanion: 3,
+        poisonReducesEnemyDamage: 3,
+        natureDamageReduction: 3,
         cardHealMultipliers: { apple: 1, bread: 1 },
         trinketSiphonChance: 100,
         leechBleedChance: 100,
@@ -161,27 +180,43 @@ describe("normalizePersistedBattleState", () => {
     expect(normalizePersistedBattleState(normalized).talentEffects).toEqual(normalized.talentEffects);
   });
 
-  it("sanitizes persisted enemy traits", () => {
-    const saved = {
-      ...defaultBattleState(),
-      currentEnemy: {
-        ...defaultBattleState().currentEnemy,
+  it("drops a retired Forge reaction queue without changing the current combat snapshot", () => {
+    const current = normalizePersistedBattleState({ ...defaultBattleState(), playerHealth: 17, gold: 25 });
+    const restored = normalizePersistedBattleState({
+      ...current,
+      pendingForgeThresholds: [{ previousForge: 0, nextForge: 5 }],
+    } as typeof current);
+    expect(restored).toEqual(current);
+    expect(Object.hasOwn(restored, "pendingForgeThresholds")).toBe(false);
+  });
 
-        traits: [{ id: "tempered", kind: "combat" as const }] as unknown as ReturnType<
-          typeof defaultBattleState
-        >["currentEnemy"]["traits"],
+  it("drops unsupported saved traits while keeping current encounter modifiers playable", () => {
+    const defaults = defaultBattleState();
+    const saved = {
+      ...defaults,
+      contentSystemType: "labyrinth" as const,
+      encounterBenefits: ["generous" as const],
+      currentEnemy: {
+        ...defaults.currentEnemy,
+        traits: [
+          { id: "tempered", kind: "combat" },
+          { id: "generous", title: "Generous", description: "A reward, not an enemy action" },
+          { id: "removed-native-trait", title: "Old trait", description: "No current behavior" },
+          null,
+        ] as unknown as typeof defaults.currentEnemy.traits,
       },
     };
 
     const normalized = normalizePersistedBattleState(saved);
-
+    expect(() => endPlayerTurn({ ...normalized, rng: () => 0.99 })).not.toThrow();
     expect(normalized.currentEnemy.traits.map((trait) => trait.id)).toEqual([
       ...enemyById.skeleton.traits.map((trait) => trait.id),
       "tempered",
     ]);
+    expect(normalized.encounterBenefits).toEqual(["generous"]);
   });
 
-  it("repairs malformed defenses and control counters while retaining valid live stacks", () => {
+  it("repairs malformed modifiers, defenses and control counters while retaining valid live values", () => {
     const defaults = defaultBattleState();
     const normalized = normalizePersistedBattleState({
       currentEnemy: enemyById.skeleton,
@@ -198,6 +233,14 @@ describe("normalizePersistedBattleState", () => {
         flatBurnDamage: 1.5,
         retiredDamage: 9,
       } as unknown as typeof defaults.gearEffects,
+      talentEffects: {
+        ...defaults.talentEffects,
+        flatPhysicalDamage: "6",
+        flatBurnDamage: Infinity,
+        potionPotency: Number.NaN,
+        firstBurnCardFree: "false",
+        armorLowHealthBonusPercent: 25,
+      } as unknown as typeof defaults.talentEffects,
       playerCC: { stunSkipTurns: -1 } as typeof defaults.playerCC,
       enemyCC: { cooldown: Number.NaN, retiredControl: 4 } as unknown as typeof defaults.enemyCC,
       enemyMitigation: { armor: -5, block: 3, retiredMitigation: 8 } as unknown as typeof defaults.enemyMitigation,
@@ -205,6 +248,7 @@ describe("normalizePersistedBattleState", () => {
     expect(normalized.playerStatuses).toEqual({ ...defaults.playerStatuses, block: 4 });
     expect(normalized.enemyStatuses).toEqual({ ...defaults.enemyStatuses, burn: 6 });
     expect(normalized.gearEffects).toEqual({ ...defaults.gearEffects, flatBurnDamage: 1.5 });
+    expect(normalized.talentEffects).toEqual({ ...defaults.talentEffects, armorLowHealthBonusPercent: 25 });
     expect(
       computeCardDamageToEnemy(
         { ...defaults, ...normalized, rng: () => 0.99, appliesFightPacing: false },
@@ -215,51 +259,5 @@ describe("normalizePersistedBattleState", () => {
     expect(normalized.enemyCC).toEqual(defaults.enemyCC);
     expect(normalized.enemyMitigation).toEqual({ ...defaults.enemyMitigation, block: 3 });
     expect(normalizePersistedBattleState(normalized)).toEqual(normalized);
-  });
-});
-
-describe("repairPersistedTrinketManifest (owned by normalize-persisted-battle-state)", () => {
-  it("recomputes default trinketEffects from runBoons", () => {
-    const battleState = defaultBattleState();
-    const repaired = repairPersistedTrinketManifest(battleState, ["bone-charm"]);
-    expect(repaired.trinketEffects.boneCharmHealOnKill).toBe(3);
-  });
-
-  it("leaves non-default manifests unchanged", () => {
-    const battleState = {
-      ...defaultBattleState(),
-      trinketEffects: {
-        ...defaultBattleState().trinketEffects,
-        boneCharmHealOnKill: 9,
-      },
-    };
-    const repaired = repairPersistedTrinketManifest(battleState, ["bone-charm"]);
-    expect(repaired.trinketEffects.boneCharmHealOnKill).toBe(9);
-  });
-
-  it("drops retired trinket fields when recomputing from runBoons", () => {
-    const defaults = defaultBattleState();
-    // Simulates a save written before retired fields were removed from the manifest.
-    const legacyEffects: TrinketManifest & Record<string, unknown> = {
-      ...defaults.trinketEffects,
-      blockToArmorThreshold: 6,
-      blockToArmorAmount: 1,
-      mortarPestleFreeFirstPotion: true,
-      grovesFavorStartHeal: 2,
-    };
-    const battleState = { ...defaults, trinketEffects: legacyEffects };
-
-    const repaired = repairPersistedTrinketManifest(battleState, ["ironwood-buckler", "mortar-and-pestle"]);
-
-    expect(repaired.trinketEffects).toEqual(computeTrinketManifest(["ironwood-buckler", "mortar-and-pestle"]));
-    expect(repaired.trinketEffects).not.toHaveProperty("blockToArmorThreshold");
-    expect(repaired.trinketEffects).not.toHaveProperty("mortarPestleFreeFirstPotion");
-    expect(repaired.trinketEffects).not.toHaveProperty("grovesFavorStartHeal");
-  });
-
-  it("no-ops when runBoons is empty", () => {
-    const battleState = defaultBattleState();
-    const repaired = repairPersistedTrinketManifest(battleState, []);
-    expect(repaired).toBe(battleState);
   });
 });

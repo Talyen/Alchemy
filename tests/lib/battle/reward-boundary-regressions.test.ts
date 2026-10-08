@@ -3,7 +3,6 @@ import { cardById, getEnemyAbilityCard } from "@/lib/game-data";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { applyWishEffect } from "@/lib/battle/wish";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
-import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("combat reward boundaries", () => {
@@ -28,17 +27,6 @@ describe("combat reward boundaries", () => {
     expect(result.playerStatuses.thorns).toBe(0);
     expect(result.enemyHealth).toBe(state.enemyHealth - 3);
     expect(result.flags.nextHitCrit).toBe(true);
-  });
-
-  it("Apothecary's Guard preserves the first Armor-card bonus for the card's effect", () => {
-    const card = cardById["stoneskin-potion"]!;
-    const state = patchBattleState({
-      hand: [card],
-      talentEffects: { armorOnPotionCard: 1, firstArmorCardDoubled: true },
-    });
-    const result = playBattleCardResolved(state, card.id, 0).state;
-    expect(result.playerStatuses.armor).toBe(9);
-    expect(result.flags.firstArmorCardDoubledUsed).toBe(true);
   });
 
   it("a fatal Wish retaliation stops rewards from subsequent Wishes", () => {

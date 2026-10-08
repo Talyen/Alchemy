@@ -8,7 +8,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
   function presentBattleStart({ startingTexts, companionId, outcome, openingCardIds }: BattleStarted) {
     const battleState = ctx.battle.read().battleState;
     preloadBattleSounds(openingCardIds, battleState.currentEnemy.id, battleState.currentEnemy.abilityIds);
-    session.prepareBattleSessionForStart();
+    session.resetBattleSession();
     const presentationStore = ctx.getPresentation();
     ctx.playback.beginOpening();
     presentationStore.setOpeningDrawPending(true);

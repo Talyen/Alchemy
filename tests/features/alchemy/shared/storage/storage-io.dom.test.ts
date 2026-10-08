@@ -1,3 +1,4 @@
+import { savedActivityFixture, savedActivityData } from "../../../../fixtures/run-activity";
 import { loadAlchemySaveState, saveAlchemySaveData } from "@/features/alchemy/shared/storage";
 import { defaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { configureSaveBackend } from "@/features/alchemy/shared/storage/io";
@@ -247,7 +248,7 @@ describe("storage io", () => {
   it.each([
     { label: "missing", enemy: undefined },
     { label: "unknown", enemy: { id: "missing-enemy" } },
-  ])("keeps the run and warns when a battle has a $label enemy", async ({ enemy }) => {
+  ])("preserves permanent progress and warns when the selected battle has a $label enemy", async ({ enemy }) => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const campaign = currentSchemaCampaignSave();
     const activeRun = (campaign as Record<string, unknown>).activeRun;
@@ -258,16 +259,18 @@ describe("storage io", () => {
       ...campaign,
       activeRun: {
         ...activeRun,
-        activeCombat: { battleState: { ...defaultBattleState(), currentEnemy: enemy } },
+        activity: savedActivityFixture("battle", { battleState: { ...defaultBattleState(), currentEnemy: enemy } }),
       },
     });
 
     const loaded = await loadAlchemySaveState(defaultGameSession);
 
     expect(loaded.status.kind).toBe("ok");
-    expect(loaded.data.activeRun).not.toBeNull();
-    expect(loaded.data.activeRun?.activeCombat).toBeNull();
-    expect(loaded.status.kind === "ok" ? loaded.status.warnings : []).toContain("battle could not be restored");
+    expect(loaded.data.activeRun).toBeNull();
+    expect(loaded.data.gold).toBe(42);
+    expect(loaded.data.discoveredCardIds).toEqual(["slash", "block", "bash"]);
+    expect(savedActivityData(loaded.data.activeRun, "battle")).toBeNull();
+    expect(loaded.status.kind === "ok" ? loaded.status.warnings : []).toContain("active run could not be restored");
   });
 
   it.each(futureSaveCases)("saves new browser progress beside $label", async ({ payload, expectedStatus }) => {

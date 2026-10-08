@@ -240,7 +240,7 @@ describe("Sun-Struck Shield reflection", () => {
   it("applies enemy Holy weakness without multiplying reflection through Shatter", () => {
     const next = processEnemyDamageEffect(
       battle({
-        talentEffects: { ...shieldTalents, freezeDoubleDamage: true },
+        talentEffects: { ...shieldTalents, freezeDamageBonusVsFrozen: 1 },
         currentEnemy: { traits: [{ id: "holy-vulnerability", title: "", description: "" }] },
         enemyCC: { freezeSkipTurns: 1 },
         playerStatuses: { block: 10 },

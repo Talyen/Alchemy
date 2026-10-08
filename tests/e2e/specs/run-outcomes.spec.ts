@@ -2,15 +2,16 @@ import { test, expect } from "../../fixtures/e2e";
 import {
   injectBossState,
   injectActiveBattle,
-  assertEndRunShowsRecap,
   winBattleAndClaimReward,
   makeGoblinBattleState,
   startAtDestination,
   SAVE_KEY,
+  readSavedGame,
 } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { DestinationPage } from "../../pages/destination-page";
 import { critical } from "../../playwright-tags";
+import { expectRunPhase } from "../../pages/game-stage";
 
 test.describe("Run Outcomes", () => {
   test.describe("Victory Flow", () => {
@@ -28,16 +29,12 @@ test.describe("Run Outcomes", () => {
 
         await winBattleAndClaimReward(page);
 
-        const destinationBtns = page.getByRole("button", {
-          name: /Combat|Campfire|Card Shop|Alchemist|Mystery|Corruption|Trinket Shop|Gear Shop/,
-        });
-        await expect(destinationBtns.first()).toBeVisible({ timeout: 3000 });
-        expect(await destinationBtns.count()).toBeGreaterThanOrEqual(1);
+        await destination.expectVisible();
+        await expect.poll(async () => (await readSavedGame(page)).activeRun?.currentAct).toBe(2);
       },
     );
 
-    // Nightly-only: Act I above gates the boss-victory wiring every push;
-    // Act III shares that flow and only swaps the victory screen.
+    // The final boss also settles and clears the run rather than advancing an act.
     test("defeating Act III boss shows run victory screen", async ({ page, fastBattle }) => {
       void fastBattle;
       await injectBossState(page, 3);
@@ -48,8 +45,10 @@ test.describe("Run Outcomes", () => {
       await destination.enterCombat("Boss");
       await winBattleAndClaimReward(page);
 
+      await expectRunPhase(page, "runEnd");
       await expect(page.getByRole("heading", { name: /Victory|Triumph|Run Complete/i })).toBeVisible({ timeout: 5000 });
       await expect(page.getByRole("button", { name: "Main Menu" })).toBeVisible({ timeout: 5000 });
+      await expect.poll(async () => (await readSavedGame(page)).activeRun).toBeNull();
     });
   });
 
@@ -62,22 +61,6 @@ test.describe("Run Outcomes", () => {
       await expect(page.getByRole("heading", { name: "Journey’s End" })).toBeVisible({ timeout: 5000 });
       await page.getByRole("button", { name: "Main Menu" }).click();
       await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible({ timeout: 5000 });
-    });
-
-    test("manual End Run in battle shows the End Run screen and clears the active run", async ({
-      page,
-      fastBattle,
-    }) => {
-      void fastBattle;
-
-      await injectActiveBattle(page, makeGoblinBattleState());
-      await assertEndRunShowsRecap(page);
-
-      const activeRun = await page.evaluate((saveKey) => {
-        const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-        return save.activeRun ?? null;
-      }, SAVE_KEY);
-      expect(activeRun).toBeNull();
     });
 
     test(

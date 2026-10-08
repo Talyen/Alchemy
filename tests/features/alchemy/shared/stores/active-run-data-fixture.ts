@@ -1,3 +1,4 @@
+import { savedActivityFixture } from "../../../../fixtures/run-activity";
 import { defaultBattleState } from "@/lib/battle";
 import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
@@ -40,7 +41,6 @@ export function makeActiveRunData(overrides: Partial<ActiveRunData> = {}): Activ
     activeLabyrinthRewardModifiers: [],
     wildwoodDraft: null,
     starterDraftChoices: null,
-    activeCombat: null,
     runTalentXP: {},
     runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 },
     runCurrenciesEarned: { ...EMPTY_CRAFTING_CURRENCIES },
@@ -48,16 +48,7 @@ export function makeActiveRunData(overrides: Partial<ActiveRunData> = {}): Activ
     runHistory: [],
     runHistoryPartial: false,
     runGoldEarned: 0,
-    currentScreen: null,
-    interruptedFlow: { kind: "none" },
-    shopState: null,
-    alchemistState: null,
-    trinketShopState: null,
-    equipmentShopState: null,
-    mysteryVisit: null,
-    corruptionResult: null,
-    campfireState: null,
-    transmutationState: null,
+    activity: savedActivityFixture("destination"),
     ...overrides,
   } satisfies ActiveRunData;
 }
@@ -70,7 +61,7 @@ export function createCompleteActiveRunData(): ActiveRunData {
     ...defaultBattleState(),
     turn: 4,
     playerHealth: 19,
-    turnPhase: "enemy" as const,
+    turnPhase: "player" as const,
     hand: [],
   };
 
@@ -104,12 +95,6 @@ export function createCompleteActiveRunData(): ActiveRunData {
     activeLabyrinthRewardModifiers: ["generous"],
     wildwoodDraft: null,
     starterDraftChoices: null,
-    activeCombat: {
-      battleState,
-      pendingBattleTransition: { kind: "continue-end-turn" },
-      activeLabyrinthModifiers: ["tempered"],
-      activeLabyrinthRewardModifiers: ["generous"],
-    },
     runTalentXP: { armor: 11, burn: 7 },
     runMaterialsEarned: { wood: 2, iron: 3, herbs: 4, food: 5, gems: 6, stone: 0, hide: 0 },
     runCurrenciesEarned: { ...EMPTY_CRAFTING_CURRENCIES, "discordant-dice": 2 },
@@ -117,47 +102,11 @@ export function createCompleteActiveRunData(): ActiveRunData {
       { kind: "gear", instance: { instanceId: "resume-obtained-gear", definitionId: "ruby-ring-basic", affixes: [] } },
       { kind: "trinket", trinketId: "bone-charm" },
     ],
-    currentScreen: "destination",
-    interruptedFlow: {
-      kind: "destination",
-      destinations: ["Mystery", "Card Shop"],
-      selectedBossId: null,
-      lastVictoryEnemyType: "elite",
-      lastVictoryContentSystem: "labyrinth",
-    },
-    shopState: {
-      cards: [slash],
-      removeUsed: true,
-      refreshesLeft: 1,
-      freeRefreshUsed: false,
-      firstPurchaseUsed: true,
-      purchasedSlotKeys: ["card:0"],
-    },
-    alchemistState: {
-      potions: [block],
-      mixUsed: true,
-      refreshesLeft: 2,
-      freeRefreshUsed: false,
-      firstPurchaseUsed: true,
-      purchasedSlotKeys: ["potion:0"],
-    },
-    trinketShopState: {
-      trinketIds: ["bone-charm"],
-      refreshesLeft: 1,
-      freeRefreshUsed: false,
-      firstPurchaseUsed: true,
-      purchasedSlotKeys: ["trinket:0"],
-    },
-    equipmentShopState: {
-      gear: [{ instanceId: "resume-gear", definitionId: "ruby-ring-basic", affixes: [] }],
-      refreshesLeft: 1,
-      freeRefreshUsed: false,
-      firstPurchaseUsed: true,
-      purchasedSlotKeys: ["gear:0"],
-    },
-    mysteryVisit: null,
-    corruptionResult: null,
-    campfireState: null,
-    transmutationState: null,
+    activity: savedActivityFixture("battle", {
+      battleState,
+
+      activeLabyrinthModifiers: ["tempered"],
+      activeLabyrinthRewardModifiers: ["generous"],
+    }),
   } satisfies ActiveRunData;
 }

@@ -4,12 +4,13 @@ import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 
-const GUARD_PORT = 48158;
-
-function guardDirectory(rootDir) {
+function guardIdentity(rootDir) {
   const root = fs.realpathSync(rootDir);
   const key = crypto.createHash("sha256").update(root).digest("hex").slice(0, 24);
-  return path.join(os.tmpdir(), `alchemy-artifacts-${key}`);
+  return {
+    directory: path.join(os.tmpdir(), `alchemy-artifacts-${key}`),
+    port: 20_000 + (Number.parseInt(key.slice(0, 8), 16) % 20_000),
+  };
 }
 
 function ownerAlive(pid) {
@@ -22,14 +23,14 @@ function ownerAlive(pid) {
   }
 }
 
-async function acquireMutex() {
+async function acquireMutex(port) {
   const deadline = Date.now() + 2_000;
   for (;;) {
     const server = net.createServer((socket) => socket.destroy());
     try {
       await new Promise((resolve, reject) => {
         server.once("error", reject);
-        server.listen({ host: "127.0.0.1", port: GUARD_PORT, exclusive: true }, resolve);
+        server.listen({ host: "127.0.0.1", port, exclusive: true }, resolve);
       });
       // The OS releases this mutex on owner termination; no stale lock recovery
       // can race a new owner or require terminating an unrelated listener.
@@ -62,10 +63,10 @@ function activeOwners(directory, dryRun) {
 
 /** Serialize registration and deletion across participating processes. */
 export async function withArtifactGuard(rootDir, operation, { dryRun = false } = {}) {
-  const release = await acquireMutex();
+  const { directory, port } = guardIdentity(rootDir);
+  const release = await acquireMutex(port);
   try {
-    const directory = guardDirectory(rootDir);
-    return operation({ active: activeOwners(directory, dryRun), directory });
+    return await operation({ active: activeOwners(directory, dryRun), directory });
   } finally {
     await release();
   }

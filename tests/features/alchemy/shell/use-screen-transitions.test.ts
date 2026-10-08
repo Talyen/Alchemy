@@ -171,14 +171,14 @@ it.each(["idle", "shop", "rewards", "battle"] as const)(
       );
     }
     const before = readGameplayState(defaultGameSession);
-    const save = snapshotRun(undefined, defaultGameSession);
+    const save = snapshotRun(defaultGameSession);
     function assertGameplayUnchanged() {
       const after = readGameplayState(defaultGameSession);
       expect(after.session).toBe(before.session);
       expect(after.session.activity).toBe(before.session.activity);
       expect(after.run.activeRun).toBe(before.run.activeRun);
       expect(after.runProfile).toBe(before.runProfile);
-      expect(snapshotRun(undefined, defaultGameSession)).toEqual(save);
+      expect(snapshotRun(defaultGameSession)).toEqual(save);
     }
     showRunScreen("mystery", defaultGameSession);
     assertGameplayUnchanged();

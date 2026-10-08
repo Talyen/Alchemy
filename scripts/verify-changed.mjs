@@ -10,13 +10,21 @@ import { COMMANDS, DOCS_CHECK_KEY } from "./lib/verification/test-commands.mjs";
 import { ensureRunId, writeCurrentRun } from "./lib/verification/current-run.mjs";
 import { defineScript } from "./lib/script-run.mjs";
 import { runCommand } from "./lib/run-command.mjs";
-import { recordAgentEvent } from "./lib/agent/agent-events.mjs";
-import { captureVerificationInputs, createVerificationCache } from "./lib/verification/verification-cache.mjs";
+import { createVerificationCache } from "./lib/verification/verification-cache.mjs";
 import { selectContext } from "./lib/agent/agent-context.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
-const VERIFY_FLAGS = new Set(["diff", "plan", "verbose-plan", "verbose", "keep-going", "skip-docs-check", "full"]);
+const VERIFY_FLAGS = new Set([
+  "diff",
+  "plan",
+  "verbose-plan",
+  "verbose",
+  "keep-going",
+  "skip-docs-check",
+  "full",
+  "unit",
+]);
 
 export function parseVerifyArgs(argv) {
   const { flags, paths } = parseChangedPathsArgs(argv, {
@@ -25,10 +33,16 @@ export function parseVerifyArgs(argv) {
   for (const flag of flags) {
     if (!VERIFY_FLAGS.has(flag)) throw new Error(`Unknown verify option: --${flag}`);
   }
+  if (flags.has("unit") && flags.has("full")) throw new Error("Choose --unit or --full");
   return { flags, paths: resolveSelectedPaths(ROOT, { flags, paths }) };
 }
 
 export function filterPlanCommands(plan, flags) {
+  if (flags.has("unit"))
+    return {
+      ...plan,
+      commands: plan.commands.filter((command) => command.key === "related" || command.key.startsWith("unit-")),
+    };
   if (!flags.has("full")) {
     return {
       ...plan,
@@ -53,7 +67,7 @@ export function formatPlan(plan, { verbosePlan = false } = {}) {
   }
   const owners = selectContext(plan.paths).docs;
   if (owners.length) {
-    lines.push("Owners (npm run context -- <paths> prints the sections):");
+    lines.push("Owners (npm run context -- <paths> lists owner pointers):");
     for (const owner of owners.slice(0, 6)) lines.push(`  ${owner.path}${owner.heading ? ` § ${owner.heading}` : ""}`);
     if (owners.length > 6) lines.push(`  … ${owners.length - 6} more owners; use context for the complete selection`);
   }
@@ -66,22 +80,13 @@ export function formatPlan(plan, { verbosePlan = false } = {}) {
   return `${lines.join("\n")}\n`;
 }
 
-function runVerificationCommand(command, index, verbose, runId, sessionInputs) {
+function runVerificationCommand(command, index, verbose, runId) {
   const result = runCommand(command.command, command.args, {
     cwd: ROOT,
     env: { ...process.env, ALCHEMY_RUN_ID: runId },
     stdio: ["inherit", "pipe", "pipe"],
     logPath: path.join(ROOT, "reports/runs", runId, "verify", `${command.key}.log`),
   });
-  // sessionInputs is captured once per process (see main); one post-command
-  // capture decides whether the diagnostic event is trustworthy.
-  if (sessionInputs !== null && sessionInputs === captureVerificationInputs(ROOT))
-    recordAgentEvent(ROOT, {
-      kind: "diagnostic",
-      command: JSON.stringify([command.command, command.args]),
-      inputHash: sessionInputs,
-      status: result.status === 0 ? "passed" : "failed",
-    });
   if (result.status === 0) {
     const { exposure } = summarizeStepResult(command, result, { verbose });
     console.log(`✓ ${command.label} (${(result.elapsedMs / 1000).toFixed(1)}s, run ${runId})`);
@@ -107,26 +112,26 @@ export function main(argv = process.argv.slice(2)) {
     // check.mjs passes --skip-docs-check when its CI-static stage will run
     // docs:check itself, so one gate never pays for documentation checks twice.
     const plan = filterPlanCommands(resolveRoutePlan(paths), flags);
-    console.log(`Run: ${runId}`);
+    console.log(
+      `Run: ${runId}; scope: ${flags.has("full") ? "broader verification" : flags.has("unit") ? "focused units" : "fixed Node smoke"}`,
+    );
     process.stdout.write(formatPlan(plan, { verbosePlan: flags.has("verbose-plan") }));
+    if (!flags.has("full"))
+      console.log(
+        "Pending: full static, builds, browser/Electron and CI integration validation." +
+          (flags.has("unit") ? "" : " Edited gameplay is not selected by fixed smoke."),
+      );
     if (flags.has("plan")) return 0;
 
     // Local smoke does not need the full repository/dependency identity walk.
     const cache = flags.has("full") ? createVerificationCache(ROOT, plan.commands) : null;
-    const sessionInputs =
-      flags.has("full") && process.env.ALCHEMY_AGENT_SESSION ? captureVerificationInputs(ROOT) : null;
     const outcomes = [];
     for (const [index, command] of plan.commands.entries()) {
       const receipt = cache?.read(command);
       const outcome = receipt
         ? { passed: true, command, reused: receipt.runId }
-        : runVerificationCommand(command, index, flags.has("verbose"), runId, sessionInputs);
+        : runVerificationCommand(command, index, flags.has("verbose"), runId);
       if (receipt) console.log(`✓ ${command.label} (reused passing run ${receipt.runId}; inputs unchanged)`);
-      recordAgentEvent(ROOT, {
-        kind: "verification",
-        command: JSON.stringify([command.command, command.args]),
-        status: receipt ? "reused" : outcome.passed ? "passed" : "failed",
-      });
       outcomes.push(outcome);
       if (!outcome.passed && !flags.has("keep-going")) break;
     }
@@ -179,7 +184,11 @@ export function main(argv = process.argv.slice(2)) {
           ? `${failed[0].command.label} failed; inspect its bounded digest first.`
           : flags.has("full")
             ? `${outcomes.length}/${outcomes.length} verification steps passed.`
-            : "Local verification passed; full CI validation is required.",
+            : outcomes.length === 0
+              ? "No executable tests selected; run documentation checks separately. Full CI validation is required."
+              : flags.has("unit")
+                ? "Focused units passed; full CI validation is required."
+                : "Fixed Node smoke passed; edited gameplay coverage and full CI validation remain pending.",
     });
     return failed.length === 0 ? 0 : 1;
   } catch (error) {

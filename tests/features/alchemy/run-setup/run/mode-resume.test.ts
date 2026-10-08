@@ -19,6 +19,7 @@ import { readActiveRunScreen, readRunProfile, readRunSession } from "@/features/
 import { resetAllTestStores, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { ANCIENT_ALTAR_MYSTERY_VISIT } from "../../shared/stores/active-run-data-fixture";
 import { defaultGameSession } from "@/app/application-session";
+import { savedActivityFixture } from "../../../../fixtures/run-activity";
 
 beforeEach(resetAllTestStores);
 
@@ -52,7 +53,7 @@ function startMode(nav: ReturnType<typeof createNavigation>, mode: ContentSystem
 
 function reloadSavedRuns() {
   const saved = buildAlchemySaveDataFromStores(
-    readRunSession(defaultGameSession).hasActiveRun ? snapshotRun(undefined, defaultGameSession) : null,
+    readRunSession(defaultGameSession).hasActiveRun ? snapshotRun(defaultGameSession) : null,
     defaultGameSession,
   );
   const loaded = evaluateSaveCandidates([JSON.stringify(saved)]);
@@ -69,13 +70,13 @@ describe("saved mode navigation", () => {
     (mode) => {
       const nav = createNavigation();
       startMode(nav, mode);
-      const checkpoint = snapshotRun(undefined, defaultGameSession);
+      const checkpoint = snapshotRun(defaultGameSession);
       dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "menu")), undefined, defaultGameSession);
       nav.beginCampaign();
       nav.handleCharacterSelect("rogue");
-      expect(snapshotRun(undefined, defaultGameSession)).toEqual(checkpoint);
+      expect(snapshotRun(defaultGameSession)).toEqual(checkpoint);
       reloadSavedRuns();
-      expect(snapshotRun(undefined, defaultGameSession)).toEqual(checkpoint);
+      expect(snapshotRun(defaultGameSession)).toEqual(checkpoint);
     },
   );
 
@@ -165,17 +166,15 @@ describe("saved mode navigation", () => {
       const card = getStartingDeck("knight")[0]!;
       restoreRun(
         {
-          ...snapshotRun(undefined, defaultGameSession),
-          currentScreen: screen,
-          shopState:
+          ...snapshotRun(defaultGameSession),
+          activity: savedActivityFixture(
+            screen,
             screen === "shop"
               ? { ...emptyShopState(), cards: [card], removeUsed: true, firstPurchaseUsed: true, refreshesLeft: 1 }
-              : null,
-          mysteryVisit: screen === "mystery" ? ANCIENT_ALTAR_MYSTERY_VISIT : null,
-          corruptionResult:
-            screen === "corruption"
-              ? { originalCard: card, corruptedCard: { ...card, cost: 0 }, delta: -1, transformed: false }
-              : null,
+              : screen === "mystery"
+                ? ANCIENT_ALTAR_MYSTERY_VISIT
+                : undefined,
+          ),
         },
         {},
         {},
@@ -184,15 +183,15 @@ describe("saved mode navigation", () => {
       if (screen === "rewards") {
         setRunSession({ rewardState: { ...createEmptyRewardState(), choices: [card], gold: 7 } });
       }
-      const checkpoint = snapshotRun(undefined, defaultGameSession);
+      const checkpoint = snapshotRun(defaultGameSession);
       dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "menu")), undefined, defaultGameSession);
-      expect(snapshotRun(undefined, defaultGameSession)).toEqual(checkpoint);
+      expect(snapshotRun(defaultGameSession)).toEqual(checkpoint);
       nav.beginCampaign();
       reloadSavedRuns();
       const profile = readRunProfile(defaultGameSession);
       nav.resumeRun();
       expect(readActiveRunScreen(defaultGameSession)).toBe(screen);
-      expect(snapshotRun(undefined, defaultGameSession)).toEqual(checkpoint);
+      expect(snapshotRun(defaultGameSession)).toEqual(checkpoint);
       expect(readRunProfile(defaultGameSession)).toEqual(profile);
     },
   );

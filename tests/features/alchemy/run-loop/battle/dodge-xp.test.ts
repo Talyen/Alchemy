@@ -51,15 +51,15 @@ describe("Dodge XP commits", () => {
     expect(readBattle(defaultGameSession).battleState.playerDodgeCount).toBe(6);
     expect(readBattle(defaultGameSession)).not.toHaveProperty("pendingBattleTransition");
 
-    const save = ActiveRunDataSchema.parse(JSON.parse(JSON.stringify(snapshotRun("battle", defaultGameSession))));
+    const save = ActiveRunDataSchema.parse(JSON.parse(JSON.stringify(snapshotRun(defaultGameSession))));
     resetRunDomainStore();
     restoreRun(toActiveRunData(save), {}, {}, defaultGameSession);
     expect(readActiveRun(defaultGameSession).runTalentXP.dodge).toBe(2);
-    restoreRun(snapshotRun("battle", defaultGameSession), {}, {}, defaultGameSession);
+    restoreRun(snapshotRun(defaultGameSession), {}, {}, defaultGameSession);
     expect(readBattle(defaultGameSession).battleState.playerDodgeCount).toBe(6);
     expect(readBattle(defaultGameSession).battleState.lastEnemyAbilityId).toBe("ray-of-frost");
     expect(readActiveRun(defaultGameSession).runTalentXP.dodge).toBe(2);
-    restoreRun(snapshotRun("battle", defaultGameSession), {}, {}, defaultGameSession);
+    restoreRun(snapshotRun(defaultGameSession), {}, {}, defaultGameSession);
     expect(readActiveRun(defaultGameSession).runTalentXP.dodge).toBe(2);
 
     const multiplier = getDifficultyXPMultiplier(readActiveRun(defaultGameSession).selectedDifficulty);

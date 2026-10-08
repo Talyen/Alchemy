@@ -1,3 +1,4 @@
+import { setRunProgressActivity } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setBattleActiveForTest as setHasActiveBattle } from "../../../../../helpers/run-domain-store-test";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -71,6 +72,7 @@ describe("useArmoryController", () => {
         (draft) => {
           initializeActiveRun(draft, null, "knight");
           setHasActiveRun(draft, true);
+          setRunProgressActivity(draft, "destination");
 
           return acceptCommand();
         },
@@ -107,6 +109,7 @@ describe("useArmoryController", () => {
         setRunMaxHealth(draft, 30);
         setRunPlayerHealth(draft, 30);
         setHasActiveRun(draft, true);
+        setRunProgressActivity(draft, "destination");
 
         return acceptCommand();
       },
@@ -135,6 +138,7 @@ describe("useArmoryController", () => {
       (draft) => {
         initializeActiveRun(draft, null, "knight");
         setHasActiveRun(draft, true);
+        setRunProgressActivity(draft, "destination");
         setMaterials(draft, emptyInventory());
 
         return acceptCommand();
@@ -179,6 +183,7 @@ describe("useArmoryController", () => {
     dispatchRunSessionCommand(
       (draft) => {
         setHasActiveRun(draft, true);
+        setRunProgressActivity(draft, "destination");
         setHasActiveBattle(draft, true);
 
         return acceptCommand();

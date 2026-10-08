@@ -8,3 +8,5 @@ export const TEST_SUITES: {
 export function validateTestSuitePaths(rootDir: string, suites?: readonly string[]): string[];
 
 export const DOCS_CHECK_KEY: string;
+
+export const LOCAL_CHECK_INPUTS: readonly string[];

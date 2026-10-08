@@ -1,3 +1,4 @@
+import { setHasActiveRun, setRunProgressActivity } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createRunRngState, createRunStateRng, createRunStreamRng, nextRunRngValue, stepRunRng } from "@/lib/rng";
 import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -68,12 +69,21 @@ describe("run RNG", () => {
 
   it("continues the exact sequence after snapshot and restore", () => {
     setRunProgress({ rng: createRunRngState(42) });
+    dispatchRunSessionCommand(
+      (draft) => {
+        setHasActiveRun(draft, true);
+        setRunProgressActivity(draft, "destination");
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
     const first = dispatchRunSessionCommand(
       (draft) => acceptCommand(createDraftRunRandomSource(draft, "rewards")()),
       undefined,
       defaultGameSession,
     );
-    const snapshot = snapshotRun("destination", defaultGameSession);
+    const snapshot = snapshotRun(defaultGameSession);
     const expectedNext = dispatchRunSessionCommand(
       (draft) => acceptCommand(createDraftRunRandomSource(draft, "rewards")()),
       undefined,

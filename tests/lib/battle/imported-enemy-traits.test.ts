@@ -200,7 +200,7 @@ describe("imported enemy attack reactions", () => {
   it("applies player mitigation to Pyromancer Burn", () => {
     const state = stateForEnemy("pyromancer", {
       playerStatuses: defaultPlayerStatusValues({ block: 5 }),
-      talentEffects: { ...stateForEnemy("pyromancer").talentEffects, damageReduction: 2, burnDamageReduction: 2 },
+      talentEffects: { ...stateForEnemy("pyromancer").talentEffects, burnDamageReduction: 4 },
     });
     const result = applyEnemyAbility(
       state,

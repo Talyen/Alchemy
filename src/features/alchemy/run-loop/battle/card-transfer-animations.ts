@@ -31,11 +31,13 @@ export interface StableHandCardRectDeps {
   scheduleTimeout: (onTimeout: () => void, ms: number) => () => void;
 }
 
-function isRectStable(rect: CardRect, lastRect: CardRect | null): boolean {
-  if (!lastRect) return false;
+function isRectStable(rect: CardRect | null, lastRect: CardRect | null): boolean {
+  if (!rect || !lastRect) return false;
   return (
     Math.abs(rect.x - lastRect.x) < CARD_TRANSFER_CONFIG.rectEpsilonPx &&
-    Math.abs(rect.y - lastRect.y) < CARD_TRANSFER_CONFIG.rectEpsilonPx
+    Math.abs(rect.y - lastRect.y) < CARD_TRANSFER_CONFIG.rectEpsilonPx &&
+    Math.abs(rect.width - lastRect.width) < CARD_TRANSFER_CONFIG.rectEpsilonPx &&
+    Math.abs(rect.height - lastRect.height) < CARD_TRANSFER_CONFIG.rectEpsilonPx
   );
 }
 
@@ -57,7 +59,7 @@ export function waitForStableHandCardRect(
 
     function tick() {
       frameCount += 1;
-      const rect = measure();
+      const rect = deps.measureHandCard(cardKey);
       stableFrames = isRectStable(rect, lastRect) ? stableFrames + 1 : 0;
       lastRect = rect;
 
@@ -65,7 +67,7 @@ export function waitForStableHandCardRect(
         stableFrames >= CARD_TRANSFER_CONFIG.requiredStableSlotFrames ||
         frameCount >= CARD_TRANSFER_CONFIG.maxSlotStabilizeFrames
       ) {
-        task.complete(rect);
+        task.complete(rect ?? fallback);
       } else {
         task.frame(tick);
       }

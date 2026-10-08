@@ -18,6 +18,7 @@ import { createEmptyRewardState, type RewardState } from "@/lib/active-run-sessi
 import { pickWeighted } from "@/lib/rng";
 
 export interface DestinationOptionsInput {
+  currentAct?: number;
   currentHealth?: number;
   currentGold?: number;
   destinationIndexInAct?: number;

@@ -12,11 +12,10 @@ export {
   isUnsupportedFutureSaveData,
   migrateSupportedSaveData,
 } from "./migration/index";
-export { normalizePersistedBattleState, repairPersistedTrinketManifest } from "./normalize-persisted-battle-state";
-export type { InterruptedFlow, PersistedPendingReward } from "./save-schemas/active-run";
+export { normalizePersistedBattleState } from "./normalize-persisted-battle-state";
+export type { PersistedPendingReward } from "./save-schemas/active-run";
 export {
   ActiveRunDataSchema,
-  BattleCardEffectSchema,
   BattleCardSchema,
   CompletedDifficultiesSchema,
   ENEMY_STATUS_IDS_LIST,
@@ -31,3 +30,5 @@ export {
 } from "./save-schemas/index";
 
 export { ACTIVE_RUN_PROGRESS_KEYS, type PersistedRunProgress } from "./save-schemas/run-progress";
+
+export { legacyRunNeedsAbandonment } from "./migration";

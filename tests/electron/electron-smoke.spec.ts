@@ -1,3 +1,4 @@
+import { savedActivityData } from "../fixtures/run-activity";
 import { exerciseControllerOptions } from "../e2e/controller-options";
 import fs from "node:fs";
 import path from "node:path";
@@ -170,9 +171,15 @@ test("a played desktop run survives closing and relaunching the packaged UI", de
     await battle.playFirstCard();
     await battle.endTurn();
     const savePath = path.join(profile, "save.json");
-    const readBattle = () => JSON.parse(fs.readFileSync(savePath, "utf8")).activeRun?.activeCombat?.battleState;
+    const readBattle = () =>
+      savedActivityData(
+        (JSON.parse(fs.readFileSync(savePath, "utf8")) as import("@/features/alchemy/shared/storage").SaveData)
+          .activeRun,
+        "battle",
+      )?.battleState;
     await expect.poll(() => (fs.existsSync(savePath) ? readBattle()?.turn : null)).toBe(2);
     const acknowledged = readBattle();
+    if (!acknowledged) throw new Error("No acknowledged battle snapshot");
     expect(acknowledged.hand.length).toBeGreaterThan(0);
     expect(errors).toEqual([]);
     await application.close();
@@ -185,7 +192,7 @@ test("a played desktop run survives closing and relaunching the packaged UI", de
     await expect.poll(() => restored.playerHealth()).toBe(acknowledged.playerHealth);
     await expect.poll(() => restored.enemyHealth()).toBe(acknowledged.enemyHealth);
     await expect(restored.hand).toHaveCount(acknowledged.hand.length);
-    expect(readBattle().turn).toBe(2);
+    expect(readBattle()?.turn).toBe(2);
     expect(restoredErrors).toEqual([]);
   } finally {
     await application?.close();

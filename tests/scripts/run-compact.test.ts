@@ -79,3 +79,15 @@ it("lets an outer capture retain raw diagnostics without nesting compact logs", 
   expect(output.output).not.toContain("Full log:");
   expect(fs.existsSync(path.join(root, "reports"))).toBe(false);
 });
+
+it("streams explicit live output without changing the child arguments or exit status", async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "compact-live-"));
+  roots.push(root);
+  expect(
+    await runCompact(
+      ["--live", process.execPath, "-e", 'process.exit(process.argv[1] === "--literal" ? 7 : 9)', "--", "--literal"],
+      root,
+    ),
+  ).toBe(7);
+  expect(fs.existsSync(path.join(root, "reports/compact"))).toBe(false);
+});

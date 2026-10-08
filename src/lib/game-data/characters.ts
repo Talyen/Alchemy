@@ -129,7 +129,3 @@ export function getStartingDeck(characterId: CharacterId): BattleCard[] {
   // so each run needs its own copies or mutations leak across runs.
   return characters[characterId].startingDeck.map(cloneBattleCard);
 }
-
-export const allStartingDeckCardIds = Array.from(
-  new Set(Object.values(characters).flatMap((character) => character.startingDeck.map((card) => card.id))),
-);

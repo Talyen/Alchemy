@@ -30,7 +30,7 @@ beforeEach(() => {
   setRunSession({ hasActiveRun: true, activity: { kind: "destination" } });
 });
 function reload() {
-  const snapshot = parseActiveRun(JSON.parse(JSON.stringify(snapshotRun(undefined, defaultGameSession))))!;
+  const snapshot = parseActiveRun(JSON.parse(JSON.stringify(snapshotRun(defaultGameSession))))!;
   expect(snapshot).not.toBeNull();
   const profile = readRunProfile(defaultGameSession);
   restoreRun(snapshot, profile.talentXP, profile.unlockedTalents, defaultGameSession);

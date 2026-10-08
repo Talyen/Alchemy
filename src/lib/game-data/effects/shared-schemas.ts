@@ -3,7 +3,7 @@ import { companionLibrary } from "../companions";
 import { DAMAGE_TYPES, type CompanionId } from "../types";
 
 export const DamageTypeSchema = z.enum(DAMAGE_TYPES);
-export const ENEMY_STATUS_IDS = [
+const ENEMY_STATUS_IDS = [
   "burn",
   "poison",
   "bleed",
@@ -14,7 +14,7 @@ export const ENEMY_STATUS_IDS = [
   "thorns",
   "onAttackBleed",
 ] as const;
-export const ENEMY_STATUS_DAMAGE_IDS = ["burn", "poison", "bleed", "freeze", "stun", "thorns"] as const;
+const ENEMY_STATUS_DAMAGE_IDS = ["burn", "poison", "bleed", "freeze", "stun", "thorns"] as const;
 export const EnemyStatusIdSchema = z.enum(ENEMY_STATUS_IDS);
 export const EnemyStatusDamageIdSchema = z.enum(ENEMY_STATUS_DAMAGE_IDS);
 

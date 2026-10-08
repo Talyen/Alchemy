@@ -89,8 +89,6 @@ export function getEnemyDamageMultiplier(
   let multiplier = getEnemyTraitDamageMultiplier(state, damageType);
   if (state.enemyCC.stunSkipTurns > 0 && state.talentEffects.stunDoubleDamage)
     multiplier *= TRAIT_DAMAGE_WEAKNESS_MULTIPLIER;
-  if (state.enemyCC.freezeSkipTurns > 0 && state.talentEffects.freezeDoubleDamage)
-    multiplier *= TRAIT_DAMAGE_WEAKNESS_MULTIPLIER;
   return multiplier;
 }
 

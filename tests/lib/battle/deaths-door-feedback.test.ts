@@ -54,7 +54,7 @@ describe("Death's Door feedback", () => {
   it("does not show a skull when damage reduction prevents health loss", () => {
     const state = protectedState();
     const texts: CombatTextEvent[] = [];
-    dealSelfDamage({ ...state, talentEffects: { ...state.talentEffects, damageReduction: 10 } }, 5, "burn", texts);
+    dealSelfDamage({ ...state, talentEffects: { ...state.talentEffects, burnDamageReduction: 10 } }, 5, "burn", texts);
     expect(texts).toEqual([]);
   });
 

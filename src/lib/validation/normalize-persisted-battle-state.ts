@@ -9,7 +9,6 @@ import {
   type EnemyTrait,
   type TalentEffectManifest,
 } from "@/lib/game-data";
-import { computeTrinketManifest, isDefaultTrinketManifest } from "@/lib/trinkets";
 import { MAX_HAND_SIZE, MIN_MAX_MANA_FLOOR } from "@/lib/game-constants";
 import { toFiniteNonNegativeInt } from "./save-schemas/validation-utils";
 import {
@@ -23,12 +22,16 @@ function normalizeTalentEffects(
   saved: Partial<TalentEffectManifest> | undefined,
 ): TalentEffectManifest {
   const knownSaved = Object.fromEntries(
-    Object.entries(saved ?? {}).filter(([key]) => Object.hasOwn(defaults, key)),
+    Object.entries(saved ?? {}).filter(([key, value]) => {
+      if (!Object.hasOwn(defaults, key)) return false;
+      const fallback = defaults[key as keyof TalentEffectManifest];
+      if (typeof fallback === "number") return typeof value === "number" && Number.isFinite(value);
+      if (typeof fallback === "boolean") return typeof value === "boolean";
+      return true;
+    }),
   ) as Partial<TalentEffectManifest>;
   const merged = { ...defaults, ...knownSaved };
   if (!Array.isArray(merged.healthThresholdArmor)) merged.healthThresholdArmor = [];
-  const savedRecord = saved ?? {};
-  merged.wishExtraChoiceAfterHolyCard = savedRecord.wishExtraChoiceAfterHolyCard === true;
   merged.leechCardDamageVsLowHealthPercent = clampNonNegative(merged.leechCardDamageVsLowHealthPercent, 0);
   return merged;
 }
@@ -62,25 +65,10 @@ function restoreEnemyTraits(value: unknown, enemy: BestiaryEntry | undefined): E
   if (!Array.isArray(value)) return enemy?.traits ?? [];
   const traits = value.flatMap((trait: unknown): EnemyTrait[] => {
     if (!trait || typeof trait !== "object" || !("id" in trait) || typeof trait.id !== "string") return [];
-    // Native traits are restored from the catalog below; persisted copies are
-    // dropped to avoid stale tuning. trinket-hoarder is retired from the
-    // catalog but still dropped here to keep old saves loadable.
-    if (
-      enemy &&
-      !Object.hasOwn(ENCOUNTER_TRAITS, trait.id) &&
-      (traitMetadata.has(trait.id) || trait.id === "trinket-hoarder")
-    )
-      return [];
+    // Native traits come from today's enemy; reward benefits cannot become enemy actions.
+    if (enemy && sanitizeEncounterTraitIds([trait.id], "combat").length === 0) return [];
     const canonical = traitMetadata.get(trait.id);
-    if (canonical) return [canonical];
-    if (
-      !("title" in trait) ||
-      typeof trait.title !== "string" ||
-      !("description" in trait) ||
-      typeof trait.description !== "string"
-    )
-      return [];
-    return [{ id: trait.id, title: trait.title, description: trait.description }];
+    return canonical ? [canonical] : [];
   });
   return [
     ...new Map(
@@ -172,6 +160,11 @@ function normalizeSurvival(state: BattleSnapshot, saved: Partial<BattleSnapshot>
 }
 
 export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): BattleSnapshot {
+  // Current Forge has no threshold reactions; discard the obsolete queue at load.
+  const { pendingForgeThresholds: _retiredForgeQueue, ...current } = saved as Partial<BattleSnapshot> & {
+    pendingForgeThresholds?: unknown;
+  };
+  saved = current;
   const defaults = defaultBattleState();
   const currentEnemy = normalizeEnemy(saved.currentEnemy, defaults.currentEnemy);
   const merged: BattleSnapshot = {
@@ -192,7 +185,6 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
     enemyMitigation: normalizeNonNegativeRecord(defaults.enemyMitigation, saved.enemyMitigation),
     pendingTurnStartEffects: saved.pendingTurnStartEffects ?? defaults.pendingTurnStartEffects,
     pendingHandCards: saved.pendingHandCards ?? defaults.pendingHandCards,
-    pendingForgeThresholds: saved.pendingForgeThresholds ?? defaults.pendingForgeThresholds,
     currentEnemy,
     lastEnemyAbilityId:
       typeof saved.lastEnemyAbilityId === "string" && currentEnemy.abilityIds.includes(saved.lastEnemyAbilityId)
@@ -215,14 +207,5 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
       companion && typeof companion.id === "string" && Object.hasOwn(companionLibrary, companion.id)
         ? companionLibrary[companion.id]
         : null,
-  };
-}
-
-export function repairPersistedTrinketManifest(battleState: BattleSnapshot, runBoons: string[]): BattleSnapshot {
-  if (runBoons.length === 0) return battleState;
-  if (!isDefaultTrinketManifest(battleState.trinketEffects)) return battleState;
-  return {
-    ...battleState,
-    trinketEffects: computeTrinketManifest(runBoons),
   };
 }

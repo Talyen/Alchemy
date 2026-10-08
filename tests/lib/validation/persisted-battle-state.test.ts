@@ -40,6 +40,7 @@ describe("PersistedBattleStateSchema", () => {
     expect(result.data.playerStatuses.block).toBe(0);
     expect(result.data.playerStatuses.armor).toBe(0);
     expect(result.data.enemyStatuses.burn).toBe(0);
+    expect(result.data.pendingHandCards).toEqual([]);
   });
 
   it("restores a battle when queued cards are its only card pile", () => {
@@ -162,6 +163,16 @@ describe("PersistedBattleStateSchema", () => {
     if (!result.success) return;
     expect(result.data.discoveredCardIds).toEqual([]);
     expect(result.data.difficultyModifiers).toEqual([]);
+  });
+
+  it("drops malformed difficulty modifiers while keeping a resumed enemy turn playable", () => {
+    const damageMultiplier = { kind: "enemy-damage-multiplier", amount: 1.3 };
+    const restored = PersistedBattleStateSchema.parse({
+      ...validState(),
+      difficultyModifiers: [null, damageMultiplier, { kind: "increase-enemy-damage", amount: "many" }],
+    });
+    expect(() => endPlayerTurn({ ...restored, rng: () => 0.99 })).not.toThrow();
+    expect(restored.difficultyModifiers).toEqual([damageMultiplier]);
   });
 
   it("rejects a battle fragment with no card piles", () => {

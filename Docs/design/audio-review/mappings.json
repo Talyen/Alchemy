@@ -2540,7 +2540,7 @@
       "currentState": "silent",
       "note": "Use a success cue only after commit; an existing coin, shared progression, or card cue may already acknowledge a related outcome. Avoid stacking duplicates.",
       "priority": "P2",
-      "evidence": ["src/features/alchemy/run-loop/run/run-materials.ts"]
+      "evidence": ["src/features/alchemy/shared/stores/run-materials.ts"]
     },
     {
       "id": "boon",
@@ -2644,7 +2644,7 @@
       "currentState": "playing",
       "note": "",
       "priority": "P2",
-      "evidence": ["src/features/alchemy/run-loop/run/run-flow-rewards.ts"]
+      "evidence": ["src/features/alchemy/run-loop/run/run-flow.ts"]
     },
     {
       "id": "homestead-upgrade",

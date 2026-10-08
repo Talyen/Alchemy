@@ -1,3 +1,4 @@
+import { savedActivityFixture } from "../fixtures/run-activity";
 import { expect, type Page } from "@playwright/test";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 import type { BattleCard } from "@/lib/game-data/types";
@@ -27,23 +28,11 @@ export async function withSavedGame(page: Page, verify: (resumed: Page) => Promi
   }
 }
 
-export function destinationInterruptedFlow(destinations: string[]) {
-  return {
-    kind: "destination" as const,
-    destinations,
-    selectedBossId: null,
-    lastVictoryEnemyType: null,
-    lastVictoryContentSystem: null,
-  };
-}
-
 export async function injectMysterySummaryVisit(page: Page) {
   await injectSaveState(page, {
     runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()),
-    currentScreen: "mystery",
-    interruptedFlow: { kind: "none" },
     lastOfferedDestinations: ["Mystery", "Campfire", "Normal Combat"],
-    mysteryVisit: {
+    activity: savedActivityFixture("mystery", {
       event: {
         id: "ancient-altar",
         title: "Ancient Altar",
@@ -56,19 +45,15 @@ export async function injectMysterySummaryVisit(page: Page) {
       grantedTrinketIds: [],
       grantedGear: [],
       chosenCardId: null,
-    },
+    }),
   });
-}
-
-function primaryRewardInterruptedFlow(pending: Record<string, unknown>) {
-  return { kind: "primary-reward" as const, pending };
 }
 
 const DEFAULT_PRIMARY_REWARD_PENDING = {
   selectedId: null,
   gold: 0,
   materials: {},
-  destinations: [],
+  destinations: ["Normal Combat", "Campfire"],
   selectedBossId: null,
   lastVictoryEnemyType: "normal",
   lastVictoryContentSystem: "campaign",
@@ -161,6 +146,12 @@ function buildActiveRunSave(overrides: Record<string, unknown>) {
       destinationIndexInAct: 0,
       completedDestinations: [],
       runBoons: [],
+      activity: savedActivityFixture("destination", {
+        destinations: ["Normal Combat", "Campfire", "Card Shop"],
+        selectedBossId: null,
+        lastVictoryEnemyType: null,
+        lastVictoryContentSystem: null,
+      }),
       ...activeRunData,
     },
     finishedRunCharacters: [...BASE_ROSTER_CHARACTERS],
@@ -199,13 +190,12 @@ export async function injectActiveBattle(
   overrides: Record<string, unknown> = {},
 ) {
   await injectSaveState(page, {
-    currentScreen: "battle",
-    ...overrides,
-    activeCombat: {
+    activity: savedActivityFixture("battle", {
       battleState,
       activeLabyrinthModifiers: [],
       activeLabyrinthRewardModifiers: [],
-    },
+    }),
+    ...overrides,
   });
   await navigateToGame(page);
 }
@@ -213,8 +203,11 @@ export async function injectActiveBattle(
 export async function enterPrimaryRewardScreen(page: Page, pending: Record<string, unknown>) {
   await injectSaveState(page, {
     runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()),
-    currentScreen: "rewards",
-    interruptedFlow: primaryRewardInterruptedFlow({ ...DEFAULT_PRIMARY_REWARD_PENDING, ...pending }),
+    activity: savedActivityFixture("rewards", {
+      ...DEFAULT_PRIMARY_REWARD_PENDING,
+      companionChoiceIds: [],
+      ...pending,
+    }),
   });
   await navigateToGame(page);
 }
@@ -239,14 +232,13 @@ export async function injectBossState(page: Page, act = 1, overrides: Record<str
     completedDestinations: Array.from({ length: 7 }, () => "Normal Combat"),
     runPlayerHealth: 30,
     runMaxHealth: 30,
-    currentScreen: "destination",
-    interruptedFlow: {
+    activity: savedActivityFixture("destination", {
       kind: "destination",
       destinations: ["Boss Combat"],
       selectedBossId: act === 1 ? "forge-golem" : act === 2 ? "frostwarden" : "blight-treant",
       lastVictoryEnemyType: null,
       lastVictoryContentSystem: null,
-    },
+    }),
     ...overrides,
   });
 }
@@ -275,12 +267,12 @@ export async function injectLabyrinthRun(
     completedDestinations: [],
     runBoons: [],
     selectedDifficulty: null,
-    currentScreen: "labyrinth-map",
     contentSystemType: "labyrinth",
     labyrinthMap: map,
     discoveredCardIds: options.discoveredCardIds ?? ["slash"],
     finishedRunCharacters: [...BASE_ROSTER_CHARACTERS],
     ...options.runOverrides,
+    activity: savedActivityFixture("labyrinth-map"),
   });
   if (!desktop) await navigateToGame(page);
   await expect(page.getByRole("heading", { name: /Labyrinth|Map/i })).toBeVisible({ timeout: 20000 });

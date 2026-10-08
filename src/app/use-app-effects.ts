@@ -50,7 +50,6 @@ export function useAppAudioEffects({
   screen,
 }: AppAudioEffectsOptions) {
   const screenRef = useRef(screen);
-  const gestureFiredRef = useRef(false);
   const muteInBackgroundRef = useRef(muteInBackground);
 
   useEffect(() => {
@@ -67,7 +66,10 @@ export function useAppAudioEffects({
   useEffect(() => {
     initAudioHost();
     function applyBackgroundMute(event?: Event) {
-      setMuted(isNonPlayerAudioHost() || (muteInBackgroundRef.current && isAppInBackground(event)));
+      const muted = isNonPlayerAudioHost() || (muteInBackgroundRef.current && isAppInBackground(event));
+      setMuted(muted);
+      // An undisplayed host pauses playback; restoring volume alone cannot resume it.
+      if (event && !muted && isMusicPaused()) playMusic(pickMusicKey(screenRef.current));
     }
 
     applyBackgroundMute();
@@ -118,15 +120,11 @@ export function useAppAudioEffects({
       if (isNonPlayerAudioHost()) return;
       if (muteInBackgroundRef.current && isAppInBackground()) return;
       setMuted(false);
-      if (gestureFiredRef.current) {
-        removeGestureListeners();
-        return;
-      }
-      gestureFiredRef.current = true;
-      removeGestureListeners();
       if (isMusicPaused()) {
+        // play() may reject even after an input; preserve the next gesture's
+        // retry until the media element actually starts playing.
         playMusicImmediate(pickMusicKey(screenRef.current));
-      }
+      } else removeGestureListeners();
     }
 
     window.addEventListener("pointerdown", resumeOnGesture, { capture: true });

@@ -10,5 +10,6 @@ export default {
     // Vite SSR workers load these modules by string path, so Knip cannot trace their runtime consumers.
     "src/app/playthrough/career.ts": ["exports"],
     "src/app/playthrough/report.ts": ["exports"],
+    "src/lib/balance/materials-report.ts": ["exports"],
   },
 };

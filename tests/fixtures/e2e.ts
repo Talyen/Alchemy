@@ -7,7 +7,7 @@ import {
 } from "../../scripts/lib/verification/playwright-diagnostics.mjs";
 import { enableFastMode } from "../e2e/battle-setup";
 import { failOnRuntimeErrors } from "../e2e/errors";
-import { collectStartupDiagnostics } from "../e2e/startup-diagnostics";
+import { captureFailureContext, collectStartupDiagnostics } from "../e2e/startup-diagnostics";
 import type { Page } from "@playwright/test";
 
 export async function useFastBattle(page: Page) {
@@ -78,21 +78,11 @@ export const test = base.extend<E2EFixtures>({
             await startup.snapshot();
             const runId = ensureRunId("playwright");
             const url = page.url();
-            let accessibilitySnapshot = "";
-            try {
-              accessibilitySnapshot = await page.ariaSnapshot({ mode: "ai", depth: 8, timeout: 2_000 });
-            } catch (error) {
-              recordLog(
-                `[Diagnostic] Accessibility snapshot unavailable: ${error instanceof Error ? error.message : String(error)}`,
-              );
-            }
-            const htmlFallback = accessibilitySnapshot
-              ? ""
-              : await page.content().catch(() => "Unable to fetch page HTML");
+            const context = await captureFailureContext(page, recordLog);
             const diagnostic = buildFailureDiagnostic({
               runId,
               rootDir: process.cwd(),
-              title: testInfo.title,
+              title: testInfo.titlePath.slice(1).join(" > "),
               file: testInfo.file,
               line: testInfo.line,
               project: testInfo.project.name,
@@ -104,8 +94,7 @@ export const test = base.extend<E2EFixtures>({
                 ...(droppedLogs > 0 ? [`[Diagnostic] ${droppedLogs} earlier console entries dropped in memory`] : []),
                 ...consoleLogs,
               ],
-              accessibilitySnapshot,
-              htmlFallback,
+              ...context,
             });
             const { digestPath } = writeFailureDiagnostic(process.cwd(), diagnostic);
             console.log(`\n[Diagnostic] Saved E2E failure digest to ${digestPath}\n`);

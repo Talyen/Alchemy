@@ -1,7 +1,6 @@
 export * from "./battle-setup";
-export { resolveBattleStart, type ResolvedBattleStart } from "./battle-start";
+export { resolveBattleStart } from "./battle-start";
 export {
-  AUTOPLAY_EFFECT_SCORE,
   getEffectiveDamageScore,
   getImmediateDamage,
   getImmediateDefense,
@@ -15,7 +14,7 @@ export { processCompanionTurnStart } from "./companion";
 export { getBattleCompanionDamageModifiers } from "./companion-scaling";
 export { drawCards } from "./draw";
 export { applyCardEffects } from "./effect-handlers";
-export { endPlayerTurn, recoverLegacyEnemyPhase } from "./enemy-turn";
+export { endPlayerTurn } from "./enemy-turn";
 export { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "./enemy-turn-traits";
 export { getActiveCcKeyword, isCcControlled, type ActiveCcKeyword } from "./status-cc";
 export { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";

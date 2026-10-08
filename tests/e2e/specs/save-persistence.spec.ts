@@ -1,16 +1,14 @@
+import { savedActivityFixture, savedActivityData } from "../../fixtures/run-activity";
 import { expect, test } from "../../fixtures/e2e";
 import {
   injectExactSave,
   injectActiveBattle,
   makeCard,
   makeGoblinBattleState,
-  makeHighDamageCard,
   readSavedGame,
   seedRandom,
-  startBattleWithDeck,
   enterPrimaryRewardScreen,
   withSavedGame,
-  SAVE_KEY,
 } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { DestinationPage } from "../../pages/destination-page";
@@ -24,13 +22,13 @@ test("current-format resume retains Health, Gold, and offered destinations", cri
     ...save,
     activeRun: {
       ...(save.activeRun as unknown as Record<string, unknown>),
-      interruptedFlow: {
+      activity: savedActivityFixture("destination", {
         kind: "destination",
         destinations: ["Campfire", "Mystery", "Card Shop"],
         selectedBossId: null,
         lastVictoryEnemyType: null,
         lastVictoryContentSystem: null,
-      },
+      }),
     },
   });
   await page.goto("/");
@@ -60,56 +58,19 @@ test("played cards and the next enemy turn survive a fresh-page resume", critica
   await expect.poll(() => battle.enemyHealth()).toBeLessThan(40);
   await battle.endTurn();
   await expect.poll(() => battle.playerHealth()).toBeLessThan(18);
-  await expect.poll(async () => (await readSavedGame(page)).activeRun?.activeCombat?.battleState.turn).toBe(3);
-  const acknowledged = (await readSavedGame(page)).activeRun!.activeCombat!.battleState;
+  await expect
+    .poll(async () => savedActivityData((await readSavedGame(page)).activeRun, "battle")?.battleState.turn)
+    .toBe(3);
+  const acknowledged = savedActivityData((await readSavedGame(page)).activeRun!, "battle")!.battleState;
   await withSavedGame(page, async (resumed) => {
     const restored = new BattlePage(resumed);
     await expect(restored.endTurnBtn).toBeEnabled();
     await expect.poll(() => restored.playerHealth()).toBe(acknowledged.playerHealth);
     await expect.poll(() => restored.enemyHealth()).toBe(acknowledged.enemyHealth);
     await expect(restored.hand).toHaveCount(acknowledged.hand.length);
-    expect((await readSavedGame(resumed)).activeRun?.activeCombat?.battleState.turn).toBe(3);
+    expect(savedActivityData((await readSavedGame(resumed)).activeRun, "battle")?.battleState.turn).toBe(3);
     await restored.playFirstCard();
     await expect.poll(() => restored.handCount()).toBe(acknowledged.hand.length - 1);
-  });
-});
-
-test("an interrupted enemy turn resumes once with a playable hand", critical, async ({ page, fastBattle }) => {
-  void fastBattle;
-  await startBattleWithDeck(
-    page,
-    Array.from({ length: 6 }, () => makeHighDamageCard()),
-  );
-  await expect
-    .poll(async () => (await readSavedGame(page)).activeRun?.activeCombat?.battleState.turnPhase)
-    .toBe("player");
-  const handSize = await page.evaluate((key) => {
-    const save = JSON.parse(localStorage.getItem(key) ?? "{}");
-    const run = save.activeRun;
-    const combat = run.activeCombat;
-    const resultState = combat.battleState;
-    run.activeCombat = {
-      ...combat,
-      battleState: { ...resultState, turnPhase: "enemy", hand: [] },
-      pendingBattleTransition: { kind: "enemy-turn", resultState, playerTurnSkipped: false },
-    };
-    localStorage.setItem(key, JSON.stringify(save));
-    return resultState.hand.length as number;
-  }, SAVE_KEY);
-  expect(handSize).toBeGreaterThan(0);
-  await withSavedGame(page, async (resumed) => {
-    const battle = new BattlePage(resumed);
-    await expect(battle.endTurnBtn).toBeEnabled();
-    await expect(battle.hand).toHaveCount(handSize);
-    await expect
-      .poll(async () => Boolean((await readSavedGame(resumed)).activeRun?.activeCombat?.pendingBattleTransition))
-      .toBe(false);
-    await battle.playFirstCard();
-    // This fixture is lethal; its portrait unmounts when Rewards opens.
-    await expect(battle.victoryHeading).toBeVisible();
-    await expect
-      .poll(async () => (await readSavedGame(resumed)).activeRun?.interruptedFlow?.kind)
-      .toBe("primary-reward");
   });
 });
 
@@ -119,7 +80,7 @@ test(
   async ({ page, fastBattle }) => {
     void fastBattle;
     await enterPrimaryRewardScreen(page, { rewardType: "card", choiceIds: ["slash", "bash"] });
-    await expect.poll(async () => (await readSavedGame(page)).activeRun?.interruptedFlow?.kind).toBe("primary-reward");
+    await expect.poll(async () => (await readSavedGame(page)).activeRun?.activity.kind).toBe("rewards");
     await withSavedGame(page, async (resumed) => {
       await new RewardPage(resumed).claimFirstReward();
       await new DestinationPage(resumed).expectVisible();

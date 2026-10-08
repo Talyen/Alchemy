@@ -1,12 +1,7 @@
+import { savedActivityFixture } from "../../fixtures/run-activity";
 import { expect, test } from "../../fixtures/e2e";
 import type { Locator } from "@playwright/test";
-import {
-  injectSaveState,
-  makeStartingDeck,
-  destinationInterruptedFlow,
-  waitForLayoutSettled,
-  assertNoOverflow,
-} from "../../browser-helpers";
+import { injectSaveState, makeStartingDeck, waitForLayoutSettled, assertNoOverflow } from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { slow } from "../../playwright-tags";
 
@@ -61,11 +56,7 @@ test(
 
 test("Corruption picker capacity is independent of resize history and preserves selection", slow, async ({ page }) => {
   await page.setViewportSize({ width: 1470, height: 956 });
-  await injectSaveState(page, {
-    runDeck: makeStartingDeck(),
-    currentScreen: "destination",
-    interruptedFlow: destinationInterruptedFlow(["Corruption"]),
-  });
+  await injectSaveState(page, { runDeck: makeStartingDeck(), activity: savedActivityFixture("destination") });
   await page.goto("/");
   await page.getByRole("button", { name: "Corruption", exact: true }).click();
   await page.getByRole("button", { name: "Corrupt a Card", exact: true }).click();
@@ -142,8 +133,7 @@ test(
     await injectSaveState(page, {
       gold: 9999,
       runDeck: makeStartingDeck(),
-      currentScreen: "destination",
-      interruptedFlow: destinationInterruptedFlow(["Card Shop"]),
+      activity: savedActivityFixture("destination"),
     });
     await page.goto("/");
     await page.getByRole("button", { name: "Card Shop", exact: true }).click();

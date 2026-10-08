@@ -1,6 +1,6 @@
 import type { GameSession } from "../stores/game-session-types";
 import { resolveActiveRunForSave, restoreRun } from "../stores/run-lifecycle";
-import { readHasActiveRun, readRunInitialized } from "../stores/run-reads";
+import { readRunInitialized } from "../stores/run-reads";
 import { bindSessionCapabilities } from "../stores/session-capabilities";
 import {
   clearAlchemySaveData,
@@ -23,11 +23,12 @@ import {
 } from "./persistence";
 import { configureAlchemySaveBackend } from "./bootstrap-save-state";
 import type { SaveBackend } from "@/lib/platform-save-backend";
-import type { SaveLoadState } from "./save-candidates";
+import type { SaveLoadState, SaveRestoreAction } from "./save-candidates";
 import type { SaveWriteOutcome } from "./save-write-queue";
 import type { UnstampedSaveData } from "./types";
 
 export interface SessionPersistenceRestoreOptions {
+  restoreActions?: readonly SaveRestoreAction[] | undefined;
   preserveActiveRunIfInitialized?: boolean;
 }
 
@@ -43,7 +44,7 @@ export interface SessionPersistence {
   readonly clear: (mode?: "default" | "localWipe") => Promise<boolean>;
   readonly routeToRecovery: () => void;
   readonly setWritesDisabled: (disabled: boolean) => void;
-  readonly resetForTests: () => void;
+  readonly resetForTests: () => Promise<void>;
   readonly subscribe: (listener: () => void) => () => void;
   readonly subscribeCancellation: (listener: () => void) => () => void;
   readonly readFailure: () => boolean;
@@ -51,10 +52,7 @@ export interface SessionPersistence {
 }
 
 export function snapshotSessionSave(gameSession: GameSession) {
-  return buildAlchemySaveDataFromStores(
-    resolveActiveRunForSave(readHasActiveRun(gameSession), undefined, gameSession),
-    gameSession,
-  );
+  return buildAlchemySaveDataFromStores(resolveActiveRunForSave(gameSession), gameSession);
 }
 
 export function createSessionPersistence(gameSession: GameSession): SessionPersistence {
@@ -65,7 +63,9 @@ export function createSessionPersistence(gameSession: GameSession): SessionPersi
       if (options?.preserveActiveRunIfInitialized && readRunInitialized(gameSession)) {
         return false;
       }
-      restoreRun(save.activeRun, save.talentXP, save.unlockedTalents, gameSession);
+      restoreRun(save.activeRun, save.talentXP, save.unlockedTalents, gameSession, {
+        abandonIncompatibleBattle: options?.restoreActions?.includes("abandon-active-run") ?? false,
+      });
       return true;
     },
     configure: (backend: SaveBackend) => configureSaveBackend(backend, gameSession),

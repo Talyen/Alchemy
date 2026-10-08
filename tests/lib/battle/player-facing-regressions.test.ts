@@ -33,11 +33,11 @@ describe("player-facing combat regressions", () => {
     const state = regressionBattle({
       currentEnemy: { traits: [{ id: "burn-resistance", title: "Resistant", description: "" }] },
       enemyCC: { stunSkipTurns: status === "stun" ? 1 : 0, freezeSkipTurns: status === "freeze" ? 1 : 0 },
-      talentEffects: { stunDoubleDamage: true, freezeDoubleDamage: true },
+      talentEffects: { stunDoubleDamage: true, freezeDamageBonusVsFrozen: 1 },
     });
-    expect(getEnemyDamageMultiplier(state, "burn")).toBe(1);
+    expect(getEnemyDamageMultiplier(state, "burn")).toBe(status === "stun" ? 1 : 0.5);
     const result = dealDamage(state, makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 6 }] }));
-    expect(result.enemyHealth).toBe(state.enemyHealth - 6);
+    expect(result.enemyHealth).toBe(state.enemyHealth - (status === "stun" ? 6 : 4));
   });
 
   it.each([{ equalToBlock: true }, { equalToArmor: true }, { equalToGoldPercent: 50 }])(

@@ -1,3 +1,4 @@
+import { savedActivityFixture } from "../../fixtures/run-activity";
 import { controllerInput } from "../controller-input";
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
@@ -16,10 +17,8 @@ test(
     await injectSaveState(page, {
       runDeck: makeStartingDeck(),
       selectedDifficulty: null,
-      currentScreen: "mystery",
-      interruptedFlow: { kind: "none" },
       lastOfferedDestinations: ["Mystery", "Campfire", "Normal Combat"],
-      mysteryVisit: {
+      activity: savedActivityFixture("mystery", {
         event: {
           id: "ancient-altar",
           title: "Ancient Altar",
@@ -32,7 +31,7 @@ test(
         grantedTrinketIds: [],
         grantedGear: [],
         chosenCardId: null,
-      },
+      }),
     });
     await page.goto("/");
     await expect(page.getByRole("button", { name: /Take the Offering/ })).toBeVisible();

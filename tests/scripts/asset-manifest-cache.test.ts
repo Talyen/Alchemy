@@ -66,6 +66,8 @@ describe("asset-manifest-cache", () => {
     expect(hash1).toBe(hash2);
     expect(hash1).not.toBe(hashDifferentSettings);
     expect(hash1).not.toBe(hashDifferentSchema);
+    const keyedSettings = JSON.parse('{"quality":80,"__proto__":{"revision":1}}');
+    expect(await computeContentHash(sourcePath, keyedSettings, 2)).not.toBe(hash1);
   });
 
   it("preserves digest compatibility across streamed chunks and canonical settings", async () => {

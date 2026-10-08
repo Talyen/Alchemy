@@ -91,10 +91,6 @@ export const GEAR_DEFINITION_IDS = Object.keys(gearDefinitions) as [GearDefiniti
 
 export const gearDefinitionList = Object.values(gearDefinitions);
 
-export function getGearDefinitionsByRarity(rarity: GearRarity): GearDefinition[] {
-  return gearDefinitionList.filter((definition) => definition.rarity === rarity);
-}
-
 export function getGearDefinitionTitle(definition: GearDefinition): string {
   return definition.displayName;
 }

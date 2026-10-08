@@ -22,11 +22,6 @@ async function maybeWipeLocalSaveFromQuery(persistence: SessionPersistence): Pro
   window.history.replaceState({}, "", next);
 }
 
-function needsRestoredBattlePersistence(activeRun: SaveLoadState["data"]["activeRun"]): boolean {
-  const activeCombat = activeRun?.activeCombat;
-  return Boolean(activeCombat?.pendingBattleTransition ?? activeCombat?.battleState.turnPhase === "enemy");
-}
-
 export function useAlchemyBootstrap(): SaveLoadState | null {
   const [bootstrapResult, setBootstrapResult] = useState<SaveLoadState | null>(null);
 
@@ -58,11 +53,7 @@ export function useAlchemyBootstrap(): SaveLoadState | null {
         result = { data: createDefaultSaveData(), status: { kind: "unavailable" } };
       }
       if (cancelled) return;
-      const restored = persistence.restore(result.data, { preserveActiveRunIfInitialized: true });
-      if (restored && needsRestoredBattlePersistence(result.data.activeRun)) {
-        const outcome = await persistence.write(persistence.snapshot());
-        if (outcome === "failed") logStorageFailure("Restored battle transition could not be persisted");
-      }
+      persistence.restore(result.data, { preserveActiveRunIfInitialized: true, restoreActions: result.restoreActions });
       setBootstrapResult(result);
     })();
     return () => {

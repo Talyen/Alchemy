@@ -5,7 +5,6 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { E2E_ROUTES, resolveE2eRoute } from "../../scripts/run-e2e-route.mjs";
 import { acquireLocalTestLane } from "../../scripts/lib/verification/local-test-lane.mjs";
-import { sourceOutline } from "../../scripts/lib/agent/source-outline.mjs";
 
 const repoRoot = path.resolve(import.meta.dirname, "../..");
 
@@ -48,6 +47,8 @@ describe("e2e routes", () => {
     for (const [name, route] of Object.entries(E2E_ROUTES)) {
       const specs = routeSpecFiles(route);
       expect(specs.length, name).toBeGreaterThan(0);
+      // Playwright's space-separated --project consumes appended spec paths.
+      expect(route.args.at(-1), name).toBe("--project=chromium");
       for (const spec of specs) {
         expect(existsSync(path.join(repoRoot, spec)), `${name} -> ${spec}`).toBe(true);
       }
@@ -59,20 +60,6 @@ describe("e2e routes", () => {
     expect(resolveE2eRoute("shop-screen")).toBe(E2E_ROUTES.shop);
     expect(resolveE2eRoute("homestead")).toBe(E2E_ROUTES.homestead);
     expect(resolveE2eRoute("homestead-screen")).toBe(E2E_ROUTES.homestead);
-  });
-
-  it("filtered routes select a retained journey instead of an empty test set", () => {
-    for (const [name, route] of Object.entries(E2E_ROUTES)) {
-      const args: readonly string[] = route.args;
-      const grepIndex = args.findIndex((arg) => arg === "-g" || arg === "--grep");
-      if (grepIndex < 0) continue;
-      const pattern = new RegExp(args[grepIndex + 1]!);
-      const tests = routeSpecFiles(route).flatMap((spec) => sourceOutline(repoRoot, spec, { tests: true }));
-      expect(
-        tests.some((test) => pattern.test(test.name)),
-        `${name} selects no retained journey`,
-      ).toBe(true);
-    }
   });
 
   it("rejects unknown routes", () => {

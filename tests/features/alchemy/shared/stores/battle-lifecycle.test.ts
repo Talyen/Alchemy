@@ -1,3 +1,5 @@
+import { snapshotSessionSave } from "@/features/alchemy/shared/storage";
+import { savedActivityFixture, savedActivityData } from "../../../../fixtures/run-activity";
 import "../../../../helpers/mock-audio";
 
 import "../../../../helpers/mock-flush-save";
@@ -14,7 +16,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-command";
 import { finalizeRunXP, setHasActiveRun, setRunDeck } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createVictoryCommand } from "@/features/alchemy/run-loop/run/victory-commands";
-import { awardRunEndMaterials } from "@/features/alchemy/run-loop/run/run-materials";
+import { awardRunEndMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { cardById, getStartingDeck } from "@/lib/game-data";
 import { DESTINATIONS } from "@/lib/routing";
 import { parseActiveRun } from "@/lib/active-run-session";
@@ -49,7 +51,7 @@ it("rejects every battle command after End Run without changing progress, RNG, o
     expect(start.startBossById({ bossId: "forge-golem" })).toBe(false);
     expect(readGameplayState(defaultGameSession)).toBe(before);
     expect(readBattle(defaultGameSession).hasActiveBattle).toBe(false);
-    expect(snapshotRun(undefined, defaultGameSession).activeCombat).toBeNull();
+    expect(snapshotSessionSave(defaultGameSession).activeRun).toBeNull();
     expect(commit).not.toHaveBeenCalled();
     expect(started).not.toHaveBeenCalled();
   } finally {
@@ -74,9 +76,8 @@ it("starts combat only once and preserves its activity while visiting the Menu",
   expect(start.startBattle({ enemyId: "goblin" })).toBeNull();
   expect(readGameplayState(defaultGameSession)).toBe(before);
   expect(started).toHaveBeenCalledOnce();
-  expect(snapshotRun("menu", defaultGameSession)).toMatchObject({
-    currentScreen: "battle",
-    activeCombat: { battleState: readBattle(defaultGameSession).battleState },
+  expect(snapshotRun(defaultGameSession)).toMatchObject({
+    activity: savedActivityFixture("battle", { battleState: readBattle(defaultGameSession).battleState }),
   });
 });
 
@@ -92,8 +93,8 @@ it("resumes an unsettled victory and commits its rewards exactly once before pre
     undefined,
     defaultGameSession,
   );
-  const saved = parseActiveRun(JSON.parse(JSON.stringify(snapshotRun("battle", defaultGameSession))))!;
-  expect(saved.activeCombat?.battleState.enemyHealth).toBe(0);
+  const saved = parseActiveRun(JSON.parse(JSON.stringify(snapshotRun(defaultGameSession))))!;
+  expect(savedActivityData(saved, "battle")?.battleState.enemyHealth).toBe(0);
   restoreRun(saved, {}, {}, defaultGameSession);
   const settle = createVictoryCommand(() => [DESTINATIONS.CAMPFIRE], defaultGameSession);
   const before = readGameplayState(defaultGameSession);
@@ -103,11 +104,11 @@ it("resumes an unsettled victory and commits its rewards exactly once before pre
   expect(committed.runProfile.materialInventory.gems).toBe(before.runProfile.materialInventory.gems + 2);
   expect(readRunSession(defaultGameSession).activity.kind).toBe("rewards");
   expect(readBattle(defaultGameSession).hasActiveBattle).toBe(false);
-  expect(snapshotRun("battle", defaultGameSession)).toMatchObject({ currentScreen: "rewards", activeCombat: null });
+  expect(snapshotRun(defaultGameSession).activity.kind).toBe("rewards");
   expect(settle()).toBeNull();
   expect(readGameplayState(defaultGameSession)).toBe(committed);
 
-  const rewardSave = parseActiveRun(JSON.parse(JSON.stringify(snapshotRun("battle", defaultGameSession))))!;
+  const rewardSave = parseActiveRun(JSON.parse(JSON.stringify(snapshotRun(defaultGameSession))))!;
   restoreRun(rewardSave, {}, {}, defaultGameSession);
   const resumed = readGameplayState(defaultGameSession);
   expect(settle()).toBeNull();

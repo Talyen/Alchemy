@@ -11,12 +11,12 @@ import type { CorruptionResult } from "@/lib/corruption";
 import type { BattleCard } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
-import type { Screen } from "@/lib/routing";
-import type { InterruptedFlow, PersistedPendingReward, PersistedRunProgress } from "@/lib/validation";
+import type { Destination } from "@/lib/routing";
+import type { PersistedPendingReward, PersistedRunProgress } from "@/lib/validation";
 
 import type { AlchemistState, EquipmentShopState, RefreshableShopFields, ShopState } from "./shop-session-types";
 
-export type { InterruptedFlow, PersistedPendingReward };
+export type { PersistedPendingReward };
 
 export type RunObtainedItem = { kind: "gear"; instance: GearInstance } | { kind: "trinket"; trinketId: string };
 
@@ -41,26 +41,30 @@ export interface PersistedMysteryVisit {
 
 export type LabyrinthPendingNodeId = string;
 
-export type PersistedBattleTransition =
+export type PersistedRunActivity =
+  | { kind: "battle"; data: { battleState: BattleSnapshot } }
+  | { kind: "rewards"; data: PersistedPendingReward }
   | {
-      kind: "opening-draw";
-      resultState: BattleSnapshot;
+      kind: "destination";
+      data: {
+        destinations: Destination[];
+        selectedBossId: string | null;
+        lastVictoryEnemyType: import("@/lib/game-data").EnemyType | null;
+        lastVictoryContentSystem: ContentSystemId | null;
+      };
     }
-  | {
-      kind: "enemy-turn";
-      resultState: BattleSnapshot;
-      playerTurnSkipped: boolean;
-    }
-  | {
-      kind: "continue-end-turn";
-    };
-
-interface ActiveCombatData {
-  battleState: BattleSnapshot;
-  pendingBattleTransition: PersistedBattleTransition | null;
-  activeLabyrinthModifiers: EncounterCombatTraitId[];
-  activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
-}
+  | { kind: "shop"; data: PersistedShopState }
+  | { kind: "alchemist"; data: PersistedAlchemistState }
+  | { kind: "trinket-shop"; data: PersistedTrinketShopState }
+  | { kind: "equipment-shop"; data: PersistedEquipmentShopState }
+  | { kind: "mystery"; data: PersistedMysteryVisit | null }
+  | { kind: "corruption"; data: CorruptionResult | null }
+  | { kind: "campfire"; data: AlchemyVisit }
+  | { kind: "transmutation"; data: AlchemyVisit }
+  | { kind: "draft-deck" }
+  | { kind: "difficulty-select" }
+  | { kind: "labyrinth-map" }
+  | { kind: "wildwood-removal" };
 
 export interface RunRecap {
   mode: ContentSystemId;
@@ -79,15 +83,5 @@ export interface ActiveRunData extends PersistedRunProgress {
   activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
   wildwoodDraft: WildwoodDraftState | null;
   starterDraftChoices: BattleCard[] | null;
-  activeCombat: ActiveCombatData | null;
-  currentScreen: Screen | null;
-  interruptedFlow: InterruptedFlow;
-  shopState: PersistedShopState | null;
-  alchemistState: PersistedAlchemistState | null;
-  trinketShopState: PersistedTrinketShopState | null;
-  equipmentShopState: PersistedEquipmentShopState | null;
-  mysteryVisit: PersistedMysteryVisit | null;
-  corruptionResult: CorruptionResult | null;
-  campfireState?: AlchemyVisit | null;
-  transmutationState?: AlchemyVisit | null;
+  activity: PersistedRunActivity;
 }

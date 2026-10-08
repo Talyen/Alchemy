@@ -102,3 +102,5 @@ snapshots settle through the same victory/defeat callbacks as live battles.
 `battle-context.ts` supplies DOM refs and updates the stable controller's inputs
 after each React commit. Store commands own gameplay; hydration consumes legacy
 continuations before the UI observes a battle.
+Session reset cancels and clears presentation without publishing a gameplay
+command or retaining an unused opening snapshot in the run store.

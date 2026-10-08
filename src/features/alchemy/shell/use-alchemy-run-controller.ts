@@ -68,12 +68,11 @@ export function useAlchemyRunController(): AlchemyRunCommands {
           transition,
           cancelPending,
           battle,
-          labyrinthClearNode: labyrinth.onNodeCleared,
         },
         outcomes,
         defaultGameSession,
       ),
-    [navigateTo, resumeTo, transition, cancelPending, battle, labyrinth, outcomes],
+    [navigateTo, resumeTo, transition, cancelPending, battle, outcomes],
   );
 
   const runPhase = getRunPhase(screen, battle.hasActiveBattle);

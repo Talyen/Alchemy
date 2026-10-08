@@ -1,7 +1,6 @@
 export * from "./assets";
 export * from "./card-description";
 export * from "./cards";
-export { conditionalDamageDescription } from "./cards/conditional-damage-description";
 export * from "./character-unlocks";
 export * from "./characters";
 export * from "./companions";
@@ -24,7 +23,6 @@ export {
   canonicalCardDescriptionMatches,
   createEffectDescription,
   describeCardEffects,
-  effectDescriptionLine,
   getCardDescription,
 } from "./effect-metadata";
 export * from "./card-description-model";

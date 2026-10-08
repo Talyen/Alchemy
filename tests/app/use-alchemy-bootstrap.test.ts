@@ -75,35 +75,6 @@ describe("useAlchemyBootstrap", () => {
     expect(hook.current).toBe(result);
   });
 
-  it("persists active combat when battle transition was interrupted", async () => {
-    const result: SaveLoadState = {
-      data: {
-        ...defaultSaveData,
-        activeRun: {
-          activeCombat: {
-            battleState: { turnPhase: "player" },
-            pendingBattleTransition: {
-              cardId: "strike",
-              cardInstanceId: "strike-1",
-              timestamp: 100,
-            },
-          },
-        } as unknown as SaveLoadState["data"]["activeRun"],
-      },
-      status: { kind: "ok" },
-    };
-    mockPersistence.load.mockResolvedValue(result);
-
-    renderHook(() => useAlchemyBootstrap());
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-
-    expect(mockPersistence.restore).toHaveBeenCalledWith(result.data, { preserveActiveRunIfInitialized: true });
-    expect(mockPersistence.write).toHaveBeenCalledOnce();
-  });
-
   it("starts play with defaults and recovery writes when bootstrap fails", async () => {
     mockPersistence.load.mockRejectedValue(new Error("steam down"));
 

@@ -115,7 +115,7 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
       pendingCardBleedLeechHealing: Math.min(nextBleed, decayHalvedStatus(state.pendingCardBleedLeechHealing)),
     };
     return hit.healthDamage > 0 && state.talentEffects.drawPhysicalOnBleedTick
-      ? drawKeywordCard(retainedLeech, "physical")
+      ? drawKeywordCard(retainedLeech, "physical", { combatTexts })
       : retainedLeech;
   });
 }
