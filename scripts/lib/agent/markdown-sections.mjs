@@ -81,15 +81,6 @@ export function stripFencedBlocks(source) {
   return Array.from(unfencedLines(source.split("\n")), ({ line }) => line).join("\n");
 }
 
-/** Map non-fence lines through `fn(line, index)`, preserving blocks, source indices and newlines. */
-function mapUnfencedLines(content, fn) {
-  const parts = content.split(/(\r?\n)/u);
-  for (const { line, index } of unfencedLines(parts.filter((_part, index) => index % 2 === 0))) {
-    parts[index * 2] = fn(line, index);
-  }
-  return parts.join("");
-}
-
 /** Read a heading-delimited section of a repo document, ignoring headings inside fenced blocks. */
 export function readDocumentSection(rootDir, relativePath, heading = null) {
   const source = fs.readFileSync(path.join(rootDir, relativePath), "utf8");

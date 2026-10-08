@@ -1,4 +1,4 @@
-import type { ReviewCandidate } from "./audio-review.mjs";
+import type { ReviewCandidate } from "./core.mjs";
 
 interface ReviewMedia {
   available: boolean;

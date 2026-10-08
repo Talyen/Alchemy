@@ -8,7 +8,7 @@ import { failOnRuntimeErrors, assertStageFitsViewport } from "../browser-helpers
 import { exerciseControllerOptions } from "../e2e/controller-options";
 
 test.describe("isolated offline demo acceptance", () => {
-  // eslint-disable-next-line playwright/no-skipped-test -- uses a demo build and tests its extra menu/footer controls
+  // oxlint-disable-next-line playwright/no-skipped-test -- uses a demo build and tests its extra menu/footer controls
   test.skip(process.env.ALCHEMY_EDITION !== "demo", "Explicit demo renderer required");
   let application: ElectronApplication;
   let page: Page;

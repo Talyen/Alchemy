@@ -100,7 +100,12 @@ describe("Five targeted bug fixes", () => {
       const combatTexts: CombatTextEvent[] = [];
       const result = resolvePlayerHit(
         state,
-        { source: "card-attack", card, effect: card.effects[0]!, resolvedDamage: 6 },
+        {
+          source: "card-attack",
+          card,
+          effect: card.effects.find((effect) => effect.kind === "damage")!,
+          resolvedDamage: 6,
+        },
         combatTexts,
       );
 
@@ -125,7 +130,12 @@ describe("Five targeted bug fixes", () => {
       const combatTexts: CombatTextEvent[] = [];
       const result = resolvePlayerHit(
         state,
-        { source: "card-attack", card, effect: card.effects[0]!, resolvedDamage: 10 },
+        {
+          source: "card-attack",
+          card,
+          effect: card.effects.find((effect) => effect.kind === "damage")!,
+          resolvedDamage: 10,
+        },
         combatTexts,
       );
 

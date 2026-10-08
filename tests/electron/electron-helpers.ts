@@ -7,6 +7,7 @@ import { resolveElectronExecutablePathWithMarker } from "../../scripts/electron-
 import { ELECTRON_PREVIEW_PORT, previewPortFromEnv } from "../playwright-shared";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+export const ELECTRON_TEST_BACKGROUND = process.env.ALCHEMY_ELECTRON_BACKGROUND !== "0";
 
 function getPreviewPort(): number {
   return previewPortFromEnv("PLAYWRIGHT_ELECTRON_PREVIEW_PORT", ELECTRON_PREVIEW_PORT);
@@ -59,8 +60,7 @@ export async function launchElectronApp(
         ...process.env,
         ALCHEMY_ELECTRON_TEST_PROFILE: profile,
         ALCHEMY_ELECTRON_OFFSCREEN: options.offscreen === true ? "1" : "0",
-        ALCHEMY_ELECTRON_BACKGROUND:
-          (options.background ?? process.env.ALCHEMY_ELECTRON_BACKGROUND === "1") ? "1" : "0",
+        ALCHEMY_ELECTRON_BACKGROUND: (options.background ?? ELECTRON_TEST_BACKGROUND) ? "1" : "0",
         ELECTRON_RENDERER_URL: getRendererUrl(),
         ...(options.packagedRenderer ? { ELECTRON_FORCE_PACKAGED_RENDERER: "1" } : {}),
       },

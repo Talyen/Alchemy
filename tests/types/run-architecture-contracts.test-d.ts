@@ -66,7 +66,10 @@ describe("run architecture type contracts", () => {
     expectTypeOf(createSessionPersistence(defaultGameSession).setWritesDisabled).parameters.toEqualTypeOf<[boolean]>();
     expectTypeOf(createSessionPersistence(defaultGameSession).configurePlatform).parameters.toEqualTypeOf<[]>();
     expectTypeOf(createSessionPersistence(defaultGameSession)).toMatchTypeOf<SessionPersistence>();
-    expectTypeOf<SessionPersistenceRestoreOptions>().toEqualTypeOf<{ preserveActiveRunIfInitialized?: boolean }>();
+    expectTypeOf<SessionPersistenceRestoreOptions>().toEqualTypeOf<{
+      preserveActiveRunIfInitialized?: boolean;
+      restoreActions?: ReadonlyArray<"abandon-active-run"> | undefined;
+    }>();
   });
   it("requires combat data with battle activity and removes independently writable battle flags", () => {
     // @ts-expect-error -- a battle activity must carry its committed combat

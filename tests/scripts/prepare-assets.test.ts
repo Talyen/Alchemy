@@ -14,7 +14,7 @@ const { syncArtBarrels } = await import("../../scripts/sync-art-barrels.mjs");
 const { syncVersionMetadata } = await import("../../scripts/sync-version-metadata.mjs");
 const { preflightSelectedSources } = await import("../../scripts/assets/check-asset-outputs.mjs");
 const { prepareAssets } = await import("../../scripts/prepare-assets.mjs");
-const { runAllOptimizePipelines } = await import("../../scripts/optimize-pipelines.mjs");
+const { runAllOptimizePipelines } = await import("../../scripts/assets/optimize-pipelines.mjs");
 
 describe("asset pipeline orchestration", () => {
   beforeEach(() => {

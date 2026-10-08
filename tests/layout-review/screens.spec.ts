@@ -374,7 +374,7 @@ test("additional pickers tooltips and end states", async () => {
 });
 
 test("size and aspect ratio stress", async () => {
-  // eslint-disable-next-line playwright/no-skipped-test -- Explicit opt-in keeps the baseline matrix at default settings.
+  // oxlint-disable-next-line playwright/no-skipped-test -- Explicit opt-in keeps the baseline matrix at default settings.
   test.skip(process.env.LAYOUT_REVIEW_STRESS !== "1", "Run separately into the stress report directory");
   const viewports = [
     [1280, 720],
@@ -620,7 +620,7 @@ test("long descriptions and boss inspection", async () => {
 });
 
 test("armory sizing stress", async () => {
-  // eslint-disable-next-line playwright/no-skipped-test -- Size extremes are captured separately from baseline settings.
+  // oxlint-disable-next-line playwright/no-skipped-test -- Size extremes are captured separately from baseline settings.
   test.skip(process.env.LAYOUT_REVIEW_STRESS !== "1", "Stress capture only");
   for (const gameSizePercent of [80, 120]) {
     await page.evaluate(

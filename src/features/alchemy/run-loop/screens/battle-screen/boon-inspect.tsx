@@ -104,7 +104,7 @@ export function BattleBoonInspectOverlay({
 function BoonInspectPanel({ children }: { children: ReactNode }) {
   const { panelRef, handleKeyDown } = useDialogFocus();
   return (
-    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Modal contains focus and shields its backdrop from content clicks
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Modal contains focus and shields its backdrop from content clicks
     <div
       ref={panelRef}
       role="dialog"

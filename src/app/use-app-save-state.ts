@@ -20,6 +20,6 @@ export function useAlchemyAutosaveFromStores(enabled = true) {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       lifecycle.dispose();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- latest enabled value prevents outgoing lifetime writes
+    // oxlint-disable-next-line react/exhaustive-deps -- latest enabled value prevents outgoing lifetime writes
   }, [enabled]);
 }

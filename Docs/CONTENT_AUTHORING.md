@@ -145,7 +145,7 @@ Put talent-owned magnitudes on the talent ops (not only in `game-constants`) so 
 
 Talent trees accept any count ≥ 1 in rows of 1/2/3/4, with overflow in its own row.
 
-`talent-effect-invariants` must stay green: every manifest field is written by a talent or homestead key (or an explicit unused allowlist), every talent-written field is read in battle/meta code, and non-boolean `set` fields have a single writer unless they are arrays. Reader discovery uses typed property access, destructuring, and typed key registrations rather than receiver names. It checks wiring presence, not reachability or correct combat behavior; meaningful behavior tests remain necessary. Talent descriptions are free text with no numeric parity lint (typography lint still applies — run `npm run content:audit`) — keep them in lockstep with effects by hand.
+`talent-effect-invariants` must stay green: every manifest field is written by a talent or homestead key (or an explicit unused allowlist), and non-boolean `set` fields have a single writer unless they are arrays. New talent mechanics need focused gameplay tests that demonstrate their conditions and player-facing outcomes. There is no automatic scan proving that every authored field has a consumer; catalog wiring checks do not establish reachability or correct combat behavior. Talent descriptions are free text with no numeric parity lint (typography lint still applies — run `npm run content:audit`) — keep them in lockstep with effects by hand.
 
 Add a `talentArt` entry when art is ready; missing-art and keyboard behavior follow [UI component conventions](./UI.md#component-conventions).
 

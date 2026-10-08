@@ -1,7 +1,7 @@
 pre-commit:
   commands:
     format:
-      # Formats staged files that match scripts/prettier-paths.mjs (same set as format:check).
+      # Formats staged files that match scripts/lib/verification/prettier-paths.mjs (same set as format:check).
       run: node scripts/run-prettier.mjs --write {staged_files}
       stage_fixed: true
 

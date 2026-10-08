@@ -36,6 +36,8 @@
     "vitest.balance.config.ts",
     "playwright.config.ts",
     "playwright.electron.config.ts",
-    "playwright.performance.config.ts"
+    "playwright.performance.config.ts",
+    "oxlint.config.ts",
+    "lint/audit.config.ts"
   ]
 }

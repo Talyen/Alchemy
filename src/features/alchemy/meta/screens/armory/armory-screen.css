@@ -106,6 +106,8 @@
 .armory-inventory-search[data-expanded="true"] .armory-inventory-search-field {
   width: calc(20 * var(--content-rem, 1rem));
   visibility: visible;
+  /* Search must be visible immediately so opening it can move keyboard focus. */
+  transition-property: width;
 }
 
 .armory-inventory-menu {

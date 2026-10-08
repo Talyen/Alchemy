@@ -10,7 +10,7 @@
       "vitest*": "allow",
       "playwright*": "allow",
       "tsc*": "allow",
-      "eslint*": "allow",
+      "oxlint*": "allow",
       "git status*": "allow",
       "git diff*": "allow",
       "git log*": "allow",

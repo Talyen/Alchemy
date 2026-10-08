@@ -1,8 +1,8 @@
-import { optimizeAssets } from "./optimize-assets.mjs";
-import { optimizeMusic } from "./optimize-music.mjs";
-import { optimizeSounds } from "./optimize-sounds.mjs";
+import { optimizeAssets } from "../optimize-assets.mjs";
+import { optimizeMusic } from "../optimize-music.mjs";
+import { optimizeSounds } from "../optimize-sounds.mjs";
 
-export const OPTIMIZE_PIPELINES = {
+const OPTIMIZE_PIPELINES = {
   art: {
     label: "Art",
     run: optimizeAssets,

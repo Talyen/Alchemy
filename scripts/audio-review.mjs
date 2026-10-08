@@ -8,9 +8,9 @@ import {
   inspectLibrary,
   loadGameInventory,
   readLibraryCatalog,
-} from "./lib/audio-review.mjs";
-import { currentSoundIdentity, prepareReviewMedia } from "./lib/audio-review-media.mjs";
-import { serveReview } from "./lib/audio-review-server.mjs";
+} from "./audio-review/core.mjs";
+import { currentSoundIdentity, prepareReviewMedia } from "./audio-review/media.mjs";
+import { serveReview } from "./audio-review/server.mjs";
 import { importChoices, restoreChoices } from "./audio-review/choices.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));

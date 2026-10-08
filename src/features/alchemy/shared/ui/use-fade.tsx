@@ -21,10 +21,10 @@ export function useHeldWhile<T>(hold: boolean, value: T): T {
   // blessed exception — element trees are already memoized by React.
   const heldRef = useRef(value);
   if (hold) {
-    // eslint-disable-next-line react-hooks/refs -- snapshot live value for exit phase before hold drops
+    // oxlint-disable-next-line react-hooks/refs -- snapshot live value for exit phase before hold drops
     heldRef.current = value;
   }
-  // eslint-disable-next-line react-hooks/refs -- read snapshotted value during exit phase
+  // oxlint-disable-next-line react-hooks/refs -- read snapshotted value during exit phase
   return hold ? value : heldRef.current;
 }
 

@@ -130,10 +130,10 @@ composition is checked rather than replaced with late callback binding.
 
 The singleton is constructed only in `app/application-session.ts`. React hooks
 subscribe to that application's session without an additional provider. The
-explicit shipping adapter list in `eslint/session-ownership.js` covers application hooks,
-routes, and presentation adapters, including those under feature directories. The ESLint
+explicit shipping adapter list in `lint/session-ownership.js` covers application hooks,
+routes, and presentation adapters, including those under feature directories. The Oxlint
 session-ownership rule and dependency boundary prevent reusable domain modules
-and headless playthroughs from importing the singleton; ESLint also rejects
+and headless playthroughs from importing the singleton; Oxlint also rejects
 optional or defaulted session parameters. Runtime internals remain store-owned,
 with scoped exceptions for save IO, hydration, and singleton construction.
 
@@ -249,7 +249,7 @@ Use this reference for access and orchestration; unprefixed store filenames are 
 - **Session persistence** — `shared/storage/session-persistence.ts`: `createSessionPersistence(gameSession)` is the session capability port for snapshots, writes, exit writes, loading, platform configuration, recovery routing, clearing, and failure subscriptions. Feature code and store lifecycles use this port rather than calling raw storage IO functions directly.
 - **Lifecycle** — `run-lifecycle.ts` owns restore, snapshot, battle sync, and teardown including presentation listeners and battle UI clearing (import it directly). `finalizeRunEndSession` retains recap progress; `teardownRun` fully resets the live run.
 - **Settings actions** — `settings-store.ts`: `useSettingsActions` / `useAppSettings` for App chrome. Collection and Homestead commands use module-level `createRunSessionCommand` bindings beside their routes.
-- **Flow commands** — `navigation-commands.ts` supplies shell navigation and talent actions; `room-entry-commands.ts` applies room traits with activity initialization. Domain command modules beside run flows own destination claims, campfire healing, progression, Mystery/Corruption choices, Wildwood updates, and run settlement. Shell, battle presentation, and these flow adapters cannot import draft dispatch or setters (ESLint-enforced). Feature command authors compose public domain operations inside a readonly transaction. Store-owned implementations retain raw draft access.
+- **Flow commands** — `navigation-commands.ts` supplies shell navigation and talent actions; `room-entry-commands.ts` applies room traits with activity initialization. Domain command modules beside run flows own destination claims, campfire healing, progression, Mystery/Corruption choices, Wildwood updates, and run settlement. Shell, battle presentation, and these flow adapters cannot import draft dispatch or setters (Oxlint-enforced). Feature command authors compose public domain operations inside a readonly transaction. Store-owned implementations retain raw draft access.
 - **Route command composition** — `shell/use-alchemy-run-controller.ts` composes the explicit contracts in `shell/route-commands.ts`.
 - **Navigation and rewards** — `shell/use-alchemy-run-controller.ts` wires React lifetime and display reads; `shell/run-flow-engine.ts` composes command factories. Start at `createRunFlow` in `run-loop/run/run-flow.ts`, its `run-flow-*.ts` modules, and `run-loop/navigation/mystery-event-navigation.ts` for destinations. Navigation vocabulary: `transition` is validated + delayed, `navigateTo` is `transition` sugar, `goToScreen` is `navigateTo` plus card-hover clear; every flow `navigateTo` clears hover by construction. Destination reads: pure `getRunAvailableDestinations` in `shared/run-flow/destination-flow.ts`, store-backed `readRunAvailableDestinations` in `shell/run-destination-wiring.ts`. Labyrinth combat traits travel via session store, not battle-starter args.
 - **Mode entry** — Follow [run setup ownership](./ARCHITECTURE.md#run-setup-ownership) for mode selection, starter drafts, run-start snapshots, and Wildwood progression.

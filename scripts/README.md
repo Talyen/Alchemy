@@ -9,7 +9,8 @@ selection, reports, build validation, and receipt caching.
 
 Keep command entry points directly in `scripts/`. Asset registries and pipeline
 helpers live together in `assets/`, with TypeScript declarations beside their
-modules. `lib/agent/`, `lib/release/`, and `lib/verification/` group task-specific helpers; general process and repository helpers remain directly in `lib/`.
+modules. Sound desk mapping, media, server and board modules live in `audio-review/`;
+`audio-review.mjs` remains its command entry point. `lib/agent/`, `lib/release/`, and `lib/verification/` group task-specific helpers; general process and repository helpers remain directly in `lib/`.
 
 ## Assets
 
@@ -21,7 +22,7 @@ skip mode; keep that validation at each entry point.
 | Concern                                    | Implementation owner                                                                                                                                                                                                                                                                                      |
 | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Asset CLI and preparation                  | `assets.mjs` → `prepare-assets.mjs` (canonical surface; `npm run assets:check` is the local source check; `assets:check:outputs` adds `--outputs-only` for CI; direct `optimize-*.mjs` calls are the supported iteration shortcut behind `assets:optimize[:art\|:sounds\|:music]`)                        |
-| Art, sound, and music optimization         | `optimize-pipelines.mjs` → `optimize-assets.mjs`, `optimize-sounds.mjs`, `optimize-music.mjs` via `assets/asset-pipeline-runner.mjs`                                                                                                                                                                      |
+| Art, sound, and music optimization         | `assets/optimize-pipelines.mjs` → `optimize-assets.mjs`, `optimize-sounds.mjs`, `optimize-music.mjs` via `assets/asset-pipeline-runner.mjs`                                                                                                                                                               |
 | Generated art barrels and version metadata | `sync-generated.mjs` → `sync-art-barrels.mjs`, `sync-version-metadata.mjs` (`sync:art` syncs both barrels; `sync:gear-art` alone refuses stale `assets.generated.ts`; `sync:version` stamps the build version alone; `prepare`/`assets:check` sync art barrels and version metadata as independent steps) |
 | Fast generated-output validation           | `sync-generated.mjs --check`                                                                                                                                                                                                                                                                              |
 | Read-only prepared-output freshness        | `assets.mjs --check` → `check-prepared-assets.mjs` (partial-failure `prepare` advances barrels when art succeeds; `check` is all-or-nothing)                                                                                                                                                              |
@@ -126,7 +127,7 @@ shared `runStreamCommand` runner instead of bounded `runCommand` capture or raw
 ## Development
 
 `npm run dev` runs committed-output validation and port cleanup through `predev`.
-`npm run dev:checked` starts Vite with the live TypeScript checker directly;
+`npm run dev:checked` starts Vite with the live TypeScript 7 checker directly;
 run `npm run predev` first when using that command. Desktop development runs
 the same preparation and adds Steam App ID synchronization.
 
@@ -141,7 +142,9 @@ build outputs. `--processes` stops Alchemy-owned test listeners;
 `--days=<number>` changes the cutoff. Runs under `reports/runs`, `compact`,
 `agent-diff`, `performance` and test failure collections expire
 independently; other report directories expire as complete bundles. Fresh
-children preserve older siblings. Stale current-run pointers are removed when
+children preserve older siblings. Age uses the newest contained file (or an
+empty directory's timestamp), so copying or moving the checkout does not renew
+old evidence. Stale current-run pointers are removed when
 their run disappears. Roots and nested symlinks are never traversed.
 
 Report-producing CLIs register process-owned guards and prune on normal idle

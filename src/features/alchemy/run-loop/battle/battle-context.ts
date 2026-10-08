@@ -63,7 +63,7 @@ export function useBattleControllerContext(props: BattleControllerContextProps):
       enemyPanelRef,
       getPresentation: props.presentation.getState,
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- One controller lifetime; committed props are synchronized below.
+    // oxlint-disable-next-line react/exhaustive-deps -- One controller lifetime; committed props are synchronized below.
     [playback],
   );
   useLayoutEffect(() => {

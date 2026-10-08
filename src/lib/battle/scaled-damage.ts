@@ -4,7 +4,6 @@ import { applyPercentBonus } from "./amount-helpers";
 import { applyHitEpilogue, applyIronGuardReward } from "./player-rewards";
 import { mergeCombatText } from "./combat-text-events";
 import type { BattleState, CombatTextEvent } from "./types";
-import { addEnemyStatus } from "./status-state";
 import { damageEnemyHealth } from "./health-state";
 import { decayArmorAfterDamage, getEnemyDamageMultiplier } from "./status-helpers";
 import { paceCombatDamage } from "./fight-pacing";

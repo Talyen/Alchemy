@@ -74,7 +74,7 @@ const HandCardItem = memo(function HandCardItem({
   const slotRef = useRef<HTMLDivElement | null>(null);
   const prevCenterXRef = useRef<number | null>(null);
 
-  /* eslint-disable react-hooks/immutability -- Writing to handCardRefs.current (a MutableRefObject) in useLayoutEffect and its cleanup is the correct imperative pattern for maintaining a live ref registry; MutableRefObject.current writes are explicitly safe inside effects. */
+  /* oxlint-disable react-hooks/immutability -- Writing to handCardRefs.current (a MutableRefObject) in useLayoutEffect and its cleanup is the correct imperative pattern for maintaining a live ref registry; MutableRefObject.current writes are explicitly safe inside effects. */
   useLayoutEffect(() => {
     const el = elementRef.current;
     const currentRefs = handCardRefs.current;
@@ -95,7 +95,7 @@ const HandCardItem = memo(function HandCardItem({
     if (!(artwork instanceof HTMLElement)) return;
     return playHandSlotReflow(artwork, previousCenterX - centerX, HAND_REFLOW_MOTION_MS);
   }, [cardKey, index, handLength]);
-  /* eslint-enable react-hooks/immutability -- re-enable immutability checks after ref registry effects */
+  /* oxlint-enable react-hooks/immutability -- re-enable immutability checks after ref registry effects */
 
   return (
     <div

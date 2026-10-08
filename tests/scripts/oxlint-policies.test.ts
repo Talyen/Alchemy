@@ -1,20 +1,12 @@
-import { ESLint } from "eslint";
-import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import tseslint from "typescript-eslint";
+import { lintFixture } from "../helpers/lint-fixture";
 
 vi.setConfig({ testTimeout: 30_000 });
-const ROOT = path.resolve(import.meta.dirname, "../..");
-
-const effectiveEslint = new ESLint({ cwd: ROOT, overrideConfig: [tseslint.configs.disableTypeChecked] });
-
 async function effectiveMessages(filePath: string, code: string, ruleId: string) {
-  const [result] = await effectiveEslint.lintText(code, { filePath: path.join(ROOT, filePath) });
-  expect(result.fatalErrorCount, code).toBe(0);
-  return result.messages.filter((message) => message.ruleId === ruleId);
+  return lintFixture(filePath, code).filter((message) => message.ruleId === ruleId);
 }
 
-describe("eslint rationalization", () => {
+describe("Oxlint policies", () => {
   it("bans any .rng access including nextState, computed, and destructuring", async () => {
     const cases = [
       `const x = state.rng;`,
@@ -25,13 +17,13 @@ describe("eslint rationalization", () => {
       `function foo({ rng }) {}`,
     ];
     for (const code of cases) {
-      const msgs = await effectiveMessages("src/lib/battle/card-play.ts", code, "no-restricted-syntax");
+      const msgs = await effectiveMessages("src/lib/battle/card-play.ts", code, "alchemy/restricted-syntax");
       expect(msgs.length, `should ban ${code}`).toBeGreaterThan(0);
     }
     const allowed = await effectiveMessages(
       "src/lib/battle/rng.ts",
       `import { getBattleRng } from "./rng"; const x = getBattleRng(state);`,
-      "no-restricted-syntax",
+      "alchemy/restricted-syntax",
     );
     expect(allowed.length).toBe(0);
   });
@@ -41,11 +33,15 @@ describe("eslint rationalization", () => {
       const msgs = await effectiveMessages(
         "src/lib/battle/card-play.ts",
         `Math.${fn}(1.5); Math["${fn}"](1.5);`,
-        "no-restricted-syntax",
+        "alchemy/restricted-syntax",
       );
       expect(msgs.length, `should ban dot and computed Math.${fn}`).toBe(2);
     }
-    const allowed = await effectiveMessages("src/lib/battle/card-play.ts", `Math.round(1.5);`, "no-restricted-syntax");
+    const allowed = await effectiveMessages(
+      "src/lib/battle/card-play.ts",
+      `Math.round(1.5);`,
+      "alchemy/restricted-syntax",
+    );
     expect(allowed.length).toBe(0);
   });
 
@@ -58,7 +54,7 @@ describe("eslint rationalization", () => {
       const messages = await effectiveMessages(
         file,
         `Math.random(); const direct = Math.random; Math["random"](); const computed = Math["random"]; Math[random]();`,
-        "no-restricted-syntax",
+        "alchemy/restricted-syntax",
       );
       expect(messages, file).toHaveLength(4);
       expect(messages.every((message) => message.message.includes("seeded"))).toBe(true);
@@ -66,17 +62,12 @@ describe("eslint rationalization", () => {
         const nestedDispatch = await effectiveMessages(
           file,
           'import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";',
-          "no-restricted-syntax",
+          "alchemy/restricted-syntax",
         );
         expect(nestedDispatch, file).toHaveLength(1);
       }
     }
   });
-});
-
-it("ignores isolated worktrees without excluding the active checkout", async () => {
-  expect(await effectiveEslint.isPathIgnored(".worktrees/evaluation/src/example.ts")).toBe(true);
-  expect(await effectiveEslint.isPathIgnored("scripts/agent-context.mjs")).toBe(false);
 });
 
 it.each([
@@ -91,25 +82,23 @@ it.each([
     "battle.skipCombatBtn.click();",
     "battle.skipCombatToVictory();",
   ]) {
-    expect(await effectiveMessages(file, code, "no-restricted-syntax"), code).toHaveLength(1);
+    expect(await effectiveMessages(file, code, "alchemy/restricted-syntax"), code).toHaveLength(1);
   }
 });
 
 it.each(["tests/e2e/specs/draw-discard-animations.spec.ts", "tests/e2e/specs/battle-end-turn-canary.spec.ts"])(
   "keeps real animation timing in %s",
   async (filePath) => {
-    const results = await effectiveEslint.lintText('import { test } from "../../fixtures/e2e"; enableFastMode(page);', {
-      filePath: path.join(ROOT, filePath),
-    });
-    const rules = results.flatMap((result) => result.messages).map((message) => message.ruleId);
+    const results = lintFixture(filePath, 'import { test } from "../../fixtures/e2e"; enableFastMode(page);');
+    const rules = results.map((message) => message.ruleId);
     expect(rules).not.toContain("no-restricted-imports");
-    expect(rules).toContain("no-restricted-syntax");
+    expect(rules).toContain("alchemy/restricted-syntax");
     for (const code of [
       'test("timing", async ({ page, fastBattle }) => { void fastBattle; });',
       'import { useFastBattle as fast } from "../../fixtures/e2e";',
     ]) {
-      const [result] = await effectiveEslint.lintText(code, { filePath: path.join(ROOT, filePath) });
-      expect(result.messages.some((message) => message.ruleId === "no-restricted-syntax")).toBe(true);
+      const messages = lintFixture(filePath, code);
+      expect(messages.some((message) => message.ruleId === "alchemy/restricted-syntax")).toBe(true);
     }
   },
 );
@@ -122,16 +111,16 @@ it("keeps context and aggregate exceptions independent from TSX conventions", as
     "src/features/alchemy/shared/stores/lint-probe.tsx",
     "src/features/alchemy/run-loop/screens/lint-probe.tsx",
   ]) {
-    expect(await effectiveMessages(file, context, "no-restricted-syntax"), file).not.toEqual([]);
-    const messages = await effectiveMessages(file, aggregate, "no-restricted-syntax");
+    expect(await effectiveMessages(file, context, "alchemy/restricted-syntax"), file).not.toEqual([]);
+    const messages = await effectiveMessages(file, aggregate, "alchemy/restricted-syntax");
     expect(messages.length, file).toBe(file.includes("/stores/") ? 0 : 1);
   }
   for (const file of [
     "src/app/app-screen-chrome-context.tsx",
     "src/features/alchemy/shared/context/card-description-context.tsx",
   ]) {
-    expect(await effectiveMessages(file, context, "no-restricted-syntax"), file).toEqual([]);
-    expect(await effectiveMessages(file, aggregate, "no-restricted-syntax"), file).toHaveLength(1);
+    expect(await effectiveMessages(file, context, "alchemy/restricted-syntax"), file).toEqual([]);
+    expect(await effectiveMessages(file, aggregate, "alchemy/restricted-syntax"), file).toHaveLength(1);
   }
   for (const file of [
     "src/features/alchemy/shared/stores/lint-probe.tsx",
@@ -140,10 +129,14 @@ it("keeps context and aggregate exceptions independent from TSX conventions", as
   ]) {
     for (const expression of ["`a ${active}`", '"a " + active']) {
       const code = `export const view = <div className={${expression}} />;`;
-      expect(await effectiveMessages(file, code, "no-restricted-syntax"), file).toHaveLength(1);
+      expect(await effectiveMessages(file, code, "alchemy/restricted-syntax"), file).toHaveLength(1);
     }
     expect(
-      await effectiveMessages(file, 'export const view = <div className={cn("a", active)} />;', "no-restricted-syntax"),
+      await effectiveMessages(
+        file,
+        'export const view = <div className={cn("a", active)} />;',
+        "alchemy/restricted-syntax",
+      ),
       file,
     ).toEqual([]);
   }
@@ -158,7 +151,7 @@ it("allows erased type imports while blocking asset-loading imports across brows
   ]) {
     for (const imports of ["import type { Card }", "import { type Card }", "import { type Card, type Enemy }"]) {
       expect(
-        await effectiveMessages(file, `${imports} from "@/lib/game-data";`, "no-restricted-syntax"),
+        await effectiveMessages(file, `${imports} from "@/lib/game-data";`, "alchemy/restricted-syntax"),
         imports,
       ).toEqual([]);
     }
@@ -170,11 +163,13 @@ it("allows erased type imports while blocking asset-loading imports across brows
       "import {}",
     ]) {
       expect(
-        await effectiveMessages(file, `${imports} from "@/lib/game-data";`, "no-restricted-syntax"),
+        await effectiveMessages(file, `${imports} from "@/lib/game-data";`, "alchemy/restricted-syntax"),
         imports,
       ).toHaveLength(1);
     }
-    expect(await effectiveMessages(file, 'import "@/lib/game-data";', "no-restricted-syntax"), file).toHaveLength(1);
+    expect(await effectiveMessages(file, 'import "@/lib/game-data";', "alchemy/restricted-syntax"), file).toHaveLength(
+      1,
+    );
   }
 });
 
@@ -208,8 +203,8 @@ it("checks desktop globals without allowing DOM access in the main process", asy
 
 it("requires suppression reasons in tooling, configuration, desktop and performance files", async () => {
   for (const file of [
-    "eslint/plugin.js",
-    "eslint.config.js",
+    "lint/plugin.js",
+    "oxlint.config.ts",
     "desktop/main.cjs",
     "performance/metrics.ts",
     "scripts/check.mjs",
@@ -218,7 +213,7 @@ it("requires suppression reasons in tooling, configuration, desktop and performa
     expect(
       await effectiveMessages(
         file,
-        `// eslint-disable-next-line eqeqeq\n${statement}`,
+        `// oxlint-disable-next-line eqeqeq\n${statement}`,
         "alchemy/require-disable-reason",
       ),
       file,
@@ -226,7 +221,7 @@ it("requires suppression reasons in tooling, configuration, desktop and performa
     expect(
       await effectiveMessages(
         file,
-        `// eslint-disable-next-line eqeqeq -- intentional coercion fixture\n${statement}`,
+        `// oxlint-disable-next-line eqeqeq -- intentional coercion fixture\n${statement}`,
         "alchemy/require-disable-reason",
       ),
       file,
@@ -292,4 +287,81 @@ it("requires explicit sessions in functions and callback contracts", async () =>
   expect(
     await effectiveMessages(file, imported + "function command(session: Career) {}", "alchemy/session-ownership"),
   ).toHaveLength(0);
+});
+
+it("preserves layer boundaries and their owning exceptions", async () => {
+  for (const [file, code] of [
+    ["src/lib/probe.ts", 'import { view } from "@/features/alchemy/meta/view"; import React from "react";'],
+    ["src/features/alchemy/meta/probe.ts", 'import { flow } from "@/features/alchemy/run-loop/flow";'],
+    ["src/features/alchemy/run-setup/probe.ts", 'import { flow } from "@/features/alchemy/run-loop/flow";'],
+    ["src/features/alchemy/run-loop/probe.ts", 'import { setup } from "@/features/alchemy/run-setup/setup";'],
+    [
+      "src/features/alchemy/shared/ui/probe.tsx",
+      'import { state } from "@/features/alchemy/shared/stores/gameplay-state-store";',
+    ],
+    ["src/features/alchemy/meta/screens/probe.tsx", 'import { navigation } from "@/app/use-app-navigation";'],
+    ["src/lib/balance/probe.ts", 'import { createBattleState } from "@/lib/battle";'],
+  ]) {
+    expect(await effectiveMessages(file!, code!, "no-restricted-imports"), file).not.toEqual([]);
+  }
+  for (const file of [
+    "src/features/alchemy/shared/storage/persistence.ts",
+    "src/features/alchemy/shared/storage/io.ts",
+  ]) {
+    expect(
+      await effectiveMessages(file, 'import { runtime } from "../stores/session-runtime";', "no-restricted-imports"),
+      file,
+    ).toEqual([]);
+  }
+});
+
+it("runs type-aware correctness checks through the installed companion", () => {
+  const messages = lintFixture(
+    "src/type-probe.ts",
+    `
+    declare const unsafe: any;
+    export const value: string = unsafe;
+    declare function save(): Promise<void>;
+    save();
+    type Choice = "a" | "b";
+    declare const choice: Choice;
+    switch (choice) { case "a": break; }
+  `,
+    { typeAware: true },
+  );
+  for (const rule of [
+    "typescript/no-unsafe-assignment",
+    "typescript/no-floating-promises",
+    "typescript/switch-exhaustiveness-check",
+  ]) {
+    expect(
+      messages.some((message) => message.ruleId === rule),
+      rule,
+    ).toBe(true);
+  }
+});
+
+it("loads the complexity audit with advisory warnings while normal lint stays unchanged", () => {
+  const code = `export function branch(value: number) {
+${Array.from({ length: 12 }, (_, i) => `if (value === ${i}) return ${i};`).join("\n")}
+${"value += 1;\n".repeat(52)}return value;
+}`;
+  const normal = lintFixture("src/probe.ts", code);
+  expect(normal.filter((message) => ["complexity", "max-lines-per-function"].includes(message.ruleId))).toEqual([]);
+  const audit = lintFixture("src/probe.ts", code, { config: "lint/audit.config.ts" });
+  for (const rule of ["complexity", "max-lines-per-function"])
+    expect(
+      audit.some((message) => message.ruleId === rule),
+      rule,
+    ).toBe(true);
+});
+
+it("ignores other worktrees and rejects stale suppression comments", () => {
+  expect(lintFixture(".worktrees/other/src/probe.ts", "this is invalid syntax")).toEqual([]);
+  const messages = lintFixture(
+    "src/probe.ts",
+    "// oxlint-disable-next-line no-console -- interop seam\nexport const value = 1;",
+    { unused: "error" },
+  );
+  expect(messages.some((message) => message.message.includes("Unused oxlint-disable"))).toBe(true);
 });

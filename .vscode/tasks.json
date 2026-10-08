@@ -14,14 +14,15 @@
     },
     {
       "label": "test:file",
-      "type": "shell",
-      "command": "npm test -- ${input:testFile}",
-      "problemMatcher": []
+      "type": "process",
+      "command": "npm",
+      "problemMatcher": [],
+      "args": ["run", "test:full", "--", "${input:testFile}"]
     },
     {
-      "label": "test:e2e:smoke",
+      "label": "test:e2e:critical",
       "type": "npm",
-      "script": "test:e2e:smoke",
+      "script": "test:e2e:critical",
       "problemMatcher": []
     }
   ],

@@ -4,7 +4,7 @@
  * Run: node scripts/audit-all.mjs
  *
  * Exits non-zero if any audit fails. Prints a summary at the end.
- * Gating probes (knip, depcruise, eslint, content-audit) fail the sweep;
+ * Gating probes (knip, depcruise, Oxlint, content-audit) fail the sweep;
  * trend probes (type-escapes, change-amplification) always exit 0 and are
  * advisory direction signals — see Docs/Audits/TypeSafetyAudit.md.
  * Local / agent periodic sweep (Docs/Audits); not CI nightly and not a
@@ -45,16 +45,9 @@ const STEPS = [
     timeout: 120_000,
   },
   {
-    name: "ESLint complexity + max-lines-per-function",
-    cmd: "npx",
-    args: [
-      "eslint",
-      "--rule",
-      'complexity:["warn",11]',
-      "--rule",
-      'max-lines-per-function:["warn",{"max":50,"skipComments":true}]',
-      "src",
-    ],
+    name: "Oxlint complexity + max-lines-per-function",
+    cmd: "oxlint",
+    args: ["--config", "lint/audit.config.ts", "--format", "stylish", "src"],
     timeout: 180_000,
   },
   { name: "type-escape trend counts", cmd: "node", args: ["scripts/audit-type-escapes.mjs"], timeout: 60_000 },

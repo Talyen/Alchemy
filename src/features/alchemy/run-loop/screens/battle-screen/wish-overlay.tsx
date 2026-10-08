@@ -112,7 +112,7 @@ function WishOverlayPanel({
 function WishPanel({ children }: { children: ReactNode }) {
   const { panelRef, handleKeyDown } = useDialogFocus();
   return (
-    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Mandatory choice modal contains keyboard focus
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Mandatory choice modal contains keyboard focus
     <div
       ref={panelRef}
       role="dialog"

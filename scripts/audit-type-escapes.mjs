@@ -18,8 +18,8 @@ const CATEGORIES = [
   { name: "any (annotations/casts)", regex: /(?::\s*any\b|\bas any\b|<any[,>]|\bany\[\])/g },
   { name: "as unknown as", regex: /\bas unknown as\b/g },
   {
-    name: "suppressions (@ts-ignore / @ts-expect-error / eslint-disable)",
-    regex: /@ts-ignore|@ts-expect-error|eslint-disable/g,
+    name: "suppressions (@ts-ignore / @ts-expect-error / oxlint-disable)",
+    regex: /@ts-ignore|@ts-expect-error|oxlint-disable/g,
   },
   { name: "non-null assertions (!. / !;)", regex: /!\.(?=\w)|!\)|!;/g },
 ];

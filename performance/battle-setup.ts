@@ -1,5 +1,6 @@
+import { savedActivityFixture } from "../tests/fixtures/run-activity";
 import { expect, type Page } from "@playwright/test";
-import { injectSaveState, destinationInterruptedFlow } from "../tests/e2e/save-injection";
+import { injectSaveState } from "../tests/e2e/save-injection";
 import { DestinationPage } from "../tests/pages/destination-page";
 import { waitForHandPlayable } from "./battle-helpers";
 import {
@@ -32,7 +33,7 @@ export async function startPerfBattle(
       autoEndTurn: false,
       selectedAspectRatio: PERF_ASPECT_RATIO,
       currentScreen: "destination",
-      interruptedFlow: destinationInterruptedFlow(["Normal Combat"]),
+      activity: savedActivityFixture("destination", { destinations: ["Normal Combat"] }),
       runPlayerHealth: 80,
       runMaxHealth: 80,
       ...overrides,
@@ -81,7 +82,7 @@ export async function startPerfBattle(
             autoEndTurn: false,
             selectedAspectRatio: PERF_ASPECT_RATIO,
             currentScreen: "destination",
-            interruptedFlow: destinationInterruptedFlow(["Normal Combat"]),
+            activity: savedActivityFixture("destination", { destinations: ["Normal Combat"] }),
             runPlayerHealth: 80,
             runMaxHealth: 80,
             ...overrides,

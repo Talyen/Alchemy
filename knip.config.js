@@ -2,7 +2,7 @@
  * Knip dead-code policy
  * ---------------------
  * Barrels for `@/lib/game-data`, `@/lib/battle`, `@/lib/validation`, and
- * `@/lib/content-validation` are the eslint-enforced public surface. Feature
+ * `@/lib/content-validation` are the Oxlint-enforced public surface. Feature
  * stores and screens still use on-disk paths (`shared/run-flow/destination-flow`).
  *
  * Entries cover the barrel public surfaces plus the app shell (`src/App.tsx`).

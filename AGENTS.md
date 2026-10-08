@@ -37,12 +37,12 @@ Direct reads and scoped searches suffice. Optional discovery, bounded search and
 - `descriptionLines` matches effects. Grant run materials through `awardMaterialsDuringRun()`.
 - Change persistence schemas, defaults, hydration and fixtures together. Current-format resume must work; historical compatibility is not required before a supported release; restart or exit incompatible battles.
 - Screens are statically imported and art eager. Generated barrels are outputs: edit the manifest and regenerate.
-- Import boundaries live in `eslint.config.js`, `eslint/boundaries.js`, `eslint/fragments.js`, and `dependency-cruiser.config.mjs`. Keep I/O, clocks and RNG at seams.
+- Import boundaries live in `oxlint.config.ts`, `lint/boundaries.js`, `lint/fragments.js`, and `dependency-cruiser.config.mjs`. Keep I/O, clocks and RNG at seams.
 - UI uses typed plain function components, `cn()`, and [UI conventions](./Docs/UI.md). Cosmetic RNG uses `useState(() => ...)`, never `Math.random()` in render.
 
 ## Review and handoff
 
-Review the final diff and surrounding integration. Names, types and meaningful tests express behavior; comments explain non-obvious reasons, ordering or compatibility. ESLint suppressions require a reason.
+Review the final diff and surrounding integration. Names, types and meaningful tests express behavior; comments explain non-obvious reasons, ordering or compatibility. Oxlint suppressions require a reason.
 
 Use [architect](./.agents/skills/architect/SKILL.md) for new or structurally revised cross-boundary contracts and [verifier](./.agents/skills/verifier/SKILL.md) after edits and before handoff. Other [skills](./.agents/skills/README.md) apply only to their workflows. CONTRIBUTING owns gates and test value, including consolidation or retirement while preserving meaningful protection.
 

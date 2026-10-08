@@ -6,8 +6,8 @@ import path from "node:path";
 import { promisify } from "node:util";
 import ffmpegPath from "ffmpeg-static";
 import { generatedSoundAssets } from "../assets/sound-assets.mjs";
-import { containedPath, hashFile } from "./audio-review.mjs";
-import { mapPool } from "./map-pool.mjs";
+import { containedPath, hashFile } from "./core.mjs";
+import { mapPool } from "../lib/map-pool.mjs";
 
 const execute = promisify(execFile);
 const PREVIEW_VERSION = 3;

@@ -43,8 +43,12 @@ function bundleInfo(pathname) {
   let bytes = stats.size;
   let newest = stats.mtimeMs;
   if (stats.isDirectory() && !stats.isSymbolicLink()) {
+    const names = fs.readdirSync(pathname);
     bytes = 0;
-    for (const name of fs.readdirSync(pathname)) {
+    // Moving/copying a tree can refresh directory timestamps without refreshing
+    // its evidence. Only empty directories use their own modification time.
+    if (names.length > 0) newest = 0;
+    for (const name of names) {
       const child = bundleInfo(path.join(pathname, name));
       bytes += child.bytes;
       newest = Math.max(newest, child.newest);

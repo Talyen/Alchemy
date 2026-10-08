@@ -17,6 +17,7 @@ const USER_FACING_TRAILER = /^User-Facing:\s*(yes|no)\s*$/imu;
 const IMPLEMENTATION_BULLET = /^(update|add|fix) tests\b/iu;
 const TECHNICAL_TERMS = [
   "ESLint",
+  "Oxlint",
   "knip",
   "lefthook",
   "commitlint",
@@ -36,7 +37,9 @@ const INFRA_PREFIXES = [
   ".agents/",
   ".cursor/",
   "tests/",
+  // Release ranges can include commits from before the Oxlint migration.
   "eslint/",
+  "lint/",
   "reports/",
   "steam/",
 ];
@@ -46,6 +49,7 @@ const INFRA_NAMES = new Set([
   "package.json",
   "knip.config.js",
   "eslint.config.js",
+  "oxlint.config.ts",
   "lefthook.yml",
   "AGENTS.md",
   "CONTRIBUTING.md",

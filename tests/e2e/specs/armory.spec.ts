@@ -126,6 +126,7 @@ test.describe("Armory browsing", () => {
     const filters = page.getByRole("button", { name: /^Filters/ });
     const gridTop = (await items.first().boundingBox())!.y;
     await page.getByRole("button", { name: "Search inventory", exact: true }).click();
+    await expect(search).toBeFocused();
     await search.fill(" physical  LONGSWORD ");
     await expect(items).toHaveCount(2);
     await controllerInput(page).activate(filters);

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Run Prettier with the shared globs, or on an explicit file list (lefthook staged files).
 import { createRequire } from "node:module";
-import { PRETTIER_GLOBS, filterPrettierPaths } from "./prettier-paths.mjs";
+import { PRETTIER_GLOBS, filterPrettierPaths } from "./lib/verification/prettier-paths.mjs";
 import { parseKnownFlags } from "./lib/cli-args.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { runTaskCommand } from "./lib/run-command.mjs";

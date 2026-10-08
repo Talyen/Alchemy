@@ -10,11 +10,11 @@ import {
   validateMappings,
   type ReviewInventory,
   type ReviewManifest,
-} from "../../scripts/lib/audio-review.mjs";
-import { serveReview } from "../../scripts/lib/audio-review-server.mjs";
+} from "../../scripts/audio-review/core.mjs";
+import { serveReview } from "../../scripts/audio-review/server.mjs";
 import { createReviewPlayer, type ReviewAudio } from "../../scripts/audio-review/playback.mjs";
 import { importChoices, restoreChoices, buildChoicesExport } from "../../scripts/audio-review/choices.mjs";
-import { prepareReviewMedia } from "../../scripts/lib/audio-review-media.mjs";
+import { prepareReviewMedia } from "../../scripts/audio-review/media.mjs";
 
 it("shares identical excerpts across source IDs and fades their edges without silencing a late start", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "alchemy-audio-excerpt-"));

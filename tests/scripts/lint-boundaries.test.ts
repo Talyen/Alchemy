@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cruiserPathFromGroups } from "../../eslint/boundaries.js";
+import { cruiserPathFromGroups } from "../../lint/boundaries.js";
 
 describe("cruiserPathFromGroups", () => {
   it("prefers an alias group when one is present", () => {

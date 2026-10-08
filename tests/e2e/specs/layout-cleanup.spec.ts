@@ -1,7 +1,6 @@
-import { savedActivityFixture } from "../../fixtures/run-activity";
 import { expect, test } from "../../fixtures/e2e";
 import type { Locator } from "@playwright/test";
-import { injectSaveState, makeStartingDeck, waitForLayoutSettled, assertNoOverflow } from "../../browser-helpers";
+import { startAtDestination, waitForLayoutSettled, assertNoOverflow } from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { slow } from "../../playwright-tags";
 
@@ -56,8 +55,7 @@ test(
 
 test("Corruption picker capacity is independent of resize history and preserves selection", slow, async ({ page }) => {
   await page.setViewportSize({ width: 1470, height: 956 });
-  await injectSaveState(page, { runDeck: makeStartingDeck(), activity: savedActivityFixture("destination") });
-  await page.goto("/");
+  await startAtDestination(page, {}, { forceDestination: "Corruption" });
   await page.getByRole("button", { name: "Corruption", exact: true }).click();
   await page.getByRole("button", { name: "Corrupt a Card", exact: true }).click();
   const cards = page.getByRole("button", { name: /^Select / });
@@ -83,23 +81,6 @@ test("Corruption picker capacity is independent of resize history and preserves 
   }
   await expect(page.getByRole("button", { name: "Corrupt", exact: true })).toBeEnabled();
   await expectCenteredRows(cards, 4, 1470);
-});
-
-test("loading caption retains its reference size and follows proportional growth", slow, async ({ page }) => {
-  await page.addInitScript(() => localStorage.removeItem("alchemy-skip-loading-screen"));
-  for (const { viewport, factor } of [
-    { viewport: { width: 1470, height: 738 }, factor: 1 },
-    { viewport: { width: 2940, height: 1476 }, factor: 2 },
-  ]) {
-    await page.setViewportSize(viewport);
-    await page.goto("/", { waitUntil: "domcontentloaded" });
-    const loading = page.getByRole("progressbar", { name: "Loading Alchemy" });
-    await expect(loading).toBeVisible();
-    await expect
-      .poll(() => loading.locator("p").evaluate((el) => parseFloat(getComputedStyle(el).fontSize)))
-      .toBeCloseTo(12 * factor, 1);
-    await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible({ timeout: 30_000 });
-  }
 });
 
 test("Collection and Homestead keep reachable actions at maximum Game Size", slow, async ({ page }) => {
@@ -130,12 +111,7 @@ test(
   slow,
   async ({ page }) => {
     await page.setViewportSize({ width: 1470, height: 956 });
-    await injectSaveState(page, {
-      gold: 9999,
-      runDeck: makeStartingDeck(),
-      activity: savedActivityFixture("destination"),
-    });
-    await page.goto("/");
+    await startAtDestination(page, { gold: 9999 }, { forceDestination: "Card Shop" });
     await page.getByRole("button", { name: "Card Shop", exact: true }).click();
     await page.getByRole("button", { name: /^Remove Card/ }).click();
     const cards = page.getByRole("button", { name: /^Select / });

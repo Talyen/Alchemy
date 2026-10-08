@@ -8,7 +8,7 @@ Confirm unsafe escapes, unsound generics, broad records, non-exhaustive unions, 
 
 ## Hard stops
 
-- Do not add net-new `eslint-disable` / `@ts-expect-error` without a minimal line-scoped reason.
+- Do not add net-new `oxlint-disable` / `@ts-expect-error` without a minimal line-scoped reason.
 - Do not chase every `\bany\b` or every `!` — triage by risk and diagnostics.
 - Keep Zod/validation at save/load boundaries; do not replace boundary validation with scattered casts.
 - Casts on save paths: this audit owns the typing escape; silent failure / corrupt-save behavior belongs to the RuntimeCorrectness audit.
@@ -38,7 +38,7 @@ Verify the compiler rejects the invalid construction or requires handling the re
 
 - **Trend counts:** `node scripts/audit-type-escapes.mjs` (also via `npm run audit:all`) — per-category counts and top files; use counts to locate changes worth inspecting, not to demand a downward trend. Never a gate.
 - **`any`:** `\bany\b` in non-test `src`.
-- **Suppressions & double casts:** `@ts-expect-error` / `eslint-disable` / `as unknown as`. `@ts-ignore` in `src` is an ESLint error (`@typescript-eslint/ban-ts-comment`).
+- **Suppressions & double casts:** `@ts-expect-error` / `oxlint-disable` / `as unknown as`. `@ts-ignore` in `src` is an Oxlint error (`typescript/ban-ts-comment`).
 - **Non-null assertions:** `!.` in non-test `src`.
 - **Unsafe assertions on persistence/battle:** hits in `shared/storage/`, `save-schemas/`, `screen-transition-policy.ts`, `use-screen-transitions.ts`, battle transition modules, and `src/lib/battle`.
 - **Raw enum / string decoding:** stringly unions without Zod or exhaustive checks at hydrate boundaries.

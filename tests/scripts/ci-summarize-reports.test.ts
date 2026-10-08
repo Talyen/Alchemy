@@ -78,10 +78,10 @@ describe("ci-summarize (vitest)", () => {
       numPendingTests: 0,
       testResults: [
         {
-          name: "tests/architecture/eslint-boundary-stacking.test.ts",
+          name: "tests/architecture/oxlint-policies.test.ts",
           assertionResults: [
             {
-              fullName: "eslint architecture boundary stacking > meta screen files lint clean",
+              fullName: "Oxlint policies > meta screen files lint clean",
               status: "failed",
               failureMessages: ["\n\u001b[31mError: Test timed out in 5000ms.\u001b[0m\n    at ..."],
             },
@@ -99,7 +99,7 @@ describe("ci-summarize (vitest)", () => {
     const md = formatVitestSummaryMarkdown(summary);
     expect(md).toContain("## Vitest");
     expect(md).toContain("Failed: 1");
-    expect(md).toContain("eslint-boundary-stacking.test.ts");
+    expect(md).toContain("oxlint-policies.test.ts");
     expect(md).toContain("routes:");
   });
 });

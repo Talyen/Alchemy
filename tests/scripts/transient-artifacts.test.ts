@@ -46,7 +46,7 @@ function ageDirectories(root: string) {
   fs.utimesSync(root, new Date(now - 2 * DAY), new Date(now - 2 * DAY));
 }
 
-it("expires whole runs by newest activity and preserves exact-boundary and fresh siblings", async () => {
+it("expires whole runs by evidence age despite copied directory timestamps and preserves fresh siblings", async () => {
   const { rootDir, write } = fixture();
   write("reports/runs/old/log.txt");
   write("reports/runs/old/run.json");
@@ -56,6 +56,7 @@ it("expires whole runs by newest activity and preserves exact-boundary and fresh
   write("reports/bundle/new.html", 0);
   write("reports/boundary.log", DAY);
   ageDirectories(rootDir);
+  fs.utimesSync(path.join(rootDir, "reports/runs/old"), new Date(now), new Date(now));
   expect(parsePruneArgs([])).toEqual({ days: 1, dryRun: false });
   const preview = await pruneTransientArtifacts({ rootDir, now, dryRun: true });
   expect(preview.removed.map((e) => e.path)).toEqual([path.join("reports/runs/old")]);

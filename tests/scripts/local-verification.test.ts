@@ -4,10 +4,11 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { runCheck } from "../../scripts/check.mjs";
 import { filterPlanCommands } from "../../scripts/verify-changed.mjs";
 import { resolveRoutePlan } from "../../scripts/lib/verification/change-routes.mjs";
+import { normalizeRunId } from "../../scripts/lib/verification/current-run.mjs";
 
 let runId: string;
 beforeEach(() => {
-  runId = `local-check-test-${randomUUID()}`;
+  runId = normalizeRunId(`local-check-test-${randomUUID()}`);
   vi.stubEnv("ALCHEMY_RUN_ID", runId);
 });
 afterEach(() => {

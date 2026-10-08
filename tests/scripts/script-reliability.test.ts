@@ -67,7 +67,7 @@ describe("script execution reliability", () => {
     for (const tool of [
       "vitest",
       "playwright",
-      "eslint",
+      "oxlint",
       "depcruise",
       "commit-and-tag-version",
       "vite",

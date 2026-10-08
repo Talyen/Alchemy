@@ -92,7 +92,7 @@ Feature layout and run-state ownership:
 - `performance/` — browser and desktop measurement scenarios and reporting tools; runtime instrumentation lives in `src/lib/performance/`
 - Asset Library (external), `src/assets/`, `public/` — raw masters, bundled assets, and public assets; [asset workflows](./Docs/WORKFLOWS-ASSETS.md) identify generated outputs
 - `scripts/` — command entry points, asset registries and pipeline helpers in `scripts/assets/`, and other shared tooling in `scripts/lib/`; see the [script implementation map](./scripts/README.md)
-- `eslint/` — custom lint rules and import-boundary definitions composed by `eslint.config.js`
+- `lint/` — custom lint rules and import-boundary definitions composed by `oxlint.config.ts`
 - `Docs/`, `.agents/` — canonical project documentation, audit procedures, plans, and agent skills and lessons
 - `Docs/design/` — current audio-review inputs; see [design inputs](./Docs/design/README.md)
 - `steam/` — Steam packaging and upload configuration

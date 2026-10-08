@@ -64,7 +64,7 @@ function createConditionalDamageLine(
   return undefined;
 }
 
-export function createEffectLine(effect: BattleCardEffect, address: CardEffectAddress): CardDescriptionPart[] {
+function createEffectLine(effect: BattleCardEffect, address: CardEffectAddress): CardDescriptionPart[] {
   const amount = (format?: CardMagnitude["format"]) =>
     value(effect, address, "amount", format ? { format } : undefined);
   switch (effect.kind) {

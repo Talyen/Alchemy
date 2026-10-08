@@ -20,7 +20,7 @@ function ConfirmationDialogPanel({
 }) {
   const { panelRef, handleKeyDown } = useDialogFocus(returnFocusRef);
   return (
-    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Modal contains keyboard focus and stops clicks from reaching its backdrop
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Modal contains keyboard focus and stops clicks from reaching its backdrop
     <div
       ref={panelRef}
       role="dialog"

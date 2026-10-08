@@ -2,12 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../scripts/prepare-assets.mjs", () => ({ prepareAssets: vi.fn() }));
 vi.mock("../../scripts/check-prepared-assets.mjs", () => ({ checkPreparedAssets: vi.fn() }));
-vi.mock("../../scripts/optimize-pipelines.mjs", () => ({ runAllOptimizePipelines: vi.fn() }));
+vi.mock("../../scripts/assets/optimize-pipelines.mjs", () => ({ runAllOptimizePipelines: vi.fn() }));
 vi.mock("../../scripts/sync-generated.mjs", () => ({ syncGenerated: vi.fn() }));
 
 const { prepareAssets } = await import("../../scripts/prepare-assets.mjs");
 const { checkPreparedAssets } = await import("../../scripts/check-prepared-assets.mjs");
-const { runAllOptimizePipelines } = await import("../../scripts/optimize-pipelines.mjs");
+const { runAllOptimizePipelines } = await import("../../scripts/assets/optimize-pipelines.mjs");
 const { syncGenerated } = await import("../../scripts/sync-generated.mjs");
 const { runAssetCommand } = await import("../../scripts/assets.mjs");
 

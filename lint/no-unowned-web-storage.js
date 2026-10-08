@@ -8,7 +8,7 @@ const ALLOWED_FILES = new Set([
   "src/lib/storage-environment.ts",
   // Named boot/preference seams that own one key each. startup.ts routes
   // through animation-prefs today but stays listed as the boot seam;
-  // active-run-session is a reserved owner (pinned by eslint-alchemy-plugin.test.ts).
+  // active-run-session is a reserved owner (pinned by oxlint-alchemy-plugin.test.ts).
   "src/startup.ts",
   "src/features/alchemy/shared/stores/error-log-store.ts",
   "src/features/alchemy/shared/utils/dev-mode.ts",
@@ -24,7 +24,7 @@ function isAllowed(relative) {
   return ALLOWED_PREFIXES.some((prefix) => relative.startsWith(prefix));
 }
 
-/** @type {import("eslint").Rule.RuleModule} */
+/** @type {Parameters<import("oxlint/plugins-dev").RuleTester["run"]>[1]} */
 export const noUnownedWebStorage = {
   meta: {
     type: "problem",

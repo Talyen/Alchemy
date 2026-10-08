@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- JS interop seam: typed facade is performance/compare.ts */
+/* oxlint-disable typescript/no-explicit-any -- JS interop seam: typed facade is performance/compare.ts */
 export interface MetricCatalogEntry<T = string> {
   key: T;
   label: string;

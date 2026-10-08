@@ -23,12 +23,13 @@ import {
 
 const SOURCE_IMPORT_PATTERNS = [BARREL_PATTERNS, DOMAIN_STORE_PATTERNS, WRITE_PORT_PATTERNS, NO_DIRECT_ASSET_IMPORT];
 
-// Each effective scope composes its full policy once. Flat-config rules replace,
+// Each effective scope composes its full policy once. Path-scoped rules replace,
 // rather than merge, so no scope relies on an earlier block's restrictions.
 function scope(files, patterns = SOURCE_IMPORT_PATTERNS, paths = [], ignores = []) {
   return {
     files,
-    ...(ignores.length ? { ignores } : {}),
+    ...(ignores.length ? { excludeFiles: ignores } : {}),
+
     rules: { "no-restricted-imports": layerImportsWithPaths(paths, ...patterns) },
   };
 }
@@ -162,14 +163,14 @@ export const BOUNDARY_CONFIGS = [
     files: ["src/components/ui/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": layerImports(LIB_NO_FEATURES, ...SOURCE_IMPORT_PATTERNS, UI_NO_SESSION_STORES),
-      "react-refresh/only-export-components": ["error", { allowConstantExport: true }],
+      "react/only-export-components": ["error", { allowConstantExport: true }],
     },
   },
   {
     files: ["src/features/alchemy/shared/ui/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": layerImports(...SOURCE_IMPORT_PATTERNS, UI_NO_SESSION_STORES),
-      "react-refresh/only-export-components": ["error", { allowConstantExport: true }],
+      "react/only-export-components": ["error", { allowConstantExport: true }],
     },
   },
   {

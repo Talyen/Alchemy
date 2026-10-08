@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { validateMusicRegistry } from "../../scripts/assets/music-assets.mjs";
 import { validateSoundAssetRegistry } from "../../scripts/assets/sound-assets.mjs";
 import { resolveAssetConcurrency, soundTransformSettings } from "../../scripts/assets/asset-constants.mjs";
-import { optimizationFailures } from "../../scripts/optimize-pipelines.mjs";
+import { optimizationFailures } from "../../scripts/assets/optimize-pipelines.mjs";
 import { failedMessagesResult, failedResult, targetErrorHandler } from "../../scripts/lib/process-helpers.mjs";
 
 describe("registry validation consolidation", () => {

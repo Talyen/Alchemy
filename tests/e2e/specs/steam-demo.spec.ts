@@ -16,7 +16,7 @@ import { ShopPage } from "../../pages/shop-page";
 import { controllerInput } from "../controller-input";
 
 test.describe("Steam demo edition", () => {
-  // eslint-disable-next-line playwright/no-skipped-test -- the full renderer cannot exercise demo-only restrictions
+  // oxlint-disable-next-line playwright/no-skipped-test -- the full renderer cannot exercise demo-only restrictions
   test.skip(process.env.ALCHEMY_EDITION !== "demo", "Requires an explicit demo renderer");
 
   test("keeps full-game choices locked while earned heroes remain available", async ({ page }) => {

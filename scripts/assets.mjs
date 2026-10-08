@@ -2,7 +2,7 @@
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { prepareAssets } from "./prepare-assets.mjs";
 import { checkPreparedAssets } from "./check-prepared-assets.mjs";
-import { runAllOptimizePipelines } from "./optimize-pipelines.mjs";
+import { runAllOptimizePipelines } from "./assets/optimize-pipelines.mjs";
 import { syncGenerated } from "./sync-generated.mjs";
 
 function printHelp() {

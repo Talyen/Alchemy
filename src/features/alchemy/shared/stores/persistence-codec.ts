@@ -11,5 +11,5 @@ export interface GameplayPersistenceCodec<TSaveFields> extends Omit<
   encode: (gameSession: import("./game-session-types").GameSession) => TSaveFields;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-arguments -- explicit [] documents standalone has no hydrate args
+// oxlint-disable-next-line typescript/no-unnecessary-type-arguments -- explicit [] documents standalone has no hydrate args
 export type StandalonePersistenceCodec<TSaveFields> = PersistenceCodec<TSaveFields, []>;

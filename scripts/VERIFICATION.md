@@ -14,7 +14,7 @@ Gate composition, CI tiers, and reuse policy live in
 | Documentation contracts and plan metadata  | `check-docs.mjs` (also serves `plans:check` via `--plans-only` and `docs:check:final` via `--final`), `check-documentation-contract.mjs`, `lib/plan-checks.mjs` (`finish-plans.mjs` shares that lib) |
 | Passing unit receipts                      | `lib/verification/verification-cache.mjs`                                                                                                                                                            |
 | Bundle budgets                             | `lib/verification/bundle-budget.mjs`                                                                                                                                                                 |
-| Full and staged formatting                 | `run-prettier.mjs` + `prettier-paths.mjs` + `.prettierignore` (`PRETTIER_NEVER_FORMAT_RE` is the staged-path subset; `.prettierignore` also covers build outputs)                                    |
+| Full and staged formatting                 | `run-prettier.mjs` + `lib/verification/prettier-paths.mjs` + `.prettierignore` (`PRETTIER_NEVER_FORMAT_RE` is the staged-path subset; `.prettierignore` also covers build outputs)                   |
 | Plan creation and completion               | `new-plan.mjs` + `finish-plans.mjs`; [plan lifecycle](../Docs/Plans/README.md#task-handoff)                                                                                                          |
 | Selection byte budgets                     | `lib/verification/selection-budgets.mjs` (`INLINE_ARGS_BYTES` for check paths.json spill vs `RELATED_SELECTION_BYTES` for verify unit-all fallback; same value, different meanings)                  |
 | Test concurrency                           | `lib/verification/test-concurrency.mjs` (`VITEST_MAX_WORKERS` for related, ship, and full unit runs via `vitest.config.ts`; local smoke uses `vitest.local.config.ts`)                               |
@@ -67,7 +67,7 @@ invocation. Generated-output validation stays layered by design: fast
 outputs without the library), local `assets:check` (raw-source freshness), and the pre-build guard in `build-verified.mjs` share one
 `syncGenerated` implementation.
 
-Documentation and ESLint inventories exclude isolated `.worktrees/` checkouts,
+Documentation and Oxlint inventories exclude isolated `.worktrees/` checkouts,
 reports, and installed dependencies. Documentation contract checks share one
 per-file fact walk (`links`, backticked candidates, script names) plus one
 Markdown helper (`lib/agent/markdown-sections.mjs`) and one exemption owner per scope

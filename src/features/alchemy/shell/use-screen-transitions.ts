@@ -16,7 +16,7 @@ export function useScreenTransitions(
   const navigation = useMemo(
     () =>
       createScreenNavigation(
-        // eslint-disable-next-line react-hooks/refs -- factory stores the reader; it only runs when a navigation event arrives
+        // oxlint-disable-next-line react-hooks/refs -- factory stores the reader; it only runs when a navigation event arrives
         {
           readScreen: () => currentScreenRef.current,
           showScreen: setScreen,

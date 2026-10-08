@@ -49,11 +49,11 @@ When a finding has a precise, low-noise rule, consider an existing lint, type, t
 | Startup / latency / render / memory performance                                 | [PerformanceAudit.md](PerformanceAudit.md)                       |
 | Typing escapes / invalid-state models                                           | [TypeSafetyAudit.md](TypeSafetyAudit.md)                         |
 
-Layer import boundaries are continuously enforced by ESLint. Use those diagnostics for mechanical violations; audits investigate semantic ownership, missing enforcement, and defects that still pass the gates. Fix an encountered violation through its cause, not by relaxing enforcement.
+Layer import boundaries are continuously enforced by Oxlint. Use those diagnostics for mechanical violations; audits investigate semantic ownership, missing enforcement, and defects that still pass the gates. Fix an encountered violation through its cause, not by relaxing enforcement.
 
 ## Intentional seams (do not collapse)
 
-Leave alone unless the owning architecture doc changes: battle RNG injection; persistence write coalescing; options/display prefs vs the versioned player-save envelope; authored catalogs vs `assets.generated.ts` / `metadata.generated.ts`; Vite web vs Electron desktop entries; facade-only feature access to run domain; design-system tokens; ESLint `lib` vs `features` import rules; asset/codegen boundaries.
+Leave alone unless the owning architecture doc changes: battle RNG injection; persistence write coalescing; options/display prefs vs the versioned player-save envelope; authored catalogs vs `assets.generated.ts` / `metadata.generated.ts`; Vite web vs Electron desktop entries; facade-only feature access to run domain; design-system tokens; Oxlint `lib` vs `features` import rules; asset/codegen boundaries.
 
 ## Verification
 

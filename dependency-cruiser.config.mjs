@@ -1,10 +1,12 @@
-import { APPLICATION_SESSION_ADAPTERS } from "./eslint/session-ownership.js";
-// Cruiser mirrors the layer-isolation subset of eslint/boundaries.js.
-// Full boundary table (GAME_DATA_NO_BATTLE, LIB_NO_FRAMEWORK, WRITE_PORT, etc.) is enforced via eslint;
-// see eslint/boundaries.js + eslint.config.js for the complete source of truth.
+// Fail early if the configured native parser is unavailable; it is a runtime-loaded dependency.
+import "@swc/core";
+import { APPLICATION_SESSION_ADAPTERS } from "./lint/session-ownership.js";
+// Cruiser mirrors the layer-isolation subset of lint/boundaries.js.
+// Full boundary table (GAME_DATA_NO_BATTLE, LIB_NO_FRAMEWORK, WRITE_PORT, etc.) is enforced via Oxlint;
+// see lint/boundaries.js + oxlint.config.ts for the complete source of truth.
 // Cruiser covers: lib-no-features, meta/run-loop/run-setup isolation,
 // game-data-no-battle, circular, gameplay-aggregate-internal.
-// Not covered here (eslint-only): barrel deep-import bans, write-port
+// Not covered here (Oxlint-only): barrel deep-import bans, write-port
 // internals, NO_DIRECT_ASSET_IMPORT, UI_NO_SESSION_STORES, orchestration/screens
 // rules. `npm run lint` is the complete gate; `lint:boundaries` is the fast subset.
 import {
@@ -14,13 +16,13 @@ import {
   RUN_LOOP_NO_RUN_SETUP,
   RUN_SETUP_NO_RUN_LOOP,
   cruiserPathFromGroups,
-} from "./eslint/boundaries.js";
+} from "./lint/boundaries.js";
 
 function edge(name, fromPath, patterns) {
   return {
     name,
     severity: "error",
-    comment: `Derived from eslint/boundaries.js: ${patterns.map((pattern) => pattern.message).join(" ")}`,
+    comment: `Derived from lint/boundaries.js: ${patterns.map((pattern) => pattern.message).join(" ")}`,
     from: { path: fromPath },
     to: { path: cruiserPathFromGroups(patterns.flatMap((pattern) => pattern.group)) },
   };
@@ -80,14 +82,22 @@ export default {
       from: { pathNot: "^src/features/alchemy/shared/(stores/|storage/persistence\\.ts$)" },
       to: { path: "^src/features/alchemy/shared/stores/(gameplay-command|transaction-internal|readonly-view)\\.ts$" },
     },
-  ],
+  ].map((rule) => ({
+    ...rule,
+    // SWC retains erased type edges. Keep this graph gate on runtime dependencies;
+    // Oxlint independently applies the full import policies, including type imports.
+    to: {
+      ...rule.to,
+      dependencyTypesNot: ["type-only"],
+      ...(rule.to.circular ? { viaOnly: { dependencyTypesNot: ["type-only"] } } : {}),
+    },
+  })),
   options: {
     doNotFollow: {
       path: ["node_modules", "dist", "coverage", "playwright-report", "test-results"],
     },
-    tsConfig: {
-      fileName: "tsconfig.json",
-    },
+    parser: "swc",
+    webpackConfig: { fileName: "dependency-cruiser-resolve.config.mjs" },
     includeOnly: {
       path: "^src/",
     },

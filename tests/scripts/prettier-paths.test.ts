@@ -1,14 +1,14 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { PRETTIER_NEVER_FORMAT_RE, filterPrettierPaths } from "../../scripts/prettier-paths.mjs";
+import { PRETTIER_NEVER_FORMAT_RE, filterPrettierPaths } from "../../scripts/lib/verification/prettier-paths.mjs";
 
 describe("prettier-paths", () => {
   it("filters staged paths to Prettier-relevant files", () => {
     expect(
       filterPrettierPaths([
         "Docs/ARCHITECTURE.md",
-        "eslint.config.js",
+        "oxlint.config.ts",
         "src/App.tsx",
         "Raw Assets/foo.png",
         ".github/workflows/ci.yml",
@@ -19,7 +19,7 @@ describe("prettier-paths", () => {
       ]),
     ).toEqual([
       "Docs/ARCHITECTURE.md",
-      "eslint.config.js",
+      "oxlint.config.ts",
       "src/App.tsx",
       ".github/workflows/ci.yml",
       ".agents/skills/verifier/SKILL.md",

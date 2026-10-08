@@ -17,11 +17,19 @@ test("packaged controls remain reachable at minimum and reference window sizes",
       { width: 1280, height: 720 },
       { width: 1920, height: 1080 },
     ]) {
-      await application.evaluate(
-        ({ BrowserWindow }, size) => BrowserWindow.getAllWindows()[0].setContentSize(size.width, size.height),
-        viewport,
-      );
-      await expect.poll(() => page.evaluate(() => ({ width: innerWidth, height: innerHeight }))).toEqual(viewport);
+      const nativeViewport = await application.evaluate(({ BrowserWindow, screen }, size) => {
+        const window = BrowserWindow.getAllWindows()[0];
+        const outer = window.getBounds();
+        const content = window.getContentBounds();
+        const workArea = screen.getDisplayMatching(outer).workArea;
+        // Native window height includes the title bar and must fit this display.
+        const height = Math.min(size.height, workArea.height - (outer.height - content.height));
+        window.setContentSize(size.width, height);
+        return { width: size.width, height };
+      }, viewport);
+      await expect
+        .poll(() => page.evaluate(() => ({ width: innerWidth, height: innerHeight })))
+        .toEqual(nativeViewport);
       await waitForLayoutSettled(page);
       await assertStageFitsViewport(page);
       await expect(page.getByRole("slider", { name: "Background Particles", exact: true })).toBeInViewport();

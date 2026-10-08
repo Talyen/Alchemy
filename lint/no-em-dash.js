@@ -1,6 +1,6 @@
 const EM_DASH = "\u2014";
 
-/** @type {import("eslint").Rule.RuleModule} */
+/** @type {Parameters<import("oxlint/plugins-dev").RuleTester["run"]>[1]} */
 export const noEmDash = {
   meta: {
     type: "problem",

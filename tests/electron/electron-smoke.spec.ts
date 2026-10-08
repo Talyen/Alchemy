@@ -6,7 +6,7 @@ import os from "node:os";
 import { BattlePage } from "../pages/battle-page";
 import { expect, test } from "@playwright/test";
 import type { ElectronApplication, Page } from "@playwright/test";
-import { getElectronMainWindow, launchElectronApp } from "./electron-helpers";
+import { ELECTRON_TEST_BACKGROUND, getElectronMainWindow, launchElectronApp } from "./electron-helpers";
 import { failOnRuntimeErrors } from "../browser-helpers";
 import { MenuPage } from "../pages/menu-page";
 import { desktop } from "../playwright-tags";
@@ -32,6 +32,19 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
     expect(window.url()).toMatch(/^alchemy:/);
 
     await new MenuPage(window).expectMainMenuAfterColdStart();
+    if (ELECTRON_TEST_BACKGROUND) {
+      expect(
+        await electronApp!.evaluate(({ BrowserWindow }) => {
+          const main = BrowserWindow.getAllWindows()[0];
+          return {
+            visible: main.isVisible(),
+            focused: main.isFocused(),
+            fullscreen: main.isFullScreen(),
+            simpleFullscreen: main.isSimpleFullScreen(),
+          };
+        }),
+      ).toEqual({ visible: false, focused: false, fullscreen: false, simpleFullscreen: false });
+    }
     expect(errors).toEqual([]);
   });
 
@@ -76,8 +89,10 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
   });
 
   test("macOS fullscreen fills the display and restores window controls", async () => {
-    // eslint-disable-next-line playwright/no-skipped-test -- Simple fullscreen is a macOS-only native API.
+    // oxlint-disable-next-line playwright/no-skipped-test -- Simple fullscreen is a macOS-only native API.
     test.skip(process.platform !== "darwin", "macOS notch and simple fullscreen behavior");
+    // oxlint-disable-next-line playwright/no-skipped-test -- Native display changes require an explicit foreground run.
+    test.skip(ELECTRON_TEST_BACKGROUND, "Set ALCHEMY_ELECTRON_BACKGROUND=0 for an authorized foreground run");
     const errors = failOnRuntimeErrors(window);
     await new MenuPage(window).expectMainMenuAfterColdStart();
 
@@ -188,6 +203,7 @@ test("a played desktop run survives closing and relaunching the packaged UI", de
     page = await getElectronMainWindow(application);
     const restoredErrors = failOnRuntimeErrors(page);
     const restored = new BattlePage(page);
+    await restored.waitForOpeningHand();
     await expect(restored.endTurnBtn).toBeEnabled();
     await expect.poll(() => restored.playerHealth()).toBe(acknowledged.playerHealth);
     await expect.poll(() => restored.enemyHealth()).toBe(acknowledged.enemyHealth);

@@ -3,7 +3,7 @@ import { checkIconAssets } from "./assets/icon-assets.mjs";
 import { checkAssetOutputs } from "./assets/check-asset-outputs.mjs";
 import { resolveRootDir } from "./assets/asset-pipeline-runner.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
-import { optimizationFailures, runAllOptimizePipelinesSettled } from "./optimize-pipelines.mjs";
+import { optimizationFailures, runAllOptimizePipelinesSettled } from "./assets/optimize-pipelines.mjs";
 import { syncArtBarrels } from "./sync-art-barrels.mjs";
 import { syncVersionMetadata } from "./sync-version-metadata.mjs";
 

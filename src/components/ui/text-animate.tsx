@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { motion, type Variants } from "motion/react";
+import { motion, stagger, type Variants } from "motion/react";
 
 import { cn } from "@/lib/utils";
 import { useReducedMotionPreference } from "./use-reduced-motion-preference";
@@ -50,8 +50,7 @@ export function TextAnimate({
       show: {
         opacity: 1,
         transition: {
-          delayChildren: delay,
-          staggerChildren,
+          delayChildren: stagger(staggerChildren, { startDelay: delay }),
         },
       },
     }),

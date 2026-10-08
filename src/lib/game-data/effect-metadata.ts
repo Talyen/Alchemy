@@ -1,6 +1,6 @@
 import { capitalizeWord } from "@/lib/utils";
 import { effectChildren } from "./effect-tree";
-import { createEffectDescription, createEffectLine } from "./effect-description";
+import { createEffectDescription } from "./effect-description";
 import { renderCardDescription, type CardDescription } from "./card-description-model";
 import { DAMAGE_TYPES } from "./types";
 import type { BattleCard, BattleCardEffect, EnemyStatusId, KeywordId } from "./types";

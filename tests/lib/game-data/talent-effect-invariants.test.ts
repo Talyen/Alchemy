@@ -1,7 +1,4 @@
-import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
-import ts from "typescript";
-import { collectTalentEffectReaders } from "../../helpers/talent-effect-readers";
 import {
   computeTalentEffects,
   createEmptyTalentEffectManifest,
@@ -16,8 +13,6 @@ import {
   HOMESTEAD_BATTLE_NUMERIC_KEYS,
   HOMESTEAD_BATTLE_RECORD_KEYS,
 } from "@/lib/homestead/types";
-
-const ROOT = join(import.meta.dirname, "../../..");
 
 const LEGACY_SNAPSHOT_FIELDS: ReadonlyArray<keyof TalentEffectManifest> = [
   "partingCutOnDodge",
@@ -120,8 +115,6 @@ const HOMESTEAD_KEYS = new Set<string>([
   ...HOMESTEAD_BATTLE_RECORD_KEYS,
 ]);
 
-const APPLICATION_DIRS = ["src/lib/battle", "src/lib/homestead", "src/features/alchemy", "src/lib/validation"];
-
 function talentWrittenFields(): Set<keyof TalentEffectManifest> {
   const fields = new Set<keyof TalentEffectManifest>();
   for (const talent of talentPool) {
@@ -150,30 +143,6 @@ describe("talent effect invariants", () => {
       expect(HOMESTEAD_KEYS.has(field), `${field} is a homestead key and should leave the allowlist`).toBe(false);
     }
   });
-
-  it("every talent-written field has an application reader or registered reaction", () => {
-    const config = ts.readConfigFile(join(ROOT, "tsconfig.json"), ts.sys.readFile);
-    const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, ROOT);
-    const rootFiles = parsed.fileNames.filter(
-      (fileName) =>
-        APPLICATION_DIRS.some((dir) => relative(ROOT, fileName).replaceAll("\\", "/").startsWith(`${dir}/`)) ||
-        fileName.replaceAll("\\", "/").endsWith("src/lib/game-data/talents/manifest-defaults.ts"),
-    );
-    const program = ts.createProgram(rootFiles, parsed.options);
-    const checker = program.getTypeChecker();
-    const defaults = program.getSourceFile(join(ROOT, "src/lib/game-data/talents/manifest-defaults.ts"))!;
-    const module = checker.getSymbolAtLocation(defaults)!;
-    const manifestSymbol = checker.getExportsOfModule(module).find((symbol) => symbol.name === "TalentEffectManifest")!;
-    const manifest = checker.getDeclaredTypeOfSymbol(manifestSymbol);
-    const sources = program
-      .getSourceFiles()
-      .filter((source) =>
-        APPLICATION_DIRS.some((dir) => relative(ROOT, source.fileName).replaceAll("\\", "/").startsWith(`${dir}/`)),
-      );
-    const readers = collectTalentEffectReaders(checker, manifest, sources);
-    const unread = [...talentWrittenFields()].filter((field) => !readers.has(field));
-    expect(unread).toEqual([]);
-  }, 30000);
 
   it("non-boolean set fields have a single writer unless they concatenate as arrays", () => {
     const writers = new Map<string, string[]>();

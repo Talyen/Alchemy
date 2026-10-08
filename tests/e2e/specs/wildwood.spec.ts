@@ -1,4 +1,4 @@
-import { savedActivityFixture } from "../../fixtures/run-activity";
+import { savedActivityData, savedActivityFixture } from "../../fixtures/run-activity";
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
 import { BattlePage } from "../../pages/battle-page";
@@ -7,6 +7,7 @@ import {
   injectSaveState,
   makeCard,
   makeHighDamageCard,
+  readSavedGame,
   SAVE_KEY,
   seedRandom,
   withSavedGame,
@@ -177,19 +178,15 @@ test.describe("Wildwood Draft", () => {
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "Victory" })).toBeVisible({ timeout: 10000 });
 
-    const choiceIdsBefore = await page.evaluate((saveKey) => {
-      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      return save.activeRun.activity?.pending?.choiceIds ?? [];
-    }, SAVE_KEY);
+    const rewardsBefore = savedActivityData((await readSavedGame(page)).activeRun, "rewards");
+    const choiceIdsBefore = rewardsBefore?.rewardType === "card" ? rewardsBefore.choiceIds : [];
     expect(choiceIdsBefore).toEqual(["slash", "bash", "block"]);
 
     await withSavedGame(page, async (resumed) => {
       await expect(resumed.getByRole("heading", { name: "Victory" })).toBeVisible({ timeout: 10000 });
 
-      const choiceIdsAfter = await resumed.evaluate((saveKey) => {
-        const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-        return save.activeRun.activity?.pending?.choiceIds ?? [];
-      }, SAVE_KEY);
+      const rewardsAfter = savedActivityData((await readSavedGame(resumed)).activeRun, "rewards");
+      const choiceIdsAfter = rewardsAfter?.rewardType === "card" ? rewardsAfter.choiceIds : [];
       expect(choiceIdsAfter).toEqual(["slash", "bash", "block"]);
     });
   });

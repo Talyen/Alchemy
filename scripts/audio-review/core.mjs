@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
-import { withReportServer } from "./vite-report-server.mjs";
+import { withReportServer } from "../lib/vite-report-server.mjs";
 
 // The library catalog uses quoted commas, escaped quotes and multiline fields.
 export function parseCatalog(csv) {

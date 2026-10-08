@@ -21,7 +21,7 @@ import { LOCAL_CHECK_INPUTS } from "./lib/verification/test-commands.mjs";
 import { runCommandAsync } from "./lib/run-command.mjs";
 import { closeTaskBrowsers, taskKey } from "./lib/agent-browser-session.mjs";
 import { INLINE_ARGS_BYTES } from "./lib/verification/selection-budgets.mjs";
-import { filterPrettierPaths } from "./prettier-paths.mjs";
+import { filterPrettierPaths } from "./lib/verification/prettier-paths.mjs";
 import { resolveRoutes } from "./lib/verification/change-routes.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");

@@ -5,11 +5,11 @@ const ROOT = path.resolve(import.meta.dirname, "../..");
 const LOCAL_CLIS = {
   vitest: "vitest/vitest.mjs",
   playwright: "@playwright/test/cli.js",
-  eslint: "eslint/bin/eslint.js",
+  oxlint: "oxlint/bin/oxlint",
   tsc: "typescript/bin/tsc",
   knip: "knip/bin/knip.js",
   concurrently: "concurrently/dist/bin/concurrently.js",
-  depcruise: "dependency-cruiser/bin/dependency-cruise.mjs",
+  depcruise: "dependency-cruiser/bin/dependency-cruiser.mjs",
   "commit-and-tag-version": "commit-and-tag-version/bin/cli.js",
   vite: "vite/bin/vite.js",
   "electron-builder": "electron-builder/out/cli/cli.js",

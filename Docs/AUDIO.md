@@ -266,7 +266,7 @@ shipping selections. The library's own listening-review flag is also visible.
 - [Curated manifest](./design/audio-review/mappings.json): candidate IDs/paths, excerpts, rationales,
   explicit content assignments, action evidence and sequence definitions.
 - `scripts/audio-review.mjs`: generation, validation and launch command.
-- `scripts/audio-review/`: standalone board and isolated playback owner.
+- `scripts/audio-review/`: mapping validation (`core.mjs`), preview media (`media.mjs`), localhost serving (`server.mjs`), standalone board and isolated playback.
 - `reports/audio-review/index.html`: generated board, opened through localhost.
 - `reports/audio-review/mappings.json`: resolved whole-game mapping, media identity,
   provenance, current registration/state, coverage and source-code evidence index.

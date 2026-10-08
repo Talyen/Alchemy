@@ -141,7 +141,7 @@ inventory movement and crafting feedback motion locally in
 `armory/item-picker-grid.tsx`, `armory/trinket-picker-grid.tsx`, and
 `armory/armory-screen.css` under `meta/screens/`.
 
-ESLint checks keyboard counterparts for click actions and rejects focusable
+Oxlint checks keyboard counterparts for click actions and rejects focusable
 controls marked `aria-hidden`. Prefer native buttons with exposed state (for
 example, Error Log expansion uses `aria-expanded`). Backdrops and click shields
 may use line-scoped, explained exceptions: their keyboard behavior belongs to

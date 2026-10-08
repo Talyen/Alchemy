@@ -101,6 +101,6 @@ export function useAppKeyboardShortcuts({
       removeBackHandler();
       removeMenuHandler();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- refs intentionally keep a single subscription current
+    // oxlint-disable-next-line react/exhaustive-deps -- refs intentionally keep a single subscription current
   }, []);
 }

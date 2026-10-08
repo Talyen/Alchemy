@@ -1,4 +1,4 @@
-import { optimizationFailures, runAllOptimizePipelinesSettled } from "./optimize-pipelines.mjs";
+import { optimizationFailures, runAllOptimizePipelinesSettled } from "./assets/optimize-pipelines.mjs";
 import { syncArtBarrels } from "./sync-art-barrels.mjs";
 import { syncVersionMetadata } from "./sync-version-metadata.mjs";
 import { preflightSelectedSources } from "./assets/check-asset-outputs.mjs";

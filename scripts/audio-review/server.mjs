@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { createReadStream } from "node:fs";
 import { realpath, stat } from "node:fs/promises";
 import path from "node:path";
-import { containedPath } from "./audio-review.mjs";
+import { containedPath } from "./core.mjs";
 
 function parseByteRange(header, size) {
   if (!header) return null;

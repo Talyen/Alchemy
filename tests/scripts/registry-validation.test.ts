@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment -- scripts are JS without declarations
+// oxlint-disable-next-line typescript/ban-ts-comment -- scripts are JS without declarations
 // @ts-ignore scripts are untyped JS helpers
 import { validateRegistryEntries } from "../../scripts/assets/registry-validation.mjs";
 

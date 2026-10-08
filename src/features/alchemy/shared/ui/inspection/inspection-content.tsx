@@ -117,7 +117,7 @@ function InspectionPanel({
   const titleId = useId();
   const { panelRef, handleKeyDown } = useDialogFocus(returnFocusRef);
   return (
-    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Modal contains keyboard focus and stops backdrop clicks
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Modal contains keyboard focus and stops backdrop clicks
     <div
       ref={panelRef}
       role="dialog"

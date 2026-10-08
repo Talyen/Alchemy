@@ -125,30 +125,18 @@ beforeEach(() => {
 });
 
 describe("run-domain progress: initial state", () => {
-  it.each([
-    ["defaults to knight character", () => expect(readActiveRun(defaultGameSession).characterId).toBe("knight")],
-    ["has a starting deck", () => expect(readActiveRun(defaultGameSession).runDeck.length).toBeGreaterThan(0)],
-    ["starts with zero gold", () => expect(readRunProfile(defaultGameSession).gold).toBe(0)],
-    [
-      "starts with full health",
-      () => {
-        expect(readActiveRun(defaultGameSession).runPlayerHealth).toBeGreaterThan(0);
-        expect(readActiveRun(defaultGameSession).runMaxHealth).toBeGreaterThanOrEqual(
-          readActiveRun(defaultGameSession).runPlayerHealth,
-        );
-      },
-    ],
-    ["starts at act 1", () => expect(readActiveRun(defaultGameSession).currentAct).toBe(1)],
-    [
-      "has empty talent XP",
-      () => {
-        expect(readRunProfile(defaultGameSession).talentXP).toEqual({});
-        expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
-      },
-    ],
-    ["has empty unlocked talents", () => expect(readRunProfile(defaultGameSession).unlockedTalents).toEqual({})],
-  ] as const)("%s", (_name, assert) => {
-    assert();
+  it("starts a healthy knight with a deck and no earned progress", () => {
+    const run = readActiveRun(defaultGameSession);
+    const profile = readRunProfile(defaultGameSession);
+    expect(run.characterId).toBe("knight");
+    expect(run.runDeck.length).toBeGreaterThan(0);
+    expect(run.runPlayerHealth).toBeGreaterThan(0);
+    expect(run.runMaxHealth).toBeGreaterThanOrEqual(run.runPlayerHealth);
+    expect(run.currentAct).toBe(1);
+    expect(profile.gold).toBe(0);
+    expect(profile.talentXP).toEqual({});
+    expect(run.runTalentXP).toEqual({});
+    expect(profile.unlockedTalents).toEqual({});
   });
 });
 

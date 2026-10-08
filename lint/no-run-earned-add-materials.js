@@ -1,7 +1,7 @@
 import { repoRelativePosix } from "./filename.js";
 
 const ALLOWED = new Set([
-  // Keep in sync with tests/scripts/eslint-alchemy-plugin.test.ts, which pins
+  // Keep in sync with tests/scripts/oxlint-alchemy-plugin.test.ts, which pins
   // the allowed owner. Moving an allowed call site means updating both.
   // This is the stockpile-grant allowlist; the separate run-earned award-site
   // list lives in src/features/alchemy/shared/stores/run-materials.ts
@@ -28,7 +28,7 @@ function isStockpileGrantCallee(node) {
   return false;
 }
 
-/** @type {import("eslint").Rule.RuleModule} */
+/** @type {Parameters<import("oxlint/plugins-dev").RuleTester["run"]>[1]} */
 export const noRunEarnedAddMaterials = {
   meta: {
     type: "problem",

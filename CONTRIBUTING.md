@@ -123,7 +123,7 @@ remove fixtures in the checkout's real package-output or Steam build directories
 
 Vitest runs React, hook, and browser-adapter suites in the `dom` project; pure engine, validation, desktop-contract, and tooling suites run in the `node` project. Name browser-API suites without React `*.dom.test.ts` so their environment is clear and the shared glob selects them. React `*.test.tsx` and `use-*` / `*-hook` suites already select DOM. The include/exclude patterns in `vitest.config.ts` own that classification; the project guard checks actual collection rules for omissions and overlap. Full unit runs share the four-worker ceiling used by related and ship checks, leaving one CPU free on smaller hosts. CLI worker overrides remain available for focused diagnosis.
 
-Preserve test import order when a shared harness registers mocks or hooks. Import organization must not move that harness after modules whose dependencies it mocks; use explicit hoisted mocks where feasible. Ordinary explanatory comments are allowed; ESLint suppressions still require a reason. Keep comments focused on ordering, compatibility, and other reasons that names and tests alone do not explain.
+Preserve test import order when a shared harness registers mocks or hooks. Import organization must not move that harness after modules whose dependencies it mocks; use explicit hoisted mocks where feasible. Ordinary explanatory comments are allowed; Oxlint suppressions still require a reason. Keep comments focused on ordering, compatibility, and other reasons that names and tests alone do not explain.
 
 Hook tests pass changing inputs through `renderHook(callback, { initialProps })` and `rerender(nextProps)`. `rerender` updates props; it does not replace the render callback.
 
@@ -133,15 +133,26 @@ Fixture, bootstrap, page-object, tag, and diagnostic instructions live in [tests
 
 ## Hooks and workflow hygiene
 
-`lefthook` pre-push invokes only `npm run check -- --pre-push`, forwarding Git’s ref/object-ID pairs through stdin. The gate selects the union of outgoing changes, including removed paths; a new remote ref selects its full tree. Deleted remote refs require no checks. Large selections travel through a JSON path file; the opt-in full verifier falls back to the complete unit suite when related-test arguments exceed platform limits. Outgoing commits must match the checked-out HEAD, and unavailable base revisions fail explicitly. When source checks are needed, pre-push requires a clean checkout (including nonignored untracked files) so tests cannot pass against an uncommitted fix. Ordinary task checks still support dirty work. Local `--diff` continues to select working-tree changes, retaining both sides of renames for risk selection and falling back to HEAD’s changes when clean. Pre-commit formats staged files selected by `scripts/prettier-paths.mjs`; commit-msg runs commitlint. Install hooks with `npm run prepare`.
+`lefthook` pre-push invokes only `npm run check -- --pre-push`, forwarding Git’s ref/object-ID pairs through stdin. The gate selects the union of outgoing changes, including removed paths; a new remote ref selects its full tree. Deleted remote refs require no checks. Large selections travel through a JSON path file; the opt-in full verifier falls back to the complete unit suite when related-test arguments exceed platform limits. Outgoing commits must match the checked-out HEAD, and unavailable base revisions fail explicitly. When source checks are needed, pre-push requires a clean checkout (including nonignored untracked files) so tests cannot pass against an uncommitted fix. Ordinary task checks still support dirty work. Local `--diff` continues to select working-tree changes, retaining both sides of renames for risk selection and falling back to HEAD’s changes when clean. Pre-commit formats staged files selected by `scripts/lib/verification/prettier-paths.mjs`; commit-msg runs commitlint. Install hooks with `npm run prepare`.
 
 Execution plans under `Docs/Plans/` are workflow artifacts, not product correctness gates. Follow the [plan lifecycle](./Docs/Plans/README.md) to finish and remove only task-owned plans, then validate with `npm run docs:check` (also included in the opt-in full gate). `npm run docs:check:final` is an explicit repository-wide closure check; another task's active plan does not require cancellation or block ordinary handoff.
 
 ## Static, build, and CI policy
 
+TypeScript 7 owns source and test compilation. Oxlint owns linting through
+`oxlint.config.ts`, with type-aware source checks supplied by `oxlint-tsgolint`.
+Prettier continues to own formatting. The Oxc and TypeScript 7 language-server
+extensions are recommended in `.vscode/extensions.json`; the TypeScript extension
+still uses the upstream `native-preview` extension identifier, while the compiler
+package itself is the stable release. `dev:checked` retains terminal diagnostics
+and the browser overlay through vite-plugin-checker's native compiler watcher.
+Dependency-cruiser uses SWC and the shared alias through its resolve-config seam;
+its cycle gate excludes erased type edges, while Oxlint enforces type import
+boundaries as well as runtime imports.
+
 | Command                           | Role                                                                                                                                         |
 | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run check:static`            | Generated outputs, formatting, source/test types, and ESLint (fast local static; no boundary subset double-run)                              |
+| `npm run check:static`            | Generated outputs, formatting, source/test types, and Oxlint (fast local static; no boundary subset double-run)                              |
 | `npm run lint:ci`                 | The canonical every-push static aggregate: `check:static`, docs, dead code, import boundaries, architecture smoke, and Playwright collection |
 | `npm run build` / `build:desktop` | Pure generated-output-validating web or desktop build                                                                                        |
 | `npm run assets:check`            | Read-only local Asset Library source freshness check                                                                                         |

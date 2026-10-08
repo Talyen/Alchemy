@@ -2,7 +2,7 @@ import { restrictedGlobalReferences } from "./restricted-global-references.js";
 
 const NETWORK_GLOBALS = ["fetch", "XMLHttpRequest", "WebSocket", "EventSource", "sendBeacon", "navigator.sendBeacon"];
 
-/** @type {import("eslint").Rule.RuleModule} */
+/** @type {Parameters<import("oxlint/plugins-dev").RuleTester["run"]>[1]} */
 export const noLibFetch = {
   meta: {
     type: "problem",

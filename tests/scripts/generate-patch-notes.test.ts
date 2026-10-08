@@ -165,6 +165,14 @@ describe("generate-patch-notes", () => {
   });
 
   it("drops infra-only feat commits from player notes", () => {
+    for (const file of [
+      "eslint.config.js",
+      "eslint/session-ownership.js",
+      "oxlint.config.ts",
+      "lint/session-ownership.js",
+    ]) {
+      expect(isUserFacing({ subject: "fix: preserve architecture checks", body: "", files: [file] }), file).toBe(false);
+    }
     expect(
       isUserFacing({
         subject: "feat(ci): enable strict test config",

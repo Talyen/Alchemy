@@ -94,7 +94,7 @@ export function CurrencyChip({
         </button>
       ) : (
         <div
-          // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- Reward descriptions must be available on keyboard focus without implying an action
+          // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- Reward descriptions must be available on keyboard focus without implying an action
           tabIndex={0}
           role="group"
           data-testid={testId}
