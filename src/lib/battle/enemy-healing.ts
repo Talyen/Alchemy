@@ -1,4 +1,5 @@
-import { clampHealth, type BattleState, type CombatTextEvent } from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { clampHealth } from "./health-state";
 import { halveRounded } from "./amount-helpers";
 import { paceCombatMagnitude } from "./fight-pacing";
 import { mergeCombatText } from "./combat-text-events";

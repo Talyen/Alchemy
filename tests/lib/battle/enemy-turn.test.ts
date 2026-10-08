@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import { endPlayerTurn, recoverLegacyEnemyPhase } from "@/lib/battle/enemy-turn";
 import type { BattleState, EnemyStatusValues } from "@/lib/battle/types";
-import { isPlayerDefeated } from "@/lib/battle/types";
+import { isPlayerDefeated } from "@/lib/battle/health-state";
 import { defaultTalentEffects } from "@/lib/battle";
 import { makeTestCard, patchBattleState, type BattleStatePatch } from "../../fixtures/battle";
 import type { BestiaryEntry } from "@/lib/game-data";

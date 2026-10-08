@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { patchBattleState } from "../../fixtures/battle";
 import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
-import { applyPlayerCombatDamage, playerHealthLostToDamage } from "@/lib/battle/types";
+import { applyPlayerCombatDamage, playerHealthLostToDamage } from "@/lib/battle/health-state";
 import { DEATHS_DOOR_GRACE_TURNS } from "@/lib/game-constants";
 
 describe("applyPlayerCombatDamage", () => {

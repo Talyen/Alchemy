@@ -4,7 +4,10 @@ import { mergeCombatText } from "./combat-text-events";
 import type { BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
 import { COMBAT_ENCOUNTER_TRAIT_IDS } from "@/lib/content-systems/encounter-traits";
 import { logError } from "../error-logger";
-import { type BattleState, type CombatTextEvent, addEnemyMitigation, addEnemyStatus, hasEnemyTrait } from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { addEnemyMitigation } from "./enemy-mitigation-state";
+import { addEnemyStatus } from "./status-state";
+import { hasEnemyTrait } from "./encounter-trait-state";
 import {
   DIFFICULTY_FORGE_PER_TURN,
   GLACIAL_SURGE_MAX_FREEZE_BONUS,

@@ -12,7 +12,10 @@ import type {
 } from "@/features/alchemy/run-loop/battle/battle-context";
 import { useBattlePresentationGateRef } from "@/features/alchemy/run-loop/battle/presentation/use-hand-presentation";
 
+import type { BattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+
 interface UseBattlePlaybackProps {
+  presentation: BattlePresentationStore;
   screen: Screen;
   battleState: BattleSnapshot;
   hasActiveBattle: boolean;
@@ -26,6 +29,7 @@ interface UseBattlePlaybackProps {
 }
 
 export function useBattlePlayback({
+  presentation,
   screen,
   battleState,
   hasActiveBattle,
@@ -45,7 +49,7 @@ export function useBattlePlayback({
     scheduleAutoEndTurnRef.current();
     wakeAutoplayRef.current?.();
   });
-  const presentationGateRef = useBattlePresentationGateRef(onPlaybackGateChangeRef);
+  const presentationGateRef = useBattlePresentationGateRef(presentation, onPlaybackGateChangeRef);
 
   const { scheduleAutoEndTurn, clearAutoEndTurn } = useBattleAutoEndTurn({
     autoEndTurn: autoEndTurn || isAutoplayEnabled,

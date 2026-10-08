@@ -1,5 +1,5 @@
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
-import { addPlayerStatus } from "@/lib/battle/types";
+import { addPlayerStatus } from "@/lib/battle/status-state";
 import { repeatUniqueCardDamage } from "@/lib/battle/unique-card-effects";
 import { describe, expect, it } from "vitest";
 import * as uniqueGearBattle from "../../fixtures/unique-gear-battle";

@@ -4,8 +4,7 @@ import { useRef, useMemo, useLayoutEffect, useState } from "react";
 import type { BattleCard } from "@/lib/game-data";
 import type { BattleRefs, CardRect } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
-import type { BattlePresentationPort } from "./battle-presentation-store";
-import { useBattlePresentationStore } from "./battle-presentation-store";
+import type { BattlePresentationPort, BattlePresentationStore } from "./battle-presentation-store";
 
 export interface AutoplayCardControl {
   signal: AbortSignal;
@@ -31,10 +30,10 @@ export interface BattleControllerContextProps {
   measureElementRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
   measureVisualCardRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
   onSessionPrepared?: (() => void) | undefined;
-  getPresentation?: () => BattlePresentationPort;
+  presentation: BattlePresentationStore;
 }
 
-export interface BattleControllerContext extends Omit<BattleControllerContextProps, "getPresentation">, BattleRefs {
+export interface BattleControllerContext extends BattleControllerContextProps, BattleRefs {
   playback: PlaybackLifetime;
   getPresentation: () => BattlePresentationPort;
 }
@@ -62,13 +61,13 @@ export function useBattleControllerContext(props: BattleControllerContextProps):
       battleSceneRef,
       playerPanelRef,
       enemyPanelRef,
-      getPresentation: props.getPresentation ?? useBattlePresentationStore.getState,
+      getPresentation: props.presentation.getState,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- One controller lifetime; committed props are synchronized below.
     [playback],
   );
   useLayoutEffect(() => {
-    Object.assign(context, props, { getPresentation: props.getPresentation ?? useBattlePresentationStore.getState });
+    Object.assign(context, props, { getPresentation: props.presentation.getState });
   });
   return context;
 }

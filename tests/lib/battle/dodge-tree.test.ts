@@ -2,7 +2,7 @@ import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { tryDodgeEnemyAttackPacket, tryDodgePlayerAttackPacket } from "@/lib/battle/dodge";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
-import { addPlayerStatus } from "@/lib/battle/types";
+import { addPlayerStatus } from "@/lib/battle/status-state";
 import { applyPlayerDamageStatuses } from "@/lib/battle/status-player";
 import { resolvePlayerCrowdControlTriggers } from "@/lib/battle/status-cc";
 import { computeTalentEffects, getTalentsForKeyword, getTalentRows, tryUnlockTalent } from "@/lib/game-data";

@@ -1,12 +1,13 @@
 import type { EffectHandlers } from "./handler-types";
 import { applyPotionMultiplier } from "../amount-helpers";
-import { addEnemyStatus, setPlayerStatus, type BattleState, type CombatTextEvent } from "../types";
+import type { BattleState, CombatTextEvent } from "../types";
+import { addEnemyStatus, setPlayerStatus } from "../status-state";
 import { mergeCombatText } from "../combat-text-events";
 import { applyPlayerStatusEffect, applyCleanseHeals, removeHarmfulPlayerStatuses } from "../status-player";
 import { tryTriggerEnemyFreeze } from "../damage-status-riders";
 import { resolveStunTrigger } from "../status-stun-resolve";
 import { dealDamageToEnemy } from "../damage";
-import { type EnemyStatusId, type PlayerStatusId } from "@/lib/game-data";
+import type { EnemyStatusId, PlayerStatusId } from "@/lib/game-data";
 import { resolveFollowUpHit } from "../follow-up-hit-resolution";
 import { getBattleRng, pickRandom } from "@/lib/rng";
 

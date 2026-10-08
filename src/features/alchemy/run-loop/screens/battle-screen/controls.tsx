@@ -1,3 +1,4 @@
+import type { BattlePresentationStore } from "../../battle/battle-presentation-store";
 import type { RefObject } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -11,11 +12,13 @@ import { useCardTransferInProgress } from "../../battle/presentation/use-hand-pr
 import type { BattleSnapshot } from "@/lib/battle";
 
 export function BattleBottomBar({
+  presentation,
   view,
   refs,
   actions,
   playabilityState,
 }: {
+  presentation: BattlePresentationStore;
   view: RequiredBattleViewProps;
   refs: BattleRefsProps;
   actions: BattleActionsProps;
@@ -40,24 +43,37 @@ export function BattleBottomBar({
         </div>
       </div>
 
-      <BattleHand view={view} refs={refs} actions={actions} playabilityState={playabilityState} />
+      <BattleHand
+        presentation={presentation}
+        view={view}
+        refs={refs}
+        actions={actions}
+        playabilityState={playabilityState}
+      />
 
-      <BattleControls battleState={battleState} actions={actions} discardPileRef={discardPileRef} />
+      <BattleControls
+        presentation={presentation}
+        battleState={battleState}
+        actions={actions}
+        discardPileRef={discardPileRef}
+      />
     </section>
   );
 }
 
 function BattleControls({
+  presentation,
   battleState,
   actions,
   discardPileRef,
 }: {
+  presentation: BattlePresentationStore;
   battleState: BattleScreenState;
   actions: BattleActionsProps;
   discardPileRef: RefObject<HTMLDivElement | null>;
 }) {
   const { onEndTurn } = actions;
-  const cardTransferInProgress = useCardTransferInProgress();
+  const cardTransferInProgress = useCardTransferInProgress(presentation);
 
   return (
     <div className={cn(battleBottomColumnClass, "w-56")}>

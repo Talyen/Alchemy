@@ -34,12 +34,12 @@ const [META_RUN_LOOP, META_RUN_SETUP] = META_NO_RUN_LOOP;
 export default {
   forbidden: [
     {
-      name: "application-session-is-an-adapter",
+      name: "application-singletons-belong-to-adapters",
       severity: "error",
       from: {
         pathNot: [...APPLICATION_SESSION_ADAPTERS.map((file) => `^${file.replaceAll(".", "\\.")}$`)],
       },
-      to: { path: "^src/app/application-session\\.ts$" },
+      to: { path: "^src/app/(application-session|battle-presentation)\\.ts$" },
     },
     {
       name: "no-circular",

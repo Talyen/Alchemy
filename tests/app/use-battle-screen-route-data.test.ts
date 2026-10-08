@@ -4,12 +4,12 @@ import { useBattleScreenRouteData } from "@/app/screen-routes/use-battle-screen-
 import { useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { resetRunDomainStore } from "../helpers/run-domain-store-test";
 import { makeTestBattleState } from "../fixtures/battle";
-import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import { battlePresentation } from "@/app/battle-presentation";
 
 describe("useBattleScreenRouteData", () => {
   beforeEach(() => {
     resetRunDomainStore();
-    useBattlePresentationStore.getState().resetPresentation();
+    battlePresentation.getState().resetPresentation();
   });
 
   it("retains the final battle display through settlement, presentation reset, and the outgoing fade", () => {
@@ -30,7 +30,7 @@ describe("useBattleScreenRouteData", () => {
       },
     }));
 
-    const { result } = renderHook(() => useBattleScreenRouteData());
+    const { result } = renderHook(() => useBattleScreenRouteData(battlePresentation));
 
     expect(result.current.hasActiveBattle).toBe(true);
     expect(result.current.battleScreenData.battleState).toBe(battleState);
@@ -39,7 +39,7 @@ describe("useBattleScreenRouteData", () => {
 
     const finalFrame = { ...battleState, enemyHealth: 0 };
     act(() => {
-      useBattlePresentationStore.getState().setDisplayedBattle(finalFrame);
+      battlePresentation.getState().setDisplayedBattle(finalFrame);
       useGameplayStateStore.setState((state) => ({
         ...state,
         session: { ...state.session, activity: { kind: "rewards" }, activeLabyrinthModifiers: [] },
@@ -50,7 +50,7 @@ describe("useBattleScreenRouteData", () => {
     expect(result.current.battleScreenData.battleState).toBe(finalFrame);
     expect(result.current.battleScreenData.activeLabyrinthModifiers).toEqual(["tempered"]);
     expect(result.current.battleScreenData.runBoons).toEqual(["test-boon"]);
-    act(() => useBattlePresentationStore.getState().resetPresentation());
+    act(() => battlePresentation.getState().resetPresentation());
     expect(result.current.battleScreenData.battleState).toBe(finalFrame);
     expect(result.current.battleScreenData.battleState.currentEnemy).toBe(battleState.currentEnemy);
     act(() =>

@@ -2,16 +2,11 @@ import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { mergeCombatText } from "./combat-text-events";
 import { applyArmorReward } from "./status-player";
 import { BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION, STATUS_CONFIG, STUN_THRESHOLD_FRACTION } from "../game-constants";
-import {
-  setEnemyStatus,
-  setPlayerStatus,
-  addEnemyMitigation,
-  hasEnemyTrait,
-  isPlayerDefeated,
-  type BattleState,
-  type CcState,
-  type CombatTextEvent,
-} from "./types";
+import type { BattleState, CcState, CombatTextEvent } from "./types";
+import { setEnemyStatus, setPlayerStatus } from "./status-state";
+import { addEnemyMitigation } from "./enemy-mitigation-state";
+import { hasEnemyTrait } from "./encounter-trait-state";
+import { isPlayerDefeated } from "./health-state";
 
 export type ActiveCcKeyword = "stun" | "freeze";
 

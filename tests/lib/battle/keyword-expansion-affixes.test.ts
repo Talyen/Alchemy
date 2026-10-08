@@ -5,7 +5,8 @@ import { applyHealingWithCombatText, payKillPayouts } from "@/lib/battle/player-
 import { resolvePendingBattleReactions } from "@/lib/battle/enemy-attack-damage";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { resolveDeathsDoorGraceExpiry } from "@/lib/battle/player-turn-transition";
-import { applyPlayerCombatDamage, type CombatTextEvent } from "@/lib/battle/types";
+import type { CombatTextEvent } from "@/lib/battle/types";
+import { applyPlayerCombatDamage } from "@/lib/battle/health-state";
 import { applyPurgeGearRewards, purgeEnemyBenefits } from "@/lib/battle/enemy-purge";
 import { applyDodgeTalentStatuses } from "@/lib/battle/dodge-talent-rewards";
 import { playBattleCardResolved } from "@/lib/battle/card-play";

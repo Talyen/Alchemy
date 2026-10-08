@@ -1,12 +1,8 @@
-import { hasEncounterBenefit } from "./types";
+import { hasEncounterBenefit } from "./encounter-trait-state";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
-import {
-  damageEnemyHealth,
-  setEnemyStatus,
-  type BattleState,
-  type CombatTextEvent,
-  type EnemyHitHealth,
-} from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { damageEnemyHealth, type EnemyHitHealth } from "./health-state";
+import { setEnemyStatus } from "./status-state";
 import {
   decayHalvedStatus,
   decayPoisonStacks,

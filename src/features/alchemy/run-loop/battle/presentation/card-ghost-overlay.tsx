@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { cn } from "@/lib/utils";
-import { useBattlePresentationStore } from "../battle-presentation-store";
+import { useStore } from "zustand";
+import type { BattlePresentationStore } from "../battle-presentation-store";
 
 import type { CardGhost, GhostStyle } from "../../../shared/types";
 
@@ -29,9 +30,9 @@ const CardGhostOverlay = memo(function CardGhostOverlay({ ghost, onDone }: { gho
   );
 });
 
-export function CardGhostLayer() {
-  const cardGhosts = useBattlePresentationStore((s) => s.cardGhosts);
-  const removeCardGhost = useBattlePresentationStore((s) => s.removeCardGhost);
+export function CardGhostLayer({ presentation }: { presentation: BattlePresentationStore }) {
+  const cardGhosts = useStore(presentation, (s) => s.cardGhosts);
+  const removeCardGhost = useStore(presentation, (s) => s.removeCardGhost);
   return (
     <>
       {cardGhosts.map((ghost) => (

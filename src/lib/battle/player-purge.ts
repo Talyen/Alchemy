@@ -3,7 +3,8 @@ import { getBattleRng, pickRandom } from "@/lib/rng";
 import { removePlayerArmor } from "./status-helpers";
 import { applyBlockDepletionForgeReward } from "./status-player";
 import { applyArmorLossAttackRetaliation } from "./player-defensive-reactions";
-import { setPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { setPlayerStatus } from "./status-state";
 
 export function purgeOnePlayerBenefit(
   state: BattleState,

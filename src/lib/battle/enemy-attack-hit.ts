@@ -31,7 +31,10 @@ import {
   type EnemyDamageResult,
 } from "./enemy-attack-damage";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
-import { hasEnemyTrait, isPlayerDefeated, setPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { hasEnemyTrait } from "./encounter-trait-state";
+import { isPlayerDefeated } from "./health-state";
+import { setPlayerStatus } from "./status-state";
 
 function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (state.gearEffects.dodgeDrawAndPlay <= 0) return state;

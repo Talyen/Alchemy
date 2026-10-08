@@ -2,14 +2,8 @@ import { readCombatFlag } from "./action-context";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { mergeCombatText } from "./combat-text-events";
 import type { BattleCard } from "@/lib/game-data";
-import {
-  type BattleResolution,
-  type BattleState,
-  type BattleSnapshot,
-  type CombatFlags,
-  type CombatTextEvent,
-  isPlayerDefeated,
-} from "./types";
+import type { BattleResolution, BattleState, BattleSnapshot, CombatFlags, CombatTextEvent } from "./types";
+import { isPlayerDefeated } from "./health-state";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { deliverPendingHandCards } from "./draw";
 import { applyPurgeGearRewards, purgeEnemyBenefits } from "./enemy-purge";

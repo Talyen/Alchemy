@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { patchBattleState } from "../../fixtures/battle";
 import { dealDamage, makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
 import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/follow-up-hit-resolution";
+import { playBattleCardResolved } from "@/lib/battle/card-play";
+import { cardById } from "@/lib/game-data";
 
 describe("dealDamageToEnemy — lifesteal", () => {
   it.each([
@@ -31,4 +33,26 @@ describe("low-health Leech bonuses", () => {
     });
     expect(applyLifestealAndPlayerHitTriggers(desperate, 10, []).playerHealth - health).toBe(health < 15 ? 6 : 5);
   });
+});
+
+describe("card Leech resolution", () => {
+  it.each([
+    { enemyHealth: 1, restoredHealth: 1 },
+    { enemyHealth: 10, restoredHealth: 2 },
+  ])(
+    "Venom Fangs Leech caps restoration at Poison Health loss with $enemyHealth enemy Health",
+    ({ enemyHealth, restoredHealth }) => {
+      const card = cardById["venom-fangs"]!;
+      const state = patchBattleState({
+        hand: [card],
+        enemyHealth,
+        playerHealth: 10,
+        gearEffects: { flatPoisonDamage: 3 },
+        rng: () => 0.99,
+      });
+      const result = playBattleCardResolved(state, card.id, 0).state;
+      expect(result.enemyHealth).toBe(Math.max(0, enemyHealth - 4));
+      expect(result.playerHealth).toBe(10 + restoredHealth);
+    },
+  );
 });

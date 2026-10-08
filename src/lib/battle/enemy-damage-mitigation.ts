@@ -4,7 +4,9 @@ import { mergeCombatText } from "./combat-text-events";
 import { paceCombatDamage } from "./fight-pacing";
 import { armorMitigatesElementalDamage, reduceDamageByMana } from "./status-helpers";
 import type { BattleState, CombatTextEvent } from "./types";
-import { hasEnemyTrait, mitigatePlayerCombatDamage, scaleReceivedPlayerDamage } from "./types/state-helpers";
+import { hasEnemyTrait } from "./encounter-trait-state";
+import { mitigatePlayerCombatDamage } from "./health-state";
+import { scaleReceivedPlayerDamage } from "./damage-modifiers";
 
 function applyEnemyAttackBonuses(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }) {
   const forge = effect.damageType === "physical" || effect.damageType === "stun" ? state.enemyMitigation.forge : 0;

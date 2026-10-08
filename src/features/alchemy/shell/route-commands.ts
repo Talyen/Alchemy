@@ -11,7 +11,8 @@ import type { KeywordId, CharacterId, DifficultyId, BattleCard } from "@/lib/gam
 import type { MysteryChoice } from "@/lib/mystery";
 import type { MouseEvent } from "react";
 import type { AutoplayCardHandler, AutoplayWishHandler, BattlePlaybackBind } from "../run-loop/battle/battle-context";
-import type { HomesteadEffectManifest } from "@/lib/homestead/types";
+
+import type { BattlePresentationStore } from "../run-loop/battle/battle-presentation-store";
 
 export interface AlchemyRouteCommands {
   meta: {
@@ -74,6 +75,7 @@ export interface AlchemyRouteCommands {
     };
   };
   battle: {
+    presentation: BattlePresentationStore;
     handleCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
     handleWishChoice: (card: BattleCard) => void;
     handleEndTurn: () => void;
@@ -99,7 +101,6 @@ export interface AlchemyRouteCommands {
 export interface AlchemyRunCommands {
   screen: Screen;
   navigationPending: boolean;
-  homesteadEffects: HomesteadEffectManifest;
   routeCommands: AlchemyRouteCommands;
   unlockAllTalents: () => void;
   returnToBattle: () => void;

@@ -15,7 +15,7 @@ export const APPLICATION_SESSION_ADAPTERS = Object.freeze([
   "src/features/alchemy/shell/use-battle-controller.ts",
   "src/features/alchemy/shell/use-screen-transitions.ts",
   "src/features/alchemy/meta/screens/armory/use-armory-controller.ts",
-  "src/features/alchemy/run-loop/battle/battle-presentation-store.ts",
+  "src/app/battle-presentation.ts",
   "src/features/alchemy/shared/stores/gameplay-state-store.ts",
   "src/features/alchemy/shared/stores/settings-store.ts",
   "src/features/alchemy/shared/stores/use-run-screen-data.ts",
@@ -39,7 +39,7 @@ export const sessionOwnership = {
     schema: [],
     messages: {
       application:
-        "The application session belongs to shipping adapters. Bind an explicit GameSession through a capability factory.",
+        "Application singletons belong to shipping adapters. Pass a bound session capability or presentation store explicitly.",
       required: "GameSession parameters must be required and have no fallback. Bind the session at composition.",
     },
   },
@@ -59,7 +59,10 @@ export const sessionOwnership = {
       }
     }
     function checkImport(node) {
-      if (!applicationAdapter && /(?:^|\/)application-session(?:\.[jt]sx?)?$/.test(node.source.value)) {
+      if (
+        !applicationAdapter &&
+        /(?:^|\/)(?:application-session|battle-presentation)(?:\.[jt]sx?)?$/.test(node.source.value)
+      ) {
         context.report({ node, messageId: "application" });
       }
     }

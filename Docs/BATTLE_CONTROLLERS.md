@@ -28,7 +28,14 @@ BattleScreenRoute → useBattleScreenRouteData → displayed frame, active comba
 
 - `useAlchemyRunController` exposes battle **commands** on `routeCommands.battle`. Battle **display** is local to `BattleScreenRoute` via `useBattleScreenRouteData`, which selects the current presentation frame or active combat and retains its outgoing data during settlement and fades. `createBattleSession` publishes the terminal presentation frame before calling an outcome command; clearing feedback cannot replace the outgoing enemy or hand with default data.
 - Autoplay / auto-end-turn **ticks** live in `useBattlePlayback` on that route. Session autoplay on/off lives in `useBattleController`. Playback how-to: [WORKFLOWS § Change battle playback](./WORKFLOWS.md#change-battle-playback).
-- Presentation leaves subscribe to `battle-presentation-store`. Teardown follows committed store `screen !== "battle"` (not `renderedScreen`). `App.tsx` passes `routeCommands` through `renderAlchemyScreenRoute`. Run/battle bindings stay on props; the allowed providers are `AppScreenChromeProvider` and `CardDescriptionProvider`, while presentation-only state may use `ui-store`. See [Content authoring § Add a new card](./CONTENT_AUTHORING.md#add-a-new-card) for card-description context.
+- `createBattlePresentationStore(gameSession)` creates an independent presentation store.
+  `app/battle-presentation.ts` composes the shipping instance; the controller,
+  route data, opening draw, autoplay gates, hand and visual effects all receive
+  that same store through explicit props. Playback factories read it through
+  `getPresentation`, with no global fallback. Visibility and clear/teardown
+  subscriptions belong to its session; session disposal resets presentation
+  and cancels feedback timers. Presentation leaves subscribe only to their
+  supplied store. Teardown follows committed store `screen !== "battle"` (not `renderedScreen`). `App.tsx` passes `routeCommands` through `renderAlchemyScreenRoute`. Run/battle bindings stay on props; the allowed providers are `AppScreenChromeProvider` and `CardDescriptionProvider`, while presentation-only state may use `ui-store`. See [Content authoring § Add a new card](./CONTENT_AUTHORING.md#add-a-new-card) for card-description context.
 
 ### Data flow
 

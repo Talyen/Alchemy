@@ -2,13 +2,9 @@ import { createBattleStartState, drawOpeningHand, type CreateBattleStateOptions 
 import { processCompanionTurnStart } from "./companion";
 import type { BattleTurnFrame } from "./enemy-turn";
 import { getBattleRng } from "@/lib/rng";
-import {
-  battleSnapshot,
-  isPlayerDefeated,
-  type BattleResolutionContext,
-  type BattleSnapshot,
-  type CombatTextEvent,
-} from "./types";
+import type { BattleResolutionContext, BattleSnapshot, CombatTextEvent } from "./types";
+import { battleSnapshot } from "./battle-snapshot";
+import { isPlayerDefeated } from "./health-state";
 
 export interface ResolvedBattleStart {
   state: BattleSnapshot;

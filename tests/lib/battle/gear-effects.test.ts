@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { applyGearKillRewards } from "@/lib/battle/player-rewards";
 import { gearFrozenDamageMultiplier, scaledGearLeechHeal } from "@/lib/battle/scaled-damage";
-import { applyGearDamageResistance, scaleGoldReward, type CombatTextEvent } from "@/lib/battle/types";
+import type { CombatTextEvent } from "@/lib/battle/types";
+import { applyGearDamageResistance } from "@/lib/battle/damage-modifiers";
 import { defaultGearEffects } from "@/lib/gear";
 import {
   makeStateWithFailedRolls as makeState,
@@ -16,7 +17,7 @@ import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { applyDamageStatuses, applyPoisonTalentRiders } from "@/lib/battle/damage-status-riders";
-import { addEnemyStatus } from "@/lib/battle/types/state-helpers";
+import { addEnemyStatus } from "@/lib/battle/status-state";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { reduceDamageByMana } from "@/lib/battle/status-helpers";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
@@ -42,12 +43,6 @@ describe("gear-effects", () => {
     const gear = { ...defaultGearEffects, resistPhysical: 50 };
     expect(applyGearDamageResistance(10, "physical", gear)).toBe(5);
     expect(applyGearDamageResistance(10, "burn", gear)).toBe(10);
-  });
-
-  it("scales gold rewards by goldGainPercent", () => {
-    const gear = { ...defaultGearEffects, goldGainPercent: 25 };
-    expect(scaleGoldReward(100, gear)).toBe(125);
-    expect(scaleGoldReward(100, defaultGearEffects)).toBe(100);
   });
 
   it("scales leech heal by leechHealBonusPercent", () => {

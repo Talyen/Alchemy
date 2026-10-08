@@ -13,7 +13,9 @@ import {
 import { BASE_PLAYER_MANA, CARDS_PER_TURN, MAX_PLAYER_HEALTH } from "../game-constants";
 import type { GearEffectManifest } from "@/lib/gear";
 import { defaultGearEffects } from "@/lib/gear";
-import { EMPTY_ENEMY_MITIGATION, isPlayerDefeated, type BattleState, type EnemyMitigation } from "./types";
+import type { BattleState, EnemyMitigation } from "./types";
+import { EMPTY_ENEMY_MITIGATION } from "./enemy-mitigation-state";
+import { isPlayerDefeated } from "./health-state";
 import { applyEmergencyWish } from "./wish";
 import { computeTrinketManifest } from "../trinkets";
 import { applyDrawResult, drawCards, drawKeywordCard } from "./draw";

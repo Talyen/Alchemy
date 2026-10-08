@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { applyDodgeTalentStatuses } from "@/lib/battle/dodge-talent-rewards";
 import { tickPlayerStatuses } from "@/lib/battle/status-ticks";
-import { addPlayerStatus } from "@/lib/battle/types";
+import { addPlayerStatus } from "@/lib/battle/status-state";
 import {
   defaultPlayerStatusValues,
   defaultTalentEffects,

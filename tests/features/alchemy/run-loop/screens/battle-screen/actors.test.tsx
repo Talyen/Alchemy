@@ -1,3 +1,4 @@
+import { battlePresentation } from "@/app/battle-presentation";
 import { render } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
@@ -18,6 +19,7 @@ it.each([
 ])("player death presentation follows defeat: %j", ({ playerHealth, deathsDoorActive, dead }) => {
   render(
     <BattleActors
+      presentation={battlePresentation}
       view={{
         battleState: { ...defaultBattleState(), playerHealth, deathsDoorActive },
         characterId: "knight",

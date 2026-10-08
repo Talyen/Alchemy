@@ -6,7 +6,8 @@ import { DISCARD_PILE_TOP_CARD_BOUNDS } from "@/lib/game-constants";
 import { pileDiscardArt } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cardBack } from "@/lib/game-data";
 import { cardSurfaceClass } from "@/features/alchemy/shared/config/layout";
-import { useBattlePresentationStore } from "../battle-presentation-store";
+import { useStore } from "zustand";
+import type { BattlePresentationStore } from "../battle-presentation-store";
 import type { CardTransfer } from "../../../shared/types";
 import { getCardTransferPose } from "./card-transfer-motion";
 
@@ -98,8 +99,8 @@ function DiscardCardBack() {
   );
 }
 
-export function CardTransferLayer() {
-  const cardTransfers = useBattlePresentationStore((s) => s.cardTransfers);
+export function CardTransferLayer({ presentation }: { presentation: BattlePresentationStore }) {
+  const cardTransfers = useStore(presentation, (s) => s.cardTransfers);
   return (
     <>
       {cardTransfers.map((transfer) => (

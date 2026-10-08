@@ -1,3 +1,4 @@
+import { battlePresentation } from "@/app/battle-presentation";
 import { defaultGameSession } from "@/app/application-session";
 import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import { isRunLoopScreen, type Screen } from "@/lib/routing";
@@ -67,8 +68,8 @@ export function useCardInspection({
 }) {
   const data = useCardInspectionData();
   const selected = useUiStore((state) => state.cardInspection);
-  const cardAnimationInProgress = useCardAnimationInProgress();
-  const hiddenHandCardKeys = useHiddenHandCardKeys();
+  const cardAnimationInProgress = useCardAnimationInProgress(battlePresentation);
+  const hiddenHandCardKeys = useHiddenHandCardKeys(battlePresentation);
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const visible = isDeckInspectionVisible(screen, data.hasActiveRun, returnToRunScreen);
   const canOpen =
@@ -105,12 +106,12 @@ export function useCardInspection({
         return;
       if (!current.hasActiveBattle && view !== "deck") return;
       if (current.hasActiveBattle) {
-        const presentation = readPlaybackPresentationGate();
+        const presentation = readPlaybackPresentationGate(battlePresentation);
         if (
           isCardPlayInProgress() ||
           isBattleInspectionBlocked({
             battleReady: current.battleReady,
-            cardAnimationInProgress: readCardAnimationInProgress(),
+            cardAnimationInProgress: readCardAnimationInProgress(battlePresentation),
             battleState: current,
             hiddenHandCardKeys: presentation.hiddenHandCardKeys,
           })

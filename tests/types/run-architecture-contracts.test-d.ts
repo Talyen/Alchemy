@@ -2,6 +2,8 @@ import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import {
   createSessionPersistence,
   saveAlchemySaveData,
+  type SessionPersistence,
+  type SessionPersistenceRestoreOptions,
   type UnstampedSaveData,
 } from "@/features/alchemy/shared/storage";
 
@@ -57,6 +59,14 @@ describe("run architecture type contracts", () => {
     saveAlchemySaveData({} as UnstampedSaveData);
     expectTypeOf(createBattleCapabilities(defaultGameSession).endTurn).parameters.toEqualTypeOf<[]>();
     expectTypeOf(createSessionPersistence(defaultGameSession).snapshot).parameters.toEqualTypeOf<[]>();
+    expectTypeOf(createSessionPersistence(defaultGameSession).clear).parameters.toEqualTypeOf<
+      [("default" | "localWipe")?]
+    >();
+    expectTypeOf(createSessionPersistence(defaultGameSession).routeToRecovery).parameters.toEqualTypeOf<[]>();
+    expectTypeOf(createSessionPersistence(defaultGameSession).setWritesDisabled).parameters.toEqualTypeOf<[boolean]>();
+    expectTypeOf(createSessionPersistence(defaultGameSession).configurePlatform).parameters.toEqualTypeOf<[]>();
+    expectTypeOf(createSessionPersistence(defaultGameSession)).toMatchTypeOf<SessionPersistence>();
+    expectTypeOf<SessionPersistenceRestoreOptions>().toEqualTypeOf<{ preserveActiveRunIfInitialized?: boolean }>();
   });
   it("requires combat data with battle activity and removes independently writable battle flags", () => {
     // @ts-expect-error -- a battle activity must carry its committed combat
@@ -210,6 +220,7 @@ describe("run architecture type contracts", () => {
       | "shopState"
       | "talentXP"
       | "unlockedTalents"
+      | "homesteadEffects"
     >;
 
     expectTypeOf<ForbiddenDisplayKeys>().toEqualTypeOf<never>();

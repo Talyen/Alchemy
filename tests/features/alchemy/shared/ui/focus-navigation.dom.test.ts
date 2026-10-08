@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { focusInDirection } from "@/features/alchemy/shared/ui/focus-navigation";
+import { focusInDirection, focusPreviousControl } from "@/features/alchemy/shared/ui/focus-navigation";
 
 function place(element: HTMLElement, x: number, y: number) {
   const rect = { left: x, right: x + 50, top: y, bottom: y + 30, width: 50, height: 30, x, y, toJSON: () => ({}) };
@@ -102,5 +102,59 @@ describe("directional focus", () => {
     root.append(text);
     text.focus();
     expect(focusInDirection("down")).toBe(false);
+  });
+});
+
+describe("focusPreviousControl", () => {
+  it("navigates backward through controls and wraps to the end", () => {
+    const root = screen();
+    const first = button(root, 0, 0);
+    const second = button(root, 100, 0);
+    const third = button(root, 200, 0);
+
+    third.focus();
+    focusPreviousControl();
+    expect(document.activeElement).toBe(second);
+
+    focusPreviousControl();
+    expect(document.activeElement).toBe(first);
+
+    // Wraps around from first to last
+    focusPreviousControl();
+    expect(document.activeElement).toBe(third);
+  });
+
+  it("confines backward navigation to an active dialog overlay", () => {
+    const root = screen();
+    button(root, 0, 0);
+    const dialog = document.createElement("div");
+    dialog.setAttribute("role", "dialog");
+    document.body.append(dialog);
+    place(dialog, 0, 0);
+    const dialogFirst = button(dialog, 50, 0);
+    const dialogSecond = button(dialog, 150, 0);
+
+    dialogSecond.focus();
+    focusPreviousControl();
+    expect(document.activeElement).toBe(dialogFirst);
+
+    focusPreviousControl();
+    expect(document.activeElement).toBe(dialogSecond);
+  });
+
+  it("focuses the last control when no element currently has focus", () => {
+    const root = screen();
+    button(root, 0, 0);
+    const second = button(root, 100, 0);
+    document.body.focus();
+
+    focusPreviousControl();
+    expect(document.activeElement).toBe(second);
+  });
+
+  it("does nothing safely when no focusable controls exist", () => {
+    screen();
+    document.body.focus();
+    expect(() => focusPreviousControl()).not.toThrow();
   });
 });

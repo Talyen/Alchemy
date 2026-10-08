@@ -20,15 +20,11 @@ import { scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { removePlayerArmor } from "./status-helpers";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import { applyArmorLossAttackRetaliation } from "./player-defensive-reactions";
-import {
-  addEnemyStatus,
-  isPlayerDefeated,
-  isStunFreezeBuildupBlocked,
-  setFlag,
-  setPlayerStatus,
-  type BattleState,
-  type CombatTextEvent,
-} from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { isStunFreezeBuildupBlocked } from "./crowd-control-policy";
+import { addEnemyStatus, setPlayerStatus } from "./status-state";
+import { isPlayerDefeated } from "./health-state";
+import { writeCombatFlag as setFlag } from "./action-context";
 
 function applyEnemyEffect(
   state: BattleState,

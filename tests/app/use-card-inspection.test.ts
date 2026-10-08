@@ -5,7 +5,7 @@ import { isDeckInspectionVisible, useCardInspection } from "@/app/use-card-inspe
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
-import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import { battlePresentation } from "@/app/battle-presentation";
 import { makeTestCard } from "../fixtures/battle";
 import { getEffectiveCardDescriptionLines } from "@/lib/game-data/card-description";
 import { resetAllTestStores } from "../helpers/run-domain-store-test";
@@ -23,7 +23,7 @@ const base = {
 
 beforeEach(() => {
   resetAllTestStores();
-  useBattlePresentationStore.getState().resetPresentation();
+  battlePresentation.getState().resetPresentation();
   dispatchGameplayCommand(
     (draft) => {
       draft.session.activity = { kind: "idle" };
@@ -128,7 +128,7 @@ describe("run card inspection", () => {
       undefined,
       defaultGameSession,
     );
-    if (reason === "transfer") useBattlePresentationStore.setState({ cardTransferInProgress: true });
+    if (reason === "transfer") battlePresentation.setState({ cardTransferInProgress: true });
     const { result } = renderHook(() =>
       useCardInspection({ ...base, isCardPlayInProgress: () => reason === "card-play" }),
     );

@@ -1,5 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { battlePresentation } from "@/app/battle-presentation";
 import { useBattlePlayback } from "@/app/screen-routes/use-battle-playback";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { resetBattlePresentationAndRun } from "../features/alchemy/run-loop/battle/battle-test-reset";
@@ -12,6 +13,7 @@ function renderPlayback(overrides: Partial<Parameters<typeof useBattlePlayback>[
   return renderHook(
     (props: Partial<Parameters<typeof useBattlePlayback>[0]>) =>
       useBattlePlayback({
+        presentation: battlePresentation,
         screen: "battle",
         battleState: makeTestBattleState(),
         hasActiveBattle: true,

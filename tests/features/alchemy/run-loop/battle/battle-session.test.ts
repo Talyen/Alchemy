@@ -5,7 +5,7 @@ import {
 import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
-import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import { battlePresentation } from "@/app/battle-presentation";
 import { battleStageMarkName, markBattleStage } from "@/lib/performance/marks";
 import { defaultBattleState } from "@/lib/battle";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
@@ -28,7 +28,7 @@ function makeSession() {
     playback,
     onBattleVictory,
     onBattleDefeat,
-    getPresentation: () => useBattlePresentationStore.getState(),
+    getPresentation: () => battlePresentation.getState(),
   } as unknown as BattleControllerContext);
 
   return {
@@ -140,27 +140,25 @@ describe("createBattleSession", () => {
   );
 
   it("resetBattleSession clears portrait impact cues", () => {
-    useBattlePresentationStore.setState({
+    battlePresentation.setState({
       playerImpactCue: { sequence: 1, colors: ["#fff"], healthLost: true },
       enemyImpactCue: { sequence: 2, colors: ["#fff"], healthLost: true },
     });
     const { session } = makeSession();
     session.resetBattleSession();
-    expect(useBattlePresentationStore.getState().playerImpactCue).toBeNull();
-    expect(useBattlePresentationStore.getState().enemyImpactCue).toBeNull();
+    expect(battlePresentation.getState().playerImpactCue).toBeNull();
+    expect(battlePresentation.getState().enemyImpactCue).toBeNull();
   });
 
   it("resetBattleSession clears floating combat texts", async () => {
     vi.useFakeTimers();
-    useBattlePresentationStore
-      .getState()
-      .showCombatTexts([{ target: "enemy", kind: "damage", stat: "health", amount: 5 }]);
+    battlePresentation.getState().showCombatTexts([{ target: "enemy", kind: "damage", stat: "health", amount: 5 }]);
     await vi.advanceTimersByTimeAsync(0);
-    expect(useBattlePresentationStore.getState().floatingCombatBursts).toHaveLength(1);
+    expect(battlePresentation.getState().floatingCombatBursts).toHaveLength(1);
 
     const { session } = makeSession();
     session.resetBattleSession();
-    expect(useBattlePresentationStore.getState().floatingCombatBursts).toEqual([]);
+    expect(battlePresentation.getState().floatingCombatBursts).toEqual([]);
     vi.useRealTimers();
   });
 

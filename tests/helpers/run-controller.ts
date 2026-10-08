@@ -1,4 +1,5 @@
 import { vi } from "vitest";
+import { battlePresentation } from "@/app/battle-presentation";
 import type { AlchemyRouteCommands } from "@/features/alchemy/shell/route-commands";
 
 export function createMockRouteCommands(): AlchemyRouteCommands {
@@ -70,6 +71,7 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
       transmutation: { exchange: fn(), continue: fn() },
     },
     battle: {
+      presentation: battlePresentation,
       screen: "battle",
       refs: {} as never,
       handleCardClick: fn(),

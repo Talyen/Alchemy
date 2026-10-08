@@ -52,8 +52,6 @@ export default {
     "src/lib/routing/index.ts": ["exports"],
     // Unified persistence seam: single source in persistence.ts.
     "src/features/alchemy/shared/storage/persistence.ts": ["exports"],
-    // Content-navigation read ports: invariant-tested consumption seam for persisted run/talent fields.
-    "src/features/alchemy/shared/stores/run-reads.ts": ["exports", "types"],
     // Compat barrel: talentPool is single source, per-keyword arrays are filtered views for legacy imports.
     "src/lib/game-data/talents/talent-pool-selectors.ts": ["exports"],
     // run-resume-codec is the canonical resume boundary (shops/interrupted-flow included).

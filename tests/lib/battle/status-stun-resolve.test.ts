@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import { applyCardEffects } from "@/lib/battle";
 import { defaultTalentEffects } from "@/lib/battle";
-import { addPlayerStatus, type CombatTextEvent } from "@/lib/battle/types";
+import type { CombatTextEvent } from "@/lib/battle/types";
+import { addPlayerStatus } from "@/lib/battle/status-state";
 import {
   makeCombatTexts as makeTexts,
   makeStateWithFailedRolls,

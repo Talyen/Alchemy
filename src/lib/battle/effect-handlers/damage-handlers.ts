@@ -1,14 +1,15 @@
 import type { EffectHandlers } from "./handler-types";
 import { resolveConditionalCardDamage } from "../conditional-card-damage";
 import { mergeCombatText } from "../combat-text-events";
-import { setPlayerStatus } from "../types";
+import { setPlayerStatus } from "../status-state";
 import { applyBlockDepletionForgeReward, applyHealthLossTalentRewards, checkHealthThresholds } from "../status-player";
 import { DAMAGE_TYPES } from "@/lib/game-data";
 import { getBattleRng, pickRandom, rngInt } from "@/lib/rng";
 import { applyPotionMultiplier, halveRounded } from "../amount-helpers";
 import { dealDamageToEnemy } from "../damage";
 import { dealSelfDamage } from "../status-helpers";
-import { addPlayerStatus, reduceEnemyArmor } from "../types";
+import { addPlayerStatus } from "../status-state";
+import { reduceEnemyArmor } from "../enemy-mitigation-state";
 import { rangeBoundsError } from "./simple-handlers";
 
 export const DAMAGE_HANDLERS = {

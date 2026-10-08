@@ -10,7 +10,8 @@ import {
 import { clamp } from "../math";
 import { mergeCombatText } from "./combat-text-events";
 import { getBattleRng, rollPercent } from "@/lib/rng";
-import { hasEncounterBenefit, hasEnemyTrait, type BattleState, type CombatTextEvent } from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { hasEncounterBenefit, hasEnemyTrait } from "./encounter-trait-state";
 
 function getPlayerDodgeChance(
   state: Pick<

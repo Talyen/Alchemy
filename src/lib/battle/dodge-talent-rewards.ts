@@ -4,7 +4,8 @@ import { applyDrawResult, drawFromState } from "./draw";
 import { addPlayerStatusWithCombatText } from "./player-rewards";
 import { addForgeToPlayer, applyCleanseHeals } from "./status-player";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
-import { setPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { setPlayerStatus } from "./status-state";
 import { mergeCombatText } from "./combat-text-events";
 
 export function applyDodgeTalentStatuses(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {

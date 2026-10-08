@@ -2,10 +2,11 @@ import { useLayoutEffect, useMemo, useRef, type RefObject } from "react";
 import { CombatTextRail } from "@/features/alchemy/run-loop/battle/presentation/ui/combat-text";
 import type { BattleRefs, CardRect, CombatTextBurst } from "@/features/alchemy/shared/types";
 import { getBattleSceneLocalRect, viewportRectToBattleSceneRect, type BattleSceneLocalRect } from "../controller-utils";
-import { useBattlePresentationStore } from "../battle-presentation-store";
+import { useStore } from "zustand";
+import type { BattlePresentationStore } from "../battle-presentation-store";
 
-export function CombatTextLayer({ refs }: { refs: BattleRefs }) {
-  const bursts = useBattlePresentationStore((state) => state.floatingCombatBursts);
+export function CombatTextLayer({ refs, presentation }: { refs: BattleRefs; presentation: BattlePresentationStore }) {
+  const bursts = useStore(presentation, (state) => state.floatingCombatBursts);
   const targetBursts = useMemo(() => {
     const targets: Record<CombatTextBurst["target"], CombatTextBurst[]> = { player: [], enemy: [] };
     for (const burst of bursts) targets[burst.target].push(burst);

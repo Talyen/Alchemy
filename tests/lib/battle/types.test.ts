@@ -1,15 +1,9 @@
-import { battleSnapshot } from "@/lib/battle/types/state-types";
+import { battleSnapshot } from "@/lib/battle/battle-snapshot";
 import { resolveSecondaryAction, readCombatFlag, writeCombatFlag } from "@/lib/battle/action-context";
 import { describe, expect, it } from "vitest";
-import {
-  addPlayerStatus,
-  setEnemyStatus,
-  setPlayerStatus,
-  gainMana,
-  resolvePlayerHealing,
-  applyPlayerHealing,
-  isPlayerDefeated,
-} from "@/lib/battle/types";
+import { addPlayerStatus, setEnemyStatus, setPlayerStatus } from "@/lib/battle/status-state";
+import { gainMana } from "@/lib/battle/resource-state";
+import { resolvePlayerHealing, applyPlayerHealing, isPlayerDefeated } from "@/lib/battle/health-state";
 import { makeTestBattleState, patchBattleState } from "../../fixtures/battle";
 import { defaultCombatFlags } from "../../fixtures/default-battle-state";
 

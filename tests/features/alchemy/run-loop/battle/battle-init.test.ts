@@ -8,7 +8,7 @@ import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { enemyBestiary } from "@/lib/game-data";
 import { resetRunDomainStore, setRunSession, setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { readActiveRun, readBattle, readRunRevision } from "@/features/alchemy/shared/stores/run-reads";
-import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import { battlePresentation } from "@/app/battle-presentation";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import { createRunRngState } from "@/lib/rng";
@@ -29,7 +29,7 @@ describe("createBattleInit", () => {
     const ctx = {
       battle: createBattleCapabilities(defaultGameSession),
       playback: new PlaybackLifetime(),
-      getPresentation: () => useBattlePresentationStore.getState(),
+      getPresentation: () => battlePresentation.getState(),
     } as unknown as BattleControllerContext;
 
     const session = {
@@ -75,8 +75,8 @@ describe("createBattleInit", () => {
     expect(readBattle(defaultGameSession)).not.toHaveProperty("pendingTransitionResumeRequired");
     expect(readBattle(defaultGameSession).battleState.hand.length).toBeGreaterThan(0);
     expect(readBattle(defaultGameSession)).not.toHaveProperty("pendingBattleTransition");
-    expect(useBattlePresentationStore.getState().openingDrawPending).toBe(true);
-    expect(useBattlePresentationStore.getState().cardTransferInProgress).toBe(true);
+    expect(battlePresentation.getState().openingDrawPending).toBe(true);
+    expect(battlePresentation.getState().cardTransferInProgress).toBe(true);
     expect(readActiveRun(defaultGameSession).encounteredRunEnemyIds).toContain(enemyId);
     expect(prepareBattleSessionForStart).toHaveBeenCalled();
   });

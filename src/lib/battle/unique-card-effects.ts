@@ -4,7 +4,8 @@ import { UNIQUE_GEAR_COMBAT } from "../game-constants";
 import { damageOnlyEffects, isAttackCard } from "./card-classification";
 import { applyCardEffects } from "./effect-handlers";
 import { cardHasDamageType, cardHasKeyword, isNatureCard } from "./card-classification";
-import { type BattleState, type CombatTextEvent, isPlayerDefeated } from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { isPlayerDefeated } from "./health-state";
 
 export function repeatUniqueCardDamage(
   state: BattleState,

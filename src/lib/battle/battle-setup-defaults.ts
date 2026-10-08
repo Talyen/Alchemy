@@ -1,7 +1,8 @@
 import { createEmptyTalentEffectManifest, type TalentEffectManifest } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { BASE_ENEMY_HEALTH, MAX_PLAYER_HEALTH } from "../game-constants";
-import { EMPTY_ENEMY_MITIGATION, type BattleState } from "./types";
+import type { BattleState } from "./types";
+import { EMPTY_ENEMY_MITIGATION } from "./enemy-mitigation-state";
 import { defaultTrinketEffects } from "../trinkets";
 import { defaultGearEffects } from "@/lib/gear";
 import { placeholderRng } from "@/lib/rng";

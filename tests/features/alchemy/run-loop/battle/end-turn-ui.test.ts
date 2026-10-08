@@ -13,7 +13,7 @@ import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battl
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 
-import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import { battlePresentation } from "@/app/battle-presentation";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { patchBattleState, slashDeck } from "../../../../fixtures/battle";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
@@ -51,7 +51,7 @@ function makeUi(rejectDraw = false, onDraw?: (ctx: BattleControllerContext) => v
     battle: createBattleCapabilities(defaultGameSession),
     screen: "battle",
     playback: new PlaybackLifetime(),
-    getPresentation: () => useBattlePresentationStore.getState(),
+    getPresentation: () => battlePresentation.getState(),
   } as unknown as BattleControllerContext;
   const active = (id: number) => id === ctx.playback.id;
   const session = {
@@ -96,9 +96,7 @@ describe("End Turn execution and playback", () => {
     expect(getRunSessionFromState(resolved).battle).not.toHaveProperty("pendingBattleTransition");
     expect(resolved.revision).toBe(before.revision + 1);
     expect(ctx.playback.cardPlayInProgress).toBe(true);
-    expect(useBattlePresentationStore.getState().displayedBattle).toBe(
-      getRunSessionFromState(before).battle.battleState,
-    );
+    expect(battlePresentation.getState().displayedBattle).toBe(getRunSessionFromState(before).battle.battleState);
     ui.handleEndTurn();
     expect(readGameplayState(defaultGameSession)).toBe(resolved);
     expect(vi.mocked(playBattleEvent).mock.calls.filter(([event]) => event === "endTurn")).toHaveLength(1);
@@ -143,7 +141,7 @@ describe("End Turn execution and playback", () => {
         await vi.runAllTimersAsync();
         expect(readGameplayState(defaultGameSession)).toBe(resolved);
         expect(ctx.playback.cardPlayInProgress).toBe(false);
-        expect(useBattlePresentationStore.getState().displayedBattle).toBeNull();
+        expect(battlePresentation.getState().displayedBattle).toBeNull();
       } finally {
         vi.useRealTimers();
       }
@@ -162,8 +160,8 @@ describe("End Turn execution and playback", () => {
       releaseDiscard();
       await vi.runAllTimersAsync();
       expect(ctx.playback.pendingCardDraws).toBe(1);
-      expect(useBattlePresentationStore.getState().hiddenHandCardKeys).toEqual(["drawing-card"]);
-      expect(useBattlePresentationStore.getState().cardTransferInProgress).toBe(true);
+      expect(battlePresentation.getState().hiddenHandCardKeys).toEqual(["drawing-card"]);
+      expect(battlePresentation.getState().cardTransferInProgress).toBe(true);
       finishCardDraw();
     } finally {
       vi.useRealTimers();

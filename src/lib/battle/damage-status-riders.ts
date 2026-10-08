@@ -1,6 +1,9 @@
 import { rollBattleChance } from "./chance-roll";
 import type { BattleCardEffect } from "@/lib/game-data";
-import { addEnemyStatus, reduceEnemyArmor, setFlag, type BattleState, type CombatTextEvent } from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { addEnemyStatus } from "./status-state";
+import { reduceEnemyArmor } from "./enemy-mitigation-state";
+import { writeCombatFlag as setFlag } from "./action-context";
 import {
   addGoldWithCombatText,
   addPlayerStatusWithCombatText,

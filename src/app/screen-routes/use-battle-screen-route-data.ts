@@ -1,16 +1,17 @@
-import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import { useStore } from "zustand";
+import type { BattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useMemo, useState } from "react";
 import { useActiveRunScreenValue, useActiveRunBoons } from "@/features/alchemy/shared/stores/run-reads";
 import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run-reads";
 import type { BattleScreenData } from "@/features/alchemy/run-loop/screens/battle-screen/types";
 
-export function useBattleScreenRouteData() {
+export function useBattleScreenRouteData(presentation: BattlePresentationStore) {
   const screen = useActiveRunScreenValue();
   const {
     battle: { battleState, hasActiveBattle },
     activeLabyrinthModifiers,
   } = useRunSessionBattleContext(screen);
-  const displayedBattle = useBattlePresentationStore((state) => state.displayedBattle);
+  const displayedBattle = useStore(presentation, (state) => state.displayedBattle);
   const runBoons = useActiveRunBoons();
   const battleScreenData: BattleScreenData = useMemo(
     () => ({

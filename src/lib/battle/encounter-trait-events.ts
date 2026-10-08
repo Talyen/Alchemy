@@ -11,14 +11,11 @@ import { getBattleRng, rollPercent } from "@/lib/rng";
 import { SEPTIC_SPLIT_CHANCE_PERCENT } from "../game-constants";
 import { removePlayerArmor } from "./status-helpers";
 import { applyArmorLossAttackRetaliation } from "./player-defensive-reactions";
-import {
-  hasEnemyTrait,
-  isPlayerDefeated,
-  setEnemyStatus,
-  setFlag,
-  type BattleState,
-  type CombatTextEvent,
-} from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { hasEnemyTrait } from "./encounter-trait-state";
+import { isPlayerDefeated } from "./health-state";
+import { setEnemyStatus } from "./status-state";
+import { writeCombatFlag as setFlag } from "./action-context";
 
 export function regrowEnemyThorns(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (state.flags.legacyEnemyThornsReady) return state;

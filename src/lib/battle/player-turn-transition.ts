@@ -2,7 +2,7 @@ import { resetTurnFlags } from "./combat-flags";
 import { mergeCombatText } from "./combat-text-events";
 import { resolveSecondaryAction } from "./action-context";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
-import { hasEncounterBenefit, hasEnemyTrait } from "./types";
+import { hasEncounterBenefit, hasEnemyTrait } from "./encounter-trait-state";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { BattleCard } from "@/lib/game-data";
 import { processArcheryEchoes } from "./unique-card-effects";
@@ -18,7 +18,8 @@ import { finalizeCcSkipTurnDecrement, isCcControlled } from "./status-cc";
 import { decayHalvedStatus } from "./status-helpers";
 import { PER_TURN_UNIQUE_GEAR_RESET } from "./unique-gear-state";
 import { getBattleRng } from "@/lib/rng";
-import { isPlayerDefeated, deathsDoorGraceTurns, type BattleState, type CcState, type CombatTextEvent } from "./types";
+import type { BattleState, CcState, CombatTextEvent } from "./types";
+import { isPlayerDefeated, deathsDoorGraceTurns } from "./health-state";
 
 function decrementCcSkipTurns(cc: CcState): CcState {
   return {

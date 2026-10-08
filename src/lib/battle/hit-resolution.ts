@@ -14,7 +14,9 @@ import { applyCardHitReactions } from "./card-hit-reactions";
 import { applyHolyDamageRiders, applyNatureDamageRiders } from "./elemental-hit-reactions";
 import { decayArmorAfterDamage } from "./status-helpers";
 import { addForgeToPlayer, applyIronGuardReward, spendPlayerForgeForAttack } from "./status-player";
-import { addEnemyStatus, hasEncounterBenefit, type BattleState, type CombatTextEvent } from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { addEnemyStatus } from "./status-state";
+import { hasEncounterBenefit } from "./encounter-trait-state";
 import { applyPurgeGearRewards, purgeEnemyBenefits } from "./enemy-purge";
 import { drawKeywordCard } from "./draw";
 

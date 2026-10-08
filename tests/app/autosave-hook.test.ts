@@ -4,8 +4,7 @@ import { useAlchemyAutosaveFromStores } from "@/app/use-app-save-state";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setGold, setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 
-import { clearAlchemySaveData, setWritesDisabled } from "@/features/alchemy/shared/storage";
-import { configureSaveBackend, resetStorageIoForTests } from "@/features/alchemy/shared/storage/io";
+import { createSessionPersistence } from "@/features/alchemy/shared/storage";
 import { resetAllTestStores } from "../helpers/run-domain-store-test";
 import { deferred } from "../helpers/deferred";
 import type { SaveBackend } from "@/lib/platform-save-backend";
@@ -13,6 +12,8 @@ import { defaultGameSession } from "@/app/application-session";
 import * as runLifecycle from "@/features/alchemy/shared/stores/run-lifecycle";
 import { AUTOSAVE_RETRY_COOLDOWN_MS } from "@/lib/game-constants";
 import { createAlchemyAutosaveLifecycle } from "@/app/autosave-lifecycle";
+
+const persistence = createSessionPersistence(defaultGameSession);
 
 function changeGold(gold: number) {
   act(() => {
@@ -29,21 +30,18 @@ async function advance(ms: number) {
 function installBackend() {
   const write = vi.fn<SaveBackend["write"]>().mockResolvedValue({ ok: true });
   const writeSync = vi.fn<SaveBackend["writeSync"]>().mockReturnValue({ ok: true });
-  configureSaveBackend(
-    {
-      readCandidates: async () => ({ ok: true, candidates: [] }),
-      write,
-      writeSync,
-      clear: async () => ({ ok: true }),
-    },
-    defaultGameSession,
-  );
+  persistence.configure({
+    readCandidates: async () => ({ ok: true, candidates: [] }),
+    write,
+    writeSync,
+    clear: async () => ({ ok: true }),
+  });
   return { write, writeSync };
 }
 
 describe("useAlchemyAutosaveFromStores", () => {
   beforeEach(async () => {
-    await resetStorageIoForTests(defaultGameSession);
+    await persistence.resetForTests();
     resetAllTestStores();
     vi.spyOn(console, "error").mockImplementation(() => {});
     vi.useFakeTimers();
@@ -52,7 +50,7 @@ describe("useAlchemyAutosaveFromStores", () => {
 
   afterEach(async () => {
     cleanup();
-    await resetStorageIoForTests(defaultGameSession);
+    await persistence.resetForTests();
     window.localStorage.clear();
     vi.restoreAllMocks();
     vi.useRealTimers();
@@ -271,11 +269,11 @@ describe("useAlchemyAutosaveFromStores", () => {
     await advance(500);
     if (action === "clear")
       await act(async () => {
-        await clearAlchemySaveData(undefined, defaultGameSession);
+        await persistence.clear();
       });
     if (action === "protection")
       act(() => {
-        setWritesDisabled(true, defaultGameSession);
+        persistence.setWritesDisabled(true);
       });
     if (action === "disabled") hook.rerender({ enabled: false });
     await advance(20_000);
@@ -331,7 +329,7 @@ describe("useAlchemyAutosaveFromStores", () => {
     changeGold(10);
     await advance(500);
     await act(async () => {
-      const clearing = clearAlchemySaveData(undefined, defaultGameSession);
+      const clearing = persistence.clear();
       gate.resolve({ ok: true });
       await clearing;
     });

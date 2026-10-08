@@ -2,7 +2,8 @@ import { rollBattleChance } from "./chance-roll";
 import type { BattleCard, BattleCardEffect, DamageType } from "@/lib/game-data";
 import { applyDrawResult, drawFromState } from "./draw";
 import { gainManaWithCombatText } from "./player-rewards";
-import { damageEnemyHealth, type BattleState, type CombatTextEvent } from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { damageEnemyHealth } from "./health-state";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 
 /** Eligibility is captured before reactions; Health belongs to the actual target of this hit. */

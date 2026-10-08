@@ -1,4 +1,5 @@
 import { assertSessionOwnership } from "@/features/alchemy/shared/stores/session-capabilities";
+import { battlePresentation } from "@/app/battle-presentation";
 import { defaultGameSession } from "@/app/application-session";
 import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
 import { playUISound } from "@/lib/audio";
@@ -84,6 +85,7 @@ export function useBattleController({
   const battle = useMemo(() => createBattleCapabilities(defaultGameSession), []);
   const ctx = useBattleControllerContext({
     battle,
+    presentation: battlePresentation,
     screen,
     setHoveredCardId,
     onBattleVictory,
@@ -141,6 +143,7 @@ export function useBattleController({
   return useMemo(
     () => ({
       hasActiveBattle,
+      presentation: battlePresentation,
       refs,
       bindPlayback,
       screen,

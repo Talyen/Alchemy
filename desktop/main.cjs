@@ -29,6 +29,7 @@ const BACKGROUND_AUTOMATION =
   !app.isPackaged && TEST_PROFILE_ISOLATED && process.env.ALCHEMY_ELECTRON_BACKGROUND === "1";
 const { openWishlist } = require("./wishlist.cjs");
 const { registerOverlayPause } = require("./steam-overlay.cjs");
+const { resolveApplicationMenuTemplate } = require("./application-menu.cjs");
 const metadata = require(path.join(app.getAppPath(), "package.json"));
 const EDITION = resolveEdition(app.isPackaged ? metadata.gameEdition : process.env.ALCHEMY_EDITION);
 const EDITION_POLICY = editionPolicy(EDITION);
@@ -435,7 +436,11 @@ function createMainWindow() {
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
-  Menu.setApplicationMenu(null);
+  const menuTemplate = resolveApplicationMenuTemplate({
+    platform: process.platform,
+    isBackground: BACKGROUND_AUTOMATION,
+  });
+  Menu.setApplicationMenu(menuTemplate ? Menu.buildFromTemplate(menuTemplate) : null);
   void mainWindow.loadURL(USE_PACKAGED_RENDERER ? `${APP_ORIGIN}/` : DEV_SERVER_URL);
 }
 

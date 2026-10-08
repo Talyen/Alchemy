@@ -1,13 +1,15 @@
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { isCcControlled } from "./status-cc";
-import { battleSnapshot, hasEncounterBenefit } from "./types";
+import { battleSnapshot } from "./battle-snapshot";
+import { hasEncounterBenefit } from "./encounter-trait-state";
 import type { BattleResolutionContext } from "./types";
 import { processCompanionTurnStart } from "./companion";
 import { deliverPendingHandCards } from "./draw";
 import { applyHealingWithCombatText } from "./player-rewards";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
-import { isPlayerDefeated, type BattleState, type BattleSnapshot, type CombatTextEvent } from "./types";
+import type { BattleState, BattleSnapshot, CombatTextEvent } from "./types";
+import { isPlayerDefeated } from "./health-state";
 import { processEnemyAbility } from "./enemy-turn-attack";
 import { isFreezeActiveForAspect, processEnemyRegeneration, processEnemyTraits } from "./enemy-turn-traits";
 import { processEncounterTraitActionDamage, processEncounterTraitActionStart } from "./encounter-trait-events";

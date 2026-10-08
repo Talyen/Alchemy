@@ -8,20 +8,13 @@ import { mergeCombatText } from "./combat-text-events";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import type { DamageType, PlayerStatusId } from "@/lib/game-data";
-import {
-  blockAmountWithForge,
-  damageEnemyHealth,
-  decayEnemyArmor,
-  setFlag,
-  setPlayerStatus,
-  addPlayerStatus,
-  gainMana,
-  resolvePlayerHealing,
-  scaleGoldReward,
-  hasEnemyTrait,
-  type BattleState,
-  type CombatTextEvent,
-} from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { blockAmountWithForge, setPlayerStatus, addPlayerStatus } from "./status-state";
+import { damageEnemyHealth, resolvePlayerHealing } from "./health-state";
+import { decayEnemyArmor } from "./enemy-mitigation-state";
+import { writeCombatFlag as setFlag } from "./action-context";
+import { gainMana, scaleGoldReward } from "./resource-state";
+import { hasEnemyTrait } from "./encounter-trait-state";
 import { paceCombatMagnitude } from "./fight-pacing";
 
 function emitGainedStatusText(

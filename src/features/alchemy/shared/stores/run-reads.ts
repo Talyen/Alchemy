@@ -18,7 +18,7 @@ import type {
   UnlockedTalents,
 } from "@/lib/game-data";
 import { computeTalentEffects } from "@/lib/game-data";
-import { getRunPhase, type Destination, type RunPhase, type Screen } from "@/lib/routing";
+import { getRunPhase, type RunPhase, type Screen } from "@/lib/routing";
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { readGameplayState, useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
@@ -26,16 +26,6 @@ import type { RunSessionFields } from "./run-domain-types";
 import type { PermanentProgressFields } from "./run-state-init";
 import { pickActiveRunView, type ActiveRunReadView } from "./run-state-init";
 import { deepFreeze, deepFreezeInDev } from "./store-utils";
-
-export interface ContentNavigationRunPort {
-  contentSystemType: ContentSystemId;
-  lastOfferedDestinations: Destination[];
-  destinationRoundsSinceOffered: Partial<Record<Destination, number>>;
-}
-export interface ContentNavigationTalentPort {
-  talentXP: TalentXP;
-  talentEffects: Pick<TalentEffectManifest, "startGold">;
-}
 
 export type ShopSessionStateKey = "shopState" | "alchemistState" | "trinketShopState" | "equipmentShopState";
 
@@ -47,15 +37,6 @@ const SHOP_VISIT_BY_STATE_KEY = {
   trinketShopState: "trinket-shop",
   equipmentShopState: "equipment-shop",
 } as const satisfies Record<ShopSessionStateKey, "shop" | "alchemist" | "trinket-shop" | "equipment-shop">;
-
-function selectContentNavigationFields(state: GameplayState): ContentNavigationRunPort {
-  const r = state.run.activeRun;
-  return {
-    contentSystemType: r.contentSystemType,
-    lastOfferedDestinations: r.lastOfferedDestinations,
-    destinationRoundsSinceOffered: r.destinationRoundsSinceOffered,
-  };
-}
 
 export type { ActiveRunReadView } from "./run-state-init";
 export type RunProfileReadView = Readonly<PermanentProgressFields>;
@@ -127,18 +108,6 @@ export function useTalentEffects(): TalentEffectManifest {
   const unlockedTalents = useGameplayStateStore(useShallow((state) => state.runProfile.unlockedTalents));
   return useMemo(() => computeTalentEffects(unlockedTalents), [unlockedTalents]);
 }
-export function useContentNavigationRunPort(): ContentNavigationRunPort {
-  return useShallowRunSelector(selectContentNavigationFields);
-}
-export function useContentNavigationTalentPort(
-  talentEffects: TalentEffectManifest,
-  talentXP: TalentXP,
-): ContentNavigationTalentPort {
-  return useMemo(
-    () => ({ talentXP, talentEffects: { startGold: talentEffects.startGold } }),
-    [talentEffects, talentXP],
-  );
-}
 export function useActiveRunScreenValue(): Screen {
   return useGameplayStateStore((state) => state.run.navigation.screen);
 }
@@ -173,9 +142,6 @@ export function useForegroundResumeKind(): "battle" | "run" | null {
 
 export function useBondedCompanions() {
   return useGameplayStateStore(useShallow((state) => state.runProfile.bondedCompanions));
-}
-export function useContentSystemType(): ContentSystemId {
-  return useGameplayStateStore((state) => state.run.activeRun.contentSystemType);
 }
 export function useHomesteadProgressSlice() {
   return useShallowRunSelector((state) => ({

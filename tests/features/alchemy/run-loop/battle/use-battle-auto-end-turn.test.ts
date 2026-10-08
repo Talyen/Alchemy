@@ -4,7 +4,7 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useBattleAutoEndTurn } from "@/features/alchemy/run-loop/battle/use-battle-auto-end-turn";
 import { useBattlePresentationGateRef } from "@/features/alchemy/run-loop/battle/presentation/use-hand-presentation";
-import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import { battlePresentation } from "@/app/battle-presentation";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import type { BattleSnapshot } from "@/lib/battle";
 import { AUTO_END_TURN_DELAY_MS } from "@/lib/game-constants";
@@ -22,7 +22,7 @@ function useAutoEndTurnUnderTest(
   options: Omit<Parameters<typeof useBattleAutoEndTurn>[0], "presentationGateRef" | "scheduleAutoEndTurnRef">,
 ) {
   const scheduleAutoEndTurnRef = useRef<(state?: BattleSnapshot) => void>(() => {});
-  const presentationGateRef = useBattlePresentationGateRef(scheduleAutoEndTurnRef);
+  const presentationGateRef = useBattlePresentationGateRef(battlePresentation, scheduleAutoEndTurnRef);
   return useBattleAutoEndTurn({
     ...options,
     presentationGateRef,
@@ -123,7 +123,7 @@ describe("useBattleAutoEndTurn", () => {
 
   it("schedules end turn after a hand transfer completes", () => {
     const onEndTurn = vi.fn();
-    useBattlePresentationStore.setState({ cardTransferInProgress: true });
+    battlePresentation.setState({ cardTransferInProgress: true });
     renderHook(() =>
       useAutoEndTurnUnderTest({
         ...baseOptions,
@@ -138,7 +138,7 @@ describe("useBattleAutoEndTurn", () => {
     expect(onEndTurn).not.toHaveBeenCalled();
 
     act(() => {
-      useBattlePresentationStore.setState({ cardTransferInProgress: false });
+      battlePresentation.setState({ cardTransferInProgress: false });
       vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS);
     });
 
@@ -147,7 +147,7 @@ describe("useBattleAutoEndTurn", () => {
 
   it("reschedules when hidden-hand membership is replaced", () => {
     const onEndTurn = vi.fn();
-    useBattlePresentationStore.getState().setHiddenHandCardKeys(() => ["meteor-1"]);
+    battlePresentation.getState().setHiddenHandCardKeys(() => ["meteor-1"]);
     renderHook(() =>
       useAutoEndTurnUnderTest({
         ...baseOptions,
@@ -162,7 +162,7 @@ describe("useBattleAutoEndTurn", () => {
     expect(onEndTurn).not.toHaveBeenCalled();
 
     act(() => {
-      useBattlePresentationStore.getState().setHiddenHandCardKeys(() => []);
+      battlePresentation.getState().setHiddenHandCardKeys(() => []);
       vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS);
     });
 
@@ -197,7 +197,7 @@ describe("useBattleAutoEndTurn", () => {
 
   it("schedules end turn despite orphaned hidden-hand keys", () => {
     const onEndTurn = vi.fn();
-    useBattlePresentationStore.setState({ hiddenHandCardKeys: ["slash-1"] });
+    battlePresentation.setState({ hiddenHandCardKeys: ["slash-1"] });
     renderHook(() =>
       useAutoEndTurnUnderTest({
         ...baseOptions,

@@ -11,7 +11,7 @@ import {
   shouldBlockPreventStatusBuildup,
 } from "./status-player";
 import type { BattleState, CombatTextEvent, CombatTextStat } from "./types";
-import { isPlayerDefeated, playerHealthLostToDamage } from "./types/state-helpers";
+import { isPlayerDefeated, playerHealthLostToDamage } from "./health-state";
 
 function applyVanguardCrestAfterBlock(
   state: BattleState,

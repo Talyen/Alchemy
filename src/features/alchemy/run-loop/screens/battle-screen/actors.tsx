@@ -1,3 +1,4 @@
+import type { BattlePresentationStore } from "../../battle/battle-presentation-store";
 import { isPlayerDefeated, getBattleCompanionDamageModifiers } from "@/lib/battle";
 import { BATTLE_ACTOR_TOP } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
@@ -18,12 +19,14 @@ import { getActiveCcKeyword } from "@/features/alchemy/shared/utils";
 import type { BattleFeedbackProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
 
 export function BattleActors({
+  presentation,
   view,
   feedback,
   refs,
   onInspectEnemy,
   enemyInspectionOpen,
 }: {
+  presentation: BattlePresentationStore;
   view: RequiredBattleViewProps;
   feedback: BattleFeedbackProps;
   refs: BattleRefsProps;
@@ -53,6 +56,7 @@ export function BattleActors({
           )}
         >
           <ShakingArtPanel
+            presentation={presentation}
             side="player"
             title={playerName}
             art={heroArt}
@@ -72,6 +76,7 @@ export function BattleActors({
               battleState.activeCompanion ? (
                 <div className={battleCompanionCornerClass}>
                   <ShakingCompanionPanel
+                    presentation={presentation}
                     companion={battleState.activeCompanion}
                     ccKeyword={playerCcKeyword}
                     turnActive={isPlayerTurn}
@@ -88,6 +93,7 @@ export function BattleActors({
 
       <div className={battleActorEnemyCellClass}>
         <ShakingArtPanel
+          presentation={presentation}
           side="enemy"
           title={battleState.currentEnemy.title}
           art={battleState.currentEnemy.art}

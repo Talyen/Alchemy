@@ -1,7 +1,8 @@
 import { beneficialEnemyStatusIds } from "@/lib/game-data";
 import { applyBlockReward } from "./status-player";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
-import { setEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { setEnemyStatus } from "./status-state";
 
 export function purgeEnemyBenefits(
   state: BattleState,

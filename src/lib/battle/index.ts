@@ -19,11 +19,14 @@ export { endPlayerTurn, recoverLegacyEnemyPhase } from "./enemy-turn";
 export { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "./enemy-turn-traits";
 export { getActiveCcKeyword, isCcControlled, type ActiveCcKeyword } from "./status-cc";
 export { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
-export * from "./types/state-types";
+export type * from "./types/state-types";
+export { battleSnapshot } from "./battle-snapshot";
+export { isStunFreezeBuildupBlocked } from "./crowd-control-policy";
+export { EMPTY_ENEMY_MITIGATION } from "./enemy-mitigation-state";
 // Barrel surface: only symbols consumed through the barrel live here.
-// Battle internals import state-helpers relatively; keep this list to what
-// barrel consumers actually use (knip entry-exports enforced).
-export { addEnemyStatus, addPlayerStatus, applyPlayerCombatDamage, isPlayerDefeated } from "./types/state-helpers";
+// Internal callers import mechanics from their domain owners, never the type boundary.
+export { addEnemyStatus, addPlayerStatus } from "./status-state";
+export { applyPlayerCombatDamage, isPlayerDefeated } from "./health-state";
 export { chooseWishCard } from "./wish";
 
 export { createUniqueGearBattleState } from "./unique-gear-state";

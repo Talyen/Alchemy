@@ -1,8 +1,9 @@
 import { rollBattleChance } from "./chance-roll";
 import { applyBlockReward, applyCardHealing } from "./status-player";
-import { hasEncounterBenefit } from "./types";
+import { hasEncounterBenefit } from "./encounter-trait-state";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
-import { isPlayerDefeated, resolvePlayerHealing, type BattleState, type CombatTextEvent } from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { isPlayerDefeated, resolvePlayerHealing } from "./health-state";
 import {
   addGoldWithCombatText,
   addPlayerStatusWithCombatText,

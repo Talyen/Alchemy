@@ -6,7 +6,7 @@ import type { AutoplayCardControl } from "@/features/alchemy/run-loop/battle/bat
 import type { BattleCard } from "@/lib/game-data";
 import { useBattleAutoplay } from "@/features/alchemy/run-loop/battle/use-battle-autoplay";
 import { useBattlePresentationGateRef } from "@/features/alchemy/run-loop/battle/presentation/use-hand-presentation";
-import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import { battlePresentation } from "@/app/battle-presentation";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { AUTOPLAY_POST_PLAY_DELAY_MS, AUTOPLAY_RETRY_DELAY_MS } from "@/lib/game-constants";
 import { makeOpenBattle, playableCard } from "./open-battle-fixture";
@@ -21,7 +21,7 @@ function useAutoplayUnderTest(
   const onGateChangeRef = useRef(() => {
     wakeRef.current?.();
   });
-  const presentationGateRef = useBattlePresentationGateRef(onGateChangeRef);
+  const presentationGateRef = useBattlePresentationGateRef(battlePresentation, onGateChangeRef);
   const { playWish = () => false, ...rest } = options;
   useBattleAutoplay({ ...rest, playWish, presentationGateRef, wakeRef });
 }
@@ -103,9 +103,9 @@ describe("useBattleAutoplay", () => {
     expect(previewControl?.canCommit()).toBe(false);
     rerender(options);
     expect(previewControl?.canCommit()).toBe(true);
-    act(() => useBattlePresentationStore.setState({ cardTransferInProgress: true }));
+    act(() => battlePresentation.setState({ cardTransferInProgress: true }));
     expect(previewControl?.canCommit()).toBe(false);
-    act(() => useBattlePresentationStore.setState({ cardTransferInProgress: false }));
+    act(() => battlePresentation.setState({ cardTransferInProgress: false }));
     rerender({ ...options, battleState: { ...options.battleState, wishOptions: mode === "wish" ? null : [wish] } });
     expect(previewControl?.canCommit()).toBe(false);
     rerender(options);
@@ -174,7 +174,7 @@ describe("useBattleAutoplay", () => {
 
   it("does not play while blocked by hidden cards", () => {
     const playCard = vi.fn(() => true);
-    useBattlePresentationStore.setState({ hiddenHandCardKeys: ["slash-1"] });
+    battlePresentation.setState({ hiddenHandCardKeys: ["slash-1"] });
     renderHook(() =>
       useAutoplayUnderTest({
         enabled: true,
@@ -196,7 +196,7 @@ describe("useBattleAutoplay", () => {
 
   it("plays immediately when a blocking transfer completes", async () => {
     const playCard = vi.fn(() => true);
-    useBattlePresentationStore.setState({ cardTransferInProgress: true });
+    battlePresentation.setState({ cardTransferInProgress: true });
     renderHook(() =>
       useAutoplayUnderTest({
         enabled: true,
@@ -215,7 +215,7 @@ describe("useBattleAutoplay", () => {
     expect(playCard).not.toHaveBeenCalled();
 
     await act(async () => {
-      useBattlePresentationStore.setState({ cardTransferInProgress: false });
+      battlePresentation.setState({ cardTransferInProgress: false });
       await Promise.resolve();
     });
 
@@ -237,12 +237,12 @@ describe("useBattleAutoplay", () => {
     );
     await act(async () => {
       await vi.advanceTimersByTimeAsync(100);
-      useBattlePresentationStore.getState().setHiddenHandCardKeys(() => ["orphaned-card"]);
+      battlePresentation.getState().setHiddenHandCardKeys(() => ["orphaned-card"]);
       await vi.advanceTimersByTimeAsync(0);
     });
     expect(playCard).toHaveBeenCalledOnce();
     await act(async () => {
-      useBattlePresentationStore.getState().setHiddenHandCardKeys(() => []);
+      battlePresentation.getState().setHiddenHandCardKeys(() => []);
       await vi.advanceTimersByTimeAsync(AUTOPLAY_POST_PLAY_DELAY_MS - 101);
     });
     expect(playCard).toHaveBeenCalledOnce();

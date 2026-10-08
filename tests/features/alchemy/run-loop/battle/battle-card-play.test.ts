@@ -21,7 +21,7 @@ import { makeTestCard } from "../../../../fixtures/battle";
 import { playBattleEvent, playCardSound, playUISound } from "@/lib/audio";
 import { AUTOPLAY_PREVIEW_MS } from "@/lib/game-constants";
 import { logError } from "@/lib/error-logger";
-import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import { battlePresentation } from "@/app/battle-presentation";
 
 vi.mock("@/lib/error-logger", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/error-logger")>()),
@@ -89,7 +89,8 @@ function makeDeps(overrides: Partial<BattleControllerContext> = {}) {
     setHoveredCardId: vi.fn(),
     measureElementRect: () => null,
     measureVisualCardRect: () => null,
-    getPresentation: () => useBattlePresentationStore.getState(),
+    presentation: battlePresentation,
+    getPresentation: battlePresentation.getState,
     ...overrides,
   };
 
@@ -150,10 +151,10 @@ describe("createBattleCardPlay", () => {
     const state = makeTestBattleState({ hand: [card], mana: 0 });
     givenBattle(state);
     const shown = battleSnapshot({ ...state, mana: 2 });
-    useBattlePresentationStore.getState().setDisplayedBattle(shown);
+    battlePresentation.getState().setDisplayedBattle(shown);
     const { ctx, session, transferDeps } = makeDeps();
     clickCard(createBattleCardPlay(ctx, session, transferDeps).handleCardClick, card, 0);
-    expect(useBattlePresentationStore.getState().displayedBattle).toBe(shown);
+    expect(battlePresentation.getState().displayedBattle).toBe(shown);
     expect(readBattle(defaultGameSession).battleState.mana).toBe(0);
   });
 
@@ -232,7 +233,7 @@ describe("createBattleCardPlay", () => {
     expect(playBattleEvent).not.toHaveBeenCalled();
     expect(playUISound).not.toHaveBeenCalled();
     expect(logError).not.toHaveBeenCalled();
-    expect(useBattlePresentationStore.getState().playerAttackToken).toBe(1);
+    expect(battlePresentation.getState().playerAttackToken).toBe(1);
   });
 
   it("rejects stale manual and autoplay callbacks while inspecting", async () => {
@@ -268,7 +269,7 @@ describe("createBattleCardPlay", () => {
     expect(ctx.playback.scheduleAutoEndTurn).not.toHaveBeenCalled();
     expect(awardCardXP).not.toHaveBeenCalled();
     expect(playUISound).toHaveBeenCalledWith("error");
-    expect(useBattlePresentationStore.getState().playerAttackToken).toBe(0);
+    expect(battlePresentation.getState().playerAttackToken).toBe(0);
   });
 
   it("rejects plays when the player is defeated", () => {
@@ -305,7 +306,7 @@ describe("createBattleCardPlay", () => {
       enemyHealth: 30,
     });
     givenBattle(state);
-    useBattlePresentationStore.getState().setCardTransferInProgress(true);
+    battlePresentation.getState().setCardTransferInProgress(true);
 
     const { ctx, session, transferDeps, awardCardXP } = makeDeps();
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
@@ -384,8 +385,8 @@ describe("createBattleCardPlay", () => {
       enemyHealth: 30,
     });
     givenBattle(state);
-    useBattlePresentationStore.getState().setCardTransferInProgress(true);
-    useBattlePresentationStore.getState().setHiddenHandCardKeys(() => ["slash-6"]);
+    battlePresentation.getState().setCardTransferInProgress(true);
+    battlePresentation.getState().setHiddenHandCardKeys(() => ["slash-6"]);
 
     const { ctx, session, transferDeps, awardCardXP } = makeDeps();
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
@@ -474,7 +475,7 @@ describe("createBattleCardPlay", () => {
     expect(request.newState.hand.find((card) => card.id === "slash")).toBeDefined();
     const drawn = readBattle(defaultGameSession).battleState.hand.find((card) => card.id === "slash");
     expect(drawn).toBeDefined();
-    expect(useBattlePresentationStore.getState().playerAttackToken).toBe(0);
+    expect(battlePresentation.getState().playerAttackToken).toBe(0);
   });
 
   it("flashes a hover preview before autoplaying", async () => {
@@ -717,7 +718,7 @@ describe("createBattleCardPlay", () => {
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...guard, uid: 8 }, 0);
 
-    expect(useBattlePresentationStore.getState().playerAttackToken).toBe(0);
-    expect(useBattlePresentationStore.getState().playerCastToken).toBe(1);
+    expect(battlePresentation.getState().playerAttackToken).toBe(0);
+    expect(battlePresentation.getState().playerCastToken).toBe(1);
   });
 });

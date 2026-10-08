@@ -1,5 +1,8 @@
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
-import { isPlayerDefeated, reduceEnemyArmor, setFlag, type BattleState, type CombatTextEvent } from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { isPlayerDefeated } from "./health-state";
+import { reduceEnemyArmor } from "./enemy-mitigation-state";
+import { writeCombatFlag as setFlag } from "./action-context";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { mergeCombatText } from "./combat-text-events";
 export function canInitiateElementalReaction(state: BattleState, context?: CardEffectResolutionContext): boolean {

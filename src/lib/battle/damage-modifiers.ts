@@ -1,3 +1,5 @@
+import { PERCENT_DENOMINATOR } from "../game-constants";
+import { applyPercentReduction, halveRounded } from "./amount-helpers";
 import type { DamageType, TalentEffectManifest } from "@/lib/game-data";
 import type { GearEffectManifest } from "@/lib/gear";
 import type { BattleSnapshot } from "./types/state-types";
@@ -86,4 +88,22 @@ export function receivesHalfDamage(talents: TalentEffectManifest, type: string |
 export function gearResistancePercent(gear: GearEffectManifest, type: string | undefined): number {
   const key = sources(type)?.gearResistance;
   return key ? gear[key] : 0;
+}
+
+export function scaleReceivedPlayerDamage(
+  damage: number,
+  talentEffects: BattleSnapshot["talentEffects"],
+  damageType: string | undefined,
+): number {
+  if (damage <= 0) return damage;
+  return receivesHalfDamage(talentEffects, damageType) ? halveRounded(damage) : damage;
+}
+
+export function applyGearDamageResistance(
+  damage: number,
+  damageType: string | undefined,
+  gear: GearEffectManifest,
+): number {
+  const resist = gearResistancePercent(gear, damageType);
+  return applyPercentReduction(damage, resist, PERCENT_DENOMINATOR);
 }

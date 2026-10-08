@@ -229,7 +229,11 @@ export function relatedLocations(root, selectedPaths, limit = 6) {
       return relative && known.has(relative) ? [relative] : [];
     });
     dependencies.set(file, resolved);
-    for (const target of resolved) consumers.set(target, [...(consumers.get(target) ?? []), file]);
+    for (const target of resolved) {
+      const list = consumers.get(target);
+      if (list) list.push(file);
+      else consumers.set(target, [file]);
+    }
   }
   const selected = selectedPaths.map((file) => toRepoRelative(root, file));
   const seeds = new Set(
@@ -239,12 +243,15 @@ export function relatedLocations(root, selectedPaths, limit = 6) {
   let frontier = [...seeds];
   for (let distance = 1; distance <= 2; distance++) {
     const next = [];
-    for (const file of frontier)
-      for (const consumer of consumers.get(file) ?? []) {
+    for (const file of frontier) {
+      const list = consumers.get(file);
+      if (!list) continue;
+      for (const consumer of list) {
         if (seeds.has(consumer) || distances.has(consumer)) continue;
         distances.set(consumer, distance);
         next.push(consumer);
       }
+    }
     frontier = next;
   }
   const ranked = [...distances].sort(([a, da], [b, db]) => da - db || a.localeCompare(b));

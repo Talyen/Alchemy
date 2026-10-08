@@ -1,7 +1,7 @@
 import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 import { CombatTextLayer } from "@/features/alchemy/run-loop/battle/presentation/combat-text-layer";
-import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import { battlePresentation } from "@/app/battle-presentation";
 import type { BattleRefs, CombatTextBurst } from "@/features/alchemy/shared/types";
 
 vi.mock("@/features/alchemy/run-loop/battle/presentation/ui/combat-text", () => ({
@@ -49,12 +49,12 @@ describe("CombatTextLayer geometry", () => {
       drawPileRef: { current: null },
       discardPileRef: { current: null },
     };
-    useBattlePresentationStore.setState({ floatingCombatBursts: [burst("player"), burst("enemy")] });
+    battlePresentation.setState({ floatingCombatBursts: [burst("player"), burst("enemy")] });
   });
 
   afterEach(() => {
     cleanup();
-    useBattlePresentationStore.getState().resetPresentation();
+    battlePresentation.getState().resetPresentation();
     scene.remove();
     frames.clear();
     vi.unstubAllGlobals();
@@ -67,7 +67,7 @@ describe("CombatTextLayer geometry", () => {
   }
 
   it("keeps both overlays pinned through movement and portrait replacement using one scene read per frame", () => {
-    const { container } = render(<CombatTextLayer refs={refs} />);
+    const { container } = render(<CombatTextLayer presentation={battlePresentation} refs={refs} />);
     const layers = container.querySelectorAll<HTMLDivElement>('[data-testid="combat-text-layer"]');
     const playerLayer = layers[0]!;
     const enemyLayer = layers[1]!;
@@ -99,15 +99,15 @@ describe("CombatTextLayer geometry", () => {
     expect(sceneBounds).toHaveBeenCalledTimes(2);
     expect(frames.size).toBe(1);
 
-    act(() => useBattlePresentationStore.setState({ floatingCombatBursts: [] }));
+    act(() => battlePresentation.setState({ floatingCombatBursts: [] }));
     expect(container.querySelector('[data-testid="combat-text-layer"]')).toBeNull();
     expect(frames.size).toBe(0);
   });
 
   it("keeps an unmeasurable portrait hidden and begins tracking when its ref becomes available", () => {
     refs.playerPanelRef.current = null;
-    useBattlePresentationStore.setState({ floatingCombatBursts: [burst("player")] });
-    const { container, unmount } = render(<CombatTextLayer refs={refs} />);
+    battlePresentation.setState({ floatingCombatBursts: [burst("player")] });
+    const { container, unmount } = render(<CombatTextLayer presentation={battlePresentation} refs={refs} />);
     const layer = container.querySelector<HTMLDivElement>('[data-testid="combat-text-layer"]')!;
     expect(layer.style.visibility).toBe("hidden");
     const player = document.createElement("div");

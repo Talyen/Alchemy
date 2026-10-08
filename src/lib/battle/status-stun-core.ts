@@ -1,5 +1,8 @@
 import { recordEnemyAbilityActivation } from "./battle-metrics";
-import { hasEnemyTrait, setFlag, setEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { hasEnemyTrait } from "./encounter-trait-state";
+import { writeCombatFlag as setFlag } from "./action-context";
+import { setEnemyStatus } from "./status-state";
 import { addGoldWithCombatText, applyHitEpilogue } from "./player-rewards";
 import { applyLuckyCloverGold, applyNatureGoldReward, applyNatureManaRefund } from "./bonus-effects";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage } from "./scaled-damage";

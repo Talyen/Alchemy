@@ -32,6 +32,7 @@ import {
   useActiveRunScreenValue,
   useAutosaveAllowed,
   useBondedCompanions,
+  useHomesteadEffects,
   useRunSessionNavigationSlice,
   useTalentEffects,
 } from "@/features/alchemy/shared/stores/run-reads";
@@ -98,7 +99,7 @@ function AppMainContent({
 
   const dev = useDevShortcuts(run);
 
-  const homesteadEffects = run.homesteadEffects;
+  const homesteadEffects = useHomesteadEffects();
   const talentEffects = useTalentEffects();
   const homesteadBondedCompanions = useBondedCompanions();
   const cardDescriptionContext = useMemo(

@@ -13,7 +13,7 @@ import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { createBattleStartState } from "@/lib/battle/battle-setup";
 import { getBattleCompanionDamageModifiers } from "@/lib/battle/companion-scaling";
-import { setEnemyStatus } from "@/lib/battle/types";
+import { setEnemyStatus } from "@/lib/battle/status-state";
 import { makeTestCard, regressionBattle as battle } from "../../fixtures/battle";
 
 describe("card and turn reaction ordering", () => {

@@ -1,10 +1,10 @@
 import { afterEach, beforeEach } from "vitest";
-import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import { battlePresentation } from "@/app/battle-presentation";
 import { createRunRngState } from "@/lib/rng";
 import { resetRunBattleSlice, resetRunProgressSlice, setRunProgress } from "../../../../helpers/run-domain-store-test";
 
 export function resetBattlePresentationAndRun(): void {
-  useBattlePresentationStore.setState(useBattlePresentationStore.getInitialState());
+  battlePresentation.getState().resetPresentation();
   resetRunBattleSlice();
   resetRunProgressSlice();
   setRunProgress({ rng: createRunRngState(() => 0.5) });

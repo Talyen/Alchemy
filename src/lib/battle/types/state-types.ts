@@ -37,20 +37,10 @@ export interface EnemyMitigation {
   block: number;
 }
 
-export const EMPTY_ENEMY_MITIGATION: EnemyMitigation = { armor: 0, forge: 0, block: 0 };
-
 export interface CcState {
   stunSkipTurns: number;
   freezeSkipTurns: number;
   cooldown: number;
-}
-
-function hasActiveCc(cc: CcState): boolean {
-  return cc.stunSkipTurns > 0 || cc.freezeSkipTurns > 0;
-}
-
-export function isStunFreezeBuildupBlocked(cc: CcState): boolean {
-  return hasActiveCc(cc) || cc.cooldown > 0;
 }
 
 export type { CombatFlags } from "../combat-flags";
@@ -175,9 +165,3 @@ export interface BattleResolutionContext {
 }
 
 export interface BattleState extends BattleSnapshot, BattleResolutionContext {}
-
-export function battleSnapshot(state: BattleSnapshot & Partial<BattleResolutionContext>): BattleSnapshot {
-  // eslint-disable-next-line no-restricted-syntax -- Serialization removes the execution dependency without drawing it.
-  const { rng: _rng, action: _action, ...snapshot } = state;
-  return snapshot;
-}

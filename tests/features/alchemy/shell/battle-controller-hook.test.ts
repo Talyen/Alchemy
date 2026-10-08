@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
-import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import { battlePresentation } from "@/app/battle-presentation";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
@@ -67,12 +67,12 @@ describe("useBattleController", () => {
     act(() => {
       result.current.startBattle();
     });
-    expect(useBattlePresentationStore.getState().openingDrawPending).toBe(true);
+    expect(battlePresentation.getState().openingDrawPending).toBe(true);
     expect(result.current.isCardPlayInProgress()).toBe(true);
     act(() => {
       rerender({ screen: ROUTE_SCREENS.BATTLE });
     });
-    expect(useBattlePresentationStore.getState().openingDrawPending).toBe(true);
+    expect(battlePresentation.getState().openingDrawPending).toBe(true);
     expect(result.current.isCardPlayInProgress()).toBe(true);
   });
 
@@ -167,10 +167,8 @@ describe("useBattleController", () => {
 
     const { rerender } = renderBattleController(ROUTE_SCREENS.BATTLE);
 
-    useBattlePresentationStore
-      .getState()
-      .showCombatTexts([{ target: "enemy", kind: "damage", stat: "health", amount: 5 }]);
-    useBattlePresentationStore.getState().spawnCardGhost({
+    battlePresentation.getState().showCombatTexts([{ target: "enemy", kind: "damage", stat: "health", amount: 5 }]);
+    battlePresentation.getState().spawnCardGhost({
       art: "test.webp",
       rect: { x: 0, y: 0, width: 10, height: 10 },
       rotation: 0,
@@ -178,15 +176,15 @@ describe("useBattleController", () => {
       variant: "activate",
     });
     await vi.advanceTimersByTimeAsync(0);
-    expect(useBattlePresentationStore.getState().floatingCombatBursts).toHaveLength(1);
-    expect(useBattlePresentationStore.getState().cardGhosts).toHaveLength(1);
+    expect(battlePresentation.getState().floatingCombatBursts).toHaveLength(1);
+    expect(battlePresentation.getState().cardGhosts).toHaveLength(1);
 
     act(() => {
       rerender({ screen: ROUTE_SCREENS.COLLECTION });
     });
 
-    expect(useBattlePresentationStore.getState().floatingCombatBursts).toEqual([]);
-    expect(useBattlePresentationStore.getState().cardGhosts).toEqual([]);
+    expect(battlePresentation.getState().floatingCombatBursts).toEqual([]);
+    expect(battlePresentation.getState().cardGhosts).toEqual([]);
     vi.useRealTimers();
   });
 });

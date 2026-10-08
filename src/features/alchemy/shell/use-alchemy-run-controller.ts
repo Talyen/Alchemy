@@ -166,7 +166,6 @@ export function useAlchemyRunController(): AlchemyRunCommands {
   return {
     screen,
     navigationPending,
-    homesteadEffects,
     routeCommands,
     unlockAllTalents: runActions.unlockTalentsForDevelopment,
     returnToBattle: nav.returnToBattle,

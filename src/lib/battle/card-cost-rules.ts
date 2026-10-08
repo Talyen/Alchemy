@@ -1,10 +1,10 @@
 import { readCombatFlag } from "./action-context";
 import { cardHasDamageType, cardHasKeyword, isNatureCard } from "./card-classification";
-import { hasEncounterBenefit } from "./types";
+import { hasEncounterBenefit } from "./encounter-trait-state";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { UNIQUE_GEAR_COMBAT } from "../game-constants";
 import type { BattleCard } from "@/lib/game-data";
-import { type BattleSnapshot, type CombatFlags } from "./types";
+import type { BattleSnapshot, CombatFlags } from "./types";
 
 type BooleanCombatFlag = {
   [K in keyof CombatFlags]: CombatFlags[K] extends boolean ? K : never;

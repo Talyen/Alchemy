@@ -1,5 +1,6 @@
 import { HALF_DIVISOR } from "../game-constants";
-import { getEnemyTraitSet, hasEnemyTrait, type BattleState } from "./types";
+import type { BattleState } from "./types";
+import { getEnemyTraitSet, hasEnemyTrait } from "./encounter-trait-state";
 
 /** Scratch facts shared by the ordered effects and follow-ups of one ability. */
 export interface EnemyAbilityContext {

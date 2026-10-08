@@ -1,6 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { installDesktopApi } from "../helpers/desktop-save-mock-helper";
-import { initializeSteam, isDesktop, quitDesktopApp, setDisplayMode, setSteamRichPresence } from "@/lib/platform";
+import {
+  initializeSteam,
+  isDesktop,
+  openFullGameWishlist,
+  quitDesktopApp,
+  setDisplayMode,
+  setSteamRichPresence,
+} from "@/lib/platform";
 
 afterEach(() => {
   window.alchemyDesktop = undefined;
@@ -33,7 +40,17 @@ describe("desktop runtime", () => {
   it("uses harmless browser fallbacks", async () => {
     await expect(setDisplayMode("windowed")).resolves.toBeUndefined();
     expect(() => quitDesktopApp()).not.toThrow();
+    expect(() => openFullGameWishlist()).not.toThrow();
     await expect(setSteamRichPresence("status", "Playing")).resolves.toBe(false);
+  });
+
+  it("delegates wishlist opening when supported by the desktop bridge", () => {
+    const openWishlist = vi.fn().mockResolvedValue(true);
+    installDesktopApi({
+      overrides: { openWishlist },
+    });
+    openFullGameWishlist();
+    expect(openWishlist).toHaveBeenCalledOnce();
   });
 
   it("returns Steam capabilities instead of mutating shared state", async () => {

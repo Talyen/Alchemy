@@ -10,7 +10,7 @@ import {
 } from "@/lib/battle";
 import { applyGearCcPhysicalDamage } from "@/lib/battle/scaled-damage";
 import { computeEffectiveCost } from "@/lib/battle/card-cost-rules";
-import { addEnemyStatus } from "@/lib/battle/types";
+import { addEnemyStatus } from "@/lib/battle/status-state";
 import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/follow-up-hit-resolution";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { applyWishEffect, chooseWishCard } from "@/lib/battle/wish";

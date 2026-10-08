@@ -2,7 +2,9 @@ import { rollBattleChance } from "./chance-roll";
 import { FREE_CARD_SENTINEL } from "../game-constants";
 import { drawFromState, applyDrawResult } from "./draw";
 import { addGoldWithCombatText, gainManaWithCombatText } from "./player-rewards";
-import { setFlag, stripEnemyArmor, stripEnemyBlock, type BattleState, type CombatTextEvent } from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { writeCombatFlag as setFlag } from "./action-context";
+import { stripEnemyArmor, stripEnemyBlock } from "./enemy-mitigation-state";
 import { addForgeToPlayer, applyBlockReward } from "./status-player";
 import { mergeCombatText } from "./combat-text-events";
 

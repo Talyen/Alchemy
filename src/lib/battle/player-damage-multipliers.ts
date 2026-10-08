@@ -10,7 +10,8 @@ import {
 import { cardHasKeyword } from "./card-classification";
 import { gearFrozenDamageMultiplier } from "./scaled-damage";
 import { getBurnBonusToBleedingMultiplier, getEnemyDamageMultiplier } from "./status-helpers";
-import { setFlag, type BattleState } from "./types";
+import type { BattleState } from "./types";
+import { writeCombatFlag as setFlag } from "./action-context";
 
 function isLikeDamage(damageType: DamageType, target: "burn" | "bleed", state: BattleState): boolean {
   return (

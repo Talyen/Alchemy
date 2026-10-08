@@ -5,7 +5,8 @@ import {
   resolveDeathsDoorGraceExpiry,
 } from "@/lib/battle/player-turn-transition";
 import { checkHealthThresholds } from "@/lib/battle/status-player";
-import { getEnemyTraitSet, hasEnemyTrait, type CombatTextEvent } from "@/lib/battle/types";
+import type { CombatTextEvent } from "@/lib/battle/types";
+import { getEnemyTraitSet, hasEnemyTrait } from "@/lib/battle/encounter-trait-state";
 import { CARDS_PER_TURN } from "@/lib/game-constants";
 import { makeTestCardWithId, patchBattleState } from "../../fixtures/battle";
 

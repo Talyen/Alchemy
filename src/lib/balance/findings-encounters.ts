@@ -192,9 +192,9 @@ function collectMatchupFindings(model: BalanceReportModel): BalanceFinding[] {
   const findings: BalanceFinding[] = [];
   const byEnemy = new Map<string, ClassMatchupRow[]>();
   for (const row of model.classMatchups) {
-    const list = byEnemy.get(row.enemyId) ?? [];
-    list.push(row);
-    byEnemy.set(row.enemyId, list);
+    const list = byEnemy.get(row.enemyId);
+    if (list) list.push(row);
+    else byEnemy.set(row.enemyId, [row]);
   }
 
   for (const [enemyId, rows] of byEnemy) {

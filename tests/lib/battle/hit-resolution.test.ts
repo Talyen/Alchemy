@@ -3,7 +3,8 @@ import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import { defaultTalentEffects } from "@/lib/battle";
-import { setEnemyStatus, type CombatTextEvent } from "@/lib/battle/types";
+import type { CombatTextEvent } from "@/lib/battle/types";
+import { setEnemyStatus } from "@/lib/battle/status-state";
 import { dealDamage, makeCombatTexts, makeTestCard, patchBattleState, seededRng } from "../../fixtures/battle";
 import {
   defaultPlayerStatusValues,

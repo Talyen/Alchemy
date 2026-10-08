@@ -11,7 +11,7 @@ import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import { companionLibrary, enemyById, type BattleCard, type BestiaryEntry } from "@/lib/game-data";
 import { resolvePendingBattleReactions } from "@/lib/battle/enemy-attack-damage";
-import { damageEnemyHealth } from "@/lib/battle/types";
+import { damageEnemyHealth } from "@/lib/battle/health-state";
 import { normalizePersistedBattleState } from "@/lib/validation/normalize-persisted-battle-state";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { processEncounterTraitHealthThreshold } from "@/lib/battle/encounter-trait-health-threshold";

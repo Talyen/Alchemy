@@ -1,6 +1,6 @@
 import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import { recordEnemyAbilityHit, type EnemyAbilityContext } from "./enemy-ability-context";
-import { type DamageType, type EnemyAbilityDamageEffect } from "@/lib/game-data";
+import type { DamageType, EnemyAbilityDamageEffect } from "@/lib/game-data";
 import { getBattleRng, pickRandom } from "@/lib/rng";
 import {
   BANDIT_FIRST_HIT_MULTIPLIER,
@@ -20,7 +20,10 @@ import { mergeCombatText } from "./combat-text-events";
 import { resolveEnemyAttackHit } from "./enemy-attack-hit";
 import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-threshold";
 import { scaleByRoomMultiplier } from "./enemy-turn-traits";
-import { hasEnemyTrait, isPlayerDefeated, setFlag, type BattleState, type CombatTextEvent } from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { hasEnemyTrait } from "./encounter-trait-state";
+import { isPlayerDefeated } from "./health-state";
+import { writeCombatFlag as setFlag } from "./action-context";
 
 function applyHitRewards(
   state: BattleState,

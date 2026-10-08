@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { playBattleOpeningDraw } from "@/features/alchemy/run-loop/battle/use-battle-opening-draw";
 import { defaultBattleState } from "@/lib/battle";
-import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import { battlePresentation } from "@/app/battle-presentation";
 import { makeTestCardWithId } from "../../../../fixtures/battle";
 import { makeDrawSequenceDeps } from "./turn-orchestration-fixture";
 import { installImmediateRafForTests } from "./battle-test-reset";
@@ -21,8 +21,8 @@ describe("opening hand playback", () => {
   installImmediateRafForTests();
   beforeEach(() => {
     domain = { battleState: initial };
-    useBattlePresentationStore.getState().resetPresentation();
-    useBattlePresentationStore.getState().setOpeningDrawPending(true);
+    battlePresentation.getState().resetPresentation();
+    battlePresentation.getState().setOpeningDrawPending(true);
     scheduleAutoEndTurn.mockClear();
   });
 
@@ -39,34 +39,18 @@ describe("opening hand playback", () => {
     const ctx = {
       battle: { read: () => ({ ...createBattleCapabilities(defaultGameSession).read(), ...domain }) },
       playback: { id: 3, completeAction: vi.fn(), scheduleAutoEndTurn },
+      getPresentation: battlePresentation.getState,
     };
     const transfers = { getDrawSequenceDeps: () => drawDeps };
     const playback = playBattleOpeningDraw(ctx, transfers);
     await vi.waitFor(() => expect(drawDeps.animateDrawnHand).toHaveBeenCalledOnce());
-    expect(useBattlePresentationStore.getState().openingDrawPending).toBe(false);
+    expect(battlePresentation.getState().openingDrawPending).toBe(false);
     expect(await playBattleOpeningDraw(ctx, transfers)).toBe(false);
     expect(scheduleAutoEndTurn).not.toHaveBeenCalled();
     expect(domain.battleState).toBe(initial);
     domain = { battleState: { ...initial, hand: initial.hand.slice(1), mana: 2 } };
     finishAnimation();
     await playback;
-    expect(scheduleAutoEndTurn).toHaveBeenCalledWith(domain.battleState);
-  });
-
-  it("prefers the injected presentation over the global store", async () => {
-    const drawDeps = makeDrawSequenceDeps({ animateDrawnHand: vi.fn(async () => {}) });
-    const setOpeningDrawPending = vi.fn();
-    const ctx = {
-      battle: { read: () => ({ ...createBattleCapabilities(defaultGameSession).read(), ...domain }) },
-      playback: { id: 3, completeAction: vi.fn(), scheduleAutoEndTurn },
-      getPresentation: () => ({ openingDrawPending: true, setOpeningDrawPending }),
-    };
-    const transfers = { getDrawSequenceDeps: () => drawDeps };
-    // Global store stays unarmed; only the injected seam is consumed.
-    useBattlePresentationStore.getState().setOpeningDrawPending(false);
-    await expect(playBattleOpeningDraw(ctx, transfers)).resolves.toBe(true);
-    expect(setOpeningDrawPending).toHaveBeenCalledWith(false);
-    expect(useBattlePresentationStore.getState().openingDrawPending).toBe(false);
     expect(scheduleAutoEndTurn).toHaveBeenCalledWith(domain.battleState);
   });
 });

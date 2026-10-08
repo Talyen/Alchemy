@@ -1,11 +1,12 @@
-import { defaultGameSession } from "@/app/application-session";
+import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { registerSessionCleanup } from "@/features/alchemy/shared/stores/session-capabilities";
 import {
   createCombatFeedback,
   createCombatFeedbackState,
   type CombatFeedbackState,
   type CombatFeedbackActions,
 } from "./combat-feedback";
-import { create } from "zustand";
+import { createStore } from "zustand/vanilla";
 import { subscribeWithSelector } from "zustand/middleware";
 import { readBattle, readRunPhase } from "@/features/alchemy/shared/stores/run-reads";
 import { onClearBattlePresentation, onRunTeardown } from "@/features/alchemy/shared/stores/run-lifecycle";
@@ -18,7 +19,7 @@ import {
   type HiddenHandCardKeys,
 } from "./playable-hand";
 
-interface BattlePresentationStore extends CombatFeedbackState, CombatFeedbackActions {
+interface BattlePresentationStateWithActions extends CombatFeedbackState, CombatFeedbackActions {
   openingDrawPending: boolean;
   setOpeningDrawPending: (pending: boolean) => void;
   displayedBattle: BattleSnapshot | null;
@@ -42,7 +43,7 @@ interface BattlePresentationStore extends CombatFeedbackState, CombatFeedbackAct
 const MAX_CARD_GHOSTS = 6;
 
 type BattlePresentationState = Pick<
-  BattlePresentationStore,
+  BattlePresentationStateWithActions,
   | "openingDrawPending"
   | "displayedBattle"
   | "cardGhosts"
@@ -63,66 +64,68 @@ function createInitialState(): BattlePresentationState & CombatFeedbackState {
   };
 }
 
-export const useBattlePresentationStore = create<BattlePresentationStore>()(
-  subscribeWithSelector((set) => {
-    let ghostIdCounter = 0;
-    const feedback = createCombatFeedback({
-      update: (reduce) => set(reduce),
-      isVisible: () => readBattle(defaultGameSession).hasActiveBattle && readRunPhase(defaultGameSession) === "battle",
-      now: () => Date.now(),
-    });
-    return {
-      ...createInitialState(),
-      ...feedback.actions,
-      setOpeningDrawPending: (openingDrawPending) => set({ openingDrawPending }),
-      setDisplayedBattle: (displayedBattle) => set({ displayedBattle }),
+export function createBattlePresentationStore(gameSession: GameSession) {
+  const store = createStore<BattlePresentationStateWithActions>()(
+    subscribeWithSelector((set) => {
+      let ghostIdCounter = 0;
+      const feedback = createCombatFeedback({
+        update: (reduce) => set(reduce),
+        isVisible: () => readBattle(gameSession).hasActiveBattle && readRunPhase(gameSession) === "battle",
+        now: () => Date.now(),
+      });
+      return {
+        ...createInitialState(),
+        ...feedback.actions,
+        setOpeningDrawPending: (openingDrawPending) => set({ openingDrawPending }),
+        setDisplayedBattle: (displayedBattle) => set({ displayedBattle }),
 
-      spawnCardGhost: (ghost) => {
-        const id = `ghost-${++ghostIdCounter}`;
-        // Departing cards finish independently; cap overlapping ghosts so rapid
-        // plays shed the oldest instead of stacking canvases (Trinket parity: 6).
-        set((s) => ({ cardGhosts: [...s.cardGhosts.slice(-(MAX_CARD_GHOSTS - 1)), { ...ghost, id }] }));
-      },
+        spawnCardGhost: (ghost) => {
+          const id = `ghost-${++ghostIdCounter}`;
+          // Departing cards finish independently; cap overlapping ghosts so rapid
+          // plays shed the oldest instead of stacking canvases (Trinket parity: 6).
+          set((s) => ({ cardGhosts: [...s.cardGhosts.slice(-(MAX_CARD_GHOSTS - 1)), { ...ghost, id }] }));
+        },
 
-      removeCardGhost: (id) => set((s) => ({ cardGhosts: s.cardGhosts.filter((g) => g.id !== id) })),
+        removeCardGhost: (id) => set((s) => ({ cardGhosts: s.cardGhosts.filter((g) => g.id !== id) })),
 
-      clearCardGhosts: () => set({ cardGhosts: [] }),
+        clearCardGhosts: () => set({ cardGhosts: [] }),
 
-      setCardTransfers: (transfers) =>
-        set((s) => ({
-          cardTransfers: typeof transfers === "function" ? transfers(s.cardTransfers) : transfers,
-        })),
+        setCardTransfers: (transfers) =>
+          set((s) => ({
+            cardTransfers: typeof transfers === "function" ? transfers(s.cardTransfers) : transfers,
+          })),
 
-      setHiddenHandCardKeys: (update) =>
-        set((s) => {
-          const next = canonicalizeHiddenHandCardKeys(update(s.hiddenHandCardKeys));
-          if (hiddenHandKeysEqual(s.hiddenHandCardKeys, next)) return {};
-          return { hiddenHandCardKeys: next };
-        }),
+        setHiddenHandCardKeys: (update) =>
+          set((s) => {
+            const next = canonicalizeHiddenHandCardKeys(update(s.hiddenHandCardKeys));
+            if (hiddenHandKeysEqual(s.hiddenHandCardKeys, next)) return {};
+            return { hiddenHandCardKeys: next };
+          }),
 
-      setCardTransferInProgress: (inProgress) =>
-        set((s) => ({
-          cardTransferInProgress: typeof inProgress === "function" ? inProgress(s.cardTransferInProgress) : inProgress,
-        })),
+        setCardTransferInProgress: (inProgress) =>
+          set((s) => ({
+            cardTransferInProgress:
+              typeof inProgress === "function" ? inProgress(s.cardTransferInProgress) : inProgress,
+          })),
 
-      resetHandTransferUi: () => set({ hiddenHandCardKeys: EMPTY_HIDDEN_HAND_KEYS, cardTransferInProgress: false }),
+        resetHandTransferUi: () => set({ hiddenHandCardKeys: EMPTY_HIDDEN_HAND_KEYS, cardTransferInProgress: false }),
 
-      resetCardTransfers: () => set({ cardTransfers: [] }),
+        resetCardTransfers: () => set({ cardTransfers: [] }),
 
-      resetPresentation: () => {
-        feedback.cancel();
-        set(createInitialState());
-      },
-    };
-  }),
-);
+        resetPresentation: () => {
+          feedback.cancel();
+          set(createInitialState());
+        },
+      };
+    }),
+  );
 
-onClearBattlePresentation(() => {
-  useBattlePresentationStore.getState().resetPresentation();
-}, defaultGameSession);
+  const reset = () => store.getState().resetPresentation();
+  onClearBattlePresentation(reset, gameSession);
+  onRunTeardown(reset, gameSession);
+  registerSessionCleanup(gameSession, reset);
+  return store;
+}
 
-onRunTeardown(() => {
-  useBattlePresentationStore.getState().resetPresentation();
-}, defaultGameSession);
-
-export type BattlePresentationPort = ReturnType<typeof useBattlePresentationStore.getState>;
+export type BattlePresentationStore = ReturnType<typeof createBattlePresentationStore>;
+export type BattlePresentationPort = ReturnType<BattlePresentationStore["getState"]>;

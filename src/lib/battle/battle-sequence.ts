@@ -1,4 +1,4 @@
-import { isPlayerDefeated } from "./types/state-helpers";
+import { isPlayerDefeated } from "./health-state";
 import type { BattleState, CombatTextEvent } from "./types/state-types";
 
 export type ReactionBoundary =

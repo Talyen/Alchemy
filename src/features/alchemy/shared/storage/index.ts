@@ -2,16 +2,20 @@ export { clearAlchemySaveData, loadAlchemySaveState, saveAlchemySaveData, saveAl
 // Bootstrap and headless careers explicitly install their storage transport.
 export { configureSaveBackend } from "./io";
 export { evaluateSaveCandidates, type SaveLoadState } from "./save-candidates";
-export { setWritesDisabled, routeWritesToRecovery } from "./io";
 export type { SaveWriteOutcome } from "./save-write-queue";
 export type * from "./types";
 export * from "./defaults";
 export { buildAlchemySaveDataFromStores, hydrateAlchemyPersistenceFields } from "./persistence";
-export { bootstrapAlchemySaveState, configureAlchemySaveBackend } from "./bootstrap-save-state";
+export { bootstrapAlchemySaveState } from "./bootstrap-save-state";
 export {
   DEVICE_DISPLAY_STORAGE_KEY,
   readDeviceDisplayPreferences,
   writeDeviceDisplayPreferences,
 } from "./device-display-preferences";
 
-export { createSessionPersistence, snapshotSessionSave } from "./session-persistence";
+export {
+  createSessionPersistence,
+  snapshotSessionSave,
+  type SessionPersistence,
+  type SessionPersistenceRestoreOptions,
+} from "./session-persistence";

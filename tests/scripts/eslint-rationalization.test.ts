@@ -252,11 +252,17 @@ it("keeps the shipping singleton out of reusable domains and headless careers", 
     "src/features/alchemy/shared/storage/bootstrap-save-state.ts",
     "src/app/playthrough/controller.ts",
     "src/app/autosave-lifecycle.ts",
+    "src/features/alchemy/run-loop/battle/battle-presentation-store.ts",
+    "src/features/alchemy/run-loop/battle/use-battle-opening-draw.ts",
+    "src/features/alchemy/run-loop/screens/battle-screen/hand.tsx",
   ]) {
     for (const code of [
       'import { defaultGameSession } from "@/app/application-session";',
       'export { defaultGameSession } from "@/app/application-session";',
       'const session = import("@/app/application-session");',
+      'import { battlePresentation } from "@/app/battle-presentation";',
+      'export { battlePresentation } from "@/app/battle-presentation";',
+      'const presentation = import("@/app/battle-presentation");',
     ]) {
       expect(await effectiveMessages(file, code, "alchemy/session-ownership"), `${file}: ${code}`).toHaveLength(1);
     }

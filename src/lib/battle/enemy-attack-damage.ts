@@ -8,14 +8,9 @@ import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-tra
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import { applyForgeThresholdRewards, applyHealthLossTalentRewards } from "./status-player";
-import {
-  applyPlayerCombatDamage,
-  isPlayerDefeated,
-  playerHealthLostToDamage,
-  type BattleState,
-  type CombatTextEvent,
-} from "./types";
-import { getEnemyTraitSet, hasEnemyTrait } from "./types/state-helpers";
+import type { BattleState, CombatTextEvent } from "./types";
+import { applyPlayerCombatDamage, isPlayerDefeated, playerHealthLostToDamage } from "./health-state";
+import { getEnemyTraitSet, hasEnemyTrait } from "./encounter-trait-state";
 
 import { applyBlockedAttackRetaliation, applyPlayerDefensiveReactions } from "./player-defensive-reactions";
 import {

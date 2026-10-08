@@ -1,24 +1,54 @@
 import type { GameSession } from "../stores/game-session-types";
 import { resolveActiveRunForSave, restoreRun } from "../stores/run-lifecycle";
-import { readHasActiveRun } from "../stores/run-reads";
+import { readHasActiveRun, readRunInitialized } from "../stores/run-reads";
 import { bindSessionCapabilities } from "../stores/session-capabilities";
 import {
+  clearAlchemySaveData,
   configureSaveBackend,
+  getSaveWriteFailure,
   loadAlchemySaveState,
+  resetStorageIoForTests,
+  routeWritesToRecovery,
   saveAlchemySaveData,
   saveAlchemySaveDataForExit,
+  setWritesDisabled,
   subscribeSaveCancellation,
-  waitForPendingSaveWrites,
-  getSaveWriteFailure,
   subscribeSaveWriteFailure,
+  waitForPendingSaveWrites,
 } from "./io";
 import {
   buildAlchemySaveDataFromStores,
   hydrateAlchemyPersistenceFields,
   subscribeAlchemyPersistence,
 } from "./persistence";
+import { configureAlchemySaveBackend } from "./bootstrap-save-state";
 import type { SaveBackend } from "@/lib/platform-save-backend";
+import type { SaveLoadState } from "./save-candidates";
+import type { SaveWriteOutcome } from "./save-write-queue";
 import type { UnstampedSaveData } from "./types";
+
+export interface SessionPersistenceRestoreOptions {
+  preserveActiveRunIfInitialized?: boolean;
+}
+
+export interface SessionPersistence {
+  readonly snapshot: () => UnstampedSaveData;
+  readonly restore: (save: UnstampedSaveData, options?: SessionPersistenceRestoreOptions) => boolean;
+  readonly configure: (backend: SaveBackend) => void;
+  readonly configurePlatform: () => Promise<void>;
+  readonly load: () => Promise<SaveLoadState>;
+  readonly write: (save: UnstampedSaveData) => Promise<SaveWriteOutcome>;
+  readonly writeOnExit: (save: UnstampedSaveData) => Promise<SaveWriteOutcome>;
+  readonly waitForWrites: () => Promise<void>;
+  readonly clear: (mode?: "default" | "localWipe") => Promise<boolean>;
+  readonly routeToRecovery: () => void;
+  readonly setWritesDisabled: (disabled: boolean) => void;
+  readonly resetForTests: () => void;
+  readonly subscribe: (listener: () => void) => () => void;
+  readonly subscribeCancellation: (listener: () => void) => () => void;
+  readonly readFailure: () => boolean;
+  readonly subscribeFailure: (listener: () => void) => () => void;
+}
 
 export function snapshotSessionSave(gameSession: GameSession) {
   return buildAlchemySaveDataFromStores(
@@ -27,18 +57,27 @@ export function snapshotSessionSave(gameSession: GameSession) {
   );
 }
 
-export function createSessionPersistence(gameSession: GameSession) {
+export function createSessionPersistence(gameSession: GameSession): SessionPersistence {
   return bindSessionCapabilities(gameSession, {
     snapshot: () => snapshotSessionSave(gameSession),
-    restore: (save: UnstampedSaveData) => {
+    restore: (save: UnstampedSaveData, options?: SessionPersistenceRestoreOptions) => {
       hydrateAlchemyPersistenceFields(save, gameSession);
+      if (options?.preserveActiveRunIfInitialized && readRunInitialized(gameSession)) {
+        return false;
+      }
       restoreRun(save.activeRun, save.talentXP, save.unlockedTalents, gameSession);
+      return true;
     },
     configure: (backend: SaveBackend) => configureSaveBackend(backend, gameSession),
+    configurePlatform: () => configureAlchemySaveBackend(gameSession),
     load: () => loadAlchemySaveState(gameSession),
     write: (save: UnstampedSaveData) => saveAlchemySaveData(save, gameSession),
     writeOnExit: (save: UnstampedSaveData) => saveAlchemySaveDataForExit(save, gameSession),
     waitForWrites: () => waitForPendingSaveWrites(gameSession),
+    clear: (mode: "default" | "localWipe" = "default") => clearAlchemySaveData(mode, gameSession),
+    routeToRecovery: () => routeWritesToRecovery(gameSession),
+    setWritesDisabled: (disabled: boolean) => setWritesDisabled(disabled, gameSession),
+    resetForTests: () => resetStorageIoForTests(gameSession),
     subscribe: (listener: () => void) => subscribeAlchemyPersistence(listener, gameSession),
     subscribeCancellation: (listener: () => void) => subscribeSaveCancellation(listener, gameSession),
     readFailure: () => getSaveWriteFailure(gameSession),

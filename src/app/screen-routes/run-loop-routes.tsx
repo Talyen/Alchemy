@@ -47,7 +47,7 @@ import type { BattleRouteCtx, RunLoopRouteCtx } from "./route-ctx";
 function BattleScreenRoute({ cardInspection, routeCommands, gameMenuOpen }: BattleRouteCtx) {
   const commands = routeCommands.battle;
   const { characterId, heroArt, playerName, aspectMode, stagePixelRatio } = useAppScreenChrome();
-  const { battleScreenData, hasActiveBattle } = useBattleScreenRouteData();
+  const { battleScreenData, hasActiveBattle } = useBattleScreenRouteData(commands.presentation);
   const enemyInspectionOpen = useUiStore((state) => state.enemyInspectionOpen);
   const setEnemyInspectionOpen = useUiStore((state) => state.setEnemyInspectionOpen);
   const returnFocusRef = useRef<HTMLElement | null>(null);
@@ -65,11 +65,11 @@ function BattleScreenRoute({ cardInspection, routeCommands, gameMenuOpen }: Batt
     return () => setEnemyInspectionOpen(false);
   }, [canInspectEnemy, setEnemyInspectionOpen]);
   function inspectEnemy(trigger: HTMLElement) {
-    const presentation = readPlaybackPresentationGate();
+    const presentation = readPlaybackPresentationGate(commands.presentation);
     if (
       !canInspectEnemy ||
       commands.isCardPlayInProgress() ||
-      readCardAnimationInProgress() ||
+      readCardAnimationInProgress(commands.presentation) ||
       handHasHiddenCard(battleScreenData.battleState, presentation.hiddenHandCardKeys)
     )
       return;
@@ -77,6 +77,7 @@ function BattleScreenRoute({ cardInspection, routeCommands, gameMenuOpen }: Batt
     setEnemyInspectionOpen(true);
   }
   useBattlePlayback({
+    presentation: commands.presentation,
     screen: commands.screen,
     battleState: battleScreenData.battleState,
     hasActiveBattle,
@@ -92,6 +93,7 @@ function BattleScreenRoute({ cardInspection, routeCommands, gameMenuOpen }: Batt
   return (
     <>
       <BattleScreen
+        presentation={commands.presentation}
         onInspectEnemy={inspectEnemy}
         enemyInspectionOpen={enemyInspectionOpen}
         onInspectPile={cardInspection?.onOpen}

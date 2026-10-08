@@ -8,17 +8,18 @@ import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
 import type { Screen } from "@/lib/routing";
 import { useEffect } from "react";
 
+const RADIX_OPEN_SELECTOR =
+  '[data-radix-select-content][data-state="open"], [data-radix-dropdown-menu-content][data-state="open"], [data-radix-popover-content][data-state="open"], [data-radix-combobox-content][data-state="open"]';
+
+const ARROW_DIRECTIONS: Readonly<Record<string, FocusDirection>> = Object.freeze({
+  ArrowLeft: "left",
+  ArrowRight: "right",
+  ArrowUp: "up",
+  ArrowDown: "down",
+});
+
 function isRadixEscapeTargetOpen(): boolean {
-  return Boolean(
-    document.querySelector(
-      [
-        '[data-radix-select-content][data-state="open"]',
-        '[data-radix-dropdown-menu-content][data-state="open"]',
-        '[data-radix-popover-content][data-state="open"]',
-        '[data-radix-combobox-content][data-state="open"]',
-      ].join(", "),
-    ),
-  );
+  return Boolean(document.querySelector(RADIX_OPEN_SELECTOR));
 }
 
 export function useAppKeyboardShortcuts({
@@ -60,13 +61,7 @@ export function useAppKeyboardShortcuts({
         focusPreviousControl();
         return;
       }
-      const directions: Record<string, FocusDirection> = {
-        ArrowLeft: "left",
-        ArrowRight: "right",
-        ArrowUp: "up",
-        ArrowDown: "down",
-      };
-      const direction = directions[event.key];
+      const direction = ARROW_DIRECTIONS[event.key];
       if (direction && !isRadixEscapeTargetOpen() && focusInDirection(direction)) event.preventDefault();
     };
     document.addEventListener("keydown", previousFocus);

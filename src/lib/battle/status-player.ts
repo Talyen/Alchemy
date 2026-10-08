@@ -2,15 +2,10 @@ import { rollBattleChance } from "./chance-roll";
 import { readCombatFlag } from "./action-context";
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { BattleCardEffect, DamageType, EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data";
-import {
-  addPlayerStatus,
-  effectivePlayerHealingAmount,
-  isPlayerDefeated,
-  setPlayerStatus,
-  stripEnemyArmor,
-  type BattleState,
-  type CombatTextEvent,
-} from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { addPlayerStatus, setPlayerStatus } from "./status-state";
+import { effectivePlayerHealingAmount, isPlayerDefeated } from "./health-state";
+import { stripEnemyArmor } from "./enemy-mitigation-state";
 import {
   addPlayerStatusWithCombatText,
   applyHealingWithCombatText,

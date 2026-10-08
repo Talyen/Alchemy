@@ -1,3 +1,4 @@
+import type { BattlePresentationStore } from "../../battle/battle-presentation-store";
 import { type MouseEvent, type RefObject, memo, useEffect, useLayoutEffect, useRef } from "react";
 
 import {
@@ -148,11 +149,13 @@ const HandCardItem = memo(function HandCardItem({
 });
 
 export function BattleHand({
+  presentation,
   view,
   refs,
   actions,
   playabilityState,
 }: {
+  presentation: BattlePresentationStore;
   view: RequiredBattleViewProps;
   refs: BattleRefsProps;
   actions: BattleActionsProps;
@@ -166,7 +169,7 @@ export function BattleHand({
     playableHandCardKeys: visuallyPlayableHandCardKeys,
     interactiveHandCardKeys,
     animationInProgress,
-  } = useHandPresentation(playabilityState);
+  } = useHandPresentation(presentation, playabilityState);
   const keyboardActivation = useRef(false);
   const recovery = useRef<{ played: string; order: string[] } | null>(null);
   const pointer = useHandPointer(battleState.hand, hiddenHandCardKeys, handCardRefs);

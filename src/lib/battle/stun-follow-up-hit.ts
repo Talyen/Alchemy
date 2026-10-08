@@ -5,7 +5,8 @@ import { computeCardDamageToEnemy } from "./damage-calc";
 import { applyHitHealth } from "./player-hit-core";
 import { decayArmorAfterDamage } from "./status-helpers";
 import { resolveStunTriggerCore, type ThunderstoneLeech } from "./status-stun-core";
-import { addEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { addEnemyStatus } from "./status-state";
 
 /** Leaf stun entry: stays free of hit-resolution tiers so leech riders can call it without a module cycle. */
 export function resolveStunFollowUpHit(

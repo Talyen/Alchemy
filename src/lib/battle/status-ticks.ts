@@ -2,18 +2,17 @@ import { rollBattleChance } from "./chance-roll";
 import { resolveBattleSequence } from "./battle-sequence";
 import { applyHealthLossTalentRewards, checkHealthThresholds } from "./status-player";
 import { drawKeywordCard } from "./draw";
-import { hasEncounterBenefit } from "./types";
+import { hasEncounterBenefit } from "./encounter-trait-state";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
+import type { BattleState, CombatTextEvent } from "./types";
 import {
   applyPlayerCombatDamage,
   isPlayerDefeated,
   mitigatePlayerCombatDamage,
   playerHealthLostToDamage,
-  scaleReceivedPlayerDamage,
-  setPlayerStatus,
-  type BattleState,
-  type CombatTextEvent,
-} from "./types";
+} from "./health-state";
+import { scaleReceivedPlayerDamage } from "./damage-modifiers";
+import { setPlayerStatus } from "./status-state";
 import {
   applyPoisonDamageArmorRider,
   armorMitigatesElementalDamage,

@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import { battlePresentation } from "@/app/battle-presentation";
 import { BattleHand } from "@/features/alchemy/run-loop/screens/battle-screen/hand";
 import type {
   BattleActionsProps,
@@ -74,17 +74,25 @@ function renderHand() {
     onCardClick: vi.fn(),
   } as unknown as BattleActionsProps;
 
-  return render(<BattleHand view={view} refs={refs} actions={actions} playabilityState={battleState} />);
+  return render(
+    <BattleHand
+      presentation={battlePresentation}
+      view={view}
+      refs={refs}
+      actions={actions}
+      playabilityState={battleState}
+    />,
+  );
 }
 
 describe("BattleHand", () => {
   afterEach(() => {
     cleanup();
-    useBattlePresentationStore.getState().resetPresentation();
+    battlePresentation.getState().resetPresentation();
   });
 
   it("keeps playable cards colored and interactive during transfers", () => {
-    useBattlePresentationStore.setState({ cardTransferInProgress: true });
+    battlePresentation.setState({ cardTransferInProgress: true });
     renderHand();
 
     const affordable = screen.getByRole("button", { name: "Play Slash" });
@@ -115,7 +123,15 @@ describe("BattleHand", () => {
       onCardClick: vi.fn(),
     } as unknown as BattleActionsProps;
 
-    render(<BattleHand view={view} refs={refs} actions={actions} playabilityState={battleState} />);
+    render(
+      <BattleHand
+        presentation={battlePresentation}
+        view={view}
+        refs={refs}
+        actions={actions}
+        playabilityState={battleState}
+      />,
+    );
 
     expect(screen.getAllByTestId("combatant-status-effect")).toHaveLength(2);
   });

@@ -2,12 +2,13 @@ import { applyDamageStatuses } from "./damage-status-riders";
 import { rollBattleChance } from "./chance-roll";
 import { resolveBattleSequence, type ReactionBoundary } from "./battle-sequence";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
-import { hasEncounterBenefit, hasEnemyTrait } from "./types";
+import { hasEncounterBenefit, hasEnemyTrait } from "./encounter-trait-state";
 import { selectRewardCards } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import type { BattleCard } from "@/lib/game-data";
 import { addCardToHandOrQueue, applyDrawResult, drawFromState } from "./draw";
-import { isPlayerDefeated, type BattleState, type CombatTextEvent } from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { isPlayerDefeated } from "./health-state";
 import {
   addGoldWithCombatText,
   applyHealingWithCombatText,

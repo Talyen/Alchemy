@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { dealSelfDamage } from "@/lib/battle/status-helpers";
 import { tickPlayerStatuses } from "@/lib/battle/status-ticks";
-import { applyPlayerCombatDamage, type CombatTextEvent } from "@/lib/battle/types";
+import type { CombatTextEvent } from "@/lib/battle/types";
+import { applyPlayerCombatDamage } from "@/lib/battle/health-state";
 import { makeTestBattleState } from "../../fixtures/battle";
 
 function protectedState() {

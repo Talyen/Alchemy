@@ -7,14 +7,10 @@ import { resolveEnemyAttackHit } from "./enemy-attack-hit";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { applyPlayerStatusFromAttack } from "./status-player";
 import { purgeOnePlayerBenefit } from "./player-purge";
-import {
-  hasEnemyTrait,
-  isPlayerDefeated,
-  setEnemyStatus,
-  setPlayerStatus,
-  type BattleState,
-  type CombatTextEvent,
-} from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { hasEnemyTrait } from "./encounter-trait-state";
+import { isPlayerDefeated } from "./health-state";
+import { setEnemyStatus, setPlayerStatus } from "./status-state";
 
 export function applyAbilityFollowups(
   state: BattleState,

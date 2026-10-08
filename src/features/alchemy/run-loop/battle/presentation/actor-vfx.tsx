@@ -3,18 +3,21 @@ import { useShallow } from "zustand/react/shallow";
 import { ArtPanel } from "@/features/alchemy/run-loop/battle/presentation/ui/actor-panel";
 import { CompanionPanel } from "@/features/alchemy/run-loop/battle/presentation/ui/companion-panel";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import { useBattlePresentationStore } from "../battle-presentation-store";
+import { useStore } from "zustand";
+import type { BattlePresentationStore } from "../battle-presentation-store";
 
 type ShakingArtPanelProps = Omit<
   ComponentProps<typeof ArtPanel>,
   "shaking" | "impactCue" | "attackToken" | "castToken" | "shimmerActive" | "shimmerToken" | "onHoverShimmer"
 > & {
+  presentation: BattlePresentationStore;
   side: "player" | "enemy";
   shimmerId: string;
 };
 
-export function ShakingArtPanel({ side, shimmerId, ...props }: ShakingArtPanelProps) {
-  const { shaking, impactCue, attackToken, castToken } = useBattlePresentationStore(
+export function ShakingArtPanel({ presentation, side, shimmerId, ...props }: ShakingArtPanelProps) {
+  const { shaking, impactCue, attackToken, castToken } = useStore(
+    presentation,
     useShallow((s) => ({
       shaking: side === "player" ? s.playerShaking : s.enemyShaking,
       impactCue: side === "player" ? s.playerImpactCue : s.enemyImpactCue,
@@ -45,7 +48,10 @@ export function ShakingArtPanel({ side, shimmerId, ...props }: ShakingArtPanelPr
   );
 }
 
-export function ShakingCompanionPanel(props: Omit<ComponentProps<typeof CompanionPanel>, "shaking">) {
-  const shaking = useBattlePresentationStore((s) => s.companionShaking);
+export function ShakingCompanionPanel({
+  presentation,
+  ...props
+}: Omit<ComponentProps<typeof CompanionPanel>, "shaking"> & { presentation: BattlePresentationStore }) {
+  const shaking = useStore(presentation, (s) => s.companionShaking);
   return <CompanionPanel {...props} shaking={shaking} />;
 }

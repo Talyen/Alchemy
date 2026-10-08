@@ -1,4 +1,4 @@
-import { hasEncounterBenefit } from "./types";
+import { hasEncounterBenefit } from "./encounter-trait-state";
 import {
   BATTLE_CONFIG,
   LABYRINTH_HALF_DAMAGE_WARDS,
@@ -12,19 +12,17 @@ import {
 } from "../game-constants";
 import { addPlayerStatusWithCombatText } from "./player-rewards";
 import { mergeCombatText } from "./combat-text-events";
+import type { BattleState, CombatTextEvent } from "./types";
 import {
   applyPlayerCombatDamage,
-  decayEnemyArmor,
-  getEnemyTraitSet,
   isPlayerDefeated,
   mitigatePlayerCombatDamage,
   playerHealthLostToDamage,
-  reduceEnemyArmor,
-  scaleReceivedPlayerDamage,
-  setPlayerStatus,
-  type BattleState,
-  type CombatTextEvent,
-} from "./types";
+} from "./health-state";
+import { decayEnemyArmor, reduceEnemyArmor } from "./enemy-mitigation-state";
+import { getEnemyTraitSet } from "./encounter-trait-state";
+import { scaleReceivedPlayerDamage } from "./damage-modifiers";
+import { setPlayerStatus } from "./status-state";
 import type { EnemyStatusDamageId } from "@/lib/game-data";
 import { halveRounded } from "./amount-helpers";
 

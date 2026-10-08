@@ -12,7 +12,10 @@ import { paceCombatDamage } from "./fight-pacing";
 import { computeBaseDamage } from "./player-damage-base";
 import { applyFirstDamageBonus, resolveDamageBonusMultiplier } from "./player-damage-multipliers";
 import { getEnemyDamageMultiplier, getEnemyTraitDamageMultiplier } from "./status-helpers";
-import { hasEncounterBenefit, reduceEnemyArmor, setFlag, type BattleState } from "./types";
+import type { BattleState } from "./types";
+import { hasEncounterBenefit } from "./encounter-trait-state";
+import { reduceEnemyArmor } from "./enemy-mitigation-state";
+import { writeCombatFlag as setFlag } from "./action-context";
 export { forgeAppliesToDamageType } from "./player-damage-base";
 
 function applyCrit(damage: number, state: BattleState, guaranteed = false) {

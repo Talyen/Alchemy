@@ -1,3 +1,4 @@
+import type { BattlePresentationStore } from "../../battle/battle-presentation-store";
 import { useMemo, type MouseEvent } from "react";
 import type { BattleCard } from "@/lib/game-data";
 import type { CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
@@ -18,6 +19,7 @@ import { getScreenParticleConfig } from "@/app/screen-particle-config";
 import { useSettingsStore } from "../../../shared/stores/settings-store";
 
 interface BattleScreenProps {
+  presentation: BattlePresentationStore;
   onInspectEnemy?: ((trigger: HTMLElement) => void) | undefined;
   enemyInspectionOpen?: boolean | undefined;
   onInspectPile?: BattleActionsProps["onInspectPile"];
@@ -38,6 +40,7 @@ interface BattleScreenProps {
 
 export function BattleScreen(props: BattleScreenProps) {
   const {
+    presentation,
     onInspectPile,
     inspectionAvailable,
     battleScreenData,
@@ -55,7 +58,7 @@ export function BattleScreen(props: BattleScreenProps) {
   } = props;
 
   const { battleState, activeLabyrinthModifiers, runBoons } = battleScreenData;
-  const cardTransferInProgress = useCardTransferInProgress();
+  const cardTransferInProgress = useCardTransferInProgress(presentation);
 
   const isBossBattle = battleState.currentEnemy.enemyType === "boss";
   const { particleColors, particleAlphaMultiplier, particleCount } = getScreenParticleConfig("battle", isBossBattle);
@@ -123,6 +126,7 @@ export function BattleScreen(props: BattleScreenProps) {
               className="[container-type:size] absolute inset-0 overflow-visible"
             >
               <BattleActors
+                presentation={presentation}
                 view={view}
                 feedback={feedback}
                 refs={refs}
@@ -130,7 +134,13 @@ export function BattleScreen(props: BattleScreenProps) {
                 enemyInspectionOpen={props.enemyInspectionOpen}
               />
 
-              <BattleBottomBar view={view} refs={refs} actions={actions} playabilityState={battleState} />
+              <BattleBottomBar
+                presentation={presentation}
+                view={view}
+                refs={refs}
+                actions={actions}
+                playabilityState={battleState}
+              />
 
               <WishOverlay
                 open={Boolean(battleState.wishOptions) && !cardTransferInProgress}
@@ -140,9 +150,9 @@ export function BattleScreen(props: BattleScreenProps) {
 
               <BattleBoonInspectOverlay open={inspectUiOpen} trinketIds={runBoons} onClose={onCloseBoonInspect} />
 
-              <CardGhostLayer />
-              <CardTransferLayer />
-              <CombatTextLayer refs={refs} />
+              <CardGhostLayer presentation={presentation} />
+              <CardTransferLayer presentation={presentation} />
+              <CombatTextLayer presentation={presentation} refs={refs} />
             </div>
           </div>
         </div>

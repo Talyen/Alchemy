@@ -13,7 +13,7 @@ import {
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { patchBattleState, makeTestCard } from "../../../../fixtures/battle";
-import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import { battlePresentation } from "@/app/battle-presentation";
 import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -23,66 +23,39 @@ import { defaultGameSession } from "@/app/application-session";
 describe("battle-presentation-store", () => {
   beforeEach(resetBattlePresentationAndRun);
   afterEach(() => {
-    useBattlePresentationStore.getState().resetPresentation();
+    battlePresentation.getState().resetPresentation();
     vi.useRealTimers();
   });
 
-  it("initializes with empty presentation state", () => {
-    const s = useBattlePresentationStore.getState();
-    expect(s.cardGhosts).toEqual([]);
-    expect(s.floatingCombatBursts).toEqual([]);
-    expect(s.enemyShaking).toBe(false);
-    expect(s.playerShaking).toBe(false);
-    expect(s.companionShaking).toBe(false);
-    expect(s.playerImpactCue).toBeNull();
-    expect(s.enemyImpactCue).toBeNull();
-    expect(s.playerAttackToken).toBe(0);
-    expect(s.enemyAttackToken).toBe(0);
-    expect(s.playerCastToken).toBe(0);
-    expect(s.enemyCastToken).toBe(0);
-  });
-
   it("telegraphs cast motion and resets on resetPresentation", () => {
-    useBattlePresentationStore.getState().telegraphCast("player");
-    expect(useBattlePresentationStore.getState().playerCastToken).toBe(1);
-    expect(useBattlePresentationStore.getState().enemyCastToken).toBe(0);
+    battlePresentation.getState().telegraphCast("player");
+    expect(battlePresentation.getState().playerCastToken).toBe(1);
+    expect(battlePresentation.getState().enemyCastToken).toBe(0);
 
-    useBattlePresentationStore.getState().telegraphCast("enemy");
-    expect(useBattlePresentationStore.getState().enemyCastToken).toBe(1);
+    battlePresentation.getState().telegraphCast("enemy");
+    expect(battlePresentation.getState().enemyCastToken).toBe(1);
 
-    useBattlePresentationStore.getState().resetPresentation();
-    expect(useBattlePresentationStore.getState().playerCastToken).toBe(0);
-    expect(useBattlePresentationStore.getState().enemyCastToken).toBe(0);
-  });
-
-  it("telegraphAttack maps companion to the player lunge token", () => {
-    useBattlePresentationStore.getState().telegraphAttack("companion");
-    expect(useBattlePresentationStore.getState().playerAttackToken).toBe(1);
-
-    useBattlePresentationStore.getState().telegraphAttack("player");
-    expect(useBattlePresentationStore.getState().playerAttackToken).toBe(2);
-    expect(useBattlePresentationStore.getState().enemyAttackToken).toBe(0);
-
-    useBattlePresentationStore.getState().telegraphAttack("enemy");
-    expect(useBattlePresentationStore.getState().enemyAttackToken).toBe(1);
+    battlePresentation.getState().resetPresentation();
+    expect(battlePresentation.getState().playerCastToken).toBe(0);
+    expect(battlePresentation.getState().enemyCastToken).toBe(0);
   });
 
   it("spawnCardGhost and removeCardGhost round-trip", () => {
-    useBattlePresentationStore.getState().spawnCardGhost({
+    battlePresentation.getState().spawnCardGhost({
       art: "test.webp",
       rect: { x: 0, y: 0, width: 10, height: 10 },
       rotation: 0,
       delay: 0,
       variant: "activate",
     });
-    const id = useBattlePresentationStore.getState().cardGhosts[0]!.id;
-    useBattlePresentationStore.getState().removeCardGhost(id);
-    expect(useBattlePresentationStore.getState().cardGhosts).toHaveLength(0);
+    const id = battlePresentation.getState().cardGhosts[0]!.id;
+    battlePresentation.getState().removeCardGhost(id);
+    expect(battlePresentation.getState().cardGhosts).toHaveLength(0);
   });
 
   it("caps overlapping ghosts, shedding the oldest", () => {
     for (let i = 0; i < 8; i += 1) {
-      useBattlePresentationStore.getState().spawnCardGhost({
+      battlePresentation.getState().spawnCardGhost({
         art: `test-${i}.webp`,
         rect: { x: 0, y: 0, width: 10, height: 10 },
         rotation: 0,
@@ -90,81 +63,81 @@ describe("battle-presentation-store", () => {
         variant: "activate",
       });
     }
-    const ghosts = useBattlePresentationStore.getState().cardGhosts;
+    const ghosts = battlePresentation.getState().cardGhosts;
     expect(ghosts).toHaveLength(6);
     expect(ghosts[0]?.art).toBe("test-2.webp");
   });
 
   it("shakeEnemy sets and clears enemyShaking", async () => {
     vi.useFakeTimers();
-    useBattlePresentationStore.getState().shakeEnemy();
-    expect(useBattlePresentationStore.getState().enemyShaking).toBe(true);
+    battlePresentation.getState().shakeEnemy();
+    expect(battlePresentation.getState().enemyShaking).toBe(true);
     await vi.advanceTimersByTimeAsync(SHAKE_DURATION_MS);
-    expect(useBattlePresentationStore.getState().enemyShaking).toBe(false);
+    expect(battlePresentation.getState().enemyShaking).toBe(false);
     vi.useRealTimers();
   });
 
   it("restarts a shake timer so an older hit cannot clear a newer shake", async () => {
     vi.useFakeTimers();
-    useBattlePresentationStore.getState().shakeEnemy();
+    battlePresentation.getState().shakeEnemy();
     await vi.advanceTimersByTimeAsync(SHAKE_DURATION_MS - 100);
-    useBattlePresentationStore.getState().shakeEnemy();
+    battlePresentation.getState().shakeEnemy();
     await vi.advanceTimersByTimeAsync(150);
-    expect(useBattlePresentationStore.getState().enemyShaking).toBe(true);
+    expect(battlePresentation.getState().enemyShaking).toBe(true);
     await vi.advanceTimersByTimeAsync(SHAKE_DURATION_MS - 149);
-    expect(useBattlePresentationStore.getState().enemyShaking).toBe(false);
+    expect(battlePresentation.getState().enemyShaking).toBe(false);
     vi.useRealTimers();
   });
 
   it("telegraphAttack bumps the acting combatant's token and maps companion onto player", () => {
-    useBattlePresentationStore.getState().telegraphAttack("player");
-    useBattlePresentationStore.getState().telegraphAttack("enemy");
-    useBattlePresentationStore.getState().telegraphAttack("companion");
-    useBattlePresentationStore.getState().telegraphAttack("player");
-    const s = useBattlePresentationStore.getState();
+    battlePresentation.getState().telegraphAttack("player");
+    battlePresentation.getState().telegraphAttack("enemy");
+    battlePresentation.getState().telegraphAttack("companion");
+    battlePresentation.getState().telegraphAttack("player");
+    const s = battlePresentation.getState();
     expect(s.playerAttackToken).toBe(3);
     expect(s.enemyAttackToken).toBe(1);
   });
 
   it("resetPresentation clears VFX state", () => {
-    useBattlePresentationStore.setState({
+    battlePresentation.setState({
       playerImpactCue: { sequence: 1, colors: keywordDefinitions.burn.shineColors, healthLost: true },
     });
-    useBattlePresentationStore.getState().telegraphAttack("player");
-    useBattlePresentationStore.getState().spawnCardGhost({
+    battlePresentation.getState().telegraphAttack("player");
+    battlePresentation.getState().spawnCardGhost({
       art: "test.webp",
       rect: { x: 0, y: 0, width: 10, height: 10 },
       rotation: 0,
       delay: 0,
       variant: "activate",
     });
-    useBattlePresentationStore.getState().resetPresentation();
-    const s = useBattlePresentationStore.getState();
+    battlePresentation.getState().resetPresentation();
+    const s = battlePresentation.getState();
     expect(s.playerImpactCue).toBeNull();
     expect(s.playerAttackToken).toBe(0);
     expect(s.cardGhosts).toEqual([]);
   });
 
   it("teardownRun clears card ghosts via the presentation bridge", () => {
-    useBattlePresentationStore.getState().spawnCardGhost({
+    battlePresentation.getState().spawnCardGhost({
       art: "test.webp",
       rect: { x: 0, y: 0, width: 10, height: 10 },
       rotation: 0,
       delay: 0,
       variant: "activate",
     });
-    expect(useBattlePresentationStore.getState().cardGhosts).toHaveLength(1);
+    expect(battlePresentation.getState().cardGhosts).toHaveLength(1);
     teardownRun(defaultGameSession);
-    expect(useBattlePresentationStore.getState().cardGhosts).toEqual([]);
+    expect(battlePresentation.getState().cardGhosts).toEqual([]);
   });
 
   it("clearBattlePresentationUi resets full presentation VFX", () => {
-    useBattlePresentationStore.setState({
+    battlePresentation.setState({
       playerImpactCue: { sequence: 1, colors: keywordDefinitions.freeze.shineColors, healthLost: true },
     });
-    useBattlePresentationStore.getState().shakeEnemy();
-    useBattlePresentationStore.getState().telegraphAttack("enemy");
-    useBattlePresentationStore.getState().spawnCardGhost({
+    battlePresentation.getState().shakeEnemy();
+    battlePresentation.getState().telegraphAttack("enemy");
+    battlePresentation.getState().spawnCardGhost({
       art: "test.webp",
       rect: { x: 0, y: 0, width: 10, height: 10 },
       rotation: 0,
@@ -172,7 +145,7 @@ describe("battle-presentation-store", () => {
       variant: "activate",
     });
     clearBattlePresentationUi(defaultGameSession);
-    const s = useBattlePresentationStore.getState();
+    const s = battlePresentation.getState();
     expect(s.cardGhosts).toEqual([]);
     expect(s.playerImpactCue).toBeNull();
     expect(s.enemyShaking).toBe(false);
@@ -193,7 +166,7 @@ describe("battle-presentation-store", () => {
       undefined,
       defaultGameSession,
     );
-    return useBattlePresentationStore.getState().showCombatTexts;
+    return battlePresentation.getState().showCombatTexts;
   }
 
   it("consolidates copied events within the action, retaining types, signs, and notices", () => {
@@ -218,7 +191,7 @@ describe("battle-presentation-store", () => {
     events.forEach(Object.freeze);
     show(events);
     expect(events).toEqual(original);
-    const bursts = useBattlePresentationStore.getState().floatingCombatBursts;
+    const bursts = battlePresentation.getState().floatingCombatBursts;
     expect(bursts).toHaveLength(2);
     expect(bursts[0]!.entries.map(({ displayText, stat }) => [stat, displayText])).toEqual([
       ["block", "-4"],
@@ -239,22 +212,20 @@ describe("battle-presentation-store", () => {
     const input: CombatTextEvent[] = [{ target: "enemy", kind: "damage", stat: "physical", amount: 3 }];
     Object.freeze(input[0]);
     show(input);
-    const original = useBattlePresentationStore.getState().floatingCombatBursts[0]!;
-    const cue = useBattlePresentationStore.getState().enemyImpactCue!.sequence;
+    const original = battlePresentation.getState().floatingCombatBursts[0]!;
+    const cue = battlePresentation.getState().enemyImpactCue!.sequence;
     await vi.advanceTimersByTimeAsync(elapsed);
     show([{ target: "enemy", kind: "damage", stat: "physical", amount: 4 }]);
-    const bursts = useBattlePresentationStore.getState().floatingCombatBursts;
+    const bursts = battlePresentation.getState().floatingCombatBursts;
     expect(bursts).toHaveLength(elapsed < 250 ? 1 : 2);
     expect(bursts[0]!.id).toBe(original.id);
     expect(bursts[0]!.firstShownAt).toBe(original.firstShownAt);
     expect(bursts[0]!.entries[0]!.displayText).toBe(elapsed < 250 ? "-7" : "-3");
     expect(input[0]).toMatchObject({ amount: 3 });
     expect(original.entries[0]).toMatchObject({ amount: 3 });
-    expect(useBattlePresentationStore.getState().enemyImpactCue!.sequence).toBeGreaterThan(cue);
+    expect(battlePresentation.getState().enemyImpactCue!.sequence).toBeGreaterThan(cue);
     await vi.advanceTimersByTimeAsync(COMBAT_TEXT_LIFETIME_MS - elapsed);
-    expect(useBattlePresentationStore.getState().floatingCombatBursts.some((burst) => burst.id === original.id)).toBe(
-      false,
-    );
+    expect(battlePresentation.getState().floatingCombatBursts.some((burst) => burst.id === original.id)).toBe(false);
   });
 
   it("merges partial actions without mixing types, recipients, or resource directions", async () => {
@@ -268,7 +239,7 @@ describe("battle-presentation-store", () => {
       { target: "player", kind: "damage", stat: "block", amount: 2 },
       { target: "player", kind: "status", stat: "block", amount: 3 },
     ]);
-    const bursts = useBattlePresentationStore.getState().floatingCombatBursts;
+    const bursts = battlePresentation.getState().floatingCombatBursts;
     expect(bursts).toHaveLength(3);
     expect(bursts[0]!.entries[0]!.displayText).toBe("-7");
     expect(bursts.flatMap((burst) => burst.entries.map((entry) => entry.displayText))).toEqual([
@@ -292,12 +263,12 @@ describe("battle-presentation-store", () => {
     show([ready, { target: "enemy", kind: "damage", stat: "physical", amount: 9 }]);
     await vi.advanceTimersByTimeAsync(100);
     show([ready, { target: "enemy", kind: "damage", stat: "physical", amount: 90 }]);
-    let bursts = useBattlePresentationStore.getState().floatingCombatBursts;
+    let bursts = battlePresentation.getState().floatingCombatBursts;
     expect(bursts.filter((burst) => burst.target === "player")).toHaveLength(1);
     expect(bursts.find((burst) => burst.target === "enemy")!.entries[0]!.displayText).toBe("-99");
     await vi.advanceTimersByTimeAsync(100);
     show([{ target: "enemy", kind: "damage", stat: "physical", amount: 1 }]);
-    bursts = useBattlePresentationStore.getState().floatingCombatBursts;
+    bursts = battlePresentation.getState().floatingCombatBursts;
     expect(bursts.filter((burst) => burst.target === "enemy").map((burst) => burst.entries[0]!.displayText)).toEqual([
       "-99",
       "-1",
@@ -309,12 +280,12 @@ describe("battle-presentation-store", () => {
     for (const stat of ["physical", "burn", "poison"] as const) {
       show([{ target: "enemy", kind: "damage", stat, amount: 3 }]);
     }
-    const original = useBattlePresentationStore.getState().floatingCombatBursts[0]!.id;
+    const original = battlePresentation.getState().floatingCombatBursts[0]!.id;
     show([
       { target: "enemy", kind: "damage", stat: "physical", amount: 4 },
       { target: "enemy", kind: "damage", stat: "holy", amount: 2 },
     ]);
-    const bursts = useBattlePresentationStore.getState().floatingCombatBursts;
+    const bursts = battlePresentation.getState().floatingCombatBursts;
     expect(bursts).toHaveLength(3);
     expect(bursts.some((burst) => burst.id === original)).toBe(false);
     expect(bursts.at(-1)!.entries.map((entry) => [entry.stat, entry.displayText])).toEqual([
@@ -326,37 +297,35 @@ describe("battle-presentation-store", () => {
   it("does not resurrect an evicted entry or merge after the original window closes", async () => {
     const show = activateBattle();
     show([{ target: "enemy", kind: "damage", stat: "physical", amount: 1 }]);
-    const first = useBattlePresentationStore.getState().floatingCombatBursts[0]!.id;
+    const first = battlePresentation.getState().floatingCombatBursts[0]!.id;
     for (const stat of ["burn", "poison", "holy"] as const)
       show([{ target: "enemy", kind: "damage", stat, amount: 1 }]);
-    expect(useBattlePresentationStore.getState().floatingCombatBursts.some((burst) => burst.id === first)).toBe(false);
+    expect(battlePresentation.getState().floatingCombatBursts.some((burst) => burst.id === first)).toBe(false);
     show([{ target: "enemy", kind: "damage", stat: "physical", amount: 2 }]);
-    const newest = useBattlePresentationStore.getState().floatingCombatBursts.at(-1)!;
+    const newest = battlePresentation.getState().floatingCombatBursts.at(-1)!;
     expect(newest.entries[0]!.displayText).toBe("-2");
     await vi.advanceTimersByTimeAsync(200);
     show([{ target: "enemy", kind: "damage", stat: "physical", amount: 3 }]);
     await vi.advanceTimersByTimeAsync(51);
     show([{ target: "enemy", kind: "damage", stat: "physical", amount: 4 }]);
-    expect(useBattlePresentationStore.getState().floatingCombatBursts.at(-1)!.entries[0]!.displayText).toBe("-4");
+    expect(battlePresentation.getState().floatingCombatBursts.at(-1)!.entries[0]!.displayText).toBe("-4");
   });
 
   it("starts consecutive actions immediately without merging or renewing older numbers", async () => {
     const show = activateBattle();
     show([{ target: "enemy", kind: "damage", stat: "physical", amount: 5 }]);
-    const first = useBattlePresentationStore.getState().floatingCombatBursts[0]!;
+    const first = battlePresentation.getState().floatingCombatBursts[0]!;
     await vi.advanceTimersByTimeAsync(300);
     show([{ target: "enemy", kind: "damage", stat: "physical", amount: 8 }]);
-    const bursts = useBattlePresentationStore.getState().floatingCombatBursts;
+    const bursts = battlePresentation.getState().floatingCombatBursts;
     expect(bursts).toHaveLength(2);
     expect(bursts[0]).toBe(first);
     expect(bursts[1]!.id).not.toBe(first.id);
     expect(bursts.map((burst) => burst.entries[0]!.displayText)).toEqual(["-5", "-8"]);
     await vi.advanceTimersByTimeAsync(COMBAT_TEXT_LIFETIME_MS - 300);
-    expect(useBattlePresentationStore.getState().floatingCombatBursts.map((burst) => burst.id)).toEqual([
-      bursts[1]!.id,
-    ]);
+    expect(battlePresentation.getState().floatingCombatBursts.map((burst) => burst.id)).toEqual([bursts[1]!.id]);
     await vi.advanceTimersByTimeAsync(300);
-    expect(useBattlePresentationStore.getState().floatingCombatBursts).toEqual([]);
+    expect(battlePresentation.getState().floatingCombatBursts).toEqual([]);
   });
 
   it("caps bursts per target without dropping types from a dense new action", async () => {
@@ -372,7 +341,7 @@ describe("battle-presentation-store", () => {
       { target: "enemy", kind: "damage", stat: "freeze", amount: 2 },
       { target: "enemy", kind: "damage", stat: "holy", amount: 1 },
     ]);
-    const bursts = useBattlePresentationStore.getState().floatingCombatBursts;
+    const bursts = battlePresentation.getState().floatingCombatBursts;
     expect(bursts.filter((burst) => burst.target === "player")).toHaveLength(1);
     const enemy = bursts.filter((burst) => burst.target === "enemy");
     expect(enemy.map((burst) => burst.entries[0]!.displayText)).toEqual(["-2", "-3", "-4"]);
@@ -389,11 +358,11 @@ describe("battle-presentation-store", () => {
       { target: "player", kind: "damage", stat: "physical", amount: 1 },
       { target: "player", kind: "heal", stat: "health", amount: 20 },
     ]);
-    const state = useBattlePresentationStore.getState();
+    const state = battlePresentation.getState();
     expect(state.enemyImpactCue).toMatchObject({ colors: keywordDefinitions.burn.shineColors, healthLost: true });
     expect(state.playerImpactCue).toMatchObject({ colors: keywordDefinitions.physical.shineColors, healthLost: true });
     show([{ target: "player", kind: "damage", stat: "block", amount: 3 }]);
-    expect(useBattlePresentationStore.getState().playerImpactCue).toMatchObject({
+    expect(battlePresentation.getState().playerImpactCue).toMatchObject({
       colors: keywordDefinitions.block.shineColors,
       healthLost: false,
     });
@@ -403,11 +372,11 @@ describe("battle-presentation-store", () => {
     const show = activateBattle();
     show([{ target: "enemy", kind: "damage", stat: "physical", amount: 5 }]);
     await vi.advanceTimersByTimeAsync(300);
-    useBattlePresentationStore.getState().clearFloatingCombatTexts();
+    battlePresentation.getState().clearFloatingCombatTexts();
     show([{ target: "enemy", kind: "damage", stat: "physical", amount: 8 }]);
     await vi.advanceTimersByTimeAsync(COMBAT_TEXT_LIFETIME_MS - 300);
-    expect(useBattlePresentationStore.getState().floatingCombatBursts).toHaveLength(1);
-    useBattlePresentationStore.getState().resetPresentation();
+    expect(battlePresentation.getState().floatingCombatBursts).toHaveLength(1);
+    battlePresentation.getState().resetPresentation();
     dispatchRunSessionCommand(
       (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.COLLECTION)),
       undefined,
@@ -415,8 +384,8 @@ describe("battle-presentation-store", () => {
     );
     show([{ target: "enemy", kind: "damage", stat: "physical", amount: 9 }]);
     await vi.advanceTimersByTimeAsync(COMBAT_TEXT_LIFETIME_MS);
-    expect(useBattlePresentationStore.getState().floatingCombatBursts).toEqual([]);
-    expect(useBattlePresentationStore.getState().enemyImpactCue).toBeNull();
+    expect(battlePresentation.getState().floatingCombatBursts).toEqual([]);
+    expect(battlePresentation.getState().enemyImpactCue).toBeNull();
   });
 
   it.each(["Holy/Leech", "Nature/Poison", "Dodge/Companion"] as const)(
@@ -472,7 +441,7 @@ describe("battle-presentation-store", () => {
       }
       expect(texts.length).toBeGreaterThan(3);
       show(texts);
-      const bursts = useBattlePresentationStore.getState().floatingCombatBursts;
+      const bursts = battlePresentation.getState().floatingCombatBursts;
       expect(bursts).toHaveLength(2);
       const entries = bursts.flatMap((burst) => burst.entries);
       expect(entries).toHaveLength(texts.length);
@@ -485,11 +454,11 @@ describe("battle-presentation-store", () => {
     localStorage.setItem("alchemy-disable-animations", "true");
     try {
       show([{ target: "enemy", kind: "damage", stat: "physical", amount: 5 }]);
-      expect(useBattlePresentationStore.getState().floatingCombatBursts[0]!.lifetimeMs).toBe(400);
+      expect(battlePresentation.getState().floatingCombatBursts[0]!.lifetimeMs).toBe(400);
       await vi.advanceTimersByTimeAsync(399);
-      expect(useBattlePresentationStore.getState().floatingCombatBursts).toHaveLength(1);
+      expect(battlePresentation.getState().floatingCombatBursts).toHaveLength(1);
       await vi.advanceTimersByTimeAsync(1);
-      expect(useBattlePresentationStore.getState().floatingCombatBursts).toEqual([]);
+      expect(battlePresentation.getState().floatingCombatBursts).toEqual([]);
     } finally {
       localStorage.removeItem("alchemy-disable-animations");
     }

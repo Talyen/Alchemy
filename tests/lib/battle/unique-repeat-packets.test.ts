@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
-import { addPlayerStatus } from "@/lib/battle/types";
+import { addPlayerStatus } from "@/lib/battle/status-state";
 import { attack, battle, play } from "../../fixtures/unique-gear-battle";
 
 describe("Unique damage repeats retain the resolved attack", () => {

@@ -1,14 +1,15 @@
 import type { Screen } from "@/lib/routing";
 import { useCallback, useEffect } from "react";
 import type { BattleControllerContext } from "./battle-context";
-import { useBattlePresentationStore, type BattlePresentationPort } from "./battle-presentation-store";
+import { useStore } from "zustand";
+import type { BattlePresentationPort } from "./battle-presentation-store";
 import { runBattleDraw } from "./draw-sequence";
 import type { createBattleTransferDeps } from "./battle-transfers";
 
 export interface BattleOpeningDrawContext {
   battle: Pick<BattleControllerContext["battle"], "read">;
   playback: Pick<BattleControllerContext["playback"], "id" | "completeAction" | "scheduleAutoEndTurn">;
-  getPresentation?: () => Pick<BattlePresentationPort, "openingDrawPending" | "setOpeningDrawPending">;
+  getPresentation: () => Pick<BattlePresentationPort, "openingDrawPending" | "setOpeningDrawPending">;
 }
 
 export async function playBattleOpeningDraw(
@@ -16,7 +17,7 @@ export async function playBattleOpeningDraw(
   transferDeps: Pick<ReturnType<typeof createBattleTransferDeps>, "getDrawSequenceDeps">,
 ): Promise<boolean> {
   const current = ctx.battle.read();
-  const presentation = ctx.getPresentation?.() ?? useBattlePresentationStore.getState();
+  const presentation = ctx.getPresentation();
   if (!presentation.openingDrawPending) return false;
   presentation.setOpeningDrawPending(false);
   const sessionNum = ctx.playback.id;
@@ -44,13 +45,13 @@ export function useBattleOpeningDraw({
   screen,
   playbackBound,
 }: {
-  ctx: BattleControllerContext;
-  transferDeps: ReturnType<typeof createBattleTransferDeps>;
+  ctx: BattleOpeningDrawContext & Pick<BattleControllerContext, "presentation" | "battleSceneRef" | "drawPileRef">;
+  transferDeps: Pick<ReturnType<typeof createBattleTransferDeps>, "getDrawSequenceDeps">;
   hasActiveBattle: boolean;
   screen: Screen;
   playbackBound: boolean;
 }) {
-  const openingDrawPending = useBattlePresentationStore((state) => state.openingDrawPending);
+  const openingDrawPending = useStore(ctx.presentation, (state) => state.openingDrawPending);
   const playOpeningDrawWhenReady = useCallback(() => {
     if (!ctx.getPresentation().openingDrawPending || !ctx.battleSceneRef.current || !ctx.drawPileRef.current) {
       return undefined;

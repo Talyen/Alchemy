@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { isPlayerDefeated } from "@/lib/battle/types";
+import { isPlayerDefeated } from "@/lib/battle/health-state";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { blockDeck, makeState, makeTestCard, statusDeck } from "../../fixtures/battle";
 import { defaultPlayerStatusValues, defaultEnemyStatusValues } from "../../fixtures/default-battle-state";

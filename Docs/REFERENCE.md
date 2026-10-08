@@ -102,16 +102,22 @@ Live autoplay scoring lives in `src/lib/battle/autoplay-policy.ts` and is game-d
 
 Exact presets, finding bands, report grouping, pairing methodology, and measurement semantics are owned by `src/lib/balance/` and the generated report; use findings as review input rather than applying tunings automatically. The summary opens `reports/balance-findings.html` and writes a JSON companion.
 
-Report measurements share `RateCell` in `simulator-types.ts` and an exhaustive
+Report measurements share `RateCell` in `simulator-types.ts` and an
 extraction/aggregation record in `rate-statistics.ts`. Batch summaries and report
-aggregation use that same record: outcome counts and sample counts always sum;
-rates and averages weight by battles, or equally by sampled enemy types for
-class rankings. Add a measurement to the contract and its record together; batch
-to report projection and both weighting modes then include it automatically.
+aggregation use that record: counts always sum; rates and averages weight by
+battles or sampled enemy types. Adding a measurement to the contract and record
+updates projections and weighting automatically.
 
-Paired sweeps describe reference fights and one or more variants in `report-sweeps.ts`. `report-sweep-runner.ts` owns batch configuration, matched-fight validation, one simulation of each shared reference, and paired result aggregation. A pair must keep character, enemy, depth, tier, fight seed, and iteration count equal; only the tested deck, talent, Trinket, or Gear input varies. A variant can use the reference as either the baseline or treatment, so removing a card or talent preserves the meaning of the reported delta.
+Paired sweeps describe reference fights and variants in `report-sweeps.ts`.
+`report-sweep-runner.ts` manages batch configuration, matched-fight checks, reference
+simulations, and delta aggregation. A pair holds character, enemy, depth, tier,
+seed, and iterations equal; only the tested deck, talent, Trinket, or Gear varies.
+Either reference or variant may serve as baseline.
 
-Numeric environment values must be positive integers. Policy and loadout values must exactly match the choices above; pacing accepts `on`/`1`/`true` or `off`/`0`/`false` (anything else fails fast). Invalid configuration fails before report files are written. `ALCHEMY_BALANCE_FINDINGS_CAP` controls the number of findings in both rendered summaries (default: 100).
+Numeric values must be positive integers. Policies and loadouts must match
+supported choices; pacing accepts `on`/`1`/`true` or `off`/`0`/`false`. Invalid
+settings fail fast before report writes. `ALCHEMY_BALANCE_FINDINGS_CAP` sets the
+summary findings cap (default: 100).
 `balance:sim` and `balance:sim:full` generate reports; `test:balance` verifies finite full-report
 construction and render purity without touching `reports/`. Changed balance
 implementation runs both the focused unit suite and this report check.

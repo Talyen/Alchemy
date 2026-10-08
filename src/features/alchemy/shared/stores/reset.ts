@@ -1,4 +1,4 @@
-import { clearAlchemySaveData } from "@/features/alchemy/shared/storage";
+import { createSessionPersistence } from "@/features/alchemy/shared/storage";
 import { logStorageFailure } from "@/lib/storage-logging";
 import type { GameSession } from "./game-session-types";
 import { dispatchGameplayCommand } from "./gameplay-command";
@@ -25,7 +25,7 @@ export async function clearAllPersistentGameData(gameSession: GameSession): Prom
   if (runtime.persistentClearInFlight) return false;
   runtime.persistentClearInFlight = true;
   try {
-    const cleared = await clearAlchemySaveData("localWipe", gameSession);
+    const cleared = await createSessionPersistence(gameSession).clear("localWipe");
     if (!cleared) {
       logStorageFailure("Save data could not be cleared; memory was left unchanged");
       return false;

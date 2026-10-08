@@ -3,7 +3,9 @@ import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
 import { mergeCombatText } from "./combat-text-events";
 import { paceCombatMagnitude } from "./fight-pacing";
-import { addEnemyMitigation, hasEnemyTrait, type BattleState, type CombatTextEvent } from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+import { addEnemyMitigation } from "./enemy-mitigation-state";
+import { hasEnemyTrait } from "./encounter-trait-state";
 
 export function addEnemyMitigationWithCombatText(
   state: BattleState,
