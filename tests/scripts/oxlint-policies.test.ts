@@ -241,6 +241,14 @@ it("checks mouse-only actions and focusable controls hidden from assistive techn
 });
 
 it("keeps the shipping singleton out of reusable domains and headless careers", async () => {
+  const imports = [
+    'import { defaultGameSession } from "@/app/application-session";',
+    'export { defaultGameSession } from "@/app/application-session";',
+    'const session = import("@/app/application-session");',
+    'import { battlePresentation } from "@/app/battle-presentation";',
+    'export { battlePresentation } from "@/app/battle-presentation";',
+    'const presentation = import("@/app/battle-presentation");',
+  ];
   for (const file of [
     "src/features/alchemy/run-loop/shop/create-shop-actions.ts",
     "src/features/alchemy/shared/stores/battle-commands.ts",
@@ -251,16 +259,9 @@ it("keeps the shipping singleton out of reusable domains and headless careers", 
     "src/features/alchemy/run-loop/battle/use-battle-opening-draw.ts",
     "src/features/alchemy/run-loop/screens/battle-screen/hand.tsx",
   ]) {
-    for (const code of [
-      'import { defaultGameSession } from "@/app/application-session";',
-      'export { defaultGameSession } from "@/app/application-session";',
-      'const session = import("@/app/application-session");',
-      'import { battlePresentation } from "@/app/battle-presentation";',
-      'export { battlePresentation } from "@/app/battle-presentation";',
-      'const presentation = import("@/app/battle-presentation");',
-    ]) {
-      expect(await effectiveMessages(file, code, "alchemy/session-ownership"), `${file}: ${code}`).toHaveLength(1);
-    }
+    expect(await effectiveMessages(file, imports.join("\n"), "alchemy/session-ownership"), file).toHaveLength(
+      imports.length,
+    );
   }
   for (const file of ["src/app/use-app-save-state.ts", "src/features/alchemy/shell/use-battle-controller.ts"]) {
     expect(

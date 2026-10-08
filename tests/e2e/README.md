@@ -37,13 +37,15 @@ Run browser batches serially or combine specs in one invocation. Browser tests a
 
 An explicitly requested local Electron run collects only the desktop bridge and main-menu smoke. Electron tests load the built desktop renderer through the app protocol without starting a preview server; CI and nightly explicitly select the full suite. These tests launch the checkout's Electron runtime. The [packaged Windows startup check](../../Docs/RELEASE.md#packaged-windows-startup-check) separately validates the distributed application.
 
-Electron test launches default to background mode, keeping the isolated window
+Local Electron test launches default to background mode, keeping the isolated window
 hidden and rendering without taking focus. `ALCHEMY_ELECTRON_BACKGROUND=1`
 also explicitly selects this mode. Background mode suppresses native display-mode
 changes; native fullscreen checks are skipped unless a user-authorized foreground
 run sets `ALCHEMY_ELECTRON_BACKGROUND=0`. The opt-in
 [desktop layout review](../layout-review/README.md) captures the full viewport
 matrix with this mode and verifies hidden versus offscreen composition.
+CI defaults to a visible window inside its isolated virtual display: hidden Linux
+windows can suspend frame callbacks and stall the real loading screen.
 
 Browser tests default to port 4173. To use another port, run `PLAYWRIGHT_BROWSER_PREVIEW_PORT=4273 npm run test:e2e:dev -- tests/e2e/specs/menu-navigation.spec.ts`. The override also sets the browser URL and seeded storage origin. Performance uses `PLAYWRIGHT_PERF_PORT` (default 4176); [desktop layout review](../layout-review/README.md) owns its separate preview-server setup. Preview mode still requires rebuilding after source changes.
 

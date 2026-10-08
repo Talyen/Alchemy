@@ -7,7 +7,10 @@ import { resolveElectronExecutablePathWithMarker } from "../../scripts/electron-
 import { ELECTRON_PREVIEW_PORT, previewPortFromEnv } from "../playwright-shared";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-export const ELECTRON_TEST_BACKGROUND = process.env.ALCHEMY_ELECTRON_BACKGROUND !== "0";
+// Hidden Linux windows can suspend frame callbacks despite backgroundThrottling:
+// false. CI renders in its isolated virtual display; local launches stay hidden.
+export const ELECTRON_TEST_BACKGROUND =
+  (process.env.ALCHEMY_ELECTRON_BACKGROUND ?? (process.env.CI ? "0" : "1")) !== "0";
 
 function getPreviewPort(): number {
   return previewPortFromEnv("PLAYWRIGHT_ELECTRON_PREVIEW_PORT", ELECTRON_PREVIEW_PORT);
