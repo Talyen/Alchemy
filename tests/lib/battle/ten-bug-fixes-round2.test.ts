@@ -213,10 +213,10 @@ describe("Combat feedback and reward regressions", () => {
           origin: "companion",
         },
         {
-          state,
           healthDamage: 5,
           previousHealth: 50,
           enemyWasAlive: true,
+          killed: false,
           critical: false,
           eligibility: state,
           resolvedDamage: 5,
@@ -247,10 +247,10 @@ describe("Combat feedback and reward regressions", () => {
           origin: "companion",
         },
         {
-          state,
           healthDamage: 5,
           previousHealth: 50,
           enemyWasAlive: true,
+          killed: false,
           critical: false,
           eligibility: state,
           resolvedDamage: 5,
