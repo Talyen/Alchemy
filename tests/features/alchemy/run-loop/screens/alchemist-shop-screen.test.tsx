@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
@@ -113,6 +113,47 @@ describe("AlchemistShopScreen mix Escape", () => {
     await user.click(first!);
     await user.click(combine);
     expect(onMixPotions).toHaveBeenCalledExactlyOnceWith(1, 0);
+  });
+
+  it("shows a brewed result only after saving and discards it when the player leaves the panel", async () => {
+    const user = userEvent.setup();
+    const pending: Array<() => void> = [];
+    const onStrengthenPotion = vi.fn(() => potion);
+    render(
+      <AlchemistShopScreen
+        gold={100}
+        runDeck={[potion]}
+        potionCards={[]}
+        refreshesLeft={0}
+        mixUsed={false}
+        purchasedSlotKeys={[]}
+        getPotionPrice={() => 10}
+        mixPrice={25}
+        refreshPrice={15}
+        onBuyCard={() => true}
+        onRefresh={() => {}}
+        onMixPotions={() => null}
+        onStrengthenPotion={onStrengthenPotion}
+        potency={0}
+        onContinue={() => {}}
+        afterProgressSaved={(run) => pending.push(run)}
+      />,
+    );
+    const brew = async () => {
+      await user.click(screen.getByRole("button", { name: /^Strengthen Potion/ }));
+      await user.click(await screen.findByRole("button", { name: "Select shop card" }));
+      await user.click(screen.getByRole("button", { name: "Strengthen · 25 Gold" }));
+    };
+    await brew();
+    expect(screen.queryByRole("button", { name: "Continue" })).toBeNull();
+    act(() => pending.shift()!());
+    await user.click(await screen.findByRole("button", { name: "Continue" }));
+    await brew();
+    await user.keyboard("{Escape}");
+    act(() => pending.shift()!());
+    expect(await screen.findByRole("button", { name: /^Strengthen Potion/ })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Continue" })).toBeNull();
+    expect(onStrengthenPotion).toHaveBeenCalledTimes(2);
   });
 
   it("cancels mix mode on Escape and stops GameMenu from receiving the key", async () => {

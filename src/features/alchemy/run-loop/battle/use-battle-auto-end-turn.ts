@@ -19,6 +19,7 @@ interface AutoEndTurnOptions {
   hasActiveBattle: boolean;
   gameMenuOpen?: boolean;
   isCardPlayInProgress?: () => boolean;
+  isProgressSavePending?: (() => boolean) | undefined;
   onEndTurn: () => void;
   presentationGateRef: RefObject<BattlePlaybackPresentationGate>;
   scheduleAutoEndTurnRef: RefObject<(state?: BattleSnapshot) => void>;
@@ -32,6 +33,7 @@ export function useBattleAutoEndTurn({
   hasActiveBattle,
   gameMenuOpen = false,
   isCardPlayInProgress,
+  isProgressSavePending,
   onEndTurn,
   presentationGateRef,
   scheduleAutoEndTurnRef,
@@ -48,6 +50,7 @@ export function useBattleAutoEndTurn({
     hasActiveBattle,
     gameMenuOpen,
     isCardPlayInProgress,
+    isProgressSavePending,
     presentationGateRef,
   });
 

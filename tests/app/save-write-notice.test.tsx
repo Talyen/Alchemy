@@ -32,7 +32,7 @@ describe("visible save acknowledgement", () => {
     await act(async () => {
       expect(await saveAlchemySaveData(createDefaultSaveData(), defaultGameSession)).toBe("failed");
     });
-    expect(screen.getByRole("alert").textContent).toContain("Progress could not be saved");
+    expect(screen.getByRole("alert").textContent).toContain("Couldn’t save");
     expect(errors).toHaveBeenCalled();
     fail = false;
     await act(async () => {

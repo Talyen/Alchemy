@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FlaskConical } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,8 @@ export function AlchemistShopScreen({
   onStrengthenPotion,
   potency,
   onContinue,
+  afterProgressSaved = (feedback) => feedback(),
+  isProgressSavePending = () => false,
 }: {
   gold: number;
   runDeck: BattleCard[];
@@ -47,9 +49,18 @@ export function AlchemistShopScreen({
   onStrengthenPotion: (index: number) => BattleCard | null;
   potency: number;
   onContinue: () => void;
+  afterProgressSaved?: (feedback: () => void) => void;
+  isProgressSavePending?: () => boolean;
 }) {
   const [brewMode, setBrewMode] = useState<"combine" | "strengthen" | null>(null);
   const [mixedCard, setMixedCard] = useState<BattleCard | null>(null);
+  const resultSequence = useRef(0);
+  useEffect(
+    () => () => {
+      resultSequence.current++;
+    },
+    [],
+  );
   const mixable = runDeck.filter(isBrewablePotion);
   const mixDisabled = gold < mixPrice || mixable.length < 2;
   const strengthenDisabled = gold < mixPrice || !mixable.some((card) => strengthenPotion(card));
@@ -62,7 +73,12 @@ export function AlchemistShopScreen({
         : operation.kind === "strengthen"
           ? onStrengthenPotion(operation.index)
           : null;
-    if (result) setMixedCard(result);
+    if (result) {
+      const sequence = ++resultSequence.current;
+      afterProgressSaved(() => {
+        if (resultSequence.current === sequence) setMixedCard(result);
+      });
+    }
     return result;
   }
   return (
@@ -103,8 +119,12 @@ export function AlchemistShopScreen({
             price={mixPrice}
             gold={gold}
             potency={potency}
+            isProgressSavePending={isProgressSavePending}
             onConfirm={confirm}
-            onBack={() => setBrewMode(null)}
+            onBack={() => {
+              resultSequence.current++;
+              setBrewMode(null);
+            }}
           />
         </ShopBrowseShell>
       ) : (
@@ -120,6 +140,7 @@ export function AlchemistShopScreen({
           onBuy={onBuyCard}
           onRefresh={onRefresh}
           onContinue={onContinue}
+          isProgressSavePending={isProgressSavePending}
           extraServices={
             <>
               <ServiceButton

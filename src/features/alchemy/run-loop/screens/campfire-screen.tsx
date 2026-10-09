@@ -25,6 +25,8 @@ export function CampfireScreen({
   onRest,
   onBrew,
   onContinue,
+  afterProgressSaved = (feedback) => feedback(),
+  isProgressSavePending = () => false,
 }: {
   playerHealth: number;
   maxHealth: number;
@@ -37,6 +39,8 @@ export function CampfireScreen({
   onRest: () => boolean;
   onBrew: (operation: BrewOperation) => BattleCard | null;
   onContinue: () => void;
+  afterProgressSaved?: (feedback: () => void) => void;
+  isProgressSavePending?: () => boolean;
 }) {
   const [brewing, setBrewing] = useState(false);
   const [rest, setRest] = useState<{ from: number; to: number } | null>(null);
@@ -83,6 +87,7 @@ export function CampfireScreen({
               offers={visit.offers}
               potency={potency}
               onConfirm={onBrew}
+              isProgressSavePending={isProgressSavePending}
               onBack={() => setBrewing(false)}
             />
           </>
@@ -92,9 +97,10 @@ export function CampfireScreen({
             <div className="flex flex-wrap justify-center gap-4">
               <Button
                 onClick={() => {
+                  if (isProgressSavePending()) return;
                   const from = playerHealth;
                   const to = playerHealth + restore;
-                  if (onRest()) setRest({ from, to });
+                  if (onRest()) afterProgressSaved(() => setRest({ from, to }));
                   else setError("This Campfire has already been used.");
                 }}
               >

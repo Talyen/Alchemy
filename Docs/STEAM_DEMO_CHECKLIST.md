@@ -128,3 +128,30 @@ For each completed check, record evidence against the candidate build in the rel
 | Resolution, VSync, and many FPS choices      | Validate Electron display modes and Alchemy's sizing controls. New resolution/VSync/FPS menus need a demonstrated player benefit and an approved implementation scope. |
 | Localization, itch.io, creator outreach      | Conditional launch decisions with honest support claims and separate publication/outreach authorization.                                                               |
 | Stability and marketing                      | Add Alchemy-specific run/save/progression checks, Steam Wishlist above Play/Continue, release evidence, and optional full-game wishlist links.                         |
+
+## Physical Steam acceptance evidence
+
+Automated controller tests send Steam Input's intended keyboard/pointer events;
+isolated Electron tests do not connect to Steamworks or real Cloud profiles.
+A fake two-device backend protects existing candidate-selection behavior and is
+not evidence of live synchronization.
+
+For a Windows candidate launched through Steam, record the package version/hash,
+Windows and Steam client versions, and published controller layout ID. Exercise
+menu, battle, Wish, rewards, shops, Armory, inspection, and modal Back with the
+controller. Repeat held Confirm, reconnect the controller, and switch between
+pointer and controller input. Open the default and a remapped overlay shortcut
+during autoplay; require the native activation event, paused actions, and a menu
+that remains open after the overlay closes until the player resumes.
+
+Repeat after Windows sleep/resume and Steam reconnection. With isolated acceptance
+accounts, verify newer saves across two devices, Cloud unavailable/reconnecting,
+and demo-to-full import while preserving edition slots and initialization receipts.
+Keep this evidence with the release's existing artifacts; do not create an archive
+of completed task notes in the repository.
+
+Deck acceptance remains pending when hardware is unavailable. Required external
+evidence includes Proton startup/performance, physical Steam Input and overlay,
+1280×800 readability, and suspend/resume. Renderer geometry and virtual-display
+results do not satisfy these gates or establish a controller/Deck rating. Preserve
+the release blockers documented in the Steam demo owner.

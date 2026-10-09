@@ -16,6 +16,7 @@ interface Props {
   equippedCharacterName: string | null;
   editable: boolean;
   onSalvage: (instanceId: string) => boolean;
+  afterProgressSaved?: (feedback: () => void) => void;
   onClearSalvageTarget: () => void;
 }
 
@@ -26,6 +27,7 @@ export function ArmoryOverlays({
   equippedCharacterName,
   editable,
   onSalvage,
+  afterProgressSaved = (feedback) => feedback(),
   onClearSalvageTarget,
 }: Props) {
   const heldCharacterName = useHeldWhile(salvagePending !== null, equippedCharacterName);
@@ -71,7 +73,7 @@ export function ArmoryOverlays({
             return;
           }
           if (onSalvage(heldPending.instance.instanceId)) {
-            playUISound("salvage");
+            afterProgressSaved(() => playUISound("salvage"));
             onClearSalvageTarget();
           } else {
             playUISound("error");

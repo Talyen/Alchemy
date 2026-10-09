@@ -1,3 +1,5 @@
+import { createSessionPersistence } from "@/features/alchemy/shared/storage";
+import { guardProgressAction } from "@/features/alchemy/shared/stores/session-capabilities";
 import { defaultGameSession } from "@/app/application-session";
 import type { CharacterId } from "@/lib/game-data";
 import {
@@ -41,6 +43,8 @@ export interface ArmoryController {
   onUnequipTrinket: (characterId: CharacterId) => void;
   onSalvage: (instanceId: string) => boolean;
   onApplyCurrency: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
+  afterProgressSaved?: (feedback: () => void) => void;
+  isProgressSavePending?: () => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;
 }
 
@@ -56,6 +60,8 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
   const flush = () => flushSaveAfterGearMutation(resolveActiveRunForSave(defaultGameSession), defaultGameSession);
   const controller: ArmoryController = {
     ...gear,
+    afterProgressSaved: createSessionPersistence(defaultGameSession).afterProgressSaved,
+    isProgressSavePending: () => createSessionPersistence(defaultGameSession).readProgress().kind !== "idle",
     finishedRunCharacters,
     combatRestrictions,
     onEquip: (characterId, slot, instance) =>
@@ -82,5 +88,13 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
       });
     };
   }
+  controller.onEquip = guardProgressAction(defaultGameSession, controller.onEquip, false);
+  controller.onUnequip = guardProgressAction(defaultGameSession, controller.onUnequip, undefined);
+  controller.onEquipTrinket = guardProgressAction(defaultGameSession, controller.onEquipTrinket, undefined);
+  controller.onUnequipTrinket = guardProgressAction(defaultGameSession, controller.onUnequipTrinket, undefined);
+  controller.onSalvage = guardProgressAction(defaultGameSession, controller.onSalvage, false);
+  controller.onApplyCurrency = guardProgressAction(defaultGameSession, controller.onApplyCurrency, false);
+  if (controller.onSpawnDevGear)
+    controller.onSpawnDevGear = guardProgressAction(defaultGameSession, controller.onSpawnDevGear, undefined);
   return controller;
 }

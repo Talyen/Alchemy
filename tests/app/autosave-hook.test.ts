@@ -57,7 +57,7 @@ describe("useAlchemyAutosaveFromStores", () => {
     vi.useRealTimers();
   });
 
-  it("writes debounced saves through storage io with lastSavedAt", async () => {
+  it("acknowledges committed progress through storage io with lastSavedAt", async () => {
     const { write } = installBackend();
     renderHook(() => useAlchemyAutosaveFromStores(true));
 
@@ -170,21 +170,17 @@ describe("useAlchemyAutosaveFromStores", () => {
     expect(JSON.parse(writeSync.mock.calls[0]![1]).gold).toBe(5);
   });
 
-  it("holds the debounce while commits keep arriving (max-wait window covered at scheduler level)", async () => {
+  it("groups synchronous action commits into one checkpoint without waiting for debounce", async () => {
     const { write } = installBackend();
     renderHook(() => useAlchemyAutosaveFromStores(true));
-
     changeGold(1);
-    for (let i = 0; i < 4; i++) {
-      await advance(250);
-      changeGold(2 + i);
-    }
-    expect(write).not.toHaveBeenCalled();
-    expect(vi.getTimerCount()).toBe(1);
-
-    await advance(500);
-    expect(write).toHaveBeenCalledTimes(1);
+    changeGold(2);
+    changeGold(5);
+    await advance(0);
+    expect(write).toHaveBeenCalledOnce();
     expect(JSON.parse(write.mock.calls[0]![1]).gold).toBe(5);
+    await advance(20_000);
+    expect(write).toHaveBeenCalledOnce();
   });
   it.each(["reported", "thrown"])("retries a %s failure on exit without another change", async (failure) => {
     const { write, writeSync } = installBackend();
@@ -213,7 +209,7 @@ describe("useAlchemyAutosaveFromStores", () => {
     write.mockResolvedValueOnce({ ok: false, error: "recovery disk" });
     renderHook(() => useAlchemyAutosaveFromStores());
     changeGold(42);
-    await advance(500);
+    await advance(0);
     await advance(9999);
     expect(write).toHaveBeenCalledTimes(2);
     await advance(1);
@@ -229,7 +225,7 @@ describe("useAlchemyAutosaveFromStores", () => {
     write.mockReturnValueOnce(gate.promise);
     renderHook(() => useAlchemyAutosaveFromStores());
     changeGold(1);
-    await advance(500);
+    await advance(0);
     changeGold(2);
     await act(async () => {
       gate.resolve({ ok: true });
@@ -237,7 +233,8 @@ describe("useAlchemyAutosaveFromStores", () => {
     act(() => {
       window.dispatchEvent(new PageTransitionEvent("pagehide"));
     });
-    expect(JSON.parse(writeSync.mock.calls[0]![1]).gold).toBe(2);
+    expect(writeSync).not.toHaveBeenCalled();
+    expect(JSON.parse(write.mock.calls.at(-1)![1]).gold).toBe(2);
   });
 
   it("limits sustained failures even when new changes disable animations", async () => {
@@ -245,7 +242,7 @@ describe("useAlchemyAutosaveFromStores", () => {
     write.mockResolvedValue({ ok: false, error: "disk" });
     renderHook(() => useAlchemyAutosaveFromStores());
     changeGold(1);
-    await advance(500);
+    await advance(0);
     window.localStorage.setItem("alchemy-disable-animations", "true");
     for (let i = 0; i < 9; i++) {
       await advance(1000);

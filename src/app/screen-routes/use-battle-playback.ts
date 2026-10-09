@@ -25,6 +25,8 @@ interface UseBattlePlaybackProps {
   handleAutoplayCard: AutoplayCardHandler;
   handleAutoplayWish: AutoplayWishHandler;
   isCardPlayInProgress: () => boolean;
+  isProgressSavePending?: (() => boolean) | undefined;
+  subscribeProgressSave?: ((listener: () => void) => () => void) | undefined;
   bindPlayback?: ((bind: BattlePlaybackBind | null) => void) | undefined;
 }
 
@@ -39,6 +41,8 @@ export function useBattlePlayback({
   handleAutoplayCard,
   handleAutoplayWish,
   isCardPlayInProgress,
+  isProgressSavePending,
+  subscribeProgressSave,
   bindPlayback,
 }: UseBattlePlaybackProps) {
   const autoEndTurn = useSettingsStore((s) => s.autoEndTurn);
@@ -49,6 +53,14 @@ export function useBattlePlayback({
     scheduleAutoEndTurnRef.current();
     wakeAutoplayRef.current?.();
   });
+  useLayoutEffect(
+    () =>
+      subscribeProgressSave?.(() => {
+        scheduleAutoEndTurnRef.current();
+        wakeAutoplayRef.current?.();
+      }),
+    [subscribeProgressSave],
+  );
   const presentationGateRef = useBattlePresentationGateRef(presentation, onPlaybackGateChangeRef);
 
   const { scheduleAutoEndTurn, clearAutoEndTurn } = useBattleAutoEndTurn({
@@ -59,6 +71,7 @@ export function useBattlePlayback({
     hasActiveBattle,
     gameMenuOpen,
     isCardPlayInProgress,
+    isProgressSavePending,
     onEndTurn: handleEndTurn,
     presentationGateRef,
     scheduleAutoEndTurnRef,
@@ -70,6 +83,7 @@ export function useBattlePlayback({
     battleState,
     hasActiveBattle,
     isCardPlayInProgress,
+    isProgressSavePending,
     gameMenuOpen,
     playCard: handleAutoplayCard,
     playWish: handleAutoplayWish,

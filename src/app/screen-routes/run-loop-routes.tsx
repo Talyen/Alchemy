@@ -87,6 +87,8 @@ function BattleScreenRoute({ cardInspection, routeCommands, gameMenuOpen }: Batt
     handleAutoplayCard: commands.handleAutoplayCard,
     handleAutoplayWish: commands.handleAutoplayWish,
     isCardPlayInProgress: commands.isCardPlayInProgress,
+    isProgressSavePending: commands.isProgressSavePending,
+    subscribeProgressSave: commands.subscribeProgressSave,
     bindPlayback: commands.bindPlayback,
   });
 
@@ -181,6 +183,8 @@ function CampfireScreenRoute({ routeCommands }: RunLoopRouteCtx) {
       runDeck={r.runDeck}
       visit={r.visit}
       potency={talentEffects.potionMixPotency}
+      afterProgressSaved={routeCommands.progress.afterSaved}
+      isProgressSavePending={routeCommands.progress.isPending}
       onRest={commands.rest}
       onBrew={commands.brew}
       onContinue={commands.continueCampfire}
@@ -194,6 +198,7 @@ function CardShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const r = useShopScreenData();
   return (
     <CardShopScreen
+      isProgressSavePending={routeCommands.progress.isPending}
       gold={r.gold}
       runDeck={r.runDeck}
       shopCards={r.shopState.cards}
@@ -218,6 +223,8 @@ function AlchemistShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const potency = useTalentEffects().potionMixPotency;
   return (
     <AlchemistShopScreen
+      afterProgressSaved={routeCommands.progress.afterSaved}
+      isProgressSavePending={routeCommands.progress.isPending}
       gold={r.gold}
       runDeck={r.runDeck}
       potionCards={r.alchemistState.potions}
@@ -247,6 +254,7 @@ function TrinketShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const r = useTrinketShopScreenData();
   return (
     <TrinketShopScreen
+      isProgressSavePending={routeCommands.progress.isPending}
       gold={r.gold}
       trinkets={r.trinketShopState.trinkets}
       refreshesLeft={r.trinketShopState.refreshesLeft}
@@ -270,6 +278,7 @@ function EquipmentShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const r = useEquipmentShopScreenData();
   return (
     <EquipmentShopScreen
+      isProgressSavePending={routeCommands.progress.isPending}
       gold={r.gold}
       gear={r.equipmentShopState.gear}
       refreshesLeft={r.equipmentShopState.refreshesLeft}
@@ -310,6 +319,8 @@ function TransmutationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   if (!r.visit.completed && r.visit.offers.length === 0) return null;
   return (
     <TransmutationScreen
+      afterProgressSaved={routeCommands.progress.afterSaved}
+      isProgressSavePending={routeCommands.progress.isPending}
       runDeck={r.runDeck}
       visit={r.visit}
       onExchange={commands.exchange}

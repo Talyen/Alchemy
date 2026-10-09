@@ -13,7 +13,12 @@ const replaced: GearInstance = { instanceId: "replaced", definitionId: "longswor
 const offhand: GearInstance = { instanceId: "offhand", definitionId: "hatchet-basic", affixes: [] };
 const inventory = [incoming, replaced, offhand];
 
-function setup({ success = true, geometry = true, occupied = true } = {}) {
+function setup({
+  success = true,
+  geometry = true,
+  occupied = true,
+  afterProgressSaved = (run: () => void) => run(),
+} = {}) {
   if (geometry) {
     document.body.innerHTML = `
       <div data-testid="armory-inventory-item" data-instance-id="incoming"></div>
@@ -50,6 +55,7 @@ function setup({ success = true, geometry = true, occupied = true } = {}) {
         ordering,
         requireEditable: (action) => action(),
         setNotice: vi.fn(),
+        afterProgressSaved,
       });
       return { ordering, transfers };
     }),
@@ -60,6 +66,21 @@ describe("Armory transfer orchestration", () => {
   beforeEach(() => {
     motion.reduced = false;
     document.body.innerHTML = "";
+  });
+
+  it("waits for saving before moving artwork and discards a transfer after the view changes", () => {
+    const pending: Array<() => void> = [];
+    const { result, onEquip } = setup({ afterProgressSaved: (run) => pending.push(run) });
+    act(() => result.current.transfers.handleEquipGear(incoming));
+    expect(onEquip).toHaveBeenCalledOnce();
+    expect(result.current.transfers.flyingItems).toEqual([]);
+    act(() => pending.shift()!());
+    expect(result.current.transfers.flyingItems).toHaveLength(3);
+    act(() => result.current.transfers.handleEquipGear(incoming));
+    act(() => result.current.transfers.settleActiveTransfers());
+    act(() => pending.shift()!());
+    expect(result.current.transfers.flyingItems).toEqual([]);
+    expect(onEquip).toHaveBeenCalledTimes(2);
   });
 
   it.each(["animated", "reduced motion", "missing geometry"])(

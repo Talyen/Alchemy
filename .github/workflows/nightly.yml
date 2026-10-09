@@ -167,6 +167,15 @@ jobs:
         env:
           CI: true
 
+      - name: Gameplay resource soak
+        if: matrix.slot == 0
+        run: xvfb-run --auto-servernum -- npm run perf -- --scenario memory-soak --electron --skip-build
+        env:
+          CI: true
+          PERF_MEASURE_MS: "300000"
+          PERF_SOAK_MIN_CYCLES: "20"
+          PERF_RUNS: "1"
+
       - name: Upload replay and diagnostics
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

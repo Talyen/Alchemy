@@ -267,7 +267,10 @@ async function main() {
   const selectedSuite =
     args.suite === "synthetic" ? SYNTHETIC_SCENARIOS : args.suite === "seeded" ? SEEDED_SCENARIOS : METRIC_SCENARIOS;
   const replay = args.replay ? JSON.parse(fs.readFileSync(path.resolve(args.replay), "utf8")) : null;
-  if (args.replay && (replay?.version !== 1 || !REALISTIC_CASE_IDS.has(replay?.scenario)))
+  if (
+    args.replay &&
+    (replay?.version !== 1 || (!REALISTIC_CASE_IDS.has(replay?.scenario) && replay?.scenario !== "memory-soak"))
+  )
     throw new Error("Invalid replay bundle");
   const scenario = replay?.scenario ?? (args.all ? null : (args.scenario ?? selectedSuite[0] ?? DEFAULT_SCENARIO));
 
@@ -288,7 +291,9 @@ async function main() {
     ? selectedSuite.filter((id) => REALISTIC_CASE_IDS.has(id))
     : REALISTIC_CASE_IDS.has(scenario)
       ? [scenario]
-      : [];
+      : scenario === "memory-soak"
+        ? ["meta-journey"]
+        : [];
   if (replay) {
     fs.writeFileSync(path.join(outDir, `${replay.scenario}.case.json`), JSON.stringify(replay, null, 2));
   } else {

@@ -205,6 +205,7 @@ test(
     await desktopJourney(info, async (page, app) => {
       const battle = await seedDrawBattle(page);
       await battle.playFirstCard();
+      await battle.autoplayToggle.click();
       await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.blur());
       await expect(page.getByTestId("game-menu")).toBeVisible();
       await app.evaluate(({ BrowserWindow }) => {
@@ -215,8 +216,14 @@ test(
       await expect
         .poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.isFullScreen()))
         .toBe(true);
+      await expect(page.getByTestId("game-menu")).toBeVisible();
+      await expect(page.getByText("Saving…", { exact: true })).toHaveCount(0);
+      const pausedMana = await battle.mana();
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      expect(await battle.mana()).toBe(pausedMana);
       await page.keyboard.press("Escape");
       await expect(page.getByTestId("game-menu")).toHaveCount(0);
+      await battle.autoplayToggle.click();
       await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setFullScreen(false));
       await expect(page.getByRole("button", { name: /^View Deck/ })).toHaveAttribute("aria-disabled", "false");
       await battle.endTurn();

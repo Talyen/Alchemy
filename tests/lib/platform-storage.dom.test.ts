@@ -1,4 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
+import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage/save-candidates";
+import { deferred } from "../helpers/deferred";
 import { installDesktopApi } from "../helpers/desktop-save-mock-helper";
 import { SAVE_KEY, SAVE_RECOVERY_KEY } from "@/lib/game-constants";
 import {
@@ -179,6 +182,62 @@ describe("platform save backend", () => {
       ok: true,
     });
     expect(order).toEqual(["local", "cloud"]);
+  });
+
+  it("acknowledges local progress while Cloud is still waiting and drains it before clear", async () => {
+    const upload = deferred<boolean>();
+    const desktop = installDesktopApi({
+      cloudDeleteSuccess: true,
+      overrides: { steamCloudWrite: vi.fn(() => upload.promise) },
+    });
+    const backend = createDesktopSaveBackend({ cloudSyncEnabled: true });
+    await expect(backend.write(SAVE_KEY, "completed-action")).resolves.toEqual({ ok: true });
+    expect(desktop.steamCloudWrite).toHaveBeenCalledWith("completed-action", undefined);
+    const clearing = backend.clear(SAVE_KEY);
+    await Promise.resolve();
+    expect(desktop.clearSave).not.toHaveBeenCalled();
+    upload.resolve(true);
+    await expect(clearing).resolves.toEqual({ ok: true });
+    expect(desktop.clearSave).toHaveBeenCalledOnce();
+  });
+
+  it("two isolated devices select the fresher shared mirror without overwriting their independent local slots", async () => {
+    let shared: string | null = null;
+    const device = () => {
+      let local: string | null = null;
+      return installDesktopApi({
+        cloudWriteSuccess: true,
+        overrides: {
+          readSaveSlot: vi.fn(async () => ({ candidates: local ? [local] : [], localReadFailed: false })),
+          writeSave: vi.fn(async (value) => {
+            local = value;
+            return true;
+          }),
+          steamCloudRead: vi.fn(async () => shared),
+          steamCloudWrite: vi.fn(async (value) => {
+            shared = value;
+            return true;
+          }),
+        },
+      });
+    };
+    const first = device();
+    const firstBackend = createDesktopSaveBackend({ cloudSyncEnabled: true });
+    const old = JSON.stringify({ ...createDefaultSaveData(), gold: 10, lastSavedAt: 10 });
+    await firstBackend.write(SAVE_KEY, old);
+    const second = device();
+    const secondBackend = createDesktopSaveBackend({ cloudSyncEnabled: true });
+    const latest = JSON.stringify({ ...createDefaultSaveData(), gold: 20, lastSavedAt: 20 });
+    await secondBackend.write(SAVE_KEY, latest);
+    window.alchemyDesktop = first;
+    const candidates = await firstBackend.readCandidates(SAVE_KEY);
+    expect(candidates.ok).toBe(true);
+    if (!candidates.ok) throw new Error("Device read failed");
+    expect(candidates.candidates).toEqual([old, latest]);
+    expect(evaluateSaveCandidates(candidates.candidates).data.gold).toBe(20);
+    window.alchemyDesktop = second;
+    const secondRead = await secondBackend.readCandidates(SAVE_KEY);
+    expect(secondRead).toEqual({ ok: true, candidates: [latest] });
   });
 
   it("fails closed without clearing local data when cloud deletion fails", async () => {

@@ -25,6 +25,7 @@ type TransferProps = Pick<
   ordering: ReturnType<typeof useArmoryOrdering>;
   requireEditable: (action: () => void) => void;
   setNotice: (notice: string) => void;
+  afterProgressSaved?: (feedback: () => void) => void;
 };
 
 export function useArmoryTransfers({
@@ -41,6 +42,7 @@ export function useArmoryTransfers({
   ordering,
   requireEditable,
   setNotice,
+  afterProgressSaved = (feedback) => feedback(),
 }: TransferProps) {
   const loadout = loadouts[characterId];
   const reducedMotion = useReducedMotion();
@@ -49,6 +51,7 @@ export function useArmoryTransfers({
   const transferSequence = useRef(0);
   const { clearPlaceholder, commitEquip, commitUnequip } = ordering;
   const settleActiveTransfers = useCallback(() => {
+    transferSequence.current++;
     setFlyingItems((prev) => (prev.length === 0 ? prev : []));
     clearPlaceholder();
   }, [clearPlaceholder]);
@@ -57,6 +60,7 @@ export function useArmoryTransfers({
     window.addEventListener("resize", settleActiveTransfers);
     window.addEventListener("scroll", settleActiveTransfers, true);
     return () => {
+      transferSequence.current++;
       window.removeEventListener("resize", settleActiveTransfers);
       window.removeEventListener("scroll", settleActiveTransfers, true);
     };
@@ -76,6 +80,16 @@ export function useArmoryTransfers({
     }
     const sequence = ++transferSequence.current;
     setFlyingItems(flights.map((flight) => ({ ...flight, id: `${sequence}-${flight.id}` })));
+  }
+
+  function completeTransfer(commit: () => void, flights: ArmoryFlight[], sound = false) {
+    const sequence = transferSequence.current;
+    afterProgressSaved(() => {
+      if (sequence !== transferSequence.current) return;
+      commit();
+      if (sound) playUISound("gearMove");
+      present(flights);
+    });
   }
 
   function gearArtwork(id: string): TransferArtwork {
@@ -119,9 +133,7 @@ export function useArmoryTransfers({
         playUISound("error");
         return;
       }
-      commitEquip(instance.instanceId, replacedId, displaced);
-      playUISound("gearMove");
-      present(flights);
+      completeTransfer(() => commitEquip(instance.instanceId, replacedId, displaced), flights, true);
     });
   }
 
@@ -139,9 +151,7 @@ export function useArmoryTransfers({
         panelRect: undefined,
       });
       onEquipTrinket(characterId, trinketId);
-      commitEquip(trinketId, replacedId);
-      playUISound("gearMove");
-      present(flights);
+      completeTransfer(() => commitEquip(trinketId, replacedId), flights, true);
     });
   }
 
@@ -149,8 +159,7 @@ export function useArmoryTransfers({
     beginTransfer();
     const flights = buildUnequipFlights(artwork, measureArmorySlot(slot), measureArmoryItem(slot === "trinket"));
     commit();
-    commitUnequip(artwork.id);
-    present(flights);
+    completeTransfer(() => commitUnequip(artwork.id), flights);
   }
 
   function handleSlotUnequip(slot: GearSlot) {

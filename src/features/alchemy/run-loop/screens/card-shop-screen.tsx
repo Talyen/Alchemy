@@ -25,6 +25,7 @@ export function CardShopScreen({
   onRemoveCard,
   onRefresh,
   onContinue,
+  isProgressSavePending = () => false,
 }: {
   gold: number;
   runDeck: BattleCard[];
@@ -39,6 +40,7 @@ export function CardShopScreen({
   onRemoveCard: (cardIndex: number) => boolean;
   onRefresh: () => void;
   onContinue: () => void;
+  isProgressSavePending?: () => boolean;
 }) {
   const [removeMode, setRemoveMode] = useState(false);
   const [removeError, setRemoveError] = useState("");
@@ -57,6 +59,7 @@ export function CardShopScreen({
               removePrice={removePrice}
               fitHeight
               onConfirm={(index) => {
+                if (isProgressSavePending()) return;
                 if (onRemoveCard(index)) {
                   setRemoveError("");
                   setRemoveMode(false);
@@ -82,6 +85,7 @@ export function CardShopScreen({
           onBuy={onBuyCard}
           onRefresh={onRefresh}
           onContinue={onContinue}
+          isProgressSavePending={isProgressSavePending}
           extraServices={
             <ServiceButton
               icon={Trash2}

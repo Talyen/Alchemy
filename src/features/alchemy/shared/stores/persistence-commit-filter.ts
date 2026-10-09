@@ -90,7 +90,7 @@ function sessionPersistedInputsEqual(
   return Object.is(previous[NON_WILDWOOD_GATED_SESSION_KEY], next[NON_WILDWOOD_GATED_SESSION_KEY]);
 }
 
-function gameplayPersistedInputsEqual(previous: GameplayState, next: GameplayState): boolean {
+export function gameplayPersistedInputsEqual(previous: GameplayState, next: GameplayState): boolean {
   if (previous === next) return true;
   if (!fieldsEqual(previous.runProfile, next.runProfile, RUN_PROFILE_SAVE_KEYS)) return false;
   if (!Object.is(previous.gear, next.gear)) return false;

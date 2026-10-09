@@ -16,14 +16,29 @@ test.describe("Combat feedback animations", slow, () => {
         ],
       }),
     ];
-    await injectActiveBattle(page, makeGoblinBattleState({ hand, playerHealth: 10, playerMaxHealth: 100 }), {
-      runDeck: hand,
-      autoEndTurn: false,
-    });
+    await injectActiveBattle(
+      page,
+      makeGoblinBattleState({
+        hand,
+        playerHealth: 10,
+        playerMaxHealth: 100,
+        enemyHealth: 40,
+        enemyMaxHealth: 40,
+        enemyCC: { stunSkipTurns: 1 },
+      }),
+      {
+        runDeck: hand,
+        autoEndTurn: false,
+        masterVolume: 0,
+      },
+    );
     const battle = new BattlePage(page);
     await battle.playFirstCard();
     const burst = page.locator('[data-testid="combat-text-burst"][data-target="player"]');
     await expect(burst).toBeVisible();
+    await expect(burst.locator('[data-testid="combat-text"][data-kind="heal"][data-stat="health"]')).toContainText("1");
+    await expect.poll(() => battle.playerHealth()).toBe(11);
+    await expect.poll(() => battle.enemyHealth()).toBe(39);
     const samples = await burst.evaluate(async (node) => {
       const layer = node.closest('[data-testid="combat-text-layer"]')!;
       const portrait = document.querySelector('[data-testid="battle-player-art-panel"]')!;

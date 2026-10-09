@@ -1,3 +1,4 @@
+import { ProgressCompletion } from "../storage/progress-completion";
 import { createInstanceId } from "@/lib/utils";
 import { createSaveIo } from "../storage/save-io";
 import type { GameSession, GameSessionOptions, SessionClock, SessionFeedback } from "./game-session-types";
@@ -62,8 +63,10 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
     },
     options.feedback,
   );
+  const gameplay = createGameplayStore(generateRunSeed);
   return {
-    gameplay: createGameplayStore(generateRunSeed),
+    gameplay,
+    presentationBase: gameplay.getState(),
     settings,
     settingsCodec: createSettingsPersistenceCodec(settings),
     io: createSaveIo(options.saveBackend, clock.now, allowPlatformStorage),
@@ -72,6 +75,7 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
     createInstanceId: instanceIdSource,
     feedback,
     inCommand: false,
+    progressCompletion: new ProgressCompletion(),
     persistentClearInFlight: false,
     disposed: false,
     teardown: createLifecycleChannel(),
@@ -106,6 +110,7 @@ export function createSessionRuntime(options: GameSessionOptions = {}, allowPlat
   const session = {
     dispose() {
       disposal ??= (async () => {
+        runtime.progressCompletion.cancel();
         runtime.disposed = true;
         const failures = runtime.cleanup();
         runtime.teardown.clear();

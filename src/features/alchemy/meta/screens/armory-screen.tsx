@@ -21,7 +21,7 @@ import {
   type GearInstance,
 } from "@/lib/gear";
 import { cn } from "@/lib/utils";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PageLayout, ScreenHeaderRow } from "../../shared/ui/layout-components";
 import { FadeSlot } from "../../shared/ui/use-fade";
 import { ArmoryCharacterTabs, ArmoryOverlays, type ArmoryScreenProps } from "./armory";
@@ -54,9 +54,18 @@ export function ArmoryScreen({
   onSalvage,
   onApplyCurrency = () => false,
   onSpawnDevGear,
+  afterProgressSaved = (feedback) => feedback(),
+  isProgressSavePending = () => false,
   onBack,
   onMenu,
 }: ArmoryScreenProps) {
+  const feedbackSequence = useRef(0);
+  useEffect(
+    () => () => {
+      feedbackSequence.current++;
+    },
+    [],
+  );
   const salvageButtonRef = useRef<HTMLButtonElement>(null);
   const [characterId, setCharacterId] = useState<CharacterId>("knight");
   const [selectedSlot, setSelectedSlot] = useState<ArmorySlot>("main-hand");
@@ -119,6 +128,7 @@ export function ArmoryScreen({
   }
 
   const requireEditable = (action: () => void) => {
+    if (isProgressSavePending()) return;
     if (!editable) {
       handleCombatLockedAttempt();
       return;
@@ -149,9 +159,11 @@ export function ArmoryScreen({
     ordering,
     requireEditable,
     setNotice,
+    afterProgressSaved,
   });
 
   const handleSelectCharacter = (id: CharacterId) => {
+    feedbackSequence.current++;
     settleActiveTransfers();
     setCharacterId(id);
     setCraftingResult(null);
@@ -192,15 +204,21 @@ export function ArmoryScreen({
         instance,
         onApplyCurrency,
         clearCurrency: clearTargeting,
+        afterProgressSaved,
       });
       if (applied) {
         setNotice("");
-        setCraftingResult({ before: instance, currencyId: activeCurrencyId });
+        const sequence = ++feedbackSequence.current;
+        afterProgressSaved(() => {
+          if (feedbackSequence.current === sequence)
+            setCraftingResult({ before: instance, currencyId: activeCurrencyId });
+        });
       } else setNotice("Crafting could not be completed. No currency was spent.");
     });
   };
 
   const handleSlotSelect = (slot: ArmorySlot) => {
+    feedbackSequence.current++;
     settleActiveTransfers();
     setSelectedSlot(slot);
     if (slot === "trinket") clearTargeting();
@@ -213,6 +231,7 @@ export function ArmoryScreen({
   };
 
   const handleFiltersChange = (filters: ArmoryInventoryFilters) => {
+    feedbackSequence.current++;
     settleActiveTransfers();
     clearTargeting();
     ordering.setFilters(filters);
@@ -333,14 +352,21 @@ export function ArmoryScreen({
           editable={editable}
           equippedCharacterName={equippedSalvageCharacter ? characters[equippedSalvageCharacter].name : null}
           onSalvage={(instanceId) => {
+            if (isProgressSavePending()) return false;
             const success = onSalvage(instanceId);
-            if (success)
-              setNotice(
-                `${salvagePending ? getGearInstanceTitle(salvagePending.instance) : "Item"} salvaged. Rewards added.`,
-              );
+            if (success) {
+              const sequence = ++feedbackSequence.current;
+              afterProgressSaved(() => {
+                if (feedbackSequence.current === sequence)
+                  setNotice(
+                    `${salvagePending ? getGearInstanceTitle(salvagePending.instance) : "Item"} salvaged. Rewards added.`,
+                  );
+              });
+            }
             return success;
           }}
           onClearSalvageTarget={clearTargeting}
+          afterProgressSaved={afterProgressSaved}
         />
         <ArmoryTransferOverlay flyingItems={flyingItems} onComplete={settleActiveTransfers} />
       </div>

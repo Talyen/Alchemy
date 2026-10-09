@@ -1,3 +1,4 @@
+import { gameplayPersistedInputsEqual } from "./persistence-commit-filter";
 import type { Draft } from "immer";
 import { produce } from "immer";
 import type { CommandOutcome, SynchronousResult } from "./command-outcome";
@@ -60,6 +61,10 @@ export function dispatchGameplayCommand<T>(
     if (outcome.kind === "accepted" && next !== base) {
       const published = { ...next, revision: base.revision + 1 };
       deepFreezeInDev(published);
+      if (runtime.progressCompletion.active && !gameplayPersistedInputsEqual(base, published)) {
+        if (runtime.progressCompletion.read().kind === "idle") runtime.presentationBase = base;
+        runtime.progressCompletion.mark(published.revision);
+      }
       runtime.gameplay.setState(published, true);
     }
   } finally {

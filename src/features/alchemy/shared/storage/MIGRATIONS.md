@@ -137,10 +137,25 @@ Autosave retains unacknowledged changes until a covering write succeeds. In-memo
 
 Browser lifecycle exits (`visibilitychange`, `pagehide`, and `beforeunload`) synchronously flush the latest unacknowledged snapshot to `localStorage` via `writeSync`. A successful synchronous flush returns `saved` immediately when the queue is idle. If an older write may still land, the latest snapshot also replaces pending queue work and completion waits for that final write. No await sits between the sync write and the idle check, so check-and-enqueue is atomic on the event loop (see `SaveStorage.saveForExit` in [save-storage.ts](./save-storage.ts), the owner of this ordering; `io.ts` delegates exit saves to that storage instance). Each snapshot serialization stamps its own `lastSavedAt`. `SaveStorage` advances that timestamp beyond its loaded save and prior serialized writes, even when the clock repeats or moves backward, so a newer recovery save cannot lose to an older primary on reload. Primary-to-recovery fallback retries reuse the same serialized payload and timestamp. Desktop IPC uses the same serialized coalescing queue and returns a promise for the actual write outcome. A failed synchronous exit remains retryable through the scheduler retry while mounted. Desktop shutdown remains best effort, so earlier visibility/pagehide signals give IPC time to finish before the window closes. Terminal saves supersede queued snapshots that have not started writing.
 
-Local write failures surface a non-modal warning while the autosave scheduler
-retries. An acknowledged primary or recovery write clears it; cloud-only failures
-do not imply local progress loss. This transient status is not saved and does not
-change candidate selection, recovery policy, or the write acknowledgement contract.
+Renderer gameplay checkpoints publish Saving… before any completed result. Display
+hooks retain pre-action progress while domain commands resolve and saving runs.
+A successful primary or recovery write releases the pending result; failed and
+skipped writes never acknowledge it. If both slots fail, progression pauses with
+Couldn’t save and Retry. Retrying saves the committed snapshot without executing
+the action again. Automatic retry remains with the existing scheduler and cooldown;
+explicit Retry resets its submission latch without changing normal exit deduplication.
+
+Checkpoint revisions, epochs, pending presentation references, and failure status
+are runtime-only. Restoring another run, clear, write protection, and disposal
+invalidate stale acknowledgements and completion feedback. No schema migration is
+needed. Completed outcomes survive process interruption after local acknowledgement;
+shutdown flushing of unfinished work remains best effort.
+
+Cloud mirroring runs independently after local writing, serialized across both
+slots with the newest queued payload per slot. A mirror failure cannot delay local
+completion. Clear cancels queued mirrors and waits for an active upload before
+Cloud deletion. Candidate selection, account ownership, and recovery policy retain
+the existing contracts.
 
 ## Deletion
 

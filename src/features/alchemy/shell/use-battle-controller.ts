@@ -1,4 +1,5 @@
-import { assertSessionOwnership } from "@/features/alchemy/shared/stores/session-capabilities";
+import { createSessionPersistence } from "@/features/alchemy/shared/storage";
+import { assertSessionOwnership, guardProgressAction } from "@/features/alchemy/shared/stores/session-capabilities";
 import { battlePresentation } from "@/app/battle-presentation";
 import { defaultGameSession } from "@/app/application-session";
 import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
@@ -44,6 +45,7 @@ export function useBattleController({
     ...[onBattleVictory, onBattleDefeat].filter((callback) => callback !== undefined),
   );
   const hasActiveBattle = useHasActiveBattle();
+  const persistence = useMemo(() => createSessionPersistence(defaultGameSession), []);
 
   const [isAutoplayEnabled, setIsAutoplayEnabledState] = useState(() =>
     preferredAutoplayEnabled(useSettingsStore.getState()),
@@ -154,20 +156,31 @@ export function useBattleController({
       toggleBoonInspect,
       closeBoonInspect,
       isCardPlayInProgress: () => ctx.playback.cardPlayInProgress,
+      isProgressSavePending: () => persistence.readProgress().kind !== "idle",
+      subscribeProgressSave: persistence.subscribeProgress,
       presentBattleStart: actions.init.presentBattleStart,
       startBattle: actions.init.startBattle,
       startBossBattle: actions.init.startBossBattle,
       startBossById: actions.init.startBossById,
-      handleCardClick: actions.cardPlay.handleCardClick,
-      handleWishChoice: actions.cardPlay.handleWishChoice,
-      handleAutoplayCard: actions.cardPlay.handleAutoplayCard,
-      handleAutoplayWish: actions.cardPlay.handleAutoplayWish,
-      handleEndTurn: actions.endTurnUi.handleEndTurn,
+      handleCardClick: guardProgressAction(defaultGameSession, actions.cardPlay.handleCardClick, undefined),
+      handleWishChoice: guardProgressAction(defaultGameSession, actions.cardPlay.handleWishChoice, undefined),
+      handleAutoplayCard: guardProgressAction(
+        defaultGameSession,
+        actions.cardPlay.handleAutoplayCard,
+        Promise.resolve(false),
+      ),
+      handleAutoplayWish: guardProgressAction(
+        defaultGameSession,
+        actions.cardPlay.handleAutoplayWish,
+        Promise.resolve(false),
+      ),
+      handleEndTurn: guardProgressAction(defaultGameSession, actions.endTurnUi.handleEndTurn, undefined),
       cancelBattle: actions.session.resetBattleSession,
       skipCombatDevMode: actions.devOutcomes.skipCombatDevMode,
     }),
     [
       hasActiveBattle,
+      persistence,
       refs,
       bindPlayback,
       ctx,

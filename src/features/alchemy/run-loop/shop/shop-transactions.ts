@@ -6,7 +6,7 @@ import {
   type RunTransaction,
 } from "@/features/alchemy/shared/stores/run-session-command";
 import { deductGold, readDraftGold } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
+import { guardProgressAction, sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 import { type playUISound } from "@/lib/audio";
 
 export interface ShopTransactionResult<T = undefined> {
@@ -28,15 +28,20 @@ export function runShopTransaction<T>(
   successSound: Parameters<typeof playUISound>[0] | undefined,
   gameSession: GameSession,
 ): ShopTransactionResult<T | undefined> {
-  const result = dispatchRunSessionCommand(
-    (draft) => {
-      if (draft.session.activity.kind !== activity) return rejectCommand("Shop visit is no longer active", null);
-      const result = recipe(draft);
-      return result.committed ? acceptCommand(result) : rejectCommand("Shop action was rejected", result);
-    },
-    undefined,
+  const result = guardProgressAction(
     gameSession,
-  );
+    () =>
+      dispatchRunSessionCommand(
+        (draft) => {
+          if (draft.session.activity.kind !== activity) return rejectCommand("Shop visit is no longer active", null);
+          const result = recipe(draft);
+          return result.committed ? acceptCommand(result) : rejectCommand("Shop action was rejected", result);
+        },
+        undefined,
+        gameSession,
+      ),
+    null,
+  )();
   if (!result) return { committed: false, price: 0, value: undefined };
   playShopSpendFeedback(result, gameSession);
   if (result.committed && successSound) sessionFeedback(gameSession).playUISound(successSound);

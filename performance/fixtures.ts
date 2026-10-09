@@ -82,6 +82,9 @@ interface PerfFixtures {
     ) => Promise<void>;
     collectObservations?: (page: Page) => Promise<Record<string, number>>;
     captureElectronLaunchTiming?: boolean;
+    warmup?: boolean;
+    timeoutMs?: number;
+    collectRuntimeSamples?: () => ScenarioRunResult["runtimeSamples"];
   }) => Promise<void>;
 }
 
@@ -182,8 +185,11 @@ export const test = base.extend<PerfFixtures>({
         interact,
         collectObservations,
         captureElectronLaunchTiming = false,
+        warmup = true,
+        timeoutMs = 300_000,
+        collectRuntimeSamples,
       }) => {
-        testInfo.setTimeout(300_000);
+        testInfo.setTimeout(timeoutMs);
         ensureOutputDirs();
 
         const measuredSamples: FrameSampleRaw[] = [];
@@ -191,12 +197,12 @@ export const test = base.extend<PerfFixtures>({
         const segmentSamples = new Map<string, FrameSampleRaw[]>();
         let runFailure: Error | null = null;
         // Ordinary profiles include a warm-up. Cold mode intentionally measures first use.
-        const totalLoops = runsPerScenario + (isCold ? 0 : 1);
+        const totalLoops = runsPerScenario + (isCold || !warmup ? 0 : 1);
         let activePage = perfPage;
 
         for (let i = 0; i < totalLoops; i++) {
-          const isWarmup = !isCold && i === 0;
-          const runIndex = isCold ? i + 1 : i;
+          const isWarmup = warmup && !isCold && i === 0;
+          const runIndex = isCold || !warmup ? i + 1 : i;
           const measured = !isWarmup;
 
           if (isCold && isElectron && i > 0) {
@@ -322,6 +328,7 @@ export const test = base.extend<PerfFixtures>({
                 : {}),
               ...(runtimeBefore ? { runtimeBefore } : {}),
               runtimeAfter,
+              ...(collectRuntimeSamples ? { runtimeSamples: collectRuntimeSamples() } : {}),
               inputEvents: sample.inputEvents ?? [],
               longAnimationFrames: sample.longAnimationFrames ?? [],
               longAnimationFrameSupported: sample.longAnimationFrameSupported ?? false,
@@ -482,7 +489,7 @@ function getOutputDirSafe(): string {
   }
 }
 
-async function collectRuntimeSnapshot(page: Page): Promise<RuntimeSnapshot> {
+export async function collectRuntimeSnapshot(page: Page): Promise<RuntimeSnapshot> {
   const renderer = await page.evaluate(() => {
     const memory = performance as Performance & { memory?: { usedJSHeapSize?: number } };
     return {
@@ -491,6 +498,16 @@ async function collectRuntimeSnapshot(page: Page): Promise<RuntimeSnapshot> {
       images: document.images.length,
       canvases: document.getElementsByTagName("canvas").length,
       audioElements: document.getElementsByTagName("audio").length,
+      ...((
+        window as unknown as {
+          __alchemyResourceProbe?: () => {
+            activeSfx: number;
+            retainedSfx: number;
+            overdueSfx: number;
+            ownedAnimations: number;
+          };
+        }
+      ).__alchemyResourceProbe?.() ?? {}),
     };
   });
   if (!isElectron || !electronApp) return renderer;

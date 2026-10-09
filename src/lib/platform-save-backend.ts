@@ -1,3 +1,4 @@
+import { CloudSaveMirror } from "./cloud-save-mirror";
 import { getDesktopApi, type DemoImportSource } from "./desktop-api";
 import { logStorageFailure } from "./storage-logging";
 import { tryLocalStorageGetItem, tryLocalStorageRemoveItem, tryLocalStorageSetItem } from "./storage-environment";
@@ -26,6 +27,15 @@ interface SaveBackendClearOptions {
 }
 
 type DesktopApi = NonNullable<ReturnType<typeof getDesktopApi>>;
+const mirrors = new WeakMap<DesktopApi, CloudSaveMirror>();
+function cloudMirror(desktop: DesktopApi) {
+  let mirror = mirrors.get(desktop);
+  if (!mirror) {
+    mirror = new CloudSaveMirror();
+    mirrors.set(desktop, mirror);
+  }
+  return mirror;
+}
 
 async function withDesktopSaveApi<T extends SaveBackendReadResult | SaveBackendWriteResult>(
   operation: (desktop: DesktopApi) => Promise<T>,
@@ -129,11 +139,9 @@ async function writeDesktopSave(
   // Recovery may still be mirrored after a local failure; the primary slot
   // must remain local-first. Neither Cloud result changes local write success.
   if (cloudSyncEnabled && (localWritten || slot === "recovery")) {
-    await bestEffortCloudWrite(
-      () => desktop.steamCloudWrite?.(value, slot),
-      localWritten
-        ? "Steam Cloud write failed, save may not sync"
-        : "Recovery save could not be mirrored to Steam Cloud",
+    cloudMirror(desktop).enqueue(
+      slot ?? "primary",
+      () => desktop.steamCloudWrite?.(value, slot) ?? Promise.resolve(false),
     );
   }
   return localWritten ? { ok: true } : { ok: false, error: new Error("Failed to write desktop save file") };
@@ -185,7 +193,9 @@ export function createDesktopSaveBackend({ cloudSyncEnabled = false }: PlatformS
     },
 
     clear: (_key, options) =>
-      withDesktopSaveApi((desktop) => clearDesktop(desktop, cloudSyncEnabled, options?.forceLocalWipe === true)),
+      withDesktopSaveApi((desktop) =>
+        cloudMirror(desktop).clear(() => clearDesktop(desktop, cloudSyncEnabled, options?.forceLocalWipe === true)),
+      ),
   };
 }
 

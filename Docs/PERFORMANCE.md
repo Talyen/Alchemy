@@ -137,7 +137,7 @@ Classification bands only — never CI gates. Compare only on the same machine, 
 | ≥100 ms stalls    |         0 |
 | ≥50 ms long tasks | ≤1 / 30 s |
 
-The fixed suite covers Campaign, Labyrinth, Wildwood, rewards, shops, account screens, a battle with an equipped trinket and owned Unique in Armory, resume, and startup. Nightly discovery alternates two validated three-seed cohorts, each spanning all three game modes; `--seed` accepts other unsigned 32-bit seeds locally. The older `battle-effects`, `battle-end-turn`, talents, collection, options, Labyrinth, Armory, and shop loops remain in the synthetic suite for isolated stress diagnosis. `startup-first-use` measures cold-start observations, not frame targets. `memory-soak` and `battle-art-diag` remain opt-in diagnostics.
+The fixed suite covers Campaign, Labyrinth, Wildwood, rewards, shops, account screens, a battle with an equipped trinket and owned Unique in Armory, resume, and startup. Nightly discovery alternates two validated three-seed cohorts, each spanning all three game modes; `--seed` accepts other unsigned 32-bit seeds locally. The older `battle-effects`, `battle-end-turn`, talents, collection, options, Labyrinth, Armory, and shop loops remain in the synthetic suite for isolated stress diagnosis. `startup-first-use` measures cold-start observations, not frame targets. `battle-art-diag` remains opt-in. Nightly runs one five-minute `memory-soak` in the existing discovery job, with at least 20 completed gameplay cycles; the manual soak defaults to thirty minutes.
 
 Use `npm run perf -- --help` and `performance/catalog.json` for current scenario
 durations and minimum samples rather than maintaining a second defaults table.
@@ -216,3 +216,31 @@ Related: [PerformanceAudit.md](./Audits/PerformanceAudit.md) (when to change cod
 ## Eager bundle size
 
 Bundle ceilings live with the bundle-budget owner (`scripts/lib/verification/bundle-budget.mjs`, `npm run check:bundle`), not this FPS harness. See that owner for ceilings, chunk policy, and history.
+
+### Gameplay memory soak
+
+`npm run perf -- --scenario memory-soak --electron --skip-build` uses the existing
+developed `meta-journey` checkpoint, with its fixture provenance retained in the
+case artifacts. It runs one process/profile with one initial injection. Normal
+battle, reward, shop, inspection, Armory, and menu controls advance the account;
+there are no reloads or resets between cycles. A cycle performs gameplay and a
+meta excursion, returning to the same settled menu for sampling. Legal gear moves
+are conditional on current ownership and combat reservations.
+
+`PERF_MEASURE_MS=300000 PERF_SOAK_MIN_CYCLES=20 PERF_RUNS=1` is the nightly setting;
+the default measurement is thirty minutes. Setup warms meta routes and an initial
+gameplay cycle. Samples record cycle/time, renderer heap when available, Electron
+working set, DOM nodes, canvases, detached active and retained SFX, overdue SFX, and owned action
+animation elements. The probe observes actual media lifecycle without muting,
+shortening, or replacing playback. DOM audio-element count is separate from SFX
+ownership and cannot establish that detached cues were released.
+
+Stalls, unexpected runtime errors, overdue finite-duration cues, and unreleased
+card/Armory transfers fail the journey. A minimum cycle count prevents an idle
+renderer from passing the soak. Heap growth remains diagnostic because new gameplay
+content can legitimately populate caches; there is no invented memory threshold.
+The existing replay file retains the starting checkpoint and cycle log. Soak
+replay repeats the recorded number of cycles with the same control policy; real
+renderer timing remains observational. Existing frame and input targets remain
+in the report. Physical audio quality,
+OS suspend, Proton, and Deck performance require external acceptance.

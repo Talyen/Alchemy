@@ -19,6 +19,7 @@ export function BrewPotionPanel({
   potency = 0,
   selectionSound = "selection",
   onConfirm,
+  isProgressSavePending = () => false,
   onBack,
 }: {
   deck: BattleCard[];
@@ -29,6 +30,7 @@ export function BrewPotionPanel({
   potency?: number;
   selectionSound?: "selection" | "shopSelect";
   onConfirm: (operation: BrewOperation) => BattleCard | null;
+  isProgressSavePending?: () => boolean;
   onBack: () => void;
 }) {
   const [selected, setSelected] = useState<number[]>([]);
@@ -64,6 +66,7 @@ export function BrewPotionPanel({
           : null;
   const afford = gold >= price;
   function choose(index: number) {
+    if (kind === "new" && isProgressSavePending()) return;
     playUISound(selectionSound);
     setError("");
     if (kind === "new") {
@@ -130,6 +133,7 @@ export function BrewPotionPanel({
           <Button
             disabled={!result || !afford}
             onClick={() => {
+              if (isProgressSavePending()) return;
               if (!onConfirm(operation)) setError("This brew is no longer available.");
             }}
           >

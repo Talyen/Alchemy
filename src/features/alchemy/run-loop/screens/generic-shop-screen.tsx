@@ -14,6 +14,7 @@ interface GenericShopScreenProps<T> {
   onBuy: (item: T, slotKey: string) => boolean;
   onRefresh: () => void;
   onContinue: () => void;
+  isProgressSavePending?: () => boolean;
   extraServices?: ReactNode;
   renderItem: (item: T, price: number, purchased: boolean, onBuy: () => void) => ReactNode;
 }
@@ -30,6 +31,7 @@ export function GenericShopScreen<T>({
   onBuy,
   onRefresh,
   onContinue,
+  isProgressSavePending = () => false,
   extraServices,
   renderItem,
 }: GenericShopScreenProps<T>) {
@@ -65,7 +67,9 @@ export function GenericShopScreen<T>({
           const price = getPrice(item);
           return (
             <Fragment key={slotKey}>
-              {renderItem(item, price, purchased, () => setPurchaseFailed(!onBuy(item, slotKey)))}
+              {renderItem(item, price, purchased, () => {
+                if (!isProgressSavePending()) setPurchaseFailed(!onBuy(item, slotKey));
+              })}
             </Fragment>
           );
         })}

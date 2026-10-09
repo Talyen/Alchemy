@@ -20,6 +20,7 @@ import { CONTENT_REFERENCE_VIEWPORT, STAGE_HEIGHT } from "../../../src/lib/game-
 // spec, so this loop covers small and ultrawide extremes without re-running it.
 const VIEWPORTS = [
   { width: 1280, height: 720 },
+  { width: 1280, height: 800 },
   { width: 3440, height: 1440 },
 ];
 
@@ -506,3 +507,43 @@ test("Armory currency artwork follows Game Size", slow, async ({ page }) => {
   }
   expect(widths[1]! / widths[0]!).toBeCloseTo(1.5, 2);
 });
+
+for (const deviceScaleFactor of [1.25, 2]) {
+  test(
+    `1280x800 pointer targets and keyboard inspection agree at DPR ${deviceScaleFactor}`,
+    slow,
+    async ({ browser }) => {
+      const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor });
+      const page = await context.newPage();
+      const errors = failOnRuntimeErrors(page);
+      try {
+        await startBattleWithDeck(
+          page,
+          Array.from({ length: 6 }, () => makeCard({ cost: 0 })),
+          { autoEndTurn: false },
+        );
+        const cards = page.locator('[aria-label^="Play "]');
+        await expect(cards.first()).toBeEnabled();
+        await controllerInput(page).reach(cards.first());
+        await expectTooltipFitsViewport(page.locator("#tooltip-root .hover-popup-panel[data-visible]").first(), {
+          width: 1280,
+          height: 800,
+        });
+        const bounds = await cards.first().boundingBox();
+        if (!bounds) throw new Error("Playable card has no pointer target");
+        const count = await cards.count();
+        await page.mouse.click(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+        await expect(cards).toHaveCount(count - 1);
+        const inspect = page.getByRole("button", { name: /^View Deck/ });
+        await controllerInput(page).activate(inspect);
+        await expect(page.getByRole("dialog")).toBeVisible();
+        await page.keyboard.press("Escape");
+        await expect(inspect).toBeFocused();
+        await assertStageFitsViewport(page);
+        expect(errors).toEqual([]);
+      } finally {
+        await context.close();
+      }
+    },
+  );
+}

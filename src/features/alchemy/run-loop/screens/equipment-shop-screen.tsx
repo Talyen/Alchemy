@@ -13,6 +13,7 @@ export function EquipmentShopScreen({
   onBuyGear,
   onRefresh,
   onContinue,
+  isProgressSavePending = () => false,
 }: {
   gold: number;
   gear: GearInstance[];
@@ -23,6 +24,7 @@ export function EquipmentShopScreen({
   onBuyGear: (instance: GearInstance, slotKey: string) => boolean;
   onRefresh: () => void;
   onContinue: () => void;
+  isProgressSavePending?: () => boolean;
 }) {
   return (
     <GenericShopScreen
@@ -37,6 +39,7 @@ export function EquipmentShopScreen({
       onBuy={onBuyGear}
       onRefresh={onRefresh}
       onContinue={onContinue}
+      isProgressSavePending={isProgressSavePending}
       renderItem={(instance, price, purchased, onBuy) => (
         <PurchasableGearItem instance={instance} price={price} gold={gold} purchased={purchased} onBuy={onBuy} />
       )}

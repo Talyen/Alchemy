@@ -14,6 +14,7 @@ export function TrinketShopScreen({
   onBuyTrinket,
   onRefresh,
   onContinue,
+  isProgressSavePending = () => false,
 }: {
   gold: number;
   trinkets: TrinketEntry[];
@@ -24,6 +25,7 @@ export function TrinketShopScreen({
   onBuyTrinket: (trinket: TrinketEntry, slotKey: string) => boolean;
   onRefresh: () => void;
   onContinue: () => void;
+  isProgressSavePending?: () => boolean;
 }) {
   return (
     <GenericShopScreen
@@ -38,6 +40,7 @@ export function TrinketShopScreen({
       onBuy={onBuyTrinket}
       onRefresh={onRefresh}
       onContinue={onContinue}
+      isProgressSavePending={isProgressSavePending}
       extraServices={trinkets.length === 0 ? <p role="status">All Trinkets have been collected.</p> : undefined}
       renderItem={(trinket, price, purchased, onBuy) => (
         <PurchasableTrinketItem trinket={trinket} price={price} gold={gold} purchased={purchased} onBuy={onBuy} />

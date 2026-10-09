@@ -1,3 +1,4 @@
+import type { ProgressSaveState } from "@/features/alchemy/shared/storage";
 import type { BrewOperation } from "@/lib/alchemist/brewing";
 import type { BattleRefs } from "../shared/types";
 import type {
@@ -15,6 +16,10 @@ import type { AutoplayCardHandler, AutoplayWishHandler, BattlePlaybackBind } fro
 import type { BattlePresentationStore } from "../run-loop/battle/battle-presentation-store";
 
 export interface AlchemyRouteCommands {
+  progress: {
+    isPending: () => boolean;
+    afterSaved: (feedback: () => void) => void;
+  };
   meta: {
     resumeRun: () => void;
     goToScreen: (nextScreen: Screen) => void;
@@ -85,6 +90,8 @@ export interface AlchemyRouteCommands {
     refs: BattleRefs;
     bindPlayback: (bind: BattlePlaybackBind | null) => void;
     isCardPlayInProgress: () => boolean;
+    isProgressSavePending: () => boolean;
+    subscribeProgressSave: (listener: () => void) => () => void;
     screen: Screen;
     isAutoplayEnabled: boolean;
     setAutoplayEnabled: (enabled: boolean) => void;
@@ -101,6 +108,8 @@ export interface AlchemyRouteCommands {
 export interface AlchemyRunCommands {
   screen: Screen;
   navigationPending: boolean;
+  progressSave: ProgressSaveState;
+  retryProgressSave: () => void;
   routeCommands: AlchemyRouteCommands;
   unlockAllTalents: () => void;
   returnToBattle: () => void;

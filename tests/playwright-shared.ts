@@ -36,6 +36,10 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
     const previewPort = previewPortFromEnv("PLAYWRIGHT_PERF_PORT", PERF_PREVIEW_PORT);
     const isElectron = process.env.PLAYWRIGHT_PERF_ELECTRON === "1";
     const isTrace = process.env.PLAYWRIGHT_PERF_TRACE === "1";
+    const soakBudget =
+      process.env.PERF_SCENARIO === "memory-soak"
+        ? Number.parseInt(process.env.PERF_MEASURE_MS ?? "1800000", 10) + 180_000
+        : 0;
     return defineConfig({
       testDir: "./performance/scenarios",
       testMatch: "**/*.perf.ts",
@@ -43,7 +47,7 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
       workers: 1,
       retries: 0,
       timeout: isTrace ? TIMEOUTS.performance.trace : TIMEOUTS.performance.normal,
-      globalTimeout: TIMEOUTS.performance.global,
+      globalTimeout: Math.max(TIMEOUTS.performance.global, soakBudget),
       forbidOnly: false,
       reporter: [["list"], ["./performance/reporter.ts"]],
       use: {

@@ -265,3 +265,12 @@ and Tooltip Size together. The Background section contains Background Glow and
 Background Particles. Screen Effects and Drifting Lights have been removed,
 including their renderers and saved preferences. Reset to Default restores the
 remaining preferences and device sizes.
+
+### Pending saves and action feedback
+
+Persisted actions acknowledge input immediately with Saving… and `aria-busy`.
+Completion feedback, changed progress values, and onward progression wait for a
+successful local save. Both-slot failure shows Couldn’t save with a reachable Retry
+button; retries preserve the original cost and outcome. Inspection, Collection
+browsing, navigation without progress changes, and sound/display controls remain
+usable. Pending state is transient and requires no new provider or save fields.

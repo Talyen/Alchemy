@@ -13,65 +13,46 @@ import { useRunSessionBattleContext, readBattle } from "@/features/alchemy/share
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { companionLibrary } from "@/lib/game-data";
 import { canPlayCard, isPlayerDefeated } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
 import {
+  mutateGearForTest,
   replaceBattleForTest,
   resetAllTestStores,
   setRunProgress,
   setRunSession,
 } from "../helpers/run-domain-store-test";
-import { makeTestBattleState, makeTestCard } from "../fixtures/battle";
+import { battleCohort, combatOutcome } from "./battle-cohorts";
+import { snapshotRun, restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { parseActiveRun } from "@/lib/active-run-session";
+import { isDeepStrictEqual } from "node:util";
 import { defineSequenceFamily, requireProgress, type Scenario } from "./sequence";
 import { advance, installFrames, installMotionPreference } from "./timing";
 
 defineSequenceFamily("battle", (seed) => {
   resetAllTestStores();
-  installFrames();
+  const frames = installFrames();
   const setReducedMotion = installMotionPreference(seed % 3 === 0);
   useUiStore.setState(useUiStore.getInitialState(), true);
   useSettingsStore.getState().setAutoEndTurn(false);
   localStorage.removeItem("alchemy-disable-animations");
-  const cards = Array.from({ length: 12 }, (_, i) =>
-    makeTestCard({
-      id: "slash",
-      uid: i + 1,
-      cost: 1,
-      effects:
-        i % 3 === 0
-          ? [{ kind: "wish", amount: 1 }]
-          : i % 3 === 1
-            ? [{ kind: "draw-cards", amount: 1 }]
-            : [{ kind: "damage", damageType: "physical", amount: 1 }],
-    }),
-  );
+  const cohort = battleCohort(seed);
+  const { cards } = cohort;
   setRunProgress({
-    rng: createRunRngState(seed),
+    rng: createRunRngState(cohort.worldFixtureSeed),
     characterId: "knight",
-    runPlayerHealth: 1000,
-    runMaxHealth: 1000,
+    runPlayerHealth: cohort.battle.playerHealth,
+    runMaxHealth: cohort.battle.playerMaxHealth,
     runDeck: cards,
+    unlockedTalents: cohort.unlockedTalents,
   });
+  mutateGearForTest((gear) =>
+    gear.initialize(cohort.inventories, cohort.loadouts, undefined, cohort.trinketIds, cohort.equippedTrinkets),
+  );
   setRunSession({ hasActiveRun: true });
   dispatchRunSessionCommand(
-    (draft) =>
-      acceptCommand(
-        replaceBattleForTest(
-          draft,
-          makeTestBattleState({
-            hand: cards.slice(0, 3),
-            deck: cards.slice(3),
-            mana: 3,
-            activeCompanion: seed % 4 === 0 ? companionLibrary.wolf : null,
-            playerCC: { stunSkipTurns: seed % 4 === 1 ? 1 : 0, freezeSkipTurns: 0, cooldown: 0 },
-            playerHealth: seed % 8 === 7 ? 1 : 1000,
-            playerMaxHealth: 1000,
-            enemyHealth: seed % 8 === 6 ? 1 : 1000,
-            enemyMaxHealth: 1000,
-          }),
-        ),
-      ),
+    (draft) => acceptCommand(replaceBattleForTest(draft, cohort.battle)),
     undefined,
     defaultGameSession,
   );
@@ -98,12 +79,19 @@ defineSequenceFamily("battle", (seed) => {
   let screen: Screen = "battle";
   let menu = false;
   let settled = false;
+  let probed = false;
+  let probeOutcome: ReturnType<typeof combatOutcome> | null = null;
   const observe = () => {
     const battle = readBattle(defaultGameSession).battleState;
     const presentation = battlePresentation.getState();
     return {
       screen,
       menu,
+      cohort: cohort.id,
+      variant: cohort.variant,
+      expected: cohort.expected,
+      probeOutcome,
+      actual: combatOutcome(battle),
       turn: battle.turn,
       mana: battle.mana,
       wish: !!battle.wishOptions,
@@ -121,24 +109,40 @@ defineSequenceFamily("battle", (seed) => {
     });
   }
   return {
-    fixture: { seed, battle: readBattle(defaultGameSession).battleState, worldFixtureSeed: 42 },
-    actions: () => [
-      "play",
-      "end",
-      "wish",
-      "autoplay",
-      "menu",
-      "inspect",
-      "close",
-      "leave",
-      "return",
-      "settle",
-      "disabled-motion",
-      "normal-motion",
-      "reduced-motion",
-    ],
+    fixture: {
+      seed,
+      cohort: cohort.id,
+      variant: cohort.variant,
+      provenance: "live catalog cards and legal owned Gear/Trinket/Talents; injected boundary Health/status",
+      expected: cohort.expected,
+      initialCheckpoint: snapshotRun(defaultGameSession),
+      battle: readBattle(defaultGameSession).battleState,
+      worldFixtureSeed: cohort.worldFixtureSeed,
+    },
+    actions: () =>
+      !probed
+        ? ["probe"]
+        : [
+            "play",
+            "end",
+            "wish",
+            "autoplay",
+            "menu",
+            "inspect",
+            "close",
+            "leave",
+            "return",
+            "settle",
+            "disabled-motion",
+            "normal-motion",
+            "reduced-motion",
+            "resume",
+            "long-gap",
+          ],
     async run(action) {
-      settled = action === "settle";
+      settled = action === "settle" || action === "long-gap";
+      const requestedAction = action;
+      if (action === "probe") action = cohort.probe;
       act(() => {
         const { controller, inspection } = mounted.result.current;
         const state = readBattle(defaultGameSession).battleState;
@@ -160,7 +164,20 @@ defineSequenceFamily("battle", (seed) => {
         if (action === "menu") menu = !menu;
         if (action === "leave") screen = "options";
         if (action === "return") screen = "battle";
-        if (action === "settle") controller.setAutoplayEnabled(false);
+        if (action === "settle" || action === "long-gap") controller.setAutoplayEnabled(false);
+        if (action === "resume") {
+          controller.setAutoplayEnabled(false);
+          const before = snapshotRun(defaultGameSession);
+          const restored = parseActiveRun(JSON.parse(JSON.stringify(before)));
+          requireProgress(restored, "battle-resume-parse", before);
+          const profile = readRunProfile(defaultGameSession);
+          restoreRun(restored, profile.talentXP, profile.unlockedTalents, defaultGameSession);
+          requireProgress(
+            isDeepStrictEqual(snapshotRun(defaultGameSession), before),
+            "battle-resume-state-and-rng-parity",
+            { before, actual: snapshotRun(defaultGameSession), activity: readRunSession(defaultGameSession).activity },
+          );
+        }
         if (action === "disabled-motion") localStorage.setItem("alchemy-disable-animations", "true");
         if (action === "normal-motion") {
           localStorage.removeItem("alchemy-disable-animations");
@@ -169,10 +186,27 @@ defineSequenceFamily("battle", (seed) => {
         if (action === "reduced-motion") setReducedMotion(true);
         mounted.rerender({ screen, menu });
       });
-      await paint(action === "settle" ? 8000 : 17);
+      if (requestedAction === "probe") {
+        probed = true;
+        probeOutcome = combatOutcome(readBattle(defaultGameSession).battleState);
+      }
+      if (requestedAction === "long-gap") {
+        frames.pauseFrames();
+        await advance(8000);
+        frames.resumeFrames();
+      }
+      await paint(settled ? 8000 : 17);
     },
     check() {
       const state = observe();
+      if (probeOutcome)
+        requireProgress(
+          Object.entries(cohort.expected).every(
+            ([key, value]) => probeOutcome![key as keyof typeof probeOutcome] === value,
+          ),
+          "battle-cohort-outcome",
+          { cohort: cohort.id, expected: cohort.expected, actual: probeOutcome },
+        );
       if (
         settled &&
         screen === "battle" &&
@@ -189,6 +223,20 @@ defineSequenceFamily("battle", (seed) => {
         );
       }
       requireProgress(state.mana >= 0, "battle-mana-not-double-spent", state);
+      const battle = readBattle(defaultGameSession).battleState;
+      const piles = [
+        ...battle.hand,
+        ...battle.pendingHandCards,
+        ...battle.deck,
+        ...battle.discard,
+        ...battle.exhausted,
+      ];
+      const identities = piles.map((card) => card.uid);
+      requireProgress(
+        identities.every((uid) => uid !== undefined) && new Set(identities).size === identities.length,
+        "battle-card-identity-not-duplicated",
+        { cohort: cohort.id, identities },
+      );
     },
     observe,
     async settle(this: Scenario) {

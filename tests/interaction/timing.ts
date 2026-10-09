@@ -14,11 +14,42 @@ export function installFrames() {
       callback(...args);
     }, ms),
   );
-  vi.stubGlobal(
-    "requestAnimationFrame",
-    (callback: FrameRequestCallback) => setTimeout(() => callback(performance.now()), 16) as unknown as number,
-  );
-  vi.stubGlobal("cancelAnimationFrame", (id: number) => clearTimeout(id));
+  let paused = false;
+  let nextFrame = 0;
+  const waiting = new Map<number, FrameRequestCallback>();
+  const scheduled = new Map<number, ReturnType<typeof setTimeout>>();
+  const deliver = (id: number, callback: FrameRequestCallback) => {
+    scheduled.set(
+      id,
+      setTimeout(() => {
+        scheduled.delete(id);
+        if (paused) waiting.set(id, callback);
+        else callback(performance.now());
+      }, 16),
+    );
+  };
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+    const id = ++nextFrame;
+    if (paused) waiting.set(id, callback);
+    else deliver(id, callback);
+    return id;
+  });
+  vi.stubGlobal("cancelAnimationFrame", (id: number) => {
+    const timer = scheduled.get(id);
+    if (timer !== undefined) clearTimeout(timer);
+    scheduled.delete(id);
+    waiting.delete(id);
+  });
+  return {
+    pauseFrames: () => {
+      paused = true;
+    },
+    resumeFrames: () => {
+      paused = false;
+      for (const [id, callback] of waiting) deliver(id, callback);
+      waiting.clear();
+    },
+  };
 }
 export async function advance(ms = 2000) {
   callbackDeliveries = 0;

@@ -79,3 +79,24 @@ native Windows focus or hosted CI. Browser/Electron execution, builds and full
 static validation follow the explicit-execution policy in CONTRIBUTING. Test
 collection proves selection only. Validate actual journeys in their configured
 CI tier before treating a release as qualified.
+
+## Combat outcome cohorts and suspension
+
+Battle seeds rotate through eight named live-card cohorts: mitigated hits, Phoenix
+Health costs, fatal retaliation, Poison overkill Leech, crowd-control immunity,
+companions on skipped turns, Wish/draw takeover, and Consume at last Mana. Boundary
+statuses are labeled as injected rather than earned career progression. Each case
+starts with a fixed world-seed probe and an independent expected outcome before exploring
+random player actions. Fixed world streams keep the probe expectation independent
+of random Critical/Dodge outcomes; action seeds vary later RNG consumption through
+interleavings. Legal owned Dagger/Bone Charm/Toxic Profit builds and resistance/detonation
+variants participate in the same cohorts. Failures retain the cohort, initial checkpoint, expected/actual
+outcomes, and the usual replay/shrink evidence. Resume compares state and world RNG;
+pile checks detect duplicate card identities.
+
+The frame seam can suspend delivery while timers continue, then resume actual
+queued callbacks. This exercises delayed frames without claiming OS sleep evidence.
+The isolated Electron crash suite separately terminates owned processes at IPC,
+temporary-write, sync, backup-rotation, and replacement barriers. Test controls live
+only in the test preload. Three push canaries cover completed purchases, reward
+claims, and battle victory; deeper write-stage interruptions run nightly.

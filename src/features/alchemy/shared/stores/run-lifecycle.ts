@@ -42,6 +42,7 @@ export function restoreRun(
   gameSession: GameSession,
   options?: { abandonIncompatibleBattle?: boolean },
 ): void {
+  sessionRuntime(gameSession).progressCompletion.cancel();
   dispatchGameplayCommand(
     (draft) => {
       applyTalentState(draft, talentXP, unlockedTalents);

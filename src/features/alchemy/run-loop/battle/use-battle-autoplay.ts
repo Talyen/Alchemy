@@ -17,6 +17,7 @@ interface UseBattleAutoplayOptions {
   battleState: BattleSnapshot;
   hasActiveBattle: boolean;
   isCardPlayInProgress: () => boolean;
+  isProgressSavePending?: (() => boolean) | undefined;
   gameMenuOpen: boolean;
   playCard: AutoplayCardHandler;
   playWish: AutoplayWishHandler;

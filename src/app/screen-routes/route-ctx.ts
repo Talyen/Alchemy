@@ -21,7 +21,7 @@ interface PhaseRouteCtx<K extends keyof AlchemyRouteCommands> {
 
 export type MetaRouteCtx = PhaseRouteCtx<"meta">;
 export type RunSetupRouteCtx = PhaseRouteCtx<"runSetup">;
-export type RunLoopRouteCtx = PhaseRouteCtx<"runLoop">;
+export type RunLoopRouteCtx = PhaseRouteCtx<"runLoop" | "progress">;
 export type RunEndRouteCtx = PhaseRouteCtx<"runEnd"> & Pick<RenderAlchemyScreenProps, "screen">;
 
 export interface BattleRouteCtx extends PhaseRouteCtx<"battle"> {

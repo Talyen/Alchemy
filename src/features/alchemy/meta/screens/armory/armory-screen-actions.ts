@@ -16,12 +16,14 @@ export function applyCurrencyToGear({
   instance,
   onApplyCurrency,
   clearCurrency,
+  afterProgressSaved = (feedback) => feedback(),
 }: {
   editable: boolean;
   activeCurrencyId: CraftingCurrencyId | null;
   instance: GearInstance;
   onApplyCurrency: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
   clearCurrency: () => void;
+  afterProgressSaved?: (feedback: () => void) => void;
 }): boolean {
   if (!editable || !activeCurrencyId) return false;
   if (!canApplyCraftingCurrency(activeCurrencyId, instance)) {
@@ -33,7 +35,9 @@ export function applyCurrencyToGear({
     playUISound("error");
     return false;
   }
-  playUISound("craft");
-  clearCurrency();
+  afterProgressSaved(() => {
+    playUISound("craft");
+    clearCurrency();
+  });
   return true;
 }

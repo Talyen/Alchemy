@@ -11,17 +11,22 @@ export function TransmutationScreen({
   visit,
   onExchange,
   onContinue,
+  afterProgressSaved = (feedback) => feedback(),
+  isProgressSavePending = () => false,
 }: {
   runDeck: BattleCard[];
   visit: AlchemyVisit;
   onExchange: (source: number, offer: number) => BattleCard | null;
   onContinue: () => void;
+  afterProgressSaved?: (feedback: () => void) => void;
+  isProgressSavePending?: () => boolean;
 }) {
   const [source, setSource] = useState(-1);
   const [page, setPage] = useState(0);
   const [error, setError] = useState("");
   const [selectionDeck, setSelectionDeck] = useState(runDeck);
   const continued = useRef(false);
+  const continuationRequest = useRef({ revision: 0 });
   if (selectionDeck !== runDeck) {
     setSelectionDeck(runDeck);
     setSource(-1);
@@ -32,11 +37,19 @@ export function TransmutationScreen({
     isTransmutableCard(card) && visit.offers.some((offer) => offer.id !== card.id);
   const available = runDeck.some(canExchange);
   useEffect(() => {
+    const requests = continuationRequest.current;
     if ((visit.completed || !available) && !continued.current) {
-      continued.current = true;
-      onContinue();
+      const request = ++requests.revision;
+      afterProgressSaved(() => {
+        if (request !== requests.revision || continued.current) return;
+        continued.current = true;
+        onContinue();
+      });
     }
-  }, [visit.completed, available, onContinue]);
+    return () => {
+      requests.revision++;
+    };
+  }, [visit.completed, available, onContinue, afterProgressSaved]);
   const original = runDeck[source];
   const items = runDeck.map((card, index) => ({ card, index }));
   if (visit.completed || !available) return null;
@@ -79,9 +92,15 @@ export function TransmutationScreen({
                     onSelect={() => {
                       if (continued.current || !canExchange(original) || original.id === card.id) return;
                       playUISound("transmuteSelect");
+                      if (isProgressSavePending()) return;
                       if (onExchange(source, index)) {
-                        continued.current = true;
-                        onContinue();
+                        const requests = continuationRequest.current;
+                        const request = ++requests.revision;
+                        afterProgressSaved(() => {
+                          if (request !== requests.revision || continued.current) return;
+                          continued.current = true;
+                          onContinue();
+                        });
                       } else {
                         setError("This exchange is no longer available. Choose another card.");
                       }

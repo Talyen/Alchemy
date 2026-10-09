@@ -49,6 +49,7 @@ interface PlaybackBlockedSource {
   hasActiveBattle: boolean;
   gameMenuOpen?: boolean;
   isCardPlayInProgress?: (() => boolean) | undefined;
+  isProgressSavePending?: (() => boolean) | undefined;
   presentationGateRef: RefObject<BattlePlaybackPresentationGate>;
 }
 
@@ -58,6 +59,7 @@ export function usePlaybackBlocked(source: PlaybackBlockedSource) {
   return useCallback(
     (override?: BattleSnapshot, mode: PlaybackMode = "card") => {
       const current = sourceRef.current;
+      if (current.isProgressSavePending?.()) return true;
       return isPlaybackBlocked(
         {
           ...current,

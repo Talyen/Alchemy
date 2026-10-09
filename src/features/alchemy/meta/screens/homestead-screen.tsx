@@ -36,6 +36,7 @@ export function HomesteadScreen({
   onPlantFarm,
   onCompleteResearch,
   onBondCompanion,
+  afterProgressSaved = (feedback) => feedback(),
   onBack,
   onMenu,
 }: {
@@ -50,6 +51,7 @@ export function HomesteadScreen({
   onPlantFarm: (id: FarmId) => boolean;
   onCompleteResearch: (id: ResearchId) => boolean;
   onBondCompanion: (id: CompanionId) => boolean;
+  afterProgressSaved?: (feedback: () => void) => void;
   onBack?: (() => void) | undefined;
   onMenu?: ((rect: DOMRect) => void) | undefined;
 }) {
@@ -66,7 +68,7 @@ export function HomesteadScreen({
         : item.kind === "farm"
           ? onPlantFarm(item.data.id)
           : onCompleteResearch(item.data.id);
-    if (success) playUISound("talentUnlock");
+    if (success) afterProgressSaved(() => playUISound("talentUnlock"));
   }
 
   const upgradeItems =
@@ -88,7 +90,7 @@ export function HomesteadScreen({
 
   function handleBondCompanion(companionId: CompanionId) {
     if (onBondCompanion(companionId)) {
-      playUISound("bond");
+      afterProgressSaved(() => playUISound("bond"));
     }
   }
 

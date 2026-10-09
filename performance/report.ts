@@ -20,6 +20,7 @@ export interface ScenarioRunResult {
   notes?: string[];
   runtimeBefore?: RuntimeSnapshot;
   runtimeAfter?: RuntimeSnapshot;
+  runtimeSamples?: Array<{ cycle: number; elapsedMs: number; runtime: RuntimeSnapshot }>;
   inputEvents?: InputEventSample[];
   longAnimationFrames?: LongAnimationFrameSample[];
   longAnimationFrameSupported?: boolean;
@@ -37,6 +38,10 @@ export interface RuntimeSnapshot {
   images: number;
   canvases: number;
   audioElements: number;
+  activeSfx?: number;
+  retainedSfx?: number;
+  overdueSfx?: number;
+  ownedAnimations?: number;
   electronWorkingSetKB?: number;
 }
 

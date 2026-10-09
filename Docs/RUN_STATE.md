@@ -191,6 +191,34 @@ Run-luck helpers live in `@/lib/rng` (the single door), small math in `@/lib/mat
 
 Choosing one encounter trait draws once from its eligible pool. Wildwood boss preparation draws once for its combat trait and once for its reward trait after selecting a boss; refilling the boss bag has its own draws.
 
+## Completed actions and local saving
+
+The renderer marks persisted gameplay commits as pending before publishing them.
+`SessionPersistence` exposes `checkpoint`, `readProgress`, `subscribeProgress`,
+`trackProgress`, `retryProgress`, and `afterProgressSaved`. A checkpoint carries
+the gameplay revision and a runtime epoch; only a covering local write in that
+epoch acknowledges completion. The save envelope does not gain scheduling data.
+
+Player-facing store hooks retain the immutable pre-action progress until saving
+succeeds. Transient navigation, Collection browsing, and inspection remain usable.
+Domain reads continue to see the committed state. Player command entrypoints reject
+additional progression while saving or after failure; internal combat and terminal
+settlement commands still resolve synchronously. The renderer groups synchronous
+commits into one immediate checkpoint rather than waiting for the ordinary autosave
+debounce. Presentation and local saving must both settle before another action.
+
+A failed primary write tries the recovery slot. If both fail, show “Couldn’t save”
+and Retry; keep the original action pending and retry its snapshot without repeating
+costs, rewards, or RNG. The existing autosave timer handles automatic retries.
+Explicit Retry bypasses backoff once; repeated activation during saving does nothing.
+Clear, restore, write protection, and disposal invalidate pending completion callbacks.
+Completed actions survive process termination after local acknowledgement. This
+promise does not cover power loss, subsequent filesystem failure, or browser eviction.
+
+Steam Cloud mirrors serialize independently and coalesce queued payloads per slot.
+Local acknowledgement does not wait for Cloud. Deletion discards queued uploads and
+drains an in-flight upload before removing mirrors so it cannot resurrect a save.
+
 ## Persistence API
 
 `run-resume-codec.ts` translates `RunSession` and `ActiveRunData`. The encoder selects

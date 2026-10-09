@@ -94,6 +94,42 @@ describe("Transmutation steps", () => {
     expect(props.onContinue).toHaveBeenCalledOnce();
   });
 
+  it("waits for local acknowledgement before continuing an accepted exchange and ignores it after leaving", () => {
+    const props = createProps();
+    const pending: Array<() => void> = [];
+    props.onExchange.mockReturnValue(props.visit.offers[0]!);
+    const afterProgressSaved = (feedback: () => void) => {
+      pending.push(feedback);
+    };
+    const { unmount } = render(<TransmutationScreen {...props} afterProgressSaved={afterProgressSaved} />);
+    click("Slash");
+    click("Fireball");
+    expect(props.onExchange).toHaveBeenCalledOnce();
+    expect(props.onContinue).not.toHaveBeenCalled();
+    unmount();
+    for (const feedback of pending) feedback();
+    expect(props.onContinue).not.toHaveBeenCalled();
+  });
+
+  it("replayed completion effects advance once after a covering save", () => {
+    const props = createProps();
+    const pending: Array<() => void> = [];
+    render(
+      <StrictMode>
+        <TransmutationScreen
+          {...props}
+          visit={{ ...props.visit, completed: true }}
+          afterProgressSaved={(feedback) => {
+            pending.push(feedback);
+          }}
+        />
+      </StrictMode>,
+    );
+    expect(props.onContinue).not.toHaveBeenCalled();
+    for (const feedback of pending) feedback();
+    expect(props.onContinue).toHaveBeenCalledOnce();
+  });
+
   it("requires a fresh source after a live deck reorder rather than exchanging the wrong card", () => {
     const props = createProps();
     const { rerender } = render(<TransmutationScreen {...props} />);

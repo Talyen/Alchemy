@@ -6,7 +6,7 @@ import { createAlchemyAutosaveLifecycle } from "./autosave-lifecycle";
 export function useAlchemyAutosaveFromStores(enabled = true) {
   const enabledRef = useLatestRef(enabled);
   useEffect(() => {
-    const lifecycle = createAlchemyAutosaveLifecycle(() => enabledRef.current, undefined, defaultGameSession);
+    const lifecycle = createAlchemyAutosaveLifecycle(() => enabledRef.current, undefined, defaultGameSession, true);
     const handlePageExit = () => lifecycle.flush(true);
     const handleVisibilityChange = () => {
       if (document.visibilityState === "hidden") lifecycle.flush(true);

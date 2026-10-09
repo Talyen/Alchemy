@@ -19,6 +19,7 @@ export function createAlchemyAutosaveLifecycle(
   enabled: () => boolean = () => true,
   clock: AutosaveClock | undefined,
   gameSession: GameSession,
+  durableProgress = false,
 ) {
   const persistence = createSessionPersistence(gameSession);
   const runtimeClock = clock ?? sessionClock(gameSession);
@@ -92,8 +93,20 @@ export function createAlchemyAutosaveLifecycle(
     if (!enabled()) return;
     scheduler.markDirty(runtimeClock.now());
     schedule();
+    // One microtask groups synchronous domain commits into one resolved action.
+    if (durableProgress)
+      queueMicrotask(() => {
+        if (mounted && scheduler.nextDelay(runtimeClock.now(), 0) === 0) flush();
+      });
   };
 
+  const releaseProgress =
+    durableProgress && enabled()
+      ? persistence.trackProgress(() => {
+          scheduler.retryNow();
+          flush();
+        })
+      : () => {};
   const unsubscribeCancellation = persistence.subscribeCancellation(cancelPending);
   const unsubscribePersistence = persistence.subscribe(triggerSave);
 
@@ -105,6 +118,7 @@ export function createAlchemyAutosaveLifecycle(
       mounted = false;
       cancelTimer();
       unsubscribeCancellation();
+      releaseProgress();
     }
   };
   const release = registerSessionCleanup(gameSession, () => dispose(false));

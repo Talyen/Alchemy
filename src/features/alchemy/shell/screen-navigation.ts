@@ -1,4 +1,4 @@
-import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
+import { afterProgressSaved, bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import {
   registerSessionCleanup,
@@ -68,8 +68,21 @@ export function createScreenNavigation(
         if (requestedRevision === revision) onPendingChange?.(false);
       }
     };
-    if (options.immediate) show();
-    else timers.setTimeout(show, options.delayMs ?? NAVIGATION_DELAY_MS);
+    const present = () => {
+      if (requestedRevision !== revision) return;
+      if (options.immediate) show();
+      else timers.setTimeout(show, options.delayMs ?? NAVIGATION_DELAY_MS);
+    };
+    // Domain preparation may change the saved activity; do not present its
+    // completed route until that activity can be restored after a crash.
+    if (
+      options.prepare ||
+      ["battle", "rewards", "run-victory", "game-over", "destination", "labyrinth-map", "wildwood-removal"].includes(
+        screen,
+      )
+    )
+      afterProgressSaved(gameSession, present);
+    else present();
   }
 
   function transition(screen: Screen, options: ScreenTransitionOptions = {}) {

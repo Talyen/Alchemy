@@ -1,3 +1,5 @@
+import { createSessionPersistence } from "@/features/alchemy/shared/storage";
+import { guardProgressAction } from "@/features/alchemy/shared/stores/session-capabilities";
 import { defaultGameSession } from "@/app/application-session";
 import { playUISound } from "@/lib/audio";
 import { IS_DEMO } from "@/lib/game-edition";
@@ -39,6 +41,8 @@ import {
 } from "@/features/alchemy/shared/stores/run-reads";
 import type { MetaRouteCtx } from "./route-ctx";
 import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
+
+const persistence = createSessionPersistence(defaultGameSession);
 
 const setCollectionPageCommand = createRunSessionCommand(
   (...args: Parameters<typeof setCollectionPage>) => acceptCommand(setCollectionPage(...args)),
@@ -160,10 +164,11 @@ function HomesteadScreenRoute({ onBack, onOpenGameMenu }: MetaRouteCtx) {
     <HomesteadScreen
       {...homesteadValues}
       discoveredCardIds={discoveredCardIds}
-      onConstructBuilding={constructBuildingCommand}
-      onPlantFarm={plantFarmCommand}
-      onCompleteResearch={completeResearchCommand}
-      onBondCompanion={bondCompanionCommand}
+      afterProgressSaved={persistence.afterProgressSaved}
+      onConstructBuilding={guardProgressAction(defaultGameSession, constructBuildingCommand, false)}
+      onPlantFarm={guardProgressAction(defaultGameSession, plantFarmCommand, false)}
+      onCompleteResearch={guardProgressAction(defaultGameSession, completeResearchCommand, false)}
+      onBondCompanion={guardProgressAction(defaultGameSession, bondCompanionCommand, false)}
       onBack={onBack}
       onMenu={onOpenGameMenu}
     />

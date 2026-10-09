@@ -30,7 +30,6 @@ import { useDeviceDisplayPreferences } from "@/features/alchemy/shared/stores/de
 import {
   useActiveRunBoons,
   useActiveRunScreenValue,
-  useAutosaveAllowed,
   useBondedCompanions,
   useHomesteadEffects,
   useRunSessionNavigationSlice,
@@ -92,10 +91,9 @@ function AppMainContent({
 }) {
   const { screen: controllerScreen } = run;
   const { phase: runPhase } = useRunSessionNavigationSlice(controllerScreen);
-  const autosaveEnabled = useAutosaveAllowed(controllerScreen);
   const nav = useReturnToRunNavigation({ run, renderedScreen });
 
-  useAlchemyAutosaveFromStores(autosaveEnabled);
+  useAlchemyAutosaveFromStores();
 
   const dev = useDevShortcuts(run);
 
@@ -288,7 +286,11 @@ function AppInner({ displayLayout }: { displayLayout: ReturnType<typeof useVirtu
 
   return (
     <ErrorBoundary label={screen}>
-      <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-background">
+      <SaveWriteNotice onRetry={run.retryProgressSave} />
+      <div
+        aria-busy={run.progressSave.kind !== "idle"}
+        className="flex h-screen w-screen items-center justify-center overflow-hidden bg-background"
+      >
         <div className="relative" style={frameStyle}>
           <div ref={setModalRoot} className="contents" />
           <AppMainContent
@@ -342,7 +344,6 @@ export default function App() {
     <>
       {bootstrapResult.importedDemoProgress ? <DemoImportNotice /> : null}
       <AppInner displayLayout={displayLayout} />
-      <SaveWriteNotice />
     </>
   );
 }

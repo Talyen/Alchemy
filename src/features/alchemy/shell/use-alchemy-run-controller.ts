@@ -1,3 +1,5 @@
+import { guardProgressAction } from "@/features/alchemy/shared/stores/session-capabilities";
+import { createSessionPersistence } from "@/features/alchemy/shared/storage";
 import { defaultGameSession } from "@/app/application-session";
 import type { AlchemyRouteCommands, AlchemyRunCommands } from "./route-commands";
 import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
@@ -8,7 +10,7 @@ import {
   useHomesteadEffects,
   useTalentEffects,
 } from "@/features/alchemy/shared/stores/run-reads";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { getRunPhase } from "@/lib/routing";
 import { createLabyrinthNodeRouting } from "./labyrinth-node-routing";
 import { createRunRouteActions } from "./run-route-actions";
@@ -18,7 +20,12 @@ import { createRunFlowEngine } from "./run-flow-engine";
 import { useScreenTransitions } from "./use-screen-transitions";
 import { useSteamRichPresence } from "./use-steam-rich-presence";
 
+const protectVoid = <Args extends unknown[]>(action: (...args: Args) => void) =>
+  guardProgressAction(defaultGameSession, action, undefined);
+
 export function useAlchemyRunController(): AlchemyRunCommands {
+  const persistence = useMemo(() => createSessionPersistence(defaultGameSession), []);
+  const progressSave = useSyncExternalStore(persistence.subscribeProgress, persistence.readProgress);
   const runActions = useMemo(() => createRunRouteActions(defaultGameSession), []);
   const homesteadEffects = useHomesteadEffects();
   const talentEffects = useTalentEffects();
@@ -101,75 +108,84 @@ export function useAlchemyRunController(): AlchemyRunCommands {
 
   const routeCommands = useMemo<AlchemyRouteCommands>(
     () => ({
+      progress: {
+        isPending: () => persistence.readProgress().kind !== "idle",
+        afterSaved: persistence.afterProgressSaved,
+      },
       meta: {
         resumeRun: nav.returnToBattle,
         goToScreen: nav.goToScreen,
-        beginCampaign: nav.beginCampaign,
-        beginLabyrinth: nav.beginLabyrinth,
-        beginWildwood: nav.beginWildwood,
-        unlockTalent: runActions.purchaseTalent,
-        resetUnlockedTalents: runActions.resetTalentUnlocks,
+        beginCampaign: protectVoid(nav.beginCampaign),
+        beginLabyrinth: protectVoid(nav.beginLabyrinth),
+        beginWildwood: protectVoid(nav.beginWildwood),
+        unlockTalent: protectVoid(runActions.purchaseTalent),
+        resetUnlockedTalents: protectVoid(runActions.resetTalentUnlocks),
       },
       runSetup: {
         goToScreen: nav.goToScreen,
-        handleCharacterSelect: nav.handleCharacterSelect,
-        handleStandardDraftComplete: nav.handleStandardDraftComplete,
-        handleWildwoodDraftComplete: nav.handleWildwoodDraftComplete,
-        handleWildwoodDraftPick: nav.handleWildwoodDraftPick,
-        handleStarterDraftPick: nav.handleStarterDraftPick,
-        handleDifficultySelect: nav.handleDifficultySelect,
-        handleBackFromDifficultySelect: nav.handleBackFromDifficultySelect,
+        handleCharacterSelect: protectVoid(nav.handleCharacterSelect),
+        handleStandardDraftComplete: protectVoid(nav.handleStandardDraftComplete),
+        handleWildwoodDraftComplete: protectVoid(nav.handleWildwoodDraftComplete),
+        handleWildwoodDraftPick: protectVoid(nav.handleWildwoodDraftPick),
+        handleStarterDraftPick: protectVoid(nav.handleStarterDraftPick),
+        handleDifficultySelect: protectVoid(nav.handleDifficultySelect),
+        handleBackFromDifficultySelect: protectVoid(nav.handleBackFromDifficultySelect),
       },
       runLoop: {
         labyrinth: {
-          handleNodeSelect: labyrinth.selectNode,
-          handleNodeDeselect: labyrinth.deselectNode,
-          handleNodeEnter: nodeRouting.handleLabyrinthNodeEnter,
-          descend: labyrinth.descend,
+          handleNodeSelect: protectVoid(labyrinth.selectNode),
+          handleNodeDeselect: protectVoid(labyrinth.deselectNode),
+          handleNodeEnter: guardProgressAction(defaultGameSession, nodeRouting.handleLabyrinthNodeEnter, false),
+          descend: protectVoid(labyrinth.descend),
         },
         rewards: {
-          skip: nav.skipRewards,
-          claimChoice: nav.claimRewardChoice,
+          skip: protectVoid(nav.skipRewards),
+          claimChoice: protectVoid(nav.claimRewardChoice),
         },
         destinations: {
-          prepare: nav.prepareDestinationScreen,
-          choose: nav.handleDestinationChoice,
-          continueCampfire: nav.handleCampfireContinue,
-          rest: runActions.restAtCampfire,
-          brew: runActions.brewAtCampfire,
+          prepare: protectVoid(nav.prepareDestinationScreen),
+          choose: protectVoid(nav.handleDestinationChoice),
+          continueCampfire: protectVoid(nav.handleCampfireContinue),
+          rest: guardProgressAction(defaultGameSession, runActions.restAtCampfire, false),
+          brew: guardProgressAction(defaultGameSession, runActions.brewAtCampfire, null),
         },
         wildwood: {
-          removeCard: nav.handleWildwoodRemoveCard,
-          skipRemoval: nav.handleWildwoodSkipRemoval,
+          removeCard: protectVoid(nav.handleWildwoodRemoveCard),
+          skipRemoval: protectVoid(nav.handleWildwoodSkipRemoval),
         },
-        shop: { ...shop, continue: nav.advanceToNextDestination },
+        shop: { ...shop, continue: protectVoid(nav.advanceToNextDestination) },
         mystery: {
-          handleChoice: nav.handleMysteryChoice,
-          handleChooseCard: nav.handleMysteryChooseCard,
-          handleContinue: nav.handleMysteryContinue,
+          handleChoice: protectVoid(nav.handleMysteryChoice),
+          handleChooseCard: guardProgressAction(defaultGameSession, nav.handleMysteryChooseCard, false),
+          handleContinue: protectVoid(nav.handleMysteryContinue),
         },
-        transmutation: { exchange: runActions.transmuteCard, continue: nav.advanceToNextDestination },
+        transmutation: {
+          exchange: guardProgressAction(defaultGameSession, runActions.transmuteCard, null),
+          continue: protectVoid(nav.advanceToNextDestination),
+        },
         corruption: {
-          handleCorruptCard: nav.handleCorruptCard,
-          handleExit: nav.handleCorruptionExit,
+          handleCorruptCard: protectVoid(nav.handleCorruptCard),
+          handleExit: protectVoid(nav.handleCorruptionExit),
         },
       },
       battle,
       runEnd: {
-        continueFromRunEnd: nav.continueFromRunEnd,
+        continueFromRunEnd: protectVoid(nav.continueFromRunEnd),
       },
     }),
-    [nav, nodeRouting, labyrinth, shop, battle, runActions],
+    [nav, nodeRouting, labyrinth, shop, battle, runActions, persistence],
   );
 
   return {
     screen,
     navigationPending,
+    progressSave,
+    retryProgressSave: persistence.retryProgress,
     routeCommands,
     unlockAllTalents: runActions.unlockTalentsForDevelopment,
     returnToBattle: nav.returnToBattle,
     goToScreen: nav.goToScreen,
-    handleEndRun,
-    resetRunState: nav.resetRunState,
+    handleEndRun: protectVoid(handleEndRun),
+    resetRunState: protectVoid(nav.resetRunState),
   };
 }

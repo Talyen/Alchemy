@@ -5,6 +5,7 @@ import type { AlchemyRouteCommands } from "@/features/alchemy/shell/route-comman
 export function createMockRouteCommands(): AlchemyRouteCommands {
   const fn = () => vi.fn();
   return {
+    progress: { isPending: () => false, afterSaved: (feedback) => feedback() },
     meta: {
       resumeRun: vi.fn(),
       goToScreen: fn(),
@@ -82,6 +83,8 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
       skipCombatDevMode: fn(),
       bindPlayback: fn(),
       isCardPlayInProgress: vi.fn(() => false),
+      isProgressSavePending: vi.fn(() => false),
+      subscribeProgressSave: vi.fn(() => () => {}),
       isAutoplayEnabled: false,
       setAutoplayEnabled: fn(),
       toggleAutoplayEnabled: fn(),

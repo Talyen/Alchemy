@@ -44,6 +44,11 @@ export function createAutosaveScheduler(maxWaitMs: number, retryCooldownMs: numb
   return {
     cancel,
     canSubmit,
+    retryNow() {
+      submittedRevision = acknowledgedRevision;
+      exitAttemptedRevision = 0;
+      retryAt = 0;
+    },
     markDirty(now: number) {
       // Preserve the original max-wait window across failure rewinds and partial
       // saves: only a fully submitted revision restarts the dirty-since clock.
