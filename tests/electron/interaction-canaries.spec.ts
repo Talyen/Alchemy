@@ -132,7 +132,7 @@ test(
         runDeck: [makeCard()],
         runPlayerHealth: 10,
         runMaxHealth: 30,
-        activity: savedActivityFixture("campfire", { offers: [], completed: false }),
+        activity: savedActivityFixture("campfire"),
       });
       await page.getByRole("button", { name: "Rest", exact: true }).click({ clickCount: 2 });
       await expect(page.getByRole("button", { name: "Rest", exact: true })).toHaveCount(0);

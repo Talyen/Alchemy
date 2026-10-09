@@ -107,7 +107,7 @@ const DEFAULT_SHOP_STATE = { cards: [], refreshesLeft: 1, purchasedSlotKeys: [] 
 const DEFAULT_ALCHEMIST_STATE = { potions: [], refreshesLeft: 1, purchasedSlotKeys: [] };
 const DEFAULT_TRINKET_SHOP_STATE = { trinketIds: [], refreshesLeft: 1, purchasedSlotKeys: [] };
 const DEFAULT_EQUIPMENT_SHOP_STATE = { gear: [], refreshesLeft: 1, purchasedSlotKeys: [] };
-const DEFAULT_ALCHEMY_VISIT = { completed: false, result: null };
+const DEFAULT_ALCHEMY_VISIT = { offers: [], completed: false, result: null, original: null };
 
 /** Current-format activity fixtures use production defaults without a legacy decoder. */
 export function savedActivityFixture(kind: PersistedRunActivity["kind"], data?: unknown): PersistedRunActivity {
