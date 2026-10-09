@@ -85,6 +85,7 @@ function routeElement() {
   return (
     <MysteryRoute
       routeCommands={{
+        progress: createMockRouteCommands().progress,
         runLoop: {
           ...createMockRouteCommands().runLoop,
           mystery: {

@@ -14,10 +14,10 @@ import {
 } from "@/lib/gear";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { makeGearInstance } from "../fixtures/gear";
-import type { BattleState } from "@/lib/battle";
+import type { BattleSnapshot } from "@/lib/battle";
 import { patchBattleState } from "../fixtures/battle";
 
-export const BATTLE_COHORTS = [
+const BATTLE_COHORTS = [
   "mitigated-hit",
   "phoenix-health-cost",
   "fatal-retaliation",
@@ -142,7 +142,7 @@ export function battleCohort(seed: number) {
   };
 }
 
-export function combatOutcome(state: BattleState) {
+export function combatOutcome(state: BattleSnapshot) {
   return {
     playerHealth: state.playerHealth,
     enemyHealth: state.enemyHealth,

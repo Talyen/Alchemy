@@ -229,7 +229,9 @@ describe("run architecture type contracts", () => {
     expectTypeOf<ForbiddenDisplayKeys>().toEqualTypeOf<never>();
     expectTypeOf<AlchemyRunCommands>().toHaveProperty("routeCommands");
     expectTypeOf<AlchemyRunCommands>().toHaveProperty("screen");
-    expectTypeOf<keyof RouteCommands>().toEqualTypeOf<"meta" | "runSetup" | "runLoop" | "battle" | "runEnd">();
+    expectTypeOf<keyof RouteCommands>().toEqualTypeOf<
+      "progress" | "meta" | "runSetup" | "runLoop" | "battle" | "runEnd"
+    >();
   });
 
   it("keeps route commands isolated by phase", () => {

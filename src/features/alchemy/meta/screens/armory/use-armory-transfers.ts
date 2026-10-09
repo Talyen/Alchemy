@@ -57,10 +57,13 @@ export function useArmoryTransfers({
   }, [clearPlaceholder]);
 
   useEffect(() => {
+    const invalidate = () => {
+      transferSequence.current++;
+    };
     window.addEventListener("resize", settleActiveTransfers);
     window.addEventListener("scroll", settleActiveTransfers, true);
     return () => {
-      transferSequence.current++;
+      invalidate();
       window.removeEventListener("resize", settleActiveTransfers);
       window.removeEventListener("scroll", settleActiveTransfers, true);
     };

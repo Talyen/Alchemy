@@ -34,9 +34,16 @@ const presentationStore = {
     return cachedPresentation;
   },
   getInitialState: applicationStore.getInitialState,
-  subscribe: (listener: () => void) => {
-    const gameplay = applicationStore.subscribe(listener);
-    const progress = runtime.progressCompletion.subscribe(listener);
+  subscribe: (listener: (state: GameplayState, previous: GameplayState) => void) => {
+    let previous = presentationStore.getState();
+    const notify = () => {
+      const current = presentationStore.getState();
+      const before = previous;
+      previous = current;
+      listener(current, before);
+    };
+    const gameplay = applicationStore.subscribe(notify);
+    const progress = runtime.progressCompletion.subscribe(notify);
     return () => {
       gameplay();
       progress();

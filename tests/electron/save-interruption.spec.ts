@@ -13,7 +13,7 @@ import {
 import { savedActivityFixture } from "../fixtures/run-activity";
 import { ShopPage } from "../pages/shop-page";
 import { BattlePage } from "../pages/battle-page";
-import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage/save-candidates";
+import type { SaveData } from "@/features/alchemy/shared/storage/types";
 
 function saved(profile: string) {
   const candidates = [
@@ -22,8 +22,19 @@ function saved(profile: string) {
     ...[1, 2, 3].flatMap((i) => [`save.json.bak.${i}`, `save-recovery.json.bak.${i}`]),
   ]
     .filter((name) => fs.existsSync(path.join(profile, name)))
-    .map((name) => fs.readFileSync(path.join(profile, name), "utf8"));
-  return evaluateSaveCandidates(candidates).data;
+    .flatMap((name) => {
+      try {
+        return [JSON.parse(fs.readFileSync(path.join(profile, name), "utf8")) as SaveData];
+      } catch {
+        // An interrupted write can leave an unreadable slot; the backup ring
+        // must still contain a complete acknowledged snapshot.
+        return [];
+      }
+    })
+    .sort((a, b) => b.lastSavedAt - a.lastSavedAt);
+  const latest = candidates[0];
+  if (!latest) throw new Error("No readable save survived interruption");
+  return latest;
 }
 async function quote(page: Page) {
   const text = await new ShopPage(page).buyBtn.first().locator("span.tabular-nums").last().innerText();
