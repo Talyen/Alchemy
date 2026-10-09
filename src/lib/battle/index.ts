@@ -7,6 +7,7 @@ export {
   pickHighestScoring,
 } from "./autoplay-policy";
 export { getBattleCardPlayTarget, getBattleCardTransmutationRole, isAttackCard } from "./card-classification";
+export { computeCardPayment } from "./card-cost-rules";
 export { canPlayCard, playBattleCardResolved, type CardPlayOptions } from "./card-play";
 export { projectEnemyDotDamage } from "./dot-resolve";
 export { mergeCombatText } from "./combat-text-events";

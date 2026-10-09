@@ -1,6 +1,9 @@
 import "../../../../helpers/mock-audio";
 
-import { replaceBattleForTest as setSyncedBattleState } from "../../../../helpers/run-domain-store-test";
+import {
+  setBattleActiveForTest,
+  replaceBattleForTest as setSyncedBattleState,
+} from "../../../../helpers/run-domain-store-test";
 import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
 import { act, renderHook } from "@testing-library/react";
 import { useBattleAutoplay } from "@/features/alchemy/run-loop/battle/use-battle-autoplay";
@@ -13,12 +16,14 @@ import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle
 import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfers";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
+import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { makeTestCard } from "../../../../fixtures/battle";
 import { playBattleEvent, playCardSound, playUISound } from "@/lib/audio";
+import { getHandCardKey } from "@/features/alchemy/run-loop/battle/playable-hand";
 import { AUTOPLAY_PREVIEW_MS } from "@/lib/game-constants";
 import { logError } from "@/lib/error-logger";
 import { battlePresentation } from "@/app/battle-presentation";
@@ -74,7 +79,16 @@ import { defaultGameSession } from "@/app/application-session";
 const autoplayControl = { signal: new AbortController().signal, canCommit: () => true };
 
 function givenBattle(state: BattleSnapshot): void {
-  dispatchGameplayCommand((draft) => acceptCommand(setSyncedBattleState(draft, state)), undefined, defaultGameSession);
+  dispatchGameplayCommand(
+    (draft) => {
+      setSyncedBattleState(draft, state);
+      setBattleActiveForTest(draft, true);
+      setScreen(draft, "battle");
+      return acceptCommand();
+    },
+    undefined,
+    defaultGameSession,
+  );
 }
 
 function makeDeps(overrides: Partial<BattleControllerContext> = {}) {
@@ -161,6 +175,9 @@ describe("createBattleCardPlay", () => {
     clickCard(createBattleCardPlay(ctx, session, transferDeps).handleCardClick, card, 0);
     expect(battlePresentation.getState().displayedBattle).toBe(shown);
     expect(readBattle(defaultGameSession).battleState.mana).toBe(0);
+    expect(battlePresentation.getState().cardRejection).toEqual({ cardKey: getHandCardKey(card, 0), mana: true });
+    clickCard(createBattleCardPlay(ctx, session, transferDeps).handleCardClick, card, 0);
+    expect(playUISound).toHaveBeenCalledTimes(1);
   });
 
   it("a stale autoplay preview cannot choose the same catalog card from the next queued Wish", async () => {
@@ -375,7 +392,10 @@ describe("createBattleCardPlay", () => {
     });
     const actions = createBattleCardPlay(ctx, session, transferDeps);
     await expect(actions.handleAutoplayCard(card, 0, autoplayControl)).resolves.toBe(false);
+    clickCard(actions.handleCardClick, card, 0);
     expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(1);
+    expect(playUISound).not.toHaveBeenCalled();
+    expect(battlePresentation.getState().cardRejection).toBeNull();
   });
 
   it("rejects plays for cards still animating into the hand", () => {
@@ -399,7 +419,8 @@ describe("createBattleCardPlay", () => {
 
     expect(readBattle(defaultGameSession).battleState).toEqual(battleSnapshot(state));
     expect(awardCardXP).not.toHaveBeenCalled();
-    expect(playUISound).toHaveBeenCalledWith("error");
+    expect(playUISound).not.toHaveBeenCalled();
+    expect(battlePresentation.getState().cardRejection).toBeNull();
   });
 
   it("plays cards after enemy is defeated during victory grace", () => {

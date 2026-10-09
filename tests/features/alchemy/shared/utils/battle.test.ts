@@ -151,6 +151,8 @@ describe("getCombatImpactVisual", () => {
     expect(getCombatImpactVisual({ target: "enemy", kind: "damage", stat, amount: 5 })).toEqual({
       colors: keywordDefinitions[stat].shineColors,
       healthLost: true,
+      amount: 5,
+      periodic: false,
     });
   });
 
@@ -158,6 +160,8 @@ describe("getCombatImpactVisual", () => {
     expect(getCombatImpactVisual({ target: "player", kind: "damage", stat: "block", amount: 5 })).toEqual({
       colors: keywordDefinitions.block.shineColors,
       healthLost: false,
+      amount: 5,
+      periodic: false,
     });
   });
 

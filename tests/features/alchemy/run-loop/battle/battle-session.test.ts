@@ -141,8 +141,8 @@ describe("createBattleSession", () => {
 
   it("resetBattleSession clears portrait impact cues", () => {
     battlePresentation.setState({
-      playerImpactCue: { sequence: 1, colors: ["#fff"], healthLost: true },
-      enemyImpactCue: { sequence: 2, colors: ["#fff"], healthLost: true },
+      playerImpactCue: { sequence: 1, colors: ["#fff"], healthLost: true, amount: 5, periodic: false, recoil: true },
+      enemyImpactCue: { sequence: 2, colors: ["#fff"], healthLost: true, amount: 5, periodic: false, recoil: true },
     });
     const { session } = makeSession();
     session.resetBattleSession();

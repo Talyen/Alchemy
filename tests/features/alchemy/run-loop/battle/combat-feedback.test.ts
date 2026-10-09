@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createStore } from "zustand/vanilla";
-import { COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION_MS } from "@/lib/game-constants";
+import {
+  CARD_REJECTION_FEEDBACK_MS,
+  COMBAT_RECOIL_COOLDOWN_MS,
+  COMBAT_TEXT_LIFETIME_MS,
+  SHAKE_DURATION_MS,
+} from "@/lib/game-constants";
 import { createCombatFeedback, createCombatFeedbackState } from "@/features/alchemy/run-loop/battle/combat-feedback";
 
 function makeFeedback() {
@@ -27,6 +32,36 @@ describe("combat feedback lifetime", () => {
   afterEach(() => {
     vi.clearAllTimers();
     vi.useRealTimers();
+  });
+
+  it("caps rapid recoil while retaining every impact and numeric outcome", () => {
+    const feedback = makeFeedback();
+    feedback.showCombatTexts([...hit]);
+    const first = feedback.store.getState().enemyImpactCue!;
+    expect(first.recoil).toBe(true);
+    feedback.showCombatTexts([...hit]);
+    expect(feedback.store.getState().enemyImpactCue).toMatchObject({ recoil: false, amount: 5 });
+    expect(feedback.store.getState().enemyImpactCue!.sequence).toBeGreaterThan(first.sequence);
+    expect(feedback.store.getState().floatingCombatBursts[0]!.entries[0]!.amount).toBe(10);
+    vi.advanceTimersByTime(COMBAT_RECOIL_COOLDOWN_MS);
+    feedback.showCombatTexts([...hit]);
+    expect(feedback.store.getState().enemyImpactCue!.recoil).toBe(true);
+    feedback.reset();
+    feedback.showCombatTexts([...hit]);
+    expect(feedback.store.getState().enemyImpactCue!.recoil).toBe(true);
+  });
+
+  it("bounds rejection feedback and cancels its lifetime on teardown", () => {
+    const feedback = makeFeedback();
+    expect(feedback.rejectCardPlay("slash-1", true)).toBe(true);
+    expect(feedback.rejectCardPlay("slash-1", true)).toBe(false);
+    expect(feedback.store.getState().cardRejection).toEqual({ cardKey: "slash-1", mana: true });
+    vi.advanceTimersByTime(CARD_REJECTION_FEEDBACK_MS);
+    expect(feedback.store.getState().cardRejection).toBeNull();
+    expect(feedback.rejectCardPlay("guard-2", false)).toBe(true);
+    feedback.reset();
+    expect(feedback.store.getState().cardRejection).toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it("isolates cancellation and expiry between feedback owners", () => {

@@ -1,6 +1,11 @@
 import { useUiStore, isBattleInspectionOpen } from "../../shared/stores/ui-store";
 import type { MouseEvent } from "react";
-import { canPlayCard as canPlayCardInBattle, isAttackCard, type BattleSnapshot } from "@/lib/battle";
+import {
+  canPlayCard as canPlayCardInBattle,
+  computeCardPayment,
+  isAttackCard,
+  type BattleSnapshot,
+} from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import { playCardSound, playBattleEvent, playUISound } from "@/lib/audio";
 import { AUTOPLAY_PREVIEW_MS, CARD_ACTIVATION_ROTATION_DEGREES } from "@/lib/game-constants";
@@ -59,13 +64,14 @@ export function createBattleCardPlay(
     });
   }
 
-  function canPlayCard(card: BattleCard, index: number, state: BattleSnapshot) {
+  function canAcceptCardInput(card: BattleCard, index: number, state: BattleSnapshot) {
     const presentation = getPresentation();
     return (
       !isBattleInspectionOpen(useUiStore.getState()) &&
       ctx.screen === "battle" &&
       ctx.playback.canAcceptInput(true) &&
-      canPlayCardInBattle(state, card, index, PLAYABLE_HAND_OPTIONS) &&
+      state.turnPhase === "player" &&
+      !state.wishOptions &&
       !presentation.hiddenHandCardKeys.includes(getHandCardKey(card, index))
     );
   }
@@ -122,8 +128,19 @@ export function createBattleCardPlay(
     if (card.uid !== undefined) {
       index = currentState.hand.findIndex((candidate) => candidate.uid === card.uid && candidate.id === card.id);
     }
-    if (!canPlayCard(card, index, currentState)) {
-      if (!options?.silentReject) playUISound("error");
+    if (!canAcceptCardInput(card, index, currentState)) return false;
+    const handCard = currentState.hand[index];
+    // Stale clicks and playback locks are silent; deliberate rule rejections are visible.
+    if (!handCard || handCard.id !== card.id) return false;
+    if (!canPlayCardInBattle(currentState, handCard, index, PLAYABLE_HAND_OPTIONS)) {
+      if (
+        !options?.silentReject &&
+        getPresentation().rejectCardPlay(
+          getHandCardKey(handCard, index),
+          !computeCardPayment(currentState, handCard).affordable,
+        )
+      )
+        playUISound("error");
       return false;
     }
     const sessionNum = ctx.playback.id;

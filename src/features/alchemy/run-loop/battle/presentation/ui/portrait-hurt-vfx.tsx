@@ -14,6 +14,7 @@ export function PortraitImpactVfx({
     <>
       {showHealthFlash ? (
         <div
+          key={pulse.sequence}
           data-testid="portrait-health-loss-flash"
           className="pointer-events-none absolute inset-0 z-20 animate-hurt-flash rounded-[inherit] bg-red-950/85"
         />

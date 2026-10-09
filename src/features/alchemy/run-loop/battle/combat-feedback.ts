@@ -1,5 +1,11 @@
 import type { CombatTextEvent } from "@/lib/battle";
-import { COMBAT_TEXT_LIFETIME_MS, COMBAT_TEXT_MIN_LIFETIME_MS, SHAKE_DURATION_MS } from "@/lib/game-constants";
+import {
+  CARD_REJECTION_FEEDBACK_MS,
+  COMBAT_RECOIL_COOLDOWN_MS,
+  COMBAT_TEXT_LIFETIME_MS,
+  COMBAT_TEXT_MIN_LIFETIME_MS,
+  SHAKE_DURATION_MS,
+} from "@/lib/game-constants";
 import { resolveGameDelay, TimerGroup } from "@/lib/animation/game-timer";
 import type { CombatImpactCue, CombatTextBurst } from "../../shared/types";
 import { consolidateCombatBursts } from "./combat-feedback-merge";
@@ -9,6 +15,7 @@ type Combatant = "player" | "enemy" | "companion";
 
 export interface CombatFeedbackState {
   floatingCombatBursts: CombatTextBurst[];
+  cardRejection: { cardKey: string; mana: boolean } | null;
   enemyShaking: boolean;
   playerShaking: boolean;
   companionShaking: boolean;
@@ -21,6 +28,7 @@ export interface CombatFeedbackState {
 }
 
 export interface CombatFeedbackActions {
+  rejectCardPlay: (cardKey: string, mana: boolean) => boolean;
   shakeEnemy: () => void;
   shakePlayer: () => void;
   shakeCompanion: () => void;
@@ -33,6 +41,7 @@ export interface CombatFeedbackActions {
 export function createCombatFeedbackState(): CombatFeedbackState {
   return {
     floatingCombatBursts: [],
+    cardRejection: null,
     enemyShaking: false,
     playerShaking: false,
     companionShaking: false,
@@ -58,6 +67,9 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
 } {
   const textTimers = new TimerGroup();
   const shakeTimers = new TimerGroup();
+  const rejectionTimers = new TimerGroup();
+  const lastImpact = new Map<string, number>();
+  let rejecting = false;
   const shakeCancels = new Map<Combatant, () => void>();
   let generation = 0;
   let actionId = 0;
@@ -91,9 +103,22 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
     cancel: () => {
       cancelTexts();
       shakeTimers.clearAll();
+      rejectionTimers.clearAll();
+      rejecting = false;
+      lastImpact.clear();
       shakeCancels.clear();
     },
     actions: {
+      rejectCardPlay: (cardKey, mana) => {
+        if (rejecting || !isVisible()) return false;
+        rejecting = true;
+        rejectionTimers.setTimeout(() => {
+          rejecting = false;
+          update(() => ({ cardRejection: null }));
+        }, CARD_REJECTION_FEEDBACK_MS);
+        update(() => ({ cardRejection: { cardKey, mana } }));
+        return true;
+      },
       shakeEnemy: () => shake("enemy"),
       shakePlayer: () => shake("player"),
       shakeCompanion: () => shake("companion"),
@@ -109,7 +134,12 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
         const impacts: Partial<Pick<CombatFeedbackState, "playerImpactCue" | "enemyImpactCue">> = {};
         for (const key of ["playerImpactCue", "enemyImpactCue"] as const) {
           const visual = prepared.impacts[key];
-          if (visual) impacts[key] = { ...visual, sequence: ++impactSequence };
+          // Keep outcomes and sounds immediate while bounding repeated portrait motion.
+          if (visual) {
+            const recoil = timestamp - (lastImpact.get(key) ?? -Infinity) >= COMBAT_RECOIL_COOLDOWN_MS;
+            if (recoil) lastImpact.set(key, timestamp);
+            impacts[key] = { ...visual, recoil, sequence: ++impactSequence };
+          }
         }
         let added: CombatTextBurst[] = [];
         update((state) => {

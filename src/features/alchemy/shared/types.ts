@@ -70,6 +70,9 @@ export interface CombatImpactCue {
   sequence: number;
   colors: readonly string[];
   healthLost: boolean;
+  amount: number;
+  periodic: boolean;
+  recoil: boolean;
 }
 
 export type CollectionTab = "heroes" | "cards" | "bestiary" | "trinkets" | "uniques";

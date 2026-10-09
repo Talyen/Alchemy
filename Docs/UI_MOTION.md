@@ -50,6 +50,12 @@ the queued frame, and disconnects resize observation; late callbacks do nothing.
 Stun and Freeze presentation rebuilds when the shared motion preference changes,
 switching between a static overlay with no tilt and the animated effect.
 
+Reward selection immediately holds the chosen frame, with one 200ms tiny settle
+and one simultaneous 220ms artwork shine. Alternatives gently dim. Selection
+suppresses any hover shimmer; saving and the existing outgoing fade proceed
+independently, with no second shine or added wait. Each reward-choice identity
+starts fresh. Reduced or disabled motion keeps the selected frame and dimming.
+
 ## Battle motion
 
 Living combatant artwork, including companions, scales to 103.5% during its active
@@ -66,7 +72,12 @@ Player lunges occur only for cards with a damage effect and move the portrait,
 not the Health/status column. Feedback and the single portrait impact flash appear
 as soon as the action resolves, independently of the attack animation. Health
 damage takes priority over Block-only impacts; the largest eligible amount wins,
-with first occurrence breaking ties. Each action requests each combat sound family
+with first occurrence breaking ties. Portrait recoil has light, normal, and heavy
+strengths: below 5%, from 5%, and from 20% of the target's maximum Health per
+selected impact. Block and periodic damage always use light recoil. Recoil stays
+on artwork, leaving Health and statuses steady; at most one recoil starts per
+target every 180ms. Every resolved impact still retains its flash, numbers, and
+sound. These effects never delay input. Each action requests each combat sound family
 at most once. Player and enemy deaths share the slice effect and battle-end delay;
 Death's Door is not defeat, and voluntary run exits remain immediate.
 The shared 1.25-second death effect uses a straight diagonal cut for both portrait

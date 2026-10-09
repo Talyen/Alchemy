@@ -101,7 +101,14 @@ describe("battle-presentation-store", () => {
 
   it("resetPresentation clears VFX state", () => {
     battlePresentation.setState({
-      playerImpactCue: { sequence: 1, colors: keywordDefinitions.burn.shineColors, healthLost: true },
+      playerImpactCue: {
+        sequence: 1,
+        colors: keywordDefinitions.burn.shineColors,
+        healthLost: true,
+        amount: 5,
+        periodic: false,
+        recoil: true,
+      },
     });
     battlePresentation.getState().telegraphAttack("player");
     battlePresentation.getState().spawnCardGhost({
@@ -133,7 +140,14 @@ describe("battle-presentation-store", () => {
 
   it("clearBattlePresentationUi resets full presentation VFX", () => {
     battlePresentation.setState({
-      playerImpactCue: { sequence: 1, colors: keywordDefinitions.freeze.shineColors, healthLost: true },
+      playerImpactCue: {
+        sequence: 1,
+        colors: keywordDefinitions.freeze.shineColors,
+        healthLost: true,
+        amount: 5,
+        periodic: false,
+        recoil: true,
+      },
     });
     battlePresentation.getState().shakeEnemy();
     battlePresentation.getState().telegraphAttack("enemy");
@@ -348,7 +362,7 @@ describe("battle-presentation-store", () => {
     expect(enemy[2]!.entries).toHaveLength(4);
   });
 
-  it("selects one strongest Health impact per target, ahead of Block and rewards", () => {
+  it("selects one strongest Health impact per target, ahead of Block and rewards", async () => {
     const show = activateBattle();
     show([
       { target: "enemy", kind: "damage", stat: "physical", amount: 5 },
@@ -361,6 +375,7 @@ describe("battle-presentation-store", () => {
     const state = battlePresentation.getState();
     expect(state.enemyImpactCue).toMatchObject({ colors: keywordDefinitions.burn.shineColors, healthLost: true });
     expect(state.playerImpactCue).toMatchObject({ colors: keywordDefinitions.physical.shineColors, healthLost: true });
+    await vi.advanceTimersByTimeAsync(180);
     show([{ target: "player", kind: "damage", stat: "block", amount: 3 }]);
     expect(battlePresentation.getState().playerImpactCue).toMatchObject({
       colors: keywordDefinitions.block.shineColors,

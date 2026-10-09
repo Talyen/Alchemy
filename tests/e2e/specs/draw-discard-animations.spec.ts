@@ -236,9 +236,11 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
         const drawStarts = performance.getEntriesByName("alchemy:battle:draw-start", "mark").length;
         const drawEnds = performance.getEntriesByName("alchemy:battle:draw-end", "mark").length;
         if (drawStarts <= drawEnds) return;
-        document.querySelectorAll<HTMLElement>('[aria-label^="Play "]:not(.opacity-0).grayscale').forEach((card) => {
-          testWindow.drawGrayscaleFlashes?.push(card.getAttribute("aria-label") ?? "unknown card");
-        });
+        document
+          .querySelectorAll<HTMLElement>('[aria-label^="Play "]:not(.opacity-0).hand-card-unplayable')
+          .forEach((card) => {
+            testWindow.drawGrayscaleFlashes?.push(card.getAttribute("aria-label") ?? "unknown card");
+          });
       });
       testWindow.cardColorObserver.observe(document.body, {
         attributes: true,
@@ -257,7 +259,7 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
         async () => {
           if ((await flyingCards.count()) === 0) return false;
           const classes = await visibleHandCards.evaluateAll((cards) => cards.map((card) => card.className));
-          return classes.length > 0 && classes.every((className) => !className.includes("grayscale"));
+          return classes.length > 0 && classes.every((className) => !className.includes("hand-card-unplayable"));
         },
         { message: "affordable cards should stay colored during discard" },
       )

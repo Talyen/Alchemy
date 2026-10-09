@@ -115,26 +115,95 @@ describe("ArtPanel hover motion", () => {
     const { rerender } = render(<ArtPanel {...baseProps} />);
 
     rerender(
-      <ArtPanel {...baseProps} isDead impactCue={{ sequence: 1, colors: ["#67e8f9", "#06b6d4"], healthLost: true }} />,
+      <ArtPanel
+        {...baseProps}
+        isDead
+        impactCue={{
+          sequence: 1,
+          colors: ["#67e8f9", "#06b6d4"],
+          healthLost: true,
+          amount: 5,
+          periodic: false,
+          recoil: true,
+        }}
+      />,
     );
 
     expect(screen.getByTestId("portrait-impact-sparks").getAttribute("data-colors")).toBe("#67e8f9,#06b6d4");
     expect(screen.queryByTestId("portrait-health-loss-flash")).toBeNull();
   });
 
-  it("keeps the red Health-loss flash for a living combatant", () => {
+  it("restarts the Health-loss flash for rapid hits even when recoil is suppressed", () => {
     const { rerender } = render(<ArtPanel {...baseProps} />);
 
-    rerender(<ArtPanel {...baseProps} impactCue={{ sequence: 1, colors: ["#fb923c"], healthLost: true }} />);
+    rerender(
+      <ArtPanel
+        {...baseProps}
+        impactCue={{ sequence: 1, colors: ["#fb923c"], healthLost: true, amount: 5, periodic: false, recoil: true }}
+      />,
+    );
 
     expect(screen.getByTestId("portrait-impact-sparks")).toBeTruthy();
-    expect(screen.getByTestId("portrait-health-loss-flash")).toBeTruthy();
+    const flash = screen.getByTestId("portrait-health-loss-flash");
+    rerender(
+      <ArtPanel
+        {...baseProps}
+        impactCue={{ sequence: 2, colors: ["#fb923c"], healthLost: true, amount: 5, periodic: false, recoil: false }}
+      />,
+    );
+    expect(screen.getByTestId("portrait-health-loss-flash")).not.toBe(flash);
   });
+
+  it("does not replay an old recoil on maximum Health changes or carry it into death", () => {
+    const impactCue = { sequence: 1, colors: ["#fff"], healthLost: true, amount: 5, periodic: false, recoil: true };
+    const { rerender } = render(<ArtPanel {...baseProps} />);
+    rerender(<ArtPanel {...baseProps} impactCue={impactCue} />);
+    const recoil = screen.getByTestId("battle-player-art-panel").closest(".portrait-recoil")!;
+    expect(recoil.classList.contains("portrait-recoil-active")).toBe(true);
+    const restart = vi.spyOn(recoil.classList, "add");
+    rerender(<ArtPanel {...baseProps} maxHealth={30} impactCue={impactCue} />);
+    expect(restart).not.toHaveBeenCalled();
+
+    rerender(<ArtPanel {...baseProps} impactCue={{ ...impactCue, sequence: 2 }} />);
+    expect(recoil.classList.contains("portrait-recoil-active")).toBe(true);
+    rerender(<ArtPanel {...baseProps} isDead impactCue={{ ...impactCue, sequence: 3 }} />);
+    expect(recoil.classList.contains("portrait-recoil-active")).toBe(false);
+    restart.mockRestore();
+  });
+
+  it.each([
+    { amount: 1, periodic: false, healthLost: true, strength: "light" },
+    { amount: 5, periodic: false, healthLost: true, strength: "normal" },
+    { amount: 20, periodic: false, healthLost: true, strength: "heavy" },
+    { amount: 20, periodic: true, healthLost: true, strength: "light" },
+    { amount: 20, periodic: false, healthLost: false, strength: "light" },
+  ])(
+    "keeps $strength recoil on existing portrait artwork and away from Health",
+    ({ amount, periodic, healthLost, strength }) => {
+      const { rerender } = render(<ArtPanel {...baseProps} maxHealth={100} />);
+      const art = screen.getByTestId("battle-player-art-panel");
+      rerender(
+        <ArtPanel
+          {...baseProps}
+          maxHealth={100}
+          impactCue={{ sequence: 1, colors: ["#fff"], amount, periodic, healthLost, recoil: true }}
+        />,
+      );
+      expect(screen.getByTestId("battle-player-art-panel")).toBe(art);
+      expect(art.closest("[data-impact-strength]")?.getAttribute("data-impact-strength")).toBe(strength);
+      expect(screen.getByTestId("player-health").closest(".portrait-recoil")).toBeNull();
+    },
+  );
 
   it("renders Block sparks without a Health-loss flash", () => {
     const { rerender } = render(<ArtPanel {...baseProps} />);
 
-    rerender(<ArtPanel {...baseProps} impactCue={{ sequence: 1, colors: ["#7dd3fc"], healthLost: false }} />);
+    rerender(
+      <ArtPanel
+        {...baseProps}
+        impactCue={{ sequence: 1, colors: ["#7dd3fc"], healthLost: false, amount: 5, periodic: false, recoil: true }}
+      />,
+    );
 
     expect(screen.getByTestId("portrait-impact-sparks")).toBeTruthy();
     expect(screen.queryByTestId("portrait-health-loss-flash")).toBeNull();

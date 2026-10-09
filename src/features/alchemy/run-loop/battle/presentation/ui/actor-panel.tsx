@@ -1,5 +1,6 @@
-import { type ReactNode, type Ref } from "react";
+import { type CSSProperties, type ReactNode, type Ref, useLayoutEffect, useRef } from "react";
 
+import { COMBAT_IMPACT_NORMAL_HEALTH_RATIO, COMBAT_IMPACT_HEAVY_HEALTH_RATIO } from "@/lib/game-constants";
 import { Progress } from "@/components/ui/progress";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
 import type { BestiaryEntry } from "@/lib/game-data";
@@ -76,7 +77,6 @@ export function ArtPanel({
   onHoverShimmer,
   surfaceRef,
   isDead = false,
-  shaking = false,
   cardWidthClass,
   descriptionLines,
   currentEnemy,
@@ -109,7 +109,7 @@ export function ArtPanel({
   const artWrapClass = cn("relative overflow-visible", isBoss && side === "player" && "origin-bottom scale-[1.3]");
 
   return (
-    <div className={cn("relative flex flex-col items-center gap-3", shaking && "animate-shake")}>
+    <div className="relative flex flex-col items-center gap-3">
       <CombatantAttackLunge
         attackToken={attackToken}
         castToken={castToken}
@@ -155,6 +155,7 @@ export function ArtPanel({
               cardWidthClass={resolvedCardWidthClass}
               deathsDoorActive={deathsDoorActive}
               impactCue={impactCue}
+              maxHealth={maxHealth}
               turnActive={turnActive}
               turnUrgentHide={turnUrgentHide}
               ccKeyword={ccKeyword}
@@ -194,6 +195,7 @@ function ActorArtFrame({
   cardWidthClass = battleCardWidthClass,
   deathsDoorActive,
   impactCue = null,
+  maxHealth,
   turnActive = false,
   turnUrgentHide = false,
   turnShineColors,
@@ -212,67 +214,102 @@ function ActorArtFrame({
   cardWidthClass?: string;
   deathsDoorActive: boolean;
   impactCue?: CombatImpactCue | null;
+  maxHealth: number;
   turnActive?: boolean;
   turnUrgentHide?: boolean;
   turnShineColors?: readonly string[] | undefined;
   ccKeyword?: ActiveCcKeyword | null;
 }) {
   const { pulse, sparksOverflow } = useImpactPulse(impactCue);
+  const recoilRef = useRef<HTMLDivElement>(null);
+  const lastRecoilSequence = useRef(0);
+  useLayoutEffect(() => {
+    const node = recoilRef.current;
+    if (!node) return;
+    if (!pulse || isDead) {
+      node.classList.remove("portrait-recoil-active");
+      if (pulse) lastRecoilSequence.current = pulse.sequence;
+      return;
+    }
+    // Maximum Health and death state can change while the same impact is still visible.
+    if (pulse.sequence <= lastRecoilSequence.current) return;
+    lastRecoilSequence.current = pulse.sequence;
+    if (!pulse.recoil) return;
+    const ratio = maxHealth > 0 ? pulse.amount / maxHealth : 0;
+    node.dataset.impactStrength =
+      !pulse.healthLost || pulse.periodic || ratio < COMBAT_IMPACT_NORMAL_HEALTH_RATIO
+        ? "light"
+        : ratio < COMBAT_IMPACT_HEAVY_HEALTH_RATIO
+          ? "normal"
+          : "heavy";
+    node.classList.remove("portrait-recoil-active");
+    void node.offsetWidth;
+    node.classList.add("portrait-recoil-active");
+  }, [pulse, isDead, maxHealth]);
 
   return (
-    <CombatantStatusEffectPresentation keyword={isDead ? null : ccKeyword}>
-      <Surface
-        surfaceRef={surfaceRef}
-        onDivClick={
-          onInspect && !isDead
-            ? (event) => {
-                if (event) onInspect(event.currentTarget);
-              }
-            : undefined
-        }
-        ariaLabel={`Inspect ${title}`}
-        testId={`battle-${side}-art-panel`}
-        clipContents={false}
-        className={cn(
-          "combatant-art relative",
-          cardSurfaceClass,
-          !isDead && cardHoverScaleClass,
-          turnActive && !isDead && "combatant-turn-active",
-          cardWidthClass ?? battleCardWidthClass,
-          "border",
-          isDead ? "border-transparent" : "border-border/80",
-          sparksOverflow && "overflow-visible",
-          isDead && "overflow-visible !bg-transparent",
-        )}
-        shimmerActive={shimmerActive}
-        shimmerToken={shimmerToken}
-        shimmerRounded="rounded-shell-hero"
-        onMouseEnter={() => onHoverShimmer(shimmerId)}
-      >
-        <ArtTurnActiveBorder
-          side={side}
-          active={turnActive && !isDead}
-          urgentHide={turnUrgentHide}
-          shineColor={turnShineColors}
-        />
-        {deathsDoorActive ? <ArtDeathDoorBorder /> : null}
-        {isDead ? (
-          <SliceDeath
-            imageUrl={art}
-            alt={title}
-            imageClassName={side === "enemy" ? landscapeArtImageClass : cardArtImageClass}
+    <div
+      ref={recoilRef}
+      className="portrait-recoil"
+      style={{ "--recoil-direction": side === "enemy" ? 1 : -1 } as CSSProperties}
+      onAnimationEnd={(event) => {
+        if (event.target === event.currentTarget) event.currentTarget.classList.remove("portrait-recoil-active");
+      }}
+    >
+      <CombatantStatusEffectPresentation keyword={isDead ? null : ccKeyword}>
+        <Surface
+          surfaceRef={surfaceRef}
+          onDivClick={
+            onInspect && !isDead
+              ? (event) => {
+                  if (event) onInspect(event.currentTarget);
+                }
+              : undefined
+          }
+          ariaLabel={`Inspect ${title}`}
+          testId={`battle-${side}-art-panel`}
+          clipContents={false}
+          className={cn(
+            "combatant-art relative",
+            cardSurfaceClass,
+            !isDead && cardHoverScaleClass,
+            turnActive && !isDead && "combatant-turn-active",
+            cardWidthClass ?? battleCardWidthClass,
+            "border",
+            isDead ? "border-transparent" : "border-border/80",
+            sparksOverflow && "overflow-visible",
+            isDead && "overflow-visible !bg-transparent",
+          )}
+          shimmerActive={shimmerActive}
+          shimmerToken={shimmerToken}
+          shimmerRounded="rounded-shell-hero"
+          onMouseEnter={() => onHoverShimmer(shimmerId)}
+        >
+          <ArtTurnActiveBorder
+            side={side}
+            active={turnActive && !isDead}
+            urgentHide={turnUrgentHide}
+            shineColor={turnShineColors}
           />
-        ) : (
-          <img
-            src={art}
-            alt={title}
-            className={cn("block w-full", side === "enemy" ? landscapeArtImageClass : cardArtImageClass)}
-            loading="eager"
-          />
-        )}
-        <PortraitImpactVfx pulse={pulse} showHealthFlash={!isDead && pulse?.healthLost === true} />
-      </Surface>
-    </CombatantStatusEffectPresentation>
+          {deathsDoorActive ? <ArtDeathDoorBorder /> : null}
+          {isDead ? (
+            <SliceDeath
+              imageUrl={art}
+              alt={title}
+              imageClassName={side === "enemy" ? landscapeArtImageClass : cardArtImageClass}
+            />
+          ) : (
+            <img
+              src={art}
+              alt={title}
+              className={cn("block w-full", side === "enemy" ? landscapeArtImageClass : cardArtImageClass)}
+              loading="eager"
+            />
+          )}
+          <PortraitImpactVfx pulse={pulse} showHealthFlash={!isDead && pulse?.healthLost === true} />
+        </Surface>
+      </CombatantStatusEffectPresentation>
+    </div>
   );
 }
 

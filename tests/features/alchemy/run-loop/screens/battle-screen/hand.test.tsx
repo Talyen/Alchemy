@@ -98,9 +98,9 @@ describe("BattleHand", () => {
     const affordable = screen.getByRole("button", { name: "Play Slash" });
     const expensive = screen.getByRole("button", { name: "Play Meteor" });
 
-    expect(affordable.classList.contains("grayscale!")).toBe(false);
+    expect(affordable.classList.contains("hand-card-unplayable")).toBe(false);
     expect(affordable.classList.contains("cursor-default")).toBe(false);
-    expect(expensive.classList.contains("grayscale!")).toBe(true);
+    expect(expensive.classList.contains("hand-card-unplayable")).toBe(true);
   });
 
   it("overlays stun presentation on hand cards while the player is crowd-controlled", () => {

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { useUiStore } from "../../shared/stores/ui-store";
 import { getCardKeywords } from "@/lib/game-data";
 import { getGearInstanceTitle } from "@/lib/gear";
@@ -35,59 +35,79 @@ function RewardChoiceItems({
   disabled: boolean;
   onClaimReward: (id: string) => void;
 }) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  function claim(id: string) {
+    if (disabled) return;
+    setSelectedId(id);
+    onClaimReward(id);
+  }
+  function frame(id: string, child: ReactNode) {
+    return (
+      <div
+        key={id}
+        className={cn(
+          "reward-choice relative flex justify-center",
+          selectedId === id && "reward-choice-selected",
+          selectedId !== null && selectedId !== id && "reward-choice-dim",
+        )}
+        data-reward-selected={selectedId === id || undefined}
+      >
+        {child}
+      </div>
+    );
+  }
   // Each choice cell shares the same flex centering so card, gear, and
   // trinket/boon tiles align identically; tile widths/aspects already match.
   switch (rewardState.rewardType) {
     case "gear":
       return rewardState.choices.map((instance) => {
         const choiceId = getRewardChoiceId(instance);
-        return (
-          <div key={choiceId} className="flex justify-center">
-            <GearTile
-              instance={instance}
-              interactionKey="reward"
-              as="button"
-              disabled={disabled}
-              hoverKeywordShine
-              onClick={() => onClaimReward(choiceId)}
-              ariaLabel={`Select ${getGearInstanceTitle(instance)}`}
-            />
-          </div>
+        return frame(
+          choiceId,
+          <GearTile
+            instance={instance}
+            interactionKey="reward"
+            as="button"
+            ariaDisabled={disabled}
+            selected={selectedId === choiceId}
+            hoverKeywordShine
+            onClick={() => claim(choiceId)}
+            ariaLabel={`Select ${getGearInstanceTitle(instance)}`}
+          />,
         );
       });
     case "boon":
     case "trinket":
       return rewardState.choices.map((trinket) => {
         const choiceId = getRewardChoiceId(trinket);
-        return (
-          <div key={choiceId} className="flex justify-center">
-            <TrinketTile
-              trinket={trinket}
-              interactionKey="reward"
-              as="button"
-              disabled={disabled}
-              hoverKeywordShine
-              temporary={rewardState.rewardType === "boon"}
-              onClick={() => onClaimReward(choiceId)}
-              ariaLabel={`Select ${trinket.title}`}
-            />
-          </div>
+        return frame(
+          choiceId,
+          <TrinketTile
+            trinket={trinket}
+            interactionKey="reward"
+            as="button"
+            ariaDisabled={disabled}
+            selected={selectedId === choiceId}
+            hoverKeywordShine
+            temporary={rewardState.rewardType === "boon"}
+            onClick={() => claim(choiceId)}
+            ariaLabel={`Select ${trinket.title}`}
+          />,
         );
       });
     case "card":
       return rewardState.choices.map((card) => {
         const choiceId = getRewardChoiceId(card);
-        return (
-          <div key={choiceId} className="flex justify-center">
-            <SelectableCard
-              card={card}
-              isSelected={false}
-              disabled={disabled}
-              shineColor={getCardInspectionShineColors(card)}
-              onSelect={() => onClaimReward(choiceId)}
-              interactionKey="reward"
-            />
-          </div>
+        return frame(
+          choiceId,
+          <SelectableCard
+            card={card}
+            isSelected={selectedId === choiceId}
+            disabled={disabled}
+            shineColor={getCardInspectionShineColors(card)}
+            onSelect={() => claim(choiceId)}
+            interactionKey="reward"
+          />,
         );
       });
   }

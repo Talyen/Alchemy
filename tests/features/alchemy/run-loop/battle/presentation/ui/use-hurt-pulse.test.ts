@@ -2,7 +2,14 @@ import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useImpactPulse } from "@/features/alchemy/run-loop/battle/presentation/ui/use-hurt-pulse";
 
-const cue = (sequence: number) => ({ sequence, colors: ["#fff"], healthLost: true });
+const cue = (sequence: number) => ({
+  sequence,
+  colors: ["#fff"],
+  healthLost: true,
+  amount: 5,
+  periodic: false,
+  recoil: true,
+});
 
 describe("useImpactPulse", () => {
   beforeEach(() => {

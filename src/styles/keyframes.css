@@ -148,12 +148,12 @@
 
 @keyframes manaGemSettle {
   0% {
-    transform: translate3d(0, 2px, 0) scale3d(0.82, 0.82, 1);
+    transform: translate3d(0, 1px, 0) scale3d(0.94, 0.94, 1);
     opacity: 0.5;
     animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
   }
   58% {
-    transform: translate3d(0, -2px, 0) scale3d(1.12, 1.12, 1);
+    transform: translate3d(0, -1px, 0) scale3d(1.05, 1.05, 1);
     opacity: 1;
     animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
   }
@@ -333,4 +333,67 @@ html.alchemy-disable-animations *::after {
   animation-iteration-count: 1 !important;
   scroll-behavior: auto !important;
   transition-duration: var(--animation-disabled-duration) !important;
+}
+
+@keyframes actionRejection {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  15%,
+  55% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes manaGemSpend {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  40% {
+    opacity: 0.45;
+    transform: scale(0.94);
+  }
+  100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+}
+
+@keyframes portraitRecoil {
+  0%,
+  100% {
+    translate: 0;
+  }
+  22% {
+    translate: calc(var(--recoil-distance) * var(--recoil-direction)) 0;
+  }
+  55% {
+    translate: calc(var(--recoil-distance) * var(--recoil-direction) * -0.35) 0;
+  }
+}
+
+@keyframes rewardChoiceSettle {
+  0%,
+  100% {
+    scale: 1;
+  }
+  25% {
+    scale: 1.025;
+  }
+}
+
+@keyframes rewardChoiceShine {
+  0% {
+    background-position: 100% 0;
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.8;
+  }
+  100% {
+    background-position: 0% 0;
+    opacity: 0;
+  }
 }

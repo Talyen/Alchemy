@@ -75,9 +75,8 @@ export function PilePanel({
   );
 }
 
-export function ManaPanel({ mana, maxMana }: { mana: number; maxMana: number }) {
+export function ManaPanel({ mana, maxMana, rejected = false }: { mana: number; maxMana: number; rejected?: boolean }) {
   const displayCount = Math.max(mana, maxMana);
-  const manaToken = useChangeToken(`${mana}-${maxMana}`);
 
   return (
     <div
@@ -85,24 +84,17 @@ export function ManaPanel({ mana, maxMana }: { mana: number; maxMana: number }) 
       data-testid="mana-panel"
       data-mana={mana}
     >
-      <div className="flex items-center justify-center gap-1.5" role="img" aria-label={`Mana: ${mana} / ${maxMana}`}>
+      <div
+        className={cn("mana-row relative flex items-center justify-center gap-1.5", rejected && "mana-play-rejected")}
+        role="img"
+        aria-label={`Mana: ${mana} / ${maxMana}`}
+      >
         {Array.from({ length: displayCount }).map((_, index) => {
           const isFilled = index < mana;
           const isOverflow = index >= maxMana;
           return (
             <span key={`mana-${index}`} className="mana-gem relative inline-flex">
-              <img
-                key={`mana-${manaToken}-${isFilled}`}
-                src={battleManaCrystal}
-                alt=""
-                draggable={false}
-                className={cn(
-                  "h-[calc(1.8225*var(--content-rem,1rem))] w-[calc(1.8225*var(--content-rem,1rem))] object-contain transition-opacity duration-200 select-none",
-                  isFilled && "mana-gem-active",
-                  isFilled && isOverflow && "brightness-125 drop-shadow-mana-overflow-glow",
-                  !isFilled && "opacity-20",
-                )}
-              />
+              <ManaCrystal filled={isFilled} overflow={isOverflow} />
               <span
                 aria-hidden="true"
                 className={cn("mana-gem-glint", !isFilled && "opacity-20")}
@@ -113,5 +105,24 @@ export function ManaPanel({ mana, maxMana }: { mana: number; maxMana: number }) 
         })}
       </div>
     </div>
+  );
+}
+
+function ManaCrystal({ filled, overflow }: { filled: boolean; overflow: boolean }) {
+  const token = useChangeToken(Number(filled));
+  return (
+    <img
+      key={token}
+      src={battleManaCrystal}
+      alt=""
+      draggable={false}
+      className={cn(
+        "h-[calc(1.8225*var(--content-rem,1rem))] w-[calc(1.8225*var(--content-rem,1rem))] object-contain select-none",
+        filled && "mana-gem-active",
+        token > 0 && !filled && "mana-gem-spent",
+        filled && overflow && "brightness-125 drop-shadow-mana-overflow-glow",
+        !filled && "opacity-20",
+      )}
+    />
   );
 }

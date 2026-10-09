@@ -25,7 +25,8 @@ export function prepareCombatFeedback(
   const fallback = consolidated[0];
   if (!hasMeaningful && fallback) byTarget[fallback.target].push(fallback);
   const bursts: CombatTextBurst[] = [];
-  const impacts: Partial<Record<"playerImpactCue" | "enemyImpactCue", Omit<CombatImpactCue, "sequence">>> = {};
+  const impacts: Partial<Record<"playerImpactCue" | "enemyImpactCue", Omit<CombatImpactCue, "sequence" | "recoil">>> =
+    {};
   for (const target of ["player", "enemy"] as const) {
     const entries = byTarget[target];
     if (entries.length === 0) continue;

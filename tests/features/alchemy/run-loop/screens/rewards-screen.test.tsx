@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RewardsScreen } from "@/features/alchemy/run-loop/screens/rewards-screen";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { type BattleCard } from "@/lib/game-data";
-import { emptyInventory } from "@/lib/homestead/inventory";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -59,6 +58,12 @@ describe("RewardsScreen", () => {
 
     expect(onClaimReward).toHaveBeenCalledWith("slash");
     expect(readRunSession(defaultGameSession).rewardFlow.state.selectedId).toBeNull();
+    expect(
+      screen
+        .getByRole("button", { name: /select slash/i })
+        .closest("[data-reward-selected]")
+        ?.classList.contains("reward-choice-selected"),
+    ).toBe(true);
   });
 
   it("keeps locked rewards inspectable while blocking pointer and keyboard claims and Skip", async () => {
@@ -85,24 +90,6 @@ describe("RewardsScreen", () => {
     expect(skip).toHaveProperty("disabled", true);
     await user.click(skip);
     expect(onSkip).not.toHaveBeenCalled();
-  });
-
-  it("shows Found resources with the reward choices", () => {
-    render(
-      <RewardsScreen
-        rewardState={{
-          ...createEmptyRewardState(),
-          rewardType: "card",
-          choices: [testCard, { ...testCard, id: "bash", title: "Bash" }],
-          gold: 13,
-          materials: { ...emptyInventory(), herbs: 1 },
-        }}
-        onSkip={vi.fn()}
-        onClaimReward={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByText("+13")).toBeTruthy();
   });
 
   it("swaps reward choices with their content after the outgoing fade", async () => {

@@ -35,7 +35,7 @@ export function getCombatTextColorClass(event: CombatTextEvent): string {
   return "text-muted-foreground";
 }
 
-export function getCombatImpactVisual(event: CombatTextEvent): Omit<CombatImpactCue, "sequence"> | null {
+export function getCombatImpactVisual(event: CombatTextEvent): Omit<CombatImpactCue, "sequence" | "recoil"> | null {
   if (event.kind !== "damage" || event.impact === false || event.amount <= 0) return null;
   const isDamageType = DAMAGE_TYPES.includes(event.stat as DamageType);
   if (event.stat !== "health" && event.stat !== "block" && !isDamageType) return null;
@@ -43,6 +43,8 @@ export function getCombatImpactVisual(event: CombatTextEvent): Omit<CombatImpact
   return {
     colors: keyword.shineColors,
     healthLost: event.stat !== "block",
+    amount: event.amount,
+    periodic: event.periodic === true,
   };
 }
 

@@ -46,6 +46,7 @@ const HandCardItem = memo(function HandCardItem({
   isInteractionEnabled,
   isVisuallyPlayable,
   isHidden,
+  rejected,
   ccKeyword,
   onCardClick,
   descriptionContext,
@@ -59,6 +60,7 @@ const HandCardItem = memo(function HandCardItem({
   isInteractionEnabled: boolean;
   isVisuallyPlayable: boolean;
   isHidden: boolean;
+  rejected: boolean;
   ccKeyword: ActiveCcKeyword | null;
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   descriptionContext: CardDescriptionContext;
@@ -131,9 +133,10 @@ const HandCardItem = memo(function HandCardItem({
             className={cn(
               handWidthClass,
               "hand-card-motion",
+              rejected && "card-play-rejected",
               visualHovered ? "scale-[1.035]" : "scale-100",
               !isInteractionEnabled && "cursor-default",
-              !isVisuallyPlayable && "grayscale!",
+              !isVisuallyPlayable && "hand-card-unplayable",
             )}
             tooltipPadding={HAND_HOVER_TOOLTIP_PADDING_PX}
             scaleOnHover={false}
@@ -166,6 +169,7 @@ export function BattleHand({
   const { onCardClick } = actions;
   const {
     hiddenHandCardKeys,
+    cardRejection,
     playableHandCardKeys: visuallyPlayableHandCardKeys,
     interactiveHandCardKeys,
     animationInProgress,
@@ -260,6 +264,7 @@ export function BattleHand({
             isInteractionEnabled={interactiveHandCardKeys.has(cardKey)}
             isVisuallyPlayable={visuallyPlayableHandCardKeys.has(cardKey)}
             isHidden={hiddenHandCardKeys.includes(cardKey)}
+            rejected={cardRejection?.cardKey === cardKey}
             ccKeyword={ccKeyword}
             onCardClick={playCard}
             descriptionContext={descriptionContext}

@@ -20,6 +20,7 @@ export function useHandPresentation(store: BattlePresentationStore, battleState:
     store,
     useShallow((state) => ({
       hiddenHandCardKeys: state.hiddenHandCardKeys,
+      cardRejection: state.cardRejection,
       animationInProgress:
         state.cardTransferInProgress || state.cardTransfers.length > 0 || state.cardGhosts.length > 0,
     })),
