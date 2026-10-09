@@ -22,6 +22,10 @@ export function isBrewablePotion(card: BattleCard): boolean {
   return isStandardPotionCard(card) && !card.brewed;
 }
 
+export function getCampfireBrewKind(deck: readonly BattleCard[]): "new" | "combine" {
+  return deck.filter(isBrewablePotion).length >= 2 ? "combine" : "new";
+}
+
 function strengthenEffect(effect: BattleCardEffect): BattleCardEffect {
   if (
     effect.kind === "player-status" &&

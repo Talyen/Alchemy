@@ -1,11 +1,12 @@
 import type { EnemyAttackEffect } from "@/lib/game-data";
-import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./player-rewards";
+import { applyHealingWithCombatText } from "./player-rewards";
 import { mergeCombatText } from "./combat-text-events";
 import { resolvePlayerHit } from "./hit-resolution";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { decayArmorAfterDamage } from "./status-helpers";
 import {
   addForgeToPlayer,
+  applyBlockDepletionRewards,
   applyPlayerDamageStatuses,
   checkHealthThresholds,
   shouldBlockPreventStatusBuildup,
@@ -82,26 +83,8 @@ function applyBlockDepletedHeal(
   isBlockDepleted: boolean,
 ): BattleState {
   if (isPlayerDefeated(nextState)) return nextState;
-  let finalState = nextState;
-  const healAmount = prevState.talentEffects.blockDepletedHeal + prevState.gearEffects.blockDepletedHeal;
-
-  if (isBlockDepleted && healAmount > 0) {
-    finalState = applyHealingWithCombatText(finalState, healAmount, combatTexts);
-  }
-
   // The hit depleted Block even if threshold or healing rewards refilled it.
-  if (isBlockDepleted && prevState.talentEffects.forgeOnBlockDepleted > 0) {
-    finalState = addForgeToPlayer(finalState, prevState.talentEffects.forgeOnBlockDepleted, combatTexts);
-  }
-
-  if (isBlockDepleted && prevState.gearEffects.thornsOnBlockDepleted > 0) {
-    finalState = addPlayerStatusWithCombatText(
-      finalState,
-      "thorns",
-      prevState.gearEffects.thornsOnBlockDepleted,
-      combatTexts,
-    );
-  }
+  let finalState = applyBlockDepletionRewards(prevState, nextState, combatTexts, isBlockDepleted);
 
   if (isBlockDepleted && prevState.gearEffects.stunOnBlockDepleted > 0 && finalState.enemyHealth > 0) {
     finalState = resolveFollowUpHit(
@@ -169,6 +152,19 @@ export function applyPlayerDefensiveReactions(
     nextState.playerHealth > 0 &&
     !shouldBlockPreventStatusBuildup(protectionState, effect.damageType)
   ) {
+    if (
+      actualDamage > 0 &&
+      nextState.playerCC.cooldown > 0 &&
+      (effect.damageType === "stun" || effect.damageType === "freeze")
+    ) {
+      mergeCombatText(combatTexts, {
+        target: "player",
+        kind: "notice",
+        stat: effect.damageType,
+        signal: "immune",
+        text: `Immune to ${effect.damageType === "stun" ? "Stun" : "Freeze"}`,
+      });
+    }
     nextState = applyPlayerDamageStatuses(nextState, effect, actualDamage);
   }
 

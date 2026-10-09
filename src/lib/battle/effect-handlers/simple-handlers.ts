@@ -53,8 +53,9 @@ export const SIMPLE_HANDLERS = {
   "random-draw": (state, _card, effect, potionMult, combatTexts) => {
     if (effect.maxAmount < effect.minAmount) throw rangeBoundsError("random-draw");
     const amount = effect.minAmount + rngInt(getBattleRng(state), effect.maxAmount - effect.minAmount + 1);
-    const next = applyDrawResult(state, drawFromState(state, applyPotionMultiplier(amount, potionMult)), combatTexts);
-    return applyEmergencyWishForEmptyDraw(next, amount, combatTexts);
+    const scaledAmount = applyPotionMultiplier(amount, potionMult);
+    const next = applyDrawResult(state, drawFromState(state, scaledAmount), combatTexts);
+    return applyEmergencyWishForEmptyDraw(next, scaledAmount, combatTexts);
   },
   "summon-companion": (state, _card, effect, _potionMult, combatTexts) => {
     mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: "companion", text: "" });

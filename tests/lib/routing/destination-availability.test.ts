@@ -18,6 +18,11 @@ const affordableDestinations = [
 ];
 
 describe("destination eligibility", () => {
+  it("offers Campfire only below maximum Health", () => {
+    expect(getAvailableDestinations(MAX_HEALTH - 1, SHOP_MIN_GOLD, MAX_HEALTH)).toContain("Campfire");
+    for (const health of [MAX_HEALTH, MAX_HEALTH + 1])
+      expect(getAvailableDestinations(health, SHOP_MIN_GOLD, MAX_HEALTH)).not.toContain("Campfire");
+  });
   it("keeps free actions available and excludes all shops below their Gold floor", () => {
     expect(getAvailableDestinations(eliteFloor - 1, SHOP_MIN_GOLD - 1, MAX_HEALTH)).toEqual(freeDestinations);
     expect(getAvailableDestinations(eliteFloor - 1, SHOP_MIN_GOLD, MAX_HEALTH)).toEqual(affordableDestinations);

@@ -150,3 +150,13 @@ describe("Playwright server configuration", () => {
     }
   }, 20_000);
 });
+
+it("keeps deeper interaction journeys nightly while retaining existing Electron tiers", () => {
+  vi.stubEnv("PLAYWRIGHT_ELECTRON_FULL", "1");
+  vi.stubEnv("ALCHEMY_INTERACTION_TIER", "push");
+  const push = createAlchemyPlaywrightConfig("electron");
+  expect(push.grep).toBeUndefined();
+  expect(String(push.grepInvert)).toContain("@interaction-nightly");
+  vi.stubEnv("ALCHEMY_INTERACTION_TIER", "nightly");
+  expect(createAlchemyPlaywrightConfig("electron").grepInvert).toBeUndefined();
+});

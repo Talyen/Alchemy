@@ -139,48 +139,81 @@ test.describe("Responsive display sizes", slow, () => {
     }
   });
 
-  test("enemy Traits remain readable and inside the viewport in Collection and Battle", async ({ browser }) => {
-    test.setTimeout(60_000);
-    const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-    const errors = failOnRuntimeErrors(page);
-    await page.addInitScript(
-      (preferences) => localStorage.setItem("alchemy-device-display-v1", JSON.stringify(preferences)),
-      { version: 1, gameSizePercent: 120, tooltipSizePercent: 125 },
-    );
-    try {
-      await new MenuPage(page).gotoCollection({ encounteredEnemyIds: ["bandit"] });
-      const tooltip = page.locator("#tooltip-root .hover-popup-panel[data-visible]");
-      await page.getByRole("button", { name: "Bestiary", exact: true }).click();
-      for (const screen of ["Collection", "Battle"]) {
-        if (screen === "Battle") {
-          await startBattleWithDeck(
-            page,
-            Array.from({ length: 6 }, () => makeCard()),
-          );
-          await expect(page.getByRole("button", { name: /^View Deck/ })).toHaveAttribute("aria-disabled", "false", {
-            timeout: 20_000,
+  // Computed dimensions catch oversized hover traits and accidental double scaling;
+  // DOM tests cannot resolve Tailwind sizes or inherited content units.
+  for (const { viewport, gameSizePercent, tooltipSizePercent } of [
+    { viewport: CONTENT_REFERENCE_VIEWPORT, gameSizePercent: 100, tooltipSizePercent: 100 },
+    { viewport: { width: 1280, height: 720 }, gameSizePercent: 120, tooltipSizePercent: 125 },
+  ]) {
+    test(`enemy hover Traits stay compact in Collection and Battle at ${viewport.width}px, Game ${gameSizePercent}%, Tooltip ${tooltipSizePercent}%`, async ({
+      browser,
+    }) => {
+      test.setTimeout(60_000);
+      const page = await browser.newPage({ viewport });
+      const errors = failOnRuntimeErrors(page);
+      await page.addInitScript(
+        (preferences) => localStorage.setItem("alchemy-device-display-v1", JSON.stringify(preferences)),
+        { version: 1, gameSizePercent, tooltipSizePercent },
+      );
+      const scale =
+        Math.min(
+          viewport.width / CONTENT_REFERENCE_VIEWPORT.width,
+          viewport.height / CONTENT_REFERENCE_VIEWPORT.height,
+        ) *
+        (gameSizePercent / 100) *
+        (tooltipSizePercent / 100);
+      try {
+        await new MenuPage(page).gotoCollection({ encounteredEnemyIds: ["bandit"] });
+        const tooltip = page.locator("#tooltip-root .hover-popup-panel[data-visible]");
+        await page.getByRole("button", { name: "Bestiary", exact: true }).click();
+        for (const screen of ["Collection", "Battle"]) {
+          if (screen === "Battle") {
+            await startBattleWithDeck(
+              page,
+              Array.from({ length: 6 }, () => makeCard()),
+            );
+            await expect(page.getByRole("button", { name: /^View Deck/ })).toHaveAttribute("aria-disabled", "false", {
+              timeout: 20_000,
+            });
+            await page.getByTestId("battle-enemy-art-panel").hover();
+          } else {
+            await page.getByRole("button", { name: "Inspect Bandit", exact: true }).hover();
+          }
+          const trait = tooltip.locator("[data-trait]").first();
+          await expect(trait).toBeVisible();
+          const sizes = await trait.evaluate((el) => {
+            const heading = el.querySelector("h3")!;
+            const description = el.querySelector("p")!;
+            const icon = el.querySelector("svg")!;
+            return {
+              heading: parseFloat(getComputedStyle(heading).fontSize),
+              description: parseFloat(getComputedStyle(description).fontSize),
+              iconWidth: parseFloat(getComputedStyle(icon).width),
+              iconHeight: parseFloat(getComputedStyle(icon).height),
+              rowGap: parseFloat(getComputedStyle(el).columnGap),
+              titleGap: parseFloat(getComputedStyle(description).marginTop),
+              traitGap: parseFloat(getComputedStyle(el.parentElement!.parentElement!).rowGap),
+            };
           });
-          await page.getByTestId("battle-enemy-art-panel").hover();
-        } else {
-          await page.getByRole("button", { name: "Inspect Bandit", exact: true }).hover();
+          for (const [dimension, pixels] of Object.entries({
+            heading: 14,
+            description: 12,
+            iconWidth: 24,
+            iconHeight: 24,
+            rowGap: 8,
+            titleGap: 3,
+            traitGap: 8,
+          })) {
+            expect(sizes[dimension as keyof typeof sizes], `${screen}: ${dimension}`).toBeCloseTo(pixels * scale, 1);
+          }
+          await expectTooltipFitsViewport(tooltip, viewport, 0);
         }
-        await expect(tooltip.locator("[data-trait]").first()).toBeVisible();
-        const headingSize = await tooltip
-          .locator("p")
-          .first()
-          .evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
-        const traitSize = await tooltip
-          .locator("[data-trait] h3")
-          .first()
-          .evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
-        expect(traitSize / headingSize).toBeCloseTo(20 / 18, 2);
-        await expectTooltipFitsViewport(tooltip, { width: 1280, height: 720 }, 0);
+        expect(errors).toEqual([]);
+      } finally {
+        await page.close();
       }
-      expect(errors).toEqual([]);
-    } finally {
-      await page.close();
-    }
-  });
+    });
+  }
 
   test("collection keeps page capacity and position across proportional resizes and tab changes", async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });

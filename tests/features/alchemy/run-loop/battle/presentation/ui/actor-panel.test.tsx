@@ -51,12 +51,12 @@ describe("ArtPanel hover motion", () => {
     expect(screen.getByTestId("battle-player-art-panel").classList.contains("card-hover-scale")).toBe(false);
   });
 
-  it("capitalizes keywords in the enemy ability tooltip", async () => {
+  it("uses compact enemy traits and encounter modifiers while capitalizing description keywords", async () => {
     const entry = {
       ...enemy,
       traits: [{ id: "thorns", title: "Thorns", description: "When hit, consume Thorns" }],
     } satisfies BestiaryEntry;
-    render(<ArtPanel {...baseProps} side="enemy" currentEnemy={entry} />);
+    render(<ArtPanel {...baseProps} side="enemy" currentEnemy={entry} activeLabyrinthModifiers={["tempered"]} />);
 
     const wrapper = screen.getByTestId("battle-enemy-art-panel").parentElement;
     expect(wrapper).not.toBeNull();
@@ -66,6 +66,8 @@ describe("ArtPanel hover motion", () => {
       const tooltip = document.querySelector<HTMLElement>(".hover-popup-panel[data-visible]");
       expect(tooltip?.textContent).toContain("When hit, Consume Thorns");
       expect(tooltip?.textContent).not.toContain("consume");
+      expect(tooltip?.querySelector('[data-trait="thorns"]')?.getAttribute("data-trait-variant")).toBe("compact");
+      expect(tooltip?.querySelector('[data-trait="tempered"]')?.getAttribute("data-trait-variant")).toBe("compact");
     });
   });
 

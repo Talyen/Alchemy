@@ -28,6 +28,9 @@ export function createBattleCardPlay(
     if (ctx.playback.pendingCardDraws > 0) return;
     session.runIfSessionActive(sessionNum, () => {
       ctx.playback.completeAction(sessionNum);
+      // The inner draw settled while this card action still owned a draw count.
+      // Publish the final gate only after releasing that outer ownership.
+      getPresentation().setCardTransferInProgress(ctx.playback.pendingDraws > 0);
       const state = getBattle().battleState;
       ctx.playback.scheduleAutoEndTurn(state);
     });

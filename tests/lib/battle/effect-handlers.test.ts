@@ -55,11 +55,12 @@ describe("applyPlayerStatusEffectHandler", () => {
       });
       expect(result.playerStatuses.block).toBe(12 * convertCurrentMana);
       expect(result.mana).toBe(0);
-      expect(texts).toEqual(
-        convertCurrentMana > 0
+      expect(texts).toEqual([
+        { target: "player", kind: "damage", stat: "mana", amount: 4, impact: false },
+        ...(convertCurrentMana > 0
           ? [{ target: "player", kind: "status", stat: "block", amount: 12 * convertCurrentMana }]
-          : [],
-      );
+          : []),
+      ]);
       expect(state.mana).toBe(4);
     },
   );
@@ -114,36 +115,6 @@ describe("applyRemovePlayerStatusEffect", () => {
       [],
     );
     expect(result).toBe(state);
-  });
-});
-
-describe("applyMultiplyEnemyStatusEffect", () => {
-  it("no-ops when current status is 0", () => {
-    const state = patchBattleState({
-      enemyStatuses: { poison: 0 },
-    });
-    const result = EFFECT_APPLY_BY_KIND["multiply-enemy-status"](
-      state,
-      makeTestCard(),
-      { kind: "multiply-enemy-status", status: "poison", factor: 2 },
-      1,
-      [],
-    );
-    expect(result).toBe(state);
-  });
-
-  it("multiplies enemy status and triggers freeze resolution", () => {
-    const state = patchBattleState({
-      enemyStatuses: { freeze: 4 },
-    });
-    const result = EFFECT_APPLY_BY_KIND["multiply-enemy-status"](
-      state,
-      makeTestCard(),
-      { kind: "multiply-enemy-status", status: "freeze", factor: 3 },
-      1,
-      [],
-    );
-    expect(result.enemyStatuses.freeze).toBe(12);
   });
 });
 

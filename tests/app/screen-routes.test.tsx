@@ -4,6 +4,10 @@ import { ROUTE_SCREEN_VALUES, type Screen } from "@/lib/routing";
 import { renderAlchemyScreenRoute } from "@/app/screen-routes";
 import type { RenderAlchemyScreenProps } from "@/app/screen-routes/route-ctx";
 import { createMockRouteCommands } from "../helpers/run-controller";
+import { resetAllTestStores, setRunSession } from "../helpers/run-domain-store-test";
+import { emptyAlchemyVisit, type AlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
+
+const { transmutationRender } = vi.hoisted(() => ({ transmutationRender: vi.fn() }));
 
 vi.mock("@/features/alchemy/meta/screens", () => ({
   ArmoryScreen: () => <div data-testid="armory-screen" />,
@@ -42,7 +46,10 @@ vi.mock("@/features/alchemy/run-loop/screens/run-end-screen", () => ({
 }));
 
 vi.mock("@/features/alchemy/run-loop/screens/transmutation-screen", () => ({
-  TransmutationScreen: () => <div data-testid="transmutation-screen" />,
+  TransmutationScreen: ({ visit }: { visit: AlchemyVisit }) => {
+    transmutationRender(visit);
+    return <div data-testid="transmutation-screen" />;
+  },
 }));
 
 vi.mock("@/app/app-screen-chrome-context", () => ({
@@ -92,6 +99,18 @@ describe("SCREEN_ROUTES registry", () => {
           screen === "game-over" ? "Journey’s End" : "Victory",
         );
       }
+    }
+  });
+
+  it("initializes saved offers before mounting Transmutation so its auto-advance cannot skip the visit", () => {
+    resetAllTestStores();
+    setRunSession({ hasActiveRun: true, activity: { kind: "transmutation", data: emptyAlchemyVisit() } });
+    transmutationRender.mockClear();
+    render(renderAlchemyScreenRoute(createMockProps("transmutation")));
+    expect(transmutationRender).toHaveBeenCalled();
+    for (const [visit] of transmutationRender.mock.calls) {
+      expect(visit.offers).toHaveLength(3);
+      expect(visit.completed).toBe(false);
     }
   });
 

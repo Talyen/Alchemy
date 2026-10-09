@@ -69,7 +69,7 @@ test.describe("Labyrinth exploration", critical, () => {
     await room.click();
     await page.getByRole("button", { name: "Enter", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Campfire", exact: true, level: 1 })).toBeVisible();
-    await page.getByRole("button", { name: /^Rest · Recover/ }).click();
+    await page.getByRole("button", { name: /^Rest$/ }).click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
     await expect(room).toHaveAttribute("aria-current", "location");
     await expect(room.locator("img")).toHaveAttribute("src", /knight(?:-[\w-]+)?\.webp/);
@@ -85,7 +85,7 @@ test.describe("Labyrinth exploration", critical, () => {
     await otherBranch.click();
     await page.getByRole("button", { name: "Enter", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Campfire", exact: true, level: 1 })).toBeVisible();
-    await page.getByRole("button", { name: /^Rest · Recover/ }).click();
+    await page.getByRole("button", { name: /^Rest$/ }).click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
     await expect(otherBranch).toHaveAttribute("aria-current", "location");
     await expect(diagonal.locator("img")).toHaveCount(1);

@@ -152,3 +152,15 @@ critical combat and real-timing canaries in the existing CI tier, and secondary
 viewport/cursor variants in the full suite. Deck-size screenshots are retained in
 ignored `reports/controller-support/`; rendered-font measurements are diagnostic
 CSS pixel estimates, not physical glyph measurements or Valve certification.
+
+## Connected interaction and Electron canaries
+
+[Interaction coverage](../interaction/README.md) owns the seven progress families,
+seeded action replay and screen map. Unit scenarios cover controlled completion
+orders without mocking completion or input gates. Steam acceptance uses
+`tests/electron/interaction-canaries.spec.ts`: normal animation and actual controls
+for last-Mana draws, inspection, turn progress, visit completion, Armory interruption,
+native focus and save recovery. `@interaction-nightly` excludes deeper variants
+from the push desktop tier; nightly sets `ALCHEMY_INTERACTION_TIER=nightly`.
+Existing Chromium journeys remain for distinct renderer evidence; WebKit is not
+required for the Electron-only release target.

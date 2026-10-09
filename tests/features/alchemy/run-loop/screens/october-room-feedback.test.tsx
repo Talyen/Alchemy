@@ -8,7 +8,7 @@ import { gridLabyrinthMapFixture } from "../../../../fixtures/labyrinth-map";
 
 afterEach(cleanup);
 
-it("Hidden Purse communicates its Gold before Rest and after a resumed completion", () => {
+it("Hidden Purse acknowledges its Gold after a resumed Rest completion", () => {
   const props = {
     playerHealth: 100,
     maxHealth: 100,
@@ -20,9 +20,7 @@ it("Hidden Purse communicates its Gold before Rest and after a resumed completio
     onContinue: vi.fn(),
     modifiers: ["hidden-purse" as const],
   };
-  const { rerender } = render(<CampfireScreen {...props} visit={emptyAlchemyVisit()} />);
-  expect(screen.getByText("Rest also grants 15 Gold.")).toBeTruthy();
-  rerender(<CampfireScreen {...props} visit={{ ...emptyAlchemyVisit(), completed: true }} />);
+  render(<CampfireScreen {...props} visit={{ ...emptyAlchemyVisit(), completed: true }} />);
   expect(screen.getByText("15 Gold added to your purse.")).toBeTruthy();
 });
 

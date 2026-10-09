@@ -16,7 +16,12 @@ import {
 import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 import { readActivityData } from "@/lib/active-run-session";
 import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
-import { createCampfirePotionOffers, isBrewablePotion, type BrewOperation } from "@/lib/alchemist/brewing";
+import {
+  createCampfirePotionOffers,
+  getCampfireBrewKind,
+  isBrewablePotion,
+  type BrewOperation,
+} from "@/lib/alchemist/brewing";
 import { createTransmutationOffers, isTransmutableCard } from "@/lib/alchemist/transmutation";
 import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import { cloneBattleCard, computeTalentEffects, type BattleCard } from "@/lib/game-data";
@@ -47,6 +52,8 @@ export function brewAtCampfire(operation: BrewOperation, gameSession: GameSessio
         return rejectCommand("Alchemy action is unavailable", null);
       const visit = draft.session.activity.data;
       const deck = draft.run.activeRun.runDeck;
+      if (operation.kind !== getCampfireBrewKind(snapshotTransactionValue(deck)))
+        return rejectCommand("Alchemy action is unavailable", null);
       let result: BattleCard | null;
       if (operation.kind === "new") {
         const offer = visit.offers[operation.offerIndex];

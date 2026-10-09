@@ -61,19 +61,19 @@ export function applyHealthLossTalentRewards(
   return removeHarmfulPlayerStatuses(nextState, 1, combatTexts);
 }
 
-export function applyBlockDepletionForgeReward(
+export function applyBlockDepletionRewards(
   previousState: BattleState,
   nextState: BattleState,
   combatTexts: CombatTextEvent[],
+  depleted = previousState.playerStatuses.block > 0 && nextState.playerStatuses.block <= 0,
 ): BattleState {
-  if (
-    previousState.playerStatuses.block <= 0 ||
-    nextState.playerStatuses.block > 0 ||
-    previousState.talentEffects.forgeOnBlockDepleted <= 0
-  ) {
-    return nextState;
-  }
-  return addForgeToPlayer(nextState, previousState.talentEffects.forgeOnBlockDepleted, combatTexts);
+  if (!depleted || isPlayerDefeated(nextState)) return nextState;
+  const healing = previousState.talentEffects.blockDepletedHeal + previousState.gearEffects.blockDepletedHeal;
+  let rewarded = healing > 0 ? applyHealingWithCombatText(nextState, healing, combatTexts) : nextState;
+  rewarded = addForgeToPlayer(rewarded, previousState.talentEffects.forgeOnBlockDepleted, combatTexts);
+  return previousState.gearEffects.thornsOnBlockDepleted > 0
+    ? addPlayerStatusWithCombatText(rewarded, "thorns", previousState.gearEffects.thornsOnBlockDepleted, combatTexts)
+    : rewarded;
 }
 
 function crossedBelow(prevHealth: number, nextHealth: number, thresholdHp: number): boolean {

@@ -69,7 +69,7 @@ function resolveHasteTurn(state: BattleState) {
   const nextState = processHasteEarlyTurn(state);
   return {
     kind: "haste" as const,
-    ...finalizePlayerTurn(nextState, combatTexts, { preserveBlock: true }),
+    ...finalizePlayerTurn(nextState, combatTexts, { preserveBlock: true, manaAtTurnEnd: state.mana }),
     enemyTurnStartCombatTexts: [] as CombatTextEvent[],
     enemyResolutionCombatTexts: [] as CombatTextEvent[],
     enemyPerformedAbility: false,

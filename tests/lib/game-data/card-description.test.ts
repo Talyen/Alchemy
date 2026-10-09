@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getEffectiveCardDescriptionLines } from "@/lib/game-data";
+import { cardLibrary, getEffectiveCardDescriptionLines, keywordDefinitions } from "@/lib/game-data";
 import { makeTestCard } from "../../fixtures/cards";
 
 describe("getEffectiveCardDescriptionLines", () => {
@@ -32,34 +32,18 @@ describe("getEffectiveCardDescriptionLines", () => {
     ]);
   });
 
-  it("labels chance reaction previews conditionally and excludes scheduled hits", () => {
-    const reactionPreview = { shatter: "Shatter: destroy all defenses", wildfire: "Wildfire: detonate 15 Burn" };
-    const chance = makeTestCard({
-      descriptionLines: ["Random attack"],
-      effects: [
-        {
-          kind: "chance",
-          probability: 0.5,
-          successEffects: [{ kind: "damage", damageType: "nature", amount: 4 }],
-          failureEffects: [{ kind: "damage", damageType: "physical", amount: 2 }],
-        },
-      ],
-    });
-    expect(getEffectiveCardDescriptionLines(chance, { reactionPreview })).toEqual([
-      "Random attack",
-      "If the Physical hit resolves: Shatter: destroy all defenses",
-      "If the Nature hit resolves: Wildfire: detonate 15 Burn",
-    ]);
-    const scheduled = makeTestCard({
-      descriptionLines: ["Later attack"],
-      effects: [
-        {
-          kind: "repeat-over-turns",
-          remainingTurns: 1,
-          effects: [{ kind: "damage", damageType: "nature", amount: 4 }],
-        },
-      ],
-    });
-    expect(getEffectiveCardDescriptionLines(scheduled, { reactionPreview })).toEqual(["Later attack"]);
+  it("keeps universal reactions out of card descriptions and keyword explanations", () => {
+    const context = {
+      companionBondLevels: {},
+      reactionPreview: { shatter: "Shatter: destroy all defenses", wildfire: "Wildfire: detonate 15 Burn" },
+    };
+    for (const card of cardLibrary) {
+      expect(getEffectiveCardDescriptionLines(card, context).join("\n"), card.id).not.toMatch(
+        /\b(?:Shatter|Wildfire)\b/i,
+      );
+    }
+    for (const definition of Object.values(keywordDefinitions)) {
+      expect(definition.description, definition.id).not.toMatch(/\b(?:Shatter|Wildfire)\b/i);
+    }
   });
 });

@@ -128,7 +128,7 @@ describe("verification selection", () => {
   it("adds only the retained risk escalations", () => {
     expect(
       resolveRoutePlan(["src/features/alchemy/shared/storage/io.ts"]).commands.map((command) => command.key),
-    ).toEqual(["related", "unit-save"]);
+    ).toEqual(["unit-interactions", "related", "unit-save"]);
     expect(resolveRoutePlan(["scripts/assets/core-assets.mjs"]).commands.map((command) => command.key)).toEqual([
       "assets-check",
       "unit-tooling",
@@ -262,4 +262,22 @@ describe("route hints", () => {
     const shopDomain = routeHintForPath("src/features/alchemy/run-loop/shop/create-shop-actions.ts");
     expect(shopDomain.focusedE2E).toEqual([]);
   });
+});
+
+it("selects connected progress coverage once for asynchronous flow owners", () => {
+  for (const owner of [
+    "src/features/alchemy/run-loop/battle/battle-card-play.ts",
+    "src/app/autosave-lifecycle.ts",
+    "src/features/alchemy/shell/screen-navigation.ts",
+    "src/features/alchemy/meta/screens/armory/use-armory-transfers.ts",
+  ]) {
+    const plan = resolveRoutePlan([owner, "tests/interaction/battle.dom.test.tsx"]);
+    expect(plan.commands.filter((command) => command.key === "unit-interactions")).toHaveLength(1);
+    expect(plan.commands.find((command) => command.key === "related")?.args).toEqual(
+      expect.arrayContaining(["--exclude", "tests/interaction/**"]),
+    );
+    expect(plan.commands.find((command) => command.key === "unit-changed")?.args ?? []).not.toContain(
+      "tests/interaction/battle.dom.test.tsx",
+    );
+  }
 });

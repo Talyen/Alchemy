@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { AlchemistShopScreen } from "@/features/alchemy/run-loop/screens/alchemist-shop-screen";
-import type { BattleCard } from "@/lib/game-data";
+import { cardById } from "@/lib/game-data";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
 import { installShopScreenIntersectionObserver } from "../../../../helpers/shop-screen-ui-mocks";
 
@@ -24,19 +24,7 @@ vi.mock(
   "@/features/alchemy/run-loop/screens/shop-browse-shell",
   () => import("../../../../helpers/shop-screen-ui-mocks"),
 );
-vi.mock("@/lib/game-data/cards/card-pools", () => ({
-  isStandardPotionCard: () => true,
-  isMixedPotionCard: () => false,
-}));
-
-const potion = {
-  id: "potion-1",
-  title: "Potion One",
-  descriptionLines: ["A potion."],
-  art: "potion",
-  cost: 0,
-  effects: [],
-} as BattleCard;
+const potion = cardById["health-potion"]!;
 
 describe("AlchemistShopScreen mix Escape", () => {
   installDisabledAnimationsForTests();
@@ -46,6 +34,46 @@ describe("AlchemistShopScreen mix Escape", () => {
     resetEscapeStackForTests();
   });
 
+  it("opens Strengthen separately and respects eligibility, affordability, and shared use", async () => {
+    const user = userEvent.setup();
+    const onStrengthenPotion = vi.fn(() => null);
+    const onMixPotions = vi.fn(() => null);
+    const props = {
+      gold: 25,
+      runDeck: [cardById["health-potion"]!],
+      potionCards: [],
+      refreshesLeft: 0,
+      mixUsed: false,
+      purchasedSlotKeys: [],
+      getPotionPrice: () => 10,
+      mixPrice: 25,
+      refreshPrice: 15,
+      onBuyCard: () => true,
+      onRefresh: () => {},
+      onMixPotions,
+      onStrengthenPotion,
+      potency: 0,
+      onContinue: () => {},
+    };
+    const { rerender } = render(<AlchemistShopScreen {...props} />);
+    expect((screen.getByRole("button", { name: /^Mix Potion/ }) as HTMLButtonElement).disabled).toBe(true);
+    await user.click(screen.getByRole("button", { name: /^Strengthen Potion/ }));
+    expect(await screen.findByRole("heading", { name: "Strengthen Potion" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /^Mix/ })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Select shop card" }));
+    await user.click(screen.getByRole("button", { name: "Strengthen · 25 Gold" }));
+    expect(onStrengthenPotion).toHaveBeenCalledExactlyOnceWith(0);
+    expect(onMixPotions).not.toHaveBeenCalled();
+    await user.keyboard("{Escape}");
+    rerender(<AlchemistShopScreen {...props} gold={24} />);
+    expect(((await screen.findByRole("button", { name: /^Strengthen Potion/ })) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    rerender(<AlchemistShopScreen {...props} mixUsed />);
+    expect((screen.getByRole("button", { name: "Mix Potion - Used" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Strengthen Potion - Used" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it("requires two distinct ingredients after deselecting the first potion", async () => {
     const user = userEvent.setup();
     const onMixPotions = vi.fn(() => null);
@@ -53,7 +81,7 @@ describe("AlchemistShopScreen mix Escape", () => {
     render(
       <AlchemistShopScreen
         gold={100}
-        runDeck={[potion, { ...potion, id: "potion-2", title: "Potion Two" }]}
+        runDeck={[potion, cardById["mana-potion"]!]}
         potionCards={[potion]}
         refreshesLeft={1}
         mixUsed={false}
@@ -70,9 +98,9 @@ describe("AlchemistShopScreen mix Escape", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: /Brew Potion/i }));
+    await user.click(screen.getByRole("button", { name: /^Mix Potion/ }));
     const [first, second] = await screen.findAllByRole("button", { name: "Select shop card" });
-    const combine = screen.getByRole("button", { name: /^Brew(?: ·.*)?$/ });
+    const combine = screen.getByRole("button", { name: /^Mix(?: ·.*)?$/ });
     await user.click(first!);
     await user.click(second!);
     await user.click(first!);
@@ -95,7 +123,7 @@ describe("AlchemistShopScreen mix Escape", () => {
     render(
       <AlchemistShopScreen
         gold={100}
-        runDeck={[potion, { ...potion, id: "potion-2", title: "Potion Two" }]}
+        runDeck={[potion, cardById["mana-potion"]!]}
         potionCards={[potion]}
         refreshesLeft={1}
         mixUsed={false}
@@ -112,13 +140,14 @@ describe("AlchemistShopScreen mix Escape", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: /Brew Potion/i }));
-    expect(await screen.findByText("Choose two Potions to replace with one Mixed Potion.")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: /^Mix Potion/ }));
+    expect(await screen.findByRole("heading", { name: "Mix Potion" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Strengthen/ })).toBeNull();
 
     await user.keyboard("{Escape}");
 
-    expect(await screen.findByRole("button", { name: /Brew Potion/i })).toBeTruthy();
-    expect(screen.queryByText("Choose two Potions to replace with one Mixed Potion.")).toBeNull();
+    expect(await screen.findByRole("button", { name: /^Mix Potion/ })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Mix Potion" })).toBeNull();
     expect(gameMenuHandler).not.toHaveBeenCalled();
 
     window.removeEventListener("keydown", gameMenuHandler);

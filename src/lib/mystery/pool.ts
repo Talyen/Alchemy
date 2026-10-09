@@ -32,7 +32,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "mana-berries",
     "Mana Berries",
-    "You stumble upon a lush field of glowing Mana Berries. Crystal has formed along the stems, and a sapphire ring lies half-buried in the tangle, pulsing with the same blue light.",
+    "Glowing mana berries fill a tangled patch, with blue crystals clustered along their stems.",
     [
       ["Harvest Berries", [xp("mana"), gear("sapphire-ring"), mat("herbs")]],
       ["Gather Crystals", [xp("mana"), card("mana-berries"), mat("gems", 3)]],
@@ -41,7 +41,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "enchanted-spring",
     "Enchanted Spring",
-    "A pool of iridescent water steams gently in the cool air. Moss carpets the bank, and a charm of icy crystal rests just below the surface.",
+    "Moss carpets an iridescent spring, and an icy charm rests just beneath the water.",
     [
       ["Gather the Moss", [xp("nature"), trinket("groves-favor"), mat("herbs")]],
       ["Take the Charm", [xp("nature"), trinket("icy-heart"), mat("gems")]],
@@ -50,7 +50,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "fungal-grotto",
     "Fungal Grotto",
-    "Bioluminescent mushrooms pulse in the dark, their spores hanging thick in the air. Crystals glitter on the cave walls, and an emerald ring sits among the caps.",
+    "Glowing mushrooms carpet the grotto floor, while crystals glitter along its dark walls.",
     [
       ["Harvest Mushrooms", [xp("nature"), trinket("plague-doctors-mask"), mat("herbs")]],
       ["Collect Crystals", [xp("mana"), trinket("frozen-pocketwatch"), mat("gems", 3)]],
@@ -59,43 +59,28 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "wisdom-tree",
     "Wisdom Tree",
-    "An immense oak with a weathered face carved into its bark speaks in rustling leaves. Fallen branches litter the ground, and herbs crowd the roots.",
+    "A weathered oak whispers above fallen branches and herbs growing between its roots.",
     [
       ["Collect Branches", [xp("nature"), gear("staff"), mat("wood", 3)]],
       ["Forage Herbs", [xp("nature"), gear("emerald-amulet"), mat("herbs")]],
     ],
   ),
-  ev(
-    "fairy-ring",
-    "Fairy Ring",
-    "A circle of glowing mushrooms hums with fey energy in a moonlit clearing. Gold coins and a lucky clover rest in the grass as if left for you.",
-    [
-      ["Take the Gold", [trinket("lucky-clover"), gold()]],
-      ["Pick Mushrooms", [trinket("parasitic-bloom"), mat("herbs", 3)]],
-    ],
-  ),
-  ev(
-    "ancient-altar",
-    "Ancient Altar",
-    "A weathered stone altar stands beneath a shaft of light piercing the canopy. Gold fills a rusted offering bowl, and a topaz relic set with crystal rests beside it.",
-    [
-      ["Take the Offering", [xp("holy"), gear("topaz-ring"), gold(20)]],
-      ["Claim the Relic", [xp("holy"), gear("topaz-amulet"), mat("gems")]],
-    ],
-  ),
-  ev(
-    "hidden-cache",
-    "Hidden Cache",
-    "A leather-wrapped bundle tucked between exposed roots catches your eye. Inside wait a coinpurse and a blade, hidden here for a long time.",
-    [
-      ["Take the Coinpurse", [trinket("merchants-favor"), gold(20), mat("food", 3)]],
-      ["Claim the Blade", [xp("bleed"), gear("dagger"), mat("iron")]],
-    ],
-  ),
+  ev("fairy-ring", "Fairy Ring", "Gold coins lie within a circle of glowing mushrooms in a moonlit clearing.", [
+    ["Take the Gold", [trinket("lucky-clover"), gold()]],
+    ["Pick Mushrooms", [trinket("parasitic-bloom"), mat("herbs", 3)]],
+  ]),
+  ev("ancient-altar", "Ancient Altar", "A sunlit stone altar holds a bowl of gold and a gleaming topaz relic.", [
+    ["Take the Offering", [xp("holy"), gear("topaz-ring"), gold(20)]],
+    ["Claim the Relic", [xp("holy"), gear("topaz-amulet"), mat("gems")]],
+  ]),
+  ev("hidden-cache", "Hidden Cache", "A leather bundle hidden between roots holds an old coinpurse and a blade.", [
+    ["Take the Coinpurse", [trinket("merchants-favor"), gold(20), mat("food", 3)]],
+    ["Claim the Blade", [xp("bleed"), gear("dagger"), mat("iron")]],
+  ]),
   ev(
     "overgrown-temple",
     "Overgrown Temple",
-    "Vines carpet ancient mosaic tiles. A faint glow pulses from a cracked, iron-banded sarcophagus in the crypt beyond, hinting at gold, iron fittings, and preserved treasures.",
+    "Vines cover loose mosaic tiles beside an open crypt, where something glimmers in the darkness.",
     [
       ["Search the Crypt", [randomGear(), gold(), mat("iron")]],
       ["Take a Tile", [xp("nature"), trinket("vanguards-crest"), mat("stone", 3)]],
@@ -104,7 +89,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "abandoned-study",
     "Abandoned Study",
-    "Dusty wooden shelves of scrolls line a circular tower room. A spellbook lies open on the desk, a quill dried beside it centuries ago.",
+    "Dusty scrolls fill the tower shelves, and a forgotten quill rests on the desk.",
     [
       ["Search the Scrolls", [gear("spellbook"), mat("wood", 3)]],
       ["Take the Quill", [xp("mana"), trinket("runic-quill")]],
@@ -113,7 +98,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "mysterious-tome",
     "Mysterious Tome",
-    "A leather-bound book floats above a pedestal, loose pages turning on their own. Its binding is splitting, as if it has been waiting to be read or repaired.",
+    "A floating tome sheds loose pages as its worn binding slowly comes apart.",
     [
       ["Take the Pages", [xp("mana"), trinket("tattered-pages")]],
       ["Repair the Binding", [xp("mana"), gear("spellbook")]],
@@ -122,7 +107,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "crystal-geode",
     "Crystal Geode",
-    "A massive amethyst geode splits the cave floor, crystal crowding its hollow. A sapphire ring has formed among the crystal, and the stone shell has broken open beside it.",
+    "An enormous geode lies cracked open, exposing bright crystals within its broken stone shell.",
     [
       ["Collect Crystal", [xp("mana"), gear("sapphire-ring"), mat("gems")]],
       ["Take the Shell", [xp("mana"), gear("sapphire-amulet"), mat("stone", 3)]],
@@ -131,7 +116,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "meteorite-crash",
     "Meteorite Crash",
-    "A smoldering crater scars the forest floor. A metallic meteorite from beyond the sky sits at its center, iron fragments in the stone where the pit was torn open.",
+    "A smoldering meteorite lies in a forest crater, surrounded by scattered metallic fragments.",
     [
       ["Take a Fragment", [xp("burn"), trinket("meteorite"), mat("iron")]],
       ["Search the Crater", [xp("burn"), gear("ruby-ring"), mat("stone", 3)]],
@@ -140,7 +125,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "forgotten-hoard",
     "Forgotten Hoard",
-    "Scattered bones and a bone charm lie beside a massive, ancient skeleton. Iron scraps rest among the remains, and gold coins spill around a shield the beast still guards.",
+    "An ancient beast’s scattered bones surround a shield still nestled beneath its massive skeleton.",
     [
       ["Collect the Bones", [trinket("bone-charm"), mat("iron", 3)]],
       ["Claim the Shield", [gear("kite-shield"), gold()]],
@@ -149,7 +134,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "sacred-grove",
     "Sacred Grove",
-    "Sunlight breaks through the canopy in golden rays, falling on wild blooms and herbs. An emerald ring hangs in the roots of a fallen wooden bough.",
+    "Wild blooms fill a sunlit grove, and an emerald ring hangs among exposed roots.",
     [
       ["Pick the Blooms", [xp("nature"), gear("emerald-amulet"), mat("herbs", 3)]],
       ["Take the Ring", [xp("nature"), gear("emerald-ring"), mat("wood")]],
@@ -158,25 +143,20 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "mountain-pass",
     "Mountain Pass",
-    "A narrow pass winds through jagged peaks. Iron and a thunderstone glint in the cliffside, and alpine herbs cling to the rocks where the wind howls.",
+    "Iron glints in the windswept cliffside above alpine herbs growing between the rocks.",
     [
       ["Mine the Cliffside", [xp("stun"), trinket("thunderstone"), mat("iron")]],
       ["Gather Herbs", [xp("nature"), card("fox-companion"), mat("herbs")]],
     ],
   ),
-  ev(
-    "murky-pond",
-    "Murky Pond",
-    "A still pond reflects the gnarled trees surrounding it. Fish drift in the murky depths, and medicinal reeds crowd the bank as bubbles rise from below.",
-    [
-      ["Catch Fish", [xp("nature"), card("lizard-scout-companion"), mat("food")]],
-      ["Pull the Reeds", [xp("nature"), card("will-o-wisp-companion"), mat("herbs")]],
-    ],
-  ),
+  ev("murky-pond", "Murky Pond", "Fish drift through a murky pond beneath medicinal reeds crowding the quiet bank.", [
+    ["Catch Fish", [xp("nature"), card("lizard-scout-companion"), mat("food")]],
+    ["Pull the Reeds", [xp("nature"), card("will-o-wisp-companion"), mat("herbs")]],
+  ]),
   ev(
     "necromancers-offer",
     "The Necromancer's Offer",
-    "A robed figure tends a circle of crystal salts and bone. Without looking up, they extend a staff in a skeletal hand, offering a forbidden rite.",
+    "A robed necromancer offers a forbidden rite beside a circle of crystal salts and bone.",
     [
       ["Accept the Rite", [xp("bleed"), card("skeleton-companion")]],
       ["Take the Salts", [trinket("bone-charm"), mat("gems", 3)]],
@@ -185,7 +165,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "medicinal-herb-garden",
     "Medicinal Herb Garden",
-    "Cultivated beds have run wild as medicinal herbs grow through cracked paving. A mortar and pestle sit beside a sheaf of notes, rich with scent and curative promise.",
+    "Medicinal herbs overrun cracked garden beds, with a sheaf of remedy notes lying nearby.",
     [
       ["Harvest Remedies", [trinket("mortar-and-pestle"), mat("herbs")]],
       ["Take the Notes", [xp("nature"), trinket("tattered-pages")]],
@@ -194,7 +174,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "crystal-garden",
     "Crystal Garden",
-    "Faceted crystalline blooms catch stray light, and chimes hang among the shards. A sapphire amulet rests in the bed, each shard thrumming with latent power.",
+    "Crystal shards glitter in a garden bed beneath chimes humming with arcane energy.",
     [
       ["Harvest Shards", [gear("sapphire-amulet"), mat("gems")]],
       ["Take the Chimes", [xp("mana"), trinket("resonant-chimes")]],
@@ -203,7 +183,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "hunters-lodge",
     "Hunter's Lodge",
-    "A deserted lodge still smells of smoke, wood, and leather. A hunter's bow and hatchet hang near the door, preserved and waiting.",
+    "A bow hangs inside the deserted lodge, where a watchful wolf shelters by the hearth.",
     [
       ["Claim the Bow", [gear("shortbow"), mat("hide", 3)]],
       ["Befriend the Wolf", [card("wolf-companion"), mat("food", 3)]],
@@ -212,7 +192,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "roadside-censer",
     "Roadside Censer",
-    "Incense smoke coils from a hanging brass censer at a fork in the path. Gold coins lie at its base, and the air tastes of sanctified ash and old vows.",
+    "A brass censer hangs at a fork in the path, filled with fragrant incense.",
     [
       ["Gather Incense", [xp("holy"), gear("mace"), mat("herbs", 3)]],
       ["Claim the Censer", [xp("holy"), trinket("brass-censer"), gold()]],
@@ -221,25 +201,20 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "the-phoenix",
     "The Phoenix",
-    "A single feather glows with warm radiance on a nest of charred wood, a ruby gleam caught in the down. A burning brand leans in the embers as if the flame that created it still burns nearby.",
+    "A radiant feather rests atop a charred nest, where embers still glow beneath the wood.",
     [
       ["Claim the Feather", [gear("ruby-amulet"), mat("food", 3)]],
       ["Fan the Embers", [card("phoenix-companion"), mat("wood", 3)]],
     ],
   ),
-  ev(
-    "the-wolf",
-    "The Wolf",
-    "A grey wolf steps from the treeline, watching you with amber eyes. It does not flee. It waits, then leads you toward a den of hides and a hunter's cache of food and a bow.",
-    [
-      ["Answer the Howl", [xp("companion"), card("wolf-companion"), mat("hide", 3)]],
-      ["Open the Cache", [xp("companion"), gear("recurve-bow"), mat("food", 3)]],
-    ],
-  ),
+  ev("the-wolf", "The Wolf", "A grey wolf howls beside its den, where a hunter’s cache lies tucked among the roots.", [
+    ["Answer the Howl", [xp("companion"), card("wolf-companion"), mat("hide", 3)]],
+    ["Open the Cache", [xp("companion"), gear("recurve-bow"), mat("food", 3)]],
+  ]),
   ev(
     "locked-treatise",
     "The Locked Treatise",
-    "The lock on a scholar's treatise hangs broken. Loose pages on the desk describe a cleansing rite; another bundle records arcane experiments.",
+    "A broken lock exposes a scholar’s cleansing rite, with loose pages scattered across the desk.",
     [
       ["Learn the Cleansing Rite", [xp("holy"), card("exorcism")]],
       ["Keep the Loose Pages", [xp("mana"), trinket("tattered-pages")]],
@@ -248,7 +223,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "altars-afterglow",
     "The Altar's Afterglow",
-    "A brass censer rests beside the altar's offering bowl. A topaz amulet lies in the same shaft of light, its gem still loose in its setting.",
+    "A brass censer rests on the altar beside a topaz amulet glowing like captured sunlight.",
     [
       ["Kindle the Censer", [xp("holy"), trinket("brass-censer")]],
       ["Lift the Sunstone", [gear("topaz-amulet"), mat("gems", 3)]],
@@ -257,7 +232,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "singing-crystal",
     "The Singing Crystal",
-    "Crystal branches ring against chimes hanging among the shards. Smaller, charged crystals have fallen into the garden bed below.",
+    "Chimes ring among crystal branches, above charged shards scattered across the garden bed.",
     [
       ["Tune the Chimes", [xp("mana"), trinket("resonant-chimes")]],
       ["Gather the Charged Shards", [card("mana-crystals"), mat("gems", 3)]],
@@ -266,7 +241,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "clearwater-remedy",
     "Clearwater Remedy",
-    "A discarded flask has filled with the spring's clear water. Restorative moss grows along the bank, thick enough to weave into a charm.",
+    "Clear spring water pools beside thick restorative moss, its strands supple enough to weave.",
     [
       ["Bottle the Spring Water", [card("health-potion"), mat("herbs", 3)]],
       ["Weave the Spring Moss", [xp("nature"), trinket("groves-favor")]],
@@ -275,7 +250,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "fae-lanterns",
     "Fae Lanterns",
-    "A pixie flickers among the moonlit mushrooms. Enchanted dew gathers on their caps, shining each time the little creature passes.",
+    "A pixie flits among moonlit mushrooms, leaving their caps glittering with enchanted dew.",
     [
       ["Follow the Pixie", [xp("companion"), card("pixie-companion")]],
       ["Bottle the Dew", [card("wishing-potion"), mat("herbs", 3)]],
@@ -284,7 +259,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "sporekeepers-tools",
     "The Sporekeeper's Tools",
-    "Someone left a mortar and a set of small bottles beside the grotto's luminous mushrooms. Caustic spores drift down whenever the caps are disturbed.",
+    "A mortar and empty bottles sit beside glowing mushroom caps dusted with bitter spores.",
     [
       ["Grind the Mushroom Caps", [trinket("mortar-and-pestle"), mat("herbs", 3)]],
       ["Bottle the Bitter Spores", [xp("poison"), card("acid-potion")]],
@@ -293,7 +268,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "rootbound-dispatch",
     "Rootbound Dispatch",
-    "A wrapped bundle beneath the roots holds a route map and a well-kept dagger. One marked stop leads to a small coin cache nearby.",
+    "A bundle beneath the roots holds a marked route map and a well-kept dagger.",
     [
       ["Follow the Marked Route", [trinket("smugglers-map"), gold(20)]],
       ["Claim the Dagger", [gear("dagger"), mat("iron", 3)]],
@@ -302,7 +277,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "moth-in-the-thicket",
     "Moth in the Thicket",
-    "A mana moth feeds among the glowing berries, undisturbed by your approach. Ripe fruit and useful herbs crowd the stems beneath it.",
+    "A mana moth hovers above ripe berries glowing within a dense thicket of herbs.",
     [
       ["Coax the Moth Closer", [xp("mana"), card("mana-moth-companion")]],
       ["Dry the Ripe Berries", [card("mana-berries"), mat("herbs", 3)]],
@@ -311,7 +286,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "healers-recipe",
     "The Healer's Recipe",
-    "A legible remedy recipe lies beside a usable mortar in the overgrown herb beds. The plants it calls for are still growing nearby.",
+    "A remedy recipe rests beside a sturdy mortar, surrounded by the herbs it calls for.",
     [
       ["Prepare the Remedy", [xp("health"), card("panacea-potion")]],
       ["Keep the Mortar", [trinket("mortar-and-pestle"), mat("herbs", 3)]],
@@ -320,7 +295,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "cooled-core",
     "The Cooled Core",
-    "The fallen stone has split open. Its heart still radiates heat, while blue crystal veins run through the cooling shell.",
+    "A fallen meteorite has split open, revealing a warm heart and veins of blue crystal.",
     [
       ["Lift the Warm Heart", [xp("burn"), trinket("meteorite")]],
       ["Chip the Blue Veins", [card("mana-crystals"), mat("gems", 3)]],
@@ -329,7 +304,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "drowned-toll",
     "The Drowned Toll",
-    "A coin stamped with a wishing well glints beside a sunken purse. Medicinal reeds grow thick along the bank, their leaves full of clear sap.",
+    "A coin purse glints beneath the pond’s surface, beside reeds rich with healing sap.",
     [
       ["Dredge the Coin Purse", [trinket("wishing-well-coin"), gold(20)]],
       ["Cut the Healing Reeds", [card("health-potion"), mat("herbs", 3)]],
@@ -338,7 +313,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "forgotten-door",
     "The Forgotten Door",
-    "Roots have opened two shallow alcoves in the ruined temple. A prayer book rests in one; an old shield stands in the other.",
+    "Roots split a ruined doorway, revealing a prayer book and an old shield in shallow alcoves.",
     [
       ["Take the Prayer Book", [xp("holy"), gear("spellbook")]],
       ["Claim the Shield", [xp("block"), gear("kite-shield")]],
@@ -347,7 +322,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "fallen-bough",
     "The Fallen Bough",
-    "A fallen ironwood limb lies across the sunlit grove, broad enough to shape into a buckler. A small bark charm hangs nearby, glossy with healing sap.",
+    "A fallen ironwood bough lies across the grove, beside a bark charm glossy with healing sap.",
     [
       ["Shape the Ironwood", [trinket("ironwood-buckler"), mat("wood", 3)]],
       ["Take the Sap Charm", [trinket("groves-favor"), mat("herbs", 3)]],
@@ -356,7 +331,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "seed-in-the-ash",
     "A Seed in the Ash",
-    "A living ember-bloom grows from the phoenix's charred nest. Beside it, a ruby amulet glows among loose gems, embers, and fallen wood.",
+    "An ember-bloom grows from a charred phoenix nest, beside a ruby amulet glowing in the ash.",
     [
       ["Nurture the Bloom", [card("cinderbloom"), mat("wood", 3)]],
       ["Take the Ruby Amulet", [gear("ruby-amulet"), mat("gems", 3)]],
@@ -365,7 +340,7 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "patient-scout",
     "The Patient Scout",
-    "The wolf leads you to its den, then waits beside an old companion's collar and a store of hides left by its former keeper.",
+    "A patient wolf waits beside its den, where an old companion’s collar hangs near the entrance.",
     [
       ["Earn Its Trust", [xp("companion"), card("wolf-companion")]],
       ["Recover the Collar", [trinket("companions-collar"), mat("hide", 3)]],

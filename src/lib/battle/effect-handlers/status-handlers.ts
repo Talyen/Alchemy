@@ -34,6 +34,15 @@ export const STATUS_HANDLERS = {
     let nextState = state;
     if (effect.convertCurrentMana !== undefined) {
       adjustedAmount = (context?.manaAtStart ?? state.mana) * effect.convertCurrentMana;
+      if (state.mana > 0) {
+        mergeCombatText(combatTexts, {
+          target: "player",
+          kind: "damage",
+          stat: "mana",
+          amount: state.mana,
+          impact: false,
+        });
+      }
       nextState = { ...state, mana: 0 };
     } else if (effect.perManaCrystal !== undefined) {
       adjustedAmount = effect.perManaCrystal * state.maxMana;
@@ -72,8 +81,11 @@ export const STATUS_HANDLERS = {
   "multiply-enemy-status": (state, _card, effect, _potionMult, combatTexts) => {
     const current = state.enemyStatuses[effect.status];
     if (current <= 0) return state;
-
-    const nextState = addEnemyStatus(state, effect.status, current * (effect.factor - 1));
+    // Multiplication adds stacks subject to resistance, but is not another
+    // attack eligible for the room's attack buildup bonus.
+    const nextState = addEnemyStatus(state, effect.status, Math.round(current * (effect.factor - 1)), {
+      attackBuildup: false,
+    });
     mergeCombatText(combatTexts, {
       target: "enemy",
       kind: "multiply",

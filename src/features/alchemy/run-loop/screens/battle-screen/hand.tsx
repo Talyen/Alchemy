@@ -133,7 +133,7 @@ const HandCardItem = memo(function HandCardItem({
               "hand-card-motion",
               visualHovered ? "scale-[1.035]" : "scale-100",
               !isInteractionEnabled && "cursor-default",
-              !isVisuallyPlayable && "grayscale",
+              !isVisuallyPlayable && "grayscale!",
             )}
             tooltipPadding={HAND_HOVER_TOOLTIP_PADDING_PX}
             scaleOnHover={false}

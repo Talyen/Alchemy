@@ -71,9 +71,13 @@ describe("enemy inspection presentation", () => {
 
   it("uses portrait-only cards and standard tooltips without playing or flipping them", async () => {
     const onClose = vi.fn();
-    render(<EnemyInspectionOverlay open entry={enemyById.inquisitor} onClose={onClose} />);
+    render(<EnemyInspectionOverlay open entry={enemyById.inquisitor} modifiers={["tempered"]} onClose={onClose} />);
     await waitForArtwork();
     const dialog = screen.getByRole("dialog", { name: "Inquisitor" });
+    expect(dialog.querySelector('[data-trait="tempered"]')?.getAttribute("data-trait-variant")).toBe("default");
+    expect(
+      new Set([...dialog.querySelectorAll("[data-trait]")].map((node) => node.getAttribute("data-trait-variant"))),
+    ).toEqual(new Set(["default"]));
     expect(within(dialog).getByRole("heading", { name: "Traits" })).toBeTruthy();
     expect(within(dialog).getByRole("heading", { name: "Abilities" })).toBeTruthy();
     expect(

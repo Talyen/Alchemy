@@ -19,7 +19,7 @@ export function applyDodgeTalentStatuses(state: BattleState, combatTexts: Combat
   if (state.talentEffects.thornsOnDodge > 0) {
     nextState = addPlayerStatusWithCombatText(nextState, "thorns", state.talentEffects.thornsOnDodge, combatTexts);
   }
-  if (state.enemyStatuses.burn > 0) {
+  if (state.talentEffects.burnOnDodgeBurning > 0 && state.enemyStatuses.burn > 0) {
     nextState = resolveFollowUpHit(
       nextState,
       { source: "talent-fixed", damageType: "burn", amount: state.talentEffects.burnOnDodgeBurning },

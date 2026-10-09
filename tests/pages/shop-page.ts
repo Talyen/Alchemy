@@ -19,8 +19,8 @@ export class ShopPage {
     this.buyBtn = this.page.getByRole("button", { name: /^Buy/ });
     this.removeCardBtn = this.page.getByRole("button", { name: /Remove Card/ });
     this.refreshBtn = this.page.getByRole("button", { name: /Refresh/ });
-    this.mixBtn = this.page.getByRole("button", { name: /^Brew Potion/ });
-    this.combineBtn = this.page.getByRole("button", { name: /^Brew(?: ·.*)?$/ });
+    this.mixBtn = this.page.getByRole("button", { name: /^Mix Potion/ });
+    this.combineBtn = this.page.getByRole("button", { name: /^Mix(?: ·.*)?$/ });
     this.continueBtn = this.page.getByRole("button", { name: "Continue" });
     this.goldText = this.page.getByTestId("run-gold");
     this.purchasedText = this.page.getByText("Purchased").first();

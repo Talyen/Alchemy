@@ -12,7 +12,7 @@ import { halveRounded, scalePercent } from "./amount-helpers";
 import { takeRandomCardFromDeck, drawKeywordCard } from "./draw";
 import { tryDodgeEnemyAttackPacket } from "./dodge";
 import { applyDodgeTalentStatuses } from "./dodge-talent-rewards";
-import { applyArmorReward, applyBlockDepletionForgeReward, applyBlockReward } from "./status-player";
+import { applyArmorReward, applyBlockDepletionRewards, applyBlockReward } from "./status-player";
 import {
   applyCardPlayTalentRewards,
   applyMortarAndPestlePotionUse,
@@ -209,7 +209,8 @@ function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], 
     const spent = halveRounded(state.playerStatuses.block);
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: spent, impact: false });
     nextState = setPlayerStatus(nextState, "block", state.playerStatuses.block - spent);
-    nextState = applyBlockDepletionForgeReward(state, nextState, combatTexts);
+    nextState = resolvePendingBattleReactions(applyBlockDepletionRewards(state, nextState, combatTexts), combatTexts);
+    if (isPlayerDefeated(nextState)) return nextState;
     nextState = resolveSecondaryAction(nextState, "retaliation", (current) =>
       resolveFollowUpHit(current, { source: "player-follow-up", damageType: "physical", amount: spent }, combatTexts),
     );
@@ -293,7 +294,7 @@ export function resolveEnemyAttackHit(
         ? purgeOnePlayerBenefit(resolved.state, combatTexts).state
         : resolved.state,
   };
-  const blockDepleted = state.playerStatuses.block > 0 && result.blockLost === state.playerStatuses.block;
+  const blockDepleted = state.playerStatuses.block > 0 && result.blockLost >= state.playerStatuses.block;
   if (
     blockDepleted &&
     result.state.talentEffects.companionAttackOnBlockDepletedBelowHalf &&

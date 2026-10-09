@@ -91,6 +91,12 @@ export const COMMANDS = Object.freeze({
     command: process.execPath,
     args: ["scripts/run-compact.mjs", "vitest", "run"],
   },
+  "unit-interactions": {
+    label: "connected interaction progress",
+    reason: "asynchronous flow changes preserve completion, cancellation and usable input",
+    command: NPM,
+    args: ["run", "test:full", "--", "tests/interaction"],
+  },
   "unit-save": {
     label: "save/persistence unit tests",
     reason: "save changes preserve schema, storage, autosave, and hydration behavior",

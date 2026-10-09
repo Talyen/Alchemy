@@ -43,6 +43,22 @@ export function isDocumentationPath(filePath) {
 
 const ROUTES = Object.freeze([
   route(
+    "interactions",
+    [
+      "src/app/**",
+      "src/features/alchemy/**",
+      "src/lib/animation/**",
+      "src/lib/routing/**",
+      "src/lib/platform-save-backend.ts",
+      "src/lib/image-preload.ts",
+      "tests/interaction/**",
+      "scripts/run-interactions.mjs",
+    ],
+    ["unit-interactions"],
+    [doc("tests/interaction/README.md", null, "connected progress coverage")],
+    "tests/interaction/sequence.ts",
+  ),
+  route(
     "documentation",
     ["*.md", "**/*.md", "Docs/**", ".agents/**", ".cursor/**"],
     ["docs-check"],
@@ -278,7 +294,17 @@ export function resolveRoutePlan(paths) {
       const command = COMMANDS[key];
       if (key === "unit-changed") return { key, ...command, args: [...command.args, ...changedTests] };
       if (key === "related") {
-        return { key, ...command, args: [...command.args, ...relatedInputs, "--run", "--passWithNoTests"] };
+        return {
+          key,
+          ...command,
+          args: [
+            ...command.args,
+            ...relatedInputs,
+            ...(keys.has("unit-interactions") ? ["--exclude", "tests/interaction/**"] : []),
+            "--run",
+            "--passWithNoTests",
+          ],
+        };
       }
       return { key, ...command };
     }),

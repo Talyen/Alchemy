@@ -30,6 +30,7 @@ Direct reads and scoped searches suffice. Optional discovery, bounded search and
 
 ## High-risk invariants
 
+- Follow [Show, don’t tell](./Docs/UI.md#show-dont-tell): use concise labels and visible state or outcomes; do not routinely add instructional text, descriptive paragraphs, or redundant success copy to UI you touch. Preserve essential mechanics, accessible names, and concise errors.
 - Apply [Every player action receives feedback](./Docs/UI.md#every-player-action-receives-feedback) to UI, UX, and gameplay design, implementation, and review: supported actions need timely visible acknowledgment and clear outcomes; audio may reinforce them, and essential meaning survives mute.
 - Outside `shared/stores/`, use capability ports. Writes go through `dispatchRunSessionCommand()` and `run-session-write-port.ts`.
 - Run/battle controllers travel through route/shell props. Only `AppScreenChromeProvider` and `CardDescriptionProvider` are allowed providers; presentation state may use `ui-store`.

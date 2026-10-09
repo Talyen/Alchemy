@@ -22,6 +22,11 @@ import { playBattleEvent, playCardSound, playUISound } from "@/lib/audio";
 import { AUTOPLAY_PREVIEW_MS } from "@/lib/game-constants";
 import { logError } from "@/lib/error-logger";
 import { battlePresentation } from "@/app/battle-presentation";
+import { makeDrawSequenceDeps } from "./turn-orchestration-fixture";
+import { isBattlePlaybackBlocked } from "@/features/alchemy/run-loop/battle/playback-gate";
+import { readCardAnimationInProgress } from "@/features/alchemy/run-loop/battle/presentation/use-hand-presentation";
+import { isBattleInspectionBlocked } from "@/app/use-card-inspection";
+import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/end-turn-ui";
 
 vi.mock("@/lib/error-logger", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/error-logger")>()),
@@ -449,33 +454,84 @@ describe("createBattleCardPlay", () => {
     expect(playUISound).not.toHaveBeenCalled();
   });
 
-  it("routes drawn cards through the unified draw helper", async () => {
-    const draw = makeTestCard({
-      id: "quick-study",
-      cost: 1,
-      effects: [{ kind: "draw-cards", amount: 1 }],
-    });
-    const incoming = makeTestCard({ id: "slash", uid: 99 });
-    const state = makeTestBattleState({
-      hand: [{ ...draw, uid: 1 }],
-      deck: [incoming],
-      mana: 3,
-      enemyHealth: 30,
-    });
-    givenBattle(state);
-
-    const { ctx, session, transferDeps } = makeDeps();
-    const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
-    clickCard(handleCardClick, { ...draw, uid: 1 }, 0);
-
+  it.each([1, 2])("unlocks End Turn, autoplay and inspection after %i card draws settle", async (count) => {
     const { runBattleDraw } = await import("@/features/alchemy/run-loop/battle/draw-sequence");
-    expect(vi.mocked(runBattleDraw)).toHaveBeenCalledOnce();
-    const request = vi.mocked(runBattleDraw).mock.calls[0]![0];
-    expect(request.oldHand).toHaveLength(1);
-    expect(request.newState.hand.find((card) => card.id === "slash")).toBeDefined();
-    const drawn = readBattle(defaultGameSession).battleState.hand.find((card) => card.id === "slash");
-    expect(drawn).toBeDefined();
-    expect(battlePresentation.getState().playerAttackToken).toBe(0);
+    const actual = await vi.importActual<typeof import("@/features/alchemy/run-loop/battle/draw-sequence")>(
+      "@/features/alchemy/run-loop/battle/draw-sequence",
+    );
+    vi.mocked(runBattleDraw).mockImplementation(actual.runBattleDraw);
+    try {
+      const cards = Array.from({ length: count }, (_, index) =>
+        makeTestCard({ id: "quick-study", uid: index + 1, cost: 1, effects: [{ kind: "draw-cards", amount: 1 }] }),
+      );
+      givenBattle(
+        makeTestBattleState({
+          hand: cards,
+          deck: Array.from({ length: count }, (_, index) => makeTestCard({ id: "slash", uid: index + 99, cost: 1 })),
+          mana: count,
+          enemyHealth: 30,
+        }),
+      );
+      const { ctx, session, transferDeps } = makeDeps();
+      vi.spyOn(ctx.playback, "waitForFrame").mockResolvedValue(true);
+      const finish: (() => void)[] = [];
+      const deps = makeDrawSequenceDeps({
+        playback: ctx.playback,
+        animateDrawnHand: () =>
+          new Promise<void>((resolve) => {
+            finish.push(resolve);
+          }),
+        setTransferInProgress: (active) => battlePresentation.getState().setCardTransferInProgress(active),
+        setHiddenHandCardKeys: (update) => battlePresentation.getState().setHiddenHandCardKeys(update),
+      });
+      vi.mocked(transferDeps.getDrawSequenceDeps).mockReturnValue(deps);
+      const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
+      for (const card of cards) clickCard(handleCardClick, card, 0);
+      await vi.waitFor(() => expect(finish).toHaveLength(count));
+      expect(readBattle(defaultGameSession).battleState.mana).toBe(0);
+      expect(battlePresentation.getState().cardTransferInProgress).toBe(true);
+      for (let index = count - 1; index >= 0; index--) {
+        finish[index]!();
+        await vi.waitFor(() => expect(ctx.playback.pendingCardDraws).toBe(index));
+        if (index > 0) {
+          expect(ctx.playback.canAcceptInput()).toBe(false);
+          expect(battlePresentation.getState().cardTransferInProgress).toBe(true);
+        }
+      }
+      const presentation = battlePresentation.getState();
+      const battleState = readBattle(defaultGameSession).battleState;
+      expect(ctx.playback.pendingDraws).toBe(0);
+      expect(ctx.playback.canAcceptInput()).toBe(true);
+      expect(presentation.hiddenHandCardKeys).toEqual([]);
+      expect(
+        isBattlePlaybackBlocked({
+          screen: "battle",
+          battleState,
+          hasActiveBattle: true,
+          cardTransferInProgress: presentation.cardTransferInProgress,
+          hiddenHandCardKeys: presentation.hiddenHandCardKeys,
+          cardPlayInProgress: ctx.playback.cardPlayInProgress,
+        }),
+      ).toBe(false);
+      expect(
+        isBattleInspectionBlocked({
+          battleReady: true,
+          battleState,
+          cardAnimationInProgress: readCardAnimationInProgress(battlePresentation),
+          hiddenHandCardKeys: presentation.hiddenHandCardKeys,
+        }),
+      ).toBe(false);
+      const endTurn = vi.spyOn(ctx.battle, "endTurn").mockReturnValue(null);
+      createBattleEndTurnUi(ctx, session, transferDeps).handleEndTurn();
+      expect(endTurn).toHaveBeenCalledOnce();
+      expect(ctx.playback.scheduleAutoEndTurn).toHaveBeenCalledWith(battleState);
+    } finally {
+      vi.mocked(runBattleDraw).mockImplementation(async (request) => {
+        request.onReveal();
+        request.onSettled?.();
+        return false;
+      });
+    }
   });
 
   it("flashes a hover preview before autoplaying", async () => {

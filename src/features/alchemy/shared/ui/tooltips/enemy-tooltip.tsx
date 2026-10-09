@@ -29,7 +29,7 @@ export function EnemyTooltip({
     >
       <TooltipHeader>{discovered ? entry.title : "Undiscovered"}</TooltipHeader>
       {discovered ? (
-        <EnemyTraits entry={entry} modifiers={labyrinthModifiers} />
+        <EnemyTraits entry={entry} modifiers={labyrinthModifiers} variant="compact" />
       ) : (
         <TooltipBody>
           <p>Undiscovered</p>

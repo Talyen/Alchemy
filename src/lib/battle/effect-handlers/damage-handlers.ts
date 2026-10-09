@@ -2,7 +2,7 @@ import type { EffectHandlers } from "./handler-types";
 import { resolveConditionalCardDamage } from "../conditional-card-damage";
 import { mergeCombatText } from "../combat-text-events";
 import { setPlayerStatus } from "../status-state";
-import { applyBlockDepletionForgeReward, applyHealthLossTalentRewards, checkHealthThresholds } from "../status-player";
+import { applyBlockDepletionRewards, applyHealthLossTalentRewards, checkHealthThresholds } from "../status-player";
 import { DAMAGE_TYPES } from "@/lib/game-data";
 import { getBattleRng, pickRandom, rngInt } from "@/lib/rng";
 import { applyPotionMultiplier, halveRounded } from "../amount-helpers";
@@ -11,6 +11,7 @@ import { dealSelfDamage } from "../status-helpers";
 import { addPlayerStatus } from "../status-state";
 import { reduceEnemyArmor } from "../enemy-mitigation-state";
 import { rangeBoundsError } from "./simple-handlers";
+import { resolvePendingBattleReactions } from "../enemy-attack-damage";
 
 export const DAMAGE_HANDLERS = {
   damage: (state, card, effect, potionMult, combatTexts, context) => {
@@ -23,7 +24,10 @@ export const DAMAGE_HANDLERS = {
     if (selected.blockSpent > 0) {
       const beforeBlockSpend = state;
       state = setPlayerStatus(state, "block", state.playerStatuses.block - selected.blockSpent);
-      state = applyBlockDepletionForgeReward(beforeBlockSpend, state, combatTexts);
+      state = resolvePendingBattleReactions(
+        applyBlockDepletionRewards(beforeBlockSpend, state, combatTexts),
+        combatTexts,
+      );
       mergeCombatText(combatTexts, {
         target: "player",
         kind: "damage",

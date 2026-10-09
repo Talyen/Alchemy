@@ -121,6 +121,7 @@
     "release:hotfix": "node scripts/release.mjs --hotfix",
     "test:e2e:verbose": "cross-env PLAYWRIGHT_VITE_MODE=preview node scripts/run-compact.mjs --live playwright test --project=chromium",
     "demo:playtest": "node scripts/play-demo.mjs",
+    "test:interactions": "node scripts/run-interactions.mjs",
     "test:full": "node scripts/run-compact.mjs vitest run",
     "check:full": "node scripts/check.mjs --full",
     "verify:full": "node scripts/verify-changed.mjs --full",

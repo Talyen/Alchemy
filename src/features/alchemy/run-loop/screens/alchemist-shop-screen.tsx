@@ -48,12 +48,13 @@ export function AlchemistShopScreen({
   potency: number;
   onContinue: () => void;
 }) {
-  const [mixMode, setMixMode] = useState(false);
+  const [brewMode, setBrewMode] = useState<"combine" | "strengthen" | null>(null);
   const [mixedCard, setMixedCard] = useState<BattleCard | null>(null);
   const mixable = runDeck.filter(isBrewablePotion);
-  const mixDisabled = gold < mixPrice || (mixable.length < 2 && !mixable.some((card) => strengthenPotion(card)));
-  const mixDisabledMessage = gold < mixPrice ? "Not Enough Gold" : "No eligible Potions to brew";
-  const modeKey = mixedCard ? "result" : mixMode ? "mix" : "browse";
+  const mixDisabled = gold < mixPrice || mixable.length < 2;
+  const strengthenDisabled = gold < mixPrice || !mixable.some((card) => strengthenPotion(card));
+  const mixDisabledMessage = gold < mixPrice ? "Not Enough Gold" : "Two eligible Potions required";
+  const modeKey = mixedCard ? "result" : (brewMode ?? "browse");
   function confirm(operation: BrewOperation): BattleCard | null {
     const result =
       operation.kind === "combine"
@@ -85,7 +86,7 @@ export function AlchemistShopScreen({
                 className="min-w-56"
                 onClick={() => {
                   setMixedCard(null);
-                  setMixMode(false);
+                  setBrewMode(null);
                 }}
               >
                 Continue
@@ -93,16 +94,17 @@ export function AlchemistShopScreen({
             </div>
           </div>
         </ShopBrowseShell>
-      ) : mixMode ? (
+      ) : brewMode ? (
         <ShopBrowseShell title="Alchemist's Shop" gold={gold}>
           <BrewPotionPanel
             deck={runDeck}
-            allowStrengthen
+            kind={brewMode}
+            selectionSound="shopSelect"
             price={mixPrice}
             gold={gold}
             potency={potency}
             onConfirm={confirm}
-            onBack={() => setMixMode(false)}
+            onBack={() => setBrewMode(null)}
           />
         </ShopBrowseShell>
       ) : (
@@ -119,16 +121,28 @@ export function AlchemistShopScreen({
           onRefresh={onRefresh}
           onContinue={onContinue}
           extraServices={
-            <ServiceButton
-              icon={FlaskConical}
-              label="Brew Potion"
-              cost={mixPrice}
-              disabled={mixDisabled}
-              disabledMessage={mixDisabledMessage}
-              used={mixUsed}
-              soldOutText="Brew Potion - Used"
-              onClick={() => setMixMode(true)}
-            />
+            <>
+              <ServiceButton
+                icon={FlaskConical}
+                label="Mix Potion"
+                cost={mixPrice}
+                disabled={mixDisabled}
+                disabledMessage={mixDisabledMessage}
+                used={mixUsed}
+                soldOutText="Mix Potion - Used"
+                onClick={() => setBrewMode("combine")}
+              />
+              <ServiceButton
+                icon={FlaskConical}
+                label="Strengthen Potion"
+                cost={mixPrice}
+                disabled={strengthenDisabled}
+                disabledMessage={gold < mixPrice ? "Not Enough Gold" : "No eligible Potions to strengthen"}
+                used={mixUsed}
+                soldOutText="Strengthen Potion - Used"
+                onClick={() => setBrewMode("strengthen")}
+              />
+            </>
           }
           renderItem={(card, price, purchased, onBuy) => (
             <PurchasableCardItem card={card} price={price} gold={gold} purchased={purchased} onBuy={onBuy} />

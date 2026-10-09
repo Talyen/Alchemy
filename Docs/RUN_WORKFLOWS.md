@@ -25,7 +25,7 @@ Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-sess
 Campaign, Labyrinth, and Wildwood victories grant enemy-based Materials through the same reward flow; Wildwood shows them beside Gold on its existing Victory screen and includes them in the run-end summary.
 
 1. Route combat payouts through `computeCombatMaterialReward()` and mystery grants through `computeMysteryMaterialReward()` (both in `@/lib/homestead/material-rewards`); they own herb-find, scavenger/herbalist, and elite/boss ordering per the policy table there. Do not reimplement the sequence at the call site.
-2. Call `awardMaterialsDuringRun(draft, materials)` inside the owning command (`run-loop/run/victory-commands.ts`, `run-loop/run/reward-commands.ts`, `run-loop/navigation/mystery-flow.ts`, or Armory salvage in `shared/stores/gear-session-command.ts`). The canonical site list is `AWARD_MATERIALS_CALL_SITES` in `shared/stores/run-materials.ts`, enforced by `tests/architecture/run-materials-award-guard.test.ts`; new grant paths must extend it there.
+2. Call `awardMaterialsDuringRun(draft, materials)` inside the owning command (`run-loop/run/reward-commands.ts`, `run-loop/navigation/mystery-flow.ts`, or Armory salvage in `shared/stores/gear-session-command.ts`). The canonical site list is `AWARD_MATERIALS_CALL_SITES` in `shared/stores/run-materials.ts`, enforced by `tests/architecture/run-materials-award-guard.test.ts`; new grant paths must extend it there.
 3. Reuse the run-end display: `awardRunEndMaterials` in the write port (implementation in `shared/stores/write/run-end.ts`), used by both defeat and victory flows, merges `runMaterialsEarned` and `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`.
 4. Check `tests/features/alchemy/run-loop/run/run-victory-handlers.dom.test.ts` and the affected mystery/reward-flow tests when adding a new source.
 
@@ -85,8 +85,8 @@ export function awardMaterialReward(
   session: GameSession,
 ): void {
   dispatchRunSessionCommand(
-    (draft) => {
-      awardMaterialsDuringRun(draft, materials);
+    (transaction) => {
+      awardMaterialsDuringRun(transaction, materials);
       return acceptCommand(materials);
     },
     { afterCommit: onAwarded },
@@ -105,4 +105,4 @@ Resolve battle gameplay and commit its RNG/XP before starting presentation. Retu
 
 `navigation/alchemy-commands.ts` initializes fixed visit offers using the saved events RNG stream. Campfire and Transmutation activities own offers, completion, and result cards; the resume codec persists them independently of the visible menu. Returning or reloading must not regenerate an initialized visit.
 
-Brew and exchange commands validate the current activity, completion, source eligibility, and selected offers before writing. Payment, deck replacement, discovery, and visit use commit synchronously through the run-session write port. Campfire Rest and Brew are mutually exclusive. The Campfire route passes active room modifiers to the screen so Hidden Purse and Herbal Hearth rewards are explained before Rest and acknowledged after completion, including resume; brewing does not claim those Rest rewards. A completed Labyrinth support visit clears its pending node through the existing progression flow.
+Brew and exchange commands validate the current activity, completion, source eligibility, and selected offers before writing. Payment, deck replacement, discovery, and visit use commit synchronously through the run-session write port. Campfire Rest and Brew are mutually exclusive. Campfire brewing automatically mixes two eligible, unbrewed standard Potion instances when available; otherwise, choosing one of the three saved offers immediately grants it. Both the screen and command enforce this choice. The Campfire route passes active room modifiers to the screen so Hidden Purse and Herbal Hearth rewards are acknowledged after Rest, including resume; brewing does not claim those Rest rewards. The Alchemist exposes Mix Potion and Strengthen Potion as separate services sharing the existing price and once-per-visit brewing allowance. Transmutation immediately locks in the selected source card, then selecting a replacement commits the exchange and advances without confirmation or a result summary. Mixed and strengthened Potions remain ineligible. Completed visits and visits with no valid exchange advance automatically after offer initialization. A completed Labyrinth support visit clears its pending node through the existing progression flow.

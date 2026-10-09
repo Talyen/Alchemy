@@ -6,6 +6,18 @@ Alchemy's accessibility stance. Screen wiring checklists remain in
 [in the browsing guide](./UI_BROWSING.md#armory-crafting-and-salvage); Gear data and mutation rules live in
 [ARMORY.md](./ARMORY.md).
 
+## Show, don't tell
+
+Aim for a minimalist, polished game UI. Default to concise labels, interactive
+cards, visible selection and resource changes, and clear outcomes. Do not add
+instructional text, descriptive paragraphs, or redundant success messages to
+every screen or control you touch. If the interface already shows it, omit the
+explanation. Prefer improving the interaction over explaining it.
+
+Keep essential mechanics in cards or inspection, preserve accessible names, and
+use concise errors when an action fails. Feedback need not be prose: a resulting
+card, healing meter, changed value, or selected state can communicate the outcome.
+
 ## Every player action receives feedback
 
 Every supported player action must produce a timely, perceivable response that
@@ -199,6 +211,13 @@ content scale (738 / 1080), multiplied by Tooltip Size (90–125%, 5% steps).
 At 100%, tooltip text, icons, spacing, and panels grow proportionally with the
 game, including enemy Traits. Tooltip Size is an additional
 relative adjustment, not a fixed pixel size independent of Game Size.
+
+Enemy hover Traits use the explicit compact presentation: 14px headings, 12px
+descriptions, 24px icons, 8px row and inter-trait gaps, and 3px between the title
+and description at the reference viewport and 100% settings. This is an exception
+to the general small-text baseline. These dimensions use `--content-rem` and
+inherit the shared tooltip scale once. Enemy inspection and Labyrinth chamber
+details retain the default Trait presentation.
 
 The stage's `--content-scale` is visible content scale divided by stage scale.
 Inline Tailwind theme tokens and `--content-rem` size text, controls, cards,

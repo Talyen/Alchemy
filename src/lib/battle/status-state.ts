@@ -58,7 +58,12 @@ export function setPlayerStatus(state: BattleState, status: PlayerStatusId, valu
   };
 }
 
-export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta: number): BattleState {
+export function addEnemyStatus(
+  state: BattleState,
+  status: EnemyStatusId,
+  delta: number,
+  options: { attackBuildup?: boolean } = {},
+): BattleState {
   if ((status === "stun" || status === "freeze") && isStunFreezeBuildupBlocked(state.enemyCC)) {
     return state;
   }
@@ -70,7 +75,8 @@ export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta:
         : status === "bleed"
           ? "deep-wounds"
           : null;
-  if (delta > 0 && benefit && hasEncounterBenefit(state, benefit)) delta *= LABYRINTH_MODIFIER_CONFIG.double;
+  if (options.attackBuildup !== false && delta > 0 && benefit && hasEncounterBenefit(state, benefit))
+    delta *= LABYRINTH_MODIFIER_CONFIG.double;
   const traitAdjustedDelta =
     ((status === "stun" && hasEnemyTrait(state, "braced")) ||
       (status === "freeze" && hasEnemyTrait(state, "winterborn"))) &&

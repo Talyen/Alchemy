@@ -5,7 +5,7 @@ import { campfire } from "@/features/alchemy/shared/config/game-data-catalog";
 import { getCampfireRestHealth } from "@/lib/campfire-heal";
 import type { BattleCard } from "@/lib/game-data";
 import type { AlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
-import type { BrewOperation } from "@/lib/alchemist/brewing";
+import { getCampfireBrewKind, type BrewOperation } from "@/lib/alchemist/brewing";
 import { SelectableCard } from "../../shared/ui/cards/selectable-card";
 import { HealthRestoreMeter } from "../../shared/ui/health-restore-meter";
 import { useEasedHealth } from "../../shared/ui/use-eased-health";
@@ -47,6 +47,7 @@ export function CampfireScreen({
     active: rest !== null,
   });
   const restore = getCampfireRestHealth(playerHealth, maxHealth, healFraction, healingBonus) - playerHealth;
+  const brewKind = getCampfireBrewKind(runDeck);
   return (
     <TitledScreenShell title="Campfire">
       <div className="mt-6 flex flex-col items-center gap-6 text-center">
@@ -54,12 +55,10 @@ export function CampfireScreen({
           <>
             {visit.result ? (
               <>
-                <p role="status">Potion brewed and added to your run deck.</p>
                 <SelectableCard card={visit.result} isSelected chrome="shop" onSelect={() => {}} />
               </>
             ) : (
               <>
-                <p role="status">Rest complete.</p>
                 {modifiers.includes("hidden-purse") && (
                   <p role="status">{LABYRINTH_MODIFIER_CONFIG.hiddenPurseGold} Gold added to your purse.</p>
                 )}
@@ -78,13 +77,14 @@ export function CampfireScreen({
         ) : brewing ? (
           <>
             <BrewPotionPanel
+              key={brewKind}
+              kind={brewKind}
               deck={runDeck}
               offers={visit.offers}
               potency={potency}
               onConfirm={onBrew}
               onBack={() => setBrewing(false)}
             />
-            <p>Brewing replaces Rest at this Campfire.</p>
           </>
         ) : (
           <>
@@ -98,16 +98,10 @@ export function CampfireScreen({
                   else setError("This Campfire has already been used.");
                 }}
               >
-                Rest · Recover {restore} Health
+                Rest
               </Button>
               <Button onClick={() => setBrewing(true)}>Brew Potion</Button>
             </div>
-            {restore === 0 && <p>Health is full. Rest restores no Health.</p>}
-            {modifiers.includes("hidden-purse") && (
-              <p>Rest also grants {LABYRINTH_MODIFIER_CONFIG.hiddenPurseGold} Gold.</p>
-            )}
-            {modifiers.includes("herbal-hearth") && <p>Rest also adds a random Potion to your run deck.</p>}
-            <p>Rest or brew one Potion. Each Campfire can be used once.</p>
           </>
         )}
         {error && <p role="alert">{error}</p>}

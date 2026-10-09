@@ -36,7 +36,7 @@ export function prepareWildwoodBossInDraft(draft: RunTransaction, removeIndex?: 
   if (!nextDeck) return null;
   const prepared = prepareNextWildwoodBoss(
     snapshotTransactionValue(state),
-    deck.length,
+    nextDeck.length,
     createDraftRunRandomSource(draft, "world"),
   );
   if (!prepared) return null;

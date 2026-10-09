@@ -64,7 +64,18 @@ function applyEnemyEffect(
       return applyArmorLossAttackRetaliation(removed, amount, combatTexts);
     }
     case "multiply-enemy-status": {
-      if (isStunFreezeBuildupBlocked(state.playerCC)) return state;
+      if (isStunFreezeBuildupBlocked(state.playerCC)) {
+        if (state.playerCC.cooldown > 0) {
+          mergeCombatText(combatTexts, {
+            target: "player",
+            kind: "notice",
+            stat: "freeze",
+            signal: "immune",
+            text: "Immune to Freeze",
+          });
+        }
+        return state;
+      }
       const amount = Math.round(state.playerStatuses.freeze * effect.factor);
       const nextState = setPlayerStatus(state, "freeze", amount);
       const added = amount - state.playerStatuses.freeze;

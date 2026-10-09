@@ -85,6 +85,7 @@ function applyConsumeGearRiders(
   manaSpent: number,
   manaAtConsume: number,
 ): BattleState {
+  if (cardIsSummonCompanion(card)) return state;
   let nextState = state;
   if (state.gearEffects.armorOnConsume > 0) {
     nextState = applyArmorReward(nextState, state.gearEffects.armorOnConsume, combatTexts);

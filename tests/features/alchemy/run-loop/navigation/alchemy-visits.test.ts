@@ -37,20 +37,21 @@ function reload() {
 }
 describe("alchemy visit transactions and resume", () => {
   it("keeps Campfire offers through reload and commits only one brew, mutually exclusive with Rest", () => {
+    setRunProgress({ runDeck: [cardById.slash!, cardById["health-potion"]!] });
     initializeAlchemyVisit("campfire", defaultGameSession);
     const initial = readRunSession(defaultGameSession).activity;
     reload();
     expect(readRunSession(defaultGameSession).activity).toEqual(initial);
     expect(brewAtCampfire({ kind: "new", offerIndex: 99 }, defaultGameSession)).toBeNull();
-    expect(readActiveRun(defaultGameSession).runDeck).toHaveLength(3);
+    expect(readActiveRun(defaultGameSession).runDeck).toHaveLength(2);
     expect(brewAtCampfire({ kind: "new", offerIndex: 0 }, defaultGameSession)).not.toBeNull();
-    expect(readActiveRun(defaultGameSession).runDeck).toHaveLength(4);
+    expect(readActiveRun(defaultGameSession).runDeck).toHaveLength(3);
     expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(10);
     reload();
     initializeAlchemyVisit("campfire", defaultGameSession);
     expect(brewAtCampfire({ kind: "new", offerIndex: 1 }, defaultGameSession)).toBeNull();
     expect(restAtCampfire(defaultGameSession)).toBe(false);
-    expect(readActiveRun(defaultGameSession).runDeck).toHaveLength(4);
+    expect(readActiveRun(defaultGameSession).runDeck).toHaveLength(3);
   });
   it("combines existing Potions for free and never permits a repeat brew after reload", () => {
     initializeAlchemyVisit("campfire", defaultGameSession);
@@ -59,6 +60,29 @@ describe("alchemy visit transactions and resume", () => {
     expect(readActiveRun(defaultGameSession).runDeck).toHaveLength(2);
     reload();
     expect(brewAtCampfire({ kind: "combine", indices: [0, 1] }, defaultGameSession)).toBeNull();
+  });
+  it("requires mixing when two eligible instances exist, including duplicate Potion types", () => {
+    setRunProgress({ gold: 0, runDeck: [cardById["health-potion"]!, cardById["health-potion"]!] });
+    initializeAlchemyVisit("campfire", defaultGameSession);
+    const before = snapshotRun(defaultGameSession);
+    expect(brewAtCampfire({ kind: "new", offerIndex: 0 }, defaultGameSession)).toBeNull();
+    expect(brewAtCampfire({ kind: "combine", indices: [0, 0] }, defaultGameSession)).toBeNull();
+    expect(snapshotRun(defaultGameSession)).toEqual(before);
+    const result = brewAtCampfire({ kind: "combine", indices: [0, 1] }, defaultGameSession);
+    expect(result?.effects).toEqual([{ kind: "heal", amount: 16 }]);
+    expect(readActiveRun(defaultGameSession).runDeck).toEqual([result]);
+    expect(readRunProfile(defaultGameSession).gold).toBe(0);
+  });
+  it("ignores brewed and Mixed Potions when deciding whether to offer a new Potion", () => {
+    setRunProgress({
+      runDeck: [cardById.slash!, { ...cardById["health-potion"]!, brewed: true }, cardById["mixed-potion"]!],
+    });
+    initializeAlchemyVisit("campfire", defaultGameSession);
+    const before = snapshotRun(defaultGameSession);
+    expect(brewAtCampfire({ kind: "combine", indices: [1, 2] }, defaultGameSession)).toBeNull();
+    expect(snapshotRun(defaultGameSession)).toEqual(before);
+    expect(brewAtCampfire({ kind: "new", offerIndex: 0 }, defaultGameSession)).not.toBeNull();
+    expect(readActiveRun(defaultGameSession).runDeck).toHaveLength(4);
   });
   it("Rest commits healing once and prevents brewing", () => {
     initializeAlchemyVisit("campfire", defaultGameSession);

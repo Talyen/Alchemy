@@ -208,8 +208,8 @@ Do not duplicate the current schema number here. [`MIGRATIONS.md`](../src/featur
 
 Gear rule coverage lives in `tests/lib/gear/` (`gear`, `generation`,
 `crafting`, `crafting-ids`, `crafting-assets`, `salvage-yield`,
-`unique-catalog`, `gear-shine`, `display`, `definitions-art`,
-`affixes`, `item-names`, `raw-assets`); aggregate and
+`unique-catalog`, `gear-shine`, `definitions-art`, `affixes`,
+`affix-pool`, `raw-assets`); aggregate and
 persistence contracts in `tests/features/alchemy/shared/stores/gear-*` and
 `tests/features/alchemy/shared/storage/gear-save.test.ts`; Armory interaction
 in `tests/features/alchemy/meta/screens/armory-screen*.test.tsx` and

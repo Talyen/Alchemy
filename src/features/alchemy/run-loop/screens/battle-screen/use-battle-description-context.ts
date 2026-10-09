@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { projectEnemyDotDamage } from "@/lib/battle";
 import { getBattleCompanionDamageModifiers } from "@/lib/battle";
 import type { BattleScreenState } from "./types";
 
@@ -34,29 +33,7 @@ export function useBattleDescriptionContext(state: BattleScreenState) {
     () => ({
       companionBondLevels: state.talentEffects.companionBondLevels,
       companionDamageModifiers,
-      reactionPreview: {
-        shatter: state.flags.shatterUsed
-          ? "Shatter: used this turn."
-          : state.enemyCC.freezeSkipTurns > 0
-            ? `Shatter: destroy all ${state.enemyMitigation.block} Block and ${state.enemyMitigation.armor} Armor. Guaranteed Critical. Freeze remains.`
-            : "Shatter: a Physical hit against a Frozen enemy destroys all Block and Armor and guarantees a Critical. Once per turn.",
-        wildfire: state.flags.wildfireUsed
-          ? "Wildfire: used this turn."
-          : state.enemyStatuses.burn > 0
-            ? `Wildfire: detonate ${projectEnemyDotDamage({ enemyStatuses: state.enemyStatuses, enemyCC: state.enemyCC, currentEnemy: state.currentEnemy, talentEffects: state.talentEffects, gearEffects: state.gearEffects, encounterBenefits: state.encounterBenefits }, "burn", "remaining-ticks")} remaining Burn damage; remove Burn. Requires a damaging Nature hit and a surviving hero and enemy.`
-            : "Wildfire: a damaging Nature hit against a Burning enemy detonates its remaining Burn. Once per turn.",
-      },
     }),
-    [
-      state.talentEffects,
-      companionDamageModifiers,
-      state.flags,
-      state.enemyCC,
-      state.enemyMitigation,
-      state.enemyStatuses,
-      state.currentEnemy,
-      state.gearEffects,
-      state.encounterBenefits,
-    ],
+    [state.talentEffects.companionBondLevels, companionDamageModifiers],
   );
 }

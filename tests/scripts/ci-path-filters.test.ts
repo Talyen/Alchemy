@@ -70,16 +70,16 @@ function ciGatesFor(filters: Map<string, string[]>, filePath: string): string[] 
 // Empty gates means the change is covered by ungated every-push jobs
 // (lint/test/build/critical e2e), not a path-gated job.
 const PATH_CASES: Array<[string, string[], string[]]> = [
-  ["src/features/alchemy/shared/storage/io.ts", ["runtime", "save"], ["desktop", "desktop_renderer"]],
-  ["src/features/alchemy/shared/stores/run-store.ts", ["runtime", "save"], ["desktop_renderer"]],
+  ["src/features/alchemy/shared/storage/io.ts", ["interactions", "runtime", "save"], ["desktop", "desktop_renderer"]],
+  ["src/features/alchemy/shared/stores/run-store.ts", ["interactions", "runtime", "save"], ["desktop_renderer"]],
   ["src/lib/validation/save-schemas/save-data.ts", ["runtime", "save"], []],
   ["src/lib/content-validation/validators.ts", ["runtime", "save"], []],
   ["src/lib/active-run-session/session.ts", ["runtime", "save"], []],
-  ["src/app/use-app-save-state.ts", ["runtime", "save"], ["desktop_renderer"]],
-  ["src/app/autosave-lifecycle.ts", ["runtime", "save"], ["desktop_renderer"]],
+  ["src/app/use-app-save-state.ts", ["interactions", "runtime", "save"], ["desktop_renderer"]],
+  ["src/app/autosave-lifecycle.ts", ["interactions", "runtime", "save"], ["desktop_renderer"]],
   // Save specs intentionally run nothing locally (browser-test has no commands;
   // local handoff does not rerun browser journeys) while CI runs every-push unit and critical browser coverage.
-  ["tests/e2e/specs/save-persistence.spec.ts", ["browser-test"], []],
+  ["tests/e2e/specs/save-persistence.spec.ts", ["browser-test"], ["desktop_renderer"]],
   ["scripts/sync-generated.mjs", ["assets", "tooling"], ["assets"]],
   ["scripts/prepare-assets.mjs", ["assets", "tooling"], ["assets", "desktop_renderer"]],
   ["scripts/check-prepared-assets.mjs", ["assets", "tooling"], ["assets"]],
@@ -97,8 +97,12 @@ const PATH_CASES: Array<[string, string[], string[]]> = [
   ["desktop/main.cjs", ["desktop"], ["desktop", "desktop_renderer"]],
   ["src/lib/platform.ts", ["desktop", "runtime"], ["desktop", "desktop_renderer"]],
   ["src/App.tsx", ["runtime"], ["desktop_renderer"]],
-  ["src/app/app-shell.ts", ["runtime"], ["desktop_renderer"]],
-  ["src/lib/battle/damage-calc.ts", ["runtime"], []],
+  ["src/app/app-shell.ts", ["interactions", "runtime"], ["desktop_renderer"]],
+  ["src/lib/battle/damage-calc.ts", ["runtime"], ["desktop_renderer"]],
+  ["src/features/alchemy/run-loop/battle/battle-card-play.ts", ["interactions", "runtime"], ["desktop_renderer"]],
+  ["src/lib/image-preload.ts", ["interactions", "runtime"], ["desktop_renderer"]],
+  ["src/lib/platform-save-backend.ts", ["interactions", "runtime", "save"], ["desktop_renderer"]],
+  ["tests/interaction/battle.dom.test.tsx", ["interactions", "unit-test"], ["desktop_renderer"]],
   ["vite.config.ts", ["tooling"], ["desktop", "desktop_renderer"]],
   ["scripts/build-verified.mjs", ["tooling"], ["desktop", "desktop_renderer"]],
   ["scripts/lib/vite-chunks.mjs", ["tooling"], ["desktop", "desktop_renderer"]],

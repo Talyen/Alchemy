@@ -213,6 +213,7 @@ jobs:
         env:
           CI: true
           PLAYWRIGHT_ELECTRON_FULL: "1"
+          ALCHEMY_INTERACTION_TIER: nightly
 
       - name: Summarize Electron e2e
         id: playwright-summary
@@ -283,15 +284,29 @@ jobs:
       - uses: ./.github/actions/setup
 
       - run: mkdir -p reports
-      - name: Unit tests with coverage (thresholds in vitest.config.ts)
+      - name: Unit tests with coverage and deeper interaction sequences
         run: npm run test:coverage
+        env:
+          ALCHEMY_INTERACTION_TIER: nightly
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: failure()
         with:
           name: coverage-report
-          path: coverage/
+          path: |
+            coverage/
+            reports/runs/
+            reports/compact/
           retention-days: 1
+
+      - name: Retain interaction seed manifests
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: interaction-seeds-nightly
+          path: reports/runs/**/interaction/*-seeds.json
+          retention-days: 1
+          if-no-files-found: ignore
 
   mutation:
     name: Battle mutation

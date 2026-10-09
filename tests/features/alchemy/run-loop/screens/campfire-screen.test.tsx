@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { CampfireScreen } from "@/features/alchemy/run-loop/screens/campfire-screen";
 import { emptyAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
 import { cardById } from "@/lib/game-data";
@@ -13,56 +14,73 @@ vi.mock(
   "@/features/alchemy/shared/ui/cards/card-selection-grid",
   () => import("../../../../helpers/shop-screen-ui-mocks"),
 );
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  resetEscapeStackForTests();
+});
+const offers = [cardById["health-potion"]!, cardById["mana-potion"]!, cardById["stoneskin-potion"]!];
+function props() {
+  return {
+    playerHealth: 20,
+    maxHealth: 100,
+    healFraction: 0.3,
+    runDeck: [],
+    visit: { ...emptyAlchemyVisit(), offers },
+    potency: 0,
+    onRest: vi.fn(() => true),
+    onBrew: vi.fn(() => null),
+    onContinue: vi.fn(),
+  };
+}
 describe("Campfire Rest or Brew", () => {
   installDisabledAnimationsForTests();
-  it("allows inspecting a brew and returning to Rest without spending the visit", () => {
-    const onRest = vi.fn(() => true);
-    const onBrew = vi.fn(() => null);
-    const onContinue = vi.fn();
-    render(
-      <CampfireScreen
-        playerHealth={20}
-        maxHealth={100}
-        healFraction={0.3}
-        runDeck={[]}
-        visit={{ ...emptyAlchemyVisit(), offers: [cardById["health-potion"]!] }}
-        potency={0}
-        onRest={onRest}
-        onBrew={onBrew}
-        onContinue={onContinue}
-      />,
-    );
+  it("offers three cards without a preview and grants on selection, with concise failure feedback", () => {
+    const p = props();
+    render(<CampfireScreen {...p} />);
     fireEvent.click(screen.getByRole("button", { name: "Brew Potion" }));
+    expect(screen.getByRole("heading", { name: "Choose a Potion" })).toBeTruthy();
+    expect(screen.getAllByRole("button")).toHaveLength(3);
+    expect(screen.queryByRole("img")).toBeNull();
+    expect(screen.queryByLabelText("Brew preview")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Health Potion" }));
-    expect(screen.getByText("Added to your run deck. Available each battle.")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Back" }));
-    expect(onBrew).not.toHaveBeenCalled();
-    expect(onRest).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Rest · Recover 30 Health" })).toBeTruthy();
+    expect(p.onBrew).toHaveBeenCalledExactlyOnceWith({ kind: "new", offerIndex: 0 });
+    expect(screen.getByRole("alert").textContent).toBe("This Potion is no longer available.");
+    expect(p.onRest).not.toHaveBeenCalled();
   });
-  it("shows zero Rest healing at full Health and acknowledges a restored completed brew", () => {
-    const props = {
-      playerHealth: 100,
-      maxHealth: 100,
-      healFraction: 0.3,
-      runDeck: [],
-      potency: 0,
-      onRest: vi.fn(() => true),
-      onBrew: vi.fn(() => null),
-      onContinue: vi.fn(),
-    };
-    const { rerender } = render(<CampfireScreen {...props} visit={emptyAlchemyVisit()} />);
-    expect(screen.getByText("Health is full. Rest restores no Health.")).toBeTruthy();
-    rerender(
-      <CampfireScreen
-        {...props}
-        visit={{ ...emptyAlchemyVisit(), completed: true, result: cardById["health-potion"]! }}
-      />,
-    );
+  it("Escape returns from Potion choice to Rest without spending the visit", () => {
+    const p = props();
+    render(<CampfireScreen {...p} />);
+    fireEvent.click(screen.getByRole("button", { name: "Brew Potion" }));
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.getByRole("button", { name: "Rest" })).toBeTruthy();
+    expect(p.onBrew).not.toHaveBeenCalled();
+    expect(p.onRest).not.toHaveBeenCalled();
+  });
+  it("opens mixing automatically and confirms two ingredients without a price", () => {
+    const p = props();
+    render(<CampfireScreen {...p} runDeck={offers.slice(0, 2)} />);
+    fireEvent.click(screen.getByRole("button", { name: "Brew Potion" }));
+    expect(screen.getByRole("heading", { name: "Mix Potion" })).toBeTruthy();
+    expect(screen.queryByText("Choose a Potion")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Strengthen" })).toBeNull();
+    const mix = screen.getByRole("button", { name: "Mix" }) as HTMLButtonElement;
+    expect(mix.disabled).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Health Potion" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mana Potion" }));
+    expect(screen.getByLabelText("Brew preview")).toBeTruthy();
+    fireEvent.click(mix);
+    expect(p.onBrew).toHaveBeenCalledExactlyOnceWith({ kind: "combine", indices: [0, 1] });
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(screen.getByRole("button", { name: "Rest" })).toBeTruthy();
+  });
+  it("shows the restored result and Continue without allowing another action", () => {
+    const p = props();
+    render(<CampfireScreen {...p} visit={{ ...p.visit, completed: true, result: offers[0]! }} />);
+    expect(screen.getByRole("button", { name: "Health Potion" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Brew Potion" })).toBeNull();
-    expect(screen.getByRole("status").textContent).toContain("Potion brewed");
+    expect(screen.queryByRole("button", { name: "Rest" })).toBeNull();
+    expect(screen.queryByText(/Potion brewed/)).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    expect(props.onContinue).toHaveBeenCalledOnce();
+    expect(p.onContinue).toHaveBeenCalledOnce();
   });
 });

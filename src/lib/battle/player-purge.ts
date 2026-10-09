@@ -1,7 +1,7 @@
 import { beneficialPlayerStatusIds } from "@/lib/game-data";
 import { getBattleRng, pickRandom } from "@/lib/rng";
 import { removePlayerArmor } from "./status-helpers";
-import { applyBlockDepletionForgeReward } from "./status-player";
+import { applyBlockDepletionRewards } from "./status-player";
 import { applyArmorLossAttackRetaliation } from "./player-defensive-reactions";
 import type { BattleState, CombatTextEvent } from "./types";
 import { setPlayerStatus } from "./status-state";
@@ -18,7 +18,7 @@ export function purgeOnePlayerBenefit(
       ? removePlayerArmor(state, state.playerStatuses.armor, combatTexts)
       : setPlayerStatus(state, target, 0);
   combatTexts.push({ target: "player", kind: "notice", stat: target, text: "Purged", signal: "purge" });
-  if (target === "block") nextState = applyBlockDepletionForgeReward(state, nextState, combatTexts);
+  if (target === "block") nextState = applyBlockDepletionRewards(state, nextState, combatTexts);
   // Both callers are enemy attack reactions. Capture the purged Armor before
   // Reactive Guard or Armored Surge can replace it.
   return {

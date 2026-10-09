@@ -115,7 +115,12 @@ export function applyCardHitReactions(
     );
   }
 
-  if (modifiedDamage > 0 && companionAttack && eligibility.enemyCC.freezeSkipTurns > 0) {
+  if (
+    modifiedDamage > 0 &&
+    companionAttack &&
+    eligibility.enemyCC.freezeSkipTurns > 0 &&
+    eligibility.talentEffects.companionFreezeDamageVsFrozen > 0
+  ) {
     nextState = resolveFollowUpHit(
       nextState,
       {

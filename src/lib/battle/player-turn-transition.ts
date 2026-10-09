@@ -10,7 +10,7 @@ import { CARDS_PER_TURN, MAX_HAND_SIZE } from "../game-constants";
 import { addPlayerStatusWithCombatText, applyHealingWithCombatText, gainManaWithCombatText } from "./player-rewards";
 import { halveRounded } from "./amount-helpers";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
-import { applyBlockDepletionForgeReward, applyCleanseHeals, restoreSpentPlayerForge } from "./status-player";
+import { applyBlockDepletionRewards, applyCleanseHeals, restoreSpentPlayerForge } from "./status-player";
 import { drawCards, applyDrawResult, drawFromState } from "./draw";
 import { applyEmergencyWish } from "./wish";
 import { applyCardEffects } from "./effect-handlers";
@@ -222,7 +222,7 @@ export function advanceToPlayerTurn(
       combatTexts,
     );
   }
-  nextState = applyBlockDepletionForgeReward(beforeTurnReset, nextState, combatTexts);
+  nextState = applyBlockDepletionRewards(beforeTurnReset, nextState, combatTexts);
   nextState = resolvePendingBattleReactions(restoreSpentPlayerForge(nextState, combatTexts), combatTexts);
   if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
   if (

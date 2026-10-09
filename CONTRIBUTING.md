@@ -196,3 +196,21 @@ Follow [REFERENCE.md](./Docs/REFERENCE.md#failure-first-triage). Start with the 
 ## Changelog and patch notes
 
 Changelog updates happen at release only. Player patch notes are generated from Conventional Commits, changed paths, and an optional `User-Facing: yes` or `User-Facing: no` trailer. Release-time details live in [RELEASE.md](./Docs/RELEASE.md).
+
+### Connected interaction progress tests
+
+[Interaction coverage](./tests/interaction/README.md) maps every screen to its
+lifecycle family and documents deterministic replay. `npm run test:interactions`
+runs the seven connected families with 16 fixed seeds and up to 40 actions each.
+The normal CI unit suite includes those cases. Nightly unit coverage sets
+`ALCHEMY_INTERACTION_TIER=nightly` for 128 distinct seeds and up to 120 actions;
+it does not rerun push seeds. Failures and seed manifests live in the existing
+run-attributed reports directory. `--family`, `--seed`, `--replay`, `--day` and
+`--shrink` support reproduction and bounded trace reduction.
+
+Use these tests for asynchronous completion, cancellation and stale callbacks;
+retain real commands and gate logic. Replace low-value helper-call assertions
+when connected outcome coverage supersedes them. Electron interaction canaries
+run in the existing desktop CI tier, with deeper variants nightly. No additional
+browser engine or worker/shard expansion is required. Local browser/Electron,
+build and full-static execution still requires an explicit request.

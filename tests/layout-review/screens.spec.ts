@@ -495,13 +495,13 @@ test("services crafting and dense recap", async () => {
   );
   await startAtDestination(page, { gold: 9999, runDeck: potions }, { forceDestination: "Alchemist's Shop" });
   await click("Alchemist's Shop");
-  await page.getByRole("button", { name: /^Brew Potion/ }).click();
+  await page.getByRole("button", { name: /^Mix Potion/ }).click();
   await shot("alchemist-mix-picker");
   const picks = page.getByRole("button", { name: /^Select / });
   await picks.nth(0).click();
   await picks.nth(1).click();
   await shot("alchemist-mix-selected");
-  await page.getByRole("button", { name: /^Brew(?: ·.*)?$/ }).click();
+  await page.getByRole("button", { name: /^Mix(?: ·.*)?$/ }).click();
   await expect(page.getByRole("button", { name: "Continue", exact: true })).toBeVisible();
   await shot("alchemist-mix-result");
   await injectHomestead(page, { ownedTrinketIds: ["tattered-pages", "brass-censer", "companions-collar"] });

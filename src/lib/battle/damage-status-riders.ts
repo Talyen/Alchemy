@@ -113,7 +113,7 @@ export function applyPoisonTalentRiders(
 ): BattleState {
   let nextState = state;
   if (nextState.talentEffects.poisonStripArmor) {
-    nextState = reduceEnemyArmor(nextState, 1);
+    nextState = removeEnemyArmorWithFeedback(nextState, 1, combatTexts);
   }
   if (damage > 0) {
     const leechChances = [
@@ -301,7 +301,7 @@ function applyPhysicalStatusRider(
     nextState = removeEnemyArmorWithFeedback(nextState, forgeBeforeHit, combatTexts);
   }
   if (state.talentEffects.physicalStripArmorWhileBlocked && state.playerStatuses.block > 0) {
-    nextState = reduceEnemyArmor(nextState, 2);
+    nextState = removeEnemyArmorWithFeedback(nextState, 2, combatTexts);
   }
   return nextState;
 }
