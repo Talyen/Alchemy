@@ -135,8 +135,12 @@ for (const kind of ["purchase", "reward", "victory"] as const) {
         app = await launchElectronApp({ packagedRenderer: true, profile });
         page = await getElectronMainWindow(app);
         const resumedErrors = failOnRuntimeErrors(page);
-        await expect(page.getByRole("button", { name: "Continue", exact: true })).toBeVisible();
-        await page.getByRole("button", { name: "Continue", exact: true }).click();
+        await expect(
+          page.getByRole("heading", {
+            name: kind === "purchase" ? "Card Shop" : kind === "reward" ? "Choose Destination" : "Victory",
+            exact: true,
+          }),
+        ).toBeVisible();
         await expect(page.getByText("Saving…", { exact: true })).toHaveCount(0);
         const restored = saved(profile);
         expect(restored.gold).toBe(completed.gold);
@@ -198,7 +202,7 @@ for (const stage of [
       app = await launchElectronApp({ packagedRenderer: true, profile });
       page = await getElectronMainWindow(app);
       const resumedErrors = failOnRuntimeErrors(page);
-      await page.getByRole("button", { name: "Continue", exact: true }).click();
+      await expect(page.getByRole("heading", { name: "Card Shop", exact: true })).toBeVisible();
       const shop = new ShopPage(page);
       if (!acquired) {
         await shop.buyCard();
