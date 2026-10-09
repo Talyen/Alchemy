@@ -185,6 +185,6 @@ describe("player control immunity feedback", () => {
       blockedTexts,
       { canDodge: true },
     );
-    expect(blockedTexts.some((event) => event.signal === "immune")).toBe(false);
+    expect(blockedTexts.some((event) => event.kind === "notice" && event.signal === "immune")).toBe(false);
   });
 });

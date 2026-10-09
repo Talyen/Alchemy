@@ -4,7 +4,7 @@ import { it } from "vitest";
 import { createSeededRng } from "@/lib/rng";
 import { ensureRunId } from "../../scripts/lib/verification/current-run.mjs";
 
-export const FAMILIES = ["battle", "navigation", "visits", "armory", "overlays", "persistence", "startup"] as const;
+const FAMILIES = ["battle", "navigation", "visits", "armory", "overlays", "persistence", "startup"] as const;
 export type Family = (typeof FAMILIES)[number];
 export interface Scenario {
   fixture: unknown;

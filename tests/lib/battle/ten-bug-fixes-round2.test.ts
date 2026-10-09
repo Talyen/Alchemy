@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { resolveTypedEnemyHit } from "@/lib/battle/typed-hit-resolution";
 import { applyDamageStatuses, applyPoisonTalentRiders } from "@/lib/battle/damage-status-riders";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
-import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { prepareWildwoodBossInDraft } from "@/features/alchemy/run-loop/run/wildwood-commands";
 import { SIMPLE_HANDLERS } from "@/lib/battle/effect-handlers/simple-handlers";
@@ -22,6 +21,7 @@ import {
   dispatchRunSessionCommand,
   rejectCommand,
 } from "@/features/alchemy/shared/stores/run-session-command";
+import { setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 
 describe("Combat feedback and reward regressions", () => {
@@ -143,7 +143,7 @@ describe("Combat feedback and reward regressions", () => {
         (draft) => {
           draft.run.activeRun.contentSystemType = CONTENT_SYSTEMS.WILDWOOD;
           draft.run.activeRun.runDeck = Array.from({ length: 9 }, (_, uid) => ({ ...cardById["slash"]!, uid }));
-          draft.session.hasActiveRun = true;
+          setHasActiveRun(draft, true);
           draft.session.activity = { kind: "wildwood-removal" };
           draft.session.wildwoodDraft = {
             ...createInitialWildwoodDraftState("knight", () => 0.5),
@@ -205,7 +205,13 @@ describe("Combat feedback and reward regressions", () => {
       const testCard = makeTestCard();
       applyCardHitReactions(
         state,
-        { card: testCard, effect: { kind: "damage", damageType: "physical", amount: 5 }, origin: "companion" },
+        {
+          source: "card-attack",
+          resolvedDamage: 5,
+          card: testCard,
+          effect: { kind: "damage", damageType: "physical", amount: 5 },
+          origin: "companion",
+        },
         {
           state,
           healthDamage: 5,
@@ -233,7 +239,13 @@ describe("Combat feedback and reward regressions", () => {
       const testCard = makeTestCard();
       applyCardHitReactions(
         state,
-        { card: testCard, effect: { kind: "damage", damageType: "physical", amount: 5 }, origin: "companion" },
+        {
+          source: "card-attack",
+          resolvedDamage: 5,
+          card: testCard,
+          effect: { kind: "damage", damageType: "physical", amount: 5 },
+          origin: "companion",
+        },
         {
           state,
           healthDamage: 5,

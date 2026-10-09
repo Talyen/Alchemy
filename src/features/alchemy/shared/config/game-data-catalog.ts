@@ -2,7 +2,6 @@ export {
   alchemistShopBg,
   battleManaCrystal,
   campfire,
-  alchemyLab,
   transmutationCrucible,
   cardById,
   cardLibrary,

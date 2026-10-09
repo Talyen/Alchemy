@@ -94,7 +94,7 @@ export function BrewPotionPanel({
       ) : (
         <CardSelectionGrid
           items={items}
-          pageSize={kind === "new" ? items.length : undefined}
+          {...(kind === "new" ? { pageSize: items.length } : {})}
           page={page}
           onPageChange={setPage}
           selectedIndex={items.findIndex((item) => item.index === a)}

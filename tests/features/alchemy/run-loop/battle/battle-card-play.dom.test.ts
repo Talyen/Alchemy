@@ -474,7 +474,7 @@ describe("createBattleCardPlay", () => {
       );
       const { ctx, session, transferDeps } = makeDeps();
       vi.spyOn(ctx.playback, "waitForFrame").mockResolvedValue(true);
-      const finish: (() => void)[] = [];
+      const finish: Array<() => void> = [];
       const deps = makeDrawSequenceDeps({
         playback: ctx.playback,
         animateDrawnHand: () =>
@@ -486,7 +486,7 @@ describe("createBattleCardPlay", () => {
       });
       vi.mocked(transferDeps.getDrawSequenceDeps).mockReturnValue(deps);
       const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
-      for (const card of cards) clickCard(handleCardClick, card, 0);
+      for (const card of cards) clickCard(handleCardClick, { ...card, uid: card.uid! }, 0);
       await vi.waitFor(() => expect(finish).toHaveLength(count));
       expect(readBattle(defaultGameSession).battleState.mana).toBe(0);
       expect(battlePresentation.getState().cardTransferInProgress).toBe(true);

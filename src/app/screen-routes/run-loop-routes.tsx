@@ -2,7 +2,7 @@ import { defaultGameSession } from "@/app/application-session";
 import { TransmutationScreen } from "@/features/alchemy/run-loop/screens/transmutation-screen";
 import { initializeAlchemyVisit } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
 import { labyrinthCampfireHealing } from "@/lib/content-systems/labyrinth/room-rules";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { EnemyInspectionOverlay } from "@/features/alchemy/shared/ui/inspection/enemy-inspection-overlay";
 import {
@@ -303,13 +303,11 @@ function CorruptionScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 function TransmutationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.transmutation;
   const r = useTransmutationScreenData();
-  const [initialized, setInitialized] = useState(false);
   useEffect(() => {
     initializeAlchemyVisit("transmutation", defaultGameSession);
-    setInitialized(true);
   }, []);
   // Empty offers before initialization do not mean the visit is unusable.
-  if (!initialized) return null;
+  if (!r.visit.completed && r.visit.offers.length === 0) return null;
   return (
     <TransmutationScreen
       runDeck={r.runDeck}
