@@ -381,7 +381,7 @@ describe("createBattleCardPlay", () => {
   });
 
   it("keeps the hand closed once End Turn has started", async () => {
-    const card = makeTestCard({ id: "slash", uid: 1, cost: 0 });
+    const card = { ...makeTestCard({ id: "slash", cost: 0 }), uid: 1 };
     givenBattle(makeTestBattleState({ hand: [card] }));
     const { ctx, session, transferDeps } = makeDeps({
       playback: (() => {

@@ -71,7 +71,7 @@ export const DEFAULT_TALENT_EFFECTS = {
   forgeOnBurnCard: 0,
   forgeOnBurnCardChance: 0,
   burnCardPlayTwiceChance: 0,
-  cardLeechBonusPercent: 0,
+  cardLeechHealingBonus: 0,
   companionNextAttackOnPhysical: 0,
   afflictionLeechBonusPercent: 0,
   manaAfterEmptyTurn: 0,

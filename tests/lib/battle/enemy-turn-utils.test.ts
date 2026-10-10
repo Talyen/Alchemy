@@ -128,7 +128,7 @@ describe("Health threshold rewards", () => {
     const mid = checkHealthThresholds(80, 40, state, texts);
     expect(mid.playerStatuses).toMatchObject({ block: 4, armor: 6 });
     const low = checkHealthThresholds(40, 20, mid, texts);
-    expect(low.playerStatuses).toMatchObject({ block: 4, armor: 10 });
+    expect(low.playerStatuses).toMatchObject({ block: 4, armor: 9 });
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 4 });
     expect(checkHealthThresholds(20, 19, low, texts)).toBe(low);
     expect(state.playerStatuses).toMatchObject({ block: 0, armor: 0 });

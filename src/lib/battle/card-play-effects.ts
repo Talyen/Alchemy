@@ -226,7 +226,8 @@ function applyNatureCardPlayTalents(
   if (nextState.talentEffects.healOnNatureCard > 0) {
     nextState = applyHealingWithCombatText(nextState, nextState.talentEffects.healOnNatureCard, combatTexts);
   }
-  if (nextState.gearEffects.armorOnNatureCard > 0) {
+  if (nextState.gearEffects.armorOnNatureCard > 0 && !nextState.flags.ironrootArmorUsedThisTurn) {
+    nextState = writeCombatFlag(nextState, "ironrootArmorUsedThisTurn", true);
     nextState = applyArmorReward(nextState, nextState.gearEffects.armorOnNatureCard, combatTexts);
   }
   return nextState;

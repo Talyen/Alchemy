@@ -46,15 +46,21 @@ describe("appliesFightPacingFromEnv", () => {
 });
 
 describe("fight pacing multipliers", () => {
-  it("accelerates damage on both sides only after the target duration, without accelerating resources", () => {
-    const atTarget = pacedState({ turn: 7 });
-    const late = { ...atTarget, turn: 11 };
+  it.each([
+    { enemyType: "normal" as const, target: 7, late: 11 },
+    { enemyType: "elite" as const, target: 12, late: 16 },
+    { enemyType: "boss" as const, target: 20, late: 23 },
+  ])("preserves player/resource pacing while limiting $enemyType enemy escalation", ({ enemyType, target, late }) => {
+    const atTarget = pacedState({ turn: target, currentEnemy: { enemyType } });
+    const overrun = { ...atTarget, turn: late };
     for (const side of ["player", "enemy"] as const) {
       expect(paceCombatDamage(atTarget, 10, side)).toBe(paceCombatMagnitude(atTarget, 10, side));
-      expect(paceCombatDamage(late, 10, side)).toBe(paceCombatMagnitude(late, 10, side) * 2);
-      expect(paceCombatDamage({ ...late, appliesFightPacing: false }, 10, side)).toBe(10);
-      expect(paceCombatDamage(late, 10, side, false)).toBe(10);
+      expect(paceCombatMagnitude(overrun, 10, side)).toBe(12);
+      expect(paceCombatDamage({ ...overrun, appliesFightPacing: false }, 10, side)).toBe(10);
+      expect(paceCombatDamage(overrun, 10, side, false)).toBe(10);
     }
+    expect(paceCombatDamage(overrun, 10, "player")).toBe(24);
+    expect(paceCombatDamage(overrun, 10, "enemy")).toBe(enemyType === "boss" ? 24 : 17);
   });
   it("grants no comeback when HP fractions are even", () => {
     expect(fightPacingComebackMultiplier("player", evenMetrics)).toBe(1);

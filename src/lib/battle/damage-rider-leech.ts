@@ -79,23 +79,20 @@ export function applyLeechHealing(
   return healing > 0 && !isPlayerDefeated(restored) ? applyLeechManaRider(restored, combatTexts) : restored;
 }
 
-/** Shared base scaler: desperate → gear → explicit card share → blood-feast. */
-function scaleLeechBase(state: BattleState, amount: number, cardLeechFraction = 0): number {
+/** Shared base scaler: desperate → gear → explicit card bonus → blood-feast. */
+function scaleLeechBase(state: BattleState, amount: number, cardLeech = false): number {
   const base = scaledGearLeechHeal(applyDesperateLeechBonus(state, amount), state.gearEffects);
-  return scalePlayerLeechHeal(
-    state,
-    applyPercentBonus(base, state.talentEffects.cardLeechBonusPercent * cardLeechFraction, PERCENT_DENOMINATOR),
-  );
+  return scalePlayerLeechHeal(state, base + (cardLeech ? state.talentEffects.cardLeechHealingBonus : 0));
 }
 
 export function applyScaledLeechHealing(
   state: BattleState,
   rawAmount: number,
   combatTexts: CombatTextEvent[],
-  options: { cardHealing?: boolean; afflicted?: boolean; cardLeechFraction?: number } = {},
+  options: { cardHealing?: boolean; afflicted?: boolean; cardLeech?: boolean } = {},
 ): BattleState {
   if (rawAmount <= 0) return state;
-  return applyLeechHealing(state, scaleLeechBase(state, rawAmount, options.cardLeechFraction), combatTexts, options);
+  return applyLeechHealing(state, scaleLeechBase(state, rawAmount, options.cardLeech), combatTexts, options);
 }
 
 /** Thunderstone is a shallow trinket hit: restore its actual Health damage with ordinary Leech gain riders. */
@@ -122,7 +119,7 @@ export function applyLeechHitHealing(
 ) {
   if (damage <= 0) return state;
 
-  const healAmount = scaleLeechBase(state, computeLeechHeal(damage), cardLeech ? 1 : 0);
+  const healAmount = scaleLeechBase(state, computeLeechHeal(damage), cardLeech);
   return healAmount > 0 ? applyLeechHealing(state, healAmount, combatTexts, { cardHealing }) : state;
 }
 
@@ -192,7 +189,7 @@ export function payPendingBleedLeech(
   if (leechPaid > 0) {
     nextState = applyScaledLeechHealing(nextState, computeLeechHeal(leechPaid), combatTexts, {
       afflicted,
-      cardLeechFraction: Math.min(1, state.pendingCardBleedLeechHealing / leechAmount),
+      cardLeech: state.pendingCardBleedLeechHealing > 0,
     });
   }
   return nextState;

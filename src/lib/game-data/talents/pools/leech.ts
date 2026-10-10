@@ -7,9 +7,9 @@ export const leechTalents = [
   t(
     "leech-first-double",
     "Deep Siphon",
-    "Leech from your cards restores 10% more Health",
+    "Leech from your cards restores 1 additional Health",
     "Sword",
-    setEffect("cardLeechBonusPercent", 10),
+    setEffect("cardLeechHealingBonus", 1),
   ),
   t(
     "leech-blood-debt",

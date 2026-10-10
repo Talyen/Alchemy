@@ -336,7 +336,10 @@ export function applyArmorStatusEffect(
 ): BattleState {
   if (amount <= 0) return state;
   const armorBefore = state.playerStatuses.armor;
-  amount += state.gearEffects.flatArmorGained;
+  if (state.gearEffects.flatArmorGained > 0 && !state.flags.layeredArmorUsedThisTurn) {
+    amount += state.gearEffects.flatArmorGained;
+    state = setFlag(state, "layeredArmorUsedThisTurn", true);
+  }
   if (state.playerHealth < state.playerMaxHealth / HALF_DIVISOR)
     amount = applyPercentBonus(amount, state.talentEffects.armorLowHealthBonusPercent);
   if (rollBattleChance(state.talentEffects.armorDoubleChance, state)) amount *= 2;

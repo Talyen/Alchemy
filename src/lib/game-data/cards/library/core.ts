@@ -58,7 +58,7 @@ export const coreCards: BattleCard[] = [
     consume: true,
     effects: [
       { kind: "damage", damageType: "burn", amount: 7 },
-      { kind: "lose-max-mana", amount: 1 },
+      { kind: "lose-mana", amount: 1 },
     ],
   }),
   {

@@ -51,7 +51,7 @@ describe("combat interaction bug regressions", () => {
     expect(presenter.shakePlayer).not.toHaveBeenCalled();
   });
 
-  it("Meteor's Mana Crystal cost does not shake the hero's portrait", () => {
+  it("Meteor's temporary Mana loss does not shake the hero's portrait", () => {
     const card = cardById.meteor!;
     const state = patchBattleState({
       hand: [card],
@@ -62,7 +62,7 @@ describe("combat interaction bug regressions", () => {
       rng: () => 0.99,
     });
     const result = playBattleCardResolved(state, card.id, 0);
-    expect(result.state.maxMana).toBe(2);
+    expect(result.state.maxMana).toBe(3);
     expect(result.state.playerHealth).toBe(state.playerHealth);
     expect(result.combatTexts).toContainEqual(expect.objectContaining({ stat: "mana", amount: 1 }));
     const presenter = { showCombatTexts: vi.fn(), shakeEnemy: vi.fn(), shakePlayer: vi.fn() };

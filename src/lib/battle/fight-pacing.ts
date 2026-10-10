@@ -122,7 +122,8 @@ export function paceCombatDamage(
 ): number {
   const paced = paceCombatMagnitude(state, amount, side, applyFightPacing);
   if (!applyFightPacing || !state.appliesFightPacing || amount <= 0) return paced;
-  const config = FIGHT_PACING.clockByEnemyType[state.currentEnemy.enemyType];
-  const overrun = Math.max(0, state.turn - config.targetDuration);
-  return Math.round(paced * (1 + (overrun / config.damageOverrunSpan) ** 2));
+  const config = FIGHT_PACING.damageRampByEnemyType[state.currentEnemy.enemyType];
+  const overrun = Math.max(0, state.turn - config.startRound);
+  const span = side === "player" ? config.playerSpan : config.enemySpan;
+  return Math.round(paced * (1 + (overrun / span) ** 2));
 }

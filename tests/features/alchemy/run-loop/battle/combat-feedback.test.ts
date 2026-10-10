@@ -42,7 +42,7 @@ describe("combat feedback lifetime", () => {
     feedback.showCombatTexts([...hit]);
     expect(feedback.store.getState().enemyImpactCue).toMatchObject({ recoil: false, amount: 5 });
     expect(feedback.store.getState().enemyImpactCue!.sequence).toBeGreaterThan(first.sequence);
-    expect(feedback.store.getState().floatingCombatBursts[0]!.entries[0]!.amount).toBe(10);
+    expect(feedback.store.getState().floatingCombatBursts[0]!.entries[0]).toMatchObject({ kind: "damage", amount: 10 });
     vi.advanceTimersByTime(COMBAT_RECOIL_COOLDOWN_MS);
     feedback.showCombatTexts([...hit]);
     expect(feedback.store.getState().enemyImpactCue!.recoil).toBe(true);

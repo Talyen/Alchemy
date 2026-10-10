@@ -99,7 +99,7 @@ describe("encounter event regressions", () => {
         talentEffects: {
           ...state.talentEffects,
           physicalLeechVsStunned: true,
-          cardLeechBonusPercent: 25,
+          cardLeechHealingBonus: 1,
           cleanseOnCardOverheal: true,
         },
         hand: [card],

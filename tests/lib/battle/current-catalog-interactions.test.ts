@@ -2,11 +2,16 @@ import { describe, expect, it } from "vitest";
 import { cardById, computeTalentEffects } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
-import { patchBattleState } from "../../fixtures/battle";
+import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("current catalog interactions", () => {
-  it.each([7, 9, 10])("Mana Flare respects %i starting enemy Block after Meteor's hit", (block) => {
-    const card = cardById["meteor"]!;
+  it.each([7, 9, 10])("Mana Flare respects %i starting enemy Block after a Crystal-spending hit", (block) => {
+    const card = makeTestCard({
+      effects: [
+        { kind: "damage", damageType: "burn", amount: 7 },
+        { kind: "lose-max-mana", amount: 1 },
+      ],
+    });
     const state = patchBattleState({
       hand: [card],
       maxMana: 3,

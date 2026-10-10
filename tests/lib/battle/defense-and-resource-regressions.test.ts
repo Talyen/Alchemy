@@ -89,7 +89,7 @@ describe("defense and resource regressions", () => {
     expect(result.playerStatuses.armor).toBe(2);
   });
 
-  it("Meteor preserves overflow Mana when no Mana Crystal can be lost", () => {
+  it("Meteor spends temporary overflow Mana without reducing Mana Crystals", () => {
     const card = cardById.meteor!;
     const state = patchBattleState({
       hand: [card],
@@ -99,6 +99,6 @@ describe("defense and resource regressions", () => {
     });
     const result = playBattleCardResolved(state, card.id, 0).state;
     expect(result.maxMana).toBe(1);
-    expect(result.mana).toBe(3);
+    expect(result.mana).toBe(2);
   });
 });

@@ -127,8 +127,8 @@ describe("thematic card effects", () => {
 
   it("Dark Pact deals Burn, pays Health, and grants one Wish without drawing", () => {
     const result = play("dark-pact", { playerHealth: 10, deck: [makeTestCard({ id: "draw-me" })] });
-    expect(result.enemyHealth).toBe(99);
-    expect(result.enemyStatuses.burn).toBe(1);
+    expect(result.enemyHealth).toBe(98);
+    expect(result.enemyStatuses.burn).toBe(2);
     expect(result.playerHealth).toBe(9);
     expect(result.wishOptions).not.toBeNull();
     expect(result.hand).toHaveLength(0);

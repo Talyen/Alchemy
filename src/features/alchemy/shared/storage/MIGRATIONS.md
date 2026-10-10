@@ -8,6 +8,12 @@ Leech. New snapshots preserve that attribution through ticks, detonations, and
 resume so Deep Siphon applies only to card-origin Leech. This additive field does
 not change the save version.
 
+Battle flags include independent per-turn Layered and Ironroot Armor allowances.
+Current snapshots preserve spent allowances through resume; omitted flags default
+to unused through the combat-flag defaults. Deep Siphon uses
+`cardLeechHealingBonus` (flat Health); the retired percentage field is ignored.
+These additive defaults do not change the save version.
+
 There are currently no historical player saves that must be preserved. Remove code
 that exists only to retain obsolete saved mechanics rather than maintaining parallel
 rulesets. Resumed battles must use current rules; restart or exit an incompatible

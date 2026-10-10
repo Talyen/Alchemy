@@ -24,7 +24,7 @@ describe("gear generation", () => {
     const rng = createSeededRng(17);
     const choices = generateLootGearChoices(4, rng, weights, new Set(), ["ruby-ring", "emerald-ring"], fillCount);
     const expected = [
-      { definitionId: "ruby-ring-basic", affixes: [{ id: "burn-per-mana", value: 10 }] },
+      { definitionId: "ruby-ring-basic", affixes: [{ id: "burn-per-mana", value: 5 }] },
       {
         definitionId: "emerald-ring-astral",
         affixes: [

@@ -1,4 +1,6 @@
 export const FLAG_DEFINITIONS = {
+  layeredArmorUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
+  ironrootArmorUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   shatterUsed: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   wildfireUsed: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   hawkEyeReady: { default: false as const, secondaryValue: null, lifetime: "until-consumed" },

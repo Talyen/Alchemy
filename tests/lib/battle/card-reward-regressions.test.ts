@@ -73,7 +73,7 @@ describe("card reward interactions", () => {
       enemyHealth: 100,
       enemyMaxHealth: 100,
       rng: () => 0.99,
-      talentEffects: { holyLifestealPercent: 10, cardLeechBonusPercent: 25 },
+      talentEffects: { holyLifestealPercent: 10, cardLeechHealingBonus: 1 },
       gearEffects: { leechHealBonusPercent: 50 },
     });
     const result = dealDamage(state, makeTestCard({ effects: [{ kind: "damage", damageType: "holy", amount: 20 }] }));
