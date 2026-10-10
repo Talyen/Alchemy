@@ -177,7 +177,7 @@ function CardHoverPopup({
       triggerRef={triggerRef}
       plasmaColorPair={plasmaColorPair}
       {...(padding !== undefined ? { padding } : {})}
-      {...(card.corrupted ? { card } : {})}
+      card={card}
     />
   );
 }

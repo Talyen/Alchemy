@@ -56,4 +56,23 @@ describe("Brew selection safety", () => {
     fireEvent.click(screen.getByRole("button", { name: "Mix" }));
     expect(onConfirm).not.toHaveBeenCalled();
   });
+  it("disables the confirmation button when a progress save is pending", () => {
+    const deck = [cardById["health-potion"]!, cardById["mana-potion"]!];
+    const onConfirm = vi.fn(() => null);
+    render(
+      <BrewPotionPanel
+        kind="combine"
+        deck={deck}
+        onConfirm={onConfirm}
+        onBack={() => {}}
+        isProgressSavePending={() => true}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Select Health Potion" }));
+    fireEvent.click(screen.getByRole("button", { name: "Select Mana Potion" }));
+    const button = screen.getByRole("button", { name: "Mix" }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    fireEvent.click(button);
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
 });

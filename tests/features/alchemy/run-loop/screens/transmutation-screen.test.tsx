@@ -174,6 +174,7 @@ describe("Transmutation flow", () => {
         <Harness afterProgressSaved={(callback) => pending.push(callback)} />
       </StrictMode>,
     );
+    expect(screen.queryByRole("heading")).toBeNull();
     for (const callback of pending) callback();
     expect(onContinue).toHaveBeenCalledOnce();
     expect(onExchange).not.toHaveBeenCalled();

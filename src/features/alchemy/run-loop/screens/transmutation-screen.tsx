@@ -30,8 +30,9 @@ export function TransmutationScreen({
 }) {
   const [page, setPage] = useState(0);
   const [error, setError] = useState("");
+  const [committing, setCommitting] = useState(false);
   const continued = useRef(false);
-  const committing = useRef(false);
+  const committingRef = useRef(false);
   const continuationRequest = useRef({ revision: 0 });
   const selection = visit.transmutation;
   const canExchange = (card: BattleCard) => canTransmuteCard(selection?.choices ?? [], card);
@@ -59,7 +60,7 @@ export function TransmutationScreen({
   }, [completed, available, onContinue, afterProgressSaved]);
 
   function select(command: TransmutationSelectionCommand) {
-    if (locked || committing.current || continued.current) return;
+    if (locked || committingRef.current || continued.current) return;
     if (onSelect(command)) {
       playUISound("transmuteSelect");
       setError("");
@@ -69,7 +70,7 @@ export function TransmutationScreen({
   function confirm() {
     if (
       locked ||
-      committing.current ||
+      committingRef.current ||
       continued.current ||
       staleSource ||
       selection?.sourceIndex === null ||
@@ -78,18 +79,20 @@ export function TransmutationScreen({
       !offers[selection.offerIndex]
     )
       return;
-    committing.current = true;
+    committingRef.current = true;
+    setCommitting(true);
     if (onExchange(selection.sourceIndex, selection.offerIndex)) {
       playUISound("transmuteSelect");
     } else {
-      committing.current = false;
+      committingRef.current = false;
+      setCommitting(false);
       setError("This exchange is no longer available. Choose another card.");
     }
   }
 
   if (!available && !completed) return null;
   // Completed visits resume directly onward, with no result screen.
-  if (completed && !keyword) return null;
+  if (completed && !committing) return null;
   return (
     <TitledScreenShell title="Transmutation">
       <div className="mt-5 flex flex-col items-center gap-5 text-center">

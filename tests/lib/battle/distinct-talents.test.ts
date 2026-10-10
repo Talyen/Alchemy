@@ -177,6 +177,21 @@ describe("distinct talent conditions", () => {
     expect(hit(battle({ talentEffects: initial.talentEffects }), "physical").playerStatuses.forge).toBe(0);
   });
 
+  it("Icebreaker awards Forge before kill epilogue so kill rewards evaluate the updated Forge", () => {
+    const initial = battle({
+      enemyHealth: 4,
+      playerStatuses: { forge: 4 },
+      talentEffects: talents("Icebreaker"),
+      gearEffects: { goldOnKillWithForge: 25 },
+      rng: () => 0,
+      enemyCC: { freezeSkipTurns: 1 },
+    });
+    const result = hit(initial, "physical", 4);
+    expect(result.enemyHealth).toBe(0);
+    expect(result.playerStatuses.forge).toBe(5);
+    expect(result.gold).toBe(25);
+  });
+
   it("Hawk Eye prepares a Crit for the next attack", () => {
     const initial = battle({ talentEffects: talents("Hawk Eye"), flags: { hawkEyeReady: true } });
     const card = cardById["serrated-arrowhead"]!;

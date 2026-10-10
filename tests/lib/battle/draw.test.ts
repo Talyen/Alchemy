@@ -135,6 +135,21 @@ describe("drawCards — edge cases", () => {
     expect(afterPlay.pendingHandCards.map((card) => card.id)).toEqual(["later"]);
   });
 
+  it("preserves reshuffled deck and cleared discard when tutoring a missing keyword card with an empty deck", () => {
+    const fireCard = makeTestCardWithId("fire", {
+      effects: [{ kind: "damage", damageType: "fire", amount: 3 }],
+    });
+    const state = makeTestBattleState({
+      deck: [],
+      discard: [fireCard],
+    });
+    const result = drawKeywordCard(state, "holy");
+    expect(result.deck).toHaveLength(1);
+    expect(result.deck[0]?.id).toBe("fire");
+    expect(result.discard).toHaveLength(0);
+    expect(result.pendingHandCards).toHaveLength(0);
+  });
+
   it("delivers waiting cards after end-turn discard before the next ordinary draw", () => {
     const hand = Array.from({ length: MAX_HAND_SIZE }, (_, i) => makeCard(`h${i}`));
     const state = makeTestBattleState({

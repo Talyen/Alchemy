@@ -161,7 +161,6 @@ function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts
     });
   }
 
-  nextState = applyHitEpilogue(nextState, previousHealth, facts.enemyWasAlive, combatTexts);
   if (
     modifiedDamage > 0 &&
     eligibility.enemyCC.freezeSkipTurns > 0 &&
@@ -173,5 +172,7 @@ function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts
     if (rollBattleChance(state.talentEffects.forgeOnPhysicalVsFrozenChance, nextState))
       nextState = addForgeToPlayer(nextState, state.talentEffects.forgeOnPhysicalVsFrozen, combatTexts);
   }
+
+  nextState = applyHitEpilogue(nextState, previousHealth, facts.enemyWasAlive, combatTexts);
   return nextState;
 }

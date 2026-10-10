@@ -3,7 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { BattleCardButton } from "@/features/alchemy/shared/ui/cards/card-button";
 import { SelectableCard } from "@/features/alchemy/shared/ui/cards/selectable-card";
-import type { BattleCard } from "@/lib/game-data/index";
+import { cardById, type BattleCard } from "@/lib/game-data/index";
+import { strengthenPotion } from "@/lib/alchemist/brewing";
 
 const card: BattleCard = {
   id: "test-card",
@@ -45,5 +46,22 @@ describe("BattleCardButton", () => {
     rerender(<SelectableCard card={card} isSelected={false} onSelect={onSelect} />);
     fireEvent.click(button);
     expect(onSelect).toHaveBeenCalledOnce();
+  });
+
+  it("renders distilled potion values with green highlighting in popup", () => {
+    const distilledHealthPotion = strengthenPotion(cardById["health-potion"]!)!;
+    render(
+      <BattleCardButton
+        card={distilledHealthPotion}
+        ariaLabel="Health Potion"
+        shimmerActive={false}
+        shimmerToken={undefined}
+      />,
+    );
+    const button = screen.getByRole("button", { name: "Health Potion" });
+    act(() => button.focus());
+    const tooltip = screen.getByRole("tooltip");
+    const greenSpan = tooltip.querySelector(".text-green-400");
+    expect(greenSpan).not.toBeNull();
   });
 });

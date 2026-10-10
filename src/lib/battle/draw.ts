@@ -179,12 +179,12 @@ export function drawKeywordCard(
   for (let index = 0; index < refilled.deck.length; index++) {
     if (cardHasKeyword(refilled.deck[index]!, keyword)) indices.push(index);
   }
-  if (indices.length === 0) return ready;
+  if (indices.length === 0) return { ...ready, deck: refilled.deck, discard: refilled.discard };
   const sampled = indices[rngInt(getBattleRng(ready), indices.length)];
-  if (sampled === undefined) return ready;
+  if (sampled === undefined) return { ...ready, deck: refilled.deck, discard: refilled.discard };
   const index = sampled;
   const deckCard = refilled.deck[index];
-  if (!deckCard) return ready;
+  if (!deckCard) return { ...ready, deck: refilled.deck, discard: refilled.discard };
   const card = { ...deckCard, uid: ready.nextCardUid };
   return reportDraw(
     ready,

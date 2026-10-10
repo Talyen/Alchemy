@@ -139,7 +139,7 @@ export function BrewPotionPanel({
             </Button>
           )}
           <Button
-            disabled={!result || !afford}
+            disabled={!result || !afford || isProgressSavePending()}
             onClick={() => {
               if (isProgressSavePending()) return;
               if (!onConfirm(operation)) setError("This brew is no longer available.");
