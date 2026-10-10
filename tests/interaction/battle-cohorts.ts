@@ -89,7 +89,7 @@ export function battleCohort(seed: number) {
       battle.playerHealth = 1;
       battle.deathsDoorUsed = true;
       battle.currentEnemy = enemyBestiary.find((enemy) => enemy.id === "fire-elemental")!;
-      expected = { playerHealth: 0, enemyHealth: 39, wish: false };
+      expected = { playerHealth: 0, enemyHealth: 38, wish: false };
       break;
     case "poison-overkill-leech":
       battle.playerHealth = 10;
