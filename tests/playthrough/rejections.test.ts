@@ -1,3 +1,6 @@
+import { offerRunChoices } from "@/app/playthrough/run-offers";
+import { createChoiceCatalog } from "@/app/playthrough/choice-catalog";
+import { initializeAlchemyVisit } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
 import { savedActivityData } from "../fixtures/run-activity";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createPlaythroughFixture } from "@/app/playthrough/fixtures";
@@ -6,7 +9,7 @@ import {
   unlockTalent,
   applyTalentState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { talentPool, canUnlockTalent } from "@/lib/game-data";
+import { talentPool, canUnlockTalent, cardById } from "@/lib/game-data";
 import { resetAllTestStores } from "../helpers/run-domain-store-test";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { readBattle, readRunSession, readRunProfile, readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
@@ -44,6 +47,55 @@ function start() {
 }
 
 describe("retained headless rejection and persistence contracts", () => {
+  it("offers source, keyword, and outcome choices before committing Transmutation through Continue", () => {
+    const controller = start();
+    dispatchGameplayCommand(
+      (draft) => acceptCommand(setRunDeck(draft, [cardById.slash!])),
+      undefined,
+      defaultGameSession,
+    );
+    initializeAlchemyVisit("transmutation", defaultGameSession);
+    const before = readActiveRun(defaultGameSession).runDeck;
+    const catalog = createChoiceCatalog();
+    function observe() {
+      const choices = catalog.beginObservation();
+      offerRunChoices(
+        {
+          config: {
+            seed: 1,
+            hero: "knight",
+            mode: "campaign",
+            difficulty: "difficulty-1",
+            runs: 1,
+            horizon: 3,
+            maxSteps: 100,
+            maxTurns: 100,
+            policy: "archetype",
+            combatPolicy: "greedy-effective-damage",
+          },
+          controller,
+          offer: catalog.offer,
+          choices,
+          recordBattle: () => {},
+        },
+        defaultGameSession,
+      );
+      return choices;
+    }
+    for (const kind of ["transmutation-source", "transmutation-keyword", "transmutation-outcome"]) {
+      const choices = observe();
+      expect(choices.length).toBeGreaterThan(0);
+      expect(choices.every((choice) => choice.kind === kind)).toBe(true);
+      catalog.execute(choices[0]!);
+      expect(readActiveRun(defaultGameSession).runDeck).toEqual(before);
+    }
+    const [confirm] = observe();
+    expect(confirm?.kind).toBe("transmutation-confirm");
+    catalog.execute(confirm!);
+    expect(readActiveRun(defaultGameSession).runDeck[0]?.id).not.toBe(before[0]!.id);
+    expect(observe().map((choice) => choice.kind)).toEqual(["transmutation-exit"]);
+  });
+
   it("rejects stale combat choices without consuming world RNG", () => {
     start();
     const before = stateDigest(defaultGameSession);

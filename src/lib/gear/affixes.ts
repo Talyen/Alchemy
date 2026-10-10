@@ -1,7 +1,7 @@
 import type { GearAffixId } from "./affix-catalog";
 import { gearAffixCatalog, formatAffixDescription, type GearAffixDefinition } from "./affix-catalog";
 import type { GearEffectManifest } from "./gear-effect-manifest";
-import { defaultGearEffects } from "./gear-effect-manifest";
+import { defaultGearEffects, GEAR_CHANCE_EFFECT_KEYS, type GearChanceEffectKey } from "./gear-effect-manifest";
 import { gearDefinitions } from "./definitions";
 import { getUniqueAffixView } from "./unique-catalog";
 import type { GearAffixRoll, GearInstance, GearRarity } from "./types";
@@ -17,12 +17,21 @@ function isGearAffixId(value: unknown): value is GearAffixId {
   return typeof value === "string" && Object.hasOwn(gearAffixCatalog, value);
 }
 
+function addAffixEffect(effects: GearEffectManifest, key: keyof GearEffectManifest, value: number): void {
+  if ((GEAR_CHANCE_EFFECT_KEYS as readonly string[]).includes(key)) {
+    const chanceKey = key as GearChanceEffectKey;
+    effects[chanceKey] = [...effects[chanceKey], value];
+  } else {
+    effects[key as Exclude<keyof GearEffectManifest, GearChanceEffectKey>] += value;
+  }
+}
+
 export function resolveAffixEffects(affixes: readonly GearAffixRoll[]): GearEffectManifest {
   const effects = { ...defaultGearEffects };
   for (const roll of affixes) {
     const def = gearAffixCatalog[roll.id];
     if (def) {
-      effects[def.effectKey] += roll.value;
+      addAffixEffect(effects, def.effectKey, roll.value);
     }
   }
   return effects;
@@ -73,7 +82,7 @@ export function addAffixRollEffects(
   rarity?: GearRarity | null,
 ): void {
   forEachNormalizedAffixRoll(rawAffixes, rarity, (definition, value) => {
-    effects[definition.effectKey] += value;
+    addAffixEffect(effects, definition.effectKey, value);
   });
 }
 

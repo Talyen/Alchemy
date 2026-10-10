@@ -22,7 +22,14 @@ import {
   isBrewablePotion,
   type BrewOperation,
 } from "@/lib/alchemist/brewing";
-import { createTransmutationOffers, isTransmutableCard } from "@/lib/alchemist/transmutation";
+import {
+  createTransmutationOffers,
+  getTransmutationOffers,
+  canTransmuteCard,
+  isTransmutationSourceCurrent,
+  isTransmutableCard,
+} from "@/lib/alchemist/transmutation";
+import type { TransmutationSelectionCommand } from "@/lib/active-run-session/alchemy-visits";
 import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import { cloneBattleCard, computeTalentEffects, type BattleCard } from "@/lib/game-data";
 
@@ -36,10 +43,25 @@ export function initializeAlchemyVisit(kind: "campfire" | "transmutation", gameS
 
 export function initializeAlchemyVisitInTransaction(draft: RunTransaction, kind: "campfire" | "transmutation"): void {
   const visit = readActivityData(snapshotTransactionValue(draft.session.activity), kind);
-  if (draft.session.activity.kind === kind && (visit.offers.length || visit.completed)) return;
+  if (
+    draft.session.activity.kind === kind &&
+    (visit.completed || (kind === "campfire" ? visit.offers.length : visit.transmutation))
+  )
+    return;
   const rng = createDraftRunRandomSource(draft, "events");
   setAlchemyVisit(draft, kind, {
-    offers: kind === "campfire" ? createCampfirePotionOffers(rng) : createTransmutationOffers(rng),
+    offers: kind === "campfire" ? createCampfirePotionOffers(rng) : [],
+    ...(kind === "transmutation"
+      ? {
+          transmutation: {
+            choices: createTransmutationOffers(draft.run.activeRun.characterId, rng),
+            sourceIndex: null,
+            source: null,
+            keyword: null,
+            offerIndex: null,
+          },
+        }
+      : {}),
     result: null,
     original: null,
     completed: false,
@@ -89,6 +111,57 @@ export function brewAtCampfire(operation: BrewOperation, gameSession: GameSessio
   if (brewed) sessionFeedback(gameSession).playUISound("campBrew");
   return brewed;
 }
+export function selectTransmutation(selection: TransmutationSelectionCommand, gameSession: GameSession): boolean {
+  return dispatchRunSessionCommand(
+    (draft) => {
+      if (draft.session.activity.kind !== "transmutation" || draft.session.activity.data.completed)
+        return rejectCommand("Transmutation is unavailable", false);
+      const visit = snapshotTransactionValue(draft.session.activity.data);
+      const current = visit.transmutation;
+      if (!current) return rejectCommand("Transmutation is unavailable", false);
+      const deck = snapshotTransactionValue(draft.run.activeRun.runDeck);
+      const next = { ...current };
+      if (selection.kind === "source") {
+        const source = deck[selection.index];
+        if (
+          !Number.isInteger(selection.index) ||
+          !source ||
+          !canTransmuteCard(current.choices, source) ||
+          JSON.stringify(source) !== JSON.stringify(selection.card)
+        )
+          return rejectCommand("Card is no longer available", false);
+        next.sourceIndex = selection.index;
+        next.source = cloneBattleCard(source);
+        next.keyword = null;
+        next.offerIndex = null;
+      } else if (selection.kind === "back") {
+        next.keyword = null;
+        next.offerIndex = null;
+        if (selection.to === "source") {
+          next.sourceIndex = null;
+          next.source = null;
+        }
+      } else {
+        if (!isTransmutationSourceCurrent(visit, deck)) return rejectCommand("Your deck changed", false);
+        if (selection.kind === "keyword") {
+          if (!current.choices.some((choice) => choice.keyword === selection.keyword))
+            return rejectCommand("Keyword is unavailable", false);
+          next.keyword = selection.keyword;
+          next.offerIndex = null;
+        } else {
+          if (!Number.isInteger(selection.index) || !getTransmutationOffers(visit)[selection.index])
+            return rejectCommand("Outcome is unavailable", false);
+          next.offerIndex = selection.index;
+        }
+      }
+      setAlchemyVisit(draft, "transmutation", { ...visit, transmutation: next });
+      return acceptCommand(true);
+    },
+    undefined,
+    gameSession,
+  );
+}
+
 export function transmuteCard(sourceIndex: number, offerIndex: number, gameSession: GameSession): BattleCard | null {
   return dispatchRunSessionCommand(
     (draft) => {
@@ -97,8 +170,12 @@ export function transmuteCard(sourceIndex: number, offerIndex: number, gameSessi
       const visit = draft.session.activity.data;
       const deck = draft.run.activeRun.runDeck;
       const original = deck[sourceIndex];
-      const offer = visit.offers[offerIndex];
+      const snapshot = snapshotTransactionValue(visit);
+      const offer = getTransmutationOffers(snapshot)[offerIndex];
       if (
+        visit.transmutation?.sourceIndex !== sourceIndex ||
+        visit.transmutation?.offerIndex !== offerIndex ||
+        !isTransmutationSourceCurrent(snapshot, snapshotTransactionValue(deck)) ||
         !Number.isInteger(sourceIndex) ||
         !Number.isInteger(offerIndex) ||
         !original ||

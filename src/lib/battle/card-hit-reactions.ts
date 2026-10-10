@@ -1,7 +1,7 @@
 import { rollBattleChance } from "./chance-roll";
 import type { BattleCardEffect } from "@/lib/game-data";
 import type { CardHitRequest, HitFacts } from "./player-hit-core";
-import { applyBurnForgePayout } from "./bonus-effects";
+import { applyEmberforgedPayout } from "./bonus-effects";
 import { applyDamageStatuses } from "./damage-status-riders";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import {
@@ -17,8 +17,11 @@ function applyBurnDamageRiders(
   modifiedDamage: number,
   combatTexts: CombatTextEvent[],
   enemyWasBurningBefore: boolean,
+  forgeTriggers?: Set<string>,
 ): BattleState {
-  const nextState = applyBurnForgePayout(state, combatTexts, enemyWasBurningBefore);
+  const canAward = !enemyWasBurningBefore && !forgeTriggers?.has("emberforged");
+  if (canAward) forgeTriggers?.add("emberforged");
+  const nextState = canAward ? applyEmberforgedPayout(state, combatTexts, false) : state;
   if (rollBattleChance(state.talentEffects.burnStunChance, state)) {
     return resolveFollowUpHit(
       nextState,
@@ -36,6 +39,7 @@ function applyForgeStunRider(
   forgeBeforeHit: number,
 ) {
   if (
+    state.flags.obsidianHammerUsedThisTurn ||
     effect.damageType !== "physical" ||
     state.trinketEffects.forgeStunThreshold <= 0 ||
     forgeBeforeHit < state.trinketEffects.forgeStunThreshold
@@ -43,8 +47,8 @@ function applyForgeStunRider(
     return state;
 
   return resolveFollowUpHit(
-    state,
-    { source: "player-follow-up", damageType: "stun", amount: state.trinketEffects.forgeStunAmount },
+    { ...state, flags: { ...state.flags, obsidianHammerUsedThisTurn: true } },
+    { source: "talent-fixed", damageType: "stun", amount: state.trinketEffects.forgeStunAmount },
     combatTexts,
   );
 }
@@ -66,6 +70,7 @@ export function applyCardHitReactions(
     eligibility,
     critical: facts.critical,
     forgeBeforeHit: eligibility.playerStatuses.forge,
+    forgeTriggers: request.forgeTriggers,
     onPoisonBleedConversion: (current, damage, texts) =>
       resolveFollowUpHit(current, { source: "talent-derived", damageType: "bleed", amount: damage }, texts),
   });
@@ -92,7 +97,13 @@ export function applyCardHitReactions(
   }
 
   if (effect.damageType === "burn" && modifiedDamage > 0) {
-    nextState = applyBurnDamageRiders(nextState, modifiedDamage, combatTexts, enemyWasBurningBefore);
+    nextState = applyBurnDamageRiders(
+      nextState,
+      modifiedDamage,
+      combatTexts,
+      enemyWasBurningBefore,
+      request.forgeTriggers,
+    );
   }
 
   const enemyWasStunned = eligibility.enemyCC.stunSkipTurns > 0;

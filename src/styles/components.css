@@ -699,8 +699,7 @@
   filter: grayscale(1);
 }
 
-.card-play-rejected::before,
-.mana-play-rejected::before {
+.card-play-rejected::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -713,10 +712,6 @@
 
 .mana-row {
   border-radius: var(--radius-xl);
-}
-
-.mana-play-rejected::before {
-  inset: -6px;
 }
 
 .mana-gem-spent {
@@ -789,8 +784,7 @@
     display: none;
   }
 
-  .card-play-rejected::before,
-  .mana-play-rejected::before {
+  .card-play-rejected::before {
     animation: none;
   }
 }
@@ -806,8 +800,7 @@ html.alchemy-disable-animations .reward-choice-selected::after {
   display: none;
 }
 
-html.alchemy-disable-animations .card-play-rejected::before,
-html.alchemy-disable-animations .mana-play-rejected::before {
+html.alchemy-disable-animations .card-play-rejected::before {
   animation: none;
 }
 

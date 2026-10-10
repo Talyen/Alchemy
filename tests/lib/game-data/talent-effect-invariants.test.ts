@@ -46,7 +46,6 @@ const LEGACY_SNAPSHOT_FIELDS: ReadonlyArray<keyof TalentEffectManifest> = [
   "flatStunDamage",
 
   "manaNextTurnOnWish",
-  "forgeOnBurnDealt",
   "stunBuildupReductionPercent",
   "blockReduceBurnDamage",
   "campfireHealBonus",

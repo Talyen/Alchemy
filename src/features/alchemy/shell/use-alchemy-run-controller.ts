@@ -160,6 +160,7 @@ export function useAlchemyRunController(): AlchemyRunCommands {
           handleContinue: protectVoid(nav.handleMysteryContinue),
         },
         transmutation: {
+          select: guardProgressAction(defaultGameSession, runActions.selectTransmutation, false),
           exchange: guardProgressAction(defaultGameSession, runActions.transmuteCard, null),
           continue: protectVoid(nav.advanceToNextDestination),
         },

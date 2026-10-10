@@ -31,6 +31,7 @@ export function damageEnemyHealth(state: BattleState, damage: number): EnemyHitH
     enemyHealth > 0 &&
     enemyHealth < previousHealth &&
     hasEnemyTrait(state, "cinder-skin") &&
+    state.turn % 2 === 1 &&
     !state.flags.cinderSkinUsedThisTurn;
   return {
     state: {

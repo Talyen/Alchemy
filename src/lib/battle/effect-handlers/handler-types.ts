@@ -8,6 +8,7 @@ export interface AttackBonuses {
 }
 
 export interface CardEffectResolutionContext {
+  forgeTriggers?: Set<string>;
   manaAtStart: number;
   enemyFreezeSkipTurnsAtStart: number;
   origin?: "played-card" | "triggered-card" | "companion";

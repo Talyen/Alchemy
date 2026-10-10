@@ -54,7 +54,10 @@ function spendEnemyForgeForHit(
   landed: boolean,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  const forgeBasedBurn = effect.damageType === "burn" && "equalToForge" in effect && effect.equalToForge === true;
+  const forgeBasedBurn =
+    effect.damageType === "burn" &&
+    (("equalToForge" in effect && effect.equalToForge === true) ||
+      ("forgeBonusPercent" in effect && effect.forgeBonusPercent !== undefined));
   if (
     !landed ||
     hasEnemyTrait(state, "whitehot") ||

@@ -10,7 +10,7 @@ import { isPlayerDefeated } from "./health-state";
 import { addEnemyStatus } from "./status-state";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { tickEnemyPoison } from "./status-ticks";
-import { addForgeToPlayer, applyArmorReward } from "./status-player";
+import { rollForgeAffixAwards, addForgeToPlayer, applyArmorReward } from "./status-player";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { cardHasKeyword } from "./card-classification";
 import { REACTIVE_REWARD_CHANCES } from "../game-constants";
@@ -106,8 +106,12 @@ function applyConsumeGearRiders(
     nextState = resolvePendingBattleReactions(tickEnemyPoison(nextState, combatTexts), combatTexts);
     if (isPlayerDefeated(nextState)) return nextState;
   }
-  if (cardHasKeyword(card, "burn") && nextState.gearEffects.forgeOnConsumeBurnCard > 0) {
-    nextState = addForgeToPlayer(nextState, nextState.gearEffects.forgeOnConsumeBurnCard, combatTexts);
+  if (cardHasKeyword(card, "burn")) {
+    nextState = addForgeToPlayer(
+      nextState,
+      rollForgeAffixAwards(nextState, nextState.gearEffects.forgeOnConsumeBurnCardChances),
+      combatTexts,
+    );
     nextState = resolvePendingBattleReactions(nextState, combatTexts);
     if (isPlayerDefeated(nextState)) return nextState;
   }

@@ -15,6 +15,7 @@ const playerStatusEffectDefinition = {
       kind: z.literal("player-status"),
       status: z.enum(["block", "armor", "thorns", "forge", "haste", "phoenixFeather"]),
       amount: AmountSchema,
+      forgeAmount: AmountSchema.optional(),
       statusPool: z
         .array(z.enum(["block", "armor", "thorns", "forge"]))
         .min(2)
@@ -22,6 +23,18 @@ const playerStatusEffectDefinition = {
       perManaCrystal: AmountSchema.optional(),
       convertCurrentMana: z.number().int().min(0).max(100).optional(),
     })
+    .refine(
+      (data) =>
+        data.forgeAmount === undefined ||
+        (data.statusPool?.length === 3 &&
+          data.statusPool.includes("forge") &&
+          data.statusPool.includes("block") &&
+          data.statusPool.includes("armor") &&
+          data.statusPool.every((status) => status === "block" || status === "forge" || status === "armor") &&
+          data.perManaCrystal === undefined &&
+          data.convertCurrentMana === undefined),
+      { message: "forgeAmount requires a Block/Forge/Armor pool without Mana conversion" },
+    )
     .refine((data) => !(data.perManaCrystal !== undefined && data.convertCurrentMana !== undefined), {
       message: "player-status cannot have both perManaCrystal and convertCurrentMana",
     }),

@@ -98,7 +98,7 @@ before handing off.
 - **1. Define entry in `enemyBestiary` (`id` becomes `EnemyId`)** — `src/lib/game-data/compendium/enemies.ts`
 - **2. Set `enemyType` (`normal`/`elite`/`boss`)** — same file
 - **3. Add traits as `{ id, title, description }` objects** — same file (logic lives in battle system)
-- **4. Register a nonempty fallback attack sound** — `src/lib/audio/sound-registry.ts` (`enemyAttackSounds`); ability turns use the chosen card's focal cue first. Follow the [audio checklist](./AUDIO.md#change-checklist).
+- **4. Use registered ability cards** — enemy turns use each ability card's focal cue; enemies have no separate sound mapping. Follow the [audio checklist](./AUDIO.md#change-checklist).
 - **5. Wildwood gauntlet bosses must also be listed in `WILDWOOD_BOSS_IDS`** — `src/lib/content-systems/wildwood/bosses.ts`
 
 ---
@@ -194,10 +194,10 @@ for custom templates and saved/Corrupted/Mixed Potion descriptions. Keep compact
 combined phrases stable: Corruption still uses their displayed numeric positions
 to preserve the established editable-value contract.
 
-### Transmutation roles and Potion brewing
+### Transmutation keywords and Potion brewing
 
-`cards/transmutation-roles.ts` explicitly assigns ordinary sidegrade candidates to attack, defense, or utility roles. The card library exposes those roles as `transmutationRole`; Transmutation samples one distinct card per role without guessing from titles. Add candidates deliberately and keep each role populated.
+Transmutation uses the offerable card pool and `getCardKeywords()` to match outcomes to each class's three affinity keywords. Wildcard receives three seeded keyword choices. Each keyword needs at least four distinct matching cards so the visit can offer three outcomes after excluding the surrendered card's base identity. Candidate lists and selections persist for the visit; Back and reload must not reroll them. Keep affinity pools sufficiently populated when changing card keywords or offer eligibility.
 
-Current-run Potion transformations carry `brewed: true`. Preserve this metadata, the transformed effects, and generated descriptions together. Mixed and strengthened Potions cannot be used as brewing ingredients or Transmutation sources. Strengthening preserves probabilities, percentage effects, Wishes, and draw counts; offer it only when a numerical benefit changes.
+Preserve transformed effects and generated descriptions together. Mixed and strengthened Potions can be brewed repeatedly. Strengthened standard Potions can be Transmutation sources; Mixed Potions cannot. Distillation adds 1 to supported magnitudes, including Wishes, and preserves probabilities, percentage effects, durations, and draw counts. Full-cleanse Potions without healing gain Restore 1 Health. Persist `distilled` marks on description magnitudes so increased values remain green after hydration and mixing.
 
 The former Shatter and Wildfire talents are displayed as Brittle Ice and Flash Fire to distinguish them from the universal reactions. Their saved IDs and effects remain unchanged.

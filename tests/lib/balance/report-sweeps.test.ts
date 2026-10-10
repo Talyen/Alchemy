@@ -38,7 +38,11 @@ function affixScenarioViolations(groups: Map<number, BalanceBatchConfig[]>) {
     if (configs.length !== gearAffixList.length + 1)
       record(`expected one baseline and ${gearAffixList.length} treatments; got ${configs.length} calls`);
     if (!baseline?.deck) record("missing baseline deck");
-    if (Object.values(baseline?.gearEffects ?? {}).some((value) => value !== 0))
+    if (
+      Object.values(baseline?.gearEffects ?? {}).some((value) =>
+        Array.isArray(value) ? value.length > 0 : value !== 0,
+      )
+    )
       record("baseline contains an affix effect");
     for (let index = 1; index < configs.length; index += 1) {
       const config = configs[index];
@@ -52,7 +56,9 @@ function affixScenarioViolations(groups: Map<number, BalanceBatchConfig[]>) {
         config.iterations !== baseline?.iterations
       )
         record(`${affix?.id}: changed paired battle`);
-      const active = Object.entries(config.gearEffects ?? {}).filter(([, value]) => value !== 0);
+      const active = Object.entries(config.gearEffects ?? {}).filter(([, value]) =>
+        Array.isArray(value) ? value.length > 0 : value !== 0,
+      );
       if (active.length !== 1 || active[0]?.[0] !== affix?.effectKey)
         record(`${affix?.id}: expected its single effect, got ${active.map(([key]) => key).join(", ") || "none"}`);
     }

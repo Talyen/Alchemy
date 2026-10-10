@@ -84,13 +84,16 @@ describe("Labyrinth player benefits", () => {
     expect(endPlayerTurn(state({ playerStatuses: { block: 9 } })).state.playerStatuses.block).toBe(5);
   });
 
-  it("White Heat preserves Forge without creating recoverable Forge debt", () => {
+  it("Forge remains persistent with White Heat", () => {
     const next = play(
-      state({ encounterBenefits: ["white-heat"], playerStatuses: { forge: 3 }, gearEffects: { recoverSpentForge: 1 } }),
+      state({
+        encounterBenefits: ["white-heat"],
+        playerStatuses: { forge: 3 },
+        gearEffects: { forgeEveryThreeTurns: 1 },
+      }),
       attack(),
     );
     expect(next.playerStatuses.forge).toBe(3);
-    expect(next.uniqueGear.spentForge).toBe(0);
     expect(next.enemyHealth).toBe(93);
   });
 

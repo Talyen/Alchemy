@@ -36,6 +36,8 @@ function scoreEffects(effects: readonly BattleCardEffect[], state: BattleSnapsho
 }
 
 function scoreDamageEffect(effect: Extract<BattleCardEffect, { kind: "damage" }>, state: BattleSnapshot): number {
+  if (effect.forgeBonusPercent !== undefined)
+    return effect.amount + scalePercent(state.playerStatuses.forge, effect.forgeBonusPercent);
   if (effect.equalToForge) return state.playerStatuses.forge;
   if (effect.equalToBlock) return scalePercent(state.playerStatuses.block, effect.equalToBlockPercent ?? 100);
   if (effect.equalToArmor) return state.playerStatuses.armor;

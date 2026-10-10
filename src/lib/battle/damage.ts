@@ -185,6 +185,7 @@ export function dealDamageToEnemy(
       resolvedDamage: modifiedDamage,
       critical,
       origin: context?.origin,
+      ...(context?.forgeTriggers ? { forgeTriggers: context.forgeTriggers } : {}),
       onDamageDealt: context?.onDamageDealt,
     },
     combatTexts,

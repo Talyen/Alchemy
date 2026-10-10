@@ -1,3 +1,4 @@
+import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { sanitizeWildwoodBossId, sanitizeWildwoodBossIds } from "@/lib/content-systems/wildwood/bosses";
 import { shopItemSlotKey } from "@/lib/active-run-session/shop-offering-repair";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -98,7 +99,21 @@ function repairSavedShopCards(cards: unknown[], purchasedSlotKeys: string[], pat
   };
 }
 
+const TransmutationKeywordSchema = z.custom<KeywordId>(
+  (value) => typeof value === "string" && Object.hasOwn(keywordDefinitions, value),
+);
 const AlchemyVisitObjectSchema = z.object({
+  transmutation: z
+    .object({
+      choices: z.array(
+        z.object({ keyword: TransmutationKeywordSchema, candidates: savedCardArraySchema("transmutation.candidates") }),
+      ),
+      sourceIndex: z.number().int().min(0).nullable(),
+      source: BattleCardSchema.nullable(),
+      keyword: TransmutationKeywordSchema.nullable(),
+      offerIndex: z.number().int().min(0).max(2).nullable(),
+    })
+    .optional(),
   offers: savedCardArraySchema("alchemyVisit.offers"),
   result: BattleCardSchema.nullable(),
   original: BattleCardSchema.nullable(),

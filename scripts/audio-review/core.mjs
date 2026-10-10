@@ -111,14 +111,10 @@ export async function loadGameInventory() {
       destinations: Object.values(DESTINATIONS),
       keywords: Object.keys(keywordDefinitions),
       registry: Object.fromEntries(
-        [
-          "cardSounds",
-          "enemyAttackSounds",
-          "battleEventSounds",
-          "uiSounds",
-          "stingerSounds",
-          "screenAmbienceSounds",
-        ].map((key) => [key, registry[key]]),
+        ["cardSounds", "battleEventSounds", "uiSounds", "stingerSounds", "screenAmbienceSounds"].map((key) => [
+          key,
+          registry[key],
+        ]),
       ),
     };
   });
@@ -169,7 +165,7 @@ export function validateMappings(manifest, inventory, catalog) {
       if (!Object.hasOwn(inventory.registry[table] ?? {}, key)) throw new Error(`Stale current cue: ${entry.current}`);
     } else if (entry.currentState !== "silent") throw new Error(`Current state requires a registration: ${entry.id}`);
   }
-  for (const kind of ["cards", "enemies", "companions"]) {
+  for (const kind of ["cards", "companions"]) {
     assertCoverage(
       inventory[kind].map(({ id }) => id),
       Object.keys(manifest.assignments[kind]),
@@ -187,7 +183,6 @@ export function validateMappings(manifest, inventory, catalog) {
   assertCoverage(inventory.keywords, Object.keys(manifest.keywordCoverage), "keywords");
   const contentMappingIds = new Set([
     ...inventory.cards.map(({ id }) => `card:${id}`),
-    ...inventory.enemies.map(({ id }) => `enemy:${id}`),
     ...inventory.companions.map(({ id }) => `companion:${id}`),
   ]);
   for (const [dependent, source] of Object.entries(manifest.sharedChoices ?? {})) {
@@ -200,7 +195,7 @@ export function validateMappings(manifest, inventory, catalog) {
       throw new Error(`Invalid shared sound choice: ${dependent} -> ${source}`);
     const familyFor = (id) => {
       const [kind, key] = id.split(":");
-      return manifest.assignments[kind === "enemy" ? "enemies" : kind === "companion" ? "companions" : "cards"][key];
+      return manifest.assignments[kind === "companion" ? "companions" : "cards"][key];
     };
     if (familyFor(dependent) !== familyFor(source))
       throw new Error(`Shared choices need the same candidates: ${dependent}`);
@@ -241,9 +236,7 @@ export async function collectAudioEvidence(root) {
     const lines = (await readFile(file, "utf8")).split("\n");
     lines.forEach((line, i) => {
       if (
-        /play(?:CardSound|EnemyAttack|BattleEvent|UISound|GoldGain|GoldSpend|Victory|Defeat|CompanionSound)\(/.test(
-          line,
-        ) ||
+        /play(?:CardSound|BattleEvent|UISound|GoldGain|GoldSpend|Victory|Defeat|CompanionSound)\(/.test(line) ||
         /"(?:shopRefresh|shopRemove|alchemistMix)"/.test(line)
       )
         evidence.push({ file: path.relative(root, file), line: i + 1, text: line.trim() });
@@ -265,15 +258,14 @@ export function buildMappings(manifest, inventory, catalog, currentIdentity) {
       ...(sound === null ? { currentState: "silent" } : {}),
     };
   });
-  for (const kind of ["cards", "enemies", "companions"]) {
+  for (const kind of ["cards", "companions"]) {
     for (const entity of inventory[kind]) {
       const key = kind === "companions" ? `${entity.id}-companion` : entity.id;
-      const registry = kind === "enemies" ? "enemyAttackSounds" : "cardSounds";
-      const currentFiles = inventory.registry[registry][key] ?? [];
+      const currentFiles = inventory.registry.cardSounds[key] ?? [];
       mappings.push({
-        id: `${kind === "enemies" ? "enemy" : kind.slice(0, -1)}:${entity.id}`,
+        id: `${kind.slice(0, -1)}:${entity.id}`,
         title: entity.title,
-        group: kind === "enemies" && entity.enemyType === "boss" ? "Bosses" : kind[0].toUpperCase() + kind.slice(1),
+        group: kind[0].toUpperCase() + kind.slice(1),
         family: manifest.assignments[kind][entity.id],
         currentFiles,
         currentState: currentFiles.length ? "playing" : "silent",
@@ -281,34 +273,17 @@ export function buildMappings(manifest, inventory, catalog, currentIdentity) {
         trigger:
           kind === "cards"
             ? "Accepted card play; also used by enemies playing this ability."
-            : kind === "enemies"
-              ? "Bestiary attack preview or fallback attack without an ability card."
-              : "Summoning card and companion turn effect.",
+            : "Summoning card and companion turn effect.",
         note:
-          kind === "enemies"
-            ? "Ability turns use the ability card cue first. This fallback does not replace those sounds."
-            : kind === "companions"
-              ? "Summoning and turn effects share the focal recording; compare repeated playback at a restrained level."
-              : "One focal cue per accepted play; routine effect layers are suppressed, with at most one resolved special accent.",
-        priority:
-          (kind === "enemies" && entity.enemyType === "boss") ||
-          (kind === "cards" && !currentFiles.length && entity.keywords.includes("archery"))
-            ? "P1"
-            : "P2",
+          kind === "companions"
+            ? "Summoning and turn effects share the focal recording; compare repeated playback at a restrained level."
+            : "One focal cue per accepted play; routine effect layers are suppressed, with at most one resolved special accent.",
+        priority: "P2",
         evidence:
-          kind === "enemies"
-            ? [
-                "src/features/alchemy/run-loop/battle/end-turn-ui.ts",
-                "src/features/alchemy/meta/screens/collection/collection-tile.tsx",
-              ]
-            : kind === "companions"
-              ? ["src/features/alchemy/run-loop/battle/controller-utils.ts", "src/lib/game-data/companions.ts"]
-              : [
-                  "src/features/alchemy/run-loop/battle/battle-card-play.ts",
-                  "src/lib/game-data/cards/library/cards.ts",
-                ],
+          kind === "companions"
+            ? ["src/features/alchemy/run-loop/battle/controller-utils.ts", "src/lib/game-data/companions.ts"]
+            : ["src/features/alchemy/run-loop/battle/battle-card-play.ts", "src/lib/game-data/cards/library/cards.ts"],
         keywords: entity.keywords ?? [],
-        abilityMappings: entity.abilityIds?.map((id) => `card:${id}`) ?? [],
       });
     }
   }
@@ -353,10 +328,6 @@ export function buildMappings(manifest, inventory, catalog, currentIdentity) {
     return {
       ...mapping,
       choiceFrom: manifest.sharedChoices?.[mapping.id],
-      note:
-        mapping.id === "enemy:will-o-wisp"
-          ? `${mapping.note} This choice also sets the Will-o'-Wisp companion and its summoning card.`
-          : mapping.note,
       candidates,
       status,
       rationale: family.rationale,

@@ -169,7 +169,12 @@ describe("PersistedBattleStateSchema", () => {
     const damageMultiplier = { kind: "enemy-damage-multiplier", amount: 1.3 };
     const restored = PersistedBattleStateSchema.parse({
       ...validState(),
-      difficultyModifiers: [null, damageMultiplier, { kind: "increase-enemy-damage", amount: "many" }],
+      difficultyModifiers: [
+        null,
+        damageMultiplier,
+        { kind: "increase-enemy-damage", amount: "many" },
+        { kind: "enemy-gains-forge-each-turn" },
+      ],
     });
     expect(() => endPlayerTurn({ ...restored, rng: () => 0.99 })).not.toThrow();
     expect(restored.difficultyModifiers).toEqual([damageMultiplier]);

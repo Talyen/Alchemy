@@ -128,26 +128,26 @@ describe("preloadSounds", () => {
 
 describe("preloadBattleSounds", () => {
   it("warms the sound for crafted Mixed Potions in the hand", () => {
-    preloadBattleSounds(["mixed-potion-health-potion-0-mana-potion-0"], "skeleton");
+    preloadBattleSounds(["mixed-potion-health-potion-0-mana-potion-0"]);
     expect(createdFakeAudio.some((el) => el.src.includes("ice-in-water."))).toBe(true);
   });
 
-  it("prioritizes the visible hand and current enemy sound set", () => {
-    preloadBattleSounds(["slash", "frostbolt"], "skeleton");
+  it("warms the visible hand without unrelated companion cues", () => {
+    preloadBattleSounds(["slash", "frostbolt"]);
     const urls = createdFakeAudio.map((el) => el.src);
     expect(urls.some((url) => url.includes("sword-attack-1."))).toBe(true);
     expect(urls.some((url) => url.includes("ice-throw-1."))).toBe(true);
-    expect(urls.some((url) => url.includes("swish-hit."))).toBe(true);
+    expect(urls.some((url) => url.includes("swish-hit."))).toBe(false);
   });
 
   it("warms enemy ability card sounds alongside the hand", () => {
-    preloadBattleSounds(["slash"], "skeleton", ["sunder"]);
+    preloadBattleSounds(["slash"], ["sunder"]);
     const urls = createdFakeAudio.map((el) => el.src);
     expect(urls.some((url) => url.includes("strong-punch."))).toBe(true);
   });
 
   it("warms the full battle event set including opening status cues", () => {
-    preloadBattleSounds(["slash"], "skeleton");
+    preloadBattleSounds(["slash"]);
     const urls = createdFakeAudio.map((el) => el.src);
     for (const name of Object.values(battleEventSounds).filter((name) => name !== null)) {
       expect(urls.some((url) => url.includes(name))).toBe(true);

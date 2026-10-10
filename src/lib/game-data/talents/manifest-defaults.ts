@@ -15,7 +15,7 @@ export const DEFAULT_TALENT_EFFECTS = {
   forgeHolyDamagePercent: 0,
   forgeBlockPercent: 0,
   forgeBleedDamagePercent: 0,
-  forgeLowHealthBonusPercent: 0,
+  forgeLowHealthBonusChance: 0,
   armorNatureDamagePercent: 0,
   armorPhysicalDamagePercent: 0,
   dodgePhysicalDamagePercent: 0,
@@ -33,6 +33,7 @@ export const DEFAULT_TALENT_EFFECTS = {
   archeryCritOnCrowdControl: false,
   physicalLeechVsStunned: false,
   forgeOnPhysicalVsFrozen: 0,
+  forgeOnPhysicalVsFrozenChance: 0,
   cleanseBelowHealthPercent: 0,
   leechCardDamageVsLowHealthPercent: 0,
   armorOnPotionCard: 0,
@@ -140,6 +141,7 @@ export const DEFAULT_TALENT_EFFECTS = {
   stunCardPlayTwiceChance: 0,
   blockOnStun: 0,
   forgeOnStun: 0,
+  forgeOnStunChance: 0,
   stunStripArmor: false,
   manaOnStun: 0,
 
@@ -153,8 +155,8 @@ export const DEFAULT_TALENT_EFFECTS = {
   blockOnDodgeEqualToAttack: false,
 
   startForge: 0,
-  forgeBurningBonusPercent: 0,
-  forgeDoubleChance: 0,
+  forgeBurningBonusChance: 0,
+  forgeBonusChance: 0,
   forgeOnBlockDepleted: 0,
   physicalStripArmorByForge: false,
 
@@ -187,7 +189,6 @@ export const DEFAULT_TALENT_EFFECTS = {
   receiveHalfBurnDamage: false,
   flatBurnDamage: 0,
   burnOnWish: 0,
-  forgeOnBurnDealt: 0,
   blockToBurnDamage: false,
   consumeBurnDamageBonusPercent: 0,
   firstConsumeCardFree: false,

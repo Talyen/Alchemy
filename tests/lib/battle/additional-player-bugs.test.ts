@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { tryTriggerEnemyFreeze } from "@/lib/battle/damage-status-riders";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
-import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { cardById } from "@/lib/game-data";
@@ -36,21 +35,6 @@ describe("additional player-facing regressions", () => {
     const next = tryTriggerEnemyFreeze(state, { ...state, enemyStatuses: { ...state.enemyStatuses, freeze: 100 } }, []);
     expect(next.enemyHealth).toBe(97);
     expect(next.enemyMitigation.armor).toBe(2);
-  });
-
-  it("equipping multiple Spellrending items still Purges one benefit on the first paid card", () => {
-    const card = makeTestCard({ cost: 1, effects: [{ kind: "heal", amount: 1 }] });
-    const state = patchBattleState({
-      hand: [card],
-      mana: 2,
-      playerHealth: 20,
-      gearEffects: { purgeOnFirstPaidCard: 2 },
-      enemyMitigation: { armor: 3, block: 4 },
-    });
-    const next = playBattleCardResolved(state, card.id, 0).state;
-    expect(next.enemyMitigation.armor).toBe(0);
-    expect(next.enemyMitigation.block).toBe(4);
-    expect(next.flags.spellrendingUsedThisTurn).toBe(true);
   });
 
   it("Stun Insight reports its card draw", () => {

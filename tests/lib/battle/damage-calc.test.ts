@@ -130,12 +130,12 @@ describe("resolved card damage", () => {
     expect(dealDamage(state, makeTestCard({ effects: [makeEffect("physical", 5)] })).enemyHealth).toBe(20);
   });
 
-  it.each(["block", "armor"] as const)("uses live %s plus Forge and spends Forge only once", (resource) => {
+  it.each(["block", "armor"] as const)("uses live %s plus Forge and preserves Forge", (resource) => {
     const state = patchBattleState({ playerStatuses: { [resource]: 7, forge: 3 }, rng: () => 0.99 });
     const effect = makeEffect("physical", 0, resource === "block" ? { equalToBlock: true } : { equalToArmor: true });
     const result = dealDamage(state, makeTestCard({ effects: [effect] }));
     expect(result.enemyHealth).toBe(20);
-    expect(result.playerStatuses.forge).toBe(2);
+    expect(result.playerStatuses.forge).toBe(3);
     expect(result.playerStatuses[resource]).toBe(7);
   });
 

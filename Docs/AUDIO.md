@@ -41,9 +41,10 @@ Playback modules live together in `src/lib/audio/`; callers use `@/lib/audio`, b
 
 ### Loading and registration
 
-- `useAppAudioEffects` starts best-effort warming when the app shell mounts after the startup gate. UI sounds and the draw-transfer cue warm immediately; the remaining manifest warms in one input-idle callback. Startup does not wait for audio fetching or decoding. Battle initialization also warms the full battle event set, opening-hand cards, enemy ability cards, and the current enemy's attack sounds.
+- `useAppAudioEffects` starts best-effort warming when the app shell mounts after the startup gate. UI sounds and the draw-transfer cue warm immediately; the remaining manifest warms in one input-idle callback. Startup does not wait for audio fetching or decoding. Battle initialization also warms the full battle event set, opening-hand cards, and enemy ability cards.
 - Crafted Mixed Potion IDs resolve to the base Potion sound for both playback and battle preloading.
-- Every card, enemy fallback and companion now has a nonempty focal registration, enforced by exact catalog coverage in `tests/lib/audio/sound-registry.test.ts`. Companion turns use their summoning card's cue; the enemy and companion Will-o'-Wisp share the approved recording. Gold gain/spending remain distinct, and explicit UI/service silence remains intentional. The music-boss vs attack-only (`living-armor`) roster is pinned in the same tests.
+- Every card and companion has a nonempty focal registration, enforced by exact catalog coverage in `tests/lib/audio/sound-registry.test.ts`. Companion turns use their summoning card's cue. Enemy turns use ability card cues, and Bestiary portrait clicks have no sound effect. Gold gain/spending remain distinct, and explicit UI/service silence remains intentional.
+- Card selections in drafting, Transmutation and Corruption, plus battle draw-batch acknowledgment, are intentionally silent. Card movement into the hand retains its separate draw-transfer cue.
 - UI event keys remain available when their cue is `null`. Playback and preloading skip these explicit silence choices. Resolved registrations and processing inputs live in [the approved cue mappings](./design/audio-review/approved-choices.json).
 
 ### Music lifecycle
@@ -94,7 +95,7 @@ still needs an in-game listening pass.
 ### Battle sound focus
 
 Accepted cards, enemy abilities, and companion actions request one authored focal
-cue at activation. Card and enemy playback return the selected filename even
+cue at activation. Card playback returns the selected filename even
 when muted or cooldown-suppressed; this identifies the source for its later
 feedback, rather than claiming playback succeeded. No shared action pointer or
 persisted audio state is needed. Accepted Cleanse still sounds when it removes
@@ -109,6 +110,10 @@ stingers remain separate. Quiet draw/discard paper cues follow card movement.
 Different actions may overlap while their clips finish; there is no global
 voice-stealing rule.
 
+Armor stripping has no standalone cue; its triggering action supplies the sound.
+Standalone Armor gains use the equipment rustle cue. An authored focal cue
+suppresses routine Armor gain feedback.
+
 Without a focal cue, one standalone feedback cue is selected: special outcomes,
 damage, healing, cleanse, Mana, Armor, Forge, Block, Thorns, Gold, Wish, then draw.
 Only damage magnitudes compete numerically. Ties prefer Burn, Poison, Bleed,
@@ -117,14 +122,14 @@ metadata distinguishes ordinary spells from critical hits and Burn/Poison/Bleed
 ticks. The selector does not change combat calculations, saves or visual feedback.
 
 The [focused Sound desk](#battle-replacement-auditions)
-now has fifteen approved decisions covering sixteen sources. Exorcism uses
-Purge; Prayer uses the shorter choir excerpt; Avatar and Seraph share the longer
+covers card and companion cues. Exorcism uses
+Purge; Prayer uses the shorter choir excerpt; Avatar uses the longer
 choir excerpt. The selected files, source hashes and exact excerpt boundaries
 are recorded in [the approved cue mappings](./design/audio-review/approved-choices.json).
 
 ## Change checklist
 
-1. Register new card, enemy, or companion sounds in the owning sound registry or audio module (`sound-registry.ts`, `COMPANION_SOUND_CARD_IDS`); the exact catalog coverage in `tests/lib/audio/sound-registry.test.ts` requires a nonempty focal registration for new content.
+1. Register new card or companion sounds in the owning sound registry or audio module (`sound-registry.ts`, `COMPANION_SOUND_CARD_IDS`); the exact catalog coverage in `tests/lib/audio/sound-registry.test.ts` requires a nonempty focal registration for new content.
 2. Add or replace source audio through [the asset workflow](./WORKFLOWS-ASSETS.md#add-or-replace-sound) and regenerate committed outputs.
 3. Keep host visibility, volume, cache, and failure behavior in the runtime audio owners above.
 4. Run focused unit suites with `npm run test:full -- tests/lib/audio` and any affected lifecycle tests, then the task-scoped local gate. Browser playback verification uses `npm run test:e2e:route -- audio` under the [local execution policy](../CONTRIBUTING.md#what-to-run-when-you-change).
@@ -171,7 +176,7 @@ If the existing encoder dependency lacks its binary, restore it with
 
 ## Battle replacement auditions
 
-Prepare the sixteen requested battle rows and start a separate review session:
+Prepare the focused card and companion rows and start a separate review session:
 
 ```sh
 npm run audio:review -- --battle-focus --serve --port 4318
@@ -180,15 +185,13 @@ npm run audio:review -- --battle-focus --serve --port 4318
 Most rows have two short, level-matched candidates and their current cue or silence.
 Exorcism and Prayer each have four options, including their original pair.
 The queue includes Avatar, Exorcism, Sanctified Plate, Tithe, Prayer, Wishing Well,
-both Will-o'-Wisp roles, Library Owl, Cleric, Inquisitor, Paladin, Seraph, Zealot,
-Giant Snake and Giant Spider. Companion selections also apply to their summoning
-cards; enemy rows choose fallback/Bestiary cues, while ability turns retain the
-ability card's focal sound.
+Will-o'-Wisp and Library Owl. Companion selections also apply to their summoning
+cards. Enemy abilities use the selected card's focal sound; there are no separate
+enemy or Bestiary sound choices.
 
-Will-o'-Wisp has one listening decision: the enemy choice automatically applies
-to the companion and summoning card. The dependent companion row is omitted
-from the queue and progress count, but its matching choice is included in exports.
-The focused queue therefore contains fifteen decisions for sixteen targets.
+Will-o'-Wisp has one listening decision shared by the companion and summoning
+card. The companion row owns the choice in the focused queue; the summoning
+card follows it in the whole-game queue and exports.
 
 Focused previews and imported choices live in `reports/audio-review/battle-focus/`.
 Their browser storage is separate from whole-game choices. Use
@@ -245,7 +248,7 @@ a visible message. Essential in-game feedback must continue to work under mute.
 
 ## Sound desk validation
 
-Every card, enemy and companion requires an explicit assignment; battle/UI/stinger
+Every card and companion requires an explicit assignment; battle/UI/stinger
 registrations need review rows. Destination and keyword inventories are checked.
 New content without an assignment fails validation. Path, hash and decode checks
 cannot establish audible suitability; listen before choosing takes, trimming,

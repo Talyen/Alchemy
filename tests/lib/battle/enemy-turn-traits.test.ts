@@ -11,12 +11,7 @@ import {
   processEnemyRegeneration,
   processEnemyTraits,
 } from "@/lib/battle/enemy-turn-traits";
-import {
-  DIFFICULTY_FORGE_PER_TURN,
-  IRON_HIDE_ARMOR_PER_TURN,
-  TRAIT_FORGE_PER_TURN,
-  TRAIT_FREEZE_BONUS_PER_TURN,
-} from "@/lib/game-constants";
+import { IRON_HIDE_ARMOR_PER_TURN, TRAIT_FORGE_PER_TURN, TRAIT_FREEZE_BONUS_PER_TURN } from "@/lib/game-constants";
 import { patchBattleState } from "../../fixtures/battle";
 import { defaultCcState } from "../../fixtures/default-battle-state";
 
@@ -83,7 +78,6 @@ describe("processEnemyTraits", () => {
   const forgeGolem = enemyBestiary.find((e) => e.id === "forge-golem")!;
   const ironBear = enemyBestiary.find((e) => e.id === "iron-bear")!;
   const frostwarden = enemyBestiary.find((e) => e.id === "frostwarden")!;
-  const skeleton = enemyBestiary.find((e) => e.id === "skeleton")!;
 
   it("applies rusting-carapace forge every other turn (not room-scaled)", () => {
     const state = patchBattleState({
@@ -128,22 +122,6 @@ describe("processEnemyTraits", () => {
     expect(texts).not.toContainEqual(expect.objectContaining({ stat: "freezeBonus" }));
   });
 
-  it("applies enemy-gains-forge-each-turn difficulty modifier", () => {
-    const state = patchBattleState({
-      currentEnemy: skeleton,
-      difficultyModifiers: [{ kind: "enemy-gains-forge-each-turn" }],
-    });
-    const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
-    const result = processEnemyTraits(state, texts);
-    expect(result.enemyMitigation.forge).toBe(DIFFICULTY_FORGE_PER_TURN);
-    expect(texts).toContainEqual({
-      target: "enemy",
-      kind: "status",
-      stat: "forge",
-      amount: DIFFICULTY_FORGE_PER_TURN,
-    });
-  });
-
   it("does not run handlers for passive-only regeneration trait", () => {
     const blightTreant = enemyBestiary.find((e) => e.id === "blight-treant")!;
     const state = patchBattleState({
@@ -152,17 +130,5 @@ describe("processEnemyTraits", () => {
     });
     const result = processEnemyTraits(state, []);
     expect(result.enemyMitigation.forge).toBe(0);
-  });
-
-  it("applies trait and difficulty handlers in one pass", () => {
-    const state = patchBattleState({
-      currentEnemy: forgeGolem,
-      turn: 2,
-      roomScalingMultiplier: 1,
-      difficultyModifiers: [{ kind: "enemy-gains-forge-each-turn" }],
-      enemyMitigation: { forge: 0 },
-    });
-    const result = processEnemyTraits(state, []);
-    expect(result.enemyMitigation.forge).toBe(TRAIT_FORGE_PER_TURN + DIFFICULTY_FORGE_PER_TURN);
   });
 });

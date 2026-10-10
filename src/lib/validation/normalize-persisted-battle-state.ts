@@ -1,3 +1,9 @@
+import {
+  defaultGearEffects,
+  GEAR_NUMERIC_EFFECT_KEYS,
+  GEAR_CHANCE_EFFECT_KEYS,
+  type GearEffectManifest,
+} from "@/lib/gear";
 import { battleSnapshot, defaultBattleState, type BattleSnapshot } from "@/lib/battle";
 import {
   findEnemyAbilityCard,
@@ -16,6 +22,20 @@ import {
   sanitizeEncounterTraitIds,
   sanitizePersistedEnemyTraits,
 } from "@/lib/content-systems/encounter-traits";
+
+function normalizeGearEffects(saved: Partial<GearEffectManifest> | undefined): GearEffectManifest {
+  const result = { ...defaultGearEffects };
+  for (const key of GEAR_NUMERIC_EFFECT_KEYS) result[key] = clampNonNegative(saved?.[key] ?? 0, 0);
+  for (const key of GEAR_CHANCE_EFFECT_KEYS) {
+    const values = saved?.[key];
+    result[key] = Array.isArray(values)
+      ? values.filter(
+          (value): value is number => typeof value === "number" && Number.isFinite(value) && value > 0 && value <= 100,
+        )
+      : [];
+  }
+  return result;
+}
 
 function normalizeTalentEffects(
   defaults: TalentEffectManifest,
@@ -174,10 +194,15 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
         ? sanitizeEncounterTraitIds(saved.encounterBenefits, "reward")
         : [],
     trinketEffects: { ...defaults.trinketEffects, ...saved.trinketEffects },
-    gearEffects: normalizeNonNegativeRecord(defaults.gearEffects, saved.gearEffects),
+    gearEffects: normalizeGearEffects(saved.gearEffects),
     talentEffects: normalizeTalentEffects(defaults.talentEffects, saved.talentEffects),
     flags: normalizeCombatFlags(defaults.flags, saved.flags),
-    uniqueGear: { ...defaults.uniqueGear, ...saved.uniqueGear },
+    uniqueGear: Object.fromEntries(
+      Object.entries(defaults.uniqueGear).map(([key, value]) => [
+        key,
+        saved.uniqueGear?.[key as keyof typeof defaults.uniqueGear] ?? value,
+      ]),
+    ) as typeof defaults.uniqueGear,
     playerStatuses: normalizeNonNegativeRecord(defaults.playerStatuses, saved.playerStatuses),
     enemyStatuses: normalizeNonNegativeRecord(defaults.enemyStatuses, saved.enemyStatuses),
     playerCC: normalizeNonNegativeRecord(defaults.playerCC, saved.playerCC),

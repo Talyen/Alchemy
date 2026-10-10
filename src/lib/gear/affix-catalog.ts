@@ -1,12 +1,6 @@
 import type { AffixRowInput } from "./affix-definition";
 export { formatAffixDescription, type GearAffixAspect } from "./affix-definition";
-import {
-  primaryUniqueAffixes,
-  companionUniqueAffixes,
-  wardUniqueAffixes,
-  dodgeUniqueAffixes,
-  reactionUniqueAffixes,
-} from "./unique-affixes";
+import { primaryUniqueAffixes, wardUniqueAffixes, dodgeUniqueAffixes, reactionUniqueAffixes } from "./unique-affixes";
 import {
   primaryAffixes,
   secondaryAffixes,
@@ -20,7 +14,6 @@ import { keywordExpansionAffixes } from "./keyword-expansion-affixes";
 const affixRows = [
   ...primaryUniqueAffixes,
   ...primaryAffixes,
-  ...companionUniqueAffixes,
   ...secondaryAffixes,
   ...wardUniqueAffixes,
   ...dodgeAffixes,

@@ -13,6 +13,7 @@ const ENEMY_DAMAGE_FIELDS = [
   "equalToBlock",
   "equalToBlockPercent",
   "equalToForge",
+  "forgeBonusPercent",
   "ignoreArmor",
   "ignoreBlock",
   "blockCost",

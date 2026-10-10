@@ -9,7 +9,7 @@ const RESOURCE_PRIORITY = [
   "playerHeal",
   "cleanse",
   "manaChange",
-  "armorChange",
+  "armorGain",
   "forgeGain",
   "blockGain",
   "thornsGain",
@@ -52,7 +52,7 @@ export function selectCombatSound(events: CombatTextEvent[], hasFocalSound: bool
     }
     if (event.amount <= 0) continue;
     if (event.stat === "armor") {
-      resources.add("armorChange");
+      if (event.kind !== "damage") resources.add("armorGain");
       continue;
     }
     if (event.stat === "mana") {

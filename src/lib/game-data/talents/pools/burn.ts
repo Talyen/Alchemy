@@ -14,9 +14,9 @@ export const burnTalents = [
   t(
     "burn-dmg-2",
     "Thermal Vent",
-    "Burn cards have a 10% chance to grant 3 Forge",
+    "Burn cards have a 10% chance to grant 1 Forge",
     "WavesArrowUp",
-    setEffect("forgeOnBurnCard", 3),
+    setEffect("forgeOnBurnCard", 1),
     setEffect("forgeOnBurnCardChance", 10),
   ),
   t(

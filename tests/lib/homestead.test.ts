@@ -32,7 +32,7 @@ describe("computeHomesteadEffects", () => {
     const capped = computeHomesteadEffects({ "blacksmiths-forge": 99 }, {}, { "detect-magic": 99 });
     expect(capped).toMatchObject({
       flatPhysicalDamage: 4,
-      homesteadForgeBurnPercent: 100,
+      homesteadForgeBurnPercent: 40,
       gearAstralChanceBonus: 0.15,
     });
     expect(computeHomesteadEffects({ "blacksmiths-forge": -1 }, {}, {})).toEqual(defaultHomesteadEffects);

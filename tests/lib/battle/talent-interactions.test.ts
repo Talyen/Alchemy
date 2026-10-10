@@ -136,8 +136,8 @@ describe("card play rewards", () => {
   it("Thermal Vent supplies Forge that Ignite uses on the same card", () => {
     let rolls = 0;
     const next = play(battle({ talentEffects: burnTalents, rng: () => (rolls++ === 0 ? 0 : 0.99) }), burn);
-    expect(next.enemyHealth).toBe(196);
-    expect(next.playerStatuses.forge).toBe(2);
+    expect(next.enemyHealth).toBe(198);
+    expect(next.playerStatuses.forge).toBe(1);
   });
 
   it("Thermal Vent uses Intensify, Desperate Forge, and Overheat without a feedback loop", () => {
@@ -155,7 +155,7 @@ describe("card play rewards", () => {
       }),
       burn,
     );
-    expect(next.playerStatuses.forge).toBe(5);
+    expect(next.playerStatuses.forge).toBe(2);
     expect(next.enemyHealth).toBe(198);
   });
 
@@ -171,7 +171,7 @@ describe("card play rewards", () => {
       }),
       { ...burn, effects: [...burn.effects, ...burn.effects] },
     );
-    expect(next.playerStatuses.forge).toBe(3);
+    expect(next.playerStatuses.forge).toBe(1);
     expect(next.enemyHealth).toBe(192);
   });
 
@@ -199,7 +199,7 @@ describe("card play rewards", () => {
       makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 1 }] }),
       [],
     );
-    expect(next.playerStatuses.forge).toBe(3);
+    expect(next.playerStatuses.forge).toBe(1);
   });
 });
 

@@ -1,10 +1,4 @@
-import {
-  allRegisteredSoundFiles,
-  battleEventSounds,
-  getCardSounds,
-  enemyAttackSounds,
-  uiSounds,
-} from "./sound-registry";
+import { allRegisteredSoundFiles, battleEventSounds, getCardSounds, uiSounds } from "./sound-registry";
 import { scheduleIdle } from "../preload";
 import { getSoundUrl, resetSoundUrlCache } from "./url";
 import { releaseAudioElement } from "./element";
@@ -73,11 +67,7 @@ export function preloadSounds(names: readonly string[] | string[]) {
   }
 }
 
-export function preloadBattleSounds(
-  handCardIds: readonly string[],
-  enemyId: string,
-  abilityIds: readonly string[] = [],
-) {
+export function preloadBattleSounds(handCardIds: readonly string[], abilityIds: readonly string[] = []) {
   // Opening combat text can
   // trigger stun/freeze/heal cues, so warm everything rather than a subset.
   // Enemy abilities play through playCardSound(ability.id), so their card
@@ -86,7 +76,6 @@ export function preloadBattleSounds(
   for (const cardId of [...handCardIds, ...abilityIds]) {
     for (const name of getCardSounds(cardId)) names.add(name);
   }
-  for (const name of enemyAttackSounds[enemyId] ?? []) names.add(name);
   preloadSounds([...names]);
 }
 

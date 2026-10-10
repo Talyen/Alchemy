@@ -14,9 +14,9 @@ export const consumeTalents = [
   t(
     "consume-last-supper",
     "Last Supper",
-    "When you Consume your last card in hand, gain 3 Forge (except cards that summon a Companion)",
+    "Consume your last card in hand to gain 1 Forge (except Companion summons)",
     "Gift",
-    setEffect("forgeOnConsume", 3),
+    setEffect("forgeOnConsume", 1),
   ),
   t(
     "consume-volatility",

@@ -6,7 +6,6 @@ import {
   playCardSound,
   playGoldGain,
   playGoldSpend,
-  playEnemyAttack,
   playBattleEvent,
   playUISound,
   playVictory,
@@ -93,19 +92,6 @@ describe("playGoldSpend", () => {
     playGoldSpend();
     expect(lastFakeAudio()?.src).toContain(uiSounds.shopBuy);
     expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
-  });
-});
-
-describe("playEnemyAttack", () => {
-  it("plays audio for known enemy id", () => {
-    playEnemyAttack("skeleton");
-    expect(lastFakeAudio()?.src).toContain("swish-hit.");
-    expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
-  });
-
-  it("does nothing for unknown enemy id", () => {
-    playEnemyAttack("nonexistent-enemy");
-    expect(createdFakeAudio).toHaveLength(0);
   });
 });
 

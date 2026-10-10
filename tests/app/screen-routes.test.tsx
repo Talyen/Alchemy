@@ -109,7 +109,7 @@ describe("SCREEN_ROUTES registry", () => {
     render(renderAlchemyScreenRoute(createMockProps("transmutation")));
     expect(transmutationRender).toHaveBeenCalled();
     for (const [visit] of transmutationRender.mock.calls) {
-      expect(visit.offers).toHaveLength(3);
+      expect(visit.transmutation?.choices).toHaveLength(3);
       expect(visit.completed).toBe(false);
     }
   });

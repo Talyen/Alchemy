@@ -90,7 +90,7 @@ describe("Dodge tree rewards", () => {
     );
     expect(result.playerDodgeCount).toBe(2);
     expect(result.playerHealth).toBe(52);
-    expect(result.playerStatuses).toMatchObject({ armor: 5, forge: 4, thorns: 2 });
+    expect(result.playerStatuses).toMatchObject({ armor: 5, forge: 2, thorns: 2 });
     expect(state.playerStatuses).toMatchObject({ armor: 0, forge: 0, thorns: 0 });
   });
 

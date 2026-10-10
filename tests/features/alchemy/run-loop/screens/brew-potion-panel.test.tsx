@@ -20,18 +20,26 @@ afterEach(() => {
 describe("Brew selection safety", () => {
   installDisabledAnimationsForTests();
   it("confirms a single Potion only through the Strengthen flow", () => {
+    const onConfirm = vi.fn(() => null);
     render(
       <BrewPotionPanel
-        deck={[cardById["health-potion"]!]}
+        deck={[cardById["health-potion"]!, cardById["mana-potion"]!, cardById["wishing-potion"]!]}
         kind="strengthen"
-        onConfirm={() => null}
+        onConfirm={onConfirm}
         onBack={() => {}}
       />,
     );
     expect(screen.queryByRole("button", { name: "Mix" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Select Wishing Potion" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Select Health Potion" }));
     expect(screen.getByRole("button", { name: "Inspect brew result: Health Potion" })).toBeTruthy();
-    expect((screen.getByRole("button", { name: "Strengthen" }) as HTMLButtonElement).disabled).toBe(false);
+    expect(screen.getByRole("button", { name: "Original: Health Potion" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Select Health Potion" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Choose Another Potion" }));
+    expect(screen.queryByRole("button", { name: "Inspect brew result: Health Potion" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Select Mana Potion" }));
+    fireEvent.click(screen.getByRole("button", { name: "Distill" }));
+    expect(onConfirm).toHaveBeenCalledExactlyOnceWith({ kind: "strengthen", index: 1 });
   });
   it("requires fresh source selection if the deck changes before confirmation", () => {
     const deck = [cardById["health-potion"]!, cardById["mana-potion"]!];

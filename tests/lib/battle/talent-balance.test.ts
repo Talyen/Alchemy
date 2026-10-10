@@ -56,10 +56,10 @@ describe("repeatability-based talent balance", () => {
   it.each([
     ["physical", 15], // 4 base + 5 Forge + 4 Armor + 2 Block
     ["nature", 4],
-    ["holy", 8],
+    ["holy", 7],
     ["stun", 10],
-    ["burn", 6],
-    ["bleed", 6],
+    ["burn", 5],
+    ["bleed", 5],
   ] as const)(
     "combines current %s resource conversions without restoring full-strength talent scaling",
     (type, expected) => {
@@ -71,24 +71,16 @@ describe("repeatability-based talent balance", () => {
 
   it("retains full Forge from Homestead and Gear without adding the talent contribution twice", () => {
     const initial = battle({ talentEffects: scaling, playerStatuses: { forge: 8 } });
-    expect(damage(initial, "burn")).toBe(8);
+    expect(damage(initial, "burn")).toBe(6);
     const homestead = { ...initial, talentEffects: { ...scaling, homesteadForgeBurnPercent: 100 } };
     expect(damage(homestead, "burn")).toBe(12);
     expect(damage({ ...homestead, gearEffects: { ...initial.gearEffects, sharedBurnBleedBonuses: 1 } }, "bleed")).toBe(
       12,
     );
-    expect(damage({ ...initial, gearEffects: { ...initial.gearEffects, holyPreservesForge: 1 } }, "holy")).toBe(12);
-    expect(
-      computeCardDamageToEnemy(
-        { ...initial, gearEffects: { ...initial.gearEffects, companionBenefitsFromForge: 1 } },
-        { kind: "damage", damageType: "burn", amount: 4 },
-        undefined,
-        { origin: "companion", manaAtStart: initial.mana, enemyFreezeSkipTurnsAtStart: 0 },
-      ).modifiedDamage,
-    ).toBe(12);
+    expect(damage({ ...initial, gearEffects: { ...initial.gearEffects, oathkeeperHolyAndBlock: 1 } }, "holy")).toBe(8);
   });
 
-  it("uses the larger shared Burn/Bleed conversion only once and spends Forge normally", () => {
+  it("uses the larger shared Burn/Bleed conversion only once and preserves Forge", () => {
     const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 4 }] });
     const state = battle({
       talentEffects: scaling,
@@ -97,8 +89,8 @@ describe("repeatability-based talent balance", () => {
       hand: [card],
     });
     const next = playBattleCardResolved(state, card.id, 0).state;
-    expect(next.enemyHealth).toBe(94);
-    expect(next.playerStatuses.forge).toBe(3);
+    expect(next.enemyHealth).toBe(95);
+    expect(next.playerStatuses.forge).toBe(4);
   });
 
   it("keeps half-Health bonuses strict and rounds small gains", () => {
@@ -115,7 +107,7 @@ describe("repeatability-based talent balance", () => {
       expect(
         applyPlayerStatusEffect(state, { kind: "player-status", status: "armor", amount: 4 }, []).playerStatuses.armor,
       ).toBe(gain);
-      expect(addForgeToPlayer(state, 4).playerStatuses.forge).toBe(gain);
+      expect(addForgeToPlayer(state, 4).playerStatuses.forge).toBe(4);
       expect(damage(state, "physical")).toBe(hit);
     }
     const tiny = battle({ talentEffects: talents });
@@ -132,8 +124,8 @@ describe("repeatability-based talent balance", () => {
       5,
     );
     const guarded = applyPlayerStatusEffect(forged, { kind: "player-status", status: "block", amount: 2 }, []);
-    expect(forged.playerStatuses.forge).toBe(13);
-    expect(guarded.playerStatuses).toMatchObject({ forge: 13, block: 9, armor: 9 });
+    expect(forged.playerStatuses.forge).toBe(9);
+    expect(guarded.playerStatuses).toMatchObject({ forge: 9, block: 4, armor: 4 });
     expect(guarded.enemyHealth).toBe(100);
   });
 

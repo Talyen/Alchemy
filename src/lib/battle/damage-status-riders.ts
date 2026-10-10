@@ -282,6 +282,7 @@ function applyPhysicalStatusRider(
   combatTexts: CombatTextEvent[],
   critical = false,
   forgeBeforeHit = state.playerStatuses.forge,
+  forgeTriggers?: Set<string>,
 ): BattleState {
   let nextState =
     actualDamage > 0 &&
@@ -297,8 +298,14 @@ function applyPhysicalStatusRider(
   ) {
     nextState = detonateEnemyStatuses(nextState, ["bleed"], combatTexts);
   }
-  if (actualDamage > 0 && state.talentEffects.physicalStripArmorByForge && forgeBeforeHit > 0) {
-    nextState = removeEnemyArmorWithFeedback(nextState, forgeBeforeHit, combatTexts);
+  if (
+    actualDamage > 0 &&
+    state.talentEffects.physicalStripArmorByForge &&
+    forgeBeforeHit > 0 &&
+    !forgeTriggers?.has("sunder")
+  ) {
+    forgeTriggers?.add("sunder");
+    nextState = removeEnemyArmorWithFeedback(nextState, Math.round(forgeBeforeHit * 0.5), combatTexts);
   }
   if (state.talentEffects.physicalStripArmorWhileBlocked && state.playerStatuses.block > 0) {
     nextState = removeEnemyArmorWithFeedback(nextState, 2, combatTexts);
@@ -319,6 +326,7 @@ export function applyDamageStatuses(
     onPoisonBleedConversion?: (state: BattleState, damage: number, combatTexts: CombatTextEvent[]) => BattleState;
     critical?: boolean;
     forgeBeforeHit?: number;
+    forgeTriggers?: Set<string> | undefined;
   } = {},
 ) {
   switch (effect.damageType) {
@@ -340,7 +348,14 @@ export function applyDamageStatuses(
     case "freeze":
       return applyFreezeStatusRider(state, actualDamage, combatTexts, preHitHealth, options.eligibility ?? state);
     case "physical":
-      return applyPhysicalStatusRider(state, actualDamage, combatTexts, options.critical, options.forgeBeforeHit);
+      return applyPhysicalStatusRider(
+        state,
+        actualDamage,
+        combatTexts,
+        options.critical,
+        options.forgeBeforeHit,
+        options.forgeTriggers,
+      );
     case "holy":
       if (state.gearEffects.holyStunBuildupGold > 0 && actualDamage > 0) {
         return applyStunStatusRider(state, actualDamage, combatTexts, preHitHealth, true);

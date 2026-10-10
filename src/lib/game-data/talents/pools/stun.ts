@@ -7,9 +7,10 @@ export const stunTalents = [
   t(
     "stun-forge-grant",
     "Riled Up",
-    "If you have no Forge, Stunning an enemy grants 2 Forge",
+    "Stunning an enemy has a 25% chance to grant 1 Forge",
     "Flame",
-    setEffect("forgeOnStun", 2),
+    setEffect("forgeOnStun", 1),
+    setEffect("forgeOnStunChance", 25),
   ),
   t(
     "stun-double-damage",

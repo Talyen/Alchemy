@@ -43,19 +43,19 @@ describe("card and turn reaction ordering", () => {
         enemyHealth: 30,
         enemyMaxHealth: 30,
         hand: [card],
-        talentEffects: { physicalStunChance: 100, forgeOnStun: 2 },
+        talentEffects: { physicalStunChance: 100, forgeOnStun: 1, forgeOnStunChance: 100 },
       }),
       card.id,
       0,
     ).state;
     expect(result.enemyCC.stunSkipTurns).toBe(1);
-    expect(result.playerStatuses.forge).toBe(2);
+    expect(result.playerStatuses.forge).toBe(1);
   });
 
   it("Phoenix and card attacks earn Emberforged only while reigniting Burn", () => {
     let state = battle({
       activeCompanion: companionLibrary.phoenix,
-      gearEffects: { forgeOnBurnVsUnburned: 2 },
+      gearEffects: { forgeOnBurnVsUnburnedChances: [100, 100] },
     });
     state = processCompanionTurnStart(state, []);
     expect(state.playerStatuses.forge).toBe(2);

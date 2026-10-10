@@ -10,7 +10,10 @@ import { applyPlayerCombatDamage } from "@/lib/battle/health-state";
 import { applyPurgeGearRewards, purgeEnemyBenefits } from "@/lib/battle/enemy-purge";
 import { applyDodgeTalentStatuses } from "@/lib/battle/dodge-talent-rewards";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
-import { gearAffixCatalog } from "@/lib/gear";
+import { effectsForAffixRolls, gearAffixCatalog } from "@/lib/gear";
+import { resolveBattleStart } from "@/lib/battle/battle-start";
+import { enemyById } from "@/lib/game-data";
+import { normalizePersistedBattleState } from "@/lib/validation/normalize-persisted-battle-state";
 import { keywordExpansionAffixes } from "@/lib/gear/keyword-expansion-affixes";
 import { gearDefinitions } from "@/lib/gear/definitions";
 import { buildEligibleAffixPool } from "@/lib/gear/affix-pool";
@@ -90,10 +93,6 @@ describe("ported Thorns affixes", () => {
     expect(gearAffixCatalog["thorns-damage-while-blocked"].roll).toMatchObject({
       basic: { min: 1, max: 3 },
       astral: { min: 3, max: 5 },
-    });
-    expect(gearAffixCatalog["purge-on-first-paid-card"].roll).toMatchObject({
-      basic: { min: 1, max: 1 },
-      astral: { min: 1, max: 1 },
     });
   });
 });
@@ -214,60 +213,73 @@ describe("ported Purge affix rewards", () => {
     expect(emptyTexts).toEqual([]);
     expect(applyPurgeGearRewards(empty.state, empty.removed, []).enemyHealth).toBe(28);
   });
+});
 
-  it("uses Spellrending before the first paid card resolves and only once per turn", () => {
-    const attack = makeTestCard({
-      id: "paid-attack",
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
-    });
-    const support = makeTestCard({ id: "paid-support", cost: 1, effects: [] });
-    const state = patchBattleState({
-      hand: [attack],
-      mana: 2,
-      maxMana: 2,
-      enemyHealth: 30,
-      enemyMaxHealth: 30,
-      enemyMitigation: { armor: 0, block: 3, forge: 0 },
-      gearEffects: { purgeOnFirstPaidCard: 1 },
-      rng: () => 0.99,
-    });
-    const first = playBattleCardResolved(state, attack.id, 0).state;
-    expect(first.flags.spellrendingUsedThisTurn).toBe(true);
-    expect(first.enemyMitigation.block).toBe(0);
-    expect(first.enemyHealth).toBe(26);
-
-    const second = playBattleCardResolved(
-      { ...first, hand: [support], enemyMitigation: { ...first.enemyMitigation, block: 3 } },
-      support.id,
-      0,
-    ).state;
-    expect(second.enemyMitigation.block).toBe(3);
-    expect(advanceToPlayerTurn(second, []).flags.spellrendingUsedThisTurn).toBe(false);
-
-    const free = makeTestCard({ id: "free-support", cost: 0, effects: [] });
-    const freeResult = playBattleCardResolved({ ...state, hand: [free] }, free.id, 0).state;
-    expect(freeResult.flags.spellrendingUsedThisTurn).toBe(false);
-    expect(freeResult.enemyMitigation.block).toBe(3);
+describe("Spellrending turn-start Purge", () => {
+  it.each([
+    [0.249, true],
+    [0.25, false],
+  ] as const)("rolls at the opening and later turn starts (roll %s, Purged %s)", (roll, purged) => {
+    const gearEffects = effectsForAffixRolls([{ id: "purge-on-first-paid-card", value: 1 }], "basic");
+    const opening = resolveBattleStart(
+      { runDeck: [strike], currentEnemy: enemyById["living-armor"]!, gearEffects },
+      { rng: () => roll },
+    );
+    expect(opening.state.enemyMitigation.armor === 0).toBe(purged);
+    const texts: CombatTextEvent[] = [];
+    const next = advanceToPlayerTurn(
+      { ...opening.state, enemyMitigation: { armor: 3, block: 4, forge: 0 }, rng: () => roll },
+      texts,
+    );
+    expect(next.enemyMitigation.armor).toBe(purged ? 0 : 3);
+    expect(texts.some((text) => text.kind === "notice" && text.signal === "purge")).toBe(purged);
   });
 
-  it("stops the paid card's attack if its Purge reward defeats the enemy", () => {
-    const attack = makeTestCard({
-      id: "finishing-card",
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
-    });
+  it("does not Purge on Mana spending", () => {
+    const paid = makeTestCard({ cost: 1, effects: [{ kind: "heal", amount: 1 }] });
     const state = patchBattleState({
-      hand: [attack],
+      hand: [paid],
       mana: 1,
-      enemyHealth: 1,
-      enemyMaxHealth: 1,
-      enemyMitigation: { armor: 1, block: 0, forge: 0 },
-      gearEffects: { purgeOnFirstPaidCard: 1, holyOnPurge: 2 },
+      playerHealth: 20,
+      enemyMitigation: { armor: 3 },
+      gearEffects: { turnStartPurgeChance: 100 },
+      rng: () => 0,
+    });
+    expect(playBattleCardResolved(state, paid.id, 0).state.enemyMitigation.armor).toBe(3);
+  });
+
+  it("stacks chance while removing one category per turn and survives current-format resume", () => {
+    const gearEffects = effectsForAffixRolls(
+      [
+        { id: "purge-on-first-paid-card", value: 25 },
+        { id: "purge-on-first-paid-card", value: 25 },
+      ],
+      "astral",
+    );
+    const state = patchBattleState({ enemyMitigation: { armor: 3, block: 4 }, gearEffects });
+    const restored = normalizePersistedBattleState(JSON.parse(JSON.stringify(state)));
+    const first = advanceToPlayerTurn({ ...restored, rng: () => 0.49 }, []);
+    expect(first.enemyMitigation).toMatchObject({ armor: 0, block: 4 });
+    const second = advanceToPlayerTurn({ ...first, rng: () => 0.49 }, []);
+    expect(second.enemyMitigation.block).toBe(0);
+    expect(advanceToPlayerTurn({ ...restored, rng: () => 0.5 }, []).enemyMitigation.armor).toBe(3);
+  });
+
+  it("settles fatal Purge retaliation before later turn-start healing", () => {
+    const state = patchBattleState({
+      turn: 2,
+      playerHealth: 1,
+      deathsDoorUsed: true,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyMitigation: { armor: 1 },
+      currentEnemy: { traits: [{ id: "cinder-skin", title: "Cinder Skin", description: "" }] },
+      gearEffects: { turnStartPurgeChance: 100, holyOnPurge: 2, healthPerTurn: 10 },
       rng: () => 0.99,
     });
-    const result = playBattleCardResolved(state, attack.id, 0);
-    expect(result.state.enemyHealth).toBe(0);
-    expect(result.combatTexts.some((event) => event.kind === "damage" && event.stat === "physical")).toBe(false);
+    const texts: CombatTextEvent[] = [];
+    const next = advanceToPlayerTurn(state, texts);
+    expect(next.playerHealth).toBe(0);
+    expect(texts.some((text) => text.kind === "heal")).toBe(false);
   });
 });

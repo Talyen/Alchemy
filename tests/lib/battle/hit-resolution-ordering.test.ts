@@ -8,12 +8,12 @@ it("settles an Obsidian Hammer kill before paying the parent Leech without addin
   const rng = vi.fn(() => 0.99);
   const state = patchBattleState({
     rng,
-    enemyHealth: 22,
+    enemyHealth: 16,
     enemyMaxHealth: 40,
     playerHealth: 10,
     playerMaxHealth: 30,
     playerStatuses: { forge: 8 },
-    trinketEffects: { forgeStunThreshold: 4, forgeStunAmount: 1 },
+    trinketEffects: { forgeStunThreshold: 4, forgeStunAmount: 2 },
     gearEffects: { goldOnKill: 2 },
   });
   const card = makeTestCard({
@@ -29,16 +29,16 @@ it("settles an Obsidian Hammer kill before paying the parent Leech without addin
     enemyHealth: 0,
     playerHealth: 17,
     gold: state.gold + 2,
-    playerStatuses: { forge: 7 },
+    playerStatuses: { forge: 8 },
     flags: { killRewardsPaid: true },
   });
   expect(texts).toEqual([
-    { target: "enemy", kind: "damage", stat: "stun", amount: 8 },
+    { target: "enemy", kind: "damage", stat: "stun", amount: 2 },
     { target: "player", kind: "status", stat: "gold", amount: 2 },
     { target: "player", kind: "heal", stat: "health", amount: 7 },
     { target: "enemy", kind: "damage", stat: "physical", amount: 14 },
   ]);
-  expect(rng).toHaveBeenCalledTimes(3);
+  expect(rng).toHaveBeenCalledTimes(2);
 });
 
 it("preserves Holy reflection reward timing and does not spend Forge", () => {

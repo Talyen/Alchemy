@@ -8,6 +8,7 @@ export interface CardEffectAddress {
 
 export const CARD_MAGNITUDE_FIELDS = [
   "amount",
+  "forgeAmount",
   "blockDamageBonus",
   "amountIfTargetFrozen",
   "minAmount",
@@ -39,6 +40,7 @@ export interface CardMagnitude {
   format?: (typeof CARD_MAGNITUDE_FORMATS)[number];
   editable?: boolean;
   corrupted?: boolean;
+  distilled?: boolean;
 }
 
 export type CardDescriptionPart = string | CardMagnitude;
@@ -121,10 +123,12 @@ function magnitudeSignature(magnitude: CardMagnitude): string {
 export function carryCardDescriptionMarks(previous: CardDescription, description: CardDescription): CardDescription {
   const identities = new Map<string, CardMagnitude>();
   const marked = new Set<string>();
+  const distilled = new Set<string>();
   for (const part of previous.flatMap((line) => line.parts)) {
     if (typeof part === "string") continue;
     identities.set(magnitudeSignature(part), part);
     if (part.corrupted) for (const reference of part.references) marked.add(referenceKey(reference));
+    if (part.distilled) for (const reference of part.references) distilled.add(referenceKey(reference));
   }
   return description.map((line) => ({
     ...line,
@@ -135,6 +139,7 @@ export function carryCardDescriptionMarks(previous: CardDescription, description
         ...part,
         ...(prior ? { id: prior.id } : {}),
         ...(part.references.some((reference) => marked.has(referenceKey(reference))) ? { corrupted: true } : {}),
+        ...(part.references.some((reference) => distilled.has(referenceKey(reference))) ? { distilled: true } : {}),
       };
     }),
   }));

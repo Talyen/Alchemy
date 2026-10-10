@@ -51,9 +51,10 @@ ordering follow [the battle workflow](./WORKFLOWS.md#change-battle-playback).
 
 Divine Intervention opens or queues an ordinary Wish under the [Talent rules](./TALENT_RULES.md#wishes-and-mana), using the existing [Wish interaction](./UI_BROWSING.md#rewards-and-wishes). The retained `nextWishExtraChoice` status chip describes compatibility state, not readiness granted by the current talent.
 
-Manual unplayable-card attempts show a brief warm outline on the card; an
-unaffordable resolved payment also outlines the Mana row, without added text.
-Repeated attempts share a 260ms feedback window. Playback locks, hidden transfer
+Manual unplayable-card attempts show a brief warm outline on the card, including
+when Mana is insufficient, so rejection remains visible with sound muted. The
+rejection sound reinforces this feedback; the Mana row stays unchanged. Repeated
+attempts share a 260ms feedback window. Playback locks, hidden transfer
 cards, and stale clicks remain silent. Automatic play does not trigger rejection
 feedback. Existing unavailable appearance and inspection remain available.
 

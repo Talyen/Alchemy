@@ -82,46 +82,32 @@ describe("player-facing combat regressions", () => {
     expect(computeCardPayment(state, libraryCard("astral-arrow"))).toMatchObject({ affordable: true });
   });
 
-  it("keeps ordinary companion Forge rules without Bonded and leaves hero Burn unchanged", () => {
+  it.each([
+    ["wolf", 0, 1, 4],
+    ["wolf", 0.99, 5, 4],
+    ["bear", 0.99, 5, 4],
+    ["phoenix", 0.99, 1, 4],
+  ] as const)("Companion %s uses ordinary damage-type Forge permissions (roll %s)", (id, roll, damage, forge) => {
     let rngCalls = 0;
     const state = regressionBattle({
-      activeCompanion: companionLibrary.wolf,
+      activeCompanion: companionLibrary[id],
       playerStatuses: { forge: 4 },
-      rng: () => (rngCalls++ === 0 ? 0 : 0.99),
+      rng: () => (rngCalls++ === 0 ? roll : 0.99),
     });
-    const companion = processCompanionTurnStart(state, []);
-    expect(companion.enemyHealth).toBe(state.enemyHealth - 1);
-    expect(companion.playerStatuses.forge).toBe(4);
-    const hero = dealDamage(
-      { ...state, gearEffects: { ...state.gearEffects, companionBenefitsFromForge: 1 } },
-      libraryCard("fireball"),
-    );
-    const ordinaryHero = dealDamage(state, libraryCard("fireball"));
-    expect(hero.enemyHealth).toBe(ordinaryHero.enemyHealth);
-    expect(hero.playerStatuses.forge).toBe(4);
+    const result = processCompanionTurnStart(state, []);
+    expect(result.enemyHealth).toBe(state.enemyHealth - damage);
+    expect(result.playerStatuses.forge).toBe(forge);
   });
 
-  it.each([0.01, 0.99])("Bonded spends no Forge on dodged or fully blocked attacks (%s)", (roll) => {
+  it.each([0.01, 0.99])("Companion Forge is preserved on dodged or fully blocked hits (%s)", (roll) => {
     const state = patchBattleState({
       rng: () => roll,
-      activeCompanion: companionLibrary.wolf,
+      activeCompanion: companionLibrary.bear,
       playerStatuses: { forge: 4 },
       enemyMitigation: { block: 100 },
-      gearEffects: { companionBenefitsFromForge: 1 },
     });
     const result = processCompanionTurnStart(state, []);
     expect(result.enemyHealth).toBe(state.enemyHealth);
     expect(result.playerStatuses.forge).toBe(4);
-  });
-
-  it.each(["bear", "wolf", "phoenix"] as const)("Bonded adds Forge exactly once to %s", (id) => {
-    const state = regressionBattle({
-      activeCompanion: companionLibrary[id],
-      playerStatuses: { forge: 4 },
-      gearEffects: { companionBenefitsFromForge: 1 },
-    });
-    const result = processCompanionTurnStart(state, []);
-    expect(result.enemyHealth).toBe(state.enemyHealth - 5);
-    expect(result.playerStatuses.forge).toBe(3);
   });
 });

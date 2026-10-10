@@ -125,5 +125,5 @@ export function paceCombatDamage(
   const config = FIGHT_PACING.damageRampByEnemyType[state.currentEnemy.enemyType];
   const overrun = Math.max(0, state.turn - config.startRound);
   const span = side === "player" ? config.playerSpan : config.enemySpan;
-  return Math.round(paced * (1 + (overrun / span) ** 2));
+  return Math.round(paced * Math.min(FIGHT_PACING.damageRampMaxMultiplier, 1 + (overrun / span) ** 2));
 }

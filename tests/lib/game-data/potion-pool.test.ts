@@ -20,7 +20,7 @@ it("keeps the brewing pool limited to the seven Distillation-eligible standard P
   expect(pool.every((card) => isPotionCard(card) && isStandardPotionCard(card))).toBe(true);
 });
 
-it("applies Potion perks to Mixed Potions without allowing them to be brewed again", () => {
+it("classifies Mixed Potions separately from standard Potion offers", () => {
   for (const id of ["mixed-potion", "mixed-potion-health-potion-a1-mana-potion-b2"]) {
     expect(isPotionCard({ id })).toBe(true);
     expect(isStandardPotionCard({ id })).toBe(false);

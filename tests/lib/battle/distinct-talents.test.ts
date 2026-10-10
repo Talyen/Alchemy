@@ -169,11 +169,11 @@ describe("distinct talent conditions", () => {
     );
   });
 
-  it("Icebreaker gains Forge on each qualifying hit, after spending the previous Forge", () => {
-    const initial = battle({ talentEffects: talents("Icebreaker"), enemyCC: { freezeSkipTurns: 1 } });
+  it("Icebreaker gains Forge on successful rolls for qualifying attacks", () => {
+    const initial = battle({ talentEffects: talents("Icebreaker"), rng: () => 0, enemyCC: { freezeSkipTurns: 1 } });
     const first = hit(initial, "physical");
     expect(first.playerStatuses.forge).toBe(1);
-    expect(hit(first, "physical").playerStatuses.forge).toBe(1);
+    expect(hit(first, "physical").playerStatuses.forge).toBe(2);
     expect(hit(battle({ talentEffects: initial.talentEffects }), "physical").playerStatuses.forge).toBe(0);
   });
 
@@ -269,11 +269,11 @@ describe("repeatable card and Consume rewards", () => {
     const first = handlePostPlayCardDestination(initial, cardById["health-potion"]!, { lastCardInHand: true });
     expect(first.enemyHealth).toBe(97);
     expect(first.enemyStatuses).toMatchObject({ burn: 0, poison: 0 });
-    expect(first.playerStatuses.forge).toBe(3);
+    expect(first.playerStatuses.forge).toBe(1);
     expect(first.hand).toHaveLength(1);
     const second = handlePostPlayCardDestination(first, cardById["health-potion"]!);
     expect(second.enemyHealth).toBe(97);
-    expect(second.playerStatuses.forge).toBe(3);
+    expect(second.playerStatuses.forge).toBe(1);
     expect(second.hand).toHaveLength(2);
   });
 

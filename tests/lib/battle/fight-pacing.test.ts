@@ -61,6 +61,11 @@ describe("fight pacing multipliers", () => {
     }
     expect(paceCombatDamage(overrun, 10, "player")).toBe(24);
     expect(paceCombatDamage(overrun, 10, "enemy")).toBe(enemyType === "boss" ? 24 : 17);
+    for (const side of ["player", "enemy"] as const) {
+      const stalled = { ...atTarget, turn: 100 };
+      expect(paceCombatDamage(stalled, 10, side)).toBe(36);
+      expect(paceCombatMagnitude(stalled, 10, side)).toBe(12);
+    }
   });
   it("grants no comeback when HP fractions are even", () => {
     expect(fightPacingComebackMultiplier("player", evenMetrics)).toBe(1);
@@ -231,7 +236,7 @@ describe("fight pacing in combat pipelines", () => {
 });
 
 describe("Forge gain pacing", () => {
-  it("scales an ordinary Forge gain and its feedback", () => {
+  it("does not scale an ordinary Forge gain and its feedback", () => {
     const state = pacedState({
       playerHealth: 8,
       playerMaxHealth: 30,
@@ -245,10 +250,10 @@ describe("Forge gain pacing", () => {
       makeTestCard({ effects: [{ kind: "player-status", status: "forge", amount: 10 }] }),
       texts,
     );
-    expect(result.playerStatuses.forge).toBe(12);
+    expect(result.playerStatuses.forge).toBe(10);
     expect(result.enemyStatuses.burn).toBe(0);
     expect(result.enemyHealth).toBe(state.enemyHealth);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 12 });
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 10 });
     expect(state.playerStatuses.forge).toBe(0);
   });
 });

@@ -1,37 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { createMixedPotion } from "@/lib/alchemist";
-import { processCompanionTurnStart } from "@/lib/battle/companion";
-import { cardById, companionLibrary } from "@/lib/game-data";
+import { cardById } from "@/lib/game-data";
 import { presentCombatTexts } from "@/features/alchemy/run-loop/battle/controller-utils";
 import { patchBattleState } from "../../fixtures/battle";
 
 describe("combat interaction bug regressions", () => {
-  it("Rimeheart checks Mana before Smithguard's cleanse rewards", () => {
-    let rolls = 0;
-    const state = patchBattleState({
-      activeCompanion: companionLibrary["frost-whelp"],
-      mana: 0,
-      maxMana: 10,
-      enemyHealth: 4,
-      enemyMaxHealth: 100,
-      playerStatuses: { forge: 1, poison: 1 },
-      gearEffects: {
-        companionBenefitsFromForge: 1,
-        freezeGrantsBlockAndMana: 1,
-        blockOnLastForgeSpent: 2,
-        manaOnCleanse: 1,
-      },
-      talentEffects: { armorOnBlockChance: 10, armorCleanseChance: 10 },
-      rng: () => (++rolls <= 2 ? 0.99 : 0),
-    });
-    const result = processCompanionTurnStart(state, []);
-    expect(result.enemyCC.freezeSkipTurns).toBeGreaterThan(0);
-    expect(result.playerStatuses.poison).toBe(0);
-    expect(result.playerStatuses.block).toBe(4);
-    expect(result.mana).toBe(3);
-  });
-
   it("Winter's Credit spends Block without presenting a hit on the hero", () => {
     const card = cardById.frostbolt!;
     const state = patchBattleState({

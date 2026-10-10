@@ -1,6 +1,6 @@
 import { Fragment, useMemo, type ReactNode } from "react";
 
-import type { BattleCard, KeywordId } from "@/lib/game-data";
+import { renderCardDescription, type BattleCard, type KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 
@@ -100,32 +100,45 @@ export function DescriptionLines({
 }: {
   lines: string[];
   idPrefix: string;
-  card?: Pick<BattleCard, "corruptedValuePositions">;
+  card?: Pick<BattleCard, "corruptedValuePositions"> & Partial<Pick<BattleCard, "effects" | "description">>;
 }) {
   const corruptedValuePositions = card?.corruptedValuePositions;
-  const content = useMemo(
-    () =>
-      lines.map((line, lineIndex) => {
-        const corruptedOffsets = getCorruptedValueOffsets(
-          corruptedValuePositions ? { corruptedValuePositions } : undefined,
-          lineIndex,
-        );
+  const effects = card?.effects;
+  const description = card?.description;
+  const content = useMemo(() => {
+    const magnitudes = effects && description ? renderCardDescription(effects, description).magnitudes : [];
+    return lines.map((line, lineIndex) => {
+      const distilledOffsets = new Set(
+        magnitudes
+          .filter((entry) => entry.lineIndex === lineIndex && entry.magnitude.distilled)
+          .map((entry) => entry.matchIndex),
+      );
+      const corruptedOffsets = getCorruptedValueOffsets(
+        corruptedValuePositions ? { corruptedValuePositions } : undefined,
+        lineIndex,
+      );
 
-        return (
-          <div key={`${idPrefix}-${lineIndex}-${line}`} className={tooltipBodyLineClass}>
-            {renderDescription(line, {
-              renderPlain: (text, key, offset) =>
-                splitCorruptedNumericParts(text, offset, corruptedOffsets).map((fragment, index) => (
-                  <span key={`${key}-${index}`} className={fragment.corrupted ? "text-destructive" : undefined}>
-                    {fragment.text}
-                  </span>
-                )),
-            })}
-          </div>
-        );
-      }),
-    [lines, idPrefix, corruptedValuePositions],
-  );
+      return (
+        <div key={`${idPrefix}-${lineIndex}-${line}`} className={tooltipBodyLineClass}>
+          {renderDescription(line, {
+            renderPlain: (text, key, offset) => {
+              const distilled = splitCorruptedNumericParts(text, offset, distilledOffsets);
+              return splitCorruptedNumericParts(text, offset, corruptedOffsets).map((fragment, index) => (
+                <span
+                  key={`${key}-${index}`}
+                  className={
+                    distilled[index]?.corrupted ? "text-green-400" : fragment.corrupted ? "text-destructive" : undefined
+                  }
+                >
+                  {fragment.text}
+                </span>
+              ));
+            },
+          })}
+        </div>
+      );
+    });
+  }, [lines, idPrefix, corruptedValuePositions, effects, description]);
 
   return <TooltipBody>{content}</TooltipBody>;
 }

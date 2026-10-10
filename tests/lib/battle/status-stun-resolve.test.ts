@@ -247,13 +247,13 @@ describe("resolveStunTrigger", () => {
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
-      gearEffects: { ...defaultGearEffects, forgeOnStun: 4 },
-      talentEffects: { forgeOnStun: 2 },
+      gearEffects: { ...defaultGearEffects, forgeOnStunChances: [100, 100, 100, 100] },
+      talentEffects: { forgeOnStun: 1, forgeOnStunChance: 100 },
     });
     const texts = makeTexts();
     const result = resolveStunTrigger(state, texts);
-    expect(result.playerStatuses.forge).toBe(6);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 6 });
+    expect(result.playerStatuses.forge).toBe(5);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 5 });
   });
 
   it("combines talent and gear Block on Stun with combat text", () => {

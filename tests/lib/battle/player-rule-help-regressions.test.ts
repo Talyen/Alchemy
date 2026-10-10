@@ -24,13 +24,13 @@ describe("player rule help matches consequential combat behavior", () => {
     }
   });
 
-  it("explains that Forge is spent only by damage it boosts", () => {
+  it("explains that Forge persists after damage it boosts", () => {
     const state = regressionBattle({ playerStatuses: { forge: 3 }, enemyHealth: 100, enemyMaxHealth: 100 });
     const holy = applyCardEffects(state, cardById.tithe!, []);
     expect(holy.playerStatuses.forge).toBe(3);
     const physical = applyCardEffects(holy, cardById.slash!, []);
-    expect(physical.playerStatuses.forge).toBe(2);
-    expect(keywordDefinitions.forge.description).toContain("damage that uses Forge");
+    expect(physical.playerStatuses.forge).toBe(3);
+    expect(keywordDefinitions.forge.description).toContain("for the rest of combat");
   });
 
   it("explains that Wish offers can expand and full-hand choices are kept", () => {

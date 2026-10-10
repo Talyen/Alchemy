@@ -68,7 +68,7 @@ describe("Unique Gear battle effect persistence", () => {
     const state = play(
       battle({
         gearEffects: { archeryEchoNextTurn: 1 },
-        uniqueGear: { wildheartReady: true, spentForge: 3 },
+        uniqueGear: { wildheartReady: true },
       }),
       card,
     );

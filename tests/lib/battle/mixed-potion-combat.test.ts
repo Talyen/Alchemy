@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
-import { createMixedPotion, tryCreateMixedPotion } from "@/lib/alchemist";
+import { createMixedPotion } from "@/lib/alchemist";
 import { cardById, computeTalentEffects, isMixedPotionCard, isPotionCard, isStandardPotionCard } from "@/lib/game-data";
 import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import { makeCombatTexts, makeState } from "../../fixtures/battle";
@@ -21,13 +21,6 @@ describe("Mixed potion classification and combat mechanics", () => {
     expect(isPotionCard(mixed)).toBe(true);
     expect(isStandardPotionCard(mixed)).toBe(false);
     expect(isMixedPotionCard({ id: MIXED_POTION_CARD_ID })).toBe(true);
-  });
-
-  it("prevents re-mixing an already-mixed potion", () => {
-    const mixed = createMixedPotion(healthPotion, manaPotion);
-    expect(() => createMixedPotion(mixed, healthPotion)).toThrow("Cannot mix with an existing Mixed Potion");
-    expect(() => createMixedPotion(healthPotion, mixed)).toThrow("Cannot mix with an existing Mixed Potion");
-    expect(tryCreateMixedPotion(mixed, healthPotion)).toBeNull();
   });
 
   it("applies potionPotency talent bonus to mixed potions during battle", () => {

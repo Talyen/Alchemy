@@ -30,6 +30,7 @@ const descriptionSchema = z
             format: z.enum(CARD_MAGNITUDE_FORMATS).optional(),
             editable: z.boolean().optional(),
             corrupted: z.boolean().optional(),
+            distilled: z.boolean().optional(),
           }),
         ]),
       ),

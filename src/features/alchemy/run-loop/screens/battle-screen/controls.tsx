@@ -1,4 +1,3 @@
-import { useStore } from "zustand";
 import type { BattlePresentationStore } from "../../battle/battle-presentation-store";
 import type { RefObject } from "react";
 
@@ -27,12 +26,11 @@ export function BattleBottomBar({
 }) {
   const { battleState } = view;
   const { drawPileRef, discardPileRef } = refs;
-  const manaRejected = useStore(presentation, (state) => state.cardRejection?.mana === true);
 
   return (
     <section className={battleBottomBarClass}>
       <div className={battleBottomColumnClass}>
-        <ManaPanel mana={battleState.mana} maxMana={battleState.maxMana} rejected={manaRejected} />
+        <ManaPanel mana={battleState.mana} maxMana={battleState.maxMana} />
         <div className="flex justify-center">
           <PilePanel
             ref={drawPileRef}

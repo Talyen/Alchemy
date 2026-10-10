@@ -102,7 +102,6 @@ function fixture() {
     keywords: ["physical"],
     registry: {
       cardSounds: { slash: ["slash.ogg"], "wolf-companion": ["wolf.ogg"] },
-      enemyAttackSounds: {},
       battleEventSounds: { hit: "hit.ogg" },
       uiSounds: {},
       stingerSounds: {},
@@ -136,7 +135,7 @@ function fixture() {
         evidence: ["controller.ts"],
       },
     ],
-    assignments: { cards: { slash: "blade" }, enemies: { boss: "blade" }, companions: { wolf: "blade" } },
+    assignments: { cards: { slash: "blade" }, companions: { wolf: "blade" } },
     destinationCoverage: ["Combat"],
     keywordCoverage: { physical: ["hit"] },
     sequences: [],
@@ -171,7 +170,7 @@ describe("whole-game audio review coverage", () => {
     expect(slash.candidates[0].identicalTo).toEqual(["slash.ogg"]);
     expect(slash.candidates[0].originalName).toBe('Sword, attack "one"\nsecond line');
     expect(mappings.find((mapping) => mapping.id === "hit")?.status).toBe("addition");
-    expect(mappings.find((mapping) => mapping.id === "enemy:boss")?.currentState).toBe("silent");
+    expect(mappings.some((mapping) => mapping.id.startsWith("enemy:"))).toBe(false);
   });
 });
 
@@ -264,7 +263,7 @@ it("imports matching decisions without trusting attached candidate metadata and 
           notes: "Good",
           candidate: { path: "wrong-source.wav" },
         },
-        { mappingId: "enemy:boss", choice: "not-a-candidate", reviewed: true },
+        { mappingId: "companion:wolf", choice: "not-a-candidate", reviewed: true },
       ],
     },
     mappings,
@@ -336,16 +335,16 @@ describe("audition playback lifetime", () => {
   });
 });
 
-it("a shared enemy/companion selection overrides independent choices and survives import and export", () => {
+it("a shared card/companion selection overrides independent choices and survives import and export", () => {
   const { inventory, manifest, catalog } = fixture();
-  manifest.sharedChoices = { "companion:wolf": "enemy:boss" };
+  manifest.sharedChoices = { "companion:wolf": "card:slash" };
   const mappings = buildMappings(manifest, inventory, catalog, {});
   const records = {
-    "enemy:boss": { choice: "asset", notes: "Use this take", reviewed: true },
+    "card:slash": { choice: "asset", notes: "Use this take", reviewed: true },
     "companion:wolf": { choice: "silence", notes: "Earlier independent choice", reviewed: true },
   };
   const choices = restoreChoices(mappings, records);
-  expect(choices["companion:wolf"]).toEqual(choices["enemy:boss"]);
+  expect(choices["companion:wolf"]).toEqual(choices["card:slash"]);
   const exported = buildChoicesExport({ mappings, direction: "Fantasy", generatedAt: "now" }, records);
   expect(exported.choices.find((choice) => choice.mappingId === "companion:wolf")).toMatchObject({
     choice: "asset",
@@ -353,13 +352,13 @@ it("a shared enemy/companion selection overrides independent choices and survive
     notes: "Use this take",
   });
   const imported = importChoices(
-    { schemaVersion: 1, choices: [{ mappingId: "enemy:boss", ...records["enemy:boss"] }] },
+    { schemaVersion: 1, choices: [{ mappingId: "card:slash", ...records["card:slash"] }] },
     mappings,
   );
   expect(imported.skipped).toBe(0);
-  expect(imported.choices["companion:wolf"]).toEqual(imported.choices["enemy:boss"]);
+  expect(imported.choices["companion:wolf"]).toEqual(imported.choices["card:slash"]);
   expect(restoreChoices(mappings, { "companion:wolf": records["companion:wolf"] })).toEqual({});
-  manifest.sharedChoices["enemy:boss"] = "companion:wolf";
+  manifest.sharedChoices["card:slash"] = "companion:wolf";
   expect(() => validateMappings(manifest, inventory, catalog)).toThrow(/Invalid shared sound choice/);
 });
 
@@ -376,4 +375,10 @@ it("keeps the current Sound desk manifest aligned with live catalogs and registr
   ];
   const inventory = await loadGameInventory();
   expect(() => validateMappings(manifest, inventory, catalog)).not.toThrow();
+  const focusedIds = new Set(manifest.battleFocus);
+  for (const id of focusedIds) {
+    expect(id.startsWith("enemy:")).toBe(false);
+    const source = manifest.sharedChoices?.[id];
+    if (source) expect(focusedIds.has(source)).toBe(true);
+  }
 });

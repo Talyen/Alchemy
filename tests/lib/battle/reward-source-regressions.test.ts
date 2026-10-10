@@ -45,16 +45,17 @@ describe("combat reward sources", () => {
     expect(dealDamage(state, card).mana).toBe(2);
   });
 
-  it("Golden Crucible converts Gold without gain bonuses, pacing, or retired threshold reactions", () => {
+  it("Golden Crucible converts Gold using one nonrecursive grant without pacing", () => {
     const state = regressionBattle({
+      rng: () => 0,
       playerHealth: 10,
       playerStatuses: { forge: 0, burn: 1 },
       appliesFightPacing: true,
-      talentEffects: { forgeBurningBonusPercent: 100, forgeDoubleChance: 100, forgeLowHealthBonusPercent: 100 },
+      talentEffects: { forgeBurningBonusChance: 100, forgeBonusChance: 100, forgeLowHealthBonusChance: 100 },
       gearEffects: { goldGrantsForgeAndHoly: 1 },
     });
     const result = applyCardEffects(state, makeTestCard({ effects: [{ kind: "gain-gold", amount: 5 }] }), []);
-    expect(result.playerStatuses.forge).toBe(5);
+    expect(result.playerStatuses.forge).toBe(4);
     expect(result.gold).toBe(state.gold + 5);
     expect(result.enemyHealth).toBe(state.enemyHealth);
     expect(result.enemyStatuses.burn).toBe(0);

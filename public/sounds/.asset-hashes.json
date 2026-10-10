@@ -1,4 +1,16 @@
 {
+  "armor-gain-leather-rustle-ba8ddcf0-0-930.mp3": {
+    "hash": "6c4ec0d981cd1becb9b9f9d962d8480e",
+    "outputHash": "e4725455a9805875c55fff98bb607151",
+    "selectionHash": "fceffcc12bb349e355467e1f240fd03e3b23c4bb5371b5514bb8e5224dae8b79",
+    "owner": "generated"
+  },
+  "armor-gain-leather-rustle-ba8ddcf0-0-930.ogg": {
+    "hash": "3cd69155b2a993c5f577782355fd8b20",
+    "outputHash": "60a30d1dfa1e836ea0f568dffa6adf35",
+    "selectionHash": "b8de1b5e772b353583c4e08d611ae3ec4d53326b9b5e041fd50d652f60c03041",
+    "owner": "generated"
+  },
   "atmo-eerie-cave-water-drips-emptyness-howling-f2038732-0-12000.mp3": {
     "hash": "74a46bd1ea0a17538a46ec0d417df09c",
     "outputHash": "a75c4712d3cf93c48ed65dcde4f4013e",
@@ -23,18 +35,6 @@
     "selectionHash": "971e0205887041e0efd0515cc58be351d2f64e3b64aadb43a7da4a8e5c494938",
     "owner": "generated"
   },
-  "battle-focus-bug-people-03-d2d3d05e-50-1387.mp3": {
-    "hash": "8b766073d72115ca678e83fc7a8ead2c",
-    "outputHash": "9ed530cb503023fda3b5fc1de97a7733",
-    "selectionHash": "4c232e22d4c7d468f632fb623f90ab886cd629700f26ed4f8d8cc209fab40c1a",
-    "owner": "generated"
-  },
-  "battle-focus-bug-people-03-d2d3d05e-50-1387.ogg": {
-    "hash": "7948e8fa7fd5b36f662839ff4ff1ac9b",
-    "outputHash": "0d9772d47fa3e8d90e0deea88269bbda",
-    "selectionHash": "93c2c75bf3efd3eb9caef67cd1fae56ef065184366dfc9bd4108182d219354b8",
-    "owner": "generated"
-  },
   "battle-focus-church-choir-dm-a47d5cbc-0-1500.mp3": {
     "hash": "d86060d8e22c2c6c75a05100b9fe9bd0",
     "outputHash": "99357702857d5139a47c9d79d333e822",
@@ -57,30 +57,6 @@
     "hash": "d7e3247c3a720c7289bfc70f2898bdda",
     "outputHash": "fca373550e6c4699f23f155370d39234",
     "selectionHash": "4ba6843ab49399b46791eabc0aae7a333094a073440493a9ea6a8d097e5bd91f",
-    "owner": "generated"
-  },
-  "battle-focus-creature-hiss-4-m-e9aede68-330-1500.mp3": {
-    "hash": "8663abe7b9f7eadfc9414684b26d6cb0",
-    "outputHash": "d626dba085badac0a246324ed27d232b",
-    "selectionHash": "f35b28f2201410488dd04fb73dafc451e95c85326d98ed7ff533ece714092c67",
-    "owner": "generated"
-  },
-  "battle-focus-creature-hiss-4-m-e9aede68-330-1500.ogg": {
-    "hash": "4f3183a94f58dad5b0462cc5315c1163",
-    "outputHash": "7dc3316485212c4b1ade2a7c1afcfdf9",
-    "selectionHash": "653ef4a49fb9377841341ff71ebbf869f66ebd15aaf492c2f751d66574869d17",
-    "owner": "generated"
-  },
-  "battle-focus-heal-01-2847537e-0-1500.mp3": {
-    "hash": "c30a0d360ce2506ea0f365ccf07c5cec",
-    "outputHash": "5222c58f6c12fd002df98928d73a5a4c",
-    "selectionHash": "2e37e02442a58a5521aed925bf3593840811c36b17a702b4eeb85cbf4056c2f0",
-    "owner": "generated"
-  },
-  "battle-focus-heal-01-2847537e-0-1500.ogg": {
-    "hash": "51b05649acad1cf2cf99ae4d0800c0a1",
-    "outputHash": "157f61fd4063242066480e01428740cc",
-    "selectionHash": "6921dfd7f5d736c8587750d082a4f8734a1f8b8ab3b40be5b1ef56ae7996291a",
     "owner": "generated"
   },
   "battle-focus-illusion-mystery-magical-water-44c5b75b-0-1500.mp3": {
@@ -119,18 +95,6 @@
     "selectionHash": "e3bf5c44bc9d0407483465fc3b34be419040b5068005001830950144570572be",
     "owner": "generated"
   },
-  "battle-focus-magspel-cast-casting-buff-hy-pc-3b300b28-20-1500.mp3": {
-    "hash": "6cdf2ce3ecadd0a54efbc702ec21501b",
-    "outputHash": "96d6631aef927ae0a34b0896029339a1",
-    "selectionHash": "2ff5a730b03b97029128fde218c113390fce9fc02805ea29c55f2859814715f3",
-    "owner": "generated"
-  },
-  "battle-focus-magspel-cast-casting-buff-hy-pc-3b300b28-20-1500.ogg": {
-    "hash": "90068f5cae71175065630321df067665",
-    "outputHash": "78018adce26543162dd3b975f49ba2d2",
-    "selectionHash": "dd1a53d12013376e0a61289399adc55804bb046bf2fb87cd03c3c90173b4fef3",
-    "owner": "generated"
-  },
   "battle-focus-magspel-cast-casting-buff-hy-pc-6b612bab-50-1500.mp3": {
     "hash": "e6ef7b673f10d3a92d592fb0624b94c0",
     "outputHash": "5e8e44b168206a20a7ca56f9756fe0e4",
@@ -143,18 +107,6 @@
     "selectionHash": "97ac02b5240687d788eccfddcbdd61bd261ae525821ac4dd52a89361a294af9c",
     "owner": "generated"
   },
-  "battle-focus-plate-impact-hard-02-a6a1ca66-0-764.mp3": {
-    "hash": "7705bafd75a4e58c9995c51549174ff8",
-    "outputHash": "50c9bf56c699c71dfba60982cc4542fd",
-    "selectionHash": "f938d78fb720d800da2cea3750618c087f6741aed7097a70a7ffa7daa6a18c46",
-    "owner": "generated"
-  },
-  "battle-focus-plate-impact-hard-02-a6a1ca66-0-764.ogg": {
-    "hash": "d6e14f2f702048cf7692a01c76c4055f",
-    "outputHash": "cb78eadccbbf778b331ea9352f043427",
-    "selectionHash": "20ed4b7b28c2b11a72fc985e52c9324730e2a06f7f38b26a77b2d9a655ee6ff0",
-    "owner": "generated"
-  },
   "battle-focus-purge-01-ef2ba588-0-1500.mp3": {
     "hash": "8da711e4d00e667dbb1b03769d9e05b1",
     "outputHash": "bf68c72edebd5f2842aa0b1b9506888d",
@@ -165,6 +117,18 @@
     "hash": "ba2e266109b50f12adc177471a5af74f",
     "outputHash": "e63f74dd589851407fc0d4123f260599",
     "selectionHash": "15e848d9f0f35d301b8fc6a89fa8ffb582b3d96357ad5250f6763cb92f5514fc",
+    "owner": "generated"
+  },
+  "bleed-tick-soft-wet-impact-299cd309-0-850.mp3": {
+    "hash": "9f35b6e5ac104ab95c84dd8f1ea06cf4",
+    "outputHash": "57d077dff9bdf27ca5812e036079db8c",
+    "selectionHash": "dbc53a532444913f59c3bb5aaf2dc8fade46a90cde2802c189c18d0a515566d7",
+    "owner": "generated"
+  },
+  "bleed-tick-soft-wet-impact-299cd309-0-850.ogg": {
+    "hash": "186b50fd7f3a64d9b91abedc793120b0",
+    "outputHash": "a76375114be5ad73ab34254c6072acf9",
+    "selectionHash": "2da34ebf234c1fc729c1aac98f2fab05fac2b0d38c9922acea5c49b321b0c344",
     "owner": "generated"
   },
   "bow-attack-01-626d2d6d-0-3000.mp3": {
@@ -239,30 +203,6 @@
     "selectionHash": "b552d26f05f26ed51a09aab20c585bf873f62980558abd8563c39b0bbf82e238",
     "owner": "generated"
   },
-  "button-assorted-03-fc496fdd-0-359.mp3": {
-    "hash": "2a13be53feb547a31fd5ed8e364f0578",
-    "outputHash": "9584a653e98b994226617d5e0c925a2e",
-    "selectionHash": "7ee2b48b5613fed3c2e9864c924f34e51c9897e3c66c620f18573871ab5370c2",
-    "owner": "generated"
-  },
-  "button-assorted-03-fc496fdd-0-359.ogg": {
-    "hash": "efcddc451e0dd3319222153b6b53c0e3",
-    "outputHash": "3e22e8d0e91bb55149b455f4dbe8dbc1",
-    "selectionHash": "945b8bbbf98ef9b00d3fd5a0ee57c687a096da29cfe8cc020111a84f80065f28",
-    "owner": "generated"
-  },
-  "card-draw-1.mp3": {
-    "hash": "87dd568ec1dcc2a515ecc6d5163192f8",
-    "outputHash": "e93132aac7cd55bbc24b29cb3dd0b830",
-    "selectionHash": "32805bc41a3cac06d7097425a5c78ab3d2b3232ee976c53056e7aada22ee3459",
-    "owner": "generated"
-  },
-  "card-draw-1.ogg": {
-    "hash": "c735b5521b634aeaa5117f7b0e9b0b0d",
-    "outputHash": "144bbf17ad678fbe79f9beec0dad2b39",
-    "selectionHash": "5916259641311f0ab4183c8fb216299cd8c624f02ebe7631b5ae2b08f350e5ea",
-    "owner": "generated"
-  },
   "card-draw-2.mp3": {
     "hash": "3e64c1e3aeaf9e839e4e21c463d595f2",
     "outputHash": "d34f6d591ceed383cbb5032e7027e3f2",
@@ -299,18 +239,6 @@
     "selectionHash": "677aab0dcc9e1853ea8c47eec7b3416c5861e71a4bd0c8e46982155eb1be1bb3",
     "owner": "generated"
   },
-  "coins-drop-carpet-06-396f065a-0-650.mp3": {
-    "hash": "121d81d158238c22119454c2512cf3b4",
-    "outputHash": "1cdd636b7b390a68033ec5a54ff9214e",
-    "selectionHash": "8fd1918b367ea250d103ee7651070eb6629e87f428bec21a659aacb1bcca0626",
-    "owner": "generated"
-  },
-  "coins-drop-carpet-06-396f065a-0-650.ogg": {
-    "hash": "71deb8a22da4582fd0d09de7b7c5113e",
-    "outputHash": "fc58e19d35d77d7f7e747dde72ea1e8d",
-    "selectionHash": "8269fbb2f8b66da9c9c7598b2afecea471a264a63fe56670a1a191fac656b2e4",
-    "owner": "generated"
-  },
   "coins-gather-quick.mp3": {
     "hash": "f46316c6ddefefc003f9d3f9bf9269d2",
     "outputHash": "5de620f45f9d8b7379288158987af90c",
@@ -335,16 +263,16 @@
     "selectionHash": "925cd769679cb5f3a74a4a727632828fe26415e9af2452b8e84c641ae535d0fd",
     "owner": "generated"
   },
-  "creature-monster-attack-09-108cd42b-0-1854.mp3": {
-    "hash": "eb4141174f37f9e8db07a41cc6fa7fbe",
-    "outputHash": "889f72bce4fe26c779c1a8101848fb39",
-    "selectionHash": "cba6bce39c0a9e9c2625cb36c0e62b8a79a2f6039e75ef07b09ba6ea6b305ff7",
+  "crystal-bulwark-soft-cast-4ab78de8-0-1600.mp3": {
+    "hash": "7c9e9d169b1709f2e2af97800184729b",
+    "outputHash": "cd2fa9d7aeab078db0ade704b9ad1114",
+    "selectionHash": "93e965070a1a0c1b7b7964cefe352be0ea57f62b9a6d5f08d072b2a5a2c765e5",
     "owner": "generated"
   },
-  "creature-monster-attack-09-108cd42b-0-1854.ogg": {
-    "hash": "c906ef6b353aaa9ba0a15323524753df",
-    "outputHash": "e253ed15723b159faf99506b6b1b7373",
-    "selectionHash": "2fa168bdd641b2c1e7a1a47ec8cf5e1d94400806ab2f6a513b74b4d220478025",
+  "crystal-bulwark-soft-cast-4ab78de8-0-1600.ogg": {
+    "hash": "fd59e2291cfc52460b490de62b9bcc4d",
+    "outputHash": "f58400bb32e213d82ce4f2c8301ebd45",
+    "selectionHash": "ae9e99d4ff118c6386b077c1ae79e8ac4563924aafc1dfdd8bc7a79b93d6e784",
     "owner": "generated"
   },
   "dark-spell-life-tap-03-dd1d0dd1-0-2754.mp3": {
@@ -551,18 +479,6 @@
     "selectionHash": "fbd151a972ed89e83dccbe646f399a3967d137e5d1c59f5eb4650428f44ded07",
     "owner": "generated"
   },
-  "heavy-armor-block-01-a169e2a5-0-2000.mp3": {
-    "hash": "9a4ef77d05a75fdcc2f1c8f246897284",
-    "outputHash": "a4ecd45930882f6fc79ff5c967c05e69",
-    "selectionHash": "19e2630b417d76981791252b14992454bb12626a70e0fbf1611de06177f82dce",
-    "owner": "generated"
-  },
-  "heavy-armor-block-01-a169e2a5-0-2000.ogg": {
-    "hash": "261b83b03a50acaab326f88c27e92d6f",
-    "outputHash": "b2885ffebcac3c34f7fb1a3e9a0f8607",
-    "selectionHash": "831c2d2d7852ce9f8a280bca71bea7eef50ada5fcc3a05609c8b13951754b3fb",
-    "owner": "generated"
-  },
   "hkap2-spin-whoosh-2a-261f31e9-0-608.mp3": {
     "hash": "c1b487ade0ef0f030b7e527791e347c4",
     "outputHash": "63778f823bad72d49d4b67ea41cd269e",
@@ -731,6 +647,18 @@
     "selectionHash": "cefd2c06ebb880e9f9bf31a4727edc59bbb12578427bc323b40d68a68aa350d4",
     "owner": "generated"
   },
+  "plate-mail-gear-movement-fcea0d3b.mp3": {
+    "hash": "67ebe4e52fc9b857626f61a5020125ed",
+    "outputHash": "137729b28730fdb7b6021ac61ebe90ef",
+    "selectionHash": "6c717f8185cf4cc25cfd96bd9fb675a6ea76c8a0ec682750a1612cb441c87c46",
+    "owner": "generated"
+  },
+  "plate-mail-gear-movement-fcea0d3b.ogg": {
+    "hash": "a1ee52ccf26886ed009647fd1764c7ab",
+    "outputHash": "4bc3154f4f87ca51e3132733a7e6fec2",
+    "selectionHash": "8b22f012000d2ed32c8b3fa64560abb95580e95b95fb39fd81993507abfa03a9",
+    "owner": "generated"
+  },
   "punch-3.mp3": {
     "hash": "a95aabd44a6b372d57ab3eee28dcbded",
     "outputHash": "b35e7fdb2bcb63c9cc53a62218a077ab",
@@ -789,18 +717,6 @@
     "hash": "62d280b67e9eeb961cb03c6b9c29533a",
     "outputHash": "c2365590c0490e4477be078bb16fffb2",
     "selectionHash": "009e4763492ccae20b8dfb91943b08b5adcb8358b727e241a04445a7adcade1b",
-    "owner": "generated"
-  },
-  "switch-03-297909c3-0-640.mp3": {
-    "hash": "97ac5d2f84a34abdb8fe75c4e7c7cb36",
-    "outputHash": "9e01ee7371e2cb944b46fe1beda58963",
-    "selectionHash": "ee7d55372602029b8fd54e58958d3a0fe322ea6680830ea30f4955f626313f5a",
-    "owner": "generated"
-  },
-  "switch-03-297909c3-0-640.ogg": {
-    "hash": "27256b46559a5155ec20a5d6f9cc037c",
-    "outputHash": "30beeaa72ad259346510a2ad4630e3cd",
-    "selectionHash": "dd51e4da667bb9e232771cddd8d1c7ab98cc90678e07e6bcf7f45ab131f2f77c",
     "owner": "generated"
   },
   "sword-attack-1.mp3": {

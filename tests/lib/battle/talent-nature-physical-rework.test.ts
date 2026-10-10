@@ -35,8 +35,8 @@ describe("Nature and Physical Talent reworks", () => {
       rng: () => 0.99,
     });
     const next = playBattleCardResolved(state, card.id, 0).state;
-    expect(next.playerStatuses.forge).toBe(2);
-    expect(next.enemyMitigation.armor).toBe(4);
+    expect(next.playerStatuses.forge).toBe(3);
+    expect(next.enemyMitigation.armor).toBe(5);
   });
 
   it("repeats a Nature card's effects once while paying and consuming once", () => {

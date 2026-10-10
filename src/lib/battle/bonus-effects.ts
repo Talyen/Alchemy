@@ -5,7 +5,7 @@ import { addGoldWithCombatText, gainManaWithCombatText } from "./player-rewards"
 import type { BattleState, CombatTextEvent } from "./types";
 import { writeCombatFlag as setFlag } from "./action-context";
 import { stripEnemyArmor, stripEnemyBlock } from "./enemy-mitigation-state";
-import { addForgeToPlayer, applyBlockReward } from "./status-player";
+import { rollForgeAffixAwards, addForgeToPlayer, applyBlockReward } from "./status-player";
 import { mergeCombatText } from "./combat-text-events";
 
 export interface CrowdControlTriggerBonuses {
@@ -82,26 +82,12 @@ export function applyNatureGoldReward(state: BattleState, damage: number, combat
   return addGoldWithCombatText(state, damage, combatTexts);
 }
 
-// Shared burn-hit forge payout (card hits and talent follow-ups grant the
-// same forge; kept here so the two call sites cannot drift apart).
-export function applyBurnForgePayout(
-  state: BattleState,
-  combatTexts: CombatTextEvent[],
-  enemyWasBurningBefore: boolean,
-): BattleState {
-  let nextState = state;
-  if (state.talentEffects.forgeOnBurnDealt > 0) {
-    nextState = addForgeToPlayer(nextState, state.talentEffects.forgeOnBurnDealt, combatTexts);
-  }
-  return applyEmberforgedPayout(nextState, combatTexts, enemyWasBurningBefore);
-}
-
 export function applyEmberforgedPayout(
   state: BattleState,
   combatTexts: CombatTextEvent[],
   enemyWasBurningBefore: boolean,
 ): BattleState {
-  return state.gearEffects.forgeOnBurnVsUnburned > 0 && !enemyWasBurningBefore
-    ? addForgeToPlayer(state, state.gearEffects.forgeOnBurnVsUnburned, combatTexts)
+  return !enemyWasBurningBefore
+    ? addForgeToPlayer(state, rollForgeAffixAwards(state, state.gearEffects.forgeOnBurnVsUnburnedChances), combatTexts)
     : state;
 }

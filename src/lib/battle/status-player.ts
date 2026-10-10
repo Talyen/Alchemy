@@ -3,21 +3,22 @@ import { readCombatFlag } from "./action-context";
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { BattleCardEffect, DamageType, EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "./types";
-import { addPlayerStatus, setPlayerStatus } from "./status-state";
+import { addPlayerStatus } from "./status-state";
 import { effectivePlayerHealingAmount, isPlayerDefeated } from "./health-state";
 import {
+  addForgeToPlayer,
   addPlayerStatusWithCombatText,
   applyHealingWithCombatText,
   applyArmorReward,
   applyArmorStatusEffect,
   applyBlockReward,
   removeHarmfulPlayerStatuses,
+  rollForgeAffixAwards,
 } from "./player-rewards";
-import { mergeCombatText } from "./combat-text-events";
-import { BLEED_STATUS_MULTIPLIER, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
+import { BLEED_STATUS_MULTIPLIER, PERCENT_DENOMINATOR } from "../game-constants";
 import { paceCombatMagnitude } from "./fight-pacing";
-import { applyPercentBonus } from "./amount-helpers";
-import { clamp } from "@/lib/math";
+
+export { rollForgeAffixAwards, addForgeToPlayer };
 
 export function applyCardHealing(
   state: BattleState,
@@ -69,8 +70,8 @@ export function applyBlockDepletionRewards(
 ): BattleState {
   if (!depleted || isPlayerDefeated(nextState)) return nextState;
   const healing = previousState.talentEffects.blockDepletedHeal + previousState.gearEffects.blockDepletedHeal;
-  let rewarded = healing > 0 ? applyHealingWithCombatText(nextState, healing, combatTexts) : nextState;
-  rewarded = addForgeToPlayer(rewarded, previousState.talentEffects.forgeOnBlockDepleted, combatTexts);
+  const rewarded = healing > 0 ? applyHealingWithCombatText(nextState, healing, combatTexts) : nextState;
+
   return previousState.gearEffects.thornsOnBlockDepleted > 0
     ? addPlayerStatusWithCombatText(rewarded, "thorns", previousState.gearEffects.thornsOnBlockDepleted, combatTexts)
     : rewarded;
@@ -122,63 +123,6 @@ export function checkHealthThresholds(
 
 function scaleBleedStatus(status: PlayerStatusId, amount: number): number {
   return status === "bleed" ? amount * BLEED_STATUS_MULTIPLIER : amount;
-}
-
-export function addForgeToPlayer(
-  state: BattleState,
-  baseAmount: number,
-  combatTexts?: CombatTextEvent[],
-  options?: { skipFightPacing?: boolean },
-): BattleState {
-  if (baseAmount <= 0) return state;
-  let amount = baseAmount;
-  if (state.playerStatuses.burn > 0 && state.talentEffects.forgeBurningBonusPercent > 0) {
-    amount = applyPercentBonus(amount, state.talentEffects.forgeBurningBonusPercent);
-  }
-  if (rollBattleChance(state.talentEffects.forgeDoubleChance, state)) {
-    amount *= 2;
-  }
-  if (state.playerHealth < state.playerMaxHealth / HALF_DIVISOR) {
-    amount = applyPercentBonus(amount, state.talentEffects.forgeLowHealthBonusPercent);
-  }
-  if (!options?.skipFightPacing) amount = paceCombatMagnitude(state, amount, "player");
-  if (amount <= 0) return state;
-  const nextState = addPlayerStatus(state, "forge", amount);
-  if (combatTexts) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat: "forge",
-      amount,
-    });
-  }
-  return nextState;
-}
-
-/** Only attack spending is eligible for Patient Edge recovery. */
-export function spendPlayerForgeForAttack(
-  state: BattleState,
-  amount: number,
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  const spent = clamp(amount, 0, state.playerStatuses.forge);
-  if (spent <= 0) return state;
-  let next = setPlayerStatus(state, "forge", state.playerStatuses.forge - spent);
-  if (state.gearEffects.recoverSpentForge > 0) {
-    next = { ...next, uniqueGear: { ...next.uniqueGear, spentForge: next.uniqueGear.spentForge + spent } };
-  }
-  return next.playerStatuses.forge === 0 && state.gearEffects.blockOnLastForgeSpent > 0
-    ? applyBlockReward(next, state.gearEffects.blockOnLastForgeSpent, combatTexts)
-    : next;
-}
-
-/** Restore attack spending once without applying Forge gain bonuses. */
-export function restoreSpentPlayerForge(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
-  const amount = state.uniqueGear.spentForge;
-  if (amount <= 0) return state;
-  const cleared = { ...state, uniqueGear: { ...state.uniqueGear, spentForge: 0 } };
-  if (state.gearEffects.recoverSpentForge <= 0) return cleared;
-  return addPlayerStatusWithCombatText(cleared, "forge", amount, combatTexts, { skipFightPacing: true });
 }
 
 export function applyPlayerStatusEffect(

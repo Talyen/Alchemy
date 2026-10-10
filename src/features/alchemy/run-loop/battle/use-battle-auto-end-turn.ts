@@ -94,9 +94,21 @@ export function useBattleAutoEndTurn({
   );
 
   useEffect(() => {
+    // A playback/save wake can precede React's updated battle snapshot.
+    // Recheck the committed render too so that wake cannot strand an exhausted hand.
     scheduleAutoEndTurnRaw();
     return clearAutoEndTurn;
-  }, [scheduleAutoEndTurnRaw, clearAutoEndTurn, autoEndTurn, isAutoplayEnabled, gameMenuOpen, inspectionOpen]);
+  }, [
+    scheduleAutoEndTurnRaw,
+    clearAutoEndTurn,
+    autoEndTurn,
+    isAutoplayEnabled,
+    gameMenuOpen,
+    inspectionOpen,
+    battleState,
+    screen,
+    hasActiveBattle,
+  ]);
 
   return { scheduleAutoEndTurn, clearAutoEndTurn };
 }

@@ -78,6 +78,12 @@ function createEffectLine(effect: BattleCardEffect, address: CardEffectAddress):
       }
       if (effect.equalToArmor) return [`Deal ${type} damage equal to your Armor`];
       if (effect.equalToForge) return [`Deal ${type} damage equal to your Forge`];
+      if (effect.forgeBonusPercent !== undefined)
+        return [
+          "Deal ",
+          amount(),
+          ` ${type} damage, increased by ${effect.forgeBonusPercent === 50 ? "half" : `${effect.forgeBonusPercent}% of`} your Forge`,
+        ];
       if (effect.equalToGoldPercent !== undefined)
         return [`Deal ${type} damage equal to `, value(effect, address, "equalToGoldPercent"), "% of your Gold"];
       const conditional = createConditionalDamageLine(effect, address);
@@ -105,6 +111,16 @@ function createEffectLine(effect: BattleCardEffect, address: CardEffectAddress):
       if (effect.status === "haste") return ["Take ", amount("turns"), " after this one"];
       if (effect.status === "phoenixFeather")
         return [`Upon death, revive with ${Math.round(CAMPFIRE_HEAL_FRACTION * 100)}% Health`];
+      if (effect.statusPool && effect.forgeAmount !== undefined)
+        return [
+          "Gain ",
+          amount(),
+          " Block, ",
+          value(effect, address, "forgeAmount"),
+          " Forge, or ",
+          amount(),
+          " Armor",
+        ];
       if (effect.statusPool) return ["Gain ", amount(), ` ${joinOptions(effect.statusPool.map(capitalizeWord), true)}`];
       if (["block", "armor", "thorns", "forge"].includes(effect.status)) return ["Gain ", amount(), ` ${status}`];
       throw new Error(`effectDescriptionLine: unsupported player-status ${effect.status}`);

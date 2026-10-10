@@ -1,7 +1,7 @@
 import { useUiStore, isBattleInspectionOpen } from "../../shared/stores/ui-store";
 import { enemyAbilityDealsDamage, getEnemyAbilityCard } from "@/lib/game-data";
 import { isPlayerDefeated, type BattleTurnFrame } from "@/lib/battle";
-import { playBattleEvent, playCardSound, playEnemyAttack } from "@/lib/audio";
+import { playBattleEvent, playCardSound } from "@/lib/audio";
 import { COMPANION_ATTACK_DELAY_MS, ENEMY_ATTACK_RECOVERY_DELAY_MS, ENEMY_PHASE_DELAY_MS } from "@/lib/game-constants";
 import { delay } from "@/lib/animation/game-timer";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
@@ -45,7 +45,7 @@ export async function playTurnFrames(
       let focalSound: string | undefined;
       if (turn.enemyPerformedAbility) {
         const ability = turn.state.lastEnemyAbilityId ? getEnemyAbilityCard(turn.state.lastEnemyAbilityId) : null;
-        focalSound = ability ? playCardSound(ability.id) : playEnemyAttack(before.currentEnemy.id);
+        focalSound = ability ? playCardSound(ability.id) : undefined;
         if (!ability || enemyAbilityDealsDamage(ability)) presentation.telegraphAttack("enemy");
         else presentation.telegraphCast("enemy");
       }
@@ -123,11 +123,10 @@ export function createBattleEndTurnUi(
           presentCombatTexts(presentation, turn.combatTexts, focalSound);
         } else {
           presentCombatTexts(presentation, turn.enemyTurnStartCombatTexts);
-          const focalSound = turn.enemyPerformedAbility
-            ? turn.state.lastEnemyAbilityId
+          const focalSound =
+            turn.enemyPerformedAbility && turn.state.lastEnemyAbilityId
               ? playCardSound(turn.state.lastEnemyAbilityId)
-              : playEnemyAttack(before.currentEnemy.id)
-            : undefined;
+              : undefined;
           if (!before.deathsDoorActive && turn.state.deathsDoorActive) playBattleEvent("deathsDoor");
           presentCombatTexts(presentation, turn.enemyResolutionCombatTexts, focalSound);
         }

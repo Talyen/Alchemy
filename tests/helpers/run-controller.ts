@@ -69,7 +69,7 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
       },
       mystery: { handleChoice: fn(), handleChooseCard: fn(), handleContinue: fn() },
       corruption: { handleCorruptCard: fn(), handleExit: fn() },
-      transmutation: { exchange: fn(), continue: fn() },
+      transmutation: { select: fn(), exchange: fn(), continue: fn() },
     },
     battle: {
       presentation: battlePresentation,

@@ -26,7 +26,9 @@ export function DetailPopup({
   chip?: string | undefined;
   descriptionLines: string[];
   descriptionNodes?: ReactNode[] | undefined;
-  card?: Pick<BattleCard, "corruptedValuePositions"> | undefined;
+  card?:
+    | (Pick<BattleCard, "corruptedValuePositions"> & Partial<Pick<BattleCard, "effects" | "description">>)
+    | undefined;
   triggerRef: RefObject<HTMLElement | null>;
   visible: boolean;
   padding?: number | undefined;

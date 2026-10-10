@@ -2,7 +2,6 @@ import { expect, it } from "vitest";
 import ledger from "../../../Docs/design/audio-review/approved-choices.json";
 import {
   cardSounds,
-  enemyAttackSounds,
   battleEventSounds,
   uiSounds,
   stingerSounds,
@@ -24,7 +23,6 @@ it("installs every approved cue, preserves current choices, and represents selec
     const id = choice.mappingId;
     let actual: readonly string[];
     if (id.startsWith("card:")) actual = cardSounds[id.slice(5)] ?? [];
-    else if (id.startsWith("enemy:")) actual = enemyAttackSounds[id.slice(6)] ?? [];
     else if (id.startsWith("companion:")) actual = cardSounds[COMPANION_SOUND_CARD_IDS[id.slice(10)]!] ?? [];
     else if (bindings[id]) {
       const [table, key] = bindings[id]!.split(".");

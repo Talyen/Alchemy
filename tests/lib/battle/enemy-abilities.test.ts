@@ -9,7 +9,6 @@ import {
   isEnemyAbilityCard,
 } from "@/lib/game-data";
 import { applyEnemyAbility, processEnemyAbility } from "@/lib/battle/enemy-turn-attack";
-import { paceCombatMagnitude } from "@/lib/battle/fight-pacing";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { getEnemyAbilityPressure, scaleEnemyAbilityDamage } from "@/lib/battle/battle-enemy-setup";
 import { normalizePersistedBattleState } from "@/lib/validation/normalize-persisted-battle-state";
@@ -46,7 +45,7 @@ describe("enemy repertoire", () => {
   it.each([
     { id: "slash", block: 0, roll: 0.99, remainingForge: 2 },
     { id: "bash", block: 100, roll: 0.99, remainingForge: 2 },
-    { id: "burning-blade", block: 100, roll: 0.99, remainingForge: 3 },
+    { id: "burning-blade", block: 100, roll: 0.99, remainingForge: 2 },
     { id: "slash", block: 0, roll: 0.01, remainingForge: 3 },
     { id: "fireball", block: 0, roll: 0.99, remainingForge: 3 },
   ])("spends enemy Forge only on landed Forge-using hits: $id/$block/$roll", ({ id, block, roll, remainingForge }) => {
@@ -61,9 +60,7 @@ describe("enemy repertoire", () => {
     expect(result.enemyMitigation.forge).toBe(remainingForge);
     expect(state.enemyMitigation).toEqual(before);
     expect(texts.filter((text) => text.target === "enemy" && text.kind === "damage" && text.stat === "forge")).toEqual(
-      remainingForge < (id === "burning-blade" ? 4 : 3)
-        ? [{ target: "enemy", kind: "damage", stat: "forge", amount: 1, impact: false }]
-        : [],
+      remainingForge < 3 ? [{ target: "enemy", kind: "damage", stat: "forge", amount: 1, impact: false }] : [],
     );
     if (block > 0 || roll < 0.05) expect(result.playerHealth).toBe(state.playerHealth);
   });
@@ -110,23 +107,23 @@ describe("enemy repertoire", () => {
       playerStatuses: defaultPlayerStatusValues({ block: 100 }),
     });
     expect(useAbility(state, "slash").enemyMitigation.forge).toBe(3);
-    expect(useAbility(state, "burning-blade").enemyMitigation.forge).toBe(4);
+    expect(useAbility(state, "burning-blade").enemyMitigation.forge).toBe(3);
   });
 
-  it("Burning Blade paces its Forge grant before deriving its Burn damage", () => {
+  it("Burning Blade remains usable without Forge and creates no Forge", () => {
     const state = enemyState("pyromancer", {
       appliesFightPacing: true,
       turn: 10,
       enemyHealth: 10,
       roomScalingMultiplier: 4,
     });
-    const expectedForge = paceCombatMagnitude(state, 4, "enemy");
-    expect(expectedForge).toBeGreaterThan(4);
     const texts: CombatTextEvent[] = [];
     const result = useAbility(state, "burning-blade", texts);
-    expect(result.enemyMitigation.forge).toBe(expectedForge - 1);
-    expect(texts).toContainEqual({ target: "enemy", kind: "status", stat: "forge", amount: expectedForge });
+    expect(result.enemyMitigation.forge).toBe(0);
+    expect(result.playerHealth).toBeLessThan(state.playerHealth);
+    expect(texts.some((text) => text.target === "enemy" && text.stat === "forge")).toBe(false);
   });
+
   it("assigns three distinct canonical, fully supported cards to every enemy", () => {
     for (const enemy of enemyBestiary) {
       expect(enemy.abilityIds).toHaveLength(3);

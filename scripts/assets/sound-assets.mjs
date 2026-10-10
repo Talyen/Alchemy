@@ -4,6 +4,22 @@ import { validateRegistryEntries } from "./registry-validation.mjs";
 /** Raw sound sources transformed or copied into public/sounds. */
 export const generatedSoundAssets = [
   {
+    source: "Sounds/Game Sources/Projects/Alchemy/Sound Effects/approved/bleed-tick-soft-wet-impact-299cd309-0-850.wav",
+    target: "bleed-tick-soft-wet-impact-299cd309-0-850.ogg",
+  },
+  {
+    source: "Sounds/Game Sources/Projects/Alchemy/Sound Effects/approved/armor-gain-leather-rustle-ba8ddcf0-0-930.wav",
+    target: "armor-gain-leather-rustle-ba8ddcf0-0-930.ogg",
+  },
+  {
+    source: "Sounds/Game Sources/Projects/Alchemy/Sound Effects/approved/crystal-bulwark-soft-cast-4ab78de8-0-1600.wav",
+    target: "crystal-bulwark-soft-cast-4ab78de8-0-1600.ogg",
+  },
+  {
+    source: "Sounds/Game Sources/Projects/Alchemy/Sound Effects/approved/plate-mail-gear-movement-fcea0d3b.wav",
+    target: "plate-mail-gear-movement-fcea0d3b.ogg",
+  },
+  {
     source: "Sounds/Game Sources/Projects/Alchemy/Sound Effects/combat/weapons/sword_attack_01.ogg",
     target: "sword-attack-1.ogg",
   },
@@ -34,10 +50,6 @@ export const generatedSoundAssets = [
   {
     source: "Sounds/Game Sources/Projects/Alchemy/Sound Effects/cards/hand/card_fan.wav",
     target: "card-fan.ogg",
-  },
-  {
-    source: "Sounds/Game Sources/Projects/Alchemy/Sound Effects/cards/hand/card_draw_01.wav",
-    target: "card-draw-1.ogg",
   },
   {
     source: "Sounds/Game Sources/Sound Effects/cards/hand/card_draw_02.wav",
@@ -112,14 +124,6 @@ export const generatedSoundAssets = [
     target: "mine-2.ogg",
   },
   {
-    source: "Sounds/Game Sources/Projects/Alchemy/Sound Effects/approved/button-assorted-03-fc496fdd-0-359.wav",
-    target: "button-assorted-03-fc496fdd-0-359.ogg",
-  },
-  {
-    source: "Sounds/Game Sources/Projects/Alchemy/Sound Effects/approved/switch-03-297909c3-0-640.wav",
-    target: "switch-03-297909c3-0-640.ogg",
-  },
-  {
     source:
       "Sounds/Game Sources/Projects/Alchemy/Sound Effects/approved/harpsichord-chime-positive-f88163a6-0-1144.wav",
     target: "harpsichord-chime-positive-f88163a6-0-1144.ogg",
@@ -160,10 +164,6 @@ export const generatedSoundAssets = [
     target: "hkap2-spin-whoosh-2a-261f31e9-0-608.ogg",
   },
   {
-    source: "Sounds/Game Sources/Projects/Alchemy/Sound Effects/approved/heavy-armor-block-01-a169e2a5-0-2000.wav",
-    target: "heavy-armor-block-01-a169e2a5-0-2000.ogg",
-  },
-  {
     source:
       "Sounds/Game Sources/Projects/Alchemy/Sound Effects/approved/ilmarinen-blacksmith-forge-hammer-anvil-strik-0f11505a-0-432.wav",
     target: "ilmarinen-blacksmith-forge-hammer-anvil-strik-0f11505a-0-432.ogg",
@@ -180,10 +180,6 @@ export const generatedSoundAssets = [
   {
     source: "Sounds/Game Sources/Projects/Alchemy/Sound Effects/approved/clothing-movement-01-786d2b95-0-1572.wav",
     target: "clothing-movement-01-786d2b95-0-1572.ogg",
-  },
-  {
-    source: "Sounds/Game Sources/Projects/Alchemy/Sound Effects/approved/coins-drop-carpet-06-396f065a-0-650.wav",
-    target: "coins-drop-carpet-06-396f065a-0-650.ogg",
   },
   {
     source:
@@ -254,11 +250,6 @@ export const generatedSoundAssets = [
   },
   {
     source:
-      "Sounds/Game Sources/Projects/Alchemy/Sound Effects/approved/creature-monster-attack-09-108cd42b-0-1854.wav",
-    target: "creature-monster-attack-09-108cd42b-0-1854.ogg",
-  },
-  {
-    source:
       "Sounds/Game Sources/Projects/Alchemy/Sound Effects/approved/battle-focus-church-choir-dm-a47d5cbc-0-2500.wav",
     target: "battle-focus-church-choir-dm-a47d5cbc-0-2500.ogg",
   },
@@ -295,30 +286,6 @@ export const generatedSoundAssets = [
     source:
       "Sounds/Game Sources/Projects/Alchemy/Sound Effects/approved/battle-focus-magic-generic-haunted-old-grimoire-open-f8eb7607-280-1500.wav",
     target: "battle-focus-magic-generic-haunted-old-grimoire-open-f8eb7607-280-1500.ogg",
-  },
-  {
-    source: "Sounds/Game Sources/Projects/Alchemy/Sound Effects/approved/battle-focus-heal-01-2847537e-0-1500.wav",
-    target: "battle-focus-heal-01-2847537e-0-1500.ogg",
-  },
-  {
-    source:
-      "Sounds/Game Sources/Projects/Alchemy/Sound Effects/approved/battle-focus-plate-impact-hard-02-a6a1ca66-0-764.wav",
-    target: "battle-focus-plate-impact-hard-02-a6a1ca66-0-764.ogg",
-  },
-  {
-    source:
-      "Sounds/Game Sources/Projects/Alchemy/Sound Effects/approved/battle-focus-magspel-cast-casting-buff-hy-pc-3b300b28-20-1500.wav",
-    target: "battle-focus-magspel-cast-casting-buff-hy-pc-3b300b28-20-1500.ogg",
-  },
-  {
-    source:
-      "Sounds/Game Sources/Projects/Alchemy/Sound Effects/approved/battle-focus-creature-hiss-4-m-e9aede68-330-1500.wav",
-    target: "battle-focus-creature-hiss-4-m-e9aede68-330-1500.ogg",
-  },
-  {
-    source:
-      "Sounds/Game Sources/Projects/Alchemy/Sound Effects/approved/battle-focus-bug-people-03-d2d3d05e-50-1387.wav",
-    target: "battle-focus-bug-people-03-d2d3d05e-50-1387.ogg",
   },
   {
     source: "Sounds/Game Sources/Projects/Alchemy/Sound Effects/curated/coins-gather-quick.ogg",

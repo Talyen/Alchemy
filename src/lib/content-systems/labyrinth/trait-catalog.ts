@@ -54,7 +54,7 @@ export const LABYRINTH_TRAITS = {
   "heavy-hand": benefit("Heavy Hand", "Your first Physical attack each turn deals double damage", "physical"),
   thunderstruck: benefit("Thunderstruck", "Your attacks apply double Stun buildup", "stun"),
   unbroken: benefit("Unbroken", "Your Block no longer halves each turn", "block"),
-  "white-heat": benefit("White Heat", "You no longer lose Forge when dealing damage", "forge"),
+  "white-heat": benefit("White Heat", "Start combat with 2 Forge", "forge"),
   ironclad: benefit("Ironclad", "You no longer lose Armor when taking damage", "armor"),
   "eternal-flame": benefit("Eternal Flame", "Burn on the enemy no longer halves each turn", "burn"),
   consecrated: benefit("Consecrated", "Your first Holy attack each turn deals double damage", "holy"),

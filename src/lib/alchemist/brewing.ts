@@ -1,4 +1,4 @@
-import { getStandardPotionPool, isStandardPotionCard } from "@/lib/game-data/cards/card-pools";
+import { getStandardPotionPool, isPotionCard } from "@/lib/game-data/cards/card-pools";
 import {
   areBattleCardEffectsEqual,
   cloneBattleCard,
@@ -7,10 +7,11 @@ import {
   getCardDescription,
   withCardDescription,
   mapEffectChildren,
+  getCardEffect,
   type BattleCard,
   type BattleCardEffect,
 } from "@/lib/game-data";
-import { POTION_STRENGTHEN_MULTIPLIER, CAMPFIRE_POTION_OFFERS } from "@/lib/game-constants";
+import { POTION_DISTILL_BONUS, CAMPFIRE_POTION_OFFERS } from "@/lib/game-constants";
 import { CONSUME_DESCRIPTION_LINE } from "@/lib/game-constants";
 import { shuffle } from "@/lib/rng";
 
@@ -19,7 +20,7 @@ export type BrewOperation =
   | { kind: "combine"; indices: [number, number] }
   | { kind: "strengthen"; index: number };
 export function isBrewablePotion(card: BattleCard): boolean {
-  return isStandardPotionCard(card) && !card.brewed;
+  return isPotionCard(card);
 }
 
 export function getCampfireBrewKind(deck: readonly BattleCard[]): "new" | "combine" {
@@ -38,10 +39,11 @@ function strengthenEffect(effect: BattleCardEffect): BattleCardEffect {
     effect.kind === "heal" ||
     effect.kind === "restore-mana" ||
     effect.kind === "gain-gold" ||
+    effect.kind === "wish" ||
     effect.kind === "damage" ||
     effect.kind === "player-status"
   ) {
-    return { ...effect, amount: Math.round(effect.amount * POTION_STRENGTHEN_MULTIPLIER) };
+    return { ...effect, amount: effect.amount + POTION_DISTILL_BONUS };
   }
   return mapEffectChildren(effect, strengthenEffect);
 }
@@ -49,14 +51,42 @@ function strengthenEffect(effect: BattleCardEffect): BattleCardEffect {
 export function strengthenPotion(card: BattleCard): BattleCard | null {
   if (!isBrewablePotion(card)) return null;
   const effects = card.effects.map(strengthenEffect);
-  if (effects.every((effect, index) => areBattleCardEffectsEqual(effect, card.effects[index]!))) return null;
-  const description = carryCardDescriptionMarks(getCardDescription(card), createEffectDescription(effects));
+  if (
+    effects.some((effect) => effect.kind === "remove-harmful-status" && effect.removeAll) &&
+    !effects.some((effect) => effect.kind === "heal")
+  ) {
+    effects.push({ kind: "heal", amount: POTION_DISTILL_BONUS });
+  }
+  if (
+    effects.length === card.effects.length &&
+    effects.every((effect, index) => areBattleCardEffectsEqual(effect, card.effects[index]!))
+  )
+    return null;
+  const description = carryCardDescriptionMarks(getCardDescription(card), createEffectDescription(effects)).map(
+    (line) => ({
+      ...line,
+      parts: line.parts.map((part) => {
+        if (typeof part === "string") return part;
+        const increased = part.references.some((reference) => {
+          const before = getCardEffect(card.effects, reference);
+          const after = getCardEffect(effects, reference);
+          return (
+            after &&
+            reference.field === "amount" &&
+            "amount" in after &&
+            typeof after.amount === "number" &&
+            (!before || ("amount" in before && typeof before.amount === "number" && after.amount > before.amount))
+          );
+        });
+        return increased ? { ...part, distilled: true } : part;
+      }),
+    }),
+  );
   if (card.consume) description.push({ parts: [CONSUME_DESCRIPTION_LINE], role: "consume" });
   return cloneBattleCard(
     withCardDescription(
       {
         ...card,
-        brewed: true,
         effects,
       },
       description,

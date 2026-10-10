@@ -2,7 +2,6 @@ export const TRAIT_FORGE_PER_TURN = 1;
 export const IRON_HIDE_ARMOR_PER_TURN = 1;
 export const TRAIT_FREEZE_BONUS_PER_TURN = 1;
 export const GLACIAL_SURGE_MAX_FREEZE_BONUS = 2;
-export const DIFFICULTY_FORGE_PER_TURN = 1;
 export const LIVING_ARMOR_STARTING_ARMOR = 4;
 export const ENEMY_STARTING_BLOCK = 4;
 

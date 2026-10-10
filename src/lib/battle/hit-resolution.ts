@@ -1,21 +1,19 @@
 import { rollBattleChance } from "./chance-roll";
-import type { BattleCardEffect } from "@/lib/game-data";
 import { applyBleedDamageDraw, applyElementalDamageManaRestore, applyHitHealth } from "./player-hit-core";
 import type { CardHitRequest, HitFacts, HitRequest } from "./player-hit-core";
-import { BLACKFLETCH_EXECUTE_HEALTH_PERCENT, BATTLE_CONFIG, PERCENT_DENOMINATOR } from "../game-constants";
+import { BLACKFLETCH_EXECUTE_HEALTH_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
 import { halveRounded } from "./amount-helpers";
 import { applyHitEpilogue } from "./player-rewards";
 import { mergeCombatText } from "./combat-text-events";
-import { computeReflectedHolyDamageToEnemy, forgeAppliesToDamageType } from "./damage-calc";
+import { computeReflectedHolyDamageToEnemy } from "./damage-calc";
 import { applyDamageStatuses, applyPoisonTalentRiders } from "./damage-status-riders";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { resolveFollowUpHit, tryPoisonStunProc, tryTalentTypedHit } from "./follow-up-hit-resolution";
 import { applyCardHitReactions } from "./card-hit-reactions";
 import { applyHolyDamageRiders, applyNatureDamageRiders } from "./elemental-hit-reactions";
 import { decayArmorAfterDamage } from "./status-helpers";
-import { addForgeToPlayer, applyIronGuardReward, spendPlayerForgeForAttack } from "./status-player";
+import { addForgeToPlayer, applyIronGuardReward } from "./status-player";
 import type { BattleState, CombatTextEvent } from "./types";
-import { hasEncounterBenefit } from "./encounter-trait-state";
 import { applyPurgeGearRewards, purgeEnemyBenefits } from "./enemy-purge";
 import { drawKeywordCard } from "./draw";
 
@@ -85,24 +83,6 @@ function resolveAttackPurgeHit(state: BattleState, combatTexts: CombatTextEvent[
   return applyPurgeGearRewards(marked, purged.removed, combatTexts);
 }
 
-function consumeForgeAfterDamage(
-  state: BattleState,
-  effect: Extract<BattleCardEffect, { kind: "damage" }>,
-  damage: number,
-  combatTexts: CombatTextEvent[],
-  companionAttack = false,
-) {
-  if (hasEncounterBenefit(state, "white-heat")) return state;
-  if (effect.damageType === "holy" && state.gearEffects.holyPreservesForge > 0) return state;
-  const forgeWasApplied =
-    effect.equalToForge === true ||
-    forgeAppliesToDamageType(effect.damageType, state.talentEffects, state.gearEffects, companionAttack);
-
-  if (!forgeWasApplied || damage <= 0 || state.playerStatuses.forge <= 0) return state;
-
-  return spendPlayerForgeForAttack(state, BATTLE_CONFIG.FORGE_DECAY_AMOUNT, combatTexts);
-}
-
 function applyCardArcheryReactions(
   nextState: BattleState,
   request: CardHitRequest,
@@ -135,6 +115,7 @@ function applyCardArcheryReactions(
 }
 
 function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts: CombatTextEvent[]): BattleState {
+  request = { ...request, forgeTriggers: request.forgeTriggers ?? new Set<string>() };
   const { card, effect, resolvedDamage: modifiedDamage, onDamageDealt } = request;
   const companionAttack = request.origin === "companion";
   const eligibility = state;
@@ -145,8 +126,7 @@ function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts
   const facts = hit.facts;
   const { previousHealth } = facts;
   onDamageDealt?.(facts.healthDamage);
-  // Spend the resource used by this packet before its rewards grant fresh Forge.
-  let nextState = consumeForgeAfterDamage(hit.state, effect, modifiedDamage, combatTexts, companionAttack);
+  let nextState = hit.state;
   nextState = applyIronGuardReward(nextState, effect.damageType, facts.healthDamage, combatTexts);
   if (effect.damageType === "bleed") nextState = applyBleedDamageDraw(nextState, facts.healthDamage, combatTexts);
 
@@ -164,7 +144,7 @@ function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts
     nextState = drawKeywordCard(nextState, "companion", { combatTexts });
   }
   if (effect.damageType === "holy") {
-    nextState = applyHolyDamageRiders(nextState, card, facts, combatTexts, !companionAttack);
+    nextState = applyHolyDamageRiders(nextState, card, facts, combatTexts, !companionAttack, request.forgeTriggers);
   } else if (effect.damageType === "nature") {
     nextState = applyNatureDamageRiders(nextState, facts, combatTexts, effect.lifesteal === true);
   }
@@ -186,9 +166,12 @@ function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts
     modifiedDamage > 0 &&
     eligibility.enemyCC.freezeSkipTurns > 0 &&
     effect.damageType === "physical" &&
-    state.talentEffects.forgeOnPhysicalVsFrozen > 0
+    state.talentEffects.forgeOnPhysicalVsFrozen > 0 &&
+    !request.forgeTriggers?.has("icebreaker")
   ) {
-    nextState = addForgeToPlayer(nextState, state.talentEffects.forgeOnPhysicalVsFrozen, combatTexts);
+    request.forgeTriggers?.add("icebreaker");
+    if (rollBattleChance(state.talentEffects.forgeOnPhysicalVsFrozenChance, nextState))
+      nextState = addForgeToPlayer(nextState, state.talentEffects.forgeOnPhysicalVsFrozen, combatTexts);
   }
   return nextState;
 }

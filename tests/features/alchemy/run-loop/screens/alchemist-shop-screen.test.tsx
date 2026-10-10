@@ -57,21 +57,19 @@ describe("AlchemistShopScreen mix Escape", () => {
     };
     const { rerender } = render(<AlchemistShopScreen {...props} />);
     expect((screen.getByRole("button", { name: /^Mix Potion/ }) as HTMLButtonElement).disabled).toBe(true);
-    await user.click(screen.getByRole("button", { name: /^Strengthen Potion/ }));
-    expect(await screen.findByRole("heading", { name: "Strengthen Potion" })).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: /^Distill/ }));
+    expect(await screen.findByRole("heading", { name: "Select a Potion to Distill" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /^Mix/ })).toBeNull();
     await user.click(screen.getByRole("button", { name: "Select shop card" }));
-    await user.click(screen.getByRole("button", { name: "Strengthen · 25 Gold" }));
+    await user.click(screen.getByRole("button", { name: "Distill · 25 Gold" }));
     expect(onStrengthenPotion).toHaveBeenCalledExactlyOnceWith(0);
     expect(onMixPotions).not.toHaveBeenCalled();
     await user.keyboard("{Escape}");
     rerender(<AlchemistShopScreen {...props} gold={24} />);
-    expect(((await screen.findByRole("button", { name: /^Strengthen Potion/ })) as HTMLButtonElement).disabled).toBe(
-      true,
-    );
+    expect(((await screen.findByRole("button", { name: /^Distill/ })) as HTMLButtonElement).disabled).toBe(true);
     rerender(<AlchemistShopScreen {...props} mixUsed />);
     expect((screen.getByRole("button", { name: "Mix Potion - Used" }) as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByRole("button", { name: "Strengthen Potion - Used" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Distill - Used" }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it("requires two distinct ingredients after deselecting the first potion", async () => {
@@ -140,18 +138,20 @@ describe("AlchemistShopScreen mix Escape", () => {
       />,
     );
     const brew = async () => {
-      await user.click(screen.getByRole("button", { name: /^Strengthen Potion/ }));
+      await user.click(screen.getByRole("button", { name: /^Distill/ }));
       await user.click(await screen.findByRole("button", { name: "Select shop card" }));
-      await user.click(screen.getByRole("button", { name: "Strengthen · 25 Gold" }));
+      await user.click(screen.getByRole("button", { name: "Distill · 25 Gold" }));
     };
     await brew();
     expect(screen.queryByRole("button", { name: "Continue" })).toBeNull();
     act(() => pending.shift()!());
+    expect(await screen.findByRole("button", { name: "Original: Health Potion" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Inspect brew result: Health Potion" })).toBeTruthy();
     await user.click(await screen.findByRole("button", { name: "Continue" }));
     await brew();
     await user.keyboard("{Escape}");
     act(() => pending.shift()!());
-    expect(await screen.findByRole("button", { name: /^Strengthen Potion/ })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: /^Distill/ })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Continue" })).toBeNull();
     expect(onStrengthenPotion).toHaveBeenCalledTimes(2);
   });
@@ -183,7 +183,7 @@ describe("AlchemistShopScreen mix Escape", () => {
 
     await user.click(screen.getByRole("button", { name: /^Mix Potion/ }));
     expect(await screen.findByRole("heading", { name: "Mix Potion" })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /Strengthen/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Distill/ })).toBeNull();
 
     await user.keyboard("{Escape}");
 

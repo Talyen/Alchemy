@@ -66,7 +66,6 @@ export function hydrateCard(savedCard: SavedCard): BattleCard {
     ...(content.description ? { description: content.description } : {}),
     cost: hydrateCost(savedCard, libraryCard),
     ...(consume !== undefined && { consume }),
-    ...(savedCard.brewed !== undefined && { brewed: savedCard.brewed }),
     ...(savedCard.uid !== undefined && { uid: savedCard.uid }),
     ...(keepSavedContent && savedCard.corrupted !== undefined && { corrupted: savedCard.corrupted }),
     ...(keepSavedContent && savedCard.baseTitle !== undefined && { baseTitle: savedCard.baseTitle }),

@@ -231,33 +231,37 @@ describe("useBattleAutoEndTurn", () => {
     expect(onEndTurn).toHaveBeenCalledOnce();
   });
 
-  it("does not reschedule from a battleState rerender without an explicit schedule call", () => {
+  it("ends after mana runs out when the settled battle snapshot arrives after the playback wake", () => {
     const onEndTurn = vi.fn();
-    const { rerender, result } = renderHook(
+    const playable = makeOpenBattle().battleState;
+    battlePresentation.setState({ cardTransferInProgress: true });
+    const { rerender } = renderHook(
       ({ battleState }: { battleState: BattleSnapshot }) =>
-        useAutoEndTurnUnderTest({
-          ...baseOptions,
-          battleState,
-          onEndTurn,
-        }),
-      { initialProps: { battleState: makeOpenBattle().battleState } },
+        useAutoEndTurnUnderTest({ ...baseOptions, battleState, onEndTurn }),
+      { initialProps: { battleState: playable } },
     );
 
-    act(() => {
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS + 100);
-    });
+    // The external presentation store can settle before React receives the spent mana.
+    act(() => battlePresentation.setState({ cardTransferInProgress: false }));
+    rerender({ battleState: { ...playable, mana: 0 } });
+    act(() => vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS));
+    expect(onEndTurn).toHaveBeenCalledOnce();
+  });
+
+  it("leaves a free card playable at zero mana until it is removed from the hand", () => {
+    const onEndTurn = vi.fn();
+    const playable = makeOpenBattle().battleState;
+    const battleState = { ...playable, mana: 0, hand: playable.hand.map((card) => ({ ...card, cost: 0 })) };
+    const { rerender } = renderHook(
+      ({ battleState }: { battleState: BattleSnapshot }) =>
+        useAutoEndTurnUnderTest({ ...baseOptions, battleState, onEndTurn }),
+      { initialProps: { battleState } },
+    );
+    act(() => vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS * 2));
     expect(onEndTurn).not.toHaveBeenCalled();
 
-    rerender({ battleState: makeEmptyHandBattle().battleState });
-    act(() => {
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS + 100);
-    });
-    expect(onEndTurn).not.toHaveBeenCalled();
-
-    act(() => {
-      result.current.scheduleAutoEndTurn(makeEmptyHandBattle().battleState);
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS);
-    });
+    rerender({ battleState: { ...battleState, hand: [] } });
+    act(() => vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS));
     expect(onEndTurn).toHaveBeenCalledOnce();
   });
 

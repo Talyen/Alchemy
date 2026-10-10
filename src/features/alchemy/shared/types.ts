@@ -78,6 +78,7 @@ export interface CombatImpactCue {
 export type CollectionTab = "heroes" | "cards" | "bestiary" | "trinkets" | "uniques";
 
 export interface StatusChip {
+  description?: string;
   id:
     | PlayerStatusId
     | EnemyStatusId

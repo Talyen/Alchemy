@@ -32,7 +32,7 @@ function reportMarkdown(report) {
     "",
     "## Coverage and current behavior",
     "",
-    "Enemy ability turns use card cues before fallback attacks. Registered-unused cues do not currently play. Gain/transaction/impact layers must be reviewed together to avoid doubled feedback. Optional ambience is lower priority; loop seams are unverified.",
+    "Enemy ability turns use card cues; Bestiary portraits have no sound effect. Registered-unused cues do not currently play. Gain/transaction/impact layers must be reviewed together to avoid doubled feedback. Optional ambience is lower priority; loop seams are unverified.",
     "",
     `Catalog entries: ${report.catalogCount}; stale paths: ${report.missingCatalogPaths.length}; preview failures: ${report.failures.length}.`,
     "",

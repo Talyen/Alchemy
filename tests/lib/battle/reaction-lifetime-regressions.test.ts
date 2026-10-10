@@ -7,7 +7,7 @@ import { processEncounterTraitActionDamage } from "@/lib/battle/encounter-trait-
 import { companionLibrary, cardById } from "@/lib/game-data";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
-import { makeTestCard, patchBattleState } from "../../fixtures/battle";
+import { patchBattleState } from "../../fixtures/battle";
 
 describe("reaction lifetimes", () => {
   it("a Companion attack can trigger the enemy's once-per-turn Holy Retribution", () => {
@@ -41,64 +41,7 @@ describe("reaction lifetimes", () => {
     expect(second.pendingBleedLeechHealing).toBe(2);
   });
 
-  it("Covering checks Block before Spellrending's Purge rewards", () => {
-    const card = cardById["serrated-arrowhead"]!;
-    const state = patchBattleState({
-      hand: [card],
-      enemyMitigation: { armor: 1 },
-      gearEffects: { purgeOnFirstPaidCard: 1, blockOnPurge: 1, blockOnArcheryWithoutBlock: 2 },
-      rng: () => 0.99,
-    });
-    expect(playBattleCardResolved(state, card.id, 0).state.playerStatuses.block).toBe(3);
-  });
-
-  it("Eagle Eye checks Stun before Denouncing can Stun during payment", () => {
-    const card = cardById["serrated-arrowhead"]!;
-    const state = patchBattleState({
-      hand: [card],
-      deck: [makeTestCard({ id: "draw-reward" })],
-      enemyHealth: 30,
-      enemyMaxHealth: 30,
-      enemyMitigation: { armor: 1 },
-      gearEffects: { purgeOnFirstPaidCard: 1, holyOnPurge: 16, holyStunBuildupGold: 1 },
-      talentEffects: { drawOnArcheryVsStunned: 1 },
-      rng: () => 0.99,
-    });
-    const result = playBattleCardResolved(state, card.id, 0).state;
-    expect(result.enemyCC.stunSkipTurns).toBeGreaterThan(0);
-    expect(result.deck).toHaveLength(1);
-    expect(result.hand).toHaveLength(0);
-  });
-
-  it("Rimeheart checks Block before spending the last Bonded Forge grants Smithguard Block", () => {
-    const state = patchBattleState({
-      activeCompanion: companionLibrary["frost-whelp"],
-      playerStatuses: { forge: 1 },
-      gearEffects: { companionBenefitsFromForge: 1, blockOnLastForgeSpent: 2, freezeGrantsBlockAndMana: 1 },
-      rng: () => 0.99,
-    });
-    expect(processCompanionTurnStart(state, []).playerStatuses.block).toBe(4);
-  });
-
-  it("fatal payment retaliation resolves before Quickfletched can open a healing Emergency Wish", () => {
-    const card = cardById["fire-arrow"]!;
-    const state = patchBattleState({
-      hand: [card],
-      playerHealth: 1,
-      deathsDoorUsed: true,
-      enemyMitigation: { block: 1 },
-      currentEnemy: { traits: [{ id: "cinder-skin", title: "Cinder Skin", description: "" }] },
-      gearEffects: { purgeOnFirstPaidCard: 1, holyOnPurge: 1, archeryDrawChance: 100 },
-      talentEffects: { healthOnWish: 1 },
-      rng: () => 0.99,
-    });
-    const result = playBattleCardResolved(state, card.id, 0).state;
-    expect(result.playerHealth).toBe(0);
-    expect(result.wishOptions).toBeNull();
-    expect(result.discard).toContainEqual(card);
-  });
-
-  it("Forged Bulwark rewards Block depleted by an enemy Purge", () => {
+  it("Forged Bulwark does not reward Block removed by an enemy Purge", () => {
     const state = patchBattleState({
       playerStatuses: { block: 3 },
       talentEffects: { forgeOnBlockDepleted: 1 },
@@ -106,7 +49,7 @@ describe("reaction lifetimes", () => {
     });
     const result = purgeOnePlayerBenefit(state, []).state;
     expect(result.playerStatuses.block).toBe(0);
-    expect(result.playerStatuses.forge).toBe(1);
+    expect(result.playerStatuses.forge).toBe(0);
   });
 
   it("Counterplate retaliates against Caustic's explicit Armor removal", () => {

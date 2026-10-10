@@ -9,7 +9,6 @@ import { addEnemyMitigation } from "./enemy-mitigation-state";
 import { addEnemyStatus } from "./status-state";
 import { hasEnemyTrait } from "./encounter-trait-state";
 import {
-  DIFFICULTY_FORGE_PER_TURN,
   GLACIAL_SURGE_MAX_FREEZE_BONUS,
   IRON_HIDE_ARMOR_PER_TURN,
   REACTION_ONLY_ENEMY_TRAIT_IDS as REACTION_ONLY_IDS,
@@ -71,8 +70,7 @@ const enemyTraitTurnStartHandlers = new Map<string, EnemyTurnStartTrait>([
 
 // Null means the modifier is handled during setup or damage resolution.
 // Exhaustiveness makes adding a difficulty kind require an explicit classification.
-const difficultyTurnStartHandlers = {
-  "enemy-gains-forge-each-turn": makeMitigationHandler("forge", DIFFICULTY_FORGE_PER_TURN),
+const difficultyTurnStartHandlers: Record<DifficultyModifier["kind"], EnemyTurnStartHandler | null> = {
   "enemy-starting-armor": null,
   "increase-enemy-physical-damage": null,
   "increase-enemy-damage": null,
@@ -84,7 +82,7 @@ const difficultyTurnStartHandlers = {
   "start-companion": null,
   "enemy-health-multiplier": null,
   "enemy-damage-multiplier": null,
-} satisfies Record<DifficultyModifier["kind"], EnemyTurnStartHandler | null>;
+};
 
 const PASSIVE_ONLY_TRAITS = new Set<string>([
   "brittle-bones",

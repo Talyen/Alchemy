@@ -1,6 +1,5 @@
 import { resolveSecondaryAction } from "./action-context";
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
-import { rollBattleChance } from "./chance-roll";
 import { drawKeywordCard } from "./draw";
 import { applyPercentBonus } from "./amount-helpers";
 import { HALF_DIVISOR } from "../game-constants";
@@ -9,6 +8,7 @@ import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-t
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import type { DamageType, PlayerStatusId } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "./types";
+import { rollBattleChance } from "./chance-roll";
 import { blockAmountWithForge, setPlayerStatus, addPlayerStatus } from "./status-state";
 import { damageEnemyHealth, resolvePlayerHealing } from "./health-state";
 import { decayEnemyArmor } from "./enemy-mitigation-state";
@@ -176,8 +176,9 @@ export function addGoldWithCombatText(
   if (nextState.gearEffects.healOnCombatGoldGain > 0) {
     nextState = applyHealingWithCombatText(nextState, nextState.gearEffects.healOnCombatGoldGain, combatTexts ?? []);
   }
-  if (state.gearEffects.goldGrantsForgeAndHoly <= 0 || state.playerStatuses.forge > 0) return nextState;
-  return addPlayerStatusWithCombatText(nextState, "forge", scaledGold, combatTexts, { skipFightPacing: true });
+  return state.gearEffects.goldGrantsForgeAndHoly > 0 && rollBattleChance(25, nextState)
+    ? addForgeToPlayer(nextState, 1, combatTexts)
+    : nextState;
 }
 
 function applyKillHeal(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
@@ -193,7 +194,7 @@ export function applyGearKillRewards(
   enemyWasAlive: boolean,
   combatTexts: CombatTextEvent[],
   enemyStatusesOverride?: BattleState["enemyStatuses"],
-  forgeAtKill = state.playerStatuses.forge > 0,
+  forgeAtKill = state.playerStatuses.forge >= 5,
 ): BattleState {
   if (state.enemyHealth > 0 || !enemyWasAlive) return state;
   let nextState = state;
@@ -221,7 +222,7 @@ export function payKillPayouts(
   enemyStatusesOverride?: BattleState["enemyStatuses"],
 ): BattleState {
   if (state.enemyHealth > 0 || !enemyWasAlive || state.flags.killRewardsPaid) return state;
-  const forgeAtKill = state.playerStatuses.forge > 0;
+  const forgeAtKill = state.playerStatuses.forge >= 5;
   state = { ...state, flags: { ...state.flags, killRewardsPaid: true } };
   const statuses = enemyStatusesOverride ?? state.enemyStatuses;
   if (statuses.poison > 0 && state.talentEffects.goldOnPoisonedKill > 0) {
@@ -274,6 +275,36 @@ export function applyBlockReward(
   options?: { skipFightPacing?: boolean },
 ): BattleState {
   return addPlayerStatusWithCombatText(state, "block", amount, combatTexts, options);
+}
+
+export function rollForgeAffixAwards(state: BattleState, chances: readonly number[]): number {
+  return chances.reduce((total, chance) => total + Number(rollBattleChance(chance, state)), 0);
+}
+
+export function addForgeToPlayer(state: BattleState, baseAmount: number, combatTexts?: CombatTextEvent[]): BattleState {
+  if (baseAmount <= 0) return state;
+  let amount = baseAmount;
+  if (state.playerStatuses.burn > 0 && rollBattleChance(state.talentEffects.forgeBurningBonusChance, state))
+    amount += 1;
+  if (rollBattleChance(state.talentEffects.forgeBonusChance, state)) amount += 1;
+  if (
+    state.playerHealth < state.playerMaxHealth / HALF_DIVISOR &&
+    rollBattleChance(state.talentEffects.forgeLowHealthBonusChance, state)
+  )
+    amount += 1;
+  if (amount <= 0) return state;
+  let nextState = addPlayerStatus(state, "forge", amount);
+  if (state.gearEffects.blockOnForgeGain > 0)
+    nextState = applyBlockReward(nextState, state.gearEffects.blockOnForgeGain, combatTexts ?? []);
+  if (combatTexts) {
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "status",
+      stat: "forge",
+      amount,
+    });
+  }
+  return nextState;
 }
 
 function applyBlockGainRewards(state: BattleState, gained: number, combatTexts: CombatTextEvent[]): BattleState {

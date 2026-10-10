@@ -7,7 +7,9 @@ import { getBossMusicKey } from "@/lib/audio";
 
 const audio = vi.hoisted(() => ({
   playMusic: vi.fn(),
-  playEnemyAttack: vi.fn(),
+  playCardSound: vi.fn(),
+  playUISound: vi.fn(),
+  playBattleEvent: vi.fn(),
   previewBossMusic: vi.fn(),
   endBossPreview: vi.fn(),
 }));
@@ -71,7 +73,9 @@ describe("CollectionScreen", () => {
     );
     const portrait = screen.getByRole("button", { name: "Inspect The Forge Golem" });
     fireEvent.click(portrait);
-    expect(audio.playEnemyAttack).toHaveBeenCalledWith(id);
+    expect(audio.playCardSound).not.toHaveBeenCalled();
+    expect(audio.playUISound).not.toHaveBeenCalled();
+    expect(audio.playBattleEvent).not.toHaveBeenCalled();
     expect(audio.previewBossMusic).toHaveBeenCalledWith(getBossMusicKey(id));
     const dialog = screen.getByRole("dialog", { name: "The Forge Golem" });
     expect(
@@ -85,13 +89,18 @@ describe("CollectionScreen", () => {
     expect(screen.getByRole("dialog", { name: "The Forge Golem" })).toBeTruthy();
     expect(audio.previewBossMusic).toHaveBeenCalledTimes(2);
     expect(audio.previewBossMusic).toHaveBeenLastCalledWith(getBossMusicKey(id));
-    expect(audio.playEnemyAttack).toHaveBeenCalledTimes(2);
+    expect(audio.playCardSound).not.toHaveBeenCalled();
+    expect(audio.playUISound).not.toHaveBeenCalled();
+    expect(audio.playBattleEvent).not.toHaveBeenCalled();
   });
 
-  it("keeps undiscovered entries concealed while retaining their existing click sound", () => {
+  it("keeps undiscovered entries concealed and silent", () => {
     render(<CollectionScreen {...defaultProps} collectionTab="bestiary" encounteredEnemyIds={[]} />);
     fireEvent.click(screen.getAllByRole("button", { name: "Inspect Undiscovered Entry" })[0]);
     expect(screen.queryByRole("dialog")).toBeNull();
-    expect(audio.playEnemyAttack).toHaveBeenCalledOnce();
+    expect(audio.playCardSound).not.toHaveBeenCalled();
+    expect(audio.playUISound).not.toHaveBeenCalled();
+    expect(audio.playBattleEvent).not.toHaveBeenCalled();
+    expect(audio.previewBossMusic).not.toHaveBeenCalled();
   });
 });

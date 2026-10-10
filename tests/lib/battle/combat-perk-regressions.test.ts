@@ -63,11 +63,11 @@ describe("combat perk regressions", () => {
     const state = patchBattleState({
       playerStatuses: { block: 5, forge: 2, burn: 1 },
       trinketEffects: { vanguardCrestForgeOnBlockAbsorb: 1 },
-      talentEffects: { forgeBurningBonusPercent: 100, forgeDoubleChance: 100 },
+      talentEffects: { forgeBurningBonusChance: 100, forgeBonusChance: 100 },
     });
     const result = processEnemyDamageEffect(state, { kind: "damage", damageType: "physical", amount: 5 }, []);
     expect(result.playerHealth).toBe(state.playerHealth);
-    expect(result.playerStatuses.forge).toBe(6);
+    expect(result.playerStatuses.forge).toBe(5);
     expect(result.enemyHealth).toBe(state.enemyHealth);
     expect(result.enemyStatuses.burn).toBe(0);
   });
@@ -77,9 +77,9 @@ describe("combat perk regressions", () => {
     const state = patchBattleState({
       hand: [card],
       rng: () => 0.99,
-      gearEffects: { forgeOnBurnVsUnburned: 1 },
+      gearEffects: { forgeOnBurnVsUnburnedChances: [100] },
       playerStatuses: { burn: 1 },
-      talentEffects: { forgeBurningBonusPercent: 100 },
+      talentEffects: { forgeBurningBonusChance: 100 },
     });
     const result = playBattleCardResolved(state, card.id, 0).state;
     expect(result.playerStatuses.forge).toBe(2);

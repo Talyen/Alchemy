@@ -20,10 +20,19 @@ function applyVanguardCrestAfterBlock(
   remainingDamage: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  if (state.trinketEffects.vanguardCrestForgeOnBlockAbsorb <= 0 || blockAbsorb <= 0 || remainingDamage !== 0) {
+  if (
+    state.flags.vanguardCrestUsedThisTurn ||
+    state.trinketEffects.vanguardCrestForgeOnBlockAbsorb <= 0 ||
+    blockAbsorb <= 0 ||
+    remainingDamage !== 0
+  ) {
     return state;
   }
-  return addForgeToPlayer(state, state.trinketEffects.vanguardCrestForgeOnBlockAbsorb, combatTexts);
+  return addForgeToPlayer(
+    { ...state, flags: { ...state.flags, vanguardCrestUsedThisTurn: true } },
+    state.trinketEffects.vanguardCrestForgeOnBlockAbsorb,
+    combatTexts,
+  );
 }
 
 export function applyArmorLossAttackRetaliation(
@@ -85,6 +94,8 @@ function applyBlockDepletedHeal(
   if (isPlayerDefeated(nextState)) return nextState;
   // The hit depleted Block even if threshold or healing rewards refilled it.
   let finalState = applyBlockDepletionRewards(prevState, nextState, combatTexts, isBlockDepleted);
+  if (isBlockDepleted)
+    finalState = addForgeToPlayer(finalState, prevState.talentEffects.forgeOnBlockDepleted, combatTexts);
 
   if (isBlockDepleted && prevState.gearEffects.stunOnBlockDepleted > 0 && finalState.enemyHealth > 0) {
     finalState = resolveFollowUpHit(

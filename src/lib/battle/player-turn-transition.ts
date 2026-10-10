@@ -10,7 +10,7 @@ import { CARDS_PER_TURN, MAX_HAND_SIZE } from "../game-constants";
 import { addPlayerStatusWithCombatText, applyHealingWithCombatText, gainManaWithCombatText } from "./player-rewards";
 import { halveRounded } from "./amount-helpers";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
-import { applyBlockDepletionRewards, applyCleanseHeals, restoreSpentPlayerForge } from "./status-player";
+import { applyBlockDepletionRewards, applyCleanseHeals, addForgeToPlayer } from "./status-player";
 import { drawCards, applyDrawResult, drawFromState } from "./draw";
 import { applyEmergencyWish } from "./wish";
 import { applyCardEffects } from "./effect-handlers";
@@ -20,6 +20,7 @@ import { PER_TURN_UNIQUE_GEAR_RESET } from "./unique-gear-state";
 import { getBattleRng } from "@/lib/rng";
 import type { BattleState, CcState, CombatTextEvent } from "./types";
 import { isPlayerDefeated, deathsDoorGraceTurns } from "./health-state";
+import { applyTurnStartPurge } from "./enemy-purge";
 
 function decrementCcSkipTurns(cc: CcState): CcState {
   return {
@@ -214,6 +215,8 @@ export function advanceToPlayerTurn(
 
   const beforeTurnReset = nextState;
   nextState = performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn, options);
+  nextState = resolvePendingBattleReactions(applyTurnStartPurge(nextState, combatTexts), combatTexts);
+  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
   if (nextState.playerStatuses.block > 0 && nextState.gearEffects.thornsOnRetainedBlock > 0) {
     nextState = addPlayerStatusWithCombatText(
       nextState,
@@ -223,7 +226,8 @@ export function advanceToPlayerTurn(
     );
   }
   nextState = applyBlockDepletionRewards(beforeTurnReset, nextState, combatTexts);
-  nextState = resolvePendingBattleReactions(restoreSpentPlayerForge(nextState, combatTexts), combatTexts);
+  if (nextState.gearEffects.forgeEveryThreeTurns > 0 && nextState.turn % 3 === 0)
+    nextState = addForgeToPlayer(nextState, 1, combatTexts);
   if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
   if (
     !nextState.wishOptions &&

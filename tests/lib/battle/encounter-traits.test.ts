@@ -272,7 +272,7 @@ describe("encounter trait card events", () => {
     expect(second.state.playerStatuses.burn).toBe(1);
   });
 
-  it("resets cinder-skin and holy-retribution on the next player turn", () => {
+  it("reactivates Cinder Skin on alternating turns while Holy Retribution resets each turn", () => {
     const currentEnemy: BestiaryEntry = {
       ...enemyWith("holy-retribution"),
       traits: [
@@ -298,8 +298,14 @@ describe("encounter trait card events", () => {
     expect(nextTurn.flags.cinderSkinUsedThisTurn).toBe(false);
     expect(nextTurn.flags.holyRetributionUsedThisTurn).toBe(false);
     const third = playBattleCardResolved(nextTurn, thirdCard.id, 0);
-    expect(third.state.playerHealth).toBe(second.state.playerHealth - 2);
-    expect(third.state.playerStatuses.burn).toBe(second.state.playerStatuses.burn + 1);
+    expect(third.state.playerHealth).toBe(second.state.playerHealth - 1);
+    expect(third.state.playerStatuses.burn).toBe(second.state.playerStatuses.burn);
+    const fourthCard = card({ uid: 4, effects: [{ kind: "damage", damageType: "physical", amount: 2 }] });
+    const restored = normalizePersistedBattleState(JSON.parse(JSON.stringify(third.state)));
+    const alternatingTurn = { ...advanceToPlayerTurn({ ...restored, rng: () => 0.99 }), hand: [fourthCard], mana: 1 };
+    const fourth = playBattleCardResolved(alternatingTurn, fourthCard.id, 0);
+    expect(fourth.state.playerHealth).toBe(third.state.playerHealth - 2);
+    expect(fourth.state.playerStatuses.burn).toBe(third.state.playerStatuses.burn + 1);
   });
 
   it("moves a played card to its destination when retaliation defeats the player", () => {

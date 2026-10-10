@@ -1,3 +1,5 @@
+import { rollBattleChance } from "./chance-roll";
+import { rollForgeAffixAwards } from "./status-player";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import type { BattleState, CombatTextEvent } from "./types";
 import { hasEnemyTrait } from "./encounter-trait-state";
@@ -25,7 +27,9 @@ function applyStunTriggerBonuses(state: BattleState, combatTexts?: CombatTextEve
       draw: talents.drawOnStun,
       nextCardFree: talents.nextCardFreeOnStun,
       block: state.playerStatuses.block === 0 ? talents.blockOnStun + gear.blockOnStun : 0,
-      forge: state.playerStatuses.forge === 0 ? talents.forgeOnStun + gear.forgeOnStun : 0,
+      forge:
+        (rollBattleChance(talents.forgeOnStunChance, state) ? talents.forgeOnStun : 0) +
+        rollForgeAffixAwards(state, gear.forgeOnStunChances),
       stripArmor: talents.stunStripArmor,
       mana: state.mana === 0 ? talents.manaOnStun + gear.manaOnStun : 0,
     },

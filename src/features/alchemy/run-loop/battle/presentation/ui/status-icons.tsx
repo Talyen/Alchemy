@@ -129,7 +129,9 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
           value={chip.value}
           hideValue={hideValue}
           valueColorClass={definition.colorClass}
-          description={haste ? definition.description : renderColoredKeywords(definition.description)}
+          description={
+            haste ? definition.description : renderColoredKeywords(chip.description ?? definition.description)
+          }
         />
       }
       plasmaColorPair={plasmaColorPair}

@@ -9,7 +9,7 @@ import { createMixedPotion } from "@/lib/alchemist";
 import { strengthenPotion } from "@/lib/alchemist/brewing";
 import * as cardPools from "@/lib/game-data/cards/card-pools";
 import { buildWishOptions } from "@/lib/battle/wish";
-import { patchBattleState } from "../../fixtures/battle";
+import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("card description bindings", () => {
   it("keeps both Ray of Frost hits linked after wording changes, reload and another corruption", () => {
@@ -36,7 +36,12 @@ describe("card description bindings", () => {
   });
 
   it("binds reordered equal-valued custom clauses without treating other numbers as magnitudes", () => {
-    const original = cardById.tithe!;
+    const original = makeTestCard({
+      effects: [
+        { kind: "damage", damageType: "holy", amount: 1 },
+        { kind: "gain-gold", amount: 1 },
+      ],
+    });
     const card = withCardDescription(original, [
       {
         role: "effect",
@@ -166,8 +171,8 @@ describe("card description bindings", () => {
     const corrupted = applyNumericCorruption(potion, target, 1);
     const strengthened = strengthenPotion(corrupted)!;
     const loaded = hydrateCard(BattleCardSchema.parse(JSON.parse(JSON.stringify(strengthened))));
-    expect(loaded.effects[0]).toEqual({ kind: "heal", amount: 14 });
-    expect(loaded.descriptionLines).toEqual(["Restore 14 Health", "Consume"]);
+    expect(loaded.effects[0]).toEqual({ kind: "heal", amount: 10 });
+    expect(loaded.descriptionLines).toEqual(["Restore 10 Health", "Consume"]);
     expect(loaded.corruptedValuePositions).toEqual([{ lineIndex: 0, matchIndex: 8 }]);
     expect(getEditableCorruptionTargets(loaded)[0]!.id).toBe(target.id);
   });

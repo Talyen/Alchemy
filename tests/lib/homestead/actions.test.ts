@@ -52,7 +52,7 @@ describe("homestead-actions", () => {
       expect(profile.materialInventory.iron).toBe(28);
       expect(profile.materialInventory.stone).toBe(42);
       expect(profile.effects.flatPhysicalDamage).toBe(1);
-      expect(profile.effects.homesteadForgeBurnPercent).toBe(25);
+      expect(profile.effects.homesteadForgeBurnPercent).toBe(10);
     });
 
     it("fails when attempting to upgrade past max tier", () => {

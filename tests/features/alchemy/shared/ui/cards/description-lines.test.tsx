@@ -1,5 +1,9 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { cardById } from "@/lib/game-data";
+import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
+import { strengthenPotion } from "@/lib/alchemist/brewing";
+import { BattleCardSchema } from "@/lib/validation/save-schemas/battle-card-schemas";
 import { DescriptionLines } from "@/features/alchemy/shared/ui/cards/card-description-ui";
 
 describe("DescriptionLines", () => {
@@ -51,5 +55,21 @@ describe("DescriptionLines", () => {
     );
     expect(container.textContent).toBe("Gain 7 Block");
     expect(container.querySelector(".text-destructive")?.textContent).toBe("7");
+  });
+  it.each([
+    ["health-potion", ["9"]],
+    ["mana-potion", ["3"]],
+    ["stoneskin-potion", ["5"]],
+    ["acid-potion", ["3"]],
+    ["luck-potion", ["5"]],
+    ["wishing-potion", ["2"]],
+    ["panacea-potion", ["1"]],
+  ] as const)("highlights only distilled values in %s after save hydration", (id, values) => {
+    const distilled = strengthenPotion(cardById[id]!)!;
+    const card = hydrateCard(BattleCardSchema.parse(JSON.parse(JSON.stringify(distilled))));
+    const { container } = render(<DescriptionLines lines={card.descriptionLines} idPrefix={id} card={card} />);
+    expect([...container.querySelectorAll(".text-green-400")].map((span) => span.textContent)).toEqual(values);
+    expect(container.textContent).toBe(card.descriptionLines.join(""));
+    expect(container.textContent).not.toContain("Brewed");
   });
 });

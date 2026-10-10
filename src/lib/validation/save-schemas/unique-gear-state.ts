@@ -19,7 +19,6 @@ const cardUid = z.number().int().nonnegative().nullable().catch(null);
 export const UniqueGearBattleStateSchema = z
   .object({
     everkeenReady: ready,
-    spentForge: z.number().int().nonnegative().catch(0),
     viperReady: ready,
     wildheartReady: ready,
     knightsAnswerReady: ready,

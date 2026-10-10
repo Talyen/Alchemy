@@ -174,7 +174,18 @@ export function getEnemyStatusChips(state: BattleSnapshot | null | undefined): S
   const mitigationChips: StatusChip[] = [];
   for (const key of ENEMY_MITIGATION_DISPLAY_ORDER) {
     const value = state.enemyMitigation[key];
-    if (value > 0) mitigationChips.push({ id: key, value });
+    if (value > 0)
+      mitigationChips.push({
+        id: key,
+        value,
+        ...(key === "forge"
+          ? {
+              description: state.currentEnemy.traits.some((trait) => trait.id === "whitehot")
+                ? "Each stack of Forge increases this enemy’s Physical and Stun damage by 1. Whitehot prevents attack spending."
+                : "Each stack of Forge increases this enemy’s Physical and Stun damage by 1. Attacks that use Forge spend 1 stack.",
+            }
+          : {}),
+      });
   }
   const statusChips = buildStatusChips(ENEMY_STATUS_DISPLAY_ORDER, state.enemyStatuses, state.enemyCC);
   const pendingChips = buildPendingEnemyChips(state);

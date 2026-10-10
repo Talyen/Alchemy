@@ -4,7 +4,7 @@ import { ManaPanel } from "@/features/alchemy/run-loop/battle/presentation/ui/re
 
 afterEach(cleanup);
 
-it("keeps unchanged mana artwork mounted through spending, gains, and rejected attempts", () => {
+it("keeps unchanged mana artwork mounted through spending and gains", () => {
   const { rerender } = render(<ManaPanel mana={3} maxMana={4} />);
   const crystals = () => Array.from(screen.getByTestId("mana-panel").querySelectorAll("img"));
   const initial = crystals();
@@ -22,8 +22,4 @@ it("keeps unchanged mana artwork mounted through spending, gains, and rejected a
   expect(gained[2]).not.toBe(spent[2]);
   expect(gained[2]!.classList.contains("mana-gem-active")).toBe(true);
   expect(gained[3]).toBe(initial[3]);
-
-  rerender(<ManaPanel mana={3} maxMana={4} rejected />);
-  expect(crystals()).toEqual(gained);
-  expect(screen.getByRole("img", { name: "Mana: 3 / 4" }).classList.contains("mana-play-rejected")).toBe(true);
 });

@@ -11,9 +11,9 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readActivityData } from "@/lib/active-run-session";
 import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
-import { strengthenPotion as prepareStrengthenedPotion } from "@/lib/alchemist/brewing";
+import { isBrewablePotion, strengthenPotion as prepareStrengthenedPotion } from "@/lib/alchemist/brewing";
 import { ALCHEMIST_POTIONS_OFFERED, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
-import { isMixedPotionCard, isStandardPotionCard, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
+import { isMixedPotionCard, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { isValidDeckIndex } from "@/lib/utils";
@@ -100,7 +100,7 @@ export function createAlchemistShopCommands(
       }
       const cardA = deck[indexA]!;
       const cardB = deck[indexB]!;
-      if (!isStandardPotionCard(cardA) || !isStandardPotionCard(cardB)) return null;
+      if (!isBrewablePotion(cardA) || !isBrewablePotion(cardB)) return null;
       const potion = tryCreateMixedPotion(cardA, cardB, talentEffects.potionMixPotency);
       return potion ? { potion, deck: applyMixToDeck(deck, indexA, indexB, potion) } : null;
     });

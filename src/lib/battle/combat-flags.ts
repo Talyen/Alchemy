@@ -1,4 +1,6 @@
 export const FLAG_DEFINITIONS = {
+  vanguardCrestUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
+  obsidianHammerUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   layeredArmorUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   ironrootArmorUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   shatterUsed: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
@@ -44,7 +46,6 @@ export const FLAG_DEFINITIONS = {
   cinderSkinUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   holyRetributionUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   spitefulHealedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
-  spellrendingUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
 
   divineAegisTriggered: { default: false as const, secondaryValue: null, lifetime: "combat" },
   desperateGuardUsed: { default: false as const, secondaryValue: null, lifetime: "combat" },

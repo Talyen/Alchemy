@@ -118,6 +118,19 @@ describe("imported enemy attack reactions", () => {
     expect(result.playerStatuses.burn).toBe(baseline.playerStatuses.burn + 2);
   });
 
+  it("stops adding Pyromancy damage once the hero is Burning, including later hits of one ability", () => {
+    const state = stateForEnemy("pyromancer", { roomScalingMultiplier: 2 });
+    const hit = makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 1 }] });
+    const first = applyEnemyAbility(state, hit, []);
+    const repeated = applyEnemyAbility(state, { ...hit, effects: [...hit.effects, ...hit.effects] }, []);
+    const withoutTrait = applyEnemyAbility({ ...first, currentEnemy: { ...first.currentEnemy, traits: [] } }, hit, []);
+    const second = applyEnemyAbility(first, hit, []);
+    expect(first.playerStatuses.burn).toBeGreaterThan(0);
+    expect(second.playerHealth).toBe(withoutTrait.playerHealth);
+    expect(second.playerStatuses.burn).toBe(withoutTrait.playerStatuses.burn);
+    expect(repeated.playerHealth).toBe(second.playerHealth);
+  });
+
   it("doubles Bandit's first successful damage packet only", () => {
     const state = stateForEnemy("bandit", {});
     const first = applyEnemyAbility(

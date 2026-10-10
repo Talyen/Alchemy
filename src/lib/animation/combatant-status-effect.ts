@@ -70,17 +70,20 @@ function drawStar(
   x: number,
   y: number,
   size: number,
+  rotation: number,
   primary: RgbTuple,
   secondary: RgbTuple,
   opacity: number,
 ): void {
   const spikes = 4;
+  const cos = Math.cos(rotation);
+  const sin = Math.sin(rotation);
   ctx.beginPath();
   for (let i = 0; i < spikes * 2; i++) {
     const direction = STAR_DIRECTIONS[i]!;
     const radius = i % 2 === 0 ? size : size * 0.38;
-    const px = x + direction.cos * radius;
-    const py = y + direction.sin * radius;
+    const px = x + (direction.cos * cos - direction.sin * sin) * radius;
+    const py = y + (direction.sin * cos + direction.cos * sin) * radius;
     if (i === 0) ctx.moveTo(px, py);
     else ctx.lineTo(px, py);
   }
@@ -167,9 +170,10 @@ function drawSwirlingStars(
     const radial = radius * (0.85 + noise * 0.3);
     const x = centerX + Math.cos(angle) * radial;
     const y = centerY + Math.sin(angle) * radial;
-    const starSize = 4 + noise * 5;
+    const starSize = (4 + noise * 5) * 1.5;
+    const wobble = Math.sin(progress * Math.PI * 8 + noise * Math.PI * 2) * 0.3;
     const twinkle = 0.45 + 0.55 * Math.abs(Math.sin(progress * Math.PI * 4 + noise * Math.PI * 2));
-    drawStar(ctx, x, y, starSize, palette.primaryRgb, palette.secondaryRgb, twinkle * appear);
+    drawStar(ctx, x, y, starSize, wobble, palette.primaryRgb, palette.secondaryRgb, twinkle * appear);
   }
 }
 

@@ -3,14 +3,13 @@ import { cardLibrary, getEffectiveCardDescriptionLines, keywordDefinitions } fro
 import { makeTestCard } from "../../fixtures/cards";
 
 describe("getEffectiveCardDescriptionLines", () => {
-  it("preserves authored amounts and annotates brewed cards without mutating their copy", () => {
+  it("preserves authored amounts without mutating their copy", () => {
     const card = makeTestCard({
-      brewed: true,
       descriptionLines: ["Restore 8 Health", "Deal Holy damage equal to your Block", "Consume"],
     });
     const before = structuredClone(card);
     const lines = getEffectiveCardDescriptionLines(card);
-    expect(lines).toEqual([...card.descriptionLines, "Brewed: cannot be brewed again"]);
+    expect(lines).toEqual(card.descriptionLines);
     lines[0] = "changed";
     expect(card).toEqual(before);
   });

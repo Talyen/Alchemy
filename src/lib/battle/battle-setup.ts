@@ -220,8 +220,8 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
   // Opening grants use the ordinary gain owners, without fight pacing. Forge
   // precedes Block so Tempered Guard sees the Forge already granted.
   let equipped = state;
-  if (openingStatuses.forge > 0)
-    equipped = addForgeToPlayer(equipped, openingStatuses.forge, [], { skipFightPacing: true });
+  const openingForge = openingStatuses.forge + (equipped.encounterBenefits.includes("white-heat") ? 2 : 0);
+  if (openingForge > 0) equipped = addForgeToPlayer(equipped, openingForge, []);
   if (openingStatuses.armor > 0) equipped = applyArmorReward(equipped, openingStatuses.armor, []);
   if (openingStatuses.block > 0)
     equipped = applyBlockReward(equipped, openingStatuses.block, [], { skipFightPacing: true });

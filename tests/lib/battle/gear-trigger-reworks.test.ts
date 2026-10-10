@@ -13,7 +13,7 @@ describe("reworked Gear triggers", () => {
       mana: 5,
       maxMana: 5,
       talentEffects: { burnDamageOnManaCrystalLoss: 5 },
-      gearEffects: { forgeOnBurnVsUnburned: 2 },
+      gearEffects: { forgeOnBurnVsUnburnedChances: [100, 100] },
     });
     const crystalLoss = attack("physical", { cost: 0, effects: [{ kind: "lose-max-mana", amount: 1 }] });
     const ignited = play(initial, crystalLoss);

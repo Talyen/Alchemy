@@ -17,7 +17,7 @@ describe("resource interaction regressions", () => {
 
   it("a weakened zero Forge grant does not roll Intensify", () => {
     const rng = vi.fn(() => 0);
-    const state = patchBattleState({ rng, talentEffects: { forgeDoubleChance: 10 } });
+    const state = patchBattleState({ rng, talentEffects: { forgeBonusChance: 10 } });
     applyCardEffects(state, makeTestCard({ effects: [{ kind: "player-status", status: "forge", amount: 0 }] }), []);
     expect(rng).not.toHaveBeenCalled();
   });

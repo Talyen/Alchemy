@@ -59,14 +59,14 @@ describe("keyword catalog expansion", () => {
     expect(result.enemyStatuses.stun).toBeGreaterThan(0);
   });
 
-  it("heals on combat Gold and pays Tithebound only with Forge remaining", () => {
+  it("heals on combat Gold and pays Tithebound only with at least 5 Forge", () => {
     const state = patchBattleState({
       playerHealth: 10,
       playerMaxHealth: 20,
       gearEffects: { healOnCombatGoldGain: 2, goldOnKillWithForge: 3 },
     });
     expect(addGoldWithCombatText(state, 1, []).playerHealth).toBe(12);
-    const defeated = { ...state, enemyHealth: 0, playerStatuses: { ...state.playerStatuses, forge: 1 } };
+    const defeated = { ...state, enemyHealth: 0, playerStatuses: { ...state.playerStatuses, forge: 5 } };
     const rewarded = payKillPayouts(defeated, true, []);
     expect(rewarded.gold - state.gold).toBe(3);
     expect(rewarded.playerHealth).toBe(12);

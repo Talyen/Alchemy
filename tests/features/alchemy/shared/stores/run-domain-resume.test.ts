@@ -268,7 +268,7 @@ describe("session facade API", () => {
     );
     const restored = readBattle(defaultGameSession).battleState;
     expect(restored.talentEffects).toMatchObject({
-      forgeBurnDamagePercent: 50,
+      forgeBurnDamagePercent: 25,
       armorPhysicalDamagePercent: 50,
       nextAttackPhysicalOnDodge: 2,
       partingCutDamagePercent: 50,

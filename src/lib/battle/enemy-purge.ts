@@ -3,6 +3,19 @@ import { applyBlockReward } from "./status-player";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import type { BattleState, CombatTextEvent } from "./types";
 import { setEnemyStatus } from "./status-state";
+import { rollBattleChance } from "./chance-roll";
+import { isPlayerDefeated } from "./health-state";
+
+export function applyTurnStartPurge(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  if (
+    state.enemyHealth <= 0 ||
+    isPlayerDefeated(state) ||
+    !rollBattleChance(state.gearEffects.turnStartPurgeChance, state)
+  )
+    return state;
+  const purged = purgeEnemyBenefits(state, 1, combatTexts);
+  return applyPurgeGearRewards(purged.state, purged.removed, combatTexts);
+}
 
 export function purgeEnemyBenefits(
   state: BattleState,

@@ -16,7 +16,6 @@ import type { BattleState } from "./types";
 import { hasEncounterBenefit } from "./encounter-trait-state";
 import { reduceEnemyArmor } from "./enemy-mitigation-state";
 import { writeCombatFlag as setFlag } from "./action-context";
-export { forgeAppliesToDamageType } from "./player-damage-base";
 
 function applyCrit(damage: number, state: BattleState, guaranteed = false) {
   const chance =

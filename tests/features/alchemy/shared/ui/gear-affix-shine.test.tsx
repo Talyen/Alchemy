@@ -25,6 +25,6 @@ describe("gear affix descriptions", () => {
       }),
     );
     expect(screen.getByText("Lifegiving").closest("div")?.textContent).toContain("Restore 1 Health each turn");
-    expect(screen.getByText("Emberforged").closest("div")?.textContent).toContain("gains 2 Forge");
+    expect(screen.getByText("Emberforged").closest("div")?.textContent).toContain("20% chance to grant 1 Forge");
   });
 });

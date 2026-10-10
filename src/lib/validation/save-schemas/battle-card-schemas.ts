@@ -40,7 +40,6 @@ export const BattleCardSchema = z
     cost: z.number().catch(-1),
     consume: z.boolean().optional(),
     corrupted: z.boolean().optional(),
-    brewed: z.boolean().optional(),
     corruptedValuePositions: z
       .array(
         z
@@ -72,7 +71,6 @@ export const BattleCardSchema = z
       effects: effects.values,
       ...(saved.uid !== undefined ? { uid: saved.uid } : {}),
       ...(saved.consume !== undefined ? { consume: saved.consume } : {}),
-      ...(saved.brewed !== undefined ? { brewed: saved.brewed } : {}),
       ...(saved.corrupted !== undefined ? { corrupted: saved.corrupted } : {}),
       ...(saved.baseTitle !== undefined ? { baseTitle: saved.baseTitle } : {}),
       ...(rendered

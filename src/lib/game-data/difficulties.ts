@@ -5,7 +5,6 @@ export type DifficultyId = "difficulty-1" | "difficulty-2" | "difficulty-3";
 
 export type DifficultyModifier =
   | { kind: "enemy-starting-armor"; amount: number }
-  | { kind: "enemy-gains-forge-each-turn" }
   | { kind: "increase-enemy-physical-damage"; amount: number }
   | { kind: "increase-enemy-damage"; amount: number }
   | { kind: "increase-enemy-status"; status: Exclude<EnemyStatusId, "stun">; amount: number }

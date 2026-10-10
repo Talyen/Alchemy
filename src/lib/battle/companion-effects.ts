@@ -12,7 +12,7 @@ import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { applyBlockReward, applyHealingWithCombatText, gainManaWithCombatText } from "./player-rewards";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { getBattleCompanionDamageModifiers } from "./companion-scaling";
-import { addForgeToPlayer } from "./status-player";
+import { rollForgeAffixAwards, addForgeToPlayer } from "./status-player";
 
 export function resolveCompanionTurnStart(
   state: BattleState,
@@ -68,8 +68,12 @@ export function resolveCompanionTurnStart(
 
     afterEffects = { ...afterEffects, flags: { ...afterEffects.flags, companionNextAttackBonus: attackBonuses.flat } };
     if (isPlayerDefeated(afterEffects)) return afterEffects;
-    if (damageDealt > 0 && burningEnemy && s.gearEffects.forgeOnCompanionDamageVsBurning > 0) {
-      afterEffects = addForgeToPlayer(afterEffects, s.gearEffects.forgeOnCompanionDamageVsBurning, combatTexts);
+    if (damageDealt > 0 && burningEnemy) {
+      afterEffects = addForgeToPlayer(
+        afterEffects,
+        rollForgeAffixAwards(afterEffects, s.gearEffects.forgeOnCompanionDamageVsBurningChances),
+        combatTexts,
+      );
     }
     if (
       damageDealt > 0 &&

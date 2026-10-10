@@ -175,6 +175,7 @@ export function applyCardEffects(
 ): BattleState {
   // Earlier turn-start actions share the output rail, but cannot acknowledge
   // this card or Companion's ineffective action on its behalf.
+  context = { ...context, forgeTriggers: new Set<string>() };
   const effectTexts: CombatTextEvent[] = [];
   const potionMult =
     isPotionCard(card) && card.consume && !state.action?.repeatActive

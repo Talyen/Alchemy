@@ -111,19 +111,19 @@ describe("applyPlayerDamageStatuses", () => {
 it("Tempered Guard reads Forge after Overheat and Intensify modify its gain", () => {
   const state = patchBattleState({
     playerStatuses: { forge: 5, burn: 1 },
-    talentEffects: { forgeBlockPercent: 50, forgeBurningBonusPercent: 100, forgeDoubleChance: 100 },
+    talentEffects: { forgeBlockPercent: 50, forgeBurningBonusChance: 100, forgeBonusChance: 100 },
   });
   const forged = applyPlayerStatusEffect(state, { kind: "player-status", status: "forge", amount: 2 }, []);
   const guarded = applyPlayerStatusEffect(forged, { kind: "player-status", status: "block", amount: 2 }, []);
-  expect(forged.playerStatuses.forge).toBe(13);
-  expect(guarded.playerStatuses.block).toBe(9);
+  expect(forged.playerStatuses.forge).toBe(9);
+  expect(guarded.playerStatuses.block).toBe(7);
   expect(state.playerStatuses.forge).toBe(5);
 });
 
 describe("addForgeToPlayer", () => {
   it("does nothing when amount is zero after modifiers", () => {
     const rng = vi.fn(() => 0.5);
-    const state = patchBattleState({ rng, talentEffects: { forgeDoubleChance: 10 } });
+    const state = patchBattleState({ rng, talentEffects: { forgeBonusChance: 10 } });
     const result = addForgeToPlayer(state, 0);
     expect(result).toBe(state);
     expect(rng).not.toHaveBeenCalled();
@@ -135,11 +135,11 @@ describe("low-health resource bonuses", () => {
     const state = patchBattleState({
       playerHealth,
       playerMaxHealth: 30,
-      talentEffects: { armorLowHealthBonusPercent: 100, forgeLowHealthBonusPercent: 100 },
+      talentEffects: { armorLowHealthBonusPercent: 100, forgeLowHealthBonusChance: 100 },
     });
     const armor = applyPlayerStatusEffect(state, { kind: "player-status", status: "armor", amount: 4 }, []);
     const forge = addForgeToPlayer(state, 4);
     expect(armor.playerStatuses.armor).toBe(playerHealth < 15 ? 8 : 4);
-    expect(forge.playerStatuses.forge).toBe(playerHealth < 15 ? 8 : 4);
+    expect(forge.playerStatuses.forge).toBe(playerHealth < 15 ? 5 : 4);
   });
 });

@@ -129,7 +129,7 @@ describe("talent damage conversions", () => {
   });
 
   it("fully absorbed hits create no statuses or damage rewards", () => {
-    const initial = battle({ enemyMitigation: { block: 10 }, talentEffects: { forgeOnBurnDealt: 1 } });
+    const initial = battle({ enemyMitigation: { block: 10 }, gearEffects: { forgeOnBurnVsUnburnedChances: [100] } });
     const next = resolveFollowUpHit(initial, { source: "talent-derived", damageType: "burn", amount: 4 }, []);
     expect(next.enemyHealth).toBe(100);
     expect(next.enemyStatuses.burn).toBe(0);

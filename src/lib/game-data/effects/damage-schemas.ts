@@ -14,6 +14,7 @@ const damageEffectDefinition = {
       equalToBlockPercent: z.number().int().min(1).max(100).optional(),
       equalToArmor: z.boolean().optional(),
       equalToForge: z.boolean().optional(),
+      forgeBonusPercent: z.number().int().min(1).max(100).optional(),
       ignoreArmor: z.boolean().optional(),
       ignoreBlock: z.boolean().optional(),
       blockCost: PositiveAmountSchema.optional(),
@@ -52,6 +53,7 @@ const damageEffectDefinition = {
               data.equalToBlock === true ||
               data.equalToArmor === true ||
               data.equalToForge === true ||
+              data.forgeBonusPercent !== undefined ||
               data.equalToGoldPercent !== undefined
             ))
         );
@@ -63,8 +65,13 @@ const damageEffectDefinition = {
     })
     .refine(
       (data) =>
-        [data.equalToBlock, data.equalToArmor, data.equalToForge, data.equalToGoldPercent !== undefined].filter(Boolean)
-          .length <= 1,
+        [
+          data.equalToBlock,
+          data.equalToArmor,
+          data.equalToForge,
+          data.forgeBonusPercent !== undefined,
+          data.equalToGoldPercent !== undefined,
+        ].filter(Boolean).length <= 1,
       {
         message: "damage effect must have at most one of equalToBlock/equalToArmor/equalToForge/equalToGoldPercent",
       },

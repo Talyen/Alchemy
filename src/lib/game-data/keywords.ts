@@ -94,8 +94,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   forge: {
     id: "forge",
     label: "Forge",
-    description:
-      "Each stack of Forge increases your Physical and Stun damage dealt by 1; lose 1 Forge when an attack deals damage that uses Forge",
+    description: "Each stack of Forge increases Physical and Stun damage by 1 for the rest of combat.",
     colorClass: "text-orange-300",
     borderClass: "border-orange-300",
     shineColors: ["#fdba74", "#ea580c", "#fdba74"],

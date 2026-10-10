@@ -14,16 +14,11 @@ import {
   getCardDescription,
   mapCardDescriptionReferences,
   withCardDescription,
-  isMixedPotionCard,
   mapEffectChildren,
   mixedPotion,
 } from "../game-data";
 
-const MIXED_POTION_ERROR = "Cannot mix with an existing Mixed Potion";
-
-function canMixPotion(card: BattleCard | undefined): card is BattleCard {
-  return card != null && !isMixedPotionCard(card) && !card.brewed;
-}
+const MIXED_POTION_ERROR = "Two Potions are required";
 
 function areEffectsEquivalent(a: readonly BattleCardEffect[], b: readonly BattleCardEffect[]): boolean {
   // Deep comparison: same-id cards can carry different payloads (nested
@@ -54,11 +49,14 @@ function scalePotionEffect(effect: BattleCardEffect, multiplier: number, potency
 
 function scaledPotionParts(card: BattleCard, multiplier: number, potencyBonus: number) {
   const effects = card.effects.map((effect) => scalePotionEffect(effect, multiplier, potencyBonus));
-  return { effects, description: createEffectDescription(effects) };
+  return {
+    effects,
+    description: carryCardDescriptionMarks(getCardDescription(card), createEffectDescription(effects)),
+  };
 }
 
 export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyBonus: number = 0): BattleCard {
-  if (!canMixPotion(cardA) || !canMixPotion(cardB)) {
+  if (!cardA || !cardB) {
     throw new Error(MIXED_POTION_ERROR);
   }
 
@@ -93,7 +91,6 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyB
         art: mixedPotion,
         cost: MIXED_POTION_COST,
         consume: true,
-        brewed: true,
         effects: parts.flatMap((part) => part.effects),
       },
       description,
@@ -106,7 +103,7 @@ export function tryCreateMixedPotion(
   cardB: BattleCard | undefined,
   potencyBonus: number = 0,
 ): BattleCard | null {
-  if (!canMixPotion(cardA) || !canMixPotion(cardB)) return null;
+  if (!cardA || !cardB) return null;
   return createMixedPotion(cardA, cardB, potencyBonus);
 }
 

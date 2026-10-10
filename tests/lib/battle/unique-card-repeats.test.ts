@@ -16,7 +16,7 @@ describe("Unique Gear unique card repeats", () => {
       ],
     });
     const charged = addPlayerStatus(
-      battle({ gearEffects: { forgeReadiesPhysicalRepeat: 1, forgeOnBurnVsUnburned: 2 } }),
+      battle({ gearEffects: { forgeReadiesPhysicalRepeat: 1, forgeOnBurnVsUnburnedChances: [100, 100] } }),
       "forge",
       4,
     );
@@ -70,8 +70,7 @@ describe("Unique Gear unique card repeats", () => {
   it("Forge earned by a damage repeat cannot prepare another Everkeen repeat", () => {
     const result = repeatUniqueCardDamage(
       battle({
-        gearEffects: { forgeReadiesPhysicalRepeat: 1 },
-        talentEffects: { forgeOnBurnDealt: 2 },
+        gearEffects: { forgeReadiesPhysicalRepeat: 1, forgeOnBurnVsUnburnedChances: [100, 100] },
       }),
       attack("burn"),
       [],

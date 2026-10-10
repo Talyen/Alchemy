@@ -1,3 +1,4 @@
+import type { TransmutationSelectionCommand } from "@/lib/active-run-session/alchemy-visits";
 import type { ProgressSaveState } from "@/features/alchemy/shared/storage";
 import type { BrewOperation } from "@/lib/alchemist/brewing";
 import type { BattleRefs } from "../shared/types";
@@ -73,7 +74,11 @@ export interface AlchemyRouteCommands {
       handleChooseCard: (cardId: string) => boolean;
       handleContinue: () => void;
     };
-    transmutation: { exchange: (sourceIndex: number, offerIndex: number) => BattleCard | null; continue: () => void };
+    transmutation: {
+      select: (selection: TransmutationSelectionCommand) => boolean;
+      exchange: (sourceIndex: number, offerIndex: number) => BattleCard | null;
+      continue: () => void;
+    };
     corruption: {
       handleCorruptCard: (cardIndex: number) => void;
       handleExit: () => void;

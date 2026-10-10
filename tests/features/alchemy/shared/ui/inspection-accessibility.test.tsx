@@ -52,6 +52,17 @@ describe("inspection through keyboard and Steam Input focus", () => {
     await waitFor(() => expect(document.body.textContent).toContain("reduces by half each turn"));
   });
 
+  it("inspects and chooses a keyword chip through the same keyboard target", async () => {
+    const onSelect = vi.fn();
+    const { container } = render(<KeywordTag keywordId="burn" pill showTooltip onSelect={onSelect} />);
+    await userEvent.tab();
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Choose Burn" }));
+    await waitFor(() => expect(document.body.textContent).toContain("reduces by half each turn"));
+    expect(container.querySelector("button button")).toBeNull();
+    await userEvent.keyboard("{Enter}");
+    expect(onSelect).toHaveBeenCalledOnce();
+  });
+
   it("explains an unavailable shop service on focus without allowing a purchase", async () => {
     const onClick = vi.fn();
     render(

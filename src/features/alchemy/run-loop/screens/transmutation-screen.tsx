@@ -1,14 +1,20 @@
 import { playUISound } from "@/lib/audio";
 import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import type { BattleCard } from "@/lib/game-data";
+import type { AlchemyVisit, TransmutationSelectionCommand } from "@/lib/active-run-session/alchemy-visits";
+import { getTransmutationOffers, canTransmuteCard, isTransmutationSourceCurrent } from "@/lib/alchemist/transmutation";
 import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { SelectableCard } from "../../shared/ui/cards/selectable-card";
 import { CardSelectionGrid } from "../../shared/ui/cards/card-selection-grid";
-import type { BattleCard } from "@/lib/game-data";
-import type { AlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
-import { isTransmutableCard } from "@/lib/alchemist/transmutation";
+import { CardTitle } from "../../shared/ui/cards/card-description-ui";
+import { controlLabelClass } from "../../shared/config";
+import { KeywordTag } from "../../shared/ui/keyword-tag";
+
 export function TransmutationScreen({
   runDeck,
   visit,
+  onSelect,
   onExchange,
   onContinue,
   afterProgressSaved = (feedback) => feedback(),
@@ -16,29 +22,30 @@ export function TransmutationScreen({
 }: {
   runDeck: BattleCard[];
   visit: AlchemyVisit;
+  onSelect: (selection: TransmutationSelectionCommand) => boolean;
   onExchange: (source: number, offer: number) => BattleCard | null;
   onContinue: () => void;
   afterProgressSaved?: (feedback: () => void) => void;
   isProgressSavePending?: () => boolean;
 }) {
-  const [source, setSource] = useState(-1);
   const [page, setPage] = useState(0);
   const [error, setError] = useState("");
-  const [selectionDeck, setSelectionDeck] = useState(runDeck);
   const continued = useRef(false);
+  const committing = useRef(false);
   const continuationRequest = useRef({ revision: 0 });
-  if (selectionDeck !== runDeck) {
-    setSelectionDeck(runDeck);
-    setSource(-1);
-    setPage(0);
-    setError("Your deck changed. Choose a Card again.");
-  }
-  const canExchange = (card: BattleCard) =>
-    isTransmutableCard(card) && visit.offers.some((offer) => offer.id !== card.id);
+  const selection = visit.transmutation;
+  const canExchange = (card: BattleCard) => canTransmuteCard(selection?.choices ?? [], card);
   const available = runDeck.some(canExchange);
+  const completed = visit.completed;
+  const staleSource = !!selection?.source && !completed && !isTransmutationSourceCurrent(visit, runDeck);
+  const source = staleSource ? null : selection?.source;
+  const keyword = source ? selection?.keyword : null;
+  const offers = getTransmutationOffers(visit);
+  const locked = completed || isProgressSavePending();
+
   useEffect(() => {
     const requests = continuationRequest.current;
-    if ((visit.completed || !available) && !continued.current) {
+    if ((completed || !available) && !continued.current) {
       const request = ++requests.revision;
       afterProgressSaved(() => {
         if (request !== requests.revision || continued.current) return;
@@ -49,70 +56,114 @@ export function TransmutationScreen({
     return () => {
       requests.revision++;
     };
-  }, [visit.completed, available, onContinue, afterProgressSaved]);
-  const original = runDeck[source];
-  const items = runDeck.map((card, index) => ({ card, index }));
-  if (visit.completed || !available) return null;
+  }, [completed, available, onContinue, afterProgressSaved]);
+
+  function select(command: TransmutationSelectionCommand) {
+    if (locked || committing.current || continued.current) return;
+    if (onSelect(command)) {
+      playUISound("transmuteSelect");
+      setError("");
+    } else setError("This choice is no longer available.");
+  }
+
+  function confirm() {
+    if (
+      locked ||
+      committing.current ||
+      continued.current ||
+      staleSource ||
+      selection?.sourceIndex === null ||
+      selection?.sourceIndex === undefined ||
+      selection.offerIndex === null ||
+      !offers[selection.offerIndex]
+    )
+      return;
+    committing.current = true;
+    if (onExchange(selection.sourceIndex, selection.offerIndex)) {
+      playUISound("transmuteSelect");
+    } else {
+      committing.current = false;
+      setError("This exchange is no longer available. Choose another card.");
+    }
+  }
+
+  if (!available && !completed) return null;
+  // Completed visits resume directly onward, with no result screen.
+  if (completed && !keyword) return null;
   return (
     <TitledScreenShell title="Transmutation">
       <div className="mt-5 flex flex-col items-center gap-5 text-center">
-        {!original ? (
+        {!source ? (
           <>
-            <h2 className="text-2xl font-semibold">Choose a Card</h2>
+            <h2 className="text-2xl font-semibold">Transform a Card</h2>
             <CardSelectionGrid
-              items={items}
+              items={runDeck.map((card, index) => ({ card, index }))}
               page={page}
               onPageChange={setPage}
-              selectedIndex={source}
+              selectedIndex={-1}
               renderItem={({ card, index }) => (
                 <SelectableCard
                   card={card}
-                  isSelected={source === index}
-                  disabled={!canExchange(card)}
-                  onSelect={() => {
-                    if (continued.current || !canExchange(card)) return;
-                    playUISound("transmuteSelect");
-                    setSource(index);
-                    setError("");
-                  }}
+                  isSelected={false}
+                  disabled={locked || !canExchange(card)}
+                  onSelect={() => select({ kind: "source", index, card })}
                 />
               )}
             />
           </>
+        ) : !keyword ? (
+          <div className="flex flex-wrap justify-center gap-5 py-8" role="group" aria-label="Choose a keyword">
+            {selection?.choices.map((choice) => (
+              <KeywordTag
+                key={choice.keyword}
+                keywordId={choice.keyword}
+                pill
+                showTooltip
+                disabled={locked}
+                className="px-6 py-4 text-lg"
+                onSelect={() => select({ kind: "keyword", keyword: choice.keyword })}
+              />
+            ))}
+          </div>
         ) : (
           <>
-            <h2 className="text-2xl font-semibold">Your card is transmuted into...</h2>
+            <h2 className="text-2xl font-semibold">Choose an Outcome</h2>
+            <KeywordTag keywordId={keyword} pill showTooltip />
             <div className="flex flex-wrap justify-center gap-4">
-              {visit.offers.map((card, index) => (
-                <div key={card.id}>
+              {offers.map((card, index) => (
+                <div key={card.id} className="flex flex-col items-center gap-3">
                   <SelectableCard
                     card={card}
-                    isSelected={false}
-                    disabled={original.id === card.id}
-                    onSelect={() => {
-                      if (continued.current || !canExchange(original) || original.id === card.id) return;
-                      playUISound("transmuteSelect");
-                      if (isProgressSavePending()) return;
-                      if (onExchange(source, index)) {
-                        const requests = continuationRequest.current;
-                        const request = ++requests.revision;
-                        afterProgressSaved(() => {
-                          if (request !== requests.revision || continued.current) return;
-                          continued.current = true;
-                          onContinue();
-                        });
-                      } else {
-                        setError("This exchange is no longer available. Choose another card.");
-                      }
-                    }}
+                    isSelected={selection?.offerIndex === index}
+                    disabled={locked}
+                    onSelect={() => select({ kind: "outcome", index })}
                   />
-                  {original.id === card.id && <p>Already the selected card</p>}
+                  <div className={controlLabelClass}>
+                    <CardTitle card={card} />
+                  </div>
                 </div>
               ))}
             </div>
           </>
         )}
-        {error && <p role="alert">{error}</p>}
+        {source && (
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button
+              size="lg"
+              variant="outline"
+              disabled={locked}
+              onClick={() => select({ kind: "back", to: keyword ? "keyword" : "source" })}
+            >
+              Back
+            </Button>
+            {keyword && (
+              <Button size="lg" variant="primary" disabled={locked || selection?.offerIndex === null} onClick={confirm}>
+                Continue
+              </Button>
+            )}
+          </div>
+        )}
+        {(error || staleSource) && <p role="alert">{error || "Your deck changed. Transform a card again."}</p>}
       </div>
     </TitledScreenShell>
   );

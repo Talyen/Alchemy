@@ -50,9 +50,9 @@ const trinketDefinitions = [
     "obsidian-hammer",
     "Obsidian Hammer",
     assetRefs.obsidianHammer,
-    { forgeStunThreshold: 4, forgeStunAmount: 1 },
+    { forgeStunThreshold: 5, forgeStunAmount: 2 },
     (effects) =>
-      `When you have ${effects.forgeStunThreshold} or more Forge, your Physical damage also deals ${effects.forgeStunAmount} Stun damage`,
+      `At ${effects.forgeStunThreshold} or more Forge, your first damaging Physical hit each turn deals ${effects.forgeStunAmount} additional Stun damage`,
   ),
   defineTrinket(
     "icy-heart",
@@ -87,7 +87,8 @@ const trinketDefinitions = [
     "Vanguard's Crest",
     assetRefs.vanguardsCrest,
     { vanguardCrestForgeOnBlockAbsorb: 1 },
-    (effects) => `When your Block fully absorbs an attack, gain ${effects.vanguardCrestForgeOnBlockAbsorb} Forge`,
+    (effects) =>
+      `Once per turn, gain ${effects.vanguardCrestForgeOnBlockAbsorb} Forge when your Block fully absorbs an attack`,
   ),
   defineTrinket(
     "parasitic-bloom",

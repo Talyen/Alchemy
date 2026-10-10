@@ -20,8 +20,8 @@ export const buildings: HomesteadBuilding[] = [
       materialCost({ stone: 16, iron: 44 }),
       materialCost({ stone: 20, iron: 55 }),
     ],
-    { flatPhysicalDamage: 1, homesteadForgeBurnPercent: 25, endRunIronPerRoom: 1 },
-    (t) => `Physical damage +${t}\nBurn damage gains ${25 * t}% of Forge.`,
+    { flatPhysicalDamage: 1, homesteadForgeBurnPercent: 10, endRunIronPerRoom: 1 },
+    (t) => `Physical damage +${t}\nBurn damage gains ${10 * t}% of Forge.`,
     (t) => `+${t} Iron per Room`,
   ),
   stackingUpgrade(

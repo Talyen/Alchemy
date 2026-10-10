@@ -5,6 +5,20 @@
   "reviewPolicy": "Current references reflect installed registrations. Approved cue mappings remain working inputs in approved-choices.json; discard completed exports and review histories.",
   "families": [
     {
+      "id": "bleed-tick-soft-impact",
+      "title": "Bleed tick soft impact",
+      "rationale": "The selected compact soft impact distinguishes ongoing Bleed from a new monster bite.",
+      "candidates": [
+        {
+          "assetId": "299cd3093d7e9492",
+          "path": "combat/gore_wood_beating_flesh_wet_blood_splat_soft_4__timothy_mchugh_gorification_hd__299cd3093d7e9492.flac",
+          "start": 0,
+          "duration": 0.85,
+          "note": "Approved G excerpt; the production source includes 12 ms edge fades and the audition gain."
+        }
+      ]
+    },
+    {
       "id": "paper",
       "title": "Card handling",
       "rationale": "Paper on felt gives card movement a physical identity. Prefer a small dealt-card take over a large shuffle; keep frequent draws quiet.",
@@ -218,6 +232,20 @@
           "start": 0,
           "duration": 0.499521,
           "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "fcea0d3bb242ab3e",
+          "path": "movement/foley_soldier_gear_equipment_metal_cloth_heavy_movement_light_08__gamemaster_audio_footstep_and_foley_sounds__fcea0d3bb242ab3e.flac",
+          "start": 0,
+          "duration": 1.0775520833333334,
+          "note": "Full recording; approved for Plate Mail."
+        },
+        {
+          "assetId": "ba8ddcf091d7fdc3",
+          "path": "movement/leatherarmor_rustle_03__double_trouble_audio_medieval_armor_and_im__ba8ddcf091d7fdc3.flac",
+          "start": 0,
+          "duration": 0.93,
+          "note": "Approved equipment rustle excerpt for Armor gained."
         }
       ]
     },
@@ -421,6 +449,13 @@
           "start": 0,
           "duration": 1.8835,
           "note": "Full recording at original level or matched level."
+        },
+        {
+          "assetId": "4ab78de83ad443fc",
+          "path": "magic/ice_cast_spell_soft_02__existing_library_unattributed__4ab78de83ad443fc.flac",
+          "start": 0,
+          "duration": 1.6,
+          "note": "Approved soft casting excerpt for Crystal Bulwark."
         }
       ]
     },
@@ -1307,9 +1342,9 @@
       ]
     },
     {
-      "id": "battle-focus-enemy-will-o-wisp",
-      "title": "Will-o\u2019-Wisp enemy audition",
-      "rationale": "Two source-specific alternatives for Will-o\u2019-Wisp enemy. These are unapproved listening candidates; no production replacement is installed.",
+      "id": "battle-focus-will-o-wisp",
+      "title": "Will-o'-Wisp companion",
+      "rationale": "A compact arcane cue supports the companion summon and cleansing turn effect.",
       "candidates": [
         {
           "assetId": "b861ccb684646844",
@@ -1344,153 +1379,6 @@
           "path": "items/catalogue_page_turn_9__touchdown_audio_the_white_stuff__8ee66c00b72cba10.wav",
           "start": 0.38,
           "duration": 0.438,
-          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
-        }
-      ]
-    },
-    {
-      "id": "battle-focus-enemy-cleric",
-      "title": "Cleric audition",
-      "rationale": "Two source-specific alternatives for Cleric. These are unapproved listening candidates; no production replacement is installed.",
-      "candidates": [
-        {
-          "assetId": "2847537ec06e3c64",
-          "path": "magic/heal_01__existing_library_unattributed__2847537ec06e3c64.flac",
-          "start": 0,
-          "duration": 1.5,
-          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
-        },
-        {
-          "assetId": "9c263c55e9a235f1",
-          "path": "music_and_outcomes/singing_bowl_strike_sustain_d_02__prismo_sound_singing_bowls__9c263c55e9a235f1.wav",
-          "start": 4.63,
-          "duration": 1.5,
-          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
-        }
-      ]
-    },
-    {
-      "id": "battle-focus-enemy-inquisitor",
-      "title": "Inquisitor audition",
-      "rationale": "Two source-specific alternatives for Inquisitor. These are unapproved listening candidates; no production replacement is installed.",
-      "candidates": [
-        {
-          "assetId": "f6318a19f7ff55a2",
-          "path": "combat/impact_sound_design_hit_chime_resonant_hit_chime_accent_tinkle_fast__airborne_sound_crisis_accents__f6318a19f7ff55a2.wav",
-          "start": 0,
-          "duration": 1.5,
-          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
-        },
-        {
-          "assetId": "ef2ba58846d5bd45",
-          "path": "magic/purge_01__existing_library_unattributed__ef2ba58846d5bd45.flac",
-          "start": 0,
-          "duration": 1.5,
-          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
-        }
-      ]
-    },
-    {
-      "id": "battle-focus-enemy-paladin",
-      "title": "Paladin audition",
-      "rationale": "Two source-specific alternatives for Paladin. These are unapproved listening candidates; no production replacement is installed.",
-      "candidates": [
-        {
-          "assetId": "28230a5cb0123eda",
-          "path": "magic/arcane_metal_02__existing_library_unattributed__28230a5cb0123eda.flac",
-          "start": 0.11,
-          "duration": 1.5,
-          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
-        },
-        {
-          "assetId": "a6a1ca66d08efd92",
-          "path": "combat/plate_impact_hard_02__double_trouble_audio_medieval_armor_and_im__a6a1ca66d08efd92.flac",
-          "start": 0,
-          "duration": 0.764,
-          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
-        }
-      ]
-    },
-    {
-      "id": "battle-focus-enemy-seraph",
-      "title": "Seraph audition",
-      "rationale": "Two source-specific alternatives for Seraph. These are unapproved listening candidates; no production replacement is installed.",
-      "candidates": [
-        {
-          "assetId": "a47d5cbcd05115a4",
-          "path": "world/church_choir_dm__certified_audio_ambient_soundscapes__a47d5cbcd05115a4.flac",
-          "start": 0,
-          "duration": 2.5,
-          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
-        },
-        {
-          "assetId": "e5440ea12f1c5e20",
-          "path": "world/angels_behind_the_wall__digital_rain_lab_dreamscapes_vol_2__e5440ea12f1c5e20.flac",
-          "start": 0.01,
-          "duration": 2.5,
-          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
-        }
-      ]
-    },
-    {
-      "id": "battle-focus-enemy-zealot",
-      "title": "Zealot audition",
-      "rationale": "Two source-specific alternatives for Zealot. These are unapproved listening candidates; no production replacement is installed.",
-      "candidates": [
-        {
-          "assetId": "3b300b28cadd1c94",
-          "path": "magic/magspel_cast_casting_buff_hy_pc_002__existing_library_unattributed__3b300b28cadd1c94.flac",
-          "start": 0.02,
-          "duration": 1.5,
-          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
-        },
-        {
-          "assetId": "fded9548efba5ccf",
-          "path": "magic/magspel_cast_casting_buff_hy_pc_004__existing_library_unattributed__fded9548efba5ccf.flac",
-          "start": 0.02,
-          "duration": 1.5,
-          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
-        }
-      ]
-    },
-    {
-      "id": "battle-focus-enemy-giant-snake",
-      "title": "Giant Snake audition",
-      "rationale": "Two source-specific alternatives for Giant Snake. These are unapproved listening candidates; no production replacement is installed.",
-      "candidates": [
-        {
-          "assetId": "c33cf3f943e5ae6c",
-          "path": "creatures/snake_hiss_03__gamemaster_audio_animal_sounds__c33cf3f943e5ae6c.flac",
-          "start": 0.81,
-          "duration": 0.804,
-          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
-        },
-        {
-          "assetId": "e9aede68b7efc05d",
-          "path": "creatures/creature_hiss_4_m__rdgsfx002_creatures__e9aede68b7efc05d.flac",
-          "start": 0.33,
-          "duration": 1.5,
-          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
-        }
-      ]
-    },
-    {
-      "id": "battle-focus-enemy-giant-spider",
-      "title": "Giant Spider audition",
-      "rationale": "Two source-specific alternatives for Giant Spider. These are unapproved listening candidates; no production replacement is installed.",
-      "candidates": [
-        {
-          "assetId": "d2d3d05e3b8f01d4",
-          "path": "creatures/bug_people_03__existing_library_unattributed__d2d3d05e3b8f01d4.flac",
-          "start": 0.05,
-          "duration": 1.387,
-          "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
-        },
-        {
-          "assetId": "454bd7cf4a88ccde",
-          "path": "world/gaf_sfx01_horror_designed_corpseinsect_01__game_audio_factory_gafsfx01_dark_materials__454bd7cf4a88ccde.wav",
-          "start": 0.12,
-          "duration": 1.5,
           "note": "First prominent event selected from signal levels, with 5 ms edge fades. Unheard; compare both candidates before choosing."
         }
       ]
@@ -1654,7 +1542,7 @@
       "screens": ["draft-deck"],
       "trigger": "Accepted starter-draft selection or removal.",
       "current": "uiSounds.draftSelect",
-      "currentState": "playing",
+      "currentState": "silent",
       "note": "",
       "priority": "P2",
       "evidence": ["src/features/alchemy/run-setup/screens/draft-deck-screen.tsx"]
@@ -1859,7 +1747,7 @@
       "id": "bleedTick",
       "title": "Bleed damage over time",
       "group": "Battle feedback",
-      "family": "bleed",
+      "family": "bleed-tick-soft-impact",
       "screens": ["battle"],
       "trigger": "Resolved outcome: Bleed damage over time.",
       "current": "battleEventSounds.bleedTick",
@@ -1917,7 +1805,7 @@
       "screens": ["battle"],
       "trigger": "Resolved outcome: Draw batch acknowledgment.",
       "current": "battleEventSounds.drawCards",
-      "currentState": "playing",
+      "currentState": "silent",
       "note": "Registry entries marked unused are proposals for activation, not evidence that this cue currently plays.",
       "priority": "P2",
       "evidence": [
@@ -2050,12 +1938,25 @@
     },
     {
       "id": "armor",
-      "title": "Armor gained or stripped",
+      "title": "Armor stripped",
       "group": "Battle feedback",
       "family": "parry",
       "screens": ["battle"],
-      "trigger": "Resolved event: Armor gained or stripped.",
-      "current": "battleEventSounds.armorChange",
+      "trigger": "Resolved event: Armor stripped.",
+      "current": "battleEventSounds.armorStrip",
+      "currentState": "silent",
+      "note": "Intentionally silent; the triggering card or enemy action supplies its authored cue.",
+      "priority": "P2",
+      "evidence": ["src/features/alchemy/run-loop/battle/controller-utils.ts", "Docs/GAME_RULES.md"]
+    },
+    {
+      "id": "armor-gain",
+      "title": "Armor gained",
+      "group": "Battle feedback",
+      "family": "equip",
+      "screens": ["battle"],
+      "trigger": "Resolved event: Armor gained.",
+      "current": "battleEventSounds.armorGain",
       "currentState": "playing",
       "note": "New semantic cue proposal. Avoid duplicating a simultaneous cast, hit or heal; Leech can reuse the existing heal acknowledgment.",
       "priority": "P2",
@@ -2446,7 +2347,7 @@
       "screens": ["transmutation"],
       "trigger": "Committed result or meaningful selection: Select surrendered and replacement cards.",
       "current": "uiSounds.transmuteSelect",
-      "currentState": "playing",
+      "currentState": "silent",
       "note": "Use a success cue only after commit; an existing coin, shared progression, or card cue may already acknowledge a related outcome. Avoid stacking duplicates.",
       "priority": "P2",
       "evidence": ["src/features/alchemy/run-loop/screens/transmutation-screen.tsx"]
@@ -2472,7 +2373,7 @@
       "screens": ["corruption"],
       "trigger": "Committed result or meaningful selection: Select a card for Corruption.",
       "current": "uiSounds.corruptSelect",
-      "currentState": "playing",
+      "currentState": "silent",
       "note": "Use a success cue only after commit; an existing coin, shared progression, or card cue may already acknowledge a related outcome. Avoid stacking duplicates.",
       "priority": "P2",
       "evidence": ["src/features/alchemy/run-loop/screens/corruption-screen.tsx"]
@@ -2855,15 +2756,15 @@
       "pounce": "heavy",
       "maul": "heavy",
       "block": "parry",
-      "plate-mail": "parry",
-      "crystal-bulwark": "parry",
-      "blessed-aegis": "holy",
+      "plate-mail": "equip",
+      "crystal-bulwark": "ice",
+      "blessed-aegis": "battle-focus-card-tithe",
       "tithe": "battle-focus-card-tithe",
       "exorcism": "battle-focus-card-exorcism",
       "sanctified-plate": "battle-focus-card-sanctified-plate",
       "avatar": "battle-focus-card-avatar",
       "smite": "holy",
-      "judgment": "holy",
+      "judgment": "battle-focus-card-tithe",
       "holy-radiance": "holy",
       "wish": "wish",
       "wishing-well": "battle-focus-card-wishing-well",
@@ -2871,7 +2772,7 @@
       "meteor": "earth",
       "earthquake": "earth",
       "roll-the-dice": "dice",
-      "blackjack": "dice",
+      "blackjack": "heavy",
       "lightning-bolt": "lightning",
       "steal": "coins",
       "golden-plate": "coins",
@@ -2918,7 +2819,7 @@
       "skeleton-companion": "bone",
       "pixie-companion": "heal",
       "mana-moth-companion": "mana",
-      "will-o-wisp-companion": "battle-focus-enemy-will-o-wisp",
+      "will-o-wisp-companion": "battle-focus-will-o-wisp",
       "golden-retriever-companion": "coins",
       "shield-scarab-companion": "parry",
       "library-owl-companion": "battle-focus-companion-library-owl",
@@ -2928,47 +2829,6 @@
       "bellows-blast": "fire",
       "quench": "ice",
       "feint": "transition"
-    },
-    "enemies": {
-      "forge-golem": "forge",
-      "frostwarden": "ice",
-      "frost-elemental": "ice",
-      "ice-wraith": "ice",
-      "winter-wolf": "ice",
-      "yeti": "ice",
-      "blight-treant": "wood",
-      "iron-bear": "heavy",
-      "ogre": "heavy",
-      "brawler": "heavy",
-      "skeleton": "bone",
-      "goblin": "blade",
-      "bandit": "blade",
-      "mimic": "beast",
-      "mud-elemental": "poison",
-      "plague-doctor": "poison",
-      "slime": "poison",
-      "giant-spider": "battle-focus-enemy-giant-spider",
-      "giant-snake": "battle-focus-enemy-giant-snake",
-      "necromancer": "dark",
-      "vampire": "dark",
-      "blood-cultist": "dark",
-      "blood-countess": "dark",
-      "living-armor": "parry",
-      "stone-golem": "parry",
-      "fire-elemental": "fire",
-      "fire-imp": "fire",
-      "hellhound": "fire",
-      "pyromancer": "fire",
-      "will-o-wisp": "battle-focus-enemy-will-o-wisp",
-      "dire-wolf": "canine",
-      "zealot": "battle-focus-enemy-zealot",
-      "cleric": "battle-focus-enemy-cleric",
-      "inquisitor": "battle-focus-enemy-inquisitor",
-      "paladin": "battle-focus-enemy-paladin",
-      "seraph": "battle-focus-enemy-seraph",
-      "banshee": "danger",
-      "earth-elemental": "earth",
-      "stone-titan": "earth"
     },
     "companions": {
       "wolf": "canine",
@@ -2980,7 +2840,7 @@
       "skeleton": "bone",
       "pixie": "heal",
       "mana-moth": "mana",
-      "will-o-wisp": "battle-focus-enemy-will-o-wisp",
+      "will-o-wisp": "battle-focus-will-o-wisp",
       "golden-retriever": "coins",
       "shield-scarab": "parry",
       "library-owl": "battle-focus-companion-library-owl",
@@ -3006,7 +2866,7 @@
     "mana": ["mana-change", "card:meteor"],
     "block": ["blockAbsorb", "card:block"],
     "dodge": ["dodge"],
-    "armor": ["armor", "card:plate-mail"],
+    "armor": ["armor-gain", "armor", "card:plate-mail"],
     "forge": ["forge-status", "card:anvil"],
     "burn": ["burnTick", "wildfire", "card:fireball"],
     "freeze": ["freezeProc", "shatter", "card:frostbolt"],
@@ -3184,19 +3044,10 @@
     "card:tithe",
     "card:prayer",
     "card:wishing-well",
-    "enemy:will-o-wisp",
     "companion:will-o-wisp",
-    "companion:library-owl",
-    "enemy:cleric",
-    "enemy:inquisitor",
-    "enemy:paladin",
-    "enemy:seraph",
-    "enemy:zealot",
-    "enemy:giant-snake",
-    "enemy:giant-spider"
+    "companion:library-owl"
   ],
   "sharedChoices": {
-    "companion:will-o-wisp": "enemy:will-o-wisp",
-    "card:will-o-wisp-companion": "enemy:will-o-wisp"
+    "card:will-o-wisp-companion": "companion:will-o-wisp"
   }
 }

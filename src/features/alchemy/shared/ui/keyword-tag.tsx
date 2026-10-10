@@ -15,6 +15,8 @@ export interface KeywordTagProps {
   showIcon?: boolean;
   className?: string;
   showTooltip?: boolean;
+  onSelect?: () => void;
+  disabled?: boolean;
 }
 
 export function KeywordTag({
@@ -23,6 +25,8 @@ export function KeywordTag({
   showIcon = true,
   className,
   showTooltip = false,
+  onSelect,
+  disabled = false,
 }: KeywordTagProps) {
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
     useHoverVisible<HTMLButtonElement>();
@@ -50,21 +54,27 @@ export function KeywordTag({
     </span>
   );
 
-  if (!showTooltip) return tag;
+  if (!showTooltip && !onSelect) return tag;
 
   return (
     <button
       ref={triggerRef}
       type="button"
-      className="relative inline-flex items-center"
-      aria-label={`Inspect ${def.label} keyword`}
+      className={cn("relative inline-flex items-center", pill && "rounded-full")}
+      aria-label={onSelect ? `Choose ${def.label}` : `Inspect ${def.label} keyword`}
+      disabled={disabled}
+      onClick={onSelect}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       onFocusCapture={onFocusCapture}
       onBlurCapture={onBlurCapture}
     >
-      <span className="cursor-help">{tag}</span>
-      <PortaledTooltip triggerRef={triggerRef} visible={visible} plasmaColorPair={getPlasmaColorPair([keywordId])}>
+      <span className={onSelect ? undefined : "cursor-help"}>{tag}</span>
+      <PortaledTooltip
+        triggerRef={triggerRef}
+        visible={showTooltip && visible}
+        plasmaColorPair={getPlasmaColorPair([keywordId])}
+      >
         <span className={cn("flex items-center gap-2", tooltipHeaderClass)}>
           <KeywordTag keywordId={keywordId} className="text-sm sm:text-base" showIcon />
         </span>

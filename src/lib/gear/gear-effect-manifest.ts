@@ -1,10 +1,10 @@
-export const GEAR_EFFECT_KEYS = [
+export const GEAR_NUMERIC_EFFECT_KEYS = [
   "bleedDecaysByHalf",
   "armorIncreasesStun",
   "forgeReadiesPhysicalRepeat",
   "physicalCritDetonatesBleed",
-  "holyPreservesForge",
-  "recoverSpentForge",
+  "oathkeeperHolyAndBlock",
+  "forgeEveryThreeTurns",
   "dodgeReadiesVenomousHit",
   "retainStunBuildup",
   "archeryCritDrawsCompanion",
@@ -45,7 +45,6 @@ export const GEAR_EFFECT_KEYS = [
   "leechHealBonusPercent",
   "goldGainPercent",
   "companionDamageBonus",
-  "companionBenefitsFromForge",
   "resistPhysical",
   "resistStun",
   "resistHoly",
@@ -56,7 +55,6 @@ export const GEAR_EFFECT_KEYS = [
   "resistNature",
   "healthPerTurn",
   "damageOnStunPhysical",
-  "forgeOnStun",
   "blockOnStun",
   "manaOnStun",
   "poisonLeechChance",
@@ -70,7 +68,6 @@ export const GEAR_EFFECT_KEYS = [
   "manaOnWish",
   "healOnKill",
   "goldOnKill",
-  "forgeOnBurnVsUnburned",
   "damageOnFreezePhysical",
   "blockDepletedHeal",
   "burnOnConsume",
@@ -87,20 +84,18 @@ export const GEAR_EFFECT_KEYS = [
   "startThorns",
   "flatThornsDamage",
   "thornsOnBlockDepleted",
-  "forgeOnConsumeBurnCard",
   "armorOnThornsDamage",
   "manaOnPaidConsume",
   "poisonTickOnConsume",
   "drawOnLastHandConsume",
   "blockOnCompanionSummon",
-  "forgeOnCompanionDamageVsBurning",
   "archeryDrawChance",
   "blockOnArcheryWithoutBlock",
   "flatArmorGained",
   "armorOnNatureCard",
   "blockOnWish",
   "leechBlockChance",
-  "blockOnLastForgeSpent",
+  "blockOnForgeGain",
   "thornsOnNatureCardWithoutThorns",
   "poisonOnThornsDamage",
   "healOnCombatGoldGain",
@@ -128,7 +123,7 @@ export const GEAR_EFFECT_KEYS = [
   "healOnDeathsDoorSurvival",
   "blockOnPurge",
   "holyOnPurge",
-  "purgeOnFirstPaidCard",
+  "turnStartPurgeChance",
   "attackPurgeOncePerTurn",
   "dodgeDrawAndPlay",
   "dodgeChance",
@@ -147,14 +142,42 @@ export const GEAR_EFFECT_KEYS = [
   "holyStunBuildupGold",
 ] as const;
 
-import { createNumericManifest, mergeNumericManifests } from "@/lib/manifest-utils";
+import { createNumericManifest } from "@/lib/manifest-utils";
+
+export const GEAR_CHANCE_EFFECT_KEYS = [
+  "forgeOnStunChances",
+  "forgeOnBurnVsUnburnedChances",
+  "forgeOnConsumeBurnCardChances",
+  "forgeOnCompanionDamageVsBurningChances",
+] as const;
+
+export const GEAR_EFFECT_KEYS = [...GEAR_NUMERIC_EFFECT_KEYS, ...GEAR_CHANCE_EFFECT_KEYS] as const;
+
+export type GearChanceEffectKey = (typeof GEAR_CHANCE_EFFECT_KEYS)[number];
 
 export type GearEffectManifest = {
-  [K in (typeof GEAR_EFFECT_KEYS)[number]]: number;
+  [K in (typeof GEAR_NUMERIC_EFFECT_KEYS)[number]]: number;
+} & { [K in GearChanceEffectKey]: number[] };
+
+export const defaultGearEffects: GearEffectManifest = {
+  ...createNumericManifest(GEAR_NUMERIC_EFFECT_KEYS),
+  forgeOnStunChances: [],
+  forgeOnBurnVsUnburnedChances: [],
+  forgeOnConsumeBurnCardChances: [],
+  forgeOnCompanionDamageVsBurningChances: [],
 };
 
-export const defaultGearEffects: GearEffectManifest = createNumericManifest(GEAR_EFFECT_KEYS);
-
 export function mergeGearEffectManifests(base: GearEffectManifest, addition: GearEffectManifest): GearEffectManifest {
-  return mergeNumericManifests(base, addition, GEAR_EFFECT_KEYS);
+  const merged = { ...base };
+  for (const key of GEAR_NUMERIC_EFFECT_KEYS) merged[key] += addition[key];
+  return {
+    ...merged,
+    forgeOnStunChances: [...base.forgeOnStunChances, ...addition.forgeOnStunChances],
+    forgeOnBurnVsUnburnedChances: [...base.forgeOnBurnVsUnburnedChances, ...addition.forgeOnBurnVsUnburnedChances],
+    forgeOnConsumeBurnCardChances: [...base.forgeOnConsumeBurnCardChances, ...addition.forgeOnConsumeBurnCardChances],
+    forgeOnCompanionDamageVsBurningChances: [
+      ...base.forgeOnCompanionDamageVsBurningChances,
+      ...addition.forgeOnCompanionDamageVsBurningChances,
+    ],
+  };
 }

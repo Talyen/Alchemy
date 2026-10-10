@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { battlePresentation } from "@/app/battle-presentation";
@@ -10,6 +10,8 @@ import type {
 } from "@/features/alchemy/run-loop/screens/battle-screen/types";
 import { defaultBattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
+import { audioState } from "@/lib/audio/state";
+import { getHandCardKey } from "@/features/alchemy/run-loop/battle/playable-hand";
 
 vi.mock("@/features/alchemy/shared/ui/cards/card-button", () => ({
   BattleCardButton: ({
@@ -101,6 +103,25 @@ describe("BattleHand", () => {
     expect(affordable.classList.contains("hand-card-unplayable")).toBe(false);
     expect(affordable.classList.contains("cursor-default")).toBe(false);
     expect(expensive.classList.contains("hand-card-unplayable")).toBe(true);
+  });
+
+  it("visibly acknowledges an unaffordable rejection while muted and clears it afterwards", () => {
+    const wasMuted = audioState.muted;
+    audioState.muted = true;
+    try {
+      renderHand();
+      const expensive = screen.getByRole("button", { name: "Play Meteor" });
+      const affordable = screen.getByRole("button", { name: "Play Slash" });
+      act(() =>
+        battlePresentation.setState({ cardRejection: { cardKey: getHandCardKey(expensiveCard, 1), mana: true } }),
+      );
+      expect(expensive.classList.contains("card-play-rejected")).toBe(true);
+      expect(affordable.classList.contains("card-play-rejected")).toBe(false);
+      act(() => battlePresentation.setState({ cardRejection: null }));
+      expect(expensive.classList.contains("card-play-rejected")).toBe(false);
+    } finally {
+      audioState.muted = wasMuted;
+    }
   });
 
   it("overlays stun presentation on hand cards while the player is crowd-controlled", () => {

@@ -2,7 +2,7 @@ import { TOOLTIP_FADE_MS } from "@/lib/game-constants";
 import { isEditionCharacterAvailable } from "@/lib/game-edition";
 import { memo, useState, type RefObject } from "react";
 
-import { playCardSound, playEnemyAttack } from "@/lib/audio";
+import { playCardSound } from "@/lib/audio";
 import { cardBack, getEffectiveCardDescriptionLines } from "@/lib/game-data";
 import { gearDefinitions, getGearDefinitionShineColors } from "@/lib/gear";
 import { cn } from "@/lib/utils";
@@ -96,7 +96,6 @@ export const CollectionTile = memo(function CollectionTile({
             setFlipped((f) => !f);
           } else if (item.frameType === "bestiary") {
             if (item.discovered) dismiss();
-            playEnemyAttack(item.id);
             onEnemyActivate?.(item.id, event.currentTarget);
           }
         }}

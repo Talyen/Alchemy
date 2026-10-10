@@ -15,7 +15,6 @@ export {
   playBattleEvent,
   playCardSound,
   playDefeat,
-  playEnemyAttack,
   playGoldGain,
   playGoldSpend,
   playSliceDeath,

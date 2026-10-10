@@ -3,6 +3,7 @@ import { FlaskConical } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { type BattleCard } from "@/lib/game-data";
+import { PotionComparison } from "./potion-comparison";
 import { BrewPotionPanel } from "./brew-potion-panel";
 import { isBrewablePotion, strengthenPotion, type BrewOperation } from "@/lib/alchemist/brewing";
 import { collectionTileWidthClass, getCardInspectionShineColors } from "@/features/alchemy/shared/config";
@@ -54,6 +55,7 @@ export function AlchemistShopScreen({
 }) {
   const [brewMode, setBrewMode] = useState<"combine" | "strengthen" | null>(null);
   const [mixedCard, setMixedCard] = useState<BattleCard | null>(null);
+  const [originalPotion, setOriginalPotion] = useState<BattleCard | null>(null);
   const resultSequence = useRef(0);
   useEffect(
     () => () => {
@@ -67,6 +69,7 @@ export function AlchemistShopScreen({
   const mixDisabledMessage = gold < mixPrice ? "Not Enough Gold" : "Two eligible Potions required";
   const modeKey = mixedCard ? "result" : (brewMode ?? "browse");
   function confirm(operation: BrewOperation): BattleCard | null {
+    const original = operation.kind === "strengthen" ? runDeck[operation.index] : null;
     const result =
       operation.kind === "combine"
         ? onMixPotions(...operation.indices)
@@ -76,7 +79,10 @@ export function AlchemistShopScreen({
     if (result) {
       const sequence = ++resultSequence.current;
       afterProgressSaved(() => {
-        if (resultSequence.current === sequence) setMixedCard(result);
+        if (resultSequence.current === sequence) {
+          setOriginalPotion(original ?? null);
+          setMixedCard(result);
+        }
       });
     }
     return result;
@@ -86,16 +92,20 @@ export function AlchemistShopScreen({
       {mixedCard ? (
         <ShopBrowseShell title="Alchemist's Shop" gold={gold} showGold={false}>
           <div className="flex flex-col items-center gap-6">
-            <div className="flex flex-col items-center gap-3">
-              <BattleCardButton
-                card={mixedCard}
-                ariaLabel={mixedCard.title}
-                shimmerActive={false}
-                shimmerToken={undefined}
-                shineColor={getCardInspectionShineColors(mixedCard)}
-                className={collectionTileWidthClass}
-              />
-            </div>
+            {originalPotion ? (
+              <PotionComparison original={originalPotion} result={mixedCard} />
+            ) : (
+              <div className="flex flex-col items-center gap-3">
+                <BattleCardButton
+                  card={mixedCard}
+                  ariaLabel={mixedCard.title}
+                  shimmerActive={false}
+                  shimmerToken={undefined}
+                  shineColor={getCardInspectionShineColors(mixedCard)}
+                  className={collectionTileWidthClass}
+                />
+              </div>
+            )}
             <div>
               <Button
                 size="lg"
@@ -155,12 +165,12 @@ export function AlchemistShopScreen({
               />
               <ServiceButton
                 icon={FlaskConical}
-                label="Strengthen Potion"
+                label="Distill"
                 cost={mixPrice}
                 disabled={strengthenDisabled}
-                disabledMessage={gold < mixPrice ? "Not Enough Gold" : "No eligible Potions to strengthen"}
+                disabledMessage={gold < mixPrice ? "Not Enough Gold" : "No eligible Potions to distill"}
                 used={mixUsed}
-                soldOutText="Strengthen Potion - Used"
+                soldOutText="Distill - Used"
                 onClick={() => setBrewMode("strengthen")}
               />
             </>

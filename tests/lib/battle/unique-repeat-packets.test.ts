@@ -20,7 +20,7 @@ describe("Unique damage repeats retain the resolved attack", () => {
       1,
     );
     const result = play(charged, attack("physical"));
-    expect(result.playerHealth).toBe(61);
+    expect(result.playerHealth).toBe(62);
     expect(result.flags.nextHitLeech).toBe(false);
   });
 

@@ -171,16 +171,6 @@ describe("tryCreateMixedPotion", () => {
     expect(tryCreateMixedPotion(healPotion, undefined)).toBeNull();
     expect(tryCreateMixedPotion(undefined, undefined)).toBeNull();
   });
-
-  it("uses the same eligibility for throwing and nullable callers, including strengthened Potions", () => {
-    for (const invalid of [makePotion({ brewed: true }), makePotion({ id: "mixed-potion" })]) {
-      expect(tryCreateMixedPotion(invalid, healPotion)).toBeNull();
-      expect(tryCreateMixedPotion(healPotion, invalid)).toBeNull();
-      expect(() => createMixedPotion(invalid, healPotion)).toThrow("Cannot mix");
-      expect(() => createMixedPotion(healPotion, invalid)).toThrow("Cannot mix");
-    }
-    expect(tryCreateMixedPotion(healPotion, firePotion)).toEqual(createMixedPotion(healPotion, firePotion));
-  });
 });
 
 describe("applyMixToDeck", () => {

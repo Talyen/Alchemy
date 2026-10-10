@@ -70,5 +70,14 @@ describe("one focal cue and one resolved accent", () => {
     expect(selectCombatSound([...events].reverse(), false)).toBe("burnTick");
     expect(selectCombatSound(events.slice(2), false)).toBe("playerHeal");
     expect(selectCombatSound(events.slice(2), true)).toBeUndefined();
+
+    const gain: CombatTextEvent = { target: "player", kind: "status", stat: "armor", amount: 3 };
+    const strip: CombatTextEvent = { target: "enemy", kind: "damage", stat: "armor", amount: 1, impact: false };
+    expect(selectCombatSound([gain], false)).toBe("armorGain");
+    expect(selectCombatSound([strip], false)).toBeUndefined();
+    // Silent stripping must not swallow the standalone gain cue during Armor theft.
+    expect(selectCombatSound([gain, strip], false)).toBe("armorGain");
+    expect(selectCombatSound([strip, gain], false)).toBe("armorGain");
+    expect(selectCombatSound([gain, strip], true)).toBeUndefined();
   });
 });

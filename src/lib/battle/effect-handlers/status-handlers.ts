@@ -51,7 +51,18 @@ export const STATUS_HANDLERS = {
     const status = effect.statusPool
       ? (pickRandom(effect.statusPool, getBattleRng(nextState)) ?? effect.status)
       : effect.status;
-    return applyPlayerStatusEffect(nextState, { ...effect, status, amount: adjustedAmount }, combatTexts);
+    return applyPlayerStatusEffect(
+      nextState,
+      {
+        ...effect,
+        status,
+        amount:
+          status === "forge" && effect.forgeAmount !== undefined
+            ? applyPotionMultiplier(effect.forgeAmount, potionMult)
+            : adjustedAmount,
+      },
+      combatTexts,
+    );
   },
   "enemy-status": (state, _card, effect, potionMult, combatTexts) => {
     const amount = applyPotionMultiplier(effect.amount, potionMult);

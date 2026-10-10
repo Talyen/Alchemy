@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createBattleState, defaultTalentEffects } from "@/lib/battle";
+import { applyCardEffects, createBattleState, defaultTalentEffects } from "@/lib/battle";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
@@ -74,7 +74,7 @@ describe("new ordinary affix interactions", () => {
       deck: [drawn],
       gearEffects: {
         poisonTickOnConsume: 1,
-        forgeOnConsumeBurnCard: 2,
+        forgeOnConsumeBurnCardChances: [100, 100],
         manaOnPaidConsume: 2,
         drawOnLastHandConsume: 1,
       },
@@ -132,7 +132,7 @@ describe("new ordinary affix interactions", () => {
       enemyHealth: 100,
       enemyMaxHealth: 100,
       enemyStatuses: { burn: 3 },
-      gearEffects: { blockOnCompanionSummon: 3, forgeOnCompanionDamageVsBurning: 2 },
+      gearEffects: { blockOnCompanionSummon: 3, forgeOnCompanionDamageVsBurningChances: [100, 100] },
       rng: () => 0.99,
     });
     const summoned = playBattleCardResolved(state, summon.id, 0).state;
@@ -165,7 +165,7 @@ describe("new ordinary affix interactions", () => {
     expect(afterNature.playerStatuses.armor).toBe(2);
   });
 
-  it("grants Block for a Wish, an actual Leech heal, and spending the last Forge", () => {
+  it("grants Block for a Wish, an actual Leech heal, and gaining Forge", () => {
     const wished = applyWishEffect(patchBattleState({ gearEffects: { blockOnWish: 2 } }), undefined, 1, []);
     expect(wished.playerStatuses.block).toBe(2);
 
@@ -187,16 +187,20 @@ describe("new ordinary affix interactions", () => {
     const forgeState = patchBattleState({
       hand: [strike],
       playerStatuses: { forge: 1 },
-      gearEffects: { blockOnLastForgeSpent: 3 },
+      gearEffects: { blockOnForgeGain: 3 },
       rng: () => 0.99,
     });
-    const spent = playBattleCardResolved(forgeState, strike.id, 0).state;
-    expect(spent.playerStatuses).toMatchObject({ forge: 0, block: 3 });
+    const spent = applyCardEffects(
+      forgeState,
+      makeTestCard({ effects: [{ kind: "player-status", status: "forge", amount: 1 }] }),
+      [],
+    );
+    expect(spent.playerStatuses).toMatchObject({ forge: 2, block: 3 });
     const stillForged = playBattleCardResolved(
       { ...forgeState, playerStatuses: { ...forgeState.playerStatuses, forge: 2 } },
       strike.id,
       0,
     ).state;
-    expect(stillForged.playerStatuses).toMatchObject({ forge: 1, block: 0 });
+    expect(stillForged.playerStatuses).toMatchObject({ forge: 2, block: 0 });
   });
 });

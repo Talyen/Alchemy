@@ -6,13 +6,7 @@ const t = talentFor("dodge");
 export const dodgeTalents = [
   t("dodge-lightfoot", "Lightfoot", "+5% Dodge chance", "Feather", addEffect("dodgeChance", 5)),
   t("dodge-catch-breath", "Catch Breath", "Restore 1 Health when you Dodge", "HeartPulse", addEffect("healOnDodge", 1)),
-  t(
-    "dodge-feint",
-    "Feint",
-    "When you Dodge, you have a 25% chance to gain 2 Forge",
-    "Anvil",
-    addEffect("forgeOnDodge", 2),
-  ),
+  t("dodge-feint", "Feint", "When you Dodge, 25% chance to gain 1 Forge", "Anvil", addEffect("forgeOnDodge", 1)),
   t("dodge-thornstep", "Thornstep", "Gain 1 Thorns when you Dodge", "Leaf", addEffect("thornsOnDodge", 1)),
   t(
     "dodge-clean-getaway",

@@ -209,6 +209,27 @@ describe("simulator and live command parity", () => {
     expect(actions[0]?.kind).toBe("end");
   });
 
+  it("replays Spellrending turn-start rolls with identical live combat state and RNG", () => {
+    const runs = [24, 25, 26].map((seed) => {
+      resetRunDomainStore();
+      return replaySimulation(
+        { ...base, seed, enemyId: "living-armor", deck: heldDeck, maxTurns: 6 },
+        { gearEffects: { ...battle.defaultBattleState().gearEffects, turnStartPurgeChance: 25, blockOnPurge: 1 } },
+      );
+    });
+    expect(
+      runs.some(({ actions }) =>
+        actions.some(
+          (action) =>
+            action.kind === "end" &&
+            action.frames.some((frame) =>
+              frame.turn.combatTexts.some((text) => text.kind === "notice" && text.signal === "purge"),
+            ),
+        ),
+      ),
+    ).toBe(true);
+  });
+
   it("caps forced skips without granting a Companion action or exceeding the round budget", () => {
     const { result, actions } = recordSimulation(
       { ...base, deck: heldDeck, maxTurns: 2 },

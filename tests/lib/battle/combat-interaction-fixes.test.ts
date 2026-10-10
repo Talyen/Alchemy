@@ -14,11 +14,11 @@ function card(id: string) {
 }
 
 describe("combat interaction fixes", () => {
-  it("Burning Blade spends the Forge it uses without requiring Ignite", () => {
+  it("Burning Blade preserves Forge without requiring Ignite", () => {
     const blade = card("burning-blade");
     const state = patchBattleState({ rng: () => 0.99, hand: [blade], playerStatuses: { forge: 4 } });
     const result = playBattleCardResolved(state, blade.id, 0).state;
-    expect(result.enemyHealth).toBe(state.enemyHealth - 5);
+    expect(result.enemyHealth).toBe(state.enemyHealth - 3);
     expect(result.playerStatuses.forge).toBe(4);
   });
 

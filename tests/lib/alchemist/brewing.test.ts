@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cardById } from "@/lib/game-data";
+import { cardById, characters, getCardKeywords } from "@/lib/game-data";
 import { createCampfirePotionOffers, strengthenPotion } from "@/lib/alchemist/brewing";
 import { createTransmutationOffers } from "@/lib/alchemist/transmutation";
 import { tryCreateMixedPotion } from "@/lib/alchemist";
@@ -7,7 +7,6 @@ import { makeTestCard } from "../../fixtures/cards";
 import { BattleCardSchema } from "@/lib/validation/save-schemas/battle-card-schemas";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { createSeededRng } from "@/lib/rng";
-import { getBattleCardTransmutationRole } from "@/lib/battle/card-classification";
 describe("brewing and transmutation content", () => {
   it("creates distinct fixed Potion offers with a recovery or defense option", () => {
     const offers = createCampfirePotionOffers(createSeededRng(23));
@@ -15,17 +14,36 @@ describe("brewing and transmutation content", () => {
     expect(offers.some((card) => ["health-potion", "stoneskin-potion", "panacea-potion"].includes(card.id))).toBe(true);
     expect(offers).toEqual(createCampfirePotionOffers(createSeededRng(23)));
   });
-  it("strengthens numerical effects once and preserves the result through save hydration", () => {
+  it("allows repeated strengthening and mixing after save hydration", () => {
     const potion = strengthenPotion(cardById["health-potion"]!)!;
-    expect(potion.descriptionLines).toEqual(["Restore 12 Health", "Consume"]);
+    expect(potion.descriptionLines).toEqual(["Restore 9 Health", "Consume"]);
     expect(potion.cost).toBe(cardById["health-potion"]!.cost);
-    const restored = hydrateCard(BattleCardSchema.parse(potion));
+    const restored = hydrateCard(BattleCardSchema.parse({ ...potion, brewed: true }));
     expect(restored.effects).toEqual(potion.effects);
-    expect(restored.brewed).toBe(true);
-    expect(strengthenPotion(restored)).toBeNull();
-    expect(tryCreateMixedPotion(restored, cardById["mana-potion"])).toBeNull();
-    expect(strengthenPotion(cardById["panacea-potion"]!)).toBeNull();
-    expect(strengthenPotion(cardById["wishing-potion"]!)).toBeNull();
+    const again = strengthenPotion(restored)!;
+    expect(again.effects).toEqual([{ kind: "heal", amount: 10 }]);
+    const mixed = tryCreateMixedPotion(again, cardById["mana-potion"])!;
+    expect(mixed.effects).toEqual([
+      { kind: "heal", amount: 10 },
+      { kind: "restore-mana", amount: 2 },
+    ]);
+    expect(strengthenPotion(mixed)?.effects).toEqual([
+      { kind: "heal", amount: 11 },
+      { kind: "restore-mana", amount: 3 },
+    ]);
+    expect(tryCreateMixedPotion(mixed, restored)?.effects).toEqual([...mixed.effects, ...restored.effects]);
+    expect(strengthenPotion(cardById["panacea-potion"]!)?.effects).toEqual([
+      { kind: "remove-harmful-status", removeAll: true },
+      { kind: "heal", amount: 1 },
+    ]);
+    expect(strengthenPotion(strengthenPotion(cardById["panacea-potion"]!)!)?.effects).toEqual([
+      { kind: "remove-harmful-status", removeAll: true },
+      { kind: "heal", amount: 2 },
+    ]);
+    expect(strengthenPotion(cardById["wishing-potion"]!)?.effects).toEqual([
+      { kind: "wish", amount: 2 },
+      { kind: "draw-cards", amount: 1 },
+    ]);
   });
   it("preserves nested chance probabilities and nonnumeric Acid effects", () => {
     const acid = strengthenPotion(cardById["acid-potion"]!)!;
@@ -38,13 +56,13 @@ describe("brewing and transmutation content", () => {
       {
         kind: "chance",
         probability: 0.5,
-        successEffects: [{ kind: "restore-mana", amount: 6 }],
+        successEffects: [{ kind: "restore-mana", amount: 5 }],
         failureEffects: [
           {
             kind: "chance",
             probability: 0.5,
-            successEffects: [{ kind: "gain-gold", amount: 6 }],
-            failureEffects: [{ kind: "player-status", status: "block", amount: 6 }],
+            successEffects: [{ kind: "gain-gold", amount: 5 }],
+            failureEffects: [{ kind: "player-status", status: "block", amount: 5 }],
           },
         ],
       },
@@ -83,7 +101,7 @@ describe("brewing and transmutation content", () => {
           {
             kind: "chance",
             probability: 0.25,
-            successEffects: [{ kind: "heal", amount: 8 }],
+            successEffects: [{ kind: "heal", amount: 6 }],
             failureEffects: protectedEffects,
           },
         ],
@@ -97,20 +115,24 @@ describe("brewing and transmutation content", () => {
     Object.assign(chance.failureEffects[0], { amount: 99 });
     expect(card).toEqual(before);
   });
-  it("preserves seeded role order, subsequent RNG and independent cards through save hydration", () => {
-    const rng = createSeededRng(42);
-    const offers = createTransmutationOffers(rng);
-    expect(offers).toEqual(createTransmutationOffers(createSeededRng(42)));
-    expect(rng()).toBe(0.6697340414393693);
-    expect(offers.map((card) => card.transmutationRole ?? getBattleCardTransmutationRole(card))).toEqual([
-      "attack",
-      "defense",
-      "utility",
-    ]);
-    expect(offers.map((card) => hydrateCard(BattleCardSchema.parse(card)))).toEqual(offers);
-    const catalogCard = cardById[offers[0].id]!;
-    const before = structuredClone(catalogCard);
-    Object.assign(offers[0].effects[0], { amount: 999 });
-    expect(catalogCard).toEqual(before);
+  it("offers each class affinity with distinct matching candidates and independent hydrated cards", () => {
+    for (const character of Object.values(characters)) {
+      const choices = createTransmutationOffers(character.id, createSeededRng(42));
+      expect(choices).toEqual(createTransmutationOffers(character.id, createSeededRng(42)));
+      expect(choices).toHaveLength(3);
+      if (character.keywords.length) expect(choices.map((choice) => choice.keyword)).toEqual(character.keywords);
+      expect(new Set(choices.map((choice) => choice.keyword)).size).toBe(3);
+      for (const { keyword, candidates } of choices) {
+        expect(candidates).toHaveLength(4);
+        expect(new Set(candidates.map((card) => card.id)).size).toBe(4);
+        expect(candidates.every((card) => getCardKeywords(card).includes(keyword))).toBe(true);
+        expect(candidates.map((card) => hydrateCard(BattleCardSchema.parse(card)))).toEqual(candidates);
+      }
+      const candidate = choices[0]!.candidates[0]!;
+      const catalogCard = cardById[candidate.id]!;
+      const before = structuredClone(catalogCard);
+      Object.assign(candidate.effects[0], { amount: 999 });
+      expect(catalogCard).toEqual(before);
+    }
   });
 });

@@ -6,6 +6,7 @@ import {
   initializeAlchemyVisit,
   brewAtCampfire,
   transmuteCard,
+  selectTransmutation,
 } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
 import { restAtCampfire } from "@/features/alchemy/run-loop/run/destination-commands";
 import { claimRunReward } from "@/features/alchemy/run-loop/run/reward-commands";
@@ -79,7 +80,7 @@ defineSequenceFamily("visits", (seed) => {
     activity: readRunSession(defaultGameSession).activity,
     health: readActiveRun(defaultGameSession).runPlayerHealth,
     gold: readRunProfile(defaultGameSession).gold,
-    deck: readActiveRun(defaultGameSession).runDeck.map((c) => ({ id: c.id, brewed: !!c.brewed })),
+    deck: readActiveRun(defaultGameSession).runDeck.map((c) => ({ id: c.id, effects: c.effects })),
     claimed,
   });
   return {
@@ -112,9 +113,18 @@ defineSequenceFamily("visits", (seed) => {
               : brewAtCampfire({ kind: "new", offerIndex: invalid ? 99 : 0 }, defaultGameSession);
         if (visit === "transmutation") {
           const activity = readRunSession(defaultGameSession).activity;
-          const index =
-            activity.kind === "transmutation" ? (activity.data.offers?.findIndex((c) => c.id !== "slash") ?? -1) : -1;
-          result = transmuteCard(invalid ? 99 : 0, index, defaultGameSession);
+          if (!claimed && !invalid && activity.kind === "transmutation") {
+            selectTransmutation(
+              { kind: "source", index: 0, card: readActiveRun(defaultGameSession).runDeck[0]! },
+              defaultGameSession,
+            );
+            selectTransmutation(
+              { kind: "keyword", keyword: activity.data.transmutation!.choices[0]!.keyword },
+              defaultGameSession,
+            );
+            selectTransmutation({ kind: "outcome", index: 0 }, defaultGameSession);
+          }
+          result = transmuteCard(invalid ? 99 : 0, 0, defaultGameSession);
         }
         if (visit === "alchemist") result = alchemist.strengthenPotion(invalid ? 99 : 1);
         if (visit === "rewards") result = claimRunReward(invalid ? "not-offered" : "slash", defaultGameSession);

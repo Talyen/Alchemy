@@ -46,6 +46,7 @@ export type FollowUpHitRequest =
 
 export type CardHitRequest = Readonly<{
   source: "card-attack" | "archery-extra";
+  forgeTriggers?: Set<string>;
   card: BattleCard;
   effect: DamageEffect;
   /** Already scaled and mitigated. Extra hits copy this amount without recalculating it. */

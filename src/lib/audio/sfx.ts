@@ -1,11 +1,4 @@
-import {
-  battleEventSounds,
-  getCardSounds,
-  enemyAttackSounds,
-  stingerSounds,
-  uiSounds,
-  type UISound,
-} from "./sound-registry";
+import { battleEventSounds, getCardSounds, stingerSounds, uiSounds, type UISound } from "./sound-registry";
 import { audioState } from "./state";
 import { getSoundUrl } from "./url";
 import { createSfxPlayer, type PlaySoundOptions } from "./sfx-player";
@@ -47,20 +40,13 @@ export function playGoldSpend() {
   playUISound("shopBuy");
 }
 
-export function playEnemyAttack(enemyId: string) {
-  const sound = pickRandomUnsafe(enemyAttackSounds[enemyId] ?? []);
-  if (!sound) return;
-  player.play(sound);
-  return sound;
-}
-
 export function playBattleEvent(
   event: keyof typeof battleEventSounds,
   { excludeSound, ...options }: PlaySoundOptions & { excludeSound?: string } = {},
 ) {
   const sound = battleEventSounds[event];
   if (sound && sound !== excludeSound) player.play(sound, options);
-  return sound;
+  return sound ?? undefined;
 }
 
 export function playSliceDeath() {

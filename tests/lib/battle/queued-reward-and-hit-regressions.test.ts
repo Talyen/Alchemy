@@ -44,19 +44,18 @@ describe("queued rewards and hit ordering", () => {
     expect(after.deck).toHaveLength(0);
   });
 
-  it.each([0, 1])("preserves hit-earned Forge after spending the original %i Forge", (forge) => {
+  it.each([0, 1])("preserves hit-earned Forge alongside the original %i Forge", (forge) => {
     const card = { ...cardById.slash!, uid: 1 };
     const state = regressionBattle({
       hand: [card],
       mana: 2,
       playerStatuses: { forge },
-      gearEffects: { goldGrantsForgeAndHoly: 1, recoverSpentForge: 1 },
+      gearEffects: { goldGrantsForgeAndHoly: 1, forgeEveryThreeTurns: 1 },
       talentEffects: { armorOnPhysicalDamageChance: 100, goldOnArmorGainChance: 100 },
     });
     const after = playBattleCardResolved(state, card.id, 0).state;
     expect(after.gold).toBeGreaterThan(0);
-    expect(after.playerStatuses.forge).toBe(after.gold - state.gold);
-    expect(after.uniqueGear.spentForge).toBe(forge);
+    expect(after.playerStatuses.forge).toBe(forge);
   });
 
   it("counts queued Companion cards when weighting Wish offers", () => {

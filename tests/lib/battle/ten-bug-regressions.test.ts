@@ -41,19 +41,6 @@ describe("combat and card regression fixes", () => {
     expect(rng).not.toHaveBeenCalled();
   });
 
-  it("Bramblecall checks Thorns before payment-time Purge rewards", () => {
-    const card = makeTestCard({ cost: 1, tags: ["nature"], effects: [] });
-    const state = patchBattleState({
-      hand: [card],
-      mana: 1,
-      enemyMitigation: { armor: 1 },
-      gearEffects: { purgeOnFirstPaidCard: 1, blockOnPurge: 1, thornsOnNatureCardWithoutThorns: 2 },
-      trinketEffects: { ironwoodBucklerThornsOnBlock: 1 },
-      rng: () => 0.99,
-    });
-    expect(playBattleCardResolved(state, card.id, 0).state.playerStatuses.thorns).toBe(3);
-  });
-
   it("Corruption avoids secondary Block already present in Luck Potion's nested branch", () => {
     const secondary = getCorruptionMutationGroups(cardById["luck-potion"]!).find((group) => group.kind === "secondary");
     expect(secondary).toBeDefined();

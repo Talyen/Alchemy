@@ -54,9 +54,9 @@ describe("card number and discount regressions", () => {
       rng: () => 0.99,
     });
     const tithe = buildWishOptions(state, cardById.wish!).find((card) => card.id === "tithe")!;
-    expect(tithe.descriptionLines).toEqual(["Deal 2 Holy damage", "Gain 2 Gold"]);
+    expect(tithe.descriptionLines).toEqual(["Deal 3 Holy damage", "Gain 2 Gold"]);
     expect(tithe.effects).toEqual([
-      { kind: "damage", damageType: "holy", amount: 2 },
+      { kind: "damage", damageType: "holy", amount: 3 },
       { kind: "gain-gold", amount: 2 },
     ]);
     expect(tithe.effects.every((effect) => BattleCardEffectSchema.safeParse(effect).success)).toBe(true);
@@ -65,7 +65,7 @@ describe("card number and discount regressions", () => {
       tithe.id,
       0,
     ).state;
-    expect(played.enemyHealth).toBe(98);
+    expect(played.enemyHealth).toBe(97);
     expect(played.gold).toBe(102);
   });
 

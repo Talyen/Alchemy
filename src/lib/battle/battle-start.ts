@@ -5,6 +5,8 @@ import { getBattleRng } from "@/lib/rng";
 import type { BattleResolutionContext, BattleSnapshot, CombatTextEvent } from "./types";
 import { battleSnapshot } from "./battle-snapshot";
 import { isPlayerDefeated } from "./health-state";
+import { applyTurnStartPurge } from "./enemy-purge";
+import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 
 export interface ResolvedBattleStart {
   state: BattleSnapshot;
@@ -22,6 +24,7 @@ export function resolveBattleStart(
     state = { ...state, battleMetrics: { enemyAttackActions: 0, enemyAbilityActivations: {}, enemyAbilityUses: {} } };
   }
   const startingTexts: CombatTextEvent[] = [];
+  state = resolvePendingBattleReactions(applyTurnStartPurge(state, startingTexts), startingTexts);
   const companionId = state.activeCompanion?.id ?? null;
   if (companionId) {
     state = processCompanionTurnStart(state, startingTexts);

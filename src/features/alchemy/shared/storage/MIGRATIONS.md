@@ -2,6 +2,15 @@
 
 ## Supported baseline
 
+Transmutation visits save fixed keyword candidate lists and the selected source
+snapshot/index, keyword, and outcome index in `AlchemyVisit.transmutation`.
+Hydration restores all candidate/source cards. Selection survives current-format
+resume without rerolling; completed visits advance after a covering save without
+repeating the exchange. Campfire retains its existing visit fields. Uninitialized
+Transmutation visits receive the new choices on entry; retired role-based offers
+are not a parallel supported workflow. This additive optional visit field does
+not change the save version.
+
 Battle snapshots include `pendingCardBleedLeechHealing`, the explicit-card subset
 of queued Bleed Leech. It defaults to zero and cannot exceed the total queued
 Leech. New snapshots preserve that attribution through ticks, detonations, and
@@ -13,6 +22,19 @@ Current snapshots preserve spent allowances through resume; omitted flags defaul
 to unused through the combat-flag defaults. Deep Siphon uses
 `cardLeechHealingBonus` (flat Health); the retired percentage field is ignored.
 These additive defaults do not change the save version.
+
+Spellrending uses `turnStartPurgeChance` instead of the retired payment-trigger
+field and per-turn flag. Its existing affix ID is unchanged; current catalog roll
+normalization uses the fixed 25% value. Battle gear manifests and flag defaults
+retain only current fields. This pre-release balance change does not bump the
+save version.
+
+The unassigned Bonded affix, its all-type Companion Forge permission, the
+unauthored Burn-to-Forge talent field, and the unused enemy Forge-per-turn
+difficulty modifier are retired. Current defaults discard their old fields,
+affix normalization rejects the removed affix ID, and modifier validation drops
+the removed kind. Authored Forge sources and native enemy traits remain active.
+These pre-release removals do not change the save version.
 
 There are currently no historical player saves that must be preserved. Remove code
 that exists only to retain obsolete saved mechanics rather than maintaining parallel
@@ -240,6 +262,8 @@ the supported baseline just like a full release; never retire promised progress.
 
 ## Alchemy visit and reaction additions
 
-Current saves include optional Campfire/Transmutation visit records with fixed offers, original/result cards, and completion. Missing records default to null and initialize on first entry; existing records survive resume without rerolling or repeated grants. Saved cards retain optional `brewed` metadata so transformations remain ineligible after hydration.
+Current saves include optional Campfire/Transmutation visit records with fixed offers, original/result cards, and completion. Missing records default to null and initialize on first entry; existing records survive resume without rerolling or repeated grants. Saved cards retain transformed effects and descriptions; repeat brewing is allowed. The obsolete `brewed` field is ignored when parsing saves. Description magnitudes retain optional `distilled` marks so upgraded values remain green in tooltips.
 
 Battle flags include `shatterUsed` and `wildfireUsed`, defaulting to false through the canonical flag definitions and resetting each player turn. Current snapshots preserve spent opportunities across reload. These compatible additive defaults do not require a schema-version bump.
+
+Persistent Forge replaces player attack spending and removes the Unique Gear `spentForge` recovery queue. Current manifests use Forge bonus chances and per-copy gear chance arrays. Defaults and normalization retain ordered probability arrays, Everkeen readiness, and the Vanguard/Obsidian turn flags without replaying rewards. Derived manifests rebind from current purchased Talent IDs and loadouts. These pre-release content changes do not bump the save version; current-format saves retain typed card effects and magnitude descriptions together.

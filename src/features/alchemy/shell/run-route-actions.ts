@@ -1,4 +1,8 @@
-import { brewAtCampfire, transmuteCard } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
+import {
+  brewAtCampfire,
+  transmuteCard,
+  selectTransmutation,
+} from "@/features/alchemy/run-loop/navigation/alchemy-commands";
 import { restAtCampfire } from "@/features/alchemy/run-loop/run/destination-commands";
 import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import {
@@ -20,6 +24,8 @@ export function createRunRouteActions(gameSession: GameSession) {
     unlockTalentsForDevelopment: () => unlockTalentsForDevelopment(gameSession),
     restAtCampfire: () => restAtCampfire(gameSession),
     brewAtCampfire: (operation: Parameters<typeof brewAtCampfire>[0]) => brewAtCampfire(operation, gameSession),
+    selectTransmutation: (selection: Parameters<typeof selectTransmutation>[0]) =>
+      selectTransmutation(selection, gameSession),
     transmuteCard: (sourceIndex: number, offerIndex: number) => transmuteCard(sourceIndex, offerIndex, gameSession),
   });
 }

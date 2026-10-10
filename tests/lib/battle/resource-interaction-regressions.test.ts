@@ -66,7 +66,7 @@ describe("resource interactions", () => {
     const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] });
     const texts: CombatTextEvent[] = [];
     const next = applyCardEffects(state, card, texts);
-    expect(next.enemyMitigation.armor).toBe(4);
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "armor", amount: 3, impact: false });
+    expect(next.enemyMitigation.armor).toBe(5);
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "armor", amount: 2, impact: false });
   });
 });

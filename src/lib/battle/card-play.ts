@@ -6,7 +6,6 @@ import type { BattleResolution, BattleState, BattleSnapshot, CombatFlags, Combat
 import { isPlayerDefeated } from "./health-state";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { deliverPendingHandCards } from "./draw";
-import { applyPurgeGearRewards, purgeEnemyBenefits } from "./enemy-purge";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { finishUniqueCardDamage, prepareUniqueCardPlay } from "./unique-card-effects";
 import { computeCardPayment } from "./card-cost-rules";
@@ -30,19 +29,6 @@ function consumeCardDiscounts(state: BattleState, payment: ReturnType<typeof com
   for (const flag of disarmedFlags) nextFlags[flag] = false;
   if (spentArmedDiscount) nextFlags.nextCardCostReduction = 0;
   return { ...state, flags: nextFlags, uniqueGear: { ...state.uniqueGear, ...uniqueDiscounts } };
-}
-
-function applySpellrendingPurge(state: BattleState, manaSpent: number, combatTexts: CombatTextEvent[]): BattleState {
-  if (
-    manaSpent <= 0 ||
-    state.gearEffects.purgeOnFirstPaidCard <= 0 ||
-    state.flags.spellrendingUsedThisTurn ||
-    state.enemyHealth <= 0
-  )
-    return state;
-  const ready = { ...state, flags: { ...state.flags, spellrendingUsedThisTurn: true } };
-  const purged = purgeEnemyBenefits(ready, 1, combatTexts);
-  return applyPurgeGearRewards(purged.state, purged.removed, combatTexts);
 }
 
 function getHandCard(state: BattleSnapshot, cardId: string, index: number, uid?: number): BattleCard | null {
@@ -162,8 +148,7 @@ export function playBattleCardResolved(
     cardsPlayedThisTurn: paymentState.cardsPlayedThisTurn + 1,
     mana: Math.max(0, paymentState.mana - effectiveCost),
   };
-  const paid = applySpellrendingPurge(stripped, manaSpent, combatTexts);
-  const played = resolvePaidCardEffects(deliverPendingHandCards(paid), card, combatTexts, {
+  const played = resolvePaidCardEffects(deliverPendingHandCards(stripped), card, combatTexts, {
     eligibility: state,
     playTwice,
     guaranteedCrit: prepared.critical,

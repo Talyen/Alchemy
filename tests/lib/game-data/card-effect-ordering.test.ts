@@ -14,12 +14,6 @@ const orderingInvariants: Array<{ cardId: string; firstKind: string; secondKind:
     secondKind: "damage",
     reason: "armor removal must land before the Poison hit so the hit is unmitigated",
   },
-  {
-    cardId: "burning-blade",
-    firstKind: "player-status",
-    secondKind: "damage",
-    reason: "the Forge gain resolves before the Forge-scaled Burn hit",
-  },
 ];
 
 describe("card effect ordering invariants", () => {

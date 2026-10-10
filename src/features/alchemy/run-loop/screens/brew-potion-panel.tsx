@@ -1,3 +1,4 @@
+import { PotionComparison } from "./potion-comparison";
 import { playUISound } from "@/lib/audio";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -84,7 +85,7 @@ export function BrewPotionPanel({
   return (
     <div className="flex w-full max-w-4xl flex-col items-center gap-5">
       <h2 className="text-xl">
-        {kind === "new" ? "Choose a Potion" : kind === "combine" ? "Mix Potion" : "Strengthen Potion"}
+        {kind === "new" ? "Choose a Potion" : kind === "combine" ? "Mix Potion" : "Select a Potion to Distill"}
       </h2>
       {!items.length ? (
         <p role="status">
@@ -94,6 +95,8 @@ export function BrewPotionPanel({
               ? "No Potion recipes are available."
               : "Two eligible Potions required."}
         </p>
+      ) : kind === "strengthen" && result && deck[a] ? (
+        <PotionComparison original={deck[a]} result={result} />
       ) : (
         <CardSelectionGrid
           items={items}
@@ -112,7 +115,7 @@ export function BrewPotionPanel({
         />
       )}
       {kind === "combine" && items.length === 1 && <p role="status">Two eligible Potions required.</p>}
-      {kind !== "new" && result && (
+      {kind === "combine" && result && (
         <div className="flex flex-col items-center gap-3" aria-label="Brew preview">
           <BattleCardButton
             card={result}
@@ -130,6 +133,11 @@ export function BrewPotionPanel({
           <Button variant="outline" onClick={onBack}>
             Back
           </Button>
+          {kind === "strengthen" && result && (
+            <Button variant="outline" onClick={() => setSelected([])}>
+              Choose Another Potion
+            </Button>
+          )}
           <Button
             disabled={!result || !afford}
             onClick={() => {
@@ -137,7 +145,7 @@ export function BrewPotionPanel({
               if (!onConfirm(operation)) setError("This brew is no longer available.");
             }}
           >
-            {kind === "combine" ? "Mix" : "Strengthen"}
+            {kind === "combine" ? "Mix" : "Distill"}
             {price ? ` · ${price} Gold` : ""}
           </Button>
         </div>

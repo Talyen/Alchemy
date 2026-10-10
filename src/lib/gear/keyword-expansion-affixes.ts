@@ -67,9 +67,9 @@ export const keywordExpansionAffixes = [
     aspect: "offensive",
     keywordId: "mana",
     secondaryKeywordId: "holy",
-    descriptionTemplate: "The first time you spend Mana each turn, Purge an enemy's beneficial status effect",
-    effectKey: "purgeOnFirstPaidCard",
-    roll: rollRange(1, 1, 1, 1),
+    descriptionTemplate: "At the start of your turn, 25% chance to Purge the enemy",
+    effectKey: "turnStartPurgeChance",
+    roll: rollRange(25, 25, 25, 25),
   },
   {
     id: "block-on-purge",

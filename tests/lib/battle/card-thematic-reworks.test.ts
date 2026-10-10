@@ -93,15 +93,15 @@ describe("thematic card effects", () => {
     expect(stacked.enemyStatuses.bleed).toBe(0);
   });
 
-  it("Kindling doubles Burn only when the enemy was not already Burning and does not Consume", () => {
+  it("Kindling triples Burn only when the enemy was not already Burning and does not Consume", () => {
     const fresh = play("kindling");
-    expect(fresh.enemyHealth).toBe(96);
-    expect(fresh.enemyStatuses.burn).toBe(4);
+    expect(fresh.enemyHealth).toBe(97);
+    expect(fresh.enemyStatuses.burn).toBe(3);
     expect(fresh.exhausted.some((card) => card.id === "kindling")).toBe(false);
 
     const burning = play("kindling", { enemyStatuses: { burn: 1 } });
-    expect(burning.enemyHealth).toBe(98);
-    expect(burning.enemyStatuses.burn).toBe(3);
+    expect(burning.enemyHealth).toBe(99);
+    expect(burning.enemyStatuses.burn).toBe(2);
   });
 
   it("preserves legacy Combustion detonation semantics in complete saved cards", () => {
@@ -150,7 +150,7 @@ describe("thematic card effects", () => {
 
   it("Tithe deals fixed Holy damage and gains one Gold regardless of current Gold", () => {
     const result = play("tithe", { gold: 47 });
-    expect(result.enemyHealth).toBe(99);
+    expect(result.enemyHealth).toBe(98);
     expect(result.gold).toBe(48);
   });
 
@@ -285,21 +285,21 @@ describe("thematic card effects", () => {
     expect(second.enemyStatuses[secondType]).toBe(2);
   });
 
-  it("Burning Blade gains Forge before reading it for Burn, including for enemies", () => {
+  it("Burning Blade reads half of live Forge without generating or spending it, including for enemies", () => {
     const hero = play("burning-blade", {
       playerStatuses: { forge: 4 },
       talentEffects: { forgeBurnDamagePercent: 100 },
     });
-    expect(hero.enemyStatuses.burn).toBe(5);
-    expect(hero.enemyHealth).toBe(95);
+    expect(hero.enemyStatuses.burn).toBe(3);
+    expect(hero.enemyHealth).toBe(97);
     expect(hero.playerStatuses.forge).toBe(4);
     const unheated = play("burning-blade");
     expect(unheated.enemyStatuses.burn).toBe(1);
     expect(unheated.enemyHealth).toBe(99);
     const base = battle({ roomScalingMultiplier: 2, enemyMitigation: { forge: 4 } });
     const enemy = applyEnemyAbility(base, cardById["burning-blade"]!, []);
-    // Six live Forge receives ability pressure, without a second room multiplier.
-    expect(enemy.playerStatuses.burn).toBe(10);
+    // The base is room-scaled once; the existing Forge is not scaled again.
+    expect(enemy.playerStatuses.burn).toBe(7);
   });
 
   it("Avatar deals Holy damage before its equal-odds resource gain", () => {
@@ -310,7 +310,7 @@ describe("thematic card effects", () => {
 
     const forge = play("avatar", { rng: sequenceRng([0.99, 0.99, 0.34]) });
     expect(forge.enemyHealth).toBe(95);
-    expect(forge.playerStatuses.forge).toBe(5);
+    expect(forge.playerStatuses.forge).toBe(2);
 
     const armor = play("avatar", { rng: sequenceRng([0.99, 0.99, 0.67]) });
     expect(armor.enemyHealth).toBe(95);
@@ -429,7 +429,7 @@ describe("thematic card effects", () => {
   it("upgrades actual damage and Companion actions without editing hidden placeholder amounts", () => {
     for (const [id, line, expected] of [
       ["acid-potion", "Deal 3 Poison damage", { kind: "damage", amount: 3 }],
-      ["burning-blade", "Gain 2 Forge", { kind: "player-status", amount: 2 }],
+      ["burning-blade", "Deal 2 Burn damage, increased by half your Forge", { kind: "damage", amount: 2 }],
       ["pack-tactics", "Your Companion acts 3 times", { kind: "companion-action", amount: 3 }],
     ] as const) {
       const original = cardById[id]!;
@@ -477,11 +477,11 @@ describe("thematic card effects", () => {
     expect(result.enemyHealth).toBe(97);
   });
 
-  it("Bellows Blast grants 2 Forge and deals 2 Burn damage", () => {
+  it("Bellows Blast grants 1 Forge and deals 1 Burn damage", () => {
     const result = play("bellows-blast");
-    expect(result.playerStatuses.forge).toBe(2);
-    expect(result.enemyHealth).toBe(98);
-    expect(result.enemyStatuses.burn).toBe(2);
+    expect(result.playerStatuses.forge).toBe(1);
+    expect(result.enemyHealth).toBe(99);
+    expect(result.enemyStatuses.burn).toBe(1);
   });
 
   it("Quench cleanses a harmful status effect and grants 1 Forge", () => {

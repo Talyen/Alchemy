@@ -5,30 +5,17 @@
   "direction": "Tactile fantasy",
   "assets": [
     {
-      "source": "approved/button-assorted-03-fc496fdd-0-359.wav",
-      "target": "button-assorted-03-fc496fdd-0-359.ogg",
-      "assetId": "fc496fdd09d81c3a",
-      "libraryPath": "interface/button_assorted_03__existing_library_unattributed__fc496fdd09d81c3a.flac",
-      "storedSha256": "70f1c0c8a4436b82c729961e21cc2d427edaf4d26eda9d06ac62166cbeb22039",
-      "originalSha256": "fc496fdd09d81c3a8ba2862443a9941c88defb07c720026e1bc64c19d4289422",
-      "start": 0,
-      "duration": 0.358917,
-      "sourceSha256": "3a0d0a7d901137d35802bed968b9f9e3a9c39de66823d784076f00a329a9311a",
-      "processing": "Decoded full recording to 24-bit PCM.",
-      "provenance": "not verified; original extracted library provenance unavailable"
-    },
-    {
-      "source": "approved/switch-03-297909c3-0-640.wav",
-      "target": "switch-03-297909c3-0-640.ogg",
-      "assetId": "297909c316af4680",
-      "libraryPath": "interface/toggle_off__existing_library_unattributed__297909c316af4680.flac",
-      "storedSha256": "3ec3b1014703f43df3b37ae71593a68e50199ea63ba96889cb0b7d9b0cc91671",
-      "originalSha256": "297909c316af46801383ac4248b37223d649347fc713d3e9a4c916f87160ac85",
-      "start": 0,
-      "duration": 0.639729,
-      "sourceSha256": "1d56bd79855799d6f281976e1427574fd9285ac9e35d2f440da3136595e04b5a",
-      "processing": "Decoded full recording to 24-bit PCM.",
-      "provenance": "not verified; original extracted library provenance unavailable"
+      "source": "approved/bleed-tick-soft-wet-impact-299cd309-0-850.wav",
+      "target": "bleed-tick-soft-wet-impact-299cd309-0-850.ogg",
+      "assetId": "299cd3093d7e9492",
+      "libraryPath": "combat/gore_wood_beating_flesh_wet_blood_splat_soft_4__timothy_mchugh_gorification_hd__299cd3093d7e9492.flac",
+      "storedSha256": "cf876863c46524bf5be36794cf870a71010dcd8bf1cce9ef93074428255561dc",
+      "originalSha256": "",
+      "start": 0.0,
+      "duration": 0.85,
+      "sourceSha256": "28855434fe2bbf4842bbbcadcbfc0234dbc90d62f717a8c3d65270c817808874",
+      "processing": "Approved G audition excerpt: 12 ms edge fades, fixed gain +11.862482 dB; converted to 24-bit PCM. Production encoding follows the standard sound pipeline.",
+      "provenance": "Pack inferred from filename: Timothy McHugh Gorification HD; original catalog unavailable."
     },
     {
       "source": "approved/harpsichord-chime-positive-f88163a6-0-1144.wav",
@@ -146,19 +133,6 @@
       "sourceSha256": "bf2d6956a3d0f36d49e1b81c7c891ea59fc417eb2f137e04a21bfeb7e3ea8dc1",
       "processing": "Decoded full recording to 24-bit PCM.",
       "provenance": "reference/original_documents/Sounds/SonnissGDC/SOURCE.md; reference/provenance/archives/"
-    },
-    {
-      "source": "approved/heavy-armor-block-01-a169e2a5-0-2000.wav",
-      "target": "heavy-armor-block-01-a169e2a5-0-2000.ogg",
-      "assetId": "a169e2a5350c7868",
-      "libraryPath": "combat/heavy_armor_block_01__existing_library_unattributed__a169e2a5350c7868.mp3",
-      "storedSha256": "a169e2a5350c786898e6ba30cc2e0b197a381dc22b2bd986da10cde46bc16bc6",
-      "originalSha256": "a169e2a5350c786898e6ba30cc2e0b197a381dc22b2bd986da10cde46bc16bc6",
-      "start": 0,
-      "duration": 2,
-      "sourceSha256": "079c123283af5139c7dc4f72a243cb0180ba0cf7bcfe0425c028b259d7bcdc33",
-      "processing": "Decoded full recording to 24-bit PCM.",
-      "provenance": "not verified; original extracted library provenance unavailable"
     },
     {
       "source": "approved/ilmarinen-blacksmith-forge-hammer-anvil-strik-0f11505a-0-432.wav",
@@ -421,19 +395,6 @@
       "provenance": "reference/original_documents/Sounds/SonnissGDC/SOURCE.md; reference/provenance/archives/"
     },
     {
-      "source": "approved/creature-monster-attack-09-108cd42b-0-1854.wav",
-      "target": "creature-monster-attack-09-108cd42b-0-1854.ogg",
-      "assetId": "108cd42b5b26ea82",
-      "libraryPath": "creatures/creature_monster_attack_09__matiasmacsd_creatures_zone__108cd42b5b26ea82.flac",
-      "storedSha256": "0b3c0e81147f0f2c126c752688f300a0d68c93f7f521d80cb7897f3f01e9f092",
-      "originalSha256": "108cd42b5b26ea82f5c6b7f50c6f7e8ca3e1e98db406d930f3341f411381aa7c",
-      "start": 0,
-      "duration": 1.854313,
-      "sourceSha256": "ba2c2289853945c159e0065ad3226555c29e96eed95122192bf4e68e426b36ff",
-      "processing": "Decoded full recording to 24-bit PCM.",
-      "provenance": "reference/original_documents/Sounds/SonnissGDC/SOURCE.md; reference/provenance/archives/"
-    },
-    {
       "source": "approved/battle-focus-church-choir-dm-a47d5cbc-0-2500.wav",
       "target": "battle-focus-church-choir-dm-a47d5cbc-0-2500.ogg",
       "assetId": "a47d5cbcd05115a4",
@@ -538,89 +499,60 @@
       "provenance": "Catalog unavailable; attribution inferred from filename only."
     },
     {
-      "source": "approved/battle-focus-heal-01-2847537e-0-1500.wav",
-      "target": "battle-focus-heal-01-2847537e-0-1500.ogg",
-      "assetId": "2847537ec06e3c64",
-      "libraryPath": "magic/heal_01__existing_library_unattributed__2847537ec06e3c64.flac",
-      "storedSha256": "42e47c579442f3046a520ee19bf7623b9201874aa401467851cb2c3c94c734c4",
-      "originalSha256": "",
+      "source": "approved/plate-mail-gear-movement-fcea0d3b.wav",
+      "target": "plate-mail-gear-movement-fcea0d3b.ogg",
+      "assetId": "fcea0d3bb242ab3e",
+      "libraryPath": "movement/foley_soldier_gear_equipment_metal_cloth_heavy_movement_light_08__gamemaster_audio_footstep_and_foley_sounds__fcea0d3bb242ab3e.flac",
+      "storedSha256": "32bff38e17ccb0fe92d4176bcad740c8926515ee293cdc6eec73daed8026cd95",
       "start": 0,
-      "duration": 1.5,
-      "sourceSha256": "07dbb75c554615cec67b71993d66fd214a78077803d70e5766fd7929dd75902b",
-      "processing": "Approved audition excerpt, decoded to 48 kHz stereo 24-bit PCM with 5 ms edge fades. Production loudness and codecs use the existing sound pipeline.",
-      "provenance": "Catalog unavailable; attribution inferred from filename only."
+      "duration": 1.0775520833333334,
+      "sourceSha256": "d4fa3c1fbb05908c4ce78a313717fecf11437d863204185157465902169ca26a",
+      "processing": "Decoded full recording to 24-bit PCM.",
+      "provenance": "GameMaster Audio Footstep and Foley Sounds; pack attribution inferred from library filename."
     },
     {
-      "source": "approved/battle-focus-plate-impact-hard-02-a6a1ca66-0-764.wav",
-      "target": "battle-focus-plate-impact-hard-02-a6a1ca66-0-764.ogg",
-      "assetId": "a6a1ca66d08efd92",
-      "libraryPath": "combat/plate_impact_hard_02__double_trouble_audio_medieval_armor_and_im__a6a1ca66d08efd92.flac",
-      "storedSha256": "ac5578d37cc3181f0e81590a9a8ec9f4a26428ae4c37712c2e9dc7285153cf0d",
-      "originalSha256": "",
+      "source": "approved/crystal-bulwark-soft-cast-4ab78de8-0-1600.wav",
+      "target": "crystal-bulwark-soft-cast-4ab78de8-0-1600.ogg",
+      "assetId": "4ab78de83ad443fc",
+      "libraryPath": "magic/ice_cast_spell_soft_02__existing_library_unattributed__4ab78de83ad443fc.flac",
+      "storedSha256": "ad811638ffd820320be64a5b3fa6ff03fdc448b3bbcc24c733d1f904a0593dba",
       "start": 0,
-      "duration": 0.764,
-      "sourceSha256": "4502ae576d3a819e4f51f3ef5b8349bab5b0077678c6ec6266874910317e6c83",
-      "processing": "Approved audition excerpt, decoded to 48 kHz stereo 24-bit PCM with 5 ms edge fades. Production loudness and codecs use the existing sound pipeline.",
-      "provenance": "Catalog unavailable; attribution inferred from filename only."
+      "duration": 1.6,
+      "sourceSha256": "325fa330a20e6d62594e0ead7988227ac4361dd22b32454ab5edc52f38aaeb71",
+      "processing": "Approved 1.6 second audition excerpt decoded to 48 kHz stereo 24-bit PCM, with 5 ms opening and 40 ms closing fades. Production loudness and codecs use the existing sound pipeline.",
+      "provenance": "Not verified; original extracted library provenance unavailable."
     },
     {
-      "source": "approved/battle-focus-magspel-cast-casting-buff-hy-pc-3b300b28-20-1500.wav",
-      "target": "battle-focus-magspel-cast-casting-buff-hy-pc-3b300b28-20-1500.ogg",
-      "assetId": "3b300b28cadd1c94",
-      "libraryPath": "magic/magspel_cast_casting_buff_hy_pc_002__existing_library_unattributed__3b300b28cadd1c94.flac",
-      "storedSha256": "255dfc0204ff212421b4ae40199eaaaa172aa29f624b5fdf118b02e8b68c9545",
-      "originalSha256": "",
-      "start": 0.02,
-      "duration": 1.5,
-      "sourceSha256": "5ad0592f87873ca64640a1eeb6a60ce153c5112c8ec2e22895b33ed64f910563",
-      "processing": "Approved audition excerpt, decoded to 48 kHz stereo 24-bit PCM with 5 ms edge fades. Production loudness and codecs use the existing sound pipeline.",
-      "provenance": "Catalog unavailable; attribution inferred from filename only."
-    },
-    {
-      "source": "approved/battle-focus-creature-hiss-4-m-e9aede68-330-1500.wav",
-      "target": "battle-focus-creature-hiss-4-m-e9aede68-330-1500.ogg",
-      "assetId": "e9aede68b7efc05d",
-      "libraryPath": "creatures/creature_hiss_4_m__rdgsfx002_creatures__e9aede68b7efc05d.flac",
-      "storedSha256": "01e674fb420fa2d653a1a605d7ab4b3c4321c4ea7e5f6e73cafaa4917c1fc6fd",
-      "originalSha256": "",
-      "start": 0.33,
-      "duration": 1.5,
-      "sourceSha256": "00b34bb927376633081c8430a470e1d6fe51c83fb5d063e538c630a78472b6fc",
-      "processing": "Approved audition excerpt, decoded to 48 kHz stereo 24-bit PCM with 5 ms edge fades. Production loudness and codecs use the existing sound pipeline.",
-      "provenance": "Catalog unavailable; attribution inferred from filename only."
-    },
-    {
-      "source": "approved/battle-focus-bug-people-03-d2d3d05e-50-1387.wav",
-      "target": "battle-focus-bug-people-03-d2d3d05e-50-1387.ogg",
-      "assetId": "d2d3d05e3b8f01d4",
-      "libraryPath": "creatures/bug_people_03__existing_library_unattributed__d2d3d05e3b8f01d4.flac",
-      "storedSha256": "555bcaf51127a8cf6a852866d3ddad2765fd5fcb7554528b5c00e70a061e5915",
-      "originalSha256": "",
-      "start": 0.05,
-      "duration": 1.387,
-      "sourceSha256": "9bf7c03b321278f9efa770e6ab227f3a8223ec34cb65aa8f4fca3a5c270ac399",
-      "processing": "Approved audition excerpt, decoded to 48 kHz stereo 24-bit PCM with 5 ms edge fades. Production loudness and codecs use the existing sound pipeline.",
-      "provenance": "Catalog unavailable; attribution inferred from filename only."
+      "source": "approved/armor-gain-leather-rustle-ba8ddcf0-0-930.wav",
+      "target": "armor-gain-leather-rustle-ba8ddcf0-0-930.ogg",
+      "assetId": "ba8ddcf091d7fdc3",
+      "libraryPath": "movement/leatherarmor_rustle_03__double_trouble_audio_medieval_armor_and_im__ba8ddcf091d7fdc3.flac",
+      "storedSha256": "6d3bc57cf5bf883ddbefa4d22f98a5156e77ca772b7da1668bc618d6f0d3d1b4",
+      "start": 0,
+      "duration": 0.93,
+      "sourceSha256": "e6a76c0d4ce94b72a1fce4510c687af3ba86777e998a681b610ee99ab9628cab",
+      "processing": "Approved audition excerpt decoded to 48 kHz stereo 24-bit PCM, with 5 ms opening and 30 ms closing fades. Production loudness and codecs use the existing sound pipeline.",
+      "provenance": "Double Trouble Audio Medieval Armor and Impacts; attribution inferred from library filename."
     }
   ],
   "choices": [
     {
       "mappingId": "navigate",
       "title": "Menus, Back, Continue and screen navigation",
-      "choice": "fc496fdd09d81c3a",
+      "choice": "silence",
       "baselineState": "silent",
       "baselineFiles": [],
-      "runtimeFiles": ["button-assorted-03-fc496fdd-0-359.ogg"],
+      "runtimeFiles": [],
       "reviewed": true,
       "notes": ""
     },
     {
       "mappingId": "pause",
       "title": "Open and dismiss game menu",
-      "choice": "fc496fdd09d81c3a",
+      "choice": "silence",
       "baselineState": "silent",
       "baselineFiles": [],
-      "runtimeFiles": ["button-assorted-03-fc496fdd-0-359.ogg"],
+      "runtimeFiles": [],
       "reviewed": true,
       "notes": ""
     },
@@ -637,10 +569,10 @@
     {
       "mappingId": "selection",
       "title": "Select tabs, filters, sorting and pagination",
-      "choice": "fc496fdd09d81c3a",
+      "choice": "silence",
       "baselineState": "silent",
       "baselineFiles": [],
-      "runtimeFiles": ["button-assorted-03-fc496fdd-0-359.ogg"],
+      "runtimeFiles": [],
       "reviewed": true,
       "notes": ""
     },
@@ -657,20 +589,20 @@
     {
       "mappingId": "toggle-on",
       "title": "Enable an option / autoplay",
-      "choice": "fc496fdd09d81c3a",
+      "choice": "silence",
       "baselineState": "registered-unused",
       "baselineFiles": ["toggle-on.ogg"],
-      "runtimeFiles": ["button-assorted-03-fc496fdd-0-359.ogg"],
+      "runtimeFiles": [],
       "reviewed": true,
       "notes": ""
     },
     {
       "mappingId": "toggle-off",
       "title": "Disable an option / autoplay",
-      "choice": "297909c316af4680",
+      "choice": "silence",
       "baselineState": "registered-unused",
       "baselineFiles": ["toggle-off.ogg"],
-      "runtimeFiles": ["switch-03-297909c3-0-640.ogg"],
+      "runtimeFiles": [],
       "reviewed": true,
       "notes": ""
     },
@@ -707,10 +639,10 @@
     {
       "mappingId": "draft-select",
       "title": "Draft or deselect a starter card",
-      "choice": "081285164b6b602a",
+      "choice": "silence",
       "baselineState": "silent",
       "baselineFiles": [],
-      "runtimeFiles": ["card-draw-1.ogg"],
+      "runtimeFiles": [],
       "reviewed": true,
       "notes": ""
     },
@@ -727,10 +659,10 @@
     {
       "mappingId": "resume",
       "title": "Resume saved run",
-      "choice": "fc496fdd09d81c3a",
+      "choice": "silence",
       "baselineState": "silent",
       "baselineFiles": [],
-      "runtimeFiles": ["button-assorted-03-fc496fdd-0-359.ogg"],
+      "runtimeFiles": [],
       "reviewed": true,
       "notes": ""
     },
@@ -837,10 +769,10 @@
     {
       "mappingId": "bleedTick",
       "title": "Bleed damage over time",
-      "choice": "7193d1d8f9e4d76e",
+      "choice": "299cd3093d7e9492",
       "baselineState": "registered-unused",
       "baselineFiles": ["splat-quick.ogg"],
-      "runtimeFiles": ["monster-bite-3-7193d1d8-0-1339.ogg"],
+      "runtimeFiles": ["bleed-tick-soft-wet-impact-299cd309-0-850.ogg"],
       "reviewed": true,
       "notes": ""
     },
@@ -867,10 +799,10 @@
     {
       "mappingId": "drawCards",
       "title": "Draw batch acknowledgment",
-      "choice": "current",
+      "choice": "silence",
       "baselineState": "registered-unused",
       "baselineFiles": ["card-draw-1.ogg"],
-      "runtimeFiles": ["card-draw-1.ogg"],
+      "runtimeFiles": [],
       "reviewed": true,
       "notes": ""
     },
@@ -916,7 +848,7 @@
     },
     {
       "mappingId": "deathsDoor",
-      "title": "Death’s Door / boss-route warning",
+      "title": "Death\u2019s Door / boss-route warning",
       "choice": "current",
       "baselineState": "playing",
       "baselineFiles": ["horror-sting.ogg"],
@@ -946,11 +878,11 @@
     },
     {
       "mappingId": "armor",
-      "title": "Armor gained or stripped",
-      "choice": "a169e2a5350c7868",
+      "title": "Armor stripped",
+      "choice": "silence",
       "baselineState": "silent",
       "baselineFiles": [],
-      "runtimeFiles": ["heavy-armor-block-01-a169e2a5-0-2000.ogg"],
+      "runtimeFiles": [],
       "reviewed": true,
       "notes": ""
     },
@@ -1187,10 +1119,10 @@
     {
       "mappingId": "shop-select",
       "title": "Inspect/select a shop offering or service ingredient",
-      "choice": "fc496fdd09d81c3a",
+      "choice": "silence",
       "baselineState": "silent",
       "baselineFiles": [],
-      "runtimeFiles": ["button-assorted-03-fc496fdd-0-359.ogg"],
+      "runtimeFiles": [],
       "reviewed": true,
       "notes": ""
     },
@@ -1207,10 +1139,10 @@
     {
       "mappingId": "transmute-select",
       "title": "Select surrendered and replacement cards",
-      "choice": "081285164b6b602a",
+      "choice": "silence",
       "baselineState": "silent",
       "baselineFiles": [],
-      "runtimeFiles": ["card-draw-1.ogg"],
+      "runtimeFiles": [],
       "reviewed": true,
       "notes": ""
     },
@@ -1227,10 +1159,10 @@
     {
       "mappingId": "corrupt-select",
       "title": "Select a card for Corruption",
-      "choice": "081285164b6b602a",
+      "choice": "silence",
       "baselineState": "silent",
       "baselineFiles": [],
-      "runtimeFiles": ["card-draw-1.ogg"],
+      "runtimeFiles": [],
       "reviewed": true,
       "notes": ""
     },
@@ -1247,10 +1179,10 @@
     {
       "mappingId": "map-node",
       "title": "Select and enter a destination / Labyrinth room",
-      "choice": "fc496fdd09d81c3a",
+      "choice": "silence",
       "baselineState": "silent",
       "baselineFiles": [],
-      "runtimeFiles": ["button-assorted-03-fc496fdd-0-359.ogg"],
+      "runtimeFiles": [],
       "reviewed": true,
       "notes": ""
     },
@@ -1597,10 +1529,10 @@
     {
       "mappingId": "card:blessed-aegis",
       "title": "Blessed Aegis",
-      "choice": "current",
+      "choice": "f6318a19f7ff55a2",
       "baselineState": "playing",
       "baselineFiles": ["gut-kick.ogg"],
-      "runtimeFiles": ["gut-kick.ogg"],
+      "runtimeFiles": ["battle-focus-impact-sound-design-hit-chime-resonant-f6318a19-0-1500.ogg"],
       "reviewed": true,
       "notes": ""
     },
@@ -1727,10 +1659,10 @@
     {
       "mappingId": "card:plate-mail",
       "title": "Plate Mail",
-      "choice": "a169e2a5350c7868",
+      "choice": "fcea0d3bb242ab3e",
       "baselineState": "playing",
       "baselineFiles": ["sword-blocked-1.ogg"],
-      "runtimeFiles": ["heavy-armor-block-01-a169e2a5-0-2000.ogg"],
+      "runtimeFiles": ["plate-mail-gear-movement-fcea0d3b.ogg"],
       "reviewed": true,
       "notes": ""
     },
@@ -1787,10 +1719,10 @@
     {
       "mappingId": "card:blackjack",
       "title": "Blackjack",
-      "choice": "current",
+      "choice": "760c2dcd9278e544",
       "baselineState": "playing",
       "baselineFiles": ["coins-gather-quick.ogg"],
-      "runtimeFiles": ["coins-gather-quick.ogg"],
+      "runtimeFiles": ["gut-kick.ogg"],
       "reviewed": true,
       "notes": ""
     },
@@ -2437,10 +2369,10 @@
     {
       "mappingId": "card:crystal-bulwark",
       "title": "Crystal Bulwark",
-      "choice": "a169e2a5350c7868",
+      "choice": "4ab78de83ad443fc",
       "baselineState": "silent",
       "baselineFiles": [],
-      "runtimeFiles": ["heavy-armor-block-01-a169e2a5-0-2000.ogg"],
+      "runtimeFiles": ["crystal-bulwark-soft-cast-4ab78de8-0-1600.ogg"],
       "reviewed": true,
       "notes": ""
     },
@@ -2517,400 +2449,10 @@
     {
       "mappingId": "card:judgment",
       "title": "Judgment",
-      "choice": "current",
+      "choice": "f6318a19f7ff55a2",
       "baselineState": "playing",
       "baselineFiles": ["strong-punch.ogg"],
-      "runtimeFiles": ["strong-punch.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:forge-golem",
-      "title": "The Forge Golem",
-      "choice": "0f11505ac361bf7b",
-      "baselineState": "playing",
-      "baselineFiles": ["strong-punch.ogg"],
-      "runtimeFiles": ["ilmarinen-blacksmith-forge-hammer-anvil-strik-0f11505a-0-432.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:frostwarden",
-      "title": "The Frostwarden",
-      "choice": "cd5b436a0c0c7866",
-      "baselineState": "playing",
-      "baselineFiles": ["strong-punch.ogg"],
-      "runtimeFiles": ["ice-throw-1.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:blight-treant",
-      "title": "The Blight Treant",
-      "choice": "d8b1cf2e907a0653",
-      "baselineState": "playing",
-      "baselineFiles": ["strong-punch.ogg"],
-      "runtimeFiles": ["wood-breaking-cracking-snapping-breaking-peel-d8b1cf2e-0-1333.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:skeleton",
-      "title": "Skeleton",
-      "choice": "current",
-      "baselineState": "playing",
-      "baselineFiles": ["swish-hit.ogg"],
-      "runtimeFiles": ["swish-hit.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:goblin",
-      "title": "Goblin",
-      "choice": "current",
-      "baselineState": "playing",
-      "baselineFiles": ["swish-hit.ogg"],
-      "runtimeFiles": ["swish-hit.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:mimic",
-      "title": "Mimic",
-      "choice": "108cd42b5b26ea82",
-      "baselineState": "playing",
-      "baselineFiles": ["kick.ogg"],
-      "runtimeFiles": ["creature-monster-attack-09-108cd42b-0-1854.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:mud-elemental",
-      "title": "Mud Elemental",
-      "choice": "current",
-      "baselineState": "playing",
-      "baselineFiles": ["strong-punch.ogg"],
-      "runtimeFiles": ["strong-punch.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:necromancer",
-      "title": "Necromancer",
-      "choice": "dd1d0dd1c90ef7ee",
-      "baselineState": "playing",
-      "baselineFiles": ["energy-noise.ogg"],
-      "runtimeFiles": ["dark-spell-life-tap-03-dd1d0dd1-0-2754.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:plague-doctor",
-      "title": "Plague Doctor",
-      "choice": "current",
-      "baselineState": "playing",
-      "baselineFiles": ["swish-hit.ogg"],
-      "runtimeFiles": ["swish-hit.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:living-armor",
-      "title": "Living Armor",
-      "choice": "1b12234aca325a25",
-      "baselineState": "playing",
-      "baselineFiles": ["strong-punch.ogg"],
-      "runtimeFiles": ["weapon-impact-parry-01-1b12234a-0-922.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:iron-bear",
-      "title": "The Iron Bear",
-      "choice": "760c2dcd9278e544",
-      "baselineState": "playing",
-      "baselineFiles": ["strong-punch.ogg"],
-      "runtimeFiles": ["gut-kick.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:fire-elemental",
-      "title": "Fire Elemental",
-      "choice": "7b515ce1c85396b7",
-      "baselineState": "playing",
-      "baselineFiles": ["torch-attack-strike-1.ogg"],
-      "runtimeFiles": ["fireball-1.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:frost-elemental",
-      "title": "Frost Elemental",
-      "choice": "current",
-      "baselineState": "playing",
-      "baselineFiles": ["ice-throw-1.ogg"],
-      "runtimeFiles": ["ice-throw-1.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:slime",
-      "title": "Slime",
-      "choice": "current",
-      "baselineState": "playing",
-      "baselineFiles": ["squelching-4.ogg"],
-      "runtimeFiles": ["squelching-4.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:will-o-wisp",
-      "title": "Will-o-Wisp",
-      "choice": "current",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": [],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:bandit",
-      "title": "Bandit",
-      "choice": "30f752c8bbaac9ee",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": ["sword-attack-1.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:ogre",
-      "title": "Ogre",
-      "choice": "760c2dcd9278e544",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": ["gut-kick.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:fire-imp",
-      "title": "Fire Imp",
-      "choice": "e587c4fab796fcfc",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": ["fireball-02-e587c4fa-0-3000.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:hellhound",
-      "title": "Hellhound",
-      "choice": "e587c4fab796fcfc",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": ["fireball-02-e587c4fa-0-3000.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:pyromancer",
-      "title": "Pyromancer",
-      "choice": "7b515ce1c85396b7",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": ["fireball-1.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:giant-spider",
-      "title": "Giant Spider",
-      "choice": "current",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": [],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:giant-snake",
-      "title": "Giant Snake",
-      "choice": "current",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": [],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:blood-cultist",
-      "title": "Blood Cultist",
-      "choice": "dd1d0dd1c90ef7ee",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": ["dark-spell-life-tap-03-dd1d0dd1-0-2754.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:dire-wolf",
-      "title": "Dire Wolf",
-      "choice": "ef1caab144992a7a",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": ["efx-int-mutt-growl-42-b-ef1caab1-0-2443.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:vampire",
-      "title": "Vampire",
-      "choice": "dd1d0dd1c90ef7ee",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": ["dark-spell-life-tap-03-dd1d0dd1-0-2754.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:blood-countess",
-      "title": "The Blood Countess",
-      "choice": "dd1d0dd1c90ef7ee",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": ["dark-spell-life-tap-03-dd1d0dd1-0-2754.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:zealot",
-      "title": "Zealot",
-      "choice": "current",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": [],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:cleric",
-      "title": "Cleric",
-      "choice": "current",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": [],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:inquisitor",
-      "title": "Inquisitor",
-      "choice": "current",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": [],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:paladin",
-      "title": "Paladin",
-      "choice": "current",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": [],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:seraph",
-      "title": "The Seraph",
-      "choice": "current",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": [],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:winter-wolf",
-      "title": "Winter Wolf",
-      "choice": "current",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": [],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:ice-wraith",
-      "title": "Ice Wraith",
-      "choice": "cd5b436a0c0c7866",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": ["ice-throw-1.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:yeti",
-      "title": "Yeti",
-      "choice": "current",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": [],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:banshee",
-      "title": "Banshee",
-      "choice": "current",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": [],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:brawler",
-      "title": "Brawler",
-      "choice": "760c2dcd9278e544",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": ["gut-kick.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:stone-golem",
-      "title": "Stone Golem",
-      "choice": "1b12234aca325a25",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": ["weapon-impact-parry-01-1b12234a-0-922.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:earth-elemental",
-      "title": "Earth Elemental",
-      "choice": "2f578e6a54f50842",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": ["ground-impact-large-falling-rocks-various-04-2f578e6a-0-5305.ogg"],
-      "reviewed": true,
-      "notes": ""
-    },
-    {
-      "mappingId": "enemy:stone-titan",
-      "title": "The Stone Titan",
-      "choice": "2f578e6a54f50842",
-      "baselineState": "silent",
-      "baselineFiles": [],
-      "runtimeFiles": ["ground-impact-large-falling-rocks-various-04-2f578e6a-0-5305.ogg"],
+      "runtimeFiles": ["battle-focus-impact-sound-design-hit-chime-resonant-f6318a19-0-1500.ogg"],
       "reviewed": true,
       "notes": ""
     },
@@ -3053,6 +2595,16 @@
       "runtimeFiles": ["swipe.ogg"],
       "reviewed": true,
       "notes": ""
+    },
+    {
+      "mappingId": "armor-gain",
+      "title": "Armor gained",
+      "choice": "ba8ddcf091d7fdc3",
+      "baselineState": "playing",
+      "baselineFiles": ["heavy-armor-block-01-a169e2a5-0-2000.ogg"],
+      "runtimeFiles": ["armor-gain-leather-rustle-ba8ddcf0-0-930.ogg"],
+      "reviewed": true,
+      "notes": ""
     }
   ],
   "bindings": {
@@ -3087,7 +2639,7 @@
     "deathsDoor": "battleEventSounds.deathsDoor",
     "sliceDeath": "battleEventSounds.sliceDeath",
     "dodge": "battleEventSounds.dodge",
-    "armor": "battleEventSounds.armorChange",
+    "armor": "battleEventSounds.armorStrip",
     "forge-status": "battleEventSounds.forgeGain",
     "wildfire": "battleEventSounds.wildfire",
     "shatter": "battleEventSounds.shatter",
@@ -3121,9 +2673,14 @@
     "amb-camp": "screenAmbienceSounds.campfire",
     "amb-labyrinth": "screenAmbienceSounds.labyrinth-map",
     "status-purge": "battleEventSounds.cleanse",
-    "mana-change": "battleEventSounds.manaChange"
+    "mana-change": "battleEventSounds.manaChange",
+    "armor-gain": "battleEventSounds.armorGain"
   },
   "runtimeRevisions": {
+    "shopBuy": {
+      "runtimeFiles": ["coins-gather-quick.ogg"],
+      "reason": "2026-10-09: user selected quick coin gather for all shop purchases."
+    },
     "card:caustic-jab": {
       "runtimeFiles": ["sword-impact-hit-2.ogg"],
       "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
@@ -3150,18 +2707,6 @@
     },
     "companion:mana-moth": {
       "runtimeFiles": ["buff-pickup.ogg"],
-      "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
-    },
-    "enemy:winter-wolf": {
-      "runtimeFiles": ["ice-throw-1.ogg"],
-      "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
-    },
-    "enemy:yeti": {
-      "runtimeFiles": ["ice-throw-1.ogg"],
-      "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
-    },
-    "enemy:banshee": {
-      "runtimeFiles": ["dark-spell-life-tap-03-dd1d0dd1-0-2754.ogg"],
       "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
     },
     "status-purge": {
@@ -3208,12 +2753,6 @@
       "choice": "44c5b75bf0f94799",
       "notes": ""
     },
-    "enemy:will-o-wisp": {
-      "runtimeFiles": ["battle-focus-magspel-cast-casting-buff-hy-pc-6b612bab-50-1500.ogg"],
-      "reason": "2026-10-03: selected in the focused battle listening export.",
-      "choice": "6b612bab4fa9e078",
-      "notes": ""
-    },
     "companion:will-o-wisp": {
       "runtimeFiles": ["battle-focus-magspel-cast-casting-buff-hy-pc-6b612bab-50-1500.ogg"],
       "reason": "2026-10-03: selected in the focused battle listening export.",
@@ -3237,48 +2776,6 @@
       "reason": "2026-10-03: selected in the focused battle listening export.",
       "choice": "f8eb76079359d8d6",
       "notes": ""
-    },
-    "enemy:cleric": {
-      "runtimeFiles": ["battle-focus-heal-01-2847537e-0-1500.ogg"],
-      "reason": "2026-10-03: selected in the focused battle listening export.",
-      "choice": "2847537ec06e3c64",
-      "notes": ""
-    },
-    "enemy:inquisitor": {
-      "runtimeFiles": ["battle-focus-impact-sound-design-hit-chime-resonant-f6318a19-0-1500.ogg"],
-      "reason": "2026-10-03: selected in the focused battle listening export.",
-      "choice": "f6318a19f7ff55a2",
-      "notes": ""
-    },
-    "enemy:paladin": {
-      "runtimeFiles": ["battle-focus-plate-impact-hard-02-a6a1ca66-0-764.ogg"],
-      "reason": "2026-10-03: selected in the focused battle listening export.",
-      "choice": "a6a1ca66d08efd92",
-      "notes": ""
-    },
-    "enemy:seraph": {
-      "runtimeFiles": ["battle-focus-church-choir-dm-a47d5cbc-0-2500.ogg"],
-      "reason": "2026-10-03: selected in the focused battle listening export.",
-      "choice": "a47d5cbcd05115a4",
-      "notes": ""
-    },
-    "enemy:zealot": {
-      "runtimeFiles": ["battle-focus-magspel-cast-casting-buff-hy-pc-3b300b28-20-1500.ogg"],
-      "reason": "2026-10-03: selected in the focused battle listening export.",
-      "choice": "3b300b28cadd1c94",
-      "notes": ""
-    },
-    "enemy:giant-snake": {
-      "runtimeFiles": ["battle-focus-creature-hiss-4-m-e9aede68-330-1500.ogg"],
-      "reason": "2026-10-03: selected in the focused battle listening export.",
-      "choice": "e9aede68b7efc05d",
-      "notes": ""
-    },
-    "enemy:giant-spider": {
-      "runtimeFiles": ["battle-focus-bug-people-03-d2d3d05e-50-1387.ogg"],
-      "reason": "2026-10-03: selected in the focused battle listening export.",
-      "choice": "d2d3d05e3b8f01d4",
-      "notes": ""
     }
   },
   "battleFocusInstallation": {
@@ -3286,18 +2783,15 @@
     "approvalSnapshotSha256": "9f880911bdedb4cff7ae5bc2183eb09df6d0ea9a0291acde355479fb298ff20f",
     "approvalSnapshotFile": "battle-focus-approved-export.json",
     "originalExportUnavailableAtArchive": true,
-    "targets": 16,
-    "independentDecisions": 15,
-    "uniqueClips": 13,
+    "targets": 8,
+    "independentDecisions": 8,
+    "uniqueClips": 8,
     "excerptFadeCorrection": {
       "reason": "Seek before decoding so 5 ms edge fades apply to the selected excerpt rather than the master timeline.",
       "sources": [
         "approved/battle-focus-arcane-metal-01-5abcc0c6-250-1500.wav",
         "approved/battle-focus-magspel-cast-casting-buff-hy-pc-6b612bab-50-1500.wav",
-        "approved/battle-focus-magic-generic-haunted-old-grimoire-open-f8eb7607-280-1500.wav",
-        "approved/battle-focus-magspel-cast-casting-buff-hy-pc-3b300b28-20-1500.wav",
-        "approved/battle-focus-creature-hiss-4-m-e9aede68-330-1500.wav",
-        "approved/battle-focus-bug-people-03-d2d3d05e-50-1387.wav"
+        "approved/battle-focus-magic-generic-haunted-old-grimoire-open-f8eb7607-280-1500.wav"
       ]
     }
   }

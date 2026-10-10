@@ -42,8 +42,8 @@ export const primaryUniqueAffixes = [
     "Oathkeeper",
     "offensive",
     "forge",
-    "Forge also strengthens Holy damage. Holy damage never spends Forge.",
-    "holyPreservesForge",
+    "Holy damage is increased by half your Forge. Damaging Holy attacks grant 1 Block.",
+    "oathkeeperHolyAndBlock",
     "holy",
   ),
   uniqueAffix(
@@ -51,8 +51,8 @@ export const primaryUniqueAffixes = [
     "The Patient Edge",
     "offensive",
     "forge",
-    "Recover Forge spent on attacks at the start of your next turn.",
-    "recoverSpentForge",
+    "Gain 1 Forge every 3 turns",
+    "forgeEveryThreeTurns",
     "physical",
   ),
   uniqueAffix(
@@ -187,20 +187,8 @@ export const primaryUniqueAffixes = [
     "The Golden Crucible",
     "offensive",
     "gold",
-    "Without Forge, combat Gold gains grant equal Forge. Forge also increases Holy damage",
+    "Gaining Gold during combat has a 25% chance to grant 1 Forge. Holy damage is increased by half your Forge.",
     "goldGrantsForgeAndHoly",
-    "forge",
-  ),
-] as const satisfies readonly AffixRowInput[];
-
-export const companionUniqueAffixes = [
-  uniqueAffix(
-    "companion-forge-power",
-    "Bonded",
-    "offensive",
-    "companion",
-    "Companions benefit from Forge",
-    "companionBenefitsFromForge",
     "forge",
   ),
 ] as const satisfies readonly AffixRowInput[];

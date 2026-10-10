@@ -316,13 +316,14 @@ function TransmutationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
     initializeAlchemyVisit("transmutation", defaultGameSession);
   }, []);
   // Empty offers before initialization do not mean the visit is unusable.
-  if (!r.visit.completed && r.visit.offers.length === 0) return null;
+  if (!r.visit.completed && !r.visit.transmutation) return null;
   return (
     <TransmutationScreen
       afterProgressSaved={routeCommands.progress.afterSaved}
       isProgressSavePending={routeCommands.progress.isPending}
       runDeck={r.runDeck}
       visit={r.visit}
+      onSelect={commands.select}
       onExchange={commands.exchange}
       onContinue={commands.continue}
     />

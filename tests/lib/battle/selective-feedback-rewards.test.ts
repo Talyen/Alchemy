@@ -118,7 +118,7 @@ describe("selective feedback rewards", () => {
       talentEffects: computeTalentEffects({ consume: ["consume-last-supper", "consume-second-helping"] }),
     });
     const last = play(state, consume);
-    expect(last.state.playerStatuses.forge).toBe(3);
+    expect(last.state.playerStatuses.forge).toBe(1);
     expect(last.state.hand).toHaveLength(3);
     expect(play(state, consume, [attack]).state.playerStatuses.forge).toBe(0);
   });
@@ -152,31 +152,35 @@ describe("selective feedback rewards", () => {
     expect(result.playerStatuses.forge).toBe(roll < 0.25 ? 1 : 0); // Never consumes the last held card.
   });
 
-  it("Gold conversion rewards require empty defenses and do not repeat on filled resources", () => {
-    const state = battle({ talentEffects: { blockPerGold: 0.25 }, gearEffects: { goldGrantsForgeAndHoly: 1 } });
+  it("Gold conversion rewards keep defensive gates while Forge can reward successive Gold gains", () => {
+    const state = battle({
+      rng: () => 0,
+      talentEffects: { blockPerGold: 0.25 },
+      gearEffects: { goldGrantsForgeAndHoly: 1 },
+    });
     const first = addGoldWithCombatText(state, 4, []);
-    expect(first.playerStatuses).toMatchObject({ block: 1, forge: 4 });
+    expect(first.playerStatuses).toMatchObject({ block: 1, forge: 1 });
     const texts: CombatTextEvent[] = [];
     const second = addGoldWithCombatText(first, 4, texts);
-    expect(second.playerStatuses).toEqual(first.playerStatuses);
-    expect(texts).toEqual([{ target: "player", kind: "status", stat: "gold", amount: 4 }]);
+    expect(second.playerStatuses).toMatchObject({ block: 1, forge: 2 });
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 1 });
   });
 
-  it("Stun combines matching talent/affix rewards, then suppresses filled resources", () => {
+  it("Stun combines matching talent/affix rewards, without requiring empty Forge", () => {
     const state = battle({
       mana: 0,
       enemyStatuses: { stun: 120 },
-      talentEffects: { blockOnStun: 4, forgeOnStun: 2, manaOnStun: 1 },
-      gearEffects: { blockOnStun: 3, forgeOnStun: 1, manaOnStun: 2 },
+      talentEffects: { blockOnStun: 4, forgeOnStun: 1, forgeOnStunChance: 100, manaOnStun: 1 },
+      gearEffects: { blockOnStun: 3, forgeOnStunChances: [100], manaOnStun: 2 },
     });
     const first = resolveStunTrigger(state, []);
-    expect(first.playerStatuses).toMatchObject({ block: 7, forge: 3 });
+    expect(first.playerStatuses).toMatchObject({ block: 7, forge: 2 });
     expect(first.mana).toBe(3);
     const texts: CombatTextEvent[] = [];
     const second = resolveStunTrigger({ ...first, enemyCC: state.enemyCC, enemyStatuses: state.enemyStatuses }, texts);
-    expect(second.playerStatuses).toEqual(first.playerStatuses);
+    expect(second.playerStatuses).toMatchObject({ block: 7, forge: 4 });
     expect(second.mana).toBe(3);
-    expect(texts.every((text) => text.target === "enemy")).toBe(true);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 2 });
   });
 
   it.each([0.1, 0.6])("Dodge reward rolls succeed or fail independently of Dodge at %s", (roll) => {
@@ -195,7 +199,7 @@ describe("selective feedback rewards", () => {
     const texts: CombatTextEvent[] = [];
     const next = applyEnemyAbility(state, incoming, texts);
     expect(next.playerDodgeCount).toBe(1);
-    expect(next.playerStatuses).toMatchObject({ block: 1, armor: 1, forge: roll < 0.25 ? 2 : 0 });
+    expect(next.playerStatuses).toMatchObject({ block: 1, armor: 1, forge: roll < 0.25 ? 1 : 0 });
     expect(next.gold).toBe(roll < 0.25 ? 4 : 0);
     expect(next.enemyHealth < state.enemyHealth).toBe(roll < 0.5);
     if (roll > 0.5) expect(texts).toHaveLength(1);

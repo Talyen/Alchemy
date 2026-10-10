@@ -88,7 +88,7 @@ export const coreCards: BattleCard[] = [
     id: "tithe",
     art: assetRefs.tithe,
     effects: [
-      { kind: "damage", damageType: "holy", amount: 1 },
+      { kind: "damage", damageType: "holy", amount: 2 },
       { kind: "gain-gold", amount: 1 },
     ],
   }),
@@ -103,7 +103,7 @@ export const coreCards: BattleCard[] = [
   cardBuilders.effectsCard({
     id: "kindling",
     art: assetRefs.kindling,
-    effects: [{ kind: "damage", damageType: "burn", amount: 2, doubleIfEnemyNotBurning: true }],
+    effects: [{ kind: "damage", damageType: "burn", amount: 1, tripleIfEnemyNotBurning: true }],
   }),
   cardBuilders.effectsCard({
     id: "roll-the-dice",
@@ -177,10 +177,7 @@ export const coreCards: BattleCard[] = [
   cardBuilders.effectsCard({
     id: "burning-blade",
     art: assetRefs.burningBlade,
-    effects: [
-      { kind: "player-status", status: "forge", amount: 1 },
-      { kind: "damage", damageType: "burn", amount: 0, equalToForge: true },
-    ],
+    effects: [{ kind: "damage", damageType: "burn", amount: 1, forgeBonusPercent: 50 }],
   }),
   cardBuilders.effectsCard({
     id: "cauterize",
@@ -365,7 +362,7 @@ export const coreCards: BattleCard[] = [
     consume: true,
     effects: [
       { kind: "damage", damageType: "holy", amount: 5 },
-      { kind: "player-status", status: "block", statusPool: ["block", "forge", "armor"], amount: 5 },
+      { kind: "player-status", status: "block", statusPool: ["block", "forge", "armor"], amount: 5, forgeAmount: 2 },
     ],
   }),
   cardBuilders.effectsCard({
@@ -377,8 +374,8 @@ export const coreCards: BattleCard[] = [
     id: "bellows-blast",
     art: assetRefs.bellowsBlast,
     effects: [
-      { kind: "player-status", status: "forge", amount: 2 },
-      { kind: "damage", damageType: "burn", amount: 2 },
+      { kind: "player-status", status: "forge", amount: 1 },
+      { kind: "damage", damageType: "burn", amount: 1 },
     ],
   }),
   cardBuilders.effectsCard({

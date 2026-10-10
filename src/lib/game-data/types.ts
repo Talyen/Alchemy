@@ -107,7 +107,6 @@ export interface BattleCard {
   cost: number;
   consume?: boolean;
   corrupted?: boolean;
-  brewed?: boolean;
   transmutationRole?: "attack" | "defense" | "utility";
 
   corruptedValuePositions?: Array<{ lineIndex: number; matchIndex: number }>;

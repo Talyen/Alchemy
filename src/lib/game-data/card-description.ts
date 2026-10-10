@@ -8,7 +8,7 @@ export interface CardDescriptionContext {
 }
 
 export function getEffectiveCardDescriptionLines(
-  card: Pick<BattleCard, "id" | "effects" | "descriptionLines" | "brewed">,
+  card: Pick<BattleCard, "id" | "effects" | "descriptionLines">,
   context: CardDescriptionContext = {},
 ): string[] {
   const summon = card.effects.find((effect) => effect.kind === "summon-companion");
@@ -26,7 +26,5 @@ export function getEffectiveCardDescriptionLines(
       "Companion",
     ];
   }
-  const lines = [...card.descriptionLines];
-  if (card.brewed) lines.push("Brewed: cannot be brewed again");
-  return lines;
+  return [...card.descriptionLines];
 }

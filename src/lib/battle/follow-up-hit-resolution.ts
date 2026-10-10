@@ -1,3 +1,4 @@
+import { applyBlockReward } from "./player-rewards";
 import { rollBattleChance } from "./chance-roll";
 import { resolveSecondaryAction } from "./action-context";
 import type { DamageType, TalentEffectManifest } from "@/lib/game-data";
@@ -8,7 +9,6 @@ import {
   TALENT_CONVERSION_DEFAULT_FRACTION,
 } from "../game-constants";
 import {
-  applyBurnForgePayout,
   applyEmberforgedPayout,
   applyLuckyCloverGold,
   applyNatureGoldReward,
@@ -93,6 +93,8 @@ function resolveDerivedFollowUp(
     nextState = applyFollowUpNatureRiders(nextState, resolved, hit.facts.healthDamage, state, combatTexts);
   }
   if (damageType === "holy") {
+    if (resolved > 0 && nextState.gearEffects.oathkeeperHolyAndBlock > 0)
+      nextState = applyBlockReward(nextState, 1, combatTexts);
     if (!isPlayer) nextState = applyHolyLifesteal(nextState, resolved, combatTexts, hit.facts.eligibility);
     nextState = applyHolyBlockChance(nextState, hit.facts.healthDamage, combatTexts);
     if (!isPlayer) {
@@ -105,7 +107,7 @@ function resolveDerivedFollowUp(
   if (damageType === "burn" && (isPlayer ? hit.facts.healthDamage > 0 : true)) {
     nextState = isPlayer
       ? applyEmberforgedPayout(nextState, combatTexts, state.enemyStatuses.burn > 0)
-      : applyBurnForgePayout(nextState, combatTexts, hit.facts.eligibility.enemyStatuses.burn > 0);
+      : applyEmberforgedPayout(nextState, combatTexts, hit.facts.eligibility.enemyStatuses.burn > 0);
   }
   return nextState;
 }

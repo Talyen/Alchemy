@@ -42,9 +42,10 @@ export const physicalTalents = [
   t(
     "physical-shatter",
     "Icebreaker",
-    "Physical hits against Frozen enemies grant 1 Forge",
+    "Physical attacks against Frozen enemies have a 25% chance to grant 1 Forge",
     "Split",
     setEffect("forgeOnPhysicalVsFrozen", 1),
+    setEffect("forgeOnPhysicalVsFrozenChance", 25),
   ),
   t(
     "physical-lacerate",

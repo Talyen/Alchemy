@@ -1,3 +1,5 @@
+import { selectTransmutation, transmuteCard } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
+import { getTransmutationOffers, canTransmuteCard, isTransmutationSourceCurrent } from "@/lib/alchemist/transmutation";
 import { PLAYABLE_HAND_OPTIONS } from "@/features/alchemy/run-loop/battle/playable-hand";
 import { cardSlotKeyOf, gearSlotKeyOf } from "@/features/alchemy/run-loop/shop/shop-commands-core";
 import { shopItemSlotKey } from "@/features/alchemy/run-loop/shop/shop-slot-keys";
@@ -142,9 +144,50 @@ export function offerRunChoices(
     case "campfire":
       offer("campfire", "rest", 1, flow.handleCampfireContinue);
       break;
-    case "transmutation":
-      offer("transmutation-exit", "leave", 0, flow.advanceToNextDestination);
+    case "transmutation": {
+      if (activity.kind !== "transmutation") break;
+      const visit = activity.data;
+      const selection = visit.transmutation;
+      const canExchange = (card: BattleCard) => canTransmuteCard(selection?.choices ?? [], card);
+      if (visit.completed || !run.runDeck.some(canExchange)) {
+        offer("transmutation-exit", "continue", 1, flow.advanceToNextDestination);
+      } else if (!selection || selection.sourceIndex === null || !isTransmutationSourceCurrent(visit, run.runDeck)) {
+        run.runDeck.forEach((card, index) => {
+          if (canExchange(card))
+            offer(
+              "transmutation-source",
+              card.id,
+              1,
+              () => selectTransmutation({ kind: "source", index, card }, gameSession),
+              index,
+            );
+        });
+      } else if (!selection.keyword) {
+        selection.choices.forEach(({ keyword }, index) =>
+          offer(
+            "transmutation-keyword",
+            keyword,
+            1,
+            () => selectTransmutation({ kind: "keyword", keyword }, gameSession),
+            index,
+          ),
+        );
+      } else if (selection.offerIndex === null) {
+        getTransmutationOffers(visit).forEach((card, index) =>
+          offer(
+            "transmutation-outcome",
+            card.id,
+            affinity(card),
+            () => selectTransmutation({ kind: "outcome", index }, gameSession),
+            index,
+          ),
+        );
+      } else {
+        const { sourceIndex, offerIndex } = selection;
+        offer("transmutation-confirm", "continue", 1, () => transmuteCard(sourceIndex, offerIndex, gameSession));
+      }
       break;
+    }
     case "mystery": {
       const visit = activity.data;
       if (visit.mysteryCardChoices?.length)

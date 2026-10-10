@@ -7,7 +7,7 @@ import type { BattleStarted } from "@/features/alchemy/shared/stores/battle-star
 export function createBattleInit(ctx: BattleControllerContext, session: ReturnType<typeof createBattleSession>) {
   function presentBattleStart({ startingTexts, companionId, outcome, openingCardIds }: BattleStarted) {
     const battleState = ctx.battle.read().battleState;
-    preloadBattleSounds(openingCardIds, battleState.currentEnemy.id, battleState.currentEnemy.abilityIds);
+    preloadBattleSounds(openingCardIds, battleState.currentEnemy.abilityIds);
     session.resetBattleSession();
     const presentationStore = ctx.getPresentation();
     ctx.playback.beginOpening();

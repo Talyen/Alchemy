@@ -30,7 +30,7 @@ describe("opening resource gains", () => {
       maxHealth: 40,
       talentEffects: computeTalentEffects({ forge: ["forge-strength-1", "forge-strength-5"] }),
       gearEffects: { ...defaultGearEffects, startForge: 2, forgeReadiesPhysicalRepeat: 1 },
-      rng: () => 0.99,
+      rng: () => 0,
     });
     expect(state.playerStatuses.forge).toBe(4);
     expect(state.uniqueGear.everkeenReady).toBe(true);
@@ -45,7 +45,7 @@ describe("opening resource gains", () => {
       gearEffects: { ...defaultGearEffects, startForge: 4, startBlock: 4, flatBlockGained: 1 },
       rng: () => 0.99,
     });
-    expect(state.playerStatuses.block).toBe(7);
+    expect(state.playerStatuses.block).toBe(6);
     expect(state.playerStatuses.thorns).toBe(1);
   });
 });

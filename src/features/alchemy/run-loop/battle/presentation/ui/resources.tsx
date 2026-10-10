@@ -75,7 +75,7 @@ export function PilePanel({
   );
 }
 
-export function ManaPanel({ mana, maxMana, rejected = false }: { mana: number; maxMana: number; rejected?: boolean }) {
+export function ManaPanel({ mana, maxMana }: { mana: number; maxMana: number }) {
   const displayCount = Math.max(mana, maxMana);
 
   return (
@@ -85,7 +85,7 @@ export function ManaPanel({ mana, maxMana, rejected = false }: { mana: number; m
       data-mana={mana}
     >
       <div
-        className={cn("mana-row relative flex items-center justify-center gap-1.5", rejected && "mana-play-rejected")}
+        className="mana-row relative flex items-center justify-center gap-1.5"
         role="img"
         aria-label={`Mana: ${mana} / ${maxMana}`}
       >

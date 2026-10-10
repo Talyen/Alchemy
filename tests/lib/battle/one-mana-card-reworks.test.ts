@@ -43,7 +43,7 @@ describe("one-Mana card tradeoffs", () => {
     expect(next.mana).toBe(2);
     expect(next.playerHealth).toBe(11);
     expect(next.exhausted.filter((card) => card.id === "prayer")).toHaveLength(1);
-    expect(next.playerStatuses.forge).toBe(3);
+    expect(next.playerStatuses.forge).toBe(1);
     expect(next.hand).toHaveLength(1);
     expect(next.wishOptions).not.toBeNull();
     expect(next.wishQueue).toHaveLength(1);

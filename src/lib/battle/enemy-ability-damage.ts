@@ -112,7 +112,7 @@ export function applyAbilityDamage(
     flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
     record(trait("frost-elemental") ? "frost-elemental" : "ice-wraith");
   }
-  if (effect.damageType === "burn" && trait("pyromancer")) {
+  if (effect.damageType === "burn" && trait("pyromancer") && state.playerStatuses.burn === 0) {
     flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
     record("pyromancer");
   }
@@ -121,6 +121,13 @@ export function applyAbilityDamage(
   // Resources already contain room scaling, but still receive ability pressure
   // and difficulty bonuses like every other damaging ability.
   let resourceEffect = effect;
+  if (effect.forgeBonusPercent !== undefined)
+    resourceEffect = {
+      ...effect,
+      amount:
+        Math.round(effect.amount * state.roomScalingMultiplier) +
+        Math.round((state.enemyMitigation.forge * effect.forgeBonusPercent) / 100),
+    };
   if (effect.equalToForge) resourceEffect = { ...effect, amount: state.enemyMitigation.forge };
   if (effect.equalToBlock)
     resourceEffect = {
@@ -130,7 +137,7 @@ export function applyAbilityDamage(
   let damage = scaleEnemyAbilityDamage(
     state,
     resourceEffect,
-    effect.equalToForge === true || effect.equalToBlock === true,
+    effect.equalToForge === true || effect.equalToBlock === true || effect.forgeBonusPercent !== undefined,
   );
   if (effect.doubleIfEnemyBleeding && state.playerStatuses.bleed > 0) damage = { ...damage, amount: damage.amount * 2 };
   if (trait("blood-cultist") && effect.damageType === "bleed" && state.playerStatuses.bleed > 0) {

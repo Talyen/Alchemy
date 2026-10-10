@@ -36,7 +36,7 @@ export interface ReviewManifest {
     silenceReason?: string;
   }>;
   actions: ReviewAction[];
-  assignments: Record<"cards" | "enemies" | "companions", Record<string, string>>;
+  assignments: Record<"cards" | "companions", Record<string, string>>;
   destinationCoverage: string[];
   keywordCoverage: Record<string, string[]>;
   sequences: Array<{ id: string; title: string; note: string; steps: Array<{ mapping: string; at: number }> }>;

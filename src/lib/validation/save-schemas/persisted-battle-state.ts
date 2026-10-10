@@ -24,7 +24,6 @@ const battleFallbacks = defaultBattleState();
 const difficultyModifierSchema = z
   .discriminatedUnion("kind", [
     z.object({ kind: z.literal("enemy-starting-armor"), amount: z.number() }),
-    z.object({ kind: z.literal("enemy-gains-forge-each-turn") }),
     z.object({ kind: z.literal("increase-enemy-physical-damage"), amount: z.number() }),
     z.object({ kind: z.literal("increase-enemy-damage"), amount: z.number() }),
     z.object({

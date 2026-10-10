@@ -16,9 +16,7 @@ function forgeDamagePercent(
   damageType: DamageType,
   talents: TalentEffectManifest,
   gear?: BattleState["gearEffects"],
-  companionAttack = false,
 ): number {
-  if (companionAttack && (gear?.companionBenefitsFromForge ?? 0) > 0) return PERCENT_DENOMINATOR;
   // Full-strength Homestead/Gear grants take precedence;
   // overlapping permissions do not award Forge twice.
   const burn = Math.max(talents.forgeBurnDamagePercent, talents.homesteadForgeBurnPercent ?? 0);
@@ -29,8 +27,8 @@ function forgeDamagePercent(
     case "stun":
       return PERCENT_DENOMINATOR;
     case "holy":
-      return (gear?.holyPreservesForge ?? 0) > 0 || (gear?.goldGrantsForgeAndHoly ?? 0) > 0
-        ? PERCENT_DENOMINATOR
+      return (gear?.oathkeeperHolyAndBlock ?? 0) > 0 || (gear?.goldGrantsForgeAndHoly ?? 0) > 0
+        ? Math.max(50, talents.forgeHolyDamagePercent)
         : talents.forgeHolyDamagePercent;
     case "burn":
       return shared ? Math.max(burn, bleed) : burn;
@@ -43,39 +41,39 @@ function forgeDamagePercent(
   }
 }
 
-export function forgeAppliesToDamageType(
+function forgeAppliesToDamageType(
   damageType: DamageType,
   talentEffects: TalentEffectManifest,
   gearEffects?: BattleState["gearEffects"],
-  companionAttack = false,
 ): boolean {
-  return forgeDamagePercent(damageType, talentEffects, gearEffects, companionAttack) > 0;
+  return forgeDamagePercent(damageType, talentEffects, gearEffects) > 0;
 }
 
 function blockScaledDamage(state: BattleState, percent: number): number {
   return scalePercent(state.playerStatuses.block, percent, PERCENT_DENOMINATOR);
 }
 
-function getForgeBonusForDamage(state: BattleState, damageType: DamageType, companionAttack = false): number {
-  if (!forgeAppliesToDamageType(damageType, state.talentEffects, state.gearEffects, companionAttack)) return 0;
+function getForgeBonusForDamage(state: BattleState, damageType: DamageType): number {
+  if (!forgeAppliesToDamageType(damageType, state.talentEffects, state.gearEffects)) return 0;
   const forge = state.playerStatuses.forge;
   if (damageType === "physical" && state.talentEffects.forgeToPhysicalDamageMultiplier > 0) {
     return forge * state.talentEffects.forgeToPhysicalDamageMultiplier;
   }
-  return scalePercent(forge, forgeDamagePercent(damageType, state.talentEffects, state.gearEffects, companionAttack));
+  return scalePercent(forge, forgeDamagePercent(damageType, state.talentEffects, state.gearEffects));
 }
 
 function computeBaseRawAmount(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   card?: BattleCard,
-  companionAttack = false,
 ): number {
-  const forgeBonus = getForgeBonusForDamage(state, effect.damageType, companionAttack);
+  const forgeBonus = getForgeBonusForDamage(state, effect.damageType);
 
   // Forge replaces the base; the other resource attacks can also use Forge.
   let amount: number;
-  if (effect.equalToForge) {
+  if (effect.forgeBonusPercent !== undefined) {
+    amount = effect.amount + scalePercent(state.playerStatuses.forge, effect.forgeBonusPercent);
+  } else if (effect.equalToForge) {
     amount = state.playerStatuses.forge;
   } else if (effect.equalToBlock) {
     amount = scalePercent(state.playerStatuses.block, effect.equalToBlockPercent ?? PERCENT_DENOMINATOR) + forgeBonus;
@@ -166,11 +164,7 @@ export function computeBaseDamage(
   const potionBonus =
     card && !companionAttack && isPotionCard(card) ? (state.talentEffects.homesteadPotionBonus ?? 0) : 0;
   const rawAmount =
-    computeBaseRawAmount(state, effect, card, companionAttack) +
-    bonus +
-    poisonPotionBonus +
-    consumeBurnBonus +
-    potionBonus;
+    computeBaseRawAmount(state, effect, card) + bonus + poisonPotionBonus + consumeBurnBonus + potionBonus;
   const hasBlock = effect.equalToBlock === true;
   const hasArmor = effect.equalToArmor === true;
   const hasGold = effect.equalToGoldPercent !== undefined;
