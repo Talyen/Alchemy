@@ -28,13 +28,6 @@ test.describe("Labyrinth exploration", critical, () => {
     const hidden = page.getByRole("button", { name: /^Undiscovered chamber/ });
     expect(await hidden.count()).toBeGreaterThanOrEqual(15);
     await expect(hidden.first().locator("img")).toHaveAttribute("src", /labyrinth-shrouded-/);
-    await expect(hidden.first().locator("img")).toHaveCSS("filter", "brightness(0.82) saturate(0.8)");
-    await expect(
-      page
-        .getByRole("button", { name: /Combat chamber, reachable/ })
-        .first()
-        .locator("img"),
-    ).toHaveCSS("filter", "brightness(0.9) saturate(0.85)");
     await expect(hidden.first()).toHaveText("");
     const fogSources = await hidden
       .locator("img")

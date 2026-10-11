@@ -5,6 +5,7 @@ import {
   selectTransmutation,
 } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
 import { restAtCampfire } from "@/features/alchemy/run-loop/run/destination-commands";
+import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import {
   applyCurrencyToGear,
@@ -43,8 +44,10 @@ export function createRunRouteActions(gameSession: GameSession) {
     selectTransmutation: (selection: Parameters<typeof selectTransmutation>[0]) =>
       selectTransmutation(selection, gameSession),
     transmuteCard: (sourceIndex: number, offerIndex: number) => transmuteCard(sourceIndex, offerIndex, gameSession),
-    initializeAlchemyVisit: (kind: Parameters<typeof initializeAlchemyVisit>[0]) =>
-      initializeAlchemyVisit(kind, gameSession),
+    initializeAlchemyVisit: (kind: Parameters<typeof initializeAlchemyVisit>[0]) => {
+      // An outgoing route can rerun its effect while it fades after navigation.
+      if (readRunSession(gameSession).activity.kind === kind) initializeAlchemyVisit(kind, gameSession);
+    },
     constructBuilding: (id: Parameters<typeof constructBuilding>[0]) => constructBuilding(id, gameSession),
     plantFarm: (id: Parameters<typeof plantFarm>[0]) => plantFarm(id, gameSession),
     completeResearch: (id: Parameters<typeof completeResearch>[0]) => completeResearch(id, gameSession),

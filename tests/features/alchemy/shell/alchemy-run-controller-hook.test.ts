@@ -117,6 +117,20 @@ describe("useAlchemyRunController", () => {
     }
   });
 
+  it.each(["campfire", "transmutation"] as const)("ignores an outgoing %s route's late initialization", (kind) => {
+    setRunSession({ hasActiveRun: true, activity: { kind, data: emptyAlchemyVisit() } });
+    const { result } = renderController();
+    const initialize =
+      kind === "campfire"
+        ? result.current.routeCommands.runLoop.destinations.initializeCampfire
+        : result.current.routeCommands.runLoop.transmutation.initialize;
+    act(() => setRunSession({ activity: { kind: "labyrinth-map" }, labyrinthMap: gridLabyrinthMapFixture() }));
+    const revision = readRunRevision(defaultGameSession);
+    act(() => initialize());
+    expect(readRunSession(defaultGameSession).activity.kind).toBe("labyrinth-map");
+    expect(readRunRevision(defaultGameSession)).toBe(revision);
+  });
+
   it("keeps routeCommands identity across a no-op rerender", () => {
     const { result, rerender } = renderController();
     const first = result.current.routeCommands;
