@@ -26,8 +26,16 @@ const FIRST_CARD_FREE_RULES: ReadonlyArray<
     "firstHolyCardFreeUsed",
     (card) => cardHasKeyword(card, "holy") || cardHasDamageType(card, "holy"),
   ],
-  ["firstPoisonCardFree", "firstPoisonCardFreeUsed", (card) => cardHasDamageType(card, "poison")],
-  ["firstBleedCardFree", "firstBleedCardFreeUsed", (card) => cardHasDamageType(card, "bleed")],
+  [
+    "firstPoisonCardFree",
+    "firstPoisonCardFreeUsed",
+    (card) => cardHasKeyword(card, "poison") || cardHasDamageType(card, "poison"),
+  ],
+  [
+    "firstBleedCardFree",
+    "firstBleedCardFreeUsed",
+    (card) => cardHasKeyword(card, "bleed") || cardHasDamageType(card, "bleed"),
+  ],
   ["firstConsumeCardFree", "firstConsumeCardFreeUsed", (card) => !!card.consume],
   ["firstCompanionCardFree", "firstCompanionCardFreeUsed", (card) => cardHasKeyword(card, "companion")],
   ["firstArcheryCardFree", "firstArcheryCardFreeUsed", (card) => cardHasKeyword(card, "archery")],

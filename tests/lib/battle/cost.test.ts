@@ -30,6 +30,16 @@ const firstFreeCases: Array<{
     flag: "firstBleedCardFreeUsed",
     card: { effects: [{ kind: "damage", damageType: "bleed", amount: 1 }] },
   },
+  {
+    talent: "firstPoisonCardFree",
+    flag: "firstPoisonCardFreeUsed",
+    card: { effects: [{ kind: "next-hit-poison" }] },
+  },
+  {
+    talent: "firstBleedCardFree",
+    flag: "firstBleedCardFreeUsed",
+    card: { effects: [{ kind: "multiply-enemy-status", status: "bleed", factor: 2 }] },
+  },
   { talent: "firstConsumeCardFree", flag: "firstConsumeCardFreeUsed", card: { consume: true, effects: [] } },
   {
     talent: "firstCompanionCardFree",
