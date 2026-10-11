@@ -119,6 +119,7 @@ export function ArtPanel({
         <div className={artWrapClass}>
           <div
             ref={artWrapperRef}
+            data-plasma-anchor
             className="group/art-wrapper relative"
             onMouseEnter={tooltipHandlers.onMouseEnter}
             onMouseLeave={tooltipHandlers.onMouseLeave}

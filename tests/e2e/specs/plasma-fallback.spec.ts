@@ -25,9 +25,9 @@ for (const failure of ["context", "shader"] as const) {
     await menu.goto();
     await menu.expectMainMenu();
     await menu.playBtn.hover();
-    const fallback = page.getByTestId("static-plasma-background");
+    const fallback = page.getByTestId("interaction-plasma-fallback");
     await expect(fallback).toBeVisible();
-    await expect(page.getByTestId("global-plasma-background")).toBeHidden();
+    await expect(page.getByTestId("interaction-plasma-canvas")).toBeHidden();
     await page.setViewportSize({ width: 1280, height: 800 });
     await menu.playBtn.hover();
     await expect(fallback).toBeVisible();
@@ -42,16 +42,16 @@ test("context loss shows static glow and restoration resumes WebGL", async ({ pa
   await menu.goto();
   await menu.expectMainMenu();
   await menu.playBtn.hover();
-  const canvas = page.getByTestId("global-plasma-background");
+  const canvas = page.getByTestId("interaction-plasma-canvas");
   const extension = await canvas.evaluateHandle((element: HTMLCanvasElement) =>
     element.getContext("webgl")?.getExtension("WEBGL_lose_context"),
   );
   expect(await extension.evaluate((value) => Boolean(value))).toBe(true);
   await extension.evaluate((value) => value?.loseContext());
-  await expect(page.getByTestId("static-plasma-background")).toBeVisible();
+  await expect(page.getByTestId("interaction-plasma-fallback")).toBeVisible();
   await extension.evaluate((value) => value?.restoreContext());
   await extension.dispose();
-  await expect(page.getByTestId("static-plasma-background")).toHaveCount(0);
+  await expect(page.getByTestId("interaction-plasma-fallback")).toHaveCount(0);
   await expect(canvas).toBeVisible();
   expect(runtimeErrors.splice(0).map((message) => message.trim())).toEqual([
     "[other] Plasma WebGL context lost; using static decoration",

@@ -248,6 +248,14 @@ or browser-journey work also follows [tests/e2e/README.md](../tests/e2e/README.m
 
 ## Plasma availability
 
+Hover and keyboard-focus plasma uses a localized halo centered on the source
+control, sized from its bounds and capped at 560 by 480 stage pixels (and 60% of
+each stage dimension). Its soft radial mask and 65% opacity keep nearby content
+quiet; opacity eases in over 500ms and out over 700ms. The outgoing halo holds
+its position and colors until the fade finishes. Screen-owned ambient palettes
+and the Options preview remain full-frame. Trigger tracking ignores portaled
+tooltip content and follows control movement, scrolling, and stage scaling.
+
 `KeywordPlasmaBackground` uses the single WebGL renderer entry point in
 `keyword-plasma.ts`. A failed context/shader setup or lost context shows a static
 CSS gradient with the same interaction colors, focal offset, blending, and
