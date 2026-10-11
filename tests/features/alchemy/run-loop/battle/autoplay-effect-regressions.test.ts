@@ -18,6 +18,24 @@ function readyBattle(patch: Parameters<typeof patchBattleState>[0]) {
 }
 
 describe("autoplay effect regressions", () => {
+  it("chooses Exorcism's stored Burn damage over a weaker attack", () => {
+    const state = readyBattle({ playerStatuses: { burn: 8 }, hand: [cardById.slash!, cardById.exorcism!] });
+    const pick = findBestPlayableHandCard(state)!;
+    expect(pick.card.id).toBe("exorcism");
+    const result = playBattleCardResolved(state, pick.card.id, pick.index).state;
+    expect(result.enemyHealth).toBe(91);
+    expect(result.playerStatuses.burn).toBe(0);
+  });
+
+  it("chooses Kindling's conditional triple damage only against an unburned target", () => {
+    const hand = [cardById.fireball!, cardById.kindling!];
+    const state = readyBattle({ hand });
+    const pick = findBestPlayableHandCard(state)!;
+    expect(pick.card.id).toBe("kindling");
+    expect(playBattleCardResolved(state, pick.card.id, pick.index).state.enemyHealth).toBe(97);
+    expect(findBestPlayableHandCard(readyBattle({ hand, enemyStatuses: { burn: 1 } }))?.card.id).toBe("fireball");
+  });
+
   it("recognizes Smelling Salts as defense against existing control buildup", () => {
     const state = readyBattle({
       playerHealth: 10,
