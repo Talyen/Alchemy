@@ -11,6 +11,8 @@ import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { resetRunSessionSlice } from "../../../../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/app/application-session";
 
+import { installReadyArtworkForTests, waitForArtwork } from "../../../../helpers/artwork-test";
+
 const testCard: BattleCard = {
   id: "slash",
   title: "Slash",
@@ -19,6 +21,8 @@ const testCard: BattleCard = {
   cost: 1,
   effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
 };
+
+installReadyArtworkForTests();
 
 beforeEach(() => {
   useUiStore.setState({ hoveredCardId: null, shimmerState: null, plasmaInteraction: null });
@@ -152,6 +156,7 @@ describe("RewardsScreen", () => {
       />,
     );
 
+    await waitForArtwork();
     const button = screen.getByRole("button", { name: /select slash/i });
     const wrapper = button.parentElement as HTMLElement;
     fireEvent.mouseEnter(wrapper);
