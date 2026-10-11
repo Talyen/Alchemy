@@ -55,8 +55,11 @@ export function InteractionPlasmaBackground({
       if (bounds.width <= 0 || bounds.height <= 0) return;
       const scaleX = stage.clientWidth / bounds.width;
       const scaleY = stage.clientHeight / bounds.height;
-      const width = Math.min(560, stage.clientWidth * 0.6, rect.width * scaleX * 1.6 + 80);
-      const height = Math.min(480, stage.clientHeight * 0.6, rect.height * scaleY * 1.4 + 80);
+      // Reserve space outside opaque artwork. Capping the whole halo or fading
+      // at 70% of its radius can put nearly all visible light under tall cards.
+      const padding = Math.min(96, stage.clientWidth * 0.08, stage.clientHeight * 0.08);
+      const width = rect.width * scaleX + padding * 2;
+      const height = rect.height * scaleY + padding * 2;
       layer.style.left = `${(rect.left + rect.width / 2 - bounds.left) * scaleX - width / 2}px`;
       layer.style.top = `${(rect.top + rect.height / 2 - bounds.top) * scaleY - height / 2}px`;
       layer.style.width = `${width}px`;
@@ -72,9 +75,9 @@ export function InteractionPlasmaBackground({
       data-testid="interaction-plasma-background"
       className="pointer-events-none absolute"
       style={{
-        opacity: visible && anchor ? 0.65 : 0,
+        opacity: visible && anchor ? 1 : 0,
         transition: reducedMotion ? "none" : `opacity ${visible ? 500 : FADE_OUT_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`,
-        maskImage: "radial-gradient(ellipse, black 10%, transparent 70%)",
+        maskImage: "radial-gradient(ellipse, black 60%, transparent 100%)",
       }}
     >
       <KeywordPlasmaBackground
