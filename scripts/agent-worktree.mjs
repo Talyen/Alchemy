@@ -140,7 +140,10 @@ export async function main(argv = process.argv.slice(2)) {
       if (!taskRecord?.split("\n").includes(`branch refs/heads/agent/${task}`)) {
         throw new Error("Task must be a registered worktree on its expected agent branch.");
       }
-      const clean = (cwd) => {
+      const clean = (cwd, branch) => {
+        if (git(cwd, ["rev-parse", "--abbrev-ref", "HEAD"]) !== branch) {
+          throw new Error(`Checkout is no longer on its expected branch ${branch}: ${cwd}; nothing integrated.`);
+        }
         if (git(cwd, ["status", "--porcelain", "--untracked-files=all"])) {
           throw new Error(`Checkout has uncommitted work: ${cwd}; preserve it and retry later.`);
         }
@@ -150,8 +153,8 @@ export async function main(argv = process.argv.slice(2)) {
           }
         }
       };
-      clean(mainPath);
-      clean(taskPath);
+      clean(mainPath, "main");
+      clean(taskPath, `agent/${task}`);
       const mainHead = git(mainPath, ["rev-parse", "HEAD"]);
       git(taskPath, [
         "merge",
@@ -173,8 +176,8 @@ export async function main(argv = process.argv.slice(2)) {
         check(["run", "check", "--", ...paths]);
         if (paths.some((file) => file.endsWith(".md"))) check(["run", "docs:check"]);
       }
-      clean(taskPath);
-      clean(mainPath);
+      clean(taskPath, `agent/${task}`);
+      clean(mainPath, "main");
       if (git(taskPath, ["rev-parse", "HEAD"]) !== taskHead || git(mainPath, ["rev-parse", "HEAD"]) !== mainHead) {
         throw new Error("A checkout changed during verification; retry integration.");
       }

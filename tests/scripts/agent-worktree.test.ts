@@ -118,6 +118,7 @@ function integrationFixture() {
     join(root, "check.cjs"),
     `
 const fs = require('node:fs');
+if (process.env.INTEGRATION_DETACH) require('node:child_process').execFileSync('git', ['checkout', '--detach'], { cwd: process.env.INTEGRATION_DETACH, stdio: 'ignore' });
 if (process.env.INTEGRATION_READY) {
   fs.writeFileSync(process.env.INTEGRATION_READY, 'ready');
   while (!fs.existsSync(process.env.INTEGRATION_RELEASE)) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20);
@@ -162,6 +163,21 @@ describe("serialized local integration", () => {
     } finally {
       rmSync(root, { recursive: true, force: true });
       rmSync(proof, { force: true });
+    }
+  }, 20000);
+
+  it("refuses a main checkout detached at the same commit during verification", () => {
+    const { root, git, integrate } = integrationFixture();
+    try {
+      const before = git(["rev-parse", "main"]);
+      const result = integrate({ INTEGRATION_DETACH: root });
+      expect(result.status, result.stdout).toBe(1);
+      expect(result.stderr).toContain("expected branch");
+      expect(git(["rev-parse", "main"])).toBe(before);
+      expect(git(["rev-parse", "HEAD"])).toBe(before);
+      expect(existsSync(join(root, "task.txt"))).toBe(false);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
     }
   }, 20000);
 
