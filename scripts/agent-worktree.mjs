@@ -181,7 +181,9 @@ export async function main(argv = process.argv.slice(2)) {
       git(mainPath, ["merge", "--ff-only", taskHead]);
       console.log(`Integrated ${task} into local main at ${taskHead}; no push performed.`);
     } finally {
-      await new Promise((resolve) => lock.close(resolve));
+      await new Promise((resolve) => {
+        lock.close(resolve);
+      });
     }
     return;
   }

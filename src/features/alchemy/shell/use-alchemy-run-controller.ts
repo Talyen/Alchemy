@@ -120,6 +120,12 @@ export function useAlchemyRunController(): AlchemyRunCommands {
         beginWildwood: protectVoid(nav.beginWildwood),
         unlockTalent: protectVoid(runActions.purchaseTalent),
         resetUnlockedTalents: protectVoid(runActions.resetTalentUnlocks),
+        constructBuilding: guardProgressAction(defaultGameSession, runActions.constructBuilding, false),
+        plantFarm: guardProgressAction(defaultGameSession, runActions.plantFarm, false),
+        completeResearch: guardProgressAction(defaultGameSession, runActions.completeResearch, false),
+        bondCompanion: guardProgressAction(defaultGameSession, runActions.bondCompanion, false),
+        selectCollectionTab: protectVoid(runActions.selectCollectionTab),
+        setCollectionPage: protectVoid(runActions.setCollectionPage),
       },
       runSetup: {
         goToScreen: nav.goToScreen,

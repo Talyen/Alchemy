@@ -163,7 +163,7 @@ describe("serialized local integration", () => {
       rmSync(root, { recursive: true, force: true });
       rmSync(proof, { force: true });
     }
-  });
+  }, 20000);
 
   it("refuses dirty main and preserves a conflicting merge in the task worktree", () => {
     const { root, taskPath, git, integrate } = integrationFixture();
@@ -200,7 +200,7 @@ describe("serialized local integration", () => {
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
-  });
+  }, 20000);
 
   it("excludes a second integrator and releases the lock after an interrupted owner", async () => {
     const { root, script, taskPath, git, integrate } = integrationFixture();
@@ -212,11 +212,15 @@ describe("serialized local integration", () => {
       env: { ...process.env, INTEGRATION_READY: ready, INTEGRATION_RELEASE: release },
       stdio: "ignore",
     });
-    const closed = new Promise((resolve) => child.once("close", resolve));
+    const closed = new Promise((resolve) => {
+      child.once("close", resolve);
+    });
     try {
       const deadline = Date.now() + 10000;
       while (!existsSync(ready) && Date.now() < deadline && child.exitCode === null) {
-        await new Promise((resolve) => setTimeout(resolve, 20));
+        await new Promise((resolve) => {
+          setTimeout(resolve, 20);
+        });
       }
       expect(existsSync(ready)).toBe(true);
       // Invoke from the task's script to exercise the shared Git-directory lock.

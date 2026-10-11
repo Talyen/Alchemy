@@ -3,7 +3,6 @@ import path from "node:path";
 // These are shipping application adapters, even where they live beside a feature.
 export const APPLICATION_SESSION_ADAPTERS = Object.freeze([
   "src/app/screen-routes/run-loop-routes.tsx",
-  "src/app/screen-routes/meta-routes.tsx",
   "src/app/use-dev-shortcuts.ts",
   "src/app/use-app-navigation.ts",
   "src/app/use-card-inspection.ts",
