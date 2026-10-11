@@ -8,9 +8,11 @@ import { MUSIC_KEYS } from "@/lib/game-constants";
 it("keeps the shipped lyric timeline tied to its recording with positive, ordered word intervals", () => {
   const hash = createHash("sha256").update(readFileSync("public/music/The Blight Treant.mp3")).digest("hex");
   expect(lyrics.audioSha256).toBe(hash);
-  expect(getMusicLyrics(MUSIC_KEYS.BOSS_BLIGHT_TREANT)).toBe(lyrics.lines);
+  const lines = getMusicLyrics(MUSIC_KEYS.BOSS_BLIGHT_TREANT)!;
+  expect(lines).toHaveLength(lyrics.lines.length);
   let end = 0;
-  for (const line of lyrics.lines) {
+  for (const [index, line] of lines.entries()) {
+    expect(lyrics.lines[index]!.timings).toHaveLength(line.length * 2);
     expect(line.length).toBeGreaterThan(0);
     for (const word of line) {
       expect(word.start).toBeGreaterThanOrEqual(end);

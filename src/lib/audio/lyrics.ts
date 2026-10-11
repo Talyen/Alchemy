@@ -7,8 +7,13 @@ export interface LyricWord {
   readonly end: number;
 }
 
+// Store phrase text once and interleave start/end times to keep eager timing data compact.
+const blightTreantLines: ReadonlyArray<readonly LyricWord[]> = blightTreant.lines.map(({ text, timings }) =>
+  text.split(" ").map((word, index) => ({ text: word, start: timings[index * 2]!, end: timings[index * 2 + 1]! })),
+);
+
 export function getMusicLyrics(key: string): ReadonlyArray<readonly LyricWord[]> | undefined {
-  return key === MUSIC_KEYS.BOSS_BLIGHT_TREANT ? blightTreant.lines : undefined;
+  return key === MUSIC_KEYS.BOSS_BLIGHT_TREANT ? blightTreantLines : undefined;
 }
 
 export interface LyricFrame {
