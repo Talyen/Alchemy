@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { canPlayCard, playBattleCardResolved } from "@/lib/battle";
+import { canPlayCard } from "@/lib/battle";
+import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { cardById, companionLibrary, defaultCompanionBondLevels } from "@/lib/game-data";
 import { findBestPlayableHandCard } from "@/features/alchemy/run-loop/battle/playable-hand";
 import { makeTestCard, patchBattleState } from "../../../../fixtures/battle";
