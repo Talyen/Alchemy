@@ -21,11 +21,12 @@ import { ChromeIconButton } from "../../shared/ui/chrome-icon-button";
 import { usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
 import { getPlasmaColorPair, getPlasmaKeywordsForTalent } from "../../shared/config";
 import { FadeSlot } from "../../shared/ui/use-fade";
+import { cn } from "@/lib/utils";
 import { playUISound } from "@/lib/audio";
 import { TalentTree } from "../talents/talent-tree";
 import { useCaptureEscapeCancel } from "../../shared/ui/use-modal-escape-dismiss";
 
-const TALENT_PANE_CLASS = "flex w-full flex-col items-center";
+const TALENT_PANE_CLASS = "col-start-1 row-start-1 flex w-full flex-col items-center";
 
 export function TalentsScreen({
   talentXP,
@@ -59,11 +60,11 @@ export function TalentsScreen({
     ]),
   );
   const selectedKeywordDef = selectedKeyword ? keywordDefinitions[selectedKeyword] : undefined;
-  const unlockedIds = selectedKeyword ? (unlockedTalents[selectedKeyword] ?? []) : [];
-  const allTalentsForKeyword = selectedKeyword ? getTalentsForKeyword(selectedKeyword) : [];
-  const allocatableIds = new Set(
-    selectedKeyword ? getAllocatableTalentChoices(selectedKeyword, unlockedIds).map((talent) => talent.id) : [],
-  );
+  // Keep both panes in the grid so its height cannot change during navigation.
+  const treeKeyword = selectedKeyword ?? "block";
+  const unlockedIds = unlockedTalents[treeKeyword] ?? [];
+  const allTalentsForKeyword = getTalentsForKeyword(treeKeyword);
+  const allocatableIds = new Set(getAllocatableTalentChoices(treeKeyword, unlockedIds).map((talent) => talent.id));
   const progress = selectedKeyword
     ? getTalentKeywordProgress(
         talentXP[selectedKeyword] ?? 0,
@@ -125,43 +126,48 @@ export function TalentsScreen({
         </ChromeIconButton>
       }
     >
-      <FadeSlot swapKey={selectedKeyword ?? "overview"} className="mt-4 flex w-full flex-col">
-        {selectedKeyword === null ? (
-          <div className={TALENT_PANE_CLASS}>
-            <TalentOverviewGrid
-              keywordIds={keywordIds}
-              unspentByKeyword={unspentByKeyword}
-              onSelectKeyword={(kw) => {
-                setHoveredOverviewKeyword(null);
-                setSelectedKeyword(kw);
-              }}
-              onHoverKeyword={setHoveredOverviewKeyword}
-            />
+      <FadeSlot swapKey={selectedKeyword ?? "overview"} className="mt-4 grid w-full items-start">
+        <div
+          className={cn(TALENT_PANE_CLASS, selectedKeyword !== null && "invisible")}
+          aria-hidden={selectedKeyword !== null}
+          inert={selectedKeyword !== null}
+        >
+          <TalentOverviewGrid
+            keywordIds={keywordIds}
+            unspentByKeyword={unspentByKeyword}
+            onSelectKeyword={(kw) => {
+              setHoveredOverviewKeyword(null);
+              setSelectedKeyword(kw);
+            }}
+            onHoverKeyword={setHoveredOverviewKeyword}
+          />
+        </div>
+        <div
+          className={cn(TALENT_PANE_CLASS, selectedKeyword === null && "invisible")}
+          aria-hidden={selectedKeyword === null}
+          inert={selectedKeyword === null}
+        >
+          <TalentTree
+            key={treeKeyword}
+            allTalents={allTalentsForKeyword}
+            unlockedIds={unlockedIds}
+            allocatableIds={allocatableIds}
+            hasUnspentPoints={unspentPoints > 0}
+            onUnlock={handleUnlockTalent}
+            onUnlockBegin={handleUnlockTalentBegin}
+            onHoverTalent={setHoveredTalent}
+          />
+          <div className="mt-6 flex min-h-7 items-start justify-center">
+            {unspentPoints > 0 ? (
+              <p
+                aria-live="polite"
+                className="text-center font-sans text-xl font-normal tracking-normal text-balance text-muted-foreground/60"
+              >
+                {unspentPoints} {unspentPoints === 1 ? "Talent Point" : "Talent Points"} Remaining
+              </p>
+            ) : null}
           </div>
-        ) : (
-          <div className={TALENT_PANE_CLASS}>
-            <TalentTree
-              key={selectedKeyword}
-              allTalents={allTalentsForKeyword}
-              unlockedIds={unlockedIds}
-              allocatableIds={allocatableIds}
-              hasUnspentPoints={unspentPoints > 0}
-              onUnlock={handleUnlockTalent}
-              onUnlockBegin={handleUnlockTalentBegin}
-              onHoverTalent={setHoveredTalent}
-            />
-            <div className="mt-6 flex min-h-7 items-start justify-center">
-              {unspentPoints > 0 ? (
-                <p
-                  aria-live="polite"
-                  className="text-center font-sans text-xl font-normal tracking-normal text-balance text-muted-foreground/60"
-                >
-                  {unspentPoints} {unspentPoints === 1 ? "Talent Point" : "Talent Points"} Remaining
-                </p>
-              ) : null}
-            </div>
-          </div>
-        )}
+        </div>
       </FadeSlot>
 
       <ConfirmationDialog

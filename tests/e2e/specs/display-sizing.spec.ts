@@ -84,6 +84,32 @@ test.describe("Responsive display sizes", slow, () => {
     }
   });
 
+  test("Talents header and controls stay fixed when entering and leaving trees", async ({ page }) => {
+    const menu = new MenuPage(page);
+    await menu.gotoWithUnlockedMeta({ talentXP: { block: 200 }, unlockedTalents: {} });
+    await menu.openTalents();
+    for (const viewport of [CONTENT_REFERENCE_VIEWPORT, VIEWPORTS[0]!]) {
+      await page.setViewportSize(viewport);
+      const heading = page.getByRole("heading", { name: "Talents", exact: true });
+      await waitForLayoutSettled(page, heading);
+      const headerTop = (await heading.boundingBox())!.y;
+      const reset = page.getByRole("button", { name: "Reset talents", exact: true });
+      const resetBounds = await reset.boundingBox();
+      for (const keyword of ["Block", "Physical"]) {
+        await page.getByRole("button", { name: `Select ${keyword} Talents`, exact: true }).click();
+        await expect(page.locator(".talent-node").first()).toBeVisible();
+        await expect
+          .poll(async () => (await page.getByRole("heading", { name: keyword, exact: true }).boundingBox())!.y)
+          .toBeCloseTo(headerTop, 0);
+        await expect.poll(() => reset.boundingBox()).toEqual(resetBounds);
+        await page.getByRole("button", { name: "Back", exact: true }).click();
+        await expect(page.getByRole("button", { name: `Select ${keyword} Talents`, exact: true })).toBeVisible();
+        await expect.poll(async () => (await heading.boundingBox())!.y).toBeCloseTo(headerTop, 0);
+        await expect.poll(() => reset.boundingBox()).toEqual(resetBounds);
+      }
+    }
+  });
+
   test("independent size controls remain usable and survive reload", async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
     const menu = new MenuPage(page);
