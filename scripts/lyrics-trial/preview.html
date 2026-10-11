@@ -68,10 +68,13 @@
     .word {
       display: inline-block;
       white-space: pre;
-      color: transparent;
-      background: linear-gradient(to right, #d7ee8a var(--fill), #8d9b91 var(--fill));
-      background-clip: text;
-      -webkit-background-clip: text;
+      color: #a5b1a9;
+    }
+    .word[hidden] {
+      display: none;
+    }
+    .word.active {
+      color: #e7f6a2;
     }
     .hand {
       display: flex;
@@ -201,12 +204,10 @@
           });
           container.replaceChildren(...spans);
         }
+        const activeWord = (line?.words ?? []).findIndex((word) => time >= word.start && time < word.end);
         (line?.words ?? []).forEach((word, index) => {
-          const progress =
-            word.end > word.start
-              ? Math.max(0, Math.min(1, (time - word.start) / (word.end - word.start)))
-              : Number(time >= word.end);
-          spans[index].style.setProperty("--fill", `${progress * 100}%`);
+          spans[index].hidden = time < word.start;
+          spans[index].classList.toggle("active", index === activeWord);
         });
         status.textContent = `${time.toFixed(2)}s · ${data.provenance.model} · ${data.provenance.method}`;
         requestAnimationFrame(render);

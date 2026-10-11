@@ -2,9 +2,11 @@
 
 This standalone experiment aligns the supplied Blight Treant lyrics to the
 shipped recording. It does not enable lyrics in the game. Its placeholder layout
-places lyrics centered between the combatants and the hand. Each word fills
-with color between its inferred start and end; this is interpolation within a
-word, not phoneme timing.
+places lyrics centered between the combatants and the hand. Words appear as
+their inferred start times arrive, building the phrase as it is sung. Earlier
+words remain dimmed until the phrase ends; only the currently sung word is
+highlighted. The highlight switches between whole words without a fill or motion
+animation. Seeking backward hides words that have not yet been sung.
 
 ## Run locally
 
