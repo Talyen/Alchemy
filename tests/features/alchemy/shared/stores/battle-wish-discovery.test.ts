@@ -2,7 +2,7 @@ import { initializeBattleForTest as initializeActiveBattle } from "../../../../h
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { beforeEach, describe, expect, it } from "vitest";
 import { commitBattleWish, commitCardPlay } from "@/features/alchemy/shared/stores/battle-commands";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { setDiscoveredCardIds, setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 

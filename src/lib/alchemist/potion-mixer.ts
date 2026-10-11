@@ -1,4 +1,4 @@
-import { isValidDeckIndex } from "@/lib/utils";
+import { capitalizeWord, isValidDeckIndex } from "@/lib/utils";
 import {
   CONSUME_DESCRIPTION_LINE,
   MIXED_POTION_CARD_ID,
@@ -60,6 +60,7 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyB
     throw new Error(MIXED_POTION_ERROR);
   }
 
+  const tags = [...new Set([...(cardA.tags ?? []), ...(cardB.tags ?? [])])];
   const sameCard = cardA.id === cardB.id && areEffectsEquivalent(cardA.effects, cardB.effects);
 
   // Describe ingredients separately: matching prose from different Potions
@@ -81,6 +82,7 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyB
       `ingredient/${offset}`,
     );
   });
+  for (const tag of tags) description.push({ parts: [capitalizeWord(tag)], role: "keyword" });
   description.push({ parts: [CONSUME_DESCRIPTION_LINE], role: "consume" });
   return cloneBattleCard(
     withCardDescription(
@@ -91,6 +93,7 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyB
         art: mixedPotion,
         cost: MIXED_POTION_COST,
         consume: true,
+        ...(tags.length ? { tags } : {}),
         effects: parts.flatMap((part) => part.effects),
       },
       description,
@@ -117,6 +120,7 @@ export function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: numbe
 export function doublePotionPotency(card: BattleCard): BattleCard {
   const { effects, description } = scaledPotionParts(card, 2, 0);
   const markedDescription = carryCardDescriptionMarks(getCardDescription(card), description);
+  for (const tag of card.tags ?? []) markedDescription.push({ parts: [capitalizeWord(tag)], role: "keyword" });
   if (card.consume) markedDescription.push({ parts: [CONSUME_DESCRIPTION_LINE], role: "consume" });
   return cloneBattleCard(
     withCardDescription(

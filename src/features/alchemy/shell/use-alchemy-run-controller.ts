@@ -9,7 +9,7 @@ import {
   useActiveRunScreenValue,
   useHomesteadEffects,
   useTalentEffects,
-} from "@/features/alchemy/shared/stores/run-reads";
+} from "@/features/alchemy/shared/stores/use-run-reads";
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { getRunPhase } from "@/lib/routing";
 import { createLabyrinthNodeRouting } from "./labyrinth-node-routing";

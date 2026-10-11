@@ -1,4 +1,4 @@
 import type { Immutable } from "immer";
-import type { GameplayState } from "./gameplay-state-store";
+import type { GameplayState } from "./gameplay-state-reads";
 
 export type RunTransaction = Immutable<GameplayState>;

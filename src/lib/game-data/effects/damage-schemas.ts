@@ -102,6 +102,7 @@ const randomDamageEffectDefinition = {
     .object({
       kind: z.literal("random-damage"),
       minAmount: PositiveAmountSchema,
+      lifesteal: z.boolean().optional(),
       maxAmount: PositiveAmountSchema,
       damageTypePool: z.array(DamageTypeSchema).min(2).optional(),
     })

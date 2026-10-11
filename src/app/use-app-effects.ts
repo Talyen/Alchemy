@@ -23,7 +23,7 @@ import { isDesktop, setDisplayMode as setPlatformDisplayMode } from "@/lib/platf
 import type { DisplayMode } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import { useHasActiveBattle } from "@/features/alchemy/shared/stores/run-reads";
+import { useHasActiveBattle } from "@/features/alchemy/shared/stores/use-run-reads";
 
 interface AppAudioEffectsOptions {
   masterVolume: number;

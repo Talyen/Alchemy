@@ -27,8 +27,13 @@ const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } =
       effect.equalToForge || effect.forgeBonusPercent !== undefined ? ["forge"] : [],
       effect.equalToGoldPercent !== undefined ? ["gold"] : [],
     ),
-  "cleanse-player-status-to-damage": (effect) => [effect.status, effect.damageType],
-  "random-damage": (effect) => [...(effect.damageTypePool?.length ? effect.damageTypePool : DAMAGE_TYPES)],
+  "cleanse-player-status-to-damage": (effect) =>
+    dedupeKeywords([effect.status, effect.damageType], effect.lifesteal ? ["leech"] : []),
+  "random-damage": (effect) =>
+    dedupeKeywords(
+      [...(effect.damageTypePool?.length ? effect.damageTypePool : DAMAGE_TYPES)],
+      effect.lifesteal ? ["leech"] : [],
+    ),
   chance: (effect) => [...new Set(effectChildren(effect).flatMap(collectKeywordsFromBattleEffect))],
   "player-status": (effect) =>
     dedupeKeywords(

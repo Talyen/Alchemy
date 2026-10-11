@@ -141,6 +141,12 @@ describe("PortaledTooltip", () => {
     expect(panel?.style.left).not.toBe("");
     expect(panel?.style.top).not.toBe("");
     expect(panel?.textContent).toContain("Hover-only description");
+
+    fireEvent.pointerDown(document.body);
+    expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeNull();
+    fireEvent.mouseLeave(screen.getByRole("button", { name: "Trigger" }));
+    fireEvent.mouseEnter(screen.getByRole("button", { name: "Trigger" }));
+    await waitFor(() => expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeTruthy());
   });
 
   it("keeps the placed tooltip mounted through fade-out, then unmounts it", async () => {

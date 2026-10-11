@@ -6,7 +6,7 @@ import "../../../../helpers/mock-flush-save";
 import { beforeEach, expect, it, vi } from "vitest";
 import { commitBattleWish, commitCardPlay, commitEndTurn } from "@/features/alchemy/shared/stores/battle-commands";
 import { createBattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { abandonRun, restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import {

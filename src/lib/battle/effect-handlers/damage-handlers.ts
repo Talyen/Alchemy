@@ -76,7 +76,13 @@ export const DAMAGE_HANDLERS = {
     const span = effect.maxAmount - effect.minAmount + 1;
     const rolled = effect.minAmount + rngInt(rng, span);
     const amount = applyPotionMultiplier(rolled, potionMult);
-    return dealDamageToEnemy(state, card, { kind: "damage", damageType, amount }, combatTexts, context);
+    return dealDamageToEnemy(
+      state,
+      card,
+      { kind: "damage", damageType, amount, ...(effect.lifesteal ? { lifesteal: true } : {}) },
+      combatTexts,
+      context,
+    );
   },
   "remove-enemy-armor": (state, _card, effect, _potionMult, combatTexts) => {
     const remainingArmor = effect.halve ? halveRounded(state.enemyMitigation.armor) : 0;

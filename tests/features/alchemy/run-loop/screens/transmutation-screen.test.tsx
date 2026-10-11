@@ -10,7 +10,7 @@ import {
 import { useTransmutationScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { cardById, keywordDefinitions, type BattleCard } from "@/lib/game-data";
-import { getTransmutationOffers } from "@/lib/alchemist/transmutation";
+import { getTransmutationVariants, getTransmutationOffers } from "@/lib/alchemist/transmutation";
 import { defaultGameSession } from "@/app/application-session";
 import { resetAllTestStores, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 vi.mock("@/lib/audio", () => ({ playUISound: vi.fn() }));
@@ -74,6 +74,69 @@ afterEach(() => {
 });
 
 describe("Transmutation flow", () => {
+  it("skips a saved Companion choice when its summon has left the deck", () => {
+    const source = cardById.slash!;
+    const deck = [source, cardById["wolf-companion"]!];
+    const variant = getTransmutationVariants(source, "companion", deck)[0]!;
+    setRunProgress({ runDeck: [source] });
+    setRunSession({
+      activity: {
+        kind: "transmutation",
+        data: {
+          ...visit(),
+          transmutation: {
+            choices: [{ keyword: "companion", alterations: [{ ...variant, sourceIndex: 0, source }] }],
+            source: null,
+            sourceIndex: null,
+            keyword: null,
+            offerIndex: null,
+          },
+        },
+      },
+    });
+    expect(selectTransmutation({ kind: "source", index: 0, card: source }, defaultGameSession)).toBe(false);
+    render(<Harness />);
+    expect(screen.queryByRole("button", { name: "Slash" })).toBeNull();
+    expect(onContinue).toHaveBeenCalledOnce();
+  });
+
+  it("selects the next fixed offer when only the Companion alteration becomes unavailable", () => {
+    const source = cardById.slash!;
+    const deck = [source, cardById["wolf-companion"]!];
+    setRunProgress({ runDeck: [source] });
+    setRunSession({
+      activity: {
+        kind: "transmutation",
+        data: {
+          ...visit(),
+          transmutation: {
+            choices: (["companion", "burn"] as const).map((keyword) => ({
+              keyword,
+              alterations: [
+                {
+                  ...getTransmutationVariants(source, keyword, deck)[0]!,
+                  sourceIndex: 0,
+                  source,
+                },
+              ],
+            })),
+            source: null,
+            sourceIndex: null,
+            keyword: null,
+            offerIndex: null,
+          },
+        },
+      },
+    });
+    render(<Harness />);
+    click("Slash");
+    expect(visit().transmutation).toMatchObject({ keyword: "burn", offerIndex: 1 });
+    expect((screen.getByRole("button", { name: "Choose Companion" }) as HTMLButtonElement).disabled).toBe(true);
+    click("Transmute");
+    expect(readActiveRun(defaultGameSession).runDeck[0]?.transmuted).toBe("burn");
+    expect(onExchange).toHaveBeenCalledExactlyOnceWith(0, 1);
+  });
+
   it("shows keyword buttons above original and preview, keeps values, and commits only through Transmute", () => {
     const before = readActiveRun(defaultGameSession).runDeck;
     render(<Harness />);
@@ -107,6 +170,25 @@ describe("Transmutation flow", () => {
     fireEvent.keyDown(source, { key: "Enter" });
     fireEvent.click(source, { detail: 0 });
     expect(screen.getByRole("group", { name: "Alterations" }).contains(document.activeElement)).toBe(true);
+  });
+
+  it("blocks selection, commitment, and Leave when a save starts before the next render", () => {
+    let pending = false;
+    render(<Harness isProgressSavePending={() => pending} />);
+    pending = true;
+    click("Slash");
+    expect(visit().transmutation!.source).toBeNull();
+    click("Leave");
+    expect(onContinue).not.toHaveBeenCalled();
+    pending = false;
+    chooseAlteration();
+    const selected = visit();
+    pending = true;
+    click("Back");
+    click("Transmute");
+    expect(visit()).toEqual(selected);
+    expect(onExchange).not.toHaveBeenCalled();
+    expect(onContinue).not.toHaveBeenCalled();
   });
 
   it("Back retains the fixed offers and preview without rerolling", () => {

@@ -6,12 +6,12 @@ import {
   resolveReturnToRunTarget,
   resolveScreenBackHandler,
 } from "@/app/screen-navigation-policy";
+import { readActiveRunScreen } from "@/features/alchemy/shared/stores/run-reads";
 import {
-  readActiveRunScreen,
   useForegroundResumeKind,
   useHasActiveBattle,
   useRunResumeScreen,
-} from "@/features/alchemy/shared/stores/run-reads";
+} from "@/features/alchemy/shared/stores/use-run-reads";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/route-commands";
 import { useSequentialFadeSwap } from "@/features/alchemy/shared/ui/use-fade";
 import { resolveGameDelay } from "@/lib/animation/game-timer";

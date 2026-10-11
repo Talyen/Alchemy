@@ -1,5 +1,5 @@
-import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
-import { useHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
+import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/use-profile-store";
+import { useHasActiveRun } from "@/features/alchemy/shared/stores/use-run-reads";
 import { GameMenu } from "@/features/alchemy/shared/ui/game-menu";
 import { BackgroundParticles } from "@/features/alchemy/shared/ui/background-particles";
 import { type Screen } from "@/lib/routing";

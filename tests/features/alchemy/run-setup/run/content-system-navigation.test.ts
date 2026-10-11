@@ -111,7 +111,7 @@ describe("createContentSystemNavigation", () => {
       () => observed.push(snapshotSessionSave(defaultGameSession)),
       defaultGameSession,
     );
-    deps.presentBattleStart.mockImplementation(() => {
+    vi.mocked(deps.presentBattleStart).mockImplementation(() => {
       expect(readRunSession(defaultGameSession).pendingCharacterId).toBeNull();
       deps.navigateTo(ROUTE_SCREENS.REWARDS);
       throw new Error("presentation failed");
@@ -124,7 +124,7 @@ describe("createContentSystemNavigation", () => {
       expect(observed[0]?.activeRun?.activity.kind).toBe("battle");
       expect(observed[0]?.activeRun?.roomsEncountered).toBe(1);
       expect(snapshotSessionSave(defaultGameSession)).toEqual(observed[0]);
-      expect(deps.navigateTo.mock.calls.map(([screen]) => screen)).toEqual([
+      expect(vi.mocked(deps.navigateTo).mock.calls.map(([screen]) => screen)).toEqual([
         ROUTE_SCREENS.BATTLE,
         ROUTE_SCREENS.REWARDS,
       ]);

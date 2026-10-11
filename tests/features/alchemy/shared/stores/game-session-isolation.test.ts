@@ -16,7 +16,7 @@ import {
 } from "@/features/alchemy/shared/storage";
 import { commitCardPlay, commitEndTurn } from "@/features/alchemy/shared/stores/battle-commands";
 import { createGameSession, type GameSession, type SessionClock } from "@/features/alchemy/shared/stores/game-session";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { onRunTeardown, teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
   readActiveRun,

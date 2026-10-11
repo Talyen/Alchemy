@@ -61,7 +61,9 @@ export default {
       severity: "error",
       comment: "Only shared/stores may import the authoritative gameplay aggregate directly.",
       from: { pathNot: "^src/features/alchemy/shared/stores/" },
-      to: { path: "^src/features/alchemy/shared/stores/(gameplay-state-store|gameplay-state)\\.ts$" },
+      to: {
+        path: "^src/features/alchemy/shared/stores/(gameplay-state-store|gameplay-state-reads|gameplay-state)\\.ts$",
+      },
     },
     {
       name: "game-session-runtime-is-internal",

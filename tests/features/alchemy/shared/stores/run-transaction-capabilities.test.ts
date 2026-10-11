@@ -8,7 +8,7 @@ import {
   subscribeRunSessionCommits,
 } from "@/features/alchemy/shared/stores/run-session-command";
 import { dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import {
   addGold,
   deductGold,

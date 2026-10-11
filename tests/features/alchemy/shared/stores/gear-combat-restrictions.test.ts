@@ -1,7 +1,7 @@
 import { setBattleActiveForTest, getBattleForTest } from "../../../../helpers/run-domain-store-test";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { deriveGearCombatRestrictions } from "@/features/alchemy/shared/stores/gear-combat-restrictions";
 import {
   dispatchGearMutationWithRunHealthSync,

@@ -104,12 +104,9 @@ describe("alchemy visit transactions and resume", () => {
     expect(transmuteCard(0, 0, defaultGameSession)).toBeNull();
     expect(selectTransmutation({ kind: "source", index: 99, card: deck[0]! }, defaultGameSession)).toBe(false);
     expect(readRunSession(defaultGameSession).activity).toEqual(initial);
-    expect(
-      selectTransmutation(
-        { kind: "source", index: 0, card: Object.fromEntries(Object.entries(deck[0]!).reverse()) as BattleCard },
-        defaultGameSession,
-      ),
-    ).toBe(true);
+    // Reordering retains every field, but fromEntries erases their required-key types.
+    const reordered = Object.fromEntries(Object.entries(deck[0]!).reverse()) as unknown as BattleCard;
+    expect(selectTransmutation({ kind: "source", index: 0, card: reordered }, defaultGameSession)).toBe(true);
     const activity = readRunSession(defaultGameSession).activity;
     if (activity.kind !== "transmutation") throw new Error("wrong visit");
     const offers = getTransmutationOffers(activity.data);
@@ -183,6 +180,7 @@ describe("alchemy visit transactions and resume", () => {
     });
     expect(selectTransmutation({ kind: "source", index: 0, card: source }, defaultGameSession)).toBe(true);
     setRunProgress({ runDeck: [source] });
+    expect(selectTransmutation({ kind: "keyword", keyword: "companion" }, defaultGameSession)).toBe(false);
     const before = snapshotRun(defaultGameSession);
     expect(transmuteCard(0, 0, defaultGameSession)).toBeNull();
     expect(snapshotRun(defaultGameSession)).toEqual(before);

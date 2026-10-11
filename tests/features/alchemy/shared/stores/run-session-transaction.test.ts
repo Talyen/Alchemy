@@ -26,7 +26,8 @@ import {
   setMaterials as setRunProfileMaterials,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { addGearCurrencies } from "@/features/alchemy/shared/stores/gear-actions";
-import { readGameplayState, useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import {

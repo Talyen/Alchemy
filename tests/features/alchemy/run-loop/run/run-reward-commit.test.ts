@@ -4,7 +4,7 @@ import "../../../../helpers/mock-audio";
 import { beforeEach, expect, it } from "vitest";
 import { claimRunReward } from "@/features/alchemy/run-loop/run/reward-commands";
 import { readActiveRun, readRunSession, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { createEmptyRewardState } from "@/lib/active-run-session";

@@ -1,7 +1,8 @@
 import { defaultGameSession } from "@/app/application-session";
 import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { readGameplayState, useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
+import { useGameplayStateStore } from "./gameplay-state-store";
+import { readGameplayState, type GameplayState } from "./gameplay-state-reads";
 import { RUN_SCREEN_SELECTORS, type RunDataScreen, type RunScreenDataByScreen } from "./run-screen-data";
 
 function useRetainedScreenData<S extends RunDataScreen>(screen: S): RunScreenDataByScreen[S] {

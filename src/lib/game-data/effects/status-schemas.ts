@@ -86,6 +86,7 @@ const cleansePlayerStatusToDamageEffectDefinition = {
     kind: z.literal("cleanse-player-status-to-damage"),
     status: z.literal("burn"),
     damageType: DamageTypeSchema,
+    lifesteal: z.boolean().optional(),
   }),
 } satisfies EffectKindDefinition<"cleanse-player-status-to-damage">;
 

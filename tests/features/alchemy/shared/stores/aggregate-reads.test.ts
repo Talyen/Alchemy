@@ -1,7 +1,8 @@
 import { setBattleActiveForTest as setHasActiveBattle } from "../../../../helpers/run-domain-store-test";
 import { beforeEach, describe, expect, it } from "vitest";
 import { deepFreeze } from "@/features/alchemy/shared/stores/store-utils";
-import { readGameplayState, useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   setFinishedRunCharacters,

@@ -20,7 +20,7 @@ import { createRunRngState, createRunStateRng } from "@/lib/rng";
 import type { Destination } from "@/lib/routing";
 import { getAvailableDestinations } from "@/lib/routing/destination-availability";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { commitVictoryRewards, type CommitVictoryRewardsDeps } from "@/features/alchemy/run-loop/run/victory-commands";

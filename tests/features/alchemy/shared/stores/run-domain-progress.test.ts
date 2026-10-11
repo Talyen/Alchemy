@@ -32,7 +32,7 @@ import { patchBattleState } from "../../../../fixtures/battle";
 import { rebindLiveRunMeta } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { cardById, computeTalentPoints, type BattleCard } from "@/lib/game-data";
 import { purchaseTalent } from "@/features/alchemy/shared/stores/navigation-commands";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import {
   readActiveRun,
   readBattle,

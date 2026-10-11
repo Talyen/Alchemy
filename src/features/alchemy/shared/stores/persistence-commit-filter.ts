@@ -1,5 +1,5 @@
 import type { GameSession } from "./game-session-types";
-import { type GameplayState } from "./gameplay-state-store";
+import { type GameplayState } from "./gameplay-state-reads";
 import { createDefaultProfileSaveFields, type ProfileSaveFields } from "./profile-store-types";
 import type { RunDomainDataState, RunSessionFields, TRANSIENT_RUN_KEYS } from "./run-domain-types";
 import { RUN_PROFILE_SAVE_KEYS } from "./run-profile-codec";
@@ -10,7 +10,7 @@ import {
   WILDWOOD_GATED_SESSION_KEY,
 } from "./run-resume-codec";
 import { sessionRuntime } from "./session-runtime";
-import { createDefaultSettingsSaveFields, type SettingsSaveFields } from "./settings-store";
+import { createDefaultSettingsSaveFields, type SettingsSaveFields } from "./settings-state";
 
 // Dirty-tracking for persistence: fires only for persisted inputs. A new run,
 // battle, or session field must be classified below before typecheck passes.

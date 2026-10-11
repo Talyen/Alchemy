@@ -19,12 +19,12 @@ import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/compan
 import { canAfford } from "@/lib/homestead/inventory";
 import { canUpgradeTierItem } from "@/lib/homestead/upgrades";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { useProfileDiscoverySlice } from "@/features/alchemy/shared/stores/profile-store";
+import { useProfileDiscoverySlice } from "@/features/alchemy/shared/stores/use-profile-store";
 import {
   useActiveRunCharacterId,
   useHomesteadProgressSlice,
   useTalentProgressSlice,
-} from "@/features/alchemy/shared/stores/run-reads";
+} from "@/features/alchemy/shared/stores/use-run-reads";
 import type { Screen } from "@/lib/routing";
 
 interface CompanionCardEntry {

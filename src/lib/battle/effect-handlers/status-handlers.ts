@@ -116,7 +116,7 @@ export const STATUS_HANDLERS = {
     return dealDamageToEnemy(
       cleansed,
       card,
-      { kind: "damage", damageType: effect.damageType, amount },
+      { kind: "damage", damageType: effect.damageType, amount, ...(effect.lifesteal ? { lifesteal: true } : {}) },
       combatTexts,
       context,
     );

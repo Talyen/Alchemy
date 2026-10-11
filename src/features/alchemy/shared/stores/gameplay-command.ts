@@ -4,7 +4,7 @@ import { produce } from "immer";
 import type { CommandOutcome, SynchronousResult } from "./command-outcome";
 import type { GameSession } from "./game-session-types";
 import type { GameplayState } from "./gameplay-state";
-import { subscribeGameplayCommits } from "./gameplay-state-store";
+import { subscribeGameplayCommits } from "./gameplay-state-reads";
 import { sessionRuntime, type SessionRuntime } from "./session-runtime";
 import { snapshotReadonlyValue } from "./readonly-view";
 import { deepFreezeInDev } from "./store-utils";

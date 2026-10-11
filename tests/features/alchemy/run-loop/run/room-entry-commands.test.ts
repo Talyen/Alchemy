@@ -3,7 +3,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { enterRunRoom } from "@/features/alchemy/run-loop/run/room-entry-commands";
 import * as shopInitialization from "@/features/alchemy/run-loop/shop/shop-initialization";
 import { createGameSession, type GameSession } from "@/features/alchemy/shared/stores/game-session";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";

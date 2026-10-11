@@ -28,7 +28,7 @@ import {
   setShopState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/app/application-session";

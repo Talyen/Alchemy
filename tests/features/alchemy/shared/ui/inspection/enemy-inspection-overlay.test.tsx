@@ -74,6 +74,9 @@ describe("enemy inspection presentation", () => {
     render(<EnemyInspectionOverlay open entry={enemyById.inquisitor} modifiers={["tempered"]} onClose={onClose} />);
     await waitForArtwork();
     const dialog = screen.getByRole("dialog", { name: "Inquisitor" });
+    const close = within(dialog).getByRole("button", { name: "Close enemy inspection" });
+    // Wait for deferred dialog focus before hovering; that focus intentionally dismisses tooltips.
+    await waitFor(() => expect(document.activeElement).toBe(close));
     expect(dialog.querySelector('[data-trait="tempered"]')?.getAttribute("data-trait-variant")).toBe("default");
     expect(
       new Set([...dialog.querySelectorAll("[data-trait]")].map((node) => node.getAttribute("data-trait-variant"))),
@@ -98,7 +101,7 @@ describe("enemy inspection presentation", () => {
     fireEvent.click(ability);
     expect(within(ability).getByRole("img").getAttribute("alt")).toBe("Sunder");
     expect(onClose).not.toHaveBeenCalled();
-    fireEvent.click(within(dialog).getByRole("button", { name: "Close enemy inspection" }));
+    fireEvent.click(close);
     expect(onClose).toHaveBeenCalledOnce();
   });
 });

@@ -402,7 +402,7 @@ function describeEffects(
     }
     lines.push(...(effect.kind === "damage" ? damageLines(effect, address) : [createEffectLine(effect, address)]));
   }
-  if (effects.some((effect) => effect.kind === "damage" && effect.lifesteal)) lines.push(["Leech"]);
+  if (effects.some((effect) => "lifesteal" in effect && effect.lifesteal)) lines.push(["Leech"]);
   if (effects.some((effect) => effect.kind === "summon-companion")) lines.push(["Companion"]);
   return lines;
 }
@@ -413,7 +413,7 @@ export function createEffectDescription(
 ): import("./card-description-model").CardDescription {
   const lines = describeEffects(effects, (effectIndex) => ({ effectIndex }));
   const keywordCount =
-    Number(effects.some((effect) => effect.kind === "damage" && effect.lifesteal)) +
+    Number(effects.some((effect) => "lifesteal" in effect && effect.lifesteal)) +
     Number(effects.some((effect) => effect.kind === "summon-companion"));
   return lines.map((parts, index) => ({ parts, role: index >= lines.length - keywordCount ? "keyword" : "effect" }));
 }

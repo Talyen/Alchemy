@@ -37,10 +37,14 @@ function TooltipContent({ visible, children }: { visible: boolean; children: Rea
 }
 
 function useTooltipVisible(triggerRef: RefObject<HTMLElement | null>, requested: boolean) {
-  const [suppressed, setSuppressed] = useState(false);
+  const [suppression, setSuppression] = useState({ requested, suppressed: false });
+  if (suppression.requested !== requested) setSuppression({ requested, suppressed: false });
   useLayoutEffect(() => {
-    setSuppressed(false);
     if (!requested) return;
+    const setSuppressed = (suppressed: boolean) =>
+      setSuppression((current) =>
+        current.requested === requested && current.suppressed === suppressed ? current : { requested, suppressed },
+      );
     const hasActiveFocus = () => document.hasFocus() && triggerRef.current?.contains(document.activeElement);
     const onPointer = (event: PointerEvent) => {
       const trigger = triggerRef.current;
@@ -74,7 +78,7 @@ function useTooltipVisible(triggerRef: RefObject<HTMLElement | null>, requested:
       window.removeEventListener("blur", onBlur);
     };
   }, [triggerRef, requested]);
-  return requested && !suppressed;
+  return requested && !suppression.suppressed;
 }
 
 export function PortaledTooltip({

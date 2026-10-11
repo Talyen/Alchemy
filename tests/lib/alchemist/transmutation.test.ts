@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { applyCardEffects } from "@/lib/battle";
+import { makeState } from "../../fixtures/battle";
+import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
 import {
   cardById,
   cardLibrary,
@@ -16,6 +19,8 @@ import { createSeededRng } from "@/lib/rng";
 import { BattleCardSchema } from "@/lib/validation/save-schemas/battle-card-schemas";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { corruptCard } from "@/lib/corruption";
+import { strengthenPotion } from "@/lib/alchemist/brewing";
+import { createMixedPotion, doublePotionPotency } from "@/lib/alchemist";
 
 function card(effects: BattleCardEffect[]): BattleCard {
   return withCardDescription({ ...cardById.slash!, uid: 17, effects }, createEffectDescription(effects));
@@ -31,6 +36,85 @@ function numericFields(value: unknown, path = ""): Record<string, number> {
 }
 
 describe("Transmutation alterations", () => {
+  it("adds Archery to Exorcism and applies its attack bonuses without changing the Health cost", () => {
+    const source = cardById.exorcism!;
+    const result = getTransmutationVariants(source, "archery", [source])[0]?.result;
+    expect(result).toBeDefined();
+    expect(result!.effects).toEqual(source.effects);
+    const state = makeState({ playerHealth: 20, playerStatuses: defaultPlayerStatusValues({ burn: 4 }) });
+    const before = applyCardEffects(state, source, []);
+    const after = applyCardEffects(
+      { ...state, talentEffects: { ...state.talentEffects, archeryDamageWithoutBlock: 3 } },
+      result!,
+      [],
+    );
+    expect(before.enemyHealth - after.enemyHealth).toBe(3);
+    expect(after.playerHealth).toBe(before.playerHealth);
+  });
+
+  it.each(["gamblers-shot", "exorcism"] as const)("adds persistent Leech to %s and heals from its damage", (id) => {
+    const source = cardById[id]!;
+    const result = getTransmutationVariants(source, "leech", [source])[0]?.result;
+    expect(result).toBeDefined();
+    const loaded = hydrateCard(BattleCardSchema.parse(result));
+    expect(loaded).toEqual(result);
+    expect(getCardKeywords(loaded)).toContain("leech");
+    expect(loaded.descriptionLines).toContain("Leech");
+    const state = makeState({
+      playerHealth: 10,
+      playerStatuses: defaultPlayerStatusValues({ burn: 4 }),
+      rng: () => 0.99,
+    });
+    const before = applyCardEffects(state, source, []);
+    const after = applyCardEffects(state, loaded, []);
+    expect(after.enemyHealth).toBe(before.enemyHealth);
+    expect(after.playerStatuses).toEqual(before.playerStatuses);
+    expect(after.playerHealth - before.playerHealth).toBe(Math.round((state.enemyHealth - before.enemyHealth) / 2));
+    expect(after.playerHealth).toBeGreaterThan(before.playerHealth);
+  });
+
+  it("converts Gambler's Shot damage pools without changing its random magnitude range", () => {
+    const source = cardById["gamblers-shot"]!;
+    const variants = getTransmutationVariants(source, "burn", [source]);
+    expect(variants.map((variant) => variant.sourceKeyword)).toEqual(["stun", "physical", "bleed"]);
+    expect(variants[1]!.result.effects).toEqual([
+      { kind: "random-damage", minAmount: 1, maxAmount: 4, damageTypePool: ["stun", "burn", "bleed"] },
+    ]);
+    expect(hydrateCard(BattleCardSchema.parse(variants[1]!.result))).toEqual(variants[1]!.result);
+  });
+
+  it("keeps the Archery description when distilling a transmuted Acid Potion", () => {
+    const aimed = getTransmutationVariants(cardById["acid-potion"]!, "archery", [])[0]!.result;
+    for (const result of [strengthenPotion(aimed)!, doublePotionPotency(aimed)]) {
+      expect(result.descriptionLines).toContain("Archery");
+      expect(getCardKeywords(result)).toContain("archery");
+      expect(hydrateCard(BattleCardSchema.parse(result))).toEqual(result);
+    }
+  });
+
+  it("keeps native Archery mechanics when mixing a transmuted Potion, including identical effects", () => {
+    const acid = cardById["acid-potion"]!;
+    const aimed = getTransmutationVariants(acid, "archery", [])[0]!.result;
+    for (const other of [acid, cardById["health-potion"]!]) {
+      for (const ingredients of [
+        [aimed, other],
+        [other, aimed],
+      ] as const) {
+        const result = createMixedPotion(...ingredients);
+        expect(getCardKeywords(result)).toContain("archery");
+        expect(result.descriptionLines.filter((line) => line === "Archery")).toHaveLength(1);
+        expect(hydrateCard(BattleCardSchema.parse(result))).toEqual(result);
+      }
+    }
+  });
+
+  it("checks the generated effect-line limit when Leech expands repeated damage descriptions", () => {
+    const source = card(Array.from({ length: 6 }, () => ({ kind: "damage", damageType: "physical", amount: 1 })));
+    expect(source.description!.filter((line) => line.role === "effect")).toHaveLength(3);
+    expect(getTransmutationVariants(source, "leech", [source])).toEqual([]);
+    expect(getTransmutationVariants(source, "archery", [source])).toHaveLength(1);
+  });
+
   it("converts every matching damage occurrence through branches and repeats without changing numbers or costs", () => {
     const source = card([
       { kind: "damage", damageType: "physical", amount: 4, ignoreArmor: true },
@@ -147,6 +231,7 @@ describe("Transmutation alterations", () => {
       expect(getTransmutationVariants(source, "wish", [source])).toEqual([]);
     expect(getTransmutationVariants(cardById["burning-blade"]!, "burn", [])).toEqual([]);
     expect(getTransmutationVariants(cardById["wishing-well"]!, "wish", [])).toEqual([]);
+    expect(getTransmutationVariants(cardById["pack-tactics"]!, "wish", [])).toEqual([]);
     const full = card(Array.from({ length: 4 }, () => ({ kind: "heal", amount: 1 })));
     expect(getTransmutationVariants(full, "wish", [])).toEqual([]);
   });

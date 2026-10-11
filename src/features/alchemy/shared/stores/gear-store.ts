@@ -1,12 +1,9 @@
 import type { CharacterId } from "@/lib/game-data";
 import { trinketLibrary } from "@/lib/game-data";
 import { GEAR_CHARACTER_IDS } from "@/lib/gear";
-import { useMemo } from "react";
-import { useShallow } from "zustand/react/shallow";
 import type { GameSession } from "./game-session-types";
-import { readGameplayState, useGameplayStateStore } from "./gameplay-state-store";
+import { readGameplayState } from "./gameplay-state-reads";
 import { createDefaultGearSaveFields, initializeGear } from "./gear-actions";
-import { deriveGearCombatRestrictions } from "./gear-combat-restrictions";
 import type { GearSaveFields, GearStateFields } from "./gear-store-types";
 import { type GameplayPersistenceCodec } from "./persistence-codec";
 export type { GearCombatRestrictions } from "./gear-combat-restrictions";
@@ -56,39 +53,6 @@ export const gearPersistenceCodec: GameplayPersistenceCodec<GearSaveFields> = {
 };
 
 export type GearArmorySlice = GearStateFields;
-
-export function useGearCombatRestrictions() {
-  const selection = useGameplayStateStore(
-    useShallow((s) => ({
-      activityKind: s.session.activity.kind,
-      characterId: s.run.activeRun.characterId,
-      contentSystemType: s.run.activeRun.contentSystemType,
-      loadouts: s.gear.loadouts,
-      equippedTrinkets: s.gear.equippedTrinkets,
-    })),
-  );
-  return useMemo(
-    () =>
-      deriveGearCombatRestrictions({
-        session: { activity: { kind: selection.activityKind } },
-        run: { activeRun: { characterId: selection.characterId, contentSystemType: selection.contentSystemType } },
-        gear: { loadouts: selection.loadouts, equippedTrinkets: selection.equippedTrinkets },
-      }),
-    [selection],
-  );
-}
-
-export function useGearArmorySlice(): GearArmorySlice {
-  return useGameplayStateStore(
-    useShallow((state) => ({
-      inventories: state.gear.inventories,
-      loadouts: state.gear.loadouts,
-      ownedTrinketIds: state.gear.ownedTrinketIds,
-      equippedTrinkets: state.gear.equippedTrinkets,
-      craftingCurrencies: state.gear.craftingCurrencies,
-    })),
-  );
-}
 
 function hasAnyOwnedGear(inventories: GearStateFields["inventories"], ownedTrinketIds: string[]): boolean {
   return ownedTrinketIds.length > 0 || GEAR_CHARACTER_IDS.some((id) => inventories[id].length > 0);

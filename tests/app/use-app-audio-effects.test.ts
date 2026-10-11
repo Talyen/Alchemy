@@ -23,6 +23,9 @@ vi.mock("@/features/alchemy/shared/stores/run-reads", () => ({
     hasActiveBattle: battleActive.value,
     battleState: { currentEnemy: { id: battleActive.enemyId, enemyType: battleActive.enemyType } },
   }),
+}));
+
+vi.mock("@/features/alchemy/shared/stores/use-run-reads", () => ({
   useHasActiveBattle: () => battleActive.value,
 }));
 

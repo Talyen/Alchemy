@@ -8,7 +8,7 @@ import { createBattleStartCommands } from "@/features/alchemy/shared/stores/batt
 import { createLabyrinthNodeRouting } from "@/features/alchemy/shell/labyrinth-node-routing";
 import { createScreenNavigation } from "@/features/alchemy/shell/screen-navigation";
 import { showRunScreen } from "@/features/alchemy/shared/stores/navigation-commands";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { readActiveRunScreen, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";

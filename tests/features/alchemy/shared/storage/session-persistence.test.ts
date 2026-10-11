@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage/session-persistence";
 import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
 import { createPlaythroughController } from "@/app/playthrough/controller";
 

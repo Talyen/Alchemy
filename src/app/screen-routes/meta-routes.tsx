@@ -19,7 +19,7 @@ import {
   useFinishedRunCharacters,
   useProfileCollectionSlice,
   useProfileDiscoverySlice,
-} from "@/features/alchemy/shared/stores/profile-store";
+} from "@/features/alchemy/shared/stores/use-profile-store";
 import {
   acceptCommand,
   rejectCommand,
@@ -38,7 +38,7 @@ import {
   useHomesteadProgressSlice,
   useHasActiveRun,
   useTalentProgressSlice,
-} from "@/features/alchemy/shared/stores/run-reads";
+} from "@/features/alchemy/shared/stores/use-run-reads";
 import type { MetaRouteCtx } from "./route-ctx";
 import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
 

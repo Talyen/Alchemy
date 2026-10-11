@@ -1,6 +1,6 @@
 import type { CharacterId } from "@/lib/game-data";
 import type { ContentSystemId } from "@/lib/content-systems/types";
-import type { GameplayState } from "./gameplay-state-store";
+import type { GameplayState } from "./gameplay-state-reads";
 
 export interface GearCombatRestrictions {
   characters: Partial<Record<CharacterId, ContentSystemId[]>>;

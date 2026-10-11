@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { createSessionPersistence, evaluateSaveCandidates } from "@/features/alchemy/shared/storage";
 import { defaultBattleState, battleSnapshot } from "@/lib/battle";
 import { createRunRngState } from "@/lib/rng";
@@ -157,6 +157,7 @@ it("does not retire committed terminal battles or partially publish a failed set
   ]);
   const session = createGameSession();
   sessions.push(session);
+  const before = readGameplayState(session);
   vi.spyOn(materials, "awardRunEndMaterials").mockImplementationOnce(() => {
     throw new Error("settlement failed");
   });
@@ -166,7 +167,7 @@ it("does not retire committed terminal battles or partially publish a failed set
   const root = readGameplayState(session);
   expect(root.session.activity.kind).toBe("inactive");
   expect(root.run.initialized).toBe(false);
-  expect(root.runProfile.talentXP.block).toBe(10);
+  expect(root).toBe(before);
 });
 
 it("retires a legacy Wildwood battle preparation without losing the run's earned progress", () => {

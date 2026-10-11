@@ -3,7 +3,7 @@ import { createCareerRuntime } from "@/app/playthrough/career-runtime";
 import { createPlaythroughFixture } from "@/app/playthrough/fixtures";
 import type { CareerConfig } from "@/app/playthrough/types";
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { registerSessionCleanup } from "@/features/alchemy/shared/stores/session-capabilities";
 import { describe, expect, it, vi } from "vitest";
 import { defaultGameSession } from "@/app/application-session";

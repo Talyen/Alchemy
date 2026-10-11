@@ -291,6 +291,14 @@ it("preserves layer boundaries and their owning exceptions", async () => {
       "src/features/alchemy/shared/ui/probe.tsx",
       'import { state } from "@/features/alchemy/shared/stores/gameplay-state-store";',
     ],
+    [
+      "src/features/alchemy/run-loop/probe.ts",
+      'import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";',
+    ],
+    [
+      "src/features/alchemy/shared/ui/probe.tsx",
+      'import { useHasActiveRun } from "@/features/alchemy/shared/stores/use-run-reads";',
+    ],
     ["src/features/alchemy/meta/screens/probe.tsx", 'import { navigation } from "@/app/use-app-navigation";'],
     ["src/lib/balance/probe.ts", 'import { createBattleState } from "@/lib/battle";'],
   ]) {

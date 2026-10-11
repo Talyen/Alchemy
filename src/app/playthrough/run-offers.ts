@@ -164,7 +164,8 @@ export function offerRunChoices(
       if (activity.kind !== "transmutation") break;
       const visit = activity.data;
       const selection = visit.transmutation;
-      const canExchange = (card: BattleCard, index: number) => canTransmuteCard(selection?.choices ?? [], card, index);
+      const canExchange = (card: BattleCard, index: number) =>
+        canTransmuteCard(selection?.choices ?? [], card, index, run.runDeck);
       if (visit.completed || !run.runDeck.some(canExchange)) {
         offer("transmutation-exit", "continue", 1, flow.advanceToNextDestination);
       } else if (!selection || selection.sourceIndex === null || !isTransmutationSourceCurrent(visit, run.runDeck)) {
@@ -180,7 +181,16 @@ export function offerRunChoices(
         });
       } else {
         const { sourceIndex } = selection;
-        getTransmutationOffers(visit).forEach((card, index) =>
+        getTransmutationOffers(visit).forEach((card, index) => {
+          if (
+            !canTransmuteCard(
+              selection.choices.filter((choice) => choice.keyword === card.transmuted),
+              selection.source!,
+              sourceIndex,
+              run.runDeck,
+            )
+          )
+            return;
           offer(
             "transmutation-confirm",
             card.transmuted!,
@@ -190,8 +200,8 @@ export function offerRunChoices(
               return transmuteCard(sourceIndex, index, gameSession);
             },
             index,
-          ),
-        );
+          );
+        });
       }
       break;
     }

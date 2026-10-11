@@ -6,7 +6,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-state-init";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import type { GameSession } from "./game-session-types";
-import { readGameplayState } from "./gameplay-state-store";
+import { readGameplayState } from "./gameplay-state-reads";
 import { type GameplayPersistenceCodec } from "./persistence-codec";
 import { RUN_PROFILE_SAVE_KEYS } from "./run-profile-save-fields";
 

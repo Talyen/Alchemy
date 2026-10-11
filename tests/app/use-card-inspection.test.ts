@@ -3,7 +3,7 @@ import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { isDeckInspectionVisible, useCardInspection } from "@/app/use-card-inspection";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { battlePresentation } from "@/app/battle-presentation";
 import { makeTestCard } from "../fixtures/battle";

@@ -16,7 +16,7 @@ import {
 } from "@/features/alchemy/run-loop/battle/controller-utils";
 import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/end-turn-ui";
 import { useBattleOpeningDraw } from "@/features/alchemy/run-loop/battle/use-battle-opening-draw";
-import { useHasActiveBattle } from "@/features/alchemy/shared/stores/run-reads";
+import { useHasActiveBattle } from "@/features/alchemy/shared/stores/use-run-reads";
 import { preferredAutoplayEnabled, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import type { CardRect } from "@/features/alchemy/shared/types";

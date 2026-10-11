@@ -54,7 +54,7 @@ vi.mock("@/features/alchemy/run-loop/screens", () => {
   };
 });
 
-vi.mock("@/features/alchemy/shared/stores/run-reads", () => ({
+vi.mock("@/features/alchemy/shared/stores/use-run-reads", () => ({
   useTalentEffects: () => ({}),
 }));
 

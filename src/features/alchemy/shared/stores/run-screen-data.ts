@@ -1,7 +1,7 @@
 import { readActivityData } from "@/lib/active-run-session";
 import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
 import type { BattleCard } from "@/lib/game-data";
-import type { GameplayState } from "./gameplay-state-store";
+import type { GameplayState } from "./gameplay-state-reads";
 
 // Preserve the card-domain contract rather than exposing the save schema type.
 function selectRunDeck(state: GameplayState): BattleCard[] {

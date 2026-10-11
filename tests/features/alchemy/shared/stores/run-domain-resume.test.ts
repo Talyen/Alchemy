@@ -214,7 +214,11 @@ describe("session facade API", () => {
 
   it("restores Archery metadata for a card queued behind a full hand", () => {
     const arrow = { ...cardById["venom-arrow"]!, uid: 42 };
-    const parsed = PersistedBattleStateSchema.parse({ ...defaultBattleState(), pendingHandCards: [arrow] });
+    // Exercise missing metadata explicitly; the save schema now preserves authored tags.
+    const parsed = PersistedBattleStateSchema.parse({
+      ...defaultBattleState(),
+      pendingHandCards: [{ ...arrow, tags: undefined }],
+    });
     expect(parsed.pendingHandCards[0]?.tags).toBeUndefined();
     initializeActiveBattle(parsed);
     const queued = readBattle(defaultGameSession).battleState.pendingHandCards[0];

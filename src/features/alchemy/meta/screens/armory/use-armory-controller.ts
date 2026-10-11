@@ -14,12 +14,9 @@ import {
 import { resolveActiveRunForSave, flushSaveAfterGearMutation } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 
-import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
-import {
-  useGearArmorySlice,
-  useGearCombatRestrictions,
-  type GearCombatRestrictions,
-} from "@/features/alchemy/shared/stores/gear-store";
+import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/use-profile-store";
+import { type GearCombatRestrictions } from "@/features/alchemy/shared/stores/gear-store";
+import { useGearArmorySlice, useGearCombatRestrictions } from "@/features/alchemy/shared/stores/use-gear-store";
 import { mutateGearWithFlush, salvageGearWithFlush } from "./armory-commands";
 import type { GearDraftView } from "@/features/alchemy/shared/stores/gear-store-types";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";

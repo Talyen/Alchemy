@@ -1,5 +1,10 @@
 # Save Migration Guide
 
+Random damage and cleanse-to-damage effects support optional `lifesteal`, used by
+Transmutation's Leech addition. Omission keeps ordinary damage. Current card and
+battle saves preserve the flag, its Leech description, and keyword detection;
+there is no save-version change.
+
 ## Supported baseline
 
 Transmutation visits save three class-independent keyword choices and each eligible

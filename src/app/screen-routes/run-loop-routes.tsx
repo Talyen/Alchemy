@@ -40,7 +40,7 @@ import {
   useTrinketShopScreenData,
   useWildwoodRemovalScreenData,
 } from "@/features/alchemy/shared/stores/use-run-screen-data";
-import { useHomesteadEffects, useTalentEffects } from "@/features/alchemy/shared/stores/run-reads";
+import { useHomesteadEffects, useTalentEffects } from "@/features/alchemy/shared/stores/use-run-reads";
 import { getCampfireHealFraction } from "@/lib/campfire-heal";
 import type { BattleRouteCtx, RunLoopRouteCtx } from "./route-ctx";
 

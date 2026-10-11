@@ -43,7 +43,8 @@ export function TransmutationScreen({
   const keyboardInput = useRef(false);
   const restoreFocus = useRef(false);
   const selection = visit.transmutation;
-  const canExchange = (card: BattleCard, index: number) => canTransmuteCard(selection?.choices ?? [], card, index);
+  const canExchange = (card: BattleCard, index: number) =>
+    canTransmuteCard(selection?.choices ?? [], card, index, runDeck);
   const available = runDeck.some(canExchange);
   const completed = visit.completed;
   const staleSource = !!selection?.source && !completed && !isTransmutationSourceCurrent(visit, runDeck);
@@ -84,7 +85,7 @@ export function TransmutationScreen({
   }, [completed, available, onContinue, afterProgressSaved]);
 
   function select(command: TransmutationSelectionCommand) {
-    if (locked || committingRef.current || continued.current) return;
+    if (locked || isProgressSavePending() || committingRef.current || continued.current) return;
     restoreFocus.current = keyboardInput.current && panelRef.current?.contains(document.activeElement) === true;
     if (onSelect(command)) {
       playUISound("transmuteSelect");
@@ -98,6 +99,7 @@ export function TransmutationScreen({
   function confirm() {
     if (
       locked ||
+      isProgressSavePending() ||
       committingRef.current ||
       continued.current ||
       staleSource ||
@@ -116,6 +118,12 @@ export function TransmutationScreen({
       setCommitting(false);
       setError("This alteration is no longer available.");
     }
+  }
+
+  function leave() {
+    if (locked || isProgressSavePending() || committingRef.current || continued.current) return;
+    continued.current = true;
+    onContinue();
   }
 
   if (!available && !completed) return null;
@@ -150,7 +158,7 @@ export function TransmutationScreen({
                 />
               )}
             />
-            <Button size="lg" variant="outline" disabled={locked} onClick={onContinue}>
+            <Button size="lg" variant="outline" disabled={locked} onClick={leave}>
               Leave
             </Button>
           </>
@@ -164,7 +172,7 @@ export function TransmutationScreen({
                   pill
                   showTooltip
                   selected={keyword === choice.keyword}
-                  disabled={locked || !offers.some((offer) => offer.transmuted === choice.keyword)}
+                  disabled={locked || !canTransmuteCard([choice], source, selection?.sourceIndex ?? undefined, runDeck)}
                   className="px-6 py-4 text-lg"
                   onSelect={() => select({ kind: "keyword", keyword: choice.keyword })}
                 />
@@ -208,7 +216,21 @@ export function TransmutationScreen({
               Back
             </Button>
             {keyword && (
-              <Button size="lg" variant="primary" disabled={locked || selection?.offerIndex === null} onClick={confirm}>
+              <Button
+                size="lg"
+                variant="primary"
+                disabled={
+                  locked ||
+                  !preview ||
+                  !canTransmuteCard(
+                    selection?.choices.filter((choice) => choice.keyword === preview.transmuted) ?? [],
+                    source,
+                    selection?.sourceIndex ?? undefined,
+                    runDeck,
+                  )
+                }
+                onClick={confirm}
+              >
                 Transmute
               </Button>
             )}

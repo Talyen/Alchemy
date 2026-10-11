@@ -127,7 +127,7 @@ export function selectTransmutation(selection: TransmutationSelectionCommand, ga
         if (
           !Number.isInteger(selection.index) ||
           !source ||
-          !canTransmuteCard(current.choices, source, selection.index) ||
+          !canTransmuteCard(current.choices, source, selection.index, deck) ||
           !isTransmutationSourceCurrent(
             { ...visit, transmutation: { ...current, sourceIndex: selection.index, source: selection.card } },
             deck,
@@ -136,8 +136,16 @@ export function selectTransmutation(selection: TransmutationSelectionCommand, ga
           return rejectCommand("Card is no longer available", false);
         next.sourceIndex = selection.index;
         next.source = cloneBattleCard(source);
-        next.offerIndex = 0;
-        next.keyword = getTransmutationOffers({ ...visit, transmutation: next })[0]!.transmuted!;
+        const offers = getTransmutationOffers({ ...visit, transmutation: next });
+        next.offerIndex = offers.findIndex((offer) =>
+          canTransmuteCard(
+            current.choices.filter((choice) => choice.keyword === offer.transmuted),
+            source,
+            selection.index,
+            deck,
+          ),
+        );
+        next.keyword = offers[next.offerIndex]!.transmuted!;
       } else if (selection.kind === "back") {
         next.keyword = null;
         next.offerIndex = null;
@@ -146,7 +154,17 @@ export function selectTransmutation(selection: TransmutationSelectionCommand, ga
       } else {
         if (!isTransmutationSourceCurrent(visit, deck)) return rejectCommand("Your deck changed", false);
         const offerIndex = getTransmutationOffers(visit).findIndex((card) => card.transmuted === selection.keyword);
-        if (offerIndex < 0) return rejectCommand("Keyword is unavailable", false);
+        if (
+          offerIndex < 0 ||
+          !current.source ||
+          !canTransmuteCard(
+            current.choices.filter((choice) => choice.keyword === selection.keyword),
+            current.source,
+            current.sourceIndex ?? undefined,
+            deck,
+          )
+        )
+          return rejectCommand("Keyword is unavailable", false);
         next.keyword = selection.keyword;
         next.offerIndex = offerIndex;
       }

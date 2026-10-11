@@ -125,7 +125,12 @@ export const BATTLE_NO_FEATURES = [
 /** @type {ImportPattern[]} */
 export const DOMAIN_STORE_PATTERNS = [
   {
-    group: ["**/gameplay-state-store", "**/gameplay-state", "@/features/alchemy/shared/stores/gameplay-state-store"],
+    group: [
+      "**/gameplay-state-store",
+      "**/gameplay-state-reads",
+      "**/gameplay-state",
+      "@/features/alchemy/shared/stores/gameplay-state-store",
+    ],
     message: "Import capability reads, writes, commands, or run-lifecycle instead of the low-level gameplay aggregate.",
   },
   {
@@ -278,6 +283,7 @@ export const UI_NO_SESSION_STORES = [
     group: [
       "**/stores/run-session-*",
       "**/stores/run-reads",
+      "**/stores/use-run-reads",
       "@/features/alchemy/shared/stores/run-session-write-port",
       "@/features/alchemy/shared/stores/run-reads",
       "@/features/alchemy/shared/stores/gameplay-state-store",

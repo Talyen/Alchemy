@@ -15,7 +15,7 @@ import { emptyShopState, readActivityData } from "@/lib/active-run-session";
 import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { createDraftRunRandomSource, deductGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { runShopTransaction } from "@/features/alchemy/run-loop/shop/shop-transactions";
 import { playGoldSpend, playUISound } from "@/lib/audio";

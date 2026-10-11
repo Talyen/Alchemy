@@ -10,7 +10,7 @@ import { readRunResumeScreen, readActiveRunScreen } from "@/features/alchemy/sha
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setRunProgressActivity, resetNavigation } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { showRunScreen } from "@/features/alchemy/shared/stores/navigation-commands";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { emptyShopState, createEmptyRewardState } from "@/lib/active-run-session";
 
