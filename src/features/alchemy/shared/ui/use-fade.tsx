@@ -93,10 +93,13 @@ export function FadeSlot({
   swapKey,
   className,
   children,
+  onReady,
   ...props
 }: {
   swapKey: string | number;
   children: ReactNode;
+  // Lets actions outside the slot wait for the displayed identity and its artwork.
+  onReady?: (shownKey: string | number) => void;
 } & HTMLAttributes<HTMLDivElement>) {
   const { shown: shownKey, phase } = useSequentialFadeSwap({
     target: swapKey,
@@ -106,6 +109,10 @@ export function FadeSlot({
   // screen inert again. New images still wait individually for decoding.
   const { ref: artworkRef, pending: artworkPending } = useArtworkReady(shownKey, { initialRevealOnly: true });
   const isLive = shownKey === swapKey;
+  const onReadyRef = useLatestRef(onReady);
+  useEffect(() => {
+    if (isLive && !artworkPending) onReadyRef.current?.(shownKey);
+  }, [isLive, artworkPending, shownKey, onReadyRef]);
   const heldChildren = useHeldWhile(isLive, children);
   const heldClassName = useHeldWhile(isLive, className);
   const { style, ...restProps } = props;
