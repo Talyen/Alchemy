@@ -1,4 +1,4 @@
-import { mutateGearWithFlush, salvageGearWithFlush } from "@/features/alchemy/meta/screens/armory/armory-commands";
+import { mutateGearWithFlush, salvageGearWithFlush } from "@/features/alchemy/shared/stores/meta-commands";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
 import { purchaseTalent } from "@/features/alchemy/shared/stores/navigation-commands";

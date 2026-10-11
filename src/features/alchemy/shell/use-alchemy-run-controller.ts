@@ -20,6 +20,8 @@ import { createRunFlowEngine } from "./run-flow-engine";
 import { useScreenTransitions } from "./use-screen-transitions";
 import { useSteamRichPresence } from "./use-steam-rich-presence";
 
+import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
+
 const protectVoid = <Args extends unknown[]>(action: (...args: Args) => void) =>
   guardProgressAction(defaultGameSession, action, undefined);
 
@@ -126,6 +128,23 @@ export function useAlchemyRunController(): AlchemyRunCommands {
         bondCompanion: guardProgressAction(defaultGameSession, runActions.bondCompanion, false),
         selectCollectionTab: protectVoid(runActions.selectCollectionTab),
         setCollectionPage: protectVoid(runActions.setCollectionPage),
+        armory: {
+          onEquip: guardProgressAction(defaultGameSession, runActions.equipGear, false),
+          onUnequip: protectVoid(runActions.unequipGear),
+          onEquipTrinket: protectVoid(runActions.equipTrinket),
+          onUnequipTrinket: protectVoid(runActions.unequipTrinket),
+          onSalvage: guardProgressAction(defaultGameSession, runActions.salvageGear, false),
+          onApplyCurrency: guardProgressAction(
+            defaultGameSession,
+            (currencyId, instanceId) => runActions.applyCurrencyToGear(currencyId, instanceId, undefined),
+            false,
+          ),
+          ...(isAlchemyDevBuild()
+            ? {
+                onSpawnDevGear: protectVoid((characterId) => runActions.spawnDevGear(characterId, undefined)),
+              }
+            : {}),
+        },
       },
       runSetup: {
         goToScreen: nav.goToScreen,
@@ -154,6 +173,7 @@ export function useAlchemyRunController(): AlchemyRunCommands {
           continueCampfire: protectVoid(nav.handleCampfireContinue),
           rest: guardProgressAction(defaultGameSession, runActions.restAtCampfire, false),
           brew: guardProgressAction(defaultGameSession, runActions.brewAtCampfire, null),
+          initializeCampfire: protectVoid(() => runActions.initializeAlchemyVisit("campfire")),
         },
         wildwood: {
           removeCard: protectVoid(nav.handleWildwoodRemoveCard),
@@ -169,6 +189,7 @@ export function useAlchemyRunController(): AlchemyRunCommands {
           select: guardProgressAction(defaultGameSession, runActions.selectTransmutation, false),
           exchange: guardProgressAction(defaultGameSession, runActions.transmuteCard, null),
           continue: protectVoid(nav.advanceToNextDestination),
+          initialize: protectVoid(() => runActions.initializeAlchemyVisit("transmutation")),
         },
         corruption: {
           handleCorruptCard: protectVoid(nav.handleCorruptCard),

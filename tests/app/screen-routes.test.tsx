@@ -5,12 +5,20 @@ import { renderAlchemyScreenRoute } from "@/app/screen-routes";
 import type { RenderAlchemyScreenProps } from "@/app/screen-routes/route-ctx";
 import { createMockRouteCommands } from "../helpers/run-controller";
 import { resetAllTestStores, setRunSession } from "../helpers/run-domain-store-test";
+import { initializeAlchemyVisit } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
+import { defaultGameSession } from "@/app/application-session";
 import { emptyAlchemyVisit, type AlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
 
-const { transmutationRender } = vi.hoisted(() => ({ transmutationRender: vi.fn() }));
+const { transmutationRender, armoryRender } = vi.hoisted(() => ({
+  transmutationRender: vi.fn(),
+  armoryRender: vi.fn(),
+}));
 
 vi.mock("@/features/alchemy/meta/screens", () => ({
-  ArmoryScreen: () => <div data-testid="armory-screen" />,
+  ArmoryScreen: (props: unknown) => {
+    armoryRender(props);
+    return <div data-testid="armory-screen" />;
+  },
   CollectionScreen: () => <div data-testid="collection-screen" />,
   GameModeSelectScreen: () => <div data-testid="game-mode-select-screen" />,
   HomesteadScreen: () => <div data-testid="homestead-screen" />,
@@ -68,9 +76,13 @@ vi.mock("@/app/app-screen-chrome-context", () => ({
 }));
 
 function createMockProps(screen: Screen): RenderAlchemyScreenProps {
+  const routeCommands = createMockRouteCommands();
+  routeCommands.runLoop.transmutation.initialize = vi.fn(() =>
+    initializeAlchemyVisit("transmutation", defaultGameSession),
+  );
   return {
     screen,
-    routeCommands: createMockRouteCommands(),
+    routeCommands,
     onClearSaveData: vi.fn(),
     onUnlockAllDevMode: vi.fn(),
     onBack: vi.fn(),
@@ -106,12 +118,31 @@ describe("SCREEN_ROUTES registry", () => {
     resetAllTestStores();
     setRunSession({ hasActiveRun: true, activity: { kind: "transmutation", data: emptyAlchemyVisit() } });
     transmutationRender.mockClear();
-    render(renderAlchemyScreenRoute(createMockProps("transmutation")));
+    const props = createMockProps("transmutation");
+    props.routeCommands.runLoop.transmutation.initialize = vi.fn(() =>
+      initializeAlchemyVisit("transmutation", defaultGameSession),
+    );
+    render(renderAlchemyScreenRoute(props));
+    expect(props.routeCommands.runLoop.transmutation.initialize).toHaveBeenCalledOnce();
     expect(transmutationRender).toHaveBeenCalled();
     for (const [visit] of transmutationRender.mock.calls) {
       expect(visit.transmutation?.choices).toHaveLength(3);
       expect(visit.completed).toBe(false);
     }
+  });
+
+  it("routes ArmoryScreen with route commands and progress callbacks", () => {
+    armoryRender.mockClear();
+    const props = createMockProps("armory");
+    render(renderAlchemyScreenRoute(props));
+    expect(armoryRender).toHaveBeenCalled();
+    const [passedProps] = armoryRender.mock.calls[0] as [
+      { onEquip: unknown; onUnequip: unknown; onSalvage: unknown; afterProgressSaved: unknown },
+    ];
+    expect(passedProps.onEquip).toBe(props.routeCommands.meta.armory.onEquip);
+    expect(passedProps.onUnequip).toBe(props.routeCommands.meta.armory.onUnequip);
+    expect(passedProps.onSalvage).toBe(props.routeCommands.meta.armory.onSalvage);
+    expect(passedProps.afterProgressSaved).toBe(props.routeCommands.progress.afterSaved);
   });
 
   it("throws an explicit error when attempting to render an unregistered screen", () => {

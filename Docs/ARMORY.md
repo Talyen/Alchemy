@@ -9,7 +9,8 @@ The Armory is available from the first launch, before finding any Gear. It is th
 The screen implementation lives under `src/features/alchemy/meta/screens/`.
 Start from these owners:
 
-- `armory/use-armory-controller.ts` — read facade and mutation/HP-sync/save-flush boundary consumed by the route.
+- `shared/stores/meta-commands.ts` — intent commands for gear mutation, crafting, salvage, and save flushes.
+- `armory/armory-screen-types.ts` — screen props composed from the gear read slice and route commands.
 - `armory-screen.tsx` (sibling of `armory/`) — screen composition and interaction wiring.
 - `armory/armory-equipment-panel.tsx` and `armory/armory-picker-panel.tsx` — equipment and inventory presentation, receiving targeting state and callbacks from the screen.
 - `armory/` — picker grids (`ArmoryPagedGrid` owner in `paged-picker-grid.tsx`, slot-filtered via `itemsMatchingSlot` in `armory-screen-actions.ts`), targeting state (`use-armory-targeting-state.ts`, `armory-item-state.ts`), panels, parts, and overlays — presentation only; they receive domain state and commands through props.
@@ -126,16 +127,15 @@ Homestead mutation timing remains unchanged.
   - `equipped-effects.ts` owns per-item and equipped battle stat aggregation.
   - `operations.ts` owns inventory salvage. The Gear barrel retains the public API; save repair imports its rule owners directly, without depending on crafting.
 - **Aggregate** — `gameplay-state-store` gear region via `gear-store.ts` (selectors + persistence codec) and `gear-session-command.ts` (HP-sync wrapper)
-- **Screen** — Armory route → `use-armory-controller.ts` → `armory-screen.tsx`
+- **Screen** — Armory route (`meta-routes.tsx`) → `routeCommands.meta.armory` → `armory-screen.tsx`
 - **Battle** — `computeGearManifest` → `BattleState.gearEffects`; rebound on live meta mutation
 - **Persistence** — `subscribeAlchemyPersistence` / `buildAlchemySaveDataFromStores` + immediate `flushSaveAfterGearMutation` (fire-and-forget; autosave owns retry)
 
 ### Read paths
 
 - **Armory access** — the Main Menu always offers Armory, including before any Gear or Trinkets are owned. Combat preserves browsing but makes the battling hero’s Armory tab read-only through `useGearCombatRestrictions`; see [Combat equipment restrictions](#combat-equipment-restrictions).
-- **`ArmoryScreen`** — reads Gear, Trinket ownership/equipment, and crafting currencies via `useGearArmorySlice`, combat reservations via `useGearCombatRestrictions`, plus finished-run and active-run reads bundled in `useArmoryController`.
+- **`ArmoryScreen`** — reads Gear, Trinket ownership/equipment, and crafting currencies via `useGearArmorySlice`, combat reservations via `useGearCombatRestrictions`, plus finished-run characters.
 - **Interaction policy** — `armory-item-state.ts` owns inventory/equipment click decisions alongside targeting affordances. Equipped slots retain locked browsing; inventory tiles retain reservation and compatibility guards. `use-armory-targeting-state.ts` owns mutually exclusive idle, salvage, currency, and salvage-confirmation modes through intent callbacks. Store commands still validate authoritative mutations.
-- **`useArmoryController`** — facade hook that bundles the read-only slice plus the mutation callbacks.
 - **Battle** — `computeGearManifest` is applied at battle start and rebound onto the live `BattleState` whenever gear, talents, or homestead change.
 - **Run start** — `run-start-command.ts` snapshots `computeGearManifest.maxHealth` into `RunStartSnapshot.gearMaxHealthBonus`.
 
@@ -160,9 +160,9 @@ After a Gear change, `rebindLiveRunMeta` synchronizes health when a run is activ
 
 Base item construction owns homestead salvage materials; rarity increases quantities rather than introducing affinity-based Herbs. Metal equipment yields Iron, wooden equipment yields Wood, magical staves and wands combine Wood and Gems, and jewelry and spellbooks yield Gems. Leather Armor and Quivers yield Hide, and the Leather Buckler yields Wood and Hide for its backing. Herbs remain available from enemy loot, Herb Garden progression, and run-end Homestead bonuses; removing gear Herbs reduces an optional supply, not access to progression. Currency rarity distributions remain unchanged.
 
-### `useArmoryController` facade
+### Route commands
 
-The route wrapper (`src/app/screen-routes/meta-routes.tsx`) consumes `useArmoryController` for the [read paths](#read-paths) and [write paths](#write-paths) above. The facade supplies combat reservations and finished-run characters, routes mutations through the appropriate Gear wrapper, and calls `flushSaveAfterGearMutation` only after success. Rejected taps remain feedback-only. Dev spawning uses `generateDevRandomGearInstance` through the same mutation and flush boundary.
+The route wrapper (`src/app/screen-routes/meta-routes.tsx`) wires `routeCommands.meta.armory` for the [read paths](#read-paths) and [write paths](#write-paths) above. The commands route mutations through the appropriate Gear wrapper and call `flushSaveAfterGearMutation` only after success. Rejected taps remain feedback-only. Dev spawning uses `generateDevRandomGearInstance` through the same mutation and flush boundary.
 
 ## Battle integration
 

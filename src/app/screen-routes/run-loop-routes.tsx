@@ -1,6 +1,4 @@
-import { defaultGameSession } from "@/app/application-session";
 import { TransmutationScreen } from "@/features/alchemy/run-loop/screens/transmutation-screen";
-import { initializeAlchemyVisit } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
 import { labyrinthCampfireHealing } from "@/lib/content-systems/labyrinth/room-rules";
 import { useEffect, useRef } from "react";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
@@ -169,7 +167,7 @@ function DestinationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 function CampfireScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.destinations;
   const r = useCampfireScreenData();
-  useEffect(() => initializeAlchemyVisit("campfire", defaultGameSession), []);
+  useEffect(() => commands.initializeCampfire(), [commands.initializeCampfire]);
   const healingBonus = useHomesteadEffects().homesteadHealing;
   const talentEffects = useTalentEffects();
   const healFraction = labyrinthCampfireHealing(getCampfireHealFraction(talentEffects.campfireHealBonus), r.modifiers);
@@ -313,8 +311,8 @@ function TransmutationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.transmutation;
   const r = useTransmutationScreenData();
   useEffect(() => {
-    initializeAlchemyVisit("transmutation", defaultGameSession);
-  }, []);
+    commands.initialize();
+  }, [commands.initialize]);
   // Empty offers before initialization do not mean the visit is unusable.
   if (!r.visit.completed && !r.visit.transmutation) return null;
   return (

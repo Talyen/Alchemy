@@ -2,7 +2,8 @@ import { setRunProgressActivity } from "@/features/alchemy/shared/stores/run-ses
 import { setBattleActiveForTest as setHasActiveBattle } from "../../../../../helpers/run-domain-store-test";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
+import "../../../../../helpers/mock-audio";
+import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { mutateGearForTest, resetAllTestStores } from "../../../../../helpers/run-domain-store-test";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
@@ -32,7 +33,7 @@ vi.mock("@/features/alchemy/shared/stores/run-lifecycle", async (importOriginal)
   };
 });
 
-describe("useArmoryController", () => {
+describe("Armory route commands", () => {
   beforeEach(() => {
     resetAllTestStores();
     vi.clearAllMocks();
@@ -44,7 +45,7 @@ describe("useArmoryController", () => {
     inventories.knight = [armor];
     mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
 
-    const { result } = renderHook(() => useArmoryController());
+    const { result } = renderHook(() => useAlchemyRunController().routeCommands.meta.armory);
 
     act(() => {
       dispatchRunSessionCommand(
@@ -84,7 +85,7 @@ describe("useArmoryController", () => {
       defaultGameSession,
     );
 
-    const { result } = renderHook(() => useArmoryController());
+    const { result } = renderHook(() => useAlchemyRunController().routeCommands.meta.armory);
 
     act(() => {
       result.current.onEquip("rogue", "body", armor);
@@ -114,7 +115,7 @@ describe("useArmoryController", () => {
       defaultGameSession,
     );
 
-    const { result } = renderHook(() => useArmoryController());
+    const { result } = renderHook(() => useAlchemyRunController().routeCommands.meta.armory);
 
     act(() => {
       expect(result.current.onSalvage(armor.instanceId)).toBe(true);
@@ -131,7 +132,7 @@ describe("useArmoryController", () => {
     const inventories = createEmptyGearInventories();
     mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
 
-    const { result } = renderHook(() => useArmoryController());
+    const { result } = renderHook(() => useAlchemyRunController().routeCommands.meta.armory);
     expect(result.current.onSpawnDevGear).toEqual(expect.any(Function));
 
     act(() => {
@@ -159,8 +160,7 @@ describe("useArmoryController", () => {
       defaultGameSession,
     );
 
-    const { result } = renderHook(() => useArmoryController());
-    expect(result.current.combatRestrictions.characters.knight).toEqual(["campaign"]);
+    const { result } = renderHook(() => useAlchemyRunController().routeCommands.meta.armory);
 
     act(() => {
       expect(result.current.onEquip("knight", "body", armor)).toBe(false);
@@ -191,7 +191,7 @@ describe("useArmoryController", () => {
       gear.addCurrencies({ voidstone: 1 });
     });
 
-    const { result } = renderHook(() => useArmoryController({ rng: () => 0 }));
+    const { result } = renderHook(() => useAlchemyRunController().routeCommands.meta.armory);
 
     act(() => {
       expect(result.current.onEquip("knight", "body", armor)).toBe(true);
@@ -223,7 +223,7 @@ describe("useArmoryController", () => {
     const inventories = createEmptyGearInventories();
     mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
 
-    const { result } = renderHook(() => useArmoryController());
+    const { result } = renderHook(() => useAlchemyRunController().routeCommands.meta.armory);
 
     act(() => {
       expect(result.current.onSalvage("missing")).toBe(false);

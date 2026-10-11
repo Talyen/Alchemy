@@ -7,7 +7,7 @@ import { isMainModule } from "./lib/is-main-module.mjs";
 
 export const ARCHITECTURE_SMOKE_FILES = Object.freeze([
   "src/features/alchemy/meta/screens/menu-screen.tsx",
-  "src/features/alchemy/meta/screens/armory/use-armory-controller.ts",
+  "src/features/alchemy/meta/screens/armory/armory-screen-types.ts",
   "src/features/alchemy/run-loop/screens/destination-screen.tsx",
   "src/features/alchemy/run-loop/shop/create-shop-actions.ts",
 ]);

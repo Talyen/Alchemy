@@ -23,8 +23,8 @@ import {
   useHasActiveRun,
   useTalentProgressSlice,
 } from "@/features/alchemy/shared/stores/use-run-reads";
+import { useGearArmorySlice, useGearCombatRestrictions } from "@/features/alchemy/shared/stores/use-gear-store";
 import type { MetaRouteCtx } from "./route-ctx";
-import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
 
 function MenuScreenRoute({ routeCommands }: MetaRouteCtx) {
   const commands = routeCommands.meta;
@@ -57,9 +57,24 @@ function MenuScreenRoute({ routeCommands }: MetaRouteCtx) {
   );
 }
 
-function ArmoryScreenRoute({ onBack, onOpenGameMenu }: MetaRouteCtx) {
-  const controller = useArmoryController();
-  return <ArmoryScreen {...controller} onBack={onBack} onMenu={onOpenGameMenu} />;
+function ArmoryScreenRoute({ routeCommands, onBack, onOpenGameMenu }: MetaRouteCtx) {
+  const commands = routeCommands.meta.armory;
+  const gear = useGearArmorySlice();
+  const combatRestrictions = useGearCombatRestrictions();
+  const finishedRunCharacters = useFinishedRunCharacters();
+
+  return (
+    <ArmoryScreen
+      {...gear}
+      {...commands}
+      combatRestrictions={combatRestrictions}
+      finishedRunCharacters={finishedRunCharacters}
+      afterProgressSaved={routeCommands.progress.afterSaved}
+      isProgressSavePending={routeCommands.progress.isPending}
+      onBack={onBack}
+      onMenu={onOpenGameMenu}
+    />
+  );
 }
 
 function GameModeSelectScreenRoute({ routeCommands, onBack, onOpenGameMenu }: MetaRouteCtx) {

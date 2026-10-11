@@ -20,6 +20,15 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
       bondCompanion: vi.fn(() => false),
       selectCollectionTab: fn(),
       setCollectionPage: fn(),
+      armory: {
+        onEquip: vi.fn(() => false),
+        onUnequip: fn(),
+        onEquipTrinket: fn(),
+        onUnequipTrinket: fn(),
+        onSalvage: vi.fn(() => false),
+        onApplyCurrency: vi.fn(() => false),
+        onSpawnDevGear: fn(),
+      },
     },
     runSetup: {
       goToScreen: fn(),
@@ -39,7 +48,14 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
         descend: fn(),
       },
       rewards: { skip: fn(), claimChoice: fn() },
-      destinations: { prepare: fn(), choose: fn(), continueCampfire: fn(), rest: fn(), brew: fn() },
+      destinations: {
+        prepare: fn(),
+        choose: fn(),
+        continueCampfire: fn(),
+        rest: fn(),
+        brew: fn(),
+        initializeCampfire: fn(),
+      },
       wildwood: { removeCard: fn(), skipRemoval: fn() },
       shop: {
         continue: fn(),
@@ -75,7 +91,7 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
       },
       mystery: { handleChoice: fn(), handleChooseCard: fn(), handleContinue: fn() },
       corruption: { handleCorruptCard: fn(), handleExit: fn() },
-      transmutation: { select: fn(), exchange: fn(), continue: fn() },
+      transmutation: { select: fn(), exchange: fn(), continue: fn(), initialize: fn() },
     },
     battle: {
       presentation: battlePresentation,
