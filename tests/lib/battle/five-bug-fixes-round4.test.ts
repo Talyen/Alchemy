@@ -41,8 +41,8 @@ describe("Five targeted bug fixes round 4", () => {
     });
   });
 
-  describe("Bug 2: Runic Quill draw on consume excludes companion summons", () => {
-    it("does not trigger runicQuillDrawOnConsume when playing a summon-companion card", () => {
+  describe("Runic Quill draws on any Consume, including companion summons", () => {
+    it("draws for a companion summon while excluding gear and talent Consume rewards", () => {
       const summonCard: BattleCard = {
         ...cardById["wolf-companion"]!,
         consume: true,
@@ -52,12 +52,18 @@ describe("Five targeted bug fixes round 4", () => {
         deck: [slash],
         hand: [],
         trinketEffects: { runicQuillDrawOnConsume: 1 },
+        gearEffects: { armorOnConsume: 2 },
+        talentEffects: { healOnConsume: 5 },
+        playerHealth: 20,
+        playerMaxHealth: 30,
       });
       const combatTexts: CombatTextEvent[] = [];
       const next = handlePostPlayCardDestination(state, summonCard, { combatTexts });
 
-      expect(next.hand.length).toBe(0);
-      expect(next.deck.length).toBe(1);
+      expect(next.hand).toMatchObject([{ id: slash.id }]);
+      expect(next.deck).toHaveLength(0);
+      expect(next.playerStatuses.armor).toBe(state.playerStatuses.armor);
+      expect(next.playerHealth).toBe(20);
     });
 
     it("triggers runicQuillDrawOnConsume for an ordinary consumable card", () => {
@@ -76,8 +82,8 @@ describe("Five targeted bug fixes round 4", () => {
     });
   });
 
-  describe("Bug 3: holyOnConsumeWithoutMana uses post-payment mana and guards defeated enemy", () => {
-    it("triggers holyOnConsumeWithoutMana when paying 0 mana for a card that restores mana", () => {
+  describe("Lastlight checks Mana at Consume and guards defeated enemies", () => {
+    it("does not trigger after the card restores Mana", () => {
       const manaPotion = makeTestCard({
         cost: 0,
         consume: true,
@@ -94,9 +100,8 @@ describe("Five targeted bug fixes round 4", () => {
       });
 
       const result = playBattleCardResolved(state, manaPotion.id, 0);
-      // Mana was restored to 2 by the card effect, but mana at consume (post-payment) was 0
       expect(result.state.mana).toBe(2);
-      expect(result.state.enemyHealth).toBe(36);
+      expect(result.state.enemyHealth).toBe(40);
     });
 
     it("does not hit a defeated enemy with holyOnConsumeWithoutMana", () => {

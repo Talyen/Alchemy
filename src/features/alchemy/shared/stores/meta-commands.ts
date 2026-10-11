@@ -21,7 +21,7 @@ export function constructBuilding(id: BuildingId, gameSession: GameSession): boo
       const ok = constructBuildingWrite(draft, id);
       return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
     },
-    false,
+    undefined,
     gameSession,
   );
 }
@@ -32,7 +32,7 @@ export function plantFarm(id: FarmId, gameSession: GameSession): boolean {
       const ok = plantFarmWrite(draft, id);
       return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
     },
-    false,
+    undefined,
     gameSession,
   );
 }
@@ -43,7 +43,7 @@ export function completeResearch(id: ResearchId, gameSession: GameSession): bool
       const ok = completeResearchWrite(draft, id);
       return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
     },
-    false,
+    undefined,
     gameSession,
   );
 }
@@ -54,7 +54,7 @@ export function bondCompanion(id: CompanionId, gameSession: GameSession): boolea
       const ok = bondCompanionWrite(draft, id);
       return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
     },
-    false,
+    undefined,
     gameSession,
   );
 }

@@ -129,28 +129,21 @@ interface CardDestinationContext {
   combatTexts?: CombatTextEvent[];
   lastCardInHand?: boolean;
   manaSpent?: number;
-  manaAtConsume?: number;
 }
 
 export function handlePostPlayCardDestination(
   state: BattleState,
   card: BattleCard,
-  {
-    triggerConsumeRiders = true,
-    combatTexts = [],
-    lastCardInHand = false,
-    manaSpent = 0,
-    manaAtConsume = state.mana,
-  }: CardDestinationContext = {},
+  { triggerConsumeRiders = true, combatTexts = [], lastCardInHand = false, manaSpent = 0 }: CardDestinationContext = {},
 ): BattleState {
   if (!card.consume) return { ...state, discard: [...state.discard, card] };
   let nextState = { ...state, exhausted: [...state.exhausted, card] };
-  if (!triggerConsumeRiders || cardIsSummonCompanion(card)) return nextState;
+  if (!triggerConsumeRiders) return nextState;
   if (state.trinketEffects.runicQuillDrawOnConsume > 0) {
     nextState = drawConsumeReward(nextState, state.trinketEffects.runicQuillDrawOnConsume, combatTexts);
     if (isPlayerDefeated(nextState)) return nextState;
   }
-  nextState = applyConsumeGearRiders(nextState, card, combatTexts, lastCardInHand, manaSpent, manaAtConsume);
+  nextState = applyConsumeGearRiders(nextState, card, combatTexts, lastCardInHand, manaSpent, state.mana);
   return isPlayerDefeated(nextState)
     ? nextState
     : applyConsumeTalentRiders(nextState, card, combatTexts, lastCardInHand);

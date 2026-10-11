@@ -379,6 +379,7 @@ describe("ArmoryScreen equipment movement and inventory ordering", () => {
     await waitForArtwork();
     await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /^Salvage$/ }));
     expect(onSalvage).toHaveBeenCalledWith("gear-sword");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 
   it("portals equipped gear and crafting currency tooltips", async () => {

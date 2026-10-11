@@ -16,6 +16,7 @@ import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/app/application-session";
+import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
 
 beforeEach(() => {
   resetAllTestStores();
@@ -165,6 +166,40 @@ describe("four-tier Homestead persistence and settlement", () => {
 });
 
 describe("meta intent commands", () => {
+  it("purchases upgrades in the supplied career without changing the default career", async () => {
+    const commands = await import("@/features/alchemy/shared/stores/meta-commands");
+    const session = createGameSession();
+    try {
+      dispatchGameplayCommand(
+        (draft) => {
+          addMaterialsToStockpile(draft, { ...emptyInventory(), stone: 8, iron: 22, food: 43, gems: 21 });
+          setDiscoveredCardIds(draft, ["wolf-companion"]);
+          return acceptCommand();
+        },
+        undefined,
+        session,
+      );
+      const defaultRevision = readRunRevision(defaultGameSession);
+      expect(commands.constructBuilding("blacksmiths-forge", session)).toBe(true);
+      expect(commands.plantFarm("wheat-field", session)).toBe(true);
+      expect(commands.completeResearch("leyline-energy", session)).toBe(true);
+      expect(commands.bondCompanion("wolf", session)).toBe(true);
+      expect(readRunProfile(session)).toMatchObject({
+        constructedBuildings: { "blacksmiths-forge": 1 },
+        plantedFarms: { "wheat-field": 1 },
+        completedResearch: { "leyline-energy": 1 },
+        bondedCompanions: { wolf: 1 },
+        materialInventory: emptyInventory(),
+      });
+      const revision = readRunRevision(session);
+      expect(commands.constructBuilding("blacksmiths-forge", session)).toBe(false);
+      expect(readRunRevision(session)).toBe(revision);
+      expect(readRunRevision(defaultGameSession)).toBe(defaultRevision);
+    } finally {
+      await session.dispose();
+    }
+  });
+
   it("selectCollectionTab and setCollectionPage update profile collection tab and page", async () => {
     const { selectCollectionTab, setCollectionPage } = await import("@/features/alchemy/shared/stores/meta-commands");
     const { readProfileStore } = await import("@/features/alchemy/shared/stores/profile-store");
