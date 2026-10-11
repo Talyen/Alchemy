@@ -8,9 +8,11 @@ import {
 import type { KeywordId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
 import { startKeywordPlasma, type PlasmaColorState } from "@/lib/animation/keyword-plasma";
-import { lerpParsedRgbFloats } from "@/lib/animation/plasma-colors";
 
-const COLOR_LERP_MS = 400;
+// Critically damped: retain velocity across retargets, settling in about 800 ms.
+const COLOR_SPRING_RATE = 0.012;
+const COLOR_SETTLE_EPSILON = 1 / 4096;
+const GLOW_BRIGHTNESS = 0.8;
 
 const BLACK_PAIR: PlasmaColorPair = { primary: "#000000", secondary: "#000000" };
 
@@ -46,16 +48,16 @@ export function KeywordPlasmaBackground({
   });
   const activeRef = useRef(colorPair !== null);
   const wakeRef = useRef<() => void>(() => {});
-  const targetRef = useRef<PlasmaColorPair | null>(null);
+  const velocityRef = useRef({ primary: [0, 0, 0], secondary: [0, 0, 0] });
   const rafRef = useRef<number | null>(null);
   const idleTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     const currentTarget = { primary: targetPrimary, secondary: targetSecondary };
-    targetRef.current = currentTarget;
-    if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current);
 
     if (!motionAllowed || !visible || !active || !webglAvailable) {
+      velocityRef.current.primary.fill(0);
+      velocityRef.current.secondary.fill(0);
       colorsRef.current = currentTarget;
       activeRef.current = hasColorPair;
       return;
@@ -69,7 +71,7 @@ export function KeywordPlasmaBackground({
     activeRef.current = true;
     wakeRef.current();
 
-    const start = performance.now();
+    let previousTime = performance.now();
     // Interrupted fades need owned starting tuples; the previous fade's output
     // is mutable, and must never become the next fade's working buffer.
     const fromPrimary =
@@ -80,34 +82,49 @@ export function KeywordPlasmaBackground({
       typeof from.secondary === "string"
         ? parsePlasmaHexColor(from.secondary)
         : ([...from.secondary] as [number, number, number]);
-    const mixedPrimary: [number, number, number] = [0, 0, 0];
-    const mixedSecondary: [number, number, number] = [0, 0, 0];
-    const mixedColors: PlasmaColorState = { primary: mixedPrimary, secondary: mixedSecondary };
-    let cachedTarget: PlasmaColorPair | null = null;
-    let toPrimary = parsePlasmaHexColor(currentTarget.primary);
-    let toSecondary = parsePlasmaHexColor(currentTarget.secondary);
+    const toPrimary = parsePlasmaHexColor(currentTarget.primary);
+    const toSecondary = parsePlasmaHexColor(currentTarget.secondary);
+    const velocity = velocityRef.current;
+    const channels = [
+      [fromPrimary, toPrimary, velocity.primary],
+      [fromSecondary, toSecondary, velocity.secondary],
+    ] as const;
+    const mixedColors: PlasmaColorState = { primary: fromPrimary, secondary: fromSecondary };
 
     function tick(now: number) {
-      const activeTarget = targetRef.current;
-      if (!activeTarget) return;
-
-      if (cachedTarget !== activeTarget) {
-        cachedTarget = activeTarget;
-        toPrimary = parsePlasmaHexColor(activeTarget.primary);
-        toSecondary = parsePlasmaHexColor(activeTarget.secondary);
+      const dt = Math.max(0, now - previousTime);
+      previousTime = now;
+      const decay = Math.exp(-COLOR_SPRING_RATE * dt);
+      let settled = true;
+      for (const [color, target, speed] of channels) {
+        for (let channel = 0; channel < 3; channel++) {
+          const offset = color[channel]! - target[channel]!;
+          const momentum = speed[channel]! + COLOR_SPRING_RATE * offset;
+          const next = target[channel]! + (offset + momentum * dt) * decay;
+          color[channel] = clamp01(next);
+          speed[channel] = next === color[channel] ? (speed[channel]! - COLOR_SPRING_RATE * momentum * dt) * decay : 0;
+          if (
+            Math.abs(color[channel]! - target[channel]!) > COLOR_SETTLE_EPSILON ||
+            Math.abs(speed[channel]!) > COLOR_SETTLE_EPSILON * COLOR_SPRING_RATE
+          ) {
+            settled = false;
+          }
+        }
       }
-
-      const t = Math.min(1, (now - start) / COLOR_LERP_MS);
-      lerpParsedRgbFloats(fromPrimary, toPrimary, t, mixedPrimary);
-      lerpParsedRgbFloats(fromSecondary, toSecondary, t, mixedSecondary);
       colorsRef.current = mixedColors;
-
-      if (t < 1) {
+      if (!settled) {
         rafRef.current = requestAnimationFrame(tick);
-      } else if (!hasColorPair) {
-        idleTimerRef.current = window.setTimeout(() => {
-          activeRef.current = false;
-        }, 100);
+      } else {
+        colorsRef.current = currentTarget;
+        velocity.primary.fill(0);
+        velocity.secondary.fill(0);
+        if (!hasColorPair) {
+          // Let the renderer paint the final black frame before going idle.
+          idleTimerRef.current = window.setTimeout(() => {
+            activeRef.current = false;
+          }, 100);
+        }
+        rafRef.current = null;
       }
     }
 
@@ -144,7 +161,7 @@ export function KeywordPlasmaBackground({
     <div
       aria-hidden
       className={cn("pointer-events-none absolute inset-0 mix-blend-plus-lighter", className)}
-      style={{ opacity: clamp01(intensity / 100) }}
+      style={{ opacity: clamp01(intensity / 100) * GLOW_BRIGHTNESS }}
     >
       <canvas
         ref={canvasRef}

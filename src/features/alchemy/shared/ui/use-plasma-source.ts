@@ -1,4 +1,4 @@
-import { useEffect, useId } from "react";
+import { useEffect, useId, useState } from "react";
 
 import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 import { useUiStore } from "../stores/ui-store";
@@ -27,4 +27,21 @@ export function usePlasmaInteraction(colorPair: PlasmaColorPair | null, active: 
 
 export function usePlasmaBaseline(colorPair: PlasmaColorPair | null) {
   usePlasmaRegistration(colorPair, colorPair !== null, true);
+}
+
+// Filter decoration only; object highlights and other interaction feedback stay immediate.
+export function usePlasmaDisplayColorPair(): PlasmaColorPair | null {
+  const baseline = useUiStore((state) => state.plasmaBaseline?.colorPair ?? null);
+  const interaction = useUiStore((state) => state.plasmaInteraction?.colorPair ?? null);
+  const primary = interaction?.primary;
+  const secondary = interaction?.secondary;
+  const [settledInteraction, setSettledInteraction] = useState<PlasmaColorPair | null>(null);
+
+  useEffect(() => {
+    const next = primary && secondary ? { primary, secondary } : null;
+    const timer = window.setTimeout(() => setSettledInteraction(next), next ? 80 : 120);
+    return () => window.clearTimeout(timer);
+  }, [primary, secondary]);
+
+  return settledInteraction ?? baseline;
 }

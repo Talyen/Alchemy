@@ -258,6 +258,15 @@ preferences keep their existing unanimated appearance without color-animation
 frames. Availability belongs to the renderer lifecycle; failures are logged,
 not shown in a player-facing dialog.
 
+Hover-driven plasma colors settle after an 80 ms dwell, with a 120 ms exit grace
+period to bridge gaps between objects. The displayed colors use a critically damped
+transition that retains momentum when retargeted. Object highlights remain immediate.
+The glow is 20% dimmer at every nonzero intensity setting, including the static fallback.
+The WebGL renderer calculates the broad field at bounded low resolution, then applies
+stable RGB dithering after color and opacity in a separate output pass (up to 8.3 million output pixels).
+This reduces dark-gradient banding without animated grain; final appearance still depends
+on browser compositing and the display. Panel technology is not detected.
+
 ## Display options
 
 Display groups Display Mode (desktop only), Aspect Ratio, Brightness, Game Size,

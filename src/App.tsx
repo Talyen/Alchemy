@@ -36,7 +36,7 @@ import {
   useTalentEffects,
 } from "@/features/alchemy/shared/stores/use-run-reads";
 import { useAppSettings, useSelectedAspectRatio } from "@/features/alchemy/shared/stores/settings-store";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { usePlasmaDisplayColorPair } from "@/features/alchemy/shared/ui/use-plasma-source";
 import { CardInspectionOverlay } from "@/features/alchemy/shared/ui/inspection/card-inspection-overlay";
 import { KeywordPlasmaBackground } from "@/features/alchemy/shared/ui/keyword-plasma-background";
 import { setModalRoot } from "@/features/alchemy/shared/ui/modal-root";
@@ -53,9 +53,7 @@ const OPTIONS_PREVIEW_PLASMA_PAIR = { primary: "#fbbf24", secondary: "#78350f" }
 type GameMenuState = ReturnType<typeof useGameMenuState>;
 
 function AppKeywordPlasmaBackground({ renderedScreen, intensity }: { renderedScreen: Screen; intensity: number }) {
-  const plasmaColorPair = useUiStore(
-    (state) => state.plasmaInteraction?.colorPair ?? state.plasmaBaseline?.colorPair ?? null,
-  );
+  const plasmaColorPair = usePlasmaDisplayColorPair();
   const effectivePlasmaColorPair =
     plasmaColorPair ?? (renderedScreen === "options" ? OPTIONS_PREVIEW_PLASMA_PAIR : null);
 

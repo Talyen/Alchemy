@@ -1,6 +1,6 @@
 import { createWebGLProgram } from "./webgl-program";
 import { parsePlasmaHexColor, type RgbTuple } from "@/lib/animation/plasma-colors";
-import { createCanvasLifecycle } from "./canvas-lifecycle";
+import { createCanvasLifecycle, resolveCanvasBackingScale } from "./canvas-lifecycle";
 import { PLASMA_BACKING_OPTIONS, type PlasmaRendererOptions } from "./keyword-plasma-types";
 
 const VERTEX_SHADER = `
@@ -15,17 +15,7 @@ precision highp float;
 
 uniform vec2 uSize;
 uniform float uTime;
-uniform vec3 uPrimary;
-uniform vec3 uSecondary;
 uniform vec2 uFocalCenter;
-
-// Triangular-distribution dither: two uniform samples averaged remove banding
-// while keeping the noise floor low (tent PDF vs harsh uniform).
-float triDither(vec2 seed) {
-  float r1 = fract(sin(dot(seed, vec2(12.9898, 78.233))) * 43758.5453);
-  float r2 = fract(sin(dot(seed + 0.5, vec2(93.9898, 67.345))) * 31415.9265);
-  return (r1 + r2 - 1.0) / 255.0;
-}
 
 void main() {
   vec2 position = vec2(gl_FragCoord.x, uSize.y - gl_FragCoord.y);
@@ -54,10 +44,29 @@ void main() {
   float smoothFluid = fluid * fluid * (3.0 - 2.0 * fluid);
   float radialFalloff = 1.0 / (1.0 + dist * dist * 1.4);
 
-  vec3 color = mix(uPrimary, uSecondary, clamp(smoothFluid * 1.2, 0.0, 1.0));
-  float alpha = clamp(smoothFluid * radialFalloff * 0.13 + triDither(position), 0.0, 0.14);
+  // Store the broad field before applying the low-opacity colors. Quantizing
+  // premultiplied glow here would bake bands into the enlarged texture.
+  gl_FragColor = vec4(smoothFluid, radialFalloff, 0.0, 1.0);
+}
+`;
 
-  gl_FragColor = vec4(color * alpha, alpha);
+const COMPOSITE_SHADER = `
+precision highp float;
+uniform sampler2D uField;
+uniform vec2 uOutputSize;
+uniform vec3 uPrimary;
+uniform vec3 uSecondary;
+
+void main() {
+  vec2 field = texture2D(uField, gl_FragCoord.xy / uOutputSize).rg;
+  vec3 color = mix(uPrimary, uSecondary, clamp(field.r * 1.2, 0.0, 1.0));
+  float alpha = field.r * field.g * 0.13;
+  // Stable screen-space stochastic rounding breaks up RGB quantization without
+  // animated grain. Apply it after premultiplication, at the output resolution.
+  float noise = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
+  vec3 rgb = floor(color * alpha * 255.0 + noise) / 255.0;
+  // Round alpha up so every rounded RGB channel remains valid premultiplied RGB.
+  gl_FragColor = vec4(rgb, ceil(alpha * 255.0) / 255.0);
 }
 `;
 
@@ -83,28 +92,76 @@ export function startWebGLKeywordPlasma(options: PlasmaRendererOptions): (() => 
   const program = createWebGLProgram(gl, VERTEX_SHADER, FRAGMENT_SHADER);
   if (!program) return null;
 
+  const composite = createWebGLProgram(gl, VERTEX_SHADER, COMPOSITE_SHADER);
+  if (!composite) {
+    gl.deleteProgram(program);
+    return null;
+  }
+  const buffer = gl.createBuffer();
+  const texture = gl.createTexture();
+  const framebuffer = gl.createFramebuffer();
+  const disposeResources = () => {
+    if (buffer) gl.deleteBuffer(buffer);
+    if (texture) gl.deleteTexture(texture);
+    if (framebuffer) gl.deleteFramebuffer(framebuffer);
+    gl.deleteProgram(program);
+    gl.deleteProgram(composite);
+  };
   const positionLoc = gl.getAttribLocation(program, "aPosition");
+  const compositePositionLoc = gl.getAttribLocation(composite, "aPosition");
   const sizeLoc = gl.getUniformLocation(program, "uSize");
   const timeLoc = gl.getUniformLocation(program, "uTime");
-  const primaryLoc = gl.getUniformLocation(program, "uPrimary");
-  const secondaryLoc = gl.getUniformLocation(program, "uSecondary");
   const focalLoc = gl.getUniformLocation(program, "uFocalCenter");
-
-  const buffer = gl.createBuffer();
-  if (!buffer || positionLoc < 0 || !sizeLoc || !timeLoc || !primaryLoc || !secondaryLoc || !focalLoc) {
-    if (buffer) gl.deleteBuffer(buffer);
-    gl.deleteProgram(program);
+  const outputSizeLoc = gl.getUniformLocation(composite, "uOutputSize");
+  const fieldLoc = gl.getUniformLocation(composite, "uField");
+  const primaryLoc = gl.getUniformLocation(composite, "uPrimary");
+  const secondaryLoc = gl.getUniformLocation(composite, "uSecondary");
+  if (
+    !buffer ||
+    !texture ||
+    !framebuffer ||
+    positionLoc < 0 ||
+    compositePositionLoc < 0 ||
+    !sizeLoc ||
+    !timeLoc ||
+    !focalLoc ||
+    !outputSizeLoc ||
+    !fieldLoc ||
+    !primaryLoc ||
+    !secondaryLoc
+  ) {
+    disposeResources();
     return null;
   }
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
-
-  gl.enableVertexAttribArray(positionLoc);
-  gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 0, 0);
-  gl.useProgram(program);
-  // One fullscreen quad writes every pixel, including transparent ones. It
-  // replaces the previous frame without a clear or destination blending.
+  const usePass = (pass: WebGLProgram, position: number) => {
+    gl.useProgram(pass);
+    gl.enableVertexAttribArray(position);
+    gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+  };
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    disposeResources();
+    return null;
+  }
+  usePass(composite, compositePositionLoc);
+  gl.uniform1i(fieldLoc, 0);
+  // Each pass overwrites its entire target; no clear or destination blend needed.
   gl.disable(gl.BLEND);
+  gl.disable(gl.DITHER);
+  let fieldWidth = 1;
+  let fieldHeight = 1;
+  let framebufferReady = true;
   let cachedPrimarySource: string | RgbTuple | null = null;
   let cachedSecondarySource: string | RgbTuple | null = null;
   let cachedPrimary: RgbTuple = [0, 0, 0];
@@ -123,16 +180,27 @@ export function startWebGLKeywordPlasma(options: PlasmaRendererOptions): (() => 
   const startTime = performance.now();
   const lifecycle = createCanvasLifecycle({
     canvas,
-    active,
+    active: () => framebufferReady && active(),
     fpsLimit: 30,
-    backingScale: PLASMA_BACKING_OPTIONS,
-    onResize: (_width, height) => {
-      // These inputs depend only on the canvas size; WebGL retains them
-      // between draws. Context restoration creates a fresh renderer.
-      gl.viewport(0, 0, canvas.width, canvas.height);
-      const backingScale = height > 0 ? canvas.height / height : 1;
-      gl.uniform2f(sizeLoc, canvas.width, canvas.height);
-      gl.uniform2f(focalLoc, canvas.width / 2, canvas.height / 2 - focalYOffset * backingScale);
+    // Keep the field cheap; only the texture lookup and dither run at display
+    // resolution. Bound extreme DPR/window sizes to a 4K-class allocation.
+    backingScale: { maxScale: 2, maxPixels: 8_294_400 },
+    onResize: (width, height) => {
+      const scale = resolveCanvasBackingScale(width, height, PLASMA_BACKING_OPTIONS);
+      fieldWidth = Math.max(1, Math.floor(width * scale));
+      fieldHeight = Math.max(1, Math.floor(height * scale));
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, fieldWidth, fieldHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+      const wasReady = framebufferReady;
+      framebufferReady = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      if (framebufferReady !== wasReady) options.onAvailabilityChange?.(framebufferReady);
+      usePass(program, positionLoc);
+      gl.uniform2f(sizeLoc, fieldWidth, fieldHeight);
+      gl.uniform2f(focalLoc, fieldWidth / 2, fieldHeight / 2 - focalYOffset * (height > 0 ? fieldHeight / height : 1));
+      usePass(composite, compositePositionLoc);
+      gl.uniform2f(outputSizeLoc, canvas.width, canvas.height);
     },
     onFrame: (now, _dt, width, height) => {
       if (width <= 0 || height <= 0) return;
@@ -152,7 +220,18 @@ export function startWebGLKeywordPlasma(options: PlasmaRendererOptions): (() => 
       const primary = cachedPrimary;
       const secondary = cachedSecondary;
 
+      gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+      gl.viewport(0, 0, fieldWidth, fieldHeight);
+      usePass(program, positionLoc);
+      // Do not sample a texture while it is attached to the current framebuffer.
+      gl.bindTexture(gl.TEXTURE_2D, null);
       gl.uniform1f(timeLoc, (now - startTime) / 1000);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      usePass(composite, compositePositionLoc);
+      gl.bindTexture(gl.TEXTURE_2D, texture);
       // Uniforms survive draws and backing resizes. Compare channels so an
       // interpolated or in-place updated tuple still uploads its exact values.
       uploadColor(primaryLoc, primary, uploadedPrimary);
@@ -161,12 +240,16 @@ export function startWebGLKeywordPlasma(options: PlasmaRendererOptions): (() => 
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     },
   });
+  if (!framebufferReady) {
+    lifecycle.dispose();
+    disposeResources();
+    return null;
+  }
   onWakeReady?.(lifecycle.scheduleFrame);
 
   return () => {
     onWakeReady?.(() => {});
     lifecycle.dispose();
-    gl.deleteBuffer(buffer);
-    gl.deleteProgram(program);
+    disposeResources();
   };
 }

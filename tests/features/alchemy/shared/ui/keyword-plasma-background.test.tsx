@@ -5,6 +5,7 @@ import { startKeywordPlasma } from "@/lib/animation/keyword-plasma";
 vi.mock("@/lib/animation/keyword-plasma", () => ({ startKeywordPlasma: vi.fn() }));
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   localStorage.clear();
@@ -36,7 +37,8 @@ it("does not animate color changes or start a renderer when animations are disab
   expect(screen.queryByTestId("static-plasma-background")).toBeNull();
 });
 
-it("finishes fades across equivalent rerenders and starts interrupted fades from the displayed colors", () => {
+it("retargets without a color or velocity jump, settles, and paints black before sleeping", () => {
+  vi.useFakeTimers();
   let now = 0;
   vi.spyOn(performance, "now").mockImplementation(() => now);
   const pending = new Map<number, FrameRequestCallback>();
@@ -56,22 +58,28 @@ it("finishes fades across equivalent rerenders and starts interrupted fades from
   const view = render(<KeywordPlasmaBackground colorPair={colorPair} />);
   const { colorsRef } = vi.mocked(startKeywordPlasma).mock.calls.at(-1)![0];
   view.rerender(<KeywordPlasmaBackground colorPair={{ primary: "#ffffff", secondary: "#ffffff" }} />);
+  advanceFrame(199.99);
+  const before = [...(colorsRef.current.primary as readonly number[])];
   advanceFrame(200);
-  expect(colorsRef.current.primary).toEqual([1, 0.5, 0.5]);
-  view.rerender(<KeywordPlasmaBackground colorPair={{ primary: "#ffffff", secondary: "#ffffff" }} intensity={50} />);
-  advanceFrame(400);
-  expect(colorsRef.current).toEqual({ primary: [1, 1, 1], secondary: [1, 1, 1] });
+  const displayed = [...(colorsRef.current.primary as readonly number[])];
+  expect(displayed[1]).toBeGreaterThan(0);
+  expect(displayed[1]).toBeLessThan(1);
+  view.rerender(<KeywordPlasmaBackground colorPair={colorPair} intensity={50} />);
+  expect(colorsRef.current.primary).toEqual(displayed);
+  advanceFrame(200.01);
+  const retargeted = colorsRef.current.primary as readonly number[];
+  // Momentum survives a reversal instead of abruptly reversing the screen's color motion.
+  expect(retargeted[1]! - displayed[1]!).toBeCloseTo(displayed[1]! - before[1]!, 6);
+  advanceFrame(1800);
+  expect(colorsRef.current).toEqual(colorPair);
   expect(pending.size).toBe(0);
 
-  view.rerender(<KeywordPlasmaBackground colorPair={colorPair} />);
-  advanceFrame(600);
-  expect(colorsRef.current).toEqual({ primary: [1, 0.5, 0.5], secondary: [0.5, 0.5, 1] });
-  view.rerender(<KeywordPlasmaBackground colorPair={{ primary: "#000000", secondary: "#000000" }} />);
-  advanceFrame(700);
-  expect(colorsRef.current).toEqual({ primary: [0.75, 0.375, 0.375], secondary: [0.375, 0.375, 0.75] });
-  advanceFrame(800);
-  expect(colorsRef.current).toEqual({ primary: [0.5, 0.25, 0.25], secondary: [0.25, 0.25, 0.5] });
-  advanceFrame(1000);
-  expect(colorsRef.current).toEqual({ primary: [0, 0, 0], secondary: [0, 0, 0] });
+  view.rerender(<KeywordPlasmaBackground colorPair={null} />);
+  advanceFrame(3600);
+  expect(colorsRef.current).toEqual({ primary: "#000000", secondary: "#000000" });
+  const options = vi.mocked(startKeywordPlasma).mock.calls.at(-1)![0];
+  expect(options.active?.()).toBe(true);
+  act(() => vi.advanceTimersByTime(100));
+  expect(options.active?.()).toBe(false);
   expect(pending.size).toBe(0);
 });
