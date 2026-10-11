@@ -13,6 +13,7 @@ import { CardTitle } from "../../shared/ui/cards/card-description-ui";
 import { controlLabelClass, viewCardWidthClass, getCardInspectionShineColors } from "../../shared/config";
 import { BattleCardButton } from "../../shared/ui/cards/card-button";
 import { getCardDisplayTitle } from "../../shared/ui/cards/card-description-ui";
+import { FadeSlot } from "../../shared/ui/use-fade";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
 import { focusableControls, focusControl, isFocusAvailable } from "../../shared/ui/focus-navigation";
 
@@ -35,7 +36,12 @@ export function TransmutationScreen({
 }) {
   const [page, setPage] = useState(0);
   const [error, setError] = useState("");
-  const [committing, setCommitting] = useState(false);
+  const [committedHere, setCommittedHere] = useState(false);
+  const [resultSaved, setResultSaved] = useState(false);
+  const [resultReady, setResultReady] = useState(false);
+  const [readyPreviewKey, setReadyPreviewKey] = useState<string | number | null>(null);
+  const resultAcknowledged = useRef(false);
+  const continueButtonRef = useRef<HTMLButtonElement>(null);
   const continued = useRef(false);
   const committingRef = useRef(false);
   const continuationRequest = useRef({ revision: 0 });
@@ -52,7 +58,10 @@ export function TransmutationScreen({
   const keyword = source ? selection?.keyword : null;
   const offers = getTransmutationOffers(visit);
   const locked = completed || isProgressSavePending();
-  const phase = !source ? "source" : "preview";
+  const showResult = completed && resultSaved && !!visit.result;
+  const phase = showResult ? "result" : !source ? "source" : "preview";
+  const previewKey = `${selection?.sourceIndex}:${selection?.offerIndex}`;
+  const previewReady = readyPreviewKey === previewKey;
   const preview =
     selection?.offerIndex === null || selection?.offerIndex === undefined ? undefined : offers[selection.offerIndex];
   const previousPhase = useRef(phase);
@@ -71,7 +80,7 @@ export function TransmutationScreen({
 
   useEffect(() => {
     const requests = continuationRequest.current;
-    if ((completed || !available) && !continued.current) {
+    if (((completed && !visit.result) || (!completed && !available)) && !continued.current) {
       const request = ++requests.revision;
       afterProgressSaved(() => {
         if (request !== requests.revision || continued.current) return;
@@ -82,12 +91,31 @@ export function TransmutationScreen({
     return () => {
       requests.revision++;
     };
-  }, [completed, available, onContinue, afterProgressSaved]);
+  }, [completed, visit.result, available, onContinue, afterProgressSaved]);
+
+  useEffect(() => {
+    if (!completed || !visit.result || resultAcknowledged.current) return;
+    let active = true;
+    afterProgressSaved(() => {
+      if (!active || resultAcknowledged.current) return;
+      resultAcknowledged.current = true;
+      setResultSaved(true);
+      if (committingRef.current) playUISound("talentUnlock");
+    });
+    return () => {
+      active = false;
+    };
+  }, [completed, visit.result, afterProgressSaved]);
+
+  useLayoutEffect(() => {
+    if (showResult && resultReady) focusControl(continueButtonRef.current);
+  }, [showResult, resultReady]);
 
   function select(command: TransmutationSelectionCommand) {
     if (locked || isProgressSavePending() || committingRef.current || continued.current) return;
     restoreFocus.current = keyboardInput.current && panelRef.current?.contains(document.activeElement) === true;
     if (onSelect(command)) {
+      if (command.kind !== "keyword") setReadyPreviewKey(null);
       playUISound("transmuteSelect");
       setError("");
     } else {
@@ -103,6 +131,7 @@ export function TransmutationScreen({
       committingRef.current ||
       continued.current ||
       staleSource ||
+      !previewReady ||
       selection?.sourceIndex === null ||
       selection?.sourceIndex === undefined ||
       selection.offerIndex === null ||
@@ -110,12 +139,10 @@ export function TransmutationScreen({
     )
       return;
     committingRef.current = true;
-    setCommitting(true);
     if (onExchange(selection.sourceIndex, selection.offerIndex)) {
-      playUISound("transmuteSelect");
+      setCommittedHere(true);
     } else {
       committingRef.current = false;
-      setCommitting(false);
       setError("This alteration is no longer available.");
     }
   }
@@ -127,8 +154,7 @@ export function TransmutationScreen({
   }
 
   if (!available && !completed) return null;
-  // Completed visits resume directly onward, with no result screen.
-  if (completed && !committing) return null;
+
   return (
     <TitledScreenShell title="Transmutation">
       <div
@@ -142,7 +168,43 @@ export function TransmutationScreen({
           restoreFocus.current = false;
         }}
       >
-        {!source ? (
+        {showResult && visit.result ? (
+          <>
+            <FadeSlot
+              swapKey="result"
+              className="flex flex-col items-center gap-3"
+              onReady={() => setResultReady(true)}
+              aria-label="Transmutation result"
+            >
+              <div className={cn("reward-choice relative", resultReady && committedHere && "reward-choice-selected")}>
+                <BattleCardButton
+                  card={visit.result}
+                  ariaLabel={`Transmuted: ${getCardDisplayTitle(visit.result)}`}
+                  className={viewCardWidthClass}
+                  shineColor={getCardInspectionShineColors(visit.result)}
+                  selected
+                  shimmerActive={false}
+                  shimmerToken={undefined}
+                />
+              </div>
+              <div className={controlLabelClass}>
+                <CardTitle card={visit.result} />
+              </div>
+            </FadeSlot>
+            <Button
+              ref={continueButtonRef}
+              size="lg"
+              disabled={!resultReady || isProgressSavePending()}
+              onClick={() => {
+                if (!resultReady || isProgressSavePending() || continued.current) return;
+                continued.current = true;
+                onContinue();
+              }}
+            >
+              Continue
+            </Button>
+          </>
+        ) : !source ? (
           <>
             <CardSelectionGrid
               items={runDeck.map((card, index) => ({ card, index }))}
@@ -170,10 +232,10 @@ export function TransmutationScreen({
                   key={choice.keyword}
                   keywordId={choice.keyword}
                   pill
+                  choice
                   showTooltip
                   selected={keyword === choice.keyword}
                   disabled={locked || !canTransmuteCard([choice], source, selection?.sourceIndex ?? undefined, runDeck)}
-                  className="px-6 py-4 text-lg"
                   onSelect={() => select({ kind: "keyword", keyword: choice.keyword })}
                 />
               ))}
@@ -183,34 +245,42 @@ export function TransmutationScreen({
                 className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-8 gap-y-3"
                 aria-label="Transmutation comparison"
               >
-                <BattleCardButton
-                  card={source}
-                  ariaLabel={`Original: ${getCardDisplayTitle(source)}`}
-                  className={viewCardWidthClass}
-                  shineColor={getCardInspectionShineColors(source)}
-                  shimmerActive={false}
-                  shimmerToken={undefined}
-                />
+                <div className={cn(viewCardWidthClass, "flex flex-col items-center gap-3")}>
+                  <BattleCardButton
+                    card={source}
+                    ariaLabel={`Original: ${getCardDisplayTitle(source)}`}
+                    className={viewCardWidthClass}
+                    shineColor={getCardInspectionShineColors(source)}
+                    shimmerActive={false}
+                    shimmerToken={undefined}
+                  />
+                  <div className={cn(controlLabelClass, "min-h-[2lh] w-full")}>
+                    <CardTitle card={source} />
+                  </div>
+                </div>
                 <MoveRight aria-hidden="true" className="h-10 w-10 self-center text-gold-pale" />
-                <BattleCardButton
-                  card={preview}
-                  ariaLabel={`Preview: ${getCardDisplayTitle(preview)}`}
-                  className={viewCardWidthClass}
-                  shineColor={getCardInspectionShineColors(preview)}
-                  shimmerActive={false}
-                  shimmerToken={undefined}
-                />
-                <div className={controlLabelClass}>
-                  <CardTitle card={source} />
-                </div>
-                <div className={cn("col-start-3", controlLabelClass)}>
-                  <CardTitle card={preview} />
-                </div>
+                <FadeSlot
+                  swapKey={previewKey}
+                  onReady={setReadyPreviewKey}
+                  className={cn(viewCardWidthClass, "col-start-3 flex flex-col items-center gap-3")}
+                >
+                  <BattleCardButton
+                    card={preview}
+                    ariaLabel={`Preview: ${getCardDisplayTitle(preview)}`}
+                    className={viewCardWidthClass}
+                    shineColor={getCardInspectionShineColors(preview)}
+                    shimmerActive={false}
+                    shimmerToken={undefined}
+                  />
+                  <div className={cn(controlLabelClass, "min-h-[2lh] w-full")}>
+                    <CardTitle card={preview} />
+                  </div>
+                </FadeSlot>
               </div>
             )}
           </>
         )}
-        {source && (
+        {source && !showResult && (
           <div className="flex flex-wrap justify-center gap-3">
             <Button size="lg" variant="outline" disabled={locked} onClick={() => select({ kind: "back" })}>
               Back
@@ -222,6 +292,7 @@ export function TransmutationScreen({
                 disabled={
                   locked ||
                   !preview ||
+                  !previewReady ||
                   !canTransmuteCard(
                     selection?.choices.filter((choice) => choice.keyword === preview.transmuted) ?? [],
                     source,

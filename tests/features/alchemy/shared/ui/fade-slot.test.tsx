@@ -30,8 +30,9 @@ describe("FadeSlot", () => {
 
   it("keeps outgoing and artwork-pending content inert during a swap", async () => {
     vi.useFakeTimers();
+    const onReady = vi.fn();
     const { rerender } = render(
-      <FadeSlot swapKey="first" data-testid="slot">
+      <FadeSlot swapKey="first" data-testid="slot" onReady={onReady}>
         <button>First reward</button>
       </FadeSlot>,
     );
@@ -40,13 +41,16 @@ describe("FadeSlot", () => {
       vi.advanceTimersByTime(20);
     });
     expect(screen.getByTestId("slot").hasAttribute("inert")).toBe(false);
+    expect(onReady).toHaveBeenCalledExactlyOnceWith("first");
+    onReady.mockClear();
     rerender(
-      <FadeSlot swapKey="second" data-testid="slot">
+      <FadeSlot swapKey="second" data-testid="slot" onReady={onReady}>
         <button>Next reward</button>
       </FadeSlot>,
     );
     expect(screen.getByTestId("slot").hasAttribute("inert")).toBe(true);
     expect(screen.getByRole("button", { name: "First reward", hidden: true })).toBeTruthy();
+    expect(onReady).not.toHaveBeenCalled();
     act(() => vi.advanceTimersByTime(resolveGameDelay(MOTION_FADE_MS)));
     expect(screen.getByTestId("slot").hasAttribute("inert")).toBe(true);
     await act(async () => {
@@ -55,6 +59,7 @@ describe("FadeSlot", () => {
     });
     expect(screen.getByTestId("slot").hasAttribute("inert")).toBe(false);
     expect(screen.getByRole("button", { name: "Next reward" })).toBeTruthy();
+    expect(onReady).toHaveBeenCalledExactlyOnceWith("second");
   });
 
   it("holds outgoing children and wrapper className until opacity is 0", () => {
