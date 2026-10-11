@@ -177,6 +177,7 @@ export function playBattleCardResolved(
     combatTexts,
     lastCardInHand: state.hand.length === 1,
     manaSpent,
+    manaAtConsume: stripped.mana,
   });
   return { state: resolvePendingBattleReactions(nextState, combatTexts), combatTexts };
 }

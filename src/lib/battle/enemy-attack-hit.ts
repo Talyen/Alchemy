@@ -266,18 +266,20 @@ export function resolveEnemyAttackHit(
     canDodge && preparedDamage.attemptedDamage > 0,
     preparedDamage.incomingDamage,
   );
-  if (dodged)
+  if (dodged) {
+    const nextState = resolvePendingBattleReactions(dodged, combatTexts);
     return {
-      state: resolvePendingBattleReactions(dodged, combatTexts),
+      state: nextState,
       attemptedDamage: preparedDamage.attemptedDamage,
       resolvedDamage: 0,
       healthDamage: 0,
       blockLost: 0,
-      healthAfterHit: state.playerHealth,
+      healthAfterHit: nextState.playerHealth,
       landed: false,
       dodged: true,
       killed: false,
     };
+  }
   const resolved = resolveEnemyDamageEffect(state, effect, combatTexts, {
     ...damageOptions,
     preparedDamage,

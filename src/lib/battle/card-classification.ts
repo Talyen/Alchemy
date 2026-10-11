@@ -30,6 +30,7 @@ function classifyEffects(effects: readonly BattleCardEffect[]): EffectClassifica
     playTarget ??= effectTarget(effect);
     if (
       effect.kind === "heal" ||
+      effect.kind === "dodge-next-attack" ||
       (effect.kind === "player-status" && ["block", "armor", "thorns"].includes(effect.status))
     )
       hasDefense = true;

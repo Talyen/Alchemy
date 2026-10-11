@@ -67,7 +67,7 @@ const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } =
   "next-hit-crit": () => [],
   "next-hit-leech": () => ["leech"],
   "play-next-card-twice": () => [],
-  "next-hit-poison": () => [],
+  "next-hit-poison": () => ["poison"],
   "next-archery-free": () => ["archery"],
   "dodge-next-attack": () => ["dodge"],
 };
