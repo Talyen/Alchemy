@@ -201,7 +201,20 @@ Resolve understood merge conflicts in the task worktree, commit the resolution,
 and retry; ambiguous conflicts or dirty `main` are blockers to report to the user.
 Failures preserve task work and leave `main` unchanged. Never bypass serialization
 with a manual update to `main`. Keep unintegrated work committed and recoverable;
-cleanup must not discard work. After handoff, stop: no completion broadcasts,
+cleanup must not discard work.
+
+Once the requested work is complete and integrated, standing authorization covers
+removing only this chat's clean worktree before final handoff. Confirm that its
+commit is in local `main`, preserve needed local-only files outside the checkout,
+then run `git worktree remove ".worktrees/<slug>"` from the original checkout to
+retain the task branch. Rebuildable dependencies and build caches need no archive.
+For an app-managed worktree, use the app's recoverable archive operation instead.
+Never force-remove dirty or unintegrated work, remove another chat's worktree, or
+remove an experiment still needed for the user's requested work. If needed files
+cannot be preserved, leave the checkout and report the cleanup blocker. Report
+cleanup status alongside integration and verification results.
+
+After handoff, stop: no completion broadcasts,
 acknowledgments, polling, or waking completed chats. Only a concrete unresolved
 dependency or conflict warrants a bounded chat exchange.
 
