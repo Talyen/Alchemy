@@ -73,14 +73,13 @@ describe("Campfire Rest or Brew", () => {
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(screen.getByRole("button", { name: "Rest" })).toBeTruthy();
   });
-  it("shows the restored result and Continue without allowing another action", () => {
+  it("shows the restored result and Loot without allowing another action", () => {
     const p = props();
     render(<CampfireScreen {...p} visit={{ ...p.visit, completed: true, result: offers[0]! }} />);
     expect(screen.getByRole("button", { name: "Health Potion" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Brew Potion" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Rest" })).toBeNull();
-    expect(screen.queryByText(/Potion brewed/)).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    fireEvent.click(screen.getByRole("button", { name: "Loot" }));
     expect(p.onContinue).toHaveBeenCalledOnce();
   });
   it("holds the pre-Rest Health until saving finishes, then animates forward", async () => {

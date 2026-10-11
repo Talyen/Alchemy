@@ -45,26 +45,39 @@ it("anchors to the registered control through stage scaling, tooltip entry, and 
   Object.defineProperties(stage, { clientWidth: { value: 1000 }, clientHeight: { value: 800 } });
   vi.spyOn(stage, "getBoundingClientRect").mockReturnValue({ left: 100, top: 50, width: 500, height: 400 } as DOMRect);
   const first = screen.getByRole("button", { name: "First" });
-  vi.spyOn(first, "getBoundingClientRect").mockReturnValue({ left: 200, top: 150, width: 100, height: 40 } as DOMRect);
+  const firstBounds = vi
+    .spyOn(first, "getBoundingClientRect")
+    .mockReturnValue({ left: 200, top: 150, width: 100, height: 40 } as DOMRect);
   fireEvent.mouseOver(first);
   view.rerender(<Scene colors={red} />);
   const halo = screen.getByTestId("interaction-plasma-background");
-  expect(halo.style.width).toBe("400px");
-  expect(halo.style.height).toBe("192px");
-  expect(halo.style.left).toBe("100px");
-  expect(halo.style.top).toBe("144px");
-  expect(halo.style.opacity).toBe("0.65");
+  expect(halo.style.width).toBe("328px");
+  expect(halo.style.height).toBe("208px");
+  expect(halo.style.left).toBe("136px");
+  expect(halo.style.top).toBe("136px");
+  expect(halo.style.opacity).toBe("1");
+
+  // A tall opaque card must retain an exterior halo on all sides. The old
+  // height cap squeezed its brightest region entirely beneath the artwork.
+  firstBounds.mockReturnValue({ left: 200, top: 100, width: 150, height: 210 } as DOMRect);
+  act(() => tracking.update?.());
+  expect(halo.style.width).toBe("428px");
+  expect(halo.style.height).toBe("548px");
+  expect(halo.style.left).toBe("136px");
+  expect(halo.style.top).toBe("36px");
+  firstBounds.mockReturnValue({ left: 200, top: 150, width: 100, height: 40 } as DOMRect);
+  act(() => tracking.update?.());
 
   fireEvent.mouseOver(screen.getByRole("button", { name: "Tooltip action" }));
   view.rerender(<Scene colors={blue} />);
-  expect(halo.style.left).toBe("100px");
+  expect(halo.style.left).toBe("136px");
   // An unrelated hover cannot steal a still-registered keyboard-focus palette.
   fireEvent.mouseOver(screen.getByRole("button", { name: "Second" }));
-  expect(halo.style.left).toBe("100px");
+  expect(halo.style.left).toBe("136px");
 
   view.rerender(<Scene colors={null} />);
   expect(halo.style.opacity).toBe("0");
-  expect(halo.style.left).toBe("100px");
+  expect(halo.style.left).toBe("136px");
   expect(screen.getByTestId("plasma-renderer").dataset.colors).toBe(JSON.stringify(blue));
   expect(screen.getByTestId("plasma-renderer").dataset.active).toBe("true");
   act(() => vi.advanceTimersByTime(350));
