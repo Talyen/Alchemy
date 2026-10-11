@@ -136,16 +136,16 @@ describe("drawCards — edge cases", () => {
   });
 
   it("preserves reshuffled deck and cleared discard when tutoring a missing keyword card with an empty deck", () => {
-    const fireCard = makeTestCardWithId("fire", {
-      effects: [{ kind: "damage", damageType: "fire", amount: 3 }],
+    const burnCard = makeTestCardWithId("burn", {
+      effects: [{ kind: "damage", damageType: "burn", amount: 3 }],
     });
     const state = makeTestBattleState({
       deck: [],
-      discard: [fireCard],
+      discard: [burnCard],
     });
     const result = drawKeywordCard(state, "holy");
     expect(result.deck).toHaveLength(1);
-    expect(result.deck[0]?.id).toBe("fire");
+    expect(result.deck[0]?.id).toBe("burn");
     expect(result.discard).toHaveLength(0);
     expect(result.pendingHandCards).toHaveLength(0);
   });

@@ -13,6 +13,7 @@ import {
   targetPlatform,
 } from "./desktop-artifact.mjs";
 import { REPO_ROOT } from "../repository-paths.mjs";
+import { MANIFEST_BASENAME } from "../../assets/asset-constants.mjs";
 
 const require = createRequire(import.meta.url);
 
@@ -50,9 +51,10 @@ function verifyRendererResources(html, readResource) {
 
 // Vite copies public files unchanged. Check the copy rather than only the
 // source inventory: a renderer can load successfully while its audio is absent.
+// Optimizer receipts are source-validation metadata, omitted by artifact uploads.
 function verifyPublicAssets(publicDirectory, readResource) {
   const files = readdirSync(publicDirectory, { recursive: true })
-    .filter((file) => statSync(join(publicDirectory, file)).isFile())
+    .filter((file) => basename(file) !== MANIFEST_BASENAME && statSync(join(publicDirectory, file)).isFile())
     .map((file) => file.replaceAll("\\", "/"))
     .sort();
   if (!files.some((file) => file.startsWith("Music/") && file.endsWith(".mp3"))) {

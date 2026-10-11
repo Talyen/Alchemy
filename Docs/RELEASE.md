@@ -96,7 +96,8 @@ hosts do not substitute for it.
 Windows packaging explicitly targets x64, matching the Steamworks native binding.
 Package verification reads the executable PE header and rejects other architectures.
 
-Desktop renderer artifacts used for packaging include every file in `public/`.
+Desktop renderer artifacts used for packaging include every runtime file in `public/`,
+excluding optimizer receipts (`.asset-hashes.json`) used only for source validation.
 Before packaging or signing, verification compares these files with the renderer's
 copies, including music, sound effects and their fallbacks, fonts, and licenses.
 The package verifier repeats that byte comparison inside `app.asar` and rejects

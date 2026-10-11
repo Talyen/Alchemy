@@ -53,7 +53,7 @@ const renderer: Record<string, string> = {
 };
 
 it.each(["dist", "dist-demo"])(
-  "accepts complete %s output before and after packaging, including public assets",
+  "accepts complete %s output before and after packaging without optimizer receipts",
   async (directory) => {
     const { output, source, publicDirectory } = await archive(
       Object.fromEntries(
@@ -62,7 +62,7 @@ it.each(["dist", "dist-demo"])(
           bytes,
         ]),
       ),
-      { "Music/Battle 1.mp3": "battle music bytes" },
+      { "Music/Battle 1.mp3": "battle music bytes", "Music/.asset-hashes.json": "optimizer receipt" },
     );
     expect(() => verifyDesktopRenderer(path.join(source, directory), publicDirectory)).not.toThrow();
     expect(() => verifyPackagedRenderer(output, publicDirectory, directory)).not.toThrow();
