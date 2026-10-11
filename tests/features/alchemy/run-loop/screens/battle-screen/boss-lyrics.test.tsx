@@ -35,7 +35,7 @@ it("builds words without remounting earlier words and recovers after gaps, pause
   expect(lyrics.textContent).toBe("I");
   const first = lyrics.firstElementChild;
   at(1.8);
-  expect(lyrics.children.length).toBeGreaterThan(1);
+  expect(lyrics.textContent).toBe("I was a grove");
   expect(lyrics.firstElementChild).toBe(first);
   expect(lyrics.querySelectorAll(".text-gold-pale")).toHaveLength(1);
   at(250);
