@@ -5,7 +5,7 @@ import { sessionRuntime } from "./session-runtime";
 export type { GameplayState } from "./gameplay-state";
 
 const runtime = sessionRuntime(defaultGameSession);
-const applicationStore = runtime.gameplay;
+const applicationStore = runtime.gameplay.reads;
 // Retain the immutable pre-action reference until local acknowledgement. Domain
 // reads still use the committed store; only player-facing hooks wait for saving.
 let cachedLive: GameplayState | undefined;

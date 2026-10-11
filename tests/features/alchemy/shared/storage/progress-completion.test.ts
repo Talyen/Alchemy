@@ -6,6 +6,10 @@ import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/sha
 import { guardProgressAction } from "@/features/alchemy/shared/stores/session-capabilities";
 import { setGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { flushSaveAfterGearMutation, flushSaveAfterRunEnd } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
+import { subscribePersistenceCommits } from "@/features/alchemy/shared/stores/persistence-commit-filter";
+import { readSessionRevision } from "@/features/alchemy/shared/stores/session-capabilities";
+import { registerErrorSink } from "@/lib/error-logger";
 import { readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { deferred } from "../../../../helpers/deferred";
 import type { SaveBackend } from "@/lib/platform-save-backend";
@@ -224,6 +228,110 @@ it("immediate Gear and run-end saves share failure, retry and completion with au
     expect(feedback).toHaveBeenCalledOnce();
     expect(JSON.parse(writes.at(-1)!).gold).toBe(30);
   } finally {
+    release();
+    await session.dispose();
+  }
+});
+
+it("a failing gameplay observer cannot suppress autosave, later observers, or command feedback", async () => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  const writes: string[] = [];
+  const session = createGameSession({
+    saveBackend: {
+      readCandidates: async () => ({ ok: true, candidates: [] }),
+      write: async (_key, value) => {
+        writes.push(value);
+        return { ok: true };
+      },
+      writeSync: () => null,
+      clear: async () => ({ ok: true }),
+    },
+  });
+  const persistence = createSessionPersistence(session);
+  const release = persistence.trackProgress(() => {});
+  const failure = new Error("broken display observer");
+  const errors: unknown[] = [];
+  const removeSink = registerErrorSink((entry) => errors.push(entry.cause));
+  const removeBroken = subscribeRunSessionCommits(() => {
+    throw failure;
+  }, session);
+  let saving: Promise<unknown> | undefined;
+  const removeAutosave = subscribePersistenceCommits(() => {
+    saving = persistence.checkpoint();
+  }, session);
+  const observed: number[] = [];
+  const removeObserver = subscribeRunSessionCommits((revision) => observed.push(revision), session);
+  const feedback = vi.fn();
+  try {
+    const previousRevision = readSessionRevision(session);
+    expect(
+      dispatchRunSessionCommand(
+        (draft) => {
+          setGold(draft, 37);
+          return acceptCommand("committed");
+        },
+        { afterCommit: feedback },
+        session,
+      ),
+    ).toBe("committed");
+    await saving;
+    expect(observed).toEqual([previousRevision + 1]);
+    expect(errors).toEqual([failure]);
+    expect(feedback).toHaveBeenCalledExactlyOnceWith("committed");
+    expect(writes).toHaveLength(1);
+    expect(JSON.parse(writes[0]!).gold).toBe(37);
+    expect(persistence.readProgress().kind).toBe("idle");
+    // The guard must also be released after observer failure.
+    dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 38)), undefined, session);
+    await saving;
+    expect(JSON.parse(writes.at(-1)!).gold).toBe(38);
+  } finally {
+    removeBroken();
+    removeAutosave();
+    removeObserver();
+    removeSink();
+    release();
+    await session.dispose();
+  }
+});
+
+it("save-status observers see and checkpoint the newly committed gameplay revision", async () => {
+  const writes: string[] = [];
+  const session = createGameSession({
+    saveBackend: {
+      readCandidates: async () => ({ ok: true, candidates: [] }),
+      write: async (_key, value) => {
+        writes.push(value);
+        return { ok: true };
+      },
+      writeSync: () => null,
+      clear: async () => ({ ok: true }),
+    },
+  });
+  const persistence = createSessionPersistence(session);
+  const release = persistence.trackProgress(() => {});
+  const observed: Array<{ pending: number; live: number; gold: number }> = [];
+  let saving: Promise<unknown> | undefined;
+  const unsubscribe = persistence.subscribeProgress(() => {
+    const progress = persistence.readProgress();
+    if (progress.kind !== "saving") return;
+    observed.push({
+      pending: progress.revision,
+      live: readSessionRevision(session),
+      gold: readRunProfile(session).gold,
+    });
+    saving = persistence.checkpoint();
+  });
+  try {
+    const revision = readSessionRevision(session) + 1;
+    dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 51)), undefined, session);
+    await saving;
+    expect(observed).toEqual([{ pending: revision, live: revision, gold: 51 }]);
+    expect(writes).toHaveLength(1);
+    expect(JSON.parse(writes[0]!).gold).toBe(51);
+    expect(persistence.readProgress().kind).toBe("idle");
+  } finally {
+    unsubscribe();
     release();
     await session.dispose();
   }

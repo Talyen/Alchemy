@@ -42,7 +42,7 @@ export function subscribeAlchemyPersistence(listener: () => void, gameSession: G
 
 export function buildAlchemySaveDataFromStores(gameSession: GameSession): UnstampedSaveData {
   const runtime = sessionRuntime(gameSession);
-  const state = runtime.gameplay.getState();
+  const state = runtime.gameplay.reads.getState();
   const token = runtime.progressCompletion.token(state.revision);
   try {
     const activeRun = isActiveRunActivity(state.session.activity)

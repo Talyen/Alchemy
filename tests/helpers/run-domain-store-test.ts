@@ -1,5 +1,4 @@
 import { vi } from "vitest";
-import { useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import {
   acceptCommand,
   dispatchGameplayCommand,
@@ -65,17 +64,17 @@ export function replaceBattleForTest(transaction: RunTransaction, snapshot: Batt
 type RunStateFields = ActiveRunProgressFields & PermanentProgressFields & { initialized: boolean };
 
 export function resetRunDomainStore(): void {
-  const revision = useGameplayStateStore.getState().revision + 1;
-  useGameplayStateStore.setState(
-    {
-      revision,
-      run: createInitialRunDomainData(),
-      session: createInitialSessionFields(),
-      runProfile: createInitialPermanentFields(),
-      profile: createInitialProfileState(),
-      gear: createInitialGearState(),
+  dispatchGameplayCommand(
+    (draft) => {
+      draft.run = createInitialRunDomainData();
+      draft.session = createInitialSessionFields();
+      draft.runProfile = createInitialPermanentFields();
+      draft.profile = createInitialProfileState();
+      draft.gear = createInitialGearState();
+      return acceptCommand();
     },
-    true,
+    undefined,
+    defaultGameSession,
   );
 }
 
