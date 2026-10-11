@@ -21,7 +21,6 @@ export function KeywordPlasmaBackground({
   active = true,
   className,
   intensity = 100,
-  testIdPrefix,
 }: {
   keywordIds?: readonly KeywordId[] | null | undefined;
   colorPair?: PlasmaColorPair | null | undefined;
@@ -29,7 +28,6 @@ export function KeywordPlasmaBackground({
   active?: boolean | undefined;
   className?: string | undefined;
   intensity?: number | undefined;
-  testIdPrefix?: string | undefined;
 }) {
   const [webglAvailable, setWebglAvailable] = useState(true);
   const visible = intensity > 0;
@@ -150,13 +148,13 @@ export function KeywordPlasmaBackground({
     >
       <canvas
         ref={canvasRef}
-        data-testid={testIdPrefix ? `${testIdPrefix}-plasma-canvas` : "global-plasma-background"}
+        data-testid="global-plasma-background"
         className="absolute inset-0"
         style={{ visibility: webglAvailable ? "visible" : "hidden" }}
       />
       {!webglAvailable && motionAllowed && active && colorPair !== null ? (
         <div
-          data-testid={testIdPrefix ? `${testIdPrefix}-plasma-fallback` : "static-plasma-background"}
+          data-testid="static-plasma-background"
           className="absolute inset-0"
           style={{
             background: `radial-gradient(ellipse at 50% calc(50% - ${focalYOffset}px), color-mix(in srgb, ${targetPrimary} 13%, transparent), color-mix(in srgb, ${targetSecondary} 7%, transparent) 35%, transparent 75%)`,

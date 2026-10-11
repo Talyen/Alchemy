@@ -17,18 +17,17 @@ test("packaged plasma restores a lost context and falls back on shader failure",
     const battle = new BattlePage(page);
     await battle.waitForOpeningHand();
     await battle.hand.first().hover();
-    const canvas = page.getByTestId("interaction-plasma-canvas");
+    const canvas = page.getByTestId("global-plasma-background");
     const extension = await canvas.evaluateHandle((element: HTMLCanvasElement) =>
       element.getContext("webgl")?.getExtension("WEBGL_lose_context"),
     );
     expect(await extension.evaluate((value) => Boolean(value))).toBe(true);
     await battle.playFirstCard();
-    await battle.hand.first().hover();
     await extension.evaluate((value) => value?.loseContext());
-    await expect(page.getByTestId("interaction-plasma-fallback")).toBeVisible();
+    await expect(page.getByTestId("static-plasma-background")).toBeVisible();
     await extension.evaluate((value) => value?.restoreContext());
     await extension.dispose();
-    await expect(page.getByTestId("interaction-plasma-fallback")).toHaveCount(0);
+    await expect(page.getByTestId("static-plasma-background")).toHaveCount(0);
     await expect(page.getByText("Saving…", { exact: true })).toHaveCount(0);
     await expect(battle.hand).toHaveCount(1);
     await battle.endTurn();
@@ -45,8 +44,8 @@ test("packaged plasma restores a lost context and falls back on shader failure",
     await page.reload();
     await battle.waitForOpeningHand();
     await battle.hand.first().hover();
-    await expect(page.getByTestId("interaction-plasma-fallback")).toBeVisible();
-    expect([...new Set(errors.splice(0).map((message) => message.trim()))]).toEqual([
+    await expect(page.getByTestId("static-plasma-background")).toBeVisible();
+    expect(errors.splice(0).map((message) => message.trim())).toEqual([
       "[other] Plasma WebGL unavailable; using static decoration",
     ]);
   } finally {
