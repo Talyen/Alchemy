@@ -10,7 +10,7 @@ import {
   type SettingsSaveFields,
   type SettingsStore,
 } from "./settings-state";
-export { createDefaultSettingsSaveFields, preferredAutoplayEnabled } from "./settings-state";
+export { preferredAutoplayEnabled } from "./settings-state";
 export type { SettingsActions, SettingsSaveFields, SettingsStore } from "./settings-state";
 const applicationStore = sessionRuntime(defaultGameSession).settings;
 export const useSettingsStore = Object.assign(
