@@ -6,7 +6,7 @@ import type { BattleState, CcState, CombatTextEvent } from "./types";
 import { setEnemyStatus, setPlayerStatus } from "./status-state";
 import { addEnemyMitigation } from "./enemy-mitigation-state";
 import { hasEnemyTrait } from "./encounter-trait-state";
-import { isPlayerDefeated } from "./health-state";
+import { getBattleOutcome } from "./battle-outcome";
 
 export type ActiveCcKeyword = "stun" | "freeze";
 
@@ -106,7 +106,7 @@ export type EnemyCcTriggerResult = { kind: "skip"; state: BattleState } | { kind
 
 export function tryTriggerEnemyCc(input: EnemyCcTriggerCheckInput): EnemyCcTriggerResult | null {
   const { preHitHealth, nextState, stat, stackValue, thresholdFraction, ccCooldown, skipDuration, combatTexts } = input;
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return null;
+  if (getBattleOutcome(nextState) !== null) return null;
   if (isCcControlled(nextState.enemyCC)) return null;
   if (preHitHealth <= 0 || stackValue < preHitHealth * thresholdFraction) return null;
   const cleared = setEnemyStatus(nextState, stat, 0);

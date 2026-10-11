@@ -35,14 +35,14 @@ export function corruptCard(
   rng: () => number,
   modifiers: readonly EncounterRewardTraitId[] = [],
 ): CorruptionResult | null {
-  if (selectedCard.corrupted) return null;
+  if (selectedCard.corrupted || selectedCard.transmuted) return null;
   const pure = modifiers.includes("pure-altar");
   const twin = modifiers.includes("twin-offering");
   const singleModifiers = twin ? modifiers.filter((id) => id !== "twin-offering") : modifiers;
   let groups = getCorruptionMutationGroups(selectedCard, singleModifiers);
   let transformed = false;
   const candidates = library.filter(
-    (card) => card.id !== selectedCard.id && !card.corrupted && !isSpecialCorruptionCard(card),
+    (card) => card.id !== selectedCard.id && !card.corrupted && !card.transmuted && !isSpecialCorruptionCard(card),
   );
   if (groups.length === 0 || (!pure && candidates.length > 0 && rng() < CORRUPTION_TRANSFORM_CHANCE_FRACTION)) {
     const options = candidates

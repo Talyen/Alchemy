@@ -1,13 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { cardById, characters, getCardKeywords } from "@/lib/game-data";
+import { cardById } from "@/lib/game-data";
 import { createCampfirePotionOffers, strengthenPotion } from "@/lib/alchemist/brewing";
-import { createTransmutationOffers } from "@/lib/alchemist/transmutation";
 import { tryCreateMixedPotion } from "@/lib/alchemist";
 import { makeTestCard } from "../../fixtures/cards";
 import { BattleCardSchema } from "@/lib/validation/save-schemas/battle-card-schemas";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { createSeededRng } from "@/lib/rng";
-describe("brewing and transmutation content", () => {
+describe("brewing content", () => {
   it("creates distinct fixed Potion offers with a recovery or defense option", () => {
     const offers = createCampfirePotionOffers(createSeededRng(23));
     expect(new Set(offers.map((card) => card.id)).size).toBe(3);
@@ -110,25 +109,5 @@ describe("brewing and transmutation content", () => {
     if (chance.kind !== "chance") throw new Error("Expected chance Potion");
     Object.assign(chance.failureEffects[0], { amount: 99 });
     expect(card).toEqual(before);
-  });
-  it("offers each class affinity with distinct matching candidates and independent hydrated cards", () => {
-    for (const character of Object.values(characters)) {
-      const choices = createTransmutationOffers(character.id, createSeededRng(42));
-      expect(choices).toEqual(createTransmutationOffers(character.id, createSeededRng(42)));
-      expect(choices).toHaveLength(3);
-      if (character.keywords.length) expect(choices.map((choice) => choice.keyword)).toEqual(character.keywords);
-      expect(new Set(choices.map((choice) => choice.keyword)).size).toBe(3);
-      for (const { keyword, candidates } of choices) {
-        expect(candidates).toHaveLength(4);
-        expect(new Set(candidates.map((card) => card.id)).size).toBe(4);
-        expect(candidates.every((card) => getCardKeywords(card).includes(keyword))).toBe(true);
-        expect(candidates.map((card) => hydrateCard(BattleCardSchema.parse(card)))).toEqual(candidates);
-      }
-      const candidate = choices[0]!.candidates[0]!;
-      const catalogCard = cardById[candidate.id]!;
-      const before = structuredClone(catalogCard);
-      Object.assign(candidate.effects[0], { amount: 999 });
-      expect(catalogCard).toEqual(before);
-    }
   });
 });

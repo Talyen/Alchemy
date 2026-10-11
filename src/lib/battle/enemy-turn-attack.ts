@@ -23,7 +23,7 @@ import { applyArmorLossAttackRetaliation } from "./player-defensive-reactions";
 import type { BattleState, CombatTextEvent } from "./types";
 import { isStunFreezeBuildupBlocked } from "./crowd-control-policy";
 import { addEnemyStatus, setPlayerStatus } from "./status-state";
-import { isPlayerDefeated } from "./health-state";
+import { getBattleOutcome } from "./battle-outcome";
 import { writeCombatFlag as setFlag } from "./action-context";
 
 function applyEnemyEffect(
@@ -32,7 +32,7 @@ function applyEnemyEffect(
   context: EnemyAbilityContext,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
+  if (getBattleOutcome(state) !== null) return state;
   switch (effect.kind) {
     case "chance": {
       const effects = rollChance(effect.probability, getBattleRng(state))
@@ -88,7 +88,7 @@ function applyEnemyEffect(
 
 export function applyEnemyAbility(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]): BattleState {
   if (!isEnemyAbilityCard(card)) throw new Error(`Unsupported enemy ability: ${card.id}`);
-  if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
+  if (getBattleOutcome(state) !== null) return state;
   const damaging = enemyAbilityDealsDamage(card);
   const context = createEnemyAbilityContext(state, damaging);
   let nextState = recordEnemyAbilityUse({ ...state, lastEnemyAbilityId: card.id }, card.id);
@@ -102,12 +102,12 @@ export function applyEnemyAbility(state: BattleState, card: BattleCard, combatTe
     { kind: "each-step", settle: resolvePendingBattleReactions },
     "either-defeated",
   );
-  if (!damaging || nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
+  if (!damaging || getBattleOutcome(nextState) !== null) return nextState;
   return resolvePendingBattleReactions(applyAbilityFollowups(nextState, context, combatTexts), combatTexts);
 }
 
 export function processEnemyAbility(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
-  if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
+  if (getBattleOutcome(state) !== null) return state;
   const candidates = state.currentEnemy.abilityIds.filter((id) => id !== state.lastEnemyAbilityId);
   if (candidates.length === 0) throw new Error(`Enemy has no available ability: ${state.currentEnemy.id}`);
   const id = pickRandom(candidates, getBattleRng(state));

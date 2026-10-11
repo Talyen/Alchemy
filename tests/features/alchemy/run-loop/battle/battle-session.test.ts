@@ -59,19 +59,23 @@ describe("createBattleSession", () => {
   afterEach(() => {
     vi.useRealTimers();
   });
-  it("fires victory once when enemy health is zero", () => {
-    const { session, onBattleVictory } = makeSession();
-    const state = { ...defaultBattleState(), enemyHealth: 0 };
-    expect(session.checkBattleEnd(state, 1)).toBe(true);
-    expect(onBattleVictory).toHaveBeenCalledOnce();
-  });
-
-  it("fires defeat when player is defeated", () => {
-    const { session, onBattleDefeat } = makeSession();
-    const state = { ...defaultBattleState(), playerHealth: 0, deathsDoorGraceTurns: 0 };
-    expect(session.checkBattleEnd(state, 1)).toBe(true);
-    expect(onBattleDefeat).toHaveBeenCalledOnce();
-  });
+  it.each([
+    { playerHealth: 10, enemyHealth: 0, deathsDoorActive: false, expected: "victory" },
+    { playerHealth: 0, enemyHealth: 10, deathsDoorActive: false, expected: "defeat" },
+    { playerHealth: 0, enemyHealth: 0, deathsDoorActive: false, expected: "defeat" },
+    { playerHealth: 0, enemyHealth: 0, deathsDoorActive: true, expected: "victory" },
+    { playerHealth: 0, enemyHealth: 10, deathsDoorActive: true, expected: null },
+  ])(
+    "settles $expected once at hero $playerHealth / enemy $enemyHealth, Death's Door $deathsDoorActive",
+    ({ expected, ...health }) => {
+      const { session, onBattleVictory, onBattleDefeat } = makeSession();
+      const state = { ...defaultBattleState(), ...health };
+      expect(session.checkBattleEnd(state, 1)).toBe(expected !== null);
+      session.checkBattleEnd(state, 1);
+      expect(onBattleVictory).toHaveBeenCalledTimes(expected === "victory" ? 1 : 0);
+      expect(onBattleDefeat).toHaveBeenCalledTimes(expected === "defeat" ? 1 : 0);
+    },
+  );
 
   it("ignores checkBattleEnd when session is stale", () => {
     const { session, playback, onBattleVictory } = makeSession();

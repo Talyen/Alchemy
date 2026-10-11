@@ -6,6 +6,7 @@ import type { GameSession } from "./game-session-types";
 import type { GameplayState } from "./gameplay-state";
 import { subscribeGameplayCommits } from "./gameplay-state-store";
 import { sessionRuntime, type SessionRuntime } from "./session-runtime";
+import { snapshotReadonlyValue } from "./readonly-view";
 import { deepFreezeInDev } from "./store-utils";
 
 export type GameplayDraft = Draft<GameplayState>;
@@ -56,6 +57,9 @@ export function dispatchGameplayCommand<T>(
         throw new Error("dispatchGameplayCommand: commands must return an explicit accepted or rejected outcome");
       }
       assertSynchronousResult(outcome.value);
+      // Results cross the same lifetime boundary for store and feature commands.
+      // Detach before Immer revokes drafts, including rejected fallback values.
+      outcome = { ...outcome, value: snapshotReadonlyValue(outcome.value) as T };
     });
 
     if (outcome.kind === "accepted" && next !== base) {

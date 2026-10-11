@@ -1,7 +1,7 @@
 import { tryCreateMixedPotion } from "@/lib/alchemist";
 import { isBrewablePotion, strengthenPotion } from "@/lib/alchemist/brewing";
 import { getEffectiveDamageScore, type BattleSnapshot } from "@/lib/battle";
-import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
+import { harmfulPlayerStatusIds, mapEffectChildren, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 
 // Visible-effect estimates for preparation, not combat predictions. Healing has
 // future value here even at full Health; combat decisions use the live snapshot.
@@ -102,7 +102,17 @@ export function potionPurchaseScore(card: BattleCard, deck: readonly BattleCard[
 }
 
 export function shouldPreserveConsumable(card: BattleCard, state: BattleSnapshot): boolean {
-  if (!card.consume || getEffectiveDamageScore(card, state) > 0) return false;
+  if (!card.consume) return false;
+  // Live autoplay gives fixed cleanses nominal value even without an affliction.
+  // Preservation needs their current benefit, including inside Mixed Potions.
+  const withoutInactiveCleanse = (effect: BattleCardEffect): BattleCardEffect =>
+    effect.kind === "remove-harmful-status"
+      ? { ...effect, amount: 0 }
+      : mapEffectChildren(effect, withoutInactiveCleanse);
+  const scoredCard = harmfulPlayerStatusIds.some((status) => state.playerStatuses[status] > 0)
+    ? card
+    : { ...card, effects: card.effects.map(withoutInactiveCleanse) };
+  if (getEffectiveDamageScore(scoredCard, state) > 0) return false;
   const t = state.talentEffects;
   const g = state.gearEffects;
   const last = state.hand.length === 1;

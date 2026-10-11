@@ -17,6 +17,7 @@ export interface KeywordTagProps {
   showTooltip?: boolean;
   onSelect?: () => void;
   disabled?: boolean;
+  selected?: boolean;
 }
 
 export function KeywordTag({
@@ -27,6 +28,7 @@ export function KeywordTag({
   showTooltip = false,
   onSelect,
   disabled = false,
+  selected,
 }: KeywordTagProps) {
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
     useHoverVisible<HTMLButtonElement>();
@@ -60,8 +62,9 @@ export function KeywordTag({
     <button
       ref={triggerRef}
       type="button"
-      className={cn("relative inline-flex items-center", pill && "rounded-full")}
+      className={cn("relative inline-flex items-center", pill && "rounded-full", selected && "ring-2 ring-current")}
       aria-label={onSelect ? `Choose ${def.label}` : `Inspect ${def.label} keyword`}
+      aria-pressed={onSelect ? selected : undefined}
       disabled={disabled}
       onClick={onSelect}
       onMouseEnter={onMouseEnter}

@@ -17,7 +17,7 @@ import {
 import { deriveGearCombatRestrictions } from "./gear-combat-restrictions";
 import type { GearDraftView } from "./gear-store-types";
 import { discoverUniqueIds } from "./profile-store";
-import { createReadonlyView, snapshotReadonlyValue, unwrapReadonlyValue } from "./readonly-view";
+import { createReadonlyView, snapshotReadonlyValue } from "./readonly-view";
 import type { RunTransaction } from "./run-session-command";
 import { acceptCommand, rejectCommand, type SynchronousResult } from "./run-session-command";
 import {
@@ -133,7 +133,7 @@ export function dispatchGearMutationWithRunHealthSync<T>(
 ): T {
   return dispatchGameplayCommand<T>(
     (draft) => {
-      const result = unwrapReadonlyValue(mutateGearWithRunHealthSync<T>(draft, options));
+      const result = mutateGearWithRunHealthSync<T>(draft, options);
       return result === false || result === null
         ? rejectCommand<T>("Gear action was rejected", result)
         : acceptCommand<T>(result);

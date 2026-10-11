@@ -1,5 +1,5 @@
 import { clearBattleStageMarks, markBattleStage } from "@/lib/performance/marks";
-import { isPlayerDefeated, type BattleSnapshot, type ResolvedBattleTurn } from "@/lib/battle";
+import { getBattleOutcome, type BattleOutcome, type BattleSnapshot, type ResolvedBattleTurn } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
 import { stopAllSfx } from "@/lib/audio";
 import type { BattleControllerContext } from "./battle-context";
@@ -48,7 +48,7 @@ export function createBattleSession(ctx: BattleControllerContext) {
     return fallback;
   }
 
-  function handleVictoryDefeat(kind: "victory" | "defeat") {
+  function handleVictoryDefeat(kind: BattleOutcome) {
     if (ctx.playback.finish()) {
       getPresentationStore().setDisplayedBattle(getStore().battleState);
       if (kind === "victory") ctx.onBattleVictory?.();
@@ -58,12 +58,9 @@ export function createBattleSession(ctx: BattleControllerContext) {
 
   function checkBattleEnd(state: BattleSnapshot, session: number): boolean {
     if (!isCurrentBattleSession(session)) return false;
-    if (isPlayerDefeated(state)) {
-      handleVictoryDefeat("defeat");
-      return true;
-    }
-    if (state.enemyHealth <= 0) {
-      handleVictoryDefeat("victory");
+    const outcome = getBattleOutcome(state);
+    if (outcome !== null) {
+      handleVictoryDefeat(outcome);
       return true;
     }
     return false;

@@ -3,7 +3,8 @@ import { applyBlockReward, applyCardHealing } from "./status-player";
 import { hasEncounterBenefit } from "./encounter-trait-state";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { BattleState, CombatTextEvent } from "./types";
-import { isPlayerDefeated, resolvePlayerHealing } from "./health-state";
+import { resolvePlayerHealing } from "./health-state";
+import { isPlayerDefeated } from "./battle-outcome";
 import {
   addGoldWithCombatText,
   addPlayerStatusWithCombatText,

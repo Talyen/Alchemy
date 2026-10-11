@@ -1,3 +1,5 @@
+import type { UnstampedSaveData } from "../storage/types";
+import { hydrateGameplayPersistenceFields } from "./persistence-hydration";
 import { settleRunEnd } from "./write/run-end";
 import { setScreen } from "./write/run-navigation";
 import { buildAlchemySaveDataFromStores } from "../storage/persistence";
@@ -45,15 +47,7 @@ export function restoreRun(
   sessionRuntime(gameSession).progressCompletion.cancel();
   dispatchGameplayCommand(
     (draft) => {
-      applyTalentState(draft, talentXP, unlockedTalents);
-      applyRestoreRunToDraft(draft, activeRun && isEditionRunAvailable(activeRun) ? activeRun : null);
-
-      const abandoned = Boolean(
-        options?.abandonIncompatibleBattle &&
-        activeRun &&
-        abandonRunInDraft(draft, { awardRunEndMaterials, finalizeRunXP }),
-      );
-      if (abandoned) setScreen(draft, "game-over");
+      const abandoned = restoreRunInDraft(draft, activeRun, talentXP, unlockedTalents, options);
       return acceptCommand(abandoned);
     },
     {
@@ -63,6 +57,50 @@ export function restoreRun(
     },
     gameSession,
   );
+}
+
+function restoreRunInDraft(
+  draft: GameplayDraft,
+  activeRun: ActiveRunData | null,
+  talentXP: TalentXP,
+  unlockedTalents: UnlockedTalents,
+  options?: { abandonIncompatibleBattle?: boolean },
+): boolean {
+  applyTalentState(draft, talentXP, unlockedTalents);
+  applyRestoreRunToDraft(draft, activeRun && isEditionRunAvailable(activeRun) ? activeRun : null);
+  const abandoned = Boolean(
+    options?.abandonIncompatibleBattle &&
+    activeRun &&
+    abandonRunInDraft(draft, { awardRunEndMaterials, finalizeRunXP }),
+  );
+  if (abandoned) setScreen(draft, "game-over");
+  return abandoned;
+}
+
+/** Permanent progression and its resumable activity publish as one gameplay revision. */
+export function restoreSessionSave(
+  save: UnstampedSaveData,
+  gameSession: GameSession,
+  options?: { preserveActiveRunIfInitialized?: boolean; abandonIncompatibleBattle?: boolean },
+): boolean {
+  const runtime = sessionRuntime(gameSession);
+  runtime.progressCompletion.cancel();
+  const result = dispatchGameplayCommand(
+    (draft) => {
+      const preserve = Boolean(options?.preserveActiveRunIfInitialized && draft.run.initialized);
+      hydrateGameplayPersistenceFields(save, draft);
+      const abandoned = preserve
+        ? false
+        : restoreRunInDraft(draft, save.activeRun, save.talentXP, save.unlockedTalents, options);
+      return acceptCommand({ restored: !preserve, abandoned });
+    },
+    undefined,
+    gameSession,
+  );
+  // Settings are a separate store. Do not replace them if gameplay decoding fails.
+  runtime.settingsCodec.hydrate(save);
+  if (result.abandoned) afterAbandonRun(gameSession);
+  return result.restored;
 }
 
 export function resolveActiveRunForSave(gameSession: GameSession): ActiveRunData | null {

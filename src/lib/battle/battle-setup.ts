@@ -15,7 +15,7 @@ import type { GearEffectManifest } from "@/lib/gear";
 import { defaultGearEffects } from "@/lib/gear";
 import type { BattleState, EnemyMitigation } from "./types";
 import { EMPTY_ENEMY_MITIGATION } from "./enemy-mitigation-state";
-import { isPlayerDefeated } from "./health-state";
+import { getBattleOutcome } from "./battle-outcome";
 import { applyEmergencyWish } from "./wish";
 import { computeTrinketManifest } from "../trinkets";
 import { applyDrawResult, drawCards, drawKeywordCard } from "./draw";
@@ -71,8 +71,7 @@ export function drawOpeningHand(state: BattleState): BattleState {
       getBattleRng(state),
     ),
   );
-  return drawn.enemyHealth > 0 &&
-    !isPlayerDefeated(drawn) &&
+  return getBattleOutcome(drawn) === null &&
     !drawn.wishOptions &&
     drawn.hand.length === 0 &&
     drawn.deck.length === 0 &&

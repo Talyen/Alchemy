@@ -1,63 +1,294 @@
 import {
-  characters,
   cloneBattleCard,
+  createEffectDescription,
+  carryCardDescriptionMarks,
+  getCardDescription,
   getCardKeywords,
-  getOfferableCardPool,
+  getCardEffect,
+  mapCardDescriptionReferences,
+  type CardMagnitudeReference,
   isMixedPotionCard,
-  keywordDefinitions,
+  mapEffectChildren,
+  visitBattleCardEffects,
+  withCardDescription,
   type BattleCard,
-  type CharacterId,
+  type BattleCardEffect,
+  type DamageType,
   type KeywordId,
 } from "@/lib/game-data";
-import type { AlchemyVisit, TransmutationChoice } from "@/lib/active-run-session/alchemy-visits";
-import { sampleItems } from "@/lib/rng";
+import { CORRUPTION_MAX_EFFECT_LINES } from "@/lib/game-constants/corruption";
+import { TRANSMUTATION_KEYWORD_GROUPS, TRANSMUTATION_PREFIXES } from "@/lib/game-constants/transmutation";
+import type {
+  AlchemyVisit,
+  TransmutationChoice,
+  TransmutationAlteration,
+} from "@/lib/active-run-session/alchemy-visits";
+import { pickRandom } from "@/lib/rng";
+
+const DAMAGE_KEYWORDS = TRANSMUTATION_KEYWORD_GROUPS[0]!;
+const BUFF_KEYWORDS: readonly KeywordId[] = ["block", "armor", "forge", "thorns"];
+const RESOURCE_KINDS = { health: "heal", mana: "restore-mana", gold: "gain-gold" } as const;
+const SOURCE_CONDITIONS: Partial<Record<KeywordId, readonly string[]>> = {
+  burn: [
+    "doubleIfEnemyBurning",
+    "doubleIfEnemyNotBurning",
+    "tripleIfEnemyNotBurning",
+    "detonateAllBurn",
+    "detonateIfEnemyBurning",
+  ],
+  bleed: ["doubleIfEnemyBleeding", "detonateAllBleed"],
+  freeze: ["damageTypeIfTargetFrozen", "ifEnemyFrozen"],
+  stun: ["ifEnemyStunned"],
+  block: ["equalToBlock", "equalToBlockPercent", "blockCost", "blockDamageBonus", "damageTypeIfTargetHasBlock"],
+  armor: ["equalToArmor"],
+  forge: ["equalToForge", "forgeBonusPercent"],
+  gold: ["equalToGoldPercent"],
+};
 
 export function isTransmutableCard(card: BattleCard): boolean {
-  return !isMixedPotionCard(card);
+  return !card.corrupted && !card.transmuted && !isMixedPotionCard(card);
 }
 
-export function createTransmutationOffers(characterId: CharacterId, rng: () => number): TransmutationChoice[] {
-  const catalog = getOfferableCardPool();
-  const pools = new Map<KeywordId, BattleCard[]>();
-  for (const keyword of Object.keys(keywordDefinitions) as KeywordId[]) {
-    const pool = catalog.filter((card) => getCardKeywords(card).includes(keyword));
-    // Four candidates leave three distinct outcomes even when the source is in the pool.
-    if (pool.length >= 4) pools.set(keyword, pool);
+function convertibleSource(effect: BattleCardEffect): KeywordId | undefined {
+  if (effect.kind === "damage") {
+    const fields = ["kind", "damageType", "amount", "lifesteal", "ignoreArmor", "ignoreBlock", "damageTypePool"];
+    if (Object.keys(effect).every((key) => fields.includes(key))) return effect.damageType;
   }
-  const affinity = characters[characterId].keywords;
-  const keywords = affinity.length ? affinity : sampleItems([...pools.keys()], 3, rng);
-  return keywords.flatMap((keyword) => {
-    const pool = pools.get(keyword);
-    return pool ? [{ keyword, candidates: sampleItems(pool, 4, rng).map(cloneBattleCard) }] : [];
+  if (effect.kind === "player-status" && BUFF_KEYWORDS.includes(effect.status)) {
+    if (Object.keys(effect).every((key) => ["kind", "status", "amount"].includes(key))) return effect.status;
+  }
+  for (const [keyword, kind] of Object.entries(RESOURCE_KINDS)) {
+    if (effect.kind === kind && Object.keys(effect).every((key) => ["kind", "amount"].includes(key)))
+      return keyword as KeywordId;
+  }
+  return undefined;
+}
+
+function sourceReferences(effect: BattleCardEffect, source: KeywordId): boolean {
+  // Conditions and scaling references must not silently retain a replaced keyword.
+  if (SOURCE_CONDITIONS[source]?.some((field) => Object.hasOwn(effect, field))) return true;
+  if (
+    effect.kind === "self-damage" ||
+    ["lose-health", "lose-mana", "lose-max-mana", "gain-max-mana"].includes(effect.kind)
+  )
+    return false;
+  if (effect.kind === "chance" || effect.kind === "repeat-over-turns") return false;
+  if (effect.kind === "damage")
+    return (
+      effect.damageType === source ||
+      !!effect.damageTypePool?.some((type) => type === source) ||
+      effect.damageTypeIfTargetHasBlock === source ||
+      effect.damageTypeIfTargetFrozen === source
+    );
+  if (effect.kind === "player-status")
+    return effect.status === source || !!effect.statusPool?.some((status) => status === source);
+  if (effect.kind === "heal") return source === "health";
+  if (effect.kind === "restore-mana") return source === "mana";
+  if (effect.kind === "gain-gold") return source === "gold";
+  if (effect.kind === "next-hit-poison") return source === "poison";
+  if ("status" in effect && effect.status === source) return true;
+  return "damageType" in effect && effect.damageType === source;
+}
+
+function canConvertSource(effects: BattleCardEffect[], source: KeywordId): boolean {
+  return !visitBattleCardEffects(effects, (effect) => {
+    if (!sourceReferences(effect, source)) return false;
+    if (SOURCE_CONDITIONS[source]?.some((field) => Object.hasOwn(effect, field))) return true;
+    const convertible = convertibleSource(effect);
+    return (
+      convertible !== source &&
+      !(effect.kind === "damage" && convertible && effect.damageTypePool?.some((type) => type === source))
+    );
   });
+}
+
+function convertEffect(effect: BattleCardEffect, source: KeywordId, destination: KeywordId): BattleCardEffect {
+  const mapped = mapEffectChildren(effect, (child) => convertEffect(child, source, destination));
+  if (mapped.kind === "damage" && DAMAGE_KEYWORDS.includes(destination)) {
+    return {
+      ...mapped,
+      damageType: mapped.damageType === source ? (destination as DamageType) : mapped.damageType,
+      ...(mapped.damageTypePool
+        ? {
+            damageTypePool: mapped.damageTypePool.map((type) => (type === source ? (destination as DamageType) : type)),
+          }
+        : {}),
+    };
+  }
+  if (mapped.kind === "player-status" && mapped.status === source && BUFF_KEYWORDS.includes(destination))
+    return { ...mapped, status: destination as "block" | "armor" | "forge" | "thorns" };
+  const resource = RESOURCE_KINDS[destination as keyof typeof RESOURCE_KINDS];
+  if (resource && mapped.kind === RESOURCE_KINDS[source as keyof typeof RESOURCE_KINDS])
+    return { kind: resource, amount: (mapped as { amount: number }).amount };
+  return mapped;
+}
+
+function finishAlteration(
+  card: BattleCard,
+  keyword: KeywordId,
+  effects: BattleCardEffect[],
+  extra: Partial<BattleCard> = {},
+): BattleCard {
+  const result = {
+    ...card,
+    ...extra,
+    effects,
+    transmuted: keyword,
+    baseTitle: card.title,
+    title: `${TRANSMUTATION_PREFIXES[keyword]} ${card.title}`,
+  };
+  const previous = mapCardDescriptionReferences(
+    getCardDescription(card),
+    (reference) =>
+      ({
+        ...reference,
+        kind: getCardEffect(effects, reference)?.kind ?? reference.kind,
+      }) as CardMagnitudeReference,
+  );
+  const description = carryCardDescriptionMarks(previous, createEffectDescription(effects));
+  for (const tag of result.tags ?? [])
+    description.push({ role: "keyword", parts: [tag[0]!.toUpperCase() + tag.slice(1)] });
+  if (result.consume) description.push({ role: "consume", parts: ["Consume"] });
+  return cloneBattleCard(withCardDescription(result, description));
+}
+
+export function getTransmutationVariants(
+  card: BattleCard,
+  keyword: KeywordId,
+  deck: readonly BattleCard[],
+): Array<{ sourceKeyword: KeywordId | null; result: BattleCard }> {
+  if (!isTransmutableCard(card) || getCardKeywords(card).includes(keyword)) return [];
+  const family = DAMAGE_KEYWORDS.includes(keyword)
+    ? DAMAGE_KEYWORDS
+    : BUFF_KEYWORDS.includes(keyword)
+      ? BUFF_KEYWORDS
+      : Object.hasOwn(RESOURCE_KINDS, keyword)
+        ? (Object.keys(RESOURCE_KINDS) as KeywordId[])
+        : null;
+  if (family) {
+    const sources = new Set<KeywordId>();
+    visitBattleCardEffects(card.effects, (effect) => {
+      const source = convertibleSource(effect);
+      if (source && family.includes(source) && "amount" in effect && effect.amount > 0) {
+        if (effect.kind === "damage" && effect.damageTypePool)
+          for (const type of effect.damageTypePool) sources.add(type);
+        else sources.add(source);
+      }
+    });
+    return [...sources]
+      .filter((source) => source !== keyword && canConvertSource(card.effects, source))
+      .map((sourceKeyword) => ({
+        sourceKeyword,
+        result: finishAlteration(
+          card,
+          keyword,
+          card.effects.map((effect) => convertEffect(effect, sourceKeyword, keyword)),
+        ),
+      }));
+  }
+  const effects = cloneBattleCard(card).effects;
+  if (keyword === "archery" || keyword === "leech") {
+    let damage = false;
+    const infuseDamage = (effect: BattleCardEffect): BattleCardEffect => {
+      if (effect.kind === "damage") {
+        damage = true;
+        return keyword === "leech" ? { ...effect, lifesteal: true } : effect;
+      }
+      return mapEffectChildren(effect, infuseDamage);
+    };
+    const altered = effects.map(infuseDamage);
+    if (!damage) return [];
+    return [
+      {
+        sourceKeyword: null,
+        result: finishAlteration(
+          card,
+          keyword,
+          altered,
+          keyword === "archery" ? { tags: [...(card.tags ?? []), "archery"] } : {},
+        ),
+      },
+    ];
+  }
+  if (keyword === "consume")
+    return [{ sourceKeyword: null, result: finishAlteration(card, keyword, effects, { consume: true }) }];
+  if (getCardDescription(card).filter((line) => line.role === "effect").length >= CORRUPTION_MAX_EFFECT_LINES)
+    return [];
+  if (keyword === "wish") effects.push({ kind: "wish", amount: 1 });
+  else if (keyword === "dodge") effects.push({ kind: "dodge-next-attack" });
+  else if (
+    keyword === "companion" &&
+    deck.some((entry) => visitBattleCardEffects(entry.effects, (effect) => effect.kind === "summon-companion"))
+  )
+    effects.push({ kind: "companion-action", amount: 1 });
+  else return [];
+  return [{ sourceKeyword: null, result: finishAlteration(card, keyword, effects) }];
+}
+
+export function createTransmutationOffers(deck: readonly BattleCard[], rng: () => number): TransmutationChoice[] {
+  const pools = TRANSMUTATION_KEYWORD_GROUPS.map((group) =>
+    group.filter((keyword) => deck.some((card) => getTransmutationVariants(card, keyword, deck).length > 0)),
+  );
+  const keywords: KeywordId[] = [];
+  for (const pool of pools) {
+    const keyword = pickRandom(pool, rng);
+    if (keyword) keywords.push(keyword);
+  }
+  const remaining = pools.flat().filter((keyword) => !keywords.includes(keyword));
+  while (keywords.length < 3 && remaining.length) {
+    const keyword = pickRandom(remaining, rng)!;
+    keywords.push(keyword);
+    remaining.splice(remaining.indexOf(keyword), 1);
+  }
+  return keywords.map((keyword) => ({
+    keyword,
+    alterations: deck.flatMap((source, sourceIndex) => {
+      const alteration = pickRandom(getTransmutationVariants(source, keyword, deck), rng);
+      return alteration ? [{ ...alteration, source: cloneBattleCard(source), sourceIndex }] : [];
+    }),
+  }));
+}
+
+function cardSnapshotKey(card: BattleCard | undefined): string | undefined {
+  return JSON.stringify(card, (_key, value: unknown) =>
+    value && typeof value === "object" && !Array.isArray(value)
+      ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)))
+      : value,
+  );
+}
+
+function matchingAlteration(
+  choice: TransmutationChoice,
+  card: BattleCard,
+  sourceIndex?: number,
+): TransmutationAlteration | undefined {
+  return choice.alterations.find(
+    (entry) =>
+      (sourceIndex === undefined || sourceIndex === entry.sourceIndex) &&
+      cardSnapshotKey(entry.source) === cardSnapshotKey(card),
+  );
 }
 
 export function getTransmutationOffers(visit: AlchemyVisit): BattleCard[] {
   const selection = visit.transmutation;
-  if (!selection?.source || !selection.keyword) return [];
-  return getTransmutationChoiceOffers(selection.choices, selection.source, selection.keyword);
+  if (!selection?.source || selection.sourceIndex === null) return [];
+  return selection.choices.flatMap((choice) => {
+    const alteration = matchingAlteration(choice, selection.source!, selection.sourceIndex!);
+    return alteration ? [alteration.result] : [];
+  });
 }
 
-function getTransmutationChoiceOffers(
+export function canTransmuteCard(
   choices: readonly TransmutationChoice[],
-  source: BattleCard,
-  keyword: KeywordId,
-): BattleCard[] {
-  const choice = choices.find((entry) => entry.keyword === keyword);
-  return choice?.candidates.filter((card) => card.id !== source.id).slice(0, 3) ?? [];
-}
-
-export function canTransmuteCard(choices: readonly TransmutationChoice[], card: BattleCard): boolean {
-  return (
-    isTransmutableCard(card) &&
-    choices.length === 3 &&
-    choices.every((choice) => getTransmutationChoiceOffers(choices, card, choice.keyword).length === 3)
-  );
+  card: BattleCard,
+  sourceIndex?: number,
+): boolean {
+  return isTransmutableCard(card) && choices.some((choice) => matchingAlteration(choice, card, sourceIndex));
 }
 
 export function isTransmutationSourceCurrent(visit: AlchemyVisit, deck: readonly BattleCard[]): boolean {
   const selection = visit.transmutation;
   const source =
     selection?.sourceIndex === null || selection?.sourceIndex === undefined ? undefined : deck[selection.sourceIndex];
-  return !!source && JSON.stringify(source) === JSON.stringify(selection?.source);
+  return !!source && cardSnapshotKey(source) === cardSnapshotKey(selection?.source);
 }

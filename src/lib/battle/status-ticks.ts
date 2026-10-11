@@ -5,12 +5,8 @@ import { drawKeywordCard } from "./draw";
 import { hasEncounterBenefit } from "./encounter-trait-state";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { BattleState, CombatTextEvent } from "./types";
-import {
-  applyPlayerCombatDamage,
-  isPlayerDefeated,
-  mitigatePlayerCombatDamage,
-  playerHealthLostToDamage,
-} from "./health-state";
+import { applyPlayerCombatDamage, mitigatePlayerCombatDamage, playerHealthLostToDamage } from "./health-state";
+import { getBattleOutcome } from "./battle-outcome";
 import { scaleReceivedPlayerDamage } from "./damage-modifiers";
 import { setPlayerStatus } from "./status-state";
 import {
@@ -124,7 +120,7 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
 }
 
 export function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
-  if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
+  if (getBattleOutcome(state) !== null) return state;
   if (state.enemyStatuses.burn <= 0 && state.enemyStatuses.poison <= 0 && state.enemyStatuses.bleed <= 0) {
     if (state.pendingBleedLeechHealing === 0 && state.pendingCardBleedLeechHealing === 0) return state;
     return { ...state, pendingBleedLeechHealing: 0, pendingCardBleedLeechHealing: 0 };
@@ -195,7 +191,7 @@ function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
 
 function resolvePlayerEndOfTickReactions(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   // Battle completion stops crowd control; already-earned reactions still drain.
-  if (state.enemyHealth <= 0 || isPlayerDefeated(state)) {
+  if (getBattleOutcome(state) !== null) {
     return resolvePendingBattleReactions(state, combatTexts);
   }
   return resolvePendingBattleReactions(resolvePlayerCrowdControlTriggers(state, combatTexts), combatTexts);
@@ -224,7 +220,7 @@ export function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEv
       );
     }
     nextState = resolvePendingBattleReactions(nextState, combatTexts);
-    if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) {
+    if (getBattleOutcome(nextState) !== null) {
       return resolvePlayerEndOfTickReactions(nextState, combatTexts);
     }
   }

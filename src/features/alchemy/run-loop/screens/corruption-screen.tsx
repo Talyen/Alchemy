@@ -35,7 +35,7 @@ function CorruptionDeckPicker({
   onPageChange: (page: number) => void;
 }) {
   const corruptionOptions = useMemo(
-    () => runDeck.map((card, index) => ({ card, index })).filter(({ card }) => !card.corrupted),
+    () => runDeck.map((card, index) => ({ card, index })).filter(({ card }) => !card.corrupted && !card.transmuted),
     [runDeck],
   );
 
@@ -45,7 +45,7 @@ function CorruptionDeckPicker({
       selectedIndex={corruptionOptions.findIndex((item) => item.index === selectedIndex)}
       page={page}
       onPageChange={onPageChange}
-      emptyMessage="No uncorrupted cards remain."
+      emptyMessage="No eligible cards remain."
       paginationReserveSpace
       renderItem={({ card, index }) => (
         <SelectableCard
@@ -74,7 +74,7 @@ function CorruptionIntro({
 }) {
   return (
     <div className="flex flex-col items-center gap-4">
-      {!hasEligibleCards ? <ScreenDescription tone="danger">No uncorrupted cards remain.</ScreenDescription> : null}
+      {!hasEligibleCards ? <ScreenDescription tone="danger">No eligible cards remain.</ScreenDescription> : null}
       <div>
         <img
           src={corruptionAltar}
@@ -171,7 +171,7 @@ export function CorruptionScreen({
     setSelectionNotice(selecting && !result ? "Your deck changed. Choose a card to corrupt again." : "");
   }
   const selectedCard = selectedIndex === null ? undefined : runDeck[selectedIndex];
-  const canConfirm = selectedCard !== undefined && !selectedCard.corrupted;
+  const canConfirm = selectedCard !== undefined && !selectedCard.corrupted && !selectedCard.transmuted;
 
   function cancelSelection() {
     setSelecting(false);
@@ -233,7 +233,7 @@ export function CorruptionScreen({
             </div>
           ) : (
             <CorruptionIntro
-              hasEligibleCards={runDeck.some((card) => !card.corrupted)}
+              hasEligibleCards={runDeck.some((card) => !card.corrupted && !card.transmuted)}
               onBegin={() => {
                 setSelecting(true);
                 setPage(0);

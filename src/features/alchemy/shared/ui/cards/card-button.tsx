@@ -12,7 +12,7 @@ import {
 } from "react";
 
 import { ShineBorder } from "@/components/ui/shine-border";
-import type { BattleCard } from "@/lib/game-data";
+import { keywordDefinitions, type BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import {
@@ -203,7 +203,8 @@ function CardButtonSurface({
   scaleOnHover = true,
   shineColor,
 }: BattleCardButtonProps) {
-  const showShine = Boolean(hovered && !dragging && !disabled && shineColor && shineColor.length > 0);
+  const colors = card.transmuted ? keywordDefinitions[card.transmuted].shineColors : shineColor;
+  const showShine = Boolean((Boolean(hovered) || Boolean(card.transmuted)) && !dragging && !disabled && colors?.length);
   return (
     <Surface
       as="button"
@@ -211,7 +212,7 @@ function CardButtonSurface({
         cardSurfaceClass,
         "group card-art-frame border border-border/80",
         scaleOnHover && cardHoverScaleClass,
-        showShine && "card-art-shine",
+        showShine && (card.transmuted ? "has-shine-border" : "card-art-shine"),
         className,
       )}
       shimmerActive={shimmerActive}
@@ -228,9 +229,7 @@ function CardButtonSurface({
       onBlur={onHoverEnd}
       buttonRef={buttonRef}
       ariaLabel={ariaLabel}
-      overlay={
-        showShine && shineColor ? <ShineBorder shineColor={shineColor} borderWidth={2} className="z-20" /> : undefined
-      }
+      overlay={showShine && colors ? <ShineBorder shineColor={colors} borderWidth={2} className="z-20" /> : undefined}
     >
       <img
         src={card.art || "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"}

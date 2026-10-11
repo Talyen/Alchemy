@@ -2,8 +2,7 @@ import { logStorageFailure } from "@/lib/storage-logging";
 import type { ProgressCompletion } from "./progress-completion";
 import type { ProgressSaveState } from "./progress-completion";
 import type { GameSession } from "../stores/game-session-types";
-import { resolveActiveRunForSave, restoreRun } from "../stores/run-lifecycle";
-import { readRunInitialized } from "../stores/run-reads";
+import { resolveActiveRunForSave, restoreSessionSave } from "../stores/run-lifecycle";
 import {
   bindSessionCapabilities,
   markSessionProgress,
@@ -25,11 +24,7 @@ import {
   subscribeSaveWriteFailure,
   waitForPendingSaveWrites,
 } from "./io";
-import {
-  buildAlchemySaveDataFromStores,
-  hydrateAlchemyPersistenceFields,
-  subscribeAlchemyPersistence,
-} from "./persistence";
+import { buildAlchemySaveDataFromStores, subscribeAlchemyPersistence } from "./persistence";
 import { configureAlchemySaveBackend } from "./bootstrap-save-state";
 import type { SaveBackend } from "@/lib/platform-save-backend";
 import type { SaveLoadState, SaveRestoreAction } from "./save-candidates";
@@ -124,15 +119,10 @@ export function createSessionPersistence(gameSession: GameSession): SessionPersi
     },
     afterProgressSaved: (run) => progress.afterSaved(run),
     restore: (save: UnstampedSaveData, options?: SessionPersistenceRestoreOptions) => {
-      progress.cancel();
-      hydrateAlchemyPersistenceFields(save, gameSession);
-      if (options?.preserveActiveRunIfInitialized && readRunInitialized(gameSession)) {
-        return false;
-      }
-      restoreRun(save.activeRun, save.talentXP, save.unlockedTalents, gameSession, {
+      return restoreSessionSave(save, gameSession, {
+        preserveActiveRunIfInitialized: options?.preserveActiveRunIfInitialized ?? false,
         abandonIncompatibleBattle: options?.restoreActions?.includes("abandon-active-run") ?? false,
       });
-      return true;
     },
     configure: (backend: SaveBackend) => {
       progress.cancel();

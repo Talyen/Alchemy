@@ -4,7 +4,15 @@ import { getCardDisplayTitle } from "../cards/card-description-ui";
 const inspectionCollator = new Intl.Collator("en");
 
 function inspectionSortKey(card: BattleCard): string {
-  return JSON.stringify([card.id, card.cost, card.effects, card.descriptionLines, card.corrupted, card.uid]);
+  return JSON.stringify([
+    card.id,
+    card.cost,
+    card.effects,
+    card.descriptionLines,
+    card.corrupted,
+    card.transmuted,
+    card.uid,
+  ]);
 }
 
 export function sortInspectionCards(cards: readonly BattleCard[]): BattleCard[] {

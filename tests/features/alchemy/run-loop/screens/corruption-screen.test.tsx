@@ -82,13 +82,16 @@ describe("CorruptionScreen", () => {
     expect(onCorrupt).toHaveBeenCalledWith(0);
   });
 
-  it("explains why corruption is unavailable before opening an empty picker", () => {
-    render(<CorruptionScreen runDeck={[testCorruptedCard]} result={null} onCorrupt={vi.fn()} onExit={vi.fn()} />);
+  it.each([testCorruptedCard, { ...testSlash, transmuted: "burn" as const, title: "Burning Slash" }])(
+    "disables corruption when no eligible cards remain",
+    (card) => {
+      render(<CorruptionScreen runDeck={[card]} result={null} onCorrupt={vi.fn()} onExit={vi.fn()} />);
 
-    expect(screen.getByRole("button", { name: /Corrupt a Card/i })).toHaveProperty("disabled", true);
-    expect(screen.getByRole("button", { name: "Leave" })).toHaveProperty("disabled", false);
-    expect(screen.getByText("No uncorrupted cards remain.")).toBeTruthy();
-  });
+      expect(screen.getByRole("button", { name: /Corrupt a Card/i })).toHaveProperty("disabled", true);
+      expect(screen.getByRole("button", { name: "Leave" })).toHaveProperty("disabled", false);
+      expect(screen.getByText("No eligible cards remain.")).toBeTruthy();
+    },
+  );
 
   it("renders result comparison view when a corruption result is present", async () => {
     const user = userEvent.setup();

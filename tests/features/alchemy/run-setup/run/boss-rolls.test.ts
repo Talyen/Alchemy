@@ -24,7 +24,7 @@ function navigationDeps(offer: Destination) {
   return {
     navigateTo: vi.fn(),
     resumeTo: (_screen: Screen, onCommit?: () => void) => onCommit?.(),
-    startBattle: vi.fn(),
+    presentBattleStart: vi.fn(),
     getAvailableDestinations: () => [offer],
     onResumeWildwood: vi.fn(),
   };

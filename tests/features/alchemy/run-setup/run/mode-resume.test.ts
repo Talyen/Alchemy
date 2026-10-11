@@ -23,7 +23,7 @@ import { savedActivityFixture } from "../../../../fixtures/run-activity";
 
 beforeEach(resetAllTestStores);
 
-function createNavigation(startBattle = vi.fn()) {
+function createNavigation(presentBattleStart = vi.fn()) {
   const navigateTo = (screen: Screen, onCommit?: () => void) => {
     dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, screen)), undefined, defaultGameSession);
     onCommit?.();
@@ -32,7 +32,7 @@ function createNavigation(startBattle = vi.fn()) {
     {
       navigateTo,
       resumeTo: navigateTo,
-      startBattle,
+      presentBattleStart,
       getAvailableDestinations: () => ["Normal Combat"],
       onResumeWildwood: vi.fn(),
     },
@@ -98,8 +98,8 @@ describe("saved mode navigation", () => {
   });
 
   it("keeps a completed Campaign Wildcard draft at confirmation after reload", () => {
-    const startBattle = vi.fn();
-    const nav = createNavigation(startBattle);
+    const presentBattleStart = vi.fn();
+    const nav = createNavigation(presentBattleStart);
     nav.beginCampaign();
     nav.handleCharacterSelect("wildcard");
     for (let round = 0; round < DRAFT_ROUNDS; round += 1) {
@@ -111,18 +111,14 @@ describe("saved mode navigation", () => {
 
     dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "menu")), undefined, defaultGameSession);
     nav.handleStandardDraftComplete();
-    expect(startBattle).not.toHaveBeenCalled();
+    expect(presentBattleStart).not.toHaveBeenCalled();
     reloadSavedRuns();
     nav.resumeRun();
 
     expect(readActiveRunScreen(defaultGameSession)).toBe("draft-deck");
     expect(readRunSession(defaultGameSession).starterDraftChoices).toEqual([]);
     nav.handleStandardDraftComplete();
-    expect(startBattle).toHaveBeenCalledExactlyOnceWith({
-      enemyType: "normal",
-      modifiers: expect.any(Array),
-      enemyId: "skeleton",
-    });
+    expect(presentBattleStart).toHaveBeenCalledOnce();
     expect(readActiveRunScreen(defaultGameSession)).toBe("battle");
     expect(readRunSession(defaultGameSession).starterDraftChoices).toBeNull();
   });
@@ -137,8 +133,8 @@ describe("saved mode navigation", () => {
       undefined,
       defaultGameSession,
     );
-    const startBattle = vi.fn();
-    const nav = createNavigation(startBattle);
+    const presentBattleStart = vi.fn();
+    const nav = createNavigation(presentBattleStart);
     nav.beginCampaign();
     nav.handleCharacterSelect("wildcard");
     for (let round = 0; round < DRAFT_ROUNDS; round += 1) {
@@ -155,7 +151,7 @@ describe("saved mode navigation", () => {
     nav.handleStandardDraftComplete();
     expect(readActiveRunScreen(defaultGameSession)).toBe("difficulty-select");
     expect(readRunSession(defaultGameSession).starterDraftChoices).toBeNull();
-    expect(startBattle).not.toHaveBeenCalled();
+    expect(presentBattleStart).not.toHaveBeenCalled();
   });
 
   it.each(["shop", "rewards", "mystery", "corruption"] as const)(

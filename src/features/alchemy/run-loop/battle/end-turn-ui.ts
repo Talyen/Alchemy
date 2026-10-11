@@ -1,6 +1,6 @@
 import { useUiStore, isBattleInspectionOpen } from "../../shared/stores/ui-store";
 import { enemyAbilityDealsDamage, getEnemyAbilityCard } from "@/lib/game-data";
-import { isPlayerDefeated, type BattleTurnFrame } from "@/lib/battle";
+import { getBattleOutcome, type BattleTurnFrame } from "@/lib/battle";
 import { playBattleEvent, playCardSound } from "@/lib/audio";
 import { COMPANION_ATTACK_DELAY_MS, ENEMY_ATTACK_RECOVERY_DELAY_MS, ENEMY_PHASE_DELAY_MS } from "@/lib/game-constants";
 import { delay } from "@/lib/animation/game-timer";
@@ -115,7 +115,7 @@ export function createBattleEndTurnUi(
     ctx.playback.clearAutoEndTurn();
     ctx.playback.beginAction();
     session.clearAllBattleTimeouts();
-    if (result.state.enemyHealth <= 0 || isPlayerDefeated(result.state)) {
+    if (getBattleOutcome(result.state) !== null) {
       for (const { before, turn, companion } of result.frames) {
         if (turn.kind === "haste") {
           const focalSound = playBattleEvent("haste");

@@ -23,7 +23,7 @@ function deps() {
   return {
     navigateTo: vi.fn(),
     resumeTo: vi.fn(),
-    startBattle: vi.fn(),
+    presentBattleStart: vi.fn(),
     getAvailableDestinations: () => [DESTINATIONS.NORMAL_COMBAT],
     onResumeWildwood: vi.fn(),
   };
@@ -47,7 +47,7 @@ describe("demo command boundaries", () => {
     expect(navigation.navigateTo).not.toHaveBeenCalled();
     flow.beginCampaign();
     flow.handleCharacterSelect("wizard");
-    expect(navigation.startBattle).not.toHaveBeenCalled();
+    expect(navigation.presentBattleStart).not.toHaveBeenCalled();
   });
   it("ends Act 1 without recording a full Campaign win", () => {
     createNewRunInitialization(deps(), defaultGameSession).initializeRunForDifficulty("knight", "difficulty-1");

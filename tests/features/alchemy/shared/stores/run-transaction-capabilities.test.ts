@@ -132,6 +132,8 @@ describe("feature transaction capabilities", () => {
     expect(commit).toHaveBeenCalledExactlyOnceWith(before.revision + 1);
     expect(result.battle.gold).toBe(result.purse);
     expect(() => JSON.stringify(result)).not.toThrow();
+    Reflect.set(result.battle, "gold", 999);
+    expect(readBattle(defaultGameSession).battleState.gold).toBe(result.purse);
     const committed = readGameplayState(defaultGameSession);
     expect(() => setGold(retained, 999)).toThrow(/current transaction/);
     expect(readGameplayState(defaultGameSession)).toBe(committed);

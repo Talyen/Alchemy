@@ -5,7 +5,7 @@ import { damageOnlyEffects, isAttackCard } from "./card-classification";
 import { applyCardEffects } from "./effect-handlers";
 import { cardHasDamageType, cardHasKeyword, isNatureCard } from "./card-classification";
 import type { BattleState, CombatTextEvent } from "./types";
-import { isPlayerDefeated } from "./health-state";
+import { getBattleOutcome } from "./battle-outcome";
 
 export function repeatUniqueCardDamage(
   state: BattleState,
@@ -13,7 +13,7 @@ export function repeatUniqueCardDamage(
   combatTexts: CombatTextEvent[],
   multiplier = 1,
 ): BattleState {
-  if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
+  if (getBattleOutcome(state) !== null) return state;
   return resolveSecondaryAction(state, "repeat", (current) =>
     applyCardEffects(current, { ...card, effects: damageOnlyEffects(card.effects) }, combatTexts, {
       origin: "triggered-card",

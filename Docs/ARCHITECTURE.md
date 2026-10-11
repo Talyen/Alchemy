@@ -26,7 +26,7 @@ Import lib catalogs through their Oxlint-enforced barrels (`@/lib/game-data`, `@
 
 > Token-barrel exception: keep `game-data-catalog.ts` off the token `config/` barrel so layout/token imports stay catalog-free.
 
-`shared/run-flow/` is the neutral seam for destination sampling and campaign-start helpers so `run-setup` and `run-loop` do not import each other (Oxlint-enforced).
+`shared/run-flow/` is the neutral seam for destination sampling and starter-draft helpers so `run-setup` and `run-loop` do not import each other (Oxlint-enforced).
 
 ## Run phase
 
@@ -37,8 +37,15 @@ Import lib catalogs through their Oxlint-enforced barrels (`@/lib/game-data`, `@
 `run-setup/run/content-system-navigation.ts` owns content-system selection,
 character/difficulty routing. `run-resume-navigation.ts` owns current-run resume;
 `new-run-initialization.ts` prepares new runs and drafts in commands before navigation. Run-start snapshots belong to
-`run-start-command.ts`; wildcard starter-draft and novice Campaign helpers belong
-to `shared/run-flow/starter-draft.ts` and `shared/run-flow/campaign-start.ts`.
+`run-start-command.ts`; Wildcard starter-draft sampling belongs to
+`shared/run-flow/starter-draft.ts`.
+`new-run-initialization.ts` owns Campaign launch: run setup, starting Gold,
+discovery, destination offers, pending-character cleanup, and opening combat
+commit in one command. Initialization failure rolls all of them back. After
+commit, it schedules Battle before presenting opening feedback, so an immediate
+Companion outcome supersedes that request. Presentation failure retains a
+complete resumable battle. Novice starts explicitly choose Skeleton; difficulty
+selection uses the normal encounter pool.
 Wildwood post-entry progression belongs to
 `run-loop/run/wildwood-gauntlet-flow.ts`. The persisted draft/resume differences
 between Campaign, Labyrinth, and Wildwood are covered by the [content-system

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BattleCardEffectSchema, renderCardDescription } from "@/lib/game-data";
+import { BattleCardEffectSchema, keywordDefinitions, renderCardDescription, type KeywordId } from "@/lib/game-data";
 import { parseSavedCardDescription } from "./card-description-schema";
 import { recordNestedValidationWarnings, type ValidationError } from "./validation-utils";
 
@@ -40,6 +40,14 @@ export const BattleCardSchema = z
     cost: z.number().catch(-1),
     consume: z.boolean().optional(),
     corrupted: z.boolean().optional(),
+    transmuted: z
+      .custom<KeywordId>((value) => typeof value === "string" && Object.hasOwn(keywordDefinitions, value))
+      .optional()
+      .catch(undefined),
+    tags: z
+      .array(z.custom<KeywordId>((value) => typeof value === "string" && Object.hasOwn(keywordDefinitions, value)))
+      .optional()
+      .catch(undefined),
     corruptedValuePositions: z
       .array(
         z
@@ -72,6 +80,8 @@ export const BattleCardSchema = z
       ...(saved.uid !== undefined ? { uid: saved.uid } : {}),
       ...(saved.consume !== undefined ? { consume: saved.consume } : {}),
       ...(saved.corrupted !== undefined ? { corrupted: saved.corrupted } : {}),
+      ...(saved.transmuted !== undefined ? { transmuted: saved.transmuted } : {}),
+      ...(saved.tags !== undefined ? { tags: saved.tags } : {}),
       ...(saved.baseTitle !== undefined ? { baseTitle: saved.baseTitle } : {}),
       ...(rendered
         ? rendered.corruptedValuePositions.length

@@ -104,24 +104,6 @@ describe("run-session transaction coordinator", () => {
     expect(effect).not.toHaveBeenCalled();
   });
 
-  it("executes the public command boundary and runs its effect after commit", () => {
-    const effect = vi.fn((gold: number) => {
-      expect(readGameplayState(defaultGameSession).runProfile.gold).toBe(gold);
-    });
-
-    const result = dispatchGameplayCommand(
-      (draft) => {
-        setGold(draft, 17);
-        return acceptCommand(17);
-      },
-      { afterCommit: effect },
-      defaultGameSession,
-    );
-
-    expect(result).toBe(17);
-    expect(effect).toHaveBeenCalledOnce();
-  });
-
   it.each([
     { name: "resolved Promise", result: () => Promise.resolve(1) },
     { name: "rejected Promise", result: () => Promise.reject(new Error("async failure")) },
@@ -262,6 +244,39 @@ describe("run-session transaction coordinator", () => {
     dispatchGameplayCommand((draft) => acceptCommand(setGold(draft, 8)), undefined, defaultGameSession);
     expect(readRunProfile(defaultGameSession).gold).toBe(8);
     expect(readGameplayState(defaultGameSession).revision).toBe(before.revision + 2);
+  });
+
+  it.each(["accepted", "rejected"] as const)("detaches %s draft results before closing the transaction", (kind) => {
+    const before = readGameplayState(defaultGameSession);
+    const effect = vi.fn((value: { profile: { gold: number } }) => {
+      expect(value.profile.gold).toBe(17);
+      expect(readRunProfile(defaultGameSession).gold).toBe(17);
+    });
+    const result = dispatchGameplayCommand(
+      (draft) => {
+        setGold(draft, 17);
+        const value = {
+          profile: draft.runProfile,
+          nested: [draft.runProfile],
+          materials: draft.runProfile.materialInventory,
+        };
+        return kind === "accepted" ? acceptCommand(value) : rejectCommand("Declined", value);
+      },
+      { afterCommit: effect },
+      defaultGameSession,
+    );
+
+    expect(result.profile.gold).toBe(17);
+    expect(result.nested[0]).toBe(result.profile);
+    expect(result.materials).toBe(result.profile.materialInventory);
+    expect(() => JSON.stringify(result)).not.toThrow();
+    result.profile.gold = 999;
+    expect(readRunProfile(defaultGameSession).gold).toBe(kind === "accepted" ? 17 : before.runProfile.gold);
+    if (kind === "accepted") expect(effect).toHaveBeenCalledExactlyOnceWith(result);
+    else {
+      expect(effect).not.toHaveBeenCalled();
+      expect(readGameplayState(defaultGameSession)).toBe(before);
+    }
   });
 
   it("returns serializable battle snapshots from commands", () => {

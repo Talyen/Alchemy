@@ -45,17 +45,47 @@ export function createReadonlyView<T>(source: T): Immutable<T> {
   return wrap(source) as Immutable<T>;
 }
 
-/** Detach a read value before handing it to an engine API or returning it. */
+/** Detach data while the draft is open; preserve aliases and cycles within the result. */
 export function snapshotReadonlyValue<T>(value: T): Draft<T> {
-  const source = value && typeof value === "object" ? (sources.get(value) ?? value) : value;
-  if (isDraft(source)) return structuredClone(current(source as Draft<object>)) as Draft<T>;
-  if (Array.isArray(source)) return source.map(snapshotReadonlyValue) as Draft<T>;
-  if (source && typeof source === "object") {
-    return Object.fromEntries(
-      (Object.entries(source) as Array<[string, unknown]>).map(([key, entry]) => [key, snapshotReadonlyValue(entry)]),
-    ) as Draft<T>;
+  const copies = new WeakMap<object, object>();
+  function copy(entry: unknown): unknown {
+    if (entry === null || typeof entry !== "object") return entry;
+    const source = sources.get(entry) ?? entry;
+    const existing = copies.get(source);
+    if (existing) return existing;
+    const data = source;
+    if (data instanceof Map) {
+      const result = new Map<unknown, unknown>();
+      copies.set(source, result);
+      for (const [key, item] of data) result.set(copy(key), copy(item));
+      return result;
+    }
+    if (data instanceof Set) {
+      const result = new Set<unknown>();
+      copies.set(source, result);
+      for (const item of data) result.add(copy(item));
+      return result;
+    }
+    const prototype = Object.getPrototypeOf(data) as object | null;
+    if (Array.isArray(data) || prototype === Object.prototype || prototype === null) {
+      const result: object = Array.isArray(data) ? new Array(data.length) : (Object.create(prototype) as object);
+      copies.set(source, result);
+      for (const key of Reflect.ownKeys(data)) {
+        if (!Object.prototype.propertyIsEnumerable.call(data, key)) continue;
+        Object.defineProperty(result, key, {
+          value: copy(Reflect.get(data, key)),
+          enumerable: true,
+          configurable: true,
+          writable: true,
+        });
+      }
+      return result;
+    }
+    const result = structuredClone(isDraft(data) ? current(data) : data);
+    copies.set(source, result);
+    return result;
   }
-  return source as Draft<T>;
+  return copy(value) as Draft<T>;
 }
 
 /** Strip read facades from assigned values, preserving ordinary input identities. */

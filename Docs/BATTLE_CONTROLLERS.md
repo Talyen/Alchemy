@@ -17,6 +17,10 @@ opening-draw, and cancellation callbacks read and command that bound career;
 they never import the application singleton. Session ownership is checked when
 flow factories connect outcomes and gameplay callbacks.
 
+`getBattleOutcome` in `lib/battle/battle-outcome.ts` classifies the committed
+snapshot for both live settlement and simulation. Playback and command gates
+use the same policy; they do not infer completion independently from Health.
+
 At interaction time, those callbacks resolve gameplay before presentation:
 
 ```text

@@ -4,7 +4,7 @@ import {
   battleSnapshot,
   defaultBattleState,
   getBattleCompanionDamageModifiers,
-  isPlayerDefeated,
+  getBattleOutcome,
   type BattleSnapshot,
 } from "@/lib/battle";
 import type { ContentSystemId, EncounterCombatTraitId } from "@/lib/content-systems/types";
@@ -292,8 +292,7 @@ function selectCardInspectionData(state: GameplayState) {
       state.session.activity.kind === "battle" &&
       battle.turnPhase === "player" &&
       !battle.wishOptions &&
-      battle.enemyHealth > 0 &&
-      !isPlayerDefeated(battle),
+      getBattleOutcome(battle) === null,
     hand: battle.hand,
     drawPile: battle.deck,
     discardPile: battle.discard,

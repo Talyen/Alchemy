@@ -1,4 +1,6 @@
+import { cn } from "@/lib/utils";
 import { playUISound } from "@/lib/audio";
+import { MoveRight } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { BattleCard } from "@/lib/game-data";
@@ -8,7 +10,9 @@ import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { SelectableCard } from "../../shared/ui/cards/selectable-card";
 import { CardSelectionGrid } from "../../shared/ui/cards/card-selection-grid";
 import { CardTitle } from "../../shared/ui/cards/card-description-ui";
-import { controlLabelClass } from "../../shared/config";
+import { controlLabelClass, viewCardWidthClass, getCardInspectionShineColors } from "../../shared/config";
+import { BattleCardButton } from "../../shared/ui/cards/card-button";
+import { getCardDisplayTitle } from "../../shared/ui/cards/card-description-ui";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
 import { focusableControls, focusControl, isFocusAvailable } from "../../shared/ui/focus-navigation";
 
@@ -39,7 +43,7 @@ export function TransmutationScreen({
   const keyboardInput = useRef(false);
   const restoreFocus = useRef(false);
   const selection = visit.transmutation;
-  const canExchange = (card: BattleCard) => canTransmuteCard(selection?.choices ?? [], card);
+  const canExchange = (card: BattleCard, index: number) => canTransmuteCard(selection?.choices ?? [], card, index);
   const available = runDeck.some(canExchange);
   const completed = visit.completed;
   const staleSource = !!selection?.source && !completed && !isTransmutationSourceCurrent(visit, runDeck);
@@ -47,7 +51,9 @@ export function TransmutationScreen({
   const keyword = source ? selection?.keyword : null;
   const offers = getTransmutationOffers(visit);
   const locked = completed || isProgressSavePending();
-  const phase = !source ? "source" : !keyword ? "keyword" : "outcome";
+  const phase = !source ? "source" : "preview";
+  const preview =
+    selection?.offerIndex === null || selection?.offerIndex === undefined ? undefined : offers[selection.offerIndex];
   const previousPhase = useRef(phase);
 
   useLayoutEffect(() => {
@@ -108,7 +114,7 @@ export function TransmutationScreen({
     } else {
       committingRef.current = false;
       setCommitting(false);
-      setError("This exchange is no longer available. Choose another card.");
+      setError("This alteration is no longer available.");
     }
   }
 
@@ -130,7 +136,6 @@ export function TransmutationScreen({
       >
         {!source ? (
           <>
-            <h2 className="text-2xl font-semibold">Transform a Card</h2>
             <CardSelectionGrid
               items={runDeck.map((card, index) => ({ card, index }))}
               page={page}
@@ -140,65 +145,76 @@ export function TransmutationScreen({
                 <SelectableCard
                   card={card}
                   isSelected={false}
-                  disabled={locked || !canExchange(card)}
+                  disabled={locked || !canExchange(card, index)}
                   onSelect={() => select({ kind: "source", index, card })}
                 />
               )}
             />
+            <Button size="lg" variant="outline" disabled={locked} onClick={onContinue}>
+              Leave
+            </Button>
           </>
-        ) : !keyword ? (
-          <div className="flex flex-wrap justify-center gap-5 py-8" role="group" aria-label="Choose a keyword">
-            {selection?.choices.map((choice) => (
-              <KeywordTag
-                key={choice.keyword}
-                keywordId={choice.keyword}
-                pill
-                showTooltip
-                disabled={locked}
-                className="px-6 py-4 text-lg"
-                onSelect={() => select({ kind: "keyword", keyword: choice.keyword })}
-              />
-            ))}
-          </div>
         ) : (
           <>
-            <h2 className="text-2xl font-semibold">Choose an Outcome</h2>
-            <KeywordTag keywordId={keyword} pill showTooltip />
-            <div className="flex flex-wrap justify-center gap-4">
-              {offers.map((card, index) => (
-                <div key={card.id} className="flex flex-col items-center gap-3">
-                  <SelectableCard
-                    card={card}
-                    isSelected={selection?.offerIndex === index}
-                    disabled={locked}
-                    onSelect={() => select({ kind: "outcome", index })}
-                  />
-                  <div className={controlLabelClass}>
-                    <CardTitle card={card} />
-                  </div>
-                </div>
+            <div className="flex flex-wrap justify-center gap-5" role="group" aria-label="Alterations">
+              {selection?.choices.map((choice) => (
+                <KeywordTag
+                  key={choice.keyword}
+                  keywordId={choice.keyword}
+                  pill
+                  showTooltip
+                  selected={keyword === choice.keyword}
+                  disabled={locked || !offers.some((offer) => offer.transmuted === choice.keyword)}
+                  className="px-6 py-4 text-lg"
+                  onSelect={() => select({ kind: "keyword", keyword: choice.keyword })}
+                />
               ))}
             </div>
+            {preview && (
+              <div
+                className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-8 gap-y-3"
+                aria-label="Transmutation comparison"
+              >
+                <BattleCardButton
+                  card={source}
+                  ariaLabel={`Original: ${getCardDisplayTitle(source)}`}
+                  className={viewCardWidthClass}
+                  shineColor={getCardInspectionShineColors(source)}
+                  shimmerActive={false}
+                  shimmerToken={undefined}
+                />
+                <MoveRight aria-hidden="true" className="h-10 w-10 self-center text-gold-pale" />
+                <BattleCardButton
+                  card={preview}
+                  ariaLabel={`Preview: ${getCardDisplayTitle(preview)}`}
+                  className={viewCardWidthClass}
+                  shineColor={getCardInspectionShineColors(preview)}
+                  shimmerActive={false}
+                  shimmerToken={undefined}
+                />
+                <div className={controlLabelClass}>
+                  <CardTitle card={source} />
+                </div>
+                <div className={cn("col-start-3", controlLabelClass)}>
+                  <CardTitle card={preview} />
+                </div>
+              </div>
+            )}
           </>
         )}
         {source && (
           <div className="flex flex-wrap justify-center gap-3">
-            <Button
-              size="lg"
-              variant="outline"
-              disabled={locked}
-              onClick={() => select({ kind: "back", to: keyword ? "keyword" : "source" })}
-            >
+            <Button size="lg" variant="outline" disabled={locked} onClick={() => select({ kind: "back" })}>
               Back
             </Button>
             {keyword && (
               <Button size="lg" variant="primary" disabled={locked || selection?.offerIndex === null} onClick={confirm}>
-                Continue
+                Transmute
               </Button>
             )}
           </div>
         )}
-        {(error || staleSource) && <p role="alert">{error || "Your deck changed. Transform a card again."}</p>}
+        {(error || staleSource) && <p role="alert">{error || "Your deck changed. Choose a card again."}</p>}
       </div>
     </TitledScreenShell>
   );

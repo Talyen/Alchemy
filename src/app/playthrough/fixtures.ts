@@ -1,6 +1,6 @@
-import { createDefaultSaveData, hydrateAlchemyPersistenceFields } from "@/features/alchemy/shared/storage";
+import { createDefaultSaveData } from "@/features/alchemy/shared/storage";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { restoreSessionSave } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { ACTS_PER_RUN, DESTINATIONS_PER_ACT } from "@/lib/game-constants";
 import type { CharacterId } from "@/lib/game-data";
 import { characters } from "@/lib/game-data";
@@ -26,8 +26,7 @@ export function createPlaythroughFixture(name: "unlocked-v1" | "victory-v1" | "e
     return save;
   }
   if (name === "unlocked-v1") return save;
-  hydrateAlchemyPersistenceFields(save, gameSession);
-  restoreRun(null, save.talentXP, save.unlockedTalents, gameSession);
+  restoreSessionSave(save, gameSession);
   const { flow } = createPlaythroughController(gameSession);
   flow.goToScreen("game-mode-select");
   flow.beginCampaign();

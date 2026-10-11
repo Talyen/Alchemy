@@ -26,7 +26,8 @@ export { EMPTY_ENEMY_MITIGATION } from "./enemy-mitigation-state";
 // Barrel surface: only symbols consumed through the barrel live here.
 // Internal callers import mechanics from their domain owners, never the type boundary.
 export { addEnemyStatus, addPlayerStatus } from "./status-state";
-export { applyPlayerCombatDamage, isPlayerDefeated } from "./health-state";
+export { applyPlayerCombatDamage } from "./health-state";
+export { getBattleOutcome, isPlayerDefeated, type BattleOutcome } from "./battle-outcome";
 export { chooseWishCard } from "./wish";
 
 export { createUniqueGearBattleState } from "./unique-gear-state";

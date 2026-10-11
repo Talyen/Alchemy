@@ -9,23 +9,14 @@ import {
 } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
 import { useTransmutationScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { cardById, type BattleCard } from "@/lib/game-data";
+import { cardById, keywordDefinitions, type BattleCard } from "@/lib/game-data";
+import { getTransmutationOffers } from "@/lib/alchemist/transmutation";
 import { defaultGameSession } from "@/app/application-session";
 import { resetAllTestStores, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 vi.mock("@/lib/audio", () => ({ playUISound: vi.fn() }));
 vi.mock("@/features/alchemy/shared/ui/cards/selectable-card", () => ({
-  SelectableCard: ({
-    card,
-    onSelect,
-    disabled,
-    isSelected,
-  }: {
-    card: BattleCard;
-    onSelect: () => void;
-    disabled?: boolean;
-    isSelected: boolean;
-  }) => (
-    <button disabled={disabled} aria-pressed={isSelected} onClick={onSelect}>
+  SelectableCard: ({ card, onSelect, disabled }: { card: BattleCard; onSelect: () => void; disabled?: boolean }) => (
+    <button disabled={disabled} onClick={onSelect}>
       {card.title}
     </button>
   ),
@@ -43,10 +34,9 @@ function Harness({
   afterProgressSaved?: (callback: () => void) => void;
   isProgressSavePending?: () => boolean;
 }) {
-  const data = useTransmutationScreenData();
   return (
     <TransmutationScreen
-      {...data}
+      {...useTransmutationScreenData()}
       onSelect={(command) => selectTransmutation(command, defaultGameSession)}
       onExchange={onExchange}
       onContinue={onContinue}
@@ -58,17 +48,17 @@ function Harness({
 function click(name: string) {
   fireEvent.click(screen.getByRole("button", { name }));
 }
-function chooseOutcome() {
-  click("Slash");
-  click("Choose Burn");
+function visit() {
   const activity = readRunSession(defaultGameSession).activity;
   if (activity.kind !== "transmutation") throw new Error("wrong activity");
-  const source = activity.data.transmutation!.source!;
-  const outcome = activity.data
-    .transmutation!.choices.find((choice) => choice.keyword === "burn")!
-    .candidates.find((card) => card.id !== source.id)!;
-  click(outcome.title);
-  return outcome;
+  return activity.data;
+}
+function chooseAlteration() {
+  click("Slash");
+  const offers = getTransmutationOffers(visit());
+  const preview = offers.at(-1)!;
+  click(`Choose ${keywordDefinitions[preview.transmuted!].label}`);
+  return preview;
 }
 beforeEach(() => {
   resetAllTestStores();
@@ -84,7 +74,31 @@ afterEach(() => {
 });
 
 describe("Transmutation flow", () => {
-  it("keeps keyboard focus on the current step when a source or keyword replaces the focused control", () => {
+  it("shows keyword buttons above original and preview, keeps values, and commits only through Transmute", () => {
+    const before = readActiveRun(defaultGameSession).runDeck;
+    render(<Harness />);
+    expect(screen.getAllByRole("heading")).toHaveLength(1);
+    expect((screen.getByRole("button", { name: "Mixed Potion" }) as HTMLButtonElement).disabled).toBe(true);
+    const preview = chooseAlteration();
+    const choices = screen.getByRole("group", { name: "Alterations" });
+    const comparison = screen.getByLabelText("Transmutation comparison");
+    expect(choices.compareDocumentPosition(comparison) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Original: Slash" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: `Preview: ${preview.title}` })).toBeTruthy();
+    expect(screen.getByRole("button", { pressed: true }).textContent).toContain(
+      keywordDefinitions[preview.transmuted!].label,
+    );
+    expect(readActiveRun(defaultGameSession).runDeck).toEqual(before);
+    expect(onExchange).not.toHaveBeenCalled();
+    click("Transmute");
+    expect(onExchange).toHaveBeenCalledExactlyOnceWith(0, getTransmutationOffers(visit()).length - 1);
+    expect(readActiveRun(defaultGameSession).runDeck[0]).toEqual(preview);
+    expect(onContinue).toHaveBeenCalledOnce();
+    click("Transmute");
+    expect(onExchange).toHaveBeenCalledOnce();
+  });
+
+  it("restores keyboard focus to the alteration controls when the source picker is replaced", () => {
     vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue([{}] as unknown as DOMRectList);
     Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, value: vi.fn() });
     render(<Harness />);
@@ -92,99 +106,60 @@ describe("Transmutation flow", () => {
     source.focus();
     fireEvent.keyDown(source, { key: "Enter" });
     fireEvent.click(source, { detail: 0 });
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Choose Mana" }));
-    const keyword = screen.getByRole("button", { name: "Choose Burn" });
-    keyword.focus();
-    fireEvent.keyDown(keyword, { key: "Enter" });
-    fireEvent.click(keyword, { detail: 0 });
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Inspect Burn keyword" }));
+    expect(screen.getByRole("group", { name: "Alterations" }).contains(document.activeElement)).toBe(true);
   });
 
-  it("shows only keyword chips after choosing a source and commits only through Continue", () => {
-    const before = readActiveRun(defaultGameSession).runDeck;
+  it("Back retains the fixed offers and preview without rerolling", () => {
     render(<Harness />);
-    expect(screen.getByRole("heading", { name: "Transform a Card" })).toBeTruthy();
-    expect((screen.getByRole("button", { name: "Mixed Potion" }) as HTMLButtonElement).disabled).toBe(true);
     click("Slash");
-    expect(screen.getByRole("button", { name: "Choose Mana" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Choose Burn" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Choose Freeze" })).toBeTruthy();
-    for (const text of [/affinity/i, /Transforming/i, /Choose a Keyword/i]) expect(screen.queryByText(text)).toBeNull();
-    click("Choose Burn");
-    expect((screen.getByRole("button", { name: "Continue" }) as HTMLButtonElement).disabled).toBe(true);
-    const choices = screen.getAllByRole("button", { pressed: false });
-    expect(choices).toHaveLength(3);
-    fireEvent.click(choices[0]!);
-    expect(screen.getAllByRole("button", { pressed: true })).toHaveLength(1);
-    expect(readActiveRun(defaultGameSession).runDeck).toEqual(before);
-    expect(onExchange).not.toHaveBeenCalled();
-    expect(screen.getByRole("heading", { name: "Choose an Outcome" })).toBeTruthy();
-    click("Continue");
-    expect(onExchange).toHaveBeenCalledExactlyOnceWith(0, 0);
-    expect(onContinue).toHaveBeenCalledOnce();
-    expect(readActiveRun(defaultGameSession).runDeck[0]?.id).not.toBe("slash");
-    expect(screen.getByRole("heading", { name: "Choose an Outcome" })).toBeTruthy();
-    click("Continue");
-    expect(onExchange).toHaveBeenCalledOnce();
-  });
-
-  it("Back preserves fixed outcomes and clears only the later selection", () => {
-    render(<Harness />);
-    chooseOutcome();
-    const initial = readRunSession(defaultGameSession).activity;
+    const before = visit();
+    const rng = readActiveRun(defaultGameSession).rng;
     click("Back");
-    click("Choose Burn");
-    expect(screen.getAllByRole("button", { pressed: false })).toHaveLength(3);
-    expect((screen.getByRole("button", { name: "Continue" }) as HTMLButtonElement).disabled).toBe(true);
-    const activity = readRunSession(defaultGameSession).activity;
-    if (initial.kind !== "transmutation" || activity.kind !== "transmutation") throw new Error("wrong visit");
-    expect(activity.data.transmutation!.choices).toEqual(initial.data.transmutation!.choices);
-    click("Back");
-    click("Back");
-    expect(screen.getByRole("heading", { name: "Transform a Card" })).toBeTruthy();
+    click("Slash");
+    expect(visit()).toEqual(before);
+    expect(readActiveRun(defaultGameSession).rng).toEqual(rng);
     expect(onExchange).not.toHaveBeenCalled();
   });
 
-  it("waits for save acknowledgement, locks choices, and ignores callbacks after unmount", () => {
+  it("waits for save acknowledgement, locks controls, and ignores callbacks after unmount", () => {
     const pending: Array<() => void> = [];
     const { unmount } = render(<Harness afterProgressSaved={(callback) => pending.push(callback)} />);
-    chooseOutcome();
-    click("Continue");
+    chooseAlteration();
+    click("Transmute");
     expect(onExchange).toHaveBeenCalledOnce();
     expect(onContinue).not.toHaveBeenCalled();
     expect((screen.getByRole("button", { name: "Back" }) as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByRole("button", { name: "Continue" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Transmute" }) as HTMLButtonElement).disabled).toBe(true);
     unmount();
     for (const callback of pending) callback();
     expect(onContinue).not.toHaveBeenCalled();
   });
 
-  it("keeps rejected commitments on the outcome choices and allows retry", () => {
+  it("keeps rejected commitments on the preview and permits retry", () => {
     onExchange.mockReturnValueOnce(null);
     render(<Harness />);
-    chooseOutcome();
-    click("Continue");
+    chooseAlteration();
+    click("Transmute");
     expect(screen.getByRole("alert").textContent).toContain("no longer available");
     expect(onContinue).not.toHaveBeenCalled();
-    click("Continue");
+    click("Transmute");
     expect(onContinue).toHaveBeenCalledOnce();
   });
 
-  it("requires a new source after a deck reorder", () => {
+  it("rejects a stale deck and does not manufacture new offers when cards move", () => {
     render(<Harness />);
-    chooseOutcome();
+    chooseAlteration();
+    const choices = visit().transmutation!.choices;
     act(() => setRunProgress({ runDeck: [cardById.frostbolt!, cardById.slash!] }));
-    expect(screen.getByRole("heading", { name: "Transform a Card" })).toBeTruthy();
-    expect(screen.getByRole("alert").textContent).toContain("deck changed");
-    chooseOutcome();
-    click("Continue");
-    expect(onExchange).toHaveBeenCalledExactlyOnceWith(1, 0);
+    expect(visit().transmutation!.choices).toEqual(choices);
+    expect(onExchange).not.toHaveBeenCalled();
+    expect(onContinue).toHaveBeenCalledOnce();
   });
 
-  it("continues a committed revisit once after a covering save even when effects replay", () => {
+  it("continues a committed resume only once after a covering save, including StrictMode replay", () => {
     render(<Harness />);
-    chooseOutcome();
-    click("Continue");
+    chooseAlteration();
+    click("Transmute");
     cleanup();
     onContinue.mockClear();
     onExchange.mockClear();
@@ -196,13 +171,6 @@ describe("Transmutation flow", () => {
     );
     expect(screen.queryByRole("heading")).toBeNull();
     for (const callback of pending) callback();
-    expect(onContinue).toHaveBeenCalledOnce();
-    expect(onExchange).not.toHaveBeenCalled();
-  });
-
-  it("advances an initialized visit with no eligible source instead of trapping the player", () => {
-    setRunProgress({ runDeck: [cardById["mixed-potion"]!] });
-    render(<Harness />);
     expect(onContinue).toHaveBeenCalledOnce();
     expect(onExchange).not.toHaveBeenCalled();
   });

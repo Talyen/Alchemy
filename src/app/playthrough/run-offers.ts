@@ -15,7 +15,7 @@ import { getRewardChoiceId } from "@/lib/active-run-session";
 import {
   canPlayCard,
   getEffectiveDamageScore,
-  isPlayerDefeated,
+  getBattleOutcome,
   type BattleSnapshot,
   type CombatTextEvent,
 } from "@/lib/battle";
@@ -64,8 +64,9 @@ export function offerRunChoices(
   switch (activity.kind) {
     case "battle": {
       const state = battle.read().battleState;
-      if (isPlayerDefeated(state)) offer("settle", "defeat", 1, flow.handleBattleDefeat);
-      else if (state.enemyHealth <= 0) offer("settle", "victory", 1, flow.handleBattleVictory);
+      const outcome = getBattleOutcome(state);
+      if (outcome === "defeat") offer("settle", "defeat", 1, flow.handleBattleDefeat);
+      else if (outcome === "victory") offer("settle", "victory", 1, flow.handleBattleVictory);
       else if (state.wishOptions?.length)
         state.wishOptions.forEach((card, index) =>
           offer(
@@ -163,12 +164,12 @@ export function offerRunChoices(
       if (activity.kind !== "transmutation") break;
       const visit = activity.data;
       const selection = visit.transmutation;
-      const canExchange = (card: BattleCard) => canTransmuteCard(selection?.choices ?? [], card);
+      const canExchange = (card: BattleCard, index: number) => canTransmuteCard(selection?.choices ?? [], card, index);
       if (visit.completed || !run.runDeck.some(canExchange)) {
         offer("transmutation-exit", "continue", 1, flow.advanceToNextDestination);
       } else if (!selection || selection.sourceIndex === null || !isTransmutationSourceCurrent(visit, run.runDeck)) {
         run.runDeck.forEach((card, index) => {
-          if (canExchange(card))
+          if (canExchange(card, index))
             offer(
               "transmutation-source",
               card.id,
@@ -177,29 +178,20 @@ export function offerRunChoices(
               index,
             );
         });
-      } else if (!selection.keyword) {
-        selection.choices.forEach(({ keyword }, index) =>
-          offer(
-            "transmutation-keyword",
-            keyword,
-            1,
-            () => selectTransmutation({ kind: "keyword", keyword }, gameSession),
-            index,
-          ),
-        );
-      } else if (selection.offerIndex === null) {
+      } else {
+        const { sourceIndex } = selection;
         getTransmutationOffers(visit).forEach((card, index) =>
           offer(
-            "transmutation-outcome",
-            card.id,
+            "transmutation-confirm",
+            card.transmuted!,
             affinity(card),
-            () => selectTransmutation({ kind: "outcome", index }, gameSession),
+            () => {
+              if (!selectTransmutation({ kind: "keyword", keyword: card.transmuted! }, gameSession)) return null;
+              return transmuteCard(sourceIndex, index, gameSession);
+            },
             index,
           ),
         );
-      } else {
-        const { sourceIndex, offerIndex } = selection;
-        offer("transmutation-confirm", "continue", 1, () => transmuteCard(sourceIndex, offerIndex, gameSession));
       }
       break;
     }
@@ -226,7 +218,8 @@ export function offerRunChoices(
     case "corruption":
       if (!activity.data)
         run.runDeck.forEach((card, index) => {
-          if (!card.corrupted) offer("corrupt", card.id, 1, () => flow.handleCorruptCard(index), index);
+          if (!card.corrupted && !card.transmuted)
+            offer("corrupt", card.id, 1, () => flow.handleCorruptCard(index), index);
         });
       offer("corruption-exit", "exit", 0, flow.handleCorruptionExit);
       break;

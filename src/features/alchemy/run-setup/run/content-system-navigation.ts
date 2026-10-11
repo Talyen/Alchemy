@@ -1,7 +1,3 @@
-import {
-  afterCampaignCharacterResolved,
-  type NoviceCampaignStartDeps,
-} from "@/features/alchemy/shared/run-flow/campaign-start";
 import { createStarterDraftChoices } from "@/features/alchemy/shared/run-flow/starter-draft";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { discoverCardIds, readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
@@ -28,10 +24,9 @@ import {
 import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
 import { logError } from "@/lib/error-logger";
-import { DEFAULT_BATTLE_ENEMY_TYPE, DRAFT_ROUNDS } from "@/lib/game-constants";
+import { DEFAULT_CAMPAIGN_DIFFICULTY_ID, DRAFT_ROUNDS } from "@/lib/game-constants";
 import {
   cloneBattleCard,
-  getDifficultyModifiers,
   isCharacterUnlocked,
   isDifficultyUnlocked,
   type BattleCard,
@@ -50,23 +45,6 @@ import { createNewRunInitialization } from "./new-run-initialization";
 import { createRunResumeNavigation } from "./run-resume-navigation";
 import { isDifficultySelectContinuation } from "./run-start-command";
 
-function buildNoviceCampaignDeps(
-  deps: ContentSystemNavigationDeps,
-  initializeRunForDifficulty: NoviceCampaignStartDeps["initializeRunForDifficulty"],
-  gameSession: GameSession,
-): NoviceCampaignStartDeps {
-  return {
-    completedDifficulties: IS_DEMO ? {} : readProfileStore(gameSession).completedDifficulties,
-    initializeRunForDifficulty,
-    getDifficultyModifiers,
-    startBattle: deps.startBattle,
-    navigateToBattle: () =>
-      deps.navigateTo(ROUTE_SCREENS.BATTLE, () =>
-        dispatchRunSessionCommand((draft) => acceptCommand(setPendingCharacterId(draft, null)), undefined, gameSession),
-      ),
-  };
-}
-
 function unexpectedContentSystem(
   handler: string,
   systemType: ContentSystemId,
@@ -77,16 +55,19 @@ function unexpectedContentSystem(
 }
 
 export function createContentSystemNavigation(deps: ContentSystemNavigationDeps, gameSession: GameSession) {
-  const { initializeRunForDifficulty, initializeLabyrinthRun, initializeWildwoodRun, initializeStarterDraftRun } =
-    createNewRunInitialization(deps, gameSession);
+  const {
+    startCampaignRun,
+    initializeRunForDifficulty,
+    initializeLabyrinthRun,
+    initializeWildwoodRun,
+    initializeStarterDraftRun,
+  } = createNewRunInitialization(deps, gameSession);
   const { resumeRun, beginContentSystem } = createRunResumeNavigation(deps, gameSession);
 
   function resolveNoviceCampaign(characterId: CharacterId, onDifficultySelect: () => void): void {
-    afterCampaignCharacterResolved(
-      characterId,
-      buildNoviceCampaignDeps(deps, initializeRunForDifficulty, gameSession),
-      onDifficultySelect,
-    );
+    const completed = IS_DEMO ? [] : (readProfileStore(gameSession).completedDifficulties[characterId] ?? []);
+    if (completed.includes(DEFAULT_CAMPAIGN_DIFFICULTY_ID)) onDifficultySelect();
+    else startCampaignRun(characterId, DEFAULT_CAMPAIGN_DIFFICULTY_ID, true);
   }
 
   function handleCharacterSelect(selectedId: CharacterId) {
@@ -266,13 +247,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps,
       !isDifficultyUnlocked(difficultyId, completed)
     )
       return;
-    initializeRunForDifficulty(selectedId, difficultyId);
-    if (readActiveRun(gameSession).runDeck.length === 0) return;
-    const modifiers = getDifficultyModifiers(selectedId, difficultyId);
-    deps.startBattle({ enemyType: DEFAULT_BATTLE_ENEMY_TYPE, modifiers });
-    deps.navigateTo(ROUTE_SCREENS.BATTLE, () =>
-      dispatchRunSessionCommand((draft) => acceptCommand(setPendingCharacterId(draft, null)), undefined, gameSession),
-    );
+    startCampaignRun(selectedId, difficultyId);
   }
 
   function handleBackFromDifficultySelect() {

@@ -9,6 +9,7 @@ import {
 } from "@/lib/game-constants";
 import { clamp01 } from "@/lib/math";
 import { LOADING_WORDS } from "./loading-words";
+import { StartupLoadingDecoration } from "./startup-loading-decoration";
 
 function useSyncedLoadingWord() {
   // Sequential rotation with a random start: equally pleasant, no repeat-avoidance math.
@@ -44,6 +45,7 @@ export function StartupLoadingScreen({ progress }: Props) {
       aria-label="Loading Alchemy"
     >
       <h1 className="relative font-sans text-4xl font-black tracking-[0.15em] uppercase" aria-label="Alchemy">
+        <StartupLoadingDecoration />
         <span aria-hidden className="text-stone-700">
           Alchemy
         </span>

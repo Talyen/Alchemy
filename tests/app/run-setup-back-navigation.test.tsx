@@ -25,7 +25,7 @@ describe("difficulty Back navigation", () => {
       {
         navigateTo,
         resumeTo: vi.fn(),
-        startBattle: vi.fn(),
+        presentBattleStart: vi.fn(),
         getAvailableDestinations: () => [],
         onResumeWildwood: vi.fn(),
       },

@@ -10,6 +10,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   createDraftRunRandomSource,
+  initializeBattle,
   setLabyrinthMap,
   setPendingCharacterId,
   setRunProgressActivity,
@@ -94,18 +95,41 @@ function commitRunStart(
 }
 
 export function createNewRunInitialization(deps: ContentSystemNavigationDeps, gameSession: GameSession) {
-  function initializeRunForDifficulty(characterId: CharacterId, difficultyId: DifficultyId) {
-    commitRunStart(
+  function prepareCampaign(draft: RunTransaction, characterId: CharacterId, difficultyId: DifficultyId) {
+    const startSnapshot = createStartSnapshot(draft, characterId, CONTENT_SYSTEMS.CAMPAIGN, { difficultyId });
+    const { startGoldGranted } = applyRunStartToDraft(draft, startSnapshot, { discoverDeck: true });
+    setStarterDraftChoices(draft, null);
+    sampleAndApplyInitialCampaignDestinations(draft, deps.getAvailableDestinations, startSnapshot.runMaxHealth);
+    return { playGoldSound: startGoldGranted > 0 };
+  }
+
+  function startCampaignRun(characterId: CharacterId, difficultyId: DifficultyId, novice = false) {
+    dispatchRunSessionCommand(
       (draft) => {
-        const startSnapshot = createStartSnapshot(draft, characterId, CONTENT_SYSTEMS.CAMPAIGN, { difficultyId });
-        const { startGoldGranted } = applyRunStartToDraft(draft, startSnapshot, { discoverDeck: true });
-        setStarterDraftChoices(draft, null);
-        sampleAndApplyInitialCampaignDestinations(draft, deps.getAvailableDestinations, startSnapshot.runMaxHealth);
-        return { playGoldSound: startGoldGranted > 0 };
+        const outcome = prepareCampaign(draft, characterId, difficultyId);
+        if (draft.run.activeRun.runDeck.length === 0) throw new Error("Campaign requires a starting deck");
+        setPendingCharacterId(draft, null);
+        const battle = initializeBattle(draft, {
+          kind: "battle",
+          options: novice ? { enemyId: "skeleton" } : {},
+        });
+        if (!battle) throw new Error("Campaign opening battle could not be initialized");
+        return acceptCommand({ ...outcome, battle });
       },
-      undefined,
+      {
+        afterCommit: (outcome) => {
+          // Schedule the display first: an opening Companion outcome can supersede it.
+          deps.navigateTo(ROUTE_SCREENS.BATTLE);
+          afterRunStartCommitted(outcome, gameSession);
+          deps.presentBattleStart(outcome.battle);
+        },
+      },
       gameSession,
     );
+  }
+
+  function initializeRunForDifficulty(characterId: CharacterId, difficultyId: DifficultyId) {
+    commitRunStart((draft) => prepareCampaign(draft, characterId, difficultyId), undefined, gameSession);
   }
 
   function initializeLabyrinthRun(characterId: CharacterId) {
@@ -157,5 +181,11 @@ export function createNewRunInitialization(deps: ContentSystemNavigationDeps, ga
     );
   }
 
-  return { initializeRunForDifficulty, initializeLabyrinthRun, initializeWildwoodRun, initializeStarterDraftRun };
+  return {
+    startCampaignRun,
+    initializeRunForDifficulty,
+    initializeLabyrinthRun,
+    initializeWildwoodRun,
+    initializeStarterDraftRun,
+  };
 }

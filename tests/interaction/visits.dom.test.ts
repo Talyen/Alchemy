@@ -122,7 +122,6 @@ defineSequenceFamily("visits", (seed) => {
               { kind: "keyword", keyword: activity.data.transmutation!.choices[0]!.keyword },
               defaultGameSession,
             );
-            selectTransmutation({ kind: "outcome", index: 0 }, defaultGameSession);
           }
           result = transmuteCard(invalid ? 99 : 0, 0, defaultGameSession);
         }

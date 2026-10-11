@@ -1,4 +1,4 @@
-import { getTransmutationOffers } from "@/lib/alchemist/transmutation";
+import { getTransmutationOffers, getTransmutationVariants } from "@/lib/alchemist/transmutation";
 import "../../../../helpers/mock-audio";
 
 import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
@@ -19,7 +19,7 @@ import { resetAllTestStores, setRunProgress, setRunSession } from "../../../../h
 import { snapshotRun, restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readActiveRun, readRunSession, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { parseActiveRun } from "@/lib/active-run-session";
-import { cardById, computeTalentEffects, getCardKeywords } from "@/lib/game-data";
+import { cardById, computeTalentEffects, type BattleCard } from "@/lib/game-data";
 import { defaultGameSession } from "@/app/application-session";
 beforeEach(() => {
   resetAllTestStores();
@@ -94,7 +94,7 @@ describe("alchemy visit transactions and resume", () => {
     expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(hp);
     expect(brewAtCampfire({ kind: "new", offerIndex: 0 }, defaultGameSession)).toBeNull();
   });
-  it("persists each selection without rerolls and exchanges once only on Continue", () => {
+  it("persists offers, random source choices, and previews, then alters the original card exactly once", () => {
     initializeAlchemyVisit("transmutation", defaultGameSession);
     const initial = readRunSession(defaultGameSession).activity;
     if (initial.kind !== "transmutation") throw new Error("wrong visit");
@@ -104,53 +104,90 @@ describe("alchemy visit transactions and resume", () => {
     expect(transmuteCard(0, 0, defaultGameSession)).toBeNull();
     expect(selectTransmutation({ kind: "source", index: 99, card: deck[0]! }, defaultGameSession)).toBe(false);
     expect(readRunSession(defaultGameSession).activity).toEqual(initial);
-    expect(selectTransmutation({ kind: "source", index: 0, card: deck[0]! }, defaultGameSession)).toBe(true);
-    reload();
-    expect(selectTransmutation({ kind: "keyword", keyword: choices[0]!.keyword }, defaultGameSession)).toBe(true);
+    expect(
+      selectTransmutation(
+        { kind: "source", index: 0, card: Object.fromEntries(Object.entries(deck[0]!).reverse()) as BattleCard },
+        defaultGameSession,
+      ),
+    ).toBe(true);
     const activity = readRunSession(defaultGameSession).activity;
     if (activity.kind !== "transmutation") throw new Error("wrong visit");
     const offers = getTransmutationOffers(activity.data);
-    expect(offers).toHaveLength(3);
-    expect(offers.every((card) => card.id !== deck[0]!.id && getCardKeywords(card).includes(choices[0]!.keyword))).toBe(
-      true,
-    );
-    expect(selectTransmutation({ kind: "outcome", index: 0 }, defaultGameSession)).toBe(true);
+    const offerIndex = offers.length - 1;
+    const preview = offers[offerIndex]!;
+    expect(selectTransmutation({ kind: "keyword", keyword: preview.transmuted! }, defaultGameSession)).toBe(true);
     expect(readActiveRun(defaultGameSession).runDeck).toEqual(deck);
     reload();
     initializeAlchemyVisit("transmutation", defaultGameSession);
     expect(readActiveRun(defaultGameSession).rng).toEqual(rng);
-    const selected = readRunSession(defaultGameSession).activity;
-    expect(selected).toMatchObject({
-      data: { transmutation: { choices, sourceIndex: 0, keyword: choices[0]!.keyword, offerIndex: 0 } },
+    expect(readRunSession(defaultGameSession).activity).toMatchObject({
+      data: { transmutation: { choices, sourceIndex: 0, keyword: preview.transmuted, offerIndex } },
     });
-    const result = transmuteCard(0, 0, defaultGameSession)!;
-    expect(result.id).toBe(offers[0]!.id);
+    const result = transmuteCard(0, offerIndex, defaultGameSession)!;
+    expect(result).toEqual(preview);
+    expect(result.id).toBe(deck[0]!.id);
+    expect(result.cost).toBe(deck[0]!.cost);
     expect(readActiveRun(defaultGameSession).runDeck).toEqual([result, ...deck.slice(1)]);
     reload();
-    expect(transmuteCard(0, 0, defaultGameSession)).toBeNull();
+    expect(transmuteCard(0, offerIndex, defaultGameSession)).toBeNull();
     expect(readRunSession(defaultGameSession).activity).toMatchObject({ data: { completed: true, result } });
   });
 
-  it("Back preserves offers and stale same-ID source modifications reject the exchange atomically", () => {
+  it("Back preserves the fixed preview and a stale same-ID source rejects commitment atomically", () => {
     initializeAlchemyVisit("transmutation", defaultGameSession);
     const source = readActiveRun(defaultGameSession).runDeck[0]!;
     selectTransmutation({ kind: "source", index: 0, card: source }, defaultGameSession);
-    const initial = readRunSession(defaultGameSession).activity;
-    if (initial.kind !== "transmutation") throw new Error("wrong visit");
-    const keyword = initial.data.transmutation!.choices[0]!.keyword;
+    const selected = readRunSession(defaultGameSession).activity;
     const rng = readActiveRun(defaultGameSession).rng;
-    selectTransmutation({ kind: "keyword", keyword }, defaultGameSession);
-    selectTransmutation({ kind: "outcome", index: 0 }, defaultGameSession);
-    selectTransmutation({ kind: "back", to: "keyword" }, defaultGameSession);
-    expect(readRunSession(defaultGameSession).activity).toEqual(initial);
-    selectTransmutation({ kind: "keyword", keyword }, defaultGameSession);
-    selectTransmutation({ kind: "outcome", index: 0 }, defaultGameSession);
+    selectTransmutation({ kind: "back" }, defaultGameSession);
+    reload();
+    selectTransmutation(
+      { kind: "source", index: 0, card: readActiveRun(defaultGameSession).runDeck[0]! },
+      defaultGameSession,
+    );
+    expect(readRunSession(defaultGameSession).activity).toEqual(selected);
     setRunProgress({ runDeck: [{ ...source, cost: source.cost + 1 }] });
     const before = snapshotRun(defaultGameSession);
     expect(transmuteCard(0, 0, defaultGameSession)).toBeNull();
+    expect(
+      selectTransmutation(
+        { kind: "source", index: 0, card: readActiveRun(defaultGameSession).runDeck[0]! },
+        defaultGameSession,
+      ),
+    ).toBe(false);
     expect(snapshotRun(defaultGameSession)).toEqual(before);
     expect(readActiveRun(defaultGameSession).rng).toEqual(rng);
   });
+  it("rejects a saved Companion addition if the deck loses its summon", () => {
+    const source = cardById.slash!;
+    const deck = [source, cardById["wolf-companion"]!];
+    setRunProgress({ runDeck: deck });
+    initializeAlchemyVisit("transmutation", defaultGameSession);
+    const activity = readRunSession(defaultGameSession).activity;
+    if (activity.kind !== "transmutation") throw new Error("wrong visit");
+    const variant = getTransmutationVariants(source, "companion", deck)[0]!;
+    setRunSession({
+      activity: {
+        kind: "transmutation",
+        data: {
+          ...activity.data,
+          transmutation: {
+            choices: [{ keyword: "companion", alterations: [{ ...variant, sourceIndex: 0, source }] }],
+            sourceIndex: null,
+            source: null,
+            keyword: null,
+            offerIndex: null,
+          },
+        },
+      },
+    });
+    expect(selectTransmutation({ kind: "source", index: 0, card: source }, defaultGameSession)).toBe(true);
+    setRunProgress({ runDeck: [source] });
+    const before = snapshotRun(defaultGameSession);
+    expect(transmuteCard(0, 0, defaultGameSession)).toBeNull();
+    expect(snapshotRun(defaultGameSession)).toEqual(before);
+  });
+
   it("shop strengthening shares price, rejects insufficient Gold atomically, and spends the one service", () => {
     setRunSession({
       activity: {

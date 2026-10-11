@@ -22,7 +22,7 @@ import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-thres
 import { scaleByRoomMultiplier } from "./enemy-turn-traits";
 import type { BattleState, CombatTextEvent } from "./types";
 import { hasEnemyTrait } from "./encounter-trait-state";
-import { isPlayerDefeated } from "./health-state";
+import { getBattleOutcome } from "./battle-outcome";
 import { writeCombatFlag as setFlag } from "./action-context";
 
 function applyHitRewards(
@@ -36,8 +36,7 @@ function applyHitRewards(
     if (
       !hasEnemyTrait(nextState, traitId, context.traitSet) ||
       context.rewardedTraits.has(traitId) ||
-      nextState.enemyHealth <= 0 ||
-      isPlayerDefeated(nextState)
+      getBattleOutcome(nextState) !== null
     )
       return;
     context.rewardedTraits.add(traitId);

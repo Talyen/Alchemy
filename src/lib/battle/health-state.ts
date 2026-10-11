@@ -1,3 +1,4 @@
+import { isPlayerDefeated } from "./battle-outcome";
 import type { BattleState, CombatTextEvent } from "./types";
 import { CAMPFIRE_HEAL_FRACTION, DEATHS_DOOR_GRACE_TURNS } from "../game-constants";
 import { halveRounded } from "./amount-helpers";
@@ -171,8 +172,4 @@ export function resolvePlayerHealing(state: BattleState, amount: number, allowOv
     nextState = addPlayerStatus(nextState, "block", blockAmountWithForge(nextState, blockGain));
   }
   return { state: nextState, effective: amount, restored: actualHeal, overflow: overheal };
-}
-
-export function isPlayerDefeated(state: Pick<BattleState, "playerHealth" | "deathsDoorActive">): boolean {
-  return state.playerHealth <= 0 && !state.deathsDoorActive;
 }

@@ -126,6 +126,13 @@ Crowd-control triggers require both combatants to survive the hit. A lethal Stun
 
 #### Health thresholds and defeat
 
+`lib/battle/battle-outcome.ts` owns combat completion: `getBattleOutcome` returns
+Victory, Defeat, or no outcome. Defeat takes precedence if both combatants are
+defeated; active Death's Door counts as survival. Turn processing, command
+eligibility, live settlement, headless playthroughs, and balance reports use this
+same policy. Target-specific damage and earned reward reactions retain their
+separate cutoffs.
+
 - **Death's Door** — [Domain Glossary](./GLOSSARY.md#domain-glossary). Ordinary healing cannot revive a defeated hero. A lethal enemy attack or player status tick ends turn processing before regeneration, drawing, or companions; explicit death prevention remains available.
 - **Card Health costs and self-damage** — Health loss bypasses damage reduction and resistance while retaining death prevention. Typed self-damage respects matching damage reductions and resistance and causes ordinary Armor decay from its mitigated amount; fully resisted damage adds no buildup or decay. Buildup follows Health lost before Phoenix Feather recovery, while Death’s Door can prevent that loss. Health costs do not decay Armor.
 - **Talent Health cutoffs** — “below” is strict: Kill Shot requires less than 20% enemy Health and Desperate Wish less than half player Health. Desperate Guard triggers once per combat on the first surviving crossing from at or above half Health to below it, including status ticks, typed self-damage, and Health costs; lethal damage grants no defensive reward. Evaluate the crossing after incoming buildup but before Block-break healing. Other below-half talents recheck their condition for each applicable event.
@@ -254,7 +261,7 @@ remain unchanged.
 
 ## Corruption altars
 
-- Pick one uncorrupted card, commit, and reveal the result. The existing intro, picker, and before/after result remain the entire interaction. Leaving before corruption restores the same destination choice; a completed result is saved and cannot be rerolled. A card can be corrupted once, including after transformation. Mana costs never mutate.
+- Pick one card that has neither Corruption nor Transmutation, commit, and reveal the result. The existing intro, picker, and before/after result remain the entire interaction. Leaving before corruption restores the same destination choice; a completed result is saved and cannot be rerolled. A card can be corrupted once, including after transformation. Mana costs never mutate.
 - Transformation has a 10% chance when another eligible library card exists. It replaces the selected card with a different card and one eligible mutation, preserving its deck-slot UID. Mixed Potions are not transformation destinations. Cards without numeric targets can receive a secondary effect; transformation is forced only if no local mutation exists.
 - Other outcomes use `CORRUPTION_OUTCOME_WEIGHTS` from [Corruption tuning](../src/lib/game-constants/corruption.ts), renormalized after filtering for eligible families. Select the family first and then an equally likely compatible variant so large variant pools cannot crowd out other outcomes.
 - Strengthening adds 50% (nearest integer, minimum one) to plain Physical/Holy/Nature damage, healing, or flat Block; weakening removes 25% with the same rounding. Other editable magnitudes change by one. Lower Health/Mana losses count as improvements. Numbers cannot go below zero or violate the effect schema’s stricter minimum, random-damage bounds cannot cross, and unchanged results are excluded. Repeated copies of an edited effect stay aligned with its description. Companion summon summaries are not numeric card-effect targets; upgrades such as Powerful Wish edit any added effect's own description.
@@ -388,7 +395,11 @@ Campfires offer Rest or Brew, including at full Health. Brew adds one of three f
 
 The Alchemist shop sells ordinary Potions and offers one Brew service per visit: Mix or Distill, at the existing 40 Gold mixing price before discounts. Distill adds 1 to supported beneficial numerical magnitudes, including Wishes; cost, Consume, probabilities, draw counts, durations, and percentage effects stay unchanged. Panacea gains Restore 1 Health alongside its full cleanse, then adds 1 Health per later distillation. Increased values are green in card hover tooltips, including after reload. Potions can be brewed repeatedly, including Mixed Potions; All seven standard Potions can be distilled.
 
-Transmutation offers one free exchange. Choose an eligible card, one of your class's three affinity keywords, then one of three distinct outcome cards containing that keyword. Wildcard receives three seeded keyword choices with sufficient matching cards. Candidate lists are fixed for the visit; Back and reload do not reroll them. Corrupted cards and strengthened standard Potions are eligible; Mixed Potions are not. Outcomes cannot share the original card's base identity. Selecting choices does not change the deck; Continue commits the exchange and advances directly, without a result screen.
+Transmutation offers one free alteration to an eligible card. Each visit rolls three class-independent keywords: one Damage, one Buffs/Restoration, and one Resources/Additions. Health and Leech belong to Buffs/Restoration. Only keywords useful somewhere in the eligible deck enter the roll; an unavailable category is filled from the remaining keywords without duplicates. All 21 keywords participate. Offers and randomly selected source keywords are fixed for each card throughout the visit, including Back and reload.
+
+Damage converts to another damage type; Block, Armor, Forge, and Thorns convert among themselves; positive Health restoration, Mana restoration, and Gold gains convert among themselves. Every occurrence of the randomly chosen compatible source keyword changes, including nested branches and repeats. Existing magnitudes, costs, probabilities, durations, and targeting remain unchanged. Conversions with unsupported conditions or scaling are excluded. Other keywords add their native mechanic: Wish 1, Leech on damage, Archery on attacks, Consume, Dodge the next attack, or one Companion action when the deck contains a summon. Added effect lines respect Corruption's four-effect-line limit. Existing destination keywords are excluded.
+
+The keyword buttons sit above the original card and its preview, joined by a right arrow. Transmute commits the exact preview and advances after saving. Cards keep their identity and artwork, gain the keyword's title prefix and shine, and can be altered only once. Transmutation and Corruption are mutually exclusive. Strengthened standard Potions remain eligible; Mixed Potions are excluded.
 
 Shatter and Wildfire each activate once per player turn through card hits (including automatic plays) or Companion actions. Their saved flags reset before turn-start Companion actions. Secondary Gear/talent damage, retaliation, delayed pulses, and status ticks do not initiate reactions.
 

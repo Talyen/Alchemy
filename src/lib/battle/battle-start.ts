@@ -4,14 +4,14 @@ import type { BattleTurnFrame } from "./enemy-turn";
 import { getBattleRng } from "@/lib/rng";
 import type { BattleResolutionContext, BattleSnapshot, CombatTextEvent } from "./types";
 import { battleSnapshot } from "./battle-snapshot";
-import { isPlayerDefeated } from "./health-state";
+import { getBattleOutcome, type BattleOutcome } from "./battle-outcome";
 import { applyTurnStartPurge } from "./enemy-purge";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 
 export interface ResolvedBattleStart {
   state: BattleSnapshot;
   companion: BattleTurnFrame["companion"];
-  outcome: "victory" | "defeat" | null;
+  outcome: BattleOutcome | null;
 }
 
 /** Opening Companions act before the hand is drawn in every battle host. */
@@ -32,6 +32,6 @@ export function resolveBattleStart(
   }
   const companion = companionId ? { id: companionId, texts: startingTexts, state: battleSnapshot(state) } : null;
   const opening = drawOpeningHand(state);
-  const outcome = isPlayerDefeated(state) ? "defeat" : state.enemyHealth <= 0 ? "victory" : null;
+  const outcome = getBattleOutcome(opening);
   return { state: battleSnapshot(opening), companion, outcome };
 }

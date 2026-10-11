@@ -33,7 +33,7 @@ import {
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import type { BattleState, CombatTextEvent } from "./types";
 import { hasEnemyTrait } from "./encounter-trait-state";
-import { isPlayerDefeated } from "./health-state";
+import { getBattleOutcome, isPlayerDefeated } from "./battle-outcome";
 import { setPlayerStatus } from "./status-state";
 
 function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
@@ -287,10 +287,7 @@ export function resolveEnemyAttackHit(
   const result = {
     ...resolved,
     state:
-      resolved.landed &&
-      resolved.state.enemyHealth > 0 &&
-      !isPlayerDefeated(resolved.state) &&
-      hasEnemyTrait(resolved.state, "unbinding-strike")
+      resolved.landed && getBattleOutcome(resolved.state) === null && hasEnemyTrait(resolved.state, "unbinding-strike")
         ? purgeOnePlayerBenefit(resolved.state, combatTexts).state
         : resolved.state,
   };
@@ -300,8 +297,7 @@ export function resolveEnemyAttackHit(
     result.state.talentEffects.companionAttackOnBlockDepletedBelowHalf &&
     result.healthAfterHit < state.playerMaxHealth / HALF_DIVISOR &&
     result.state.activeCompanion &&
-    result.state.enemyHealth > 0 &&
-    !isPlayerDefeated(result.state)
+    getBattleOutcome(result.state) === null
   ) {
     return {
       ...result,

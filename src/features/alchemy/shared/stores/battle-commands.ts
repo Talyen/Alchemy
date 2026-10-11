@@ -10,7 +10,7 @@ import { awardCardXP } from "@/features/alchemy/shared/stores/run-session-write-
 import {
   battleSnapshot,
   canPlayCard,
-  isPlayerDefeated,
+  getBattleOutcome,
   chooseWishCard,
   playBattleCardResolved,
   resolveBattleTurn,
@@ -61,7 +61,7 @@ export function commitEndTurn(gameSession: GameSession): ResolvedBattleTurn | nu
     (draft) => {
       if (draft.session.activity.kind !== "battle") return rejectCommand("There is no active battle", null);
       const before = current(draft.session.activity.data.battleState);
-      if (before.turnPhase !== "player" || before.wishOptions || before.enemyHealth <= 0 || isPlayerDefeated(before))
+      if (before.turnPhase !== "player" || before.wishOptions || getBattleOutcome(before) !== null)
         return rejectCommand("Battle action is unavailable", null);
       const result = resolveBattleTurn(before, { rng: createDraftRunRandomSource(draft, "world") });
       awardBattleDodgeXP(draft, before, result.state);

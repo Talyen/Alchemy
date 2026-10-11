@@ -1,4 +1,4 @@
-import { isPlayerDefeated } from "./health-state";
+import { getBattleOutcome, isPlayerDefeated } from "./battle-outcome";
 import type { BattleState, CombatTextEvent } from "./types/state-types";
 
 export type ReactionBoundary =
@@ -16,7 +16,7 @@ export function resolveBattleSequence<T>(
 ): BattleState {
   let next = state;
   for (const step of steps) {
-    if (isPlayerDefeated(next) || (stopWhen === "either-defeated" && next.enemyHealth <= 0)) break;
+    if (stopWhen === "either-defeated" ? getBattleOutcome(next) !== null : isPlayerDefeated(next)) break;
     next = resolve(next, step);
     if (reactions.kind === "each-step") next = reactions.settle(next, texts);
   }

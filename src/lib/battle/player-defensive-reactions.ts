@@ -12,7 +12,8 @@ import {
   shouldBlockPreventStatusBuildup,
 } from "./status-player";
 import type { BattleState, CombatTextEvent, CombatTextStat } from "./types";
-import { isPlayerDefeated, playerHealthLostToDamage } from "./health-state";
+import { playerHealthLostToDamage } from "./health-state";
+import { getBattleOutcome, isPlayerDefeated } from "./battle-outcome";
 
 function applyVanguardCrestAfterBlock(
   state: BattleState,
@@ -40,10 +41,7 @@ export function applyArmorLossAttackRetaliation(
   armorLost: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  return armorLost > 0 &&
-    !isPlayerDefeated(state) &&
-    state.enemyHealth > 0 &&
-    state.gearEffects.stunOnArmorLostToAttack > 0
+  return armorLost > 0 && getBattleOutcome(state) === null && state.gearEffects.stunOnArmorLostToAttack > 0
     ? resolveFollowUpHit(
         state,
         { source: "player-follow-up", damageType: "stun", amount: state.gearEffects.stunOnArmorLostToAttack },

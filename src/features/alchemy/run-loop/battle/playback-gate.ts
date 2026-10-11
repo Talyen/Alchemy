@@ -1,5 +1,5 @@
 import { useCallback, type RefObject } from "react";
-import { isPlayerDefeated, type BattleSnapshot } from "@/lib/battle";
+import { getBattleOutcome, type BattleSnapshot } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
 import { isBattleInspectionOpen, useUiStore } from "../../shared/stores/ui-store";
 import { useLatestRef } from "../../shared/ui/use-latest-ref";
@@ -30,8 +30,7 @@ function isPlaybackBlocked(options: PlaybackBlockedOptions, mode: PlaybackMode):
     handHasHiddenCard(battleState, options.hiddenHandCardKeys) ||
     battleState.turnPhase !== "player" ||
     Boolean(battleState.wishOptions) !== (mode === "wish") ||
-    battleState.enemyHealth <= 0 ||
-    isPlayerDefeated(battleState)
+    getBattleOutcome(battleState) !== null
   );
 }
 

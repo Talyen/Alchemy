@@ -1,6 +1,6 @@
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import type { BattleState, CombatTextEvent } from "./types";
-import { isPlayerDefeated } from "./health-state";
+import { getBattleOutcome } from "./battle-outcome";
 import { reduceEnemyArmor } from "./enemy-mitigation-state";
 import { writeCombatFlag as setFlag } from "./action-context";
 import { detonateEnemyStatuses } from "./dot-resolve";
@@ -35,8 +35,7 @@ export function applyShatter(state: BattleState, texts: CombatTextEvent[]): Batt
   return next;
 }
 export function applyWildfire(state: BattleState, texts: CombatTextEvent[]): BattleState {
-  if (state.enemyHealth <= 0 || isPlayerDefeated(state) || state.enemyStatuses.burn <= 0 || state.flags.wildfireUsed)
-    return state;
+  if (getBattleOutcome(state) !== null || state.enemyStatuses.burn <= 0 || state.flags.wildfireUsed) return state;
   const marked = setFlag(state, "wildfireUsed", true);
   mergeCombatText(texts, {
     target: "enemy",

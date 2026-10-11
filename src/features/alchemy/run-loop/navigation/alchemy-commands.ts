@@ -25,6 +25,7 @@ import {
 import {
   createTransmutationOffers,
   getTransmutationOffers,
+  getTransmutationVariants,
   canTransmuteCard,
   isTransmutationSourceCurrent,
   isTransmutableCard,
@@ -54,7 +55,7 @@ export function initializeAlchemyVisitInTransaction(draft: RunTransaction, kind:
     ...(kind === "transmutation"
       ? {
           transmutation: {
-            choices: createTransmutationOffers(draft.run.activeRun.characterId, rng),
+            choices: createTransmutationOffers(snapshotTransactionValue(draft.run.activeRun.runDeck), rng),
             sourceIndex: null,
             source: null,
             keyword: null,
@@ -126,33 +127,28 @@ export function selectTransmutation(selection: TransmutationSelectionCommand, ga
         if (
           !Number.isInteger(selection.index) ||
           !source ||
-          !canTransmuteCard(current.choices, source) ||
-          JSON.stringify(source) !== JSON.stringify(selection.card)
+          !canTransmuteCard(current.choices, source, selection.index) ||
+          !isTransmutationSourceCurrent(
+            { ...visit, transmutation: { ...current, sourceIndex: selection.index, source: selection.card } },
+            deck,
+          )
         )
           return rejectCommand("Card is no longer available", false);
         next.sourceIndex = selection.index;
         next.source = cloneBattleCard(source);
-        next.keyword = null;
-        next.offerIndex = null;
+        next.offerIndex = 0;
+        next.keyword = getTransmutationOffers({ ...visit, transmutation: next })[0]!.transmuted!;
       } else if (selection.kind === "back") {
         next.keyword = null;
         next.offerIndex = null;
-        if (selection.to === "source") {
-          next.sourceIndex = null;
-          next.source = null;
-        }
+        next.sourceIndex = null;
+        next.source = null;
       } else {
         if (!isTransmutationSourceCurrent(visit, deck)) return rejectCommand("Your deck changed", false);
-        if (selection.kind === "keyword") {
-          if (!current.choices.some((choice) => choice.keyword === selection.keyword))
-            return rejectCommand("Keyword is unavailable", false);
-          next.keyword = selection.keyword;
-          next.offerIndex = null;
-        } else {
-          if (!Number.isInteger(selection.index) || !getTransmutationOffers(visit)[selection.index])
-            return rejectCommand("Outcome is unavailable", false);
-          next.offerIndex = selection.index;
-        }
+        const offerIndex = getTransmutationOffers(visit).findIndex((card) => card.transmuted === selection.keyword);
+        if (offerIndex < 0) return rejectCommand("Keyword is unavailable", false);
+        next.keyword = selection.keyword;
+        next.offerIndex = offerIndex;
       }
       setAlchemyVisit(draft, "transmutation", { ...visit, transmutation: next });
       return acceptCommand(true);
@@ -181,7 +177,19 @@ export function transmuteCard(sourceIndex: number, offerIndex: number, gameSessi
         !original ||
         !offer ||
         !isTransmutableCard(snapshotTransactionValue(original)) ||
-        original.id === offer.id
+        original.id !== offer.id ||
+        offer.transmuted !== visit.transmutation?.keyword ||
+        !getTransmutationVariants(
+          snapshotTransactionValue(original),
+          offer.transmuted,
+          snapshotTransactionValue(deck),
+        ).some(
+          (variant) =>
+            variant.sourceKeyword ===
+            snapshot.transmutation?.choices
+              .find((choice) => choice.keyword === offer.transmuted)
+              ?.alterations.find((alteration) => alteration.sourceIndex === sourceIndex)?.sourceKeyword,
+        )
       )
         return rejectCommand("Alchemy action is unavailable", null);
       const result = cloneBattleCard(snapshotTransactionValue(offer));

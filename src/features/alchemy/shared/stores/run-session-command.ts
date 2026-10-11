@@ -1,7 +1,6 @@
 import type { CommandOutcome, SynchronousResult } from "./command-outcome";
 import type { GameSession } from "./game-session-types";
 import { dispatchGameplayCommand, subscribeRunSessionCommits } from "./gameplay-command";
-import { unwrapReadonlyValue } from "./readonly-view";
 import type { RunTransaction } from "./run-transaction";
 import { openRunTransaction } from "./transaction-internal";
 
@@ -21,10 +20,7 @@ export function dispatchRunSessionCommand<T>(
     (draft) => {
       const scope = openRunTransaction(draft);
       try {
-        const outcome = execute(scope.transaction);
-        return outcome !== null && typeof outcome === "object" && "value" in outcome
-          ? { ...outcome, value: unwrapReadonlyValue(outcome.value) }
-          : outcome;
+        return execute(scope.transaction);
       } finally {
         scope.close();
       }

@@ -2,14 +2,18 @@
 
 ## Supported baseline
 
-Transmutation visits save fixed keyword candidate lists and the selected source
-snapshot/index, keyword, and outcome index in `AlchemyVisit.transmutation`.
-Hydration restores all candidate/source cards. Selection survives current-format
-resume without rerolling; completed visits advance after a covering save without
-repeating the exchange. Campfire retains its existing visit fields. Uninitialized
-Transmutation visits receive the new choices on entry; retired role-based offers
-are not a parallel supported workflow. This additive optional visit field does
-not change the save version.
+Transmutation visits save three class-independent keyword choices and each eligible
+card's source snapshot/index, randomly selected source keyword, and exact altered
+result in `AlchemyVisit.transmutation`. The selected source, keyword, and preview
+index persist. Hydration restores all source/result cards; Back and current-format
+resume never reroll initialized visits. Completed visits advance after a covering
+save without repeating the alteration. Saved cards retain the `transmuted`
+keyword, `baseTitle`, generated description, and added keyword tags; hydration
+restores the prefixed title and permanent shine. Campfire retains its existing
+visit fields. Retired replacement-card candidate lists are repaired to an
+uninitialized selection and receive the new offers on entry. Historical
+pre-release mechanics are not a parallel supported workflow. These optional
+fields do not change the save version.
 
 Battle snapshots include `pendingCardBleedLeechHealing`, the explicit-card subset
 of queued Bleed Leech. It defaults to zero and cannot exceed the total queued

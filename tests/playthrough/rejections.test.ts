@@ -47,7 +47,7 @@ function start() {
 }
 
 describe("retained headless rejection and persistence contracts", () => {
-  it("offers source, keyword, and outcome choices before committing Transmutation through Continue", () => {
+  it("previews an alteration after source selection and commits only through confirmation", () => {
     const controller = start();
     dispatchGameplayCommand(
       (draft) => acceptCommand(setRunDeck(draft, [cardById.slash!])),
@@ -82,17 +82,18 @@ describe("retained headless rejection and persistence contracts", () => {
       );
       return choices;
     }
-    for (const kind of ["transmutation-source", "transmutation-keyword", "transmutation-outcome"]) {
+    {
       const choices = observe();
       expect(choices.length).toBeGreaterThan(0);
-      expect(choices.every((choice) => choice.kind === kind)).toBe(true);
+      expect(choices.every((choice) => choice.kind === "transmutation-source")).toBe(true);
       catalog.execute(choices[0]!);
       expect(readActiveRun(defaultGameSession).runDeck).toEqual(before);
     }
     const [confirm] = observe();
     expect(confirm?.kind).toBe("transmutation-confirm");
     catalog.execute(confirm!);
-    expect(readActiveRun(defaultGameSession).runDeck[0]?.id).not.toBe(before[0]!.id);
+    expect(readActiveRun(defaultGameSession).runDeck[0]?.id).toBe(before[0]!.id);
+    expect(readActiveRun(defaultGameSession).runDeck[0]?.transmuted).toBeTruthy();
     expect(observe().map((choice) => choice.kind)).toEqual(["transmutation-exit"]);
   });
 

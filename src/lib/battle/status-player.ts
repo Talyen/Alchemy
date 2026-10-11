@@ -4,7 +4,8 @@ import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { BattleCardEffect, DamageType, EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "./types";
 import { addPlayerStatus } from "./status-state";
-import { effectivePlayerHealingAmount, isPlayerDefeated } from "./health-state";
+import { effectivePlayerHealingAmount } from "./health-state";
+import { isPlayerDefeated } from "./battle-outcome";
 import {
   addForgeToPlayer,
   addPlayerStatusWithCombatText,

@@ -19,7 +19,8 @@ import { decayHalvedStatus } from "./status-helpers";
 import { PER_TURN_UNIQUE_GEAR_RESET } from "./unique-gear-state";
 import { getBattleRng } from "@/lib/rng";
 import type { BattleState, CcState, CombatTextEvent } from "./types";
-import { isPlayerDefeated, deathsDoorGraceTurns } from "./health-state";
+import { deathsDoorGraceTurns } from "./health-state";
+import { getBattleOutcome } from "./battle-outcome";
 import { applyTurnStartPurge } from "./enemy-purge";
 
 function decrementCcSkipTurns(cc: CcState): CcState {
@@ -81,7 +82,7 @@ function processPendingTurnStartEffects(state: BattleState, combatTexts: CombatT
   // by a pulse survive and start on the following turn.
   return resolveSecondaryAction({ ...state, pendingTurnStartEffects: kept }, "delayed-card", (current) => {
     for (const pulse of state.pendingTurnStartEffects) {
-      if (current.enemyHealth <= 0 || isPlayerDefeated(current)) break;
+      if (getBattleOutcome(current) !== null) break;
       current = applyCardEffects(current, { ...pulseCard, ...pulse.sourceCard, effects: pulse.effects }, combatTexts, {
         manaAtStart: current.mana,
         enemyFreezeSkipTurnsAtStart: current.enemyCC.freezeSkipTurns,
@@ -202,7 +203,7 @@ export function advanceToPlayerTurn(
   combatTexts: CombatTextEvent[] = [],
   options?: { preserveBlock?: boolean; manaAtTurnEnd?: number },
 ) {
-  if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
+  if (getBattleOutcome(state) !== null) return state;
   const deathsDoorNeedsRecoveryTurn = state.deathsDoorActive;
 
   let nextState = state;
@@ -216,7 +217,7 @@ export function advanceToPlayerTurn(
   const beforeTurnReset = nextState;
   nextState = performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn, options);
   nextState = resolvePendingBattleReactions(applyTurnStartPurge(nextState, combatTexts), combatTexts);
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
+  if (getBattleOutcome(nextState) !== null) return nextState;
   if (nextState.playerStatuses.block > 0 && nextState.gearEffects.thornsOnRetainedBlock > 0) {
     nextState = addPlayerStatusWithCombatText(
       nextState,
@@ -228,7 +229,7 @@ export function advanceToPlayerTurn(
   nextState = applyBlockDepletionRewards(beforeTurnReset, nextState, combatTexts);
   if (nextState.gearEffects.forgeEveryThreeTurns > 0 && nextState.turn % 3 === 0)
     nextState = addForgeToPlayer(nextState, 1, combatTexts);
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
+  if (getBattleOutcome(nextState) !== null) return nextState;
   if (
     !nextState.wishOptions &&
     nextState.hand.length === 0 &&
@@ -256,7 +257,7 @@ export function advanceToPlayerTurn(
     combatTexts,
   );
   const healedState =
-    drawnState.enemyHealth > 0 && !isPlayerDefeated(drawnState) && drawnState.gearEffects.healthPerTurn > 0
+    getBattleOutcome(drawnState) === null && drawnState.gearEffects.healthPerTurn > 0
       ? applyHealingWithCombatText(drawnState, drawnState.gearEffects.healthPerTurn, combatTexts)
       : drawnState;
   return resolvePendingBattleReactions(healedState, combatTexts);
@@ -271,8 +272,7 @@ export function reduceSkipTurns(state: BattleState, combatTexts: CombatTextEvent
   };
   return prevCc.freezeSkipTurns > 0 &&
     nextState.enemyCC.freezeSkipTurns === 0 &&
-    nextState.enemyHealth > 0 &&
-    !isPlayerDefeated(nextState) &&
+    getBattleOutcome(nextState) === null &&
     state.talentEffects.drawOnThaw > 0
     ? applyDrawResult(nextState, drawFromState(nextState, state.talentEffects.drawOnThaw), combatTexts)
     : nextState;

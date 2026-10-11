@@ -57,7 +57,7 @@ adapters translate their operation failure results (`false` and `null`) into rej
 Persistence adapters may subscribe to the aggregate
 commit signal directly; gameplay callers must not.
 
-`run-session-write-port.ts` adapts the existing domain mutators to transactions; it does not own a second store. Raw dispatch (`gameplay-command.ts`), draft lookup (`transaction-internal.ts`), and read-facade internals are restricted by import boundaries. A transaction can write only during its callback; retained handles cannot write in `afterCommit` or another command. `snapshotTransactionValue(value)` returns a detached value for engine APIs that require mutable types. Command results automatically detach nested transaction reads before publication, so read facades never enter saves or playback.
+`run-session-write-port.ts` adapts the existing domain mutators to transactions; it does not own a second store. Raw dispatch (`gameplay-command.ts`), draft lookup (`transaction-internal.ts`), and read-facade internals are restricted by import boundaries. A transaction can write only during its callback; retained handles cannot write in `afterCommit` or another command. `snapshotTransactionValue(value)` returns a detached value for engine APIs that require mutable types. The aggregate dispatcher detaches result data before Immer closes the draft, for both store-owned and feature commands. Accepted results and rejected fallbacks may contain nested draft reads or read facades; neither escapes into deferred playback. Result objects are independent of committed state, preserve aliases and cycles, and the same detached result reaches `afterCommit` and the caller. Wrappers do not perform their own result conversion.
 
 Commands are synchronous and must not span an `await`. The command factory and
 Gear mutation wrappers reject Promise-like result types, including unions with
@@ -230,7 +230,19 @@ branch and derives its route directly. Historical screen/visit/reward precedence
 exists only in the version 20-to-21 migration. `run-restore.ts` applies the decoded
 fields and explicit current-data repairs in the command draft.
 
-`run-lifecycle.ts` exposes `snapshotRun(session)` and `restoreRun(…)` for snapshotting and boot/resume, including Trinket-manifest repair. `parseActiveRun(raw)` validates JSON before hydration; `toActiveRunData` in `lib/active-run-session/parse.ts` handles run parsing, while `PersistedBattleStateSchema` owns battle wire parsing and default merging.
+`run-lifecycle.ts` exposes `snapshotRun(session)`, `restoreRun(…)` for run-only
+restoration, and `restoreSessionSave(save, session, options)` for complete saves.
+Bootstrap, independent session initialization, and playthrough fixtures use the
+complete-save command: profile, Gear, permanent progress, codec repairs, active
+run decoding, battle rebinding, and incompatible-battle settlement share one
+draft and one gameplay revision. A decoding failure publishes none of those
+changes. Settings remain a separate store and hydrate only after that command
+succeeds; abandonment feedback and its immediate save follow settings hydration.
+Repeated bootstrap may preserve an initialized activity while applying saved
+progression and rebinding its live manifests in the same command.
+`persistence-hydration.ts` composes the gameplay codec repairs inside that draft;
+`hydrateAlchemyPersistenceFields` remains the fields-only operation and does not
+restore an activity. Both paths include Trinket-manifest repair. `parseActiveRun(raw)` validates JSON before hydration; `toActiveRunData` in `lib/active-run-session/parse.ts` handles run parsing, while `PersistedBattleStateSchema` owns battle wire parsing and default merging.
 
 Domain persistence codecs own field selection, defaults, encoding, hydration, and subscriptions. `GameplayPersistenceCodec<T>` receives a `GameplayDraft`; `StandalonePersistenceCodec<T>` owns a separate Zustand store. `shared/storage/persistence.ts` composes their fields into the versioned envelope and subscribes to settings changes plus the gameplay commit signal. Codec types live in `shared/stores/persistence-codec.ts`.
 
@@ -290,7 +302,7 @@ Use this reference for access and orchestration; unprefixed store filenames are 
 
 Controllers implement the explicit **command contracts** in `shell/route-commands.ts`; `use-alchemy-run-controller.ts` composes them. Shop and battle commands pass through directly, with shop continuation owned by run navigation. Screen contracts never derive from the composition root’s inferred return type. Screen routes own **display data** via their specific hooks. App chrome / autosave / particles read via capability hooks, not controller display re-exports. Imperative handlers read lifetime-specific ports at call time. Reward route commands expose `claimChoice(id)` and `skip()`: the reward command validates the offered ID and finalizes it atomically behind the claim guard. Card-only skipping explicitly finalizes with no choice, ignoring legacy persisted selection; `selectedId` remains save-compatible but no longer drives reward interaction. Battle refs and handlers travel through `routeCommands.battle`; battle display is read locally by the battle route. Battle-start commands derive gameplay and meta inputs from their open command draft instead of React controller props. Run-flow handlers take `RunFlowShellActions` and read gameplay fields from the command draft / read ports at call time. Room-entry presentation takes only navigation and opening-feedback callbacks (`RoomPresentation` in `run-destination-handlers.ts`); post-reward presentation is composed in `run-flow.ts`; reward commands commit the destination, act, node, or Wildwood transition atomically. Active-run core fields shared by committed session reads come from `pickActiveRunView` in `run-state-init.ts`.
 
-Boot: [`use-alchemy-bootstrap.ts`](../src/app/use-alchemy-bootstrap.ts) applies persistence owners via `hydrateAlchemyPersistenceFields` and then calls the canonical `restoreRun` transition before publishing bootstrap readiness (guarded by `readRunInitialized`), so [`App.tsx`](../src/App.tsx) cannot render `AppInner` against an unhydrated run. [`bootstrap-save-state.ts`](../src/features/alchemy/shared/storage/bootstrap-save-state.ts) initializes Steam, configures the save backend from the returned capabilities, and only then loads candidates. `restoreRun` is the only runtime run-session hydration path; settings/profile/gear hydration flows through the persistence codecs first.
+Boot: [`use-alchemy-bootstrap.ts`](../src/app/use-alchemy-bootstrap.ts) calls `SessionPersistence.restore`, which delegates to `restoreSessionSave` before publishing bootstrap readiness (preserving an already initialized activity), so [`App.tsx`](../src/App.tsx) cannot render `AppInner` against an unhydrated run. [`bootstrap-save-state.ts`](../src/features/alchemy/shared/storage/bootstrap-save-state.ts) initializes Steam, configures the save backend from the returned capabilities, and only then loads candidates. `restoreRun` and `restoreSessionSave` share the same run restoration recipe; complete saves hydrate gameplay codecs inside that recipe's transaction.
 
 ## Card inspection and combat equipment reservations
 

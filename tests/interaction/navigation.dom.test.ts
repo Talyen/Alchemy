@@ -58,7 +58,7 @@ defineSequenceFamily("navigation", (seed) => {
         expected = screen;
         mounted.result.current.navigation.resumeTo(screen, prepare);
       },
-      startBattle: starts.startBattle,
+      presentBattleStart: starts.presentBattleStart,
       getAvailableDestinations: () => ["Normal Combat"],
       onResumeWildwood: wildwood.resumeWildwoodRun,
     },

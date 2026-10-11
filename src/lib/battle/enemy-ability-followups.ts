@@ -9,7 +9,7 @@ import { applyPlayerStatusFromAttack } from "./status-player";
 import { purgeOnePlayerBenefit } from "./player-purge";
 import type { BattleState, CombatTextEvent } from "./types";
 import { hasEnemyTrait } from "./encounter-trait-state";
-import { isPlayerDefeated } from "./health-state";
+import { getBattleOutcome } from "./battle-outcome";
 import { setEnemyStatus, setPlayerStatus } from "./status-state";
 
 export function applyAbilityFollowups(
@@ -38,7 +38,7 @@ export function applyAbilityFollowups(
     ["fire-imp", "burn"],
     ["giant-spider", "poison"],
   ] as const) {
-    if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
+    if (getBattleOutcome(nextState) !== null) return nextState;
     if (context.healthDamage > 0 && hasEnemyTrait(nextState, traitId, context.traitSet)) {
       nextState = applyPlayerStatusFromAttack(
         recordEnemyAbilityActivation(nextState, traitId),
@@ -51,7 +51,7 @@ export function applyAbilityFollowups(
       );
     }
   }
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
+  if (getBattleOutcome(nextState) !== null) return nextState;
   if (context.healthDamage > 0 && hasEnemyTrait(nextState, "winter-wolf", context.traitSet)) {
     nextState = resolveEnemyAttackHit(
       recordEnemyAbilityActivation(nextState, "winter-wolf"),
@@ -64,7 +64,7 @@ export function applyAbilityFollowups(
       { canDodge: false, traitSet: context.traitSet },
     ).state;
   }
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
+  if (getBattleOutcome(nextState) !== null) return nextState;
   if (context.landed && hasEnemyTrait(nextState, "banshee", context.traitSet)) {
     const purged = purgeOnePlayerBenefit(nextState, combatTexts);
     if (purged.purged) nextState = recordEnemyAbilityActivation(purged.state, "banshee");
@@ -77,7 +77,7 @@ export function applyAbilityFollowups(
       combatTexts,
     );
   }
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
+  if (getBattleOutcome(nextState) !== null) return nextState;
   // Purged Thorns stay purged: the retaliation check below sees zero stacks, so no Nature damage fires.
   if (context.landed && nextState.playerStatuses.thorns > 0) {
     const amount =

@@ -64,6 +64,7 @@ export function getCardDisplayKeywords(card: BattleCard): KeywordId[] {
 }
 
 export function getCardKeywordShineColors(card: BattleCard): readonly string[] {
+  if (card.transmuted) return keywordDefinitions[card.transmuted].shineColors;
   return getInspectionKeywordShineColors(getCardDisplayKeywords(card));
 }
 

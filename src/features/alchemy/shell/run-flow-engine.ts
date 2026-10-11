@@ -47,7 +47,7 @@ export function createRunFlowEngine(
     {
       navigateTo,
       resumeTo,
-      startBattle: battle.startBattle,
+      presentBattleStart: battle.presentBattleStart,
       getAvailableDestinations: outcomes.getAvailableDestinations,
       onResumeWildwood: wildwood.resumeWildwoodRun,
     },

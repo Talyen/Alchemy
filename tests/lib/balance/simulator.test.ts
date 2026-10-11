@@ -1,9 +1,38 @@
+import * as battle from "@/lib/battle";
 import { makeTestCard } from "../../fixtures/battle";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { simulateBatch, simulateBattle } from "@/lib/balance";
 
 describe("balance simulator", () => {
+  it.each([
+    { playerHealth: 10, enemyHealth: 0, deathsDoorActive: false, expected: "win" },
+    { playerHealth: 0, enemyHealth: 10, deathsDoorActive: false, expected: "loss" },
+    { playerHealth: 0, enemyHealth: 0, deathsDoorActive: false, expected: "loss" },
+    { playerHealth: 0, enemyHealth: 0, deathsDoorActive: true, expected: "win" },
+  ])(
+    "reports $expected for a terminal opening at hero $playerHealth / enemy $enemyHealth, Death's Door $deathsDoorActive",
+    ({ expected, ...health }) => {
+      // Inject the resolved boundary snapshot, leaving simulator classification and metrics real.
+      const opening = vi.spyOn(battle, "resolveBattleStart").mockReturnValue({
+        state: { ...battle.defaultBattleState(), ...health },
+        companion: null,
+        outcome: battle.getBattleOutcome(health),
+      });
+      try {
+        const result = simulateBattle({ characterId: "knight", enemyId: "skeleton", loadoutMode: "bare", deck: [] });
+        expect(result).toMatchObject({
+          outcome: expected,
+          turns: 0,
+          totalCardsPlayed: 0,
+          wonBeforeEnemyAttack: expected === "win",
+        });
+      } finally {
+        opening.mockRestore();
+      }
+    },
+  );
+
   it("reports combat Gold separately from the starting purse", () => {
     const result = simulateBattle({
       characterId: "knight",

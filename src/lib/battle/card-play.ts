@@ -3,7 +3,7 @@ import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { mergeCombatText } from "./combat-text-events";
 import type { BattleCard } from "@/lib/game-data";
 import type { BattleResolution, BattleState, BattleSnapshot, CombatFlags, CombatTextEvent } from "./types";
-import { isPlayerDefeated } from "./health-state";
+import { getBattleOutcome, isPlayerDefeated } from "./battle-outcome";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { deliverPendingHandCards } from "./draw";
 import { getBattleRng, rollPercent } from "@/lib/rng";
@@ -68,8 +68,8 @@ function validateCardPlay(
   options?: CardPlayOptions,
 ): ReturnType<typeof computeCardPayment> | null {
   if (!Number.isInteger(card.cost) || card.cost < 0) return null;
-  if (state.enemyHealth <= 0 && !options?.allowAfterEnemyDefeat) return null;
-  if (isPlayerDefeated(state)) return null;
+  const outcome = getBattleOutcome(state);
+  if (outcome === "defeat" || (outcome === "victory" && !options?.allowAfterEnemyDefeat)) return null;
   if (state.turnPhase !== "player") return null;
   if (isCcControlled(state.playerCC)) return null;
   const handCard = getHandCard(state, card.id, index, card.uid);

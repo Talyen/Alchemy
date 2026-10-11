@@ -6,7 +6,7 @@ import { addGoldWithCombatText, applyHealingWithCombatText, gainManaWithCombatTe
 import { mergeCombatText } from "./combat-text-events";
 import type { BattleCard } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "./types";
-import { isPlayerDefeated } from "./health-state";
+import { isPlayerDefeated } from "./battle-outcome";
 import { addEnemyStatus } from "./status-state";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { tickEnemyPoison } from "./status-ticks";

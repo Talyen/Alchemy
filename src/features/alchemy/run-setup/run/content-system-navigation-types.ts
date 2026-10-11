@@ -5,7 +5,7 @@ import type { Destination, Screen } from "@/lib/routing";
 export interface ContentSystemNavigationDeps {
   navigateTo: (nextScreen: Screen, prepareNavigation?: () => void) => void;
   resumeTo: (nextScreen: Screen, prepareNavigation?: () => void) => void;
-  startBattle: BattleStartCommands["startBattle"];
+  presentBattleStart: BattleStartCommands["presentBattleStart"];
   getAvailableDestinations: (options?: DestinationOptionsInput) => Destination[];
   onResumeWildwood: () => void;
 }

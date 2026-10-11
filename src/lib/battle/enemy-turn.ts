@@ -9,7 +9,7 @@ import { applyHealingWithCombatText } from "./player-rewards";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 import type { BattleState, BattleSnapshot, CombatTextEvent } from "./types";
-import { isPlayerDefeated } from "./health-state";
+import { getBattleOutcome, isPlayerDefeated } from "./battle-outcome";
 import { processEnemyAbility } from "./enemy-turn-attack";
 import { processEnemyRegeneration, processEnemyTraits } from "./enemy-turn-traits";
 import { processEncounterTraitActionDamage, processEncounterTraitActionStart } from "./encounter-trait-events";
@@ -40,7 +40,7 @@ function finalizePlayerTurn(
   combatTexts: CombatTextEvent[],
   options?: { preserveBlock?: boolean; manaAtTurnEnd?: number },
 ) {
-  if (state.enemyHealth <= 0 || isPlayerDefeated(state)) {
+  if (getBattleOutcome(state) !== null) {
     return { state, combatTexts, playerTurnSkipped: false };
   }
   const finalState = advanceToPlayerTurn(state, combatTexts, options);
@@ -89,12 +89,12 @@ function resolveEnemyPostTickResolution(
   if (mode === "attack") {
     nextState = processEnemyAbility(nextState, texts);
     afterAbilityState = nextState;
-    if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return { state: nextState, afterAbilityState };
+    if (getBattleOutcome(nextState) !== null) return { state: nextState, afterAbilityState };
   } else {
     nextState = reduceSkipTurns(nextState, texts);
   }
   nextState = tickPlayerStatuses(nextState, texts);
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) {
+  if (getBattleOutcome(nextState) !== null) {
     return { state: nextState, ...(afterAbilityState ? { afterAbilityState } : {}) };
   }
   if (mode === "attack" && !isPlayerDefeated(nextState)) {
@@ -113,7 +113,7 @@ function resolveEnemyTurn(state: BattleState): Exclude<EndPlayerTurnResolution, 
   const enemyTurnStartState = tickEnemyStatuses(state, enemyTurnStartCombatTexts);
   const enemyResolutionCombatTexts: CombatTextEvent[] = [];
 
-  if (enemyTurnStartState.enemyHealth <= 0 || isPlayerDefeated(enemyTurnStartState)) {
+  if (getBattleOutcome(enemyTurnStartState) !== null) {
     return {
       kind: skippedAtStart ? "skipped" : "standard",
       ...finalizePlayerTurn(
@@ -152,7 +152,7 @@ function resolveEnemyTurn(state: BattleState): Exclude<EndPlayerTurnResolution, 
 export function endPlayerTurn(state: BattleState): EndPlayerTurnResolution {
   const endingTexts: CombatTextEvent[] = [];
   const healedState =
-    hasEncounterBenefit(state, "restorative") && state.enemyHealth > 0 && !isPlayerDefeated(state)
+    hasEncounterBenefit(state, "restorative") && getBattleOutcome(state) === null
       ? applyHealingWithCombatText(state, LABYRINTH_MODIFIER_CONFIG.healingPerTurn, endingTexts)
       : state;
   const turnEndedState = reducePlayerSkipTurns(resolvePendingBattleReactions(healedState, endingTexts));
@@ -211,12 +211,12 @@ export function resolveBattleTurn(
   const frames: BattleTurnFrame[] = [];
   // Balance fights have a round budget, including forced skips. Live commands
   // omit it and continue until player input is possible or combat ends.
-  while (state.enemyHealth > 0 && !isPlayerDefeated(state) && frames.length < (options?.maxTurns ?? Infinity)) {
+  while (getBattleOutcome(state) === null && frames.length < (options?.maxTurns ?? Infinity)) {
     const before = battleSnapshot(state);
     const turn = endPlayerTurn(state);
     state = turn.state;
     let companion: BattleTurnFrame["companion"] = null;
-    if (!turn.playerTurnSkipped && state.enemyHealth > 0 && !isPlayerDefeated(state) && state.activeCompanion) {
+    if (!turn.playerTurnSkipped && getBattleOutcome(state) === null && state.activeCompanion) {
       const id = state.activeCompanion.id;
       const texts: CombatTextEvent[] = [];
       state = processCompanionTurnStart(state, texts);

@@ -14,12 +14,8 @@ import {
 import { addPlayerStatusWithCombatText } from "./player-rewards";
 import { mergeCombatText } from "./combat-text-events";
 import type { BattleState, CombatTextEvent } from "./types";
-import {
-  applyPlayerCombatDamage,
-  isPlayerDefeated,
-  mitigatePlayerCombatDamage,
-  playerHealthLostToDamage,
-} from "./health-state";
+import { applyPlayerCombatDamage, mitigatePlayerCombatDamage, playerHealthLostToDamage } from "./health-state";
+import { isPlayerDefeated } from "./battle-outcome";
 import { decayEnemyArmor, reduceEnemyArmor } from "./enemy-mitigation-state";
 import { getEnemyTraitSet } from "./encounter-trait-state";
 import { scaleReceivedPlayerDamage } from "./damage-modifiers";

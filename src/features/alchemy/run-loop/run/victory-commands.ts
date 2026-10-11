@@ -21,7 +21,7 @@ import {
   settleBattleVictory,
   settlePendingBattleMaterials,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { isPlayerDefeated, type BattleSnapshot } from "@/lib/battle";
+import { getBattleOutcome, type BattleSnapshot } from "@/lib/battle";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { getOwnedUniqueDefinitionIds } from "@/lib/gear";
@@ -116,7 +116,7 @@ export function createVictoryCommand(
       (draft) => {
         if (draft.session.activity.kind !== "battle") return rejectCommand("There is no active battle to finish", null);
         const state = draft.session.activity.data.battleState;
-        if (state.enemyHealth > 0 || isPlayerDefeated(state)) return rejectCommand("Battle has not been won", null);
+        if (getBattleOutcome(state) !== "victory") return rejectCommand("Battle has not been won", null);
         const committedResult = computeVictoryResult(draft);
         const battleState = snapshotTransactionValue(draft.session.activity.data.battleState);
         const runState = draft.run.activeRun;

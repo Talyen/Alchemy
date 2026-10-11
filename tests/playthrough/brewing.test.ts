@@ -282,6 +282,13 @@ describe("consumable preservation and paired evidence", () => {
     });
     expect(shouldPreserveConsumable(cardById["health-potion"]!, state)).toBe(true);
     expect(shouldPreserveConsumable(cardById["panacea-potion"]!, state)).toBe(true);
+    expect(shouldPreserveConsumable(cardById.apple!, state)).toBe(true);
+    expect(
+      shouldPreserveConsumable(cardById.apple!, {
+        ...state,
+        playerStatuses: { ...state.playerStatuses, poison: 1 },
+      }),
+    ).toBe(false);
     expect(shouldPreserveConsumable(cardById["health-potion"]!, { ...state, playerHealth: 1 })).toBe(false);
     expect(
       shouldPreserveConsumable(cardById["panacea-potion"]!, {

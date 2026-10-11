@@ -12,7 +12,12 @@ import {
   dispatchGameplayCommand,
   subscribeRunSessionCommits,
 } from "@/features/alchemy/shared/stores/gameplay-command";
-import { readActiveRun, readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import {
+  readActiveRun,
+  readActiveRunScreen,
+  readBattle,
+  readRunSession,
+} from "@/features/alchemy/shared/stores/run-reads";
 import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
@@ -21,6 +26,9 @@ import { getStartingDeck } from "@/lib/game-data";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state";
 import { logError } from "@/lib/error-logger";
+import { createPlaythroughController } from "@/app/playthrough/controller";
+import * as battleEngine from "@/lib/battle";
+import { snapshotSessionSave } from "@/features/alchemy/shared/storage/session-persistence";
 import { defaultGameSession } from "@/app/application-session";
 
 vi.mock("@/lib/error-logger", async (importOriginal) => ({
@@ -35,11 +43,11 @@ beforeEach(() => {
 function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNavigation>[0]> = {}) {
   const navigateTo = vi.fn();
   const resumeTo = vi.fn();
-  const startBattle = vi.fn();
+  const presentBattleStart = vi.fn();
   return {
     navigateTo,
     resumeTo,
-    startBattle,
+    presentBattleStart,
     getAvailableDestinations: () => [DESTINATIONS.NORMAL_COMBAT],
     onResumeWildwood: vi.fn(),
     ...overrides,
@@ -60,14 +68,99 @@ describe("createContentSystemNavigation", () => {
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps, defaultGameSession);
     nav.handleCharacterSelect("knight");
-    expect(deps.startBattle).toHaveBeenCalledExactlyOnceWith({
-      enemyType: "normal",
-      modifiers: expect.any(Array),
-      enemyId: "skeleton",
-    });
-    expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE, expect.any(Function));
+    expect(deps.presentBattleStart).toHaveBeenCalledOnce();
+    expect(readBattle(defaultGameSession).battleState.currentEnemy.id).toBe("skeleton");
+    expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE);
     expect(readActiveRun(defaultGameSession).contentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
     expect(readActiveRun(defaultGameSession).characterId).toBe("knight");
+  });
+
+  it.each(["novice", "difficulty"] as const)("rolls back the entire %s start when opening combat fails", (entry) => {
+    setRunSession({ pendingContentSystemType: CONTENT_SYSTEMS.CAMPAIGN, pendingCharacterId: "knight" });
+    const deps = makeDeps();
+    const nav = createContentSystemNavigation(deps, defaultGameSession);
+    const before = snapshotSessionSave(defaultGameSession);
+    const commits = vi.fn();
+    const unsubscribe = subscribeRunSessionCommits(commits, defaultGameSession);
+    const resolve = battleEngine.resolveBattleStart;
+    const failure = vi.spyOn(battleEngine, "resolveBattleStart").mockImplementationOnce((...args) => {
+      resolve(...args);
+      throw new Error("opening combat failed");
+    });
+    try {
+      expect(() =>
+        entry === "novice"
+          ? nav.handleCharacterSelect("knight")
+          : nav.handleDifficultySelect(DEFAULT_CAMPAIGN_DIFFICULTY_ID),
+      ).toThrow("opening combat failed");
+      expect(snapshotSessionSave(defaultGameSession)).toEqual(before);
+      expect(commits).not.toHaveBeenCalled();
+      expect(deps.navigateTo).not.toHaveBeenCalled();
+      expect(deps.presentBattleStart).not.toHaveBeenCalled();
+    } finally {
+      failure.mockRestore();
+      unsubscribe();
+    }
+  });
+
+  it("publishes one complete start before feedback and lets opening outcomes supersede Battle", () => {
+    setRunSession({ pendingCharacterId: "knight" });
+    const deps = makeDeps();
+    const observed: Array<ReturnType<typeof snapshotSessionSave>> = [];
+    const unsubscribe = subscribeRunSessionCommits(
+      () => observed.push(snapshotSessionSave(defaultGameSession)),
+      defaultGameSession,
+    );
+    deps.presentBattleStart.mockImplementation(() => {
+      expect(readRunSession(defaultGameSession).pendingCharacterId).toBeNull();
+      deps.navigateTo(ROUTE_SCREENS.REWARDS);
+      throw new Error("presentation failed");
+    });
+    try {
+      expect(() => createContentSystemNavigation(deps, defaultGameSession).handleCharacterSelect("knight")).toThrow(
+        "presentation failed",
+      );
+      expect(observed).toHaveLength(1);
+      expect(observed[0]?.activeRun?.activity.kind).toBe("battle");
+      expect(observed[0]?.activeRun?.roomsEncountered).toBe(1);
+      expect(snapshotSessionSave(defaultGameSession)).toEqual(observed[0]);
+      expect(deps.navigateTo.mock.calls.map(([screen]) => screen)).toEqual([
+        ROUTE_SCREENS.BATTLE,
+        ROUTE_SCREENS.REWARDS,
+      ]);
+    } finally {
+      unsubscribe();
+    }
+  });
+
+  it("keeps an opening Companion victory on Rewards through the production shell", () => {
+    dispatchGameplayCommand(
+      (draft) => {
+        draft.runProfile.effects.companionDamage = 1000;
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    const resolve = battleEngine.resolveBattleStart;
+    const opening = vi
+      .spyOn(battleEngine, "resolveBattleStart")
+      .mockImplementationOnce((options, context) =>
+        resolve({ ...options, difficultyModifiers: [{ kind: "start-companion", companionId: "bear" }] }, context),
+      );
+    try {
+      const { flow } = createPlaythroughController(defaultGameSession);
+      flow.goToScreen(ROUTE_SCREENS.GAME_MODE_SELECT);
+      flow.beginCampaign();
+      flow.handleCharacterSelect("knight");
+      expect(readRunSession(defaultGameSession).activity.kind).toBe("rewards");
+      expect(readActiveRunScreen(defaultGameSession)).toBe("rewards");
+      expect(snapshotSessionSave(defaultGameSession).activeRun?.runHistory).toEqual([
+        expect.objectContaining({ destination: DESTINATIONS.NORMAL_COMBAT, completed: true }),
+      ]);
+    } finally {
+      opening.mockRestore();
+    }
   });
 
   it("sends a veteran hero to difficulty select", () => {
@@ -84,7 +177,7 @@ describe("createContentSystemNavigation", () => {
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps, defaultGameSession);
     nav.handleCharacterSelect("knight");
-    expect(deps.startBattle).not.toHaveBeenCalled();
+    expect(deps.presentBattleStart).not.toHaveBeenCalled();
     expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DIFFICULTY_SELECT);
     expect(readRunSession(defaultGameSession).pendingCharacterId).toBe("knight");
   });
@@ -248,12 +341,9 @@ describe("createContentSystemNavigation", () => {
     nav.handleStandardDraftComplete();
     expect(() => nav.handleStandardDraftComplete()).not.toThrow();
 
-    expect(deps.startBattle).toHaveBeenCalledExactlyOnceWith({
-      enemyType: "normal",
-      modifiers: expect.any(Array),
-      enemyId: "skeleton",
-    });
-    expect(deps.navigateTo).toHaveBeenLastCalledWith(ROUTE_SCREENS.BATTLE, expect.any(Function));
+    expect(deps.presentBattleStart).toHaveBeenCalledOnce();
+    expect(readBattle(defaultGameSession).battleState.currentEnemy.id).toBe("skeleton");
+    expect(deps.navigateTo).toHaveBeenLastCalledWith(ROUTE_SCREENS.BATTLE);
   });
 
   it("resumes an incomplete campaign Wildcard draft to the draft screen", () => {
@@ -434,7 +524,7 @@ describe("createContentSystemNavigation", () => {
     nav.handleStandardDraftComplete();
     expect(readRunSession(defaultGameSession).activity.kind).toBe("difficulty-select");
     expect(readActiveRun(defaultGameSession).runDeck).toEqual(draftedCards);
-    expect(deps.startBattle).not.toHaveBeenCalled();
+    expect(deps.presentBattleStart).not.toHaveBeenCalled();
     dispatchGameplayCommand(
       (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DIFFICULTY_SELECT)),
       undefined,
@@ -444,10 +534,8 @@ describe("createContentSystemNavigation", () => {
 
     expect(readActiveRun(defaultGameSession).contentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
     expect(readActiveRun(defaultGameSession).runDeck).toEqual(draftedCards);
-    expect(deps.startBattle).toHaveBeenCalledExactlyOnceWith({
-      enemyType: "normal",
-      modifiers: expect.any(Array),
-    });
+    expect(deps.presentBattleStart).toHaveBeenCalledOnce();
+    expect(readRunSession(defaultGameSession).activity.kind).toBe("battle");
   });
   it("repairs missing Campaign destinations using the current run's progress without switching runs", () => {
     setRunProgress({

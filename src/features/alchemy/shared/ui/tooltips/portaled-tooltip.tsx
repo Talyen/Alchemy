@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, type ReactNode, type RefObject } from "react";
+import { useId, useLayoutEffect, useState, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 
 import { cn } from "@/lib/utils";
@@ -36,9 +36,50 @@ function TooltipContent({ visible, children }: { visible: boolean; children: Rea
   return useHeldWhile(visible, children);
 }
 
+function useTooltipVisible(triggerRef: RefObject<HTMLElement | null>, requested: boolean) {
+  const [suppressed, setSuppressed] = useState(false);
+  useLayoutEffect(() => {
+    setSuppressed(false);
+    if (!requested) return;
+    const hasActiveFocus = () => document.hasFocus() && triggerRef.current?.contains(document.activeElement);
+    const onPointer = (event: PointerEvent) => {
+      const trigger = triggerRef.current;
+      // The hand selects cards by geometry across overlapping slots and gaps.
+      // Its own hover owner decides which card is active inside the hand.
+      const boundary = trigger?.closest("[data-hand-slot]")?.parentElement ?? trigger;
+      const inside = event.target instanceof Node && boundary?.contains(event.target);
+      // Preserve keyboard inspection without reviving a panel dismissed by blur or a click.
+      if (!inside && event.type === "pointermove" && hasActiveFocus()) return;
+      setSuppressed(!inside);
+    };
+    const onFocus = (event: FocusEvent) => {
+      setSuppressed(!(event.target instanceof Node && triggerRef.current?.contains(event.target)));
+    };
+    const onBlur = () => setSuppressed(true);
+    const onPointerOut = (event: PointerEvent) => {
+      if (event.relatedTarget === null && !hasActiveFocus()) onBlur();
+    };
+    // Overlays, disabled controls and window changes can interrupt React's
+    // trigger-local leave/blur events. Observe actual input at the document seam.
+    document.addEventListener("pointermove", onPointer, true);
+    document.addEventListener("pointerdown", onPointer, true);
+    document.addEventListener("pointerout", onPointerOut, true);
+    document.addEventListener("focusin", onFocus, true);
+    window.addEventListener("blur", onBlur);
+    return () => {
+      document.removeEventListener("pointermove", onPointer, true);
+      document.removeEventListener("pointerdown", onPointer, true);
+      document.removeEventListener("pointerout", onPointerOut, true);
+      document.removeEventListener("focusin", onFocus, true);
+      window.removeEventListener("blur", onBlur);
+    };
+  }, [triggerRef, requested]);
+  return requested && !suppressed;
+}
+
 export function PortaledTooltip({
   triggerRef,
-  visible,
+  visible: requestedVisible,
   children,
   width = tooltipWidthClass,
   className,
@@ -48,6 +89,7 @@ export function PortaledTooltip({
   fadeOutMs = TOOLTIP_FADE_MS,
   plasmaColorPair = null,
 }: PortaledTooltipProps) {
+  const visible = useTooltipVisible(triggerRef, requestedVisible);
   const tooltipId = useId();
   useLayoutEffect(() => {
     const trigger = triggerRef.current;

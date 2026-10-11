@@ -5,7 +5,7 @@ import {
   resolveBattleStart,
   defaultTalentEffects,
   resolveBattleTurn,
-  isPlayerDefeated,
+  getBattleOutcome,
   playBattleCardResolved,
   type BattleSnapshot,
 } from "@/lib/battle";
@@ -94,7 +94,7 @@ function playAutomatedTurn(
 ): BattleSnapshot {
   let nextState = choosePendingWishCards(state, combatRng, policyRng);
 
-  while (nextState.enemyHealth > 0 && !isPlayerDefeated(nextState)) {
+  while (getBattleOutcome(nextState) === null) {
     const selection = chooseCardToPlay(nextState, policy, policyRng);
     if (!selection) break;
 
@@ -146,7 +146,7 @@ function runSimTurn(
 ): { state: BattleSnapshot; turns: number } {
   state = playAutomatedTurn(state, policy, tracking, combatRng, policyRng);
   if (tracking.anomalies) sampleAnomalies(state, [], tracking.anomalies);
-  if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return { state, turns: 1 };
+  if (getBattleOutcome(state) !== null) return { state, turns: 1 };
 
   const resolution = resolveBattleTurn(state, { rng: combatRng }, { maxTurns: remainingTurns });
   if (tracking.anomalies) {
@@ -231,14 +231,15 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
   let state = initialState;
   let turns = 0;
 
-  while (state.enemyHealth > 0 && !isPlayerDefeated(state) && turns < maxTurns) {
+  while (getBattleOutcome(state) === null && turns < maxTurns) {
     const result = runSimTurn(state, policy, tracking, rng, policyRng, maxTurns - turns);
     state = result.state;
     turns += result.turns;
   }
 
-  const outcome: BattleSimulationOutcome =
-    state.enemyHealth <= 0 ? "win" : isPlayerDefeated(state) ? "loss" : "timeout";
+  const outcome = getBattleOutcome(state);
+  const simulationOutcome: BattleSimulationOutcome =
+    outcome === "victory" ? "win" : outcome === "defeat" ? "loss" : "timeout";
 
   const battleMetrics = state.battleMetrics ?? {
     enemyAttackActions: 0,
@@ -249,7 +250,7 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
     characterId: config.characterId,
     enemyId: enemy.id,
     enemyType: enemy.enemyType,
-    outcome,
+    outcome: simulationOutcome,
     turns,
     playerHealth: state.playerHealth,
     playerMaxHealth,
@@ -258,7 +259,7 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
     enemyAttackActions: battleMetrics.enemyAttackActions,
     enemyAbilityActivations: battleMetrics.enemyAbilityActivations,
     enemyAbilityUses: battleMetrics.enemyAbilityUses ?? {},
-    wonBeforeEnemyAttack: outcome === "win" && battleMetrics.enemyAttackActions === 0,
+    wonBeforeEnemyAttack: simulationOutcome === "win" && battleMetrics.enemyAttackActions === 0,
     cardsPlayed: cardsPlayed ?? EMPTY_CARDS_RECORD,
     totalCardsPlayed: cardsPlayed ? Object.values(cardsPlayed).reduce((total, count) => total + count, 0) : 0,
     combatGoldEarned: trackMetrics ? state.gold - startingGold : 0,

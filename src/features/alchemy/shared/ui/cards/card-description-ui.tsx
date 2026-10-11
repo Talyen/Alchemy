@@ -11,6 +11,7 @@ import { TooltipBody } from "../tooltips/tooltip-panel";
 import { PortaledTooltip } from "../tooltips/portaled-tooltip";
 import { useHoverVisible } from "../use-hover-visible";
 import { getCorruptedValueOffsets, splitCorruptedNumericParts } from "./card-text";
+import { ShineText } from "../shine-text";
 
 export interface TokenizedTextOptions {
   renderKeyword?: (text: string, keywordId: KeywordId, key: number) => ReactNode;
@@ -147,7 +148,22 @@ export function getCardDisplayTitle(card: Pick<BattleCard, "title" | "corrupted"
   return card.corrupted ? `Corrupted ${card.title}` : card.title;
 }
 
-export function CardTitle({ card, className }: { card: Pick<BattleCard, "title" | "corrupted">; className?: string }) {
+export function CardTitle({
+  card,
+  className,
+}: {
+  card: Pick<BattleCard, "title" | "corrupted" | "transmuted">;
+  className?: string;
+}) {
+  if (card.transmuted)
+    return (
+      <ShineText
+        colors={keywordDefinitions[card.transmuted].shineColors}
+        className={cn("font-sans font-semibold", className)}
+      >
+        {card.title}
+      </ShineText>
+    );
   return (
     <span className={cn("font-sans font-semibold", className)}>
       {card.corrupted ? <span className="text-shine-corruption">Corrupted </span> : null}

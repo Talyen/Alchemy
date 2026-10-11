@@ -86,7 +86,7 @@ Each enemy has three distinct canonical card IDs in `abilityIds` and 1–3 uniqu
 
 All Bestiary enemies, including Skeleton, can appear in random encounters. The
 first novice Campaign battle chooses Skeleton explicitly in
-`shared/run-flow/campaign-start.ts`; later battles use the normal encounter pool.
+`run-setup/run/new-run-initialization.ts`; later battles use the normal encounter pool.
 
 Follow the [repertoire requirements](#enemy-repertoire-requirements). Trait
 descriptions must mention every distinct effect. For damage resistance and
@@ -197,7 +197,7 @@ rendered numeric positions identify highlights, never the effect to mutate.
 
 ### Transmutation keywords and Potion brewing
 
-Transmutation uses the offerable card pool and `getCardKeywords()` to match outcomes to each class's three affinity keywords. Wildcard receives three seeded keyword choices. Each keyword needs at least four distinct matching cards so the visit can offer three outcomes after excluding the surrendered card's base identity. Candidate lists and selections persist for the visit; Back and reload must not reroll them. Keep affinity pools sufficiently populated when changing card keywords or offer eligibility.
+Transmutation derives compatible alterations from the run deck, independent of class affinities and offerable replacement-card pools. `game-constants/transmutation.ts` owns the three keyword groups and title prefixes. Each visit rolls one useful keyword per group, with unique fallback choices if a group is unavailable, then saves each card's randomly chosen conversion. All occurrences of the selected source keyword convert without changing existing numeric fields. Unsupported conditions and scaling exclude conversions; additions use native effects, and added effect lines respect Corruption's four-effect-line limit. Keep recursive effects, structured descriptions, distilled marks, and keyword detection consistent when adding new mechanics. Back and reload must preserve exact previews. Transmuted cards carry `transmuted`, `baseTitle`, generated descriptions, and any added tags through hydration; they cannot receive further Transmutation or Corruption.
 
 Preserve transformed effects and generated descriptions together. Mixed and strengthened Potions can be brewed repeatedly. Strengthened standard Potions can be Transmutation sources; Mixed Potions cannot. Distillation adds 1 to supported magnitudes, including Wishes, and preserves probabilities, percentage effects, durations, and draw counts. Full-cleanse Potions without healing gain Restore 1 Health. Persist `distilled` marks on description magnitudes so increased values remain green after hydration and mixing.
 

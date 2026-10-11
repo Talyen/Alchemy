@@ -3,7 +3,7 @@ import { resolveSecondaryAction, readCombatFlag, writeCombatFlag } from "@/lib/b
 import { describe, expect, it } from "vitest";
 import { addPlayerStatus, setEnemyStatus, setPlayerStatus } from "@/lib/battle/status-state";
 import { gainMana } from "@/lib/battle/resource-state";
-import { resolvePlayerHealing, applyPlayerHealing, isPlayerDefeated } from "@/lib/battle/health-state";
+import { resolvePlayerHealing, applyPlayerHealing } from "@/lib/battle/health-state";
 import { makeTestBattleState, patchBattleState } from "../../fixtures/battle";
 import { defaultCombatFlags } from "../../fixtures/default-battle-state";
 
@@ -97,11 +97,6 @@ describe("applyPlayerHealing", () => {
     expect(next.playerHealth).toBe(30);
     expect(next.playerStatuses.block).toBe(7);
   });
-});
-
-it("distinguishes defeat from active Death's Door at zero Health", () => {
-  expect(isPlayerDefeated({ playerHealth: 0, deathsDoorActive: true })).toBe(false);
-  expect(isPlayerDefeated({ playerHealth: 0, deathsDoorActive: false })).toBe(true);
 });
 
 describe("resolveSecondaryAction", () => {

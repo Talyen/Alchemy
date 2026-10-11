@@ -13,7 +13,7 @@ import { applyDrawResult, drawFromState } from "./draw";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import type { BattleState, CombatTextEvent } from "./types";
-import { isPlayerDefeated } from "./health-state";
+import { isPlayerDefeated } from "./battle-outcome";
 import { reduceEnemyArmor } from "./enemy-mitigation-state";
 import { writeCombatFlag as setFlag } from "./action-context";
 import { mergeCombatText } from "./combat-text-events";

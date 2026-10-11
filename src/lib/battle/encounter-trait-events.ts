@@ -13,7 +13,7 @@ import { removePlayerArmor } from "./status-helpers";
 import { applyArmorLossAttackRetaliation } from "./player-defensive-reactions";
 import type { BattleState, CombatTextEvent } from "./types";
 import { hasEnemyTrait } from "./encounter-trait-state";
-import { isPlayerDefeated } from "./health-state";
+import { getBattleOutcome } from "./battle-outcome";
 import { setEnemyStatus } from "./status-state";
 import { writeCombatFlag as setFlag } from "./action-context";
 
@@ -66,7 +66,7 @@ function dealTraitDamage(
 
 export function processEncounterTraitActionDamage(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
+  if (getBattleOutcome(nextState) !== null) return nextState;
   if (hasEnemyTrait(nextState, "septic")) {
     nextState = recordEnemyAbilityActivation(nextState, "septic");
     nextState = dealTraitDamage(
@@ -76,11 +76,11 @@ export function processEncounterTraitActionDamage(state: BattleState, combatText
       combatTexts,
     );
   }
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
+  if (getBattleOutcome(nextState) !== null) return nextState;
   if (hasEnemyTrait(nextState, "caustic")) {
     nextState = recordEnemyAbilityActivation(nextState, "caustic");
     nextState = dealTraitDamage(nextState, "poison", 1, combatTexts);
-    if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
+    if (getBattleOutcome(nextState) !== null) return nextState;
     let armorLost = 0;
     nextState = removePlayerArmor(nextState, scaleByRoomMultiplier(nextState, 1), combatTexts, (amount) => {
       armorLost = amount;
@@ -90,7 +90,7 @@ export function processEncounterTraitActionDamage(state: BattleState, combatText
       combatTexts,
     );
   }
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
+  if (getBattleOutcome(nextState) !== null) return nextState;
   if (hasEnemyTrait(nextState, "flesheater")) {
     nextState = recordEnemyAbilityActivation(nextState, "flesheater");
     nextState = processEnemyDamageEffect(
@@ -108,7 +108,7 @@ export function processEncounterTraitActionDamage(state: BattleState, combatText
     ["zealot", "holy", 2],
     ["concussive", "stun", 1],
   ] as const) {
-    if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
+    if (getBattleOutcome(nextState) !== null) return nextState;
     if (hasEnemyTrait(nextState, trait))
       nextState = dealTraitDamage(recordEnemyAbilityActivation(nextState, trait), damageType, amount, combatTexts);
   }

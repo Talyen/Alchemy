@@ -6,7 +6,7 @@ import type { CardEffectResolutionContext } from "./effect-handlers/handler-type
 import { damageOnlyEffects } from "./card-classification";
 import { getModifiedCompanionEffects, type BattleCard } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "./types";
-import { isPlayerDefeated } from "./health-state";
+import { getBattleOutcome, isPlayerDefeated } from "./battle-outcome";
 import { applyScaledLeechHealing, computeLeechHeal } from "./damage-rider-leech";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { applyBlockReward, applyHealingWithCombatText, gainManaWithCombatText } from "./player-rewards";
@@ -25,7 +25,7 @@ export function resolveCompanionTurnStart(
   ) => BattleState,
   options?: { damageOnly?: boolean },
 ) {
-  if (!state.activeCompanion || state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
+  if (!state.activeCompanion || getBattleOutcome(state) !== null) return state;
 
   const companionCard: BattleCard = {
     id: `companion-${state.activeCompanion.id}`,

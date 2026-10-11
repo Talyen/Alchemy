@@ -8,7 +8,7 @@ import { applyCardEffects } from "./effect-handlers";
 import { addPlayerStatusWithCombatText, applyHealingWithCombatText, gainManaWithCombatText } from "./player-rewards";
 import { isPotionCard, type BattleCard } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "./types";
-import { isPlayerDefeated } from "./health-state";
+import { isPlayerDefeated } from "./battle-outcome";
 import { processCompanionTurnStart } from "./companion";
 import { applyArmorReward, applyBlockReward } from "./status-player";
 import { getBattleRng, rollPercent } from "@/lib/rng";

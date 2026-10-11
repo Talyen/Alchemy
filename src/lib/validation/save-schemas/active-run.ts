@@ -106,14 +106,25 @@ const AlchemyVisitObjectSchema = z.object({
   transmutation: z
     .object({
       choices: z.array(
-        z.object({ keyword: TransmutationKeywordSchema, candidates: savedCardArraySchema("transmutation.candidates") }),
+        z.object({
+          keyword: TransmutationKeywordSchema,
+          alterations: z.array(
+            z.object({
+              sourceIndex: z.number().int().nonnegative(),
+              source: BattleCardSchema,
+              sourceKeyword: TransmutationKeywordSchema.nullable(),
+              result: BattleCardSchema,
+            }),
+          ),
+        }),
       ),
       sourceIndex: z.number().int().min(0).nullable(),
       source: BattleCardSchema.nullable(),
       keyword: TransmutationKeywordSchema.nullable(),
       offerIndex: z.number().int().min(0).max(2).nullable(),
     })
-    .optional(),
+    .optional()
+    .catch(undefined),
   offers: savedCardArraySchema("alchemyVisit.offers"),
   result: BattleCardSchema.nullable(),
   original: BattleCardSchema.nullable(),

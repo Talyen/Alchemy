@@ -1,8 +1,15 @@
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import type { BattleCard, KeywordId } from "@/lib/game-data";
+export interface TransmutationAlteration {
+  sourceIndex: number;
+  source: BattleCard;
+  sourceKeyword: KeywordId | null;
+  result: BattleCard;
+}
+
 export interface TransmutationChoice {
   keyword: KeywordId;
-  candidates: BattleCard[];
+  alterations: TransmutationAlteration[];
 }
 
 interface TransmutationSelection {
@@ -16,8 +23,7 @@ interface TransmutationSelection {
 export type TransmutationSelectionCommand =
   | { kind: "source"; index: number; card: BattleCard }
   | { kind: "keyword"; keyword: KeywordId }
-  | { kind: "outcome"; index: number }
-  | { kind: "back"; to: "source" | "keyword" };
+  | { kind: "back" };
 
 export interface AlchemyVisit {
   offers: BattleCard[];
@@ -41,7 +47,11 @@ export function hydrateAlchemyVisit(visit: AlchemyVisit | null | undefined): Alc
                 ...visit.transmutation,
                 choices: visit.transmutation.choices.map((choice) => ({
                   ...choice,
-                  candidates: choice.candidates.map(hydrateCard),
+                  alterations: choice.alterations.map((alteration) => ({
+                    ...alteration,
+                    source: hydrateCard(alteration.source),
+                    result: hydrateCard(alteration.result),
+                  })),
                 })),
                 source: visit.transmutation.source ? hydrateCard(visit.transmutation.source) : null,
               },

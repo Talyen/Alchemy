@@ -9,7 +9,8 @@ import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import { applyHealthLossTalentRewards } from "./status-player";
 import type { BattleState, CombatTextEvent } from "./types";
-import { applyPlayerCombatDamage, isPlayerDefeated, playerHealthLostToDamage } from "./health-state";
+import { applyPlayerCombatDamage, playerHealthLostToDamage } from "./health-state";
+import { isPlayerDefeated } from "./battle-outcome";
 import { getEnemyTraitSet, hasEnemyTrait } from "./encounter-trait-state";
 
 import { applyBlockedAttackRetaliation, applyPlayerDefensiveReactions } from "./player-defensive-reactions";
