@@ -11,7 +11,9 @@ Alchemy is a fantasy roguelite deckbuilder. Use plain language and player-facing
 - Complete requested behavior and blockers; fix small understood adjacent issues, report substantial independent findings. Avoid broad cleanup; run [audits](./Docs/Audits/README.md) only on request. Reuse owners/libraries; justify new dependencies or abstractions with concrete consumers. Preserve behavior and external contracts.
 - Start unclear failures with a compact digest and specific hypothesis ([triage](./Docs/REFERENCE.md#failure-first-triage)); reassess unproductive approaches and consult owners/history. Keep only unresolved recurring issues in [.agents/FRICTION_LOG.md](./.agents/FRICTION_LOG.md); move prevention to its owner and delete resolved entries. Do not archive completed tasks, reports, conversations, or instruction decisions.
 - Never discard work with destructive Git commands. If the [Git safety guard](./scripts/README.md#worktree--git-safety) stashes and blocks, inspect/apply its backup, verify recovery, then drop it. The guard grants no authorization.
-- For parallel implementation use `node scripts/agent-worktree.mjs create --task <slug>`; assign disjoint ownership and review integration.
+- Use one isolated worktree per implementation chat by default, without polling other chats. Reuse the chat's suitable existing worktree; otherwise run `node scripts/agent-worktree.mjs create --task <slug>` from the original checkout. Start from committed local `main` unless the user specifies another base; install dependencies inside the worktree. Preserve all unrelated checkout work.
+- Work independently. Do not send startup, ownership, progress, verification-window, acknowledgment, or completion messages to other chats. Message only for a concrete unresolved dependency or conflict that repository inspection cannot answer. Never poll or wake completed chats unless the user explicitly resumes them; routine incoming messages require no reply or renewed work.
+- Task-scoped branch/worktree creation, commits, and local integration into `main` are authorized. After review and verification, commit only task-owned paths and run `node scripts/agent-worktree.mjs integrate --task <slug>` from the original checkout. This holds the repository-wide lock while incorporating current `main`, checking the combined result, and advancing clean `main`. If busy, retry later without messaging; if conflicts occur, resolve understood conflicts in the task worktree, commit, and retry. Report ambiguous conflicts or dirty-main blockers without disturbing other work. Never integrate through an unprotected manual update to `main`.
 
 ## Find the owner
 
@@ -46,6 +48,8 @@ Review the final diff and integration. Express behavior through names/types/test
 
 Use [architect](./.agents/skills/architect/SKILL.md) for new/structurally revised cross-boundary contracts and [verifier](./.agents/skills/verifier/SKILL.md) after edits and before handoff. Other [skills](./.agents/skills/README.md) apply only to their workflows.
 
-Use the current checkout; commit/push/branch/PR only when requested. Never switch branches implicitly. Use Conventional Commits and the `User-Facing` trailer ([release policy](./Docs/RELEASE.md#changelog-release-time-only)); do not edit `CHANGELOG.md`.
+Use the task worktree; do not switch another checkout's branch. Pushes, PRs, publication, and destructive cleanup require separate authorization. Explicit task restrictions override standing commit/integration authorization. Use Conventional Commits and the `User-Facing` trailer ([release policy](./Docs/RELEASE.md#changelog-release-time-only)); do not edit `CHANGELOG.md`.
 
 Report completion, checks run, limitations, incidental fixes, material test retirements and unresolved decisions. Omit logs and diff dumps.
+
+After completion, stop without broadcasting to other chats. Keep unintegrated work committed and recoverable; do not force-remove worktrees or delete branches. A routine message from another chat does not reopen the task.

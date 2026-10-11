@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
+import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -32,12 +34,13 @@ function runGit(args, opts = {}) {
 function usage() {
   console.log(`Usage:
   node scripts/agent-worktree.mjs create --task <slug> [--base <branch>] [--detached]
+  node scripts/agent-worktree.mjs integrate --task <slug>
   node scripts/agent-worktree.mjs remove --task <slug> [--force]
   node scripts/agent-worktree.mjs list
   node scripts/agent-worktree.mjs prune
 
 Creates isolated worktrees under .worktrees/<slug> on branch agent/<slug>.
-Use when another agent has dirty work on main to avoid shared-checkout races.
+Use one worktree per implementation chat to avoid shared-checkout races.
 Add --detached for verification-only detached HEAD.
 `);
 }
@@ -51,11 +54,12 @@ export function slugify(s) {
     .slice(0, 64);
 }
 
-export function main(argv = process.argv.slice(2)) {
+export async function main(argv = process.argv.slice(2)) {
   const [cmd, ...rest] = argv;
 
-  if (["create", "remove", "list", "prune"].includes(cmd)) {
-    const valueOptions = cmd === "create" ? ["--task", "--base"] : cmd === "remove" ? ["--task"] : [];
+  if (["create", "integrate", "remove", "list", "prune"].includes(cmd)) {
+    const valueOptions =
+      cmd === "create" ? ["--task", "--base"] : ["remove", "integrate"].includes(cmd) ? ["--task"] : [];
     const flagOptions = cmd === "create" ? ["--detached"] : cmd === "remove" ? ["--force"] : [];
     const seen = new Set();
     for (let index = 0; index < rest.length; index++) {
@@ -103,6 +107,83 @@ export function main(argv = process.argv.slice(2)) {
   if (cmd === "prune") {
     const r = runGit(["worktree", "prune", "-v"], { stdio: "inherit" });
     process.exit(r.status ?? 1);
+  }
+
+  if (cmd === "integrate") {
+    const task = slugify(getArg("--task") ?? "");
+    if (!task) throw new Error("missing or invalid --task slug");
+    const git = (cwd, args, raw = false) => {
+      const result = spawnSync("git", args, { cwd, encoding: "utf8" });
+      if (result.status !== 0) throw new Error(result.stderr || `git ${args[0]} failed`);
+      return raw ? result.stdout : result.stdout.trim();
+    };
+    const common = fs.realpathSync(path.resolve(root, git(root, ["rev-parse", "--git-common-dir"])));
+    // The OS releases this shared lock when its owner exits, including crashes.
+    // Hash collisions fail closed as busy; they never allow concurrent integration.
+    const port = 20000 + (createHash("sha256").update(common).digest().readUInt32BE(0) % 40000);
+    const lock = net.createServer((socket) => socket.destroy());
+    await new Promise((resolve, reject) => {
+      lock.once("error", reject);
+      lock.listen({ host: "127.0.0.1", port, exclusive: true }, resolve);
+    }).catch((error) => {
+      if (error.code === "EADDRINUSE")
+        throw new Error("Integration lock busy; retry later without messaging other chats.");
+      throw error;
+    });
+    try {
+      const records = git(root, ["worktree", "list", "--porcelain"]).split("\n\n");
+      const mainRecord = records.find((record) => record.split("\n").includes("branch refs/heads/main"));
+      if (!mainRecord) throw new Error("main must have a registered checkout; nothing integrated.");
+      const mainPath = mainRecord.split("\n")[0].slice("worktree ".length);
+      const taskPath = path.join(mainPath, ".worktrees", task);
+      const taskRecord = records.find((record) => record.split("\n").includes(`worktree ${taskPath}`));
+      if (!taskRecord?.split("\n").includes(`branch refs/heads/agent/${task}`)) {
+        throw new Error("Task must be a registered worktree on its expected agent branch.");
+      }
+      const clean = (cwd) => {
+        if (git(cwd, ["status", "--porcelain", "--untracked-files=all"])) {
+          throw new Error(`Checkout has uncommitted work: ${cwd}; preserve it and retry later.`);
+        }
+        for (const marker of ["MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "rebase-merge", "rebase-apply"]) {
+          if (fs.existsSync(path.resolve(cwd, git(cwd, ["rev-parse", "--git-path", marker])))) {
+            throw new Error(`Unfinished Git operation in ${cwd}; resolve it before integration.`);
+          }
+        }
+      };
+      clean(mainPath);
+      clean(taskPath);
+      const mainHead = git(mainPath, ["rev-parse", "HEAD"]);
+      git(taskPath, [
+        "merge",
+        "--no-edit",
+        "-m",
+        "chore: incorporate main before integration\n\nUser-Facing: no",
+        mainHead,
+      ]);
+      const taskHead = git(taskPath, ["rev-parse", "HEAD"]);
+      const paths = git(taskPath, ["diff", "--name-only", "-z", mainHead, taskHead], true).split("\0").filter(Boolean);
+      if (paths.length) {
+        const check = (args) => {
+          const result = spawnSync(process.platform === "win32" ? "npm.cmd" : "npm", args, {
+            cwd: taskPath,
+            stdio: "inherit",
+          });
+          if (result.status !== 0) throw new Error("Integration verification failed; main remains unchanged.");
+        };
+        check(["run", "check", "--", ...paths]);
+        if (paths.some((file) => file.endsWith(".md"))) check(["run", "docs:check"]);
+      }
+      clean(taskPath);
+      clean(mainPath);
+      if (git(taskPath, ["rev-parse", "HEAD"]) !== taskHead || git(mainPath, ["rev-parse", "HEAD"]) !== mainHead) {
+        throw new Error("A checkout changed during verification; retry integration.");
+      }
+      git(mainPath, ["merge", "--ff-only", taskHead]);
+      console.log(`Integrated ${task} into local main at ${taskHead}; no push performed.`);
+    } finally {
+      await new Promise((resolve) => lock.close(resolve));
+    }
+    return;
   }
 
   if (cmd === "create") {
@@ -233,4 +314,9 @@ export function main(argv = process.argv.slice(2)) {
   process.exit(1);
 }
 
-if (isMainEntry()) main();
+if (isMainEntry()) {
+  main().catch((error) => {
+    console.error(error.message);
+    process.exitCode = 1;
+  });
+}

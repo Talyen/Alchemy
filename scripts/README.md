@@ -168,7 +168,9 @@ expiry. Inspect unfinished experiments before deleting them explicitly.
 
 ## Worktree / git safety
 
-`node scripts/agent-worktree.mjs create --task <slug>` (`.worktrees/<slug>` on `agent/<slug>`);
+Use one isolated worktree per implementation chat, without polling other chats
+or negotiating ownership. Reuse the chat's existing suitable worktree.
+`node scripts/agent-worktree.mjs create --task <slug>` (`.worktrees/<slug>` on `agent/<slug>`, from committed local `main` by default);
 `--detached` for verification-only runs. Creation checks out tracked files only;
 run `npm ci` inside the new worktree before running its verification gates.
 Some tools can resolve dependencies from the parent checkout while Knip still
@@ -176,6 +178,32 @@ reports missing binaries and unused dependencies without a local installation.
 Run worktree management commands from the original checkout. Removal validates
 the exact registered worktree; an unregistered directory requires inspection
 and explicit `--force`. An empty normalized task name is rejected.
+
+Task-scoped commits and local integration into `main` are authorized by
+[AGENTS.md](../AGENTS.md#working-style); pushes and PRs still require a request.
+Commit only reviewed task-owned changes with the required release trailer, then run:
+
+```sh
+node scripts/agent-worktree.mjs integrate --task <slug>
+```
+
+Integration uses an exclusive loopback port derived from the shared Git directory,
+so all worktrees share one OS-released lock. A busy lock fails immediately; retry
+later without messaging other chats. A port collision also fails closed. The command
+requires registered task and `main` checkouts with no dirty files or unfinished Git
+operations. While holding the lock, it merges current local `main` into the task,
+runs `npm run check -- <combined changed paths>` and, for Markdown changes,
+`npm run docs:check`, then fast-forwards `main` only if verification succeeded and
+both checkouts remain clean at the expected commits. It never pushes or switches
+checkout branches. Additional task-required tests remain the task owner's responsibility.
+
+Resolve understood merge conflicts in the task worktree, commit the resolution,
+and retry; ambiguous conflicts or dirty `main` are blockers to report to the user.
+Failures preserve task work and leave `main` unchanged. Never bypass serialization
+with a manual update to `main`. Keep unintegrated work committed and recoverable;
+cleanup must not discard work. After handoff, stop: no completion broadcasts,
+acknowledgments, polling, or waking completed chats. Only a concrete unresolved
+dependency or conflict warrants a bounded chat exchange.
 
 `scripts/bin/git` shims destructive git through
 `git-safety-guard.mjs` (auto-stash backup); `setup-git-safety.mjs` installs the PATH hook.
