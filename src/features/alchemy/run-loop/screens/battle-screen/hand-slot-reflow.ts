@@ -7,7 +7,13 @@ export function playHandSlotReflow(artwork: HTMLElement, deltaX: number, duratio
   // displacement forward when another play or draw changes the hand mid-motion.
   const remainingX = slot ? (getElementCenterX(artwork) - getElementCenterX(slot)) / scale : 0;
   const offsetX = deltaX / scale + remainingX;
-  if (Math.abs(offsetX) < 0.5) return;
+  if (Math.abs(offsetX) < 0.5) {
+    // Opposing layout changes can cancel while the previous transition is still
+    // displaced. Stop it at rest rather than letting that old offset jump back.
+    artwork.style.transition = "none";
+    artwork.style.transform = "";
+    return;
+  }
 
   artwork.style.transition = "none";
   artwork.style.transform = `translate3d(${offsetX}px, 0, 0)`;
