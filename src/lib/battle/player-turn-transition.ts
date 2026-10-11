@@ -171,12 +171,12 @@ function performDrawAndResetPhase(
     state.pendingHandCards,
   );
   let returningFlightUid: number | null = null;
-  if (recovered && nextDraw.hand.length < MAX_HAND_SIZE) {
+  if (recovered) {
     returningFlightUid = nextDraw.nextCardUid;
-    nextDraw.hand.push({ ...recovered, uid: returningFlightUid });
+    const card = { ...recovered, uid: returningFlightUid };
+    if (nextDraw.hand.length < MAX_HAND_SIZE) nextDraw.hand.push(card);
+    else nextDraw.pendingHandCards.push(card);
     nextDraw.nextCardUid += 1;
-  } else if (recovered) {
-    nextDraw.discard.push(recovered);
   }
   const nextState = resetPlayerTurnState(state, options);
   const hadUnspentMana = (options?.manaAtTurnEnd ?? state.mana) > 0;
@@ -216,9 +216,10 @@ export function advanceToPlayerTurn(
 
   const beforeTurnReset = nextState;
   nextState = performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn, options);
+  const retainedBlock = nextState.playerStatuses.block > 0;
   nextState = resolvePendingBattleReactions(applyTurnStartPurge(nextState, combatTexts), combatTexts);
   if (getBattleOutcome(nextState) !== null) return nextState;
-  if (nextState.playerStatuses.block > 0 && nextState.gearEffects.thornsOnRetainedBlock > 0) {
+  if (retainedBlock && nextState.gearEffects.thornsOnRetainedBlock > 0) {
     nextState = addPlayerStatusWithCombatText(
       nextState,
       "thorns",

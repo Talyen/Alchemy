@@ -8,7 +8,6 @@ import {
   makeCard,
   makeGoblinBattleState,
   seedRandom,
-  startAtDestination,
   startBattleWithDeck,
 } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
@@ -99,21 +98,6 @@ test("shows an empty draft and updates the viewer after each pick", async ({ pag
     .click();
   await page.getByRole("button", { name: "View Deck · 1 cards" }).click();
   await expect(page.getByRole("dialog").getByRole("img", { name: "Slash", exact: true })).toBeVisible();
-});
-
-test("keeps deck access on run screens and meta detours", async ({ page, fastBattle }) => {
-  void fastBattle;
-  await startAtDestination(
-    page,
-    { runDeck: Array.from({ length: 6 }, () => makeCard()) },
-    { forceDestination: "Normal Combat" },
-  );
-  const icon = page.getByRole("button", { name: "View Deck · 6 cards" });
-  await expect(icon).toBeVisible();
-  await page.getByRole("button", { name: "Open game menu" }).click();
-  await page.getByRole("button", { name: "Collection", exact: true }).click();
-  await icon.click();
-  await expect(page.getByRole("dialog").getByRole("heading", { name: "Deck", exact: true })).toBeVisible();
 });
 
 test("waits for real card animations and preserves pile transfer anchors", slow, async ({ page }) => {

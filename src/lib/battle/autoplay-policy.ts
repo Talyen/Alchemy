@@ -35,7 +35,7 @@ function scoreEffects(effects: readonly BattleCardEffect[], state: BattleSnapsho
   return total;
 }
 
-function scoreDamageEffect(effect: Extract<BattleCardEffect, { kind: "damage" }>, state: BattleSnapshot): number {
+function scoreDamageBase(effect: Extract<BattleCardEffect, { kind: "damage" }>, state: BattleSnapshot): number {
   if (effect.forgeBonusPercent !== undefined)
     return effect.amount + scalePercent(state.playerStatuses.forge, effect.forgeBonusPercent);
   if (effect.equalToForge) return state.playerStatuses.forge;
@@ -50,6 +50,17 @@ function scoreDamageEffect(effect: Extract<BattleCardEffect, { kind: "damage" }>
     targetBlock: state.enemyMitigation.block,
     targetFrozen: state.enemyCC.freezeSkipTurns > 0,
   }).effect.amount;
+}
+
+function scoreDamageEffect(effect: Extract<BattleCardEffect, { kind: "damage" }>, state: BattleSnapshot): number {
+  const burning = state.enemyStatuses.burn > 0;
+  const bleeding = state.enemyStatuses.bleed > 0;
+  const bonus =
+    Number(effect.doubleIfEnemyBurning === true && burning) +
+    Number(effect.doubleIfEnemyBleeding === true && bleeding) +
+    Number(effect.doubleIfEnemyNotBurning === true && !burning) +
+    (effect.tripleIfEnemyNotBurning === true && !burning ? 2 : 0);
+  return scoreDamageBase(effect, state) * (1 + bonus);
 }
 
 function playerStatusAmount(
@@ -148,12 +159,13 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, manaRoom: 
       return effect.companionIfAbsent && state.activeCompanion ? 0 : effect.amount * AUTOPLAY_EFFECT_SCORE.wish;
     case "remove-player-status":
       return state.playerStatuses[effect.status] > 0 ? AUTOPLAY_EFFECT_SCORE.cleanse : 0;
+    case "cleanse-player-status-to-damage":
+      return state.playerStatuses[effect.status];
     case "lose-mana":
     case "lose-max-mana":
     case "gain-gold":
     case "self-damage":
     case "lose-health":
-    case "cleanse-player-status-to-damage":
     case "next-hit-poison":
     case "next-archery-free":
     case "dodge-next-attack":

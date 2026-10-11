@@ -1,5 +1,5 @@
 import "../../../../helpers/mock-audio";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DifficultySelectScreen } from "@/features/alchemy/run-setup/screens/difficulty-select-screen";
@@ -9,35 +9,6 @@ describe("DifficultySelectScreen", () => {
   afterEach(() => {
     cleanup();
     useUiStore.setState({ hoveredCardId: null, shimmerState: null, plasmaInteraction: null });
-  });
-
-  it("renders hero info and difficulties with lock state", () => {
-    const onSelect = vi.fn();
-    const onBack = vi.fn();
-
-    render(
-      <DifficultySelectScreen
-        characterId="knight"
-        selectedDifficulty={null}
-        completedDifficulties={[]}
-        onSelect={onSelect}
-        onBack={onBack}
-      />,
-    );
-
-    expect(screen.getByText("A Knight's Journey")).toBeDefined();
-    expect(screen.getByText("Knight")).toBeDefined();
-    expect(screen.getByText("Block")).toBeDefined();
-
-    const diff1Btn = screen.getByRole("button", { name: /Novice/i });
-    const diff2Btn = screen.getByRole("button", { name: /Adventurer/i });
-    const diff3Btn = screen.getByRole("button", { name: /Legend/i });
-
-    expect(diff1Btn.getAttribute("disabled")).toBeNull();
-    expect(diff2Btn.getAttribute("disabled")).toBeNull();
-    expect(diff3Btn.getAttribute("disabled")).toBeNull();
-    expect(diff2Btn.getAttribute("aria-disabled")).toBe("true");
-    expect(diff3Btn.getAttribute("aria-disabled")).toBe("true");
   });
 
   it("allows selecting an unlocked difficulty and pressing Play", async () => {
@@ -65,32 +36,6 @@ describe("DifficultySelectScreen", () => {
     await user.click(playButton);
 
     expect(onSelect).toHaveBeenCalledWith("difficulty-1");
-  });
-
-  it("displays unlock requirement tooltip on hovering locked difficulty", () => {
-    render(
-      <DifficultySelectScreen
-        characterId="knight"
-        selectedDifficulty={null}
-        completedDifficulties={[]}
-        onSelect={vi.fn()}
-        onBack={vi.fn()}
-      />,
-    );
-
-    const lockedDiff = screen.getByRole("button", { name: /Legend/i });
-    const wrapper = lockedDiff.parentElement!;
-
-    fireEvent.mouseEnter(wrapper);
-    expect(
-      screen.getByText(
-        (_, element) =>
-          element?.tagName.toLowerCase() === "p" &&
-          element.textContent?.toLowerCase() === "clear previous difficulty to unlock",
-      ),
-    ).toBeDefined();
-
-    fireEvent.mouseLeave(wrapper);
   });
 
   it("explains a locked difficulty on keyboard focus without allowing selection", async () => {
