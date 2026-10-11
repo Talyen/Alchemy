@@ -66,7 +66,7 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
   const gameplay = createGameplayStore(generateRunSeed);
   return {
     gameplay,
-    presentationBase: gameplay.getState(),
+    presentationBase: gameplay.reads.getState(),
     settings,
     settingsCodec: createSettingsPersistenceCodec(settings),
     io: createSaveIo(options.saveBackend, clock.now, allowPlatformStorage),

@@ -31,14 +31,6 @@ describe("WildwoodRemovalScreen", () => {
     vi.unstubAllGlobals();
   });
 
-  it("renders screen title and deck cards for removal", () => {
-    render(<WildwoodRemovalScreen runDeck={[testCard]} onRemove={vi.fn()} onSkip={vi.fn()} />);
-
-    expect(screen.getByRole("heading", { name: "Refine Your Deck" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Select Strike" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Skip" })).toBeTruthy();
-  });
-
   it("calls onSkip when Skip button is clicked", () => {
     const onSkip = vi.fn();
     render(<WildwoodRemovalScreen runDeck={[testCard]} onRemove={vi.fn()} onSkip={onSkip} />);

@@ -124,7 +124,8 @@ Representative journeys cover menu-to-battle, consecutive plays, End Turn,
 victory/rewards/destinations, dialogs, Options selects, secondary screens, and
 cursor scrolling. Focus traversal is bounded and reports cycles. Chromium and
 Electron share the Options journey. Existing display and inspection suites cover
-1280×720 and 1280×800; screenshots go to ignored `reports/controller-support/`.
+1280×720 and 1280×800. Use the opt-in [desktop layout review](../tests/layout-review/README.md)
+for screenshots; functional journeys assert geometry directly.
 These checks need no controllers, Steam login, or virtual-device drivers.
 
 Use the existing critical, nightly/full, and desktop CI tiers described in

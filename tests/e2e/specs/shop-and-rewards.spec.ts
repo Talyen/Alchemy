@@ -11,7 +11,7 @@ import {
   startAtDestination,
 } from "../../browser-helpers";
 import type { ParsedSaveData } from "@/lib/validation";
-import { critical, slow } from "../../playwright-tags";
+import { critical } from "../../playwright-tags";
 
 async function enterShop(page: import("@playwright/test").Page, gold: number, destination: "Card Shop" | "Gear Shop") {
   await startAtDestination(page, { runGold: gold }, { forceDestination: destination });
@@ -41,25 +41,6 @@ test("buying a card charges its quote once and survives resume", critical, async
     await expect(resumed.getByRole("dialog").getByRole("img", { name: title, exact: true }).first()).toBeVisible();
     expect((await readSavedGame(resumed)).activeRun?.runDeck).toHaveLength(deckSize + 1);
   });
-});
-
-test.describe("Shop fade-out", () => {
-  for (const destination of ["Card Shop", "Gear Shop"] as const) {
-    test(`keeps ${destination} offerings mounted through route fade-out`, slow, async ({ page }) => {
-      const shop = new ShopPage(page);
-      await enterShop(page, 9999, destination);
-      const offeringCount = await shop.buyBtn.count();
-      expect(offeringCount).toBeGreaterThan(0);
-
-      await page.getByRole("button", { name: "Leave", exact: true }).click({ noWaitAfter: true });
-
-      const destinationPage = new DestinationPage(page);
-      if (!(await page.getByRole("heading", { name: "Choose Destination" }).isVisible())) {
-        await expect(shop.buyBtn).toHaveCount(offeringCount);
-      }
-      await destinationPage.expectVisible();
-    });
-  }
 });
 
 test.describe("Reward Flow", () => {

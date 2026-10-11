@@ -1,4 +1,4 @@
-import { createStore } from "zustand/vanilla";
+import { logError } from "@/lib/error-logger";
 import { createInitialGearState } from "./gear-actions";
 import type { GearStateFields } from "./gear-store-types";
 import type { ProfileStateFields } from "./profile-store-types";
@@ -18,12 +18,50 @@ export interface GameplayState {
 }
 
 export function createGameplayStore(generateSeed: () => number) {
-  return createStore<GameplayState>()(() => ({
+  const initial: GameplayState = {
     revision: 0,
     run: createInitialRunDomainData(generateSeed),
     session: createInitialSessionFields(),
     runProfile: createInitialPermanentFields(),
     profile: createInitialProfileState(),
     gear: createInitialGearState(),
-  }));
+  };
+  let state = initial;
+  type Listener = (state: GameplayState, previous: GameplayState) => void;
+  const listeners = new Set<Listener>();
+  const reads = {
+    getState: () => state,
+    getInitialState: () => initial,
+    subscribe(listener: Listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  };
+  return {
+    reads,
+    // Install the root before publishing the save gate. Both observer channels
+    // must read the same committed revision, with the presentation gate armed.
+    commit(next: GameplayState, prepareObservers: () => void) {
+      const previous = state;
+      state = next;
+      prepareObservers();
+      // Subscription changes during notification apply to the next commit.
+      for (const listener of [...listeners]) {
+        try {
+          listener(state, previous);
+        } catch (error) {
+          logError(
+            "Gameplay commit subscriber failed",
+            "other",
+            { revision: state.revision },
+            undefined,
+            undefined,
+            error,
+          );
+        }
+      }
+    },
+  };
 }

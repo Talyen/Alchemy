@@ -154,9 +154,10 @@ preview/component tests.
 
 The [Options journey](./controller-options.ts) is shared with Electron. Keep the
 critical combat and real-timing canaries in the existing CI tier, and secondary
-viewport/cursor variants in the full suite. Deck-size screenshots are retained in
-ignored `reports/controller-support/`; rendered-font measurements are diagnostic
-CSS pixel estimates, not physical glyph measurements or Valve certification.
+viewport/cursor variants in the full suite. Layout checks assert geometry directly;
+use the opt-in [desktop layout review](../layout-review/README.md) for screenshot
+artifacts. Rendered-font measurements are CSS pixel estimates, not physical glyph
+measurements or Valve certification.
 
 ## Connected interaction and Electron canaries
 
@@ -196,3 +197,19 @@ card controls. The draft and run-setup journeys retain their separate entry
 coverage. Wildwood phase/RNG rules, save/resume, Labyrinth exploration and hover
 geometry, native activation, and Armory equip/unequip and rejection behavior have
 focused protection in the corresponding unit, DOM and browser suites.
+
+Ordinary specs use the fixture-owned page so automatic runtime errors and failure
+diagnostics follow the tested renderer without allocating an unused second page.
+Fresh-page save checks still need a separate unseeded page. Keep passing-journey
+screenshots in explicit visual acceptance or layout-review workflows; functional
+checks assert state and geometry without screenshot encoding or attachment I/O.
+
+Repeated-card targeting is covered by the hand-hover journeys, transfer presence
+by the discard landing and hand-color canaries, and confirmation dismissal by the
+critical controller Options journey. Shared fade retention belongs to the DOM
+FadeSlot/useFade tests; a route-fade check that conditionally skips its assertion
+is not additional protection. DPR input coverage sets an actual device scale
+factor and exercises pointer targeting and keyboard inspection together.
+
+Electron-only CI jobs install system libraries with `playwright install-deps` and
+use the installed Electron runtime; they do not need Playwright Chromium binaries.

@@ -20,7 +20,7 @@ export function subscribePersistenceCommits(listener: () => void, gameSession: G
   const unsubscribeSettings = runtime.settings.subscribe((state, previous) => {
     if (!fieldsEqual(previous, state, SETTINGS_SAVE_KEYS)) listener();
   });
-  const unsubscribeGameplay = runtime.gameplay.subscribe((state, previous) => {
+  const unsubscribeGameplay = runtime.gameplay.reads.subscribe((state, previous) => {
     if (!gameplayPersistedInputsEqual(previous, state)) listener();
   });
   return runtime.track(() => {
