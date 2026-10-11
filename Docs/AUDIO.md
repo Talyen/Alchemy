@@ -28,6 +28,13 @@ for every action or change the intentional silent-content registrations below.
 | Playback test setup                  | `tests/helpers/audio-fixture.ts` (`installCleanAudio`) over `resetAudioRuntimeForTests()` in `src/lib/audio/reset.ts`; `tests/helpers/fake-audio.ts` only for mid-test stub swaps |
 | Asset/pipeline test                  | `tests/lib/audio/audio-assets.test.ts` (disk + `scripts/assets/*` validators; run on registry/asset/pipeline changes)                                                             |
 
+## Local lyric alignment experiment
+
+The [boss karaoke experiment](../scripts/lyrics-trial/README.md) runs local
+word alignment against supplied lyrics and provides a standalone preview.
+It does not enable battle lyrics or change the music player. Generated timings
+need performance-coverage and audible synchronization review before adoption.
+
 ## Runtime contract
 
 ### Shared playback rules

@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Blight Treant · automatic karaoke trial</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: #101813;
+      color: #e6e8dc;
+      font-family: Georgia, serif;
+    }
+    main {
+      max-width: 1100px;
+      margin: auto;
+      padding: 28px;
+    }
+    h1 {
+      font-weight: normal;
+      font-size: 24px;
+    }
+    p,
+    label,
+    button,
+    select {
+      font: 14px system-ui;
+    }
+    p {
+      color: #b5c4b7;
+    }
+    .arena {
+      height: 440px;
+      position: relative;
+      background: radial-gradient(ellipse at center, #294132, #101813 75%);
+    }
+    .combatants {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      height: 280px;
+    }
+    .portrait {
+      height: 230px;
+      width: 190px;
+      object-fit: cover;
+      border: 1px solid #80956b;
+      border-radius: 18px;
+    }
+    .hero {
+      display: grid;
+      place-items: center;
+      background: #223128;
+      color: #aebfa8;
+    }
+    #lyrics {
+      position: absolute;
+      bottom: 38px;
+      width: 100%;
+      padding: 0 24px;
+      text-align: center;
+      font-size: clamp(20px, 3vw, 32px);
+      line-height: 1.5;
+      text-shadow: 0 2px 8px black;
+    }
+    .word {
+      display: inline-block;
+      white-space: pre;
+      color: #a5b1a9;
+    }
+    .word[hidden] {
+      display: none;
+    }
+    .word.active {
+      color: #e7f6a2;
+    }
+    .hand {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+    }
+    .card {
+      width: 115px;
+      height: 115px;
+      border: 1px solid #637a65;
+      border-radius: 10px;
+      background: linear-gradient(#304637, #17241c);
+    }
+    audio {
+      width: 100%;
+      margin: 20px 0 10px;
+    }
+    select {
+      max-width: 100%;
+      padding: 8px;
+      background: #223128;
+      color: #eee;
+      border: 1px solid #637a65;
+    }
+    #status {
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+  <main>
+    <h1>The Blight Treant · word timing trial</h1>
+    <p>
+      Automatic word alignment; the inferred-order option adjusts the lyric sequence. Proposed placement: centered above
+      the hand. Placeholder layout; not the live battle UI.
+    </p>
+    <div class="arena">
+      <div class="combatants">
+        <div class="portrait hero">Alchemist</div>
+        <img class="portrait" src="../../src/assets/optimized/the-blight-treant.webp" alt="The Blight Treant" />
+      </div>
+      <div id="lyrics" aria-label="Song lyrics"></div>
+    </div>
+    <div class="hand" aria-hidden="true">
+      <div class="card"></div>
+      <div class="card"></div>
+      <div class="card"></div>
+      <div class="card"></div>
+      <div class="card"></div>
+    </div>
+    <label
+      >Alignment input
+      <select id="input">
+        <option value="mix">Original mix</option>
+        <option value="vocals">Isolated vocals</option>
+        <option value="performance">Mix with inferred performance order</option>
+      </select></label
+    >
+    <audio id="audio" controls src="../../public/music/The%20Blight%20Treant.mp3"></audio>
+    <label
+      >Jump to a lyric
+      <select id="jump">
+        <option>Loading alignment…</option>
+      </select></label
+    >
+    <button id="seek">Jump</button>
+    <p id="status">Loading…</p>
+  </main>
+  <script type="module">
+    const audio = document.querySelector("#audio");
+    const container = document.querySelector("#lyrics");
+    const jump = document.querySelector("#jump");
+    const status = document.querySelector("#status");
+    try {
+      const requested = new URLSearchParams(location.search).get("alignment");
+      const source = ["mix", "vocals", "performance"].includes(requested) ? requested : "mix";
+      const input = document.querySelector("#input");
+      input.value = source;
+      input.addEventListener("change", () => {
+        location.search = `?alignment=${input.value}`;
+      });
+      const response = await fetch(`./alignment-${source}.json`);
+      if (!response.ok) throw new Error(`Alignment HTTP ${response.status}`);
+      const data = await response.json();
+      const recording = await fetch(audio.src);
+      if (!recording.ok) throw new Error(`Recording HTTP ${recording.status}`);
+      audio.src = URL.createObjectURL(await recording.blob());
+      audio.load();
+      const lines = data.segments;
+      const suspect = lines
+        .flatMap((line) => line.words)
+        .filter((word) => word.end <= word.start || word.end - word.start > 5).length;
+      const warning = document.createElement("p");
+      warning.textContent = `Experimental timing: ${suspect} suspect words (zero duration or over 5 seconds). No timestamps were manually corrected.`;
+      document.querySelector("h1").after(warning);
+      jump.replaceChildren(
+        ...lines.map((line, index) => new Option(`${line.start.toFixed(2)}s · ${line.text}`, index)),
+      );
+      document.querySelector("#seek").addEventListener("click", () => {
+        audio.currentTime = Math.max(0, lines[Number(jump.value)].start);
+      });
+      let shown = null;
+      let spans = [];
+      function render() {
+        const time = audio.currentTime;
+        const line = lines.find(
+          (candidate) =>
+            time >= candidate.start &&
+            time < candidate.end &&
+            !candidate.words.some(
+              (word, index) =>
+                index > 0 &&
+                word.start - candidate.words[index - 1].end > 4 &&
+                time > candidate.words[index - 1].end + 1 &&
+                time < word.start,
+            ),
+        );
+        if (line !== shown) {
+          shown = line;
+          spans = (line?.words ?? []).map((word) => {
+            const span = document.createElement("span");
+            span.className = "word";
+            span.textContent = word.word;
+            if (word.end <= word.start) {
+              span.style.textDecoration = "underline dashed #d7a986";
+              span.title = "Unresolved word timing";
+            }
+            return span;
+          });
+          container.replaceChildren(...spans);
+        }
+        const activeWord = (line?.words ?? []).findIndex((word) => time >= word.start && time < word.end);
+        (line?.words ?? []).forEach((word, index) => {
+          spans[index].hidden = time < word.start;
+          spans[index].classList.toggle("active", index === activeWord);
+        });
+        status.textContent = `${time.toFixed(2)}s · ${data.provenance.model} · ${data.provenance.method}`;
+        requestAnimationFrame(render);
+      }
+      render();
+    } catch (error) {
+      status.textContent = String(error);
+    }
+  </script>
+</html>
