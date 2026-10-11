@@ -1,5 +1,5 @@
 import "../../../../helpers/mock-audio";
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { playUISound } from "@/lib/audio";
@@ -382,8 +382,7 @@ describe("ArmoryScreen equipment movement and inventory ordering", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 
-  it("portals equipped gear and crafting currency tooltips", async () => {
-    const user = userEvent.setup();
+  it("shows equipped gear and crafting currency descriptions on keyboard focus", async () => {
     const loadouts = createEmptyGearLoadouts();
     loadouts.knight.body = "gear-body";
     renderArmoryScreen({
@@ -391,12 +390,13 @@ describe("ArmoryScreen equipment movement and inventory ordering", () => {
       craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES, voidstone: 1 },
     });
 
-    await user.hover(screen.getByLabelText("Armor equipment slot"));
+    await waitForArtwork();
+    act(() => screen.getByLabelText("Armor equipment slot").focus());
     await waitFor(() => {
       expect(screen.getByText("Leather Armor").closest(".armory-inventory-tooltip")).toBeTruthy();
     });
 
-    await user.hover(screen.getByLabelText(/^Use Voidstone,/));
+    act(() => screen.getByLabelText(/^Use Voidstone,/).focus());
     await waitFor(() => {
       const panel = document.querySelector(".hover-popup-panel[data-visible]");
       expect(panel?.textContent).toContain("Remove");

@@ -143,11 +143,13 @@ describe("createContentSystemNavigation", () => {
       defaultGameSession,
     );
     const resolve = battleEngine.resolveBattleStart;
-    const opening = vi
-      .spyOn(battleEngine, "resolveBattleStart")
-      .mockImplementationOnce((options, context) =>
-        resolve({ ...options, difficultyModifiers: [{ kind: "start-companion", companionId: "bear" }] }, context),
-      );
+    const opening = vi.spyOn(battleEngine, "resolveBattleStart").mockImplementationOnce((options, context) =>
+      resolve(
+        { ...options, difficultyModifiers: [{ kind: "start-companion", companionId: "bear" }] },
+        // Fix the opening roll so the Companion lands the lethal hit.
+        { ...context, rng: () => 0.99 },
+      ),
+    );
     try {
       const { flow } = createPlaythroughController(defaultGameSession);
       flow.goToScreen(ROUTE_SCREENS.GAME_MODE_SELECT);
