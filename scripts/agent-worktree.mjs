@@ -1,8 +1,9 @@
 #!/usr/bin/env node
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import net from "node:net";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -31,10 +32,61 @@ function runGit(args, opts = {}) {
   return result;
 }
 
+// Move the entire checkout before unregistering it: ignored evidence and late writes
+// remain recoverable. Only installed dependencies are discarded; branches stay.
+export function archiveIntegratedWorktree(main, task, branch, head) {
+  const git = (...args) => execFileSync("git", args, { cwd: main, encoding: "utf8" }).trim();
+  if (task === main || fs.lstatSync(task).isSymbolicLink()) throw new Error("Unexpected task checkout");
+  const records = git("worktree", "list", "--porcelain", "-z").split("\0\0");
+  const record = records.find((entry) => entry.split("\0").includes("worktree " + task));
+  if (
+    !record?.split("\0").includes("branch refs/heads/" + branch) ||
+    record.split("\0").some((field) => /^(locked|prunable)( |$)/.test(field))
+  )
+    throw new Error("Task worktree registration changed or is locked");
+  if (
+    git("-C", task, "branch", "--show-current") !== branch ||
+    git("-C", task, "rev-parse", "HEAD") !== head ||
+    git("rev-parse", "main") !== head
+  )
+    throw new Error("Task or main changed after integration");
+  if (git("-C", task, "status", "--porcelain", "--untracked-files=all")) throw new Error("Unfinished work preserved");
+  for (const state of ["MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "BISECT_START", "rebase-merge", "rebase-apply"])
+    if (fs.existsSync(git("-C", task, "rev-parse", "--path-format=absolute", "--git-path", state)))
+      throw new Error("Unfinished Git operation preserved");
+  if (/^160000 /m.test(git("-C", task, "ls-files", "--stage"))) throw new Error("Submodule worktree preserved");
+  const dependenciesTracked = !!git("-C", task, "ls-files", "--", "node_modules");
+  const root = path.resolve(
+    process.env.CODEX_WORKTREE_ARCHIVE_ROOT ??
+      path.join(os.homedir(), ".codex", "worktree-archives", path.basename(main)),
+  );
+  if (
+    [main, task, git("rev-parse", "--path-format=absolute", "--git-common-dir")].some(
+      (parent) => root === parent || root.startsWith(parent + path.sep),
+    )
+  )
+    throw new Error("Recovery directory must be outside the repository and task checkout");
+  fs.mkdirSync(root, { recursive: true, mode: 0o700 });
+  const recovery = fs.mkdtempSync(path.join(root, branch.replaceAll("/", "-") + "-"));
+  const checkout = path.join(recovery, "checkout");
+  fs.writeFileSync(path.join(recovery, "recovery.json"), JSON.stringify({ main, task, branch, head }, null, 2));
+  process.chdir(main);
+  fs.renameSync(task, checkout);
+  try {
+    git("worktree", "remove", task); // Missing original path: unregister only this entry, without --force.
+  } catch (error) {
+    if (!fs.existsSync(task)) fs.renameSync(checkout, task);
+    throw error;
+  }
+  fs.unlinkSync(path.join(checkout, ".git"));
+  if (!dependenciesTracked) fs.rmSync(path.join(checkout, "node_modules"), { recursive: true, force: true });
+  console.log("Archived completed worktree to " + recovery + "; retained branch " + branch);
+}
+
 function usage() {
   console.log(`Usage:
   node scripts/agent-worktree.mjs create --task <slug> [--base <branch>] [--detached]
-  node scripts/agent-worktree.mjs integrate --task <slug>
+  node scripts/agent-worktree.mjs integrate --task <slug> [--keep-worktree]
   node scripts/agent-worktree.mjs remove --task <slug> [--force]
   node scripts/agent-worktree.mjs list
   node scripts/agent-worktree.mjs prune
@@ -60,7 +112,14 @@ export async function main(argv = process.argv.slice(2)) {
   if (["create", "integrate", "remove", "list", "prune"].includes(cmd)) {
     const valueOptions =
       cmd === "create" ? ["--task", "--base"] : ["remove", "integrate"].includes(cmd) ? ["--task"] : [];
-    const flagOptions = cmd === "create" ? ["--detached"] : cmd === "remove" ? ["--force"] : [];
+    const flagOptions =
+      cmd === "create"
+        ? ["--detached"]
+        : cmd === "remove"
+          ? ["--force"]
+          : cmd === "integrate"
+            ? ["--keep-worktree"]
+            : [];
     const seen = new Set();
     for (let index = 0; index < rest.length; index++) {
       const arg = rest[index];
@@ -183,6 +242,7 @@ export async function main(argv = process.argv.slice(2)) {
       }
       git(mainPath, ["merge", "--ff-only", taskHead]);
       console.log(`Integrated ${task} into local main at ${taskHead}; no push performed.`);
+      if (!hasFlag("--keep-worktree")) archiveIntegratedWorktree(mainPath, taskPath, `agent/${task}`, taskHead);
     } finally {
       await new Promise((resolve) => {
         lock.close(resolve);
