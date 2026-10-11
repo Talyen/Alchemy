@@ -1,7 +1,9 @@
 # Local boss karaoke experiment
 
 This standalone experiment aligns the supplied Blight Treant lyrics to the
-shipped recording. It does not enable lyrics in the game. Its placeholder layout
+shipped recording. Its accepted phrase-bounded output also supplies the Blight
+Treant Battle UI timing snapshot; see [Audio workflow](../../Docs/AUDIO.md#local-lyric-alignment-experiment).
+Running this tool does not itself replace that checked-in snapshot. Its placeholder layout
 places lyrics centered between the combatants and the hand. Words appear as
 their inferred start times arrive, building the phrase as it is sung. Earlier
 words remain dimmed until the phrase ends; only the currently sung word is

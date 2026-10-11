@@ -21,6 +21,7 @@ function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBack, onOpe
       musicVolume: s.musicVolume,
       sfxVolume: s.sfxVolume,
       muteInBackground: s.muteInBackground,
+      bossLyricsEnabled: s.bossLyricsEnabled,
       autoEndTurn: s.autoEndTurn,
       rememberAutoplayPreference: s.rememberAutoplayPreference,
     })),
@@ -66,6 +67,8 @@ function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBack, onOpe
         onMasterVolumeChange: actions.setMasterVolume,
         onMusicVolumeChange: actions.setMusicVolume,
         onSfxVolumeChange: actions.setSfxVolume,
+        bossLyricsEnabled: settings.bossLyricsEnabled,
+        onBossLyricsEnabledChange: actions.setBossLyricsEnabled,
         muteInBackground: settings.muteInBackground,
         onMuteInBackgroundChange: actions.setMuteInBackground,
       }}

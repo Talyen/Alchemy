@@ -20,6 +20,7 @@ export function currentSchemaCampaignSave() {
     sfxVolume: 80,
     masterVolume: 90,
     muteInBackground: false,
+    bossLyricsEnabled: false,
     autoEndTurn: true,
     brightness: 110,
     gold: 42,

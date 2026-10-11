@@ -136,6 +136,7 @@ export const SaveDataSchema = z
     sfxVolume: clampedSettingSchema(DEFAULT_SFX_VOLUME_PCT, SETTINGS_RANGES.volume),
     masterVolume: clampedSettingSchema(DEFAULT_MASTER_VOLUME_PCT, SETTINGS_RANGES.volume),
     muteInBackground: z.boolean().catch(true),
+    bossLyricsEnabled: z.boolean().catch(true),
     autoEndTurn: z.boolean().catch(true),
     rememberAutoplayPreference: z.boolean().catch(false),
     autoplayEnabled: z.boolean().catch(false),

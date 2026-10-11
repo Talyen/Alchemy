@@ -367,3 +367,19 @@ it("ignores an already queued fade callback after reset and replacement playback
   expect(replacement.volume).toBeCloseTo(0.91);
   expect(vi.getTimerCount()).toBe(0);
 });
+
+it("reports the active media clock through transitions, pause, loops, and invalidation", () => {
+  expect(player.readMusicPlayback()).toBeNull();
+  player.playMusicImmediate(MUSIC_KEYS.BOSS_BLIGHT_TREANT);
+  const boss = elements.at(-1)!;
+  boss.currentTime = 152;
+  expect(player.readMusicPlayback()).toEqual({ key: MUSIC_KEYS.BOSS_BLIGHT_TREANT, currentTime: 152, audible: true });
+  boss.currentTime = 0.7;
+  expect(player.readMusicPlayback()?.currentTime).toBe(0.7);
+  player.playMusic(MUSIC_KEYS.MENU);
+  expect(player.readMusicPlayback()?.key).toBe(MUSIC_KEYS.BOSS_BLIGHT_TREANT);
+  player.pauseAllMusic();
+  expect(player.readMusicPlayback()?.audible).toBe(false);
+  player.invalidateCacheForKey(MUSIC_KEYS.BOSS_BLIGHT_TREANT);
+  expect(player.readMusicPlayback()).toBeNull();
+});
