@@ -14,7 +14,9 @@ import type { MysteryChoice } from "@/lib/mystery";
 import type { MouseEvent } from "react";
 import type { AutoplayCardHandler, AutoplayWishHandler, BattlePlaybackBind } from "../run-loop/battle/battle-context";
 
-import type { BattlePresentationStore } from "../run-loop/battle/battle-presentation-store";
+import type { BuildingId, FarmId, ResearchId } from "@/lib/homestead/types";
+import type { CompanionId } from "@/lib/game-data";
+import type { CollectionTab } from "../shared/types";
 
 export interface AlchemyRouteCommands {
   progress: {
@@ -29,6 +31,12 @@ export interface AlchemyRouteCommands {
     beginWildwood: () => void;
     unlockTalent: (keywordId: KeywordId, talentId: string) => void;
     resetUnlockedTalents: () => void;
+    constructBuilding: (id: BuildingId) => boolean;
+    plantFarm: (id: FarmId) => boolean;
+    completeResearch: (id: ResearchId) => boolean;
+    bondCompanion: (id: CompanionId) => boolean;
+    selectCollectionTab: (tab: CollectionTab) => void;
+    setCollectionPage: (tab: CollectionTab, page: number) => void;
   };
   runSetup: {
     goToScreen: (nextScreen: Screen) => void;

@@ -1,6 +1,3 @@
-import { createSessionPersistence } from "@/features/alchemy/shared/storage";
-import { guardProgressAction } from "@/features/alchemy/shared/stores/session-capabilities";
-import { defaultGameSession } from "@/app/application-session";
 import { playUISound } from "@/lib/audio";
 import { IS_DEMO } from "@/lib/game-edition";
 import { openFullGameWishlist } from "@/lib/platform";
@@ -21,19 +18,6 @@ import {
   useProfileDiscoverySlice,
 } from "@/features/alchemy/shared/stores/use-profile-store";
 import {
-  acceptCommand,
-  rejectCommand,
-  createRunSessionCommand,
-} from "@/features/alchemy/shared/stores/run-session-command";
-import {
-  bondCompanion,
-  completeResearch,
-  constructBuilding,
-  handleCollectionTabChange,
-  plantFarm,
-  setCollectionPage,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
-import {
   useBondedCompanions,
   useHomesteadProgressSlice,
   useHasActiveRun,
@@ -41,51 +25,6 @@ import {
 } from "@/features/alchemy/shared/stores/use-run-reads";
 import type { MetaRouteCtx } from "./route-ctx";
 import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
-
-const persistence = createSessionPersistence(defaultGameSession);
-
-const setCollectionPageCommand = createRunSessionCommand(
-  (...args: Parameters<typeof setCollectionPage>) => acceptCommand(setCollectionPage(...args)),
-  undefined,
-  defaultGameSession,
-);
-const handleCollectionTabChangeCommand = createRunSessionCommand(
-  (...args: Parameters<typeof handleCollectionTabChange>) => acceptCommand(handleCollectionTabChange(...args)),
-  undefined,
-  defaultGameSession,
-);
-const constructBuildingCommand = createRunSessionCommand(
-  (...args: Parameters<typeof constructBuilding>) => {
-    const ok = constructBuilding(...args);
-    return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
-  },
-  undefined,
-  defaultGameSession,
-);
-const plantFarmCommand = createRunSessionCommand(
-  (...args: Parameters<typeof plantFarm>) => {
-    const ok = plantFarm(...args);
-    return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
-  },
-  undefined,
-  defaultGameSession,
-);
-const completeResearchCommand = createRunSessionCommand(
-  (...args: Parameters<typeof completeResearch>) => {
-    const ok = completeResearch(...args);
-    return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
-  },
-  undefined,
-  defaultGameSession,
-);
-const bondCompanionCommand = createRunSessionCommand(
-  (...args: Parameters<typeof bondCompanion>) => {
-    const ok = bondCompanion(...args);
-    return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
-  },
-  undefined,
-  defaultGameSession,
-);
 
 function MenuScreenRoute({ routeCommands }: MetaRouteCtx) {
   const commands = routeCommands.meta;
@@ -138,7 +77,8 @@ function GameModeSelectScreenRoute({ routeCommands, onBack, onOpenGameMenu }: Me
   );
 }
 
-function CollectionScreenRoute({ onBack, onOpenGameMenu }: MetaRouteCtx) {
+function CollectionScreenRoute({ routeCommands, onBack, onOpenGameMenu }: MetaRouteCtx) {
+  const commands = routeCommands.meta;
   const profile = useProfileCollectionSlice();
   const bondedCompanions = useBondedCompanions();
   const finishedRunCharacters = useFinishedRunCharacters();
@@ -146,8 +86,8 @@ function CollectionScreenRoute({ onBack, onOpenGameMenu }: MetaRouteCtx) {
   return (
     <CollectionScreen
       {...profile}
-      onSelectTab={handleCollectionTabChangeCommand}
-      onPageChange={setCollectionPageCommand}
+      onSelectTab={commands.selectCollectionTab}
+      onPageChange={commands.setCollectionPage}
       bondedCompanions={bondedCompanions}
       finishedRunCharacters={finishedRunCharacters}
       onBack={onBack}
@@ -156,7 +96,8 @@ function CollectionScreenRoute({ onBack, onOpenGameMenu }: MetaRouteCtx) {
   );
 }
 
-function HomesteadScreenRoute({ onBack, onOpenGameMenu }: MetaRouteCtx) {
+function HomesteadScreenRoute({ routeCommands, onBack, onOpenGameMenu }: MetaRouteCtx) {
+  const commands = routeCommands.meta;
   const homesteadValues = useHomesteadProgressSlice();
   const { discoveredCardIds } = useProfileDiscoverySlice();
 
@@ -164,11 +105,11 @@ function HomesteadScreenRoute({ onBack, onOpenGameMenu }: MetaRouteCtx) {
     <HomesteadScreen
       {...homesteadValues}
       discoveredCardIds={discoveredCardIds}
-      afterProgressSaved={persistence.afterProgressSaved}
-      onConstructBuilding={guardProgressAction(defaultGameSession, constructBuildingCommand, false)}
-      onPlantFarm={guardProgressAction(defaultGameSession, plantFarmCommand, false)}
-      onCompleteResearch={guardProgressAction(defaultGameSession, completeResearchCommand, false)}
-      onBondCompanion={guardProgressAction(defaultGameSession, bondCompanionCommand, false)}
+      afterProgressSaved={routeCommands.progress.afterSaved}
+      onConstructBuilding={commands.constructBuilding}
+      onPlantFarm={commands.plantFarm}
+      onCompleteResearch={commands.completeResearch}
+      onBondCompanion={commands.bondCompanion}
       onBack={onBack}
       onMenu={onOpenGameMenu}
     />

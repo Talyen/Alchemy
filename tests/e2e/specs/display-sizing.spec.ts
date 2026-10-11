@@ -11,6 +11,7 @@ import {
   waitForLayoutSettled,
 } from "../../browser-helpers";
 import { openArmory } from "../armory";
+import { failOnRuntimeErrors } from "../errors";
 import { MenuPage } from "../../pages/menu-page";
 import { slow } from "../../playwright-tags";
 import { CONTENT_REFERENCE_VIEWPORT, STAGE_HEIGHT } from "../../../src/lib/game-constants/ui-layout";

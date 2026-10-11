@@ -185,6 +185,7 @@ export const BOUNDARY_CONFIGS = [
           },
         ],
         ...SOURCE_IMPORT_PATTERNS,
+        COMMAND_ONLY,
       ),
       "no-restricted-properties": [
         "error",

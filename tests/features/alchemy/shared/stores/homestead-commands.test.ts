@@ -163,3 +163,23 @@ describe("four-tier Homestead persistence and settlement", () => {
     );
   });
 });
+
+describe("meta intent commands", () => {
+  it("selectCollectionTab and setCollectionPage update profile collection tab and page", async () => {
+    const { selectCollectionTab, setCollectionPage } = await import("@/features/alchemy/shared/stores/meta-commands");
+    const { readProfileStore } = await import("@/features/alchemy/shared/stores/profile-store");
+
+    selectCollectionTab("relics", defaultGameSession);
+    expect(readProfileStore(defaultGameSession).collectionTab).toBe("relics");
+
+    setCollectionPage("relics", 2, defaultGameSession);
+    expect(readProfileStore(defaultGameSession).collectionPages.relics).toBe(2);
+  });
+
+  it("constructBuilding returns false and does not mutate when resources are insufficient", async () => {
+    const { constructBuilding } = await import("@/features/alchemy/shared/stores/meta-commands");
+    const result = constructBuilding("blacksmiths-forge", defaultGameSession);
+    expect(result).toBe(false);
+    expect(readRunProfile(defaultGameSession).constructedBuildings["blacksmiths-forge"] ?? 0).toBe(0);
+  });
+});
