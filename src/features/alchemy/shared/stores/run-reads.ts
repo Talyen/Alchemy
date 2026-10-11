@@ -14,7 +14,7 @@ import { readGameplayState, type GameplayState } from "./gameplay-state-reads";
 import type { RunSessionFields } from "./run-domain-types";
 import type { PermanentProgressFields } from "./run-state-init";
 import { pickActiveRunView, type ActiveRunReadView } from "./run-state-init";
-import { deepFreeze, deepFreezeInDev } from "./store-utils";
+import { deepFreeze } from "./store-utils";
 
 export type ShopSessionStateKey = "shopState" | "alchemistState" | "trinketShopState" | "equipmentShopState";
 
@@ -44,21 +44,21 @@ export function selectBattle(state: Pick<GameplayState, "session">): BattleReadV
 }
 
 export function readActiveRun(gameSession: GameSession): ActiveRunReadView {
-  return deepFreezeInDev(pickActiveRunView(readGameplayState(gameSession).run));
+  return pickActiveRunView(readGameplayState(gameSession).run);
 }
 export function readRunProfile(gameSession: GameSession): RunProfileReadView {
-  return deepFreezeInDev({ ...readGameplayState(gameSession).runProfile });
+  return { ...readGameplayState(gameSession).runProfile };
 }
 export function readRunSession(gameSession: GameSession): RunSessionReadView {
   const session = readGameplayState(gameSession).session;
-  return deepFreezeInDev({ ...session, hasActiveRun: isActiveRunActivity(session.activity) });
+  return { ...session, hasActiveRun: isActiveRunActivity(session.activity) };
 }
 export function readShopFirstPurchaseUsed(shop: ShopSessionStateKey, gameSession: GameSession): boolean {
   return readActivityData(readGameplayState(gameSession).session.activity, SHOP_VISIT_BY_STATE_KEY[shop])
     .firstPurchaseUsed;
 }
 export function readBattle(gameSession: GameSession): BattleReadView {
-  return deepFreezeInDev(selectBattle(readGameplayState(gameSession)));
+  return selectBattle(readGameplayState(gameSession));
 }
 export function readRunRevision(gameSession: GameSession): number {
   return readGameplayState(gameSession).revision;

@@ -8,7 +8,7 @@ export {
 } from "./autoplay-policy";
 export { getBattleCardPlayTarget, getBattleCardTransmutationRole, isAttackCard } from "./card-classification";
 export { computeCardPayment } from "./card-cost-rules";
-export { canPlayCard, playBattleCardResolved, type CardPlayOptions } from "./card-play";
+export { canPlayCard, type CardPlayOptions } from "./card-play";
 export { projectEnemyDotDamage } from "./dot-resolve";
 export { mergeCombatText } from "./combat-text-events";
 export { processCompanionTurnStart } from "./companion";
@@ -28,7 +28,7 @@ export { EMPTY_ENEMY_MITIGATION } from "./enemy-mitigation-state";
 export { addEnemyStatus, addPlayerStatus } from "./status-state";
 export { applyPlayerCombatDamage } from "./health-state";
 export { getBattleOutcome, isPlayerDefeated, type BattleOutcome } from "./battle-outcome";
-export { chooseWishCard } from "./wish";
+export { resolveBattleCard, resolveBattleWish, type ResolvedPlayerAction } from "./player-actions";
 
 export { createUniqueGearBattleState } from "./unique-gear-state";
 

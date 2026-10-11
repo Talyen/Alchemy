@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { defaultBattleState, endPlayerTurn, playBattleCardResolved } from "@/lib/battle";
+import { defaultBattleState, endPlayerTurn } from "@/lib/battle";
+import { playBattleCardResolved } from "@/lib/battle/card-play";
 import {
   addCardToHandOrQueue,
   deliverPendingHandCards,

@@ -7,7 +7,6 @@ import type { GameplayState } from "./gameplay-state";
 import { subscribeGameplayCommits } from "./gameplay-state-reads";
 import { sessionRuntime, type SessionRuntime } from "./session-runtime";
 import { snapshotReadonlyValue } from "./readonly-view";
-import { deepFreezeInDev } from "./store-utils";
 
 export type GameplayDraft = Draft<GameplayState>;
 
@@ -64,7 +63,6 @@ export function dispatchGameplayCommand<T>(
 
     if (outcome.kind === "accepted" && next !== base) {
       const published = { ...next, revision: base.revision + 1 };
-      deepFreezeInDev(published);
       const persistedChange = runtime.progressCompletion.active && !gameplayPersistedInputsEqual(base, published);
       runtime.gameplay.commit(published, () => {
         if (persistedChange) {

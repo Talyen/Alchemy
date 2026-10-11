@@ -6,7 +6,8 @@ import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
 import { resetTurnFlags } from "@/lib/battle/combat-flags";
 import { resolveSecondaryAction } from "@/lib/battle/action-context";
 import { patchBattleState, makeTestCard } from "../../fixtures/battle";
-import { playBattleCardResolved, type BattleState, type CombatTextEvent } from "@/lib/battle";
+import { type BattleState, type CombatTextEvent } from "@/lib/battle";
+import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { cardById } from "@/lib/game-data";
 const physical = makeTestCard({
   id: "test-physical",

@@ -1,12 +1,11 @@
 import {
-  battleSnapshot,
   canPlayCard,
-  chooseWishCard,
+  resolveBattleWish,
   resolveBattleStart,
   defaultTalentEffects,
   resolveBattleTurn,
   getBattleOutcome,
-  playBattleCardResolved,
+  resolveBattleCard,
   type BattleSnapshot,
 } from "@/lib/battle";
 import {
@@ -75,7 +74,7 @@ function choosePendingWishCards(state: BattleSnapshot, combatRng: Rng, policyRng
   while (nextState.wishOptions && nextState.wishOptions.length > 0) {
     const choice = nextState.wishOptions[rngInt(policyRng, nextState.wishOptions.length)];
     if (!choice) break;
-    nextState = battleSnapshot(chooseWishCard({ ...nextState, rng: combatRng }, choice.id));
+    nextState = resolveBattleWish(nextState, choice.id, { rng: combatRng }).state;
   }
   return nextState;
 }
@@ -98,15 +97,14 @@ function playAutomatedTurn(
     const selection = chooseCardToPlay(nextState, policy, policyRng);
     if (!selection) break;
 
-    const bound = { ...nextState, rng: combatRng };
-    const result = playBattleCardResolved(bound, selection.card.id, selection.index);
-    if (result.state === bound) break;
+    const result = resolveBattleCard(nextState, selection.card.id, selection.index, { rng: combatRng });
+    if (result.state === nextState) break;
 
     if (cardsPlayed) {
       cardsPlayed[selection.card.id] = (cardsPlayed[selection.card.id] ?? 0) + 1;
     }
     if (anomalies) sampleAnomalies(result.state, result.combatTexts, anomalies, selection.card.id);
-    nextState = choosePendingWishCards(battleSnapshot(result.state), combatRng, policyRng);
+    nextState = choosePendingWishCards(result.state, combatRng, policyRng);
   }
 
   return nextState;

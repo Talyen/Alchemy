@@ -1,3 +1,4 @@
+import { deepFreeze } from "./store-utils";
 import { logError } from "@/lib/error-logger";
 import { createInitialGearState } from "./gear-actions";
 import type { GearStateFields } from "./gear-store-types";
@@ -18,14 +19,14 @@ export interface GameplayState {
 }
 
 export function createGameplayStore(generateSeed: () => number) {
-  const initial: GameplayState = {
+  const initial: GameplayState = deepFreeze({
     revision: 0,
     run: createInitialRunDomainData(generateSeed),
     session: createInitialSessionFields(),
     runProfile: createInitialPermanentFields(),
     profile: createInitialProfileState(),
     gear: createInitialGearState(),
-  };
+  });
   let state = initial;
   type Listener = (state: GameplayState, previous: GameplayState) => void;
   const listeners = new Set<Listener>();
@@ -45,7 +46,9 @@ export function createGameplayStore(generateSeed: () => number) {
     // must read the same committed revision, with the presentation gate armed.
     commit(next: GameplayState, prepareObservers: () => void) {
       const previous = state;
-      state = next;
+      // Every exposed revision is immutable before either observer channel runs,
+      // including the fresh state and the root rebuilt after Immer finishes.
+      state = deepFreeze(next);
       prepareObservers();
       // Subscription changes during notification apply to the next commit.
       for (const listener of [...listeners]) {
