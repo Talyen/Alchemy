@@ -8,6 +8,56 @@
     background-color: color-mix(in srgb, currentColor 15%, transparent);
   }
 
+  .transmutation-keyword-choice {
+    --surface-frame-border-width: 2px;
+    border: 2px solid color-mix(in srgb, currentColor 35%, var(--color-background));
+    background-color: var(--color-background);
+    transition:
+      background-color 200ms ease-out,
+      border-color 200ms ease-out,
+      box-shadow 200ms ease-out;
+  }
+
+  .transmutation-keyword-choice:is(:hover, :focus-visible):not(:disabled) {
+    background-color: color-mix(in srgb, currentColor 12%, var(--color-background));
+    border-color: currentColor;
+    box-shadow: 0 0 16px color-mix(in srgb, currentColor 18%, transparent);
+  }
+
+  .transmutation-keyword-choice[aria-pressed="true"] {
+    border-color: currentColor;
+    background-color: color-mix(in srgb, currentColor 8%, var(--color-background));
+  }
+
+  .transmutation-keyword-choice:focus-visible {
+    outline: 2px solid var(--color-gold-pale);
+    outline-offset: 4px;
+  }
+
+  .transmutation-keyword-choice:active:not(:disabled) {
+    background-color: var(--color-background);
+    box-shadow: inset 0 0 12px color-mix(in srgb, currentColor 25%, transparent);
+  }
+
+  .transmutation-keyword-choice:disabled {
+    cursor: not-allowed;
+    color: var(--color-muted-foreground);
+  }
+
+  .transmutation-keyword-choice:disabled > span {
+    opacity: 0.5;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .transmutation-keyword-choice {
+      transition: none;
+    }
+  }
+
+  html.alchemy-disable-animations .transmutation-keyword-choice {
+    transition: none;
+  }
+
   .button-primary-bloom:not(:disabled) {
     box-shadow: 0 0 0 color-mix(in srgb, var(--color-primary) 0%, transparent);
     transition: box-shadow 200ms ease-in;

@@ -56,6 +56,14 @@ suppresses any hover shimmer; saving and the existing outgoing fade proceed
 independently, with no second shine or added wait. Each reward-choice identity
 starts fresh. Reduced or disabled motion keeps the selected frame and dimming.
 
+Transmutation keyword choices use opaque fills, 24px icons, hover/focus illumination,
+press feedback, and a selected 2px shine border in the keyword palette. The preview
+card and its title swap together through `FadeSlot`; the original stays steady.
+Transmute stays disabled until the current preview artwork is ready. Choices remain
+available during the swap. The saved result uses the reward settle/shine once on
+live completion and waits for Continue; resumed results skip that reveal effect. Reduced or
+disabled motion preserves selection emphasis without decorative animation.
+
 ## Battle motion
 
 Living combatant artwork, including companions, scales to 103.5% during its active

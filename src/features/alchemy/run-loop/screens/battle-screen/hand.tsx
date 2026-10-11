@@ -95,7 +95,7 @@ const HandCardItem = memo(function HandCardItem({
     if (previousCenterX === null) return;
     const artwork = slot.firstElementChild;
     if (!(artwork instanceof HTMLElement)) return;
-    return playHandSlotReflow(artwork, previousCenterX - centerX, HAND_REFLOW_MOTION_MS);
+    playHandSlotReflow(artwork, previousCenterX - centerX, HAND_REFLOW_MOTION_MS);
   }, [cardKey, index, handLength]);
   /* oxlint-enable react-hooks/immutability -- re-enable immutability checks after ref registry effects */
 
