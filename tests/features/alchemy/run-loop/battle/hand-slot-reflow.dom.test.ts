@@ -52,4 +52,16 @@ describe("playHandSlotReflow", () => {
     expect(invertedPoses).toEqual(["translate3d(24px, 0, 0)", "translate3d(-10px, 0, 0)"]);
     expect(requestFrame).not.toHaveBeenCalled();
   });
+
+  it.each([0.75, 1, 1.5])("stops a cancelled unfinished reflow at stage scale %s", (scale) => {
+    const { artwork, invertedPoses } = mountSlot(scale, 20);
+    artwork.style.transition = "transform 320ms var(--ease-out-expo)";
+    artwork.style.transform = "";
+
+    playHandSlotReflow(artwork, -19.8 * scale, 320);
+
+    expect(artwork.style.transition).toBe("none");
+    expect(artwork.style.transform).toBe("");
+    expect(invertedPoses).toEqual([]);
+  });
 });
