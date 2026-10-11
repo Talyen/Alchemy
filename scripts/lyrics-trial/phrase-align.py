@@ -26,7 +26,7 @@ def suspect(segment):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--audio', type=Path, default=Path('public/music/The Blight Treant.mp3'))
+    parser.add_argument('--audio', type=Path, default=Path('public/Music/The Blight Treant.mp3'))
     parser.add_argument('--lyrics', type=Path, default=Path('scripts/lyrics-trial/blight-treant.txt'))
     parser.add_argument('--retry-model', default='medium.en')
     args = parser.parse_args()

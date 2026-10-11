@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { initAudioHost, setMuted, setSfxVolume, setMasterVolume, setMusicVolume } from "@/lib/audio/volume";
 import { audioState } from "@/lib/audio/state";
-import { MUSIC_KEYS, MUSIC_MASTER_GAIN } from "@/lib/game-constants";
+import { MUSIC_KEYS } from "@/lib/game-constants";
 import { playMusic, playMusicImmediate } from "@/lib/audio/music";
 import { setScreenAmbience } from "@/lib/audio/ambience";
 import { playBattleEvent } from "@/lib/audio/sfx";
@@ -108,11 +108,11 @@ it("applies channel limits to live music, sound effects and ambience independent
   setMasterVolume(0.5);
   setSfxVolume(2);
   setMusicVolume(0.25);
-  expect(music.volume).toBeCloseTo(0.25 * 0.5 * MUSIC_MASTER_GAIN * 2);
+  expect(music.volume).toBeCloseTo(0.2275);
   expect(sfx.volume).toBeCloseTo(0.5 * 0.5);
   expect(ambience.volume).toBeCloseTo(SFX_AMBIENCE_VOLUME * 0.5);
   setSfxVolume(-1);
   expect(sfx.volume).toBe(0);
   expect(ambience.volume).toBe(0);
-  expect(music.volume).toBeCloseTo(0.25 * 0.5 * MUSIC_MASTER_GAIN * 2);
+  expect(music.volume).toBeCloseTo(0.2275);
 });

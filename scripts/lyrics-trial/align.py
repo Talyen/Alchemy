@@ -12,11 +12,11 @@ import stable_whisper
 import torch
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--audio', type=Path, default=Path('public/music/The Blight Treant.mp3'))
+parser.add_argument('--audio', type=Path, default=Path('public/Music/The Blight Treant.mp3'))
 parser.add_argument('--lyrics', type=Path, default=Path('scripts/lyrics-trial/blight-treant.txt'))
 parser.add_argument('--output', type=Path, default=Path('reports/boss-lyrics/alignment-mix.json'))
 parser.add_argument('--model', default='small.en')
-parser.add_argument('--reference-audio', type=Path, default=Path('public/music/The Blight Treant.mp3'))
+parser.add_argument('--reference-audio', type=Path, default=Path('public/Music/The Blight Treant.mp3'))
 args = parser.parse_args()
 torch.set_num_threads(4)
 started = time.monotonic()

@@ -6,7 +6,7 @@ import { getMusicLyrics } from "@/lib/audio/lyrics";
 import { MUSIC_KEYS } from "@/lib/game-constants";
 
 it("keeps the shipped lyric timeline tied to its recording with positive, ordered word intervals", () => {
-  const hash = createHash("sha256").update(readFileSync("public/music/The Blight Treant.mp3")).digest("hex");
+  const hash = createHash("sha256").update(readFileSync("public/Music/The Blight Treant.mp3")).digest("hex");
   expect(lyrics.audioSha256).toBe(hash);
   const lines = getMusicLyrics(MUSIC_KEYS.BOSS_BLIGHT_TREANT)!;
   expect(lines).toHaveLength(lyrics.lines.length);

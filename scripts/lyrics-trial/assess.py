@@ -6,7 +6,7 @@ from pathlib import Path
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('alignment', type=Path)
-parser.add_argument('--audio', type=Path, default=Path('public/music/The Blight Treant.mp3'))
+parser.add_argument('--audio', type=Path, default=Path('public/Music/The Blight Treant.mp3'))
 args = parser.parse_args()
 data = json.loads(args.alignment.read_text())
 words = [word for segment in data['segments'] for word in segment['words']]
