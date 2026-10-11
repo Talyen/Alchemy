@@ -117,10 +117,10 @@ export function verifyPackagedRenderer(archivePath, publicDirectory = join(REPO_
   }
   const indexEntry = `${rendererDirectory}/index.html`;
   if (!entries.includes(indexEntry)) throw new Error(`Packaged renderer is missing ${indexEntry}.`);
-  verifyRendererResources(asar.extractFile(archivePath, indexEntry).toString("utf8"), (resource) =>
-    asar.extractFile(archivePath, `${rendererDirectory}/${resource}`),
-  );
-  verifyPublicAssets(publicDirectory, (resource) => asar.extractFile(archivePath, `${rendererDirectory}/${resource}`));
+  // ASAR traverses native separators, including for nested URL paths on Windows.
+  const readResource = (resource) => asar.extractFile(archivePath, join(rendererDirectory, resource));
+  verifyRendererResources(readResource("index.html").toString("utf8"), readResource);
+  verifyPublicAssets(publicDirectory, readResource);
 }
 
 /** Throw when a release git tag does not match the package.json version. */
