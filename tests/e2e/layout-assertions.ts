@@ -43,31 +43,31 @@ export async function assertHorizontalNeighborGap(
   { minGap = 16, minCount = 2 }: { minGap?: number; minCount?: number } = {},
 ) {
   await expect(locator.first()).toBeVisible();
-  const count = await locator.count();
-  expect(count).toBeGreaterThanOrEqual(minCount);
-
-  let first: { x: number; y: number; width: number; height: number } | null = null;
-  let second: { x: number; y: number; width: number; height: number } | null = null;
-
   await expect(async () => {
-    first = await locator.nth(0).boundingBox();
-    second = await locator.nth(1).boundingBox();
-    expect(first).toBeTruthy();
-    expect(second).toBeTruthy();
+    const layout = await locator.evaluateAll((elements) => {
+      const first = elements[0];
+      const second = elements[1];
+      if (!first || !second) return null;
+      const a = first.getBoundingClientRect();
+      const b = second.getBoundingClientRect();
+      const stage = first.closest('[data-testid="vr-stage"]') ?? document.querySelector('[data-testid="vr-stage"]');
+      const stageScale =
+        stage instanceof HTMLElement && stage.offsetWidth > 0
+          ? stage.getBoundingClientRect().width / stage.offsetWidth
+          : 1;
+      const contentScale = Number.parseFloat(getComputedStyle(first).getPropertyValue("--content-scale"));
+      const scale = stageScale * (Number.isFinite(contentScale) && contentScale > 0 ? contentScale : 1);
+      return {
+        count: elements.length,
+        width: Math.min(a.width, b.width),
+        gap: (b.x - a.right) / (Number.isFinite(scale) && scale > 0 ? scale : 1),
+      };
+    });
+    expect(layout).not.toBeNull();
+    expect(layout!.count).toBeGreaterThanOrEqual(minCount);
+    expect(layout!.width).toBeGreaterThan(0);
+    expect(layout!.gap).toBeGreaterThanOrEqual(minGap - SUBPIXEL_GAP_TOLERANCE);
   }).toPass({ timeout: 5_000 });
-
-  const gap = second!.x - (first!.x + first!.width);
-  const visualScale = await locator.first().evaluate((element) => {
-    const stage = element.closest('[data-testid="vr-stage"]') ?? document.querySelector('[data-testid="vr-stage"]');
-    const stageScale =
-      stage instanceof HTMLElement && stage.offsetWidth > 0
-        ? stage.getBoundingClientRect().width / stage.offsetWidth
-        : 1;
-    const contentScale = Number.parseFloat(getComputedStyle(element).getPropertyValue("--content-scale"));
-    const scale = stageScale * (Number.isFinite(contentScale) && contentScale > 0 ? contentScale : 1);
-    return Number.isFinite(scale) && scale > 0 ? scale : 1;
-  });
-  expect(gap / visualScale).toBeGreaterThanOrEqual(minGap - SUBPIXEL_GAP_TOLERANCE);
 }
 
 /** Wait for the active view and virtual-stage geometry before measuring layout. */

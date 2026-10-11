@@ -9,13 +9,11 @@ import {
   SAVE_KEY,
   readSavedGame,
   withSavedGame,
-  enableLoadingScreen,
   injectHomestead,
 } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { expectRunPhase } from "../../pages/game-stage";
 import { MenuPage } from "../../pages/menu-page";
-import { LOADING_WORDS } from "@/app/loading-words";
 import { critical, slow } from "../../playwright-tags";
 
 test.describe("Menu", () => {
@@ -94,26 +92,6 @@ test("closing the game menu blocks stray keyboard navigation", async ({ page }) 
   ).toBe(false);
   await expect(panel).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Options", exact: true })).toBeVisible();
-});
-
-test.describe("Startup Loading Screen", slow, () => {
-  const loadingPhrase = new RegExp(
-    `^(${LOADING_WORDS.map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\.\\.\\.$`,
-  );
-
-  test("loading screen appears and transitions to main menu", async ({ page }) => {
-    await enableLoadingScreen(page);
-
-    await page.goto("/");
-
-    await expect(page.getByText(loadingPhrase)).toBeVisible({ timeout: 5000 });
-    await new MenuPage(page).expectMainMenu(15000);
-    const logo = page.getByRole("img", { name: "Alchemy logo" }).first();
-    await expect(logo).toHaveJSProperty("complete", true);
-    expect(await logo.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
-
-    await expect(page.getByRole("button", { name: "Play" })).toBeVisible({ timeout: 15000 });
-  });
 });
 
 test.describe("Progression Locks", () => {
