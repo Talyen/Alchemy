@@ -44,7 +44,7 @@ Playback modules live together in `src/lib/audio/`; callers use `@/lib/audio`, b
 - `useAppAudioEffects` starts best-effort warming when the app shell mounts after the startup gate. UI sounds and the draw-transfer cue warm immediately; the remaining manifest warms in one input-idle callback. Startup does not wait for audio fetching or decoding. Battle initialization also warms the full battle event set, opening-hand cards, and enemy ability cards.
 - Crafted Mixed Potion IDs resolve to the base Potion sound for both playback and battle preloading.
 - Every card and companion has a nonempty focal registration, enforced by exact catalog coverage in `tests/lib/audio/sound-registry.test.ts`. Companion turns use their summoning card's cue. Enemy turns use ability card cues, and Bestiary portrait clicks have no sound effect. Gold gain/spending remain distinct, and explicit UI/service silence remains intentional.
-- Card selections in drafting, Transmutation and Corruption, plus battle draw-batch acknowledgment, are intentionally silent. Card movement into the hand retains its separate draw-transfer cue.
+- Card selections in drafting, Transmutation and Corruption, plus battle draw-batch acknowledgment, are intentionally silent. Successful Transmutation plays the existing card-reward chime (`talentUnlock`) once after the covering save; resuming its result screen is silent. Card movement into the hand retains its separate draw-transfer cue.
 - UI event keys remain available when their cue is `null`. Playback and preloading skip these explicit silence choices. Resolved registrations and processing inputs live in [the approved cue mappings](./design/audio-review/approved-choices.json).
 
 ### Music lifecycle

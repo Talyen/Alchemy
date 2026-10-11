@@ -58,7 +58,6 @@ const TalentCard = memo(function TalentCard({
 
   return (
     <Element
-      data-plasma-anchor
       type={interactive ? "button" : undefined}
       onClick={interactive ? () => onUnlock?.(talent.id) : undefined}
       onMouseEnter={() => {
