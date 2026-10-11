@@ -3,7 +3,7 @@ import { createMusicPlayer } from "@/lib/audio/music-player";
 import { computeMusicVolume, getBossMusicKey } from "@/lib/audio/music-catalog";
 import { MUSIC_KEYS, MUSIC_MASTER_GAIN } from "@/lib/game-constants";
 
-type MockMusicElement = {
+interface MockMusicElement {
   src: string;
   volume: number;
   muted: boolean;
@@ -14,10 +14,10 @@ type MockMusicElement = {
   pause: ReturnType<typeof vi.fn<() => void>>;
   removeAttribute: ReturnType<typeof vi.fn<(name: string) => void>>;
   load: ReturnType<typeof vi.fn<() => void>>;
-};
+}
 
 function createHarness() {
-  const elements: Array<MockMusicElement> = [];
+  const elements: MockMusicElement[] = [];
   function createElement(file: string): MockMusicElement {
     const element: MockMusicElement = {
       src: file,

@@ -15,6 +15,11 @@ import {
   resetRunProgressSlice,
   setRunProgress,
 } from "../../../helpers/run-domain-store-test";
+import { sessionRuntime } from "@/features/alchemy/shared/stores/session-runtime";
+import { readRunSession, readRunRevision } from "@/features/alchemy/shared/stores/run-reads";
+import { setRunSession } from "../../../helpers/run-domain-store-test";
+import { gridLabyrinthMapFixture } from "../../../fixtures/labyrinth-map";
+import { emptyAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
 import { defaultGameSession } from "@/app/application-session";
 vi.mock("@/lib/platform", () => ({
   setSteamRichPresence: vi.fn(),
@@ -68,6 +73,48 @@ describe("useAlchemyRunController", () => {
 
     expect(readHasActiveRun(defaultGameSession)).toBe(false);
     expect(readBattle(defaultGameSession).hasActiveBattle).toBe(false);
+  });
+
+  it("allows Labyrinth inspection while saving but keeps room entry blocked", () => {
+    const map = gridLabyrinthMapFixture();
+    const room = map.nodes["labyrinth-floor-1-n0"]!;
+    room.type = "rest";
+    delete room.enemyId;
+    setRunProgress({ contentSystemType: "labyrinth" });
+    setRunSession({ hasActiveRun: true, activity: { kind: "labyrinth-map" }, labyrinthMap: map });
+    const { result } = renderController();
+    const completion = sessionRuntime(defaultGameSession).progressCompletion;
+    try {
+      act(() => completion.mark(readRunRevision(defaultGameSession) + 1));
+      act(() => result.current.routeCommands.runLoop.labyrinth.handleNodeSelect(map.currentNodeId));
+      expect(readRunSession(defaultGameSession).selectedLabyrinthNodeId).toBe(map.currentNodeId);
+      act(() => result.current.routeCommands.runLoop.labyrinth.handleNodeSelect(room.id));
+      expect(readRunSession(defaultGameSession).selectedLabyrinthNodeId).toBe(room.id);
+      expect(result.current.routeCommands.runLoop.labyrinth.handleNodeEnter()).toBe(false);
+      expect(readRunSession(defaultGameSession).activeLabyrinthPendingNode).toBeNull();
+      act(() => result.current.routeCommands.runLoop.labyrinth.handleNodeDeselect());
+      expect(readRunSession(defaultGameSession).selectedLabyrinthNodeId).toBeNull();
+    } finally {
+      act(() => completion.cancel());
+    }
+  });
+
+  it.each(["campfire", "transmutation"] as const)("initializes %s offers while a save is pending", (kind) => {
+    setRunSession({ hasActiveRun: true, activity: { kind, data: emptyAlchemyVisit() } });
+    const { result } = renderController();
+    const completion = sessionRuntime(defaultGameSession).progressCompletion;
+    try {
+      act(() => completion.mark(readRunRevision(defaultGameSession) + 1));
+      act(() => {
+        if (kind === "campfire") result.current.routeCommands.runLoop.destinations.initializeCampfire();
+        else result.current.routeCommands.runLoop.transmutation.initialize();
+      });
+      const activity = readRunSession(defaultGameSession).activity;
+      if (activity.kind !== "campfire" && activity.kind !== "transmutation") throw new Error("Unexpected activity");
+      expect(kind === "campfire" ? activity.data.offers : activity.data.transmutation?.choices).toHaveLength(3);
+    } finally {
+      act(() => completion.cancel());
+    }
   });
 
   it("keeps routeCommands identity across a no-op rerender", () => {

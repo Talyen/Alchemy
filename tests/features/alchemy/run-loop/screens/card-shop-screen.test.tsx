@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { CardShopScreen } from "@/features/alchemy/run-loop/screens/card-shop-screen";
 import type { BattleCard } from "@/lib/game-data";
+import { installReadyArtworkForTests, waitForArtwork } from "../../../../helpers/artwork-test";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
 import { installShopScreenIntersectionObserver } from "../../../../helpers/shop-screen-ui-mocks";
 
@@ -35,6 +36,7 @@ const deckCard = {
 
 describe("CardShopScreen remove mode", () => {
   installDisabledAnimationsForTests();
+  installReadyArtworkForTests();
 
   afterEach(() => {
     cleanup();
@@ -66,6 +68,7 @@ describe("CardShopScreen remove mode", () => {
     renderCardShop(onRemoveCard, []);
     const remove = screen.getByRole("button", { name: /Remove Card/i });
     expect(remove).toHaveProperty("disabled", true);
+    await waitForArtwork();
     await user.hover(remove.parentElement!);
     expect(await screen.findByText("No Cards to Remove")).toBeTruthy();
     expect(onRemoveCard).not.toHaveBeenCalled();

@@ -167,7 +167,8 @@ function DestinationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 function CampfireScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.destinations;
   const r = useCampfireScreenData();
-  useEffect(() => commands.initializeCampfire(), [commands.initializeCampfire]);
+  const initializeCampfire = commands.initializeCampfire;
+  useEffect(() => initializeCampfire(), [initializeCampfire]);
   const healingBonus = useHomesteadEffects().homesteadHealing;
   const talentEffects = useTalentEffects();
   const healFraction = labyrinthCampfireHealing(getCampfireHealFraction(talentEffects.campfireHealBonus), r.modifiers);
@@ -310,9 +311,10 @@ function CorruptionScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 function TransmutationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.transmutation;
   const r = useTransmutationScreenData();
+  const initialize = commands.initialize;
   useEffect(() => {
-    commands.initialize();
-  }, [commands.initialize]);
+    initialize();
+  }, [initialize]);
   // Empty offers before initialization do not mean the visit is unusable.
   if (!r.visit.completed && !r.visit.transmutation) return null;
   return (

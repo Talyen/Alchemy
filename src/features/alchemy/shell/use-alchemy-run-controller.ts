@@ -158,8 +158,8 @@ export function useAlchemyRunController(): AlchemyRunCommands {
       },
       runLoop: {
         labyrinth: {
-          handleNodeSelect: protectVoid(labyrinth.selectNode),
-          handleNodeDeselect: protectVoid(labyrinth.deselectNode),
+          handleNodeSelect: labyrinth.selectNode,
+          handleNodeDeselect: labyrinth.deselectNode,
           handleNodeEnter: guardProgressAction(defaultGameSession, nodeRouting.handleLabyrinthNodeEnter, false),
           descend: protectVoid(labyrinth.descend),
         },
@@ -173,7 +173,7 @@ export function useAlchemyRunController(): AlchemyRunCommands {
           continueCampfire: protectVoid(nav.handleCampfireContinue),
           rest: guardProgressAction(defaultGameSession, runActions.restAtCampfire, false),
           brew: guardProgressAction(defaultGameSession, runActions.brewAtCampfire, null),
-          initializeCampfire: protectVoid(() => runActions.initializeAlchemyVisit("campfire")),
+          initializeCampfire: () => runActions.initializeAlchemyVisit("campfire"),
         },
         wildwood: {
           removeCard: protectVoid(nav.handleWildwoodRemoveCard),
@@ -189,7 +189,7 @@ export function useAlchemyRunController(): AlchemyRunCommands {
           select: guardProgressAction(defaultGameSession, runActions.selectTransmutation, false),
           exchange: guardProgressAction(defaultGameSession, runActions.transmuteCard, null),
           continue: protectVoid(nav.advanceToNextDestination),
-          initialize: protectVoid(() => runActions.initializeAlchemyVisit("transmutation")),
+          initialize: () => runActions.initializeAlchemyVisit("transmutation"),
         },
         corruption: {
           handleCorruptCard: protectVoid(nav.handleCorruptCard),

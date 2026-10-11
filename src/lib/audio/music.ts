@@ -5,7 +5,7 @@ import { audioState } from "./state";
 import { pickRandomUnsafe } from "@/lib/rng";
 import { createMusicPlayer } from "./music-player";
 
-export { allRegisteredMusicFiles, getBossMusicKey, computeMusicVolume } from "./music-catalog";
+export { allRegisteredMusicFiles, getBossMusicKey } from "./music-catalog";
 
 const musicBase = audioUrl(MUSIC_BASE_PATH);
 const player = createMusicPlayer({
