@@ -59,6 +59,9 @@ export function CampfireScreen({
           <>
             {visit.result ? (
               <>
+                <p>
+                  You received <strong>{visit.result.title}</strong>
+                </p>
                 <SelectableCard card={visit.result} isSelected chrome="shop" onSelect={() => {}} />
               </>
             ) : (
@@ -76,7 +79,7 @@ export function CampfireScreen({
                 />
               </>
             )}
-            <Button onClick={onContinue}>Continue</Button>
+            <Button onClick={onContinue}>{visit.result ? "Loot" : "Continue"}</Button>
           </>
         ) : brewing ? (
           <>
