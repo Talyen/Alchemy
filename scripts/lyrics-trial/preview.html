@@ -129,6 +129,7 @@
         <option value="mix">Original mix</option>
         <option value="vocals">Isolated vocals</option>
         <option value="performance">Mix with inferred performance order</option>
+        <option value="phrases">Automatically detected phrases + model retry</option>
       </select></label
     >
     <audio id="audio" controls src="../../public/music/The%20Blight%20Treant.mp3"></audio>
@@ -148,7 +149,7 @@
     const status = document.querySelector("#status");
     try {
       const requested = new URLSearchParams(location.search).get("alignment");
-      const source = ["mix", "vocals", "performance"].includes(requested) ? requested : "mix";
+      const source = ["mix", "vocals", "performance", "phrases"].includes(requested) ? requested : "mix";
       const input = document.querySelector("#input");
       input.value = source;
       input.addEventListener("change", () => {
@@ -167,6 +168,9 @@
         .filter((word) => word.end <= word.start || word.end - word.start > 5).length;
       const warning = document.createElement("p");
       warning.textContent = `Experimental timing: ${suspect} suspect words (zero duration or over 5 seconds). No timestamps were manually corrected.`;
+      if (data.coverage) {
+        warning.textContent += ` ${data.coverage.detectedPhrases} phrases detected; ${data.coverage.unmatchedAsrWords} ASR words unmatched; ${data.coverage.undetectedWrittenPhrases} distinct written phrases undetected. Missing matches remain unresolved.`;
+      }
       document.querySelector("h1").after(warning);
       jump.replaceChildren(
         ...lines.map((line, index) => new Option(`${line.start.toFixed(2)}s · ${line.text}`, index)),

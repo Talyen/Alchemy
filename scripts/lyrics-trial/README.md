@@ -52,6 +52,40 @@ reports/boss-lyrics/venv/bin/python scripts/lyrics-trial/align.py --lyrics scrip
 reports/boss-lyrics/venv/bin/python scripts/lyrics-trial/assess.py reports/boss-lyrics/alignment-performance.json
 ```
 
+## Automatic phrase detection trial
+
+```sh
+reports/boss-lyrics/venv/bin/python scripts/lyrics-trial/phrase-align.py
+reports/boss-lyrics/venv/bin/python scripts/lyrics-trial/assess.py reports/boss-lyrics/alignment-phrases.json
+reports/boss-lyrics/venv/bin/python -m unittest discover -s scripts/lyrics-trial -p 'test_*.py'
+cp scripts/lyrics-trial/preview.html reports/boss-lyrics/index.html
+```
+
+Choose **Automatically detected phrases + model retry** in the preview.
+This pass transcribes the full recording independently with `small.en`, matches
+contiguous ASR words against distinct phrases from the original lyric sheet,
+and permits repeated or omitted phrases in the performed order. The original
+sheet supplies spelling. Matches cannot cross an ASR gap over two seconds.
+Word alignment then runs inside each detected phrase window, with 120ms padding
+clipped against adjacent windows. This prevents a lyric phrase from being
+stretched across a long instrumental section.
+
+Clusters of at least three unmatched ASR words are also transcribed again with
+`medium.en`; a replacement is accepted only when the confidence-weighted matched
+lyric coverage increases. This is an automatic selection heuristic and can still
+choose an incorrect phrase.
+
+Phrases with a match score below 0.8, zero-duration words, or words longer than
+2.5 seconds are
+retried with `medium.en`. A retry replaces the first result only when its
+structural timing penalty improves. That selection is a heuristic, not an
+independent confirmation of audible accuracy. No manual timestamps or uniform
+word-spacing repairs are used. `phrase-evidence.json` records match scores,
+recognized text, unmatched ASR words, undetected written phrases, and retry
+outcomes. These omissions must be reviewed alongside timing quality; fewer
+flagged words alone does not establish a better or complete transcription.
+The cached full transcript is reused only for the same recording hash.
+
 Dependencies and models download on first use. Subsequent runs use local caches;
 no audio or lyrics are sent to a service. Models, environments, vocal stems,
 logs, and preview copies stay outside Git in ignored reports or model caches.
