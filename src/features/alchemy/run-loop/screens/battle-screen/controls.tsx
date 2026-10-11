@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 import { ManaPanel, PilePanel } from "../../battle/presentation/ui/resources";
 import { battleBottomBarClass, battleBottomColumnClass } from "@/features/alchemy/shared/config";
+import { BossLyrics } from "./boss-lyrics";
 import { BattleHand } from "./hand";
 import type { BattleActionsProps, BattleRefsProps, BattleScreenState, RequiredBattleViewProps } from "./types";
 import { useCardTransferInProgress } from "../../battle/presentation/use-hand-presentation";
@@ -29,6 +30,7 @@ export function BattleBottomBar({
 
   return (
     <section className={battleBottomBarClass}>
+      {battleState.currentEnemy.enemyType === "boss" ? <BossLyrics bossId={battleState.currentEnemy.id} /> : null}
       <div className={battleBottomColumnClass}>
         <ManaPanel mana={battleState.mana} maxMana={battleState.maxMana} />
         <div className="flex justify-center">

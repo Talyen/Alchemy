@@ -263,7 +263,14 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
     playMusic(MUSIC_KEYS.MENU);
   }
 
+  function readMusicPlayback(): { key: string; currentTime: number; audible: boolean } | null {
+    if (playback.phase === "idle") return null;
+    const { key, element } = playback.track;
+    return { key, currentTime: element.currentTime, audible: !element.paused && !element.muted && element.volume > 0 };
+  }
+
   return {
+    readMusicPlayback,
     syncMusicSettings,
     isMusicPaused,
     playMusicImmediate,

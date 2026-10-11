@@ -20,6 +20,7 @@ const player = createMusicPlayer({
 });
 
 export const {
+  readMusicPlayback,
   syncMusicSettings,
   isMusicPaused,
   playMusicImmediate,

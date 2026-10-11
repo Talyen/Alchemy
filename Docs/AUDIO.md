@@ -32,8 +32,24 @@ for every action or change the intentional silent-content registrations below.
 
 The [boss karaoke experiment](../scripts/lyrics-trial/README.md) runs local
 word alignment against supplied lyrics and provides a standalone preview.
-It does not enable battle lyrics or change the music player. Generated timings
-need performance-coverage and audible synchronization review before adoption.
+The accepted phrase-bounded Blight Treant timing snapshot is checked in at
+`src/lib/audio/lyrics/blight-treant.json`, tied to the recording by SHA-256.
+It supplies the first Battle UI lyric track; other bosses remain without lyrics
+until their own timing data is authored. The experiment remains a separate
+comparison tool. Generated timings still need performance-coverage and audible
+synchronization review; two introductory lines were undetected and two ASR
+words remain unmatched in this trial.
+
+`Boss Lyrics` in Audio settings defaults on and persists through the normal
+settings codec. The battle lyric leaf samples `readMusicPlayback()` from the
+music player, using the active track key and actual media position rather than
+an elapsed wall clock. It clears for other tracks, pauses, mute, and instrumental
+gaps, and follows seeks and loops. Sampling uses one animation-frame callback
+only while an enabled boss with timing data is mounted; React updates only when
+the visible words or highlight change. Words build the phrase as sung, with a
+180ms opacity and small scale pop on entry. Earlier words stay dim and still;
+only the current whole word uses the gold highlight. No alignment models,
+transcription, audio decoding, or per-word timers run in the game.
 
 ## Runtime contract
 

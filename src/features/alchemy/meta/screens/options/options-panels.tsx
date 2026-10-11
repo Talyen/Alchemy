@@ -29,6 +29,8 @@ export interface AudioOptionsProps {
   onMasterVolumeChange: (value: number) => void;
   onMusicVolumeChange: (value: number) => void;
   onSfxVolumeChange: (value: number) => void;
+  bossLyricsEnabled: boolean;
+  onBossLyricsEnabledChange: (checked: boolean) => void;
   muteInBackground: boolean;
   onMuteInBackgroundChange: (checked: boolean) => void;
 }
@@ -123,6 +125,11 @@ export function AudioOptionsPanel({ audio }: { audio: AudioOptionsProps }) {
       ).map(([label, value, onChange]) => (
         <SettingsSlider key={label} label={label} value={value} onChange={onChange} {...SETTINGS_RANGES.volume} />
       ))}
+      <SettingsToggle
+        label="Boss Lyrics"
+        checked={audio.bossLyricsEnabled}
+        onChange={audio.onBossLyricsEnabledChange}
+      />
       <SettingsToggle
         label="Mute in Background"
         checked={audio.muteInBackground}

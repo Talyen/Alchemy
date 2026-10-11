@@ -140,6 +140,7 @@ describe("save JSON round trips", () => {
       sfxVolume: 60,
       masterVolume: 80,
       muteInBackground: true,
+      bossLyricsEnabled: false,
       autoEndTurn: false,
       discoveredCardIds: ["slash", "block", "bash", "fireball"],
       encounteredEnemyIds: ["skeleton", "goblin"],

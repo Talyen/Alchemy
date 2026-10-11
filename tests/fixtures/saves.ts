@@ -42,6 +42,7 @@ export interface HomesteadSaveFixture {
   sfxVolume: number;
   masterVolume: number;
   muteInBackground: boolean;
+  bossLyricsEnabled: boolean;
   autoEndTurn: boolean;
   rememberAutoplayPreference: boolean;
   autoplayEnabled: boolean;
@@ -80,6 +81,7 @@ export function saveEnvelopeFixture(overrides: Record<string, unknown> = {}) {
     sfxVolume: 50,
     masterVolume: 50,
     muteInBackground: true,
+    bossLyricsEnabled: true,
     autoEndTurn: true,
     activeRun: null,
     completedDifficulties: {

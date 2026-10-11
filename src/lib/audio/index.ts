@@ -3,6 +3,7 @@ export { getSoundUrl } from "./url";
 export type { UISound } from "./sound-registry";
 export { isNonPlayerAudioHost, isAppInBackground } from "./host";
 export {
+  readMusicPlayback,
   endBossPreview,
   getBossMusicKey,
   invalidateCacheForKey,
@@ -26,3 +27,5 @@ export {
 export { setScreenAmbience, stopScreenAmbience } from "./ambience";
 export { initAudioHost, setMasterVolume, setMusicVolume, setMuted, setSfxVolume } from "./volume";
 export { resetAudioRuntimeForTests } from "./reset";
+
+export { getMusicLyrics, getLyricFrame, type LyricFrame } from "./lyrics";

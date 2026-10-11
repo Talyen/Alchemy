@@ -62,6 +62,15 @@ Mana spending dims and slightly settles only the affected crystals. Newly filled
 crystals brighten and settle together; unchanged crystals retain their artwork
 and animation state. Resource feedback never gates accepted gameplay.
 
+## Boss lyrics
+
+Timed boss lyrics sit centered across the space between the combatants and the
+hand, without intercepting card input. Words appear as sung with a brief fade
+and small pop; earlier words remain dim until the phrase ends. The gold highlight
+switches directly between whole words. Instrumental gaps stay clear. Audio
+settings owns the default-on **Boss Lyrics** switch; timing data and playback
+synchronization follow the [audio contract](./AUDIO.md#local-lyric-alignment-experiment).
+
 ## Hand playability
 
 `useHandPresentation` derives visual and interactive card eligibility together from

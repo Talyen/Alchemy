@@ -859,3 +859,9 @@ html.alchemy-disable-animations .card-play-rejected::before {
   animation: none;
   opacity: 0;
 }
+
+/* Only arriving lyric words animate; changing the sung word does not restart entry. */
+.boss-lyric-word {
+  animation: boss-lyric-enter 180ms ease-out both;
+  transform-origin: center bottom;
+}

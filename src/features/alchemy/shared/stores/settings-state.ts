@@ -25,6 +25,7 @@ export interface SettingsSaveFields {
   sfxVolume: number;
   masterVolume: number;
   muteInBackground: boolean;
+  bossLyricsEnabled: boolean;
   autoEndTurn: boolean;
   rememberAutoplayPreference: boolean;
   autoplayEnabled: boolean;
@@ -40,6 +41,7 @@ export interface SettingsActions {
   setSfxVolume: (value: number) => void;
   setMasterVolume: (value: number) => void;
   setMuteInBackground: (value: boolean) => void;
+  setBossLyricsEnabled: (value: boolean) => void;
   setAutoEndTurn: (value: boolean) => void;
   setRememberAutoplayPreference: (value: boolean) => void;
   setAutoplayEnabled: (value: boolean) => void;
@@ -59,6 +61,7 @@ export function createDefaultSettingsSaveFields(): SettingsSaveFields {
     sfxVolume: DEFAULT_SFX_VOLUME_PCT,
     masterVolume: DEFAULT_MASTER_VOLUME_PCT,
     muteInBackground: true,
+    bossLyricsEnabled: true,
     autoEndTurn: true,
     rememberAutoplayPreference: false,
     autoplayEnabled: false,
@@ -90,6 +93,7 @@ export function createSettingsStore() {
     setSfxVolume: (sfxVolume) => set({ sfxVolume: clampVolumePct(sfxVolume) }),
     setMasterVolume: (masterVolume) => set({ masterVolume: clampVolumePct(masterVolume) }),
     setMuteInBackground: (muteInBackground) => set({ muteInBackground }),
+    setBossLyricsEnabled: (bossLyricsEnabled) => set({ bossLyricsEnabled }),
     setAutoEndTurn: (autoEndTurn) => set({ autoEndTurn }),
     setRememberAutoplayPreference: (rememberAutoplayPreference) =>
       set((state) => ({

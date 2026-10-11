@@ -30,6 +30,7 @@ function selectSettingsActions(state: SettingsStore): SettingsActions {
     setMusicVolume: state.setMusicVolume,
     setSfxVolume: state.setSfxVolume,
     setMuteInBackground: state.setMuteInBackground,
+    setBossLyricsEnabled: state.setBossLyricsEnabled,
     setAutoEndTurn: state.setAutoEndTurn,
     setRememberAutoplayPreference: state.setRememberAutoplayPreference,
     setAutoplayEnabled: state.setAutoplayEnabled,

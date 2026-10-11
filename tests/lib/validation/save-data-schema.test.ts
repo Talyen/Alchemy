@@ -28,6 +28,7 @@ describe("SaveDataSchema", () => {
   it("recovers from corrupt fields", () => {
     const result = SaveDataSchema.safeParse({
       musicVolume: "loud",
+      bossLyricsEnabled: "invalid",
       sfxVolume: 80,
       selectedAspectRatio: "99:99",
       brightness: 999,
@@ -36,6 +37,7 @@ describe("SaveDataSchema", () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.musicVolume).toBe(50);
+      expect(result.data.bossLyricsEnabled).toBe(true);
       expect(result.data.sfxVolume).toBe(80);
       expect(result.data.selectedAspectRatio).toBe("auto");
       expect(result.data.brightness).toBe(SETTINGS_RANGES.brightness.max);
@@ -80,6 +82,7 @@ describe("SaveDataSchema", () => {
       sfxVolume: 80,
       masterVolume: 90,
       muteInBackground: false,
+      bossLyricsEnabled: false,
       autoEndTurn: false,
       brightness: 120,
       selectedAspectRatio: "16:10",
@@ -92,6 +95,7 @@ describe("SaveDataSchema", () => {
       expect(result.data.sfxVolume).toBe(80);
       expect(result.data.masterVolume).toBe(90);
       expect(result.data.muteInBackground).toBe(false);
+      expect(result.data.bossLyricsEnabled).toBe(false);
       expect(result.data.autoEndTurn).toBe(false);
       expect(result.data.brightness).toBe(120);
       expect(result.data.selectedAspectRatio).toBe("16:10");

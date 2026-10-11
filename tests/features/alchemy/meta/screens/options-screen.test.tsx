@@ -29,6 +29,8 @@ const defaultProps = {
     onMasterVolumeChange: vi.fn(),
     onMusicVolumeChange: vi.fn(),
     onSfxVolumeChange: vi.fn(),
+    bossLyricsEnabled: true,
+    onBossLyricsEnabledChange: vi.fn(),
     muteInBackground: false,
     onMuteInBackgroundChange: vi.fn(),
   },
@@ -77,6 +79,8 @@ describe("OptionsScreen", () => {
     expect(audio.onSfxVolumeChange).toHaveBeenCalledExactlyOnceWith(20);
     fireEvent.click(screen.getByRole("switch", { name: "Mute in Background" }));
     expect(audio.onMuteInBackgroundChange).toHaveBeenCalledExactlyOnceWith(true);
+    fireEvent.click(screen.getByRole("switch", { name: "Boss Lyrics" }));
+    expect(audio.onBossLyricsEnabledChange).toHaveBeenCalledExactlyOnceWith(false);
   });
 
   it("groups display options and reports background intensity changes", () => {
