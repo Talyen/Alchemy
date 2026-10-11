@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useRef, useState } from "react";
 
@@ -45,6 +46,7 @@ function StaleTooltipHarness({ hand = false }: { hand?: boolean }) {
 describe("PortaledTooltip", () => {
   afterEach(() => {
     cleanup();
+    vi.restoreAllMocks();
     vi.useRealTimers();
   });
 
@@ -95,6 +97,53 @@ describe("PortaledTooltip", () => {
     fireEvent.pointerMove(document.body);
     expect(document.querySelector("[role='tooltip'][data-visible]")).toBeNull();
   });
+
+  it("dismisses a clicked, still-focused card when the pointer leaves, then permits keyboard inspection", async () => {
+    render(<KeywordTag keywordId="burn" showTooltip />);
+    const trigger = screen.getByRole("button", { name: "Inspect Burn keyword" });
+    fireEvent.mouseEnter(trigger);
+    await waitFor(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
+    fireEvent.pointerDown(trigger);
+    act(() => trigger.focus());
+    fireEvent.mouseLeave(trigger);
+    fireEvent.pointerMove(document.body);
+
+    expect(document.activeElement).toBe(trigger);
+    expect(document.querySelector("[role='tooltip'][data-visible]")).toBeNull();
+    expect(trigger.hasAttribute("aria-describedby")).toBe(false);
+    await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
+
+    const user = userEvent.setup();
+    await user.tab();
+    await user.tab();
+    // jsdom does not update :focus-visible modality after a pointer-to-keyboard switch.
+    const matches = trigger.matches.bind(trigger);
+    vi.spyOn(trigger, "matches").mockImplementation((selector) => selector === ":focus-visible" || matches(selector));
+    await waitFor(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
+    fireEvent.pointerMove(document.body);
+    expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy();
+  });
+
+  it.each(["inert", "hidden", "aria-hidden"])(
+    "dismisses retained modal content becoming %s without waiting for more input",
+    async (attribute) => {
+      render(<StaleTooltipHarness />);
+      const trigger = screen.getByRole("button", { name: "Trigger" });
+      await waitFor(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
+      const boundary = screen.getByTestId("pointer-boundary");
+      await act(async () => boundary.setAttribute(attribute, attribute === "aria-hidden" ? "true" : ""));
+      expect(document.querySelector("[role='tooltip'][data-visible]")).toBeNull();
+      expect(trigger.hasAttribute("aria-describedby")).toBe(false);
+      fireEvent.pointerMove(trigger);
+      expect(document.querySelector("[role='tooltip'][data-visible]")).toBeNull();
+      await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
+
+      await act(async () => boundary.removeAttribute(attribute));
+      expect(document.querySelector("[role='tooltip'][data-visible]")).toBeNull();
+      fireEvent.pointerMove(trigger);
+      await waitFor(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
+    },
+  );
 
   it("keeps retained focus dismissed across window blur and return until fresh inspection", async () => {
     render(<KeywordTag keywordId="burn" showTooltip />);

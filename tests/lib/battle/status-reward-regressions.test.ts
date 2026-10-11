@@ -8,18 +8,21 @@ import { paceCombatMagnitude } from "@/lib/battle/fight-pacing";
 import { patchBattleState } from "../../fixtures/battle";
 
 describe("status reward interactions", () => {
-  it("Panacea pays cleansing healing for each removed status, never empty slots", () => {
+  it.each([
+    [{}, 12],
+    [{ burn: 2, poison: 3, bleed: 4 }, 36],
+  ] as const)("Panacea restores Health plus cleansing healing only for removed statuses (%j)", (statuses, health) => {
     const state = patchBattleState({
       playerHealth: 10,
       playerMaxHealth: 50,
-      playerStatuses: { burn: 2, poison: 3, bleed: 4 },
+      playerStatuses: statuses,
       talentEffects: { healOnStatusCleanse: 2 },
       trinketEffects: { sinEaterHealOnHarmfulStatusRemove: 6 },
     });
     const next = applyCardEffects(state, cardById["panacea-potion"]!, []);
-    expect(next.playerHealth).toBe(34);
+    expect(next.playerHealth).toBe(health);
     expect(next.playerStatuses).toMatchObject({ burn: 0, poison: 0, bleed: 0 });
-    expect(removeHarmfulPlayerStatuses(next, Infinity, []).playerHealth).toBe(34);
+    expect(removeHarmfulPlayerStatuses(next, Infinity, []).playerHealth).toBe(health);
   });
 
   it("Tempered Guard boosts both card Block and triggered Block exactly once", () => {

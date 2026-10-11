@@ -45,13 +45,14 @@ describe("combat interaction bug regressions", () => {
     expect(presenter.shakePlayer).not.toHaveBeenCalled();
   });
 
-  it("an ineffective Panacea and Mana Potion brew reports its outcome", () => {
+  it("a Panacea and Mana Potion brew restores Health when there is nothing to cleanse", () => {
     const card = createMixedPotion(cardById["panacea-potion"]!, cardById["mana-potion"]!);
-    const state = patchBattleState({ hand: [card], mana: 4, maxMana: 3 });
+    const state = patchBattleState({ hand: [card], mana: 4, maxMana: 3, playerHealth: 10, playerMaxHealth: 30 });
     const result = playBattleCardResolved(state, card.id, 0);
     expect(result.state.exhausted).toContainEqual(card);
+    expect(result.state.playerHealth).toBe(12);
     expect(result.combatTexts).toContainEqual(
-      expect.objectContaining({ target: "player", kind: "notice", text: "Nothing to Cleanse" }),
+      expect.objectContaining({ target: "player", kind: "heal", stat: "health", amount: 2 }),
     );
   });
 });

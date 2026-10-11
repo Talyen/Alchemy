@@ -11,7 +11,7 @@ import {
   type GearSlot,
   type EquippedTrinkets,
 } from "@/lib/gear";
-import { resolveActiveRunForSave, flushSaveAfterGearMutation } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { flushSaveAfterGearMutation } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 
 import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/use-profile-store";
@@ -54,7 +54,7 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
   // an explicit rng so the source stays visible at the call site.
   const rng = options?.rng ?? Math.random;
 
-  const flush = () => flushSaveAfterGearMutation(resolveActiveRunForSave(defaultGameSession), defaultGameSession);
+  const flush = () => flushSaveAfterGearMutation(defaultGameSession);
   const controller: ArmoryController = {
     ...gear,
     afterProgressSaved: createSessionPersistence(defaultGameSession).afterProgressSaved,

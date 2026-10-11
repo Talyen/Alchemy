@@ -28,6 +28,7 @@ import {
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Draft } from "immer";
 import type { GearSaveFields, GearStateFields } from "./gear-store-types";
+import { ownTransactionInput } from "./readonly-view";
 
 export function createInitialGearState(): GearStateFields {
   return {
@@ -47,7 +48,7 @@ export function initializeGear(
   ownedTrinketIds: string[] = [],
   equippedTrinkets?: EquippedTrinkets,
 ): void {
-  gear.inventories = inventories;
+  gear.inventories = ownTransactionInput(inventories);
   // Dangling equipped IDs (e.g. from older saves) are pruned here as well as
   // in the save pipeline, so in-memory state never references missing items.
   gear.loadouts = pruneOrphanGearLoadouts(flattenGearInventories(inventories), loadouts);
@@ -65,7 +66,7 @@ export function initializeGear(
 }
 
 export function addGearInstance(gear: Draft<GearStateFields>, instance: GearInstance, characterId: CharacterId): void {
-  gear.inventories[characterId].push(instance);
+  gear.inventories[characterId].push(ownTransactionInput(instance));
 }
 
 export function equipGearInstance(

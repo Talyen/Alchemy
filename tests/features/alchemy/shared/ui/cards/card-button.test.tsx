@@ -5,6 +5,8 @@ import { BattleCardButton } from "@/features/alchemy/shared/ui/cards/card-button
 import { SelectableCard } from "@/features/alchemy/shared/ui/cards/selectable-card";
 import { cardById, type BattleCard } from "@/lib/game-data/index";
 import { strengthenPotion } from "@/lib/alchemist/brewing";
+import { getCardKeywordShineColors } from "@/features/alchemy/shared/config/shine-palettes";
+import { CardTitle } from "@/features/alchemy/shared/ui/cards/card-description-ui";
 
 const card: BattleCard = {
   id: "test-card",
@@ -18,20 +20,55 @@ const card: BattleCard = {
 describe("BattleCardButton", () => {
   afterEach(cleanup);
 
-  it("keeps card inspection active until both focus and pointer leave", () => {
-    render(<BattleCardButton card={card} ariaLabel="Test Card" shimmerActive={false} shimmerToken={undefined} />);
-    const button = screen.getByRole("button", { name: "Test Card" });
-    const wrapper = button.parentElement!;
-    act(() => button.focus());
-    fireEvent.mouseEnter(wrapper);
-    fireEvent.mouseLeave(wrapper);
-    expect(button.dataset.hovered).toBe("true");
-    fireEvent.mouseEnter(wrapper);
-    act(() => button.blur());
-    expect(button.dataset.hovered).toBe("true");
-    fireEvent.mouseLeave(wrapper);
-    expect(button.dataset.hovered).toBeUndefined();
+  it("limits title shine to the Transmuted or Corrupted prefix", () => {
+    const { container, rerender } = render(<CardTitle card={{ title: "Burning Slash", transmuted: "burn" }} />);
+    expect(container.textContent).toBe("Burning Slash");
+    expect(container.querySelector(".boss-title-shine")?.textContent).toBe("Burning");
+    expect(container.firstElementChild?.classList.contains("text-transparent")).toBe(false);
+
+    rerender(<CardTitle card={{ title: "Slash", corrupted: true }} />);
+    expect(container.textContent).toBe("Corrupted Slash");
+    expect(container.querySelector(".text-shine-corruption")?.textContent?.trim()).toBe("Corrupted");
+    expect(container.firstElementChild?.classList.contains("text-transparent")).toBe(false);
+
+    rerender(<CardTitle card={{ title: "Slash" }} />);
+    expect(container.textContent).toBe("Slash");
+    expect(container.querySelector(".boss-title-shine, .text-shine-corruption")).toBeNull();
   });
+
+  it.each<BattleCard>([card, { ...card, transmuted: "burn" }, { ...card, corrupted: true }])(
+    "keeps inspection and shine active only while focused or hovered ($transmuted, $corrupted)",
+    (battleCard) => {
+      render(
+        <BattleCardButton
+          card={battleCard}
+          shineColor={getCardKeywordShineColors(battleCard)}
+          ariaLabel="Test Card"
+          shimmerActive={false}
+          shimmerToken={undefined}
+        />,
+      );
+      const button = screen.getByRole("button", { name: "Test Card" });
+      const wrapper = button.parentElement!;
+      expect(button.querySelector(".shine-border")).toBeNull();
+      fireEvent.mouseEnter(wrapper);
+      expect(button.querySelector(".shine-border")).not.toBeNull();
+      fireEvent.mouseLeave(wrapper);
+      expect(button.querySelector(".shine-border")).toBeNull();
+      act(() => button.focus());
+      expect(button.querySelector(".shine-border")).not.toBeNull();
+      fireEvent.mouseEnter(wrapper);
+      fireEvent.mouseLeave(wrapper);
+      expect(button.dataset.hovered).toBe("true");
+      fireEvent.mouseEnter(wrapper);
+      act(() => button.blur());
+      expect(button.dataset.hovered).toBe("true");
+      expect(button.querySelector(".shine-border")).not.toBeNull();
+      fireEvent.mouseLeave(wrapper);
+      expect(button.dataset.hovered).toBeUndefined();
+      expect(button.querySelector(".shine-border")).toBeNull();
+    },
+  );
 
   it("keeps unavailable card choices inspectable by keyboard without selecting them", () => {
     const onSelect = vi.fn();

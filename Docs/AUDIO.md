@@ -16,11 +16,11 @@ for every action or change the intentional silent-content registrations below.
 
 | Concern                              | Owner                                                                                                                                                                             |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Playback host, cache, music, and SFX | `src/lib/audio/index.ts` (facade) + `host.ts`, `sfx.ts`, `music.ts`, `state.ts`, `preload.ts`, `volume.ts`, `url.ts`, `element.ts`, `reset.ts`                                    |
+| Playback host, cache, music, and SFX | `src/lib/audio/index.ts` (facade) + `host.ts`, `sfx.ts`, `music.ts`, `music-player.ts`, `state.ts`, `preload.ts`, `volume.ts`, `url.ts`, `element.ts`, `reset.ts`                 |
 | Player volume values and bounds      | Defaults in `src/lib/game-constants/settings.ts`, ranges in `src/lib/settings-values.ts`, live pct in `settings-store.ts`, runtime fraction in `src/lib/audio/state.ts`           |
 | Sound-to-content registration        | `src/lib/audio/sound-registry.ts` + `COMPANION_SOUND_CARD_IDS` in `src/lib/game-constants/audio.ts`                                                                               |
 | Screen ambience loops                | `src/lib/audio/ambience.ts`, screen mappings in `sound-registry.ts`, lifecycle in `useAppAudioEffects`                                                                            |
-| Single music catalog and boss map    | `src/lib/audio/music.ts` (module-private `MUSIC_CATALOG` via `computeMusicVolume`)                                                                                                |
+| Single music catalog and boss map    | `src/lib/audio/music-catalog.ts` (`MUSIC_CATALOG`, boss lookup, volume curve)                                                                                                     |
 | Bestiary boss preview                | `src/lib/audio/music.ts` (`previewBossMusic`/`endBossPreview`), called by `collection-screen.tsx`                                                                                 |
 | App lifecycle wiring                 | `src/app/use-app-effects.ts` (`useAppAudioEffects`)                                                                                                                               |
 | Desktop capability                   | `src/lib/audio/host.ts` reads `src/lib/desktop-api.ts` (foreign Electron hosts stay silent)                                                                                       |
@@ -49,14 +49,19 @@ Playback modules live together in `src/lib/audio/`; callers use `@/lib/audio`, b
 
 ### Music lifecycle
 
-Music playback has one private owner in `music.ts`: cached records bind the track key,
+Music playback has one lifetime owner in `music-player.ts`: cached records bind the track key,
 media element, and fade gain. Its playback state distinguishes idle, paused,
 playing, fading in, and fading out; only fading out carries a pending destination.
 Fade states own their timers, and cancellation invalidates their callbacks.
 `state.ts` contains shared preferences, never playback pointers or cooldowns.
 Volume controls call `syncMusicSettings()` so updates retain the actual playing
-track's boss boost and fade gain. Tests observe fake Audio elements rather than
-injecting media pointers into shared state.
+track's boss boost and fade gain. `music.ts` constructs the shipping player and adapts browser media, host eligibility,
+track selection, settings, clocks, timers, and diagnostics. The player receives those
+dependencies explicitly; its caches, preview state, and transitions belong to each
+instance. Reset releases only that instance's media and timers. The catalog and
+volume curve live in `music-catalog.ts`, independent of browser initialization.
+Core lifecycle tests run in Node with injected media and scheduling; DOM suites
+protect the shipping adapter, settings, host recovery, and screen integration.
 
 - Starting a battle invalidates the upcoming enemy's battle music cache, even while the previous screen remains visible. It preserves menu playback until navigation selects the battle track. Invalidating the currently playing key forgets it entirely, so the next play builds a fresh track.
 - Invalidating either the playing track or the pending destination cancels the transition. Invalidating the playing track stops playback; invalidating only the destination restores the outgoing track to full gain. Unrelated cache invalidation leaves playback and its fade alone. A later explicit play can build the invalidated track afresh.

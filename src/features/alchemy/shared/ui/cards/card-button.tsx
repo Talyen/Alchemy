@@ -12,7 +12,7 @@ import {
 } from "react";
 
 import { ShineBorder } from "@/components/ui/shine-border";
-import { keywordDefinitions, type BattleCard } from "@/lib/game-data";
+import { type BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import {
@@ -20,6 +20,7 @@ import {
   cardHoverScaleClass,
   cardSurfaceClass,
   getPlasmaColorPairForCard,
+  getCardKeywordShineColors,
 } from "../../config/index";
 import { useCardDescriptionContext } from "@/features/alchemy/shared/context/card-description-context";
 import { getEffectiveCardDescriptionLines, type CardDescriptionContext } from "@/lib/game-data";
@@ -203,8 +204,8 @@ function CardButtonSurface({
   scaleOnHover = true,
   shineColor,
 }: BattleCardButtonProps) {
-  const colors = card.transmuted ? keywordDefinitions[card.transmuted].shineColors : shineColor;
-  const showShine = Boolean((Boolean(hovered) || Boolean(card.transmuted)) && !dragging && !disabled && colors?.length);
+  const colors = shineColor ?? (card.transmuted ? getCardKeywordShineColors(card) : undefined);
+  const showShine = Boolean(hovered && !dragging && !disabled && colors?.length);
   return (
     <Surface
       as="button"
@@ -212,7 +213,7 @@ function CardButtonSurface({
         cardSurfaceClass,
         "group card-art-frame border border-border/80",
         scaleOnHover && cardHoverScaleClass,
-        showShine && (card.transmuted ? "has-shine-border" : "card-art-shine"),
+        showShine && "card-art-shine",
         className,
       )}
       shimmerActive={shimmerActive}

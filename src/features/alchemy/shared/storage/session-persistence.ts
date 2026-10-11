@@ -1,8 +1,7 @@
 import { logStorageFailure } from "@/lib/storage-logging";
-import type { ProgressCompletion } from "./progress-completion";
 import type { ProgressSaveState } from "./progress-completion";
 import type { GameSession } from "../stores/game-session-types";
-import { resolveActiveRunForSave, restoreSessionSave } from "../stores/run-lifecycle";
+import { restoreSessionSave } from "../stores/run-lifecycle";
 import {
   bindSessionCapabilities,
   markSessionProgress,
@@ -62,31 +61,14 @@ export interface SessionPersistence {
 }
 
 export function snapshotSessionSave(gameSession: GameSession) {
-  return buildAlchemySaveDataFromStores(resolveActiveRunForSave(gameSession), gameSession);
+  return buildAlchemySaveDataFromStores(gameSession);
 }
 
 export function createSessionPersistence(gameSession: GameSession): SessionPersistence {
   const progress = sessionProgressCompletion(gameSession);
-  const snapshots = new WeakMap<UnstampedSaveData, ReturnType<ProgressCompletion["token"]>>();
-  const snapshot = () => {
-    const token = progress.token(readSessionRevision(gameSession));
-    let save: UnstampedSaveData;
-    try {
-      save = snapshotSessionSave(gameSession);
-    } catch (error) {
-      progress.complete(token, "failed");
-      throw error;
-    }
-    snapshots.set(save, token);
-    return save;
-  };
-  const write = async (save: UnstampedSaveData, exit = false) => {
-    const token = snapshots.get(save);
-    const outcome = await (exit
-      ? saveAlchemySaveDataForExit(save, gameSession)
-      : saveAlchemySaveData(save, gameSession));
-    return token ? progress.complete(token, outcome) : outcome;
-  };
+  const snapshot = () => snapshotSessionSave(gameSession);
+  const write = (save: UnstampedSaveData, exit = false) =>
+    exit ? saveAlchemySaveDataForExit(save, gameSession) : saveAlchemySaveData(save, gameSession);
   const checkpoint = () => {
     markSessionProgress(gameSession);
     try {
@@ -125,7 +107,6 @@ export function createSessionPersistence(gameSession: GameSession): SessionPersi
       });
     },
     configure: (backend: SaveBackend) => {
-      progress.cancel();
       configureSaveBackend(backend, gameSession);
     },
     configurePlatform: () => configureAlchemySaveBackend(gameSession),
@@ -134,16 +115,13 @@ export function createSessionPersistence(gameSession: GameSession): SessionPersi
     writeOnExit: (save: UnstampedSaveData) => write(save, true),
     waitForWrites: () => waitForPendingSaveWrites(gameSession),
     clear: (mode: "default" | "localWipe" = "default") => {
-      progress.cancel();
       return clearAlchemySaveData(mode, gameSession);
     },
     routeToRecovery: () => routeWritesToRecovery(gameSession),
     setWritesDisabled: (disabled: boolean) => {
-      if (disabled) progress.cancel();
       setWritesDisabled(disabled, gameSession);
     },
     resetForTests: () => {
-      progress.cancel();
       return resetStorageIoForTests(gameSession);
     },
     subscribe: (listener: () => void) => subscribeAlchemyPersistence(listener, gameSession),

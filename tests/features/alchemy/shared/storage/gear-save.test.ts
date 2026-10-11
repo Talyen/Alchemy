@@ -181,7 +181,7 @@ describe("gear save normalization", () => {
 
     mutateGearForTest((gear) => gear.initialize(knightInventories(body, ring), loadouts, craftingCurrencies));
 
-    const save = buildAlchemySaveDataFromStores(null, defaultGameSession);
+    const save = buildAlchemySaveDataFromStores(defaultGameSession);
     const normalized = normalizeSaveData(save);
 
     expect(normalized.gearInventories.knight).toEqual([body, ring]);
@@ -202,13 +202,13 @@ describe("gear save normalization", () => {
       gear.equipTrinket("knight", "bone-charm");
     });
 
-    const save = buildAlchemySaveDataFromStores(null, defaultGameSession);
+    const save = buildAlchemySaveDataFromStores(defaultGameSession);
     expect(save.gearInventories.knight[0]?.instanceId).toBe("sword-1");
     expect(save.equippedTrinkets.knight).toBe("bone-charm");
 
     save.gearInventories.knight[0]!.affixes[0]!.value = 999;
     save.gearInventories.knight.push({ instanceId: "injected", definitionId: "shortsword-basic", affixes: [] });
-    const fresh = buildAlchemySaveDataFromStores(null, defaultGameSession);
+    const fresh = buildAlchemySaveDataFromStores(defaultGameSession);
     expect(fresh.gearInventories.knight).toHaveLength(1);
     expect(fresh.gearInventories.knight[0]?.affixes[0]?.value).toBe(1);
 

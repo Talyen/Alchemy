@@ -55,43 +55,10 @@ describe("useArmoryController", () => {
       expect(result.current.onSalvage(armor.instanceId)).toBe(true);
     });
 
-    expect(flushSaveAfterGearMutation).toHaveBeenCalledWith(null, defaultGameSession);
+    expect(flushSaveAfterGearMutation).toHaveBeenCalledWith(defaultGameSession);
     expect(readRunProfile(defaultGameSession).materialInventory.iron).toBe(9);
     expect(readActiveRun(defaultGameSession).runMaterialsEarned.iron).toBe(0);
     expect(readActiveRun(defaultGameSession).runCurrenciesEarned).toEqual(EMPTY_CRAFTING_CURRENCIES);
-  });
-
-  it("uses the current run state when flushing after a controller rerender", () => {
-    const armor: GearInstance = { instanceId: "rerender-armor", definitionId: "plate-armor-basic", affixes: [] };
-    const inventories = createEmptyGearInventories();
-    inventories.knight = [armor];
-    mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
-    const { result } = renderHook(() => useArmoryController());
-    act(() => {
-      dispatchRunSessionCommand(
-        (draft) => {
-          initializeActiveRun(draft, null, "knight");
-          setHasActiveRun(draft, true);
-          setRunProgressActivity(draft, "destination");
-
-          return acceptCommand();
-        },
-        undefined,
-        defaultGameSession,
-      );
-    });
-    act(() => {
-      expect(result.current.onEquip("knight", "body", armor)).toBe(true);
-    });
-    expect(flushSaveAfterGearMutation).toHaveBeenLastCalledWith(
-      expect.objectContaining({ characterId: "knight" }),
-      defaultGameSession,
-    );
-    act(() =>
-      dispatchRunSessionCommand((draft) => acceptCommand(setHasActiveRun(draft, false)), undefined, defaultGameSession),
-    );
-    act(() => result.current.onUnequip("knight", "body"));
-    expect(flushSaveAfterGearMutation).toHaveBeenLastCalledWith(null, defaultGameSession);
   });
 
   it("syncs health for the active-run character when editing another loadout", () => {

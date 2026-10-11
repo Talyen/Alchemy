@@ -224,6 +224,16 @@ drains an in-flight upload before removing mirrors so it cannot resurrect a save
 
 ## Persistence API
 
+`buildAlchemySaveDataFromStores(session)` owns complete snapshot construction.
+It derives the active activity and permanent fields from the current session,
+then detaches the whole payload; callers cannot supply a stale run or omit a
+live one. `ProgressCompletion` retains snapshot revision/epoch receipts for the
+session, and the shared `io.ts` write seam acknowledges them for ordinary and
+exit writes. Autosave, Gear flushes, and run-end flushes use that same seam.
+A snapshot can be written through another adapter for the same session without
+losing its receipt. Imported or externally constructed payloads have no receipt
+and cannot acknowledge live gameplay. Save receipts never enter the wire format.
+
 `run-resume-codec.ts` translates `RunSession` and `ActiveRunData`. The encoder selects
 progress, mode geography, and one tagged `activity`; the decoder hydrates that
 branch and derives its route directly. Historical screen/visit/reward precedence
@@ -289,7 +299,7 @@ Use this reference for access and orchestration; unprefixed store filenames are 
 - **Commands and writes** — `run-session-command.ts` owns dispatch and `createRunSessionCommand` bindings. `run-session-write-port.ts` exposes domain operations with `RunTransaction` as their first argument; `set*` accepts a value or readonly updater. The internal `gameplay-command.ts` retains the single draft/commit coordinator. There is one import path for writes; implementations are split by domain under `shared/stores/write/` behind that barrel.
 - **Battle commands** — `battle-commands.ts` owns card play, Wish selection, and turn completion; `battle-start-commands.ts` owns standalone validated starts; room entry composes the same `initializeBattle` transaction operation. Its `presentBattleStart` callback receives committed opening feedback. Rejected end turns return null, so callers start presentation only after a committed result. Raw snapshot replacement and RNG binding stay private under `write/run-battle.ts`. Live resolutions commit an explicit Gold delta against the authoritative purse and tally earnings atomically. Snapshot Gold remains an engine/save input; historical unfinished battles are abandoned through the load instruction.
 - **Gear reads and writes** — `gear-store.ts` provides data-only reads and its codec; `use-gear-store.ts` owns React slices and combat restrictions; `gear-session-command.ts` composes Gear, discovery, materials, and live-run rebinding within one command. Choose its outer or draft wrapper using [Armory write paths](./ARMORY.md#write-paths).
-- **Session persistence** — `shared/storage/session-persistence.ts`: `createSessionPersistence(gameSession)` is the session capability port for snapshots, writes, exit writes, loading, platform configuration, recovery routing, clearing, and failure subscriptions. Feature code and store lifecycles use this port rather than calling raw storage IO functions directly.
+- **Session persistence** — `shared/storage/session-persistence.ts`: `createSessionPersistence(gameSession)` is the session capability port for snapshots, writes, exit writes, loading, platform configuration, recovery routing, clearing, and failure subscriptions. Feature code uses this port. Store-owned immediate lifecycle flushes use the same snapshot builder and acknowledgement-aware IO seam.
 - **Lifecycle** — `run-lifecycle.ts` owns restore, snapshot, battle sync, and teardown including presentation listeners and battle UI clearing (import it directly). `finalizeRunEndSession` retains recap progress; `teardownRun` fully resets the live run.
 - **Settings actions** — `settings-store.ts`: `useSettingsActions` / `useAppSettings` for App chrome. Collection and Homestead commands use module-level `createRunSessionCommand` bindings beside their routes.
 - **Flow commands** — `navigation-commands.ts` supplies shell navigation and talent actions; `room-entry-commands.ts` applies room traits with activity initialization. Domain command modules beside run flows own destination claims, campfire healing, progression, Mystery/Corruption choices, Wildwood updates, and run settlement. Shell, battle presentation, and these flow adapters cannot import draft dispatch or setters (Oxlint-enforced). Feature command authors compose public domain operations inside a readonly transaction. Store-owned implementations retain raw draft access.

@@ -45,8 +45,19 @@ function useTooltipVisible(triggerRef: RefObject<HTMLElement | null>, requested:
       setSuppression((current) =>
         current.requested === requested && current.suppressed === suppressed ? current : { requested, suppressed },
       );
-    const hasActiveFocus = () => document.hasFocus() && triggerRef.current?.contains(document.activeElement);
+    const isAvailable = () => {
+      const trigger = triggerRef.current;
+      return Boolean(trigger?.isConnected && !trigger.closest('[inert], [hidden], [aria-hidden="true"]'));
+    };
+    let pointerPressed = false;
+    const hasActiveFocus = () =>
+      !pointerPressed &&
+      isAvailable() &&
+      document.hasFocus() &&
+      document.activeElement?.matches(":focus-visible") &&
+      triggerRef.current?.contains(document.activeElement);
     const onPointer = (event: PointerEvent) => {
+      if (event.type === "pointerdown") pointerPressed = true;
       const trigger = triggerRef.current;
       // The hand selects cards by geometry across overlapping slots and gaps.
       // Its own hover owner decides which card is active inside the hand.
@@ -54,27 +65,42 @@ function useTooltipVisible(triggerRef: RefObject<HTMLElement | null>, requested:
       const inside = event.target instanceof Node && boundary?.contains(event.target);
       // Preserve keyboard inspection without reviving a panel dismissed by blur or a click.
       if (!inside && event.type === "pointermove" && hasActiveFocus()) return;
-      setSuppressed(!inside);
+      setSuppressed(!inside || !isAvailable());
     };
     const onFocus = (event: FocusEvent) => {
-      setSuppressed(!(event.target instanceof Node && triggerRef.current?.contains(event.target)));
+      setSuppressed(!isAvailable() || !(event.target instanceof Node && triggerRef.current?.contains(event.target)));
+    };
+    const onKeyDown = () => {
+      pointerPressed = false;
     };
     const onBlur = () => setSuppressed(true);
     const onPointerOut = (event: PointerEvent) => {
       if (event.relatedTarget === null && !hasActiveFocus()) onBlur();
     };
+    // Closing modals retain their children for the fade. Their tooltip portals
+    // live outside the inert subtree, so they need to observe that boundary.
+    const observer = new MutationObserver(() => {
+      if (!isAvailable()) onBlur();
+    });
+    for (let element = triggerRef.current; element; element = element.parentElement) {
+      observer.observe(element, { attributes: true, attributeFilter: ["inert", "hidden", "aria-hidden"] });
+    }
+    if (!isAvailable()) onBlur();
     // Overlays, disabled controls and window changes can interrupt React's
     // trigger-local leave/blur events. Observe actual input at the document seam.
     document.addEventListener("pointermove", onPointer, true);
     document.addEventListener("pointerdown", onPointer, true);
     document.addEventListener("pointerout", onPointerOut, true);
     document.addEventListener("focusin", onFocus, true);
+    document.addEventListener("keydown", onKeyDown, true);
     window.addEventListener("blur", onBlur);
     return () => {
+      observer.disconnect();
       document.removeEventListener("pointermove", onPointer, true);
       document.removeEventListener("pointerdown", onPointer, true);
       document.removeEventListener("pointerout", onPointerOut, true);
       document.removeEventListener("focusin", onFocus, true);
+      document.removeEventListener("keydown", onKeyDown, true);
       window.removeEventListener("blur", onBlur);
     };
   }, [triggerRef, requested]);

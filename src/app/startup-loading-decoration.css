@@ -1,7 +1,7 @@
 /* Keep decoration out of layout so the existing logo and phrase stay centered. */
 .loading-decoration {
   position: absolute;
-  inset: 0 0 auto;
+  inset: -8px 0 auto;
   height: 0;
   pointer-events: none;
   font-size: 0;

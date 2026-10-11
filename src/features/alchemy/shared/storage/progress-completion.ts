@@ -10,6 +10,7 @@ export class ProgressCompletion {
   private state: ProgressSaveState = { kind: "idle" };
   private epoch = 0;
   private acknowledged = -1;
+  private snapshots = new WeakMap<object, { epoch: number; revision: number }>();
   private listeners = new Set<() => void>();
   private completions: Array<() => void> = [];
   private retry: (() => void) | null = null;
@@ -40,6 +41,16 @@ export class ProgressCompletion {
 
   token(revision: number) {
     return { epoch: this.epoch, revision };
+  }
+
+  captureSnapshot<T extends object>(snapshot: T, revision: number): T {
+    this.snapshots.set(snapshot, this.token(revision));
+    return snapshot;
+  }
+
+  completeSnapshot(snapshot: object, outcome: SaveWriteOutcome): SaveWriteOutcome {
+    const token = this.snapshots.get(snapshot);
+    return token ? this.complete(token, outcome) : outcome;
   }
 
   complete(token: { epoch: number; revision: number }, outcome: SaveWriteOutcome) {

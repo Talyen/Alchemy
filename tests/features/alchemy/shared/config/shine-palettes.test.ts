@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   getCardDisplayKeywords,
+  getCardKeywordShineColors,
   getTrinketShineColors,
   getTrinketTextShineColors,
   SHINE_PALETTES,
@@ -10,6 +11,17 @@ import { cardLibrary, keywordDefinitions } from "@/lib/game-data";
 import { getKeywordTextShineColors } from "@/lib/keyword-text-shine";
 
 describe("card display keywords", () => {
+  it("keeps every displayed keyword in Transmuted and Corrupted border palettes", () => {
+    const card = { ...cardLibrary[0]!, descriptionLines: ["Deal 4 Physical damage. Apply 2 Burn and 1 Poison."] };
+    const colors = [
+      keywordDefinitions.physical.shineColors[0],
+      keywordDefinitions.burn.shineColors[0],
+      keywordDefinitions.poison.shineColors[0],
+      keywordDefinitions.physical.shineColors[0],
+    ];
+    expect(getCardKeywordShineColors({ ...card, transmuted: "burn" })).toEqual(colors);
+    expect(getCardKeywordShineColors({ ...card, corrupted: true })).toEqual(colors);
+  });
   it("includes conditional and companion keywords visible in card descriptions", () => {
     const packTactics = cardLibrary.find((card) => card.id === "pack-tactics")!;
     const wolfCompanion = cardLibrary.find((card) => card.id === "wolf-companion")!;

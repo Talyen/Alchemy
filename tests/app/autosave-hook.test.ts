@@ -10,7 +10,7 @@ import { resetAllTestStores } from "../helpers/run-domain-store-test";
 import { deferred } from "../helpers/deferred";
 import type { SaveBackend } from "@/lib/platform-save-backend";
 import { defaultGameSession } from "@/app/application-session";
-import * as runLifecycle from "@/features/alchemy/shared/stores/run-lifecycle";
+import * as savePersistence from "@/features/alchemy/shared/storage/persistence";
 import { AUTOSAVE_RETRY_COOLDOWN_MS } from "@/lib/game-constants";
 import { createAlchemyAutosaveLifecycle } from "@/app/autosave-lifecycle";
 
@@ -72,7 +72,7 @@ describe("useAlchemyAutosaveFromStores", () => {
 
   it("backs off snapshot failures and saves the latest progress after recovery", async () => {
     const { write, writeSync } = installBackend();
-    const snapshot = vi.spyOn(runLifecycle, "resolveActiveRunForSave").mockImplementation(() => {
+    const snapshot = vi.spyOn(savePersistence, "buildAlchemySaveDataFromStores").mockImplementation(() => {
       throw new Error("snapshot failed");
     });
     renderHook(() => useAlchemyAutosaveFromStores());

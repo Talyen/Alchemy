@@ -33,11 +33,11 @@ describe("brewing content", () => {
     expect(tryCreateMixedPotion(mixed, restored)?.effects).toEqual([...mixed.effects, ...restored.effects]);
     expect(strengthenPotion(cardById["panacea-potion"]!)?.effects).toEqual([
       { kind: "remove-harmful-status", removeAll: true },
-      { kind: "heal", amount: 1 },
+      { kind: "heal", amount: 3 },
     ]);
     expect(strengthenPotion(strengthenPotion(cardById["panacea-potion"]!)!)?.effects).toEqual([
       { kind: "remove-harmful-status", removeAll: true },
-      { kind: "heal", amount: 2 },
+      { kind: "heal", amount: 4 },
     ]);
   });
   it("preserves nested chance probabilities and nonnumeric Acid effects", () => {

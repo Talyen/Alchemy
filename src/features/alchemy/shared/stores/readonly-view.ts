@@ -47,10 +47,24 @@ export function createReadonlyView<T>(source: T): Immutable<T> {
 
 /** Detach data while the draft is open; preserve aliases and cycles within the result. */
 export function snapshotReadonlyValue<T>(value: T): Draft<T> {
+  return copyBoundaryValue(value, false);
+}
+
+/** Own caller data on ingress; existing read capabilities already belong to the transaction. */
+export function ownTransactionInput<T>(value: T): Draft<T> {
+  return copyBoundaryValue(value, true);
+}
+
+function copyBoundaryValue<T>(value: T, retainReadSources: boolean): Draft<T> {
   const copies = new WeakMap<object, object>();
   function copy(entry: unknown): unknown {
     if (entry === null || typeof entry !== "object") return entry;
-    const source = sources.get(entry) ?? entry;
+    const readSource = sources.get(entry);
+    if (retainReadSources && (readSource || isDraft(entry))) {
+      const owned = readSource ?? entry;
+      return isDraft(owned) ? current(owned) : owned;
+    }
+    const source = readSource ?? entry;
     const existing = copies.get(source);
     if (existing) return existing;
     const data = source;
@@ -86,15 +100,4 @@ export function snapshotReadonlyValue<T>(value: T): Draft<T> {
     return result;
   }
   return copy(value) as Draft<T>;
-}
-
-/** Strip read facades from assigned values, preserving ordinary input identities. */
-export function unwrapReadonlyValue<T>(value: T): T {
-  if (value === null || typeof value !== "object") return value;
-  const source = sources.get(value);
-  if (source) return (isDraft(source) ? current(source) : source) as T;
-  const entries = Object.entries(value) as Array<[string, unknown]>;
-  const unwrapped = entries.map(([key, entry]) => [key, unwrapReadonlyValue(entry)] as const);
-  if (unwrapped.every(([, entry], index) => entry === entries[index]![1])) return value;
-  return (Array.isArray(value) ? unwrapped.map(([, entry]) => entry) : Object.fromEntries(unwrapped)) as T;
 }

@@ -1,7 +1,7 @@
 import { isDraft, type Immutable } from "immer";
 import type { GameplayDraft } from "./gameplay-command";
 import type { RunTransaction } from "./run-transaction";
-import { createReadonlyView, unwrapReadonlyValue } from "./readonly-view";
+import { createReadonlyView, ownTransactionInput } from "./readonly-view";
 
 const drafts = new WeakMap<object, GameplayDraft>();
 
@@ -24,10 +24,10 @@ type OperationInput<T> = T extends (...args: infer Args) => infer Result
   : T | Immutable<T>;
 
 function operationInput(arg: unknown): unknown {
-  if (typeof arg !== "function") return unwrapReadonlyValue(arg);
+  if (typeof arg !== "function") return ownTransactionInput(arg);
   const update = arg as (...values: unknown[]) => unknown;
   return (...values: unknown[]) =>
-    unwrapReadonlyValue(
+    ownTransactionInput(
       update(...values.map((value) => (value && typeof value === "object" ? createReadonlyView(value) : value))),
     );
 }

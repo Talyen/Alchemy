@@ -34,7 +34,10 @@ export const consumableCards: BattleCard[] = [
     id: "panacea-potion",
     art: assetRefs.panaceaPotion,
     consume: true,
-    effects: [{ kind: "remove-harmful-status", removeAll: true }],
+    effects: [
+      { kind: "remove-harmful-status", removeAll: true },
+      { kind: "heal", amount: 2 },
+    ],
   }),
   cardBuilders.effectsCard({
     id: "stoneskin-potion",

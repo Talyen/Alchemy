@@ -5,6 +5,7 @@ import { createSessionPersistence } from "@/features/alchemy/shared/storage";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { guardProgressAction } from "@/features/alchemy/shared/stores/session-capabilities";
 import { setGold } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { flushSaveAfterGearMutation, flushSaveAfterRunEnd } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { deferred } from "../../../../helpers/deferred";
 import type { SaveBackend } from "@/lib/platform-save-backend";
@@ -159,4 +160,71 @@ it("an explicit checkpoint defers completion even without an autosave owner", as
   expect(await checkpoint).toBe("saved");
   expect(feedback).toHaveBeenCalledOnce();
   await session.dispose();
+});
+
+it("acknowledges a snapshot through another adapter for the same session", async () => {
+  const session = createGameSession({
+    saveBackend: {
+      readCandidates: async () => ({ ok: true, candidates: [] }),
+      write: async () => ({ ok: true }),
+      writeSync: () => ({ ok: true }),
+      clear: async () => ({ ok: true }),
+    },
+  });
+  const reader = createSessionPersistence(session);
+  const writer = createSessionPersistence(session);
+  const release = reader.trackProgress(() => {});
+  try {
+    dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 10)), undefined, session);
+    const feedback = vi.fn();
+    reader.afterProgressSaved(feedback);
+    expect(await writer.write(createDefaultSaveData())).toBe("saved");
+    expect(reader.readProgress().kind).toBe("saving");
+    expect(feedback).not.toHaveBeenCalled();
+    expect(guardProgressAction(session, () => true, false)()).toBe(false);
+    expect(await writer.writeOnExit(reader.snapshot())).toBe("saved");
+    expect(reader.readProgress().kind).toBe("idle");
+    expect(feedback).toHaveBeenCalledOnce();
+    expect(guardProgressAction(session, () => true, false)()).toBe(true);
+  } finally {
+    release();
+    await session.dispose();
+  }
+});
+
+it("immediate Gear and run-end saves share failure, retry and completion with autosave", async () => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  let fail = true;
+  const writes: string[] = [];
+  const session = createGameSession({
+    saveBackend: {
+      readCandidates: async () => ({ ok: true, candidates: [] }),
+      write: async (_key, value) => {
+        writes.push(value);
+        return fail ? { ok: false, error: "disk full" } : { ok: true };
+      },
+      writeSync: () => null,
+      clear: async () => ({ ok: true }),
+    },
+  });
+  const persistence = createSessionPersistence(session);
+  const release = persistence.trackProgress(() => {});
+  try {
+    dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 30)), undefined, session);
+    const feedback = vi.fn();
+    persistence.afterProgressSaved(feedback);
+    flushSaveAfterGearMutation(session);
+    await persistence.waitForWrites();
+    expect(persistence.readProgress().kind).toBe("failed");
+    expect(feedback).not.toHaveBeenCalled();
+    fail = false;
+    flushSaveAfterRunEnd(session);
+    await persistence.waitForWrites();
+    expect(persistence.readProgress().kind).toBe("idle");
+    expect(feedback).toHaveBeenCalledOnce();
+    expect(JSON.parse(writes.at(-1)!).gold).toBe(30);
+  } finally {
+    release();
+    await session.dispose();
+  }
 });

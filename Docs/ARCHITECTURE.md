@@ -193,6 +193,15 @@ Owned Gear and per-character loadouts live in `shared/stores/gear-store.ts`. Pur
 
 ## Types
 
+Gameplay write operations own incoming data at the transaction boundary. Direct
+values and functional updater results are copied before domain mutators can
+retain them, so later caller edits cannot change the draft or committed state,
+and committing cannot freeze caller-owned objects. Existing readonly transaction
+views resolve to their owned snapshots, preserving unchanged updater identity.
+The same boundary copier handles incoming values and detached command results;
+Gear inventory insertion and initialization use it as well. Functions remain
+explicit capabilities (for example command-bound RNG), rather than data to copy.
+
 `GameplayState` in `gameplay-state.ts` defines the [aggregate regions](./RUN_STATE.md#run-state). Read, write, command, and screen contracts are listed in the [capability reference](./RUN_STATE.md#session-capability-ports); persistence types are in the [codec contract](./RUN_STATE.md#persistence-api).
 
 Initial progress and permanent fields, `ACTIVE_RUN_PROGRESS_KEYS`, `generateRunSeed`, and `pickActiveRunView` live in `run-state-init.ts`; `run-domain-types.ts` defines session, battle, and run-data fields. `profile-store-types.ts` owns its domain (completion buckets derived from the character registry); `gear-actions.ts` owns the initial gear state. Fresh-run snapshots live in `shared/run-flow/run-start.ts`. Shared numeric manifest defaults use `createNumericManifest` / `mergeNumericManifests` from `manifest-utils.ts`.

@@ -23,7 +23,7 @@ import { gameplayDraftRuntime } from "./gameplay-command";
 
 import type { RunActivityData } from "@/lib/active-run-session";
 import type { Immutable } from "immer";
-import { createReadonlyView, unwrapReadonlyValue } from "./readonly-view";
+import { createReadonlyView, ownTransactionInput } from "./readonly-view";
 import type { RunTransaction } from "./run-session-command";
 import { transactionDraft, transactionOperation } from "./transaction-internal";
 import * as meta from "./write/live-meta";
@@ -98,7 +98,7 @@ export function setRunActivityData<K extends keyof RunActivityData>(
     transactionDraft(transaction),
     kind,
     (previous) =>
-      unwrapReadonlyValue(
+      ownTransactionInput(
         typeof action === "function" ? action(createReadonlyView(previous)) : action,
       ) as RunActivityData[NoInfer<K>],
   );

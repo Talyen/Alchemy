@@ -33,7 +33,7 @@ describe("resolveActiveRunForSave", () => {
     );
 
     const activeRun = resolveActiveRunForSave(defaultGameSession);
-    const save = buildAlchemySaveDataFromStores(activeRun, defaultGameSession);
+    const save = buildAlchemySaveDataFromStores(defaultGameSession);
 
     expect(activeRun).not.toBeNull();
     expect(activeRun).not.toHaveProperty("runGold");
@@ -56,7 +56,7 @@ describe("resolveActiveRunForSave", () => {
 
     setRunProgress({ gold: 100 });
 
-    const save = buildAlchemySaveDataFromStores(resolveActiveRunForSave(defaultGameSession), defaultGameSession);
+    const save = buildAlchemySaveDataFromStores(defaultGameSession);
     expect(save.activeRun).toBeNull();
   });
 });
@@ -70,7 +70,7 @@ describe("buildAlchemySaveDataFromStores permanent progress", () => {
       initialized: true,
     });
 
-    const save = buildAlchemySaveDataFromStores(null, defaultGameSession);
+    const save = buildAlchemySaveDataFromStores(defaultGameSession);
 
     expect(save.materialInventory).toEqual({ wood: 12, iron: 3, herbs: 1, food: 0, gems: 2, stone: 0, hide: 0 });
     expect(save.talentXP).toEqual({ burn: 40 });

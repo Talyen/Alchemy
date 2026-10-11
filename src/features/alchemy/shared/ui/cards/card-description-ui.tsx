@@ -3,6 +3,7 @@ import { Fragment, useMemo, type ReactNode } from "react";
 import { renderCardDescription, type BattleCard, type KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
+import { TRANSMUTATION_PREFIXES } from "@/lib/game-constants/transmutation";
 
 import { tooltipBodyLineClass, tooltipHeaderClass } from "../../config/index";
 import { tokenizeDescription } from "../../utils/index";
@@ -155,19 +156,19 @@ export function CardTitle({
   card: Pick<BattleCard, "title" | "corrupted" | "transmuted">;
   className?: string;
 }) {
-  if (card.transmuted)
-    return (
-      <ShineText
-        colors={keywordDefinitions[card.transmuted].shineColors}
-        className={cn("font-sans font-semibold", className)}
-      >
-        {card.title}
-      </ShineText>
-    );
+  const prefix = card.transmuted ? TRANSMUTATION_PREFIXES[card.transmuted] : undefined;
+  const hasTransmutedPrefix = prefix !== undefined && card.title.startsWith(`${prefix} `);
   return (
     <span className={cn("font-sans font-semibold", className)}>
       {card.corrupted ? <span className="text-shine-corruption">Corrupted </span> : null}
-      {card.title}
+      {hasTransmutedPrefix && card.transmuted ? (
+        <>
+          <ShineText colors={keywordDefinitions[card.transmuted].shineColors}>{prefix}</ShineText>
+          {card.title.slice(prefix.length)}
+        </>
+      ) : (
+        card.title
+      )}
     </span>
   );
 }

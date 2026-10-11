@@ -52,7 +52,7 @@ it("forwards every boss activation to the preview; the module dedupes repeats", 
     fireEvent.click(screen.getByRole("button", { name: id }));
   }
   // Repeat clicks forward too; previewBossMusic() itself skips the restart
-  // (pinned in music.dom.test.ts).
+  // (pinned in music-player.test.ts).
   expect(previewBossMusic).toHaveBeenCalledTimes(8);
   fireEvent.click(screen.getByRole("button", { name: "unknown-boss" }));
   fireEvent.click(screen.getByRole("button", { name: "goblin-scout" }));
@@ -91,7 +91,7 @@ it("never previews unknown enemies; tab restore without a preview is a music no-
   fireEvent.click(screen.getByRole("button", { name: "unknown-boss" }));
   expect(previewBossMusic).not.toHaveBeenCalled();
   // The tab change still runs the restore path, but endBossPreview() no-ops
-  // internally without an active preview (pinned in music.dom.test.ts).
+  // internally without an active preview (pinned in music-player.test.ts).
   rerender(<CollectionScreen {...props} collectionTab="cards" />);
   expect(previewBossMusic).not.toHaveBeenCalled();
   expect(endBossPreview).toHaveBeenCalledTimes(1);

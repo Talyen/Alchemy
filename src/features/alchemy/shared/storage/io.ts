@@ -11,10 +11,14 @@ export function subscribeSaveWriteFailure(listener: () => void, gameSession: Gam
   return runtime.track(runtime.io.subscribeSaveWriteFailure(listener));
 }
 export function configureSaveBackend(backend: SaveBackend, gameSession: GameSession) {
-  sessionRuntime(gameSession).io.configureSaveBackend(backend);
+  const runtime = sessionRuntime(gameSession);
+  runtime.io.configureSaveBackend(backend);
+  runtime.progressCompletion.cancel();
 }
 export function setWritesDisabled(disabled: boolean, gameSession: GameSession) {
-  sessionRuntime(gameSession).io.setWritesDisabled(disabled);
+  const runtime = sessionRuntime(gameSession);
+  if (disabled) runtime.progressCompletion.cancel();
+  runtime.io.setWritesDisabled(disabled);
 }
 export function routeWritesToRecovery(gameSession: GameSession) {
   sessionRuntime(gameSession).io.routeWritesToRecovery();
@@ -29,15 +33,21 @@ export function waitForPendingSaveWrites(gameSession: GameSession) {
 export function loadAlchemySaveState(gameSession: GameSession) {
   return sessionRuntime(gameSession).io.loadAlchemySaveState();
 }
-export function saveAlchemySaveData(data: UnstampedSaveData, gameSession: GameSession) {
-  return sessionRuntime(gameSession).io.saveAlchemySaveData(data);
+export async function saveAlchemySaveData(data: UnstampedSaveData, gameSession: GameSession) {
+  const runtime = sessionRuntime(gameSession);
+  return runtime.progressCompletion.completeSnapshot(data, await runtime.io.saveAlchemySaveData(data));
 }
-export function saveAlchemySaveDataForExit(data: UnstampedSaveData, gameSession: GameSession) {
-  return sessionRuntime(gameSession).io.saveAlchemySaveDataForExit(data);
+export async function saveAlchemySaveDataForExit(data: UnstampedSaveData, gameSession: GameSession) {
+  const runtime = sessionRuntime(gameSession);
+  return runtime.progressCompletion.completeSnapshot(data, await runtime.io.saveAlchemySaveDataForExit(data));
 }
 export function clearAlchemySaveData(mode: "default" | "localWipe" = "default", gameSession: GameSession) {
-  return sessionRuntime(gameSession).io.clearAlchemySaveData(mode);
+  const runtime = sessionRuntime(gameSession);
+  runtime.progressCompletion.cancel();
+  return runtime.io.clearAlchemySaveData(mode);
 }
 export function resetStorageIoForTests(gameSession: GameSession) {
-  return sessionRuntime(gameSession).io.resetStorageIoForTests();
+  const runtime = sessionRuntime(gameSession);
+  runtime.progressCompletion.cancel();
+  return runtime.io.resetStorageIoForTests();
 }

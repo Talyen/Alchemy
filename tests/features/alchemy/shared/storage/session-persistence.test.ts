@@ -124,3 +124,20 @@ describe("session save restoration", () => {
     }
   });
 });
+
+it("owns the complete snapshot without sharing nested battle or progression state", async () => {
+  const session = createGameSession({ initialSave: battleSave() });
+  const persistence = createSessionPersistence(session);
+  try {
+    const save = persistence.snapshot();
+    const before = persistence.snapshot();
+    if (save.activeRun?.activity.kind !== "battle") throw new Error("Battle was lost");
+    save.activeRun.runDeck.length = 0;
+    save.activeRun.activity.data.battleState.playerStatuses.burn = 999;
+    save.activeRun.activity.data.battleState.hand.length = 0;
+    save.gearInventories.knight.length = 0;
+    expect(persistence.snapshot()).toEqual(before);
+  } finally {
+    await session.dispose();
+  }
+});

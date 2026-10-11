@@ -52,10 +52,7 @@ function startMode(nav: ReturnType<typeof createNavigation>, mode: ContentSystem
 }
 
 function reloadSavedRuns() {
-  const saved = buildAlchemySaveDataFromStores(
-    readRunSession(defaultGameSession).hasActiveRun ? snapshotRun(defaultGameSession) : null,
-    defaultGameSession,
-  );
+  const saved = buildAlchemySaveDataFromStores(defaultGameSession);
   const loaded = evaluateSaveCandidates([JSON.stringify(saved)]);
   expect(loaded.status.kind).toBe("ok");
   resetAllTestStores();

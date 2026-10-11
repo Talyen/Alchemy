@@ -3,6 +3,7 @@ import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   acceptCommand,
+  rejectCommand,
   dispatchRunSessionCommand,
   type RunTransaction,
   subscribeRunSessionCommits,
@@ -65,6 +66,84 @@ const forbiddenWrites: Array<[string, (transaction: RunTransaction) => void]> = 
 ];
 
 describe("feature transaction capabilities", () => {
+  it.each(["accept", "reject", "throw"] as const)(
+    "owns setter inputs without mutating or freezing caller data when commands %s",
+    (ending) => {
+      const card = makeTestCard({ effects: [{ kind: "damage", amount: 5, damageType: "physical" }] });
+      const cards = [card];
+      const before = readGameplayState(defaultGameSession);
+      const execute = () =>
+        dispatchRunSessionCommand(
+          (transaction) => {
+            setRunDeck(transaction, cards);
+            Reflect.set(card.effects[0]!, "amount", 999);
+            cards.push(makeTestCard({ id: "external" }));
+            expect(transaction.run.activeRun.runDeck).toHaveLength(1);
+            expect(transaction.run.activeRun.runDeck[0]!.effects[0]).toMatchObject({ amount: 5 });
+            if (ending === "throw") throw new Error("abort input ownership test");
+            return ending === "accept" ? acceptCommand() : rejectCommand("cancelled", undefined);
+          },
+          undefined,
+          defaultGameSession,
+        );
+      if (ending === "throw") expect(execute).toThrow("abort input ownership test");
+      else execute();
+      if (ending === "accept") {
+        expect(readGameplayState(defaultGameSession).run.activeRun.runDeck).toHaveLength(1);
+      } else expect(readGameplayState(defaultGameSession)).toBe(before);
+      expect(Object.isFrozen(cards)).toBe(false);
+      expect(Object.isFrozen(card.effects[0])).toBe(false);
+      Reflect.set(card.effects[0]!, "amount", 1000);
+      expect(card.effects[0]).toMatchObject({ amount: 1000 });
+    },
+  );
+
+  it("owns functional setter results and typed visit inputs while preserving unchanged updater identity", () => {
+    const cards = [makeTestCard()];
+    const offers = [makeTestCard()];
+    dispatchRunSessionCommand(
+      (transaction) => {
+        setRunDeck(transaction, () => cards);
+        setRunActivityData(transaction, "campfire", { offers, result: null, original: null, completed: false });
+        cards.length = 0;
+        offers.length = 0;
+        expect(transaction.run.activeRun.runDeck).toHaveLength(1);
+        expect(transaction.session.activity.kind).toBe("campfire");
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    const before = readGameplayState(defaultGameSession);
+    expect(before.session.activity).toMatchObject({ kind: "campfire", data: { offers: [makeTestCard()] } });
+    dispatchRunSessionCommand(
+      (transaction) => acceptCommand(setRunDeck(transaction, (deck) => deck)),
+      undefined,
+      defaultGameSession,
+    );
+    expect(readGameplayState(defaultGameSession)).toBe(before);
+  });
+
+  it("takes ownership of Gear before caller edits can bypass guarded mutation methods", () => {
+    const armor: GearInstance = {
+      instanceId: "owned-armor",
+      definitionId: "leather-armor-basic",
+      affixes: [{ id: "max-health", value: 7 }],
+    };
+    dispatchGearMutationWithRunHealthSync(
+      {
+        mutate: (gear) => {
+          gear.addInstance(armor, "knight");
+          armor.affixes[0]!.value = 999;
+          expect(gear.inventories.knight[0]!.affixes[0]!.value).toBe(7);
+        },
+      },
+      defaultGameSession,
+    );
+    expect(readGameplayState(defaultGameSession).gear.inventories.knight[0]!.affixes[0]!.value).toBe(7);
+    expect(Object.isFrozen(armor.affixes)).toBe(false);
+  });
+
   it.each(forbiddenWrites)("rolls back earlier operations and RNG when an untyped caller writes %s", (_name, write) => {
     dispatchGameplayCommand(
       (draft) => acceptCommand(initializeActiveBattle(draft, makeTestBattleState())),

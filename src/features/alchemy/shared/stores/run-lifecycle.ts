@@ -145,12 +145,19 @@ export function teardownRun(gameSession: GameSession): void {
   notifyRunTeardown(gameSession);
 }
 
-function flushSave(activeRun: ActiveRunData | null, message: string, gameSession: GameSession): void {
+function flushSave(message: string, gameSession: GameSession): void {
   // Immediate fast path: run-end and gear mutations need durability without
   // waiting for the autosave debounce. Shares the storage owner’s queue (and the
   // snapshot builder) with the debounced autosave, so overlapping writes
   // coalesce.
-  void saveAlchemySaveData(buildAlchemySaveDataFromStores(activeRun, gameSession), gameSession).then(
+  let save: UnstampedSaveData;
+  try {
+    save = buildAlchemySaveDataFromStores(gameSession);
+  } catch (error) {
+    logStorageFailure(message, error);
+    return;
+  }
+  void saveAlchemySaveData(save, gameSession).then(
     (outcome) => {
       if (outcome === "failed") logStorageFailure(message);
     },
@@ -161,11 +168,11 @@ function flushSave(activeRun: ActiveRunData | null, message: string, gameSession
 }
 
 export function flushSaveAfterRunEnd(gameSession: GameSession): void {
-  flushSave(null, "Failed to flush save after run end", gameSession);
+  flushSave("Failed to flush save after run end", gameSession);
 }
 
-export function flushSaveAfterGearMutation(activeRun: ActiveRunData | null, gameSession: GameSession): void {
-  flushSave(activeRun, "Failed to flush save after gear mutation", gameSession);
+export function flushSaveAfterGearMutation(gameSession: GameSession): void {
+  flushSave("Failed to flush save after gear mutation", gameSession);
 }
 
 export function finalizeRunEndSession(

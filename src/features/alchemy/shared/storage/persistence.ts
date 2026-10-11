@@ -5,7 +5,9 @@ import { subscribePersistenceCommits } from "@/features/alchemy/shared/stores/pe
 import { profilePersistenceCodec } from "@/features/alchemy/shared/stores/profile-store";
 import { runProfilePersistenceCodec } from "@/features/alchemy/shared/stores/run-profile-codec";
 import { hydrateGameplayPersistenceFields } from "../stores/persistence-hydration";
-import type { ActiveRunData } from "@/lib/active-run-session";
+import { isActiveRunActivity } from "@/lib/active-run-session";
+import { getRunSessionFromState } from "../stores/run-reads";
+import { encodeRunResumeSnapshot } from "../stores/run-resume-codec";
 import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import type { GameSession } from "../stores/game-session-types";
 import { sessionRuntime } from "../stores/session-runtime";
@@ -38,20 +40,26 @@ export function subscribeAlchemyPersistence(listener: () => void, gameSession: G
   return subscribePersistenceCommits(listener, gameSession);
 }
 
-export function buildAlchemySaveDataFromStores(
-  activeRun: ActiveRunData | null,
-  gameSession: GameSession,
-): UnstampedSaveData {
-  // Single save join point: flat persistence fields (settings/profile/gear/run
-  // profile codecs) plus the active-run resume snapshot from run-lifecycle's
-  // snapshotRun. Callers snapshot the run first; this function only stamps.
-  const persistenceFields = encodePersistenceFields(gameSession);
-  return {
-    steamAccountId: null,
-    saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-    gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
-    contentVersion: CURRENT_CONTENT_VERSION,
-    ...persistenceFields,
-    activeRun,
-  };
+export function buildAlchemySaveDataFromStores(gameSession: GameSession): UnstampedSaveData {
+  const runtime = sessionRuntime(gameSession);
+  const state = runtime.gameplay.getState();
+  const token = runtime.progressCompletion.token(state.revision);
+  try {
+    const activeRun = isActiveRunActivity(state.session.activity)
+      ? encodeRunResumeSnapshot(getRunSessionFromState(state))
+      : null;
+    // Own every nested value: a save must not retain live state or draft views.
+    const save = structuredClone({
+      steamAccountId: null,
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+      gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
+      contentVersion: CURRENT_CONTENT_VERSION,
+      ...encodePersistenceFields(gameSession),
+      activeRun,
+    });
+    return runtime.progressCompletion.captureSnapshot(save, state.revision);
+  } catch (error) {
+    runtime.progressCompletion.complete(token, "failed");
+    throw error;
+  }
 }

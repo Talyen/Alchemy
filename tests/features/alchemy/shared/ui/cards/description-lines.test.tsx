@@ -63,7 +63,7 @@ describe("DescriptionLines", () => {
     ["acid-potion", ["3"]],
     ["luck-potion", ["5"]],
     ["wishing-potion", ["3"]],
-    ["panacea-potion", ["1"]],
+    ["panacea-potion", ["3"]],
   ] as const)("highlights only distilled values in %s after save hydration", (id, values) => {
     const distilled = strengthenPotion(cardById[id]!)!;
     const card = hydrateCard(BattleCardSchema.parse(JSON.parse(JSON.stringify(distilled))));

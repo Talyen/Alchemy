@@ -152,7 +152,7 @@ export function offerMetaChoices(
       )
         offer("equip", `${slot}:${item.instanceId}`, 2, () =>
           mutateGearWithFlush(
-            () => flushSaveAfterGearMutation(null, gameSession),
+            () => flushSaveAfterGearMutation(gameSession),
             (state) => state.equip(config.hero, slot, item),
             gameSession,
           ),
@@ -167,7 +167,7 @@ export function offerMetaChoices(
         offer("craft", `${currency.id}:${item.instanceId}`, 1, () => {
           crafted.add(item.instanceId);
           return mutateGearWithFlush(
-            () => flushSaveAfterGearMutation(null, gameSession),
+            () => flushSaveAfterGearMutation(gameSession),
             (state) => state.applyCurrency(currency.id, item.instanceId, { rng: craftingRandom }),
             gameSession,
           );
@@ -179,14 +179,14 @@ export function offerMetaChoices(
       inventory.some((other) => other.definitionId === item.definitionId && gearScore(other) > gearScore(item))
     )
       offer("salvage", item.instanceId, 1, () =>
-        salvageGearWithFlush(() => flushSaveAfterGearMutation(null, gameSession), item.instanceId, gameSession),
+        salvageGearWithFlush(() => flushSaveAfterGearMutation(gameSession), item.instanceId, gameSession),
       );
   }
   if (!gear.equippedTrinkets[config.hero])
     for (const id of gear.ownedTrinketIds)
       offer("equip-trinket", id, 2, () =>
         mutateGearWithFlush(
-          () => flushSaveAfterGearMutation(null, gameSession),
+          () => flushSaveAfterGearMutation(gameSession),
           (state) => state.equipTrinket(config.hero, id),
           gameSession,
         ),
