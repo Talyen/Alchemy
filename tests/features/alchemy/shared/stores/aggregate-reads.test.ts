@@ -2,6 +2,7 @@ import { setBattleActiveForTest as setHasActiveBattle } from "../../../../helper
 import { beforeEach, describe, expect, it } from "vitest";
 import { deepFreeze } from "@/features/alchemy/shared/stores/store-utils";
 import { useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
@@ -14,7 +15,7 @@ import { readActiveRun, readBattle, readRunProfile, readRunSession } from "@/fea
 import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(() => {
-  useGameplayStateStore.setState(useGameplayStateStore.getInitialState(), true);
+  resetRunDomainStore();
 });
 
 describe("aggregate read ports", () => {
@@ -40,7 +41,9 @@ describe("aggregate read ports", () => {
     expect(readGameplayState(defaultGameSession).profile.finishedRunCharacters).toEqual(["knight"]);
   });
 
-  it("keeps feature-facing imperative reads data-only", () => {
+  it("keeps read capabilities data-only and unable to bypass the command coordinator", () => {
+    expect(useGameplayStateStore).not.toHaveProperty("setState");
+    expect(useGameplayStateStore).not.toHaveProperty("commit");
     expect(readActiveRun(defaultGameSession)).not.toHaveProperty("setGold");
     expect(readActiveRun(defaultGameSession)).not.toHaveProperty("nextRunRandom");
     expect(readRunProfile(defaultGameSession)).not.toHaveProperty("unlockTalent");

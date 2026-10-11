@@ -2,7 +2,7 @@
 
 ## Run state
 
-Each game session owns one authoritative nested Zustand aggregate constructed in `shared/stores/gameplay-state.ts`. `gameplay-state-reads.ts` owns explicit-session aggregate reads and subscriptions; `gameplay-state-store.ts` keeps presentation hooks bound to the application’s default session. Reusable reads, commands, and persistence codecs do not import React or initialize the application. Its `run`, `session`, `runProfile`, `profile`, and `gear` objects are the domain-shaped state, and the aggregate is data-only: draft mutators in `run-session-write-port.ts` (plus `homestead-actions.ts` / `gear-actions.ts`) compose atomic changes. Feature commands receive a deeply readonly `RunTransaction`, with live reads of the same draft. Only store-owned mutation implementations and bootstrap hydration receive the raw `GameplayDraft`; feature commands cannot assign fields or mutate nested collections directly. Feature orchestration should call intent-level commands rather than assemble field updates. `profile-store.ts` and `gear-store.ts` are thin aggregate-backed read/persistence modules; React profile slices live in `use-profile-store.ts`; they do not own shadow state. The write module, reads, commands, and `run-lifecycle.ts` are the feature-facing seams. Independent runtimes follow [Session ownership](#session-ownership).
+Each game session owns one authoritative nested gameplay aggregate constructed in `shared/stores/gameplay-state.ts`. `gameplay-state-reads.ts` owns explicit-session aggregate reads and subscriptions; `gameplay-state-store.ts` keeps presentation hooks bound to the application’s default session. Reusable reads, commands, and persistence codecs do not import React or initialize the application. Its `run`, `session`, `runProfile`, `profile`, and `gear` objects are the domain-shaped state, and the aggregate is data-only: draft mutators in `run-session-write-port.ts` (plus `homestead-actions.ts` / `gear-actions.ts`) compose atomic changes. Feature commands receive a deeply readonly `RunTransaction`, with live reads of the same draft. Only store-owned mutation implementations and bootstrap hydration receive the raw `GameplayDraft`; feature commands cannot assign fields or mutate nested collections directly. Feature orchestration should call intent-level commands rather than assemble field updates. `profile-store.ts` and `gear-store.ts` are thin aggregate-backed read/persistence modules; React profile slices live in `use-profile-store.ts`; they do not own shadow state. The write module, reads, commands, and `run-lifecycle.ts` are the feature-facing seams. Independent runtimes follow [Session ownership](#session-ownership).
 
 | Aggregate region | Concern                                                                                                                                                                                    | Lifetime                                                                                                           |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
@@ -43,6 +43,16 @@ commands also preserve the root and revision; thrown execution errors discard th
 The dispatcher returns the outcome's value so route-facing result shapes stay unchanged.
 React selectors and autosave subscribe to
 that same root. Settings and presentation-only state remain separate.
+
+The aggregate exposes read/subscription capabilities separately from its internal
+commit capability; React adapters and test fixtures cannot bypass commands through
+`setState`. The coordinator installs the complete root, arms its persistence and
+presentation gate, then notifies gameplay subscribers. Save-status subscribers
+therefore see the revision they are being asked to save. Gameplay subscriber
+failures are logged independently and cannot suppress later subscribers, autosave,
+or command completion effects. Subscription changes during gameplay notification
+apply to the next commit. Execution failures still roll back; explicit
+`afterCommit` failures still propagate after the committed state is retained.
 
 Domain operations receive the transaction explicitly and compose inside one command;
 a command body must not call another command. Transactional checks that guard

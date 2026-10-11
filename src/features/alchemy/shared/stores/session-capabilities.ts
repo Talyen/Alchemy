@@ -114,11 +114,11 @@ export function sessionProgressCompletion(gameSession: GameSession) {
 }
 
 export function readSessionRevision(gameSession: GameSession): number {
-  return sessionRuntime(gameSession).gameplay.getState().revision;
+  return sessionRuntime(gameSession).gameplay.reads.getState().revision;
 }
 
 export function markSessionProgress(gameSession: GameSession, force = false) {
   const runtime = sessionRuntime(gameSession);
-  if (runtime.progressCompletion.read().kind === "idle") runtime.presentationBase = runtime.gameplay.getState();
-  runtime.progressCompletion.mark(runtime.gameplay.getState().revision, force);
+  if (runtime.progressCompletion.read().kind === "idle") runtime.presentationBase = runtime.gameplay.reads.getState();
+  runtime.progressCompletion.mark(runtime.gameplay.reads.getState().revision, force);
 }

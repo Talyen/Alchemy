@@ -44,7 +44,7 @@ export function dispatchGameplayCommand<T>(
   runtime.inCommand = true;
   let outcome!: CommandOutcome<T>;
   try {
-    const base = runtime.gameplay.getState();
+    const base = runtime.gameplay.reads.getState();
     const next = produce(base, (draft: GameplayDraft) => {
       draftRuntimes.set(draft, runtime);
       try {
@@ -65,11 +65,13 @@ export function dispatchGameplayCommand<T>(
     if (outcome.kind === "accepted" && next !== base) {
       const published = { ...next, revision: base.revision + 1 };
       deepFreezeInDev(published);
-      if (runtime.progressCompletion.active && !gameplayPersistedInputsEqual(base, published)) {
-        if (runtime.progressCompletion.read().kind === "idle") runtime.presentationBase = base;
-        runtime.progressCompletion.mark(published.revision);
-      }
-      runtime.gameplay.setState(published, true);
+      const persistedChange = runtime.progressCompletion.active && !gameplayPersistedInputsEqual(base, published);
+      runtime.gameplay.commit(published, () => {
+        if (persistedChange) {
+          if (runtime.progressCompletion.read().kind === "idle") runtime.presentationBase = base;
+          runtime.progressCompletion.mark(published.revision);
+        }
+      });
     }
   } finally {
     runtime.inCommand = false;
