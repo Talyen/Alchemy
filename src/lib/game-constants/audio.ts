@@ -24,7 +24,7 @@ export const SFX_SLICE_DEATH_VOLUME = 0.55;
 
 export const SFX_COOLDOWN_MS = 80;
 
-export const MUSIC_BOSS_VOLUME_BOOST = 2;
+export const MUSIC_BOSS_VOLUME_BOOST = 2.6;
 export const MUSIC_FADE_TICK_MS = 30;
 
 // Battle companion ids whose turn cue follows the summoning card. A lookup

@@ -96,10 +96,9 @@ it("keeps synchronous music playback failures nonfatal and retries the cached tr
 it("keeps the volume curve, fade gain, boss boost, and saturation", () => {
   expect(computeMusicVolume({ musicVolume: 0.5, masterVolume: 0.5 })).toBe(0.25 * MUSIC_MASTER_GAIN);
   expect(computeMusicVolume({ musicVolume: 1, masterVolume: 1, isBoss: true })).toBe(1);
-  expect(computeMusicVolume({ musicVolume: 0.5, masterVolume: 1, isBoss: true })).toBe(MUSIC_MASTER_GAIN);
-  expect(computeMusicVolume({ musicVolume: 0.5, masterVolume: 1, fadeGain: 0.25, isBoss: true })).toBe(
-    0.25 * MUSIC_MASTER_GAIN,
-  );
+  expect(computeMusicVolume({ musicVolume: 0.5, masterVolume: 0.5, isBoss: true })).toBeCloseTo(0.455);
+  expect(computeMusicVolume({ musicVolume: 0.5, masterVolume: 1, isBoss: true })).toBeCloseTo(0.91);
+  expect(computeMusicVolume({ musicVolume: 0.5, masterVolume: 1, fadeGain: 0.25, isBoss: true })).toBeCloseTo(0.2275);
   expect(computeMusicVolume({ musicVolume: 0, masterVolume: 1 })).toBe(0);
 });
 
@@ -364,6 +363,7 @@ it("ignores an already queued fade callback after reset and replacement playback
   expect(elements).toHaveLength(2);
   expect(outgoing).toMatchObject({ paused: true });
   expect(outgoing.removeAttribute).toHaveBeenCalledWith("src");
-  expect(replacement).toMatchObject({ paused: false, volume: MUSIC_MASTER_GAIN });
+  expect(replacement).toMatchObject({ paused: false });
+  expect(replacement.volume).toBeCloseTo(0.91);
   expect(vi.getTimerCount()).toBe(0);
 });
