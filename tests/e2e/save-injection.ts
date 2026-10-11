@@ -63,24 +63,6 @@ async function isDesktopPage(page: Page): Promise<boolean> {
   return page.evaluate(() => Boolean(window.alchemyDesktop?.isDesktop)).catch(() => false);
 }
 
-async function waitForDesktopSaveCandidate(page: Page): Promise<void> {
-  const deadline = Date.now() + 2000;
-  while (Date.now() < deadline) {
-    const hasCandidate = await page
-      .evaluate(async () => {
-        const desktop = window.alchemyDesktop;
-        if (!desktop) return false;
-        const candidates = (await desktop.listSaveCandidates()) ?? [];
-        return candidates.length > 0;
-      })
-      .catch(() => false);
-    if (hasCandidate) return;
-    await new Promise((resolve) => {
-      setTimeout(resolve, 25);
-    });
-  }
-}
-
 async function writeDesktopSaveAndReload(page: Page, save: unknown): Promise<void> {
   const write = async () => {
     const ok = await page.evaluate(async (payload) => {
@@ -94,8 +76,9 @@ async function writeDesktopSaveAndReload(page: Page, save: unknown): Promise<voi
     }
   };
 
+  // Rewards autosave can race the first injection. Keep the second write until
+  // renderer teardown can cancel that owner; the bridge already awaits disk acknowledgment.
   await write();
-  await waitForDesktopSaveCandidate(page);
   await write();
   await page.reload({ waitUntil: "domcontentloaded" });
 }
@@ -165,14 +148,16 @@ function buildActiveRunSave(overrides: Record<string, unknown>) {
   return save;
 }
 
+/** Returns whether the desktop adapter already loaded the injected checkpoint. */
 export async function injectSaveState(page: Page, overrides: Record<string, unknown> = {}) {
   const save = buildActiveRunSave(overrides);
   if (await isDesktopPage(page)) {
     await writeDesktopSaveAndReload(page, save);
-    return;
+    return true;
   }
 
   await injectLocalStorage(page, save, true);
+  return false;
 }
 
 /** Load a production-format checkpoint without the test fixture's default hero or run fields. */
@@ -189,7 +174,7 @@ export async function injectActiveBattle(
   battleState: InjectedBattleState,
   overrides: Record<string, unknown> = {},
 ) {
-  await injectSaveState(page, {
+  const loaded = await injectSaveState(page, {
     activity: savedActivityFixture("battle", {
       battleState,
       activeLabyrinthModifiers: [],
@@ -197,11 +182,11 @@ export async function injectActiveBattle(
     }),
     ...overrides,
   });
-  await navigateToGame(page);
+  if (!loaded) await navigateToGame(page);
 }
 
 export async function enterPrimaryRewardScreen(page: Page, pending: Record<string, unknown>) {
-  await injectSaveState(page, {
+  const loaded = await injectSaveState(page, {
     runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()),
     activity: savedActivityFixture("rewards", {
       ...DEFAULT_PRIMARY_REWARD_PENDING,
@@ -209,16 +194,17 @@ export async function enterPrimaryRewardScreen(page: Page, pending: Record<strin
       ...pending,
     }),
   });
-  await navigateToGame(page);
+  if (!loaded) await navigateToGame(page);
 }
 
 export async function injectHomestead(page: Page, overrides: Record<string, unknown> = {}) {
   const save = { ...baseHomesteadSave, ...overrides };
   if (await isDesktopPage(page)) {
     await writeDesktopSaveAndReload(page, save);
-    return;
+    return true;
   }
   await injectLocalStorage(page, save, false);
+  return false;
 }
 
 export async function injectBossState(page: Page, act = 1, overrides: Record<string, unknown> = {}) {

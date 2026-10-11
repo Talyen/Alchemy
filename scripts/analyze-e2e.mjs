@@ -129,7 +129,9 @@ function main(argv = process.argv.slice(2)) {
       `| **Failed** | ${failedTests.length} |`,
       `| **Flaky (passed on retry)** | ${flakyTests.length} |`,
       `| **Skipped** | ${skippedTests} |`,
-      `| **Total Duration** | ${(allTests.reduce((sum, t) => sum + t.duration, 0) / 1000).toFixed(2)}s |`,
+      `| **Playwright wall time** | ${summary.timings.wallMs === null ? "unavailable" : `${(summary.timings.wallMs / 1000).toFixed(2)}s`} |`,
+      `| **Summed test execution (including retries)** | ${(summary.timings.testMs / 1000).toFixed(2)}s |`,
+      `| **Retry execution** | ${(summary.timings.retryMs / 1000).toFixed(2)}s |`,
     ];
 
     // 1. Failures Section

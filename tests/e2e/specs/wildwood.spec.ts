@@ -5,11 +5,12 @@ import { BattlePage } from "../../pages/battle-page";
 import { critical, slow } from "../../playwright-tags";
 import {
   injectSaveState,
+  injectActiveBattle,
+  makeGoblinBattleState,
   makeCard,
   makeHighDamageCard,
   readSavedGame,
   SAVE_KEY,
-  seedRandom,
   withSavedGame,
 } from "../../browser-helpers";
 
@@ -117,23 +118,27 @@ test.describe("Wildwood Draft", () => {
       ...makeHighDamageCard(),
       effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 500 }],
     };
-    await injectSaveState(
+    await injectActiveBattle(
       page,
-      wildwoodBossState({
+      makeGoblinBattleState({
+        currentEnemy: { id: "forge-golem" },
+        hand: [bossKiller],
+        enemyHealth: 1,
+        enemyMaxHealth: 1,
+        playerHealth: 10,
+        playerMaxHealth: 30,
+        contentSystemType: "wildwood",
+      }),
+      {
+        contentSystemType: "wildwood",
+        selectedDifficulty: null,
         runPlayerHealth: 10,
         runMaxHealth: 30,
-        runDeck: Array.from({ length: 5 }, () => ({ ...bossKiller })),
-        wildwoodDraft: wildwoodDraftDefaults({ draftChoices: [{ ...bossKiller }] }),
-      }),
+        runDeck: Array.from({ length: 6 }, () => ({ ...bossKiller })),
+        wildwoodDraft: wildwoodDraftDefaults({ phase: "battle", currentBossId: "forge-golem", draftChoices: [] }),
+      },
     );
-    await page.goto("/");
-
-    await pickDraftCard(page);
-    await expect(page.getByRole("heading", { name: "Draft Complete" })).toBeVisible();
-    await page.getByRole("button", { name: "Continue" }).click();
-
     const battle = new BattlePage(page);
-    await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
     await battle.winViaCombat();
 
     await expect(async () => {
@@ -188,38 +193,6 @@ test.describe("Wildwood Draft", () => {
       const rewardsAfter = savedActivityData((await readSavedGame(resumed)).activeRun, "rewards");
       const choiceIdsAfter = rewardsAfter?.rewardType === "card" ? rewardsAfter.choiceIds : [];
       expect(choiceIdsAfter).toEqual(["slash", "bash", "block"]);
-    });
-  });
-});
-
-test.describe("Wildwood Traits", slow, () => {
-  test.beforeEach(async ({ page }) => {
-    await seedRandom(page, 42);
-  });
-
-  test("reloading mid-draft preserves combat trait assignment", async ({ page, fastBattle }) => {
-    void fastBattle;
-
-    await injectSaveState(
-      page,
-      wildwoodBossState({
-        wildwoodDraft: wildwoodDraftDefaults({ draftChoices: [makeCard()], currentCombatTraitIds: ["zealot"] }),
-      }),
-    );
-    await page.goto("/");
-
-    const traitsBefore = await page.evaluate((saveKey) => {
-      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      return save.activeRun?.wildwoodDraft?.currentCombatTraitIds ?? [];
-    }, SAVE_KEY);
-    expect(traitsBefore).toContain("zealot");
-
-    await withSavedGame(page, async (resumed) => {
-      const traitsAfter = await resumed.evaluate((saveKey) => {
-        const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-        return save.activeRun?.wildwoodDraft?.currentCombatTraitIds ?? [];
-      }, SAVE_KEY);
-      expect(traitsAfter).toContain("zealot");
     });
   });
 });

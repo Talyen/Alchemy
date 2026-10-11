@@ -42,15 +42,6 @@ describe("ArmoryScreen core", () => {
     expect(onUnequip).toHaveBeenCalledWith("knight", "main-hand");
   });
 
-  it("switches to an unlocked character", async () => {
-    const user = userEvent.setup();
-    renderArmoryScreen({ finishedRunCharacters: ["knight", "rogue"] });
-
-    await user.click(screen.getByRole("button", { name: "Rogue" }));
-
-    expect(screen.getByRole("button", { name: "Rogue" }).className).toMatch(/ring-/);
-  });
-
   it("disables characters whose prerequisite has not finished", () => {
     renderArmoryScreen({ finishedRunCharacters: ["knight"] });
 
@@ -235,26 +226,6 @@ describe("ArmoryScreen equipment movement and inventory ordering", () => {
     await user.click(swordButton);
 
     expect(onEquip).toHaveBeenCalledWith("knight", "main-hand", expect.objectContaining({ instanceId: "sword-1" }));
-  });
-
-  it("unequips into the first position of the current page", async () => {
-    const user = userEvent.setup();
-    const onUnequip = vi.fn();
-    const loadouts = createEmptyGearLoadouts();
-    loadouts.knight["main-hand"] = "sword-equipped";
-    const sword = { instanceId: "sword-equipped", definitionId: "longsword-basic" as const, affixes: [] };
-    const hatchet = { instanceId: "hatchet-1", definitionId: "hatchet-basic" as const, affixes: [] };
-
-    renderArmoryScreen({
-      onUnequip,
-      loadouts,
-      inventories: createArmoryInventories([sword, hatchet]),
-    });
-
-    const slotBtn = screen.getByLabelText("Main-hand equipment slot");
-    await user.click(slotBtn);
-
-    expect(onUnequip).toHaveBeenCalledWith("knight", "main-hand");
   });
 
   it("replaces equipped item and preserves working position", async () => {

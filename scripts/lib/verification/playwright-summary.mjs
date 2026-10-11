@@ -106,6 +106,93 @@ export function topSlowestTests(allTests, count = 10) {
     .slice(0, count);
 }
 
+/** Wall time and retry work are distinct from the sum of parallel test durations. */
+export function summarizePlaywrightTimings(report) {
+  const finiteDuration = (value) => (typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : null);
+  const metadata = report?.config?.metadata ?? {};
+  let testMs = 0;
+  let retryMs = 0;
+  for (const { test } of testsInSuites(report?.suites)) {
+    for (const result of Array.isArray(test.results) ? test.results : []) {
+      const duration = finiteDuration(result?.duration) ?? 0;
+      testMs += duration;
+      if (result?.retry > 0) retryMs += duration;
+    }
+  }
+  const setupStart = Date.parse(metadata.setupStartedAt);
+  const testStart = Date.parse(report?.stats?.startTime);
+  return {
+    wallMs: finiteDuration(report?.stats?.duration),
+    testMs,
+    retryMs,
+    setupMs:
+      Number.isFinite(setupStart) && Number.isFinite(testStart) && testStart >= setupStart
+        ? testStart - setupStart
+        : null,
+    runId: metadata.runId ?? null,
+    commit: metadata.commit ?? null,
+    workflowRun: metadata.workflowRun ?? null,
+    attempt: metadata.attempt ?? null,
+    job: metadata.job ?? null,
+    shard: report?.config?.shard ?? null,
+  };
+}
+
+/** Compare downloaded shards of one commit/run; never imply unrelated runs are one suite. */
+export function formatPlaywrightShardTimings(reports) {
+  const timings = reports.map(summarizePlaywrightTimings);
+  const first = timings[0];
+  if (
+    !first ||
+    !first.commit ||
+    !first.workflowRun ||
+    !first.attempt ||
+    !first.job ||
+    timings.some(
+      (timing) =>
+        timing.commit !== first.commit ||
+        timing.workflowRun !== first.workflowRun ||
+        timing.attempt !== first.attempt ||
+        timing.job !== first.job ||
+        timing.wallMs === null ||
+        !timing.shard,
+    )
+  ) {
+    throw new Error(
+      "Shard timing comparison requires reports from the same commit, workflow run, attempt and job with wall times and shard identities",
+    );
+  }
+  const shardCount = first.shard.total;
+  if (
+    timings.length !== shardCount ||
+    new Set(timings.map((timing) => timing.shard.current)).size !== shardCount ||
+    timings.some(
+      (timing) =>
+        timing.shard.total !== shardCount ||
+        !Number.isInteger(timing.shard.current) ||
+        timing.shard.current < 1 ||
+        timing.shard.current > shardCount,
+    )
+  ) {
+    throw new Error("Shard timing comparison requires every shard exactly once");
+  }
+  const walls = timings.map((timing) => timing.wallMs);
+  return [
+    "## Playwright shard timing",
+    `- Commit: \`${first.commit}\` · Workflow run: ${first.workflowRun} · Attempt: ${first.attempt} · Job: ${first.job}`,
+    `- Shards: ${timings.length}`,
+    `- Playwright wall-time spread (slowest minus fastest): ${((Math.max(...walls) - Math.min(...walls)) / 1000).toFixed(2)}s`,
+    `- Summed Playwright wall time: ${(walls.reduce((sum, value) => sum + value, 0) / 1000).toFixed(2)}s`,
+    `- Summed test execution (including retries): ${(timings.reduce((sum, timing) => sum + timing.testMs, 0) / 1000).toFixed(2)}s`,
+    `- Retry execution: ${(timings.reduce((sum, timing) => sum + timing.retryMs, 0) / 1000).toFixed(2)}s`,
+    ...(timings.every((timing) => timing.setupMs !== null)
+      ? [
+          `- Summed pre-Playwright setup: ${(timings.reduce((sum, timing) => sum + timing.setupMs, 0) / 1000).toFixed(2)}s`,
+        ]
+      : []),
+  ].join("\n");
+}
+
 export function summarizePlaywrightReport(report, options = {}) {
   const maxFailures = Math.max(0, Math.trunc(options.maxFailures ?? MAX_SUMMARY_FAILURES) || 0);
   const rootDir = options.rootDir ?? process.cwd();
@@ -167,6 +254,7 @@ export function summarizePlaywrightReport(report, options = {}) {
     total: hasStats ? Object.values(counts).reduce((sum, value) => sum + value, 0) : collected.totalTests,
     ...counts,
     failures,
+    timings: summarizePlaywrightTimings(root),
   };
 }
 
@@ -179,6 +267,18 @@ export function formatPlaywrightSummaryMarkdown(summary) {
       `- Failed: ${summary.unexpected}`,
       `- Flaky: ${summary.flaky}`,
       `- Skipped: ${summary.skipped}`,
+      ...(summary.timings
+        ? [
+            `- Playwright wall time: ${summary.timings.wallMs === null ? "unavailable" : `${(summary.timings.wallMs / 1000).toFixed(2)}s`}`,
+            `- Summed test execution (including retries): ${(summary.timings.testMs / 1000).toFixed(2)}s`,
+            `- Retry execution: ${(summary.timings.retryMs / 1000).toFixed(2)}s`,
+            ...(summary.timings.setupMs === null
+              ? []
+              : [`- Pre-Playwright setup: ${(summary.timings.setupMs / 1000).toFixed(2)}s`]),
+            ...(summary.timings.commit ? [`- Commit: \`${summary.timings.commit}\``] : []),
+            ...(summary.timings.runId ? [`- Run: \`${summary.timings.runId}\``] : []),
+          ]
+        : []),
     ],
     runnerErrors: summary.runnerErrors,
     failures: summary.failures,

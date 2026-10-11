@@ -1,5 +1,5 @@
 import { savedActivityData } from "../fixtures/run-activity";
-import { exerciseControllerOptions } from "../e2e/controller-options";
+import { controllerInput } from "../e2e/controller-input";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -158,11 +158,17 @@ test("mapped controller keys navigate the packaged desktop renderer", desktop, a
     await new MenuPage(page).expectMainMenuAfterColdStart();
     expect(page.url()).toMatch(/^alchemy:\/\//);
     await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1280, 720));
-    await page.getByRole("button", { name: "Options", exact: true }).click();
-    await expect(page.getByRole("combobox", { name: "Display Mode" })).toBeVisible();
+    const input = controllerInput(page);
+    await input.activate(page.getByRole("button", { name: "Options", exact: true }));
+    const displayMode = page.getByRole("combobox", { name: "Display Mode" });
+    await input.activate(displayMode);
+    await input.press("down");
+    await input.press("confirm");
+    await expect(page.getByRole("listbox")).toHaveCount(0);
+    await expect(displayMode).toBeFocused();
     await expect(page.getByRole("slider", { name: "Background Particles", exact: true })).toBeInViewport();
-    await page.getByRole("button", { name: "Back", exact: true }).click();
-    await exerciseControllerOptions(page);
+    await input.press("back");
+    await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible();
     expect(errors).toEqual([]);
   } finally {
     await application.close();

@@ -4,6 +4,7 @@ import {
   injectActiveBattle,
   winBattleAndClaimReward,
   makeGoblinBattleState,
+  makeHighDamageCard,
   startAtDestination,
   SAVE_KEY,
   readSavedGame,
@@ -11,7 +12,28 @@ import {
 import { BattlePage } from "../../pages/battle-page";
 import { DestinationPage } from "../../pages/destination-page";
 import { critical } from "../../playwright-tags";
+import { savedActivityFixture } from "../../fixtures/run-activity";
+import type { Page } from "@playwright/test";
 import { expectRunPhase } from "../../pages/game-stage";
+
+async function startBossBattle(page: Page, act: 1 | 3) {
+  const card = makeHighDamageCard();
+  await injectBossState(page, act, {
+    activity: savedActivityFixture("battle", {
+      battleState: makeGoblinBattleState({
+        currentEnemy: { id: act === 1 ? "forge-golem" : "blight-treant" },
+        hand: [card],
+        turn: 1,
+        enemyHealth: 1,
+        enemyMaxHealth: 1,
+        contentSystemType: "campaign",
+      }),
+      activeLabyrinthModifiers: [],
+      activeLabyrinthRewardModifiers: [],
+    }),
+  });
+  await page.goto("/");
+}
 
 test.describe("Run Outcomes", () => {
   test.describe("Victory Flow", () => {
@@ -20,12 +42,8 @@ test.describe("Run Outcomes", () => {
       critical,
       async ({ page, fastBattle }) => {
         void fastBattle;
-        await injectBossState(page, 1);
-        await page.goto("/");
-
+        await startBossBattle(page, 1);
         const destination = new DestinationPage(page);
-        await destination.expectVisible();
-        await destination.enterCombat("Boss");
 
         await winBattleAndClaimReward(page);
 
@@ -37,12 +55,7 @@ test.describe("Run Outcomes", () => {
     // The final boss also settles and clears the run rather than advancing an act.
     test("defeating Act III boss shows run victory screen", async ({ page, fastBattle }) => {
       void fastBattle;
-      await injectBossState(page, 3);
-      await page.goto("/");
-
-      const destination = new DestinationPage(page);
-      await destination.expectVisible();
-      await destination.enterCombat("Boss");
+      await startBossBattle(page, 3);
       await winBattleAndClaimReward(page);
 
       await expectRunPhase(page, "runEnd");

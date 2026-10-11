@@ -10,7 +10,9 @@ async function waitForOpeningDeal(page: import("@playwright/test").Page) {
       message: "the opening hand deal should finish",
     })
     .toBeGreaterThan(0);
-  await expect(page.locator('[aria-label^="Play "]:not(.opacity-0)')).toHaveCount(4, { timeout: 20_000 });
+  await expect(page.locator('[data-hand-slot]:not([data-hand-hidden]) [aria-label^="Play "]')).toHaveCount(4, {
+    timeout: 20_000,
+  });
 }
 
 test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
@@ -23,11 +25,18 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
       testWindow.openingHandCounts = [];
       const recordHand = () => {
         if (!document.querySelector('[data-testid="battle-scene"]')) return;
-        const count = document.querySelectorAll('[aria-label^="Play "]:not(.opacity-0)').length;
+        const count = document.querySelectorAll(
+          '[data-hand-slot]:not([data-hand-hidden]) [aria-label^="Play "]',
+        ).length;
         if (testWindow.openingHandCounts?.at(-1) !== count) testWindow.openingHandCounts?.push(count);
         if (document.querySelector("[data-flying-card]")) testWindow.openingFlyingCardSeen = true;
       };
-      new MutationObserver(recordHand).observe(document, { childList: true, subtree: true });
+      new MutationObserver(recordHand).observe(document, {
+        attributes: true,
+        attributeFilter: ["data-hand-hidden"],
+        childList: true,
+        subtree: true,
+      });
     });
 
     await startBattleWithDeck(
@@ -45,7 +54,9 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
       )
       .toBe(true);
     await expect(battle.hand).toHaveCount(4, { timeout: 20_000 });
-    await expect(page.locator('[aria-label^="Play "]:not(.opacity-0)')).toHaveCount(4, { timeout: 20_000 });
+    await expect(page.locator('[data-hand-slot]:not([data-hand-hidden]) [aria-label^="Play "]')).toHaveCount(4, {
+      timeout: 20_000,
+    });
     const opening = await page.evaluate(() => {
       const testWindow = window as Window & { openingFlyingCardSeen?: boolean; openingHandCounts?: number[] };
       return { flyingCardSeen: testWindow.openingFlyingCardSeen, handCounts: testWindow.openingHandCounts ?? [] };
@@ -95,7 +106,7 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
       ),
     );
     await waitForOpeningDeal(page);
-    const visibleCards = page.locator('[aria-label^="Play "]:not(.opacity-0)');
+    const visibleCards = page.locator('[data-hand-slot]:not([data-hand-hidden]) [aria-label^="Play "]');
     const drawStarts = () =>
       page.evaluate(() => performance.getEntriesByName("alchemy:battle:draw-start", "mark").length);
     const before = await drawStarts();
@@ -105,7 +116,9 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
         const drawStarts = performance.getEntriesByName("alchemy:battle:draw-start", "mark").length;
         const drawEnds = performance.getEntriesByName("alchemy:battle:draw-end", "mark").length;
         if (drawStarts !== openingDrawCount + 1 || drawEnds !== openingDrawCount) return;
-        const card = document.querySelector<HTMLButtonElement>('[aria-label^="Play "]:not(.opacity-0)');
+        const card = document.querySelector<HTMLButtonElement>(
+          '[data-hand-slot]:not([data-hand-hidden]) [aria-label^="Play "][aria-disabled="false"]',
+        );
         if (!card) return;
         observer.disconnect();
         testWindow.consecutivePlayAttempt = { drawStarts, drawEnds };
@@ -113,7 +126,9 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
       });
       observer.observe(document.body, { attributes: true, childList: true, subtree: true });
     }, before);
-    await visibleCards.first().click({ force: true });
+    const firstSlot = await page.locator("[data-hand-slot]:not([data-hand-hidden])").first().boundingBox();
+    if (!firstSlot) throw new Error("Playable card has no hand slot");
+    await page.mouse.click(firstSlot.x + firstSlot.width / 2, firstSlot.y + firstSlot.height / 2);
     await expect
       .poll(() => page.evaluate(() => (window as Window & { consecutivePlayAttempt?: unknown }).consecutivePlayAttempt))
       .toEqual({ drawStarts: before + 1, drawEnds: before });
@@ -207,14 +222,14 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     expect(result.samples).toBeGreaterThan(2);
     expect(result.error).toBeLessThan(1);
     await ending;
-    await expect(page.locator('[aria-label^="Play "]:not(.opacity-0)')).toHaveCount(4);
+    await expect(page.locator('[data-hand-slot]:not([data-hand-hidden]) [aria-label^="Play "]')).toHaveCount(4);
   });
 
   test("playable hand cards stay colored during discard and draw transfers", async ({ page }) => {
     test.setTimeout(60_000);
 
     const flyingCards = page.locator("[data-flying-card]");
-    const visibleHandCards = page.locator('[aria-label^="Play "]:not(.opacity-0)');
+    const visibleHandCards = page.locator('[data-hand-slot]:not([data-hand-hidden]) [aria-label^="Play "]');
 
     await startBattleWithDeck(
       page,
@@ -237,7 +252,9 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
         const drawEnds = performance.getEntriesByName("alchemy:battle:draw-end", "mark").length;
         if (drawStarts <= drawEnds) return;
         document
-          .querySelectorAll<HTMLElement>('[aria-label^="Play "]:not(.opacity-0).hand-card-unplayable')
+          .querySelectorAll<HTMLElement>(
+            '[data-hand-slot]:not([data-hand-hidden]) [aria-label^="Play "].hand-card-unplayable',
+          )
           .forEach((card) => {
             testWindow.drawGrayscaleFlashes?.push(card.getAttribute("aria-label") ?? "unknown card");
           });

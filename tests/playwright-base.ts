@@ -51,3 +51,15 @@ export const TIMEOUTS = {
   electron: { timeout: 90_000, global: 600_000 },
   performance: { trace: 180_000, normal: 300_000, action: 30_000, global: 1_800_000 },
 } as const;
+
+/** Identity and pre-run setup timing travel with downloaded JSON reports. */
+export function playwrightRunMetadata() {
+  return {
+    runId: ensureRunId("playwright"),
+    commit: process.env.GITHUB_SHA ?? null,
+    workflowRun: process.env.GITHUB_RUN_ID ?? null,
+    attempt: process.env.GITHUB_RUN_ATTEMPT ?? null,
+    job: process.env.GITHUB_JOB ?? null,
+    setupStartedAt: process.env.ALCHEMY_CI_SETUP_STARTED_AT ?? null,
+  };
+}

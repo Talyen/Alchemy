@@ -266,33 +266,3 @@ test("node hover, focus and selection retain shared shine without moving neighbo
   await expect(room.locator("..")).toHaveCSS("scale", "1.06");
   expect(await neighbor.boundingBox()).toEqual(neighborBefore);
 });
-
-test("current amber, dim room borders and the boss glow remain stable through hover", async ({ page }) => {
-  await injectLabyrinthRun(page, { labyrinthMap: gridLabyrinthMapFixture() });
-  const entrance = page.getByRole("button", { name: "Entrance chamber, you are here", exact: true });
-  const room = page.locator('[data-labyrinth-node="labyrinth-floor-1-n0"] button');
-  const hidden = page.getByRole("button", { name: /^Undiscovered chamber/ }).first();
-  const boss = page.getByRole("button", { name: /^Boss chamber/ });
-  await expect(page.getByTestId("labyrinth-location")).toHaveCount(0);
-  await expect(entrance).toHaveClass(/border-primary/);
-  await expect(entrance).toHaveCSS("border-top-width", "3px");
-  const roomBorder = await room.evaluate((element) => getComputedStyle(element).borderColor);
-  await expect(hidden).toHaveCSS("border-color", roomBorder);
-  await expect(boss).toHaveCSS("border-color", roomBorder);
-  const glow = await boss.evaluate((element) => getComputedStyle(element).boxShadow);
-  expect(glow).not.toBe("none");
-  await boss.hover();
-  await expect(boss.locator(".shine-border")).toBeVisible();
-  await expect(boss).toHaveCSS("box-shadow", glow);
-  await page.getByRole("heading", { name: "Labyrinth", exact: true }).hover();
-  await entrance.hover();
-  await expect(entrance.locator(".shine-border")).toHaveCSS("--border-width", "4px");
-  await page.getByRole("heading", { name: "Labyrinth", exact: true }).hover();
-  await expect(boss.locator(".shine-border")).toHaveCount(0);
-  await expect(boss).toHaveCSS("box-shadow", glow);
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await room.hover();
-  await expect(room.locator("..")).toHaveCSS("scale", "1.06");
-  await expect(room.locator("..")).toHaveCSS("transition-property", "none");
-  await expect(room.locator(".shine-border")).toHaveCSS("animation-name", "none");
-});

@@ -1,7 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 import { controllerInput } from "./controller-input";
 
-/** Same mapped-input smoke for Chromium and the isolated Electron renderer. */
+/** Full mapped-input Options journey; Electron covers the native select boundary separately. */
 export async function exerciseControllerOptions(page: Page) {
   const input = controllerInput(page);
   await input.activate(page.getByRole("button", { name: "Options", exact: true }));

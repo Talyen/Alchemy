@@ -68,9 +68,16 @@ describe("Playwright server configuration", () => {
     });
   });
 
-  it("caps push-CI browser shards at two workers for animation headroom", () => {
+  it("caps push-CI browser execution at two workers for animation headroom", () => {
     vi.stubEnv("CI", "true");
     expect(configFor().workers).toBe(2);
+    vi.stubEnv("GITHUB_SHA", "reviewed-commit");
+    vi.stubEnv("ALCHEMY_CI_SETUP_STARTED_AT", "2026-10-10T12:00:00Z");
+    expect(configFor().metadata).toMatchObject({
+      runId: "playwright-config-test",
+      commit: "reviewed-commit",
+      setupStartedAt: "2026-10-10T12:00:00Z",
+    });
   });
 
   it("runs packaged Electron without a preview server", () => {

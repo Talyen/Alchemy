@@ -3,7 +3,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { writeFailureIndex } from "./lib/verification/playwright-diagnostics.mjs";
 import { writeCurrentRun } from "./lib/verification/current-run.mjs";
-import { formatPlaywrightSummaryMarkdown, summarizePlaywrightReport } from "./lib/verification/playwright-summary.mjs";
+import {
+  formatPlaywrightSummaryMarkdown,
+  formatPlaywrightShardTimings,
+  summarizePlaywrightReport,
+} from "./lib/verification/playwright-summary.mjs";
 import { formatVitestSummaryMarkdown, summarizeVitestReport } from "./lib/verification/vitest-summary.mjs";
 import { missingReportMarkdown, readJsonReport } from "./lib/verification/report-summary.mjs";
 import { defineScript } from "./lib/script-run.mjs";
@@ -99,6 +103,7 @@ function printHelp() {
   --vitest [path]      Summarize Vitest (default ${DEFAULT_VITEST_REPORT})
   --playwright [path]  Summarize Playwright (default ${DEFAULT_PLAYWRIGHT_REPORT})
   --all [vitestPath] [playwrightPath]  Summarize both (defaults as above)
+  --playwright-shards <paths...>  Compare all downloaded shards from one hosted job
   --help               Show this help`);
 }
 
@@ -179,6 +184,23 @@ function main() {
   const args = process.argv.slice(2);
   if (args.includes("--help") || args.includes("-h")) {
     printHelp();
+    return;
+  }
+  if (args[0] === "--playwright-shards") {
+    const paths = args.slice(1);
+    const reports = paths.map((file) => {
+      const read = readJsonReport(file);
+      if (!read) throw new Error(`Missing or unreadable shard report: ${file}`);
+      return read.data;
+    });
+    const markdown = formatPlaywrightShardTimings(reports);
+    publishCiSummary({
+      markdown,
+      status: reports.some((report) => summarizePlaywrightReport(report).failed) ? "failed" : "passed",
+      command: "playwright shard timing comparison",
+      artifacts: paths,
+      summary: "Compared complete Playwright shard timings from one hosted job.",
+    });
     return;
   }
   const { vitest, playwright, vitestPath, playwrightPath } = parseSummaryArgs(args);

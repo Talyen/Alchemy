@@ -124,6 +124,9 @@ jobs:
       matrix:
         shard: [1, 2, 3]
     steps:
+      - name: Record test job setup start
+        run: echo "ALCHEMY_CI_SETUP_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           sparse-checkout: |
@@ -183,6 +186,9 @@ jobs:
       ALCHEMY_EDITION: demo
       PLAYWRIGHT_VITE_MODE: preview
     steps:
+      - name: Record test job setup start
+        run: echo "ALCHEMY_CI_SETUP_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: ./.github/actions/setup
       - uses: ./.github/actions/setup-playwright

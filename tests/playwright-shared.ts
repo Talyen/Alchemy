@@ -5,6 +5,7 @@ import {
   PERF_PREVIEW_PORT,
   TIMEOUTS,
   playwrightCiSettings,
+  playwrightRunMetadata,
   previewPortFromEnv,
   previewWebServer,
 } from "./playwright-base";
@@ -18,6 +19,7 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
   if (preset === "electron") {
     const isCi = !!process.env.CI;
     return defineConfig({
+      metadata: playwrightRunMetadata(),
       testDir: "./tests/electron",
       testMatch: "**/*.spec.ts",
       ...(process.env.PLAYWRIGHT_ELECTRON_FULL === "1" ? {} : { grep: /@local-electron-smoke/ }),
@@ -99,6 +101,7 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
   // four workers per shard caused missed animation frames and action deadlines.
   const ciWorkers = isCi ? 2 : isNightly ? Math.min(6, Math.max(4, os.cpus().length)) : defaultWorkers;
   return defineConfig({
+    metadata: playwrightRunMetadata(),
     testDir: "./tests/e2e/specs",
     testMatch: "**/*.spec.ts",
     fullyParallel: true,

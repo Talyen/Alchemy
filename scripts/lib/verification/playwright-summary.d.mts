@@ -1,3 +1,18 @@
+export interface PlaywrightTimings {
+  wallMs: number | null;
+  testMs: number;
+  retryMs: number;
+  setupMs: number | null;
+  runId: string | null;
+  commit: string | null;
+  workflowRun: string | null;
+  attempt: string | null;
+  job: string | null;
+  shard: { current: number; total: number } | null;
+}
+export function summarizePlaywrightTimings(report: unknown): PlaywrightTimings;
+export function formatPlaywrightShardTimings(reports: unknown[]): string;
+
 export interface PlaywrightFailure {
   file: string;
   line: number;
@@ -16,6 +31,7 @@ export interface PlaywrightSummary {
   flaky: number;
   skipped: number;
   failures: PlaywrightFailure[];
+  timings: PlaywrightTimings;
 }
 
 export function collectPlaywrightTests(report: unknown): {

@@ -3,6 +3,8 @@ import { formatVitestSummaryMarkdown, summarizeVitestReport } from "../../script
 import { parseSummaryArgs } from "../../scripts/ci-summarize.mjs";
 import {
   collectPlaywrightTests,
+  formatPlaywrightShardTimings,
+  summarizePlaywrightTimings,
   formatPlaywrightSummaryMarkdown,
   summarizePlaywrightReport,
 } from "../../scripts/lib/verification/playwright-summary.mjs";
@@ -528,5 +530,75 @@ describe("Playwright failure diagnostics", () => {
     expect(second.identity.id).toBe(diagnostic.identity.id);
     expect(secondResult.digestPath).not.toBe(result.digestPath);
     expect(fs.existsSync(result.digestPath)).toBe(true);
+  });
+});
+
+describe("Playwright efficiency reporting", () => {
+  const shardReport = (current: number, duration: number) => ({
+    config: {
+      metadata: {
+        commit: "same-commit",
+        workflowRun: "42",
+        attempt: "1",
+        job: "nightly-web",
+        runId: `run-${current}`,
+        setupStartedAt: "2026-10-10T12:00:00Z",
+      },
+      shard: { current, total: 2 },
+    },
+    stats: { startTime: "2026-10-10T12:00:20Z", duration },
+    suites: [
+      {
+        specs: [
+          {
+            title: "recovers",
+            tests: [
+              {
+                status: "flaky",
+                results: [
+                  { duration: 4000, retry: 0 },
+                  { duration: 1000, retry: 1 },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+
+  it("keeps elapsed, parallel execution, retry and pre-run setup costs distinct", () => {
+    const report = shardReport(1, 3000);
+    expect(summarizePlaywrightTimings(report)).toMatchObject({
+      wallMs: 3000,
+      testMs: 5000,
+      retryMs: 1000,
+      setupMs: 20000,
+      runId: "run-1",
+      commit: "same-commit",
+      shard: { current: 1, total: 2 },
+    });
+    const markdown = formatPlaywrightSummaryMarkdown(summarizePlaywrightReport(report));
+    expect(markdown).toContain("Playwright wall time: 3.00s");
+    expect(markdown).toContain("Summed test execution (including retries): 5.00s");
+    expect(markdown).toContain("Retry execution: 1.00s");
+    expect(markdown).toContain("Pre-Playwright setup: 20.00s");
+    expect(summarizePlaywrightTimings({ suites: [] })).toMatchObject({ wallMs: null, setupMs: null, testMs: 0 });
+    expect(formatPlaywrightShardTimings([report, shardReport(2, 6000)])).toContain(
+      "wall-time spread (slowest minus fastest): 3.00s",
+    );
+  });
+
+  it("refuses missing, duplicate or unrelated shards instead of producing misleading comparisons", () => {
+    const first = shardReport(1, 3000);
+    const second = shardReport(2, 6000);
+    expect(() => formatPlaywrightShardTimings([first])).toThrow("every shard exactly once");
+    expect(() => formatPlaywrightShardTimings([first, first])).toThrow("every shard exactly once");
+    for (const key of ["commit", "workflowRun", "attempt", "job"] as const) {
+      const unrelated = structuredClone(second);
+      unrelated.config.metadata[key] = "unrelated";
+      expect(() => formatPlaywrightShardTimings([first, unrelated])).toThrow("same commit");
+    }
+    expect(() => formatPlaywrightShardTimings([{}, {}])).toThrow("same commit");
   });
 });

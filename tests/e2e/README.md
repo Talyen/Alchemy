@@ -134,6 +134,11 @@ CI traces the first retry rather than every passing browser journey. CI retains 
 runs, including tests that pass on retry. A retry remains permitted; flakes do
 not create an additional gate.
 
+Critical Chromium coverage runs in one CI job with two workers, avoiding repeated
+dependency/browser setup and artifact downloads. Nightly keeps its four shards
+until three successful hosted comparisons establish that consolidation lowers
+combined runner time without extending CI completion or adding retries.
+
 All retained save specs are critical and run once in the every-push/pull-request browser gate. Local `test:ship:e2e` remains an explicit opt-in; release and nightly include the complete retained suite.
 
 ## Controller-equivalent input
@@ -164,3 +169,30 @@ native focus and save recovery. `@interaction-nightly` excludes deeper variants
 from the push desktop tier; nightly sets `ALCHEMY_INTERACTION_TIER=nightly`.
 Existing Chromium journeys remain for distinct renderer evidence; WebKit is not
 required for the Electron-only release target.
+
+## Efficiency evidence
+
+CI JSON reports retain commit/run identity, Playwright wall time, summed test
+execution including retries, retry execution, and pre-Playwright setup time.
+Setup starts at the job's first explicit step; it excludes runner provisioning,
+queueing and teardown. Summed test execution can exceed elapsed wall time because
+workers run concurrently. Compare total job/runner time through Actions as well
+as these report metrics before claiming a speedup.
+
+For downloaded nightly/release shards, compare every shard from the same commit,
+workflow run, attempt and job with
+`npm run ci:summarize -- --playwright-shards <report-1.json> <report-2.json> ...`.
+The comparison rejects incomplete, duplicate or mixed-run inputs and reports the
+slowest-minus-fastest wall-time spread. Older JSON reports still summarize, but
+lack setup timing and cannot establish a shard comparison without identity.
+
+Save injection returns whether Electron already reloaded the checkpoint; composed
+helpers navigate only for browser injection. Desktop writes remain doubled to
+protect against a rewards autosave racing injection; each bridge write awaits disk
+acknowledgment. Fresh-page resume checks still use an unseeded page.
+
+Outcome canaries start from a live boss battle checkpoint and win through actual
+card controls. The draft and run-setup journeys retain their separate entry
+coverage. Wildwood phase/RNG rules, save/resume, Labyrinth exploration and hover
+geometry, native activation, and Armory equip/unequip and rejection behavior have
+focused protection in the corresponding unit, DOM and browser suites.

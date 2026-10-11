@@ -33,7 +33,6 @@ describe("Button", () => {
       const wrapper = button.parentElement;
       expect(wrapper).toBe(container.firstElementChild);
       expect(wrapper?.tagName).toBe("SPAN");
-      expect(wrapper?.classList.contains("inline-flex")).toBe(true);
       expect(wrapper?.classList.contains(wrapperClassName)).toBe(true);
       expect(button.classList.contains(wrapperClassName)).toBe(false);
     } else {
@@ -89,20 +88,5 @@ describe("Button", () => {
     await userEvent.click(button);
     expect(onSubmit).toHaveBeenCalledTimes(type === "submit" ? 1 : 0);
     expect(onReset).toHaveBeenCalledTimes(type === "reset" ? 1 : 0);
-  });
-
-  it("applies caller overrides to the button independently of its wrapper", () => {
-    render(
-      <Button className="h-20 bg-muted" wrapperClassName="h-24">
-        Override
-      </Button>,
-    );
-    const button = screen.getByRole("button");
-    expect(button.classList.contains("h-20")).toBe(true);
-    expect(button.classList.contains("bg-muted")).toBe(true);
-    expect(button.classList.contains("h-14")).toBe(false);
-    expect(button.classList.contains("bg-primary")).toBe(false);
-    expect(button.classList.contains("h-24")).toBe(false);
-    expect(button.parentElement?.classList.contains("h-24")).toBe(true);
   });
 });

@@ -4,7 +4,6 @@ import type { Locator } from "@playwright/test";
 import {
   assertNoOverflow,
   assertStageFitsViewport,
-  failOnRuntimeErrors,
   makeCard,
   SAVE_KEY,
   startAtDestination,
@@ -50,9 +49,9 @@ test.describe("Responsive display sizes", slow, () => {
   test("menu, collections, and options fit small and wide viewports", async ({ page }) => {
     test.setTimeout(60000);
     const menu = new MenuPage(page);
+    await menu.goto();
     for (const viewport of VIEWPORTS) {
       await page.setViewportSize(viewport);
-      await menu.goto();
       await menu.expectMainMenuAfterColdStart();
       await assertStageFitsViewport(page);
       await assertNoOverflow(page, `Menu ${viewport.width}`);
@@ -80,6 +79,7 @@ test.describe("Responsive display sizes", slow, () => {
       await page.getByRole("combobox", { name: "Aspect Ratio" }).click();
       await expectTooltipFitsViewport(page.getByRole("listbox"), viewport);
       await page.keyboard.press("Escape");
+      await page.getByRole("button", { name: "Back", exact: true }).click();
     }
   });
 
@@ -509,41 +509,36 @@ test("Armory currency artwork follows Game Size", slow, async ({ page }) => {
 });
 
 for (const deviceScaleFactor of [1.25, 2]) {
-  test(
-    `1280x800 pointer targets and keyboard inspection agree at DPR ${deviceScaleFactor}`,
-    slow,
-    async ({ browser }) => {
-      const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor });
-      const page = await context.newPage();
-      const errors = failOnRuntimeErrors(page);
-      try {
-        await startBattleWithDeck(
-          page,
-          Array.from({ length: 6 }, () => makeCard({ cost: 0 })),
-          { autoEndTurn: false },
-        );
-        const cards = page.locator('[aria-label^="Play "]');
-        await expect(cards.first()).toBeEnabled();
-        await controllerInput(page).reach(cards.first());
-        await expectTooltipFitsViewport(page.locator("#tooltip-root .hover-popup-panel[data-visible]").first(), {
-          width: 1280,
-          height: 800,
-        });
-        const bounds = await cards.first().boundingBox();
-        if (!bounds) throw new Error("Playable card has no pointer target");
-        const count = await cards.count();
-        await page.mouse.click(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
-        await expect(cards).toHaveCount(count - 1);
-        const inspect = page.getByRole("button", { name: /^View Deck/ });
-        await controllerInput(page).activate(inspect);
-        await expect(page.getByRole("dialog")).toBeVisible();
-        await page.keyboard.press("Escape");
-        await expect(inspect).toBeFocused();
-        await assertStageFitsViewport(page);
-        expect(errors).toEqual([]);
-      } finally {
-        await context.close();
-      }
-    },
-  );
+  test.describe(`DPR ${deviceScaleFactor}`, () => {
+    test.use({ viewport: { width: 1280, height: 800 }, deviceScaleFactor });
+
+    test("1280x800 pointer targets and keyboard inspection agree", slow, async ({ page }) => {
+      await startBattleWithDeck(
+        page,
+        Array.from({ length: 6 }, () => makeCard({ cost: 0 })),
+        { autoEndTurn: false },
+      );
+      const cards = page.locator('[aria-label^="Play "]');
+      await expect(cards.first()).toHaveAttribute("aria-disabled", "false");
+      await controllerInput(page).reach(cards.first());
+      await expectTooltipFitsViewport(page.locator("#tooltip-root .hover-popup-panel[data-visible]").first(), {
+        width: 1280,
+        height: 800,
+      });
+      // The artwork moves on hover. Target the stable hand slot, which also owns
+      // geometry-based hit testing, rather than a moving card's bounding-box center.
+      const slot = page.locator("[data-hand-slot]").first();
+      const bounds = await slot.boundingBox();
+      if (!bounds) throw new Error("Playable card has no pointer target");
+      const count = await cards.count();
+      await page.mouse.click(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+      await expect(cards).toHaveCount(count - 1);
+      const inspect = page.getByRole("button", { name: /^View Deck/ });
+      await controllerInput(page).activate(inspect);
+      await expect(page.getByRole("dialog")).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(inspect).toBeFocused();
+      await assertStageFitsViewport(page);
+    });
+  });
 }

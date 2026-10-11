@@ -129,7 +129,7 @@ Hook tests pass changing inputs through `renderHook(callback, { initialProps })`
 
 ## E2E policy
 
-Fixture, bootstrap, page-object, tag, and diagnostic instructions live in [tests/e2e/README.md](./tests/e2e/README.md). Every pull request and push to `main` runs the `@critical` suite once, including all retained save specs. There is no separate save browser job. Nightly and release workflows own the full browser suite; nightly also owns coverage, mutation, deep entry-export analysis, and full Electron coverage.
+Fixture, bootstrap, page-object, tag, and diagnostic instructions live in [tests/e2e/README.md](./tests/e2e/README.md). Every pull request and push to `main` runs the `@critical` suite once, including all retained save specs. There is no separate save browser job. Critical browser coverage uses one job with two workers; nightly and release retain their full-suite shard counts until hosted efficiency comparisons qualify further consolidation. Nightly and release workflows own the full browser suite; nightly also owns coverage, mutation, deep entry-export analysis, and full Electron coverage.
 
 ## Hooks and workflow hygiene
 

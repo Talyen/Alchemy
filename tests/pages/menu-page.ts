@@ -25,8 +25,8 @@ export class MenuPage {
   }
 
   async gotoWithUnlockedMeta(overrides: Parameters<typeof injectHomestead>[1] = {}) {
-    await injectHomestead(this.page, overrides);
-    await this.goto();
+    const loaded = await injectHomestead(this.page, overrides);
+    if (!loaded) await this.goto();
   }
 
   async gotoCollection(overrides: Parameters<typeof injectHomestead>[1] = {}) {

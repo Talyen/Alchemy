@@ -243,13 +243,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      ALCHEMY_RUN_VARIANT: shard-${{ matrix.shard }}
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2, 3]
     steps:
+      - name: Record test job setup start
+        run: echo "ALCHEMY_CI_SETUP_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           sparse-checkout: |
@@ -270,24 +267,24 @@ jobs:
 
       - run: mkdir -p reports
 
-      - name: Run critical e2e tests (shard ${{ matrix.shard }}/3)
-        run: npm run test:e2e:critical -- --shard=${{ matrix.shard }}/3
+      - name: Run critical e2e tests
+        run: npm run test:e2e:critical
         env:
           PLAYWRIGHT_VITE_MODE: preview
           CI: true
-          PLAYWRIGHT_JSON_OUTPUT_NAME: reports/playwright-results-${{ matrix.shard }}.json
+          PLAYWRIGHT_JSON_OUTPUT_NAME: reports/playwright-results.json
 
       - name: Summarize e2e tests
         id: playwright-summary
         if: always()
-        run: node scripts/ci-summarize.mjs --playwright reports/playwright-results-${{ matrix.shard }}.json
+        run: node scripts/ci-summarize.mjs --playwright reports/playwright-results.json
 
       - name: Upload Playwright results
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: playwright-report-critical-${{ matrix.shard }}-results
-          path: reports/playwright-results-${{ matrix.shard }}.json
+          name: playwright-report-critical-results
+          path: reports/playwright-results.json
           retention-days: 1
           if-no-files-found: ignore
 
@@ -295,11 +292,11 @@ jobs:
         if: failure() || steps.playwright-summary.outputs.retain-diagnostics == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: playwright-report-critical-${{ matrix.shard }}
+          name: playwright-report-critical
           path: |
             playwright-report/
             test-results/
-            reports/playwright-results-${{ matrix.shard }}.json
+            reports/playwright-results.json
             reports/current-run.*
             reports/runs/
           retention-days: 1
@@ -438,6 +435,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
+      - name: Record test job setup start
+        run: echo "ALCHEMY_CI_SETUP_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           sparse-checkout: |

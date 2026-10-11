@@ -21,7 +21,7 @@ export async function startAtDestination(
   overrides: Record<string, unknown> = {},
   options: { forceDestination?: DestinationName } = {},
 ) {
-  await injectSaveState(page, {
+  const loaded = await injectSaveState(page, {
     runGold: 50,
     runPlayerHealth: 30,
     runMaxHealth: 30,
@@ -38,7 +38,7 @@ export async function startAtDestination(
         }
       : {}),
   });
-  await navigateToGame(page);
+  if (!loaded) await navigateToGame(page);
   if (options.forceDestination) {
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 8000 });
     await expect(
@@ -51,7 +51,7 @@ export async function startAtDestination(
 }
 
 export async function startBattleWithDeck(page: Page, deck: BattleCard[], overrides: Record<string, unknown> = {}) {
-  await injectSaveState(page, {
+  const loaded = await injectSaveState(page, {
     runDeck: deck,
     runPlayerHealth: 30,
     runMaxHealth: 30,
@@ -63,7 +63,7 @@ export async function startBattleWithDeck(page: Page, deck: BattleCard[], overri
     }),
     ...overrides,
   });
-  await navigateToGame(page);
+  if (!loaded) await navigateToGame(page);
   const destination = new DestinationPage(page);
   await destination.expectVisible();
   await destination.enterCombat("Combat");
