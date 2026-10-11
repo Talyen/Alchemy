@@ -1,4 +1,4 @@
-export const AUTO_END_TURN_DELAY_MS = 1220;
+export const AUTO_END_TURN_DELAY_MS = 500;
 export const AUTOPLAY_RETRY_DELAY_MS = 50;
 export const AUTOPLAY_PREVIEW_MS = 200;
 export const AUTOPLAY_POST_PLAY_DELAY_MS = 850;
