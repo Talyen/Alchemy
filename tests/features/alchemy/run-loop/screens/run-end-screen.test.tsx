@@ -26,6 +26,7 @@ function renderRunEnd({
   runEndCurrencies = emptyCurrencies,
   runEndItems = [],
   runRecap = null,
+  outcome = "defeat",
 }: {
   runEndTalentXP?: Record<string, number>;
   talentXP?: Record<string, number>;
@@ -33,13 +34,14 @@ function renderRunEnd({
   runEndCurrencies?: Record<CraftingCurrencyId, number>;
   runEndItems?: RunObtainedItem[];
   runRecap?: RunRecap | null;
+  outcome?: "victory" | "defeat";
 } = {}) {
   return render(
     <RunEndScreen
       runRecap={runRecap}
       title="Journey’s End"
       subtitle=""
-      outcome="defeat"
+      outcome={outcome}
       characterId="knight"
       runEndTalentXP={runEndTalentXP}
       talentXP={talentXP}
@@ -82,12 +84,56 @@ describe("RunEndScreen", () => {
     expect(burnLv).toBeTruthy();
   });
 
+  it.each(["defeat", "victory"] as const)(
+    "caps %s rewards and toggles all keywords in run-XP order",
+    async (outcome) => {
+      const user = userEvent.setup();
+      const keywords = getTalentTreeKeywordIds().slice(0, 12);
+      const earned = keywords.map((kw, index) => [kw, index < 2 ? 20 : index + 1] as const);
+      const xp = Object.fromEntries(earned);
+      const expected = [0, 1, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2].map((index) => keywords[index]!);
+      renderRunEnd({
+        outcome,
+        runEndTalentXP: xp,
+        talentXP: Object.fromEntries(keywords.map((kw, index) => [kw, 1000 - index * 10])),
+      });
+
+      const toggle = screen.getByRole("button", { name: "Show all Talent XP" });
+      const controlled = document.getElementById(toggle.getAttribute("aria-controls")!)!;
+      const labels = () => Array.from(controlled.querySelector(".grid")!.children).map((card) => card.textContent);
+      const expectedLabels = (count: number) =>
+        expected.slice(0, count).map((kw) => expect.stringContaining(keywordDefinitions[kw]!.label));
+      expect(toggle.getAttribute("aria-expanded")).toBe("false");
+      expect(toggle.textContent).toBe("");
+      expect(labels()).toEqual(expectedLabels(10));
+
+      await user.click(toggle);
+      expect(screen.getByRole("button", { name: "Show fewer Talent XP" })).toBe(toggle);
+      expect(toggle.getAttribute("aria-expanded")).toBe("true");
+      expect(document.activeElement).toBe(toggle);
+      expect(labels()).toEqual(expectedLabels(12));
+
+      await user.keyboard("{Enter}");
+      expect(toggle.getAttribute("aria-expanded")).toBe("false");
+      expect(labels()).toEqual(expectedLabels(10));
+      expect(document.activeElement).toBe(toggle);
+    },
+  );
+
+  it.each([0, 10])("omits expansion for %i eligible keywords", (count) => {
+    const keywords = getTalentTreeKeywordIds().slice(0, count);
+    const xp = Object.fromEntries(keywords.map((kw) => [kw, 1]));
+    renderRunEnd({ runEndTalentXP: { ...xp, exhaust: 100 }, talentXP: xp });
+    expect(screen.queryByRole("button", { name: "Show all Talent XP" })).toBeNull();
+    expect(screen.queryAllByRole("progressbar")).toHaveLength(count);
+  });
+
   it.each([
     [1, [1]],
     [3, [3]],
     [6, [3, 3]],
     [7, [4, 3]],
-    [11, [4, 4, 3]],
+    [10, [5, 5]],
   ] as const)("balances %i talent XP cards into centered rows", (count, expectedRows) => {
     const keywords = getTalentTreeKeywordIds().slice(0, count);
     const runEndTalentXP = Object.fromEntries(keywords.map((kw) => [kw, 1]));

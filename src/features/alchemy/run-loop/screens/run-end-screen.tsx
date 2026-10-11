@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   bodyTextClass,
@@ -20,6 +21,8 @@ import { RunEndObtainedItems } from "./run-end-obtained-items";
 
 import { BattleBoonInspectButton, BattleBoonInspectOverlay } from "./battle-screen/boon-inspect";
 import { hasInspectableBoons } from "./battle-screen/unique-run-boons";
+
+const COLLAPSED_TALENT_COUNT = 10;
 
 export function RunEndScreen({
   runRecap,
@@ -49,6 +52,8 @@ export function RunEndScreen({
   continueLabel?: "Main Menu" | "Continue";
 }) {
   const [boonsOpen, setBoonsOpen] = useState(false);
+  const [talentsExpanded, setTalentsExpanded] = useState(false);
+  const talentGridId = useId();
   const plasmaColorPair =
     outcome === "defeat" ? DEATHS_DOOR_PLASMA_PAIR : getPlasmaColorPair(getPlasmaKeywordsForCharacter(characterId));
   usePlasmaBaseline(plasmaColorPair);
@@ -57,6 +62,7 @@ export function RunEndScreen({
     () =>
       (Object.keys(runEndTalentXP) as KeywordId[])
         .filter((kw) => visibleKeywords.has(kw) && (runEndTalentXP[kw] ?? 0) > 0)
+        .sort((a, b) => (runEndTalentXP[b] ?? 0) - (runEndTalentXP[a] ?? 0))
         .map((kw) => ({ kw, totalXP: talentXP[kw] ?? 0 })),
     [runEndTalentXP, talentXP, visibleKeywords],
   );
@@ -78,7 +84,33 @@ export function RunEndScreen({
       <div className="mt-6 flex flex-col items-center gap-8 text-center">
         {subtitle ? <p className={cn(bodyTextClass, "text-xl")}>{subtitle}</p> : null}
 
-        {entries.length > 0 ? <KeywordProgressGrid entries={entries} size="lg" /> : null}
+        {entries.length > 0 ? (
+          <div className="flex w-full flex-col items-center gap-2">
+            <div id={talentGridId} className="w-full">
+              <KeywordProgressGrid
+                entries={talentsExpanded ? entries : entries.slice(0, COLLAPSED_TALENT_COUNT)}
+                size="lg"
+              />
+            </div>
+            {entries.length > COLLAPSED_TALENT_COUNT ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-pale"
+                aria-label={talentsExpanded ? "Show fewer Talent XP" : "Show all Talent XP"}
+                aria-expanded={talentsExpanded}
+                aria-controls={talentGridId}
+                onClick={() => setTalentsExpanded((expanded) => !expanded)}
+              >
+                {talentsExpanded ? (
+                  <ChevronUp className="h-5 w-5" aria-hidden="true" />
+                ) : (
+                  <ChevronDown className="h-5 w-5" aria-hidden="true" />
+                )}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
         <RunEndObtainedItems items={runEndItems} />
         <FoundResourcesRow gold={runRecap?.gold ?? 0} materials={runEndMaterials} size="lg" />
         {earnedCurrencies.length > 0 ? (
