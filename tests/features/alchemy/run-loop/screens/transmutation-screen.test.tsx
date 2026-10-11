@@ -77,9 +77,29 @@ beforeEach(() => {
   setRunSession({ hasActiveRun: true, activity: { kind: "destination" } });
   initializeAlchemyVisit("transmutation", defaultGameSession);
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
+});
 
 describe("Transmutation flow", () => {
+  it("keeps keyboard focus on the current step when a source or keyword replaces the focused control", () => {
+    vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue([{}] as unknown as DOMRectList);
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, value: vi.fn() });
+    render(<Harness />);
+    const source = screen.getByRole("button", { name: "Slash" });
+    source.focus();
+    fireEvent.keyDown(source, { key: "Enter" });
+    fireEvent.click(source, { detail: 0 });
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Choose Mana" }));
+    const keyword = screen.getByRole("button", { name: "Choose Burn" });
+    keyword.focus();
+    fireEvent.keyDown(keyword, { key: "Enter" });
+    fireEvent.click(keyword, { detail: 0 });
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Inspect Burn keyword" }));
+  });
+
   it("shows only keyword chips after choosing a source and commits only through Continue", () => {
     const before = readActiveRun(defaultGameSession).runDeck;
     render(<Harness />);

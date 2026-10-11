@@ -1,5 +1,6 @@
 import fs from "node:fs";
-import { spawnSync } from "node:child_process";
+import { runStreamCommand } from "./lib/run-command.mjs";
+import { REPO_ROOT } from "./lib/repository-paths.mjs";
 const families = ["battle", "navigation", "visits", "armory", "overlays", "persistence", "startup"];
 const env = { ...process.env };
 const args = process.argv.slice(2);
@@ -35,7 +36,7 @@ try {
       env.ALCHEMY_INTERACTION_DAY = value;
     else throw new Error(`Unknown option or invalid value: ${flag} ${value}`);
   }
-  const result = spawnSync(
+  const result = runStreamCommand(
     process.execPath,
     [
       "scripts/run-compact.mjs",
@@ -46,7 +47,7 @@ try {
         : "tests/interaction",
       "--maxWorkers=1",
     ],
-    { env, stdio: "inherit" },
+    { cwd: REPO_ROOT, env },
   );
   if (result.error) throw result.error;
   process.exitCode = result.status ?? 1;

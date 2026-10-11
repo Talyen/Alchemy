@@ -62,7 +62,7 @@ describe("DescriptionLines", () => {
     ["stoneskin-potion", ["5"]],
     ["acid-potion", ["3"]],
     ["luck-potion", ["5"]],
-    ["wishing-potion", ["2"]],
+    ["wishing-potion", ["3"]],
     ["panacea-potion", ["1"]],
   ] as const)("highlights only distilled values in %s after save hydration", (id, values) => {
     const distilled = strengthenPotion(cardById[id]!)!;

@@ -33,11 +33,13 @@ and [hero tooltip](../src/features/alchemy/shared/ui/tooltips/hero-tooltip.tsx).
 
 ## Other newly added player-facing notices
 
-| Location                                                      | Exact current copy                                                                                               |
-| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Full-game startup after successful demo progress import       | `Your earned demo progress has been imported. Start a new adventure in the full game.`                           |
-| Import notice action                                          | `Dismiss`                                                                                                        |
-| Failed local primary and recovery save writes, either edition | `Progress could not be saved. Keep the game open while saving retries; recent progress may be lost if you quit.` |
+| Location                                                      | Exact current copy                                                                     |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Full-game startup after successful demo progress import       | `Your earned demo progress has been imported. Start a new adventure in the full game.` |
+| Import notice action                                          | `Dismiss`                                                                              |
+| Pending local save, either edition                            | `Saving…`                                                                              |
+| Failed local primary and recovery save writes, either edition | `Couldn’t save`                                                                        |
+| Failed-save action                                            | `Retry`                                                                                |
 
 Sources: [import notice](../src/App.tsx) and
 [save-write notice](../src/app/save-write-notice.tsx).

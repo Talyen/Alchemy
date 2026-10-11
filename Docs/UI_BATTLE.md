@@ -135,7 +135,7 @@ use the shared inspection gate. Opening is restricted to the same safe decision
 window as deck inspection. Modal dismissal and focus return follow the shared
 overlay lifecycle.
 
-Bestiary clicks retain the enemy sound and Boss music preview. Opening, closing,
+Bestiary clicks retain the Boss music preview without an enemy sound effect. Opening, closing,
 and reopening the modal do not restart or stop preview music; existing page/tab
 changes still restore menu music. Undiscovered entries retain their current
 concealment and audio behavior and cannot open inspection.

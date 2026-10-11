@@ -5,7 +5,8 @@ import { applyHitEpilogue, applyIronGuardReward } from "./player-rewards";
 import { mergeCombatText } from "./combat-text-events";
 import type { BattleState, CombatTextEvent } from "./types";
 import { damageEnemyHealth } from "./health-state";
-import { decayArmorAfterDamage, getEnemyDamageMultiplier } from "./status-helpers";
+import { decayArmorAfterDamage, getEnemyDamageMultiplier, getEnemyDamageVulnerabilityBonus } from "./status-helpers";
+import { applySunderingArmorRemoval } from "./enemy-mitigation-state";
 import { paceCombatDamage } from "./fight-pacing";
 import { applyElementalDamageManaRestore } from "./player-hit-core";
 
@@ -31,7 +32,7 @@ export function dealEnemyScaledDamage(
   options: DealEnemyScaledDamageOptions = {},
 ): BattleState {
   if (baseDamage <= 0 || state.enemyHealth <= 0) return state;
-  const pacedDamage = paceCombatDamage(state, baseDamage, "player");
+  const pacedDamage = paceCombatDamage(state, baseDamage + getEnemyDamageVulnerabilityBonus(state), "player");
   const damage = Math.max(0, Math.round(pacedDamage * (options.multiplier ?? 1)));
   const absorbed = Math.min(damage, state.enemyMitigation.block);
   if (absorbed > 0) {
@@ -41,13 +42,14 @@ export function dealEnemyScaledDamage(
     absorbed > 0
       ? { ...state, enemyMitigation: { ...state.enemyMitigation, block: state.enemyMitigation.block - absorbed } }
       : state;
-  const armor = stat === "physical" ? blocked.enemyMitigation.armor : 0;
+  const sundered = applySunderingArmorRemoval(blocked, stat);
+  const armor = stat === "physical" ? sundered.enemyMitigation.armor : 0;
   const finalDamage = Math.max(0, damage - absorbed - armor);
-  if (finalDamage <= 0) return blocked;
+  if (finalDamage <= 0) return sundered;
   if (finalDamage > 0) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat, amount: finalDamage });
   }
-  const hit = damageEnemyHealth(blocked, finalDamage);
+  const hit = damageEnemyHealth(sundered, finalDamage);
   const rewarded = decayArmorAfterDamage(
     applyIronGuardReward(hit.state, stat, hit.healthDamage, combatTexts),
     finalDamage,
@@ -67,6 +69,7 @@ export function applyGearCcPhysicalDamage(
   const enemyWasAlive = state.enemyHealth > 0;
   return dealEnemyScaledDamage(state, gearDamage, "physical", combatTexts, {
     multiplier: getEnemyDamageMultiplier(state, "physical") * gearFrozenDamageMultiplier(state),
-    riders: (nextState, _finalDamage, texts) => applyHitEpilogue(nextState, state.enemyHealth, enemyWasAlive, texts),
+    riders: (nextState, _finalDamage, texts) =>
+      applyHitEpilogue(nextState, state.enemyHealth, enemyWasAlive, texts, undefined, state.playerStatuses.forge >= 5),
   });
 }

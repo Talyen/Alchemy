@@ -88,8 +88,11 @@ result atomically before discard or enemy animation.
 
 Playback consumes detached `BattleTurnFrame` values and updates only
 `battle-presentation-store.displayedBattle`; cancellation or failed animation
-cannot roll back or advance gameplay. Create detached frames from
-`current(draft.battle.battleState)` so no revoked Immer proxy can escape the command.
+cannot roll back or advance gameplay. Inside store-owned battle commands, narrow
+`draft.session.activity.kind` to `"battle"` and pass
+`current(draft.session.activity.data.battleState)` to the resolver so no revoked
+Immer proxy can escape. Feature callers consume the detached command result
+through battle capabilities rather than accessing the raw draft.
 
 An active terminal battle remains serializable until its outcome settles. Current
 saves contain one committed battle snapshot in `activeRun.activity`. Versions

@@ -4,6 +4,8 @@ import { dealDamage, makeCombatTexts, makeEffect, makeTestCard } from "../../fix
 import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/follow-up-hit-resolution";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { cardById } from "@/lib/game-data";
+import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
+import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 
 describe("dealDamageToEnemy — lifesteal", () => {
   it.each([
@@ -36,6 +38,27 @@ describe("low-health Leech bonuses", () => {
 });
 
 describe("card Leech resolution", () => {
+  it("Fangs retains Clean Slate eligibility for its deferred Bleed Leech", () => {
+    const card = cardById.fangs!;
+    const state = patchBattleState({
+      hand: [card],
+      playerHealth: 39,
+      playerMaxHealth: 40,
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      playerStatuses: { poison: 4 },
+      talentEffects: { cleanseOnCardOverheal: true },
+      rng: () => 0.4,
+    });
+    const hit = playBattleCardResolved(state, card.id, 0).state;
+    expect(hit.playerHealth).toBe(40);
+    expect(hit.playerStatuses.poison).toBe(4);
+    expect(hit.pendingCardBleedLeechHealing).toBe(2);
+    expect(tickEnemyStatuses(hit, []).playerStatuses.poison).toBe(0);
+    expect(detonateEnemyStatuses(hit, ["bleed"], []).playerStatuses.poison).toBe(0);
+    expect(tickEnemyStatuses({ ...hit, pendingCardBleedLeechHealing: 0 }, []).playerStatuses.poison).toBe(4);
+  });
+
   it.each([
     { enemyHealth: 1, restoredHealth: 1 },
     { enemyHealth: 10, restoredHealth: 2 },

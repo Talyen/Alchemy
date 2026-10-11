@@ -1,16 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { checkBundleBudget } from "../../scripts/check-bundle-budget.mjs";
 import { BUDGETS, CHUNK_SIZE_WARNING_KB } from "../../scripts/lib/verification/bundle-budget.mjs";
 
 const tempDirs: string[] = [];
 
 function createAssetDirectory(assets: Record<string, number>): string {
-  const directory = mkdtempSync(join(tmpdir(), "alchemy-bundle-budget-"));
+  const directory = realpathSync(mkdtempSync(join(tmpdir(), "alchemy-bundle-budget-")));
   tempDirs.push(directory);
   for (const [name, bytes] of Object.entries(assets)) {
+    mkdirSync(dirname(join(directory, name)), { recursive: true });
     writeFileSync(join(directory, name), Buffer.alloc(bytes));
   }
   return directory;
@@ -28,6 +30,16 @@ describe("bundle budget sync", () => {
     expect(checkBundleBudget(join(empty, "missing"))).toBe(false);
     expect(checkBundleBudget(empty)).toBe(false);
     expect(checkBundleBudget(createAssetDirectory({ "styles.css": 100 }))).toBe(false);
+  });
+
+  it.each(["empty script", "directory"])("rejects an unusable entry (%s)", (entry) => {
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const directory = createAssetDirectory({ "vendor-a.js": 100 });
+    const index = join(directory, "index-AbC_1.js");
+    if (entry === "directory") mkdirSync(index);
+    else writeFileSync(index, "");
+    expect(checkBundleBudget(directory)).toBe(false);
   });
 
   it("excludes sourcemaps from the JavaScript budget", () => {
@@ -69,20 +81,12 @@ describe("bundle budget sync", () => {
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining("index chunk not found"));
   });
 
-  it("accepts a large entry when the total remains within budget", () => {
-    vi.spyOn(console, "log").mockImplementation(() => undefined);
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
-    const directory = createAssetDirectory({ "index-AbC_1.js": CHUNK_SIZE_WARNING_KB * 1024 + 1 });
-
-    expect(checkBundleBudget(directory)).toBe(true);
-  });
-
-  it("fails when aggregate JavaScript exceeds its budget", () => {
+  it.each(["vendor-a.js", "chunks/vendor-a.js"])("includes %s in the aggregate JavaScript budget", (vendor) => {
     vi.spyOn(console, "log").mockImplementation(() => undefined);
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     const directory = createAssetDirectory({
       "index-AbC_1.js": 100,
-      "vendor-a.js": BUDGETS.totalJsMaxBytes,
+      [vendor]: BUDGETS.totalJsMaxBytes,
     });
 
     expect(checkBundleBudget(directory)).toBe(false);
@@ -100,10 +104,33 @@ describe("bundle budget sync", () => {
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("WARN"));
   });
 
-  it("evaluates multiple asset directories when passed as an array", () => {
-    vi.spyOn(console, "log").mockImplementation(() => undefined);
-    const dirA = createAssetDirectory({ "index-AbC_1.js": 100 });
-    const dirB = createAssetDirectory({ "index-XyZ_2.js": 200 });
-    expect(checkBundleBudget([dirA, dirB])).toBe(true);
+  it.each(["full", "demo"])("checks the %s edition from outside the checkout", (edition) => {
+    const root = createAssetDirectory({});
+    const repo = new URL("../../", import.meta.url);
+    for (const file of [
+      "scripts/check-bundle-budget.mjs",
+      "scripts/lib/verification/bundle-budget.mjs",
+      "scripts/lib/release/game-edition.mjs",
+      "scripts/lib/repository-paths.mjs",
+      "scripts/lib/is-main-module.mjs",
+      "game-edition.mjs",
+    ]) {
+      const target = join(root, file);
+      mkdirSync(dirname(target), { recursive: true });
+      cpSync(new URL(file, repo), target);
+    }
+    const assets = join(root, edition === "demo" ? "dist-demo" : "dist", "assets");
+    mkdirSync(assets, { recursive: true });
+    writeFileSync(join(assets, "index-AbC_1.js"), Buffer.alloc(100));
+    const caller = join(root, "caller");
+    mkdirSync(caller);
+    const result = spawnSync(process.execPath, [join(root, "scripts/check-bundle-budget.mjs")], {
+      cwd: caller,
+      encoding: "utf8",
+      env: { ...process.env, ALCHEMY_EDITION: edition },
+      timeout: 5_000,
+    });
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain(`[bundle-budget] pass ${assets}`);
   });
 });

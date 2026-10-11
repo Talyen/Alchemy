@@ -275,6 +275,8 @@ function applyWishBurnTrigger(
         state.enemyHealth,
         enemyWasAlive,
         texts,
+        undefined,
+        state.playerStatuses.forge >= 5,
       ),
   });
 }

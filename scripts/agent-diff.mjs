@@ -69,8 +69,12 @@ function exactUnstagedMoves(root, entries) {
 }
 
 /** Complete status is retained even when path selection or output limits hide patches. */
-export function reviewDiff(root = ROOT, { paths = [], full = false, statusOnly = false, budget = null } = {}) {
-  budget ??= statusOnly ? 4_000 : 12_000;
+export function reviewDiff(
+  root = ROOT,
+  { paths = [], full = false, statusOnly = false, summaryOnly = false, budget = null } = {},
+) {
+  if (statusOnly && summaryOnly) throw new Error("Choose --status or --summary");
+  budget ??= statusOnly || summaryOnly ? 4_000 : 12_000;
   const selected = paths.map((file) => toRepoRelative(root, file));
   const entries = inventory(root);
   const moves = full || statusOnly ? new Map() : exactUnstagedMoves(root, entries);
@@ -124,7 +128,20 @@ export function reviewDiff(root = ROOT, { paths = [], full = false, statusOnly =
     ({ status, file, from }) => `${status} ${JSON.stringify(file)}${from ? ` <- ${JSON.stringify(from)}` : ""}`,
   );
   const selectedHeading = statusOnly ? "Selected status:" : "Selected patches:";
-  const blocks = ["Complete working-tree inventory:", ...status, "", selectedHeading, ...patches];
+  const header = ["Complete working-tree inventory:", ...status, ""];
+  const hasIndex = !statusOnly && patches.length > 0;
+  let reportLine = header.length + (hasIndex ? patches.length + 2 : 0) + 2;
+  const locations = patches.map((patch) => {
+    const start = reportLine;
+    reportLine += patch.split("\n").length;
+    return `Report lines ${start}-${reportLine - 1}: ${patch.split("\n", 1)[0]}`;
+  });
+  const blocks = [
+    ...header,
+    ...(hasIndex ? ["Selected patch index:", ...locations, ""] : []),
+    selectedHeading,
+    ...patches,
+  ];
   fs.writeFileSync(report, blocks.join("\n") + "\n");
   const directories = new Map();
   for (const entry of entries) {
@@ -136,17 +153,32 @@ export function reviewDiff(root = ROOT, { paths = [], full = false, statusOnly =
   const summary = [...directories]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([directory, counts]) => `${directory}: ${counts.selected} selected, ${counts.other} other changed paths`);
-  const footer = `\nComplete inventory and ${statusOnly ? "selected status" : "selected patches"}: ${report}\n${statusOnly ? "Review: npm run review:diff -- <task-owned paths>" : "Expand: npm run review:diff -- --full <path> (or read the report)."}`;
+  const indexHint = hasIndex
+    ? `\nPatch index: report lines ${header.length + 2}-${header.length + 1 + patches.length}.`
+    : "";
+  const footer = `\nComplete inventory and ${statusOnly ? "selected status" : "selected patches"}: ${report}${indexHint}\n${statusOnly ? "Review: npm run review:diff -- <task-owned paths>" : "Read omitted patches at their report lines; --full <path> expands generated/media details."}`;
   const lines = [
     statusOnly && !selected.length
       ? `${entries.length} changed paths; grouped below. Name task-owned paths to show individual status.`
       : `${entries.length} changed paths; ${patches.length} selected ${statusOnly ? "status entries" : "patches/summaries"}.`,
   ];
   let omitted = 0;
-  for (const block of [selectedHeading, ...patches, "", "Working-tree summary:", ...summary]) {
+  const append = (block) => {
     if (Buffer.byteLength([...lines, block, footer].join("\n")) <= budget - 160) lines.push(block);
-    else omitted++;
+    else return false;
+    return true;
+  };
+  if (!append(summaryOnly ? "Selected patch index (bodies retained in report):" : selectedHeading)) omitted++;
+  for (const [index, patch] of patches.entries()) {
+    if (summaryOnly) {
+      if (!append(locations[index])) omitted++;
+      continue;
+    }
+    if (append(patch)) continue;
+    omitted++;
+    append(`${locations[index]} (omitted from terminal).`);
   }
+  for (const block of ["", "Working-tree summary:", ...summary]) if (!append(block)) omitted++;
   if (omitted)
     lines.push(`${omitted} blocks omitted from terminal output; read the report before treating review as complete.`);
   return { text: lines.join("\n") + footer, report };
@@ -156,17 +188,18 @@ export function main(argv = process.argv.slice(2), root = ROOT) {
   try {
     if (argv.includes("--help")) {
       console.log(
-        "Usage: npm run review:diff -- [--full] [--status] [paths...]\nStatus bounds task paths and retains complete inventory. Reports live in reports/agent-diff.",
+        "Usage: npm run review:diff -- [--full] [--status | --summary] [paths...]\n--summary prints patch locations without bodies; complete patches and inventory stay in reports/agent-diff.",
       );
       return 0;
     }
-    const options = { paths: [], full: false, statusOnly: false };
+    const options = { paths: [], full: false, statusOnly: false, summaryOnly: false };
     let positional = false;
     for (let index = 0; index < argv.length; index++) {
       const arg = argv[index];
       if (!positional && arg === "--") positional = true;
       else if (!positional && arg === "--full") options.full = true;
       else if (!positional && arg === "--status") options.statusOnly = true;
+      else if (!positional && arg === "--summary") options.summaryOnly = true;
       else if (!positional && arg.startsWith("--")) throw new Error("Unknown diff option");
       else options.paths.push(arg);
     }

@@ -1,3 +1,4 @@
+import { summarizeBrewing } from "./brewing-evidence";
 import { buildFindings } from "./agent-report-findings";
 import {
   buildBattles,
@@ -49,6 +50,33 @@ function buildCohortSummary(cohort: string, cohortResults: CareerResult[]): Agen
     deckCohesion,
     coverageGaps,
   );
+  const brewing = summarizeBrewing(careers);
+  if (
+    careers.length &&
+    (brewing.missingCareers > 0 ||
+      !brewing.services.some(
+        (service) => ["mix", "distill", "campfire-new", "campfire-mix"].includes(service.kind) && service.used > 0,
+      ))
+  ) {
+    findings.push({
+      id: "brewing-exposure",
+      cohort,
+      kind: "coverage-gap",
+      priority: "medium",
+      confidence: "high",
+      title: "Brewing progression is not represented in this cohort",
+      claim: "No completed brewing services were observed, or legacy careers lack brewing evidence.",
+      evidence: {
+        shopVisits: brewing.shopVisits,
+        campfireVisits: brewing.campfireVisits,
+        missingCareers: brewing.missingCareers,
+      },
+      interpretation:
+        "Disabled brewing, unavailable services, and declined opportunities are distinct from hero weakness; inspect service reasons.",
+      nextStep:
+        "Compare brewing on/off with matched starting saves and seeds, and inspect eligible/affordable visits before tuning cards.",
+    });
+  }
   const outcomes = Object.fromEntries(
     [...new Set(runs.map((run) => run.outcome))].map((outcome) => [
       outcome,
@@ -72,6 +100,7 @@ function buildCohortSummary(cohort: string, cohortResults: CareerResult[]): Agen
     firstVictoryRun: firstVictory.distribution,
     neverWon: firstVictory.neverWon,
     deckCohesion,
+    brewing,
     milestones,
     coverageGaps,
     findings,

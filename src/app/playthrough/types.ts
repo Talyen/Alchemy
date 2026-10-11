@@ -1,3 +1,4 @@
+import type { BrewingVisitEvidence } from "./brewing-evidence";
 import type { BattleAnomalies } from "@/lib/balance/anomalies";
 import type { BalancePlayPolicy } from "@/lib/balance/simulator-types";
 import type { CharacterId, DifficultyId, KeywordId } from "@/lib/game-data";
@@ -15,6 +16,8 @@ export interface CareerConfig {
   maxTurns: number;
   combatPolicy: BalancePlayPolicy;
   policy: "archetype" | "random" | "minimalist";
+  /** Missing means the legacy actor, for retained manifests and replay bundles. */
+  brewing?: "on" | "off";
   resumeAt?: number;
   diagnosticFault?: { at: number; stage: "execution" | "post-commit" };
   initialSave?: UnstampedSaveData;
@@ -88,6 +91,8 @@ export interface CareerResult {
   saveChecks: number;
   resumeChecks: number;
   telemetry: {
+    brewing?: BrewingVisitEvidence[];
+    brewingTruncated?: boolean;
     anomalies: BattleAnomalies;
     cards: Record<string, { observed: number; playable: number; chosen: number }>;
     economy: Array<{

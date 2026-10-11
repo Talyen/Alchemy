@@ -18,6 +18,7 @@ const config: CareerConfig = {
   maxTurns: 100,
   policy: "archetype",
   combatPolicy: "greedy-effective-damage",
+  brewing: "on",
 };
 function career(overrides: Partial<CareerConfig> = {}, fixture?: string, replay?: JournalEntry[]) {
   const prefix = resolve(directory, String(serial++));
@@ -48,6 +49,22 @@ describe("headless production careers", () => {
     expect(resumed.resumeChecks).toBe(1);
     expect(resumed.finalSave).toEqual(result.finalSave);
     expect(resumed.outcomes).toEqual(result.outcomes);
+  }, 90000);
+
+  it("replays brewing in a fresh process and resumes immediately after a committed service", () => {
+    const options: Partial<CareerConfig> = { hero: "alchemist", seed: 42, runs: 3, brewing: "on" };
+    const result = career(options, "unlocked-v1");
+    expect(result.status, result.error).toBe("completed");
+    const mix = result.journal.find((entry) => entry.action.kind === "mix" || entry.action.kind === "distill");
+    expect(mix).toBeDefined();
+    const replay = career(options, "unlocked-v1", result.journal);
+    expect(replay.status, replay.error).toBe("completed");
+    expect(replay.finalSave).toEqual(result.finalSave);
+    const resumed = career({ ...options, resumeAt: mix!.step + 1 }, "unlocked-v1");
+    expect(resumed.status, resumed.error).toBe("completed");
+    expect(resumed.resumeChecks).toBe(1);
+    expect(resumed.finalSave).toEqual(result.finalSave);
+    expect(resumed.telemetry.brewing).toEqual(result.telemetry.brewing);
   }, 90000);
 
   it("resumes an acknowledged combat save in a fresh process", () => {

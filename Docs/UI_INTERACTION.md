@@ -111,4 +111,5 @@ inspection. Existing battle commands remain the authority for accepting plays.
 
 Held Enter/Space repeat events are consumed at the app boundary to prevent a held
 confirm from activating successive cards or newly entered screens. Separate
-presses still work normally; sliders retain arrow-key repeat behavior.
+presses still work normally. Held Escape repeats cannot dismiss further layers;
+sliders retain arrow-key repeat behavior.

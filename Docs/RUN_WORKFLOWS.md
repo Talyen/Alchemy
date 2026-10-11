@@ -25,7 +25,7 @@ Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-sess
 Campaign, Labyrinth, and Wildwood victories grant enemy-based Materials through the same reward flow; Wildwood shows them beside Gold on its existing Victory screen and includes them in the run-end summary.
 
 1. Route combat payouts through `computeCombatMaterialReward()` and mystery grants through `computeMysteryMaterialReward()` (both in `@/lib/homestead/material-rewards`); they own herb-find, scavenger/herbalist, and elite/boss ordering per the policy table there. Do not reimplement the sequence at the call site.
-2. Call `awardMaterialsDuringRun(draft, materials)` inside the owning command (`run-loop/run/reward-commands.ts`, `run-loop/navigation/mystery-flow.ts`, or Armory salvage in `shared/stores/gear-session-command.ts`). The canonical site list is `AWARD_MATERIALS_CALL_SITES` in `shared/stores/run-materials.ts`, enforced by `tests/architecture/run-materials-award-guard.test.ts`; new grant paths must extend it there.
+2. Call `awardMaterialsDuringRun(transaction, materials)` inside the owning command (`run-loop/run/reward-commands.ts`, `run-loop/navigation/mystery-flow.ts`, or Armory salvage in `shared/stores/gear-session-command.ts`). The canonical site list is `AWARD_MATERIALS_CALL_SITES` in `shared/stores/run-materials.ts`, enforced by `tests/architecture/run-materials-award-guard.test.ts`; new grant paths must extend it there.
 3. Reuse the run-end display: `awardRunEndMaterials` in the write port (implementation in `shared/stores/write/run-end.ts`), used by both defeat and victory flows, merges `runMaterialsEarned` and `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`.
 4. Check `tests/features/alchemy/run-loop/run/run-victory-handlers.dom.test.ts` and the affected mystery/reward-flow tests when adding a new source.
 
@@ -71,7 +71,7 @@ Run outcome flows use [`run-end-commands.ts`](../src/features/alchemy/run-loop/r
 
 ## Gameplay command boundary
 
-Ownership and anti-patterns: [RUN_STATE.md § Run state](./RUN_STATE.md#run-state). Keep the command synchronous; put audio, navigation, timers, and presentation cleanup in `afterCommit`. Pass the draft to every gameplay mutator and return an explicit `acceptCommand(value)` or `rejectCommand(reason, fallback)`. Rejection discards all writes and RNG draws and skips `afterCommit`; the dispatcher returns the supplied value or fallback. This outer-boundary example awards an already bonus-adjusted material amount and passes it to presentation feedback after commit:
+Ownership and anti-patterns: [RUN_STATE.md § Run state](./RUN_STATE.md#run-state). Keep the command synchronous; put audio, navigation, timers, and presentation cleanup in `afterCommit`. Feature commands receive a readonly `RunTransaction`; pass it to every write-port operation and return an explicit `acceptCommand(value)` or `rejectCommand(reason, fallback)`. Rejection discards all writes and RNG draws and skips `afterCommit`; the dispatcher returns the supplied value or fallback. This outer-boundary example awards an already bonus-adjusted material amount and passes it to presentation feedback after commit:
 
 ```ts
 import type { MaterialInventory } from "@/lib/homestead/types";
@@ -95,7 +95,7 @@ export function awardMaterialReward(
 }
 ```
 
-Inside an existing reward, shop, or mystery command, call the mutator with that command's draft instead of dispatching another command. Keep the existing claim guard and reward finalization in the owning flow.
+Inside an existing reward, shop, or mystery command, call the mutator with that command's transaction instead of dispatching another command. Keep the existing claim guard and reward finalization in the owning flow.
 
 Resolve battle gameplay and commit its RNG/XP before starting presentation. Return detached frames for playback; never commit gameplay from a draw or animation callback. Older activity fields are read only by migration; unfinished legacy combat is abandoned after winner selection, without executing obsolete rules.
 

@@ -60,7 +60,13 @@ function applyBloodCountessHealingReaction(
     decayEnemyArmor(hit.state),
     combatTexts ?? [],
   );
-  return payKillPayouts(recordEnemyAbilityActivation(damagedState, "blood-countess"), enemyWasAlive, combatTexts ?? []);
+  return payKillPayouts(
+    recordEnemyAbilityActivation(damagedState, "blood-countess"),
+    enemyWasAlive,
+    combatTexts ?? [],
+    undefined,
+    state.playerStatuses.forge >= 5,
+  );
 }
 
 export function applyHealingWithCombatText(
@@ -220,9 +226,9 @@ export function payKillPayouts(
   enemyWasAlive: boolean,
   combatTexts: CombatTextEvent[],
   enemyStatusesOverride?: BattleState["enemyStatuses"],
+  forgeAtKill = state.playerStatuses.forge >= 5,
 ): BattleState {
   if (state.enemyHealth > 0 || !enemyWasAlive || state.flags.killRewardsPaid) return state;
-  const forgeAtKill = state.playerStatuses.forge >= 5;
   state = { ...state, flags: { ...state.flags, killRewardsPaid: true } };
   const statuses = enemyStatusesOverride ?? state.enemyStatuses;
   if (statuses.poison > 0 && state.talentEffects.goldOnPoisonedKill > 0) {
@@ -236,18 +242,21 @@ export function payKillPayouts(
 // Shared end-of-hit epilogue: encounter-trait health thresholds first, then kill
 // payouts. Status-conditional kill rewards evaluate against pre-hit statuses when an
 // override is supplied (defensive pattern from applyEnemyDotDamage).
+// Forge eligibility also precedes hit rewards, which can grant Forge after the kill.
 export function applyHitEpilogue(
   state: BattleState,
   preHitHealth: number,
   enemyWasAlive: boolean,
   combatTexts: CombatTextEvent[],
   enemyStatusesOverride?: BattleState["enemyStatuses"],
+  forgeAtKill = state.playerStatuses.forge >= 5,
 ): BattleState {
   return payKillPayouts(
     processEncounterTraitHealthThreshold(preHitHealth, state, combatTexts),
     enemyWasAlive,
     combatTexts,
     enemyStatusesOverride,
+    forgeAtKill,
   );
 }
 

@@ -155,7 +155,7 @@ export function useAlchemyRunController(): AlchemyRunCommands {
         },
         shop: { ...shop, continue: protectVoid(nav.advanceToNextDestination) },
         mystery: {
-          handleChoice: protectVoid(nav.handleMysteryChoice),
+          handleChoice: guardProgressAction(defaultGameSession, nav.handleMysteryChoice, false),
           handleChooseCard: guardProgressAction(defaultGameSession, nav.handleMysteryChooseCard, false),
           handleContinue: protectVoid(nav.handleMysteryContinue),
         },

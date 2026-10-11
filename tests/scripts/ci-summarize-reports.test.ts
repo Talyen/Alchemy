@@ -105,13 +105,19 @@ describe("ci-summarize (vitest)", () => {
 });
 
 describe("ci-summarize (playwright)", () => {
-  it("retains diagnostics for failures and recovered retries, but not clean runs", () => {
+  it("retains diagnostics for failures, retries and malformed stats, but not clean runs", () => {
     const directory = temporaryRoot("alchemy-ci-retention-");
     const script = path.resolve("scripts/ci-summarize.mjs");
-    for (const [unexpected, flaky, retain] of [
-      [0, 0, false],
-      [1, 0, true],
-      [0, 1, true],
+    for (const stats of [{ expected: -1 }, []]) {
+      const summary = summarizePlaywrightReport({ suites: [], stats });
+      expect(summary.failed).toBe(true);
+      expect(formatPlaywrightSummaryMarkdown(summary)).toContain("Invalid Playwright report");
+    }
+    for (const [stats, retain, status] of [
+      [{ expected: 1, unexpected: 0, flaky: 0, skipped: 0 }, false, "passed"],
+      [{ unexpected: 1 }, true, "failed"],
+      [{ flaky: 1 }, true, "passed"],
+      [{ unexpected: "broken" }, true, "failed"],
     ] as const) {
       const output = path.join(directory, "github-output");
       fs.writeFileSync(output, "");
@@ -119,7 +125,7 @@ describe("ci-summarize (playwright)", () => {
         path.join(directory, "report.json"),
         JSON.stringify({
           suites: [],
-          stats: { expected: 1, unexpected, flaky, skipped: 0 },
+          stats,
         }),
       );
       execFileSync(process.execPath, [script, "--playwright", "report.json"], {
@@ -128,6 +134,7 @@ describe("ci-summarize (playwright)", () => {
         stdio: "pipe",
       });
       expect(fs.readFileSync(output, "utf8")).toBe(`retain-diagnostics=${retain}\n`);
+      expect(JSON.parse(fs.readFileSync(path.join(directory, "reports/current-run.json"), "utf8")).status).toBe(status);
     }
   });
   it("reports setup errors independently of test failures", () => {
@@ -372,8 +379,10 @@ describe("current-run pointer", () => {
     const failed = readRecentRuns(root, { last: 1, status: "failed" });
     expect(failed).toHaveLength(1);
     expect(formatRecentRun(root, failed[0] ?? {})).toContain("evidence available");
+    expect(formatRecentRun(root, failed[0] ?? {})).toContain("reports/evidence.md");
     fs.unlinkSync(evidence);
     expect(formatRecentRun(root, failed[0] ?? {})).toContain("evidence pruned/missing");
+    expect(formatRecentRun(root, failed[0] ?? {})).toContain("reports/evidence.md");
   });
 });
 

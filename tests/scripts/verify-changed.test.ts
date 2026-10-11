@@ -224,7 +224,12 @@ describe("verification diagnostics", () => {
   it("writes a bounded digest and separate full log", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "verify-digest-"));
     try {
-      const result = { status: 1, elapsedMs: 10, output: "x".repeat(5_000) };
+      const repeated = "Error: repeated failure\n at same.ts:10\n".repeat(200);
+      const result = {
+        status: 1,
+        elapsedMs: 10,
+        output: `${repeated}TypeError: independent cause\n at other.ts:2\n${repeated}`,
+      };
       const files = writeFailureDigest(
         root,
         { key: "test", label: "test", command: "npm", args: ["test"], reason: "fixture" },
@@ -232,8 +237,15 @@ describe("verification diagnostics", () => {
         "run-id",
         0,
       );
-      expect(fs.readFileSync(files.digestPath, "utf8").length).toBeLessThan(result.output.length);
-      expect(fs.readFileSync(files.logPath, "utf8")).toContain("x".repeat(100));
+      const digest = fs.readFileSync(files.digestPath, "utf8");
+      expect(Buffer.byteLength(digest)).toBeLessThan(4_000);
+      expect(digest).toContain("TypeError: independent cause");
+      expect(digest).toContain("at other.ts:2");
+      expect(digest.match(/Error: repeated failure/gu)).toHaveLength(1);
+      expect(digest).toContain("L1 (400 occurrences; last L801)");
+      const log = fs.readFileSync(files.logPath, "utf8");
+      expect(log).toBe(result.output);
+      expect(log.split("\n")[800]).toBe("Error: repeated failure");
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }

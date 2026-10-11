@@ -39,9 +39,12 @@ containing non-Markdown paths; Markdown-only selections run no verifier commands
 `check` adds small selected-file formatting batches. Documentation edits also need
 an explicit `npm run docs:check` under [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change).
 The default profile does not run dependency-related selection, full static checks,
-builds, browsers, or the verification-cache identity walk. Unit suites may run
-locally without user approval via `npm run test:full -- <paths>`. Broader full
-verification commands require an explicit local opt-in; CI owns complete validation.
+builds, browsers, or the verification-cache identity walk. `npm run verify:unit -- <paths>`
+selects dependency-related and risk-selected unit suites, filtering out documentation,
+static and browser commands. Unit suites may also run directly via
+`npm run test:full -- <test-paths>`; both unit-only paths are allowed without user
+approval. Broader full verification commands require an explicit local opt-in;
+CI owns complete validation.
 
 The local test lane holds a loopback TCP listener on `127.0.0.1:48157` for the
 duration of a one-shot unit or browser command. Bind failure stops the new run

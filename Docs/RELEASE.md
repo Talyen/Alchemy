@@ -66,10 +66,13 @@ These checks validate configuration completeness; signing credentials are still
 authenticated by the signing provider during packaging.
 
 Production Steam App IDs must contain only digits and represent a positive safe
-integer other than 480. Releases with Sentry reporting reject
-`ALCHEMY_SKIP_SOURCEMAP=1`; local builds can still omit maps, and release crash
-reporting remains optional. `dist:desktop` checks the renderer bundle budget
-before creating or signing installers.
+integer other than 480. Demo and full-game App IDs must be numerically distinct.
+Desktop releases validate Vite's resolved options: output must use the selected
+edition's renderer directory, inline source maps are rejected, and Sentry reporting
+requires hidden maps even when command-line options override the defaults.
+Releases with Sentry reporting also reject `ALCHEMY_SKIP_SOURCEMAP=1`; local builds
+can still override output and maps, and release crash reporting remains optional.
+`dist:desktop` checks the renderer bundle budget before creating or signing installers.
 
 1. Ensure your working tree is clean and you're on `main`. Before publishing, confirm the applicable [release setup](./RELEASE_SETUP.md) is current, including notice and provenance review for changed assets or service use.
 2. Run **`npm run release`** — runs `check:ship:full`, prints the player-facing patch-note draft, bumps version (inferred from commits via `commit-and-tag-version`), creates the release commit + `vX.Y.Z` tag, pushes both to origin, and watches the release workflow (matched by the tag name, not `main`). Preview notes without shipping: **`npm run release -- --dry-run`**.
@@ -93,9 +96,17 @@ hosts do not substitute for it.
 Windows packaging explicitly targets x64, matching the Steamworks native binding.
 Package verification reads the executable PE header and rejects other architectures.
 
-Desktop renderer artifacts used for packaging include music. The package verifier
-compares packaged MP3 bytes with `public/Music/` and rejects source maps inside
-`app.asar`, independently of whether crash reporting is configured.
+Desktop renderer artifacts used for packaging include every file in `public/`.
+Before packaging or signing, verification compares these files with the renderer's
+copies, including music, sound effects and their fallbacks, fonts, and licenses.
+The package verifier repeats that byte comparison inside `app.asar` and rejects
+source maps, independently of whether crash reporting is configured.
+
+Direct packaging validates the selected renderer's HTML before invoking
+electron-builder. Application scripts, stylesheets, and module preloads must use
+relative paths to nonempty files inside that renderer directory; web builds must
+be rebuilt with `npm run build:desktop`. The ASAR verifier repeats these resource
+checks against the packaged files.
 
 ## Failed release and rollback
 

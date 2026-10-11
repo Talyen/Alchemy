@@ -86,10 +86,11 @@ export function useArmoryTransfers({
   }
 
   function completeTransfer(commit: () => void, flights: ArmoryFlight[], sound = false) {
+    // Placement follows the accepted command even if scrolling cancels its later artwork.
+    commit();
     const sequence = transferSequence.current;
     afterProgressSaved(() => {
       if (sequence !== transferSequence.current) return;
-      commit();
       if (sound) playUISound("gearMove");
       present(flights);
     });

@@ -18,9 +18,9 @@ describe("edition packaging and upload identity", () => {
     expect(releaseEdition(env).packageDirectory).toBe("release-desktop-demo");
     expect(releaseEdition(env).steamDepotId).toBe("1235");
   });
-  it("checks production IDs before builds and rejects a shared App ID", () => {
+  it.each(["5678", "05678"])("checks production IDs before builds and rejects shared App ID %s", (appId) => {
     expect(validateDesktopBuildConfig(env).steamAppId).toBe("1234");
-    expect(() => validateDesktopBuildConfig({ ...env, STEAM_DEMO_APP_ID: "5678" })).toThrow("distinct");
+    expect(() => validateDesktopBuildConfig({ ...env, STEAM_DEMO_APP_ID: appId })).toThrow("distinct");
     expect(() => validateDesktopBuildConfig({ ...env, STEAM_DEMO_APP_ID: undefined })).toThrow();
   });
   it("rejects edition, upload and wishlist target mismatches", () => {

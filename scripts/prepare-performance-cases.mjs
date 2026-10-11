@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
+import { runCommandAsync } from "./lib/run-command.mjs";
 import { createHash } from "node:crypto";
 import { chooseCheckpointStep, selectCase } from "../performance/case-selection.mjs";
 import { REPO_ROOT, runGit } from "./lib/repository-paths.mjs";
@@ -35,7 +36,7 @@ const fixture = ["meta-journey", "trinket-journey"].includes(scenario)
     ? "unlocked-v1"
     : null;
 
-function runWorker(label, checkpointAt) {
+async function runWorker(label, checkpointAt) {
   const input = path.join(workDir, `${label}.input.json`);
   const output = path.join(workDir, `${label}.json`);
   const journal = path.join(workDir, `${label}.journal.jsonl`);
@@ -47,25 +48,28 @@ function runWorker(label, checkpointAt) {
   // Every worker artifact must belong to this invocation, including optional
   // checkpoints. A successful worker may finish without reaching the checkpoint.
   for (const stale of [output, `${output}.start`, `${output}.checkpoint`]) fs.rmSync(stale, { force: true });
-  const child = spawnSync(process.execPath, ["scripts/run-playthrough-worker.mjs", input, output, journal], {
-    cwd: REPO_ROOT,
-    encoding: "utf8",
-    timeout: 120_000,
-    maxBuffer: 2 * 1024 * 1024,
-  });
+  const child = await runCommandAsync(
+    process.execPath,
+    ["scripts/run-playthrough-worker.mjs", input, output, journal],
+    {
+      cwd: REPO_ROOT,
+      timeout: 120_000,
+      maxBuffer: 2 * 1024 * 1024,
+    },
+  );
   if (child.status !== 0)
-    throw new Error(`Playthrough ${label} failed: ${child.error?.message ?? child.stderr.slice(-3000)}`);
+    throw new Error(`Playthrough ${label} failed: ${child.output.slice(-3000) || "worker returned no exit code"}`);
   const result = JSON.parse(fs.readFileSync(output, "utf8"));
   if (result.status !== "completed") throw new Error(`Playthrough ${label} incomplete: ${result.error ?? "unknown"}`);
   return { output, result };
 }
 
-const discovery = runWorker("discovery");
+const discovery = await runWorker("discovery");
 const step = chooseCheckpointStep(selected, discovery.result);
 if (!Number.isSafeInteger(step) || step < 1) {
   throw new Error(`No reachable ${selected.checkpoint} checkpoint for ${scenario} seed ${selected.seed}`);
 }
-const checkpoint = runWorker("checkpoint", step);
+const checkpoint = await runWorker("checkpoint", step);
 const saved = JSON.parse(fs.readFileSync(`${checkpoint.output}.checkpoint`, "utf8"));
 const initialSave = JSON.parse(saved.bytes);
 if (!initialSave || typeof initialSave !== "object") throw new Error("Checkpoint has no save");

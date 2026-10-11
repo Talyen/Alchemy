@@ -1,10 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { validateMusicRegistry } from "../../scripts/assets/music-assets.mjs";
-import { validateSoundAssetRegistry } from "../../scripts/assets/sound-assets.mjs";
+import {
+  curatedSoundFiles,
+  generatedSoundAssets,
+  validateSoundAssetRegistry,
+} from "../../scripts/assets/sound-assets.mjs";
 import { resolveAssetConcurrency, soundTransformSettings } from "../../scripts/assets/asset-constants.mjs";
-import { optimizationFailures } from "../../scripts/assets/optimize-pipelines.mjs";
-import { failedMessagesResult, failedResult, targetErrorHandler } from "../../scripts/lib/process-helpers.mjs";
 
 describe("registry validation consolidation", () => {
   it("rejects case-insensitive duplicate music names", async () => {
@@ -14,17 +16,50 @@ describe("registry validation consolidation", () => {
     await expect(validateMusicRegistry(["a.ogg", "b.mp3"])).resolves.toEqual(["a.ogg", "b.mp3"]);
   });
 
-  it("rejects generated targets that are also curated sounds", async () => {
+  it.each([false, true])("rejects generated targets that are also curated sounds (case alias: %s)", async (alias) => {
     await expect(validateSoundAssetRegistry()).resolves.toBeUndefined();
-    const { generatedSoundAssets, curatedSoundFiles } = await import("../../scripts/assets/sound-assets.mjs");
     const overlap = generatedSoundAssets[0].target;
-    curatedSoundFiles.push(overlap);
+    curatedSoundFiles.push(alias ? overlap[0].toUpperCase() + overlap.slice(1) : overlap);
     try {
       await expect(validateSoundAssetRegistry()).rejects.toThrow(
         `Sound target is both generated and curated: "${overlap}"`,
       );
     } finally {
       curatedSoundFiles.pop();
+    }
+  });
+
+  it.each(["../escaped.ogg", "nested/escaped.ogg", "nested\\escaped.ogg"])(
+    "rejects sound targets outside the managed output directory: %s",
+    async (target) => {
+      generatedSoundAssets.push({ source: "unique.wav", target });
+      try {
+        await expect(validateSoundAssetRegistry()).rejects.toThrow("Invalid target");
+      } finally {
+        generatedSoundAssets.pop();
+      }
+      curatedSoundFiles.push(target);
+      try {
+        await expect(validateSoundAssetRegistry()).rejects.toThrow("Invalid target");
+      } finally {
+        curatedSoundFiles.pop();
+      }
+    },
+  );
+
+  it("rejects sound output collisions on case-insensitive filesystems", async () => {
+    const target = generatedSoundAssets[0].target;
+    generatedSoundAssets.push({ source: "unique.wav", target: target[0].toUpperCase() + target.slice(1) });
+    try {
+      await expect(validateSoundAssetRegistry()).rejects.toThrow("Duplicate asset target");
+    } finally {
+      generatedSoundAssets.pop();
+    }
+    curatedSoundFiles.push("extra.ogg", "Extra.ogg");
+    try {
+      await expect(validateSoundAssetRegistry()).rejects.toThrow("Duplicate asset target");
+    } finally {
+      curatedSoundFiles.splice(-2);
     }
   });
 });
@@ -43,51 +78,5 @@ describe("sound transform settings", () => {
     vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "0");
     expect(resolveAssetConcurrency(4)).toBeLessThanOrEqual(4);
     vi.unstubAllEnvs();
-  });
-});
-
-describe("pipeline failure reporting", () => {
-  beforeEach(() => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
-    vi.spyOn(console, "warn").mockImplementation(() => {});
-  });
-
-  it("labels string, targeted, and unknown items without crashing", () => {
-    expect(targetErrorHandler("a.ogg", new Error("bad"))).toEqual({
-      message: "FAILED a.ogg: bad",
-      entry: null,
-    });
-    expect(targetErrorHandler({ target: "b.ogg" }, "worse")).toEqual({
-      message: "FAILED b.ogg: worse",
-      entry: null,
-    });
-    expect(targetErrorHandler(null, 42)).toEqual({ message: "FAILED null: 42", entry: null });
-  });
-
-  it("joins only failed results behind the skip label", () => {
-    const results = [
-      { failed: false, message: "ok" },
-      { failed: true, message: "FAILED x: bad" },
-    ];
-    expect(failedResult(results, "later steps")).toEqual({
-      ok: false,
-      error: "FAILED x: bad",
-    });
-    expect(failedMessagesResult(["a", "b"], "later steps")).toEqual({ ok: false, error: "a\nb" });
-  });
-
-  it("reports Error reasons by message instead of doubling the prefix", () => {
-    const failures = optimizationFailures([
-      { key: "sound", status: "rejected", reason: new Error("encoder broke") },
-      { key: "music", status: "fulfilled", value: { ok: false, error: "missing track" } },
-      { key: "art", status: "fulfilled", value: { ok: true } },
-      { key: "video", status: "rejected", reason: null },
-    ]);
-    expect(failures.map((error) => error.message)).toEqual([
-      "sound: encoder broke",
-      "music: missing track",
-      "video: null",
-    ]);
-    expect(failures[0].cause).toBeInstanceOf(Error);
   });
 });

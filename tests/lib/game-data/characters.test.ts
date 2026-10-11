@@ -7,7 +7,7 @@ describe("starting decks", () => {
     const cardIds = new Set(cardLibrary.map((card) => card.id));
     for (const [id, hero] of Object.entries(characters)) {
       const deck = getStartingDeck(hero.id);
-      expect(deck, id).toHaveLength(id === "wildcard" ? 0 : 7);
+      expect(deck, id).toHaveLength(id === "wildcard" ? 0 : id === "alchemist" ? 10 : 7);
       expect(
         deck.every((card) => cardIds.has(card.id)),
         id,

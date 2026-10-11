@@ -1,4 +1,5 @@
 export const REPO_ROOT: string;
+export const UNCACHED_GIT_OPTIONS: readonly string[];
 
 export function runGit(
   root: string,

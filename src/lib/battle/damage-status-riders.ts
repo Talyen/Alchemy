@@ -25,7 +25,7 @@ import {
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage, gearFrozenDamageMultiplier } from "./scaled-damage";
 import { applyScaledLeechHealing, computeLeechHeal } from "./damage-rider-leech";
 import { detonateEnemyStatuses } from "./dot-resolve";
-import { mergeCombatText } from "./combat-text-events";
+import { emitEnemyBuildupImmunity, mergeCombatText } from "./combat-text-events";
 import { halveRounded } from "./amount-helpers";
 
 function removeEnemyArmorWithFeedback(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
@@ -187,22 +187,6 @@ function applyStunStatusRider(
   return resolveStunTrigger(addEnemyStatus(state, "stun", actualDamage), combatTexts, preHitHealth, fromHolyDamage);
 }
 
-function emitEnemyBuildupImmunity(
-  state: BattleState,
-  stat: "stun" | "freeze",
-  amount: number,
-  combatTexts: CombatTextEvent[],
-): void {
-  if (amount <= 0 || state.enemyHealth <= 0 || state.enemyCC.cooldown <= 0) return;
-  mergeCombatText(combatTexts, {
-    target: "enemy",
-    kind: "notice",
-    stat,
-    signal: "immune",
-    text: `Immune to ${stat === "stun" ? "Stun" : "Freeze"}`,
-  });
-}
-
 export function tryTriggerEnemyFreeze(
   preHitState: BattleState,
   nextState: BattleState,
@@ -233,9 +217,11 @@ export function tryTriggerEnemyFreeze(
   if (result.trinketEffects.frozenHeartDamage > 0) {
     const enemyWasAlive = result.enemyHealth > 0;
     const frozenHealth = result.enemyHealth;
+    const forgeAtHit = result.playerStatuses.forge >= 5;
     result = dealEnemyScaledDamage(result, result.trinketEffects.frozenHeartDamage, "physical", combatTexts, {
       multiplier: getEnemyDamageMultiplier(result, "physical") * gearFrozenDamageMultiplier(result),
-      riders: (damagedState, _damage, texts) => applyHitEpilogue(damagedState, frozenHealth, enemyWasAlive, texts),
+      riders: (damagedState, _damage, texts) =>
+        applyHitEpilogue(damagedState, frozenHealth, enemyWasAlive, texts, undefined, forgeAtHit),
     });
   }
   result = applyGearCcPhysicalDamage(result, preHitState.gearEffects.damageOnFreezePhysical, combatTexts);

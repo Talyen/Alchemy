@@ -33,6 +33,23 @@ const menuProps = {
 };
 
 describe("keyboard access to battle and navigation modals", () => {
+  it("Escape closes the pause menu above a pending Wish", async () => {
+    const closeMenu = vi.fn();
+    render(
+      <>
+        <WishOverlay
+          open
+          battleState={patchBattleState({ wishOptions: [cardById.slash!] })}
+          actions={{ onWishChoice: noop } as unknown as BattleActionsProps}
+        />
+        <GameMenu {...menuProps} onClose={closeMenu} />
+      </>,
+    );
+    await waitForArtwork();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(closeMenu).toHaveBeenCalledOnce();
+  });
+
   it("lets the pause menu own focus above a pending Wish, then restores the Wish", async () => {
     const rect = { width: 100, height: 40 } as DOMRect;
     vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue([rect] as unknown as DOMRectList);

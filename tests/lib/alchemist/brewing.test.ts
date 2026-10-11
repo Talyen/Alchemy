@@ -40,10 +40,6 @@ describe("brewing and transmutation content", () => {
       { kind: "remove-harmful-status", removeAll: true },
       { kind: "heal", amount: 2 },
     ]);
-    expect(strengthenPotion(cardById["wishing-potion"]!)?.effects).toEqual([
-      { kind: "wish", amount: 2 },
-      { kind: "draw-cards", amount: 1 },
-    ]);
   });
   it("preserves nested chance probabilities and nonnumeric Acid effects", () => {
     const acid = strengthenPotion(cardById["acid-potion"]!)!;

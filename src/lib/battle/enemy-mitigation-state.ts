@@ -35,6 +35,12 @@ export function reduceEnemyArmor(state: BattleState, delta: number): BattleState
   };
 }
 
+export function applySunderingArmorRemoval(state: BattleState, damageType: string): BattleState {
+  return damageType === "physical" || damageType === "stun"
+    ? reduceEnemyArmor(state, state.trinketEffects.sunderingArmorPiercing)
+    : state;
+}
+
 export function decayEnemyArmor(state: BattleState): BattleState {
   if (hasEnemyTrait(state, "unbreakable") || state.enemyMitigation.armor <= MIN_ARMOR_AMOUNT) {
     return state;

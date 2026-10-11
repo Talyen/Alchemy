@@ -35,9 +35,7 @@ export function applyCurrencyToGear({
     playUISound("error");
     return false;
   }
-  afterProgressSaved(() => {
-    playUISound("craft");
-    clearCurrency();
-  });
+  clearCurrency();
+  afterProgressSaved(() => playUISound("craft"));
   return true;
 }

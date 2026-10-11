@@ -14,7 +14,7 @@ Definitions of common terms used in the Alchemy codebase.
 ### Shared battle and progression terms
 
 - **Armor** — Each stack normally reduces Physical and Stun damage taken by 1; taking damage removes 1 Armor. See [mitigation exceptions](./GAME_RULES.md#mitigation-and-crowd-control).
-- **Forge** — Each stack normally adds 1 Physical and Stun damage; dealing damage spends 1 Forge. Gear and talent exceptions follow [Armor, Forge, and Gold](./TALENT_RULES.md#armor-forge-and-gold).
+- **Forge** — Each stack adds 1 Physical and Stun damage. Player Forge survives attacks; enemies spend 1 Forge on landed Physical, Stun, or Forge-based Burn hits unless Whitehot prevents it. Other conversions and gain rewards follow [Armor, Forge, and Gold](./TALENT_RULES.md#armor-forge-and-gold).
 - **Poison** — DoT status; deals its buildup as damage each tick, then normally loses 20% of its stacks, with a minimum decay of 1.
 - **Stun** — Damage type whose buildup can make the target skip turns once its Health-based threshold is met. See [crowd-control immunity](./GAME_RULES.md#mitigation-and-crowd-control).
 - **Freeze** — Damage type whose buildup can make the target skip turns once its Health-based threshold is met. Threshold modifiers and [crowd-control immunity](./GAME_RULES.md#mitigation-and-crowd-control) apply.
@@ -33,7 +33,7 @@ Definitions of common terms used in the Alchemy codebase.
 - **Companion Bond** — Per-companion Homestead upgrade; improves its turn-start effects above the unbonded baseline. Progression follows [Companion Bond](./GAME_RULES.md#companion-bond).
 - **Corruption** — Altar event that mutates or transforms a card once. Leaving before corruption returns to the same destination picker in Campaign or the map in Labyrinth, keeping the destination available. See [Corruption altars](./GAME_RULES.md#corruption-altars).
 - **Damage type** — `physical`, `stun`, `holy`, `burn`, `poison`, `bleed`, `freeze`, `nature` — enemies may resist or be vulnerable per type.
-- **Potion** — Consumable with temporary effect from the Alchemist shop.
+- **Potion** — A card in the Potion pool that Consumes for the battle and remains in the run Deck. Standard and Mixed Potions can be combined or strengthened through [brewing](./GAME_RULES.md#brewing-transmutation-and-elemental-reactions).
 - **Regen / Regeneration** — Enemy trait: heal each turn at end of enemy phase.
 - **Reward route** — Internal post-rewards destination (`REWARD_ROUTES`), not a `Screen` — see **Screen** above. Combat and content-system reward kinds are selected by the current reward rules in `src/lib/game-constants/run-rewards.ts`.
 - **Run materials earned** — Materials collected during the current run and included in the run-end summary. See [Run workflows § Grant materials](./RUN_WORKFLOWS.md#grant-materials-during-a-run).

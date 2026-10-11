@@ -90,10 +90,7 @@ export const consumableCards: BattleCard[] = [
     id: "wishing-potion",
     art: assetRefs.wishingPotion,
     consume: true,
-    effects: [
-      { kind: "wish", amount: 1 },
-      { kind: "draw-cards", amount: 1 },
-    ],
+    effects: [{ kind: "wish", amount: 2 }],
   }),
   cardBuilders.effectsCard({
     id: "blood-offering",

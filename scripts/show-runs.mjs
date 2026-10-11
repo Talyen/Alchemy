@@ -62,11 +62,14 @@ export function formatRecentRun(rootDir, record) {
       : primary.every((artifact) => fs.existsSync(path.resolve(rootDir, artifact.path)))
         ? "evidence available"
         : "evidence pruned/missing";
+  const pointer = primary.length
+    ? `; ${primary[0].path}${primary.length > 1 ? ` (+${primary.length - 1} more)` : ""}`
+    : "";
   const summary =
     String(record.summary ?? "")
       .replaceAll(/\s+/gu, " ")
       .slice(0, 160) || "—";
-  return `${record.generatedAt} | ${record.runId} | ${record.status} | ${record.command} | ${counts} | ${evidence} | ${summary}`;
+  return `${record.generatedAt} | ${record.runId} | ${record.status} | ${record.command} | ${counts} | ${evidence}${pointer} | ${summary}`;
 }
 
 export function main(argv = process.argv.slice(2), rootDir = ROOT) {

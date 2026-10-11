@@ -10,12 +10,11 @@ import {
   readRunProfile,
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-reads";
+import { DESTINATIONS } from "@/lib/routing";
 import { getRewardChoiceId } from "@/lib/active-run-session";
 import {
   canPlayCard,
   getEffectiveDamageScore,
-  getImmediateDamage,
-  getImmediateDefense,
   isPlayerDefeated,
   type BattleSnapshot,
   type CombatTextEvent,
@@ -23,6 +22,10 @@ import {
 import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-generation";
 import { canDescendFromLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state";
 import { characters, type BattleCard } from "@/lib/game-data";
+import { offerBrewingChoices, type BrewingObservation } from "./brewing-offers";
+import { scoreCombatCards } from "./combat-policy";
+import { brewCandidates } from "./brewing-policy";
+import { computeTalentEffects } from "@/lib/game-data";
 import { scoreArchetypeRemoval, scoreStrategyCard } from "./archetype-policy";
 import type { OfferChoice } from "./choice-catalog";
 import type { createPlaythroughController } from "./controller";
@@ -33,11 +36,13 @@ interface RunOfferContext {
   controller: ReturnType<typeof createPlaythroughController>;
   offer: OfferChoice;
   choices: PlayerChoice[];
+  defenseOnlyTurns?: number;
+  recordBrewing?: (observation: BrewingObservation) => void;
   recordBattle: (state: BattleSnapshot, texts: CombatTextEvent[], card?: string) => void;
 }
 
 export function offerRunChoices(
-  { config, controller, offer, choices, recordBattle }: RunOfferContext,
+  { config, controller, offer, choices, recordBattle, recordBrewing, defenseOnlyTurns }: RunOfferContext,
   gameSession: GameSession,
 ): void {
   const { flow, shop, labyrinth, nodes, battle } = controller;
@@ -46,18 +51,6 @@ export function offerRunChoices(
   const profile = readRunProfile(gameSession);
   const screen = readActiveRunScreen(gameSession);
   const affinity = (card: BattleCard) => scoreStrategyCard(config.policy, config.hero, card, run.runDeck);
-  const combatScore = (card: BattleCard, state: BattleSnapshot) => {
-    switch (config.combatPolicy) {
-      case "random-playable":
-        return 1;
-      case "greedy-damage":
-        return getImmediateDamage(card);
-      case "defensive-random":
-        return state.playerHealth < state.playerMaxHealth / 2 && getImmediateDefense(card) > 0 ? 2 : 1;
-      case "greedy-effective-damage":
-        return getEffectiveDamageScore(card, state);
-    }
-  };
   if (
     config.mode !== "campaign" &&
     run.roomsEncountered >= config.horizon &&
@@ -84,21 +77,29 @@ export function offerRunChoices(
           ),
         );
       else {
-        state.hand.forEach((card, index) => {
-          if (canPlayCard(state, card, index, PLAYABLE_HAND_OPTIONS))
-            offer(
-              "play",
-              card.id,
-              combatScore(card, state),
-              () => {
-                const result = battle.playCard(index, card.id);
-                if (result) recordBattle(result.state, result.combatTexts, card.id);
-                return result;
-              },
-              index,
-            );
+        const playable = state.hand.flatMap((card, index) =>
+          canPlayCard(state, card, index, PLAYABLE_HAND_OPTIONS) ? [{ card, index }] : [],
+        );
+        const scores = scoreCombatCards(
+          playable.map(({ card }) => card),
+          state,
+          config.combatPolicy,
+          config.brewing === undefined ? undefined : (defenseOnlyTurns ?? 0),
+        );
+        playable.forEach(({ card, index }, position) => {
+          offer(
+            "play",
+            card.id,
+            scores[position]!,
+            () => {
+              const result = battle.playCard(index, card.id);
+              if (result) recordBattle(result.state, result.combatTexts, card.id);
+              return result;
+            },
+            index,
+          );
         });
-        if (!choices.length)
+        if (!choices.length || choices.every((choice) => choice.score < 0))
           offer("end-turn", "turn", 0, () => {
             const result = battle.endTurn();
             if (!result) return null;
@@ -136,12 +137,26 @@ export function offerRunChoices(
         offer(
           "destination",
           destination,
-          destination === "Campfire" && run.runPlayerHealth < run.runMaxHealth * 0.6 ? 10 : 1,
+          destination === "Campfire" && run.runPlayerHealth < run.runMaxHealth * 0.6
+            ? 10
+            : config.brewing === "on" &&
+                destination === DESTINATIONS.ALCHEMIST_SHOP &&
+                profile.gold >= shop().alchemist.getMixPrice() &&
+                brewCandidates(run.runDeck, computeTalentEffects(profile.unlockedTalents).potionMixPotency).some(
+                  (c) => c.improvement > 0,
+                )
+              ? 3
+              : 1,
           () => flow.handleDestinationChoice(destination),
         ),
       );
       break;
     case "campfire":
+      if (config.brewing !== undefined) {
+        const observation = offerBrewingChoices(config, controller, offer, gameSession);
+        if (observation) recordBrewing?.(observation);
+        break;
+      }
       offer("campfire", "rest", 1, flow.handleCampfireContinue);
       break;
     case "transmutation": {
@@ -236,6 +251,11 @@ export function offerRunChoices(
       break;
     }
     case "alchemist": {
+      if (config.brewing !== undefined) {
+        const observation = offerBrewingChoices(config, controller, offer, gameSession);
+        if (observation) recordBrewing?.(observation);
+        break;
+      }
       const actions = shop().alchemist;
       activity.data.potions.forEach((card, index) => {
         const key = cardSlotKeyOf(card, index);

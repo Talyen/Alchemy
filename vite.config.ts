@@ -1,4 +1,5 @@
 import { fileURLToPath, URL } from "node:url";
+import { resolve } from "node:path";
 
 import tailwind from "@tailwindcss/vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
@@ -12,6 +13,7 @@ import { CHUNK_SIZE_WARNING_KB } from "./scripts/lib/verification/bundle-budget.
 import { VITE_ALIAS_PATH, VITE_ALIAS_TARGET } from "./scripts/lib/vite-aliases.mjs";
 import { rolldownCodeSplittingGroups } from "./scripts/lib/vite-chunks.mjs";
 import { resolveSentryRelease, resolveSourcemapMode } from "./scripts/lib/release/sentry-release.mjs";
+import { validateDesktopBuildConfig } from "./scripts/lib/release/desktop-build-config.mjs";
 import { TRANSIENT_ARTIFACT_DIRS } from "./scripts/lib/clean-dev-artifacts.mjs";
 import { resolveEdition, editionPolicy } from "./game-edition.mjs";
 
@@ -21,13 +23,9 @@ const devPort = resolveDevPort(process.env);
 export default defineConfig(({ mode, command }) => {
   const edition = resolveEdition(process.env.ALCHEMY_EDITION);
   const policy = editionPolicy(edition);
+  const desktopConfig = mode === "desktop" && command === "build" ? validateDesktopBuildConfig() : undefined;
   const sentryEnabled =
-    mode === "desktop" &&
-    process.env.CI_RELEASE === "true" &&
-    !!process.env.SENTRY_AUTH_TOKEN &&
-    !!process.env.SENTRY_ORG &&
-    !!process.env.SENTRY_PROJECT &&
-    !!process.env.SENTRY_DSN;
+    process.env.CI_RELEASE === "true" && desktopConfig?.sentryUploadEnabled && Boolean(desktopConfig.sentryDsn);
 
   return {
     define: { __ALCHEMY_EDITION__: JSON.stringify(edition) },
@@ -44,7 +42,22 @@ export default defineConfig(({ mode, command }) => {
     preview: { open: false },
     plugins: [
       {
-        name: "alchemy-edition",
+        name: "alchemy-build",
+        configResolved(config) {
+          if (!desktopConfig || process.env.CI_RELEASE !== "true") return;
+          // CLI options override build defaults. Validate the final settings
+          // before uploads or writes can leave packaging with a stale renderer.
+          const rendererDirectory = fileURLToPath(new URL(policy.rendererDirectory, import.meta.url));
+          if (resolve(config.root, config.build.outDir) !== rendererDirectory) {
+            throw new Error(`Desktop releases must use the selected renderer directory: ${policy.rendererDirectory}`);
+          }
+          if (config.build.sourcemap === "inline") {
+            throw new Error("Desktop releases cannot embed inline source maps in packaged JavaScript.");
+          }
+          if (sentryEnabled && config.build.sourcemap !== "hidden") {
+            throw new Error("Production crash reporting requires hidden source maps; remove the source-map override.");
+          }
+        },
         generateBundle() {
           this.emitFile({ type: "asset", fileName: "edition.json", source: JSON.stringify({ edition }) });
         },

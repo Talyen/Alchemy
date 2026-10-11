@@ -54,9 +54,11 @@ screen-specific behavior. A mapping is not a claim of exhaustive action coverage
 | All initial renders and desktop windows                                       | startup              | Real startup readiness with delayed image/font/bootstrap ordering, frame delays and font timeout; Electron retains cold boot, display controls and save/relaunch coverage.                                                                  |
 
 The map is checked against the route enum. New routes require an explicit family
-and identified protection. Coverage selection runs this suite for application,
-feature, animation, routing, artwork-loading and save-backend changes, and avoids
-running it again through dependency-related selection in the same verifier plan.
+and identified protection. Unit-only and full verification select this suite for
+application, feature, animation, routing, artwork-loading and save-backend changes,
+and avoid running it again through dependency-related selection in the same plan.
+The default local smoke gate does not select it; see
+[verification tiers](../../CONTRIBUTING.md#what-to-run-when-you-change).
 
 ## Renderer and desktop checks
 

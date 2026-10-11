@@ -24,6 +24,14 @@ function play(id: string, kind: string) {
 }
 
 describe("corrupted effects in battle", () => {
+  it("keeps Forge-scaled Burning Blade out of plain-damage bargains and conversions", () => {
+    const card = cardById["burning-blade"]!;
+    const groups = getCorruptionMutationGroups(card);
+    expect(groups.map((group) => group.kind)).toEqual(["strengthen", "weaken", "secondary"]);
+    const strengthened = groups.find((group) => group.kind === "strengthen")!.mutations[0]!.card;
+    expect(strengthened.effects).toEqual([{ kind: "damage", damageType: "burn", amount: 2, forgeBonusPercent: 50 }]);
+  });
+
   it("excludes secondary gifts already present inside chance and scheduled branches", () => {
     const card = makeTestCard({
       descriptionLines: ["Conditional aid"],

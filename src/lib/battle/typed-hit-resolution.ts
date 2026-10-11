@@ -49,6 +49,13 @@ export function resolveTypedEnemyHit(
     });
   }
   // Shared closer: thresholds then kill payouts (same as other hit paths).
-  next = applyHitEpilogue(next, facts.previousHealth, facts.enemyWasAlive, combatTexts);
+  next = applyHitEpilogue(
+    next,
+    facts.previousHealth,
+    facts.enemyWasAlive,
+    combatTexts,
+    undefined,
+    state.playerStatuses.forge >= 5,
+  );
   return { facts, state: next };
 }

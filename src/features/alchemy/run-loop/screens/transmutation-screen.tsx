@@ -1,5 +1,5 @@
 import { playUISound } from "@/lib/audio";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { BattleCard } from "@/lib/game-data";
 import type { AlchemyVisit, TransmutationSelectionCommand } from "@/lib/active-run-session/alchemy-visits";
@@ -10,6 +10,7 @@ import { CardSelectionGrid } from "../../shared/ui/cards/card-selection-grid";
 import { CardTitle } from "../../shared/ui/cards/card-description-ui";
 import { controlLabelClass } from "../../shared/config";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
+import { focusableControls, focusControl, isFocusAvailable } from "../../shared/ui/focus-navigation";
 
 export function TransmutationScreen({
   runDeck,
@@ -34,6 +35,9 @@ export function TransmutationScreen({
   const continued = useRef(false);
   const committingRef = useRef(false);
   const continuationRequest = useRef({ revision: 0 });
+  const panelRef = useRef<HTMLDivElement>(null);
+  const keyboardInput = useRef(false);
+  const restoreFocus = useRef(false);
   const selection = visit.transmutation;
   const canExchange = (card: BattleCard) => canTransmuteCard(selection?.choices ?? [], card);
   const available = runDeck.some(canExchange);
@@ -43,6 +47,20 @@ export function TransmutationScreen({
   const keyword = source ? selection?.keyword : null;
   const offers = getTransmutationOffers(visit);
   const locked = completed || isProgressSavePending();
+  const phase = !source ? "source" : !keyword ? "keyword" : "outcome";
+  const previousPhase = useRef(phase);
+
+  useLayoutEffect(() => {
+    if (previousPhase.current === phase) return;
+    previousPhase.current = phase;
+    if (!restoreFocus.current) return;
+    restoreFocus.current = false;
+    const panel = panelRef.current;
+    if (!panel) return;
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && active !== document.body && isFocusAvailable(active)) return;
+    focusControl(focusableControls(panel).find((control) => control.getAttribute("aria-disabled") !== "true"));
+  }, [phase]);
 
   useEffect(() => {
     const requests = continuationRequest.current;
@@ -61,10 +79,14 @@ export function TransmutationScreen({
 
   function select(command: TransmutationSelectionCommand) {
     if (locked || committingRef.current || continued.current) return;
+    restoreFocus.current = keyboardInput.current && panelRef.current?.contains(document.activeElement) === true;
     if (onSelect(command)) {
       playUISound("transmuteSelect");
       setError("");
-    } else setError("This choice is no longer available.");
+    } else {
+      restoreFocus.current = false;
+      setError("This choice is no longer available.");
+    }
   }
 
   function confirm() {
@@ -95,7 +117,17 @@ export function TransmutationScreen({
   if (completed && !committing) return null;
   return (
     <TitledScreenShell title="Transmutation">
-      <div className="mt-5 flex flex-col items-center gap-5 text-center">
+      <div
+        ref={panelRef}
+        className="mt-5 flex flex-col items-center gap-5 text-center"
+        onKeyDownCapture={() => {
+          keyboardInput.current = true;
+        }}
+        onPointerDownCapture={() => {
+          keyboardInput.current = false;
+          restoreFocus.current = false;
+        }}
+      >
         {!source ? (
           <>
             <h2 className="text-2xl font-semibold">Transform a Card</h2>

@@ -12,7 +12,12 @@ export function useScreenFocus(screen: string, ready: boolean) {
         keyboard.current = true;
       }
       // A held confirm must not activate the next card or newly entered screen.
-      if (event.repeat && (event.key === "Enter" || event.key === " ")) {
+      const editingText =
+        event.target instanceof HTMLElement &&
+        event.target.closest(
+          'input[type="search"], input[type="text"], input:not([type]), textarea, [contenteditable="true"]',
+        );
+      if (!editingText && event.repeat && (event.key === "Enter" || event.key === " ")) {
         event.preventDefault();
         event.stopPropagation();
       }

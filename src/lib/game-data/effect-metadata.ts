@@ -22,17 +22,23 @@ const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } =
       effect.lifesteal ? ["leech"] : [],
       effect.damageTypeIfTargetHasBlock ? [effect.damageTypeIfTargetHasBlock] : [],
       effect.damageTypeIfTargetFrozen ? [effect.damageTypeIfTargetFrozen] : [],
-      effect.blockCost !== undefined ? ["block"] : [],
+      effect.blockCost !== undefined || effect.equalToBlock ? ["block"] : [],
+      effect.equalToArmor ? ["armor"] : [],
+      effect.equalToForge || effect.forgeBonusPercent !== undefined ? ["forge"] : [],
+      effect.equalToGoldPercent !== undefined ? ["gold"] : [],
     ),
   "cleanse-player-status-to-damage": (effect) => [effect.status, effect.damageType],
   "random-damage": (effect) => [...(effect.damageTypePool?.length ? effect.damageTypePool : DAMAGE_TYPES)],
   chance: (effect) => [...new Set(effectChildren(effect).flatMap(collectKeywordsFromBattleEffect))],
   "player-status": (effect) =>
-    effect.statusPool
-      ? [...effect.statusPool]
-      : effect.status !== "haste" && effect.status !== "phoenixFeather"
-        ? [effect.status]
-        : [],
+    dedupeKeywords(
+      effect.statusPool
+        ? [...effect.statusPool]
+        : effect.status !== "haste" && effect.status !== "phoenixFeather"
+          ? [effect.status]
+          : [],
+      effect.perManaCrystal !== undefined || effect.convertCurrentMana !== undefined ? ["mana"] : [],
+    ),
   "enemy-status": (effect) => (isKeywordEnemyStatus(effect.status) ? [effect.status] : []),
   heal: () => ["health"],
   "restore-mana": () => ["mana"],

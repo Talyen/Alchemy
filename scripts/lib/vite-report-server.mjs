@@ -1,6 +1,5 @@
 import { resolveEdition } from "../../game-edition.mjs";
 import path from "node:path";
-import { createServer } from "vite";
 
 /**
  * Shared middleware-mode Vite server for SSR report generation (balance and
@@ -8,6 +7,7 @@ import { createServer } from "vite";
  * closes the server so entry modules stay import-safe under `defineScript`.
  */
 export async function withReportServer(fn) {
+  const { createServer } = await import("vite");
   const server = await createServer({
     root: path.resolve(import.meta.dirname, "../.."),
     configFile: false,

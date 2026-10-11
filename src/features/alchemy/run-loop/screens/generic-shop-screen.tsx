@@ -35,19 +35,20 @@ export function GenericShopScreen<T>({
   extraServices,
   renderItem,
 }: GenericShopScreenProps<T>) {
-  const [purchaseFailed, setPurchaseFailed] = useState(false);
+  const shelfKey = shopOfferingsSwapKey(
+    items.map((it, i) => getSlotKey(it, i)),
+    refreshesLeft,
+  );
+  const [failedShelf, setFailedShelf] = useState<string | null>(null);
   return (
     <ShopBrowseShell title={title} gold={gold}>
-      {purchaseFailed && (
+      {failedShelf === shelfKey && (
         <p role="alert" className="text-center">
           Could not complete this purchase. Check the current stock, price, and your Gold, then try again.
         </p>
       )}
       <ShopBrowseOfferings
-        swapKey={shopOfferingsSwapKey(
-          items.map((it, i) => getSlotKey(it, i)),
-          refreshesLeft,
-        )}
+        swapKey={shelfKey}
         onLeave={onContinue}
         services={
           <>
@@ -68,7 +69,7 @@ export function GenericShopScreen<T>({
           return (
             <Fragment key={slotKey}>
               {renderItem(item, price, purchased, () => {
-                if (!isProgressSavePending()) setPurchaseFailed(!onBuy(item, slotKey));
+                if (!isProgressSavePending()) setFailedShelf(onBuy(item, slotKey) ? null : shelfKey);
               })}
             </Fragment>
           );

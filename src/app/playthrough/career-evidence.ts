@@ -26,6 +26,7 @@ export function createCareerResult(config: CareerConfig, initialSave: CareerResu
     saveChecks: 0,
     resumeChecks: 0,
     telemetry: {
+      ...(config.brewing !== undefined ? { brewing: [] } : {}),
       anomalies: createEmptyAnomalies(),
       cards: {},
       economy: [],

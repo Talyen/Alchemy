@@ -1,6 +1,7 @@
 import { hasEncounterBenefit } from "./encounter-trait-state";
 import {
   BATTLE_CONFIG,
+  HALF_DIVISOR,
   LABYRINTH_HALF_DAMAGE_WARDS,
   LABYRINTH_MODIFIER_CONFIG,
   MIN_ARMOR_AMOUNT,
@@ -92,6 +93,23 @@ export function getEnemyDamageMultiplier(
   return multiplier;
 }
 
+export function getEnemyDamageVulnerabilityBonus(
+  state: Pick<BattleState, "enemyCC" | "enemyStatuses" | "talentEffects">,
+): number {
+  return (
+    (state.enemyCC.freezeSkipTurns > 0 ? state.talentEffects.freezeDamageBonusVsFrozen : 0) +
+    (state.enemyStatuses.poison > 0 ? state.talentEffects.poisonDamageBonusVsPoisoned : 0)
+  );
+}
+
+export function getBleedLowHealthDamageMultiplier(
+  state: Pick<BattleState, "playerHealth" | "playerMaxHealth" | "talentEffects">,
+): number {
+  return state.playerHealth * HALF_DIVISOR < state.playerMaxHealth
+    ? Math.max(1, state.talentEffects.bleedDesperateMultiplier)
+    : 1;
+}
+
 export function reduceDamageByMana(
   state: Pick<BattleState, "mana" | "maxMana" | "gearEffects">,
   amount: number,
@@ -111,10 +129,10 @@ export function dealSelfDamage(
   const scaled = healthCost
     ? amount
     : scaleReceivedPlayerDamage(reduceDamageByMana(state, amount), state.talentEffects, statLabel);
-  const damage = armorMitigatesElementalDamage(state, statLabel)
-    ? Math.max(0, scaled - state.playerStatuses.armor)
-    : scaled;
-  const resolvedDamage = healthCost ? damage : mitigatePlayerCombatDamage(state, damage, statLabel);
+  const resisted = healthCost ? scaled : mitigatePlayerCombatDamage(state, scaled, statLabel);
+  const resolvedDamage = armorMitigatesElementalDamage(state, statLabel)
+    ? Math.max(0, resisted - state.playerStatuses.armor)
+    : resisted;
   const postDamage = applyPlayerCombatDamage(
     state,
     resolvedDamage,

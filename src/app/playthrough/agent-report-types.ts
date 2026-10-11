@@ -1,3 +1,4 @@
+import type { summarizeBrewing } from "./brewing-evidence";
 import type { CareerResult } from "./types";
 
 export const MILESTONE_KINDS = [
@@ -135,6 +136,7 @@ export interface AgentCohortSummary {
   firstVictoryRun: Record<string, number>;
   neverWon: number;
   deckCohesion: AgentDeckCohesion;
+  brewing: ReturnType<typeof summarizeBrewing>;
   milestones: AgentMilestoneMetric[];
   coverageGaps: AgentMilestoneMetric[];
   findings: AgentFinding[];

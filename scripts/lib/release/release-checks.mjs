@@ -1,8 +1,8 @@
 import { releaseEdition, assertPackageEdition } from "./game-edition.mjs";
 import { execFileSync } from "node:child_process";
-import { closeSync, existsSync, openSync, readFileSync, readdirSync, readSync } from "node:fs";
+import { closeSync, existsSync, openSync, readFileSync, readdirSync, readSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
-import { basename, join, resolve } from "node:path";
+import { basename, join, posix, resolve } from "node:path";
 
 import { FuseState, FuseV1Options, getCurrentFuseWire } from "@electron/fuses";
 import {
@@ -12,8 +12,71 @@ import {
   targetFromUnpackedName,
   targetPlatform,
 } from "./desktop-artifact.mjs";
+import { REPO_ROOT } from "../repository-paths.mjs";
 
 const require = createRequire(import.meta.url);
+
+function verifyRendererResources(html, readResource) {
+  const resources = [];
+  let hasScript = false;
+  for (const [tag, element] of html.matchAll(/<(script|link)\b[^>]*>/giu)) {
+    const attribute = (name) => tag.match(new RegExp(`\\s${name}\\s*=\\s*["']([^"']+)["']`, "iu"))?.[1];
+    const script = element.toLowerCase() === "script";
+    if (!script && !["stylesheet", "modulepreload"].includes(attribute("rel")?.toLowerCase())) continue;
+    const reference = attribute(script ? "src" : "href");
+    if (!reference) continue;
+    hasScript ||= script;
+    resources.push(reference);
+  }
+  if (!hasScript) throw new Error("Desktop renderer HTML must reference an application script.");
+  for (const reference of new Set(resources)) {
+    if (/^(?:[\\/]|[a-z][a-z\d+.-]*:)/iu.test(reference)) {
+      throw new Error(`Desktop renderer resources must be relative: ${reference} (run npm run build:desktop).`);
+    }
+    const url = new URL(reference, "file:///renderer/index.html");
+    const resource = posix.relative("/renderer", decodeURIComponent(url.pathname));
+    if (resource === ".." || resource.startsWith("../")) {
+      throw new Error(`Desktop renderer resource points outside the renderer: ${reference}`);
+    }
+    let bytes;
+    try {
+      bytes = readResource(resource);
+    } catch (cause) {
+      throw new Error(`Desktop renderer resource is missing: ${resource}`, { cause });
+    }
+    if (bytes.length === 0) throw new Error(`Desktop renderer resource is empty: ${resource}`);
+  }
+}
+
+// Vite copies public files unchanged. Check the copy rather than only the
+// source inventory: a renderer can load successfully while its audio is absent.
+function verifyPublicAssets(publicDirectory, readResource) {
+  const files = readdirSync(publicDirectory, { recursive: true })
+    .filter((file) => statSync(join(publicDirectory, file)).isFile())
+    .map((file) => file.replaceAll("\\", "/"))
+    .sort();
+  if (!files.some((file) => file.startsWith("Music/") && file.endsWith(".mp3"))) {
+    throw new Error("No authored music found for package verification.");
+  }
+  for (const file of files) {
+    const expected = readFileSync(join(publicDirectory, file));
+    let actual;
+    try {
+      actual = readResource(file);
+    } catch (cause) {
+      throw new Error(`Renderer public asset is missing: ${file}`, { cause });
+    }
+    if (!actual.equals(expected)) throw new Error(`Renderer public asset differs from authored output: ${file}`);
+  }
+}
+
+/** Reject web or incomplete renderer output before packaging or signing it. */
+export function verifyDesktopRenderer(rendererDirectory, publicDirectory = join(REPO_ROOT, "public")) {
+  verifyRendererResources(readFileSync(join(rendererDirectory, "index.html"), "utf8"), (resource) =>
+    readFileSync(join(rendererDirectory, resource)),
+  );
+  verifyPublicAssets(publicDirectory, (resource) => readFileSync(join(rendererDirectory, resource)));
+}
 
 /** Steamworks ships a Windows x64 native binding, regardless of the build host. */
 export function verifyWindowsExecutableArchitecture(executable) {
@@ -44,23 +107,18 @@ export function verifyWindowsExecutableArchitecture(executable) {
 }
 
 /** Inspect the artifact itself, including assets that JavaScript imports cannot validate. */
-export function verifyPackagedRenderer(archivePath, musicDirectory = resolve("public/Music"), rendererDirectory = "dist") {
+export function verifyPackagedRenderer(archivePath, publicDirectory = join(REPO_ROOT, "public"), rendererDirectory = "dist") {
   const asar = require("@electron/asar");
   const entries = asar.listPackage(archivePath).map((entry) => entry.replaceAll("\\", "/").replace(/^\//u, ""));
   if (entries.some((entry) => entry.endsWith(".map"))) {
     throw new Error("Source maps were found inside app.asar.");
   }
-  if (!entries.includes(`${rendererDirectory}/index.html`)) throw new Error("Packaged renderer is missing dist/index.html.");
-  const music = readdirSync(musicDirectory).filter((name) => name.endsWith(".mp3"));
-  if (music.length === 0) throw new Error("No authored music found for package verification.");
-  for (const name of music) {
-    const archiveEntry = join(rendererDirectory, "Music", name);
-    const normalizedEntry = archiveEntry.replaceAll("\\", "/");
-    if (!entries.includes(normalizedEntry)) throw new Error(`Packaged music is missing: ${normalizedEntry}`);
-    if (!asar.extractFile(archivePath, archiveEntry).equals(readFileSync(join(musicDirectory, name)))) {
-      throw new Error(`Packaged music differs from authored output: ${normalizedEntry}`);
-    }
-  }
+  const indexEntry = `${rendererDirectory}/index.html`;
+  if (!entries.includes(indexEntry)) throw new Error(`Packaged renderer is missing ${indexEntry}.`);
+  verifyRendererResources(asar.extractFile(archivePath, indexEntry).toString("utf8"), (resource) =>
+    asar.extractFile(archivePath, `${rendererDirectory}/${resource}`),
+  );
+  verifyPublicAssets(publicDirectory, (resource) => asar.extractFile(archivePath, `${rendererDirectory}/${resource}`));
 }
 
 /** Throw when a release git tag does not match the package.json version. */
@@ -184,6 +242,6 @@ export async function verifyDesktopPackage() {
   }
 
   console.log(
-    "Packaged renderer, music, Electron fuses, ASAR boundary, Steamworks natives, source maps, secrets, and signing state verified.",
+    "Packaged renderer, public assets, Electron fuses, ASAR boundary, Steamworks natives, source maps, secrets, and signing state verified.",
   );
 }

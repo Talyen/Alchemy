@@ -1,5 +1,21 @@
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
-import type { CombatTextEvent } from "./types";
+import type { BattleState, CombatTextEvent } from "./types";
+
+export function emitEnemyBuildupImmunity(
+  state: BattleState,
+  stat: "stun" | "freeze",
+  amount: number,
+  combatTexts: CombatTextEvent[],
+): void {
+  if (amount <= 0 || state.enemyHealth <= 0 || state.enemyCC.cooldown <= 0) return;
+  mergeCombatText(combatTexts, {
+    target: "enemy",
+    kind: "notice",
+    stat,
+    signal: "immune",
+    text: `Immune to ${stat === "stun" ? "Stun" : "Freeze"}`,
+  });
+}
 
 export function shouldShowCombatText(event: CombatTextEvent) {
   return event.kind !== "status" || !harmfulPlayerStatusIds.some((status) => status === event.stat);

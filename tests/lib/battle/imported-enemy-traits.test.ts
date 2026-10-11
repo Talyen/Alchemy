@@ -131,16 +131,19 @@ describe("imported enemy attack reactions", () => {
     expect(repeated.playerHealth).toBe(second.playerHealth);
   });
 
-  it("doubles Bandit's first successful damage packet only", () => {
+  it.each(["physical", "bleed"] as const)("Ambush describes and doubles only the first landed %s hit", (damageType) => {
     const state = stateForEnemy("bandit", {});
+    expect(state.currentEnemy.traits.find((trait) => trait.id === "bandit")?.description).toBe(
+      "Deals double damage on its first landed hit",
+    );
     const first = applyEnemyAbility(
       state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] }),
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType, amount: 4 }] }),
       [],
     );
     const second = applyEnemyAbility(
       first,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] }),
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType, amount: 4 }] }),
       [],
     );
     expect(first.playerHealth).toBe(92);

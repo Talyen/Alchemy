@@ -29,7 +29,7 @@ export function validateDesktopBuildConfig(env = process.env) {
   }
   if (env.CI_RELEASE === "true" && selected.edition === "demo") {
     const fullId = selected.fullGameSteamAppId;
-    if (!/^\d+$/u.test(fullId ?? "") || !Number.isSafeInteger(Number(fullId)) || Number(fullId) <= 0 || Number(fullId) === 480 || fullId === steamAppId) {
+    if (!/^\d+$/u.test(fullId ?? "") || !Number.isSafeInteger(Number(fullId)) || Number(fullId) <= 0 || Number(fullId) === 480 || Number(fullId) === numericAppId) {
       throw new Error("Demo releases require distinct production demo and full-game App IDs");
     }
   }

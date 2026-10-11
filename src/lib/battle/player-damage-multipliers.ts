@@ -9,7 +9,11 @@ import {
 } from "../game-constants";
 import { cardHasKeyword } from "./card-classification";
 import { gearFrozenDamageMultiplier } from "./scaled-damage";
-import { getBurnBonusToBleedingMultiplier, getEnemyDamageMultiplier } from "./status-helpers";
+import {
+  getBleedLowHealthDamageMultiplier,
+  getBurnBonusToBleedingMultiplier,
+  getEnemyDamageMultiplier,
+} from "./status-helpers";
 import type { BattleState } from "./types";
 import { writeCombatFlag as setFlag } from "./action-context";
 
@@ -66,9 +70,7 @@ function computeTypeSpecificDamageBonus(
     bonus += state.gearEffects.holyBonusVsStunnedPercent / PERCENT_DENOMINATOR;
   }
   if (isLikeDamage(effect.damageType, "bleed", state)) {
-    if (isBelowHalfHealth(state) && state.talentEffects.bleedDesperateMultiplier > 1) {
-      bonus += state.talentEffects.bleedDesperateMultiplier - 1;
-    }
+    bonus += getBleedLowHealthDamageMultiplier(state) - 1;
     if (
       state.talentEffects.bleedExecuteThreshold > 0 &&
       state.enemyHealth * PERCENT_DENOMINATOR <= state.enemyMaxHealth * state.talentEffects.bleedExecuteThreshold

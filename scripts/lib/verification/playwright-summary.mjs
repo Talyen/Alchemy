@@ -139,6 +139,22 @@ export function summarizePlaywrightReport(report, options = {}) {
   const runnerErrors = (Array.isArray(root.errors) ? root.errors : []).map((error) =>
     firstSummaryLine(String(error?.message ?? error?.value ?? error)),
   );
+  if (root.stats !== undefined && (!root.stats || typeof root.stats !== "object" || Array.isArray(root.stats)))
+    runnerErrors.push("Invalid Playwright report: stats must be an object");
+  const count = (key, fallback) => {
+    if (!hasStats) return fallback;
+    const value = stats[key];
+    if (value === undefined) return 0;
+    if (Number.isSafeInteger(value) && value >= 0) return value;
+    runnerErrors.push(`Invalid Playwright report: stats.${key} must be a non-negative integer`);
+    return 0;
+  };
+  const counts = {
+    expected: count("expected", expected),
+    unexpected: count("unexpected", unexpected),
+    flaky: count("flaky", flaky),
+    skipped: count("skipped", skipped),
+  };
   if (!Array.isArray(root.suites)) runnerErrors.push("Invalid Playwright report: missing suites array");
   const unknown = collected.allTests.filter((test) => !TEST_OUTCOMES.has(test.status)).length;
   if (unknown)
@@ -146,18 +162,10 @@ export function summarizePlaywrightReport(report, options = {}) {
       `Invalid Playwright report: ${unknown} ${unknown === 1 ? "test has" : "tests have"} an unknown outcome`,
     );
   return {
-    failed: unexpected > 0 || Number(stats.unexpected) > 0 || runnerErrors.length > 0,
+    failed: unexpected > 0 || counts.unexpected > 0 || runnerErrors.length > 0,
     runnerErrors: runnerErrors.slice(0, maxFailures),
-    total: hasStats
-      ? Number(stats.expected ?? 0) +
-        Number(stats.unexpected ?? 0) +
-        Number(stats.flaky ?? 0) +
-        Number(stats.skipped ?? 0)
-      : collected.totalTests,
-    expected: hasStats ? Number(stats.expected ?? 0) : expected,
-    unexpected: hasStats ? Number(stats.unexpected ?? 0) : unexpected,
-    flaky: hasStats ? Number(stats.flaky ?? 0) : flaky,
-    skipped: hasStats ? Number(stats.skipped ?? 0) : skipped,
+    total: hasStats ? Object.values(counts).reduce((sum, value) => sum + value, 0) : collected.totalTests,
+    ...counts,
     failures,
   };
 }

@@ -14,7 +14,7 @@ export const TRAIT_REQUIRED_TERMS: Record<string, ReadonlyArray<string | readonl
   "living-armor": ["armor"],
   "gold-trove": ["gold"],
   "cinder-skin": ["burn"],
-  bandit: ["attack"],
+  bandit: ["double", "first", "landed", "hit"],
   ogre: ["physical", "block"],
   "fire-imp": ["burn"],
   hellhound: ["burn"],

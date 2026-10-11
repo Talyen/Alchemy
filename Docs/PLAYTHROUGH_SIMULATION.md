@@ -56,6 +56,88 @@ cohesion and lightweight immediate utility. Heroes with no fixed keywords, such
 as Wildcard, use the deck-conditioned fallback without receiving an authored
 starting deck or keyword catalog.
 
+## Brewing coverage and comparisons
+
+New CLI careers default to `--brewing on`. Use `--brewing off` for a paired
+ablation; both explicit settings use the same modern purchase, refresh, and
+consumable-preservation policy. Missing settings in retained manifests and
+bundles select the legacy actor, which cannot brew. Replay retains its recorded
+setting; `--brewing` cannot override a replay bundle.
+
+```bash
+npm run balance:playthrough -- --hero alchemist --fixture unlocked-v1 --seeds 42,137 --runs 3 --brewing off --out reports/alchemist-off
+npm run balance:playthrough -- --manifest reports/alchemist-off/playthrough.json --brewing on --baseline reports/alchemist-off/playthrough.json --comparison brewing --fixture unlocked-v1 --out reports/alchemist-on
+```
+
+The explicit `--comparison brewing` mode permits only the on/off setting to
+differ. It requires the same code/content identity and ordered scenario manifest,
+including starting saves, seeds, budgets and policies. Normal comparisons remain
+strict. An incomplete career cannot enter a balance comparison. Results use
+paired career means and standard errors; battles within careers are correlated.
+The `firstVictoryRunCensored` metric records careers without a victory as
+`runs + 1`, not as a measured later victory. Treatment decisions can change
+routes, spending and RNG consumption: matched seeds do not guarantee matched
+encounters. Fixture cohorts remain targeted evidence.
+
+The actor exposes shop mixing, distilling, buying and refreshing, and campfire
+new-potion or combining choices through production commands. Shop mixing and
+distilling share the production once-per-visit service limit. Campfire brewing
+and resting are mutually exclusive. Observation previews never advance RNG.
+
+The preparation heuristic estimates visible effects: Poison damage times three,
+other direct damage times two, healing times 0.75, Mana/draw times two, maximum
+Mana times five, Wish times four, Gold times 0.25, and status grants at their
+amount. Chance branches use expected value. Scores divide by at least one Mana.
+A mix compares its result with the better ingredient and adds one compression
+point; distilling compares the strengthened result with its input. These values
+are explainable policy estimates, not calibrated win-rate predictions. They do
+not model every talent/affix interaction or future combat sequence.
+
+Below half Health, the heuristic prefers campfire rest. Otherwise it favors
+positive brewing improvements. Purchases stop at four brewable Potions, and
+reserve the current service price while useful brewing remains. A weaker copy
+of a Potion already owned in stronger form is declined; novel Potion roles and
+equal-strength ingredients remain eligible. Only visible
+shop prices inform refresh decisions; a refresh requires no useful affordable
+option, room below the four-Potion policy cap, and enough Gold left to buy the
+cheapest visible Potion after reserving service Gold. Inferior stock can prompt
+one bounded search; unseen replacement stock is never examined. Evidence
+separates the potion cap, an available option, and reserved purchase Gold from
+an attempt to seek better stock. Production refresh limits apply. Alchemist destinations receive
+priority when current Gold and ingredients support a useful service; unseen
+stock is never inspected. Random noncombat policy ignores these score rankings.
+
+Heuristic combat policies may end a turn rather than consume a card with no
+current direct benefit and no recognized active Consume reward. This preserves
+full-Health healing and unnecessary cleanses. Random-playable and legacy careers
+retain their dump-hand behavior. Modern heuristic policies prefer an available
+attack before pure defense that would spend all remaining Mana when at or above
+half Health. Initial emergency defense retains its priority. After two completed
+turns without an attack card or enemy Health reduction, an available attack
+outranks such defense even below half Health. Defense with spare Mana, attack
+cards that also defend, and hands with no scored attack keep their existing
+scores. This is a progress heuristic, not a forecast of the next enemy action.
+
+The actor tracks these defensive turns only after committed commands; repeated
+observation does not change scores. Attack cards, damage-over-time progress, and
+leaving battle reset the counter. History starts empty in a new actor; recorded
+replay still follows the journal's decisions. It adds no shipping-save fields or
+RNG draws. Live autoplay and isolated-battle scoring are unchanged.
+
+JSON, HTML and agent summaries report distinct shop/campfire visits, per-service
+eligible/affordable/beneficial visits, committed uses, actual spending, result
+descriptions, deck-size changes and reasons for declining or lacking a service.
+Repeated observations update per-visit maxima rather than inflating visit counts.
+Evidence is bounded to 512 visits and 32 decisions per visit, with truncation
+reported. Disabled, unaffordable, unavailable and policy-declined services are
+coverage distinctions, not evidence of hero weakness. Targeted fixtures prove
+mechanics; earned progression requires an earned starting checkpoint.
+
+Isolated battle presets remain synthetic: Alchemist receives two randomly mixed
+Potions without paying or visiting shops. They also omit carryover Health and
+run economics. Use career experiments to judge Alchemist progression before
+proposing changes to globally available cards.
+
 ## Evidence and limits
 
 Fresh saves must earn hero/mode unlocks. `unlocked-v1` grants access for targeted

@@ -134,7 +134,11 @@ Env (harness iteration only, not for baselines):
 }
 
 async function buildDist({ skipIfPresent = false, live = false } = {}) {
-  if (skipIfPresent && fs.existsSync(path.join(root, releaseEdition().rendererDirectory, "index.html"))) return;
+  if (skipIfPresent) {
+    const index = path.join(root, releaseEdition().rendererDirectory, "index.html");
+    if (!fs.existsSync(index)) throw new Error(`--skip-build requires an existing renderer: ${index}`);
+    return;
+  }
   console.log("Building production renderer for performance profiling…");
   const result = await runTaskCommand("npm", ["run", "build"], { cwd: root, label: "performance build", live });
   if (result.status !== 0) process.exit(result.status ?? 1);
@@ -343,8 +347,8 @@ async function main() {
   );
 
   const result = await runTaskCommand(
-    "npx",
-    ["playwright", "test", "--config", "playwright.performance.config.ts", ...grepArgs],
+    process.execPath,
+    ["scripts/run-compact.mjs", "playwright", "test", "--config", "playwright.performance.config.ts", ...grepArgs],
     { cwd: root, env, label: "performance scenarios", live: args.live, logPath: path.join(outDir, "runner.log") },
   );
 

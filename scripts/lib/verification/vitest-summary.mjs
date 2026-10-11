@@ -1,6 +1,8 @@
 import { formatRouteHintLine, routeHintForPath } from "../agent/route-hints.mjs";
 import { MAX_SUMMARY_FAILURES, firstSummaryLine, formatSummaryMarkdown } from "./report-summary.mjs";
 
+const ASSERTION_OUTCOMES = new Set(["passed", "failed", "pending", "skipped", "todo", "disabled"]);
+
 export function summarizeVitestReport(report, options = {}) {
   const maxFailures = Math.max(0, Math.trunc(options.maxFailures ?? MAX_SUMMARY_FAILURES) || 0);
   const rootDir = options.rootDir ?? process.cwd();
@@ -8,8 +10,16 @@ export function summarizeVitestReport(report, options = {}) {
   const testResults = Array.isArray(root.testResults) ? root.testResults : [];
   const failures = [];
   let observedFailures = 0;
+  let unknownOutcomes = 0;
   const runnerErrors = [];
   if (!Array.isArray(root.testResults)) runnerErrors.push("Invalid Vitest report: missing testResults array");
+  const count = (key) => {
+    const value = root[key];
+    if (value === undefined) return 0;
+    if (Number.isSafeInteger(value) && value >= 0) return value;
+    runnerErrors.push(`Invalid Vitest report: ${key} must be a non-negative integer`);
+    return 0;
+  };
   for (const fileResult of testResults) {
     if (!fileResult || typeof fileResult !== "object") continue;
     const file = fileResult;
@@ -21,6 +31,7 @@ export function summarizeVitestReport(report, options = {}) {
     for (const assertion of assertions) {
       if (!assertion || typeof assertion !== "object") continue;
       const row = assertion;
+      if (!ASSERTION_OUTCOMES.has(row.status)) unknownOutcomes++;
       if (row.status !== "failed") continue;
       observedFailures++;
       if (failures.length >= maxFailures) continue;
@@ -34,8 +45,15 @@ export function summarizeVitestReport(report, options = {}) {
       });
     }
   }
-  const numFailedTests = Number(root.numFailedTests) || observedFailures;
-  const numFailedTestSuites = Number(root.numFailedTestSuites) || 0;
+  if (unknownOutcomes)
+    runnerErrors.push(
+      `Invalid Vitest report: ${unknownOutcomes} ${unknownOutcomes === 1 ? "assertion has" : "assertions have"} an unknown outcome`,
+    );
+  const numFailedTests = count("numFailedTests") || observedFailures;
+  const numFailedTestSuites = count("numFailedTestSuites");
+  const numTotalTests = count("numTotalTests");
+  const numPassedTests = count("numPassedTests");
+  const numPendingTests = count("numPendingTests");
   const failed = root.success === false || numFailedTests > 0 || numFailedTestSuites > 0 || runnerErrors.length > 0;
   if (failed && !numFailedTests && !runnerErrors.length)
     runnerErrors.push("Vitest reported a failed run without assertion details.");
@@ -43,10 +61,10 @@ export function summarizeVitestReport(report, options = {}) {
     failed,
     runnerErrors: runnerErrors.slice(0, maxFailures),
     numFailedTestSuites,
-    numTotalTests: Number(root.numTotalTests) || 0,
-    numPassedTests: Number(root.numPassedTests) || 0,
+    numTotalTests,
+    numPassedTests,
     numFailedTests,
-    numPendingTests: Number(root.numPendingTests) || 0,
+    numPendingTests,
     failures,
   };
 }

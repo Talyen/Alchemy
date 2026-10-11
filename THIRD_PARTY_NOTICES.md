@@ -38,8 +38,8 @@ license or receipt when redistribution terms are not public.
 | Thirteen Suno-generated music tracks                 | [Track links below](#music-source-links)                                        | Account entitlement at creation/download not verified   | Review applicable terms | Embedded song IDs and creation dates; private subscription/download evidence not yet recorded — release blocker             |
 
 Files whose provenance is not represented above are not cleared for public
-distribution merely because they exist under `Raw Assets/`, `public/`, or
-`src/assets/optimized/`. Add the applicable row and preserve its evidence before
+distribution merely because they exist in the external Asset Library, `public/`,
+or `src/assets/optimized/`. Add the applicable row and preserve its evidence before
 shipping. Secrets, purchase receipts, and private license keys must not be
 committed; record a stable private evidence location instead.
 
@@ -60,8 +60,10 @@ the sound effects for distribution.
 
 ### Music source links
 
-Every MP3 under `Raw Assets/Music/` embeds a Suno song URL, a creator account,
-and a creation timestamp. These links identify the source but do not
+The thirteen selected music masters in the external Asset Library, listed by
+[`music-assets.mjs`](./scripts/assets/music-assets.mjs), embed a Suno song URL,
+a creator account, and a creation timestamp. Prepared copies ship in `public/Music/`.
+These links identify the source but do not
 prove the account's rights for game distribution. Record private evidence of the
 applicable plan and download rights before clearing these tracks for release;
 [Suno's terms](https://suno.com/terms) and [rights guidance](https://help.suno.com/en/articles/2416769)

@@ -190,6 +190,7 @@ export function payPendingBleedLeech(
     nextState = applyScaledLeechHealing(nextState, computeLeechHeal(leechPaid), combatTexts, {
       afflicted,
       cardLeech: state.pendingCardBleedLeechHealing > 0,
+      cardHealing: state.pendingCardBleedLeechHealing > 0,
     });
   }
   return nextState;

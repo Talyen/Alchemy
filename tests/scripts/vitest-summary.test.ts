@@ -25,3 +25,16 @@ it("keeps an unsuccessful run and its inferred totals when diagnostics are cappe
     failures: [],
   });
 });
+
+it("rejects missing assertion outcomes and invalid counters instead of publishing a passing run", () => {
+  const missing = summarizeVitestReport({ testResults: [{ assertionResults: [{}] }] });
+  expect(missing.failed).toBe(true);
+  expect(missing.runnerErrors).toContain("Invalid Vitest report: 1 assertion has an unknown outcome");
+  const invalid = summarizeVitestReport({
+    numFailedTests: -1,
+    testResults: [{ assertionResults: [{ status: "failed", fullName: "failed assertion" }] }],
+  });
+  expect(invalid).toMatchObject({ failed: true, numFailedTests: 1 });
+  expect(invalid.failures[0]?.title).toBe("failed assertion");
+  expect(invalid.runnerErrors).toContain("Invalid Vitest report: numFailedTests must be a non-negative integer");
+});

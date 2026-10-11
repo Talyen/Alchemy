@@ -84,7 +84,7 @@
     "test:e2e:debug": "cross-env PLAYWRIGHT_VITE_MODE=preview playwright test --project=chromium --headed --trace on",
     "test:e2e:full": "cross-env PLAYWRIGHT_VITE_MODE=preview PLAYWRIGHT_E2E_FULL=1 CI=true node scripts/run-compact.mjs playwright test --project=chromium",
     "test:e2e:nightly": "cross-env PLAYWRIGHT_VITE_MODE=preview PLAYWRIGHT_E2E_FULL=1 PLAYWRIGHT_NIGHTLY=1 CI=true node scripts/run-compact.mjs playwright test --project=chromium",
-    "test:e2e:timings": "cross-env PLAYWRIGHT_JSON_OUTPUT_NAME=reports/e2e-results.json PLAYWRIGHT_VITE_MODE=preview PLAYWRIGHT_E2E_FULL=1 CI=true playwright test --project=chromium --reporter=json",
+    "test:e2e:timings": "cross-env PLAYWRIGHT_JSON_OUTPUT_NAME=reports/e2e-results.json PLAYWRIGHT_VITE_MODE=preview PLAYWRIGHT_E2E_FULL=1 CI=true node scripts/run-compact.mjs playwright test --project=chromium --reporter=json",
     "test:e2e:audit": "node scripts/analyze-e2e.mjs",
     "perf": "node scripts/run-performance.mjs",
     "perf:trace": "node scripts/run-performance.mjs --trace",

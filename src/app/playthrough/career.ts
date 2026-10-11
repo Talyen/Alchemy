@@ -6,6 +6,8 @@ import { addGold } from "@/features/alchemy/shared/stores/run-session-write-port
 import { characters, DIFFICULTY_ORDER } from "@/lib/game-data";
 import { createSeededRng } from "@/lib/rng";
 import { performance } from "node:perf_hooks";
+import { recordBrewingObservation, recordBrewingCommit } from "./brewing-evidence";
+import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { createCareerActor } from "./actor";
 import {
   createCareerResult,
@@ -28,6 +30,7 @@ function validateConfig(config: CareerConfig) {
     !["campaign", "wildwood", "labyrinth"].includes(config.mode) ||
     !DIFFICULTY_ORDER.includes(config.difficulty) ||
     !["archetype", "random", "minimalist"].includes(config.policy) ||
+    (config.brewing !== undefined && config.brewing !== "on" && config.brewing !== "off") ||
     !["greedy-effective-damage", "greedy-damage", "random-playable", "defensive-random"].includes(config.combatPolicy)
   )
     throw new Error("Invalid scenario configuration");
@@ -95,6 +98,7 @@ export async function runCareer(
       const options = actor.observe();
       if (stateDigest(gameSession) !== before) throw new Error("Invariant: observation mutated gameplay or RNG");
       recordObservation(result, options, gameSession);
+      const brewingVisit = recordBrewingObservation(result, actor.brewingObservation(), completed);
       result.timings.observationMs += performance.now() - observationStarted;
 
       const recorded = replay?.[step];
@@ -121,7 +125,12 @@ export async function runCareer(
         injectDiagnosticFault(config, step, gameSession);
         if (choice.kind === "continue-run-end") runtime.setRunSeed((config.seed + completed + 1) >>> 0);
         const actionStarted = performance.now();
-        actor.execute(choice);
+        const brewingBefore = {
+          gold: readRunProfile(gameSession).gold,
+          deckSize: readActiveRun(gameSession).runDeck.length,
+        };
+        const executed = actor.execute(choice);
+        recordBrewingCommit(brewingVisit, step, choice, brewingBefore, executed, gameSession);
         result.timings.actionMs += performance.now() - actionStarted;
         entry.after = stateDigest(gameSession);
         entry.afterRevision = readRunRevision(gameSession);

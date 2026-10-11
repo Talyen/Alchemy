@@ -6,6 +6,19 @@ describe("escape-stack", () => {
     resetEscapeStackForTests();
   });
 
+  it("holding Escape cannot dismiss another layer after the first one closes", () => {
+    const menu = vi.fn();
+    pushEscapeHandler({ id: "menu", priority: ESCAPE_PRIORITY.APP_MENU, onEscape: menu });
+    const closeDialog = vi.fn(() => removeDialog());
+    const removeDialog = pushEscapeHandler({ id: "dialog", priority: ESCAPE_PRIORITY.DIALOG, onEscape: closeDialog });
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", repeat: true }));
+    expect(closeDialog).toHaveBeenCalledOnce();
+    expect(menu).not.toHaveBeenCalled();
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(menu).toHaveBeenCalledOnce();
+  });
+
   it("dismisses one layer per Escape and promotes the next eligible layer", () => {
     const layers = [
       { id: "menu", priority: ESCAPE_PRIORITY.APP_MENU, onEscape: vi.fn() },

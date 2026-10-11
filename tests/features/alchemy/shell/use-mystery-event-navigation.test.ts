@@ -54,7 +54,7 @@ describe("createMysteryEventNavigation", () => {
       },
     ])[0]!;
 
-    act(() => result.current.handleMysteryChoice(choice));
+    expect(result.current.handleMysteryChoice(choice)).toBe(true);
 
     expect(readRunProfile(defaultGameSession).materialInventory.herbs - before).toBe(5);
     expect(
@@ -178,11 +178,11 @@ describe("createMysteryEventNavigation", () => {
     const currentChoice = offerChoices([{ label: "Take", effects: [{ kind: "gainGold", amount: 10 }] }])[0]!;
     const beforeRevision = readRunRevision(defaultGameSession);
 
-    act(() => result.current.handleMysteryChoice(oldChoice));
+    expect(result.current.handleMysteryChoice(oldChoice)).toBe(false);
     expect(readRunRevision(defaultGameSession)).toBe(beforeRevision);
     expect(readRunProfile(defaultGameSession).gold).toBe(0);
 
-    act(() => result.current.handleMysteryChoice(currentChoice));
+    expect(result.current.handleMysteryChoice(currentChoice)).toBe(true);
     expect(readRunProfile(defaultGameSession).gold).toBe(10);
   });
 

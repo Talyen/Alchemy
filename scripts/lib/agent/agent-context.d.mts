@@ -4,5 +4,5 @@ export interface Selection {
   entrypoints: string[];
 }
 export const CONTEXT_TASKS: Record<string, { matches: RegExp; docs: Selection["docs"]; entrypoints: string[] }>;
-export function selectContext(paths: string[], task?: string): Selection;
+export function selectContext(paths: string[], task?: string | string[]): Selection;
 export function validateContextCatalog(root: string): string[];

@@ -23,9 +23,8 @@ export async function validateRegistryEntries(
   const sources = new Map();
   const targets = new Map();
   const exports = new Map();
-  const reserved = new Set(reservedTargets);
-
   const dedupeKey = (value) => (caseInsensitiveDuplicates && typeof value === "string" ? value.toLowerCase() : value);
+  const reserved = new Set(reservedTargets.map(dedupeKey));
 
   for (const entry of entries) {
     const source = entry.source;
@@ -40,7 +39,7 @@ export async function validateRegistryEntries(
       errors.push(`Duplicate asset target "${target}" (${prev} and ${source}).`);
     }
     if (target) targets.set(dedupeKey(target), source);
-    if (target && reserved.has(target)) {
+    if (target && reserved.has(dedupeKey(target))) {
       errors.push(reservedMessage(target));
     }
 

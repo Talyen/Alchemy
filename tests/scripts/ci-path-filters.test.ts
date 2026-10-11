@@ -108,6 +108,9 @@ const PATH_CASES: Array<[string, string[], string[]]> = [
   ["scripts/lib/vite-chunks.mjs", ["tooling"], ["desktop", "desktop_renderer"]],
   ["scripts/lib/release/sentry-release.mjs", ["tooling"], ["desktop", "desktop_renderer"]],
   ["scripts/lib/release/desktop-build-config.mjs", ["desktop", "tooling"], ["desktop", "desktop_renderer"]],
+  ["scripts/lib/release/desktop-artifact.mjs", ["desktop", "tooling"], ["desktop", "desktop_renderer"]],
+  ["scripts/lib/release/game-edition.mjs", ["desktop", "tooling"], ["desktop", "desktop_renderer"]],
+  ["game-edition.mjs", ["desktop", "tooling"], ["desktop", "desktop_renderer"]],
   ["package.json", ["tooling"], ["desktop", "desktop_renderer", "assets"]],
   ["Docs/REFERENCE.md", ["documentation"], []],
 ];

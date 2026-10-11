@@ -166,7 +166,10 @@ and link to numbered full-log locations. Exit status identifies a failed checker
 when its diagnostic format is unrecognized, retain bounded output from both ends
 instead of reducing the summary to its exit footer.
 
-Asset-related pre-push checks also run `npm run assets:check` and require the selected local library sources. Code-only pushes do not require the library.
+Pre-push also validates committed asset integrity: asset-related selections run
+`npm run assets:check` and require the selected local library sources; other
+selections run `npm run assets:check:outputs` without the library. Ordinary
+task-scoped `check` does not add either asset check.
 
 Builds only validate generated outputs and never prepare or rewrite tracked
 sources. `npm run dev` validates committed outputs through its `predev` lifecycle; use the

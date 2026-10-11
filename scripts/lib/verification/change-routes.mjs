@@ -21,6 +21,7 @@ function route(id, patterns, commands, docs, fixture, exclude = []) {
 // list instead of maintaining parallel copies. CI topology itself remains owned
 // by .github/workflows/ (see CONTRIBUTING.md#static-build-and-ci-policy).
 export const SHARED_BUILD_PATTERNS = Object.freeze([
+  "game-edition.mjs",
   "package.json",
   "package-lock.json",
   "tsconfig*.json",
@@ -29,6 +30,7 @@ export const SHARED_BUILD_PATTERNS = Object.freeze([
   "scripts/lib/vite-*.mjs",
   "scripts/lib/release/sentry-release.mjs",
   "scripts/lib/release/desktop-build-config.mjs",
+  "scripts/lib/release/game-edition.mjs",
 ]);
 
 // Gate-level "documentation-only" definition: every Markdown file plus the
@@ -116,11 +118,13 @@ const ROUTES = Object.freeze([
   route(
     "desktop",
     [
+      "game-edition.mjs",
       "desktop/**",
       "src/lib/desktop-api.ts",
       "src/lib/platform.ts",
       "scripts/**desktop*",
       "scripts/lib/release/release-checks.mjs",
+      "scripts/lib/release/game-edition.mjs",
       "tests/desktop/**",
     ],
     ["related", "unit-desktop"],
@@ -150,6 +154,7 @@ const ROUTES = Object.freeze([
   route(
     "tooling",
     [
+      "game-edition.mjs",
       "scripts/**",
       "tests/scripts/**",
       "tests/architecture/**",

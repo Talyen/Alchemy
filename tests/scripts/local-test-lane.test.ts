@@ -1,4 +1,5 @@
 import net from "node:net";
+import fs from "node:fs";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { setTimeout as delay } from "node:timers/promises";
@@ -90,4 +91,6 @@ it("shares the lane between unit and browser commands while leaving small non-te
     expect(usesLocalTestLane("vitest", [flag]), flag).toBe(false);
   }
   expect(usesLocalTestLane("vitest", ["--watch=false"])).toBe(true);
+  const { scripts } = JSON.parse(fs.readFileSync(new URL("../../package.json", import.meta.url), "utf8"));
+  expect(scripts["test:e2e:timings"]).toContain("node scripts/run-compact.mjs playwright test");
 });

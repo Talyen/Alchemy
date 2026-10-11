@@ -1,6 +1,6 @@
 import { PotionComparison } from "./potion-comparison";
 import { playUISound } from "@/lib/audio";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { BattleCard } from "@/lib/game-data";
 import { isBrewablePotion, strengthenPotion, type BrewOperation } from "@/lib/alchemist/brewing";
@@ -37,13 +37,19 @@ export function BrewPotionPanel({
   const [selected, setSelected] = useState<number[]>([]);
   const [page, setPage] = useState(0);
   const [error, setError] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const confirmRef = useRef<HTMLButtonElement>(null);
   const [selectionDeck, setSelectionDeck] = useState(deck);
   if (selectionDeck !== deck) {
     setSelectionDeck(deck);
     setSelected([]);
     setPage(0);
-    setError("Deck changed. Select again.");
+    setError(submitted ? "" : "Deck changed. Select again.");
   }
+  useLayoutEffect(() => {
+    if (kind === "strengthen" && selected.length === 1 && document.activeElement === document.body)
+      confirmRef.current?.focus();
+  }, [kind, selected]);
   useCaptureEscapeCancel(onBack);
   const items =
     kind === "new"
@@ -66,12 +72,17 @@ export function BrewPotionPanel({
           ? tryCreateMixedPotion(deck[a], deck[b], potency)
           : null;
   const afford = gold >= price;
+  function confirm(operation: BrewOperation) {
+    if (submitted || isProgressSavePending()) return;
+    if (onConfirm(operation)) setSubmitted(true);
+    else setError(kind === "new" ? "This Potion is no longer available." : "This brew is no longer available.");
+  }
   function choose(index: number) {
-    if (kind === "new" && isProgressSavePending()) return;
+    if (submitted || (kind === "new" && isProgressSavePending())) return;
     playUISound(selectionSound);
     setError("");
     if (kind === "new") {
-      if (!onConfirm({ kind: "new", offerIndex: index })) setError("This Potion is no longer available.");
+      confirm({ kind: "new", offerIndex: index });
       return;
     }
     setSelected((previous) =>
@@ -109,6 +120,7 @@ export function BrewPotionPanel({
               card={card}
               chrome="shop"
               isSelected={selected.includes(index)}
+              disabled={submitted}
               onSelect={() => choose(index)}
             />
           )}
@@ -128,28 +140,28 @@ export function BrewPotionPanel({
       )}
       {!afford && <p role="status">Not enough Gold. Brewing costs {price} Gold.</p>}
       {error && <p role="alert">{error}</p>}
-      {kind !== "new" && (
-        <div className="flex justify-center gap-3">
-          <Button variant="outline" onClick={onBack}>
-            Back
-          </Button>
-          {kind === "strengthen" && result && (
-            <Button variant="outline" onClick={() => setSelected([])}>
-              Choose Another Potion
+      <div className="flex justify-center gap-3">
+        <Button variant="outline" onClick={onBack}>
+          Back
+        </Button>
+        {kind !== "new" && (
+          <>
+            {kind === "strengthen" && result && (
+              <Button variant="outline" onClick={() => setSelected([])}>
+                Choose Another Potion
+              </Button>
+            )}
+            <Button
+              ref={confirmRef}
+              disabled={submitted || !result || !afford || isProgressSavePending()}
+              onClick={() => confirm(operation)}
+            >
+              {kind === "combine" ? "Mix" : "Distill"}
+              {price ? ` · ${price} Gold` : ""}
             </Button>
-          )}
-          <Button
-            disabled={!result || !afford || isProgressSavePending()}
-            onClick={() => {
-              if (isProgressSavePending()) return;
-              if (!onConfirm(operation)) setError("This brew is no longer available.");
-            }}
-          >
-            {kind === "combine" ? "Mix" : "Distill"}
-            {price ? ` · ${price} Gold` : ""}
-          </Button>
-        </div>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

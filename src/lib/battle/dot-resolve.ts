@@ -12,6 +12,7 @@ import {
   getBurnBonusToBleedingMultiplier,
   getPoisonBonusAgainstBleeding,
   getPoisonDamageMultiplierAgainstBleeding,
+  getBleedLowHealthDamageMultiplier,
 } from "./status-helpers";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 import { addGoldWithCombatText, payKillPayouts } from "./player-rewards";
@@ -66,7 +67,13 @@ export function applyEnemyDotDamage(
   if (applyRiders) nextState = applyRiders(nextState, hit);
   nextState = decayArmorAfterDamage(nextState, finalDamage, "enemy", combatTexts);
   nextState = processEncounterTraitHealthThreshold(previousHealth, nextState, combatTexts);
-  return payKillPayouts(nextState, hit.enemyWasAlive, combatTexts, state.enemyStatuses);
+  return payKillPayouts(
+    nextState,
+    hit.enemyWasAlive,
+    combatTexts,
+    state.enemyStatuses,
+    state.playerStatuses.forge >= 5,
+  );
 }
 
 export function dealEnemyDotTick(
@@ -83,7 +90,14 @@ export function dealEnemyDotTick(
 export function projectEnemyDotDamage(
   state: Pick<
     BattleState,
-    "enemyStatuses" | "enemyCC" | "currentEnemy" | "talentEffects" | "gearEffects" | "encounterBenefits"
+    | "enemyStatuses"
+    | "enemyCC"
+    | "currentEnemy"
+    | "talentEffects"
+    | "gearEffects"
+    | "encounterBenefits"
+    | "playerHealth"
+    | "playerMaxHealth"
   >,
   status: EnemyDotStatus,
   mode: "next-tick" | "remaining-ticks" = "next-tick",
@@ -98,6 +112,9 @@ export function projectEnemyDotDamage(
     gearFrozenDamageMultiplier(state) *
     (status === "burn" || (status === "bleed" && state.gearEffects.sharedBurnBleedBonuses > 0)
       ? getBurnBonusToBleedingMultiplier(state)
+      : 1) *
+    (status === "bleed" || (status === "burn" && state.gearEffects.sharedBurnBleedBonuses > 0)
+      ? getBleedLowHealthDamageMultiplier(state)
       : 1);
   // Projected ticks all use the same immutable battle inputs. Keep the
   // multiplication order and per-tick rounding when reusing these factors.

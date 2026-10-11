@@ -148,20 +148,33 @@ function diagnosticIndexes(lines) {
 
 function diagnosticExcerpt(lines, maxBytes) {
   const result = [];
+  // Repeated failures must not consume the space needed for a distinct cause.
+  // Collapse exact lines only; retain their first/last log locations and count.
+  const unique = new Map();
+  for (const { text, index } of lines) {
+    if (!text.trim()) continue;
+    const entry = unique.get(text);
+    if (entry) {
+      entry.count++;
+      entry.lastIndex = index;
+    } else unique.set(text, { text, index, lastIndex: index, count: 1 });
+  }
+  const compactLines = [...unique.values()];
   // Compiler root errors can follow their downstream failures. Give both ends
   // space, then restore source order so log locations remain easy to follow.
   const prioritized = [];
-  for (let first = 0, last = lines.length - 1; first <= last; first++, last--) {
-    prioritized.push(lines[first]);
-    if (first < last) prioritized.push(lines[last]);
+  for (let first = 0, last = compactLines.length - 1; first <= last; first++, last--) {
+    prioritized.push(compactLines[first]);
+    if (first < last) prioritized.push(compactLines[last]);
   }
   let omitted = 0;
   let currentBytes = 0;
   const budget = maxBytes - 100;
-  for (const { text, index } of prioritized) {
+  for (const { text, index, lastIndex, count } of prioritized) {
     const excerpt =
       Buffer.byteLength(text) > 700 ? Array.from(text).slice(0, 150).join("") + " […line clipped; see full log]" : text;
-    const line = `L${index + 1}: ${excerpt}`;
+    const repeats = count > 1 ? ` (${count} occurrences; last L${lastIndex + 1})` : "";
+    const line = `L${index + 1}${repeats}: ${excerpt}`;
     const lineBytes = Buffer.byteLength(line, "utf8") + (result.length > 0 ? 1 : 0);
     if (currentBytes + lineBytes <= budget) {
       result.push({ index, line });

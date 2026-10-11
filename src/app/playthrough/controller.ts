@@ -72,5 +72,5 @@ export function createPlaythroughController(gameSession: GameSession) {
     },
     gameSession,
   );
-  return { flow, shop, labyrinth, nodes, battle: battleCommands };
+  return { flow, shop, labyrinth, nodes, battle: battleCommands, alchemy: runActions };
 }

@@ -19,13 +19,13 @@ choice between fast generated checks and prepared-output verification.
 Asset and synchronization CLIs validate selectors before writing, including in
 skip mode; keep that validation at each entry point.
 
-| Concern                                    | Implementation owner                                                                                                                                                                                                                                                                                      |
-| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Asset CLI and preparation                  | `assets.mjs` → `prepare-assets.mjs` (canonical surface; `npm run assets:check` is the local source check; `assets:check:outputs` adds `--outputs-only` for CI; direct `optimize-*.mjs` calls are the supported iteration shortcut behind `assets:optimize[:art\|:sounds\|:music]`)                        |
-| Art, sound, and music optimization         | `assets/optimize-pipelines.mjs` → `optimize-assets.mjs`, `optimize-sounds.mjs`, `optimize-music.mjs` via `assets/asset-pipeline-runner.mjs`                                                                                                                                                               |
-| Generated art barrels and version metadata | `sync-generated.mjs` → `sync-art-barrels.mjs`, `sync-version-metadata.mjs` (`sync:art` syncs both barrels; `sync:gear-art` alone refuses stale `assets.generated.ts`; `sync:version` stamps the build version alone; `prepare`/`assets:check` sync art barrels and version metadata as independent steps) |
-| Fast generated-output validation           | `sync-generated.mjs --check`                                                                                                                                                                                                                                                                              |
-| Read-only prepared-output freshness        | `assets.mjs --check` → `check-prepared-assets.mjs` (partial-failure `prepare` advances barrels when art succeeds; `check` is all-or-nothing)                                                                                                                                                              |
+| Concern                                    | Implementation owner                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Asset CLI and preparation                  | `assets.mjs` → `prepare-assets.mjs` (canonical surface; `npm run assets:check` is the local source check; `assets:check:outputs` adds `--outputs-only` for CI; direct `optimize-*.mjs` calls are the supported iteration shortcut behind `assets:optimize[:art\|:sounds\|:music]`)                                               |
+| Art, sound, and music optimization         | `assets/optimize-pipelines.mjs` → `optimize-assets.mjs`, `optimize-sounds.mjs`, `optimize-music.mjs` via `assets/asset-pipeline-runner.mjs`                                                                                                                                                                                      |
+| Generated art barrels and version metadata | `sync-generated.mjs` → `sync-art-barrels.mjs`, `sync-version-metadata.mjs` (`sync:art` syncs both barrels; `sync:gear-art` alone refuses stale `assets.generated.ts`; `sync:version` stamps the build version alone; asset preparation syncs art barrels and version metadata independently; `assets:check` only validates them) |
+| Fast generated-output validation           | `sync-generated.mjs --check`                                                                                                                                                                                                                                                                                                     |
+| Read-only prepared-output freshness        | `assets.mjs --check` → `check-prepared-assets.mjs` (partial-failure `prepare` advances barrels when art succeeds; `check` is all-or-nothing)                                                                                                                                                                                     |
 
 Shared: `assets/asset-constants.mjs` (tuning, `MANAGED_DIRS` managed outputs — the manifest is the complete inventory, no directory exceptions), `assets/asset-pipeline-runner.mjs` (pipeline paths, output-dir creation, source reads, freshness, failure normalization),
 `assets/asset-manifest-cache.mjs` (freshness,
@@ -92,7 +92,7 @@ evidence and never block handoff.
 
 ## Test / E2E
 
-`npm run test:e2e:route -- <route> [-- extra playwright args]`;
+`npm run test:e2e:route -- <route> [extra Playwright arguments]`;
 `test:ship:unit`, `test:e2e:audit` (full timings), `perf`, `balance:sim`, `ci:summarize`.
 All `E2E_ROUTES` entries use the single `test:e2e:route` command; individual
 `test:e2e:<name>` scripts do not exist. `tests/scripts/run-e2e-route.test.ts`
@@ -109,7 +109,8 @@ and overflow sections, missing-report wording) via one table-driven publisher.
 stats-authoritative while `collectPlaywrightTests` is the walked audit model
 for slowest-tables (`topSlowestTests` is shared with `analyze-e2e.mjs`) — on inconsistent reports the header and the tables can
 differ by design. Malformed reports must fail rather than appear to be
-successful zero-test runs.
+successful zero-test runs. Supplied counters must be non-negative integers;
+unknown assertion outcomes also fail the summary and retain CI diagnostics.
 
 `run-performance.mjs` owns profiling options and validates them before builds
 or downloads. Measurements and interpretation follow [PERFORMANCE](../Docs/PERFORMANCE.md).
@@ -118,11 +119,15 @@ Balance and loot reports share the middleware-mode Vite bootstrap in
 `lib/vite-report-server.mjs` (also used by `content-audit.mjs`, which is now an
 import-safe `defineScript` entry); both are import-safe `defineScript` entries and
 both leave a run receipt. Report paths resolve from the script root, not the
-invoking CWD. Long-running suite/build/profiling CLIs
+invoking CWD. One-shot suite/build/profiling CLIs
 (`run-ship-unit`, `run-e2e-route`, `run-performance`, `build-verified`,
-`run-prettier`, `audit` dispatcher) stream output intentionally through the
-shared `runStreamCommand` runner instead of bounded `runCommand` capture or raw
-`spawnSync`.
+`run-prettier`, `audit` dispatcher) use `runTaskCommand` to retain complete logs
+and print compact summaries. Supported `--live` / `--verbose` options select
+streaming output when needed.
+
+Playthrough and performance-case workers use `runCommandAsync` so deadlines and
+cancellation stop their process trees. Interrupted playthroughs keep their
+journal prefix and starting-state evidence for replay.
 
 ## Development
 
@@ -193,11 +198,11 @@ Exit codes are 0 = pass, 1 = check failed, 2 = bad invocation (`UsageError`;
 another validator. Path selection stays on `lib/verification/changed-paths.mjs`; complex
 CLIs (audit, performance) keep bespoke validators until migrated.
 
-`lib/run-command.mjs` owns subprocess execution: `runCommand`/`runCommandAsync`
-for captured bounded output with `logPath` (checks, verification, audits, E2E
-analysis; only bounded excerpts enter summaries), `runStreamCommand` for
-long-running CLIs that stream inherit output (builds, ship suites, browser
-runs, profiling, formatting). Do not use raw `spawnSync` in scripts — the
+`lib/run-command.mjs` owns subprocess execution: `runTaskCommand` supplies the
+compact one-shot interface and full logs; `runCommand`/`runCommandAsync` supply
+captured output for callers that own their summaries, with complete logs when
+`logPath` is set. `runStreamCommand` supplies inherited output for explicit live
+mode and desktop setup, packaging, and startup checks. Do not use raw `spawnSync` in scripts — the
 documented long-running owners are `repository-paths.mjs:runGit` (single git spawn with
 stale-cache overrides; `git-safety-guard` must exec past its own shim and
 `release-runner` keeps mockable flows) and `agent-worktree.mjs` worktree git.

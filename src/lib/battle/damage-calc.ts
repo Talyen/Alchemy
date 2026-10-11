@@ -11,10 +11,14 @@ import type { CardEffectResolutionContext } from "./effect-handlers/handler-type
 import { paceCombatDamage } from "./fight-pacing";
 import { computeBaseDamage } from "./player-damage-base";
 import { applyFirstDamageBonus, resolveDamageBonusMultiplier } from "./player-damage-multipliers";
-import { getEnemyDamageMultiplier, getEnemyTraitDamageMultiplier } from "./status-helpers";
+import {
+  getEnemyDamageMultiplier,
+  getEnemyDamageVulnerabilityBonus,
+  getEnemyTraitDamageMultiplier,
+} from "./status-helpers";
 import type { BattleState } from "./types";
 import { hasEncounterBenefit } from "./encounter-trait-state";
-import { reduceEnemyArmor } from "./enemy-mitigation-state";
+import { applySunderingArmorRemoval } from "./enemy-mitigation-state";
 import { writeCombatFlag as setFlag } from "./action-context";
 
 function applyCrit(damage: number, state: BattleState, guaranteed = false) {
@@ -26,13 +30,6 @@ function applyCrit(damage: number, state: BattleState, guaranteed = false) {
       critical && damage > 0 ? damage * CRIT_MULTIPLIER + (state.talentEffects.homesteadCriticalDamage ?? 0) : damage,
     critical: critical && damage > 0,
   };
-}
-
-function applySunderingArmorPiercing(state: BattleState, isPhysicalOrStun: boolean): BattleState {
-  if (!isPhysicalOrStun) return state;
-  const pierce = state.trinketEffects.sunderingArmorPiercing;
-  if (pierce <= 0) return state;
-  return reduceEnemyArmor(state, pierce);
 }
 
 function applyBlockAbsorption(
@@ -62,20 +59,19 @@ export function computeTalentDamageToEnemy(
   amount: number,
   source: "talent-fixed" | "talent-derived",
 ) {
-  const frozenBonus = state.enemyCC.freezeSkipTurns > 0 ? state.talentEffects.freezeDamageBonusVsFrozen : 0;
-  const poisonedBonus = state.enemyStatuses.poison > 0 ? state.talentEffects.poisonDamageBonusVsPoisoned : 0;
   const base =
     source === "talent-derived"
       ? Math.round(amount)
-      : paceCombatDamage(state, amount + frozenBonus + poisonedBonus, "player");
+      : paceCombatDamage(state, amount + getEnemyDamageVulnerabilityBonus(state), "player");
   const multiplier =
     source === "talent-derived"
       ? getEnemyTraitDamageMultiplier(state, damageType)
       : getEnemyDamageMultiplier(state, damageType);
   const damage = Math.max(0, Math.round(base * multiplier));
   const afterBlock = applyBlockAbsorption(state, damage);
-  const armor = damageType === "physical" || damageType === "stun" ? state.enemyMitigation.armor : 0;
-  return { state: afterBlock.state, remainingDamage: Math.max(0, afterBlock.remainingDamage - armor) };
+  const sundered = damage > 0 ? applySunderingArmorRemoval(afterBlock.state, damageType) : afterBlock.state;
+  const armor = damageType === "physical" || damageType === "stun" ? sundered.enemyMitigation.armor : 0;
+  return { state: sundered, remainingDamage: Math.max(0, afterBlock.remainingDamage - armor) };
 }
 
 export function computeReflectedHolyDamageToEnemy(state: BattleState, blockLost: number) {
@@ -134,7 +130,7 @@ function resolveDamageAfterMitigation(
   const isPhysicalOrStun = effect.damageType === "physical" || effect.damageType === "stun";
   const serpent = state.gearEffects.poisonedAttacksPierce > 0 && state.enemyStatuses.poison > 0 && card !== undefined;
   const kingbreaker = effect.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0;
-  let nextState = applySunderingArmorPiercing(stateAfterBlock, isPhysicalOrStun);
+  let nextState = applySunderingArmorRemoval(stateAfterBlock, effect.damageType);
   // Ignoring Armor changes this hit's mitigation; only Sundering removes stacks.
   const ignoredArmor =
     state.gearEffects.armorPiercing +

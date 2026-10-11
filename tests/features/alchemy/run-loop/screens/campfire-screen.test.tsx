@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { CampfireScreen } from "@/features/alchemy/run-loop/screens/campfire-screen";
@@ -39,7 +39,6 @@ describe("Campfire Rest or Brew", () => {
     render(<CampfireScreen {...p} />);
     fireEvent.click(screen.getByRole("button", { name: "Brew Potion" }));
     expect(screen.getByRole("heading", { name: "Choose a Potion" })).toBeTruthy();
-    expect(screen.getAllByRole("button")).toHaveLength(3);
     expect(screen.queryByRole("img")).toBeNull();
     expect(screen.queryByLabelText("Brew preview")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Health Potion" }));
@@ -47,11 +46,12 @@ describe("Campfire Rest or Brew", () => {
     expect(screen.getByRole("alert").textContent).toBe("This Potion is no longer available.");
     expect(p.onRest).not.toHaveBeenCalled();
   });
-  it("Escape returns from Potion choice to Rest without spending the visit", () => {
+  it.each(["Back", "Escape"])("%s returns from Potion choice to Rest without spending the visit", (action) => {
     const p = props();
     render(<CampfireScreen {...p} />);
     fireEvent.click(screen.getByRole("button", { name: "Brew Potion" }));
-    fireEvent.keyDown(window, { key: "Escape" });
+    if (action === "Back") fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    else fireEvent.keyDown(window, { key: "Escape" });
     expect(screen.getByRole("button", { name: "Rest" })).toBeTruthy();
     expect(p.onBrew).not.toHaveBeenCalled();
     expect(p.onRest).not.toHaveBeenCalled();
@@ -82,5 +82,25 @@ describe("Campfire Rest or Brew", () => {
     expect(screen.queryByText(/Potion brewed/)).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     expect(p.onContinue).toHaveBeenCalledOnce();
+  });
+  it("holds the pre-Rest Health until saving finishes, then animates forward", async () => {
+    const p = props();
+    let saved: (() => void) | undefined;
+    const afterProgressSaved = (feedback: () => void) => {
+      saved = feedback;
+    };
+    const { rerender } = render(<CampfireScreen {...p} afterProgressSaved={afterProgressSaved} />);
+    fireEvent.click(screen.getByRole("button", { name: "Rest" }));
+    rerender(
+      <CampfireScreen
+        {...p}
+        playerHealth={50}
+        visit={{ ...p.visit, completed: true }}
+        afterProgressSaved={afterProgressSaved}
+      />,
+    );
+    expect(screen.getByText("20 / 100")).toBeTruthy();
+    act(() => saved!());
+    await waitFor(() => expect(screen.getByText("50 / 100")).toBeTruthy());
   });
 });

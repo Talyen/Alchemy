@@ -30,7 +30,7 @@ import {
 
 import { patchBattleState } from "../../../../fixtures/battle";
 import { rebindLiveRunMeta } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { computeTalentPoints, type BattleCard } from "@/lib/game-data";
+import { cardById, computeTalentPoints, type BattleCard } from "@/lib/game-data";
 import { purchaseTalent } from "@/features/alchemy/shared/stores/navigation-commands";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import {
@@ -305,57 +305,12 @@ describe("gear max health sync", () => {
 });
 
 describe("awardCardXP", () => {
-  it("awards XP for card keywords to runTalentXP", () => {
-    const card: BattleCard = {
-      id: "fireball",
-      title: "Fireball",
-      descriptionLines: [""],
-      art: "",
-      cost: 3,
-      effects: [{ kind: "damage", damageType: "burn", amount: 8 }],
-    };
-    awardCardXP(card);
-    expect(readActiveRun(defaultGameSession).runTalentXP.burn).toBeGreaterThan(0);
-    expect(readRunProfile(defaultGameSession).talentXP.burn).toBeUndefined();
-  });
-
-  it("does nothing for card with no keywords", () => {
-    const card: BattleCard = {
-      id: "blank",
-      title: "Blank",
-      descriptionLines: [""],
-      art: "",
-      cost: 0,
-      effects: [],
-    };
-    awardCardXP(card);
-    expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
+  it("awards and accumulates all resource-card keywords in run XP without changing permanent XP", () => {
+    awardCardXP(cardById["burning-blade"]!);
+    awardCardXP(cardById["mana-shield"]!);
+    awardCardXP(cardById["crystal-bulwark"]!);
+    expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({ burn: 1, forge: 1, block: 2, mana: 2 });
     expect(readRunProfile(defaultGameSession).talentXP).toEqual({});
-  });
-
-  it("accumulates XP across multiple cards", () => {
-    const burnCard: BattleCard = {
-      id: "fireball",
-      title: "Fireball",
-      descriptionLines: [""],
-      art: "",
-      cost: 3,
-      effects: [{ kind: "damage", damageType: "burn", amount: 8 }],
-    };
-    const physCard: BattleCard = {
-      id: "slash",
-      title: "Slash",
-      descriptionLines: [""],
-      art: "",
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
-    };
-    awardCardXP(burnCard);
-    awardCardXP(physCard);
-    expect(readActiveRun(defaultGameSession).runTalentXP.burn).toBeGreaterThan(0);
-    expect(readActiveRun(defaultGameSession).runTalentXP.physical).toBeGreaterThan(0);
-    expect(readRunProfile(defaultGameSession).talentXP.burn).toBeUndefined();
-    expect(readRunProfile(defaultGameSession).talentXP.physical).toBeUndefined();
   });
 });
 

@@ -303,15 +303,25 @@ export const curatedSoundFiles = [];
 /** Validate sound ownership before the optimizer writes outputs. */
 export async function validateSoundAssetRegistry({ sourceDir } = {}) {
   const errors = [];
+  const targetPattern = /^[^/\\]+\.ogg$/u;
   try {
     await validateRegistryEntries(generatedSoundAssets, {
       sourceDir,
       sourcePattern: /\.(ogg|wav|mp3)$/iu,
-      targetPattern: /\.ogg$/u,
+      targetPattern,
+      caseInsensitiveDuplicates: true,
       label: "Sound asset registry",
       reservedTargets: curatedSoundFiles,
       reservedMessage: (target) => `Sound target is both generated and curated: "${target}".`,
     });
+    await validateRegistryEntries(
+      curatedSoundFiles.map((target) => ({ target })),
+      {
+        targetPattern,
+        caseInsensitiveDuplicates: true,
+        label: "Curated sound registry",
+      },
+    );
   } catch (error) {
     const details = error instanceof Error ? error.cause?.details : undefined;
     if (Array.isArray(details)) {
@@ -319,10 +329,6 @@ export async function validateSoundAssetRegistry({ sourceDir } = {}) {
     } else {
       errors.push(error instanceof Error ? error.message : String(error));
     }
-  }
-
-  for (const file of curatedSoundFiles) {
-    if (!file.endsWith(".ogg")) errors.push(`Curated sound must be OGG: "${file}".`);
   }
 
   if (errors.length > 0) throw new Error(`Sound asset registry validation failed:\n- ${errors.join("\n- ")}`);

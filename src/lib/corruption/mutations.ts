@@ -44,6 +44,7 @@ function isPlainMagnitude(effect: BattleCardEffect): boolean {
     effect.equalToBlockPercent === undefined &&
     !effect.equalToArmor &&
     !effect.equalToForge &&
+    effect.forgeBonusPercent === undefined &&
     effect.equalToGoldPercent === undefined &&
     !effect.doubleIfEnemyBurning &&
     !effect.doubleIfEnemyBleeding &&

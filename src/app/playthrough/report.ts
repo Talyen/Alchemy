@@ -1,3 +1,4 @@
+import { summarizeBrewing } from "./brewing-evidence";
 import { careerCohort, summarizeProgress } from "./progress-telemetry";
 import type { AgentPlaythroughSummary } from "./agent-report";
 import { escapeHtml, renderReportPage } from "@/lib/balance/report-layout";
@@ -29,7 +30,7 @@ export function renderPlaythroughReport(
   const details = results
     .map(
       (result) =>
-        `<details><summary>${escapeHtml(`${result.config.hero} ${result.config.mode} seed ${result.config.seed}`)}</summary><h3>Reached choices</h3><pre>${escapeHtml(JSON.stringify(result.coverage, null, 2))}</pre><h3>Economy and progression</h3><table><tr><th>Run</th><th>Rooms</th><th>Gold</th><th>Materials</th><th>Deck</th></tr>${result.telemetry.economy.map((point) => `<tr><td>${point.run + 1}</td><td>${point.rooms}</td><td>${point.gold}</td><td>${point.materials}</td><td>${point.deckSize}</td></tr>`).join("")}</table><h3>Card opportunities</h3><p>Observed and playable counts are decision opportunities, not distinct draws. Repeated observations count separately; passive item triggers are not measured.</p><pre>${escapeHtml(JSON.stringify(result.telemetry.cards, null, 2))}</pre><h3>Combat maxima (advisory)</h3><pre>${escapeHtml(JSON.stringify(result.telemetry.anomalies, null, 2))}</pre><h3>Milestones (zero-based run index)</h3><pre>${escapeHtml(JSON.stringify(result.telemetry.milestones, null, 2))}</pre></details>`,
+        `<details><summary>${escapeHtml(`${result.config.hero} ${result.config.mode} seed ${result.config.seed}`)}</summary><h3>Reached choices</h3><pre>${escapeHtml(JSON.stringify(result.coverage, null, 2))}</pre><h3>Economy and progression</h3><table><tr><th>Run</th><th>Rooms</th><th>Gold</th><th>Materials</th><th>Deck</th></tr>${result.telemetry.economy.map((point) => `<tr><td>${point.run + 1}</td><td>${point.rooms}</td><td>${point.gold}</td><td>${point.materials}</td><td>${point.deckSize}</td></tr>`).join("")}</table><h3>Brewing exposure</h3><pre>${escapeHtml(JSON.stringify(summarizeBrewing([result]), null, 2))}</pre><details><summary>Brewing visit decisions</summary><pre>${escapeHtml(JSON.stringify(result.telemetry.brewing ?? [], null, 2))}</pre></details><h3>Card opportunities</h3><p>Observed and playable counts are decision opportunities, not distinct draws. Repeated observations count separately; passive item triggers are not measured.</p><pre>${escapeHtml(JSON.stringify(result.telemetry.cards, null, 2))}</pre><h3>Combat maxima (advisory)</h3><pre>${escapeHtml(JSON.stringify(result.telemetry.anomalies, null, 2))}</pre><h3>Milestones (zero-based run index)</h3><pre>${escapeHtml(JSON.stringify(result.telemetry.milestones, null, 2))}</pre></details>`,
     )
     .join("");
   const progress = summarizeProgress(results)
@@ -51,8 +52,28 @@ export function renderPlaythroughReport(
 }
 
 /** Paired career means keep correlated battles/runs out of the sample denominator. */
-export function comparePlaythroughReports(baseline: CareerResult[], current: CareerResult[]) {
-  const manifest = (results: CareerResult[]) => results.map(({ config }) => JSON.stringify(config));
+export function comparePlaythroughReports(
+  baseline: CareerResult[],
+  current: CareerResult[],
+  comparison: "exact" | "brewing" = "exact",
+) {
+  const manifest = (results: CareerResult[]) =>
+    results.map(({ config }) => {
+      if (comparison === "exact") return JSON.stringify(config);
+      const { brewing: _brewing, ...scenario } = config;
+      return JSON.stringify(scenario);
+    });
+  if (
+    comparison === "brewing" &&
+    (baseline.length !== current.length ||
+      baseline.some(
+        (result, index) =>
+          !["on", "off"].includes(result.config.brewing ?? "") ||
+          !["on", "off"].includes(current[index]?.config.brewing ?? "") ||
+          result.config.brewing === current[index]?.config.brewing,
+      ))
+  )
+    throw new Error("Brewing comparison requires paired explicit on/off treatments");
   if (JSON.stringify(manifest(baseline)) !== JSON.stringify(manifest(current)))
     throw new Error("Comparison requires the same ordered scenario manifest (including fixtures and policies)");
   if ([...baseline, ...current].some((result) => result.status !== "completed"))
@@ -66,6 +87,25 @@ export function comparePlaythroughReports(baseline: CareerResult[], current: Car
       result.telemetry.battles.reduce((sum, battle) => sum + battle.turns, 0) /
       Math.max(1, result.telemetry.battles.length),
     finalGold: (result: CareerResult) => result.finalSave.gold,
+    netHealthLostPerBattle: (result: CareerResult) => {
+      const starts = result.telemetry.battleSnapshots.filter((snapshot) => snapshot.stage === "start");
+      const settled = starts.flatMap((start) => {
+        const end = result.telemetry.battleSnapshots.find(
+          (snapshot) => snapshot.stage === "settle" && snapshot.run === start.run && snapshot.room === start.room,
+        );
+        return end ? [start.playerHealth - end.playerHealth] : [];
+      });
+      return settled.reduce((sum, health) => sum + health, 0) / Math.max(1, settled.length);
+    },
+    firstVictoryRunCensored: (result: CareerResult) => {
+      const first = result.outcomes.findIndex((outcome) => outcome.outcome === "victory");
+      return first < 0 ? result.config.runs + 1 : first + 1;
+    },
+    brewingGoldSpent: (result: CareerResult) => summarizeBrewing([result]).goldSpent,
+    brewingServices: (result: CareerResult) =>
+      summarizeBrewing([result])
+        .services.filter((service) => ["mix", "distill", "campfire-new", "campfire-mix"].includes(service.kind))
+        .reduce((sum, service) => sum + service.used, 0),
   };
   const cohorts = new Map<string, number[]>();
   current.forEach((result, index) => {
@@ -76,6 +116,7 @@ export function comparePlaythroughReports(baseline: CareerResult[], current: Car
   });
   return [...cohorts].map(([cohort, indices]) => ({
     cohort,
+    comparison,
     metrics: Object.entries(metrics).map(([metric, measure]) => {
       const deltas = indices.map((index) => measure(current[index]!) - measure(baseline[index]!));
       const n = deltas.length;

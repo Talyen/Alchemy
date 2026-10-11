@@ -54,6 +54,9 @@ it.each([
   ["gamblers-shot", ["stun", "physical", "bleed", "archery"]],
   ["roll-the-dice", ["consume"]],
   ["astral-arrow", ["freeze", "burn", "holy", "consume", "archery"]],
+  ["burning-blade", ["burn", "forge"]],
+  ["crystal-bulwark", ["block", "mana"]],
+  ["mana-shield", ["block", "mana"]],
 ])("keeps %s eligible for all of its keyword rewards", (id, expected) => {
   const card = cardLibrary.find((entry) => entry.id === id);
   expect(card).toBeDefined();

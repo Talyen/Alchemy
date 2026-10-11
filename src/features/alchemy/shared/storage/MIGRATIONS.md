@@ -117,7 +117,7 @@ resurrect a saved run after death, abandonment, or victory.
 
 ## Public save contract
 
-Local storage is authoritative; Cloud is a mirror. Choose playable candidates by freshness, and preserve unreadable or newer-format data in its existing slot while current play writes a safe slot. A save succeeds only when a local write acknowledges the snapshot or a newer replacement. Deletion has explicit modes; pending writes must not resurrect deleted data. Save problems do not block play or ask the player to make a recovery choice.
+Local storage is authoritative; Cloud is a mirror. Choose playable candidates by freshness, and preserve unreadable or newer-format data in its existing slot while current play writes a safe slot. A save succeeds only when a local write acknowledges the snapshot or a newer replacement. Deletion has explicit modes; pending writes must not resurrect deleted data. Load problems fall back to playable data or defaults without a recovery-choice screen. Completed gameplay actions wait for local acknowledgement under [write acknowledgement](#write-acknowledgement).
 
 Read the applicable contract before changing its behavior:
 
@@ -147,7 +147,7 @@ together until hydration. `evaluateSaveCandidates` is the single-source facade;
 demo import uses the same selection and rejects a protected source. Storage adds
 unreadable-primary protection at the I/O boundary.
 
-A failed local candidate read is different from an empty or corrupt candidate set. Desktop still attempts the Cloud copy; the storage owner tries both slots and uses any compatible candidate it can read. If the primary is unreadable, new progress writes to the recovery slot, leaving the primary untouched. If neither slot can be read, play starts with defaults and writes still attempt the recovery slot. If a normal primary write fails, the same snapshot is attempted in recovery before autosave reports failure and retries. The player sees no save-problem screen. When all storage writes fail, progress remains in memory for that session and autosave keeps retrying; durability cannot be promised until some storage accepts a write.
+A failed local candidate read is different from an empty or corrupt candidate set. Desktop still attempts the Cloud copy; the storage owner tries both slots and uses any compatible candidate it can read. If the primary is unreadable, new progress writes to the recovery slot, leaving the primary untouched. If neither slot can be read, play starts with defaults and writes still attempt the recovery slot. If a normal primary write fails, the same snapshot is attempted in recovery before autosave reports failure and retries. When both writes fail, committed progress remains in memory and autosave keeps retrying, while the renderer holds action completion and shows Couldn’t save with Retry under [write acknowledgement](#write-acknowledgement).
 
 ## Future schema saves
 

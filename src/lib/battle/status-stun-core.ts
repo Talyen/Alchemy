@@ -66,7 +66,14 @@ function applyStunTrinketEffects(
           let rewarded = applyNatureManaRefund(leeched, finalDamage, texts);
           rewarded = applyLuckyCloverGold(rewarded, healthDamage, texts);
           rewarded = applyNatureGoldReward(rewarded, healthDamage, texts);
-          return applyHitEpilogue(rewarded, previousHealth, enemyWasAlive, texts);
+          return applyHitEpilogue(
+            rewarded,
+            previousHealth,
+            enemyWasAlive,
+            texts,
+            undefined,
+            state.playerStatuses.forge >= 5,
+          );
         },
       },
     );

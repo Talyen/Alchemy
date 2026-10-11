@@ -1,8 +1,9 @@
 import { resolveEdition } from "../game-edition.mjs";
 import { mkdirSync, readFileSync, writeFileSync, existsSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
-import { spawnSync, execFileSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { defineScript } from "./lib/script-run.mjs";
+import { runCommandAsync } from "./lib/run-command.mjs";
 import { withReportServer } from "./lib/vite-report-server.mjs";
 import { createHash } from "node:crypto";
 import { REPO_ROOT, runGit } from "./lib/repository-paths.mjs";
@@ -37,6 +38,8 @@ async function main() {
     "fixture",
     "timeout",
     "baseline",
+    "brewing",
+    "comparison",
   ]);
   for (let index = 0; index < args.length; index += 2) {
     const key = args[index]?.replace(/^--/, "");
@@ -50,6 +53,12 @@ async function main() {
   if (arg("bundle", null) && (arg("fixture", null) || arg("manifest", null) || arg("save", null)))
     throw new Error("Replay cannot replace its starting state");
   if (arg("save", null) && arg("fixture", null)) throw new Error("Choose either --save or --fixture");
+  const brewing = arg("brewing", null);
+  if (brewing !== null && !["on", "off"].includes(brewing)) throw new Error("--brewing must be on or off");
+  const comparison = arg("comparison", "exact");
+  if (!["exact", "brewing"].includes(comparison)) throw new Error("--comparison must be exact or brewing");
+  if (comparison === "brewing" && !arg("baseline", null)) throw new Error("Brewing comparison requires --baseline");
+  if (arg("bundle", null) && brewing !== null) throw new Error("Replay cannot replace its brewing setting");
   const baselineReport = arg("baseline", null) ? JSON.parse(readFileSync(arg("baseline"), "utf8")) : null;
   const defaultDirectory = arg("bundle", null)
     ? "reports/playthrough-replay"
@@ -82,6 +91,8 @@ async function main() {
     head: execFileSync("git", ["rev-parse", "HEAD"], { cwd: REPO_ROOT, encoding: "utf8" }).trim(),
     sourceHash: hash.digest("hex"),
   };
+  if (comparison === "brewing" && baselineReport?.codeIdentity?.sourceHash !== codeIdentity.sourceHash)
+    throw new Error("Brewing comparison requires the same code/content identity");
   const bundlePath = arg("bundle", null);
   const bundle = bundlePath ? JSON.parse(readFileSync(bundlePath, "utf8")) : null;
   if (bundle && bundle.version !== 1) throw new Error("Unsupported replay bundle version");
@@ -106,9 +117,11 @@ async function main() {
             maxTurns: integer("max-turns", 100),
             policy: arg("policy", "archetype"),
             combatPolicy: arg("combat-policy", "greedy-effective-damage"),
+            brewing: brewing ?? "on",
             ...(arg("save", null) ? { initialSave: JSON.parse(readFileSync(arg("save"), "utf8")) } : {}),
           }));
   if (!Array.isArray(configs) || configs.length === 0) throw new Error("Scenario manifest must not be empty");
+  if (manifestPath && brewing !== null) for (const config of configs) config.brewing = brewing;
   // Seeds become report filenames before the worker validates gameplay options.
   // Check the complete batch before writing or replacing any replay evidence.
   for (const config of configs)
@@ -132,14 +145,17 @@ async function main() {
     );
     for (const stale of [output, `${output}.start`, `${output}.checkpoint`]) rmSync(stale, { force: true });
     writeFileSync(journal, "");
-    const child = spawnSync(process.execPath, ["scripts/run-playthrough-worker.mjs", input, output, journal], {
-      cwd: REPO_ROOT,
-      encoding: "utf8",
-      timeout: timeoutMs,
-      maxBuffer: 2 * 1024 * 1024,
-    });
+    const child = await runCommandAsync(
+      process.execPath,
+      ["scripts/run-playthrough-worker.mjs", input, output, journal],
+      {
+        cwd: REPO_ROOT,
+        timeout: timeoutMs,
+        maxBuffer: 2 * 1024 * 1024,
+      },
+    );
     if (child.status !== 0) {
-      const error = child.error?.message ?? child.stderr.slice(-4000);
+      const error = child.output.slice(-4000) || `Playthrough worker exited with ${child.status ?? "no exit code"}`;
       const attempts = existsSync(journal)
         ? readFileSync(journal, "utf8")
             .trim()
@@ -243,7 +259,7 @@ async function main() {
       const baseline = baselineReport;
       writeFileSync(
         resolve(reportDir, "comparison.json"),
-        JSON.stringify(comparePlaythroughReports(baseline.results, results), null, 2),
+        JSON.stringify(comparePlaythroughReports(baseline.results, results, comparison), null, 2),
       );
     }
   });

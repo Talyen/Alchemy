@@ -157,7 +157,7 @@ export const enemyBestiary = [
     title: "Bandit",
     art: assetRefs.bandit,
     enemyType: "normal",
-    traits: [trait("bandit", "Ambush", "Deals double Physical damage on its first attack")],
+    traits: [trait("bandit", "Ambush", "Deals double damage on its first landed hit")],
     abilityIds: ["slash", "serrated-edge", "block"],
   }),
   defineEnemy({

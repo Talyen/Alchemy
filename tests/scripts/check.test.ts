@@ -107,6 +107,8 @@ describe("full source-aware completion gate", () => {
     "vite.config.ts",
     "scripts/build-verified.mjs",
     "scripts/lib/vite-chunks.mjs",
+    "game-edition.mjs",
+    "scripts/lib/release/game-edition.mjs",
   ])("builds both targets for shared build input %s", async (filePath) => {
     const calls: string[] = [];
     const code = await runCheck([filePath], {

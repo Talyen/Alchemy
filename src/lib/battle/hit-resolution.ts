@@ -53,7 +53,14 @@ function resolveReflectedHolyHit(state: BattleState, blockLost: number, combatTe
   );
   nextState = applyHolyDamageRiders(nextState, undefined, facts, combatTexts);
   nextState = applyElementalDamageManaRestore(nextState, "holy", facts.healthDamage, combatTexts);
-  return applyHitEpilogue(nextState, facts.previousHealth, facts.enemyWasAlive, combatTexts, preDamageStatuses);
+  return applyHitEpilogue(
+    nextState,
+    facts.previousHealth,
+    facts.enemyWasAlive,
+    combatTexts,
+    preDamageStatuses,
+    state.playerStatuses.forge >= 5,
+  );
 }
 
 function applyArcheryDetonate(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
@@ -173,6 +180,13 @@ function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts
       nextState = addForgeToPlayer(nextState, state.talentEffects.forgeOnPhysicalVsFrozen, combatTexts);
   }
 
-  nextState = applyHitEpilogue(nextState, previousHealth, facts.enemyWasAlive, combatTexts);
+  nextState = applyHitEpilogue(
+    nextState,
+    previousHealth,
+    facts.enemyWasAlive,
+    combatTexts,
+    undefined,
+    prePurgeState.playerStatuses.forge >= 5,
+  );
   return nextState;
 }

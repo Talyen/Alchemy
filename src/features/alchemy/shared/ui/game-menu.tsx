@@ -159,7 +159,6 @@ export function GameMenu({
       open={isOpen}
       escapeId="game-menu"
       onClose={onClose}
-      dismissOnEscape={false}
       dismissOnBackdrop
       dim={false}
       zIndex={120}

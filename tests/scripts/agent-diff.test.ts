@@ -2,11 +2,12 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, expect, it } from "vitest";
-import { reviewDiff } from "../../scripts/agent-diff.mjs";
+import { afterEach, expect, it, vi } from "vitest";
+import { main, reviewDiff } from "../../scripts/agent-diff.mjs";
 
 const roots: string[] = [];
 afterEach(() => {
+  vi.restoreAllMocks();
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 it("retains both change layers, renames, deletions, untracked files and generated inventory under a bounded preview", () => {
@@ -56,6 +57,14 @@ it("retains both change layers, renames, deletions, untracked files and generate
   fs.utimesSync(path.join(root, "anchor.ts"), stale, stale);
   const result = reviewDiff(root, { budget: 2000 });
   const report = fs.readFileSync(result.report, "utf8");
+  const summary = reviewDiff(root, { summaryOnly: true, budget: 2000 });
+  expect(fs.readFileSync(summary.report, "utf8")).toBe(report);
+  expect(Buffer.byteLength(summary.text)).toBeLessThanOrEqual(2000);
+  expect(summary.text).toContain("bodies retained in report");
+  expect(summary.text).toContain('"reversed.ts"');
+  expect(summary.text).not.toContain("+staged");
+  expect(summary.text).not.toContain("-staged");
+  expect(summary.text).not.toContain("diff --git");
   expect(Buffer.byteLength(result.text)).toBeLessThanOrEqual(2000);
   expect(result.text).toContain("omitted");
   for (const item of [
@@ -90,7 +99,7 @@ it("retains both change layers, renames, deletions, untracked files and generate
   expect(expanded).not.toContain("+staged");
 });
 
-it("shows a selected patch before unrelated paths consume its budget and retains the complete inventory", () => {
+it("locates oversized patches without hiding small patches or reading unrelated changes", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-diff-"));
   roots.push(root);
   const git = (...args: string[]) => execFileSync("git", args, { cwd: root, stdio: "pipe" });
@@ -99,9 +108,11 @@ it("shows a selected patch before unrelated paths consume its budget and retains
   fs.mkdirSync(path.join(root, "unrelated"));
   for (let index = 0; index < 100; index++)
     fs.writeFileSync(path.join(root, `unrelated/long-unrelated-file-name-${index}.ts`), "unrelated\n");
+  fs.writeFileSync(path.join(root, "large.ts"), "large selected change\n".repeat(1000));
   fs.writeFileSync(path.join(root, "selected.ts"), "selected change\n");
-  const result = reviewDiff(root, { paths: ["selected.ts"], budget: 1200 });
-  expect(Buffer.byteLength(result.text)).toBeLessThanOrEqual(1200);
+  fs.writeFileSync(path.join(root, "z-large.ts"), "later large change\n".repeat(1000));
+  const result = reviewDiff(root, { paths: ["large.ts", "selected.ts", "z-large.ts"], budget: 1600 });
+  expect(Buffer.byteLength(result.text)).toBeLessThanOrEqual(1600);
   expect(result.text).toContain("+selected change");
   expect(result.text).toContain("unrelated/: 0 selected, 100 other changed paths");
   expect(result.text).not.toContain("long-unrelated-file-name");
@@ -109,6 +120,44 @@ it("shows a selected patch before unrelated paths consume its budget and retains
   expect(report).toContain("long-unrelated-file-name-99.ts");
   expect(report).toContain("+selected change");
   expect(report).not.toContain("+unrelated");
+  const location = /Report lines (\d+)-(\d+): \?\? "large.ts"/u.exec(result.text);
+  expect(location, "Oversized patches must keep their filename and exact report location").not.toBeNull();
+  const patch = report.split("\n").slice(Number(location![1]) - 1, Number(location![2]));
+  expect(patch[0]).toBe('?? "large.ts"');
+  expect(patch.filter((line) => line === "+large selected change")).toHaveLength(1000);
+  expect(patch).not.toContain('?? "selected.ts"');
+  const crowdedPaths = [
+    "large.ts",
+    "selected.ts",
+    "z-large.ts",
+    ...Array.from({ length: 8 }, (_, index) => `unrelated/long-unrelated-file-name-${index}.ts`),
+  ];
+  for (const summaryOnly of [false, true]) {
+    const crowded = reviewDiff(root, { paths: crowdedPaths, summaryOnly, budget: 700 });
+    expect(Buffer.byteLength(crowded.text)).toBeLessThanOrEqual(700);
+    const indexRange = /Patch index: report lines (\d+)-(\d+)/u.exec(crowded.text);
+    expect(indexRange, "Every selected patch must remain discoverable after terminal truncation").not.toBeNull();
+    const crowdedReport = fs.readFileSync(crowded.report, "utf8").split("\n");
+    const rows = crowdedReport.slice(Number(indexRange![1]) - 1, Number(indexRange![2]));
+    expect(rows).toHaveLength(crowdedPaths.length);
+    expect((crowded.text.match(/^Report lines /gmu) ?? []).length).toBeLessThan(rows.length);
+    const labels = rows.map((row) => {
+      const match = /^Report lines (\d+)-(\d+): (.+)$/u.exec(row)!;
+      const block = crowdedReport.slice(Number(match[1]) - 1, Number(match[2]));
+      expect(block[0]).toBe(match[3]);
+      expect(block.filter((line) => line.startsWith('?? "'))).toEqual([match[3]]);
+      expect(block.some((line) => line.startsWith("+"))).toBe(true);
+      return match[3];
+    });
+    expect(labels).toEqual([...crowdedPaths].sort().map((file) => `?? ${JSON.stringify(file)}`));
+  }
+  const output = vi.spyOn(console, "log").mockImplementation(() => {});
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  expect(main(["--summary", "selected.ts"], root)).toBe(0);
+  expect(output.mock.calls[0]?.[0]).toContain('"selected.ts"');
+  expect(output.mock.calls[0]?.[0]).not.toContain("+selected change");
+  expect(main(["--summary", "--status"], root)).toBe(1);
+  expect(errors).toHaveBeenCalledWith("Choose --status or --summary");
 });
 
 it("bounds scoped status while keeping both layers, rename sources and unrelated inventory", () => {

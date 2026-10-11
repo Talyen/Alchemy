@@ -38,6 +38,7 @@ jobs:
         with:
           filters: |
             desktop:
+              - "game-edition.mjs"
               - "scripts/build-verified.mjs"
               - "scripts/lib/vite-*.mjs"
               - "scripts/lib/release/sentry-release.mjs"
@@ -57,12 +58,14 @@ jobs:
               - "tsconfig*.json"
               - "steam/**"
               - "scripts/dist-desktop*"
-              - "scripts/lib/desktop-artifact*"
+              - "scripts/lib/release/desktop-artifact*"
+              - "scripts/lib/release/game-edition.mjs"
               - "scripts/verify-desktop-package*"
               - "scripts/lib/release/release-checks.mjs"
               - "scripts/smoke-desktop*"
               - "scripts/sync-steam-appid*"
             desktop_renderer:
+              - "game-edition.mjs"
               - "scripts/build-verified.mjs"
               - "scripts/lib/vite-*.mjs"
               - "scripts/lib/release/sentry-release.mjs"
@@ -111,6 +114,8 @@ jobs:
               - "scripts/ensure-electron*"
               - "scripts/electron-download*"
               - "scripts/verify-desktop-package*"
+              - "scripts/lib/release/desktop-artifact*"
+              - "scripts/lib/release/game-edition.mjs"
               - "scripts/lib/release/release-checks.mjs"
               - "scripts/smoke-desktop*"
             assets:

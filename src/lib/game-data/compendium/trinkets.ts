@@ -37,7 +37,7 @@ const trinketDefinitions = [
     "Meteorite",
     assetRefs.meteorite,
     { firstBurnDoubled: true },
-    () => "Your first Burn damage each combat is doubled",
+    () => "Your first Burn card hit each combat is doubled",
   ),
   defineTrinket(
     "bone-charm",

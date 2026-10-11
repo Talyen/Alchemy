@@ -7,6 +7,7 @@ import { assertSupportedTargets, targetToBuilderFlag } from "./lib/release/deskt
 import { runStreamCommand } from "./lib/run-command.mjs";
 import { resolveSentryRelease } from "./lib/release/sentry-release.mjs";
 import { validateDesktopBuildConfig } from "./lib/release/desktop-build-config.mjs";
+import { verifyDesktopRenderer } from "./lib/release/release-checks.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const selected = releaseEdition();
@@ -42,6 +43,7 @@ assertPackageEdition(
   },
   rendererIdentity,
 );
+verifyDesktopRenderer(join(root, selected.rendererDirectory));
 const builderConfig = {
   ...JSON.parse(readFileSync(join(root, "package.json"), "utf8")).build,
   productName: selected.productName,

@@ -110,35 +110,32 @@ it("keeps context and aggregate exceptions independent from TSX conventions", as
     "src/features/alchemy/shared/stores/lint-probe.ts",
     "src/features/alchemy/shared/stores/lint-probe.tsx",
     "src/features/alchemy/run-loop/screens/lint-probe.tsx",
-  ]) {
-    expect(await effectiveMessages(file, context, "alchemy/restricted-syntax"), file).not.toEqual([]);
-    const messages = await effectiveMessages(file, aggregate, "alchemy/restricted-syntax");
-    expect(messages.length, file).toBe(file.includes("/stores/") ? 0 : 1);
-  }
-  for (const file of [
     "src/app/app-screen-chrome-context.tsx",
     "src/features/alchemy/shared/context/card-description-context.tsx",
   ]) {
-    expect(await effectiveMessages(file, context, "alchemy/restricted-syntax"), file).toEqual([]);
-    expect(await effectiveMessages(file, aggregate, "alchemy/restricted-syntax"), file).toHaveLength(1);
+    const messages = await effectiveMessages(file, `${context}\n${aggregate}`, "alchemy/restricted-syntax");
+    const contexts = messages.filter(({ message }) => message.includes("React Contexts"));
+    const aggregates = messages.filter(({ message }) => message.includes("useGameplayStateStore.getState()"));
+    expect(contexts, file).toHaveLength(file.includes("context") ? 0 : 1);
+    expect(aggregates, file).toHaveLength(file.includes("/stores/") ? 0 : 1);
+    expect(messages, file).toHaveLength(contexts.length + aggregates.length);
   }
   for (const file of [
     "src/features/alchemy/shared/stores/lint-probe.tsx",
     "src/app/app-screen-chrome-context.tsx",
     "src/features/alchemy/shared/context/card-description-context.tsx",
   ]) {
-    for (const expression of ["`a ${active}`", '"a " + active']) {
-      const code = `export const view = <div className={${expression}} />;`;
-      expect(await effectiveMessages(file, code, "alchemy/restricted-syntax"), file).toHaveLength(1);
-    }
+    const code = [
+      "export const template = <div className={`a ${active}`} />;",
+      'export const concatenated = <div className={"a " + active} />;',
+      'export const valid = <div className={cn("a", active)} />;',
+    ].join("\n");
+    const messages = await effectiveMessages(file, code, "alchemy/restricted-syntax");
+    expect(messages, file).toHaveLength(2);
     expect(
-      await effectiveMessages(
-        file,
-        'export const view = <div className={cn("a", active)} />;',
-        "alchemy/restricted-syntax",
-      ),
+      messages.every(({ message }) => message.includes("Use cn()")),
       file,
-    ).toEqual([]);
+    ).toBe(true);
   }
 });
 
@@ -149,27 +146,21 @@ it("allows erased type imports while blocking asset-loading imports across brows
     "tests/helpers/lint-probe.ts",
     "performance/scenarios/battle-end-turn.perf.ts",
   ]) {
-    for (const imports of ["import type { Card }", "import { type Card }", "import { type Card, type Enemy }"]) {
-      expect(
-        await effectiveMessages(file, `${imports} from "@/lib/game-data";`, "alchemy/restricted-syntax"),
-        imports,
-      ).toEqual([]);
-    }
-    for (const imports of [
-      "import { Card, type Enemy }",
-      "import { Card }",
-      "import Cards",
-      "import * as Cards",
-      "import {}",
-    ]) {
-      expect(
-        await effectiveMessages(file, `${imports} from "@/lib/game-data";`, "alchemy/restricted-syntax"),
-        imports,
-      ).toHaveLength(1);
-    }
-    expect(await effectiveMessages(file, 'import "@/lib/game-data";', "alchemy/restricted-syntax"), file).toHaveLength(
-      1,
-    );
+    const erased = [
+      'import type { Card as TypeCard } from "@/lib/game-data";',
+      'import { type Card as InlineCard } from "@/lib/game-data";',
+      'import { type Card as MultiCard, type Enemy } from "@/lib/game-data";',
+    ].join("\n");
+    expect(await effectiveMessages(file, erased, "alchemy/restricted-syntax"), file).toEqual([]);
+    const runtime = [
+      'import { Card as MixedCard, type Enemy } from "@/lib/game-data";',
+      'import { Card } from "@/lib/game-data";',
+      'import DefaultCards from "@/lib/game-data";',
+      'import * as Cards from "@/lib/game-data";',
+      'import {} from "@/lib/game-data";',
+      'import "@/lib/game-data";',
+    ].join("\n");
+    expect(await effectiveMessages(file, runtime, "alchemy/restricted-syntax"), file).toHaveLength(6);
   }
 });
 

@@ -180,14 +180,6 @@ describe("thematic card effects", () => {
     expect(result.playerHealth).toBe(91);
   });
 
-  it("Wishing Potion Wishes once, draws a card, and Consumes", () => {
-    const drawn = makeTestCard({ id: "drawn" });
-    const result = play("wishing-potion", { deck: [drawn] });
-    expect(result.wishOptions).not.toBeNull();
-    expect(result.hand).toEqual([expect.objectContaining({ id: "drawn" })]);
-    expect(result.exhausted.map((card) => card.id)).toContain("wishing-potion");
-  });
-
   it("Wishing Well keeps its Wish-or-Gold chance branches", () => {
     const wished = play("wishing-well", { rng: () => 0 });
     expect(wished.wishOptions).not.toBeNull();

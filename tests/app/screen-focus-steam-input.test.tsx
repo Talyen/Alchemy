@@ -30,3 +30,23 @@ it("recovers focus after the backward Steam Input bumper is pressed during scree
   });
   expect(document.activeElement).toBe(back);
 });
+
+it("preserves held text-entry keys while blocking repeated button confirmation", () => {
+  function SearchScreen() {
+    useScreenFocus("armory", true);
+    return (
+      <>
+        <input type="search" aria-label="Search inventory" />
+        <button>Search</button>
+      </>
+    );
+  }
+  render(<SearchScreen />);
+  const input = screen.getByRole("searchbox", { name: "Search inventory" });
+  input.focus();
+  expect(fireEvent.keyDown(input, { key: " ", repeat: true })).toBe(true);
+  const button = screen.getByRole("button", { name: "Search" });
+  button.focus();
+  expect(fireEvent.keyDown(button, { key: " ", repeat: true })).toBe(false);
+  expect(fireEvent.keyDown(button, { key: "Enter", repeat: true })).toBe(false);
+});

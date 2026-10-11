@@ -4,6 +4,7 @@ import path from "node:path";
 import { createPackage } from "@electron/asar";
 import { afterEach, expect, it } from "vitest";
 import {
+  verifyDesktopRenderer,
   verifyPackagedRenderer,
   verifyWindowsExecutableArchitecture,
 } from "../../scripts/lib/release/release-checks.mjs";
@@ -13,16 +14,24 @@ afterEach(async () => {
   await Promise.all(directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
 });
 
-async function archive(files: Record<string, string>, musicFiles: Record<string, string> = {}) {
+const publicAssets = {
+  "Music/Menu 1.mp3": "expected music bytes",
+  "sounds/click.ogg": "expected OGG bytes",
+  "sounds/click.mp3": "expected MP3 fallback bytes",
+  "fonts/Inter.woff2": "expected font bytes",
+  "licenses/inter-ofl.txt": "expected license bytes",
+};
+
+async function archive(files: Record<string, string>, extraPublicFiles: Record<string, string> = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "alchemy-package-test-"));
   directories.push(root);
   const source = path.join(root, "source");
-  const music = path.join(root, "music");
+  const publicDirectory = path.join(root, "public");
   await mkdir(source);
-  await mkdir(music);
-  await writeFile(path.join(music, "Menu 1.mp3"), "expected music bytes");
-  for (const [name, bytes] of Object.entries(musicFiles)) {
-    await writeFile(path.join(music, name), bytes);
+  for (const [name, bytes] of Object.entries({ ...publicAssets, ...extraPublicFiles })) {
+    const target = path.join(publicDirectory, name);
+    await mkdir(path.dirname(target), { recursive: true });
+    await writeFile(target, bytes);
   }
   for (const [name, bytes] of Object.entries(files)) {
     const target = path.join(source, name);
@@ -31,36 +40,84 @@ async function archive(files: Record<string, string>, musicFiles: Record<string,
   }
   const output = path.join(root, "app.asar");
   await createPackage(source, output);
-  return { output, music };
+  return { output, source, publicDirectory };
 }
 
-const renderer = { "dist/index.html": "<html></html>", "dist/Music/Menu 1.mp3": "expected music bytes" };
+const desktopHtml =
+  '<script type="module" src="./assets/index.js"></script><link rel="stylesheet" href="./assets/index.css">';
+const renderer: Record<string, string> = {
+  "dist/index.html": desktopHtml,
+  "dist/assets/index.js": "console.log('ready');",
+  "dist/assets/index.css": "body { color: white; }",
+  ...Object.fromEntries(Object.entries(publicAssets).map(([name, bytes]) => [`dist/${name}`, bytes])),
+};
 
-it("accepts a complete renderer archive", async () => {
-  const { output, music } = await archive(renderer);
-  expect(() => verifyPackagedRenderer(output, music)).not.toThrow();
-});
-
-it("accepts music filenames with spaces", async () => {
-  const { output, music } = await archive(
-    {
-      "dist/index.html": "<html></html>",
-      "dist/Music/Menu 1.mp3": "expected music bytes",
-      "dist/Music/Battle 1.mp3": "battle music bytes",
-    },
-    { "Battle 1.mp3": "battle music bytes" },
-  );
-  expect(() => verifyPackagedRenderer(output, music)).not.toThrow();
-});
+it.each(["dist", "dist-demo"])(
+  "accepts complete %s output before and after packaging, including public assets",
+  async (directory) => {
+    const { output, source, publicDirectory } = await archive(
+      Object.fromEntries(
+        Object.entries({ ...renderer, "dist/Music/Battle 1.mp3": "battle music bytes" }).map(([name, bytes]) => [
+          name.replace(/^dist/u, directory),
+          bytes,
+        ]),
+      ),
+      { "Music/Battle 1.mp3": "battle music bytes" },
+    );
+    expect(() => verifyDesktopRenderer(path.join(source, directory), publicDirectory)).not.toThrow();
+    expect(() => verifyPackagedRenderer(output, publicDirectory, directory)).not.toThrow();
+  },
+);
 
 it.each([
-  [{ "dist/index.html": "<html></html>" }, /music is missing/u],
-  [{ ...renderer, "dist/Music/Menu 1.mp3": "stale bytes" }, /music differs/u],
+  [
+    Object.fromEntries(Object.entries(renderer).filter(([name]) => !name.includes("Music/"))),
+    /asset is missing: Music/u,
+  ],
+  [{ ...renderer, "dist/Music/Menu 1.mp3": "stale bytes" }, /asset differs.*Music/u],
   [{ ...renderer, "dist/assets/index.js.map": "source code" }, /Source maps/u],
   [{ "dist/Music/Menu 1.mp3": "expected music bytes" }, /missing dist\/index.html/u],
 ])("rejects incomplete or contaminated package contents", async (files, error) => {
-  const { output, music } = await archive(files);
-  expect(() => verifyPackagedRenderer(output, music)).toThrow(error);
+  const { output, publicDirectory } = await archive(files);
+  expect(() => verifyPackagedRenderer(output, publicDirectory)).toThrow(error);
+});
+
+it.each([
+  ["sounds/click.ogg", undefined],
+  ["sounds/click.mp3", "stale fallback"],
+  ["fonts/Inter.woff2", ""],
+  ["licenses/inter-ofl.txt", undefined],
+] as const)("rejects missing or altered %s before and after packaging", async (asset, replacement) => {
+  const files = { ...renderer };
+  if (replacement === undefined) delete files[`dist/${asset}`];
+  else files[`dist/${asset}`] = replacement;
+  const { output, source, publicDirectory } = await archive(files);
+  for (const [stage, verify] of [
+    ["renderer", () => verifyDesktopRenderer(path.join(source, "dist"), publicDirectory)],
+    ["archive", () => verifyPackagedRenderer(output, publicDirectory)],
+  ] as const) {
+    expect(verify, stage).toThrow(
+      new RegExp(`public asset (?:is missing|differs).*${asset.replaceAll(".", "\\.")}`, "u"),
+    );
+  }
+});
+
+it.each([
+  [desktopHtml.replace("./assets/index.js", "/assets/index.js"), /must be relative/u],
+  [desktopHtml.replace("./assets/index.js", "https://example.com/index.js"), /must be relative/u],
+  [desktopHtml.replace("./assets/index.js", "../assets/index.js"), /outside/u],
+  [desktopHtml.replace("./assets/index.js", "./assets/missing.js"), /missing/u],
+  [desktopHtml.replace("./assets/index.css", "./assets/missing.css"), /missing/u],
+  [desktopHtml + '<link href="./assets/missing.js" rel="modulepreload">', /missing/u],
+  ['<html><div id="root"></div></html>', /application script/u],
+])("rejects a renderer that cannot load from the packaged file URL", async (html, error) => {
+  const { output, publicDirectory } = await archive({ ...renderer, "dist/index.html": html });
+  expect(() => verifyPackagedRenderer(output, publicDirectory)).toThrow(error);
+});
+
+it("rejects an empty application script", async () => {
+  const { output, publicDirectory } = await archive({ ...renderer, "dist/assets/index.js": "" });
+  expect(() => verifyPackagedRenderer(output, publicDirectory)).toThrow("empty");
 });
 
 it("validates executable architecture rather than trusting package folder names", async () => {

@@ -6,7 +6,7 @@ export const REPO_ROOT = path.resolve(import.meta.dirname, "../..");
 
 // Verification must see new files even when Git's filesystem caches are stale.
 // Command-local overrides leave the user's persistent Git configuration intact.
-const UNCACHED_GIT_OPTIONS = ["-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false"];
+export const UNCACHED_GIT_OPTIONS = Object.freeze(["-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false"]);
 
 /**
  * Single git-spawn owner for script tooling: every call runs above the

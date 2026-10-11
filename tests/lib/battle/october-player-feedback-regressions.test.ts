@@ -10,6 +10,40 @@ import { selectCombatSound } from "@/features/alchemy/run-loop/battle/combat-sou
 import { makeTestCard, regressionBattle } from "../../fixtures/battle";
 
 describe("player outcomes and rule help", () => {
+  it("Counterplate reports its Critical Hit and rejected Stun buildup while preserving the next card's Crit", () => {
+    const texts: CombatTextEvent[] = [];
+    const state = regressionBattle({
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      enemyCC: { cooldown: 2 },
+      playerStatuses: { armor: 1 },
+      gearEffects: { stunOnArmorLostToAttack: 3 },
+      flags: { nextHitCrit: true },
+      rng: () => 0,
+    });
+    const next = resolveEnemyAttackHit(state, { kind: "damage", damageType: "physical", amount: 4 }, texts, {
+      canDodge: false,
+    }).state;
+    expect(next.enemyHealth).toBe(94);
+    expect(next.enemyStatuses.stun).toBe(0);
+    expect(next.flags.nextHitCrit).toBe(true);
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "stun", amount: 6, critical: true });
+    const notice = texts.find((event) => event.kind === "notice" && event.stat === "stun");
+    expect(notice).toMatchObject({ signal: "immune" });
+    expect(selectCombatSound(notice ? [notice] : [], false)).toBeUndefined();
+    expect(selectCombatSound(texts, false)).toBe("critHit");
+
+    const preventedTexts: CombatTextEvent[] = [];
+    const prevented = resolveEnemyAttackHit(
+      { ...state, enemyMitigation: { ...state.enemyMitigation, block: 100 } },
+      { kind: "damage", damageType: "physical", amount: 4 },
+      preventedTexts,
+      { canDodge: false },
+    ).state;
+    expect(prevented.enemyHealth).toBe(100);
+    expect(preventedTexts.some((event) => event.kind === "notice" && event.signal === "immune")).toBe(false);
+  });
+
   it("acknowledges Phoenix revival even when the final Health equals the pre-hit Health", () => {
     const texts: CombatTextEvent[] = [];
     const state = regressionBattle({ playerHealth: 30, playerMaxHealth: 100, playerStatuses: { phoenixFeather: 1 } });

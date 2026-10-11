@@ -1,5 +1,5 @@
 import "../../../../../helpers/mock-audio";
-import { applyCurrencyToGear, itemsMatchingSlot } from "@/features/alchemy/meta/screens/armory/armory-screen-actions";
+import { applyCurrencyToGear } from "@/features/alchemy/meta/screens/armory/armory-screen-actions";
 import { playUISound } from "@/lib/audio";
 import { type GearInstance } from "@/lib/gear";
 import { describe, expect, it, vi } from "vitest";
@@ -7,24 +7,6 @@ import { describe, expect, it, vi } from "vitest";
 function basicSword(): GearInstance {
   return { instanceId: "sword-1", definitionId: "shortsword-basic", affixes: [{ id: "flat-physical", value: 1 }] };
 }
-
-function basicArmor(): GearInstance {
-  return { instanceId: "armor-1", definitionId: "leather-armor-basic", affixes: [{ id: "max-health", value: 5 }] };
-}
-
-describe("itemsMatchingSlot", () => {
-  it("keeps only items compatible with the slot", () => {
-    expect(itemsMatchingSlot([basicSword(), basicArmor()], "main-hand").map((item) => item.instanceId)).toEqual([
-      "sword-1",
-    ]);
-    expect(itemsMatchingSlot([basicSword(), basicArmor()], "body").map((item) => item.instanceId)).toEqual(["armor-1"]);
-  });
-
-  it("drops items with unknown definitions", () => {
-    const unknown: GearInstance = { instanceId: "x-1", definitionId: "missing-definition", affixes: [] };
-    expect(itemsMatchingSlot([unknown], "main-hand")).toEqual([]);
-  });
-});
 
 describe("applyCurrencyToGear", () => {
   it("does nothing when the board is not editable or no currency is armed", () => {
@@ -77,16 +59,26 @@ describe("applyCurrencyToGear", () => {
     expect(clearCurrency).not.toHaveBeenCalled();
   });
 
-  it("clears the armed currency after one successful application", () => {
+  it("disarms a successful craft immediately without clearing a newer selection after saving", () => {
+    const pending: Array<() => void> = [];
+    let mode = "currency";
     const onApplyCurrency = vi.fn().mockReturnValue(true);
-    const clearCurrency = vi.fn();
+    const clearCurrency = vi.fn(() => {
+      mode = "idle";
+    });
     applyCurrencyToGear({
       editable: true,
       activeCurrencyId: "voidstone",
       instance: basicSword(),
       onApplyCurrency,
       clearCurrency,
+      afterProgressSaved: (run) => pending.push(run),
     });
+    expect(mode).toBe("idle");
+    expect(playUISound).not.toHaveBeenCalledWith("craft");
+    mode = "salvage";
+    pending.shift()!();
+    expect(mode).toBe("salvage");
     expect(playUISound).toHaveBeenCalledWith("craft");
     expect(clearCurrency).toHaveBeenCalledTimes(1);
   });

@@ -336,6 +336,7 @@ export const coreCards: BattleCard[] = [
   cardBuilders.effectsCard({
     id: "sniff-out",
     art: assetRefs.sniffOut,
+    tags: ["archery"],
     effects: [{ kind: "damage", damageType: "bleed", amount: 1 }, { kind: "next-archery-free" }],
   }),
   cardBuilders.effectsCard({

@@ -29,8 +29,8 @@ corrections through their callbacks after commit, once per correction. Empty
 lists use page zero with one logical page and a minimum capacity of one.
 Offered choices remain content-owned, independent of browsing capacity.
 
-Activating a Bestiary portrait keeps its attack sound and plays its registered boss
-music when available, including for undiscovered entries. Music loops until the
+Activating a Bestiary portrait plays its registered boss music when available,
+including for undiscovered entries; it does not play an attack sound. Music loops until the
 Bestiary page or Collection tab changes, restoring menu music; leaving Collection
 uses the destination screen's music. Another supported boss switches the track;
 repeating the same boss does not restart it. Entries without a track leave music
@@ -91,7 +91,7 @@ keep the same spacing.
 
 ## Options
 
-Gameplay Options contains Auto-End Turn and Remember Auto-Battle Preference. The former Controls instructions are removed. Failed local saves show a non-modal warning until an acknowledged retry; the warning does not change save recovery behavior.
+Gameplay Options contains Auto-End Turn and Remember Auto-Battle Preference. The former Controls instructions are removed. Failed local saves show the shared non-modal warning and Retry action; progression waits for local acknowledgement under [pending saves and action feedback](./UI.md#pending-saves-and-action-feedback).
 
 Options opened from either end-run outcome returns to that same recap through Back or Escape, including after changing Game Size.
 

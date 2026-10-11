@@ -2,7 +2,15 @@ import type { CareerResult } from "./types";
 
 export function careerCohort(result: CareerResult): string {
   const { config } = result;
-  return [result.cohort, config.hero, config.mode, config.difficulty, config.policy, config.combatPolicy].join("/");
+  return [
+    result.cohort,
+    config.hero,
+    config.mode,
+    config.difficulty,
+    config.policy,
+    config.combatPolicy,
+    config.brewing ?? "legacy",
+  ].join("/");
 }
 
 /** Reports observations only; no inferred balance thresholds or simulated rules. */

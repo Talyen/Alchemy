@@ -64,20 +64,25 @@ function descendantCommand(root: string, delayMs = 1000) {
 
 describe("script execution reliability", () => {
   it("resolves installed tools through Node and never downloads unknown tools", () => {
-    for (const tool of [
-      "vitest",
-      "playwright",
-      "oxlint",
-      "depcruise",
-      "commit-and-tag-version",
-      "vite",
-      "electron-builder",
+    const forwarded = ["--version", "space & literal | argument"];
+    for (const [tool, relative] of [
+      ["vitest", "vitest/vitest.mjs"],
+      ["playwright", "@playwright/test/cli.js"],
+      ["oxlint", "oxlint/bin/oxlint"],
+      ["depcruise", "dependency-cruiser/bin/dependency-cruiser.mjs"],
+      ["commit-and-tag-version", "commit-and-tag-version/bin/cli.js"],
+      ["vite", "vite/bin/vite.js"],
+      ["electron-builder", "electron-builder/out/cli/cli.js"],
+      ["tsc", "typescript/bin/tsc"],
+      ["knip", "knip/bin/knip.js"],
+      ["concurrently", "concurrently/dist/bin/concurrently.js"],
     ]) {
-      const [executable, args] = commandInvocation("npx", [tool, "--version"]);
+      const [executable, args] = commandInvocation("npx", [tool, ...forwarded]);
       expect(executable).toBe(process.execPath);
+      expect(args[0]).toBe(path.join(ROOT, "node_modules", relative));
       expect(fs.existsSync(args[0])).toBe(true);
-      expect(args.slice(1)).toEqual(["--version"]);
-      expect(commandInvocation(tool, ["--version"])).toEqual([executable, args]);
+      expect(args.slice(1)).toEqual(forwarded);
+      expect(commandInvocation(tool, forwarded)).toEqual([executable, args]);
     }
     expect(() => commandInvocation("npx", ["not-installed"])).toThrow("Unsupported local CLI");
     expect(fs.existsSync(resolveBuilderBin())).toBe(true);
@@ -142,13 +147,17 @@ describe("script execution reliability", () => {
 
   it("fails the ship gate when its test process is interrupted", () => {
     const source = `import cp from 'node:child_process';
+      import net from 'node:net';
       import { syncBuiltinESMExports } from 'node:module';
-      cp.spawnSync = () => ({status:null,signal:'SIGTERM'});
+      net.createServer = () => ({once() {}, listen(_options, ready) { ready(); }, address() { return {port: 0}; }, close(done) { done(); }});
+      cp.spawnSync = () => { console.log('interrupted test process'); return {status:null,signal:'SIGTERM'}; };
       syncBuiltinESMExports();
       process.argv.push('--live');
       await import('./scripts/run-ship-unit.mjs');`;
     const result = spawnSync(process.execPath, ["--input-type=module", "-e", source], { cwd: ROOT, encoding: "utf8" });
     expect(result.status, result.stderr).toBe(1);
+    expect(result.stdout).toContain("interrupted test process");
+    expect(result.stderr).not.toContain("Local test lane is occupied");
   });
 
   it("captures large successful output in memory and retains full file-backed failure evidence", async () => {
@@ -223,6 +232,31 @@ describe("script execution reliability", () => {
     expect(result.status).toBe(0);
     expect(result.stdout.trim()).toBe("preserved");
   });
+
+  it.skipIf(process.platform === "win32")(
+    "backs up work hidden by a stale filesystem monitor before blocking reset",
+    () => {
+      const root = repository();
+      const monitor = path.join(root, ".git", "silent-fsmonitor");
+      fs.writeFileSync(monitor, "#!/bin/sh\nprintf 'stale-token\\0'\n", { mode: 0o755 });
+      git(root, "config", "core.fsmonitor", monitor);
+      git(root, "config", "core.untrackedCache", "true");
+      git(root, "status", "--porcelain");
+      fs.writeFileSync(path.join(root, "game.ts"), "unsaved work");
+      expect(git(root, "status", "--porcelain", "--untracked-files=all")).toBe("");
+
+      const result = spawnSync(process.execPath, [path.join(ROOT, "scripts/git-safety-guard.mjs"), "reset", "--hard"], {
+        cwd: root,
+        encoding: "utf8",
+        env: { ...process.env, LEFTHOOK: "0" },
+      });
+      expect(result.status, result.stderr).toBe(1);
+      expect(result.stderr).toContain("blocked: destructive git command");
+      expect(git(root, "show", "stash@{0}:game.ts")).toBe("unsaved work");
+      expect(git(root, "config", "core.fsmonitor")).toBe(monitor);
+      expect(git(root, "config", "core.untrackedCache")).toBe("true");
+    },
+  );
 
   it.each([false, true])("stops descendants at the deadline (file capture: %s)", async (fileCapture) => {
     const root = fixture();
@@ -502,7 +536,25 @@ describe("script execution reliability", () => {
     }
   });
 
-  it("keeps direct optimizer checks read-only and rejects unsupported arguments before preparing assets", () => {
+  it("rejects unsupported optimizer arguments before preparing assets", () => {
+    const root = fixture();
+    fs.cpSync(path.join(ROOT, "scripts"), path.join(root, "scripts"), { recursive: true });
+    fs.symlinkSync(path.join(ROOT, "node_modules"), path.join(root, "node_modules"), "junction");
+    for (const script of ["optimize-assets.mjs", "optimize-music.mjs", "optimize-sounds.mjs"]) {
+      for (const arg of ["--chek", "unexpected"]) {
+        const result = spawnSync(process.execPath, [path.join(root, "scripts", script), arg], {
+          cwd: root,
+          encoding: "utf8",
+        });
+        expect(result.status, result.stderr).toBe(2);
+        expect(result.stderr).toMatch(/Unknown option|Unexpected optimization arguments/);
+      }
+    }
+    expect(fs.existsSync(path.join(root, "public"))).toBe(false);
+    expect(fs.existsSync(path.join(root, "src"))).toBe(false);
+  });
+
+  it("keeps direct optimizer checks read-only when outputs are missing, current or stale", () => {
     const root = fixture();
     fs.cpSync(path.join(ROOT, "scripts"), path.join(root, "scripts"), { recursive: true });
     fs.symlinkSync(path.join(ROOT, "node_modules"), path.join(root, "node_modules"), "junction");
@@ -520,14 +572,6 @@ describe("script execution reliability", () => {
         env: { ...process.env, ASSET_LIBRARY_ROOT: path.join(root, "Raw Assets") },
       });
 
-    for (const script of ["optimize-assets.mjs", "optimize-music.mjs", "optimize-sounds.mjs"]) {
-      for (const arg of ["--chek", "unexpected"]) {
-        const result = run(script, arg);
-        expect(result.status, result.stderr).toBe(2);
-        expect(result.stderr).toMatch(/Unknown option|Unexpected optimization arguments/);
-      }
-    }
-    expect(fs.existsSync(path.join(root, "public"))).toBe(false);
     const stale = run("optimize-music.mjs", "--check");
     expect(stale.status, stale.stderr).toBe(1);
     expect(fs.existsSync(path.join(root, "public"))).toBe(false);

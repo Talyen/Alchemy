@@ -187,12 +187,13 @@ Keyword labels and descriptions must pass the typography rules (no em dashes; de
 
 ---
 
-Generated card rules live in `effect-metadata.ts`. Extend that renderer when a
-mechanic needs a new clause; do not duplicate its amounts in library prose.
-Exact generated descriptions bypass English parity parsing. The parser remains
-for custom templates and saved/Corrupted/Mixed Potion descriptions. Keep compact
-combined phrases stable: Corruption still uses their displayed numeric positions
-to preserve the established editable-value contract.
+Canonical card descriptions render through `effect-metadata.ts`. Extend that
+renderer when a mechanic needs a new clause; do not duplicate its amounts in
+library prose. The [parity checker](../src/lib/content-validation/card-parity/index.ts)
+compares authored mechanic lines with `describeCardEffects()`, allowing the
+Steal/Gain Gold alias and specialized validation for summons and Mixed Potions.
+Corruption and Powerful Wish use [structured magnitude references](#add-a-new-card);
+rendered numeric positions identify highlights, never the effect to mutate.
 
 ### Transmutation keywords and Potion brewing
 

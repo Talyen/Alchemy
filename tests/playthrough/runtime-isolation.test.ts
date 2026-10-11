@@ -58,6 +58,7 @@ describe("career runtime ownership", () => {
       maxTurns: 100,
       policy: "archetype",
       combatPolicy: "greedy-effective-damage",
+      brewing: "on",
       initialSave: createPlaythroughFixture("economy-v1", defaultGameSession),
     };
     const other: CareerConfig = { ...base, seed: 8, mode: "wildwood", resumeAt: 7 };

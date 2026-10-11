@@ -43,12 +43,12 @@ export function CampfireScreen({
   isProgressSavePending?: () => boolean;
 }) {
   const [brewing, setBrewing] = useState(false);
-  const [rest, setRest] = useState<{ from: number; to: number } | null>(null);
+  const [rest, setRest] = useState<{ from: number; to: number; saved: boolean } | null>(null);
   const [error, setError] = useState("");
   const { displayHealth, progressHealth } = useEasedHealth({
     from: rest?.from ?? playerHealth,
     to: rest?.to ?? playerHealth,
-    active: rest !== null,
+    active: rest?.saved ?? false,
   });
   const restore = getCampfireRestHealth(playerHealth, maxHealth, healFraction, healingBonus) - playerHealth;
   const brewKind = getCampfireBrewKind(runDeck);
@@ -100,8 +100,10 @@ export function CampfireScreen({
                   if (isProgressSavePending()) return;
                   const from = playerHealth;
                   const to = playerHealth + restore;
-                  if (onRest()) afterProgressSaved(() => setRest({ from, to }));
-                  else setError("This Campfire has already been used.");
+                  if (onRest()) {
+                    setRest({ from, to, saved: false });
+                    afterProgressSaved(() => setRest({ from, to, saved: true }));
+                  } else setError("This Campfire has already been used.");
                 }}
               >
                 Rest

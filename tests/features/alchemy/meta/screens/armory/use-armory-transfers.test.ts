@@ -32,8 +32,10 @@ function setup({
     loadouts.knight["off-hand"] = offhand.instanceId;
   }
   const onEquip = vi.fn(() => success);
+  const placement = vi.fn();
   return {
     onEquip,
+    placement,
     ...renderHook(() => {
       const ordering = useArmoryOrdering({
         characterId: "knight",
@@ -52,7 +54,13 @@ function setup({
         selectedSlot: "main-hand",
         inventoryById: new Map(inventory.map((item) => [item.instanceId, item])),
         sharedInventory: inventory,
-        ordering,
+        ordering: {
+          ...ordering,
+          commitEquip: (...args) => {
+            placement(...args);
+            ordering.commitEquip(...args);
+          },
+        },
         requireEditable: (action) => action(),
         setNotice: vi.fn(),
         afterProgressSaved,
@@ -81,6 +89,18 @@ describe("Armory transfer orchestration", () => {
     act(() => pending.shift()!());
     expect(result.current.transfers.flyingItems).toEqual([]);
     expect(onEquip).toHaveBeenCalledTimes(2);
+  });
+
+  it.each(["scroll", "resize"])("keeps committed placement when %s cancels artwork during saving", (event) => {
+    const pending: Array<() => void> = [];
+    const { result, placement } = setup({ afterProgressSaved: (run) => pending.push(run) });
+    act(() => result.current.transfers.handleEquipGear(incoming));
+    act(() => window.dispatchEvent(new Event(event)));
+    act(() => pending.shift()!());
+    expect(placement).toHaveBeenCalledExactlyOnceWith(incoming.instanceId, replaced.instanceId, [
+      { slot: "off-hand", instance: offhand },
+    ]);
+    expect(result.current.transfers.flyingItems).toEqual([]);
   });
 
   it.each(["animated", "reduced motion", "missing geometry"])(

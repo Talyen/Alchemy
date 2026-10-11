@@ -24,6 +24,53 @@ afterEach(() => {
 });
 
 describe("release workflow result", () => {
+  it("rejects work hidden by Git caches before running release gates or changing versions", async () => {
+    vi.mocked(execFileSync).mockImplementation((_command, args) => {
+      const argv = args as string[];
+      if (argv.includes("status"))
+        return argv.includes("core.fsmonitor=false") && argv.includes("core.untrackedCache=false")
+          ? " M game.ts\n"
+          : "";
+      throw new Error("Release proceeded past an unsafe clean-checkout check");
+    });
+    await expect(runRelease({ label: "Release", gates: [["check:ship"]] })).rejects.toThrow(
+      "Working tree is not clean",
+    );
+    expect(execFileSync).toHaveBeenCalledTimes(1);
+    expect(readFileSync).not.toHaveBeenCalled();
+  });
+
+  it.each(["dirty source", "changed HEAD"])(
+    "rejects %s after verification before bumping or pushing",
+    async (change) => {
+      vi.spyOn(console, "log").mockImplementation(() => {});
+      let statusChecks = 0;
+      let headChecks = 0;
+      vi.mocked(execFileSync).mockImplementation((_command, args) => {
+        const argv = args as string[];
+        if (argv.includes("status")) {
+          statusChecks++;
+          return change === "dirty source" && statusChecks > 1 ? " M game.ts\n" : "";
+        }
+        if (argv[0] === "rev-parse") {
+          if (argv.includes("--abbrev-ref")) return "main";
+          return change === "changed HEAD" && headChecks++ > 0 ? "b".repeat(40) : "a".repeat(40);
+        }
+        return "";
+      });
+      await expect(runRelease({ label: "Release", gates: [["check:ship"]] })).rejects.toThrow(
+        change === "dirty source" ? "Working tree is not clean" : "HEAD changed during release verification",
+      );
+      expect(execFileSync).toHaveBeenCalledWith(
+        process.execPath,
+        expect.arrayContaining(["check:ship"]),
+        expect.anything(),
+      );
+      expect(readFileSync).not.toHaveBeenCalled();
+      expect(vi.mocked(execFileSync).mock.calls.some(([, args]) => args?.[0] === "push")).toBe(false);
+    },
+  );
+
   it.each(["missing run", "unavailable GitHub CLI"])(
     "reports incomplete verification after publishing with %s",
     async (condition) => {

@@ -3,12 +3,13 @@ import { releaseEdition } from "./lib/release/game-edition.mjs";
 // Enforces bundle size budget for the no-lazy eager entry invariant.
 // Replaces the former chunkSizeWarningLimit:900 silence with a real gate.
 import { readdirSync, statSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 
 import { BUDGETS } from "./lib/verification/bundle-budget.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
+import { REPO_ROOT } from "./lib/repository-paths.mjs";
 
-const DEFAULT_ASSETS_DIR = `${releaseEdition().rendererDirectory}/assets`;
+const DEFAULT_ASSETS_DIR = join(REPO_ROOT, releaseEdition().rendererDirectory, "assets");
 
 function chunkPattern(name) {
   return new RegExp(`^${name}-[A-Za-z0-9_-]+\\.js$`);
@@ -16,9 +17,15 @@ function chunkPattern(name) {
 
 function jsAssets(dir) {
   if (!existsSync(dir)) return [];
-  return readdirSync(dir)
-    .filter((f) => f.endsWith(".js"))
-    .map((f) => ({ name: f, bytes: statSync(join(dir, f)).size }));
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const assetPath = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      return jsAssets(assetPath).map((asset) => ({ ...asset, name: join(entry.name, asset.name) }));
+    }
+    if (!entry.name.endsWith(".js")) return [];
+    const stat = statSync(assetPath);
+    return stat.isFile() ? [{ name: entry.name, bytes: stat.size }] : [];
+  });
 }
 
 function checkSingleBudget(dir) {
@@ -27,9 +34,13 @@ function checkSingleBudget(dir) {
     console.error(`[bundle-budget] FAIL ${dir}: no JavaScript assets (run npm run build first)`);
     return false;
   }
-  const indexAsset = assets.find((a) => chunkPattern("index").test(a.name));
+  const indexAsset = assets.find((a) => chunkPattern("index").test(basename(a.name)));
   if (!indexAsset) {
     console.error(`[bundle-budget] FAIL ${dir}: index chunk not found (expected index-*.js)`);
+    return false;
+  }
+  if (indexAsset.bytes === 0) {
+    console.error(`[bundle-budget] FAIL ${dir}: index chunk is empty (run npm run build first)`);
     return false;
   }
   const totalJs = assets.reduce((sum, a) => sum + a.bytes, 0);

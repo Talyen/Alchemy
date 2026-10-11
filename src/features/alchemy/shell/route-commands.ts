@@ -70,7 +70,7 @@ export interface AlchemyRouteCommands {
       continue: () => void;
     };
     mystery: {
-      handleChoice: (choice: MysteryChoice) => void;
+      handleChoice: (choice: MysteryChoice) => boolean;
       handleChooseCard: (cardId: string) => boolean;
       handleContinue: () => void;
     };

@@ -1,6 +1,6 @@
 import { resolveSecondaryAction } from "./action-context";
 import { applyHitEpilogue } from "./player-rewards";
-import { mergeCombatText } from "./combat-text-events";
+import { emitEnemyBuildupImmunity, mergeCombatText } from "./combat-text-events";
 import { computeCardDamageToEnemy } from "./damage-calc";
 import { applyHitHealth } from "./player-hit-core";
 import { decayArmorAfterDamage } from "./status-helpers";
@@ -18,9 +18,10 @@ export function resolveStunFollowUpHit(
   return resolveSecondaryAction(state, "reward", (current) => {
     if (amount <= 0 || current.enemyHealth <= 0) return current;
     const effect = { kind: "damage" as const, damageType: "stun" as const, amount };
-    const { nextState: afterMods, modifiedDamage } = computeCardDamageToEnemy(current, effect);
-    const hit = applyHitHealth(afterMods, modifiedDamage, current);
+    const { nextState: afterMods, modifiedDamage, critical } = computeCardDamageToEnemy(current, effect);
+    const hit = applyHitHealth(afterMods, modifiedDamage, current, critical);
     const decayed = decayArmorAfterDamage(hit.state, modifiedDamage, "enemy", combatTexts);
+    emitEnemyBuildupImmunity(decayed, "stun", modifiedDamage, combatTexts);
     let nextState = resolveStunTriggerCore(
       addEnemyStatus(decayed, "stun", modifiedDamage),
       combatTexts,
@@ -29,9 +30,22 @@ export function resolveStunFollowUpHit(
       leech,
     );
     if (modifiedDamage > 0) {
-      mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "stun", amount: modifiedDamage });
+      mergeCombatText(combatTexts, {
+        target: "enemy",
+        kind: "damage",
+        stat: "stun",
+        amount: modifiedDamage,
+        ...(critical ? { critical: true } : {}),
+      });
     }
-    nextState = applyHitEpilogue(nextState, hit.facts.previousHealth, hit.facts.enemyWasAlive, combatTexts);
+    nextState = applyHitEpilogue(
+      nextState,
+      hit.facts.previousHealth,
+      hit.facts.enemyWasAlive,
+      combatTexts,
+      undefined,
+      afterMods.playerStatuses.forge >= 5,
+    );
     return nextState;
   });
 }

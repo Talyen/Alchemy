@@ -18,10 +18,13 @@ export function createMysteryEventNavigation(
     sessionFeedback(gameSession).playUISound("musicBoxMystery");
   }
   function handleMysteryChoice(choice: MysteryChoice) {
-    for (const sound of chooseMysteryOption(choice, gameSession)) {
+    const sounds = chooseMysteryOption(choice, gameSession);
+    if (sounds === null) return false;
+    for (const sound of sounds) {
       if (sound === "gain") sessionFeedback(gameSession).playGoldGain();
       else sessionFeedback(gameSession).playGoldSpend();
     }
+    return true;
   }
   return {
     beginMysteryEvent,

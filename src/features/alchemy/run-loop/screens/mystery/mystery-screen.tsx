@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { playUISound } from "@/lib/audio";
 import type { BattleCard, KeywordId, TalentXP, TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
@@ -42,21 +42,30 @@ export function MysteryScreen({
   mysteryChosenChoice: MysteryChoice | null;
   runTalentXP?: TalentXP;
   talentXP?: TalentXP;
-  onChoose: (choice: MysteryChoice) => void;
-  onChooseCard: (cardId: string) => void;
+  onChoose: (choice: MysteryChoice) => boolean;
+  onChooseCard: (cardId: string) => boolean;
   onContinue: () => void;
   findCard: (id: string) => BattleCard | undefined;
   findTrinket: (id: string) => TrinketEntry | undefined;
 }) {
+  const [error, setError] = useState("");
   function handlePick(choice: MysteryChoice) {
-    onChoose(choice);
+    if (!onChoose(choice)) {
+      setError("This choice is unavailable. Try again.");
+      return;
+    }
+    setError("");
     if (!choiceOffersCardSelection(choice) && hasPositiveMysteryEffect(choice.effects)) {
       playUISound("talentUnlock");
     }
   }
 
-  function handlePickerConfirm(confirm: () => void) {
-    confirm();
+  function handlePickerConfirm(confirm: () => boolean) {
+    if (!confirm()) {
+      setError("This choice is unavailable. Try again.");
+      return;
+    }
+    setError("");
     if (mysteryChosenChoice && choiceHasDisplayableSummary(mysteryChosenChoice)) {
       if (hasPositiveMysteryEffect(mysteryChosenChoice.effects)) playUISound("talentUnlock");
     } else {
@@ -93,6 +102,11 @@ export function MysteryScreen({
     <FadeSlot swapKey={`${event.id}:${phase}`} className="h-full w-full">
       <MysteryScreenShell title={title} keywordIds={plasmaKeywordIds}>
         <div className="mt-6 flex w-full flex-col">
+          {error && (
+            <p role="alert" className="mb-4 text-center">
+              {error}
+            </p>
+          )}
           {mysteryCardChoices ? (
             <CardChoicePicker choices={mysteryCardChoices} onSelect={handleCardChoiceConfirm} />
           ) : mysteryChosenChoice ? (

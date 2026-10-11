@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { extractSubcommand, isDestructive } from "./lib/git-classify.mjs";
+import { UNCACHED_GIT_OPTIONS } from "./lib/repository-paths.mjs";
 
 const ownShimDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "scripts", "bin");
 
@@ -15,10 +16,14 @@ const { subcommand, subIndex } = extractSubcommand(args);
 const prelude = args.slice(0, Math.max(0, subIndex)).filter((arg) => arg !== "--");
 
 function hasDirtyTree() {
-  const result = spawnSync(realGit, [...prelude, "status", "--porcelain", "--untracked-files=all", "-z"], {
-    cwd: process.cwd(),
-    encoding: "utf8",
-  });
+  const result = spawnSync(
+    realGit,
+    [...prelude, ...UNCACHED_GIT_OPTIONS, "status", "--porcelain", "--untracked-files=all", "-z"],
+    {
+      cwd: process.cwd(),
+      encoding: "utf8",
+    },
+  );
   if (result.status !== 0) {
     console.error(`Could not inspect the target checkout; command blocked. ${result.error?.message ?? result.stderr}`);
     process.exit(1);
@@ -29,10 +34,14 @@ function hasDirtyTree() {
 function stashBackup(cmd) {
   const ts = new Date().toISOString().replace(/[:.]/g, "-");
   const msg = `auto-backup pre-${cmd} ${ts}`;
-  const result = spawnSync(realGit, [...prelude, "stash", "push", "-m", msg, "--include-untracked"], {
-    cwd: process.cwd(),
-    encoding: "utf8",
-  });
+  const result = spawnSync(
+    realGit,
+    [...prelude, ...UNCACHED_GIT_OPTIONS, "stash", "push", "-m", msg, "--include-untracked"],
+    {
+      cwd: process.cwd(),
+      encoding: "utf8",
+    },
+  );
   return { msg, status: result.status, output: (result.stdout ?? "") + (result.stderr ?? "") };
 }
 

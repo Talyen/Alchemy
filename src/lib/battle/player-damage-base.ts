@@ -9,7 +9,11 @@ import {
 import { BURN_BLOCK_SCALED_DAMAGE_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
 import { scalePercent, scalePerMana } from "./amount-helpers";
 import { flatDamageBonus } from "./damage-modifiers";
-import { getPoisonBonusAgainstBleeding, getPoisonDamageMultiplierAgainstBleeding } from "./status-helpers";
+import {
+  getEnemyDamageVulnerabilityBonus,
+  getPoisonBonusAgainstBleeding,
+  getPoisonDamageMultiplierAgainstBleeding,
+} from "./status-helpers";
 import type { BattleState } from "./types";
 
 function forgeDamagePercent(
@@ -169,9 +173,7 @@ export function computeBaseDamage(
   const hasArmor = effect.equalToArmor === true;
   const hasGold = effect.equalToGoldPercent !== undefined;
   const isEqualTo = hasBlock || hasArmor || hasGold || effect.equalToForge === true;
-  const vulnerabilityBonus =
-    (state.enemyCC.freezeSkipTurns > 0 ? state.talentEffects.freezeDamageBonusVsFrozen : 0) +
-    (state.enemyStatuses.poison > 0 ? state.talentEffects.poisonDamageBonusVsPoisoned : 0);
+  const vulnerabilityBonus = getEnemyDamageVulnerabilityBonus(state);
   if (isEqualTo) return Math.max(0, rawAmount + (rawAmount > 0 ? vulnerabilityBonus : 0));
   const sharedBonus =
     state.gearEffects.sharedBurnBleedBonuses <= 0

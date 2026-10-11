@@ -60,20 +60,20 @@ export function beginMysteryVisitInTransaction(draft: RunTransaction): void {
     ),
   );
 }
-export function chooseMysteryOption(choice: MysteryChoice, gameSession: GameSession) {
+export function chooseMysteryOption(choice: MysteryChoice, gameSession: GameSession): Array<"gain" | "spend"> | null {
   const activity = readRunSession(gameSession).activity;
   // The choice object belongs to one resolved visit. A retained screen from an
   // earlier visit must not apply its effects to the current one.
   const choiceIndex = activity.kind === "mystery" ? (activity.data.mysteryEvent?.choices.indexOf(choice) ?? -1) : -1;
-  if (choiceIndex < 0) return [];
+  if (choiceIndex < 0) return null;
 
   return dispatchRunSessionCommand(
     (draft) => {
       const visit = draft.session.activity;
       if (visit.kind !== "mystery" || visit.data.mysteryChosenChoice !== null)
-        return rejectCommand("Mystery choice is unavailable", []);
+        return rejectCommand("Mystery choice is unavailable", null);
       const offeredChoice = visit.data.mysteryEvent?.choices[choiceIndex];
-      if (!offeredChoice) return rejectCommand("Mystery choice is unavailable", []);
+      if (!offeredChoice) return rejectCommand("Mystery choice is unavailable", null);
       const resolvedEffects = [...offeredChoice.effects];
       const goldSounds: Array<"gain" | "spend"> = [];
       const rng = createDraftRunRandomSource(draft, "events");

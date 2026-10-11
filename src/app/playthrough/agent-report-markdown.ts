@@ -58,6 +58,13 @@ export function renderAgentPlaythroughSummaryMarkdown(summary: AgentPlaythroughS
       `- Battles: ${cohort.battles.victories}/${cohort.battles.encounters} victories (${cohort.battles.winRate}%); bosses: ${cohort.battles.bosses.victories}/${cohort.battles.bosses.encounters} (${cohort.battles.bosses.winRate}%)`,
     );
     lines.push(
+      `- Brewing: ${cohort.brewing.shopVisits} shop visits; ${cohort.brewing.campfireVisits} campfires; ${cohort.brewing.goldSpent} Gold spent; ${cohort.brewing.missingCareers} careers missing evidence${cohort.brewing.truncated ? "; evidence truncated" : ""}`,
+    );
+    for (const service of cohort.brewing.services)
+      lines.push(
+        `  - ${service.kind}: eligible/affordable/beneficial visits ${service.eligibleVisits}/${service.affordableVisits}/${service.beneficialVisits}; used ${service.used}; reasons ${JSON.stringify(service.reasons)}`,
+      );
+    lines.push(
       `- Progression: first-to-final room delta ${cohort.progression.meanRoomDelta ?? "n/a"}; improved/worsened/tied ${cohort.progression.improved}/${cohort.progression.worsened}/${cohort.progression.tied}`,
     );
     lines.push("");

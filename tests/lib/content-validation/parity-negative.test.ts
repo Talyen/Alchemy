@@ -202,6 +202,18 @@ describe("enemy trait parity failure paths", () => {
     expect(issues.map((issue) => issue.message)).toEqual(['Trait "stone-golem" description does not mention damage']);
   });
 
+  it("rejects Ambush wording that promises the whole first attack instead of the first landed hit", () => {
+    const enemy = enemyBestiary.find((entry) => entry.id === "bandit")!;
+    const issues = validateEnemyTraitDescriptionParity({
+      ...enemy,
+      traits: [{ id: "bandit", title: "Ambush", description: "Deals double damage on its first attack" }],
+    });
+    expect(issues.map((issue) => issue.message)).toEqual([
+      'Trait "bandit" description does not mention landed',
+      'Trait "bandit" description does not mention hit',
+    ]);
+  });
+
   it("rejects a wrong damage magnitude", () => {
     const enemy = enemyBestiary.find((entry) => entry.id === "frostwarden")!;
     const issues = validateEnemyTraitDescriptionParity({

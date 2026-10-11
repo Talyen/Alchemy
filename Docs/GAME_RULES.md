@@ -73,6 +73,7 @@ Bond 0 preserves the baseline. Damage, healing, Gold, and Scarab Block gain +1 p
 - **Companion card perks** — Whistle and Hunter's Bond use the card's Companion keyword, including Pack Tactics. Whistle makes the active Companion act after all effects of the card finish, including a newly summoned Companion. Both rewards occur once per card play, including automatic plays, never again for repeated or scheduled effects. Both `getCardKeywords` and `cardHasKeyword` use the full content keywords, including utility effects.
 - **Companion Forge** — Companion attacks use ordinary damage-type Forge permissions and preserve player Forge.
 - **Pack Tactics** — makes the active Companion act twice, including utility actions. Without an active Companion, it opens a normal Wish whose options are restricted to Companion summon cards; the chosen card enters the hand. It then grants 2 Block. Ordinary Companion bonuses and reaction cutoffs apply, and card-play rewards occur once.
+- **Wishing Potion** — costs 1 Mana and Consumes to Wish twice from the ordinary card pool, excluding the originating card as usual. It has no additional draw. Both Wishes trigger normal Wish bonuses; chosen cards enter the hand or its pending queue. Mixing and distilling can increase the Wish count.
 
 ### Enemy abilities and traits
 
@@ -116,7 +117,8 @@ Crowd-control triggers require both combatants to survive the hit. A lethal Stun
 - **Block status resistance** — while the hero has Block, Coagulate halves incoming Bleed damage and Detoxify halves incoming Poison damage. They mitigate damage rather than preventing buildup, and check Block before the incoming packet spends it; damage that breaks through Block still deals Health damage and matching status buildup.
 - **Shield Slam** — Physical damage increases by half the player’s current Block. Rupture detonates Bleed only from a positive Critical Physical packet; a fully blocked or armored hit does not detonate it.
 - **Crushing Force** — Earth Elemental checks the Block spent by the incoming hit. Replacing broken Block through a defensive reward does not cancel its follow-up; killing the enemy with retaliation does.
-- **Damage vulnerabilities** — Brittle Ice adds 1 damage to positive player/Companion packets against Frozen enemies, and Corrosive adds 1 against Poisoned enemies; Exploit Weakness doubles damage against Stunned enemies. A matching enemy trait never disables these Talents. Trait matching retains its established first-match order.
+- **Damage vulnerabilities** — Brittle Ice adds 1 damage to positive player/Companion packets against Frozen enemies, and Corrosive adds 1 against Poisoned enemies, including Icy Heart, Thunderstone, and crowd-control Gear damage; Exploit Weakness doubles damage against Stunned enemies. A matching enemy trait never disables these Talents. Trait matching retains its established first-match order.
+- **Sundering Charm** — Physical and Stun packets remove its stated Armor before Armor mitigation, including fixed/derived Talent hits and crowd-control Gear/Trinket damage. Fully blocked positive packets still remove Armor; zero-base effects grant no removal.
 - **Enemy status** — stack changes go through `addEnemyStatus()` / `setEnemyStatus()` in `src/lib/battle/status-state.ts`; `braced` enemy trait halves incoming stun.
 - **Crowd-control thresholds** — baseline Stun and Freeze trigger when buildup reaches at least half Health. Enemies use Health before the hit; heroes use maximum Health. Enemy current Health lets control become easier as a boss weakens, while checking before the hit prevents one damage packet from both adding buildup and lowering its own threshold. Threshold modifiers apply before the comparison.
 - **Skipped player turns** — the committed turn resolver advances through Stun and Freeze skips until the hero can act or combat ends; skipped turns do not trigger Companion actions.
@@ -137,6 +139,7 @@ Crowd-control triggers require both combatants to survive the hit. A lethal Stun
 - **DoT bonuses and Leech** — Frigid increases Burn, Poison, and Bleed ticks and each projected detonation tick while the enemy is Frozen, without increasing remaining stacks. Rotbloom's immediate Poison tick uses the same damage, decay, and riders as a natural Poison tick. Burn detonations include the same bonus against bleeding enemies as Burn ticks. Caustic removes enemy Armor equal to resolved Poison damage on direct hits, natural ticks, and detonations. Paralytic Venom rolls once per resolved Poison packet, including detonations, and deals matching Stun damage without recursively rolling from the derived Stun. Parasitic Bloom and Poison Leech heal from Health actually lost to Poison, excluding overkill from hits and ticks. Parasitic Bloom rolls on both direct Poison hits and natural Poison ticks, once per source, independently of Talent/Gear Poison Leech. Detonations pay queued Bleed Leech only when consuming Bleed, capped by both Bleed damage and actual Health loss; other statuses cannot fund or consume that healing.
 - **Lethal status ticks** — resolve Burn, Poison, then Bleed, stopping when the enemy is defeated. Later ticks and enemy trait pulses cannot continue after either combatant is defeated. Phoenix Feather recovery does not erase Health lost to a Bleed tick for pending enemy Leech.
 - **Septic Shock** — while the enemy is Bleeding, Poison damage dealt to it is increased by 10% for ordinary hits, natural ticks, and each projected tick in a detonation. Apply the multiplier before resistance and rounding; it does not increase the remaining Poison stacks.
+- **Bleeding Out** — while the hero is strictly below half Health, natural Bleed ticks and each projected detonation tick receive its 25% damage bonus without increasing the remaining stacks. Bloodember Pendant also shares this conditional bonus with Burn ticks.
 
 ### Unique item interactions
 
@@ -243,8 +246,8 @@ the legacy `uniqueRepeatActive` field, remain readable.
 sequences, enemy abilities, status ticks, and Wish rewards. An explicit reaction
 boundary selects settlement after each step or in the enclosing hit. Card Wishes
 settle between Wishes; triggered Holy Wishes settle with their enclosing hit.
-Pending Forge/Cinder Skin settlement remains in `enemy-attack-damage.ts`, using
-the existing damage path. Hit-specific preconditions and depth-first ordering
+Pending Cinder Skin and Emberwake settlement remains in `enemy-attack-damage.ts`,
+using the existing damage path. Hit-specific preconditions and depth-first ordering
 remain unchanged.
 
 ---

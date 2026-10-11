@@ -1,4 +1,5 @@
 import { commandInvocation } from "../command-invocation.mjs";
+import { UNCACHED_GIT_OPTIONS } from "../repository-paths.mjs";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -48,11 +49,12 @@ function previewPatchNotes() {
 }
 
 function assertReleaseHead() {
-  if (capture("git", ["status", "--porcelain"])) {
+  if (capture("git", [...UNCACHED_GIT_OPTIONS, "status", "--porcelain", "--untracked-files=all"])) {
     throw new Error("Working tree is not clean. Commit or stash changes first.");
   }
   const branch = capture("git", ["rev-parse", "--abbrev-ref", "HEAD"]);
   if (branch !== "main") throw new Error(`Not on main (on ${branch}). Switch to main first.`);
+  return capture("git", ["rev-parse", "HEAD"]);
 }
 
 async function watchRelease({ label, tag }) {
@@ -130,7 +132,7 @@ export async function runRelease({ label, gates, bumpArgs = [], dryRun = false }
     return;
   }
 
-  assertReleaseHead();
+  const checkedHead = assertReleaseHead();
 
   console.log(`\n═══ ${label} pre-flight gate ═══\n`);
   try {
@@ -140,6 +142,10 @@ export async function runRelease({ label, gates, bumpArgs = [], dryRun = false }
   }
 
   previewPatchNotes();
+
+  if (assertReleaseHead() !== checkedHead) {
+    throw new Error("HEAD changed during release verification. Rerun the release gates before releasing.");
+  }
 
   const oldVersion = packageVersion();
   console.log(`\n═══ Bumping version${bumpArgs.length > 0 ? ` (${bumpArgs.join(" ")})` : ""} ═══\n`);

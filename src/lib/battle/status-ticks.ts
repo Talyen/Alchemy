@@ -20,6 +20,7 @@ import {
   decayHalvedStatus,
   decayPoisonStacks,
   getBurnBonusToBleedingMultiplier,
+  getBleedLowHealthDamageMultiplier,
   getEnemyDamageMultiplier,
   getPoisonBonusAgainstBleeding,
   getPoisonDamageMultiplierAgainstBleeding,
@@ -51,7 +52,8 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const multiplier =
     getEnemyDamageMultiplier(state, "burn") *
     getBurnBonusToBleedingMultiplier(state) *
-    gearFrozenDamageMultiplier(state);
+    gearFrozenDamageMultiplier(state) *
+    (state.gearEffects.sharedBurnBleedBonuses > 0 ? getBleedLowHealthDamageMultiplier(state) : 1);
   const finalDamage = Math.round(damage * multiplier);
   emitDotCombatText(combatTexts, "enemy", "burn", finalDamage);
   let nextBurn = state.enemyStatuses.burn;
@@ -101,6 +103,7 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const multiplier =
     getEnemyDamageMultiplier(state, "bleed") *
     gearFrozenDamageMultiplier(state) *
+    getBleedLowHealthDamageMultiplier(state) *
     (state.gearEffects.sharedBurnBleedBonuses > 0 ? getBurnBonusToBleedingMultiplier(state) : 1);
   const finalDamage = Math.round(damage * multiplier);
 
@@ -144,9 +147,8 @@ function dealPlayerDotTick(
   combatTexts: CombatTextEvent[],
   applyRiders?: (state: BattleState) => BattleState,
 ): BattleState {
-  const reducedDamage = mitigatePlayerCombatDamage(state, damage, status);
   let nextState = setPlayerStatus(
-    applyPlayerCombatDamage(state, reducedDamage, "hostile", status, { ignoreMitigation: true }, combatTexts),
+    applyPlayerCombatDamage(state, damage, "hostile", status, { ignoreMitigation: true }, combatTexts),
     status,
     nextStacks,
   );
@@ -156,7 +158,7 @@ function dealPlayerDotTick(
     emitDotCombatText(combatTexts, "player", status, healthLost);
   }
   const healthAfterTick = nextState.playerHealth;
-  nextState = decayArmorAfterDamage(nextState, reducedDamage, "player", combatTexts);
+  nextState = decayArmorAfterDamage(nextState, damage, "player", combatTexts);
   nextState = checkHealthThresholds(state.playerHealth, healthAfterTick, nextState, combatTexts);
   nextState = applyHealthLossTalentRewards(state, nextState, healthLost, combatTexts);
   return nextState;
@@ -167,9 +169,8 @@ function mitigatePlayerDot(state: BattleState, damage: number, status: "burn" | 
   const blockReduction = status === "burn" ? state.talentEffects.blockReduceBurnDamage : 0;
   const afterBlock =
     blockReduction > 0 && state.playerStatuses.block > 0 ? Math.max(0, scaled - blockReduction) : scaled;
-  return armorMitigatesElementalDamage(state, status)
-    ? Math.max(0, afterBlock - state.playerStatuses.armor)
-    : afterBlock;
+  const resisted = mitigatePlayerCombatDamage(state, afterBlock, status);
+  return armorMitigatesElementalDamage(state, status) ? Math.max(0, resisted - state.playerStatuses.armor) : resisted;
 }
 
 function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {

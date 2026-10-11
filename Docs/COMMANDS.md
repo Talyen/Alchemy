@@ -18,6 +18,7 @@ includes and when it applies.
 | Check prepared outputs             | `npm run assets:check:outputs`     | Read-only; does not require Asset Library; used by CI                                             |
 | Run local smoke                    | `npm test`                         | Fixed Node-only suites; accepts no test-path arguments                                            |
 | Run unit tests                     | `npm run test:full -- <path>`      | Omit paths for the full unit suite; agents may run unit tests without approval                    |
+| Select affected unit tests         | `npm run verify:unit -- <paths>`   | Dependency-related and risk-selected units only; add `--plan` to inspect selection                |
 | Run lightweight checks during work | `npm run verify -- --diff`         | Add `--plan` to preview selection                                                                 |
 | Finish a task                      | `npm run check -- --diff`          | Use explicit task-owned paths in a mixed checkout                                                 |
 | Check source types                 | `npm run typecheck`                | Source types; full static checks run in CI or by explicit local request                           |
