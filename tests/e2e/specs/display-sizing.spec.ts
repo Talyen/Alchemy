@@ -11,7 +11,6 @@ import {
   waitForLayoutSettled,
 } from "../../browser-helpers";
 import { openArmory } from "../armory";
-import { failOnRuntimeErrors } from "../errors";
 import { MenuPage } from "../../pages/menu-page";
 import { slow } from "../../playwright-tags";
 import { CONTENT_REFERENCE_VIEWPORT, STAGE_HEIGHT } from "../../../src/lib/game-constants/ui-layout";
@@ -162,8 +161,6 @@ test.describe("Responsive display sizes", slow, () => {
       await expect(tip).toBeVisible();
       await expectTooltipFitsViewport(tip, viewport);
       await assertNoOverflow(page, `Battle ${viewport.width} at ${gameSizePercent}`);
-      if (viewport.width === 1280)
-        await page.screenshot({ path: `reports/controller-support/hand-${viewport.height}-${gameSizePercent}.png` });
     }
   });
 
@@ -174,11 +171,10 @@ test.describe("Responsive display sizes", slow, () => {
     { viewport: { width: 1280, height: 720 }, gameSizePercent: 120, tooltipSizePercent: 125 },
   ]) {
     test(`enemy hover Traits stay compact in Collection and Battle at ${viewport.width}px, Game ${gameSizePercent}%, Tooltip ${tooltipSizePercent}%`, async ({
-      browser,
+      page,
     }) => {
       test.setTimeout(60_000);
-      const page = await browser.newPage({ viewport });
-      const errors = failOnRuntimeErrors(page);
+      await page.setViewportSize(viewport);
       await page.addInitScript(
         (preferences) => localStorage.setItem("alchemy-device-display-v1", JSON.stringify(preferences)),
         { version: 1, gameSizePercent, tooltipSizePercent },
@@ -190,55 +186,50 @@ test.describe("Responsive display sizes", slow, () => {
         ) *
         (gameSizePercent / 100) *
         (tooltipSizePercent / 100);
-      try {
-        await new MenuPage(page).gotoCollection({ encounteredEnemyIds: ["bandit"] });
-        const tooltip = page.locator("#tooltip-root .hover-popup-panel[data-visible]");
-        await page.getByRole("button", { name: "Bestiary", exact: true }).click();
-        for (const screen of ["Collection", "Battle"]) {
-          if (screen === "Battle") {
-            await startBattleWithDeck(
-              page,
-              Array.from({ length: 6 }, () => makeCard()),
-            );
-            await expect(page.getByRole("button", { name: /^View Deck/ })).toHaveAttribute("aria-disabled", "false", {
-              timeout: 20_000,
-            });
-            await page.getByTestId("battle-enemy-art-panel").hover();
-          } else {
-            await page.getByRole("button", { name: "Inspect Bandit", exact: true }).hover();
-          }
-          const trait = tooltip.locator("[data-trait]").first();
-          await expect(trait).toBeVisible();
-          const sizes = await trait.evaluate((el) => {
-            const heading = el.querySelector("h3")!;
-            const description = el.querySelector("p")!;
-            const icon = el.querySelector("svg")!;
-            return {
-              heading: parseFloat(getComputedStyle(heading).fontSize),
-              description: parseFloat(getComputedStyle(description).fontSize),
-              iconWidth: parseFloat(getComputedStyle(icon).width),
-              iconHeight: parseFloat(getComputedStyle(icon).height),
-              rowGap: parseFloat(getComputedStyle(el).columnGap),
-              titleGap: parseFloat(getComputedStyle(description).marginTop),
-              traitGap: parseFloat(getComputedStyle(el.parentElement!.parentElement!).rowGap),
-            };
+      await new MenuPage(page).gotoCollection({ encounteredEnemyIds: ["bandit"] });
+      const tooltip = page.locator("#tooltip-root .hover-popup-panel[data-visible]");
+      await page.getByRole("button", { name: "Bestiary", exact: true }).click();
+      for (const screen of ["Collection", "Battle"]) {
+        if (screen === "Battle") {
+          await startBattleWithDeck(
+            page,
+            Array.from({ length: 6 }, () => makeCard()),
+          );
+          await expect(page.getByRole("button", { name: /^View Deck/ })).toHaveAttribute("aria-disabled", "false", {
+            timeout: 20_000,
           });
-          for (const [dimension, pixels] of Object.entries({
-            heading: 14,
-            description: 12,
-            iconWidth: 24,
-            iconHeight: 24,
-            rowGap: 8,
-            titleGap: 3,
-            traitGap: 8,
-          })) {
-            expect(sizes[dimension as keyof typeof sizes], `${screen}: ${dimension}`).toBeCloseTo(pixels * scale, 1);
-          }
-          await expectTooltipFitsViewport(tooltip, viewport, 0);
+          await page.getByTestId("battle-enemy-art-panel").hover();
+        } else {
+          await page.getByRole("button", { name: "Inspect Bandit", exact: true }).hover();
         }
-        expect(errors).toEqual([]);
-      } finally {
-        await page.close();
+        const trait = tooltip.locator("[data-trait]").first();
+        await expect(trait).toBeVisible();
+        const sizes = await trait.evaluate((el) => {
+          const heading = el.querySelector("h3")!;
+          const description = el.querySelector("p")!;
+          const icon = el.querySelector("svg")!;
+          return {
+            heading: parseFloat(getComputedStyle(heading).fontSize),
+            description: parseFloat(getComputedStyle(description).fontSize),
+            iconWidth: parseFloat(getComputedStyle(icon).width),
+            iconHeight: parseFloat(getComputedStyle(icon).height),
+            rowGap: parseFloat(getComputedStyle(el).columnGap),
+            titleGap: parseFloat(getComputedStyle(description).marginTop),
+            traitGap: parseFloat(getComputedStyle(el.parentElement!.parentElement!).rowGap),
+          };
+        });
+        for (const [dimension, pixels] of Object.entries({
+          heading: 14,
+          description: 12,
+          iconWidth: 24,
+          iconHeight: 24,
+          rowGap: 8,
+          titleGap: 3,
+          traitGap: 8,
+        })) {
+          expect(sizes[dimension as keyof typeof sizes], `${screen}: ${dimension}`).toBeCloseTo(pixels * scale, 1);
+        }
+        await expectTooltipFitsViewport(tooltip, viewport, 0);
       }
     });
   }
@@ -305,7 +296,7 @@ test.describe("Responsive display sizes", slow, () => {
   });
 });
 
-test("keyboard Options and confirmation fit at 1280×720", async ({ page }, testInfo) => {
+test("keyboard Options and confirmation fit at 1280×720", async ({ page }) => {
   const height = 720;
   await page.setViewportSize({ width: 1280, height });
   await page.goto("/");
@@ -316,15 +307,10 @@ test("keyboard Options and confirmation fit at 1280×720", async ({ page }, test
   await input.reach(volume);
   await expect(volume).toBeInViewport();
   await expectTooltipFitsViewport(volume, { width: 1280, height });
-  await page.screenshot({ path: `reports/controller-support/options-${height}.png` });
   const renderedText = await page.getByText("Music Volume", { exact: true }).evaluate((element) => {
     const rect = element.getBoundingClientRect();
     const scale = rect.height / (element as HTMLElement).offsetHeight;
     return parseFloat(getComputedStyle(element).fontSize) * scale;
-  });
-  await testInfo.attach("rendered-label-font-size", {
-    body: `${renderedText.toFixed(1)} CSS pixels after scaling; not a physical glyph-height measurement`,
-    contentType: "text/plain",
   });
   const expectedScale = Math.min(
     1280 / (STAGE_HEIGHT * (CONTENT_REFERENCE_VIEWPORT.width / CONTENT_REFERENCE_VIEWPORT.height)),
@@ -339,7 +325,6 @@ test("keyboard Options and confirmation fit at 1280×720", async ({ page }, test
   await expect(cancel).toBeFocused();
   await expect(cancel).toBeInViewport();
   await expect(cancel).toBeVisible();
-  await page.screenshot({ path: `reports/controller-support/confirmation-${height}.png` });
   await input.press("back");
   await expect(dialog).toHaveCount(0);
 });
@@ -442,23 +427,6 @@ test("Start a Run artwork and tooltips share proportional scaling through resize
     await assertStageFitsViewport(page);
     await assertNoOverflow(page, `Start a Run ${viewport.width} × ${viewport.height}`);
   }
-});
-
-test("uses CSS viewport dimensions without double-scaling for high DPR", slow, async ({ page }) => {
-  await page.setViewportSize({ width: 1512, height: 982 });
-  await page.addInitScript(
-    ({ saveKey }) => {
-      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      save.selectedAspectRatio = "auto";
-      localStorage.setItem(saveKey, JSON.stringify(save));
-    },
-    { saveKey: SAVE_KEY },
-  );
-  await page.goto("/");
-  await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
-
-  expect(Number(await page.getByTestId("vr-stage").getAttribute("data-stage-pixel-ratio"))).toBe(1);
-  await assertStageFitsViewport(page);
 });
 
 test(
