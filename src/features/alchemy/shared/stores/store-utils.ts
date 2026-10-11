@@ -1,9 +1,8 @@
 const deeplyFrozen = new WeakSet<object>();
 
-// Unconditional deep freeze for shared singletons that must never be mutated
-// in any build (e.g. defaultSaveData: a prod mutation would leak into every
-// later new game in the session). Prefer this over deepFreezeInDev when the
-// frozen value is load-bearing outside development.
+// Shared data and published gameplay must remain immutable in every build.
+// Cache fully traversed objects so structurally shared revisions only visit
+// changed branches; a shallow-frozen object still needs its children checked.
 export function deepFreeze<T>(value: T, seen: WeakSet<object> = new WeakSet()): T {
   if (value === null || typeof value !== "object") return value;
   if (value instanceof Date || value instanceof RegExp) return value;
@@ -15,9 +14,4 @@ export function deepFreeze<T>(value: T, seen: WeakSet<object> = new WeakSet()): 
   for (const child of children) deepFreeze(child, seen);
   deeplyFrozen.add(value);
   return value;
-}
-
-export function deepFreezeInDev<T>(value: T, seen: WeakSet<object> = new WeakSet()): T {
-  if (!import.meta.env.DEV) return value;
-  return deepFreeze(value, seen);
 }
