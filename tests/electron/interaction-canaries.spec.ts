@@ -97,6 +97,8 @@ async function lastManaJourney(info: TestInfo, reducedMotion: boolean) {
     await controllerInput(page).activate(page.getByRole("button", { name: /^View Deck/ }));
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^View Deck/ })).toBeFocused();
     const health = await battle.playerHealth();
     await controllerInput(page).activate(battle.endTurnBtn);
     await expect.poll(() => battle.playerHealth()).toBeLessThan(health);
