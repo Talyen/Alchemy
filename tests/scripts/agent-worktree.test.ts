@@ -1,8 +1,17 @@
 import { spawn, spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 describe("worktree removal", () => {
   it("rejects malformed options before removing a worktree named force", () => {
@@ -95,8 +104,14 @@ describe("worktree removal", () => {
   });
 });
 
+const recoveryRoots: string[] = [];
+afterEach(() => {
+  for (const root of recoveryRoots.splice(0)) rmSync(root, { recursive: true, force: true });
+});
 function integrationFixture() {
   const root = mkdtempSync(join(tmpdir(), "alchemy-integration-"));
+  const archive = root + "-archives";
+  recoveryRoots.push(archive);
   const git = (args: string[], cwd = root) => {
     const result = spawnSync("git", args, { cwd, encoding: "utf8" });
     expect(result.status, result.stderr).toBe(0);
@@ -137,10 +152,10 @@ process.exit(process.env.INTEGRATION_FAIL ? 1 : 0);
   git(["commit", "-qm", "test: task change"], taskPath);
   const integrate = (env = {}) =>
     spawnSync(process.execPath, [script, "integrate", "--task", "task"], {
-      env: { ...process.env, ...env },
+      env: { ...process.env, CODEX_WORKTREE_ARCHIVE_ROOT: archive, ...env },
       encoding: "utf8",
     });
-  return { root, script, taskPath, git, integrate };
+  return { root, script, taskPath, git, integrate, archive };
 }
 
 describe("serialized local integration", () => {
@@ -158,7 +173,8 @@ describe("serialized local integration", () => {
       const passed = integrate({ INTEGRATION_PROOF: proof });
       expect(passed.status, passed.stderr).toBe(0);
       expect(readFileSync(proof, "utf8")).toBe("main\ntask\n");
-      expect(git(["rev-parse", "main"])).toBe(git(["rev-parse", "HEAD"], taskPath));
+      expect(git(["rev-parse", "main"])).toBe(git(["rev-parse", "agent/task"]));
+      expect(existsSync(taskPath)).toBe(false);
       expect(readFileSync(join(root, "task.txt"), "utf8")).toBe("task\n");
     } finally {
       rmSync(root, { recursive: true, force: true });
@@ -261,4 +277,49 @@ describe("serialized local integration", () => {
       rmSync(signals, { recursive: true, force: true });
     }
   }, 20000);
+});
+
+it("archives ignored evidence, retains the branch and leaves a peer untouched", () => {
+  const { root, taskPath, git, integrate, archive } = integrationFixture();
+  try {
+    writeFileSync(join(root, "main.txt"), "main\n");
+    git(["add", "main.txt"]);
+    git(["commit", "-qm", "test: main"]);
+    writeFileSync(join(taskPath, ".gitignore"), ".worktrees/\nignored\nnode_modules/\n");
+    git(["add", ".gitignore"], taskPath);
+    git(["commit", "-qm", "test: ignore outputs"], taskPath);
+    writeFileSync(join(taskPath, "ignored"), "local evidence");
+    mkdirSync(join(taskPath, "node_modules"));
+    writeFileSync(join(taskPath, "node_modules", "cached"), "rebuildable");
+    const peer = join(root, ".worktrees", "peer");
+    git(["worktree", "add", "-b", "agent/peer", peer]);
+    writeFileSync(join(peer, "unfinished"), "peer work");
+    const result = integrate();
+    expect(result.status, result.stderr).toBe(0);
+    const snapshot = readdirSync(archive)[0];
+    expect(readFileSync(join(archive, snapshot, "checkout", "ignored"), "utf8")).toBe("local evidence");
+    expect(existsSync(join(archive, snapshot, "checkout", "node_modules"))).toBe(false);
+    expect(readFileSync(join(peer, "unfinished"), "utf8")).toBe("peer work");
+    expect(git(["rev-parse", "agent/task"])).toBe(git(["rev-parse", "main"]));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+it("keeps an intermediate integration when requested", () => {
+  const { root, taskPath, script, git, archive } = integrationFixture();
+  try {
+    writeFileSync(join(root, "main.txt"), "main\n");
+    git(["add", "main.txt"]);
+    git(["commit", "-qm", "test: main"]);
+    const result = spawnSync(process.execPath, [script, "integrate", "--task", "task", "--keep-worktree"], {
+      encoding: "utf8",
+      env: { ...process.env, CODEX_WORKTREE_ARCHIVE_ROOT: archive },
+    });
+    expect(result.status, result.stderr).toBe(0);
+    expect(existsSync(taskPath)).toBe(true);
+    expect(existsSync(archive)).toBe(false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

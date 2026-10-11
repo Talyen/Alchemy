@@ -203,16 +203,24 @@ Failures preserve task work and leave `main` unchanged. Never bypass serializati
 with a manual update to `main`. Keep unintegrated work committed and recoverable;
 cleanup must not discard work.
 
-Once the requested work is complete and integrated, standing authorization covers
-removing only this chat's clean worktree before final handoff. Confirm that its
-commit is in local `main`, preserve needed local-only files outside the checkout,
-then run `git worktree remove ".worktrees/<slug>"` from the original checkout to
-retain the task branch. Rebuildable dependencies and build caches need no archive.
-For an app-managed worktree, use the app's recoverable archive operation instead.
-Never force-remove dirty or unintegrated work, remove another chat's worktree, or
-remove an experiment still needed for the user's requested work. If needed files
-cannot be preserved, leave the checkout and report the cleanup blocker. Report
-cleanup status alongside integration and verification results.
+Successful integration automatically archives and unregisters only the named task
+worktree while holding the integration lock. Cleanup rechecks its branch, commit,
+clean status, unfinished Git operations, registration and lock state; submodules
+block automatic cleanup. Failed verification never removes a worktree. A cleanup
+failure leaves the completed integration in place and reports the blocker.
+
+The full checkout moves atomically to `~/.codex/worktree-archives/Alchemy/` before
+unregistration. Ignored evidence and late writes remain recoverable. Installed
+`node_modules` is discarded unless tracked; all other files and the task branch
+are retained. `recovery.json` records its original path, branch and commit. Restore
+with `git worktree add <original-path> <branch>`, then copy needed archived files.
+Archives never expire automatically. `CODEX_WORKTREE_ARCHIVE_ROOT` can select an
+external directory; moving across filesystems fails without deleting the source.
+
+Use `node scripts/agent-worktree.mjs integrate --task <slug> --keep-worktree` for
+intermediate integration when requested work, a preview or an experiment still
+needs the checkout. Final integration cleans up by default. Report cleanup status
+alongside integration and verification results.
 
 After handoff, stop: no completion broadcasts,
 acknowledgments, polling, or waking completed chats. Only a concrete unresolved
