@@ -153,6 +153,7 @@ const SESSION_KEYS = [
   "runEndCurrencies",
   "runEndTalentXP",
   "runEndItems",
+  "runEndUnlockedCharacters",
   "runRecap",
   "pendingCharacterId",
   "pendingContentSystemType",

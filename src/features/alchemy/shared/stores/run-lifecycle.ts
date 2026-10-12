@@ -228,6 +228,7 @@ function abandonRunInDraft(draft: GameplayDraft, options: Parameters<typeof aban
   const runEndCurrencies = { ...draft.session.runEndCurrencies };
   const runEndTalentXP = { ...draft.session.runEndTalentXP };
   const runEndItems = draft.session.runEndItems.map(cloneRunObtainedItem);
+  const runEndUnlockedCharacters = [...draft.session.runEndUnlockedCharacters];
   const runEndLabyrinthFloor = draft.session.runEndLabyrinthFloor;
   clearTransientSession(draft);
   draft.session.runRecap = runRecap;
@@ -236,6 +237,7 @@ function abandonRunInDraft(draft: GameplayDraft, options: Parameters<typeof aban
   // No write-port setter: finalizeRunXP owns runEndTalentXP.
   draft.session.runEndTalentXP = runEndTalentXP;
   setRunEndItems(draft, runEndItems);
+  draft.session.runEndUnlockedCharacters = runEndUnlockedCharacters;
   setRunEndLabyrinthFloor(draft, runEndLabyrinthFloor);
   return true;
 }

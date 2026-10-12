@@ -1,3 +1,4 @@
+import { characters, isCharacterUnlocked, type CharacterId } from "@/lib/game-data";
 import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
 import { applyEndOfRunHomesteadBonuses } from "@/lib/homestead/material-rewards";
 import type { MaterialInventory } from "@/lib/homestead/types";
@@ -54,10 +55,17 @@ export function settleRunEnd(
   }
 
   const activeChar = draft.run.activeRun.characterId;
+  const lockedCharacters = (Object.keys(characters) as CharacterId[]).filter(
+    (id) => !isCharacterUnlocked(id, draft.profile.finishedRunCharacters),
+  );
   setFinishedRunCharacters(draft, (prev) => {
     if (prev.includes(activeChar)) return prev;
     return [...prev, activeChar];
   });
+
+  draft.session.runEndUnlockedCharacters = lockedCharacters.filter((id) =>
+    isCharacterUnlocked(id, draft.profile.finishedRunCharacters),
+  );
 
   const scope = options ? openRunTransaction(draft) : null;
   let homesteadBonus: MaterialInventory;

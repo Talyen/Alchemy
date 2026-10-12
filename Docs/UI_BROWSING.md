@@ -132,3 +132,9 @@ Crafting consumes one currency per activation. Escape cancels targeting; invalid
 Journey’s End focuses on earned rewards and progression, without a room trail or
 Act/node summary. Deck and Boon inspection retain their normal labels and shared
 overlay behavior. Victory keeps its own title.
+
+When a run newly unlocks a hero, Continue opens a Hero Unlocked reveal with that
+hero’s portrait and name before Main Menu. Repeat runs do not replay unlocks.
+Defeat and manual End Run follow the same unlock rules as victory. Demo victories
+show available hero unlocks before the demo completion screen. Unlock reveals,
+like the recap, are transient; permanent hero availability remains saved.

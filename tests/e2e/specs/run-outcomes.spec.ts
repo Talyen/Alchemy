@@ -1,11 +1,11 @@
 import { test, expect } from "../../fixtures/e2e";
 import {
   injectBossState,
+  injectSaveState,
   injectActiveBattle,
   winBattleAndClaimReward,
   makeGoblinBattleState,
   makeHighDamageCard,
-  startAtDestination,
   SAVE_KEY,
   readSavedGame,
 } from "../../browser-helpers";
@@ -66,13 +66,31 @@ test.describe("Run Outcomes", () => {
   });
 
   test.describe("Defeat and Run End Flow", () => {
-    test("ending a run from destination always shows the End Run screen", async ({ page }) => {
-      await startAtDestination(page, {}, { forceDestination: "Normal Combat" });
-      await page.keyboard.press("Escape");
+    test("ending a first Knight run reveals Rogue after the recap before returning to menu", async ({ page }) => {
+      await injectSaveState(page, { finishedRunCharacters: [] });
+      await page.goto("/");
+      await new DestinationPage(page).expectVisible();
+      await page.getByRole("button", { name: "Open game menu", exact: true }).click();
       await expect(page.getByRole("button", { name: "End Run" })).toBeVisible({ timeout: 3000 });
       await page.getByRole("button", { name: "End Run" }).click();
+      await page
+        .getByRole("dialog", { name: "End this run?" })
+        .getByRole("button", { name: "End Run", exact: true })
+        .click();
       await expect(page.getByRole("heading", { name: "Journey’s End" })).toBeVisible({ timeout: 5000 });
-      await page.getByRole("button", { name: "Main Menu" }).click();
+      await page.getByRole("button", { name: "Continue", exact: true }).click();
+      await expect(page.getByRole("heading", { name: "Hero Unlocked", exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Rogue", exact: true })).toBeVisible();
+      const portrait = page.getByRole("img", { name: "Rogue", exact: true });
+      await expect(portrait).toBeVisible();
+      await expect
+        .poll(() => portrait.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0))
+        .toBe(true);
+      await expect(page.getByRole("button", { name: "Main Menu", exact: true })).toBeFocused();
+      await page.setViewportSize({ width: 900, height: 600 });
+      await expect(portrait).toBeInViewport();
+      await expect(page.getByRole("button", { name: "Main Menu", exact: true })).toBeInViewport();
+      await page.keyboard.press("Enter");
       await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible({ timeout: 5000 });
     });
 

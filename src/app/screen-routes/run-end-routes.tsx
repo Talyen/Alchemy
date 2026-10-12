@@ -1,8 +1,9 @@
-import { IS_DEMO } from "@/lib/game-edition";
+import { IS_DEMO, isEditionCharacterAvailable } from "@/lib/game-edition";
 import { isDesktop, openFullGameWishlist } from "@/lib/platform";
 import { useEffect, useState } from "react";
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { DemoCompletionScreen } from "@/features/alchemy/run-loop/screens/demo-completion-screen";
+import { HeroUnlockedScreen } from "@/features/alchemy/run-loop/screens/hero-unlocked-screen";
 import { RunEndScreen } from "@/features/alchemy/run-loop/screens/run-end-screen";
 import { useRunEndScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import type { RunEndRouteCtx } from "./route-ctx";
@@ -25,10 +26,14 @@ function RunEndScreenRoute({ screen, routeCommands }: RunEndRouteCtx) {
     runEndMaterials,
     runEndCurrencies,
     runEndItems,
+    runEndUnlockedCharacters,
     runEndLabyrinthFloor,
     runRecap,
   } = useRunEndScreenData();
   const [marketing, setMarketing] = useState(false);
+  const [unlockIndex, setUnlockIndex] = useState<number | null>(null);
+  const unlockedCharacters = runEndUnlockedCharacters.filter(isEditionCharacterAvailable);
+  const revealedCharacter = unlockIndex === null ? undefined : unlockedCharacters[unlockIndex];
   const demoVictory = IS_DEMO && outcome === "victory";
   useEffect(() => {
     if (!marketing) return;
@@ -38,6 +43,26 @@ function RunEndScreenRoute({ screen, routeCommands }: RunEndRouteCtx) {
       onEscape: () => commands.continueFromRunEnd(),
     });
   }, [marketing, commands]);
+  function continueAfterRewards() {
+    if (demoVictory) setMarketing(true);
+    else commands.continueFromRunEnd();
+  }
+  if (revealedCharacter) {
+    const hasNextHero = unlockIndex !== null && unlockIndex + 1 < unlockedCharacters.length;
+    return (
+      <HeroUnlockedScreen
+        characterId={revealedCharacter}
+        continueLabel={hasNextHero || demoVictory ? "Continue" : "Main Menu"}
+        onContinue={() => {
+          if (hasNextHero) setUnlockIndex((index) => (index ?? 0) + 1);
+          else {
+            if (demoVictory) setUnlockIndex(null);
+            continueAfterRewards();
+          }
+        }}
+      />
+    );
+  }
   if (marketing && demoVictory)
     return (
       <DemoCompletionScreen
@@ -55,7 +80,7 @@ function RunEndScreenRoute({ screen, routeCommands }: RunEndRouteCtx) {
       title={title}
       runRecap={runRecap}
       subtitle={demoVictory ? "" : subtitle}
-      continueLabel={demoVictory ? "Continue" : "Main Menu"}
+      continueLabel={demoVictory || unlockedCharacters.length > 0 ? "Continue" : "Main Menu"}
       outcome={outcome}
       characterId={characterId}
       runEndTalentXP={runEndTalentXP}
@@ -63,7 +88,7 @@ function RunEndScreenRoute({ screen, routeCommands }: RunEndRouteCtx) {
       runEndMaterials={runEndMaterials}
       runEndCurrencies={runEndCurrencies}
       runEndItems={runEndItems}
-      onContinue={demoVictory ? () => setMarketing(true) : commands.continueFromRunEnd}
+      onContinue={unlockedCharacters.length > 0 ? () => setUnlockIndex(0) : continueAfterRewards}
     />
   );
 }

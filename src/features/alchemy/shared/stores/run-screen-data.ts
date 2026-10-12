@@ -15,6 +15,7 @@ function selectRunEndData(state: GameplayState) {
     runEndCurrencies: state.session.runEndCurrencies,
     runEndTalentXP: state.session.runEndTalentXP,
     runEndItems: state.session.runEndItems,
+    runEndUnlockedCharacters: state.session.runEndUnlockedCharacters,
     runRecap: state.session.runRecap,
     runEndLabyrinthFloor: state.session.runEndLabyrinthFloor,
     talentXP: state.runProfile.talentXP,
