@@ -82,6 +82,15 @@ export function createAutosaveScheduler(maxWaitMs: number, retryCooldownMs: numb
         cancel();
         return "cancel";
       }
+      if (outcome === "superseded") {
+        // Another writer replaced this payload without saving this revision.
+        // Keep dirty work and retry unless a newer scheduler submission covers it.
+        if (submission.revision > acknowledgedRevision && submission.revision === submittedRevision) {
+          submittedRevision = acknowledgedRevision;
+          return "schedule";
+        }
+        return "ignore";
+      }
       if (outcome === "saved") {
         acknowledgedRevision = Math.max(acknowledgedRevision, submission.revision);
         submittedRevision = Math.max(submittedRevision, acknowledgedRevision);

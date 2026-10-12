@@ -90,16 +90,34 @@ describe("autosave scheduler", () => {
     expect(scheduler.submit(false)).toBeNull();
   });
 
-  it.each(["saved", "failed", "skipped"] as const)("ignores late %s completions after cancellation", (outcome) => {
+  it.each(["saved", "failed", "skipped", "superseded"] as const)(
+    "ignores late %s completions after cancellation",
+    (outcome) => {
+      const scheduler = createAutosaveScheduler(10_000);
+      scheduler.markDirty(100);
+      const older = scheduler.submit(false)!;
+      scheduler.cancel();
+      expect(scheduler.nextDelay(200, 500)).toBeNull();
+      scheduler.markDirty(300);
+      const newer = scheduler.submit(false)!;
+      expect(scheduler.complete(older, outcome, 400)).toBe("ignore");
+      expect(scheduler.complete(newer, "saved", 500)).toBe("cancel");
+    },
+  );
+
+  it("retries replaced work without acknowledging it or cancelling newer submissions", () => {
     const scheduler = createAutosaveScheduler(10_000);
     scheduler.markDirty(100);
-    const older = scheduler.submit(false)!;
-    scheduler.cancel();
-    expect(scheduler.nextDelay(200, 500)).toBeNull();
+    const replaced = scheduler.submit(false)!;
+    expect(scheduler.complete(replaced, "superseded", 200)).toBe("schedule");
+    expect(scheduler.nextDelay(200, 500)).toBe(500);
+    const retry = scheduler.submit(false)!;
     scheduler.markDirty(300);
     const newer = scheduler.submit(false)!;
-    expect(scheduler.complete(older, outcome, 400)).toBe("ignore");
+    expect(scheduler.complete(retry, "superseded", 400)).toBe("ignore");
+    expect(scheduler.nextDelay(400, 500)).toBeNull();
     expect(scheduler.complete(newer, "saved", 500)).toBe("cancel");
+    expect(scheduler.submit(true)).toBeNull();
   });
 
   it("drops skipped work and starts a fresh deadline for subsequent progress", () => {

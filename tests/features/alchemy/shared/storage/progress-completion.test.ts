@@ -1,3 +1,4 @@
+import { createAlchemyAutosaveLifecycle } from "@/app/autosave-lifecycle";
 import { afterEach, expect, it, vi } from "vitest";
 import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
@@ -336,3 +337,148 @@ it("save-status observers see and checkpoint the newly committed gameplay revisi
     await session.dispose();
   }
 });
+
+it.each(["write", "writeOnExit"] as const)(
+  "%s does not acknowledge a snapshot edited before submission",
+  async (method) => {
+    const writes: string[] = [];
+    const session = createGameSession({
+      saveBackend: {
+        readCandidates: async () => ({ ok: true, candidates: [] }),
+        write: async (_key, value) => {
+          writes.push(value);
+          return { ok: true };
+        },
+        writeSync: (_key, value) => {
+          writes.push(value);
+          return { ok: true };
+        },
+        clear: async () => ({ ok: true }),
+      },
+    });
+    const persistence = createSessionPersistence(session);
+    const release = persistence.trackProgress(() => {});
+    try {
+      dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 70)), undefined, session);
+      const feedback = vi.fn();
+      persistence.afterProgressSaved(feedback);
+      const snapshot = persistence.snapshot();
+      snapshot.gold = 0;
+      expect(await persistence[method](snapshot)).toBe("saved");
+      expect(JSON.parse(writes.at(-1)!).gold).toBe(0);
+      expect(persistence.readProgress().kind).toBe("saving");
+      expect(feedback).not.toHaveBeenCalled();
+      expect(await persistence.checkpoint()).toBe("saved");
+      expect(JSON.parse(writes.at(-1)!).gold).toBe(70);
+      expect(feedback).toHaveBeenCalledOnce();
+    } finally {
+      release();
+      await session.dispose();
+    }
+  },
+);
+
+it("a replacement external save cannot acknowledge a discarded gameplay checkpoint", async () => {
+  const writes: string[] = [];
+  const session = createGameSession({
+    saveBackend: {
+      readCandidates: async () => ({ ok: true, candidates: [] }),
+      write: async (_key, value) => {
+        writes.push(value);
+        return { ok: true };
+      },
+      writeSync: () => null,
+      clear: async () => ({ ok: true }),
+    },
+  });
+  const persistence = createSessionPersistence(session);
+  const release = persistence.trackProgress(() => {});
+  try {
+    dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 70)), undefined, session);
+    const feedback = vi.fn();
+    persistence.afterProgressSaved(feedback);
+    const checkpoint = persistence.checkpoint();
+    const external = persistence.write({ ...createDefaultSaveData(), gold: 0 });
+    expect(await checkpoint).toBe("superseded");
+    expect(await external).toBe("saved");
+    expect(writes).toHaveLength(1);
+    expect(JSON.parse(writes[0]!).gold).toBe(0);
+    expect(persistence.readProgress().kind).toBe("saving");
+    expect(feedback).not.toHaveBeenCalled();
+    expect(await persistence.checkpoint()).toBe("saved");
+    expect(JSON.parse(writes.at(-1)!).gold).toBe(70);
+    expect(feedback).toHaveBeenCalledOnce();
+  } finally {
+    release();
+    await session.dispose();
+  }
+});
+
+it("autosave retries a replaced checkpoint and releases feedback only after gameplay reaches disk", async () => {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
+  const writes: string[] = [];
+  const session = createGameSession({
+    saveBackend: {
+      readCandidates: async () => ({ ok: true, candidates: [] }),
+      write: async (_key, value) => {
+        writes.push(value);
+        return { ok: true };
+      },
+      writeSync: () => null,
+      clear: async () => ({ ok: true }),
+    },
+  });
+  const persistence = createSessionPersistence(session);
+  const lifecycle = createAlchemyAutosaveLifecycle(() => true, undefined, session, true);
+  try {
+    dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 70)), undefined, session);
+    const feedback = vi.fn();
+    persistence.afterProgressSaved(feedback);
+    lifecycle.flush();
+    expect(await persistence.write({ ...createDefaultSaveData(), gold: 0 })).toBe("saved");
+    expect(persistence.readProgress().kind).toBe("saving");
+    expect(feedback).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(600);
+    expect(writes.map((value) => JSON.parse(value).gold)).toEqual([0, 70]);
+    expect(persistence.readProgress().kind).toBe("idle");
+    expect(feedback).toHaveBeenCalledOnce();
+  } finally {
+    lifecycle.dispose(false);
+    await session.dispose();
+    vi.useRealTimers();
+  }
+});
+
+it.each(["write", "writeOnExit"] as const)(
+  "%s validates the receipt at submission rather than completion",
+  async (method) => {
+    const gate = deferred<{ ok: true }>();
+    const writes: string[] = [];
+    const session = createGameSession({
+      saveBackend: {
+        readCandidates: async () => ({ ok: true, candidates: [] }),
+        write: async (_key, value) => {
+          writes.push(value);
+          return gate.promise;
+        },
+        writeSync: () => null,
+        clear: async () => ({ ok: true }),
+      },
+    });
+    const persistence = createSessionPersistence(session);
+    const release = persistence.trackProgress(() => {});
+    try {
+      dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 70)), undefined, session);
+      const snapshot = persistence.snapshot();
+      const writing = persistence[method](snapshot);
+      snapshot.gold = 0;
+      gate.resolve({ ok: true });
+      expect(await writing).toBe("saved");
+      expect(JSON.parse(writes[0]!).gold).toBe(70);
+      expect(persistence.readProgress().kind).toBe("idle");
+    } finally {
+      release();
+      await session.dispose();
+    }
+  },
+);

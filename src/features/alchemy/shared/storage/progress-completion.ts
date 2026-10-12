@@ -1,4 +1,5 @@
 import { logStorageFailure } from "@/lib/storage-logging";
+import type { UnstampedSaveData } from "./types";
 import type { SaveWriteOutcome } from "./save-write-queue";
 
 export type ProgressSaveState =
@@ -10,7 +11,7 @@ export class ProgressCompletion {
   private state: ProgressSaveState = { kind: "idle" };
   private epoch = 0;
   private acknowledged = -1;
-  private snapshots = new WeakMap<object, { epoch: number; revision: number }>();
+  private snapshots = new WeakMap<object, { token: { epoch: number; revision: number }; contents: string }>();
   private listeners = new Set<() => void>();
   private completions: Array<() => void> = [];
   private retry: (() => void) | null = null;
@@ -43,18 +44,26 @@ export class ProgressCompletion {
     return { epoch: this.epoch, revision };
   }
 
-  captureSnapshot<T extends object>(snapshot: T, revision: number): T {
-    this.snapshots.set(snapshot, this.token(revision));
+  captureSnapshot<T extends UnstampedSaveData>(snapshot: T, revision: number): T {
+    this.snapshots.set(snapshot, { token: this.token(revision), contents: JSON.stringify(snapshot) });
     return snapshot;
   }
 
-  completeSnapshot(snapshot: object, outcome: SaveWriteOutcome): SaveWriteOutcome {
-    const token = this.snapshots.get(snapshot);
-    return token ? this.complete(token, outcome) : outcome;
+  /** Validate before IO takes ownership; later caller edits cannot change that submission. */
+  snapshotToken(snapshot: UnstampedSaveData) {
+    const receipt = this.snapshots.get(snapshot);
+    if (!receipt || receipt.token.epoch !== this.epoch) return undefined;
+    try {
+      return JSON.stringify(snapshot) === receipt.contents ? receipt.token : undefined;
+    } catch {
+      // Invalid external data follows the ordinary storage failure path.
+      return undefined;
+    }
   }
 
   complete(token: { epoch: number; revision: number }, outcome: SaveWriteOutcome) {
     if (token.epoch !== this.epoch) return "skipped" as const;
+    if (outcome === "superseded") return outcome;
     if (outcome === "saved") this.acknowledged = Math.max(this.acknowledged, token.revision);
     if (this.state.kind === "idle") return outcome;
     if (this.acknowledged >= this.state.revision) {
