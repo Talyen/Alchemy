@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState, type Ref } from "react";
-import { ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { playUISound } from "@/lib/audio";
 import { cn } from "@/lib/utils";
-import { type MaterialInventory } from "@/lib/homestead/types";
+import { MATERIAL_IDS, materialLabels, type MaterialInventory } from "@/lib/homestead/types";
 import { canAfford } from "@/lib/homestead/inventory";
+import { HomesteadResourceArtwork } from "../../../shared/ui/material-icons";
+import { DisabledTooltip } from "../../../shared/ui/tooltips/disabled-tooltip";
 import { HomesteadNodeArtwork } from "./node-artwork";
-import { renderTextWithMaterials } from "./helpers";
 import { type HomesteadNodeModel } from "./node-model";
-import { HomesteadPurchaseSheet } from "./purchase-sheet";
 
 export function HomesteadNodeDetail({
   node,
@@ -16,21 +15,19 @@ export function HomesteadNodeDetail({
   onPurchase,
   afterProgressSaved,
   isCurrent,
-  titleRef,
+  detailRef,
 }: {
   node: HomesteadNodeModel;
   inventory: MaterialInventory;
   onPurchase: () => boolean;
   afterProgressSaved: (feedback: () => void) => void;
   isCurrent: () => boolean;
-  titleRef: Ref<HTMLHeadingElement>;
+  detailRef: Ref<HTMLDivElement>;
 }) {
-  const [quote, setQuote] = useState<HomesteadNodeModel | null>(null);
-  const [open, setOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [purchaseState, setPurchaseState] = useState<{ node: HomesteadNodeModel; saved: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [savedQuoteLevel, setSavedQuoteLevel] = useState<number | null>(null);
   const pending = useRef(false);
+  const submittedLevel = useRef<number | null>(null);
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
@@ -39,32 +36,23 @@ export function HomesteadNodeDetail({
     };
   }, []);
 
-  const shown = saving && quote ? quote : node;
-  const complete = shown.level >= shown.maxLevel;
-  const awaitingProgress = savedQuoteLevel !== null && node.level <= savedQuoteLevel;
-  const nextLines = [
-    ...previewChanges(shown.level > 0 || shown.companion ? shown.bonuses : [], shown.nextBonuses),
-    ...previewChanges(shown.level > 0 ? shown.production : [], shown.nextProduction),
-  ];
-
-  function openOffer() {
-    if (pending.current || awaitingProgress || !node.cost) return;
-    setQuote(node);
-    setError(null);
-    setOpen(true);
-  }
+  const saving = purchaseState !== null && !purchaseState.saved;
+  const shown = saving ? purchaseState.node : node;
+  const awaitingProgress = purchaseState !== null && node.level <= purchaseState.node.level;
+  const materials = MATERIAL_IDS.filter((material) => (shown.cost?.[material] ?? 0) > 0);
+  const affordable = node.cost !== null && canAfford(inventory, node.cost);
+  const costLabel = materials.map((material) => `${shown.cost![material]} ${materialLabels[material]}`).join(", ");
 
   function purchase() {
     if (
       pending.current ||
-      awaitingProgress ||
-      !quote?.cost ||
-      quote.level !== node.level ||
-      !canAfford(inventory, quote.cost)
+      (submittedLevel.current !== null && node.level <= submittedLevel.current) ||
+      !node.cost ||
+      !affordable
     )
       return;
-    // Latch synchronously: repeated input can arrive before React commits the
-    // pending state, and save acknowledgment may be delayed or retried.
+    // Latch both the pending save and the accepted tier synchronously. A save
+    // callback may run inline, before React has rendered the purchased level.
     pending.current = true;
     const accepted = onPurchase();
     if (!accepted) {
@@ -72,107 +60,57 @@ export function HomesteadNodeDetail({
       setError("Purchase unavailable. Your materials were not spent.");
       return;
     }
-    setSaving(true);
+    submittedLevel.current = node.level;
+    setPurchaseState({ node, saved: false });
+    setError(null);
     let acknowledged = false;
     afterProgressSaved(() => {
       if (acknowledged || !mounted.current || !isCurrent()) return;
       acknowledged = true;
       pending.current = false;
-      setSaving(false);
-      setSavedQuoteLevel(quote.level);
-      setOpen(false);
+      setPurchaseState({ node, saved: true });
       playUISound(node.companion ? "bond" : "talentUnlock");
     });
   }
 
   return (
-    <>
-      <div className="mx-auto flex w-full max-w-xl flex-col items-center gap-6 text-center">
-        <div>
-          <h2
-            ref={titleRef}
-            tabIndex={-1}
-            className="text-3xl font-semibold tracking-tight text-foreground outline-none"
-          >
-            {shown.title}
-          </h2>
-          {shown.discovered && (
-            <p
-              aria-label={shown.companion ? "Bond progress" : "Upgrade progress"}
-              className="mt-1.5 text-sm text-muted-foreground tabular-nums"
-              aria-live="polite"
-            >
-              {complete ? (shown.companion ? "Max bond" : "Fully upgraded") : shown.companion ? "Bond" : "Level"}{" "}
-              {shown.level}/{shown.maxLevel}
-            </p>
-          )}
-        </div>
-        <div className={cn("w-full", shown.companion ? "max-w-72" : "max-w-xl")}>
-          <HomesteadNodeArtwork node={shown} />
-        </div>
-        {!shown.discovered ? (
-          <p className="text-base text-muted-foreground">Discover this Companion during a Run.</p>
-        ) : shown.cost ? (
-          <>
-            {nextLines.length > 0 && (
-              <section
-                aria-label={
-                  shown.level === 0 && !shown.companion ? "On build" : shown.companion ? "Next bond" : "Next upgrade"
-                }
-                className="w-full space-y-2"
-              >
-                <h3 className="text-xs font-medium text-muted-foreground">
-                  {shown.level === 0 && !shown.companion ? "On build" : shown.companion ? "Next bond" : "Next upgrade"}
-                </h3>
-                <div className="space-y-1 text-base leading-relaxed text-foreground/90">
-                  {nextLines.map((line, index) => (
-                    <p key={index}>{renderTextWithMaterials(line)}</p>
-                  ))}
-                </div>
-              </section>
-            )}
-            <Button
-              variant={node.affordable ? "primary" : "outline"}
-              className="min-w-56 gap-2"
-              onClick={openOffer}
-              disabled={saving || awaitingProgress}
-              aria-label={`Review ${node.action.toLowerCase()} for ${node.title}`}
-            >
-              {node.affordable && <ArrowUp className="h-4 w-4" aria-hidden="true" />}
-              {saving ? "Saving…" : shown.action}
-            </Button>
-          </>
-        ) : null}
+    <div
+      ref={detailRef}
+      role="group"
+      aria-label={`${shown.title} details`}
+      aria-busy={saving}
+      tabIndex={-1}
+      className="mx-auto flex w-full max-w-xl flex-col items-center gap-6 text-center outline-none"
+    >
+      <div className={cn("w-full", shown.companion ? "max-w-72" : "max-w-xl")}>
+        <HomesteadNodeArtwork node={shown} />
       </div>
-      <HomesteadPurchaseSheet
-        open={open}
-        quote={quote}
-        inventory={inventory}
-        saving={saving}
-        changed={quote !== null && quote.level !== node.level && !saving}
-        error={error}
-        onClose={() => setOpen(false)}
-        onPurchase={purchase}
-      />
-    </>
+      {shown.cost && (
+        <DisabledTooltip show={!affordable && !saving} message="More materials needed">
+          <Button
+            variant="primary"
+            className="min-w-56 gap-5"
+            onClick={purchase}
+            disabled={saving || awaitingProgress || !affordable}
+            aria-label={saving ? `Saving ${shown.title}` : `${shown.action} ${shown.title} for ${costLabel}`}
+          >
+            <span aria-live="polite">{saving ? "Saving…" : shown.action}</span>
+            <span className="inline-flex items-center gap-3" aria-hidden="true">
+              {materials.map((material) => (
+                <span key={material} className="inline-flex items-center gap-1.5 tabular-nums">
+                  <HomesteadResourceArtwork resource={material} alt="" />
+                  <span>{shown.cost![material]}</span>
+                </span>
+              ))}
+            </span>
+          </Button>
+        </DisabledTooltip>
+      )}
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
+    </div>
   );
-}
-
-function previewChanges(current: string[], next: string[]) {
-  const number = /\d+(?:\.\d+)?/g;
-  return next.flatMap((line, index) => {
-    if (current.includes(line)) return [];
-    const previous = current[index];
-    // Compare numbers only when the authored wording matches; new mechanics
-    // retain their complete description.
-    if (!previous || previous.replace(number, "#") !== line.replace(number, "#")) return [line];
-    const values = previous.match(number) ?? [];
-    let valueIndex = 0;
-    return [
-      line.replace(number, (value) => {
-        const before = values[valueIndex++];
-        return before === value ? value : `${before} → ${value}`;
-      }),
-    ];
-  });
 }

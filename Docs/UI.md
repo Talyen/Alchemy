@@ -177,26 +177,28 @@ maximum height and standard page gutters. Its available fitting area can shrink
 on short windows without stretching the footer toward taller window edges.
 
 Collection and Homestead center real items in wrapping rows, without layout-only
-fillers. Collection reserves two portrait rows and a pagination slot on every tab
-and page, keeping its header, tabs, and pagination stationary while the complete
-group stays screen-centered. Shorter grids center within that reserved area;
-single-page tabs leave the pagination slot empty. Homestead keeps pagination
-immediately beneath its items and omits the wrapper on single-page views. Picker
-measurement containers must receive available width independently of their
-rendered card count, so resizing cannot feed a narrower row back into its own
-column calculation.
+fillers. Both reserve two portrait rows and a pagination slot on every tab and
+page, keeping headers, tabs, and pagination stationary while the complete group
+stays screen-centered. Shorter grids center within that reserved area;
+single-page tabs leave the pagination slot empty. Picker measurement containers
+must receive available width independently of their rendered card count, so
+resizing cannot feed a narrower row back into its own column calculation.
 
 Homestead is an artwork-first inspection gallery: selecting any node opens its
 detail page and never spends materials. Names, purchased bonuses, and production
-live in artwork hover/focus tooltips, with first-tier effects labelled On build
-before construction. Affordable purchases have a persistent, unboxed upward arrow
-over the artwork. Detail pages use a centered stack: name, compact level or bond
-count, artwork, changed next-tier effects, and one purchase-review button. The
-button uses primary gold when affordable; unaffordable upgrades remain inspectable.
-The resource wallet belongs to the gallery. Costs and the purchase action live in
-a separate sheet, including owned amounts and missing-material feedback. Completed
-and undiscovered nodes remain inspectable. Back returns to the same gallery tab
-and page.
+live in the same artwork hover/focus tooltip on both pages, positioned above or
+below like Collection. Stars beside the name show purchased levels or bonds.
+Effect rows use consistent spacing without visible section headers, with
+first-tier effects labelled On build before construction. Production descriptions
+use Find more followed by the material names; reward amounts remain gameplay-owned.
+The gallery has no upgrade arrows. Detail pages contain only centered artwork and
+one primary Build, Upgrade, or Bond button, with material icons and costs inside.
+The button purchases directly, disables when unaffordable or saving, and offers
+missing-material feedback on hover/focus. Saving acknowledgment precedes the
+purchased artwork/progress reveal and sound; repeated input cannot purchase the
+same tier twice. Concise errors appear only on failure. The resource wallet
+belongs to the gallery. Completed and undiscovered nodes remain inspectable.
+Back returns to the same gallery tab and page.
 
 Homestead artwork uses its native aspect ratio in both the gallery and detail
 page, without cropping. Both use the shared 3px hover/focus outline and 103.5%

@@ -22,7 +22,7 @@ export const buildings: HomesteadBuilding[] = [
     ],
     { flatPhysicalDamage: 1, homesteadForgeBurnPercent: 10, endRunIronPerRoom: 1 },
     (t) => `Physical damage +${t}\nBurn damage gains ${10 * t}% of Forge.`,
-    (t) => `+${t} Iron per Room`,
+    "Find more Iron",
   ),
   stackingUpgrade(
     "hunters-lodge",
@@ -30,7 +30,7 @@ export const buildings: HomesteadBuilding[] = [
     woodHideCosts(),
     { flatNatureDamage: 1, endRunFoodPerRoom: 1, endRunHidePerRoom: 1 },
     (t) => `Nature damage +${t}`,
-    (t) => `+${t} Food and +${t} Hide per Room`,
+    "Find more Food and Hide",
   ),
   stackingUpgrade(
     "alchemy-lab",
@@ -43,7 +43,7 @@ export const buildings: HomesteadBuilding[] = [
     ],
     { homesteadPotionBonus: 1, endRunHerbsPerRoom: 1 },
     (t) => `Potion damage and healing +${t}`,
-    (t) => `+${t} Herbs per Room`,
+    "Find more Herbs",
   ),
   stackingUpgrade(
     "runesmiths-workshop",
@@ -56,7 +56,7 @@ export const buildings: HomesteadBuilding[] = [
     ],
     { flatFreezeDamage: 1, flatHolyDamage: 1, endRunGemsPerRoom: 1 },
     (t) => `Freeze and Holy damage +${t}`,
-    (t) => `+${t} Gems per Room`,
+    "Find more Gems",
   ),
   stackingUpgrade(
     "companion-sanctuary",
@@ -71,7 +71,7 @@ export const buildings: HomesteadBuilding[] = [
     woodStoneCosts(),
     { wishExtraChoiceChance: 10, endRunWishPerRoom: 1 },
     (t) => `${10 * t}% chance for an extra Wish choice`,
-    (t) => `+${t} Gems or Gold per Room`,
+    "Find more Gems or Gold",
   ),
   stackingUpgrade(
     "transmutation-crucible",
@@ -84,7 +84,7 @@ export const buildings: HomesteadBuilding[] = [
     ],
     { flatBurnDamage: 1, endRunIronPerRoom: 1 },
     (t) => `Burn damage +${t}`,
-    (t) => `+${t} Iron per Room`,
+    "Find more Iron",
   ),
   stackingUpgrade(
     "mycology-cellar",
@@ -97,7 +97,7 @@ export const buildings: HomesteadBuilding[] = [
     ],
     { homesteadLeechHealing: 1, endRunHerbsPerRoom: 1 },
     (t) => `Leech healing +${t}`,
-    (t) => `+${t} Herbs per Room`,
+    "Find more Herbs",
   ),
   stackingUpgrade(
     "sparring-grounds",
@@ -105,7 +105,7 @@ export const buildings: HomesteadBuilding[] = [
     woodStoneCosts(),
     { startBlock: 2, endRunIronPerRoom: 1 },
     (t) => `Starting Block +${2 * t}`,
-    (t) => `+${t} Iron per Room`,
+    "Find more Iron",
   ),
   stackingUpgrade(
     "archery-range",
@@ -113,7 +113,7 @@ export const buildings: HomesteadBuilding[] = [
     woodHideCosts(),
     { flatArrowDamage: 1, endRunWoodPerRoom: 1 },
     (t) => `Archery damage +${t}`,
-    (t) => `+${t} Wood per Room`,
+    "Find more Wood",
   ),
   stackingUpgrade(
     "library",
@@ -136,7 +136,7 @@ export const farmPlots: HomesteadFarm[] = [
     foodSingleCosts(),
     { cardHealBonus: { bread: 2 }, endRunFoodPerRoom: 2 },
     (t) => `Bread healing +${2 * t}`,
-    (t) => `+${2 * t} Food per Room`,
+    "Find more Food",
   ),
   stackingUpgrade(
     "herb-garden",
@@ -144,7 +144,7 @@ export const farmPlots: HomesteadFarm[] = [
     herbsSingleCosts(),
     { poisonDamageReduction: 1, endRunHerbsPerRoom: 1 },
     (t) => `Poison damage taken −${t}`,
-    (t) => `+${t} Herbs per Room`,
+    "Find more Herbs",
   ),
   stackingUpgrade(
     "chicken-coop",
@@ -152,7 +152,7 @@ export const farmPlots: HomesteadFarm[] = [
     woodFoodCosts(),
     { runMaxHealthBonus: 5, endRunFoodPerRoom: 2 },
     (t) => `Health +${5 * t}`,
-    (t) => `+${2 * t} Food per Room`,
+    "Find more Food",
   ),
   stackingUpgrade(
     "pasture",
@@ -160,7 +160,7 @@ export const farmPlots: HomesteadFarm[] = [
     woodFoodCosts(),
     { physicalDamageReduction: 1, endRunHidePerRoom: 1 },
     (t) => `Physical damage taken −${t}`,
-    (t) => `+${t} Hide per Room`,
+    "Find more Hide",
   ),
   stackingUpgrade(
     "orchard",
@@ -168,7 +168,7 @@ export const farmPlots: HomesteadFarm[] = [
     woodFoodCosts(),
     { cardHealBonus: { apple: 2 }, endRunFoodPerRoom: 2 },
     (t) => `Apple healing +${2 * t}`,
-    (t) => `+${2 * t} Food per Room`,
+    "Find more Food",
   ),
   stackingUpgrade(
     "crystal-garden",
@@ -181,7 +181,7 @@ export const farmPlots: HomesteadFarm[] = [
     ],
     { homesteadCriticalDamage: 1, endRunGemsPerRoom: 2, endRunStonePerRoom: 1 },
     (t) => `Critical damage +${t}`,
-    (t) => `+${2 * t} Gems and +${t} Stone per Room`,
+    "Find more Gems and Stone",
   ),
 ];
 
@@ -192,7 +192,7 @@ export const researchUpgrades: HomesteadResearch[] = [
     gemsSingleCosts(),
     { homesteadFreeManaChance: 5, endRunGemsPerRoom: 1 },
     (t) => `${5 * t}% chance to spend no Mana`,
-    (t) => `+${t} Gems per Room`,
+    "Find more Gems",
   ),
   stackingUpgrade(
     "detect-magic",
@@ -200,7 +200,7 @@ export const researchUpgrades: HomesteadResearch[] = [
     gemsSingleCosts(),
     (t) => ({ gearAstralChanceBonus: t <= 2 ? 0.03 : t === 3 ? 0.04 : 0.05, endRunGemsPerRoom: 1 }),
     (t) => `Basic → Astral chance +${[3, 6, 10, 15][t - 1]}%`,
-    (t) => `+${t} Gems per Room`,
+    "Find more Gems",
   ),
   stackingUpgrade(
     "botanical-distillation",
@@ -208,7 +208,7 @@ export const researchUpgrades: HomesteadResearch[] = [
     herbsSingleCosts(),
     { mixPotionDiscount: 2, endRunHerbsPerRoom: 1 },
     (t) => `Potion brewing cost −${2 * t} Gold`,
-    (t) => `+${t} Herbs per Room`,
+    "Find more Herbs",
   ),
   stackingUpgrade(
     "culinary-arts",
@@ -216,7 +216,7 @@ export const researchUpgrades: HomesteadResearch[] = [
     foodSingleCosts(),
     { homesteadHealing: 1, endRunFoodPerRoom: 1 },
     (t) => `Health restored +${t}`,
-    (t) => `+${t} Food per Room`,
+    "Find more Food",
   ),
   stackingUpgrade(
     "wool-tailoring",
@@ -224,7 +224,7 @@ export const researchUpgrades: HomesteadResearch[] = [
     woodHideCosts(),
     { freezeDamageReduction: 1, burnDamageReduction: 1, endRunGoldPerRoom: 1 },
     (t) => `Freeze and Burn damage taken −${t}`,
-    (t) => `+${t} Gold per Room`,
+    "Find more Gold",
   ),
   stackingUpgrade(
     "agility-training",

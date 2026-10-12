@@ -7,6 +7,7 @@ import { FadeSlot } from "../../shared/ui/use-fade";
 import { useCaptureEscapeCancel } from "../../shared/ui/use-modal-escape-dismiss";
 import { cardLibrary, visitBattleCardEffects, type CompanionId } from "@/lib/game-data";
 import { COLLECTION_BESTIARY_REFERENCE_WIDTH, COLLECTION_CARD_REFERENCE_WIDTH } from "../../shared/config";
+import { CollectionContentLayout } from "./collection/collection-content-layout";
 import {
   BUILDING_GOAL_ITEMS,
   FARM_GOAL_ITEMS,
@@ -61,7 +62,7 @@ export function HomesteadScreen({
   const [selection, setSelection] = useState<HomesteadSelection | null>(null);
   const [lastViewedId, setLastViewedId] = useState<string | null>(null);
   const currentInspection = useRef<HomesteadSelection | null>(null);
-  const detailTitleRef = useRef<HTMLHeadingElement>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
   const lastViewedTileRef = useRef<HTMLButtonElement>(null);
   useEffect(
     () => () => {
@@ -128,7 +129,7 @@ export function HomesteadScreen({
           className="mt-6 w-full"
           onReady={(key) => {
             if (key === "gallery") lastViewedTileRef.current?.focus({ preventScroll: true });
-            else detailTitleRef.current?.focus({ preventScroll: true });
+            else detailRef.current?.focus({ preventScroll: true });
           }}
         >
           {selectedNode ? (
@@ -138,53 +139,58 @@ export function HomesteadScreen({
               onPurchase={purchaseSelected}
               afterProgressSaved={afterProgressSaved}
               isCurrent={() => currentInspection.current === selection}
-              titleRef={detailTitleRef}
+              detailRef={detailRef}
             />
           ) : (
-            <div className="flex flex-col gap-7">
+            <div className="flex flex-col">
               <HomesteadWallet gold={gold} inventory={materialInventory} />
-              <HomesteadTabs
-                activeTab={tab}
-                onSelectTab={(next) => {
-                  setTab(next);
-                  setUpgradePage(0);
-                }}
-              />
-              <FadeSlot swapKey={`${tab}-${page}`} className="mx-auto w-full overflow-visible">
-                <div
-                  className="mx-auto flex max-w-full flex-wrap items-start justify-center gap-5"
-                  style={{ width: `calc(${rowWidth}px * var(--content-scale, 1))` }}
-                >
-                  {pageItems.map((item) => {
-                    const node = getNode(item);
-                    return (
-                      <div
-                        key={node.id}
-                        className="max-w-full shrink-0"
-                        style={{ width: `calc(${tileWidth}px * var(--content-scale, 1))` }}
-                      >
-                        <HomesteadNodeArtwork
-                          node={node}
-                          showAvailability
-                          onInspect={() => inspect(item)}
-                          buttonRef={node.id === lastViewedId ? lastViewedTileRef : undefined}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              </FadeSlot>
-              {totalPages > 1 && (
-                <div className="flex justify-center">
-                  <PaginationControls
-                    page={page}
-                    totalPages={totalPages}
-                    onPageChange={isCompanions ? setCompanionPage : setUpgradePage}
-                    size="default"
-                    className="mt-0"
-                  />
-                </div>
-              )}
+              <div className="mt-6">
+                <HomesteadTabs
+                  activeTab={tab}
+                  onSelectTab={(next) => {
+                    setTab(next);
+                    setUpgradePage(0);
+                  }}
+                />
+              </div>
+              <CollectionContentLayout
+                pagination={
+                  totalPages > 1 ? (
+                    <PaginationControls
+                      page={page}
+                      totalPages={totalPages}
+                      onPageChange={isCompanions ? setCompanionPage : setUpgradePage}
+                      size="default"
+                      className="mt-0"
+                    />
+                  ) : null
+                }
+              >
+                <FadeSlot swapKey={`${tab}-${page}`} className="mx-auto w-full overflow-visible">
+                  <div
+                    className="mx-auto flex max-w-full flex-wrap items-start justify-center gap-5"
+                    style={{ width: `calc(${rowWidth}px * var(--content-scale, 1))` }}
+                  >
+                    {pageItems.map((item) => {
+                      const node = getNode(item);
+                      return (
+                        <div
+                          key={node.id}
+                          className="max-w-full shrink-0"
+                          style={{ width: `calc(${tileWidth}px * var(--content-scale, 1))` }}
+                        >
+                          <HomesteadNodeArtwork
+                            node={node}
+                            showStatus
+                            onInspect={() => inspect(item)}
+                            buttonRef={node.id === lastViewedId ? lastViewedTileRef : undefined}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </FadeSlot>
+              </CollectionContentLayout>
             </div>
           )}
         </FadeSlot>

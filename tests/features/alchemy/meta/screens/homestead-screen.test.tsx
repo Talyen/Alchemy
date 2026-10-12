@@ -36,14 +36,11 @@ const defaultProps = {
 
 async function inspect(title: string) {
   fireEvent.click(await screen.findByRole("button", { name: new RegExp(`^View ${title}(,|$)`) }));
-  await screen.findByRole("heading", { name: title });
+  return screen.findByRole("button", { name: `Inspect ${title} benefits` });
 }
 
-async function review(action = "build", title = "Blacksmith") {
-  fireEvent.click(await screen.findByRole("button", { name: `Review ${action} for ${title}` }));
-  const dialog = await screen.findByRole("dialog", { name: title });
-  await waitFor(() => expect(dialog.closest("[inert]")).toBeNull());
-  return dialog;
+function purchaseButton(action = "Build", title = "Blacksmith") {
+  return screen.getByRole("button", { name: new RegExp(`^${action} ${title} for `) });
 }
 
 async function inspectArtwork(title = "Blacksmith") {
@@ -69,17 +66,16 @@ describe("HomesteadScreen", () => {
     await inspect("Blacksmith");
     expect(defaultProps.onConstructBuilding).not.toHaveBeenCalled();
     expect(screen.queryByRole("dialog")).toBeNull();
-    expect(screen.getByRole("region", { name: "On build" }).textContent).toContain("Physical damage +1");
-    const dialog = await review();
-    expect(defaultProps.onConstructBuilding).not.toHaveBeenCalled();
-    expect(dialog.textContent).toContain("4");
-    expect(dialog.textContent).toContain("11");
-    expect(within(dialog).queryByRole("region", { name: "Bonuses" })).toBeNull();
-    const buy = within(dialog).getByRole("button", { name: "Build" });
+    const tooltip = await inspectArtwork();
+    expect(within(tooltip).getByRole("region", { name: "On build" }).textContent).toContain("Physical damage +1");
+    expect(within(tooltip).getByRole("img", { name: "Level 0 of 4" })).toBeTruthy();
+    const buy = purchaseButton();
+    expect(buy.getAttribute("aria-label")).toBe("Build Blacksmith for 4 Stone, 11 Iron");
+    act(() => buy.focus());
     fireEvent.click(buy);
     fireEvent.click(buy);
     expect(defaultProps.onConstructBuilding).toHaveBeenCalledExactlyOnceWith("blacksmiths-forge");
-    expect(within(dialog).getByRole("button", { name: "Saving…" }).hasAttribute("disabled")).toBe(true);
+    expect(screen.getByRole("button", { name: "Saving Blacksmith" }).hasAttribute("disabled")).toBe(true);
     expect(playUISound).not.toHaveBeenCalled();
     rerender(
       <HomesteadScreen
@@ -88,34 +84,54 @@ describe("HomesteadScreen", () => {
         constructedBuildings={{ ...defaultProps.constructedBuildings, "blacksmiths-forge": 1 }}
       />,
     );
-    expect(screen.getByLabelText("Upgrade progress").textContent).toContain("0/4");
+    expect(screen.getByRole("img", { name: "Blacksmith" }).classList.contains("grayscale")).toBe(true);
     act(() => {
       saved!();
       saved!();
     });
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(screen.getByLabelText("Upgrade progress").textContent).toContain("1/4");
+    expect(screen.getByRole("img", { name: "Blacksmith" }).classList.contains("grayscale")).toBe(false);
+    expect(within(await inspectArtwork()).getByRole("img", { name: "Level 1 of 4" })).toBeTruthy();
     expect(playUISound).toHaveBeenCalledExactlyOnceWith("talentUnlock");
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     const gallery = await screen.findByRole("button", { name: "View Blacksmith, upgrade available" });
     await waitFor(() => expect(document.activeElement).toBe(gallery));
   });
 
-  it("keeps unaffordable nodes inspectable and explains missing materials in the purchase sheet", async () => {
+  it("accepts each rendered tier only once even when save acknowledgment runs before React renders", async () => {
+    const { rerender } = render(<HomesteadScreen {...defaultProps} />);
+    await inspect("Blacksmith");
+    const buy = purchaseButton();
+    act(() => {
+      fireEvent.click(buy);
+      fireEvent.click(buy);
+    });
+    expect(defaultProps.onConstructBuilding).toHaveBeenCalledTimes(1);
+    expect(buy.hasAttribute("disabled")).toBe(true);
+    rerender(
+      <HomesteadScreen
+        {...defaultProps}
+        constructedBuildings={{ ...defaultProps.constructedBuildings, "blacksmiths-forge": 1 }}
+      />,
+    );
+    fireEvent.click(purchaseButton("Upgrade"));
+    expect(defaultProps.onConstructBuilding).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps unaffordable nodes inspectable and explains the disabled purchase to keyboard users", async () => {
     render(<HomesteadScreen {...defaultProps} materialInventory={emptyInventory()} />);
     await inspect("Blacksmith");
-    const dialog = await review();
-    expect(within(dialog).getByRole("button", { name: "Build" }).hasAttribute("disabled")).toBe(true);
-    expect(dialog.textContent).toContain("More materials needed");
+    const buy = purchaseButton();
+    expect(buy.hasAttribute("disabled")).toBe(true);
+    const disabledReason = buy.closest('[aria-disabled="true"]') as HTMLElement;
+    act(() => disabledReason.focus());
+    await screen.findByText("More materials needed");
+    fireEvent.click(buy);
     expect(defaultProps.onConstructBuilding).not.toHaveBeenCalled();
-    fireEvent.keyDown(window, { key: "Escape" });
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(screen.getByRole("heading", { name: "Blacksmith" })).toBeTruthy();
     fireEvent.keyDown(window, { key: "Escape" });
     await screen.findByRole("button", { name: "View Blacksmith" });
   });
 
-  it("inspects purchased effects on gallery and detail artwork, previews the next changes, and retains purchased color", async () => {
+  it("uses the same purchased effects on gallery and detail artwork and retains purchased color", async () => {
     render(
       <HomesteadScreen
         {...defaultProps}
@@ -123,47 +139,40 @@ describe("HomesteadScreen", () => {
         constructedBuildings={{ ...defaultProps.constructedBuildings, "blacksmiths-forge": 1 }}
       />,
     );
-    const art = screen.getByRole("img", { name: "Blacksmith" });
-    expect(art.classList.contains("grayscale")).toBe(false);
+    expect(screen.getByRole("img", { name: "Blacksmith" }).classList.contains("grayscale")).toBe(false);
     expect(screen.queryByRole("button", { name: "View Blacksmith, upgrade available" })).toBeNull();
-    const tile = screen.getByRole("button", { name: "View Blacksmith" });
-    act(() => tile.focus());
-    const galleryTooltip = await screen.findByRole("tooltip");
-    expect(galleryTooltip.textContent).toContain("Blacksmith");
-    expect(galleryTooltip.textContent).toContain("Physical damage +1");
+    act(() => screen.getByRole("button", { name: "View Blacksmith" }).focus());
+    const galleryText = (await screen.findByRole("tooltip")).textContent;
     await inspect("Blacksmith");
     expect(screen.queryByRole("tooltip")).toBeNull();
-    const next = screen.getByRole("region", { name: "Next upgrade" });
-    expect(next.textContent).toContain("Physical damage +1 → 2");
-    expect(next.textContent).toContain("Burn damage gains 10 → 20% of Forge.");
-    expect(next.textContent).toContain("+1 → 2 Iron per Room");
+    expect(screen.queryByRole("heading", { name: "Blacksmith" })).toBeNull();
     const tooltip = await inspectArtwork();
+    expect(tooltip.textContent).toBe(galleryText);
     const bonuses = within(tooltip).getByRole("region", { name: "Bonuses" });
     expect(bonuses.textContent).toContain("Physical damage +1");
     expect(bonuses.textContent).not.toContain("Physical damage +2");
-    expect(bonuses.textContent).not.toContain("per Room");
-    expect(within(tooltip).getByRole("region", { name: "Production" }).textContent).toContain("+1 Iron per Room");
+    expect(within(tooltip).getByRole("region", { name: "Production" }).textContent).toContain("Find more Iron");
+    expect(within(tooltip).getByRole("img", { name: "Level 1 of 4" })).toBeTruthy();
     expect(screen.getByRole("img", { name: "Blacksmith" }).classList.contains("grayscale")).toBe(false);
-    act(() => screen.getByRole("button", { name: "Review upgrade for Blacksmith" }).focus());
+    act(() => screen.getByRole("group", { name: "Blacksmith details" }).focus());
     await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
-    expect(screen.queryByRole("region", { name: "Bonuses" })).toBeNull();
-    expect(screen.getByLabelText("Upgrade progress").textContent).toContain("1/4");
     expect(defaultProps.onConstructBuilding).not.toHaveBeenCalled();
   });
 
-  it("does not spend against a quote whose tier changed while it was open", async () => {
+  it("uses the current tier cost and affordability when progress changes during inspection", async () => {
     const { rerender } = render(<HomesteadScreen {...defaultProps} />);
     await inspect("Blacksmith");
-    const dialog = await review();
     rerender(
       <HomesteadScreen
         {...defaultProps}
+        materialInventory={{ ...emptyInventory(), stone: 4, iron: 11 }}
         constructedBuildings={{ ...defaultProps.constructedBuildings, "blacksmiths-forge": 1 }}
       />,
     );
-    expect(within(dialog).getByRole("button", { name: "Build" }).hasAttribute("disabled")).toBe(true);
-    expect(dialog.textContent).toContain("This upgrade has changed");
-    fireEvent.click(within(dialog).getByRole("button", { name: "Build" }));
+    const buy = purchaseButton("Upgrade");
+    expect(buy.getAttribute("aria-label")).toBe("Upgrade Blacksmith for 8 Stone, 22 Iron");
+    expect(buy.hasAttribute("disabled")).toBe(true);
+    fireEvent.click(buy);
     expect(defaultProps.onConstructBuilding).not.toHaveBeenCalled();
   });
 
@@ -173,14 +182,12 @@ describe("HomesteadScreen", () => {
       <HomesteadScreen {...defaultProps} onConstructBuilding={() => false} afterProgressSaved={afterProgressSaved} />,
     );
     await inspect("Blacksmith");
-    const dialog = await review();
-    fireEvent.click(within(dialog).getByRole("button", { name: "Build" }));
-    expect(dialog.textContent).toContain("Purchase unavailable");
+    fireEvent.click(purchaseButton());
+    expect(screen.getByRole("alert").textContent).toContain("Purchase unavailable");
     expect(afterProgressSaved).not.toHaveBeenCalled();
     rerender(<HomesteadScreen {...defaultProps} afterProgressSaved={afterProgressSaved} />);
-    fireEvent.click(within(dialog).getByRole("button", { name: "Build" }));
+    fireEvent.click(purchaseButton());
     expect(afterProgressSaved).toHaveBeenCalledTimes(1);
-    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     act(() => afterProgressSaved.mock.calls[0]![0]());
     expect(playUISound).not.toHaveBeenCalled();
@@ -197,8 +204,7 @@ describe("HomesteadScreen", () => {
     fireEvent.click(screen.getByRole("button", { name: tab }));
     await inspect(title);
     expect(command).not.toHaveBeenCalled();
-    const dialog = await review("build", title);
-    fireEvent.click(within(dialog).getByRole("button", { name: "Build" }));
+    fireEvent.click(purchaseButton("Build", title));
     expect(command).toHaveBeenCalledExactlyOnceWith(id);
     expect(defaultProps.onConstructBuilding).not.toHaveBeenCalled();
   });
@@ -209,10 +215,8 @@ describe("HomesteadScreen", () => {
     await screen.findByRole("button", { name: /^View Wolf,/ });
     fireEvent.click(screen.getByRole("button", { name: "Next page" }));
     await inspect("Mana Moth");
-    const dialog = await review("bond", "Mana Moth");
-    fireEvent.click(within(dialog).getByRole("button", { name: "Bond" }));
+    fireEvent.click(purchaseButton("Bond", "Mana Moth"));
     expect(defaultProps.onBondCompanion).toHaveBeenCalledExactlyOnceWith("mana-moth");
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     await screen.findByRole("button", { name: /^View Mana Moth,/ });
     expect(screen.queryByRole("button", { name: /^View Wolf,/ })).toBeNull();
@@ -226,10 +230,10 @@ describe("HomesteadScreen", () => {
       />,
     );
     await inspect("Blacksmith");
-    expect(screen.getByLabelText("Upgrade progress").textContent).toContain("4/4");
     const tooltip = await inspectArtwork();
+    expect(within(tooltip).getByRole("img", { name: "Level 4 of 4" })).toBeTruthy();
     expect(within(tooltip).getByRole("region", { name: "Bonuses" }).textContent).toContain("Physical damage +4");
-    expect(screen.queryByRole("button", { name: /Review/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Upgrade/ })).toBeNull();
   });
 
   it("conceals undiscovered Companion identity and keeps its discovery requirement inspectable", async () => {
@@ -237,9 +241,10 @@ describe("HomesteadScreen", () => {
     fireEvent.click(screen.getByRole("button", { name: "Companions" }));
     const hidden = await screen.findAllByRole("button", { name: "View Undiscovered companion" });
     fireEvent.click(hidden[0]!);
-    await screen.findByRole("heading", { name: "Undiscovered companion" });
+    await screen.findByRole("button", { name: "Inspect Undiscovered companion benefits" });
     expect(screen.queryByRole("img", { name: "Wolf" })).toBeNull();
-    expect(screen.queryByRole("button", { name: /Review/ })).toBeNull();
-    expect(screen.getByText("Discover this Companion during a Run.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /^Bond/ })).toBeNull();
+    const tooltip = await inspectArtwork("Undiscovered companion");
+    expect(tooltip.textContent).toContain("Discover this Companion during a Run.");
   });
 });

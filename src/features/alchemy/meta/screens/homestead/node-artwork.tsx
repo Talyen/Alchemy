@@ -1,4 +1,4 @@
-import { ArrowUp, Check, LockKeyhole } from "lucide-react";
+import { Check, LockKeyhole, Star } from "lucide-react";
 import { type Ref } from "react";
 import { TOOLTIP_FADE_MS } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
@@ -28,12 +28,12 @@ export function HomesteadNodeArtwork({
   node,
   onInspect,
   buttonRef,
-  showAvailability = false,
+  showStatus = false,
 }: {
   node: HomesteadNodeModel;
   onInspect?: (() => void) | undefined;
   buttonRef?: Ref<HTMLButtonElement> | undefined;
-  showAvailability?: boolean;
+  showStatus?: boolean;
 }) {
   const complete = node.level >= node.maxLevel;
   const { wrapperRef, visible, showPopup, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } = useHoverVisible(
@@ -62,11 +62,9 @@ export function HomesteadNodeArtwork({
           cardInteractiveGlowClass,
         )}
         overlay={
-          showAvailability && (node.affordable || complete || !node.discovered) ? (
+          showStatus && (complete || !node.discovered) ? (
             <span className="pointer-events-none absolute right-3 bottom-3 z-20 drop-shadow-[0_1px_3px_rgba(0,0,0,1)]">
-              {node.affordable ? (
-                <ArrowUp className="h-6 w-6 text-gold-pale" aria-label={`${node.action} available`} />
-              ) : complete ? (
+              {complete ? (
                 <Check className="h-5 w-5 text-foreground/80" aria-label={node.companion ? "Max bond" : "Complete"} />
               ) : (
                 <LockKeyhole className="h-5 w-5 text-foreground/80" aria-label="Undiscovered" />
@@ -78,21 +76,43 @@ export function HomesteadNodeArtwork({
         <HomesteadArtwork node={node} />
       </Surface>
       {showPopup && (
-        <PortaledTooltip triggerRef={wrapperRef} visible={visible} placement="side-end">
-          <TooltipHeader>{node.title}</TooltipHeader>
+        <PortaledTooltip triggerRef={wrapperRef} visible={visible}>
+          <TooltipHeader className="mb-0 flex items-center justify-between gap-3">
+            <span>{node.title}</span>
+            {node.discovered && (
+              <span
+                role="img"
+                aria-label={`${node.companion ? "Bond" : "Level"} ${node.level} of ${node.maxLevel}`}
+                className="inline-flex shrink-0 items-center gap-0.5"
+              >
+                {Array.from({ length: node.maxLevel }, (_, index) => (
+                  <Star
+                    key={index}
+                    aria-hidden="true"
+                    className={cn(
+                      "h-3.5 w-3.5",
+                      index < node.level ? "fill-gold-light text-gold-light" : "text-muted-foreground/40",
+                    )}
+                  />
+                ))}
+              </span>
+            )}
+          </TooltipHeader>
           {node.discovered ? (
             <>
-              <TooltipSubheader className="mt-1">
-                {node.companion ? "Bond" : "Level"} {node.level}/{node.maxLevel}
-              </TooltipSubheader>
-              <ArtworkBenefits
-                title={node.companion ? "Abilities" : node.level === 0 ? "On build" : "Bonuses"}
-                lines={node.bonuses}
-              />
-              <ArtworkBenefits
-                title={node.level === 0 ? "Production on build" : "Production"}
-                lines={node.production}
-              />
+              {node.level === 0 && !node.companion && (
+                <TooltipSubheader className="mt-1 mb-0">On build</TooltipSubheader>
+              )}
+              <TooltipBody className="mt-2 space-y-1">
+                <ArtworkBenefits
+                  title={node.companion ? "Abilities" : node.level === 0 ? "On build" : "Bonuses"}
+                  lines={node.bonuses}
+                />
+                <ArtworkBenefits
+                  title={node.level === 0 ? "Production on build" : "Production"}
+                  lines={node.production}
+                />
+              </TooltipBody>
             </>
           ) : (
             <TooltipBody>Discover this Companion during a Run.</TooltipBody>
@@ -106,13 +126,12 @@ export function HomesteadNodeArtwork({
 function ArtworkBenefits({ title, lines }: { title: string; lines: string[] }) {
   if (lines.length === 0) return null;
   return (
-    <section aria-label={title} className="mt-3">
-      <TooltipSubheader className="mt-0">{title}</TooltipSubheader>
-      <TooltipBody className="space-y-1">
-        {lines.map((line, index) => (
-          <p key={index}>{renderTextWithMaterials(line)}</p>
-        ))}
-      </TooltipBody>
+    <section aria-label={title} className="space-y-1">
+      {lines.map((line, index) => (
+        <p key={index} className="min-h-6 leading-6">
+          {renderTextWithMaterials(line)}
+        </p>
+      ))}
     </section>
   );
 }

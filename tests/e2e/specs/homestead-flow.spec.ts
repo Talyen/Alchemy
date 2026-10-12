@@ -19,7 +19,7 @@ async function expectNativeArtwork(art: Locator) {
 }
 
 test(
-  "inspecting never spends; building spends the quoted resources once and survives resume",
+  "inspecting never spends; building spends the displayed resources once and survives resume",
   critical,
   async ({ page }) => {
     await new HomesteadPage(page).goto({
@@ -35,28 +35,29 @@ test(
     await page.getByRole("heading", { name: "Homestead" }).hover();
     await expect(tooltip).toBeHidden();
     await input.activate(page.getByRole("button", { name: "View Blacksmith, build available" }));
-    await expect(page.getByRole("heading", { name: "Blacksmith" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Inspect Blacksmith benefits" })).toBeVisible();
     await expectNativeArtwork(page.getByRole("img", { name: "Blacksmith", exact: true }));
     await page.getByRole("button", { name: "Inspect Blacksmith benefits" }).focus();
-    await expect(tooltip).toContainText("+1 Iron per Room");
+    await expect(tooltip).toContainText("Find more Iron");
     expect((await readSavedGame(page)).materialInventory).toMatchObject({ stone: 4, iron: 11 });
-    await input.activate(page.getByRole("button", { name: "Review build for Blacksmith" }));
-    const sheet = page.getByRole("dialog", { name: "Blacksmith" });
-    await expect(sheet).toContainText("4");
-    await expect(sheet).toContainText("11");
-    await sheet.getByRole("button", { name: "Build", exact: true }).click();
-    await expect(sheet).toBeHidden();
-    await expect(page.getByLabel("Upgrade progress")).toContainText("1/4");
+    const buy = page.getByRole("button", { name: "Build Blacksmith for 4 Stone, 11 Iron" });
+    await expect(buy).toContainText("4");
+    await expect(buy).toContainText("11");
+    await expect(buy.locator("img")).toHaveCount(2);
+    await buy.click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await page.getByRole("button", { name: "Inspect Blacksmith benefits" }).focus();
+    await expect(tooltip.getByRole("img", { name: "Level 1 of 4" })).toBeVisible();
     await expect.poll(async () => (await readSavedGame(page)).constructedBuildings["blacksmiths-forge"]).toBe(1);
     await expect.poll(async () => (await readSavedGame(page)).materialInventory).toMatchObject({ stone: 0, iron: 0 });
     await withSavedGame(page, async (resumed) => {
       await new MenuPage(resumed).openHomestead();
       const resumedInput = controllerInput(resumed);
       await resumedInput.activate(resumed.getByRole("button", { name: "View Blacksmith", exact: true }));
-      await resumedInput.activate(resumed.getByRole("button", { name: "Review upgrade for Blacksmith" }));
-      const next = resumed.getByRole("dialog", { name: "Blacksmith" });
-      await expect(next.getByRole("button", { name: "Upgrade", exact: true })).toBeDisabled();
-      await expect(next).toContainText("More materials needed");
+      const next = resumed.getByRole("button", { name: "Upgrade Blacksmith for 8 Stone, 22 Iron" });
+      await expect(next).toBeDisabled();
+      await next.locator("..").focus();
+      await expect(resumed.getByRole("tooltip")).toContainText("More materials needed");
       const save = await readSavedGame(resumed);
       expect(save.constructedBuildings["blacksmiths-forge"]).toBe(1);
       expect(save.materialInventory).toMatchObject({ stone: 0, iron: 0 });

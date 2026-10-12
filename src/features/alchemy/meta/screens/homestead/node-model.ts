@@ -20,8 +20,6 @@ export interface HomesteadNodeModel {
   affordable: boolean;
   bonuses: string[];
   production: string[];
-  nextBonuses: string[];
-  nextProduction: string[];
 }
 
 function lines(text: string | undefined) {
@@ -46,8 +44,6 @@ export function getUpgradeNode(item: GoalItem, level: number, inventory: Materia
     affordable: cost !== null && canAfford(inventory, cost),
     bonuses: lines(tier?.benefitDescription),
     production: lines(tier?.nonCombatBenefitDescription),
-    nextBonuses: lines(item.data.tiers[level]?.benefitDescription),
-    nextProduction: lines(item.data.tiers[level]?.nonCombatBenefitDescription),
   };
 }
 
@@ -77,12 +73,5 @@ export function getCompanionNode(
     affordable: cost !== null && canAfford(inventory, cost),
     bonuses: discovered ? getEffectiveCardDescriptionLines(card, { companionBondLevels: bondedCompanions }) : [],
     production: [],
-    nextBonuses:
-      discovered && companionId && cost
-        ? getEffectiveCardDescriptionLines(card, {
-            companionBondLevels: { ...bondedCompanions, [companionId]: level + 1 },
-          })
-        : [],
-    nextProduction: [],
   };
 }
