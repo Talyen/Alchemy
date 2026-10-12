@@ -66,7 +66,7 @@ function applyConsumeTalentRiders(
     if (isPlayerDefeated(nextState)) return nextState;
   }
   if (nextState.enemyHealth > 0 && talents.poisonOnConsume > 0) {
-    nextState = addEnemyStatus(nextState, "poison", talents.poisonOnConsume);
+    nextState = addEnemyStatus(nextState, "poison", talents.poisonOnConsume, { combatTexts });
     mergeCombatText(combatTexts, {
       target: "enemy",
       kind: "status",

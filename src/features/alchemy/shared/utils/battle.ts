@@ -79,7 +79,7 @@ export function getCombatTextAccessibleLabel(event: FloatingCombatText): string 
   if (event.kind === "notice") {
     if (event.signal === "purge" || event.text === "Purged") return `Purged ${label}`;
     if (event.signal === "cleanse") return `Cleansed ${label}`;
-    if (event.signal === "prepared") return `${label} prepared`;
+    if (event.signal === "prepared") return event.text || `${label} prepared`;
     return event.text || (event.stat === "deathsDoor" ? "Death's Door" : label);
   }
   return `${label}: ${event.displayText}`;

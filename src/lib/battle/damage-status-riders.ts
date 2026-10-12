@@ -47,7 +47,7 @@ function applyGearBurnBleedMirrorLeech(
   if (state.gearEffects.burnBleedMirrorAndLeech <= 0 || actualDamage <= 0) return state;
   let nextState = state;
   if (rollPercent(BURN_BLEED_MIRROR_CHANCE_PERCENT, getBattleRng(nextState))) {
-    nextState = addEnemyStatus(nextState, mirrorTarget, actualDamage);
+    nextState = addEnemyStatus(nextState, mirrorTarget, actualDamage, { combatTexts });
     const added = nextState.enemyStatuses[mirrorTarget] - state.enemyStatuses[mirrorTarget];
     if (added > 0) {
       mergeCombatText(combatTexts, { target: "enemy", kind: "multiply", stat: mirrorTarget, amount: added });
@@ -80,7 +80,7 @@ function applyPoisonStatusRider(
   allowPoisonBleedConversion = true,
   onPoisonBleedConversion?: (state: BattleState, damage: number, combatTexts: CombatTextEvent[]) => BattleState,
 ): BattleState {
-  let nextState = addEnemyStatus(state, "poison", actualDamage);
+  let nextState = addEnemyStatus(state, "poison", actualDamage, { combatTexts });
   nextState = applyPoisonDamageArmorRider(nextState, actualDamage, combatTexts);
   if (
     actualDamage > 0 &&
@@ -161,7 +161,7 @@ function applyBleedStatusRider(
     };
   }
   if (bleedAmount > 0 && actualDamage > 0 && rollBattleChance(nextState.talentEffects.bleedPoisonChance, nextState)) {
-    nextState = addEnemyStatus(nextState, "poison", actualDamage);
+    nextState = addEnemyStatus(nextState, "poison", actualDamage, { combatTexts });
   }
   nextState = applyGearBurnBleedMirrorLeech(
     nextState,
@@ -276,6 +276,10 @@ function applyPhysicalStatusRider(
     rollBattleChance(state.gearEffects.physicalBleedChance, state)
       ? addEnemyStatus(state, "bleed", actualDamage)
       : state;
+  const bleedAdded = nextState.enemyStatuses.bleed - state.enemyStatuses.bleed;
+  if (bleedAdded > 0) {
+    mergeCombatText(combatTexts, { target: "enemy", kind: "multiply", stat: "bleed", amount: bleedAdded });
+  }
   if (
     actualDamage > 0 &&
     critical &&
