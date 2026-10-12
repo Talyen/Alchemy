@@ -3,10 +3,8 @@ import { MATERIAL_IDS, type MaterialInventory } from "@/lib/homestead/types";
 import { MaterialCost } from "../../../shared/ui/material-icons";
 import { TooltipSection, TooltipSeparator } from "../../../shared/ui/tooltips/tooltip-panel";
 
-export const homesteadTileDimClass =
-  "opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 group-focus-within:grayscale-0 group-focus-within:opacity-100";
-export const homesteadUndiscoveredDimClass =
-  "opacity-45 grayscale group-hover:grayscale-0 group-hover:opacity-100 group-focus-within:grayscale-0 group-focus-within:opacity-100";
+export const homesteadTileDimClass = "opacity-60 grayscale";
+export const homesteadUndiscoveredDimClass = "opacity-45 grayscale";
 export const homesteadCompletedSurfaceClass = "bg-stone-800/70";
 
 export function HomesteadTooltipCost({

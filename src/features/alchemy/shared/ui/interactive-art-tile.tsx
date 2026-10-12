@@ -32,6 +32,7 @@ interface InteractiveArtTileProps {
   disabled?: boolean | undefined;
   showGlow?: boolean | undefined;
   ariaDisabled?: boolean | undefined;
+  grayscaleWhenUnavailable?: boolean | undefined;
   onClick?: (() => void) | undefined;
   ariaLabel?: string | undefined;
   children?: ReactNode | undefined;
@@ -56,6 +57,7 @@ export function InteractiveArtTile({
   disabled = false,
   showGlow: showGlowOverride,
   ariaDisabled,
+  grayscaleWhenUnavailable = true,
   onClick,
   ariaLabel,
   children,
@@ -107,7 +109,8 @@ export function InteractiveArtTile({
         className={cn(
           className,
           "group shadow-md",
-          ariaDisabled && "cursor-default grayscale",
+          ariaDisabled && "cursor-default",
+          ariaDisabled && grayscaleWhenUnavailable && "grayscale",
           shineClassName,
           frameClassName,
           glowClassName,

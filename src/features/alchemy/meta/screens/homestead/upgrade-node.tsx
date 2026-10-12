@@ -7,14 +7,7 @@ import { DetailPopup } from "../../../shared/ui/tooltips/card-popup";
 import { InteractiveArtTile, type PopupContext } from "../../../shared/ui/interactive-art-tile";
 import { StarRating } from "../../../shared/ui/star-rating";
 import { cardSurfaceClass, collectionGridBestiaryWidthClass, landscapeArtImageClass } from "../../../shared/config";
-import {
-  HOMESTEAD_CONFIG,
-  type GoalItem,
-  formatMaterialCostSummary,
-  getArt,
-  getHomesteadUpgradeShineColors,
-  renderTextWithMaterials,
-} from "./helpers";
+import { HOMESTEAD_CONFIG, type GoalItem, formatMaterialCostSummary, getArt, renderTextWithMaterials } from "./helpers";
 import { HomesteadTooltipCost, homesteadCompletedSurfaceClass, homesteadTileDimClass } from "./homestead-tile-node";
 
 const ZERO_COST: MaterialInventory = EMPTY_INVENTORY;
@@ -69,9 +62,8 @@ export function HomesteadUpgradeNode({
       )}
       popup={detailTooltip}
       as={isCompleted ? "div" : "button"}
-      showGlow
-      shineOnHover
-      shineColor={getHomesteadUpgradeShineColors(item)}
+      showGlow={false}
+      grayscaleWhenUnavailable={false}
       {...(isCompleted ? {} : { ariaDisabled: !itemAffordable })}
       onClick={itemAffordable ? () => onAction(item) : undefined}
       ariaLabel={ariaLabel}

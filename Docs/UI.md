@@ -182,6 +182,10 @@ views render neither pagination nor its wrapper. Picker measurement containers
 must receive available width independently of their rendered card count, so
 resizing cannot feed a narrower row back into its own column calculation.
 
+Homestead nodes use no glow or shine borders. Upgrade and Companion artwork stays
+grayscale until its first upgrade or bond is purchased, then stays in color even
+when the next purchase is unaffordable. Undiscovered Companions remain grayscale.
+
 Desktop Main Menu pairs Quit on the bottom left with Options on the right. Quit
 uses a rose-colored Power icon; browser Options remains centered. Demo completion
 uses standard page gutters and fits its complete image into the remaining area.

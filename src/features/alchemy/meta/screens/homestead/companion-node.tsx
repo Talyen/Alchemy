@@ -14,8 +14,9 @@ import {
   HomesteadTooltipCost,
   homesteadCompletedSurfaceClass,
   homesteadUndiscoveredDimClass,
+  homesteadTileDimClass,
 } from "./homestead-tile-node";
-import { getCardInspectionShineColors, getPlasmaColorPairForCard } from "@/features/alchemy/shared/config";
+import { getPlasmaColorPairForCard } from "@/features/alchemy/shared/config";
 
 function getCompanionTooltip(
   card: BattleCard,
@@ -109,13 +110,12 @@ export function CompanionCardNode({
       imageClassName={cn(
         "block w-full transition duration-300",
         cardArtImageClass,
-        !discovered && homesteadUndiscoveredDimClass,
+        !discovered ? homesteadUndiscoveredDimClass : currentLevel === 0 && homesteadTileDimClass,
       )}
       popup={detailTooltip}
       as={interactive ? "button" : "div"}
-      showGlow
-      shineOnHover
-      shineColor={getCardInspectionShineColors(card)}
+      showGlow={false}
+      grayscaleWhenUnavailable={false}
       {...(interactive ? { ariaDisabled: !bondAffordable } : {})}
       onClick={interactive && bondAffordable && companionId ? () => onBond(companionId) : undefined}
       ariaLabel={ariaLabel}
