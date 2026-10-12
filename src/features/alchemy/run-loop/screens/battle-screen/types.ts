@@ -25,6 +25,8 @@ export type BattleScreenState = Pick<
   | "activeCompanion"
   | "companionDamageBuff"
   | "currentEnemy"
+  | "roomScalingMultiplier"
+  | "difficultyModifiers"
   | "turnPhase"
   | "playerCC"
   | "enemyCC"

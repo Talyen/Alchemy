@@ -1,3 +1,5 @@
+import { createRef } from "react";
+import { EnemyTooltip } from "@/features/alchemy/shared/ui/tooltips/enemy-tooltip";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { enemyById, keywordDefinitions } from "@/lib/game-data";
@@ -66,6 +68,61 @@ describe("enemy inspection presentation", () => {
     );
     expect(container.querySelector('[data-enemy-trait="constructor"] svg')?.getAttribute("class")).toContain(
       "text-stone-400",
+    );
+  });
+
+  it("shows scaled native and encounter traits in the portrait tooltip", async () => {
+    const entry = enemyById.goblin;
+    const triggerRef = createRef<HTMLButtonElement>();
+    render(
+      <>
+        <button ref={triggerRef}>Goblin</button>
+        <EnemyTooltip
+          entry={entry}
+          enemyDescriptionContext={{ currentEnemy: entry, roomScalingMultiplier: 1.25, difficultyModifiers: [] }}
+          labyrinthModifiers={["reinforced"]}
+          triggerRef={triggerRef}
+          visible
+        />
+      </>,
+    );
+    await waitFor(() => {
+      const tooltip = document.querySelector(".hover-popup-panel[data-visible]");
+      expect(tooltip?.textContent).toContain("Starts with 5 Block");
+      expect(tooltip?.textContent).toContain("gains 3 Block each turn");
+    });
+  });
+
+  it("uses encounter values in traits and ability hover text, and restores catalog values without context", async () => {
+    const entry = enemyById.goblin;
+    const context = { currentEnemy: entry, roomScalingMultiplier: 1.25, difficultyModifiers: [] };
+    const { rerender } = render(
+      <EnemyInspectionOverlay
+        open
+        entry={entry}
+        enemyDescriptionContext={context}
+        modifiers={["reinforced"]}
+        onClose={() => {}}
+      />,
+    );
+    await waitForArtwork();
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole("button", { name: "Close enemy inspection" })),
+    );
+    const dialog = screen.getByRole("dialog", { name: "Goblin" });
+    expect(dialog.querySelector('[data-trait="starting-block"]')?.textContent).toContain("Starts with 5 Block");
+    expect(dialog.querySelector('[data-trait="reinforced"]')?.textContent).toContain("gains 3 Block each turn");
+    const ability = within(dialog).getByRole("button", { name: "Block" });
+    fireEvent.mouseEnter(ability.parentElement!);
+    await waitFor(() =>
+      expect(document.querySelector(".hover-popup-panel[data-visible]")?.textContent).toContain("Gain 6 Block"),
+    );
+    fireEvent.mouseLeave(ability.parentElement!);
+    rerender(<EnemyInspectionOverlay open entry={entry} onClose={() => {}} />);
+    expect(dialog.querySelector('[data-trait="starting-block"]')?.textContent).toContain("Starts with 4 Block");
+    fireEvent.mouseEnter(ability.parentElement!);
+    await waitFor(() =>
+      expect(document.querySelector(".hover-popup-panel[data-visible]")?.textContent).toContain("Gain 5 Block"),
     );
   });
 

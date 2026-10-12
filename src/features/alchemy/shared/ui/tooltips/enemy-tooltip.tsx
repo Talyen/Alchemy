@@ -1,3 +1,4 @@
+import type { EnemyDescriptionContext } from "@/lib/battle";
 import type { RefObject } from "react";
 import type { BestiaryEntry } from "@/lib/game-data";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
@@ -7,12 +8,14 @@ import { PortaledTooltip } from "./portaled-tooltip";
 import { TooltipBody, TooltipHeader } from "./tooltip-panel";
 
 export function EnemyTooltip({
+  enemyDescriptionContext,
   entry,
   discovered = true,
   labyrinthModifiers = [],
   triggerRef,
   visible,
 }: {
+  enemyDescriptionContext?: EnemyDescriptionContext | undefined;
   entry: BestiaryEntry;
   discovered?: boolean;
   labyrinthModifiers?: EncounterCombatTraitId[];
@@ -29,7 +32,12 @@ export function EnemyTooltip({
     >
       <TooltipHeader>{discovered ? entry.title : "Undiscovered"}</TooltipHeader>
       {discovered ? (
-        <EnemyTraits entry={entry} modifiers={labyrinthModifiers} variant="compact" />
+        <EnemyTraits
+          enemyDescriptionContext={enemyDescriptionContext}
+          entry={entry}
+          modifiers={labyrinthModifiers}
+          variant="compact"
+        />
       ) : (
         <TooltipBody>
           <p>Undiscovered</p>

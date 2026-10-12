@@ -105,6 +105,7 @@ export function BattleActors({
           surfaceRef={enemyPanelRef}
           isDead={battleState.enemyHealth <= 0}
           currentEnemy={battleState.currentEnemy}
+          enemyDescriptionContext={battleState}
           onInspect={onInspectEnemy}
           inspectionOpen={enemyInspectionOpen ?? false}
           activeLabyrinthModifiers={activeLabyrinthModifiers}
