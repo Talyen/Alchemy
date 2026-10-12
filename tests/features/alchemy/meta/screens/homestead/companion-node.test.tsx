@@ -18,14 +18,14 @@ afterEach(() => {
 });
 
 it("rejects an unaffordable bond and dispatches the right Companion when affordable", () => {
-  const onBond = vi.fn();
+  const onBond = vi.fn(() => true);
   const { rerender } = render(<CompanionCardNode {...props} onBond={onBond} />);
   fireEvent.click(screen.getByRole("button"));
   expect(onBond).not.toHaveBeenCalled();
 
   rerender(<CompanionCardNode {...props} materialInventory={{ ...emptyInventory(), food: 100 }} onBond={onBond} />);
   fireEvent.click(screen.getByRole("button"));
-  expect(onBond).toHaveBeenCalledExactlyOnceWith("wolf");
+  expect(onBond).toHaveBeenCalledExactlyOnceWith("wolf", expect.any(Function));
 });
 
 it.each([

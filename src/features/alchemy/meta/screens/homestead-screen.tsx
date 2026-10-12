@@ -19,6 +19,7 @@ import {
 } from "./homestead/helpers";
 import { CompanionCardNode } from "./homestead/companion-node";
 import { HomesteadUpgradeNode } from "./homestead/upgrade-node";
+import { type HomesteadPurchaseFeedback } from "./homestead/use-purchase-ceremony";
 
 const companionCards = cardLibrary.filter((card) =>
   visitBattleCardEffects(card.effects, (effect) => effect.kind === "summon-companion"),
@@ -61,14 +62,15 @@ export function HomesteadScreen({
 
   const discoveredIds = useMemo(() => new Set(discoveredCardIds), [discoveredCardIds]);
 
-  function handleAction(item: GoalItem) {
+  function handleAction(item: GoalItem, feedback: HomesteadPurchaseFeedback) {
     const success =
       item.kind === "building"
         ? onConstructBuilding(item.data.id)
         : item.kind === "farm"
           ? onPlantFarm(item.data.id)
           : onCompleteResearch(item.data.id);
-    if (success) afterProgressSaved(() => playUISound("talentUnlock"));
+    if (success) afterProgressSaved(() => feedback(() => playUISound("talentUnlock")));
+    return success;
   }
 
   const upgradeItems =
@@ -88,10 +90,10 @@ export function HomesteadScreen({
     setUpgradePage(0);
   }
 
-  function handleBondCompanion(companionId: CompanionId) {
-    if (onBondCompanion(companionId)) {
-      afterProgressSaved(() => playUISound("bond"));
-    }
+  function handleBondCompanion(companionId: CompanionId, feedback: HomesteadPurchaseFeedback) {
+    const success = onBondCompanion(companionId);
+    if (success) afterProgressSaved(() => feedback(() => playUISound("bond")));
+    return success;
   }
 
   return (

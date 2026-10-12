@@ -10,6 +10,9 @@ import { cardSurfaceClass, collectionGridBestiaryWidthClass, landscapeArtImageCl
 import { HOMESTEAD_CONFIG, type GoalItem, formatMaterialCostSummary, getArt, renderTextWithMaterials } from "./helpers";
 import { HomesteadTooltipCost, homesteadCompletedSurfaceClass, homesteadTileDimClass } from "./homestead-tile-node";
 
+import { HomesteadPurchaseCeremony } from "./purchase-ceremony";
+import { useHomesteadPurchaseCeremony, type HomesteadPurchaseFeedback } from "./use-purchase-ceremony";
+
 const ZERO_COST: MaterialInventory = EMPTY_INVENTORY;
 
 export function HomesteadUpgradeNode({
@@ -21,8 +24,9 @@ export function HomesteadUpgradeNode({
   item: GoalItem;
   currentLevel: number;
   materialInventory: MaterialInventory;
-  onAction: (item: GoalItem) => void;
+  onAction: (item: GoalItem, feedback: HomesteadPurchaseFeedback) => boolean;
 }) {
+  const { ceremony, pendingLevel, purchase, finish } = useHomesteadPurchaseCeremony();
   const maxTiers = item.data.tiers.length;
   const isTier0 = currentLevel === 0;
   const isCompleted = currentLevel >= maxTiers;
@@ -58,16 +62,29 @@ export function HomesteadUpgradeNode({
       imageClassName={cn(
         "block w-full transition duration-300",
         landscapeArtImageClass,
-        isTier0 && homesteadTileDimClass,
+        (isTier0 || pendingLevel === 1) && homesteadTileDimClass,
       )}
-      popup={detailTooltip}
+      popup={ceremony ? undefined : detailTooltip}
       as={isCompleted ? "div" : "button"}
       showGlow={false}
+      showShimmer={false}
       grayscaleWhenUnavailable={false}
       {...(isCompleted ? {} : { ariaDisabled: !itemAffordable })}
-      onClick={itemAffordable ? () => onAction(item) : undefined}
+      onClick={
+        itemAffordable ? () => purchase((feedback) => onAction(item, feedback), currentLevel + 1, maxTiers) : undefined
+      }
       ariaLabel={ariaLabel}
-    />
+    >
+      {ceremony && (
+        <HomesteadPurchaseCeremony
+          key={ceremony.token}
+          ceremony={ceremony}
+          art={getArt(item.data.id)}
+          artClassName={landscapeArtImageClass}
+          onFinished={finish}
+        />
+      )}
+    </InteractiveArtTile>
   );
 }
 

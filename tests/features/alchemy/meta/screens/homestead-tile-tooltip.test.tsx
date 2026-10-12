@@ -25,7 +25,7 @@ describe("HomesteadUpgradeNode hover tooltip", () => {
         item={buildingItem}
         currentLevel={0}
         materialInventory={{ ...emptyInventory(), iron: 100 }}
-        onAction={() => {}}
+        onAction={() => true}
       />,
     );
 
@@ -56,7 +56,7 @@ describe("HomesteadUpgradeNode hover tooltip", () => {
         item={buildingItem}
         currentLevel={maxLevel}
         materialInventory={emptyInventory()}
-        onAction={() => {}}
+        onAction={() => true}
       />,
     );
 
@@ -77,7 +77,7 @@ describe("HomesteadUpgradeNode hover tooltip", () => {
         item={leylineItem}
         currentLevel={1}
         materialInventory={{ ...emptyInventory(), gems: 100 }}
-        onAction={() => {}}
+        onAction={() => true}
       />,
     );
 

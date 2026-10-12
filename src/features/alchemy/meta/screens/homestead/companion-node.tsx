@@ -18,6 +18,9 @@ import {
 } from "./homestead-tile-node";
 import { getPlasmaColorPairForCard } from "@/features/alchemy/shared/config";
 
+import { HomesteadPurchaseCeremony } from "./purchase-ceremony";
+import { useHomesteadPurchaseCeremony, type HomesteadPurchaseFeedback } from "./use-purchase-ceremony";
+
 function getCompanionTooltip(
   card: BattleCard,
   discovered: boolean,
@@ -71,8 +74,9 @@ export function CompanionCardNode({
   discovered: boolean;
   bondedCompanions: Record<CompanionId, number>;
   materialInventory: MaterialInventory;
-  onBond: (companionId: CompanionId) => void;
+  onBond: (companionId: CompanionId, feedback: HomesteadPurchaseFeedback) => boolean;
 }) {
+  const { ceremony, pendingLevel, purchase, finish } = useHomesteadPurchaseCeremony();
   const companionEffect = card.effects.find(
     (e): e is { kind: "summon-companion"; companionId: CompanionId } => e.kind === "summon-companion",
   );
@@ -110,15 +114,32 @@ export function CompanionCardNode({
       imageClassName={cn(
         "block w-full transition duration-300",
         cardArtImageClass,
-        !discovered ? homesteadUndiscoveredDimClass : currentLevel === 0 && homesteadTileDimClass,
+        !discovered
+          ? homesteadUndiscoveredDimClass
+          : (currentLevel === 0 || pendingLevel === 1) && homesteadTileDimClass,
       )}
-      popup={detailTooltip}
+      popup={ceremony ? undefined : detailTooltip}
       as={interactive ? "button" : "div"}
       showGlow={false}
+      showShimmer={false}
       grayscaleWhenUnavailable={false}
       {...(interactive ? { ariaDisabled: !bondAffordable } : {})}
-      onClick={interactive && bondAffordable && companionId ? () => onBond(companionId) : undefined}
+      onClick={
+        interactive && bondAffordable && companionId
+          ? () => purchase((feedback) => onBond(companionId, feedback), currentLevel + 1, COMPANION_MAX_TIER)
+          : undefined
+      }
       ariaLabel={ariaLabel}
-    />
+    >
+      {ceremony && (
+        <HomesteadPurchaseCeremony
+          key={ceremony.token}
+          ceremony={ceremony}
+          art={card.art}
+          artClassName={cardArtImageClass}
+          onFinished={finish}
+        />
+      )}
+    </InteractiveArtTile>
   );
 }
