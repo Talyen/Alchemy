@@ -348,5 +348,14 @@ describe("ArmoryScreen equipment movement and inventory ordering", () => {
       expect(panel?.textContent).toContain("Remove");
       expect(panel?.textContent).toContain("Affixes");
     });
+
+    const salvageButton = screen.getByTestId("armory-salvage-toggle");
+    expect(salvageButton.textContent).toBe("");
+    act(() => salvageButton.focus());
+    await waitFor(() => {
+      const panel = document.querySelector(".hover-popup-panel[data-visible]");
+      expect(panel?.textContent).toContain("Salvage");
+      expect(panel?.textContent).toContain("Dismantle");
+    });
   });
 });
