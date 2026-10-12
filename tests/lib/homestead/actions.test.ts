@@ -49,8 +49,8 @@ describe("homestead-actions", () => {
       const success = constructBuilding(profile, "blacksmiths-forge");
       expect(success).toBe(true);
       expect(profile.constructedBuildings["blacksmiths-forge"]).toBe(1);
-      expect(profile.materialInventory.iron).toBe(28);
-      expect(profile.materialInventory.stone).toBe(42);
+      expect(profile.materialInventory.iron).toBe(39);
+      expect(profile.materialInventory.stone).toBe(46);
       expect(profile.effects.flatPhysicalDamage).toBe(1);
       expect(profile.effects.homesteadForgeBurnPercent).toBe(10);
     });
@@ -98,7 +98,7 @@ describe("homestead-actions", () => {
       expect(success).toBe(true);
       expect(profile.bondedCompanions.wolf).toBe(1);
       expect(profile.effects.companionBondLevels.wolf).toBe(1);
-      expect(profile.materialInventory.food).toBe(30);
+      expect(profile.materialInventory.food).toBe(40);
     });
 
     it("fails when food is insufficient", () => {

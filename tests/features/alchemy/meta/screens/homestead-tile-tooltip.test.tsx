@@ -37,7 +37,7 @@ describe("HomesteadUpgradeNode hover tooltip", () => {
       expect(panel).toBeTruthy();
       expect(panelText()).toContain("Blacksmith");
       expect(panelText()).toContain("Build");
-      expect(panelText()).toContain("22");
+      expect(panelText()).toContain("11");
 
       const header = panel?.querySelector("p.font-bold");
       expect(header?.textContent).toBe("Blacksmith");

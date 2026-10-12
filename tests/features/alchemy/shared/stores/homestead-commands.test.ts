@@ -95,7 +95,7 @@ describe("homestead write commands", () => {
     expect(
       dispatchGameplayCommand((draft) => acceptCommand(bondCompanion(draft, "wolf")), undefined, defaultGameSession),
     ).toBe(true);
-    expect(readRunProfile(defaultGameSession).materialInventory.food).toBe(30);
+    expect(readRunProfile(defaultGameSession).materialInventory.food).toBe(40);
     expect(readRunProfile(defaultGameSession).bondedCompanions.wolf).toBe(1);
     expect(readRunProfile(defaultGameSession).effects.companionBondLevels.wolf).toBe(1);
   });
@@ -172,7 +172,7 @@ describe("meta intent commands", () => {
     try {
       dispatchGameplayCommand(
         (draft) => {
-          addMaterialsToStockpile(draft, { ...emptyInventory(), stone: 8, iron: 22, food: 43, gems: 21 });
+          addMaterialsToStockpile(draft, { ...emptyInventory(), stone: 4, iron: 11, food: 21, gems: 10 });
           setDiscoveredCardIds(draft, ["wolf-companion"]);
           return acceptCommand();
         },
