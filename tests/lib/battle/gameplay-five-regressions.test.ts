@@ -26,7 +26,7 @@ describe("gameplay interaction regressions", () => {
     expect(result.playerStatuses.thorns).toBe(0);
   });
 
-  it("enemy Stun attacks benefit from Forge and spend a stack on damage", () => {
+  it("enemy Stun attacks benefit from Forge and preserve it on damage", () => {
     const state = patchBattleState({
       rng: () => 0.99,
       playerHealth: 100,
@@ -40,7 +40,7 @@ describe("gameplay interaction regressions", () => {
       [],
     );
     expect(result.playerHealth).toBe(95);
-    expect(result.enemyMitigation.forge).toBe(2);
+    expect(result.enemyMitigation.forge).toBe(3);
   });
 
   it.each([0, 3])("the last Frozen turn still resolves regeneration and %i pending Bleed Leech once", (bleed) => {

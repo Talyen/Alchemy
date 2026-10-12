@@ -7,6 +7,7 @@ import {
   getCombatTextAccessibleLabel,
 } from "@/features/alchemy/shared/utils/battle";
 import { enemyBestiary, keywordDefinitions } from "@/lib/game-data";
+import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { makeTestCard } from "../../../../fixtures/battle";
 
 const skeleton = enemyBestiary.find((enemy) => enemy.id === "skeleton")!;
@@ -103,6 +104,17 @@ describe("getPlayerStatusChips", () => {
 });
 
 describe("getEnemyStatusChips", () => {
+  it("keeps Stoke the Forge visible after an enemy attack with the persistent Forge tooltip", () => {
+    const golem = enemyBestiary.find((enemy) => enemy.id === "forge-golem")!;
+    const initial = createBattleState({ runDeck: [makeTestCard()], currentEnemy: golem, rng: () => 0.99 });
+    const result = endPlayerTurn({ ...initial, turn: 2, lastEnemyAbilityId: "molten-bulwark" });
+    expect(getEnemyStatusChips(result.state)).toContainEqual({
+      id: "forge",
+      value: 1,
+      description: "Each stack of Forge increases this enemy’s Physical and Stun damage by 1 for the rest of combat.",
+    });
+  });
+
   it("orders actual enemy defenses and harmful statuses while hiding internal Leech credit", () => {
     const state = makeProductionBattleState();
     state.enemyMitigation.block = 5;

@@ -90,6 +90,7 @@ function resolveStartingEnemyMitigation(
     ...EMPTY_ENEMY_MITIGATION,
     armor: startingArmor + (hasFortress ? LABYRINTH_MODIFIER_CONFIG.fortressArmor : 0),
     block: startingBlock,
+    forge: traits.some((trait) => trait.id === "whitehot") ? LABYRINTH_MODIFIER_CONFIG.whitehotForge : 0,
   };
 }
 
