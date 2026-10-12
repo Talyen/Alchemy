@@ -355,7 +355,9 @@ describe("ArmoryScreen equipment movement and inventory ordering", () => {
     await waitFor(() => {
       const panel = document.querySelector(".hover-popup-panel[data-visible]");
       expect(panel?.textContent).toContain("Salvage");
-      expect(panel?.textContent).toContain("Dismantle");
+      expect(panel?.textContent).toContain("Dismantle gear into crafting materials.");
+      expect(panel?.textContent).not.toContain("and currencies");
+      expect(panel?.textContent).not.toContain("No salvageable gear available");
     });
   });
 
@@ -401,5 +403,28 @@ describe("ArmoryScreen equipment movement and inventory ordering", () => {
     await user.click(spawnTrinketBtn);
     expect(onSpawnDevTrinket).toHaveBeenCalledTimes(1);
     expect(onSpawnDevGear).not.toHaveBeenCalled();
+  });
+
+  it("does not display empty status icon when browsing empty equipment slots unless filtered", async () => {
+    const user = userEvent.setup();
+    const sword = { instanceId: "gear-sword", definitionId: "longsword-basic" as const, affixes: [] };
+    renderArmoryScreen({
+      inventories: createArmoryInventories([sword]),
+      ownedTrinketIds: [],
+    });
+
+    // Main-hand has sword
+    expect(document.querySelector('[data-testid$="-empty"]')).toBeNull();
+
+    // Switch to trinket slot (no trinkets owned)
+    await user.click(screen.getByLabelText("Trinket equipment slot"));
+    // Renders filler slots without the floating empty package icon overlay
+    expect(document.querySelector('[data-testid$="-empty"]')).toBeNull();
+    expect(document.querySelectorAll('[data-testid="armory-inventory-filler"]')).toHaveLength(6);
+
+    // Switch to armor slot (no body armor in inventory)
+    await user.click(screen.getByLabelText("Armor equipment slot"));
+    expect(document.querySelector('[data-testid$="-empty"]')).toBeNull();
+    expect(document.querySelectorAll('[data-testid="armory-inventory-filler"]')).toHaveLength(6);
   });
 });

@@ -55,14 +55,9 @@ export function CraftingStrip({
             <TooltipHeader>Salvage</TooltipHeader>
             <TooltipBody>
               <p>
-                <strong className="font-semibold text-foreground">Dismantle</strong> gear into crafting materials and
-                currencies.
+                <strong className="font-semibold text-foreground">Dismantle</strong> gear into crafting materials.
               </p>
-              {!editable ? (
-                <p className="mt-2">Salvaging is unavailable.</p>
-              ) : !hasSalvageableGear && !salvageMode ? (
-                <p className="mt-2">No salvageable gear available.</p>
-              ) : null}
+              {!editable ? <p className="mt-2">Salvaging is unavailable.</p> : null}
             </TooltipBody>
           </PortaledTooltip>
           <button

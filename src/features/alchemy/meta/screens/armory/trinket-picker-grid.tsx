@@ -61,7 +61,8 @@ export function TrinketPickerGrid({
       pageItems={pageItems}
       placeholderIndex={placeholderIndex}
       testId="armory-trinket-picker"
-      swapKey={characterId}
+      fillerTestId="armory-inventory-filler"
+      swapKey="gear"
       renderItem={(trinket) => {
         const reservedBy = reservedTrinkets[trinket.id];
         const isArtHidden = hiddenArtworkIds?.has(trinket.id) ?? false;
