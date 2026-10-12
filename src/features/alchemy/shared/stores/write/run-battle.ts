@@ -1,18 +1,11 @@
 import { awardMaterialsDuringRun } from "./run-homestead";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { addRunGoldEarned } from "./run-recap";
-import { battleSnapshot, type BattleSnapshot, type BattleState } from "@/lib/battle";
-import { current, isDraft } from "immer";
+import { battleSnapshot, type BattleSnapshot } from "@/lib/battle";
 import type { GameplayDraft } from "../gameplay-command";
 import type { RewardState } from "@/lib/active-run-session";
 import type { BattleCard } from "@/lib/game-data";
-import { createDraftRunRandomSource } from "./run-progress";
 import { syncBattleGoldFromPurse } from "./run-gold";
-
-export function withDraftWorldBattleRng(draft: GameplayDraft, battleState: BattleSnapshot): BattleState {
-  const snapshot = isDraft(battleState) ? current(battleState) : battleState;
-  return { ...snapshot, rng: createDraftRunRandomSource(draft, "world") };
-}
 
 function activeBattle(draft: GameplayDraft) {
   if (draft.session.activity.kind !== "battle") throw new Error("Battle mutation requires an active battle");

@@ -101,8 +101,20 @@ function buildStatusChips(
 
 function buildActiveCcChips(cc: CcState): StatusChip[] {
   const chips: StatusChip[] = [];
-  if (cc.stunSkipTurns > 0) chips.push({ id: "stunned", value: cc.stunSkipTurns, hideValue: true });
-  if (cc.freezeSkipTurns > 0) chips.push({ id: "frozen", value: cc.freezeSkipTurns, hideValue: true });
+  if (cc.stunSkipTurns > 0)
+    chips.push({
+      id: "stunned",
+      value: cc.stunSkipTurns,
+      hideValue: true,
+      ...(cc.stunSkipTurns > 1 ? { description: `Loses their next ${cc.stunSkipTurns} turns.` } : {}),
+    });
+  if (cc.freezeSkipTurns > 0)
+    chips.push({
+      id: "frozen",
+      value: cc.freezeSkipTurns,
+      hideValue: true,
+      ...(cc.freezeSkipTurns > 1 ? { description: `Loses their next ${cc.freezeSkipTurns} turns.` } : {}),
+    });
   return chips;
 }
 

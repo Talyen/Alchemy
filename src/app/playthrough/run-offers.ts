@@ -167,7 +167,7 @@ export function offerRunChoices(
       const canExchange = (card: BattleCard, index: number) =>
         canTransmuteCard(selection?.choices ?? [], card, index, run.runDeck);
       if (visit.completed || !run.runDeck.some(canExchange)) {
-        offer("transmutation-exit", "continue", 1, flow.advanceToNextDestination);
+        offer("transmutation-exit", "continue", 1, () => flow.advanceToNextDestination(activity.kind));
       } else if (!selection || selection.sourceIndex === null || !isTransmutationSourceCurrent(visit, run.runDeck)) {
         run.runDeck.forEach((card, index) => {
           if (canExchange(card, index))
@@ -250,7 +250,7 @@ export function offerRunChoices(
             index,
           ),
         );
-      offer("shop-continue", "continue", 0, flow.advanceToNextDestination);
+      offer("shop-continue", "continue", 0, () => flow.advanceToNextDestination(activity.kind));
       break;
     }
     case "alchemist": {
@@ -265,7 +265,7 @@ export function offerRunChoices(
         if (!activity.data.purchasedSlotKeys.includes(key) && actions.getPotionBuyPrice(card) <= profile.gold)
           offer("buy-potion", card.id, 1, () => actions.buyPotion(card, key), index);
       });
-      offer("shop-continue", "continue", 0, flow.advanceToNextDestination);
+      offer("shop-continue", "continue", 0, () => flow.advanceToNextDestination(activity.kind));
       break;
     }
     case "trinket-shop": {
@@ -275,7 +275,7 @@ export function offerRunChoices(
         if (!activity.data.purchasedSlotKeys.includes(key) && actions.getBuyPrice(trinket) <= profile.gold)
           offer("buy-trinket", trinket.id, 1, () => actions.buy(trinket, key), index);
       });
-      offer("shop-continue", "continue", 0, flow.advanceToNextDestination);
+      offer("shop-continue", "continue", 0, () => flow.advanceToNextDestination(activity.kind));
       break;
     }
     case "equipment-shop": {
@@ -285,7 +285,7 @@ export function offerRunChoices(
         if (!activity.data.purchasedSlotKeys.includes(key) && actions.getBuyPrice(gear) <= profile.gold)
           offer("buy-gear", key, 1, () => actions.buy(gear, key), index);
       });
-      offer("shop-continue", "continue", 0, flow.advanceToNextDestination);
+      offer("shop-continue", "continue", 0, () => flow.advanceToNextDestination(activity.kind));
       break;
     }
     case "draft-deck": {

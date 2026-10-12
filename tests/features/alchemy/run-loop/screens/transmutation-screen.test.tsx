@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playUISound } from "@/lib/audio";
 import { StrictMode } from "react";
@@ -54,6 +54,17 @@ function visit() {
   if (activity.kind !== "transmutation") throw new Error("wrong activity");
   return activity.data;
 }
+async function waitFor(assertion: () => void) {
+  for (let attempt = 0; attempt < 20; attempt++) {
+    await act(async () => vi.advanceTimersByTimeAsync(50));
+    try {
+      assertion();
+      return;
+    } catch (error) {
+      if (attempt === 19) throw error;
+    }
+  }
+}
 async function previewReady() {
   await waitFor(() =>
     expect((screen.getByRole("button", { name: "Transmute" }) as HTMLButtonElement).disabled).toBe(false),
@@ -68,6 +79,7 @@ async function chooseAlteration() {
   return preview;
 }
 beforeEach(() => {
+  vi.useFakeTimers();
   vi.spyOn(HTMLImageElement.prototype, "complete", "get").mockReturnValue(true);
   vi.spyOn(HTMLImageElement.prototype, "naturalWidth", "get").mockReturnValue(100);
   resetAllTestStores();
@@ -78,6 +90,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.restoreAllMocks();
   Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
   localStorage.removeItem("alchemy-disable-animations");

@@ -22,7 +22,7 @@ describe("e2e routes", () => {
         fs.cpSync(path.join(repoRoot, "scripts"), path.join(root, "scripts"), { recursive: true });
         const laneModule = path.join(root, "scripts/lib/verification/local-test-lane.mjs");
         fs.writeFileSync(laneModule, fs.readFileSync(laneModule, "utf8").replace("48157", String(lane.port)));
-        const spec = path.join(root, "tests/e2e/specs/audio-sfx.spec.ts");
+        const spec = path.join(root, "tests/e2e/specs/battle-end-turn-canary.spec.ts");
         fs.mkdirSync(path.dirname(spec), { recursive: true });
         fs.writeFileSync(spec, "");
         const cli = path.join(root, "node_modules/@playwright/test/cli.js");

@@ -24,13 +24,3 @@ export async function selectGameMode(page: Page, mode: GameMode) {
   await openGameModeSelect(page);
   await page.getByRole("button", { name: GAME_MODE_TITLES[mode] }).click();
 }
-
-export async function resumeCampaignRun(page: Page) {
-  const destination = page.getByRole("heading", { name: "Choose Destination" });
-  const continueButton = page.getByRole("button", { name: "Continue", exact: true });
-  try {
-    await continueButton.waitFor({ state: "visible", timeout: 3000 });
-    await continueButton.click();
-  } catch {}
-  await expect(destination).toBeVisible({ timeout: 10000 });
-}

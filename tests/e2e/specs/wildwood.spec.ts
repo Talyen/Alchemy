@@ -161,38 +161,28 @@ test.describe("Wildwood Draft", () => {
       .toBe(true);
   });
 
-  test("skips reward after wildwood victory and starts next boss", slow, async ({ page, fastBattle }) => {
-    test.setTimeout(30000);
-    void fastBattle;
-    await injectSaveState(page, wildwoodRewardFlow());
-    await page.goto("/");
+  test(
+    "Wildwood reward choices survive resume and Skip starts the next boss",
+    critical,
+    async ({ page, fastBattle }) => {
+      void fastBattle;
+      await injectSaveState(page, wildwoodRewardFlow());
+      await page.goto("/");
+      await expect(page.getByRole("heading", { name: "Victory" })).toBeVisible({ timeout: 10000 });
 
-    await expect(page.getByRole("heading", { name: "Victory" })).toBeVisible({ timeout: 10000 });
+      const rewardsBefore = savedActivityData((await readSavedGame(page)).activeRun, "rewards");
+      const choiceIdsBefore = rewardsBefore?.rewardType === "card" ? rewardsBefore.choiceIds : [];
+      expect(choiceIdsBefore).toEqual(["slash", "bash", "block"]);
 
-    const skipBtn = page.getByRole("button", { name: "Skip" });
-    await expect(skipBtn).toBeEnabled({ timeout: 5000 });
-    await skipBtn.click();
+      await withSavedGame(page, async (resumed) => {
+        await expect(resumed.getByRole("heading", { name: "Victory" })).toBeVisible({ timeout: 10000 });
 
-    const battle = new BattlePage(page);
-    await expect(battle.hand.first()).toBeVisible({ timeout: 10000 });
-  });
-
-  test("reloading a Wildwood reward save keeps reward activity choices", critical, async ({ page, fastBattle }) => {
-    void fastBattle;
-    await injectSaveState(page, wildwoodRewardFlow());
-    await page.goto("/");
-    await expect(page.getByRole("heading", { name: "Victory" })).toBeVisible({ timeout: 10000 });
-
-    const rewardsBefore = savedActivityData((await readSavedGame(page)).activeRun, "rewards");
-    const choiceIdsBefore = rewardsBefore?.rewardType === "card" ? rewardsBefore.choiceIds : [];
-    expect(choiceIdsBefore).toEqual(["slash", "bash", "block"]);
-
-    await withSavedGame(page, async (resumed) => {
-      await expect(resumed.getByRole("heading", { name: "Victory" })).toBeVisible({ timeout: 10000 });
-
-      const rewardsAfter = savedActivityData((await readSavedGame(resumed)).activeRun, "rewards");
-      const choiceIdsAfter = rewardsAfter?.rewardType === "card" ? rewardsAfter.choiceIds : [];
-      expect(choiceIdsAfter).toEqual(["slash", "bash", "block"]);
-    });
-  });
+        const rewardsAfter = savedActivityData((await readSavedGame(resumed)).activeRun, "rewards");
+        const choiceIdsAfter = rewardsAfter?.rewardType === "card" ? rewardsAfter.choiceIds : [];
+        expect(choiceIdsAfter).toEqual(["slash", "bash", "block"]);
+        await resumed.getByRole("button", { name: "Skip", exact: true }).click();
+        await new BattlePage(resumed).waitForOpeningHand();
+      });
+    },
+  );
 });

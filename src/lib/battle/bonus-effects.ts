@@ -27,6 +27,7 @@ export function applyCrowdControlTriggerBonuses(
   const draw = bonuses.draw ?? 0;
   if (draw > 0) {
     nextState = applyDrawResult(nextState, drawFromState(nextState, draw), combatTexts);
+    nextState = nextState.onEmptyDraw?.(nextState, draw, combatTexts ?? []) ?? nextState;
   }
   if (bonuses.nextCardFree) {
     nextState = setFlag(nextState, "nextCardCostReduction", FREE_CARD_SENTINEL);

@@ -4,10 +4,7 @@ import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabi
 import { readActivityData } from "@/lib/active-run-session";
 import { corruptRunCard } from "./corruption-commands";
 export interface CorruptionFlowDeps {
-  advanceToNextDestination: () => void;
-  returnToCurrentDestination: () => void;
-  returnToLabyrinthMap?: () => void;
-  isLabyrinthRun?: () => boolean;
+  leaveVisit: () => void;
 }
 
 export function createCorruptionFlowHandlers(deps: CorruptionFlowDeps, gameSession: GameSession) {
@@ -17,17 +14,5 @@ export function createCorruptionFlowHandlers(deps: CorruptionFlowDeps, gameSessi
     if (corruptRunCard(cardIndex, gameSession)) sessionFeedback(gameSession).playUISound("musicBoxMystery");
   }
 
-  function handleCorruptionExit() {
-    if (readActivityData(readRunSession(gameSession).activity, "corruption")) {
-      deps.advanceToNextDestination();
-      return;
-    }
-    if (deps.isLabyrinthRun?.() && deps.returnToLabyrinthMap) {
-      deps.returnToLabyrinthMap();
-      return;
-    }
-    deps.returnToCurrentDestination();
-  }
-
-  return { handleCorruptCard, handleCorruptionExit };
+  return { handleCorruptCard, handleCorruptionExit: deps.leaveVisit };
 }

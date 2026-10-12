@@ -89,7 +89,7 @@ export interface AlchemyRouteCommands {
       alchemist: Omit<AlchemistShopCommands, "initialize">;
       trinket: Omit<TrinketShopCommands, "initialize">;
       equipment: Omit<EquipmentShopCommands, "initialize">;
-      continue: () => void;
+      continue: (expectedActivity: "shop" | "alchemist" | "trinket-shop" | "equipment-shop") => void;
     };
     mystery: {
       handleChoice: (choice: MysteryChoice) => boolean;

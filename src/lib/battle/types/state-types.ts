@@ -161,6 +161,7 @@ export interface BattleResolution {
 export interface BattleResolutionContext {
   rng: () => number;
   action?: BattleActionContext;
+  onEmptyDraw?: (state: BattleState, amount: number, texts: CombatTextEvent[]) => BattleState;
 }
 
 export interface BattleState extends BattleSnapshot, BattleResolutionContext {}

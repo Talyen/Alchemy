@@ -182,6 +182,6 @@ export function offerBrewingChoices(
               : "purchase-reserve",
   });
   if (canRefresh && canAffordRefresh) offer("alchemist-refresh", "refresh", worthwhile ? 0.5 : -1, actions.refresh);
-  offer("shop-continue", "continue", 0, controller.flow.advanceToNextDestination);
+  offer("shop-continue", "continue", 0, () => controller.flow.advanceToNextDestination("alchemist"));
   return observation;
 }

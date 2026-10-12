@@ -1,11 +1,18 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useRef, useState } from "react";
 
 import { PortaledTooltip } from "@/features/alchemy/shared/ui/tooltips/portaled-tooltip";
 import { KeywordTag } from "@/features/alchemy/shared/ui/keyword-tag";
 import { TOOLTIP_FADE_MS } from "@/lib/game-constants";
+
+async function expectSettled(assertion: () => void) {
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(TOOLTIP_FADE_MS);
+  });
+  assertion();
+}
 
 function TooltipHarness() {
   const [visible, setVisible] = useState(false);
@@ -44,6 +51,7 @@ function StaleTooltipHarness({ hand = false }: { hand?: boolean }) {
 }
 
 describe("PortaledTooltip", () => {
+  beforeEach(() => vi.useFakeTimers());
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
@@ -54,7 +62,7 @@ describe("PortaledTooltip", () => {
     "dismisses a stale tooltip on outside %s and allows keyboard inspection again",
     async (input) => {
       render(<StaleTooltipHarness />);
-      await waitFor(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
+      await expectSettled(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
       const outside = screen.getByRole("button", { name: "Overlay choice" });
       if (input === "move") fireEvent.pointerMove(outside);
       if (input === "press") fireEvent.pointerDown(outside);
@@ -63,15 +71,15 @@ describe("PortaledTooltip", () => {
       if (input === "window exit") fireEvent.pointerOut(document.body, { relatedTarget: null });
 
       expect(document.querySelector("[role='tooltip'][data-visible]")).toBeNull();
-      await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
+      await expectSettled(() => expect(screen.queryByRole("tooltip")).toBeNull());
       act(() => screen.getByRole("button", { name: "Trigger" }).focus());
-      await waitFor(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
+      await expectSettled(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
     },
   );
 
   it("reopens on pointer return even when the hover owner never changed", async () => {
     render(<StaleTooltipHarness />);
-    await waitFor(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
+    await expectSettled(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
     fireEvent.pointerMove(screen.getByRole("button", { name: "Overlay choice" }));
     expect(document.querySelector("[role='tooltip'][data-visible]")).toBeNull();
     fireEvent.pointerMove(screen.getByRole("button", { name: "Trigger" }));
@@ -82,7 +90,7 @@ describe("PortaledTooltip", () => {
     render(<KeywordTag keywordId="burn" showTooltip />);
     const trigger = screen.getByRole("button", { name: "Inspect Burn keyword" });
     act(() => trigger.focus());
-    await waitFor(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
+    await expectSettled(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
     const description = trigger.getAttribute("aria-describedby");
 
     fireEvent.pointerMove(document.body);
@@ -102,7 +110,7 @@ describe("PortaledTooltip", () => {
     render(<KeywordTag keywordId="burn" showTooltip />);
     const trigger = screen.getByRole("button", { name: "Inspect Burn keyword" });
     fireEvent.mouseEnter(trigger);
-    await waitFor(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
+    await expectSettled(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
     fireEvent.pointerDown(trigger);
     act(() => trigger.focus());
     fireEvent.mouseLeave(trigger);
@@ -111,15 +119,18 @@ describe("PortaledTooltip", () => {
     expect(document.activeElement).toBe(trigger);
     expect(document.querySelector("[role='tooltip'][data-visible]")).toBeNull();
     expect(trigger.hasAttribute("aria-describedby")).toBe(false);
-    await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
+    await expectSettled(() => expect(screen.queryByRole("tooltip")).toBeNull());
 
+    // Testing Library drains a real task after each keyboard action.
+    vi.useRealTimers();
     const user = userEvent.setup();
     await user.tab();
     await user.tab();
+    vi.useFakeTimers();
     // jsdom does not update :focus-visible modality after a pointer-to-keyboard switch.
     const matches = trigger.matches.bind(trigger);
     vi.spyOn(trigger, "matches").mockImplementation((selector) => selector === ":focus-visible" || matches(selector));
-    await waitFor(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
+    await expectSettled(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
     fireEvent.pointerMove(document.body);
     expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy();
   });
@@ -129,19 +140,19 @@ describe("PortaledTooltip", () => {
     async (attribute) => {
       render(<StaleTooltipHarness />);
       const trigger = screen.getByRole("button", { name: "Trigger" });
-      await waitFor(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
+      await expectSettled(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
       const boundary = screen.getByTestId("pointer-boundary");
       await act(async () => boundary.setAttribute(attribute, attribute === "aria-hidden" ? "true" : ""));
       expect(document.querySelector("[role='tooltip'][data-visible]")).toBeNull();
       expect(trigger.hasAttribute("aria-describedby")).toBe(false);
       fireEvent.pointerMove(trigger);
       expect(document.querySelector("[role='tooltip'][data-visible]")).toBeNull();
-      await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
+      await expectSettled(() => expect(screen.queryByRole("tooltip")).toBeNull());
 
       await act(async () => boundary.removeAttribute(attribute));
       expect(document.querySelector("[role='tooltip'][data-visible]")).toBeNull();
       fireEvent.pointerMove(trigger);
-      await waitFor(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
+      await expectSettled(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
     },
   );
 
@@ -149,7 +160,7 @@ describe("PortaledTooltip", () => {
     render(<KeywordTag keywordId="burn" showTooltip />);
     const trigger = screen.getByRole("button", { name: "Inspect Burn keyword" });
     act(() => trigger.focus());
-    await waitFor(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
+    await expectSettled(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
 
     fireEvent.blur(window);
     expect(document.activeElement).toBe(trigger);
@@ -165,13 +176,13 @@ describe("PortaledTooltip", () => {
     fireEvent.focus(window);
     act(() => trigger.blur());
     act(() => trigger.focus());
-    await waitFor(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
+    await expectSettled(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
     expect(trigger.hasAttribute("aria-describedby")).toBe(true);
   });
 
   it("preserves geometry-selected hand inspection across gaps but dismisses outside the hand", async () => {
     render(<StaleTooltipHarness hand />);
-    await waitFor(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
+    await expectSettled(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
     fireEvent.pointerMove(screen.getByTestId("gap"));
     expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy();
     fireEvent.pointerMove(screen.getByRole("button", { name: "Overlay choice" }));
@@ -185,7 +196,7 @@ describe("PortaledTooltip", () => {
       fireEvent.mouseEnter(screen.getByRole("button", { name: "Trigger" }));
     });
 
-    await waitFor(() => expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeTruthy());
+    await expectSettled(() => expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeTruthy());
     const panel = document.querySelector<HTMLElement>(".hover-popup-panel[data-visible]");
     expect(panel?.style.left).not.toBe("");
     expect(panel?.style.top).not.toBe("");
@@ -195,11 +206,10 @@ describe("PortaledTooltip", () => {
     expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeNull();
     fireEvent.mouseLeave(screen.getByRole("button", { name: "Trigger" }));
     fireEvent.mouseEnter(screen.getByRole("button", { name: "Trigger" }));
-    await waitFor(() => expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeTruthy());
+    await expectSettled(() => expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeTruthy());
   });
 
   it("keeps the placed tooltip mounted through fade-out, then unmounts it", async () => {
-    vi.useFakeTimers();
     render(<TooltipHarness />);
     const trigger = screen.getByRole("button", { name: "Trigger" });
 

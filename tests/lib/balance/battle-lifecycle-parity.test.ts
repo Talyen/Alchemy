@@ -44,9 +44,9 @@ function recordSimulation(config: BattleSimulationConfig, patch: Partial<battle.
     openingCounter = world.counters.world;
     return { ...result, state: opening };
   });
-  const play = battle.playBattleCardResolved;
-  vi.spyOn(battle, "playBattleCardResolved").mockImplementation((state, cardId, index, options) => {
-    const result = play(state, cardId, index, options);
+  const play = battle.resolveBattleCard;
+  vi.spyOn(battle, "resolveBattleCard").mockImplementation((state, cardId, index, context, options) => {
+    const result = play(state, cardId, index, context, options);
     actions.push({
       kind: "play",
       cardId,
@@ -56,10 +56,10 @@ function recordSimulation(config: BattleSimulationConfig, patch: Partial<battle.
     });
     return result;
   });
-  const wish = battle.chooseWishCard;
-  vi.spyOn(battle, "chooseWishCard").mockImplementation((state, cardId, texts) => {
-    const result = wish(state, cardId, texts);
-    actions.push({ kind: "wish", cardId, state: battle.battleSnapshot(result), counter: world.counters.world });
+  const wish = battle.resolveBattleWish;
+  vi.spyOn(battle, "resolveBattleWish").mockImplementation((state, cardId, context) => {
+    const result = wish(state, cardId, context);
+    actions.push({ kind: "wish", cardId, state: result.state, counter: world.counters.world });
     return result;
   });
   const end = battle.resolveBattleTurn;

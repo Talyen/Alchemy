@@ -76,7 +76,6 @@ owners directly.
 | ----------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | Open mode selection           | `navigation.ts`: `openGameModeSelect`, `selectGameMode`             | Retries Play if bootstrap unmounts the menu; selecting a mode never resumes a separate slot                       |
 | Select hero                   | `tests/pages/menu-page.ts`: `MenuPage.selectCharacterAndContinue`   | Clicks the portrait; no Back/Continue footer                                                                      |
-| Resume campaign               | `navigation.ts`: `resumeCampaignRun`                                | Waits for the saved destination or uses main-menu Continue                                                        |
 | Start battle or destination   | `battle-setup.ts`: `startBattleWithDeck`, `startAtDestination`      | Bootstraps battle                                                                                                 |
 | Inject mid-battle             | `save-injection.ts`: `injectActiveBattle`                           | Boots directly into battle                                                                                        |
 | Win and claim reward          | `battle-setup.ts`: `winBattleAndClaimReward`                        | Wins through combat and claims the first reward card                                                              |
@@ -213,3 +212,29 @@ factor and exercises pointer targeting and keyboard inspection together.
 
 Electron-only CI jobs install system libraries with `playwright install-deps` and
 use the installed Electron runtime; they do not need Playwright Chromium binaries.
+
+Destination setup requires an explicit destination; it never waits for an absent
+main-menu Continue control. Labyrinth setup reuses the injection result rather
+than probing the renderer twice. Cold-start logo readiness shares the fresh-storage
+canary, and Wildwood reward resume continues through Skip into the next battle.
+Tooltip motion checks observe frames or actual transition events, stop when the
+panel settles, and cannot pass solely from declared CSS transition properties.
+
+DOM artwork replacement and Collection music lifecycle checks share their existing
+screen/hook harnesses. Transmutation DOM races advance a virtual clock; browser
+animation canaries retain real timing. Resource-wallet markup and removal-tooltip
+CSS-class smoke checks are retired; tooltip interaction, placement, removal safety,
+resource spending, and persistence retain focused behavioral coverage.
+
+The critical End Turn canary also observes successful Slash SFX startup after
+resetting its cue-specific counter, sharing one real-timing battle boot. The audio
+route selects that canary. Armory browsing retains actual layout and keyboard
+focus checks; filter combinations, sorting and clearing use the
+inventory filtering/control and Armory screen unit/DOM suites.
+
+Pure Mystery, Wildwood and Labyrinth controller tests and Slice geometry/drawing
+parity tests run in Node, without JSDOM. FadeSlot cases share the use-fade suite.
+Tooltip dismissal tests advance a virtual fade clock; the keyboard helper briefly
+uses real timers for Testing Library's task drain. Browser tooltip and animation
+canaries continue to observe real rendering and timing. Unsupported native macOS
+fullscreen cases are skipped before Electron setup.

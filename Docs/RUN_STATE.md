@@ -4,6 +4,15 @@
 
 Each game session owns one authoritative nested gameplay aggregate constructed in `shared/stores/gameplay-state.ts`. `gameplay-state-reads.ts` owns explicit-session aggregate reads and subscriptions; `gameplay-state-store.ts` keeps presentation hooks bound to the application’s default session. Reusable reads, commands, and persistence codecs do not import React or initialize the application. Its `run`, `session`, `runProfile`, `profile`, and `gear` objects are the domain-shaped state, and the aggregate is data-only: draft mutators in `run-session-write-port.ts` (plus `homestead-actions.ts` / `gear-actions.ts`) compose atomic changes. Feature commands receive a deeply readonly `RunTransaction`, with live reads of the same draft. Only store-owned mutation implementations and bootstrap hydration receive the raw `GameplayDraft`; feature commands cannot assign fields or mutate nested collections directly. Feature orchestration should call intent-level commands rather than assemble field updates. `profile-store.ts` and `gear-store.ts` are thin aggregate-backed read/persistence modules; React profile slices live in `use-profile-store.ts`; they do not own shadow state. The write module, reads, commands, and `run-lifecycle.ts` are the feature-facing seams. Independent runtimes follow [Session ownership](#session-ownership).
 
+Committed gameplay is immutable in every build. `createGameplayStore` freezes the
+complete initial aggregate and each new revision before save-status or gameplay
+observers run. Read ports borrow those stable references; reads never freeze or
+copy live state as a side effect. Projection wrappers may be changed locally,
+but their nested gameplay values remain protected. Commands use Immer drafts;
+input ownership and detached command results stay at the transaction boundary.
+Freezing caches fully traversed objects, so later revisions traverse only changed
+branches and retain structural sharing.
+
 | Aggregate region | Concern                                                                                                                                                                                    | Lifetime                                                                                                           |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
 | `run`            | Deck, HP, acts, run Boons on `run.activeRun`; presentation screen on `run.navigation`; one resumable active run                                                                            | Resets on run termination                                                                                          |

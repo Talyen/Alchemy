@@ -29,11 +29,13 @@ test.describe("Save Error Paths", () => {
 
     await page.addInitScript(() => {
       localStorage.clear();
-      localStorage.removeItem("alchemy-skip-loading-screen");
     });
     await page.goto("/", { waitUntil: "load" });
     const menu = new MenuPage(page);
     await menu.expectMainMenuAfterColdStart(30_000);
+    const logo = page.getByRole("img", { name: "Alchemy logo", exact: true });
+    await expect(logo).toHaveJSProperty("complete", true);
+    expect(await logo.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
     await expect(menu.collectionBtn).toBeVisible();
     await expect(menu.optionsBtn).toBeVisible();
   });
