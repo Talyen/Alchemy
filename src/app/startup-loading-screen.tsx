@@ -12,8 +12,8 @@ import { LOADING_WORDS } from "./loading-words";
 import { StartupLoadingDecoration } from "./startup-loading-decoration";
 
 function useSyncedLoadingWord() {
-  // Sequential rotation with a random start: equally pleasant, no repeat-avoidance math.
-  const [wordIndex, setWordIndex] = useState(() => Math.floor(Math.random() * LOADING_WORDS.length));
+  // Sequential rotation starting with index 0 to match index.html phrase without snap.
+  const [wordIndex, setWordIndex] = useState(0);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -67,10 +67,15 @@ export function StartupLoadingScreen({ progress }: Props) {
         </span>
         <span
           aria-hidden
-          className="alchemy-loading-logo-fill absolute inset-y-0 left-0 overflow-hidden"
+          className="alchemy-loading-logo-fill absolute inset-0 overflow-hidden"
           style={{ animationDuration: `${INITIAL_LOAD_MIN_DURATION_MS}ms` }}
         >
-          <span className="w-max text-primary">Alchemy</span>
+          <span
+            className="alchemy-loading-logo-fill-text block w-full text-primary"
+            style={{ animationDuration: `${INITIAL_LOAD_MIN_DURATION_MS}ms` }}
+          >
+            Alchemy
+          </span>
         </span>
       </h1>
       <p

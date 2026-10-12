@@ -114,12 +114,21 @@
   }
 }
 
-@keyframes loadingLogoFill {
+@keyframes loadingLogoReveal {
   from {
-    width: 0%;
+    transform: translate3d(-100%, 0, 0);
   }
   to {
-    width: 100%;
+    transform: translate3d(0%, 0, 0);
+  }
+}
+
+@keyframes loadingLogoCounter {
+  from {
+    transform: translate3d(100%, 0, 0);
+  }
+  to {
+    transform: translate3d(0%, 0, 0);
   }
 }
 

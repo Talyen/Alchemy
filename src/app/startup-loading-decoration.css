@@ -72,12 +72,17 @@
   animation: loadingSlimeShadow 2s cubic-bezier(0.333333, 0, 0.666667, 1) both;
 }
 
+:root {
+  --leaf-travel: calc(222px * var(--content-scale, 1) + 140px);
+}
+
 .loading-decoration-leaf {
   position: absolute;
   top: var(--leaf-y);
   left: 0;
   width: 12px;
   height: 16px;
+  will-change: transform, opacity;
   animation: loadingLeafDrift 2.5s linear var(--leaf-delay) infinite both;
 }
 
@@ -236,26 +241,28 @@
 
 @keyframes loadingLeafDrift {
   0% {
-    left: -70px;
     opacity: 0;
-    transform: translateY(0) rotate(var(--leaf-turn)) scale(var(--leaf-scale));
+    transform: translate3d(-70px, 0, 0) rotate(var(--leaf-turn)) scale(var(--leaf-scale));
   }
   25% {
     opacity: 0.6;
-    transform: translateY(13px) rotate(calc(var(--leaf-turn) + 90deg)) scaleX(0.55) scale(var(--leaf-scale));
+    transform: translate3d(calc(-70px + var(--leaf-travel) * 0.25), 13px, 0) rotate(calc(var(--leaf-turn) + 90deg))
+      scaleX(0.55) scale(var(--leaf-scale));
   }
   50% {
     opacity: 0.85;
-    transform: translateY(0) rotate(calc(var(--leaf-turn) + 180deg)) scale(var(--leaf-scale));
+    transform: translate3d(calc(-70px + var(--leaf-travel) * 0.5), 0, 0) rotate(calc(var(--leaf-turn) + 180deg))
+      scale(var(--leaf-scale));
   }
   75% {
     opacity: 0.6;
-    transform: translateY(-13px) rotate(calc(var(--leaf-turn) + 270deg)) scaleX(0.55) scale(var(--leaf-scale));
+    transform: translate3d(calc(-70px + var(--leaf-travel) * 0.75), -13px, 0) rotate(calc(var(--leaf-turn) + 270deg))
+      scaleX(0.55) scale(var(--leaf-scale));
   }
   100% {
-    left: calc(100% + 70px);
     opacity: 0;
-    transform: translateY(0) rotate(calc(var(--leaf-turn) + 360deg)) scale(var(--leaf-scale));
+    transform: translate3d(calc(-70px + var(--leaf-travel)), 0, 0) rotate(calc(var(--leaf-turn) + 360deg))
+      scale(var(--leaf-scale));
   }
 }
 

@@ -26,6 +26,12 @@
         --alchemy-fg: 40 25% 88%;
         --alchemy-border: 30 8% 16%;
         --alchemy-primary: 36 55% 56%;
+        --leaf-travel: calc(222px * var(--content-scale, 1) + 140px);
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
       }
       html,
       body {
@@ -78,19 +84,26 @@
       .alchemy-loading-logo-fill {
         position: absolute;
         inset: 0 auto 0 0;
+        width: 100%;
         overflow: hidden;
-        animation: loadingLogoFill 3000ms ease-out forwards;
-        will-change: width;
+        transform: translate3d(-100%, 0, 0);
+        animation: loadingLogoReveal 3000ms ease-out forwards;
+        will-change: transform;
       }
       .alchemy-loading-logo-fill-text {
         display: block;
-        width: max-content;
+        width: 100%;
         color: hsl(var(--alchemy-primary));
+        transform: translate3d(100%, 0, 0);
+        animation: loadingLogoCounter 3000ms ease-out forwards;
+        will-change: transform;
       }
       .alchemy-loading-word {
+        margin: 0;
         margin-top: calc(-0.75rem * var(--content-scale, 1));
         font-family: "Inter", sans-serif;
         font-size: calc(0.75 * 1rem * var(--content-scale, 1) / (738 / 1080));
+        line-height: 1.5;
         font-weight: 500;
         letter-spacing: 0.18em;
         text-transform: uppercase;
@@ -167,15 +180,24 @@
         left: 0;
         width: 12px;
         height: 16px;
+        will-change: transform, opacity;
         animation: loadingLeafDrift 2.5s linear var(--leaf-delay) infinite both;
       }
 
-      @keyframes loadingLogoFill {
+      @keyframes loadingLogoReveal {
         from {
-          width: 0%;
+          transform: translate3d(-100%, 0, 0);
         }
         to {
-          width: 100%;
+          transform: translate3d(0%, 0, 0);
+        }
+      }
+      @keyframes loadingLogoCounter {
+        from {
+          transform: translate3d(100%, 0, 0);
+        }
+        to {
+          transform: translate3d(0%, 0, 0);
         }
       }
       @keyframes loadingSlimeHop {
@@ -329,26 +351,28 @@
       }
       @keyframes loadingLeafDrift {
         0% {
-          left: -70px;
           opacity: 0;
-          transform: translateY(0) rotate(var(--leaf-turn)) scale(var(--leaf-scale));
+          transform: translate3d(-70px, 0, 0) rotate(var(--leaf-turn)) scale(var(--leaf-scale));
         }
         25% {
           opacity: 0.6;
-          transform: translateY(13px) rotate(calc(var(--leaf-turn) + 90deg)) scaleX(0.55) scale(var(--leaf-scale));
+          transform: translate3d(calc(-70px + var(--leaf-travel) * 0.25), 13px, 0)
+            rotate(calc(var(--leaf-turn) + 90deg)) scaleX(0.55) scale(var(--leaf-scale));
         }
         50% {
           opacity: 0.85;
-          transform: translateY(0) rotate(calc(var(--leaf-turn) + 180deg)) scale(var(--leaf-scale));
+          transform: translate3d(calc(-70px + var(--leaf-travel) * 0.5), 0, 0) rotate(calc(var(--leaf-turn) + 180deg))
+            scale(var(--leaf-scale));
         }
         75% {
           opacity: 0.6;
-          transform: translateY(-13px) rotate(calc(var(--leaf-turn) + 270deg)) scaleX(0.55) scale(var(--leaf-scale));
+          transform: translate3d(calc(-70px + var(--leaf-travel) * 0.75), -13px, 0)
+            rotate(calc(var(--leaf-turn) + 270deg)) scaleX(0.55) scale(var(--leaf-scale));
         }
         100% {
-          left: calc(100% + 70px);
           opacity: 0;
-          transform: translateY(0) rotate(calc(var(--leaf-turn) + 360deg)) scale(var(--leaf-scale));
+          transform: translate3d(calc(-70px + var(--leaf-travel)), 0, 0) rotate(calc(var(--leaf-turn) + 360deg))
+            scale(var(--leaf-scale));
         }
       }
 
@@ -364,7 +388,11 @@
         }
         .alchemy-loading-logo-fill {
           animation: none;
-          width: 100%;
+          transform: translate3d(0%, 0, 0);
+        }
+        .alchemy-loading-logo-fill-text {
+          animation: none;
+          transform: translate3d(0%, 0, 0);
         }
       }
       html.alchemy-disable-animations .loading-decoration-slime,
@@ -378,7 +406,11 @@
       }
       html.alchemy-disable-animations .alchemy-loading-logo-fill {
         animation: none;
-        width: 100%;
+        transform: translate3d(0%, 0, 0);
+      }
+      html.alchemy-disable-animations .alchemy-loading-logo-fill-text {
+        animation: none;
+        transform: translate3d(0%, 0, 0);
       }
     </style>
     <script>
