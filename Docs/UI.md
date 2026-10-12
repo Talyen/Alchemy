@@ -184,29 +184,35 @@ single-page tabs leave the pagination slot empty. Picker measurement containers
 must receive available width independently of their rendered card count, so
 resizing cannot feed a narrower row back into its own column calculation.
 
-Homestead is an artwork-first inspection gallery: selecting any node opens its
-detail page and never spends materials. Names, purchased bonuses, and production
-live in the same artwork hover/focus tooltip on both pages, positioned above or
-below like Collection. Stars beside the name show purchased levels or bonds.
-Effect rows use consistent spacing without visible section headers, with
-first-tier effects labelled On build before construction. Production descriptions
-use Find more followed by the material names; reward amounts remain gameplay-owned.
-The gallery has no upgrade arrows. Detail pages contain only centered artwork and
-one primary Build, Upgrade, or Bond button, with material icons and costs inside.
-The button purchases directly, disables when unaffordable or saving, and offers
-missing-material feedback on hover/focus. Saving acknowledgment precedes the
-purchased artwork/progress reveal and sound; repeated input cannot purchase the
-same tier twice. Concise errors appear only on failure. The resource wallet
-belongs to the gallery. Completed and undiscovered nodes remain inspectable.
-Back returns to the same gallery tab and page.
+Homestead is an artwork-first gallery with one interactive hover panel at a time.
+The panel shares Collection's above/below placement, tooltip scale, and chrome,
+using `PortaledHoverPanel` with non-modal dialog semantics. Hover/focus opens it;
+artwork activation pins it without spending. Pointer travel across the artwork,
+placement gap, and panel keeps it open. Outside presses, Escape, window blur,
+and hidden/inert ancestors dismiss it. Escape returns focus to the artwork;
+Tab enters the purchase action and leaves the panel without trapping focus.
 
-Homestead artwork uses its native aspect ratio in both the gallery and detail
-page, without cropping. Landscape gallery nodes use a larger Homestead-specific
-width to fill the reserved two-row area, keeping three nodes per row and the
-header and tabs stationary. Both pages use the shared 3px hover/focus outline and
-103.5% scale with `card-interactive-no-glow`; nodes use no glow, shimmer, or shine borders.
-Upgrade and Companion artwork stays grayscale until its first upgrade or bond is purchased,
-then stays in color even when the next purchase is unaffordable. Undiscovered
+Stars beside the name show purchased levels or bonds. Unbuilt/unbonded nodes show
+only their name, empty stars, and purchase cost. Purchased nodes show current
+bonuses and Find 10/20/30/40% more resource quantities, with uniform effect-row
+spacing and no section headers or upgrade previews. Completed nodes show current
+benefits without a purchase action; undiscovered Companions show their discovery
+requirement. The wallet stays in the gallery, which has no upgrade arrows or
+separate detail screens.
+
+One primary Build, Upgrade, or Bond button contains the material icons and costs.
+Purchases are direct. Unaffordable costs are distinguished and accompanied by
+More materials needed. Saving acknowledgment precedes purchased artwork/progress
+and sound; synchronous tier guards reject repeated input. Closing the panel or
+changing tabs cannot cancel or repeat an accepted purchase. Errors appear only
+on failure.
+
+Homestead artwork keeps its native aspect ratio without cropping. Landscape
+nodes retain the larger Homestead-specific width and fixed two-row geometry,
+keeping headers, tabs, and pagination stationary. Artwork uses the shared 3px
+hover/focus outline and 103.5% scale with `card-interactive-no-glow`, without glow,
+shimmer, or shine borders. Nodes stay grayscale until their first purchase, then
+remain colored even when the next purchase is unaffordable. Undiscovered
 Companions remain grayscale.
 
 Desktop Main Menu pairs Quit on the bottom left with Options on the right. Quit

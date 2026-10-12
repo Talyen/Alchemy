@@ -32,50 +32,38 @@ export function getCombatMaterialLoot(
   return loot;
 }
 
-export function applyMaterialFindBonus(
-  materials: MaterialInventory,
-  effects: Pick<HomesteadEffectManifest, "herbFindBonus">,
-): MaterialInventory {
-  if (effects.herbFindBonus <= 0 || materials.herbs <= 0) return materials;
-  return { ...materials, herbs: Math.round(materials.herbs * (1 + effects.herbFindBonus)) };
-}
-
-const END_RUN_MATERIAL_YIELDS = {
-  stone: "endRunStonePerRoom",
-  herbs: "endRunHerbsPerRoom",
-  food: "endRunFoodPerRoom",
-  hide: "endRunHidePerRoom",
-  gems: "endRunGemsPerRoom",
-  iron: "endRunIronPerRoom",
-  wood: "endRunWoodPerRoom",
+const MATERIAL_FIND_KEYS = {
+  wood: "woodFindBonus",
+  stone: "stoneFindBonus",
+  iron: "ironFindBonus",
+  food: "foodFindBonus",
+  herbs: "herbFindBonus",
+  hide: "hideFindBonus",
+  gems: "gemFindBonus",
 } as const satisfies Record<MaterialId, keyof HomesteadEffectManifest>;
 
-type EndOfRunHomesteadEffects = Pick<
-  HomesteadEffectManifest,
-  (typeof END_RUN_MATERIAL_YIELDS)[MaterialId] | "endRunWishPerRoom" | "herbFindBonus"
->;
+type MaterialFindEffects = Pick<HomesteadEffectManifest, (typeof MATERIAL_FIND_KEYS)[MaterialId]>;
 
-export function applyEndOfRunHomesteadBonuses(
-  base: MaterialInventory,
-  effects: EndOfRunHomesteadEffects,
-  roomsEncountered: number,
-): MaterialInventory {
-  const roomCount = Math.max(0, roomsEncountered);
-  const withFlatYields = { ...base };
-  for (const material of MATERIAL_IDS) {
-    withFlatYields[material] += (effects[END_RUN_MATERIAL_YIELDS[material]] ?? 0) * roomCount;
-  }
-  withFlatYields.gems += (effects.endRunWishPerRoom ?? 0) * Math.floor(roomCount / 2);
-  return applyMaterialFindBonus(withFlatYields, effects);
+/** Apply once to a source payout, after its ordinary modifiers, without changing RNG. */
+export function applyRewardFindBonus(amount: number, bonus: number): number {
+  return amount > 0 ? Math.round(amount * (1 + Math.max(0, bonus))) : 0;
 }
 
-// ── Material reward policy ──────────────────────────────────────────────
-// Single owner for which modifiers apply to which source:
-//   combat victory: shared bundles by encounter type and band → herb-find → scavenger → herbalist
-//   mystery grant:  fixed amount → herb-find only (location traits don't apply off-map)
-//   wish gems:      flat pendingMaterials append (no find bonus; gems aren't herbs)
-//   gear salvage:   fixed definition value + rolled currencies (no homestead modifiers)
-//   end of run:     flat per-room yields → herb-find (via applyEndOfRunHomesteadBonuses)
+export function computeGoldReward(amount: number, multiplier: number, findBonus: number): number {
+  return applyRewardFindBonus(Math.round(amount * multiplier), findBonus);
+}
+
+export function applyMaterialFindBonus(materials: MaterialInventory, effects: MaterialFindEffects): MaterialInventory {
+  const found = { ...materials };
+  for (const material of MATERIAL_IDS) {
+    found[material] = applyRewardFindBonus(materials[material], effects[MATERIAL_FIND_KEYS[material]]);
+  }
+  return found;
+}
+
+// Reward policy: combat bundles → location modifiers → find bonuses.
+// Mystery and direct Wish payouts receive find bonuses at their source.
+// Salvage, generated Gold, and run-end accounting never apply them.
 
 export interface ScavengerHerbalistFlags {
   scavenger: boolean;
@@ -100,23 +88,23 @@ export function applyScavengerHerbalistModifiers(
 export interface CombatMaterialRewardInput {
   progressionBand: number;
   enemyType: string;
-  effects: Pick<HomesteadEffectManifest, "herbFindBonus">;
+  effects: MaterialFindEffects;
   scavenger: boolean;
   herbalist: boolean;
   rng: () => number;
 }
 
-/** Full combat-victory material pipeline: shared bundles → herb-find → scavenger → herbalist. */
+/** Shared bundles → scavenger → herbalist → Homestead find bonuses. */
 export function computeCombatMaterialReward(input: CombatMaterialRewardInput): MaterialInventory {
   const base = getCombatMaterialLoot(input.enemyType, input.progressionBand, input.rng);
-  return applyScavengerHerbalistModifiers(applyMaterialFindBonus(base, input.effects), input);
+  return applyMaterialFindBonus(applyScavengerHerbalistModifiers(base, input), input.effects);
 }
 
-/** Mystery grants skip location traits; only the homestead herb-find bonus applies. */
+/** Mystery grants skip location traits and apply the matching resource bonus. */
 export function computeMysteryMaterialReward(input: {
   material: MaterialId;
   amount: number;
-  effects: Pick<HomesteadEffectManifest, "herbFindBonus">;
+  effects: MaterialFindEffects;
 }): MaterialInventory {
   const found = emptyInventory();
   found[input.material] = input.amount;

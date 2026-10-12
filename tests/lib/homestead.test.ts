@@ -4,9 +4,10 @@ import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { computeHomesteadEffects, mergeIntoManifest } from "@/lib/homestead/effects";
 import {
-  applyEndOfRunHomesteadBonuses,
+  applyRewardFindBonus,
   applyMaterialFindBonus,
   computeCombatMaterialReward,
+  computeGoldReward,
   computeMysteryMaterialReward,
   getCombatMaterialLoot,
 } from "@/lib/homestead/material-rewards";
@@ -37,13 +38,16 @@ describe("computeHomesteadEffects", () => {
     expect(computeHomesteadEffects({ "blacksmiths-forge": -1 }, {}, {})).toEqual(defaultHomesteadEffects);
   });
 
-  it("accumulates farm healing across tiers without sharing mutable defaults", () => {
+  it("accumulates purchased farm effects and resource bonuses without sharing mutable defaults", () => {
     const effects = computeHomesteadEffects({}, { "wheat-field": 4, orchard: 2 }, {}, { wolf: 2 });
-    expect(effects.cardHealBonus).toEqual({ bread: 8, apple: 4 });
+    expect(effects.healthRestorePerCombat).toBe(4);
+    expect(effects.startThorns).toBe(2);
+    expect(effects.foodFindBonus).toBe(0.6);
+    expect(effects.cardHealBonus).toEqual({});
     expect(effects.companionBondLevels.wolf).toBe(2);
     expect(effects.companionDamage).toBe(0);
 
-    effects.cardHealBonus.bread = 99;
+    effects.foodFindBonus = 99;
     effects.companionBondLevels.wolf = 99;
     const fresh = computeHomesteadEffects({}, {}, {});
     expect(fresh.cardHealBonus).toEqual({});
@@ -142,7 +146,7 @@ describe("computeCombatMaterialReward", () => {
     const result = computeCombatMaterialReward({
       progressionBand: 1,
       enemyType: "normal",
-      effects: { herbFindBonus: 0 },
+      effects: { ...defaultHomesteadEffects, herbFindBonus: 0 },
       scavenger: true,
       herbalist: true,
       rng: () => 0,
@@ -154,25 +158,33 @@ describe("computeCombatMaterialReward", () => {
     expect(result.herbs).toBe(3);
   });
 
-  it("stacks herb-find before scavenger", () => {
+  it("applies find bonuses after all location modifiers", () => {
     const result = computeCombatMaterialReward({
       progressionBand: 1,
       enemyType: "normal",
-      effects: { herbFindBonus: 0.5 },
+      effects: { ...defaultHomesteadEffects, herbFindBonus: 0.5 },
       scavenger: true,
       herbalist: false,
       rng: () => 4.5 / MATERIAL_IDS.length,
     });
-    expect(result.herbs).toBe(10);
+    expect(result.herbs).toBe(9);
   });
 });
 
 describe("computeMysteryMaterialReward", () => {
   it("applies only the herb-find bonus to a fixed grant", () => {
-    expect(computeMysteryMaterialReward({ material: "herbs", amount: 2, effects: { herbFindBonus: 0.5 } }).herbs).toBe(
-      3,
-    );
-    const iron = computeMysteryMaterialReward({ material: "iron", amount: 2, effects: { herbFindBonus: 0.5 } });
+    expect(
+      computeMysteryMaterialReward({
+        material: "herbs",
+        amount: 2,
+        effects: { ...defaultHomesteadEffects, herbFindBonus: 0.5 },
+      }).herbs,
+    ).toBe(3);
+    const iron = computeMysteryMaterialReward({
+      material: "iron",
+      amount: 2,
+      effects: { ...defaultHomesteadEffects, herbFindBonus: 0.5 },
+    });
     expect(iron.iron).toBe(2);
     expect(iron.herbs).toBe(0);
   });
@@ -181,31 +193,58 @@ describe("computeMysteryMaterialReward", () => {
 describe("applyMaterialFindBonus", () => {
   it("rounds fractional herb bonuses without changing other rewards or its input", () => {
     const base = { ...emptyInventory(), wood: 2, herbs: 1 };
-    expect(applyMaterialFindBonus(base, { herbFindBonus: 0.5 })).toEqual({ ...base, herbs: 2 });
+    expect(applyMaterialFindBonus(base, { ...defaultHomesteadEffects, herbFindBonus: 0.5 })).toEqual({
+      ...base,
+      herbs: 2,
+    });
     expect(base).toEqual({ ...emptyInventory(), wood: 2, herbs: 1 });
   });
 });
 
-describe("applyEndOfRunHomesteadBonuses", () => {
-  it("applies flat end-of-run yields separately from herb find multiplier", () => {
-    const base = { wood: 4, iron: 0, herbs: 10, food: 3, gems: 1, stone: 0, hide: 0 };
+describe("reward quantity bonuses", () => {
+  it("boosts the resolved Gold payout after ordinary scaling and preserves zero rewards", () => {
+    expect(computeGoldReward(3, 1.5, 0.1)).toBe(6);
+    expect(computeGoldReward(3, 1.5, 0)).toBe(5);
+    expect(computeGoldReward(0, 1.5, 0.4)).toBe(0);
+  });
+  it.each([1, 2, 3, 4])("applies tier %i to matching resources and stacks different nodes additively", (tier) => {
+    const effects = computeHomesteadEffects(
+      { "hunters-lodge": tier, "wishing-well": tier },
+      { "wheat-field": tier, "crystal-garden": tier },
+      { "wool-tailoring": tier },
+    );
+    expect(effects.foodFindBonus).toBeCloseTo(tier * 0.2);
+    expect(effects.gemFindBonus).toBeCloseTo(tier * 0.2);
+    expect(effects.goldFindBonus).toBeCloseTo(tier * 0.2);
+    const base = { ...emptyInventory(), food: 10, gems: 10, stone: 10, hide: 10 };
+    expect(applyMaterialFindBonus(base, effects)).toEqual({
+      ...base,
+      food: 10 + tier * 2,
+      gems: 10 + tier * 2,
+      stone: 10 + tier,
+      hide: 10 + tier,
+    });
+    expect(base.food).toBe(10);
+  });
+
+  it("rounds source quantities once, preserves empty payouts, and boosts every supported material", () => {
     const effects = {
       ...defaultHomesteadEffects,
-      endRunStonePerRoom: 3,
-      endRunWishPerRoom: 2,
-      endRunFoodPerRoom: 2,
-      endRunHerbsPerRoom: 1,
-      endRunHidePerRoom: 2,
-      endRunGemsPerRoom: 1,
-      endRunIronPerRoom: 1,
-      endRunWoodPerRoom: 2,
-      herbFindBonus: 0.1,
+      woodFindBonus: 0.1,
+      stoneFindBonus: 0.2,
+      ironFindBonus: 0.3,
+      foodFindBonus: 0.4,
+      herbFindBonus: 0.5,
+      hideFindBonus: 0.6,
+      gemFindBonus: 0.7,
     };
-    const result = applyEndOfRunHomesteadBonuses(base, effects, 4);
-    expect(result).toEqual({ wood: 12, iron: 4, herbs: 15, food: 11, gems: 9, stone: 12, hide: 8 });
-    expect(applyEndOfRunHomesteadBonuses(base, effects, 3).gems).toBe(6);
-    expect(applyEndOfRunHomesteadBonuses(base, effects, -1)).toEqual({ ...base, herbs: 11 });
-    expect(base).toEqual({ wood: 4, iron: 0, herbs: 10, food: 3, gems: 1, stone: 0, hide: 0 });
+    expect(applyMaterialFindBonus(emptyInventory(), effects)).toEqual(emptyInventory());
+    expect(
+      applyMaterialFindBonus({ wood: 10, stone: 10, iron: 10, food: 10, herbs: 10, hide: 10, gems: 10 }, effects),
+    ).toEqual({ wood: 11, stone: 12, iron: 13, food: 14, herbs: 15, hide: 16, gems: 17 });
+    expect(applyRewardFindBonus(1, 0.1)).toBe(1);
+    expect(applyRewardFindBonus(5, 0.1)).toBe(6);
+    expect(applyRewardFindBonus(0, 0.4)).toBe(0);
   });
 });
 

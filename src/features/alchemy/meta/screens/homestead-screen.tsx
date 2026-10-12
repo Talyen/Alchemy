@@ -4,7 +4,7 @@ import { PageLayout, ScreenHeaderRow, ScreenShell } from "../../shared/ui/layout
 import { PaginationControls } from "../../shared/ui/navigation";
 import { getPagination } from "../../shared/ui/pagination";
 import { FadeSlot } from "../../shared/ui/use-fade";
-import { useCaptureEscapeCancel } from "../../shared/ui/use-modal-escape-dismiss";
+import { playUISound } from "@/lib/audio";
 import { cardLibrary, visitBattleCardEffects, type CompanionId } from "@/lib/game-data";
 import { COLLECTION_CARD_REFERENCE_WIDTH } from "../../shared/config";
 import { CollectionContentLayout } from "./collection/collection-content-layout";
@@ -17,9 +17,14 @@ import {
   RESEARCH_GOAL_ITEMS,
 } from "./homestead/helpers";
 import { HomesteadNodeArtwork } from "./homestead/node-artwork";
-import { HomesteadNodeDetail } from "./homestead/node-detail";
 import { HomesteadWallet } from "./homestead/resource-wallet";
-import { getCompanionId, getCompanionNode, getUpgradeNode, type HomesteadSelection } from "./homestead/node-model";
+import {
+  getCompanionId,
+  getCompanionNode,
+  getUpgradeNode,
+  type HomesteadSelection,
+  type HomesteadNodeModel,
+} from "./homestead/node-model";
 
 const companionCards = cardLibrary.filter((card) =>
   visitBattleCardEffects(card.effects, (effect) => effect.kind === "summon-companion"),
@@ -59,30 +64,19 @@ export function HomesteadScreen({
   const [tab, setTab] = useState<Tab>("buildings");
   const [companionPage, setCompanionPage] = useState(0);
   const [upgradePage, setUpgradePage] = useState(0);
-  const [selection, setSelection] = useState<HomesteadSelection | null>(null);
-  const [lastViewedId, setLastViewedId] = useState<string | null>(null);
-  const currentInspection = useRef<HomesteadSelection | null>(null);
-  const detailRef = useRef<HTMLDivElement>(null);
-  const lastViewedTileRef = useRef<HTMLButtonElement>(null);
-  useEffect(
-    () => () => {
-      currentInspection.current = null;
-    },
-    [],
-  );
+  const [activePanel, setActivePanel] = useState<{ id: string; pinned: boolean } | null>(null);
+  const [purchaseState, setPurchaseState] = useState<{ node: HomesteadNodeModel; saved: boolean } | null>(null);
+  const [error, setError] = useState<{ id: string; message: string } | null>(null);
+  const pending = useRef(false);
+  const submittedLevels = useRef(new Map<string, number>());
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const discoveredIds = useMemo(() => new Set(discoveredCardIds), [discoveredCardIds]);
-
-  function inspect(next: HomesteadSelection) {
-    currentInspection.current = next;
-    setLastViewedId(next.kind === "companion" ? next.card.id : next.data.id);
-    setSelection(next);
-  }
-
-  function backToGallery() {
-    currentInspection.current = null;
-    setSelection(null);
-  }
-  useCaptureEscapeCancel(selection ? backToGallery : undefined);
 
   function getNode(item: HomesteadSelection) {
     if (item.kind === "companion") {
@@ -93,17 +87,37 @@ export function HomesteadScreen({
     return getUpgradeNode(item, (levels as Record<string, number>)[item.data.id] ?? 0, materialInventory);
   }
 
-  function purchaseSelected() {
-    if (!selection || currentInspection.current !== selection) return false;
-    if (selection.kind === "companion") {
-      const id = getCompanionId(selection.card);
-      return id ? onBondCompanion(id) : false;
+  function purchase(item: HomesteadSelection, node: HomesteadNodeModel) {
+    if (pending.current || node.level <= (submittedLevels.current.get(node.id) ?? -1) || !node.cost || !node.affordable)
+      return;
+    pending.current = true;
+    const accepted =
+      item.kind === "companion"
+        ? (() => {
+            const id = getCompanionId(item.card);
+            return id ? onBondCompanion(id) : false;
+          })()
+        : item.kind === "building"
+          ? onConstructBuilding(item.data.id)
+          : item.kind === "farm"
+            ? onPlantFarm(item.data.id)
+            : onCompleteResearch(item.data.id);
+    if (!accepted) {
+      pending.current = false;
+      setError({ id: node.id, message: "Purchase unavailable. Your materials were not spent." });
+      return;
     }
-    return selection.kind === "building"
-      ? onConstructBuilding(selection.data.id)
-      : selection.kind === "farm"
-        ? onPlantFarm(selection.data.id)
-        : onCompleteResearch(selection.data.id);
+    submittedLevels.current.set(node.id, node.level);
+    setPurchaseState({ node, saved: false });
+    setError(null);
+    let acknowledged = false;
+    afterProgressSaved(() => {
+      if (acknowledged || !mounted.current) return;
+      acknowledged = true;
+      pending.current = false;
+      setPurchaseState({ node, saved: true });
+      playUISound(node.companion ? "bond" : "talentUnlock");
+    });
   }
 
   const upgradeItems =
@@ -118,82 +132,81 @@ export function HomesteadScreen({
   const tileWidth = isCompanions ? COLLECTION_CARD_REFERENCE_WIDTH : HOMESTEAD_CONFIG.landscapeNodeWidth;
   const columns = isCompanions ? 4 : 3;
   const rowWidth = columns * tileWidth + (columns - 1) * 20 + 0.5;
-  const selectedNode = selection ? getNode(selection) : null;
 
   return (
     <PageLayout>
       <ScreenShell maxWidthClass="max-w-[calc(88*var(--content-rem,1rem))]" className="relative">
-        <ScreenHeaderRow title="Homestead" onBack={selection ? backToGallery : onBack} onMenu={onMenu} />
-        <FadeSlot
-          swapKey={selectedNode?.id ?? "gallery"}
-          className="mt-6 w-full"
-          onReady={(key) => {
-            if (key === "gallery") lastViewedTileRef.current?.focus({ preventScroll: true });
-            else detailRef.current?.focus({ preventScroll: true });
-          }}
-        >
-          {selectedNode ? (
-            <HomesteadNodeDetail
-              node={selectedNode}
-              inventory={materialInventory}
-              onPurchase={purchaseSelected}
-              afterProgressSaved={afterProgressSaved}
-              isCurrent={() => currentInspection.current === selection}
-              detailRef={detailRef}
+        <ScreenHeaderRow title="Homestead" onBack={onBack} onMenu={onMenu} />
+        <div className="mt-6 flex w-full flex-col">
+          <HomesteadWallet gold={gold} inventory={materialInventory} />
+          <div className="mt-6">
+            <HomesteadTabs
+              activeTab={tab}
+              onSelectTab={(next) => {
+                setActivePanel(null);
+                setTab(next);
+                setUpgradePage(0);
+              }}
             />
-          ) : (
-            <div className="flex flex-col">
-              <HomesteadWallet gold={gold} inventory={materialInventory} />
-              <div className="mt-6">
-                <HomesteadTabs
-                  activeTab={tab}
-                  onSelectTab={(next) => {
-                    setTab(next);
-                    setUpgradePage(0);
+          </div>
+          <CollectionContentLayout
+            pagination={
+              totalPages > 1 ? (
+                <PaginationControls
+                  page={page}
+                  totalPages={totalPages}
+                  onPageChange={(next) => {
+                    setActivePanel(null);
+                    if (isCompanions) setCompanionPage(next);
+                    else setUpgradePage(next);
                   }}
+                  size="default"
+                  className="mt-0"
                 />
-              </div>
-              <CollectionContentLayout
-                pagination={
-                  totalPages > 1 ? (
-                    <PaginationControls
-                      page={page}
-                      totalPages={totalPages}
-                      onPageChange={isCompanions ? setCompanionPage : setUpgradePage}
-                      size="default"
-                      className="mt-0"
-                    />
-                  ) : null
-                }
+              ) : null
+            }
+          >
+            <FadeSlot swapKey={`${tab}-${page}`} className="mx-auto w-full overflow-visible">
+              <div
+                className="mx-auto flex max-w-full flex-wrap items-start justify-center gap-5"
+                style={{ width: `calc(${rowWidth}px * var(--content-scale, 1))` }}
               >
-                <FadeSlot swapKey={`${tab}-${page}`} className="mx-auto w-full overflow-visible">
-                  <div
-                    className="mx-auto flex max-w-full flex-wrap items-start justify-center gap-5"
-                    style={{ width: `calc(${rowWidth}px * var(--content-scale, 1))` }}
-                  >
-                    {pageItems.map((item) => {
-                      const node = getNode(item);
-                      return (
-                        <div
-                          key={node.id}
-                          className="max-w-full shrink-0"
-                          style={{ width: `calc(${tileWidth}px * var(--content-scale, 1))` }}
-                        >
-                          <HomesteadNodeArtwork
-                            node={node}
-                            showStatus
-                            onInspect={() => inspect(item)}
-                            buttonRef={node.id === lastViewedId ? lastViewedTileRef : undefined}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </FadeSlot>
-              </CollectionContentLayout>
-            </div>
-          )}
-        </FadeSlot>
+                {pageItems.map((item) => {
+                  const liveNode = getNode(item);
+                  const saving = purchaseState !== null && !purchaseState.saved;
+                  const isPurchasing = purchaseState?.node.id === liveNode.id;
+                  const node = saving && isPurchasing ? purchaseState.node : liveNode;
+                  const awaitingProgress = isPurchasing && liveNode.level <= purchaseState.node.level;
+                  return (
+                    <div
+                      key={node.id}
+                      className="max-w-full shrink-0"
+                      style={{ width: `calc(${tileWidth}px * var(--content-scale, 1))` }}
+                    >
+                      <HomesteadNodeArtwork
+                        node={node}
+                        inventory={materialInventory}
+                        open={activePanel?.id === node.id}
+                        pinned={activePanel?.id === node.id && activePanel.pinned}
+                        saving={saving && isPurchasing}
+                        awaitingProgress={awaitingProgress || (saving && !isPurchasing)}
+                        error={error?.id === node.id ? error.message : null}
+                        onOpen={() =>
+                          setActivePanel((current) =>
+                            current?.pinned || current?.id === node.id ? current : { id: node.id, pinned: false },
+                          )
+                        }
+                        onPin={() => setActivePanel({ id: node.id, pinned: true })}
+                        onClose={() => setActivePanel((current) => (current?.id === node.id ? null : current))}
+                        onPurchase={() => purchase(item, liveNode)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </FadeSlot>
+          </CollectionContentLayout>
+        </div>
       </ScreenShell>
     </PageLayout>
   );

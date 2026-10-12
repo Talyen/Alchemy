@@ -1,14 +1,11 @@
 import { characters, isCharacterUnlocked, type CharacterId } from "@/lib/game-data";
-import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
-import { applyEndOfRunHomesteadBonuses } from "@/lib/homestead/material-rewards";
+import { emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { RunRecap } from "@/lib/active-run-session";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import type { GameplayDraft } from "../gameplay-command";
 import type { RunTransaction } from "../run-session-command";
 import { openRunTransaction } from "../transaction-internal";
-import { addGold } from "./run-gold";
-import { addMaterialsToStockpile } from "./run-homestead";
 import { clearRunCurrenciesEarned, clearRunMaterialsEarned, cloneRunObtainedItem } from "./run-progress";
 import { finalizeRunXP, setFinishedRunCharacters } from "./run-meta";
 import { captureRunRecap } from "./run-recap";
@@ -22,20 +19,12 @@ import {
 
 export function awardRunEndMaterials(draft: GameplayDraft): MaterialInventory {
   const runState = draft.run.activeRun;
-  const runProfile = draft.runProfile;
-  const rooms = Math.max(0, runState.roomsEncountered);
-  const wishGoldRooms = Math.ceil(rooms / 2);
-  const gold =
-    (runProfile.effects.endRunGoldPerRoom ?? 0) * rooms + (runProfile.effects.endRunWishPerRoom ?? 0) * wishGoldRooms;
-  if (gold > 0) addGold(draft, gold);
-  const runCollected = runState.runMaterialsEarned;
-  const homesteadBonus = applyEndOfRunHomesteadBonuses(emptyInventory(), runProfile.effects, runState.roomsEncountered);
-  addMaterialsToStockpile(draft, homesteadBonus);
-  setRunEndMaterials(draft, addInventory(runCollected, homesteadBonus));
+  // Source payouts already updated the stockpile and tally during the run.
+  setRunEndMaterials(draft, { ...runState.runMaterialsEarned });
   setRunEndCurrencies(draft, { ...runState.runCurrenciesEarned });
   clearRunMaterialsEarned(draft);
   clearRunCurrenciesEarned(draft);
-  return homesteadBonus;
+  return emptyInventory();
 }
 
 export function settleRunEnd(

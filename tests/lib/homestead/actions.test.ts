@@ -74,8 +74,8 @@ describe("homestead-actions", () => {
       const success = plantFarm(profile, "wheat-field");
       expect(success).toBe(true);
       expect(profile.plantedFarms["wheat-field"]).toBe(1);
-      expect(profile.effects.endRunFoodPerRoom).toBe(2);
-      expect(profile.effects.cardHealBonus.bread).toBe(2);
+      expect(profile.effects.foodFindBonus).toBe(0.1);
+      expect(profile.effects.healthRestorePerCombat).toBe(1);
     });
 
     it("completes research and updates computed effects", () => {

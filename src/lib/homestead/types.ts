@@ -67,7 +67,6 @@ export const HOMESTEAD_BATTLE_NUMERIC_KEYS = [
   "flatPhysicalDamage",
   "flatHolyDamage",
   "physicalDamageReduction",
-  "homesteadCriticalDamage",
   "homesteadHealing",
   "homesteadLeechHealing",
   "homesteadPotionBonus",
@@ -81,6 +80,11 @@ export const HOMESTEAD_BATTLE_NUMERIC_KEYS = [
   "flatFreezeDamage",
   "flatNatureDamage",
   "startBlock",
+  "startThorns",
+  "healthRestorePerCombat",
+  "freezeDamagePerMana",
+  "gemFindBonus",
+  "goldFindBonus",
   "burnDamageReduction",
   "freezeDamageReduction",
   "poisonDamageReduction",
@@ -101,19 +105,15 @@ type HomesteadBattleKey =
 type HomesteadBattleEffects = Pick<TalentEffectManifest, HomesteadBattleKey>;
 
 interface HomesteadMetaEffects {
-  endRunStonePerRoom: number;
-  endRunGoldPerRoom: number;
-  endRunWishPerRoom: number;
   removeCardDiscount: number;
   mixPotionDiscount: number;
 
   herbFindBonus: number;
-  endRunFoodPerRoom: number;
-  endRunHerbsPerRoom: number;
-  endRunHidePerRoom: number;
-  endRunGemsPerRoom: number;
-  endRunIronPerRoom: number;
-  endRunWoodPerRoom: number;
+  woodFindBonus: number;
+  stoneFindBonus: number;
+  ironFindBonus: number;
+  foodFindBonus: number;
+  hideFindBonus: number;
   gearAstralChanceBonus: number;
 }
 

@@ -113,7 +113,8 @@ export const DEFAULT_TALENT_EFFECTS = {
   flatPhysicalDamage: 0,
   flatHolyDamage: 0,
   physicalDamageReduction: 0,
-  homesteadCriticalDamage: 0,
+  gemFindBonus: 0,
+  goldFindBonus: 0,
   homesteadHealing: 0,
   homesteadLeechHealing: 0,
   homesteadPotionBonus: 0,
@@ -146,6 +147,7 @@ export const DEFAULT_TALENT_EFFECTS = {
   manaOnStun: 0,
 
   startBlock: 0,
+  startThorns: 0,
   blockPreventsBleed: false,
   blockPreventsPoison: false,
   blockPreventsStun: false,

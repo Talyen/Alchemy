@@ -27,8 +27,7 @@ function lines(text: string | undefined) {
 }
 
 export function getUpgradeNode(item: GoalItem, level: number, inventory: MaterialInventory): HomesteadNodeModel {
-  // Descriptions are cumulative: show the purchased tier, or an explicitly
-  // labelled first-tier preview before construction.
+  // Descriptions show only the purchased cumulative tier.
   const tier = item.data.tiers[Math.max(0, Math.min(level - 1, item.data.tiers.length - 1))];
   const cost = getNextTierCost(item.data, level);
   return {
@@ -42,8 +41,8 @@ export function getUpgradeNode(item: GoalItem, level: number, inventory: Materia
     action: level === 0 ? "Build" : "Upgrade",
     cost,
     affordable: cost !== null && canAfford(inventory, cost),
-    bonuses: lines(tier?.benefitDescription),
-    production: lines(tier?.nonCombatBenefitDescription),
+    bonuses: level > 0 ? lines(tier?.benefitDescription) : [],
+    production: level > 0 ? lines(tier?.nonCombatBenefitDescription) : [],
   };
 }
 
@@ -71,7 +70,8 @@ export function getCompanionNode(
     action: "Bond",
     cost,
     affordable: cost !== null && canAfford(inventory, cost),
-    bonuses: discovered ? getEffectiveCardDescriptionLines(card, { companionBondLevels: bondedCompanions }) : [],
+    bonuses:
+      discovered && level > 0 ? getEffectiveCardDescriptionLines(card, { companionBondLevels: bondedCompanions }) : [],
     production: [],
   };
 }

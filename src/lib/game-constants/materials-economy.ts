@@ -5,8 +5,8 @@
 //   LABYRINTH_REWARD_CONFIG (run-rewards.ts): scavenger material multiplier,
 //     herbalist herb bonus, plus the gold/healing reward knobs.
 //   Salvage chances (gear.ts): SALVAGE_*_CHANCE_FRACTION crafting-currency rolls.
-//   End-of-run per-room yields (homestead/data.ts): endRun*PerRoom building,
-//     farm, and research effects.
+//   Homestead find bonuses (homestead/data.ts): additive resource percentages
+//     from buildings, farms, and research.
 //   Reward pipeline order and the which-modifiers-apply-to-which-source policy
 //     table (homestead/material-rewards.ts): computeCombatMaterialReward and
 //     computeMysteryMaterialReward.

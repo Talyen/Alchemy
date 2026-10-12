@@ -1,3 +1,4 @@
+import { applyRewardFindBonus } from "@/lib/homestead/material-rewards";
 import { applyDamageStatuses } from "./damage-status-riders";
 import { rollBattleChance } from "./chance-roll";
 import { resolveBattleSequence, type ReactionBoundary } from "./battle-sequence";
@@ -121,15 +122,16 @@ function applyWishGemsGoldTrigger(state: BattleState, combatTexts: CombatTextEve
   const amount = state.talentEffects.wishGemsGold;
   if (amount <= 0) return state;
   if (rollPercent(WISH_GEMS_GOLD_PERCENT, getBattleRng(state))) {
-    return addGoldWithCombatText(state, amount, combatTexts);
+    return addGoldWithCombatText(state, amount, combatTexts, state.talentEffects.goldFindBonus);
   }
   if (shouldConvertGemsWishToGold(state.contentSystemType)) {
-    return addGoldWithCombatText(state, amount, combatTexts);
+    return addGoldWithCombatText(state, amount, combatTexts, state.talentEffects.goldFindBonus);
   }
-  mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gems", amount });
+  const gems = applyRewardFindBonus(amount, state.talentEffects.gemFindBonus);
+  mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gems", amount: gems });
   return {
     ...state,
-    pendingMaterials: { ...state.pendingMaterials, gems: state.pendingMaterials.gems + amount },
+    pendingMaterials: { ...state.pendingMaterials, gems: state.pendingMaterials.gems + gems },
   };
 }
 

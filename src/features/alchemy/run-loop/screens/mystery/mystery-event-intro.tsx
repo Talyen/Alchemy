@@ -13,7 +13,7 @@ import {
   standaloneLandscapeArtWidthClass,
   viewCardWidthClass,
 } from "@/features/alchemy/shared/config";
-import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
+import type { MysteryChoice, MysteryEvent, MysteryEffect } from "@/lib/mystery";
 import { Surface } from "../../../shared/ui/surface";
 import { BattleCardButton } from "../../../shared/ui/cards/card-button";
 import { MysteryEffectList } from "./mystery-effect-badge";
@@ -28,12 +28,14 @@ const CONFIG = {
 };
 
 interface LookupProps {
+  previewEffect?: ((effect: MysteryEffect) => MysteryEffect) | undefined;
   findCard: (id: string) => BattleCard | undefined;
   findTrinket: (id: string) => TrinketEntry | undefined;
 }
 
 function MysteryEventChoiceButton({
   choice,
+  previewEffect,
   findCard,
   findTrinket,
   onPick,
@@ -63,7 +65,7 @@ function MysteryEventChoiceButton({
       </Button>
       <PortaledTooltip triggerRef={triggerRef} visible={visible} maxWidthFraction={0.4}>
         <MysteryEffectList
-          effects={choice.effects}
+          effects={previewEffect ? choice.effects.map(previewEffect) : choice.effects}
           findCard={findCard}
           findTrinket={findTrinket}
           choiceLabel={choice.label}
@@ -75,11 +77,13 @@ function MysteryEventChoiceButton({
 
 export function MysteryEventIntro({
   event,
+  previewEffect,
   findCard,
   findTrinket,
   onPick,
 }: {
   event: MysteryEvent;
+  previewEffect?: ((effect: MysteryEffect) => MysteryEffect) | undefined;
   findCard: (id: string) => BattleCard | undefined;
   findTrinket: (id: string) => TrinketEntry | undefined;
   onPick: (choice: MysteryChoice) => void;
@@ -139,7 +143,13 @@ export function MysteryEventIntro({
       <FadeSlot swapKey={event.id} className="flex flex-wrap justify-center gap-4">
         {event.choices.map((choice, i) => (
           <div key={i}>
-            <MysteryEventChoiceButton choice={choice} findCard={findCard} findTrinket={findTrinket} onPick={onPick} />
+            <MysteryEventChoiceButton
+              choice={choice}
+              previewEffect={previewEffect}
+              findCard={findCard}
+              findTrinket={findTrinket}
+              onPick={onPick}
+            />
           </div>
         ))}
       </FadeSlot>

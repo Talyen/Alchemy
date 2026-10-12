@@ -161,17 +161,20 @@ New keywords still follow [Add a new keyword](./CONTENT_AUTHORING.md#add-a-new-k
 6. Change layout constants only for an intended layout change — `HOMESTEAD_CONFIG` in `helpers.tsx` (companion page size, aspect ratios)
 7. Check affected rules or interactions; saved-shape changes follow the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
 
-Every building/farm/research node has four tiers. All numeric effects and each
-room-production quantity strictly increase in cumulative tier totals. Companion
-Bonds remain a separate three-tier progression. Recipes use fixed material costs;
-production support affects authoring, not prices at runtime. Crystal Garden
-produces Gems and Stone. Library, Agility Training, and Sanctuary intentionally
-have no material production. A Companion card must be discovered during a Run
-before its Bond can be purchased; the Homestead command checks this against the
-card's summon effect. Resource labels use “per Room”; settlement remains
-at run end. Wishing Well alternates Gold/Gems by room (odd rooms Gold) in every
-mode. Tailoring also produces Gold. Capture the recap after these payouts so
-the Gold and Material totals include them.
+Every building/farm/research node has four tiers; Companion Bonds have three.
+Numeric effects increase cumulatively. Resource support adds 10 percentage points
+per tier to the matching find bonuses, reaching 40% per node; separate nodes add
+together. Descriptions use Find 10/20/30/40% more followed by material names.
+Costs remain fixed. Crystal Garden boosts Gems and Stone, Wishing Well boosts Gems
+and Gold, and Wool Tailoring boosts Gold. Library, Agility Training, and Sanctuary
+have no resource bonus. These bonuses augment eligible run rewards at their
+source; they never create per-room or run-end payouts.
+
+Wheat Field restores 1/2/3/4 Health after every combat. Orchard starts each combat
+with 1/2/3/4 Thorns. Crystal Garden adds 25/50/75/100% of current Mana to Freeze
+damage, through the existing additive Mana scaling. Use short effect clauses,
+capitalized keywords, and no terminal periods. Companion descriptions remain
+card-owned; the summon card must be discovered before bonding is permitted.
 
 Homestead screens (like all screen directories) are excluded from `vitest` coverage thresholds — see the coverage `exclude` list in `vitest.config.ts` — and are covered by E2E `tests/e2e/specs/homestead-flow.spec.ts` plus the unit `homestead/*.test.tsx` suites. Use `npm run test:full -- tests/lib/homestead` for the lib contract. Browser verification uses `npm run test:e2e:route -- homestead` under the [local execution policy](../CONTRIBUTING.md#what-to-run-when-you-change).
 

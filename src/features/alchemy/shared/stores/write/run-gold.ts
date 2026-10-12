@@ -1,3 +1,4 @@
+import { computeGoldReward } from "@/lib/homestead/material-rewards";
 import { addRunGoldEarned } from "./run-recap";
 import { getGoldMultiplier } from "@/lib/game-data";
 import type { GameplayDraft } from "../gameplay-command";
@@ -22,9 +23,9 @@ export function setGold(draft: GameplayDraft, action: number | ((previous: numbe
   syncBattleGoldFromPurse(draft);
 }
 
-export function addGold(draft: GameplayDraft, amount: number): void {
+export function addGold(draft: GameplayDraft, amount: number, findBonus = 0): void {
   const multiplier = getGoldMultiplier(draft.run.activeRun.characterId, draft.run.activeRun.selectedDifficulty);
-  const earned = Math.round(amount * multiplier);
+  const earned = computeGoldReward(amount, multiplier, findBonus);
   addRunGoldEarned(draft, earned);
   setGold(draft, (gold) => gold + earned);
 }

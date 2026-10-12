@@ -34,6 +34,9 @@ interface SurfaceProps {
   ariaLabel?: string;
   ariaDisabled?: boolean;
   ariaPressed?: boolean;
+  ariaExpanded?: boolean;
+  ariaControls?: string | undefined;
+  ariaHasPopup?: AriaAttributes["aria-haspopup"];
   ariaCurrent?: AriaAttributes["aria-current"];
   buttonRef?: Ref<HTMLButtonElement> | undefined;
   surfaceRef?: Ref<HTMLDivElement> | undefined;
@@ -69,6 +72,9 @@ export function Surface(props: SurfaceProps) {
     ariaLabel,
     ariaDisabled,
     ariaPressed,
+    ariaExpanded,
+    ariaControls,
+    ariaHasPopup,
     ariaCurrent,
     buttonRef,
     surfaceRef,
@@ -131,6 +137,9 @@ export function Surface(props: SurfaceProps) {
         aria-label={ariaLabel}
         aria-disabled={ariaDisabled}
         aria-pressed={ariaPressed}
+        aria-expanded={ariaExpanded}
+        aria-controls={ariaControls}
+        aria-haspopup={ariaHasPopup}
         disabled={disabled}
         onClick={onClick}
         onPointerDown={onPointerDown}

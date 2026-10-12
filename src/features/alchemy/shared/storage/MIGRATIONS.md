@@ -7,6 +7,15 @@ there is no save-version change.
 
 ## Supported baseline
 
+Homestead find bonuses replace per-room yields; effects are derived from the saved
+node levels on hydration. Wheat Field uses post-combat recovery, Orchard adds
+starting Thorns, and Crystal Garden uses current-Mana Freeze scaling. The declared
+battle manifest adds zero-default starting Thorns and Gems/Gold find bonuses and
+retires Homestead Critical damage. Current battle snapshots preserve resolved
+Thorns, pending modified Wish materials, and RNG without replaying starting grants
+or reward multipliers. These additive defaults and balance changes do not bump
+the save version.
+
 Transmutation visits save three class-independent keyword choices and each eligible
 card's source snapshot/index, randomly selected source keyword, and exact altered
 result in `AlchemyVisit.transmutation`. The selected source, keyword, and preview

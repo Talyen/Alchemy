@@ -85,6 +85,8 @@ export function chooseMysteryOption(choice: MysteryChoice, gameSession: GameSess
             ...effect,
             amount: result.materialAward.amount,
           };
+        } else if (effect.kind === "gainGold" && result.goldAward !== undefined) {
+          resolvedEffects[index] = { ...effect, amount: result.goldAward };
         } else if (effect.kind === "healHealth") {
           resolvedEffects[index] = {
             kind: "healHealth",

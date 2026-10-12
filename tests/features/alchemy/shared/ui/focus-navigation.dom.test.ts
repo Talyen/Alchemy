@@ -86,6 +86,20 @@ describe("directional focus", () => {
     focusInDirection("right");
     expect(document.activeElement).toBe(last);
   });
+  it("lets focus leave a non-modal hover panel while retaining modal focus boundaries", () => {
+    const root = screen();
+    const next = button(root, 200, 0);
+    const panel = document.createElement("div");
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-modal", "false");
+    document.body.append(panel);
+    place(panel, 0, 0);
+    const action = button(panel, 100, 0);
+    action.focus();
+    focusInDirection("right");
+    expect(document.activeElement).toBe(next);
+  });
+
   it("preserves horizontal slider editing but lets up/down leave it", () => {
     const root = screen();
     const slider = document.createElement("input");

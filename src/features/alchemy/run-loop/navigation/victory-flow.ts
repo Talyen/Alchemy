@@ -28,6 +28,7 @@ import {
   type TalentEffectManifest,
   type UnlockedTalents,
 } from "@/lib/game-data";
+import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { computeCombatMaterialReward } from "@/lib/homestead/material-rewards";
 import type { HomesteadEffectManifest, MaterialInventory } from "@/lib/homestead/types";
 import type { LootProgress } from "@/lib/loot";
@@ -195,6 +196,7 @@ function computeVictorySettlement(
     ...goldRoll,
     talentGoldPerCombat: victoryGoldPerCombat(talentEffects, input.battleState),
     goldMultiplier: getGoldMultiplier(input.characterId, input.selectedDifficulty),
+    goldFindBonus: input.homesteadEffects.goldFindBonus,
   });
   const materials = computeCombatMaterialReward({
     progressionBand: input.materialRewardBand,
@@ -252,7 +254,7 @@ export function computeVictoryRewards(
     input.activeLabyrinthRewardModifiers,
   );
 
-  const talentEffects = computeTalentEffects(input.unlockedTalents);
+  const talentEffects = mergeIntoManifest(computeTalentEffects(input.unlockedTalents), input.homesteadEffects);
   const settlement = computeVictorySettlement(
     input,
     talentEffects,

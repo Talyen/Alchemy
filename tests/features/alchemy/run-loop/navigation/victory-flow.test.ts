@@ -1,3 +1,4 @@
+import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import { setBattleActiveForTest, getBattleForTest } from "../../../../helpers/run-domain-store-test";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
@@ -92,6 +93,24 @@ function baseInput(overrides: Record<string, unknown> = {}): VictoryRewardsInput
 const testRng = () => 0.25;
 
 describe("Fetch victory rewards", () => {
+  it.each(["campaign", "labyrinth", "wildwood"])(
+    "Wheat Field restores purchased Health after combat in %s and stacks with recovery talents",
+    (contentSystemType) => {
+      for (const tier of [1, 2, 3, 4]) {
+        const input = baseInput({
+          contentSystemType,
+          battleState: baseBattleState({ playerHealth: 10 }),
+          unlockedTalents: { health: ["health-max-per-combat"] },
+          homesteadEffects: computeHomesteadEffects({}, { "wheat-field": tier }, {}),
+        });
+        expect(computeVictoryRewards(input, testRng).playerHealth).toBe(14 + tier);
+        expect(
+          computeVictoryRewards({ ...input, battleState: baseBattleState({ playerHealth: 29 }) }, testRng).playerHealth,
+        ).toBe(30);
+      }
+    },
+  );
+
   it("applies a Labyrinth Hoard to the actual victory choices", () => {
     const result = computeVictoryRewards(
       baseInput({ contentSystemType: "labyrinth", activeLabyrinthRewardModifiers: ["ring-hoard"] }),

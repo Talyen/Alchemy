@@ -109,7 +109,8 @@ function resolveStartingPlayerStatuses(
     phoenixFeather: encounterBenefits.includes("phoenix-nest") ? 1 : 0,
     thorns:
       (encounterBenefits.includes("bramblecoat") ? LABYRINTH_MODIFIER_CONFIG.playerThornsMinimum : 0) +
-      battleGearEffects.startThorns,
+      battleGearEffects.startThorns +
+      battleTalents.startThorns,
     block: startingBlock + (battleTalents.manaBulwarkActive ? mana : 0),
     forge: battleTalents.startForge + battleGearEffects.startForge,
     armor: startingArmor,

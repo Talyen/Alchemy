@@ -24,9 +24,9 @@ Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-sess
 
 Campaign, Labyrinth, and Wildwood victories grant shared combat Materials through the same reward flow; Wildwood shows them beside Gold on its existing Victory screen and includes them in the run-end summary.
 
-1. Route combat payouts through `computeCombatMaterialReward()` and mystery grants through `computeMysteryMaterialReward()` (both in `@/lib/homestead/material-rewards`); they own shared encounter-type/band bundles and herb-find/scavenger/herbalist ordering per the policy table there. Do not reimplement the sequence at the call site.
+1. Route combat payouts through `computeCombatMaterialReward()` and mystery grants through `computeMysteryMaterialReward()` (both in `@/lib/homestead/material-rewards`); they own shared encounter-type/band bundles, location modifiers, and final Homestead find bonuses. Direct Wish payouts use the same quantity helper before emitting feedback and pending rewards. Do not reimplement or repeat the sequence at the call site.
 2. Call `awardMaterialsDuringRun(transaction, materials)` inside the owning command (`run-loop/run/reward-commands.ts`, `run-loop/navigation/mystery-flow.ts`, or Armory salvage in `shared/stores/gear-session-command.ts`). The canonical site list is `AWARD_MATERIALS_CALL_SITES` in `shared/stores/run-materials.ts`, enforced by `tests/architecture/run-materials-award-guard.test.ts`; new grant paths must extend it there.
-3. Reuse the run-end display: `awardRunEndMaterials` in the write port (implementation in `shared/stores/write/run-end.ts`), used by both defeat and victory flows, merges `runMaterialsEarned` and `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`.
+3. Reuse the run-end display: `awardRunEndMaterials` in the write port (implementation in `shared/stores/write/run-end.ts`), used by both defeat and victory flows, copies `runMaterialsEarned` into `session.runEndMaterials` and clears the tally. It never grants materials again or applies another multiplier.
 4. Check `tests/features/alchemy/run-loop/run/run-victory-handlers.dom.test.ts` and the affected mystery/reward-flow tests when adding a new source.
 
 **Do not** call `addMaterialsToStockpile()` on the run profile store directly from run-loop or mystery code for player loot.

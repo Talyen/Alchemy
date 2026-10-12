@@ -433,6 +433,30 @@ describe("new wish talents", () => {
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gold", amount: 8 });
   });
 
+  it.each([1, 2, 3, 4])("applies tier %i find bonuses once to direct Wish Gems/Gold and their combat text", (tier) => {
+    const card = makeTestCard();
+    const texts: CombatTextEvent[] = [];
+    const gemState = patchBattleState({
+      talentEffects: { wishGemsGold: 10, gemFindBonus: tier * 0.1 },
+      rng: () => 0.99,
+    });
+    const gems = applyWishEffect(gemState, card, 1, texts);
+    expect(gems.pendingMaterials.gems).toBe(10 + tier);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gems", amount: 10 + tier });
+    const goldState = patchBattleState({
+      contentSystemType: "wildwood",
+      gold: 50,
+      rng: () => 0.99,
+      talentEffects: { wishGemsGold: 10, goldFindBonus: tier * 0.1, goldOnWish: 3 },
+    });
+    const goldTexts: CombatTextEvent[] = [];
+    const gold = applyWishEffect(goldState, card, 1, goldTexts);
+    expect(gold.gold).toBe(63 + tier);
+    expect(
+      goldTexts.filter((event) => event.stat === "gold").reduce((sum, event) => sum + (event.amount ?? 0), 0),
+    ).toBe(13 + tier);
+  });
+
   it("wishManaTrigger adds mana per wish", () => {
     const card = makeTestCard({ id: "strike", title: "Strike" });
     const state = patchBattleState({

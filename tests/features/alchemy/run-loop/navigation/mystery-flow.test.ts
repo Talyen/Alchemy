@@ -1,3 +1,4 @@
+import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { MysteryEffect } from "@/lib/mystery";
 import { applyMysteryEffect, type MysteryEffectResult } from "@/features/alchemy/run-loop/navigation/mystery-flow";
@@ -82,6 +83,18 @@ describe("applyMysteryEffect", () => {
     expect(readRunProfile(defaultGameSession).gold).toBe(30);
     expect(apply({ kind: "gainGold", amount: 0 }).goldSound).toBeUndefined();
     expect(readRunProfile(defaultGameSession).gold).toBe(30);
+  });
+
+  it("boosts Mystery payouts before writing their exact quantities to wallets and run tallies", () => {
+    setRunProgress({ gold: 50, effects: { ...defaultHomesteadEffects, woodFindBonus: 0.4, goldFindBonus: 0.4 } });
+    const result = apply({ kind: "gainMaterial", material: "wood", amount: 10 });
+    expect(result.materialAward).toEqual({ material: "wood", amount: 14 });
+    expect(readRunProfile(defaultGameSession).materialInventory.wood).toBe(14);
+    expect(readActiveRun(defaultGameSession).runMaterialsEarned.wood).toBe(14);
+    expect(apply({ kind: "gainGold", amount: 10 }).goldAward).toBe(14);
+    expect(readRunProfile(defaultGameSession).gold).toBe(64);
+    apply({ kind: "gainGold", amount: 0 });
+    expect(readRunProfile(defaultGameSession).gold).toBe(64);
   });
 
   it("loseGold spends gold with the spend sound", () => {
