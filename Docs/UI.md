@@ -177,10 +177,14 @@ maximum height and standard page gutters. Its available fitting area can shrink
 on short windows without stretching the footer toward taller window edges.
 
 Collection and Homestead center real items in wrapping rows, without layout-only
-fillers. Partial pages keep pagination immediately beneath the items; single-page
-views render neither pagination nor its wrapper. Picker measurement containers
-must receive available width independently of their rendered card count, so
-resizing cannot feed a narrower row back into its own column calculation.
+fillers. Collection reserves two portrait rows and a pagination slot on every tab
+and page, keeping its header, tabs, and pagination stationary while the complete
+group stays screen-centered. Shorter grids center within that reserved area;
+single-page tabs leave the pagination slot empty. Homestead keeps pagination
+immediately beneath its items and omits the wrapper on single-page views. Picker
+measurement containers must receive available width independently of their
+rendered card count, so resizing cannot feed a narrower row back into its own
+column calculation.
 
 Homestead is an artwork-first inspection gallery: selecting any node opens its
 detail page and never spends materials. Names, purchased bonuses, and production
