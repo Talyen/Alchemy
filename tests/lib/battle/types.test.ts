@@ -151,7 +151,10 @@ describe("resolveSecondaryAction", () => {
 });
 
 it("keeps secondary-action policy out of committed snapshots and restores nested scope", () => {
-  const state = makeTestBattleState({ flags: defaultCombatFlags({ nextHitCrit: true }) });
+  const state = makeTestBattleState({
+    flags: defaultCombatFlags({ nextHitCrit: true }),
+    onEmptyDraw: (current) => current,
+  });
   const result = resolveSecondaryAction(state, "companion", (companion) => {
     expect(companion.flags.nextHitCrit).toBe(true);
     expect(readCombatFlag(companion, "nextHitCrit")).toBe(false);
@@ -164,6 +167,7 @@ it("keeps secondary-action policy out of committed snapshots and restores nested
       const snapshot = battleSnapshot(repeat);
       expect(snapshot).not.toHaveProperty("action");
       expect(snapshot).not.toHaveProperty("rng");
+      expect(snapshot).not.toHaveProperty("onEmptyDraw");
       expect(snapshot.flags.nextHitCrit).toBe(true);
       return repeat;
     });
