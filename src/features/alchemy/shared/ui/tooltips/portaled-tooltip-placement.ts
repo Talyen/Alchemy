@@ -4,7 +4,7 @@ import { clamp } from "@/lib/math";
 
 export type PortaledTooltipSide = "side-start" | "side-end";
 
-export type PortaledTooltipPlacement = "above" | PortaledTooltipSide;
+export type PortaledTooltipPlacement = "above" | "below" | PortaledTooltipSide;
 
 const VR_STAGE_SELECTOR = '[data-testid="vr-stage"]';
 const DEFAULT_HORIZONTAL_INSET = 152;
@@ -18,6 +18,7 @@ function horizontalInsetForStage(stage: Pick<DOMRect, "left" | "right">): number
 }
 
 function preferredFloatingPlacement(placement: PortaledTooltipPlacement): Placement {
+  if (placement === "below") return "bottom";
   if (placement === "side-start") return "left";
   if (placement === "side-end") return "right";
   return "top";
@@ -92,7 +93,12 @@ export function usePortaledTooltipPlacement(
           offset(padding),
           flip({
             boundary: stage,
-            fallbackPlacements: placement === "above" ? ["bottom", "left", "right"] : undefined,
+            fallbackPlacements:
+              placement === "above"
+                ? ["bottom", "left", "right"]
+                : placement === "below"
+                  ? ["top", "left", "right"]
+                  : undefined,
           }),
           shift({
             boundary: stage,

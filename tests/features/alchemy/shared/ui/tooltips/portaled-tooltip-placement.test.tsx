@@ -58,7 +58,12 @@ describe("usePortaledTooltipPlacement", () => {
       remeasure = update;
       return () => {};
     });
-    render(<Harness placement="above" />);
+    render(<Harness placement="below" />);
+    expect(compute).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({ placement: "bottom" }),
+    );
     act(() => remeasure());
     await waitFor(() => expect(compute).toHaveBeenCalledTimes(2));
     const result = { x: 200, y: 100, placement: "bottom" as const, strategy: "fixed" as const, middlewareData: {} };
