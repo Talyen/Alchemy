@@ -1,6 +1,7 @@
 import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
-import { defaultBattleState, endPlayerTurn, applyPlayerCombatDamage } from "@/lib/battle";
+import { defaultBattleState, applyPlayerCombatDamage } from "@/lib/battle";
+import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { tryDodgeEnemyAttackPacket } from "@/lib/battle/dodge";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";

@@ -1,4 +1,4 @@
-import { resolveBattleCard, resolveBattleWish, type BattleSnapshot } from "@/lib/battle";
+import { resolveBattleAction, resolveBattleCard, resolveBattleWish, type BattleSnapshot } from "@/lib/battle";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import {
   createSessionPersistence,
@@ -56,6 +56,14 @@ describe("run architecture type contracts", () => {
   });
 
   it("requires explicit RNG for player actions and returns data-only snapshots", () => {
+    // @ts-expect-error -- the action boundary also requires an explicit combat stream
+    resolveBattleAction(snapshot, { kind: "end-turn" });
+    type ActionResult = ReturnType<typeof resolveBattleAction>;
+    expectTypeOf<
+      Extract<ActionResult, { kind: "accepted"; action: "end-turn" }>["resolution"]["state"]
+    >().toEqualTypeOf<BattleSnapshot>();
+    // @ts-expect-error -- only turn completion accepts a simulation turn budget
+    resolveBattleAction(snapshot, { kind: "wish", cardId: "card", maxTurns: 1 }, { rng: () => 0 });
     // @ts-expect-error -- snapshots cannot supply execution dependencies implicitly
     resolveBattleCard(snapshot, "card", 0);
     // @ts-expect-error -- Wish selection also needs the host combat stream
@@ -63,7 +71,9 @@ describe("run architecture type contracts", () => {
     expectTypeOf<ReturnType<typeof resolveBattleCard>["state"]>().toEqualTypeOf<BattleSnapshot>();
     expectTypeOf<ReturnType<typeof resolveBattleWish>["state"]>().toEqualTypeOf<BattleSnapshot>();
     type BattleApi = typeof import("@/lib/battle");
-    expectTypeOf<Extract<keyof BattleApi, "playBattleCardResolved" | "chooseWishCard">>().toEqualTypeOf<never>();
+    expectTypeOf<
+      Extract<keyof BattleApi, "playBattleCardResolved" | "chooseWishCard" | "endPlayerTurn" | "resolveTurnSequence">
+    >().toEqualTypeOf<never>();
   });
   it("requires a career for reusable reads, writes, and persistence while bound methods need none", () => {
     // @ts-expect-error -- missing ownership must never select the application career

@@ -7,14 +7,7 @@ import { dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gamepl
 import { discoverCardIds } from "@/features/alchemy/shared/stores/profile-store";
 import { acceptCommand, rejectCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { awardCardXP } from "@/features/alchemy/shared/stores/run-session-write-port";
-import {
-  canPlayCard,
-  getBattleOutcome,
-  resolveBattleWish,
-  resolveBattleCard,
-  resolveBattleTurn,
-  type ResolvedBattleTurn,
-} from "@/lib/battle";
+import { resolveBattleAction, type ResolvedBattleTurn } from "@/lib/battle";
 import { current } from "immer";
 import { PLAYABLE_HAND_OPTIONS } from "../config/battle-input";
 import { awardBattleDodgeXP, createDraftRunRandomSource } from "./run-session-write-port";
@@ -25,18 +18,16 @@ export function commitCardPlay(index: number, cardId: string, gameSession: GameS
     (draft) => {
       if (draft.session.activity.kind !== "battle") return rejectCommand("There is no active battle", null);
       const before = current(draft.session.activity.data.battleState);
-      const card = before.hand[index];
-      if (!card || card.id !== cardId || !canPlayCard(before, card, index, PLAYABLE_HAND_OPTIONS))
-        return rejectCommand("Battle action is unavailable", null);
-      const resolution = resolveBattleCard(
+      const result = resolveBattleAction(
         before,
-        card.id,
-        index,
+        { kind: "card", cardId, index, options: PLAYABLE_HAND_OPTIONS },
         { rng: createDraftRunRandomSource(draft, "world") },
-        PLAYABLE_HAND_OPTIONS,
       );
+      if (result.kind === "rejected") return rejectCommand(result.reason, null);
+      if (result.action !== "card") throw new Error("Unexpected battle action result");
+      const resolution = result.resolution;
       commitResolvedBattle(draft, before, resolution.state);
-      awardCardXP(draft, card);
+      awardCardXP(draft, result.card);
       return acceptCommand(resolution);
     },
     undefined,
@@ -49,9 +40,14 @@ export function commitBattleWish(cardId: string, gameSession: GameSession) {
     (draft) => {
       if (draft.session.activity.kind !== "battle") return rejectCommand("There is no active battle", null);
       const before = current(draft.session.activity.data.battleState);
-      if (!before.wishOptions?.some((option) => option.id === cardId))
-        return rejectCommand("Battle action is unavailable", null);
-      const { state: next } = resolveBattleWish(before, cardId, { rng: createDraftRunRandomSource(draft, "world") });
+      const result = resolveBattleAction(
+        before,
+        { kind: "wish", cardId },
+        { rng: createDraftRunRandomSource(draft, "world") },
+      );
+      if (result.kind === "rejected") return rejectCommand(result.reason, null);
+      if (result.action !== "wish") throw new Error("Unexpected battle action result");
+      const next = result.resolution.state;
       commitResolvedBattle(draft, before, next);
       discoverCardIds(draft, next.discoveredCardIds);
       return acceptCommand(next);
@@ -66,9 +62,14 @@ export function commitEndTurn(gameSession: GameSession): ResolvedBattleTurn | nu
     (draft) => {
       if (draft.session.activity.kind !== "battle") return rejectCommand("There is no active battle", null);
       const before = current(draft.session.activity.data.battleState);
-      if (before.turnPhase !== "player" || before.wishOptions || getBattleOutcome(before) !== null)
-        return rejectCommand("Battle action is unavailable", null);
-      const result = resolveBattleTurn(before, { rng: createDraftRunRandomSource(draft, "world") });
+      const action = resolveBattleAction(
+        before,
+        { kind: "end-turn" },
+        { rng: createDraftRunRandomSource(draft, "world") },
+      );
+      if (action.kind === "rejected") return rejectCommand(action.reason, null);
+      if (action.action !== "end-turn") throw new Error("Unexpected battle action result");
+      const result = action.resolution;
       awardBattleDodgeXP(draft, before, result.state);
       commitResolvedBattle(draft, before, result.state);
       return acceptCommand(result);

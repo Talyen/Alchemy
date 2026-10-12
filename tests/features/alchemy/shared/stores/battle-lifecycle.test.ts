@@ -115,3 +115,33 @@ it("resumes an unsettled victory and commits its rewards exactly once before pre
   expect(readGameplayState(defaultGameSession)).toBe(resumed);
   expect(readRunSession(defaultGameSession).rewardFlow.state).toEqual(committed.session.rewardFlow.state);
 });
+
+it.each([
+  { name: "enemy phase", patch: { turnPhase: "enemy" as const } },
+  { name: "defeated player", patch: { playerHealth: 0, deathsDoorUsed: true } },
+])("rejects all player input during $name without resource, discovery, XP, RNG or revision changes", ({ patch }) => {
+  const slash = { ...cardById.slash!, uid: 1 };
+  dispatchRunSessionCommand(
+    (transaction) => {
+      initializeBattleForTest(
+        transaction,
+        regressionBattle({ ...patch, hand: [slash], mana: 10, wishOptions: [slash] }),
+      );
+      return acceptCommand();
+    },
+    undefined,
+    defaultGameSession,
+  );
+  const before = readGameplayState(defaultGameSession);
+  const commit = vi.fn();
+  const unsubscribe = subscribeRunSessionCommits(commit, defaultGameSession);
+  try {
+    expect(commitCardPlay(0, slash.id, defaultGameSession)).toBeNull();
+    expect(commitBattleWish(slash.id, defaultGameSession)).toBeNull();
+    expect(commitEndTurn(defaultGameSession)).toBeNull();
+    expect(readGameplayState(defaultGameSession)).toBe(before);
+    expect(commit).not.toHaveBeenCalled();
+  } finally {
+    unsubscribe();
+  }
+});
