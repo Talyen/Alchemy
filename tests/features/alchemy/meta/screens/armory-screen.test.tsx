@@ -358,4 +358,48 @@ describe("ArmoryScreen equipment movement and inventory ordering", () => {
       expect(panel?.textContent).toContain("Dismantle");
     });
   });
+
+  it("preserves inventory item elements when switching between compatible gear slots", async () => {
+    const user = userEvent.setup();
+    const sword = {
+      instanceId: "gear-sword",
+      definitionId: "longsword-basic" as const,
+      affixes: [],
+    };
+    renderArmoryScreen({
+      inventories: createArmoryInventories([sword]),
+    });
+
+    await waitForArtwork();
+    const swordBtnBefore = screen.getByRole("button", { name: "Longsword" });
+
+    // Switch to off-hand (both slots allow 1H swords)
+    await user.click(screen.getByLabelText("Off-hand equipment slot"));
+    await waitForArtwork();
+
+    const swordBtnAfter = screen.getByRole("button", { name: "Longsword" });
+    expect(swordBtnAfter).toBe(swordBtnBefore);
+  });
+
+  it("shows spawn dev trinket button on trinket slot and triggers onSpawnDevTrinket", async () => {
+    const user = userEvent.setup();
+    const onSpawnDevGear = vi.fn();
+    const onSpawnDevTrinket = vi.fn();
+    renderArmoryScreen({
+      onSpawnDevGear,
+      onSpawnDevTrinket,
+    });
+
+    // On gear slot, spawn gear button is visible
+    expect(screen.getByRole("button", { name: "Spawn random gear" })).toBeDefined();
+
+    // Switch to trinket slot
+    await user.click(screen.getByLabelText("Trinket equipment slot"));
+    const spawnTrinketBtn = screen.getByRole("button", { name: "Spawn random trinket" });
+    expect(spawnTrinketBtn).toBeDefined();
+
+    await user.click(spawnTrinketBtn);
+    expect(onSpawnDevTrinket).toHaveBeenCalledTimes(1);
+    expect(onSpawnDevGear).not.toHaveBeenCalled();
+  });
 });

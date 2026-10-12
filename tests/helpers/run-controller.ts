@@ -28,6 +28,7 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
         onSalvage: vi.fn(() => false),
         onApplyCurrency: vi.fn(() => false),
         onSpawnDevGear: fn(),
+        onSpawnDevTrinket: fn(),
       },
     },
     runSetup: {

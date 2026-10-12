@@ -142,6 +142,7 @@ export function useAlchemyRunController(): AlchemyRunCommands {
           ...(isAlchemyDevBuild()
             ? {
                 onSpawnDevGear: protectVoid((characterId) => runActions.spawnDevGear(characterId, undefined)),
+                onSpawnDevTrinket: protectVoid(() => runActions.spawnDevTrinket(undefined)),
               }
             : {}),
         },

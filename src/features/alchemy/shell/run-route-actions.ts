@@ -19,6 +19,7 @@ import {
   selectCollectionTab,
   setCollectionPage,
   spawnDevGear,
+  spawnDevTrinket,
   unequipGear,
   unequipTrinket,
 } from "@/features/alchemy/shared/stores/meta-commands";
@@ -73,5 +74,6 @@ export function createRunRouteActions(gameSession: GameSession) {
     ) => applyCurrencyToGear(currencyId, instanceId, options, gameSession),
     spawnDevGear: (characterId: Parameters<typeof spawnDevGear>[0], options?: Parameters<typeof spawnDevGear>[1]) =>
       spawnDevGear(characterId, options, gameSession),
+    spawnDevTrinket: (options?: Parameters<typeof spawnDevTrinket>[0]) => spawnDevTrinket(options, gameSession),
   });
 }

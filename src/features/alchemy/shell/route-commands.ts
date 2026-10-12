@@ -28,6 +28,7 @@ export interface ArmoryRouteCommands {
   onSalvage: (instanceId: string) => boolean;
   onApplyCurrency: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;
+  onSpawnDevTrinket?: () => void;
 }
 
 export interface AlchemyRouteCommands {

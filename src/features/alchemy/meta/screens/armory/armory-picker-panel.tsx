@@ -9,7 +9,6 @@ import type { ArmoryInventoryFilters } from "./armory-inventory-filtering";
 import { ItemPickerGrid } from "./item-picker-grid";
 import { SLOT_LABELS } from "./parts/slot-labels";
 import { TrinketPickerGrid } from "./trinket-picker-grid";
-import { FadeSlot } from "../../../shared/ui/use-fade";
 import type { ArmorySortOption } from "./armory-ordering";
 
 import type { ArmoryItemActions, ArmoryTargeting } from "./armory-screen-types";
@@ -28,6 +27,7 @@ interface ArmoryPickerPanelProps {
   targeting: ArmoryTargeting;
   actions: ArmoryItemActions;
   onSpawnDevGear: ((characterId: CharacterId) => void) | undefined;
+  onSpawnDevTrinket?: (() => void) | undefined;
   filters: ArmoryInventoryFilters;
   matchCount: number;
   totalCount: number;
@@ -58,6 +58,7 @@ export function ArmoryPickerPanel({
   targeting,
   actions,
   onSpawnDevGear,
+  onSpawnDevTrinket,
   onSort,
   filters,
   matchCount,
@@ -80,7 +81,7 @@ export function ArmoryPickerPanel({
       data-testid="armory-right-panel"
       className="alchemy-shell relative flex min-h-0 min-w-0 flex-col rounded-shell-dialog border border-border/80 p-4"
     >
-      <FadeSlot swapKey={selectedSlot} className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <div className="relative z-20 mb-3 flex min-h-11 w-full flex-wrap items-center justify-between gap-2">
           <h2 className={cn("font-sans", sectionTitleClass)}>{SLOT_LABELS[selectedSlot]}</h2>
           <div className="flex max-w-full flex-wrap items-center justify-end gap-2">
@@ -92,14 +93,20 @@ export function ArmoryPickerPanel({
               onSort={onSort}
               onBrowse={onBrowse}
             />
-            {onSpawnDevGear && editable && selectedSlot !== "trinket" ? (
+            {editable && (selectedSlot === "trinket" ? onSpawnDevTrinket : onSpawnDevGear) ? (
               <div className="shrink-0">
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  aria-label="Spawn random gear"
-                  onClick={() => onSpawnDevGear(characterId)}
+                  aria-label={selectedSlot === "trinket" ? "Spawn random trinket" : "Spawn random gear"}
+                  onClick={() => {
+                    if (selectedSlot === "trinket") {
+                      onSpawnDevTrinket?.();
+                    } else {
+                      onSpawnDevGear?.(characterId);
+                    }
+                  }}
                 >
                   <Dices className="h-4 w-4" />
                 </Button>
@@ -141,7 +148,7 @@ export function ArmoryPickerPanel({
             {...paging}
           />
         )}
-      </FadeSlot>
+      </div>
     </section>
   );
 }

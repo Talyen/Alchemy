@@ -1,5 +1,5 @@
 import type { BuildingId, FarmId, ResearchId } from "@/lib/homestead/types";
-import type { CharacterId, CompanionId } from "@/lib/game-data";
+import { trinketLibrary, type CharacterId, type CompanionId } from "@/lib/game-data";
 import type { CraftingCurrencyId, GearInstance, GearSlot } from "@/lib/gear";
 import { generateDevRandomGearInstance } from "@/lib/gear";
 import type { CollectionTab } from "../types";
@@ -155,6 +155,26 @@ export function spawnDevGear(
     {
       mutate: (state) => {
         state.addInstance(generateDevRandomGearInstance(rng), characterId);
+      },
+    },
+    gameSession,
+  );
+  flushSaveAfterGearMutation(gameSession);
+}
+
+export function spawnDevTrinket(options: { rng?: () => number } | undefined, gameSession: GameSession): void {
+  if (!isAlchemyDevBuild()) return;
+  const rng = options?.rng ?? Math.random;
+  dispatchGearMutationWithRunHealthSync<void>(
+    {
+      mutate: (state) => {
+        const owned = new Set(state.ownedTrinketIds);
+        const available = trinketLibrary.filter((entry) => !owned.has(entry.id));
+        if (available.length === 0) return;
+        const choice = available[Math.floor(rng() * available.length)];
+        if (choice) {
+          state.addTrinket(choice.id);
+        }
       },
     },
     gameSession,
