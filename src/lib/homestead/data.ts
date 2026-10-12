@@ -36,7 +36,7 @@ export const buildings: HomesteadBuilding[] = [
     "alchemy-lab",
     "Alchemy Lab",
     [
-      materialCost({ herbs: 11 }),
+      materialCost({ stone: 4, herbs: 11 }),
       materialCost({ stone: 8, herbs: 22 }),
       materialCost({ stone: 12, herbs: 33 }),
       materialCost({ stone: 16, herbs: 44 }),
