@@ -1,5 +1,4 @@
 import { logStorageFailure } from "@/lib/storage-logging";
-import type { UnstampedSaveData } from "./types";
 import type { SaveWriteOutcome } from "./save-write-queue";
 
 export type ProgressSaveState =
@@ -11,7 +10,7 @@ export class ProgressCompletion {
   private state: ProgressSaveState = { kind: "idle" };
   private epoch = 0;
   private acknowledged = -1;
-  private snapshots = new WeakMap<object, { token: { epoch: number; revision: number }; contents: string }>();
+  private snapshots = new WeakMap<object, { epoch: number; revision: number; contents: string }>();
   private listeners = new Set<() => void>();
   private completions: Array<() => void> = [];
   private retry: (() => void) | null = null;
@@ -44,26 +43,25 @@ export class ProgressCompletion {
     return { epoch: this.epoch, revision };
   }
 
-  captureSnapshot<T extends UnstampedSaveData>(snapshot: T, revision: number): T {
-    this.snapshots.set(snapshot, { token: this.token(revision), contents: JSON.stringify(snapshot) });
+  captureSnapshot<T extends object>(snapshot: T, revision: number): T {
+    this.snapshots.set(snapshot, { ...this.token(revision), contents: JSON.stringify(snapshot) });
     return snapshot;
   }
 
-  /** Validate before IO takes ownership; later caller edits cannot change that submission. */
-  snapshotToken(snapshot: UnstampedSaveData) {
+  /** Validate at submission, before callers can mutate the object during IO. */
+  prepareSnapshotWrite(snapshot: object): (outcome: SaveWriteOutcome) => SaveWriteOutcome {
     const receipt = this.snapshots.get(snapshot);
-    if (!receipt || receipt.token.epoch !== this.epoch) return undefined;
+    let token: { epoch: number; revision: number } | undefined;
     try {
-      return JSON.stringify(snapshot) === receipt.contents ? receipt.token : undefined;
+      if (receipt && receipt.contents === JSON.stringify(snapshot)) token = receipt;
     } catch {
-      // Invalid external data follows the ordinary storage failure path.
-      return undefined;
+      // Invalid external payloads still follow the storage failure path.
     }
+    return (outcome) => (token ? this.complete(token, outcome) : outcome);
   }
 
   complete(token: { epoch: number; revision: number }, outcome: SaveWriteOutcome) {
     if (token.epoch !== this.epoch) return "skipped" as const;
-    if (outcome === "superseded") return outcome;
     if (outcome === "saved") this.acknowledged = Math.max(this.acknowledged, token.revision);
     if (this.state.kind === "idle") return outcome;
     if (this.acknowledged >= this.state.revision) {
@@ -79,7 +77,7 @@ export class ProgressCompletion {
         }
       }
     } else if (token.revision >= this.state.revision) {
-      // A skipped write is never an acknowledgement. Only explicit cancellation
+      // An unwritten snapshot is never an acknowledgement. Only explicit cancellation
       // can release the gate without showing completion.
       this.publish({ kind: "failed", revision: this.state.revision });
     }

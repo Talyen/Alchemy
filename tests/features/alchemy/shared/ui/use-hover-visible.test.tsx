@@ -96,6 +96,21 @@ describe("useHoverVisible", () => {
     expect(result.current.showPopup).toBe(false);
   });
 
+  it("hides a fading tooltip immediately when inspection suspends it", () => {
+    vi.useFakeTimers();
+    const { result, rerender } = renderHook(
+      ({ isHovered, suspended }) => useHoverVisible({ holdMs: 160, isHovered, suspended }),
+      { initialProps: { isHovered: true, suspended: false } },
+    );
+    rerender({ isHovered: false, suspended: false });
+    expect(result.current.showPopup).toBe(true);
+    rerender({ isHovered: false, suspended: true });
+    expect(result.current.showPopup).toBe(false);
+    act(() => vi.advanceTimersByTime(160));
+    rerender({ isHovered: false, suspended: false });
+    expect(result.current.showPopup).toBe(false);
+  });
+
   it("suppresses disabled hover callbacks and hides even a held controlled popup", () => {
     const onHoverStart = vi.fn();
     const onHoverEnd = vi.fn();

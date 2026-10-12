@@ -35,9 +35,8 @@ export function loadAlchemySaveState(gameSession: GameSession) {
 }
 async function writeSessionSnapshot(data: UnstampedSaveData, gameSession: GameSession, exit: boolean) {
   const runtime = sessionRuntime(gameSession);
-  const token = runtime.progressCompletion.snapshotToken(data);
-  const outcome = await (exit ? runtime.io.saveAlchemySaveDataForExit(data) : runtime.io.saveAlchemySaveData(data));
-  return token ? runtime.progressCompletion.complete(token, outcome) : outcome;
+  const complete = runtime.progressCompletion.prepareSnapshotWrite(data);
+  return complete(await (exit ? runtime.io.saveAlchemySaveDataForExit(data) : runtime.io.saveAlchemySaveData(data)));
 }
 export function saveAlchemySaveData(data: UnstampedSaveData, gameSession: GameSession) {
   return writeSessionSnapshot(data, gameSession, false);

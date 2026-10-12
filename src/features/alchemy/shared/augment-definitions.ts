@@ -15,6 +15,7 @@ export const ARMED_PLAYER_CHIP_IDS = [
   "hawkEyeReady",
   "playNextCardTwice",
   "nextHitCrit",
+  "nextPhysicalCrit",
   "nextHitLeech",
   "nextHitPoison",
   "nextHitPhysicalBonus",
@@ -107,6 +108,12 @@ const fixedDefinitions = {
     description: "Your next card hit is a critical strike.",
     icon: Focus,
     colorClass: "text-amber-200",
+  },
+  nextPhysicalCrit: {
+    label: "Riposte",
+    description: "Your next Physical attack Critically Hits. Lasts until used or combat ends.",
+    icon: Focus,
+    colorClass: keywordDefinitions.physical.colorClass,
   },
   nextHitLeech: {
     label: "Predator's Hunger",

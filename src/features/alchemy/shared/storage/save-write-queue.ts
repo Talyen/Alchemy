@@ -65,9 +65,9 @@ export class SaveWriteQueue {
       logStorageFailure("Save snapshot could not be cloned", error);
       return Promise.resolve("failed");
     }
-    // Completion belongs to a submission, never to the mutable queue slot.
-    // A replacement has not written the discarded caller's payload.
-    this.coalesced?.resolve("superseded");
+    // A replaced payload was never written. Sharing the replacement's success
+    // would let its predecessor acknowledge progress absent from the disk.
+    this.discardPending("superseded");
     let resolve!: PendingSave["resolve"];
     const completion = new Promise<SaveWriteOutcome>((settle) => {
       resolve = settle;
@@ -162,8 +162,8 @@ export class SaveWriteQueue {
     }
   }
 
-  private discardPending(): void {
-    this.coalesced?.resolve("skipped");
+  private discardPending(outcome: "skipped" | "superseded" = "skipped"): void {
+    this.coalesced?.resolve(outcome);
     this.coalesced = null;
   }
 }

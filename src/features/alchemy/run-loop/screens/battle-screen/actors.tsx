@@ -67,6 +67,7 @@ export function BattleActors({
             isDead={isPlayerDefeated(battleState)}
             turnUrgentHide={isPlayerDefeated(battleState)}
             deathsDoorActive={battleState.deathsDoorActive}
+            deathsDoorGraceTurnsRemaining={battleState.deathsDoorGraceTurnsRemaining}
             surfaceRef={playerPanelRef}
             turnActive={isPlayerTurn}
             turnShineColors={getCharacterShineColors(characterId)}

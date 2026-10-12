@@ -52,6 +52,7 @@ interface ArtPanelProps {
   inspectionOpen?: boolean;
   activeLabyrinthModifiers?: EncounterCombatTraitId[];
   deathsDoorActive?: boolean;
+  deathsDoorGraceTurnsRemaining?: number | null;
   isBoss?: boolean;
   impactCue?: CombatImpactCue | null;
   turnActive?: boolean;
@@ -84,6 +85,7 @@ export function ArtPanel({
   inspectionOpen = false,
   activeLabyrinthModifiers = [],
   deathsDoorActive = false,
+  deathsDoorGraceTurnsRemaining,
   isBoss = false,
   impactCue = null,
   turnActive = false,
@@ -175,6 +177,7 @@ export function ArtPanel({
           isDead={isDead}
           cardWidthClass={resolvedCardWidthClass}
           deathsDoorActive={deathsDoorActive}
+          deathsDoorGraceTurnsRemaining={deathsDoorGraceTurnsRemaining}
         />
       </CombatantAttackLunge>
     </div>
@@ -324,7 +327,11 @@ function ActorStatsPanel({
   isDead,
   cardWidthClass = battleCardWidthClass,
   deathsDoorActive,
-}: Pick<ArtPanelProps, "side" | "title" | "health" | "maxHealth" | "statuses" | "isDead" | "cardWidthClass"> & {
+  deathsDoorGraceTurnsRemaining,
+}: Pick<
+  ArtPanelProps,
+  "deathsDoorGraceTurnsRemaining" | "side" | "title" | "health" | "maxHealth" | "statuses" | "isDead" | "cardWidthClass"
+> & {
   deathsDoorActive: boolean | undefined;
   healthPercent: number;
   healthToken: number;
@@ -346,7 +353,13 @@ function ActorStatsPanel({
           value={healthPercent}
           className={cn("mt-1.5 h-3 bg-background/80 [&>div]:bg-destructive", isDead && "[&>div]:bg-destructive/30")}
         />
-        <ActorStatusRow title={title} statuses={statuses} deathsDoorActive={deathsDoorActive} side={side} />
+        <ActorStatusRow
+          title={title}
+          statuses={statuses}
+          deathsDoorActive={deathsDoorActive}
+          deathsDoorGraceTurnsRemaining={deathsDoorGraceTurnsRemaining}
+          side={side}
+        />
       </div>
     </div>
   );
@@ -377,11 +390,14 @@ function ActorStatusRow({
   title,
   statuses,
   deathsDoorActive,
+  deathsDoorGraceTurnsRemaining,
   side,
-}: Pick<ArtPanelProps, "title" | "statuses" | "side"> & { deathsDoorActive: boolean | undefined }) {
+}: Pick<ArtPanelProps, "deathsDoorGraceTurnsRemaining" | "title" | "statuses" | "side"> & {
+  deathsDoorActive: boolean | undefined;
+}) {
   return (
     <div className="mt-2.5 flex min-h-9 items-center gap-1" data-testid={`${side}-statuses`}>
-      {deathsDoorActive ? <DeathsDoorStatusIcon /> : null}
+      {deathsDoorActive ? <DeathsDoorStatusIcon remainingTurns={deathsDoorGraceTurnsRemaining} /> : null}
       {statuses.map((status) => (
         <StatusIcon key={`${title}-${status.id}-${status.value}`} chip={status} />
       ))}
