@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CorruptionScreen } from "@/features/alchemy/run-loop/screens/corruption-screen";
@@ -36,6 +36,7 @@ describe("CorruptionScreen", () => {
 
   afterEach(() => {
     cleanup();
+    vi.restoreAllMocks();
   });
 
   it("requires a new selection when the deck changes instead of corrupting a different card", async () => {
@@ -96,6 +97,8 @@ describe("CorruptionScreen", () => {
   it("renders result comparison view when a corruption result is present", async () => {
     const user = userEvent.setup();
     const onExit = vi.fn();
+    vi.spyOn(HTMLImageElement.prototype, "complete", "get").mockReturnValue(true);
+    vi.spyOn(HTMLImageElement.prototype, "naturalWidth", "get").mockReturnValue(100);
     const result: CorruptionResult = {
       originalCard: testSlash,
       corruptedCard: testCorruptedCard,
@@ -108,6 +111,14 @@ describe("CorruptionScreen", () => {
     expect(screen.getByText("The altar returns your card changed.")).toBeTruthy();
     expect(screen.getByRole("button", { name: /Original: Slash/i })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Result: Corrupted Slash/i })).toBeTruthy();
+
+    const resultButton = screen.getByRole("button", { name: /Result: Corrupted Slash/i });
+    await waitFor(() => expect(resultButton.closest("[inert]")).toBeNull());
+    await user.hover(resultButton);
+    expect((await screen.findByText("NEW")).parentElement?.textContent).toBe("Deal 7 Physical damageNEW");
+    await user.unhover(resultButton);
+    await user.hover(screen.getByRole("button", { name: /Original: Slash/i }));
+    expect(screen.queryByText("NEW")).toBeNull();
 
     const continueBtn = screen.getByRole("button", { name: /Continue/i });
     await user.click(continueBtn);

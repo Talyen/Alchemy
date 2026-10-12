@@ -8,7 +8,7 @@ import { TRANSMUTATION_PREFIXES } from "@/lib/game-constants/transmutation";
 import { tooltipBodyLineClass, tooltipHeaderClass } from "../../config/index";
 import { tokenizeDescription } from "../../utils/index";
 import { KeywordTag } from "../keyword-tag";
-import { TooltipBody } from "../tooltips/tooltip-panel";
+import { TooltipBody, TooltipChip } from "../tooltips/tooltip-panel";
 import { PortaledTooltip } from "../tooltips/portaled-tooltip";
 import { useHoverVisible } from "../use-hover-visible";
 import { getCorruptedValueOffsets, splitCorruptedNumericParts } from "./card-text";
@@ -99,9 +99,11 @@ export function DescriptionLines({
   lines,
   idPrefix,
   card,
+  newLineIndices,
 }: {
   lines: string[];
   idPrefix: string;
+  newLineIndices?: ReadonlySet<number> | undefined;
   card?: Pick<BattleCard, "corruptedValuePositions"> & Partial<Pick<BattleCard, "effects" | "description">>;
 }) {
   const corruptedValuePositions = card?.corruptedValuePositions;
@@ -137,10 +139,11 @@ export function DescriptionLines({
               ));
             },
           })}
+          {newLineIndices?.has(lineIndex) ? <TooltipChip className="ml-1.5 align-middle">NEW</TooltipChip> : null}
         </div>
       );
     });
-  }, [lines, idPrefix, corruptedValuePositions, effects, description]);
+  }, [lines, idPrefix, corruptedValuePositions, effects, description, newLineIndices]);
 
   return <TooltipBody>{content}</TooltipBody>;
 }

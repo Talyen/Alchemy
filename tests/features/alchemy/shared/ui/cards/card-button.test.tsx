@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { BattleCardButton } from "@/features/alchemy/shared/ui/cards/card-button";
@@ -70,6 +70,89 @@ describe("BattleCardButton", () => {
     },
   );
 
+  it.each([
+    {
+      name: "added effect and Consume",
+      before: ["Deal 6 Physical damage"],
+      after: ["Deal 6 Physical damage", "Gain 2 Block", "Consume"],
+      changed: [1, 2],
+    },
+    {
+      name: "changed value and keyword",
+      before: ["Deal 6 Physical damage", "Gain 2 Block", "Consume"],
+      after: ["Deal 7 Physical damage", "Gain 2 Armor", "Consume"],
+      changed: [0, 1],
+    },
+    {
+      name: "unchanged lines reordered and one removed",
+      before: ["Deal 6 Physical damage", "Gain 2 Block", "Consume"],
+      after: ["Consume", "Deal 6 Physical damage"],
+      changed: [],
+    },
+    {
+      name: "duplicate line added",
+      before: ["Gain 2 Block", "Consume"],
+      after: ["Consume", "Gain 2 Block", "Gain 2 Block"],
+      changed: [2],
+    },
+  ])("marks only resulting changes for $name and clears them outside the event", ({ before, after, changed }) => {
+    const result = { ...card, title: "Changed Card", descriptionLines: after };
+    const props = {
+      card: result,
+      ariaLabel: "Result",
+      shimmerActive: false,
+      shimmerToken: undefined,
+    };
+    const { rerender } = render(<BattleCardButton {...props} comparisonCard={{ ...card, descriptionLines: before }} />);
+    fireEvent.mouseEnter(screen.getByRole("button", { name: "Result" }).parentElement!);
+    const tooltip = screen.getByRole("tooltip");
+    const chips = within(tooltip).queryAllByText("NEW");
+    expect(chips).toHaveLength(changed.length);
+    expect(chips.map((chip) => chip.parentElement?.textContent)).toEqual(changed.map((index) => `${after[index]}NEW`));
+    rerender(<BattleCardButton {...props} />);
+    expect(within(screen.getByRole("tooltip")).queryByText("NEW")).toBeNull();
+  });
+
+  it("compares effective Companion lines using the same description context", () => {
+    const source = cardById["wolf-companion"]!;
+    render(
+      <BattleCardButton
+        card={{ ...source, descriptionLines: [...source.descriptionLines, "Consume"], consume: true }}
+        comparisonCard={source}
+        descriptionContext={{
+          companionBondLevels: { wolf: 2 },
+          companionDamageModifiers: { damageBonus: 4, bleedDamageBonus: 0, damageMultiplier: 1 },
+        }}
+        ariaLabel="Result"
+        shimmerActive={false}
+        shimmerToken={undefined}
+      />,
+    );
+    act(() => screen.getByRole("button", { name: "Result" }).focus());
+    const tooltip = screen.getByRole("tooltip");
+    expect(tooltip.textContent).toContain("Deals 7 Bleed or Physical damage each turn");
+    expect(within(tooltip).getByText("NEW").parentElement?.textContent).toBe("ConsumeNEW");
+  });
+
+  it("updates the changed affixes when a focused preview switches cards", () => {
+    const comparisonCard = { ...card, descriptionLines: ["Deal 6 Physical damage", "Consume"] };
+    const props = { ariaLabel: "Preview", shimmerActive: false, shimmerToken: undefined, comparisonCard };
+    const { rerender } = render(
+      <BattleCardButton {...props} card={{ ...card, descriptionLines: ["Deal 6 Burn damage", "Consume"] }} />,
+    );
+    act(() => screen.getByRole("button", { name: "Preview" }).focus());
+    expect(within(screen.getByRole("tooltip")).getByText("NEW").parentElement?.textContent).toBe(
+      "Deal 6 Burn damageNEW",
+    );
+    rerender(
+      <BattleCardButton
+        {...props}
+        card={{ ...card, descriptionLines: ["Deal 6 Physical damage", "Wish", "Consume"] }}
+      />,
+    );
+    expect(within(screen.getByRole("tooltip")).getByText("NEW").parentElement?.textContent).toBe("WishNEW");
+  });
+
   it("keeps unavailable card choices inspectable by keyboard without selecting them", () => {
     const onSelect = vi.fn();
     const { rerender } = render(<SelectableCard card={card} isSelected={false} disabled onSelect={onSelect} />);
@@ -99,6 +182,7 @@ describe("BattleCardButton", () => {
     render(
       <BattleCardButton
         card={distilledHealthPotion}
+        comparisonCard={cardById["health-potion"]!}
         ariaLabel="Health Potion"
         shimmerActive={false}
         shimmerToken={undefined}
@@ -109,5 +193,6 @@ describe("BattleCardButton", () => {
     const tooltip = screen.getByRole("tooltip");
     const greenSpan = tooltip.querySelector(".text-green-400");
     expect(greenSpan).not.toBeNull();
+    expect(within(tooltip).getByText("NEW").parentElement).toBe(greenSpan?.parentElement);
   });
 });

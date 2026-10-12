@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playUISound } from "@/lib/audio";
 import { StrictMode } from "react";
@@ -45,6 +45,10 @@ function Harness({
       isProgressSavePending={isProgressSavePending}
     />
   );
+}
+function tooltipFor(name: string) {
+  const button = screen.getByRole("button", { name });
+  return within(document.getElementById(button.getAttribute("aria-describedby")!)!);
 }
 function click(name: string) {
   fireEvent.click(screen.getByRole("button", { name }));
@@ -175,6 +179,10 @@ describe("Transmutation flow", () => {
     expect(screen.getByRole("button", { pressed: true }).textContent).toContain(
       keywordDefinitions[preview.transmuted!].label,
     );
+    act(() => screen.getByRole("button", { name: `Preview: ${preview.title}` }).focus());
+    expect(tooltipFor(`Preview: ${preview.title}`).getAllByText("NEW").length).toBeGreaterThan(0);
+    act(() => screen.getByRole("button", { name: "Original: Slash" }).focus());
+    expect(tooltipFor("Original: Slash").queryByText("NEW")).toBeNull();
     expect(readActiveRun(defaultGameSession).runDeck).toEqual(before);
     expect(onExchange).not.toHaveBeenCalled();
     click("Transmute");
@@ -388,6 +396,8 @@ describe("Transmutation flow", () => {
       expect((screen.getByRole("button", { name: "Continue" }) as HTMLButtonElement).disabled).toBe(false),
     );
     expect(screen.getByRole("button", { name: `Transmuted: ${visit().result!.title}` })).toBeTruthy();
+    act(() => screen.getByRole("button", { name: `Transmuted: ${visit().result!.title}` }).focus());
+    expect(tooltipFor(`Transmuted: ${visit().result!.title}`).getAllByText("NEW").length).toBeGreaterThan(0);
     expect(playUISound).not.toHaveBeenCalled();
     expect(onContinue).not.toHaveBeenCalled();
     click("Continue");
