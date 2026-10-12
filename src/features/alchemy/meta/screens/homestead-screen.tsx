@@ -6,7 +6,7 @@ import { getPagination } from "../../shared/ui/pagination";
 import { FadeSlot } from "../../shared/ui/use-fade";
 import { useCaptureEscapeCancel } from "../../shared/ui/use-modal-escape-dismiss";
 import { cardLibrary, visitBattleCardEffects, type CompanionId } from "@/lib/game-data";
-import { COLLECTION_BESTIARY_REFERENCE_WIDTH, COLLECTION_CARD_REFERENCE_WIDTH } from "../../shared/config";
+import { COLLECTION_CARD_REFERENCE_WIDTH } from "../../shared/config";
 import { CollectionContentLayout } from "./collection/collection-content-layout";
 import {
   BUILDING_GOAL_ITEMS,
@@ -115,14 +115,14 @@ export function HomesteadScreen({
   const pageSize = isCompanions ? HOMESTEAD_CONFIG.companionPageSize : HOMESTEAD_CONFIG.upgradePageSize;
   const { page, totalPages } = getPagination(items.length, isCompanions ? companionPage : upgradePage, pageSize);
   const pageItems = items.slice(page * pageSize, (page + 1) * pageSize);
-  const tileWidth = isCompanions ? COLLECTION_CARD_REFERENCE_WIDTH : COLLECTION_BESTIARY_REFERENCE_WIDTH;
+  const tileWidth = isCompanions ? COLLECTION_CARD_REFERENCE_WIDTH : HOMESTEAD_CONFIG.landscapeNodeWidth;
   const columns = isCompanions ? 4 : 3;
   const rowWidth = columns * tileWidth + (columns - 1) * 20 + 0.5;
   const selectedNode = selection ? getNode(selection) : null;
 
   return (
     <PageLayout>
-      <ScreenShell maxWidthClass="max-w-7xl" className="relative">
+      <ScreenShell maxWidthClass="max-w-[calc(88*var(--content-rem,1rem))]" className="relative">
         <ScreenHeaderRow title="Homestead" onBack={selection ? backToGallery : onBack} onMenu={onMenu} />
         <FadeSlot
           swapKey={selectedNode?.id ?? "gallery"}

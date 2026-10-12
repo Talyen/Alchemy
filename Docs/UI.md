@@ -201,8 +201,10 @@ belongs to the gallery. Completed and undiscovered nodes remain inspectable.
 Back returns to the same gallery tab and page.
 
 Homestead artwork uses its native aspect ratio in both the gallery and detail
-page, without cropping. Both use the shared 3px hover/focus outline and 103.5%
-scale with `card-interactive-no-glow`; nodes use no glow, shimmer, or shine borders.
+page, without cropping. Landscape gallery nodes use a larger Homestead-specific
+width to fill the reserved two-row area, keeping three nodes per row and the
+header and tabs stationary. Both pages use the shared 3px hover/focus outline and
+103.5% scale with `card-interactive-no-glow`; nodes use no glow, shimmer, or shine borders.
 Upgrade and Companion artwork stays grayscale until its first upgrade or bond is purchased,
 then stays in color even when the next purchase is unaffordable. Undiscovered
 Companions remain grayscale.

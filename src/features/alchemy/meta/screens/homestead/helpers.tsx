@@ -54,6 +54,7 @@ export type GoalItem =
 export const HOMESTEAD_CONFIG = {
   companionPageSize: 8,
   upgradePageSize: 6,
+  landscapeNodeWidth: 430,
 } as const;
 
 const itemArt = {
