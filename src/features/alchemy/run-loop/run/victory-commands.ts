@@ -83,6 +83,12 @@ export function createVictoryCommand(
     return computeVictoryRewards(
       {
         lootProgress: resolveDraftLootProgress(draft),
+        materialRewardBand:
+          runState.contentSystemType === CONTENT_SYSTEMS.CAMPAIGN
+            ? runState.currentAct
+            : runState.contentSystemType === CONTENT_SYSTEMS.LABYRINTH
+              ? (draft.session.labyrinthMap?.currentFloor ?? 1)
+              : runState.roomsEncountered,
         createInstanceId: createDraftInstanceIdSource(draft),
         characterId: runState.characterId,
         selectedDifficulty: runState.selectedDifficulty,

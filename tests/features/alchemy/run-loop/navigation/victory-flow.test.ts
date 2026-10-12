@@ -42,10 +42,8 @@ vi.mock("@/lib/homestead/material-rewards", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/homestead/material-rewards")>();
   return {
     ...actual,
-    getEnemyMaterialLoot: vi.fn(() => ({ wood: 1, stone: 0, iron: 0, food: 0, herbs: 0, hide: 0, gems: 0 })),
-    applyMaterialFindBonus: vi.fn((mats: unknown) => mats),
     // Fixed-base stand-in for the real pipeline: isolates these tests from material
-    // tables while preserving scavenger/herbalist semantics from live tuning.
+    // rolls while preserving scavenger/herbalist semantics from live tuning.
     computeCombatMaterialReward: vi.fn((input: { scavenger: boolean; herbalist: boolean }) => ({
       wood: input.scavenger ? Math.round(1 * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier) : 1,
       stone: 0,
@@ -71,6 +69,7 @@ function baseBattleState(overrides: Record<string, unknown> = {}) {
 function baseInput(overrides: Record<string, unknown> = {}): VictoryRewardsInput {
   return {
     lootProgress: { depth: 24, highestCompletedDifficulty: null },
+    materialRewardBand: 1,
     characterId: "knight",
     selectedDifficulty: null,
     unlockedTalents: {},

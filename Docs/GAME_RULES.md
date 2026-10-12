@@ -296,7 +296,7 @@ Gold and prior savings. Spending does not subtract from this earned total.
 The recap omits the room progression trail. Existing menu upgrade highlights
 continue to guide between-run progression.
 
-Wildwood boss victories use the same boss Gold and enemy Material payout rules as
+Wildwood boss victories use the same boss Gold and shared Material payout rules as
 Campaign and Labyrinth while retaining Wildwood's reward choices and next-boss
 flow. The existing Victory screen shows both currencies, and run-end summaries
 include collected Materials and crafting currencies.

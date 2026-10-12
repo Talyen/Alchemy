@@ -1,76 +1,8 @@
 import { MATERIAL_IDS, type MaterialId, type MaterialInventory } from "./types";
 import type { HomesteadEffectManifest } from "./types";
 import { emptyInventory } from "./inventory";
-import { materialCost } from "./data-builders";
-import { HOMESTEAD_LOOT_MULTIPLIERS, LABYRINTH_REWARD_CONFIG } from "../game-constants";
+import { COMBAT_MATERIAL_QUANTITIES, COMBAT_MATERIAL_BUNDLE_SIZE, LABYRINTH_REWARD_CONFIG } from "../game-constants";
 import { rngInt } from "@/lib/rng";
-
-export interface MaterialLootEntry {
-  material: MaterialId;
-  min: number;
-  max: number;
-  /** Probability in (0, 1] that this bonus pays out. A hit always pays at least `min` (which is ≥ 1). */
-  chance: number;
-}
-
-export interface EnemyLootTable {
-  guaranteed: MaterialInventory;
-  bonuses: MaterialLootEntry[];
-}
-
-function bonus(material: MaterialId, chance: number, max = 1): MaterialLootEntry {
-  return { material, min: 1, max, chance };
-}
-
-// Compact loot row: guaranteed partial plus bonus triples. Defaults (min 1,
-// max 1) cover every current bonus; max 2 is passed explicitly where needed.
-function lootTable(guaranteed: Partial<MaterialInventory>, bonuses: MaterialLootEntry[] = []): EnemyLootTable {
-  return { guaranteed: materialCost(guaranteed), bonuses };
-}
-
-export const enemyLootTables: Record<string, EnemyLootTable> = {
-  skeleton: lootTable({}, [bonus("herbs", 0.3)]),
-  goblin: lootTable({ wood: 1, food: 1 }, [bonus("wood", 0.4), bonus("hide", 0.3)]),
-  mimic: lootTable({ iron: 2 }, [bonus("gems", 0.5), bonus("iron", 0.4)]),
-  "mud-elemental": lootTable({ herbs: 1 }),
-  necromancer: lootTable({ herbs: 2, gems: 1 }, [bonus("gems", 0.3), bonus("herbs", 0.5)]),
-  "plague-doctor": lootTable({ herbs: 2 }, [bonus("herbs", 0.4)]),
-  "forge-golem": lootTable({ iron: 3, gems: 1 }, [bonus("iron", 0.6, 2), bonus("gems", 0.4), bonus("stone", 0.5)]),
-  frostwarden: lootTable({ gems: 3 }, [bonus("gems", 0.6, 2), bonus("iron", 0.3)]),
-  "blight-treant": lootTable({ wood: 2, herbs: 2 }, [bonus("wood", 0.6, 2), bonus("herbs", 0.5, 2)]),
-  "living-armor": lootTable({ iron: 2 }, [bonus("iron", 0.4), bonus("gems", 0.3)]),
-  "iron-bear": lootTable({ iron: 2, food: 1 }, [bonus("iron", 0.5, 2), bonus("food", 0.4), bonus("hide", 0.5)]),
-  "fire-elemental": lootTable({ iron: 1, gems: 1 }, [bonus("gems", 0.4)]),
-  "frost-elemental": lootTable({ gems: 2 }, [bonus("gems", 0.6)]),
-  slime: lootTable({ food: 1 }, [bonus("herbs", 0.3)]),
-  "will-o-wisp": lootTable({ gems: 2 }, [bonus("gems", 0.6)]),
-  bandit: lootTable({ wood: 1, food: 1 }, [bonus("wood", 0.4), bonus("hide", 0.3)]),
-  ogre: lootTable({ iron: 2, food: 1 }, [bonus("iron", 0.5), bonus("hide", 0.4)]),
-  "fire-imp": lootTable({ iron: 1, gems: 1 }, [bonus("gems", 0.4)]),
-  hellhound: lootTable({ food: 2, iron: 1 }, [bonus("food", 0.4), bonus("hide", 0.4)]),
-  pyromancer: lootTable({ gems: 2, iron: 1 }, [bonus("gems", 0.5)]),
-  "giant-spider": lootTable({ herbs: 1, food: 1 }, [bonus("herbs", 0.5), bonus("hide", 0.4)]),
-  "giant-snake": lootTable({ herbs: 2 }, [bonus("herbs", 0.5), bonus("hide", 0.5)]),
-  "blood-cultist": lootTable({ herbs: 2, gems: 1 }, [bonus("gems", 0.4)]),
-  "dire-wolf": lootTable({ food: 2 }, [bonus("food", 0.5), bonus("hide", 0.5)]),
-  vampire: lootTable({ herbs: 2, food: 1 }, [bonus("gems", 0.4)]),
-  "blood-countess": lootTable({ herbs: 3, gems: 1 }, [bonus("herbs", 0.6, 2), bonus("gems", 0.4)]),
-  zealot: lootTable({ food: 1, gems: 1 }, [bonus("food", 0.4)]),
-  cleric: lootTable({ herbs: 1, gems: 1 }, [bonus("herbs", 0.4)]),
-  inquisitor: lootTable({ iron: 1, gems: 1 }, [bonus("iron", 0.4)]),
-  paladin: lootTable({ iron: 2, gems: 1 }, [bonus("iron", 0.5)]),
-  seraph: lootTable({ gems: 3, herbs: 1 }, [bonus("gems", 0.6, 2), bonus("herbs", 0.4)]),
-  "winter-wolf": lootTable({ food: 1, gems: 1 }, [bonus("gems", 0.4), bonus("hide", 0.4)]),
-  "ice-wraith": lootTable({ gems: 2, herbs: 1 }, [bonus("gems", 0.5)]),
-  yeti: lootTable({ food: 2, iron: 1 }, [bonus("food", 0.4), bonus("hide", 0.4)]),
-  banshee: lootTable({ herbs: 1, gems: 1 }, [bonus("herbs", 0.4)]),
-  brawler: lootTable({ iron: 2, food: 1 }, [bonus("iron", 0.5)]),
-  "stone-golem": lootTable({ stone: 3 }, [bonus("iron", 0.5, 2), bonus("stone", 0.4)]),
-  "earth-elemental": lootTable({ stone: 1, herbs: 1 }, [bonus("stone", 0.4)]),
-  "stone-titan": lootTable({ stone: 3, gems: 1 }, [bonus("iron", 0.6, 2), bonus("gems", 0.4)]),
-};
-
-export const enemyLootTableIds = Object.keys(enemyLootTables);
 
 function multiplyMaterials(materials: MaterialInventory, multiplier: number): MaterialInventory {
   const result = { ...materials };
@@ -78,23 +10,26 @@ function multiplyMaterials(materials: MaterialInventory, multiplier: number): Ma
   return result;
 }
 
-export function getEnemyMaterialLoot(enemyId: string, enemyType: string, rng: () => number): MaterialInventory {
-  const table = enemyLootTables[enemyId];
-  if (!table) return emptyInventory();
-  const loot: MaterialInventory = { ...table.guaranteed };
-  for (const bonus of table.bonuses) {
-    if (rng() < bonus.chance) {
-      loot[bonus.material] += bonus.min + rngInt(rng, bonus.max - bonus.min + 1);
-    }
-  }
-  const multiplier =
+/** Shared base payout: equal material odds per bundle, with replacement. */
+export function getCombatMaterialLoot(
+  enemyType: string,
+  progressionBand: number,
+  rng: () => number,
+): MaterialInventory {
+  const bandIndex = Math.min(2, Math.max(0, Math.floor(progressionBand) - 1));
+  const quantities =
     enemyType === "boss"
-      ? HOMESTEAD_LOOT_MULTIPLIERS.boss
+      ? COMBAT_MATERIAL_QUANTITIES.boss
       : enemyType === "elite"
-        ? HOMESTEAD_LOOT_MULTIPLIERS.elite
-        : HOMESTEAD_LOOT_MULTIPLIERS.normal;
-  // Round multi-drops (2 × 1.3 → 3); singleton elite drops stay unchanged.
-  return multiplier === HOMESTEAD_LOOT_MULTIPLIERS.normal ? loot : multiplyMaterials(loot, multiplier);
+        ? COMBAT_MATERIAL_QUANTITIES.elite
+        : COMBAT_MATERIAL_QUANTITIES.normal;
+  const quantity = quantities[bandIndex]!;
+  const loot = emptyInventory();
+  for (let remaining = quantity; remaining > 0; remaining -= COMBAT_MATERIAL_BUNDLE_SIZE) {
+    const material = MATERIAL_IDS[rngInt(rng, MATERIAL_IDS.length)]!;
+    loot[material] += Math.min(COMBAT_MATERIAL_BUNDLE_SIZE, remaining);
+  }
+  return loot;
 }
 
 export function applyMaterialFindBonus(
@@ -136,7 +71,7 @@ export function applyEndOfRunHomesteadBonuses(
 
 // ── Material reward policy ──────────────────────────────────────────────
 // Single owner for which modifiers apply to which source:
-//   combat victory: enemy table → elite/boss multiplier → herb-find → scavenger → herbalist
+//   combat victory: shared bundles by encounter type and band → herb-find → scavenger → herbalist
 //   mystery grant:  fixed amount → herb-find only (location traits don't apply off-map)
 //   wish gems:      flat pendingMaterials append (no find bonus; gems aren't herbs)
 //   gear salvage:   fixed definition value + rolled currencies (no homestead modifiers)
@@ -163,7 +98,7 @@ export function applyScavengerHerbalistModifiers(
 }
 
 export interface CombatMaterialRewardInput {
-  enemyId: string;
+  progressionBand: number;
   enemyType: string;
   effects: Pick<HomesteadEffectManifest, "herbFindBonus">;
   scavenger: boolean;
@@ -171,9 +106,9 @@ export interface CombatMaterialRewardInput {
   rng: () => number;
 }
 
-/** Full combat-victory material pipeline: table → type multiplier → herb-find → scavenger → herbalist. */
+/** Full combat-victory material pipeline: shared bundles → herb-find → scavenger → herbalist. */
 export function computeCombatMaterialReward(input: CombatMaterialRewardInput): MaterialInventory {
-  const base = getEnemyMaterialLoot(input.enemyId, input.enemyType, input.rng);
+  const base = getCombatMaterialLoot(input.enemyType, input.progressionBand, input.rng);
   return applyScavengerHerbalistModifiers(applyMaterialFindBonus(base, input.effects), input);
 }
 

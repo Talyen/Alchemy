@@ -64,7 +64,7 @@ Edit the source weights and progression points in `run-rewards.ts`, then run `np
 
 ## Materials tuning
 
-Homestead material payouts are tuned separately from gear offers; every knob is inventoried in `src/lib/game-constants/materials-economy.ts`. Per-enemy amounts live in the `enemyLootTables` in `src/lib/homestead/material-rewards.ts` (guaranteed loot plus chance-based bonuses that always pay at least their minimum when they hit). Campaign, Labyrinth, and Wildwood combat victories run the `computeCombatMaterialReward` pipeline there (table, then elite/boss multiplier, then herb-find, then scavenger doubling, then herbalist bonus); mystery grants use `computeMysteryMaterialReward` (herb-find only). That file's policy table is the owner for which modifiers apply to which source. The seeded materials report in `reports/loot-progression/materials.html` (built by the same `npm run balance:loot` command) shows mean base payouts per enemy and enemy type; build-dependent modifiers (herb-find, scavenger, herbalist, end-of-run bonuses) apply afterwards and are not simulated.
+Homestead material payouts are tuned separately from gear offers in `src/lib/game-constants/materials-economy.ts`. Combat victories use a shared pool independent of enemy identity: Normal encounters pay 3/4/5 materials across bands 1/2/3, Elites pay 5/6/7, and Bosses pay 8/10/12. Campaign uses the current act, Labyrinth the current floor, and Wildwood the current boss number; bands cap at 3. Each bundle of two picks one of all seven materials with equal odds and replacement; odd totals end with a single-material roll. The seeded reward stream owns every roll. `computeCombatMaterialReward` applies herb-find to the rolled payout, then scavenger doubling, then the herbalist bonus. Mystery grants use `computeMysteryMaterialReward` (herb-find only). The policy table in `src/lib/homestead/material-rewards.ts` owns modifier ordering. The seeded report in `reports/loot-progression/materials.html` (built by `npm run balance:loot`) shows mean base payouts per progression band and encounter type; build-dependent modifiers and end-of-run bonuses are not simulated.
 
 ## Inventory ordering and equipment movement
 
@@ -158,7 +158,7 @@ After a Gear change, `rebindLiveRunMeta` synchronizes health when a run is activ
 
 ### Salvage materials
 
-Base item construction owns homestead salvage materials; rarity increases quantities rather than introducing affinity-based Herbs. Metal equipment yields Iron, wooden equipment yields Wood, magical staves and wands combine Wood and Gems, and jewelry and spellbooks yield Gems. Leather Armor and Quivers yield Hide, and the Leather Buckler yields Wood and Hide for its backing. Herbs remain available from enemy loot, Herb Garden progression, and run-end Homestead bonuses; removing gear Herbs reduces an optional supply, not access to progression. Currency rarity distributions remain unchanged.
+Base item construction owns homestead salvage materials; rarity increases quantities rather than introducing affinity-based Herbs. Metal equipment yields Iron, wooden equipment yields Wood, magical staves and wands combine Wood and Gems, and jewelry and spellbooks yield Gems. Leather Armor and Quivers yield Hide, and the Leather Buckler yields Wood and Hide for its backing. Herbs remain available from shared combat rewards, Herb Garden progression, and run-end Homestead bonuses; removing gear Herbs reduces an optional supply, not access to progression. Currency rarity distributions remain unchanged.
 
 ### Route commands
 

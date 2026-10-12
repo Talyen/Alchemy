@@ -22,7 +22,13 @@ import { DESTINATIONS } from "@/lib/routing";
 import { parseActiveRun } from "@/lib/validation";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { regressionBattle } from "../../../../fixtures/battle";
-import { initializeBattleForTest, resetAllTestStores } from "../../../../helpers/run-domain-store-test";
+import {
+  initializeBattleForTest,
+  resetAllTestStores,
+  setRunProgress,
+  setRunSession,
+} from "../../../../helpers/run-domain-store-test";
+import { gridLabyrinthMapFixture } from "../../../../fixtures/labyrinth-map";
 import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(resetAllTestStores);
@@ -79,6 +85,37 @@ it("starts combat only once and preserves its activity while visiting the Menu",
   expect(snapshotRun(defaultGameSession)).toMatchObject({
     activity: savedActivityFixture("battle", { battleState: readBattle(defaultGameSession).battleState }),
   });
+});
+
+it.each([
+  ["campaign", 2, 4],
+  ["labyrinth", 3, 5],
+  ["wildwood", 2, 10],
+] as const)("uses %s progression for its shared combat material budget", (mode, band, quantity) => {
+  setRunProgress({
+    contentSystemType: mode,
+    currentAct: mode === "campaign" ? band : 1,
+    roomsEncountered: mode === "wildwood" ? band : 11,
+  });
+  if (mode === "labyrinth") {
+    setRunSession({ labyrinthMap: { ...gridLabyrinthMapFixture(), currentFloor: band } });
+  }
+  const battle = regressionBattle({ enemyHealth: 0, contentSystemType: mode });
+  if (mode === "wildwood") battle.currentEnemy = { ...battle.currentEnemy, enemyType: "boss" };
+  dispatchRunSessionCommand(
+    (transaction) => {
+      initializeBattleForTest(transaction, battle);
+      return acceptCommand();
+    },
+    undefined,
+    defaultGameSession,
+  );
+  const settle = createVictoryCommand(() => [DESTINATIONS.CAMPFIRE], defaultGameSession);
+  expect(settle()).not.toBeNull();
+  const reward = readRunSession(defaultGameSession).rewardFlow.state;
+  expect(Object.values(reward.materials).reduce((sum, value) => sum + value, 0)).toBe(quantity);
+  expect(settle()).toBeNull();
+  expect(readRunSession(defaultGameSession).rewardFlow.state).toEqual(reward);
 });
 
 it("resumes an unsettled victory and commits its rewards exactly once before presentation navigation", () => {

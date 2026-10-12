@@ -49,6 +49,7 @@ import {
 export interface VictoryRewardsInput {
   createInstanceId?: (() => string) | undefined;
   lootProgress: LootProgress;
+  materialRewardBand: number;
   characterId: CharacterId;
   selectedDifficulty: DifficultyId | null;
   unlockedTalents: UnlockedTalents;
@@ -196,7 +197,7 @@ function computeVictorySettlement(
     goldMultiplier: getGoldMultiplier(input.characterId, input.selectedDifficulty),
   });
   const materials = computeCombatMaterialReward({
-    enemyId: input.battleState.currentEnemy.id,
+    progressionBand: input.materialRewardBand,
     enemyType: input.battleState.currentEnemy.enemyType,
     effects: input.homesteadEffects,
     scavenger: labyrinthRewardModifiers.includes("scavenger"),

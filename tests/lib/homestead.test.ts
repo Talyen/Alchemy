@@ -8,12 +8,11 @@ import {
   applyMaterialFindBonus,
   computeCombatMaterialReward,
   computeMysteryMaterialReward,
-  enemyLootTableIds,
-  enemyLootTables,
-  getEnemyMaterialLoot,
+  getCombatMaterialLoot,
 } from "@/lib/homestead/material-rewards";
-import { enemyBestiary } from "@/lib/game-data/compendium/enemies";
 import { createEmptyTalentEffectManifest } from "@/lib/game-data";
+import { MATERIAL_IDS } from "@/lib/homestead/types";
+import { createSeededRng } from "@/lib/rng";
 import { tryUpgradeTierItem } from "@/lib/homestead/upgrades";
 
 describe("homestead upgrade IDs cross-category uniqueness", () => {
@@ -103,70 +102,68 @@ describe("mergeIntoManifest", () => {
   });
 });
 
-describe("getEnemyMaterialLoot", () => {
-  it("returns empty inventory for unknown enemy", () => {
-    const loot = getEnemyMaterialLoot("unknown", "normal", () => 0);
-    expect(loot).toEqual(emptyInventory());
-  });
-
-  it("pays guaranteed loot, successful bonuses, and type scaling without changing the catalog", () => {
-    const before = structuredClone(enemyLootTables.mimic);
-    const rng = vi.fn().mockReturnValueOnce(0.1).mockReturnValueOnce(0.5).mockReturnValueOnce(0.4);
-    expect(getEnemyMaterialLoot("mimic", "elite", rng)).toEqual({ ...emptyInventory(), iron: 3, gems: 1 });
-    expect(rng).toHaveBeenCalledTimes(3);
-    expect(getEnemyMaterialLoot("mimic", "boss", () => 0.9)).toEqual({ ...emptyInventory(), iron: 6 });
-    expect(enemyLootTables.mimic).toEqual(before);
-  });
-});
-
-describe("enemy loot parity", () => {
-  it("every bestiary enemy has a loot table and vice versa", () => {
-    const bestiaryIds = enemyBestiary.map((enemy) => enemy.id).sort();
-    const lootIds = [...enemyLootTableIds].sort();
-    expect(lootIds).toEqual(bestiaryIds);
-  });
-
-  it("keeps material bonus entries well-shaped", () => {
-    for (const [enemyId, table] of Object.entries(enemyLootTables)) {
-      for (const bonus of table.bonuses) {
-        // A triggered bonus always pays: min ≥ 1 keeps the chance honest.
-        expect(bonus.min, `${enemyId}.${bonus.material} min`).toBeGreaterThanOrEqual(1);
-        expect(bonus.min, `${enemyId}.${bonus.material} range`).toBeLessThanOrEqual(bonus.max);
-        expect(bonus.chance, `${enemyId}.${bonus.material} chance`).toBeGreaterThan(0);
-        expect(bonus.chance, `${enemyId}.${bonus.material} chance`).toBeLessThanOrEqual(1);
-      }
+describe("shared combat material loot", () => {
+  it.each([
+    ["normal", [3, 4, 5]],
+    ["elite", [5, 6, 7]],
+    ["boss", [8, 10, 12]],
+  ] as const)("keeps the %s payout budget across progression bands", (type, quantities) => {
+    for (const [index, quantity] of quantities.entries()) {
+      const rng = vi.fn(createSeededRng(42));
+      const loot = getCombatMaterialLoot(type, index + 1, rng);
+      expect(Object.values(loot).reduce((sum, value) => sum + value, 0)).toBe(quantity);
+      expect(rng).toHaveBeenCalledTimes(Math.ceil(quantity / 2));
+      expect(getCombatMaterialLoot(type, index + 1, createSeededRng(42))).toEqual(loot);
     }
+  });
+
+  it("selects each material uniformly in two-unit bundles with a final singleton", () => {
+    for (const [index, material] of MATERIAL_IDS.entries()) {
+      const rng = vi
+        .fn()
+        .mockReturnValueOnce((index + 0.5) / MATERIAL_IDS.length)
+        .mockReturnValueOnce(0.999);
+      const expected = emptyInventory();
+      expected[material] += 2;
+      expected.gems += 1;
+      expect(getCombatMaterialLoot("normal", 1, rng)).toEqual(expected);
+    }
+    expect(getCombatMaterialLoot("boss", 3, () => 0)).toEqual({ ...emptyInventory(), wood: 12 });
+  });
+
+  it("caps long runs at band three and treats the opening as band one", () => {
+    expect(getCombatMaterialLoot("elite", 99, () => 0)).toEqual({ ...emptyInventory(), wood: 7 });
+    expect(getCombatMaterialLoot("normal", 0, () => 0)).toEqual({ ...emptyInventory(), wood: 3 });
   });
 });
 
 describe("computeCombatMaterialReward", () => {
-  it("applies table, herb-find, scavenger, then herbalist in order", () => {
-    // Bandit with every roll hitting: guaranteed 1 wood + 1 food, bonuses +1 wood +1 hide.
+  it("doubles the shared payout before adding the herbalist bonus", () => {
     const result = computeCombatMaterialReward({
-      enemyId: "bandit",
+      progressionBand: 1,
       enemyType: "normal",
       effects: { herbFindBonus: 0 },
       scavenger: true,
       herbalist: true,
       rng: () => 0,
     });
-    expect(result.wood).toBe(4);
-    expect(result.food).toBe(2);
-    expect(result.hide).toBe(2);
+    expect(result.wood).toBe(6);
+    expect(result.food).toBe(0);
+    expect(result.hide).toBe(0);
     // Herbalist tops up already-doubled herbs instead of being doubled itself.
     expect(result.herbs).toBe(3);
   });
 
   it("stacks herb-find before scavenger", () => {
     const result = computeCombatMaterialReward({
-      enemyId: "skeleton",
+      progressionBand: 1,
       enemyType: "normal",
-      effects: { herbFindBonus: 1 },
+      effects: { herbFindBonus: 0.5 },
       scavenger: true,
       herbalist: false,
-      rng: () => 0,
+      rng: () => 4.5 / MATERIAL_IDS.length,
     });
-    expect(result.herbs).toBe(4);
+    expect(result.herbs).toBe(10);
   });
 });
 
