@@ -5,6 +5,7 @@ import type { GameSession, GameSessionOptions, SessionClock, SessionFeedback } f
 import { createGameplayStore } from "./gameplay-state";
 import { generateRandomRunSeed } from "./run-state-init";
 import { createSettingsPersistenceCodec, createSettingsStore } from "./settings-state";
+import { createRunLifecycleEffects, isolateSessionFeedback } from "./session-effects";
 
 const nativeClock: SessionClock = {
   now: () => Date.now(),
@@ -23,22 +24,6 @@ function bindRuntimeMethods<T extends object>(defaults: T, source?: Partial<T>):
   return bound;
 }
 
-function createLifecycleChannel() {
-  const listeners = new Set<() => void>();
-  return {
-    on(listener: () => void) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-    emit() {
-      for (const listener of listeners) listener();
-    },
-    clear() {
-      listeners.clear();
-    },
-  };
-}
-
 function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolean) {
   const clock = bindRuntimeMethods(nativeClock, options.runtimeInputs?.clock);
   const { generateRunSeed, createInstanceId: instanceIdSource } = bindRuntimeMethods(
@@ -47,21 +32,23 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
   );
   const cleanups = new Set<() => void>();
   const settings = createSettingsStore();
-  const feedback = bindRuntimeMethods<SessionFeedback>(
-    {
-      playUISound: () => {},
-      playGoldGain: () => {},
-      playGoldSpend: () => {},
-      playVictory: () => {},
-      playRunVictory: () => {},
-      playDefeat: () => {},
-      stopAllSfx: () => {},
-      clearCardHover: () => {},
-      clearBattleUi: () => {},
-      clearSaveConfirmation: () => {},
-      resetTransientUi: () => {},
-    },
-    options.feedback,
+  const feedback = isolateSessionFeedback(
+    bindRuntimeMethods<SessionFeedback>(
+      {
+        playUISound: () => {},
+        playGoldGain: () => {},
+        playGoldSpend: () => {},
+        playVictory: () => {},
+        playRunVictory: () => {},
+        playDefeat: () => {},
+        stopAllSfx: () => {},
+        clearCardHover: () => {},
+        clearBattleUi: () => {},
+        clearSaveConfirmation: () => {},
+        resetTransientUi: () => {},
+      },
+      options.feedback,
+    ),
   );
   const gameplay = createGameplayStore(generateRunSeed);
   return {
@@ -78,8 +65,7 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
     progressCompletion: new ProgressCompletion(),
     persistentClearInFlight: false,
     disposed: false,
-    teardown: createLifecycleChannel(),
-    clearPresentation: createLifecycleChannel(),
+    lifecycle: createRunLifecycleEffects(feedback),
     track(cleanup: () => void): () => void {
       cleanups.add(cleanup);
       return () => {
@@ -113,8 +99,7 @@ export function createSessionRuntime(options: GameSessionOptions = {}, allowPlat
         runtime.progressCompletion.cancel();
         runtime.disposed = true;
         const failures = runtime.cleanup();
-        runtime.teardown.clear();
-        runtime.clearPresentation.clear();
+        runtime.lifecycle.dispose();
         try {
           await runtime.io.waitForPendingSaveWrites();
         } finally {

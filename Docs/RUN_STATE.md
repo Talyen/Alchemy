@@ -98,6 +98,19 @@ The command guard is released before `afterCommit`, so an effect may dispatch a
 separate command. If an effect throws, its error propagates and the already
 committed state remains; post-commit errors do not roll back gameplay.
 
+Session feedback adapters are an explicit exception to error propagation.
+`shared/stores/session-effects.ts` isolates each audio/UI adapter and lifecycle
+listener, logging its failure without aborting the caller's remaining work.
+Execution and persistence errors retain their own failure contracts; the command
+dispatcher does not suppress arbitrary `afterCommit` errors.
+
+The same owner provides each session's presentation-clear and teardown channels.
+Teardown always clears battle UI, notifies presentation cancellation, then notifies
+run teardown, even if an adapter or listener fails. Listener changes apply on the
+next notification. Run abandonment and defeat submit their settled save before
+these effects; neither requires a route adapter to remember presentation cleanup.
+Defeat's optional `clearCombatPresentation` callback remains an additional adapter.
+
 ### Committed battle playback
 
 Battle reads expose serializable `BattleSnapshot` values. Opening draws and card
