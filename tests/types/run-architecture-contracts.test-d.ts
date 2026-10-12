@@ -11,7 +11,7 @@ import type { GearDraftView } from "@/features/alchemy/shared/stores/gear-store-
 import { describe, expectTypeOf, it } from "vitest";
 import type { BattleCard } from "@/lib/game-data";
 import type { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
-import type { AlchemyRunCommands } from "@/features/alchemy/shell/route-commands";
+import type { AlchemyRouteCommands, AlchemyRunCommands } from "@/features/alchemy/shell/route-commands";
 import type { RunFlowHandlerDeps } from "@/features/alchemy/run-loop/run/run-flow";
 import type { RunScreenDataByScreen } from "@/features/alchemy/shared/stores/run-screen-data";
 import {
@@ -48,6 +48,11 @@ type NonDraftFirstWrite = Exclude<
 >;
 
 describe("run architecture type contracts", () => {
+  it("requires shop exits to identify the activity that offered Continue", () => {
+    type Continue = AlchemyRouteCommands["runLoop"]["shop"]["continue"];
+    expectTypeOf<Continue>().parameters.toEqualTypeOf<["shop" | "alchemist" | "trinket-shop" | "equipment-shop"]>();
+  });
+
   it("requires a career for reusable reads, writes, and persistence while bound methods need none", () => {
     // @ts-expect-error -- missing ownership must never select the application career
     readBattle();

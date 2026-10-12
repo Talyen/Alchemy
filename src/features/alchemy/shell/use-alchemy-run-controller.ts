@@ -188,7 +188,7 @@ export function useAlchemyRunController(): AlchemyRunCommands {
         transmutation: {
           select: guardProgressAction(defaultGameSession, runActions.selectTransmutation, false),
           exchange: guardProgressAction(defaultGameSession, runActions.transmuteCard, null),
-          continue: protectVoid(nav.advanceToNextDestination),
+          continue: protectVoid(() => nav.advanceToNextDestination("transmutation")),
           initialize: () => runActions.initializeAlchemyVisit("transmutation"),
         },
         corruption: {

@@ -15,6 +15,8 @@ import {
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { setRewardState, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
+import { emptyAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
+import { setRunSession } from "../../../../helpers/run-domain-store-test";
 import { createRunRngState } from "@/lib/rng";
 import { defaultGameSession } from "@/app/application-session";
 
@@ -55,8 +57,9 @@ describe("boss rolls in run commands", () => {
     { offer: DESTINATIONS.BOSS_COMBAT, worldDraws: 1, destinationDraws: 0 },
   ])("progression to $offer uses its own RNG streams", ({ offer, worldDraws, destinationDraws }) => {
     startCampaign(DESTINATIONS.NORMAL_COMBAT);
+    setRunSession({ activity: { kind: "transmutation", data: emptyAlchemyVisit() } });
     const before = readActiveRun(defaultGameSession).rng.counters;
-    createProgressionCommands(() => [offer], defaultGameSession).prepareNextDestination();
+    createProgressionCommands(() => [offer], defaultGameSession).leaveVisit("transmutation");
     expect(readActiveRun(defaultGameSession).rng.counters.world - before.world).toBe(worldDraws);
     expect(readActiveRun(defaultGameSession).rng.counters.destinations - before.destinations).toBe(destinationDraws);
     expect(Boolean(readRunSession(defaultGameSession).rewardFlow.state.selectedBossId)).toBe(worldDraws === 1);
@@ -79,13 +82,14 @@ describe("boss rolls in run commands", () => {
       undefined,
       defaultGameSession,
     );
+    setRunSession({ activity: { kind: "transmutation", data: emptyAlchemyVisit() } });
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision), defaultGameSession);
     try {
       createProgressionCommands(
         () => [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.ELITE_COMBAT, DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE],
         defaultGameSession,
-      ).prepareNextDestination();
+      ).leaveVisit("transmutation");
     } finally {
       unsubscribe();
     }

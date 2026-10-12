@@ -1,3 +1,4 @@
+import { applyAlchemistPotion } from "./alchemist-reward";
 import { canOfferWildwoodRemoval, enterWildwoodRemoval } from "@/lib/content-systems/wildwood/gauntlet";
 import { flushSaveAfterRunEnd } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
@@ -37,7 +38,7 @@ import {
 import { resolveRewardChoice, type ResolvedRewardChoice } from "@/lib/active-run-session";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { REWARD_ROUTES, ROUTE_SCREENS, type Screen } from "@/lib/routing";
-import { finalizeRewardState, getRandomPotionCard } from "../navigation/reward-flow";
+import { finalizeRewardState } from "../navigation/reward-flow";
 import { getActiveRewardModifiersForContentSystem, shouldGrantAlchemistReward } from "../navigation/reward-math";
 
 export function applyRewardSelection({ reward, draft }: { reward: ResolvedRewardChoice; draft: RunTransaction }) {
@@ -55,12 +56,6 @@ export function applyRewardSelection({ reward, draft }: { reward: ResolvedReward
       grantGearToRunWithRecord(draft, reward.choice);
       return;
   }
-}
-
-export function applyAlchemistPotion({ draft, rng }: { draft: RunTransaction; rng: () => number }) {
-  const potion = getRandomPotionCard(rng);
-  if (!potion) return;
-  appendCardToRunWithDiscovery(draft, potion);
 }
 
 export function claimRunReward(

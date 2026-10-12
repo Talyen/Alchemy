@@ -133,6 +133,16 @@ for a change: `run-flow.ts` → its
 `reward-math.ts` through `victory-flow.ts`; the saved purse and every reward
 screen derive from that same settlement. `reward-flow.ts` receives the settled
 Gold payout and only assembles reward states.
+`progression-commands.ts` owns non-combat visit exits. Callers supply the
+expected activity; the command rejects mismatched activities and unfinished
+Mystery choices. Automatic Campfire rest, room completion, next destination
+sampling, history, RNG, and the durable next activity commit together. Untouched
+Corruption restores the Campaign picker or leaves the Labyrinth node unconsumed;
+used Corruption completes the room. Presentation only navigates to the returned
+committed screen. Act advancement remains inside reward claiming rather than a
+separate shell action. The renderer and headless playthrough bind exits to the
+activity that offered the action.
+
 `reward-offers.ts` owns category eligibility, hoard guarantees, and seeded
 choice sampling. It returns a typed offer without run settlement fields;
 `reward-flow.ts` adds the reward state defaults, settled Gold, Materials, destinations,
