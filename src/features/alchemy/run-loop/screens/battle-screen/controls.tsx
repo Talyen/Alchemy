@@ -1,9 +1,10 @@
 import type { BattlePresentationStore } from "../../battle/battle-presentation-store";
-import type { RefObject } from "react";
+import { useState, type RefObject } from "react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+import { handHasPlayableCard } from "../../battle/playable-hand";
 import { ManaPanel, PilePanel } from "../../battle/presentation/ui/resources";
 import { battleBottomBarClass, battleBottomColumnClass } from "@/features/alchemy/shared/config";
 import { BossLyrics } from "./boss-lyrics";
@@ -56,6 +57,7 @@ export function BattleBottomBar({
       <BattleControls
         presentation={presentation}
         battleState={battleState}
+        playabilityState={playabilityState}
         actions={actions}
         discardPileRef={discardPileRef}
       />
@@ -66,16 +68,30 @@ export function BattleBottomBar({
 function BattleControls({
   presentation,
   battleState,
+  playabilityState,
   actions,
   discardPileRef,
 }: {
   presentation: BattlePresentationStore;
   battleState: BattleScreenState;
+  playabilityState: BattleSnapshot;
   actions: BattleActionsProps;
   discardPileRef: RefObject<HTMLDivElement | null>;
 }) {
   const { onEndTurn } = actions;
   const cardTransferInProgress = useCardTransferInProgress(presentation);
+  const [confirmationState, setConfirmationState] = useState<BattleSnapshot | null>(null);
+  // Immutable snapshots invalidate confirmation after any gameplay change.
+  const confirming = confirmationState === playabilityState;
+
+  function requestEndTurn() {
+    if (!confirming && handHasPlayableCard(playabilityState)) {
+      setConfirmationState(playabilityState);
+      return;
+    }
+    setConfirmationState(null);
+    onEndTurn();
+  }
 
   return (
     <div className={cn(battleBottomColumnClass, "w-56")}>
@@ -85,10 +101,11 @@ function BattleControls({
           size="sm"
           className="tracking-normal normal-case"
           data-battle-end-turn
-          onClick={onEndTurn}
+          onClick={requestEndTurn}
+          onBlur={() => setConfirmationState(null)}
           disabled={battleState.turnPhase !== "player" || cardTransferInProgress}
         >
-          End Turn
+          {confirming ? "Confirm" : "End Turn"}
         </Button>
       </div>
 
