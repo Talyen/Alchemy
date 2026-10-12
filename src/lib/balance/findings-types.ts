@@ -15,8 +15,8 @@ export const MATERIAL_TIMEOUT_RATE = 0.02;
 
 export const LENGTH_BAND_BY_TYPE: Record<EnemyTypeBand, { min: number; max: number }> = {
   normal: { min: 5, max: 10 },
-  elite: { min: 10, max: 15 },
-  boss: { min: 15, max: 30 },
+  elite: { min: 8, max: 12 },
+  boss: { min: 13, max: 20 },
 };
 
 export const WIN_RATE_BAND_BY_TYPE: Record<EnemyTypeBand, { min: number; max: number }> = {
