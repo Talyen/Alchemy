@@ -275,8 +275,14 @@ live one. `ProgressCompletion` retains snapshot revision/epoch receipts for the
 session, and the shared `io.ts` write seam acknowledges them for ordinary and
 exit writes. Autosave, Gear flushes, and run-end flushes use that same seam.
 A snapshot can be written through another adapter for the same session without
-losing its receipt. Imported or externally constructed payloads have no receipt
-and cannot acknowledge live gameplay. Save receipts never enter the wire format.
+losing its receipt. Receipts bind the captured contents to their revision and epoch;
+the IO seam validates those contents at submission, before asynchronous writing.
+Editing a captured snapshot makes that submission an external write: it may save,
+but cannot acknowledge live gameplay. A coalesced-away submission returns `superseded`,
+never the replacement payload's outcome. Autosave retains that unsaved work for
+retry; `skipped` remains reserved for storage cancellation or unavailability.
+Only a snapshot actually written can acknowledge its captured revision. Imported
+or externally constructed payloads have no receipt. Save receipts never enter the wire format.
 
 `run-resume-codec.ts` translates `RunSession` and `ActiveRunData`. The encoder selects
 progress, mode geography, and one tagged `activity`; the decoder hydrates that

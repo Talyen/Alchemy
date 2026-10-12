@@ -10,7 +10,7 @@ export class ProgressCompletion {
   private state: ProgressSaveState = { kind: "idle" };
   private epoch = 0;
   private acknowledged = -1;
-  private snapshots = new WeakMap<object, { epoch: number; revision: number }>();
+  private snapshots = new WeakMap<object, { epoch: number; revision: number; contents: string }>();
   private listeners = new Set<() => void>();
   private completions: Array<() => void> = [];
   private retry: (() => void) | null = null;
@@ -44,13 +44,20 @@ export class ProgressCompletion {
   }
 
   captureSnapshot<T extends object>(snapshot: T, revision: number): T {
-    this.snapshots.set(snapshot, this.token(revision));
+    this.snapshots.set(snapshot, { ...this.token(revision), contents: JSON.stringify(snapshot) });
     return snapshot;
   }
 
-  completeSnapshot(snapshot: object, outcome: SaveWriteOutcome): SaveWriteOutcome {
-    const token = this.snapshots.get(snapshot);
-    return token ? this.complete(token, outcome) : outcome;
+  /** Validate at submission, before callers can mutate the object during IO. */
+  prepareSnapshotWrite(snapshot: object): (outcome: SaveWriteOutcome) => SaveWriteOutcome {
+    const receipt = this.snapshots.get(snapshot);
+    let token: { epoch: number; revision: number } | undefined;
+    try {
+      if (receipt && receipt.contents === JSON.stringify(snapshot)) token = receipt;
+    } catch {
+      // Invalid external payloads still follow the storage failure path.
+    }
+    return (outcome) => (token ? this.complete(token, outcome) : outcome);
   }
 
   complete(token: { epoch: number; revision: number }, outcome: SaveWriteOutcome) {
@@ -70,7 +77,7 @@ export class ProgressCompletion {
         }
       }
     } else if (token.revision >= this.state.revision) {
-      // A skipped write is never an acknowledgement. Only explicit cancellation
+      // An unwritten snapshot is never an acknowledgement. Only explicit cancellation
       // can release the gate without showing completion.
       this.publish({ kind: "failed", revision: this.state.revision });
     }
