@@ -162,7 +162,14 @@ function WildwoodRemovalScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 function DestinationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.destinations;
   const r = useDestinationScreenData();
-  return <DestinationScreen rewardState={r.rewardState} onChoose={commands.choose} onPrepare={commands.prepare} />;
+  return (
+    <DestinationScreen
+      rewardState={r.rewardState}
+      currentAct={r.currentAct}
+      onChoose={commands.choose}
+      onPrepare={commands.prepare}
+    />
+  );
 }
 
 function CampfireScreenRoute({ routeCommands }: RunLoopRouteCtx) {

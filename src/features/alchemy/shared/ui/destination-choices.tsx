@@ -20,10 +20,12 @@ import { FadeSlot } from "./use-fade";
 
 export function DestinationChoices({
   destinationOptions,
+  currentAct,
   onChoose,
   selectedBoss,
 }: {
   destinationOptions: Destination[];
+  currentAct: number;
   onChoose: (destination: Destination) => void;
   selectedBoss?: BestiaryEntry | null;
 }) {
@@ -46,6 +48,11 @@ export function DestinationChoices({
           <DestinationChoiceTile
             key={destination}
             destination={destination}
+            label={
+              destination === DESTINATIONS.BOSS_COMBAT
+                ? `Boss - Act ${["I", "II", "III"][currentAct - 1] ?? currentAct}`
+                : destinationLabel(destination)
+            }
             art={art}
             icon={icon}
             accentClassName={accentClassName}
@@ -62,6 +69,7 @@ export function DestinationChoices({
 
 function DestinationChoiceTile({
   destination,
+  label,
   art,
   icon,
   accentClassName,
@@ -71,6 +79,7 @@ function DestinationChoiceTile({
   onChoose,
 }: {
   destination: Destination;
+  label: string;
   art: string;
   icon: LucideIcon;
   accentClassName: string;
@@ -87,7 +96,7 @@ function DestinationChoiceTile({
       interactionId={destination}
       art={art}
       icon={icon}
-      label={destinationLabel(destination)}
+      label={label}
       accentClassName={accentClassName}
       plasmaColorPair={plasmaColorPair}
       widthClass={tooltipEntry ? battleEnemyCardWidthClass : chooserArtWidthClass}

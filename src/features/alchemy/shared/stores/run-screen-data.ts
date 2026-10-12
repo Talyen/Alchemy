@@ -64,7 +64,10 @@ export const RUN_SCREEN_SELECTORS = {
     rewardState: state.session.rewardFlow.state,
     rewardClaimInFlight: state.session.rewardFlow.claim.kind === "reward",
   }),
-  destination: (state: GameplayState) => ({ rewardState: state.session.rewardFlow.state }),
+  destination: (state: GameplayState) => ({
+    rewardState: state.session.rewardFlow.state,
+    currentAct: state.run.activeRun.currentAct,
+  }),
   mystery: (state: GameplayState) => {
     const visit = readActivityData(state.session.activity, "mystery");
     return {
