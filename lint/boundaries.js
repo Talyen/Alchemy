@@ -98,6 +98,20 @@ export const BOUNDARY_CONFIGS = [
     ),
   ),
   scope(["src/lib/**/*.{ts,tsx}"], libPatterns, LIB_NO_FRAMEWORK_PATHS),
+  scope(
+    ["src/lib/active-run-session/**/*.{ts,tsx}"],
+    [
+      ...libPatterns,
+      [
+        {
+          group: ["@/lib/validation", "@/lib/validation/**", "**/validation", "**/validation/**"],
+          message:
+            "Run domain contracts must not depend on save validation. Parse and recover saves in lib/validation.",
+        },
+      ],
+    ],
+    LIB_NO_FRAMEWORK_PATHS,
+  ),
   scope(["src/lib/balance/**/*.ts"], libPatterns, [
     ...LIB_NO_FRAMEWORK_PATHS,
     {

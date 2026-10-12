@@ -258,7 +258,9 @@ and Tooltip Size remain device preferences despite sharing the Display tab.
 
 ## Shared run-progress shape
 
-`lib/validation/save-schemas/run-progress.ts` owns progression schema fields and legacy recovery defaults. `PersistedRunProgress` and `ACTIVE_RUN_PROGRESS_KEYS` derive from it; `ActiveRunData` extends the shared wire fields and `ActiveRunProgressFields` narrows destination names for live state. Saved callers remain permissive about historical destination names until normalization. Fresh-run constructors still own starting decks, seeded RNG, fresh collection instances and zero earned totals. Legacy missing `runHistoryPartial`/`runGoldEarned` still recover as `true`/`null`; never replace those with fresh-run defaults. New progress fields require their schema and meaningful fresh/resume initialization, without a duplicate wire/live declaration or key-list edit.
+`lib/active-run-session/run-progress.ts` owns `PersistedRunProgress` and its exhaustive `ACTIVE_RUN_PROGRESS_KEYS` projection. `ActiveRunData` extends those shared fields; `ActiveRunProgressFields` narrows destination names for live state. Saved callers remain permissive about historical destination names until normalization. The save schema in `lib/validation/save-schemas/run-progress.ts` checks every field against that contract and owns recovery defaults. Fresh-run constructors still own starting decks, seeded RNG, fresh collection instances and zero earned totals. Missing `runHistoryPartial`/`runGoldEarned` still recover as `true`/`null`; never replace those with fresh-run defaults. New fields require the domain contract, exhaustive projection, schema and meaningful fresh/resume initialization.
+
+`lib/validation` owns `parseActiveRun`, `toActiveRunData` and conversion of parsed Mystery choices into domain effects. Session contracts, activity helpers and live constructors never import validation. `PersistedPendingReward` belongs beside the domain reward types; its save schema checks that output contract. This changes module ownership only, with no save-format or recovery-default change.
 
 ## Demo account identity and transfer
 

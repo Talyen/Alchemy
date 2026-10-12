@@ -26,7 +26,7 @@ import {
 import { battleCohort, combatOutcome } from "./battle-cohorts";
 import { snapshotRun, restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { parseActiveRun } from "@/lib/active-run-session";
+import { parseActiveRun } from "@/lib/validation";
 import { isDeepStrictEqual } from "node:util";
 import { defineSequenceFamily, requireProgress, type Scenario } from "./sequence";
 import { advance, installFrames, installMotionPreference } from "./timing";

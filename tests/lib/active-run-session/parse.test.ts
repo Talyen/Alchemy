@@ -1,6 +1,6 @@
 import { savedActivityFixture, savedActivityData } from "../../fixtures/run-activity";
 import { describe, expect, it } from "vitest";
-import { parseActiveRun, toActiveRunData } from "@/lib/active-run-session";
+import { parseActiveRun, toActiveRunData } from "@/lib/validation";
 import { ActiveRunDataSchema } from "@/lib/validation";
 import { makeActiveRunData } from "../../features/alchemy/shared/stores/active-run-data-fixture";
 import { cardById, cardLibrary } from "@/lib/game-data";

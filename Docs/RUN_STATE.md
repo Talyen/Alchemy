@@ -304,7 +304,7 @@ Repeated bootstrap may preserve an initialized activity while applying saved
 progression and rebinding its live manifests in the same command.
 `persistence-hydration.ts` composes the gameplay codec repairs inside that draft;
 `hydrateAlchemyPersistenceFields` remains the fields-only operation and does not
-restore an activity. Both paths include Trinket-manifest repair. `parseActiveRun(raw)` validates JSON before hydration; `toActiveRunData` in `lib/active-run-session/parse.ts` handles run parsing, while `PersistedBattleStateSchema` owns battle wire parsing and default merging.
+restore an activity. Both paths include Trinket-manifest repair. `parseActiveRun(raw)` validates JSON before hydration; `toActiveRunData` in `lib/validation/parse-active-run.ts` handles run parsing, while `PersistedBattleStateSchema` owns battle wire parsing and default merging.
 
 Domain persistence codecs own field selection, defaults, encoding, hydration, and subscriptions. `GameplayPersistenceCodec<T>` receives a `GameplayDraft`; `StandalonePersistenceCodec<T>` owns a separate Zustand store. `shared/storage/persistence.ts` composes their fields into the versioned envelope and subscribes to settings changes plus the gameplay commit signal. Codec types live in `shared/stores/persistence-codec.ts`.
 

@@ -231,7 +231,7 @@ explicit capabilities (for example command-bound RNG), rather than data to copy.
 
 `GameplayState` in `gameplay-state.ts` defines the [aggregate regions](./RUN_STATE.md#run-state). Read, write, command, and screen contracts are listed in the [capability reference](./RUN_STATE.md#session-capability-ports); persistence types are in the [codec contract](./RUN_STATE.md#persistence-api).
 
-Initial progress and permanent fields, `ACTIVE_RUN_PROGRESS_KEYS`, `generateRunSeed`, and `pickActiveRunView` live in `run-state-init.ts`; `run-domain-types.ts` defines session, battle, and run-data fields. `profile-store-types.ts` owns its domain (completion buckets derived from the character registry); `gear-actions.ts` owns the initial gear state. Fresh-run snapshots live in `shared/run-flow/run-start.ts`. Shared numeric manifest defaults use `createNumericManifest` / `mergeNumericManifests` from `manifest-utils.ts`.
+Run-progress contracts and the exhaustive `ACTIVE_RUN_PROGRESS_KEYS` projection live in `lib/active-run-session/run-progress.ts`, independently of save validation. `lib/validation` owns saved-run parsing and recovery; its schemas check the domain contracts. Initial progress and permanent fields, `generateRunSeed`, and `pickActiveRunView` live in `run-state-init.ts`; `run-domain-types.ts` defines session, battle, and run-data fields. `profile-store-types.ts` owns its domain (completion buckets derived from the character registry); `gear-actions.ts` owns the initial gear state. Fresh-run snapshots live in `shared/run-flow/run-start.ts`. Shared numeric manifest defaults use `createNumericManifest` / `mergeNumericManifests` from `manifest-utils.ts`.
 
 ## Import boundaries
 

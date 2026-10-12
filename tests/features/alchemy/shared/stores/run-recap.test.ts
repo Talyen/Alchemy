@@ -9,7 +9,7 @@ import {
 import { beforeEach, describe, expect, it } from "vitest";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { defaultBattleState } from "@/lib/battle";
-import { parseActiveRun } from "@/lib/active-run-session";
+import { parseActiveRun } from "@/lib/validation";
 import { createBattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
 import { gridLabyrinthMapFixture } from "../../../../fixtures/labyrinth-map";
 import { getStartingDeck } from "@/lib/game-data";

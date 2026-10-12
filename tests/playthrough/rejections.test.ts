@@ -19,7 +19,8 @@ import { createPlaythroughController } from "@/app/playthrough/controller";
 import { commitCardPlay } from "@/features/alchemy/shared/stores/battle-commands";
 import { cardSlotKeyOf } from "@/features/alchemy/run-loop/shop/shop-commands-core";
 import { claimRunReward } from "@/features/alchemy/run-loop/run/reward-commands";
-import { getRewardChoiceId, parseActiveRun } from "@/lib/active-run-session";
+import { getRewardChoiceId } from "@/lib/active-run-session";
+import { parseActiveRun } from "@/lib/validation";
 import { buildings } from "@/lib/homestead/data";
 import { constructBuilding } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {

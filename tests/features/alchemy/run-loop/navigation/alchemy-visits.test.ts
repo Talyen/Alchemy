@@ -18,7 +18,7 @@ import { createAlchemistShopCommands } from "@/features/alchemy/run-loop/shop/al
 import { resetAllTestStores, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { snapshotRun, restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readActiveRun, readRunSession, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
-import { parseActiveRun } from "@/lib/active-run-session";
+import { parseActiveRun } from "@/lib/validation";
 import { cardById, computeTalentEffects, type BattleCard } from "@/lib/game-data";
 import { defaultGameSession } from "@/app/application-session";
 beforeEach(() => {

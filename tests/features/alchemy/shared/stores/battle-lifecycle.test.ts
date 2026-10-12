@@ -19,7 +19,7 @@ import { createVictoryCommand } from "@/features/alchemy/run-loop/run/victory-co
 import { awardRunEndMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { cardById, getStartingDeck } from "@/lib/game-data";
 import { DESTINATIONS } from "@/lib/routing";
-import { parseActiveRun } from "@/lib/active-run-session";
+import { parseActiveRun } from "@/lib/validation";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { regressionBattle } from "../../../../fixtures/battle";
 import { initializeBattleForTest, resetAllTestStores } from "../../../../helpers/run-domain-store-test";

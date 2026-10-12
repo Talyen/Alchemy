@@ -13,7 +13,8 @@ import { claimRunReward } from "@/features/alchemy/run-loop/run/reward-commands"
 import { createAlchemistShopCommands } from "@/features/alchemy/run-loop/shop/alchemist-shop-commands";
 import { snapshotRun, restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { parseActiveRun, createEmptyRewardState } from "@/lib/active-run-session";
+import { createEmptyRewardState } from "@/lib/active-run-session";
+import { parseActiveRun } from "@/lib/validation";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { defaultGameSession } from "@/app/application-session";
 import { resetAllTestStores, setRunProgress, setRunSession } from "../helpers/run-domain-store-test";

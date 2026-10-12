@@ -365,3 +365,21 @@ it("ignores other worktrees and rejects stale suppression comments", () => {
   );
   expect(messages.some((message) => message.message.includes("Unused oxlint-disable"))).toBe(true);
 });
+
+it("keeps save validation out of run domain contracts, including erased type imports", async () => {
+  for (const code of [
+    'import { ActiveRunDataSchema } from "@/lib/validation"; export { ActiveRunDataSchema };',
+    'import type { ParsedActiveRunData } from "@/lib/validation"; export type Progress = ParsedActiveRunData;',
+    'import type { ParsedActiveRunData } from "../validation"; export type Progress = ParsedActiveRunData;',
+    'import type { ParsedActiveRunData } from "../validation/save-schemas/active-run"; export type Progress = ParsedActiveRunData;',
+  ]) {
+    const messages = await effectiveMessages("src/lib/active-run-session/probe.ts", code, "no-restricted-imports");
+    expect(messages, code).not.toEqual([]);
+  }
+  const allowed = await effectiveMessages(
+    "src/lib/validation/probe.ts",
+    'import type { ActiveRunData } from "@/lib/active-run-session"; export type Save = ActiveRunData;',
+    "no-restricted-imports",
+  );
+  expect(allowed).toEqual([]);
+});
