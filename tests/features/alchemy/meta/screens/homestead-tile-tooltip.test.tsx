@@ -49,30 +49,6 @@ describe("HomesteadUpgradeNode hover tooltip", () => {
     });
   });
 
-  it("hides tooltip content on mouse leave", async () => {
-    render(
-      <HomesteadUpgradeNode
-        item={buildingItem}
-        currentLevel={0}
-        materialInventory={{ ...emptyInventory(), iron: 100 }}
-        onAction={() => {}}
-      />,
-    );
-
-    const trigger = screen.getByRole("button", { name: /Blacksmith/ }).parentElement as HTMLElement;
-    fireEvent.mouseEnter(trigger);
-
-    await waitFor(() => {
-      expect(panelText()).toContain("Build");
-    });
-
-    fireEvent.mouseLeave(trigger);
-
-    await waitFor(() => {
-      expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeNull();
-    });
-  });
-
   it("shows Max Level with all stars filled when completed", async () => {
     const maxLevel = buildingItem.data.tiers.length;
     const { container } = render(

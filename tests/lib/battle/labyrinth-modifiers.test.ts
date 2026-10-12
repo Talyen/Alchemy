@@ -3,11 +3,11 @@ import { describe, expect, it } from "vitest";
 import {
   createBattleState,
   endPlayerTurn,
-  playBattleCardResolved,
   processCompanionTurnStart,
   tickEnemyStatuses,
   tickPlayerStatuses,
 } from "@/lib/battle";
+import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { applyGearCcPhysicalDamage } from "@/lib/battle/scaled-damage";
 import { computeEffectiveCost } from "@/lib/battle/card-cost-rules";
 import { addEnemyStatus } from "@/lib/battle/status-state";

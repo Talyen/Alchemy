@@ -6,7 +6,7 @@ import { BattlePage } from "../pages/battle-page";
 import { DestinationPage } from "../pages/destination-page";
 import { RewardPage } from "../pages/reward-page";
 import { makeStartingDeck } from "./cards";
-import { navigateToGame, resumeCampaignRun } from "./navigation";
+import { navigateToGame } from "./navigation";
 import { injectSaveState } from "./save-injection";
 import type { DestinationName } from "./types";
 
@@ -18,8 +18,8 @@ export async function enableFastMode(page: Page) {
 
 export async function startAtDestination(
   page: Page,
-  overrides: Record<string, unknown> = {},
-  options: { forceDestination?: DestinationName } = {},
+  overrides: Record<string, unknown>,
+  options: { forceDestination: DestinationName },
 ) {
   const loaded = await injectSaveState(page, {
     runGold: 50,
@@ -27,27 +27,18 @@ export async function startAtDestination(
     runMaxHealth: 30,
     runDeck: makeStartingDeck(),
     ...overrides,
-    ...(options.forceDestination
-      ? {
-          activity: savedActivityFixture("destination", {
-            destinations: [options.forceDestination],
-            selectedBossId: null,
-            lastVictoryEnemyType: null,
-            lastVictoryContentSystem: null,
-          }),
-        }
-      : {}),
+    activity: savedActivityFixture("destination", {
+      destinations: [options.forceDestination],
+      selectedBossId: null,
+      lastVictoryEnemyType: null,
+      lastVictoryContentSystem: null,
+    }),
   });
   if (!loaded) await navigateToGame(page);
-  if (options.forceDestination) {
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 8000 });
-    await expect(
-      page.getByRole("button", { name: destinationLabel(options.forceDestination), exact: true }),
-    ).toBeVisible({ timeout: 3000 });
-  } else {
-    await resumeCampaignRun(page);
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
-  }
+  await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 8000 });
+  await expect(page.getByRole("button", { name: destinationLabel(options.forceDestination), exact: true })).toBeVisible(
+    { timeout: 3000 },
+  );
 }
 
 export async function startBattleWithDeck(page: Page, deck: BattleCard[], overrides: Record<string, unknown> = {}) {

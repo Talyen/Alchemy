@@ -1,3 +1,4 @@
+import { applyEmergencyWishForEmptyDraw } from "./wish";
 import { readCombatFlag } from "./action-context";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { mergeCombatText } from "./combat-text-events";
@@ -123,6 +124,9 @@ export function playBattleCardResolved(
   const payment = validateCardPlay(state, card, index, options);
   if (!payment) return { state, combatTexts };
 
+  const previousEmptyDraw = state.onEmptyDraw;
+  state = { ...state, onEmptyDraw: previousEmptyDraw ?? applyEmergencyWishForEmptyDraw };
+
   const freeMana =
     payment.effectiveCost > 0 &&
     (state.talentEffects.homesteadFreeManaChance ?? 0) > 0 &&
@@ -178,5 +182,8 @@ export function playBattleCardResolved(
     lastCardInHand: state.hand.length === 1,
     manaSpent,
   });
-  return { state: resolvePendingBattleReactions(nextState, combatTexts), combatTexts };
+  const resolved = resolvePendingBattleReactions(nextState, combatTexts);
+  if (previousEmptyDraw) return { state: resolved, combatTexts };
+  const { onEmptyDraw: _onEmptyDraw, ...completed } = resolved;
+  return { state: completed, combatTexts };
 }

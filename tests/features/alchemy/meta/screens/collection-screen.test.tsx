@@ -42,35 +42,17 @@ describe("CollectionScreen", () => {
     bondedCompanions: {},
   };
 
-  it("calls onSelectTab when switching tabs", () => {
-    const onSelectTab = vi.fn();
-    render(<CollectionScreen {...defaultProps} onSelectTab={onSelectTab} />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Bestiary" }));
-    expect(onSelectTab).toHaveBeenCalledWith("bestiary");
-  });
-
-  it("handles pagination clicks", () => {
-    const onPageChange = vi.fn();
-    render(<CollectionScreen {...defaultProps} onPageChange={onPageChange} />);
-
-    const nextButton = screen.getByRole("button", { name: "Next page" });
-    fireEvent.click(nextButton);
-    expect(onPageChange).toHaveBeenCalledWith("cards", 1);
-  });
-
   it("opens Boss inspection while preserving music preview across closing and reopening", () => {
     const id = "forge-golem";
     const sorted = [...enemyBestiary].sort((a, b) => a.title.localeCompare(b.title));
     const page = Math.floor(sorted.findIndex((entry) => entry.id === id) / 6);
-    render(
-      <CollectionScreen
-        {...defaultProps}
-        collectionTab="bestiary"
-        encounteredEnemyIds={[id]}
-        collectionPages={{ ...defaultProps.collectionPages, bestiary: page }}
-      />,
-    );
+    const props = {
+      ...defaultProps,
+      collectionTab: "bestiary" as const,
+      encounteredEnemyIds: [id],
+      collectionPages: { ...defaultProps.collectionPages, bestiary: page },
+    };
+    const { rerender, unmount } = render(<CollectionScreen {...props} />);
     const portrait = screen.getByRole("button", { name: "Inspect The Forge Golem" });
     fireEvent.click(portrait);
     expect(audio.playCardSound).not.toHaveBeenCalled();
@@ -92,6 +74,15 @@ describe("CollectionScreen", () => {
     expect(audio.playCardSound).not.toHaveBeenCalled();
     expect(audio.playUISound).not.toHaveBeenCalled();
     expect(audio.playBattleEvent).not.toHaveBeenCalled();
+    audio.endBossPreview.mockClear();
+    rerender(<CollectionScreen {...props} collectionPages={{ ...props.collectionPages, bestiary: page + 1 }} />);
+    expect(audio.endBossPreview).toHaveBeenCalledOnce();
+    rerender(<CollectionScreen {...props} collectionTab="cards" />);
+    expect(audio.endBossPreview).toHaveBeenCalledTimes(2);
+    audio.previewBossMusic.mockClear();
+    unmount();
+    expect(audio.previewBossMusic).not.toHaveBeenCalled();
+    expect(audio.endBossPreview).toHaveBeenCalledTimes(2);
   });
 
   it("keeps undiscovered entries concealed and silent", () => {

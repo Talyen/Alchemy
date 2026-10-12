@@ -80,8 +80,17 @@ that base update without restarting the full healing reaction chain. Import
 `battle/combat-text-events.ts` for text aggregation and `battle/enemy-healing.ts`
 for enemy healing. Combat text is feedback, not a gameplay rule owner.
 
-- **Card play:** UI → `useBattleController.playCard()` → `playBattleCardResolved()` → `applyCardEffects()` → new `BattleState` → store.
+- **Card play:** UI → `useBattleController.playCard()` → `commitCardPlay()` → `resolveBattleCard(snapshot, context)` → committed snapshot and combat feedback.
 - **Enemy turn:** `commitEndTurn()` → `resolveBattleTurn(snapshot, context)` → committed result and XP → `playTurnFrames()` for presentation only.
+
+`resolveBattleCard` and `resolveBattleWish` in `battle/player-actions.ts` own the
+player-action host boundary. Like battle start and turn resolution, they accept
+a `BattleSnapshot` plus an explicit `BattleResolutionContext` and return only
+snapshot data and combat feedback. Live commands supply transaction-bound world
+RNG; simulation supplies its combat stream. Hosts never bind RNG onto state or
+strip execution capabilities from player-action results. Invalid choices retain
+the input snapshot identity and consume no rolls. Low-level Card and Wish
+mechanics remain internal to the engine rather than barrel exports.
 
 `battle/card-play.ts` owns hand validation, payment, and the ordinary play sequence.
 `battle/card-play-effects.ts` resolves effects, repeats, and subsequent Talent
@@ -97,7 +106,10 @@ reactions. Its existing damage entry points remain the caller-facing surface.
 Direct player hits use source-specific recipes in `lib/battle/hit-resolution.ts`
 and its lower `follow-up-hit-resolution.ts` tier. `player-hit-core.ts` carries source
 intent (`HitRequest`) and captures eligibility and Health results (`HitFacts`) before
-nested reactions. Attack orchestration keeps Dodge, reserved bonuses, numeric preparation,
+nested reactions. Card play binds an execution-only empty-draw callback so low-level
+Stun and Bleed draw rewards can request Emergency Wish without importing its
+orchestrator; snapshots strip that callback along with RNG and action context.
+Attack orchestration keeps Dodge, reserved bonuses, numeric preparation,
 whole-packet follow-ups, and retaliation. Card reaction stages cannot call back into
 attack orchestration. The [hit-source matrix](./GAME_RULES.md#direct-player-hit-resolution)
 describes the current ordering and scaling differences. Retirement of legacy

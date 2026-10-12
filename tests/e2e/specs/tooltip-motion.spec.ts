@@ -4,73 +4,39 @@ import { injectActiveBattle, makeGoblinBattleState } from "../../browser-helpers
 import { BattlePage } from "../../pages/battle-page";
 import { slow } from "../../playwright-tags";
 
-function sampleTooltip(page: Page) {
+function observeMotion(page: Page, entering: boolean) {
   return page.evaluate(
-    () =>
-      new Promise<Array<{ opacity: number; movement: number; visible: boolean }>>((resolve) => {
-        const samples: Array<{ opacity: number; movement: number; visible: boolean }> = [];
+    (entering) =>
+      new Promise<{ faded: boolean; moved: boolean; transitions: string[] }>((resolve, reject) => {
+        const transitions = new Set<string>();
+        const listener = (event: Event) => {
+          if (event.target instanceof Element && event.target.matches("#tooltip-root .hover-popup-panel")) {
+            transitions.add((event as TransitionEvent).propertyName);
+          }
+        };
+        document.addEventListener("transitionrun", listener, true);
+        let faded = false;
+        let moved = false;
         const start = performance.now();
         const sample = () => {
-          const panel = document.querySelector<HTMLElement>("#tooltip-root .hover-popup-panel");
-          if (panel) {
-            const style = getComputedStyle(panel);
-            const matrix = new DOMMatrixReadOnly(style.transform);
-            samples.push({
-              opacity: Number(style.opacity),
-              movement: Math.hypot(matrix.m41, matrix.m42),
-              visible: panel.hasAttribute("data-visible"),
-            });
-          }
-          if (performance.now() - start >= 600) resolve(samples);
-          else requestAnimationFrame(sample);
+          const panel = document.querySelector("#tooltip-root .hover-popup-panel");
+          const style = panel && getComputedStyle(panel);
+          const opacity = Number(style?.opacity ?? 0);
+          const matrix = new DOMMatrixReadOnly(style?.transform ?? "none");
+          const movement = Math.hypot(matrix.m41, matrix.m42);
+          faded ||= opacity > 0 && opacity < 0.99;
+          moved ||= movement > 0.1;
+          const settled = entering ? panel?.hasAttribute("data-visible") && opacity === 1 && movement < 0.1 : !panel;
+          if (settled || performance.now() - start > 2000) {
+            document.removeEventListener("transitionrun", listener, true);
+            if (settled) resolve({ faded, moved, transitions: [...transitions] });
+            else reject(new Error(`Tooltip ${entering ? "entry" : "exit"} did not settle`));
+          } else requestAnimationFrame(sample);
         };
         requestAnimationFrame(sample);
       }),
+    entering,
   );
-}
-
-async function installTooltipTransitionRecorder(page: Page) {
-  await page.evaluate(() => {
-    const state = window as unknown as {
-      tooltipMotionTransitions?: string[];
-      tooltipMotionTransitionListener?: (event: Event) => void;
-    };
-    const transitions: string[] = [];
-    const listener = (event: Event) => {
-      if (event.target instanceof Element && event.target.matches("#tooltip-root .hover-popup-panel")) {
-        transitions.push((event as TransitionEvent).propertyName);
-      }
-    };
-    state.tooltipMotionTransitions = transitions;
-    state.tooltipMotionTransitionListener = listener;
-    document.addEventListener("transitionrun", listener, true);
-  });
-}
-
-async function readTooltipTransitionRecorder(page: Page) {
-  return page.evaluate(() => {
-    const state = window as unknown as {
-      tooltipMotionTransitions?: string[];
-      tooltipMotionTransitionListener?: (event: Event) => void;
-    };
-    if (state.tooltipMotionTransitionListener) {
-      document.removeEventListener("transitionrun", state.tooltipMotionTransitionListener, true);
-    }
-    return [...new Set(state.tooltipMotionTransitions ?? [])];
-  });
-}
-
-async function readTooltipTransitionStyle(page: Page) {
-  return page.locator("#tooltip-root .hover-popup-panel").evaluate((element) => {
-    const style = getComputedStyle(element);
-    return {
-      duration: style.transitionDuration
-        .split(",")
-        .map((value) => Number.parseFloat(value))
-        .some((value) => value > 0),
-      properties: style.transitionProperty.split(",").map((value) => value.trim()),
-    };
-  });
 }
 
 test("tooltips visibly fade and move on entry and exit", slow, async ({ page }) => {
@@ -78,40 +44,10 @@ test("tooltips visibly fade and move on entry and exit", slow, async ({ page }) 
   await injectActiveBattle(page, makeGoblinBattleState());
   const battle = new BattlePage(page);
   await expect(battle.enemyArt).toBeVisible();
-  await installTooltipTransitionRecorder(page);
-  const [entrance] = await Promise.all([sampleTooltip(page), battle.enemyArt.hover()]);
-  const entranceTransitions = await readTooltipTransitionRecorder(page);
-  const entranceTransitionStyle = await readTooltipTransitionStyle(page);
-  expect(
-    entrance.some((frame) => frame.visible && frame.opacity > 0 && frame.opacity < 0.95) ||
-      entranceTransitions.includes("opacity") ||
-      (entranceTransitionStyle.duration && entranceTransitionStyle.properties.includes("opacity")),
-  ).toBe(true);
-  expect(
-    entrance.some((frame) => frame.visible && frame.movement > 0.1) ||
-      entranceTransitions.includes("transform") ||
-      (entranceTransitionStyle.duration && entranceTransitionStyle.properties.includes("transform")),
-  ).toBe(true);
-  const tooltip = page.locator("#tooltip-root .hover-popup-panel");
-  await expect.poll(async () => Number(await tooltip.evaluate((element) => getComputedStyle(element).opacity))).toBe(1);
-  await expect
-    .poll(async () => {
-      const movement = await tooltip.evaluate((element) => {
-        const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform);
-        return Math.hypot(matrix.m41, matrix.m42);
-      });
-      return movement;
-    })
-    .toBe(0);
-
-  const exitTransitionStyle = await readTooltipTransitionStyle(page);
-  await installTooltipTransitionRecorder(page);
-  const [exit] = await Promise.all([sampleTooltip(page), page.mouse.move(0, 0)]);
-  const exitTransitions = await readTooltipTransitionRecorder(page);
-  expect(
-    exit.some((frame) => !frame.visible && frame.opacity > 0 && frame.opacity < 1) ||
-      exitTransitions.includes("opacity") ||
-      (exitTransitionStyle.duration && exitTransitionStyle.properties.includes("opacity")),
-  ).toBe(true);
-  await expect(tooltip).toHaveCount(0);
+  const [entrance] = await Promise.all([observeMotion(page, true), battle.enemyArt.hover()]);
+  expect(entrance.faded || entrance.transitions.includes("opacity")).toBe(true);
+  expect(entrance.moved || entrance.transitions.includes("transform")).toBe(true);
+  const [exit] = await Promise.all([observeMotion(page, false), page.mouse.move(0, 0)]);
+  expect(exit.faded || exit.transitions.includes("opacity")).toBe(true);
+  await expect(page.locator("#tooltip-root .hover-popup-panel")).toHaveCount(0);
 });

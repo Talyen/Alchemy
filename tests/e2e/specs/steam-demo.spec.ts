@@ -1,7 +1,7 @@
 import { test, expect } from "../../fixtures/e2e";
 import {
   assertEndRunShowsRecap,
-  failOnRuntimeErrors,
+  withSavedGame,
   injectBossState,
   injectHomestead,
   SAVE_KEY,
@@ -180,10 +180,7 @@ test.describe("Steam demo edition", () => {
       .toBeLessThan(before);
 
     const acknowledged = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), SAVE_KEY);
-    const restored = await page.context().newPage();
-    const errors = failOnRuntimeErrors(restored);
-    try {
-      await restored.goto("/");
+    await withSavedGame(page, async (restored) => {
       await expect(restored.getByRole("heading", { name: DESTINATIONS.ALCHEMIST_SHOP, exact: true })).toBeVisible();
       await new ShopPage(restored).waitForPurchase();
       const owned = await restored.evaluate(
@@ -194,9 +191,6 @@ test.describe("Steam demo edition", () => {
       expect(await new ShopPage(restored).gold()).toBe(acknowledged.gold);
       await restored.getByRole("button", { name: "Leave", exact: true }).click();
       await new DestinationPage(restored).expectVisible();
-      expect(errors).toEqual([]);
-    } finally {
-      await restored.close();
-    }
+    });
   });
 });

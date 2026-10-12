@@ -142,8 +142,8 @@ jobs:
       - name: Ensure Electron binary
         run: npm run ensure:electron
 
-      - name: Setup Playwright Chromium
-        uses: ./.github/actions/setup-playwright
+      - name: Install Electron system dependencies
+        run: npx playwright install-deps chromium
 
       - name: Select rotating seed
         id: seed
@@ -216,8 +216,8 @@ jobs:
       - name: Ensure Electron binary
         run: node scripts/ensure-electron.mjs
 
-      - name: Setup Playwright Chromium
-        uses: ./.github/actions/setup-playwright
+      - name: Install Electron system dependencies
+        run: npx playwright install-deps chromium
 
       - run: npm run check:ship
 

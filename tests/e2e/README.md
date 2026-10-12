@@ -76,7 +76,6 @@ owners directly.
 | ----------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | Open mode selection           | `navigation.ts`: `openGameModeSelect`, `selectGameMode`             | Retries Play if bootstrap unmounts the menu; selecting a mode never resumes a separate slot                       |
 | Select hero                   | `tests/pages/menu-page.ts`: `MenuPage.selectCharacterAndContinue`   | Clicks the portrait; no Back/Continue footer                                                                      |
-| Resume campaign               | `navigation.ts`: `resumeCampaignRun`                                | Waits for the saved destination or uses main-menu Continue                                                        |
 | Start battle or destination   | `battle-setup.ts`: `startBattleWithDeck`, `startAtDestination`      | Bootstraps battle                                                                                                 |
 | Inject mid-battle             | `save-injection.ts`: `injectActiveBattle`                           | Boots directly into battle                                                                                        |
 | Win and claim reward          | `battle-setup.ts`: `winBattleAndClaimReward`                        | Wins through combat and claims the first reward card                                                              |
@@ -154,9 +153,10 @@ preview/component tests.
 
 The [Options journey](./controller-options.ts) is shared with Electron. Keep the
 critical combat and real-timing canaries in the existing CI tier, and secondary
-viewport/cursor variants in the full suite. Deck-size screenshots are retained in
-ignored `reports/controller-support/`; rendered-font measurements are diagnostic
-CSS pixel estimates, not physical glyph measurements or Valve certification.
+viewport/cursor variants in the full suite. Layout checks assert geometry directly;
+use the opt-in [desktop layout review](../layout-review/README.md) for screenshot
+artifacts. Rendered-font measurements are CSS pixel estimates, not physical glyph
+measurements or Valve certification.
 
 ## Connected interaction and Electron canaries
 
@@ -196,3 +196,45 @@ card controls. The draft and run-setup journeys retain their separate entry
 coverage. Wildwood phase/RNG rules, save/resume, Labyrinth exploration and hover
 geometry, native activation, and Armory equip/unequip and rejection behavior have
 focused protection in the corresponding unit, DOM and browser suites.
+
+Ordinary specs use the fixture-owned page so automatic runtime errors and failure
+diagnostics follow the tested renderer without allocating an unused second page.
+Fresh-page save checks still need a separate unseeded page. Keep passing-journey
+screenshots in explicit visual acceptance or layout-review workflows; functional
+checks assert state and geometry without screenshot encoding or attachment I/O.
+
+Repeated-card targeting is covered by the hand-hover journeys, transfer presence
+by the discard landing and hand-color canaries, and confirmation dismissal by the
+critical controller Options journey. Shared fade retention belongs to the DOM
+FadeSlot/useFade tests; a route-fade check that conditionally skips its assertion
+is not additional protection. DPR input coverage sets an actual device scale
+factor and exercises pointer targeting and keyboard inspection together.
+
+Electron-only CI jobs install system libraries with `playwright install-deps` and
+use the installed Electron runtime; they do not need Playwright Chromium binaries.
+
+Destination setup requires an explicit destination; it never waits for an absent
+main-menu Continue control. Labyrinth setup reuses the injection result rather
+than probing the renderer twice. Cold-start logo readiness shares the fresh-storage
+canary, and Wildwood reward resume continues through Skip into the next battle.
+Tooltip motion checks observe frames or actual transition events, stop when the
+panel settles, and cannot pass solely from declared CSS transition properties.
+
+DOM artwork replacement and Collection music lifecycle checks share their existing
+screen/hook harnesses. Transmutation DOM races advance a virtual clock; browser
+animation canaries retain real timing. Resource-wallet markup and removal-tooltip
+CSS-class smoke checks are retired; tooltip interaction, placement, removal safety,
+resource spending, and persistence retain focused behavioral coverage.
+
+The critical End Turn canary also observes successful Slash SFX startup after
+resetting its cue-specific counter, sharing one real-timing battle boot. The audio
+route selects that canary. Armory browsing retains actual layout and keyboard
+focus checks; filter combinations, sorting and clearing use the
+inventory filtering/control and Armory screen unit/DOM suites.
+
+Pure Mystery, Wildwood and Labyrinth controller tests and Slice geometry/drawing
+parity tests run in Node, without JSDOM. FadeSlot cases share the use-fade suite.
+Tooltip dismissal tests advance a virtual fade clock; the keyboard helper briefly
+uses real timers for Testing Library's task drain. Browser tooltip and animation
+canaries continue to observe real rendering and timing. Unsupported native macOS
+fullscreen cases are skipped before Electron setup.

@@ -70,7 +70,8 @@ export function applyBleedDamageDraw(
   if (healthDamage <= 0 || !rollBattleChance(state.talentEffects.drawOnBleedDamageChance, state)) {
     return state;
   }
-  return applyDrawResult(state, drawFromState(state, 1), combatTexts);
+  const drawn = applyDrawResult(state, drawFromState(state, 1), combatTexts);
+  return drawn.onEmptyDraw?.(drawn, 1, combatTexts) ?? drawn;
 }
 
 export function applyElementalDamageManaRestore(

@@ -20,7 +20,7 @@ import {
   setHasActiveRun,
   setGold,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setBattleState, withDraftWorldBattleRng } from "@/features/alchemy/shared/stores/write/run-battle";
+import { setBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
 import {
   setDiscoveredCardIds,
   setMaterials as setRunProfileMaterials,
@@ -39,7 +39,9 @@ import {
 import { createRunRngState } from "@/lib/rng";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
 import { defaultGameSession } from "@/app/application-session";
-import { battleSnapshot } from "@/lib/battle";
+import { resolveBattleCard } from "@/lib/battle";
+import { makeTestCard } from "../../../../fixtures/cards";
+import { makeTestBattleState } from "../../../../fixtures/battle";
 
 beforeEach(() => {
   resetRunDomainStore();
@@ -280,21 +282,37 @@ describe("run-session transaction coordinator", () => {
     }
   });
 
-  it("returns serializable battle snapshots from commands", () => {
-    setRunProgress({ rng: createRunRngState(() => 42 / 0x1_0000_0000) });
-    const returned = dispatchGameplayCommand(
-      (draft) => {
-        const bound = withDraftWorldBattleRng(draft, getBattleForTest(draft).battleState);
-        const next = { ...bound, playerHealth: Math.max(1, bound.playerHealth - 1) };
-        setBattleState(draft, next);
-        return acceptCommand(battleSnapshot(next));
-      },
-      undefined,
-      defaultGameSession,
+  it("rolls back combat rolls and returns reusable data after a successful retry", () => {
+    const card = makeTestCard({
+      effects: [
+        { kind: "chance", probability: 0.5, successEffects: [{ kind: "gain-gold", amount: 7 }], failureEffects: [] },
+      ],
+    });
+    setRunProgress({ rng: createRunRngState(42) });
+    setRunSession({
+      activity: { kind: "battle", data: { battleState: makeTestBattleState({ hand: [card], mana: 10 }) } },
+    });
+    const before = readGameplayState(defaultGameSession);
+    const execute = (fail: boolean) =>
+      dispatchGameplayCommand(
+        (draft) => {
+          const snapshot = getBattleForTest(draft).battleState;
+          const result = resolveBattleCard(snapshot, card.id, 0, { rng: createDraftRunRandomSource(draft, "world") });
+          setBattleState(draft, result.state);
+          if (fail) throw new Error("Settlement failed");
+          return acceptCommand(result);
+        },
+        undefined,
+        defaultGameSession,
+      );
+    expect(() => execute(true)).toThrow("Settlement failed");
+    expect(readGameplayState(defaultGameSession)).toBe(before);
+    const result = execute(false);
+    expect(readActiveRun(defaultGameSession).rng.counters.world).toBeGreaterThan(
+      before.run.activeRun.rng.counters.world,
     );
-
-    expect(returned).not.toHaveProperty("rng");
-    expect(() => JSON.stringify(returned)).not.toThrow();
+    expect(result.state.hand).toHaveLength(0);
+    expect(() => structuredClone(result)).not.toThrow();
     expect(readBattle(defaultGameSession).battleState).not.toHaveProperty("rng");
   });
 

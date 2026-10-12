@@ -2,7 +2,7 @@ import { controllerInput } from "../controller-input";
 import { expect, test } from "../../fixtures/e2e";
 import { gridLabyrinthMapFixture, twoFloorLabyrinthMapFixture } from "../../fixtures/labyrinth-map";
 import { critical } from "../../playwright-tags";
-import { failOnRuntimeErrors, injectLabyrinthRun } from "../../browser-helpers";
+import { injectLabyrinthRun, withSavedGame } from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { CorruptionPage } from "../../pages/corruption-page";
 
@@ -91,10 +91,7 @@ test.describe("Labyrinth exploration", critical, () => {
         .locator("[data-labyrinth-node]")
         .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("style"))),
     ).toEqual(layout);
-    const fresh = await page.context().newPage();
-    const freshErrors = failOnRuntimeErrors(fresh);
-    try {
-      await fresh.goto("/");
+    await withSavedGame(page, async (fresh) => {
       await expect(fresh.locator('[data-labyrinth-node="labyrinth-floor-1-n3"] button')).toHaveAttribute(
         "aria-current",
         "location",
@@ -102,10 +99,7 @@ test.describe("Labyrinth exploration", critical, () => {
       );
       await expect(fresh.locator('[data-labyrinth-node="labyrinth-floor-1-n4"] img')).toHaveCount(1);
       await expect(fresh.locator(`[data-labyrinth-node="${target.id}"]`)).toHaveAttribute("data-state", "cleared");
-      expect(freshErrors).toEqual([]);
-    } finally {
-      await fresh.close();
-    }
+    });
   });
 
   test("leaving Corruption unfinished does not move the player or scout beyond it", async ({ page }) => {

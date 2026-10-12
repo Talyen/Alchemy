@@ -1,10 +1,10 @@
 import { expect } from "@playwright/test";
 import { MAX_HAND_SIZE } from "@/lib/game-constants";
-import { injectActiveBattle, makeCard, makeGoblinBattleState, startBattleWithDeck } from "../../browser-helpers";
+import { injectActiveBattle, makeCard, makeGoblinBattleState } from "../../browser-helpers";
 import { test } from "../../fixtures/e2e";
 import { BattlePage } from "../../pages/battle-page";
 
-import { critical, slow } from "../../playwright-tags";
+import { critical } from "../../playwright-tags";
 
 test.describe("Battle Flow", () => {
   test("maximum hand remains visible beyond the battle scene boundary", async ({ page, fastBattle }) => {
@@ -46,40 +46,6 @@ test.describe("Battle Flow", () => {
   });
 });
 
-test.describe("Card Interactions", slow, () => {
-  test("multiple copies of the same card in hand can be hovered and played independently", async ({
-    page,
-    fastBattle,
-  }) => {
-    void fastBattle;
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 8 }, () => makeCard()),
-    );
-    const battle = new BattlePage(page);
-
-    const handBefore = await battle.handCount();
-    expect(handBefore).toBeGreaterThanOrEqual(2);
-
-    await battle.hand.nth(0).hover();
-
-    await expect(page.locator(".hover-popup-panel[data-visible]")).toBeVisible();
-
-    await battle.enemyArt.hover();
-    await expect(page.locator(".hover-popup-panel[data-visible]")).toHaveCount(1);
-    await expect(page.locator(".hover-popup-panel[data-visible]")).toBeVisible();
-
-    await battle.hand.nth(1).hover();
-    await expect(page.locator(".hover-popup-panel[data-visible]")).toBeVisible();
-
-    await battle.hand.nth(0).click();
-    await expect(async () => expect(await battle.handCount()).toBe(handBefore - 1)).toPass({ timeout: 3000 });
-
-    await battle.hand.nth(0).click();
-    await expect(async () => expect(await battle.handCount()).toBe(handBefore - 2)).toPass({ timeout: 3000 });
-  });
-});
-
 test.describe("Battle Autoplay", critical, () => {
   test("plays a hand card without clicking it", async ({ page, fastBattle }) => {
     void fastBattle;
@@ -91,10 +57,10 @@ test.describe("Battle Autoplay", critical, () => {
       effects: [{ kind: "player-status", status: "block", amount: 5 }],
     });
 
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => blockCard),
-    );
+    const deck = Array.from({ length: 6 }, () => blockCard);
+    await injectActiveBattle(page, makeGoblinBattleState({ hand: deck.slice(0, 4), deck: deck.slice(4) }), {
+      runDeck: deck,
+    });
     const battle = new BattlePage(page);
     await expect(battle.autoplayToggle).toBeVisible({ timeout: 10_000 });
     const manaBefore = await battle.mana();

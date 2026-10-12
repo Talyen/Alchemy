@@ -9,6 +9,7 @@ import {
 } from "../game-constants";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { paceCombatDamage } from "./fight-pacing";
+import { gearFrozenDamageMultiplier } from "./scaled-damage";
 import { computeBaseDamage } from "./player-damage-base";
 import { applyFirstDamageBonus, resolveDamageBonusMultiplier } from "./player-damage-multipliers";
 import {
@@ -66,7 +67,7 @@ export function computeTalentDamageToEnemy(
   const multiplier =
     source === "talent-derived"
       ? getEnemyTraitDamageMultiplier(state, damageType)
-      : getEnemyDamageMultiplier(state, damageType);
+      : getEnemyDamageMultiplier(state, damageType) * gearFrozenDamageMultiplier(state);
   const damage = Math.max(0, Math.round(base * multiplier));
   const afterBlock = applyBlockAbsorption(state, damage);
   const sundered = damage > 0 ? applySunderingArmorRemoval(afterBlock.state, damageType) : afterBlock.state;

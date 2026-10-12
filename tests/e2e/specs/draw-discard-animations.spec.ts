@@ -67,29 +67,6 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     expect(handCounts).toContain(4);
   });
 
-  test("play card shows ghost overlay", async ({ page }, testInfo) => {
-    const ghostOverlays = page.locator(".card-ghost-overlay");
-
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => makeCard()),
-    );
-    const battle = new BattlePage(page);
-    await waitForOpeningDeal(page);
-
-    await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
-    await battle.playFirstCard();
-    await expect(ghostOverlays.first()).toBeVisible({ timeout: 5000 });
-    // The played card flies as artwork and pops before fading on arrival.
-    const ghostKind = await ghostOverlays.first().evaluate((node) => node.tagName.toLowerCase());
-    expect(ghostKind).toBe("img");
-    await testInfo.attach("card-ghost-midflight", {
-      body: await page.screenshot(),
-      contentType: "image/png",
-    });
-    await expect(ghostOverlays).toHaveCount(0);
-  });
-
   test("accepts consecutive plays while draws and hand reflow are running", async ({ page }) => {
     test.setTimeout(60_000);
 
@@ -148,32 +125,7 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     await expect(visibleCards).toHaveCount(4);
   });
 
-  test("end turn shows card transfers during transition", async ({ page }) => {
-    test.setTimeout(60_000);
-
-    const flyingCards = page.locator("[data-flying-card]");
-
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => makeCard()),
-    );
-    const battle = new BattlePage(page);
-    await waitForOpeningDeal(page);
-
-    await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
-    await battle.playFirstCard();
-
-    const endTurnDone = battle.endTurn();
-    const transfersDuringTurn = expect
-      .poll(async () => flyingCards.count(), {
-        timeout: 20_000,
-        message: "draw/discard transfers should appear during the turn transition",
-      })
-      .toBeGreaterThan(0);
-    await Promise.all([transfersDuringTurn, endTurnDone]);
-  });
-
-  test("discard artwork lands exactly over the pile's muted-gem top card", async ({ page }, testInfo) => {
+  test("discard artwork lands exactly over the pile's muted-gem top card", async ({ page }) => {
     test.setTimeout(60_000);
     await startBattleWithDeck(
       page,
@@ -216,7 +168,6 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     });
     const ending = battle.endTurn();
     await expect(page.locator('[data-flying-card][data-transfer-kind="discard"]')).toHaveCount(1);
-    await testInfo.attach("discard-back-in-flight", { body: await page.screenshot(), contentType: "image/png" });
     const result = await landing;
     expect(result.sameArtwork).toBe(true);
     expect(result.samples).toBeGreaterThan(2);

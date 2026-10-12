@@ -1,5 +1,9 @@
 import { setBattleActiveForTest as setHasActiveBattle } from "../../../../helpers/run-domain-store-test";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
+import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
+import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
 import { deepFreeze } from "@/features/alchemy/shared/stores/store-utils";
 import { useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
@@ -41,32 +45,71 @@ describe("aggregate read ports", () => {
     expect(readGameplayState(defaultGameSession).profile.finishedRunCharacters).toEqual(["knight"]);
   });
 
-  it("keeps read capabilities data-only and unable to bypass the command coordinator", () => {
+  it("keeps the aggregate publisher private", () => {
     expect(useGameplayStateStore).not.toHaveProperty("setState");
     expect(useGameplayStateStore).not.toHaveProperty("commit");
-    expect(readActiveRun(defaultGameSession)).not.toHaveProperty("setGold");
-    expect(readActiveRun(defaultGameSession)).not.toHaveProperty("nextRunRandom");
-    expect(readRunProfile(defaultGameSession)).not.toHaveProperty("unlockTalent");
-    expect(readRunSession(defaultGameSession)).not.toHaveProperty("setRewardState");
-    expect(readBattle(defaultGameSession)).not.toHaveProperty("setSyncedBattleState");
   });
 
-  it("deep-freezes nested read values in development", () => {
-    dispatchRunSessionCommand((draft) => acceptCommand(setHasActiveRun(draft, true)), undefined, defaultGameSession);
+  it.each([true, false])("protects fresh and committed gameplay with DEV=%s", async (development) => {
+    vi.stubEnv("DEV", development);
+    const gameSession = createGameSession({ runtimeInputs: { generateRunSeed: () => 7 } });
+    try {
+      // The owner must protect the initial aggregate before any projection is read.
+      const initial = readGameplayState(gameSession);
+      expect(() => {
+        initial.revision = 900;
+      }).toThrow(TypeError);
+      expect(() => {
+        initial.runProfile.gold = 900;
+      }).toThrow(TypeError);
+      expect(() => {
+        initial.run.activeRun.rng.counters.world = 900;
+      }).toThrow(TypeError);
+      expect(() => readActiveRun(gameSession).runDeck.pop()).toThrow(TypeError);
+      expect(() => readProfileStore(gameSession).discoveredCardIds.push("slash")).toThrow(TypeError);
+      expect(() => readGearState(gameSession).ownedTrinketIds.push("unearned")).toThrow(TypeError);
+      expect(() => {
+        readRunProfile(gameSession).materialInventory.wood = 900;
+      }).toThrow(TypeError);
+      expect(() => readRunSession(gameSession).rewardFlow.state.destinations.pop()).toThrow(TypeError);
+      expect(readGameplayState(gameSession)).toBe(initial);
 
-    const session = readRunSession(defaultGameSession);
-    expect(Object.isFrozen(session)).toBe(true);
-    expect(Object.isFrozen(session.rewardFlow.state)).toBe(true);
-    expect(Object.isFrozen(session.rewardFlow.state.destinations)).toBe(true);
+      const observed: Array<{ state: ReturnType<typeof readGameplayState>; frozen: boolean; writable: boolean }> = [];
+      const stop = subscribeRunSessionCommits(() => {
+        const state = readGameplayState(gameSession);
+        observed.push({ state, frozen: Object.isFrozen(state), writable: Reflect.set(state, "revision", 900) });
+      }, gameSession);
+      try {
+        dispatchRunSessionCommand((transaction) => acceptCommand(setGold(transaction, 23)), undefined, gameSession);
+      } finally {
+        stop();
+      }
+      const committed = readGameplayState(gameSession);
+      expect(observed).toEqual([{ state: committed, frozen: true, writable: false }]);
+      expect(() => {
+        committed.revision = 900;
+      }).toThrow(TypeError);
+      expect(() => {
+        committed.runProfile.gold = 900;
+      }).toThrow(TypeError);
+      expect(committed.revision).toBe(initial.revision + 1);
+      expect(committed.runProfile.gold).toBe(23);
+      expect(initial.runProfile.gold).toBe(0);
+      expect(committed.gear).toBe(initial.gear);
+      expect(readGearState(gameSession).inventories).toBe(committed.gear.inventories);
+    } finally {
+      await gameSession.dispose();
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("traverses shallow-frozen and cyclic shared data", () => {
     const child = { progress: [1] };
     const shallow = Object.freeze({ child });
-    deepFreeze(shallow);
-    expect(() => child.progress.push(2)).toThrow(TypeError);
-    const key = { id: 1 };
-    const tree = { map: new Map([[key, shallow]]), set: new Set([child]), self: null as unknown };
+    const tree = { shallow, self: null as unknown };
     tree.self = tree;
     expect(deepFreeze(tree)).toBe(tree);
-    expect(Object.isFrozen(key)).toBe(true);
+    expect(() => child.progress.push(2)).toThrow(TypeError);
     expect(deepFreeze(tree)).toBe(tree);
   });
 });

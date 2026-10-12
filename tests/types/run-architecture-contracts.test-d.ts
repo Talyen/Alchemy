@@ -1,3 +1,4 @@
+import { resolveBattleCard, resolveBattleWish, type BattleSnapshot } from "@/lib/battle";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import {
   createSessionPersistence,
@@ -32,6 +33,7 @@ import { defaultGameSession } from "@/app/application-session";
 declare const asyncMutation: () => Promise<void>;
 declare const maybeAsyncMutation: () => number | PromiseLike<number>;
 declare const draft: RunTransaction;
+declare const snapshot: BattleSnapshot;
 
 type WritePort = typeof import("@/features/alchemy/shared/stores/run-session-write-port");
 // Pure (non-mutating) helpers are exempt from the transaction-first rule.
@@ -53,6 +55,16 @@ describe("run architecture type contracts", () => {
     expectTypeOf<Continue>().parameters.toEqualTypeOf<["shop" | "alchemist" | "trinket-shop" | "equipment-shop"]>();
   });
 
+  it("requires explicit RNG for player actions and returns data-only snapshots", () => {
+    // @ts-expect-error -- snapshots cannot supply execution dependencies implicitly
+    resolveBattleCard(snapshot, "card", 0);
+    // @ts-expect-error -- Wish selection also needs the host combat stream
+    resolveBattleWish(snapshot, "card");
+    expectTypeOf<ReturnType<typeof resolveBattleCard>["state"]>().toEqualTypeOf<BattleSnapshot>();
+    expectTypeOf<ReturnType<typeof resolveBattleWish>["state"]>().toEqualTypeOf<BattleSnapshot>();
+    type BattleApi = typeof import("@/lib/battle");
+    expectTypeOf<Extract<keyof BattleApi, "playBattleCardResolved" | "chooseWishCard">>().toEqualTypeOf<never>();
+  });
   it("requires a career for reusable reads, writes, and persistence while bound methods need none", () => {
     // @ts-expect-error -- missing ownership must never select the application career
     readBattle();
