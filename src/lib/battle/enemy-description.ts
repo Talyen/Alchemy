@@ -1,0 +1,140 @@
+import {
+  getCardDescription,
+  getCardEffect,
+  renderCardDescription,
+  type BattleCard,
+  type EnemyTrait,
+  type EnemyAbilityEffect,
+  type EnemyAbilityCard,
+} from "@/lib/game-data";
+import {
+  ENEMY_STARTING_BLOCK,
+  LIVING_ARMOR_STARTING_ARMOR,
+  ENEMY_BASE_REGENERATION,
+  ENEMY_BOSS_REGENERATION,
+} from "../game-constants";
+import { scaleEnemyAbilityDamage } from "./battle-enemy-setup";
+import { capitalizeWord } from "../utils";
+import type { BattleState } from "./types";
+
+export type EnemyDescriptionContext = Readonly<
+  Pick<BattleState, "roomScalingMultiplier" | "difficultyModifiers" | "currentEnemy">
+>;
+
+function scaleEffect(effect: EnemyAbilityEffect, context: EnemyDescriptionContext): EnemyAbilityEffect {
+  const room = (amount: number) => Math.round(amount * context.roomScalingMultiplier);
+  switch (effect.kind) {
+    case "chance":
+      return {
+        ...effect,
+        successEffects: effect.successEffects.map((e) => scaleEffect(e, context)),
+        failureEffects: effect.failureEffects.map((e) => scaleEffect(e, context)),
+      };
+    case "damage": {
+      if (effect.equalToBlock || effect.equalToForge)
+        return { ...scaleEnemyAbilityDamage(context, effect, true), amount: effect.amount };
+      const damage = (amount: number, damageType = effect.damageType) =>
+        scaleEnemyAbilityDamage(context, { ...effect, amount, damageType }).amount;
+      return {
+        ...effect,
+        ...scaleEnemyAbilityDamage(context, effect),
+        ...(effect.blockDamageBonus !== undefined
+          ? { blockDamageBonus: damage(effect.amount + effect.blockDamageBonus) - damage(effect.amount) }
+          : {}),
+        ...(effect.amountIfTargetFrozen !== undefined
+          ? { amountIfTargetFrozen: damage(effect.amountIfTargetFrozen, effect.damageTypeIfTargetFrozen) }
+          : {}),
+      };
+    }
+    case "heal":
+    case "player-status":
+      return { ...effect, amount: room(effect.amount) };
+    case "remove-enemy-armor":
+      return effect.amount !== undefined && !effect.halve && !effect.removeAll
+        ? { ...effect, amount: room(effect.amount) }
+        : effect;
+    case "multiply-enemy-status":
+      return effect;
+  }
+}
+
+/** Presentation copies must never be passed back into ability resolution. */
+export function getEncounterEnemyAbility(card: EnemyAbilityCard, context: EnemyDescriptionContext): BattleCard {
+  const effects = card.effects.map((effect) => scaleEffect(effect, context));
+  const { description: _authoredDescription, ...presentation } = card;
+  const description = getCardDescription({ ...presentation, effects });
+  // A damage-type alternative can receive different flat difficulty bonuses.
+  for (const line of description) {
+    const seenAmounts = new Set<string>();
+    line.parts = line.parts.map((part, index) => {
+      if (typeof part === "string") return part;
+      const reference = part.references[0];
+      if (!reference || reference.kind !== "damage" || reference.field !== "amount") return part;
+      const original = getCardEffect(card.effects, reference);
+      if (original?.kind !== "damage") return part;
+      const damage = (damageType: typeof original.damageType) =>
+        scaleEnemyAbilityDamage(context, { ...original, damageType }).amount;
+      if (original.damageTypePool?.length && new Set(original.damageTypePool.map(damage)).size > 1) {
+        // The structured damage line places its type label immediately after its magnitude.
+        line.parts[index + 1] = " damage";
+        return original.damageTypePool.map((type) => `${damage(type)} ${capitalizeWord(type)}`).join(" or ");
+      }
+      if (!original.damageTypeIfTargetHasBlock) return part;
+      if (!seenAmounts.has(part.id)) {
+        seenAmounts.add(part.id);
+        return part;
+      }
+      return String(damage(original.damageTypeIfTargetHasBlock));
+    });
+  }
+
+  return {
+    ...card,
+    effects,
+    description,
+    descriptionLines: renderCardDescription(effects, description).descriptionLines,
+  };
+}
+
+const ROOM_SCALED_TRAITS = new Set([
+  "cinder-skin",
+  "frost-elemental",
+  "ice-wraith",
+  "pyromancer",
+  "dire-wolf",
+  "blood-cultist",
+  "tempered",
+  "plated",
+  "reinforced",
+  "septic",
+  "caustic",
+  "flesheater",
+  "combustible",
+  "chilling",
+  "zealot",
+  "insatiable",
+  "jealous",
+  "concussive",
+  "rooted",
+  "overgrowth",
+  "holy-retribution",
+  "toxic",
+  "bloodletter",
+]);
+
+export function getEncounterEnemyTrait(trait: EnemyTrait, context: EnemyDescriptionContext): EnemyTrait {
+  const room = (amount: number) => Math.round(amount * context.roomScalingMultiplier);
+  let description = trait.description;
+  if (trait.id === "starting-block") description = `Starts with ${room(ENEMY_STARTING_BLOCK)} Block`;
+  else if (trait.id === "living-armor")
+    description = description.replace("with Armor", `with ${room(LIVING_ARMOR_STARTING_ARMOR)} Armor`);
+  else if (trait.id === "regeneration")
+    description = `Restores ${room(context.currentEnemy.enemyType === "boss" ? ENEMY_BOSS_REGENERATION : ENEMY_BASE_REGENERATION)} Health each turn`;
+  else if (trait.id === "stone-golem") description = description.replace("1 additional", `${room(1)} additional`);
+  else if (trait.id === "thorns") description = description.replace("deals 1 Physical", `deals ${room(1)} Physical`);
+  else if (trait.id === "divine-aegis")
+    description = description.replace("2 Armor and 4 Block", `${room(2)} Armor and ${room(4)} Block`);
+  else if (ROOM_SCALED_TRAITS.has(trait.id))
+    description = description.replace(/\b\d+\b/g, (value) => String(room(Number(value))));
+  return description === trait.description ? trait : { ...trait, description };
+}
