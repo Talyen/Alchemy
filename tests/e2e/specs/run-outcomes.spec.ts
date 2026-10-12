@@ -87,6 +87,15 @@ test.describe("Run Outcomes", () => {
         .poll(() => portrait.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0))
         .toBe(true);
       await expect(page.getByRole("button", { name: "Main Menu", exact: true })).toBeFocused();
+      await portrait.hover();
+      await expect(page.getByRole("tooltip")).toContainText("Starting Deck");
+      await page.mouse.move(0, 0);
+      await expect(page.getByRole("tooltip")).toHaveCount(0);
+      await page.keyboard.press("Shift+Tab");
+      await expect(page.getByRole("button", { name: "Inspect Rogue", exact: true })).toBeFocused();
+      await expect(page.getByRole("tooltip")).toContainText("Starting Deck");
+      await page.keyboard.press("Tab");
+      await expect(page.getByRole("tooltip")).toHaveCount(0);
       await page.setViewportSize({ width: 900, height: 600 });
       await expect(portrait).toBeInViewport();
       await expect(page.getByRole("button", { name: "Main Menu", exact: true })).toBeInViewport();

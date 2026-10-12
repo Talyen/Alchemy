@@ -134,7 +134,10 @@ Act/node summary. Deck and Boon inspection retain their normal labels and shared
 overlay behavior. Victory keeps its own title.
 
 When a run newly unlocks a hero, Continue opens a Hero Unlocked reveal with that
-hero’s portrait and name before Main Menu. Repeat runs do not replay unlocks.
+hero’s portrait and name before Main Menu. Hovering or focusing the portrait
+shows the same hero tooltip as hero selection, including the starting deck and
+keywords. The background glow uses that hero’s selection palette. Repeat runs
+do not replay unlocks.
 Defeat and manual End Run follow the same unlock rules as victory. Demo victories
 show available hero unlocks before the demo completion screen. Unlock reveals,
 like the recap, are transient; permanent hero availability remains saved.
