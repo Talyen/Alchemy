@@ -412,3 +412,14 @@ html.alchemy-disable-animations *::after {
     transform: translateY(0) scale(1);
   }
 }
+
+@keyframes heroPortraitReveal {
+  from {
+    opacity: 0;
+    transform: translateY(calc(0.5 * var(--content-rem))) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
