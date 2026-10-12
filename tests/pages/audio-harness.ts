@@ -1,6 +1,5 @@
 /**
- * Shared browser harness for the audio E2E journey (`audio-sfx.spec.ts` covers
- * menu SFX). Pretends to be a player host (non-headless user agent) and then
+ * Shared browser harness for the combat and SFX canary. Pretends to be a player host (non-headless user agent) and then
  * observes `Audio` playback without sounding anything.
  */
 import type { Page } from "@playwright/test";

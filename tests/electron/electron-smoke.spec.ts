@@ -88,65 +88,66 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
     expect(errors).toEqual([]);
   });
 
-  test("macOS fullscreen fills the display and restores window controls", async () => {
-    // oxlint-disable-next-line playwright/no-skipped-test -- Simple fullscreen is a macOS-only native API.
-    test.skip(process.platform !== "darwin", "macOS notch and simple fullscreen behavior");
-    // oxlint-disable-next-line playwright/no-skipped-test -- Native display changes require an explicit foreground run.
-    test.skip(ELECTRON_TEST_BACKGROUND, "Set ALCHEMY_ELECTRON_BACKGROUND=0 for an authorized foreground run");
-    const errors = failOnRuntimeErrors(window);
-    await new MenuPage(window).expectMainMenuAfterColdStart();
+  test.describe("macOS fullscreen", () => {
+    // Static skips avoid launching an application on unsupported hosts.
+    // oxlint-disable-next-line playwright/no-skipped-test -- Native macOS fullscreen requires an authorized foreground run.
+    test.skip(process.platform !== "darwin" || ELECTRON_TEST_BACKGROUND, "Requires foreground macOS");
+    test("fills the display and restores window controls", async () => {
+      const errors = failOnRuntimeErrors(window);
+      await new MenuPage(window).expectMainMenuAfterColdStart();
 
-    const expectFullDisplay = async () => {
-      const display = await electronApp!.evaluate(({ BrowserWindow, screen }) => {
-        const main = BrowserWindow.getAllWindows()[0];
-        return screen.getDisplayMatching(main.getBounds()).bounds;
-      });
-      await expect
-        .poll(() =>
-          electronApp!.evaluate(({ BrowserWindow }) => {
-            const main = BrowserWindow.getAllWindows()[0];
-            return {
-              simple: main.isSimpleFullScreen(),
-              native: main.isFullScreen(),
-              bounds: main.getContentBounds(),
-            };
-          }),
-        )
-        .toEqual({ simple: true, native: false, bounds: display });
-      await expect
-        .poll(() => window.evaluate(() => ({ width: innerWidth, height: innerHeight })))
-        .toEqual({ width: display.width, height: display.height });
-    };
-
-    await expectFullDisplay();
-    for (const mode of ["fullscreen", "borderless-fullscreen"] as const) {
-      await window.evaluate(() => window.alchemyDesktop!.setDisplayMode("windowed"));
-      await expect
-        .poll(() =>
-          electronApp!.evaluate(({ BrowserWindow }) => {
-            const main = BrowserWindow.getAllWindows()[0];
-            return {
-              simple: main.isSimpleFullScreen(),
-              native: main.isFullScreen(),
-              resizable: main.isResizable(),
-              minimizable: main.isMinimizable(),
-              movable: main.isMovable(),
-              size: main.getSize(),
-            };
-          }),
-        )
-        .toEqual({
-          simple: false,
-          native: false,
-          resizable: true,
-          minimizable: true,
-          movable: true,
-          size: [1280, 720],
+      const expectFullDisplay = async () => {
+        const display = await electronApp!.evaluate(({ BrowserWindow, screen }) => {
+          const main = BrowserWindow.getAllWindows()[0];
+          return screen.getDisplayMatching(main.getBounds()).bounds;
         });
-      await window.evaluate((value) => window.alchemyDesktop!.setDisplayMode(value), mode);
+        await expect
+          .poll(() =>
+            electronApp!.evaluate(({ BrowserWindow }) => {
+              const main = BrowserWindow.getAllWindows()[0];
+              return {
+                simple: main.isSimpleFullScreen(),
+                native: main.isFullScreen(),
+                bounds: main.getContentBounds(),
+              };
+            }),
+          )
+          .toEqual({ simple: true, native: false, bounds: display });
+        await expect
+          .poll(() => window.evaluate(() => ({ width: innerWidth, height: innerHeight })))
+          .toEqual({ width: display.width, height: display.height });
+      };
+
       await expectFullDisplay();
-    }
-    expect(errors).toEqual([]);
+      for (const mode of ["fullscreen", "borderless-fullscreen"] as const) {
+        await window.evaluate(() => window.alchemyDesktop!.setDisplayMode("windowed"));
+        await expect
+          .poll(() =>
+            electronApp!.evaluate(({ BrowserWindow }) => {
+              const main = BrowserWindow.getAllWindows()[0];
+              return {
+                simple: main.isSimpleFullScreen(),
+                native: main.isFullScreen(),
+                resizable: main.isResizable(),
+                minimizable: main.isMinimizable(),
+                movable: main.isMovable(),
+                size: main.getSize(),
+              };
+            }),
+          )
+          .toEqual({
+            simple: false,
+            native: false,
+            resizable: true,
+            minimizable: true,
+            movable: true,
+            size: [1280, 720],
+          });
+        await window.evaluate((value) => window.alchemyDesktop!.setDisplayMode(value), mode);
+        await expectFullDisplay();
+      }
+      expect(errors).toEqual([]);
+    });
   });
 });
 

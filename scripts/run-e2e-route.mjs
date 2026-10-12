@@ -20,7 +20,7 @@ function e2eRoute(label, specs, grep) {
 }
 
 export const E2E_ROUTES = Object.freeze({
-  audio: e2eRoute("audio Playwright flow", ["audio-sfx"]),
+  audio: e2eRoute("audio Playwright flow", ["battle-end-turn-canary"]),
   gear: e2eRoute("gear Playwright flows", ["armory"]),
   mystery: e2eRoute("mystery Playwright flow", ["destination-progression"], "Mystery"),
   homestead: e2eRoute("homestead Playwright flow", ["homestead-flow"]),
