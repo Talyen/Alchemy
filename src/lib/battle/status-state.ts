@@ -1,4 +1,5 @@
-import type { BattleState } from "./types";
+import { mergeCombatText } from "./combat-text-events";
+import type { BattleState, CombatTextEvent } from "./types";
 import { isStunFreezeBuildupBlocked } from "./crowd-control-policy";
 import type { EnemyStatusId, PlayerStatusId } from "@/lib/game-data";
 import { PERCENT_DENOMINATOR, LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
@@ -62,7 +63,7 @@ export function addEnemyStatus(
   state: BattleState,
   status: EnemyStatusId,
   delta: number,
-  options: { attackBuildup?: boolean } = {},
+  options: { attackBuildup?: boolean; combatTexts?: CombatTextEvent[] } = {},
 ): BattleState {
   if ((status === "stun" || status === "freeze") && isStunFreezeBuildupBlocked(state.enemyCC)) {
     return state;
@@ -90,7 +91,18 @@ export function addEnemyStatus(
     traitAdjustedDelta > 0 &&
     rollPercent(nextState.gearEffects.poisonArmorShredChance, getBattleRng(nextState))
   ) {
+    const armorBefore = nextState.enemyMitigation.armor;
     nextState = reduceEnemyArmor(nextState, 1);
+    const removed = armorBefore - nextState.enemyMitigation.armor;
+    if (removed > 0 && options.combatTexts) {
+      mergeCombatText(options.combatTexts, {
+        target: "enemy",
+        kind: "damage",
+        stat: "armor",
+        amount: removed,
+        impact: false,
+      });
+    }
   }
 
   return nextState;
