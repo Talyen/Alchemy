@@ -23,28 +23,31 @@ describe("SaveWriteQueue", () => {
     await expect(queue.enqueue(snapshot(2), async () => "saved")).resolves.toBe("saved");
   });
 
-  it.each(["saved", "failed"] as const)("coalesced callers share the replacement's %s outcome", async (outcome) => {
-    const queue = new SaveWriteQueue();
-    const gate = deferred<SaveWriteOutcome>();
-    const write = vi.fn().mockReturnValueOnce(gate.promise).mockResolvedValue(outcome);
-    const first = queue.enqueue(snapshot(1), write);
-    await Promise.resolve();
-    const second = queue.enqueue(snapshot(2), write);
-    const third = queue.enqueue(snapshot(3), write);
-    expect(second).toBe(third);
-    let resolved = false;
-    void second.then(() => {
-      resolved = true;
-    });
-    await Promise.resolve();
-    expect(resolved).toBe(false);
-    gate.resolve("saved");
-    expect(await first).toBe("saved");
-    expect(await second).toBe(outcome);
-    expect(await third).toBe(outcome);
-    expect(write.mock.calls.map(([data]) => data.gold)).toEqual([1, 3]);
-    expect(queue.isIdle).toBe(true);
-  });
+  it.each(["saved", "failed"] as const)(
+    "superseded callers never inherit a replacement that is %s",
+    async (outcome) => {
+      const queue = new SaveWriteQueue();
+      const gate = deferred<SaveWriteOutcome>();
+      const write = vi.fn().mockReturnValueOnce(gate.promise).mockResolvedValue(outcome);
+      const first = queue.enqueue(snapshot(1), write);
+      await Promise.resolve();
+      const second = queue.enqueue(snapshot(2), write);
+      const third = queue.enqueue(snapshot(3), write);
+      expect(second).not.toBe(third);
+      let resolved = false;
+      void second.then(() => {
+        resolved = true;
+      });
+      await Promise.resolve();
+      expect(resolved).toBe(true);
+      gate.resolve("saved");
+      expect(await first).toBe("saved");
+      expect(await second).toBe("superseded");
+      expect(await third).toBe(outcome);
+      expect(write.mock.calls.map(([data]) => data.gold)).toEqual([1, 3]);
+      expect(queue.isIdle).toBe(true);
+    },
+  );
 
   it("owns its snapshot so caller mutations after enqueue cannot corrupt the write", async () => {
     const queue = new SaveWriteQueue();
@@ -64,14 +67,16 @@ describe("SaveWriteQueue", () => {
     const latestWrite = vi.fn().mockResolvedValue("saved");
     const first = queue.enqueue(snapshot(1), replacedWrite);
     const replacement = queue.enqueue(snapshot(2), firstWrite);
-    expect(first).toBe(replacement);
+    expect(first).not.toBe(replacement);
     await Promise.resolve();
     expect(firstWrite).toHaveBeenCalledExactlyOnceWith(snapshot(2));
     const next = queue.enqueue(snapshot(3), replacedWrite);
-    expect(queue.enqueue(snapshot(4), latestWrite)).toBe(next);
+    const latest = queue.enqueue(snapshot(4), latestWrite);
     gate.resolve("saved");
-    await expect(first).resolves.toBe("saved");
-    await expect(next).resolves.toBe("saved");
+    await expect(first).resolves.toBe("superseded");
+    await expect(replacement).resolves.toBe("saved");
+    await expect(next).resolves.toBe("superseded");
+    await expect(latest).resolves.toBe("saved");
     expect(latestWrite).toHaveBeenCalledExactlyOnceWith(snapshot(4));
     expect(replacedWrite).not.toHaveBeenCalled();
   });

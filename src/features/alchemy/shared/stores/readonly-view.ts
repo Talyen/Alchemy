@@ -1,3 +1,4 @@
+import { assertSynchronousResult } from "./command-outcome";
 import { current, isDraft, type Draft, type Immutable } from "immer";
 
 const sources = new WeakMap<object, object>();
@@ -50,14 +51,25 @@ export function snapshotReadonlyValue<T>(value: T): Draft<T> {
   return copyBoundaryValue(value, false);
 }
 
+/** Commit results are data; executable dependencies must never reach deferred consumers. */
+export function snapshotCommandResult<T>(value: T): Draft<T> {
+  return copyBoundaryValue(value, false, true);
+}
+
 /** Own caller data on ingress; existing read capabilities already belong to the transaction. */
 export function ownTransactionInput<T>(value: T): Draft<T> {
   return copyBoundaryValue(value, true);
 }
 
-function copyBoundaryValue<T>(value: T, retainReadSources: boolean): Draft<T> {
+function copyBoundaryValue<T>(value: T, retainReadSources: boolean, dataOnly = false): Draft<T> {
   const copies = new WeakMap<object, object>();
   function copy(entry: unknown): unknown {
+    if (dataOnly) {
+      assertSynchronousResult(entry);
+      if (typeof entry === "function") {
+        throw new Error("Command results must contain only data; a function cannot leave its command");
+      }
+    }
     if (entry === null || typeof entry !== "object") return entry;
     const readSource = sources.get(entry);
     if (retainReadSources && (readSource || isDraft(entry))) {

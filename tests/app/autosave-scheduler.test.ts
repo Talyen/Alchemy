@@ -77,18 +77,21 @@ describe("autosave scheduler", () => {
     expect(scheduler.submit(false)).not.toBeNull();
   });
 
-  it("ignores older failures while a newer submission is pending or saved", () => {
-    const scheduler = createAutosaveScheduler(10_000);
-    scheduler.markDirty(1_000);
-    const older = scheduler.submit(false)!;
-    scheduler.markDirty(2_000);
-    const newer = scheduler.submit(false)!;
-    expect(scheduler.complete(older, "failed", 3_000)).toBe("ignore");
-    expect(scheduler.nextDelay(3_000, 500)).toBeNull();
-    expect(scheduler.complete(newer, "saved", 4_000)).toBe("cancel");
-    expect(scheduler.complete(older, "failed", 5_000)).toBe("ignore");
-    expect(scheduler.submit(false)).toBeNull();
-  });
+  it.each(["failed", "superseded"] as const)(
+    "ignores older %s writes while a newer submission is pending or saved",
+    (outcome) => {
+      const scheduler = createAutosaveScheduler(10_000);
+      scheduler.markDirty(1_000);
+      const older = scheduler.submit(false)!;
+      scheduler.markDirty(2_000);
+      const newer = scheduler.submit(false)!;
+      expect(scheduler.complete(older, outcome, 3_000)).toBe("ignore");
+      expect(scheduler.nextDelay(3_000, 500)).toBeNull();
+      expect(scheduler.complete(newer, "saved", 4_000)).toBe("cancel");
+      expect(scheduler.complete(older, outcome, 5_000)).toBe("ignore");
+      expect(scheduler.submit(false)).toBeNull();
+    },
+  );
 
   it.each(["saved", "failed", "skipped"] as const)("ignores late %s completions after cancellation", (outcome) => {
     const scheduler = createAutosaveScheduler(10_000);
@@ -143,4 +146,15 @@ describe("autosave scheduler", () => {
       expect(scheduler.nextDelay(20_000, 500)).toBe(500);
     },
   );
+});
+
+it("retries superseded work until its own payload is saved", () => {
+  const scheduler = createAutosaveScheduler(10_000);
+  scheduler.markDirty(100);
+  const original = scheduler.submit(false)!;
+  expect(scheduler.complete(original, "superseded", 200)).toBe("schedule");
+  expect(scheduler.nextDelay(200, 0)).toBe(10_000);
+  const retry = scheduler.submit(false)!;
+  expect(scheduler.complete(retry, "saved", 10_200)).toBe("cancel");
+  expect(scheduler.nextDelay(10_200, 0)).toBeNull();
 });

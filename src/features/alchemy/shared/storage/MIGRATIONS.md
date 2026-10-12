@@ -168,7 +168,7 @@ Tie rules: playable-vs-playable ties keep the first candidate in read order — 
 
 ## Write acknowledgement
 
-Normal saves and explicit flushes return `saved`, `failed`, or `skipped`. `saved` means local storage accepted that snapshot or a newer coalesced replacement in the active slot; a Cloud-mirror failure remains non-fatal. A failed primary write tries the recovery slot with the same snapshot. Serialization and backend failures are logged at the I/O seam and returned to the caller.
+Normal saves and explicit flushes return `saved`, `failed`, `skipped`, or `superseded`. `saved` means local storage accepted that submitted snapshot in the active slot; a Cloud-mirror failure remains non-fatal. A pending submission replaced by coalescing returns `superseded`, and autosave retains its unacknowledged work for retry. Replacement success cannot acknowledge the discarded payload. `skipped` covers cancellation, protection, or unavailable storage. A failed primary write tries the recovery slot with the same snapshot. Serialization and backend failures are logged at the I/O seam and returned to the caller.
 
 Autosave retains unacknowledged changes until a covering write succeeds. In-memory revisions prevent an older completion from clearing newer progress. When building a snapshot or writing it fails, autosave retries through the existing single timer no sooner than `AUTOSAVE_RETRY_COOLDOWN_MS` after failure (see `src/lib/game-constants/storage.ts`; kept equal to `AUTOSAVE_MAX_WAIT_MS` so the backoff survives shrunken debounces, split so UX timing and retry backoff can diverge later), including when animations are disabled or new changes arrive. Timing math lives in `src/app/autosave-scheduler.ts` with unit coverage; `src/app/autosave-lifecycle.ts` owns debounce selection, snapshot building, completion gating, and subscriptions for both React and headless callers; the React hook adds browser lifecycle listeners. Exit signals may bypass that cooldown, with an exit-once latch per revision so back-to-back exit events write one snapshot. Clear requests and write protection invalidate pending acknowledgements and cancel scheduled autosaves; disabled persistence and hook cleanup also stop retries. Late timer callbacks and write completions cannot restart cancelled work or flush a disposed lifecycle. No scheduling metadata is persisted.
 
@@ -177,7 +177,7 @@ Browser lifecycle exits (`visibilitychange`, `pagehide`, and `beforeunload`) syn
 Renderer gameplay checkpoints publish Saving… before any completed result. Display
 hooks retain pre-action progress while domain commands resolve and saving runs.
 A successful primary or recovery write releases the pending result; failed and
-skipped writes never acknowledge it. If both slots fail, progression pauses with
+skipped or superseded writes never acknowledge it. If both slots fail, progression pauses with
 Couldn’t save and Retry. Retrying saves the committed snapshot without executing
 the action again. Automatic retry remains with the existing scheduler and cooldown;
 explicit Retry resets its submission latch without changing normal exit deduplication.

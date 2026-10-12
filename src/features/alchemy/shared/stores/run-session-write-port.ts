@@ -1,5 +1,5 @@
 import * as ending from "./write/run-end";
-import { gameplayDraftRuntime } from "./gameplay-command";
+import { bindDraftCapability, gameplayDraftRuntime } from "./gameplay-command";
 // Canonical gameplay write seam: commands write through these transaction operations.
 //
 // This module is the transaction API for command authors (adapters call commands,
@@ -168,7 +168,8 @@ export const captureRunRecap = transactionOperation(recap.captureRunRecap);
 export const settlePendingBattleMaterials = transactionOperation(battle.settlePendingBattleMaterials);
 
 export function createDraftInstanceIdSource(transaction: RunTransaction): () => string {
-  return gameplayDraftRuntime(transactionDraft(transaction)).createInstanceId;
+  const draft = transactionDraft(transaction);
+  return bindDraftCapability(draft, gameplayDraftRuntime(draft).createInstanceId);
 }
 
 export const awardRunEndMaterials = transactionOperation(ending.awardRunEndMaterials);
