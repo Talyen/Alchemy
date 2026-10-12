@@ -10,6 +10,7 @@ import {
 import { clamp01 } from "@/lib/math";
 import { LOADING_WORDS } from "./loading-words";
 import { StartupLoadingDecoration } from "./startup-loading-decoration";
+import { dismissStartupSplash } from "./startup-splash";
 
 function useSyncedLoadingWord() {
   // Sequential rotation with a random start: equally pleasant, no repeat-avoidance math.
@@ -34,6 +35,28 @@ interface Props {
 export function StartupLoadingScreen({ progress }: Props) {
   const fill = clamp01(progress);
   const { wordIndex, loadingWord } = useSyncedLoadingWord();
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const splash = document.getElementById("startup-splash");
+    if (splash) {
+      splash.setAttribute("aria-valuenow", String(Math.round(fill * 100)));
+    }
+  }, [fill]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const phrase = document.getElementById("startup-splash-phrase");
+    if (phrase) {
+      phrase.textContent = `${loadingWord}...`;
+    }
+  }, [loadingWord]);
+
+  useEffect(() => {
+    return () => {
+      dismissStartupSplash();
+    };
+  }, []);
 
   return (
     <div

@@ -13,7 +13,7 @@
         font-family: 'Inter';
         font-style: normal;
         font-weight: 400 800;
-        font-display: block;
+        font-display: swap;
         src: url(/fonts/Inter.woff2) format('woff2');
         unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
       }
@@ -36,71 +36,311 @@
         overflow: hidden;
         font-family: 'Inter', sans-serif;
       }
+      /* Unified Startup Loading Screen */
+      #startup-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        background-color: hsl(var(--alchemy-bg));
+        color: hsl(var(--alchemy-fg));
+        font-family: 'Inter', sans-serif;
+        user-select: none;
+      }
+      #startup-splash.alchemy-splash-dismissed {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 180ms ease-out;
+      }
+      html.alchemy-skip-loading-screen #startup-splash {
+        display: none !important;
+      }
+
+      .alchemy-loading-title {
+        position: relative;
+        font-family: 'Inter', sans-serif;
+        font-size: 2.25rem;
+        line-height: 2.5rem;
+        font-weight: 900;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin: 0;
+      }
+      .alchemy-loading-logo-base {
+        color: #44403c;
+      }
+      .alchemy-loading-logo-fill {
+        position: absolute;
+        inset: 0 auto 0 0;
+        overflow: hidden;
+        animation: loadingLogoFill 3000ms ease-out forwards;
+        will-change: width;
+      }
+      .alchemy-loading-logo-fill-text {
+        display: block;
+        width: max-content;
+        color: hsl(var(--alchemy-primary));
+      }
+      .alchemy-loading-word {
+        margin-top: -12px;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.75rem;
+        font-weight: 500;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: hsl(var(--alchemy-fg) / 0.5);
+      }
+
+      /* Loading Decoration (Slime, Shadow, Leaves) */
+      .loading-decoration {
+        position: absolute;
+        inset: -8px 0 auto;
+        height: 0;
+        pointer-events: none;
+        font-size: 0;
+      }
+      .loading-decoration-slime {
+        position: absolute;
+        left: calc(50% - 25px);
+        bottom: -3px;
+        width: 50px;
+        height: 39px;
+        transform-origin: bottom;
+        transform: translateX(54px);
+        animation: loadingSlimeHop 2s cubic-bezier(0.333333, 0, 0.666667, 1) both;
+      }
+      .loading-decoration img {
+        display: block;
+        max-width: none;
+      }
+      .loading-decoration-face {
+        position: absolute;
+        inset: -5.5px -1.75px 5.5px 1.75px;
+        animation: loadingSlimeFace 2s cubic-bezier(0.333333, 0, 0.666667, 1) both;
+      }
+      .loading-decoration-face img {
+        position: absolute;
+      }
+      .loading-decoration-eye-left {
+        left: 18.5px;
+        top: 13.65px;
+        width: 6px;
+        height: 8.97px;
+      }
+      .loading-decoration-eye-right {
+        left: 32px;
+        top: 13.65px;
+        width: 5.25px;
+        height: 8.97px;
+      }
+      .loading-decoration-eye-left,
+      .loading-decoration-eye-right {
+        animation: loadingSlimeBlink 4.4s linear both;
+      }
+      .loading-decoration-mouth {
+        left: 26.5px;
+        top: 23.4px;
+        width: 6.5px;
+        height: 2.73px;
+      }
+      .loading-decoration-shadow {
+        position: absolute;
+        left: calc(50% - 20.5px);
+        top: 0;
+        width: 41px;
+        height: 3px;
+        border-radius: 50%;
+        background: rgb(0 0 0 / 12%);
+        filter: blur(2px);
+        transform: translateX(54px);
+        animation: loadingSlimeShadow 2s cubic-bezier(0.333333, 0, 0.666667, 1) both;
+      }
+      .loading-decoration-leaf {
+        position: absolute;
+        top: var(--leaf-y);
+        left: 0;
+        width: 12px;
+        height: 16px;
+        animation: loadingLeafDrift 2.5s linear var(--leaf-delay) infinite both;
+      }
+
+      @keyframes loadingLogoFill {
+        from { width: 0%; }
+        to { width: 100%; }
+      }
+      @keyframes loadingSlimeHop {
+        0% { transform: translate(-54px, 0px) rotate(-3deg) scale(1, 1); }
+        10% { transform: translate(-54px, 0px) rotate(-6deg) scale(1.15, 0.82); }
+        16% { transform: translate(-45px, -7.5px) rotate(4deg) scale(0.91, 1.1); }
+        24.5% { transform: translate(-30px, -15px) rotate(6deg) scale(0.96, 1.05); }
+        36.5% { transform: translate(-6px, 0px) rotate(-3deg) scale(1.22, 0.76); }
+        44% { transform: translate(-6px, 0px) rotate(0deg) scale(0.94, 1.07); }
+        51.5% { transform: translate(-6px, 0px) rotate(-5deg) scale(1.14, 0.83); }
+        59% { transform: translate(11px, -12.5px) rotate(4deg) scale(0.9, 1.13); }
+        68% { transform: translate(33px, -15.5px) rotate(6deg) scale(0.96, 1.04); }
+        79% { transform: translate(54px, 0px) rotate(-3deg) scale(1.24, 0.74); }
+        87% { transform: translate(54px, 0px) rotate(2deg) scale(0.93, 1.08); }
+        95.5% { transform: translate(54px, 0px) rotate(0deg) scale(1.03, 0.97); }
+        100% { transform: translate(54px, 0px) rotate(0deg) scale(1, 1); }
+      }
+      @keyframes loadingSlimeFace {
+        0% { transform: scale(1, 1); }
+        10% { transform: scale(0.9413, 1.07683); }
+        16% { transform: scale(1.04451, 0.96818); }
+        24.5% { transform: scale(1.01875, 0.98333); }
+        36.5% { transform: scale(0.91885, 1.11053); }
+        44% { transform: scale(1.02872, 0.9771); }
+        51.5% { transform: scale(0.94474, 1.07169); }
+        59% { transform: scale(1.05, 0.95973); }
+        68% { transform: scale(1.01875, 0.98654); }
+        79% { transform: scale(0.9129, 1.12297); }
+        87% { transform: scale(1.03387, 0.97407); }
+        95.5% { transform: scale(0.98689, 1.01082); }
+        100% { transform: scale(1, 1); }
+      }
+      @keyframes loadingSlimeShadow {
+        0% { transform: translateX(-54px) scale(1); opacity: 1; }
+        10% { transform: translateX(-54px) scale(1); opacity: 1; }
+        16% { transform: translateX(-45px) scale(0.8125); opacity: 0.76923; }
+        24.5% { transform: translateX(-30px) scale(0.625); opacity: 0.53846; }
+        36.5% { transform: translateX(-6px) scale(1); opacity: 1; }
+        44% { transform: translateX(-6px) scale(1); opacity: 1; }
+        51.5% { transform: translateX(-6px) scale(1); opacity: 1; }
+        59% { transform: translateX(11px) scale(0.6875); opacity: 0.61538; }
+        68% { transform: translateX(33px) scale(0.6125); opacity: 0.52308; }
+        79% { transform: translateX(54px) scale(1); opacity: 1; }
+        87% { transform: translateX(54px) scale(1); opacity: 1; }
+        95.5% { transform: translateX(54px) scale(1); opacity: 1; }
+        100% { transform: translateX(54px) scale(1); opacity: 1; }
+      }
+      @keyframes loadingSlimeBlink {
+        0%, 40.57%, 44.43%, 98.07%, 100% { transform: scaleY(1); }
+        42.5%, 99% { transform: scaleY(0.08); }
+      }
+      @keyframes loadingLeafDrift {
+        0% { left: -70px; opacity: 0; transform: translateY(0) rotate(var(--leaf-turn)) scale(var(--leaf-scale)); }
+        25% { opacity: 0.6; transform: translateY(13px) rotate(calc(var(--leaf-turn) + 90deg)) scaleX(0.55) scale(var(--leaf-scale)); }
+        50% { opacity: 0.85; transform: translateY(0) rotate(calc(var(--leaf-turn) + 180deg)) scale(var(--leaf-scale)); }
+        75% { opacity: 0.6; transform: translateY(-13px) rotate(calc(var(--leaf-turn) + 270deg)) scaleX(0.55) scale(var(--leaf-scale)); }
+        100% { left: calc(100% + 70px); opacity: 0; transform: translateY(0) rotate(calc(var(--leaf-turn) + 360deg)) scale(var(--leaf-scale)); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .loading-decoration-slime,
+        .loading-decoration-face,
+        .loading-decoration-shadow,
+        .loading-decoration-face img {
+          animation: none;
+        }
+        .loading-decoration-leaf {
+          display: none;
+        }
+        .alchemy-loading-logo-fill {
+          animation: none;
+          width: 100%;
+        }
+      }
+      html.alchemy-disable-animations .loading-decoration-slime,
+      html.alchemy-disable-animations .loading-decoration-face,
+      html.alchemy-disable-animations .loading-decoration-shadow,
+      html.alchemy-disable-animations .loading-decoration-face img {
+        animation: none;
+      }
+      html.alchemy-disable-animations .loading-decoration-leaf {
+        display: none;
+      }
+      html.alchemy-disable-animations .alchemy-loading-logo-fill {
+        animation: none;
+        width: 100%;
+      }
     </style>
+    <script>
+      try {
+        if (localStorage.getItem("alchemy-disable-animations") === "true") {
+          document.documentElement.classList.add("alchemy-disable-animations");
+        }
+        if (localStorage.getItem("alchemy-skip-loading-screen") === "true") {
+          document.documentElement.classList.add("alchemy-skip-loading-screen");
+        }
+      } catch (e) {}
+    </script>
     <script type="module" src="/src/startup.ts"></script>
     <link rel="preload" as="font" href="/fonts/Inter.woff2" crossorigin />
     <title>Alchemy</title>
   </head>
   <body>
-    <div id="root">
-      <div style="
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        width: 100vw;
-        gap: 12px;
-        background-color: hsl(var(--alchemy-bg));
-        color: hsl(var(--alchemy-fg));
-        font-family: 'Inter', sans-serif;
-      ">
-        <div style="
-          height: 4px;
-          width: 192px;
-          background-color: hsl(var(--alchemy-border));
-          border-radius: 9999px;
-          overflow: hidden;
-          position: relative;
-        ">
-          <div style="
-            height: 100%;
-            width: 40%;
-            border-radius: 9999px;
-            position: absolute;
-            left: 0;
-            top: 0;
-            background: linear-gradient(
-              90deg,
-              hsl(var(--alchemy-primary) / 0) 0%,
-              hsl(var(--alchemy-primary) / 0.35) 32%,
-              hsl(var(--alchemy-primary)) 50%,
-              hsl(var(--alchemy-primary) / 0.35) 68%,
-              hsl(var(--alchemy-primary) / 0) 100%
-            );
-            will-change: transform;
-            animation: alchemy-startup-comet 1.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
-          "></div>
-        </div>
-        <p style="
-          font-size: 12px;
-          font-weight: 500;
-          text-transform: uppercase;
-          letter-spacing: 0.18em;
-          text-align: center;
-          color: hsl(var(--alchemy-fg) / 0.4);
-          margin: 0;
-        ">Loading...</p>
-      </div>
-      <style>
-        /* translateX % is relative to the comet (40% of the 192px track).
-           -100% starts fully off the left; 350% is track width + comet width off the right. */
-        @keyframes alchemy-startup-comet {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(350%); }
-        }
-      </style>
+    <div
+      id="startup-splash"
+      role="progressbar"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow="0"
+      aria-label="Loading Alchemy"
+    >
+      <h1 class="alchemy-loading-title" aria-label="Alchemy">
+        <span class="loading-decoration" aria-hidden="true">
+          <img
+            class="loading-decoration-leaf"
+            src="/artwork/loading/leaf-gold.png"
+            alt=""
+            width="12"
+            height="16"
+            style="--leaf-delay: -0.2s; --leaf-y: -90px; --leaf-turn: 0deg; --leaf-scale: 1;"
+          />
+          <img
+            class="loading-decoration-leaf"
+            src="/artwork/loading/leaf-green.png"
+            alt=""
+            width="12"
+            height="16"
+            style="--leaf-delay: -0.75s; --leaf-y: -76px; --leaf-turn: 63deg; --leaf-scale: 0.72;"
+          />
+          <img
+            class="loading-decoration-leaf"
+            src="/artwork/loading/leaf-gold.png"
+            alt=""
+            width="12"
+            height="16"
+            style="--leaf-delay: -1.425s; --leaf-y: -62px; --leaf-turn: 126deg; --leaf-scale: 1;"
+          />
+          <img
+            class="loading-decoration-leaf"
+            src="/artwork/loading/leaf-green.png"
+            alt=""
+            width="12"
+            height="16"
+            style="--leaf-delay: -2.025s; --leaf-y: -48px; --leaf-turn: 189deg; --leaf-scale: 0.72;"
+          />
+          <img
+            class="loading-decoration-leaf"
+            src="/artwork/loading/leaf-gold.png"
+            alt=""
+            width="12"
+            height="16"
+            style="--leaf-delay: -2.35s; --leaf-y: -34px; --leaf-turn: 252deg; --leaf-scale: 1;"
+          />
+          <span class="loading-decoration-shadow"></span>
+          <span class="loading-decoration-slime">
+            <img src="/artwork/loading/slime-body.png" alt="" width="50" height="39" />
+            <span class="loading-decoration-face">
+              <img class="loading-decoration-eye-left" src="/artwork/loading/slime-eye-left.png" alt="" />
+              <img class="loading-decoration-eye-right" src="/artwork/loading/slime-eye-right.png" alt="" />
+              <img class="loading-decoration-mouth" src="/artwork/loading/slime-mouth.png" alt="" />
+            </span>
+          </span>
+        </span>
+        <span aria-hidden="true" class="alchemy-loading-logo-base">Alchemy</span>
+        <span aria-hidden="true" class="alchemy-loading-logo-fill">
+          <span class="alchemy-loading-logo-fill-text">Alchemy</span>
+        </span>
+      </h1>
+      <p id="startup-splash-phrase" class="alchemy-loading-word">Adventure awaits...</p>
     </div>
+    <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
