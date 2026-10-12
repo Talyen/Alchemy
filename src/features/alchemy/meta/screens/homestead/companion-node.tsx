@@ -103,7 +103,7 @@ export function CompanionCardNode({
     <InteractiveArtTile
       id={card.id}
       interactionKey={HOMESTEAD_CONFIG.hoverScope}
-      title={card.title}
+      title={discovered ? card.title : "Undiscovered companion"}
       art={card.art}
       className={cn(cardSurfaceClass, collectionCardGridTileWidthClass, isComplete && homesteadCompletedSurfaceClass)}
       imageClassName={cn(

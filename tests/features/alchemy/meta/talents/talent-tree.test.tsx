@@ -1,5 +1,6 @@
 import { StrictMode, useMemo, useState } from "react";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { TalentTree } from "@/features/alchemy/meta/talents/talent-tree";
@@ -84,38 +85,39 @@ describe("TalentTree sequential unlocks", () => {
     expect(onUnlock).toHaveBeenCalledTimes(2);
   });
 
-  it("keeps allocated nodes bright while allocatable nodes rest dark and muted", () => {
+  it("exposes unlocked, available and locked allocation states", () => {
     render(
       <TalentTree
-        allTalents={burnTalents}
+        allTalents={[first, second, third]}
         unlockedIds={[first.id]}
         allocatableIds={new Set([second.id])}
         hasUnspentPoints
         onUnlock={() => {}}
       />,
     );
+    expect(
+      screen.getByRole("button", { name: new RegExp(`Unlocked.*${first.name}`) }).getAttribute("aria-disabled"),
+    ).toBe("true");
+    expect(
+      screen
+        .getByRole("button", { name: new RegExp(`Available to unlock.*${second.name}`) })
+        .getAttribute("aria-disabled"),
+    ).toBe("false");
+    expect(
+      screen.getByRole("button", { name: new RegExp(`Locked.*${third.name}`) }).getAttribute("aria-disabled"),
+    ).toBe("true");
+  });
 
-    const faceFor = (name: string) => {
-      const node = screen.getByText(name, { exact: true }).closest(".talent-node");
-      expect(node).not.toBeNull();
-      const face = node!.querySelector(".talent-card-face");
-      expect(face).not.toBeNull();
-      return { node: node!, face: face! };
-    };
-
-    const allocated = faceFor(first.name!);
-    expect(allocated.face.classList.contains("talent-card-unlocked")).toBe(true);
-    expect(allocated.face.classList.contains("bg-stone-900")).toBe(true);
-
-    const allocatable = faceFor(second.name!);
-    expect(allocatable.node.classList.contains("talent-card-available")).toBe(true);
-    expect(allocatable.face.classList.contains("talent-card-unlocked")).toBe(false);
-    expect(allocatable.face.classList.contains("bg-stone-950")).toBe(true);
-    expect(allocatable.face.querySelector(".opacity-80")).not.toBeNull();
-
-    const locked = faceFor(third.name!);
-    expect(locked.face.classList.contains("talent-card-unlocked")).toBe(false);
-    expect(locked.face.classList.contains("bg-stone-950")).toBe(true);
-    expect(locked.face.querySelector(".opacity-50")).not.toBeNull();
+  it("retains keyboard focus after unlocking and prevents another purchase", async () => {
+    const user = userEvent.setup();
+    const onUnlock = vi.fn();
+    render(<SequentialTree onUnlock={onUnlock} />);
+    const button = screen.getByRole("button", { name: new RegExp(second.name!) });
+    act(() => button.focus());
+    await user.keyboard("{Enter}");
+    expect(document.activeElement).toBe(button);
+    expect(screen.getByRole("button", { name: new RegExp(second.name!) })).toBe(button);
+    await user.keyboard("{Enter}");
+    expect(onUnlock).toHaveBeenCalledExactlyOnceWith(second.id);
   });
 });

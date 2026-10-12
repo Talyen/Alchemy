@@ -43,3 +43,12 @@ it.each([
   );
   expect(screen.queryByRole("button")).toBeNull();
 });
+
+it("conceals undiscovered Companion identity from image text until discovery", () => {
+  const { rerender } = render(<CompanionCardNode {...props} discovered={false} onBond={vi.fn()} />);
+  expect(screen.getByRole("group", { name: "Undiscovered companion" })).toBeTruthy();
+  expect(screen.queryByRole("img", { name: props.card.title })).toBeNull();
+  expect(screen.getByRole("img", { name: "Undiscovered companion" })).toBeTruthy();
+  rerender(<CompanionCardNode {...props} onBond={vi.fn()} />);
+  expect(screen.getByRole("img", { name: props.card.title })).toBeTruthy();
+});

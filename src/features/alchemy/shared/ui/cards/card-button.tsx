@@ -46,6 +46,7 @@ interface BattleCardButtonBaseProps {
   selected?: boolean;
   disabled?: boolean | undefined;
   ariaDisabled?: boolean | undefined;
+  ariaPressed?: boolean | undefined;
   dragging?: boolean | undefined;
   scaleOnHover?: boolean | undefined;
   descriptionContext?: CardDescriptionContext | undefined;
@@ -200,6 +201,7 @@ function CardButtonSurface({
   selected = false,
   disabled = false,
   ariaDisabled,
+  ariaPressed,
   dragging = false,
   scaleOnHover = true,
   shineColor,
@@ -219,6 +221,7 @@ function CardButtonSurface({
       shimmerActive={shimmerActive}
       shimmerToken={shimmerToken}
       selected={selected}
+      {...(ariaPressed !== undefined ? { ariaPressed } : {})}
       disabled={disabled}
       {...(ariaDisabled !== undefined ? { ariaDisabled } : {})}
       dragging={dragging}

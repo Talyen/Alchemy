@@ -85,6 +85,15 @@ describe("BattleCardButton", () => {
     expect(onSelect).toHaveBeenCalledOnce();
   });
 
+  it.each(["choice", "shop", "deck", "corruption"] as const)("exposes selection changes for %s cards", (chrome) => {
+    const { rerender } = render(<SelectableCard card={card} chrome={chrome} isSelected={false} onSelect={() => {}} />);
+    expect(screen.getByRole("button", { name: "Select Test Card", pressed: false })).toBeTruthy();
+    rerender(<SelectableCard card={card} chrome={chrome} isSelected onSelect={() => {}} />);
+    expect(screen.getByRole("button", { name: "Select Test Card", pressed: true })).toBeTruthy();
+    rerender(<SelectableCard card={card} chrome={chrome} isSelected={false} onSelect={() => {}} />);
+    expect(screen.getByRole("button", { name: "Select Test Card", pressed: false })).toBeTruthy();
+  });
+
   it("renders distilled potion values with green highlighting in popup", () => {
     const distilledHealthPotion = strengthenPotion(cardById["health-potion"]!)!;
     render(
