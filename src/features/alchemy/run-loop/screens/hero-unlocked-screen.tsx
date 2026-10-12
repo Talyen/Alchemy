@@ -56,7 +56,7 @@ export function HeroUnlockedScreen({
                 isLocked={false}
                 unlockRequirementText=""
                 triggerRef={triggerRef}
-                placement="side-end"
+                placement="below"
                 visible
               />
             ) : null}

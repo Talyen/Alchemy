@@ -89,7 +89,7 @@ test.describe("Run Outcomes", () => {
       await expect(page.getByRole("button", { name: "Main Menu", exact: true })).toBeFocused();
       await portrait.hover();
       await expect(page.getByRole("tooltip")).toContainText("Starting Deck");
-      await expect(page.getByRole("tooltip")).toHaveAttribute("data-placement", "side-end");
+      await expect(page.getByRole("tooltip")).toHaveAttribute("data-placement", "below");
       await page.mouse.move(0, 0);
       await expect(page.getByRole("tooltip")).toHaveCount(0);
       await page.keyboard.press("Shift+Tab");
