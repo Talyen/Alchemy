@@ -26,7 +26,7 @@ export function createSaveIo(
     };
   }
   function reportSaveWriteOutcome(outcome: SaveWriteOutcome): SaveWriteOutcome {
-    if (outcome !== "skipped" && saveWriteFailed !== (outcome === "failed")) {
+    if ((outcome === "saved" || outcome === "failed") && saveWriteFailed !== (outcome === "failed")) {
       saveWriteFailed = outcome === "failed";
       for (const listener of saveWriteListeners) {
         try {

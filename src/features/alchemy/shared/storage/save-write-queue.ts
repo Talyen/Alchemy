@@ -1,13 +1,12 @@
 import type { UnstampedSaveData } from "./types";
 import { logStorageFailure } from "@/lib/storage-logging";
 
-export type SaveWriteOutcome = "saved" | "failed" | "skipped";
+export type SaveWriteOutcome = "saved" | "failed" | "skipped" | "superseded";
 
 interface PendingSave {
   data: UnstampedSaveData;
   storageEpoch: number;
   write: (data: UnstampedSaveData) => Promise<SaveWriteOutcome>;
-  completion: Promise<SaveWriteOutcome>;
   resolve: (outcome: SaveWriteOutcome) => void;
 }
 
@@ -66,16 +65,14 @@ export class SaveWriteQueue {
       logStorageFailure("Save snapshot could not be cloned", error);
       return Promise.resolve("failed");
     }
-    if (this.coalesced) {
-      this.coalesced.data = owned;
-      this.coalesced.write = write;
-      return this.coalesced.completion;
-    }
+    // A replaced payload was never written. Sharing the replacement's success
+    // would let its predecessor acknowledge progress absent from the disk.
+    this.discardPending("superseded");
     let resolve!: PendingSave["resolve"];
     const completion = new Promise<SaveWriteOutcome>((settle) => {
       resolve = settle;
     });
-    this.coalesced = { data: owned, storageEpoch: this.storageEpoch, write, completion, resolve };
+    this.coalesced = { data: owned, storageEpoch: this.storageEpoch, write, resolve };
     if (!this.runnerActive) {
       this.runnerActive = true;
       this.chain = this.chain.then(async () => {
@@ -165,8 +162,8 @@ export class SaveWriteQueue {
     }
   }
 
-  private discardPending(): void {
-    this.coalesced?.resolve("skipped");
+  private discardPending(outcome: "skipped" | "superseded" = "skipped"): void {
+    this.coalesced?.resolve(outcome);
     this.coalesced = null;
   }
 }

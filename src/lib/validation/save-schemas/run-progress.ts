@@ -1,3 +1,4 @@
+import type { PersistedRunProgress } from "@/lib/active-run-session/run-progress";
 import { ACTS_PER_RUN, MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { normalizeGearInstance } from "@/lib/gear/instance-normalization";
 import { createRunRngState, type RunRngState } from "@/lib/rng";
@@ -117,16 +118,4 @@ export const RunProgressSchema = z.object({
   runMaterialsEarned: MaterialInventorySchema,
   runCurrenciesEarned: CraftingCurrencyInventorySchema,
   runObtainedItems: RunObtainedItemArraySchema,
-});
-
-// Wire callers may carry old destination names until normalization; live state narrows them.
-export type PersistedRunProgress = Omit<
-  z.output<typeof RunProgressSchema>,
-  "completedDestinations" | "lastOfferedDestinations"
-> & {
-  completedDestinations: string[];
-  lastOfferedDestinations: string[];
-};
-export const ACTIVE_RUN_PROGRESS_KEYS = Object.freeze(Object.keys(RunProgressSchema.shape)) as ReadonlyArray<
-  keyof PersistedRunProgress
->;
+} satisfies { [K in keyof PersistedRunProgress]: z.ZodType<PersistedRunProgress[K]> });

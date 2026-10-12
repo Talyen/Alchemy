@@ -1,3 +1,5 @@
+import { resolvePendingBattleReactions } from "./enemy-attack-damage";
+import { isPlayerDefeated } from "./battle-outcome";
 import { rollBattleChance } from "./chance-roll";
 import { REACTIVE_REWARD_CHANCES } from "../game-constants";
 import { applyDrawResult, drawFromState } from "./draw";
@@ -25,6 +27,8 @@ export function applyDodgeTalentStatuses(state: BattleState, combatTexts: Combat
       { source: "talent-fixed", damageType: "burn", amount: state.talentEffects.burnOnDodgeBurning },
       combatTexts,
     );
+    nextState = resolvePendingBattleReactions(nextState, combatTexts);
+    if (isPlayerDefeated(nextState)) return nextState;
   }
   if (
     state.talentEffects.cleanseCcOnDodge &&
@@ -62,5 +66,5 @@ export function applyDodgeTalentStatuses(state: BattleState, combatTexts: Combat
       });
     }
   }
-  return removedStatuses > 0 ? applyCleanseHeals(nextState, combatTexts, 1) : nextState;
+  return removedStatuses > 0 ? applyCleanseHeals(nextState, combatTexts, removedStatuses) : nextState;
 }

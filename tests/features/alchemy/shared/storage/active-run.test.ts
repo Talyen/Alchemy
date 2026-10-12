@@ -1,6 +1,6 @@
 import { savedActivityFixture, savedActivityData } from "../../../../fixtures/run-activity";
 import { describe, expect, it } from "vitest";
-import { parseActiveRun } from "@/lib/active-run-session";
+import { parseActiveRun } from "@/lib/validation";
 import { defaultBattleState } from "@/lib/battle";
 import { cardLibrary, enemyById } from "@/lib/game-data";
 import { makeRunCandidate } from "../../../../fixtures/active-run";

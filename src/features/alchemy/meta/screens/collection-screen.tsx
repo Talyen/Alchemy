@@ -86,9 +86,9 @@ export function CollectionScreen({
 
   const handleEnemyActivate = useCallback(
     (enemyId: string, trigger: HTMLButtonElement) => {
-      if (collectionTab !== "bestiary") return;
+      if (collectionTab !== "bestiary" || !encounteredEnemyIds.includes(enemyId)) return;
       const enemy = enemyById[enemyId];
-      if (enemy && encounteredEnemyIds.includes(enemyId)) {
+      if (enemy) {
         returnFocusRef.current = trigger;
         setInspection({ key: inspectionKey, entry: enemy });
       }

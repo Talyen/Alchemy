@@ -1,12 +1,12 @@
 import { gameplayPersistedInputsEqual } from "./persistence-commit-filter";
 import type { Draft } from "immer";
 import { produce } from "immer";
-import type { CommandOutcome, SynchronousResult } from "./command-outcome";
+import { assertSynchronousResult, type CommandOutcome, type SynchronousResult } from "./command-outcome";
 import type { GameSession } from "./game-session-types";
 import type { GameplayState } from "./gameplay-state";
 import { subscribeGameplayCommits } from "./gameplay-state-reads";
 import { sessionRuntime, type SessionRuntime } from "./session-runtime";
-import { snapshotReadonlyValue } from "./readonly-view";
+import { snapshotCommandResult } from "./readonly-view";
 
 export type GameplayDraft = Draft<GameplayState>;
 
@@ -17,18 +17,16 @@ export function gameplayDraftRuntime(draft: GameplayDraft): SessionRuntime {
   return runtime;
 }
 
-function assertSynchronousResult(result: unknown): void {
-  if (
-    result !== null &&
-    (typeof result === "object" || typeof result === "function") &&
-    "then" in result &&
-    typeof result.then === "function"
-  ) {
-    void Promise.resolve(result).catch(() => undefined);
-    throw new Error(
-      "dispatchGameplayCommand: commands must be synchronous; move asynchronous work outside the command",
-    );
-  }
+/** Bind executable dependencies to this draft, rather than merely to its session. */
+export function bindDraftCapability<Args extends unknown[], Result>(
+  draft: GameplayDraft,
+  execute: (...args: Args) => Result,
+): (...args: Args) => Result {
+  gameplayDraftRuntime(draft);
+  return (...args) => {
+    gameplayDraftRuntime(draft);
+    return execute(...args);
+  };
 }
 
 export function dispatchGameplayCommand<T>(
@@ -55,10 +53,9 @@ export function dispatchGameplayCommand<T>(
       if (!outcome || (outcome.kind !== "accepted" && outcome.kind !== "rejected") || !("value" in outcome)) {
         throw new Error("dispatchGameplayCommand: commands must return an explicit accepted or rejected outcome");
       }
-      assertSynchronousResult(outcome.value);
       // Results cross the same lifetime boundary for store and feature commands.
       // Detach before Immer revokes drafts, including rejected fallback values.
-      outcome = { ...outcome, value: snapshotReadonlyValue(outcome.value) as T };
+      outcome = { ...outcome, value: snapshotCommandResult(outcome.value) as T };
     });
 
     if (outcome.kind === "accepted" && next !== base) {

@@ -1,11 +1,7 @@
 import { savedActivityFixture, savedActivityData } from "../../fixtures/run-activity";
 import { describe, expect, it } from "vitest";
-import {
-  emptyHydratedMysteryVisit,
-  hydrateMysteryVisit,
-  parseActiveRun,
-  serializeMysteryVisit,
-} from "@/lib/active-run-session";
+import { emptyHydratedMysteryVisit, hydrateMysteryVisit, serializeMysteryVisit } from "@/lib/active-run-session";
+import { parseActiveRun } from "@/lib/validation";
 import { getStartingDeck } from "@/lib/game-data";
 import type { MysteryEvent } from "@/lib/mystery";
 import { makeMinimalActiveRunInput } from "../../fixtures/active-run";

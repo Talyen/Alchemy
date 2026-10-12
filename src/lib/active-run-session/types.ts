@@ -12,13 +12,14 @@ import type { BattleCard } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 import type { Destination } from "@/lib/routing";
-import type { PersistedPendingReward, PersistedRunProgress } from "@/lib/validation";
+import type { PersistedPendingReward } from "./reward-types";
+import type { PersistedRunProgress } from "./run-progress";
 
 import type { AlchemistState, EquipmentShopState, RefreshableShopFields, ShopState } from "./shop-session-types";
 
 export type { PersistedPendingReward };
 
-export type RunObtainedItem = { kind: "gear"; instance: GearInstance } | { kind: "trinket"; trinketId: string };
+export type { RunObtainedItem } from "./run-progress";
 
 export type PersistedShopState = ShopState;
 

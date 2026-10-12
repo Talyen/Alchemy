@@ -33,13 +33,16 @@ export function waitForPendingSaveWrites(gameSession: GameSession) {
 export function loadAlchemySaveState(gameSession: GameSession) {
   return sessionRuntime(gameSession).io.loadAlchemySaveState();
 }
-export async function saveAlchemySaveData(data: UnstampedSaveData, gameSession: GameSession) {
+async function writeSessionSnapshot(data: UnstampedSaveData, gameSession: GameSession, exit: boolean) {
   const runtime = sessionRuntime(gameSession);
-  return runtime.progressCompletion.completeSnapshot(data, await runtime.io.saveAlchemySaveData(data));
+  const complete = runtime.progressCompletion.prepareSnapshotWrite(data);
+  return complete(await (exit ? runtime.io.saveAlchemySaveDataForExit(data) : runtime.io.saveAlchemySaveData(data)));
 }
-export async function saveAlchemySaveDataForExit(data: UnstampedSaveData, gameSession: GameSession) {
-  const runtime = sessionRuntime(gameSession);
-  return runtime.progressCompletion.completeSnapshot(data, await runtime.io.saveAlchemySaveDataForExit(data));
+export function saveAlchemySaveData(data: UnstampedSaveData, gameSession: GameSession) {
+  return writeSessionSnapshot(data, gameSession, false);
+}
+export function saveAlchemySaveDataForExit(data: UnstampedSaveData, gameSession: GameSession) {
+  return writeSessionSnapshot(data, gameSession, true);
 }
 export function clearAlchemySaveData(mode: "default" | "localWipe" = "default", gameSession: GameSession) {
   const runtime = sessionRuntime(gameSession);

@@ -36,6 +36,7 @@ import {
   setRunPlayerHealth,
 } from "./run-session-write-port";
 import { sessionRuntime } from "./session-runtime";
+import { runSessionEffect } from "./session-effects";
 
 export function restoreRun(
   activeRun: ActiveRunData | null,
@@ -141,8 +142,7 @@ export function teardownRun(gameSession: GameSession): void {
     undefined,
     gameSession,
   );
-  clearBattleUiState(gameSession);
-  notifyRunTeardown(gameSession);
+  sessionRuntime(gameSession).lifecycle.teardown();
 }
 
 function flushSave(message: string, gameSession: GameSession): void {
@@ -212,10 +212,9 @@ export function abandonRun(
 }
 
 function afterAbandonRun(gameSession: GameSession): void {
-  sessionFeedback(gameSession).stopAllSfx();
-  clearBattlePresentationUi(gameSession);
-  notifyRunTeardown(gameSession);
   flushSaveAfterRunEnd(gameSession);
+  sessionRuntime(gameSession).lifecycle.teardown();
+  sessionFeedback(gameSession).stopAllSfx();
 }
 function abandonRunInDraft(draft: GameplayDraft, options: Parameters<typeof abandonRun>[0]): boolean {
   if (draft.session.activity.kind === "inactive") return false;
@@ -264,9 +263,10 @@ export function applyRunDefeatTeardown(
     {
       afterCommit: () => {
         flushSaveAfterRunEnd(gameSession);
+        sessionRuntime(gameSession).lifecycle.teardown();
         sessionFeedback(gameSession).stopAllSfx();
         sessionFeedback(gameSession).playDefeat();
-        options.clearCombatPresentation?.();
+        if (options.clearCombatPresentation) runSessionEffect("clear combat adapter", options.clearCombatPresentation);
       },
     },
     gameSession,
@@ -275,20 +275,13 @@ export function applyRunDefeatTeardown(
 
 export function onRunTeardown(listener: () => void, gameSession: GameSession): () => void {
   const runtime = sessionRuntime(gameSession);
-  return runtime.track(runtime.teardown.on(listener));
+  return runtime.track(runtime.lifecycle.onTeardown(listener));
 }
 export function onClearBattlePresentation(listener: () => void, gameSession: GameSession): () => void {
   const runtime = sessionRuntime(gameSession);
-  return runtime.track(runtime.clearPresentation.on(listener));
+  return runtime.track(runtime.lifecycle.onClearPresentation(listener));
 }
 
-function clearBattleUiState(gameSession: GameSession): void {
-  sessionRuntime(gameSession).feedback.clearBattleUi();
-}
 export function clearBattlePresentationUi(gameSession: GameSession): void {
-  clearBattleUiState(gameSession);
-  sessionRuntime(gameSession).clearPresentation.emit();
-}
-function notifyRunTeardown(gameSession: GameSession): void {
-  sessionRuntime(gameSession).teardown.emit();
+  sessionRuntime(gameSession).lifecycle.clearPresentation();
 }

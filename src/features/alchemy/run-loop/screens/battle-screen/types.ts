@@ -12,6 +12,7 @@ export type BattleScreenState = Pick<
   | "playerHealth"
   | "playerMaxHealth"
   | "deathsDoorActive"
+  | "deathsDoorGraceTurnsRemaining"
   | "enemyHealth"
   | "enemyMaxHealth"
   | "mana"

@@ -90,6 +90,8 @@ export function createAutosaveScheduler(maxWaitMs: number, retryCooldownMs: numb
         if (acknowledgedRevision >= retryRevision) retryAt = retryRevision = 0;
         return acknowledgedRevision === revision ? "cancel" : "schedule";
       }
+      // Failure or supersession leaves progress dirty. Unlike cancellation, a
+      // replacement does not prove that this scheduler's progress was written.
       // Only the latest unacknowledged submission can rewind the write gate.
       if (submission.revision > acknowledgedRevision && submission.revision === submittedRevision) {
         submittedRevision = acknowledgedRevision;

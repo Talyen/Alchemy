@@ -8,7 +8,8 @@ import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/share
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
-import { createEmptyRewardState, parseActiveRun } from "@/lib/active-run-session";
+import { createEmptyRewardState } from "@/lib/active-run-session";
+import { parseActiveRun } from "@/lib/validation";
 import * as battleEngine from "@/lib/battle";
 import { getStartingDeck } from "@/lib/game-data";
 import { DESTINATIONS, type Destination } from "@/lib/routing";

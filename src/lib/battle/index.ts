@@ -15,7 +15,6 @@ export { processCompanionTurnStart } from "./companion";
 export { getBattleCompanionDamageModifiers } from "./companion-scaling";
 export { drawCards } from "./draw";
 export { applyCardEffects } from "./effect-handlers";
-export { endPlayerTurn } from "./enemy-turn";
 export { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "./enemy-turn-traits";
 export { getActiveCcKeyword, isCcControlled, type ActiveCcKeyword } from "./status-cc";
 export { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
@@ -28,8 +27,16 @@ export { EMPTY_ENEMY_MITIGATION } from "./enemy-mitigation-state";
 export { addEnemyStatus, addPlayerStatus } from "./status-state";
 export { applyPlayerCombatDamage } from "./health-state";
 export { getBattleOutcome, isPlayerDefeated, type BattleOutcome } from "./battle-outcome";
-export { resolveBattleCard, resolveBattleWish, type ResolvedPlayerAction } from "./player-actions";
+export {
+  resolveBattleAction,
+  resolveBattleCard,
+  resolveBattleWish,
+  resolveBattleTurn,
+  type BattleAction,
+  type ResolvedBattleAction,
+  type ResolvedPlayerAction,
+} from "./battle-actions";
 
 export { createUniqueGearBattleState } from "./unique-gear-state";
 
-export { resolveBattleTurn, type BattleTurnFrame, type ResolvedBattleTurn } from "./enemy-turn";
+export type { BattleTurnFrame, ResolvedBattleTurn } from "./enemy-turn";

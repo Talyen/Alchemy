@@ -7,7 +7,7 @@ import { tryTriggerEnemyFreeze } from "@/lib/battle/damage-status-riders";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { cardById, computeTalentEffects } from "@/lib/game-data";
 import { getEnemyStatusChips, getPlayerStatusChips } from "@/features/alchemy/shared/utils/battle";
-import { patchBattleState } from "../../../../../../fixtures/battle";
+import { dealDamage, makeTestCard, patchBattleState } from "../../../../../../fixtures/battle";
 
 describe("StatusIcon", () => {
   afterEach(cleanup);
@@ -30,6 +30,30 @@ describe("StatusIcon", () => {
     await waitFor(() =>
       expect(document.querySelector(".hover-popup-panel")?.textContent).toContain("Loses their next 2 turns."),
     );
+  });
+
+  it("shows Riposte after a Dodge, preserves it through Holy damage, and spends it on Physical damage", async () => {
+    const dodged = applyEnemyAbility(
+      patchBattleState({
+        talentEffects: computeTalentEffects({ physical: ["physical-brute-force"] }),
+        flags: { dodgeNextAttack: true },
+        rng: () => 0.99,
+      }),
+      cardById.slash!,
+      [],
+    );
+    const holy = dealDamage(dodged, makeTestCard({ effects: [{ kind: "damage", damageType: "holy", amount: 1 }] }));
+    const chip = getPlayerStatusChips(holy).find((entry) => entry.id === "nextPhysicalCrit");
+    expect(chip).toEqual({ id: "nextPhysicalCrit", value: 1, hideValue: true });
+    render(<StatusIcon chip={chip!} />);
+    fireEvent.focus(screen.getByRole("button", { name: "Riposte" }));
+    await waitFor(() =>
+      expect(document.querySelector(".hover-popup-panel[data-visible]")?.textContent).toContain(
+        "Your next Physical attack Critically Hits.",
+      ),
+    );
+    const hit = dealDamage(holy, cardById.slash!);
+    expect(getPlayerStatusChips(hit).some((entry) => entry.id === "nextPhysicalCrit")).toBe(false);
   });
 
   it("describes the armed Parting Cut as half damage, matching the talent earned on Dodge", async () => {

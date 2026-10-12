@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { addEnemyStatus, endPlayerTurn, tickEnemyStatuses, tickPlayerStatuses } from "@/lib/battle";
+import { addEnemyStatus, tickEnemyStatuses, tickPlayerStatuses } from "@/lib/battle";
+import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { processEncounterTraitActionDamage, regrowEnemyThorns } from "@/lib/battle/encounter-trait-events";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";

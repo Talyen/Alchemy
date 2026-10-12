@@ -78,6 +78,17 @@ commit signal directly; gameplay callers must not.
 
 `run-session-write-port.ts` adapts the existing domain mutators to transactions; it does not own a second store. Raw dispatch (`gameplay-command.ts`), draft lookup (`transaction-internal.ts`), and read-facade internals are restricted by import boundaries. A transaction can write only during its callback; retained handles cannot write in `afterCommit` or another command. `snapshotTransactionValue(value)` returns a detached value for engine APIs that require mutable types. The aggregate dispatcher detaches result data before Immer closes the draft, for both store-owned and feature commands. Accepted results and rejected fallbacks may contain nested draft reads or read facades; neither escapes into deferred playback. Result objects are independent of committed state, preserve aliases and cycles, and the same detached result reaches `afterCommit` and the caller. Wrappers do not perform their own result conversion.
 
+Command results are detached data, including nested arrays, Maps, and Sets.
+Functions and Promise-like values cannot cross this boundary, even inside a
+rejected fallback. Invalid results abort before state, revision, RNG counters,
+or observers publish. Command result types enforce the same rule for known
+types; the runtime boundary also checks untyped inputs.
+
+Transaction-provided RNG and instance-ID functions are execution capabilities.
+They are bound to the originating open draft and reject use after it closes,
+including during a later command in the same session. Retaining a callback in
+an external closure does not extend its lifetime.
+
 Commands are synchronous and must not span an `await`. The command factory and
 Gear mutation wrappers reject Promise-like result types, including unions with
 asynchronous results. The runtime boundary also rejects thenables before
@@ -98,12 +109,26 @@ The command guard is released before `afterCommit`, so an effect may dispatch a
 separate command. If an effect throws, its error propagates and the already
 committed state remains; post-commit errors do not roll back gameplay.
 
+Session feedback adapters are an explicit exception to error propagation.
+`shared/stores/session-effects.ts` isolates each audio/UI adapter and lifecycle
+listener, logging its failure without aborting the caller's remaining work.
+Execution and persistence errors retain their own failure contracts; the command
+dispatcher does not suppress arbitrary `afterCommit` errors.
+
+The same owner provides each session's presentation-clear and teardown channels.
+Teardown always clears battle UI, notifies presentation cancellation, then notifies
+run teardown, even if an adapter or listener fails. Listener changes apply on the
+next notification. Run abandonment and defeat submit their settled save before
+these effects; neither requires a route adapter to remember presentation cleanup.
+Defeat's optional `clearCombatPresentation` callback remains an additional adapter.
+
 ### Committed battle playback
 
 Battle reads expose serializable `BattleSnapshot` values. Opening draws and card
 plays commit before presentation. `commitEndTurn` resolves the turn and its
-Companion follow-up with `resolveBattleTurn`, awards Dodge XP, and publishes the
-result atomically before discard or enemy animation.
+Companion follow-up with the engine-owned `resolveBattleAction` end-turn request,
+awards Dodge XP only after acceptance, and publishes the result atomically before
+discard or enemy animation.
 
 Playback consumes detached `BattleTurnFrame` values and updates only
 `battle-presentation-store.displayedBattle`; cancellation or failed animation
@@ -201,7 +226,7 @@ Activity encoding follows the [persistence API](./RUN_STATE.md#persistence-api);
 
 ## Run randomness
 
-Run-level randomness is persisted in `activeRun.rng` as one seed plus counters for the named `rewards`, `destinations`, `events`, `shops`, and `world` streams. Commands obtain generators through `createDraftRunRandomSource(draft, stream)` so counters commit or roll back with gameplay. `BattleSnapshot` contains only data. `BattleResolutionContext` supplies execution-only action scope and the RNG to `resolveBattleTurn`; individual engine handlers use the execution-only `BattleState` supplied by `withDraftWorldBattleRng`. Engine draws use `getBattleRng(state)`. `battleSnapshot` removes those execution dependencies before publication or return. Stored snapshots and presentation frames contain no RNG callback. Advancing one stream cannot perturb another, and save/resume continues at the exact next draw.
+Run-level randomness is persisted in `activeRun.rng` as one seed plus counters for the named `rewards`, `destinations`, `events`, `shops`, and `world` streams. Commands obtain generators through `createDraftRunRandomSource(draft, stream)` so counters commit or roll back with gameplay. `BattleSnapshot` contains only data. `BattleResolutionContext` supplies execution-only action scope and the RNG to `resolveBattleAction`; individual engine handlers use the execution-only `BattleState` supplied by `withDraftWorldBattleRng`. Engine draws use `getBattleRng(state)`. `battleSnapshot` removes those execution dependencies before publication or return. Stored snapshots and presentation frames contain no RNG callback. Advancing one stream cannot perturb another, and save/resume continues at the exact next draw.
 
 Destination offers use the `destinations` stream for sampling. They draw a boss from `world` only when the offer contains Boss Combat alone and has no saved boss ID. Ordinary offers and resuming a valid boss preview do not advance `world`.
 
@@ -250,8 +275,16 @@ live one. `ProgressCompletion` retains snapshot revision/epoch receipts for the
 session, and the shared `io.ts` write seam acknowledges them for ordinary and
 exit writes. Autosave, Gear flushes, and run-end flushes use that same seam.
 A snapshot can be written through another adapter for the same session without
-losing its receipt. Imported or externally constructed payloads have no receipt
-and cannot acknowledge live gameplay. Save receipts never enter the wire format.
+losing its receipt. Receipts bind the captured contents to their revision and epoch;
+the IO seam validates those contents at submission, before asynchronous writing.
+Editing a captured snapshot makes that submission an external write: it may save,
+but cannot acknowledge live gameplay. Each queued submission owns its completion.
+A coalesced-away submission returns `superseded`, never the replacement payload's
+outcome. Autosave retains that unsaved work for retry; replacement neither clears
+an existing storage failure nor reports a new one. `skipped` remains reserved for
+storage cancellation or unavailability. Only a snapshot actually written can
+acknowledge its captured revision. Imported or externally constructed payloads
+have no receipt. Save receipts never enter the wire format.
 
 `run-resume-codec.ts` translates `RunSession` and `ActiveRunData`. The encoder selects
 progress, mode geography, and one tagged `activity`; the decoder hydrates that
@@ -271,7 +304,7 @@ Repeated bootstrap may preserve an initialized activity while applying saved
 progression and rebinding its live manifests in the same command.
 `persistence-hydration.ts` composes the gameplay codec repairs inside that draft;
 `hydrateAlchemyPersistenceFields` remains the fields-only operation and does not
-restore an activity. Both paths include Trinket-manifest repair. `parseActiveRun(raw)` validates JSON before hydration; `toActiveRunData` in `lib/active-run-session/parse.ts` handles run parsing, while `PersistedBattleStateSchema` owns battle wire parsing and default merging.
+restore an activity. Both paths include Trinket-manifest repair. `parseActiveRun(raw)` validates JSON before hydration; `toActiveRunData` in `lib/validation/parse-active-run.ts` handles run parsing, while `PersistedBattleStateSchema` owns battle wire parsing and default merging.
 
 Domain persistence codecs own field selection, defaults, encoding, hydration, and subscriptions. `GameplayPersistenceCodec<T>` receives a `GameplayDraft`; `StandalonePersistenceCodec<T>` owns a separate Zustand store. `shared/storage/persistence.ts` composes their fields into the versioned envelope and subscribes to settings changes plus the gameplay commit signal. Codec types live in `shared/stores/persistence-codec.ts`.
 

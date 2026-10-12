@@ -92,7 +92,7 @@ export const CollectionTile = memo(function CollectionTile({
         )}
         onClick={(event) => {
           if (item.frameType === "card") {
-            playCardSound(item.id);
+            if (item.discovered) playCardSound(item.id);
             setFlipped((f) => !f);
           } else if (item.frameType === "bestiary") {
             if (item.discovered) dismiss();

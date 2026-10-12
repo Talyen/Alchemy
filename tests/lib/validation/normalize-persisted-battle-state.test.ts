@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { battleSnapshot, defaultBattleState, endPlayerTurn } from "@/lib/battle";
+import { battleSnapshot, defaultBattleState } from "@/lib/battle";
+import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { cardById, enemyById } from "@/lib/game-data";
 import { MANABURN_DAMAGE_PERCENT, MAX_HAND_SIZE, MIN_MAX_MANA_FLOOR } from "@/lib/game-constants";

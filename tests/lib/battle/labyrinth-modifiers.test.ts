@@ -1,12 +1,7 @@
 import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
-import {
-  createBattleState,
-  endPlayerTurn,
-  processCompanionTurnStart,
-  tickEnemyStatuses,
-  tickPlayerStatuses,
-} from "@/lib/battle";
+import { createBattleState, processCompanionTurnStart, tickEnemyStatuses, tickPlayerStatuses } from "@/lib/battle";
+import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { applyGearCcPhysicalDamage } from "@/lib/battle/scaled-damage";
 import { computeEffectiveCost } from "@/lib/battle/card-cost-rules";
