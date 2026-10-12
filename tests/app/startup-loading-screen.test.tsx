@@ -64,7 +64,7 @@ describe("StartupLoadingScreen", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("synchronizes progress and phrase to existing HTML startup-splash element and dismisses on unmount", () => {
+  it("synchronizes progress and phrase to existing HTML startup-splash element", () => {
     const splash = document.createElement("div");
     splash.id = "startup-splash";
     const phrase = document.createElement("p");
@@ -84,12 +84,7 @@ describe("StartupLoadingScreen", () => {
     expect(phrase.textContent).toBe("Polishing trinkets...");
 
     unmount();
-    expect(splash.classList.contains("alchemy-splash-dismissed")).toBe(true);
-
-    act(() => {
-      vi.advanceTimersByTime(400);
-    });
-    expect(document.getElementById("startup-splash")).toBeNull();
+    splash.remove();
   });
 });
 
