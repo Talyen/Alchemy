@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import {
   agilityTraining,
   alchemyLab,
@@ -32,11 +32,10 @@ import {
   type HomesteadBuilding,
   type HomesteadFarm,
   type HomesteadResearch,
-  type MaterialId,
   type ResearchId,
   materialLabels,
 } from "@/lib/homestead/types";
-import { MaterialInlineChip } from "../../../shared/ui/material-icons";
+import { MaterialInlineChip, type HomesteadResource } from "../../../shared/ui/material-icons";
 import { TabBar } from "../../../shared/ui/tab-bar";
 import { renderTokenizedDescription } from "../../../shared/ui/cards/card-description-ui";
 import { Hammer, Wheat, FlaskConical, PawPrint } from "lucide-react";
@@ -87,22 +86,22 @@ export function getArt(id: string): string {
   return (itemArt as Record<string, string>)[id] ?? "";
 }
 
-const LABEL_TO_MATERIAL: Record<string, MaterialId> = Object.fromEntries(
-  MATERIAL_IDS.map((m) => [materialLabels[m], m]),
-);
-const MATERIAL_LABELS_LIST = MATERIAL_IDS.map((m) => materialLabels[m]);
-const MATERIAL_REGEX = new RegExp(`\\b(${MATERIAL_LABELS_LIST.join("|")})\\b`, "g");
-
-function renderMaterialPills(text: string, key: number): ReactNode {
-  return text.split(MATERIAL_REGEX).map((sub, index) => {
-    const mat = LABEL_TO_MATERIAL[sub];
-    if (!mat) return <span key={`${key}-${index}`}>{sub}</span>;
-    return <MaterialInlineChip key={`${key}-${index}`} material={mat} label={sub} />;
-  });
-}
+const LABEL_TO_RESOURCE: Record<string, HomesteadResource> = {
+  ...Object.fromEntries(MATERIAL_IDS.map((material) => [materialLabels[material], material])),
+  Gold: "gold",
+};
+const RESOURCE_REGEX = new RegExp(`\\b(${Object.keys(LABEL_TO_RESOURCE).join("|")})\\b`, "g");
 
 export function renderTextWithMaterials(text: string): ReactNode {
-  return renderTokenizedDescription(text, { renderPlain: renderMaterialPills });
+  // Resources include Gold, which the keyword renderer would otherwise consume.
+  return text.split(RESOURCE_REGEX).map((part, index) => {
+    const resource = LABEL_TO_RESOURCE[part];
+    return resource ? (
+      <MaterialInlineChip key={index} material={resource} label={part} />
+    ) : (
+      <Fragment key={index}>{renderTokenizedDescription(part)}</Fragment>
+    );
+  });
 }
 
 const tabs: Array<{ id: Tab; label: string; icon: typeof Hammer; iconClassName: string }> = [

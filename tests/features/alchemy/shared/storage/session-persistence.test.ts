@@ -28,7 +28,7 @@ function battleSave() {
 describe("session save restoration", () => {
   it("recomputes Homestead effects without regranting starting Thorns or multiplying saved loot", async () => {
     const save = battleSave();
-    save.constructedBuildings = { "wishing-well": 4 };
+    save.constructedBuildings = { "hunters-lodge": 4, "wishing-well": 4 };
     save.plantedFarms = { orchard: 4, "wheat-field": 4, "crystal-garden": 4 };
     save.materialInventory.gems = 14;
     save.activeRun!.runMaterialsEarned.gems = 14;
@@ -49,15 +49,16 @@ describe("session save restoration", () => {
           startThorns: 4,
           healthRestorePerCombat: 4,
           freezeDamagePerMana: 100,
-          gemFindBonus: 0.8,
+          gemFindBonus: 0.4,
           goldFindBonus: 0.4,
           foodFindBonus: 0.8,
+          hideFindBonus: 0.4,
         });
         expect(restored.activeRun.activity.data.battleState.talentEffects).toMatchObject({
           startThorns: 4,
           healthRestorePerCombat: 4,
           freezeDamagePerMana: 100,
-          gemFindBonus: 0.8,
+          gemFindBonus: 0.4,
           goldFindBonus: 0.4,
         });
       }
@@ -99,19 +100,19 @@ describe("session save restoration", () => {
       expect(chooseMysteryOption(choice, session)).toEqual(["gain"]);
       const claimed = persistence.snapshot();
       expect(claimed.gold).toBe(save.gold + 14);
-      expect(claimed.materialInventory.gems).toBe(save.materialInventory.gems + 14);
+      expect(claimed.materialInventory.gems).toBe(save.materialInventory.gems + 10);
       expect(
         readActivityData(readGameplayState(session).session.activity, "mystery").mysteryChosenChoice?.effects,
       ).toEqual([
         { kind: "gainGold", amount: 14 },
-        { kind: "gainMaterial", material: "gems", amount: 14 },
+        { kind: "gainMaterial", material: "gems", amount: 10 },
       ]);
       expect(chooseMysteryOption(choice, session)).toBeNull();
       persistence.restore(claimed);
       const restored = readActivityData(readGameplayState(session).session.activity, "mystery");
       expect(restored.mysteryChosenChoice?.effects).toEqual([
         { kind: "gainGold", amount: 14 },
-        { kind: "gainMaterial", material: "gems", amount: 14 },
+        { kind: "gainMaterial", material: "gems", amount: 10 },
       ]);
       expect(chooseMysteryOption(restored.mysteryEvent!.choices[0]!, session)).toBeNull();
       expect(persistence.snapshot().gold).toBe(claimed.gold);

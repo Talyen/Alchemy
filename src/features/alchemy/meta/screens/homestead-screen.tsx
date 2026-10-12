@@ -168,7 +168,7 @@ export function HomesteadScreen({
                 className="mx-auto flex max-w-full flex-wrap items-start justify-center gap-5"
                 style={{ width: `calc(${rowWidth}px * var(--content-scale, 1))` }}
               >
-                {pageItems.map((item) => {
+                {pageItems.map((item, index) => {
                   const liveNode = getNode(item);
                   const saving = purchaseState !== null && !purchaseState.saved;
                   const isPurchasing = purchaseState?.node.id === liveNode.id;
@@ -183,6 +183,7 @@ export function HomesteadScreen({
                       <HomesteadNodeArtwork
                         node={node}
                         inventory={materialInventory}
+                        tooltipPlacement={index < columns ? "below" : "above"}
                         saving={saving && isPurchasing}
                         awaitingProgress={awaitingProgress || (saving && !isPurchasing)}
                         onPurchase={() => purchase(item, liveNode)}

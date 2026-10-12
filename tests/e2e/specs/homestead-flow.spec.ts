@@ -31,12 +31,15 @@ test(
     const panel = page.getByRole("tooltip").filter({ has: page.getByText("Blacksmith", { exact: true }) });
     await expect(tile).toHaveClass(/homestead-node-affordable/);
     await expect(tile).toHaveCSS("filter", /drop-shadow/);
+    const restingBorder = await tile.evaluate((element) => getComputedStyle(element).borderColor);
+    const inactiveTile = page.getByRole("button", { name: /^Build Hunter's Lodge for / });
+    await expect(inactiveTile).toHaveCSS("border-color", restingBorder);
     const affordableFilter = await tile.evaluate((element) => getComputedStyle(element).filter);
     await tile.hover();
     await expect(panel).toBeVisible();
-    await expect(panel).toContainText("Physical damage is increased by 1");
-    await expect(panel).toContainText("Find 10% more");
-    await expect(panel.locator(".grayscale")).toHaveCSS("opacity", "0.6");
+    await expect(panel).not.toContainText("Physical damage");
+    await expect(panel).not.toContainText("Find");
+    await expect(panel).toHaveAttribute("data-placement", "below");
     await expect(panel.getByRole("img", { name: "Level 0 of 4" })).toBeVisible();
     await expect(panel.getByLabel("Build cost: 4 Stone, 11 Iron").locator("img")).toHaveCount(2);
     await expect(panel.getByRole("button")).toHaveCount(0);
@@ -56,7 +59,7 @@ test(
     await expect(panel.getByRole("img", { name: "Level 1 of 4" })).toBeVisible();
     await expect(panel).toContainText("Physical damage is increased by 1");
     await expect(panel).toContainText("Find 10% more");
-    await expect(panel.locator(".grayscale")).toHaveCount(0);
+    await expect(panel).toHaveAttribute("data-placement", "below");
     await expect(tile).toHaveAttribute("aria-label", "Upgrade Blacksmith for 8 Stone, 22 Iron");
     await expect(tile).toHaveAttribute("aria-disabled", "true");
     await expect(tile).not.toHaveClass(/homestead-node-affordable/);
@@ -74,7 +77,8 @@ test(
       const inspection = resumed.getByRole("tooltip").filter({ has: resumed.getByText("Blacksmith", { exact: true }) });
       await expect(inspection).toContainText("Physical damage is increased by 1");
       await expect(inspection.getByRole("button")).toHaveCount(0);
-      await expect(inspection).toContainText("More materials needed");
+      await expect(inspection).not.toContainText("More materials needed");
+      await expect(inspection).toHaveAttribute("data-placement", "below");
       await expect(resumedTile).toHaveAttribute("aria-disabled", "true");
       await expect(resumedTile).not.toHaveClass(/homestead-node-affordable/);
       await expect(resumed.getByRole("img", { name: "Blacksmith", exact: true })).not.toHaveClass(/grayscale/);
@@ -82,5 +86,13 @@ test(
       expect(save.constructedBuildings["blacksmiths-forge"]).toBe(1);
       expect(save.materialInventory).toMatchObject({ stone: 0, iron: 0 });
     });
+    const bottomTile = page.getByRole("button", { name: /^Build Wishing Well for / });
+    await bottomTile.hover();
+    const bottomPanel = page.getByRole("tooltip").filter({ has: page.getByText("Wishing Well", { exact: true }) });
+    await expect(bottomPanel).toBeVisible();
+    await expect(bottomPanel).toHaveAttribute("data-placement", "above");
+    const panelBounds = await bottomPanel.boundingBox();
+    const tileBounds = await bottomTile.boundingBox();
+    expect(panelBounds!.y + panelBounds!.height).toBeLessThan(tileBounds!.y);
   },
 );

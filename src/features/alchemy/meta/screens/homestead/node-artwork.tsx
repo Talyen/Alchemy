@@ -5,7 +5,7 @@ import { cardInteractiveGlowClass } from "../../../shared/config";
 import { Surface } from "../../../shared/ui/surface";
 import { HomesteadResourceArtwork } from "../../../shared/ui/material-icons";
 import { PortaledTooltip } from "../../../shared/ui/tooltips/portaled-tooltip";
-import { TooltipBody, TooltipHeader } from "../../../shared/ui/tooltips/tooltip-panel";
+import { TooltipBody, TooltipHeader, TooltipSeparator } from "../../../shared/ui/tooltips/tooltip-panel";
 import { useHoverVisible } from "../../../shared/ui/use-hover-visible";
 import { renderTextWithMaterials } from "./helpers";
 import { type HomesteadNodeModel } from "./node-model";
@@ -13,12 +13,14 @@ import { type HomesteadNodeModel } from "./node-model";
 export function HomesteadNodeArtwork({
   node,
   inventory,
+  tooltipPlacement,
   saving,
   awaitingProgress,
   onPurchase,
 }: {
   node: HomesteadNodeModel;
   inventory: MaterialInventory;
+  tooltipPlacement: "above" | "below";
   saving: boolean;
   awaitingProgress: boolean;
   onPurchase: () => void;
@@ -83,7 +85,7 @@ export function HomesteadNodeArtwork({
           )}
         />
       </Surface>
-      <PortaledTooltip triggerRef={triggerRef} visible={visible}>
+      <PortaledTooltip triggerRef={triggerRef} visible={visible} placement={tooltipPlacement} allowFlip={false}>
         <TooltipHeader className="mb-0 flex items-center justify-between gap-3">
           <span>{node.title}</span>
           {node.discovered && (
@@ -107,39 +109,43 @@ export function HomesteadNodeArtwork({
         </TooltipHeader>
         {node.discovered ? (
           <>
-            <TooltipBody className={cn("mt-2 space-y-1", node.level === 0 && "opacity-60 grayscale")}>
-              {node.level === 0 && <span className="sr-only">First-tier bonuses, inactive until purchased</span>}
-              {[...node.bonuses, ...node.production].map((line, index) => (
-                <p key={index} className="min-h-6 leading-6">
-                  {renderTextWithMaterials(line)}
-                </p>
-              ))}
-            </TooltipBody>
-            {node.cost && (
-              <div
-                role="group"
-                className="mt-3 flex min-h-6 items-center justify-between gap-4 text-sm leading-6"
-                aria-label={`${node.action} cost: ${costLabel}`}
-              >
-                <span className="text-muted-foreground">{node.action}</span>
-                <span className="inline-flex items-center gap-3" aria-hidden="true">
-                  {materials.map((material) => (
-                    <span
-                      key={material}
-                      className={cn(
-                        "inline-flex items-center gap-1.5 tabular-nums",
-                        !saving && inventory[material] < node.cost![material] && "text-destructive",
-                      )}
-                    >
-                      <HomesteadResourceArtwork resource={material} alt="" />
-                      <span>{node.cost![material]}</span>
-                    </span>
-                  ))}
-                </span>
-              </div>
+            {node.level > 0 && (
+              <TooltipBody className="mt-2 space-y-1">
+                {[...node.bonuses, ...node.production].map((line, index) => (
+                  <p key={index} className="min-h-6 leading-6">
+                    {renderTextWithMaterials(line)}
+                  </p>
+                ))}
+              </TooltipBody>
             )}
-            {!node.affordable && node.cost && !saving && (
-              <p className="mt-2 text-sm text-muted-foreground">More materials needed</p>
+            {node.cost && (
+              <>
+                {node.level > 0 && <TooltipSeparator className="my-3" />}
+                <div
+                  role="group"
+                  className={cn(
+                    "flex min-h-6 items-center justify-between gap-4 text-sm leading-6",
+                    node.level === 0 && "mt-3",
+                  )}
+                  aria-label={`${node.action} cost: ${costLabel}`}
+                >
+                  <span className="text-muted-foreground">{node.action}</span>
+                  <span className="inline-flex items-center gap-3" aria-hidden="true">
+                    {materials.map((material) => (
+                      <span
+                        key={material}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 tabular-nums",
+                          !saving && inventory[material] < node.cost![material] && "text-destructive",
+                        )}
+                      >
+                        <HomesteadResourceArtwork resource={material} alt="" />
+                        <span>{node.cost![material]}</span>
+                      </span>
+                    ))}
+                  </span>
+                </div>
+              </>
             )}
           </>
         ) : (

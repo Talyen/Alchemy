@@ -209,7 +209,7 @@ export function MaterialInlineChip({
   label,
   className,
 }: {
-  material: MaterialId;
+  material: HomesteadResource;
   label: string;
   className?: string | undefined;
 }) {
@@ -218,8 +218,8 @@ export function MaterialInlineChip({
       className={cn(
         "mx-1 inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 align-middle shadow-xs",
         "text-xs leading-none font-semibold",
-        matPillStyle[material],
-        matTextColor[material],
+        material === "gold" ? goldPillStyle : matPillStyle[material],
+        material === "gold" ? goldTextColor : matTextColor[material],
         className,
       )}
     >

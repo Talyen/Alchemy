@@ -41,6 +41,7 @@ export function usePortaledTooltipPlacement(
   padding = 8,
   placement: PortaledTooltipPlacement = "above",
   maxWidthFraction?: number,
+  allowFlip = true,
 ) {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState<{
@@ -91,15 +92,16 @@ export function usePortaledTooltipPlacement(
         strategy: "fixed",
         middleware: [
           offset(padding),
-          flip({
-            boundary: stage,
-            fallbackPlacements:
-              placement === "above"
-                ? ["bottom", "left", "right"]
-                : placement === "below"
-                  ? ["top", "left", "right"]
-                  : undefined,
-          }),
+          allowFlip &&
+            flip({
+              boundary: stage,
+              fallbackPlacements:
+                placement === "above"
+                  ? ["bottom", "left", "right"]
+                  : placement === "below"
+                    ? ["top", "left", "right"]
+                    : undefined,
+            }),
           shift({
             boundary: stage,
             padding: { top: padding, bottom: padding, left: horizontalInset, right: horizontalInset },
@@ -146,7 +148,7 @@ export function usePortaledTooltipPlacement(
       if (frame !== null) cancelAnimationFrame(frame);
       cleanup();
     };
-  }, [active, triggerRef, padding, placement, maxWidthFraction]);
+  }, [active, triggerRef, padding, placement, maxWidthFraction, allowFlip]);
 
   return { tooltipRef, ...floatingPlacementToTooltipState(position.placement), tooltipStyle: position.tooltipStyle };
 }

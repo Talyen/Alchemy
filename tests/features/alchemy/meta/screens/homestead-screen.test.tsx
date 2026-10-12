@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { HomesteadScreen } from "@/features/alchemy/meta/screens/homestead-screen";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { cardLibrary, defaultCompanionBondLevels } from "@/lib/game-data";
+import { cardLibrary, defaultCompanionBondLevels, keywordDefinitions } from "@/lib/game-data";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { createEmptyTierRecord } from "@/lib/homestead/tiers";
 import { playUISound } from "@/lib/audio";
@@ -52,7 +52,7 @@ describe("HomesteadScreen", () => {
     vi.clearAllMocks();
   });
 
-  it("previews inactive first-tier bonuses and reveals purchased progress only after saving once", async () => {
+  it("shows only build costs before purchase and reveals bonuses and progress after saving once", async () => {
     let saved: (() => void) | undefined;
     const afterProgressSaved = (feedback: () => void) => {
       saved = feedback;
@@ -60,9 +60,8 @@ describe("HomesteadScreen", () => {
     const { rerender } = render(<HomesteadScreen {...defaultProps} afterProgressSaved={afterProgressSaved} />);
     const panel = await inspect();
     expect(defaultProps.onConstructBuilding).not.toHaveBeenCalled();
-    expect(panel.textContent).toContain("Physical damage is increased by 1");
-    expect(panel.textContent).toContain("Find 10% more");
-    expect(panel.querySelector(".grayscale.opacity-60")).toBeTruthy();
+    expect(panel.textContent).not.toContain("Physical damage");
+    expect(panel.textContent).not.toContain("Find");
     expect(within(panel).getByRole("img", { name: "Level 0 of 4" })).toBeTruthy();
     expect(within(panel).queryByRole("button")).toBeNull();
     const tile = nodeTile();
@@ -95,6 +94,7 @@ describe("HomesteadScreen", () => {
     expect(panel.querySelector(".grayscale")).toBeNull();
     expect(within(panel).getByRole("img", { name: "Level 1 of 4" })).toBeTruthy();
     expect(panel.textContent).toContain("Physical damage is increased by 1");
+    expect(panel.textContent).toContain("Find 10% more");
     expect(panel.textContent).not.toContain("Physical damage is increased by 2");
     expect(tile.classList.contains("homestead-node-affordable")).toBe(false);
     expect(vi.mocked(playUISound).mock.calls.filter(([sound]) => sound === "talentUnlock")).toHaveLength(1);
@@ -133,7 +133,7 @@ describe("HomesteadScreen", () => {
     act(() => tile.focus());
     const panel = await screen.findByRole("tooltip");
     expect(panel.textContent).toContain("Physical damage is increased by 1");
-    expect(panel.textContent).toContain("More materials needed");
+    expect(panel.textContent).not.toContain("More materials needed");
     expect(
       within(panel).getByLabelText("Upgrade cost: 8 Stone, 22 Iron").querySelectorAll(".text-destructive"),
     ).toHaveLength(2);
@@ -227,18 +227,40 @@ describe("HomesteadScreen", () => {
     expect(defaultProps.onConstructBuilding).not.toHaveBeenCalled();
   });
 
-  it("previews the first bond and bonds a Companion on the second page without leaving it", async () => {
+  it("shows only unbonded costs and bonds a Companion on the second page without leaving it", async () => {
     render(<HomesteadScreen {...defaultProps} discoveredCardIds={cardLibrary.map((card) => card.id)} />);
     fireEvent.click(screen.getByRole("button", { name: "Companions" }));
     await screen.findByRole("img", { name: "Wolf", exact: true });
     fireEvent.click(screen.getByRole("button", { name: "Next page" }));
     const panel = await inspect("Mana Moth");
     expect(within(panel).getByRole("img", { name: "Bond 0 of 3" })).toBeTruthy();
-    const preview = panel.querySelector(".grayscale.opacity-60");
-    expect(preview?.querySelectorAll("p").length).toBeGreaterThan(0);
+    expect(panel.querySelectorAll("p")).toHaveLength(1);
+    expect(within(panel).getByRole("group", { name: /^Bond cost:/ })).toBeTruthy();
     fireEvent.click(nodeTile("Mana Moth"));
     expect(defaultProps.onBondCompanion).toHaveBeenCalledExactlyOnceWith("mana-moth");
     expect(screen.queryByRole("img", { name: "Wolf", exact: true })).toBeNull();
+  });
+
+  it("shows Hide alone for Hunter's Lodge and renders Wishing Well Gold in a resource chip", async () => {
+    render(
+      <HomesteadScreen
+        {...defaultProps}
+        constructedBuildings={{ ...defaultProps.constructedBuildings, "hunters-lodge": 1, "wishing-well": 1 }}
+      />,
+    );
+    const hunter = await inspect("Hunter's Lodge");
+    expect(hunter.textContent).toContain("Find 10% more Hide");
+    expect(hunter.textContent).not.toContain("Food");
+    fireEvent.mouseLeave(nodeTile("Hunter's Lodge"));
+    await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
+    const well = await inspect("Wishing Well");
+    expect(well.textContent).toContain("Wish has a 10% chance to offer an additional choice");
+    expect(within(well).getByText("Wish").classList.contains(keywordDefinitions.wish.colorClass)).toBe(true);
+    expect(well.textContent).toContain("Find 10% more Gold");
+    expect(well.textContent).not.toContain("Gems");
+    const gold = within(well).getByRole("img", { name: "Gold" });
+    expect(gold.parentElement?.textContent).toBe("Gold");
+    expect(gold.parentElement?.classList.contains("rounded-full")).toBe(true);
   });
 
   it("shows completed benefits and keeps undiscovered Companions anonymous and unpurchasable", async () => {

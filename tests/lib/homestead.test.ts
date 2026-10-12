@@ -208,19 +208,24 @@ describe("reward quantity bonuses", () => {
     expect(computeGoldReward(0, 1.5, 0.4)).toBe(0);
   });
   it.each([1, 2, 3, 4])("applies tier %i to matching resources and stacks different nodes additively", (tier) => {
+    const buildingsOnly = computeHomesteadEffects({ "hunters-lodge": tier, "wishing-well": tier }, {}, {});
+    expect(buildingsOnly.foodFindBonus).toBe(0);
+    expect(buildingsOnly.gemFindBonus).toBe(0);
+    expect(buildingsOnly.hideFindBonus).toBeCloseTo(tier * 0.1);
+    expect(buildingsOnly.goldFindBonus).toBeCloseTo(tier * 0.1);
     const effects = computeHomesteadEffects(
       { "hunters-lodge": tier, "wishing-well": tier },
       { "wheat-field": tier, "crystal-garden": tier },
       { "wool-tailoring": tier },
     );
-    expect(effects.foodFindBonus).toBeCloseTo(tier * 0.2);
-    expect(effects.gemFindBonus).toBeCloseTo(tier * 0.2);
+    expect(effects.foodFindBonus).toBeCloseTo(tier * 0.1);
+    expect(effects.gemFindBonus).toBeCloseTo(tier * 0.1);
     expect(effects.goldFindBonus).toBeCloseTo(tier * 0.2);
     const base = { ...emptyInventory(), food: 10, gems: 10, stone: 10, hide: 10 };
     expect(applyMaterialFindBonus(base, effects)).toEqual({
       ...base,
-      food: 10 + tier * 2,
-      gems: 10 + tier * 2,
+      food: 10 + tier,
+      gems: 10 + tier,
       stone: 10 + tier,
       hide: 10 + tier,
     });

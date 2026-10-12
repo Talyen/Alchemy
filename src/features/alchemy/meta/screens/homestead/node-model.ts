@@ -27,8 +27,7 @@ function lines(text: string | undefined) {
 }
 
 export function getUpgradeNode(item: GoalItem, level: number, inventory: MaterialInventory): HomesteadNodeModel {
-  // Preview the first tier until purchased; later tiers show current effects only.
-  const tier = item.data.tiers[Math.max(0, Math.min(level - 1, item.data.tiers.length - 1))];
+  const tier = level > 0 ? item.data.tiers[Math.min(level - 1, item.data.tiers.length - 1)] : undefined;
   const cost = getNextTierCost(item.data, level);
   return {
     id: item.data.id,
@@ -71,11 +70,7 @@ export function getCompanionNode(
     cost,
     affordable: cost !== null && canAfford(inventory, cost),
     bonuses:
-      discovered && companionId
-        ? getEffectiveCardDescriptionLines(card, {
-            companionBondLevels: { ...bondedCompanions, [companionId]: Math.max(1, level) },
-          })
-        : [],
+      discovered && level > 0 ? getEffectiveCardDescriptionLines(card, { companionBondLevels: bondedCompanions }) : [],
     production: [],
   };
 }

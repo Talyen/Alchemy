@@ -165,10 +165,10 @@ Every building/farm/research node has four tiers; Companion Bonds have three.
 Numeric effects increase cumulatively. Resource support adds 10 percentage points
 per tier to the matching find bonuses, reaching 40% per node; separate nodes add
 together. Descriptions use Find 10/20/30/40% more followed by material names.
-Costs remain fixed. Crystal Garden boosts Gems and Stone, Wishing Well boosts Gems
-and Gold, and Wool Tailoring boosts Gold. Library, Agility Training, and Sanctuary
-have no resource bonus. These bonuses augment eligible run rewards at their
-source; they never create per-room or run-end payouts.
+Costs remain fixed. Hunter's Lodge boosts Hide only; Crystal Garden boosts Gems
+and Stone; Wishing Well and Wool Tailoring boost Gold only. Library, Agility
+Training, and Sanctuary have no resource bonus. These bonuses augment eligible
+run rewards at their source; they never create per-room or run-end payouts.
 
 Wheat Field restores 1/2/3/4 Health after every combat. Orchard starts each combat
 with 1/2/3/4 Thorns. Crystal Garden adds 25/50/75/100% of current Mana to Freeze
