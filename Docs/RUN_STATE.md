@@ -78,6 +78,17 @@ commit signal directly; gameplay callers must not.
 
 `run-session-write-port.ts` adapts the existing domain mutators to transactions; it does not own a second store. Raw dispatch (`gameplay-command.ts`), draft lookup (`transaction-internal.ts`), and read-facade internals are restricted by import boundaries. A transaction can write only during its callback; retained handles cannot write in `afterCommit` or another command. `snapshotTransactionValue(value)` returns a detached value for engine APIs that require mutable types. The aggregate dispatcher detaches result data before Immer closes the draft, for both store-owned and feature commands. Accepted results and rejected fallbacks may contain nested draft reads or read facades; neither escapes into deferred playback. Result objects are independent of committed state, preserve aliases and cycles, and the same detached result reaches `afterCommit` and the caller. Wrappers do not perform their own result conversion.
 
+Command results are detached data, including nested arrays, Maps, and Sets.
+Functions and Promise-like values cannot cross this boundary, even inside a
+rejected fallback. Invalid results abort before state, revision, RNG counters,
+or observers publish. Command result types enforce the same rule for known
+types; the runtime boundary also checks untyped inputs.
+
+Transaction-provided RNG and instance-ID functions are execution capabilities.
+They are bound to the originating open draft and reject use after it closes,
+including during a later command in the same session. Retaining a callback in
+an external closure does not extend its lifetime.
+
 Commands are synchronous and must not span an `await`. The command factory and
 Gear mutation wrappers reject Promise-like result types, including unions with
 asynchronous results. The runtime boundary also rejects thenables before
