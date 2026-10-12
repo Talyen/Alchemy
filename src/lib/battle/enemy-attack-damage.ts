@@ -197,6 +197,7 @@ function resolveEnemyDamageEffectCore(
     effect,
     { ...facts, preDamageBlockStrip, attackBlockLost, isBlockDepleted },
     combatTexts,
+    resolvePendingBattleReactions,
     state,
   );
   nextState = applyHealthLossTalentRewards(hitState, nextState, outcome.healthDamage, combatTexts);
