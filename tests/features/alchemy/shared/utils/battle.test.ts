@@ -4,6 +4,7 @@ import {
   getPlayerStatusChips,
   getEnemyStatusChips,
   getCombatImpactVisual,
+  getCombatTextAccessibleLabel,
 } from "@/features/alchemy/shared/utils/battle";
 import { enemyBestiary, keywordDefinitions } from "@/lib/game-data";
 import { makeTestCard } from "../../../../fixtures/battle";
@@ -173,4 +174,21 @@ describe("getCombatImpactVisual", () => {
   ] as const)("does not create an impact for $kind $stat text", (event) => {
     expect(getCombatImpactVisual(event)).toBeNull();
   });
+});
+
+it("identifies named Gear preparations while preserving generic preparation labels", () => {
+  const event = {
+    id: "ready",
+    displayText: "",
+    target: "player" as const,
+    kind: "notice" as const,
+    stat: "playNextCardTwice" as const,
+    signal: "prepared" as const,
+    text: "Everkeen Ready",
+  };
+  expect(getCombatTextAccessibleLabel(event)).toBe("Everkeen Ready");
+  expect(getCombatTextAccessibleLabel({ ...event, stat: "poison", text: "Viper’s Courtesy Ready" })).toBe(
+    "Viper’s Courtesy Ready",
+  );
+  expect(getCombatTextAccessibleLabel({ ...event, text: "" })).toBe("Shadowstep prepared");
 });

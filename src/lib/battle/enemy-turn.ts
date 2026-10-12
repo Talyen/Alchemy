@@ -202,7 +202,7 @@ function snapshotTurn(turn: EndPlayerTurnResolution): EndPlayerTurnResolution<Ba
 }
 
 /** Resolve until input is possible again; presentation never advances combat or draws RNG. */
-export function resolveBattleTurn(
+export function resolveTurnSequence(
   snapshot: BattleSnapshot,
   context: BattleResolutionContext,
   options?: { maxTurns: number },

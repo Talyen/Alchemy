@@ -5,7 +5,7 @@ vi.hoisted(() => vi.stubGlobal("__ALCHEMY_EDITION__", "demo"));
 import { isEditionRunAvailable } from "@/lib/game-edition";
 import { createNewRunInitialization } from "@/features/alchemy/run-setup/run/new-run-initialization";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
-import { createProgressionCommands } from "@/features/alchemy/run-loop/run/progression-commands";
+import { completeActInDraft } from "@/features/alchemy/run-loop/run/progression-commands";
 import { readActiveRun, readHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
@@ -17,6 +17,7 @@ import {
 import { snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { DESTINATIONS } from "@/lib/routing";
 import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { defaultGameSession } from "@/app/application-session";
 
 function deps() {
@@ -51,7 +52,9 @@ describe("demo command boundaries", () => {
   });
   it("ends Act 1 without recording a full Campaign win", () => {
     createNewRunInitialization(deps(), defaultGameSession).initializeRunForDifficulty("knight", "difficulty-1");
-    expect(createProgressionCommands(deps().getAvailableDestinations, defaultGameSession).completeAct()).toBe(true);
+    expect(
+      dispatchRunSessionCommand((draft) => acceptCommand(completeActInDraft(draft)), undefined, defaultGameSession),
+    ).toBe(true);
     expect(readActiveRun(defaultGameSession).currentAct).toBe(1);
     expect(readProfileStore(defaultGameSession).completedDifficulties.knight).toEqual([]);
     completeRunVictory(defaultGameSession);

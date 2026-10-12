@@ -1,11 +1,9 @@
 import {
   canPlayCard,
-  resolveBattleWish,
+  resolveBattleAction,
   resolveBattleStart,
   defaultTalentEffects,
-  resolveBattleTurn,
   getBattleOutcome,
-  resolveBattleCard,
   type BattleSnapshot,
 } from "@/lib/battle";
 import {
@@ -74,7 +72,9 @@ function choosePendingWishCards(state: BattleSnapshot, combatRng: Rng, policyRng
   while (nextState.wishOptions && nextState.wishOptions.length > 0) {
     const choice = nextState.wishOptions[rngInt(policyRng, nextState.wishOptions.length)];
     if (!choice) break;
-    nextState = resolveBattleWish(nextState, choice.id, { rng: combatRng }).state;
+    const action = resolveBattleAction(nextState, { kind: "wish", cardId: choice.id }, { rng: combatRng });
+    if (action.kind === "rejected") break;
+    nextState = action.resolution.state;
   }
   return nextState;
 }
@@ -97,8 +97,13 @@ function playAutomatedTurn(
     const selection = chooseCardToPlay(nextState, policy, policyRng);
     if (!selection) break;
 
-    const result = resolveBattleCard(nextState, selection.card.id, selection.index, { rng: combatRng });
-    if (result.state === nextState) break;
+    const action = resolveBattleAction(
+      nextState,
+      { kind: "card", cardId: selection.card.id, index: selection.index },
+      { rng: combatRng },
+    );
+    if (action.kind === "rejected" || action.action !== "card") break;
+    const result = action.resolution;
 
     if (cardsPlayed) {
       cardsPlayed[selection.card.id] = (cardsPlayed[selection.card.id] ?? 0) + 1;
@@ -146,7 +151,10 @@ function runSimTurn(
   if (tracking.anomalies) sampleAnomalies(state, [], tracking.anomalies);
   if (getBattleOutcome(state) !== null) return { state, turns: 1 };
 
-  const resolution = resolveBattleTurn(state, { rng: combatRng }, { maxTurns: remainingTurns });
+  const action = resolveBattleAction(state, { kind: "end-turn", maxTurns: remainingTurns }, { rng: combatRng });
+  if (action.kind === "rejected" || action.action !== "end-turn")
+    throw new Error("Simulation could not complete its turn");
+  const resolution = action.resolution;
   if (tracking.anomalies) {
     for (const frame of resolution.frames) {
       if (frame.turn.kind !== "haste") sampleAnomalies(frame.turn.enemyTurnStartState, [], tracking.anomalies);

@@ -67,7 +67,7 @@ Gameplay resolves before presentation; playback uses committed results.
 `lib/battle/battle-start.ts` owns opening Companion actions (including Eager Pack)
 and the subsequent hand draw. `resolveBattleStart` returns data-only state and
 Companion feedback; live start commands own progression, opening Gold settlement,
-and presentation notices. `resolveBattleTurn` owns progression through forced
+and presentation notices. `resolveTurnSequence` internally owns progression through forced
 player skips and runs the next Companion only when player input returns. The
 balance simulator uses both operations; its policy selects cards and Wishes but
 never assembles turn stages. A simulator round budget limits resolved turn
@@ -80,17 +80,22 @@ that base update without restarting the full healing reaction chain. Import
 `battle/combat-text-events.ts` for text aggregation and `battle/enemy-healing.ts`
 for enemy healing. Combat text is feedback, not a gameplay rule owner.
 
-- **Card play:** UI → `useBattleController.playCard()` → `commitCardPlay()` → `resolveBattleCard(snapshot, context)` → committed snapshot and combat feedback.
-- **Enemy turn:** `commitEndTurn()` → `resolveBattleTurn(snapshot, context)` → committed result and XP → `playTurnFrames()` for presentation only.
+- **Card play:** UI → `useBattleController.playCard()` → `commitCardPlay()` → `resolveBattleAction(snapshot, card, context)` → committed snapshot and combat feedback.
+- **Enemy turn:** `commitEndTurn()` → `resolveBattleAction(snapshot, end-turn, context)` → committed result and XP → `playTurnFrames()` for presentation only.
 
-`resolveBattleCard` and `resolveBattleWish` in `battle/player-actions.ts` own the
-player-action host boundary. Like battle start and turn resolution, they accept
-a `BattleSnapshot` plus an explicit `BattleResolutionContext` and return only
-snapshot data and combat feedback. Live commands supply transaction-bound world
-RNG; simulation supplies its combat stream. Hosts never bind RNG onto state or
-strip execution capabilities from player-action results. Invalid choices retain
-the input snapshot identity and consume no rolls. Low-level Card and Wish
-mechanics remain internal to the engine rather than barrel exports.
+`resolveBattleAction` in `battle/battle-actions.ts` owns acceptance and resolution
+for Card, Wish, and end-turn requests in both live commands and simulation. Its
+discriminated result separates rejection from accepted gameplay; rejected actions
+retain snapshot identity and consume no RNG. Phase, defeat, pending Wish, offered
+choice, card payment, and turn-budget validation happen before execution. Card
+previews reuse the same card validation. Pending Wishes may settle after enemy
+defeat or while controlled; explicit Card options preserve victory-grace plays,
+but neither permits a new enemy turn. Live commands award XP, discover cards,
+and settle resources only after acceptance. The convenience Card, Wish, and turn
+resolvers delegate to that boundary and keep their data-only return shapes.
+Hosts supply an explicit `BattleResolutionContext`; only snapshot data and combat
+feedback return. Low-level Card, Wish, and turn mechanics remain internal to the
+engine rather than barrel exports.
 
 `battle/card-play.ts` owns hand validation, payment, and the ordinary play sequence.
 `battle/card-play-effects.ts` resolves effects, repeats, and subsequent Talent
@@ -145,6 +150,16 @@ for a change: `run-flow.ts` → its
 `reward-math.ts` through `victory-flow.ts`; the saved purse and every reward
 screen derive from that same settlement. `reward-flow.ts` receives the settled
 Gold payout and only assembles reward states.
+`progression-commands.ts` owns non-combat visit exits. Callers supply the
+expected activity; the command rejects mismatched activities and unfinished
+Mystery choices. Automatic Campfire rest, room completion, next destination
+sampling, history, RNG, and the durable next activity commit together. Untouched
+Corruption restores the Campaign picker or leaves the Labyrinth node unconsumed;
+used Corruption completes the room. Presentation only navigates to the returned
+committed screen. Act advancement remains inside reward claiming rather than a
+separate shell action. The renderer and headless playthrough bind exits to the
+activity that offered the action.
+
 `reward-offers.ts` owns category eligibility, hoard guarantees, and seeded
 choice sampling. It returns a typed offer without run settlement fields;
 `reward-flow.ts` adds the reward state defaults, settled Gold, Materials, destinations,

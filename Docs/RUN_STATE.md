@@ -102,8 +102,9 @@ committed state remains; post-commit errors do not roll back gameplay.
 
 Battle reads expose serializable `BattleSnapshot` values. Opening draws and card
 plays commit before presentation. `commitEndTurn` resolves the turn and its
-Companion follow-up with `resolveBattleTurn`, awards Dodge XP, and publishes the
-result atomically before discard or enemy animation.
+Companion follow-up with the engine-owned `resolveBattleAction` end-turn request,
+awards Dodge XP only after acceptance, and publishes the result atomically before
+discard or enemy animation.
 
 Playback consumes detached `BattleTurnFrame` values and updates only
 `battle-presentation-store.displayedBattle`; cancellation or failed animation
@@ -201,7 +202,7 @@ Activity encoding follows the [persistence API](./RUN_STATE.md#persistence-api);
 
 ## Run randomness
 
-Run-level randomness is persisted in `activeRun.rng` as one seed plus counters for the named `rewards`, `destinations`, `events`, `shops`, and `world` streams. Commands obtain generators through `createDraftRunRandomSource(draft, stream)` so counters commit or roll back with gameplay. `BattleSnapshot` contains only data. `BattleResolutionContext` supplies execution-only action scope and the RNG to `resolveBattleTurn`; individual engine handlers use the execution-only `BattleState` supplied by `withDraftWorldBattleRng`. Engine draws use `getBattleRng(state)`. `battleSnapshot` removes those execution dependencies before publication or return. Stored snapshots and presentation frames contain no RNG callback. Advancing one stream cannot perturb another, and save/resume continues at the exact next draw.
+Run-level randomness is persisted in `activeRun.rng` as one seed plus counters for the named `rewards`, `destinations`, `events`, `shops`, and `world` streams. Commands obtain generators through `createDraftRunRandomSource(draft, stream)` so counters commit or roll back with gameplay. `BattleSnapshot` contains only data. `BattleResolutionContext` supplies execution-only action scope and the RNG to `resolveBattleAction`; individual engine handlers use the execution-only `BattleState` supplied by `withDraftWorldBattleRng`. Engine draws use `getBattleRng(state)`. `battleSnapshot` removes those execution dependencies before publication or return. Stored snapshots and presentation frames contain no RNG callback. Advancing one stream cannot perturb another, and save/resume continues at the exact next draw.
 
 Destination offers use the `destinations` stream for sampling. They draw a boss from `world` only when the offer contains Boss Combat alone and has no saved boss ID. Ordinary offers and resuming a valid boss preview do not advance `world`.
 

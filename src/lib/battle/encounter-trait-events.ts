@@ -85,6 +85,15 @@ export function processEncounterTraitActionDamage(state: BattleState, combatText
     nextState = removePlayerArmor(nextState, scaleByRoomMultiplier(nextState, 1), combatTexts, (amount) => {
       armorLost = amount;
     });
+    if (armorLost > 0) {
+      mergeCombatText(combatTexts, {
+        target: "player",
+        kind: "damage",
+        stat: "armor",
+        amount: armorLost,
+        impact: false,
+      });
+    }
     nextState = resolvePendingBattleReactions(
       applyArmorLossAttackRetaliation(nextState, armorLost, combatTexts),
       combatTexts,

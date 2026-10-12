@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
-import { resolveBattleTurn } from "@/lib/battle/enemy-turn";
+import { resolveBattleTurn } from "@/lib/battle";
 import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
 import { cardById } from "@/lib/game-data";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";

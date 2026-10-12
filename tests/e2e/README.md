@@ -225,3 +225,16 @@ screen/hook harnesses. Transmutation DOM races advance a virtual clock; browser
 animation canaries retain real timing. Resource-wallet markup and removal-tooltip
 CSS-class smoke checks are retired; tooltip interaction, placement, removal safety,
 resource spending, and persistence retain focused behavioral coverage.
+
+The critical End Turn canary also observes successful Slash SFX startup after
+resetting its cue-specific counter, sharing one real-timing battle boot. The audio
+route selects that canary. Armory browsing retains actual layout and keyboard
+focus checks; filter combinations, sorting and clearing use the
+inventory filtering/control and Armory screen unit/DOM suites.
+
+Pure Mystery, Wildwood and Labyrinth controller tests and Slice geometry/drawing
+parity tests run in Node, without JSDOM. FadeSlot cases share the use-fade suite.
+Tooltip dismissal tests advance a virtual fade clock; the keyboard helper briefly
+uses real timers for Testing Library's task drain. Browser tooltip and animation
+canaries continue to observe real rendering and timing. Unsupported native macOS
+fullscreen cases are skipped before Electron setup.

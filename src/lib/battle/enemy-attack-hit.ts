@@ -203,6 +203,15 @@ function applyDodgeOffensiveBuffs(state: BattleState): BattleState {
 }
 
 function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], dodgedAmount: number): BattleState {
+  if (!state.uniqueGear.viperReady && state.gearEffects.dodgeReadiesVenomousHit > 0) {
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "notice",
+      stat: "poison",
+      text: "Viper’s Courtesy Ready",
+      signal: "prepared",
+    });
+  }
   let nextState = {
     ...state,
     uniqueGear: {

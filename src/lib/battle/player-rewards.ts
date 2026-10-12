@@ -303,6 +303,15 @@ export function addForgeToPlayer(state: BattleState, baseAmount: number, combatT
     amount += 1;
   if (amount <= 0) return state;
   let nextState = addPlayerStatus(state, "forge", amount);
+  if (!state.uniqueGear.everkeenReady && nextState.uniqueGear.everkeenReady && combatTexts) {
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "notice",
+      stat: "playNextCardTwice",
+      text: "Everkeen Ready",
+      signal: "prepared",
+    });
+  }
   if (state.gearEffects.blockOnForgeGain > 0)
     nextState = applyBlockReward(nextState, state.gearEffects.blockOnForgeGain, combatTexts ?? []);
   if (combatTexts) {

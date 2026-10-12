@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { getBattleOutcome } from "@/lib/battle/battle-outcome";
-import { resolveBattleTurn } from "@/lib/battle/enemy-turn";
+import { resolveBattleTurn } from "@/lib/battle";
 import { resolveBattleSequence } from "@/lib/battle/battle-sequence";
 import { makeTestBattleState } from "../../fixtures/battle";
 

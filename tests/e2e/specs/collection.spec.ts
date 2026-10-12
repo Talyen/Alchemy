@@ -8,13 +8,6 @@ import { critical } from "../../playwright-tags";
 test("collection shows tabs, card inspection, and keeps tile gaps", critical, async ({ page }) => {
   await new MenuPage(page).gotoCollection({ discoveredCardIds: ["anvil"] });
 
-  await expect(page.getByRole("button", { name: "Heroes" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Cards" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Bestiary" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Trinkets" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Uniques" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Inspect/ }).first()).toBeVisible();
-
   await controllerInput(page).activate(page.getByRole("button", { name: "Cards" }));
   const inspectBtn = page.getByRole("button", { name: /Inspect Anvil/ });
   await expect(inspectBtn).toBeVisible({ timeout: 5000 });

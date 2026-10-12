@@ -110,7 +110,7 @@ export const BOUNDARY_CONFIGS = [
         "processCompanionTurnStart",
       ],
       message:
-        "Balance policies select actions; use resolveBattleStart and resolveBattleTurn for battle lifecycle rules.",
+        "Balance policies select actions; use resolveBattleStart and resolveBattleAction for battle lifecycle rules.",
     },
   ]),
   scope(["src/lib/game-data/**/*.{ts,tsx}"], [...catalogPatterns, NO_DIRECT_ASSET_IMPORT], LIB_NO_FRAMEWORK_PATHS),

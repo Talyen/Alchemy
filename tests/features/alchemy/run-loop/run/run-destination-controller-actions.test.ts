@@ -8,7 +8,6 @@ import { getPreviousDestination } from "@/features/alchemy/shared/run-flow/resol
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import {
-  beginDestinationClaim,
   setMysteryCardChoices,
   setMysteryChosenCardId,
   setMysteryChosenChoice,
@@ -34,7 +33,7 @@ describe("run destination controller actions", () => {
       setRunSession({ activity: { kind: "transmutation", data: emptyAlchemyVisit() } });
       const navigateTo = vi.fn((_screen: string, prepare?: () => void) => prepare?.());
       const rooms = readActiveRun(defaultGameSession).roomsEncountered;
-      createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession).advanceToNextDestination();
+      createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession).advanceToNextDestination("transmutation");
       expect(navigateTo).toHaveBeenCalledWith(
         contentSystemType === CONTENT_SYSTEMS.LABYRINTH ? ROUTE_SCREENS.LABYRINTH_MAP : ROUTE_SCREENS.DESTINATION,
       );
@@ -73,6 +72,7 @@ describe("run destination controller actions", () => {
       defaultGameSession,
     );
 
+    setRunSession({ activity: { kind: "destination" } });
     createRunFlow(makeFlowHandlerDeps(), defaultGameSession).prepareDestinationScreen();
     expect(readRunSession(defaultGameSession).rewardFlow.state.selectedBossId).toBe("mimic");
   });
@@ -117,7 +117,7 @@ describe("run destination controller actions", () => {
       defaultGameSession,
     );
 
-    handlers.advanceToNextDestination();
+    handlers.advanceToNextDestination("campfire");
 
     expect(captured.at(-1)?.destinationIndexInAct).toBe(7);
     expect(readRunSession(defaultGameSession).rewardFlow.state.destinations).toEqual([DESTINATIONS.BOSS_COMBAT]);
@@ -150,7 +150,7 @@ describe("run destination controller actions", () => {
       defaultGameSession,
     );
 
-    handlers.advanceToNextDestination();
+    handlers.advanceToNextDestination("campfire");
 
     const offered = readRunSession(defaultGameSession).rewardFlow.state.destinations;
     expect(offered.length).toBeGreaterThan(0);
@@ -191,6 +191,7 @@ describe("run destination controller actions", () => {
             { instanceId: "stale-gear", definitionId: "dagger-basic", affixes: [] },
           ]);
           setMysteryChosenCardId(draft, "slash");
+          setMysteryCardChoices(draft, null);
           setMysteryChosenChoice(draft, { label: "Leave", effects: [] });
 
           return acceptCommand();
@@ -201,14 +202,14 @@ describe("run destination controller actions", () => {
 
       const navigateTo = vi.fn((_screen: string, prepare?: () => void) => prepare?.());
       const roomsBeforeExit = readActiveRun(defaultGameSession).roomsEncountered;
-      createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession).advanceToNextDestination();
+      createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession).advanceToNextDestination("mystery");
       expect(readRunSession(defaultGameSession).activity.kind).not.toBe("mystery");
       expect(readActiveRun(defaultGameSession).roomsEncountered).toBe(roomsBeforeExit + 1);
       expect(navigateTo.mock.calls[0]?.[0]).toBe(expectedScreen);
     },
   );
 
-  it("returnToCurrentDestination undoes a committed Corruption visit and restores the same picker", () => {
+  it("leaving untouched Corruption restores the same picker without consuming the room", () => {
     const offered = [DESTINATIONS.CAMPFIRE, DESTINATIONS.CORRUPTION, DESTINATIONS.MYSTERY];
     setRunProgress({
       destinationIndexInAct: 2,
@@ -223,8 +224,9 @@ describe("run destination controller actions", () => {
       defaultGameSession,
     );
 
+    setRunSession({ activity: { kind: "corruption", data: null } });
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
-    createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession).returnToCurrentDestination();
+    createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession).advanceToNextDestination("corruption");
 
     expect(readActiveRun(defaultGameSession).roomsEncountered).toBe(3);
     expect(readActiveRun(defaultGameSession).destinationIndexInAct).toBe(1);
@@ -234,37 +236,6 @@ describe("run destination controller actions", () => {
     });
     expect(readRunSession(defaultGameSession).rewardFlow.state.destinations).toEqual(offered);
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DESTINATION);
-  });
-
-  it("returnToCurrentDestination cancels an uncommitted Corruption claim without advancing", () => {
-    const offered = [DESTINATIONS.CAMPFIRE, DESTINATIONS.CORRUPTION, DESTINATIONS.MYSTERY];
-    setRunProgress({
-      destinationIndexInAct: 1,
-      roomsEncountered: 3,
-      completedDestinations: [DESTINATIONS.NORMAL_COMBAT],
-      lastOfferedDestinations: offered,
-    });
-    dispatchRunSessionCommand(
-      (draft) => acceptCommand(setRewardState(draft, { ...createEmptyRewardState(), destinations: offered })),
-      undefined,
-      defaultGameSession,
-    );
-    expect(
-      dispatchRunSessionCommand(
-        (draft) => acceptCommand(beginDestinationClaim(draft, DESTINATIONS.CORRUPTION)),
-        undefined,
-        defaultGameSession,
-      ),
-    ).toBe(true);
-
-    const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
-    createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession).returnToCurrentDestination();
-
-    expect(readRunSession(defaultGameSession).rewardFlow.claim).toEqual({ kind: "idle" });
-    expect(readActiveRun(defaultGameSession).roomsEncountered).toBe(3);
-    expect(readActiveRun(defaultGameSession).destinationIndexInAct).toBe(1);
-    expect(readActiveRun(defaultGameSession).completedDestinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
-    expect(readRunSession(defaultGameSession).rewardFlow.state.destinations).toEqual(offered);
   });
 
   it("commitDestinationClaim seeds lastOfferedDestinations so Leave can restore an injected picker", () => {
@@ -290,7 +261,7 @@ describe("run destination controller actions", () => {
     expect(readActiveRun(defaultGameSession).lastOfferedDestinations).toEqual(offered);
     expect(readActiveRun(defaultGameSession).completedDestinations).toEqual([DESTINATIONS.CORRUPTION]);
 
-    createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession).returnToCurrentDestination();
+    createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession).advanceToNextDestination("corruption");
 
     expect(readRunSession(defaultGameSession).rewardFlow.state.destinations).toEqual(offered);
     expect(readActiveRun(defaultGameSession).destinationIndexInAct).toBe(0);

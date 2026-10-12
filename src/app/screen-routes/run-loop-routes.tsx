@@ -193,7 +193,7 @@ function CampfireScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 
 function CardShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.shop.merchant;
-  const onContinue = routeCommands.runLoop.shop.continue;
+  const onContinue = () => routeCommands.runLoop.shop.continue("shop");
   const r = useShopScreenData();
   return (
     <CardShopScreen
@@ -217,7 +217,7 @@ function CardShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 
 function AlchemistShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.shop.alchemist;
-  const onContinue = routeCommands.runLoop.shop.continue;
+  const onContinue = () => routeCommands.runLoop.shop.continue("alchemist");
   const r = useAlchemistScreenData();
   const potency = useTalentEffects().potionMixPotency;
   return (
@@ -249,7 +249,7 @@ function AlchemistShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 
 function TrinketShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.shop.trinket;
-  const onContinue = routeCommands.runLoop.shop.continue;
+  const onContinue = () => routeCommands.runLoop.shop.continue("trinket-shop");
   const r = useTrinketShopScreenData();
   return (
     <TrinketShopScreen
@@ -273,7 +273,7 @@ function TrinketShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 
 function EquipmentShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.shop.equipment;
-  const onContinue = routeCommands.runLoop.shop.continue;
+  const onContinue = () => routeCommands.runLoop.shop.continue("equipment-shop");
   const r = useEquipmentShopScreenData();
   return (
     <EquipmentShopScreen

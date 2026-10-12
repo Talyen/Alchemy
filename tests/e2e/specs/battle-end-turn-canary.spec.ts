@@ -2,11 +2,13 @@ import { savedActivityData } from "../../fixtures/run-activity";
 import { expect, test } from "../../fixtures/e2e";
 import { injectActiveBattle, makeCard, makeGoblinBattleState, readSavedGame, seedRandom } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
+import { readSfxPlays, resetSfxPlays, trackSfxPlays } from "../../pages/audio-harness";
 import { critical } from "../../playwright-tags";
 
-test("rapid End Turn advances once, damages the player, and restores the hand", critical, async ({ page }) => {
+test("Slash starts its SFX and rapid End Turn advances once and restores the hand", critical, async ({ page }) => {
   test.setTimeout(45_000);
   await seedRandom(page, 42);
+  await trackSfxPlays(page, "sword-attack-1.");
   const deck = Array.from({ length: 6 }, () =>
     makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 1 }] }),
   );
@@ -14,8 +16,11 @@ test("rapid End Turn advances once, damages the player, and restores the hand", 
   state.currentEnemy = { ...state.currentEnemy, abilityIds: ["slash", "sunder", "burning-blade"] };
   await injectActiveBattle(page, state, { runDeck: deck });
   const battle = new BattlePage(page);
+  await battle.waitForOpeningHand();
+  await resetSfxPlays(page);
   await battle.playFirstCard();
   await expect(battle.hand).toHaveCount(3);
+  await expect.poll(() => readSfxPlays(page)).toBeGreaterThan(0);
   const health = await battle.playerHealth();
   await battle.endTurnBtn.click({ clickCount: 3, delay: 20 });
   await expect.poll(() => battle.playerHealth()).toBeLessThan(health);
