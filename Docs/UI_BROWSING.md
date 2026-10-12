@@ -136,9 +136,9 @@ overlay behavior. Victory keeps its own title.
 When a run newly unlocks a hero, Continue opens a Hero Unlocked reveal with that
 hero’s portrait and name before Main Menu. Hovering or focusing the portrait
 shows the same hero tooltip as hero selection, including the starting deck and
-keywords. The reveal tooltip prefers the right side and flips left when space
-is limited. Hero selection uses a consistent placement per row: below the top
-row and above the bottom row, regardless of whether a hero is locked. Shared
+keywords. The reveal tooltip prefers below the portrait. Hero selection uses a
+consistent placement per row: below the top row and above the bottom row,
+regardless of whether a hero is locked. Shared
 collision handling keeps tooltips within the game frame. The background glow
 uses that hero’s selection palette. Repeat runs do not replay unlocks.
 Defeat and manual End Run follow the same unlock rules as victory. Demo victories
