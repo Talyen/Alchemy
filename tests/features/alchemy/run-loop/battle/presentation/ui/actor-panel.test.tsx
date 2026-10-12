@@ -40,6 +40,27 @@ describe("ArtPanel hover motion", () => {
 
   afterEach(cleanup);
 
+  it("shows the remaining Death's Door protection and its survival rules", async () => {
+    const { rerender } = render(<ArtPanel {...baseProps} deathsDoorActive deathsDoorGraceTurnsRemaining={3} />);
+    fireEvent.focus(screen.getByRole("button", { name: "Death's Door: 3 protected turns remaining" }));
+    await waitFor(() => {
+      const tooltip = document.querySelector(".hover-popup-panel[data-visible]");
+      expect(tooltip?.textContent).toContain("3 protected turns remaining.");
+      expect(tooltip?.textContent).toContain("Fatal damage leaves you at 1 Health while protected.");
+      expect(tooltip?.textContent).toContain("Healing does not end protection.");
+      expect(tooltip?.textContent).toContain("Once protection expires, fatal damage can defeat you.");
+    });
+    rerender(<ArtPanel {...baseProps} deathsDoorActive deathsDoorGraceTurnsRemaining={1} />);
+    expect(screen.getByRole("button", { name: "Death's Door: 1 protected turn remaining" })).toBeTruthy();
+    await waitFor(() =>
+      expect(document.querySelector(".hover-popup-panel[data-visible]")?.textContent).toContain(
+        "1 protected turn remaining.",
+      ),
+    );
+    rerender(<ArtPanel {...baseProps} deathsDoorActive={false} deathsDoorGraceTurnsRemaining={null} />);
+    expect(screen.queryByRole("button", { name: /Death's Door/ })).toBeNull();
+  });
+
   it("scales living actor art but keeps dead actor art static", () => {
     const { rerender } = render(<ArtPanel {...baseProps} />);
 

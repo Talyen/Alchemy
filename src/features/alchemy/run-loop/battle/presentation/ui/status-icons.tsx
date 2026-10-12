@@ -146,15 +146,28 @@ const HASTE_STATUS = {
   description: "Skips the next enemy phase and grants another player turn.",
 };
 
-export function DeathsDoorStatusIcon() {
+export function DeathsDoorStatusIcon({ remainingTurns }: { remainingTurns?: number | null }) {
   return (
     <StatusChipShell
-      ariaLabel="Death's Door"
+      ariaLabel={
+        remainingTurns == null
+          ? "Death's Door"
+          : `Death's Door: ${remainingTurns} protected ${remainingTurns === 1 ? "turn" : "turns"} remaining`
+      }
       buttonClassName="rounded-full bg-red-950/70 text-red-200 ring-1 ring-red-400/60"
       icon={<Skull className={STATUS_ICON_CLASS} />}
       tooltip={
         <>
           <TooltipHeader>Death's Door</TooltipHeader>
+          <TooltipBody>
+            {remainingTurns != null && (
+              <p>
+                {remainingTurns} protected {remainingTurns === 1 ? "turn" : "turns"} remaining.
+              </p>
+            )}
+            <p>Fatal damage leaves you at 1 Health while protected. Healing does not end protection.</p>
+            <p>Once protection expires, fatal damage can defeat you. Death's Door triggers once per combat.</p>
+          </TooltipBody>
           <TooltipBody className="italic">
             <p>
               Because I could not stop for Death,
