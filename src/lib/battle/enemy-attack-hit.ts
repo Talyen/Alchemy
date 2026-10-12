@@ -134,6 +134,8 @@ function applyDodgeCounterAttacks(
       ),
     );
   }
+  nextState = resolvePendingBattleReactions(nextState, combatTexts);
+  if (isPlayerDefeated(nextState)) return nextState;
   const riposteDamage = nextState.talentEffects.physicalOnDodgeEqualToAttack
     ? dodgedAmount
     : scalePercent(dodgedAmount, nextState.talentEffects.dodgePhysicalDamagePercent);
@@ -144,6 +146,8 @@ function applyDodgeCounterAttacks(
       combatTexts,
     );
   }
+  nextState = resolvePendingBattleReactions(nextState, combatTexts);
+  if (isPlayerDefeated(nextState)) return nextState;
   if (nextState.gearEffects.bleedOnDodge > 0 && nextState.enemyHealth > 0 && eligibility.enemyStatuses.bleed > 0) {
     nextState = resolveSecondaryAction(nextState, "retaliation", (current) =>
       resolveFollowUpHit(
@@ -153,6 +157,8 @@ function applyDodgeCounterAttacks(
       ),
     );
   }
+  nextState = resolvePendingBattleReactions(nextState, combatTexts);
+  if (isPlayerDefeated(nextState)) return nextState;
   if (nextState.talentEffects.goldOnDodge > 0 && rollBattleChance(REACTIVE_REWARD_CHANCES.luckyFoot, nextState)) {
     nextState = addGoldWithCombatText(nextState, nextState.talentEffects.goldOnDodge, combatTexts);
   }

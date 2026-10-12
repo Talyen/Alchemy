@@ -6,20 +6,16 @@ import { useInteractiveCard } from "./use-interactive-card";
  * cards still track hover (for their unlock tooltip) but never shimmer.
  */
 export function useChooserHover(scope: string, itemId: string, locked: boolean) {
-  const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } = useHoverVisible();
-  const { shimmerActive, shimmerToken, onHoverStart } = useInteractiveCard(scope, itemId);
-
-  function handleEnter() {
-    if (!locked) {
-      onHoverStart();
-    }
-    onMouseEnter();
-  }
+  const { shimmerActive, shimmerToken, onHoverStart, onHoverEnd } = useInteractiveCard(scope, itemId);
+  const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } = useHoverVisible({
+    onHoverStart: locked ? undefined : onHoverStart,
+    onHoverEnd,
+  });
 
   return {
     triggerRef,
     visible,
-    onMouseEnter: handleEnter,
+    onMouseEnter,
     onMouseLeave,
     onFocusCapture,
     onBlurCapture,

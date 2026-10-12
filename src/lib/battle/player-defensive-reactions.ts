@@ -88,6 +88,7 @@ function applyBlockDepletedHeal(
   nextState: BattleState,
   combatTexts: CombatTextEvent[],
   isBlockDepleted: boolean,
+  settleReactions: (state: BattleState, combatTexts: CombatTextEvent[]) => BattleState,
 ): BattleState {
   if (isPlayerDefeated(nextState)) return nextState;
   // The hit depleted Block even if threshold or healing rewards refilled it.
@@ -102,6 +103,9 @@ function applyBlockDepletedHeal(
       combatTexts,
     );
   }
+
+  finalState = settleReactions(finalState, combatTexts);
+  if (isPlayerDefeated(finalState)) return finalState;
 
   if (isBlockDepleted && prevState.gearEffects.saintfallRetribution > 0 && finalState.enemyHealth > 0) {
     finalState = resolveFollowUpHit(
@@ -141,6 +145,7 @@ export function applyPlayerDefensiveReactions(
     blockDepletedByStrip?: boolean;
   },
   combatTexts: CombatTextEvent[],
+  settleReactions: (state: BattleState, combatTexts: CombatTextEvent[]) => BattleState,
   protectionState = facts.before,
 ): BattleState {
   const {
@@ -188,7 +193,7 @@ export function applyPlayerDefensiveReactions(
   const isBlockDepleted =
     factsBlockDepleted ??
     (blockDepletedByStrip === true || (blockLost > 0 && blockLost === state.playerStatuses.block));
-  nextState = applyBlockDepletedHeal(protectionState, nextState, combatTexts, isBlockDepleted);
+  nextState = applyBlockDepletedHeal(protectionState, nextState, combatTexts, isBlockDepleted, settleReactions);
 
   return nextState;
 }

@@ -16,6 +16,7 @@ import {
   withCardDescription,
   mapEffectChildren,
   mixedPotion,
+  visitBattleCardEffects,
 } from "../game-data";
 
 const MIXED_POTION_ERROR = "Two Potions are required";
@@ -61,7 +62,11 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyB
   }
 
   const tags = [...new Set([...(cardA.tags ?? []), ...(cardB.tags ?? [])])];
-  const sameCard = cardA.id === cardB.id && areEffectsEquivalent(cardA.effects, cardB.effects);
+  // Doubling amounts cannot represent a second Armor-halving operation.
+  const sameCard =
+    cardA.id === cardB.id &&
+    areEffectsEquivalent(cardA.effects, cardB.effects) &&
+    !visitBattleCardEffects(cardA.effects, (effect) => effect.kind === "remove-enemy-armor" && effect.halve === true);
 
   // Describe ingredients separately: matching prose from different Potions
   // must not collapse into a single effect description.
