@@ -784,6 +784,15 @@
   animation: portraitRecoil 180ms ease-out;
 }
 
+.hero-unlock-portrait img {
+  animation: heroPortraitReveal 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-unlock-portrait[data-artwork-pending] img {
+  opacity: 0;
+  animation: none;
+}
+
 .reward-choice {
   isolation: isolate;
   border-radius: var(--radius-xl);
@@ -823,6 +832,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .hero-unlock-portrait img,
   .portrait-recoil-active,
   .mana-gem-spent,
   .mana-gem-active,
@@ -839,6 +849,7 @@
   }
 }
 
+html.alchemy-disable-animations .hero-unlock-portrait img,
 html.alchemy-disable-animations .portrait-recoil-active,
 html.alchemy-disable-animations .mana-gem-spent,
 html.alchemy-disable-animations .mana-gem-active,

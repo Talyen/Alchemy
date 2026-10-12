@@ -50,6 +50,12 @@ the queued frame, and disconnects resize observation; late callbacks do nothing.
 Stun and Freeze presentation rebuilds when the shared motion preference changes,
 switching between a static overlay with no tilt and the animated effect.
 
+Hero Unlocked reveals the decoded portrait once per hero with a 560ms fade,
+small upward settle, and 98% to 100% scale. The name and Continue/Main Menu
+button remain immediately available; the reveal never delays navigation or
+grants progression. Reduced or disabled motion shows the portrait without the
+reveal animation.
+
 Reward selection immediately holds the chosen frame, with one 200ms tiny settle
 and one simultaneous 220ms artwork shine. Alternatives gently dim. Selection
 suppresses any hover shimmer; saving and the existing outgoing fade proceed
