@@ -546,6 +546,13 @@
   scale: 1.035;
 }
 
+.homestead-node-affordable {
+  border-color: color-mix(in srgb, var(--color-primary) 65%, var(--color-border));
+  filter: drop-shadow(
+    0 0 calc(5px * var(--content-scale, 1)) color-mix(in srgb, var(--color-primary) 35%, transparent)
+  );
+}
+
 .card-interactive-glow.talent-hover-scale-only:hover,
 .group:hover .card-interactive-glow.talent-hover-scale-only {
   border-color: transparent;

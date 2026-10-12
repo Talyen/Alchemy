@@ -184,34 +184,37 @@ single-page tabs leave the pagination slot empty. Picker measurement containers
 must receive available width independently of their rendered card count, so
 resizing cannot feed a narrower row back into its own column calculation.
 
-Homestead is an artwork-first gallery with one interactive hover panel at a time.
-The panel shares Collection's above/below placement, tooltip scale, and chrome,
-using `PortaledHoverPanel` with non-modal dialog semantics. Hover/focus opens it;
-artwork activation pins it without spending. Pointer travel across the artwork,
-placement gap, and panel keeps it open. Outside presses, Escape, window blur,
-and hidden/inert ancestors dismiss it. Escape returns focus to the artwork;
-Tab enters the purchase action and leaves the panel without trapping focus.
+Homestead is an artwork-first gallery. Hover/focus inspects a node through the
+ordinary passive `PortaledTooltip`, sharing Collection's above/below placement,
+scale, chrome, and dismissal. Tooltips contain no controls and receive no focus;
+Tab moves between gallery controls. Clicking the artwork or pressing Enter/Space
+on it directly builds, upgrades, or bonds the node.
 
 Stars beside the name show purchased levels or bonds. Unbuilt/unbonded nodes show
-only their name, empty stars, and purchase cost. Purchased nodes show current
+their name, empty stars, purchase cost, and dimmed, desaturated first-tier bonuses
+that become active after purchase. Discovered unbonded Companions preview their
+first bond through the shared card-description owner. Purchased nodes show current
 bonuses and Find 10/20/30/40% more resource quantities, with uniform effect-row
-spacing and no section headers or upgrade previews. Completed nodes show current
-benefits without a purchase action; undiscovered Companions show their discovery
+spacing and no section headers or next-tier comparisons. Completed nodes show current
+benefits without costs; undiscovered Companions show their discovery
 requirement. The wallet stays in the gallery, which has no upgrade arrows or
 separate detail screens.
 
-One primary Build, Upgrade, or Bond button contains the material icons and costs.
-Purchases are direct. Unaffordable costs are distinguished and accompanied by
-More materials needed. Saving acknowledgment precedes purchased artwork/progress
-and sound; synchronous tier guards reject repeated input. Closing the panel or
-changing tabs cannot cancel or repeat an accepted purchase. Errors appear only
-on failure.
+Build, Upgrade, or Bond costs appear as a plain row with material icons and
+quantities. Unaffordable costs are distinguished and accompanied by More materials
+needed; the artwork stays focusable for inspection but cannot purchase. A visible
+Saving acknowledgment on the artwork precedes purchased artwork/progress and sound;
+synchronous tier guards reject repeated input. Dismissing the tooltip or changing
+tabs cannot cancel or repeat an accepted purchase. Errors appear only on failure
+and remain visible outside the tooltip.
 
 Homestead artwork keeps its native aspect ratio without cropping. Landscape
 nodes retain the larger Homestead-specific width and fixed two-row geometry,
 keeping headers, tabs, and pagination stationary. Artwork uses the shared 3px
-hover/focus outline and 103.5% scale with `card-interactive-no-glow`, without glow,
-shimmer, or shine borders. Nodes stay grayscale until their first purchase, then
+hover/focus outline and 103.5% scale with `card-interactive-no-glow`. Affordable
+nodes add a faint gold border and tight, static outer halo at rest, without pulse,
+shimmer, or shine; affordability updates after spending and is suppressed while
+a purchase is saving. Nodes stay grayscale until their first purchase, then
 remain colored even when the next purchase is unaffordable. Undiscovered
 Companions remain grayscale.
 

@@ -16,12 +16,6 @@ export type TooltipPlacement = "above" | "below" | "side-start" | "side-end";
 
 interface TooltipPanelProps {
   id?: string;
-  role?: "tooltip" | "dialog";
-  ariaLabel?: string;
-  ariaModal?: boolean;
-  ariaHidden?: boolean;
-  inert?: boolean;
-  tabIndex?: number;
   children: ReactNode;
   width?: string;
   className?: string;
@@ -41,12 +35,6 @@ function tooltipAnchorClass(placement: TooltipPlacement): string {
 
 export function TooltipPanel({
   id,
-  role = "tooltip",
-  ariaLabel,
-  ariaModal,
-  ariaHidden,
-  inert,
-  tabIndex,
   children,
   width = tooltipWidthClass,
   className,
@@ -59,12 +47,7 @@ export function TooltipPanel({
     <div
       ref={ref}
       id={id}
-      role={role}
-      aria-label={ariaLabel}
-      aria-modal={ariaModal}
-      aria-hidden={ariaHidden}
-      inert={inert}
-      tabIndex={tabIndex}
+      role="tooltip"
       className={cn(
         popupBaseClassName,
         tooltipAnchorClass(placement),

@@ -39,13 +39,10 @@ export function focusPreviousControl(): void {
 }
 
 function activeFocusRoot(): ParentNode {
-  const overlays = [
-    ...document.querySelectorAll<HTMLElement>('[role="dialog"]:not([aria-modal="false"]), [data-modal-content]'),
-  ].filter(isFocusAvailable);
-  if (overlays.length > 0) return overlays.at(-1)!;
-  if ([...document.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="false"]')].some(isFocusAvailable))
-    return document;
-  return document.querySelector("[data-screen-content]:not([inert])") ?? document;
+  const overlays = [...document.querySelectorAll<HTMLElement>('[role="dialog"], [data-modal-content]')].filter(
+    isFocusAvailable,
+  );
+  return overlays.at(-1) ?? document.querySelector("[data-screen-content]:not([inert])") ?? document;
 }
 
 export type FocusDirection = "left" | "right" | "up" | "down";

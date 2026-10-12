@@ -64,9 +64,8 @@ export function HomesteadScreen({
   const [tab, setTab] = useState<Tab>("buildings");
   const [companionPage, setCompanionPage] = useState(0);
   const [upgradePage, setUpgradePage] = useState(0);
-  const [activePanel, setActivePanel] = useState<{ id: string; pinned: boolean } | null>(null);
   const [purchaseState, setPurchaseState] = useState<{ node: HomesteadNodeModel; saved: boolean } | null>(null);
-  const [error, setError] = useState<{ id: string; message: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const pending = useRef(false);
   const submittedLevels = useRef(new Map<string, number>());
   const mounted = useRef(true);
@@ -104,7 +103,7 @@ export function HomesteadScreen({
             : onCompleteResearch(item.data.id);
     if (!accepted) {
       pending.current = false;
-      setError({ id: node.id, message: "Purchase unavailable. Your materials were not spent." });
+      setError(`Could not ${node.action.toLowerCase()} ${node.title}. Materials were not spent.`);
       return;
     }
     submittedLevels.current.set(node.id, node.level);
@@ -143,7 +142,6 @@ export function HomesteadScreen({
             <HomesteadTabs
               activeTab={tab}
               onSelectTab={(next) => {
-                setActivePanel(null);
                 setTab(next);
                 setUpgradePage(0);
               }}
@@ -156,7 +154,6 @@ export function HomesteadScreen({
                   page={page}
                   totalPages={totalPages}
                   onPageChange={(next) => {
-                    setActivePanel(null);
                     if (isCompanions) setCompanionPage(next);
                     else setUpgradePage(next);
                   }}
@@ -186,18 +183,8 @@ export function HomesteadScreen({
                       <HomesteadNodeArtwork
                         node={node}
                         inventory={materialInventory}
-                        open={activePanel?.id === node.id}
-                        pinned={activePanel?.id === node.id && activePanel.pinned}
                         saving={saving && isPurchasing}
                         awaitingProgress={awaitingProgress || (saving && !isPurchasing)}
-                        error={error?.id === node.id ? error.message : null}
-                        onOpen={() =>
-                          setActivePanel((current) =>
-                            current?.pinned || current?.id === node.id ? current : { id: node.id, pinned: false },
-                          )
-                        }
-                        onPin={() => setActivePanel({ id: node.id, pinned: true })}
-                        onClose={() => setActivePanel((current) => (current?.id === node.id ? null : current))}
                         onPurchase={() => purchase(item, liveNode)}
                       />
                     </div>
@@ -207,6 +194,11 @@ export function HomesteadScreen({
             </FadeSlot>
           </CollectionContentLayout>
         </div>
+        {error && (
+          <p role="alert" className="absolute inset-x-0 top-full mt-2 text-center text-sm text-destructive">
+            {error}
+          </p>
+        )}
       </ScreenShell>
     </PageLayout>
   );
