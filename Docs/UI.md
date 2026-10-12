@@ -182,18 +182,22 @@ views render neither pagination nor its wrapper. Picker measurement containers
 must receive available width independently of their rendered card count, so
 resizing cannot feed a narrower row back into its own column calculation.
 
-Homestead is an inspection gallery: selecting any node opens its detail page and
-never spends materials. Affordable purchases have a persistent, unboxed upward
-arrow with Build, Upgrade, or Bond beside the node name. Details separate purchased
-bonuses, production, and segmented upgrade progress; a Current / Next preview
-shows the next tier without changing progress, and unbuilt bonuses are labelled
-On build. Costs and the purchase action live in a separate sheet, including owned
-amounts and missing-material feedback. Completed and undiscovered nodes remain
-inspectable. Back returns to the same gallery tab and page.
+Homestead is an artwork-first inspection gallery: selecting any node opens its
+detail page and never spends materials. Names, purchased bonuses, and production
+live in artwork hover/focus tooltips, with first-tier effects labelled On build
+before construction. Affordable purchases have a persistent, unboxed upward arrow
+over the artwork. Detail pages use a centered stack: name, compact level or bond
+count, artwork, changed next-tier effects, and one purchase-review button. The
+button uses primary gold when affordable; unaffordable upgrades remain inspectable.
+The resource wallet belongs to the gallery. Costs and the purchase action live in
+a separate sheet, including owned amounts and missing-material feedback. Completed
+and undiscovered nodes remain inspectable. Back returns to the same gallery tab
+and page.
 
 Homestead artwork uses its native aspect ratio in both the gallery and detail
-page, without cropping. Nodes use no glow, shimmer, or shine borders. Upgrade and
-Companion artwork stays grayscale until its first upgrade or bond is purchased,
+page, without cropping. Both use the shared 3px hover/focus outline and 103.5%
+scale with `card-interactive-no-glow`; nodes use no glow, shimmer, or shine borders.
+Upgrade and Companion artwork stays grayscale until its first upgrade or bond is purchased,
 then stays in color even when the next purchase is unaffordable. Undiscovered
 Companions remain grayscale.
 

@@ -28,9 +28,17 @@ test(
     });
     const input = controllerInput(page);
     await expectNativeArtwork(page.getByRole("img", { name: "Blacksmith", exact: true }));
+    const tile = page.getByRole("button", { name: "View Blacksmith, build available" });
+    const tooltip = page.getByRole("tooltip", { name: /^Blacksmith/ });
+    await tile.hover();
+    await expect(tooltip).toContainText("Physical damage +1");
+    await page.getByRole("heading", { name: "Homestead" }).hover();
+    await expect(tooltip).toBeHidden();
     await input.activate(page.getByRole("button", { name: "View Blacksmith, build available" }));
     await expect(page.getByRole("heading", { name: "Blacksmith" })).toBeVisible();
     await expectNativeArtwork(page.getByRole("img", { name: "Blacksmith", exact: true }));
+    await page.getByRole("button", { name: "Inspect Blacksmith benefits" }).focus();
+    await expect(tooltip).toContainText("+1 Iron per Room");
     expect((await readSavedGame(page)).materialInventory).toMatchObject({ stone: 4, iron: 11 });
     await input.activate(page.getByRole("button", { name: "Review build for Blacksmith" }));
     const sheet = page.getByRole("dialog", { name: "Blacksmith" });
@@ -38,7 +46,7 @@ test(
     await expect(sheet).toContainText("11");
     await sheet.getByRole("button", { name: "Build", exact: true }).click();
     await expect(sheet).toBeHidden();
-    await expect(page.getByRole("progressbar", { name: "Upgrade progress" })).toHaveAttribute("aria-valuenow", "1");
+    await expect(page.getByLabel("Upgrade progress")).toContainText("1/4");
     await expect.poll(async () => (await readSavedGame(page)).constructedBuildings["blacksmiths-forge"]).toBe(1);
     await expect.poll(async () => (await readSavedGame(page)).materialInventory).toMatchObject({ stone: 0, iron: 0 });
     await withSavedGame(page, async (resumed) => {

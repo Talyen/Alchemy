@@ -11,7 +11,6 @@ export interface HomesteadNodeModel {
   id: string;
   title: string;
   art: string | undefined;
-  category: string;
   discovered: boolean;
   companion: boolean;
   level: number;
@@ -38,7 +37,6 @@ export function getUpgradeNode(item: GoalItem, level: number, inventory: Materia
     id: item.data.id,
     title: item.data.title,
     art: getArt(item.data.id),
-    category: item.kind === "building" ? "Building" : item.kind === "farm" ? "Farm" : "Research",
     discovered: true,
     companion: false,
     level,
@@ -70,7 +68,6 @@ export function getCompanionNode(
     id: card.id,
     title: discovered ? card.title : "Undiscovered companion",
     art: card.art,
-    category: "Companion",
     discovered,
     companion: true,
     level,

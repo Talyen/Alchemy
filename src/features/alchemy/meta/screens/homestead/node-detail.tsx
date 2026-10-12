@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type Ref } from "react";
-import { ArrowUp, ChevronRight } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { playUISound } from "@/lib/audio";
 import { cn } from "@/lib/utils";
 import { type MaterialInventory } from "@/lib/homestead/types";
 import { canAfford } from "@/lib/homestead/inventory";
-import { HomesteadArtwork } from "./gallery-node";
+import { HomesteadNodeArtwork } from "./node-artwork";
 import { renderTextWithMaterials } from "./helpers";
 import { type HomesteadNodeModel } from "./node-model";
 import { HomesteadPurchaseSheet } from "./purchase-sheet";
@@ -30,7 +30,6 @@ export function HomesteadNodeDetail({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedQuoteLevel, setSavedQuoteLevel] = useState<number | null>(null);
-  const [bonusView, setBonusView] = useState<"current" | "next">("current");
   const pending = useRef(false);
   const mounted = useRef(true);
   useEffect(() => {
@@ -43,8 +42,10 @@ export function HomesteadNodeDetail({
   const shown = saving && quote ? quote : node;
   const complete = shown.level >= shown.maxLevel;
   const awaitingProgress = savedQuoteLevel !== null && node.level <= savedQuoteLevel;
-  const canPreviewNext = shown.cost !== null && (shown.level > 0 || shown.companion);
-  const previewNext = canPreviewNext && bonusView === "next";
+  const nextLines = [
+    ...previewChanges(shown.level > 0 || shown.companion ? shown.bonuses : [], shown.nextBonuses),
+    ...previewChanges(shown.level > 0 ? shown.production : [], shown.nextProduction),
+  ];
 
   function openOffer() {
     if (pending.current || awaitingProgress || !node.cost) return;
@@ -80,122 +81,68 @@ export function HomesteadNodeDetail({
       setSaving(false);
       setSavedQuoteLevel(quote.level);
       setOpen(false);
-      setBonusView("current");
       playUISound(node.companion ? "bond" : "talentUnlock");
     });
   }
 
   return (
     <>
-      <div className="mx-auto grid w-full max-w-5xl items-center gap-8 py-4 md:grid-cols-2 md:gap-12 md:py-10">
-        <div
-          className={cn(
-            "mx-auto w-full overflow-hidden rounded-xl border border-border/60 shadow-lg",
-            shown.companion ? "max-w-72" : "max-w-xl",
-          )}
-        >
-          <HomesteadArtwork node={shown} />
-        </div>
-        <div className="w-full min-w-0">
-          <p className="text-xs tracking-widest text-muted-foreground uppercase">{shown.category}</p>
+      <div className="mx-auto flex w-full max-w-xl flex-col items-center gap-6 text-center">
+        <div>
           <h2
             ref={titleRef}
             tabIndex={-1}
-            className="mt-2 text-3xl font-semibold tracking-tight text-foreground outline-none"
+            className="text-3xl font-semibold tracking-tight text-foreground outline-none"
           >
             {shown.title}
           </h2>
-          {!shown.discovered ? (
-            <p className="mt-6 text-base text-muted-foreground">Discover this Companion during a Run.</p>
-          ) : (
-            <>
-              <div className="mt-6">
-                <div className="mb-2.5 flex items-center justify-between text-sm text-muted-foreground">
-                  <span>
-                    {complete
-                      ? shown.companion
-                        ? "Max bond"
-                        : "Fully upgraded"
-                      : shown.companion
-                        ? "Bond"
-                        : "Progress"}
-                  </span>
-                  <span className="tabular-nums">
-                    {shown.level} of {shown.maxLevel}
-                  </span>
-                </div>
-                <div
-                  role="progressbar"
-                  aria-label={shown.companion ? "Bond progress" : "Upgrade progress"}
-                  aria-valuenow={shown.level}
-                  aria-valuemin={0}
-                  aria-valuemax={shown.maxLevel}
-                  className="flex gap-1.5"
-                >
-                  {Array.from({ length: shown.maxLevel }, (_, index) => (
-                    <span
-                      key={index}
-                      className={cn(
-                        "h-1.5 flex-1 rounded-full transition-colors motion-reduce:transition-none",
-                        index < shown.level ? "bg-gold-pale" : "bg-muted",
-                      )}
-                    />
-                  ))}
-                </div>
-              </div>
-              {shown.cost ? (
-                <Button
-                  variant="outline"
-                  className="mt-5 w-full justify-between px-4"
-                  onClick={openOffer}
-                  disabled={saving || awaitingProgress}
-                  aria-label={`Review ${node.action.toLowerCase()} for ${node.title}`}
-                >
-                  <span className="flex items-center gap-2">
-                    {node.affordable && <ArrowUp className="h-4 w-4 text-gold-pale" aria-hidden="true" />}
-                    {saving ? "Saving…" : shown.action}
-                  </span>
-                  <span className="flex items-center gap-2 text-sm font-normal text-muted-foreground">
-                    {node.affordable && !saving ? <span className="text-gold-pale">Available</span> : null}
-                    <ChevronRight className="h-4 w-4" aria-hidden="true" />
-                  </span>
-                </Button>
-              ) : null}
-              <div className="mt-8 space-y-7" aria-live="polite" aria-atomic="true">
-                {canPreviewNext && (
-                  <div role="group" aria-label="Bonus preview" className="flex gap-5">
-                    {(["current", "next"] as const).map((view) => (
-                      <button
-                        key={view}
-                        type="button"
-                        aria-pressed={bonusView === view}
-                        onClick={() => setBonusView(view)}
-                        className={cn(
-                          "min-h-11 border-b px-1 text-sm transition-colors",
-                          bonusView === view
-                            ? "border-gold-pale text-gold-pale"
-                            : "border-transparent text-muted-foreground hover:text-foreground",
-                        )}
-                      >
-                        {view === "current" ? "Current" : shown.companion ? "Next bond" : "Next upgrade"}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <Benefits
-                  title={shown.companion ? "Abilities" : "Bonuses"}
-                  lines={previewNext ? shown.nextBonuses : shown.bonuses}
-                  preview={shown.level === 0 && !shown.companion}
-                />
-                <Benefits
-                  title="Production"
-                  lines={previewNext ? shown.nextProduction : shown.production}
-                  preview={shown.level === 0}
-                />
-              </div>
-            </>
+          {shown.discovered && (
+            <p
+              aria-label={shown.companion ? "Bond progress" : "Upgrade progress"}
+              className="mt-1.5 text-sm text-muted-foreground tabular-nums"
+              aria-live="polite"
+            >
+              {complete ? (shown.companion ? "Max bond" : "Fully upgraded") : shown.companion ? "Bond" : "Level"}{" "}
+              {shown.level}/{shown.maxLevel}
+            </p>
           )}
         </div>
+        <div className={cn("w-full", shown.companion ? "max-w-72" : "max-w-xl")}>
+          <HomesteadNodeArtwork node={shown} />
+        </div>
+        {!shown.discovered ? (
+          <p className="text-base text-muted-foreground">Discover this Companion during a Run.</p>
+        ) : shown.cost ? (
+          <>
+            {nextLines.length > 0 && (
+              <section
+                aria-label={
+                  shown.level === 0 && !shown.companion ? "On build" : shown.companion ? "Next bond" : "Next upgrade"
+                }
+                className="w-full space-y-2"
+              >
+                <h3 className="text-xs font-medium text-muted-foreground">
+                  {shown.level === 0 && !shown.companion ? "On build" : shown.companion ? "Next bond" : "Next upgrade"}
+                </h3>
+                <div className="space-y-1 text-base leading-relaxed text-foreground/90">
+                  {nextLines.map((line, index) => (
+                    <p key={index}>{renderTextWithMaterials(line)}</p>
+                  ))}
+                </div>
+              </section>
+            )}
+            <Button
+              variant={node.affordable ? "primary" : "outline"}
+              className="min-w-56 gap-2"
+              onClick={openOffer}
+              disabled={saving || awaitingProgress}
+              aria-label={`Review ${node.action.toLowerCase()} for ${node.title}`}
+            >
+              {node.affordable && <ArrowUp className="h-4 w-4" aria-hidden="true" />}
+              {saving ? "Saving…" : shown.action}
+            </Button>
+          </>
+        ) : null}
       </div>
       <HomesteadPurchaseSheet
         open={open}
@@ -211,19 +158,21 @@ export function HomesteadNodeDetail({
   );
 }
 
-function Benefits({ title, lines, preview }: { title: string; lines: string[]; preview: boolean }) {
-  if (lines.length === 0) return null;
-  return (
-    <section aria-label={title}>
-      <div className="mb-3 flex items-center gap-2">
-        <h3 className="text-xs font-medium tracking-widest text-muted-foreground uppercase">{title}</h3>
-        {preview && <span className="text-xs text-muted-foreground/70">On build</span>}
-      </div>
-      <div className="space-y-2 text-base leading-relaxed text-foreground/90">
-        {lines.map((line, index) => (
-          <p key={index}>{renderTextWithMaterials(line)}</p>
-        ))}
-      </div>
-    </section>
-  );
+function previewChanges(current: string[], next: string[]) {
+  const number = /\d+(?:\.\d+)?/g;
+  return next.flatMap((line, index) => {
+    if (current.includes(line)) return [];
+    const previous = current[index];
+    // Compare numbers only when the authored wording matches; new mechanics
+    // retain their complete description.
+    if (!previous || previous.replace(number, "#") !== line.replace(number, "#")) return [line];
+    const values = previous.match(number) ?? [];
+    let valueIndex = 0;
+    return [
+      line.replace(number, (value) => {
+        const before = values[valueIndex++];
+        return before === value ? value : `${before} → ${value}`;
+      }),
+    ];
+  });
 }

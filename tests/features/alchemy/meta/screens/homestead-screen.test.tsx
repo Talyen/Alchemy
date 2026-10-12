@@ -46,6 +46,12 @@ async function review(action = "build", title = "Blacksmith") {
   return dialog;
 }
 
+async function inspectArtwork(title = "Blacksmith") {
+  const artwork = await screen.findByRole("button", { name: `Inspect ${title} benefits` });
+  act(() => artwork.focus());
+  return screen.findByRole("tooltip");
+}
+
 describe("HomesteadScreen", () => {
   installDisabledAnimationsForTests();
   installReadyArtworkForTests();
@@ -63,7 +69,7 @@ describe("HomesteadScreen", () => {
     await inspect("Blacksmith");
     expect(defaultProps.onConstructBuilding).not.toHaveBeenCalled();
     expect(screen.queryByRole("dialog")).toBeNull();
-    expect(screen.getByRole("region", { name: "Bonuses" }).textContent).toContain("Physical damage +1");
+    expect(screen.getByRole("region", { name: "On build" }).textContent).toContain("Physical damage +1");
     const dialog = await review();
     expect(defaultProps.onConstructBuilding).not.toHaveBeenCalled();
     expect(dialog.textContent).toContain("4");
@@ -82,17 +88,17 @@ describe("HomesteadScreen", () => {
         constructedBuildings={{ ...defaultProps.constructedBuildings, "blacksmiths-forge": 1 }}
       />,
     );
-    expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("0");
+    expect(screen.getByLabelText("Upgrade progress").textContent).toContain("0/4");
     act(() => {
       saved!();
       saved!();
     });
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("1");
+    expect(screen.getByLabelText("Upgrade progress").textContent).toContain("1/4");
     expect(playUISound).toHaveBeenCalledExactlyOnceWith("talentUnlock");
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     const gallery = await screen.findByRole("button", { name: "View Blacksmith, upgrade available" });
-    expect(document.activeElement).toBe(gallery);
+    await waitFor(() => expect(document.activeElement).toBe(gallery));
   });
 
   it("keeps unaffordable nodes inspectable and explains missing materials in the purchase sheet", async () => {
@@ -109,7 +115,7 @@ describe("HomesteadScreen", () => {
     await screen.findByRole("button", { name: "View Blacksmith" });
   });
 
-  it("shows purchased bonuses, separates production, and retains color when the next upgrade is unaffordable", async () => {
+  it("inspects purchased effects on gallery and detail artwork, previews the next changes, and retains purchased color", async () => {
     render(
       <HomesteadScreen
         {...defaultProps}
@@ -120,17 +126,28 @@ describe("HomesteadScreen", () => {
     const art = screen.getByRole("img", { name: "Blacksmith" });
     expect(art.classList.contains("grayscale")).toBe(false);
     expect(screen.queryByRole("button", { name: "View Blacksmith, upgrade available" })).toBeNull();
+    const tile = screen.getByRole("button", { name: "View Blacksmith" });
+    act(() => tile.focus());
+    const galleryTooltip = await screen.findByRole("tooltip");
+    expect(galleryTooltip.textContent).toContain("Blacksmith");
+    expect(galleryTooltip.textContent).toContain("Physical damage +1");
     await inspect("Blacksmith");
-    const bonuses = screen.getByRole("region", { name: "Bonuses" });
+    expect(screen.queryByRole("tooltip")).toBeNull();
+    const next = screen.getByRole("region", { name: "Next upgrade" });
+    expect(next.textContent).toContain("Physical damage +1 → 2");
+    expect(next.textContent).toContain("Burn damage gains 10 → 20% of Forge.");
+    expect(next.textContent).toContain("+1 → 2 Iron per Room");
+    const tooltip = await inspectArtwork();
+    const bonuses = within(tooltip).getByRole("region", { name: "Bonuses" });
     expect(bonuses.textContent).toContain("Physical damage +1");
     expect(bonuses.textContent).not.toContain("Physical damage +2");
     expect(bonuses.textContent).not.toContain("per Room");
-    expect(screen.getByRole("region", { name: "Production" }).textContent).toContain("+1 Iron per Room");
+    expect(within(tooltip).getByRole("region", { name: "Production" }).textContent).toContain("+1 Iron per Room");
     expect(screen.getByRole("img", { name: "Blacksmith" }).classList.contains("grayscale")).toBe(false);
-    fireEvent.click(screen.getByRole("button", { name: "Next upgrade" }));
-    expect(screen.getByRole("region", { name: "Bonuses" }).textContent).toContain("Physical damage +2");
-    expect(screen.getByRole("region", { name: "Production" }).textContent).toContain("+2 Iron per Room");
-    expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("1");
+    act(() => screen.getByRole("button", { name: "Review upgrade for Blacksmith" }).focus());
+    await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
+    expect(screen.queryByRole("region", { name: "Bonuses" })).toBeNull();
+    expect(screen.getByLabelText("Upgrade progress").textContent).toContain("1/4");
     expect(defaultProps.onConstructBuilding).not.toHaveBeenCalled();
   });
 
@@ -209,8 +226,9 @@ describe("HomesteadScreen", () => {
       />,
     );
     await inspect("Blacksmith");
-    expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("4");
-    expect(screen.getByRole("region", { name: "Bonuses" }).textContent).toContain("Physical damage +4");
+    expect(screen.getByLabelText("Upgrade progress").textContent).toContain("4/4");
+    const tooltip = await inspectArtwork();
+    expect(within(tooltip).getByRole("region", { name: "Bonuses" }).textContent).toContain("Physical damage +4");
     expect(screen.queryByRole("button", { name: /Review/ })).toBeNull();
   });
 

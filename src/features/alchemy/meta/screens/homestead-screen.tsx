@@ -15,7 +15,7 @@ import {
   HomesteadTabs,
   RESEARCH_GOAL_ITEMS,
 } from "./homestead/helpers";
-import { HomesteadGalleryNode } from "./homestead/gallery-node";
+import { HomesteadNodeArtwork } from "./homestead/node-artwork";
 import { HomesteadNodeDetail } from "./homestead/node-detail";
 import { HomesteadWallet } from "./homestead/resource-wallet";
 import { getCompanionId, getCompanionNode, getUpgradeNode, type HomesteadSelection } from "./homestead/node-model";
@@ -123,9 +123,6 @@ export function HomesteadScreen({
     <PageLayout>
       <ScreenShell maxWidthClass="max-w-7xl" className="relative">
         <ScreenHeaderRow title="Homestead" onBack={selection ? backToGallery : onBack} onMenu={onMenu} />
-        <div className="mt-6">
-          <HomesteadWallet gold={gold} inventory={materialInventory} />
-        </div>
         <FadeSlot
           swapKey={selectedNode?.id ?? "gallery"}
           className="mt-6 w-full"
@@ -145,6 +142,7 @@ export function HomesteadScreen({
             />
           ) : (
             <div className="flex flex-col gap-7">
+              <HomesteadWallet gold={gold} inventory={materialInventory} />
               <HomesteadTabs
                 activeTab={tab}
                 onSelectTab={(next) => {
@@ -154,7 +152,7 @@ export function HomesteadScreen({
               />
               <FadeSlot swapKey={`${tab}-${page}`} className="mx-auto w-full overflow-visible">
                 <div
-                  className="mx-auto flex max-w-full flex-wrap items-start justify-center gap-x-5 gap-y-8"
+                  className="mx-auto flex max-w-full flex-wrap items-start justify-center gap-5"
                   style={{ width: `calc(${rowWidth}px * var(--content-scale, 1))` }}
                 >
                   {pageItems.map((item) => {
@@ -165,8 +163,9 @@ export function HomesteadScreen({
                         className="max-w-full shrink-0"
                         style={{ width: `calc(${tileWidth}px * var(--content-scale, 1))` }}
                       >
-                        <HomesteadGalleryNode
+                        <HomesteadNodeArtwork
                           node={node}
+                          showAvailability
                           onInspect={() => inspect(item)}
                           buttonRef={node.id === lastViewedId ? lastViewedTileRef : undefined}
                         />
