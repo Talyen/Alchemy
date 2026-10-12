@@ -25,6 +25,9 @@ describe("StartupLoadingScreen", () => {
     vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    document.getElementById("startup-splash")?.remove();
+    delete window.__alchemySplashWordIndex;
+    delete window.__alchemySplashWordTimer;
   });
 
   it("fills the gold header left to right and advances the phrase on each tick", () => {
@@ -86,6 +89,39 @@ describe("StartupLoadingScreen", () => {
     unmount();
     splash.remove();
   });
+
+  it("seamlessly continues from a phrase rotated pre-React load and clears pre-React timer", () => {
+    const splash = document.createElement("div");
+    splash.id = "startup-splash";
+    const phrase = document.createElement("p");
+    phrase.id = "startup-splash-phrase";
+    phrase.textContent = "Shuffling decks...";
+    splash.appendChild(phrase);
+    document.body.appendChild(splash);
+
+    const dummyTimer = 999;
+    window.__alchemySplashWordTimer = dummyTimer;
+    window.__alchemySplashWordIndex = 2;
+    const clearIntervalSpy = vi.spyOn(window, "clearInterval");
+
+    const { unmount } = render(<StartupLoadingScreen progress={0.5} />);
+
+    expect(clearIntervalSpy).toHaveBeenCalledWith(dummyTimer);
+    expect(window.__alchemySplashWordTimer).toBeUndefined();
+    expect(screen.getAllByText("Shuffling decks...")).toHaveLength(2);
+    expect(phrase.textContent).toBe("Shuffling decks...");
+
+    act(() => {
+      vi.advanceTimersByTime(LOADING_WORD_INTERVAL_MS);
+    });
+
+    expect(screen.getAllByText("Waking monsters...")).toHaveLength(2);
+    expect(phrase.textContent).toBe("Waking monsters...");
+
+    unmount();
+    splash.remove();
+    clearIntervalSpy.mockRestore();
+  });
 });
 
 describe("dismissStartupSplash", () => {
@@ -103,6 +139,18 @@ describe("dismissStartupSplash", () => {
 
     splash.dispatchEvent(new Event("transitionend"));
     expect(document.getElementById("startup-splash")).toBeNull();
+  });
+
+  it("clears active __alchemySplashWordTimer when dismissing splash", () => {
+    const dummyTimer = 888;
+    window.__alchemySplashWordTimer = dummyTimer;
+    const clearIntervalSpy = vi.spyOn(window, "clearInterval");
+
+    dismissStartupSplash();
+
+    expect(clearIntervalSpy).toHaveBeenCalledWith(dummyTimer);
+    expect(window.__alchemySplashWordTimer).toBeUndefined();
+    clearIntervalSpy.mockRestore();
   });
 });
 

@@ -11,12 +11,35 @@ import { clamp01 } from "@/lib/math";
 import { LOADING_WORDS } from "./loading-words";
 import { StartupLoadingDecoration } from "./startup-loading-decoration";
 
+function getInitialWordIndex(): number {
+  if (typeof window !== "undefined") {
+    if (
+      typeof window.__alchemySplashWordIndex === "number" &&
+      window.__alchemySplashWordIndex >= 0 &&
+      window.__alchemySplashWordIndex < LOADING_WORDS.length
+    ) {
+      return window.__alchemySplashWordIndex;
+    }
+    const phrase = document.getElementById("startup-splash-phrase");
+    if (phrase?.textContent) {
+      const clean = phrase.textContent.replace(/\.{3}$/, "").trim();
+      const idx = LOADING_WORDS.indexOf(clean as (typeof LOADING_WORDS)[number]);
+      if (idx !== -1) return idx;
+    }
+  }
+  return 0;
+}
+
 function useSyncedLoadingWord() {
-  // Sequential rotation starting with index 0 to match index.html phrase without snap.
-  const [wordIndex, setWordIndex] = useState(0);
+  const [wordIndex, setWordIndex] = useState(getInitialWordIndex);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (window.__alchemySplashWordTimer) {
+      window.clearInterval(window.__alchemySplashWordTimer);
+      window.__alchemySplashWordTimer = undefined;
+    }
+    window.__alchemySplashWordIndex = undefined;
     if (shouldReduceMotion()) return;
     const id = window.setInterval(() => {
       setWordIndex((prev) => (prev + 1) % LOADING_WORDS.length);
@@ -46,8 +69,11 @@ export function StartupLoadingScreen({ progress }: Props) {
   useEffect(() => {
     if (typeof document === "undefined") return;
     const phrase = document.getElementById("startup-splash-phrase");
-    if (phrase) {
+    if (phrase && phrase.textContent !== `${loadingWord}...`) {
       phrase.textContent = `${loadingWord}...`;
+      phrase.style.animation = "none";
+      void phrase.offsetHeight;
+      phrase.style.animation = "";
     }
   }, [loadingWord]);
 

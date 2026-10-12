@@ -87,7 +87,7 @@
         width: 100%;
         overflow: hidden;
         transform: translate3d(-100%, 0, 0);
-        animation: loadingLogoReveal 3000ms ease-out forwards;
+        animation: loadingLogoReveal 5000ms ease-out forwards;
         will-change: transform;
       }
       .alchemy-loading-logo-fill-text {
@@ -95,7 +95,7 @@
         width: 100%;
         color: hsl(var(--alchemy-primary));
         transform: translate3d(100%, 0, 0);
-        animation: loadingLogoCounter 3000ms ease-out forwards;
+        animation: loadingLogoCounter 5000ms ease-out forwards;
         will-change: transform;
       }
       .alchemy-loading-word {
@@ -108,6 +108,18 @@
         letter-spacing: 0.18em;
         text-transform: uppercase;
         color: hsl(var(--alchemy-fg) / 0.5);
+        animation: loadingWordFade 200ms ease-out both;
+        will-change: opacity, transform;
+      }
+      @keyframes loadingWordFade {
+        from {
+          opacity: 0;
+          transform: scale(0.98);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
       }
 
       /* Loading Decoration (Slime, Shadow, Leaves) */
@@ -126,7 +138,7 @@
         height: 39px;
         transform-origin: bottom;
         transform: translateX(54px);
-        animation: loadingSlimeHop 2s cubic-bezier(0.333333, 0, 0.666667, 1) both;
+        animation: loadingSlimeHop 5s cubic-bezier(0.333333, 0, 0.666667, 1) both;
       }
       .loading-decoration img {
         display: block;
@@ -135,7 +147,7 @@
       .loading-decoration-face {
         position: absolute;
         inset: -5.5px -1.75px 5.5px 1.75px;
-        animation: loadingSlimeFace 2s cubic-bezier(0.333333, 0, 0.666667, 1) both;
+        animation: loadingSlimeFace 5s cubic-bezier(0.333333, 0, 0.666667, 1) both;
       }
       .loading-decoration-face img {
         position: absolute;
@@ -172,7 +184,7 @@
         background: rgb(0 0 0 / 12%);
         filter: blur(2px);
         transform: translateX(54px);
-        animation: loadingSlimeShadow 2s cubic-bezier(0.333333, 0, 0.666667, 1) both;
+        animation: loadingSlimeShadow 5s cubic-bezier(0.333333, 0, 0.666667, 1) both;
       }
       .loading-decoration-leaf {
         position: absolute;
@@ -394,6 +406,9 @@
           animation: none;
           transform: translate3d(0%, 0, 0);
         }
+        .alchemy-loading-word {
+          animation: none;
+        }
       }
       html.alchemy-disable-animations .loading-decoration-slime,
       html.alchemy-disable-animations .loading-decoration-face,
@@ -411,6 +426,9 @@
       html.alchemy-disable-animations .alchemy-loading-logo-fill-text {
         animation: none;
         transform: translate3d(0%, 0, 0);
+      }
+      html.alchemy-disable-animations .alchemy-loading-word {
+        animation: none;
       }
     </style>
     <script>
@@ -524,6 +542,45 @@
         </span>
       </h1>
       <p id="startup-splash-phrase" class="alchemy-loading-word">Adventure awaits...</p>
+      <script>
+        (function () {
+          try {
+            var prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            var disableAnimations = document.documentElement.classList.contains("alchemy-disable-animations");
+            if (prefersReduced || disableAnimations) return;
+
+            var words = [
+              "Adventure awaits",
+              "Polishing trinkets",
+              "Shuffling decks",
+              "Waking monsters",
+              "Brewing potions",
+              "Gathering crystals",
+              "Sharpening blades",
+              "Mapping labyrinth",
+              "Attuning relics",
+              "Consulting oracle",
+              "Enchanting baubles",
+              "Counting loot",
+              "Training companions",
+              "Building homestead",
+              "Restocking shops",
+            ];
+            var phrase = document.getElementById("startup-splash-phrase");
+            if (!phrase) return;
+            var index = 0;
+            window.__alchemySplashWordIndex = 0;
+            window.__alchemySplashWordTimer = window.setInterval(function () {
+              index = (index + 1) % words.length;
+              window.__alchemySplashWordIndex = index;
+              phrase.textContent = words[index] + "...";
+              phrase.style.animation = "none";
+              void phrase.offsetHeight;
+              phrase.style.animation = "";
+            }, 750);
+          } catch (e) {}
+        })();
+      </script>
     </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
