@@ -15,6 +15,7 @@ import {
   completeResearch as completeResearchWrite,
   constructBuilding as constructBuildingWrite,
   plantFarm as plantFarmWrite,
+  resetHomestead as resetHomesteadWrite,
 } from "./write/run-homestead";
 import {
   handleCollectionTabChange as handleCollectionTabChangeWrite,
@@ -60,6 +61,15 @@ export function bondCompanion(id: CompanionId, gameSession: GameSession): boolea
       const ok = bondCompanionWrite(draft, id);
       return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
     },
+    undefined,
+    gameSession,
+  );
+}
+
+export function resetHomestead(gameSession: GameSession): boolean {
+  return dispatchGameplayCommand(
+    (draft) =>
+      resetHomesteadWrite(draft) ? acceptCommand(true) : rejectCommand("Homestead has no purchased upgrades", false),
     undefined,
     gameSession,
   );

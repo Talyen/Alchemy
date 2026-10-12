@@ -330,6 +330,13 @@ until the current restore command exits the unusable visit.
 
 Reward grants and bundle advancement follow [Activity and rewards](./RUN_STATE.md#activity-and-rewards); mode selection and resume follow [Run setup ownership](./ARCHITECTURE.md#run-setup-ownership).
 
+Reset Homestead is a session-bound meta intent command. One transaction sums
+current catalog costs for purchased Building, Farm, Research, and Companion tiers,
+refunds the stockpile, clears those levels to defaults, and recomputes/rebinds live
+meta effects. Empty resets reject without a revision or refund. Refunds bypass
+find bonuses and run-earned/recap tallies. Discoveries, Gold, RNG, and resolved
+combat grants remain intact; existing maximum-Health rebinding clamps Health.
+
 The permanent purse owns Gold. Live battle commands reconcile the engine output delta against that purse in the same transaction. Purse writes update the current battle input. Battle restore hydrates and rebinds the committed snapshot without executing gameplay. Retired legacy input/result pairs never reconcile uncommitted earnings. Run Health is carried between battles; the battle snapshot owns combat Health until run settlement, while live meta rebinding updates the shared maximum and clamps current Health.
 
 - **Autosave scheduling:** `app/autosave-scheduler.ts` owns revision acknowledgement, cancellation epochs, maximum wait, retry decisions, and the exit-once latch for one subscription lifetime. Its factory is the only scheduling API; submission and completion update the same private state, and tests exercise save sequences through that API. The shared `app/autosave-lifecycle.ts` supplies subscriptions, debounce selection, snapshots, completion gating, and storage writes with an injectable clock/timer seam. The React adapter supplies lifecycle events; the headless runner uses the same lifecycle without mounting React. Explicitly configured save backends also run outside a browser; unconfigured SSR retains its no-storage behavior. Late completions from cancelled epochs cannot acknowledge new progress. `SaveWriteQueue.storageEpoch` separately guards storage invalidation (clear/protection/reset) for all queue writers, including non-scheduler fast paths.

@@ -88,3 +88,12 @@ export const HAND_CARD_BASE_Z_INDEX = 10;
 export const HAND_CARD_HOVER_Z_INDEX = 40;
 
 export const WISH_OVERLAY_Z_INDEX = 90;
+
+export const HOMESTEAD_FEEDBACK = {
+  contentFadeMs: 120,
+  resizeMs: 180,
+  starMs: 180,
+  revealMs: 400,
+  glowMs: 450,
+  confirmationMs: 1000,
+} as const;

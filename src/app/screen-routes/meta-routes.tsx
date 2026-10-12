@@ -121,6 +121,8 @@ function HomesteadScreenRoute({ routeCommands, onBack, onOpenGameMenu }: MetaRou
       {...homesteadValues}
       discoveredCardIds={discoveredCardIds}
       afterProgressSaved={routeCommands.progress.afterSaved}
+      onResetHomestead={commands.resetHomestead}
+      isProgressSavePending={routeCommands.progress.isPending}
       onConstructBuilding={commands.constructBuilding}
       onPlantFarm={commands.plantFarm}
       onCompleteResearch={commands.completeResearch}

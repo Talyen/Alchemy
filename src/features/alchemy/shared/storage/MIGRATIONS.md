@@ -7,6 +7,12 @@ there is no save-version change.
 
 ## Supported baseline
 
+Reset Homestead persists ordinary zeroed node/bond levels and the refunded
+material stockpile. Refunds are derived from current catalog tier costs and
+committed once; hydration only recomputes effects and never refunds again.
+Discovery remains independent from bonds. Purchase feedback is presentation-only
+and is not serialized. No save-version change or refund ledger is required.
+
 Homestead find bonuses replace per-room yields; effects are derived from the saved
 node levels on hydration. Wheat Field uses post-combat recovery, Orchard adds
 starting Thorns, and Crystal Garden uses current-Mana Freeze scaling. The declared

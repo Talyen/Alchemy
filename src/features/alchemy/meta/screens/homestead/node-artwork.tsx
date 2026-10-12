@@ -1,13 +1,16 @@
+import { useEffect, useState, type CSSProperties } from "react";
+import { HOMESTEAD_FEEDBACK } from "@/lib/game-constants/ui-motion";
+import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
+import { useHeldWhile, useSequentialFadeSwap } from "../../../shared/ui/use-fade";
+import { HomesteadTooltipBody } from "./node-tooltip-body";
 import { Check, LockKeyhole, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MATERIAL_IDS, materialLabels, type MaterialInventory } from "@/lib/homestead/types";
 import { cardInteractiveGlowClass } from "../../../shared/config";
 import { Surface } from "../../../shared/ui/surface";
-import { HomesteadResourceArtwork } from "../../../shared/ui/material-icons";
 import { PortaledTooltip } from "../../../shared/ui/tooltips/portaled-tooltip";
-import { TooltipBody, TooltipHeader, TooltipSeparator } from "../../../shared/ui/tooltips/tooltip-panel";
+import { TooltipHeader } from "../../../shared/ui/tooltips/tooltip-panel";
 import { useHoverVisible } from "../../../shared/ui/use-hover-visible";
-import { renderTextWithMaterials } from "./helpers";
 import { type HomesteadNodeModel } from "./node-model";
 
 export function HomesteadNodeArtwork({
@@ -15,6 +18,7 @@ export function HomesteadNodeArtwork({
   inventory,
   tooltipPlacement,
   saving,
+  completion,
   awaitingProgress,
   onPurchase,
 }: {
@@ -22,11 +26,40 @@ export function HomesteadNodeArtwork({
   inventory: MaterialInventory;
   tooltipPlacement: "above" | "below";
   saving: boolean;
+  completion: { sequence: number; fromLevel: number } | null;
   awaitingProgress: boolean;
   onPurchase: () => void;
 }) {
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
     useHoverVisible<HTMLButtonElement>();
+  const reducedMotion = useReducedMotionPreference();
+  const [seenSequence, setSeenSequence] = useState(completion?.sequence ?? 0);
+  const [feedback, setFeedback] = useState<typeof completion>(null);
+  const [animateTooltip, setAnimateTooltip] = useState(false);
+  if ((completion?.sequence ?? 0) !== seenSequence) {
+    setSeenSequence(completion?.sequence ?? 0);
+    setFeedback(completion);
+    setAnimateTooltip(Boolean(completion) && visible);
+  }
+  useEffect(() => {
+    if (!feedback) return;
+    const timer = window.setTimeout(() => setFeedback(null), HOMESTEAD_FEEDBACK.confirmationMs);
+    return () => window.clearTimeout(timer);
+  }, [feedback]);
+  const { shown: shownLevel, phase } = useSequentialFadeSwap({
+    target: node.level,
+    durationMs: reducedMotion ? 0 : HOMESTEAD_FEEDBACK.contentFadeMs,
+  });
+  const heldNode = useHeldWhile(shownLevel === node.level, node);
+  const transition = feedback !== null && animateTooltip && !reducedMotion;
+  const tooltipNode = transition ? heldNode : node;
+  const firstPurchase = feedback?.fromLevel === 0;
+  const feedbackStyle = {
+    "--homestead-reveal-duration": `${HOMESTEAD_FEEDBACK.revealMs}ms`,
+    "--homestead-star-duration": `${HOMESTEAD_FEEDBACK.starMs}ms`,
+    "--homestead-glow-duration": `${HOMESTEAD_FEEDBACK.glowMs}ms`,
+    "--homestead-confirmation-duration": `${HOMESTEAD_FEEDBACK.confirmationMs}ms`,
+  } as CSSProperties;
   const complete = node.level >= node.maxLevel;
   const canPurchase = node.affordable && !saving && !awaitingProgress;
   const materials = MATERIAL_IDS.filter((material) => (node.cost?.[material] ?? 0) > 0);
@@ -37,9 +70,15 @@ export function HomesteadNodeArtwork({
         as="button"
         buttonRef={triggerRef}
         onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
+        onMouseLeave={() => {
+          setAnimateTooltip(false);
+          onMouseLeave();
+        }}
         onFocus={onFocusCapture}
-        onBlur={onBlurCapture}
+        onBlur={() => {
+          setAnimateTooltip(false);
+          onBlurCapture();
+        }}
         onClick={() => {
           if (canPurchase) onPurchase();
         }}
@@ -51,6 +90,7 @@ export function HomesteadNodeArtwork({
               : `View ${node.title}`
         }
         ariaDisabled={!canPurchase}
+        style={feedbackStyle}
         className={cn(
           "card-art-frame card-interactive-no-glow block w-full rounded-shell-hero border border-border/80 bg-black shadow-md focus-visible:outline-none",
           cardInteractiveGlowClass,
@@ -64,6 +104,28 @@ export function HomesteadNodeArtwork({
             >
               <span className="rounded-full bg-black/80 px-3 py-1">Saving…</span>
             </span>
+          ) : feedback ? (
+            <>
+              {!firstPurchase && !reducedMotion && (
+                <span
+                  key={feedback.sequence}
+                  aria-hidden="true"
+                  className="homestead-upgrade-glow pointer-events-none absolute inset-0 rounded-[inherit]"
+                />
+              )}
+              <span
+                key={`confirmation-${feedback.sequence}`}
+                role="status"
+                className={cn(
+                  "pointer-events-none absolute inset-x-0 bottom-3 z-20 text-center text-sm text-gold-pale",
+                  !reducedMotion && "homestead-purchase-confirmation",
+                )}
+              >
+                <span className="rounded-full bg-black/80 px-3 py-1">
+                  {node.companion ? "Bonded" : firstPurchase ? "Built" : "Upgraded"}
+                </span>
+              </span>
+            </>
           ) : complete || !node.discovered ? (
             <span className="pointer-events-none absolute right-3 bottom-3 z-20 drop-shadow-[0_1px_3px_rgba(0,0,0,1)]">
               {complete ? (
@@ -81,9 +143,19 @@ export function HomesteadNodeArtwork({
           draggable={false}
           className={cn(
             "block h-auto w-full",
+            firstPurchase && !reducedMotion && "homestead-art-reveal",
             !node.discovered ? "opacity-45 grayscale" : node.level === 0 && "opacity-60 grayscale",
           )}
         />
+        {firstPurchase && !reducedMotion && (
+          <div
+            key={feedback.sequence}
+            aria-hidden="true"
+            className="homestead-art-before pointer-events-none absolute inset-0"
+          >
+            <img src={node.art} alt="" draggable={false} className="block h-auto w-full opacity-60 grayscale" />
+          </div>
+        )}
       </Surface>
       <PortaledTooltip triggerRef={triggerRef} visible={visible} placement={tooltipPlacement} allowFlip={false}>
         <TooltipHeader className="mb-0 flex items-center justify-between gap-3">
@@ -96,10 +168,12 @@ export function HomesteadNodeArtwork({
             >
               {Array.from({ length: node.maxLevel }, (_, index) => (
                 <Star
-                  key={index}
+                  key={`${index}-${feedback?.sequence ?? 0}`}
                   aria-hidden="true"
+                  style={feedbackStyle}
                   className={cn(
                     "h-3.5 w-3.5",
+                    feedback && animateTooltip && !reducedMotion && index === node.level - 1 && "homestead-earned-star",
                     index < node.level ? "fill-gold-light text-gold-light" : "text-muted-foreground/40",
                   )}
                 />
@@ -107,50 +181,13 @@ export function HomesteadNodeArtwork({
             </span>
           )}
         </TooltipHeader>
-        {node.discovered ? (
-          <>
-            {node.level > 0 && (
-              <TooltipBody className="mt-2 space-y-1">
-                {[...node.bonuses, ...node.production].map((line, index) => (
-                  <p key={index} className="min-h-6 leading-6">
-                    {renderTextWithMaterials(line)}
-                  </p>
-                ))}
-              </TooltipBody>
-            )}
-            {node.cost && (
-              <>
-                {node.level > 0 && <TooltipSeparator className="my-3" />}
-                <div
-                  role="group"
-                  className={cn(
-                    "flex min-h-6 items-center justify-between gap-4 text-sm leading-6",
-                    node.level === 0 && "mt-3",
-                  )}
-                  aria-label={`${node.action} cost: ${costLabel}`}
-                >
-                  <span className="text-muted-foreground">{node.action}</span>
-                  <span className="inline-flex items-center gap-3" aria-hidden="true">
-                    {materials.map((material) => (
-                      <span
-                        key={material}
-                        className={cn(
-                          "inline-flex items-center gap-1.5 tabular-nums",
-                          !saving && inventory[material] < node.cost![material] && "text-destructive",
-                        )}
-                      >
-                        <HomesteadResourceArtwork resource={material} alt="" />
-                        <span>{node.cost![material]}</span>
-                      </span>
-                    ))}
-                  </span>
-                </div>
-              </>
-            )}
-          </>
-        ) : (
-          <TooltipBody className="mt-2">Discover this Companion during a Run.</TooltipBody>
-        )}
+        <HomesteadTooltipBody
+          node={tooltipNode}
+          inventory={inventory}
+          saving={saving}
+          phase={transition ? phase : "idle"}
+          reducedMotion={reducedMotion}
+        />
       </PortaledTooltip>
     </>
   );

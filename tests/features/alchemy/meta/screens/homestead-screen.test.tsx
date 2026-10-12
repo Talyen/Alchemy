@@ -32,6 +32,7 @@ const defaultProps = {
   onPlantFarm: vi.fn(() => true),
   onCompleteResearch: vi.fn(() => true),
   onBondCompanion: vi.fn(() => true),
+  onResetHomestead: vi.fn(() => true),
 };
 
 function nodeTile(title = "Blacksmith") {
@@ -39,6 +40,7 @@ function nodeTile(title = "Blacksmith") {
 }
 
 async function inspect(title = "Blacksmith") {
+  await screen.findByRole("img", { name: title, exact: true });
   await waitForArtwork();
   fireEvent.mouseEnter(nodeTile(title));
   return screen.findByRole("tooltip");
@@ -50,6 +52,7 @@ describe("HomesteadScreen", () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+    vi.useRealTimers();
   });
 
   it("shows only build costs before purchase and reveals bonuses and progress after saving once", async () => {
@@ -71,6 +74,7 @@ describe("HomesteadScreen", () => {
     fireEvent.click(tile);
     expect(defaultProps.onConstructBuilding).toHaveBeenCalledExactlyOnceWith("blacksmiths-forge");
     expect(screen.getByRole("status").textContent).toBe("Saving…");
+    expect(screen.getByRole("button", { name: "Reset Homestead" }).hasAttribute("disabled")).toBe(true);
     expect(tile.getAttribute("aria-disabled")).toBe("true");
     expect(tile.classList.contains("homestead-node-affordable")).toBe(false);
     expect(nodeTile("Hunter's Lodge").classList.contains("homestead-node-affordable")).toBe(false);
@@ -89,7 +93,7 @@ describe("HomesteadScreen", () => {
       saved!();
       saved!();
     });
-    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.getByRole("status").textContent).toBe("Built");
     expect(screen.getByRole("img", { name: "Blacksmith" }).classList.contains("grayscale")).toBe(false);
     expect(panel.querySelector(".grayscale")).toBeNull();
     expect(within(panel).getByRole("img", { name: "Level 1 of 4" })).toBeTruthy();
@@ -234,7 +238,6 @@ describe("HomesteadScreen", () => {
     fireEvent.click(screen.getByRole("button", { name: "Next page" }));
     const panel = await inspect("Mana Moth");
     expect(within(panel).getByRole("img", { name: "Bond 0 of 3" })).toBeTruthy();
-    expect(panel.querySelectorAll("p")).toHaveLength(1);
     expect(within(panel).getByRole("group", { name: /^Bond cost:/ })).toBeTruthy();
     fireEvent.click(nodeTile("Mana Moth"));
     expect(defaultProps.onBondCompanion).toHaveBeenCalledExactlyOnceWith("mana-moth");
@@ -261,6 +264,106 @@ describe("HomesteadScreen", () => {
     const gold = within(well).getByRole("img", { name: "Gold" });
     expect(gold.parentElement?.textContent).toBe("Gold");
     expect(gold.parentElement?.classList.contains("rounded-full")).toBe(true);
+  });
+
+  it("confirms reset, holds its refund until saved, and permits buying the same tier again", async () => {
+    const acknowledgments: Array<() => void> = [];
+    const afterProgressSaved = (feedback: () => void) => acknowledgments.push(feedback);
+    const { rerender } = render(<HomesteadScreen {...defaultProps} afterProgressSaved={afterProgressSaved} />);
+    expect(screen.getByRole("button", { name: "Reset Homestead" }).hasAttribute("disabled")).toBe(true);
+    await inspect();
+    fireEvent.click(nodeTile());
+    const purchased = {
+      ...defaultProps,
+      constructedBuildings: { ...defaultProps.constructedBuildings, "blacksmiths-forge": 1 },
+    };
+    rerender(<HomesteadScreen {...purchased} afterProgressSaved={afterProgressSaved} />);
+    act(() => acknowledgments[0]!());
+    fireEvent.click(screen.getByRole("button", { name: "Reset Homestead" }));
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.textContent).toContain("refund all spent materials");
+    await waitFor(() => expect(within(dialog).getByRole("button", { name: "Cancel" }).closest("[inert]")).toBeNull());
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(defaultProps.onResetHomestead).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Reset Homestead" }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Reset", exact: true }).closest("[inert]")).toBeNull(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Reset", exact: true }));
+    expect(defaultProps.onResetHomestead).toHaveBeenCalledTimes(1);
+    rerender(<HomesteadScreen {...defaultProps} afterProgressSaved={afterProgressSaved} />);
+    await inspect();
+    expect(nodeTile().getAttribute("aria-label")).toContain("Upgrade Blacksmith");
+    fireEvent.click(nodeTile());
+    expect(defaultProps.onConstructBuilding).toHaveBeenCalledTimes(1);
+    act(() => {
+      acknowledgments[1]!();
+      acknowledgments[1]!();
+    });
+    expect(nodeTile().getAttribute("aria-label")).toContain("Build Blacksmith");
+    expect(screen.queryByText("Built")).toBeNull();
+    fireEvent.click(nodeTile());
+    expect(defaultProps.onConstructBuilding).toHaveBeenCalledTimes(2);
+  });
+
+  it("allows resetting bonds alone and reports rejection without showing success", async () => {
+    const afterProgressSaved = vi.fn();
+    render(
+      <HomesteadScreen
+        {...defaultProps}
+        bondedCompanions={{ ...defaultCompanionBondLevels, wolf: 1 }}
+        onResetHomestead={() => false}
+        afterProgressSaved={afterProgressSaved}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Reset Homestead" }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Reset", exact: true }).closest("[inert]")).toBeNull(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Reset", exact: true }));
+    expect(screen.getByRole("alert").textContent).toBe("Could not reset Homestead. Nothing was changed.");
+    expect(afterProgressSaved).not.toHaveBeenCalled();
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("fades old tooltip content before replacing it and keeps confirmation after pointer exit", async () => {
+    localStorage.removeItem("alchemy-disable-animations");
+    const { rerender } = render(<HomesteadScreen {...defaultProps} />);
+    const panel = await inspect();
+    vi.useFakeTimers();
+    fireEvent.click(nodeTile());
+    expect(screen.queryByText("Built")).toBeNull();
+    rerender(
+      <HomesteadScreen
+        {...defaultProps}
+        constructedBuildings={{ ...defaultProps.constructedBuildings, "blacksmiths-forge": 1 }}
+      />,
+    );
+    expect(screen.getByRole("status").textContent).toBe("Built");
+    expect(panel.textContent).not.toContain("Physical damage");
+    expect(panel.querySelector('[data-homestead-phase="exit"]')).toBeTruthy();
+    act(() => vi.advanceTimersByTime(60));
+    fireEvent.click(nodeTile());
+    rerender(
+      <HomesteadScreen
+        {...defaultProps}
+        constructedBuildings={{ ...defaultProps.constructedBuildings, "blacksmiths-forge": 2 }}
+      />,
+    );
+    expect(defaultProps.onConstructBuilding).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole("status").textContent).toBe("Upgraded");
+    expect(panel.textContent).not.toContain("Physical damage");
+    act(() => vi.advanceTimersByTime(120));
+    expect(panel.textContent).toContain("Physical damage is increased by 2");
+    expect(panel.textContent).not.toContain("Physical damage is increased by 1");
+    fireEvent.mouseLeave(nodeTile());
+    expect(screen.getByRole("status").textContent).toBe("Upgraded");
+    act(() => vi.advanceTimersByTime(1000));
+    expect(screen.queryByRole("status")).toBeNull();
+    fireEvent.mouseEnter(nodeTile());
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.getByRole("tooltip").querySelector(".homestead-earned-star")).toBeNull();
   });
 
   it("shows completed benefits and keeps undiscovered Companions anonymous and unpurchasable", async () => {

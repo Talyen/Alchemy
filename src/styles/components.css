@@ -537,13 +537,79 @@
 .card-interactive-glow:hover:not(:disabled):not(.card-interactive-no-glow):not(:has(> .shine-border)),
 .group:hover .card-interactive-glow:not(:disabled):not(.card-interactive-no-glow):not(:has(> .shine-border)),
 .card-interactive-selected:not(.card-interactive-no-glow):not(:has(> .shine-border)) {
-  filter: drop-shadow(0 0 16px color-mix(in srgb, var(--color-primary) 45%, transparent));
+  filter: drop-shadow(
+    0 0 calc(16px * var(--content-scale, 1)) color-mix(in srgb, var(--color-primary) 45%, transparent)
+  );
 }
 
 .card-interactive-glow:hover:not(:disabled),
 .card-interactive-glow.card-interactive-no-glow:focus-visible:not(:disabled),
 .group:hover .card-interactive-glow:not(:disabled) {
   scale: 1.035;
+}
+
+@keyframes homestead-art-reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes homestead-art-before {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes homestead-earned-star {
+  0% {
+    transform: scale(0.8);
+  }
+  55% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes homestead-upgrade-glow {
+  0% {
+    box-shadow: 0 0 0 transparent;
+  }
+  25% {
+    box-shadow: 0 0 calc(16px * var(--content-scale, 1)) color-mix(in srgb, var(--color-primary) 45%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 transparent;
+  }
+}
+@keyframes homestead-purchase-confirmation {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  12%,
+  88% {
+    opacity: 1;
+  }
+}
+.homestead-art-reveal {
+  animation: homestead-art-reveal var(--homestead-reveal-duration) ease-out both;
+}
+.homestead-art-before {
+  animation: homestead-art-before var(--homestead-reveal-duration) ease-out both;
+}
+.homestead-earned-star {
+  animation: homestead-earned-star var(--homestead-star-duration) ease-out both;
+}
+.homestead-upgrade-glow {
+  animation: homestead-upgrade-glow var(--homestead-glow-duration) ease-out both;
+}
+.homestead-purchase-confirmation {
+  animation: homestead-purchase-confirmation var(--homestead-confirmation-duration) ease-out both;
 }
 
 .homestead-node-affordable {

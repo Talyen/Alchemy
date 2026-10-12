@@ -70,12 +70,23 @@ available during the swap. The saved result uses the reward settle/shine once on
 live completion and waits for Continue; resumed results skip that reveal effect. Reduced or
 disabled motion preserves selection emphasis without decorative animation.
 
-Homestead inspection uses the shared page fade. Purchases acknowledge pending
-saves in the cost sheet, then return to the detail page with updated progress,
-bonuses, and artwork color. The existing unlock or bond sound reinforces saved
-completion once. There is no artwork reveal, seal, glow, or purchase overlay.
-Navigation cancels local feedback; late save callbacks and hydrated progress do
-not replay it. Reduced motion and mute preserve all meaning through visible state.
+Homestead purchases retain the old node while saving. Once acknowledged progress
+is available, changing tooltip content fades out over 120ms, swaps, and fades in
+over 120ms while panel height eases over 180ms. The name stays mounted and the
+edge nearest the node stays anchored; passive tooltips retain their fixed row side.
+The earned star pops over 180ms. First builds/bonds crossfade opacity layers into
+color over 400ms without animating grayscale filters; later upgrades/bonds pulse
+an independent gold edge glow over 450ms. Built/Upgraded/Bonded appears on the
+artwork for 1000ms with short entrance/exit fades, remaining after pointer exit.
+Tuning lives in `HOMESTEAD_FEEDBACK` in the shared motion constants.
+
+Feedback tokens belong to accepted purchases, never hydrated levels. Repeated
+valid purchases replace visual targets without waiting for motion. Tooltip
+dismissal settles content; tab/page changes, navigation, and reset cancel local
+animation without cancelling committed purchases. Existing unlock/bond sound
+plays once after acknowledged progress is available. Reduced/disabled motion
+settles immediately and retains the static confirmation label. Reset uses the
+standard confirmation/save feedback without a purchase celebration.
 
 ## Battle motion
 

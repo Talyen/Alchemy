@@ -44,6 +44,7 @@ export interface AlchemyRouteCommands {
     beginWildwood: () => void;
     unlockTalent: (keywordId: KeywordId, talentId: string) => void;
     resetUnlockedTalents: () => void;
+    resetHomestead: () => boolean;
     constructBuilding: (id: BuildingId) => boolean;
     plantFarm: (id: FarmId) => boolean;
     completeResearch: (id: ResearchId) => boolean;

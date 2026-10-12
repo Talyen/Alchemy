@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage/session-persistence";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
+import { resetHomestead } from "@/features/alchemy/shared/stores/meta-commands";
 import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
@@ -64,6 +66,71 @@ describe("session save restoration", () => {
       }
     } finally {
       await session.dispose();
+    }
+  });
+
+  it("resets Homestead atomically and resumes without refunding or replaying combat grants", async () => {
+    const save = battleSave();
+    save.discoveredCardIds.push("wolf-companion");
+    save.constructedBuildings = { "blacksmiths-forge": 1 };
+    save.plantedFarms = { "chicken-coop": 4, orchard: 2 };
+    save.completedResearch = { "leyline-energy": 1 };
+    save.bondedCompanions.wolf = 1;
+    save.materialInventory.iron = 7;
+    save.activeRun!.runMaterialsEarned.iron = 5;
+    if (save.activeRun?.activity.kind !== "battle") throw new Error("Battle was lost");
+    save.activeRun.activity.data.battleState.playerStatuses.thorns = 7;
+    const session = createGameSession();
+    const other = createGameSession();
+    const persistence = createSessionPersistence(session);
+    try {
+      persistence.restore(save);
+      dispatchGameplayCommand(
+        (draft) => {
+          draft.run.activeRun.runPlayerHealth = draft.run.activeRun.runMaxHealth;
+          if (draft.session.activity.kind === "battle") {
+            draft.session.activity.data.battleState.playerHealth =
+              draft.session.activity.data.battleState.playerMaxHealth;
+          }
+          return acceptCommand();
+        },
+        undefined,
+        session,
+      );
+      const before = persistence.snapshot();
+      const state = readGameplayState(session);
+      const commits: number[] = [];
+      const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision), session);
+      expect(resetHomestead(session)).toBe(true);
+      unsubscribe();
+      expect(commits).toEqual([state.revision + 1]);
+      const reset = persistence.snapshot();
+      expect(reset.materialInventory.iron).toBe(18);
+      expect(reset.materialInventory.stone).toBe(4);
+      expect(reset.materialInventory.food).toBeGreaterThan(before.materialInventory.food);
+      expect(reset.gold).toBe(before.gold);
+      expect(reset.discoveredCardIds).toEqual(before.discoveredCardIds);
+      expect(reset.activeRun?.runMaterialsEarned).toEqual(before.activeRun?.runMaterialsEarned);
+      expect(reset.activeRun?.rng).toEqual(before.activeRun?.rng);
+      if (reset.activeRun?.activity.kind !== "battle" || before.activeRun?.activity.kind !== "battle")
+        throw new Error("Battle was lost");
+      const battle = reset.activeRun.activity.data.battleState;
+      expect(battle.playerStatuses.thorns).toBe(7);
+      expect(battle.talentEffects.startThorns).toBe(0);
+      expect(battle.talentEffects.homesteadFreeManaChance).toBe(0);
+      expect(battle.talentEffects.companionBondLevels.wolf).toBe(0);
+      expect(battle.playerMaxHealth).toBe(before.activeRun.activity.data.battleState.playerMaxHealth - 20);
+      expect(battle.playerHealth).toBe(battle.playerMaxHealth);
+      expect(reset.activeRun.runPlayerHealth).toBe(reset.activeRun.runMaxHealth);
+      expect(readGameplayState(other).revision).toBe(0);
+      expect(resetHomestead(session)).toBe(false);
+      expect(readGameplayState(session).revision).toBe(state.revision + 1);
+      persistence.restore(reset);
+      expect(persistence.snapshot().materialInventory).toEqual(reset.materialInventory);
+      expect(readGameplayState(session).runProfile.effects.startThorns).toBe(0);
+    } finally {
+      await session.dispose();
+      await other.dispose();
     }
   });
 

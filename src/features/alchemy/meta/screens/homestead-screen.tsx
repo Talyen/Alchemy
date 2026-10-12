@@ -1,4 +1,7 @@
 import { useEffect, useState, useMemo, useRef } from "react";
+import { RotateCcw } from "lucide-react";
+import { ChromeIconButton } from "../../shared/ui/chrome-icon-button";
+import { ConfirmationDialog } from "../../shared/ui/dialogs";
 import { type BuildingId, type FarmId, type MaterialInventory, type ResearchId } from "@/lib/homestead/types";
 import { PageLayout, ScreenHeaderRow, ScreenShell } from "../../shared/ui/layout-components";
 import { PaginationControls } from "../../shared/ui/navigation";
@@ -31,17 +34,19 @@ const companionCards = cardLibrary.filter((card) =>
 );
 
 export function HomesteadScreen({
-  gold = 0,
-  materialInventory,
-  constructedBuildings,
-  plantedFarms,
-  completedResearch,
-  bondedCompanions,
+  gold: liveGold = 0,
+  materialInventory: liveInventory,
+  constructedBuildings: liveBuildings,
+  plantedFarms: liveFarms,
+  completedResearch: liveResearch,
+  bondedCompanions: liveBonds,
   discoveredCardIds,
   onConstructBuilding,
   onPlantFarm,
   onCompleteResearch,
   onBondCompanion,
+  onResetHomestead,
+  isProgressSavePending = () => false,
   afterProgressSaved = (feedback) => feedback(),
   onBack,
   onMenu,
@@ -57,14 +62,40 @@ export function HomesteadScreen({
   onPlantFarm: (id: FarmId) => boolean;
   onCompleteResearch: (id: ResearchId) => boolean;
   onBondCompanion: (id: CompanionId) => boolean;
+  onResetHomestead: () => boolean;
+  isProgressSavePending?: () => boolean;
   afterProgressSaved?: (feedback: () => void) => void;
   onBack?: (() => void) | undefined;
   onMenu?: ((rect: DOMRect) => void) | undefined;
 }) {
+  const liveProgress = useMemo(
+    () => ({
+      gold: liveGold,
+      materialInventory: liveInventory,
+      constructedBuildings: liveBuildings,
+      plantedFarms: liveFarms,
+      completedResearch: liveResearch,
+      bondedCompanions: liveBonds,
+    }),
+    [liveGold, liveInventory, liveBuildings, liveFarms, liveResearch, liveBonds],
+  );
+  const [resetSnapshot, setResetSnapshot] = useState<typeof liveProgress | null>(null);
+  const { gold, materialInventory, constructedBuildings, plantedFarms, completedResearch, bondedCompanions } =
+    resetSnapshot ?? liveProgress;
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [viewEpoch, setViewEpoch] = useState(0);
+  const sequence = useRef(0);
+  const soundedSequence = useRef(0);
   const [tab, setTab] = useState<Tab>("buildings");
   const [companionPage, setCompanionPage] = useState(0);
   const [upgradePage, setUpgradePage] = useState(0);
-  const [purchaseState, setPurchaseState] = useState<{ node: HomesteadNodeModel; saved: boolean } | null>(null);
+  const [purchaseState, setPurchaseState] = useState<{
+    node: HomesteadNodeModel;
+    item: HomesteadSelection;
+    saved: boolean;
+    sequence: number;
+    viewEpoch: number;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const pending = useRef(false);
   const submittedLevels = useRef(new Map<string, number>());
@@ -87,7 +118,13 @@ export function HomesteadScreen({
   }
 
   function purchase(item: HomesteadSelection, node: HomesteadNodeModel) {
-    if (pending.current || node.level <= (submittedLevels.current.get(node.id) ?? -1) || !node.cost || !node.affordable)
+    if (
+      isProgressSavePending() ||
+      pending.current ||
+      node.level <= (submittedLevels.current.get(node.id) ?? -1) ||
+      !node.cost ||
+      !node.affordable
+    )
       return;
     pending.current = true;
     const accepted =
@@ -107,15 +144,54 @@ export function HomesteadScreen({
       return;
     }
     submittedLevels.current.set(node.id, node.level);
-    setPurchaseState({ node, saved: false });
+    const purchase = { node, item, saved: false, sequence: ++sequence.current, viewEpoch };
+    setPurchaseState(purchase);
     setError(null);
     let acknowledged = false;
     afterProgressSaved(() => {
       if (acknowledged || !mounted.current) return;
       acknowledged = true;
       pending.current = false;
-      setPurchaseState({ node, saved: true });
-      playUISound(node.companion ? "bond" : "talentUnlock");
+      setPurchaseState({ ...purchase, saved: true });
+    });
+  }
+
+  const purchasedLevel = purchaseState ? getNode(purchaseState.item).level : 0;
+  useEffect(() => {
+    if (
+      !purchaseState?.saved ||
+      purchasedLevel <= purchaseState.node.level ||
+      soundedSequence.current === purchaseState.sequence
+    )
+      return;
+    soundedSequence.current = purchaseState.sequence;
+    playUISound(purchaseState.node.companion ? "bond" : "talentUnlock");
+  }, [purchaseState, purchasedLevel]);
+
+  const hasPurchases = [constructedBuildings, plantedFarms, completedResearch, bondedCompanions].some((levels) =>
+    Object.values(levels).some((level) => level > 0),
+  );
+  function resetHomestead() {
+    if (pending.current || isProgressSavePending()) return;
+    pending.current = true;
+    if (!onResetHomestead()) {
+      pending.current = false;
+      setShowResetConfirm(false);
+      setError("Could not reset Homestead. Nothing was changed.");
+      return;
+    }
+    setResetSnapshot(liveProgress);
+    setShowResetConfirm(false);
+    setPurchaseState(null);
+    setViewEpoch((epoch) => epoch + 1);
+    setError(null);
+    let acknowledged = false;
+    afterProgressSaved(() => {
+      if (acknowledged || !mounted.current) return;
+      acknowledged = true;
+      submittedLevels.current.clear();
+      pending.current = false;
+      setResetSnapshot(null);
     });
   }
 
@@ -135,13 +211,32 @@ export function HomesteadScreen({
   return (
     <PageLayout>
       <ScreenShell maxWidthClass="max-w-[calc(88*var(--content-rem,1rem))]" className="relative">
-        <ScreenHeaderRow title="Homestead" onBack={onBack} onMenu={onMenu} />
+        <ScreenHeaderRow
+          title="Homestead"
+          onBack={onBack}
+          onMenu={onMenu}
+          trailing={
+            <ChromeIconButton
+              aria-label="Reset Homestead"
+              disabled={
+                !hasPurchases ||
+                resetSnapshot !== null ||
+                (purchaseState !== null && (!purchaseState.saved || purchasedLevel <= purchaseState.node.level)) ||
+                isProgressSavePending()
+              }
+              onClick={() => setShowResetConfirm(true)}
+            >
+              <RotateCcw className="h-6 w-6" />
+            </ChromeIconButton>
+          }
+        />
         <div className="mt-6 flex w-full flex-col">
           <HomesteadWallet gold={gold} inventory={materialInventory} />
           <div className="mt-6">
             <HomesteadTabs
               activeTab={tab}
               onSelectTab={(next) => {
+                setViewEpoch((epoch) => epoch + 1);
                 setTab(next);
                 setUpgradePage(0);
               }}
@@ -154,6 +249,7 @@ export function HomesteadScreen({
                   page={page}
                   totalPages={totalPages}
                   onPageChange={(next) => {
+                    setViewEpoch((epoch) => epoch + 1);
                     if (isCompanions) setCompanionPage(next);
                     else setUpgradePage(next);
                   }}
@@ -185,7 +281,20 @@ export function HomesteadScreen({
                         inventory={materialInventory}
                         tooltipPlacement={index < columns ? "below" : "above"}
                         saving={saving && isPurchasing}
-                        awaitingProgress={awaitingProgress || (saving && !isPurchasing)}
+                        completion={
+                          isPurchasing &&
+                          purchaseState.saved &&
+                          liveNode.level > purchaseState.node.level &&
+                          purchaseState.viewEpoch === viewEpoch
+                            ? { sequence: purchaseState.sequence, fromLevel: purchaseState.node.level }
+                            : null
+                        }
+                        awaitingProgress={
+                          awaitingProgress ||
+                          (saving && !isPurchasing) ||
+                          resetSnapshot !== null ||
+                          isProgressSavePending()
+                        }
                         onPurchase={() => purchase(item, liveNode)}
                       />
                     </div>
@@ -195,6 +304,16 @@ export function HomesteadScreen({
             </FadeSlot>
           </CollectionContentLayout>
         </div>
+        <ConfirmationDialog
+          open={showResetConfirm}
+          title="Reset Homestead"
+          description="This will reset all Homestead upgrades and Companion bonds and refund all spent materials."
+          confirmLabel="Reset"
+          tone="default"
+          dimBackground={false}
+          onConfirm={resetHomestead}
+          onCancel={() => setShowResetConfirm(false)}
+        />
         {error && (
           <p role="alert" className="absolute inset-x-0 top-full mt-2 text-center text-sm text-destructive">
             {error}

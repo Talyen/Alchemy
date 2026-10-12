@@ -3,7 +3,7 @@ import { HomesteadPage } from "../../pages/homestead-page";
 import { MenuPage } from "../../pages/menu-page";
 import { readSavedGame, withSavedGame } from "../../browser-helpers";
 import { critical } from "../../playwright-tags";
-import { type Locator } from "@playwright/test";
+import { type Locator, type Page } from "@playwright/test";
 
 async function expectNativeArtwork(art: Locator) {
   await expect
@@ -17,12 +17,70 @@ async function expectNativeArtwork(art: Locator) {
     .toBeLessThan(0.001);
 }
 
+async function observePurchase(page: Page, title: string, activate: () => Promise<void>) {
+  const [frames] = await Promise.all([
+    page.evaluate(async (title) => {
+      const frames: Array<{ height: number; gap: number; opacity: number; phase: string | null }> = [];
+      const start = performance.now();
+      let settled = 0;
+      while (performance.now() - start < 1800) {
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => resolve());
+        });
+        const art = Array.from(document.querySelectorAll("button img")).find(
+          (image) => image.getAttribute("alt") === title,
+        );
+        const panel = Array.from(document.querySelectorAll('[role="tooltip"]')).find(
+          (element) => element.querySelector("p > span")?.textContent === title,
+        );
+        const body = panel?.querySelector<HTMLElement>("[data-homestead-phase]");
+        if (!art || !panel || !body) continue;
+        const bounds = panel.getBoundingClientRect();
+        const artwork = art.getBoundingClientRect();
+        const phase = body.getAttribute("data-homestead-phase");
+        const opacity = Number(getComputedStyle(body.firstElementChild!).opacity);
+        frames.push({
+          height: bounds.height,
+          gap:
+            panel.getAttribute("data-placement") === "above"
+              ? artwork.top - bounds.bottom
+              : bounds.top - artwork.bottom,
+          opacity,
+          phase,
+        });
+        const complete =
+          art.closest("button")?.querySelector('[role="status"]')?.textContent !== "Saving…" &&
+          art.closest("button")?.querySelector('[role="status"]') &&
+          phase === "enter" &&
+          opacity === 1 &&
+          Number(getComputedStyle(art).opacity) === 1;
+        settled = complete && frames.at(-2)?.height === bounds.height ? settled + 1 : 0;
+        if (settled >= 6) break;
+      }
+      return frames;
+    }, title),
+    activate(),
+  ]);
+  expect(frames.some((frame) => frame.opacity > 0 && frame.opacity < 1)).toBe(true);
+  const heights = frames.map((frame) => frame.height);
+  const minimum = Math.min(...heights);
+  const maximum = Math.max(...heights);
+  expect(frames.some((frame) => frame.height > minimum + 1 && frame.height < maximum - 1)).toBe(true);
+  const moving = frames.filter((frame) => frame.phase === "enter");
+  expect(Math.max(...moving.map((frame) => frame.gap)) - Math.min(...moving.map((frame) => frame.gap))).toBeLessThan(
+    1.5,
+  );
+}
+
 // Native pointer/focus behavior and acknowledged persistence share one gallery journey.
 test(
   "gallery node purchases preserve passive inspection, spend once, and survive resume",
   critical,
   async ({ page }) => {
-    await new HomesteadPage(page).goto({ materialInventory: { stone: 4, iron: 11 }, constructedBuildings: {} });
+    await new HomesteadPage(page).goto({
+      materialInventory: { wood: 4, stone: 8, iron: 11 },
+      constructedBuildings: {},
+    });
     const art = page.getByRole("img", { name: "Blacksmith", exact: true });
     await expectNativeArtwork(art);
     const heading = page.getByRole("heading", { name: "Homestead" });
@@ -46,7 +104,7 @@ test(
     await expect(tile).toHaveCSS("scale", "1.035");
     await expect(tile).toHaveCSS("filter", affordableFilter);
     await expect.poll(() => tile.evaluate((element) => getComputedStyle(element, "::after").borderWidth)).toBe("3px");
-    expect((await readSavedGame(page)).materialInventory).toMatchObject({ stone: 4, iron: 11 });
+    expect((await readSavedGame(page)).materialInventory).toMatchObject({ wood: 4, stone: 8, iron: 11 });
     await heading.hover();
     await expect(panel).toBeHidden();
     await tile.focus();
@@ -55,7 +113,7 @@ test(
     await expect(page.getByRole("button", { name: /^Build Hunter's Lodge for / })).toBeFocused();
     await page.keyboard.press("Shift+Tab");
     await expect(tile).toBeFocused();
-    await page.keyboard.press("Enter");
+    await observePurchase(page, "Blacksmith", () => page.keyboard.press("Enter"));
     await expect(panel.getByRole("img", { name: "Level 1 of 4" })).toBeVisible();
     await expect(panel).toContainText("Physical damage is increased by 1");
     await expect(panel).toContainText("Find 10% more");
@@ -69,7 +127,9 @@ test(
     expect(await heading.boundingBox()).toEqual(headingBefore);
     await page.keyboard.press("Enter");
     await expect.poll(async () => (await readSavedGame(page)).constructedBuildings["blacksmiths-forge"]).toBe(1);
-    await expect.poll(async () => (await readSavedGame(page)).materialInventory).toMatchObject({ stone: 0, iron: 0 });
+    await expect
+      .poll(async () => (await readSavedGame(page)).materialInventory)
+      .toMatchObject({ wood: 4, stone: 4, iron: 0 });
     await withSavedGame(page, async (resumed) => {
       await new MenuPage(resumed).openHomestead();
       const resumedTile = resumed.getByRole("button", { name: "Upgrade Blacksmith for 8 Stone, 22 Iron", exact: true });
@@ -84,7 +144,7 @@ test(
       await expect(resumed.getByRole("img", { name: "Blacksmith", exact: true })).not.toHaveClass(/grayscale/);
       const save = await readSavedGame(resumed);
       expect(save.constructedBuildings["blacksmiths-forge"]).toBe(1);
-      expect(save.materialInventory).toMatchObject({ stone: 0, iron: 0 });
+      expect(save.materialInventory).toMatchObject({ wood: 4, stone: 4, iron: 0 });
     });
     const bottomTile = page.getByRole("button", { name: /^Build Wishing Well for / });
     await bottomTile.hover();
@@ -94,5 +154,34 @@ test(
     const panelBounds = await bottomPanel.boundingBox();
     const tileBounds = await bottomTile.boundingBox();
     expect(panelBounds!.y + panelBounds!.height).toBeLessThan(tileBounds!.y);
+    await observePurchase(page, "Wishing Well", () => bottomTile.click());
+    await expect(bottomPanel).toContainText("Wish has a 10% chance");
+    await expect(bottomPanel).toHaveAttribute("data-placement", "above");
+    await page.getByRole("button", { name: "Reset Homestead", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "Reset Homestead", exact: true });
+    await expect(dialog).toContainText("refund all spent materials");
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(page.getByRole("button", { name: "Reset Homestead", exact: true })).toBeFocused();
+    await page.keyboard.press("Enter");
+    await dialog.getByRole("button", { name: "Reset", exact: true }).click();
+    await expect(dialog).toBeHidden();
+    await expect(tile).toHaveAttribute("aria-label", "Build Blacksmith for 4 Stone, 11 Iron");
+    await expect(page.getByRole("button", { name: "Reset Homestead", exact: true })).toBeDisabled();
+    await expect(art).toHaveClass(/grayscale/);
+    await expect(page.getByRole("button", { name: "Back", exact: true })).toBeFocused();
+    await expect
+      .poll(async () => (await readSavedGame(page)).materialInventory)
+      .toMatchObject({ wood: 4, stone: 8, iron: 11 });
+    await tile.click();
+    await expect(tile).toHaveAttribute("aria-label", "Upgrade Blacksmith for 8 Stone, 22 Iron");
+    await withSavedGame(page, async (resumed) => {
+      await new MenuPage(resumed).openHomestead();
+      await expect(
+        resumed.getByRole("button", { name: "Upgrade Blacksmith for 8 Stone, 22 Iron", exact: true }),
+      ).toBeVisible();
+      await expect(resumed.getByRole("status")).toHaveCount(0);
+      expect((await readSavedGame(resumed)).constructedBuildings["wishing-well"]).toBe(0);
+    });
   },
 );

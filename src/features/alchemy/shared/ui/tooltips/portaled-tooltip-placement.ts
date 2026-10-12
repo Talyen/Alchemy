@@ -110,13 +110,19 @@ export function usePortaledTooltipPlacement(
       }).then(({ x, y, placement: finalPlacement }) => {
         if (cancelled || currentMeasurement !== measurement) return;
         const left = `${x}px`;
-        const top = `${y}px`;
+        // Fixed above panels grow away from their trigger without waiting for
+        // another measured top position on each animation frame.
+        const tooltipStyle: CSSProperties =
+          !allowFlip && finalPlacement === "top"
+            ? { left, bottom: `${window.innerHeight - y - tooltipEl.getBoundingClientRect().height}px` }
+            : { left, top: `${y}px` };
         setPosition((previous) =>
           previous.placement === finalPlacement &&
-          previous.tooltipStyle?.left === left &&
-          previous.tooltipStyle.top === top
+          previous.tooltipStyle?.left === tooltipStyle.left &&
+          previous.tooltipStyle.top === tooltipStyle.top &&
+          previous.tooltipStyle.bottom === tooltipStyle.bottom
             ? previous
-            : { placement: finalPlacement, tooltipStyle: { left, top } },
+            : { placement: finalPlacement, tooltipStyle },
         );
       });
     };

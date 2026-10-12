@@ -210,6 +210,20 @@ synchronous tier guards reject repeated input. Dismissing the tooltip or changin
 tabs cannot cancel or repeat an accepted purchase. Errors appear only on failure
 and remain visible outside the tooltip.
 
+Saved Homestead purchases briefly confirm Built, Upgraded, or Bonded on the
+artwork. First purchases crossfade into color; later purchases pulse the edge
+glow once. The earned star pops while tooltip bonuses/costs fade and their panel
+height eases without changing its anchored side. Motion never gates purchases;
+feedback does not replay on resume. Reduced motion retains static confirmation.
+
+Reset Homestead uses the same circular-arrow header action and neutral
+confirmation as Reset Talents, immediately before the menu button. It resets
+Buildings, Farm, Research, and Companion bonds and refunds purchased tier costs
+to the stockpile, preserving discoveries. Empty Homesteads and pending mutations
+disable reset. Confirmation closes after acceptance; the reset display waits for
+save acknowledgment, using shared Saving/Retry feedback. The current tab/page
+stays selected and cleared tiers can be purchased again.
+
 Homestead artwork keeps its native aspect ratio without cropping. Landscape
 nodes retain the larger Homestead-specific width and fixed two-row geometry,
 keeping headers, tabs, and pagination stationary. Artwork uses the shared 3px

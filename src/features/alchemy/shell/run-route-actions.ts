@@ -15,6 +15,7 @@ import {
   equipGear,
   equipTrinket,
   plantFarm,
+  resetHomestead,
   salvageGear,
   selectCollectionTab,
   setCollectionPage,
@@ -49,6 +50,7 @@ export function createRunRouteActions(gameSession: GameSession) {
       // An outgoing route can rerun its effect while it fades after navigation.
       if (readRunSession(gameSession).activity.kind === kind) initializeAlchemyVisit(kind, gameSession);
     },
+    resetHomestead: () => resetHomestead(gameSession),
     constructBuilding: (id: Parameters<typeof constructBuilding>[0]) => constructBuilding(id, gameSession),
     plantFarm: (id: Parameters<typeof plantFarm>[0]) => plantFarm(id, gameSession),
     completeResearch: (id: Parameters<typeof completeResearch>[0]) => completeResearch(id, gameSession),
