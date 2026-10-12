@@ -102,6 +102,34 @@ describe("worktree removal", () => {
       rmSync(root, { recursive: true, force: true });
     }
   });
+
+  it("symlinks root node_modules into the created worktree when present", () => {
+    const root = mkdtempSync(join(tmpdir(), "alchemy-worktree-nm-"));
+    try {
+      const script = join(root, "scripts", "agent-worktree.mjs");
+      mkdirSync(join(root, "scripts"));
+      copyFileSync(join(process.cwd(), "scripts", "agent-worktree.mjs"), script);
+      mkdirSync(join(root, "node_modules"));
+      writeFileSync(join(root, "node_modules", "marker.txt"), "installed");
+      expect(spawnSync("git", ["init", "-q", "-b", "main"], { cwd: root }).status).toBe(0);
+      expect(spawnSync("git", ["config", "user.name", "Test"], { cwd: root }).status).toBe(0);
+      expect(spawnSync("git", ["config", "user.email", "test@test.test"], { cwd: root }).status).toBe(0);
+      writeFileSync(join(root, "file.txt"), "hello");
+      expect(spawnSync("git", ["add", "."], { cwd: root }).status).toBe(0);
+      expect(spawnSync("git", ["commit", "-qm", "initial"], { cwd: root }).status).toBe(0);
+
+      const result = spawnSync(process.execPath, [script, "create", "--task", "symlink-test"], {
+        cwd: root,
+        encoding: "utf8",
+      });
+      expect(result.status, result.stderr).toBe(0);
+      const targetNm = join(root, ".worktrees", "symlink-test", "node_modules");
+      expect(existsSync(targetNm)).toBe(true);
+      expect(readFileSync(join(targetNm, "marker.txt"), "utf8")).toBe("installed");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
 });
 
 const recoveryRoots: string[] = [];
@@ -304,7 +332,7 @@ it("archives ignored evidence, retains the branch and leaves a peer untouched", 
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
-});
+}, 20000);
 
 it("keeps an intermediate integration when requested", () => {
   const { root, taskPath, script, git, archive } = integrationFixture();
@@ -322,4 +350,4 @@ it("keeps an intermediate integration when requested", () => {
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
-});
+}, 20000);

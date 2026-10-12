@@ -106,6 +106,20 @@ export function slugify(s) {
     .slice(0, 64);
 }
 
+export function linkDependencies(mainRoot, targetWorktree) {
+  const rootNodeModules = path.join(mainRoot, "node_modules");
+  const targetNodeModules = path.join(targetWorktree, "node_modules");
+  if (fs.existsSync(rootNodeModules) && !fs.existsSync(targetNodeModules)) {
+    try {
+      fs.symlinkSync(path.relative(targetWorktree, rootNodeModules), targetNodeModules, "junction");
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+
 export async function main(argv = process.argv.slice(2)) {
   const [cmd, ...rest] = argv;
 
@@ -295,9 +309,14 @@ export async function main(argv = process.argv.slice(2)) {
       console.log(`▸ git ${args.join(" ")}`);
       const r = runGit(args, { stdio: "inherit" });
       if (r.status !== 0) process.exit(r.status ?? 1);
+      const linked = linkDependencies(root, worktreePath);
       console.log(`detached worktree ready: ${worktreePath} at ${base} (verification only)`);
       console.log(`  cd "${worktreePath}"`);
-      console.log("  npm ci  # install dependencies before verification");
+      if (linked) {
+        console.log("  node_modules linked from root checkout");
+      } else {
+        console.log("  npm ci  # install dependencies before verification");
+      }
       console.log(`  cd "${root}"  # return before cleanup`);
       console.log(`  node scripts/agent-worktree.mjs remove --task ${task}  # after verification`);
       process.exit(0);
@@ -313,9 +332,14 @@ export async function main(argv = process.argv.slice(2)) {
     console.log(`▸ git ${args.join(" ")}`);
     const r = runGit(args, { stdio: "inherit" });
     if (r.status !== 0) process.exit(r.status ?? 1);
+    const linked = linkDependencies(root, worktreePath);
     console.log(`worktree ready: ${worktreePath} on ${branch} (base ${base})`);
     console.log(`  cd "${worktreePath}"  # work in isolation`);
-    console.log("  npm ci  # install dependencies before verification");
+    if (linked) {
+      console.log("  node_modules linked from root checkout");
+    } else {
+      console.log("  npm ci  # install dependencies before verification");
+    }
     console.log(`  cd "${root}"  # return before cleanup`);
     console.log(`  node scripts/agent-worktree.mjs remove --task ${task}  # after merging to main`);
     process.exit(0);

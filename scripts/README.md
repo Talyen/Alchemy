@@ -171,10 +171,9 @@ expiry. Inspect unfinished experiments before deleting them explicitly.
 Use one isolated worktree per implementation chat, without polling other chats
 or negotiating ownership. Reuse the chat's existing suitable worktree.
 `node scripts/agent-worktree.mjs create --task <slug>` (`.worktrees/<slug>` on `agent/<slug>`, from committed local `main` by default);
-`--detached` for verification-only runs. Creation checks out tracked files only;
-run `npm ci` inside the new worktree before running its verification gates.
-Some tools can resolve dependencies from the parent checkout while Knip still
-reports missing binaries and unused dependencies without a local installation.
+`--detached` for verification-only runs. Creation links `node_modules` from
+the root checkout automatically when present; run `npm ci` only if package
+dependencies change.
 Run worktree management commands from the original checkout. Removal validates
 the exact registered worktree; an unregistered directory requires inspection
 and explicit `--force`. An empty normalized task name is rejected.
