@@ -15,7 +15,7 @@ export const buildings: HomesteadBuilding[] = [
     "blacksmiths-forge",
     "Blacksmith",
     [
-      materialCost({ stone: 8, iron: 22 }),
+      materialCost({ stone: 4, iron: 11 }),
       materialCost({ stone: 12, iron: 33 }),
       materialCost({ stone: 16, iron: 44 }),
       materialCost({ stone: 20, iron: 55 }),
@@ -36,7 +36,7 @@ export const buildings: HomesteadBuilding[] = [
     "alchemy-lab",
     "Alchemy Lab",
     [
-      materialCost({ herbs: 22 }),
+      materialCost({ herbs: 11 }),
       materialCost({ stone: 12, herbs: 33 }),
       materialCost({ stone: 16, herbs: 44 }),
       materialCost({ stone: 20, herbs: 55 }),
@@ -49,7 +49,7 @@ export const buildings: HomesteadBuilding[] = [
     "runesmiths-workshop",
     "Runesmith",
     [
-      materialCost({ iron: 11, gems: 11 }),
+      materialCost({ iron: 5, gems: 5 }),
       materialCost({ iron: 17, gems: 16 }),
       materialCost({ iron: 22, gems: 21 }),
       materialCost({ iron: 28, gems: 26 }),
@@ -77,7 +77,7 @@ export const buildings: HomesteadBuilding[] = [
     "transmutation-crucible",
     "Transmutation Crucible",
     [
-      materialCost({ stone: 8, iron: 11 }),
+      materialCost({ stone: 4, iron: 5 }),
       materialCost({ stone: 12, iron: 17 }),
       materialCost({ stone: 16, iron: 22 }),
       materialCost({ stone: 20, iron: 28 }),
@@ -90,7 +90,7 @@ export const buildings: HomesteadBuilding[] = [
     "mycology-cellar",
     "Mycology Cellar",
     [
-      materialCost({ stone: 8, herbs: 11 }),
+      materialCost({ stone: 4, herbs: 5 }),
       materialCost({ stone: 12, herbs: 17 }),
       materialCost({ stone: 16, herbs: 22 }),
       materialCost({ stone: 20, herbs: 28 }),
@@ -119,7 +119,7 @@ export const buildings: HomesteadBuilding[] = [
     "library",
     "Library",
     [
-      materialCost({ wood: 8, gems: 11 }),
+      materialCost({ wood: 4, gems: 5 }),
       materialCost({ wood: 12, gems: 16 }),
       materialCost({ wood: 16, gems: 21 }),
       materialCost({ wood: 20, gems: 26 }),
@@ -174,7 +174,7 @@ export const farmPlots: HomesteadFarm[] = [
     "crystal-garden",
     "Crystal Garden",
     [
-      materialCost({ stone: 8, gems: 21 }),
+      materialCost({ stone: 4, gems: 10 }),
       materialCost({ stone: 12, gems: 32 }),
       materialCost({ stone: 16, gems: 42 }),
       materialCost({ stone: 20, gems: 53 }),
@@ -230,7 +230,7 @@ export const researchUpgrades: HomesteadResearch[] = [
     "agility-training",
     "Agility Training",
     [
-      materialCost({ food: 12, hide: 10 }),
+      materialCost({ food: 6, hide: 5 }),
       materialCost({ food: 17, hide: 15 }),
       materialCost({ food: 23, hide: 20 }),
       materialCost({ food: 29, hide: 25 }),
