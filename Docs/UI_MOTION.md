@@ -70,19 +70,12 @@ available during the swap. The saved result uses the reward settle/shine once on
 live completion and waits for Continue; resumed results skip that reveal effect. Reduced or
 disabled motion preserves selection emphasis without decorative animation.
 
-Homestead purchases present only after a successful save. The first build or bond
-uses an 850ms inward breath and ragged ink-wash reveal from grayscale to color;
-later upgrades use a 450ms texture sweep. A gold seal stamps the resulting tier's
-stars, with a double rim at the final tier, and six small flecks disperse. The
-existing unlock/bond sound lands with the stamp. Effects stay clipped inside the
-artwork, with no hover shimmer, glow, or shine border. Inspection is temporarily
-suppressed during the ceremony. Pending first purchases retain grayscale until saved. Each
-node owns its feedback; navigation cancels it, late save callbacks cannot replay
-it, and reopening or hydrating progress does not celebrate. Purchases and navigation
-never wait for animation completion. Reduced or disabled motion shows the resulting
-color and a temporary static tier seal with immediate sound, without the wash,
-scaling, or flecks. Timing lives in `HOMESTEAD_PURCHASE_MOTION` and reaches CSS through
-inline custom properties.
+Homestead inspection uses the shared page fade. Purchases acknowledge pending
+saves in the cost sheet, then return to the detail page with updated progress,
+bonuses, and artwork color. The existing unlock or bond sound reinforces saved
+completion once. There is no artwork reveal, seal, glow, or purchase overlay.
+Navigation cancels local feedback; late save callbacks and hydrated progress do
+not replay it. Reduced motion and mute preserve all meaning through visible state.
 
 ## Battle motion
 

@@ -6,12 +6,6 @@ export const TOOLTIP_FADE_MS = 120;
 
 export const NAVIGATION_DELAY_MS = 100;
 export const CAMPFIRE_ANIMATION_MS = 1200;
-export const HOMESTEAD_PURCHASE_MOTION = {
-  buildMs: 850,
-  upgradeMs: 450,
-  buildSealMs: 570,
-  upgradeSealMs: 200,
-} as const;
 
 export const INITIAL_LOAD_MIN_DURATION_MS = 3000;
 export const FONT_PRELOAD_TIMEOUT_MS = 10_000;

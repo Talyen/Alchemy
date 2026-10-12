@@ -33,7 +33,6 @@ import {
   type HomesteadFarm,
   type HomesteadResearch,
   type MaterialId,
-  type MaterialInventory,
   type ResearchId,
   materialLabels,
 } from "@/lib/homestead/types";
@@ -55,7 +54,6 @@ export type GoalItem =
 export const HOMESTEAD_CONFIG = {
   companionPageSize: 8,
   upgradePageSize: 6,
-  hoverScope: "homestead",
 } as const;
 
 const itemArt = {
@@ -88,8 +86,6 @@ export function getArt(id: string): string {
   return (itemArt as Record<string, string>)[id] ?? "";
 }
 
-export { HomesteadResourceWallet as MaterialsBar } from "../../../shared/ui/material-icons";
-
 const LABEL_TO_MATERIAL: Record<string, MaterialId> = Object.fromEntries(
   MATERIAL_IDS.map((m) => [materialLabels[m], m]),
 );
@@ -117,11 +113,6 @@ const tabs: Array<{ id: Tab; label: string; icon: typeof Hammer; iconClassName: 
 
 export function HomesteadTabs({ activeTab, onSelectTab }: { activeTab: Tab; onSelectTab: (tab: Tab) => void }) {
   return <TabBar tabs={tabs} activeTab={activeTab} onSelectTab={onSelectTab} />;
-}
-
-export function formatMaterialCostSummary(cost: MaterialInventory): string {
-  const parts = MATERIAL_IDS.filter((m) => (cost[m] ?? 0) > 0).map((m) => `${cost[m] ?? 0} ${materialLabels[m]}`);
-  return parts.join(", ");
 }
 
 export const BUILDING_GOAL_ITEMS: readonly GoalItem[] = buildings.map((data) => ({ kind: "building", data }));
