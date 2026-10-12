@@ -106,7 +106,10 @@ reactions. Its existing damage entry points remain the caller-facing surface.
 Direct player hits use source-specific recipes in `lib/battle/hit-resolution.ts`
 and its lower `follow-up-hit-resolution.ts` tier. `player-hit-core.ts` carries source
 intent (`HitRequest`) and captures eligibility and Health results (`HitFacts`) before
-nested reactions. Attack orchestration keeps Dodge, reserved bonuses, numeric preparation,
+nested reactions. Card play binds an execution-only empty-draw callback so low-level
+Stun and Bleed draw rewards can request Emergency Wish without importing its
+orchestrator; snapshots strip that callback along with RNG and action context.
+Attack orchestration keeps Dodge, reserved bonuses, numeric preparation,
 whole-packet follow-ups, and retaliation. Card reaction stages cannot call back into
 attack orchestration. The [hit-source matrix](./GAME_RULES.md#direct-player-hit-resolution)
 describes the current ordering and scaling differences. Retirement of legacy

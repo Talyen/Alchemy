@@ -14,7 +14,7 @@ export const bleedTalents = [
   t(
     "bleed-physical-bonus",
     "Parting Cut",
-    "After you Dodge, your next Physical card deals half its damage as Bleed damage",
+    "After you Dodge, your next Physical hit deals half its damage as additional Bleed damage",
     "Slash",
     setEffect("partingCutDamagePercent", 50),
   ),

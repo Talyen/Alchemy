@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cardById, getEnemyAbilityCard } from "@/lib/game-data";
+import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { applyWishEffect } from "@/lib/battle/wish";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
@@ -43,5 +44,25 @@ describe("combat reward boundaries", () => {
     expect(result.gold).toBe(state.gold + 1);
     expect(result.enemyHealth).toBe(state.enemyHealth - 1);
     expect(result.flags.pendingCinderSkinReaction).toBe(false);
+  });
+  it.each(["stun", "bleed"] as const)("opens an Emergency Wish after an empty %s reward draw", (damageType) => {
+    const card = damageType === "stun" ? cardById.bash! : cardById["predators-focus"]!;
+    const state = patchBattleState({
+      hand: [card],
+      deck: [],
+      discard: [],
+      enemyHealth: 20,
+      enemyMaxHealth: 20,
+      enemyStatuses: { stun: damageType === "stun" ? 9 : 0 },
+      talentEffects: {
+        drawOnStun: damageType === "stun" ? 1 : 0,
+        drawOnBleedDamageChance: damageType === "bleed" ? 10 : 0,
+      },
+      rng: () => 0.09,
+    });
+    const result = playBattleCardResolved(state, card.id, 0).state;
+    if (damageType === "stun") expect(result.enemyCC.stunSkipTurns).toBeGreaterThan(0);
+    expect(result.wishOptions?.length).toBeGreaterThan(0);
+    expect(result).not.toHaveProperty("onEmptyDraw");
   });
 });

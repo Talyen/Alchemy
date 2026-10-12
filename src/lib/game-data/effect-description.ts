@@ -175,9 +175,9 @@ function createEffectLine(effect: BattleCardEffect, address: CardEffectAddress):
     case "self-damage":
       return ["Take ", amount(), ` ${capitalizeWord(effect.damageType)} damage`];
     case "next-hit-crit":
-      return ["Your next damaging card is a critical strike"];
+      return ["Your next card hit is a critical strike"];
     case "next-hit-leech":
-      return ["Your next attack has Leech"];
+      return ["Your next card hit has Leech"];
     case "play-next-card-twice":
       return ["Your next card is played twice"];
     case "next-hit-poison":

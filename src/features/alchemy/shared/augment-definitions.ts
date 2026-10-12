@@ -104,13 +104,13 @@ const fixedDefinitions = {
   },
   nextHitCrit: {
     label: "Predator's Focus",
-    description: "Your next damaging card is a critical strike.",
+    description: "Your next card hit is a critical strike.",
     icon: Focus,
     colorClass: "text-amber-200",
   },
   nextHitLeech: {
     label: "Predator's Hunger",
-    description: "Your next damaging card has Leech.",
+    description: "Your next card hit has Leech.",
     icon: keywordIcons.leech,
     colorClass: keywordDefinitions.leech.colorClass,
   },
@@ -128,7 +128,7 @@ const fixedDefinitions = {
   },
   nextPhysicalDealsBleed: {
     label: "Parting Cut",
-    description: "Your next Physical card deals half its damage as Bleed damage.",
+    description: "Your next Physical hit deals half its damage as additional Bleed damage.",
     icon: keywordIcons.bleed,
     colorClass: keywordDefinitions.bleed.colorClass,
   },
