@@ -6,7 +6,7 @@ import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 
 import { tooltipWidthClass } from "../../config";
 
-import { usePortaledTooltipPlacement, type PortaledTooltipSide } from "./portaled-tooltip-placement";
+import { usePortaledTooltipPlacement, type PortaledTooltipPlacement } from "./portaled-tooltip-placement";
 import { getTooltipRoot } from "./tooltip-root";
 import { TooltipPanel } from "./tooltip-panel";
 import { useFadePresence, useHeldWhile } from "../use-fade";
@@ -21,7 +21,7 @@ export interface PortaledTooltipProps {
   className?: string;
   padding?: number;
 
-  placement?: "above" | PortaledTooltipSide;
+  placement?: PortaledTooltipPlacement;
 
   maxWidthFraction?: number;
 
