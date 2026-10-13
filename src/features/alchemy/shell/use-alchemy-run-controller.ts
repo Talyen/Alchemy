@@ -41,7 +41,6 @@ export function useAlchemyRunController(): AlchemyRunCommands {
       createRunOutcomes(
         {
           actions: { navigateTo, transition, clearCardHover: runActions.clearCardHover },
-          getAvailableDestinations: runActions.getAvailableDestinations,
         },
         defaultGameSession,
       ),

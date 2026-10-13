@@ -53,14 +53,14 @@ design, implementation, and review.
 
 ## Guide index
 
-| Topic                                                      | Guide                              |
-| ---------------------------------------------------------- | ---------------------------------- |
-| Shared components, buttons, sizing, colors, accessibility  | This page                          |
-| Hover tooltips, modal input, focus and dismissal           | [Interaction](./UI_INTERACTION.md) |
-| Screen fades, battle and equipment motion                  | [Motion](./UI_MOTION.md)           |
-| Combat feedback, deck and enemy inspection, Corrupted text | [Battle UI](./UI_BATTLE.md)        |
-| Collection, Armory, rewards, Wishes, Options and recap     | [Browsing](./UI_BROWSING.md)       |
-| Discovery, map layout and room inspection                  | [Labyrinth](./UI_LABYRINTH.md)     |
+| Topic                                                             | Guide                              |
+| ----------------------------------------------------------------- | ---------------------------------- |
+| Shared components, buttons, sizing, colors, accessibility         | This page                          |
+| Hover tooltips, modal input, focus and dismissal                  | [Interaction](./UI_INTERACTION.md) |
+| Screen fades, battle and equipment motion                         | [Motion](./UI_MOTION.md)           |
+| Combat feedback, deck and enemy inspection, Corrupted text        | [Battle UI](./UI_BATTLE.md)        |
+| Collection, Homestead, Armory, rewards, Wishes, Options and recap | [Browsing](./UI_BROWSING.md)       |
+| Discovery, map layout and room inspection                         | [Labyrinth](./UI_LABYRINTH.md)     |
 
 ## Placement and boundaries
 
@@ -184,57 +184,8 @@ single-page tabs leave the pagination slot empty. Picker measurement containers
 must receive available width independently of their rendered card count, so
 resizing cannot feed a narrower row back into its own column calculation.
 
-Homestead is an artwork-first gallery. Hover/focus inspects a node through the
-ordinary passive `PortaledTooltip`, sharing Collection's scale, chrome, and
-dismissal. Top-row tooltips always appear below; bottom-row tooltips always appear
-above, with automatic flipping disabled even when their content changes size.
-Tooltips contain no controls and receive no focus; Tab moves between gallery
-controls. Clicking the artwork or pressing Enter/Space on it directly builds,
-upgrades, or bonds the node.
-
-Stars beside the name show purchased levels or bonds. Unbuilt/unbonded nodes show
-only their name, empty stars, and purchase cost, without first-tier previews.
-Purchased nodes show current bonuses and Find 10/20/30/40% more resource quantities,
-with uniform effect-row spacing and no section headers or next-tier comparisons.
-Completed nodes show current benefits without costs; undiscovered Companions show
-their discovery requirement. The wallet stays in the gallery, which has no upgrade
-arrows or separate detail screens.
-
-Build, Upgrade, or Bond costs appear as a plain row with material icons and
-quantities. Missing materials use red quantities without additional feedback text.
-A divider separates purchased bonuses from the next cost. Gold uses the same
-inline icon chip as Homestead materials. The artwork stays focusable for
-inspection but cannot purchase when more materials are needed. A visible Saving
-acknowledgment on the artwork precedes purchased artwork/progress and sound;
-synchronous tier guards reject repeated input. Dismissing the tooltip or changing
-tabs cannot cancel or repeat an accepted purchase. Errors appear only on failure
-and remain visible outside the tooltip.
-
-Saved Homestead purchases emphasize the newly filled star and gently pop the
-whole tooltip from its anchored edge. First purchases
-crossfade into color; later purchases pulse the edge glow once. No success label
-covers the artwork. Tooltip words and icons stay mounted; only changed numbers
-receive a subtle reveal, while panel height eases without changing its anchored
-side. Motion never gates purchases or replays on resume. Reduced motion updates
-progress and values immediately without decorative animation.
-
-Reset Homestead uses the same circular-arrow header action and neutral
-confirmation as Reset Talents, immediately before the menu button. It resets
-Buildings, Farm, Research, and Companion bonds and refunds purchased tier costs
-to the stockpile, preserving discoveries. Empty Homesteads and pending mutations
-disable reset. Confirmation closes after acceptance; the reset display waits for
-save acknowledgment, using shared Saving/Retry feedback. The current tab/page
-stays selected and cleared tiers can be purchased again.
-
-Homestead artwork keeps its native aspect ratio without cropping. Landscape
-nodes retain the larger Homestead-specific width and fixed two-row geometry,
-keeping headers, tabs, and pagination stationary. Artwork uses the shared 3px
-hover/focus outline and 103.5% scale with `card-interactive-no-glow`. Affordable
-nodes add only a tight, static outer gold halo at rest, retaining the neutral
-border until hover/focus, without pulse, shimmer, or shine. Affordability updates
-after spending and is suppressed while a purchase is saving. Nodes stay grayscale
-until their first purchase, then remain colored even when the next purchase is
-unaffordable. Undiscovered Companions remain grayscale.
+Homestead's artwork sizing, purchase states, and reset interaction follow the
+[Homestead gallery contract](./UI_BROWSING.md#homestead-gallery).
 
 Desktop Main Menu pairs Quit on the bottom left with Options on the right. Quit
 uses a rose-colored Power icon; browser Options remains centered. Demo completion

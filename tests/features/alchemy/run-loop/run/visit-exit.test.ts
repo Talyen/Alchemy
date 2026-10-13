@@ -1,3 +1,4 @@
+import * as destinationFlow from "@/features/alchemy/shared/run-flow/destination-flow";
 import * as config from "@/features/alchemy/shared/config";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createGameSession, type GameSession } from "@/features/alchemy/shared/stores/game-session";
@@ -38,11 +39,10 @@ describe("transaction-owned visit exits", () => {
       session,
     );
     const before = readGameplayState(session);
-    const sample = vi.fn(() => [DESTINATIONS.NORMAL_COMBAT]);
-    sample.mockImplementationOnce(() => {
+    const sample = vi.spyOn(destinationFlow, "createInitialDestinationResult").mockImplementationOnce(() => {
       throw new Error("sampling failed");
     });
-    const commands = createProgressionCommands(sample, session);
+    const commands = createProgressionCommands(session);
 
     expect(() => commands.leaveVisit("campfire")).toThrow("sampling failed");
     expect(readGameplayState(session)).toBe(before);
@@ -55,6 +55,7 @@ describe("transaction-owned visit exits", () => {
     expect(after.run.activeRun.lastOfferedDestinations).toEqual(after.session.rewardFlow.state.destinations);
     expect(commands.leaveVisit("campfire")).toBeNull();
     expect(readGameplayState(session)).toBe(after);
+    sample.mockRestore();
   });
 
   it("rolls Corruption abandonment back if preparing the restored picker fails", () => {
@@ -75,7 +76,7 @@ describe("transaction-owned visit exits", () => {
       throw new Error("boss roll failed");
     });
     try {
-      expect(() => createProgressionCommands(() => [], session).leaveVisit("corruption")).toThrow("boss roll failed");
+      expect(() => createProgressionCommands(session).leaveVisit("corruption")).toThrow("boss roll failed");
       expect(readGameplayState(session)).toBe(before);
     } finally {
       roll.mockRestore();
@@ -98,14 +99,12 @@ describe("transaction-owned visit exits", () => {
       );
       const before = readGameplayState(session);
       const navigateTo = vi.fn();
-      const sample = vi.fn(() => [DESTINATIONS.NORMAL_COMBAT]);
-      createRunFlow(
-        makeFlowHandlerDeps({ navigateTo, getAvailableDestinations: sample }),
-        session,
-      ).advanceToNextDestination(expected);
+      const sample = vi.spyOn(destinationFlow, "createInitialDestinationResult");
+      createRunFlow(makeFlowHandlerDeps({ navigateTo }), session).advanceToNextDestination(expected);
       expect(readGameplayState(session)).toBe(before);
       expect(navigateTo).not.toHaveBeenCalled();
       expect(sample).not.toHaveBeenCalled();
+      sample.mockRestore();
     },
   );
 
@@ -120,7 +119,7 @@ describe("transaction-owned visit exits", () => {
       session,
     );
     const before = readGameplayState(session);
-    expect(createProgressionCommands(() => [], session).leaveVisit("corruption")).toBeNull();
+    expect(createProgressionCommands(session).leaveVisit("corruption")).toBeNull();
     expect(readGameplayState(session)).toBe(before);
   });
 
@@ -142,7 +141,7 @@ describe("transaction-owned visit exits", () => {
       session,
     );
     const before = readGameplayState(session);
-    expect(createProgressionCommands(() => [], session).leaveVisit("mystery")).toBeNull();
+    expect(createProgressionCommands(session).leaveVisit("mystery")).toBeNull();
     expect(readGameplayState(session)).toBe(before);
   });
 
@@ -187,8 +186,8 @@ describe("transaction-owned visit exits", () => {
       session,
     );
     const before = readGameplayState(session);
-    const sample = vi.fn(() => []);
-    expect(createProgressionCommands(sample, session).leaveVisit("corruption")).toBe("labyrinth-map");
+    const sample = vi.spyOn(destinationFlow, "createInitialDestinationResult");
+    expect(createProgressionCommands(session).leaveVisit("corruption")).toBe("labyrinth-map");
     const after = readGameplayState(session);
     expect(after.revision).toBe(before.revision + 1);
     expect(after.session.labyrinthMap?.nodes.altar?.cleared).toBe(used);
@@ -197,5 +196,6 @@ describe("transaction-owned visit exits", () => {
     expect(after.session.activeLabyrinthPendingNode).toBeNull();
     expect(after.session.selectedLabyrinthNodeId).toBeNull();
     expect(sample).not.toHaveBeenCalled();
+    sample.mockRestore();
   });
 });

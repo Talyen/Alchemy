@@ -42,6 +42,34 @@ beforeEach(() => {
 });
 
 describe("createMysteryEventNavigation", () => {
+  it("a stale Mystery initializer cannot navigate away from another activity", () => {
+    const { nav, navigateTo } = createMysteryNav();
+    setRunSession({ activity: { kind: "destination" } });
+    const activity = readRunSession(defaultGameSession).activity;
+    const revision = readRunRevision(defaultGameSession);
+    nav.beginMysteryEvent();
+    expect(readRunSession(defaultGameSession).activity).toBe(activity);
+    expect(readRunRevision(defaultGameSession)).toBe(revision);
+    expect(navigateTo).not.toHaveBeenCalled();
+    expect(playUISound).not.toHaveBeenCalled();
+  });
+
+  it("reinitializing a claimed Mystery preserves its offer, claim, and RNG", () => {
+    const { nav } = createMysteryNav();
+    const choice = offerChoices([{ label: "Take Gold", effects: [{ kind: "gainGold", amount: 10 }] }])[0]!;
+    expect(nav.handleMysteryChoice(choice)).toBe(true);
+    const activity = readRunSession(defaultGameSession).activity;
+    const rng = readActiveRun(defaultGameSession).rng;
+    const revision = readRunRevision(defaultGameSession);
+
+    nav.beginMysteryEvent();
+
+    expect(readRunSession(defaultGameSession).activity).toBe(activity);
+    expect(readActiveRun(defaultGameSession).rng).toEqual(rng);
+    expect(readRunRevision(defaultGameSession)).toBe(revision);
+    expect(nav.handleMysteryChoice(choice)).toBe(false);
+  });
+
   it("records the Herbs actually awarded, including the Homestead find bonus", () => {
     setRunProgress({ effects: { ...defaultHomesteadEffects, herbFindBonus: 0.5 } });
     const before = readRunProfile(defaultGameSession).materialInventory.herbs;

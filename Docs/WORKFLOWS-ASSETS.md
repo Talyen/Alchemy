@@ -93,7 +93,7 @@ Create a single game inventory icon. Square composition, genuinely transparent b
    art-only iteration, or `node scripts/assets.mjs --prepare` for optimization
    and generated-output synchronization together.
 4. Import through the curated map in `src/lib/game-data/assets.ts` (e.g. `craftingArt`, `difficultyArt`, `talentArt`) — do not import `@/assets/optimized` directly.
-5. Run `npm run check:generated` (fast barrel-only); review the generated diff.
+5. Run `npm run check:generated` (fast art-barrel and build-version validation); review the generated diff.
 
 `npm run sync:generated` updates both art barrels and version metadata.
 `npm run sync:art` updates both art barrels (`src/lib/game-data/assets.generated.ts`
@@ -222,9 +222,17 @@ Three scopes share the `--check` flag: bare `--check` (and `assets:check`) verif
 everything — all three pipelines plus art barrels plus version metadata.
 `--optimize --check` verifies only pipeline outputs (no barrels), and
 `--sync --check` verifies only generated code (art barrels plus version metadata).
-Slice the generated check with `npm run sync:art -- --check` /
-`sync:gear-art` / `sync:version` (via `sync-generated.mjs`
-`--art-only` / `--gear-only` / `--version-only`).
+For narrower read-only generated checks:
+
+```sh
+npm run sync:art -- --check
+npm run sync:gear-art -- --check
+npm run sync:version -- --check
+```
+
+`sync:art` checks both art barrels; `sync:gear-art` checks the Gear barrel and
+requires a current main art barrel. `sync:version` checks only build metadata.
+These commands do not establish prepared-media or raw-source freshness.
 
 For manual inspection:
 
@@ -269,7 +277,7 @@ changing them. Unreadable selected sources fail before processing; their diagnos
 
 Three authoring shapes coexist by design:
 
-- **Static manifest** — `scripts/assets/{core,card,content,talent}-assets.mjs` declare `{source,target,width,quality}`. Used for cards, talents, boons, destinations, etc. where every target is explicitly registered and validated for duplicate targets and export names. Shared sources may produce distinct targets. Width/quality presets, Sharp defaults, schema version, and audio settings live in `scripts/assets/asset-constants.mjs`.
+- **Static manifest** — `scripts/assets/{core,card,content,talent}-assets.mjs` declare `{source,target,width,quality}`. Core and content manifests use `artGroup()` from `scripts/assets/art-group.mjs` to share a folder relative to `2d Assets/Game Sources`, an `ART_PRESETS` entry, and optional transparency requirements across explicit `[sourceFilename, targetFilename]` pairs. Nested source paths are allowed; targets remain explicit basenames. Adding files to the library never adds selections. Every target is explicitly registered and validated for duplicate targets and export names; shared sources may produce distinct targets. Width/quality presets, Sharp defaults, schema version, and audio settings live in `scripts/assets/asset-constants.mjs`.
 - **Explicit Gear and Music selections** — `scripts/assets/gear-assets.mjs` and `music-assets.mjs` select sources and stable targets. Adding files to Asset Library does not change a game's inventory. Every output directory is fully managed; unregistered outputs are swept only after successful preparation. All current sound masters live in Asset Library; OGG masters are copied unchanged and receive MP3 fallbacks.
 
 - **Sound manifest** — `scripts/assets/sound-assets.mjs` lists `generatedSoundAssets` (WAV→OGG with loudnorm) plus the legacy `curatedSoundFiles` fallback (currently empty; all production masters are external). The optimizer owns `public/sounds/` and tags each hash manifest entry with `owner: generated|curated`.

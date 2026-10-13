@@ -76,19 +76,21 @@ then installs the browser-process copies before enabling their fuse. The build w
 Packaged Windows startup: `smoke-desktop.mjs` resolves the artifact and invokes
 `smoke-desktop.ps1` for native accessibility verification (see [RELEASE](../Docs/RELEASE.md#packaged-windows-startup-check)).
 
-`platforms.json` must declare at least one desktop target; `package.json` build blocks own per-platform packaging configuration. Sentry release and desktop sourcemap mode are owned by `lib/release/sentry-release.mjs`; chunk splitting is owned by `lib/vite-chunks.mjs`. Vite uses only Rolldown chunk groups.
+[`steam/platforms.json`](../steam/platforms.json) must declare at least one desktop target; `package.json` build blocks own per-platform packaging configuration. Sentry release and desktop sourcemap mode are owned by `lib/release/sentry-release.mjs`; chunk splitting is owned by `lib/vite-chunks.mjs`. Vite uses only Rolldown chunk groups.
 
 ## Audits (periodic sweep, not a push gate)
 
 `npm run audit` runs `audit.mjs`, which dispatches to `audit-all.mjs` when no
 selector is supplied, including with `--verbose`. `npm run audit:all` is the
 same sweep via `audit.mjs --all` (thin forward, not a separate entry).
-Pass a focused selector after
-to dispatch one probe instead. `--all` is the periodic sweep, not literally
-content-audit. Advisory trend probes (always exit 0):
-`audit-type-escapes.mjs`, `audit-change-amplification.mjs` — direction signals, see
-`Docs/Audits/TypeSafetyAudit.md`. `runs:show` is advisory process
-evidence and never block handoff.
+Pass a focused selector after npm's `--`, for example
+`npm run audit -- --types`, to dispatch one probe instead. `--all` runs the
+measurable sweep; it does not execute every guide in [Docs/Audits](../Docs/Audits/README.md).
+`audit-type-escapes.mjs` and `audit-change-amplification.mjs` report
+advisory trends without thresholds; read or Git failures still fail execution.
+Interpret type-escape counts through the [Type Safety audit](../Docs/Audits/TypeSafetyAudit.md)
+and co-edit trends through the [Simplification audit](../Docs/Audits/SimplificationAudit.md).
+`runs:show` supplies advisory process evidence rather than a handoff gate.
 
 ## Test / E2E
 

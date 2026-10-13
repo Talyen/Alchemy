@@ -60,6 +60,11 @@ describe("persistence coordinator", () => {
   });
 
   it("round-trips domain-owned save fields without transient UI state", () => {
+    const snapshots: Array<ReturnType<typeof encodePersistenceFields>> = [];
+    const unsubscribe = subscribeAlchemyPersistence(
+      () => snapshots.push(encodePersistenceFields(defaultGameSession)),
+      defaultGameSession,
+    );
     hydrateAlchemyPersistenceFields(
       {
         ...defaultSaveData,
@@ -70,6 +75,8 @@ describe("persistence coordinator", () => {
       },
       defaultGameSession,
     );
+    unsubscribe();
+    expect(snapshots).toEqual([encodePersistenceFields(defaultGameSession)]);
 
     useUiStore.getState().setShowClearSaveConfirm(true);
     dispatchGameplayCommand(
