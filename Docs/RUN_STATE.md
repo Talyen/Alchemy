@@ -2,7 +2,7 @@
 
 ## Run state
 
-Each game session owns one authoritative nested gameplay aggregate constructed in `shared/stores/gameplay-state.ts`. `gameplay-state-reads.ts` owns explicit-session aggregate reads and subscriptions; `gameplay-state-store.ts` keeps presentation hooks bound to the application’s default session. Reusable reads, commands, and persistence codecs do not import React or initialize the application. Its `run`, `session`, `runProfile`, `profile`, and `gear` objects are the domain-shaped state, and the aggregate is data-only: draft mutators in `run-session-write-port.ts` (plus `homestead-actions.ts` / `gear-actions.ts`) compose atomic changes. Feature commands receive a deeply readonly `RunTransaction`, with live reads of the same draft. Only store-owned mutation implementations and bootstrap hydration receive the raw `GameplayDraft`; feature commands cannot assign fields or mutate nested collections directly. Feature orchestration should call intent-level commands rather than assemble field updates. `profile-store.ts` and `gear-store.ts` are thin aggregate-backed read/persistence modules; React profile slices live in `use-profile-store.ts`; they do not own shadow state. The write module, reads, commands, and `run-lifecycle.ts` are the feature-facing seams. Independent runtimes follow [Session ownership](#session-ownership).
+Each game session owns one authoritative nested gameplay aggregate constructed in `shared/stores/gameplay-state.ts`. `gameplay-state-reads.ts` owns explicit-session aggregate reads and subscriptions; `session-gameplay-store.ts` owns a cached presentation read store per session; `gameplay-state-store.ts` is the default-application adapter. Reusable reads, commands, and persistence codecs do not import React or initialize the application. Its `run`, `session`, `runProfile`, `profile`, and `gear` objects are the domain-shaped state, and the aggregate is data-only: draft mutators in `run-session-write-port.ts` (plus `homestead-actions.ts` / `gear-actions.ts`) compose atomic changes. Feature commands receive a deeply readonly `RunTransaction`, with live reads of the same draft. Only store-owned mutation implementations and bootstrap hydration receive the raw `GameplayDraft`; feature commands cannot assign fields or mutate nested collections directly. Feature orchestration should call intent-level commands rather than assemble field updates. `profile-store.ts` and `gear-store.ts` are thin aggregate-backed read/persistence modules; React profile slices live in `use-profile-store.ts`; they do not own shadow state. The write module, reads, commands, and `run-lifecycle.ts` are the feature-facing seams. Independent runtimes follow [Session ownership](#session-ownership).
 
 Committed gameplay is immutable in every build. `createGameplayStore` freezes the
 complete initial aggregate and each new revision before save-status or gameplay
@@ -186,9 +186,22 @@ before they can mutate gameplay. Pure presentation callbacks need no session.
 Outcome handlers remain constructed before battle controllers; their separate
 composition is checked rather than replaced with late callback binding.
 
-The singleton is constructed only in `app/application-session.ts`. React hooks
-subscribe to that application's session without an additional provider. The
-explicit shipping adapter list in `lint/session-ownership.js` covers application hooks,
+The singleton is constructed only in `app/application-session.ts`. `App.tsx`
+passes its session and battle presentation store to `useAlchemyRunController`;
+that controller passes the same dependencies to battle and navigation hooks.
+Steam rich presence is composed in `App`, and autoplay toggle sounds use the
+session feedback capability.
+`use-session-run-reads.ts` supplies narrow explicit-session subscriptions, and
+`session-settings.ts` supplies imperative settings for battle autoplay. Battle
+presentation stores carry session ownership, so mixed-career composition fails
+before gameplay. A mounted battle controller owns one session/presentation pair;
+changing careers requires remounting that controller.
+
+`session-gameplay-store.ts` caches each session's presentation projection separately.
+Pending saves retain that session's pre-action gameplay while navigation, Collection
+browsing, and Labyrinth inspection remain live. Its subscriptions detach on unmount
+or session disposal. Application screen hooks retain their default-session adapter
+without adding a provider. The explicit shipping adapter list in `lint/session-ownership.js` covers application hooks,
 routes, and presentation adapters, including those under feature directories. The Oxlint
 session-ownership rule and dependency boundary prevent reusable domain modules
 and headless playthroughs from importing the singleton; Oxlint also rejects

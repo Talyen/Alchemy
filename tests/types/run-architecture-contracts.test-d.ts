@@ -11,6 +11,8 @@ import {
 import type { GearDraftView } from "@/features/alchemy/shared/stores/gear-store-types";
 import { describe, expectTypeOf, it } from "vitest";
 import type { BattleCard } from "@/lib/game-data";
+import type { BattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import type { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import type { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
 import type { AlchemyRouteCommands, AlchemyRunCommands } from "@/features/alchemy/shell/route-commands";
 import type { RunFlowHandlerDeps } from "@/features/alchemy/run-loop/run/run-flow";
@@ -246,6 +248,11 @@ describe("run architecture type contracts", () => {
 
   it("keeps battle commands draft-sourced and run-flow controllers capability-specific", () => {
     type BattleProps = Parameters<typeof useBattleController>[0];
+    expectTypeOf<Pick<BattleProps, "gameSession" | "presentation">>().toEqualTypeOf<{
+      gameSession: GameSession;
+      presentation: BattlePresentationStore;
+    }>();
+    expectTypeOf<Parameters<typeof useAlchemyRunController>>().toEqualTypeOf<[GameSession, BattlePresentationStore]>();
 
     expectTypeOf<Extract<keyof BattleProps, "run" | "talents" | "homesteadEffects">>().toEqualTypeOf<never>();
     expectTypeOf<keyof RunFlowHandlerDeps>().toEqualTypeOf<"actions">();

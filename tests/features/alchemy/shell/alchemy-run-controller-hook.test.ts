@@ -1,4 +1,5 @@
 import "../../../helpers/mock-audio";
+import { battlePresentation } from "@/app/battle-presentation";
 
 import { setBattleActiveForTest as setHasActiveBattle } from "../../../helpers/run-domain-store-test";
 import { act, renderHook } from "@testing-library/react";
@@ -35,7 +36,7 @@ beforeEach(() => {
 
 describe("useAlchemyRunController", () => {
   function renderController() {
-    return renderHook(() => useAlchemyRunController());
+    return renderHook(() => useAlchemyRunController(defaultGameSession, battlePresentation));
   }
 
   it("exposes menu screen after bootstrap", () => {
@@ -142,7 +143,7 @@ describe("useAlchemyRunController", () => {
     let renders = 0;
     renderHook(() => {
       renders += 1;
-      return useAlchemyRunController();
+      return useAlchemyRunController(defaultGameSession, battlePresentation);
     });
     const initialRenders = renders;
 

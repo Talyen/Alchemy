@@ -60,7 +60,13 @@ defineSequenceFamily("battle", (seed) => {
   const rect = () => ({ x: 0, y: 0, width: 100, height: 150 });
   const mounted = renderHook(
     ({ screen, menu }: { screen: Screen; menu: boolean }) => {
-      const controller = useBattleController({ screen, measureElementRect: rect, measureVisualCardRect: rect });
+      const controller = useBattleController({
+        gameSession: defaultGameSession,
+        presentation: battlePresentation,
+        screen,
+        measureElementRect: rect,
+        measureVisualCardRect: rect,
+      });
       const { battle } = useRunSessionBattleContext(screen);
       useBattlePlayback({ ...controller, battleState: battle.battleState, gameMenuOpen: menu });
       const inspection = useCardInspection({

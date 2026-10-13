@@ -1,5 +1,5 @@
 import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { registerSessionCleanup } from "@/features/alchemy/shared/stores/session-capabilities";
+import { bindSessionCapabilities, registerSessionCleanup } from "@/features/alchemy/shared/stores/session-capabilities";
 import {
   createCombatFeedback,
   createCombatFeedbackState,
@@ -124,7 +124,7 @@ export function createBattlePresentationStore(gameSession: GameSession) {
   onClearBattlePresentation(reset, gameSession);
   onRunTeardown(reset, gameSession);
   registerSessionCleanup(gameSession, reset);
-  return store;
+  return bindSessionCapabilities(gameSession, store);
 }
 
 export type BattlePresentationStore = ReturnType<typeof createBattlePresentationStore>;
