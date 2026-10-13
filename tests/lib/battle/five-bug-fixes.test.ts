@@ -4,7 +4,6 @@ import { applyResonantChimeTrinket } from "@/lib/battle/card-play-effects";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { cardById } from "@/lib/game-data";
-import { defaultTalentEffects } from "@/lib/battle";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
@@ -19,7 +18,7 @@ describe("Five targeted bug fixes", () => {
         playerHealth: 50,
         playerMaxHealth: 100,
         playerStatuses: { block: 5 },
-        talentEffects: { ...defaultTalentEffects, blockDepletedHeal: 8 },
+        talentEffects: { blockDepletedHeal: 8 },
         currentEnemy: { traits: [{ id: "sundered-guard", title: "Sundered Guard", description: "" }] },
       });
 
@@ -48,7 +47,7 @@ describe("Five targeted bug fixes", () => {
         playerHealth: 50,
         playerMaxHealth: 100,
         playerStatuses: { block: 10 },
-        talentEffects: { ...defaultTalentEffects, blockDepletedHeal: 8 },
+        talentEffects: { blockDepletedHeal: 8 },
         currentEnemy: { traits: [{ id: "sundered-guard", title: "Sundered Guard", description: "" }] },
       });
 
@@ -123,7 +122,7 @@ describe("Five targeted bug fixes", () => {
       const state = patchBattleState({
         enemyHealth: 50,
         enemyMaxHealth: 50,
-        talentEffects: { ...defaultTalentEffects, archeryBleedDamageChance: 100 },
+        talentEffects: { archeryBleedDamageChance: 100 },
         rng: () => 0.1,
       });
 
@@ -152,7 +151,7 @@ describe("Five targeted bug fixes", () => {
         enemyHealth: 50,
         enemyMaxHealth: 50,
         enemyStatuses: { bleed: 4 },
-        talentEffects: { ...defaultTalentEffects, drawPhysicalOnBleedTick: true },
+        talentEffects: { drawPhysicalOnBleedTick: true },
       });
 
       const combatTexts: CombatTextEvent[] = [];

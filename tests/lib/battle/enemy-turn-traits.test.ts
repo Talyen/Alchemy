@@ -13,7 +13,6 @@ import {
 } from "@/lib/battle/enemy-turn-traits";
 import { IRON_HIDE_ARMOR_PER_TURN, TRAIT_FORGE_PER_TURN, TRAIT_FREEZE_BONUS_PER_TURN } from "@/lib/game-constants";
 import { patchBattleState } from "../../fixtures/battle";
-import { defaultCcState } from "../../fixtures/default-battle-state";
 
 describe("enemy turn trait coverage", () => {
   it("documents every active trait handler and passive-only allowlist entry", () => {
@@ -52,7 +51,7 @@ describe("processEnemyRegeneration", () => {
       enemyHealth: 20,
       enemyMaxHealth: 30,
       enemyRegeneration: 3,
-      enemyCC: defaultCcState({ freezeSkipTurns: 0 }),
+      enemyCC: { freezeSkipTurns: 0 },
     });
     const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
     const result = processEnemyRegeneration(state, texts);

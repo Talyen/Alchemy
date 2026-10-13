@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { defaultTalentEffects } from "@/lib/battle";
 import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
@@ -105,7 +104,7 @@ describe("Five targeted bug fixes round 4", () => {
         playerHealth: 30,
         playerMaxHealth: 100,
         flags: { dodgeNextAttack: true },
-        talentEffects: { ...defaultTalentEffects, healOnDodge: 10 },
+        talentEffects: { healOnDodge: 10 },
       });
       const combatTexts: CombatTextEvent[] = [];
       const result = resolveEnemyAttackHit(state, { kind: "damage", damageType: "physical", amount: 8 }, combatTexts, {

@@ -3,7 +3,6 @@ import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { applyPlayerStatusFromAttack } from "@/lib/battle/status-player";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { patchBattleState } from "../../fixtures/battle";
-import { defaultTrinketManifest } from "../../fixtures/default-battle-state";
 
 describe("applyPlayerStatusFromAttack", () => {
   it.each([
@@ -44,7 +43,7 @@ describe("applyPlayerStatusFromAttack", () => {
 
   it("the Mask allows incoming Poison before cleansing on the next turn", () => {
     const state = patchBattleState({
-      trinketEffects: defaultTrinketManifest({ plagueDoctorPoisonCleanse: 2 }),
+      trinketEffects: { plagueDoctorPoisonCleanse: 2 },
     });
     const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status: "poison", amount: 3 }, []);
     expect(result.playerStatuses.poison).toBe(3);

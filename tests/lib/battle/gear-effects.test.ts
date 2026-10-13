@@ -10,7 +10,6 @@ import {
   makeTestCard,
   patchBattleState,
 } from "../../fixtures/battle";
-import { defaultCcState } from "../../fixtures/default-battle-state";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
@@ -52,11 +51,11 @@ describe("gear-effects", () => {
 
   it("applies frozen enemy damage bonus multiplier", () => {
     const state = patchBattleState({
-      enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
-      gearEffects: { ...defaultGearEffects, frozenEnemyDamageBonusPercent: 50 },
+      enemyCC: { freezeSkipTurns: 1 },
+      gearEffects: { frozenEnemyDamageBonusPercent: 50 },
     });
     expect(gearFrozenDamageMultiplier(state)).toBe(1.5);
-    expect(gearFrozenDamageMultiplier(patchBattleState({ enemyCC: defaultCcState({ freezeSkipTurns: 0 }) }))).toBe(1);
+    expect(gearFrozenDamageMultiplier(patchBattleState({ enemyCC: { freezeSkipTurns: 0 } }))).toBe(1);
   });
 
   it("applies kill rewards with scaled gold", () => {
@@ -64,7 +63,7 @@ describe("gear-effects", () => {
       enemyHealth: 0,
       gold: 5,
       playerHealth: 10,
-      gearEffects: { ...defaultGearEffects, healOnKill: 3, goldOnKill: 4, goldGainPercent: 50 },
+      gearEffects: { healOnKill: 3, goldOnKill: 4, goldGainPercent: 50 },
     });
     const texts: Parameters<typeof applyGearKillRewards>[2] = [];
     const next = applyGearKillRewards(state, true, texts);

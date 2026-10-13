@@ -1,118 +1,59 @@
 import { describe, expect, it } from "vitest";
-import { applyDamageBlock } from "@/lib/battle/damage-rider-leech";
-import { patchBattleState } from "../../fixtures/battle";
 import {
-  defaultPlayerStatusValues,
-  defaultEnemyStatusValues,
-  defaultTalentEffects,
-} from "../../fixtures/default-battle-state";
-import { dealDamage, makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
+  dealDamage,
+  makeCombatTexts,
+  makeEffect,
+  makeTestCard,
+  regressionBattle,
+  type BattleStatePatch,
+} from "../../fixtures/battle";
 
-describe("computeBaseDamage — holy damage", () => {
-  it("scales holy damage with gold when holyGoldPercent is active", () => {
-    const state = patchBattleState({
-      gold: 50,
-      talentEffects: { ...defaultTalentEffects, holyGoldPercent: 10 },
-    });
-    const card = makeTestCard({ effects: [makeEffect("holy", 5)] });
-    const result = dealDamage(state, card);
-    expect(result.enemyHealth).toBeLessThan(30);
+describe("Holy damage", () => {
+  it.each<{ name: string; patch: BattleStatePatch; damage: number; equalToBlock?: boolean }>([
+    { name: "Gold scaling", patch: { gold: 50, talentEffects: { holyGoldPercent: 10 } }, damage: 10 },
+    { name: "current Block", patch: { playerStatuses: { block: 7 } }, damage: 7, equalToBlock: true },
+    {
+      name: "Block scaling",
+      patch: { playerStatuses: { block: 10 }, talentEffects: { blockHolyDamagePercent: 30 } },
+      damage: 8,
+    },
+    {
+      name: "Burning enemies",
+      patch: { enemyStatuses: { burn: 5 }, talentEffects: { holyVsBurnMultiplier: 50 } },
+      damage: 8,
+    },
+  ])("applies $name exactly", ({ patch, damage, equalToBlock }) => {
+    const state = regressionBattle(patch);
+    const effect = makeEffect("holy", 5, { equalToBlock });
+    expect(dealDamage(state, makeTestCard({ effects: [effect] })).enemyHealth).toBe(30 - damage);
   });
 
-  it("deals exactly current block when equalToBlock is set", () => {
-    const state = patchBattleState({ playerStatuses: defaultPlayerStatusValues({ block: 7 }) });
-    const card = makeTestCard({ effects: [makeEffect("holy", 0, { equalToBlock: true })] });
-    const result = dealDamage(state, card);
-    expect(result.enemyHealth).toBe(30 - 7);
+  it("restores half the damage as Health through Holy Leech", () => {
+    const state = regressionBattle({ playerHealth: 10, talentEffects: { holyLifestealPercent: 50 } });
+    const result = dealDamage(state, makeTestCard({ effects: [makeEffect("holy", 10)] }));
+    expect(result.playerHealth).toBe(15);
   });
 
-  it("scales holy damage with block when blockHolyDamagePercent is active", () => {
-    const state = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ block: 10 }),
-      talentEffects: { ...defaultTalentEffects, blockHolyDamagePercent: 30 },
-    });
-    const card = makeTestCard({ effects: [makeEffect("holy", 5)] });
-    const result = dealDamage(state, card);
-    expect(result.enemyHealth).toBeLessThan(30);
-  });
-
-  it("amplifies holy damage against burning enemies with holyVsBurnMultiplier", () => {
-    const state = patchBattleState({
-      enemyStatuses: defaultEnemyStatusValues({ burn: 5 }),
-      talentEffects: { ...defaultTalentEffects, holyVsBurnMultiplier: 0.5 },
-    });
-    const card = makeTestCard({ effects: [makeEffect("holy", 5)] });
-    const result = dealDamage(state, card);
-    expect(result.enemyHealth).toBeLessThan(30);
-  });
-});
-
-describe("applyHolyDamageRiders", () => {
-  it("heals player with holy lifesteal", () => {
-    const state = patchBattleState({
-      playerHealth: 10,
-      talentEffects: { ...defaultTalentEffects, holyLifestealPercent: 50 },
-    });
-    const card = makeTestCard({ effects: [makeEffect("holy", 10)] });
-    const result = dealDamage(state, card);
-    expect(result.playerHealth).toBeGreaterThan(10);
-  });
-
-  it("grants block from holy damage with holyBlockPercentFromDamage", () => {
-    const state = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ block: 0 }),
-      talentEffects: { ...defaultTalentEffects, holyBlockPercentFromDamage: 50 },
-      rng: () => 0.5,
-    });
-    const card = makeTestCard({ effects: [makeEffect("holy", 10)] });
-    const result = dealDamage(state, card);
-    expect(result.playerStatuses.block).toBe(5);
-  });
-
-  it("reports the full block gained in combat text when flatBlockGained is active", () => {
-    const state = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ block: 0 }),
-      talentEffects: { ...defaultTalentEffects, holyBlockPercentFromDamage: 50 },
-      gearEffects: { ...patchBattleState().gearEffects, flatBlockGained: 2 },
+  it("reports all Block gained, including the flat Gear bonus", () => {
+    const state = regressionBattle({
+      talentEffects: { holyBlockPercentFromDamage: 50 },
+      gearEffects: { flatBlockGained: 2 },
     });
     const texts = makeCombatTexts();
-    const result = applyDamageBlock(state, 10, texts);
-
+    const result = dealDamage(state, makeTestCard({ effects: [makeEffect("holy", 10)] }), texts);
     expect(result.playerStatuses.block).toBe(7);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 7 });
   });
 
-  it("applies burn on holy damage with holyBurnDamageChance", () => {
-    const state = patchBattleState({
-      rng: () => 0.1,
-      talentEffects: { ...defaultTalentEffects, holyBurnDamageChance: 50, holyLifestealPercent: 0, holyGoldPercent: 0 },
-    });
-    const card = makeTestCard({ effects: [makeEffect("holy", 10)] });
-    const result = dealDamage(state, card);
+  it("applies Burn when its Holy damage rider succeeds", () => {
+    const state = regressionBattle({ rng: () => 0.1, talentEffects: { holyBurnDamageChance: 50 } });
+    const result = dealDamage(state, makeTestCard({ effects: [makeEffect("holy", 10)] }));
     expect(result.enemyStatuses.burn).toBeGreaterThan(0);
   });
 
-  it("triggers a wish on holy damage with holyWishChance", () => {
-    const state = patchBattleState({
-      rng: () => 0.1,
-      talentEffects: {
-        ...defaultTalentEffects,
-        holyWishChance: 50,
-        holyLifestealPercent: 0,
-      },
-    });
-    const card = makeTestCard({ effects: [makeEffect("holy", 10)] });
-    const result = dealDamage(state, card);
-    expect(result.wishOptions).not.toBeNull();
-  });
-
-  it("does not trigger a wish when the holyWishChance roll fails", () => {
-    const state = patchBattleState({
-      rng: () => 0.99,
-      talentEffects: { ...defaultTalentEffects, holyWishChance: 50 },
-    });
-    const card = makeTestCard({ effects: [makeEffect("holy", 10)] });
-    const result = dealDamage(state, card);
-    expect(result.wishOptions).toBeNull();
+  it.each([0.1, 0.99])("offers a Wish only when the Holy rider succeeds at roll %s", (roll) => {
+    const state = regressionBattle({ rng: () => roll, talentEffects: { holyWishChance: 50 } });
+    const result = dealDamage(state, makeTestCard({ effects: [makeEffect("holy", 10)] }));
+    expect(result.wishOptions !== null).toBe(roll < 0.5);
   });
 });

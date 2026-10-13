@@ -45,25 +45,18 @@ function forgeDamagePercent(
   }
 }
 
-function forgeAppliesToDamageType(
-  damageType: DamageType,
-  talentEffects: TalentEffectManifest,
-  gearEffects?: BattleState["gearEffects"],
-): boolean {
-  return forgeDamagePercent(damageType, talentEffects, gearEffects) > 0;
-}
-
 function blockScaledDamage(state: BattleState, percent: number): number {
   return scalePercent(state.playerStatuses.block, percent, PERCENT_DENOMINATOR);
 }
 
 function getForgeBonusForDamage(state: BattleState, damageType: DamageType): number {
-  if (!forgeAppliesToDamageType(damageType, state.talentEffects, state.gearEffects)) return 0;
+  const percent = forgeDamagePercent(damageType, state.talentEffects, state.gearEffects);
+  if (!(percent > 0)) return 0;
   const forge = state.playerStatuses.forge;
   if (damageType === "physical" && state.talentEffects.forgeToPhysicalDamageMultiplier > 0) {
     return forge * state.talentEffects.forgeToPhysicalDamageMultiplier;
   }
-  return scalePercent(forge, forgeDamagePercent(damageType, state.talentEffects, state.gearEffects));
+  return scalePercent(forge, percent);
 }
 
 function computeBaseRawAmount(

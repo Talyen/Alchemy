@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
-import { defaultTalentEffects } from "@/lib/battle";
 import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { CRIT_MULTIPLIER } from "@/lib/game-constants";
 import type { BattleCardEffect } from "@/lib/game-data";
@@ -74,7 +73,7 @@ describe("computeCardDamageToEnemy", () => {
     };
     const state = patchBattleState({
       enemyMitigation: { block: 0, armor: 0 },
-      talentEffects: { ...defaultTalentEffects, consumeDamageBonusPercent: 20 },
+      talentEffects: { consumeDamageBonusPercent: 20 },
       rng: () => 0.99,
     });
     const { modifiedDamage } = computeCardDamageToEnemy(state, holyEffect, {
