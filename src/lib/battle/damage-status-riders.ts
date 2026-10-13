@@ -183,6 +183,7 @@ function applyStunStatusRider(
   preHitHealth: number,
   fromHolyDamage = false,
 ): BattleState {
+  if (actualDamage <= 0) return state;
   emitEnemyBuildupImmunity(state, "stun", actualDamage, combatTexts);
   return resolveStunTrigger(addEnemyStatus(state, "stun", actualDamage), combatTexts, preHitHealth, fromHolyDamage);
 }
@@ -248,6 +249,7 @@ function applyFreezeStatusRider(
   preHitHealth: number,
   eligibility: BattleState,
 ): BattleState {
+  if (actualDamage <= 0) return state;
   emitEnemyBuildupImmunity(state, "freeze", actualDamage, combatTexts);
   let nextState = addEnemyStatus(state, "freeze", actualDamage);
   if (

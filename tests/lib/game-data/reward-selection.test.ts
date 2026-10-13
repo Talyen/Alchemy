@@ -141,8 +141,12 @@ it("keeps ordinary rewards when owned Companions are dampened out", () => {
   expect(rewards.map((entry) => entry.id)).toEqual(["strike"]);
 });
 
-it("falls back to the original pool when dampening would leave no rewards", () => {
-  const pool = [companionCard("wolf"), companionCard("fox")];
-  const rewards = selectRewardCards([companionCard("owned-wolf")], pool, 3, [], () => 0.99);
-  expect(rewards.map((entry) => entry.id).sort()).toEqual(["fox", "wolf"]);
+describe("constrained Companion rewards", () => {
+  it("fills all available choices even when owned-Companion weighting rejects most candidates", () => {
+    const pool = [companionCard("wolf"), companionCard("fox"), companionCard("bear")];
+    let calls = 0;
+    const rng = () => (calls++ === 0 ? 0 : 0.99);
+    const selected = selectRewardCards([companionCard("owned")], pool, 3, [], rng);
+    expect(new Set(selected.map((entry) => entry.id))).toEqual(new Set(pool.map((entry) => entry.id)));
+  });
 });

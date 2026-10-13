@@ -49,7 +49,7 @@ export function applyNatureDamageRiders(
     );
   }
   nextState = applyTalentHitConversions(nextState, "nature", modifiedDamage, combatTexts);
-  if (rollBattleChance(state.talentEffects.natureStunChance, state)) {
+  if (nextState.enemyHealth > 0 && rollBattleChance(state.talentEffects.natureStunChance, nextState)) {
     nextState = resolveFollowUpHit(
       nextState,
       { source: "talent-derived", damageType: "stun", amount: modifiedDamage },

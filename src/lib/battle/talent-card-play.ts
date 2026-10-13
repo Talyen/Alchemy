@@ -99,6 +99,8 @@ export function prepareTalentCardPlay(
     const secondArcheryCard = archery && archeryCardsPlayed === 1;
     nextState = setFlag(nextState, "archeryCardsPlayedThisTurn", archery ? archeryCardsPlayed + 1 : archeryCardsPlayed);
     nextState = setFlag(nextState, "archerySecondCardActive", secondArcheryCard);
+  } else {
+    nextState = setFlag(nextState, "archerySecondCardActive", false);
   }
 
   return {

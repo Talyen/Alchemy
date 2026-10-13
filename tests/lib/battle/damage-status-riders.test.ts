@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyDamageStatuses, applyPoisonTalentRiders } from "@/lib/battle/damage-status-riders";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
+import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { makeTestCard, patchBattleState, type BattleStatePatch } from "../../fixtures/battle";
 import type { CombatTextEvent } from "@/lib/battle/types";
@@ -135,9 +136,19 @@ describe("damage status riders", () => {
     ["stun", 5],
     ["freeze", 5],
     ["poison", 4],
-  ] as const)("zero %s damage preserves its existing stacks without triggering CC", (damageType, amount) => {
-    const state = patchBattleState({ enemyHealth: 30, enemyMaxHealth: 30, enemyStatuses: { [damageType]: amount } });
-    const result = applyDamageStatuses(state, { kind: "damage", damageType, amount: 0 }, 0, []);
+  ] as const)("fully blocked %s damage preserves existing stacks without triggering CC", (damageType, amount) => {
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType, amount: 2 }] });
+    const state = patchBattleState({
+      hand: [card],
+      enemyHealth: 8,
+      enemyMaxHealth: 30,
+      enemyStatuses: { [damageType]: amount },
+      enemyMitigation: { block: 20 },
+      rng: () => 0.99,
+    });
+    const result = playBattleCardResolved(state, card.id, 0).state;
+    expect(result.enemyHealth).toBe(8);
+    expect(result.enemyMitigation.block).toBe(18);
     expect(result.enemyStatuses).toEqual(state.enemyStatuses);
     expect(result.enemyCC).toEqual(state.enemyCC);
   });

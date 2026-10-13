@@ -129,7 +129,7 @@ function applyFollowUpNatureRiders(
 }
 
 export function tryPoisonStunProc(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
-  if (damage <= 0) return state;
+  if (damage <= 0 || state.enemyHealth <= 0) return state;
   if (!rollBattleChance(state.talentEffects.poisonStunChance, state)) return state;
   return resolveFollowUpHit(state, { source: "talent-derived", damageType: "stun", amount: damage }, combatTexts);
 }

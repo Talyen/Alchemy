@@ -22,7 +22,7 @@ function applyBurnDamageRiders(
   const canAward = !enemyWasBurningBefore && !forgeTriggers?.has("emberforged");
   if (canAward) forgeTriggers?.add("emberforged");
   const nextState = canAward ? applyEmberforgedPayout(state, combatTexts, false) : state;
-  if (rollBattleChance(state.talentEffects.burnStunChance, state)) {
+  if (nextState.enemyHealth > 0 && rollBattleChance(state.talentEffects.burnStunChance, nextState)) {
     return resolveFollowUpHit(
       nextState,
       { source: "talent-derived", damageType: "stun", amount: modifiedDamage },
