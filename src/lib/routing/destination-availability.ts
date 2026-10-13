@@ -14,7 +14,6 @@ export function getAvailableDestinations(
   hasUnownedTrinkets = true,
 ): Destination[] {
   return nonBossDestinationPool.filter((destination) => {
-    if (destination === DESTINATIONS.CAMPFIRE && currentHealth >= maxHealth) return false;
     if (isShopDestination(destination) && currentGold < SHOP_MIN_GOLD) return false;
     if (destination === DESTINATIONS.GEAR_SHOP && !hasAnyOwnedGear) return false;
     if (destination === DESTINATIONS.TRINKET_SHOP && !hasUnownedTrinkets) return false;
