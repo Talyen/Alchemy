@@ -25,7 +25,7 @@ it("headless session dependency boundary starts, resolves combat and round-trips
     controller.flow.handleCharacterSelect("knight");
     expect(readBattle(session).hasActiveBattle).toBe(true);
     const turn = readBattle(session).battleState.turn;
-    expect(commitEndTurn(session)).not.toBeNull();
+    expect(commitEndTurn(readBattle(session).battleState, session)).not.toBeNull();
     expect(readBattle(session).battleState.turn).toBeGreaterThan(turn);
     const save = createSessionPersistence(session).snapshot();
     restored = createGameSession({ initialSave: save });

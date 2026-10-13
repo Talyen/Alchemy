@@ -173,7 +173,7 @@ export class SaveStorage {
     data: UnstampedSaveData,
     validate: () => SaveWriteOutcome | undefined = () => undefined,
   ): Promise<SaveWriteOutcome> {
-    return await this.queue.enqueue(data, (snapshot) => validate() ?? this.writeSaveSnapshot(snapshot));
+    return await this.queue.enqueue(data, async (snapshot) => validate() ?? this.writeSaveSnapshot(snapshot));
   }
 
   /**

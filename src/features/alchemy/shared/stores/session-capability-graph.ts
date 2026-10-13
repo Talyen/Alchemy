@@ -62,7 +62,7 @@ export function bindSessionCapabilities<T extends object>(gameSession: GameSessi
     }
     const bound: object = Array.isArray(node)
       ? new Array(node.length)
-      : (Object.create(Object.getPrototypeOf(node)) as object);
+      : (Object.create(Object.getPrototypeOf(node) as object | null) as object);
     boundNodes.set(node, bound);
     capabilityOwners.set(bound, gameSession);
     for (const [key, descriptor] of capabilityProperties(node)) {
@@ -70,7 +70,7 @@ export function bindSessionCapabilities<T extends object>(gameSession: GameSessi
       const value: unknown = descriptor.value;
       Object.defineProperty(bound, key, {
         value: isNode(value) ? bind(value) : value,
-        enumerable: descriptor.enumerable,
+        enumerable: descriptor.enumerable ?? false,
         configurable: true,
         writable: true,
       });

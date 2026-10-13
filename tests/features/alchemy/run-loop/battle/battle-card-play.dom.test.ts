@@ -497,21 +497,29 @@ describe("createBattleCardPlay", () => {
     }
   });
 
-  it("flashes a hover preview before autoplaying", async () => {
+  it("rejects a previewed card when combat is replaced without restarting playback", async () => {
     vi.mocked(shouldReduceMotion).mockReturnValue(false);
     vi.useFakeTimers();
 
     const slash = slashCard();
     givenBattle(makeTestBattleState({ hand: [{ ...slash, uid: 7 }], mana: 3, enemyHealth: 30 }));
 
-    const { handleAutoplayCard } = makeDeps();
+    const { ctx, handleAutoplayCard } = makeDeps();
     const pending = handleAutoplayCard({ ...slash, uid: 7 }, 0, autoplayControl);
+    const generation = ctx.playback.id;
+    givenBattle(makeTestBattleState({ hand: [{ ...slash, uid: 7 }], mana: 3, enemyHealth: 30 }));
+    const replacement = readBattle(defaultGameSession).battleState;
 
     expect(useUiStore.getState().autoplayPreviewCardId).toBe("hand-slash-7");
     expect(useUiStore.getState().shimmerState?.cardId).toBe("hand-slash-7");
     await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
-    await expect(pending).resolves.toBe(true);
+    await expect(pending).resolves.toBe(false);
+    expect(ctx.playback.id).toBe(generation);
+    expect(readBattle(defaultGameSession).battleState).toBe(replacement);
     expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
+    const retry = handleAutoplayCard(replacement.hand[0]!, 0, autoplayControl);
+    await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
+    await expect(retry).resolves.toBe(true);
     expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(0);
   });
 

@@ -22,6 +22,15 @@ flow factories connect outcomes and gameplay callbacks.
 snapshot for both live settlement and simulation. Playback and command gates
 use the same policy; they do not infer completion independently from Health.
 
+Card, Wish, and end-turn commands require the borrowed immutable snapshot that
+offered the input. The command compares its identity with the current battle
+inside the transaction, before resolving gameplay, consuming RNG, or awarding XP.
+A retained action cannot affect a later turn, Wish queue, replacement battle, or
+restored save even when card IDs and turn numbers repeat. Unrelated navigation
+leaves the battle snapshot intact and does not invalidate input. Autoplay retains
+its snapshot across preview delays; headless offers retain it in their callbacks.
+Playback cancellation remains responsible for presentation work.
+
 At interaction time, those callbacks resolve gameplay before presentation:
 
 ```text

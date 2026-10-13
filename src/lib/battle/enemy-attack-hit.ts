@@ -269,7 +269,7 @@ export function resolveEnemyAttackHit(
     ...resolved,
     state:
       resolved.landed && getBattleOutcome(resolved.state) === null && hasEnemyTrait(resolved.state, "unbinding-strike")
-        ? purgeOnePlayerBenefit(resolved.state, combatTexts).state
+        ? resolvePendingBattleReactions(purgeOnePlayerBenefit(resolved.state, combatTexts).state, combatTexts)
         : resolved.state,
   };
   const blockDepleted = state.playerStatuses.block > 0 && result.blockLost >= state.playerStatuses.block;

@@ -103,6 +103,21 @@ describe("session-bound React controllers", () => {
     }
   });
 
+  it("keeps navigation usable when a battle controller rerenders with mounted DOM refs", () => {
+    const a = career();
+    const hook = renderHook(() => useAlchemyRunController(a.gameSession, a.presentation));
+    const battle = hook.result.current.routeCommands.battle;
+    battle.refs.battleSceneRef.current = document.createElement("div");
+    battle.refs.handCardRefs.current.card = document.createElement("button");
+    act(() => battle.toggleBoonInspect());
+    expect(hook.result.current.routeCommands.battle.boonInspectOpen).toBe(true);
+    act(() => hook.result.current.routeCommands.battle.toggleAutoplayEnabled());
+    expect(hook.result.current.routeCommands.battle.isAutoplayEnabled).toBe(true);
+    act(() => showRunScreen("armory", a.gameSession));
+    expect(hook.result.current.screen).toBe("armory");
+    hook.unmount();
+  });
+
   it("rejects a presentation store belonging to a different career before gameplay can run", () => {
     const a = career();
     const b = career();

@@ -238,7 +238,6 @@ describe("createMysteryEventNavigation", () => {
   it("handleMysteryChooseCard ignores a second pick", async () => {
     const { nav } = createMysteryNav();
 
-    const { dispatchRunSessionCommand } = await import("@/features/alchemy/shared/stores/run-session-command");
     const { setMysteryCardChoices } = await import("@/features/alchemy/shared/stores/run-session-write-port");
     const { cardById } = await import("@/lib/game-data");
     mutateRunForTest((draft) => {
