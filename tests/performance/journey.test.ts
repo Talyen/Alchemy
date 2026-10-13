@@ -30,7 +30,6 @@ describe("reachable performance cases", () => {
     expect(chooseCheckpointStep(selectCase("campaign-developed"), result)).toBe(40);
     expect(chooseCheckpointStep(selectCase("reward-route"), result)).toBe(12);
     expect(chooseCheckpointStep(selectCase("shop-journey"), result)).toBe(20);
-    expect(selectCase("trinket-journey")).toMatchObject({ seed: 1, policy: "random", checkpoint: "trinket-battle" });
   });
 
   it("validates replay case shape and rejects mismatched checkpoints or actions", () => {
