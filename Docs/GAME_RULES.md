@@ -204,7 +204,7 @@ Simulation-only instrumentation and measurement semantics live in [Balance simul
 
 - **State and arithmetic** — treat `BattleState` as immutable. Combat magnitudes use nearest-integer `Math.round()`, never `Math.floor()`; the battle-engine lint boundary enforces this convention.
 - **Turn presentation** — the accepted End Turn action resolves and commits before discard, enemy, draw, and Companion feedback plays. Companion turn-start effects resolve after the enemy and next-hand rules, before the next player action; delaying or cancelling their visual feedback cannot cancel their gameplay. Card and opening-hand results likewise commit before animation. Autoplay and automatic End Turn remain separate user preferences. Autoplay ends the turn when no safe card remains; manual automatic End Turn still leaves playable lethal cards for the player to decide.
-- **Battle RNG** — live combat draws the persisted `world` run stream (`withDraftWorldBattleRng` inside a command). Engine consumers use `getBattleRng(state)`, never direct `state.rng` access or `Math.random()`; RNG setup helpers own the execution-only callback seam; committed and saved `BattleSnapshot` values never contain it. Tests use `createRunStreamRng`; the balance simulator uses `createRunStateRng` over a local `RunRngState` (both use the same mixer as `nextRunRngValue`). Simulator card and Wish decisions use a separate seed-derived policy RNG and never advance combat counters. `createBattleState` may pass explicit RNG in unit tests. All dice draw from `@/lib/rng` and stay in `[0, 1)`; out-of-range draws and empty ranges throw instead of biasing. Chance helpers share one probability core (`rollChance`; `rollPercent` is the 0–100 wrapper). Small math lives in `@/lib/math` (`clamp`, `clamp01`, `lerp`).
+- **Battle RNG** — live combat draws the persisted `world` run stream through `BattleResolutionContext` (see [run randomness](./RUN_STATE.md#run-randomness) for command wiring). Engine consumers use `getBattleRng(state)`, never direct `state.rng` access or `Math.random()`; RNG setup helpers own the execution-only callback seam; committed and saved `BattleSnapshot` values never contain it. Tests use `createRunStreamRng`; the balance simulator uses `createRunStateRng` over a local `RunRngState` (both use the same mixer as `nextRunRngValue`). Simulator card and Wish decisions use a separate seed-derived policy RNG and never advance combat counters. `createBattleState` may pass explicit RNG in unit tests. All dice draw from `@/lib/rng` and stay in `[0, 1)`; out-of-range draws and empty ranges throw instead of biasing. Chance helpers share one probability core (`rollChance`; `rollPercent` is the 0–100 wrapper). Small math lives in `@/lib/math` (`clamp`, `clamp01`, `lerp`).
 
 #### Card classification
 
@@ -280,8 +280,9 @@ Players keep one unfinished run. The main menu offers Continue when it exists,
 otherwise Play opens the existing mode/hero setup. Continue restores the exact
 activity, including pending battle results, rewards, events, shops, and drafts.
 Menu and meta visits preserve that location. The existing red End Run menu action
-ends the run immediately without confirmation and always shows the End Run screen;
-Main Menu on that recap returns to the main menu. Earned progression is kept and
+ends the run immediately without confirmation and always shows Journey’s End.
+Continue reveals newly unlocked heroes before Main Menu; when no hero was
+unlocked, Main Menu returns directly (see [run recap UI](./UI_BROWSING.md#run-journey-recap)). Earned progression is kept and
 unclaimed choices are not granted. Normal defeat and victory retain their outcome screens. Drafting is part of the run, not setup
 for a second run. Gold, Talents, Homestead progress, and equipment remain permanent
 profile data. A current battle still protects its equipped items during meta visits.
@@ -385,9 +386,10 @@ until-consumed flags survive that reset. Save field names and values are unchang
 
 Attack packet ordering remains attempt bonuses, Dodge, contact-only flag
 consumption, magnitude and mitigation, riders, follow-up hits, then settled
-reactions. `consumeAttackBonuses` owns the action-local pool shared by successive
-effects and play-twice; these attempt bonuses are spent even on a Dodge, while
-next-hit flags are preserved. This ordering is separate from the detailed
+reactions. `damage.ts` spends the action-local Coordinated Strike bonus on the
+Companion's first attempted damage packet, including a Dodge; utility actions
+retain it. Next-hit flags commit only after the packet passes Dodge. This
+ordering is separate from the detailed
 hit-stage ordering above and must not reorder RNG or feedback.
 
 ## Brewing, Transmutation, and elemental reactions
