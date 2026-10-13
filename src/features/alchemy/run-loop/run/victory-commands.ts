@@ -1,3 +1,4 @@
+import { readDraftDestinationEligibility } from "@/features/alchemy/shared/stores/destination-offer-command";
 import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
@@ -29,7 +30,6 @@ import { getCompanionCardChoices } from "../navigation/reward-flow";
 import { shouldGrantCompanionReward } from "../navigation/reward-math";
 import type { VictoryRewardsResult } from "../navigation/victory-flow";
 import { computeVictoryRewards } from "../navigation/victory-flow";
-import type { RunOutcomeDeps } from "./run-flow";
 
 export interface CommitVictoryRewardsDeps {
   battleState: BattleSnapshot;
@@ -67,10 +67,7 @@ export function commitVictoryRewards(
   return result.goldEarned > 0;
 }
 
-export function createVictoryCommand(
-  getAvailableDestinations: RunOutcomeDeps["getAvailableDestinations"],
-  gameSession: GameSession,
-) {
+export function createVictoryCommand(gameSession: GameSession) {
   function computeVictoryResult(draft: RunTransaction) {
     const runState = draft.run.activeRun;
     const runProfile = draft.runProfile;
@@ -103,9 +100,8 @@ export function createVictoryCommand(
         battleState,
         purseGold: draft.runProfile.gold,
         runMaxHealth: runState.runMaxHealth,
-        destinationIndexInAct: runState.destinationIndexInAct,
+        destinationEligibility: readDraftDestinationEligibility(draft),
         homesteadEffects: runProfile.effects,
-        getAvailableDestinations: getAvailableDestinations,
         rollBossEnemyId: () => rollFreshBossId(createDraftRunRandomSource(draft, "world")),
         destinationOfferState: {
           lastOfferedDestinations: snapshotTransactionValue(runState.lastOfferedDestinations),

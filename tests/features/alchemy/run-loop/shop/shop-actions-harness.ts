@@ -2,7 +2,7 @@ import "../../../../helpers/mock-audio";
 
 import { beforeEach } from "vitest";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
-import { createEmptyTalentEffectManifest, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
+import { type BattleCard } from "@/lib/game-data";
 import {
   acceptCommand,
   dispatchRunSessionCommand,
@@ -24,7 +24,6 @@ import {
   createInitialTrinketShopState as createInitialTrinketShopStateImpl,
   createInitialEquipmentShopState as createInitialEquipmentShopStateImpl,
 } from "@/features/alchemy/run-loop/shop/shop-state-init";
-import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { makeTestCard } from "../../../../fixtures/cards";
 import { makeEffect } from "../../../../fixtures/battle";
 import { defaultGameSession } from "@/app/application-session";
@@ -53,7 +52,6 @@ export const setEquipmentShopState = createRunSessionCommand(
 );
 
 const testRng = () => 0.5;
-const defaultTalentEffects: TalentEffectManifest = createEmptyTalentEffectManifest();
 
 export const createInitialShopState = (deck: BattleCard[] = []) => createInitialShopStateImpl(deck, testRng);
 export const createInitialAlchemistState = (deck: BattleCard[] = []) => createInitialAlchemistStateImpl(deck, testRng);
@@ -70,30 +68,12 @@ export function requiredItem<T>(value: T | undefined, label: string): T {
   return value;
 }
 
-export function buildActions(
-  overrides?: Partial<{
-    talentEffects: Partial<TalentEffectManifest>;
-    homesteadEffects: Partial<typeof defaultHomesteadEffects>;
-    gearAstralChanceBonus: number;
-    trinketIds: string[];
-  }>,
-) {
+export function buildActions(overrides?: { trinketIds: string[] }) {
   const trinketIds = overrides?.trinketIds;
   if (trinketIds) {
     dispatchRunSessionCommand((draft) => acceptCommand(setRunBoons(draft, trinketIds)), undefined, defaultGameSession);
   }
-  const talentEffects = { ...defaultTalentEffects, ...overrides?.talentEffects };
-  return createShopActions(
-    {
-      talentEffects,
-      homesteadEffects: {
-        ...defaultHomesteadEffects,
-        gearAstralChanceBonus: overrides?.gearAstralChanceBonus ?? 0,
-        ...overrides?.homesteadEffects,
-      },
-    },
-    defaultGameSession,
-  );
+  return createShopActions(defaultGameSession);
 }
 
 beforeEach(() => {

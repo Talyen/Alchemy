@@ -17,16 +17,6 @@ import {
 import { createEmptyRewardState, type RewardState } from "@/lib/active-run-session";
 import { pickWeighted } from "@/lib/rng";
 
-export interface DestinationOptionsInput {
-  currentAct?: number;
-  currentHealth?: number;
-  currentGold?: number;
-  destinationIndexInAct?: number;
-  maxHealth?: number;
-  hasAnyOwnedGear?: boolean;
-  hasUnownedTrinkets?: boolean;
-}
-
 export interface DestinationOfferState {
   lastOfferedDestinations: Destination[];
   roundsSinceOffered: Partial<Record<Destination, number>>;

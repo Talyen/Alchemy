@@ -167,12 +167,7 @@ describe("desktop CI artifact flow", () => {
     const pkg = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8")) as {
       scripts: Record<string, string>;
     };
-    expect(pkg.scripts["dist:desktop"].split(" && ")).toEqual([
-      "npm run sync:steam-appid",
-      "npm run build:desktop",
-      "npm run check:bundle",
-      "node scripts/dist-desktop.mjs",
-    ]);
+    expect(pkg.scripts["dist:desktop"]).toBe("node scripts/dist-desktop.mjs --build");
     expect(packaging.indexOf("npm run check:bundle")).toBeGreaterThan(packaging.indexOf("npm run build:desktop"));
     expect(packaging.indexOf("npm run check:bundle")).toBeLessThan(packaging.indexOf("node scripts/dist-desktop.mjs"));
     const release = readFileSync(path.join(repoRoot, ".github/workflows/release.yml"), "utf8")
@@ -197,6 +192,11 @@ describe("desktop CI artifact flow", () => {
     const releaseWorkflow = readFileSync(path.join(repoRoot, ".github/workflows/release.yml"), "utf8");
     const producer = releaseWorkflow.split("  package:\n")[1].split("  release:\n")[0];
     const delivery = releaseWorkflow.split("  release:\n")[1];
+    const concurrency = delivery.match(/^    concurrency:\n((?:      .+\n)+)/mu)?.[1];
+    expect(concurrency).toBeDefined();
+    expect(concurrency).toContain("group: steam-publishing");
+    expect(concurrency).toContain("queue: max");
+    expect(concurrency).toContain("cancel-in-progress: false");
     expect(producer).toContain("artifact-id: ${{ steps.package-upload.outputs.artifact-id }}");
     expect(producer).toContain("id: package-upload");
     expect(delivery).toContain("needs: [package, package-demo]");

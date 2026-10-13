@@ -29,7 +29,7 @@ function refreshSortedCache(): void {
 }
 
 function handleWindowKeyDown(event: KeyboardEvent) {
-  if (event.key !== "Escape") return;
+  if (event.key !== "Escape" || event.isComposing || event.keyCode === 229) return;
   if (event.repeat) {
     event.preventDefault();
     event.stopPropagation();

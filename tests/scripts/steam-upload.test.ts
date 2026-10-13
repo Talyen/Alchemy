@@ -4,6 +4,7 @@ const asar = createRequire(import.meta.url)("@electron/asar");
 import { spawnSync } from "node:child_process";
 import {
   copyFileSync,
+  cpSync,
   existsSync,
   mkdtempSync,
   mkdirSync,
@@ -26,11 +27,8 @@ beforeEach(() => {
   // The CLI resolves paths from its script location. Copy its dependency closure
   // into a temporary root so package fixtures and cleanup never touch real builds.
   fixtureRoot = realpathSync(mkdtempSync(join(tmpdir(), "alchemy-steam-upload-fixture-")));
+  cpSync(join(ROOT, "scripts"), join(fixtureRoot, "scripts"), { recursive: true });
   for (const file of [
-    "scripts/steam-upload.mjs",
-    "scripts/lib/release/game-edition.mjs",
-    "scripts/lib/release/desktop-artifact.mjs",
-    "scripts/lib/release/steam-vdf.mjs",
     "desktop/package-layout.cjs",
     "game-edition.mjs",
     "steam/app_build.vdf",
@@ -78,6 +76,47 @@ afterEach(() => {
 });
 
 describe("steam-upload script", () => {
+  it("honors --dry-run with complete credentials without launching SteamCMD", async () => {
+    await ensureFakeWinUnpacked();
+    const source = `import cp from 'node:child_process';
+      import {syncBuiltinESMExports} from 'node:module';
+      cp.spawnSync = () => { throw new Error('unexpected SteamCMD launch'); };
+      syncBuiltinESMExports();
+      process.argv = [process.execPath, 'scripts/steam-upload.mjs', '--dry-run'];
+      await import('./scripts/steam-upload.mjs');`;
+    const result = spawnSync(process.execPath, ["--input-type=module", "-e", source], {
+      cwd: fixtureRoot,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        ALCHEMY_EDITION: "full",
+        STEAM_UPLOAD_DRY_RUN: "",
+        ALLOW_STEAM_DRY_RUN: "",
+        STEAM_APP_ID: "42",
+        STEAM_DEPOT_ID: "7",
+        STEAM_USERNAME: "build-account",
+        STEAM_PASSWORD: "fixture-password",
+      },
+    });
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain("Steam upload dry run");
+    expect(readFileSync(join(fixtureRoot, "steam/build/app_build.vdf"), "utf8")).toContain('"appid" "42"');
+    expect(result.stderr).not.toContain("ALLOW_STEAM_DRY_RUN");
+  });
+
+  it.each(["--dry-rnu", "unexpected", "--dry-run=false"])(
+    "rejects %s before writing VDFs or launching SteamCMD",
+    (argument) => {
+      const result = spawnSync(process.execPath, ["scripts/steam-upload.mjs", argument], {
+        cwd: fixtureRoot,
+        encoding: "utf8",
+      });
+      expect(result.status).toBe(2);
+      expect(result.stderr).toMatch(/Unknown option|Unexpected Steam upload arguments|does not take a value/u);
+      expect(existsSync(join(fixtureRoot, "steam/build"))).toBe(false);
+    },
+  );
+
   it.each(["full", "demo"] as const)(
     "honors the release dry-run allowance for %s when upload credentials are missing",
     async (edition) => {

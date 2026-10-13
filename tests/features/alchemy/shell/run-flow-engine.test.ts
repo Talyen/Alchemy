@@ -8,7 +8,6 @@ import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/
 import type { BattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
 import { createRunFlowEngine } from "@/features/alchemy/shell/run-flow-engine";
 import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
-import { readRunAvailableDestinations } from "@/features/alchemy/shell/run-destination-wiring";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
@@ -29,7 +28,6 @@ function makeOutcomes(navigateTo: TestNavigate, transition: TestTransition) {
   return createRunOutcomes(
     {
       actions: { navigateTo, transition, clearCardHover: () => {} },
-      getAvailableDestinations: (options) => readRunAvailableDestinations(options, defaultGameSession),
     },
     defaultGameSession,
   );

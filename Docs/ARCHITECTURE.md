@@ -51,14 +51,17 @@ Wildwood post-entry progression belongs to
 between Campaign, Labyrinth, and Wildwood are covered by the [content-system
 workflow](./WORKFLOWS.md#content-system-behavior).
 
-The main menu offers Continue when a run is unfinished, otherwise Play. Continue delegates to `content-system-navigation.resumeRun` through route props. A requested mode cannot replace an active run. End Run in the existing red menu action cancels pending battle/navigation work, finalizes earned progression once, clears the current run, and always shows the End Run screen without confirmation; Main Menu on that recap returns to the menu. Ordinary defeat and victory retain their outcome screens. Drafting belongs to the active run; finishing its starter draft is the only supported re-application of a start snapshot. Domain commands own the activity's resume location; display navigation, including Menu/meta visits, never replaces it. Run-start and progression commands establish their next activity before presentation begins. There are no parked slots or recency fields.
+The main menu offers Continue when a run is unfinished, otherwise Play. Continue delegates to `content-system-navigation.resumeRun` through route props. A requested mode cannot replace an active run. End Run in the existing red menu action cancels pending battle/navigation work, finalizes earned progression once, clears the current run, and always shows Journey’s End without confirmation; continuation follows the [run recap UI](./UI_BROWSING.md#run-journey-recap), including earned hero unlocks. Ordinary defeat and victory retain their outcome screens. Drafting belongs to the active run; finishing its starter draft is the only supported re-application of a start snapshot. Domain commands own the activity's resume location; display navigation, including Menu/meta visits, never replaces it. Run-start and progression commands establish their next activity before presentation begins. There are no parked slots or recency fields.
 
-Destination offer construction is pure in `shared/run-flow/destination-flow.ts`.
-Callers supply offer history, boss ID, and command-bound RNG; destination
-generation is not exposed through the content-system navigation API.
-`shared/stores/destination-offer-command.ts` samples and applies Campaign
-destination offers for both run start and progression inside the caller's
-existing command, committing offer history, reward state, and RNG counters together.
+Destination eligibility is pure in `shared/run-flow/resolve-available-destinations.ts`;
+weighted offer construction lives in `shared/run-flow/destination-flow.ts`.
+`shared/stores/destination-offer-command.ts` derives act, room history, Health,
+Gold, and collection eligibility from the open transaction. Run start, resume
+repair, and progression use that owner; victory supplies its plain eligibility
+context to reward calculation, which uses settled Health and Gold. Domain
+commands never call a shell reader or accept partial overrides for eligibility.
+Offer history, reward state, and command-bound RNG counters commit together;
+destination generation is not exposed through navigation capabilities.
 
 ## Battle path
 
@@ -80,8 +83,14 @@ that base update without restarting the full healing reaction chain. Import
 `battle/combat-text-events.ts` for text aggregation and `battle/enemy-healing.ts`
 for enemy healing. Combat text is feedback, not a gameplay rule owner.
 
-- **Card play:** UI → `useBattleController.playCard()` → `commitCardPlay()` → `resolveBattleAction(snapshot, card, context)` → committed snapshot and combat feedback.
-- **Enemy turn:** `commitEndTurn()` → `resolveBattleAction(snapshot, end-turn, context)` → committed result and XP → `playTurnFrames()` for presentation only.
+- **Card play:** UI → `useBattleController`'s `handleCardClick` → bound `battle.playCard` capability → `commitCardPlay` → committed snapshot and combat feedback.
+- **Wish choice:** UI → `handleWishChoice` → bound `battle.chooseWish` capability → `commitBattleWish` → committed chosen card and remaining Wish queue.
+- **End Turn:** UI → `handleEndTurn` → bound `battle.endTurn` capability → `commitEndTurn` → committed result and XP → `playTurnFrames` for presentation only.
+
+Those store commands call `resolveBattleAction(snapshot, action, context)` with
+the typed `BattleAction` request from `battle/battle-actions.ts`: `card` carries
+`cardId`, `index`, and optional play options; `wish` carries `cardId`; `end-turn`
+may carry a simulation turn budget. The context supplies command-bound world RNG.
 
 `resolveBattleAction` in `battle/battle-actions.ts` owns acceptance and resolution
 for Card, Wish, and end-turn requests in both live commands and simulation. Its
@@ -184,7 +193,13 @@ layers live beside their leaves (`card-ghost-overlay.tsx`,
 
 ## Shop commands
 
-`create-shop-actions.ts` composes the matching `*-shop-commands.ts` modules;
+`create-shop-actions.ts` composes the matching `*-shop-commands.ts` modules and
+binds them once to a `GameSession`. Callers supply no Talent or Homestead
+manifests. `shop-pricing-context.ts` derives effects from current session
+progression for quotes and from the open transaction for mutations. Purchases,
+services, refresh chances, potion potency, and Gear sampling therefore use the
+same progression as payment and visit state, including after upgrades, resets,
+or save restoration. Retained capabilities do not need to be recreated.
 `shop-commands-core.ts` owns shared purchase actions and live price helpers.
 Each shop supplies typed shelf selection, item identity, pricing, and acquisition
 rules; the shared purchase owner uses that pricing rule for both displayed quotes
@@ -290,6 +305,6 @@ controller factories, reads, commands, and persistence.
 `actor.ts` routes each observation to `meta-offers.ts` or `run-offers.ts` after constructing the production controller. `choice-catalog.ts` owns recorded choice identities and their executable commands for the current observation; duplicate identities fail instead of replacing a command. Offer builders score and register legal choices but do not commit gameplay until the selected choice executes.
 
 Run outcomes and navigation share one construction owner: `createRunOutcomes`
-captures the destination sampler and exposes `connect(actions)`. Both UI and
-headless shells connect navigation to that owner; neither can supply a second
-sampler for progression. Hover-clearing navigation is wrapped once in the shell.
+exposes `connect(actions)`. Both UI and headless shells supply presentation
+capabilities; domain commands own destination eligibility and sampling.
+Hover-clearing navigation is wrapped once in the shell.

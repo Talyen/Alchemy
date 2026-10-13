@@ -45,13 +45,13 @@ export function restoreRun(
   gameSession: GameSession,
   options?: { abandonIncompatibleBattle?: boolean },
 ): void {
-  sessionRuntime(gameSession).progressCompletion.cancel();
   dispatchGameplayCommand(
     (draft) => {
       const abandoned = restoreRunInDraft(draft, activeRun, talentXP, unlockedTalents, options);
       return acceptCommand(abandoned);
     },
     {
+      restore: {},
       afterCommit: (abandoned) => {
         if (abandoned) afterAbandonRun(gameSession);
       },
@@ -84,8 +84,6 @@ export function restoreSessionSave(
   gameSession: GameSession,
   options?: { preserveActiveRunIfInitialized?: boolean; abandonIncompatibleBattle?: boolean },
 ): boolean {
-  const runtime = sessionRuntime(gameSession);
-  runtime.progressCompletion.cancel();
   const result = dispatchGameplayCommand(
     (draft) => {
       const preserve = Boolean(options?.preserveActiveRunIfInitialized && draft.run.initialized);
@@ -95,11 +93,9 @@ export function restoreSessionSave(
         : restoreRunInDraft(draft, save.activeRun, save.talentXP, save.unlockedTalents, options);
       return acceptCommand({ restored: !preserve, abandoned });
     },
-    undefined,
+    { restore: { settings: save } },
     gameSession,
   );
-  // Settings are a separate store. Do not replace them if gameplay decoding fails.
-  runtime.settingsCodec.hydrate(save);
   if (result.abandoned) afterAbandonRun(gameSession);
   return result.restored;
 }

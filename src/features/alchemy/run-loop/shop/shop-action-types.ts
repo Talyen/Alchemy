@@ -1,16 +1,10 @@
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
-import type { BattleCard, TrinketEntry, TalentEffectManifest } from "@/lib/game-data";
+import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
-import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 
 export type ShopKind = "merchant" | "alchemist" | "trinket" | "equipment";
 
 export type ShopRefreshModifiers = readonly EncounterRewardTraitId[];
-
-export interface CreateShopActionsDeps {
-  talentEffects: TalentEffectManifest;
-  homesteadEffects: Pick<HomesteadEffectManifest, "gearAstralChanceBonus" | "mixPotionDiscount" | "removeCardDiscount">;
-}
 
 export interface MerchantShopCommands {
   initialize: () => void;

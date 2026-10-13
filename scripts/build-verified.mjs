@@ -38,10 +38,12 @@ async function main(argv = process.argv.slice(2)) {
     viteForward.shift();
   }
 
-  if (isDesktop) validateDesktopBuildConfig();
+  if (!argv.includes("--help") && !argv.includes("-h")) {
+    if (isDesktop) validateDesktopBuildConfig();
 
-  // Validate all generated outputs without mutating. Throws if stale.
-  await syncGenerated({ check: true });
+    // Help does not build or upload; normal builds must reject stale outputs.
+    await syncGenerated({ check: true });
+  }
 
   const viteArgs = ["build"];
   if (isDesktop && modes.length === 0) {

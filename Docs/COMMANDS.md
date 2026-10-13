@@ -35,8 +35,10 @@ includes and when it applies.
 
 Use [Agent discovery](./AGENT_DISCOVERY.md) for optional lookup/measurement
 commands and [Plans](./Plans/README.md) for plan creation and completion.
-`npm run docs:check:final` is only for intentionally closing every plan in the
-repository; documentation handoff uses `docs:check` plus the task-scoped `check`.
+`npm run docs:check:final` is a non-mutating repository-wide closure check: it
+requires no active or blocked plans and does not finish or delete them.
+Ordinary documentation handoff uses `docs:check` plus the task-scoped `check`;
+other tasks' active or blocked plans may remain.
 
 ## Build commands decision tree
 

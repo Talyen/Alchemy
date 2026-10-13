@@ -18,7 +18,8 @@ const ciCap = process.env.CI ? 4 : 6;
  */
 export function resolveAssetConcurrency(fallback) {
   const override = Number(process.env.ALCHEMY_ASSET_CONCURRENCY ?? "");
-  if (Number.isFinite(override) && override > 0) return Math.floor(override);
+  if (Number.isFinite(override) && override > 0 && override <= Number.MAX_SAFE_INTEGER)
+    return Math.max(1, Math.floor(override));
   return Math.min(ciCap, fallback);
 }
 
