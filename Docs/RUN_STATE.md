@@ -320,7 +320,9 @@ Domain persistence codecs own field selection, defaults, encoding, hydration, an
 
 The storage owner reads primary and recovery slots before selecting the freshest playable save. Unreadable or newer-format data stays in its slot while new progress saves to the other slot; a failed primary write also tries recovery. Load status is diagnostic only, so the app continues into play without a save-problem screen. The [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#public-save-contract) owns the exact routing and wipe rules.
 
-Current-run reads remain detached. Restoring active combat returns to battle before considering the mode map or destination route.
+Save snapshots are detached from live state; read ports borrow immutable committed
+values as described under [Run state](#run-state). Restoring active combat returns
+to battle before considering the mode map or destination route.
 
 `session.activity` owns one logical location and its visit. Mode geography remains
 run-wide; the reward-flow working state spans commands, but only the selected
