@@ -26,7 +26,7 @@ import {
 import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 
 export type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
-export { lerpParsedPlasmaColor, lerpPlasmaColor, parsePlasmaHexColor } from "@/lib/animation/plasma-colors";
+export { lerpParsedPlasmaColor, parsePlasmaHexColor } from "@/lib/animation/plasma-colors";
 
 export const DEATHS_DOOR_PLASMA_PAIR: PlasmaColorPair = {
   primary: SHINE_PALETTES.deathsDoorArt[1] ?? "#dc2626",

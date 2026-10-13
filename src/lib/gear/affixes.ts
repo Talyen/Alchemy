@@ -26,17 +26,6 @@ function addAffixEffect(effects: GearEffectManifest, key: keyof GearEffectManife
   }
 }
 
-export function resolveAffixEffects(affixes: readonly GearAffixRoll[]): GearEffectManifest {
-  const effects = { ...defaultGearEffects };
-  for (const roll of affixes) {
-    const def = gearAffixCatalog[roll.id];
-    if (def) {
-      addAffixEffect(effects, def.effectKey, roll.value);
-    }
-  }
-  return effects;
-}
-
 export function effectsForAffixRolls(
   rawAffixes: readonly AffixRollInput[] | null | undefined,
   rarity?: GearRarity | null,

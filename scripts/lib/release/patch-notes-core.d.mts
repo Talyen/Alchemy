@@ -14,8 +14,6 @@ export function extractPlayerFacingLines(commit: PatchNoteCommit): string[];
 
 export function isInfraPath(filePath: string): boolean;
 
-export function isProductPath(filePath: string): boolean;
-
 export function isUserFacing(commit: PatchNoteCommit): boolean;
 
 export function parseChangelogCommits(section: string): Array<{ subject: string; body: string }>;

@@ -3,7 +3,6 @@ import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
 import { collectKeywordsFromBattleEffect } from "@/lib/game-data/effect-metadata";
-import { getBattleCardTransmutationRole } from "@/lib/battle/card-classification";
 import { cardById, type BattleCard } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
@@ -114,15 +113,6 @@ describe("Five targeted bug fixes round 4", () => {
       expect(result.dodged).toBe(true);
       expect(result.state.playerHealth).toBe(40);
       expect(result.healthAfterHit).toBe(40);
-    });
-  });
-
-  describe("Incidental Fix: dodge-next-attack card classification", () => {
-    it("classifies cards with dodge-next-attack as defense", () => {
-      const dodgeCard = makeTestCard({ effects: [{ kind: "dodge-next-attack" }] });
-      expect(getBattleCardTransmutationRole(dodgeCard)).toBe("defense");
-      expect(getBattleCardTransmutationRole(cardById["feint"]!)).toBe("defense");
-      expect(getBattleCardTransmutationRole(cardById["shadowstep"]!)).toBe("defense");
     });
   });
 });

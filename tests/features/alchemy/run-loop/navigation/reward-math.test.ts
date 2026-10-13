@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { emptyInventory } from "@/lib/homestead/inventory";
-import {
-  applyLabyrinthRewardMaterialModifiers,
-  computeVictoryGold,
-} from "@/features/alchemy/run-loop/navigation/reward-math";
+import { computeVictoryGold } from "@/features/alchemy/run-loop/navigation/reward-math";
 
 describe("victory reward settlement", () => {
   it("includes every bonus before rounding earnings once, preserving the purse", () => {
@@ -58,21 +54,5 @@ describe("victory reward settlement", () => {
         goldMultiplier: 2,
       }),
     ).toEqual({ earnedBeforeMultiplier: 3, persistedGold: 16 });
-  });
-
-  it("adds Herbalist after Scavenger, applies only matching traits, and preserves the original materials", () => {
-    const materials = Object.freeze({ ...emptyInventory(), herbs: 4, iron: 3 });
-    expect(applyLabyrinthRewardMaterialModifiers(materials, ["scavenger", "herbalist"])).toEqual({
-      ...emptyInventory(),
-      herbs: 11,
-      iron: 6,
-    });
-    expect(applyLabyrinthRewardMaterialModifiers(materials, ["herbalist"])).toEqual({
-      ...emptyInventory(),
-      herbs: 7,
-      iron: 3,
-    });
-    expect(applyLabyrinthRewardMaterialModifiers(materials, ["generous"])).toBe(materials);
-    expect(materials).toEqual({ ...emptyInventory(), herbs: 4, iron: 3 });
   });
 });

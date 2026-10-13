@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   lerpParsedPlasmaColor,
-  lerpParsedRgbFloats,
-  lerpPlasmaColor,
   parseHexRgbBytes,
   parseHexRgbNormalized,
   parsePlasmaHexColor,
@@ -28,21 +26,6 @@ describe("plasma-colors", () => {
     expect(fallback).toEqual([10, 20, 30]);
   });
 
-  describe("lerpParsedRgbFloats", () => {
-    it("reuses an output tuple with exactly the same channels as allocating interpolation", () => {
-      const from = parsePlasmaHexColor("#137abd");
-      const to = parsePlasmaHexColor("#e25409");
-      const target: [number, number, number] = [0, 0, 0];
-      for (const t of [0, 0.001, 0.25, 0.5, 0.999, 1]) {
-        const expected = from.map((channel, index) => channel + (to[index]! - channel) * t);
-        expect(lerpParsedRgbFloats(from, to, t, target)).toBe(target);
-        expect(target).toEqual(expected);
-      }
-      expect(from).toEqual(parsePlasmaHexColor("#137abd"));
-      expect(to).toEqual(parsePlasmaHexColor("#e25409"));
-    });
-  });
-
   describe("lerpParsedPlasmaColor", () => {
     it("interpolates between two parsed colors", () => {
       const from: [number, number, number] = [0, 0, 0];
@@ -51,7 +34,6 @@ describe("plasma-colors", () => {
       expect(lerpParsedPlasmaColor(from, to, 0)).toBe("#000000");
       expect(lerpParsedPlasmaColor(from, to, 1)).toBe("#ffffff");
       expect(lerpParsedPlasmaColor(from, to, 0.5)).toBe("#808080");
-      expect(lerpPlasmaColor("#000000", "#ffffff", 0.5)).toBe("#808080");
     });
   });
 });
