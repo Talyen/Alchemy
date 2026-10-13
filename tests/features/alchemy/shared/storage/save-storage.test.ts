@@ -21,6 +21,97 @@ function backend() {
 }
 
 describe("SaveStorage ownership", () => {
+  it.each(["save", "saveForExit"] as const)(
+    "%s waits for a pending load to identify the protected primary slot",
+    async (operation) => {
+      const primary = futureSaveCandidate(100);
+      const slots = new Map([[SAVE_KEY, primary]]);
+      const reading = deferred<void>();
+      const releaseRead = deferred<void>();
+      const write = vi.fn((key: string, bytes: string) => {
+        slots.set(key, bytes);
+        return { ok: true as const };
+      });
+      const storage = new SaveStorage({
+        readCandidates: async (key) => {
+          const candidates = slots.has(key) ? [slots.get(key)!] : [];
+          reading.resolve();
+          await releaseRead.promise;
+          return { ok: true, candidates };
+        },
+        write: async (key, bytes) => write(key, bytes),
+        writeSync: write,
+        clear: async () => ({ ok: true }),
+      });
+      const loading = storage.load();
+      await reading.promise;
+      const saving = storage[operation]({ ...createDefaultSaveData(), gold: 17 });
+      releaseRead.resolve();
+      await loading;
+      expect(await saving).toBe("saved");
+      expect(slots.get(SAVE_KEY)).toBe(primary);
+      expect(JSON.parse(slots.get(SAVE_RECOVERY_KEY)!).gold).toBe(17);
+    },
+  );
+
+  it("loads the completed preceding write rather than an older snapshot", async () => {
+    let bytes = JSON.stringify({ ...createDefaultSaveData(), gold: 1 });
+    const writing = deferred<void>();
+    const releaseWrite = deferred<void>();
+    const storage = new SaveStorage({
+      readCandidates: async (key) => ({ ok: true, candidates: key === SAVE_KEY ? [bytes] : [] }),
+      write: async (_key, value) => {
+        writing.resolve();
+        await releaseWrite.promise;
+        bytes = value;
+        return { ok: true };
+      },
+      writeSync: () => null,
+      clear: async () => ({ ok: true }),
+    });
+    const saving = storage.save({ ...createDefaultSaveData(), gold: 2 });
+    await writing.promise;
+    const loading = storage.load();
+    releaseWrite.resolve();
+    await saving;
+    expect((await loading).data.gold).toBe(2);
+  });
+
+  it("finishes an in-flight demo import before clearing so imported progress cannot revive the save", async () => {
+    const slots = new Map<string, string>();
+    const importing = deferred<void>();
+    const releaseImport = deferred<void>();
+    const storage = new SaveStorage({
+      readCandidates: async (key) => ({ ok: true, candidates: slots.has(key) ? [slots.get(key)!] : [] }),
+      readDemoImportSource: async () => {
+        importing.resolve();
+        await releaseImport.promise;
+        return {
+          initialized: false,
+          fullSaveExists: false,
+          readFailed: false,
+          candidates: [JSON.stringify({ ...createDefaultSaveData(), gold: 31 })],
+        };
+      },
+      write: async (key, bytes) => {
+        slots.set(key, bytes);
+        return { ok: true };
+      },
+      writeSync: () => null,
+      clear: async () => {
+        slots.clear();
+        return { ok: true };
+      },
+    });
+    const loading = storage.load();
+    await importing.promise;
+    const clearing = storage.clear();
+    releaseImport.resolve();
+    await Promise.all([loading, clearing]);
+    expect(slots.size).toBe(0);
+    expect((await storage.load()).data.gold).toBe(0);
+  });
+
   const older = playableSaveCandidate(10);
   const newer = playableSaveCandidate(20);
   const future = futureSaveCandidate(1);

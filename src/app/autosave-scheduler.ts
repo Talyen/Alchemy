@@ -11,12 +11,12 @@ interface SaveSubmission {
 /** Owns one subscription lifetime. The adapter supplies clocks, timers, and storage.
  *
  * schedulerEpoch guards hook-lifetime invalidation (cancel on unmount or
- * disable must ignore late completions). SaveWriteQueue.storageEpoch guards
+ * disable must ignore late completions). SaveOperationQueue.storageEpoch guards
  * storage invalidation (clear or write protection must skip stale writes).
  * Both are required: the queue cannot repair scheduler revision counters from
  * a "skipped" outcome alone once the scheduler has reset, and a clear with no
  * pending write still needs the cancellation broadcast to drop a
- * debounced-but-unsubmitted dirty revision (see save-write-queue.ts). */
+ * debounced-but-unsubmitted dirty revision (see save-operation-queue.ts). */
 export function createAutosaveScheduler(maxWaitMs: number, retryCooldownMs: number = maxWaitMs) {
   let revision = 0;
   let acknowledgedRevision = 0;

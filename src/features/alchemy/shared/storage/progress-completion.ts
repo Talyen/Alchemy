@@ -1,5 +1,5 @@
 import { logStorageFailure } from "@/lib/storage-logging";
-import type { SaveWriteOutcome } from "./save-write-queue";
+import type { SaveWriteOutcome } from "./save-operation-queue";
 
 export type ProgressSaveState =
   | { readonly kind: "idle" }
