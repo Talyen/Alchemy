@@ -1,5 +1,4 @@
 import { restAtCampfireInDraft } from "./destination-commands";
-import { trinketLibrary } from "@/lib/game-data";
 import { withClearedNode } from "@/lib/content-systems/labyrinth/map-state";
 import { getBossById, rollFreshBossId } from "@/features/alchemy/shared/config";
 import { isBossOnlyDestinationOffer } from "@/features/alchemy/shared/run-flow/destination-flow";
@@ -34,7 +33,6 @@ import {
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { ACTS_PER_RUN } from "@/lib/game-constants";
 import { GAME_EDITION_POLICY, IS_DEMO } from "@/lib/game-edition";
-import type { RunFlowHandlerDeps } from "./run-flow";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 
 export function prepareDestinationInDraft(draft: RunTransaction): void {
@@ -48,25 +46,8 @@ export function prepareDestinationInDraft(draft: RunTransaction): void {
     }));
   }
 }
-export function prepareNextDestinationInDraft(
-  draft: RunTransaction,
-  getAvailableDestinations: RunFlowHandlerDeps["getAvailableDestinations"],
-  index?: number,
-): void {
-  sampleAndApplyDestinationOffer(
-    draft,
-    getAvailableDestinations({
-      currentAct: draft.run.activeRun.currentAct,
-      destinationIndexInAct: index ?? draft.run.activeRun.destinationIndexInAct,
-      currentHealth: draft.run.activeRun.runPlayerHealth,
-      currentGold: draft.runProfile.gold,
-      maxHealth: draft.run.activeRun.runMaxHealth,
-      hasAnyOwnedGear:
-        draft.gear.ownedTrinketIds.length > 0 ||
-        Object.values(draft.gear.inventories).some((items) => items.length > 0),
-      hasUnownedTrinkets: draft.gear.ownedTrinketIds.length < trinketLibrary.length,
-    }),
-  );
+export function prepareNextDestinationInDraft(draft: RunTransaction): void {
+  sampleAndApplyDestinationOffer(draft);
   prepareDestinationInDraft(draft);
 }
 export function completeActInDraft(draft: RunTransaction): boolean {
@@ -95,10 +76,7 @@ export function clearLabyrinthNodeInDraft(draft: RunTransaction): void {
   if (node && draft.session.labyrinthMap)
     setLabyrinthMap(draft, withClearedNode(snapshotTransactionValue(draft.session.labyrinthMap), node));
 }
-export function createProgressionCommands(
-  getAvailableDestinations: RunFlowHandlerDeps["getAvailableDestinations"],
-  gameSession: GameSession,
-) {
+export function createProgressionCommands(gameSession: GameSession) {
   return {
     prepareDestinationScreen: () =>
       dispatchRunSessionCommand(
@@ -163,7 +141,7 @@ export function createProgressionCommands(
             setRunProgressActivity(draft, "labyrinth-map");
             return acceptCommand(ROUTE_SCREENS.LABYRINTH_MAP);
           }
-          prepareNextDestinationInDraft(draft, getAvailableDestinations);
+          prepareNextDestinationInDraft(draft);
           return acceptCommand(ROUTE_SCREENS.DESTINATION);
         },
         undefined,

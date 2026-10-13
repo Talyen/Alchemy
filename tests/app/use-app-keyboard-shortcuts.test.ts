@@ -10,6 +10,32 @@ afterEach(() => {
 });
 
 describe("app Escape shortcuts", () => {
+  it.each([{ isComposing: true }, { keyCode: 229 }])(
+    "leaves composition keys with the text editor: %j",
+    (composition) => {
+      const focusSpy = vi.spyOn(focusNav, "focusInDirection").mockReturnValue(true);
+      const previousSpy = vi.spyOn(focusNav, "focusPreviousControl").mockImplementation(() => {});
+      const onBack = vi.fn();
+      const toggleGameMenu = vi.fn();
+      renderHook(() =>
+        useAppKeyboardShortcuts({
+          renderedScreen: "armory",
+          screenInteractive: true,
+          gameMenuOpen: false,
+          onBack,
+          toggleGameMenu,
+        }),
+      );
+      for (const key of ["ArrowDown", "F7", "Escape"]) {
+        expect(fireEvent.keyDown(document, { key, ...composition })).toBe(true);
+      }
+      expect(focusSpy).not.toHaveBeenCalled();
+      expect(previousSpy).not.toHaveBeenCalled();
+      expect(onBack).not.toHaveBeenCalled();
+      expect(toggleGameMenu).not.toHaveBeenCalled();
+    },
+  );
+
   it("activates Options switches and inventory checkboxes with the Steam Input confirm key", () => {
     renderHook(() =>
       useAppKeyboardShortcuts({

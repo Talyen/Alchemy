@@ -18,7 +18,6 @@ import { finalizeRunXP, setHasActiveRun, setRunDeck } from "@/features/alchemy/s
 import { createVictoryCommand } from "@/features/alchemy/run-loop/run/victory-commands";
 import { awardRunEndMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { cardById, getStartingDeck } from "@/lib/game-data";
-import { DESTINATIONS } from "@/lib/routing";
 import { parseActiveRun } from "@/lib/validation";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { regressionBattle } from "../../../../fixtures/battle";
@@ -110,7 +109,7 @@ it.each([
     undefined,
     defaultGameSession,
   );
-  const settle = createVictoryCommand(() => [DESTINATIONS.CAMPFIRE], defaultGameSession);
+  const settle = createVictoryCommand(defaultGameSession);
   expect(settle()).not.toBeNull();
   const reward = readRunSession(defaultGameSession).rewardFlow.state;
   expect(Object.values(reward.materials).reduce((sum, value) => sum + value, 0)).toBe(quantity);
@@ -133,7 +132,7 @@ it("resumes an unsettled victory and commits its rewards exactly once before pre
   const saved = parseActiveRun(JSON.parse(JSON.stringify(snapshotRun(defaultGameSession))))!;
   expect(savedActivityData(saved, "battle")?.battleState.enemyHealth).toBe(0);
   restoreRun(saved, {}, {}, defaultGameSession);
-  const settle = createVictoryCommand(() => [DESTINATIONS.CAMPFIRE], defaultGameSession);
+  const settle = createVictoryCommand(defaultGameSession);
   const before = readGameplayState(defaultGameSession);
   expect(settle()).not.toBeNull();
   const committed = readGameplayState(defaultGameSession);

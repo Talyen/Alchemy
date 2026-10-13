@@ -16,6 +16,7 @@ describe("loot source availability", () => {
       gold: 1000,
       runMaxHealth: 30,
       hasAnyOwnedGear: true,
+      hasUnownedTrinkets: true,
     };
     expect(resolveAvailableDestinations(input)).not.toContain(DESTINATIONS.TRINKET_SHOP);
     expect(resolveAvailableDestinations({ ...input, destinationIndexInAct: 6 })).toContain(DESTINATIONS.TRINKET_SHOP);

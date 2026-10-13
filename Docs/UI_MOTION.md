@@ -70,6 +70,11 @@ available during the swap. The saved result uses the reward settle/shine once on
 live completion and waits for Continue; resumed results skip that reveal effect. Reduced or
 disabled motion preserves selection emphasis without decorative animation.
 
+### Homestead purchases
+
+Interaction, purchase states, and reset behavior belong to the
+[Homestead gallery contract](./UI_BROWSING.md#homestead-gallery).
+
 Homestead purchases retain the old node while saving. Once acknowledged progress
 is available, tooltip sentences and icons remain steady. Changed values reveal
 over 180ms with a slight 2px rise; there is no whole-body fade or delayed swap.

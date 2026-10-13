@@ -28,7 +28,16 @@ import { cardById } from "@/lib/game-data";
 import { isMysteryLootEligible, pickResolvedMysteryEvent, type MysteryChoice } from "@/lib/mystery";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
 export function beginMysteryVisit(gameSession: GameSession): void {
-  dispatchRunSessionCommand((draft) => acceptCommand(beginMysteryVisitInTransaction(draft)), undefined, gameSession);
+  dispatchRunSessionCommand(
+    (draft) => {
+      const visit = draft.session.activity;
+      if (visit.kind !== "mystery" || visit.data.mysteryEvent)
+        return rejectCommand("Mystery visit is already initialized or no longer active", undefined);
+      return acceptCommand(beginMysteryVisitInTransaction(draft));
+    },
+    undefined,
+    gameSession,
+  );
 }
 
 export function beginMysteryVisitInTransaction(draft: RunTransaction): void {
