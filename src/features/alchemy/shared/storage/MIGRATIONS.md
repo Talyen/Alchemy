@@ -75,6 +75,13 @@ Normalization drops these retired fields; current Talent IDs, active bonuses,
 queued choices, and committed results still resume without replaying rewards.
 No schema version change is required under the pre-release baseline.
 
+Unauthored damage scaling, proportional Dodge retaliation, status prevention,
+Companion rewards, and first-card-free Talents are also retired. Flashpoint
+remains the only first-card-free Talent; its spent allowance and current Boon,
+Gear, encounter, and prepared-card opportunities still resume normally. Removed
+manifest keys and their combat flags are discarded by the existing declared-key
+normalization. Purchased Talent IDs and Homestead effects rebuild current bonuses.
+
 Reworked Talents may retain their IDs, while current run restoration rebinds derived manifests from purchased IDs and Homestead effects. Remove retired manifest keys and their gameplay branches instead of preserving legacy battle behavior. Battle normalization keeps only declared Talent and combat-flag keys; their defaults own the supported shape. Combat flags retain valid booleans and finite nonnegative numbers, repairing other values to their declared defaults. Use defaults for compatible additions and retire incompatible development snapshots when required. Shop state adds `freeRefreshUsed` with a false default and field-by-field hydration for older saves; refresh affordability, RNG, and visit limits follow the [shop workflow](../../../../../Docs/WORKFLOWS.md#change-a-shop).
 
 Battle flags default safely, normalize to their declared boolean/number types, and preserve their current values on resume. Their turn/combat/until-consumed lifetimes are owned by [combat-flags.ts](../../../../../src/lib/battle/combat-flags.ts): Archery sequence flags reset each player turn, while Hawk Eye and Riposte readiness survive until consumed and the first-Burn-free allowance lasts for the combat. Never reconstruct readiness from existing status or Dodge state, or replay opening draws/rewards during normalization. New battles initialize fresh flags.

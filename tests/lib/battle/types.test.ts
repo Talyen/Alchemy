@@ -142,11 +142,11 @@ describe("resolveSecondaryAction", () => {
     const state = makeTestBattleState();
     let observedInside = false;
     resolveSecondaryAction(state, "companion", (s) => {
-      observedInside = readCombatFlag(s, "firstHolyCardFreeUsed");
+      observedInside = readCombatFlag(s, "firstBurnCardFreeUsed");
       return s;
     });
     expect(observedInside).toBe(true);
-    expect(state.flags.firstHolyCardFreeUsed).toBe(false);
+    expect(state.flags.firstBurnCardFreeUsed).toBe(false);
   });
 });
 

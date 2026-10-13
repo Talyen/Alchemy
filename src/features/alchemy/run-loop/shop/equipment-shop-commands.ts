@@ -1,5 +1,4 @@
 import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
-import { createShopInitializer } from "./shop-initialization";
 import { grantGearToRunWithRecord } from "@/features/alchemy/shared/stores/deck-mutations";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
@@ -33,8 +32,6 @@ export function createEquipmentShopCommands(gameSession: GameSession): Equipment
   );
   const getRefreshPrice = createGetRefreshPrice("equipment-shop", gameSession);
 
-  const initialize = createShopInitializer("equipment", gameSession);
-
   const refresh = createShopRefreshAction(
     {
       activity: "equipment-shop",
@@ -54,5 +51,5 @@ export function createEquipmentShopCommands(gameSession: GameSession): Equipment
     gameSession,
   );
 
-  return bindSessionCapabilities(gameSession, { initialize, buy, refresh, getBuyPrice, getRefreshPrice });
+  return bindSessionCapabilities(gameSession, { buy, refresh, getBuyPrice, getRefreshPrice });
 }

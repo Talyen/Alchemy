@@ -1,5 +1,4 @@
 import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
-import { createShopInitializer } from "./shop-initialization";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { snapshotTransactionValue } from "@/features/alchemy/shared/stores/run-session-command";
@@ -50,8 +49,6 @@ export function createMerchantShopCommands(gameSession: GameSession): MerchantSh
   };
   const getRefreshPrice = createGetRefreshPrice("shop", gameSession);
 
-  const initialize = createShopInitializer("merchant", gameSession);
-
   function removeCard(index: number): boolean {
     return runShopTransaction(
       "shop",
@@ -99,7 +96,6 @@ export function createMerchantShopCommands(gameSession: GameSession): MerchantSh
   );
 
   return bindSessionCapabilities(gameSession, {
-    initialize,
     buyCard,
     removeCard,
     refresh,

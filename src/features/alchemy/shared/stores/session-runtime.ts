@@ -53,12 +53,15 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
   );
   const gameplay = createGameplayStore(generateRunSeed);
   const progressCompletion = new ProgressCompletion();
+  const io = createSaveIo(options.saveBackend, clock.now, allowPlatformStorage);
+  // Storage invalidation is a session event, independent of autosave clients.
+  cleanups.add(io.subscribeSaveCancellation(() => progressCompletion.cancel()));
   return {
     gameplay,
     presentationBase: gameplay.reads.getState(),
     settings,
     settingsCodec: createSettingsPersistenceCodec(settings),
-    io: createSaveIo(options.saveBackend, clock.now, allowPlatformStorage),
+    io,
     clock,
     generateRunSeed,
     createInstanceId: instanceIdSource,

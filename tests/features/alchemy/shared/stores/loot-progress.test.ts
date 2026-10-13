@@ -1,4 +1,5 @@
 import "../../../../helpers/mock-audio";
+import { initializeShopForTest } from "../../../../helpers/visit-initialization";
 import "../../../../helpers/mock-flush-save";
 import { mutateGameplayForTest, resetRunDomainStore, setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { DESTINATIONS } from "@/lib/routing";
@@ -47,7 +48,7 @@ describe("loot progression at run boundaries", () => {
     expect(progress().depth).toBe(4);
     const shop = actions();
     setRunProgress({ effects: { ...defaultHomesteadEffects, gearAstralChanceBonus: 1 } });
-    shop.equipment.initialize();
+    initializeShopForTest("equipment", defaultGameSession);
     expect(
       readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop").gear.every(
         (item) => gearDefinitions[item.definitionId].rarity === "astral",
@@ -78,7 +79,7 @@ describe("loot progression at run boundaries", () => {
     });
     expect(progress().depth).toBe(2);
     const shop = actions();
-    shop.equipment.initialize();
+    initializeShopForTest("equipment", defaultGameSession);
     expect(shop.equipment.refresh()).toBe(true);
     expect(progress().depth).toBe(2);
     expect(
@@ -130,7 +131,7 @@ describe("loot progression at run boundaries", () => {
       draft.run.navigation.screen = "trinket-shop";
     });
     const shop = actions();
-    shop.trinket.initialize();
+    initializeShopForTest("trinket", defaultGameSession);
     const offered = readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop").trinkets;
     expect(offered).toHaveLength(3);
     restoreRun(snapshotRun(defaultGameSession), {}, {}, defaultGameSession);
@@ -161,7 +162,7 @@ describe("loot progression at run boundaries", () => {
       draft.run.navigation.screen = "equipment-shop";
     });
     const shop = actions();
-    shop.equipment.initialize();
+    initializeShopForTest("equipment", defaultGameSession);
     const offered = readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop").gear;
     const saved = snapshotRun(defaultGameSession);
     restoreRun(saved, {}, {}, defaultGameSession);

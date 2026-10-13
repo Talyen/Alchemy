@@ -1,5 +1,4 @@
 import "../../../../helpers/mock-audio";
-
 import "../../../../helpers/mock-flush-save";
 import { beforeEach, describe, expect, it } from "vitest";
 import { readActivityData, shopItemSlotKey } from "@/lib/active-run-session";
@@ -25,6 +24,7 @@ import { makeMinimalActiveRunInput } from "../../../../fixtures/active-run";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { defaultGameSession } from "@/app/application-session";
 import { savedActivityFixture } from "../../../../fixtures/run-activity";
+
 const ownedTrinket = trinketLibrary[0]!;
 const otherTrinket = trinketLibrary[1]!;
 
@@ -89,7 +89,6 @@ describe("saved battle card recovery", () => {
               },
               talentEffects: {
                 ...restored.talentEffects,
-                firstConsumeCardFree: true,
                 consumeHealMultiplier: 1,
                 healOnConsume: 9,
                 drawOnConsume: 1,

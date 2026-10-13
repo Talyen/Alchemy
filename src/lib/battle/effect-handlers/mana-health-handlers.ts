@@ -54,7 +54,6 @@ export const MANA_HEALTH_HANDLERS = {
       { ...state, maxMana: state.maxMana + amount, mana: state.mana + amount },
       amount,
       combatTexts,
-      state.mana,
     );
   },
   "lose-max-mana": (state, _card, effect, _potionMult, combatTexts) => {

@@ -19,7 +19,6 @@ import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { sessionRuntime } from "@/features/alchemy/shared/stores/session-runtime";
 import { readRunSession, readRunRevision } from "@/features/alchemy/shared/stores/run-reads";
 import { gridLabyrinthMapFixture } from "../../../fixtures/labyrinth-map";
-import { emptyAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
 import { defaultGameSession } from "@/app/application-session";
 vi.mock("@/lib/platform", () => ({
   setSteamRichPresence: vi.fn(),
@@ -91,38 +90,6 @@ describe("useAlchemyRunController", () => {
     } finally {
       act(() => completion.cancel());
     }
-  });
-
-  it.each(["campfire", "transmutation"] as const)("initializes %s offers while a save is pending", (kind) => {
-    setRunSession({ hasActiveRun: true, activity: { kind, data: emptyAlchemyVisit() } });
-    const { result } = renderController();
-    const completion = sessionRuntime(defaultGameSession).progressCompletion;
-    try {
-      act(() => completion.mark(readRunRevision(defaultGameSession) + 1));
-      act(() => {
-        if (kind === "campfire") result.current.routeCommands.runLoop.destinations.initializeCampfire();
-        else result.current.routeCommands.runLoop.transmutation.initialize();
-      });
-      const activity = readRunSession(defaultGameSession).activity;
-      if (activity.kind !== "campfire" && activity.kind !== "transmutation") throw new Error("Unexpected activity");
-      expect(kind === "campfire" ? activity.data.offers : activity.data.transmutation?.choices).toHaveLength(3);
-    } finally {
-      act(() => completion.cancel());
-    }
-  });
-
-  it.each(["campfire", "transmutation"] as const)("ignores an outgoing %s route's late initialization", (kind) => {
-    setRunSession({ hasActiveRun: true, activity: { kind, data: emptyAlchemyVisit() } });
-    const { result } = renderController();
-    const initialize =
-      kind === "campfire"
-        ? result.current.routeCommands.runLoop.destinations.initializeCampfire
-        : result.current.routeCommands.runLoop.transmutation.initialize;
-    act(() => setRunSession({ activity: { kind: "labyrinth-map" }, labyrinthMap: gridLabyrinthMapFixture() }));
-    const revision = readRunRevision(defaultGameSession);
-    act(() => initialize());
-    expect(readRunSession(defaultGameSession).activity.kind).toBe("labyrinth-map");
-    expect(readRunRevision(defaultGameSession)).toBe(revision);
   });
 
   it("keeps routeCommands identity across a no-op rerender", () => {

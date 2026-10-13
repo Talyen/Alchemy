@@ -80,14 +80,13 @@ describe("card number and discount regressions", () => {
     expect(changed.descriptionLines[1]).toBe("Gain 4 Gold");
   });
 
-  it.each(["armed", "first", "encounter"])("applies the %s Archery discount to Sniff Out", (kind) => {
+  it.each(["armed", "encounter"])("applies the %s Archery discount to Sniff Out", (kind) => {
     const card = cardById["sniff-out"]!;
     const state = patchBattleState({
       hand: [card],
       mana: 0,
       enemyHealth: 100,
       flags: { nextArcheryCardFree: kind === "armed" },
-      talentEffects: { firstArcheryCardFree: kind === "first" },
       encounterBenefits: kind === "encounter" ? ["quickdraw"] : [],
     });
     const result = playBattleCardResolved(state, card.id, 0).state;
@@ -95,7 +94,6 @@ describe("card number and discount regressions", () => {
     expect(result.mana).toBe(0);
     expect(result.enemyStatuses.bleed).toBe(1);
     expect(result.flags.nextArcheryCardFree).toBe(true);
-    if (kind === "first") expect(result.flags.firstArcheryCardFreeUsed).toBe(true);
     if (kind === "encounter") expect(result.flags.encounterArcheryUsed).toBe(true);
   });
 

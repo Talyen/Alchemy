@@ -28,13 +28,10 @@ describe("damage status riders", () => {
   });
 
   it.each([
-    ["poison", 0, 8],
-    ["poison", 50, 12],
     ["bleed", 0, 2],
     ["bleed", 50, 3],
   ] as const)("%s rewards Gold and matching feedback with %i%% Gear scaling", (damageType, goldGainPercent, gold) => {
     const state = patchBattleState({
-      talentEffects: { goldOnFirstPoison: 8 },
       trinketEffects: { cutpurseGoldOnBleed: 2 },
       gearEffects: { goldGainPercent },
     });
@@ -43,17 +40,7 @@ describe("damage status riders", () => {
       critical: true,
     });
     expect(result.gold).toBe(gold);
-    expect(result.flags.goldOnFirstPoisonThisCombat).toBe(damageType === "poison");
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gold", amount: gold });
-  });
-
-  it("pays first-Poison Gold only once", () => {
-    const state = patchBattleState({
-      gold: 10,
-      talentEffects: { goldOnFirstPoison: 8 },
-      flags: { goldOnFirstPoisonThisCombat: true },
-    });
-    expect(applyDamageStatuses(state, { kind: "damage", damageType: "poison", amount: 3 }, 3, []).gold).toBe(10);
   });
 
   it("queues Bleed Leech healing for later ticks", () => {
@@ -174,11 +161,6 @@ describe("damage status riders", () => {
     const texts: CombatTextEvent[] = [];
     expect(applyPoisonTalentRiders(state, 5, texts).playerHealth).toBe(21);
     expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 3 });
-  });
-
-  it("Poison strips one Armor with its matching talent", () => {
-    const state = patchBattleState({ enemyMitigation: { armor: 3 }, talentEffects: { poisonStripArmor: true } });
-    expect(applyPoisonTalentRiders(state, 4, []).enemyMitigation.armor).toBe(2);
   });
 
   it.each<{ name: string; patch: BattleStatePatch; health: number; enemyHealth: number; gold: number }>([

@@ -1,5 +1,4 @@
 import "../../../../helpers/mock-audio";
-
 import "../../../../helpers/mock-flush-save";
 import {
   mutateGameplayForTest,
@@ -63,11 +62,11 @@ describe("Dodge XP commits", () => {
     expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
   });
 
-  it("awards a Dodge whose Riposte ends combat", () => {
+  it("awards a Dodge whose Gear retaliation ends combat", () => {
     const state = incomingPhysical({
       rng: () => 0,
       enemyHealth: 1,
-      talentEffects: { physicalOnDodgeEqualToAttack: true },
+      gearEffects: { physicalOnDodge: 100 },
     });
     mutateGameplayForTest((draft) => initializeActiveBattle(draft, state));
     const result = endPlayerTurn(state);

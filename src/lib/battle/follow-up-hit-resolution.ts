@@ -16,18 +16,18 @@ import {
 } from "./bonus-effects";
 import { computeCardDamageToEnemy, computeTalentDamageToEnemy } from "./damage-calc";
 import {
-  applyDamageBlock,
   applyHolyLifesteal,
   applyHolyBlockChance,
   applyHolyTithe,
   applyLeechHitHealing,
   applyThunderstoneLeech,
 } from "./damage-rider-leech";
-export { applyLeechHitHealing as applyLifestealAndPlayerHitTriggers } from "./damage-rider-leech";
 import { resolveTypedEnemyHit } from "./typed-hit-resolution";
 import { resolveStunFollowUpHit } from "./stun-follow-up-hit";
 import { type BattleState, type CombatTextEvent } from "./types";
 import type { FollowUpHitRequest } from "./player-hit-core";
+
+export { applyLeechHitHealing as applyLifestealAndPlayerHitTriggers } from "./damage-rider-leech";
 
 /** Lower resolution tier: Wish and other reactions can emit shallow hits without importing card orchestration. */
 export function resolveFollowUpHit(
@@ -98,7 +98,6 @@ function resolveDerivedFollowUp(
     if (!isPlayer) nextState = applyHolyLifesteal(nextState, resolved, combatTexts, hit.facts.eligibility);
     nextState = applyHolyBlockChance(nextState, hit.facts.healthDamage, combatTexts);
     if (!isPlayer) {
-      nextState = applyDamageBlock(nextState, resolved, combatTexts, hit.facts.eligibility);
       nextState = applyHolyTithe(nextState, hit.facts.healthDamage, combatTexts);
     } else {
       nextState = applyBrassCenser(nextState, resolved, combatTexts);

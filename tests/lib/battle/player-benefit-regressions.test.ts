@@ -41,7 +41,7 @@ describe("player benefit regressions", () => {
       const state = patchBattleState({
         playerHealth: 50,
         playerMaxHealth: 100,
-        talentEffects: { healthThresholdBlock: { threshold: 50, amount: 6 } },
+        talentEffects: { healthThresholdBlockOnce: { threshold: 50, amount: 6 } },
       });
       const result =
         source === "health-cost" || source === "self-damage"

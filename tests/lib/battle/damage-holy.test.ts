@@ -1,12 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  dealDamage,
-  makeCombatTexts,
-  makeEffect,
-  makeTestCard,
-  regressionBattle,
-  type BattleStatePatch,
-} from "../../fixtures/battle";
+import { dealDamage, makeEffect, makeTestCard, regressionBattle, type BattleStatePatch } from "../../fixtures/battle";
 
 describe("Holy damage", () => {
   it.each<{ name: string; patch: BattleStatePatch; damage: number; equalToBlock?: boolean }>([
@@ -32,17 +25,6 @@ describe("Holy damage", () => {
     const state = regressionBattle({ playerHealth: 10, talentEffects: { holyLifestealPercent: 50 } });
     const result = dealDamage(state, makeTestCard({ effects: [makeEffect("holy", 10)] }));
     expect(result.playerHealth).toBe(15);
-  });
-
-  it("reports all Block gained, including the flat Gear bonus", () => {
-    const state = regressionBattle({
-      talentEffects: { holyBlockPercentFromDamage: 50 },
-      gearEffects: { flatBlockGained: 2 },
-    });
-    const texts = makeCombatTexts();
-    const result = dealDamage(state, makeTestCard({ effects: [makeEffect("holy", 10)] }), texts);
-    expect(result.playerStatuses.block).toBe(7);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 7 });
   });
 
   it("applies Burn when its Holy damage rider succeeds", () => {

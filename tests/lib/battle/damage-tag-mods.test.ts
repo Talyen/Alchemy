@@ -55,25 +55,4 @@ describe("typed damage bonuses", () => {
     const state = regressionBattle({ talentEffects: { flatStunDamage: 2 } });
     expect(dealDamage(state, makeTestCard({ effects: [makeEffect("stun", 5)] })).enemyHealth).toBe(23);
   });
-
-  it.each([
-    ["poison", "poisonPhysicalBonus", 3, 22],
-    ["bleed", "bleedPhysicalBonus", 2, 23],
-  ] as const)("adds %s-dependent Physical damage", (status, field, amount, expectedHealth) => {
-    const state = regressionBattle({ enemyStatuses: { [status]: 5 }, talentEffects: { [field]: amount } });
-    expect(dealDamage(state, makeTestCard({ effects: [makeEffect("physical", 5)] })).enemyHealth).toBe(expectedHealth);
-  });
-
-  it.each([
-    ["stunSkipTurns", "physicalDoubledVsStunned", 80],
-    ["freezeSkipTurns", "physicalDoubledVsFrozen", 60],
-  ] as const)("amplifies Physical damage during %s", (control, field, expectedHealth) => {
-    const state = regressionBattle({
-      enemyHealth: 100,
-      enemyMaxHealth: 100,
-      enemyCC: { [control]: 1 },
-      talentEffects: { [field]: true },
-    });
-    expect(dealDamage(state, makeTestCard({ effects: [makeEffect("physical", 10)] })).enemyHealth).toBe(expectedHealth);
-  });
 });

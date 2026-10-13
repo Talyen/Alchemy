@@ -66,13 +66,14 @@ describe("card reward interactions", () => {
       const card = makeTestCard({
         cost: 1,
         consume: true,
+        tags: ["burn"],
         effects: [{ kind: "damage", damageType: "holy", amount: 2 }],
       });
       const state = patchBattleState({
         hand: [card],
         mana: 0,
         flags: { nextHolyCardFree: true },
-        talentEffects: { firstHolyCardFree: source === "talent" },
+        talentEffects: { firstBurnCardFree: source === "talent" },
         encounterBenefits: source === "encounter" ? ["fleeting"] : [],
       });
       const result = playBattleCardResolved(state, card.id, 0).state;
