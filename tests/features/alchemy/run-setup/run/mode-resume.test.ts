@@ -21,7 +21,17 @@ import { ANCIENT_ALTAR_MYSTERY_VISIT } from "../../shared/stores/active-run-data
 import { defaultGameSession } from "@/app/application-session";
 import { savedActivityFixture } from "../../../../fixtures/run-activity";
 
-beforeEach(resetAllTestStores);
+beforeEach(() => {
+  resetAllTestStores();
+  dispatchGameplayCommand(
+    (draft) => {
+      draft.profile.finishedRunCharacters = ["knight", "rogue", "ranger", "wizard", "alchemist", "warlock", "druid"];
+      return acceptCommand();
+    },
+    undefined,
+    defaultGameSession,
+  );
+});
 
 function createNavigation(presentBattleStart = vi.fn()) {
   const navigateTo = (screen: Screen, onCommit?: () => void) => {

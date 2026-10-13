@@ -38,6 +38,14 @@ vi.mock("@/lib/error-logger", async (importOriginal) => ({
 
 beforeEach(() => {
   resetAllTestStores();
+  dispatchGameplayCommand(
+    (draft) => {
+      draft.profile.finishedRunCharacters = ["knight", "rogue", "ranger", "wizard", "alchemist", "warlock", "druid"];
+      return acceptCommand();
+    },
+    undefined,
+    defaultGameSession,
+  );
 });
 
 function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNavigation>[0]> = {}) {
@@ -55,6 +63,75 @@ function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNaviga
 }
 
 describe("createContentSystemNavigation", () => {
+  it("rejects a locked hero without starting a run or navigating", () => {
+    dispatchGameplayCommand(
+      (draft) => {
+        draft.profile.finishedRunCharacters = [];
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    const deps = makeDeps();
+    const before = snapshotSessionSave(defaultGameSession);
+    createContentSystemNavigation(deps, defaultGameSession).handleCharacterSelect("rogue");
+    expect(snapshotSessionSave(defaultGameSession)).toEqual(before);
+    expect(deps.navigateTo).not.toHaveBeenCalled();
+    expect(deps.presentBattleStart).not.toHaveBeenCalled();
+
+    setRunSession({ pendingCharacterId: "rogue" });
+    const pending = snapshotSessionSave(defaultGameSession);
+    createContentSystemNavigation(deps, defaultGameSession).handleDifficultySelect(DEFAULT_CAMPAIGN_DIFFICULTY_ID);
+    expect(snapshotSessionSave(defaultGameSession)).toEqual(pending);
+    expect(deps.navigateTo).not.toHaveBeenCalled();
+    expect(deps.presentBattleStart).not.toHaveBeenCalled();
+  });
+
+  it.each(["labyrinth", "wildwood"] as const)("rejects the locked %s mode at entry and hero selection", (mode) => {
+    dispatchGameplayCommand(
+      (draft) => {
+        draft.profile.finishedRunCharacters = [];
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    const deps = makeDeps();
+    const nav = createContentSystemNavigation(deps, defaultGameSession);
+    const before = snapshotSessionSave(defaultGameSession);
+    if (mode === "labyrinth") nav.beginLabyrinth();
+    else nav.beginWildwood();
+    expect(snapshotSessionSave(defaultGameSession)).toEqual(before);
+    expect(deps.navigateTo).not.toHaveBeenCalled();
+
+    setRunSession({ pendingContentSystemType: mode });
+    const pending = snapshotSessionSave(defaultGameSession);
+    nav.handleCharacterSelect("knight");
+    expect(snapshotSessionSave(defaultGameSession)).toEqual(pending);
+    expect(deps.navigateTo).not.toHaveBeenCalled();
+  });
+
+  it("a stale difficulty Back action preserves and resumes an active Wildcard battle", () => {
+    setRunProgress({ characterId: "wildcard", runDeck: getStartingDeck("knight") });
+    dispatchGameplayCommand(
+      (draft) => {
+        setBattleActiveForTest(draft, true);
+        getBattleForTest(draft).battleState = makeTestBattleState({ turn: 4 });
+        setScreen(draft, ROUTE_SCREENS.BATTLE);
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    const before = snapshotSessionSave(defaultGameSession);
+    const deps = makeDeps();
+    createContentSystemNavigation(deps, defaultGameSession).handleBackFromDifficultySelect();
+    expect(snapshotSessionSave(defaultGameSession)).toEqual(before);
+    expect(readRunSession(defaultGameSession).activity.kind).toBe("battle");
+    expect(deps.resumeTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE);
+    expect(deps.navigateTo).not.toHaveBeenCalled();
+  });
+
   it("beginCampaign routes to character select when no active run", () => {
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps, defaultGameSession);
