@@ -9,8 +9,12 @@ import {
   getUniqueItemDefinition,
   type GearInstance,
 } from "@/lib/gear";
-import { mutateGearForTest, resetGearForTest, resetProfileForTest } from "../../../../helpers/run-domain-store-test";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
+import {
+  mutateGameplayForTest,
+  mutateGearForTest,
+  resetGearForTest,
+  resetProfileForTest,
+} from "../../../../helpers/run-domain-store-test";
 import {
   gearPersistenceCodec,
   readGearState,
@@ -85,22 +89,17 @@ describe("gear-store", () => {
     resetGearForTest();
     const loadouts = createEmptyGearLoadouts();
     loadouts.knight["left-accessory"] = "missing-ring";
-    dispatchGameplayCommand(
-      (draft) =>
-        acceptCommand(
-          gearPersistenceCodec.hydrate(
-            {
-              gearInventories: createEmptyGearInventories(),
-              gearLoadouts: loadouts,
-              ownedTrinketIds: ["bone-charm", "bogus-trinket"],
-              equippedTrinkets: { ...createEmptyEquippedTrinkets(), knight: "bone-charm", rogue: "bone-charm" },
-              craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
-            },
-            draft,
-          ),
-        ),
-      undefined,
-      defaultGameSession,
+    mutateGameplayForTest((draft) =>
+      gearPersistenceCodec.hydrate(
+        {
+          gearInventories: createEmptyGearInventories(),
+          gearLoadouts: loadouts,
+          ownedTrinketIds: ["bone-charm", "bogus-trinket"],
+          equippedTrinkets: { ...createEmptyEquippedTrinkets(), knight: "bone-charm", rogue: "bone-charm" },
+          craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
+        },
+        draft,
+      ),
     );
 
     expect(readGearState(defaultGameSession).loadouts.knight["left-accessory"]).toBeNull();

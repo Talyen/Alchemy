@@ -31,7 +31,11 @@ import {
   setCompanionRewardCards,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { defaultBattleState, battleSnapshot, type BattleSnapshot } from "@/lib/battle";
-import { createRunSessionCommand, type RunTransaction } from "@/features/alchemy/shared/stores/run-session-command";
+import {
+  createRunSessionCommand,
+  dispatchRunSessionCommand,
+  type RunTransaction,
+} from "@/features/alchemy/shared/stores/run-session-command";
 import { transactionDraft } from "@/features/alchemy/shared/stores/transaction-internal";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { defaultGameSession } from "@/app/application-session";
@@ -42,6 +46,16 @@ export function mutateGameplayForTest<Result>(
 ): Result {
   return dispatchGameplayCommand<Result>(
     (draft) => acceptCommand<Result>(mutate(draft)),
+    undefined,
+    defaultGameSession,
+  );
+}
+
+export function mutateRunForTest<Result>(
+  mutate: (transaction: RunTransaction) => Result & SynchronousResult<Result>,
+): Result {
+  return dispatchRunSessionCommand<Result>(
+    (transaction) => acceptCommand<Result>(mutate(transaction)),
     undefined,
     defaultGameSession,
   );

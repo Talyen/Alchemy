@@ -10,8 +10,7 @@ import {
   applyTalentState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { talentPool, canUnlockTalent, cardById } from "@/lib/game-data";
-import { resetAllTestStores } from "../helpers/run-domain-store-test";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
+import { mutateGameplayForTest, resetAllTestStores } from "../helpers/run-domain-store-test";
 import { readBattle, readRunSession, readRunProfile, readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import { setGold, setMaterials, setRunDeck, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
@@ -50,11 +49,7 @@ function start() {
 describe("retained headless rejection and persistence contracts", () => {
   it("previews an alteration after source selection and commits only through confirmation", () => {
     const controller = start();
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(setRunDeck(draft, [cardById.slash!])),
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => setRunDeck(draft, [cardById.slash!]));
     initializeAlchemyVisit("transmutation", defaultGameSession);
     const before = readActiveRun(defaultGameSession).runDeck;
     const catalog = createChoiceCatalog();
@@ -113,12 +108,12 @@ describe("retained headless rejection and persistence contracts", () => {
     if (activity.kind !== "shop") throw new Error("Shop not initialized");
     const card = activity.data.cards[0]!;
     const key = cardSlotKeyOf(card, 0);
-    dispatchGameplayCommand((draft) => acceptCommand(setGold(draft, 10000)), undefined, defaultGameSession);
+    mutateGameplayForTest((draft) => setGold(draft, 10000));
     expect(shop.buyCard(card, key)).toBe(true);
     const after = stateDigest(defaultGameSession);
     expect(shop.buyCard(card, key)).toBe(false);
     expect(stateDigest(defaultGameSession)).toBe(after);
-    dispatchGameplayCommand((draft) => acceptCommand(setGold(draft, 0)), undefined, defaultGameSession);
+    mutateGameplayForTest((draft) => setGold(draft, 0));
     const second = activity.data.cards[1]!;
     const poor = stateDigest(defaultGameSession);
     expect(shop.buyCard(second, cardSlotKeyOf(second, 1))).toBe(false);
@@ -127,11 +122,8 @@ describe("retained headless rejection and persistence contracts", () => {
 
   it("locks a claimed reward and rejects stale and duplicate claims", () => {
     const { flow } = start();
-    dispatchGameplayCommand(
-      (draft) =>
-        acceptCommand(setBattleState(draft, { ...readBattle(defaultGameSession).battleState, enemyHealth: 0 })),
-      undefined,
-      defaultGameSession,
+    mutateGameplayForTest((draft) =>
+      setBattleState(draft, { ...readBattle(defaultGameSession).battleState, enemyHealth: 0 }),
     );
     flow.handleBattleVictory();
     const before = stateDigest(defaultGameSession);
@@ -149,9 +141,9 @@ describe("retained headless rejection and persistence contracts", () => {
   it("settles mystery once even with an empty deck and preserves homestead upgrades", () => {
     const { flow } = start();
     // Targeted setup, deliberately separate from earned-career sampling.
-    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "destination")), undefined, defaultGameSession);
+    mutateGameplayForTest((draft) => setScreen(draft, "destination"));
     flow.beginMysteryEvent();
-    dispatchGameplayCommand((draft) => acceptCommand(setRunDeck(draft, [])), undefined, defaultGameSession);
+    mutateGameplayForTest((draft) => setRunDeck(draft, []));
     const visit = readRunSession(defaultGameSession).activity;
     if (visit.kind !== "mystery") throw new Error("Missing mystery");
     const choice = visit.data.mysteryEvent!.choices[0]!;
@@ -160,18 +152,8 @@ describe("retained headless rejection and persistence contracts", () => {
     flow.handleMysteryChoice(choice);
     expect(stateDigest(defaultGameSession)).toBe(after);
     const building = buildings[0]!;
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(setMaterials(draft, building.tiers[0]!.cost)),
-      undefined,
-      defaultGameSession,
-    );
-    expect(
-      dispatchGameplayCommand(
-        (draft) => acceptCommand(constructBuilding(draft, building.id)),
-        undefined,
-        defaultGameSession,
-      ),
-    ).toBe(true);
+    mutateGameplayForTest((draft) => setMaterials(draft, building.tiers[0]!.cost));
+    expect(mutateGameplayForTest((draft) => constructBuilding(draft, building.id))).toBe(true);
     expect(readRunProfile(defaultGameSession).constructedBuildings[building.id]).toBe(1);
   });
 
@@ -179,22 +161,10 @@ describe("retained headless rejection and persistence contracts", () => {
     const talent = talentPool.find(
       (entry) => canUnlockTalent(entry.keywordId, entry.id, { [entry.keywordId]: 1000 }, {}).ok,
     )!;
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(applyTalentState(draft, { [talent.keywordId]: 1000 }, {})),
-      undefined,
-      defaultGameSession,
-    );
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(unlockTalent(draft, talent.keywordId, talent.id)),
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => applyTalentState(draft, { [talent.keywordId]: 1000 }, {}));
+    mutateGameplayForTest((draft) => unlockTalent(draft, talent.keywordId, talent.id));
     expect(readRunProfile(defaultGameSession).unlockedTalents[talent.keywordId]).toContain(talent.id);
-    dispatchGameplayCommand(
-      (...args: Parameters<typeof resetUnlockedTalents>) => acceptCommand(resetUnlockedTalents(...args)),
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((...args: Parameters<typeof resetUnlockedTalents>) => resetUnlockedTalents(...args));
     expect(readRunProfile(defaultGameSession).unlockedTalents).toEqual({});
     expect(readRunProfile(defaultGameSession).talentXP[talent.keywordId]).toBe(1000);
   });
@@ -269,7 +239,7 @@ describe("retained headless rejection and persistence contracts", () => {
     start();
     await lifecycle.drain();
     const checkpoint = bytes;
-    dispatchGameplayCommand((draft) => acceptCommand(setGold(draft, 123)), undefined, defaultGameSession);
+    mutateGameplayForTest((draft) => setGold(draft, 123));
     lifecycle.dispose(false);
     expect(bytes).toBe(checkpoint);
     const loaded = await loadAlchemySaveState(defaultGameSession);

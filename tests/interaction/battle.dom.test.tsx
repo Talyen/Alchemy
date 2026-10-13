@@ -13,10 +13,10 @@ import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/use-run-reads";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { canPlayCard, isPlayerDefeated } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
 import {
+  mutateRunForTest,
   mutateGearForTest,
   replaceBattleForTest,
   resetAllTestStores,
@@ -52,11 +52,7 @@ defineSequenceFamily("battle", (seed) => {
     gear.initialize(cohort.inventories, cohort.loadouts, undefined, cohort.trinketIds, cohort.equippedTrinkets),
   );
   setRunSession({ hasActiveRun: true });
-  dispatchRunSessionCommand(
-    (draft) => acceptCommand(replaceBattleForTest(draft, cohort.battle)),
-    undefined,
-    defaultGameSession,
-  );
+  mutateRunForTest((draft) => replaceBattleForTest(draft, cohort.battle));
   const rect = () => ({ x: 0, y: 0, width: 100, height: 150 });
   const mounted = renderHook(
     ({ screen, menu }: { screen: Screen; menu: boolean }) => {

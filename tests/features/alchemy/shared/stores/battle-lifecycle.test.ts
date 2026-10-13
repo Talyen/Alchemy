@@ -9,11 +9,7 @@ import { createBattleStartCommands } from "@/features/alchemy/shared/stores/batt
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { abandonRun, restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import {
-  acceptCommand,
-  dispatchRunSessionCommand,
-  subscribeRunSessionCommits,
-} from "@/features/alchemy/shared/stores/run-session-command";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
 import { setHasActiveRun, setRunDeck } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createVictoryCommand } from "@/features/alchemy/run-loop/run/victory-commands";
 import { cardById, getStartingDeck } from "@/lib/game-data";
@@ -21,6 +17,7 @@ import { parseActiveRun } from "@/lib/validation";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { regressionBattle } from "../../../../fixtures/battle";
 import {
+  mutateRunForTest,
   initializeBattleForTest,
   resetAllTestStores,
   setRunProgress,
@@ -33,14 +30,9 @@ beforeEach(resetAllTestStores);
 
 it("rejects every battle command after End Run without changing progress, RNG, or revision", () => {
   const slash = { ...cardById.slash!, uid: 1 };
-  dispatchRunSessionCommand(
-    (transaction) => {
-      initializeBattleForTest(transaction, regressionBattle({ hand: [slash], mana: 10, wishOptions: [slash] }));
-      return acceptCommand();
-    },
-    undefined,
-    defaultGameSession,
-  );
+  mutateRunForTest((transaction) => {
+    initializeBattleForTest(transaction, regressionBattle({ hand: [slash], mana: 10, wishOptions: [slash] }));
+  });
   expect(abandonRun(defaultGameSession)).toBe(true);
   const before = readGameplayState(defaultGameSession);
   const commit = vi.fn();
@@ -64,15 +56,10 @@ it("rejects every battle command after End Run without changing progress, RNG, o
 });
 
 it("starts combat only once and preserves its activity while visiting the Menu", () => {
-  dispatchRunSessionCommand(
-    (transaction) => {
-      setHasActiveRun(transaction, true);
-      setRunDeck(transaction, getStartingDeck("knight"));
-      return acceptCommand();
-    },
-    undefined,
-    defaultGameSession,
-  );
+  mutateRunForTest((transaction) => {
+    setHasActiveRun(transaction, true);
+    setRunDeck(transaction, getStartingDeck("knight"));
+  });
   const started = vi.fn();
   const start = createBattleStartCommands(started, defaultGameSession);
   expect(start.startBattle({ enemyId: "goblin" })).not.toBeNull();
@@ -100,14 +87,9 @@ it.each([
   }
   const battle = regressionBattle({ enemyHealth: 0, contentSystemType: mode });
   if (mode === "wildwood") battle.currentEnemy = { ...battle.currentEnemy, enemyType: "boss" };
-  dispatchRunSessionCommand(
-    (transaction) => {
-      initializeBattleForTest(transaction, battle);
-      return acceptCommand();
-    },
-    undefined,
-    defaultGameSession,
-  );
+  mutateRunForTest((transaction) => {
+    initializeBattleForTest(transaction, battle);
+  });
   const settle = createVictoryCommand(defaultGameSession);
   expect(settle()).not.toBeNull();
   const reward = readRunSession(defaultGameSession).rewardFlow.state;
@@ -117,17 +99,12 @@ it.each([
 });
 
 it("resumes an unsettled victory and commits its rewards exactly once before presentation navigation", () => {
-  dispatchRunSessionCommand(
-    (transaction) => {
-      initializeBattleForTest(
-        transaction,
-        regressionBattle({ enemyHealth: 0, pendingMaterials: { ...emptyInventory(), gems: 2 } }),
-      );
-      return acceptCommand();
-    },
-    undefined,
-    defaultGameSession,
-  );
+  mutateRunForTest((transaction) => {
+    initializeBattleForTest(
+      transaction,
+      regressionBattle({ enemyHealth: 0, pendingMaterials: { ...emptyInventory(), gems: 2 } }),
+    );
+  });
   const saved = parseActiveRun(JSON.parse(JSON.stringify(snapshotRun(defaultGameSession))))!;
   expect(savedActivityData(saved, "battle")?.battleState.enemyHealth).toBe(0);
   restoreRun(saved, {}, {}, defaultGameSession);
@@ -156,17 +133,9 @@ it.each([
   { name: "defeated player", patch: { playerHealth: 0, deathsDoorUsed: true } },
 ])("rejects all player input during $name without resource, discovery, XP, RNG or revision changes", ({ patch }) => {
   const slash = { ...cardById.slash!, uid: 1 };
-  dispatchRunSessionCommand(
-    (transaction) => {
-      initializeBattleForTest(
-        transaction,
-        regressionBattle({ ...patch, hand: [slash], mana: 10, wishOptions: [slash] }),
-      );
-      return acceptCommand();
-    },
-    undefined,
-    defaultGameSession,
-  );
+  mutateRunForTest((transaction) => {
+    initializeBattleForTest(transaction, regressionBattle({ ...patch, hand: [slash], mana: 10, wishOptions: [slash] }));
+  });
   const before = readGameplayState(defaultGameSession);
   const commit = vi.fn();
   const unsubscribe = subscribeRunSessionCommits(commit, defaultGameSession);

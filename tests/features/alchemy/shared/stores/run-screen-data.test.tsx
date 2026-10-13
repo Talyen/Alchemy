@@ -1,5 +1,4 @@
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   setRunProgressActivity,
   setRewardState,
@@ -26,8 +25,12 @@ import { teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { emptyShopState, readActivityData } from "@/lib/active-run-session";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
-import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
-import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
+import {
+  mutateRunForTest,
+  resetAllTestStores,
+  setRunProgress,
+  setRunSession,
+} from "../../../../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(() => {
@@ -65,7 +68,7 @@ describe("screen hook coverage", () => {
 describe("screen-specific run data hooks", () => {
   it.each(["game-over", "run-victory"] as const)("retains the %s summary while teardown clears the run", (screen) => {
     setRunSession({ runEndTalentXP: { physical: 25 }, runEndLabyrinthFloor: 7 });
-    dispatchRunSessionCommand((draft) => acceptCommand(setScreen(draft, screen)), undefined, defaultGameSession);
+    mutateRunForTest((draft) => setScreen(draft, screen));
     const { result } = renderHook(() => useRunEndScreenData());
     const shown = result.current;
     act(() => teardownRun(defaultGameSession));
@@ -78,11 +81,7 @@ describe("screen-specific run data hooks", () => {
     setRunSession({ activity: { kind: "labyrinth-map" }, selectedLabyrinthNodeId: "room-1" });
     const { result } = renderHook(() => useLabyrinthMapScreenData());
     act(() => {
-      dispatchRunSessionCommand(
-        (draft) => acceptCommand(setShopState(draft, emptyShopState())),
-        undefined,
-        defaultGameSession,
-      );
+      mutateRunForTest((draft) => setShopState(draft, emptyShopState()));
       setRunSession({ selectedLabyrinthNodeId: null });
     });
     expect(readRunSession(defaultGameSession).selectedLabyrinthNodeId).toBeNull();
@@ -120,11 +119,7 @@ describe("screen-specific run data hooks", () => {
     });
 
     act(() => {
-      dispatchRunSessionCommand(
-        (draft) => acceptCommand(setRewardState(draft, { ...readRunSession(defaultGameSession).rewardFlow.state })),
-        undefined,
-        defaultGameSession,
-      );
+      mutateRunForTest((draft) => setRewardState(draft, { ...readRunSession(defaultGameSession).rewardFlow.state }));
     });
 
     expect(renders).toBe(1);
@@ -137,21 +132,9 @@ describe("screen-specific run data hooks", () => {
       renders += 1;
       return useShopScreenData();
     });
-    act(() =>
-      dispatchRunSessionCommand(
-        (draft) => acceptCommand(setShopState(draft, { ...emptyShopState(), refreshesLeft: 0 })),
-        undefined,
-        defaultGameSession,
-      ),
-    );
+    act(() => mutateRunForTest((draft) => setShopState(draft, { ...emptyShopState(), refreshesLeft: 0 })));
     const outgoing = result.current;
-    act(() =>
-      dispatchRunSessionCommand(
-        (draft) => acceptCommand(setRunProgressActivity(draft, "destination")),
-        undefined,
-        defaultGameSession,
-      ),
-    );
+    act(() => mutateRunForTest((draft) => setRunProgressActivity(draft, "destination")));
     expect(readRunSession(defaultGameSession).activity).toEqual({ kind: "destination" });
     expect(result.current).toBe(outgoing);
     expect(result.current.shopState.refreshesLeft).toBe(0);
@@ -161,13 +144,7 @@ describe("screen-specific run data hooks", () => {
     expect(result.current.gold).toBe(42);
     expect(renders).toBe(inactiveRenders);
 
-    act(() =>
-      dispatchRunSessionCommand(
-        (draft) => acceptCommand(setShopState(draft, emptyShopState())),
-        undefined,
-        defaultGameSession,
-      ),
-    );
+    act(() => mutateRunForTest((draft) => setShopState(draft, emptyShopState())));
     expect(result.current).not.toBe(outgoing);
     expect(result.current.shopState.refreshesLeft).toBe(emptyShopState().refreshesLeft);
     expect(result.current.gold).toBe(99);

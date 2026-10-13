@@ -1,4 +1,8 @@
-import { setBattleActiveForTest as setHasActiveBattle } from "../../../../helpers/run-domain-store-test";
+import {
+  mutateRunForTest,
+  setBattleActiveForTest as setHasActiveBattle,
+  resetRunDomainStore,
+} from "../../../../helpers/run-domain-store-test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
@@ -6,7 +10,6 @@ import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
 import { deepFreeze } from "@/features/alchemy/shared/stores/store-utils";
 import { useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
-import { resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
@@ -24,19 +27,13 @@ beforeEach(() => {
 
 describe("aggregate read ports", () => {
   it("reads every gameplay lifetime from the authoritative aggregate", () => {
-    dispatchRunSessionCommand(
-      (draft) => {
-        setGold(draft, 23);
-        setHasActiveRun(draft, true);
-        setHasActiveBattle(draft, true);
-        setRunProfileMaterials(draft, { wood: 4, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
-        setFinishedRunCharacters(draft, ["knight"]);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((draft) => {
+      setGold(draft, 23);
+      setHasActiveRun(draft, true);
+      setHasActiveBattle(draft, true);
+      setRunProfileMaterials(draft, { wood: 4, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
+      setFinishedRunCharacters(draft, ["knight"]);
+    });
 
     expect(readRunProfile(defaultGameSession).gold).toBe(23);
     expect(readRunSession(defaultGameSession).hasActiveRun).toBe(true);

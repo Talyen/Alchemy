@@ -1,12 +1,15 @@
 import { setRunProgressActivity } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setBattleActiveForTest as setHasActiveBattle } from "../../../../../helpers/run-domain-store-test";
+import {
+  mutateRunForTest,
+  setBattleActiveForTest as setHasActiveBattle,
+  mutateGearForTest,
+  resetAllTestStores,
+} from "../../../../../helpers/run-domain-store-test";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import "../../../../../helpers/mock-audio";
 import { battlePresentation } from "@/app/battle-presentation";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
-import { mutateGearForTest, resetAllTestStores } from "../../../../../helpers/run-domain-store-test";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   setHasActiveRun,
   setMaterials,
@@ -51,11 +54,7 @@ describe("Armory route commands", () => {
     );
 
     act(() => {
-      dispatchRunSessionCommand(
-        (draft) => acceptCommand(setMaterials(draft, emptyInventory())),
-        undefined,
-        defaultGameSession,
-      );
+      mutateRunForTest((draft) => setMaterials(draft, emptyInventory()));
       expect(result.current.onSalvage(armor.instanceId)).toBe(true);
     });
 
@@ -74,19 +73,13 @@ describe("Armory route commands", () => {
     const inventories = createEmptyGearInventories();
     inventories.rogue = [armor];
     mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
-    dispatchRunSessionCommand(
-      (draft) => {
-        initializeActiveRun(draft, null, "knight");
-        setRunMaxHealth(draft, 30);
-        setRunPlayerHealth(draft, 30);
-        setHasActiveRun(draft, true);
-        setRunProgressActivity(draft, "destination");
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((draft) => {
+      initializeActiveRun(draft, null, "knight");
+      setRunMaxHealth(draft, 30);
+      setRunPlayerHealth(draft, 30);
+      setHasActiveRun(draft, true);
+      setRunProgressActivity(draft, "destination");
+    });
 
     const { result } = renderHook(
       () => useAlchemyRunController(defaultGameSession, battlePresentation).routeCommands.meta.armory,
@@ -99,7 +92,7 @@ describe("Armory route commands", () => {
     expect(readActiveRun(defaultGameSession).runMaxHealth).toBe(30);
     expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(30);
 
-    dispatchRunSessionCommand((draft) => acceptCommand(setHasActiveRun(draft, false)), undefined, defaultGameSession);
+    mutateRunForTest((draft) => setHasActiveRun(draft, false));
   });
 
   it("counts homestead salvage toward run-earned materials during an active run", () => {
@@ -107,18 +100,12 @@ describe("Armory route commands", () => {
     const inventories = createEmptyGearInventories();
     inventories.knight = [armor];
     mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
-    dispatchRunSessionCommand(
-      (draft) => {
-        initializeActiveRun(draft, null, "knight");
-        setHasActiveRun(draft, true);
-        setRunProgressActivity(draft, "destination");
-        setMaterials(draft, emptyInventory());
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((draft) => {
+      initializeActiveRun(draft, null, "knight");
+      setHasActiveRun(draft, true);
+      setRunProgressActivity(draft, "destination");
+      setMaterials(draft, emptyInventory());
+    });
 
     const { result } = renderHook(
       () => useAlchemyRunController(defaultGameSession, battlePresentation).routeCommands.meta.armory,
@@ -132,7 +119,7 @@ describe("Armory route commands", () => {
     expect(readActiveRun(defaultGameSession).runMaterialsEarned.iron).toBe(9);
     expect(readActiveRun(defaultGameSession).runCurrenciesEarned).toEqual(computeSalvageYield(armor).currencies);
 
-    dispatchRunSessionCommand((draft) => acceptCommand(setHasActiveRun(draft, false)), undefined, defaultGameSession);
+    mutateRunForTest((draft) => setHasActiveRun(draft, false));
   });
 
   it("spawns dev gear through the HP-sync command path", () => {
@@ -174,17 +161,11 @@ describe("Armory route commands", () => {
     const inventories = createEmptyGearInventories();
     inventories.knight = [armor];
     mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
-    dispatchRunSessionCommand(
-      (draft) => {
-        setHasActiveRun(draft, true);
-        setRunProgressActivity(draft, "destination");
-        setHasActiveBattle(draft, true);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((draft) => {
+      setHasActiveRun(draft, true);
+      setRunProgressActivity(draft, "destination");
+      setHasActiveBattle(draft, true);
+    });
 
     const { result } = renderHook(
       () => useAlchemyRunController(defaultGameSession, battlePresentation).routeCommands.meta.armory,
@@ -197,11 +178,7 @@ describe("Armory route commands", () => {
     expect(readGearState(defaultGameSession).loadouts.knight.body).toBeNull();
     expect(flushSaveAfterGearMutation).not.toHaveBeenCalled();
 
-    dispatchRunSessionCommand(
-      (draft) => acceptCommand(setHasActiveBattle(draft, false)),
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((draft) => setHasActiveBattle(draft, false));
   });
 
   it("flushes after successful equip, unequip, trinket, and currency mutations", () => {

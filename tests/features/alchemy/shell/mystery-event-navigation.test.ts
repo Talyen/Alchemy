@@ -1,10 +1,14 @@
 import "../../../helpers/mock-audio";
-
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/navigation/mystery-event-navigation";
-import { resetAllTestStores, resetProfileForTest } from "../../../helpers/run-domain-store-test";
-import { setRunProgress, setRunSession } from "../../../helpers/run-domain-store-test";
-import { acceptCommand, subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
+import {
+  mutateRunForTest,
+  resetAllTestStores,
+  resetProfileForTest,
+  setRunProgress,
+  setRunSession,
+} from "../../../helpers/run-domain-store-test";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   readActiveRun,
   readRunProfile,
@@ -232,15 +236,9 @@ describe("createMysteryEventNavigation", () => {
     const { dispatchRunSessionCommand } = await import("@/features/alchemy/shared/stores/run-session-command");
     const { setMysteryCardChoices } = await import("@/features/alchemy/shared/stores/run-session-write-port");
     const { cardById } = await import("@/lib/game-data");
-    dispatchRunSessionCommand(
-      (draft) => {
-        setMysteryCardChoices(draft, [cardById["slash"], cardById["block"]].filter(Boolean) as never);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((draft) => {
+      setMysteryCardChoices(draft, [cardById["slash"], cardById["block"]].filter(Boolean) as never);
+    });
 
     nav.handleMysteryChooseCard("slash");
     nav.handleMysteryChooseCard("block");

@@ -1,4 +1,9 @@
-import { setBattleActiveForTest, getBattleForTest } from "../../../../helpers/run-domain-store-test";
+import {
+  mutateGameplayForTest,
+  setBattleActiveForTest,
+  getBattleForTest,
+  resetAllTestStores,
+} from "../../../../helpers/run-domain-store-test";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
@@ -12,8 +17,7 @@ import {
   applyCurrencyToGear,
   salvageGear,
 } from "@/features/alchemy/shared/stores/gear-commands";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
-import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
+
 import type { GearInstance } from "@/lib/gear";
 import { defaultGameSession } from "@/app/application-session";
 
@@ -36,16 +40,10 @@ describe("combat equipment protection", () => {
       },
       defaultGameSession,
     );
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.session.activity = { kind: "idle" };
-        setBattleActiveForTest(draft, true);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      draft.session.activity = { kind: "idle" };
+      setBattleActiveForTest(draft, true);
+    });
   });
 
   it("rejects every route to changing a battle loadout without touching state or RNG", () => {
@@ -99,29 +97,17 @@ describe("combat equipment protection", () => {
   });
 
   it("keeps a pending lethal transition reserved until the battle lifecycle ends", () => {
-    dispatchGameplayCommand(
-      (draft) => {
-        getBattleForTest(draft).battleState.enemyHealth = 0;
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      getBattleForTest(draft).battleState.enemyHealth = 0;
+    });
     expect(deriveGearCombatRestrictions(readGameplayState(defaultGameSession))).toEqual({
       characters: { knight: ["campaign"] },
       gear: { [sword.instanceId]: "knight" },
       trinkets: { "brass-censer": "knight" },
     });
-    dispatchGameplayCommand(
-      (draft) => {
-        setBattleActiveForTest(draft, false);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      setBattleActiveForTest(draft, false);
+    });
     expect(deriveGearCombatRestrictions(readGameplayState(defaultGameSession))).toEqual({
       characters: {},
       gear: {},

@@ -1,6 +1,10 @@
 import "../../../helpers/mock-audio";
-
-import { setBattleActiveForTest as setHasActiveBattle } from "../../../helpers/run-domain-store-test";
+import {
+  mutateRunForTest,
+  setBattleActiveForTest as setHasActiveBattle,
+  resetAllTestStores,
+  setRunSession,
+} from "../../../helpers/run-domain-store-test";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
@@ -8,10 +12,8 @@ import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
 import { battlePresentation } from "@/app/battle-presentation";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { resetAllTestStores, setRunSession } from "../../../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(() => {
@@ -145,16 +147,10 @@ describe("useBattleController", () => {
 
   it("clears floating combat text and other VFX when leaving battle screen with active combat", async () => {
     vi.useFakeTimers();
-    dispatchRunSessionCommand(
-      (draft) => {
-        setHasActiveBattle(draft, true);
-        setScreen(draft, ROUTE_SCREENS.BATTLE);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((draft) => {
+      setHasActiveBattle(draft, true);
+      setScreen(draft, ROUTE_SCREENS.BATTLE);
+    });
 
     const { rerender } = renderBattleController(ROUTE_SCREENS.BATTLE);
 

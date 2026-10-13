@@ -2,15 +2,12 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/persistence";
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-
 import {
   setHasActiveRun,
   setRunProgressActivity,
   setScreen,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { resetAllTestStores } from "../helpers/run-domain-store-test";
-import { setRunProgress } from "../helpers/run-domain-store-test";
+import { mutateRunForTest, resetAllTestStores, setRunProgress } from "../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(() => {
@@ -20,17 +17,11 @@ beforeEach(() => {
 describe("resolveActiveRunForSave", () => {
   it("snapshots the live activity independently of presentation navigation", () => {
     setRunProgress({ gold: 15, initialized: true });
-    dispatchRunSessionCommand(
-      (draft) => {
-        setHasActiveRun(draft, true);
-        setRunProgressActivity(draft, "destination");
-        setScreen(draft, ROUTE_SCREENS.DESTINATION);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((draft) => {
+      setHasActiveRun(draft, true);
+      setRunProgressActivity(draft, "destination");
+      setScreen(draft, ROUTE_SCREENS.DESTINATION);
+    });
 
     const activeRun = resolveActiveRunForSave(defaultGameSession);
     const save = buildAlchemySaveDataFromStores(defaultGameSession);
@@ -43,16 +34,10 @@ describe("resolveActiveRunForSave", () => {
 
   it("does not resurrect active run after defeat when a later store write occurs on game-over", () => {
     setRunProgress({ gold: 99, initialized: true });
-    dispatchRunSessionCommand(
-      (draft) => {
-        setHasActiveRun(draft, false);
-        setScreen(draft, ROUTE_SCREENS.GAME_OVER);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((draft) => {
+      setHasActiveRun(draft, false);
+      setScreen(draft, ROUTE_SCREENS.GAME_OVER);
+    });
 
     setRunProgress({ gold: 100 });
 
