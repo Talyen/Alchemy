@@ -60,7 +60,7 @@ describe("session-bound React controllers", () => {
     runtime.settings.getState().setRememberAutoplayPreference(true);
     const first = renderHook(() => useBattleController({ ...a, screen: "menu" }));
     const second = renderHook(() => useBattleController({ ...b, screen: "menu" }));
-    const deactivate = runtime.progressCompletion.activate(() => {});
+    const deactivate = runtime.progressCompletion.registerRetryDriver(() => {});
     try {
       act(() => {
         dispatchRunSessionCommand(

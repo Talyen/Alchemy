@@ -111,7 +111,9 @@ describe("saved battle card recovery", () => {
           },
         },
       });
-      expect(commitCardPlay(0, summon.id, defaultGameSession)).not.toBeNull();
+      expect(
+        commitCardPlay(readBattle(defaultGameSession).battleState, 0, summon.id, defaultGameSession),
+      ).not.toBeNull();
       const after = readBattle(defaultGameSession).battleState;
       expect(after.activeCompanion?.id).toBe("wolf");
       expect(after).toMatchObject({

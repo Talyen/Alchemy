@@ -31,7 +31,10 @@ function openBattle() {
 describe("commitEndTurn", () => {
   it("commits the resolved turn and clears any pending transition", () => {
     openBattle();
-    const result = commitEndTurn(createBattleCapabilities(defaultGameSession));
+    const result = commitEndTurn(
+      createBattleCapabilities(defaultGameSession),
+      readBattle(defaultGameSession).battleState,
+    );
     if (!result) throw new Error("Expected a committed turn");
     expect(result.frames.length).toBeGreaterThan(0);
     expect(readBattle(defaultGameSession).battleState).toEqual(battleSnapshot(result.state));

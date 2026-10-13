@@ -104,7 +104,7 @@ describe("retained headless rejection and persistence contracts", () => {
   it("rejects stale combat choices without consuming world RNG", () => {
     start();
     const before = stateDigest(defaultGameSession);
-    expect(commitCardPlay(0, "not-offered", defaultGameSession)).toBeNull();
+    expect(commitCardPlay(readBattle(defaultGameSession).battleState, 0, "not-offered", defaultGameSession)).toBeNull();
     expect(stateDigest(defaultGameSession)).toBe(before);
   });
 

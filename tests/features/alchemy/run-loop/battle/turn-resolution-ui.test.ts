@@ -59,7 +59,10 @@ describe("resolved turns", () => {
       undefined,
       defaultGameSession,
     );
-    const result = commitEndTurn(createBattleCapabilities(defaultGameSession));
+    const result = commitEndTurn(
+      createBattleCapabilities(defaultGameSession),
+      readBattle(defaultGameSession).battleState,
+    );
     if (!result) throw new Error("Expected a committed turn");
     expect(result.frames[0]?.turn.kind).toBe("haste");
     expect(readBattle(defaultGameSession)).not.toHaveProperty("pendingBattleTransition");

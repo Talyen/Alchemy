@@ -42,12 +42,17 @@ describe("battle Wish discovery", () => {
       undefined,
       defaultGameSession,
     );
-    expect(commitBattleWish(chosen.id, defaultGameSession)).not.toBeNull();
+    expect(commitBattleWish(readBattle(defaultGameSession).battleState, chosen.id, defaultGameSession)).not.toBeNull();
     expect(readGameplayState(defaultGameSession).profile.discoveredCardIds).toContain(chosen.id);
     expect(readBattle(defaultGameSession).battleState.discoveredCardIds).toContain(chosen.id);
-    expect(commitCardPlay(0, wish.id, defaultGameSession)?.state.wishOptions?.map((card) => card.id)).toContain(
-      stillMissing.id,
-    );
+    expect(
+      commitCardPlay(
+        readBattle(defaultGameSession).battleState,
+        0,
+        wish.id,
+        defaultGameSession,
+      )?.state.wishOptions?.map((card) => card.id),
+    ).toContain(stillMissing.id);
   });
 
   it("Roads Not Taken discovers its bonus card even when both cards enter the hand queue", () => {
@@ -71,7 +76,7 @@ describe("battle Wish discovery", () => {
       undefined,
       defaultGameSession,
     );
-    const after = commitBattleWish(chosen.id, defaultGameSession);
+    const after = commitBattleWish(readBattle(defaultGameSession).battleState, chosen.id, defaultGameSession);
     expect(after?.pendingHandCards.map((card) => card.id)).toEqual([chosen.id, bonus.id]);
     expect(readGameplayState(defaultGameSession).profile.discoveredCardIds).toEqual(
       expect.arrayContaining([chosen.id, bonus.id]),

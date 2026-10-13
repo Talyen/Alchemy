@@ -107,9 +107,15 @@ function replaySimulation(config: BattleSimulationConfig, patch: Partial<battle.
     defaultGameSession,
   );
   for (const [index, action] of actions.entries()) {
-    if (action.kind === "play") expect(commitCardPlay(action.index, action.cardId, defaultGameSession)).not.toBeNull();
-    else if (action.kind === "wish") expect(commitBattleWish(action.cardId, defaultGameSession)).not.toBeNull();
-    else commitEndTurn(defaultGameSession);
+    if (action.kind === "play")
+      expect(
+        commitCardPlay(readBattle(defaultGameSession).battleState, action.index, action.cardId, defaultGameSession),
+      ).not.toBeNull();
+    else if (action.kind === "wish")
+      expect(
+        commitBattleWish(readBattle(defaultGameSession).battleState, action.cardId, defaultGameSession),
+      ).not.toBeNull();
+    else commitEndTurn(readBattle(defaultGameSession).battleState, defaultGameSession);
     expect(readBattle(defaultGameSession).battleState, `snapshot after action ${index}: ${action.kind}`).toEqual(
       action.state,
     );

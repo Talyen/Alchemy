@@ -92,7 +92,7 @@ describe("run architecture type contracts", () => {
       Extract<keyof BattleApi, "playBattleCardResolved" | "chooseWishCard" | "endPlayerTurn" | "resolveTurnSequence">
     >().toEqualTypeOf<never>();
   });
-  it("requires a career for reusable reads, writes, and persistence while bound methods need none", () => {
+  it("requires a career for reusable ports and an offered snapshot for bound combat input", () => {
     // @ts-expect-error -- missing ownership must never select the application career
     readBattle();
     // @ts-expect-error -- combat writes require an owner
@@ -101,7 +101,14 @@ describe("run architecture type contracts", () => {
     dispatchRunSessionCommand(() => acceptCommand());
     // @ts-expect-error -- save IO cannot choose a career implicitly
     saveAlchemySaveData({} as UnstampedSaveData);
-    expectTypeOf(createBattleCapabilities(defaultGameSession).endTurn).parameters.toEqualTypeOf<[]>();
+    const battle = createBattleCapabilities(defaultGameSession);
+    expectTypeOf(battle.endTurn).parameters.toEqualTypeOf<[BattleSnapshot]>();
+    // @ts-expect-error -- retained commands cannot silently target the latest turn
+    battle.endTurn();
+    // @ts-expect-error -- card input must carry its offered snapshot
+    battle.playCard(0, "slash");
+    // @ts-expect-error -- Wish IDs can recur in a later queue
+    battle.chooseWish("slash");
     expectTypeOf(createSessionPersistence(defaultGameSession).snapshot).parameters.toEqualTypeOf<[]>();
     expectTypeOf(createSessionPersistence(defaultGameSession).clear).parameters.toEqualTypeOf<
       [("default" | "localWipe")?]
