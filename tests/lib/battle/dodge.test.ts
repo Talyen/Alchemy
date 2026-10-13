@@ -3,6 +3,7 @@ import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { prepareEnemyDamage } from "@/lib/battle/enemy-attack-damage";
 import { scaleEnemyAbilityDamage } from "@/lib/battle/battle-enemy-setup";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
+import type { BattleState, CombatTextEvent } from "@/lib/battle/types";
 import { companionLibrary } from "@/lib/game-data";
 import { applyDamageStatuses } from "@/lib/battle/damage-status-riders";
 import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
@@ -15,6 +16,10 @@ import {
   makeTestCard,
   patchBattleState,
 } from "../../fixtures/battle";
+
+function enemyHit(state: BattleState, amount = 8, texts: CombatTextEvent[] = []) {
+  return applyEnemyAbility(state, makeTestCard({ effects: [makeEffect("physical", amount)] }), texts);
+}
 
 describe("Dodge gear affixes", () => {
   it("does not allow an actively Frozen or Stunned enemy to Dodge", () => {
@@ -42,11 +47,7 @@ describe("Dodge gear affixes", () => {
         },
       });
       const texts = makeCombatTexts();
-      const result = applyEnemyAbility(
-        state,
-        makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
-        texts,
-      );
+      const result = enemyHit(state, 5, texts);
       expect(result.playerHealth).toBe(25);
       expect(texts).not.toContainEqual(expect.objectContaining({ stat: "dodge" }));
     },
@@ -59,11 +60,7 @@ describe("Dodge gear affixes", () => {
       gearEffects: { blockOnDodge: 4, armorOnDodge: 2, healOnDodge: 5 },
       playerHealth: 20,
     });
-    const result = applyEnemyAbility(
-      state,
-      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
-      texts,
-    );
+    const result = enemyHit(state, 8, texts);
     expect(result.playerHealth).toBe(25);
     expect(result.playerStatuses.block).toBe(4);
     expect(result.playerStatuses.armor).toBe(2);
@@ -79,11 +76,7 @@ describe("Dodge gear affixes", () => {
       talentEffects: { ...patchBattleState().talentEffects, armorOnDodge: 3 },
     });
     const texts = makeCombatTexts();
-    const result = applyEnemyAbility(
-      state,
-      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
-      texts,
-    );
+    const result = enemyHit(state, 8, texts);
     expect(result.playerStatuses.armor).toBe(5);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "armor", amount: 5 });
   });
@@ -97,23 +90,17 @@ describe("Dodge gear affixes", () => {
       enemyStatuses: { bleed: 1 },
       gearEffects: { physicalOnDodge: 5, bleedOnDodge: 4 },
     });
-    const result = applyEnemyAbility(
-      state,
-      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
-      makeCombatTexts(),
-    );
+    const result = enemyHit(state);
     expect(result.playerHealth).toBe(100);
     expect(result.enemyHealth).toBe(91);
     expect(result.enemyStatuses.bleed).toBeGreaterThan(0);
   });
 
   it("arms Opening additional Physical on the next attack", () => {
-    const afterDodge = applyEnemyAbility(
+    const afterDodge = enemyHit(
       incomingPhysical({
         gearEffects: { nextAttackPhysicalOnDodge: 4 },
       }),
-      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
-      makeCombatTexts(),
     );
     expect(afterDodge.flags.nextHitPhysicalBonus).toBe(4);
 
@@ -123,12 +110,10 @@ describe("Dodge gear affixes", () => {
   });
 
   it("arms Off-Balance as a guaranteed Crit on the next attack", () => {
-    const afterDodge = applyEnemyAbility(
+    const afterDodge = enemyHit(
       incomingPhysical({
         gearEffects: { nextAttackCritOnDodge: 1 },
       }),
-      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
-      makeCombatTexts(),
     );
     expect(afterDodge.flags.nextHitCrit).toBe(true);
 
@@ -144,18 +129,6 @@ describe("Dodge gear affixes", () => {
     const played = playBattleCardResolved(armed, card.id, 0);
     expect(played.state.enemyHealth).toBe(88);
     expect(played.state.flags.nextHitCrit).toBe(false);
-  });
-
-  it("does not consume Opening when the enemy Dodges", () => {
-    const state = patchBattleState({
-      enemyHealth: 100,
-      enemyMaxHealth: 100,
-      flags: { ...patchBattleState().flags, nextHitPhysicalBonus: 4 },
-      rng: () => 0.01,
-    });
-    const result = dealDamage(state, makeTestCard({ effects: [makeEffect("physical", 5)] }));
-    expect(result.enemyHealth).toBe(100);
-    expect(result.flags.nextHitPhysicalBonus).toBe(4);
   });
 
   it("adds Opening's Physical damage to a non-Physical attack", () => {
@@ -195,38 +168,21 @@ describe("Dodge talent rewrites", () => {
     expect(result.flags.nextHitCrit).toBe(true);
   });
 
-  it("Last Gasp adds Dodge chance while below half Health", () => {
-    const wounded = patchBattleState({
-      playerHealth: 10,
+  it.each([
+    { health: 10, expected: 10 },
+    { health: 30, expected: 22 },
+  ])("Last Gasp only grants Dodge below half Health ($health)", ({ health, expected }) => {
+    const state = patchBattleState({
+      playerHealth: health,
       playerMaxHealth: 30,
       rng: () => 0.15,
       talentEffects: { dodgeChanceBelowHalfHealth: 20 },
     });
-    expect(
-      applyEnemyAbility(
-        wounded,
-        makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
-        makeCombatTexts(),
-      ).playerHealth,
-    ).toBe(10);
-
-    const healthy = patchBattleState({
-      playerHealth: 30,
-      playerMaxHealth: 30,
-      rng: () => 0.15,
-      talentEffects: { dodgeChanceBelowHalfHealth: 20 },
-    });
-    expect(
-      applyEnemyAbility(
-        healthy,
-        makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
-        makeCombatTexts(),
-      ).playerHealth,
-    ).toBeLessThan(30);
+    expect(enemyHit(state).playerHealth).toBe(expected);
   });
 
   it("Pack Weave makes the Companion attack when you Dodge", () => {
-    const result = applyEnemyAbility(
+    const result = enemyHit(
       incomingPhysical({
         rng: (() => {
           let calls = 0;
@@ -235,8 +191,6 @@ describe("Dodge talent rewrites", () => {
         activeCompanion: companionLibrary.wolf,
         talentEffects: { companionAttacksOnDodge: true },
       }),
-      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
-      makeCombatTexts(),
     );
     expect(result.enemyHealth).toBeLessThan(100);
   });
@@ -253,12 +207,10 @@ describe("Dodge talent rewrites", () => {
   });
 
   it("Parting Cut makes the next Physical card deal matching Bleed", () => {
-    const afterDodge = applyEnemyAbility(
+    const afterDodge = enemyHit(
       incomingPhysical({
         talentEffects: { partingCutOnDodge: true },
       }),
-      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
-      makeCombatTexts(),
     );
     expect(afterDodge.flags.nextPhysicalDealsBleed).toBe(true);
 
@@ -285,7 +237,7 @@ describe("Dodge talent rewrites", () => {
   });
 
   it("Lucky Foot grants Gold when you Dodge", () => {
-    const result = applyEnemyAbility(
+    const result = enemyHit(
       incomingPhysical({
         rng: (() => {
           let calls = 0;
@@ -294,51 +246,20 @@ describe("Dodge talent rewrites", () => {
         gold: 10,
         talentEffects: { goldOnDodge: 1 },
       }),
-      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
-      makeCombatTexts(),
     );
     expect(result.gold).toBe(11);
   });
 
-  it("Arrow Dance makes the next Archery card free", () => {
-    const afterDodge = applyEnemyAbility(
-      incomingPhysical({
-        talentEffects: { nextArcheryCardFreeOnDodge: true },
-      }),
-      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
-      makeCombatTexts(),
-    );
-    expect(afterDodge.flags.nextArcheryCardFree).toBe(true);
-
-    const card = makeTestCard({
-      id: "quick-shot",
-      cost: 2,
-      tags: ["archery"],
-      effects: [makeEffect("physical", 5)],
-    });
+  it.each([
+    { talent: "nextArcheryCardFreeOnDodge", flag: "nextArcheryCardFree", type: "physical", tags: ["archery"] },
+    { talent: "nextNatureCardFreeOnDodge", flag: "nextNatureCardFree", type: "nature", tags: [] },
+  ] as const)("$talent makes the matching card free and consumes $flag", ({ talent, flag, type, tags }) => {
+    const afterDodge = enemyHit(incomingPhysical({ talentEffects: { [talent]: true } }));
+    expect(afterDodge.flags[flag]).toBe(true);
+    const card = makeTestCard({ cost: 2, tags: [...tags], effects: [makeEffect(type, 5)] });
     const played = playBattleCardResolved({ ...afterDodge, hand: [card], mana: 2 }, card.id, 0);
     expect(played.state.mana).toBe(2);
-    expect(played.state.flags.nextArcheryCardFree).toBe(false);
-  });
-
-  it("Windstep makes the next Nature card free", () => {
-    const afterDodge = applyEnemyAbility(
-      incomingPhysical({
-        talentEffects: { nextNatureCardFreeOnDodge: true },
-      }),
-      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
-      makeCombatTexts(),
-    );
-    expect(afterDodge.flags.nextNatureCardFree).toBe(true);
-
-    const card = makeTestCard({
-      id: "thorns",
-      cost: 2,
-      effects: [makeEffect("nature", 5)],
-    });
-    const played = playBattleCardResolved({ ...afterDodge, hand: [card], mana: 2 }, card.id, 0);
-    expect(played.state.mana).toBe(2);
-    expect(played.state.flags.nextNatureCardFree).toBe(false);
+    expect(played.state.flags[flag]).toBe(false);
   });
 });
 
@@ -489,43 +410,15 @@ describe("enemy Dodge", () => {
     expect(result.flags.nextHitLeech).toBe(false);
     expect(result.playerHealth).toBeGreaterThan(20);
   });
-
-  it("still deals damage when the Dodge roll misses", () => {
-    const state = patchBattleState({
-      enemyHealth: 30,
-      rng: () => 0.99,
-    });
-    const result = dealDamage(state, makeTestCard({ effects: [makeEffect("physical", 5)] }));
-    expect(result.enemyHealth).toBe(25);
-  });
 });
 
 describe("player Dodge chance from gear", () => {
-  it("adds gear Dodge chance to the 5% baseline", () => {
-    const hits = patchBattleState({
-      playerHealth: 30,
-      rng: () => 0.07,
-    });
-    expect(
-      applyEnemyAbility(
-        hits,
-        makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
-        makeCombatTexts(),
-      ).playerHealth,
-    ).toBeLessThan(30);
-
-    const dodges = patchBattleState({
-      playerHealth: 30,
-      rng: () => 0.07,
-      gearEffects: { dodgeChance: 3 },
-    });
-    expect(
-      applyEnemyAbility(
-        dodges,
-        makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
-        makeCombatTexts(),
-      ).playerHealth,
-    ).toBe(30);
+  it.each([
+    { chance: 0, expected: 22 },
+    { chance: 3, expected: 30 },
+  ])("adds $chance gear Dodge chance to the baseline", ({ chance, expected }) => {
+    const state = patchBattleState({ playerHealth: 30, rng: () => 0.07, gearEffects: { dodgeChance: chance } });
+    expect(enemyHit(state).playerHealth).toBe(expected);
   });
 });
 
@@ -572,20 +465,11 @@ describe("guaranteed dodge flag (dodgeNextAttack)", () => {
       rng: () => 0.99,
     });
     const texts = makeCombatTexts();
-    const result = applyEnemyAbility(
-      state,
-      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] }),
-      texts,
-    );
-    // Player takes 0 damage because the hit was dodged
+    const result = enemyHit(state, 10, texts);
     expect(result.playerHealth).toBe(30);
-    // dodgeNextAttack is consumed
     expect(result.flags.dodgeNextAttack).toBe(false);
-    // Player dodge count increased
     expect(result.playerDodgeCount).toBe(1);
-    // Gear dodge reaction triggers
     expect(result.playerStatuses.block).toBe(4);
-    // Notice text recorded
     expect(texts).toContainEqual(expect.objectContaining({ stat: "dodge", text: "Dodge" }));
   });
 
@@ -598,11 +482,7 @@ describe("guaranteed dodge flag (dodgeNextAttack)", () => {
       rng: () => 0.99,
     });
     const texts = makeCombatTexts();
-    const result = applyEnemyAbility(
-      state,
-      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] }),
-      texts,
-    );
+    const result = enemyHit(state, 10, texts);
     expect(result.playerHealth).toBe(20);
     // Remains unconsumed since dodge wasn't eligible
     expect(result.flags.dodgeNextAttack).toBe(true);

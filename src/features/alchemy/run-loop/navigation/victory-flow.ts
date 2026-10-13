@@ -230,19 +230,15 @@ function prepareVictoryDestinations(
   effectiveMaxHealth: number,
   destinationRng: () => number,
 ) {
-  const skipDestinationSampling = input.contentSystemType === CONTENT_SYSTEMS.LABYRINTH;
-  const eligibleDestinations = skipDestinationSampling
-    ? []
-    : resolveAvailableDestinations({
-        ...input.destinationEligibility,
-        runPlayerHealth: playerHealth,
-        gold: persistedGold,
-        runMaxHealth: effectiveMaxHealth,
-      });
-  const sampled = skipDestinationSampling
-    ? { choices: [] as Destination[], offerState: input.destinationOfferState }
-    : sampleDestinationChoices(eligibleDestinations, input.destinationOfferState, destinationRng);
-  return sampled;
+  if (input.contentSystemType === CONTENT_SYSTEMS.LABYRINTH)
+    return { choices: [] as Destination[], offerState: input.destinationOfferState };
+  const eligibleDestinations = resolveAvailableDestinations({
+    ...input.destinationEligibility,
+    runPlayerHealth: playerHealth,
+    gold: persistedGold,
+    runMaxHealth: effectiveMaxHealth,
+  });
+  return sampleDestinationChoices(eligibleDestinations, input.destinationOfferState, destinationRng);
 }
 
 export function computeVictoryRewards(
