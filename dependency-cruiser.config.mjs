@@ -83,7 +83,7 @@ export default {
       comment: "Feature commands use readonly transactions and domain operations; hydration is trusted infrastructure.",
       from: { pathNot: "^src/features/alchemy/shared/(stores/|storage/persistence\\.ts$)" },
       to: {
-        path: "^src/features/alchemy/shared/stores/(gameplay-command|transaction-internal|readonly-view|gear-session-command|gear-actions)\\.ts$",
+        path: "^src/features/alchemy/shared/stores/(gameplay-command|transaction-internal|readonly-view|boundary-data|gear-session-command|gear-actions)\\.ts$",
       },
     },
   ].map((rule) => ({

@@ -1,6 +1,6 @@
 import { deepFreeze } from "./store-utils";
 import { logError } from "@/lib/error-logger";
-import { createInitialGearState } from "./gear-actions";
+import { createInitialGearState } from "./gear-state-defaults";
 import type { GearStateFields } from "./gear-store-types";
 import type { ProfileStateFields } from "./profile-store-types";
 import { createInitialProfileState } from "./profile-store-types";
