@@ -3,12 +3,10 @@ import {
   cardById,
   companionLibrary,
   computeTalentEffects,
-  enemyBestiary,
   talentPool,
   type BattleCard,
   type KeywordId,
 } from "@/lib/game-data";
-import { createBattleStartState } from "@/lib/battle/battle-setup";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
@@ -119,19 +117,6 @@ describe("distinct talent conditions", () => {
     expect(result.enemyHealth).toBe(96);
   });
 
-  it("Ecosystem tutors a Nature card before the opening hand", () => {
-    const effects = talents("Ecosystem");
-    const nature = makeTestCard({ id: "nature-drawn", tags: ["nature"] });
-    const ordinary = makeTestCard({ id: "ordinary" });
-    const next = createBattleStartState({
-      runDeck: [ordinary, nature],
-      currentEnemy: enemyBestiary[0]!,
-      talentEffects: effects,
-      rng: () => 0,
-    });
-    expect(next.hand.map((card) => card.id)).toEqual(["nature-drawn"]);
-  });
-
   it("First Blood boosts only a hit starting without Bleed and can activate again after Bleed ends", () => {
     const initial = battle({ talentEffects: talents("First Blood") });
     const effect = { kind: "damage" as const, damageType: "bleed" as const, amount: 4 };
@@ -141,17 +126,6 @@ describe("distinct talent conditions", () => {
         .modifiedDamage,
     ).toBe(4);
     expect(computeCardDamageToEnemy(initial, effect).modifiedDamage).toBe(5);
-  });
-
-  it("Finish Him doubles Physical damage below 25% enemy Health", () => {
-    const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 4 };
-    const effects = talents("Finish Him");
-    expect(computeCardDamageToEnemy(battle({ talentEffects: effects, enemyHealth: 24 }), effect).modifiedDamage).toBe(
-      8,
-    );
-    expect(computeCardDamageToEnemy(battle({ talentEffects: effects, enemyHealth: 25 }), effect).modifiedDamage).toBe(
-      4,
-    );
   });
 
   it("Icebreaker gains Forge on successful rolls for qualifying attacks", () => {

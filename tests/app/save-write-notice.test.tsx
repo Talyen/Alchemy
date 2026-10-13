@@ -1,3 +1,4 @@
+import { createSaveBackend } from "../helpers/save-backend";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SaveWriteNotice } from "@/app/save-write-notice";
@@ -19,12 +20,7 @@ describe("visible save acknowledgement", () => {
     const errors = vi.spyOn(console, "error").mockImplementation(() => {});
     let fail = true;
     configureSaveBackend(
-      {
-        readCandidates: async () => ({ ok: true, candidates: [] }),
-        write: async () => (fail ? { ok: false, error: new Error("disk full") } : { ok: true }),
-        writeSync: () => null,
-        clear: async () => ({ ok: true }),
-      },
+      createSaveBackend({ write: async () => (fail ? { ok: false, error: new Error("disk full") } : { ok: true }) }),
       defaultGameSession,
     );
     render(<SaveWriteNotice />);
@@ -43,13 +39,10 @@ describe("visible save acknowledgement", () => {
   it("does not warn if the recovery slot acknowledges the save", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     configureSaveBackend(
-      {
-        readCandidates: async () => ({ ok: true, candidates: [] }),
+      createSaveBackend({
         write: async (key) =>
           key.includes("recovery") ? { ok: true } : { ok: false, error: new Error("primary unavailable") },
-        writeSync: () => null,
-        clear: async () => ({ ok: true }),
-      },
+      }),
       defaultGameSession,
     );
     render(<SaveWriteNotice />);

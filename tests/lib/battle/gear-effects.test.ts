@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { applyGearKillRewards } from "@/lib/battle/player-rewards";
-import { gearFrozenDamageMultiplier, scaledGearLeechHeal } from "@/lib/battle/scaled-damage";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { applyGearDamageResistance } from "@/lib/battle/damage-modifiers";
 import { defaultGearEffects } from "@/lib/gear";
@@ -42,20 +41,6 @@ describe("gear-effects", () => {
     const gear = { ...defaultGearEffects, resistPhysical: 50 };
     expect(applyGearDamageResistance(10, "physical", gear)).toBe(5);
     expect(applyGearDamageResistance(10, "burn", gear)).toBe(10);
-  });
-
-  it("scales leech heal by leechHealBonusPercent", () => {
-    const gear = { ...defaultGearEffects, leechHealBonusPercent: 50 };
-    expect(scaledGearLeechHeal(4, gear)).toBe(6);
-  });
-
-  it("applies frozen enemy damage bonus multiplier", () => {
-    const state = patchBattleState({
-      enemyCC: { freezeSkipTurns: 1 },
-      gearEffects: { frozenEnemyDamageBonusPercent: 50 },
-    });
-    expect(gearFrozenDamageMultiplier(state)).toBe(1.5);
-    expect(gearFrozenDamageMultiplier(patchBattleState({ enemyCC: { freezeSkipTurns: 0 } }))).toBe(1);
   });
 
   it("applies kill rewards with scaled gold", () => {

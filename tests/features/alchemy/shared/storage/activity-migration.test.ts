@@ -1,3 +1,4 @@
+import { createSaveBackend } from "../../../../helpers/save-backend";
 import { afterEach, expect, it, vi } from "vitest";
 import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
@@ -105,18 +106,18 @@ it("abandons only the selected legacy run with current settlement and an acknowl
   sessions.push(session);
   const persistence = createSessionPersistence(session);
   let written = "";
-  persistence.configure({
-    readCandidates: async () => ({ ok: true, candidates: [] }),
-    write: async (_key, value) => {
-      written = value;
-      return { ok: true };
-    },
-    writeSync: (_key, value) => {
-      written = value;
-      return { ok: true };
-    },
-    clear: async () => ({ ok: true }),
-  });
+  persistence.configure(
+    createSaveBackend({
+      write: async (_key, value) => {
+        written = value;
+        return { ok: true };
+      },
+      writeSync: (_key, value) => {
+        written = value;
+        return { ok: true };
+      },
+    }),
+  );
   expect(persistence.restore(loaded.data, { restoreActions: loaded.restoreActions })).toBe(true);
   await persistence.waitForWrites();
   const root = readGameplayState(session);

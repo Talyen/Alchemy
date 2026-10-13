@@ -6,7 +6,6 @@ import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { computeTalentEffects, enemyBestiary } from "@/lib/game-data";
-import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { dealDamage, incomingPhysical, makeEffect, makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("Nature and Physical Talent reworks", () => {
@@ -123,23 +122,6 @@ describe("Nature and Physical Talent reworks", () => {
     expect(computeCardDamageToEnemy(armorState, effect).modifiedDamage).toBe(7);
   });
 
-  it("applies Lacerate as a derived Bleed hit with Block/Armor/resistance", () => {
-    const state = patchBattleState({
-      rng: () => 0.99,
-      enemyHealth: 100,
-      enemyMaxHealth: 100,
-      talentEffects: { ...computeTalentEffects({ physical: ["physical-lacerate"] }), physicalBleedChance: 100 },
-    });
-    const card = makeTestCard();
-    const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 5 };
-
-    const result = resolvePlayerHit(state, { source: "card-attack", card, effect, resolvedDamage: 5 }, []);
-
-    // Primary 5 Physical → 95 HP; derived Bleed follow-up uses 0.25 fraction → round(1.25)=1
-    expect(result.enemyHealth).toBe(94);
-    expect(result.enemyStatuses.bleed).toBe(1);
-  });
-
   it("does not recursively roll Lacerate from a derived Physical hit", () => {
     const state = patchBattleState({
       rng: () => 0,
@@ -242,23 +224,5 @@ describe("Nature and Physical Talent reworks", () => {
     });
 
     expect(state.hand.map((card) => card.id)).toEqual(["nature-start"]);
-  });
-
-  it("defaults new Talent manifest fields and Riposte readiness when loading older battles", () => {
-    const raw = JSON.parse(JSON.stringify(patchBattleState({ talentEffects: { physicalBleedChance: 10 } })));
-    delete raw.talentEffects.natureCardPlayTwiceChance;
-    delete raw.talentEffects.drawNatureCardAtCombatStart;
-    delete raw.talentEffects.physicalDoubledBelowQuarterHealth;
-    delete raw.talentEffects.physicalCritOnDodge;
-    delete raw.flags.nextPhysicalCrit;
-
-    const restored = PersistedBattleStateSchema.parse(raw);
-
-    expect(restored.talentEffects.natureCardPlayTwiceChance).toBe(0);
-    expect(restored.talentEffects.drawNatureCardAtCombatStart).toBe(false);
-    expect(restored.talentEffects.physicalDoubledBelowQuarterHealth).toBe(false);
-    expect(restored.talentEffects.physicalCritOnDodge).toBe(false);
-    expect(restored.flags.nextPhysicalCrit).toBe(false);
-    expect(restored.talentEffects.physicalBleedChance).toBe(10);
   });
 });

@@ -1,3 +1,4 @@
+import { createSaveBackend } from "../helpers/save-backend";
 import { setRunProgressActivity } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderHook, act, cleanup } from "@testing-library/react";
@@ -29,12 +30,7 @@ async function advance(ms: number) {
 function installBackend() {
   const write = vi.fn<SaveBackend["write"]>().mockResolvedValue({ ok: true });
   const writeSync = vi.fn<SaveBackend["writeSync"]>().mockReturnValue({ ok: true });
-  persistence.configure({
-    readCandidates: async () => ({ ok: true, candidates: [] }),
-    write,
-    writeSync,
-    clear: async () => ({ ok: true }),
-  });
+  persistence.configure(createSaveBackend({ write, writeSync }));
   return { write, writeSync };
 }
 

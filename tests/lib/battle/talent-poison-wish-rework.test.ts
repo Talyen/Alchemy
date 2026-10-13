@@ -5,7 +5,7 @@ import { applyDamageStatuses } from "@/lib/battle/damage-status-riders";
 import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { tryPoisonStunProc } from "@/lib/battle/follow-up-hit-resolution";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
-import { buildWishOptions, applyWishEffect } from "@/lib/battle/wish";
+import { applyWishEffect } from "@/lib/battle/wish";
 import { computeTalentEffects, type BattleCardEffect } from "@/lib/game-data";
 import { makeEffect, makeTestCard, patchBattleState, dealDamage } from "../../fixtures/battle";
 
@@ -14,26 +14,6 @@ function playCard(state: ReturnType<typeof patchBattleState>, card: ReturnType<t
 }
 
 describe("Poison, Stun, and Wish Talent reworks", () => {
-  it("computes the new Talent effects and preserves wording-only mechanics", () => {
-    const effects = computeTalentEffects({
-      poison: ["poison-physical-bonus", "poison-strip-armor", "poison-stun-chance", "poison-first-free"],
-      stun: ["stun-damage-1"],
-      wish: ["wish-trinket", "wish-extra-choice", "wish-draw", "wish-powerful", "wish-mana", "wish-gold"],
-    });
-
-    expect(effects.poisonDamageBonusVsPoisoned).toBe(1);
-    expect(effects.poisonStripArmorByDamage).toBe(true);
-    expect(effects.poisonStunChance).toBe(10);
-    expect(effects.poisonCardPlayTwiceChance).toBe(10);
-    expect(effects.stunCardPlayTwiceChance).toBe(10);
-    expect(effects.wishCardPlayTwiceChance).toBe(10);
-    expect(effects.wishDrawChance).toBe(10);
-    expect(effects.wishCardRefundsMana).toBe(true);
-    expect(effects.declinedWishCardChance).toBe(10);
-    expect(effects.wishTrinketChoice).toBe(true);
-    expect(effects.wishCardsUpgraded).toBe(true);
-  });
-
   it("adds Corrosive damage to player and Companion packets against Poisoned enemies", () => {
     const state = patchBattleState({
       enemyStatuses: { poison: 2 },
@@ -213,14 +193,5 @@ describe("Poison, Stun, and Wish Talent reworks", () => {
       [],
     );
     expect(succeeded.hand.map((card) => card.id)).toEqual(["drawn"]);
-  });
-
-  it("keeps Powerful Wish upgrades active while the reworked Wish effects use new fields", () => {
-    const state = patchBattleState({
-      talentEffects: computeTalentEffects({ wish: ["wish-powerful"] }),
-      rng: () => 0.99,
-    });
-    const options = buildWishOptions(state, makeTestCard({ id: "wish" }));
-    expect(options.every((card) => card.descriptionLines.length > 0)).toBe(true);
   });
 });

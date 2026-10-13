@@ -1,3 +1,4 @@
+import { createSaveBackend } from "../../../../helpers/save-backend";
 import { expect, it, vi } from "vitest";
 import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage";
@@ -11,18 +12,13 @@ import { deferred } from "../../../../helpers/deferred";
 function fixture() {
   const writes: string[] = [];
   const session = createGameSession({
-    saveBackend: {
-      readCandidates: async () => ({ ok: true, candidates: [] }),
-      write: async (_key, value) => {
-        writes.push(value);
-        return { ok: true };
-      },
+    saveBackend: createSaveBackend({
+      writes,
       writeSync: (_key, value) => {
         writes.push(value);
         return { ok: true };
       },
-      clear: async () => ({ ok: true }),
-    },
+    }),
   });
   return { session, persistence: createSessionPersistence(session), writes };
 }
@@ -87,12 +83,7 @@ it("invalidates queued snapshots at restore before they reach the backend", asyn
   const { session, persistence } = fixture();
   const barrier = deferred<{ ok: true; candidates: never[] }>();
   const write = vi.fn(async () => ({ ok: true as const }));
-  persistence.configure({
-    readCandidates: () => barrier.promise,
-    write,
-    writeSync: () => null,
-    clear: async () => ({ ok: true }),
-  });
+  persistence.configure(createSaveBackend({ readCandidates: () => barrier.promise, write }));
   try {
     const loading = persistence.load();
     const stale = persistence.write(persistence.snapshot());
@@ -111,15 +102,7 @@ it("invalidates queued snapshots at restore before they reach the backend", asyn
 it("drains an authorized exit snapshot after autosave detaches and the session disposes", async () => {
   const { session, persistence, writes } = fixture();
   const barrier = deferred<{ ok: true; candidates: never[] }>();
-  persistence.configure({
-    readCandidates: () => barrier.promise,
-    write: async (_key, value) => {
-      writes.push(value);
-      return { ok: true };
-    },
-    writeSync: () => null,
-    clear: async () => ({ ok: true }),
-  });
+  persistence.configure(createSaveBackend({ readCandidates: () => barrier.promise, writes }));
   const lifecycle = createAlchemyAutosaveLifecycle(() => true, undefined, session, true);
   const loading = persistence.load();
   dispatchRunSessionCommand((transaction) => acceptCommand(setGold(transaction, 70)), undefined, session);
@@ -137,20 +120,20 @@ it("preserves admitted writes on both sides of a load barrier", async () => {
   const barrier = deferred<{ ok: true; candidates: never[] }>();
   const operations: string[] = [];
   let reads = 0;
-  persistence.configure({
-    readCandidates: async () => {
-      // Primary and recovery reads run together for each load.
-      if (++reads <= 2) return barrier.promise;
-      operations.push("read");
-      return { ok: true, candidates: [] };
-    },
-    write: async (_key, value) => {
-      operations.push(`write:${JSON.parse(value).musicVolume}`);
-      return { ok: true };
-    },
-    writeSync: () => null,
-    clear: async () => ({ ok: true }),
-  });
+  persistence.configure(
+    createSaveBackend({
+      readCandidates: async () => {
+        // Primary and recovery reads run together for each load.
+        if (++reads <= 2) return barrier.promise;
+        operations.push("read");
+        return { ok: true, candidates: [] };
+      },
+      write: async (_key, value) => {
+        operations.push(`write:${JSON.parse(value).musicVolume}`);
+        return { ok: true };
+      },
+    }),
+  );
   try {
     const firstLoad = persistence.load();
     sessionRuntime(session).settings.getState().setMusicVolume(3);

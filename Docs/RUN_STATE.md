@@ -388,7 +388,22 @@ same publication boundary while retaining the current activity. Restore publishe
 its new persistence generation even if the saved values are equal; the gameplay
 root and revision remain unchanged when no gameplay field changes.
 
-`shared/stores/persistence-commit-filter.ts` decides whether a committed state change can alter the save. It compares the saved run, activity (including active combat), profile, and Gear inputs directly; permanent progress uses the save keys from `run-profile-codec.ts`, excluding derived Homestead effects. Session comparisons follow the transient and mode-gated fields declared by `run-resume-codec.ts`. Reward state and Companion cards count, while the claim lock does not. Every run and session field must be classified at typecheck time so a newly added field cannot silently bypass autosave.
+`shared/stores/run-resume-codec.ts` owns `projectRunResumeSnapshot`, the single
+projection used by both run encoding and persistence change detection. The
+projection selects the current activity's wire fields and mode-specific data;
+inactive runs project to null. `persistence-commit-filter.ts` compares those
+projections structurally, skipping shared immutable branches by identity. Claim
+locks, presentation navigation, destination-only reward leftovers, and battle
+metrics cannot trigger autosave or arm the progress gate. Adding a field to the
+wire projection automatically includes it in change detection. Permanent progress
+uses the save keys from `run-profile-save-fields.ts`, excluding derived Homestead
+effects; profile, settings, and Gear retain their own save fields.
+
+Projection can describe an incomplete `idle` or Mystery activity during command
+construction without throwing. Strict run encoding still rejects either until
+its resumable activity is complete. The save builder reads the gameplay aggregate
+directly and detaches the complete save once; it does not construct screen or
+battle display data to persist a run.
 
 `shared/storage/save-candidates.ts` owns save parsing, validation, and future-version protection (deterministic `evaluateSaveCandidates`, for testability); `shared/storage/save-storage.ts` owns each storage instance’s backend, queue, write protection, and load/write/exit/clear operations. `shared/storage/io.ts` preserves the app function API over the selected session’s IO instance and owns the unconfigured storage guard. The application adapter preserves the SSR guard. Backend configuration is allowed only while loads, writes, and clears are idle, so submitted work cannot move to a different transport. Bootstrap configures the application instance; each headless career configures its own instance; isolated tests can construct `SaveStorage` directly. The queue is private to its storage owner. `src/lib/platform-save-backend.ts` owns browser/desktop transport, backup/cloud candidate order, and recoverable write/clear ordering. `initializeSteam()` returns an explicit `cloudSyncEnabled` capability; it does not mutate shared platform state. Candidate order, Steam Cloud as a one-way mirror, and wipe/protect behavior: [MIGRATIONS.md § Public save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#public-save-contract).
 

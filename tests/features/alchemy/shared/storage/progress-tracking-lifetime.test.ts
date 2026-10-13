@@ -1,3 +1,4 @@
+import { createSaveBackend } from "../../../../helpers/save-backend";
 import { afterEach, expect, it, vi } from "vitest";
 import { createAlchemyAutosaveLifecycle } from "@/app/autosave-lifecycle";
 import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
@@ -11,15 +12,12 @@ function setup() {
   let fail = true;
   const writes: string[] = [];
   const session = createGameSession({
-    saveBackend: {
-      readCandidates: async () => ({ ok: true, candidates: [] }),
+    saveBackend: createSaveBackend({
       write: async (_key, value) => {
         writes.push(value);
         return fail ? { ok: false, error: "disk full" } : { ok: true };
       },
-      writeSync: () => null,
-      clear: async () => ({ ok: true }),
-    },
+    }),
   });
   const persistence = createSessionPersistence(session);
   return {

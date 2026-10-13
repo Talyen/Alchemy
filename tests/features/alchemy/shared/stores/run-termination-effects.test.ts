@@ -1,3 +1,4 @@
+import { createSaveBackend } from "../../../../helpers/save-backend";
 import { afterEach, expect, it, vi } from "vitest";
 import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage/session-persistence";
@@ -25,15 +26,12 @@ function start(feedback: GameSessionOptions["feedback"] = {}) {
   const session = createGameSession({
     runtimeInputs: { generateRunSeed: () => 7 },
     feedback,
-    saveBackend: {
-      writeSync: () => null,
-      readCandidates: async () => ({ ok: true, candidates: [] }),
+    saveBackend: createSaveBackend({
       write: async (key, value) => {
         bytes.set(key, value);
         return { ok: true };
       },
-      clear: async () => ({ ok: true }),
-    },
+    }),
   });
   sessions.push(session);
   const controller = createPlaythroughController(session);

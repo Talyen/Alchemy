@@ -1,3 +1,4 @@
+import { createSaveBackend } from "../../../../helpers/save-backend";
 import { createAlchemyAutosaveLifecycle } from "@/app/autosave-lifecycle";
 import { afterEach, expect, it, vi } from "vitest";
 import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
@@ -22,15 +23,12 @@ it("keeps a failed action pending and retries its snapshot without repeating its
   let fail = true;
   const writes: string[] = [];
   const session = createGameSession({
-    saveBackend: {
-      readCandidates: async () => ({ ok: true, candidates: [] }),
+    saveBackend: createSaveBackend({
       write: async (_key, value) => {
         writes.push(value);
         return fail ? { ok: false, error: "disk full" } : { ok: true };
       },
-      writeSync: () => null,
-      clear: async () => ({ ok: true }),
-    },
+    }),
   });
   const persistence = createSessionPersistence(session);
   let retry: Promise<unknown> = Promise.resolve();
@@ -76,16 +74,13 @@ it("keeps a failed action pending and retries its snapshot without repeating its
 it("an old acknowledgement cannot unlock newer progress and a clear invalidates late receipts", async () => {
   const pending: Array<ReturnType<typeof deferred<Awaited<ReturnType<SaveBackend["write"]>>>>> = [];
   const session = createGameSession({
-    saveBackend: {
-      readCandidates: async () => ({ ok: true, candidates: [] }),
+    saveBackend: createSaveBackend({
       write: () => {
         const result = deferred<Awaited<ReturnType<SaveBackend["write"]>>>();
         pending.push(result);
         return result.promise;
       },
-      writeSync: () => null,
-      clear: async () => ({ ok: true }),
-    },
+    }),
   });
   const persistence = createSessionPersistence(session);
   const release = persistence.trackProgress(() => {});
@@ -116,12 +111,7 @@ it.each(["restore", "protection", "dispose"] as const)(
   async (cancel) => {
     const writing = deferred<{ ok: true }>();
     const session = createGameSession({
-      saveBackend: {
-        readCandidates: async () => ({ ok: true, candidates: [] }),
-        write: () => writing.promise,
-        writeSync: () => null,
-        clear: async () => ({ ok: true }),
-      },
+      saveBackend: createSaveBackend({ write: () => writing.promise }),
     });
     const persistence = createSessionPersistence(session);
     const release = persistence.trackProgress(() => {});
@@ -152,12 +142,7 @@ it.each(["restore", "protection", "dispose"] as const)(
 it("an explicit checkpoint defers completion even without an autosave owner", async () => {
   const writing = deferred<{ ok: true }>();
   const session = createGameSession({
-    saveBackend: {
-      readCandidates: async () => ({ ok: true, candidates: [] }),
-      write: () => writing.promise,
-      writeSync: () => null,
-      clear: async () => ({ ok: true }),
-    },
+    saveBackend: createSaveBackend({ write: () => writing.promise }),
   });
   const persistence = createSessionPersistence(session);
   const checkpoint = persistence.checkpoint();
@@ -172,12 +157,7 @@ it("an explicit checkpoint defers completion even without an autosave owner", as
 
 it("acknowledges a snapshot through another adapter for the same session", async () => {
   const session = createGameSession({
-    saveBackend: {
-      readCandidates: async () => ({ ok: true, candidates: [] }),
-      write: async () => ({ ok: true }),
-      writeSync: () => ({ ok: true }),
-      clear: async () => ({ ok: true }),
-    },
+    saveBackend: createSaveBackend({ writeSync: () => ({ ok: true }) }),
   });
   const reader = createSessionPersistence(session);
   const writer = createSessionPersistence(session);
@@ -205,15 +185,12 @@ it("immediate Gear and run-end saves share failure, retry and completion with au
   let fail = true;
   const writes: string[] = [];
   const session = createGameSession({
-    saveBackend: {
-      readCandidates: async () => ({ ok: true, candidates: [] }),
+    saveBackend: createSaveBackend({
       write: async (_key, value) => {
         writes.push(value);
         return fail ? { ok: false, error: "disk full" } : { ok: true };
       },
-      writeSync: () => null,
-      clear: async () => ({ ok: true }),
-    },
+    }),
   });
   const persistence = createSessionPersistence(session);
   const release = persistence.trackProgress(() => {});
@@ -241,15 +218,7 @@ it("a failing gameplay observer cannot suppress autosave, later observers, or co
   vi.spyOn(console, "error").mockImplementation(() => {});
   const writes: string[] = [];
   const session = createGameSession({
-    saveBackend: {
-      readCandidates: async () => ({ ok: true, candidates: [] }),
-      write: async (_key, value) => {
-        writes.push(value);
-        return { ok: true };
-      },
-      writeSync: () => null,
-      clear: async () => ({ ok: true }),
-    },
+    saveBackend: createSaveBackend({ writes }),
   });
   const persistence = createSessionPersistence(session);
   const release = persistence.trackProgress(() => {});
@@ -302,15 +271,7 @@ it("a failing gameplay observer cannot suppress autosave, later observers, or co
 it("save-status observers see and checkpoint the newly committed gameplay revision", async () => {
   const writes: string[] = [];
   const session = createGameSession({
-    saveBackend: {
-      readCandidates: async () => ({ ok: true, candidates: [] }),
-      write: async (_key, value) => {
-        writes.push(value);
-        return { ok: true };
-      },
-      writeSync: () => null,
-      clear: async () => ({ ok: true }),
-    },
+    saveBackend: createSaveBackend({ writes }),
   });
   const persistence = createSessionPersistence(session);
   const release = persistence.trackProgress(() => {});
@@ -347,15 +308,12 @@ it.each(["write", "writeOnExit"] as const)(
     const writing = deferred<{ ok: true }>();
     const writes: string[] = [];
     const session = createGameSession({
-      saveBackend: {
-        readCandidates: async () => ({ ok: true, candidates: [] }),
+      saveBackend: createSaveBackend({
         write: async (_key, value) => {
           writes.push(value);
           return writing.promise;
         },
-        writeSync: () => null,
-        clear: async () => ({ ok: true }),
-      },
+      }),
     });
     const persistence = createSessionPersistence(session);
     const release = persistence.trackProgress(() => {});
@@ -392,15 +350,12 @@ it("an external payload cannot replace a queued gameplay checkpoint", async () =
   const writing = deferred<{ ok: true }>();
   const writes: string[] = [];
   const session = createGameSession({
-    saveBackend: {
-      readCandidates: async () => ({ ok: true, candidates: [] }),
+    saveBackend: createSaveBackend({
       write: async (_key, value) => {
         writes.push(value);
         return writing.promise;
       },
-      writeSync: () => null,
-      clear: async () => ({ ok: true }),
-    },
+    }),
   });
   const persistence = createSessionPersistence(session);
   const release = persistence.trackProgress(() => {});
@@ -433,15 +388,7 @@ it("autosave preserves its checkpoint when an external write is rejected", async
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
   const writes: string[] = [];
   const session = createGameSession({
-    saveBackend: {
-      readCandidates: async () => ({ ok: true, candidates: [] }),
-      write: async (_key, value) => {
-        writes.push(value);
-        return { ok: true };
-      },
-      writeSync: () => null,
-      clear: async () => ({ ok: true }),
-    },
+    saveBackend: createSaveBackend({ writes }),
   });
   const persistence = createSessionPersistence(session);
   const lifecycle = createAlchemyAutosaveLifecycle(() => true, undefined, session, true);
@@ -469,16 +416,13 @@ it("retries a restored career after an older in-flight save completes and the re
   const writes: string[] = [];
   let failReplacement = true;
   const session = createGameSession({
-    saveBackend: {
-      readCandidates: async () => ({ ok: true, candidates: [] }),
+    saveBackend: createSaveBackend({
       write: async (_key, value) => {
         writes.push(value);
         if (writes.length === 1) return oldWrite.promise;
         return failReplacement ? { ok: false, error: "disk full" } : { ok: true };
       },
-      writeSync: () => null,
-      clear: async () => ({ ok: true }),
-    },
+    }),
   });
   const persistence = createSessionPersistence(session);
   const lifecycle = createAlchemyAutosaveLifecycle(() => true, undefined, session, true);

@@ -1,3 +1,4 @@
+import { createSaveBackend } from "../../../../helpers/save-backend";
 import { describe, expect, it, vi } from "vitest";
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage/session-persistence";
@@ -232,12 +233,7 @@ describe("session save restoration", () => {
     async (failure) => {
       let fail = false;
       const session = createGameSession({
-        saveBackend: {
-          readCandidates: async () => ({ ok: true, candidates: [] }),
-          write: async () => ({ ok: true }),
-          writeSync: () => null,
-          clear: async () => ({ ok: true }),
-        },
+        saveBackend: createSaveBackend(),
         runtimeInputs: {
           generateRunSeed: () => {
             if (fail) throw new Error("Seed source failed");
