@@ -28,6 +28,27 @@ const firePotion = makePotion({
 });
 
 describe("createMixedPotion", () => {
+  it("scales alternate Potion outcomes together with the primary magnitude", () => {
+    const potion = makePotion({
+      effects: [
+        {
+          kind: "damage",
+          damageType: "physical",
+          amount: 2,
+          damageTypeIfTargetFrozen: "freeze",
+          amountIfTargetFrozen: 8,
+        },
+        { kind: "player-status", status: "block", statusPool: ["block", "forge", "armor"], amount: 5, forgeAmount: 2 },
+      ],
+    });
+    const expected = [
+      { ...potion.effects[0], amount: 4, amountIfTargetFrozen: 16 },
+      { ...potion.effects[1], amount: 10, forgeAmount: 4 },
+    ];
+    expect(createMixedPotion(potion, potion).effects).toEqual(expected);
+    expect(doublePotionPotency(potion).effects).toEqual(expected);
+    expect(potion.effects[0]).toMatchObject({ amount: 2, amountIfTargetFrozen: 8 });
+  });
   it("scales every Luck Potion outcome and its description when mixing", () => {
     const luck = cardLibrary.find((card) => card.id === "luck-potion")!;
     const mixed = createMixedPotion(luck, luck, 2);

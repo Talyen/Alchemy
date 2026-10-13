@@ -43,7 +43,21 @@ function scalePotionEffect(effect: BattleCardEffect, multiplier: number, potency
     };
   }
   if ("amount" in effect && typeof effect.amount === "number") {
-    return { ...effect, amount: scaledAmount(effect.amount, multiplier, potencyBonus) };
+    const amount = scaledAmount(effect.amount, multiplier, potencyBonus);
+    if (effect.kind === "damage")
+      return {
+        ...effect,
+        amount,
+        ...(effect.amountIfTargetFrozen !== undefined
+          ? { amountIfTargetFrozen: scaledAmount(effect.amountIfTargetFrozen, multiplier, potencyBonus) }
+          : {}),
+        ...(effect.blockDamageBonus !== undefined
+          ? { blockDamageBonus: scaledAmount(effect.blockDamageBonus, multiplier, potencyBonus) }
+          : {}),
+      };
+    if (effect.kind === "player-status" && effect.forgeAmount !== undefined)
+      return { ...effect, amount, forgeAmount: scaledAmount(effect.forgeAmount, multiplier, potencyBonus) };
+    return { ...effect, amount };
   }
   return mapEffectChildren(effect, (child) => scalePotionEffect(child, multiplier, potencyBonus));
 }
