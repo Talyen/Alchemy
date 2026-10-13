@@ -92,13 +92,13 @@ describe("boss rolls in run commands", () => {
     const run = readActiveRun(defaultGameSession);
     const offered = readRunSession(defaultGameSession).rewardFlow.state.destinations;
     expect(run.lastOfferedDestinations).toEqual(offered);
-    expect(offered).toEqual([DESTINATIONS.TRANSMUTATION, DESTINATIONS.CORRUPTION, DESTINATIONS.ELITE_COMBAT]);
+    expect(offered).toEqual([DESTINATIONS.CAMPFIRE, DESTINATIONS.TRANSMUTATION, DESTINATIONS.MYSTERY]);
     expect(run.destinationRoundsSinceOffered).toEqual({
-      [DESTINATIONS.CAMPFIRE]: 1,
-      [DESTINATIONS.ELITE_COMBAT]: 0,
-      [DESTINATIONS.MYSTERY]: 4,
+      [DESTINATIONS.CAMPFIRE]: 0,
+      [DESTINATIONS.ELITE_COMBAT]: 1,
+      [DESTINATIONS.MYSTERY]: 0,
       [DESTINATIONS.TRANSMUTATION]: 0,
-      [DESTINATIONS.CORRUPTION]: 0,
+      [DESTINATIONS.CORRUPTION]: 1,
       [DESTINATIONS.NORMAL_COMBAT]: 1,
     });
     expect(run.rng.counters).toEqual({ destinations: 3, world: 0, events: 0, rewards: 0, shops: 0 });

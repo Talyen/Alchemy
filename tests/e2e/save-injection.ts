@@ -263,9 +263,3 @@ export async function injectLabyrinthRun(
   if (!loaded) await navigateToGame(page);
   await expect(page.getByRole("heading", { name: /Labyrinth|Map/i })).toBeVisible({ timeout: 20000 });
 }
-
-export async function enableLoadingScreen(page: Page) {
-  await page.addInitScript(() => {
-    localStorage.removeItem("alchemy-skip-loading-screen");
-  });
-}

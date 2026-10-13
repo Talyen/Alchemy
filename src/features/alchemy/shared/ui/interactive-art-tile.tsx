@@ -9,7 +9,7 @@ import { Surface } from "./surface";
 import { useInteractiveCard } from "./use-interactive-card";
 import { useHoverVisible } from "./use-hover-visible";
 
-export interface PopupContext {
+interface PopupContext {
   visible: boolean;
   triggerRef: RefObject<HTMLElement | null>;
 }

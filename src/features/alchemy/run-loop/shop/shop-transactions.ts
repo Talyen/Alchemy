@@ -7,31 +7,32 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-command";
 import { deductGold, readDraftGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { guardProgressAction, sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
+import type { BattleCard } from "@/lib/game-data";
 import { type playUISound } from "@/lib/audio";
 
-export interface ShopTransactionResult<T = undefined> {
+export interface ShopTransactionResult {
   committed: boolean;
   price: number;
-  value: T;
+  value: BattleCard | null | undefined;
 }
 
 function playShopSpendFeedback(
-  result: Pick<ShopTransactionResult<unknown>, "committed" | "price">,
+  result: Pick<ShopTransactionResult, "committed" | "price">,
   gameSession: GameSession,
 ): void {
   if (result.committed && result.price > 0) sessionFeedback(gameSession).playGoldSpend();
 }
 
-export function runShopTransaction<T>(
+export function runShopTransaction(
   activity: "shop" | "alchemist" | "trinket-shop" | "equipment-shop",
-  recipe: (draft: RunTransaction) => ShopTransactionResult<T>,
+  recipe: (draft: RunTransaction) => ShopTransactionResult,
   successSound: Parameters<typeof playUISound>[0] | undefined,
   gameSession: GameSession,
-): ShopTransactionResult<T | undefined> {
+): ShopTransactionResult {
   const result = guardProgressAction(
     gameSession,
     () =>
-      dispatchRunSessionCommand(
+      dispatchRunSessionCommand<ShopTransactionResult | null>(
         (draft) => {
           if (draft.session.activity.kind !== activity) return rejectCommand("Shop visit is no longer active", null);
           const result = recipe(draft);
@@ -48,15 +49,15 @@ export function runShopTransaction<T>(
   return result;
 }
 
-interface CommitShopServiceInput<T> {
+interface CommitShopServiceInput {
   draft: RunTransaction;
   price: number;
   guard: boolean;
-  failureValue: T;
-  apply: () => T;
+  failureValue: BattleCard | null | undefined;
+  apply: () => BattleCard | null | undefined;
 }
 
-export function commitShopService<T>(input: CommitShopServiceInput<T>): ShopTransactionResult<T> {
+export function commitShopService(input: CommitShopServiceInput): ShopTransactionResult {
   if (!input.guard || readDraftGold(input.draft) < input.price) {
     return { committed: false, price: input.price, value: input.failureValue };
   }

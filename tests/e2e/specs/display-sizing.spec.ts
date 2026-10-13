@@ -5,7 +5,6 @@ import {
   assertNoOverflow,
   assertStageFitsViewport,
   makeCard,
-  SAVE_KEY,
   startAtDestination,
   startBattleWithDeck,
   waitForLayoutSettled,

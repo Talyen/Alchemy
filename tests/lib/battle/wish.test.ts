@@ -437,7 +437,9 @@ describe("new wish talents", () => {
     const gold = applyWishEffect(goldState, card, 1, goldTexts);
     expect(gold.gold).toBe(63 + tier);
     expect(
-      goldTexts.filter((event) => event.stat === "gold").reduce((sum, event) => sum + (event.amount ?? 0), 0),
+      goldTexts
+        .filter((event) => event.stat === "gold")
+        .reduce((sum, event) => sum + ("amount" in event ? event.amount : 0), 0),
     ).toBe(13 + tier);
   });
 

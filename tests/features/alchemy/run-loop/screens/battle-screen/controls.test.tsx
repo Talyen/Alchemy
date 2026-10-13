@@ -25,7 +25,7 @@ function bottomBar(state: BattleSnapshot, onEndTurn: () => void) {
   return (
     <BattleBottomBar
       presentation={battlePresentation}
-      view={{ battleState: state } as RequiredBattleViewProps}
+      view={{ battleState: state } as unknown as RequiredBattleViewProps}
       refs={{ drawPileRef: { current: null }, discardPileRef: { current: null } } as BattleRefsProps}
       actions={{ onEndTurn } as BattleActionsProps}
       playabilityState={state}

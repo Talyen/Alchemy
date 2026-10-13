@@ -56,8 +56,8 @@ export function createRunLifecycleEffects(feedback: Pick<SessionFeedback, "clear
     presentation.emit();
   }
   return {
-    onClearPresentation: presentation.on,
-    onTeardown: teardown.on,
+    onClearPresentation: (listener: () => void) => presentation.on(listener),
+    onTeardown: (listener: () => void) => teardown.on(listener),
     clearPresentation,
     teardown() {
       clearPresentation();

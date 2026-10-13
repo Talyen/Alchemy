@@ -92,23 +92,6 @@ export function TooltipSeparator({ className }: { className?: string | undefined
   return <div className={cn("my-2 border-t border-border/60", className)} />;
 }
 
-export function TooltipSection({
-  label,
-  children,
-  className,
-}: {
-  label: ReactNode;
-  children?: ReactNode;
-  className?: string | undefined;
-}) {
-  return (
-    <div className={className}>
-      <TooltipSubheader className="mt-0">{label}</TooltipSubheader>
-      {children}
-    </div>
-  );
-}
-
 export function TooltipChip({ children, className }: { children: ReactNode; className?: string | undefined }) {
   return (
     <span

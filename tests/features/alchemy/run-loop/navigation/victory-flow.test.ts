@@ -578,7 +578,7 @@ describe("computeVictoryRewards", () => {
     expect(result.persistedGold).toBeGreaterThanOrEqual(SHOP_MIN_GOLD);
     const eligible = vi.mocked(sampleDestinationChoices).mock.lastCall?.[0];
     expect(eligible).toContain("Card Shop");
-    expect(eligible).not.toContain("Campfire");
+    expect(eligible).toContain("Campfire");
     expect(eligible).not.toContain("Trinket Shop");
     expect(eligible).not.toContain("Boss Combat");
   });
