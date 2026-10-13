@@ -125,7 +125,14 @@ export function createSessionPersistence(gameSession: GameSession): SessionPersi
       return resetStorageIoForTests(gameSession);
     },
     subscribe: (listener: () => void) => subscribeAlchemyPersistence(listener, gameSession),
-    subscribeCancellation: (listener: () => void) => subscribeSaveCancellation(listener, gameSession),
+    subscribeCancellation: (listener: () => void) => {
+      const cancelStorage = subscribeSaveCancellation(listener, gameSession);
+      const cancelRestore = progress.subscribeRestore(listener);
+      return registerSessionCleanup(gameSession, () => {
+        cancelStorage();
+        cancelRestore();
+      });
+    },
     readFailure: () => getSaveWriteFailure(gameSession),
     subscribeFailure: (listener: () => void) => subscribeSaveWriteFailure(listener, gameSession),
   });

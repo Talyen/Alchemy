@@ -17,12 +17,26 @@ import { createDefaultSettingsSaveFields, type SettingsSaveFields } from "./sett
 // The classifications follow encodeRunResumeSnapshot in run-resume-codec.ts.
 export function subscribePersistenceCommits(listener: () => void, gameSession: GameSession): () => void {
   const runtime = sessionRuntime(gameSession);
-  const unsubscribeSettings = runtime.settings.subscribe((state, previous) => {
-    if (!fieldsEqual(previous, state, SETTINGS_SAVE_KEYS)) listener();
-  });
-  const unsubscribeGameplay = runtime.gameplay.reads.subscribe((state, previous) => {
-    if (!gameplayPersistedInputsEqual(previous, state)) listener();
-  });
+  let previousGameplay = runtime.gameplay.reads.getState();
+  let previousSettings = runtime.settings.getState();
+  let previousRestore = runtime.progressCompletion.readRestoreVersion();
+  const notify = () => {
+    const gameplay = runtime.gameplay.reads.getState();
+    const settings = runtime.settings.getState();
+    const restored = runtime.progressCompletion.readRestoreVersion();
+    const changed =
+      previousRestore !== restored ||
+      !gameplayPersistedInputsEqual(previousGameplay, gameplay) ||
+      !fieldsEqual(previousSettings, settings, SETTINGS_SAVE_KEYS);
+    // A restore installs both owners before either notification. Advance both
+    // baselines first so their notifications emit one complete save snapshot.
+    previousGameplay = gameplay;
+    previousSettings = settings;
+    previousRestore = restored;
+    if (changed) listener();
+  };
+  const unsubscribeSettings = runtime.settings.subscribe(notify);
+  const unsubscribeGameplay = runtime.gameplay.reads.subscribe(notify);
   return runtime.track(() => {
     unsubscribeSettings();
     unsubscribeGameplay();
