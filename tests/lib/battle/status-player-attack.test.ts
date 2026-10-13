@@ -5,24 +5,6 @@ import type { CombatTextEvent } from "@/lib/battle/types";
 import { patchBattleState } from "../../fixtures/battle";
 
 describe("applyPlayerStatusFromAttack", () => {
-  it.each([
-    { status: "bleed", talentKey: "blockPreventsBleed" },
-    { status: "poison", talentKey: "blockPreventsPoison" },
-  ] as const)("blocks $status only while its prevention talent and Block are both active", ({ status, talentKey }) => {
-    const state = patchBattleState({ playerStatuses: { block: 5 }, talentEffects: { [talentKey]: true } });
-    const before = structuredClone({ statuses: state.playerStatuses, talents: state.talentEffects });
-    const effect = { kind: "player-status", status, amount: 4 } as const;
-    const texts: CombatTextEvent[] = [];
-    expect(applyPlayerStatusFromAttack(state, effect, texts)).toBe(state);
-    expect(texts).toEqual([]);
-    const unblocked = { ...state, playerStatuses: { ...state.playerStatuses, block: 0 } };
-    const withoutTalent = { ...state, talentEffects: { ...state.talentEffects, [talentKey]: false } };
-    expect(applyPlayerStatusFromAttack(unblocked, effect, texts).playerStatuses[status]).toBe(4);
-    expect(applyPlayerStatusFromAttack(withoutTalent, effect, texts).playerStatuses[status]).toBe(4);
-    expect(applyPlayerStatusFromAttack(state, { ...effect, status: "burn" }, texts).playerStatuses.burn).toBe(4);
-    expect({ statuses: state.playerStatuses, talents: state.talentEffects }).toEqual(before);
-  });
-
   it("routes attack-granted Block through its bonuses once while other beneficial statuses retain their own stacks", () => {
     const state = patchBattleState({
       playerStatuses: { block: 3, armor: 2 },

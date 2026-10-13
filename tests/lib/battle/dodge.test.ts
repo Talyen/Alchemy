@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
-import { prepareEnemyDamage } from "@/lib/battle/enemy-attack-damage";
-import { scaleEnemyAbilityDamage } from "@/lib/battle/battle-enemy-setup";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import type { BattleState, CombatTextEvent } from "@/lib/battle/types";
 import { companionLibrary } from "@/lib/game-data";
@@ -145,29 +143,6 @@ describe("Dodge gear affixes", () => {
 });
 
 describe("Dodge talent rewrites", () => {
-  it("Riposte and Footwork copy the dodged amount without extra pacing or spending a prepared critical strike", () => {
-    const state = incomingPhysical({
-      appliesFightPacing: true,
-      turn: 11,
-      enemyHealth: 1000,
-      enemyMaxHealth: 1000,
-      playerStatuses: { forge: 50 },
-      flags: { ...patchBattleState().flags, nextHitCrit: true },
-      talentEffects: {
-        physicalOnDodgeEqualToAttack: true,
-        blockOnDodgeEqualToAttack: true,
-        flatPhysicalDamage: 50,
-      },
-    });
-    const effect = { kind: "damage", damageType: "physical", amount: 8 } as const;
-    const { incomingDamage: incoming } = prepareEnemyDamage(state, scaleEnemyAbilityDamage(state, effect));
-    const result = applyEnemyAbility(state, makeTestCard({ effects: [effect] }), makeCombatTexts());
-    expect(result.playerHealth).toBe(100);
-    expect(result.enemyHealth).toBe(1000 - incoming);
-    expect(result.playerStatuses.block).toBe(incoming);
-    expect(result.flags.nextHitCrit).toBe(true);
-  });
-
   it.each([
     { health: 10, expected: 10 },
     { health: 30, expected: 22 },
@@ -209,7 +184,7 @@ describe("Dodge talent rewrites", () => {
   it("Parting Cut makes the next Physical card deal matching Bleed", () => {
     const afterDodge = enemyHit(
       incomingPhysical({
-        talentEffects: { partingCutOnDodge: true },
+        talentEffects: { partingCutDamagePercent: 100 },
       }),
     );
     expect(afterDodge.flags.nextPhysicalDealsBleed).toBe(true);
@@ -435,11 +410,11 @@ describe("dodged player attacks preserve hit flags", () => {
   it("a dodged burn card preserves the once-per-combat burn double and hit flags", () => {
     const state = patchBattleState({
       rng: dodgeFirstRng(),
-      talentEffects: { firstBurnCardBonusMultiplier: 1.5 },
+      trinketEffects: { firstBurnDoubled: true },
       flags: { nextHitLeech: true, nextHitPhysicalBonus: 3 },
     });
     const result = dealDamage(state, burnCard(), makeCombatTexts());
-    expect(result.flags.firstBurnCardDoubledUsed).toBe(false);
+    expect(result.flags.firstBurnTrinketDoubledUsed).toBe(false);
     expect(result.flags.nextHitLeech).toBe(true);
     expect(result.flags.nextHitPhysicalBonus).toBe(3);
   });
@@ -447,10 +422,10 @@ describe("dodged player attacks preserve hit flags", () => {
   it("the same burn card consumes the burn double when it is not dodged", () => {
     const state = patchBattleState({
       rng: () => 0.99,
-      talentEffects: { firstBurnCardBonusMultiplier: 1.5 },
+      trinketEffects: { firstBurnDoubled: true },
     });
     const result = dealDamage(state, burnCard(), makeCombatTexts());
-    expect(result.flags.firstBurnCardDoubledUsed).toBe(true);
+    expect(result.flags.firstBurnTrinketDoubledUsed).toBe(true);
   });
 });
 

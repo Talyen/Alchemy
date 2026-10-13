@@ -1,17 +1,17 @@
 import "../../../../helpers/mock-audio";
-
-import { setBattleActiveForTest, getBattleForTest } from "../../../../helpers/run-domain-store-test";
+import {
+  mutateGameplayForTest,
+  setBattleActiveForTest,
+  getBattleForTest,
+  resetAllTestStores,
+  setRunProgress,
+  setRunSession,
+} from "../../../../helpers/run-domain-store-test";
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
-import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import { DEFAULT_CAMPAIGN_DIFFICULTY_ID, DRAFT_ROUNDS } from "@/lib/game-constants";
 import { makeTestCard } from "../../../../fixtures/battle";
-import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
-import {
-  acceptCommand,
-  dispatchGameplayCommand,
-  subscribeRunSessionCommits,
-} from "@/features/alchemy/shared/stores/gameplay-command";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/gameplay-command";
 import {
   readActiveRun,
   readActiveRunScreen,
@@ -38,14 +38,9 @@ vi.mock("@/lib/error-logger", async (importOriginal) => ({
 
 beforeEach(() => {
   resetAllTestStores();
-  dispatchGameplayCommand(
-    (draft) => {
-      draft.profile.finishedRunCharacters = ["knight", "rogue", "ranger", "wizard", "alchemist", "warlock", "druid"];
-      return acceptCommand();
-    },
-    undefined,
-    defaultGameSession,
-  );
+  mutateGameplayForTest((draft) => {
+    draft.profile.finishedRunCharacters = ["knight", "rogue", "ranger", "wizard", "alchemist", "warlock", "druid"];
+  });
 });
 
 function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNavigation>[0]> = {}) {
@@ -63,14 +58,9 @@ function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNaviga
 
 describe("createContentSystemNavigation", () => {
   it("rejects a locked hero without starting a run or navigating", () => {
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.profile.finishedRunCharacters = [];
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      draft.profile.finishedRunCharacters = [];
+    });
     const deps = makeDeps();
     const before = snapshotSessionSave(defaultGameSession);
     createContentSystemNavigation(deps, defaultGameSession).handleCharacterSelect("rogue");
@@ -87,14 +77,9 @@ describe("createContentSystemNavigation", () => {
   });
 
   it.each(["labyrinth", "wildwood"] as const)("rejects the locked %s mode at entry and hero selection", (mode) => {
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.profile.finishedRunCharacters = [];
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      draft.profile.finishedRunCharacters = [];
+    });
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps, defaultGameSession);
     const before = snapshotSessionSave(defaultGameSession);
@@ -112,16 +97,11 @@ describe("createContentSystemNavigation", () => {
 
   it("a stale difficulty Back action preserves and resumes an active Wildcard battle", () => {
     setRunProgress({ characterId: "wildcard", runDeck: getStartingDeck("knight") });
-    dispatchGameplayCommand(
-      (draft) => {
-        setBattleActiveForTest(draft, true);
-        getBattleForTest(draft).battleState = makeTestBattleState({ turn: 4 });
-        setScreen(draft, ROUTE_SCREENS.BATTLE);
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      setBattleActiveForTest(draft, true);
+      getBattleForTest(draft).battleState = makeTestBattleState({ turn: 4 });
+      setScreen(draft, ROUTE_SCREENS.BATTLE);
+    });
     const before = snapshotSessionSave(defaultGameSession);
     const deps = makeDeps();
     createContentSystemNavigation(deps, defaultGameSession).handleBackFromDifficultySelect();
@@ -210,14 +190,9 @@ describe("createContentSystemNavigation", () => {
   });
 
   it("keeps an opening Companion victory on Rewards through the production shell", () => {
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.runProfile.effects.companionDamage = 1000;
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      draft.runProfile.effects.companionDamage = 1000;
+    });
     const resolve = battleEngine.resolveBattleStart;
     const opening = vi.spyOn(battleEngine, "resolveBattleStart").mockImplementationOnce((options, context) =>
       resolve(
@@ -243,15 +218,9 @@ describe("createContentSystemNavigation", () => {
 
   it("sends a veteran hero to difficulty select", () => {
     setRunSession({ pendingContentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.profile.completedDifficulties.knight = [DEFAULT_CAMPAIGN_DIFFICULTY_ID];
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      draft.profile.completedDifficulties.knight = [DEFAULT_CAMPAIGN_DIFFICULTY_ID];
+    });
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps, defaultGameSession);
     nav.handleCharacterSelect("knight");
@@ -295,15 +264,9 @@ describe("createContentSystemNavigation", () => {
   it("returns to battle when resuming the same content system with an active battle", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
     setRunSession({ hasActiveRun: true });
-    dispatchGameplayCommand(
-      (draft) => {
-        setBattleActiveForTest(draft, true);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      setBattleActiveForTest(draft, true);
+    });
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps, defaultGameSession);
     nav.beginCampaign();
@@ -315,22 +278,12 @@ describe("createContentSystemNavigation", () => {
     (mode) => {
       setRunProgress({ contentSystemType: mode, characterId: "knight" });
       setRunSession({ hasActiveRun: true });
-      dispatchGameplayCommand(
-        (draft) => {
-          setBattleActiveForTest(draft, true);
-          getBattleForTest(draft).battleState = makeTestBattleState({ turn: 4 });
-          setScreen(draft, ROUTE_SCREENS.BATTLE);
-
-          return acceptCommand();
-        },
-        undefined,
-        defaultGameSession,
-      );
-      dispatchGameplayCommand(
-        (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.MENU)),
-        undefined,
-        defaultGameSession,
-      );
+      mutateGameplayForTest((draft) => {
+        setBattleActiveForTest(draft, true);
+        getBattleForTest(draft).battleState = makeTestBattleState({ turn: 4 });
+        setScreen(draft, ROUTE_SCREENS.BATTLE);
+      });
+      mutateGameplayForTest((draft) => setScreen(draft, ROUTE_SCREENS.MENU));
       const deps = makeDeps();
       const nav = createContentSystemNavigation(deps, defaultGameSession);
       const begin = { campaign: nav.beginCampaign, labyrinth: nav.beginLabyrinth, wildwood: nav.beginWildwood };
@@ -398,11 +351,7 @@ describe("createContentSystemNavigation", () => {
     const nav = createContentSystemNavigation(deps, defaultGameSession);
     nav.handleCharacterSelect("wildcard");
     setRunSession({ activity: { kind: "draft-deck" } });
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DRAFT_DECK)),
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => setScreen(draft, ROUTE_SCREENS.DRAFT_DECK));
     for (let round = 0; round < DRAFT_ROUNDS; round += 1) {
       const choice = readRunSession(defaultGameSession).starterDraftChoices?.[0];
       expect(choice).toBeDefined();
@@ -499,11 +448,7 @@ describe("createContentSystemNavigation", () => {
     nav.beginLabyrinth();
     expect(deps.resumeTo).toHaveBeenCalledWith(ROUTE_SCREENS.DRAFT_DECK);
     setRunSession({ activity: { kind: "draft-deck" } });
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DRAFT_DECK)),
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => setScreen(draft, ROUTE_SCREENS.DRAFT_DECK));
     nav.handleStandardDraftComplete();
     expect(readRunSession(defaultGameSession).labyrinthMap).not.toBeNull();
     const map = readRunSession(defaultGameSession).labyrinthMap;
@@ -529,11 +474,7 @@ describe("createContentSystemNavigation", () => {
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps, defaultGameSession);
     setRunSession({ activity: { kind: "draft-deck" } });
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DRAFT_DECK)),
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => setScreen(draft, ROUTE_SCREENS.DRAFT_DECK));
     nav.handleStandardDraftComplete();
     expect(readRunSession(defaultGameSession).labyrinthMap).not.toBeNull();
     expect(readActiveRun(defaultGameSession).contentSystemType).toBe(CONTENT_SYSTEMS.LABYRINTH);
@@ -545,15 +486,9 @@ describe("createContentSystemNavigation", () => {
       makeTestCard({ id: `campaign-draft-${index}` }),
     );
     // A veteran wildcard skips the novice auto-start and continues to difficulty select.
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.profile.completedDifficulties.wildcard = [DEFAULT_CAMPAIGN_DIFFICULTY_ID];
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      draft.profile.completedDifficulties.wildcard = [DEFAULT_CAMPAIGN_DIFFICULTY_ID];
+    });
     setRunProgress({
       characterId: "wildcard",
       contentSystemType: CONTENT_SYSTEMS.CAMPAIGN,
@@ -570,37 +505,21 @@ describe("createContentSystemNavigation", () => {
     const nav = createContentSystemNavigation(deps, defaultGameSession);
 
     setRunSession({ activity: { kind: "draft-deck" } });
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DRAFT_DECK)),
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => setScreen(draft, ROUTE_SCREENS.DRAFT_DECK));
     nav.handleStandardDraftComplete();
     expect(readRunSession(defaultGameSession).starterDraftChoices).toBeNull();
     expect(readRunSession(defaultGameSession).activity.kind).toBe("difficulty-select");
     expect(() => nav.handleStandardDraftComplete()).not.toThrow();
     expect(deps.navigateTo).toHaveBeenCalledExactlyOnceWith(ROUTE_SCREENS.DIFFICULTY_SELECT);
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DIFFICULTY_SELECT)),
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => setScreen(draft, ROUTE_SCREENS.DIFFICULTY_SELECT));
     nav.handleBackFromDifficultySelect();
     expect(readRunSession(defaultGameSession).activity.kind).toBe("draft-deck");
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DRAFT_DECK)),
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => setScreen(draft, ROUTE_SCREENS.DRAFT_DECK));
     nav.handleStandardDraftComplete();
     expect(readRunSession(defaultGameSession).activity.kind).toBe("difficulty-select");
     expect(readActiveRun(defaultGameSession).runDeck).toEqual(draftedCards);
     expect(deps.presentBattleStart).not.toHaveBeenCalled();
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DIFFICULTY_SELECT)),
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => setScreen(draft, ROUTE_SCREENS.DIFFICULTY_SELECT));
     nav.handleDifficultySelect(DEFAULT_CAMPAIGN_DIFFICULTY_ID);
 
     expect(readActiveRun(defaultGameSession).contentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
@@ -617,11 +536,7 @@ describe("createContentSystemNavigation", () => {
       runMaxHealth: 30,
     });
     setRunSession({ hasActiveRun: true });
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.DESTINATION)),
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => setScreen(draft, ROUTE_SCREENS.DESTINATION));
     const deps = makeDeps();
     createContentSystemNavigation(deps, defaultGameSession).resumeRun();
     expect(deps.resumeTo).toHaveBeenCalledWith(ROUTE_SCREENS.DESTINATION);

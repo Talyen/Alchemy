@@ -1,10 +1,16 @@
 import "../../../helpers/mock-audio";
+import { initializeMysteryForTest } from "../../../helpers/visit-initialization";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/navigation/mystery-event-navigation";
-import { resetAllTestStores, resetProfileForTest } from "../../../helpers/run-domain-store-test";
-import { setRunProgress, setRunSession } from "../../../helpers/run-domain-store-test";
-import { acceptCommand, subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
+import {
+  mutateRunForTest,
+  resetAllTestStores,
+  resetProfileForTest,
+  setRunProgress,
+  setRunSession,
+} from "../../../helpers/run-domain-store-test";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   readActiveRun,
   readRunProfile,
@@ -90,7 +96,9 @@ describe("createMysteryEventNavigation", () => {
     expect(choice.effects[0]).toEqual({ kind: "gainMaterial", material: "herbs", amount: 3 });
   });
 
-  it("beginMysteryEvent stores an event and navigates", () => {
+  it("presents an initialized event without changing its committed state", () => {
+    initializeMysteryForTest(defaultGameSession);
+    const before = readRunRevision(defaultGameSession);
     const { nav, navigateTo } = createMysteryNav();
 
     nav.beginMysteryEvent();
@@ -105,6 +113,7 @@ describe("createMysteryEventNavigation", () => {
     ).toEqual([]);
     expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryChosenCardId).toBeNull();
     expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryChosenChoice).toBeNull();
+    expect(readRunRevision(defaultGameSession)).toBe(before);
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.MYSTERY, undefined);
     expect(playUISound).toHaveBeenCalledWith("musicBoxMystery");
   });
@@ -232,15 +241,9 @@ describe("createMysteryEventNavigation", () => {
     const { dispatchRunSessionCommand } = await import("@/features/alchemy/shared/stores/run-session-command");
     const { setMysteryCardChoices } = await import("@/features/alchemy/shared/stores/run-session-write-port");
     const { cardById } = await import("@/lib/game-data");
-    dispatchRunSessionCommand(
-      (draft) => {
-        setMysteryCardChoices(draft, [cardById["slash"], cardById["block"]].filter(Boolean) as never);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((draft) => {
+      setMysteryCardChoices(draft, [cardById["slash"], cardById["block"]].filter(Boolean) as never);
+    });
 
     nav.handleMysteryChooseCard("slash");
     nav.handleMysteryChooseCard("block");

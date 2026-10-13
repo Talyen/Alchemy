@@ -6,13 +6,17 @@ import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { computeTalentEffects } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { enemyBestiary } from "@/lib/game-data";
-import { resetRunDomainStore, setRunSession, setRunProgress } from "../../../../helpers/run-domain-store-test";
+import {
+  mutateGameplayForTest,
+  resetRunDomainStore,
+  setRunSession,
+  setRunProgress,
+} from "../../../../helpers/run-domain-store-test";
 import { readActiveRun, readBattle, readRunRevision } from "@/features/alchemy/shared/stores/run-reads";
 import { battlePresentation } from "@/app/battle-presentation";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import { createRunRngState } from "@/lib/rng";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
 
@@ -42,15 +46,9 @@ describe("createBattleInit", () => {
     setRunProgress({ roomsEncountered: 0, runPlayerHealth: 30, runMaxHealth: 30 });
     const testEffects = { ...defaultHomesteadEffects, flatPhysicalDamage: 2 };
     const init = makeInit();
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.runProfile.effects = testEffects;
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      draft.runProfile.effects = testEffects;
+    });
 
     init.startBattle({ enemyType: "normal" });
 

@@ -1,8 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { gridLabyrinthMapFixture } from "../../../fixtures/labyrinth-map";
-import { resetAllTestStores, setRunProgress, setRunSession } from "../../../helpers/run-domain-store-test";
+import {
+  mutateGameplayForTest,
+  resetAllTestStores,
+  setRunProgress,
+  setRunSession,
+} from "../../../helpers/run-domain-store-test";
 import { createLabyrinthController } from "@/features/alchemy/run-loop/run/labyrinth-controller";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { getStartingDeck } from "@/lib/game-data";
 import { defaultGameSession } from "@/app/application-session";
@@ -58,15 +62,10 @@ describe("Labyrinth commands", () => {
     controller.selectNode(boss.id);
     controller.descend();
     expect(readRunSession(defaultGameSession).labyrinthMap!.currentFloor).toBe(1);
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.session.labyrinthMap!.nodes[boss.id]!.cleared = true;
-        draft.session.labyrinthMap!.currentNodeId = boss.id;
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      draft.session.labyrinthMap!.nodes[boss.id]!.cleared = true;
+      draft.session.labyrinthMap!.currentNodeId = boss.id;
+    });
     controller.descend();
     controller.descend();
     const next = readRunSession(defaultGameSession).labyrinthMap!;

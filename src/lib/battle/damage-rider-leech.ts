@@ -148,23 +148,6 @@ export function applyHolyLifesteal(
   return applyScaledLeechHealing(state, healAmount, combatTexts);
 }
 
-export function applyDamageBlock(
-  state: BattleState,
-  damage: number,
-  combatTexts: CombatTextEvent[],
-  eligibility = state,
-) {
-  if (
-    damage <= 0 ||
-    state.talentEffects.holyBlockPercentFromDamage <= 0 ||
-    eligibility.playerHealth !== eligibility.playerMaxHealth
-  )
-    return state;
-  const blockAmount = scalePercent(damage, state.talentEffects.holyBlockPercentFromDamage);
-  if (blockAmount <= 0) return state;
-  return applyBlockReward(state, blockAmount, combatTexts, { skipFightPacing: true });
-}
-
 export function applyHolyBlockChance(state: BattleState, healthDamage: number, combatTexts: CombatTextEvent[]) {
   if (healthDamage <= 0 || !rollBattleChance(state.talentEffects.holyBlockChance, state)) return state;
   return applyBlockReward(state, healthDamage, combatTexts, { skipFightPacing: true });

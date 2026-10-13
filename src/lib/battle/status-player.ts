@@ -86,9 +86,7 @@ export function checkHealthThresholds(
   if (nextHealth <= 0) return state;
   let nextState = applyHealthThresholdCleanse(prevHealth, state, combatTexts, nextHealth);
   const maxHealth = state.playerMaxHealth;
-  const block = state.talentEffects.healthThresholdBlock;
-  if (block && crossedBelow(prevHealth, nextHealth, (maxHealth * block.threshold) / PERCENT_DENOMINATOR))
-    nextState = applyBlockReward(nextState, block.amount, combatTexts);
+
   const once = state.talentEffects.healthThresholdBlockOnce;
   if (once && !readCombatFlag(nextState, "desperateGuardUsed")) {
     const thresholdHp = (maxHealth * once.threshold) / PERCENT_DENOMINATOR;
@@ -124,18 +122,8 @@ export function applyPlayerStatusEffect(
   return addPlayerStatusWithCombatText(state, effect.status, effect.amount, combatTexts, { skipFightPacing: true });
 }
 
-const BLOCK_PREVENTED_STATUSES: Partial<
-  Record<DamageType | PlayerStatusId, "blockPreventsStun" | "blockPreventsBleed" | "blockPreventsPoison">
-> = {
-  stun: "blockPreventsStun",
-  bleed: "blockPreventsBleed",
-  poison: "blockPreventsPoison",
-};
-
 export function shouldBlockPreventStatusBuildup(state: BattleState, status: DamageType | PlayerStatusId): boolean {
-  if (state.playerStatuses.block <= 0) return false;
-  const flag = BLOCK_PREVENTED_STATUSES[status];
-  return flag ? state.talentEffects[flag] : false;
+  return status === "stun" && state.playerStatuses.block > 0 && state.talentEffects.blockPreventsStun;
 }
 
 export function applyPlayerDamageStatuses(

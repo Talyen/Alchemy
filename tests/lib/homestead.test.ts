@@ -64,7 +64,7 @@ describe("mergeIntoManifest", () => {
       startBlock: 2,
       campfireHealBonus: 0.1,
     };
-    talent.firstBleedCardFree = true;
+    talent.firstBurnCardFree = true;
     talent.armorPhysicalDamagePercent = 100;
     talent.cardHealBonus = { bread: 3, apple: 1 };
     talent.companionBondLevels.wolf = 3;
@@ -83,7 +83,7 @@ describe("mergeIntoManifest", () => {
       startGold: 10,
       startBlock: 2,
       campfireHealBonus: 0.1,
-      firstBleedCardFree: true,
+      firstBurnCardFree: true,
       armorPhysicalDamagePercent: 100,
       homesteadPotionBonus: 1,
     });

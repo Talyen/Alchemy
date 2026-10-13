@@ -9,7 +9,7 @@ import type { BattleState, CombatTextEvent } from "./types";
 import { getBattleOutcome, isPlayerDefeated } from "./battle-outcome";
 import { applyScaledLeechHealing, computeLeechHeal } from "./damage-rider-leech";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
-import { applyBlockReward, applyHealingWithCombatText, gainManaWithCombatText } from "./player-rewards";
+import { applyHealingWithCombatText, gainManaWithCombatText } from "./player-rewards";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { getBattleCompanionDamageModifiers } from "./companion-scaling";
 import { rollForgeAffixAwards, addForgeToPlayer } from "./status-player";
@@ -91,10 +91,6 @@ export function resolveCompanionTurnStart(
         afterEffects.gearEffects.healOnCompanionAttack,
         combatTexts,
       );
-    }
-
-    if (damageDealt > 0 && state.talentEffects.blockOnCompanionDamage > 0 && state.playerStatuses.block === 0) {
-      afterEffects = applyBlockReward(afterEffects, state.talentEffects.blockOnCompanionDamage, combatTexts);
     }
 
     if (damageDealt > 0 && afterEffects.enemyHealth > 0 && state.talentEffects.companionStunChance > 0) {

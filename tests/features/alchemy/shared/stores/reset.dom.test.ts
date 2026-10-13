@@ -1,5 +1,10 @@
-import { setBattleActiveForTest as setHasActiveBattle } from "../../../../helpers/run-domain-store-test";
-
+import {
+  mutateRunForTest,
+  setBattleActiveForTest as setHasActiveBattle,
+  resetProfileForTest,
+  resetRunDomainStore,
+  setRunProgress,
+} from "../../../../helpers/run-domain-store-test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/alchemy/shared/storage/io", async (importOriginal) => {
@@ -9,7 +14,6 @@ vi.mock("@/features/alchemy/shared/storage/io", async (importOriginal) => {
     clearAlchemySaveData: vi.fn(),
   };
 });
-
 import { clearAlchemySaveData } from "@/features/alchemy/shared/storage/io";
 import {
   defaultSaveData,
@@ -30,7 +34,6 @@ import {
   readRunProfile,
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-reads";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   addMaterialsToStockpile,
   setDiscoveredCardIds,
@@ -40,7 +43,6 @@ import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-stor
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { ROUTE_SCREENS } from "@/lib/routing";
-import { resetProfileForTest, resetRunDomainStore, setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/app/application-session";
 import { deferred } from "../../../../helpers/deferred";
 
@@ -59,17 +61,12 @@ beforeEach(() => {
 
 describe("clearAllPersistentGameData", () => {
   it("clears progression and live combat together while preserving device display sizes", async () => {
-    dispatchRunSessionCommand(
-      (draft) => {
-        addMaterialsToStockpile(draft, { wood: 10, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
-        setDiscoveredCardIds(draft, ["card-a"]);
-        setHasActiveRun(draft, true);
-        setHasActiveBattle(draft, true);
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((draft) => {
+      addMaterialsToStockpile(draft, { wood: 10, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
+      setDiscoveredCardIds(draft, ["card-a"]);
+      setHasActiveRun(draft, true);
+      setHasActiveBattle(draft, true);
+    });
     setRunProgress({ unlockedTalents: { physical: ["test-talent"] } });
     useUiStore.getState().setShowClearSaveConfirm(true);
     useDeviceDisplayStore.getState().setGameSizePercent(85);
@@ -114,16 +111,10 @@ describe("clearAllPersistentGameData", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mockedClearSave.mockResolvedValue(false);
     useUiStore.getState().setShowClearSaveConfirm(true);
-    dispatchRunSessionCommand(
-      (draft) => {
-        addMaterialsToStockpile(draft, { wood: 10, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
-        setDiscoveredCardIds(draft, ["card-a"]);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((draft) => {
+      addMaterialsToStockpile(draft, { wood: 10, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
+      setDiscoveredCardIds(draft, ["card-a"]);
+    });
     setRunProgress({ unlockedTalents: { physical: ["test-talent"] } });
 
     await expect(clearAllPersistentGameData(defaultGameSession)).resolves.toBe(false);

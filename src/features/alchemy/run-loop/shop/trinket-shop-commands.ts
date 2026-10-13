@@ -1,5 +1,4 @@
 import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
-import { createShopInitializer } from "./shop-initialization";
 import { grantTrinketToRunWithRecord } from "@/features/alchemy/shared/stores/deck-mutations";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
@@ -35,8 +34,6 @@ export function createTrinketShopCommands(gameSession: GameSession): TrinketShop
   );
   const getRefreshPrice = createGetRefreshPrice("trinket-shop", gameSession);
 
-  const initialize = createShopInitializer("trinket", gameSession);
-
   const refresh = createShopRefreshAction(
     {
       activity: "trinket-shop",
@@ -56,5 +53,5 @@ export function createTrinketShopCommands(gameSession: GameSession): TrinketShop
     gameSession,
   );
 
-  return bindSessionCapabilities(gameSession, { initialize, buy, refresh, getBuyPrice, getRefreshPrice });
+  return bindSessionCapabilities(gameSession, { buy, refresh, getBuyPrice, getRefreshPrice });
 }

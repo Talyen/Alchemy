@@ -14,7 +14,7 @@ export class ProgressCompletion {
   private listeners = new Set<() => void>();
   private restoreListeners = new Set<() => void>();
   private completions: Array<() => void> = [];
-  private retry: (() => void) | null = null;
+  private retryOwners = new Set<{ retry: () => void }>();
 
   readonly read = (): ProgressSaveState => this.state;
   readonly subscribe = (listener: () => void) => {
@@ -27,16 +27,18 @@ export class ProgressCompletion {
     return () => this.restoreListeners.delete(listener);
   };
 
-  activate(retry: () => void) {
-    this.retry = retry;
+  registerRetryDriver(retry: () => void) {
+    // Registration identity belongs to the client; pending acknowledgements
+    // belong to the session and survive every client's scheduling lifetime.
+    const owner = { retry };
+    this.retryOwners.add(owner);
     return () => {
-      this.retry = null;
-      this.cancel();
+      this.retryOwners.delete(owner);
     };
   }
 
-  get active() {
-    return this.retry !== null;
+  get hasRetryDriver() {
+    return this.retryOwners.size > 0;
   }
 
   mark(revision: number, force = false) {
@@ -81,7 +83,11 @@ export class ProgressCompletion {
   retryNow() {
     if (this.state.kind !== "failed") return;
     this.publish({ kind: "saving", revision: this.state.revision });
-    this.retry?.();
+    // Prefer the most recently attached driver, falling back when it detaches.
+    // Select after notification, which can itself release a driver.
+    let current: { retry: () => void } | undefined;
+    for (const owner of this.retryOwners) current = owner;
+    current?.retry();
   }
 
   cancel() {

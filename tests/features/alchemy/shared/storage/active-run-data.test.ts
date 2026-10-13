@@ -1,5 +1,12 @@
 import { savedActivityFixture, savedActivityData } from "../../../../fixtures/run-activity";
-import { getBattleForTest, setBattleActiveForTest } from "../../../../helpers/run-domain-store-test";
+import {
+  mutateGameplayForTest,
+  getBattleForTest,
+  setBattleActiveForTest,
+  resetRunDomainStore,
+  setRunProgress,
+  setRunSession,
+} from "../../../../helpers/run-domain-store-test";
 import { battleSnapshot } from "@/lib/battle";
 import { beforeEach, describe, expect, it } from "vitest";
 import { defaultBattleState, type BattleState } from "@/lib/battle";
@@ -9,9 +16,7 @@ import { decodeRunResumeSnapshot, encodeRunResumeSnapshot } from "@/features/alc
 import { createInitialActiveRunFields } from "@/features/alchemy/shared/stores/run-state-init";
 import { getRunSession, readActiveRun, readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import type { Screen } from "@/lib/routing";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { ANCIENT_ALTAR_MYSTERY_VISIT, makeActiveRunData } from "../stores/active-run-data-fixture";
 import { defaultGameSession } from "@/app/application-session";
 function encodeState(screen?: Screen): ActiveRunData {
@@ -19,16 +24,10 @@ function encodeState(screen?: Screen): ActiveRunData {
 }
 
 function writeBattle(partial: { hasActiveBattle?: boolean; battleState?: BattleState }) {
-  dispatchGameplayCommand(
-    (draft) => {
-      if (partial.hasActiveBattle !== undefined) setBattleActiveForTest(draft, partial.hasActiveBattle);
-      if (partial.battleState !== undefined) getBattleForTest(draft).battleState = partial.battleState;
-
-      return acceptCommand();
-    },
-    undefined,
-    defaultGameSession,
-  );
+  mutateGameplayForTest((draft) => {
+    if (partial.hasActiveBattle !== undefined) setBattleActiveForTest(draft, partial.hasActiveBattle);
+    if (partial.battleState !== undefined) getBattleForTest(draft).battleState = partial.battleState;
+  });
 }
 
 beforeEach(() => {
@@ -300,10 +299,8 @@ describe("encodeRunResumeSnapshot", () => {
   });
 
   it("persists destination resume fields", () => {
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(setRewardState(draft, (prev) => ({ ...prev, destinations: ["Campfire", "Card Shop"] }))),
-      undefined,
-      defaultGameSession,
+    mutateGameplayForTest((draft) =>
+      setRewardState(draft, (prev) => ({ ...prev, destinations: ["Campfire", "Card Shop"] })),
     );
 
     const result = encodeState("destination");

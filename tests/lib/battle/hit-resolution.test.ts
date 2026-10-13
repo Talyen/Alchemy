@@ -175,24 +175,6 @@ describe("damage riders via applyCardEffects", () => {
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyStatuses.stun).toBeGreaterThanOrEqual(5);
   });
-
-  it("armorNatureDamagePercent adds armor to nature damage", () => {
-    const state = patchBattleState({
-      enemyHealth: 50,
-      enemyMaxHealth: 50,
-      playerStatuses: { armor: 4 },
-      talentEffects: { armorNatureDamagePercent: 100 },
-      rng: () => 0.99,
-      deck: [],
-      hand: [],
-      discard: [],
-      exhausted: [],
-    });
-    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "nature", amount: 5 }] });
-    const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(state, card, texts);
-    expect(result.enemyHealth).toBe(41);
-  });
 });
 
 describe("Emberforged ignition", () => {

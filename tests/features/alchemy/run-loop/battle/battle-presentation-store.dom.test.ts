@@ -1,4 +1,7 @@
-import { setBattleActiveForTest as setHasActiveBattle } from "../../../../helpers/run-domain-store-test";
+import {
+  mutateRunForTest,
+  setBattleActiveForTest as setHasActiveBattle,
+} from "../../../../helpers/run-domain-store-test";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION_MS } from "@/lib/game-constants";
@@ -15,7 +18,6 @@ import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { patchBattleState, makeTestCard } from "../../../../fixtures/battle";
 import { battlePresentation } from "@/app/battle-presentation";
 import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { defaultGameSession } from "@/app/application-session";
@@ -170,16 +172,10 @@ describe("battle-presentation-store", () => {
 
   function activateBattle() {
     vi.useFakeTimers();
-    dispatchRunSessionCommand(
-      (draft) => {
-        setHasActiveBattle(draft, true);
-        setScreen(draft, ROUTE_SCREENS.BATTLE);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((draft) => {
+      setHasActiveBattle(draft, true);
+      setScreen(draft, ROUTE_SCREENS.BATTLE);
+    });
     return battlePresentation.getState().showCombatTexts;
   }
 
@@ -392,11 +388,7 @@ describe("battle-presentation-store", () => {
     await vi.advanceTimersByTimeAsync(COMBAT_TEXT_LIFETIME_MS - 300);
     expect(battlePresentation.getState().floatingCombatBursts).toHaveLength(1);
     battlePresentation.getState().resetPresentation();
-    dispatchRunSessionCommand(
-      (draft) => acceptCommand(setScreen(draft, ROUTE_SCREENS.COLLECTION)),
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((draft) => setScreen(draft, ROUTE_SCREENS.COLLECTION));
     show([{ target: "enemy", kind: "damage", stat: "physical", amount: 9 }]);
     await vi.advanceTimersByTimeAsync(COMBAT_TEXT_LIFETIME_MS);
     expect(battlePresentation.getState().floatingCombatBursts).toEqual([]);

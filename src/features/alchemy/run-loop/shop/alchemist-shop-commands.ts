@@ -1,5 +1,4 @@
 import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
-import { createShopInitializer } from "./shop-initialization";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { discoverCardIds } from "@/features/alchemy/shared/stores/profile-store";
@@ -54,8 +53,6 @@ export function createAlchemistShopCommands(gameSession: GameSession): Alchemist
     );
   };
   const getRefreshPrice = createGetRefreshPrice("alchemist", gameSession);
-
-  const initialize = createShopInitializer("alchemist", gameSession);
 
   function brewPotion(
     prepare: (
@@ -141,7 +138,6 @@ export function createAlchemistShopCommands(gameSession: GameSession): Alchemist
   );
 
   return bindSessionCapabilities(gameSession, {
-    initialize,
     buyPotion,
     mixPotions,
     strengthenPotion,

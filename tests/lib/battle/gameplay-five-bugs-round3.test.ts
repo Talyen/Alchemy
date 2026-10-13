@@ -81,25 +81,6 @@ describe("gameplay five bugs round 3", () => {
     });
   });
 
-  describe("3. Scorching Light no longer has orphaned duplicate burn path", () => {
-    it("applies burn only once through the derived-hit resolver", () => {
-      const card = makeTestCard({ tags: ["holy"] });
-      const state = patchBattleState({
-        enemyHealth: 100,
-        enemyMaxHealth: 100,
-        rng: () => 0.01,
-        talentEffects: { ...computeTalentEffects({ holy: ["holy-scorching-light"] }), holyBurnDamageChance: 100 },
-      });
-      const effect = { kind: "damage" as const, damageType: "holy" as const, amount: 10 };
-
-      const result = resolvePlayerHit(state, { source: "card-attack", card, effect, resolvedDamage: 10 }, []);
-
-      // Scorching Light uses fraction: 1, so burn = 10 through derived hit
-      // Bug: dead holyBurnChance path would have doubled this if ever accidentally set
-      expect(result.enemyStatuses.burn).toBe(10);
-    });
-  });
-
   describe("4. Lacerate applies Bleed through derived-hit resolver", () => {
     it("applies Bleed through Armor instead of bypassing it", () => {
       const card = makeTestCard();

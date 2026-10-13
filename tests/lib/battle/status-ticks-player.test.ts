@@ -10,20 +10,20 @@ describe("tickPlayerStatuses", () => {
   it("combines Burn reductions before Armor and decays Armor only after Health loss", () => {
     const state = patchBattleState({
       playerStatuses: { burn: 10, block: 5, armor: 3 },
-      talentEffects: { receiveHalfBurnDamage: true, blockReduceBurnDamage: 1, armorMitigatesBurn: true },
+      talentEffects: { receiveHalfBurnDamage: true, armorMitigatesBurn: true },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
-    expect(next.playerHealth).toBe(29);
+    expect(next.playerHealth).toBe(28);
     expect(next.playerStatuses).toMatchObject({ burn: 5, armor: 2, block: 5 });
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 1, periodic: true });
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 2, periodic: true });
     expect(state.playerStatuses).toMatchObject({ burn: 10, armor: 3 });
   });
 
   it("keeps Armor and suppresses damage feedback when mitigation absorbs the whole Burn tick", () => {
     const state = patchBattleState({
       playerStatuses: { burn: 1, block: 5, armor: 3 },
-      talentEffects: { blockReduceBurnDamage: 1, armorMitigatesBurn: true },
+      talentEffects: { armorMitigatesBurn: true },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);

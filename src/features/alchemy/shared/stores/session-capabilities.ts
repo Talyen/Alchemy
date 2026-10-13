@@ -6,7 +6,7 @@ export { assertSessionOwnership, bindSessionCapabilities } from "./session-capab
 export function sessionFeedback(gameSession: GameSession) {
   const runtime = sessionRuntime(gameSession);
   const completion = runtime.progressCompletion;
-  if (!completion.active && completion.read().kind === "idle") return runtime.feedback;
+  if (!completion.hasRetryDriver && completion.read().kind === "idle") return runtime.feedback;
   return {
     ...runtime.feedback,
     playUISound: (...args: Parameters<typeof runtime.feedback.playUISound>) => {
@@ -56,7 +56,7 @@ export function guardProgressAction<Args extends unknown[], Result>(
     const runtime = sessionRuntime(gameSession);
     const completion = runtime.progressCompletion;
     if (
-      (completion.active || completion.read().kind !== "idle") &&
+      (completion.hasRetryDriver || completion.read().kind !== "idle") &&
       (completion.read().kind !== "idle" || runtime.io.getSaveWriteFailure() || runtime.persistentClearInFlight)
     )
       return blocked;
@@ -67,7 +67,7 @@ export function guardProgressAction<Args extends unknown[], Result>(
 
 export function afterProgressSaved(gameSession: GameSession, run: () => void) {
   const completion = sessionRuntime(gameSession).progressCompletion;
-  if (completion.active || completion.read().kind !== "idle") completion.afterSaved(run);
+  if (completion.hasRetryDriver || completion.read().kind !== "idle") completion.afterSaved(run);
   else run();
 }
 

@@ -4,9 +4,8 @@ import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { processEnemyRegeneration, processEnemyTraits } from "@/lib/battle/enemy-turn-traits";
 import { processEncounterTraitActionStart } from "@/lib/battle/encounter-trait-events";
-import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { normalizePersistedBattleState } from "@/lib/validation/normalize-persisted-battle-state";
-import { makeTestCard, patchBattleState } from "../../fixtures/battle";
+import { patchBattleState } from "../../fixtures/battle";
 
 const metrics = () => ({ enemyAttackActions: 0, enemyAbilityActivations: {} });
 
@@ -114,23 +113,5 @@ describe("battle measurements", () => {
     expect(
       normalizePersistedBattleState({ ...patchBattleState(), battleMetrics: metrics() }).battleMetrics,
     ).toBeUndefined();
-  });
-});
-
-describe("Shield Slam", () => {
-  it.each([
-    [1, 3],
-    [0, 5],
-  ])("removes two Armor only while Block is held (%i Block)", (block, armor) => {
-    const base = patchBattleState();
-    const state = {
-      ...base,
-      playerStatuses: { ...base.playerStatuses, block },
-      enemyMitigation: { ...base.enemyMitigation, armor: 5 },
-      talentEffects: { ...base.talentEffects, physicalStripArmorWhileBlocked: true },
-      rng: () => 0.99,
-    };
-    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 1 }] });
-    expect(applyCardEffects(state, card, []).enemyMitigation.armor).toBe(armor);
   });
 });

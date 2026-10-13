@@ -50,12 +50,12 @@ describe("applyPlayerCombatDamage", () => {
     expect(result.playerHealth).toBe(24);
   });
 
-  it("does not apply receiveHalfNatureDamage (attack/DoT paths scale instead)", () => {
+  it("does not apply receiveHalfBurnDamage (attack/DoT paths scale instead)", () => {
     const state = patchBattleState({
       playerHealth: 30,
-      talentEffects: { receiveHalfNatureDamage: true },
+      talentEffects: { receiveHalfBurnDamage: true },
     });
-    const result = applyPlayerCombatDamage(state, 10, "hostile", "nature");
+    const result = applyPlayerCombatDamage(state, 10, "hostile", "burn");
     expect(result.playerHealth).toBe(20);
   });
 
