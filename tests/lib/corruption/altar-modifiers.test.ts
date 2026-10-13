@@ -1,7 +1,31 @@
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
+import { corruptCard, corruptDeckCard } from "@/lib/corruption";
 import { applyAltarModifiers } from "@/lib/corruption/altar-modifiers";
 import { getCorruptionMutationGroups } from "@/lib/corruption/mutations";
-import { cardById } from "@/lib/game-data";
+import { cardById, createEffectDescription, withCardDescription } from "@/lib/game-data";
+import { makeTestCard } from "../../fixtures/cards";
+
+it("Pure Altar preserves identity even when the selected card has no legal mutation", () => {
+  const effects = [
+    { kind: "next-hit-crit" as const },
+    { kind: "next-hit-leech" as const },
+    { kind: "next-hit-poison" as const },
+    { kind: "next-archery-free" as const },
+  ];
+  const card = withCardDescription(makeTestCard({ effects }), createEffectDescription(effects));
+  const rng = vi.fn(() => 0.5);
+  expect(getCorruptionMutationGroups(card)).toEqual([]);
+  expect(corruptCard(card, [cardById.slash!], rng, ["pure-altar"])).toBeNull();
+  expect(rng).not.toHaveBeenCalled();
+});
+
+it.each([-1, 0.5, 1, NaN, Infinity])("rejects invalid corruption deck index %s without spending RNG", (index) => {
+  const deck = [cardById.slash!];
+  const rng = vi.fn(() => 0.5);
+  expect(corruptDeckCard(deck, index, [cardById.slash!], rng)).toEqual({ deck, result: null });
+  expect(deck).toEqual([cardById.slash!]);
+  expect(rng).not.toHaveBeenCalled();
+});
 
 it("Blood Rite favors Bleed over each other conversion instead of equally boosting all types", () => {
   const card = cardById.slash!;
