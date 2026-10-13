@@ -1,8 +1,8 @@
 import { companionLibrary, type CompanionId } from "@/lib/game-data";
-import { singleMaterialCosts } from "./data-builders";
+import { scaledMaterialCosts } from "./data-builders";
 import type { TieredItem } from "./tiers";
 
-export const COMPANION_BOND_TIERS = singleMaterialCosts("food");
+export const COMPANION_BOND_TIERS = scaledMaterialCosts({ food: 10 }, 3);
 
 export const COMPANION_MAX_TIER = COMPANION_BOND_TIERS.length;
 

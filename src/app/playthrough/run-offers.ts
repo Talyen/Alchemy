@@ -73,7 +73,7 @@ export function offerRunChoices(
             "wish",
             card.id,
             affinity(card) + getEffectiveDamageScore(card, state),
-            () => battle.chooseWish(card.id),
+            () => battle.chooseWish(state, card.id),
             index,
           ),
         );
@@ -93,7 +93,7 @@ export function offerRunChoices(
             card.id,
             scores[position]!,
             () => {
-              const result = battle.playCard(index, card.id);
+              const result = battle.playCard(state, index, card.id);
               if (result) recordBattle(result.state, result.combatTexts, card.id);
               return result;
             },
@@ -102,7 +102,7 @@ export function offerRunChoices(
         });
         if (!choices.length || choices.every((choice) => choice.score < 0))
           offer("end-turn", "turn", 0, () => {
-            const result = battle.endTurn();
+            const result = battle.endTurn(state);
             if (!result) return null;
             for (const frame of result.frames) {
               recordBattle(frame.turn.state, frame.turn.combatTexts);

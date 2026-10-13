@@ -8,26 +8,24 @@ import { globToRegExp } from "../../scripts/lib/glob-pattern.mjs";
 
 const repoRoot = path.resolve(import.meta.dirname, "../..");
 
-describe("CI action dependencies", () => {
-  it("pins external actions in workflows and composite actions to full commit SHAs", () => {
-    const references = [".github/workflows", ".github/actions"].flatMap((directory) => {
-      const root = path.join(repoRoot, directory);
-      return readdirSync(root, { recursive: true, encoding: "utf8" })
-        .filter((file) => /\.ya?ml$/u.test(file))
-        .flatMap((file) => {
-          const contents = readFileSync(path.join(root, file), "utf8");
-          return [...contents.matchAll(/^\s*(?:-\s*)?uses:\s*(\S+)/gmu)].map((match) => ({
-            file: path.join(directory, file),
-            reference: match[1],
-          }));
-        });
-    });
-    expect(references.length).toBeGreaterThan(0);
-    for (const { file, reference } of references) {
-      if (reference.startsWith("./")) continue;
-      expect(reference, `${file}: ${reference}`).toMatch(/^[^@\s]+@[a-f0-9]{40}$/u);
-    }
+it("CI action dependencies pins external actions in workflows and composite actions to full commit SHAs", () => {
+  const references = [".github/workflows", ".github/actions"].flatMap((directory) => {
+    const root = path.join(repoRoot, directory);
+    return readdirSync(root, { recursive: true, encoding: "utf8" })
+      .filter((file) => /\.ya?ml$/u.test(file))
+      .flatMap((file) => {
+        const contents = readFileSync(path.join(root, file), "utf8");
+        return [...contents.matchAll(/^\s*(?:-\s*)?uses:\s*(\S+)/gmu)].map((match) => ({
+          file: path.join(directory, file),
+          reference: match[1],
+        }));
+      });
   });
+  expect(references.length).toBeGreaterThan(0);
+  for (const { file, reference } of references) {
+    if (reference.startsWith("./")) continue;
+    expect(reference, `${file}: ${reference}`).toMatch(/^[^@\s]+@[a-f0-9]{40}$/u);
+  }
 });
 
 /**

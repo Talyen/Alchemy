@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { computeTalentEffects } from "@/lib/game-data";
+import { companionLibrary, computeTalentEffects } from "@/lib/game-data";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { checkHealthThresholds } from "@/lib/battle/status-player";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
-import { companionLibrary } from "@/lib/game-data";
 import { patchBattleState } from "../../fixtures/battle";
 
 describe("Talent rework batch", () => {

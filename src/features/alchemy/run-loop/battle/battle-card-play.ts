@@ -104,14 +104,15 @@ export function createBattleCardPlay(
   async function runAutoplayWithPreview(
     control: AutoplayCardControl,
     previewId: string,
-    commit: () => boolean | Promise<boolean>,
+    commit: (expected: BattleSnapshot) => boolean | Promise<boolean>,
   ): Promise<boolean> {
     const sessionNum = ctx.playback.id;
+    const expected = getBattle().battleState;
     if (!ctx.playback.isCurrent(sessionNum) || control.signal.aborted || !control.canCommit()) return false;
     const clearPreview = await previewAutoplayChoice(control, previewId);
     try {
       if (!ctx.playback.isCurrent(sessionNum) || control.signal.aborted || !control.canCommit()) return false;
-      return await commit();
+      return await commit(expected);
     } finally {
       clearPreview();
     }
@@ -121,10 +122,12 @@ export function createBattleCardPlay(
     card: BattleCard,
     index: number,
     sourceRect: { x: number; y: number; width: number; height: number },
+    expected: BattleSnapshot,
     options?: { silentReject?: boolean },
   ): boolean {
     clearStaleAutoplayPreview();
     const currentState = getBattle().battleState;
+    if (currentState !== expected) return false;
     if (card.uid !== undefined) {
       index = currentState.hand.findIndex((candidate) => candidate.uid === card.uid && candidate.id === card.id);
     }
@@ -144,7 +147,7 @@ export function createBattleCardPlay(
       return false;
     }
     const sessionNum = ctx.playback.id;
-    const played = ctx.battle.playCard(index, card.id);
+    const played = ctx.battle.playCard(currentState, index, card.id);
     if (!played) {
       if (!options?.silentReject) playUISound("error");
       return false;
@@ -175,7 +178,7 @@ export function createBattleCardPlay(
   }
 
   function handleCardClick(card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) {
-    handlePlayCard(card, index, getCardRect(event.currentTarget.getBoundingClientRect()));
+    handlePlayCard(card, index, getCardRect(event.currentTarget.getBoundingClientRect()), getBattle().battleState);
   }
 
   // Flash the hover treatment before committing so autoplay reads like a manual
@@ -213,18 +216,19 @@ export function createBattleCardPlay(
 
   async function handleAutoplayCard(card: BattleCard, index: number, control: AutoplayCardControl): Promise<boolean> {
     const previewId = getHoverId("hand", getHandCardKey(card, index));
-    return runAutoplayWithPreview(control, previewId, () => {
+    return runAutoplayWithPreview(control, previewId, (expected) => {
       // Measure after the preview so the ghost starts from the lifted position, like a manual play.
       const element = ctx.handCardRefs.current[getHandCardKey(card, index)];
       const sourceRect = element ? getCardRect(element.getBoundingClientRect()) : { x: 0, y: 0, width: 0, height: 0 };
-      return handlePlayCard(card, index, sourceRect, { silentReject: true });
+      return handlePlayCard(card, index, sourceRect, expected, { silentReject: true });
     });
   }
 
-  function commitWishChoice(card: BattleCard, errorContext: string): boolean {
+  function commitWishChoice(card: BattleCard, errorContext: string, expected: BattleSnapshot): boolean {
     const currentState = getBattle().battleState;
+    if (currentState !== expected) return false;
     if (!currentState.wishOptions?.some((option) => option.id === card.id)) return false;
-    const newState = ctx.battle.chooseWish(card.id);
+    const newState = ctx.battle.chooseWish(expected, card.id);
     if (!newState) return false;
     playUISound("selection");
     const sessionNum = ctx.playback.id;
@@ -234,18 +238,14 @@ export function createBattleCardPlay(
   }
 
   async function handleAutoplayWish(card: BattleCard, control: AutoplayCardControl): Promise<boolean> {
-    const options = getBattle().battleState.wishOptions;
-    return runAutoplayWithPreview(control, getHoverId("wish", card.id), () => {
-      // A manual choice can advance the queue while this preview is waiting.
-      // The same catalog card may also appear in the next, separate Wish.
-      if (getBattle().battleState.wishOptions !== options) return false;
-      return commitWishChoice(card, "autoplay wish choice");
-    });
+    return runAutoplayWithPreview(control, getHoverId("wish", card.id), (expected) =>
+      commitWishChoice(card, "autoplay wish choice", expected),
+    );
   }
 
   function handleWishChoice(card: BattleCard) {
     clearStaleAutoplayPreview();
-    commitWishChoice(card, "wish choice");
+    commitWishChoice(card, "wish choice", getBattle().battleState);
   }
 
   return { handleCardClick, handleWishChoice, handleAutoplayCard, handleAutoplayWish };

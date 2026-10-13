@@ -46,19 +46,17 @@ describe("resolveActiveRunForSave", () => {
   });
 });
 
-describe("buildAlchemySaveDataFromStores permanent progress", () => {
-  it("joins materialInventory and talentXP from the session's run profile", () => {
-    setRunProgress({
-      materialInventory: { wood: 12, iron: 3, herbs: 1, food: 0, gems: 2, stone: 0, hide: 0 },
-      talentXP: { burn: 40 },
-      unlockedTalents: { burn: ["ember-1"] },
-      initialized: true,
-    });
-
-    const save = buildAlchemySaveDataFromStores(defaultGameSession);
-
-    expect(save.materialInventory).toEqual({ wood: 12, iron: 3, herbs: 1, food: 0, gems: 2, stone: 0, hide: 0 });
-    expect(save.talentXP).toEqual({ burn: 40 });
-    expect(save.unlockedTalents).toEqual({ burn: ["ember-1"] });
+it("buildAlchemySaveDataFromStores permanent progress joins materialInventory and talentXP from the session's run profile", () => {
+  setRunProgress({
+    materialInventory: { wood: 12, iron: 3, herbs: 1, food: 0, gems: 2, stone: 0, hide: 0 },
+    talentXP: { burn: 40 },
+    unlockedTalents: { burn: ["ember-1"] },
+    initialized: true,
   });
+
+  const save = buildAlchemySaveDataFromStores(defaultGameSession);
+
+  expect(save.materialInventory).toEqual({ wood: 12, iron: 3, herbs: 1, food: 0, gems: 2, stone: 0, hide: 0 });
+  expect(save.talentXP).toEqual({ burn: 40 });
+  expect(save.unlockedTalents).toEqual({ burn: ["ember-1"] });
 });

@@ -1,25 +1,11 @@
 import type { HomesteadBuilding, HomesteadFarm, HomesteadResearch } from "./types";
-import {
-  foodSingleCosts,
-  gemsSingleCosts,
-  herbsSingleCosts,
-  materialCost,
-  stackingUpgrade,
-  woodFoodCosts,
-  woodHideCosts,
-  woodStoneCosts,
-} from "./data-builders";
+import { scaledMaterialCosts, stackingUpgrade } from "./data-builders";
 
 export const buildings: HomesteadBuilding[] = [
   stackingUpgrade(
     "blacksmiths-forge",
     "Blacksmith",
-    [
-      materialCost({ stone: 4, iron: 11 }),
-      materialCost({ stone: 8, iron: 22 }),
-      materialCost({ stone: 12, iron: 33 }),
-      materialCost({ stone: 16, iron: 44 }),
-    ],
+    scaledMaterialCosts({ stone: 4, iron: 11 }),
     { flatPhysicalDamage: 1, homesteadForgeBurnPercent: 10, ironFindBonus: 0.1 },
     (t) => `Physical damage is increased by ${t}\nBurn damage is increased by ${10 * t}% of your Forge`,
     (t) => `Find ${10 * t}% more Iron`,
@@ -27,7 +13,7 @@ export const buildings: HomesteadBuilding[] = [
   stackingUpgrade(
     "hunters-lodge",
     "Hunter's Lodge",
-    woodHideCosts(),
+    scaledMaterialCosts({ wood: 4, hide: 5 }),
     { flatNatureDamage: 1, hideFindBonus: 0.1 },
     (t) => `Nature damage is increased by ${t}`,
     (t) => `Find ${10 * t}% more Hide`,
@@ -35,12 +21,7 @@ export const buildings: HomesteadBuilding[] = [
   stackingUpgrade(
     "alchemy-lab",
     "Alchemy Lab",
-    [
-      materialCost({ stone: 4, herbs: 11 }),
-      materialCost({ stone: 8, herbs: 22 }),
-      materialCost({ stone: 12, herbs: 33 }),
-      materialCost({ stone: 16, herbs: 44 }),
-    ],
+    scaledMaterialCosts({ stone: 4, herbs: 11 }),
     { homesteadPotionBonus: 1, herbFindBonus: 0.1 },
     (t) => `Potions deal ${t} additional damage and restore ${t} additional Health`,
     (t) => `Find ${10 * t}% more Herbs`,
@@ -48,12 +29,7 @@ export const buildings: HomesteadBuilding[] = [
   stackingUpgrade(
     "runesmiths-workshop",
     "Runesmith",
-    [
-      materialCost({ iron: 5, gems: 5 }),
-      materialCost({ iron: 10, gems: 10 }),
-      materialCost({ iron: 15, gems: 15 }),
-      materialCost({ iron: 20, gems: 20 }),
-    ],
+    scaledMaterialCosts({ iron: 5, gems: 5 }),
     { flatFreezeDamage: 1, flatHolyDamage: 1, gemFindBonus: 0.1 },
     (t) => `Freeze and Holy damage are increased by ${t}`,
     (t) => `Find ${10 * t}% more Gems`,
@@ -61,14 +37,14 @@ export const buildings: HomesteadBuilding[] = [
   stackingUpgrade(
     "companion-sanctuary",
     "Sanctuary",
-    woodFoodCosts(),
+    scaledMaterialCosts({ wood: 4, food: 6 }),
     { companionDamage: 1 },
     (t) => `Companions deal ${t} additional damage`,
   ),
   stackingUpgrade(
     "wishing-well",
     "Wishing Well",
-    woodStoneCosts(),
+    scaledMaterialCosts({ wood: 4, stone: 4 }),
     { wishExtraChoiceChance: 10, goldFindBonus: 0.1 },
     (t) => `Wish has a ${10 * t}% chance to offer an additional choice`,
     (t) => `Find ${10 * t}% more Gold`,
@@ -76,12 +52,7 @@ export const buildings: HomesteadBuilding[] = [
   stackingUpgrade(
     "transmutation-crucible",
     "Transmutation Crucible",
-    [
-      materialCost({ stone: 4, iron: 5 }),
-      materialCost({ stone: 8, iron: 10 }),
-      materialCost({ stone: 12, iron: 15 }),
-      materialCost({ stone: 16, iron: 20 }),
-    ],
+    scaledMaterialCosts({ stone: 4, iron: 5 }),
     { flatBurnDamage: 1, ironFindBonus: 0.1 },
     (t) => `Burn damage is increased by ${t}`,
     (t) => `Find ${10 * t}% more Iron`,
@@ -89,12 +60,7 @@ export const buildings: HomesteadBuilding[] = [
   stackingUpgrade(
     "mycology-cellar",
     "Mycology Cellar",
-    [
-      materialCost({ stone: 4, herbs: 5 }),
-      materialCost({ stone: 8, herbs: 10 }),
-      materialCost({ stone: 12, herbs: 15 }),
-      materialCost({ stone: 16, herbs: 20 }),
-    ],
+    scaledMaterialCosts({ stone: 4, herbs: 5 }),
     { homesteadLeechHealing: 1, herbFindBonus: 0.1 },
     (t) => `Leech restores ${t} additional Health`,
     (t) => `Find ${10 * t}% more Herbs`,
@@ -102,7 +68,7 @@ export const buildings: HomesteadBuilding[] = [
   stackingUpgrade(
     "sparring-grounds",
     "Sparring Grounds",
-    woodStoneCosts(),
+    scaledMaterialCosts({ wood: 4, stone: 4 }),
     { startBlock: 2, ironFindBonus: 0.1 },
     (t) => `Start each combat with ${2 * t} Block`,
     (t) => `Find ${10 * t}% more Iron`,
@@ -110,7 +76,7 @@ export const buildings: HomesteadBuilding[] = [
   stackingUpgrade(
     "archery-range",
     "Archery Range",
-    woodHideCosts(),
+    scaledMaterialCosts({ wood: 4, hide: 5 }),
     { flatArrowDamage: 1, woodFindBonus: 0.1 },
     (t) => `Archery cards deal ${t} additional damage`,
     (t) => `Find ${10 * t}% more Wood`,
@@ -118,12 +84,7 @@ export const buildings: HomesteadBuilding[] = [
   stackingUpgrade(
     "library",
     "Library",
-    [
-      materialCost({ wood: 4, gems: 5 }),
-      materialCost({ wood: 8, gems: 10 }),
-      materialCost({ wood: 12, gems: 15 }),
-      materialCost({ wood: 16, gems: 20 }),
-    ],
+    scaledMaterialCosts({ wood: 4, gems: 5 }),
     { removeCardDiscount: 2 },
     (t) => `Card removal costs ${2 * t} less Gold`,
   ),
@@ -133,7 +94,7 @@ export const farmPlots: HomesteadFarm[] = [
   stackingUpgrade(
     "wheat-field",
     "Wheat Field",
-    foodSingleCosts(),
+    scaledMaterialCosts({ food: 11 }),
     { healthRestorePerCombat: 1, foodFindBonus: 0.1 },
     (t) => `Restore ${t} Health after every combat`,
     (t) => `Find ${10 * t}% more Food`,
@@ -141,7 +102,7 @@ export const farmPlots: HomesteadFarm[] = [
   stackingUpgrade(
     "herb-garden",
     "Herb Garden",
-    herbsSingleCosts(),
+    scaledMaterialCosts({ herbs: 11 }),
     { poisonDamageReduction: 1, herbFindBonus: 0.1 },
     (t) => `Take ${t} less Poison damage`,
     (t) => `Find ${10 * t}% more Herbs`,
@@ -149,7 +110,7 @@ export const farmPlots: HomesteadFarm[] = [
   stackingUpgrade(
     "chicken-coop",
     "Chicken Coop",
-    woodFoodCosts(),
+    scaledMaterialCosts({ wood: 4, food: 6 }),
     { runMaxHealthBonus: 5, foodFindBonus: 0.1 },
     (t) => `Gain ${5 * t} maximum Health`,
     (t) => `Find ${10 * t}% more Food`,
@@ -157,7 +118,7 @@ export const farmPlots: HomesteadFarm[] = [
   stackingUpgrade(
     "pasture",
     "Pasture",
-    woodFoodCosts(),
+    scaledMaterialCosts({ wood: 4, food: 6 }),
     { physicalDamageReduction: 1, hideFindBonus: 0.1 },
     (t) => `Take ${t} less Physical damage`,
     (t) => `Find ${10 * t}% more Hide`,
@@ -165,7 +126,7 @@ export const farmPlots: HomesteadFarm[] = [
   stackingUpgrade(
     "orchard",
     "Orchard",
-    woodFoodCosts(),
+    scaledMaterialCosts({ wood: 4, food: 6 }),
     { startThorns: 1, foodFindBonus: 0.1 },
     (t) => `Start each combat with ${t} Thorns`,
     (t) => `Find ${10 * t}% more Food`,
@@ -173,12 +134,7 @@ export const farmPlots: HomesteadFarm[] = [
   stackingUpgrade(
     "crystal-garden",
     "Crystal Garden",
-    [
-      materialCost({ stone: 4, gems: 10 }),
-      materialCost({ stone: 8, gems: 20 }),
-      materialCost({ stone: 12, gems: 30 }),
-      materialCost({ stone: 16, gems: 40 }),
-    ],
+    scaledMaterialCosts({ stone: 4, gems: 10 }),
     { freezeDamagePerMana: 25, gemFindBonus: 0.1, stoneFindBonus: 0.1 },
     (t) => `Freeze damage is increased by ${25 * t}% of your Mana`,
     (t) => `Find ${10 * t}% more Gems and Stone`,
@@ -189,7 +145,7 @@ export const researchUpgrades: HomesteadResearch[] = [
   stackingUpgrade(
     "leyline-energy",
     "Leyline Energy",
-    gemsSingleCosts(),
+    scaledMaterialCosts({ gems: 10 }),
     { homesteadFreeManaChance: 5, gemFindBonus: 0.1 },
     (t) => `Cards have a ${5 * t}% chance to cost no Mana`,
     (t) => `Find ${10 * t}% more Gems`,
@@ -197,7 +153,7 @@ export const researchUpgrades: HomesteadResearch[] = [
   stackingUpgrade(
     "detect-magic",
     "Detect Magic",
-    gemsSingleCosts(),
+    scaledMaterialCosts({ gems: 10 }),
     (t) => ({ gearAstralChanceBonus: t <= 2 ? 0.03 : t === 3 ? 0.04 : 0.05, gemFindBonus: 0.1 }),
     (t) => `Basic gear has a ${[3, 6, 10, 15][t - 1]}% chance to become Astral`,
     (t) => `Find ${10 * t}% more Gems`,
@@ -205,7 +161,7 @@ export const researchUpgrades: HomesteadResearch[] = [
   stackingUpgrade(
     "botanical-distillation",
     "Botanical Distillation",
-    herbsSingleCosts(),
+    scaledMaterialCosts({ herbs: 11 }),
     { mixPotionDiscount: 2, herbFindBonus: 0.1 },
     (t) => `Brewing Potions costs ${2 * t} less Gold`,
     (t) => `Find ${10 * t}% more Herbs`,
@@ -213,7 +169,7 @@ export const researchUpgrades: HomesteadResearch[] = [
   stackingUpgrade(
     "culinary-arts",
     "Culinary Arts",
-    foodSingleCosts(),
+    scaledMaterialCosts({ food: 11 }),
     { homesteadHealing: 1, foodFindBonus: 0.1 },
     (t) => `Health restored is increased by ${t}`,
     (t) => `Find ${10 * t}% more Food`,
@@ -221,7 +177,7 @@ export const researchUpgrades: HomesteadResearch[] = [
   stackingUpgrade(
     "wool-tailoring",
     "Wool Tailoring",
-    woodHideCosts(),
+    scaledMaterialCosts({ wood: 4, hide: 5 }),
     { freezeDamageReduction: 1, burnDamageReduction: 1, goldFindBonus: 0.1 },
     (t) => `Take ${t} less Freeze and Burn damage`,
     (t) => `Find ${10 * t}% more Gold`,
@@ -229,12 +185,7 @@ export const researchUpgrades: HomesteadResearch[] = [
   stackingUpgrade(
     "agility-training",
     "Agility Training",
-    [
-      materialCost({ food: 6, hide: 5 }),
-      materialCost({ food: 12, hide: 10 }),
-      materialCost({ food: 18, hide: 15 }),
-      materialCost({ food: 24, hide: 20 }),
-    ],
+    scaledMaterialCosts({ food: 6, hide: 5 }),
     { dodgeChance: 2 },
     (t) => `Gain ${2 * t}% Dodge chance`,
   ),

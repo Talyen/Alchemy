@@ -207,45 +207,43 @@ it("reconstructs missing catalog metadata from preserved masters, and rejects fa
   }
 });
 
-describe("private preview serving", () => {
-  it("serves seekable prepared media while rejecting arbitrary paths, writes, invalid ranges and symlink escapes", async () => {
-    const temporary = await mkdtemp(path.join(tmpdir(), "alchemy-audio-review-"));
-    const directory = path.join(temporary, "board");
-    await mkdir(path.join(directory, "media"), { recursive: true });
-    await writeFile(path.join(directory, "index.html"), "board");
-    await writeFile(path.join(directory, "choices.mjs"), "export {};");
-    await writeFile(path.join(directory, "media/clip.wav"), "0123456789");
-    await writeFile(path.join(temporary, "private.txt"), "private");
-    await symlink(path.join(temporary, "private.txt"), path.join(directory, "report.md"));
-    const server = await serveReview(
-      directory,
-      { media: { clip: { available: true, original: "media/clip.wav", matched: "media/clip.wav" } } },
-      0,
-    );
-    const address = server.address();
-    if (!address || typeof address === "string") throw new Error("Missing server address");
-    const url = `http://127.0.0.1:${address.port}`;
-    try {
-      const range = await fetch(`${url}/media/clip.wav`, { headers: { Range: "bytes=2-5" } });
-      expect(range.status).toBe(206);
-      expect(range.headers.get("content-range")).toBe("bytes 2-5/10");
-      expect(await range.text()).toBe("2345");
-      expect((await fetch(`${url}/media/clip.wav`, { headers: { Range: "bytes=99-" } })).status).toBe(416);
-      expect((await fetch(`${url}/private.txt`)).status).toBe(404);
-      expect((await fetch(`${url}/report.md`)).status).toBe(404);
-      expect((await fetch(`${url}/`, { method: "POST" })).status).toBe(405);
-      expect(await (await fetch(`${url}/`)).text()).toBe("board");
-      const choicesModule = await fetch(`${url}/choices.mjs`);
-      expect(choicesModule.headers.get("content-type")).toContain("text/javascript");
-      expect(await choicesModule.text()).toBe("export {};");
-    } finally {
-      await new Promise<void>((resolve) => {
-        server.close(() => resolve());
-        server.closeAllConnections();
-      });
-      await rm(temporary, { recursive: true, force: true });
-    }
-  });
+it("private preview serving serves seekable prepared media while rejecting arbitrary paths, writes, invalid ranges and symlink escapes", async () => {
+  const temporary = await mkdtemp(path.join(tmpdir(), "alchemy-audio-review-"));
+  const directory = path.join(temporary, "board");
+  await mkdir(path.join(directory, "media"), { recursive: true });
+  await writeFile(path.join(directory, "index.html"), "board");
+  await writeFile(path.join(directory, "choices.mjs"), "export {};");
+  await writeFile(path.join(directory, "media/clip.wav"), "0123456789");
+  await writeFile(path.join(temporary, "private.txt"), "private");
+  await symlink(path.join(temporary, "private.txt"), path.join(directory, "report.md"));
+  const server = await serveReview(
+    directory,
+    { media: { clip: { available: true, original: "media/clip.wav", matched: "media/clip.wav" } } },
+    0,
+  );
+  const address = server.address();
+  if (!address || typeof address === "string") throw new Error("Missing server address");
+  const url = `http://127.0.0.1:${address.port}`;
+  try {
+    const range = await fetch(`${url}/media/clip.wav`, { headers: { Range: "bytes=2-5" } });
+    expect(range.status).toBe(206);
+    expect(range.headers.get("content-range")).toBe("bytes 2-5/10");
+    expect(await range.text()).toBe("2345");
+    expect((await fetch(`${url}/media/clip.wav`, { headers: { Range: "bytes=99-" } })).status).toBe(416);
+    expect((await fetch(`${url}/private.txt`)).status).toBe(404);
+    expect((await fetch(`${url}/report.md`)).status).toBe(404);
+    expect((await fetch(`${url}/`, { method: "POST" })).status).toBe(405);
+    expect(await (await fetch(`${url}/`)).text()).toBe("board");
+    const choicesModule = await fetch(`${url}/choices.mjs`);
+    expect(choicesModule.headers.get("content-type")).toContain("text/javascript");
+    expect(await choicesModule.text()).toBe("export {};");
+  } finally {
+    await new Promise<void>((resolve) => {
+      server.close(() => resolve());
+      server.closeAllConnections();
+    });
+    await rm(temporary, { recursive: true, force: true });
+  }
 });
 
 it("imports matching decisions without trusting attached candidate metadata and allows newer browser decisions to win", () => {
@@ -282,57 +280,55 @@ it("imports matching decisions without trusting attached candidate metadata and 
 
 afterEach(() => vi.useRealTimers());
 
-describe("audition playback lifetime", () => {
-  it("a new audition cancels queued sequence repetitions and disposes old audio even when its play rejection arrives late", async () => {
-    vi.useFakeTimers();
-    const audio: Array<ReviewAudio & { pause: ReturnType<typeof vi.fn>; load: ReturnType<typeof vi.fn> }> = [];
-    let rejectOld: ((reason: Error) => void) | undefined;
-    const status = vi.fn();
-    const player = createReviewPlayer({
-      createAudio: () => {
-        const item = {
-          volume: 1,
-          onended: null,
-          onerror: null,
-          play: () =>
-            new Promise<void>((_resolve, reject) => {
-              rejectOld = reject;
-            }),
-          pause: vi.fn(),
-          load: vi.fn(),
-          removeAttribute: vi.fn(),
-        };
-        audio.push(item);
-        return item;
-      },
-      schedule: (callback, ms) => setTimeout(callback, ms),
-      cancel: (timer) => clearTimeout(timer as ReturnType<typeof setTimeout>),
-      onStatus: status,
-      readVolume: () => 0.4,
-    });
-    const pending = player.sequence(
-      [
-        { at: 0, duration: 1, url: "old.wav", title: "Old" },
-        { at: 2, duration: 1, url: "queued.wav", title: "Queued" },
-      ],
-      3,
-    );
-    await vi.advanceTimersByTimeAsync(1);
-    const reject = rejectOld!;
-    expect(audio).toHaveLength(1);
-    player.play("new.wav", "New");
-    reject(new Error("late failure"));
-    await pending;
-    await vi.advanceTimersByTimeAsync(10000);
-    expect(audio).toHaveLength(2);
-    expect(audio[0].pause).toHaveBeenCalledOnce();
-    expect(audio[0].load).toHaveBeenCalledOnce();
-    expect(audio[1].pause).not.toHaveBeenCalled();
-    expect(status).toHaveBeenLastCalledWith("Playing: New");
-    player.stop();
-    expect(audio[1].pause).toHaveBeenCalledOnce();
-    expect(vi.getTimerCount()).toBe(0);
+it("audition playback lifetime a new audition cancels queued sequence repetitions and disposes old audio even when its play rejection arrives late", async () => {
+  vi.useFakeTimers();
+  const audio: Array<ReviewAudio & { pause: ReturnType<typeof vi.fn>; load: ReturnType<typeof vi.fn> }> = [];
+  let rejectOld: ((reason: Error) => void) | undefined;
+  const status = vi.fn();
+  const player = createReviewPlayer({
+    createAudio: () => {
+      const item = {
+        volume: 1,
+        onended: null,
+        onerror: null,
+        play: () =>
+          new Promise<void>((_resolve, reject) => {
+            rejectOld = reject;
+          }),
+        pause: vi.fn(),
+        load: vi.fn(),
+        removeAttribute: vi.fn(),
+      };
+      audio.push(item);
+      return item;
+    },
+    schedule: (callback, ms) => setTimeout(callback, ms),
+    cancel: (timer) => clearTimeout(timer as ReturnType<typeof setTimeout>),
+    onStatus: status,
+    readVolume: () => 0.4,
   });
+  const pending = player.sequence(
+    [
+      { at: 0, duration: 1, url: "old.wav", title: "Old" },
+      { at: 2, duration: 1, url: "queued.wav", title: "Queued" },
+    ],
+    3,
+  );
+  await vi.advanceTimersByTimeAsync(1);
+  const reject = rejectOld!;
+  expect(audio).toHaveLength(1);
+  player.play("new.wav", "New");
+  reject(new Error("late failure"));
+  await pending;
+  await vi.advanceTimersByTimeAsync(10000);
+  expect(audio).toHaveLength(2);
+  expect(audio[0].pause).toHaveBeenCalledOnce();
+  expect(audio[0].load).toHaveBeenCalledOnce();
+  expect(audio[1].pause).not.toHaveBeenCalled();
+  expect(status).toHaveBeenLastCalledWith("Playing: New");
+  player.stop();
+  expect(audio[1].pause).toHaveBeenCalledOnce();
+  expect(vi.getTimerCount()).toBe(0);
 });
 
 it("a shared card/companion selection overrides independent choices and survives import and export", () => {

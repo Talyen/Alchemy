@@ -1,21 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { dealDamage, makeEffect, makeTestCard, patchBattleState } from "../../fixtures/battle";
 
-describe("computeBaseDamage — forge bonus", () => {
-  it.each([
-    ["burn", "forgeBurnDamagePercent"],
-    ["holy", "forgeHolyDamagePercent"],
-    ["bleed", "forgeBleedDamagePercent"],
-  ] as const)("converts Forge into %s damage without spending stacks", (type, field) => {
-    const state = patchBattleState({
-      playerStatuses: { forge: 2 },
-      talentEffects: { [field]: 100 },
-    });
-    const card = makeTestCard({ effects: [makeEffect(type, 5)] });
-    const result = dealDamage(state, card);
-    expect(result.enemyHealth).toBe(23);
-    expect(result.playerStatuses.forge).toBe(2);
+it.each([
+  ["burn", "forgeBurnDamagePercent"],
+  ["holy", "forgeHolyDamagePercent"],
+  ["bleed", "forgeBleedDamagePercent"],
+] as const)("computeBaseDamage — forge bonus converts Forge into %s damage without spending stacks", (type, field) => {
+  const state = patchBattleState({
+    playerStatuses: { forge: 2 },
+    talentEffects: { [field]: 100 },
   });
+  const card = makeTestCard({ effects: [makeEffect(type, 5)] });
+  const result = dealDamage(state, card);
+  expect(result.enemyHealth).toBe(23);
+  expect(result.playerStatuses.forge).toBe(2);
 });
 
 describe("applyForgeStunRider", () => {

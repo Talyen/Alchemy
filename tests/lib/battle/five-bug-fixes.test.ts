@@ -60,84 +60,78 @@ describe("Five targeted bug fixes", () => {
     });
   });
 
-  describe("Bug 2: Resonant Chime preserves combat flags while marking itself used", () => {
-    it("preserves existing flags via writeCombatFlag when granting mana", () => {
-      const state = patchBattleState({
-        mana: 1,
-        maxMana: 3,
-        cardsPlayedThisTurn: 3,
-        trinketEffects: { resonantChimeCardsRequired: 3, resonantChimeMana: 1 },
-        flags: { pendingCinderSkinReaction: true },
-      });
+  it("Bug 2: Resonant Chime preserves combat flags while marking itself used preserves existing flags via writeCombatFlag when granting mana", () => {
+    const state = patchBattleState({
+      mana: 1,
+      maxMana: 3,
+      cardsPlayedThisTurn: 3,
+      trinketEffects: { resonantChimeCardsRequired: 3, resonantChimeMana: 1 },
+      flags: { pendingCinderSkinReaction: true },
+    });
 
-      const combatTexts: CombatTextEvent[] = [];
-      const next = applyResonantChimeTrinket(state, combatTexts);
+    const combatTexts: CombatTextEvent[] = [];
+    const next = applyResonantChimeTrinket(state, combatTexts);
 
-      expect(next.mana).toBe(2);
-      expect(next.flags.resonantChimeUsedThisTurn).toBe(true);
-      expect(next.flags.pendingCinderSkinReaction).toBe(true);
-      expect(combatTexts).toContainEqual({
-        target: "player",
-        kind: "status",
-        stat: "mana",
-        amount: 1,
-      });
+    expect(next.mana).toBe(2);
+    expect(next.flags.resonantChimeUsedThisTurn).toBe(true);
+    expect(next.flags.pendingCinderSkinReaction).toBe(true);
+    expect(combatTexts).toContainEqual({
+      target: "player",
+      kind: "status",
+      stat: "mana",
+      amount: 1,
     });
   });
 
-  describe("Bug 3: decayArmorAfterDamage in resolveCardHit receives combatTexts", () => {
-    it("decays enemy armor when hit by a damaging card", () => {
-      const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 6 }] });
-      const state = patchBattleState({
-        enemyHealth: 50,
-        enemyMaxHealth: 50,
-        enemyMitigation: { armor: 3 },
-      });
-
-      const combatTexts: CombatTextEvent[] = [];
-      const result = resolvePlayerHit(
-        state,
-        {
-          source: "card-attack",
-          card,
-          effect: card.effects.find((effect) => effect.kind === "damage")!,
-          resolvedDamage: 6,
-        },
-        combatTexts,
-      );
-
-      // Enemy armor decays by 1 after taking damage
-      expect(result.enemyMitigation.armor).toBe(2);
+  it("Bug 3: decayArmorAfterDamage in resolveCardHit receives combatTexts decays enemy armor when hit by a damaging card", () => {
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 6 }] });
+    const state = patchBattleState({
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
+      enemyMitigation: { armor: 3 },
     });
+
+    const combatTexts: CombatTextEvent[] = [];
+    const result = resolvePlayerHit(
+      state,
+      {
+        source: "card-attack",
+        card,
+        effect: card.effects.find((effect) => effect.kind === "damage")!,
+        resolvedDamage: 6,
+      },
+      combatTexts,
+    );
+
+    // Enemy armor decays by 1 after taking damage
+    expect(result.enemyMitigation.armor).toBe(2);
   });
 
-  describe("Bug 4: Archery reactions use Broadhead without orphaned archeryBleedChance bypass", () => {
-    it("applies Bleed according to Broadhead talent and does not double-apply via dead chance flag", () => {
-      const card = makeTestCard({
-        tags: ["archery"],
-        effects: [{ kind: "damage", damageType: "physical", amount: 10 }],
-      });
-      const state = patchBattleState({
-        enemyHealth: 50,
-        enemyMaxHealth: 50,
-        talentEffects: { archeryBleedDamageChance: 100 },
-        rng: () => 0.1,
-      });
-
-      const combatTexts: CombatTextEvent[] = [];
-      const result = resolvePlayerHit(
-        state,
-        {
-          source: "card-attack",
-          card,
-          effect: card.effects.find((effect) => effect.kind === "damage")!,
-          resolvedDamage: 10,
-        },
-        combatTexts,
-      );
-
-      // Broadhead applies derived bleed damage via tryTalentTypedHit using TALENT_CONVERSION_BLEED_FRACTION (30% of 10 = 3)
-      expect(result.enemyStatuses.bleed).toBe(3);
+  it("Bug 4: Archery reactions use Broadhead without orphaned archeryBleedChance bypass applies Bleed according to Broadhead talent and does not double-apply via dead chance flag", () => {
+    const card = makeTestCard({
+      tags: ["archery"],
+      effects: [{ kind: "damage", damageType: "physical", amount: 10 }],
     });
+    const state = patchBattleState({
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
+      talentEffects: { archeryBleedDamageChance: 100 },
+      rng: () => 0.1,
+    });
+
+    const combatTexts: CombatTextEvent[] = [];
+    const result = resolvePlayerHit(
+      state,
+      {
+        source: "card-attack",
+        card,
+        effect: card.effects.find((effect) => effect.kind === "damage")!,
+        resolvedDamage: 10,
+      },
+      combatTexts,
+    );
+
+    // Broadhead applies derived bleed damage via tryTalentTypedHit using TALENT_CONVERSION_BLEED_FRACTION (30% of 10 = 3)
+    expect(result.enemyStatuses.bleed).toBe(3);
   });
 });

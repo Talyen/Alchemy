@@ -600,72 +600,68 @@ describe("numeric text alignment", () => {
     expect(next.corruptedValuePositions).toContainEqual({ lineIndex: 0, matchIndex: 21 });
   });
 });
-describe("corruptedValuePositions deduplication", () => {
-  it("does not produce duplicate positions when re-corrupting the same target", () => {
-    const card = makeTestCard({
-      descriptionLines: ["Deal 4 Physical damage"],
-      effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
-    });
-    const targets = getEditableCorruptionTargets(card);
-    const first = applyNumericCorruption(card, targets[0]!, 1);
-    expect(first.descriptionLines).toEqual(["Deal 5 Physical damage"]);
-    expect(first.corruptedValuePositions).toEqual([{ lineIndex: 0, matchIndex: 5 }]);
-
-    // Second mutation on the already-corrupted card at the same line position.
-    const secondTargets = getEditableCorruptionTargets(first);
-    const second = applyNumericCorruption(first, secondTargets[0]!, 1);
-    expect(second.descriptionLines).toEqual(["Deal 6 Physical damage"]);
-    // Must have exactly one entry, not a duplicate.
-    expect(second.corruptedValuePositions).toEqual([{ lineIndex: 0, matchIndex: 5 }]);
+it("corruptedValuePositions deduplication does not produce duplicate positions when re-corrupting the same target", () => {
+  const card = makeTestCard({
+    descriptionLines: ["Deal 4 Physical damage"],
+    effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
   });
+  const targets = getEditableCorruptionTargets(card);
+  const first = applyNumericCorruption(card, targets[0]!, 1);
+  expect(first.descriptionLines).toEqual(["Deal 5 Physical damage"]);
+  expect(first.corruptedValuePositions).toEqual([{ lineIndex: 0, matchIndex: 5 }]);
+
+  // Second mutation on the already-corrupted card at the same line position.
+  const secondTargets = getEditableCorruptionTargets(first);
+  const second = applyNumericCorruption(first, secondTargets[0]!, 1);
+  expect(second.descriptionLines).toEqual(["Deal 6 Physical damage"]);
+  // Must have exactly one entry, not a duplicate.
+  expect(second.corruptedValuePositions).toEqual([{ lineIndex: 0, matchIndex: 5 }]);
 });
 
-describe("removeConsume highlight preservation", () => {
-  it("remaps highlights after every removed Consume line", () => {
-    const card = makeTestCard({
-      descriptionLines: ["Consume", "Deal 6 Physical damage", "Consume", "Restore 4 Health", "Consume"],
-      description: [
-        { role: "consume", parts: ["Consume"] },
-        {
-          role: "effect",
-          parts: [
-            "Deal ",
-            cardMagnitude({ effectIndex: 0, kind: "damage", field: "amount" }, { corrupted: true }),
-            " Physical damage",
-          ],
-        },
-        { role: "consume", parts: ["Consume"] },
-        {
-          role: "effect",
-          parts: [
-            "Restore ",
-            cardMagnitude({ effectIndex: 1, kind: "heal", field: "amount" }, { corrupted: true }),
-            " Health",
-          ],
-        },
-        { role: "consume", parts: ["Consume"] },
-      ],
-      tags: ["physical", "consume"],
-      effects: [
-        { kind: "damage", damageType: "physical", amount: 6 },
-        { kind: "heal", amount: 4 },
-      ],
-      consume: true,
-      corruptedValuePositions: [
-        { lineIndex: 1, matchIndex: 5 },
-        { lineIndex: 2, matchIndex: 0 },
-        { lineIndex: 3, matchIndex: 8 },
-      ],
-    });
-    const reusable = removeConsume(card);
-    expect(reusable.descriptionLines).toEqual(["Deal 6 Physical damage", "Restore 4 Health"]);
-    expect(reusable.corruptedValuePositions).toEqual([
-      { lineIndex: 0, matchIndex: 5 },
-      { lineIndex: 1, matchIndex: 8 },
-    ]);
-    expect(reusable.consume).toBe(false);
-    expect(reusable.tags).toEqual(["physical"]);
-    expect(card.tags).toEqual(["physical", "consume"]);
-    expect(card.corruptedValuePositions![2]!.lineIndex).toBe(3);
+it("removeConsume highlight preservation remaps highlights after every removed Consume line", () => {
+  const card = makeTestCard({
+    descriptionLines: ["Consume", "Deal 6 Physical damage", "Consume", "Restore 4 Health", "Consume"],
+    description: [
+      { role: "consume", parts: ["Consume"] },
+      {
+        role: "effect",
+        parts: [
+          "Deal ",
+          cardMagnitude({ effectIndex: 0, kind: "damage", field: "amount" }, { corrupted: true }),
+          " Physical damage",
+        ],
+      },
+      { role: "consume", parts: ["Consume"] },
+      {
+        role: "effect",
+        parts: [
+          "Restore ",
+          cardMagnitude({ effectIndex: 1, kind: "heal", field: "amount" }, { corrupted: true }),
+          " Health",
+        ],
+      },
+      { role: "consume", parts: ["Consume"] },
+    ],
+    tags: ["physical", "consume"],
+    effects: [
+      { kind: "damage", damageType: "physical", amount: 6 },
+      { kind: "heal", amount: 4 },
+    ],
+    consume: true,
+    corruptedValuePositions: [
+      { lineIndex: 1, matchIndex: 5 },
+      { lineIndex: 2, matchIndex: 0 },
+      { lineIndex: 3, matchIndex: 8 },
+    ],
   });
+  const reusable = removeConsume(card);
+  expect(reusable.descriptionLines).toEqual(["Deal 6 Physical damage", "Restore 4 Health"]);
+  expect(reusable.corruptedValuePositions).toEqual([
+    { lineIndex: 0, matchIndex: 5 },
+    { lineIndex: 1, matchIndex: 8 },
+  ]);
+  expect(reusable.consume).toBe(false);
+  expect(reusable.tags).toEqual(["physical"]);
+  expect(card.tags).toEqual(["physical", "consume"]);
+  expect(card.corruptedValuePositions![2]!.lineIndex).toBe(3);
 });

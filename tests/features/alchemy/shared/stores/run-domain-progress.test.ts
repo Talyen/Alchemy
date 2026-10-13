@@ -67,20 +67,18 @@ beforeEach(() => {
   resetRunDomainStore();
 });
 
-describe("run-domain progress: initial state", () => {
-  it("starts a healthy knight with a deck and no earned progress", () => {
-    const run = readActiveRun(defaultGameSession);
-    const profile = readRunProfile(defaultGameSession);
-    expect(run.characterId).toBe("knight");
-    expect(run.runDeck.length).toBeGreaterThan(0);
-    expect(run.runPlayerHealth).toBeGreaterThan(0);
-    expect(run.runMaxHealth).toBeGreaterThanOrEqual(run.runPlayerHealth);
-    expect(run.currentAct).toBe(1);
-    expect(profile.gold).toBe(0);
-    expect(profile.talentXP).toEqual({});
-    expect(run.runTalentXP).toEqual({});
-    expect(profile.unlockedTalents).toEqual({});
-  });
+it("run-domain progress: initial state starts a healthy knight with a deck and no earned progress", () => {
+  const run = readActiveRun(defaultGameSession);
+  const profile = readRunProfile(defaultGameSession);
+  expect(run.characterId).toBe("knight");
+  expect(run.runDeck.length).toBeGreaterThan(0);
+  expect(run.runPlayerHealth).toBeGreaterThan(0);
+  expect(run.runMaxHealth).toBeGreaterThanOrEqual(run.runPlayerHealth);
+  expect(run.currentAct).toBe(1);
+  expect(profile.gold).toBe(0);
+  expect(profile.talentXP).toEqual({});
+  expect(run.runTalentXP).toEqual({});
+  expect(profile.unlockedTalents).toEqual({});
 });
 
 describe("initialize", () => {
@@ -247,14 +245,12 @@ describe("gear max health sync", () => {
   });
 });
 
-describe("awardCardXP", () => {
-  it("awards and accumulates all resource-card keywords in run XP without changing permanent XP", () => {
-    awardCardXP(cardById["burning-blade"]!);
-    awardCardXP(cardById["mana-shield"]!);
-    awardCardXP(cardById["crystal-bulwark"]!);
-    expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({ burn: 1, forge: 1, block: 2, mana: 2 });
-    expect(readRunProfile(defaultGameSession).talentXP).toEqual({});
-  });
+it("awardCardXP awards and accumulates all resource-card keywords in run XP without changing permanent XP", () => {
+  awardCardXP(cardById["burning-blade"]!);
+  awardCardXP(cardById["mana-shield"]!);
+  awardCardXP(cardById["crystal-bulwark"]!);
+  expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({ burn: 1, forge: 1, block: 2, mana: 2 });
+  expect(readRunProfile(defaultGameSession).talentXP).toEqual({});
 });
 
 describe("awardMysteryXP", () => {
@@ -317,136 +313,122 @@ describe("unlockTalent", () => {
   });
 });
 
-describe("unlockAllTalents", () => {
-  it("unlocks every talent from the pool", () => {
-    unlockAllTalents();
-    const unlocked = readRunProfile(defaultGameSession).unlockedTalents;
-    const allKeywordIds = Object.keys(unlocked);
-    expect(allKeywordIds.length).toBeGreaterThan(0);
-    for (const talents of Object.values(unlocked)) {
-      expect(Array.isArray(talents)).toBe(true);
-      expect(talents.length).toBeGreaterThan(0);
-    }
-  });
+it("unlockAllTalents unlocks every talent from the pool", () => {
+  unlockAllTalents();
+  const unlocked = readRunProfile(defaultGameSession).unlockedTalents;
+  const allKeywordIds = Object.keys(unlocked);
+  expect(allKeywordIds.length).toBeGreaterThan(0);
+  for (const talents of Object.values(unlocked)) {
+    expect(Array.isArray(talents)).toBe(true);
+    expect(talents.length).toBeGreaterThan(0);
+  }
 });
 
-describe("resetUnlockedTalents", () => {
-  it("refunds allocations and removes live combat bonuses while preserving XP and Homestead effects", () => {
-    setRunProgress({ talentXP: { health: 100 }, unlockedTalents: { health: ["health-heal-boost"] } });
-    setRunSession({ hasActiveRun: true });
-    mutateGameplayForTest((draft) => {
-      draft.runProfile.effects.homesteadHealing = 2;
-      initializeActiveBattle(draft, patchBattleState({ playerHealth: 15 }));
-      rebindLiveRunMeta(draft);
-    });
-    expect(readBattle(defaultGameSession).battleState.talentEffects.healMultiplier).toBe(1.1);
-    const before = readBattle(defaultGameSession).battleState;
-    resetUnlockedTalents();
-    expect(readRunProfile(defaultGameSession).unlockedTalents).toEqual({});
-    expect(readRunProfile(defaultGameSession).talentXP).toEqual({ health: 100 });
-    expect(readBattle(defaultGameSession).battleState.talentEffects).toMatchObject({
-      healMultiplier: 1,
-      homesteadHealing: 2,
-    });
-    expect(readBattle(defaultGameSession).battleState.playerHealth).toBe(before.playerHealth);
-    expect(readBattle(defaultGameSession).battleState.hand).toEqual(before.hand);
+it("resetUnlockedTalents refunds allocations and removes live combat bonuses while preserving XP and Homestead effects", () => {
+  setRunProgress({ talentXP: { health: 100 }, unlockedTalents: { health: ["health-heal-boost"] } });
+  setRunSession({ hasActiveRun: true });
+  mutateGameplayForTest((draft) => {
+    draft.runProfile.effects.homesteadHealing = 2;
+    initializeActiveBattle(draft, patchBattleState({ playerHealth: 15 }));
+    rebindLiveRunMeta(draft);
   });
+  expect(readBattle(defaultGameSession).battleState.talentEffects.healMultiplier).toBe(1.1);
+  const before = readBattle(defaultGameSession).battleState;
+  resetUnlockedTalents();
+  expect(readRunProfile(defaultGameSession).unlockedTalents).toEqual({});
+  expect(readRunProfile(defaultGameSession).talentXP).toEqual({ health: 100 });
+  expect(readBattle(defaultGameSession).battleState.talentEffects).toMatchObject({
+    healMultiplier: 1,
+    homesteadHealing: 2,
+  });
+  expect(readBattle(defaultGameSession).battleState.playerHealth).toBe(before.playerHealth);
+  expect(readBattle(defaultGameSession).battleState.hand).toEqual(before.hand);
 });
 
-describe("resetRunXP", () => {
-  it("clears runTalentXP but preserves talentXP after finalize", () => {
-    awardMysteryXP("burn", 50);
-    finalizeRunXP();
-    resetRunXP();
-    expect(readRunProfile(defaultGameSession).talentXP.burn).toBe(50);
-    expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
-  });
+it("resetRunXP clears runTalentXP but preserves talentXP after finalize", () => {
+  awardMysteryXP("burn", 50);
+  finalizeRunXP();
+  resetRunXP();
+  expect(readRunProfile(defaultGameSession).talentXP.burn).toBe(50);
+  expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
 });
 
-describe("clearPermanentData", () => {
-  it("clears talentXP, runTalentXP, and unlockedTalents", () => {
-    awardMysteryXP("burn", 50);
-    finalizeRunXP();
-    unlockTalent("burn", "burn-dmg-1");
-    clearPermanentData();
-    expect(readRunProfile(defaultGameSession).talentXP).toEqual({});
-    expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
-    expect(readRunProfile(defaultGameSession).unlockedTalents).toEqual({});
-  });
+it("clearPermanentData clears talentXP, runTalentXP, and unlockedTalents", () => {
+  awardMysteryXP("burn", 50);
+  finalizeRunXP();
+  unlockTalent("burn", "burn-dmg-1");
+  clearPermanentData();
+  expect(readRunProfile(defaultGameSession).talentXP).toEqual({});
+  expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
+  expect(readRunProfile(defaultGameSession).unlockedTalents).toEqual({});
 });
 
-describe("reset", () => {
-  it("preserves talentXP and unlockedTalents while clearing run state", () => {
-    awardMysteryXP("burn", 50);
-    finalizeRunXP();
-    unlockTalent("burn", "burn-dmg-1");
-    setRunProgress({ gold: 100, runPlayerHealth: 15 });
-    resetProgress();
-    expect(readRunProfile(defaultGameSession).talentXP.burn).toBe(50);
-    expect(readRunProfile(defaultGameSession).unlockedTalents.burn).toEqual(["burn-dmg-1"]);
-    expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
-    expect(readRunProfile(defaultGameSession).gold).toBe(100);
-    expect(readActiveRun(defaultGameSession).runPlayerHealth).toBeGreaterThan(0);
-    expect(readRunInitialized(defaultGameSession)).toBe(false);
-  });
+it("reset preserves talentXP and unlockedTalents while clearing run state", () => {
+  awardMysteryXP("burn", 50);
+  finalizeRunXP();
+  unlockTalent("burn", "burn-dmg-1");
+  setRunProgress({ gold: 100, runPlayerHealth: 15 });
+  resetProgress();
+  expect(readRunProfile(defaultGameSession).talentXP.burn).toBe(50);
+  expect(readRunProfile(defaultGameSession).unlockedTalents.burn).toEqual(["burn-dmg-1"]);
+  expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
+  expect(readRunProfile(defaultGameSession).gold).toBe(100);
+  expect(readActiveRun(defaultGameSession).runPlayerHealth).toBeGreaterThan(0);
+  expect(readRunInitialized(defaultGameSession)).toBe(false);
 });
 
-describe("talent XP accumulation through run end", () => {
-  it("awards card XP to runTalentXP then merges into permanent talentXP and points", () => {
-    const card: BattleCard = {
-      id: "slash",
-      title: "Slash",
-      descriptionLines: [""],
-      art: "",
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-    };
-    setRunProgress({ selectedDifficulty: "difficulty-1" });
+it("talent XP accumulation through run end awards card XP to runTalentXP then merges into permanent talentXP and points", () => {
+  const card: BattleCard = {
+    id: "slash",
+    title: "Slash",
+    descriptionLines: [""],
+    art: "",
+    cost: 1,
+    effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
+  };
+  setRunProgress({ selectedDifficulty: "difficulty-1" });
 
-    for (let i = 0; i < 20; i++) {
-      awardCardXP(card);
-    }
-    expect(readActiveRun(defaultGameSession).runTalentXP.physical).toBe(20);
-    expect(computeTalentPoints(readRunProfile(defaultGameSession).talentXP.physical ?? 0)).toBe(0);
+  for (let i = 0; i < 20; i++) {
+    awardCardXP(card);
+  }
+  expect(readActiveRun(defaultGameSession).runTalentXP.physical).toBe(20);
+  expect(computeTalentPoints(readRunProfile(defaultGameSession).talentXP.physical ?? 0)).toBe(0);
 
-    finalizeRunXP();
+  finalizeRunXP();
 
-    expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
-    expect(readRunProfile(defaultGameSession).talentXP.physical).toBe(20);
-    expect(computeTalentPoints(readRunProfile(defaultGameSession).talentXP.physical ?? 0)).toBe(1);
-    expect(readRunSession(defaultGameSession).runEndTalentXP.physical).toBe(20);
-  });
+  expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
+  expect(readRunProfile(defaultGameSession).talentXP.physical).toBe(20);
+  expect(computeTalentPoints(readRunProfile(defaultGameSession).talentXP.physical ?? 0)).toBe(1);
+  expect(readRunSession(defaultGameSession).runEndTalentXP.physical).toBe(20);
 });
 
-describe("applyRunStartSnapshot", () => {
-  it("clears runTalentXP and run-end snapshots when starting a fresh run", () => {
-    awardMysteryXP("burn", 5);
-    setRunSession({
-      runEndTalentXP: { burn: 5 },
-      runEndItems: [{ kind: "trinket", trinketId: "bone-charm" }],
-    });
-    setRunProgress({ runObtainedItems: [{ kind: "trinket", trinketId: "bone-charm" }] });
-    applyRunStartSnapshot({
-      characterId: "knight",
-      contentSystemType: "campaign",
-      freshDeck: [],
-      selectedDifficulty: "difficulty-1",
-      startGoldGrant: 0,
-      runPlayerHealth: 80,
-      runMaxHealth: 80,
-      roomsEncountered: 0,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-      runBoons: [],
-      hasActiveRun: true,
-    });
-    expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
-    expect(readActiveRun(defaultGameSession).runObtainedItems).toEqual([]);
-    expect(readRunSession(defaultGameSession).runEndTalentXP).toEqual({});
-    expect(readRunSession(defaultGameSession).runEndItems).toEqual([]);
-    expect(readRunSession(defaultGameSession).hasActiveRun).toBe(true);
+it("applyRunStartSnapshot clears runTalentXP and run-end snapshots when starting a fresh run", () => {
+  awardMysteryXP("burn", 5);
+  setRunSession({
+    runEndTalentXP: { burn: 5 },
+    runEndItems: [{ kind: "trinket", trinketId: "bone-charm" }],
   });
+  setRunProgress({ runObtainedItems: [{ kind: "trinket", trinketId: "bone-charm" }] });
+  applyRunStartSnapshot({
+    characterId: "knight",
+    contentSystemType: "campaign",
+    freshDeck: [],
+    selectedDifficulty: "difficulty-1",
+    startGoldGrant: 0,
+    runPlayerHealth: 80,
+    runMaxHealth: 80,
+    roomsEncountered: 0,
+    currentAct: 1,
+    destinationIndexInAct: 0,
+    completedDestinations: [],
+    runBoons: [],
+    hasActiveRun: true,
+  });
+  expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
+  expect(readActiveRun(defaultGameSession).runObtainedItems).toEqual([]);
+  expect(readRunSession(defaultGameSession).runEndTalentXP).toEqual({});
+  expect(readRunSession(defaultGameSession).runEndItems).toEqual([]);
+  expect(readRunSession(defaultGameSession).hasActiveRun).toBe(true);
 });
 
 describe("finalizeRunEndSession", () => {

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, expect, it, vi } from "vitest";
 import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/corruption-flow";
 import { setCorruptionResult, setRunDeck } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
@@ -10,26 +10,24 @@ beforeEach(() => {
   resetTransientRunUi(defaultGameSession);
 });
 
-describe("corruption destination exit", () => {
-  it("handleCorruptCard ignores a second pick after a result is stored", () => {
-    const original = makeTestCard({ id: "slash" });
-    mutateRunForTest((draft) => {
-      setRunDeck(draft, [original]);
-      setCorruptionResult(draft, {
-        originalCard: original,
-        corruptedCard: { ...original, corrupted: true },
-        transformed: false,
-        delta: -1,
-      });
+it("corruption destination exit handleCorruptCard ignores a second pick after a result is stored", () => {
+  const original = makeTestCard({ id: "slash" });
+  mutateRunForTest((draft) => {
+    setRunDeck(draft, [original]);
+    setCorruptionResult(draft, {
+      originalCard: original,
+      corruptedCard: { ...original, corrupted: true },
+      transformed: false,
+      delta: -1,
     });
-
-    createCorruptionFlowHandlers(
-      {
-        leaveVisit: vi.fn(),
-      },
-      defaultGameSession,
-    ).handleCorruptCard(1);
-
-    expect(readActiveRun(defaultGameSession).runDeck).toEqual([original]);
   });
+
+  createCorruptionFlowHandlers(
+    {
+      leaveVisit: vi.fn(),
+    },
+    defaultGameSession,
+  ).handleCorruptCard(1);
+
+  expect(readActiveRun(defaultGameSession).runDeck).toEqual([original]);
 });

@@ -2,8 +2,6 @@ export function latestVersionTag(root: string): string | null;
 
 export function previousVersionTag(root: string, currentTag: string): string | null;
 
-export function latestCommitHash(root: string, short?: boolean): string;
-
 export function resolvePatchNoteRange(
   root: string,
   releaseTag?: string | null,

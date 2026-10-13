@@ -100,17 +100,15 @@ describe("Dodge XP commits", () => {
   });
 });
 
-describe("Dodge battle save defaults", () => {
-  it("backfills old saves and retains valid new counters without losing existing effects", () => {
-    const state = incomingPhysical({ playerDodgeCount: 7, dodgeChanceFromDamage: 25, gearEffects: { dodgeChance: 3 } });
-    const wire = JSON.parse(JSON.stringify(state));
-    const restored = PersistedBattleStateSchema.parse(wire);
-    expect(restored).toMatchObject({ playerDodgeCount: 7, dodgeChanceFromDamage: 25, gearEffects: { dodgeChance: 3 } });
-    delete wire.playerDodgeCount;
-    delete wire.dodgeChanceFromDamage;
-    delete wire.talentEffects.dodgeChance;
-    const legacy = PersistedBattleStateSchema.parse(wire);
-    expect(legacy).toMatchObject({ playerDodgeCount: 0, dodgeChanceFromDamage: 0, talentEffects: { dodgeChance: 0 } });
-    expect(legacy.gearEffects.dodgeChance).toBe(3);
-  });
+it("Dodge battle save defaults backfills old saves and retains valid new counters without losing existing effects", () => {
+  const state = incomingPhysical({ playerDodgeCount: 7, dodgeChanceFromDamage: 25, gearEffects: { dodgeChance: 3 } });
+  const wire = JSON.parse(JSON.stringify(state));
+  const restored = PersistedBattleStateSchema.parse(wire);
+  expect(restored).toMatchObject({ playerDodgeCount: 7, dodgeChanceFromDamage: 25, gearEffects: { dodgeChance: 3 } });
+  delete wire.playerDodgeCount;
+  delete wire.dodgeChanceFromDamage;
+  delete wire.talentEffects.dodgeChance;
+  const legacy = PersistedBattleStateSchema.parse(wire);
+  expect(legacy).toMatchObject({ playerDodgeCount: 0, dodgeChanceFromDamage: 0, talentEffects: { dodgeChance: 0 } });
+  expect(legacy.gearEffects.dodgeChance).toBe(3);
 });

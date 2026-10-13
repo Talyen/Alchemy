@@ -57,13 +57,11 @@ describe("appendCardToRunWithDiscovery", () => {
   });
 });
 
-describe("appendBoonToRunWithDiscovery", () => {
-  it("appends boon and discovers it", () => {
-    const draft = {} as GameplayDraft;
-    appendBoonToRunWithDiscovery(draft, "bone-charm");
+it("appendBoonToRunWithDiscovery appends boon and discovers it", () => {
+  const draft = {} as GameplayDraft;
+  appendBoonToRunWithDiscovery(draft, "bone-charm");
 
-    const boonUpdater = discoveryMocks.setRunBoons.mock.calls[0][1];
-    expect(boonUpdater([])).toEqual(["bone-charm"]);
-    expect(discoveryMocks.discoverTrinketIds).toHaveBeenCalledWith(draft, ["bone-charm"]);
-  });
+  const boonUpdater = discoveryMocks.setRunBoons.mock.calls[0][1];
+  expect(boonUpdater([])).toEqual(["bone-charm"]);
+  expect(discoveryMocks.discoverTrinketIds).toHaveBeenCalledWith(draft, ["bone-charm"]);
 });

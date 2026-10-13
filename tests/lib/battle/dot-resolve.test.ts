@@ -93,16 +93,14 @@ describe("applyEnemyDotDamage", () => {
   });
 });
 
-describe("dealEnemyDotTick", () => {
-  it("is a single-pulse applyEnemyDotDamage", () => {
-    const state = patchBattleState({
-      enemyHealth: 20,
-      enemyStatuses: { burn: 6 },
-    });
-    const next = dealEnemyDotTick(state, "burn", 6, 3, makeTexts());
-    expect(next.enemyHealth).toBe(14);
-    expect(next.enemyStatuses.burn).toBe(3);
+it("dealEnemyDotTick is a single-pulse applyEnemyDotDamage", () => {
+  const state = patchBattleState({
+    enemyHealth: 20,
+    enemyStatuses: { burn: 6 },
   });
+  const next = dealEnemyDotTick(state, "burn", 6, 3, makeTexts());
+  expect(next.enemyHealth).toBe(14);
+  expect(next.enemyStatuses.burn).toBe(3);
 });
 
 describe("detonateEnemyStatuses", () => {

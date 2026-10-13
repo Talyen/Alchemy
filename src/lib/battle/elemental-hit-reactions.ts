@@ -66,10 +66,11 @@ export function applyHolyDamageRiders(
   combatTexts: CombatTextEvent[],
   heroAttack = true,
   forgeTriggers?: Set<string>,
+  alreadyLeeches = false,
 ) {
   const { resolvedDamage: damage, eligibility } = facts;
   if (damage <= 0) return state;
-  let nextState = applyHolyLifesteal(state, damage, combatTexts, eligibility);
+  let nextState = alreadyLeeches ? state : applyHolyLifesteal(state, damage, combatTexts, eligibility);
   if (state.gearEffects.oathkeeperHolyAndBlock > 0 && !forgeTriggers?.has("oathkeeper")) {
     forgeTriggers?.add("oathkeeper");
     nextState = applyBlockReward(nextState, 1, combatTexts);

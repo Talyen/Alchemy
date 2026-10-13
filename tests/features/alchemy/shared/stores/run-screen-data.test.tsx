@@ -56,13 +56,11 @@ const SCREEN_HOOKS: Record<RunDataScreen, () => unknown> = {
   "wildwood-removal": useWildwoodRemovalScreenData,
 };
 
-describe("screen hook coverage", () => {
-  it("resolves every screen to a data hook", () => {
-    for (const hook of Object.values(SCREEN_HOOKS)) {
-      const { result } = renderHook(() => hook());
-      expect(result.current).toBeDefined();
-    }
-  });
+it("screen hook coverage resolves every screen to a data hook", () => {
+  for (const hook of Object.values(SCREEN_HOOKS)) {
+    const { result } = renderHook(() => hook());
+    expect(result.current).toBeDefined();
+  }
 });
 
 describe("screen-specific run data hooks", () => {

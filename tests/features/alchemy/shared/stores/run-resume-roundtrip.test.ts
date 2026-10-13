@@ -19,6 +19,7 @@ import { createEmptyRewardState, emptyEquipmentShopState, emptyShopState } from 
 import { canEnterLabyrinthNode, withClearedNode } from "@/lib/content-systems/labyrinth/map-state";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { createSeededRng } from "@/lib/rng";
+import { findMysteryEvent } from "@/lib/mystery";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { decodeRunResumeSnapshot } from "@/features/alchemy/shared/stores/run-resume-codec";
 import { runProfilePersistenceCodec } from "@/features/alchemy/shared/stores/run-profile-codec";
@@ -102,48 +103,46 @@ describe("homestead hydrate parity", () => {
   });
 });
 
-describe("interrupted mid-claim rewards", () => {
-  it("resumes only the bonus after the primary reward has committed", () => {
-    const primary = cardLibrary.find((card) => card.id === "slash")!;
-    const companion = cardLibrary.find((card) => card.effects.some((effect) => effect.kind === "summon-companion"))!;
-    setRunSession({
-      hasActiveRun: true,
-      activity: { kind: "rewards" },
-      rewardState: { ...createEmptyRewardState(), rewardType: "card", choices: [primary], gold: 7 },
-      companionRewardCards: [companion],
-    });
-    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo: vi.fn() }), defaultGameSession);
-    handlers.claimRewardChoice(primary.id);
-    expect(readRunSession(defaultGameSession).rewardFlow.claim.kind === "reward").toBe(true);
-    const claimedDeck = readActiveRun(defaultGameSession).runDeck;
-
-    const snap = snapshotRun(defaultGameSession);
-    expect(snap.activity.kind).toBe("rewards");
-    if (snap.activity.kind === "rewards") {
-      expect(snap.activity.data.rewardType).toBe("card");
-      if (snap.activity.data.rewardType === "card") {
-        expect(snap.activity.data.choiceIds).toEqual([companion.id]);
-      }
-      expect(snap.activity.data.companionChoiceIds).toEqual([]);
-      expect(snap.activity.data.gold).toBe(0);
-    }
-
-    mutateGameplayForTest((draft) => {
-      setRewardState(draft, createEmptyRewardState());
-      setCompanionRewardCards(draft, null);
-    });
-    restoreRun(snap, {}, {}, defaultGameSession);
-
-    const restored = readRunSession(defaultGameSession).rewardFlow.state;
-    expect(restored.rewardType).toBe("card");
-    if (restored.rewardType === "card") {
-      expect(restored.choices.map((choice) => choice.id)).toEqual([companion.id]);
-    }
-    expect(restored.materials).toEqual(emptyInventory());
-    expect(readRunSession(defaultGameSession).rewardFlow.companionCards).toBeNull();
-    handlers.skipRewards();
-    expect(readActiveRun(defaultGameSession).runDeck).toEqual(claimedDeck);
+it("interrupted mid-claim rewards resumes only the bonus after the primary reward has committed", () => {
+  const primary = cardLibrary.find((card) => card.id === "slash")!;
+  const companion = cardLibrary.find((card) => card.effects.some((effect) => effect.kind === "summon-companion"))!;
+  setRunSession({
+    hasActiveRun: true,
+    activity: { kind: "rewards" },
+    rewardState: { ...createEmptyRewardState(), rewardType: "card", choices: [primary], gold: 7 },
+    companionRewardCards: [companion],
   });
+  const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo: vi.fn() }), defaultGameSession);
+  handlers.claimRewardChoice(primary.id);
+  expect(readRunSession(defaultGameSession).rewardFlow.claim.kind === "reward").toBe(true);
+  const claimedDeck = readActiveRun(defaultGameSession).runDeck;
+
+  const snap = snapshotRun(defaultGameSession);
+  expect(snap.activity.kind).toBe("rewards");
+  if (snap.activity.kind === "rewards") {
+    expect(snap.activity.data.rewardType).toBe("card");
+    if (snap.activity.data.rewardType === "card") {
+      expect(snap.activity.data.choiceIds).toEqual([companion.id]);
+    }
+    expect(snap.activity.data.companionChoiceIds).toEqual([]);
+    expect(snap.activity.data.gold).toBe(0);
+  }
+
+  mutateGameplayForTest((draft) => {
+    setRewardState(draft, createEmptyRewardState());
+    setCompanionRewardCards(draft, null);
+  });
+  restoreRun(snap, {}, {}, defaultGameSession);
+
+  const restored = readRunSession(defaultGameSession).rewardFlow.state;
+  expect(restored.rewardType).toBe("card");
+  if (restored.rewardType === "card") {
+    expect(restored.choices.map((choice) => choice.id)).toEqual([companion.id]);
+  }
+  expect(restored.materials).toEqual(emptyInventory());
+  expect(readRunSession(defaultGameSession).rewardFlow.companionCards).toBeNull();
+  handlers.skipRewards();
+  expect(readActiveRun(defaultGameSession).runDeck).toEqual(claimedDeck);
 });
 
 describe.each(["companion", "archery", "wish", "nature"] as const)("%s bonus reward resume", (theme) => {
@@ -176,43 +175,41 @@ describe.each(["companion", "archery", "wish", "nature"] as const)("%s bonus rew
   });
 });
 
-describe("primary reward resume", () => {
-  it("preserves victory gold and materials when primary choices are unavailable but destinations remain", () => {
-    startLabyrinthRun();
-    setRunSession({
-      rewardState: {
-        ...createEmptyRewardState(["Card Shop"]),
-        choices: [{ ...cardLibrary.find((card) => card.id === "slash")!, id: "no-such-primary-card" }],
-        selectedId: "no-such-primary-card",
-        gold: 7,
-        materials: { ...emptyInventory(), wood: 3 },
-        lastVictoryContentSystem: "labyrinth",
-        lastVictoryEnemyType: "elite",
-      },
-      companionRewardCards: null,
-    });
-    const snap = snapshotRun(defaultGameSession);
-    expect(snap.activity.kind).toBe("rewards");
-    resetRunDomainStore();
-    restoreRun(snap, {}, {}, defaultGameSession);
-
-    expect(readGameplayState(defaultGameSession).run.navigation.screen).toBe(ROUTE_SCREENS.REWARDS);
-    const restored = readRunSession(defaultGameSession).rewardFlow.state;
-    expect(restored.destinations).toEqual(["Card Shop"]);
-    expect(restored.gold).toBe(7);
-    expect(restored.materials).toEqual({ ...emptyInventory(), wood: 3 });
-    expect(restored.lastVictoryContentSystem).toBe("labyrinth");
-    expect(restored.lastVictoryEnemyType).toBe("elite");
-    const retrySnapshot = snapshotRun(defaultGameSession);
-    resetRunDomainStore();
-    restoreRun(retrySnapshot, {}, {}, defaultGameSession);
-    expect(readRunSession(defaultGameSession).rewardFlow.state).toEqual(restored);
-    const materialsBefore = readActiveRun(defaultGameSession).runMaterialsEarned.wood;
-    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo: vi.fn() }), defaultGameSession);
-    handlers.skipRewards();
-    handlers.skipRewards();
-    expect(readActiveRun(defaultGameSession).runMaterialsEarned.wood).toBe(materialsBefore + 3);
+it("primary reward resume preserves victory gold and materials when primary choices are unavailable but destinations remain", () => {
+  startLabyrinthRun();
+  setRunSession({
+    rewardState: {
+      ...createEmptyRewardState(["Card Shop"]),
+      choices: [{ ...cardLibrary.find((card) => card.id === "slash")!, id: "no-such-primary-card" }],
+      selectedId: "no-such-primary-card",
+      gold: 7,
+      materials: { ...emptyInventory(), wood: 3 },
+      lastVictoryContentSystem: "labyrinth",
+      lastVictoryEnemyType: "elite",
+    },
+    companionRewardCards: null,
   });
+  const snap = snapshotRun(defaultGameSession);
+  expect(snap.activity.kind).toBe("rewards");
+  resetRunDomainStore();
+  restoreRun(snap, {}, {}, defaultGameSession);
+
+  expect(readGameplayState(defaultGameSession).run.navigation.screen).toBe(ROUTE_SCREENS.REWARDS);
+  const restored = readRunSession(defaultGameSession).rewardFlow.state;
+  expect(restored.destinations).toEqual(["Card Shop"]);
+  expect(restored.gold).toBe(7);
+  expect(restored.materials).toEqual({ ...emptyInventory(), wood: 3 });
+  expect(restored.lastVictoryContentSystem).toBe("labyrinth");
+  expect(restored.lastVictoryEnemyType).toBe("elite");
+  const retrySnapshot = snapshotRun(defaultGameSession);
+  resetRunDomainStore();
+  restoreRun(retrySnapshot, {}, {}, defaultGameSession);
+  expect(readRunSession(defaultGameSession).rewardFlow.state).toEqual(restored);
+  const materialsBefore = readActiveRun(defaultGameSession).runMaterialsEarned.wood;
+  const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo: vi.fn() }), defaultGameSession);
+  handlers.skipRewards();
+  handlers.skipRewards();
+  expect(readActiveRun(defaultGameSession).runMaterialsEarned.wood).toBe(materialsBefore + 3);
 });
 
 describe("shop persistence", () => {
@@ -239,36 +236,32 @@ describe("shop persistence", () => {
   });
 });
 
-describe("wildwood starter drafts", () => {
-  it("does not resume wildwood starter choices", () => {
-    const primary = cardLibrary.find((card) => card.id === "slash")!;
-    setRunProgress({ characterId: "knight", contentSystemType: "wildwood" });
-    setRunSession({ hasActiveRun: true, starterDraftChoices: [primary] });
+it("wildwood starter drafts does not resume wildwood starter choices", () => {
+  const primary = cardLibrary.find((card) => card.id === "slash")!;
+  setRunProgress({ characterId: "knight", contentSystemType: "wildwood" });
+  setRunSession({ hasActiveRun: true, starterDraftChoices: [primary] });
 
-    const snap = snapshotRun(defaultGameSession);
-    expect(snap.starterDraftChoices).toBeNull();
-  });
+  const snap = snapshotRun(defaultGameSession);
+  expect(snap.starterDraftChoices).toBeNull();
 });
 
-describe("victory-handoff persistence", () => {
-  it("keeps the terminal battle until its outcome is settled", () => {
-    setRunProgress({ characterId: "knight", contentSystemType: "campaign" });
-    setRunSession({ hasActiveRun: true });
-    mutateGameplayForTest((draft) => {
-      initializeActiveBattle(draft, { ...defaultBattleState(), enemyHealth: 0 });
-    });
-
-    const snap = snapshotRun(defaultGameSession);
-    // Without the combat shell the continuation would be lost with it.
-    expect(savedActivityData(snap, "battle")?.battleState.enemyHealth).toBe(0);
-
-    const decoded = decodeRunResumeSnapshot(snap);
-    expect(decoded.session.activity.kind).toBe("battle");
-
-    resetRunDomainStore();
-    restoreRun(snap, {}, {}, defaultGameSession);
-    expect(readBattle(defaultGameSession).battleState.enemyHealth).toBe(0);
+it("victory-handoff persistence keeps the terminal battle until its outcome is settled", () => {
+  setRunProgress({ characterId: "knight", contentSystemType: "campaign" });
+  setRunSession({ hasActiveRun: true });
+  mutateGameplayForTest((draft) => {
+    initializeActiveBattle(draft, { ...defaultBattleState(), enemyHealth: 0 });
   });
+
+  const snap = snapshotRun(defaultGameSession);
+  // Without the combat shell the continuation would be lost with it.
+  expect(savedActivityData(snap, "battle")?.battleState.enemyHealth).toBe(0);
+
+  const decoded = decodeRunResumeSnapshot(snap);
+  expect(decoded.session.activity.kind).toBe("battle");
+
+  resetRunDomainStore();
+  restoreRun(snap, {}, {}, defaultGameSession);
+  expect(readBattle(defaultGameSession).battleState.enemyHealth).toBe(0);
 });
 
 it.each([
@@ -287,7 +280,18 @@ it.each([
   "draft-deck",
   "difficulty-select",
 ] as const)("decodes the saved %s location without navigation initialization", (screen) => {
-  const saved = makeActiveRunData({ activity: savedActivityFixture(screen) });
+  const activity =
+    screen === "mystery"
+      ? savedActivityFixture(screen, {
+          event: findMysteryEvent("ancient-altar"),
+          chosenChoice: null,
+          cardChoices: null,
+          grantedTrinketIds: [],
+          grantedGear: [],
+          chosenCardId: null,
+        })
+      : savedActivityFixture(screen);
+  const saved = makeActiveRunData({ activity });
   const first = decodeRunResumeSnapshot(saved);
   const second = decodeRunResumeSnapshot(saved);
   expect(first.session.activity.kind).toBe(screen);

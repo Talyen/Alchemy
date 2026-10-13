@@ -64,23 +64,21 @@ describe("registry validation consolidation", () => {
   });
 });
 
-describe("asset worker limits", () => {
-  it("keeps asset workers positive and safe for fractional or oversized overrides", () => {
-    try {
-      vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "");
-      const fallback = resolveAssetConcurrency(4);
-      expect(fallback).toBeGreaterThan(0);
-      expect(fallback).toBeLessThanOrEqual(4);
-      vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "1");
-      expect(resolveAssetConcurrency(16)).toBe(1);
-      vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "0.5");
-      expect(resolveAssetConcurrency(4)).toBe(1);
-      vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "0");
-      expect(resolveAssetConcurrency(4)).toBe(fallback);
-      vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "1e100");
-      expect(resolveAssetConcurrency(4)).toBe(fallback);
-    } finally {
-      vi.unstubAllEnvs();
-    }
-  });
+it("asset worker limits keeps asset workers positive and safe for fractional or oversized overrides", () => {
+  try {
+    vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "");
+    const fallback = resolveAssetConcurrency(4);
+    expect(fallback).toBeGreaterThan(0);
+    expect(fallback).toBeLessThanOrEqual(4);
+    vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "1");
+    expect(resolveAssetConcurrency(16)).toBe(1);
+    vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "0.5");
+    expect(resolveAssetConcurrency(4)).toBe(1);
+    vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "0");
+    expect(resolveAssetConcurrency(4)).toBe(fallback);
+    vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "1e100");
+    expect(resolveAssetConcurrency(4)).toBe(fallback);
+  } finally {
+    vi.unstubAllEnvs();
+  }
 });

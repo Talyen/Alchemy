@@ -133,7 +133,7 @@ describe("Dodge gear affixes", () => {
     const state = patchBattleState({
       enemyHealth: 100,
       enemyMaxHealth: 100,
-      flags: { ...patchBattleState().flags, nextHitPhysicalBonus: 4 },
+      flags: { nextHitPhysicalBonus: 4 },
       rng: () => 0.99,
     });
     const result = dealDamage(state, makeTestCard({ effects: [makeEffect("holy", 5)] }));
@@ -316,7 +316,6 @@ describe("enemy Dodge", () => {
       enemyHealth: 30,
       rng: () => 0.01,
       flags: {
-        ...patchBattleState().flags,
         nextHitCrit: true,
         nextHitLeech: true,
         nextHitPoison: true,
@@ -338,13 +337,7 @@ describe("enemy Dodge", () => {
     const state = patchBattleState({
       enemyHealth: 50,
       rng: () => 0.99,
-      flags: {
-        ...patchBattleState().flags,
-        nextHitCrit: true,
-        nextHitLeech: true,
-        nextHitPhysicalBonus: 5,
-        nextPhysicalDealsBleed: true,
-      },
+      flags: { nextHitCrit: true, nextHitLeech: true, nextHitPhysicalBonus: 5, nextPhysicalDealsBleed: true },
     });
     const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
     const result = dealDamage(state, card);
@@ -358,10 +351,7 @@ describe("enemy Dodge", () => {
     const state = patchBattleState({
       enemyHealth: 50,
       rng: () => 0.99,
-      flags: {
-        ...patchBattleState().flags,
-        nextHitPoison: true,
-      },
+      flags: { nextHitPoison: true },
     });
     const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
     const result = dealDamage(state, card);
@@ -375,10 +365,7 @@ describe("enemy Dodge", () => {
       playerHealth: 20,
       playerMaxHealth: 30,
       rng: () => 0.99,
-      flags: {
-        ...patchBattleState().flags,
-        nextHitLeech: true,
-      },
+      flags: { nextHitLeech: true },
     });
     const card = makeTestCard({ effects: [makeEffect("physical", 6)] });
     const result = dealDamage(state, card);
@@ -387,14 +374,12 @@ describe("enemy Dodge", () => {
   });
 });
 
-describe("player Dodge chance from gear", () => {
-  it.each([
-    { chance: 0, expected: 22 },
-    { chance: 3, expected: 30 },
-  ])("adds $chance gear Dodge chance to the baseline", ({ chance, expected }) => {
-    const state = patchBattleState({ playerHealth: 30, rng: () => 0.07, gearEffects: { dodgeChance: chance } });
-    expect(enemyHit(state).playerHealth).toBe(expected);
-  });
+it.each([
+  { chance: 0, expected: 22 },
+  { chance: 3, expected: 30 },
+])("player Dodge chance from gear adds $chance gear Dodge chance to the baseline", ({ chance, expected }) => {
+  const state = patchBattleState({ playerHealth: 30, rng: () => 0.07, gearEffects: { dodgeChance: chance } });
+  expect(enemyHit(state).playerHealth).toBe(expected);
 });
 
 describe("dodged player attacks preserve hit flags", () => {

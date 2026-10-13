@@ -8,17 +8,13 @@ import { addEnemyStatus, addPlayerStatus } from "@/lib/battle";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION } from "@/lib/game-constants";
 import { makeTestBattleState } from "../../fixtures/battle";
-import {
-  defaultPlayerStatusValues,
-  defaultEnemyStatusValues,
-  defaultCcState,
-} from "../../fixtures/default-battle-state";
+import { defaultCcState } from "../../fixtures/default-battle-state";
 
 describe("crowd-control thresholds", () => {
   it.each(["stun", "freeze"] as const)("banks %s below the threshold and triggers exactly at it", (stat) => {
     const below = makeTestBattleState({
       playerMaxHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ [stat]: 14 }),
+      playerStatuses: { [stat]: 14 },
     });
     expect(resolvePlayerCrowdControlTriggers(below, [])).toBe(below);
     const state = { ...below, playerStatuses: { ...below.playerStatuses, [stat]: 15 } };
@@ -32,8 +28,8 @@ describe("crowd-control thresholds", () => {
 
   it("clears player buildup silently during immunity", () => {
     const state = makeTestBattleState({
-      playerStatuses: defaultPlayerStatusValues({ freeze: 20 }),
-      playerCC: defaultCcState({ cooldown: 2 }),
+      playerStatuses: { freeze: 20 },
+      playerCC: { cooldown: 2 },
     });
     const texts: CombatTextEvent[] = [];
     const next = resolvePlayerCrowdControlTriggers(state, texts);
@@ -43,7 +39,7 @@ describe("crowd-control thresholds", () => {
   });
 
   it("uses pre-hit enemy Health and immunity without bypassing trigger guards", () => {
-    const state = makeTestBattleState({ enemyHealth: 10, enemyStatuses: defaultEnemyStatusValues({ freeze: 15 }) });
+    const state = makeTestBattleState({ enemyHealth: 10, enemyStatuses: { freeze: 15 } });
     const texts: CombatTextEvent[] = [];
     const input = {
       nextState: state,
@@ -92,7 +88,7 @@ describe("stun/freeze buildup gate", () => {
   it("blocks enemy stun buildup during active CC", () => {
     const state = makeTestBattleState({
       enemyCC: defaultCcState({ stunSkipTurns: 1 }),
-      enemyStatuses: defaultEnemyStatusValues({ stun: 0 }),
+      enemyStatuses: { stun: 0 },
     });
     const next = addEnemyStatus(state, "stun", 10);
     expect(next.enemyStatuses.stun).toBe(0);
@@ -100,8 +96,8 @@ describe("stun/freeze buildup gate", () => {
 
   it("blocks player freeze buildup during CC immunity", () => {
     const state = makeTestBattleState({
-      playerCC: defaultCcState({ cooldown: 2 }),
-      playerStatuses: defaultPlayerStatusValues({ freeze: 0 }),
+      playerCC: { cooldown: 2 },
+      playerStatuses: { freeze: 0 },
     });
     const next = addPlayerStatus(state, "freeze", 10);
     expect(next.playerStatuses.freeze).toBe(0);
@@ -111,9 +107,9 @@ describe("stun/freeze buildup gate", () => {
 describe("resolvePlayerCrowdControlTriggers", () => {
   it("banks buildup while already controlled instead of extending or double-firing", () => {
     const state = makeTestBattleState({
-      playerStatuses: defaultPlayerStatusValues({ stun: 20, freeze: 20 }),
+      playerStatuses: { stun: 20, freeze: 20 },
       playerMaxHealth: 30,
-      playerCC: defaultCcState({ stunSkipTurns: 1 }),
+      playerCC: { stunSkipTurns: 1 },
     });
     const texts: CombatTextEvent[] = [];
     const result = resolvePlayerCrowdControlTriggers(state, texts);
@@ -123,7 +119,7 @@ describe("resolvePlayerCrowdControlTriggers", () => {
 
   it("fires stun once when both stats cross threshold on the same packet", () => {
     const state = makeTestBattleState({
-      playerStatuses: defaultPlayerStatusValues({ stun: 20, freeze: 20 }),
+      playerStatuses: { stun: 20, freeze: 20 },
       playerMaxHealth: 30,
     });
     const texts: CombatTextEvent[] = [];

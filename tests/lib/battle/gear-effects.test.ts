@@ -62,7 +62,7 @@ describe("gear-effects", () => {
     const card = makeTestCard({ id: "card-consume", consume: true, effects: [cardDamage("burn", 1)] });
     const state = makeState({
       hand: [card],
-      gearEffects: { ...makeState().gearEffects, burnOnConsume: 5 },
+      gearEffects: { burnOnConsume: 5 },
     });
     const result = playBattleCardResolved(state, card.id, 0);
     expect(result.state.enemyStatuses.burn).toBe(6);
@@ -88,7 +88,7 @@ describe("gear-effects", () => {
   it("applies consume rewards identically without collecting combat text", () => {
     const card = makeTestCard({ consume: true });
     const state = makeState({
-      gearEffects: { ...defaultGearEffects, burnOnConsume: 5 },
+      gearEffects: { burnOnConsume: 5 },
     });
     const withText = handlePostPlayCardDestination(state, card, { combatTexts: [] });
     const withoutText = handlePostPlayCardDestination(state, card);
@@ -106,8 +106,8 @@ describe("gear-effects", () => {
     });
     const state = makeState({
       hand: [card],
-      enemyMitigation: { ...makeState().enemyMitigation, armor: 5 },
-      gearEffects: { ...makeState().gearEffects, archeryArmorPiercing: 3 },
+      enemyMitigation: { armor: 5 },
+      gearEffects: { archeryArmorPiercing: 3 },
       rng: () => 0.5,
     });
     const result = computeCardDamageToEnemy(state, effect, card);
@@ -118,8 +118,8 @@ describe("gear-effects", () => {
   it("absorb-per-mana: reduces incoming damage before block", () => {
     const state = makeState({
       mana: 3,
-      playerStatuses: { ...makeState().playerStatuses, block: 10 },
-      gearEffects: { ...makeState().gearEffects, damageReductionPerMana: 1 },
+      playerStatuses: { block: 10 },
+      gearEffects: { damageReductionPerMana: 1 },
     });
     const texts: CombatTextEvent[] = [];
     const nextState = processEnemyDamageEffect(state, enemyDamage(10), texts);
@@ -131,7 +131,7 @@ describe("gear-effects", () => {
     const state = makeState({
       mana: 6,
       maxMana: 4,
-      gearEffects: { ...defaultGearEffects, damageReductionPerMana: 2 },
+      gearEffects: { damageReductionPerMana: 2 },
     });
     expect(reduceDamageByMana(state, 10)).toBe(6);
     expect(reduceDamageByMana({ ...state, mana: 2 }, 10)).toBe(8);
@@ -143,8 +143,8 @@ describe("gear-effects", () => {
       enemyHealth: 0,
       playerHealth: 5,
       playerMaxHealth: 10,
-      enemyStatuses: { ...makeState().enemyStatuses, burn: 3 },
-      gearEffects: { ...makeState().gearEffects, healOnBurnEnemyDefeated: 4 },
+      enemyStatuses: { burn: 3 },
+      gearEffects: { healOnBurnEnemyDefeated: 4 },
     });
     const texts: CombatTextEvent[] = [];
     const nextState = applyGearKillRewards(state, true, texts);
@@ -160,7 +160,7 @@ describe("gear-effects", () => {
     const state = makeState({
       mana: 1,
       maxMana: 3,
-      gearEffects: { ...makeState().gearEffects, manaOnLeechChance: 100 },
+      gearEffects: { manaOnLeechChance: 100 },
       rng: () => 0.1,
     });
     const texts: CombatTextEvent[] = [];
@@ -170,8 +170,8 @@ describe("gear-effects", () => {
 
   it("poison-reduces-armor: every poison application shreds exactly once, ticks never do", () => {
     const state1 = makeState({
-      enemyMitigation: { ...makeState().enemyMitigation, armor: 5 },
-      gearEffects: { ...makeState().gearEffects, poisonArmorShredChance: 100 },
+      enemyMitigation: { armor: 5 },
+      gearEffects: { poisonArmorShredChance: 100 },
       rng: () => 0.1,
     });
     const texts1: CombatTextEvent[] = [];
@@ -180,8 +180,8 @@ describe("gear-effects", () => {
     expect(resultState1.enemyMitigation.armor).toBe(4);
 
     const state2 = makeState({
-      enemyMitigation: { ...makeState().enemyMitigation, armor: 5 },
-      gearEffects: { ...makeState().gearEffects, poisonArmorShredChance: 100 },
+      enemyMitigation: { armor: 5 },
+      gearEffects: { poisonArmorShredChance: 100 },
       rng: () => 0.1,
     });
     const applied = addEnemyStatus(state2, "poison", 4);
@@ -189,8 +189,8 @@ describe("gear-effects", () => {
     expect(applied.enemyMitigation.armor).toBe(4);
 
     const state3 = makeState({
-      enemyMitigation: { ...makeState().enemyMitigation, armor: 5 },
-      gearEffects: { ...makeState().gearEffects, poisonArmorShredChance: 100 },
+      enemyMitigation: { armor: 5 },
+      gearEffects: { poisonArmorShredChance: 100 },
       rng: () => 0.1,
     });
     const texts3: CombatTextEvent[] = [];
@@ -208,7 +208,7 @@ describe("gear-effects", () => {
       mana: 3,
       maxMana: 3,
       hand: [card],
-      gearEffects: { ...makeState().gearEffects, manaOnNatureDamageChance: 100 },
+      gearEffects: { manaOnNatureDamageChance: 100 },
       rng: () => 0.1,
     });
     const result = playBattleCardResolved(state, card.id, 0);
@@ -222,8 +222,8 @@ describe("gear-effects", () => {
       effects: [effect],
     });
     const state1 = makeState({
-      enemyStatuses: { ...makeState().enemyStatuses, bleed: 3 },
-      gearEffects: { ...makeState().gearEffects, burnDamageBonusToBleedingPercent: 50 },
+      enemyStatuses: { bleed: 3 },
+      gearEffects: { burnDamageBonusToBleedingPercent: 50 },
       rng: () => 0.5,
     });
     const result1 = computeCardDamageToEnemy(state1, effect, card);
@@ -232,8 +232,8 @@ describe("gear-effects", () => {
     const state2 = makeState({
       enemyHealth: 100,
       enemyMaxHealth: 100,
-      enemyStatuses: { ...makeState().enemyStatuses, burn: 10, bleed: 3 },
-      gearEffects: { ...makeState().gearEffects, burnDamageBonusToBleedingPercent: 50 },
+      enemyStatuses: { burn: 10, bleed: 3 },
+      gearEffects: { burnDamageBonusToBleedingPercent: 50 },
     });
     const texts: CombatTextEvent[] = [];
     const result2 = tickEnemyStatuses(state2, texts);
@@ -242,8 +242,8 @@ describe("gear-effects", () => {
 
   it("stun-on-block-hit: deals stun when player block is depleted", () => {
     const state = makeState({
-      playerStatuses: { ...makeState().playerStatuses, block: 2 },
-      gearEffects: { ...makeState().gearEffects, stunOnBlockDepleted: 6 },
+      playerStatuses: { block: 2 },
+      gearEffects: { stunOnBlockDepleted: 6 },
     });
     const texts: CombatTextEvent[] = [];
     const nextState = processEnemyDamageEffect(state, enemyDamage(5), texts);
@@ -262,7 +262,7 @@ describe("gear-effects", () => {
         art: "wolf",
         turnStartEffects: [cardDamage("physical", 2)],
       },
-      gearEffects: { ...makeState().gearEffects, healOnCompanionAttack: 3 },
+      gearEffects: { healOnCompanionAttack: 3 },
     });
     const texts: CombatTextEvent[] = [];
     const nextState = processCompanionTurnStart(state, texts);
@@ -271,8 +271,8 @@ describe("gear-effects", () => {
 
   it("armor-on-cc: grants armor when player is stunned or frozen", () => {
     const state = makeState({
-      playerStatuses: { ...makeState().playerStatuses, armor: 0 },
-      gearEffects: { ...makeState().gearEffects, armorOnStunOrFreeze: 4 },
+      playerStatuses: { armor: 0 },
+      gearEffects: { armorOnStunOrFreeze: 4 },
     });
     const nextState = resolvePlayerCrowdControlTrigger({
       state,

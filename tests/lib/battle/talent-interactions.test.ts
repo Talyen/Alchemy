@@ -38,17 +38,15 @@ const holy = makeTestCard({ effects: [{ kind: "damage", damageType: "holy", amou
 const leech = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10, lifesteal: true }] });
 const wish = makeTestCard({ effects: [{ kind: "wish", amount: 1 }] });
 
-describe("Mana from Heaven", () => {
-  it("leaves per-Wish gear rewards independent of the card refund", () => {
-    const next = applyWishEffect(
-      battle({ mana: 0, talentEffects: wishTalents, gearEffects: { manaOnWish: 1 } }),
-      wish,
-      1,
-      [],
-    );
-    expect(next.mana).toBe(1);
-    expect(next.playerHealth).toBe(11);
-  });
+it("Mana from Heaven leaves per-Wish gear rewards independent of the card refund", () => {
+  const next = applyWishEffect(
+    battle({ mana: 0, talentEffects: wishTalents, gearEffects: { manaOnWish: 1 } }),
+    wish,
+    1,
+    [],
+  );
+  expect(next.mana).toBe(1);
+  expect(next.playerHealth).toBe(11);
 });
 
 describe("card play rewards", () => {

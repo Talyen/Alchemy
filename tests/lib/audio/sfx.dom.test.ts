@@ -79,28 +79,22 @@ describe("playCardSound", () => {
   });
 });
 
-describe("playGoldGain", () => {
-  it("plays gold gain audio", () => {
-    playGoldGain();
-    expect(lastFakeAudio()?.src).toContain("coins-gather-quick.");
-    expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
-  });
+it("playGoldGain plays gold gain audio", () => {
+  playGoldGain();
+  expect(lastFakeAudio()?.src).toContain("coins-gather-quick.");
+  expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
 });
 
-describe("playGoldSpend", () => {
-  it("plays gold spend audio via shopBuy sound", () => {
-    playGoldSpend();
-    expect(lastFakeAudio()?.src).toContain(uiSounds.shopBuy);
-    expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
-  });
+it("playGoldSpend plays gold spend audio via shopBuy sound", () => {
+  playGoldSpend();
+  expect(lastFakeAudio()?.src).toContain(uiSounds.shopBuy);
+  expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
 });
 
-describe("playBattleEvent", () => {
-  it("plays audio for known event", () => {
-    playBattleEvent("playerHit");
-    expect(lastFakeAudio()?.src).toContain("punch-3.");
-    expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
-  });
+it("playBattleEvent plays audio for known event", () => {
+  playBattleEvent("playerHit");
+  expect(lastFakeAudio()?.src).toContain("punch-3.");
+  expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
 });
 
 describe("playUISound", () => {
@@ -118,28 +112,22 @@ describe("playUISound", () => {
   });
 });
 
-describe("playVictory", () => {
-  it("plays victory stinger", () => {
-    playVictory();
-    expect(lastFakeAudio()?.src).toContain("harpsichord-level-complete.");
-    expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
-  });
+it("playVictory plays victory stinger", () => {
+  playVictory();
+  expect(lastFakeAudio()?.src).toContain("harpsichord-level-complete.");
+  expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
 });
 
-describe("playDefeat", () => {
-  it("plays defeat stinger", () => {
-    playDefeat();
-    expect(lastFakeAudio()?.src).toContain("harpsichord-defeated.");
-    expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
-  });
+it("playDefeat plays defeat stinger", () => {
+  playDefeat();
+  expect(lastFakeAudio()?.src).toContain("harpsichord-defeated.");
+  expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
 });
 
-describe("playSliceDeath", () => {
-  it("plays the sword slice cue", () => {
-    playSliceDeath();
-    expect(lastFakeAudio()?.src).toContain("sword-slice.");
-    expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
-  });
+it("playSliceDeath plays the sword slice cue", () => {
+  playSliceDeath();
+  expect(lastFakeAudio()?.src).toContain("sword-slice.");
+  expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
 });
 
 describe("cold runtime playback", () => {
@@ -314,31 +302,29 @@ describe("SFX lifetime", () => {
   });
 });
 
-describe("ambient SFX bound", () => {
-  it("caps fire-and-forget sounds when ended handlers never fire", () => {
-    vi.useFakeTimers();
-    // Cooldown is 80ms: step past it between plays so every play lands. The
-    // first play lands without a warmup step (a never-played sound has no
-    // cooldown). 34 plays (cap 32 + 2) prove eviction with fewer timer steps.
-    for (let i = 0; i < 34; i += 1) {
-      playUISound("error");
-      vi.advanceTimersByTime(100);
-    }
-    expect(soundedFakeAudio()).toHaveLength(34);
-    // The oldest entry was paused out by the cap; the newest is still live.
-    // (soundedFakeAudio excludes the src-less canPlayType probe in
-    // createdFakeAudio, so index 0 here is the first played sound.)
-    expect(soundedFakeAudio()[0]?.pause).toHaveBeenCalled();
-    // Eviction also releases the source so the stuck element cannot keep a
-    // fetch attached (same release path as stopAllSfx/preload abort).
-    expect(soundedFakeAudio()[0]?.removeAttribute).toHaveBeenCalledWith("src");
-    const live = lastFakeAudio()!;
-    expect(live.pause).not.toHaveBeenCalled();
-    setMuted(true);
-    expect(live.muted).toBe(true);
-    stopAllSfx();
-    expect(live.pause).not.toHaveBeenCalled();
-  });
+it("ambient SFX bound caps fire-and-forget sounds when ended handlers never fire", () => {
+  vi.useFakeTimers();
+  // Cooldown is 80ms: step past it between plays so every play lands. The
+  // first play lands without a warmup step (a never-played sound has no
+  // cooldown). 34 plays (cap 32 + 2) prove eviction with fewer timer steps.
+  for (let i = 0; i < 34; i += 1) {
+    playUISound("error");
+    vi.advanceTimersByTime(100);
+  }
+  expect(soundedFakeAudio()).toHaveLength(34);
+  // The oldest entry was paused out by the cap; the newest is still live.
+  // (soundedFakeAudio excludes the src-less canPlayType probe in
+  // createdFakeAudio, so index 0 here is the first played sound.)
+  expect(soundedFakeAudio()[0]?.pause).toHaveBeenCalled();
+  // Eviction also releases the source so the stuck element cannot keep a
+  // fetch attached (same release path as stopAllSfx/preload abort).
+  expect(soundedFakeAudio()[0]?.removeAttribute).toHaveBeenCalledWith("src");
+  const live = lastFakeAudio()!;
+  expect(live.pause).not.toHaveBeenCalled();
+  setMuted(true);
+  expect(live.muted).toBe(true);
+  stopAllSfx();
+  expect(live.pause).not.toHaveBeenCalled();
 });
 
 describe("in-flight HTMLAudio mute and volume", () => {

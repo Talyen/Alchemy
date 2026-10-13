@@ -231,34 +231,32 @@ describe("canReplaceRunForStart", () => {
   });
 });
 
-describe("isDifficultySelectContinuation", () => {
-  it("proceeds only for a wildcard run waiting at difficulty select outside battle", () => {
-    expect(
-      isDifficultySelectContinuation({
-        characterId: "wildcard",
-        activityKind: "difficulty-select",
-        hasActiveBattle: false,
-      }),
-    ).toBe(true);
-    expect(
-      isDifficultySelectContinuation({ characterId: "wildcard", activityKind: "draft-deck", hasActiveBattle: false }),
-    ).toBe(false);
-    expect(
-      isDifficultySelectContinuation({
-        characterId: "knight",
-        activityKind: "difficulty-select",
-        hasActiveBattle: false,
-      }),
-    ).toBe(false);
-    expect(
-      isDifficultySelectContinuation({
-        characterId: "wildcard",
-        activityKind: "difficulty-select",
-        hasActiveBattle: true,
-      }),
-    ).toBe(false);
-    expect(
-      isDifficultySelectContinuation({ characterId: null, activityKind: "difficulty-select", hasActiveBattle: false }),
-    ).toBe(false);
-  });
+it("isDifficultySelectContinuation proceeds only for a wildcard run waiting at difficulty select outside battle", () => {
+  expect(
+    isDifficultySelectContinuation({
+      characterId: "wildcard",
+      activityKind: "difficulty-select",
+      hasActiveBattle: false,
+    }),
+  ).toBe(true);
+  expect(
+    isDifficultySelectContinuation({ characterId: "wildcard", activityKind: "draft-deck", hasActiveBattle: false }),
+  ).toBe(false);
+  expect(
+    isDifficultySelectContinuation({
+      characterId: "knight",
+      activityKind: "difficulty-select",
+      hasActiveBattle: false,
+    }),
+  ).toBe(false);
+  expect(
+    isDifficultySelectContinuation({
+      characterId: "wildcard",
+      activityKind: "difficulty-select",
+      hasActiveBattle: true,
+    }),
+  ).toBe(false);
+  expect(
+    isDifficultySelectContinuation({ characterId: null, activityKind: "difficulty-select", hasActiveBattle: false }),
+  ).toBe(false);
 });

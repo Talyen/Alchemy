@@ -35,10 +35,18 @@ function applyConsumeTalentRiders(state: BattleState, combatTexts: CombatTextEve
   nextState = resolvePendingBattleReactions(nextState, combatTexts);
   if (isPlayerDefeated(nextState)) return nextState;
   if (talents.healOnConsume > 0) {
-    nextState = applyHealingWithCombatText(nextState, talents.healOnConsume, combatTexts);
+    nextState = resolvePendingBattleReactions(
+      applyHealingWithCombatText(nextState, talents.healOnConsume, combatTexts),
+      combatTexts,
+    );
+    if (isPlayerDefeated(nextState)) return nextState;
   }
   if (talents.goldOnConsume > 0 && rollBattleChance(talents.goldOnConsumeChance, nextState)) {
-    nextState = addGoldWithCombatText(nextState, talents.goldOnConsume, combatTexts);
+    nextState = resolvePendingBattleReactions(
+      addGoldWithCombatText(nextState, talents.goldOnConsume, combatTexts),
+      combatTexts,
+    );
+    if (isPlayerDefeated(nextState)) return nextState;
   }
   return nextState;
 }
@@ -53,7 +61,11 @@ function applyConsumeGearRiders(
 ): BattleState {
   let nextState = state;
   if (state.gearEffects.armorOnConsume > 0) {
-    nextState = applyArmorReward(nextState, state.gearEffects.armorOnConsume, combatTexts);
+    nextState = resolvePendingBattleReactions(
+      applyArmorReward(nextState, state.gearEffects.armorOnConsume, combatTexts),
+      combatTexts,
+    );
+    if (isPlayerDefeated(nextState)) return nextState;
   }
   if (nextState.enemyHealth > 0 && manaAtConsume === 0 && state.gearEffects.holyOnConsumeWithoutMana > 0) {
     nextState = resolvePendingBattleReactions(
@@ -81,7 +93,11 @@ function applyConsumeGearRiders(
     if (isPlayerDefeated(nextState)) return nextState;
   }
   if (manaSpent > 0 && nextState.gearEffects.manaOnPaidConsume > 0) {
-    nextState = gainManaWithCombatText(nextState, nextState.gearEffects.manaOnPaidConsume, combatTexts);
+    nextState = resolvePendingBattleReactions(
+      gainManaWithCombatText(nextState, nextState.gearEffects.manaOnPaidConsume, combatTexts),
+      combatTexts,
+    );
+    if (isPlayerDefeated(nextState)) return nextState;
   }
   if (lastCardInHand && nextState.gearEffects.drawOnLastHandConsume > 0) {
     nextState = drawConsumeReward(nextState, nextState.gearEffects.drawOnLastHandConsume, combatTexts);

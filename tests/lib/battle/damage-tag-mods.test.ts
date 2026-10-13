@@ -50,9 +50,7 @@ describe("Archery damage", () => {
   });
 });
 
-describe("typed damage bonuses", () => {
-  it("adds flat Stun damage", () => {
-    const state = regressionBattle({ talentEffects: { flatStunDamage: 2 } });
-    expect(dealDamage(state, makeTestCard({ effects: [makeEffect("stun", 5)] })).enemyHealth).toBe(23);
-  });
+it("typed damage bonuses adds flat Stun damage", () => {
+  const state = regressionBattle({ talentEffects: { flatStunDamage: 2 } });
+  expect(dealDamage(state, makeTestCard({ effects: [makeEffect("stun", 5)] })).enemyHealth).toBe(23);
 });

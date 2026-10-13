@@ -164,8 +164,9 @@ describe("Block depletion outside enemy hits", () => {
   });
 });
 
-describe("player control immunity feedback", () => {
-  it.each(["stun", "freeze"] as const)("explains blocked %s buildup while preserving Health damage", (damageType) => {
+it.each(["stun", "freeze"] as const)(
+  "player control immunity feedback explains blocked %s buildup while preserving Health damage",
+  (damageType) => {
     const state = patchBattleState({ playerCC: { cooldown: 2 }, rng: () => 0.99 });
     const texts: CombatTextEvent[] = [];
     const next = resolveEnemyAttackHit(state, { kind: "damage", damageType, amount: 3 }, texts, {
@@ -186,5 +187,5 @@ describe("player control immunity feedback", () => {
       { canDodge: true },
     );
     expect(blockedTexts.some((event) => event.kind === "notice" && event.signal === "immune")).toBe(false);
-  });
-});
+  },
+);

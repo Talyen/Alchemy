@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
-import { endPlayerTurn, recoverLegacyEnemyPhase } from "@/lib/battle/enemy-turn";
+import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import type { BattleState } from "@/lib/battle/types";
 import { isPlayerDefeated } from "@/lib/battle/battle-outcome";
 import { makeTestCard, patchBattleState, type BattleStatePatch } from "../../fixtures/battle";
@@ -144,21 +144,6 @@ describe("endPlayerTurn - standard branch", () => {
     if (result.kind === "haste") throw new Error("Expected an enemy-turn resolution");
     expect(result.enemyTurnStartState.hand).toEqual([]);
     expect(result.enemyTurnStartState.discard.some((card) => card.id === "held")).toBe(true);
-  });
-});
-
-describe("legacy enemy-phase recovery", () => {
-  it.each([0, 2])("returns an in-flight save to a drawable player turn with %i Stun turns", (stunSkipTurns) => {
-    const recovered = recoverLegacyEnemyPhase(
-      battleState({
-        turnPhase: "enemy",
-        hand: [],
-        deck: [makeTestCard({ id: "held" })],
-        playerCC: { stunSkipTurns },
-      }),
-    );
-    expect(recovered.turnPhase).toBe("player");
-    expect(recovered.hand.length).toBeGreaterThan(0);
   });
 });
 
@@ -335,16 +320,14 @@ describe("endPlayerTurn — Death's Door", () => {
   });
 });
 
-describe("endPlayerTurn — companion", () => {
-  it("does not apply companion turn-start effects", () => {
-    const state = battleState({
-      activeCompanion: companionLibrary.wolf,
-      enemyHealth: 30,
-    });
-    const result = endPlayerTurn(state);
-    expect(result.state.enemyHealth).toBe(30);
-    expect(result.state.enemyStatuses.bleed).toBe(0);
+it("endPlayerTurn — companion does not apply companion turn-start effects", () => {
+  const state = battleState({
+    activeCompanion: companionLibrary.wolf,
+    enemyHealth: 30,
   });
+  const result = endPlayerTurn(state);
+  expect(result.state.enemyHealth).toBe(30);
+  expect(result.state.enemyStatuses.bleed).toBe(0);
 });
 
 describe("endPlayerTurn — pending turn-start pulses", () => {
@@ -405,22 +388,20 @@ describe("endPlayerTurn — pending turn-start pulses", () => {
   });
 });
 
-describe("terminal battle turns", () => {
-  it.each([false, true])("Lifegiving cannot revive lethal damage (Poison: %s)", (poison) => {
-    const state = battleState({
-      playerHealth: 1,
-      deathsDoorUsed: true,
-      deathsDoorActive: false,
-      gearEffects: { healthPerTurn: 1 },
-      playerStatuses: { poison: poison ? 2 : 0 },
-      enemyCC: { stunSkipTurns: poison ? 1 : 0 },
-      rng: () => 0.99,
-    });
-    const result = endPlayerTurn(state);
-    expect(result.state.playerHealth).toBe(0);
-    expect(result.state.turn).toBe(state.turn);
-    expect(result.state.hand).toEqual(state.hand);
+it.each([false, true])("terminal battle turns Lifegiving cannot revive lethal damage (Poison: %s)", (poison) => {
+  const state = battleState({
+    playerHealth: 1,
+    deathsDoorUsed: true,
+    deathsDoorActive: false,
+    gearEffects: { healthPerTurn: 1 },
+    playerStatuses: { poison: poison ? 2 : 0 },
+    enemyCC: { stunSkipTurns: poison ? 1 : 0 },
+    rng: () => 0.99,
   });
+  const result = endPlayerTurn(state);
+  expect(result.state.playerHealth).toBe(0);
+  expect(result.state.turn).toBe(state.turn);
+  expect(result.state.hand).toEqual(state.hand);
 });
 
 it("stops enemy trait pulses when Poison defeats the hero", () => {

@@ -587,16 +587,14 @@ describe("prepareUniqueCardPlay flag matrix", () => {
   });
 });
 
-describe("processArcheryEchoes", () => {
-  it("clears queued echoes even when the echo gear is disabled", () => {
-    const echo = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] });
-    const state = patchBattleState({
-      enemyHealth: 40,
-      uniqueGear: { archeryEchoes: [echo] },
-      gearEffects: { archeryEchoNextTurn: 0 },
-    });
-    const result = processArcheryEchoes(state, []);
-    expect(result.uniqueGear.archeryEchoes).toEqual([]);
-    expect(result.enemyHealth).toBe(40);
+it("processArcheryEchoes clears queued echoes even when the echo gear is disabled", () => {
+  const echo = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] });
+  const state = patchBattleState({
+    enemyHealth: 40,
+    uniqueGear: { archeryEchoes: [echo] },
+    gearEffects: { archeryEchoNextTurn: 0 },
   });
+  const result = processArcheryEchoes(state, []);
+  expect(result.uniqueGear.archeryEchoes).toEqual([]);
+  expect(result.enemyHealth).toBe(40);
 });

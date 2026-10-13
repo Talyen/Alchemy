@@ -32,12 +32,6 @@ function parseDescription(line: string): DescriptionPart[] {
   return pieces;
 }
 
-export function canonicalizeKeywordText(text: string): string {
-  return tokenizeDescription(text)
-    .map((part) => part.text)
-    .join("");
-}
-
 export function getHoverId(scope: string, cardId: string) {
   return `${scope}-${cardId}`;
 }

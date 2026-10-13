@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { keywordPattern } from "@/features/alchemy/shared/config/keywords";
-import { canonicalizeKeywordText, tokenizeDescription } from "@/features/alchemy/shared/utils/string";
+import { tokenizeDescription } from "@/features/alchemy/shared/utils/string";
 
 describe("tokenizeDescription", () => {
   it("reuses keyword parsing while keeping callers' parts independent", () => {
@@ -15,7 +15,6 @@ describe("tokenizeDescription", () => {
       first.pop();
 
       expect(tokenizeDescription(line)).toEqual(expected);
-      expect(canonicalizeKeywordText(line)).toBe(line);
       expect(matchAll).toHaveBeenCalledOnce();
     } finally {
       matchAll.mockRestore();
@@ -32,9 +31,6 @@ describe("tokenizeDescription", () => {
       "Frozen",
       "Mana Crystal",
     ]);
-    expect(canonicalizeKeywordText("physical consume consumed frozen mana crystal")).toBe(
-      "Physical Consume Consumed Frozen Mana Crystal",
-    );
   });
 });
 
@@ -51,5 +47,4 @@ it("keeps punctuation and word boundaries while canonicalizing multiword aliases
     { text: "!" },
   ];
   expect(tokenizeDescription(line)).toEqual(expected);
-  expect(canonicalizeKeywordText(line)).toBe("Mana Crystal, Armor; blocked? Poison ivy and Mana!");
 });

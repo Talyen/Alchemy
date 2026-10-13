@@ -65,37 +65,33 @@ describe("setMuted", () => {
   });
 });
 
-describe("setMasterVolume", () => {
-  it("preserves the outgoing fade gain when master volume changes during a crossfade", () => {
-    vi.useFakeTimers();
+it("setMasterVolume preserves the outgoing fade gain when master volume changes during a crossfade", () => {
+  vi.useFakeTimers();
 
-    playMusicImmediate(MUSIC_KEYS.MENU);
-    const outgoing = lastFakeAudio();
-    playMusic(MUSIC_KEYS.BOSS_FORGE_GOLEM);
-    vi.advanceTimersByTime(150);
-    const fadedVolume = outgoing?.volume ?? 0;
-    setMasterVolume(0.5);
+  playMusicImmediate(MUSIC_KEYS.MENU);
+  const outgoing = lastFakeAudio();
+  playMusic(MUSIC_KEYS.BOSS_FORGE_GOLEM);
+  vi.advanceTimersByTime(150);
+  const fadedVolume = outgoing?.volume ?? 0;
+  setMasterVolume(0.5);
 
-    expect(outgoing?.volume).toBeCloseTo(fadedVolume * 0.5);
+  expect(outgoing?.volume).toBeCloseTo(fadedVolume * 0.5);
 
-    playMusicImmediate(MUSIC_KEYS.MENU);
-  });
+  playMusicImmediate(MUSIC_KEYS.MENU);
 });
 
-describe("setMusicVolume", () => {
-  it("preserves the incoming fade gain when music volume changes", () => {
-    vi.useFakeTimers();
+it("setMusicVolume preserves the incoming fade gain when music volume changes", () => {
+  vi.useFakeTimers();
 
-    playMusic(MUSIC_KEYS.MENU);
-    vi.advanceTimersByTime(900);
-    const incoming = lastFakeAudio();
-    const fadedVolume = incoming?.volume ?? 0;
-    setMusicVolume(audioState.musicVolume * 0.5);
+  playMusic(MUSIC_KEYS.MENU);
+  vi.advanceTimersByTime(900);
+  const incoming = lastFakeAudio();
+  const fadedVolume = incoming?.volume ?? 0;
+  setMusicVolume(audioState.musicVolume * 0.5);
 
-    expect(incoming?.volume).toBeCloseTo(fadedVolume * 0.5);
+  expect(incoming?.volume).toBeCloseTo(fadedVolume * 0.5);
 
-    playMusicImmediate(MUSIC_KEYS.MENU);
-  });
+  playMusicImmediate(MUSIC_KEYS.MENU);
 });
 
 it("applies channel limits to live music, sound effects and ambience independently", () => {

@@ -141,58 +141,56 @@ describe("saved card content restoration", () => {
   });
 });
 
-describe("card copy isolation", () => {
-  it.each([
-    { name: "run cloning", copyCard: cloneBattleCard },
-    { name: "save restoration", copyCard: hydrateCard },
-  ])("isolates nested effects and card fields through $name", ({ copyCard }) => {
-    const source: BattleCard = {
-      ...cardById["slash"]!,
-      tags: ["poison"],
-      corrupted: true,
-      corruptedValuePositions: [{ lineIndex: 0, matchIndex: 5 }],
-      effects: [
-        {
-          kind: "chance",
-          probability: 0.5,
-          successEffects: [
-            {
-              kind: "repeat-over-turns",
-              remainingTurns: 1,
-              effects: [
-                { kind: "damage", damageType: "physical", damageTypePool: ["physical", "burn"], amount: 4 },
-                { kind: "random-damage", minAmount: 1, maxAmount: 4, damageTypePool: ["holy", "freeze"] },
-                { kind: "player-status", status: "block", statusPool: ["block", "forge"], amount: 5 },
-              ],
-            },
-          ],
-          failureEffects: [{ kind: "gain-gold", amount: 3 }],
-        },
-      ],
-    };
-    const before = structuredClone(source);
-    const clone = copyCard(source);
-    expect(clone.effects).toEqual(source.effects);
-    expect(clone.descriptionLines).toEqual(source.descriptionLines);
-    if (copyCard === cloneBattleCard) expect(clone.tags).toEqual(source.tags);
-    const cloneChance = clone.effects[0];
-    if (cloneChance?.kind !== "chance") throw new Error("Expected chance effect");
-    const cloneRepeat = cloneChance.successEffects[0];
-    if (cloneRepeat?.kind !== "repeat-over-turns") throw new Error("Expected repeated effect");
-    const cloneDamage = cloneRepeat.effects[0];
-    if (cloneDamage?.kind !== "damage") throw new Error("Expected damage effect");
-    cloneDamage.amount = 99;
-    cloneDamage.damageTypePool!.push("nature");
-    const randomDamage = cloneRepeat.effects[1];
-    const status = cloneRepeat.effects[2];
-    if (randomDamage?.kind !== "random-damage" || status?.kind !== "player-status")
-      throw new Error("Expected pooled effects");
-    randomDamage.damageTypePool!.push("nature");
-    status.statusPool!.push("thorns");
-    cloneChance.failureEffects.push({ kind: "heal", amount: 99 });
-    clone.descriptionLines.push("Changed");
-    clone.tags?.push("burn");
-    clone.corruptedValuePositions![0]!.lineIndex = 99;
-    expect(source).toEqual(before);
-  });
+it.each([
+  { name: "run cloning", copyCard: cloneBattleCard },
+  { name: "save restoration", copyCard: hydrateCard },
+])("card copy isolation isolates nested effects and card fields through $name", ({ copyCard }) => {
+  const source: BattleCard = {
+    ...cardById["slash"]!,
+    tags: ["poison"],
+    corrupted: true,
+    corruptedValuePositions: [{ lineIndex: 0, matchIndex: 5 }],
+    effects: [
+      {
+        kind: "chance",
+        probability: 0.5,
+        successEffects: [
+          {
+            kind: "repeat-over-turns",
+            remainingTurns: 1,
+            effects: [
+              { kind: "damage", damageType: "physical", damageTypePool: ["physical", "burn"], amount: 4 },
+              { kind: "random-damage", minAmount: 1, maxAmount: 4, damageTypePool: ["holy", "freeze"] },
+              { kind: "player-status", status: "block", statusPool: ["block", "forge"], amount: 5 },
+            ],
+          },
+        ],
+        failureEffects: [{ kind: "gain-gold", amount: 3 }],
+      },
+    ],
+  };
+  const before = structuredClone(source);
+  const clone = copyCard(source);
+  expect(clone.effects).toEqual(source.effects);
+  expect(clone.descriptionLines).toEqual(source.descriptionLines);
+  if (copyCard === cloneBattleCard) expect(clone.tags).toEqual(source.tags);
+  const cloneChance = clone.effects[0];
+  if (cloneChance?.kind !== "chance") throw new Error("Expected chance effect");
+  const cloneRepeat = cloneChance.successEffects[0];
+  if (cloneRepeat?.kind !== "repeat-over-turns") throw new Error("Expected repeated effect");
+  const cloneDamage = cloneRepeat.effects[0];
+  if (cloneDamage?.kind !== "damage") throw new Error("Expected damage effect");
+  cloneDamage.amount = 99;
+  cloneDamage.damageTypePool!.push("nature");
+  const randomDamage = cloneRepeat.effects[1];
+  const status = cloneRepeat.effects[2];
+  if (randomDamage?.kind !== "random-damage" || status?.kind !== "player-status")
+    throw new Error("Expected pooled effects");
+  randomDamage.damageTypePool!.push("nature");
+  status.statusPool!.push("thorns");
+  cloneChance.failureEffects.push({ kind: "heal", amount: 99 });
+  clone.descriptionLines.push("Changed");
+  clone.tags?.push("burn");
+  clone.corruptedValuePositions![0]!.lineIndex = 99;
+  expect(source).toEqual(before);
 });

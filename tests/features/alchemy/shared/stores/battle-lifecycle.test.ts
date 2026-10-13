@@ -40,9 +40,9 @@ it("rejects every battle command after End Run without changing progress, RNG, o
   const started = vi.fn();
   const start = createBattleStartCommands(started, defaultGameSession);
   try {
-    expect(commitCardPlay(0, slash.id, defaultGameSession)).toBeNull();
-    expect(commitBattleWish(slash.id, defaultGameSession)).toBeNull();
-    expect(commitEndTurn(defaultGameSession)).toBeNull();
+    expect(commitCardPlay(readBattle(defaultGameSession).battleState, 0, slash.id, defaultGameSession)).toBeNull();
+    expect(commitBattleWish(readBattle(defaultGameSession).battleState, slash.id, defaultGameSession)).toBeNull();
+    expect(commitEndTurn(readBattle(defaultGameSession).battleState, defaultGameSession)).toBeNull();
     expect(start.startBattle({ enemyId: "goblin" })).toBeNull();
     expect(start.startBossById({ bossId: "forge-golem" })).toBe(false);
     expect(readGameplayState(defaultGameSession)).toBe(before);
@@ -140,9 +140,9 @@ it.each([
   const commit = vi.fn();
   const unsubscribe = subscribeRunSessionCommits(commit, defaultGameSession);
   try {
-    expect(commitCardPlay(0, slash.id, defaultGameSession)).toBeNull();
-    expect(commitBattleWish(slash.id, defaultGameSession)).toBeNull();
-    expect(commitEndTurn(defaultGameSession)).toBeNull();
+    expect(commitCardPlay(readBattle(defaultGameSession).battleState, 0, slash.id, defaultGameSession)).toBeNull();
+    expect(commitBattleWish(readBattle(defaultGameSession).battleState, slash.id, defaultGameSession)).toBeNull();
+    expect(commitEndTurn(readBattle(defaultGameSession).battleState, defaultGameSession)).toBeNull();
     expect(readGameplayState(defaultGameSession)).toBe(before);
     expect(commit).not.toHaveBeenCalled();
   } finally {

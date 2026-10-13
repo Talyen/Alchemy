@@ -6,7 +6,7 @@ import {
   setRunProgress,
   setRunSession,
 } from "../../../../helpers/run-domain-store-test";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, expect, it } from "vitest";
 import { battleSnapshot } from "@/lib/battle";
 import { createRunRngState } from "@/lib/rng";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
@@ -26,13 +26,14 @@ function openBattle() {
   mutateGameplayForTest((draft) => initializeActiveBattle(draft, state));
 }
 
-describe("commitEndTurn", () => {
-  it("commits the resolved turn and clears any pending transition", () => {
-    openBattle();
-    const result = commitEndTurn(createBattleCapabilities(defaultGameSession));
-    if (!result) throw new Error("Expected a committed turn");
-    expect(result.frames.length).toBeGreaterThan(0);
-    expect(readBattle(defaultGameSession).battleState).toEqual(battleSnapshot(result.state));
-    expect(readBattle(defaultGameSession)).not.toHaveProperty("pendingBattleTransition");
-  });
+it("commitEndTurn commits the resolved turn and clears any pending transition", () => {
+  openBattle();
+  const result = commitEndTurn(
+    createBattleCapabilities(defaultGameSession),
+    readBattle(defaultGameSession).battleState,
+  );
+  if (!result) throw new Error("Expected a committed turn");
+  expect(result.frames.length).toBeGreaterThan(0);
+  expect(readBattle(defaultGameSession).battleState).toEqual(battleSnapshot(result.state));
+  expect(readBattle(defaultGameSession)).not.toHaveProperty("pendingBattleTransition");
 });

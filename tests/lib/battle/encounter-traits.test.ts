@@ -567,27 +567,25 @@ describe("Cinder Skin Health damage reactions", () => {
   });
 });
 
-describe("encounter trait health threshold", () => {
-  it("shares the original crossing between Second Wind and Aegis, and fires each only once", () => {
-    const state = makeTestBattleState({
-      battleMetrics: { enemyAttackActions: 0, enemyAbilityActivations: {} },
-      enemyHealth: 9,
-      enemyMaxHealth: 20,
-      currentEnemy: enemyWith("second-wind", "divine-aegis"),
-    });
-    const result = processEncounterTraitHealthThreshold(10, state, []);
-    expect(result.enemyHealth).toBeGreaterThan(10);
-    expect(result.flags).toMatchObject({ secondWindTriggered: true, divineAegisTriggered: true });
-    expect(result.enemyMitigation).toMatchObject({ armor: 2, block: 4 });
-    expect(result.battleMetrics?.enemyAbilityActivations).toEqual({ "second-wind": 1, "divine-aegis": 1 });
-    expect(state.battleMetrics?.enemyAbilityActivations).toEqual({});
-    const recrossed = processEncounterTraitHealthThreshold(result.enemyHealth, { ...result, enemyHealth: 9 }, []);
-    expect(recrossed.enemyMitigation).toEqual(result.enemyMitigation);
-    expect(recrossed.enemyHealth).toBe(9);
-    expect(recrossed.battleMetrics?.enemyAbilityActivations).toEqual(result.battleMetrics?.enemyAbilityActivations);
-    for (const enemyHealth of [0, 10, 11]) {
-      const unchanged = { ...state, enemyHealth };
-      expect(processEncounterTraitHealthThreshold(10, unchanged, [])).toBe(unchanged);
-    }
+it("encounter trait health threshold shares the original crossing between Second Wind and Aegis, and fires each only once", () => {
+  const state = makeTestBattleState({
+    battleMetrics: { enemyAttackActions: 0, enemyAbilityActivations: {} },
+    enemyHealth: 9,
+    enemyMaxHealth: 20,
+    currentEnemy: enemyWith("second-wind", "divine-aegis"),
   });
+  const result = processEncounterTraitHealthThreshold(10, state, []);
+  expect(result.enemyHealth).toBeGreaterThan(10);
+  expect(result.flags).toMatchObject({ secondWindTriggered: true, divineAegisTriggered: true });
+  expect(result.enemyMitigation).toMatchObject({ armor: 2, block: 4 });
+  expect(result.battleMetrics?.enemyAbilityActivations).toEqual({ "second-wind": 1, "divine-aegis": 1 });
+  expect(state.battleMetrics?.enemyAbilityActivations).toEqual({});
+  const recrossed = processEncounterTraitHealthThreshold(result.enemyHealth, { ...result, enemyHealth: 9 }, []);
+  expect(recrossed.enemyMitigation).toEqual(result.enemyMitigation);
+  expect(recrossed.enemyHealth).toBe(9);
+  expect(recrossed.battleMetrics?.enemyAbilityActivations).toEqual(result.battleMetrics?.enemyAbilityActivations);
+  for (const enemyHealth of [0, 10, 11]) {
+    const unchanged = { ...state, enemyHealth };
+    expect(processEncounterTraitHealthThreshold(10, unchanged, [])).toBe(unchanged);
+  }
 });
