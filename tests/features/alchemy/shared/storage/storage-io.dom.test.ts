@@ -1,3 +1,4 @@
+import { createSaveBackend } from "../../../../helpers/save-backend";
 import { writeStoragePayload } from "../../../../helpers/storage-payload-writes";
 import { savedActivityFixture, savedActivityData } from "../../../../fixtures/run-activity";
 import { loadAlchemySaveState } from "@/features/alchemy/shared/storage";
@@ -8,33 +9,18 @@ import { SAVE_RECOVERY_KEY } from "@/lib/game-constants";
 import { defaultBattleState } from "@/lib/battle";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { currentSchemaCampaignSave } from "../../../../fixtures/current-saves";
-import {
-  setupMockWindowBrowser,
-  setupMockWindowDesktop,
-  teardownMockWindow,
-} from "../../../../helpers/desktop-save-mock-helper";
+import { setupMockWindowDesktop } from "../../../../helpers/desktop-save-mock-helper";
 import {
   futureContentSaveCandidate,
   futureSaveCandidate,
   playableSaveCandidate,
 } from "../../../../helpers/save-candidate-fixtures";
-import { installStorageIoTestHooks } from "../../../../helpers/storage-io-test-setup";
+import { installBrowserStorageIoTestHooks } from "../../../../helpers/storage-io-test-setup";
 import { defaultGameSession } from "@/app/application-session";
 
-const mockStorage: Record<string, string> = {};
-const mockLocalStorage = {
-  getItem: (key: string) => mockStorage[key] ?? null,
-  setItem: (key: string, value: string) => {
-    mockStorage[key] = value;
-  },
-  removeItem: (key: string) => {
-    delete mockStorage[key];
-  },
-} as Storage;
-
-installStorageIoTestHooks();
+const mockStorage = installBrowserStorageIoTestHooks();
 
 function setupDesktopSaveCandidates(candidates: string[]) {
   const desktop = setupMockWindowDesktop({ saveCandidates: candidates, steamName: null });
@@ -60,15 +46,6 @@ const futureSaveCases = [
   },
 ];
 describe("storage io", () => {
-  beforeEach(() => {
-    Object.keys(mockStorage).forEach((k) => delete mockStorage[k]);
-    setupMockWindowBrowser(mockLocalStorage);
-  });
-
-  afterEach(() => {
-    teardownMockWindow();
-  });
-
   it("loadAlchemySaveState returns defaults when localStorage empty", async () => {
     const data = (await loadAlchemySaveState(defaultGameSession)).data;
     expect(data.selectedAspectRatio).toBe("auto");
@@ -80,15 +57,13 @@ describe("storage io", () => {
     const error = new Error("Storage unavailable");
     const write = vi.fn().mockResolvedValue({ ok: true });
     configureSaveBackend(
-      {
+      createSaveBackend({
         readCandidates: async () => {
           if (failure === "thrown") throw error;
           return { ok: false, error };
         },
         write,
-        writeSync: () => null,
-        clear: async () => ({ ok: true }),
-      },
+      }),
       defaultGameSession,
     );
 

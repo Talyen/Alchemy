@@ -1,3 +1,4 @@
+import { createSaveBackend } from "../helpers/save-backend";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { GenericShopScreen } from "@/features/alchemy/run-loop/screens/generic-shop-screen";
@@ -21,15 +22,14 @@ it("shows pending acknowledgement, retains displayed progress on failure, and Re
   vi.spyOn(console, "error").mockImplementation(() => {});
   let fail = true;
   let writes = 0;
-  persistence.configure({
-    readCandidates: async () => ({ ok: true, candidates: [] }),
-    write: async () => {
-      writes++;
-      return fail ? { ok: false, error: "disk full" } : { ok: true };
-    },
-    writeSync: () => null,
-    clear: async () => ({ ok: true }),
-  });
+  persistence.configure(
+    createSaveBackend({
+      write: async () => {
+        writes++;
+        return fail ? { ok: false, error: "disk full" } : { ok: true };
+      },
+    }),
+  );
   dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 100)), undefined, defaultGameSession);
   const lifecycle = createAlchemyAutosaveLifecycle(() => true, undefined, defaultGameSession, true);
   const spend = vi.fn(() => {

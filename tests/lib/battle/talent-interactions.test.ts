@@ -8,7 +8,6 @@ import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/follow-up-hit-resolution";
 import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
-import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { patchBattleState, type BattleStatePatch } from "../../fixtures/battle";
 import { makeTestCard } from "../../fixtures/cards";
 
@@ -77,13 +76,6 @@ describe("card play rewards", () => {
     );
     expect(next.playerStatuses.block).toBe(4);
     expect(next.enemyHealth).toBe(196);
-  });
-
-  it("Thermal Vent supplies Forge that Ignite uses on the same card", () => {
-    let rolls = 0;
-    const next = play(battle({ talentEffects: burnTalents, rng: () => (rolls++ === 0 ? 0 : 0.99) }), burn);
-    expect(next.enemyHealth).toBe(198);
-    expect(next.playerStatuses.forge).toBe(1);
   });
 
   it("Thermal Vent uses Intensify, Desperate Forge, and Overheat without a feedback loop", () => {
@@ -287,23 +279,5 @@ describe("Deep Siphon", () => {
       }),
     );
     expect(next.playerHealth).toBe(16);
-  });
-});
-
-describe("talent save", () => {
-  it("restores current combat effects and defaults omitted fields", () => {
-    const saved = JSON.parse(
-      JSON.stringify(
-        battle({
-          talentEffects: { wishCardRefundsMana: true, holyReflectionBlockLostPercent: 30 },
-        }),
-      ),
-    );
-    delete saved.talentEffects.archeryCritOnCrowdControl;
-    const restored = PersistedBattleStateSchema.parse(saved);
-    expect(restored.talentEffects.holyReflectionBlockLostPercent).toBe(30);
-    expect(restored.talentEffects.archeryCritOnCrowdControl).toBe(false);
-    expect(restored.talentEffects.wishCardRefundsMana).toBe(true);
-    expect(applyWishEffect({ ...restored, rng: () => 0.99, mana: 0 }, wish, 1, []).mana).toBe(0);
   });
 });

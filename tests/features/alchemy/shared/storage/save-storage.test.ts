@@ -1,3 +1,4 @@
+import { createSaveBackend } from "../../../../helpers/save-backend";
 import { describe, expect, it, vi } from "vitest";
 import type { SaveBackend } from "@/lib/platform-save-backend";
 import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
@@ -58,17 +59,17 @@ describe("SaveStorage ownership", () => {
     let bytes = JSON.stringify({ ...createDefaultSaveData(), gold: 1 });
     const writing = deferred<void>();
     const releaseWrite = deferred<void>();
-    const storage = new SaveStorage({
-      readCandidates: async (key) => ({ ok: true, candidates: key === SAVE_KEY ? [bytes] : [] }),
-      write: async (_key, value) => {
-        writing.resolve();
-        await releaseWrite.promise;
-        bytes = value;
-        return { ok: true };
-      },
-      writeSync: () => null,
-      clear: async () => ({ ok: true }),
-    });
+    const storage = new SaveStorage(
+      createSaveBackend({
+        readCandidates: async (key) => ({ ok: true, candidates: key === SAVE_KEY ? [bytes] : [] }),
+        write: async (_key, value) => {
+          writing.resolve();
+          await releaseWrite.promise;
+          bytes = value;
+          return { ok: true };
+        },
+      }),
+    );
     const saving = storage.save({ ...createDefaultSaveData(), gold: 2 });
     await writing.promise;
     const loading = storage.load();

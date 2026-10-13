@@ -1,3 +1,4 @@
+import { createSaveBackend } from "../../../../helpers/save-backend";
 import { afterEach, expect, it, vi } from "vitest";
 import {
   abandonCurrentRun,
@@ -34,12 +35,7 @@ function earnedRun() {
   const write = vi.fn(async (_key: string, _value: string) => ({ ok: true as const }));
   const session = createGameSession({
     feedback,
-    saveBackend: {
-      readCandidates: async () => ({ ok: true, candidates: [] }),
-      write,
-      writeSync: () => ({ ok: true }),
-      clear: async () => ({ ok: true }),
-    },
+    saveBackend: createSaveBackend({ write, writeSync: () => ({ ok: true }) }),
   });
   sessions.push(session);
   dispatchGameplayCommand(

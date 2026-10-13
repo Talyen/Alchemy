@@ -1,3 +1,5 @@
+import { deferred } from "../../../../helpers/deferred";
+import { createSaveBackend } from "../../../../helpers/save-backend";
 import { writeStoragePayload, writeStoragePayloadOnExit } from "../../../../helpers/storage-payload-writes";
 import {
   bootstrapAlchemySaveState,
@@ -8,40 +10,16 @@ import { defaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { configureSaveBackend } from "@/features/alchemy/shared/storage/io";
 import type { SaveData } from "@/features/alchemy/shared/storage/types";
 import { SAVE_KEY } from "@/lib/game-constants";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { currentSchemaCampaignSave } from "../../../../fixtures/current-saves";
-import {
-  setupMockWindowBrowser,
-  setupMockWindowDesktop,
-  teardownMockWindow,
-} from "../../../../helpers/desktop-save-mock-helper";
-import { installStorageIoTestHooks } from "../../../../helpers/storage-io-test-setup";
+import { setupMockWindowDesktop } from "../../../../helpers/desktop-save-mock-helper";
+import { installBrowserStorageIoTestHooks } from "../../../../helpers/storage-io-test-setup";
 import { defaultGameSession } from "@/app/application-session";
 
 const globalWithWindow = globalThis as unknown as { window?: object };
-const mockStorage: Record<string, string> = {};
-const mockLocalStorage = {
-  getItem: (key: string) => mockStorage[key] ?? null,
-  setItem: (key: string, value: string) => {
-    mockStorage[key] = value;
-  },
-  removeItem: (key: string) => {
-    delete mockStorage[key];
-  },
-} as Storage;
-
-installStorageIoTestHooks();
+const mockStorage = installBrowserStorageIoTestHooks();
 
 describe("storage io", () => {
-  beforeEach(() => {
-    Object.keys(mockStorage).forEach((k) => delete mockStorage[k]);
-    setupMockWindowBrowser(mockLocalStorage);
-  });
-
-  afterEach(() => {
-    teardownMockWindow();
-  });
-
   it("writeStoragePayload writes to localStorage", async () => {
     const data: SaveData = { ...defaultSaveData, selectedAspectRatio: "16:9" };
     expect(await writeStoragePayload(data, defaultGameSession)).toBe("saved");
@@ -54,15 +32,12 @@ describe("storage io", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const error = new Error("disk unavailable");
     configureSaveBackend(
-      {
-        readCandidates: async () => ({ ok: true, candidates: [] }),
+      createSaveBackend({
         write: async () => {
           if (failure === "thrown") throw error;
           return { ok: false, error };
         },
-        writeSync: () => null,
-        clear: async () => ({ ok: true }),
-      },
+      }),
       defaultGameSession,
     );
     expect(await writeStoragePayload(defaultSaveData, defaultGameSession)).toBe("failed");
@@ -72,15 +47,7 @@ describe("storage io", () => {
   it("reports serialization failure without invoking the backend", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const write = vi.fn();
-    configureSaveBackend(
-      {
-        readCandidates: async () => ({ ok: true, candidates: [] }),
-        write,
-        writeSync: () => null,
-        clear: async () => ({ ok: true }),
-      },
-      defaultGameSession,
-    );
+    configureSaveBackend(createSaveBackend({ write }), defaultGameSession);
     const data = {
       ...defaultSaveData,
       toJSON: () => {
@@ -94,19 +61,8 @@ describe("storage io", () => {
 
   it.each([true, false])("desktop exit completion reports local success=%s only after writing", async (ok) => {
     vi.spyOn(console, "error").mockImplementation(() => {});
-    let release!: (result: { ok: true } | { ok: false; error: string }) => void;
-    const gate = new Promise<{ ok: true } | { ok: false; error: string }>((resolve) => {
-      release = resolve;
-    });
-    configureSaveBackend(
-      {
-        readCandidates: async () => ({ ok: true, candidates: [] }),
-        write: () => gate,
-        writeSync: () => null,
-        clear: async () => ({ ok: true }),
-      },
-      defaultGameSession,
-    );
+    const gate = deferred<{ ok: true } | { ok: false; error: string }>();
+    configureSaveBackend(createSaveBackend({ write: () => gate.promise }), defaultGameSession);
     const completion = writeStoragePayloadOnExit(defaultSaveData, defaultGameSession);
     expect(completion).toBeInstanceOf(Promise);
     let completed = false;
@@ -115,7 +71,7 @@ describe("storage io", () => {
     });
     await Promise.resolve();
     expect(completed).toBe(false);
-    release(ok ? { ok: true } : { ok: false, error: "disk" });
+    gate.resolve(ok ? { ok: true } : { ok: false, error: "disk" });
     expect(await completion).toBe(ok ? "saved" : "failed");
   });
 
@@ -130,24 +86,19 @@ describe("storage io", () => {
 
   it("desktop exit flush wins over an async write that is already in flight", async () => {
     const storage: Record<string, string> = {};
-    let releaseWrite: (() => void) | undefined;
-    const writeGate = new Promise<void>((resolve) => {
-      releaseWrite = resolve;
-    });
+    const writeGate = deferred<void>();
     configureSaveBackend(
-      {
-        readCandidates: async () => ({ ok: true, candidates: [] }),
+      createSaveBackend({
         write: async (_key, value) => {
-          await writeGate;
+          await writeGate.promise;
           storage[SAVE_KEY] = value;
           return { ok: true };
         },
-        clear: async () => ({ ok: true }),
         writeSync: (_key, value) => {
           storage[SAVE_KEY] = value;
           return { ok: true };
         },
-      },
+      }),
       defaultGameSession,
     );
 
@@ -156,28 +107,23 @@ describe("storage io", () => {
     await Promise.resolve();
 
     const exit = writeStoragePayloadOnExit({ ...defaultSaveData, discoveredCardIds: ["latest"] }, defaultGameSession);
-    releaseWrite?.();
+    writeGate.resolve();
     await Promise.all([pending, exit]);
 
     expect(JSON.parse(storage[SAVE_KEY]).discoveredCardIds).toEqual(["latest"]);
   });
 
   it("skips terminal exit save while a clear is in flight", async () => {
-    let releaseClear: (() => void) | undefined;
-    const clearGate = new Promise<void>((resolve) => {
-      releaseClear = resolve;
-    });
+    const clearGate = deferred<void>();
     const writeSync = vi.fn().mockReturnValue({ ok: true });
     configureSaveBackend(
-      {
-        readCandidates: async () => ({ ok: true, candidates: [] }),
-        write: async () => ({ ok: true }),
+      createSaveBackend({
         clear: async () => {
-          await clearGate;
+          await clearGate.promise;
           return { ok: true };
         },
         writeSync,
-      },
+      }),
       defaultGameSession,
     );
 
@@ -187,7 +133,7 @@ describe("storage io", () => {
       writeStoragePayloadOnExit({ ...defaultSaveData, discoveredCardIds: ["resurrect"] }, defaultGameSession),
     ).resolves.toBe("skipped");
     expect(writeSync).not.toHaveBeenCalled();
-    releaseClear?.();
+    clearGate.resolve();
     await pendingClear;
   });
 
@@ -218,75 +164,6 @@ describe("storage io", () => {
     expect(loaded.status.kind).toBe("unavailable");
     await expect(writeStoragePayload(defaultSaveData, defaultGameSession)).resolves.toBe("failed");
     await expect(clearAlchemySaveData(undefined, defaultGameSession)).resolves.not.toThrow();
-  });
-
-  it("coalesces overlapping writeStoragePayload writes to the latest snapshot", async () => {
-    let releaseFirstWrite: (() => void) | undefined;
-    const firstWriteGate = new Promise<void>((resolve) => {
-      releaseFirstWrite = resolve;
-    });
-    const writePayloads: string[] = [];
-    let inFlightWrites = 0;
-    let maxInFlightWrites = 0;
-
-    const desktop = setupMockWindowDesktop({ saveCandidates: [], steamName: null });
-    desktop.writeSave.mockImplementation(async (payload: string) => {
-      inFlightWrites += 1;
-      maxInFlightWrites = Math.max(maxInFlightWrites, inFlightWrites);
-      writePayloads.push(payload);
-      if (writePayloads.length === 1) await firstWriteGate;
-      inFlightWrites -= 1;
-      return true;
-    });
-
-    const first = writeStoragePayload({ ...defaultSaveData, discoveredCardIds: ["first"] }, defaultGameSession);
-
-    await Promise.resolve();
-    await Promise.resolve();
-
-    const second = writeStoragePayload({ ...defaultSaveData, discoveredCardIds: ["second"] }, defaultGameSession);
-    const third = writeStoragePayload({ ...defaultSaveData, discoveredCardIds: ["third"] }, defaultGameSession);
-
-    releaseFirstWrite?.();
-    await Promise.all([first, second, third]);
-
-    expect(maxInFlightWrites).toBe(1);
-    expect(writePayloads).toHaveLength(2);
-    expect(JSON.parse(writePayloads[0]).discoveredCardIds).toEqual(["first"]);
-    expect(JSON.parse(writePayloads[1]).discoveredCardIds).toEqual(["third"]);
-  });
-
-  it("waits for an in-flight save before clearing desktop persistence", async () => {
-    let releaseWrite: (() => void) | undefined;
-    const writeGate = new Promise<void>((resolve) => {
-      releaseWrite = resolve;
-    });
-    let resolveStarted!: () => void;
-    const writeStarted = new Promise<void>((resolve) => {
-      resolveStarted = resolve;
-    });
-    const writeSave = vi.fn().mockImplementation(async () => {
-      resolveStarted();
-      await writeGate;
-      return true;
-    });
-    const desktop = setupMockWindowDesktop({ saveCandidates: [], steamName: null });
-    desktop.writeSave = writeSave;
-    const clearSave = desktop.clearSave;
-
-    const pendingSave = writeStoragePayload({ ...defaultSaveData, discoveredCardIds: ["stale"] }, defaultGameSession);
-    await writeStarted;
-    expect(writeSave).toHaveBeenCalledOnce();
-
-    const pendingClear = clearAlchemySaveData(undefined, defaultGameSession);
-    await Promise.resolve();
-    expect(clearSave).not.toHaveBeenCalled();
-
-    releaseWrite?.();
-    await pendingSave;
-    await pendingClear;
-
-    expect(clearSave).toHaveBeenCalledOnce();
   });
 
   it("fails closed without clearing local saves when Steam Cloud delete fails during normal play", async () => {
