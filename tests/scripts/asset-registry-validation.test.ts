@@ -6,7 +6,7 @@ import {
   generatedSoundAssets,
   validateSoundAssetRegistry,
 } from "../../scripts/assets/sound-assets.mjs";
-import { resolveAssetConcurrency, soundTransformSettings } from "../../scripts/assets/asset-constants.mjs";
+import { resolveAssetConcurrency } from "../../scripts/assets/asset-constants.mjs";
 
 describe("registry validation consolidation", () => {
   it("rejects case-insensitive duplicate music names", async () => {
@@ -64,19 +64,21 @@ describe("registry validation consolidation", () => {
   });
 });
 
-describe("sound transform settings", () => {
-  it("copies OGG sources and converts everything else with loudness normalization", () => {
-    expect(soundTransformSettings(".ogg")).toEqual({ mode: "copy" });
-    expect(soundTransformSettings(".wav")).toMatchObject({ mode: "convert", codec: "libvorbis", quality: "4" });
-  });
-
-  it("resolves worker concurrency from the environment with a positiveInteger floor", () => {
+it("asset worker limits keeps asset workers positive and safe for fractional or oversized overrides", () => {
+  try {
     vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "");
-    expect(resolveAssetConcurrency(4)).toBeLessThanOrEqual(4);
+    const fallback = resolveAssetConcurrency(4);
+    expect(fallback).toBeGreaterThan(0);
+    expect(fallback).toBeLessThanOrEqual(4);
     vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "1");
     expect(resolveAssetConcurrency(16)).toBe(1);
+    vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "0.5");
+    expect(resolveAssetConcurrency(4)).toBe(1);
     vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "0");
-    expect(resolveAssetConcurrency(4)).toBeLessThanOrEqual(4);
+    expect(resolveAssetConcurrency(4)).toBe(fallback);
+    vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "1e100");
+    expect(resolveAssetConcurrency(4)).toBe(fallback);
+  } finally {
     vi.unstubAllEnvs();
-  });
+  }
 });

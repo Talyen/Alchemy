@@ -53,14 +53,14 @@ design, implementation, and review.
 
 ## Guide index
 
-| Topic                                                      | Guide                              |
-| ---------------------------------------------------------- | ---------------------------------- |
-| Shared components, buttons, sizing, colors, accessibility  | This page                          |
-| Hover tooltips, modal input, focus and dismissal           | [Interaction](./UI_INTERACTION.md) |
-| Screen fades, battle and equipment motion                  | [Motion](./UI_MOTION.md)           |
-| Combat feedback, deck and enemy inspection, Corrupted text | [Battle UI](./UI_BATTLE.md)        |
-| Collection, Armory, rewards, Wishes, Options and recap     | [Browsing](./UI_BROWSING.md)       |
-| Discovery, map layout and room inspection                  | [Labyrinth](./UI_LABYRINTH.md)     |
+| Topic                                                             | Guide                              |
+| ----------------------------------------------------------------- | ---------------------------------- |
+| Shared components, buttons, sizing, colors, accessibility         | This page                          |
+| Hover tooltips, modal input, focus and dismissal                  | [Interaction](./UI_INTERACTION.md) |
+| Screen fades, battle and equipment motion                         | [Motion](./UI_MOTION.md)           |
+| Combat feedback, deck and enemy inspection, Corrupted text        | [Battle UI](./UI_BATTLE.md)        |
+| Collection, Homestead, Armory, rewards, Wishes, Options and recap | [Browsing](./UI_BROWSING.md)       |
+| Discovery, map layout and room inspection                         | [Labyrinth](./UI_LABYRINTH.md)     |
 
 ## Placement and boundaries
 
@@ -177,10 +177,15 @@ maximum height and standard page gutters. Its available fitting area can shrink
 on short windows without stretching the footer toward taller window edges.
 
 Collection and Homestead center real items in wrapping rows, without layout-only
-fillers. Partial pages keep pagination immediately beneath the items; single-page
-views render neither pagination nor its wrapper. Picker measurement containers
+fillers. Both reserve two portrait rows and a pagination slot on every tab and
+page, keeping headers, tabs, and pagination stationary while the complete group
+stays screen-centered. Shorter grids center within that reserved area;
+single-page tabs leave the pagination slot empty. Picker measurement containers
 must receive available width independently of their rendered card count, so
 resizing cannot feed a narrower row back into its own column calculation.
+
+Homestead's artwork sizing, purchase states, and reset interaction follow the
+[Homestead gallery contract](./UI_BROWSING.md#homestead-gallery).
 
 Desktop Main Menu pairs Quit on the bottom left with Options on the right. Quit
 uses a rose-colored Power icon; browser Options remains centered. Demo completion

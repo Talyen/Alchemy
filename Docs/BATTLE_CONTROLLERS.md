@@ -11,8 +11,9 @@ useAlchemyRunController → useBattleController → routeCommands.battle
 App → renderAlchemyScreenRoute → BattleScreenRoute → BattleScreen (command props)
 ```
 
-`useBattleController` binds `createBattleCapabilities` once and passes it as
-`BattleControllerContext.battle` to the playback factories. Card, Wish, end-turn,
+`App` supplies the session and its owned presentation store to the run controller.
+`useBattleController` requires both explicitly, binds `createBattleCapabilities`
+once, and passes it as `BattleControllerContext.battle` to the playback factories. Card, Wish, end-turn,
 opening-draw, and cancellation callbacks read and command that bound career;
 they never import the application singleton. Session ownership is checked when
 flow factories connect outcomes and gameplay callbacks.
@@ -20,6 +21,15 @@ flow factories connect outcomes and gameplay callbacks.
 `getBattleOutcome` in `lib/battle/battle-outcome.ts` classifies the committed
 snapshot for both live settlement and simulation. Playback and command gates
 use the same policy; they do not infer completion independently from Health.
+
+Card, Wish, and end-turn commands require the borrowed immutable snapshot that
+offered the input. The command compares its identity with the current battle
+inside the transaction, before resolving gameplay, consuming RNG, or awarding XP.
+A retained action cannot affect a later turn, Wish queue, replacement battle, or
+restored save even when card IDs and turn numbers repeat. Unrelated navigation
+leaves the battle snapshot intact and does not invalidate input. Autoplay retains
+its snapshot across preview delays; headless offers retain it in their callbacks.
+Playback cancellation remains responsible for presentation work.
 
 At interaction time, those callbacks resolve gameplay before presentation:
 

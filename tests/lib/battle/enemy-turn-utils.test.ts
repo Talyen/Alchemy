@@ -111,43 +111,39 @@ describe("turn boundaries", () => {
   });
 });
 
-describe("Health threshold rewards", () => {
-  it("pays Block and modified Armor at their own crossings, without paying again below the thresholds", () => {
-    const state = patchBattleState({
-      playerMaxHealth: 100,
-      talentEffects: {
-        healthThresholdBlock: { threshold: 50, amount: 4 },
-        healthThresholdArmor: [
-          { threshold: 50, amount: 5 },
-          { threshold: 25, amount: 3 },
-        ],
-      },
-      gearEffects: { flatArmorGained: 1 },
-    });
-    const texts: CombatTextEvent[] = [];
-    const mid = checkHealthThresholds(80, 40, state, texts);
-    expect(mid.playerStatuses).toMatchObject({ block: 4, armor: 6 });
-    const low = checkHealthThresholds(40, 20, mid, texts);
-    expect(low.playerStatuses).toMatchObject({ block: 4, armor: 9 });
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 4 });
-    expect(checkHealthThresholds(20, 19, low, texts)).toBe(low);
-    expect(state.playerStatuses).toMatchObject({ block: 0, armor: 0 });
+it("Health threshold rewards pays Block and modified Armor at their own crossings, without paying again below the thresholds", () => {
+  const state = patchBattleState({
+    playerMaxHealth: 100,
+    talentEffects: {
+      healthThresholdBlockOnce: { threshold: 50, amount: 4 },
+      healthThresholdArmor: [
+        { threshold: 50, amount: 5 },
+        { threshold: 25, amount: 3 },
+      ],
+    },
+    gearEffects: { flatArmorGained: 1 },
   });
+  const texts: CombatTextEvent[] = [];
+  const mid = checkHealthThresholds(80, 40, state, texts);
+  expect(mid.playerStatuses).toMatchObject({ block: 4, armor: 6 });
+  const low = checkHealthThresholds(40, 20, mid, texts);
+  expect(low.playerStatuses).toMatchObject({ block: 4, armor: 9 });
+  expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 4 });
+  expect(checkHealthThresholds(20, 19, low, texts)).toBe(low);
+  expect(state.playerStatuses).toMatchObject({ block: 0, armor: 0 });
 });
 
-describe("enemy trait queries", () => {
-  it("shares cached traits across turns and refreshes after replacing the trait list", () => {
-    const state = patchBattleState({
-      currentEnemy: { traits: [{ id: "vampire", title: "Vampire", description: "" }] },
-    });
-    const traits = getEnemyTraitSet(state);
-    expect(hasEnemyTrait(state, "vampire")).toBe(true);
-    expect(hasEnemyTrait(state, "vampire", traits)).toBe(true);
-    expect(hasEnemyTrait(state, "cleric", traits)).toBe(false);
-    const nextTurn = { ...state, turn: state.turn + 1 };
-    expect(getEnemyTraitSet(nextTurn)).toBe(traits);
-    const replaced = { ...state, currentEnemy: { ...state.currentEnemy, traits: [] } };
-    expect(hasEnemyTrait(replaced, "vampire")).toBe(false);
-    expect(hasEnemyTrait(state, "vampire")).toBe(true);
+it("enemy trait queries shares cached traits across turns and refreshes after replacing the trait list", () => {
+  const state = patchBattleState({
+    currentEnemy: { traits: [{ id: "vampire", title: "Vampire", description: "" }] },
   });
+  const traits = getEnemyTraitSet(state);
+  expect(hasEnemyTrait(state, "vampire")).toBe(true);
+  expect(hasEnemyTrait(state, "vampire", traits)).toBe(true);
+  expect(hasEnemyTrait(state, "cleric", traits)).toBe(false);
+  const nextTurn = { ...state, turn: state.turn + 1 };
+  expect(getEnemyTraitSet(nextTurn)).toBe(traits);
+  const replaced = { ...state, currentEnemy: { ...state.currentEnemy, traits: [] } };
+  expect(hasEnemyTrait(replaced, "vampire")).toBe(false);
+  expect(hasEnemyTrait(state, "vampire")).toBe(true);
 });

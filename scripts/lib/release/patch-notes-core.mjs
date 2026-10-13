@@ -64,7 +64,6 @@ const INFRA_NAMES = new Set([
   "playwright.performance.config.ts",
   "vercel.json",
 ]);
-const PRODUCT_PREFIXES = ["src/", "public/", "Raw Assets/", "desktop/"];
 
 export const CHANGELOG_SECTION_ORDER = TYPE_METADATA.map(({ section }) => section);
 const TYPE_TO_CHANGELOG_SECTION = Object.fromEntries(TYPE_METADATA.map(({ type, section }) => [type, section]));
@@ -112,10 +111,6 @@ export function isInfraPath(filePath) {
     return true;
   }
   return INFRA_PREFIXES.some((prefix) => filePath.startsWith(prefix));
-}
-
-export function isProductPath(filePath) {
-  return !isInfraPath(filePath) && PRODUCT_PREFIXES.some((prefix) => filePath.startsWith(prefix));
 }
 
 export function isUserFacing(commit) {

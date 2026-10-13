@@ -6,12 +6,11 @@ import { logStorageFailure } from "@/lib/storage-logging";
 import { createDefaultSaveData } from "./defaults";
 import { prepareDemoProgressImport } from "./demo-progress-import";
 import { selectSaveCandidates, type SaveLoadState } from "./save-candidates";
-import { SaveWriteQueue, type SaveWriteOutcome } from "./save-write-queue";
+import { SaveOperationQueue, type SaveWriteOutcome } from "./save-operation-queue";
 import type { SaveData, UnstampedSaveData } from "./types";
 
 export class SaveStorage {
-  private readonly queue = new SaveWriteQueue();
-  private pendingLoads = 0;
+  private readonly queue = new SaveOperationQueue();
   private writeKey = SAVE_KEY;
   private demoInitialization: Promise<SaveLoadState | null> | null = null;
   private lastSavedAt = 0;
@@ -22,7 +21,7 @@ export class SaveStorage {
   ) {}
 
   configureBackend(backend: SaveBackend): void {
-    if (!this.queue.isIdle || this.queue.isClearPending || this.pendingLoads > 0) {
+    if (!this.queue.isIdle) {
       throw new Error("Cannot configure save storage while an operation is pending");
     }
     this.backend = backend;
@@ -54,9 +53,8 @@ export class SaveStorage {
     this.lastSavedAt = 0;
   }
 
-  async load(): Promise<SaveLoadState> {
-    this.pendingLoads++;
-    try {
+  load(): Promise<SaveLoadState> {
+    return this.queue.enqueueLoad(async () => {
       const read = async (key: string) => {
         try {
           return await this.backend.readCandidates(key);
@@ -71,6 +69,7 @@ export class SaveStorage {
       const recoveryCandidates = recovery.ok ? recovery.candidates : [];
       const selection = selectSaveCandidates(primaryCandidates, recoveryCandidates);
       const useRecovery = !primary.ok || primary.localReadFailed === true || selection.useRecovery;
+      this.writeKey = useRecovery ? SAVE_RECOVERY_KEY : SAVE_KEY;
       let loaded = selection.state;
 
       if (primaryCandidates.length === 0 && recoveryCandidates.length === 0) {
@@ -82,13 +81,10 @@ export class SaveStorage {
         }
       }
       if (loaded.data.activeRun && !isEditionRunAvailable(loaded.data.activeRun)) loaded.data.activeRun = null;
-      this.writeKey = useRecovery ? SAVE_RECOVERY_KEY : SAVE_KEY;
       this.lastSavedAt = Math.max(this.lastSavedAt, loaded.data.lastSavedAt);
       this.setWritesDisabled(false);
       return loaded;
-    } finally {
-      this.pendingLoads--;
-    }
+    });
   }
 
   private async initializeDemoProgress(): Promise<SaveLoadState | null> {
@@ -96,7 +92,10 @@ export class SaveStorage {
       const source = await this.backend.readDemoImportSource!();
       const snapshot = prepareDemoProgressImport(source);
       if (snapshot) {
-        const outcome = await this.save(snapshot);
+        if (this.queue.areWritesDisabled()) return null;
+        // Initialization already owns the operation lane through load().
+        // Enqueuing another operation here would wait on this very load.
+        const outcome = await this.writeSaveSnapshot(snapshot);
         if (outcome !== "saved") return null;
         try {
           await this.backend.completeDemoInitialization?.();
@@ -170,8 +169,11 @@ export class SaveStorage {
     return false;
   }
 
-  async save(data: UnstampedSaveData): Promise<SaveWriteOutcome> {
-    return await this.queue.enqueue(data, (snapshot) => this.writeSaveSnapshot(snapshot));
+  async save(
+    data: UnstampedSaveData,
+    validate: () => SaveWriteOutcome | undefined = () => undefined,
+  ): Promise<SaveWriteOutcome> {
+    return await this.queue.enqueue(data, async (snapshot) => validate() ?? this.writeSaveSnapshot(snapshot));
   }
 
   /**
@@ -182,8 +184,16 @@ export class SaveStorage {
    * event loop: the trailing enqueue supersedes queued stale snapshots so an
    * in-flight async write cannot land after the exit snapshot.
    */
-  async saveForExit(data: UnstampedSaveData): Promise<SaveWriteOutcome> {
+  async saveForExit(
+    data: UnstampedSaveData,
+    validate: () => SaveWriteOutcome | undefined = () => undefined,
+  ): Promise<SaveWriteOutcome> {
+    const invalid = validate();
+    if (invalid) return invalid;
     if (this.queue.areWritesDisabled() || this.queue.isClearPending) return "skipped";
+    // Slot protection is unknown until every preceding load finishes. The
+    // synchronous fast path must not bypass that decision, even during exit.
+    if (this.queue.isLoadPending) return this.save(data, validate);
     const serialized = this.trySerializeSaveSnapshot(data, " during page exit");
     if (serialized === null) return "failed";
     let syncResult = this.tryWriteExitSnapshot(
@@ -202,18 +212,21 @@ export class SaveStorage {
       this.writeKey = SAVE_RECOVERY_KEY;
     }
     if (syncResult === true && this.queue.isIdle) return "saved";
-    return this.save(data);
+    return this.save(data, validate);
   }
 
   async clear(mode: "default" | "localWipe" = "default"): Promise<boolean> {
     const forceLocalWipe = mode !== "default";
-    const cleared = await this.queue.enqueueClear(() => this.backend.clear(SAVE_KEY, { forceLocalWipe }), {
-      onError: (error) => logStorageFailure("Save data could not be cleared", error),
-    });
-    if (cleared) {
-      this.writeKey = SAVE_KEY;
-      this.demoInitialization = Promise.resolve(null);
-    }
-    return cleared;
+    return this.queue.enqueueClear(
+      async () => {
+        const result = await this.backend.clear(SAVE_KEY, { forceLocalWipe });
+        if (result.ok) {
+          this.writeKey = SAVE_KEY;
+          this.demoInitialization = Promise.resolve(null);
+        }
+        return result;
+      },
+      { onError: (error) => logStorageFailure("Save data could not be cleared", error) },
+    );
   }
 }

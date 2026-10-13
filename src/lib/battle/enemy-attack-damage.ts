@@ -1,5 +1,4 @@
 import type { EnemyAttackEffect } from "@/lib/game-data";
-import { BATTLE_CONFIG } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
 import { mergeCombatText } from "./combat-text-events";
@@ -7,7 +6,6 @@ import { computeLeechHeal } from "./damage-rider-leech";
 import { scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
-import { applyHealthLossTalentRewards } from "./status-player";
 import type { BattleState, CombatTextEvent } from "./types";
 import { applyPlayerCombatDamage, playerHealthLostToDamage } from "./health-state";
 import { isPlayerDefeated } from "./battle-outcome";
@@ -48,32 +46,6 @@ export interface EnemyDamageResult {
 }
 
 type EnemyMitigationResult = ReturnType<typeof calculateBlockAndArmorMitigation>;
-
-function spendEnemyForgeForHit(
-  state: BattleState,
-  effect: EnemyAttackEffect & { kind: "damage" },
-  landed: boolean,
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  const forgeBasedBurn =
-    effect.damageType === "burn" &&
-    (("equalToForge" in effect && effect.equalToForge === true) ||
-      ("forgeBonusPercent" in effect && effect.forgeBonusPercent !== undefined));
-  if (
-    !landed ||
-    hasEnemyTrait(state, "whitehot") ||
-    (effect.damageType !== "physical" && effect.damageType !== "stun" && !forgeBasedBurn) ||
-    state.enemyMitigation.forge <= 0
-  ) {
-    return state;
-  }
-  const spent = Math.min(state.enemyMitigation.forge, BATTLE_CONFIG.FORGE_DECAY_AMOUNT);
-  mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "forge", amount: spent, impact: false });
-  return {
-    ...state,
-    enemyMitigation: { ...state.enemyMitigation, forge: state.enemyMitigation.forge - spent },
-  };
-}
 
 interface EnemyHitFacts {
   readonly before: BattleState;
@@ -193,14 +165,13 @@ function resolveEnemyDamageEffectCore(
   const isBlockDepleted = state.playerStatuses.block > 0 && attackBlockLost >= state.playerStatuses.block;
   // Capture Health loss before threshold healing, then resolve retaliation only for survivors.
   let nextState = applyPlayerDefensiveReactions(
-    spendEnemyForgeForHit(hit.state, effect, outcome.landed, combatTexts),
+    hit.state,
     effect,
     { ...facts, preDamageBlockStrip, attackBlockLost, isBlockDepleted },
     combatTexts,
     resolvePendingBattleReactions,
     state,
   );
-  nextState = applyHealthLossTalentRewards(hitState, nextState, outcome.healthDamage, combatTexts);
 
   const fullOutcome = { ...outcome, blockLost: outcome.blockLost + preDamageBlockStrip };
   if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...fullOutcome };

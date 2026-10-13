@@ -28,6 +28,7 @@ export interface ArmoryRouteCommands {
   onSalvage: (instanceId: string) => boolean;
   onApplyCurrency: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;
+  onSpawnDevTrinket?: () => void;
 }
 
 export interface AlchemyRouteCommands {
@@ -43,6 +44,7 @@ export interface AlchemyRouteCommands {
     beginWildwood: () => void;
     unlockTalent: (keywordId: KeywordId, talentId: string) => void;
     resetUnlockedTalents: () => void;
+    resetHomestead: () => boolean;
     constructBuilding: (id: BuildingId) => boolean;
     plantFarm: (id: FarmId) => boolean;
     completeResearch: (id: ResearchId) => boolean;
@@ -78,17 +80,16 @@ export interface AlchemyRouteCommands {
       continueCampfire: () => void;
       rest: () => boolean;
       brew: (operation: BrewOperation) => BattleCard | null;
-      initializeCampfire: () => void;
     };
     wildwood: {
       removeCard: (index: number) => void;
       skipRemoval: () => void;
     };
     shop: {
-      merchant: Omit<MerchantShopCommands, "initialize">;
-      alchemist: Omit<AlchemistShopCommands, "initialize">;
-      trinket: Omit<TrinketShopCommands, "initialize">;
-      equipment: Omit<EquipmentShopCommands, "initialize">;
+      merchant: MerchantShopCommands;
+      alchemist: AlchemistShopCommands;
+      trinket: TrinketShopCommands;
+      equipment: EquipmentShopCommands;
       continue: (expectedActivity: "shop" | "alchemist" | "trinket-shop" | "equipment-shop") => void;
     };
     mystery: {
@@ -100,7 +101,6 @@ export interface AlchemyRouteCommands {
       select: (selection: TransmutationSelectionCommand) => boolean;
       exchange: (sourceIndex: number, offerIndex: number) => BattleCard | null;
       continue: () => void;
-      initialize: () => void;
     };
     corruption: {
       handleCorruptCard: (cardIndex: number) => void;

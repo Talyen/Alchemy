@@ -51,14 +51,17 @@ Wildwood post-entry progression belongs to
 between Campaign, Labyrinth, and Wildwood are covered by the [content-system
 workflow](./WORKFLOWS.md#content-system-behavior).
 
-The main menu offers Continue when a run is unfinished, otherwise Play. Continue delegates to `content-system-navigation.resumeRun` through route props. A requested mode cannot replace an active run. End Run in the existing red menu action cancels pending battle/navigation work, finalizes earned progression once, clears the current run, and always shows the End Run screen without confirmation; Main Menu on that recap returns to the menu. Ordinary defeat and victory retain their outcome screens. Drafting belongs to the active run; finishing its starter draft is the only supported re-application of a start snapshot. Domain commands own the activity's resume location; display navigation, including Menu/meta visits, never replaces it. Run-start and progression commands establish their next activity before presentation begins. There are no parked slots or recency fields.
+The main menu offers Continue when a run is unfinished, otherwise Play. Continue delegates to `content-system-navigation.resumeRun` through route props. A requested mode cannot replace an active run. End Run in the existing red menu action cancels pending battle/navigation work, finalizes earned progression once, clears the current run, and always shows Journey’s End without confirmation; continuation follows the [run recap UI](./UI_BROWSING.md#run-journey-recap), including earned hero unlocks. Ordinary defeat and victory retain their outcome screens. Drafting belongs to the active run; finishing its starter draft is the only supported re-application of a start snapshot. Domain commands own the activity's resume location; display navigation, including Menu/meta visits, never replaces it. Run-start and progression commands establish their next activity before presentation begins. There are no parked slots or recency fields.
 
-Destination offer construction is pure in `shared/run-flow/destination-flow.ts`.
-Callers supply offer history, boss ID, and command-bound RNG; destination
-generation is not exposed through the content-system navigation API.
-`shared/stores/destination-offer-command.ts` samples and applies Campaign
-destination offers for both run start and progression inside the caller's
-existing command, committing offer history, reward state, and RNG counters together.
+Destination eligibility is pure in `shared/run-flow/resolve-available-destinations.ts`;
+weighted offer construction lives in `shared/run-flow/destination-flow.ts`.
+`shared/stores/destination-offer-command.ts` derives act, room history, Health,
+Gold, and collection eligibility from the open transaction. Run start, resume
+repair, and progression use that owner; victory supplies its plain eligibility
+context to reward calculation, which uses settled Health and Gold. Domain
+commands never call a shell reader or accept partial overrides for eligibility.
+Offer history, reward state, and command-bound RNG counters commit together;
+destination generation is not exposed through navigation capabilities.
 
 ## Battle path
 
@@ -80,8 +83,14 @@ that base update without restarting the full healing reaction chain. Import
 `battle/combat-text-events.ts` for text aggregation and `battle/enemy-healing.ts`
 for enemy healing. Combat text is feedback, not a gameplay rule owner.
 
-- **Card play:** UI → `useBattleController.playCard()` → `commitCardPlay()` → `resolveBattleAction(snapshot, card, context)` → committed snapshot and combat feedback.
-- **Enemy turn:** `commitEndTurn()` → `resolveBattleAction(snapshot, end-turn, context)` → committed result and XP → `playTurnFrames()` for presentation only.
+- **Card play:** UI → `useBattleController`'s `handleCardClick` → bound `battle.playCard` capability → `commitCardPlay` → committed snapshot and combat feedback.
+- **Wish choice:** UI → `handleWishChoice` → bound `battle.chooseWish` capability → `commitBattleWish` → committed chosen card and remaining Wish queue.
+- **End Turn:** UI → `handleEndTurn` → bound `battle.endTurn` capability → `commitEndTurn` → committed result and XP → `playTurnFrames` for presentation only.
+
+Those store commands call `resolveBattleAction(snapshot, action, context)` with
+the typed `BattleAction` request from `battle/battle-actions.ts`: `card` carries
+`cardId`, `index`, and optional play options; `wish` carries `cardId`; `end-turn`
+may carry a simulation turn budget. The context supplies command-bound world RNG.
 
 `resolveBattleAction` in `battle/battle-actions.ts` owns acceptance and resolution
 for Card, Wish, and end-turn requests in both live commands and simulation. Its
@@ -184,13 +193,24 @@ layers live beside their leaves (`card-ghost-overlay.tsx`,
 
 ## Shop commands
 
-`create-shop-actions.ts` composes the matching `*-shop-commands.ts` modules;
+`create-shop-actions.ts` composes the matching `*-shop-commands.ts` modules and
+binds them once to a `GameSession`. Callers supply no Talent or Homestead
+manifests. `shop-pricing-context.ts` derives effects from current session
+progression for quotes and from the open transaction for mutations. Purchases,
+services, refresh chances, potion potency, and Gear sampling therefore use the
+same progression as payment and visit state, including after upgrades, resets,
+or save restoration. Retained capabilities do not need to be recreated.
 `shop-commands-core.ts` owns shared purchase actions and live price helpers.
 Each shop supplies typed shelf selection, item identity, pricing, and acquisition
 rules; the shared purchase owner uses that pricing rule for both displayed quotes
 and commits, validating and acquiring the live shelf item inside the transaction.
-Pure shelf samplers live in `shop-state-init.ts`. `shop-initialization.ts` owns the shared transaction-level initialization used by
-room entry and standalone shop commands. `shop-commands-core.ts` owns
+Pure shelf samplers live in `shop-state-init.ts`. `run-loop/run/room-visit-initialization.ts`
+owns transaction-only initialization for shops, Campfire, Transmutation, and Mystery.
+Only `room-entry-commands.ts` may import that owner (Oxlint and import-boundary gates enforce this).
+Room entry commits complete visits before navigation. Screen mount effects and retained
+shop/route capabilities cannot initialize or replace visits, reset purchases or refresh
+allowances, or reroll saved offers. Resume hydrates existing visit data; damaged
+Transmutation choices use the screen's existing unavailable-visit exit. `shop-commands-core.ts` owns
 purchase validation and the complete refresh recipe; the activity
 selects pricing and the typed `setRunActivityData` write target. Callers supply
 shop-specific sampling and acquisition rules without wiring separate state writers.
@@ -216,7 +236,7 @@ Gameplay progression remains in the [aggregate regions](./RUN_STATE.md#run-state
 
 ## Permanent Gear (`gear-store`)
 
-Owned Gear and per-character loadouts live in `shared/stores/gear-store.ts`. Pure rules live under `src/lib/gear/`; per-command draft views and health-sync wrappers live in `gear-session-command.ts` (`GearDraftView` with deeply readonly collection views and guarded mutation methods, explicit write tracking — no snapshot comparison). `createInitialGearState` lives in `gear-actions.ts` beside the other pure draft mutators. Gear is meta progression, not copied into active-run data; battle snapshots `BattleState.gearEffects` and live meta mutations rebind via `rebindLiveRunMeta`. Feature code reads through `gear-store.ts`. Screen, mutations, and HP-sync: [ARMORY.md](./ARMORY.md). Authoring new items: [WORKFLOWS § Add permanent Gear](./WORKFLOWS.md#add-permanent-gear).
+Owned Gear and per-character loadouts live in `shared/stores/gear-store.ts`. Pure rules live under `src/lib/gear/`; per-command draft views and health-sync wrappers live in `gear-session-command.ts` (`GearDraftView` with deeply readonly collection views and guarded mutation methods, explicit write tracking — no snapshot comparison). `createInitialGearState` lives in `gear-actions.ts` beside the other pure draft mutators. Player actions live in `gear-commands.ts`; routes and headless playthroughs cannot supply draft callbacks or save-flush adapters. Salvage owns removal and all payouts in `salvageGearInTransaction`, outside the generic draft view. Import boundaries keep Gear mutation internals store-owned. Gear is meta progression, not copied into active-run data; battle snapshots `BattleState.gearEffects` and live meta mutations rebind via `rebindLiveRunMeta`. Feature code reads through `gear-store.ts`. Screen, mutations, and HP-sync: [ARMORY.md](./ARMORY.md). Authoring new items: [WORKFLOWS § Add permanent Gear](./WORKFLOWS.md#add-permanent-gear).
 
 ## Types
 
@@ -231,7 +251,7 @@ explicit capabilities (for example command-bound RNG), rather than data to copy.
 
 `GameplayState` in `gameplay-state.ts` defines the [aggregate regions](./RUN_STATE.md#run-state). Read, write, command, and screen contracts are listed in the [capability reference](./RUN_STATE.md#session-capability-ports); persistence types are in the [codec contract](./RUN_STATE.md#persistence-api).
 
-Initial progress and permanent fields, `ACTIVE_RUN_PROGRESS_KEYS`, `generateRunSeed`, and `pickActiveRunView` live in `run-state-init.ts`; `run-domain-types.ts` defines session, battle, and run-data fields. `profile-store-types.ts` owns its domain (completion buckets derived from the character registry); `gear-actions.ts` owns the initial gear state. Fresh-run snapshots live in `shared/run-flow/run-start.ts`. Shared numeric manifest defaults use `createNumericManifest` / `mergeNumericManifests` from `manifest-utils.ts`.
+Run-progress contracts and the exhaustive `ACTIVE_RUN_PROGRESS_KEYS` projection live in `lib/active-run-session/run-progress.ts`, independently of save validation. `lib/validation` owns saved-run parsing and recovery; its schemas check the domain contracts. Initial progress and permanent fields, `generateRunSeed`, and `pickActiveRunView` live in `run-state-init.ts`; `run-domain-types.ts` defines session, battle, and run-data fields. `profile-store-types.ts` owns its domain (completion buckets derived from the character registry); `gear-actions.ts` owns the initial gear state. Fresh-run snapshots live in `shared/run-flow/run-start.ts`. Shared numeric manifest defaults use `createNumericManifest` / `mergeNumericManifests` from `manifest-utils.ts`.
 
 ## Import boundaries
 
@@ -262,7 +282,7 @@ One loading experience at cold start, then navigation through the shared fade �
 | Screen JS | `src/app/screen-routes/`                                                       | Static imports — **no** `React.lazy()`                                                                                                  |
 | SFX       | `use-app-effects.ts`                                                           | Critical sounds eager; rest on idle                                                                                                     |
 
-`StartupLoadingScreen` shows the wordmark filling left to right with the CTA gold (`text-primary`) over the 3s minimum display, rotating loading phrases below (`startup-loading-screen.tsx`) — no progress bar. The determinate readout lives on as the screen's `progressbar` ARIA value, still a smoothed meter of art decode, fonts, and save bootstrap (`startup-load-state.ts`) — not a timed CSS fill. `startup-load-state.ts` owns the reveal decision; `use-initial-load-ready.ts` supplies browser preload, font, timer, and animation-frame events. Reveal waits until that work has settled, the 3s minimum display has elapsed, **and** the eased display has caught 100%. A rejected essential art preload is logged and treated as settled so startup can continue. Deferred per-item gear art starts decoding as soon as essential art settles so it overlaps the minimum window, continuing in the background after reveal if unfinished. The pre-React `index.html` track uses an indeterminate gold comet (no progress, no header) until React mounts.
+`StartupLoadingScreen` shows the wordmark filling left to right with the CTA gold (`text-primary`) over the 3s minimum display, rotating loading phrases below (`startup-loading-screen.tsx`) — no progress bar. The determinate readout lives on as the screen's `progressbar` ARIA value, still a smoothed meter of art decode, fonts, and save bootstrap (`startup-load-state.ts`) — not a timed CSS fill. `startup-load-state.ts` owns the reveal decision; `use-initial-load-ready.ts` supplies browser preload, font, timer, and animation-frame events. Reveal waits until that work has settled, the 3s minimum display has elapsed, **and** the eased display has caught 100%. A rejected essential art preload is logged and treated as settled so startup can continue. Deferred per-item gear art starts decoding as soon as essential art settles so it overlaps the minimum window, continuing in the background after reveal if unfinished. The pre-React `index.html` shell displays the unified startup loading screen (slime animation and filling wordmark) immediately upon first paint, keeping visual continuity while React and essential game assets load before smoothly fading out into the menu.
 
 **Do not add:** `React.lazy()` on route screens; lazy game art; per-screen spinners for assets in `allGameArt`.
 
@@ -290,6 +310,6 @@ controller factories, reads, commands, and persistence.
 `actor.ts` routes each observation to `meta-offers.ts` or `run-offers.ts` after constructing the production controller. `choice-catalog.ts` owns recorded choice identities and their executable commands for the current observation; duplicate identities fail instead of replacing a command. Offer builders score and register legal choices but do not commit gameplay until the selected choice executes.
 
 Run outcomes and navigation share one construction owner: `createRunOutcomes`
-captures the destination sampler and exposes `connect(actions)`. Both UI and
-headless shells connect navigation to that owner; neither can supply a second
-sampler for progression. Hover-clearing navigation is wrapped once in the shell.
+exposes `connect(actions)`. Both UI and headless shells supply presentation
+capabilities; domain commands own destination eligibility and sampling.
+Hover-clearing navigation is wrapped once in the shell.

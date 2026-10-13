@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { playUISound } from "@/lib/audio";
 import type { BattleCard, KeywordId, TalentXP, TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
-import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
+import type { MysteryChoice, MysteryEvent, MysteryEffect } from "@/lib/mystery";
 
 import { TitledScreenShell } from "../../../shared/ui/layout-components";
 import { usePlasmaBaseline } from "../../../shared/ui/use-plasma-source";
@@ -21,6 +21,7 @@ import {
 
 export function MysteryScreen({
   event,
+  previewEffect,
   mysteryCardChoices,
   mysteryGrantedTrinketIds,
   mysteryGrantedGearInstances,
@@ -35,6 +36,7 @@ export function MysteryScreen({
   findTrinket,
 }: {
   event: MysteryEvent;
+  previewEffect?: ((effect: MysteryEffect) => MysteryEffect) | undefined;
   mysteryCardChoices: BattleCard[] | null;
   mysteryGrantedTrinketIds: string[];
   mysteryGrantedGearInstances: GearInstance[];
@@ -122,7 +124,13 @@ export function MysteryScreen({
               onContinue={onContinue}
             />
           ) : (
-            <MysteryEventIntro event={event} findCard={findCard} findTrinket={findTrinket} onPick={handlePick} />
+            <MysteryEventIntro
+              event={event}
+              previewEffect={previewEffect}
+              findCard={findCard}
+              findTrinket={findTrinket}
+              onPick={handlePick}
+            />
           )}
         </div>
       </MysteryScreenShell>

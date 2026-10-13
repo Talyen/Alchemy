@@ -1,9 +1,8 @@
 import { savedActivityFixture, savedActivityData } from "../../fixtures/run-activity";
 import { describe, expect, it } from "vitest";
-import { parseActiveRun, toActiveRunData } from "@/lib/active-run-session";
+import { parseActiveRun } from "@/lib/validation";
 import { ActiveRunDataSchema } from "@/lib/validation";
-import { makeActiveRunData } from "../../features/alchemy/shared/stores/active-run-data-fixture";
-import { cardById, cardLibrary } from "@/lib/game-data";
+import { cardById } from "@/lib/game-data";
 import { findMysteryEvent } from "@/lib/mystery";
 import { makeMinimalActiveRunInput, makeWildwoodDraft } from "../../fixtures/active-run";
 
@@ -80,60 +79,48 @@ describe("parseActiveRun", () => {
   it("returns null when validation fails", () => {
     expect(parseActiveRun({})).toBeNull();
     expect(parseActiveRun({ characterId: "knight" })).toBeNull();
+    expect(parseActiveRun(makeMinimalActiveRunInput({ characterId: undefined }))).toBeNull();
+    expect(parseActiveRun(makeMinimalActiveRunInput({ runDeck: undefined }))).toBeNull();
   });
 
-  it("successfully parses valid active run data and hydrates card fields", () => {
-    const card = cardLibrary[0]!;
-    const rawData = makeActiveRunData({
-      runDeck: [{ id: card.id } as unknown as typeof card],
-      starterDraftChoices: [{ id: card.id } as unknown as typeof card],
-      activity: savedActivityFixture("shop", {
-        cards: [{ id: card.id } as unknown as typeof card],
-        removeUsed: false,
-        refreshesLeft: 1,
-        freeRefreshUsed: false,
-        firstPurchaseUsed: false,
-        purchasedSlotKeys: [],
+  it("hydrates ID-only cards in the deck, starter choices, and shop", () => {
+    const card = cardById.slash!;
+    const saved = [{ id: card.id }];
+    const parsed = parseActiveRun(
+      makeMinimalActiveRunInput({
+        runDeck: saved,
+        starterDraftChoices: saved,
+        activity: savedActivityFixture("shop", { cards: saved, refreshesLeft: 1, purchasedSlotKeys: [] }),
       }),
-    });
+    );
+    expect(parsed?.runDeck).toEqual([card]);
+    expect(parsed?.starterDraftChoices).toEqual([card]);
+    expect(savedActivityData(parsed, "shop")?.cards).toEqual([card]);
+  });
 
-    const parsed = parseActiveRun(rawData);
-    expect(parsed).not.toBeNull();
-    expect(parsed?.runDeck[0]?.title).toBe(card.title);
-    expect(parsed?.starterDraftChoices?.[0]?.title).toBe(card.title);
-    expect(savedActivityData(parsed, "shop")?.cards[0]?.title).toBe(card.title);
+  it("keeps an unstarted deck empty instead of synthesizing cards", () => {
+    expect(parseActiveRun(makeMinimalActiveRunInput({ runDeck: [] }))?.runDeck).toEqual([]);
   });
 });
 
-describe("toActiveRunData", () => {
-  it("hydrates nested draft choices and mystery visit cards", () => {
-    const card = cardLibrary[0]!;
-    const rawData = makeActiveRunData({
-      contentSystemType: "wildwood",
-      wildwoodDraft: {
-        phase: "draft",
-        draftChoices: [{ id: card.id } as unknown as typeof card],
-        remainingBossIds: [],
-        previousBossId: null,
-        currentBossId: null,
-        currentCombatTraitIds: [],
-        currentRewardTraitIds: [],
-      },
-      activity: savedActivityFixture("mystery", {
-        event: findMysteryEvent("ancient-altar")!,
-        chosenChoice: null,
-        cardChoices: [{ id: card.id } as unknown as typeof card],
-        grantedTrinketIds: [],
-        grantedGear: [],
-        chosenCardId: null,
-      }),
-    });
-
-    const parsed = ActiveRunDataSchema.safeParse(rawData);
-    expect(parsed.success).toBe(true);
-    if (!parsed.success) return;
-    const hydrated = toActiveRunData(parsed.data);
-    expect(hydrated.wildwoodDraft?.draftChoices[0]?.title).toBe(card.title);
-    expect(savedActivityData(hydrated, "mystery")?.cardChoices?.[0]?.title).toBe(card.title);
+it("repairs Wildwood boss and trait IDs without discarding the playable draft", () => {
+  const wildwoodDraft = {
+    ...makeWildwoodDraft(),
+    phase: "battle",
+    remainingBossIds: ["forge-golem", "retired-boss"],
+    previousBossId: "retired-boss",
+    currentBossId: "iron-bear",
+    currentCombatTraitIds: ["tempered", "removed-combat-trait"],
+    currentRewardTraitIds: ["collector", "removed-reward-trait"],
+  };
+  const restored = parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "wildwood", wildwoodDraft }));
+  expect(restored?.wildwoodDraft).toMatchObject({
+    phase: "battle",
+    remainingBossIds: ["forge-golem"],
+    previousBossId: null,
+    currentBossId: "iron-bear",
+    currentCombatTraitIds: ["tempered"],
+    currentRewardTraitIds: [],
   });
+  expect(parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "wildwood", wildwoodDraft: null }))).toBeNull();
 });

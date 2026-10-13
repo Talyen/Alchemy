@@ -27,26 +27,6 @@ describe("card reward interactions", () => {
     expect(result.mana).toBe(4);
   });
 
-  it("Photosynthesis heals for an automatically played Nature card", () => {
-    const nature = makeTestCard({ effects: [{ kind: "damage", damageType: "nature", amount: 2 }] });
-    const result = applyEnemyAbility(
-      incomingPhysical({
-        rng: (() => {
-          let calls = 0;
-          return () => (++calls <= 2 ? 0.01 : 0.99);
-        })(),
-        deck: [nature],
-        playerHealth: 50,
-        gearEffects: { dodgeDrawAndPlay: 1 },
-        talentEffects: { healOnNatureCard: 1 },
-      }),
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
-      [],
-    );
-    expect(result.enemyHealth).toBe(98);
-    expect(result.playerHealth).toBe(51);
-  });
-
   it("Mortar and Pestle deals Poison for an automatically used Potion", () => {
     const result = applyEnemyAbility(
       incomingPhysical({
@@ -66,18 +46,18 @@ describe("card reward interactions", () => {
     expect(result.exhausted.map((card) => card.id)).toEqual(["health-potion"]);
   });
 
-  it("Blessed Leech receives Sanguine once without spending Deep Siphon", () => {
+  it("Blessed Leech receives Deep Siphon alongside its other healing bonuses", () => {
     const state = patchBattleState({
       playerHealth: 10,
       playerMaxHealth: 100,
       enemyHealth: 100,
       enemyMaxHealth: 100,
       rng: () => 0.99,
-      talentEffects: { holyLifestealPercent: 10, cardLeechHealingBonus: 1 },
+      talentEffects: { holyLifestealPercent: 10, leechHealingBonus: 1 },
       gearEffects: { leechHealBonusPercent: 50 },
     });
     const result = dealDamage(state, makeTestCard({ effects: [{ kind: "damage", damageType: "holy", amount: 20 }] }));
-    expect(result.playerHealth).toBe(13);
+    expect(result.playerHealth).toBe(14);
   });
 
   it.each(["talent", "encounter"] as const)(
@@ -86,13 +66,14 @@ describe("card reward interactions", () => {
       const card = makeTestCard({
         cost: 1,
         consume: true,
+        tags: ["burn"],
         effects: [{ kind: "damage", damageType: "holy", amount: 2 }],
       });
       const state = patchBattleState({
         hand: [card],
         mana: 0,
         flags: { nextHolyCardFree: true },
-        talentEffects: { firstHolyCardFree: source === "talent" },
+        talentEffects: { firstBurnCardFree: source === "talent" },
         encounterBenefits: source === "encounter" ? ["fleeting"] : [],
       });
       const result = playBattleCardResolved(state, card.id, 0).state;

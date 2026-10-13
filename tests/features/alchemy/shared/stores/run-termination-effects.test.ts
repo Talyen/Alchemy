@@ -8,13 +8,13 @@ import {
   onRunTeardown,
   teardownRun,
 } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { completeRunDefeat } from "@/features/alchemy/run-loop/run/run-end-commands";
+import { completeRunDefeat, completeRunVictory } from "@/features/alchemy/run-loop/run/run-end-commands";
 import { readActiveRunScreen, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { registerErrorSink, type LogEntry } from "@/lib/error-logger";
 import type { GameSessionOptions } from "@/features/alchemy/shared/stores/game-session-types";
 import { SAVE_KEY } from "@/lib/game-constants";
 
-const sessions: ReturnType<typeof createGameSession>[] = [];
+const sessions: Array<ReturnType<typeof createGameSession>> = [];
 afterEach(async () => {
   await Promise.all(sessions.splice(0).map((session) => session.dispose()));
   vi.restoreAllMocks();
@@ -26,6 +26,7 @@ function start(feedback: GameSessionOptions["feedback"] = {}) {
     runtimeInputs: { generateRunSeed: () => 7 },
     feedback,
     saveBackend: {
+      writeSync: () => null,
       readCandidates: async () => ({ ok: true, candidates: [] }),
       write: async (key, value) => {
         bytes.set(key, value);
@@ -122,5 +123,32 @@ it("a broken run-start sound cannot prevent opening combat or subsequent accepte
   const { session, controller } = start({ playUISound: fail("sound unavailable") });
   expect(readActiveRunScreen(session)).toBe("battle");
   expect(readRunSession(session).activity.kind).toBe("battle");
-  expect(controller.battle.endTurn()).not.toBeNull();
+  expect(controller.battle.endTurn(controller.battle.read().battleState)).not.toBeNull();
 });
+
+it.each(["abandoned", "death", "victory"] as const)(
+  "%s captures only new hero unlocks, preserves saved progress and clears the reveal on the next run",
+  async (ending) => {
+    const { session, controller, bytes, persistence } = start();
+    const end = () => {
+      if (ending === "abandoned") controller.flow.handleAbandonRun();
+      else if (ending === "death") completeRunDefeat(session);
+      else completeRunVictory(session);
+    };
+    end();
+    expect(readRunSession(session).runEndUnlockedCharacters).toEqual(["rogue"]);
+    await persistence.waitForWrites();
+    const save = JSON.parse(bytes.get(SAVE_KEY)!);
+    expect(save.finishedRunCharacters).toContain("knight");
+    expect(save.activeRun).toBeNull();
+    expect(save).not.toHaveProperty("runEndUnlockedCharacters");
+
+    controller.flow.continueFromRunEnd();
+    controller.flow.goToScreen("game-mode-select");
+    controller.flow.beginCampaign();
+    controller.flow.handleCharacterSelect("knight");
+    expect(readRunSession(session).runEndUnlockedCharacters).toEqual([]);
+    end();
+    expect(readRunSession(session).runEndUnlockedCharacters).toEqual([]);
+  },
+);

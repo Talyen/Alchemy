@@ -1,13 +1,8 @@
-import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
-import { applyEndOfRunHomesteadBonuses } from "@/lib/homestead/material-rewards";
-import type { MaterialInventory } from "@/lib/homestead/types";
+import { characters, isCharacterUnlocked, type CharacterId } from "@/lib/game-data";
 import type { RunRecap } from "@/lib/active-run-session";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
+import { current } from "immer";
 import type { GameplayDraft } from "../gameplay-command";
-import type { RunTransaction } from "../run-session-command";
-import { openRunTransaction } from "../transaction-internal";
-import { addGold } from "./run-gold";
-import { addMaterialsToStockpile } from "./run-homestead";
 import { clearRunCurrenciesEarned, clearRunMaterialsEarned, cloneRunObtainedItem } from "./run-progress";
 import { finalizeRunXP, setFinishedRunCharacters } from "./run-meta";
 import { captureRunRecap } from "./run-recap";
@@ -17,58 +12,41 @@ import {
   setRunEndItems,
   setRunEndLabyrinthFloor,
   setHasActiveRun,
+  clearTransientSession,
 } from "./run-session";
 
-export function awardRunEndMaterials(draft: GameplayDraft): MaterialInventory {
+function captureRunEndResources(draft: GameplayDraft): void {
   const runState = draft.run.activeRun;
-  const runProfile = draft.runProfile;
-  const rooms = Math.max(0, runState.roomsEncountered);
-  const wishGoldRooms = Math.ceil(rooms / 2);
-  const gold =
-    (runProfile.effects.endRunGoldPerRoom ?? 0) * rooms + (runProfile.effects.endRunWishPerRoom ?? 0) * wishGoldRooms;
-  if (gold > 0) addGold(draft, gold);
-  const runCollected = runState.runMaterialsEarned;
-  const homesteadBonus = applyEndOfRunHomesteadBonuses(emptyInventory(), runProfile.effects, runState.roomsEncountered);
-  addMaterialsToStockpile(draft, homesteadBonus);
-  setRunEndMaterials(draft, addInventory(runCollected, homesteadBonus));
+  // Source payouts already updated the stockpile and tally during the run.
+  setRunEndMaterials(draft, { ...runState.runMaterialsEarned });
   setRunEndCurrencies(draft, { ...runState.runCurrenciesEarned });
   clearRunMaterialsEarned(draft);
   clearRunCurrenciesEarned(draft);
-  return homesteadBonus;
 }
 
-export function settleRunEnd(
-  options:
-    | {
-        awardRunEndMaterials: (transaction: RunTransaction) => MaterialInventory;
-        finalizeRunXP: (transaction: RunTransaction) => void;
-      }
-    | undefined,
-  draft: GameplayDraft,
-  ending: RunRecap["ending"],
-): MaterialInventory {
+export function settleRunEnd(draft: GameplayDraft, ending: RunRecap["ending"]): boolean {
   const session = draft.session;
 
   if (session.activity.kind === "inactive") {
-    return emptyInventory();
+    return false;
   }
 
   const activeChar = draft.run.activeRun.characterId;
+  const lockedCharacters = (Object.keys(characters) as CharacterId[]).filter(
+    (id) => !isCharacterUnlocked(id, draft.profile.finishedRunCharacters),
+  );
   setFinishedRunCharacters(draft, (prev) => {
     if (prev.includes(activeChar)) return prev;
     return [...prev, activeChar];
   });
 
-  const scope = options ? openRunTransaction(draft) : null;
-  let homesteadBonus: MaterialInventory;
-  try {
-    homesteadBonus = options && scope ? options.awardRunEndMaterials(scope.transaction) : awardRunEndMaterials(draft);
-    captureRunRecap(draft, ending);
-    if (options && scope) options.finalizeRunXP(scope.transaction);
-    else finalizeRunXP(draft);
-  } finally {
-    scope?.close();
-  }
+  draft.session.runEndUnlockedCharacters = lockedCharacters.filter((id) =>
+    isCharacterUnlocked(id, draft.profile.finishedRunCharacters),
+  );
+
+  captureRunEndResources(draft);
+  captureRunRecap(draft, ending);
+  finalizeRunXP(draft);
   setRunEndItems(draft, draft.run.activeRun.runObtainedItems.map(cloneRunObtainedItem));
   if (draft.run.activeRun.contentSystemType === CONTENT_SYSTEMS.LABYRINTH) {
     const floor = draft.session.labyrinthMap?.currentFloor ?? null;
@@ -76,5 +54,22 @@ export function settleRunEnd(
   }
 
   setHasActiveRun(draft, false);
-  return homesteadBonus;
+  if (ending === "abandoned") clearAbandonedVisit(draft);
+  return true;
+}
+
+function clearAbandonedVisit(draft: GameplayDraft): void {
+  // Clear visit/claim state while retaining the completed recap. Snapshot before
+  // reset so the retained fields do not depend on replaced draft branches.
+  const session = current(draft.session);
+  clearTransientSession(draft);
+  Object.assign(draft.session, {
+    runRecap: session.runRecap,
+    runEndMaterials: session.runEndMaterials,
+    runEndCurrencies: session.runEndCurrencies,
+    runEndTalentXP: session.runEndTalentXP,
+    runEndItems: session.runEndItems,
+    runEndUnlockedCharacters: session.runEndUnlockedCharacters,
+    runEndLabyrinthFloor: session.runEndLabyrinthFloor,
+  });
 }

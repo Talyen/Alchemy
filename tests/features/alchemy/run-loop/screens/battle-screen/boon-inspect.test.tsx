@@ -14,13 +14,11 @@ const library: TrinketEntry[] = [
   { id: "beta", title: "Beta Stone", descriptionLines: ["Draw 1."], art: "beta-art", effects: {} },
 ];
 
-describe("uniqueRunBoons", () => {
-  it("keeps first-seen ids and skips duplicates and unknown entries", () => {
-    expect(uniqueRunBoons(["beta", "missing", "alpha", "beta", "alpha"], library).map((entry) => entry.id)).toEqual([
-      "beta",
-      "alpha",
-    ]);
-  });
+it("uniqueRunBoons keeps first-seen ids and skips duplicates and unknown entries", () => {
+  expect(uniqueRunBoons(["beta", "missing", "alpha", "beta", "alpha"], library).map((entry) => entry.id)).toEqual([
+    "beta",
+    "alpha",
+  ]);
 });
 
 describe("BattleBoonInspectOverlay", () => {

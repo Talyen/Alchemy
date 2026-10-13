@@ -8,26 +8,24 @@ import { globToRegExp } from "../../scripts/lib/glob-pattern.mjs";
 
 const repoRoot = path.resolve(import.meta.dirname, "../..");
 
-describe("CI action dependencies", () => {
-  it("pins external actions in workflows and composite actions to full commit SHAs", () => {
-    const references = [".github/workflows", ".github/actions"].flatMap((directory) => {
-      const root = path.join(repoRoot, directory);
-      return readdirSync(root, { recursive: true, encoding: "utf8" })
-        .filter((file) => /\.ya?ml$/u.test(file))
-        .flatMap((file) => {
-          const contents = readFileSync(path.join(root, file), "utf8");
-          return [...contents.matchAll(/^\s*(?:-\s*)?uses:\s*(\S+)/gmu)].map((match) => ({
-            file: path.join(directory, file),
-            reference: match[1],
-          }));
-        });
-    });
-    expect(references.length).toBeGreaterThan(0);
-    for (const { file, reference } of references) {
-      if (reference.startsWith("./")) continue;
-      expect(reference, `${file}: ${reference}`).toMatch(/^[^@\s]+@[a-f0-9]{40}$/u);
-    }
+it("CI action dependencies pins external actions in workflows and composite actions to full commit SHAs", () => {
+  const references = [".github/workflows", ".github/actions"].flatMap((directory) => {
+    const root = path.join(repoRoot, directory);
+    return readdirSync(root, { recursive: true, encoding: "utf8" })
+      .filter((file) => /\.ya?ml$/u.test(file))
+      .flatMap((file) => {
+        const contents = readFileSync(path.join(root, file), "utf8");
+        return [...contents.matchAll(/^\s*(?:-\s*)?uses:\s*(\S+)/gmu)].map((match) => ({
+          file: path.join(directory, file),
+          reference: match[1],
+        }));
+      });
   });
+  expect(references.length).toBeGreaterThan(0);
+  for (const { file, reference } of references) {
+    if (reference.startsWith("./")) continue;
+    expect(reference, `${file}: ${reference}`).toMatch(/^[^@\s]+@[a-f0-9]{40}$/u);
+  }
 });
 
 /**
@@ -96,6 +94,8 @@ const PATH_CASES: Array<[string, string[], string[]]> = [
   ["scripts/lib/release/release-checks.mjs", ["desktop", "tooling"], ["desktop", "desktop_renderer"]],
   ["desktop/main.cjs", ["desktop"], ["desktop", "desktop_renderer"]],
   ["src/lib/platform.ts", ["desktop", "runtime"], ["desktop", "desktop_renderer"]],
+  ["public/startup-preferences.js", ["runtime"], ["desktop", "desktop_renderer"]],
+  ["public/startup-words.js", ["runtime"], ["desktop", "desktop_renderer"]],
   ["src/App.tsx", ["runtime"], ["desktop_renderer"]],
   ["src/app/app-shell.ts", ["interactions", "runtime"], ["desktop_renderer"]],
   ["src/lib/battle/damage-calc.ts", ["runtime"], ["desktop_renderer"]],
@@ -105,6 +105,19 @@ const PATH_CASES: Array<[string, string[], string[]]> = [
   ["tests/interaction/battle.dom.test.tsx", ["interactions", "unit-test"], ["desktop_renderer"]],
   ["vite.config.ts", ["tooling"], ["desktop", "desktop_renderer"]],
   ["scripts/build-verified.mjs", ["tooling"], ["desktop", "desktop_renderer"]],
+  ["scripts/check-bundle-budget.mjs", ["tooling"], ["desktop", "desktop_renderer"]],
+  ["scripts/lib/verification/bundle-budget.mjs", ["tooling"], ["desktop", "desktop_renderer"]],
+  [".node-version", ["tooling"], ["desktop", "desktop_renderer", "assets"]],
+  [".npmrc", ["tooling"], ["desktop", "desktop_renderer", "assets"]],
+  ["scripts/lib/command-invocation.mjs", ["tooling"], ["desktop", "desktop_renderer"]],
+  ["scripts/lib/run-command.mjs", ["tooling"], ["desktop", "desktop_renderer"]],
+  ["scripts/lib/repo-package.mjs", ["assets", "tooling"], ["assets", "desktop", "desktop_renderer"]],
+  ["scripts/lib/script-run.mjs", ["assets", "tooling"], ["assets", "desktop", "desktop_renderer"]],
+  ["scripts/lib/map-pool.mjs", ["assets", "tooling"], ["assets"]],
+  ["scripts/lib/write-text-if-changed.mjs", ["assets", "tooling"], ["assets"]],
+  ["scripts/lib/cli-args.mjs", ["assets", "tooling"], ["assets"]],
+  ["scripts/lib/is-main-module.mjs", ["assets", "tooling"], ["assets", "desktop", "desktop_renderer"]],
+  ["scripts/lib/repository-paths.mjs", ["tooling"], ["desktop", "desktop_renderer"]],
   ["scripts/lib/vite-chunks.mjs", ["tooling"], ["desktop", "desktop_renderer"]],
   ["scripts/lib/release/sentry-release.mjs", ["tooling"], ["desktop", "desktop_renderer"]],
   ["scripts/lib/release/desktop-build-config.mjs", ["desktop", "tooling"], ["desktop", "desktop_renderer"]],
@@ -158,12 +171,7 @@ describe("desktop CI artifact flow", () => {
     const pkg = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8")) as {
       scripts: Record<string, string>;
     };
-    expect(pkg.scripts["dist:desktop"].split(" && ")).toEqual([
-      "npm run sync:steam-appid",
-      "npm run build:desktop",
-      "npm run check:bundle",
-      "node scripts/dist-desktop.mjs",
-    ]);
+    expect(pkg.scripts["dist:desktop"]).toBe("node scripts/dist-desktop.mjs --build");
     expect(packaging.indexOf("npm run check:bundle")).toBeGreaterThan(packaging.indexOf("npm run build:desktop"));
     expect(packaging.indexOf("npm run check:bundle")).toBeLessThan(packaging.indexOf("node scripts/dist-desktop.mjs"));
     const release = readFileSync(path.join(repoRoot, ".github/workflows/release.yml"), "utf8")
@@ -188,6 +196,11 @@ describe("desktop CI artifact flow", () => {
     const releaseWorkflow = readFileSync(path.join(repoRoot, ".github/workflows/release.yml"), "utf8");
     const producer = releaseWorkflow.split("  package:\n")[1].split("  release:\n")[0];
     const delivery = releaseWorkflow.split("  release:\n")[1];
+    const concurrency = delivery.match(/^ {4}concurrency:\n((?: {6}.+\n)+)/mu)?.[1];
+    expect(concurrency).toBeDefined();
+    expect(concurrency).toContain("group: steam-publishing");
+    expect(concurrency).toContain("queue: max");
+    expect(concurrency).toContain("cancel-in-progress: false");
     expect(producer).toContain("artifact-id: ${{ steps.package-upload.outputs.artifact-id }}");
     expect(producer).toContain("id: package-upload");
     expect(delivery).toContain("needs: [package, package-demo]");

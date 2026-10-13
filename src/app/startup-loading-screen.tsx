@@ -11,12 +11,35 @@ import { clamp01 } from "@/lib/math";
 import { LOADING_WORDS } from "./loading-words";
 import { StartupLoadingDecoration } from "./startup-loading-decoration";
 
+function getInitialWordIndex(): number {
+  if (typeof window !== "undefined") {
+    if (
+      typeof window.__alchemySplashWordIndex === "number" &&
+      window.__alchemySplashWordIndex >= 0 &&
+      window.__alchemySplashWordIndex < LOADING_WORDS.length
+    ) {
+      return window.__alchemySplashWordIndex;
+    }
+    const phrase = document.getElementById("startup-splash-phrase");
+    if (phrase?.textContent) {
+      const clean = phrase.textContent.replace(/\.{3}$/, "").trim();
+      const idx = LOADING_WORDS.indexOf(clean as (typeof LOADING_WORDS)[number]);
+      if (idx !== -1) return idx;
+    }
+  }
+  return 0;
+}
+
 function useSyncedLoadingWord() {
-  // Sequential rotation with a random start: equally pleasant, no repeat-avoidance math.
-  const [wordIndex, setWordIndex] = useState(() => Math.floor(Math.random() * LOADING_WORDS.length));
+  const [wordIndex, setWordIndex] = useState(getInitialWordIndex);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (window.__alchemySplashWordTimer) {
+      window.clearInterval(window.__alchemySplashWordTimer);
+      delete window.__alchemySplashWordTimer;
+    }
+    delete window.__alchemySplashWordIndex;
     if (shouldReduceMotion()) return;
     const id = window.setInterval(() => {
       setWordIndex((prev) => (prev + 1) % LOADING_WORDS.length);
@@ -35,6 +58,25 @@ export function StartupLoadingScreen({ progress }: Props) {
   const fill = clamp01(progress);
   const { wordIndex, loadingWord } = useSyncedLoadingWord();
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const splash = document.getElementById("startup-splash");
+    if (splash) {
+      splash.setAttribute("aria-valuenow", String(Math.round(fill * 100)));
+    }
+  }, [fill]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const phrase = document.getElementById("startup-splash-phrase");
+    if (phrase && phrase.textContent !== `${loadingWord}...`) {
+      phrase.textContent = `${loadingWord}...`;
+      phrase.style.animation = "none";
+      void phrase.offsetHeight;
+      phrase.style.animation = "";
+    }
+  }, [loadingWord]);
+
   return (
     <div
       className="flex h-screen w-screen flex-col items-center justify-center gap-5 bg-background"
@@ -51,10 +93,15 @@ export function StartupLoadingScreen({ progress }: Props) {
         </span>
         <span
           aria-hidden
-          className="alchemy-loading-logo-fill absolute inset-y-0 left-0 overflow-hidden"
+          className="alchemy-loading-logo-fill absolute inset-0 overflow-hidden"
           style={{ animationDuration: `${INITIAL_LOAD_MIN_DURATION_MS}ms` }}
         >
-          <span className="w-max text-primary">Alchemy</span>
+          <span
+            className="alchemy-loading-logo-fill-text block w-full text-primary"
+            style={{ animationDuration: `${INITIAL_LOAD_MIN_DURATION_MS}ms` }}
+          >
+            Alchemy
+          </span>
         </span>
       </h1>
       <p

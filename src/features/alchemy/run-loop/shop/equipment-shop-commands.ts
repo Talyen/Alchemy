@@ -1,5 +1,4 @@
 import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
-import { createShopInitializer } from "./shop-initialization";
 import { grantGearToRunWithRecord } from "@/features/alchemy/shared/stores/deck-mutations";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
@@ -8,7 +7,6 @@ import {
   createDraftInstanceIdSource,
   createDraftRunRandomSource,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import type { TalentEffectManifest } from "@/lib/game-data";
 import { getOwnedUniqueDefinitionIds } from "@/lib/gear";
 import type { EquipmentShopCommands } from "./shop-action-types";
 import {
@@ -20,20 +18,10 @@ import {
 import { getShopBuyPrice } from "./shop-pricing";
 import { resampleEquipmentShopOfferings } from "./shop-state-init";
 
-export function createEquipmentShopCommands(
-  {
-    talentEffects,
-    gearAstralChanceBonus,
-  }: {
-    talentEffects: TalentEffectManifest;
-    gearAstralChanceBonus: number;
-  },
-  gameSession: GameSession,
-): EquipmentShopCommands {
+export function createEquipmentShopCommands(gameSession: GameSession): EquipmentShopCommands {
   const { buy, getBuyPrice } = createShopPurchaseActions(
     {
       activity: "equipment-shop",
-      talentEffects,
       itemsOf: (state) => state.gear,
       slotKeyOf: gearSlotKeyOf,
       idOf: (item) => item.instanceId,
@@ -42,20 +30,17 @@ export function createEquipmentShopCommands(
     },
     gameSession,
   );
-  const getRefreshPrice = createGetRefreshPrice("equipment-shop", talentEffects, gameSession);
-
-  const initialize = createShopInitializer("equipment", gameSession, gearAstralChanceBonus);
+  const getRefreshPrice = createGetRefreshPrice("equipment-shop", gameSession);
 
   const refresh = createShopRefreshAction(
     {
       activity: "equipment-shop",
-      talentEffects,
       resample: (draft, state, modifiers) => ({
         ...state,
         gear: resampleEquipmentShopOfferings(
           createDraftRunRandomSource(draft, "shops"),
           resolveDraftLootProgress(draft),
-          gearAstralChanceBonus,
+          draft.runProfile.effects.gearAstralChanceBonus,
           getOwnedUniqueDefinitionIds(snapshotTransactionValue(draft.gear.inventories)),
           modifiers,
           state.gear,
@@ -66,5 +51,5 @@ export function createEquipmentShopCommands(
     gameSession,
   );
 
-  return bindSessionCapabilities(gameSession, { initialize, buy, refresh, getBuyPrice, getRefreshPrice });
+  return bindSessionCapabilities(gameSession, { buy, refresh, getBuyPrice, getRefreshPrice });
 }

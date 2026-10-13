@@ -41,23 +41,19 @@ describe("getPlasmaColorPair", () => {
   });
 });
 
-describe("getPlasmaColorPairFromColors", () => {
-  it("uses the first two distinct palette stops", () => {
-    expect(getPlasmaColorPairFromColors(["#111111", "#111111", "#222222"])).toEqual({
-      primary: "#111111",
-      secondary: "#222222",
-    });
+it("getPlasmaColorPairFromColors uses the first two distinct palette stops", () => {
+  expect(getPlasmaColorPairFromColors(["#111111", "#111111", "#222222"])).toEqual({
+    primary: "#111111",
+    secondary: "#222222",
   });
 });
 
-describe("character plasma mapping", () => {
-  it("returns knight affinities in catalog order and wildcard has no affinities", () => {
-    expect(getPlasmaKeywordsForCharacter("knight")).toEqual(characters.knight.keywords);
-    expect(getPlasmaKeywordsForCharacter("wildcard")).toEqual([]);
-    expect(getPlasmaColorPairForCharacter("knight")).toEqual({
-      primary: keywordDefinitions.block.shineColors[0],
-      secondary: keywordDefinitions.armor.shineColors[0],
-    });
+it("character plasma mapping returns knight affinities in catalog order and wildcard has no affinities", () => {
+  expect(getPlasmaKeywordsForCharacter("knight")).toEqual(characters.knight.keywords);
+  expect(getPlasmaKeywordsForCharacter("wildcard")).toEqual([]);
+  expect(getPlasmaColorPairForCharacter("knight")).toEqual({
+    primary: keywordDefinitions.block.shineColors[0],
+    secondary: keywordDefinitions.armor.shineColors[0],
   });
 });
 
@@ -136,15 +132,13 @@ describe("getPlasmaKeywordsForEnemy", () => {
   });
 });
 
-describe("getBossShineColors", () => {
-  it("collects boss border colors from visible traits, excluding ability-only keywords", () => {
-    const frostwarden = getBossById("frostwarden");
-    expect(frostwarden).toBeDefined();
+it("getBossShineColors collects boss border colors from visible traits, excluding ability-only keywords", () => {
+  const frostwarden = getBossById("frostwarden");
+  expect(frostwarden).toBeDefined();
 
-    const colors = getBossShineColors(frostwarden!);
+  const colors = getBossShineColors(frostwarden!);
 
-    expect(colors).toContain(keywordDefinitions.freeze.shineColors[0]);
-    expect(colors).toContain(keywordDefinitions.burn.shineColors[0]);
-    expect(colors).not.toContain(keywordDefinitions.block.shineColors[0]);
-  });
+  expect(colors).toContain(keywordDefinitions.freeze.shineColors[0]);
+  expect(colors).toContain(keywordDefinitions.burn.shineColors[0]);
+  expect(colors).not.toContain(keywordDefinitions.block.shineColors[0]);
 });

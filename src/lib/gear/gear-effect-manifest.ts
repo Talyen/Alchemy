@@ -170,14 +170,6 @@ export const defaultGearEffects: GearEffectManifest = {
 export function mergeGearEffectManifests(base: GearEffectManifest, addition: GearEffectManifest): GearEffectManifest {
   const merged = { ...base };
   for (const key of GEAR_NUMERIC_EFFECT_KEYS) merged[key] += addition[key];
-  return {
-    ...merged,
-    forgeOnStunChances: [...base.forgeOnStunChances, ...addition.forgeOnStunChances],
-    forgeOnBurnVsUnburnedChances: [...base.forgeOnBurnVsUnburnedChances, ...addition.forgeOnBurnVsUnburnedChances],
-    forgeOnConsumeBurnCardChances: [...base.forgeOnConsumeBurnCardChances, ...addition.forgeOnConsumeBurnCardChances],
-    forgeOnCompanionDamageVsBurningChances: [
-      ...base.forgeOnCompanionDamageVsBurningChances,
-      ...addition.forgeOnCompanionDamageVsBurningChances,
-    ],
-  };
+  for (const key of GEAR_CHANCE_EFFECT_KEYS) merged[key] = [...base[key], ...addition[key]];
+  return merged;
 }

@@ -11,11 +11,12 @@ import { computeLeechHeal } from "@/lib/battle/damage-rider-leech";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("combat perk regressions", () => {
-  it.each(["poison", "bleed"] as const)("Block prevents %s buildup when a hit breaks through", (damageType) => {
+  it("Shock Absorber prevents Stun buildup when a hit breaks through Block", () => {
+    const damageType = "stun";
     const state = patchBattleState({
       playerHealth: 30,
       playerStatuses: { block: 2 },
-      talentEffects: { blockPreventsPoison: true, blockPreventsBleed: true },
+      talentEffects: { blockPreventsStun: true },
     });
     const result = processEnemyDamageEffect(state, { kind: "damage", damageType, amount: 6 }, []);
     expect(result.playerHealth).toBe(26);

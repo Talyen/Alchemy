@@ -66,16 +66,6 @@ describe("selective feedback rewards", () => {
     expect(result.state.playerHealth).toBe(health === 19 ? 29 : health);
   });
 
-  it("a healing Holy hit cannot enable Radiant Guard with its own healing", () => {
-    const holy = makeTestCard({ cost: 0, effects: [{ kind: "damage", damageType: "holy", amount: 20 }] });
-    const result = play(
-      battle({ playerHealth: 19, talentEffects: { holyLifestealPercent: 200, holyBlockPercentFromDamage: 15 } }),
-      holy,
-    );
-    expect(result.state.playerHealth).toBe(40);
-    expect(result.state.playerStatuses.block).toBe(0);
-  });
-
   it("Overflow accepts card healing but not passive or explicit Leech healing", () => {
     const state = battle({ playerHealth: 39, talentEffects: { overhealToBlockRatio: 0.25 } });
     const heal = makeTestCard({ cost: 0, effects: [{ kind: "heal", amount: 9 }] });
@@ -110,27 +100,31 @@ describe("selective feedback rewards", () => {
     expect(play(battle({ talentEffects: { poisonDamageOnConsume: 2 } }), nonPotion).state.enemyHealth).toBe(199);
   });
 
-  it("Last Supper uses the hand before card draws, and pays only once for repeats", () => {
+  it("Last Supper ignores hand size and pays only once for repeats", () => {
     const consume = makeTestCard({ cost: 0, consume: true, effects: [{ kind: "draw-cards", amount: 1 }] });
     const state = battle({
       deck: [attack, attack, attack],
       flags: { playNextCardTwice: true },
-      talentEffects: computeTalentEffects({ consume: ["consume-last-supper", "consume-second-helping"] }),
+      talentEffects: {
+        ...computeTalentEffects({ consume: ["consume-last-supper", "consume-second-helping"] }),
+        forgeOnConsumeChance: 100,
+        drawOnConsumeChance: 100,
+      },
     });
     const last = play(state, consume);
     expect(last.state.playerStatuses.forge).toBe(1);
     expect(last.state.hand).toHaveLength(3);
-    expect(play(state, consume, [attack]).state.playerStatuses.forge).toBe(0);
+    expect(play(state, consume, [attack]).state.playerStatuses.forge).toBe(1);
   });
 
-  it.each([0.249, 0.25, 0.499, 0.5])("reward chances retain their strict percent boundaries at %s", (roll) => {
+  it.each([0.099, 0.1, 0.499, 0.5])("reward chances retain their strict percent boundaries at %s", (roll) => {
     const state = battle({
       rng: () => roll,
       talentEffects: computeTalentEffects({ consume: ["consume-leftovers"] }),
       gearEffects: { goldOnWish: 3 },
     });
     const consume = makeTestCard({ cost: 0, consume: true, effects: [] });
-    expect(play(state, consume).state.gold).toBe(roll < 0.25 ? 4 : 0);
+    expect(play(state, consume).state.gold).toBe(roll < 0.1 ? 4 : 0);
     expect(applyWishEffect(state, makeTestCard(), 1, []).gold).toBe(roll < 0.5 ? 3 : 0);
   });
 
@@ -144,12 +138,12 @@ describe("selective feedback rewards", () => {
       rng: () => roll,
       deck: [drawn],
       gearEffects: { dodgeChance: 70, dodgeDrawAndPlay: 1 },
-      talentEffects: { forgeOnConsume: 3 },
+      talentEffects: { forgeOnConsume: 3, forgeOnConsumeChance: 100 },
     });
     const result = applyEnemyAbility(state, incoming, []);
     expect(result.playerDodgeCount).toBe(1);
     expect(result.exhausted).toHaveLength(roll < 0.25 ? 1 : 0);
-    expect(result.playerStatuses.forge).toBe(roll < 0.25 ? 1 : 0); // Never consumes the last held card.
+    expect(result.playerStatuses.forge).toBe(roll < 0.25 ? 4 : 0);
   });
 
   it("Gold conversion rewards keep defensive gates while Forge can reward successive Gold gains", () => {
@@ -284,7 +278,7 @@ describe("selective feedback rewards", () => {
     const state = battle({
       playerHealth: 21,
       playerStatuses: { block: 10 },
-      talentEffects: { holyReflectionBlockLostPercent: 30, healthThresholdBlock: { threshold: 50, amount: 6 } },
+      talentEffects: { holyReflectionBlockLostPercent: 30, healthThresholdBlockOnce: { threshold: 50, amount: 6 } },
     });
     const result = processEnemyDamageEffect(state, { kind: "damage", damageType: "physical", amount: 12 }, [], {
       triggerBlockRetaliation: true,

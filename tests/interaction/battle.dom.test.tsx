@@ -13,10 +13,10 @@ import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/use-run-reads";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { canPlayCard, isPlayerDefeated } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
 import {
+  mutateRunForTest,
   mutateGearForTest,
   replaceBattleForTest,
   resetAllTestStores,
@@ -26,7 +26,7 @@ import {
 import { battleCohort, combatOutcome } from "./battle-cohorts";
 import { snapshotRun, restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { parseActiveRun } from "@/lib/active-run-session";
+import { parseActiveRun } from "@/lib/validation";
 import { isDeepStrictEqual } from "node:util";
 import { defineSequenceFamily, requireProgress, type Scenario } from "./sequence";
 import { advance, installFrames, installMotionPreference } from "./timing";
@@ -52,15 +52,17 @@ defineSequenceFamily("battle", (seed) => {
     gear.initialize(cohort.inventories, cohort.loadouts, undefined, cohort.trinketIds, cohort.equippedTrinkets),
   );
   setRunSession({ hasActiveRun: true });
-  dispatchRunSessionCommand(
-    (draft) => acceptCommand(replaceBattleForTest(draft, cohort.battle)),
-    undefined,
-    defaultGameSession,
-  );
+  mutateRunForTest((draft) => replaceBattleForTest(draft, cohort.battle));
   const rect = () => ({ x: 0, y: 0, width: 100, height: 150 });
   const mounted = renderHook(
     ({ screen, menu }: { screen: Screen; menu: boolean }) => {
-      const controller = useBattleController({ screen, measureElementRect: rect, measureVisualCardRect: rect });
+      const controller = useBattleController({
+        gameSession: defaultGameSession,
+        presentation: battlePresentation,
+        screen,
+        measureElementRect: rect,
+        measureVisualCardRect: rect,
+      });
       const { battle } = useRunSessionBattleContext(screen);
       useBattlePlayback({ ...controller, battleState: battle.battleState, gameMenuOpen: menu });
       const inspection = useCardInspection({

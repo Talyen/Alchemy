@@ -1,6 +1,6 @@
 import { readActivityData } from "@/lib/active-run-session";
 import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
-import type { BattleCard } from "@/lib/game-data";
+import { getGoldMultiplier, type BattleCard } from "@/lib/game-data";
 import type { GameplayState } from "./gameplay-state-reads";
 
 // Preserve the card-domain contract rather than exposing the save schema type.
@@ -15,6 +15,7 @@ function selectRunEndData(state: GameplayState) {
     runEndCurrencies: state.session.runEndCurrencies,
     runEndTalentXP: state.session.runEndTalentXP,
     runEndItems: state.session.runEndItems,
+    runEndUnlockedCharacters: state.session.runEndUnlockedCharacters,
     runRecap: state.session.runRecap,
     runEndLabyrinthFloor: state.session.runEndLabyrinthFloor,
     talentXP: state.runProfile.talentXP,
@@ -64,7 +65,10 @@ export const RUN_SCREEN_SELECTORS = {
     rewardState: state.session.rewardFlow.state,
     rewardClaimInFlight: state.session.rewardFlow.claim.kind === "reward",
   }),
-  destination: (state: GameplayState) => ({ rewardState: state.session.rewardFlow.state }),
+  destination: (state: GameplayState) => ({
+    rewardState: state.session.rewardFlow.state,
+    currentAct: state.run.activeRun.currentAct,
+  }),
   mystery: (state: GameplayState) => {
     const visit = readActivityData(state.session.activity, "mystery");
     return {
@@ -74,6 +78,8 @@ export const RUN_SCREEN_SELECTORS = {
       mysteryGrantedGearInstances: visit.mysteryGrantedGearInstances,
       mysteryChosenCardId: visit.mysteryChosenCardId,
       mysteryChosenChoice: visit.mysteryChosenChoice,
+      homesteadEffects: state.runProfile.effects,
+      goldMultiplier: getGoldMultiplier(state.run.activeRun.characterId, state.run.activeRun.selectedDifficulty),
       // Screens sum the current run's XP and the permanent profile total.
       runTalentXP: state.run.activeRun.runTalentXP,
       talentXP: state.runProfile.talentXP,

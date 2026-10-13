@@ -1,15 +1,14 @@
-import { defaultGameSession } from "@/app/application-session";
+import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
 import { showRunScreen } from "@/features/alchemy/shared/stores/navigation-commands";
 import { type Screen } from "@/lib/routing";
 import { useEffect, useMemo, useState } from "react";
 import { createScreenNavigation } from "./screen-navigation";
 
-const showApplicationScreen = (screen: Screen) => showRunScreen(screen, defaultGameSession);
-
 export function useScreenTransitions(
+  gameSession: GameSession,
   currentScreen: Screen,
-  setScreen: (screen: Screen) => void = showApplicationScreen,
+  setScreen?: (screen: Screen) => void,
 ) {
   const currentScreenRef = useLatestRef(currentScreen);
   const [navigationPending, setNavigationPending] = useState(false);
@@ -19,12 +18,12 @@ export function useScreenTransitions(
         // oxlint-disable-next-line react-hooks/refs -- factory stores the reader; it only runs when a navigation event arrives
         {
           readScreen: () => currentScreenRef.current,
-          showScreen: setScreen,
+          showScreen: setScreen ?? ((screen) => showRunScreen(screen, gameSession)),
           onPendingChange: setNavigationPending,
         },
-        defaultGameSession,
+        gameSession,
       ),
-    [currentScreenRef, setScreen],
+    [currentScreenRef, setScreen, gameSession],
   );
   useEffect(() => navigation.cancelPending, [navigation]);
   return useMemo(() => ({ ...navigation, navigationPending }), [navigation, navigationPending]);

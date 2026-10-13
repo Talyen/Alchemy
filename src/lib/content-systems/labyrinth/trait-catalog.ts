@@ -101,7 +101,7 @@ export const LABYRINTH_TRAITS = {
   "sundered-guard": enemy("Sundered Guard", "Enemy attacks remove 2 extra Block", "block"),
   "unbinding-strike": enemy("Unbinding Strike", "Enemy attacks Purge 1 buff"),
   unbreakable: enemy("Unbreakable", "Enemy no longer loses Armor when taking damage", "armor", ["elite", "boss"]),
-  whitehot: enemy("Whitehot", "Enemy no longer loses Forge when dealing damage", "forge", ["elite", "boss"]),
+  whitehot: enemy("Whitehot", "Enemy starts with 1 Forge", "forge", ["elite", "boss"]),
   executioner: enemy("Desperation", "Enemy deals double Physical damage while below half Health", "physical", [
     "elite",
     "boss",

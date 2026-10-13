@@ -1,10 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { expect, it } from "vitest";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { cardById, computeTalentEffects } from "@/lib/game-data";
 import { patchBattleState } from "../../fixtures/battle";
 
-describe("crowd control requires a surviving target", () => {
-  it.each(["frostbolt", "bash"])("a lethal %s cannot control a defeated enemy or grant control rewards", (id) => {
+it.each(["frostbolt", "bash"])(
+  "crowd control requires a surviving target a lethal %s cannot control a defeated enemy or grant control rewards",
+  (id) => {
     const card = { ...cardById[id]!, uid: 1 };
     const state = patchBattleState({
       hand: [card],
@@ -24,5 +25,5 @@ describe("crowd control requires a surviving target", () => {
     expect(result.combatTexts.some((event) => event.kind === "notice" && ["stun", "freeze"].includes(event.stat))).toBe(
       false,
     );
-  });
-});
+  },
+);

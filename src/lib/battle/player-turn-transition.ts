@@ -217,6 +217,7 @@ export function advanceToPlayerTurn(
   const beforeTurnReset = nextState;
   nextState = performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn, options);
   const retainedBlock = nextState.playerStatuses.block > 0;
+  const blockDepleted = beforeTurnReset.playerStatuses.block > 0 && !retainedBlock;
   nextState = resolvePendingBattleReactions(applyTurnStartPurge(nextState, combatTexts), combatTexts);
   if (getBattleOutcome(nextState) !== null) return nextState;
   if (retainedBlock && nextState.gearEffects.thornsOnRetainedBlock > 0) {
@@ -227,7 +228,11 @@ export function advanceToPlayerTurn(
       combatTexts,
     );
   }
-  nextState = applyBlockDepletionRewards(beforeTurnReset, nextState, combatTexts);
+  nextState = resolvePendingBattleReactions(
+    applyBlockDepletionRewards(beforeTurnReset, nextState, combatTexts, blockDepleted),
+    combatTexts,
+  );
+  if (getBattleOutcome(nextState) !== null) return nextState;
   if (nextState.gearEffects.forgeEveryThreeTurns > 0 && nextState.turn % 3 === 0)
     nextState = addForgeToPlayer(nextState, 1, combatTexts);
   if (getBattleOutcome(nextState) !== null) return nextState;
@@ -238,21 +243,13 @@ export function advanceToPlayerTurn(
     nextState.discard.length === 0
   )
     nextState = applyEmergencyWish(nextState, combatTexts);
-  const reset = nextState;
-  const wished =
-    state.flags.pendingWishMana > 0
-      ? gainManaWithCombatText(reset, state.flags.pendingWishMana, combatTexts, {
-          allowOverflow: true,
-          skipFightPacing: true,
-        })
-      : reset;
   const recovered =
     state.flags.darkRecoveryMana > 0
-      ? gainManaWithCombatText(wished, state.flags.darkRecoveryMana, combatTexts, {
+      ? gainManaWithCombatText(nextState, state.flags.darkRecoveryMana, combatTexts, {
           allowOverflow: true,
           skipFightPacing: true,
         })
-      : wished;
+      : nextState;
   const drawnState = processArcheryEchoes(
     processPendingTurnStartEffects(applyPlagueDoctorMask(recovered, combatTexts), combatTexts),
     combatTexts,

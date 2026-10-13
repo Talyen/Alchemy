@@ -1,3 +1,4 @@
+import { applyRewardFindBonus } from "@/lib/homestead/material-rewards";
 import { applyDamageStatuses } from "./damage-status-riders";
 import { rollBattleChance } from "./chance-roll";
 import { resolveBattleSequence, type ReactionBoundary } from "./battle-sequence";
@@ -69,7 +70,6 @@ export function buildWishOptions(
   const baseCount =
     WISH_CHOICE_COUNT +
     state.talentEffects.wishExtraChoices +
-    (state.flags.nextWishExtraChoice ? 1 : 0) +
     (hasEncounterBenefit(state, "wishful") && !state.flags.encounterWishUsed ? 1 : 0) +
     (rollBattleChance(state.talentEffects.wishExtraChoiceChance, state) ? 1 : 0);
 
@@ -121,15 +121,16 @@ function applyWishGemsGoldTrigger(state: BattleState, combatTexts: CombatTextEve
   const amount = state.talentEffects.wishGemsGold;
   if (amount <= 0) return state;
   if (rollPercent(WISH_GEMS_GOLD_PERCENT, getBattleRng(state))) {
-    return addGoldWithCombatText(state, amount, combatTexts);
+    return addGoldWithCombatText(state, amount, combatTexts, state.talentEffects.goldFindBonus);
   }
   if (shouldConvertGemsWishToGold(state.contentSystemType)) {
-    return addGoldWithCombatText(state, amount, combatTexts);
+    return addGoldWithCombatText(state, amount, combatTexts, state.talentEffects.goldFindBonus);
   }
-  mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gems", amount });
+  const gems = applyRewardFindBonus(amount, state.talentEffects.gemFindBonus);
+  mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gems", amount: gems });
   return {
     ...state,
-    pendingMaterials: { ...state.pendingMaterials, gems: state.pendingMaterials.gems + amount },
+    pendingMaterials: { ...state.pendingMaterials, gems: state.pendingMaterials.gems + gems },
   };
 }
 
@@ -155,8 +156,7 @@ function applyWishHealthAndStatusTriggers(
 }
 
 function applyWishDrawTriggers(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
-  const talentDraw =
-    state.talentEffects.wishDrawsCard || rollBattleChance(state.talentEffects.wishDrawChance, state) ? 1 : 0;
+  const talentDraw = rollBattleChance(state.talentEffects.wishDrawChance, state) ? 1 : 0;
   const drawCount = talentDraw + state.gearEffects.drawOnWish;
   if (drawCount <= 0) return state;
   return applyDrawResult(state, drawFromState(state, drawCount), combatTexts);
@@ -176,7 +176,6 @@ export function applyWishEffect(
   const nextWishOptions: BattleCard[][] = [];
   for (let index = 0; index < wishCount; index += 1) {
     nextWishOptions.push(buildWishOptions(state, card, companionOnly));
-    if (state.flags.nextWishExtraChoice) state = { ...state, flags: { ...state.flags, nextWishExtraChoice: false } };
     if (hasEncounterBenefit(state, "wishful")) state = { ...state, flags: { ...state.flags, encounterWishUsed: true } };
   }
   const queuedOptions = nextWishOptions.filter((options) => options.length > 0);
@@ -314,21 +313,12 @@ function applyWishManaTrigger(
   combatTexts: CombatTextEvent[],
   eligibility: BattleState,
 ): BattleState {
-  if (state.talentEffects.manaNextTurnOnWish > 0) {
-    state = {
-      ...state,
-      flags: {
-        ...state.flags,
-        pendingWishMana: state.flags.pendingWishMana + state.talentEffects.manaNextTurnOnWish,
-      },
-    };
-  }
-  const manaGain = state.talentEffects.manaOnWish + (eligibility.mana === 0 ? state.gearEffects.manaOnWish : 0);
+  const manaGain = eligibility.mana === 0 ? state.gearEffects.manaOnWish : 0;
   if (manaGain <= 0) return state;
   return gainManaWithCombatText(state, manaGain, combatTexts, { skipFightPacing: true });
 }
 
-export function chooseWishCard(state: BattleState, cardId: string, combatTexts: CombatTextEvent[] = []) {
+export function chooseWishCard(state: BattleState, cardId: string) {
   const [nextWishOptions = null, ...wishQueue] = state.wishQueue;
 
   const chosenCard = state.wishOptions?.find((card) => card.id === cardId);
@@ -336,14 +326,8 @@ export function chooseWishCard(state: BattleState, cardId: string, combatTexts: 
     return state;
   }
 
-  const declined = Math.max(0, (state.wishOptions?.length ?? 0) - 1);
   const declinedCards = (state.wishOptions ?? []).filter((card) => card.id !== chosenCard.id);
-  const blockAmount = declined * state.talentEffects.blockPerDeclinedWishCard;
-  const rewarded =
-    blockAmount > 0
-      ? applyPlayerStatusEffect(state, { kind: "player-status", status: "block", amount: blockAmount }, combatTexts)
-      : state;
-  let nextState = addCardToHandOrQueue({ ...rewarded, wishOptions: nextWishOptions, wishQueue }, chosenCard);
+  let nextState = addCardToHandOrQueue({ ...state, wishOptions: nextWishOptions, wishQueue }, chosenCard);
   const acquiredIds = [chosenCard.id];
   if (declinedCards.length > 0 && rollBattleChance(nextState.talentEffects.declinedWishCardChance, nextState)) {
     const bonusCard = pickRandom(declinedCards, getBattleRng(nextState));

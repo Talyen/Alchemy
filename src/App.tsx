@@ -1,3 +1,5 @@
+import { battlePresentation } from "@/app/battle-presentation";
+import { defaultGameSession } from "@/app/application-session";
 import { SaveWriteNotice } from "@/app/save-write-notice";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -6,6 +8,7 @@ import {
   AppScreenChromeProvider,
   GameMenuOverlay,
   StartupLoadingScreen,
+  dismissStartupSplash,
   useAlchemyAutosaveFromStores,
   useAppAudioEffects,
   useAppDisplayEffects,
@@ -28,10 +31,12 @@ import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-
 import { useVirtualResolution } from "@/features/alchemy/shared/ui/use-virtual-resolution";
 import { useDeviceDisplayPreferences } from "@/features/alchemy/shared/stores/device-display-store";
 import {
+  useActiveRunCharacterId,
   useActiveRunBoons,
   useActiveRunScreenValue,
   useBondedCompanions,
   useHomesteadEffects,
+  useHasActiveBattle,
   useRunSessionNavigationSlice,
   useTalentEffects,
 } from "@/features/alchemy/shared/stores/use-run-reads";
@@ -44,9 +49,10 @@ import { setTooltipRoot } from "@/features/alchemy/shared/ui/tooltips/tooltip-ro
 import { useArtworkReady } from "@/features/alchemy/shared/ui/use-artwork-ready";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/route-commands";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
-import type { Screen } from "@/lib/routing";
+import { getRunPhase, type Screen } from "@/lib/routing";
+import { useSteamRichPresence } from "@/features/alchemy/shell/use-steam-rich-presence";
 import { cn } from "@/lib/utils";
-import { useCallback, useLayoutEffect, useMemo, useRef, type SyntheticEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, type SyntheticEvent } from "react";
 
 const OPTIONS_PREVIEW_PLASMA_PAIR = { primary: "#fbbf24", secondary: "#78350f" };
 
@@ -280,7 +286,10 @@ function AppInner({ displayLayout }: { displayLayout: ReturnType<typeof useVirtu
   });
 
   const gameMenu = useGameMenuState();
-  const run = useAlchemyRunController();
+  const run = useAlchemyRunController(defaultGameSession, battlePresentation);
+  const characterId = useActiveRunCharacterId();
+  const hasActiveBattle = useHasActiveBattle();
+  useSteamRichPresence(run.screen, getRunPhase(run.screen, hasActiveBattle), characterId);
 
   const { renderedScreen, pagePhase, tooltipBlocked } = useRenderedScreenTransition(run.screen);
 
@@ -335,6 +344,12 @@ export default function App() {
   const { ready: initialLoadReady, progress: startupProgress } = useInitialLoadReady({
     bootstrapReady: bootstrapResult != null,
   });
+
+  useEffect(() => {
+    if (bootstrapResult && initialLoadReady) {
+      dismissStartupSplash();
+    }
+  }, [bootstrapResult, initialLoadReady]);
 
   if (!bootstrapResult || !initialLoadReady) {
     return <StartupLoadingScreen progress={startupProgress} />;

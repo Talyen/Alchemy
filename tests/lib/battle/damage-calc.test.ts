@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
-import { defaultTalentEffects } from "@/lib/battle";
 import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { CRIT_MULTIPLIER } from "@/lib/game-constants";
 import type { BattleCardEffect } from "@/lib/game-data";
@@ -19,13 +18,13 @@ describe("computeCardDamageToEnemy", () => {
       const rng = vi.fn(() => 0);
       const state = patchBattleState({
         enemyMitigation: { block: 0, armor: 0 },
-        talentEffects: { homesteadCriticalDamage: 3 },
+        talentEffects: {},
         flags: { nextHitCrit: source === "next-hit", nextPhysicalCrit: source === "physical" },
         rng,
       });
       const context = { manaAtStart: 3, enemyFreezeSkipTurnsAtStart: 0, guaranteedCrit: source === "guaranteed" };
       const result = computeCardDamageToEnemy(state, physicalEffect, undefined, context);
-      expect(result.modifiedDamage).toBe(physicalEffect.amount * CRIT_MULTIPLIER + 3);
+      expect(result.modifiedDamage).toBe(physicalEffect.amount * CRIT_MULTIPLIER);
       expect(result.critical).toBe(true);
       expect(result.nextState.flags.nextHitCrit).toBe(false);
       expect(result.nextState.flags.nextPhysicalCrit).toBe(false);
@@ -51,17 +50,15 @@ describe("computeCardDamageToEnemy", () => {
         armorPhysicalDamagePercent: 50,
         blockToPhysicalDamageMultiplier: 0.5,
         flatPhysicalDamage: 2,
-        poisonPhysicalBonus: 2,
-        bleedPhysicalBonus: 3,
       },
       gearEffects: { flatPhysicalDamage: 3 },
       rng: () => 0.99,
     });
     const texts = makeCombatTexts();
     const result = dealDamage(state, makeTestCard({ effects: [physicalEffect] }), texts);
-    expect(result.enemyHealth).toBe(7);
+    expect(result.enemyHealth).toBe(12);
     expect(result.enemyMitigation).toEqual({ block: 0, armor: 2, forge: 0 });
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "physical", amount: 23 });
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "physical", amount: 18 });
     expect(state.enemyHealth).toBe(30);
     expect(state.playerStatuses).toMatchObject({ forge: 3, armor: 5, block: 10 });
   });
@@ -74,7 +71,7 @@ describe("computeCardDamageToEnemy", () => {
     };
     const state = patchBattleState({
       enemyMitigation: { block: 0, armor: 0 },
-      talentEffects: { ...defaultTalentEffects, consumeDamageBonusPercent: 20 },
+      talentEffects: { consumeDamageBonusPercent: 20 },
       rng: () => 0.99,
     });
     const { modifiedDamage } = computeCardDamageToEnemy(state, holyEffect, {
@@ -90,22 +87,20 @@ describe("computeCardDamageToEnemy", () => {
   });
 });
 
-describe("low-health damage bonuses", () => {
-  it.each([14, 15, 16])("requires strictly below half Health at %s/30", (playerHealth) => {
-    const base = patchBattleState();
-    const state = patchBattleState({
-      playerHealth,
-      playerMaxHealth: 30,
-      rng: () => 0.99,
-      talentEffects: { ...base.talentEffects, physicalDoubledBelowHalfHealth: true, bleedDesperateMultiplier: 1.5 },
-    });
-    expect(computeCardDamageToEnemy(state, { kind: "damage", damageType: "physical", amount: 10 }).modifiedDamage).toBe(
-      playerHealth < 15 ? 20 : 10,
-    );
-    expect(computeCardDamageToEnemy(state, { kind: "damage", damageType: "bleed", amount: 10 }).modifiedDamage).toBe(
-      playerHealth < 15 ? 15 : 10,
-    );
+it.each([14, 15, 16])("low-health damage bonuses requires strictly below half Health at %s/30", (playerHealth) => {
+  const base = patchBattleState();
+  const state = patchBattleState({
+    playerHealth,
+    playerMaxHealth: 30,
+    rng: () => 0.99,
+    talentEffects: { ...base.talentEffects, physicalDoubledBelowHalfHealth: true, bleedDesperateMultiplier: 1.5 },
   });
+  expect(computeCardDamageToEnemy(state, { kind: "damage", damageType: "physical", amount: 10 }).modifiedDamage).toBe(
+    playerHealth < 15 ? 20 : 10,
+  );
+  expect(computeCardDamageToEnemy(state, { kind: "damage", damageType: "bleed", amount: 10 }).modifiedDamage).toBe(
+    playerHealth < 15 ? 15 : 10,
+  );
 });
 
 describe("resolved card damage", () => {
@@ -152,25 +147,19 @@ describe("resolved card damage", () => {
     expect(texts).toEqual([]);
   });
 
-  it("spends each first-Burn opportunity once and leaves an identity multiplier unspent", () => {
+  it("spends the first-Burn Boon opportunity once", () => {
     const card = makeTestCard({ effects: [makeEffect("burn", 5)] });
     const state = patchBattleState({
       rng: () => 0.99,
-      talentEffects: { firstBurnCardBonusMultiplier: 1.5 },
       trinketEffects: { firstBurnDoubled: true },
     });
     const first = dealDamage(state, card);
-    expect(first.enemyHealth).toBe(17);
-    expect(first.flags.firstBurnCardDoubledUsed).toBe(true);
+    expect(first.enemyHealth).toBe(20);
     expect(first.flags.firstBurnTrinketDoubledUsed).toBe(true);
     const second = dealDamage(first, card);
-    expect(second.enemyHealth).toBe(12);
-    const ordinary = dealDamage(
-      patchBattleState({ talentEffects: { firstBurnCardBonusMultiplier: 1 }, rng: () => 0.99 }),
-      card,
-    );
+    expect(second.enemyHealth).toBe(15);
+    const ordinary = dealDamage(patchBattleState({ rng: () => 0.99 }), card);
     expect(ordinary.enemyHealth).toBe(25);
-    expect(ordinary.flags.firstBurnCardDoubledUsed).toBe(false);
   });
 
   it.each(["burn", "poison", "bleed", "freeze", "stun"] as const)(

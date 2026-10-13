@@ -89,15 +89,13 @@ describe("paired delta noise", () => {
   });
 });
 
-describe("paired deck helpers", () => {
-  it("inserts a missing card without changing an already-present id", () => {
-    const card = cardLibrary[0]!;
-    const other = cardLibrary[1]!;
-    const withCard = insertCardIntoDeck([other], card);
-    expect(withCard.map((entry) => entry.id)).toEqual([other.id, card.id]);
-    expect(insertCardIntoDeck(withCard, card)).toHaveLength(2);
-    expect(removeCardIdFromDeck(withCard, card.id).map((entry) => entry.id)).toEqual([other.id]);
-  });
+it("paired deck helpers inserts a missing card without changing an already-present id", () => {
+  const card = cardLibrary[0]!;
+  const other = cardLibrary[1]!;
+  const withCard = insertCardIntoDeck([other], card);
+  expect(withCard.map((entry) => entry.id)).toEqual([other.id, card.id]);
+  expect(insertCardIntoDeck(withCard, card)).toHaveLength(2);
+  expect(removeCardIdFromDeck(withCard, card.id).map((entry) => entry.id)).toEqual([other.id]);
 });
 
 describe("rate aggregation", () => {

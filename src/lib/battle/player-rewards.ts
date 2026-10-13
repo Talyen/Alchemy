@@ -1,3 +1,4 @@
+import { applyRewardFindBonus } from "@/lib/homestead/material-rewards";
 import { resolveSecondaryAction } from "./action-context";
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import { drawKeywordCard } from "./draw";
@@ -101,14 +102,12 @@ export function applyHealOnManaGain(
   state: BattleState,
   gainAmount: number,
   combatTexts: CombatTextEvent[],
-  manaBeforeGain: number,
 ): BattleState {
   if (gainAmount <= 0) return state;
   if (state.talentEffects.healthPerMana > 0) {
     return applyHealingWithCombatText(state, gainAmount * state.talentEffects.healthPerMana, combatTexts);
   }
-  if (state.talentEffects.healOnManaGain <= 0 || manaBeforeGain !== 0) return state;
-  return applyHealingWithCombatText(state, state.talentEffects.healOnManaGain, combatTexts);
+  return state;
 }
 
 export function gainManaWithCombatText(
@@ -124,7 +123,7 @@ export function gainManaWithCombatText(
   if (gained > 0 && combatTexts) {
     mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: gained });
   }
-  return applyHealOnManaGain(nextState, gained, combatTexts ?? [], state.mana);
+  return applyHealOnManaGain(nextState, gained, combatTexts ?? []);
 }
 
 export function addPlayerStatusWithCombatText(
@@ -157,10 +156,11 @@ export function addGoldWithCombatText(
   state: BattleState,
   amount: number,
   combatTexts?: CombatTextEvent[],
+  findBonus = 0,
 ): BattleState {
   if (amount <= 0) return state;
 
-  const scaledGold = scaleGoldReward(amount, state.gearEffects);
+  const scaledGold = applyRewardFindBonus(scaleGoldReward(amount, state.gearEffects), findBonus);
   let nextState = { ...state, gold: state.gold + scaledGold };
   if (state.playerStatuses.block === 0 && state.talentEffects.blockPerGold > 0) {
     nextState = addPlayerStatusWithCombatText(
@@ -328,9 +328,6 @@ export function addForgeToPlayer(state: BattleState, baseAmount: number, combatT
 function applyBlockGainRewards(state: BattleState, gained: number, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
   if (gained <= 0) return nextState;
-  if (rollBattleChance(nextState.talentEffects.armorOnBlockChance, nextState)) {
-    nextState = applyArmorReward(nextState, gained, combatTexts);
-  }
   if (rollBattleChance(nextState.talentEffects.drawHolyOnBlockChance, nextState)) {
     nextState = drawKeywordCard(nextState, "holy", { combatTexts });
   }

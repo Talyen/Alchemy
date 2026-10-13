@@ -2,8 +2,11 @@ import {
   sampleDestinationChoices,
   withSelectedBossForDestinations,
   type DestinationOfferState,
-  type DestinationOptionsInput,
 } from "@/features/alchemy/shared/run-flow/destination-flow";
+import {
+  resolveAvailableDestinations,
+  type DestinationEligibilityContext,
+} from "@/features/alchemy/shared/run-flow/resolve-available-destinations";
 import type { RewardState } from "@/lib/active-run-session";
 import type { BattleSnapshot } from "@/lib/battle";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
@@ -28,6 +31,7 @@ import {
   type TalentEffectManifest,
   type UnlockedTalents,
 } from "@/lib/game-data";
+import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { computeCombatMaterialReward } from "@/lib/homestead/material-rewards";
 import type { HomesteadEffectManifest, MaterialInventory } from "@/lib/homestead/types";
 import type { LootProgress } from "@/lib/loot";
@@ -49,6 +53,7 @@ import {
 export interface VictoryRewardsInput {
   createInstanceId?: (() => string) | undefined;
   lootProgress: LootProgress;
+  materialRewardBand: number;
   characterId: CharacterId;
   selectedDifficulty: DifficultyId | null;
   unlockedTalents: UnlockedTalents;
@@ -62,9 +67,8 @@ export interface VictoryRewardsInput {
   battleState: BattleSnapshot;
   purseGold: number;
   runMaxHealth: number;
-  destinationIndexInAct: number;
+  destinationEligibility: DestinationEligibilityContext;
   homesteadEffects: HomesteadEffectManifest;
-  getAvailableDestinations: (options?: DestinationOptionsInput) => Destination[];
   rollBossEnemyId: () => string;
   destinationOfferState: DestinationOfferState;
 }
@@ -194,9 +198,10 @@ function computeVictorySettlement(
     ...goldRoll,
     talentGoldPerCombat: victoryGoldPerCombat(talentEffects, input.battleState),
     goldMultiplier: getGoldMultiplier(input.characterId, input.selectedDifficulty),
+    goldFindBonus: input.homesteadEffects.goldFindBonus,
   });
   const materials = computeCombatMaterialReward({
-    enemyId: input.battleState.currentEnemy.id,
+    progressionBand: input.materialRewardBand,
     enemyType: input.battleState.currentEnemy.enemyType,
     effects: input.homesteadEffects,
     scavenger: labyrinthRewardModifiers.includes("scavenger"),
@@ -225,19 +230,15 @@ function prepareVictoryDestinations(
   effectiveMaxHealth: number,
   destinationRng: () => number,
 ) {
-  const skipDestinationSampling = input.contentSystemType === CONTENT_SYSTEMS.LABYRINTH;
-  const eligibleDestinations = skipDestinationSampling
-    ? []
-    : input.getAvailableDestinations({
-        currentHealth: playerHealth,
-        currentGold: persistedGold,
-        destinationIndexInAct: input.destinationIndexInAct,
-        maxHealth: effectiveMaxHealth,
-      });
-  const sampled = skipDestinationSampling
-    ? { choices: [] as Destination[], offerState: input.destinationOfferState }
-    : sampleDestinationChoices(eligibleDestinations, input.destinationOfferState, destinationRng);
-  return sampled;
+  if (input.contentSystemType === CONTENT_SYSTEMS.LABYRINTH)
+    return { choices: [] as Destination[], offerState: input.destinationOfferState };
+  const eligibleDestinations = resolveAvailableDestinations({
+    ...input.destinationEligibility,
+    runPlayerHealth: playerHealth,
+    gold: persistedGold,
+    runMaxHealth: effectiveMaxHealth,
+  });
+  return sampleDestinationChoices(eligibleDestinations, input.destinationOfferState, destinationRng);
 }
 
 export function computeVictoryRewards(
@@ -251,7 +252,7 @@ export function computeVictoryRewards(
     input.activeLabyrinthRewardModifiers,
   );
 
-  const talentEffects = computeTalentEffects(input.unlockedTalents);
+  const talentEffects = mergeIntoManifest(computeTalentEffects(input.unlockedTalents), input.homesteadEffects);
   const settlement = computeVictorySettlement(
     input,
     talentEffects,

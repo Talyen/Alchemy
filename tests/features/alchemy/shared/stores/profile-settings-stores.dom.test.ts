@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { characters } from "@/lib/game-data";
 import { profilePersistenceCodec, readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
-import { resetProfileForTest } from "../../../../helpers/run-domain-store-test";
+import { mutateGameplayForTest, resetProfileForTest } from "../../../../helpers/run-domain-store-test";
 import {
   settingsPersistenceCodec,
   useAppSettings,
@@ -11,7 +11,6 @@ import {
   useSettingsStore,
 } from "@/features/alchemy/shared/stores/settings-store";
 import { defaultSaveData, type SaveData } from "@/features/alchemy/shared/storage";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import {
   handleCollectionTabChange,
   resetToDefaults,
@@ -41,23 +40,18 @@ describe("profile store", () => {
   });
 
   it("hydrates only profile fields from save data", () => {
-    dispatchGameplayCommand(
-      (draft) =>
-        acceptCommand(
-          profilePersistenceCodec.hydrate(
-            makeSave({
-              discoveredCardIds: ["card-a"],
-              encounteredEnemyIds: ["goblin"],
-              completedDifficulties: {
-                ...defaultSaveData.completedDifficulties,
-                knight: ["difficulty-1"],
-              },
-            }),
-            draft,
-          ),
-        ),
-      undefined,
-      defaultGameSession,
+    mutateGameplayForTest((draft) =>
+      profilePersistenceCodec.hydrate(
+        makeSave({
+          discoveredCardIds: ["card-a"],
+          encounteredEnemyIds: ["goblin"],
+          completedDifficulties: {
+            ...defaultSaveData.completedDifficulties,
+            knight: ["difficulty-1"],
+          },
+        }),
+        draft,
+      ),
     );
 
     const profile = readProfileStore(defaultGameSession);
@@ -67,18 +61,12 @@ describe("profile store", () => {
   });
 
   it("supports functional discovery updates and collection navigation", () => {
-    dispatchGameplayCommand(
-      (draft) => {
-        setDiscoveredCardIds(draft, (previous: readonly string[]) => [...previous, "card-a"]);
-        setCollectionPage(draft, "bestiary", 2);
-        setCollectionPage(draft, "cards", -1);
-        handleCollectionTabChange(draft, "bestiary");
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      setDiscoveredCardIds(draft, (previous: readonly string[]) => [...previous, "card-a"]);
+      setCollectionPage(draft, "bestiary", 2);
+      setCollectionPage(draft, "cards", -1);
+      handleCollectionTabChange(draft, "bestiary");
+    });
 
     expect(readProfileStore(defaultGameSession)).toMatchObject({
       discoveredCardIds: ["card-a"],
@@ -88,17 +76,11 @@ describe("profile store", () => {
   });
 
   it("resets persisted and transient profile state", () => {
-    dispatchGameplayCommand(
-      (draft) => {
-        setDiscoveredCardIds(draft, ["card-a"]);
-        handleCollectionTabChange(draft, "trinkets");
-        resetToDefaults(draft);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      setDiscoveredCardIds(draft, ["card-a"]);
+      handleCollectionTabChange(draft, "trinkets");
+      resetToDefaults(draft);
+    });
 
     expect(readProfileStore(defaultGameSession).discoveredCardIds).toEqual(defaultSaveData.discoveredCardIds);
     expect(readProfileStore(defaultGameSession).collectionTab).toBe("heroes");
@@ -156,11 +138,7 @@ describe("settings store", () => {
   });
 
   it("updates and resets preferences independently from profile state", () => {
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(setDiscoveredCardIds(draft, ["card-a"])),
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => setDiscoveredCardIds(draft, ["card-a"]));
     const settings = useSettingsStore.getState();
     settings.setBrightness(120);
     settings.setMasterVolume(75);

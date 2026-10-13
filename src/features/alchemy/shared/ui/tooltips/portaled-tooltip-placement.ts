@@ -4,7 +4,7 @@ import { clamp } from "@/lib/math";
 
 export type PortaledTooltipSide = "side-start" | "side-end";
 
-export type PortaledTooltipPlacement = "above" | PortaledTooltipSide;
+export type PortaledTooltipPlacement = "above" | "below" | PortaledTooltipSide;
 
 const VR_STAGE_SELECTOR = '[data-testid="vr-stage"]';
 const DEFAULT_HORIZONTAL_INSET = 152;
@@ -18,6 +18,7 @@ function horizontalInsetForStage(stage: Pick<DOMRect, "left" | "right">): number
 }
 
 function preferredFloatingPlacement(placement: PortaledTooltipPlacement): Placement {
+  if (placement === "below") return "bottom";
   if (placement === "side-start") return "left";
   if (placement === "side-end") return "right";
   return "top";
@@ -40,6 +41,7 @@ export function usePortaledTooltipPlacement(
   padding = 8,
   placement: PortaledTooltipPlacement = "above",
   maxWidthFraction?: number,
+  allowFlip = true,
 ) {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState<{
@@ -90,10 +92,16 @@ export function usePortaledTooltipPlacement(
         strategy: "fixed",
         middleware: [
           offset(padding),
-          flip({
-            boundary: stage,
-            fallbackPlacements: placement === "above" ? ["bottom", "left", "right"] : undefined,
-          }),
+          allowFlip &&
+            flip({
+              boundary: stage,
+              fallbackPlacements:
+                placement === "above"
+                  ? ["bottom", "left", "right"]
+                  : placement === "below"
+                    ? ["top", "left", "right"]
+                    : undefined,
+            }),
           shift({
             boundary: stage,
             padding: { top: padding, bottom: padding, left: horizontalInset, right: horizontalInset },
@@ -102,13 +110,19 @@ export function usePortaledTooltipPlacement(
       }).then(({ x, y, placement: finalPlacement }) => {
         if (cancelled || currentMeasurement !== measurement) return;
         const left = `${x}px`;
-        const top = `${y}px`;
+        // Anchor fixed above panels directly to the artwork so resizing and
+        // celebratory scale never feed transformed panel dimensions back into placement.
+        const tooltipStyle: CSSProperties =
+          !allowFlip && finalPlacement === "top"
+            ? { left, bottom: `${window.innerHeight - trigger.getBoundingClientRect().top + padding}px` }
+            : { left, top: `${y}px` };
         setPosition((previous) =>
           previous.placement === finalPlacement &&
-          previous.tooltipStyle?.left === left &&
-          previous.tooltipStyle.top === top
+          previous.tooltipStyle?.left === tooltipStyle.left &&
+          previous.tooltipStyle?.top === tooltipStyle.top &&
+          previous.tooltipStyle?.bottom === tooltipStyle.bottom
             ? previous
-            : { placement: finalPlacement, tooltipStyle: { left, top } },
+            : { placement: finalPlacement, tooltipStyle },
         );
       });
     };
@@ -122,7 +136,12 @@ export function usePortaledTooltipPlacement(
         update();
       });
     };
-    const cleanup = autoUpdate(trigger, tooltipEl, scheduleUpdate, { elementResize: false });
+    // Fixed-side purchase panels must follow the artwork's press/hover scale
+    // while their content resizes; transforms do not trigger ResizeObserver.
+    const cleanup = autoUpdate(trigger, tooltipEl, allowFlip ? scheduleUpdate : update, {
+      elementResize: false,
+      animationFrame: !allowFlip,
+    });
     const stage = getVrStageElement();
     const observer =
       typeof ResizeObserver === "undefined"
@@ -140,7 +159,7 @@ export function usePortaledTooltipPlacement(
       if (frame !== null) cancelAnimationFrame(frame);
       cleanup();
     };
-  }, [active, triggerRef, padding, placement, maxWidthFraction]);
+  }, [active, triggerRef, padding, placement, maxWidthFraction, allowFlip]);
 
   return { tooltipRef, ...floatingPlacementToTooltipState(position.placement), tooltipStyle: position.tooltipStyle };
 }

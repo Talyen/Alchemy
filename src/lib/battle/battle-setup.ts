@@ -69,6 +69,7 @@ export function drawOpeningHand(state: BattleState): BattleState {
       CARDS_PER_TURN + state.trinketEffects.extraDrawPerBattle,
       state.nextCardUid,
       getBattleRng(state),
+      state.pendingHandCards,
     ),
   );
   return getBattleOutcome(drawn) === null &&
@@ -90,6 +91,7 @@ function resolveStartingEnemyMitigation(
     ...EMPTY_ENEMY_MITIGATION,
     armor: startingArmor + (hasFortress ? LABYRINTH_MODIFIER_CONFIG.fortressArmor : 0),
     block: startingBlock,
+    forge: traits.some((trait) => trait.id === "whitehot") ? LABYRINTH_MODIFIER_CONFIG.whitehotForge : 0,
   };
 }
 
@@ -108,7 +110,8 @@ function resolveStartingPlayerStatuses(
     phoenixFeather: encounterBenefits.includes("phoenix-nest") ? 1 : 0,
     thorns:
       (encounterBenefits.includes("bramblecoat") ? LABYRINTH_MODIFIER_CONFIG.playerThornsMinimum : 0) +
-      battleGearEffects.startThorns,
+      battleGearEffects.startThorns +
+      battleTalents.startThorns,
     block: startingBlock + (battleTalents.manaBulwarkActive ? mana : 0),
     forge: battleTalents.startForge + battleGearEffects.startForge,
     armor: startingArmor,

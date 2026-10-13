@@ -1,5 +1,4 @@
 import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
-import { createShopInitializer } from "./shop-initialization";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { discoverCardIds } from "@/features/alchemy/shared/stores/profile-store";
@@ -15,7 +14,6 @@ import { isBrewablePotion, strengthenPotion as prepareStrengthenedPotion } from 
 import { ALCHEMIST_POTIONS_OFFERED, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import { isMixedPotionCard, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
-import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { isValidDeckIndex } from "@/lib/utils";
 import type { AlchemistShopCommands } from "./shop-action-types";
 import {
@@ -25,24 +23,19 @@ import {
   createShopRefreshAction,
 } from "./shop-commands-core";
 import { computeMixPotionPrice, getShopBuyPrice } from "./shop-pricing";
-import { resolveDraftShopModifiers, resolveReadShopModifiers } from "./shop-pricing-context";
+import {
+  resolveDraftShopEffects,
+  resolveDraftShopModifiers,
+  resolveReadShopEffects,
+  resolveReadShopModifiers,
+} from "./shop-pricing-context";
 import { applyStrongSpiritsToPotions, resampleCardShopOfferings } from "./shop-state-init";
 import { commitShopService, runShopTransaction } from "./shop-transactions";
 
-export function createAlchemistShopCommands(
-  {
-    talentEffects,
-    homesteadEffects,
-  }: {
-    talentEffects: TalentEffectManifest;
-    homesteadEffects: Pick<HomesteadEffectManifest, "mixPotionDiscount">;
-  },
-  gameSession: GameSession,
-): AlchemistShopCommands {
+export function createAlchemistShopCommands(gameSession: GameSession): AlchemistShopCommands {
   const { buy: buyPotion, getBuyPrice: getPotionBuyPrice } = createShopPurchaseActions(
     {
       activity: "alchemist",
-      talentEffects,
       itemsOf: (state) => state.potions,
       slotKeyOf: cardSlotKeyOf,
       idOf: (item) => item.id,
@@ -51,26 +44,36 @@ export function createAlchemistShopCommands(
     },
     gameSession,
   );
-  const getMixPrice = () =>
-    computeMixPotionPrice(talentEffects, resolveReadShopModifiers(gameSession), homesteadEffects.mixPotionDiscount);
-  const getRefreshPrice = createGetRefreshPrice("alchemist", talentEffects, gameSession);
-
-  const initialize = createShopInitializer("alchemist", gameSession);
+  const getMixPrice = () => {
+    const { talentEffects, homesteadEffects } = resolveReadShopEffects(gameSession);
+    return computeMixPotionPrice(
+      talentEffects,
+      resolveReadShopModifiers(gameSession),
+      homesteadEffects.mixPotionDiscount,
+    );
+  };
+  const getRefreshPrice = createGetRefreshPrice("alchemist", gameSession);
 
   function brewPotion(
-    prepare: (deck: BattleCard[]) => { potion: BattleCard; deck: BattleCard[] } | null,
+    prepare: (
+      deck: BattleCard[],
+      talentEffects: TalentEffectManifest,
+    ) => { potion: BattleCard; deck: BattleCard[] } | null,
   ): BattleCard | null {
     return (
       runShopTransaction(
         "alchemist",
         (draft) => {
+          const { talentEffects, homesteadEffects } = resolveDraftShopEffects(draft);
           const price = computeMixPotionPrice(
             talentEffects,
             resolveDraftShopModifiers(draft),
             homesteadEffects.mixPotionDiscount,
           );
           const state = readActivityData(snapshotTransactionValue(draft.session.activity), "alchemist");
-          const prepared = state.mixUsed ? null : prepare(snapshotTransactionValue(draft.run.activeRun.runDeck));
+          const prepared = state.mixUsed
+            ? null
+            : prepare(snapshotTransactionValue(draft.run.activeRun.runDeck), talentEffects);
           return commitShopService({
             draft,
             price,
@@ -94,7 +97,7 @@ export function createAlchemistShopCommands(
   }
 
   function mixPotions(indexA: number, indexB: number): BattleCard | null {
-    return brewPotion((deck) => {
+    return brewPotion((deck, talentEffects) => {
       if (indexA === indexB || !isValidDeckIndex(indexA, deck.length) || !isValidDeckIndex(indexB, deck.length)) {
         return null;
       }
@@ -117,7 +120,6 @@ export function createAlchemistShopCommands(
   const refresh = createShopRefreshAction(
     {
       activity: "alchemist",
-      talentEffects,
       resample: (draft, state, modifiers) => ({
         ...state,
         potions: applyStrongSpiritsToPotions(
@@ -136,7 +138,6 @@ export function createAlchemistShopCommands(
   );
 
   return bindSessionCapabilities(gameSession, {
-    initialize,
     buyPotion,
     mixPotions,
     strengthenPotion,

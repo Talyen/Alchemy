@@ -137,7 +137,7 @@ export function verifyReleaseVersionTag(tag, version) {
 export async function verifyDesktopPackage() {
   const asar = require("@electron/asar");
   const selected = releaseEdition();
-  const outputRoot = resolve(selected.packageDirectory);
+  const outputRoot = resolve(REPO_ROOT, selected.packageDirectory);
   const requestedTarget = process.env.DESKTOP_TARGET;
   const appDirectory = resolveUnpackedDirectory(outputRoot, { target: requestedTarget });
   const target = requestedTarget ?? targetFromUnpackedName(basename(appDirectory));

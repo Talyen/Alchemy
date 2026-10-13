@@ -190,29 +190,27 @@ describe("ported Death's Door affix reactions", () => {
   });
 });
 
-describe("ported Purge affix rewards", () => {
-  it("rewards a successful Purge once even when it removes two benefits", () => {
-    const state = patchBattleState({
-      enemyHealth: 30,
-      enemyMaxHealth: 30,
-      enemyMitigation: { armor: 2, block: 3, forge: 0 },
-      gearEffects: { blockOnPurge: 2, holyOnPurge: 2 },
-      rng: () => 0.99,
-    });
-    const texts: CombatTextEvent[] = [];
-    const purged = purgeEnemyBenefits(state, 2, texts);
-    const rewarded = applyPurgeGearRewards(purged.state, purged.removed, texts);
-    expect(purged.removed).toBe(2);
-    expect(rewarded.enemyMitigation).toMatchObject({ armor: 0, block: 0 });
-    expect(rewarded.playerStatuses.block).toBe(2);
-    expect(rewarded.enemyHealth).toBe(28);
-
-    const emptyTexts: CombatTextEvent[] = [];
-    const empty = purgeEnemyBenefits(rewarded, 1, emptyTexts);
-    expect(empty.removed).toBe(0);
-    expect(emptyTexts).toEqual([]);
-    expect(applyPurgeGearRewards(empty.state, empty.removed, []).enemyHealth).toBe(28);
+it("ported Purge affix rewards rewards a successful Purge once even when it removes two benefits", () => {
+  const state = patchBattleState({
+    enemyHealth: 30,
+    enemyMaxHealth: 30,
+    enemyMitigation: { armor: 2, block: 3, forge: 0 },
+    gearEffects: { blockOnPurge: 2, holyOnPurge: 2 },
+    rng: () => 0.99,
   });
+  const texts: CombatTextEvent[] = [];
+  const purged = purgeEnemyBenefits(state, 2, texts);
+  const rewarded = applyPurgeGearRewards(purged.state, purged.removed, texts);
+  expect(purged.removed).toBe(2);
+  expect(rewarded.enemyMitigation).toMatchObject({ armor: 0, block: 0 });
+  expect(rewarded.playerStatuses.block).toBe(2);
+  expect(rewarded.enemyHealth).toBe(28);
+
+  const emptyTexts: CombatTextEvent[] = [];
+  const empty = purgeEnemyBenefits(rewarded, 1, emptyTexts);
+  expect(empty.removed).toBe(0);
+  expect(emptyTexts).toEqual([]);
+  expect(applyPurgeGearRewards(empty.state, empty.removed, []).enemyHealth).toBe(28);
 });
 
 describe("Spellrending turn-start Purge", () => {

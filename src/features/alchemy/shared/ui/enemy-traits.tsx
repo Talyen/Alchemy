@@ -1,3 +1,4 @@
+import { getEncounterEnemyTrait, type EnemyDescriptionContext } from "@/lib/battle";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
 import { cn } from "@/lib/utils";
@@ -6,10 +7,12 @@ import { TraitBox, type TraitBoxVariant } from "./trait-box";
 
 export function EnemyTraits({
   entry,
+  enemyDescriptionContext,
   modifiers = [],
   layout = "stacked",
   variant = "default",
 }: {
+  enemyDescriptionContext?: EnemyDescriptionContext | undefined;
   entry: Pick<BestiaryEntry, "traits">;
   modifiers?: readonly EncounterCombatTraitId[];
   layout?: "stacked" | "inspection";
@@ -33,7 +36,10 @@ export function EnemyTraits({
       >
         {[...traits.values()].map((trait) => (
           <div key={trait.id} data-enemy-trait={trait.id} className="grid min-w-0">
-            <TraitBox trait={trait} variant={variant} />
+            <TraitBox
+              trait={enemyDescriptionContext ? getEncounterEnemyTrait(trait, enemyDescriptionContext) : trait}
+              variant={variant}
+            />
           </div>
         ))}
       </div>

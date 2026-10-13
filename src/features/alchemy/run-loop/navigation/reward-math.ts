@@ -1,7 +1,6 @@
 import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
-import { applyScavengerHerbalistModifiers } from "@/lib/homestead/material-rewards";
+import { applyRewardFindBonus } from "@/lib/homestead/material-rewards";
 import { computeTrinketManifest } from "@/lib/trinkets";
-import { type MaterialInventory } from "@/lib/homestead/types";
 import type { BattleSnapshot } from "@/lib/battle";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
@@ -17,6 +16,7 @@ interface VictoryGoldInput {
   bossBonus: number;
   talentGoldPerCombat: number;
   goldMultiplier: number;
+  goldFindBonus?: number;
 }
 
 interface VictoryGoldResult {
@@ -58,17 +58,6 @@ export function getWellProvisionedHealing(modifiers: EncounterRewardTraitId[], m
     : 0;
 }
 
-export function applyLabyrinthRewardMaterialModifiers(
-  materials: MaterialInventory,
-  modifiers: EncounterRewardTraitId[],
-): MaterialInventory {
-  // Thin adapter over the single pipeline owner in homestead/material-rewards.ts.
-  return applyScavengerHerbalistModifiers(materials, {
-    scavenger: modifiers.includes("scavenger"),
-    herbalist: modifiers.includes("herbalist"),
-  });
-}
-
 export function computeVictoryGold({
   battleState,
   purseGold,
@@ -80,21 +69,18 @@ export function computeVictoryGold({
   bossBonus,
   talentGoldPerCombat,
   goldMultiplier,
+  goldFindBonus = 0,
 }: VictoryGoldInput): VictoryGoldResult {
   // Clamp: battle gold below the purse (e.g. spent mid-combat accounting) earns
   // nothing instead of dragging the total negative — matching the Wildwood path.
   const inCombatGold = Math.max(0, battleState.gold - purseGold);
+  const rewardGold = gold + eliteBonus + bossBonus + generousBonus + wealthyBonus;
   const earnedBeforeMultiplier =
-    inCombatGold +
-    gold +
-    (eliteBonus +
-      bossBonus +
-      generousBonus +
-      wealthyBonus +
-      talentGoldPerCombat +
-      computeTrinketManifest(runBoons).smugglersMapGoldBonus);
+    inCombatGold + rewardGold + talentGoldPerCombat + computeTrinketManifest(runBoons).smugglersMapGoldBonus;
+  const eligiblePayout = Math.round(rewardGold * goldMultiplier);
+  const findBonus = applyRewardFindBonus(eligiblePayout, goldFindBonus) - eligiblePayout;
   return {
     earnedBeforeMultiplier,
-    persistedGold: purseGold + Math.round(earnedBeforeMultiplier * goldMultiplier),
+    persistedGold: purseGold + Math.round(earnedBeforeMultiplier * goldMultiplier) + findBonus,
   };
 }

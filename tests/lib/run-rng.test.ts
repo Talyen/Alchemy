@@ -2,15 +2,13 @@ import { setHasActiveRun, setRunProgressActivity } from "@/features/alchemy/shar
 import { beforeEach, describe, expect, it } from "vitest";
 import { createRunRngState, createRunStateRng, createRunStreamRng, nextRunRngValue, stepRunRng } from "@/lib/rng";
 import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
   createInitialActiveRunFields,
   generateRunSeed,
   setTestRunSeedOverride,
 } from "@/features/alchemy/shared/stores/run-state-init";
-import { resetRunDomainStore } from "../helpers/run-domain-store-test";
-import { setRunProgress } from "../helpers/run-domain-store-test";
+import { mutateRunForTest, resetRunDomainStore, setRunProgress } from "../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/app/application-session";
 
 function drawSequence(seed: number, stream: "rewards" | "destinations", count: number): number[] {
@@ -69,36 +67,17 @@ describe("run RNG", () => {
 
   it("continues the exact sequence after snapshot and restore", () => {
     setRunProgress({ rng: createRunRngState(42) });
-    dispatchRunSessionCommand(
-      (draft) => {
-        setHasActiveRun(draft, true);
-        setRunProgressActivity(draft, "destination");
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
-    const first = dispatchRunSessionCommand(
-      (draft) => acceptCommand(createDraftRunRandomSource(draft, "rewards")()),
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((draft) => {
+      setHasActiveRun(draft, true);
+      setRunProgressActivity(draft, "destination");
+    });
+    const first = mutateRunForTest((draft) => createDraftRunRandomSource(draft, "rewards")());
     const snapshot = snapshotRun(defaultGameSession);
-    const expectedNext = dispatchRunSessionCommand(
-      (draft) => acceptCommand(createDraftRunRandomSource(draft, "rewards")()),
-      undefined,
-      defaultGameSession,
-    );
+    const expectedNext = mutateRunForTest((draft) => createDraftRunRandomSource(draft, "rewards")());
 
     restoreRun(snapshot, {}, {}, defaultGameSession);
 
-    expect(
-      dispatchRunSessionCommand(
-        (draft) => acceptCommand(createDraftRunRandomSource(draft, "rewards")()),
-        undefined,
-        defaultGameSession,
-      ),
-    ).toBe(expectedNext);
+    expect(mutateRunForTest((draft) => createDraftRunRandomSource(draft, "rewards")())).toBe(expectedNext);
     expect(first).not.toBe(expectedNext);
   });
 

@@ -1,9 +1,9 @@
 import { isDeepStrictEqual } from "node:util";
 import "../helpers/mock-audio";
+import { initializeAlchemyVisitForTest as initializeAlchemyVisit } from "../helpers/visit-initialization";
 import { createRunRngState } from "@/lib/rng";
-import { cardById, computeTalentEffects } from "@/lib/game-data";
+import { cardById } from "@/lib/game-data";
 import {
-  initializeAlchemyVisit,
   brewAtCampfire,
   transmuteCard,
   selectTransmutation,
@@ -13,7 +13,8 @@ import { claimRunReward } from "@/features/alchemy/run-loop/run/reward-commands"
 import { createAlchemistShopCommands } from "@/features/alchemy/run-loop/shop/alchemist-shop-commands";
 import { snapshotRun, restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { parseActiveRun, createEmptyRewardState } from "@/lib/active-run-session";
+import { createEmptyRewardState } from "@/lib/active-run-session";
+import { parseActiveRun } from "@/lib/validation";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { defaultGameSession } from "@/app/application-session";
 import { resetAllTestStores, setRunProgress, setRunSession } from "../helpers/run-domain-store-test";
@@ -69,10 +70,7 @@ defineSequenceFamily("visits", (seed) => {
         lastVictoryContentSystem: mode,
       },
     });
-  const alchemist = createAlchemistShopCommands(
-    { talentEffects: computeTalentEffects({}), homesteadEffects: { mixPotionDiscount: 0 } },
-    defaultGameSession,
-  );
+  const alchemist = createAlchemistShopCommands(defaultGameSession);
   let claimed: string | null = null;
   const observe = () => ({
     visit,
@@ -85,13 +83,7 @@ defineSequenceFamily("visits", (seed) => {
   });
   return {
     fixture: { visit, mode, seed, health: 10, gold: 80, deck: ["slash", "health-potion"] },
-    actions: () => [
-      "claim",
-      "invalid-choice",
-      "reload",
-      ...(visit === "campfire" ? ["rest"] : []),
-      ...(visit === "campfire" || visit === "transmutation" ? ["initialize"] : []),
-    ],
+    actions: () => ["claim", "invalid-choice", "reload", ...(visit === "campfire" ? ["rest"] : [])],
     run(action) {
       const before = snapshotRun(defaultGameSession);
       const viewBefore = observe();
@@ -101,9 +93,7 @@ defineSequenceFamily("visits", (seed) => {
         const profile = readRunProfile(defaultGameSession);
         restoreRun(parsed, profile.talentXP, profile.unlockedTalents, defaultGameSession);
         requireProgress(isDeepStrictEqual(observe(), viewBefore), "visit-resume-parity", observe());
-      } else if (action === "initialize" && (visit === "campfire" || visit === "transmutation"))
-        initializeAlchemyVisit(visit, defaultGameSession);
-      else {
+      } else {
         const invalid = action === "invalid-choice";
         let result: unknown;
         if (visit === "campfire")

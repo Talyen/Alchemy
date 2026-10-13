@@ -2,13 +2,17 @@
 
 ## Add a new status effect
 
-1. Define the status type in `src/lib/game-data/types.ts` — extend `PlayerStatusId` or `EnemyStatusId` string unions (discriminated union pattern).
-2. If the status ticks or expires during turn processing, add that behavior in `src/lib/battle/status-ticks.ts`.
-3. Add player-side application logic in `src/lib/battle/status-player.ts` when applicable; add riders in `src/lib/battle/damage-status-riders.ts` only when damage applies the status.
-4. If the status provides crowd control, add its threshold logic in `src/lib/battle/status-cc.ts`.
-5. If the status introduces a keyword, define it in `src/lib/game-data/keywords.ts`.
+1. Extend `PlayerStatusId` or `EnemyStatusId` in `src/lib/game-data/types.ts`. Classify the status in the applicable harmful/beneficial lists and display order there.
+2. Add its initial value to `defaultBattleState()` in `src/lib/battle/battle-setup-defaults.ts`. Saved status records normalize against these defaults in `normalize-persisted-battle-state.ts`; an undeclared key is dropped during load.
+3. If cards can apply, remove, or multiply the status, update the relevant allowlists in `src/lib/game-data/effects/shared-schemas.ts` and `status-schemas.ts`, plus description metadata in `effect-metadata.ts`. Extending the status union alone does not make it a valid card effect. Keep each operation limited to the statuses it supports.
+4. Route status assignment through `src/lib/battle/status-state.ts`. Add player-side grant/reaction logic in `status-player.ts` when applicable, and damage riders in `damage-status-riders.ts` only when damage applies the status.
+5. Add tick/expiry behavior in `src/lib/battle/status-ticks.ts` and, for crowd control, threshold logic in `status-cc.ts`.
+6. Wire visible state through `shared/utils/battle.ts` and `run-loop/battle/presentation/ui/status-icons.tsx` under `src/features/alchemy/`. Reuse keyword metadata when appropriate; non-keyword statuses need their own display metadata. A new keyword follows [Add a new keyword](#add-a-new-keyword).
 
-Persisted status changes follow the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
+Verify the status's consequential application, expiry/removal, and current-format
+save/resume behavior. Persisted changes follow the
+[save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md);
+card effects also follow [Battle handlers](../src/lib/game-data/effects/BATTLE_HANDLERS.md#adding-a-kind).
 
 ---
 
@@ -47,7 +51,13 @@ and Powerful Wish consume these references, never English wording or equal-value
 matching. Update cards through `withCardDescription` so strings and highlight
 offsets render from the same model; do not edit numeric prose independently.
 
-Cards in `cardLibrary` are automatically included in card shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration. Exclude a card with `excludeFromOfferPool: true` (`mixed-potion` is the current example). Distillation-eligible Potions are the explicit `POTION_CARD_IDS` list in `cards/card-pools.ts` — a new brew must be added there deliberately; Mana Berries, Mana Crystals, Apple, and Bread are intentionally excluded.
+Cards in `cardLibrary` are automatically included in card shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration. Exclude a card with `excludeFromOfferPool: true` (`mixed-potion` is the current example).
+
+Standard Potions are the explicit `POTION_CARD_IDS` list in `cards/card-pools.ts`;
+`getStandardPotionPool()` supplies shop stock and new Campfire offers.
+`isPotionCard` also recognizes Mixed Potions for brewing and the Distillation
+talent's combat potency. Add a new standard Potion to the list deliberately;
+Mana Berries, Mana Crystals, Apple, and Bread are intentionally excluded.
 
 Run `npm run content:audit` before handing off: card text must match effects (canonical description diff in `src/lib/content-validation/card-parity/`) and prose must pass the typography rules (no em dashes; description lines stay period-free).
 
@@ -116,6 +126,8 @@ One definition powers a permanent Armory Trinket and a run-scoped **Boon**. Both
 
 Companion combat and descriptions share `getModifiedCompanionEffects()` in `src/lib/game-data/companions.ts`, which applies Bond and the supplied damage modifiers together. Follow [Companion Bond rules](./GAME_RULES.md#companion-bond) for progression and displayed effects; Bond levels and costs retain their existing save representation.
 
+Summon cards omit `consume`; their summon effect routes them to the battle-removed pile after play. Companion utility cards retain ordinary discard behavior unless explicitly authored with Consume. Do not add Companion exceptions to Consume tooltips.
+
 `defaultCompanionBondLevels` derives zero values from `companionLibrary`; talent and Homestead defaults both copy that map, so new Companions need no separate default registration. If Bond behavior differs from the shared scaling, update `getModifiedCompanionEffects()` and its descriptions together; change Homestead tiers or costs only when intended.
 
 - **1. Add companion ID to `CompanionId` union** — `src/lib/game-data/types.ts`
@@ -158,20 +170,17 @@ New keywords still follow [Add a new keyword](./CONTENT_AUTHORING.md#add-a-new-k
 3. Add effect keys only when existing keys cannot express the upgrade — `HomesteadEffectManifest` + `HOMESTEAD_BATTLE_*_KEYS` in `types.ts`. Battle numeric defaults derive from that key list; meta and record defaults live in `defaults.ts`
 4. Companion bond tiers (if companion) — `src/lib/homestead/companions.ts` (`COMPANION_BOND_TIERS` + `companionTierItems`) + `src/lib/game-data/companions.ts`
 5. Art & palette — Add `helpers.tsx:itemArt` entry in `src/features/alchemy/meta/screens/homestead/helpers.tsx` + art via the [asset workflow](./WORKFLOWS-ASSETS.md#add-or-replace-game-art)
-6. Change layout constants only for an intended layout change — `HOMESTEAD_CONFIG` in `helpers.tsx` (companion page size, aspect ratios)
+6. Change layout constants only for an intended layout change — `HOMESTEAD_CONFIG` in `helpers.tsx` (page capacities and landscape node width). Artwork retains its native aspect ratio under the [gallery contract](./UI_BROWSING.md#homestead-gallery).
 7. Check affected rules or interactions; saved-shape changes follow the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
 
-Every building/farm/research node has four tiers. All numeric effects and each
-room-production quantity strictly increase in cumulative tier totals. Companion
-Bonds remain a separate three-tier progression. Recipes use fixed material costs;
-production support affects authoring, not prices at runtime. Crystal Garden
-produces Gems and Stone. Library, Agility Training, and Sanctuary intentionally
-have no material production. A Companion card must be discovered during a Run
-before its Bond can be purchased; the Homestead command checks this against the
-card's summon effect. Resource labels use “per Room”; settlement remains
-at run end. Wishing Well alternates Gold/Gems by room (odd rooms Gold) in every
-mode. Tailoring also produces Gold. Capture the recap after these payouts so
-the Gold and Material totals include them.
+Follow the [Homestead gameplay rules](./GAME_RULES.md#hit-resolution-and-pacing)
+and [manifest/progression contract](./TALENT_RULES.md#talent-manifests-and-progression)
+for tier scaling and combat effects. The catalog in `src/lib/homestead/data.ts`
+owns each node's costs and resource bonuses; the [material reward policy](./ARMORY.md#materials-tuning)
+owns eligible sources and modifier order. Keep cumulative descriptions derived
+from the authored effects, using short clauses, capitalized keywords, and no
+terminal periods. Companion descriptions remain card-owned; the summon card must
+be discovered before bonding is permitted.
 
 Homestead screens (like all screen directories) are excluded from `vitest` coverage thresholds — see the coverage `exclude` list in `vitest.config.ts` — and are covered by E2E `tests/e2e/specs/homestead-flow.spec.ts` plus the unit `homestead/*.test.tsx` suites. Use `npm run test:full -- tests/lib/homestead` for the lib contract. Browser verification uses `npm run test:e2e:route -- homestead` under the [local execution policy](../CONTRIBUTING.md#what-to-run-when-you-change).
 
@@ -182,6 +191,7 @@ Homestead screens (like all screen directories) are excluded from `vitest` cover
 3. Make `getCardKeywords` report it through effect metadata in `src/lib/game-data/effect-metadata.ts` or an explicit card tag. This same classification drives card display and ordinary card-play XP.
    `cardHasKeyword` shares that cache for single-keyword queries; use it when no keyword array is needed.
 4. Ordinary XP already flows through `awardCardXP` in `src/features/alchemy/shared/stores/write/run-progress.ts`; add a separate trigger there only when the mechanic needs one, as Dodge does. `src/lib/game-data/talents/progression.ts` owns point math, not event triggering. Add its talent tree through [Add a new talent](#add-a-new-talent).
+5. Update Transmutation in `src/lib/game-constants/transmutation.ts`: assign the keyword to `TRANSMUTATION_KEYWORD_GROUPS` and add its title prefix to `TRANSMUTATION_PREFIXES`. Implement compatible conversions or additions in `getTransmutationVariants` in `src/lib/alchemist/transmutation.ts`; listing a keyword alone does not make it offerable. Verify a useful alteration and its saved preview under the [Transmutation contract](#transmutation-keywords-and-potion-brewing).
 
 Keyword labels and descriptions must pass the typography rules (no em dashes; descriptions stay period-free — see `src/lib/content-validation/validators-typography.ts`). Run `npm run content:audit` before handing off.
 
@@ -199,6 +209,6 @@ rendered numeric positions identify highlights, never the effect to mutate.
 
 Transmutation derives compatible alterations from the run deck, independent of class affinities and offerable replacement-card pools. `game-constants/transmutation.ts` owns the three keyword groups and title prefixes. Each visit rolls one useful keyword per group, with unique fallback choices if a group is unavailable, then saves each card's randomly chosen conversion. All occurrences of the selected source keyword convert without changing existing numeric fields. Unsupported conditions and scaling exclude conversions; additions use native effects, and added effect lines respect Corruption's four-effect-line limit. Keep recursive effects, structured descriptions, distilled marks, and keyword detection consistent when adding new mechanics. Back and reload must preserve exact previews. Transmuted cards carry `transmuted`, `baseTitle`, generated descriptions, and any added tags through hydration; they cannot receive further Transmutation or Corruption.
 
-Preserve transformed effects and generated descriptions together. Mixed and strengthened Potions can be brewed repeatedly. Strengthened standard Potions can be Transmutation sources; Mixed Potions cannot. Distillation adds 1 to supported magnitudes, including Wishes, and preserves probabilities, percentage effects, durations, and draw counts. Full-cleanse Potions without healing gain Restore 1 Health. Persist `distilled` marks on description magnitudes so increased values remain green after hydration and mixing.
+Preserve transformed effects and generated descriptions together. Mixed and strengthened Potions remain eligible for later brewing visits; [brewing rules](./GAME_RULES.md#brewing-transmutation-and-elemental-reactions) own Campfire selection and once-per-visit service limits. Strengthened standard Potions can be Transmutation sources; Mixed Potions cannot. The Distill service adds 1 to supported magnitudes, including Wishes, and preserves probabilities, percentage effects, durations, and draw counts. Full-cleanse Potions without healing gain Restore 1 Health. Persist `distilled` marks on description magnitudes so increased values remain green after hydration and mixing. The Distillation talent separately scales eligible Potion benefits during combat under the [Potion potency rules](./TALENT_RULES.md#distinct-talent-and-card-effects).
 
 The former Shatter and Wildfire talents are displayed as Brittle Ice and Flash Fire to distinguish them from the universal reactions. Their saved IDs and effects remain unchanged.

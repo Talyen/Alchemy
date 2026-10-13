@@ -9,7 +9,7 @@ import {
 import { beforeEach, describe, expect, it } from "vitest";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { defaultBattleState } from "@/lib/battle";
-import { parseActiveRun } from "@/lib/active-run-session";
+import { parseActiveRun } from "@/lib/validation";
 import { createBattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
 import { gridLabyrinthMapFixture } from "../../../../fixtures/labyrinth-map";
 import { getStartingDeck } from "@/lib/game-data";
@@ -22,7 +22,6 @@ import {
   restoreRun,
   snapshotRun,
 } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { awardRunEndMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
   addGold,
   grantStartGold,
@@ -31,7 +30,6 @@ import {
   setHasActiveRun,
   recordRunRoom,
   completeRunRoom,
-  finalizeRunXP,
   setRewardState,
   beginDestinationClaim,
   commitDestinationClaim,
@@ -48,7 +46,6 @@ import { setBattleState } from "@/features/alchemy/shared/stores/write/run-battl
 import { resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/app/application-session";
 
-const endOptions = { awardRunEndMaterials, finalizeRunXP };
 beforeEach(() => {
   resetRunDomainStore();
   command(
@@ -85,9 +82,9 @@ describe("run recap", () => {
     restoreRun(saved, {}, {}, defaultGameSession);
     expect(readActiveRun(defaultGameSession).runGoldEarned).toBe(27);
     command((draft) => acceptCommand(addGold(draft, 5)), undefined, defaultGameSession);
-    abandonRun(endOptions, defaultGameSession);
+    abandonRun(defaultGameSession);
     expect(readRunSession(defaultGameSession).runRecap?.gold).toBe(32);
-    expect(abandonRun(endOptions, defaultGameSession)).toBe(false);
+    expect(abandonRun(defaultGameSession)).toBe(false);
     expect(readRunSession(defaultGameSession).runRecap?.gold).toBe(32);
   });
 
@@ -117,7 +114,7 @@ describe("run recap", () => {
       [2, DESTINATIONS.BOSS_COMBAT, false],
     ]);
     restoreRun(saved, {}, {}, defaultGameSession);
-    applyRunDefeatTeardown(endOptions, defaultGameSession);
+    applyRunDefeatTeardown(defaultGameSession);
     expect(readRunSession(defaultGameSession).runRecap).toMatchObject({ ending: "death", rooms: saved.runHistory });
   });
 
@@ -133,7 +130,7 @@ describe("run recap", () => {
       undefined,
       defaultGameSession,
     );
-    abandonRun(endOptions, defaultGameSession);
+    abandonRun(defaultGameSession);
     command(
       (draft) => {
         draft.run.activeRun.runDeck = [];
@@ -170,7 +167,7 @@ describe("run recap", () => {
       undefined,
       defaultGameSession,
     );
-    abandonRun(endOptions, defaultGameSession);
+    abandonRun(defaultGameSession);
     expect(readRunSession(defaultGameSession).runRecap).toMatchObject({ gold: null, partial: true });
     expect(readRunSession(defaultGameSession).runRecap?.rooms).toHaveLength(1);
   });
@@ -234,7 +231,7 @@ it("deduplicates unresolved Labyrinth rooms and completes the revisited room rat
     [1, true],
     [1, false],
   ]);
-  abandonRun(endOptions, defaultGameSession);
+  abandonRun(defaultGameSession);
   expect(readRunSession(defaultGameSession).runRecap?.endingRoomId).toBe("labyrinth:1:labyrinth-floor-1-n0");
 });
 
@@ -259,6 +256,6 @@ it("completes and marks a revisited campaign room by identity", () => {
     defaultGameSession,
   );
   expect(readActiveRun(defaultGameSession).runHistory.map((room) => room.completed)).toEqual([true, false]);
-  abandonRun(endOptions, defaultGameSession);
+  abandonRun(defaultGameSession);
   expect(readRunSession(defaultGameSession).runRecap?.endingRoomId).toBe(`campaign:1:1:${DESTINATIONS.CORRUPTION}`);
 });

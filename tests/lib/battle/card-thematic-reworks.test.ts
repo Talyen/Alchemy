@@ -170,7 +170,12 @@ describe("thematic card effects", () => {
     expect(result.playerHealth).toBe(19);
     expect(result.mana).toBe(2);
     expect(result.hand.map((card) => card.id).sort()).toEqual([drawA.id, drawB.id]);
-    expect(cardById["blood-offering"]?.descriptionLines).toEqual(["Lose 1 Health", "Draw 2 cards", "Gain 1 Mana"]);
+    expect(cardById["blood-offering"]?.descriptionLines).toEqual([
+      "Lose 1 Health",
+      "Draw 2 cards",
+      "Gain 1 Mana",
+      "Consume",
+    ]);
   });
 
   it("Venom Fangs deals one Poison damage and Leech heals the player", () => {
@@ -292,6 +297,7 @@ describe("thematic card effects", () => {
     const enemy = applyEnemyAbility(base, cardById["burning-blade"]!, []);
     // The base is room-scaled once; the existing Forge is not scaled again.
     expect(enemy.playerStatuses.burn).toBe(7);
+    expect(enemy.enemyMitigation.forge).toBe(4);
   });
 
   it("Avatar deals Holy damage before its equal-odds resource gain", () => {

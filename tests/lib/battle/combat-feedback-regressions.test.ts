@@ -64,7 +64,7 @@ describe("combat feedback regressions", () => {
       talentEffects: { armorStealOnLeechCard: 2 },
     });
     const texts: CombatTextEvent[] = [];
-    const result = prepareTalentCardPlay(state, makeTestCard({ tags: ["leech"] }), texts).state;
+    const result = prepareTalentCardPlay(state, makeTestCard({ tags: ["leech"] }), texts);
     expect(result.enemyMitigation.armor).toBe(0);
     expect(result.playerStatuses.armor).toBe(1);
     expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "armor", amount: 1, impact: false });

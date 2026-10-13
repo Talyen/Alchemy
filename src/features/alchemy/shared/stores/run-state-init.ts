@@ -12,7 +12,7 @@ import { createEmptyTierRecord } from "@/lib/homestead/tiers";
 import type { BuildingId, FarmId, HomesteadEffectManifest, MaterialInventory, ResearchId } from "@/lib/homestead/types";
 import { createRunRngState, type RunRngState } from "@/lib/rng";
 import { filterValidDestinationRounds, filterValidDestinations, type Destination } from "@/lib/routing";
-import type { PersistedRunProgress } from "@/lib/validation";
+import type { PersistedRunProgress } from "@/lib/active-run-session";
 export type ActiveRunProgressFields = Omit<
   PersistedRunProgress,
   "completedDestinations" | "lastOfferedDestinations" | "destinationRoundsSinceOffered"
@@ -36,7 +36,7 @@ export interface PermanentProgressFields {
 
 export type ActiveRunReadView = ActiveRunProgressFields & { initialized: boolean };
 
-export { ACTIVE_RUN_PROGRESS_KEYS } from "@/lib/validation";
+export { ACTIVE_RUN_PROGRESS_KEYS } from "@/lib/active-run-session";
 
 export function pickActiveRunView(run: {
   activeRun: ActiveRunProgressFields;

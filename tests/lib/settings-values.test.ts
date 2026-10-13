@@ -29,6 +29,9 @@ describe("settings values", () => {
   });
 
   it("clamps numeric settings to their ranges", () => {
+    expect(clampVolumePct(Number.NaN)).toBe(DEFAULT_MASTER_VOLUME_PCT);
+    expect(clampBrightnessPct(Number.NaN)).toBe(100);
+    expect(clampSpecialEffectsPct(Number.NaN)).toBe(100);
     expect(clampVolumePct(-20)).toBe(0);
     expect(clampVolumePct(1000)).toBe(100);
     expect(clampBrightnessPct(0)).toBe(50);

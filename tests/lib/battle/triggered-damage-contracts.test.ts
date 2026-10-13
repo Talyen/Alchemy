@@ -5,7 +5,6 @@ import { detonateEnemyStatuses, projectEnemyDotDamage } from "@/lib/battle/dot-r
 import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { cardById, companionLibrary, trinketById } from "@/lib/game-data";
-import { getGearAffixTooltipEntries } from "@/lib/gear";
 import { regressionBattle } from "../../fixtures/battle";
 
 describe("triggered damage contracts", () => {
@@ -118,7 +117,7 @@ describe("triggered damage contracts", () => {
     expect(trinketById.meteorite!.descriptionLines.join(" ")).toContain("Burn card hit");
   });
 
-  it("Consume Gear describes its Companion-summon exception", () => {
+  it("Companion removal cannot trigger Consume Gear or Poison ticks", () => {
     const card = cardById["wolf-companion"]!;
     const state = regressionBattle({
       hand: [card],
@@ -131,10 +130,5 @@ describe("triggered damage contracts", () => {
     expect(summoned.exhausted).toContainEqual(card);
     expect(summoned.playerStatuses.armor).toBe(0);
     expect(summoned.enemyHealth).toBe(100);
-    const entries = getGearAffixTooltipEntries([
-      { id: "armor-on-consume", value: 2 },
-      { id: "poison-tick-on-consume", value: 1 },
-    ]);
-    for (const entry of entries) expect(entry.text).toContain("except Companion summons");
   });
 });

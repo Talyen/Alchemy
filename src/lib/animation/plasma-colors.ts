@@ -33,22 +33,6 @@ export function parsePlasmaHexColor(hex: string): [number, number, number] {
   return parseHexRgbNormalized(hex, [0.8, 0.8, 0.8]);
 }
 
-export function lerpParsedRgbFloats(
-  from: readonly [number, number, number],
-  to: readonly [number, number, number],
-  t: number,
-  target: [number, number, number] = [0, 0, 0],
-): [number, number, number] {
-  target[0] = from[0] + (to[0] - from[0]) * t;
-  target[1] = from[1] + (to[1] - from[1]) * t;
-  target[2] = from[2] + (to[2] - from[2]) * t;
-  return target;
-}
-
-export function lerpPlasmaColor(a: string, b: string, t: number): string {
-  return lerpParsedPlasmaColor(parsePlasmaHexColor(a), parsePlasmaHexColor(b), t);
-}
-
 export function lerpParsedPlasmaColor(
   from: readonly [number, number, number],
   to: readonly [number, number, number],

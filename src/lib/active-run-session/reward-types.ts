@@ -16,6 +16,15 @@ export interface PendingRewardSharedFields {
   lastVictoryContentSystem: ContentSystemId | null;
 }
 
+/** Data carried by a reward activity across save/resume. */
+export type PersistedPendingReward = PendingRewardSharedFields &
+  (
+    | { rewardType: "card"; choiceIds: string[] }
+    | { rewardType: "boon"; choiceIds: string[] }
+    | { rewardType: "trinket"; choiceIds: string[] }
+    | { rewardType: "gear"; gearChoices: GearInstance[] }
+  );
+
 type RewardStateBase = Omit<PendingRewardSharedFields, "companionChoiceIds">;
 
 export type CardRewardState = RewardStateBase & {

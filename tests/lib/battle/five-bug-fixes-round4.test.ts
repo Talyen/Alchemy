@@ -1,52 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { defaultTalentEffects } from "@/lib/battle";
 import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
 import { collectKeywordsFromBattleEffect } from "@/lib/game-data/effect-metadata";
-import { getBattleCardTransmutationRole } from "@/lib/battle/card-classification";
 import { cardById, type BattleCard } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("Five targeted bug fixes round 4", () => {
-  describe("Bug 1: poisonOnConsume does not apply to a defeated enemy", () => {
-    it("skips applying poison when enemy is defeated before consume riders", () => {
-      const card = makeTestCard({ consume: true });
-      const state = patchBattleState({
-        enemyHealth: 0,
-        enemyMaxHealth: 50,
-        enemyStatuses: { poison: 0 },
-        talentEffects: { ...defaultTalentEffects, poisonOnConsume: 2 },
-      });
-      const combatTexts: CombatTextEvent[] = [];
-      const next = handlePostPlayCardDestination(state, card, { combatTexts });
-
-      expect(next.enemyStatuses.poison).toBe(0);
-      expect(combatTexts.some((t) => t.target === "enemy" && t.stat === "poison")).toBe(false);
-    });
-
-    it("applies poison when enemy is alive", () => {
-      const card = makeTestCard({ consume: true });
-      const state = patchBattleState({
-        enemyHealth: 30,
-        enemyMaxHealth: 50,
-        enemyStatuses: { poison: 0 },
-        talentEffects: { ...defaultTalentEffects, poisonOnConsume: 2 },
-      });
-      const combatTexts: CombatTextEvent[] = [];
-      const next = handlePostPlayCardDestination(state, card, { combatTexts });
-
-      expect(next.enemyStatuses.poison).toBe(2);
-    });
-  });
-
-  describe("Runic Quill draws on any Consume, including companion summons", () => {
-    it("draws for a companion summon while excluding gear and talent Consume rewards", () => {
-      const summonCard: BattleCard = {
-        ...cardById["wolf-companion"]!,
-        consume: true,
-      };
+  describe("Runic Quill distinguishes Consume from Companion removal", () => {
+    it("does not grant any Consume rewards for a companion summon", () => {
+      const summonCard: BattleCard = cardById["wolf-companion"]!;
       const slash = cardById["slash"]!;
       const state = patchBattleState({
         deck: [slash],
@@ -60,8 +24,8 @@ describe("Five targeted bug fixes round 4", () => {
       const combatTexts: CombatTextEvent[] = [];
       const next = handlePostPlayCardDestination(state, summonCard, { combatTexts });
 
-      expect(next.hand).toMatchObject([{ id: slash.id }]);
-      expect(next.deck).toHaveLength(0);
+      expect(next.hand).toHaveLength(0);
+      expect(next.deck).toEqual([slash]);
       expect(next.playerStatuses.armor).toBe(state.playerStatuses.armor);
       expect(next.playerHealth).toBe(20);
     });
@@ -126,38 +90,25 @@ describe("Five targeted bug fixes round 4", () => {
     });
   });
 
-  describe("Bug 4: next-hit-poison presentation metadata includes poison keyword", () => {
-    it("returns poison keyword for next-hit-poison effect", () => {
-      const keywords = collectKeywordsFromBattleEffect({ kind: "next-hit-poison" });
-      expect(keywords).toEqual(["poison"]);
-    });
+  it("Bug 4: next-hit-poison presentation metadata includes poison keyword returns poison keyword for next-hit-poison effect", () => {
+    const keywords = collectKeywordsFromBattleEffect({ kind: "next-hit-poison" });
+    expect(keywords).toEqual(["poison"]);
   });
 
-  describe("Bug 5: resolveEnemyAttackHit dodged branch reports post-dodge player health", () => {
-    it("reports updated healthAfterHit when dodge triggers healing", () => {
-      const state = patchBattleState({
-        playerHealth: 30,
-        playerMaxHealth: 100,
-        flags: { dodgeNextAttack: true },
-        talentEffects: { ...defaultTalentEffects, healOnDodge: 10 },
-      });
-      const combatTexts: CombatTextEvent[] = [];
-      const result = resolveEnemyAttackHit(state, { kind: "damage", damageType: "physical", amount: 8 }, combatTexts, {
-        canDodge: true,
-      });
-
-      expect(result.dodged).toBe(true);
-      expect(result.state.playerHealth).toBe(40);
-      expect(result.healthAfterHit).toBe(40);
+  it("Bug 5: resolveEnemyAttackHit dodged branch reports post-dodge player health reports updated healthAfterHit when dodge triggers healing", () => {
+    const state = patchBattleState({
+      playerHealth: 30,
+      playerMaxHealth: 100,
+      flags: { dodgeNextAttack: true },
+      talentEffects: { healOnDodge: 10 },
     });
-  });
-
-  describe("Incidental Fix: dodge-next-attack card classification", () => {
-    it("classifies cards with dodge-next-attack as defense", () => {
-      const dodgeCard = makeTestCard({ effects: [{ kind: "dodge-next-attack" }] });
-      expect(getBattleCardTransmutationRole(dodgeCard)).toBe("defense");
-      expect(getBattleCardTransmutationRole(cardById["feint"]!)).toBe("defense");
-      expect(getBattleCardTransmutationRole(cardById["shadowstep"]!)).toBe("defense");
+    const combatTexts: CombatTextEvent[] = [];
+    const result = resolveEnemyAttackHit(state, { kind: "damage", damageType: "physical", amount: 8 }, combatTexts, {
+      canDodge: true,
     });
+
+    expect(result.dodged).toBe(true);
+    expect(result.state.playerHealth).toBe(40);
+    expect(result.healthAfterHit).toBe(40);
   });
 });

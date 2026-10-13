@@ -13,11 +13,15 @@ export function subscribeSaveWriteFailure(listener: () => void, gameSession: Gam
 export function configureSaveBackend(backend: SaveBackend, gameSession: GameSession) {
   const runtime = sessionRuntime(gameSession);
   runtime.io.configureSaveBackend(backend);
+  runtime.saveSnapshots.invalidate();
   runtime.progressCompletion.cancel();
 }
 export function setWritesDisabled(disabled: boolean, gameSession: GameSession) {
   const runtime = sessionRuntime(gameSession);
-  if (disabled) runtime.progressCompletion.cancel();
+  if (disabled) {
+    runtime.saveSnapshots.invalidate();
+    runtime.progressCompletion.cancel();
+  }
   runtime.io.setWritesDisabled(disabled);
 }
 export function routeWritesToRecovery(gameSession: GameSession) {
@@ -33,10 +37,13 @@ export function waitForPendingSaveWrites(gameSession: GameSession) {
 export function loadAlchemySaveState(gameSession: GameSession) {
   return sessionRuntime(gameSession).io.loadAlchemySaveState();
 }
-async function writeSessionSnapshot(data: UnstampedSaveData, gameSession: GameSession, exit: boolean) {
+function writeSessionSnapshot(data: UnstampedSaveData, gameSession: GameSession, exit: boolean) {
   const runtime = sessionRuntime(gameSession);
-  const complete = runtime.progressCompletion.prepareSnapshotWrite(data);
-  return complete(await (exit ? runtime.io.saveAlchemySaveDataForExit(data) : runtime.io.saveAlchemySaveData(data)));
+  const admission = runtime.saveSnapshots.prepare(data);
+  if (typeof admission === "string") return Promise.resolve(admission);
+  return exit
+    ? runtime.io.saveAlchemySaveDataForExit(data, admission.complete, admission.validate)
+    : runtime.io.saveAlchemySaveData(data, admission.complete, admission.validate);
 }
 export function saveAlchemySaveData(data: UnstampedSaveData, gameSession: GameSession) {
   return writeSessionSnapshot(data, gameSession, false);
@@ -46,11 +53,13 @@ export function saveAlchemySaveDataForExit(data: UnstampedSaveData, gameSession:
 }
 export function clearAlchemySaveData(mode: "default" | "localWipe" = "default", gameSession: GameSession) {
   const runtime = sessionRuntime(gameSession);
+  runtime.saveSnapshots.invalidate();
   runtime.progressCompletion.cancel();
   return runtime.io.clearAlchemySaveData(mode);
 }
 export function resetStorageIoForTests(gameSession: GameSession) {
   const runtime = sessionRuntime(gameSession);
+  runtime.saveSnapshots.invalidate();
   runtime.progressCompletion.cancel();
   return runtime.io.resetStorageIoForTests();
 }

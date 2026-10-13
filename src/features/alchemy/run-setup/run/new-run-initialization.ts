@@ -26,22 +26,6 @@ import { ROUTE_SCREENS } from "@/lib/routing";
 import type { ContentSystemNavigationDeps } from "./content-system-navigation-types";
 import { applyRunStartToDraft, createDraftRunStartSnapshot } from "./run-start-command";
 
-function sampleAndApplyInitialCampaignDestinations(
-  draft: RunTransaction,
-  getAvailableDestinations: ContentSystemNavigationDeps["getAvailableDestinations"],
-  maxHealth: number,
-): void {
-  sampleAndApplyDestinationOffer(
-    draft,
-    getAvailableDestinations({
-      currentHealth: maxHealth,
-      currentGold: draft.runProfile.gold,
-      destinationIndexInAct: 0,
-      maxHealth,
-    }),
-  );
-}
-
 interface StartSnapshotOptions {
   difficultyId?: DifficultyId | null;
   draftedDeck?: BattleCard[];
@@ -99,7 +83,7 @@ export function createNewRunInitialization(deps: ContentSystemNavigationDeps, ga
     const startSnapshot = createStartSnapshot(draft, characterId, CONTENT_SYSTEMS.CAMPAIGN, { difficultyId });
     const { startGoldGranted } = applyRunStartToDraft(draft, startSnapshot, { discoverDeck: true });
     setStarterDraftChoices(draft, null);
-    sampleAndApplyInitialCampaignDestinations(draft, deps.getAvailableDestinations, startSnapshot.runMaxHealth);
+    sampleAndApplyDestinationOffer(draft);
     return { playGoldSound: startGoldGranted > 0 };
   }
 

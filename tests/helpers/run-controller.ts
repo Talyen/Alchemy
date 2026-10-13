@@ -14,6 +14,7 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
       beginWildwood: fn(),
       unlockTalent: fn(),
       resetUnlockedTalents: fn(),
+      resetHomestead: vi.fn(() => false),
       constructBuilding: vi.fn(() => false),
       plantFarm: vi.fn(() => false),
       completeResearch: vi.fn(() => false),
@@ -28,6 +29,7 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
         onSalvage: vi.fn(() => false),
         onApplyCurrency: vi.fn(() => false),
         onSpawnDevGear: fn(),
+        onSpawnDevTrinket: fn(),
       },
     },
     runSetup: {
@@ -54,7 +56,6 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
         continueCampfire: fn(),
         rest: fn(),
         brew: fn(),
-        initializeCampfire: fn(),
       },
       wildwood: { removeCard: fn(), skipRemoval: fn() },
       shop: {
@@ -91,7 +92,7 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
       },
       mystery: { handleChoice: fn(), handleChooseCard: fn(), handleContinue: fn() },
       corruption: { handleCorruptCard: fn(), handleExit: fn() },
-      transmutation: { select: fn(), exchange: fn(), continue: fn(), initialize: fn() },
+      transmutation: { select: fn(), exchange: fn(), continue: fn() },
     },
     battle: {
       presentation: battlePresentation,

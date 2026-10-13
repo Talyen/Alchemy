@@ -41,10 +41,11 @@ cannot replace destination music.
 
 Collection entries rest with dim grey borders. All entries, including locked and
 undiscovered entries, show a matching keyword Shine Border on hover or
-keyboard focus, with neutral shine when no keywords resolve. Homestead companions
-and upgrades use the same treatment regardless of affordability or discovery.
-Wish and reward choices use the same hover treatment. Trinkets and gear, including
-uniques, use their effect keywords on these surfaces, with neutral shine when none
+keyboard focus, with neutral shine when no keywords resolve. Wish and reward
+choices use the same hover treatment. Homestead companions and upgrades follow
+their separate [gallery treatment](#homestead-gallery).
+Trinkets and gear, including uniques, use their effect keywords on these surfaces,
+with neutral shine when none
 exist. Shared trinket and gear art tiles, including Mystery rewards, shops, and
 run-end items, also rest with the default border and show Shine only on hover or
 keyboard focus. Their existing Shine palettes and item-title colors are preserved.
@@ -64,6 +65,56 @@ An empty palette falls back to neutral shine rather than rendering black.
 `Progress` renders a bare progressbar: every call site must pass an accessible
 name (`aria-label`/`aria-labelledby`), and `value` owns the fill width —
 `fillStyle` carries only extra styling such as transitions.
+
+## Homestead gallery
+
+Homestead is an artwork-first gallery. Hover/focus inspects a node through the
+ordinary passive `PortaledTooltip`, sharing Collection's scale, chrome, and
+dismissal. Top-row tooltips always appear below; bottom-row tooltips always appear
+above, with automatic flipping disabled even when their content changes size.
+Tooltips contain no controls and receive no focus; Tab moves between gallery
+controls. Clicking the artwork or pressing Enter/Space on it directly builds,
+upgrades, or bonds the node.
+
+Stars beside the name show purchased levels or bonds. Unbuilt/unbonded nodes show
+only their name, empty stars, and purchase cost, without first-tier previews.
+Purchased nodes show current bonuses and Find 10/20/30/40% more resource quantities,
+with uniform effect-row spacing and no section headers or next-tier comparisons.
+Completed nodes show current benefits without costs; undiscovered Companions show
+their discovery requirement. The wallet stays in the gallery, which has no upgrade
+arrows or separate detail screens.
+
+Build, Upgrade, or Bond costs appear as a plain row with material icons and
+quantities. Missing materials use red quantities without additional feedback text.
+A divider separates purchased bonuses from the next cost. Gold uses the same
+inline icon chip as Homestead materials. The artwork stays focusable for
+inspection but cannot purchase when more materials are needed. A visible Saving
+acknowledgment on the artwork precedes purchased artwork/progress and sound;
+synchronous tier guards reject repeated input. Dismissing the tooltip or changing
+tabs cannot cancel or repeat an accepted purchase. Errors appear only on failure
+and remain visible outside the tooltip.
+
+Purchase feedback and reduced-motion behavior follow
+[Homestead purchase motion](./UI_MOTION.md#homestead-purchases). Feedback belongs
+to the accepted purchase and never replays from hydrated levels.
+
+Reset Homestead uses the same circular-arrow header action and neutral
+confirmation as Reset Talents, immediately before the menu button. It resets
+Buildings, Farm, Research, and Companion bonds and refunds purchased tier costs
+to the stockpile, preserving discoveries. Empty Homesteads and pending mutations
+disable reset. Confirmation closes after acceptance; the reset display waits for
+save acknowledgment, using shared Saving/Retry feedback. The current tab/page
+stays selected and cleared tiers can be purchased again.
+
+Homestead artwork keeps its native aspect ratio without cropping. Landscape
+nodes retain the larger Homestead-specific width and fixed two-row geometry,
+keeping headers, tabs, and pagination stationary. Artwork uses the shared 3px
+hover/focus outline and 103.5% scale with `card-interactive-no-glow`. Affordable
+nodes add only a tight, static outer gold halo at rest, retaining the neutral
+border until hover/focus, without pulse, shimmer, or shine. Affordability updates
+after spending and is suppressed while a purchase is saving. Nodes stay grayscale
+until their first purchase, then remain colored even when the next purchase is
+unaffordable. Undiscovered Companions remain grayscale.
 
 ## Card-removal browsing
 
@@ -132,3 +183,15 @@ Crafting consumes one currency per activation. Escape cancels targeting; invalid
 Journey’s End focuses on earned rewards and progression, without a room trail or
 Act/node summary. Deck and Boon inspection retain their normal labels and shared
 overlay behavior. Victory keeps its own title.
+
+When a run newly unlocks a hero, Continue opens a Hero Unlocked reveal with that
+hero’s portrait and name before Main Menu. Hovering or focusing the portrait
+shows the same hero tooltip as hero selection, including the starting deck and
+keywords. The reveal tooltip prefers below the portrait. Hero selection uses a
+consistent placement per row: below the top row and above the bottom row,
+regardless of whether a hero is locked. Shared
+collision handling keeps tooltips within the game frame. The background glow
+uses that hero’s selection palette. Repeat runs do not replay unlocks.
+Defeat and manual End Run follow the same unlock rules as victory. Demo victories
+show available hero unlocks before the demo completion screen. Unlock reveals,
+like the recap, are transient; permanent hero availability remains saved.

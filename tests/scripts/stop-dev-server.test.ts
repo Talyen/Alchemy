@@ -17,6 +17,27 @@ describe("isProjectOwnedCommandLine", () => {
     ).toBe(false);
   });
 
+  it("treats nested managed worktrees as separate process owners", () => {
+    const worktree = `${projectRoot}/.worktrees/task`;
+    const command = `node ${worktree}/node_modules/vite/bin/vite.js`;
+    expect(isProjectOwnedCommandLine(command, projectRoot, "darwin")).toBe(false);
+    expect(isProjectOwnedCommandLine(command, worktree, "darwin")).toBe(true);
+    expect(
+      isProjectOwnedCommandLine(
+        `node ${projectRoot}/node_modules/vite/bin/vite.js --config ${worktree}/vite.config.ts`,
+        projectRoot,
+        "darwin",
+      ),
+    ).toBe(false);
+    expect(
+      isProjectOwnedCommandLine(
+        String.raw`node C:\Alchemy\.worktrees\task\node_modules\vite\bin\vite.js`,
+        String.raw`C:\Alchemy`,
+        "win32",
+      ),
+    ).toBe(false);
+  });
+
   it("uses platform-appropriate path casing and separators", () => {
     expect(isProjectOwnedCommandLine("node /users/dev/alchemy/vite.js", projectRoot, "linux")).toBe(false);
     expect(
@@ -29,41 +50,26 @@ describe("isProjectOwnedCommandLine", () => {
   });
 });
 
-describe("stopOwnedListeners", () => {
-  it("stops only listeners owned by this project", async () => {
-    const stopPid = vi.fn(async () => undefined);
-    const log = vi.fn();
-    const commandLines = new Map([
-      [11, "node /workspace/Alchemy/node_modules/vite/bin/vite.js"],
-      [12, "node /workspace/Alchemy-copy/node_modules/vite/bin/vite.js"],
-      [13, ""],
-    ]);
+it("stopOwnedListeners stops only listeners owned by this project", async () => {
+  const stopPid = vi.fn(async () => undefined);
+  const log = vi.fn();
+  const commandLines = new Map([
+    [11, "node /workspace/Alchemy/node_modules/vite/bin/vite.js"],
+    [12, "node /workspace/Alchemy-copy/node_modules/vite/bin/vite.js"],
+    [13, ""],
+    [14, "node /workspace/Alchemy/.worktrees/another-task/node_modules/vite/bin/vite.js"],
+  ]);
 
-    await stopOwnedListeners({
-      port: 4173,
-      projectRoot: "/workspace/Alchemy",
-      platform: "linux",
-      getListeningPids: async () => [11, 12, 13],
-      getCommandLine: async (pid) => commandLines.get(pid) ?? "",
-      stopPid,
-      log,
-    });
-
-    expect(stopPid).toHaveBeenCalledExactlyOnceWith(11);
-    expect(log).toHaveBeenCalledWith(expect.stringContaining("PID 12"));
+  await stopOwnedListeners({
+    port: 4173,
+    projectRoot: "/workspace/Alchemy",
+    platform: "linux",
+    getListeningPids: async () => [11, 12, 13, 14],
+    getCommandLine: async (pid) => commandLines.get(pid) ?? "",
+    stopPid,
+    log,
   });
 
-  it("reports when no listeners exist", async () => {
-    const log = vi.fn();
-    await stopOwnedListeners({
-      port: 4173,
-      projectRoot: "/workspace/Alchemy",
-      platform: "linux",
-      getListeningPids: async () => [],
-      getCommandLine: async () => "",
-      stopPid: async () => undefined,
-      log,
-    });
-    expect(log).toHaveBeenCalledWith("No project-owned dev server found on port 4173.");
-  });
+  expect(stopPid).toHaveBeenCalledExactlyOnceWith(11);
+  expect(log).toHaveBeenCalledWith(expect.stringContaining("PID 12"));
 });

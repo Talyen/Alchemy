@@ -7,17 +7,21 @@ import { dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gamepl
 import { discoverCardIds } from "@/features/alchemy/shared/stores/profile-store";
 import { acceptCommand, rejectCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { awardCardXP } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { resolveBattleAction, type ResolvedBattleTurn } from "@/lib/battle";
+import { resolveBattleAction, type BattleSnapshot, type ResolvedBattleTurn } from "@/lib/battle";
 import { current } from "immer";
 import { PLAYABLE_HAND_OPTIONS } from "../config/battle-input";
 import { awardBattleDodgeXP, createDraftRunRandomSource } from "./run-session-write-port";
 import { commitResolvedBattle, setBattleState } from "./write/run-battle";
 
-export function commitCardPlay(index: number, cardId: string, gameSession: GameSession) {
+// Input borrows the immutable snapshot that offered it. Identity is the
+// concurrency guard: IDs, turn numbers, and even complete saved values can recur
+// in a later battle. Reject before creating RNG or awarding any progress.
+export function commitCardPlay(expected: BattleSnapshot, index: number, cardId: string, gameSession: GameSession) {
   return dispatchGameplayCommand(
     (draft) => {
       if (draft.session.activity.kind !== "battle") return rejectCommand("There is no active battle", null);
       const before = current(draft.session.activity.data.battleState);
+      if (before !== expected) return rejectCommand("Battle input is stale", null);
       const result = resolveBattleAction(
         before,
         { kind: "card", cardId, index, options: PLAYABLE_HAND_OPTIONS },
@@ -35,11 +39,12 @@ export function commitCardPlay(index: number, cardId: string, gameSession: GameS
   );
 }
 
-export function commitBattleWish(cardId: string, gameSession: GameSession) {
+export function commitBattleWish(expected: BattleSnapshot, cardId: string, gameSession: GameSession) {
   return dispatchGameplayCommand(
     (draft) => {
       if (draft.session.activity.kind !== "battle") return rejectCommand("There is no active battle", null);
       const before = current(draft.session.activity.data.battleState);
+      if (before !== expected) return rejectCommand("Battle input is stale", null);
       const result = resolveBattleAction(
         before,
         { kind: "wish", cardId },
@@ -57,11 +62,12 @@ export function commitBattleWish(cardId: string, gameSession: GameSession) {
   );
 }
 
-export function commitEndTurn(gameSession: GameSession): ResolvedBattleTurn | null {
+export function commitEndTurn(expected: BattleSnapshot, gameSession: GameSession): ResolvedBattleTurn | null {
   return dispatchGameplayCommand(
     (draft) => {
       if (draft.session.activity.kind !== "battle") return rejectCommand("There is no active battle", null);
       const before = current(draft.session.activity.data.battleState);
+      if (before !== expected) return rejectCommand("Battle input is stale", null);
       const action = resolveBattleAction(
         before,
         { kind: "end-turn" },
@@ -96,9 +102,10 @@ function commitDevBattleVictory(gameSession: GameSession): void {
 export function createBattleCapabilities(gameSession: GameSession) {
   return bindSessionCapabilities(gameSession, {
     read: () => readBattle(gameSession),
-    playCard: (index: number, cardId: string) => commitCardPlay(index, cardId, gameSession),
-    chooseWish: (cardId: string) => commitBattleWish(cardId, gameSession),
-    endTurn: () => commitEndTurn(gameSession),
+    playCard: (expected: BattleSnapshot, index: number, cardId: string) =>
+      commitCardPlay(expected, index, cardId, gameSession),
+    chooseWish: (expected: BattleSnapshot, cardId: string) => commitBattleWish(expected, cardId, gameSession),
+    endTurn: (expected: BattleSnapshot) => commitEndTurn(expected, gameSession),
     devVictory: () => commitDevBattleVictory(gameSession),
     clearPresentation: () => clearBattlePresentationUi(gameSession),
     createStartCommands: (onStarted: (result: BattleStarted) => void) =>

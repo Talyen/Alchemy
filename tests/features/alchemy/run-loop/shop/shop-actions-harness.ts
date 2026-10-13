@@ -1,14 +1,13 @@
 import "../../../../helpers/mock-audio";
-
+import {
+  bindRunMutationForTest,
+  resetAllTestStores,
+  resetGearForTest,
+} from "../../../../helpers/run-domain-store-test";
 import { beforeEach } from "vitest";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
-import { createEmptyTalentEffectManifest, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
-import {
-  acceptCommand,
-  dispatchRunSessionCommand,
-  createRunSessionCommand,
-} from "@/features/alchemy/shared/stores/run-session-command";
-import { resetAllTestStores, resetGearForTest } from "../../../../helpers/run-domain-store-test";
+import { type BattleCard } from "@/lib/game-data";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   setShopState as mutateShopState,
   setAlchemistState as mutateAlchemistState,
@@ -24,36 +23,18 @@ import {
   createInitialTrinketShopState as createInitialTrinketShopStateImpl,
   createInitialEquipmentShopState as createInitialEquipmentShopStateImpl,
 } from "@/features/alchemy/run-loop/shop/shop-state-init";
-import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { makeTestCard } from "../../../../fixtures/cards";
 import { makeEffect } from "../../../../fixtures/battle";
 import { defaultGameSession } from "@/app/application-session";
 
 const lootProgress = { depth: 24, highestCompletedDifficulty: null };
 
-export const setShopState = createRunSessionCommand(
-  (...args: Parameters<typeof mutateShopState>) => acceptCommand(mutateShopState(...args)),
-  undefined,
-  defaultGameSession,
-);
-export const setAlchemistState = createRunSessionCommand(
-  (...args: Parameters<typeof mutateAlchemistState>) => acceptCommand(mutateAlchemistState(...args)),
-  undefined,
-  defaultGameSession,
-);
-export const setTrinketShopState = createRunSessionCommand(
-  (...args: Parameters<typeof mutateTrinketShopState>) => acceptCommand(mutateTrinketShopState(...args)),
-  undefined,
-  defaultGameSession,
-);
-export const setEquipmentShopState = createRunSessionCommand(
-  (...args: Parameters<typeof mutateEquipmentShopState>) => acceptCommand(mutateEquipmentShopState(...args)),
-  undefined,
-  defaultGameSession,
-);
+export const setShopState = bindRunMutationForTest(mutateShopState);
+export const setAlchemistState = bindRunMutationForTest(mutateAlchemistState);
+export const setTrinketShopState = bindRunMutationForTest(mutateTrinketShopState);
+export const setEquipmentShopState = bindRunMutationForTest(mutateEquipmentShopState);
 
 const testRng = () => 0.5;
-const defaultTalentEffects: TalentEffectManifest = createEmptyTalentEffectManifest();
 
 export const createInitialShopState = (deck: BattleCard[] = []) => createInitialShopStateImpl(deck, testRng);
 export const createInitialAlchemistState = (deck: BattleCard[] = []) => createInitialAlchemistStateImpl(deck, testRng);
@@ -70,30 +51,12 @@ export function requiredItem<T>(value: T | undefined, label: string): T {
   return value;
 }
 
-export function buildActions(
-  overrides?: Partial<{
-    talentEffects: Partial<TalentEffectManifest>;
-    homesteadEffects: Partial<typeof defaultHomesteadEffects>;
-    gearAstralChanceBonus: number;
-    trinketIds: string[];
-  }>,
-) {
+export function buildActions(overrides?: { trinketIds: string[] }) {
   const trinketIds = overrides?.trinketIds;
   if (trinketIds) {
     dispatchRunSessionCommand((draft) => acceptCommand(setRunBoons(draft, trinketIds)), undefined, defaultGameSession);
   }
-  const talentEffects = { ...defaultTalentEffects, ...overrides?.talentEffects };
-  return createShopActions(
-    {
-      talentEffects,
-      homesteadEffects: {
-        ...defaultHomesteadEffects,
-        gearAstralChanceBonus: overrides?.gearAstralChanceBonus ?? 0,
-        ...overrides?.homesteadEffects,
-      },
-    },
-    defaultGameSession,
-  );
+  return createShopActions(defaultGameSession);
 }
 
 beforeEach(() => {

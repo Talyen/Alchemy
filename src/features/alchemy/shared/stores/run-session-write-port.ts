@@ -15,11 +15,11 @@ import { bindDraftCapability, gameplayDraftRuntime } from "./gameplay-command";
 // - Materials: `runProfile.materialInventory` is the stockpile;
 //   `run.activeRun.runMaterialsEarned` tallies what the live run earned.
 //   `awardMaterialsDuringRun` writes both; `addMaterialsToStockpile` writes the
-//   stockpile only (homestead end-of-run bonuses, meta salvage). Salvaged
+//   stockpile only (meta salvage). Salvaged
 //   crafting currencies mirror this via `run.activeRun.runCurrenciesEarned`,
-//   tallied alongside the material grant in `dispatchGearSalvageWithMaterialGrant`.
+//   tallied alongside the material grant in `salvageGearInTransaction`.
 // - Talent XP: `run.activeRun.runTalentXP` accrues during the run;
-//   `finalizeRunXP` merges it into `runProfile.talentXP` once at run end.
+//   run settlement merges it into `runProfile.talentXP` once at run end.
 
 import type { RunActivityData } from "@/lib/active-run-session";
 import type { Immutable } from "immer";
@@ -144,10 +144,10 @@ export const bondCompanion = transactionOperation(homestead.bondCompanion);
 export const completeResearch = transactionOperation(homestead.completeResearch);
 export const constructBuilding = transactionOperation(homestead.constructBuilding);
 export const plantFarm = transactionOperation(homestead.plantFarm);
+export const resetHomestead = transactionOperation(homestead.resetHomestead);
 export const setMaterials = transactionOperation(homestead.setMaterials);
 export const applyTalentState = transactionOperation(profile.applyTalentState);
 export const clearPermanentData = transactionOperation(profile.clearPermanentData);
-export const finalizeRunXP = transactionOperation(profile.finalizeRunXP);
 export const handleCollectionTabChange = transactionOperation(profile.handleCollectionTabChange);
 export const resetToDefaults = transactionOperation(profile.resetToDefaults);
 export const resetUnlockedTalents = transactionOperation(profile.resetUnlockedTalents);
@@ -172,7 +172,6 @@ export function createDraftInstanceIdSource(transaction: RunTransaction): () => 
   return bindDraftCapability(draft, gameplayDraftRuntime(draft).createInstanceId);
 }
 
-export const awardRunEndMaterials = transactionOperation(ending.awardRunEndMaterials);
 export function settleRunVictory(transaction: RunTransaction): void {
-  ending.settleRunEnd(undefined, transactionDraft(transaction), "victory");
+  ending.settleRunEnd(transactionDraft(transaction), "victory");
 }

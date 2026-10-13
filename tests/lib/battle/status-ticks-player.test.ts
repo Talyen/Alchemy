@@ -3,34 +3,27 @@ import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { applyDodgeTalentStatuses } from "@/lib/battle/dodge-talent-rewards";
 import { tickPlayerStatuses } from "@/lib/battle/status-ticks";
 import { addPlayerStatus } from "@/lib/battle/status-state";
-import {
-  defaultPlayerStatusValues,
-  defaultTalentEffects,
-  defaultCcState,
-  defaultTrinketManifest,
-} from "../../fixtures/default-battle-state";
+import { defaultPlayerStatusValues, defaultCcState } from "../../fixtures/default-battle-state";
 import { makeCombatTexts as makeTexts, makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("tickPlayerStatuses", () => {
   it("combines Burn reductions before Armor and decays Armor only after Health loss", () => {
     const state = patchBattleState({
-      playerHealth: 30,
       playerStatuses: { burn: 10, block: 5, armor: 3 },
-      talentEffects: { receiveHalfBurnDamage: true, blockReduceBurnDamage: 1, armorMitigatesBurn: true },
+      talentEffects: { receiveHalfBurnDamage: true, armorMitigatesBurn: true },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
-    expect(next.playerHealth).toBe(29);
+    expect(next.playerHealth).toBe(28);
     expect(next.playerStatuses).toMatchObject({ burn: 5, armor: 2, block: 5 });
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 1, periodic: true });
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 2, periodic: true });
     expect(state.playerStatuses).toMatchObject({ burn: 10, armor: 3 });
   });
 
   it("keeps Armor and suppresses damage feedback when mitigation absorbs the whole Burn tick", () => {
     const state = patchBattleState({
-      playerHealth: 30,
       playerStatuses: { burn: 1, block: 5, armor: 3 },
-      talentEffects: { blockReduceBurnDamage: 1, armorMitigatesBurn: true },
+      talentEffects: { armorMitigatesBurn: true },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
@@ -44,23 +37,22 @@ describe("tickPlayerStatuses", () => {
     expect(unblocked.playerHealth).toBe(29);
   });
 
-  it("deals poison damage to player and decays poison by 20% (minimum 1)", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ poison: 5 }),
-    });
+  it.each([
+    ["poison", 5, 4],
+    ["bleed", 7, 0],
+  ] as const)("deals periodic %s damage and decays its stacks", (stat, amount, remaining) => {
+    const state = patchBattleState({ playerStatuses: { [stat]: amount } });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
-    expect(next.playerHealth).toBe(25);
-    expect(next.playerStatuses.poison).toBe(4);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "poison", amount: 5, periodic: true });
+    expect(next.playerHealth).toBe(30 - amount);
+    expect(next.playerStatuses[stat]).toBe(remaining);
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat, amount, periodic: true });
   });
 
   it("receiveHalfPoisonDamage halves poison damage", () => {
     const state = patchBattleState({
-      playerHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ poison: 8 }),
-      talentEffects: { ...defaultTalentEffects, receiveHalfPoisonDamage: true },
+      playerStatuses: { poison: 8 },
+      talentEffects: { receiveHalfPoisonDamage: true },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
@@ -68,24 +60,10 @@ describe("tickPlayerStatuses", () => {
     expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "poison", amount: 4, periodic: true });
   });
 
-  it("deals bleed damage and clears bleed", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ bleed: 7 }),
-    });
-    const texts = makeTexts();
-    const next = tickPlayerStatuses(state, texts);
-    expect(next.playerHealth).toBe(23);
-    expect(next.playerStatuses.bleed).toBe(0);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "bleed", amount: 7, periodic: true });
-  });
-
   it.each(["burn", "bleed"] as const)("receiveHalf%sDamage applies resists before armor", (status) => {
     const state = patchBattleState({
-      playerHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ [status]: 10, armor: 3 }),
+      playerStatuses: { [status]: 10, armor: 3 },
       talentEffects: {
-        ...defaultTalentEffects,
         [`receiveHalf${status === "burn" ? "Burn" : "Bleed"}Damage`]: true,
         [`armorMitigates${status === "burn" ? "Burn" : "Bleed"}`]: true,
       },
@@ -97,54 +75,33 @@ describe("tickPlayerStatuses", () => {
     expect(texts).toContainEqual({ target: "player", kind: "damage", stat: status, amount: 2, periodic: true });
   });
 
-  it("clears stun and triggers turn skip when threshold exceeded", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerMaxHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ stun: 20 }),
-    });
+  it.each([
+    ["stun", 20, "stunSkipTurns", "Stunned"],
+    ["freeze", 30, "freezeSkipTurns", "Frozen"],
+  ] as const)("clears %s buildup and skips a turn above its threshold", (stat, amount, skip, text) => {
+    const state = patchBattleState({ playerStatuses: { [stat]: amount } });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
-
     expect(next.playerHealth).toBe(30);
-    expect(next.playerStatuses.stun).toBe(0);
-    expect(next.playerCC.stunSkipTurns).toBe(1);
-    expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "stun", text: "Stunned" });
+    expect(next.playerStatuses[stat]).toBe(0);
+    expect(next.playerCC[skip]).toBe(1);
+    expect(texts).toContainEqual({ target: "player", kind: "notice", stat, text });
   });
 
   it("does not apply offensive stun talents to player stun triggers", () => {
     const state = patchBattleState({
-      playerHealth: 30,
-      playerMaxHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ stun: 14 }),
-      talentEffects: { ...defaultTalentEffects, stunThresholdReduction: 0.25, stunDurationExtension: 2 },
+      playerStatuses: { stun: 14 },
+      talentEffects: { stunThresholdReduction: 0.25, stunDurationExtension: 2 },
     });
     const next = tickPlayerStatuses(state, makeTexts());
     expect(next.playerCC.stunSkipTurns).toBe(0);
     expect(next.playerStatuses.stun).toBe(14);
   });
 
-  it("clears freeze and triggers turn skip when threshold exceeded", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerMaxHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ freeze: 30 }),
-    });
-    const texts = makeTexts();
-    const next = tickPlayerStatuses(state, texts);
-
-    expect(next.playerHealth).toBe(30);
-    expect(next.playerStatuses.freeze).toBe(0);
-    expect(next.playerCC.freezeSkipTurns).toBe(1);
-    expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "freeze", text: "Frozen" });
-  });
-
   it("does not apply offensive freeze duration bonuses to player freeze triggers", () => {
     const state = patchBattleState({
-      playerHealth: 30,
-      playerMaxHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ freeze: 30 }),
-      trinketEffects: defaultTrinketManifest({ freezeDurationExtension: 2 }),
+      playerStatuses: { freeze: 30 },
+      trinketEffects: { freezeDurationExtension: 2 },
     });
     const next = tickPlayerStatuses(state, makeTexts());
     expect(next.playerCC.freezeSkipTurns).toBe(1);
@@ -152,9 +109,7 @@ describe("tickPlayerStatuses", () => {
 
   it("CC immunity suppresses second stun trigger within cooldown", () => {
     const state = patchBattleState({
-      playerHealth: 30,
-      playerMaxHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ stun: 20 }),
+      playerStatuses: { stun: 20 },
     });
     const texts = makeTexts();
     const afterFirst = tickPlayerStatuses(state, texts);
@@ -178,7 +133,7 @@ describe("tickPlayerStatuses", () => {
     const state = patchBattleState({
       playerHealth: 50,
       playerMaxHealth: 50,
-      playerStatuses: defaultPlayerStatusValues({ burn: 8, poison: 4, bleed: 5, stun: 30, freeze: 2 }),
+      playerStatuses: { burn: 8, poison: 4, bleed: 5, stun: 30, freeze: 2 },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
@@ -199,9 +154,8 @@ describe("tickPlayerStatuses", () => {
   it.each(["burn", "poison"] as const)("stops remaining player DoTs after lethal %s", (lethal) => {
     const state = patchBattleState({
       playerHealth: 5,
-      playerMaxHealth: 30,
       deathsDoorUsed: true,
-      playerStatuses: defaultPlayerStatusValues({ burn: lethal === "burn" ? 10 : 0, poison: 10, bleed: 10 }),
+      playerStatuses: { burn: lethal === "burn" ? 10 : 0, poison: 10, bleed: 10 },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
@@ -218,7 +172,6 @@ describe("tickPlayerStatuses", () => {
 describe("cleansed Bleed Leech", () => {
   it("partial Clean Getaway removal caps pending Leech before fresh Bleed is added", () => {
     const state = patchBattleState({
-      playerHealth: 30,
       playerMaxHealth: 40,
       enemyHealth: 10,
       enemyMaxHealth: 40,
@@ -237,7 +190,6 @@ describe("cleansed Bleed Leech", () => {
     (source) => {
       const state = patchBattleState({
         rng: () => 0.99,
-        playerHealth: 30,
         playerMaxHealth: 40,
         enemyHealth: 10,
         enemyMaxHealth: 40,

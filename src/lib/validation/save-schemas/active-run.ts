@@ -1,3 +1,4 @@
+import type { PersistedPendingReward } from "@/lib/active-run-session/reward-types";
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { sanitizeWildwoodBossId, sanitizeWildwoodBossIds } from "@/lib/content-systems/wildwood/bosses";
 import { shopItemSlotKey } from "@/lib/active-run-session/shop-offering-repair";
@@ -196,9 +197,7 @@ const PersistedPendingRewardUnionSchema = z.discriminatedUnion("rewardType", [
     gearChoices: z.preprocess(normalizeGearInstanceArray, z.array(GearInstanceSchema).catch([])),
     ...PersistedPendingRewardBaseSchema,
   }),
-]);
-
-export type PersistedPendingReward = z.infer<typeof PersistedPendingRewardUnionSchema>;
+]) satisfies z.ZodType<PersistedPendingReward>;
 
 const PersistedRunActivitySchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("battle"), data: z.object({ battleState: PersistedBattleStateSchema }) }),

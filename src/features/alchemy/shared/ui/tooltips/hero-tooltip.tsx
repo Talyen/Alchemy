@@ -5,6 +5,7 @@ import { getPlasmaColorPairForCharacter } from "@/features/alchemy/shared/config
 
 import { KeywordTag } from "../keyword-tag";
 import { PortaledTooltip } from "./portaled-tooltip";
+import type { PortaledTooltipPlacement } from "./portaled-tooltip-placement";
 import { TooltipBody, TooltipHeader, TooltipSubheader } from "./tooltip-panel";
 import { renderUnlockMessage } from "../unlock-text";
 
@@ -15,6 +16,7 @@ export function HeroTooltip({
   unlockRequirementText,
   triggerRef,
   visible,
+  placement = "above",
 }: {
   character: CharacterDefinition;
   isLocked: boolean;
@@ -22,11 +24,13 @@ export function HeroTooltip({
   unlockRequirementText: string;
   triggerRef: RefObject<HTMLElement | null>;
   visible: boolean;
+  placement?: PortaledTooltipPlacement;
 }) {
   return (
     <PortaledTooltip
       triggerRef={triggerRef}
       visible={visible}
+      placement={placement}
       plasmaColorPair={isLocked || requiresFullGame ? null : getPlasmaColorPairForCharacter(character.id)}
     >
       <TooltipHeader>{character.name}</TooltipHeader>

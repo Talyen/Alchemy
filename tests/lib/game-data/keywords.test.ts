@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { expect, it } from "vitest";
 import { cardLibrary, companionLibrary, type KeywordId } from "@/lib/game-data";
 import {
   cardHasKeyword,
@@ -8,11 +8,9 @@ import {
 } from "@/lib/game-data/keywords";
 import { makeTestCard } from "../../fixtures/cards";
 
-describe("keywordDefinitions", () => {
-  it("keeps only catalog keywords eligible for Talent XP", () => {
-    const keywords = ["burn", "constructor", "__proto__", "toString", "health"] as KeywordId[];
-    expect(filterKeywordsForTalentXP(keywords)).toEqual(["burn", "health"]);
-  });
+it("keywordDefinitions keeps only catalog keywords eligible for Talent XP", () => {
+  const keywords = ["burn", "constructor", "__proto__", "toString", "health"] as KeywordId[];
+  expect(filterKeywordsForTalentXP(keywords)).toEqual(["burn", "health"]);
 });
 
 it("keeps card-specific keywords separate and refreshes them when effects are replaced", () => {

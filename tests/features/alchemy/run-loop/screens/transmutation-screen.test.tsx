@@ -1,13 +1,10 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { initializeAlchemyVisitForTest as initializeAlchemyVisit } from "../../../../helpers/visit-initialization";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playUISound } from "@/lib/audio";
 import { StrictMode } from "react";
 import { TransmutationScreen } from "@/features/alchemy/run-loop/screens/transmutation-screen";
-import {
-  initializeAlchemyVisit,
-  selectTransmutation,
-  transmuteCard,
-} from "@/features/alchemy/run-loop/navigation/alchemy-commands";
+import { selectTransmutation, transmuteCard } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
 import { useTransmutationScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { cardById, keywordDefinitions, type BattleCard } from "@/lib/game-data";
@@ -45,6 +42,10 @@ function Harness({
       isProgressSavePending={isProgressSavePending}
     />
   );
+}
+function tooltipFor(name: string) {
+  const button = screen.getByRole("button", { name });
+  return within(document.getElementById(button.getAttribute("aria-describedby")!)!);
 }
 function click(name: string) {
   fireEvent.click(screen.getByRole("button", { name }));
@@ -175,6 +176,10 @@ describe("Transmutation flow", () => {
     expect(screen.getByRole("button", { pressed: true }).textContent).toContain(
       keywordDefinitions[preview.transmuted!].label,
     );
+    act(() => screen.getByRole("button", { name: `Preview: ${preview.title}` }).focus());
+    expect(tooltipFor(`Preview: ${preview.title}`).getAllByText("NEW").length).toBeGreaterThan(0);
+    act(() => screen.getByRole("button", { name: "Original: Slash" }).focus());
+    expect(tooltipFor("Original: Slash").queryByText("NEW")).toBeNull();
     expect(readActiveRun(defaultGameSession).runDeck).toEqual(before);
     expect(onExchange).not.toHaveBeenCalled();
     click("Transmute");
@@ -366,6 +371,17 @@ describe("Transmutation flow", () => {
     expect(playUISound).not.toHaveBeenCalled();
   });
 
+  it("leaves a damaged visit with missing choices without regenerating gameplay", () => {
+    setRunSession({
+      activity: { kind: "transmutation", data: { offers: [], result: null, original: null, completed: false } },
+    });
+    const before = readActiveRun(defaultGameSession);
+    render(<Harness />);
+    expect(onContinue).toHaveBeenCalledOnce();
+    expect(onExchange).not.toHaveBeenCalled();
+    expect(readActiveRun(defaultGameSession)).toEqual(before);
+  });
+
   it("resumes the saved result silently and continues only on request, including StrictMode replay", async () => {
     render(<Harness />);
     await chooseAlteration();
@@ -388,6 +404,8 @@ describe("Transmutation flow", () => {
       expect((screen.getByRole("button", { name: "Continue" }) as HTMLButtonElement).disabled).toBe(false),
     );
     expect(screen.getByRole("button", { name: `Transmuted: ${visit().result!.title}` })).toBeTruthy();
+    act(() => screen.getByRole("button", { name: `Transmuted: ${visit().result!.title}` }).focus());
+    expect(tooltipFor(`Transmuted: ${visit().result!.title}`).getAllByText("NEW").length).toBeGreaterThan(0);
     expect(playUISound).not.toHaveBeenCalled();
     expect(onContinue).not.toHaveBeenCalled();
     click("Continue");

@@ -1,4 +1,11 @@
-import { getBattleForTest } from "../../../../helpers/run-domain-store-test";
+import {
+  mutateGameplayForTest,
+  getBattleForTest,
+  mutateGearForTest,
+  resetRunDomainStore,
+  setRunProgress,
+  setRunSession,
+} from "../../../../helpers/run-domain-store-test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   encodePersistenceFields,
@@ -10,13 +17,7 @@ import { defaultSaveData } from "@/features/alchemy/shared/storage";
 import { SaveDataSchema } from "@/lib/validation";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import {
-  mutateGearForTest,
-  resetRunDomainStore,
-  setRunProgress,
-  setRunSession,
-} from "../../../../helpers/run-domain-store-test";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
+
 import {
   handleCollectionTabChange,
   setDiscoveredCardIds,
@@ -33,6 +34,24 @@ import { createEmptyGearInventories, generateUniqueGearInstance, getUniqueItemDe
 import { defaultGameSession } from "@/app/application-session";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage/session-persistence";
 import { emptyHydratedMysteryVisit } from "@/lib/active-run-session";
+import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
+import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import {
+  acceptCommand,
+  dispatchGameplayCommand,
+  type GameplayDraft,
+} from "@/features/alchemy/shared/stores/gameplay-command";
+
+function mutateSession(session: GameSession, mutate: (draft: GameplayDraft) => void) {
+  dispatchGameplayCommand(
+    (draft) => {
+      mutate(draft);
+      return acceptCommand();
+    },
+    undefined,
+    session,
+  );
+}
 
 beforeEach(() => {
   useSettingsStore.setState(useSettingsStore.getInitialState(), true);
@@ -43,21 +62,17 @@ beforeEach(() => {
 describe("persistence coordinator", () => {
   it.each(["idle", "mystery"] as const)(
     "can commit an incomplete %s activity but cannot save it as resumable progress",
-    (kind) => {
+    async (kind) => {
+      const session = createGameSession();
       const listener = vi.fn();
-      const unsubscribe = subscribeAlchemyPersistence(listener, defaultGameSession);
-      const persistence = createSessionPersistence(defaultGameSession);
+      const unsubscribe = subscribeAlchemyPersistence(listener, session);
+      const persistence = createSessionPersistence(session);
       const release = persistence.trackProgress(() => {});
       try {
         expect(() =>
-          dispatchGameplayCommand(
-            (draft) => {
-              draft.session.activity = kind === "idle" ? { kind } : { kind, data: emptyHydratedMysteryVisit() };
-              return acceptCommand();
-            },
-            undefined,
-            defaultGameSession,
-          ),
+          mutateSession(session, (draft) => {
+            draft.session.activity = kind === "idle" ? { kind } : { kind, data: emptyHydratedMysteryVisit() };
+          }),
         ).not.toThrow();
         expect(listener).toHaveBeenCalledOnce();
         expect(persistence.readProgress().kind).toBe("saving");
@@ -66,62 +81,50 @@ describe("persistence coordinator", () => {
       } finally {
         unsubscribe();
         release();
+        await session.dispose();
       }
     },
   );
   it.each(["inactive", "destination", "battle"] as const)(
     "%s changes excluded from the save cannot arm the progress gate or trigger autosave",
-    (activity) => {
+    async (activity) => {
+      const session = createGameSession();
       if (activity !== "inactive") {
-        dispatchGameplayCommand(
-          (draft) => {
-            if (activity === "battle") getBattleForTest(draft);
-            else draft.session.activity = { kind: "destination" };
-            return acceptCommand();
-          },
-          undefined,
-          defaultGameSession,
-        );
+        mutateSession(session, (draft) => {
+          if (activity === "battle") getBattleForTest(draft);
+          else draft.session.activity = { kind: "destination" };
+        });
       }
-      const persistence = createSessionPersistence(defaultGameSession);
-      const before = buildAlchemySaveDataFromStores(defaultGameSession);
+      const persistence = createSessionPersistence(session);
+      const before = buildAlchemySaveDataFromStores(session);
       const listener = vi.fn();
-      const unsubscribe = subscribeAlchemyPersistence(listener, defaultGameSession);
+      const unsubscribe = subscribeAlchemyPersistence(listener, session);
       const release = persistence.trackProgress(() => {});
       try {
-        dispatchGameplayCommand(
-          (draft) => {
-            if (activity === "inactive") draft.run.activeRun.runPlayerHealth -= 1;
-            else if (activity === "destination") draft.session.rewardFlow.state.gold += 1;
-            else
-              getBattleForTest(draft).battleState.battleMetrics = {
-                enemyAttackActions: 1,
-                enemyAbilityActivations: {},
-              };
-            return acceptCommand();
-          },
-          undefined,
-          defaultGameSession,
-        );
-        expect(buildAlchemySaveDataFromStores(defaultGameSession)).toEqual(before);
+        mutateSession(session, (draft) => {
+          if (activity === "inactive") draft.run.activeRun.runPlayerHealth -= 1;
+          else if (activity === "destination") draft.session.rewardFlow.state.gold += 1;
+          else
+            getBattleForTest(draft).battleState.battleMetrics = {
+              enemyAttackActions: 1,
+              enemyAbilityActivations: {},
+            };
+        });
+        expect(buildAlchemySaveDataFromStores(session)).toEqual(before);
         expect(listener).not.toHaveBeenCalled();
         expect(persistence.readProgress().kind).toBe("idle");
-        dispatchGameplayCommand(
-          (draft) => {
-            if (activity === "inactive") setGold(draft, 42);
-            else if (activity === "destination") draft.session.rewardFlow.state.destinations = ["Campfire"];
-            else getBattleForTest(draft).battleState.turn += 1;
-            return acceptCommand();
-          },
-          undefined,
-          defaultGameSession,
-        );
-        expect(buildAlchemySaveDataFromStores(defaultGameSession)).not.toEqual(before);
+        mutateSession(session, (draft) => {
+          if (activity === "inactive") setGold(draft, 42);
+          else if (activity === "destination") draft.session.rewardFlow.state.destinations = ["Campfire"];
+          else getBattleForTest(draft).battleState.turn += 1;
+        });
+        expect(buildAlchemySaveDataFromStores(session)).not.toEqual(before);
         expect(listener).toHaveBeenCalledOnce();
         expect(persistence.readProgress().kind).toBe("saving");
       } finally {
         unsubscribe();
         release();
+        await session.dispose();
       }
     },
   );
@@ -132,11 +135,7 @@ describe("persistence coordinator", () => {
       gear.addTrinket("tattered-pages");
       gear.addInstance({ instanceId: "new-reward", definitionId: "longsword-basic", affixes: [] }, "knight");
     });
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(setDiscoveredCardIds(draft, ["slash", "bash"])),
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => setDiscoveredCardIds(draft, ["slash", "bash"]));
     const encoded = encodePersistenceFields(defaultGameSession);
     expect(encoded.ownedTrinketIds).toContain("tattered-pages");
     expect(encoded.gearInventories.knight.some((gear) => gear.instanceId === "new-reward")).toBe(true);
@@ -147,6 +146,11 @@ describe("persistence coordinator", () => {
   });
 
   it("round-trips domain-owned save fields without transient UI state", () => {
+    const snapshots: Array<ReturnType<typeof encodePersistenceFields>> = [];
+    const unsubscribe = subscribeAlchemyPersistence(
+      () => snapshots.push(encodePersistenceFields(defaultGameSession)),
+      defaultGameSession,
+    );
     hydrateAlchemyPersistenceFields(
       {
         ...defaultSaveData,
@@ -157,13 +161,11 @@ describe("persistence coordinator", () => {
       },
       defaultGameSession,
     );
+    unsubscribe();
+    expect(snapshots).toEqual([encodePersistenceFields(defaultGameSession)]);
 
     useUiStore.getState().setShowClearSaveConfirm(true);
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(handleCollectionTabChange(draft, "bestiary")),
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => handleCollectionTabChange(draft, "bestiary"));
 
     const encoded = encodePersistenceFields(defaultGameSession);
 
@@ -195,19 +197,10 @@ describe("persistence coordinator", () => {
     const unsubscribe = subscribeAlchemyPersistence(listener, defaultGameSession);
 
     useSettingsStore.getState().setMusicVolume(42);
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(setDiscoveredCardIds(draft, ["slash"])),
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => setDiscoveredCardIds(draft, ["slash"]));
     mutateGearForTest((gear) => gear.addCurrencies({ voidstone: 1 }));
-    dispatchGameplayCommand(
-      (draft) =>
-        acceptCommand(
-          setRunProfileMaterials(draft, { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 }),
-        ),
-      undefined,
-      defaultGameSession,
+    mutateGameplayForTest((draft) =>
+      setRunProfileMaterials(draft, { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 }),
     );
 
     expect(listener).toHaveBeenCalledTimes(4);
@@ -222,52 +215,29 @@ describe("persistence coordinator", () => {
     const unsubscribe = subscribeAlchemyPersistence(listener, defaultGameSession);
 
     useUiStore.getState().setShowClearSaveConfirm(true);
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(handleCollectionTabChange(draft, "bestiary")),
-      undefined,
-      defaultGameSession,
-    );
-    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "collection")), undefined, defaultGameSession);
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(setSelectedLabyrinthNodeId(draft, "node-1")),
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => handleCollectionTabChange(draft, "bestiary"));
+    mutateGameplayForTest((draft) => setScreen(draft, "collection"));
+    mutateGameplayForTest((draft) => setSelectedLabyrinthNodeId(draft, "node-1"));
 
     expect(listener).not.toHaveBeenCalled();
 
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(setDiscoveredCardIds(draft, ["slash"])),
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => setDiscoveredCardIds(draft, ["slash"]));
     expect(listener).toHaveBeenCalledOnce();
     unsubscribe();
   });
 
   it("ignores claim locks and derived effects while saving reward payload changes", () => {
-    dispatchGameplayCommand((draft) => acceptCommand(getBattleForTest(draft)), undefined, defaultGameSession);
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.session.activity = { kind: "rewards" };
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => getBattleForTest(draft));
+    mutateGameplayForTest((draft) => {
+      draft.session.activity = { kind: "rewards" };
+    });
     const listener = vi.fn();
     const unsubscribe = subscribeAlchemyPersistence(listener, defaultGameSession);
 
     setRunSession({ rewardClaimInFlight: true });
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.runProfile.effects = { ...draft.runProfile.effects };
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      draft.runProfile.effects = { ...draft.runProfile.effects };
+    });
     expect(listener).not.toHaveBeenCalled();
 
     setRunSession({ rewardState: { ...readRunSession(defaultGameSession).rewardFlow.state, gold: 1 } });
@@ -312,19 +282,13 @@ describe("persistence coordinator", () => {
     const listener = vi.fn();
     const unsubscribe = subscribeAlchemyPersistence(listener, defaultGameSession);
 
-    dispatchGameplayCommand(
-      (draft) => {
-        setGold(draft, 42);
-        setHasActiveRun(draft, true);
-        setDiscoveredCardIds(draft, ["slash"]);
-        addGearCurrencies(draft.gear, { voidstone: 1 });
-        setRunProfileMaterials(draft, { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      setGold(draft, 42);
+      setHasActiveRun(draft, true);
+      setDiscoveredCardIds(draft, ["slash"]);
+      addGearCurrencies(draft.gear, { voidstone: 1 });
+      setRunProfileMaterials(draft, { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
+    });
 
     expect(listener).toHaveBeenCalledOnce();
     expect(readRunProfile(defaultGameSession).gold).toBe(42);

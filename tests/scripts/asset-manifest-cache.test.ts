@@ -332,25 +332,21 @@ describe("writeTextIfChanged", () => {
   });
 });
 
-describe("kebabToCamel", () => {
-  it("converts kebab-case basenames", () => {
-    expect(kebabToCamel("placeholder-destination")).toBe("placeholderDestination");
-    expect(kebabToCamel("gear-slot-main-hand")).toBe("gearSlotMainHand");
-  });
+it("kebabToCamel converts kebab-case basenames", () => {
+  expect(kebabToCamel("placeholder-destination")).toBe("placeholderDestination");
+  expect(kebabToCamel("gear-slot-main-hand")).toBe("gearSlotMainHand");
 });
 
-describe("sync-generated helpers", () => {
-  it("classifies generated WebP and gear assets", () => {
-    expect(WEBP_SUFFIX).toBe(".webp");
-    expect(GEAR_PREFIX).toBe("gear-");
-    expect(isWebpAsset("alchemy-logo.webp")).toBe(true);
-    expect(isWebpAsset("alchemy-logo.png")).toBe(false);
-    expect(isGearAsset("gear-sword-basic.webp")).toBe(true);
-    expect(isGearAsset("sword-basic.webp")).toBe(false);
-    expect(getAssetFiles({ "z.webp": {}, "a.png": {}, "a.webp": {} })).toEqual(["a.webp", "z.webp"]);
-    expect(getGearFiles({ "gear-z-basic.webp": {}, "a.webp": {}, "gear-a-basic.webp": {} })).toEqual([
-      "gear-a-basic.webp",
-      "gear-z-basic.webp",
-    ]);
-  });
+it("sync-generated helpers classifies generated WebP and gear assets", () => {
+  expect(WEBP_SUFFIX).toBe(".webp");
+  expect(GEAR_PREFIX).toBe("gear-");
+  expect(isWebpAsset("alchemy-logo.webp")).toBe(true);
+  expect(isWebpAsset("alchemy-logo.png")).toBe(false);
+  expect(isGearAsset("gear-sword-basic.webp")).toBe(true);
+  expect(isGearAsset("sword-basic.webp")).toBe(false);
+  expect(getAssetFiles({ "z.webp": {}, "a.png": {}, "a.webp": {} })).toEqual(["a.webp", "z.webp"]);
+  expect(getGearFiles({ "gear-z-basic.webp": {}, "a.webp": {}, "gear-a-basic.webp": {} })).toEqual([
+    "gear-a-basic.webp",
+    "gear-z-basic.webp",
+  ]);
 });

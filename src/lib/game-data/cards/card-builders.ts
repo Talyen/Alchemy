@@ -100,7 +100,6 @@ export function summonCompanionCard({ id, title, art, companionId, cost = 1 }: S
     })),
     art,
     cost,
-    consume: true,
     effects: [{ kind: "summon-companion", companionId }],
   };
 }

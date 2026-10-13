@@ -1,31 +1,18 @@
 import type { BattleCard, BattleCardEffect, BattleCardEffectKind } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "../types";
 
-export interface AttackBonuses {
-  flat: number;
-  physical: number;
-  bleed: number;
-}
-
 export interface CardEffectResolutionContext {
   forgeTriggers?: Set<string>;
   manaAtStart: number;
   enemyFreezeSkipTurnsAtStart: number;
   origin?: "played-card" | "triggered-card" | "companion";
-  // Execution-local pool shared by effects of one action, including play-twice.
-  // Consume at the attack-attempt boundary, even when the attack is dodged.
-  attackBonuses?: AttackBonuses;
+  // Coordinated Strike applies to one Companion attack, including a dodged attempt.
+  companionAttackBonus?: { amount: number };
   damageEffects?: Array<Extract<BattleCardEffect, { kind: "damage" }>>;
   onDamageDealt?: (amount: number) => void;
   damageMultiplier?: number;
   baseDamageBonus?: number;
   guaranteedCrit?: boolean;
-}
-
-export function consumeAttackBonuses(context: CardEffectResolutionContext | undefined): AttackBonuses {
-  const bonuses = { flat: 0, physical: 0, bleed: 0, ...context?.attackBonuses };
-  if (context?.attackBonuses) Object.assign(context.attackBonuses, { flat: 0, physical: 0, bleed: 0 });
-  return bonuses;
 }
 
 export function hasCardHealing(context: CardEffectResolutionContext | undefined): boolean {

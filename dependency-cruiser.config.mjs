@@ -36,6 +36,13 @@ const [META_RUN_LOOP, META_RUN_SETUP] = META_NO_RUN_LOOP;
 export default {
   forbidden: [
     {
+      name: "visits-initialize-only-at-room-entry",
+      severity: "error",
+      comment: "Room entry commits visits before navigation; presentation and retained commands cannot recreate them.",
+      from: { pathNot: "^src/features/alchemy/run-loop/run/room-entry-commands\\.ts$" },
+      to: { path: "^src/features/alchemy/run-loop/run/room-visit-initialization\\.ts$" },
+    },
+    {
       name: "application-singletons-belong-to-adapters",
       severity: "error",
       from: {
@@ -82,7 +89,9 @@ export default {
       severity: "error",
       comment: "Feature commands use readonly transactions and domain operations; hydration is trusted infrastructure.",
       from: { pathNot: "^src/features/alchemy/shared/(stores/|storage/persistence\\.ts$)" },
-      to: { path: "^src/features/alchemy/shared/stores/(gameplay-command|transaction-internal|readonly-view)\\.ts$" },
+      to: {
+        path: "^src/features/alchemy/shared/stores/(gameplay-command|transaction-internal|readonly-view|boundary-data|gear-session-command|gear-actions)\\.ts$",
+      },
     },
   ].map((rule) => ({
     ...rule,

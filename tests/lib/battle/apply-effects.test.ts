@@ -5,10 +5,8 @@ import type { CombatTextEvent } from "@/lib/battle/types";
 import { isPlayerDefeated } from "@/lib/battle/battle-outcome";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { blockDeck, makeState, makeTestCard, statusDeck } from "../../fixtures/battle";
-import { defaultPlayerStatusValues, defaultEnemyStatusValues } from "../../fixtures/default-battle-state";
 
 describe("applyCardEffects", () => {
-  const baseFlags = makeState().flags;
   it("applies player block status", () => {
     const state = makeState();
     const card = blockDeck(1)[0];
@@ -29,7 +27,6 @@ describe("applyCardEffects", () => {
   it("self-damage triggers Death's Door instead of defeat on first fatal hit", () => {
     const state = makeState({
       playerHealth: 1,
-      playerStatuses: defaultPlayerStatusValues(),
     });
     const card = makeTestCard({ effects: [{ kind: "self-damage", damageType: "bleed", amount: 5 }] });
     const texts: CombatTextEvent[] = [];
@@ -61,7 +58,7 @@ describe("applyCardEffects", () => {
     const state = makeState({
       enemyHealth: 30,
       hand: [card],
-      flags: { ...baseFlags, playNextCardTwice: true },
+      flags: { playNextCardTwice: true },
     });
     const result = playBattleCardResolved(state, "slash", 0);
     expect(result.state.enemyHealth).toBe(20);
@@ -76,14 +73,17 @@ describe("applyCardEffects", () => {
     const state = makeState({
       enemyHealth: 30,
       hand: [card],
-      flags: { ...baseFlags, nextHitCrit: true },
+      flags: { nextHitCrit: true },
     });
     const result = playBattleCardResolved(state, "slash", 0);
     expect(result.state.enemyHealth).toBe(20);
     expect(result.state.flags.nextHitCrit).toBe(false);
   });
 
-  it("guarantees a crit on cleanse-player-status-to-damage and consumes the flag", () => {
+  it.each([
+    [0, 28],
+    [4, 20],
+  ])("cleanses received Burn after %i existing stacks, critically hits, and consumes the flag", (burn, enemyHealth) => {
     const card = makeTestCard({
       id: "exorcism",
       effects: [
@@ -94,49 +94,45 @@ describe("applyCardEffects", () => {
     const state = makeState({
       enemyHealth: 30,
       hand: [card],
-      playerStatuses: defaultPlayerStatusValues({ burn: 4 }),
-      flags: { ...baseFlags, nextHitCrit: true },
+      playerStatuses: { burn },
+      flags: { nextHitCrit: true },
     });
     const result = playBattleCardResolved(state, "exorcism", 0);
-    expect(result.state.enemyHealth).toBe(20);
+    expect(result.state.enemyHealth).toBe(enemyHealth);
     expect(result.state.flags.nextHitCrit).toBe(false);
     expect(result.state.playerStatuses.burn).toBe(0);
   });
 });
 
-describe("applyCardEffects — phoenix-feather card", () => {
-  it("deals burn damage and grants phoenix feather status", () => {
-    const state = makeState({ enemyHealth: 20 });
-    const card = makeTestCard({
-      id: "phoenix-feather",
-      effects: [
-        { kind: "damage", damageType: "burn", amount: 1 },
-        { kind: "player-status", status: "phoenixFeather", amount: 1 },
-      ],
-    });
-    const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(state, card, texts);
-    expect(result.enemyHealth).toBe(19);
-    expect(result.enemyStatuses.burn).toBe(1);
-    expect(result.playerStatuses.phoenixFeather).toBe(1);
+it("applyCardEffects — phoenix-feather card deals burn damage and grants phoenix feather status", () => {
+  const state = makeState({ enemyHealth: 20 });
+  const card = makeTestCard({
+    id: "phoenix-feather",
+    effects: [
+      { kind: "damage", damageType: "burn", amount: 1 },
+      { kind: "player-status", status: "phoenixFeather", amount: 1 },
+    ],
   });
+  const texts: CombatTextEvent[] = [];
+  const result = applyCardEffects(state, card, texts);
+  expect(result.enemyHealth).toBe(19);
+  expect(result.enemyStatuses.burn).toBe(1);
+  expect(result.playerStatuses.phoenixFeather).toBe(1);
 });
 
-describe("applyCardEffects — unknown effect kind", () => {
-  it("ignores unknown effect kinds (default case)", () => {
-    const state = makeState({ mana: 3 });
-    const card = makeTestCard({ effects: [{ kind: "unknown" as never, amount: 99 }] });
-    const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(state, card, texts);
-    expect(result).toBe(state);
-    expect(texts).toEqual([]);
-  });
+it("applyCardEffects — unknown effect kind ignores unknown effect kinds (default case)", () => {
+  const state = makeState({ mana: 3 });
+  const card = makeTestCard({ effects: [{ kind: "unknown" as never, amount: 99 }] });
+  const texts: CombatTextEvent[] = [];
+  const result = applyCardEffects(state, card, texts);
+  expect(result).toBe(state);
+  expect(texts).toEqual([]);
 });
 
 describe("applyCardEffects — multiply-enemy-status", () => {
   it("doubles the stack with factor 2", () => {
     const state = makeState({
-      enemyStatuses: defaultEnemyStatusValues({ poison: 4 }),
+      enemyStatuses: { poison: 4 },
     });
     const card = makeTestCard({ effects: [{ kind: "multiply-enemy-status", status: "poison", factor: 2 }] });
     const texts: CombatTextEvent[] = [];
@@ -146,7 +142,7 @@ describe("applyCardEffects — multiply-enemy-status", () => {
 
   it("halves added stun stacks against a braced enemy like every other stack source", () => {
     const state = makeState({
-      enemyStatuses: defaultEnemyStatusValues({ stun: 3 }),
+      enemyStatuses: { stun: 3 },
       currentEnemy: {
         id: "braced-test-enemy",
         title: "Braced Test Enemy",
@@ -165,33 +161,27 @@ describe("applyCardEffects — multiply-enemy-status", () => {
   });
 });
 
-describe("applyCardEffects — remove-player-status", () => {
-  it("triggers Sin-Eater's Lantern heal on removal", () => {
-    const manifest = computeTrinketManifest(["sin-eaters-lantern"]);
-    const state = makeState({
-      playerStatuses: defaultPlayerStatusValues({ burn: 4 }),
-      playerHealth: 15,
-      trinketEffects: manifest,
-    });
-    const card = makeTestCard({ effects: [{ kind: "remove-player-status", status: "burn" }] });
-    const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(state, card, texts);
-    expect(result.playerStatuses.burn).toBe(0);
-    expect(result.playerHealth).toBe(21);
+it("applyCardEffects — remove-player-status triggers Sin-Eater's Lantern heal on removal", () => {
+  const manifest = computeTrinketManifest(["sin-eaters-lantern"]);
+  const state = makeState({
+    playerStatuses: { burn: 4 },
+    playerHealth: 15,
+    trinketEffects: manifest,
   });
+  const card = makeTestCard({ effects: [{ kind: "remove-player-status", status: "burn" }] });
+  const texts: CombatTextEvent[] = [];
+  const result = applyCardEffects(state, card, texts);
+  expect(result.playerStatuses.burn).toBe(0);
+  expect(result.playerHealth).toBe(21);
 });
 
-describe("applyCardEffects — enemy-status (fixture)", () => {
-  it("applies the full enemy status amount", () => {
-    const state = makeState({
-      enemyStatuses: defaultEnemyStatusValues(),
-    });
-    const card = makeTestCard({
-      effects: [{ kind: "enemy-status", status: "poison", amount: 4 }],
-    });
-    const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(state, card, texts);
-    expect(result.enemyStatuses.poison).toBe(4);
-    expect(texts).toEqual([{ target: "enemy", kind: "multiply", stat: "poison", amount: 4 }]);
+it("applyCardEffects — enemy-status (fixture) applies the full enemy status amount", () => {
+  const state = makeState({});
+  const card = makeTestCard({
+    effects: [{ kind: "enemy-status", status: "poison", amount: 4 }],
   });
+  const texts: CombatTextEvent[] = [];
+  const result = applyCardEffects(state, card, texts);
+  expect(result.enemyStatuses.poison).toBe(4);
+  expect(texts).toEqual([{ target: "enemy", kind: "multiply", stat: "poison", amount: 4 }]);
 });

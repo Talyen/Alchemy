@@ -94,6 +94,17 @@ describe("shared loot policy", () => {
     expect(resolveLootWeights({ ...input, astralChanceBonus: 1 })).toEqual(resolveLootWeights(input));
   });
 
+  it("applies depth and account scaling to transferred Astral weight too", () => {
+    const weights = resolveLootWeights({
+      source: "equipment",
+      progress: { depth: 4, highestCompletedDifficulty: "difficulty-3" },
+      astralChanceBonus: 0.5,
+    });
+    // Half the 0.7 Basic weight transfers before Astral's 0.2 depth and 1.3 account factors.
+    expect(weights.astral / weights.basic).toBeCloseTo(((0.25 + 0.35) * 0.2 * 1.3) / 0.35);
+    expect(weights.unique + weights.trinket).toBe(0);
+  });
+
   it("uses Basic Gear for an empty premium source and cards if no Gear is available", () => {
     const early = { depth: 1, highestCompletedDifficulty: null };
     const basic = resolveLootWeights({ source: "boss", progress: early });

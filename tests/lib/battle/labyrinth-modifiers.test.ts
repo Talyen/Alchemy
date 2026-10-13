@@ -247,9 +247,9 @@ describe("Labyrinth player benefits", () => {
 });
 
 describe("Labyrinth enemy modifiers", () => {
-  it("Unbreakable and Whitehot preserve enemy defenses and damage only", () => {
+  it("Unbreakable preserves Armor while enemy Forge persists through attacks", () => {
     const current = state({
-      currentEnemy: enemy("unbreakable", "whitehot"),
+      currentEnemy: enemy("unbreakable"),
       enemyMitigation: { armor: 2, forge: 3 },
     });
     const hit = play(current, attack());
@@ -346,6 +346,34 @@ describe("Labyrinth enemy modifiers", () => {
   it("Thick Hide reuses the existing 50% Physical resistance", () => {
     expect(play(state({ currentEnemy: enemy("thick-hide") }), attack("physical", 8)).enemyHealth).toBe(96);
   });
+
+  it.each([1, 10])(
+    "Whitehot starts with exactly 1 persistent Forge at room %i without replaying on resume",
+    (battleRooms) => {
+      const initial = createBattleState({
+        runDeck: [],
+        currentEnemy: { ...state().currentEnemy, traits: enemy("whitehot").traits },
+        contentSystemType: "labyrinth",
+        totalRooms: battleRooms,
+        rng: () => 0.99,
+        appliesFightPacing: false,
+      });
+      expect(initial.enemyMitigation.forge).toBe(1);
+      const hit = applyEnemyAbility(
+        initial,
+        makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 1 }] }),
+        [],
+      );
+      expect(hit.enemyMitigation.forge).toBe(1);
+      const resumed = normalizePersistedBattleState(JSON.parse(JSON.stringify(hit)));
+      expect(resumed.enemyMitigation.forge).toBe(1);
+      expect(resumed.currentEnemy.traits).toContainEqual(ENCOUNTER_TRAITS.whitehot.enemyTrait);
+      const purged = normalizePersistedBattleState(
+        JSON.parse(JSON.stringify({ ...hit, enemyMitigation: { ...hit.enemyMitigation, forge: 0 } })),
+      );
+      expect(purged.enemyMitigation.forge).toBe(0);
+    },
+  );
 
   it("Shielded Arrival grants six enemy Block before the first turn", () => {
     const next = createBattleState({

@@ -30,6 +30,7 @@ import { Surface } from "../surface";
 
 interface BattleCardButtonBaseProps {
   card: BattleCard;
+  comparisonCard?: BattleCard | undefined;
   onClick?: ((event: MouseEvent<HTMLButtonElement>) => void) | undefined;
   onPointerDown?: ((event: ReactPointerEvent<HTMLButtonElement>) => void) | undefined;
   buttonRef?: Ref<HTMLButtonElement> | undefined;
@@ -46,6 +47,7 @@ interface BattleCardButtonBaseProps {
   selected?: boolean;
   disabled?: boolean | undefined;
   ariaDisabled?: boolean | undefined;
+  ariaPressed?: boolean | undefined;
   dragging?: boolean | undefined;
   scaleOnHover?: boolean | undefined;
   descriptionContext?: CardDescriptionContext | undefined;
@@ -130,6 +132,7 @@ export function BattleCardButton(props: BattleCardButtonProps) {
     >
       <CardHoverPopup
         card={props.card}
+        comparisonCard={props.comparisonCard}
         visible={hovered && !dragging && !suppressTooltip}
         triggerRef={wrapperRef}
         descriptionContext={descriptionContext}
@@ -153,11 +156,12 @@ export function BattleCardButton(props: BattleCardButtonProps) {
 
 function CardHoverPopup({
   card,
+  comparisonCard,
   visible,
   triggerRef,
   descriptionContext,
   padding,
-}: Pick<BattleCardButtonProps, "card"> & {
+}: Pick<BattleCardButtonProps, "card" | "comparisonCard"> & {
   visible: boolean;
   triggerRef: RefObject<HTMLElement | null>;
   descriptionContext: CardDescriptionContext;
@@ -167,6 +171,20 @@ function CardHoverPopup({
     () => (visible ? getEffectiveCardDescriptionLines(card, descriptionContext) : []),
     [visible, card, descriptionContext],
   );
+  const newLineIndices = useMemo(() => {
+    if (!visible || !comparisonCard) return undefined;
+    const remaining = new Map<string, number>();
+    for (const line of getEffectiveCardDescriptionLines(comparisonCard, descriptionContext)) {
+      remaining.set(line, (remaining.get(line) ?? 0) + 1);
+    }
+    const changed = new Set<number>();
+    descriptionLines.forEach((line, index) => {
+      const count = remaining.get(line) ?? 0;
+      if (count > 0) remaining.set(line, count - 1);
+      else changed.add(index);
+    });
+    return changed;
+  }, [visible, comparisonCard, descriptionContext, descriptionLines]);
   const plasmaColorPair = useMemo(() => (visible ? getPlasmaColorPairForCard(card) : null), [visible, card]);
   return (
     <DetailPopup
@@ -174,6 +192,7 @@ function CardHoverPopup({
       title={<CardTitle card={card} />}
       subtitle={undefined}
       descriptionLines={descriptionLines}
+      newLineIndices={newLineIndices}
       visible={visible}
       triggerRef={triggerRef}
       plasmaColorPair={plasmaColorPair}
@@ -200,6 +219,7 @@ function CardButtonSurface({
   selected = false,
   disabled = false,
   ariaDisabled,
+  ariaPressed,
   dragging = false,
   scaleOnHover = true,
   shineColor,
@@ -219,6 +239,7 @@ function CardButtonSurface({
       shimmerActive={shimmerActive}
       shimmerToken={shimmerToken}
       selected={selected}
+      {...(ariaPressed !== undefined ? { ariaPressed } : {})}
       disabled={disabled}
       {...(ariaDisabled !== undefined ? { ariaDisabled } : {})}
       dragging={dragging}

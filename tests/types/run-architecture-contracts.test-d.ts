@@ -11,6 +11,8 @@ import {
 import type { GearDraftView } from "@/features/alchemy/shared/stores/gear-store-types";
 import { describe, expectTypeOf, it } from "vitest";
 import type { BattleCard } from "@/lib/game-data";
+import type { BattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import type { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import type { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
 import type { AlchemyRouteCommands, AlchemyRunCommands } from "@/features/alchemy/shell/route-commands";
 import type { RunFlowHandlerDeps } from "@/features/alchemy/run-loop/run/run-flow";
@@ -26,9 +28,16 @@ import {
 import {
   dispatchGearMutationWithRunHealthSync,
   mutateGearWithRunHealthSync,
+  dispatchGearSalvageWithMaterialGrant,
 } from "@/features/alchemy/shared/stores/gear-session-command";
 import { commitEndTurn, createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
+import type { GameSession } from "@/features/alchemy/shared/stores/game-session";
+import {
+  abandonRun,
+  applyRunDefeatTeardown,
+  finalizeRunEndSession,
+} from "@/features/alchemy/shared/stores/run-lifecycle";
 
 declare const asyncMutation: () => Promise<void>;
 declare const maybeAsyncMutation: () => number | PromiseLike<number>;
@@ -50,6 +59,14 @@ type NonDraftFirstWrite = Exclude<
 >;
 
 describe("run architecture type contracts", () => {
+  it("keeps run settlement complete and store-owned", () => {
+    expectTypeOf<Extract<keyof WritePort, "awardRunEndMaterials" | "finalizeRunXP">>().toEqualTypeOf<never>();
+    expectTypeOf(finalizeRunEndSession).parameters.toEqualTypeOf<[GameSession]>();
+    expectTypeOf<ReturnType<typeof finalizeRunEndSession>>().toEqualTypeOf<boolean>();
+    expectTypeOf(applyRunDefeatTeardown).parameters.toEqualTypeOf<[GameSession]>();
+    expectTypeOf(abandonRun).parameters.toEqualTypeOf<[GameSession]>();
+  });
+
   it("requires shop exits to identify the activity that offered Continue", () => {
     type Continue = AlchemyRouteCommands["runLoop"]["shop"]["continue"];
     expectTypeOf<Continue>().parameters.toEqualTypeOf<["shop" | "alchemist" | "trinket-shop" | "equipment-shop"]>();
@@ -75,7 +92,7 @@ describe("run architecture type contracts", () => {
       Extract<keyof BattleApi, "playBattleCardResolved" | "chooseWishCard" | "endPlayerTurn" | "resolveTurnSequence">
     >().toEqualTypeOf<never>();
   });
-  it("requires a career for reusable reads, writes, and persistence while bound methods need none", () => {
+  it("requires a career for reusable ports and an offered snapshot for bound combat input", () => {
     // @ts-expect-error -- missing ownership must never select the application career
     readBattle();
     // @ts-expect-error -- combat writes require an owner
@@ -84,7 +101,14 @@ describe("run architecture type contracts", () => {
     dispatchRunSessionCommand(() => acceptCommand());
     // @ts-expect-error -- save IO cannot choose a career implicitly
     saveAlchemySaveData({} as UnstampedSaveData);
-    expectTypeOf(createBattleCapabilities(defaultGameSession).endTurn).parameters.toEqualTypeOf<[]>();
+    const battle = createBattleCapabilities(defaultGameSession);
+    expectTypeOf(battle.endTurn).parameters.toEqualTypeOf<[BattleSnapshot]>();
+    // @ts-expect-error -- retained commands cannot silently target the latest turn
+    battle.endTurn();
+    // @ts-expect-error -- card input must carry its offered snapshot
+    battle.playCard(0, "slash");
+    // @ts-expect-error -- Wish IDs can recur in a later queue
+    battle.chooseWish("slash");
     expectTypeOf(createSessionPersistence(defaultGameSession).snapshot).parameters.toEqualTypeOf<[]>();
     expectTypeOf(createSessionPersistence(defaultGameSession).clear).parameters.toEqualTypeOf<
       [("default" | "localWipe")?]
@@ -155,10 +179,17 @@ describe("run architecture type contracts", () => {
           gear.inventories.knight[0]!.affixes[0]!.value = 99;
           // @ts-expect-error -- loadout edits must use equip/unequip
           gear.loadouts.knight.body = null;
+          // @ts-expect-error -- salvage cannot bypass its payout and run-accounting owner
+          gear.salvage("item");
         },
       },
       defaultGameSession,
     );
+  });
+
+  it("accepts only item identity for salvage, never a payout callback", () => {
+    // @ts-expect-error -- the settlement owner resolves an item ID, not a supplied payout
+    dispatchGearSalvageWithMaterialGrant(() => null, defaultGameSession);
   });
 
   it("rejects asynchronous results at every generic command entry point", () => {
@@ -212,14 +243,14 @@ describe("run architecture type contracts", () => {
       },
       defaultGameSession,
     );
-    const command = createRunSessionCommand(
+    const command = createRunSessionCommand<[gold: number, label: string], { gold: number; label: string }>(
       (_draft, gold: number, label: string) => acceptCommand({ gold, label }),
       undefined,
       defaultGameSession,
     );
     expectTypeOf(command).toEqualTypeOf<(gold: number, label: string) => { gold: number; label: string }>();
     expectTypeOf(
-      dispatchGearMutationWithRunHealthSync({ mutate: () => true }, defaultGameSession),
+      dispatchGearMutationWithRunHealthSync({ mutate: (): boolean => true }, defaultGameSession),
     ).toEqualTypeOf<boolean>();
     expectTypeOf(mutateGearWithRunHealthSync(draft, { mutate: (): number | null => null })).toEqualTypeOf<
       number | null
@@ -232,9 +263,14 @@ describe("run architecture type contracts", () => {
 
   it("keeps battle commands draft-sourced and run-flow controllers capability-specific", () => {
     type BattleProps = Parameters<typeof useBattleController>[0];
+    expectTypeOf<Pick<BattleProps, "gameSession" | "presentation">>().toEqualTypeOf<{
+      gameSession: GameSession;
+      presentation: BattlePresentationStore;
+    }>();
+    expectTypeOf<Parameters<typeof useAlchemyRunController>>().toEqualTypeOf<[GameSession, BattlePresentationStore]>();
 
     expectTypeOf<Extract<keyof BattleProps, "run" | "talents" | "homesteadEffects">>().toEqualTypeOf<never>();
-    expectTypeOf<keyof RunFlowHandlerDeps>().toEqualTypeOf<"actions" | "getAvailableDestinations">();
+    expectTypeOf<keyof RunFlowHandlerDeps>().toEqualTypeOf<"actions">();
   });
 
   it("keeps display data out of the shell command controller", () => {

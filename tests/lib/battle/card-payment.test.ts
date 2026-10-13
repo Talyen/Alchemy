@@ -79,7 +79,7 @@ describe("card payment", () => {
     const state = patchBattleState({
       mana: 0,
       hand: [card],
-      talentEffects: { firstHolyCardFree: true, firstArcheryCardFree: true },
+      talentEffects: { firstBurnCardFree: true },
       flags: { nextArcheryCardFree: true },
       gearEffects: { blockReadiesFreePhysical: 1 },
       uniqueGear: { knightsAnswerReady: true },
@@ -88,16 +88,15 @@ describe("card payment", () => {
     });
     const payment = computeCardPayment(state, card);
     expect(payment.effectiveCost).toBe(0);
-    expect(payment.consumedFlags).toEqual(new Set(["firstHolyCardFreeUsed", "encounterArcheryUsed"]));
+    expect(payment.consumedFlags).toEqual(new Set(["firstBurnCardFreeUsed", "encounterArcheryUsed"]));
     expect(payment.disarmedFlags.size).toBe(0);
     expect(payment.uniqueDiscounts).toEqual({});
     expect(canPlayCard(state, card, 0)).toBe(true);
     expect(canPlayCard(state, card, 0)).toBe(true);
-    expect(state.flags.firstHolyCardFreeUsed).toBe(false);
+    expect(state.flags.firstBurnCardFreeUsed).toBe(false);
     const result = playBattleCardResolved(state, card.id, 0).state;
     expect(result.flags).toMatchObject({
-      firstHolyCardFreeUsed: true,
-      firstArcheryCardFreeUsed: false,
+      firstBurnCardFreeUsed: true,
       nextArcheryCardFree: true,
       encounterArcheryUsed: true,
     });
@@ -106,19 +105,19 @@ describe("card payment", () => {
   });
 
   it("preserves free-card perks and the armed discount when playing a saved zero-cost card", () => {
-    const free = makeTestCard({ id: "saved-free", cost: 0, tags: ["archery"], effects: [] });
-    const paid = makeTestCard({ id: "paid", cost: 1, tags: ["archery"], effects: [] });
+    const free = makeTestCard({ id: "saved-free", cost: 0, tags: ["archery", "burn"], effects: [] });
+    const paid = makeTestCard({ id: "paid", cost: 1, tags: ["archery", "burn"], effects: [] });
     const state = patchBattleState({
       mana: 0,
       hand: [free, paid],
-      talentEffects: { firstArcheryCardFree: true },
+      talentEffects: { firstBurnCardFree: true },
       flags: { nextCardCostReduction: 1 },
     });
     const afterFree = playBattleCardResolved(state, free.id, 0).state;
-    expect(afterFree.flags.firstArcheryCardFreeUsed).toBe(false);
+    expect(afterFree.flags.firstBurnCardFreeUsed).toBe(false);
     expect(afterFree.flags.nextCardCostReduction).toBe(1);
     const afterPaid = playBattleCardResolved(afterFree, paid.id, 0).state;
-    expect(afterPaid.flags.firstArcheryCardFreeUsed).toBe(true);
+    expect(afterPaid.flags.firstBurnCardFreeUsed).toBe(true);
     expect(afterPaid.flags.nextCardCostReduction).toBe(1);
     expect(afterPaid.hand).toHaveLength(0);
   });
@@ -133,7 +132,7 @@ describe("card payment", () => {
 
   it("rejects controlled plays without spending free-card opportunities or RNG", () => {
     const rng = vi.fn(() => 0.99);
-    const card = makeTestCard({ cost: 2, tags: ["archery"], effects: [] });
+    const card = makeTestCard({ cost: 2, tags: ["archery", "burn"], effects: [] });
     const state = patchBattleState({
       hand: [card],
       flags: { nextArcheryCardFree: true },

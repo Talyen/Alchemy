@@ -1,4 +1,3 @@
-import type { DestinationOptionsInput } from "@/features/alchemy/shared/run-flow";
 import type { BattleStarted } from "@/features/alchemy/shared/stores/battle-start-commands";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-lifecycle";
@@ -7,7 +6,7 @@ import {
   bindSessionCapabilities,
   sessionFeedback,
 } from "@/features/alchemy/shared/stores/session-capabilities";
-import type { Destination, Screen, ScreenTransitionOptions } from "@/lib/routing";
+import type { Screen, ScreenTransitionOptions } from "@/lib/routing";
 import { createProgressionCommands } from "./progression-commands";
 import { claimRunReward, finishRewardClaim } from "./reward-commands";
 import { createDefeatHandlers } from "./run-flow-defeat";
@@ -27,29 +26,22 @@ export type AdvanceToNextDestination = (expectedActivity: Screen) => void;
 
 export interface RunFlowHandlerDeps {
   actions: RunFlowShellActions;
-  getAvailableDestinations: (options?: DestinationOptionsInput) => Destination[];
 }
 
 export interface RunOutcomeDeps {
   actions: Pick<RunFlowShellActions, "navigateTo" | "transition" | "clearCardHover">;
-  getAvailableDestinations: RunFlowHandlerDeps["getAvailableDestinations"];
 }
 
 export function createRunOutcomes(deps: RunOutcomeDeps, gameSession: GameSession) {
-  assertSessionOwnership(gameSession, deps.actions, deps.getAvailableDestinations);
+  assertSessionOwnership(gameSession, deps.actions);
   const victory = createVictoryHandlers(deps, gameSession);
   const defeat = createDefeatHandlers(deps, gameSession);
   return bindSessionCapabilities(gameSession, {
     victory,
     defeat,
-    getAvailableDestinations: deps.getAvailableDestinations,
     connect(actions: RunFlowShellActions) {
       assertSessionOwnership(gameSession, actions);
-      return composeRunFlow(
-        { actions, getAvailableDestinations: deps.getAvailableDestinations },
-        { victory, defeat },
-        gameSession,
-      );
+      return composeRunFlow({ actions }, { victory, defeat }, gameSession);
     },
   });
 }
@@ -85,7 +77,7 @@ function composeRunFlow(
 }
 
 function createProgressionHandlers(deps: RunFlowHandlerDeps, gameSession: GameSession) {
-  const commands = createProgressionCommands(deps.getAvailableDestinations, gameSession);
+  const commands = createProgressionCommands(gameSession);
   function advanceToNextDestination(expectedActivity: Screen) {
     const nextScreen = commands.leaveVisit(expectedActivity);
     if (!nextScreen) return;
@@ -104,7 +96,7 @@ function createRewardHandlers(
   gameSession: GameSession,
 ) {
   function finishRewards(choiceId: string | null) {
-    const commit = claimRunReward(choiceId, gameSession, deps.getAvailableDestinations);
+    const commit = claimRunReward(choiceId, gameSession);
     if (!commit) return;
     const releaseClaim = () => finishRewardClaim(gameSession);
     if (commit.result.selectedReward) sessionFeedback(gameSession).playUISound("talentUnlock");

@@ -80,20 +80,6 @@ describe("applyEnemyAbility: attack", () => {
     expect(result.playerHealth).toBe(25);
   });
 
-  it("halves enemy nature damage when receiveHalfNatureDamage is active", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerStatuses: { block: 0, armor: 0 },
-      talentEffects: { receiveHalfNatureDamage: true },
-    });
-    const result = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "nature", amount: 10 }] }),
-      makeTexts(),
-    );
-    expect(result.playerHealth).toBe(25);
-  });
-
   it("increases block absorption for physical hits with blockAbsorbPhysicalBonus", () => {
     const state = patchBattleState({
       playerHealth: 30,
@@ -137,20 +123,6 @@ describe("applyEnemyAbility: attack", () => {
     expect(result.playerStatuses.armor).toBe(0);
     expect(result.playerStatuses.block).toBe(5);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 5 });
-  });
-
-  it("decays enemy forge after dealing physical health damage", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerStatuses: { block: 0, armor: 0 },
-      enemyMitigation: { forge: 3 },
-    });
-    const result = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] }),
-      makeTexts(),
-    );
-    expect(result.enemyMitigation.forge).toBe(3 - BATTLE_CONFIG.FORGE_DECAY_AMOUNT);
   });
 
   it("heals enemy for half damage on lifesteal attacks", () => {

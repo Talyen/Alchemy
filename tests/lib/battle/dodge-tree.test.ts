@@ -2,30 +2,25 @@ import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { tryDodgeEnemyAttackPacket, tryDodgePlayerAttackPacket } from "@/lib/battle/dodge";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
-import { addPlayerStatus } from "@/lib/battle/status-state";
-import { applyPlayerDamageStatuses } from "@/lib/battle/status-player";
-import { resolvePlayerCrowdControlTriggers } from "@/lib/battle/status-cc";
 import { computeTalentEffects, getTalentsForKeyword, getTalentRows, tryUnlockTalent } from "@/lib/game-data";
 import { dealDamage, incomingPhysical, makeEffect, makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 const dodgeTalents = getTalentsForKeyword("dodge");
 const fullTree = computeTalentEffects({ dodge: dodgeTalents.map((talent) => talent.id) });
 
-describe("Dodge tree progression", () => {
-  it("offers ten real talents in four gated rows", () => {
-    expect(getTalentRows("dodge").map((row) => row.length)).toEqual([1, 2, 3, 4]);
-    expect(tryUnlockTalent("dodge", "dodge-lightfoot", { dodge: 19 }, {}).unlockedTalents).toBeNull();
-    const first = tryUnlockTalent("dodge", "dodge-lightfoot", { dodge: 20 }, {});
-    expect(first.unlockedTalents).toEqual({ dodge: ["dodge-lightfoot"] });
-    expect(tryUnlockTalent("dodge", "dodge-feint", { dodge: 1100 }, {}).unlockedTalents).toBeNull();
-    let unlocked = {};
-    for (const talent of dodgeTalents) {
-      const result = tryUnlockTalent("dodge", talent.id, { dodge: 1100 }, unlocked);
-      expect(result.unlockedTalents).not.toBeNull();
-      unlocked = result.unlockedTalents!;
-    }
-    expect(unlocked).toEqual({ dodge: dodgeTalents.map((talent) => talent.id) });
-  });
+it("Dodge tree progression offers ten real talents in four gated rows", () => {
+  expect(getTalentRows("dodge").map((row) => row.length)).toEqual([1, 2, 3, 4]);
+  expect(tryUnlockTalent("dodge", "dodge-lightfoot", { dodge: 19 }, {}).unlockedTalents).toBeNull();
+  const first = tryUnlockTalent("dodge", "dodge-lightfoot", { dodge: 20 }, {});
+  expect(first.unlockedTalents).toEqual({ dodge: ["dodge-lightfoot"] });
+  expect(tryUnlockTalent("dodge", "dodge-feint", { dodge: 1100 }, {}).unlockedTalents).toBeNull();
+  let unlocked = {};
+  for (const talent of dodgeTalents) {
+    const result = tryUnlockTalent("dodge", talent.id, { dodge: 1100 }, unlocked);
+    expect(result.unlockedTalents).not.toBeNull();
+    unlocked = result.unlockedTalents!;
+  }
+  expect(unlocked).toEqual({ dodge: dodgeTalents.map((talent) => talent.id) });
 });
 
 describe("Dodge chance", () => {
@@ -94,7 +89,7 @@ describe("Dodge tree rewards", () => {
     expect(state.playerStatuses).toMatchObject({ armor: 0, forge: 0, thorns: 0 });
   });
 
-  it("Clean Getaway reduces each status and rewards each completely removed harmful status", () => {
+  it("Clean Getaway reduces each status and triggers cleanse rewards once only for complete removal", () => {
     const state = incomingPhysical({
       playerHealth: 50,
       playerStatuses: { burn: 1, poison: 2, bleed: 1, freeze: 3, stun: 3 },
@@ -106,7 +101,7 @@ describe("Dodge tree rewards", () => {
       [],
     );
     expect(result.playerStatuses).toMatchObject({ burn: 0, poison: 1, bleed: 0, freeze: 3, stun: 3 });
-    expect(result.playerHealth).toBe(58);
+    expect(result.playerHealth).toBe(54);
     const partial = applyEnemyAbility(
       incomingPhysical({
         playerHealth: 50,
@@ -139,54 +134,5 @@ describe("Dodge tree rewards", () => {
     const hit = dealDamage({ ...dodged, rng: () => 0.99 }, makeTestCard({ effects: [makeEffect("physical", 5)] }));
     expect(hit.enemyHealth).toBe(81);
     expect(hit.flags.nextHitPhysicalBonus).toBe(0);
-  });
-
-  it("retains existing Riposte and Footwork alongside new rewards", () => {
-    const result = applyEnemyAbility(
-      incomingPhysical({
-        talentEffects: { ...fullTree, physicalOnDodgeEqualToAttack: true, blockOnDodgeEqualToAttack: true },
-      }),
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
-      [],
-    );
-    expect(result.playerStatuses.block).toBe(8);
-    expect(result.playerStatuses.armor).toBe(2);
-    expect(result.enemyHealth).toBeLessThan(100);
-    expect(result.playerDodgeCount).toBe(1);
-  });
-});
-
-describe("Rolling Recovery", () => {
-  it.each([
-    [4, 10, 4],
-    [5, 10, 5],
-    [6, 10, 5],
-    [10, 10, 9],
-    [4.5, 0, 5],
-  ])("rounds incoming %s Stun with %s percent reduction to %s", (amount, reduction, expected) => {
-    const state = patchBattleState({
-      talentEffects: { stunBuildupReductionPercent: reduction },
-      playerStatuses: { stun: 2 },
-    });
-    expect(addPlayerStatus(state, "stun", amount).playerStatuses.stun).toBe(2 + expected);
-    expect(applyPlayerDamageStatuses(state, { damageType: "stun" }, amount).playerStatuses.stun).toBe(2 + expected);
-  });
-
-  it("does not reduce Health damage and scales buildup before the Stun threshold", () => {
-    const result = applyEnemyAbility(
-      incomingPhysical({
-        rng: () => 0.99,
-        playerHealth: 100,
-        playerStatuses: { stun: 40 },
-        talentEffects: { stunBuildupReductionPercent: 10 },
-      }),
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "stun", amount: 10 }] }),
-      [],
-    );
-    expect(result.playerHealth).toBe(90);
-    expect(result.playerStatuses.stun).toBe(49);
-    expect(result.playerCC.stunSkipTurns).toBe(0);
-    const stunned = resolvePlayerCrowdControlTriggers(addPlayerStatus(result, "stun", 1), []);
-    expect(stunned.playerCC.stunSkipTurns).toBeGreaterThan(0);
   });
 });

@@ -6,7 +6,7 @@ export {
   getImmediateDefense,
   pickHighestScoring,
 } from "./autoplay-policy";
-export { getBattleCardPlayTarget, getBattleCardTransmutationRole, isAttackCard } from "./card-classification";
+export { getBattleCardPlayTarget, isAttackCard } from "./card-classification";
 export { computeCardPayment } from "./card-cost-rules";
 export { canPlayCard, type CardPlayOptions } from "./card-play";
 export { projectEnemyDotDamage } from "./dot-resolve";
@@ -15,7 +15,7 @@ export { processCompanionTurnStart } from "./companion";
 export { getBattleCompanionDamageModifiers } from "./companion-scaling";
 export { drawCards } from "./draw";
 export { applyCardEffects } from "./effect-handlers";
-export { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "./enemy-turn-traits";
+export { collectUncoveredEnemyTraitIds } from "./enemy-turn-traits";
 export { getActiveCcKeyword, isCcControlled, type ActiveCcKeyword } from "./status-cc";
 export { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 export type * from "./types/state-types";
@@ -40,3 +40,5 @@ export {
 export { createUniqueGearBattleState } from "./unique-gear-state";
 
 export type { BattleTurnFrame, ResolvedBattleTurn } from "./enemy-turn";
+
+export { getEncounterEnemyAbility, getEncounterEnemyTrait, type EnemyDescriptionContext } from "./enemy-description";

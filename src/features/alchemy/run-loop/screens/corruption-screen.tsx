@@ -125,6 +125,7 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
         <div className="col-start-3 flex flex-col items-center">
           <BattleCardButton
             card={result.corruptedCard}
+            comparisonCard={result.originalCard}
             ariaLabel={`Result: ${getCardDisplayTitle(result.corruptedCard)}`}
             shimmerActive={false}
             shimmerToken={undefined}

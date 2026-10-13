@@ -15,7 +15,6 @@ import {
   abandonCurrentRun,
 } from "@/features/alchemy/run-loop/run/run-end-commands";
 import { snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { DESTINATIONS } from "@/lib/routing";
 import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { defaultGameSession } from "@/app/application-session";
@@ -25,7 +24,6 @@ function deps() {
     navigateTo: vi.fn(),
     resumeTo: vi.fn(),
     presentBattleStart: vi.fn(),
-    getAvailableDestinations: () => [DESTINATIONS.NORMAL_COMBAT],
     onResumeWildwood: vi.fn(),
   };
 }

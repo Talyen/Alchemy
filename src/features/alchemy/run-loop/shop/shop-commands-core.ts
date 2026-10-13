@@ -7,14 +7,16 @@ import {
   setRunActivityData,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readActivityData, type RunActivityData } from "@/lib/active-run-session";
-import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
+import type { BattleCard } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import type { ShopRefreshModifiers } from "./shop-action-types";
 import { getShopRefreshPrice, type ShopBuyPriceContext, type ShopRefreshKind } from "./shop-pricing";
 import {
   resolveDraftShopModifiers,
+  resolveDraftShopEffects,
   resolveDraftShopPricingContext,
   resolveReadShopModifiers,
+  resolveReadShopEffects,
   resolveReadShopPricingContext,
   type ShopSessionStateKey,
 } from "./shop-pricing-context";
@@ -37,22 +39,25 @@ const SHOP_STATE_KEY: Record<ShopActivity, ShopSessionStateKey> = {
 
 export function createGetRefreshPrice(
   activity: ShopActivity,
-  talentEffects: TalentEffectManifest,
   gameSession: GameSession,
 ): (refreshesLeft: number, modifiers?: ShopRefreshModifiers, freeRefreshUsed?: boolean) => number {
   return (refreshesLeft, modifiers = resolveReadShopModifiers(gameSession), freeRefreshUsed = false) =>
-    getShopRefreshPrice(REFRESH_KIND[activity], talentEffects, refreshesLeft, modifiers, freeRefreshUsed);
+    getShopRefreshPrice(
+      REFRESH_KIND[activity],
+      resolveReadShopEffects(gameSession).talentEffects,
+      refreshesLeft,
+      modifiers,
+      freeRefreshUsed,
+    );
 }
 
 export function createShopRefreshAction<K extends ShopActivity>(
   {
     activity,
-    talentEffects,
     resample,
     guard,
   }: {
     activity: K;
-    talentEffects: TalentEffectManifest;
     resample: (
       draft: RunTransaction,
       state: RunActivityData[NoInfer<K>],
@@ -69,6 +74,7 @@ export function createShopRefreshAction<K extends ShopActivity>(
         const state = readActivityData(snapshotTransactionValue(draft.session.activity), activity);
         if (guard && !guard(draft, state)) return { committed: false, price: 0, value: null };
         const modifiers = resolveDraftShopModifiers(draft);
+        const { talentEffects } = resolveDraftShopEffects(draft);
         const quotedPrice = getShopRefreshPrice(
           REFRESH_KIND[activity],
           talentEffects,
@@ -117,7 +123,6 @@ interface ShopItemByActivity {
 }
 
 interface ShopPurchaseConfig<K extends ShopActivity> {
-  talentEffects: TalentEffectManifest;
   activity: K;
   itemsOf: (state: RunActivityData[NoInfer<K>]) => ReadonlyArray<ShopItemByActivity[NoInfer<K>]>;
   slotKeyOf: (item: ShopItemByActivity[NoInfer<K>], index: number) => string;
@@ -135,10 +140,7 @@ export function createShopPurchaseActions<K extends ShopActivity>(
   getBuyPrice: (item: ShopItemByActivity[K]) => number;
 } {
   const getBuyPrice = (item: ShopItemByActivity[K]) =>
-    config.priceOf(
-      item,
-      resolveReadShopPricingContext(config.talentEffects, SHOP_STATE_KEY[config.activity], gameSession),
-    );
+    config.priceOf(item, resolveReadShopPricingContext(SHOP_STATE_KEY[config.activity], gameSession));
 
   function buy(requested: ShopItemByActivity[K], slotKey: string): boolean {
     return runShopTransaction(
@@ -150,7 +152,7 @@ export function createShopPurchaseActions<K extends ShopActivity>(
           return { committed: false, price: 0, value: undefined };
         }
         // Price and acquire the live shelf item; callers may hold an older copy.
-        const price = config.priceOf(offered, resolveDraftShopPricingContext(config.talentEffects, draft, state));
+        const price = config.priceOf(offered, resolveDraftShopPricingContext(draft, state));
         if (
           (config.isAvailable && !config.isAvailable(draft, offered)) ||
           readDraftGold(draft) < price ||

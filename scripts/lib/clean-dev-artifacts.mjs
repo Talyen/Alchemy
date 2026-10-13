@@ -26,7 +26,18 @@ export const BUILD_ARTIFACT_DIRS = Object.freeze(["dist", "dist-demo", "release-
 export function listArtifactDirsToRemove(rootDir, options = {}) {
   const relativeDirs = options.builds ? [...DEFAULT_ARTIFACT_DIRS, ...BUILD_ARTIFACT_DIRS] : [...DEFAULT_ARTIFACT_DIRS];
 
-  return relativeDirs.map((relative) => path.join(rootDir, relative)).filter((absolute) => fs.existsSync(absolute));
+  return relativeDirs.flatMap((relative) => {
+    const segments = relative.split("/");
+    // Worktrees link node_modules to the original checkout. Never descend
+    // through that link to delete another checkout's cache; removing a target
+    // that is itself a symlink remains safe because rm unlinks it.
+    for (let index = 1; index < segments.length; index++) {
+      const parent = fs.lstatSync(path.join(rootDir, ...segments.slice(0, index)), { throwIfNoEntry: false });
+      if (!parent?.isDirectory() || parent.isSymbolicLink()) return [];
+    }
+    const absolute = path.join(rootDir, relative);
+    return fs.lstatSync(absolute, { throwIfNoEntry: false }) ? [absolute] : [];
+  });
 }
 
 /**

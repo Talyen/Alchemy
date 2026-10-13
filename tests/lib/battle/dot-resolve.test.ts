@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { applyEnemyDotDamage, dealEnemyDotTick, detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { BATTLE_CONFIG } from "@/lib/game-constants";
-import { defaultEnemyMitigation, defaultEnemyStatusValues } from "../../fixtures/default-battle-state";
 import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/battle";
 
 describe("applyEnemyDotDamage", () => {
   it("sums pulses into one health transition and applies every stack update", () => {
     const state = patchBattleState({
       enemyHealth: 40,
-      enemyStatuses: defaultEnemyStatusValues({ burn: 8, poison: 5 }),
+      enemyStatuses: { burn: 8, poison: 5 },
     });
     const next = applyEnemyDotDamage(
       state,
@@ -27,7 +26,7 @@ describe("applyEnemyDotDamage", () => {
     const state = patchBattleState({
       enemyHealth: 1,
       playerHealth: 20,
-      enemyStatuses: defaultEnemyStatusValues({ burn: 1 }),
+      enemyStatuses: { burn: 1 },
       gearEffects: { healOnBurnEnemyDefeated: 6 },
     });
     const next = applyEnemyDotDamage(state, [{ status: "burn", finalDamage: 1, nextStacks: 0 }], makeTexts());
@@ -39,7 +38,7 @@ describe("applyEnemyDotDamage", () => {
   it("decays enemy armor once for the summed pulse damage", () => {
     const state = patchBattleState({
       enemyHealth: 30,
-      enemyMitigation: defaultEnemyMitigation({ armor: 3 }),
+      enemyMitigation: { armor: 3 },
     });
     const next = applyEnemyDotDamage(
       state,
@@ -56,7 +55,7 @@ describe("applyEnemyDotDamage", () => {
   it("runs optional riders after stack updates", () => {
     const state = patchBattleState({
       enemyHealth: 20,
-      enemyStatuses: defaultEnemyStatusValues({ poison: 4 }),
+      enemyStatuses: { poison: 4 },
     });
     const next = applyEnemyDotDamage(
       state,
@@ -94,16 +93,14 @@ describe("applyEnemyDotDamage", () => {
   });
 });
 
-describe("dealEnemyDotTick", () => {
-  it("is a single-pulse applyEnemyDotDamage", () => {
-    const state = patchBattleState({
-      enemyHealth: 20,
-      enemyStatuses: defaultEnemyStatusValues({ burn: 6 }),
-    });
-    const next = dealEnemyDotTick(state, "burn", 6, 3, makeTexts());
-    expect(next.enemyHealth).toBe(14);
-    expect(next.enemyStatuses.burn).toBe(3);
+it("dealEnemyDotTick is a single-pulse applyEnemyDotDamage", () => {
+  const state = patchBattleState({
+    enemyHealth: 20,
+    enemyStatuses: { burn: 6 },
   });
+  const next = dealEnemyDotTick(state, "burn", 6, 3, makeTexts());
+  expect(next.enemyHealth).toBe(14);
+  expect(next.enemyStatuses.burn).toBe(3);
 });
 
 describe("detonateEnemyStatuses", () => {
@@ -163,7 +160,7 @@ describe("detonateEnemyStatuses", () => {
   it("is a no-op when none of the requested statuses have stacks", () => {
     const state = patchBattleState({
       enemyHealth: 20,
-      enemyStatuses: defaultEnemyStatusValues({ burn: 4 }),
+      enemyStatuses: { burn: 4 },
     });
     expect(detonateEnemyStatuses(state, ["bleed", "poison"], makeTexts())).toBe(state);
   });
@@ -171,7 +168,7 @@ describe("detonateEnemyStatuses", () => {
   it("bursts remaining bleed and poison in one health transition", () => {
     const state = patchBattleState({
       enemyHealth: 30,
-      enemyStatuses: defaultEnemyStatusValues({ bleed: 6, poison: 4 }),
+      enemyStatuses: { bleed: 6, poison: 4 },
     });
     const texts = makeTexts();
     const next = detonateEnemyStatuses(state, ["bleed", "poison"], texts);
@@ -186,7 +183,7 @@ describe("detonateEnemyStatuses", () => {
     const state = patchBattleState({
       enemyHealth: 30,
       playerHealth: 20,
-      enemyStatuses: defaultEnemyStatusValues({ bleed: 6 }),
+      enemyStatuses: { bleed: 6 },
       pendingBleedLeechHealing: 3,
     });
     const texts = makeTexts();
@@ -233,7 +230,7 @@ describe("remaining-tick detonation", () => {
   it("leaves a defeated enemy untouched instead of detonating its corpse", () => {
     const state = patchBattleState({
       enemyHealth: 0,
-      enemyStatuses: defaultEnemyStatusValues({ burn: 8 }),
+      enemyStatuses: { burn: 8 },
     });
     const texts = makeTexts();
     const next = detonateEnemyStatuses(state, ["burn"], texts);

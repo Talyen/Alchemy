@@ -49,25 +49,23 @@ it("suppresses an accent using the focal recording without substituting another 
   expect(playedSrcs).toEqual([]);
 });
 
-describe("defaultMeasureVisualCardRect", () => {
-  it("uses border-box layout size so borders do not offset the transfer landing", () => {
-    const scene = {
-      offsetWidth: 1920,
-      offsetHeight: 1080,
-      getBoundingClientRect: () => ({ left: 100, top: 50, width: 960, height: 540 }),
-    } as HTMLDivElement;
-    const card = {
-      offsetWidth: 160,
-      offsetHeight: 214,
-      getBoundingClientRect: () => ({ left: 300, top: 200, width: 100, height: 140 }),
-    } as HTMLElement;
+it("defaultMeasureVisualCardRect uses border-box layout size so borders do not offset the transfer landing", () => {
+  const scene = {
+    offsetWidth: 1920,
+    offsetHeight: 1080,
+    getBoundingClientRect: () => ({ left: 100, top: 50, width: 960, height: 540 }),
+  } as HTMLDivElement;
+  const card = {
+    offsetWidth: 160,
+    offsetHeight: 214,
+    getBoundingClientRect: () => ({ left: 300, top: 200, width: 100, height: 140 }),
+  } as HTMLElement;
 
-    expect(defaultMeasureVisualCardRect(card, scene)).toEqual({
-      x: 420,
-      y: 333,
-      width: 160,
-      height: 214,
-    });
+  expect(defaultMeasureVisualCardRect(card, scene)).toEqual({
+    x: 420,
+    y: 333,
+    width: 160,
+    height: 214,
   });
 });
 

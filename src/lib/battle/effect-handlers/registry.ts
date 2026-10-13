@@ -1,4 +1,5 @@
 import { resolveBattleSequence } from "../battle-sequence";
+import { applyPotionMultiplier } from "../amount-helpers";
 import { mergeCombatText } from "../combat-text-events";
 import { resolvePendingBattleReactions } from "../enemy-attack-damage";
 import { resolveCompanionTurnStart } from "../companion-effects";
@@ -25,9 +26,9 @@ export const EFFECT_APPLY_BY_KIND: EffectHandlers = {
   ...STATUS_HANDLERS,
   ...MANA_HEALTH_HANDLERS,
   ...SIMPLE_HANDLERS,
-  "companion-action": (state, _card, effect, _potionMult, combatTexts) => {
+  "companion-action": (state, _card, effect, potionMult, combatTexts) => {
     let nextState = state;
-    for (let action = 0; action < effect.amount; action += 1) {
+    for (let action = 0; action < applyPotionMultiplier(effect.amount, potionMult); action += 1) {
       nextState = resolveCompanionTurnStart(nextState, combatTexts, applyCardEffects);
     }
     return nextState;

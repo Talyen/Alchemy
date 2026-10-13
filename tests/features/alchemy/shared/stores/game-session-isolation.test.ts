@@ -1,3 +1,4 @@
+import { initializeShopForTest } from "../../../../helpers/visit-initialization";
 import { createRunFlowEngine } from "@/features/alchemy/shell/run-flow-engine";
 import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
 import { createRunRouteActions } from "@/features/alchemy/shell/run-route-actions";
@@ -117,7 +118,7 @@ function playReadyCard(session: GameSession) {
   const battle = readBattle(session).battleState;
   const index = battle.hand.findIndex((card, slot) => canPlayCard(battle, card, slot, PLAYABLE_HAND_OPTIONS));
   expect(index).toBeGreaterThanOrEqual(0);
-  expect(commitCardPlay(index, battle.hand[index]!.id, session)).not.toBeNull();
+  expect(commitCardPlay(battle, index, battle.hand[index]!.id, session)).not.toBeNull();
 }
 
 describe("independent game sessions", () => {
@@ -137,10 +138,6 @@ describe("independent game sessions", () => {
         const outcomes = createRunOutcomes(
           {
             actions: foreignCapability === "outcomes" ? { transition, navigateTo, clearCardHover: () => {} } : actions,
-            getAvailableDestinations:
-              foreignCapability === "outcomes"
-                ? createRunRouteActions(b.session).getAvailableDestinations
-                : runActions.getAvailableDestinations,
           },
           foreignCapability === "outcomes" ? b.session : a.session,
         );
@@ -267,7 +264,7 @@ describe("independent game sessions", () => {
       const beforeB = stateDigest(b.session);
       playReadyCard(a.session);
       const shop = a.controller.shop().merchant;
-      shop.initialize();
+      initializeShopForTest("merchant", a.session);
       const visit = readRunSession(a.session).activity;
       if (visit.kind !== "shop") throw new Error("Card Shop did not initialize");
       const card = visit.data.cards[0]!;
@@ -284,12 +281,12 @@ describe("independent game sessions", () => {
 
       const beforeA = stateDigest(a.session);
       playReadyCard(b.session);
-      commitEndTurn(b.session);
+      commitEndTurn(readBattle(b.session).battleState, b.session);
       expect(stateDigest(a.session)).toBe(beforeA);
       expect(bCommits).toHaveBeenCalled();
 
       for (const career of [a, b]) {
-        career.controller.shop().equipment.initialize();
+        initializeShopForTest("equipment", career.session);
         const equipment = readRunSession(career.session).activity;
         if (equipment.kind !== "equipment-shop") throw new Error("Equipment Shop did not initialize");
         expect(equipment.data.gear.length).toBeGreaterThan(0);
@@ -353,6 +350,7 @@ describe("independent game sessions", () => {
       const snapshotA = snapshotCareer(a.session);
       autosaveA.flush();
       await Promise.resolve();
+      const disposedBattle = readBattle(a.session).battleState;
       const disposalA = a.session.dispose();
       dispatchRunSessionCommand((draft) => acceptCommand(addGold(draft, 23)), undefined, b.session);
       await autosaveB.drain();
@@ -362,7 +360,7 @@ describe("independent game sessions", () => {
       await disposalA;
       expect(JSON.parse(transportA.bytes.get(SAVE_KEY)!).gold).toBe(snapshotA.gold);
       expect(JSON.parse(transportA.bytes.get(SAVE_KEY)!).lastSavedAt).toBe(11);
-      expect(() => commitEndTurn(a.session)).toThrow(/disposed/);
+      expect(() => commitEndTurn(disposedBattle, a.session)).toThrow(/disposed/);
 
       const loaded = await loadAlchemySaveState(b.session);
       expect(loaded.status.kind).toBe("ok");
@@ -393,8 +391,9 @@ describe("independent game sessions", () => {
       expect(bTeardown).not.toHaveBeenCalled();
       expect(stateDigest(b.session)).toBe(beforeB);
       const retainedEndTurn = a.controller.battle.endTurn;
+      const offered = a.controller.battle.read().battleState;
       await a.session.dispose();
-      expect(() => retainedEndTurn()).toThrow(/disposed/);
+      expect(() => retainedEndTurn(offered)).toThrow(/disposed/);
       expect(stateDigest(b.session)).toBe(beforeB);
       teardownRun(b.session);
       expect(bTeardown).toHaveBeenCalledOnce();

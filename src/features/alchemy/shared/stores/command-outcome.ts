@@ -1,15 +1,22 @@
+type WithDataMetadata<T, Builtin, Data> =
+  Exclude<keyof T, keyof Builtin> extends never
+    ? Data
+    : Data & { [K in Exclude<keyof T, keyof Builtin>]: SynchronousResult<T[K]> };
+
 /** Detached result data, including nested containers; execution capabilities stay in the command. */
 export type SynchronousResult<T> = T extends PromiseLike<unknown> | ((...args: never[]) => unknown)
   ? never
   : T extends ReadonlyMap<infer Key, infer Value>
-    ? ReadonlyMap<SynchronousResult<Key>, SynchronousResult<Value>>
+    ? WithDataMetadata<T, Map<Key, Value>, ReadonlyMap<SynchronousResult<Key>, SynchronousResult<Value>>>
     : T extends ReadonlySet<infer Value>
-      ? ReadonlySet<SynchronousResult<Value>>
-      : T extends Date | RegExp
-        ? T
-        : T extends object
-          ? { [K in keyof T]: SynchronousResult<T[K]> }
-          : T;
+      ? WithDataMetadata<T, Set<Value>, ReadonlySet<SynchronousResult<Value>>>
+      : T extends Date
+        ? WithDataMetadata<T, Date, Date>
+        : T extends RegExp
+          ? WithDataMetadata<T, RegExp, RegExp>
+          : T extends object
+            ? { [K in keyof T]: SynchronousResult<T[K]> }
+            : T;
 
 export type CommandOutcome<T> = { kind: "accepted"; value: T } | { kind: "rejected"; reason: string; value: T };
 

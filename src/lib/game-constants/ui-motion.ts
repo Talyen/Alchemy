@@ -7,7 +7,7 @@ export const TOOLTIP_FADE_MS = 120;
 export const NAVIGATION_DELAY_MS = 100;
 export const CAMPFIRE_ANIMATION_MS = 1200;
 
-export const INITIAL_LOAD_MIN_DURATION_MS = 3000;
+export const INITIAL_LOAD_MIN_DURATION_MS = 5000;
 export const FONT_PRELOAD_TIMEOUT_MS = 10_000;
 export const STARTUP_LOAD_IMAGE_WEIGHT = 0.85;
 export const STARTUP_LOAD_FONT_WEIGHT = 0.05;
@@ -88,3 +88,13 @@ export const HAND_CARD_BASE_Z_INDEX = 10;
 export const HAND_CARD_HOVER_Z_INDEX = 40;
 
 export const WISH_OVERLAY_Z_INDEX = 90;
+
+export const HOMESTEAD_FEEDBACK = {
+  valueMs: 180,
+  resizeMs: 180,
+  starMs: 360,
+  tooltipPopMs: 360,
+  revealMs: 400,
+  glowMs: 450,
+  feedbackMs: 500,
+} as const;

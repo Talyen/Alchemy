@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyCrowdControlTriggerBonuses, applyLuckyCloverGold } from "@/lib/battle/bonus-effects";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { defaultGearEffects } from "@/lib/gear";
 import { patchBattleState } from "../../fixtures/battle";
-import { defaultTrinketManifest } from "../../fixtures/default-battle-state";
 
 describe("applyCrowdControlTriggerBonuses", () => {
   it("strips both defenses in order, reports only removed amounts, and preserves the input", () => {
@@ -44,8 +42,8 @@ describe("applyCrowdControlTriggerBonuses", () => {
 describe("applyLuckyCloverGold", () => {
   it("combat text shows scaled gold when goldGainPercent gear is active", () => {
     const state = patchBattleState({
-      trinketEffects: defaultTrinketManifest({ luckyCloverGoldChance: 50 }),
-      gearEffects: { ...defaultGearEffects, goldGainPercent: 50 },
+      trinketEffects: { luckyCloverGoldChance: 50 },
+      gearEffects: { goldGainPercent: 50 },
       rng: () => 0.01,
     });
     const texts: CombatTextEvent[] = [];
@@ -54,41 +52,15 @@ describe("applyLuckyCloverGold", () => {
     expect(texts).toEqual([{ target: "player", kind: "status", stat: "gold", amount: 15 }]);
   });
 
-  it("does nothing when random does not trigger", () => {
-    const state = patchBattleState({
-      trinketEffects: defaultTrinketManifest({ luckyCloverGoldChance: 50 }),
-      rng: () => 0.99,
-    });
+  it.each([
+    { chance: 50, damage: 7, roll: 0.99 },
+    { chance: 0, damage: 7, roll: 0.01 },
+    { chance: 50, damage: 0, roll: 0.01 },
+    { chance: 50, damage: -3, roll: 0.01 },
+  ])("leaves Gold and feedback untouched at $chance% chance and $damage damage", ({ chance, damage, roll }) => {
+    const state = patchBattleState({ trinketEffects: { luckyCloverGoldChance: chance }, rng: () => roll });
     const texts: CombatTextEvent[] = [];
-    const next = applyLuckyCloverGold(state, 7, texts);
-    expect(next.gold).toBe(0);
-    expect(texts).toEqual([]);
-  });
-
-  it("does nothing when luckyCloverGoldChance is 0", () => {
-    const state = patchBattleState();
-    const texts: CombatTextEvent[] = [];
-    const next = applyLuckyCloverGold(state, 7, texts);
-    expect(next).toBe(state);
-    expect(texts).toEqual([]);
-  });
-
-  it("does nothing when damage is 0", () => {
-    const state = patchBattleState({
-      trinketEffects: defaultTrinketManifest({ luckyCloverGoldChance: 50 }),
-    });
-    const texts: CombatTextEvent[] = [];
-    const next = applyLuckyCloverGold(state, 0, texts);
-    expect(next).toBe(state);
-    expect(texts).toEqual([]);
-  });
-
-  it("does nothing when damage is negative", () => {
-    const state = patchBattleState({
-      trinketEffects: defaultTrinketManifest({ luckyCloverGoldChance: 50 }),
-    });
-    const texts: CombatTextEvent[] = [];
-    const next = applyLuckyCloverGold(state, -3, texts);
+    const next = applyLuckyCloverGold(state, damage, texts);
     expect(next).toBe(state);
     expect(texts).toEqual([]);
   });

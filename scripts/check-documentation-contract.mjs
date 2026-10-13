@@ -5,6 +5,7 @@ import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateContextCatalog } from "./lib/agent/agent-context.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
+import { BUILD_ARTIFACT_DIRS } from "./lib/clean-dev-artifacts.mjs";
 import { extractMarkdownLinkTargets, headingSlugs, stripFencedBlocks } from "./lib/agent/markdown-sections.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -12,9 +13,8 @@ const IGNORED_DIRECTORIES = new Set([
   ".git",
   ".worktrees",
   "node_modules",
-  "dist",
+  ...BUILD_ARTIFACT_DIRS,
   "dist-desktop",
-  "release-desktop",
   "test-results",
   "playwright-report",
   "coverage",

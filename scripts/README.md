@@ -76,19 +76,21 @@ then installs the browser-process copies before enabling their fuse. The build w
 Packaged Windows startup: `smoke-desktop.mjs` resolves the artifact and invokes
 `smoke-desktop.ps1` for native accessibility verification (see [RELEASE](../Docs/RELEASE.md#packaged-windows-startup-check)).
 
-`platforms.json` owns the desktop target list; `package.json` build blocks own per-platform packaging configuration. Sentry release and desktop sourcemap mode are owned by `lib/release/sentry-release.mjs`; chunk splitting is owned by `lib/vite-chunks.mjs`. Vite uses only Rolldown chunk groups.
+[`steam/platforms.json`](../steam/platforms.json) must declare at least one desktop target; `package.json` build blocks own per-platform packaging configuration. Sentry release and desktop sourcemap mode are owned by `lib/release/sentry-release.mjs`; chunk splitting is owned by `lib/vite-chunks.mjs`. Vite uses only Rolldown chunk groups.
 
 ## Audits (periodic sweep, not a push gate)
 
 `npm run audit` runs `audit.mjs`, which dispatches to `audit-all.mjs` when no
 selector is supplied, including with `--verbose`. `npm run audit:all` is the
 same sweep via `audit.mjs --all` (thin forward, not a separate entry).
-Pass a focused selector after
-to dispatch one probe instead. `--all` is the periodic sweep, not literally
-content-audit. Advisory trend probes (always exit 0):
-`audit-type-escapes.mjs`, `audit-change-amplification.mjs` — direction signals, see
-`Docs/Audits/TypeSafetyAudit.md`. `runs:show` is advisory process
-evidence and never block handoff.
+Pass a focused selector after npm's `--`, for example
+`npm run audit -- --types`, to dispatch one probe instead. `--all` runs the
+measurable sweep; it does not execute every guide in [Docs/Audits](../Docs/Audits/README.md).
+`audit-type-escapes.mjs` and `audit-change-amplification.mjs` report
+advisory trends without thresholds; read or Git failures still fail execution.
+Interpret type-escape counts through the [Type Safety audit](../Docs/Audits/TypeSafetyAudit.md)
+and co-edit trends through the [Simplification audit](../Docs/Audits/SimplificationAudit.md).
+`runs:show` supplies advisory process evidence rather than a handoff gate.
 
 ## Test / E2E
 
@@ -135,6 +137,10 @@ journal prefix and starting-state evidence for replay.
 `npm run dev:checked` starts Vite with the live TypeScript 7 checker directly;
 run `npm run predev` first when using that command. Desktop development runs
 the same preparation and adds Steam App ID synchronization.
+Vite and Electron share a lifetime: exiting either process stops the other,
+and the first exit determines the command's status.
+Desktop startup waits for a successful HTTP response and releases the readiness
+response body before launching Electron.
 
 ## Cleanup (`clean` = explicit reset, `prune:transient` = expiry)
 
@@ -142,6 +148,10 @@ the same preparation and adds Steam App ID synchronization.
 build outputs. `--processes` stops Alchemy-owned test listeners;
 `--include-dev-port` also selects the normal dev port, only with `--processes`.
 `--all` combines builds and processes. Use `--dry-run` to preview deletion.
+Cleanup preserves caches reached through a linked `node_modules` directory so
+an isolated worktree cannot remove the original checkout's shared cache.
+Listener ownership also excludes nested `.worktrees/` checkouts from the
+original checkout's process cleanup.
 
 `npm run prune:transient` expires diagnostic bundles after 24 hours of inactivity;
 `--days=<number>` changes the cutoff. Runs under `reports/runs`, `compact`,
@@ -171,10 +181,9 @@ expiry. Inspect unfinished experiments before deleting them explicitly.
 Use one isolated worktree per implementation chat, without polling other chats
 or negotiating ownership. Reuse the chat's existing suitable worktree.
 `node scripts/agent-worktree.mjs create --task <slug>` (`.worktrees/<slug>` on `agent/<slug>`, from committed local `main` by default);
-`--detached` for verification-only runs. Creation checks out tracked files only;
-run `npm ci` inside the new worktree before running its verification gates.
-Some tools can resolve dependencies from the parent checkout while Knip still
-reports missing binaries and unused dependencies without a local installation.
+`--detached` for verification-only runs. Creation links `node_modules` from
+the root checkout automatically when present; run `npm ci` only if package
+dependencies change.
 Run worktree management commands from the original checkout. Removal validates
 the exact registered worktree; an unregistered directory requires inspection
 and explicit `--force`. An empty normalized task name is rejected.
@@ -191,11 +200,13 @@ Integration uses an exclusive loopback port derived from the shared Git director
 so all worktrees share one OS-released lock. A busy lock fails immediately; retry
 later without messaging other chats. A port collision also fails closed. The command
 requires registered task and `main` checkouts with no dirty files or unfinished Git
-operations. While holding the lock, it merges current local `main` into the task,
-runs `npm run check -- <combined changed paths>` and, for Markdown changes,
+operations. Safety reads bypass Git's filesystem monitor and untracked cache
+without changing repository settings. While holding the lock, it merges current local `main` into the task,
+runs `npm run check -- <combined changed paths>` (including both sides of renames) and, for Markdown changes,
 `npm run docs:check`, then fast-forwards `main` only if verification succeeded and
 both checkouts remain clean at the expected commits. It never pushes or switches
-checkout branches. Additional task-required tests remain the task owner's responsibility.
+checkout branches. Verification uses the merged task's shared Node command launcher
+so npm runs without shell interpretation on Windows too. Additional task-required tests remain the task owner's responsibility.
 
 Resolve understood merge conflicts in the task worktree, commit the resolution,
 and retry; ambiguous conflicts or dirty `main` are blockers to report to the user.

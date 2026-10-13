@@ -1,4 +1,5 @@
 import "../../../../helpers/mock-audio";
+import { initializeShopForTest } from "../../../../helpers/visit-initialization";
 
 import { describe, expect, it, vi } from "vitest";
 import { shopItemSlotKey } from "@/features/alchemy/run-loop/shop/shop-slot-keys";
@@ -66,7 +67,7 @@ const shops = [
 
     replayIds: () => readActivityData(readRunSession(defaultGameSession).activity, "shop").cards.map((card) => card.id),
     restockDedup: true,
-    initialize: (actions: Actions) => actions.merchant.initialize(),
+    initialize: () => initializeShopForTest("merchant", defaultGameSession),
     replayRefresh: true,
   },
   {
@@ -97,7 +98,7 @@ const shops = [
     replayIds: () =>
       readActivityData(readRunSession(defaultGameSession).activity, "alchemist").potions.map((card) => card.id),
     restockDedup: true,
-    initialize: (actions: Actions) => actions.alchemist.initialize(),
+    initialize: () => initializeShopForTest("alchemist", defaultGameSession),
     replayRefresh: true,
   },
   {
@@ -128,7 +129,7 @@ const shops = [
     replayIds: () =>
       readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop").trinkets.map((entry) => entry.id),
     restockDedup: true,
-    initialize: (actions: Actions) => actions.trinket.initialize(),
+    initialize: () => initializeShopForTest("trinket", defaultGameSession),
     replayRefresh: true,
   },
   {
@@ -167,7 +168,7 @@ const shops = [
         (item) => item.definitionId,
       ),
     restockDedup: false,
-    initialize: (actions: Actions) => actions.equipment.initialize(),
+    initialize: () => initializeShopForTest("equipment", defaultGameSession),
     replayRefresh: true,
   },
 ];
@@ -284,12 +285,12 @@ describe("shop action isolation", () => {
       setRunProgress({ gold: 999, rng: rngState });
       shop.seed();
 
-      shop.initialize(buildActions());
+      shop.initialize();
       const first = shop.replayIds();
 
       shop.seed();
       setRunProgress({ rng: rngState });
-      shop.initialize(buildActions());
+      shop.initialize();
       expect(shop.replayIds()).toEqual(first);
     });
   });
@@ -310,23 +311,21 @@ describe("shop action isolation", () => {
     });
   });
 
-  describe("per-shop isolation", () => {
-    it("a stale merchant purchase cannot spend gold after entering the alchemist", () => {
-      setRunProgress({ gold: 999 });
-      setShopState(createInitialShopState());
-      const card = requiredItem(
-        readActivityData(readRunSession(defaultGameSession).activity, "shop").cards[0],
-        "merchant card",
-      );
-      setAlchemistState(createInitialAlchemistState());
-      const actions = buildActions();
-      expect(actions.merchant.buyCard(card, shopItemSlotKey(card.id, 0))).toBe(false);
-      expect(actions.merchant.refresh()).toBe(false);
-      expect(actions.merchant.removeCard(0)).toBe(false);
-      expect(readRunProfile(defaultGameSession).gold).toBe(999);
-      expect(readRunSession(defaultGameSession).activity.kind).toBe("alchemist");
+  it("per-shop isolation a stale merchant purchase cannot spend gold after entering the alchemist", () => {
+    setRunProgress({ gold: 999 });
+    setShopState(createInitialShopState());
+    const card = requiredItem(
+      readActivityData(readRunSession(defaultGameSession).activity, "shop").cards[0],
+      "merchant card",
+    );
+    setAlchemistState(createInitialAlchemistState());
+    const actions = buildActions();
+    expect(actions.merchant.buyCard(card, shopItemSlotKey(card.id, 0))).toBe(false);
+    expect(actions.merchant.refresh()).toBe(false);
+    expect(actions.merchant.removeCard(0)).toBe(false);
+    expect(readRunProfile(defaultGameSession).gold).toBe(999);
+    expect(readRunSession(defaultGameSession).activity.kind).toBe("alchemist");
 
-      expect(readActivityData(readRunSession(defaultGameSession).activity, "alchemist").firstPurchaseUsed).toBe(false);
-    });
+    expect(readActivityData(readRunSession(defaultGameSession).activity, "alchemist").firstPurchaseUsed).toBe(false);
   });
 });

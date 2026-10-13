@@ -66,5 +66,5 @@ export function applyDodgeTalentStatuses(state: BattleState, combatTexts: Combat
       });
     }
   }
-  return removedStatuses > 0 ? applyCleanseHeals(nextState, combatTexts, removedStatuses) : nextState;
+  return removedStatuses > 0 ? applyCleanseHeals(nextState, combatTexts, 1) : nextState;
 }

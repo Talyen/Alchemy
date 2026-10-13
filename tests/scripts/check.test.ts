@@ -104,8 +104,12 @@ describe("full source-aware completion gate", () => {
   it.each([
     "package.json",
     "package-lock.json",
+    ".node-version",
+    ".npmrc",
     "vite.config.ts",
     "scripts/build-verified.mjs",
+    "scripts/check-bundle-budget.mjs",
+    "scripts/lib/verification/bundle-budget.mjs",
     "scripts/lib/vite-chunks.mjs",
     "game-edition.mjs",
     "scripts/lib/release/game-edition.mjs",

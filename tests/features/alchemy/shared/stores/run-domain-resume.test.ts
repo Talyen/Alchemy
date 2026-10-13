@@ -1,9 +1,12 @@
 import "../../../../helpers/mock-audio";
-
 import "../../../../helpers/mock-flush-save";
 import {
+  bindGameplayMutationForTest,
   setBattleActiveForTest as mutateHasActiveBattle,
   replaceBattleForTest as mutateSyncedBattleState,
+  resetRunDomainStore,
+  setRunProgress,
+  setRunSession,
 } from "../../../../helpers/run-domain-store-test";
 import { restoreActiveBattle } from "@/features/alchemy/shared/stores/battle-restore";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -34,22 +37,12 @@ import {
   setRewardState as mutateRewardState,
   setRunProgressActivity,
   setScreen as mutateSetScreen,
+  resetProgress as mutateResetProgress,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-
-import { resetProgress as mutateResetProgress } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/app/application-session";
 import { savedActivityFixture, savedActivityData } from "../../../../fixtures/run-activity";
-const resetProgress = createGameplayCommand(
-  (...args: Parameters<typeof mutateResetProgress>) => acceptCommand(mutateResetProgress(...args)),
-  undefined,
-  defaultGameSession,
-);
-const setSyncedBattleState = createGameplayCommand(
-  (...args: Parameters<typeof mutateSyncedBattleState>) => acceptCommand(mutateSyncedBattleState(...args)),
-  undefined,
-  defaultGameSession,
-);
+const resetProgress = bindGameplayMutationForTest(mutateResetProgress);
+const setSyncedBattleState = bindGameplayMutationForTest(mutateSyncedBattleState);
 const setHasActiveRun = createGameplayCommand(
   (draft, active: boolean) => {
     mutateHasActiveRun(draft, active);
@@ -59,11 +52,7 @@ const setHasActiveRun = createGameplayCommand(
   undefined,
   defaultGameSession,
 );
-const setHasActiveBattle = createGameplayCommand(
-  (...args: Parameters<typeof mutateHasActiveBattle>) => acceptCommand(mutateHasActiveBattle(...args)),
-  undefined,
-  defaultGameSession,
-);
+const setHasActiveBattle = bindGameplayMutationForTest(mutateHasActiveBattle);
 const setRewardState = createGameplayCommand(
   (draft, state: Parameters<typeof mutateRewardState>[1]) => {
     mutateRewardState(draft, state);
@@ -73,26 +62,10 @@ const setRewardState = createGameplayCommand(
   undefined,
   defaultGameSession,
 );
-const beginRewardClaim = createGameplayCommand(
-  (...args: Parameters<typeof mutateBeginRewardClaim>) => acceptCommand(mutateBeginRewardClaim(...args)),
-  undefined,
-  defaultGameSession,
-);
-const setCompanionRewardCards = createGameplayCommand(
-  (...args: Parameters<typeof mutateCompanionRewardCards>) => acceptCommand(mutateCompanionRewardCards(...args)),
-  undefined,
-  defaultGameSession,
-);
-const initializeActiveBattle = createGameplayCommand(
-  (...args: Parameters<typeof restoreActiveBattle>) => acceptCommand(restoreActiveBattle(...args)),
-  undefined,
-  defaultGameSession,
-);
-const setScreen = createGameplayCommand(
-  (...args: Parameters<typeof mutateSetScreen>) => acceptCommand(mutateSetScreen(...args)),
-  undefined,
-  defaultGameSession,
-);
+const beginRewardClaim = bindGameplayMutationForTest(mutateBeginRewardClaim);
+const setCompanionRewardCards = bindGameplayMutationForTest(mutateCompanionRewardCards);
+const initializeActiveBattle = bindGameplayMutationForTest(restoreActiveBattle);
+const setScreen = bindGameplayMutationForTest(mutateSetScreen);
 
 beforeEach(() => {
   resetRunDomainStore();
@@ -247,7 +220,7 @@ describe("session facade API", () => {
     battle.trinketEffects.boneCharmHealOnKill = 9;
     battle.flags.nextPhysicalDealsBleed = true;
     battle.flags.nextHitPhysicalBonus = 4;
-    battle.flags.pendingWishMana = 2;
+    battle.flags.darkRecoveryMana = 2;
     battle.talentEffects = {
       ...battle.talentEffects,
       forgeBurnDamagePercent: 100,
@@ -282,7 +255,11 @@ describe("session facade API", () => {
     expect(restored.playerStatuses).toEqual(battle.playerStatuses);
     expect(restored.enemyHealth).toBe(17);
     expect(restored.enemyStatuses.freeze).toBe(2);
-    expect(restored.flags).toMatchObject({ nextPhysicalDealsBleed: true, nextHitPhysicalBonus: 4, pendingWishMana: 2 });
+    expect(restored.flags).toMatchObject({
+      nextPhysicalDealsBleed: true,
+      nextHitPhysicalBonus: 4,
+      darkRecoveryMana: 2,
+    });
     expect(snapshotRun(defaultGameSession).rng).toEqual(saved.rng);
   });
 

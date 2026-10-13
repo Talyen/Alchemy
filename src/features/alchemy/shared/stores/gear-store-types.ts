@@ -8,7 +8,6 @@ import type {
   GearSlot,
   EquippedTrinkets,
 } from "@/lib/gear";
-import type { MaterialInventory } from "@/lib/homestead/types";
 
 export interface GearSaveFields {
   gearInventories: GearInventories;
@@ -43,10 +42,6 @@ export interface GearDraftView extends Immutable<GearStateFields> {
   addTrinket: (trinketId: string) => boolean;
   equipTrinket: (characterId: CharacterId, trinketId: string) => boolean;
   unequipTrinket: (characterId: CharacterId) => boolean;
-  salvage: (instanceId: string) => {
-    yieldedCurrencies: Record<CraftingCurrencyId, number>;
-    yieldedMaterials: MaterialInventory;
-  } | null;
   applyCurrency: (currencyId: CraftingCurrencyId, instanceId: string, options: { rng: () => number }) => boolean;
   addCurrencies: (currencies: Partial<Record<CraftingCurrencyId, number>>) => void;
   reset: () => void;

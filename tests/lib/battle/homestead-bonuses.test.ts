@@ -1,3 +1,4 @@
+import { computeHomesteadEffects, mergeIntoManifest } from "@/lib/homestead/effects";
 import { describe, expect, it, vi } from "vitest";
 import { makeStateWithFailedRolls, makeTestCard } from "../../fixtures/battle";
 import { createEmptyTalentEffectManifest } from "@/lib/game-data";
@@ -46,19 +47,30 @@ describe("Homestead combat bonuses", () => {
     expect(rng).not.toHaveBeenCalled();
   });
 
-  it("Crystal Garden adds flat damage only to critical hits", () => {
-    const state = makeStateWithFailedRolls({ talentEffects: talents({ homesteadCriticalDamage: 4 }) });
-    const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 10 };
-    const card = makeTestCard({ effects: [effect] });
-    expect(computeCardDamageToEnemy(state, effect, card).modifiedDamage).toBe(10);
-    expect(
-      computeCardDamageToEnemy(state, effect, card, {
-        guaranteedCrit: true,
-        manaAtStart: state.mana,
-        enemyFreezeSkipTurnsAtStart: 0,
-      }).modifiedDamage,
-    ).toBe(24);
-  });
+  it.each([1, 2, 3, 4])(
+    "Crystal Garden tier %i stacks with the Mana talent and uses Mana remaining after payment",
+    (tier) => {
+      const effects = mergeIntoManifest(
+        talents({ freezeDamagePerMana: 25 }),
+        computeHomesteadEffects({}, { "crystal-garden": tier }, {}),
+      );
+      const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 5 };
+      const card = makeTestCard({ cost: 1, effects: [effect] });
+      const initial = makeStateWithFailedRolls({
+        mana: 5,
+        maxMana: 5,
+        hand: [card],
+        talentEffects: effects,
+        enemyHealth: 100,
+        enemyMaxHealth: 100,
+      });
+      const result = playBattleCardResolved(initial, card.id, 0);
+      expect(result.state.mana).toBe(4);
+      expect(result.state.enemyHealth).toBe(100 - (5 + tier + 1));
+      const noMana = { ...initial, mana: 0 };
+      expect(computeCardDamageToEnemy(noMana, effect, card).modifiedDamage).toBe(5);
+    },
+  );
 
   it("Pasture reduces the existing Physical hit", () => {
     const state = makeStateWithFailedRolls({

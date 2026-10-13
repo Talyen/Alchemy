@@ -15,7 +15,6 @@ const armoryPickerGridStyle = {
 // Pagination state is owned by useArmoryOrdering (ARMORY_PAGE_SIZE); the page
 // size here must stay ROWS x COLUMNS so filler slots complete the last page.
 export function ArmoryPagedGrid<T>({
-  items,
   testId,
   swapKey,
   fillerTestId,
@@ -70,15 +69,14 @@ export function ArmoryPagedGrid<T>({
     <section data-testid={testId} className="flex min-h-0 min-w-0 flex-1 flex-col">
       <div className="relative w-full">
         <FadeSlot swapKey={`${swapKey}-${page}`} className="relative mt-2 w-full overflow-visible">
-          {items.length === 0 && !hasPlaceholder ? (
+          {noMatches ? (
             <div
               data-testid={`${testId}-empty`}
-              role={noMatches ? "status" : "img"}
-              aria-label={noMatches ? undefined : "Empty"}
+              role="status"
               className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-4 text-center text-muted-foreground"
             >
               <PackageOpen aria-hidden="true" className="h-12 w-12" />
-              {noMatches ? <p className="text-sm">No items match your search and filters.</p> : null}
+              <p className="text-sm">No items match your search and filters.</p>
             </div>
           ) : null}
           <div

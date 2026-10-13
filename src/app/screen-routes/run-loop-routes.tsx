@@ -114,6 +114,7 @@ function BattleScreenRoute({ cardInspection, routeCommands, gameMenuOpen }: Batt
       <EnemyInspectionOverlay
         open={enemyInspectionOpen && canInspectEnemy}
         entry={battleScreenData.battleState.currentEnemy}
+        enemyDescriptionContext={battleScreenData.battleState}
         modifiers={battleScreenData.activeLabyrinthModifiers}
         onClose={() => setEnemyInspectionOpen(false)}
         returnFocusRef={returnFocusRef}
@@ -161,14 +162,19 @@ function WildwoodRemovalScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 function DestinationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.destinations;
   const r = useDestinationScreenData();
-  return <DestinationScreen rewardState={r.rewardState} onChoose={commands.choose} onPrepare={commands.prepare} />;
+  return (
+    <DestinationScreen
+      rewardState={r.rewardState}
+      currentAct={r.currentAct}
+      onChoose={commands.choose}
+      onPrepare={commands.prepare}
+    />
+  );
 }
 
 function CampfireScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.destinations;
   const r = useCampfireScreenData();
-  const initializeCampfire = commands.initializeCampfire;
-  useEffect(() => initializeCampfire(), [initializeCampfire]);
   const healingBonus = useHomesteadEffects().homesteadHealing;
   const talentEffects = useTalentEffects();
   const healFraction = labyrinthCampfireHealing(getCampfireHealFraction(talentEffects.campfireHealBonus), r.modifiers);
@@ -311,12 +317,6 @@ function CorruptionScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 function TransmutationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.transmutation;
   const r = useTransmutationScreenData();
-  const initialize = commands.initialize;
-  useEffect(() => {
-    initialize();
-  }, [initialize]);
-  // Empty offers before initialization do not mean the visit is unusable.
-  if (!r.visit.completed && !r.visit.transmutation) return null;
   return (
     <TransmutationScreen
       afterProgressSaved={routeCommands.progress.afterSaved}

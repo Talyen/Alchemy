@@ -4,7 +4,7 @@ import { logStorageFailure } from "@/lib/storage-logging";
 import { createDefaultSaveData } from "./defaults";
 import type { SaveLoadState } from "./save-candidates";
 import { SaveStorage } from "./save-storage";
-import type { SaveWriteOutcome } from "./save-write-queue";
+import type { SaveWriteOutcome } from "./save-operation-queue";
 import type { UnstampedSaveData } from "./types";
 
 export function createSaveIo(
@@ -15,6 +15,7 @@ export function createSaveIo(
   const storage = new SaveStorage(backend ?? createPlatformSaveBackend(), now);
   let backendConfigured = backend !== undefined;
   let saveWriteFailed = false;
+  const pendingWriteResults = new Set<Promise<SaveWriteOutcome>>();
   const saveWriteListeners = new Set<() => void>();
   function getSaveWriteFailure(): boolean {
     return saveWriteFailed;
@@ -60,8 +61,13 @@ export function createSaveIo(
     return storage.subscribeCancellation(listener);
   }
 
-  function waitForPendingSaveWrites(): Promise<void> {
-    return storage.waitForPendingWrites();
+  async function waitForPendingSaveWrites(): Promise<void> {
+    // Drain the published outcomes as well as backend work. Transport completion
+    // alone does not mean failure status and progress receipts have settled.
+    do {
+      await Promise.all([...pendingWriteResults]);
+      await storage.waitForPendingWrites();
+    } while (pendingWriteResults.size > 0);
   }
 
   async function loadAlchemySaveState(): Promise<SaveLoadState> {
@@ -70,12 +76,40 @@ export function createSaveIo(
     return { data: createDefaultSaveData(), status: { kind: "ok" } };
   }
 
-  async function saveAlchemySaveData(data: UnstampedSaveData): Promise<SaveWriteOutcome> {
-    return reportSaveWriteOutcome(isStorageAvailable() ? await storage.save(data) : "skipped");
+  function writeSnapshot(
+    data: UnstampedSaveData,
+    exit: boolean,
+    complete: (outcome: SaveWriteOutcome) => SaveWriteOutcome = (outcome) => outcome,
+    validate: () => SaveWriteOutcome | undefined = () => undefined,
+  ): Promise<SaveWriteOutcome> {
+    const result = (async () => {
+      const outcome = isStorageAvailable()
+        ? await (exit ? storage.saveForExit(data, validate) : storage.save(data, validate))
+        : "skipped";
+      return complete(reportSaveWriteOutcome(validate() ?? outcome));
+    })();
+    pendingWriteResults.add(result);
+    const release = () => {
+      pendingWriteResults.delete(result);
+    };
+    void result.then(release, release);
+    return result;
   }
 
-  async function saveAlchemySaveDataForExit(data: UnstampedSaveData): Promise<SaveWriteOutcome> {
-    return reportSaveWriteOutcome(isStorageAvailable() ? await storage.saveForExit(data) : "skipped");
+  function saveAlchemySaveData(
+    data: UnstampedSaveData,
+    complete?: (outcome: SaveWriteOutcome) => SaveWriteOutcome,
+    validate?: () => SaveWriteOutcome | undefined,
+  ) {
+    return writeSnapshot(data, false, complete, validate);
+  }
+
+  function saveAlchemySaveDataForExit(
+    data: UnstampedSaveData,
+    complete?: (outcome: SaveWriteOutcome) => SaveWriteOutcome,
+    validate?: () => SaveWriteOutcome | undefined,
+  ) {
+    return writeSnapshot(data, true, complete, validate);
   }
 
   async function clearAlchemySaveData(mode: "default" | "localWipe" = "default"): Promise<boolean> {

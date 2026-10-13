@@ -1,8 +1,8 @@
-import { addInventory } from "@/lib/homestead/inventory";
+import { emptyInventory, addInventory } from "@/lib/homestead/inventory";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { companionTierItems } from "@/lib/homestead/companions";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
-import type { TieredItem } from "@/lib/homestead/tiers";
+import { createEmptyTierRecord, type TieredItem } from "@/lib/homestead/tiers";
 import { logError } from "@/lib/error-logger";
 import { defaultCompanionBondLevels } from "@/lib/game-data";
 import { tryUpgradeTierItem } from "@/lib/homestead/upgrades";
@@ -68,4 +68,30 @@ export function completeResearch(profile: Draft<PermanentProgressFields>, id: Re
 
 export function bondCompanion(profile: Draft<PermanentProgressFields>, id: CompanionId): boolean {
   return applyTierUpgrade(profile, companionTierItems, profile.bondedCompanions, id);
+}
+
+export function resetHomestead(profile: Draft<PermanentProgressFields>): boolean {
+  const groups: Array<[readonly TieredItem[], Record<string, number>]> = [
+    [buildings, profile.constructedBuildings],
+    [farmPlots, profile.plantedFarms],
+    [researchUpgrades, profile.completedResearch],
+    [companionTierItems, profile.bondedCompanions],
+  ];
+  let purchased = false;
+  let refund = emptyInventory();
+  for (const [items, levels] of groups) {
+    for (const item of items) {
+      const tiers = item.tiers.slice(0, Math.max(0, levels[item.id] ?? 0));
+      purchased ||= tiers.length > 0;
+      for (const tier of tiers) refund = addInventory(refund, tier.cost);
+    }
+  }
+  if (!purchased) return false;
+  profile.materialInventory = addInventory(profile.materialInventory, refund);
+  profile.constructedBuildings = createEmptyTierRecord(buildings);
+  profile.plantedFarms = createEmptyTierRecord(farmPlots);
+  profile.completedResearch = createEmptyTierRecord(researchUpgrades);
+  profile.bondedCompanions = { ...defaultCompanionBondLevels };
+  recomputeEffects(profile);
+  return true;
 }

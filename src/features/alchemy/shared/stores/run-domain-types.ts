@@ -43,6 +43,7 @@ export function createInitialSessionFields(): RunSessionFields {
     runEndCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
     runEndTalentXP: {},
     runEndItems: [],
+    runEndUnlockedCharacters: [],
     runRecap: null,
     pendingCharacterId: null,
     pendingContentSystemType: "campaign",
@@ -73,6 +74,7 @@ export interface RunSessionFields {
   runEndCurrencies: Record<CraftingCurrencyId, number>;
   runEndTalentXP: TalentXP;
   runEndItems: RunObtainedItem[];
+  runEndUnlockedCharacters: CharacterId[];
   runRecap: RunRecap | null;
   pendingCharacterId: CharacterId | null;
   pendingContentSystemType: ContentSystemId;

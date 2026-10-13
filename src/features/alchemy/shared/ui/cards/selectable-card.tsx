@@ -114,6 +114,7 @@ function SelectableCardSurface({
     card,
     shineColor: disabled ? undefined : shineColor,
     ariaDisabled: disabled,
+    ariaPressed: isSelected,
     scaleOnHover: !disabled,
     onClick: () => {
       if (!disabled) onSelect();

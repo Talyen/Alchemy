@@ -17,9 +17,7 @@ describe("complete focal sound coverage", () => {
   });
 });
 
-describe("approved separation of formerly shared cues", () => {
-  it("keeps selected event roles distinct and respects explicit silence", () => {
-    expect(battleEventSounds.endTurn).not.toBe(uiSounds.toggleOff);
-    expect(uiSounds.shopRemove).toBeNull();
-  });
+it("approved separation of formerly shared cues keeps selected event roles distinct and respects explicit silence", () => {
+  expect(battleEventSounds.endTurn).not.toBe(uiSounds.toggleOff);
+  expect(uiSounds.shopRemove).toBeNull();
 });

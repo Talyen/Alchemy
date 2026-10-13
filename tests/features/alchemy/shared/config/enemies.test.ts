@@ -78,9 +78,7 @@ describe("getBossById", () => {
   });
 });
 
-describe("rollFreshBossId", () => {
-  it("returns a valid boss enemy ID", () => {
-    const bossId = rollFreshBossId();
-    expect(["forge-golem", "frostwarden", "blight-treant", "iron-bear"]).toContain(bossId);
-  });
+it("rollFreshBossId returns a valid boss enemy ID", () => {
+  const bossId = rollFreshBossId();
+  expect(["forge-golem", "frostwarden", "blight-treant", "iron-bear"]).toContain(bossId);
 });

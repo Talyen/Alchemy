@@ -1,5 +1,5 @@
 import type { DemoImportSource } from "@/lib/desktop-api";
-import { createDefaultGearSaveFields } from "../stores/gear-actions";
+import { createDefaultGearSaveFields } from "../stores/gear-state-defaults";
 import { createDefaultProfileSaveFields } from "../stores/profile-store-types";
 import { RUN_PROFILE_SAVE_KEYS } from "../stores/run-profile-save-fields";
 import { createDefaultSaveData } from "./defaults";

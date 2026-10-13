@@ -8,12 +8,16 @@ import { snapshotCareer } from "./career";
 import { createPlaythroughController } from "./controller";
 
 /** Fixture grants are never labeled as earned fresh-save progression. */
-export function createPlaythroughFixture(name: "unlocked-v1" | "victory-v1" | "economy-v1", gameSession: GameSession) {
-  if (!["unlocked-v1", "economy-v1", "victory-v1"].includes(name)) throw new Error(`Unknown fixture: ${name}`);
+export function createPlaythroughFixture(
+  name: "unlocked-v1" | "victory-v1" | "economy-v1" | "trinket-v1",
+  gameSession: GameSession,
+) {
+  if (!["unlocked-v1", "economy-v1", "victory-v1", "trinket-v1"].includes(name))
+    throw new Error(`Unknown fixture: ${name}`);
   const save = createDefaultSaveData();
   save.finishedRunCharacters = Object.keys(characters) as CharacterId[];
   for (const hero of save.finishedRunCharacters) save.completedDifficulties[hero] = ["difficulty-1", "difficulty-2"];
-  if (name === "economy-v1") {
+  if (name === "economy-v1" || name === "trinket-v1") {
     save.gold = 2000;
     for (const material of Object.keys(save.materialInventory) as Array<keyof typeof save.materialInventory>)
       save.materialInventory[material] = 1000;
@@ -23,6 +27,17 @@ export function createPlaythroughFixture(name: "unlocked-v1" | "victory-v1" | "e
       definitionId: "longsword-basic",
       affixes: [],
     });
+    if (name === "trinket-v1") {
+      save.ownedTrinketIds.push("companions-collar");
+      save.discoveredTrinketIds.push("companions-collar");
+      save.equippedTrinkets.knight = "companions-collar";
+      save.discoveredUniqueIds.push("oathkeeper");
+      save.gearInventories.knight.push({
+        instanceId: "fixture-oathkeeper",
+        definitionId: "oathkeeper",
+        affixes: [],
+      });
+    }
     return save;
   }
   if (name === "unlocked-v1") return save;
