@@ -12,7 +12,8 @@ Current scaling talents use numeric percentage fields. Run restoration rebuilds 
 
 Armored Fists adds half Armor to Physical damage; Shield Slam adds half Block. Nature damage riders use the resolved packet amount and each roll independently. Ignite, Sanctify, Rust, and Tempered Guard use 25% of Forge; Tempered Guard applies once to each positive Block grant, including triggered rewards and Overflow. Overlapping Homestead, talent, and Gear damage conversions use the strongest applicable percentage without adding Forge twice; Burn/Bleed sharing follows the same rule. Last Stand increases Armor gains by 25% strictly below half Health; Desperate Forge follows the [Forge gain rules](#armor-forge-and-gold). Unrelenting doubles Physical damage strictly below half Health. Round fractional combat magnitudes normally, including zero results.
 
-Homestead has four increasing tiers. Crystal Garden adds 25 percentage points
+Homestead Buildings, Farms, and Research have four increasing tiers; Companion
+Bonds have three. Crystal Garden adds 25 percentage points
 per tier to Freeze damage scaling from current Mana. Leyline has a 5/10/15/20%
 chance to waive Mana payment on an otherwise affordable play. It rolls only on a committed
 positive-Mana-cost play, preserves unused cost discounts on success, and never

@@ -47,7 +47,13 @@ and Powerful Wish consume these references, never English wording or equal-value
 matching. Update cards through `withCardDescription` so strings and highlight
 offsets render from the same model; do not edit numeric prose independently.
 
-Cards in `cardLibrary` are automatically included in card shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration. Exclude a card with `excludeFromOfferPool: true` (`mixed-potion` is the current example). Distillation-eligible Potions are the explicit `POTION_CARD_IDS` list in `cards/card-pools.ts` — a new brew must be added there deliberately; Mana Berries, Mana Crystals, Apple, and Bread are intentionally excluded.
+Cards in `cardLibrary` are automatically included in card shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration. Exclude a card with `excludeFromOfferPool: true` (`mixed-potion` is the current example).
+
+Standard Potions are the explicit `POTION_CARD_IDS` list in `cards/card-pools.ts`;
+`getStandardPotionPool()` supplies shop stock and new Campfire offers.
+`isPotionCard` also recognizes Mixed Potions for brewing and the Distillation
+talent's combat potency. Add a new standard Potion to the list deliberately;
+Mana Berries, Mana Crystals, Apple, and Bread are intentionally excluded.
 
 Run `npm run content:audit` before handing off: card text must match effects (canonical description diff in `src/lib/content-validation/card-parity/`) and prose must pass the typography rules (no em dashes; description lines stay period-free).
 
@@ -202,6 +208,6 @@ rendered numeric positions identify highlights, never the effect to mutate.
 
 Transmutation derives compatible alterations from the run deck, independent of class affinities and offerable replacement-card pools. `game-constants/transmutation.ts` owns the three keyword groups and title prefixes. Each visit rolls one useful keyword per group, with unique fallback choices if a group is unavailable, then saves each card's randomly chosen conversion. All occurrences of the selected source keyword convert without changing existing numeric fields. Unsupported conditions and scaling exclude conversions; additions use native effects, and added effect lines respect Corruption's four-effect-line limit. Keep recursive effects, structured descriptions, distilled marks, and keyword detection consistent when adding new mechanics. Back and reload must preserve exact previews. Transmuted cards carry `transmuted`, `baseTitle`, generated descriptions, and any added tags through hydration; they cannot receive further Transmutation or Corruption.
 
-Preserve transformed effects and generated descriptions together. Mixed and strengthened Potions can be brewed repeatedly. Strengthened standard Potions can be Transmutation sources; Mixed Potions cannot. Distillation adds 1 to supported magnitudes, including Wishes, and preserves probabilities, percentage effects, durations, and draw counts. Full-cleanse Potions without healing gain Restore 1 Health. Persist `distilled` marks on description magnitudes so increased values remain green after hydration and mixing.
+Preserve transformed effects and generated descriptions together. Mixed and strengthened Potions remain eligible for later brewing visits; [brewing rules](./GAME_RULES.md#brewing-transmutation-and-elemental-reactions) own Campfire selection and once-per-visit service limits. Strengthened standard Potions can be Transmutation sources; Mixed Potions cannot. The Distill service adds 1 to supported magnitudes, including Wishes, and preserves probabilities, percentage effects, durations, and draw counts. Full-cleanse Potions without healing gain Restore 1 Health. Persist `distilled` marks on description magnitudes so increased values remain green after hydration and mixing. The Distillation talent separately scales eligible Potion benefits during combat under the [Potion potency rules](./TALENT_RULES.md#distinct-talent-and-card-effects).
 
 The former Shatter and Wildfire talents are displayed as Brittle Ice and Flash Fire to distinguish them from the universal reactions. Their saved IDs and effects remain unchanged.

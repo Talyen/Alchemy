@@ -68,9 +68,11 @@ does not prove that Steam displayed the destination.
 
 ## Local screen captures
 
-Production demo screenshots are captured under `reports/demo-copy-review/` in an
+Production demo screenshots were captured under `reports/demo-copy-review/` in an
 isolated temporary Electron profile: `menu.png`, `modes.png`, `heroes.png`,
-`recap.png`, and `completion.png`. These are ignored review artifacts. The recap uses a seeded Act 1
+`recap.png`, and `completion.png`. These ignored review artifacts follow
+[transient-artifact cleanup](../scripts/README.md#cleanup-clean--explicit-reset-prunetransient--expiry)
+and may have expired. The recap uses a seeded Act 1
 boss test run through the normal combat, reward, and settlement flow; reward
 quantities are illustrative rather than a representative balance sample.
 

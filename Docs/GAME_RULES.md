@@ -392,9 +392,25 @@ hit-stage ordering above and must not reorder RNG or feedback.
 
 ## Brewing, Transmutation, and elemental reactions
 
-Campfires offer Rest or Brew, including at full Health. Brew adds one of three fixed standard Potion offers (at least one recovery/defense option), or combines two owned eligible Potions. It replaces Rest without a resource cost. Potions remain in the run deck after Consume. Rest-only room bonuses apply only to Rest.
+Campfires offer Rest or Brew, including at full Health. When the deck contains
+at least two eligible Potions, Brew combines two chosen instances; otherwise, it
+grants one of three fixed standard Potion offers (at least one recovery/defense
+option). The deck determines which brewing action is available. Rest and Brew
+share one use per visit, with no resource cost for Brew. Potions remain in the run
+deck after Consume. Rest-only room bonuses apply only to Rest.
 
-The Alchemist shop sells ordinary Potions and offers one Brew service per visit: Mix or Distill, at the existing 40 Gold mixing price before discounts. Distill adds 1 to supported beneficial numerical magnitudes, including Wishes; cost, Consume, probabilities, draw counts, durations, and percentage effects stay unchanged. Panacea restores 2 Health alongside its full cleanse; each distillation adds 1 Health. Increased values are green in card hover tooltips, including after reload. Potions can be brewed repeatedly, including Mixed Potions; All seven standard Potions can be distilled.
+The Alchemist shop sells ordinary Potions and offers Mix Potion and Distill,
+sharing one service use per visit at the 40 Gold mixing price before discounts.
+All seven standard Potions can be distilled. Mixed and previously strengthened
+Potions remain eligible for brewing at later visits; refreshing or reloading does
+not restore the current visit's service use.
+
+Distill adds 1 to supported beneficial numerical magnitudes, including Wishes;
+cost, Consume, probabilities, draw counts, durations, and percentage effects stay
+unchanged. Panacea restores 2 Health alongside its full cleanse; each distillation
+adds 1 Health. Increased values are green in card hover tooltips, including after
+reload. The Distillation talent's combat potency bonus is separate from the
+Distill service.
 
 Transmutation offers one free alteration to an eligible card. Each visit rolls three class-independent keywords: one Damage, one Buffs/Restoration, and one Resources/Additions. Health and Leech belong to Buffs/Restoration. Only keywords useful somewhere in the eligible deck enter the roll; an unavailable category is filled from the remaining keywords without duplicates. All 21 keywords participate. Offers and randomly selected source keywords are fixed for each card throughout the visit, including Back and reload.
 
