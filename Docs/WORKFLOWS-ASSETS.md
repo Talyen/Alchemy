@@ -184,7 +184,7 @@ Select library-relative sources and stable output filenames in `scripts/assets/m
 `public/Music/`. The optimizer removes files without a corresponding source;
 there is no curated-source exception for music. Filenames are validated for
 duplicates and supported extensions by `scripts/assets/music-assets.mjs`. Output targets must be basenames, and their extensions must match the selected source because this pipeline does not transcode.
-Register playable tracks in `src/lib/audio/music.ts`. Its
+Register playable tracks in `MUSIC_CATALOG` in `src/lib/audio/music-catalog.ts`. Its
 `allRegisteredMusicFiles()` list is cross-checked against `public/Music/` by
 `tests/lib/audio/audio-assets.test.ts`.
 
