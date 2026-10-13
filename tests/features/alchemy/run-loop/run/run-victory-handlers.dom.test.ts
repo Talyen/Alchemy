@@ -66,7 +66,7 @@ describe("createRunFlow victory paths", () => {
     try {
       setRunSession({ hasActiveRun: true });
       const setScreen = vi.fn();
-      const { result } = renderHook(() => useScreenTransitions(ROUTE_SCREENS.BATTLE, setScreen));
+      const { result } = renderHook(() => useScreenTransitions(defaultGameSession, ROUTE_SCREENS.BATTLE, setScreen));
       const handlers = createRunFlow(
         makeFlowHandlerDeps({ transition: result.current.transition }),
         defaultGameSession,

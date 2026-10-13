@@ -246,6 +246,9 @@ it("keeps the shipping singleton out of reusable domains and headless careers", 
     "src/features/alchemy/shared/storage/bootstrap-save-state.ts",
     "src/app/playthrough/controller.ts",
     "src/app/autosave-lifecycle.ts",
+    "src/features/alchemy/shell/use-alchemy-run-controller.ts",
+    "src/features/alchemy/shell/use-battle-controller.ts",
+    "src/features/alchemy/shell/use-screen-transitions.ts",
     "src/features/alchemy/run-loop/battle/battle-presentation-store.ts",
     "src/features/alchemy/run-loop/battle/use-battle-opening-draw.ts",
     "src/features/alchemy/run-loop/screens/battle-screen/hand.tsx",
@@ -254,7 +257,7 @@ it("keeps the shipping singleton out of reusable domains and headless careers", 
       imports.length,
     );
   }
-  for (const file of ["src/app/use-app-save-state.ts", "src/features/alchemy/shell/use-battle-controller.ts"]) {
+  for (const file of ["src/app/use-app-save-state.ts", "src/App.tsx"]) {
     expect(
       await effectiveMessages(
         file,

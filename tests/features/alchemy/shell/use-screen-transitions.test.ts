@@ -106,7 +106,9 @@ describe("screen navigation", () => {
   it("keeps the resume activity when React unmounts before the screen is shown", () => {
     setRunSession({ hasActiveRun: true });
     const show = vi.fn();
-    const { result, unmount } = renderHook(() => useScreenTransitions("battle", show), { reactStrictMode: true });
+    const { result, unmount } = renderHook(() => useScreenTransitions(defaultGameSession, "battle", show), {
+      reactStrictMode: true,
+    });
     act(() =>
       result.current.navigateTo("rewards", () =>
         dispatchRunSessionCommand(

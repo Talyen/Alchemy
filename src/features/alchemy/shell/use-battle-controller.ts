@@ -1,9 +1,12 @@
 import { createSessionPersistence } from "@/features/alchemy/shared/storage";
-import { assertSessionOwnership, guardProgressAction } from "@/features/alchemy/shared/stores/session-capabilities";
-import { battlePresentation } from "@/app/battle-presentation";
-import { defaultGameSession } from "@/app/application-session";
+import {
+  assertSessionOwnership,
+  guardProgressAction,
+  sessionFeedback,
+} from "@/features/alchemy/shared/stores/session-capabilities";
+import type { BattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
-import { playUISound } from "@/lib/audio";
 import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-card-play";
 import { useBattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import { createBattleInit } from "@/features/alchemy/run-loop/battle/battle-init";
@@ -16,14 +19,17 @@ import {
 } from "@/features/alchemy/run-loop/battle/controller-utils";
 import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/end-turn-ui";
 import { useBattleOpeningDraw } from "@/features/alchemy/run-loop/battle/use-battle-opening-draw";
-import { useHasActiveBattle } from "@/features/alchemy/shared/stores/use-run-reads";
-import { preferredAutoplayEnabled, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
+import { useSessionHasActiveBattle } from "@/features/alchemy/shared/stores/use-session-run-reads";
+import { readSessionSettings } from "@/features/alchemy/shared/stores/session-settings";
+import { preferredAutoplayEnabled } from "@/features/alchemy/shared/stores/settings-state";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import type { CardRect } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 interface UseBattleControllerProps {
+  gameSession: GameSession;
+  presentation: BattlePresentationStore;
   screen: Screen;
   setHoveredCardId?: React.Dispatch<React.SetStateAction<string | null>>;
   onBattleVictory?: () => void;
@@ -33,6 +39,8 @@ interface UseBattleControllerProps {
 }
 
 export function useBattleController({
+  gameSession,
+  presentation,
   screen,
   setHoveredCardId = useUiStore.getState().setHoveredCardId,
   onBattleVictory,
@@ -41,26 +49,34 @@ export function useBattleController({
   measureVisualCardRect = defaultMeasureVisualCardRect,
 }: UseBattleControllerProps) {
   assertSessionOwnership(
-    defaultGameSession,
+    gameSession,
+    presentation,
     ...[onBattleVictory, onBattleDefeat].filter((callback) => callback !== undefined),
   );
-  const hasActiveBattle = useHasActiveBattle();
-  const persistence = useMemo(() => createSessionPersistence(defaultGameSession), []);
+  const [owner] = useState(() => ({ gameSession, presentation }));
+  if (owner.gameSession !== gameSession || owner.presentation !== presentation) {
+    throw new Error("Remount the battle controller when changing its game session or presentation store");
+  }
+  const hasActiveBattle = useSessionHasActiveBattle(gameSession);
+  const persistence = useMemo(() => createSessionPersistence(gameSession), [gameSession]);
 
   const [isAutoplayEnabled, setIsAutoplayEnabledState] = useState(() =>
-    preferredAutoplayEnabled(useSettingsStore.getState()),
+    preferredAutoplayEnabled(readSessionSettings(gameSession)),
   );
   const autoplayEnabledRef = useRef(isAutoplayEnabled);
 
-  const updateAutoplayEnabled = useCallback((enabled: boolean, persist: boolean) => {
-    const previous = autoplayEnabledRef.current;
-    autoplayEnabledRef.current = enabled;
-    setIsAutoplayEnabledState(enabled);
-    if (persist && useSettingsStore.getState().rememberAutoplayPreference) {
-      useSettingsStore.getState().setAutoplayEnabled(enabled);
-    }
-    if (persist && previous !== enabled) playUISound(enabled ? "toggleOn" : "toggleOff");
-  }, []);
+  const updateAutoplayEnabled = useCallback(
+    (enabled: boolean, persist: boolean) => {
+      const previous = autoplayEnabledRef.current;
+      autoplayEnabledRef.current = enabled;
+      setIsAutoplayEnabledState(enabled);
+      if (persist && readSessionSettings(gameSession).rememberAutoplayPreference) {
+        readSessionSettings(gameSession).setAutoplayEnabled(enabled);
+      }
+      if (persist && previous !== enabled) sessionFeedback(gameSession).playUISound(enabled ? "toggleOn" : "toggleOff");
+    },
+    [gameSession],
+  );
 
   const setAutoplayEnabled = useCallback(
     (enabled: boolean) => updateAutoplayEnabled(enabled, true),
@@ -80,14 +96,14 @@ export function useBattleController({
   }, []);
 
   const applyPreferredAutoplay = useCallback(() => {
-    updateAutoplayEnabled(preferredAutoplayEnabled(useSettingsStore.getState()), false);
+    updateAutoplayEnabled(preferredAutoplayEnabled(readSessionSettings(gameSession)), false);
     setBoonInspectOpen(false);
-  }, [updateAutoplayEnabled]);
+  }, [updateAutoplayEnabled, gameSession]);
 
-  const battle = useMemo(() => createBattleCapabilities(defaultGameSession), []);
+  const battle = useMemo(() => createBattleCapabilities(gameSession), [gameSession]);
   const ctx = useBattleControllerContext({
     battle,
-    presentation: battlePresentation,
+    presentation,
     screen,
     setHoveredCardId,
     onBattleVictory,
@@ -145,7 +161,7 @@ export function useBattleController({
   return useMemo(
     () => ({
       hasActiveBattle,
-      presentation: battlePresentation,
+      presentation,
       refs,
       bindPlayback,
       screen,
@@ -162,24 +178,18 @@ export function useBattleController({
       startBattle: actions.init.startBattle,
       startBossBattle: actions.init.startBossBattle,
       startBossById: actions.init.startBossById,
-      handleCardClick: guardProgressAction(defaultGameSession, actions.cardPlay.handleCardClick, undefined),
-      handleWishChoice: guardProgressAction(defaultGameSession, actions.cardPlay.handleWishChoice, undefined),
-      handleAutoplayCard: guardProgressAction(
-        defaultGameSession,
-        actions.cardPlay.handleAutoplayCard,
-        Promise.resolve(false),
-      ),
-      handleAutoplayWish: guardProgressAction(
-        defaultGameSession,
-        actions.cardPlay.handleAutoplayWish,
-        Promise.resolve(false),
-      ),
-      handleEndTurn: guardProgressAction(defaultGameSession, actions.endTurnUi.handleEndTurn, undefined),
+      handleCardClick: guardProgressAction(gameSession, actions.cardPlay.handleCardClick, undefined),
+      handleWishChoice: guardProgressAction(gameSession, actions.cardPlay.handleWishChoice, undefined),
+      handleAutoplayCard: guardProgressAction(gameSession, actions.cardPlay.handleAutoplayCard, Promise.resolve(false)),
+      handleAutoplayWish: guardProgressAction(gameSession, actions.cardPlay.handleAutoplayWish, Promise.resolve(false)),
+      handleEndTurn: guardProgressAction(gameSession, actions.endTurnUi.handleEndTurn, undefined),
       cancelBattle: actions.session.resetBattleSession,
       skipCombatDevMode: actions.devOutcomes.skipCombatDevMode,
     }),
     [
       hasActiveBattle,
+      gameSession,
+      presentation,
       persistence,
       refs,
       bindPlayback,

@@ -126,6 +126,7 @@ export const BATTLE_NO_FEATURES = [
 export const DOMAIN_STORE_PATTERNS = [
   {
     group: [
+      "**/session-gameplay-store",
       "**/gameplay-state-store",
       "**/gameplay-state-reads",
       "**/gameplay-state",

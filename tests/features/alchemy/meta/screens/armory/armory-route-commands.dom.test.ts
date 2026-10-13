@@ -3,6 +3,7 @@ import { setBattleActiveForTest as setHasActiveBattle } from "../../../../../hel
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import "../../../../../helpers/mock-audio";
+import { battlePresentation } from "@/app/battle-presentation";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { mutateGearForTest, resetAllTestStores } from "../../../../../helpers/run-domain-store-test";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
@@ -45,7 +46,9 @@ describe("Armory route commands", () => {
     inventories.knight = [armor];
     mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
 
-    const { result } = renderHook(() => useAlchemyRunController().routeCommands.meta.armory);
+    const { result } = renderHook(
+      () => useAlchemyRunController(defaultGameSession, battlePresentation).routeCommands.meta.armory,
+    );
 
     act(() => {
       dispatchRunSessionCommand(
@@ -85,7 +88,9 @@ describe("Armory route commands", () => {
       defaultGameSession,
     );
 
-    const { result } = renderHook(() => useAlchemyRunController().routeCommands.meta.armory);
+    const { result } = renderHook(
+      () => useAlchemyRunController(defaultGameSession, battlePresentation).routeCommands.meta.armory,
+    );
 
     act(() => {
       result.current.onEquip("rogue", "body", armor);
@@ -115,7 +120,9 @@ describe("Armory route commands", () => {
       defaultGameSession,
     );
 
-    const { result } = renderHook(() => useAlchemyRunController().routeCommands.meta.armory);
+    const { result } = renderHook(
+      () => useAlchemyRunController(defaultGameSession, battlePresentation).routeCommands.meta.armory,
+    );
 
     act(() => {
       expect(result.current.onSalvage(armor.instanceId)).toBe(true);
@@ -132,7 +139,9 @@ describe("Armory route commands", () => {
     const inventories = createEmptyGearInventories();
     mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
 
-    const { result } = renderHook(() => useAlchemyRunController().routeCommands.meta.armory);
+    const { result } = renderHook(
+      () => useAlchemyRunController(defaultGameSession, battlePresentation).routeCommands.meta.armory,
+    );
     expect(result.current.onSpawnDevGear).toEqual(expect.any(Function));
 
     act(() => {
@@ -147,7 +156,9 @@ describe("Armory route commands", () => {
     const inventories = createEmptyGearInventories();
     mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
 
-    const { result } = renderHook(() => useAlchemyRunController().routeCommands.meta.armory);
+    const { result } = renderHook(
+      () => useAlchemyRunController(defaultGameSession, battlePresentation).routeCommands.meta.armory,
+    );
     expect(result.current.onSpawnDevTrinket).toEqual(expect.any(Function));
 
     act(() => {
@@ -175,7 +186,9 @@ describe("Armory route commands", () => {
       defaultGameSession,
     );
 
-    const { result } = renderHook(() => useAlchemyRunController().routeCommands.meta.armory);
+    const { result } = renderHook(
+      () => useAlchemyRunController(defaultGameSession, battlePresentation).routeCommands.meta.armory,
+    );
 
     act(() => {
       expect(result.current.onEquip("knight", "body", armor)).toBe(false);
@@ -206,7 +219,9 @@ describe("Armory route commands", () => {
       gear.addCurrencies({ voidstone: 1 });
     });
 
-    const { result } = renderHook(() => useAlchemyRunController().routeCommands.meta.armory);
+    const { result } = renderHook(
+      () => useAlchemyRunController(defaultGameSession, battlePresentation).routeCommands.meta.armory,
+    );
 
     act(() => {
       expect(result.current.onEquip("knight", "body", armor)).toBe(true);
@@ -238,7 +253,9 @@ describe("Armory route commands", () => {
     const inventories = createEmptyGearInventories();
     mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
 
-    const { result } = renderHook(() => useAlchemyRunController().routeCommands.meta.armory);
+    const { result } = renderHook(
+      () => useAlchemyRunController(defaultGameSession, battlePresentation).routeCommands.meta.armory,
+    );
 
     act(() => {
       expect(result.current.onSalvage("missing")).toBe(false);
