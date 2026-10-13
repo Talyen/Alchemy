@@ -53,6 +53,13 @@ The dispatcher returns the outcome's value so route-facing result shapes stay un
 React selectors and autosave subscribe to
 that same root. Settings and presentation-only state remain separate.
 
+Store-owned restore commands also stage settings normalization before execution.
+After acceptance, the dispatcher installs gameplay and settings, replaces the
+save acknowledgment epoch, and arms any pending save protection before notifying
+observers. Decoding, settings preparation, rejection, or result-validation failure
+leaves both stores, the pending save gate, and completion callbacks unchanged.
+Ordinary feature commands cannot request this restore publication mode.
+
 The aggregate exposes read/subscription capabilities separately from its internal
 commit capability; React adapters and test fixtures cannot bypass commands through
 `setState`. The coordinator installs the complete root, arms its persistence and
@@ -108,6 +115,10 @@ feedback belongs outside the transaction and can use the returned fallback value
 The command guard is released before `afterCommit`, so an effect may dispatch a
 separate command. If an effect throws, its error propagates and the already
 committed state remains; post-commit errors do not roll back gameplay.
+
+`afterCommit` confirms an in-memory commit, not a durable save. Completed player
+outcomes follow [completed actions and local saving](#completed-actions-and-local-saving)
+through the same session's `SessionPersistence.afterProgressSaved` capability.
 
 Session feedback adapters are an explicit exception to error propagation.
 `shared/stores/session-effects.ts` isolates each audio/UI adapter and lifecycle
@@ -258,7 +269,13 @@ A failed primary write tries the recovery slot. If both fail, show “Couldn’t
 and Retry; keep the original action pending and retry its snapshot without repeating
 costs, rewards, or RNG. The existing autosave timer handles automatic retries.
 Explicit Retry bypasses backoff once; repeated activation during saving does nothing.
-Clear, restore, write protection, and disposal invalidate pending completion callbacks.
+Clear, successful restore, write protection, and disposal invalidate pending completion callbacks.
+Restore replaces the acknowledgment epoch only at commit and keeps save protection
+armed continuously until the replacement snapshot is saved. A failed restore retains
+the previous epoch, pending action, and deferred feedback. Successful restore also
+invalidates autosave scheduling before observers schedule replacement work, so a
+late pre-restore write cannot cancel replacement retries. The session persistence
+cancellation subscription covers storage cancellation and committed restores.
 Completed actions survive process termination after local acknowledgement. This
 promise does not cover power loss, subsequent filesystem failure, or browser eviction.
 
@@ -297,9 +314,12 @@ restoration, and `restoreSessionSave(save, session, options)` for complete saves
 Bootstrap, independent session initialization, and playthrough fixtures use the
 complete-save command: profile, Gear, permanent progress, codec repairs, active
 run decoding, battle rebinding, and incompatible-battle settlement share one
-draft and one gameplay revision. A decoding failure publishes none of those
-changes. Settings remain a separate store and hydrate only after that command
-succeeds; abandonment feedback and its immediate save follow settings hydration.
+draft and one gameplay revision. Settings remain a separate store; their codec
+prepares normalized values without mutation, then installs them during the same
+publication boundary. Gameplay, settings, and progress observers therefore read
+the complete replacement, never a mixture of careers. A preparation or decoding
+failure changes neither state nor pending save protection. Abandonment feedback
+and its immediate save follow publication of the complete replacement.
 Repeated bootstrap may preserve an initialized activity while applying saved
 progression and rebinding its live manifests in the same command.
 `persistence-hydration.ts` composes the gameplay codec repairs inside that draft;
@@ -307,6 +327,14 @@ progression and rebinding its live manifests in the same command.
 restore an activity. Both paths include Trinket-manifest repair. `parseActiveRun(raw)` validates JSON before hydration; `toActiveRunData` in `lib/validation/parse-active-run.ts` handles run parsing, while `PersistedBattleStateSchema` owns battle wire parsing and default merging.
 
 Domain persistence codecs own field selection, defaults, encoding, hydration, and subscriptions. `GameplayPersistenceCodec<T>` receives a `GameplayDraft`; `StandalonePersistenceCodec<T>` owns a separate Zustand store. `shared/storage/persistence.ts` composes their fields into the versioned envelope and subscribes to settings changes plus the gameplay commit signal. Codec types live in `shared/stores/persistence-codec.ts`.
+
+The settings store defers hydration notifications until the coordinator arms save
+protection; subscriber failures are isolated so they cannot interrupt publication.
+Persistence subscriptions compare both owners against one baseline, producing
+one complete snapshot when restore changes both. Fields-only hydration uses the
+same publication boundary while retaining the current activity. Restore publishes
+its new persistence generation even if the saved values are equal; the gameplay
+root and revision remain unchanged when no gameplay field changes.
 
 `shared/stores/persistence-commit-filter.ts` decides whether a committed state change can alter the save. It compares the saved run, activity (including active combat), profile, and Gear inputs directly; permanent progress uses the save keys from `run-profile-codec.ts`, excluding derived Homestead effects. Session comparisons follow the transient and mode-gated fields declared by `run-resume-codec.ts`. Reward state and Companion cards count, while the claim lock does not. Every run and session field must be classified at typecheck time so a newly added field cannot silently bypass autosave.
 

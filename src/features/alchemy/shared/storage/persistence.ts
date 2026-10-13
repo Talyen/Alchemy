@@ -30,10 +30,9 @@ export function hydrateAlchemyPersistenceFields(fields: AlchemyPersistenceFields
       hydrateGameplayPersistenceFields(fields, draft);
       return acceptCommand();
     },
-    undefined,
+    { restore: { settings: fields } },
     gameSession,
   );
-  sessionRuntime(gameSession).settingsCodec.hydrate(fields);
 }
 
 export function subscribeAlchemyPersistence(listener: () => void, gameSession: GameSession): () => void {

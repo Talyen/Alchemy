@@ -42,6 +42,18 @@ function probe(script: string, args: string[], cwd: string, interception: string
 }
 
 describe("CLI launch paths", () => {
+  it("verifies desktop artifacts from the checkout when called from another directory", () => {
+    const result = probe(
+      "verify-desktop-package.mjs",
+      [],
+      fixture(),
+      `process.env.ALCHEMY_EDITION = 'full';
+       fs.readdirSync = (directory) => { throw new Error('package lookup: ' + directory); };`,
+    );
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(`package lookup: ${path.join(ROOT, "release-desktop")}`);
+  });
+
   it.each([
     ["run-local-tests.mjs", []],
     ["run-ship-unit.mjs", ["--live"]],
@@ -130,6 +142,17 @@ describe("CLI launch paths", () => {
 });
 
 describe("CLI validation before side effects", () => {
+  it.each(["dist-desktop.mjs", "steam-upload.mjs"])("%s help needs no package or release credentials", (script) => {
+    const result = probe(
+      script,
+      script === "dist-desktop.mjs" ? ["--build", "--help"] : ["--help"],
+      fixture(),
+      `fs.writeFileSync = fs.mkdirSync = cp.spawn = cp.spawnSync = () => { throw new Error('unexpected side effect'); };`,
+    );
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain("Usage:");
+  });
+
   it("rejects unsupported icon generation arguments before reading sources or writing icons", () => {
     const result = probe(
       "generate-icons.mjs",

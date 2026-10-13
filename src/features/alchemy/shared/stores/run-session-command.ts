@@ -25,7 +25,7 @@ export function dispatchRunSessionCommand<T>(
         scope.close();
       }
     },
-    options,
+    options?.afterCommit ? { afterCommit: options.afterCommit } : undefined,
     gameSession,
   );
 }
