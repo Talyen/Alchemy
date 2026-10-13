@@ -29,8 +29,9 @@ export function useAlchemyRunController(): AlchemyRunCommands {
   const persistence = useMemo(() => createSessionPersistence(defaultGameSession), []);
   const progressSave = useSyncExternalStore(persistence.subscribeProgress, persistence.readProgress);
   const runActions = useMemo(() => createRunRouteActions(defaultGameSession), []);
-  const homesteadEffects = useHomesteadEffects();
-  const talentEffects = useTalentEffects();
+  // Live quote functions need a new render when permanent progression changes.
+  useHomesteadEffects();
+  useTalentEffects();
   const characterId = useActiveRunCharacterId();
   const screen = useActiveRunScreenValue();
   const { navigateTo, resumeTo, transition, cancelPending, navigationPending } = useScreenTransitions(screen);
@@ -52,20 +53,7 @@ export function useAlchemyRunController(): AlchemyRunCommands {
     onBattleDefeat: outcomes.defeat.handleBattleDefeat,
   });
 
-  const gearAstralChanceBonus = homesteadEffects.gearAstralChanceBonus;
-  const mixPotionDiscount = homesteadEffects.mixPotionDiscount;
-  const removeCardDiscount = homesteadEffects.removeCardDiscount;
-  const shop = useMemo(
-    () =>
-      createShopActions(
-        {
-          talentEffects,
-          homesteadEffects: { gearAstralChanceBonus, mixPotionDiscount, removeCardDiscount },
-        },
-        defaultGameSession,
-      ),
-    [talentEffects, gearAstralChanceBonus, mixPotionDiscount, removeCardDiscount],
-  );
+  const shop = useMemo(() => createShopActions(defaultGameSession), []);
   const labyrinth = useMemo(() => createLabyrinthController(defaultGameSession), []);
 
   const nav = useMemo(

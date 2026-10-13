@@ -1,7 +1,7 @@
 import { isDeepStrictEqual } from "node:util";
 import "../helpers/mock-audio";
 import { createRunRngState } from "@/lib/rng";
-import { cardById, computeTalentEffects } from "@/lib/game-data";
+import { cardById } from "@/lib/game-data";
 import {
   initializeAlchemyVisit,
   brewAtCampfire,
@@ -70,10 +70,7 @@ defineSequenceFamily("visits", (seed) => {
         lastVictoryContentSystem: mode,
       },
     });
-  const alchemist = createAlchemistShopCommands(
-    { talentEffects: computeTalentEffects({}), homesteadEffects: { mixPotionDiscount: 0 } },
-    defaultGameSession,
-  );
+  const alchemist = createAlchemistShopCommands(defaultGameSession);
   let claimed: string | null = null;
   const observe = () => ({
     visit,

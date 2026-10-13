@@ -184,7 +184,13 @@ layers live beside their leaves (`card-ghost-overlay.tsx`,
 
 ## Shop commands
 
-`create-shop-actions.ts` composes the matching `*-shop-commands.ts` modules;
+`create-shop-actions.ts` composes the matching `*-shop-commands.ts` modules and
+binds them once to a `GameSession`. Callers supply no Talent or Homestead
+manifests. `shop-pricing-context.ts` derives effects from current session
+progression for quotes and from the open transaction for mutations. Purchases,
+services, refresh chances, potion potency, and Gear sampling therefore use the
+same progression as payment and visit state, including after upgrades, resets,
+or save restoration. Retained capabilities do not need to be recreated.
 `shop-commands-core.ts` owns shared purchase actions and live price helpers.
 Each shop supplies typed shelf selection, item identity, pricing, and acquisition
 rules; the shared purchase owner uses that pricing rule for both displayed quotes
