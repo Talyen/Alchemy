@@ -109,6 +109,9 @@ export function createAlchemyAutosaveLifecycle(
       : () => {};
   const unsubscribeCancellation = persistence.subscribeCancellation(cancelPending);
   const unsubscribePersistence = persistence.subscribe(triggerSave);
+  // A preceding driver may have detached with an unsaved action. Its scheduler
+  // is gone, but this session still owns the revision and completion feedback.
+  if (durableProgress && persistence.readProgress().kind !== "idle") triggerSave();
 
   const dispose = (saveOnExit = true) => {
     unsubscribePersistence();

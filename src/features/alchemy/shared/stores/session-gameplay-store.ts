@@ -13,7 +13,7 @@ function createSessionGameplayStore(gameSession: GameSession) {
   const presentationStore = {
     getState: () => {
       const live = committedStore.getState();
-      if (!runtime.progressCompletion.active || runtime.progressCompletion.read().kind === "idle") return live;
+      if (runtime.progressCompletion.read().kind === "idle") return live;
       const base = runtime.presentationBase;
       if (cachedLive !== live || cachedBase !== base) {
         cachedLive = live;

@@ -288,6 +288,14 @@ The renderer marks persisted gameplay commits as pending before publishing them.
 `trackProgress`, `retryProgress`, and `afterProgressSaved`. A checkpoint carries
 the gameplay revision and a runtime epoch; only a covering local write in that
 epoch acknowledges completion. The save envelope does not gain scheduling data.
+Pending acknowledgements, deferred feedback, and storage cancellation belong to
+the session, independently of autosave subscription lifetimes. `trackProgress`
+registers a retry driver with its own idempotent release; the newest live driver
+handles Retry, falling back to the preceding driver when released. Releasing a
+driver cannot cancel another driver's registration or acknowledge unsaved work.
+A replacement durable autosave driver schedules the session's pending revision
+without requiring another gameplay action. With no driver, pending state and
+pre-action display remain protected; explicit Retry can checkpoint directly.
 
 Player-facing store hooks retain the immutable pre-action progress until saving
 succeeds. Transient navigation, Collection browsing, and inspection remain usable.
@@ -341,10 +349,11 @@ Each queued submission owns its completion. A coalesced-away submission returns
 `superseded`, never the replacement payload's outcome. Autosave retains unsaved
 work for retry; supersession neither clears an existing storage failure nor
 reports a new one. Only an actually written, current snapshot can acknowledge
-its captured revision. Detaching an autosave owner or disposing a session cancels
-feedback acknowledgement but still drains authorized exit writes. Save receipts
-never enter the wire format. Low-level transport tests use the storage runtime
-directly to exercise arbitrary payloads below this session boundary.
+its captured revision. Detaching an autosave owner releases only its scheduling
+and retry registration; pending session feedback survives until a covering save
+or explicit invalidation. Disposing the session cancels feedback acknowledgement
+but still drains authorized exit writes. Save receipts never enter the wire format.
+Low-level transport tests use the storage runtime directly to exercise arbitrary payloads below this session boundary.
 
 `run-resume-codec.ts` translates `RunSession` and `ActiveRunData`. The encoder selects
 progress, mode geography, and one tagged `activity`; the decoder hydrates that

@@ -71,11 +71,13 @@ export function dispatchGameplayCommand<T>(
 
     if (outcome.kind === "accepted") {
       const published = next === base ? base : { ...next, revision: base.revision + 1 };
-      const persistedChange = runtime.progressCompletion.active && !gameplayPersistedInputsEqual(base, published);
+      const progress = runtime.progressCompletion;
+      const persistedChange =
+        (progress.hasRetryDriver || progress.read().kind !== "idle") && !gameplayPersistedInputsEqual(base, published);
       const prepareProgress = () => {
         const progress = runtime.progressCompletion;
         if (options?.restore) {
-          const pending = progress.active || progress.read().kind !== "idle";
+          const pending = progress.hasRetryDriver || progress.read().kind !== "idle";
           if (pending && progress.read().kind === "idle") runtime.presentationBase = base;
           progress.replace(pending ? published.revision : undefined);
         } else if (persistedChange) {
