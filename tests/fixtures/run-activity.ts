@@ -1,5 +1,3 @@
-import { battleSnapshot, defaultBattleState } from "@/lib/battle";
-import { findMysteryEvent } from "@/lib/mystery";
 import type { PersistedRunActivity } from "@/lib/active-run-session/types";
 
 const DEFAULT_REWARD_STATE = {
@@ -21,10 +19,10 @@ const DEFAULT_TRINKET_SHOP_STATE = { trinketIds: [], refreshesLeft: 1, purchased
 const DEFAULT_EQUIPMENT_SHOP_STATE = { gear: [], refreshesLeft: 1, purchasedSlotKeys: [] };
 const DEFAULT_ALCHEMY_VISIT = { offers: [], completed: false, result: null, original: null };
 
-/** Current-format activity fixtures use production defaults without a legacy decoder. */
+// Shared with Node-side Playwright discovery: keep runtime game and artwork imports out.
+// Battles and Mysteries supply their scenario-specific data explicitly.
 export function savedActivityFixture(kind: PersistedRunActivity["kind"], data?: unknown): PersistedRunActivity {
   const defaults: Partial<Record<PersistedRunActivity["kind"], unknown>> = {
-    battle: { battleState: battleSnapshot(defaultBattleState()) },
     rewards: DEFAULT_REWARD_STATE,
     destination: { destinations: [], selectedBossId: null, lastVictoryEnemyType: null, lastVictoryContentSystem: null },
     shop: DEFAULT_SHOP_STATE,
@@ -34,17 +32,11 @@ export function savedActivityFixture(kind: PersistedRunActivity["kind"], data?: 
     campfire: DEFAULT_ALCHEMY_VISIT,
     transmutation: DEFAULT_ALCHEMY_VISIT,
     corruption: null,
-    mystery: {
-      event: structuredClone(findMysteryEvent("ancient-altar")),
-      chosenChoice: null,
-      cardChoices: null,
-      grantedTrinketIds: [],
-      grantedGear: [],
-      chosenCardId: null,
-    },
   };
+  if ((kind === "battle" || kind === "mystery") && data === undefined)
+    throw new Error(`${kind} fixtures require explicit activity data`);
   return (
-    Object.hasOwn(defaults, kind)
+    data !== undefined || Object.hasOwn(defaults, kind)
       ? {
           kind,
           data:

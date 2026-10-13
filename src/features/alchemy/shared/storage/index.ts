@@ -1,4 +1,4 @@
-export { clearAlchemySaveData, loadAlchemySaveState, saveAlchemySaveData, saveAlchemySaveDataForExit } from "./io";
+export { clearAlchemySaveData, loadAlchemySaveState, saveAlchemySaveData } from "./io";
 // Bootstrap and headless careers explicitly install their storage transport.
 export { configureSaveBackend } from "./io";
 export { evaluateSaveCandidates, type SaveLoadState } from "./save-candidates";

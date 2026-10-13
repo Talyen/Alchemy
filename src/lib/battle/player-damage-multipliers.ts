@@ -69,11 +69,7 @@ function computeTypeSpecificDamageBonus(
   return bonus;
 }
 
-function computeCardSpecificTalentBonus(
-  state: BattleState,
-  effect: Extract<BattleCardEffect, { kind: "damage" }>,
-  card?: BattleCard,
-): number {
+function computeCardSpecificTalentBonus(state: BattleState, card?: BattleCard): number {
   let bonus = 0;
   if (card?.consume && state.talentEffects.consumeDamageBonusPercent > 0) {
     bonus += state.talentEffects.consumeDamageBonusPercent / PERCENT_DENOMINATOR;
@@ -117,7 +113,7 @@ function computeAdditiveDamageBonus(
   return (
     computeEffectBonusMultiplier(effect, state) +
     computeTypeSpecificDamageBonus(state, effect) +
-    computeCardSpecificTalentBonus(state, effect, card) +
+    computeCardSpecificTalentBonus(state, card) +
     computeExternalDamageMultipliers(state, effect)
   );
 }

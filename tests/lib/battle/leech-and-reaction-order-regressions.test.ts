@@ -3,7 +3,7 @@ import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
 import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
-import { companionLibrary } from "@/lib/game-data";
+import { companionLibrary, defaultCompanionBondLevels } from "@/lib/game-data";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 const countessAndCinder = [
@@ -122,11 +122,14 @@ describe("Leech and reaction ordering", () => {
         ],
       },
       activeCompanion: companionLibrary.pixie,
-      talentEffects: { companionAttackOnBlockDepletedBelowHalf: true, companionBondLevels: { pixie: 3 } },
+      talentEffects: {
+        companionAttackOnBlockDepletedBelowHalf: true,
+        companionBondLevels: { ...defaultCompanionBondLevels, pixie: 3 },
+      },
       gearEffects: { stunOnArmorLostToAttack: 1 },
       rng: () => 0.99,
     });
-    const texts: import("@/lib/battle").CombatTextEvent[] = [];
+    const texts: Array<import("@/lib/battle").CombatTextEvent> = [];
     const next = resolveEnemyAttackHit(state, { kind: "damage", damageType: "physical", amount: 1 }, texts, {
       canDodge: false,
     }).state;

@@ -83,7 +83,7 @@ describe("session capability composition", () => {
     try {
       const act = () => 7;
       const group = { act };
-      const graph: { groups: (typeof group)[]; alias: typeof group; self?: unknown; [key]?: unknown } = {
+      const graph: { groups: Array<typeof group>; alias: typeof group; self?: unknown; [key]?: unknown } = {
         groups: [group],
         alias: group,
       };
