@@ -170,7 +170,12 @@ describe("thematic card effects", () => {
     expect(result.playerHealth).toBe(19);
     expect(result.mana).toBe(2);
     expect(result.hand.map((card) => card.id).sort()).toEqual([drawA.id, drawB.id]);
-    expect(cardById["blood-offering"]?.descriptionLines).toEqual(["Lose 1 Health", "Draw 2 cards", "Gain 1 Mana"]);
+    expect(cardById["blood-offering"]?.descriptionLines).toEqual([
+      "Lose 1 Health",
+      "Draw 2 cards",
+      "Gain 1 Mana",
+      "Consume",
+    ]);
   });
 
   it("Venom Fangs deals one Poison damage and Leech heals the player", () => {

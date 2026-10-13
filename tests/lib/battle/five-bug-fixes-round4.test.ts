@@ -10,12 +10,9 @@ import type { CombatTextEvent } from "@/lib/battle/types";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("Five targeted bug fixes round 4", () => {
-  describe("Runic Quill draws on any Consume, including companion summons", () => {
-    it("draws for a companion summon while excluding gear and talent Consume rewards", () => {
-      const summonCard: BattleCard = {
-        ...cardById["wolf-companion"]!,
-        consume: true,
-      };
+  describe("Runic Quill distinguishes Consume from Companion removal", () => {
+    it("does not grant any Consume rewards for a companion summon", () => {
+      const summonCard: BattleCard = cardById["wolf-companion"]!;
       const slash = cardById["slash"]!;
       const state = patchBattleState({
         deck: [slash],
@@ -29,8 +26,8 @@ describe("Five targeted bug fixes round 4", () => {
       const combatTexts: CombatTextEvent[] = [];
       const next = handlePostPlayCardDestination(state, summonCard, { combatTexts });
 
-      expect(next.hand).toMatchObject([{ id: slash.id }]);
-      expect(next.deck).toHaveLength(0);
+      expect(next.hand).toHaveLength(0);
+      expect(next.deck).toEqual([slash]);
       expect(next.playerStatuses.armor).toBe(state.playerStatuses.armor);
       expect(next.playerHealth).toBe(20);
     });

@@ -89,8 +89,14 @@ Current [Forge rules](../../../../../Docs/GAME_RULES.md#persistent-forge) and
 
 `pendingCardBleedLeechHealing` is the explicit-card subset of queued Bleed Leech.
 It defaults to zero, cannot exceed total queued Leech, and preserves attribution
-through ticks, detonations, and resume. [Deep Siphon](../../../../../Docs/TALENT_RULES.md#healing-and-leech)
-owns the resulting healing bonus.
+through ticks, detonations, and resume. It preserves explicit card-healing attribution
+for Clean Slate; Deep Siphon now benefits all player Leech sources.
+
+Companion summon hydration removes an obsolete hidden `consume: true` when the
+card has no explicit Consume description. Keep valid modified effects, descriptions,
+UIDs, costs, and pile membership together. Summons still leave battle independently
+of Consume; an explicitly added Consume keyword remains a legitimate card edit.
+Reworked Talent manifests rebuild from purchased IDs without replaying any awards.
 
 ## Run recap tracking
 

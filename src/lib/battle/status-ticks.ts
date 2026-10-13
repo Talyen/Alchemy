@@ -1,6 +1,6 @@
 import { rollBattleChance } from "./chance-roll";
 import { resolveBattleSequence } from "./battle-sequence";
-import { applyHealthLossTalentRewards, checkHealthThresholds } from "./status-player";
+import { checkHealthThresholds } from "./status-player";
 import { drawKeywordCard } from "./draw";
 import { hasEncounterBenefit } from "./encounter-trait-state";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
@@ -156,7 +156,6 @@ function dealPlayerDotTick(
   const healthAfterTick = nextState.playerHealth;
   nextState = decayArmorAfterDamage(nextState, damage, "player", combatTexts);
   nextState = checkHealthThresholds(state.playerHealth, healthAfterTick, nextState, combatTexts);
-  nextState = applyHealthLossTalentRewards(state, nextState, healthLost, combatTexts);
   return nextState;
 }
 

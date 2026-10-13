@@ -28,7 +28,7 @@ describe("Poison, Stun, and Wish Talent reworks", () => {
     expect(effects.stunCardPlayTwiceChance).toBe(10);
     expect(effects.wishCardPlayTwiceChance).toBe(10);
     expect(effects.wishDrawChance).toBe(10);
-    expect(effects.manaOnWish).toBe(1);
+    expect(effects.wishCardRefundsMana).toBe(true);
     expect(effects.declinedWishCardChance).toBe(10);
     expect(effects.wishTrinketChoice).toBe(true);
     expect(effects.wishCardsUpgraded).toBe(true);

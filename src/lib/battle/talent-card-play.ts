@@ -56,6 +56,13 @@ function applyTalentStatusAndHitTriggers(
   ) {
     nextState = addForgeToPlayer(nextState, talents.forgeOnBurnCard, combatTexts);
   }
+  if (
+    keywords.includes("block") &&
+    talents.armorOnBlockCard > 0 &&
+    rollBattleChance(talents.armorOnBlockCardChance, nextState)
+  ) {
+    nextState = applyArmorReward(nextState, talents.armorOnBlockCard, combatTexts);
+  }
   if (keywords.includes("leech") && talents.armorStealOnLeechCard > 0) {
     const stolen = Math.min(nextState.enemyMitigation.armor, talents.armorStealOnLeechCard);
     if (stolen > 0) {

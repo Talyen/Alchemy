@@ -130,13 +130,13 @@ describe("feedback talent save compatibility", () => {
     saved.flags.consumeDrawUsedThisTurn = true;
     saved.talentEffects.leechHolyDamageVsLowHealth = 1;
     saved.talentEffects.wishExtraChoiceAfterHolyCard = true;
-    saved.talentEffects.drawOnConsume = 1;
+    saved.talentEffects.uncappedDrawOnConsume = 1;
     delete saved.talentEffects.leechCardDamageVsLowHealthPercent;
     const restored = { ...PersistedBattleStateSchema.parse(saved), rng: () => 0.99 };
     expect(restored.flags).not.toHaveProperty("nextWishExtraChoice");
     expect(restored.flags).not.toHaveProperty("consumeDrawUsedThisTurn");
     expect(restored.talentEffects).not.toHaveProperty("wishExtraChoiceAfterHolyCard");
-    expect(restored.talentEffects).not.toHaveProperty("drawOnConsume");
+    expect(restored.talentEffects).not.toHaveProperty("uncappedDrawOnConsume");
     expect(restored.talentEffects.leechCardDamageVsLowHealthPercent).toBe(0);
     expect(play(restored, holy).state.wishOptions).toHaveLength(WISH_CHOICE_COUNT);
     expect(restored.talentEffects).not.toHaveProperty("leechHolyDamageVsLowHealth");

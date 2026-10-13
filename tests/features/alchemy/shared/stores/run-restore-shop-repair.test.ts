@@ -22,6 +22,53 @@ describe("saved battle card recovery", () => {
     resetAllTestStores();
   });
 
+  it("restores modified summons and current Talents without replaying rewards", () => {
+    const summon = { ...cardById["wolf-companion"]!, consume: true, cost: 0, uid: 7 };
+    const battleState = makeTestBattleState({
+      hand: [summon],
+      exhausted: [{ ...summon, uid: 8 }],
+      mana: 2,
+      playerStatuses: { ...makeTestBattleState().playerStatuses, armor: 9, forge: 4 },
+    });
+    const activeRun = makeMinimalActiveRunInput({
+      runDeck: [summon],
+      activity: savedActivityFixture("battle", { battleState }),
+    });
+    const loaded = evaluateSaveCandidates([
+      JSON.stringify({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION, activeRun }),
+    ]);
+    restoreRun(
+      loaded.data.activeRun,
+      {},
+      {
+        armor: ["armor-block-burst"],
+        consume: ["consume-second-helping", "consume-last-supper", "consume-leftovers"],
+        wish: ["wish-mana"],
+        leech: ["leech-first-double", "leech-bleed-chance"],
+      },
+      defaultGameSession,
+    );
+    const restored = readBattle(defaultGameSession).battleState;
+    expect(restored).not.toBeNull();
+    expect(restored!.hand).toEqual([{ ...cardById["wolf-companion"]!, cost: 0, uid: 7 }]);
+    expect(restored!.exhausted).toEqual([{ ...cardById["wolf-companion"]!, cost: 0, uid: 8 }]);
+    expect(restored!.playerStatuses).toMatchObject({ armor: 9, forge: 4 });
+    expect(restored!.mana).toBe(2);
+    expect(restored!.talentEffects).toMatchObject({
+      armorOnBlockCard: 6,
+      armorOnBlockCardChance: 10,
+      drawOnConsume: 1,
+      drawOnConsumeChance: 10,
+      forgeOnConsume: 1,
+      forgeOnConsumeChance: 10,
+      goldOnConsume: 4,
+      goldOnConsumeChance: 10,
+      wishCardRefundsMana: true,
+      leechHealingBonus: 1,
+      leechCleanseChance: 10,
+    });
+  });
+
   it.each(["opening-draw", "enemy-turn"] as const)(
     "restores card content in every pile and pending %s result",
     (kind) => {

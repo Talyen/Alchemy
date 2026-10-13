@@ -122,7 +122,6 @@ export function applyCardHitReactions(
       effect.damageType === "poison" ? facts.healthDamage : modifiedDamage,
       combatTexts,
       cardHealing && !!effect.lifesteal,
-      !companionAttack && !!effect.lifesteal,
     );
   }
 

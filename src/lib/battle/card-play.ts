@@ -13,6 +13,8 @@ import { computeCardPayment } from "./card-cost-rules";
 import { countRemovableHarmfulStatuses } from "./status-player";
 import { isCcControlled } from "./status-cc";
 import { applyResonantChimeTrinket, resolvePaidCardEffects, shouldElementalTalentRepeat } from "./card-play-effects";
+import { cardHasKeyword } from "./card-classification";
+import { gainManaWithCombatText } from "./player-rewards";
 import { handlePostPlayCardDestination } from "./card-consume";
 
 function consumeCardDiscounts(state: BattleState, payment: ReturnType<typeof computeCardPayment>): BattleState {
@@ -172,6 +174,9 @@ export function playBattleCardResolved(
       { cardPlayed: false },
     );
 
+  if (!isPlayerDefeated(nextState) && state.talentEffects.wishCardRefundsMana && cardHasKeyword(card, "wish")) {
+    nextState = gainManaWithCombatText(nextState, manaSpent, combatTexts, { skipFightPacing: true });
+  }
   const playerAlive = !isPlayerDefeated(nextState);
   if (playerAlive && enemyWasAlive) {
     nextState = applyResonantChimeTrinket(nextState, combatTexts);

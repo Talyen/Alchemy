@@ -34,7 +34,7 @@ describe("rewards track actual gains", () => {
     expect(next.playerHealth).toBe(14);
   });
 
-  it("Counterplate still fires when Reactive Guard and Armored Surge replace the lost Armor", () => {
+  it("Counterplate fires after Armor breaks even when Reactive Guard grants Block", () => {
     const state = patchBattleState({
       playerHealth: 20,
       playerMaxHealth: 40,
@@ -50,7 +50,8 @@ describe("rewards track actual gains", () => {
       makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 2 }] }),
       [],
     );
-    expect(next.playerStatuses.armor).toBe(3);
+    expect(next.playerStatuses.armor).toBe(0);
+    expect(next.playerStatuses.block).toBe(3);
     expect(next.enemyHealth).toBe(98);
     expect(next.enemyStatuses.stun).toBe(2);
   });

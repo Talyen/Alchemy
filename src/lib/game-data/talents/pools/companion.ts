@@ -42,8 +42,8 @@ export const companionTalents = [
   ),
   t(
     "companion-loyal",
-    "Pack Weave",
-    "When you Dodge, your Companion has a 50% chance to act",
+    "Pack Reflexes",
+    "Dodging gives your Companion a 50% chance to act",
     "PawPrint",
     setEffect("companionAttacksOnDodge", true),
   ),

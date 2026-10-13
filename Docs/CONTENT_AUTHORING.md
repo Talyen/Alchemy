@@ -126,6 +126,8 @@ One definition powers a permanent Armory Trinket and a run-scoped **Boon**. Both
 
 Companion combat and descriptions share `getModifiedCompanionEffects()` in `src/lib/game-data/companions.ts`, which applies Bond and the supplied damage modifiers together. Follow [Companion Bond rules](./GAME_RULES.md#companion-bond) for progression and displayed effects; Bond levels and costs retain their existing save representation.
 
+Summon cards omit `consume`; their summon effect routes them to the battle-removed pile after play. Companion utility cards retain ordinary discard behavior unless explicitly authored with Consume. Do not add Companion exceptions to Consume tooltips.
+
 `defaultCompanionBondLevels` derives zero values from `companionLibrary`; talent and Homestead defaults both copy that map, so new Companions need no separate default registration. If Bond behavior differs from the shared scaling, update `getModifiedCompanionEffects()` and its descriptions together; change Homestead tiers or costs only when intended.
 
 - **1. Add companion ID to `CompanionId` union** — `src/lib/game-data/types.ts`

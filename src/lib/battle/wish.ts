@@ -313,7 +313,7 @@ function applyWishManaTrigger(
   combatTexts: CombatTextEvent[],
   eligibility: BattleState,
 ): BattleState {
-  const manaGain = state.talentEffects.manaOnWish + (eligibility.mana === 0 ? state.gearEffects.manaOnWish : 0);
+  const manaGain = eligibility.mana === 0 ? state.gearEffects.manaOnWish : 0;
   if (manaGain <= 0) return state;
   return gainManaWithCombatText(state, manaGain, combatTexts, { skipFightPacing: true });
 }

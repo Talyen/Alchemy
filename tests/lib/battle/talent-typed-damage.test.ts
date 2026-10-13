@@ -217,12 +217,12 @@ describe("Toxic Profit and saved damage rules", () => {
   it("legacy manifests retain direct-stack procs and default new rules off", () => {
     const raw = JSON.parse(JSON.stringify(battle({ talentEffects: { physicalBleedChance: 10 } })));
     delete raw.talentEffects.physicalBleedDamageChance;
-    delete raw.talentEffects.uncappedDrawOnConsume;
+    delete raw.talentEffects.drawOnConsume;
     delete raw.flags.killRewardsPaid;
     delete raw.flags.nextHolyCardFree;
     const saved = { ...PersistedBattleStateSchema.parse(raw), rng: () => 0.09 };
     expect(saved.talentEffects.physicalBleedDamageChance).toBe(0);
-    expect(saved.talentEffects.uncappedDrawOnConsume).toBe(0);
+    expect(saved.talentEffects.drawOnConsume).toBe(0);
     const hit = resolvePlayerHit(
       saved,
       {

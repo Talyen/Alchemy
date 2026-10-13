@@ -330,9 +330,6 @@ export function addForgeToPlayer(state: BattleState, baseAmount: number, combatT
 function applyBlockGainRewards(state: BattleState, gained: number, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
   if (gained <= 0) return nextState;
-  if (rollBattleChance(nextState.talentEffects.armorOnBlockChance, nextState)) {
-    nextState = applyArmorReward(nextState, gained, combatTexts);
-  }
   if (rollBattleChance(nextState.talentEffects.drawHolyOnBlockChance, nextState)) {
     nextState = drawKeywordCard(nextState, "holy", { combatTexts });
   }

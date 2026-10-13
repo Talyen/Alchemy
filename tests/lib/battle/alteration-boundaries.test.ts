@@ -11,10 +11,9 @@ it("keeps random buff pools out of flat-Block jackpots and Consume removal", () 
   expect(getCorruptionMutationGroups(card).map((group) => group.kind)).not.toEqual(expect.arrayContaining(["bargain"]));
   expect(getCorruptionMutationGroups({ ...card, consume: true }).map((group) => group.kind)).not.toContain("reusable");
 });
-it("excludes nested Companion summons from Consume talent rewards", () => {
+it("removes nested Companion summons without Consume talent rewards", () => {
   const state = makeState({ playerHealth: 10 });
   const card = makeTestCard({
-    consume: true,
     effects: [
       {
         kind: "chance",

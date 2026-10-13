@@ -74,7 +74,7 @@ describe("encounter event regressions", () => {
         deathsDoorUsed: spent,
         deck: [cardById["acid-potion"]!],
         gearEffects: { ...state.gearEffects, dodgeDrawAndPlay: 1 },
-        talentEffects: { ...state.talentEffects, goldOnConsume: 1 },
+        talentEffects: { ...state.talentEffects, goldOnConsume: 1, goldOnConsumeChance: 100 },
         rng: () => 0,
       },
       { kind: "damage", damageType: "physical", amount: 1 },
@@ -87,7 +87,7 @@ describe("encounter event regressions", () => {
     expect(result.exhausted.map((card) => card.id)).toContain("acid-potion");
   });
 
-  it.each([10, 39])("Finish Him's incidental Leech at %s Health does not receive card-only bonuses", (health) => {
+  it.each([10, 39])("incidental Leech at %s Health receives Deep Siphon without card-only cleansing", (health) => {
     const card = cardById.slash!;
     const state = battle("none");
     const result = playBattleCardResolved(
@@ -99,7 +99,7 @@ describe("encounter event regressions", () => {
         talentEffects: {
           ...state.talentEffects,
           physicalLeechVsStunned: true,
-          cardLeechHealingBonus: 1,
+          leechHealingBonus: 1,
           cleanseOnCardOverheal: true,
         },
         hand: [card],
@@ -107,7 +107,7 @@ describe("encounter event regressions", () => {
       card.id,
       0,
     ).state;
-    expect(result.playerHealth).toBe(Math.min(40, health + 2));
+    expect(result.playerHealth).toBe(Math.min(40, health + 3));
     expect(result.playerStatuses.poison).toBe(2);
   });
 

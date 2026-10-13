@@ -1,4 +1,3 @@
-import { rollBattleChance } from "./chance-roll";
 import { readCombatFlag } from "./action-context";
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { BattleCardEffect, DamageType, EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data";
@@ -45,22 +44,6 @@ export function countRemovableHarmfulStatuses(playerStatuses: BattleState["playe
     if (playerStatuses[statusId] > 0) count += 1;
   }
   return count;
-}
-
-export function applyHealthLossTalentRewards(
-  previousState: BattleState,
-  nextState: BattleState,
-  healthLost: number,
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  if (
-    healthLost <= 0 ||
-    isPlayerDefeated(nextState) ||
-    !rollBattleChance(previousState.talentEffects.healthLossCleanseChance, previousState)
-  ) {
-    return nextState;
-  }
-  return removeHarmfulPlayerStatuses(nextState, 1, combatTexts);
 }
 
 export function applyBlockDepletionRewards(

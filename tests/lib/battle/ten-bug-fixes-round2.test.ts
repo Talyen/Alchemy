@@ -263,10 +263,9 @@ describe("Combat feedback and reward regressions", () => {
     });
   });
 
-  describe("Bug 9: Guard companion summoning card in applyConsumeGearRiders", () => {
+  describe("Companion removal does not grant Consume gear rewards", () => {
     it("does not grant armorOnConsume when playing a summon-companion card", () => {
       const summonCard = makeTestCard({
-        consume: true,
         effects: [{ kind: "summon-companion", companionId: "wolf" }],
       });
       const state = patchBattleState({

@@ -1,6 +1,6 @@
 import { ccDeepenedSinceStart, hasCardHealing, type EffectHandlers } from "./handler-types";
 import { isPotionCard } from "@/lib/game-data";
-import { applyCardHealing, applyHealthLossTalentRewards, checkHealthThresholds } from "../status-player";
+import { applyCardHealing, checkHealthThresholds } from "../status-player";
 import { applyPotionMultiplier } from "../amount-helpers";
 import { MIN_MAX_MANA_FLOOR, PERCENT_DENOMINATOR } from "../../game-constants";
 import { applyHealOnManaGain, gainManaWithCombatText, applyHealingWithCombatText } from "../player-rewards";
@@ -89,8 +89,7 @@ export const MANA_HEALTH_HANDLERS = {
       : applyHealingWithCombatText(state, healAmount, combatTexts);
   },
   "lose-health": (state, _card, effect, _potionMult, combatTexts) => {
-    const { state: damaged, healthLost } = dealSelfDamage(state, effect.amount, "health", combatTexts);
-    const thresholded = checkHealthThresholds(state.playerHealth, damaged.playerHealth, damaged, combatTexts);
-    return applyHealthLossTalentRewards(state, thresholded, healthLost, combatTexts);
+    const { state: damaged } = dealSelfDamage(state, effect.amount, "health", combatTexts);
+    return checkHealthThresholds(state.playerHealth, damaged.playerHealth, damaged, combatTexts);
   },
 } satisfies Partial<EffectHandlers>;
