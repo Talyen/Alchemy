@@ -46,6 +46,7 @@ export function useAppKeyboardShortcuts({
       if (
         event.defaultPrevented ||
         event.isComposing ||
+        // oxlint-disable-next-line typescript/no-deprecated -- Some IME commit events expose only legacy code 229.
         event.keyCode === 229 ||
         event.altKey ||
         event.ctrlKey ||

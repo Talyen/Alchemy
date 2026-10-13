@@ -198,7 +198,7 @@ describe("desktop CI artifact flow", () => {
     const releaseWorkflow = readFileSync(path.join(repoRoot, ".github/workflows/release.yml"), "utf8");
     const producer = releaseWorkflow.split("  package:\n")[1].split("  release:\n")[0];
     const delivery = releaseWorkflow.split("  release:\n")[1];
-    const concurrency = delivery.match(/^    concurrency:\n((?:      .+\n)+)/mu)?.[1];
+    const concurrency = delivery.match(/^ {4}concurrency:\n((?: {6}.+\n)+)/mu)?.[1];
     expect(concurrency).toBeDefined();
     expect(concurrency).toContain("group: steam-publishing");
     expect(concurrency).toContain("queue: max");
