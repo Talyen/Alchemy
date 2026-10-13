@@ -7,7 +7,6 @@ export type ShopKind = "merchant" | "alchemist" | "trinket" | "equipment";
 export type ShopRefreshModifiers = readonly EncounterRewardTraitId[];
 
 export interface MerchantShopCommands {
-  initialize: () => void;
   buyCard: (card: BattleCard, slotKey: string) => boolean;
   removeCard: (index: number) => boolean;
   refresh: () => boolean;
@@ -17,7 +16,6 @@ export interface MerchantShopCommands {
 }
 
 export interface AlchemistShopCommands {
-  initialize: () => void;
   buyPotion: (card: BattleCard, slotKey: string) => boolean;
   mixPotions: (indexA: number, indexB: number) => BattleCard | null;
   strengthenPotion: (index: number) => BattleCard | null;
@@ -28,7 +26,6 @@ export interface AlchemistShopCommands {
 }
 
 export interface TrinketShopCommands {
-  initialize: () => void;
   buy: (trinket: TrinketEntry, slotKey: string) => boolean;
   refresh: () => boolean;
   getBuyPrice: (_trinket: TrinketEntry) => number;
@@ -36,7 +33,6 @@ export interface TrinketShopCommands {
 }
 
 export interface EquipmentShopCommands {
-  initialize: () => void;
   buy: (instance: GearInstance, slotKey: string) => boolean;
   refresh: () => boolean;
   getBuyPrice: (instance: GearInstance) => number;
@@ -44,7 +40,6 @@ export interface EquipmentShopCommands {
 }
 
 export interface ShopActions {
-  initialize: (kind: ShopKind) => void;
   merchant: MerchantShopCommands;
   alchemist: AlchemistShopCommands;
   trinket: TrinketShopCommands;

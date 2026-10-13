@@ -1,6 +1,9 @@
 import { offerRunChoices } from "@/app/playthrough/run-offers";
 import { createChoiceCatalog } from "@/app/playthrough/choice-catalog";
-import { initializeAlchemyVisit } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
+import {
+  initializeAlchemyVisitForTest as initializeAlchemyVisit,
+  initializeMysteryForTest,
+} from "../helpers/visit-initialization";
 import { savedActivityData } from "../fixtures/run-activity";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createPlaythroughFixture } from "@/app/playthrough/fixtures";
@@ -150,6 +153,7 @@ describe("retained headless rejection and persistence contracts", () => {
     const { flow } = start();
     // Targeted setup, deliberately separate from earned-career sampling.
     dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "destination")), undefined, defaultGameSession);
+    initializeMysteryForTest(defaultGameSession);
     flow.beginMysteryEvent();
     dispatchGameplayCommand((draft) => acceptCommand(setRunDeck(draft, [])), undefined, defaultGameSession);
     const visit = readRunSession(defaultGameSession).activity;

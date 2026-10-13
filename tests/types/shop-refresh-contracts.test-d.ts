@@ -1,6 +1,6 @@
 import { createShopRefreshAction } from "@/features/alchemy/run-loop/shop/shop-commands-core";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
-import { initializeShopVisit } from "@/features/alchemy/run-loop/shop/shop-initialization";
+import { initializeShopVisit } from "@/features/alchemy/run-loop/run/room-visit-initialization";
 import type { AlchemistState } from "@/lib/active-run-session";
 import { setRunActivityData } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { RunTransaction } from "@/features/alchemy/shared/stores/run-session-command";

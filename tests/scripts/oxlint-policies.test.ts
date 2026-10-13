@@ -7,6 +7,27 @@ async function effectiveMessages(filePath: string, code: string, ruleId: string)
 }
 
 describe("Oxlint policies", () => {
+  it("reserves visit initialization for room entry across route, command, and headless adapters", async () => {
+    const code = 'import { initializeShopVisit } from "@/features/alchemy/run-loop/run/room-visit-initialization";';
+    for (const file of [
+      "src/app/screen-routes/run-loop-routes.tsx",
+      "src/features/alchemy/shell/run-route-actions.ts",
+      "src/features/alchemy/run-loop/shop/merchant-shop-commands.ts",
+      "src/features/alchemy/run-loop/navigation/alchemy-commands.ts",
+      "src/app/playthrough/controller.ts",
+    ]) {
+      const messages = await effectiveMessages(file, code, "no-restricted-imports");
+      expect(messages, file).not.toEqual([]);
+    }
+    expect(
+      await effectiveMessages(
+        "src/features/alchemy/run-loop/run/room-entry-commands.ts",
+        code,
+        "no-restricted-imports",
+      ),
+    ).toEqual([]);
+  });
+
   it("bans any .rng access including nextState, computed, and destructuring", async () => {
     const cases = [
       `const x = state.rng;`,

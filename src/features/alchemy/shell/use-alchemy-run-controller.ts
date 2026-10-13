@@ -160,7 +160,6 @@ export function useAlchemyRunController(
           continueCampfire: protectVoid(nav.handleCampfireContinue),
           rest: guardProgressAction(gameSession, runActions.restAtCampfire, false),
           brew: guardProgressAction(gameSession, runActions.brewAtCampfire, null),
-          initializeCampfire: () => runActions.initializeAlchemyVisit("campfire"),
         },
         wildwood: {
           removeCard: protectVoid(nav.handleWildwoodRemoveCard),
@@ -176,7 +175,6 @@ export function useAlchemyRunController(
           select: guardProgressAction(gameSession, runActions.selectTransmutation, false),
           exchange: guardProgressAction(gameSession, runActions.transmuteCard, null),
           continue: protectVoid(() => nav.advanceToNextDestination("transmutation")),
-          initialize: () => runActions.initializeAlchemyVisit("transmutation"),
         },
         corruption: {
           handleCorruptCard: protectVoid(nav.handleCorruptCard),
