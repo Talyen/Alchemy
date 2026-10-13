@@ -1,5 +1,5 @@
 import type { DemoImportSource } from "@/lib/desktop-api";
-import { createDefaultGearSaveFields } from "../stores/gear-actions";
+import { gearPersistenceCodec } from "../stores/gear-store";
 import { createDefaultProfileSaveFields } from "../stores/profile-store-types";
 import { RUN_PROFILE_SAVE_KEYS } from "../stores/run-profile-save-fields";
 import { createDefaultSaveData } from "./defaults";
@@ -18,7 +18,7 @@ export function prepareDemoProgressImport(source: DemoImportSource): UnstampedSa
   const keys = [
     ...RUN_PROFILE_SAVE_KEYS,
     ...Object.keys(createDefaultProfileSaveFields()).filter((key) => key !== "completedDifficulties"),
-    ...Object.keys(createDefaultGearSaveFields()),
+    ...Object.keys(gearPersistenceCodec.createDefault()),
   ] as Array<keyof SaveData>;
   // Field owners define the permanent profile; settings and activity are excluded.
   for (const key of keys) Object.assign(result, { [key]: structuredClone(loaded.data[key]) });

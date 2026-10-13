@@ -17,7 +17,7 @@ import { bindDraftCapability, gameplayDraftRuntime } from "./gameplay-command";
 //   `awardMaterialsDuringRun` writes both; `addMaterialsToStockpile` writes the
 //   stockpile only (meta salvage). Salvaged
 //   crafting currencies mirror this via `run.activeRun.runCurrenciesEarned`,
-//   tallied alongside the material grant in `dispatchGearSalvageWithMaterialGrant`.
+//   tallied alongside the material grant in `salvageGearInTransaction`.
 // - Talent XP: `run.activeRun.runTalentXP` accrues during the run;
 //   run settlement merges it into `runProfile.talentXP` once at run end.
 

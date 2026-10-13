@@ -62,7 +62,7 @@ describe("Oxlint policies", () => {
         const nestedDispatch = await effectiveMessages(
           file,
           'import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";',
-          "alchemy/restricted-syntax",
+          "no-restricted-imports",
         );
         expect(nestedDispatch, file).toHaveLength(1);
       }
@@ -385,4 +385,27 @@ it("keeps save validation out of run domain contracts, including erased type imp
     "no-restricted-imports",
   );
   expect(allowed).toEqual([]);
+});
+
+it.each([
+  "src/app/playthrough/meta-offers.ts",
+  "src/features/alchemy/meta/screens/armory-screen.tsx",
+  "src/features/alchemy/run-loop/run/reward-commands.ts",
+])("keeps generic Gear mutation and raw Gear actions out of %s", async (file) => {
+  for (const owner of ["gear-session-command", "gear-actions"]) {
+    expect(
+      await effectiveMessages(
+        file,
+        `import * as gearInternals from "@/features/alchemy/shared/stores/${owner}";`,
+        "no-restricted-imports",
+      ),
+    ).toHaveLength(1);
+  }
+  expect(
+    await effectiveMessages(
+      file,
+      'import { salvageGear } from "@/features/alchemy/shared/stores/gear-commands";',
+      "no-restricted-imports",
+    ),
+  ).toHaveLength(0);
 });

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createEmptyGearInventories, createEmptyGearLoadouts, equipGear, type GearInstance } from "@/lib/gear";
 import { mutateGearForTest, resetGearForTest } from "../../../../helpers/run-domain-store-test";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
+import { dispatchGearSalvageWithMaterialGrant } from "@/features/alchemy/shared/stores/gear-session-command";
 import { defaultGameSession } from "@/app/application-session";
 
 const item: GearInstance = {
@@ -60,7 +61,7 @@ describe("gear crafting transactions", () => {
     initialize();
     const before = readGearState(defaultGameSession);
     const original = structuredClone(before);
-    const result = mutateGearForTest((gear) => gear.salvage(item.instanceId))!;
+    const result = dispatchGearSalvageWithMaterialGrant(item.instanceId, defaultGameSession)!;
     const after = readGearState(defaultGameSession);
     expect(after.inventories.knight).toEqual([]);
     expect(after.inventories.rogue).toBe(before.inventories.rogue);
@@ -72,7 +73,7 @@ describe("gear crafting transactions", () => {
       );
     }
     expect(before).toEqual(original);
-    expect(mutateGearForTest((gear) => gear.salvage(item.instanceId))).toBeNull();
+    expect(dispatchGearSalvageWithMaterialGrant(item.instanceId, defaultGameSession)).toBeNull();
     expect(readGearState(defaultGameSession)).toEqual(after);
   });
 });

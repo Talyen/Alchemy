@@ -123,7 +123,7 @@ export function salvageGearInstance(
   yieldedMaterials: MaterialInventory;
 } | null {
   // Materials routing lives OUTSIDE this helper: only
-  // dispatchGearSalvageWithMaterialGrant grants yieldedMaterials (during a run)
+  // salvageGearInTransaction grants yieldedMaterials (during a run)
   // or stockpiles them (meta). Calling this directly never grants materials.
   const owner = findGearInventoryOwner(gear.inventories, instanceId);
   if (!owner) return null;

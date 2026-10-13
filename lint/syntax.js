@@ -5,7 +5,6 @@ import {
   BATTLE_NO_MATH_FLOOR,
   BATTLE_NO_MATH_RANDOM,
   CLASSNAME_NO_TEMPLATE,
-  GEAR_NO_OUTER_DISPATCH,
   GAMEPLAY_NO_MATH_RANDOM,
   NO_UNOWNED_CONTEXT_CREATION,
   PREVIEW_NO_DEV_CONTROLS,
@@ -182,27 +181,26 @@ export const SYNTAX_CONFIGS = [
       make: syntaxBlock,
       files: ["src/features/alchemy/run-loop/**/*.ts", "src/features/alchemy/shell/**/*.ts"],
       ignores: undefined,
-      extra: [...GEAR_NO_OUTER_DISPATCH],
+      extra: [],
     },
     {
       make: tsxBlock,
       files: ["src/features/alchemy/run-loop/**/*.tsx", "src/features/alchemy/shell/**/*.tsx"],
       ignores: undefined,
-      extra: [...GEAR_NO_OUTER_DISPATCH],
+      extra: [],
     },
-    // These gameplay paths overlap the run-loop dispatch policy above. Compose
-    // both here: flat config replaces the complete no-restricted-syntax value.
+    // Add seeded gameplay RNG restrictions to the general run-loop syntax policy.
     {
       make: syntaxBlock,
       files: ["src/features/alchemy/run-loop/navigation/**/*.ts", "src/features/alchemy/run-loop/run/**/*.ts"],
       ignores: undefined,
-      extra: [...GAMEPLAY_NO_MATH_RANDOM, ...GEAR_NO_OUTER_DISPATCH],
+      extra: [...GAMEPLAY_NO_MATH_RANDOM],
     },
     {
       make: tsxBlock,
       files: ["src/features/alchemy/run-loop/navigation/**/*.tsx", "src/features/alchemy/run-loop/run/**/*.tsx"],
       ignores: undefined,
-      extra: [...GAMEPLAY_NO_MATH_RANDOM, ...GEAR_NO_OUTER_DISPATCH],
+      extra: [...GAMEPLAY_NO_MATH_RANDOM],
     },
   ].map((route) =>
     route.make(
