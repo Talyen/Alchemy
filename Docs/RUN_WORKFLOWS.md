@@ -71,7 +71,7 @@ Run outcome flows use [`run-end-commands.ts`](../src/features/alchemy/run-loop/r
 
 ## Gameplay command boundary
 
-Ownership and anti-patterns: [RUN_STATE.md § Run state](./RUN_STATE.md#run-state). Keep the command synchronous; put audio, navigation, timers, and presentation cleanup in `afterCommit`. Feature commands receive a readonly `RunTransaction`; pass it to every write-port operation and return an explicit `acceptCommand(value)` or `rejectCommand(reason, fallback)`. Rejection discards all writes and RNG draws and skips `afterCommit`; the dispatcher returns the supplied value or fallback. This outer-boundary example awards an already bonus-adjusted material amount and passes it to presentation feedback after commit:
+Ownership and anti-patterns: [RUN_STATE.md § Run state](./RUN_STATE.md#run-state). Keep the command synchronous; put non-rollbackable effects in `afterCommit` or after the command returns. Feature commands receive a readonly `RunTransaction`; pass it to every write-port operation and return an explicit `acceptCommand(value)` or `rejectCommand(reason, fallback)`. Rejection discards all writes and RNG draws and skips `afterCommit`; the dispatcher returns the supplied value or fallback. This command-owner example awards an already bonus-adjusted material amount and returns detached result data:
 
 ```ts
 import type { MaterialInventory } from "@/lib/homestead/types";
@@ -79,21 +79,23 @@ import type { GameSession } from "@/features/alchemy/shared/stores/game-session-
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { awardMaterialsDuringRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 
-export function awardMaterialReward(
-  materials: MaterialInventory,
-  onAwarded: (awarded: MaterialInventory) => void,
-  session: GameSession,
-): void {
-  dispatchRunSessionCommand(
+export function awardMaterialReward(materials: MaterialInventory, session: GameSession): MaterialInventory {
+  return dispatchRunSessionCommand(
     (transaction) => {
       awardMaterialsDuringRun(transaction, materials);
       return acceptCommand(materials);
     },
-    { afterCommit: onAwarded },
+    undefined,
     session,
   );
 }
 ```
+
+An accepted command has committed in memory; `afterCommit` does not acknowledge a
+save. The controller uses its session-bound `SessionPersistence.afterProgressSaved`
+(exposed to screens as `routeCommands.progress.afterSaved`) for completed-result
+feedback. Keep input acknowledgment and Saving… immediate, following
+[completed actions and local saving](./RUN_STATE.md#completed-actions-and-local-saving).
 
 Inside an existing reward, shop, or mystery command, call the mutator with that command's transaction instead of dispatching another command. Keep the existing claim guard and reward finalization in the owning flow.
 

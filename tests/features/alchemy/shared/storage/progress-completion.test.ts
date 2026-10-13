@@ -138,7 +138,10 @@ it.each(["restore", "protection", "dispose"] as const)(
     writing.resolve({ ok: true });
     expect(await checkpoint).toBe("skipped");
     expect(feedback).not.toHaveBeenCalled();
-    if (cancel === "restore") expect(await persistence.checkpoint()).toBe("saved");
+    if (cancel === "restore") {
+      expect(persistence.readProgress()).toEqual({ kind: "saving", revision: readSessionRevision(session) });
+      expect(await persistence.checkpoint()).toBe("saved");
+    }
     if (disposal) await disposal;
     else {
       release();
@@ -496,6 +499,57 @@ it("autosave retries a replaced checkpoint and releases feedback only after game
     expect(persistence.readProgress().kind).toBe("idle");
     expect(feedback).toHaveBeenCalledOnce();
   } finally {
+    lifecycle.dispose(false);
+    await session.dispose();
+    vi.useRealTimers();
+  }
+});
+
+it("retries a restored career after an older in-flight save completes and the replacement write fails", async () => {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  const oldWrite = deferred<{ ok: true }>();
+  const writes: string[] = [];
+  let failReplacement = true;
+  const session = createGameSession({
+    saveBackend: {
+      readCandidates: async () => ({ ok: true, candidates: [] }),
+      write: async (_key, value) => {
+        writes.push(value);
+        if (writes.length === 1) return oldWrite.promise;
+        return failReplacement ? { ok: false, error: "disk full" } : { ok: true };
+      },
+      writeSync: () => null,
+      clear: async () => ({ ok: true }),
+    },
+  });
+  const persistence = createSessionPersistence(session);
+  const lifecycle = createAlchemyAutosaveLifecycle(() => true, undefined, session, true);
+  const oldFeedback = vi.fn();
+  const restoredFeedback = vi.fn();
+  try {
+    dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 70)), undefined, session);
+    persistence.afterProgressSaved(oldFeedback);
+    lifecycle.flush();
+    await Promise.resolve();
+    expect(writes).toHaveLength(1);
+    persistence.restore({ ...createDefaultSaveData(), gold: 80 });
+    persistence.afterProgressSaved(restoredFeedback);
+    lifecycle.flush();
+    oldWrite.resolve({ ok: true });
+    await lifecycle.drain();
+    expect(persistence.readProgress().kind).toBe("failed");
+    expect(oldFeedback).not.toHaveBeenCalled();
+    expect(restoredFeedback).not.toHaveBeenCalled();
+    failReplacement = false;
+    persistence.retryProgress();
+    await lifecycle.drain();
+    expect(persistence.readProgress().kind).toBe("idle");
+    expect(JSON.parse(writes.at(-1)!).gold).toBe(80);
+    expect(oldFeedback).not.toHaveBeenCalled();
+    expect(restoredFeedback).toHaveBeenCalledOnce();
+  } finally {
+    oldWrite.resolve({ ok: true });
     lifecycle.dispose(false);
     await session.dispose();
     vi.useRealTimers();

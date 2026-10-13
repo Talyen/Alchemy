@@ -9,9 +9,11 @@ export type ProgressSaveState =
 export class ProgressCompletion {
   private state: ProgressSaveState = { kind: "idle" };
   private epoch = 0;
+  private restoreVersion = 0;
   private acknowledged = -1;
   private snapshots = new WeakMap<object, { epoch: number; revision: number; contents: string }>();
   private listeners = new Set<() => void>();
+  private restoreListeners = new Set<() => void>();
   private completions: Array<() => void> = [];
   private retry: (() => void) | null = null;
 
@@ -19,6 +21,11 @@ export class ProgressCompletion {
   readonly subscribe = (listener: () => void) => {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  };
+  readonly readRestoreVersion = () => this.restoreVersion;
+  readonly subscribeRestore = (listener: () => void) => {
+    this.restoreListeners.add(listener);
+    return () => this.restoreListeners.delete(listener);
   };
 
   activate(retry: () => void) {
@@ -96,19 +103,40 @@ export class ProgressCompletion {
   }
 
   cancel() {
-    this.epoch++;
-    this.acknowledged = -1;
-    this.completions = [];
+    this.invalidateReceipts();
     this.publish({ kind: "idle" });
   }
 
-  private publish(state: ProgressSaveState) {
-    if (
+  /** Replace a career without briefly unlocking unsaved replacement state. */
+  replace(revision?: number) {
+    this.invalidateReceipts();
+    this.restoreVersion++;
+    this.publish(revision === undefined ? { kind: "idle" } : { kind: "saving", revision }, true);
+  }
+
+  private invalidateReceipts() {
+    this.epoch++;
+    this.acknowledged = -1;
+    this.completions = [];
+  }
+
+  private publish(state: ProgressSaveState, restored = false) {
+    const unchanged =
       state.kind === this.state.kind &&
-      (state.kind === "idle" || (this.state.kind !== "idle" && state.revision === this.state.revision))
-    )
-      return;
+      (state.kind === "idle" || (this.state.kind !== "idle" && state.revision === this.state.revision));
     this.state = state;
+    if (restored) {
+      // Invalidate autosave submissions before any status or store observer
+      // can schedule a write in the replacement epoch, even if data is equal.
+      for (const listener of [...this.restoreListeners]) {
+        try {
+          listener();
+        } catch (error) {
+          logStorageFailure("Restore save scheduling update failed", error);
+        }
+      }
+    }
+    if (unchanged) return;
     for (const listener of this.listeners) {
       try {
         listener();
