@@ -234,7 +234,7 @@ describe("run architecture type contracts", () => {
     type BattleProps = Parameters<typeof useBattleController>[0];
 
     expectTypeOf<Extract<keyof BattleProps, "run" | "talents" | "homesteadEffects">>().toEqualTypeOf<never>();
-    expectTypeOf<keyof RunFlowHandlerDeps>().toEqualTypeOf<"actions" | "getAvailableDestinations">();
+    expectTypeOf<keyof RunFlowHandlerDeps>().toEqualTypeOf<"actions">();
   });
 
   it("keeps display data out of the shell command controller", () => {

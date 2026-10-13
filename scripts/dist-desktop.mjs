@@ -8,102 +8,124 @@ import { runStreamCommand } from "./lib/run-command.mjs";
 import { resolveSentryRelease } from "./lib/release/sentry-release.mjs";
 import { validateDesktopBuildConfig } from "./lib/release/desktop-build-config.mjs";
 import { verifyDesktopRenderer } from "./lib/release/release-checks.mjs";
+import { parseKnownFlags } from "./lib/cli-args.mjs";
+import { defineScript, UsageError } from "./lib/script-run.mjs";
 
-const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const selected = releaseEdition();
-const config = JSON.parse(readFileSync(join(root, "steam/platforms.json"), "utf8"));
-const targets = config.targets ?? ["win"];
-assertSupportedTargets(targets);
-const { sentryDsn, sentryUploadEnabled, steamAppId, azureFields } = validateDesktopBuildConfig();
-const sentryRelease = resolveSentryRelease();
-if (process.env.CI_RELEASE === "true" && sentryUploadEnabled) {
-  const pending = [join(root, selected.rendererDirectory)];
-  while (pending.length > 0) {
-    const directory = pending.pop();
-    for (const entry of readdirSync(directory, { withFileTypes: true })) {
-      const entryPath = join(directory, entry.name);
-      if (entry.isDirectory()) pending.push(entryPath);
-      if (entry.isFile() && entry.name.endsWith(".map")) {
-        throw new Error(`Sentry upload completed but a source map was not removed: ${entryPath}`);
+function main(argv = process.argv.slice(2)) {
+  const { flags, rest } = parseKnownFlags(argv, { build: {}, dir: {}, help: { short: "h" } });
+  if (rest.length) throw new UsageError(`Unexpected packaging arguments: ${rest.join(", ")}`);
+  if (flags.has("help")) {
+    console.log(
+      "Usage: node scripts/dist-desktop.mjs [--build] [--dir]\nPackage the prepared desktop renderer; --build first syncs the App ID, builds, and checks its bundle budget. --dir creates only the unpacked application. Publishing stays disabled.",
+    );
+    return 0;
+  }
+  const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+  const selected = releaseEdition();
+  const config = JSON.parse(readFileSync(join(root, "steam/platforms.json"), "utf8"));
+  const targets = config.targets ?? ["win"];
+  assertSupportedTargets(targets);
+  const { sentryDsn, sentryUploadEnabled, steamAppId, azureFields } = validateDesktopBuildConfig();
+  if (flags.has("build")) {
+    for (const script of ["sync:steam-appid", "build:desktop", "check:bundle"]) {
+      const result = runStreamCommand("npm", ["run", script], { cwd: root });
+      if (result.error) throw result.error;
+      if (result.status !== 0) return result.status ?? 1;
+    }
+  }
+  const sentryRelease = resolveSentryRelease();
+  if (process.env.CI_RELEASE === "true" && sentryUploadEnabled) {
+    const pending = [join(root, selected.rendererDirectory)];
+    while (pending.length > 0) {
+      const directory = pending.pop();
+      for (const entry of readdirSync(directory, { withFileTypes: true })) {
+        const entryPath = join(directory, entry.name);
+        if (entry.isDirectory()) pending.push(entryPath);
+        if (entry.isFile() && entry.name.endsWith(".map")) {
+          throw new Error(`Sentry upload completed but a source map was not removed: ${entryPath}`);
+        }
       }
     }
   }
-}
 
-// Publishing is an explicit release-workflow responsibility. electron-builder
-// otherwise infers publishing from CI environment variables.
-const packageDir = process.env.ALCHEMY_PACKAGE_DIR === "1" || process.argv.includes("--dir");
-const rendererIdentity = JSON.parse(readFileSync(join(root, selected.rendererDirectory, "edition.json"), "utf8"));
-assertPackageEdition(
-  {
-    gameEdition: selected.edition,
-    steamAppId,
-    steamDepotId: selected.steamDepotId,
-    fullGameSteamAppId: selected.fullGameSteamAppId,
-  },
-  rendererIdentity,
-);
-verifyDesktopRenderer(join(root, selected.rendererDirectory));
-const builderConfig = {
-  ...JSON.parse(readFileSync(join(root, "package.json"), "utf8")).build,
-  productName: selected.productName,
-  appId: selected.appId,
-  directories: { output: selected.packageDirectory },
-  files: ["desktop/**/*", "game-edition.mjs", `${selected.rendererDirectory}/**/*`, "!**/*.map", "package.json"],
-  extraMetadata: {
-    gameEdition: selected.edition,
-    steamAppId: steamAppId ?? 480,
-    steamDepotId: selected.steamDepotId ?? null,
-    fullGameSteamAppId: selected.fullGameSteamAppId ?? 480,
-  },
-};
-mkdirSync(join(root, "steam/build"), { recursive: true });
-const builderConfigPath = join(root, "steam/build", `electron-${selected.edition}.json`);
-writeFileSync(builderConfigPath, JSON.stringify(builderConfig));
-const builderArgs = ["--publish", "never"];
-builderArgs.push("--config", builderConfigPath);
-for (const target of targets) {
-  builderArgs.push(targetToBuilderFlag(target));
-}
-if (packageDir) {
-  builderArgs.push("--dir");
-  // electron-builder's --dir bypasses target.arch and otherwise uses the host CPU.
-  if (targets.includes("win")) builderArgs.push("--x64");
-}
-
-if (process.env.CI_RELEASE === "true" && sentryDsn) {
-  builderArgs.push(
-    "-c.extraMetadata.sentryEnabled=true",
-    `-c.extraMetadata.sentryDsn=${sentryDsn}`,
-    `-c.extraMetadata.sentryRelease=${sentryRelease}`,
+  // Publishing is an explicit release-workflow responsibility. electron-builder
+  // otherwise infers publishing from CI environment variables.
+  const packageDir = process.env.ALCHEMY_PACKAGE_DIR === "1" || flags.has("dir");
+  const rendererIdentity = JSON.parse(readFileSync(join(root, selected.rendererDirectory, "edition.json"), "utf8"));
+  assertPackageEdition(
+    {
+      gameEdition: selected.edition,
+      steamAppId,
+      steamDepotId: selected.steamDepotId,
+      fullGameSteamAppId: selected.fullGameSteamAppId,
+    },
+    rendererIdentity,
   );
-}
-
-if (process.env.CI_RELEASE === "true") {
-  builderArgs.push(`-c.extraMetadata.steamAppId=${steamAppId}`);
-}
-if (azureFields.publisherName) {
-  for (const [key, value] of Object.entries(azureFields)) {
-    builderArgs.push(`-c.win.azureSignOptions.${key}=${value}`);
+  verifyDesktopRenderer(join(root, selected.rendererDirectory));
+  const builderConfig = {
+    ...JSON.parse(readFileSync(join(root, "package.json"), "utf8")).build,
+    productName: selected.productName,
+    appId: selected.appId,
+    directories: { output: selected.packageDirectory },
+    files: ["desktop/**/*", "game-edition.mjs", `${selected.rendererDirectory}/**/*`, "!**/*.map", "package.json"],
+    extraMetadata: {
+      gameEdition: selected.edition,
+      steamAppId: steamAppId ?? 480,
+      steamDepotId: selected.steamDepotId ?? null,
+      fullGameSteamAppId: selected.fullGameSteamAppId ?? 480,
+    },
+  };
+  mkdirSync(join(root, "steam/build"), { recursive: true });
+  const builderConfigPath = join(root, "steam/build", `electron-${selected.edition}.json`);
+  writeFileSync(builderConfigPath, JSON.stringify(builderConfig));
+  const builderArgs = ["--publish", "never"];
+  builderArgs.push("--config", builderConfigPath);
+  for (const target of targets) {
+    builderArgs.push(targetToBuilderFlag(target));
   }
-}
-if (process.env.REQUIRE_CODE_SIGNING === "true") {
-  builderArgs.push("-c.forceCodeSigning=true");
-}
+  if (packageDir) {
+    builderArgs.push("--dir");
+    // electron-builder's --dir bypasses target.arch and otherwise uses the host CPU.
+    if (targets.includes("win")) builderArgs.push("--x64");
+  }
 
-const result = runStreamCommand("npx", ["electron-builder", ...builderArgs], {
-  cwd: root,
-  env: { ...process.env, NODE_OPTIONS: "--no-deprecation" },
-});
+  if (process.env.CI_RELEASE === "true" && sentryDsn) {
+    builderArgs.push(
+      "-c.extraMetadata.sentryEnabled=true",
+      `-c.extraMetadata.sentryDsn=${sentryDsn}`,
+      `-c.extraMetadata.sentryRelease=${sentryRelease}`,
+    );
+  }
 
-if (result.error) throw result.error;
-if ((result.status ?? 1) !== 0) process.exit(result.status ?? 1);
+  if (process.env.CI_RELEASE === "true") {
+    builderArgs.push(`-c.extraMetadata.steamAppId=${steamAppId}`);
+  }
+  if (azureFields.publisherName) {
+    for (const [key, value] of Object.entries(azureFields)) {
+      builderArgs.push(`-c.win.azureSignOptions.${key}=${value}`);
+    }
+  }
+  if (process.env.REQUIRE_CODE_SIGNING === "true") {
+    builderArgs.push("-c.forceCodeSigning=true");
+  }
 
-for (const target of targets) {
-  const verifyResult = runStreamCommand(process.execPath, ["scripts/verify-desktop-package.mjs"], {
+  const result = runStreamCommand("npx", ["electron-builder", ...builderArgs], {
     cwd: root,
-    env: { ...process.env, DESKTOP_TARGET: target },
+    env: { ...process.env, NODE_OPTIONS: "--no-deprecation" },
   });
-  if (verifyResult.error) throw verifyResult.error;
-  if ((verifyResult.status ?? 1) !== 0) process.exit(verifyResult.status ?? 1);
+
+  if (result.error) throw result.error;
+  if ((result.status ?? 1) !== 0) return result.status ?? 1;
+
+  for (const target of targets) {
+    const verifyResult = runStreamCommand(process.execPath, ["scripts/verify-desktop-package.mjs"], {
+      cwd: root,
+      env: { ...process.env, DESKTOP_TARGET: target },
+    });
+    if (verifyResult.error) throw verifyResult.error;
+    if ((verifyResult.status ?? 1) !== 0) return verifyResult.status ?? 1;
+  }
+  return 0;
 }
+
+defineScript(import.meta.url, () => main());

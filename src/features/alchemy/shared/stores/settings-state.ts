@@ -14,6 +14,7 @@ import {
   resolveAutoplayEnabled,
 } from "@/lib/settings-values";
 import { createStore } from "zustand/vanilla";
+import { logError } from "@/lib/error-logger";
 
 export interface SettingsSaveFields {
   selectedAspectRatio: AspectRatioOption;
@@ -79,7 +80,7 @@ export function preferredAutoplayEnabled(fields: {
 // ranges the save schema enforces on load), so in-memory state can never hold
 // an out-of-range value that load would silently repair.
 export function createSettingsStore() {
-  return createStore<SettingsStore>()((set) => ({
+  const store = createStore<SettingsStore>()((set) => ({
     ...createDefaultSettingsSaveFields(),
 
     setSelectedAspectRatio: (selectedAspectRatio) => set({ selectedAspectRatio }),
@@ -105,6 +106,43 @@ export function createSettingsStore() {
     setAutoplayEnabled: (autoplayEnabled) => set({ autoplayEnabled }),
     resetToDefaults: () => set({ ...createDefaultSettingsSaveFields() }),
   }));
+  type Listener = (state: SettingsStore, previous: SettingsStore) => void;
+  const listeners = new Set<Listener>();
+  let installing = false;
+  function notify(state: SettingsStore, previous: SettingsStore) {
+    for (const listener of [...listeners]) {
+      try {
+        listener(state, previous);
+      } catch (error) {
+        logError("Settings subscriber failed", "other", undefined, undefined, undefined, error);
+      }
+    }
+  }
+  store.subscribe((state, previous) => {
+    if (!installing) notify(state, previous);
+  });
+  return {
+    ...store,
+    subscribe(listener: Listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    // Restore installs both stores and arms save protection before either
+    // store's subscribers can snapshot or render the replacement.
+    commitHydration(fields: SettingsSaveFields, prepareObservers: () => void) {
+      const previous = store.getState();
+      installing = true;
+      try {
+        store.setState(fields);
+      } finally {
+        installing = false;
+      }
+      prepareObservers();
+      notify(store.getState(), previous);
+    },
+  };
 }
 
 // Defaults own the persisted field list; methods and unrelated save fields never encode.
@@ -117,27 +155,28 @@ export function selectSettingsSaveFields(state: SettingsSaveFields): SettingsSav
 }
 
 export function createSettingsPersistenceCodec(store: ReturnType<typeof createSettingsStore>) {
+  function prepareHydration(fields: SettingsSaveFields) {
+    const selected = selectSettingsSaveFields(fields);
+    const normalized = {
+      ...selected,
+      brightness: clampBrightnessPct(selected.brightness),
+      backgroundParticlesIntensity: clampSpecialEffectsPct(selected.backgroundParticlesIntensity),
+      backgroundGlowIntensity: clampSpecialEffectsPct(selected.backgroundGlowIntensity),
+      musicVolume: clampVolumePct(selected.musicVolume),
+      sfxVolume: clampVolumePct(selected.sfxVolume),
+      masterVolume: clampVolumePct(selected.masterVolume),
+      // Loading with remember off clears a stored autoplay choice.
+      autoplayEnabled: resolveAutoplayEnabled(selected),
+    };
+    return (prepareObservers: () => void = () => {}) => store.commitHydration(normalized, prepareObservers);
+  }
   return {
     createDefault: createDefaultSettingsSaveFields,
     // Pure selection: the live invariant is owned by the setters above (which
     // clamp on every write), load repair by SaveDataSchema, and direct-hydrate
-    // safety by hydrate below. Encode adds no further derivation.
+    // safety by prepareHydration. Encode adds no further derivation.
     encode: () => selectSettingsSaveFields(store.getState()),
-    hydrate: (fields: SettingsSaveFields) => {
-      const selected = selectSettingsSaveFields(fields);
-      store.setState({
-        ...selected,
-        brightness: clampBrightnessPct(selected.brightness),
-        backgroundParticlesIntensity: clampSpecialEffectsPct(selected.backgroundParticlesIntensity),
-        backgroundGlowIntensity: clampSpecialEffectsPct(selected.backgroundGlowIntensity),
-        musicVolume: clampVolumePct(selected.musicVolume),
-        sfxVolume: clampVolumePct(selected.sfxVolume),
-        masterVolume: clampVolumePct(selected.masterVolume),
-        // Load repair: a stored "on" with remember off hydrates to off, matching
-        // SaveDataSchema. Turning remember off at runtime clears the stored
-        // choice instead (see setRememberAutoplayPreference above).
-        autoplayEnabled: resolveAutoplayEnabled(selected),
-      });
-    },
+    prepareHydration,
+    hydrate: (fields: SettingsSaveFields) => prepareHydration(fields)(),
   };
 }

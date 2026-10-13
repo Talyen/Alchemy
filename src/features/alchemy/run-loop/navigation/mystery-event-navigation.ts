@@ -1,4 +1,5 @@
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 import { type MysteryChoice } from "@/lib/mystery";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
@@ -13,6 +14,7 @@ export function createMysteryEventNavigation(
   gameSession: GameSession,
 ) {
   function beginMysteryEvent(prepareNavigation?: () => void) {
+    if (readRunSession(gameSession).activity.kind !== "mystery") return;
     beginMysteryVisit(gameSession);
     navigateTo(ROUTE_SCREENS.MYSTERY, prepareNavigation);
     sessionFeedback(gameSession).playUISound("musicBoxMystery");

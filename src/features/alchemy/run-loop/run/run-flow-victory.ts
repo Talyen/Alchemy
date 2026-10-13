@@ -11,7 +11,7 @@ import type { RunOutcomeDeps } from "./run-flow";
 import { createVictoryCommand } from "./victory-commands";
 
 export function createVictoryHandlers(deps: RunOutcomeDeps, gameSession: GameSession) {
-  const commit = createVictoryCommand(deps.getAvailableDestinations, gameSession);
+  const commit = createVictoryCommand(gameSession);
   function commitVictoryResult() {
     const goldGained = commit();
     if (goldGained === null) return false;

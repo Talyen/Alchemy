@@ -3,8 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as config from "@/features/alchemy/shared/config";
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { createEmptyRewardState } from "@/lib/active-run-session";
-import { getRunAvailableDestinations } from "@/features/alchemy/shared/run-flow/destination-flow";
-import { getPreviousDestination } from "@/features/alchemy/shared/run-flow/resolve-available-destinations";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import {
@@ -104,22 +102,11 @@ describe("run destination controller actions", () => {
       completedDestinations: Array.from({ length: 7 }, () => DESTINATIONS.NORMAL_COMBAT),
     });
 
-    const captured: Array<{ destinationIndexInAct?: number }> = [];
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
-    const handlers = createRunFlow(
-      makeFlowHandlerDeps({
-        navigateTo,
-        getAvailableDestinations: (opts) => {
-          captured.push(opts ?? {});
-          return [DESTINATIONS.BOSS_COMBAT];
-        },
-      }),
-      defaultGameSession,
-    );
+    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession);
 
     handlers.advanceToNextDestination("campfire");
 
-    expect(captured.at(-1)?.destinationIndexInAct).toBe(7);
     expect(readRunSession(defaultGameSession).rewardFlow.state.destinations).toEqual([DESTINATIONS.BOSS_COMBAT]);
   });
 
@@ -131,24 +118,7 @@ describe("run destination controller actions", () => {
     });
 
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
-    const handlers = createRunFlow(
-      makeFlowHandlerDeps({
-        navigateTo,
-        getAvailableDestinations: (opts) =>
-          getRunAvailableDestinations({
-            destinationIndexInAct: opts?.destinationIndexInAct ?? 0,
-            currentHealth: 30,
-            currentGold: 0,
-            maxHealth: 30,
-            hasAnyOwnedGear: true,
-            previousDestination: getPreviousDestination(
-              opts?.destinationIndexInAct ?? 0,
-              readActiveRun(defaultGameSession).completedDestinations,
-            ),
-          }),
-      }),
-      defaultGameSession,
-    );
+    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession);
 
     handlers.advanceToNextDestination("campfire");
 
