@@ -1,14 +1,13 @@
 import "../../../../helpers/mock-audio";
-
+import {
+  bindRunMutationForTest,
+  resetAllTestStores,
+  resetGearForTest,
+} from "../../../../helpers/run-domain-store-test";
 import { beforeEach } from "vitest";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
 import { type BattleCard } from "@/lib/game-data";
-import {
-  acceptCommand,
-  dispatchRunSessionCommand,
-  createRunSessionCommand,
-} from "@/features/alchemy/shared/stores/run-session-command";
-import { resetAllTestStores, resetGearForTest } from "../../../../helpers/run-domain-store-test";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   setShopState as mutateShopState,
   setAlchemistState as mutateAlchemistState,
@@ -30,26 +29,10 @@ import { defaultGameSession } from "@/app/application-session";
 
 const lootProgress = { depth: 24, highestCompletedDifficulty: null };
 
-export const setShopState = createRunSessionCommand(
-  (...args: Parameters<typeof mutateShopState>) => acceptCommand(mutateShopState(...args)),
-  undefined,
-  defaultGameSession,
-);
-export const setAlchemistState = createRunSessionCommand(
-  (...args: Parameters<typeof mutateAlchemistState>) => acceptCommand(mutateAlchemistState(...args)),
-  undefined,
-  defaultGameSession,
-);
-export const setTrinketShopState = createRunSessionCommand(
-  (...args: Parameters<typeof mutateTrinketShopState>) => acceptCommand(mutateTrinketShopState(...args)),
-  undefined,
-  defaultGameSession,
-);
-export const setEquipmentShopState = createRunSessionCommand(
-  (...args: Parameters<typeof mutateEquipmentShopState>) => acceptCommand(mutateEquipmentShopState(...args)),
-  undefined,
-  defaultGameSession,
-);
+export const setShopState = bindRunMutationForTest(mutateShopState);
+export const setAlchemistState = bindRunMutationForTest(mutateAlchemistState);
+export const setTrinketShopState = bindRunMutationForTest(mutateTrinketShopState);
+export const setEquipmentShopState = bindRunMutationForTest(mutateEquipmentShopState);
 
 const testRng = () => 0.5;
 
