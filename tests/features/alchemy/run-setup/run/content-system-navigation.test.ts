@@ -48,7 +48,6 @@ function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNaviga
     navigateTo,
     resumeTo,
     presentBattleStart,
-    getAvailableDestinations: () => [DESTINATIONS.NORMAL_COMBAT],
     onResumeWildwood: vi.fn(),
     ...overrides,
   };
@@ -277,10 +276,7 @@ describe("createContentSystemNavigation", () => {
 
   it("commits the initial destination offer and reward together", () => {
     setRunProgress({ runDeck: [] });
-    const getAvailableDestinations = vi.fn(() => [DESTINATIONS.NORMAL_COMBAT]);
-    const deps = makeDeps({
-      getAvailableDestinations,
-    });
+    const deps = makeDeps();
     const nav = createContentSystemNavigation(deps, defaultGameSession);
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision), defaultGameSession);
@@ -290,14 +286,10 @@ describe("createContentSystemNavigation", () => {
     unsubscribe();
 
     expect(commits).toHaveLength(1);
-    expect(getAvailableDestinations).toHaveBeenCalledWith({
-      currentHealth: expect.any(Number),
-      currentGold: expect.any(Number),
-      destinationIndexInAct: 0,
-      maxHealth: expect.any(Number),
-    });
-    expect(readRunSession(defaultGameSession).rewardFlow.state.destinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
-    expect(readActiveRun(defaultGameSession).lastOfferedDestinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
+    const offers = readRunSession(defaultGameSession).rewardFlow.state.destinations;
+    expect(offers).toHaveLength(3);
+    expect(offers).not.toContain(DESTINATIONS.BOSS_COMBAT);
+    expect(readActiveRun(defaultGameSession).lastOfferedDestinations).toEqual(offers);
   });
 
   it("initializeWildwoodRun does not discover the normal starter deck", () => {
@@ -553,15 +545,14 @@ describe("createContentSystemNavigation", () => {
       undefined,
       defaultGameSession,
     );
-    const getAvailableDestinations = vi.fn(() => [DESTINATIONS.NORMAL_COMBAT]);
-    const deps = makeDeps({ getAvailableDestinations });
+    const deps = makeDeps();
     createContentSystemNavigation(deps, defaultGameSession).resumeRun();
     expect(deps.resumeTo).toHaveBeenCalledWith(ROUTE_SCREENS.DESTINATION);
-    expect(getAvailableDestinations).toHaveBeenCalledWith({
-      currentHealth: 12,
-      currentGold: expect.any(Number),
+    expect(readRunSession(defaultGameSession).rewardFlow.state.destinations).toHaveLength(3);
+    expect(readActiveRun(defaultGameSession)).toMatchObject({
       destinationIndexInAct: 2,
-      maxHealth: 30,
+      runPlayerHealth: 12,
+      runMaxHealth: 30,
     });
   });
 });

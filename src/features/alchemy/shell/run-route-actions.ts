@@ -30,13 +30,11 @@ import {
   unlockTalentsForDevelopment,
 } from "@/features/alchemy/shared/stores/navigation-commands";
 import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
-import { clearRunCardHover, readRunAvailableDestinations } from "./run-destination-wiring";
+import { clearRunCardHover } from "./run-card-hover";
 
 export function createRunRouteActions(gameSession: GameSession) {
   return bindSessionCapabilities(gameSession, {
     clearCardHover: () => clearRunCardHover(gameSession),
-    getAvailableDestinations: (options?: Parameters<typeof readRunAvailableDestinations>[0]) =>
-      readRunAvailableDestinations(options, gameSession),
     purchaseTalent: (keyword: Parameters<typeof purchaseTalent>[0], talent: string) =>
       purchaseTalent(keyword, talent, gameSession),
     resetTalentUnlocks: () => resetTalentUnlocks(gameSession),

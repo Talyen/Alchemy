@@ -33,7 +33,6 @@ function createNavigation(presentBattleStart = vi.fn()) {
       navigateTo,
       resumeTo: navigateTo,
       presentBattleStart,
-      getAvailableDestinations: () => ["Normal Combat"],
       onResumeWildwood: vi.fn(),
     },
     defaultGameSession,

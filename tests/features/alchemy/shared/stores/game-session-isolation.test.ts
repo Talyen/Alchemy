@@ -137,10 +137,6 @@ describe("independent game sessions", () => {
         const outcomes = createRunOutcomes(
           {
             actions: foreignCapability === "outcomes" ? { transition, navigateTo, clearCardHover: () => {} } : actions,
-            getAvailableDestinations:
-              foreignCapability === "outcomes"
-                ? createRunRouteActions(b.session).getAvailableDestinations
-                : runActions.getAvailableDestinations,
           },
           foreignCapability === "outcomes" ? b.session : a.session,
         );

@@ -33,7 +33,6 @@ export default {
     "src/lib/battle/index.ts",
     "src/lib/validation/index.ts",
     "src/lib/content-validation/index.ts",
-    "src/features/alchemy/shared/run-flow/index.ts",
     "scripts/*.mjs",
     "desktop/*.cjs",
   ],

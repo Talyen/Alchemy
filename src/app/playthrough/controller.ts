@@ -34,7 +34,6 @@ export function createPlaythroughController(gameSession: GameSession) {
   const outcomes = createRunOutcomes(
     {
       actions: { navigateTo, transition, clearCardHover: () => {} },
-      getAvailableDestinations: runActions.getAvailableDestinations,
     },
     gameSession,
   );

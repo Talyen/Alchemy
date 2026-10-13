@@ -53,12 +53,15 @@ workflow](./WORKFLOWS.md#content-system-behavior).
 
 The main menu offers Continue when a run is unfinished, otherwise Play. Continue delegates to `content-system-navigation.resumeRun` through route props. A requested mode cannot replace an active run. End Run in the existing red menu action cancels pending battle/navigation work, finalizes earned progression once, clears the current run, and always shows Journey’s End without confirmation; continuation follows the [run recap UI](./UI_BROWSING.md#run-journey-recap), including earned hero unlocks. Ordinary defeat and victory retain their outcome screens. Drafting belongs to the active run; finishing its starter draft is the only supported re-application of a start snapshot. Domain commands own the activity's resume location; display navigation, including Menu/meta visits, never replaces it. Run-start and progression commands establish their next activity before presentation begins. There are no parked slots or recency fields.
 
-Destination offer construction is pure in `shared/run-flow/destination-flow.ts`.
-Callers supply offer history, boss ID, and command-bound RNG; destination
-generation is not exposed through the content-system navigation API.
-`shared/stores/destination-offer-command.ts` samples and applies Campaign
-destination offers for both run start and progression inside the caller's
-existing command, committing offer history, reward state, and RNG counters together.
+Destination eligibility is pure in `shared/run-flow/resolve-available-destinations.ts`;
+weighted offer construction lives in `shared/run-flow/destination-flow.ts`.
+`shared/stores/destination-offer-command.ts` derives act, room history, Health,
+Gold, and collection eligibility from the open transaction. Run start, resume
+repair, and progression use that owner; victory supplies its plain eligibility
+context to reward calculation, which uses settled Health and Gold. Domain
+commands never call a shell reader or accept partial overrides for eligibility.
+Offer history, reward state, and command-bound RNG counters commit together;
+destination generation is not exposed through navigation capabilities.
 
 ## Battle path
 
@@ -302,6 +305,6 @@ controller factories, reads, commands, and persistence.
 `actor.ts` routes each observation to `meta-offers.ts` or `run-offers.ts` after constructing the production controller. `choice-catalog.ts` owns recorded choice identities and their executable commands for the current observation; duplicate identities fail instead of replacing a command. Offer builders score and register legal choices but do not commit gameplay until the selected choice executes.
 
 Run outcomes and navigation share one construction owner: `createRunOutcomes`
-captures the destination sampler and exposes `connect(actions)`. Both UI and
-headless shells connect navigation to that owner; neither can supply a second
-sampler for progression. Hover-clearing navigation is wrapped once in the shell.
+exposes `connect(actions)`. Both UI and headless shells supply presentation
+capabilities; domain commands own destination eligibility and sampling.
+Hover-clearing navigation is wrapped once in the shell.

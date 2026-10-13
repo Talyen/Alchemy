@@ -11,7 +11,7 @@ import {
   sessionFeedback,
 } from "@/features/alchemy/shared/stores/session-capabilities";
 import { ROUTE_SCREENS } from "@/lib/routing";
-import { clearRunCardHover } from "./run-destination-wiring";
+import { clearRunCardHover } from "./run-card-hover";
 import type { RunFlowEngineDeps } from "./shell-types";
 export function createRunFlowEngine(
   { navigateTo: rawNavigateTo, resumeTo: rawResumeTo, transition, cancelPending, battle }: RunFlowEngineDeps,
@@ -45,7 +45,6 @@ export function createRunFlowEngine(
       navigateTo,
       resumeTo,
       presentBattleStart: battle.presentBattleStart,
-      getAvailableDestinations: outcomes.getAvailableDestinations,
       onResumeWildwood: wildwood.resumeWildwoodRun,
     },
     gameSession,
@@ -74,7 +73,6 @@ export function createRunFlowEngine(
     navigateTo(ROUTE_SCREENS.MENU, () => teardownRun(gameSession));
   }
   return bindSessionCapabilities(gameSession, {
-    getAvailableDestinations: outcomes.getAvailableDestinations,
     advanceToNextDestination: flowHandlers.advanceToNextDestination,
     beginCampaign: contentNav.beginCampaign,
     beginLabyrinth: contentNav.beginLabyrinth,
