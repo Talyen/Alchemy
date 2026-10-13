@@ -3,6 +3,7 @@ import { createChoiceCatalog } from "@/app/playthrough/choice-catalog";
 import {
   initializeAlchemyVisitForTest as initializeAlchemyVisit,
   initializeMysteryForTest,
+  initializeShopForTest,
 } from "../helpers/visit-initialization";
 import { savedActivityData } from "../fixtures/run-activity";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -106,7 +107,7 @@ describe("retained headless rejection and persistence contracts", () => {
   it("rejects repeated and unaffordable shop purchases without duplicate grants", () => {
     const controller = start();
     const shop = controller.shop().merchant;
-    shop.initialize();
+    initializeShopForTest("merchant", defaultGameSession);
     const activity = readRunSession(defaultGameSession).activity;
     if (activity.kind !== "shop") throw new Error("Shop not initialized");
     const card = activity.data.cards[0]!;
