@@ -210,7 +210,6 @@ describe("Sun-Struck Shield reflection", () => {
           ...shieldTalents,
           forgeHolyDamagePercent: 100,
           holyGoldPercent: 3,
-          holyBlockPercentFromDamage: 15,
         },
         gearEffects: { flatHolyDamage: 50 },
         flags: { nextHitCrit: true },
@@ -240,7 +239,7 @@ describe("Sun-Struck Shield reflection", () => {
   it("respects enemy Block and does not reward fully blocked Holy damage", () => {
     const next = applyEnemyAbility(
       battle({
-        talentEffects: { ...shieldTalents, holyBlockPercentFromDamage: 100 },
+        talentEffects: { ...shieldTalents, holyBlockChance: 100 },
         playerStatuses: { block: 10 },
         enemyMitigation: { block: 3 },
       }),
@@ -252,10 +251,10 @@ describe("Sun-Struck Shield reflection", () => {
     expect(next.playerStatuses.block).toBe(0);
   });
 
-  it("retains low-Health Holy healing without also granting Radiant Guard Block", () => {
+  it("retains low-Health Holy healing from reflected damage", () => {
     const next = applyEnemyAbility(
       battle({
-        talentEffects: { ...shieldTalents, holyLifestealPercent: 10, holyBlockPercentFromDamage: 15 },
+        talentEffects: { ...shieldTalents, holyLifestealPercent: 10 },
         playerStatuses: { block: 57 },
       }),
       makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 60 }] }),

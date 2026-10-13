@@ -2,8 +2,6 @@ import { describe, expect, it } from "vitest";
 import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
 import { applyResonantChimeTrinket } from "@/lib/battle/card-play-effects";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
-import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
-import { cardById } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
@@ -140,30 +138,6 @@ describe("Five targeted bug fixes", () => {
 
       // Broadhead applies derived bleed damage via tryTalentTypedHit using TALENT_CONVERSION_BLEED_FRACTION (30% of 10 = 3)
       expect(result.enemyStatuses.bleed).toBe(3);
-    });
-  });
-
-  describe("Bug 5: drawPhysicalOnBleedTick emits draw combat feedback", () => {
-    it("emits draw combat text when a physical card is drawn on bleed tick", () => {
-      const physicalCard = cardById["slash"]!;
-      const state = patchBattleState({
-        deck: [physicalCard],
-        enemyHealth: 50,
-        enemyMaxHealth: 50,
-        enemyStatuses: { bleed: 4 },
-        talentEffects: { drawPhysicalOnBleedTick: true },
-      });
-
-      const combatTexts: CombatTextEvent[] = [];
-      const result = tickEnemyStatuses(state, combatTexts);
-
-      expect(result.hand).toContainEqual(expect.objectContaining({ id: "slash" }));
-      expect(combatTexts).toContainEqual({
-        target: "player",
-        kind: "status",
-        stat: "draw",
-        amount: 1,
-      });
     });
   });
 });

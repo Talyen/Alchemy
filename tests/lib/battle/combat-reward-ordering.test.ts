@@ -81,14 +81,14 @@ describe("combat reward ordering", () => {
   });
 
   it.each(["tick", "detonate", "remaining"] as const)(
-    "Septic Shock increases each Poison %s while the enemy is Bleeding",
+    "Venomtrail increases each Poison %s while the enemy is Bleeding",
     (mode) => {
       const state = patchBattleState({
         rng: () => 0.99,
         enemyHealth: 50,
         enemyMaxHealth: 50,
         enemyStatuses: { poison: 2, bleed: 1 },
-        talentEffects: { bleedPoisonDamageTakenBonus: 1 },
+        gearEffects: { poisonBonusVsBleeding: 1 },
       });
       const result =
         mode === "tick"

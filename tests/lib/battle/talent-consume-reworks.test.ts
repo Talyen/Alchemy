@@ -22,7 +22,6 @@ describe("Companion removal and genuine Consume", () => {
       playerHealth: 10,
       playerMaxHealth: 40,
       talentEffects: {
-        firstConsumeCardFree: true,
         drawOnConsume: 1,
         drawOnConsumeChance: 100,
         forgeOnConsume: 1,

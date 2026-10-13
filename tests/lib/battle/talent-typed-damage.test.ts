@@ -90,7 +90,7 @@ describe("talent damage conversions", () => {
       talentEffects: {
         flatBurnDamage: 100,
         forgeBurnDamagePercent: 100,
-        burnDamagePerManaCrystal: 100,
+        burnDamagePerMana: 100,
         freezeDamageBonusVsFrozen: 1,
         poisonDamageBonusVsPoisoned: 1,
       },
@@ -206,34 +206,11 @@ describe("Toxic Profit and saved damage rules", () => {
 
   it("new saved manifests retain converted procs and kill payout state", () => {
     const state = battle({
-      talentEffects: { ...converted, ...effects, physicalBleedDamageChance: 10 },
+      talentEffects: { ...converted, ...effects, physicalBleedChance: 10 },
       flags: { killRewardsPaid: true },
     });
     const saved = PersistedBattleStateSchema.parse(JSON.parse(JSON.stringify(state)));
-    expect(saved.talentEffects.physicalBleedDamageChance).toBe(10);
+    expect(saved.talentEffects.physicalBleedChance).toBe(10);
     expect(saved.flags.killRewardsPaid).toBe(true);
-  });
-
-  it("legacy manifests retain direct-stack procs and default new rules off", () => {
-    const raw = JSON.parse(JSON.stringify(battle({ talentEffects: { physicalBleedChance: 10 } })));
-    delete raw.talentEffects.physicalBleedDamageChance;
-    delete raw.talentEffects.drawOnConsume;
-    delete raw.flags.killRewardsPaid;
-    delete raw.flags.nextHolyCardFree;
-    const saved = { ...PersistedBattleStateSchema.parse(raw), rng: () => 0.09 };
-    expect(saved.talentEffects.physicalBleedDamageChance).toBe(0);
-    expect(saved.talentEffects.drawOnConsume).toBe(0);
-    const hit = resolvePlayerHit(
-      saved,
-      {
-        source: "card-attack",
-        card: cardById["slash"]!,
-        effect: { kind: "damage", damageType: "physical", amount: 8 },
-        resolvedDamage: 8,
-      },
-      [],
-    );
-    expect(hit.enemyHealth).toBe(90);
-    expect(hit.enemyStatuses.bleed).toBe(2);
   });
 });

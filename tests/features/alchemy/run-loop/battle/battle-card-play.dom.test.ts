@@ -492,8 +492,9 @@ describe("createBattleCardPlay", () => {
           hiddenHandCardKeys: presentation.hiddenHandCardKeys,
         }),
       ).toBe(false);
-      const endTurn = vi.spyOn(ctx.battle, "endTurn").mockReturnValue(null);
-      createBattleEndTurnUi(ctx, session, transferDeps).handleEndTurn();
+      const endTurn = vi.fn(() => null);
+      const endTurnContext = { ...ctx, battle: { ...ctx.battle, endTurn } };
+      createBattleEndTurnUi(endTurnContext, session, transferDeps).handleEndTurn();
       expect(endTurn).toHaveBeenCalledOnce();
       expect(ctx.playback.scheduleAutoEndTurn).toHaveBeenCalledWith(battleState);
     } finally {
