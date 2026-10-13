@@ -72,6 +72,20 @@ describe("desktop build configuration", () => {
 });
 
 describe("build command forwarding", () => {
+  it("shows desktop help without release credentials or generated-output checks", () => {
+    const env = Object.fromEntries(
+      Object.entries(process.env).filter(([key]) => !/^(SENTRY_|AZURE_|STEAM_)/u.test(key)),
+    );
+    const result = spawnSync(process.execPath, ["scripts/build-verified.mjs", "--desktop", "--help", "--live"], {
+      cwd: new URL("../..", import.meta.url),
+      env: { ...env, CI_RELEASE: "true" },
+      encoding: "utf8",
+    });
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain("vite build [root]");
+    expect(result.stdout).not.toContain("Version metadata");
+  });
+
   it.each(["--live", "--verbose"])("consumes %s while forwarding Vite options", (flag) => {
     const result = spawnSync(
       process.execPath,
@@ -136,12 +150,18 @@ function packagingFixture(edition: "full" | "demo", html = '<script type="module
   return root;
 }
 
-function packageRenderer(root: string, edition: "full" | "demo", viaEnvironment = false) {
+function packageRenderer(
+  root: string,
+  edition: "full" | "demo",
+  viaEnvironment = false,
+  args?: string[],
+  failScript = "",
+) {
   const source = `import cp from 'node:child_process';
     import { syncBuiltinESMExports } from 'node:module';
-    cp.spawnSync = (_command, args) => { console.log(JSON.stringify(args)); return { status: 0 }; };
+    cp.spawnSync = (_command, args) => { console.log(JSON.stringify(args)); return { status: args.includes(${JSON.stringify(failScript)}) ? 3 : 0 }; };
     syncBuiltinESMExports();
-    ${viaEnvironment ? "" : "process.argv.push('--dir');"}
+    process.argv = [process.execPath, 'scripts/dist-desktop.mjs', ...${JSON.stringify(args ?? (viaEnvironment ? [] : ["--dir"]))}];
     await import('./scripts/dist-desktop.mjs');`;
   const env = Object.fromEntries(
     Object.entries(process.env).filter(([key]) => !/^(SENTRY_|AZURE_|STEAM_|ALCHEMY_)/u.test(key)),
@@ -152,6 +172,35 @@ function packageRenderer(root: string, edition: "full" | "demo", viaEnvironment 
     env: { ...env, CI_RELEASE: "false", ALCHEMY_EDITION: edition, ALCHEMY_PACKAGE_DIR: viaEnvironment ? "1" : "0" },
   });
 }
+
+it.each(["--dr", "unexpected", "--dir=false"])(
+  "rejects packaging argument %s before builds, writes or signing",
+  (arg) => {
+    const root = packagingFixture("full");
+    const result = packageRenderer(root, "full", false, ["--build", arg]);
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(/Unknown option|Unexpected packaging arguments|does not take a value/u);
+    expect(result.stdout).toBe("");
+    expect(existsSync(join(root, "steam/build"))).toBe(false);
+  },
+);
+
+it.each(["build:desktop", "check:bundle"])("stops packaging when %s fails", (script) => {
+  const root = packagingFixture("full");
+  const result = packageRenderer(root, "full", false, ["--build", "--dir"], script);
+  expect(result.status, result.stderr).toBe(3);
+  const commands = result.stdout
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line).slice(1));
+  expect(commands).toEqual(
+    ["sync:steam-appid", "build:desktop", ...(script === "check:bundle" ? ["check:bundle"] : [])].map((name) => [
+      "run",
+      name,
+    ]),
+  );
+  expect(existsSync(join(root, "steam/build"))).toBe(false);
+});
 
 it.each([
   ["full", false],

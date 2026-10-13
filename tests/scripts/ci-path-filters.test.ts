@@ -167,12 +167,7 @@ describe("desktop CI artifact flow", () => {
     const pkg = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8")) as {
       scripts: Record<string, string>;
     };
-    expect(pkg.scripts["dist:desktop"].split(" && ")).toEqual([
-      "npm run sync:steam-appid",
-      "npm run build:desktop",
-      "npm run check:bundle",
-      "node scripts/dist-desktop.mjs",
-    ]);
+    expect(pkg.scripts["dist:desktop"]).toBe("node scripts/dist-desktop.mjs --build");
     expect(packaging.indexOf("npm run check:bundle")).toBeGreaterThan(packaging.indexOf("npm run build:desktop"));
     expect(packaging.indexOf("npm run check:bundle")).toBeLessThan(packaging.indexOf("node scripts/dist-desktop.mjs"));
     const release = readFileSync(path.join(repoRoot, ".github/workflows/release.yml"), "utf8")
