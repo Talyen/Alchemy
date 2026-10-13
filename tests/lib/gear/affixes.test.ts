@@ -1,11 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  defaultGearEffects,
-  effectsForAffixRolls,
-  getGearAffixTooltipEntries,
-  normalizeAffixRolls,
-  resolveAffixEffects,
-} from "@/lib/gear";
+import { defaultGearEffects, effectsForAffixRolls, getGearAffixTooltipEntries, normalizeAffixRolls } from "@/lib/gear";
 
 describe("gear affixes", () => {
   it("shows both Saintfall magnitudes in its tooltip", () => {
@@ -78,7 +72,7 @@ describe("gear affixes", () => {
 
   it("sums repeated affixes without granting unrelated combat bonuses", () => {
     expect(
-      resolveAffixEffects([
+      effectsForAffixRolls([
         { id: "flat-physical", value: 2 },
         { id: "flat-physical", value: 3 },
         { id: "flat-burn", value: 1 },
@@ -96,9 +90,14 @@ describe("gear affixes", () => {
       Object.freeze({ id: "flat-stun", value: NaN }),
     ] as const);
     const raw = Object.freeze([...knownAffixes, Object.freeze({ id: "not-an-affix", value: 1 })]);
-    for (const rarity of [undefined, "basic", "astral", "unique"] as const) {
+    for (const [rarity, flatPhysicalDamage, flatBurnDamage, damageReductionPerMana] of [
+      [undefined, 999, 2, 5],
+      ["basic", 3, 2, 1],
+      ["astral", 7, 3, 1],
+      ["unique", 7, 3, 1],
+    ] as const) {
       const normalized = normalizeAffixRolls(raw, rarity);
-      const expected = resolveAffixEffects(normalized);
+      const expected = { ...defaultGearEffects, flatPhysicalDamage, flatBurnDamage, damageReductionPerMana };
       const effects = effectsForAffixRolls(raw, rarity);
       expect(effects).toEqual(expected);
       expect(

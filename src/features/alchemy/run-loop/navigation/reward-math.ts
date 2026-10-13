@@ -1,7 +1,6 @@
 import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
-import { applyScavengerHerbalistModifiers, applyRewardFindBonus } from "@/lib/homestead/material-rewards";
+import { applyRewardFindBonus } from "@/lib/homestead/material-rewards";
 import { computeTrinketManifest } from "@/lib/trinkets";
-import { type MaterialInventory } from "@/lib/homestead/types";
 import type { BattleSnapshot } from "@/lib/battle";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
@@ -57,17 +56,6 @@ export function getWellProvisionedHealing(modifiers: EncounterRewardTraitId[], m
   return modifiers.includes("wellProvisioned")
     ? Math.max(1, Math.round(maxHealth * LABYRINTH_REWARD_CONFIG.wellProvisionedHealFraction))
     : 0;
-}
-
-export function applyLabyrinthRewardMaterialModifiers(
-  materials: MaterialInventory,
-  modifiers: EncounterRewardTraitId[],
-): MaterialInventory {
-  // Thin adapter over the single pipeline owner in homestead/material-rewards.ts.
-  return applyScavengerHerbalistModifiers(materials, {
-    scavenger: modifiers.includes("scavenger"),
-    herbalist: modifiers.includes("herbalist"),
-  });
 }
 
 export function computeVictoryGold({

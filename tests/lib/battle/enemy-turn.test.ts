@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
-import { endPlayerTurn, recoverLegacyEnemyPhase } from "@/lib/battle/enemy-turn";
+import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import type { BattleState } from "@/lib/battle/types";
 import { isPlayerDefeated } from "@/lib/battle/battle-outcome";
 import { makeTestCard, patchBattleState, type BattleStatePatch } from "../../fixtures/battle";
@@ -144,21 +144,6 @@ describe("endPlayerTurn - standard branch", () => {
     if (result.kind === "haste") throw new Error("Expected an enemy-turn resolution");
     expect(result.enemyTurnStartState.hand).toEqual([]);
     expect(result.enemyTurnStartState.discard.some((card) => card.id === "held")).toBe(true);
-  });
-});
-
-describe("legacy enemy-phase recovery", () => {
-  it.each([0, 2])("returns an in-flight save to a drawable player turn with %i Stun turns", (stunSkipTurns) => {
-    const recovered = recoverLegacyEnemyPhase(
-      battleState({
-        turnPhase: "enemy",
-        hand: [],
-        deck: [makeTestCard({ id: "held" })],
-        playerCC: { stunSkipTurns },
-      }),
-    );
-    expect(recovered.turnPhase).toBe("player");
-    expect(recovered.hand.length).toBeGreaterThan(0);
   });
 });
 

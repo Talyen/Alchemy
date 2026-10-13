@@ -43,20 +43,6 @@ export function previousVersionTag(root, currentTag) {
   return nearestVersionTag(root, `${normalized}^`);
 }
 
-export function latestCommitHash(root, short = true) {
-  try {
-    const args = short ? ["rev-parse", "--short", "HEAD"] : ["rev-parse", "HEAD"];
-    return execFileSync("git", args, {
-      cwd: root,
-      stdio: ["ignore", "pipe", "ignore"],
-    })
-      .toString()
-      .trim();
-  } catch {
-    return "unknown";
-  }
-}
-
 export function resolvePatchNoteRange(root, releaseTag) {
   if (!releaseTag) {
     return { since: latestVersionTag(root), until: "HEAD" };

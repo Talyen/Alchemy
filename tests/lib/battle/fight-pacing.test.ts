@@ -5,7 +5,6 @@ import {
   fightPacingClockMultiplier,
   fightPacingComebackMultiplier,
   fightPacingPoolMetrics,
-  openingPacedDamage,
   paceCombatMagnitude,
   paceCombatDamage,
 } from "@/lib/battle/fight-pacing";
@@ -136,13 +135,6 @@ describe("proc defensive grants bypass pacing (policy pin)", () => {
     });
     expect(triggered.playerStatuses.armor).toBe(armorAmount);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "armor", amount: armorAmount });
-  });
-});
-
-describe("openingPacedDamage", () => {
-  it("leaves fresh turn-1 openings at authored amount under lengthened targets", () => {
-    expect(openingPacedDamage(10, "normal")).toBe(10);
-    expect(openingPacedDamage(10, "boss")).toBe(10);
   });
 });
 

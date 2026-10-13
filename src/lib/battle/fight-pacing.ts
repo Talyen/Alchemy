@@ -103,17 +103,6 @@ export function paceCombatMagnitude(
   return Math.round(amount * multiplier);
 }
 
-export function openingPacedDamage(amount: number, enemyType: EnemyType = "normal"): number {
-  if (amount <= 0) return amount;
-  const bonus = fightPacingScheduleClockBonus(
-    { playerFraction: 1, enemyFraction: 1, actualBurnFraction: 0 },
-    1,
-    FIGHT_PACING.clockByEnemyType[enemyType],
-  );
-  if (bonus === 0) return amount;
-  return Math.round(amount * (1 + bonus));
-}
-
 export function paceCombatDamage(
   state: BattleState,
   amount: number,
