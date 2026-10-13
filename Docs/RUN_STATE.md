@@ -109,6 +109,10 @@ The command guard is released before `afterCommit`, so an effect may dispatch a
 separate command. If an effect throws, its error propagates and the already
 committed state remains; post-commit errors do not roll back gameplay.
 
+`afterCommit` confirms an in-memory commit, not a durable save. Completed player
+outcomes follow [completed actions and local saving](#completed-actions-and-local-saving)
+through the same session's `SessionPersistence.afterProgressSaved` capability.
+
 Session feedback adapters are an explicit exception to error propagation.
 `shared/stores/session-effects.ts` isolates each audio/UI adapter and lifecycle
 listener, logging its failure without aborting the caller's remaining work.
