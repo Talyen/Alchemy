@@ -76,7 +76,7 @@ then installs the browser-process copies before enabling their fuse. The build w
 Packaged Windows startup: `smoke-desktop.mjs` resolves the artifact and invokes
 `smoke-desktop.ps1` for native accessibility verification (see [RELEASE](../Docs/RELEASE.md#packaged-windows-startup-check)).
 
-`platforms.json` owns the desktop target list; `package.json` build blocks own per-platform packaging configuration. Sentry release and desktop sourcemap mode are owned by `lib/release/sentry-release.mjs`; chunk splitting is owned by `lib/vite-chunks.mjs`. Vite uses only Rolldown chunk groups.
+`platforms.json` must declare at least one desktop target; `package.json` build blocks own per-platform packaging configuration. Sentry release and desktop sourcemap mode are owned by `lib/release/sentry-release.mjs`; chunk splitting is owned by `lib/vite-chunks.mjs`. Vite uses only Rolldown chunk groups.
 
 ## Audits (periodic sweep, not a push gate)
 
@@ -135,6 +135,8 @@ journal prefix and starting-state evidence for replay.
 `npm run dev:checked` starts Vite with the live TypeScript 7 checker directly;
 run `npm run predev` first when using that command. Desktop development runs
 the same preparation and adds Steam App ID synchronization.
+Vite and Electron share a lifetime: exiting either process stops the other,
+and the first exit determines the command's status.
 
 ## Cleanup (`clean` = explicit reset, `prune:transient` = expiry)
 
@@ -142,6 +144,10 @@ the same preparation and adds Steam App ID synchronization.
 build outputs. `--processes` stops Alchemy-owned test listeners;
 `--include-dev-port` also selects the normal dev port, only with `--processes`.
 `--all` combines builds and processes. Use `--dry-run` to preview deletion.
+Cleanup preserves caches reached through a linked `node_modules` directory so
+an isolated worktree cannot remove the original checkout's shared cache.
+Listener ownership also excludes nested `.worktrees/` checkouts from the
+original checkout's process cleanup.
 
 `npm run prune:transient` expires diagnostic bundles after 24 hours of inactivity;
 `--days=<number>` changes the cutoff. Runs under `reports/runs`, `compact`,
