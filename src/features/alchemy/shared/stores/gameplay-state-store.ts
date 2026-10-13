@@ -1,55 +1,12 @@
-import { useStore } from "zustand";
 import { defaultGameSession } from "@/app/application-session";
 import type { GameplayState } from "./gameplay-state";
-import { sessionRuntime } from "./session-runtime";
+import { sessionGameplayStore } from "./session-gameplay-store";
+import { useStore } from "zustand";
 export type { GameplayState } from "./gameplay-state";
 
-const runtime = sessionRuntime(defaultGameSession);
-const applicationStore = runtime.gameplay.reads;
-// Retain the immutable pre-action reference until local acknowledgement. Domain
-// reads still use the committed store; only player-facing hooks wait for saving.
-let cachedLive: GameplayState | undefined;
-let cachedBase: GameplayState | undefined;
-let cachedPresentation: GameplayState = applicationStore.getState();
-const presentationStore = {
-  getState: () => {
-    const live = applicationStore.getState();
-    if (!runtime.progressCompletion.active || runtime.progressCompletion.read().kind === "idle") return live;
-    const base = runtime.presentationBase;
-    if (cachedLive !== live || cachedBase !== base) {
-      cachedLive = live;
-      cachedBase = base;
-      cachedPresentation = {
-        ...base,
-        run: { ...base.run, navigation: live.run.navigation },
-        profile: {
-          ...base.profile,
-          collectionTab: live.profile.collectionTab,
-          collectionPages: live.profile.collectionPages,
-        },
-        session: { ...base.session, selectedLabyrinthNodeId: live.session.selectedLabyrinthNodeId },
-      };
-    }
-    return cachedPresentation;
-  },
-  getInitialState: applicationStore.getInitialState,
-  subscribe: (listener: (state: GameplayState, previous: GameplayState) => void) => {
-    let previous = presentationStore.getState();
-    const notify = () => {
-      const current = presentationStore.getState();
-      const before = previous;
-      previous = current;
-      listener(current, before);
-    };
-    const gameplay = applicationStore.subscribe(notify);
-    const progress = runtime.progressCompletion.subscribe(notify);
-    return () => {
-      gameplay();
-      progress();
-    };
-  },
-};
+/** Application adapter. Session controllers use the explicit session hook. */
 export const useGameplayStateStore = Object.assign(
-  <T>(selector: (state: GameplayState) => T): T => useStore(presentationStore, selector),
-  applicationStore,
+  <T>(selector: (state: GameplayState) => T): T =>
+    useStore(sessionGameplayStore(defaultGameSession).presentation, selector),
+  sessionGameplayStore(defaultGameSession).committed,
 );

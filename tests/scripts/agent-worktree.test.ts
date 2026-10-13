@@ -14,7 +14,13 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 describe("worktree removal", () => {
-  it("rejects malformed options before removing a worktree named force", () => {
+  it.each([
+    ["remove", "--task", "--force"],
+    ["remove", "--task=--force", "--force"],
+    ["remove", "--task=force", "--force", "--typo"],
+    ["remove", "--task=force", "--force", "--task=other"],
+    ["create", "--task=force", "--base", "--detached"],
+  ])("preserves a worktree named force after malformed options: %j", (...args) => {
     const root = mkdtempSync(join(tmpdir(), "alchemy-worktree-"));
     try {
       const script = join(root, "scripts", "agent-worktree.mjs");
@@ -23,18 +29,9 @@ describe("worktree removal", () => {
       const saved = join(root, ".worktrees", "force", "work.txt");
       mkdirSync(join(root, ".worktrees", "force"), { recursive: true });
       writeFileSync(saved, "uncommitted work");
-      expect(spawnSync("git", ["init", "-q"], { cwd: root }).status).toBe(0);
-      for (const args of [
-        ["remove", "--task", "--force"],
-        ["remove", "--task=--force", "--force"],
-        ["remove", "--task=force", "--force", "--typo"],
-        ["remove", "--task=force", "--force", "--task=other"],
-        ["create", "--task=force", "--base", "--detached"],
-      ]) {
-        const result = spawnSync(process.execPath, [script, ...args], { encoding: "utf8" });
-        expect(result.status, result.stderr).toBe(2);
-        expect(readFileSync(saved, "utf8")).toBe("uncommitted work");
-      }
+      const result = spawnSync(process.execPath, [script, ...args], { cwd: root, encoding: "utf8" });
+      expect(result.status, result.stderr).toBe(2);
+      expect(readFileSync(saved, "utf8")).toBe("uncommitted work");
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

@@ -1,6 +1,6 @@
 import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
-import { cardById, computeTalentEffects, type BattleCard } from "@/lib/game-data";
+import { computeTalentEffects, type BattleCard } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { applyWishEffect } from "@/lib/battle/wish";
@@ -8,7 +8,6 @@ import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/follow-up-hit-resolution";
 import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
-import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { patchBattleState, type BattleStatePatch } from "../../fixtures/battle";
 import { makeTestCard } from "../../fixtures/cards";
@@ -40,62 +39,16 @@ const holy = makeTestCard({ effects: [{ kind: "damage", damageType: "holy", amou
 const leech = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10, lifesteal: true }] });
 const wish = makeTestCard({ effects: [{ kind: "wish", amount: 1 }] });
 
-function resume(state: ReturnType<typeof battle>) {
-  return { ...PersistedBattleStateSchema.parse(JSON.parse(JSON.stringify(state))), rng: () => 0.99 };
-}
-
 describe("Mana from Heaven", () => {
-  it("grants every Wish immediately without creating pending Mana", () => {
-    const initial = battle({ talentEffects: wishTalents });
-    const wished = applyWishEffect(initial, wish, 3, []);
-    expect(wished.mana).toBe(3);
-    expect(wished.playerHealth).toBe(10);
-    const next = advanceToPlayerTurn(resume(wished));
-    expect(next.mana).toBe(3);
-    expect(next.playerHealth).toBe(10);
-    expect(advanceToPlayerTurn(next).mana).toBe(3);
-  });
-
-  it("leaves Dark Pact with a Mana cost despite its other Wish rewards", () => {
-    const initial = battle({
-      talentEffects: computeTalentEffects({
-        wish: ["wish-mana", "wish-health", "wish-draw"],
-        gold: ["gold-on-wish"],
-      }),
-      rng: () => 0,
-    });
-    const next = play(initial, cardById["dark-pact"]!);
-    expect(next.mana).toBe(3);
-    expect(next.playerHealth).toBe(10);
-    expect(next.gold).toBe(7);
-  });
-
-  it("combines immediate Gear and Talent Mana", () => {
+  it("leaves per-Wish gear rewards independent of the card refund", () => {
     const next = applyWishEffect(
       battle({ mana: 0, talentEffects: wishTalents, gearEffects: { manaOnWish: 1 } }),
       wish,
       1,
       [],
     );
-    expect(next.mana).toBe(2);
-    expect(next.playerHealth).toBe(12);
-  });
-
-  it("does not create a delayed reward on a Haste turn", () => {
-    const wished = applyWishEffect(battle({ talentEffects: wishTalents, playerStatuses: { haste: 1 } }), wish, 2, []);
-    const next = endPlayerTurn(wished).state;
-    expect(next.mana).toBe(3);
-  });
-
-  it("applies immediate Mana to Wishes created by scheduled effects", () => {
-    const initial = battle({
-      deck: [wish],
-      talentEffects: wishTalents,
-      pendingTurnStartEffects: [{ remainingTurns: 1, effects: [{ kind: "wish", amount: 1 }] }],
-    });
-    const next = advanceToPlayerTurn(initial);
-    expect(next.mana).toBe(3);
-    expect(advanceToPlayerTurn(next).mana).toBe(3);
+    expect(next.mana).toBe(1);
+    expect(next.playerHealth).toBe(11);
   });
 });
 
@@ -257,7 +210,6 @@ describe("Sun-Struck Shield reflection", () => {
           ...shieldTalents,
           forgeHolyDamagePercent: 100,
           holyGoldPercent: 3,
-          holyBlockPercentFromDamage: 15,
         },
         gearEffects: { flatHolyDamage: 50 },
         flags: { nextHitCrit: true },
@@ -287,7 +239,7 @@ describe("Sun-Struck Shield reflection", () => {
   it("respects enemy Block and does not reward fully blocked Holy damage", () => {
     const next = applyEnemyAbility(
       battle({
-        talentEffects: { ...shieldTalents, holyBlockPercentFromDamage: 100 },
+        talentEffects: { ...shieldTalents, holyBlockChance: 100 },
         playerStatuses: { block: 10 },
         enemyMitigation: { block: 3 },
       }),
@@ -299,10 +251,10 @@ describe("Sun-Struck Shield reflection", () => {
     expect(next.playerStatuses.block).toBe(0);
   });
 
-  it("retains low-Health Holy healing without also granting Radiant Guard Block", () => {
+  it("retains low-Health Holy healing from reflected damage", () => {
     const next = applyEnemyAbility(
       battle({
-        talentEffects: { ...shieldTalents, holyLifestealPercent: 10, holyBlockPercentFromDamage: 15 },
+        talentEffects: { ...shieldTalents, holyLifestealPercent: 10 },
         playerStatuses: { block: 57 },
       }),
       makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 60 }] }),
@@ -320,11 +272,11 @@ describe("Deep Siphon", () => {
     expect(next.playerHealth).toBe(22);
   });
 
-  it("does not boost incidental Leech or let it spend the card bonus", () => {
+  it("boosts incidental Leech and the following card independently", () => {
     const initial = battle({ talentEffects: leechTalents });
     const passive = applyLifestealAndPlayerHitTriggers(initial, 8, []);
-    expect(passive.playerHealth).toBe(14);
-    expect(play(passive, leech).playerHealth).toBe(20);
+    expect(passive.playerHealth).toBe(15);
+    expect(play(passive, leech).playerHealth).toBe(21);
   });
 
   it("boosts explicit Leech in scheduled card effects", () => {
@@ -343,7 +295,7 @@ describe("talent save", () => {
     const saved = JSON.parse(
       JSON.stringify(
         battle({
-          talentEffects: { manaOnWish: 1, holyReflectionBlockLostPercent: 30 },
+          talentEffects: { wishCardRefundsMana: true, holyReflectionBlockLostPercent: 30 },
         }),
       ),
     );
@@ -351,6 +303,7 @@ describe("talent save", () => {
     const restored = PersistedBattleStateSchema.parse(saved);
     expect(restored.talentEffects.holyReflectionBlockLostPercent).toBe(30);
     expect(restored.talentEffects.archeryCritOnCrowdControl).toBe(false);
-    expect(applyWishEffect({ ...restored, rng: () => 0.99, mana: 0 }, wish, 1, []).mana).toBe(1);
+    expect(restored.talentEffects.wishCardRefundsMana).toBe(true);
+    expect(applyWishEffect({ ...restored, rng: () => 0.99, mana: 0 }, wish, 1, []).mana).toBe(0);
   });
 });

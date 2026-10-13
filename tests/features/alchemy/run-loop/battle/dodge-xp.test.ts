@@ -1,5 +1,4 @@
 import "../../../../helpers/mock-audio";
-
 import "../../../../helpers/mock-flush-save";
 import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -9,10 +8,10 @@ import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persis
 import { ActiveRunDataSchema } from "@/lib/validation/save-schemas/active-run";
 import { getDifficultyXPMultiplier } from "@/lib/game-data";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
-import { finalizeRunXP, awardBattleDodgeXP } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { awardBattleDodgeXP } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
 import { readActiveRun, readBattle, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
-import { snapshotRun, restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { snapshotRun, restoreRun, abandonRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { incomingPhysical } from "../../../../fixtures/battle";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/app/application-session";
@@ -63,16 +62,16 @@ describe("Dodge XP commits", () => {
     expect(readActiveRun(defaultGameSession).runTalentXP.dodge).toBe(2);
 
     const multiplier = getDifficultyXPMultiplier(readActiveRun(defaultGameSession).selectedDifficulty);
-    dispatchGameplayCommand((draft) => acceptCommand(finalizeRunXP(draft)), undefined, defaultGameSession);
+    expect(abandonRun(defaultGameSession)).toBe(true);
     expect(readRunProfile(defaultGameSession).talentXP.dodge).toBe(Math.round(2 * multiplier));
     expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
   });
 
-  it("awards a Dodge whose Riposte ends combat", () => {
+  it("awards a Dodge whose Gear retaliation ends combat", () => {
     const state = incomingPhysical({
       rng: () => 0,
       enemyHealth: 1,
-      talentEffects: { physicalOnDodgeEqualToAttack: true },
+      gearEffects: { physicalOnDodge: 100 },
     });
     dispatchGameplayCommand(
       (draft) => acceptCommand(initializeActiveBattle(draft, state)),

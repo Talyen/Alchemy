@@ -92,7 +92,7 @@ describe("reaction lifetimes", () => {
       enemyHealth: 100,
       enemyMaxHealth: 100,
       gearEffects: { flatBleedDamage: 18 },
-      talentEffects: { cardLeechHealingBonus: 1 },
+      talentEffects: { leechHealingBonus: 1 },
       rng: () => (rolls++ === 0 ? 0 : 0.99),
     });
     const hit = playBattleCardResolved(state, fangs.id, 0).state;
@@ -121,7 +121,7 @@ describe("reaction lifetimes", () => {
       enemyStatuses: { bleed: 40 },
       pendingBleedLeechHealing: 40,
       pendingCardBleedLeechHealing: 20,
-      talentEffects: { cardLeechHealingBonus: 1 },
+      talentEffects: { leechHealingBonus: 1 },
       rng: () => 0.99,
     });
     expect(tickEnemyStatuses(mixed, []).playerHealth).toBe(31);

@@ -16,7 +16,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readActivityData } from "@/lib/active-run-session";
 import { cardById } from "@/lib/game-data";
-import { type MysteryChoice } from "@/lib/mystery";
+import type { MysteryChoice } from "@/lib/mystery";
 export function chooseMysteryOption(choice: MysteryChoice, gameSession: GameSession): Array<"gain" | "spend"> | null {
   const activity = readRunSession(gameSession).activity;
   // The choice object belongs to one resolved visit. A retained screen from an

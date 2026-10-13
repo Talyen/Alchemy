@@ -97,7 +97,12 @@ function applyCardArcheryReactions(
   combatTexts: CombatTextEvent[],
 ): BattleState {
   const { resolvedDamage } = facts;
-  if (request.source !== "card-attack" || !request.card.tags?.includes("archery") || resolvedDamage <= 0) {
+  if (
+    request.source !== "card-attack" ||
+    !request.card.tags?.includes("archery") ||
+    resolvedDamage <= 0 ||
+    nextState.enemyHealth <= 0
+  ) {
     return nextState;
   }
   if (rollBattleChance(nextState.talentEffects.archeryPlayTwiceChance, nextState)) {

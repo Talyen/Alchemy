@@ -21,11 +21,11 @@ import {
   WRITE_PORT_PATTERNS,
 } from "./fragments.js";
 
-const ROOM_ENTRY_ONLY = [
+const ROOM_INITIALIZATION_ONLY = [
   {
-    group: ["**/room-visit-initialization", "./room-visit-initialization"],
+    group: ["**/room-visit-initialization"],
     message:
-      "Only validated room entry may create visits; presentation and retained capabilities act on committed visits.",
+      "Only room-entry-commands may initialize visits. Screens and retained capabilities consume committed visits.",
   },
 ];
 const SOURCE_IMPORT_PATTERNS = [
@@ -33,7 +33,7 @@ const SOURCE_IMPORT_PATTERNS = [
   DOMAIN_STORE_PATTERNS,
   WRITE_PORT_PATTERNS,
   NO_DIRECT_ASSET_IMPORT,
-  ROOM_ENTRY_ONLY,
+  ROOM_INITIALIZATION_ONLY,
 ];
 
 // Each effective scope composes its full policy once. Path-scoped rules replace,
@@ -91,7 +91,7 @@ export const BOUNDARY_CONFIGS = [
   ),
   scope(
     ["src/features/alchemy/shared/stores/**/*.{ts,tsx}"],
-    [BARREL_PATTERNS, ROOM_ENTRY_ONLY],
+    [BARREL_PATTERNS, ROOM_INITIALIZATION_ONLY],
     GAMEPLAY_NO_UNSAFE_RANDOM_PICK,
   ),
   // Bootstrap hydrates all codecs atomically. Only raw dispatch is exempt;
@@ -163,6 +163,10 @@ export const BOUNDARY_CONFIGS = [
   ),
   scope(["src/features/alchemy/run-loop/**/*.{ts,tsx}"], [...SOURCE_IMPORT_PATTERNS, RUN_LOOP_NO_RUN_SETUP]),
   scope(
+    ["src/features/alchemy/run-loop/run/room-entry-commands.ts"],
+    [...SOURCE_IMPORT_PATTERNS.filter((patterns) => patterns !== ROOM_INITIALIZATION_ONLY), RUN_LOOP_NO_RUN_SETUP],
+  ),
+  scope(
     ["src/features/alchemy/run-loop/screens/**/*.{ts,tsx}"],
     [...SOURCE_IMPORT_PATTERNS, RUN_LOOP_NO_RUN_SETUP, SCREENS_NO_ORCHESTRATION, SCREENS_NO_APP_ORCHESTRATION],
   ),
@@ -228,8 +232,4 @@ export const BOUNDARY_CONFIGS = [
       ],
     },
   },
-  scope(
-    ["src/features/alchemy/run-loop/run/room-entry-commands.ts"],
-    [...SOURCE_IMPORT_PATTERNS.filter((patterns) => patterns !== ROOM_ENTRY_ONLY), RUN_LOOP_NO_RUN_SETUP],
-  ),
 ];

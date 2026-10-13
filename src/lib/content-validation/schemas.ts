@@ -91,6 +91,7 @@ export const GearDefinitionContentSchema = z.object({
 
 export const GearAffixContentSchema = z.object({
   id: z.enum(GEAR_AFFIX_IDS),
+  name: NonEmptyStringSchema,
   aspect: z.enum(["offensive", "defensive"]),
   keywordId: KeywordIdSchema,
   secondaryKeywordId: KeywordIdSchema.optional(),

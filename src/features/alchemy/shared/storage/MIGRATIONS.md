@@ -75,6 +75,13 @@ Normalization drops these retired fields; current Talent IDs, active bonuses,
 queued choices, and committed results still resume without replaying rewards.
 No schema version change is required under the pre-release baseline.
 
+Unauthored damage scaling, proportional Dodge retaliation, status prevention,
+Companion rewards, and first-card-free Talents are also retired. Flashpoint
+remains the only first-card-free Talent; its spent allowance and current Boon,
+Gear, encounter, and prepared-card opportunities still resume normally. Removed
+manifest keys and their combat flags are discarded by the existing declared-key
+normalization. Purchased Talent IDs and Homestead effects rebuild current bonuses.
+
 Reworked Talents may retain their IDs, while current run restoration rebinds derived manifests from purchased IDs and Homestead effects. Remove retired manifest keys and their gameplay branches instead of preserving legacy battle behavior. Battle normalization keeps only declared Talent and combat-flag keys; their defaults own the supported shape. Combat flags retain valid booleans and finite nonnegative numbers, repairing other values to their declared defaults. Use defaults for compatible additions and retire incompatible development snapshots when required. Shop state adds `freeRefreshUsed` with a false default and field-by-field hydration for older saves; refresh affordability, RNG, and visit limits follow the [shop workflow](../../../../../Docs/WORKFLOWS.md#change-a-shop).
 
 Battle flags default safely, normalize to their declared boolean/number types, and preserve their current values on resume. Their turn/combat/until-consumed lifetimes are owned by [combat-flags.ts](../../../../../src/lib/battle/combat-flags.ts): Archery sequence flags reset each player turn, while Hawk Eye and Riposte readiness survive until consumed and the first-Burn-free allowance lasts for the combat. Never reconstruct readiness from existing status or Dodge state, or replay opening draws/rewards during normalization. New battles initialize fresh flags.
@@ -89,8 +96,14 @@ Current [Forge rules](../../../../../Docs/GAME_RULES.md#persistent-forge) and
 
 `pendingCardBleedLeechHealing` is the explicit-card subset of queued Bleed Leech.
 It defaults to zero, cannot exceed total queued Leech, and preserves attribution
-through ticks, detonations, and resume. [Deep Siphon](../../../../../Docs/TALENT_RULES.md#healing-and-leech)
-owns the resulting healing bonus.
+through ticks, detonations, and resume. It preserves explicit card-healing attribution
+for Clean Slate; Deep Siphon now benefits all player Leech sources.
+
+Companion summon hydration removes an obsolete hidden `consume: true` when the
+card has no explicit Consume description. Keep valid modified effects, descriptions,
+UIDs, costs, and pile membership together. Summons still leave battle independently
+of Consume; an explicitly added Consume keyword remains a legitimate card edit.
+Reworked Talent manifests rebuild from purchased IDs without replaying any awards.
 
 ## Run recap tracking
 
@@ -105,7 +118,7 @@ resurrect a saved run after death, abandonment, or victory.
 
 ## Defaults and resume normalization
 
-`createDefaultSaveData()` (`storage/defaults.ts`) is the top-level defaults owner: the Zod schema is parsed once into a frozen singleton and every caller receives a fresh clone, so top-level keys and values cannot drift (pinned by the migration contract test). Domain codec defaults must still be updated together: `createDefaultSettingsSaveFields` (`shared/stores/settings-store.ts`), `createDefaultProfileSaveFields` (`shared/stores/profile-store-types.ts`), `createInitialGearState` (`shared/stores/gear-actions.ts`), and `createInitialPermanentFields` (`shared/stores/run-state-init.ts`), plus both fixture builders (`tests/fixtures/saves.ts` campaign-full, `tests/helpers/save-candidate-fixtures.ts` candidate-minimal). Validation supplies safe current-field defaults. Normalization repairs current-run choices and catalog references; hydration restores runtime cards and manifests. Repair happens in two layers with distinct owners: schema load-repair (`SaveDataSchema` transform in `save-data.ts`: live-combat gold override, autoplay derive, orphan gear-loadout prune) runs first, then codec hydrate-repair (`hydrateGameplayPersistenceFields` in `shared/stores/persistence-hydration.ts`: unknown-companion prune, homestead effects, unique ownership union). Complete-save restoration composes that helper inside its existing gameplay transaction; `hydrateAlchemyPersistenceFields` is the separate fields-only wrapper, not a nested restore step. Preserve valid saved card modifications, Health, defenses, flags, pending choices, and RNG. Never reapply starting grants or resolve an action during normalization. Keep material defaults and current field names; retired crystal/recovery and historical Talent conversions are no longer accepted as aliases. Live combat gold intentionally overrides the purse when finite and non-negative; that override is not a repair warning.
+`createDefaultSaveData()` (`storage/defaults.ts`) is the top-level defaults owner: the Zod schema is parsed once into a frozen singleton and every caller receives a fresh clone, so top-level keys and values cannot drift (pinned by the migration contract test). Domain codec defaults must still be updated together: `createDefaultSettingsSaveFields` (`shared/stores/settings-store.ts`), `createDefaultProfileSaveFields` (`shared/stores/profile-store-types.ts`), `createInitialGearState` (`shared/stores/gear-state-defaults.ts`), and `createInitialPermanentFields` (`shared/stores/run-state-init.ts`), plus both fixture builders (`tests/fixtures/saves.ts` campaign-full, `tests/helpers/save-candidate-fixtures.ts` candidate-minimal). Validation supplies safe current-field defaults. Normalization repairs current-run choices and catalog references; hydration restores runtime cards and manifests. Repair happens in two layers with distinct owners: schema load-repair (`SaveDataSchema` transform in `save-data.ts`: live-combat gold override, autoplay derive, orphan gear-loadout prune) runs first, then codec hydrate-repair (`hydrateGameplayPersistenceFields` in `shared/stores/persistence-hydration.ts`: unknown-companion prune, homestead effects, unique ownership union). Complete-save restoration composes that helper inside its existing gameplay transaction; `hydrateAlchemyPersistenceFields` is the separate fields-only wrapper, not a nested restore step. Preserve valid saved card modifications, Health, defenses, flags, pending choices, and RNG. Never reapply starting grants or resolve an action during normalization. Keep material defaults and current field names; retired crystal/recovery and historical Talent conversions are no longer accepted as aliases. Live combat gold intentionally overrides the purse when finite and non-negative; that override is not a repair warning.
 
 ## Public save contract
 

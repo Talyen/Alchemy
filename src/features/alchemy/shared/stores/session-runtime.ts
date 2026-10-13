@@ -1,3 +1,4 @@
+import { SessionSaveSnapshots } from "../storage/session-save-snapshots";
 import { ProgressCompletion } from "../storage/progress-completion";
 import { createInstanceId } from "@/lib/utils";
 import { createSaveIo } from "../storage/save-io";
@@ -51,18 +52,23 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
     ),
   );
   const gameplay = createGameplayStore(generateRunSeed);
+  const progressCompletion = new ProgressCompletion();
+  const io = createSaveIo(options.saveBackend, clock.now, allowPlatformStorage);
+  // Storage invalidation is a session event, independent of autosave clients.
+  cleanups.add(io.subscribeSaveCancellation(() => progressCompletion.cancel()));
   return {
     gameplay,
     presentationBase: gameplay.reads.getState(),
     settings,
     settingsCodec: createSettingsPersistenceCodec(settings),
-    io: createSaveIo(options.saveBackend, clock.now, allowPlatformStorage),
+    io,
     clock,
     generateRunSeed,
     createInstanceId: instanceIdSource,
     feedback,
     inCommand: false,
-    progressCompletion: new ProgressCompletion(),
+    progressCompletion,
+    saveSnapshots: new SessionSaveSnapshots(progressCompletion),
     persistentClearInFlight: false,
     disposed: false,
     lifecycle: createRunLifecycleEffects(feedback),

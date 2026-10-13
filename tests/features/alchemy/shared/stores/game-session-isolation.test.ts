@@ -1,4 +1,4 @@
-import { initializeShopVisitForTest } from "../../../../helpers/room-visits";
+import { initializeShopForTest } from "../../../../helpers/visit-initialization";
 import { createRunFlowEngine } from "@/features/alchemy/shell/run-flow-engine";
 import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
 import { createRunRouteActions } from "@/features/alchemy/shell/run-route-actions";
@@ -138,10 +138,6 @@ describe("independent game sessions", () => {
         const outcomes = createRunOutcomes(
           {
             actions: foreignCapability === "outcomes" ? { transition, navigateTo, clearCardHover: () => {} } : actions,
-            getAvailableDestinations:
-              foreignCapability === "outcomes"
-                ? createRunRouteActions(b.session).getAvailableDestinations
-                : runActions.getAvailableDestinations,
           },
           foreignCapability === "outcomes" ? b.session : a.session,
         );
@@ -268,7 +264,7 @@ describe("independent game sessions", () => {
       const beforeB = stateDigest(b.session);
       playReadyCard(a.session);
       const shop = a.controller.shop().merchant;
-      initializeShopVisitForTest("merchant", a.session);
+      initializeShopForTest("merchant", a.session);
       const visit = readRunSession(a.session).activity;
       if (visit.kind !== "shop") throw new Error("Card Shop did not initialize");
       const card = visit.data.cards[0]!;
@@ -290,7 +286,7 @@ describe("independent game sessions", () => {
       expect(bCommits).toHaveBeenCalled();
 
       for (const career of [a, b]) {
-        initializeShopVisitForTest("equipment", career.session);
+        initializeShopForTest("equipment", career.session);
         const equipment = readRunSession(career.session).activity;
         if (equipment.kind !== "equipment-shop") throw new Error("Equipment Shop did not initialize");
         expect(equipment.data.gear.length).toBeGreaterThan(0);

@@ -1,5 +1,6 @@
 import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import type { BattleCard } from "../types";
+import { visitBattleCardEffects } from "../effect-tree";
 import { cardLibrary } from "./library/cards";
 
 export function isMixedPotionCard(card: Pick<BattleCard, "id">): boolean {
@@ -37,4 +38,8 @@ export function getOfferableCardPool(): BattleCard[] {
 
 export function getStandardPotionPool(): BattleCard[] {
   return [...standardPotionPool];
+}
+
+export function isCompanionSummonCard(card: Pick<BattleCard, "effects">): boolean {
+  return visitBattleCardEffects(card.effects, (effect) => effect.kind === "summon-companion");
 }

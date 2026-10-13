@@ -75,7 +75,7 @@ it("resolves TSX aliases and rejects layer violations and cycles using SWC", () 
     expect(invalid.summary.violations).toContainEqual(
       expect.objectContaining({
         from: "src/features/alchemy/shell/visit-bypass.ts",
-        rule: expect.objectContaining({ name: "room-visits-belong-to-room-entry" }),
+        rule: expect.objectContaining({ name: "visits-initialize-only-at-room-entry" }),
       }),
     );
     expect(

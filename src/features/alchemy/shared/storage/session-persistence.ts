@@ -83,12 +83,7 @@ export function createSessionPersistence(gameSession: GameSession): SessionPersi
     readProgress: progress.read,
     subscribeProgress: progress.subscribe,
     trackProgress: (retry) => {
-      const deactivate = progress.activate(retry);
-      const cancel = subscribeSaveCancellation(() => progress.cancel(), gameSession);
-      return registerSessionCleanup(gameSession, () => {
-        cancel();
-        deactivate();
-      });
+      return registerSessionCleanup(gameSession, progress.registerRetryDriver(retry));
     },
     checkpoint,
     retryProgress: () => {
@@ -96,7 +91,7 @@ export function createSessionPersistence(gameSession: GameSession): SessionPersi
         markSessionProgress(gameSession, true);
         progress.complete(progress.token(readSessionRevision(gameSession)), "failed");
       }
-      if (progress.active) progress.retryNow();
+      if (progress.hasRetryDriver) progress.retryNow();
       else if (progress.read().kind === "failed") void checkpoint();
     },
     afterProgressSaved: (run) => progress.afterSaved(run),
@@ -125,7 +120,14 @@ export function createSessionPersistence(gameSession: GameSession): SessionPersi
       return resetStorageIoForTests(gameSession);
     },
     subscribe: (listener: () => void) => subscribeAlchemyPersistence(listener, gameSession),
-    subscribeCancellation: (listener: () => void) => subscribeSaveCancellation(listener, gameSession),
+    subscribeCancellation: (listener: () => void) => {
+      const cancelStorage = subscribeSaveCancellation(listener, gameSession);
+      const cancelRestore = progress.subscribeRestore(listener);
+      return registerSessionCleanup(gameSession, () => {
+        cancelStorage();
+        cancelRestore();
+      });
+    },
     readFailure: () => getSaveWriteFailure(gameSession),
     subscribeFailure: (listener: () => void) => subscribeSaveWriteFailure(listener, gameSession),
   });

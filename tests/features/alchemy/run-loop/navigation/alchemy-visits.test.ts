@@ -1,6 +1,6 @@
 import { getTransmutationOffers, getTransmutationVariants } from "@/lib/alchemist/transmutation";
 import "../../../../helpers/mock-audio";
-import { initializeAlchemyVisitForTest } from "../../../../helpers/room-visits";
+import { initializeAlchemyVisitForTest as initializeAlchemyVisit } from "../../../../helpers/visit-initialization";
 
 import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
@@ -40,7 +40,7 @@ function reload() {
 describe("alchemy visit transactions and resume", () => {
   it("keeps Campfire offers through reload and commits only one brew, mutually exclusive with Rest", () => {
     setRunProgress({ runDeck: [cardById.slash!, cardById["health-potion"]!] });
-    initializeAlchemyVisitForTest("campfire", defaultGameSession);
+    initializeAlchemyVisit("campfire", defaultGameSession);
     const initial = readRunSession(defaultGameSession).activity;
     reload();
     expect(readRunSession(defaultGameSession).activity).toEqual(initial);
@@ -50,12 +50,13 @@ describe("alchemy visit transactions and resume", () => {
     expect(readActiveRun(defaultGameSession).runDeck).toHaveLength(3);
     expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(10);
     reload();
+    initializeAlchemyVisit("campfire", defaultGameSession);
     expect(brewAtCampfire({ kind: "new", offerIndex: 1 }, defaultGameSession)).toBeNull();
     expect(restAtCampfire(defaultGameSession)).toBe(false);
     expect(readActiveRun(defaultGameSession).runDeck).toHaveLength(3);
   });
   it("combines existing Potions for free and preserves the spent visit after reload", () => {
-    initializeAlchemyVisitForTest("campfire", defaultGameSession);
+    initializeAlchemyVisit("campfire", defaultGameSession);
     const result = brewAtCampfire({ kind: "combine", indices: [1, 2] }, defaultGameSession);
     expect(result?.title).toBe("Mixed Potion");
     expect(readActiveRun(defaultGameSession).runDeck).toHaveLength(2);
@@ -64,7 +65,7 @@ describe("alchemy visit transactions and resume", () => {
   });
   it("requires mixing when two eligible instances exist, including duplicate Potion types", () => {
     setRunProgress({ gold: 0, runDeck: [cardById["health-potion"]!, cardById["health-potion"]!] });
-    initializeAlchemyVisitForTest("campfire", defaultGameSession);
+    initializeAlchemyVisit("campfire", defaultGameSession);
     const before = snapshotRun(defaultGameSession);
     expect(brewAtCampfire({ kind: "new", offerIndex: 0 }, defaultGameSession)).toBeNull();
     expect(brewAtCampfire({ kind: "combine", indices: [0, 0] }, defaultGameSession)).toBeNull();
@@ -78,7 +79,7 @@ describe("alchemy visit transactions and resume", () => {
     setRunProgress({
       runDeck: [cardById.slash!, cardById["health-potion"]!, cardById["mixed-potion"]!],
     });
-    initializeAlchemyVisitForTest("campfire", defaultGameSession);
+    initializeAlchemyVisit("campfire", defaultGameSession);
     const before = snapshotRun(defaultGameSession);
     expect(brewAtCampfire({ kind: "new", offerIndex: 0 }, defaultGameSession)).toBeNull();
     expect(snapshotRun(defaultGameSession)).toEqual(before);
@@ -86,7 +87,7 @@ describe("alchemy visit transactions and resume", () => {
     expect(readActiveRun(defaultGameSession).runDeck).toHaveLength(2);
   });
   it("Rest commits healing once and prevents brewing", () => {
-    initializeAlchemyVisitForTest("campfire", defaultGameSession);
+    initializeAlchemyVisit("campfire", defaultGameSession);
     expect(restAtCampfire(defaultGameSession)).toBe(true);
     const hp = readActiveRun(defaultGameSession).runPlayerHealth;
     expect(restAtCampfire(defaultGameSession)).toBe(false);
@@ -94,7 +95,7 @@ describe("alchemy visit transactions and resume", () => {
     expect(brewAtCampfire({ kind: "new", offerIndex: 0 }, defaultGameSession)).toBeNull();
   });
   it("persists offers, random source choices, and previews, then alters the original card exactly once", () => {
-    initializeAlchemyVisitForTest("transmutation", defaultGameSession);
+    initializeAlchemyVisit("transmutation", defaultGameSession);
     const initial = readRunSession(defaultGameSession).activity;
     if (initial.kind !== "transmutation") throw new Error("wrong visit");
     const choices = initial.data.transmutation!.choices;
@@ -114,6 +115,7 @@ describe("alchemy visit transactions and resume", () => {
     expect(selectTransmutation({ kind: "keyword", keyword: preview.transmuted! }, defaultGameSession)).toBe(true);
     expect(readActiveRun(defaultGameSession).runDeck).toEqual(deck);
     reload();
+    initializeAlchemyVisit("transmutation", defaultGameSession);
     expect(readActiveRun(defaultGameSession).rng).toEqual(rng);
     expect(readRunSession(defaultGameSession).activity).toMatchObject({
       data: { transmutation: { choices, sourceIndex: 0, keyword: preview.transmuted, offerIndex } },
@@ -129,7 +131,7 @@ describe("alchemy visit transactions and resume", () => {
   });
 
   it("Back preserves the fixed preview and a stale same-ID source rejects commitment atomically", () => {
-    initializeAlchemyVisitForTest("transmutation", defaultGameSession);
+    initializeAlchemyVisit("transmutation", defaultGameSession);
     const source = readActiveRun(defaultGameSession).runDeck[0]!;
     selectTransmutation({ kind: "source", index: 0, card: source }, defaultGameSession);
     const selected = readRunSession(defaultGameSession).activity;
@@ -157,7 +159,7 @@ describe("alchemy visit transactions and resume", () => {
     const source = cardById.slash!;
     const deck = [source, cardById["wolf-companion"]!];
     setRunProgress({ runDeck: deck });
-    initializeAlchemyVisitForTest("transmutation", defaultGameSession);
+    initializeAlchemyVisit("transmutation", defaultGameSession);
     const activity = readRunSession(defaultGameSession).activity;
     if (activity.kind !== "transmutation") throw new Error("wrong visit");
     const variant = getTransmutationVariants(source, "companion", deck)[0]!;

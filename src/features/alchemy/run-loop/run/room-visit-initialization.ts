@@ -1,13 +1,9 @@
-import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
-import { snapshotTransactionValue, type RunTransaction } from "@/features/alchemy/shared/stores/run-session-command";
 import {
-  clearMysteryVisitState,
-  createDraftInstanceIdSource,
-  createDraftRunRandomSource,
   setAlchemyVisit,
+  clearMysteryVisitState,
   setMysteryEvent,
-  setRunActivityData,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { readActivityData } from "@/lib/active-run-session";
 import { createCampfirePotionOffers } from "@/lib/alchemist/brewing";
 import { createTransmutationOffers } from "@/lib/alchemist/transmutation";
 import {
@@ -15,9 +11,16 @@ import {
   applyLabyrinthMysteryModifiers,
   isLabyrinthMysteryEligible,
 } from "@/lib/content-systems/labyrinth/room-rules";
-import { getOwnedUniqueDefinitionIds } from "@/lib/gear";
 import { isMysteryLootEligible, pickResolvedMysteryEvent } from "@/lib/mystery";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
+import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
+import { snapshotTransactionValue, type RunTransaction } from "@/features/alchemy/shared/stores/run-session-command";
+import {
+  createDraftInstanceIdSource,
+  createDraftRunRandomSource,
+  setRunActivityData,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { getOwnedUniqueDefinitionIds } from "@/lib/gear";
 import type { ShopKind } from "../shop/shop-action-types";
 import { resolveDraftShopModifiers } from "../shop/shop-pricing-context";
 import {
@@ -27,7 +30,6 @@ import {
   createInitialEquipmentShopState,
 } from "../shop/shop-state-init";
 
-// Room entry owns visit creation; retained UI capabilities only act on committed visits.
 export function initializeShopVisit(draft: RunTransaction, kind: ShopKind): void {
   const rng = createDraftRunRandomSource(draft, "shops");
   const modifiers = resolveDraftShopModifiers(draft);
@@ -67,6 +69,12 @@ export function initializeShopVisit(draft: RunTransaction, kind: ShopKind): void
 }
 
 export function initializeAlchemyVisitInTransaction(draft: RunTransaction, kind: "campfire" | "transmutation"): void {
+  const visit = readActivityData(snapshotTransactionValue(draft.session.activity), kind);
+  if (
+    draft.session.activity.kind === kind &&
+    (visit.completed || (kind === "campfire" ? visit.offers.length : visit.transmutation))
+  )
+    return;
   const rng = createDraftRunRandomSource(draft, "events");
   setAlchemyVisit(draft, kind, {
     offers: kind === "campfire" ? createCampfirePotionOffers(rng) : [],

@@ -1,8 +1,8 @@
+import { writeStoragePayload } from "../../../../helpers/storage-payload-writes";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setupMockWindowDesktop } from "../../../../helpers/desktop-save-mock-helper";
 import { bootstrapAlchemySaveState } from "@/features/alchemy/shared/storage";
 import { defaultSaveData } from "@/features/alchemy/shared/storage/defaults";
-import { saveAlchemySaveData } from "@/features/alchemy/shared/storage";
 import { installStorageIoTestHooks } from "../../../../helpers/storage-io-test-setup";
 import { defaultGameSession } from "@/app/application-session";
 
@@ -41,7 +41,7 @@ describe("bootstrapAlchemySaveState", () => {
     });
 
     await bootstrapAlchemySaveState(defaultGameSession);
-    await saveAlchemySaveData(defaultSaveData, defaultGameSession);
+    await writeStoragePayload(defaultSaveData, defaultGameSession);
 
     expect(order).toEqual(["local", "cloud"]);
   });

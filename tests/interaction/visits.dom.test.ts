@@ -1,6 +1,6 @@
 import { isDeepStrictEqual } from "node:util";
 import "../helpers/mock-audio";
-import { initializeAlchemyVisitForTest } from "../helpers/room-visits";
+import { initializeAlchemyVisitForTest as initializeAlchemyVisit } from "../helpers/visit-initialization";
 import { createRunRngState } from "@/lib/rng";
 import { cardById } from "@/lib/game-data";
 import {
@@ -42,7 +42,7 @@ defineSequenceFamily("visits", (seed) => {
     hasActiveRun: true,
     activity: { kind: "destination" },
   });
-  if (visit === "campfire" || visit === "transmutation") initializeAlchemyVisitForTest(visit, defaultGameSession);
+  if (visit === "campfire" || visit === "transmutation") initializeAlchemyVisit(visit, defaultGameSession);
   else if (visit === "alchemist")
     setRunSession({
       activity: {

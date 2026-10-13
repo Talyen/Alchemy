@@ -4,7 +4,7 @@ import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { applyTalentHitConversions, resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
 import { applyLeechHealing, applyLeechHitHealing } from "@/lib/battle/damage-rider-leech";
 import { applyPoisonTalentRiders, applyDamageStatuses } from "@/lib/battle/damage-status-riders";
-import { applyBlockReward, applyHealthLossTalentRewards, checkHealthThresholds } from "@/lib/battle/status-player";
+import { applyBlockReward, checkHealthThresholds } from "@/lib/battle/status-player";
 import { gainManaWithCombatText } from "@/lib/battle/player-rewards";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
@@ -76,10 +76,10 @@ describe("Talent rework batch", () => {
       talentEffects: computeTalentEffects({ leech: ["leech-desperate"] }),
     });
 
-    expect(applyLeechHitHealing(state, 4, [], false, false).playerHealth).toBe(14);
+    expect(applyLeechHitHealing(state, 4, [], false).playerHealth).toBe(14);
   });
 
-  it("Bloodletting cleanses one harmful status after positive Health loss", () => {
+  it("Bloodletting cleanses one harmful status after positive Leech", () => {
     const before = patchBattleState({
       playerHealth: 20,
       playerMaxHealth: 30,
@@ -87,9 +87,7 @@ describe("Talent rework batch", () => {
       rng: () => 0,
       talentEffects: computeTalentEffects({ leech: ["leech-bleed-chance"] }),
     });
-    const after = { ...before, playerHealth: 19 };
-
-    const next = applyHealthLossTalentRewards(before, after, 1, []);
+    const next = applyLeechHealing(before, 1, []);
 
     expect([next.playerStatuses.poison, next.playerStatuses.bleed].filter((value) => value === 0)).toHaveLength(1);
   });

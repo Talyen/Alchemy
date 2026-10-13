@@ -31,7 +31,7 @@
     "dev:desktop": "concurrently --kill-others --success first \"vite --mode desktop --host 127.0.0.1\" \"node scripts/wait-dev-server.mjs && electron .\"",
     "build": "node scripts/build-verified.mjs",
     "build:desktop": "node scripts/build-verified.mjs --desktop",
-    "dist:desktop": "npm run sync:steam-appid && npm run build:desktop && npm run check:bundle && node scripts/dist-desktop.mjs",
+    "dist:desktop": "node scripts/dist-desktop.mjs --build",
     "package:win": "npm run dist:desktop -- --dir",
     "smoke:desktop": "node scripts/smoke-desktop.mjs",
     "smoke:preview": "node scripts/smoke-preview.mjs",

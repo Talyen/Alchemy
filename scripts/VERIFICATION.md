@@ -73,7 +73,9 @@ outputs without the library), local `assets:check` (raw-source freshness), and t
 Shared command launch, script lifecycle, and package metadata helpers select both
 renderer builds and the desktop-family CI gates. Asset execution and publication
 helpers also select prepared-output integrity checks, even when no asset selection
-or binary changes. The headless playthrough workflow reuses the shared dependency
+or binary changes. Node version and npm configuration changes select tooling
+units, both renderer builds, and all path-gated CI checks. Bundle-budget code and
+tuning select both renderer builds and desktop-family CI checks. The headless playthrough workflow reuses the shared dependency
 setup action and cancels superseded runs on the same ref.
 
 Documentation and Oxlint inventories exclude isolated `.worktrees/` checkouts,

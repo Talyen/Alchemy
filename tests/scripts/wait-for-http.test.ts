@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { waitForHttp } from "../../scripts/lib/wait-for-http.mjs";
+import { waitForDevServer } from "../../scripts/wait-dev-server.mjs";
 
 afterEach(() => {
   vi.useRealTimers();
@@ -7,6 +8,22 @@ afterEach(() => {
 });
 
 describe("waitForHttp", () => {
+  it("waits through Vite errors before desktop startup and releases every response", async () => {
+    vi.useFakeTimers();
+    const failed = new Response("Vite is not ready", { status: 503 });
+    const ready = new Response("<html>Alchemy</html>");
+    const fetch = vi.fn().mockResolvedValueOnce(failed).mockResolvedValueOnce(ready);
+    vi.stubGlobal("fetch", fetch);
+    const waiting = waitForDevServer({ port: 5173 });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(failed.bodyUsed).toBe(true);
+    await vi.advanceTimersByTimeAsync(250);
+    await waiting;
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(ready.bodyUsed).toBe(true);
+  });
+
   it("does not sleep beyond the remaining deadline", async () => {
     vi.useFakeTimers();
     vi.stubGlobal(

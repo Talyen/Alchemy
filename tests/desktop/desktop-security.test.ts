@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -81,7 +82,15 @@ describe("Electron renderer security policy", () => {
     );
   });
 
-  it("constructs the exact packaged CSP", () => {
+  it("loads startup scripts under the strict packaged CSP", () => {
+    const html = readFileSync(new URL("../../index.html", import.meta.url), "utf8");
+    const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)];
+    expect(scripts.length).toBeGreaterThan(0);
+    for (const [, attributes, body] of scripts) {
+      expect(attributes).toMatch(/\bsrc=/);
+      expect(body?.trim()).toBe("");
+    }
+
     expect(security.PACKAGED_CSP).toBe(
       "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; media-src 'self' blob:; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'",
     );

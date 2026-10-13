@@ -5,11 +5,9 @@ import { createBattleStartState } from "@/lib/battle/battle-setup";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
-import { defaultTalentEffects } from "@/lib/battle";
 import { computeTalentEffects, enemyBestiary } from "@/lib/game-data";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { dealDamage, incomingPhysical, makeEffect, makeTestCard, patchBattleState } from "../../fixtures/battle";
-import { defaultEnemyStatusValues, defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
 
 describe("Nature and Physical Talent reworks", () => {
   it("Rupture recognizes critical Physical counterattacks", () => {
@@ -53,7 +51,7 @@ describe("Nature and Physical Talent reworks", () => {
       enemyHealth: 100,
       enemyMaxHealth: 100,
       rng: () => 0.99,
-      talentEffects: { ...defaultTalentEffects, natureCardPlayTwiceChance: 100 },
+      talentEffects: { natureCardPlayTwiceChance: 100 },
     });
 
     const result = playBattleCardResolved(state, card.id, 0).state;
@@ -72,7 +70,6 @@ describe("Nature and Physical Talent reworks", () => {
       enemyMaxHealth: 30,
       rng: () => 0.99,
       talentEffects: {
-        ...defaultTalentEffects,
         armorOnNatureDamageChance: 100,
         thornsOnNatureDamageChance: 100,
         healOnNatureDamageChance: 100,
@@ -92,9 +89,8 @@ describe("Nature and Physical Talent reworks", () => {
 
   it("does not run Nature riders for a zero-damage packet", () => {
     const state = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ armor: 2, thorns: 3 }),
+      playerStatuses: { armor: 2, thorns: 3 },
       talentEffects: {
-        ...defaultTalentEffects,
         armorOnNatureDamageChance: 100,
         thornsOnNatureDamageChance: 100,
         healOnNatureDamageChance: 100,
@@ -113,12 +109,12 @@ describe("Nature and Physical Talent reworks", () => {
   it("uses half Block and half Armor for Physical damage", () => {
     const effect = { kind: "damage", damageType: "physical", amount: 4 } as const;
     const blockState = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ block: 5 }),
+      playerStatuses: { block: 5 },
       talentEffects: computeTalentEffects({ physical: ["physical-shield-bash"] }),
       rng: () => 0.99,
     });
     const armorState = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ armor: 5 }),
+      playerStatuses: { armor: 5 },
       talentEffects: computeTalentEffects({ physical: ["physical-armored-fists"] }),
       rng: () => 0.99,
     });
@@ -162,17 +158,17 @@ describe("Nature and Physical Talent reworks", () => {
     const bleeding = { bleed: 6 };
 
     const nonCritical = resolvePlayerHit(
-      patchBattleState({ talentEffects, enemyStatuses: defaultEnemyStatusValues(bleeding) }),
+      patchBattleState({ talentEffects, enemyStatuses: bleeding }),
       { source: "card-attack", card, effect, resolvedDamage: 5, critical: false },
       [],
     );
     const critical = resolvePlayerHit(
-      patchBattleState({ talentEffects, enemyStatuses: defaultEnemyStatusValues(bleeding) }),
+      patchBattleState({ talentEffects, enemyStatuses: bleeding }),
       { source: "card-attack", card, effect, resolvedDamage: 5, critical: true },
       [],
     );
     const blocked = resolvePlayerHit(
-      patchBattleState({ talentEffects, enemyStatuses: defaultEnemyStatusValues(bleeding) }),
+      patchBattleState({ talentEffects, enemyStatuses: bleeding }),
       { source: "card-attack", card, effect, resolvedDamage: 0, critical: true },
       [],
     );

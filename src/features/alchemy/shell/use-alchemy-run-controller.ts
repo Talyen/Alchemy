@@ -1,60 +1,60 @@
 import { guardProgressAction } from "@/features/alchemy/shared/stores/session-capabilities";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage";
-import { defaultGameSession } from "@/app/application-session";
+import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import type { BattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import { useRunControllerState } from "@/features/alchemy/shared/stores/use-session-run-reads";
 import type { AlchemyRouteCommands, AlchemyRunCommands } from "./route-commands";
 import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
-import {
-  useActiveRunCharacterId,
-  useActiveRunScreenValue,
-  useHomesteadEffects,
-  useTalentEffects,
-} from "@/features/alchemy/shared/stores/use-run-reads";
 import { useCallback, useMemo, useSyncExternalStore } from "react";
-import { getRunPhase } from "@/lib/routing";
 import { createLabyrinthNodeRouting } from "./labyrinth-node-routing";
 import { createRunRouteActions } from "./run-route-actions";
 import { useBattleController } from "./use-battle-controller";
 import { createLabyrinthController } from "@/features/alchemy/run-loop/run/labyrinth-controller";
 import { createRunFlowEngine } from "./run-flow-engine";
 import { useScreenTransitions } from "./use-screen-transitions";
-import { useSteamRichPresence } from "./use-steam-rich-presence";
 
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 
-const protectVoid = <Args extends unknown[]>(action: (...args: Args) => void) =>
-  guardProgressAction(defaultGameSession, action, undefined);
-
-export function useAlchemyRunController(): AlchemyRunCommands {
-  const persistence = useMemo(() => createSessionPersistence(defaultGameSession), []);
+export function useAlchemyRunController(
+  gameSession: GameSession,
+  presentation: BattlePresentationStore,
+): AlchemyRunCommands {
+  const protectVoid = useMemo(
+    () =>
+      <Args extends unknown[]>(action: (...args: Args) => void) =>
+        guardProgressAction(gameSession, action, undefined),
+    [gameSession],
+  );
+  const persistence = useMemo(() => createSessionPersistence(gameSession), [gameSession]);
   const progressSave = useSyncExternalStore(persistence.subscribeProgress, persistence.readProgress);
-  const runActions = useMemo(() => createRunRouteActions(defaultGameSession), []);
-  // Live quote functions need a new render when permanent progression changes.
-  useHomesteadEffects();
-  useTalentEffects();
-  const characterId = useActiveRunCharacterId();
-  const screen = useActiveRunScreenValue();
-  const { navigateTo, resumeTo, transition, cancelPending, navigationPending } = useScreenTransitions(screen);
+  const runActions = useMemo(() => createRunRouteActions(gameSession), [gameSession]);
+  const { screen } = useRunControllerState(gameSession);
+  const { navigateTo, resumeTo, transition, cancelPending, navigationPending } = useScreenTransitions(
+    gameSession,
+    screen,
+  );
 
   const outcomes = useMemo(
     () =>
       createRunOutcomes(
         {
           actions: { navigateTo, transition, clearCardHover: runActions.clearCardHover },
-          getAvailableDestinations: runActions.getAvailableDestinations,
         },
-        defaultGameSession,
+        gameSession,
       ),
-    [navigateTo, transition, runActions],
+    [navigateTo, transition, runActions, gameSession],
   );
   const battle = useBattleController({
+    gameSession,
+    presentation,
     screen,
     onBattleVictory: outcomes.victory.handleBattleVictory,
     onBattleDefeat: outcomes.defeat.handleBattleDefeat,
   });
 
-  const shop = useMemo(() => createShopActions(defaultGameSession), []);
-  const labyrinth = useMemo(() => createLabyrinthController(defaultGameSession), []);
+  const shop = useMemo(() => createShopActions(gameSession), [gameSession]);
+  const labyrinth = useMemo(() => createLabyrinthController(gameSession), [gameSession]);
 
   const nav = useMemo(
     () =>
@@ -67,13 +67,10 @@ export function useAlchemyRunController(): AlchemyRunCommands {
           battle,
         },
         outcomes,
-        defaultGameSession,
+        gameSession,
       ),
-    [navigateTo, resumeTo, transition, cancelPending, battle, outcomes],
+    [navigateTo, resumeTo, transition, cancelPending, battle, outcomes, gameSession],
   );
-
-  const runPhase = getRunPhase(screen, battle.hasActiveBattle);
-  useSteamRichPresence(screen, runPhase, characterId);
 
   const cancelBattle = battle.cancelBattle;
   const handleAbandonRun = nav.handleAbandonRun;
@@ -86,9 +83,9 @@ export function useAlchemyRunController(): AlchemyRunCommands {
           labyrinth,
           presentBattleStart: battle.presentBattleStart,
         },
-        defaultGameSession,
+        gameSession,
       ),
-    [navigateTo, labyrinth, battle.presentBattleStart],
+    [navigateTo, labyrinth, battle.presentBattleStart, gameSession],
   );
 
   const handleEndRun = useCallback(() => {
@@ -110,21 +107,21 @@ export function useAlchemyRunController(): AlchemyRunCommands {
         beginWildwood: protectVoid(nav.beginWildwood),
         unlockTalent: protectVoid(runActions.purchaseTalent),
         resetUnlockedTalents: protectVoid(runActions.resetTalentUnlocks),
-        resetHomestead: guardProgressAction(defaultGameSession, runActions.resetHomestead, false),
-        constructBuilding: guardProgressAction(defaultGameSession, runActions.constructBuilding, false),
-        plantFarm: guardProgressAction(defaultGameSession, runActions.plantFarm, false),
-        completeResearch: guardProgressAction(defaultGameSession, runActions.completeResearch, false),
-        bondCompanion: guardProgressAction(defaultGameSession, runActions.bondCompanion, false),
+        resetHomestead: guardProgressAction(gameSession, runActions.resetHomestead, false),
+        constructBuilding: guardProgressAction(gameSession, runActions.constructBuilding, false),
+        plantFarm: guardProgressAction(gameSession, runActions.plantFarm, false),
+        completeResearch: guardProgressAction(gameSession, runActions.completeResearch, false),
+        bondCompanion: guardProgressAction(gameSession, runActions.bondCompanion, false),
         selectCollectionTab: protectVoid(runActions.selectCollectionTab),
         setCollectionPage: protectVoid(runActions.setCollectionPage),
         armory: {
-          onEquip: guardProgressAction(defaultGameSession, runActions.equipGear, false),
+          onEquip: guardProgressAction(gameSession, runActions.equipGear, false),
           onUnequip: protectVoid(runActions.unequipGear),
           onEquipTrinket: protectVoid(runActions.equipTrinket),
           onUnequipTrinket: protectVoid(runActions.unequipTrinket),
-          onSalvage: guardProgressAction(defaultGameSession, runActions.salvageGear, false),
+          onSalvage: guardProgressAction(gameSession, runActions.salvageGear, false),
           onApplyCurrency: guardProgressAction(
-            defaultGameSession,
+            gameSession,
             (currencyId, instanceId) => runActions.applyCurrencyToGear(currencyId, instanceId, undefined),
             false,
           ),
@@ -150,7 +147,7 @@ export function useAlchemyRunController(): AlchemyRunCommands {
         labyrinth: {
           handleNodeSelect: labyrinth.selectNode,
           handleNodeDeselect: labyrinth.deselectNode,
-          handleNodeEnter: guardProgressAction(defaultGameSession, nodeRouting.handleLabyrinthNodeEnter, false),
+          handleNodeEnter: guardProgressAction(gameSession, nodeRouting.handleLabyrinthNodeEnter, false),
           descend: protectVoid(labyrinth.descend),
         },
         rewards: {
@@ -161,8 +158,8 @@ export function useAlchemyRunController(): AlchemyRunCommands {
           prepare: protectVoid(nav.prepareDestinationScreen),
           choose: protectVoid(nav.handleDestinationChoice),
           continueCampfire: protectVoid(nav.handleCampfireContinue),
-          rest: guardProgressAction(defaultGameSession, runActions.restAtCampfire, false),
-          brew: guardProgressAction(defaultGameSession, runActions.brewAtCampfire, null),
+          rest: guardProgressAction(gameSession, runActions.restAtCampfire, false),
+          brew: guardProgressAction(gameSession, runActions.brewAtCampfire, null),
         },
         wildwood: {
           removeCard: protectVoid(nav.handleWildwoodRemoveCard),
@@ -170,13 +167,13 @@ export function useAlchemyRunController(): AlchemyRunCommands {
         },
         shop: { ...shop, continue: protectVoid(nav.advanceToNextDestination) },
         mystery: {
-          handleChoice: guardProgressAction(defaultGameSession, nav.handleMysteryChoice, false),
-          handleChooseCard: guardProgressAction(defaultGameSession, nav.handleMysteryChooseCard, false),
+          handleChoice: guardProgressAction(gameSession, nav.handleMysteryChoice, false),
+          handleChooseCard: guardProgressAction(gameSession, nav.handleMysteryChooseCard, false),
           handleContinue: protectVoid(nav.handleMysteryContinue),
         },
         transmutation: {
-          select: guardProgressAction(defaultGameSession, runActions.selectTransmutation, false),
-          exchange: guardProgressAction(defaultGameSession, runActions.transmuteCard, null),
+          select: guardProgressAction(gameSession, runActions.selectTransmutation, false),
+          exchange: guardProgressAction(gameSession, runActions.transmuteCard, null),
           continue: protectVoid(() => nav.advanceToNextDestination("transmutation")),
         },
         corruption: {
@@ -189,7 +186,7 @@ export function useAlchemyRunController(): AlchemyRunCommands {
         continueFromRunEnd: protectVoid(nav.continueFromRunEnd),
       },
     }),
-    [nav, nodeRouting, labyrinth, shop, battle, runActions, persistence],
+    [nav, nodeRouting, labyrinth, shop, battle, runActions, persistence, gameSession, protectVoid],
   );
 
   return {

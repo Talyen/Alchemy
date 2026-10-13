@@ -36,7 +36,12 @@ export type { CorruptionMutationGroup } from "./mutation-types";
 function isPlainMagnitude(effect: BattleCardEffect): boolean {
   if (effect.kind === "heal") return true;
   if (effect.kind === "player-status") {
-    return effect.status === "block" && effect.perManaCrystal === undefined && effect.convertCurrentMana === undefined;
+    return (
+      effect.status === "block" &&
+      effect.statusPool === undefined &&
+      effect.perManaCrystal === undefined &&
+      effect.convertCurrentMana === undefined
+    );
   }
   return (
     effect.kind === "damage" &&
@@ -122,6 +127,7 @@ function canRemoveConsume(card: BattleCard): boolean {
   if (effect.kind === "player-status") {
     return (
       ["block", "armor", "thorns"].includes(effect.status) &&
+      effect.statusPool === undefined &&
       effect.amount <= 2 &&
       effect.perManaCrystal === undefined &&
       effect.convertCurrentMana === undefined

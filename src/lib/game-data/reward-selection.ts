@@ -86,7 +86,9 @@ export function selectRewardCards(
   const excludedIds = new Set(exclude.map((card) => card.id));
   const pool = allCards.filter((card) => !excludedIds.has(card.id));
   const hasCompanion = deckHasCompanionCard(deck);
-  const candidates = hasCompanion ? dampenCompanionCandidates(pool, rng) : pool;
+  // A Companion-only Wish still offers all its choices when the deck already
+  // contains summons; dampening belongs to mixed reward pools.
+  const candidates = hasCompanion && !pool.every(isCompanionCard) ? dampenCompanionCandidates(pool, rng) : pool;
   const effectiveCandidates = candidates.length > 0 ? candidates : pool;
   const boostCompanions = !hasCompanion;
   const companionCopies = boostCompanions ? REWARD_SELECTION_CONFIG.companionlessRandomWeight : 1;

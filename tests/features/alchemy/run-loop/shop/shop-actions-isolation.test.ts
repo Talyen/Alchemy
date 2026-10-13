@@ -1,4 +1,5 @@
 import "../../../../helpers/mock-audio";
+import { initializeShopForTest } from "../../../../helpers/visit-initialization";
 
 import { describe, expect, it, vi } from "vitest";
 import { shopItemSlotKey } from "@/features/alchemy/run-loop/shop/shop-slot-keys";
@@ -17,7 +18,6 @@ import {
   setShopState,
   setTrinketShopState,
 } from "./shop-actions-harness";
-import { initializeShopVisitForTest } from "../../../../helpers/room-visits";
 import {
   ALCHEMIST_POTION_PRICE,
   ALCHEMIST_REFRESH_PRICE,
@@ -67,7 +67,7 @@ const shops = [
 
     replayIds: () => readActivityData(readRunSession(defaultGameSession).activity, "shop").cards.map((card) => card.id),
     restockDedup: true,
-    initialize: () => initializeShopVisitForTest("merchant"),
+    initialize: () => initializeShopForTest("merchant", defaultGameSession),
     replayRefresh: true,
   },
   {
@@ -98,7 +98,7 @@ const shops = [
     replayIds: () =>
       readActivityData(readRunSession(defaultGameSession).activity, "alchemist").potions.map((card) => card.id),
     restockDedup: true,
-    initialize: () => initializeShopVisitForTest("alchemist"),
+    initialize: () => initializeShopForTest("alchemist", defaultGameSession),
     replayRefresh: true,
   },
   {
@@ -129,7 +129,7 @@ const shops = [
     replayIds: () =>
       readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop").trinkets.map((entry) => entry.id),
     restockDedup: true,
-    initialize: () => initializeShopVisitForTest("trinket"),
+    initialize: () => initializeShopForTest("trinket", defaultGameSession),
     replayRefresh: true,
   },
   {
@@ -168,7 +168,7 @@ const shops = [
         (item) => item.definitionId,
       ),
     restockDedup: false,
-    initialize: () => initializeShopVisitForTest("equipment"),
+    initialize: () => initializeShopForTest("equipment", defaultGameSession),
     replayRefresh: true,
   },
 ];

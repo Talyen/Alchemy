@@ -244,7 +244,7 @@ describe("repeatable card and Consume rewards", () => {
     expect(second.hand).toHaveLength(2);
   });
 
-  it("Consume rewards distinguish the last held card from ordinary consumption", () => {
+  it("Consume rewards can repeat with cards remaining in hand", () => {
     const initial = battle({
       talentEffects: talents("Last Supper", "Second Helping", "Rotgut", "Combustible"),
       enemyStatuses: { burn: 3 },
@@ -258,7 +258,7 @@ describe("repeatable card and Consume rewards", () => {
     expect(first.hand).toHaveLength(1);
     const second = handlePostPlayCardDestination(first, cardById["health-potion"]!);
     expect(second.enemyHealth).toBe(97);
-    expect(second.playerStatuses.forge).toBe(1);
+    expect(second.playerStatuses.forge).toBe(2);
     expect(second.hand).toHaveLength(2);
   });
 

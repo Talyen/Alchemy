@@ -49,13 +49,7 @@ function computeTypeSpecificDamageBonus(
     bonus += (state.maxMana * state.gearEffects.burnDamagePerManaPercent) / PERCENT_DENOMINATOR;
   }
   if (effect.damageType === "physical") {
-    if (state.talentEffects.physicalDoubledVsStunned && state.enemyCC.stunSkipTurns > 0) bonus += 1;
-    if (state.talentEffects.physicalDoubledVsFrozen && state.enemyCC.freezeSkipTurns > 0) bonus += 1;
-    if (isBelowHalfHealth(state)) {
-      bonus += state.talentEffects.physicalDoubledBelowHalfHealth
-        ? 1
-        : state.talentEffects.physicalLowHealthDamageBonusPercent / PERCENT_DENOMINATOR;
-    }
+    if (isBelowHalfHealth(state) && state.talentEffects.physicalDoubledBelowHalfHealth) bonus += 1;
     if (
       state.talentEffects.physicalDoubledBelowQuarterHealth &&
       state.enemyHealth * PERCENT_DENOMINATOR < state.enemyMaxHealth * 25
@@ -71,12 +65,6 @@ function computeTypeSpecificDamageBonus(
   }
   if (isLikeDamage(effect.damageType, "bleed", state)) {
     bonus += getBleedLowHealthDamageMultiplier(state) - 1;
-    if (
-      state.talentEffects.bleedExecuteThreshold > 0 &&
-      state.enemyHealth * PERCENT_DENOMINATOR <= state.enemyMaxHealth * state.talentEffects.bleedExecuteThreshold
-    ) {
-      bonus += state.talentEffects.bleedExecuteMultiplier - 1;
-    }
   }
   return bonus;
 }
@@ -90,18 +78,9 @@ function computeCardSpecificTalentBonus(
   if (card?.consume && state.talentEffects.consumeDamageBonusPercent > 0) {
     bonus += state.talentEffects.consumeDamageBonusPercent / PERCENT_DENOMINATOR;
   }
-  if (
-    isLikeDamage(effect.damageType, "burn", state) &&
-    card?.consume &&
-    state.talentEffects.consumeBurnDamageBonusPercent > 0
-  ) {
-    bonus += state.talentEffects.consumeBurnDamageBonusPercent / PERCENT_DENOMINATOR;
-  }
   if (card?.tags?.includes("archery")) {
-    const cc = state.enemyCC;
     const talentEffects = state.talentEffects;
-    if (talentEffects.archeryDoubledVsStunned && cc.stunSkipTurns > 0) bonus += 1;
-    if (talentEffects.archeryDoubledVsFrozen && cc.freezeSkipTurns > 0) bonus += 1;
+
     if (
       talentEffects.archeryDoubledVsHighHealth &&
       state.enemyHealth * PERCENT_DENOMINATOR >= state.enemyMaxHealth * ARCHERY_FULL_HEALTH_THRESHOLD_PERCENT
@@ -151,13 +130,6 @@ export function applyFirstDamageBonus(
   let firstBonus = 0;
 
   if (isLikeDamage(effect.damageType, "burn", state)) {
-    if (
-      nextState.talentEffects.firstBurnCardBonusMultiplier > 1 &&
-      !readCombatFlag(nextState, "firstBurnCardDoubledUsed")
-    ) {
-      firstBonus += nextState.talentEffects.firstBurnCardBonusMultiplier - 1;
-      nextState = setFlag(nextState, "firstBurnCardDoubledUsed", true);
-    }
     if (nextState.trinketEffects.firstBurnDoubled && !readCombatFlag(nextState, "firstBurnTrinketDoubledUsed")) {
       firstBonus += 1;
       nextState = setFlag(nextState, "firstBurnTrinketDoubledUsed", true);

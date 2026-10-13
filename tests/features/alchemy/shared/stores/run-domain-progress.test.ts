@@ -1,7 +1,13 @@
 import "../../../../helpers/mock-audio";
-
 import "../../../../helpers/mock-flush-save";
-import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
+import {
+  bindGameplayMutationForTest,
+  initializeBattleForTest as initializeActiveBattle,
+  mutateGearForTest,
+  resetRunDomainStore,
+  setRunProgress,
+  setRunSession,
+} from "../../../../helpers/run-domain-store-test";
 import { beforeEach, describe, expect, it } from "vitest";
 import { restoreRun, snapshotRun, finalizeRunEndSession } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
@@ -9,27 +15,18 @@ import {
   awardCardXP as mutateAwardCardXP,
   awardMysteryXP as mutateAwardMysteryXP,
   clearPermanentData as mutateClearPermanentData,
-  finalizeRunXP as mutateFinalizeRunXP,
   unlockAllTalents as mutateUnlockAllTalents,
   unlockTalent as mutateUnlockTalent,
   resetUnlockedTalents as mutateResetUnlockedTalents,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
-import {
   initializeActiveRun as mutateInitializeActiveRun,
   resetProgress as mutateResetProgress,
   resetRunXP as mutateResetRunXP,
+  applyTalentState as mutateApplyTalentState,
+  rebindLiveRunMeta,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { applyTalentState as mutateApplyTalentState } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { mutateGearForTest } from "../../../../helpers/run-domain-store-test";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
-import {
-  acceptCommand,
-  createGameplayCommand,
-  dispatchGameplayCommand,
-} from "@/features/alchemy/shared/stores/gameplay-command";
-
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { patchBattleState } from "../../../../fixtures/battle";
-import { rebindLiveRunMeta } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { cardById, computeTalentPoints, type BattleCard } from "@/lib/game-data";
 import { purchaseTalent } from "@/features/alchemy/shared/stores/navigation-commands";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
@@ -41,84 +38,30 @@ import {
   readRunProfile,
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-reads";
-
-import { awardRunEndMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createCompleteActiveRunData, makeActiveRunData } from "./active-run-data-fixture";
 import { createEmptyRewardState, serializePendingReward } from "@/lib/active-run-session";
-import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import {
   ACTIVE_RUN_PROGRESS_KEYS,
   EMPTY_ACTIVE_RUN_COLLECTION_KEYS,
   RUN_SNAPSHOT_FIELD_KEYS,
 } from "@/features/alchemy/shared/stores/run-state-init";
 import { defaultGameSession } from "@/app/application-session";
+import { finalizeRunXP as mutateFinalizeRunXP } from "@/features/alchemy/shared/stores/write/run-meta";
 import { savedActivityFixture } from "../../../../fixtures/run-activity";
 
-const syncGearRunHealth = createGameplayCommand(
-  (...args: Parameters<typeof rebindLiveRunMeta>) => acceptCommand(rebindLiveRunMeta(...args)),
-  undefined,
-  defaultGameSession,
-);
-const applyRunStartSnapshot = createGameplayCommand(
-  (...args: Parameters<typeof mutateRunStartSnapshot>) => acceptCommand(mutateRunStartSnapshot(...args)),
-  undefined,
-  defaultGameSession,
-);
-const finalizeRunXP = createGameplayCommand(
-  (...args: Parameters<typeof mutateFinalizeRunXP>) => acceptCommand(mutateFinalizeRunXP(...args)),
-  undefined,
-  defaultGameSession,
-);
-const unlockAllTalents = createGameplayCommand(
-  (...args: Parameters<typeof mutateUnlockAllTalents>) => acceptCommand(mutateUnlockAllTalents(...args)),
-  undefined,
-  defaultGameSession,
-);
-const initializeActiveRun = createGameplayCommand(
-  (...args: Parameters<typeof mutateInitializeActiveRun>) => acceptCommand(mutateInitializeActiveRun(...args)),
-  undefined,
-  defaultGameSession,
-);
-const applyTalentState = createGameplayCommand(
-  (...args: Parameters<typeof mutateApplyTalentState>) => acceptCommand(mutateApplyTalentState(...args)),
-  undefined,
-  defaultGameSession,
-);
-const awardCardXP = createGameplayCommand(
-  (...args: Parameters<typeof mutateAwardCardXP>) => acceptCommand(mutateAwardCardXP(...args)),
-  undefined,
-  defaultGameSession,
-);
-const awardMysteryXP = createGameplayCommand(
-  (...args: Parameters<typeof mutateAwardMysteryXP>) => acceptCommand(mutateAwardMysteryXP(...args)),
-  undefined,
-  defaultGameSession,
-);
-const unlockTalent = createGameplayCommand(
-  (...args: Parameters<typeof mutateUnlockTalent>) => acceptCommand(mutateUnlockTalent(...args)),
-  undefined,
-  defaultGameSession,
-);
-const resetUnlockedTalents = createGameplayCommand(
-  (...args: Parameters<typeof mutateResetUnlockedTalents>) => acceptCommand(mutateResetUnlockedTalents(...args)),
-  undefined,
-  defaultGameSession,
-);
-const resetRunXP = createGameplayCommand(
-  (...args: Parameters<typeof mutateResetRunXP>) => acceptCommand(mutateResetRunXP(...args)),
-  undefined,
-  defaultGameSession,
-);
-const resetProgress = createGameplayCommand(
-  (...args: Parameters<typeof mutateResetProgress>) => acceptCommand(mutateResetProgress(...args)),
-  undefined,
-  defaultGameSession,
-);
-const clearPermanentData = createGameplayCommand(
-  (...args: Parameters<typeof mutateClearPermanentData>) => acceptCommand(mutateClearPermanentData(...args)),
-  undefined,
-  defaultGameSession,
-);
+const syncGearRunHealth = bindGameplayMutationForTest(rebindLiveRunMeta);
+const applyRunStartSnapshot = bindGameplayMutationForTest(mutateRunStartSnapshot);
+const finalizeRunXP = bindGameplayMutationForTest(mutateFinalizeRunXP);
+const unlockAllTalents = bindGameplayMutationForTest(mutateUnlockAllTalents);
+const initializeActiveRun = bindGameplayMutationForTest(mutateInitializeActiveRun);
+const applyTalentState = bindGameplayMutationForTest(mutateApplyTalentState);
+const awardCardXP = bindGameplayMutationForTest(mutateAwardCardXP);
+const awardMysteryXP = bindGameplayMutationForTest(mutateAwardMysteryXP);
+const unlockTalent = bindGameplayMutationForTest(mutateUnlockTalent);
+const resetUnlockedTalents = bindGameplayMutationForTest(mutateResetUnlockedTalents);
+const resetRunXP = bindGameplayMutationForTest(mutateResetRunXP);
+const resetProgress = bindGameplayMutationForTest(mutateResetProgress);
+const clearPermanentData = bindGameplayMutationForTest(mutateClearPermanentData);
 
 beforeEach(() => {
   resetRunDomainStore();
@@ -481,51 +424,6 @@ describe("talent XP accumulation through run end", () => {
   });
 });
 
-describe("finalizeRunXP", () => {
-  it("applies no multiplier for difficulty-1", () => {
-    setRunProgress({ selectedDifficulty: "difficulty-1" });
-    awardMysteryXP("burn", 10);
-    finalizeRunXP();
-    expect(readRunProfile(defaultGameSession).talentXP.burn).toBe(10);
-    expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
-    expect(readRunSession(defaultGameSession).runEndTalentXP.burn).toBe(10);
-  });
-
-  it("applies 1.3x multiplier for difficulty-2", () => {
-    setRunProgress({ selectedDifficulty: "difficulty-2" });
-    awardMysteryXP("burn", 10);
-    finalizeRunXP();
-    expect(readRunProfile(defaultGameSession).talentXP.burn).toBe(13);
-    expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
-    expect(readRunSession(defaultGameSession).runEndTalentXP.burn).toBe(13);
-  });
-
-  it("applies 1.6x multiplier for difficulty-3", () => {
-    setRunProgress({ selectedDifficulty: "difficulty-3" });
-    awardMysteryXP("burn", 10);
-    finalizeRunXP();
-    expect(readRunProfile(defaultGameSession).talentXP.burn).toBe(16);
-    expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
-  });
-
-  it("is idempotent — second call does not double-count XP", () => {
-    setRunProgress({ selectedDifficulty: "difficulty-2" });
-    awardMysteryXP("burn", 10);
-    finalizeRunXP();
-    expect(readRunSession(defaultGameSession).runEndTalentXP.burn).toBe(13);
-    finalizeRunXP();
-    expect(readRunProfile(defaultGameSession).talentXP.burn).toBe(13);
-    expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
-    expect(readRunSession(defaultGameSession).runEndTalentXP).toEqual({});
-  });
-
-  it("clears runEndTalentXP snapshot when there is no run XP to merge", () => {
-    setRunSession({ runEndTalentXP: { burn: 99 } });
-    finalizeRunXP();
-    expect(readRunSession(defaultGameSession).runEndTalentXP).toEqual({});
-  });
-});
-
 describe("applyRunStartSnapshot", () => {
   it("clears runTalentXP and run-end snapshots when starting a fresh run", () => {
     awardMysteryXP("burn", 5);
@@ -569,7 +467,7 @@ describe("finalizeRunEndSession", () => {
     setRunSession({ hasActiveRun: true });
     setRunProgress({ runObtainedItems: obtained });
 
-    finalizeRunEndSession({ awardRunEndMaterials, finalizeRunXP: mutateFinalizeRunXP }, defaultGameSession);
+    finalizeRunEndSession(defaultGameSession);
 
     const recap = readRunSession(defaultGameSession).runEndItems;
     expect(recap).toEqual(obtained);
@@ -584,7 +482,7 @@ describe("finalizeRunEndSession", () => {
     setRunSession({ hasActiveRun: true });
     setRunProgress({ runBoons: ["test-boon"], roomsEncountered: 4 });
 
-    finalizeRunEndSession({ awardRunEndMaterials, finalizeRunXP: mutateFinalizeRunXP }, defaultGameSession);
+    finalizeRunEndSession(defaultGameSession);
 
     expect(readRunSession(defaultGameSession).hasActiveRun).toBe(false);
     expect(readActiveRun(defaultGameSession).runBoons).toEqual(["test-boon"]);

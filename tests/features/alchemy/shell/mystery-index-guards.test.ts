@@ -1,12 +1,13 @@
 import "../../../helpers/mock-audio";
 
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/navigation/mystery-event-navigation";
 import { resetAllTestStores, setRunProgress } from "../../../helpers/run-domain-store-test";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setMysteryCardChoices, setMysteryEvent } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { cardLibrary } from "@/lib/game-data";
+import type { Screen } from "@/lib/routing";
 import { readActivityData } from "@/lib/active-run-session";
 import { applyLabyrinthMysteryModifiers } from "@/lib/content-systems/labyrinth/room-rules";
 import { mysteryPool } from "@/lib/mystery/pool";
@@ -14,8 +15,9 @@ import { defaultGameSession } from "@/app/application-session";
 
 const act = (fn: () => void) => fn();
 function renderMysteryNav() {
-  const nav = createMysteryEventNavigation(defaultGameSession);
-  return { hook: { result: { current: nav } } };
+  const navigateTo = vi.fn((_screen: Screen, onCommit?: () => void) => onCommit?.());
+  const nav = createMysteryEventNavigation({ navigateTo }, defaultGameSession);
+  return { hook: { result: { current: nav } }, navigateTo };
 }
 
 beforeEach(() => {

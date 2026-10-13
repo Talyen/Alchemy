@@ -28,14 +28,15 @@ describe("combat reward ordering", () => {
     expect(result.exhausted).toContainEqual(card);
   });
 
-  it("Footwork Block triggers Armored Surge with Reinforced and Last Stand", () => {
+  it("Footwork cannot trigger card-play Armored Surge", () => {
     const state = patchBattleState({
       rng: () => 0.01,
       playerHealth: 10,
       playerMaxHealth: 40,
       talentEffects: {
         dodgeBlockAmount: 2,
-        armorOnBlockChance: 100,
+        armorOnBlockCardChance: 100,
+        armorOnBlockCard: 6,
         armorDoubleChance: 100,
         armorLowHealthBonusPercent: 100,
       },
@@ -45,7 +46,7 @@ describe("combat reward ordering", () => {
       makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 2 }] }),
       [],
     );
-    expect(result.playerStatuses.armor).toBe(8);
+    expect(result.playerStatuses.armor).toBe(0);
     expect(result.playerStatuses.block).toBe(2);
   });
 
@@ -80,14 +81,14 @@ describe("combat reward ordering", () => {
   });
 
   it.each(["tick", "detonate", "remaining"] as const)(
-    "Septic Shock increases each Poison %s while the enemy is Bleeding",
+    "Venomtrail increases each Poison %s while the enemy is Bleeding",
     (mode) => {
       const state = patchBattleState({
         rng: () => 0.99,
         enemyHealth: 50,
         enemyMaxHealth: 50,
         enemyStatuses: { poison: 2, bleed: 1 },
-        talentEffects: { bleedPoisonDamageTakenBonus: 1 },
+        gearEffects: { poisonBonusVsBleeding: 1 },
       });
       const result =
         mode === "tick"

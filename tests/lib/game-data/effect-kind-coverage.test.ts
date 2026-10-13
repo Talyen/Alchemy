@@ -3,7 +3,6 @@ import {
   BATTLE_CARD_EFFECT_KINDS,
   BattleCardEffectSchema,
   RECURSIVE_BATTLE_CARD_EFFECT_KINDS,
-  TEMPLATE_EFFECT_DEFINITIONS,
   type BattleCardEffect,
 } from "@/lib/game-data";
 import { EFFECT_APPLY_BY_KIND } from "@/lib/battle/effect-handlers/registry";
@@ -55,14 +54,6 @@ const MINIMAL_EFFECT_BY_KIND: Record<(typeof BATTLE_CARD_EFFECT_KINDS)[number], 
 };
 
 describe("effect kind coverage", () => {
-  it("template definitions cover all non-recursive kinds", () => {
-    const recursive = new Set<string>(RECURSIVE_BATTLE_CARD_EFFECT_KINDS);
-    const templateKinds = new Set<string>(TEMPLATE_EFFECT_DEFINITIONS.map((def) => def.kind));
-    for (const kind of BATTLE_CARD_EFFECT_KINDS) {
-      expect(templateKinds.has(kind)).toBe(!recursive.has(kind));
-    }
-  });
-
   it("every minimal effect satisfies its schema", () => {
     for (const [kind, effect] of Object.entries(MINIMAL_EFFECT_BY_KIND)) {
       expect(BattleCardEffectSchema.safeParse(effect).success, kind).toBe(true);

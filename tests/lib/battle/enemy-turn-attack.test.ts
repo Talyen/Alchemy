@@ -80,20 +80,6 @@ describe("applyEnemyAbility: attack", () => {
     expect(result.playerHealth).toBe(25);
   });
 
-  it("halves enemy nature damage when receiveHalfNatureDamage is active", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerStatuses: { block: 0, armor: 0 },
-      talentEffects: { receiveHalfNatureDamage: true },
-    });
-    const result = applyEnemyAbility(
-      state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "nature", amount: 10 }] }),
-      makeTexts(),
-    );
-    expect(result.playerHealth).toBe(25);
-  });
-
   it("increases block absorption for physical hits with blockAbsorbPhysicalBonus", () => {
     const state = patchBattleState({
       playerHealth: 30,

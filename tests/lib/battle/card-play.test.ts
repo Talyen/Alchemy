@@ -187,7 +187,7 @@ describe("playBattleCardResolved", () => {
     expect(result.state.enemyHealth).toBe(24);
   });
 
-  it("applies consume talent riders but ignores summon-companion cards", () => {
+  it("applies Consume rewards while summons leave battle without Consume", () => {
     const potion = makeTestCard({
       id: "apple",
       cost: 1,
@@ -197,14 +197,15 @@ describe("playBattleCardResolved", () => {
     const summon = makeTestCard({
       id: "wolf-companion",
       cost: 1,
-      consume: true,
       effects: [{ kind: "summon-companion", companionId: "wolf" }],
     });
     const talents = {
       ...makeState().talentEffects,
       healOnConsume: 1,
       goldOnConsume: 1,
-      uncappedDrawOnConsume: 1,
+      goldOnConsumeChance: 100,
+      drawOnConsume: 1,
+      drawOnConsumeChance: 100,
     };
     const potionState = makeState({
       hand: [potion],
@@ -239,10 +240,9 @@ describe("playBattleCardResolved", () => {
     expect(summonResult.state.enemyStatuses.poison).toBe(0);
   });
 
-  it("summons and consumes a companion card", () => {
+  it("summons a Companion and removes its card for the battle", () => {
     const card = makeTestCard({
       id: "wolf-companion",
-      consume: true,
       effects: [{ kind: "summon-companion", companionId: "wolf" }],
     });
     const state = makeState({ hand: [card] });
@@ -454,7 +454,10 @@ describe("reworked cards", () => {
       deck: [{ ...cardById.slash }],
       rng: () => 0.99,
     });
-    let state = { ...initial, talentEffects: { ...initial.talentEffects, forgeOnConsume: 3 } };
+    let state = {
+      ...initial,
+      talentEffects: { ...initial.talentEffects, forgeOnConsume: 3, forgeOnConsumeChance: 100 },
+    };
     for (let play = 0; play < 2; play += 1) {
       const index = state.hand.findIndex((entry) => entry.id === card.id);
       const before = state;

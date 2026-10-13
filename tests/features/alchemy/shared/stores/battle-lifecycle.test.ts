@@ -14,11 +14,9 @@ import {
   dispatchRunSessionCommand,
   subscribeRunSessionCommits,
 } from "@/features/alchemy/shared/stores/run-session-command";
-import { finalizeRunXP, setHasActiveRun, setRunDeck } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setHasActiveRun, setRunDeck } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createVictoryCommand } from "@/features/alchemy/run-loop/run/victory-commands";
-import { awardRunEndMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { cardById, getStartingDeck } from "@/lib/game-data";
-import { DESTINATIONS } from "@/lib/routing";
 import { parseActiveRun } from "@/lib/validation";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { regressionBattle } from "../../../../fixtures/battle";
@@ -43,7 +41,7 @@ it("rejects every battle command after End Run without changing progress, RNG, o
     undefined,
     defaultGameSession,
   );
-  expect(abandonRun({ awardRunEndMaterials, finalizeRunXP }, defaultGameSession)).toBe(true);
+  expect(abandonRun(defaultGameSession)).toBe(true);
   const before = readGameplayState(defaultGameSession);
   const commit = vi.fn();
   const unsubscribe = subscribeRunSessionCommits(commit, defaultGameSession);
@@ -110,7 +108,7 @@ it.each([
     undefined,
     defaultGameSession,
   );
-  const settle = createVictoryCommand(() => [DESTINATIONS.CAMPFIRE], defaultGameSession);
+  const settle = createVictoryCommand(defaultGameSession);
   expect(settle()).not.toBeNull();
   const reward = readRunSession(defaultGameSession).rewardFlow.state;
   expect(Object.values(reward.materials).reduce((sum, value) => sum + value, 0)).toBe(quantity);
@@ -133,7 +131,7 @@ it("resumes an unsettled victory and commits its rewards exactly once before pre
   const saved = parseActiveRun(JSON.parse(JSON.stringify(snapshotRun(defaultGameSession))))!;
   expect(savedActivityData(saved, "battle")?.battleState.enemyHealth).toBe(0);
   restoreRun(saved, {}, {}, defaultGameSession);
-  const settle = createVictoryCommand(() => [DESTINATIONS.CAMPFIRE], defaultGameSession);
+  const settle = createVictoryCommand(defaultGameSession);
   const before = readGameplayState(defaultGameSession);
   expect(settle()).not.toBeNull();
   const committed = readGameplayState(defaultGameSession);

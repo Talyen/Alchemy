@@ -1,293 +1,148 @@
 import { describe, expect, it } from "vitest";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
-import {
-  defaultEnemyStatusValues,
-  defaultTalentEffects,
-  defaultTrinketManifest,
-} from "../../fixtures/default-battle-state";
-import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/battle";
+import { makeCombatTexts, patchBattleState, type BattleStatePatch } from "../../fixtures/battle";
+
+function tick(patch: BattleStatePatch) {
+  const texts = makeCombatTexts();
+  return { next: tickEnemyStatuses(patchBattleState(patch), texts), texts };
+}
 
 describe("tickEnemyStatuses", () => {
   it.each([
-    { burn: 0, health: 3, healing: 2 },
-    { burn: 4, health: 3, healing: 0 },
-  ])("caps Parasitic Bloom healing at Poison Health loss with $burn Burn", ({ burn, health, healing }) => {
-    const state = patchBattleState({
-      enemyHealth: health,
+    { burn: 0, healing: 2 },
+    { burn: 4, healing: 0 },
+  ])("caps Parasitic Bloom healing at Poison Health loss with $burn Burn", ({ burn, healing }) => {
+    const { next } = tick({
+      enemyHealth: 3,
       playerHealth: 20,
       enemyStatuses: { burn, poison: 8 },
       trinketEffects: { parasiticBloomLeechChance: 100 },
     });
-    const next = tickEnemyStatuses(state, makeTexts());
     expect(next.enemyHealth).toBe(0);
     expect(next.playerHealth).toBe(20 + healing);
   });
 
-  it("deals burn damage and halves burn stack", () => {
-    const state = patchBattleState({
-      enemyHealth: 30,
-      enemyStatuses: defaultEnemyStatusValues({ burn: 10 }),
-    });
-    const texts = makeTexts();
-    const next = tickEnemyStatuses(state, texts);
-    expect(next.enemyHealth).toBe(20);
-    expect(next.enemyStatuses.burn).toBe(5);
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "burn", amount: 10, periodic: true });
+  it.each([
+    ["burn", 10, 5],
+    ["burn", 1, 0],
+    ["poison", 8, 6],
+    ["bleed", 6, 0],
+  ] as const)("deals %s %i damage and leaves %i stacks", (stat, amount, remaining) => {
+    const { next, texts } = tick({ enemyStatuses: { [stat]: amount } });
+    expect(next.enemyHealth).toBe(30 - amount);
+    expect(next.enemyStatuses[stat]).toBe(remaining);
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat, amount, periodic: true });
   });
 
-  it("fully clears enemy burn at 1 stack", () => {
-    const state = patchBattleState({
-      enemyHealth: 30,
-      enemyStatuses: defaultEnemyStatusValues({ burn: 1 }),
-    });
-    const next = tickEnemyStatuses(state, makeTexts());
-    expect(next.enemyHealth).toBe(29);
-    expect(next.enemyStatuses.burn).toBe(0);
-  });
-
-  it("deals poison damage and decays poison by 20% (minimum 1)", () => {
-    const state = patchBattleState({
-      enemyHealth: 30,
-      enemyStatuses: defaultEnemyStatusValues({ poison: 8 }),
-    });
-    const texts = makeTexts();
-    const next = tickEnemyStatuses(state, texts);
-    expect(next.enemyHealth).toBe(22);
-    expect(next.enemyStatuses.poison).toBe(6);
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "poison", amount: 8, periodic: true });
-  });
-
-  it("deals bleed damage equal to stack and resets bleed to 0", () => {
-    const state = patchBattleState({
-      enemyHealth: 30,
-      enemyStatuses: defaultEnemyStatusValues({ bleed: 6 }),
-    });
-    const texts = makeTexts();
-    const next = tickEnemyStatuses(state, texts);
-    expect(next.enemyHealth).toBe(24);
-    expect(next.enemyStatuses.bleed).toBe(0);
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "bleed", amount: 6, periodic: true });
-  });
-
-  it("heals player from pending bleed leech healing", () => {
-    const state = patchBattleState({
-      enemyHealth: 30,
+  it.each([
+    { name: "ordinary", enemyHealth: 30, pending: 3, bonus: 0, healing: 2 },
+    { name: "Gear bonus", enemyHealth: 30, pending: 4, bonus: 50, healing: 3 },
+    { name: "overkill cap", enemyHealth: 3, pending: 10, bonus: 0, healing: 2 },
+  ])("settles deferred Bleed Leech with $name", ({ enemyHealth, pending, bonus, healing }) => {
+    const { next, texts } = tick({
+      enemyHealth,
       playerHealth: 20,
-      enemyStatuses: defaultEnemyStatusValues({ bleed: 6 }),
-      pendingBleedLeechHealing: 3,
+      enemyStatuses: { bleed: 6 },
+      pendingBleedLeechHealing: pending,
+      gearEffects: { leechHealBonusPercent: bonus },
     });
-    const texts = makeTexts();
-    const next = tickEnemyStatuses(state, texts);
-    expect(next.playerHealth).toBe(22);
+    expect(next.enemyHealth).toBe(Math.max(0, enemyHealth - 6));
+    expect(next.playerHealth).toBe(20 + healing);
     expect(next.pendingBleedLeechHealing).toBe(0);
-    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 2 });
-  });
-
-  it("scales pending bleed leech healing by leechHealBonusPercent", () => {
-    const state = patchBattleState({
-      enemyHealth: 30,
-      playerHealth: 20,
-      playerMaxHealth: 40,
-      enemyStatuses: defaultEnemyStatusValues({ bleed: 6 }),
-      pendingBleedLeechHealing: 4,
-      gearEffects: { leechHealBonusPercent: 50 },
-    });
-    const texts = makeTexts();
-
-    const next = tickEnemyStatuses(state, texts);
-    expect(next.playerHealth).toBe(23);
-    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 3 });
-  });
-
-  it("caps pending bleed leech at the health the tick actually removed", () => {
-    const state = patchBattleState({
-      enemyHealth: 3,
-      enemyMaxHealth: 30,
-      playerHealth: 20,
-      enemyStatuses: defaultEnemyStatusValues({ bleed: 6 }),
-      pendingBleedLeechHealing: 10,
-    });
-    const texts = makeTexts();
-    const next = tickEnemyStatuses(state, texts);
-    expect(next.enemyHealth).toBe(0);
-
-    expect(next.playerHealth).toBe(22);
-    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 2 });
+    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: healing });
   });
 
   it("applies all DoTs in sequence", () => {
-    const state = patchBattleState({
+    const { next, texts } = tick({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      enemyStatuses: defaultEnemyStatusValues({ burn: 10, poison: 5, bleed: 8 }),
+      enemyStatuses: { burn: 10, poison: 5, bleed: 8 },
       pendingBleedLeechHealing: 2,
     });
-    const texts = makeTexts();
-    const next = tickEnemyStatuses(state, texts);
     expect(next.enemyHealth).toBe(27);
-    expect(next.enemyStatuses.burn).toBe(5);
-    expect(next.enemyStatuses.poison).toBe(4);
-    expect(next.enemyStatuses.bleed).toBe(0);
+    expect(next.enemyStatuses).toMatchObject({ burn: 5, poison: 4, bleed: 0 });
+    expect(texts.filter((text) => text.target === "enemy" && text.kind === "damage").map((text) => text.stat)).toEqual([
+      "burn",
+      "poison",
+      "bleed",
+    ]);
   });
 
-  it("burnPreventDecayChance prevents burn decay when triggered", () => {
-    const state = patchBattleState({
-      enemyStatuses: defaultEnemyStatusValues({ burn: 10 }),
-      talentEffects: { ...defaultTalentEffects, burnPreventDecayChance: 50 },
+  it("prevents Burn decay when its talent roll succeeds", () => {
+    const { next } = tick({
+      enemyStatuses: { burn: 10 },
+      talentEffects: { burnPreventDecayChance: 50 },
       rng: () => 0.01,
     });
-    const texts = makeTexts();
-    const next = tickEnemyStatuses(state, texts);
     expect(next.enemyStatuses.burn).toBe(10);
   });
 
-  it("poisonGainChance increases poison when triggered", () => {
-    const state = patchBattleState({
-      enemyStatuses: defaultEnemyStatusValues({ poison: 5 }),
-      talentEffects: { ...defaultTalentEffects, poisonGainChance: 50 },
-      rng: () => 0.01,
-    });
-    const texts = makeTexts();
-    const next = tickEnemyStatuses(state, texts);
+  it("increases Poison when its talent roll succeeds", () => {
+    const { next } = tick({ enemyStatuses: { poison: 5 }, talentEffects: { poisonGainChance: 50 }, rng: () => 0.01 });
     expect(next.enemyStatuses.poison).toBe(6);
   });
 
-  it("parasiticBloomLeechChance heals player on poison tick", () => {
-    const state = patchBattleState({
-      enemyHealth: 30,
+  it("heals through Parasitic Bloom on a Poison tick", () => {
+    const { next, texts } = tick({
       playerHealth: 20,
-      enemyStatuses: defaultEnemyStatusValues({ poison: 8 }),
-      trinketEffects: defaultTrinketManifest({ parasiticBloomLeechChance: 50 }),
+      enemyStatuses: { poison: 8 },
+      trinketEffects: { parasiticBloomLeechChance: 50 },
       rng: () => 0.01,
     });
-    const texts = makeTexts();
-    const next = tickEnemyStatuses(state, texts);
     expect(next.enemyHealth).toBe(22);
     expect(next.playerHealth).toBe(24);
     expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 4 });
   });
 
-  it("applies resistance multiplier for burn", () => {
-    const state = patchBattleState({
+  it.each([
+    ["burn-resistance", "burn", 5],
+    ["burn-vulnerability", "burn", 13],
+    ["living-armor", "bleed", 8],
+  ] as const)("applies %s to periodic %s damage", (trait, stat, amount) => {
+    const { next, texts } = tick({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      enemyStatuses: defaultEnemyStatusValues({ burn: 10 }),
-      currentEnemy: {
-        id: "fire-elemental",
-        title: "Fire Elemental",
-        subtitle: "",
-        descriptionLines: [""],
-        art: "",
-        enemyType: "normal",
-        traits: [{ id: "burn-resistance", title: "Burn Resistance", description: "Half burn damage" }],
-        abilityIds: ["slash", "bash", "block"],
-      },
+      enemyStatuses: { [stat]: 10 },
+      currentEnemy: { traits: [{ id: trait, title: trait, description: "" }] },
     });
-    const texts = makeTexts();
-    const next = tickEnemyStatuses(state, texts);
-    expect(next.enemyHealth).toBe(45);
-  });
-
-  it("applies vulnerability multiplier for burn", () => {
-    const state = patchBattleState({
-      enemyHealth: 50,
-      enemyMaxHealth: 50,
-      enemyStatuses: defaultEnemyStatusValues({ burn: 10 }),
-      currentEnemy: {
-        id: "blight-treant",
-        title: "The Blight Treant",
-        subtitle: "",
-        descriptionLines: [""],
-        art: "",
-        enemyType: "boss",
-        traits: [
-          { id: "burn-vulnerability", title: "Burn Vulnerability", description: "Receives 30% more Burn damage" },
-        ],
-        abilityIds: ["slash", "bash", "block"],
-      },
-    });
-    const texts = makeTexts();
-    const next = tickEnemyStatuses(state, texts);
-
-    expect(next.enemyHealth).toBe(37);
-  });
-
-  it("applies resistance multiplier for bleed against living-armor", () => {
-    const state = patchBattleState({
-      enemyHealth: 50,
-      enemyMaxHealth: 50,
-      enemyStatuses: defaultEnemyStatusValues({ bleed: 10 }),
-      currentEnemy: {
-        id: "living-armor",
-        title: "Living Armor",
-        subtitle: "",
-        descriptionLines: [""],
-        art: "",
-        enemyType: "elite",
-        traits: [{ id: "living-armor", title: "Living Armor", description: "Receives 25% less Bleed damage" }],
-        abilityIds: ["slash", "bash", "block"],
-      },
-    });
-    const texts = makeTexts();
-    const next = tickEnemyStatuses(state, texts);
-
-    expect(next.enemyHealth).toBe(42);
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "bleed", amount: 8, periodic: true });
+    expect(next.enemyHealth).toBe(50 - amount);
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat, amount, periodic: true });
   });
 });
 
 describe("DoT tick kills pay lethality payouts", () => {
-  it("a lethal burn tick pays Bone Charm and gear rewards once", () => {
-    const state = patchBattleState({
+  it.each(["burn", "poison", "bleed"] as const)("a lethal %s tick pays Bone Charm and Gear rewards once", (status) => {
+    const { next } = tick({
       enemyHealth: 5,
       playerHealth: 20,
-      enemyStatuses: defaultEnemyStatusValues({ burn: 10 }),
+      enemyStatuses: { [status]: 8 },
       gearEffects: { healOnKill: 3, goldOnKill: 4 },
-      trinketEffects: defaultTrinketManifest({ boneCharmHealOnKill: 2 }),
+      trinketEffects: { boneCharmHealOnKill: 2 },
     });
-    const texts = makeTexts();
-    const next = tickEnemyStatuses(state, texts);
     expect(next.enemyHealth).toBe(0);
     expect(next.playerHealth).toBe(25);
     expect(next.gold).toBe(4);
   });
 
-  it("a lethal burn tick still counts as defeated while burning", () => {
-    const state = patchBattleState({
+  it("a lethal Burn tick still counts as defeated while burning", () => {
+    const { next } = tick({
       enemyHealth: 1,
       playerHealth: 20,
-      enemyStatuses: defaultEnemyStatusValues({ burn: 1 }),
+      enemyStatuses: { burn: 1 },
       gearEffects: { healOnBurnEnemyDefeated: 6 },
     });
-    const next = tickEnemyStatuses(state, makeTexts());
     expect(next.enemyHealth).toBe(0);
     expect(next.playerHealth).toBe(26);
   });
 
-  it.each(["poison", "bleed"] as const)("a lethal %s tick pays the same rewards", (status) => {
-    const state = patchBattleState({
-      enemyHealth: 5,
-      playerHealth: 20,
-      enemyStatuses: defaultEnemyStatusValues({ [status]: 8 }),
-      gearEffects: { healOnKill: 3, goldOnKill: 4 },
-      trinketEffects: defaultTrinketManifest({ boneCharmHealOnKill: 2 }),
-    });
-    const next = tickEnemyStatuses(state, makeTexts());
-    expect(next.enemyHealth).toBe(0);
-    expect(next.playerHealth).toBe(25);
-    expect(next.gold).toBe(4);
-  });
-
   it("does not double-pay when later DoTs tick an already-dead enemy", () => {
-    const state = patchBattleState({
+    const { next } = tick({
       enemyHealth: 5,
       playerHealth: 20,
-      enemyMaxHealth: 30,
-      enemyStatuses: defaultEnemyStatusValues({ burn: 10, poison: 8, bleed: 6 }),
+      enemyStatuses: { burn: 10, poison: 8, bleed: 6 },
       gearEffects: { healOnKill: 3, goldOnKill: 4 },
-      trinketEffects: defaultTrinketManifest({ boneCharmHealOnKill: 2 }),
+      trinketEffects: { boneCharmHealOnKill: 2 },
     });
-    const next = tickEnemyStatuses(state, makeTexts());
     expect(next.enemyHealth).toBe(0);
     expect(next.gold).toBe(4);
     expect(next.playerHealth).toBe(25);

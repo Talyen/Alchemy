@@ -14,5 +14,7 @@ export function createShopActions(gameSession: GameSession): ShopActions {
     equipment: createEquipmentShopCommands(gameSession),
   };
 
-  return bindSessionCapabilities(gameSession, shops);
+  return bindSessionCapabilities(gameSession, {
+    ...shops,
+  });
 }

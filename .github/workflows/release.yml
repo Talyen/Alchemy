@@ -400,6 +400,11 @@ jobs:
 
   release:
     needs: [package, package-demo]
+    # Tags share Steam credentials and upload targets; keep each delivery intact.
+    concurrency:
+      group: steam-publishing
+      queue: max
+      cancel-in-progress: false
     runs-on: windows-latest
     timeout-minutes: 30
     permissions:

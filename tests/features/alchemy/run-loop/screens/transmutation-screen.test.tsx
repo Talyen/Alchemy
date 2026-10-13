@@ -1,4 +1,4 @@
-import { initializeAlchemyVisitForTest } from "../../../../helpers/room-visits";
+import { initializeAlchemyVisitForTest as initializeAlchemyVisit } from "../../../../helpers/visit-initialization";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playUISound } from "@/lib/audio";
@@ -87,7 +87,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   setRunProgress({ characterId: "wizard", runDeck: [cardById.slash!, cardById.frostbolt!, cardById["mixed-potion"]!] });
   setRunSession({ hasActiveRun: true, activity: { kind: "destination" } });
-  initializeAlchemyVisitForTest("transmutation", defaultGameSession);
+  initializeAlchemyVisit("transmutation", defaultGameSession);
 });
 afterEach(() => {
   cleanup();
@@ -369,6 +369,17 @@ describe("Transmutation flow", () => {
     expect(onContinue).toHaveBeenCalledOnce();
     expect(onExchange).not.toHaveBeenCalled();
     expect(playUISound).not.toHaveBeenCalled();
+  });
+
+  it("leaves a damaged visit with missing choices without regenerating gameplay", () => {
+    setRunSession({
+      activity: { kind: "transmutation", data: { offers: [], result: null, original: null, completed: false } },
+    });
+    const before = readActiveRun(defaultGameSession);
+    render(<Harness />);
+    expect(onContinue).toHaveBeenCalledOnce();
+    expect(onExchange).not.toHaveBeenCalled();
+    expect(readActiveRun(defaultGameSession)).toEqual(before);
   });
 
   it("resumes the saved result silently and continues only on request, including StrictMode replay", async () => {

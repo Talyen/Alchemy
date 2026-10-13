@@ -126,6 +126,8 @@ One definition powers a permanent Armory Trinket and a run-scoped **Boon**. Both
 
 Companion combat and descriptions share `getModifiedCompanionEffects()` in `src/lib/game-data/companions.ts`, which applies Bond and the supplied damage modifiers together. Follow [Companion Bond rules](./GAME_RULES.md#companion-bond) for progression and displayed effects; Bond levels and costs retain their existing save representation.
 
+Summon cards omit `consume`; their summon effect routes them to the battle-removed pile after play. Companion utility cards retain ordinary discard behavior unless explicitly authored with Consume. Do not add Companion exceptions to Consume tooltips.
+
 `defaultCompanionBondLevels` derives zero values from `companionLibrary`; talent and Homestead defaults both copy that map, so new Companions need no separate default registration. If Bond behavior differs from the shared scaling, update `getModifiedCompanionEffects()` and its descriptions together; change Homestead tiers or costs only when intended.
 
 - **1. Add companion ID to `CompanionId` union** — `src/lib/game-data/types.ts`
@@ -168,23 +170,17 @@ New keywords still follow [Add a new keyword](./CONTENT_AUTHORING.md#add-a-new-k
 3. Add effect keys only when existing keys cannot express the upgrade — `HomesteadEffectManifest` + `HOMESTEAD_BATTLE_*_KEYS` in `types.ts`. Battle numeric defaults derive from that key list; meta and record defaults live in `defaults.ts`
 4. Companion bond tiers (if companion) — `src/lib/homestead/companions.ts` (`COMPANION_BOND_TIERS` + `companionTierItems`) + `src/lib/game-data/companions.ts`
 5. Art & palette — Add `helpers.tsx:itemArt` entry in `src/features/alchemy/meta/screens/homestead/helpers.tsx` + art via the [asset workflow](./WORKFLOWS-ASSETS.md#add-or-replace-game-art)
-6. Change layout constants only for an intended layout change — `HOMESTEAD_CONFIG` in `helpers.tsx` (companion page size, aspect ratios)
+6. Change layout constants only for an intended layout change — `HOMESTEAD_CONFIG` in `helpers.tsx` (page capacities and landscape node width). Artwork retains its native aspect ratio under the [gallery contract](./UI_BROWSING.md#homestead-gallery).
 7. Check affected rules or interactions; saved-shape changes follow the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
 
-Every building/farm/research node has four tiers; Companion Bonds have three.
-Numeric effects increase cumulatively. Resource support adds 10 percentage points
-per tier to the matching find bonuses, reaching 40% per node; separate nodes add
-together. Descriptions use Find 10/20/30/40% more followed by material names.
-Costs remain fixed. Hunter's Lodge boosts Hide only; Crystal Garden boosts Gems
-and Stone; Wishing Well and Wool Tailoring boost Gold only. Library, Agility
-Training, and Sanctuary have no resource bonus. These bonuses augment eligible
-run rewards at their source; they never create per-room or run-end payouts.
-
-Wheat Field restores 1/2/3/4 Health after every combat. Orchard starts each combat
-with 1/2/3/4 Thorns. Crystal Garden adds 25/50/75/100% of current Mana to Freeze
-damage, through the existing additive Mana scaling. Use short effect clauses,
-capitalized keywords, and no terminal periods. Companion descriptions remain
-card-owned; the summon card must be discovered before bonding is permitted.
+Follow the [Homestead gameplay rules](./GAME_RULES.md#hit-resolution-and-pacing)
+and [manifest/progression contract](./TALENT_RULES.md#talent-manifests-and-progression)
+for tier scaling and combat effects. The catalog in `src/lib/homestead/data.ts`
+owns each node's costs and resource bonuses; the [material reward policy](./ARMORY.md#materials-tuning)
+owns eligible sources and modifier order. Keep cumulative descriptions derived
+from the authored effects, using short clauses, capitalized keywords, and no
+terminal periods. Companion descriptions remain card-owned; the summon card must
+be discovered before bonding is permitted.
 
 Homestead screens (like all screen directories) are excluded from `vitest` coverage thresholds — see the coverage `exclude` list in `vitest.config.ts` — and are covered by E2E `tests/e2e/specs/homestead-flow.spec.ts` plus the unit `homestead/*.test.tsx` suites. Use `npm run test:full -- tests/lib/homestead` for the lib contract. Browser verification uses `npm run test:e2e:route -- homestead` under the [local execution policy](../CONTRIBUTING.md#what-to-run-when-you-change).
 
@@ -195,6 +191,7 @@ Homestead screens (like all screen directories) are excluded from `vitest` cover
 3. Make `getCardKeywords` report it through effect metadata in `src/lib/game-data/effect-metadata.ts` or an explicit card tag. This same classification drives card display and ordinary card-play XP.
    `cardHasKeyword` shares that cache for single-keyword queries; use it when no keyword array is needed.
 4. Ordinary XP already flows through `awardCardXP` in `src/features/alchemy/shared/stores/write/run-progress.ts`; add a separate trigger there only when the mechanic needs one, as Dodge does. `src/lib/game-data/talents/progression.ts` owns point math, not event triggering. Add its talent tree through [Add a new talent](#add-a-new-talent).
+5. Update Transmutation in `src/lib/game-constants/transmutation.ts`: assign the keyword to `TRANSMUTATION_KEYWORD_GROUPS` and add its title prefix to `TRANSMUTATION_PREFIXES`. Implement compatible conversions or additions in `getTransmutationVariants` in `src/lib/alchemist/transmutation.ts`; listing a keyword alone does not make it offerable. Verify a useful alteration and its saved preview under the [Transmutation contract](#transmutation-keywords-and-potion-brewing).
 
 Keyword labels and descriptions must pass the typography rules (no em dashes; descriptions stay period-free — see `src/lib/content-validation/validators-typography.ts`). Run `npm run content:audit` before handing off.
 

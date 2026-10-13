@@ -83,6 +83,17 @@ it.each(["campaign", "labyrinth"] as const)(
   (mode) => {
     for (const [destination, nodeType, screen] of cases) {
       const game = session(mode, destination, nodeType);
+      const capabilities = createShopActions(game);
+      // Retained screen commands must have no path to replace an activity or reset a shelf.
+      for (const group of [
+        capabilities,
+        capabilities.merchant,
+        capabilities.alchemist,
+        capabilities.trinket,
+        capabilities.equipment,
+      ]) {
+        expect(group, destination).not.toHaveProperty("initialize");
+      }
       const before = readGameplayState(game);
       const observe = vi.fn(() => snapshotRun(game));
       const unsubscribe = subscribeRunSessionCommits(observe, game);
@@ -108,6 +119,10 @@ it.each(["campaign", "labyrinth"] as const)(
         if (screen === "battle")
           expect(readBattle(game).battleState.currentEnemy.traits.map((trait) => trait.id)).toContain("tempered");
       }
+      const activity = committed.session.activity;
+      if (activity.kind === "campfire") expect(activity.data.offers).toHaveLength(3);
+      if (activity.kind === "transmutation") expect(activity.data.transmutation?.choices).toHaveLength(3);
+      if (activity.kind === "mystery") expect(activity.data.mysteryEvent).not.toBeNull();
       expect(enter(mode, destination, game), destination).toBeNull();
       expect(readGameplayState(game), destination).toBe(committed);
       expect(observe, destination).toHaveBeenCalledOnce();

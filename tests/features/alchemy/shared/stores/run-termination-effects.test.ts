@@ -26,6 +26,7 @@ function start(feedback: GameSessionOptions["feedback"] = {}) {
     runtimeInputs: { generateRunSeed: () => 7 },
     feedback,
     saveBackend: {
+      writeSync: () => null,
       readCandidates: async () => ({ ok: true, candidates: [] }),
       write: async (key, value) => {
         bytes.set(key, value);

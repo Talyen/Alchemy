@@ -1,37 +1,29 @@
 import "../../../../helpers/mock-audio";
-
+import { bindRunMutationForTest, resetAllTestStores, setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createShopRefreshAction } from "@/features/alchemy/run-loop/shop/shop-commands-core";
 import { applyStrongSpiritsToPotions } from "@/features/alchemy/run-loop/shop/shop-state-init";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
 import {
-  acceptCommand,
-  createRunSessionCommand,
-  subscribeRunSessionCommits,
-} from "@/features/alchemy/shared/stores/run-session-command";
-import { setShopState as mutateShopState } from "@/features/alchemy/shared/stores/run-session-write-port";
+  setShopState as mutateShopState,
+  createDraftRunRandomSource,
+  deductGold,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { SHOP_REFRESH_PRICE } from "@/lib/game-constants";
-import { cardById, createEmptyTalentEffectManifest } from "@/lib/game-data";
+import { cardById } from "@/lib/game-data";
 import { emptyShopState, readActivityData } from "@/lib/active-run-session";
-import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
-import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
-import { createDraftRunRandomSource, deductGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { runShopTransaction } from "@/features/alchemy/run-loop/shop/shop-transactions";
 import { playGoldSpend, playUISound } from "@/lib/audio";
 import { defaultGameSession } from "@/app/application-session";
-const setShopState = createRunSessionCommand(
-  (...args: Parameters<typeof mutateShopState>) => acceptCommand(mutateShopState(...args)),
-  undefined,
-  defaultGameSession,
-);
+const setShopState = bindRunMutationForTest(mutateShopState);
 
 beforeEach(() => {
   resetAllTestStores();
 });
 
 describe("shop refresh transaction", () => {
-  const talentEffects = createEmptyTalentEffectManifest();
   const newItems = [cardById["health-potion"]!, cardById["mana-potion"]!];
 
   it("rolls back payment, shelf changes, and RNG when a recipe rejects after writing", () => {
@@ -82,7 +74,6 @@ describe("shop refresh transaction", () => {
     const refreshed = createShopRefreshAction(
       {
         activity: "shop",
-        talentEffects,
         resample: (_draft, state) => ({ ...state, cards: expectedItems }),
       },
       defaultGameSession,
@@ -119,7 +110,7 @@ describe("shop refresh transaction", () => {
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision), defaultGameSession);
 
-    const refreshed = createShopRefreshAction({ activity: "shop", talentEffects, resample }, defaultGameSession)();
+    const refreshed = createShopRefreshAction({ activity: "shop", resample }, defaultGameSession)();
     unsubscribe();
 
     expect(refreshed).toBe(false);

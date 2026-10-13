@@ -1,5 +1,5 @@
-import { assertSynchronousResult } from "./command-outcome";
-import { current, isDraft, type Draft, type Immutable } from "immer";
+import { copyBoundaryData } from "./boundary-data";
+import type { Draft, Immutable } from "immer";
 
 const sources = new WeakMap<object, object>();
 
@@ -48,68 +48,15 @@ export function createReadonlyView<T>(source: T): Immutable<T> {
 
 /** Detach data while the draft is open; preserve aliases and cycles within the result. */
 export function snapshotReadonlyValue<T>(value: T): Draft<T> {
-  return copyBoundaryValue(value, false);
+  return copyBoundaryData(value, "snapshot", sources);
 }
 
 /** Commit results are data; executable dependencies must never reach deferred consumers. */
 export function snapshotCommandResult<T>(value: T): Draft<T> {
-  return copyBoundaryValue(value, false, true);
+  return copyBoundaryData(value, "result", sources);
 }
 
 /** Own caller data on ingress; existing read capabilities already belong to the transaction. */
 export function ownTransactionInput<T>(value: T): Draft<T> {
-  return copyBoundaryValue(value, true);
-}
-
-function copyBoundaryValue<T>(value: T, retainReadSources: boolean, dataOnly = false): Draft<T> {
-  const copies = new WeakMap<object, object>();
-  function copy(entry: unknown): unknown {
-    if (dataOnly) {
-      assertSynchronousResult(entry);
-      if (typeof entry === "function") {
-        throw new Error("Command results must contain only data; a function cannot leave its command");
-      }
-    }
-    if (entry === null || typeof entry !== "object") return entry;
-    const readSource = sources.get(entry);
-    if (retainReadSources && (readSource || isDraft(entry))) {
-      const owned = readSource ?? entry;
-      return isDraft(owned) ? current(owned) : owned;
-    }
-    const source = readSource ?? entry;
-    const existing = copies.get(source);
-    if (existing) return existing;
-    const data = source;
-    if (data instanceof Map) {
-      const result = new Map<unknown, unknown>();
-      copies.set(source, result);
-      for (const [key, item] of data) result.set(copy(key), copy(item));
-      return result;
-    }
-    if (data instanceof Set) {
-      const result = new Set<unknown>();
-      copies.set(source, result);
-      for (const item of data) result.add(copy(item));
-      return result;
-    }
-    const prototype = Object.getPrototypeOf(data) as object | null;
-    if (Array.isArray(data) || prototype === Object.prototype || prototype === null) {
-      const result: object = Array.isArray(data) ? new Array(data.length) : (Object.create(prototype) as object);
-      copies.set(source, result);
-      for (const key of Reflect.ownKeys(data)) {
-        if (!Object.prototype.propertyIsEnumerable.call(data, key)) continue;
-        Object.defineProperty(result, key, {
-          value: copy(Reflect.get(data, key)),
-          enumerable: true,
-          configurable: true,
-          writable: true,
-        });
-      }
-      return result;
-    }
-    const result = structuredClone(isDraft(data) ? current(data) : data);
-    copies.set(source, result);
-    return result;
-  }
-  return copy(value) as Draft<T>;
+  return copyBoundaryData(value, "input", sources);
 }

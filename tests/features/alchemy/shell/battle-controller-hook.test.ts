@@ -24,6 +24,8 @@ function renderBattleController(screen: Screen = ROUTE_SCREENS.BATTLE) {
   return renderHook(
     ({ screen: currentScreen }) =>
       useBattleController({
+        gameSession: defaultGameSession,
+        presentation: battlePresentation,
         screen: currentScreen,
         setHoveredCardId: vi.fn(),
       }),
@@ -101,17 +103,6 @@ describe("useBattleController", () => {
       result.current.toggleAutoplayEnabled();
     });
     expect(result.current.isAutoplayEnabled).toBe(false);
-  });
-
-  it("toggles autoplay and persists when remember is on", () => {
-    useSettingsStore.getState().setRememberAutoplayPreference(true);
-    const { result } = renderBattleController();
-
-    act(() => {
-      result.current.toggleAutoplayEnabled();
-    });
-    expect(result.current.isAutoplayEnabled).toBe(true);
-    expect(useSettingsStore.getState().autoplayEnabled).toBe(true);
   });
 
   it("applies each toggle before React renders again", () => {
