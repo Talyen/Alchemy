@@ -1,12 +1,15 @@
 import "../../../../helpers/mock-audio";
-import { replaceBattleForTest as setSyncedBattleState } from "../../../../helpers/run-domain-store-test";
+import {
+  mutateGameplayForTest,
+  replaceBattleForTest as setSyncedBattleState,
+  resetAllTestStores,
+  setRunProgress,
+  setRunSession,
+} from "../../../../helpers/run-domain-store-test";
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { createVictoryHandlers } from "@/features/alchemy/run-loop/run/run-flow-victory";
-
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readActiveRun, readBattle, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-
 import { useScreenTransitions } from "@/features/alchemy/shell/use-screen-transitions";
 import { playGoldGain } from "@/lib/audio";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
@@ -15,7 +18,6 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { resetAllTestStores, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
 import { defaultGameSession } from "@/app/application-session";
 vi.mock("@/features/alchemy/shared/stores/run-lifecycle", async (importOriginal) => {
@@ -170,11 +172,8 @@ describe("createRunFlow victory paths", () => {
   });
 
   it("commits Wildwood reward handoff in the victory command draft", () => {
-    dispatchGameplayCommand(
-      (draft) =>
-        acceptCommand(setSyncedBattleState(draft, { ...readBattle(defaultGameSession).battleState, enemyHealth: 0 })),
-      undefined,
-      defaultGameSession,
+    mutateGameplayForTest((draft) =>
+      setSyncedBattleState(draft, { ...readBattle(defaultGameSession).battleState, enemyHealth: 0 }),
     );
     setRunProgress({
       contentSystemType: CONTENT_SYSTEMS.WILDWOOD,
@@ -207,17 +206,12 @@ describe("createRunFlow victory paths", () => {
       runPlayerHealth: 20,
       runMaxHealth: 20,
     });
-    dispatchGameplayCommand(
-      (draft) =>
-        acceptCommand(
-          setSyncedBattleState(draft, {
-            ...readBattle(defaultGameSession).battleState,
-            gold: 15,
-            enemyHealth: 0,
-          }),
-        ),
-      undefined,
-      defaultGameSession,
+    mutateGameplayForTest((draft) =>
+      setSyncedBattleState(draft, {
+        ...readBattle(defaultGameSession).battleState,
+        gold: 15,
+        enemyHealth: 0,
+      }),
     );
     setRunSession({
       wildwoodDraft: {

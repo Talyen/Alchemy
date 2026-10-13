@@ -41,3 +41,9 @@ createShopRefreshAction(
 
 // @ts-expect-error -- the canonical write target cannot be inferred from a mismatched payload
 setRunActivityData(draft, "shop", alchemistState);
+
+const shops = createShopActions(defaultGameSession);
+// @ts-expect-error -- room entry is the only visit creation capability
+shops.initialize("merchant");
+// @ts-expect-error -- retained shop commands cannot reroll a visit
+shops.merchant.initialize();

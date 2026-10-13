@@ -1,14 +1,15 @@
-import { replaceBattleForTest as setSyncedBattleState } from "../../../../helpers/run-domain-store-test";
+import {
+  mutateGameplayForTest,
+  replaceBattleForTest as setSyncedBattleState,
+  setRunSession,
+} from "../../../../helpers/run-domain-store-test";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { createBattleDevOutcomes } from "@/features/alchemy/run-loop/battle/battle-session";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-
 import { defaultBattleState } from "@/lib/battle";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
-import { setRunSession } from "../../../../helpers/run-domain-store-test";
 import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
 
@@ -22,11 +23,7 @@ function makeDevOutcomes(screen: string) {
 
 beforeEach(() => {
   resetBattlePresentationAndRun();
-  dispatchGameplayCommand(
-    (draft) => acceptCommand(setSyncedBattleState(draft, defaultBattleState())),
-    undefined,
-    defaultGameSession,
-  );
+  mutateGameplayForTest((draft) => setSyncedBattleState(draft, defaultBattleState()));
 });
 
 describe("skipCombatDevMode", () => {

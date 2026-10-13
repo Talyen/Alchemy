@@ -1,6 +1,7 @@
 import "../../../../helpers/mock-audio";
 import "../../../../helpers/mock-flush-save";
 import {
+  mutateGameplayForTest,
   bindGameplayMutationForTest,
   initializeBattleForTest as initializeActiveBattle,
   mutateGearForTest,
@@ -25,7 +26,6 @@ import {
   rebindLiveRunMeta,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { patchBattleState } from "../../../../fixtures/battle";
 import { cardById, computeTalentPoints, type BattleCard } from "@/lib/game-data";
 import { purchaseTalent } from "@/features/alchemy/shared/stores/navigation-commands";
@@ -334,17 +334,11 @@ describe("resetUnlockedTalents", () => {
   it("refunds allocations and removes live combat bonuses while preserving XP and Homestead effects", () => {
     setRunProgress({ talentXP: { health: 100 }, unlockedTalents: { health: ["health-heal-boost"] } });
     setRunSession({ hasActiveRun: true });
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.runProfile.effects.homesteadHealing = 2;
-        initializeActiveBattle(draft, patchBattleState({ playerHealth: 15 }));
-        rebindLiveRunMeta(draft);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      draft.runProfile.effects.homesteadHealing = 2;
+      initializeActiveBattle(draft, patchBattleState({ playerHealth: 15 }));
+      rebindLiveRunMeta(draft);
+    });
     expect(readBattle(defaultGameSession).battleState.talentEffects.healMultiplier).toBe(1.1);
     const before = readBattle(defaultGameSession).battleState;
     resetUnlockedTalents();

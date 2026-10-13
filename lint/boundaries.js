@@ -89,7 +89,11 @@ export const BOUNDARY_CONFIGS = [
     [],
     ["src/features/alchemy/shared/stores/**", "src/lib/game-data/assets.generated.ts"],
   ),
-  scope(["src/features/alchemy/shared/stores/**/*.{ts,tsx}"], [BARREL_PATTERNS], GAMEPLAY_NO_UNSAFE_RANDOM_PICK),
+  scope(
+    ["src/features/alchemy/shared/stores/**/*.{ts,tsx}"],
+    [BARREL_PATTERNS, ROOM_INITIALIZATION_ONLY],
+    GAMEPLAY_NO_UNSAFE_RANDOM_PICK,
+  ),
   // Bootstrap hydrates all codecs atomically. Only raw dispatch is exempt;
   // the aggregate, write internals, and other source restrictions still apply.
   scope(

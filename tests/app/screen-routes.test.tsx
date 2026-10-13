@@ -9,7 +9,7 @@ import { createMockRouteCommands } from "../helpers/run-controller";
 import { resetAllTestStores, setRunSession } from "../helpers/run-domain-store-test";
 import { initializeAlchemyVisitForTest as initializeAlchemyVisit } from "../helpers/visit-initialization";
 import { defaultGameSession } from "@/app/application-session";
-import { type AlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
+import { emptyAlchemyVisit, type AlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
 
 const { transmutationRender, armoryRender } = vi.hoisted(() => ({
   transmutationRender: vi.fn(),
@@ -119,7 +119,7 @@ describe("SCREEN_ROUTES registry", () => {
     transmutationRender.mockClear();
     const props = createMockProps("transmutation");
     const completion = sessionRuntime(defaultGameSession).progressCompletion;
-    const deactivate = completion.activate(vi.fn());
+    const deactivate = completion.registerRetryDriver(vi.fn());
     try {
       initializeAlchemyVisit("transmutation", defaultGameSession);
       expect(completion.read().kind).toBe("saving");
@@ -137,6 +137,17 @@ describe("SCREEN_ROUTES registry", () => {
       cleanup();
       deactivate();
     }
+  });
+
+  it.each(["campfire", "transmutation"] as const)("remounting damaged %s data does not reroll offers", (kind) => {
+    resetAllTestStores();
+    setRunSession({ hasActiveRun: true, activity: { kind, data: emptyAlchemyVisit() } });
+    const before = readGameplayState(defaultGameSession);
+    const props = createMockProps(kind);
+    const view = render(renderAlchemyScreenRoute(props));
+    view.unmount();
+    render(renderAlchemyScreenRoute(props));
+    expect(readGameplayState(defaultGameSession)).toBe(before);
   });
 
   it("routes ArmoryScreen with route commands and progress callbacks", () => {

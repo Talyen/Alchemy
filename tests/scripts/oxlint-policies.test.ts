@@ -15,6 +15,7 @@ describe("Oxlint policies", () => {
       "src/features/alchemy/run-loop/shop/merchant-shop-commands.ts",
       "src/features/alchemy/run-loop/navigation/alchemy-commands.ts",
       "src/app/playthrough/controller.ts",
+      "src/features/alchemy/shared/stores/meta-commands.ts",
     ]) {
       const messages = await effectiveMessages(file, code, "no-restricted-imports");
       expect(messages, file).not.toEqual([]);
