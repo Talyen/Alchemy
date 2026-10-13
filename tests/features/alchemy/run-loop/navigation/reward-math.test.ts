@@ -24,6 +24,25 @@ describe("victory reward settlement", () => {
     expect(input.purseGold).toBe(50);
   });
 
+  it("boosts only the settled victory payout after difficulty scaling, leaving generated Gold and the purse alone", () => {
+    const input = {
+      battleState: { gold: 65 },
+      purseGold: 50,
+      runBoons: [],
+      gold: 10,
+      eliteBonus: 0,
+      generousBonus: 0,
+      wealthyBonus: 0,
+      bossBonus: 0,
+      talentGoldPerCombat: 2,
+      goldMultiplier: 1.5,
+    };
+    expect(computeVictoryGold({ ...input, goldFindBonus: 0.4 }).persistedGold).toBe(97);
+    expect(computeVictoryGold({ ...input, gold: 0, goldFindBonus: 0.4 }).persistedGold).toBe(
+      computeVictoryGold({ ...input, gold: 0 }).persistedGold,
+    );
+  });
+
   it("never charges the purse for a negative in-combat balance, even with a reward multiplier", () => {
     expect(
       computeVictoryGold({

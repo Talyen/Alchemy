@@ -247,7 +247,7 @@ describe("session facade API", () => {
     battle.trinketEffects.boneCharmHealOnKill = 9;
     battle.flags.nextPhysicalDealsBleed = true;
     battle.flags.nextHitPhysicalBonus = 4;
-    battle.flags.pendingWishMana = 2;
+    battle.flags.darkRecoveryMana = 2;
     battle.talentEffects = {
       ...battle.talentEffects,
       forgeBurnDamagePercent: 100,
@@ -282,7 +282,11 @@ describe("session facade API", () => {
     expect(restored.playerStatuses).toEqual(battle.playerStatuses);
     expect(restored.enemyHealth).toBe(17);
     expect(restored.enemyStatuses.freeze).toBe(2);
-    expect(restored.flags).toMatchObject({ nextPhysicalDealsBleed: true, nextHitPhysicalBonus: 4, pendingWishMana: 2 });
+    expect(restored.flags).toMatchObject({
+      nextPhysicalDealsBleed: true,
+      nextHitPhysicalBonus: 4,
+      darkRecoveryMana: 2,
+    });
     expect(snapshotRun(defaultGameSession).rng).toEqual(saved.rng);
   });
 

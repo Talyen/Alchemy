@@ -17,6 +17,7 @@ interface PackContext {
 }
 
 interface PackageLayout {
+  assertSupportedTargets: (targets: unknown) => void;
   executablePath: (
     appDirectory: string,
     target: string,
@@ -73,6 +74,12 @@ describe("desktop package layout", () => {
     expect(() => afterPack.resolvePackagedExecutable(packContext("linux"))).toThrow(/executableName/u);
     expect(() => afterPack.resolvePackagedExecutable(packContext("freebsd"))).toThrow(/Unsupported Electron platform/u);
     expect(() => layout.executablePath("/package", "freebsd")).toThrow(/Unsupported desktop target/u);
+  });
+
+  it("rejects an empty target selection before electron-builder can default to the host platform", () => {
+    expect(() => layout.assertSupportedTargets(["win"])).not.toThrow();
+    expect(() => layout.assertSupportedTargets([])).toThrow(/non-empty target list/u);
+    expect(() => layout.assertSupportedTargets("win")).toThrow(/non-empty target list/u);
   });
 
   it("selects the requested unpacked directory including architecture-qualified names", async () => {

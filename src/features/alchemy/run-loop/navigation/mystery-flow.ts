@@ -38,6 +38,7 @@ import {
 export interface MysteryEffectResult {
   followUp: "choose-card" | null;
   goldSound?: "gain" | "spend";
+  goldAward?: number;
   materialAward?: { material: MaterialId; amount: number };
 }
 
@@ -163,9 +164,12 @@ export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffect
     case "damageHealth":
       setRunPlayerHealth(context.draft, (health) => Math.max(0, health - effect.amount));
       return { followUp: null };
-    case "gainGold":
-      addGold(context.draft, effect.amount);
-      return { followUp: null, ...(effect.amount > 0 ? { goldSound: "gain" } : {}) };
+    case "gainGold": {
+      const before = context.draft.runProfile.gold;
+      addGold(context.draft, effect.amount, context.draft.runProfile.effects.goldFindBonus);
+      const goldAward = context.draft.runProfile.gold - before;
+      return { followUp: null, goldAward, ...(goldAward > 0 ? { goldSound: "gain" } : {}) };
+    }
     case "loseGold":
       deductGold(context.draft, effect.amount);
       return { followUp: null, ...(effect.amount > 0 ? { goldSound: "spend" } : {}) };

@@ -41,11 +41,13 @@ const CharacterCard = memo(function CharacterCard({
   onSelect,
   isLocked,
   unlockRequirementText,
+  tooltipPlacement,
 }: {
   id: CharacterId;
   onSelect: (id: CharacterId) => void;
   isLocked: boolean;
   unlockRequirementText: string;
+  tooltipPlacement: "above" | "below";
 }) {
   const {
     triggerRef,
@@ -109,6 +111,7 @@ const CharacterCard = memo(function CharacterCard({
             requiresFullGame={!isEditionCharacterAvailable(id)}
             unlockRequirementText={unlockRequirementText}
             triggerRef={triggerRef}
+            placement={tooltipPlacement}
             visible
           />
         ) : null}
@@ -139,7 +142,7 @@ export function CharacterSelectScreen({
       onMenu={onMenu}
     >
       <div className={cn("mt-6 grid w-full grid-cols-4 justify-items-center gap-y-6", chooserHeroRowGapClass)}>
-        {CHARACTER_SELECT_ORDER.map((id) => {
+        {CHARACTER_SELECT_ORDER.map((id, index) => {
           const editionLocked = !isEditionCharacterAvailable(id);
           const isLocked = editionLocked || !isCharacterUnlocked(id, finishedRunCharacters);
           const unlockRequirementText = editionLocked
@@ -155,6 +158,7 @@ export function CharacterSelectScreen({
               onSelect={onSelect}
               isLocked={isLocked}
               unlockRequirementText={unlockRequirementText}
+              tooltipPlacement={index < 4 ? "below" : "above"}
             />
           );
         })}

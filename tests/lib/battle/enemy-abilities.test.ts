@@ -43,12 +43,12 @@ function useAbility(state: BattleState, id: string, texts: CombatTextEvent[] = [
 
 describe("enemy repertoire", () => {
   it.each([
-    { id: "slash", block: 0, roll: 0.99, remainingForge: 2 },
-    { id: "bash", block: 100, roll: 0.99, remainingForge: 2 },
-    { id: "burning-blade", block: 100, roll: 0.99, remainingForge: 2 },
-    { id: "slash", block: 0, roll: 0.01, remainingForge: 3 },
-    { id: "fireball", block: 0, roll: 0.99, remainingForge: 3 },
-  ])("spends enemy Forge only on landed Forge-using hits: $id/$block/$roll", ({ id, block, roll, remainingForge }) => {
+    { id: "slash", block: 0, roll: 0.99 },
+    { id: "bash", block: 100, roll: 0.99 },
+    { id: "burning-blade", block: 100, roll: 0.99 },
+    { id: "slash", block: 0, roll: 0.01 },
+    { id: "fireball", block: 0, roll: 0.99 },
+  ])("preserves enemy Forge through attacks: $id/$block/$roll", ({ id, block, roll }) => {
     const state = enemyState("iron-bear", {
       enemyMitigation: { block: 0, armor: 0, forge: 3 },
       playerStatuses: defaultPlayerStatusValues({ block }),
@@ -57,15 +57,15 @@ describe("enemy repertoire", () => {
     const before = structuredClone(state.enemyMitigation);
     const texts: CombatTextEvent[] = [];
     const result = useAbility(state, id, texts);
-    expect(result.enemyMitigation.forge).toBe(remainingForge);
+    expect(result.enemyMitigation.forge).toBe(3);
     expect(state.enemyMitigation).toEqual(before);
     expect(texts.filter((text) => text.target === "enemy" && text.kind === "damage" && text.stat === "forge")).toEqual(
-      remainingForge < 3 ? [{ target: "enemy", kind: "damage", stat: "forge", amount: 1, impact: false }] : [],
+      [],
     );
     if (block > 0 || roll < 0.05) expect(result.playerHealth).toBe(state.playerHealth);
   });
 
-  it("spends Forge per blocked packet and never below zero", () => {
+  it("preserves Forge bonuses across every blocked packet", () => {
     const state = enemyState("iron-bear", {
       enemyMitigation: { block: 0, armor: 0, forge: 1 },
       playerStatuses: defaultPlayerStatusValues({ block: 100 }),
@@ -77,12 +77,12 @@ describe("enemy repertoire", () => {
       ],
     });
     const result = applyEnemyAbility(state, card, []);
-    expect(result.enemyMitigation.forge).toBe(0);
+    expect(result.enemyMitigation.forge).toBe(1);
     expect(result.playerHealth).toBe(state.playerHealth);
-    expect(result.playerStatuses.block).toBe(91);
+    expect(result.playerStatuses.block).toBe(90);
   });
 
-  it("spends Forge before a lethal Counterplate retaliation closes the attack", () => {
+  it("preserves Forge when lethal Counterplate retaliation closes the attack", () => {
     const state = enemyState("iron-bear", {
       enemyHealth: 2,
       enemyMitigation: { block: 0, armor: 0, forge: 3 },
@@ -92,22 +92,22 @@ describe("enemy repertoire", () => {
     const texts: CombatTextEvent[] = [];
     const result = useAbility(state, "slash", texts);
     expect(result.enemyHealth).toBe(0);
-    expect(result.enemyMitigation.forge).toBe(2);
+    expect(result.enemyMitigation.forge).toBe(3);
     const enemyDamage = texts.filter((text) => text.target === "enemy" && text.kind === "damage");
-    expect(enemyDamage.map((text) => text.stat)).toEqual(["forge", "stun"]);
+    expect(enemyDamage.map((text) => text.stat)).toEqual(["stun"]);
   });
 
-  it("Whitehot preserves Forge on blocked hits and Forge-based Burn", () => {
-    const state = enemyState("iron-bear", {
-      currentEnemy: {
-        ...enemyById["iron-bear"],
-        traits: [{ id: "whitehot", title: "Whitehot", description: "" }],
-      },
-      enemyMitigation: { block: 0, armor: 0, forge: 3 },
-      playerStatuses: defaultPlayerStatusValues({ block: 100 }),
-    });
-    expect(useAbility(state, "slash").enemyMitigation.forge).toBe(3);
-    expect(useAbility(state, "burning-blade").enemyMitigation.forge).toBe(3);
+  it("Stoke the Forge accumulates across enemy attacks every other turn", () => {
+    let state = enemyState("forge-golem", { rng: () => 0.99 });
+    const observed: number[] = [];
+    for (let turn = 1; turn <= 6; turn++) {
+      const result = endPlayerTurn(state);
+      const forgeTexts = result.combatTexts.filter((text) => text.target === "enemy" && text.stat === "forge");
+      expect(forgeTexts).toEqual(turn % 2 === 0 ? [{ target: "enemy", kind: "status", stat: "forge", amount: 1 }] : []);
+      state = result.state;
+      observed.push(state.enemyMitigation.forge);
+    }
+    expect(observed).toEqual([0, 1, 1, 2, 2, 3]);
   });
 
   it("Burning Blade remains usable without Forge and creates no Forge", () => {
@@ -538,7 +538,6 @@ describe("ability trait boundaries", () => {
   it("rewards matching Health damage once per ability and not for fully blocked hits", () => {
     const card = makeTestCard({
       effects: [
-        // Resolve Stun before Holy so it cannot spend the Forge reward under test.
         { kind: "damage", damageType: "stun", amount: 2 },
         { kind: "damage", damageType: "holy", amount: 2 },
         { kind: "damage", damageType: "holy", amount: 2 },

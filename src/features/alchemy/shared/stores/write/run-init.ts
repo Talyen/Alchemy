@@ -54,6 +54,7 @@ export function applyRunStartSnapshot(draft: GameplayDraft, snapshot: RunStartSn
   draft.session.runEndCurrencies = { ...EMPTY_CRAFTING_CURRENCIES };
   draft.session.runEndTalentXP = {};
   draft.session.runEndItems = [];
+  draft.session.runEndUnlockedCharacters = [];
   draft.session.runRecap = null;
   draft.session.runEndLabyrinthFloor = null;
   setHasActiveRun(draft, snapshot.hasActiveRun);

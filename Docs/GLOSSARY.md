@@ -14,7 +14,7 @@ Definitions of common terms used in the Alchemy codebase.
 ### Shared battle and progression terms
 
 - **Armor** — Each stack normally reduces Physical and Stun damage taken by 1; taking damage removes 1 Armor. See [mitigation exceptions](./GAME_RULES.md#mitigation-and-crowd-control).
-- **Forge** — Each stack adds 1 Physical and Stun damage. Player Forge survives attacks; enemies spend 1 Forge on landed Physical, Stun, or Forge-based Burn hits unless Whitehot prevents it. Other conversions and gain rewards follow [Armor, Forge, and Gold](./TALENT_RULES.md#armor-forge-and-gold).
+- **Forge** — Each stack adds 1 Physical and Stun damage. Player and enemy Forge survive attacks; Purge removes Forge. Other conversions and gain rewards follow [Armor, Forge, and Gold](./TALENT_RULES.md#armor-forge-and-gold).
 - **Poison** — DoT status; deals its buildup as damage each tick, then normally loses 20% of its stacks, with a minimum decay of 1.
 - **Stun** — Damage type whose buildup can make the target skip turns once its Health-based threshold is met. See [crowd-control immunity](./GAME_RULES.md#mitigation-and-crowd-control).
 - **Freeze** — Damage type whose buildup can make the target skip turns once its Health-based threshold is met. Threshold modifiers and [crowd-control immunity](./GAME_RULES.md#mitigation-and-crowd-control) apply.

@@ -61,8 +61,10 @@ export function createCanvasLifecycle({
   const window = globalThis.window;
   let animFrameId: number | null = null;
   let lastTime = performance.now();
-  let lastFrameAt = 0;
+  let nextFrameAt: number | null = null;
   const minFrameIntervalMs = fpsLimit && fpsLimit > 0 ? 1000 / fpsLimit : 0;
+  // Small callback jitter must not push a due draw to the following vsync.
+  const frameDeadlineToleranceMs = Math.min(3, minFrameIntervalMs / 10);
 
   const lifecycle: CanvasLifecycle = {
     logicalWidth: 0,
@@ -131,7 +133,7 @@ export function createCanvasLifecycle({
     animFrameId = null;
     if (isPaused()) {
       lastTime = now;
-      lastFrameAt = now;
+      nextFrameAt = null;
       return;
     }
 
@@ -140,11 +142,19 @@ export function createCanvasLifecycle({
       resize();
     }
 
-    if (minFrameIntervalMs > 0 && now - lastFrameAt < minFrameIntervalMs) {
-      scheduleFrame();
-      return;
+    if (minFrameIntervalMs > 0) {
+      if (nextFrameAt !== null && now + frameDeadlineToleranceMs < nextFrameAt) {
+        scheduleFrame();
+        return;
+      }
+      // Retain the cadence across late callbacks instead of accumulating drift.
+      // After a stall, skip missed deadlines rather than drawing catch-up frames.
+      nextFrameAt =
+        nextFrameAt === null
+          ? now + minFrameIntervalMs
+          : nextFrameAt +
+            (Math.floor((now + frameDeadlineToleranceMs - nextFrameAt) / minFrameIntervalMs) + 1) * minFrameIntervalMs;
     }
-    lastFrameAt = now;
 
     const dt = Math.min((now - lastTime) / 16.67, 3);
     lastTime = now;
@@ -158,7 +168,7 @@ export function createCanvasLifecycle({
     resize();
     if (animFrameId !== null) return;
     lastTime = performance.now();
-    lastFrameAt = 0;
+    nextFrameAt = null;
     scheduleFrame();
   }
 

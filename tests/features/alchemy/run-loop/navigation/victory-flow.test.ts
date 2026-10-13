@@ -1,3 +1,4 @@
+import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import { setBattleActiveForTest, getBattleForTest } from "../../../../helpers/run-domain-store-test";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
@@ -42,10 +43,8 @@ vi.mock("@/lib/homestead/material-rewards", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/homestead/material-rewards")>();
   return {
     ...actual,
-    getEnemyMaterialLoot: vi.fn(() => ({ wood: 1, stone: 0, iron: 0, food: 0, herbs: 0, hide: 0, gems: 0 })),
-    applyMaterialFindBonus: vi.fn((mats: unknown) => mats),
     // Fixed-base stand-in for the real pipeline: isolates these tests from material
-    // tables while preserving scavenger/herbalist semantics from live tuning.
+    // rolls while preserving scavenger/herbalist semantics from live tuning.
     computeCombatMaterialReward: vi.fn((input: { scavenger: boolean; herbalist: boolean }) => ({
       wood: input.scavenger ? Math.round(1 * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier) : 1,
       stone: 0,
@@ -71,6 +70,7 @@ function baseBattleState(overrides: Record<string, unknown> = {}) {
 function baseInput(overrides: Record<string, unknown> = {}): VictoryRewardsInput {
   return {
     lootProgress: { depth: 24, highestCompletedDifficulty: null },
+    materialRewardBand: 1,
     characterId: "knight",
     selectedDifficulty: null,
     unlockedTalents: {},
@@ -93,6 +93,24 @@ function baseInput(overrides: Record<string, unknown> = {}): VictoryRewardsInput
 const testRng = () => 0.25;
 
 describe("Fetch victory rewards", () => {
+  it.each(["campaign", "labyrinth", "wildwood"])(
+    "Wheat Field restores purchased Health after combat in %s and stacks with recovery talents",
+    (contentSystemType) => {
+      for (const tier of [1, 2, 3, 4]) {
+        const input = baseInput({
+          contentSystemType,
+          battleState: baseBattleState({ playerHealth: 10 }),
+          unlockedTalents: { health: ["health-max-per-combat"] },
+          homesteadEffects: computeHomesteadEffects({}, { "wheat-field": tier }, {}),
+        });
+        expect(computeVictoryRewards(input, testRng).playerHealth).toBe(14 + tier);
+        expect(
+          computeVictoryRewards({ ...input, battleState: baseBattleState({ playerHealth: 29 }) }, testRng).playerHealth,
+        ).toBe(30);
+      }
+    },
+  );
+
   it("applies a Labyrinth Hoard to the actual victory choices", () => {
     const result = computeVictoryRewards(
       baseInput({ contentSystemType: "labyrinth", activeLabyrinthRewardModifiers: ["ring-hoard"] }),

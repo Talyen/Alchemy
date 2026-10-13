@@ -44,7 +44,7 @@ export function resolveCompanionTurnStart(
 
   return resolveSecondaryAction(state, "companion", (s) => {
     const burningEnemy = s.enemyStatuses.burn > 0;
-    const attackBonuses = { flat: s.flags.companionNextAttackBonus, physical: 0, bleed: 0 };
+    const companionAttackBonus = { amount: s.flags.companionNextAttackBonus };
     const damageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
     let damageDealt = 0;
     let damagePackets = 0;
@@ -52,7 +52,7 @@ export function resolveCompanionTurnStart(
       applyEffects(s, companionCard, combatTexts, {
         manaAtStart: s.mana,
         enemyFreezeSkipTurnsAtStart: s.enemyCC.freezeSkipTurns,
-        attackBonuses,
+        companionAttackBonus,
         origin: "companion",
         damageEffects,
         onDamageDealt: (amount) => {
@@ -66,7 +66,10 @@ export function resolveCompanionTurnStart(
       { cardPlayed: false },
     );
 
-    afterEffects = { ...afterEffects, flags: { ...afterEffects.flags, companionNextAttackBonus: attackBonuses.flat } };
+    afterEffects = {
+      ...afterEffects,
+      flags: { ...afterEffects.flags, companionNextAttackBonus: companionAttackBonus.amount },
+    };
     if (isPlayerDefeated(afterEffects)) return afterEffects;
     if (damageDealt > 0 && burningEnemy) {
       afterEffects = addForgeToPlayer(

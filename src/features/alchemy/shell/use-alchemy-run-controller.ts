@@ -110,6 +110,7 @@ export function useAlchemyRunController(): AlchemyRunCommands {
         beginWildwood: protectVoid(nav.beginWildwood),
         unlockTalent: protectVoid(runActions.purchaseTalent),
         resetUnlockedTalents: protectVoid(runActions.resetTalentUnlocks),
+        resetHomestead: guardProgressAction(defaultGameSession, runActions.resetHomestead, false),
         constructBuilding: guardProgressAction(defaultGameSession, runActions.constructBuilding, false),
         plantFarm: guardProgressAction(defaultGameSession, runActions.plantFarm, false),
         completeResearch: guardProgressAction(defaultGameSession, runActions.completeResearch, false),
@@ -130,6 +131,7 @@ export function useAlchemyRunController(): AlchemyRunCommands {
           ...(isAlchemyDevBuild()
             ? {
                 onSpawnDevGear: protectVoid((characterId) => runActions.spawnDevGear(characterId, undefined)),
+                onSpawnDevTrinket: protectVoid(() => runActions.spawnDevTrinket(undefined)),
               }
             : {}),
         },

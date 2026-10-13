@@ -31,7 +31,9 @@ interface InteractiveArtTileProps {
   shineColor?: string | readonly string[] | undefined;
   disabled?: boolean | undefined;
   showGlow?: boolean | undefined;
+  showShimmer?: boolean | undefined;
   ariaDisabled?: boolean | undefined;
+  grayscaleWhenUnavailable?: boolean | undefined;
   onClick?: (() => void) | undefined;
   ariaLabel?: string | undefined;
   children?: ReactNode | undefined;
@@ -55,7 +57,9 @@ export function InteractiveArtTile({
   shineOnHover = false,
   disabled = false,
   showGlow: showGlowOverride,
+  showShimmer = true,
   ariaDisabled,
+  grayscaleWhenUnavailable = true,
   onClick,
   ariaLabel,
   children,
@@ -107,12 +111,13 @@ export function InteractiveArtTile({
         className={cn(
           className,
           "group shadow-md",
-          ariaDisabled && "cursor-default grayscale",
+          ariaDisabled && "cursor-default",
+          ariaDisabled && grayscaleWhenUnavailable && "grayscale",
           shineClassName,
           frameClassName,
           glowClassName,
         )}
-        shimmerActive={canInteract && shimmerActive}
+        shimmerActive={showShimmer && canInteract && shimmerActive}
         shimmerToken={canInteract ? shimmerToken : undefined}
         overlay={showShine ? <ShineBorder shineColor={shineColors} borderWidth={2} className="z-20" /> : null}
         selected={interactiveChrome && selected}

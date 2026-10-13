@@ -191,4 +191,28 @@ describe("createCanvasLifecycle", () => {
     expect(onResize).not.toHaveBeenCalled();
     expect(cancelRaf).toHaveBeenCalledExactlyOnceWith(99);
   });
+
+  it.each([0, 2.2])("keeps 30 FPS effects paced with %s ms callback jitter and skips missed deadlines", (jitter) => {
+    const frames: FrameRequestCallback[] = [];
+    vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    const draws: number[] = [];
+    const lifecycle = createCanvasLifecycle({ canvas, fpsLimit: 30, onFrame: (now) => draws.push(now) });
+    // Browser timestamps rounded to tenths alternate 33.3 / 33.4 ms for two vsyncs.
+    for (let index = 0; index <= 120; index++) {
+      frames.shift()!(1000 + Math.round((index * 1000) / 6) / 10 + (index % 4 === 2 ? jitter : 0));
+    }
+    expect(draws).toHaveLength(61);
+    const gaps = draws.slice(1).map((now, index) => now - draws[index]!);
+    expect(Math.min(...gaps)).toBeGreaterThan(31);
+    expect(Math.max(...gaps)).toBeLessThan(35.7);
+
+    frames.shift()!(4000);
+    frames.shift()!(4016.7);
+    frames.shift()!(4033.3);
+    expect(draws.slice(-3)).toEqual([3000, 4000, 4033.3]);
+    lifecycle.dispose();
+  });
 });

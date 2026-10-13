@@ -47,7 +47,13 @@ and Powerful Wish consume these references, never English wording or equal-value
 matching. Update cards through `withCardDescription` so strings and highlight
 offsets render from the same model; do not edit numeric prose independently.
 
-Cards in `cardLibrary` are automatically included in card shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration. Exclude a card with `excludeFromOfferPool: true` (`mixed-potion` is the current example). Distillation-eligible Potions are the explicit `POTION_CARD_IDS` list in `cards/card-pools.ts` — a new brew must be added there deliberately; Mana Berries, Mana Crystals, Apple, and Bread are intentionally excluded.
+Cards in `cardLibrary` are automatically included in card shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration. Exclude a card with `excludeFromOfferPool: true` (`mixed-potion` is the current example).
+
+Standard Potions are the explicit `POTION_CARD_IDS` list in `cards/card-pools.ts`;
+`getStandardPotionPool()` supplies shop stock and new Campfire offers.
+`isPotionCard` also recognizes Mixed Potions for brewing and the Distillation
+talent's combat potency. Add a new standard Potion to the list deliberately;
+Mana Berries, Mana Crystals, Apple, and Bread are intentionally excluded.
 
 Run `npm run content:audit` before handing off: card text must match effects (canonical description diff in `src/lib/content-validation/card-parity/`) and prose must pass the typography rules (no em dashes; description lines stay period-free).
 
@@ -161,17 +167,20 @@ New keywords still follow [Add a new keyword](./CONTENT_AUTHORING.md#add-a-new-k
 6. Change layout constants only for an intended layout change — `HOMESTEAD_CONFIG` in `helpers.tsx` (companion page size, aspect ratios)
 7. Check affected rules or interactions; saved-shape changes follow the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
 
-Every building/farm/research node has four tiers. All numeric effects and each
-room-production quantity strictly increase in cumulative tier totals. Companion
-Bonds remain a separate three-tier progression. Recipes use fixed material costs;
-production support affects authoring, not prices at runtime. Crystal Garden
-produces Gems and Stone. Library, Agility Training, and Sanctuary intentionally
-have no material production. A Companion card must be discovered during a Run
-before its Bond can be purchased; the Homestead command checks this against the
-card's summon effect. Resource labels use “per Room”; settlement remains
-at run end. Wishing Well alternates Gold/Gems by room (odd rooms Gold) in every
-mode. Tailoring also produces Gold. Capture the recap after these payouts so
-the Gold and Material totals include them.
+Every building/farm/research node has four tiers; Companion Bonds have three.
+Numeric effects increase cumulatively. Resource support adds 10 percentage points
+per tier to the matching find bonuses, reaching 40% per node; separate nodes add
+together. Descriptions use Find 10/20/30/40% more followed by material names.
+Costs remain fixed. Hunter's Lodge boosts Hide only; Crystal Garden boosts Gems
+and Stone; Wishing Well and Wool Tailoring boost Gold only. Library, Agility
+Training, and Sanctuary have no resource bonus. These bonuses augment eligible
+run rewards at their source; they never create per-room or run-end payouts.
+
+Wheat Field restores 1/2/3/4 Health after every combat. Orchard starts each combat
+with 1/2/3/4 Thorns. Crystal Garden adds 25/50/75/100% of current Mana to Freeze
+damage, through the existing additive Mana scaling. Use short effect clauses,
+capitalized keywords, and no terminal periods. Companion descriptions remain
+card-owned; the summon card must be discovered before bonding is permitted.
 
 Homestead screens (like all screen directories) are excluded from `vitest` coverage thresholds — see the coverage `exclude` list in `vitest.config.ts` — and are covered by E2E `tests/e2e/specs/homestead-flow.spec.ts` plus the unit `homestead/*.test.tsx` suites. Use `npm run test:full -- tests/lib/homestead` for the lib contract. Browser verification uses `npm run test:e2e:route -- homestead` under the [local execution policy](../CONTRIBUTING.md#what-to-run-when-you-change).
 
@@ -199,6 +208,6 @@ rendered numeric positions identify highlights, never the effect to mutate.
 
 Transmutation derives compatible alterations from the run deck, independent of class affinities and offerable replacement-card pools. `game-constants/transmutation.ts` owns the three keyword groups and title prefixes. Each visit rolls one useful keyword per group, with unique fallback choices if a group is unavailable, then saves each card's randomly chosen conversion. All occurrences of the selected source keyword convert without changing existing numeric fields. Unsupported conditions and scaling exclude conversions; additions use native effects, and added effect lines respect Corruption's four-effect-line limit. Keep recursive effects, structured descriptions, distilled marks, and keyword detection consistent when adding new mechanics. Back and reload must preserve exact previews. Transmuted cards carry `transmuted`, `baseTitle`, generated descriptions, and any added tags through hydration; they cannot receive further Transmutation or Corruption.
 
-Preserve transformed effects and generated descriptions together. Mixed and strengthened Potions can be brewed repeatedly. Strengthened standard Potions can be Transmutation sources; Mixed Potions cannot. Distillation adds 1 to supported magnitudes, including Wishes, and preserves probabilities, percentage effects, durations, and draw counts. Full-cleanse Potions without healing gain Restore 1 Health. Persist `distilled` marks on description magnitudes so increased values remain green after hydration and mixing.
+Preserve transformed effects and generated descriptions together. Mixed and strengthened Potions remain eligible for later brewing visits; [brewing rules](./GAME_RULES.md#brewing-transmutation-and-elemental-reactions) own Campfire selection and once-per-visit service limits. Strengthened standard Potions can be Transmutation sources; Mixed Potions cannot. The Distill service adds 1 to supported magnitudes, including Wishes, and preserves probabilities, percentage effects, durations, and draw counts. Full-cleanse Potions without healing gain Restore 1 Health. Persist `distilled` marks on description magnitudes so increased values remain green after hydration and mixing. The Distillation talent separately scales eligible Potion benefits during combat under the [Potion potency rules](./TALENT_RULES.md#distinct-talent-and-card-effects).
 
 The former Shatter and Wildfire talents are displayed as Brittle Ice and Flash Fire to distinguish them from the universal reactions. Their saved IDs and effects remain unchanged.

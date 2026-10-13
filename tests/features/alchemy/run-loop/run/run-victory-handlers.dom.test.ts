@@ -63,30 +63,6 @@ describe("createRunFlow victory paths", () => {
     expect(readActiveRun(defaultGameSession).runDeck.filter((entry) => entry.id.endsWith("-potion"))).toHaveLength(1);
   });
 
-  it("awardRunEndMaterials applies homestead end-of-run per-room bonuses", () => {
-    setRunProgress({ roomsEncountered: 4, currentAct: 1 });
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.runProfile.effects.endRunHerbsPerRoom = 1;
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
-    const herbsBefore = readRunProfile(defaultGameSession).materialInventory.herbs;
-
-    const mats = dispatchGameplayCommand(
-      (...args: Parameters<typeof awardRunEndMaterials>) => acceptCommand(awardRunEndMaterials(...args)),
-      undefined,
-      defaultGameSession,
-    );
-
-    expect(mats.herbs).toBe(4);
-    expect(readRunProfile(defaultGameSession).materialInventory.herbs).toBe(herbsBefore + 4);
-    expect(readRunSession(defaultGameSession).runEndMaterials.herbs).toBe(4);
-  });
-
   it("awardRunEndMaterials includes materials collected during the run on the summary", () => {
     setRunProgress({ roomsEncountered: 2, currentAct: 1 });
     dispatchGameplayCommand(
@@ -104,31 +80,6 @@ describe("createRunFlow victory paths", () => {
     expect(readRunSession(defaultGameSession).runEndMaterials.wood).toBe(5);
     expect(readRunSession(defaultGameSession).runEndMaterials.herbs).toBe(2);
     expect(readActiveRun(defaultGameSession).runMaterialsEarned).toEqual(emptyInventory());
-  });
-
-  it("awardRunEndMaterials returns only the homestead bonus while the summary holds the run total", () => {
-    setRunProgress({ roomsEncountered: 2, currentAct: 1 });
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.runProfile.effects.endRunHerbsPerRoom = 1;
-        addRunMaterialsEarned(draft, { ...emptyInventory(), wood: 5 });
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
-
-    const bonus = dispatchGameplayCommand(
-      (...args: Parameters<typeof awardRunEndMaterials>) => acceptCommand(awardRunEndMaterials(...args)),
-      undefined,
-      defaultGameSession,
-    );
-
-    expect(bonus.wood).toBe(0);
-    expect(bonus.herbs).toBe(2);
-    expect(readRunSession(defaultGameSession).runEndMaterials.wood).toBe(5);
-    expect(readRunSession(defaultGameSession).runEndMaterials.herbs).toBe(2);
   });
 
   it("awardRunEndMaterials snapshots salvaged currencies into the recap and clears the tally", () => {
@@ -153,24 +104,11 @@ describe("createRunFlow victory paths", () => {
     expect(readActiveRun(defaultGameSession).runCurrenciesEarned["discordant-dice"]).toBe(0);
   });
 
-  it("awardRunEndMaterials adds no homestead bonus with default effects", () => {
-    setRunProgress({ roomsEncountered: 6, currentAct: 2 });
-
-    const mats = dispatchGameplayCommand(
-      (...args: Parameters<typeof awardRunEndMaterials>) => acceptCommand(awardRunEndMaterials(...args)),
-      undefined,
-      defaultGameSession,
-    );
-
-    expect(mats).toEqual(emptyInventory());
-    expect(readRunSession(defaultGameSession).runEndMaterials).toEqual(emptyInventory());
-  });
-
-  it("Wildwood run end includes collected Materials and Homestead bonuses", () => {
+  it("Wildwood run end records collected Materials and currencies without another payout", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.WILDWOOD, roomsEncountered: 12 });
     dispatchGameplayCommand(
       (draft) => {
-        draft.runProfile.effects.endRunHerbsPerRoom = 2;
+        draft.runProfile.effects.herbFindBonus = 0.2;
 
         return acceptCommand();
       },
@@ -194,8 +132,8 @@ describe("createRunFlow victory paths", () => {
       defaultGameSession,
     );
 
-    expect(materials).toEqual({ ...emptyInventory(), herbs: 24 });
-    expect(readRunSession(defaultGameSession).runEndMaterials).toEqual({ ...emptyInventory(), herbs: 24, wood: 5 });
+    expect(materials).toEqual(emptyInventory());
+    expect(readRunSession(defaultGameSession).runEndMaterials).toEqual({ ...emptyInventory(), wood: 5 });
     expect(readRunSession(defaultGameSession).runEndCurrencies["discordant-dice"]).toBe(2);
     expect(readActiveRun(defaultGameSession).runMaterialsEarned).toEqual(emptyInventory());
   });

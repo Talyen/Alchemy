@@ -95,7 +95,7 @@ describe("homestead write commands", () => {
     expect(
       dispatchGameplayCommand((draft) => acceptCommand(bondCompanion(draft, "wolf")), undefined, defaultGameSession),
     ).toBe(true);
-    expect(readRunProfile(defaultGameSession).materialInventory.food).toBe(30);
+    expect(readRunProfile(defaultGameSession).materialInventory.food).toBe(40);
     expect(readRunProfile(defaultGameSession).bondedCompanions.wolf).toBe(1);
     expect(readRunProfile(defaultGameSession).effects.companionBondLevels.wolf).toBe(1);
   });
@@ -116,53 +116,36 @@ describe("four-tier Homestead persistence and settlement", () => {
     expect(loaded.completedResearch["leyline-energy"]).toBe(4);
   });
 
-  it("settles Stone and alternating Wish currency through the proper wallets", () => {
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.run.activeRun.contentSystemType = CONTENT_SYSTEMS.LABYRINTH;
-        draft.run.activeRun.roomsEncountered = 3;
-        draft.runProfile.effects = {
-          ...defaultHomesteadEffects,
-          endRunStonePerRoom: 4,
-          endRunGemsPerRoom: 8,
-          endRunGoldPerRoom: 4,
-          endRunWishPerRoom: 4,
-        };
-        const before = draft.runProfile.gold;
-        const granted = awardRunEndMaterials(draft);
-        expect(granted.stone).toBe(12);
-        expect(granted.gems).toBe(28);
-        expect(draft.runProfile.gold - before).toBe(20);
-        expect(draft.session.runEndMaterials.stone).toBe(12);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
-  });
-
-  it("pays Wildwood Materials and Gold with the usual Homestead rules", () => {
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.run.activeRun.contentSystemType = CONTENT_SYSTEMS.WILDWOOD;
-        draft.run.activeRun.roomsEncountered = 3;
-        draft.runProfile.effects = {
-          ...defaultHomesteadEffects,
-          endRunStonePerRoom: 4,
-          endRunGoldPerRoom: 4,
-          endRunWishPerRoom: 4,
-        };
-        const before = draft.runProfile.gold;
-        expect(awardRunEndMaterials(draft)).toEqual({ ...emptyInventory(), stone: 12, gems: 4 });
-        expect(draft.runProfile.gold - before).toBe(20);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
-  });
+  it.each([CONTENT_SYSTEMS.CAMPAIGN, CONTENT_SYSTEMS.LABYRINTH, CONTENT_SYSTEMS.WILDWOOD])(
+    "records collected resources in %s without paying a second Homestead bonus",
+    (contentSystemType) => {
+      dispatchGameplayCommand(
+        (draft) => {
+          draft.run.activeRun.contentSystemType = contentSystemType;
+          draft.run.activeRun.roomsEncountered = 30;
+          draft.runProfile.effects = {
+            ...defaultHomesteadEffects,
+            stoneFindBonus: 0.4,
+            gemFindBonus: 0.8,
+            goldFindBonus: 0.8,
+          };
+          awardMaterialsDuringRun(draft, { ...emptyInventory(), stone: 14, gems: 18 });
+          const goldBefore = draft.runProfile.gold;
+          const inventoryBefore = { ...draft.runProfile.materialInventory };
+          expect(awardRunEndMaterials(draft)).toEqual(emptyInventory());
+          expect(draft.session.runEndMaterials).toEqual({ ...emptyInventory(), stone: 14, gems: 18 });
+          expect(draft.runProfile.materialInventory).toEqual(inventoryBefore);
+          expect(draft.runProfile.gold).toBe(goldBefore);
+          expect(draft.run.activeRun.runMaterialsEarned).toEqual(emptyInventory());
+          expect(awardRunEndMaterials(draft)).toEqual(emptyInventory());
+          expect(draft.runProfile.materialInventory).toEqual(inventoryBefore);
+          return acceptCommand();
+        },
+        undefined,
+        defaultGameSession,
+      );
+    },
+  );
 });
 
 describe("meta intent commands", () => {
@@ -172,7 +155,7 @@ describe("meta intent commands", () => {
     try {
       dispatchGameplayCommand(
         (draft) => {
-          addMaterialsToStockpile(draft, { ...emptyInventory(), stone: 8, iron: 22, food: 43, gems: 21 });
+          addMaterialsToStockpile(draft, { ...emptyInventory(), stone: 4, iron: 11, food: 21, gems: 10 });
           setDiscoveredCardIds(draft, ["wolf-companion"]);
           return acceptCommand();
         },

@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { GameMenu } from "@/features/alchemy/shared/ui/game-menu";
@@ -20,6 +20,10 @@ const menuProps = {
 
 function renderMenu(props: Partial<ComponentProps<typeof GameMenu>> = {}) {
   return render(<GameMenu {...menuProps} {...props} />);
+}
+
+async function waitForMenuReady() {
+  await waitFor(() => expect(screen.getByTestId("game-menu").closest("[inert]")).toBeNull());
 }
 
 function isAnchored(): boolean {
@@ -70,14 +74,53 @@ describe("GameMenu", () => {
       "Options",
       "End Run",
     ]);
+    await waitForMenuReady();
     await user.click(screen.getByRole("button", { name: "Return to Battle" }));
+    await waitForMenuReady();
     await user.click(screen.getByRole("button", { name: "End Run" }));
+    expect(calls).toEqual(["return", "close"]);
+    const confirmation = screen.getByRole("dialog", { name: "End this run?" });
+    await waitFor(() => expect(confirmation.closest("[inert]")).toBeNull());
+    await user.click(within(confirmation).getByRole("button", { name: "End Run" }));
     expect(calls).toEqual(["return", "close", "end", "close"]);
 
     rerender(<GameMenu {...menuProps} currentScreen="menu" />);
-    expect(screen.queryByRole("button", { name: /Return to|End Run/ })).toBeNull();
+    expect(within(screen.getByTestId("game-menu")).queryByRole("button", { name: /Return to|End Run/ })).toBeNull();
     expect(screen.getByRole("button", { name: "Main Menu" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Collection" })).toBeTruthy();
+  });
+
+  it.each(["Cancel", "Escape", "backdrop"])(
+    "preserves the run when confirmation is dismissed with %s",
+    async (dismissal) => {
+      const user = userEvent.setup();
+      const onEndRun = vi.fn();
+      const onClose = vi.fn();
+      renderMenu({ onEndRun, onClose });
+      await waitForMenuReady();
+      await user.click(screen.getByRole("button", { name: "End Run" }));
+      const dialog = screen.getByRole("dialog", { name: "End this run?" });
+      const cancel = within(dialog).getByRole("button", { name: "Cancel" });
+      await waitFor(() => expect(document.activeElement).toBe(cancel));
+      if (dismissal === "Cancel") await user.click(cancel);
+      else if (dismissal === "Escape") await user.keyboard("{Escape}");
+      else await user.click(dialog.closest("[data-modal-content]")!);
+      expect(onEndRun).not.toHaveBeenCalled();
+      expect(onClose).not.toHaveBeenCalled();
+      expect(screen.getByRole("dialog", { name: "Game menu" })).toBeTruthy();
+    },
+  );
+
+  it("clears pending confirmation when the menu closes externally", async () => {
+    const user = userEvent.setup();
+    const onEndRun = vi.fn();
+    const { rerender } = renderMenu({ onEndRun });
+    await waitForMenuReady();
+    await user.click(screen.getByRole("button", { name: "End Run" }));
+    rerender(<GameMenu {...menuProps} onEndRun={onEndRun} isOpen={false} />);
+    rerender(<GameMenu {...menuProps} onEndRun={onEndRun} />);
+    expect(screen.getByRole("dialog", { name: "Game menu" })).toBeTruthy();
+    expect(onEndRun).not.toHaveBeenCalled();
   });
 
   it.each(["Talents", "Homestead"] as const)(
@@ -95,6 +138,7 @@ describe("GameMenu", () => {
       expect(onClose).not.toHaveBeenCalled();
 
       rerender(<GameMenu {...menuProps} {...props} />);
+      await waitForMenuReady();
       await user.click(screen.getByRole("button", { name: label }));
       expect(onSelect).toHaveBeenCalledOnce();
       expect(onClose).toHaveBeenCalledOnce();

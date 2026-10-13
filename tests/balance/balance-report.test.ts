@@ -59,7 +59,7 @@ describe("balance report", () => {
     const html = renderBalanceReportHtml(model, options);
     expect(html).toContain("<h1>Balance Report</h1>");
     expect(html).toContain("Wins / Defeats / Timeouts Early");
-    expect(html).toContain("Target 15–30 turns (boss)");
+    expect(html).toContain("Target 13–20 turns (boss)");
     expect(html).toContain("Enemy attacks Early");
     expect(html).toContain("Ability uses Late");
     expect(html).toContain("Trait activations Late");

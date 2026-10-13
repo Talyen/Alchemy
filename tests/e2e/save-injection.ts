@@ -105,6 +105,7 @@ function buildActiveRunSave(overrides: Record<string, unknown>) {
     discoveredUniqueIds,
     autoEndTurn,
     selectedAspectRatio,
+    finishedRunCharacters,
     gold,
     runGold,
     ...activeRunData
@@ -137,7 +138,7 @@ function buildActiveRunSave(overrides: Record<string, unknown>) {
       }),
       ...activeRunData,
     },
-    finishedRunCharacters: [...BASE_ROSTER_CHARACTERS],
+    finishedRunCharacters: Array.isArray(finishedRunCharacters) ? finishedRunCharacters : [...BASE_ROSTER_CHARACTERS],
     discoveredCardIds: Array.isArray(discoveredCardIds) ? discoveredCardIds : [...DEFAULT_DISCOVERED_CARD_IDS],
   };
   if (Array.isArray(encounteredEnemyIds)) save.encounteredEnemyIds = encounteredEnemyIds;

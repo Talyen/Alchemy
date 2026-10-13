@@ -39,12 +39,13 @@ describe("initializeEnemyState", () => {
 
   it("applies boss HP multiplier and boss regeneration", () => {
     const result = initializeEnemyState(blightTreant, 1, []);
-    expect(result.enemyMaxHealth).toBe(101);
+    expect(result.enemyMaxHealth).toBe(90);
     expect(result.enemyRegeneration).toBe(ENEMY_BOSS_REGENERATION);
   });
 
-  it("applies elite regeneration at base rate", () => {
+  it("applies elite HP multiplier and base regeneration", () => {
     const result = initializeEnemyState(mudElemental, 1, []);
+    expect(result.enemyMaxHealth).toBe(79);
     expect(result.enemyRegeneration).toBe(ENEMY_BASE_REGENERATION);
   });
 

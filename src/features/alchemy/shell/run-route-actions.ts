@@ -15,10 +15,12 @@ import {
   equipGear,
   equipTrinket,
   plantFarm,
+  resetHomestead,
   salvageGear,
   selectCollectionTab,
   setCollectionPage,
   spawnDevGear,
+  spawnDevTrinket,
   unequipGear,
   unequipTrinket,
 } from "@/features/alchemy/shared/stores/meta-commands";
@@ -48,6 +50,7 @@ export function createRunRouteActions(gameSession: GameSession) {
       // An outgoing route can rerun its effect while it fades after navigation.
       if (readRunSession(gameSession).activity.kind === kind) initializeAlchemyVisit(kind, gameSession);
     },
+    resetHomestead: () => resetHomestead(gameSession),
     constructBuilding: (id: Parameters<typeof constructBuilding>[0]) => constructBuilding(id, gameSession),
     plantFarm: (id: Parameters<typeof plantFarm>[0]) => plantFarm(id, gameSession),
     completeResearch: (id: Parameters<typeof completeResearch>[0]) => completeResearch(id, gameSession),
@@ -73,5 +76,6 @@ export function createRunRouteActions(gameSession: GameSession) {
     ) => applyCurrencyToGear(currencyId, instanceId, options, gameSession),
     spawnDevGear: (characterId: Parameters<typeof spawnDevGear>[0], options?: Parameters<typeof spawnDevGear>[1]) =>
       spawnDevGear(characterId, options, gameSession),
+    spawnDevTrinket: (options?: Parameters<typeof spawnDevTrinket>[0]) => spawnDevTrinket(options, gameSession),
   });
 }

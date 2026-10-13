@@ -98,7 +98,7 @@ export function ItemPickerGrid({
       pageItems={pageItems}
       placeholderIndex={placeholderIndex}
       testId="armory-item-picker"
-      swapKey={slot}
+      swapKey="gear"
       fillerTestId="armory-inventory-filler"
       renderItem={(item) => {
         const reservedBy = Object.hasOwn(reservedGear, item.instanceId) ? reservedGear[item.instanceId] : undefined;

@@ -238,21 +238,13 @@ export function advanceToPlayerTurn(
     nextState.discard.length === 0
   )
     nextState = applyEmergencyWish(nextState, combatTexts);
-  const reset = nextState;
-  const wished =
-    state.flags.pendingWishMana > 0
-      ? gainManaWithCombatText(reset, state.flags.pendingWishMana, combatTexts, {
-          allowOverflow: true,
-          skipFightPacing: true,
-        })
-      : reset;
   const recovered =
     state.flags.darkRecoveryMana > 0
-      ? gainManaWithCombatText(wished, state.flags.darkRecoveryMana, combatTexts, {
+      ? gainManaWithCombatText(nextState, state.flags.darkRecoveryMana, combatTexts, {
           allowOverflow: true,
           skipFightPacing: true,
         })
-      : wished;
+      : nextState;
   const drawnState = processArcheryEchoes(
     processPendingTurnStartEffects(applyPlagueDoctorMask(recovered, combatTexts), combatTexts),
     combatTexts,

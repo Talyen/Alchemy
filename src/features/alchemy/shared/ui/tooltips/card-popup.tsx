@@ -14,6 +14,7 @@ export function DetailPopup({
   chip,
   descriptionLines,
   descriptionNodes,
+  newLineIndices,
   card,
   triggerRef,
   visible,
@@ -26,6 +27,7 @@ export function DetailPopup({
   chip?: string | undefined;
   descriptionLines: string[];
   descriptionNodes?: ReactNode[] | undefined;
+  newLineIndices?: ReadonlySet<number> | undefined;
   card?:
     | (Pick<BattleCard, "corruptedValuePositions"> & Partial<Pick<BattleCard, "effects" | "description">>)
     | undefined;
@@ -47,7 +49,12 @@ export function DetailPopup({
         {chip ? <TooltipChip className="shrink-0 whitespace-nowrap">{chip}</TooltipChip> : null}
       </TooltipHeader>
       {subtitle ? <TooltipSubheader className="mt-1">{subtitle}</TooltipSubheader> : null}
-      <DescriptionLines lines={descriptionLines} idPrefix={idPrefix} {...(card ? { card } : {})} />
+      <DescriptionLines
+        lines={descriptionLines}
+        idPrefix={idPrefix}
+        newLineIndices={newLineIndices}
+        {...(card ? { card } : {})}
+      />
       {descriptionNodes?.map((node, i) => (
         <TooltipBody key={i}>{node}</TooltipBody>
       ))}

@@ -10,37 +10,6 @@ import type { CombatTextEvent } from "@/lib/battle/types";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("Five targeted bug fixes round 4", () => {
-  describe("Bug 1: poisonOnConsume does not apply to a defeated enemy", () => {
-    it("skips applying poison when enemy is defeated before consume riders", () => {
-      const card = makeTestCard({ consume: true });
-      const state = patchBattleState({
-        enemyHealth: 0,
-        enemyMaxHealth: 50,
-        enemyStatuses: { poison: 0 },
-        talentEffects: { ...defaultTalentEffects, poisonOnConsume: 2 },
-      });
-      const combatTexts: CombatTextEvent[] = [];
-      const next = handlePostPlayCardDestination(state, card, { combatTexts });
-
-      expect(next.enemyStatuses.poison).toBe(0);
-      expect(combatTexts.some((t) => t.target === "enemy" && t.stat === "poison")).toBe(false);
-    });
-
-    it("applies poison when enemy is alive", () => {
-      const card = makeTestCard({ consume: true });
-      const state = patchBattleState({
-        enemyHealth: 30,
-        enemyMaxHealth: 50,
-        enemyStatuses: { poison: 0 },
-        talentEffects: { ...defaultTalentEffects, poisonOnConsume: 2 },
-      });
-      const combatTexts: CombatTextEvent[] = [];
-      const next = handlePostPlayCardDestination(state, card, { combatTexts });
-
-      expect(next.enemyStatuses.poison).toBe(2);
-    });
-  });
-
   describe("Runic Quill draws on any Consume, including companion summons", () => {
     it("draws for a companion summon while excluding gear and talent Consume rewards", () => {
       const summonCard: BattleCard = {

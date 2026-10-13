@@ -114,6 +114,7 @@ function BattleScreenRoute({ cardInspection, routeCommands, gameMenuOpen }: Batt
       <EnemyInspectionOverlay
         open={enemyInspectionOpen && canInspectEnemy}
         entry={battleScreenData.battleState.currentEnemy}
+        enemyDescriptionContext={battleScreenData.battleState}
         modifiers={battleScreenData.activeLabyrinthModifiers}
         onClose={() => setEnemyInspectionOpen(false)}
         returnFocusRef={returnFocusRef}
@@ -161,7 +162,14 @@ function WildwoodRemovalScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 function DestinationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.destinations;
   const r = useDestinationScreenData();
-  return <DestinationScreen rewardState={r.rewardState} onChoose={commands.choose} onPrepare={commands.prepare} />;
+  return (
+    <DestinationScreen
+      rewardState={r.rewardState}
+      currentAct={r.currentAct}
+      onChoose={commands.choose}
+      onPrepare={commands.prepare}
+    />
+  );
 }
 
 function CampfireScreenRoute({ routeCommands }: RunLoopRouteCtx) {

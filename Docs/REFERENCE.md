@@ -45,7 +45,7 @@ Outer test runners set `ALCHEMY_RUN_ID` once and pass it to child commands; CI d
 
 ## Loot progression report
 
-`npm run balance:loot` writes HTML and JSON to `reports/loot-progression/`. It uses the shared loot policy and Gear generator with deterministic per-cell seeds, comparing source/depth breakpoints, all account-clear tiers, and fresh versus nearly-complete collections. Route definitions are included in both outputs. Counts represent offered items, not acquisitions; ownership stays fixed along each route and no shop refreshes are assumed. Set `ALCHEMY_LOOT_SAMPLES` to a positive integer to change the default 1,000 samples per cell. The same command also writes `materials.html` / `materials.json` with mean homestead-material payouts per enemy and enemy type. Loot rules and tuning ownership: [ARMORY](./ARMORY.md#loot-tuning).
+`npm run balance:loot` writes HTML and JSON to `reports/loot-progression/`. It uses the shared loot policy and Gear generator with deterministic per-cell seeds, comparing source/depth breakpoints, all account-clear tiers, and fresh versus nearly-complete collections. Route definitions are included in both outputs. Counts represent offered items, not acquisitions; ownership stays fixed along each route and no shop refreshes are assumed. Set `ALCHEMY_LOOT_SAMPLES` to a positive integer to change the default 1,000 samples per cell. The same command also writes `materials.html` / `materials.json` with mean homestead-material payouts per progression band and encounter type. Loot rules and tuning ownership: [ARMORY](./ARMORY.md#loot-tuning).
 
 ## Balance simulation
 
@@ -145,7 +145,7 @@ Lookup for modules not covered in [ARCHITECTURE.md](./ARCHITECTURE.md). Paths ar
 - **Image preload helper** — `src/lib/image-preload.ts`
 - **Potion mixing** — `src/lib/alchemist/potion-mixer.ts`
 - **Platform / Steam** — `src/lib/platform.ts`, `src/lib/desktop-api.ts`, `src/lib/platform-save-backend.ts`, `desktop/`
-- **Reward card sampling** — `src/features/alchemy/run-loop/navigation/reward-flow.ts`
+- **Reward offer eligibility and sampling** — `src/features/alchemy/run-loop/navigation/reward-offers.ts`; `reward-flow.ts` assembles the settled reward state
 - **Reward math (gold / traits)** — `src/features/alchemy/run-loop/navigation/reward-math.ts`
 - **Run loop layering** — [ARCHITECTURE.md § Run loop overview](./ARCHITECTURE.md#run-loop-overview)
 - **Run lifecycle / capability ports** — [ARCHITECTURE.md](./ARCHITECTURE.md)

@@ -28,6 +28,7 @@ export interface ArmoryRouteCommands {
   onSalvage: (instanceId: string) => boolean;
   onApplyCurrency: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;
+  onSpawnDevTrinket?: () => void;
 }
 
 export interface AlchemyRouteCommands {
@@ -43,6 +44,7 @@ export interface AlchemyRouteCommands {
     beginWildwood: () => void;
     unlockTalent: (keywordId: KeywordId, talentId: string) => void;
     resetUnlockedTalents: () => void;
+    resetHomestead: () => boolean;
     constructBuilding: (id: BuildingId) => boolean;
     plantFarm: (id: FarmId) => boolean;
     completeResearch: (id: ResearchId) => boolean;

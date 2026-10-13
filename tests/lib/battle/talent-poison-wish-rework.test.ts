@@ -7,7 +7,6 @@ import { tryPoisonStunProc } from "@/lib/battle/follow-up-hit-resolution";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { buildWishOptions, applyWishEffect } from "@/lib/battle/wish";
 import { computeTalentEffects, type BattleCardEffect } from "@/lib/game-data";
-import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { makeEffect, makeTestCard, patchBattleState, dealDamage } from "../../fixtures/battle";
 
 function playCard(state: ReturnType<typeof patchBattleState>, card: ReturnType<typeof makeTestCard>) {
@@ -223,34 +222,5 @@ describe("Poison, Stun, and Wish Talent reworks", () => {
     });
     const options = buildWishOptions(state, makeTestCard({ id: "wish" }));
     expect(options.every((card) => card.descriptionLines.length > 0)).toBe(true);
-  });
-
-  it("retains deprecated Talent effects and pending Wish Mana in persisted battles", () => {
-    const saved = JSON.parse(
-      JSON.stringify(
-        patchBattleState({
-          flags: { pendingWishMana: 2 },
-          talentEffects: {
-            poisonPhysicalBonus: 2,
-            poisonStripArmor: true,
-            poisonCardPhysicalVsPoisoned: 1,
-            wishExtraChoices: 1,
-            wishDrawsCard: true,
-            blockPerDeclinedWishCard: 1,
-            manaNextTurnOnWish: 1,
-          },
-        }),
-      ),
-    );
-    const restored = PersistedBattleStateSchema.parse(saved);
-
-    expect(restored.flags.pendingWishMana).toBe(2);
-    expect(restored.talentEffects.poisonPhysicalBonus).toBe(2);
-    expect(restored.talentEffects.poisonStripArmor).toBe(true);
-    expect(restored.talentEffects.poisonCardPhysicalVsPoisoned).toBe(1);
-    expect(restored.talentEffects.wishExtraChoices).toBe(1);
-    expect(restored.talentEffects.wishDrawsCard).toBe(true);
-    expect(restored.talentEffects.blockPerDeclinedWishCard).toBe(1);
-    expect(restored.talentEffects.manaNextTurnOnWish).toBe(1);
   });
 });

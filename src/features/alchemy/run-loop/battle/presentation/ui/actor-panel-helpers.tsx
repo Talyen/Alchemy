@@ -1,3 +1,4 @@
+import type { EnemyDescriptionContext } from "@/lib/battle";
 import type { RefObject } from "react";
 import { ShineBorder } from "@/components/ui/shine-border";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
@@ -20,6 +21,7 @@ const ACTOR_PANEL_CONFIG = {
 export function ActorTooltip({
   title,
   descriptionLines,
+  enemyDescriptionContext,
   currentEnemy,
   activeLabyrinthModifiers,
   triggerRef,
@@ -27,6 +29,7 @@ export function ActorTooltip({
 }: {
   title: string;
   descriptionLines: string[] | undefined;
+  enemyDescriptionContext?: EnemyDescriptionContext | undefined;
   currentEnemy: BestiaryEntry | undefined;
   activeLabyrinthModifiers?: EncounterCombatTraitId[] | undefined;
   triggerRef: RefObject<HTMLElement | null>;
@@ -36,6 +39,7 @@ export function ActorTooltip({
     return (
       <EnemyTooltip
         entry={currentEnemy}
+        enemyDescriptionContext={enemyDescriptionContext}
         labyrinthModifiers={activeLabyrinthModifiers ?? []}
         triggerRef={triggerRef}
         visible={visible}

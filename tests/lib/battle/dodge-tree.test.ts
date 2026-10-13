@@ -94,7 +94,7 @@ describe("Dodge tree rewards", () => {
     expect(state.playerStatuses).toMatchObject({ armor: 0, forge: 0, thorns: 0 });
   });
 
-  it("Clean Getaway reduces each status and rewards each completely removed harmful status", () => {
+  it("Clean Getaway reduces each status and triggers cleanse rewards once only for complete removal", () => {
     const state = incomingPhysical({
       playerHealth: 50,
       playerStatuses: { burn: 1, poison: 2, bleed: 1, freeze: 3, stun: 3 },
@@ -106,7 +106,7 @@ describe("Dodge tree rewards", () => {
       [],
     );
     expect(result.playerStatuses).toMatchObject({ burn: 0, poison: 1, bleed: 0, freeze: 3, stun: 3 });
-    expect(result.playerHealth).toBe(58);
+    expect(result.playerHealth).toBe(54);
     const partial = applyEnemyAbility(
       incomingPhysical({
         playerHealth: 50,

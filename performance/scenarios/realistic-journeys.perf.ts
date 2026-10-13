@@ -34,6 +34,9 @@ async function loadSave(page: Page, journeyCase: JourneyCase): Promise<void> {
   await injectExactSave(page, journeyCase.initialSave);
   const desktop = await page.evaluate(() => Boolean(window.alchemyDesktop?.isDesktop)).catch(() => false);
   if (!desktop) await page.goto("/");
+  await expect(page.getByRole("progressbar", { name: "Loading Alchemy", exact: true })).toHaveCount(0, {
+    timeout: 30_000,
+  });
 }
 
 async function record(name: string, action: () => Promise<unknown>, recordAction: RecordAction): Promise<void> {
@@ -108,6 +111,8 @@ async function playRealCombat(
 
 async function rewardRoute(page: Page, phase: Phase, recordAction: RecordAction): Promise<void> {
   await phase("reward");
+  await record("inspect-reward", () => page.locator('[aria-label^="Select "]').first().hover(), recordAction);
+  await delay(350);
   await record("claim-reward", () => new RewardPage(page).claimFirstReward(), recordAction);
   await phase("destination");
   const destination = new DestinationPage(page);

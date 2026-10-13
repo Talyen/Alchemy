@@ -1,3 +1,4 @@
+import type { EnemyDescriptionContext } from "@/lib/battle";
 import { type CSSProperties, type ReactNode, type Ref, useLayoutEffect, useRef } from "react";
 
 import { COMBAT_IMPACT_NORMAL_HEALTH_RATIO, COMBAT_IMPACT_HEAVY_HEALTH_RATIO } from "@/lib/game-constants";
@@ -47,6 +48,7 @@ interface ArtPanelProps {
   shaking?: boolean;
   cardWidthClass?: string;
   descriptionLines?: string[];
+  enemyDescriptionContext?: EnemyDescriptionContext | undefined;
   currentEnemy?: BestiaryEntry;
   onInspect?: ((trigger: HTMLElement) => void) | undefined;
   inspectionOpen?: boolean;
@@ -80,12 +82,13 @@ export function ArtPanel({
   isDead = false,
   cardWidthClass,
   descriptionLines,
+  enemyDescriptionContext,
   currentEnemy,
   onInspect,
   inspectionOpen = false,
   activeLabyrinthModifiers = [],
   deathsDoorActive = false,
-  deathsDoorGraceTurnsRemaining,
+  deathsDoorGraceTurnsRemaining = null,
   isBoss = false,
   impactCue = null,
   turnActive = false,
@@ -132,6 +135,7 @@ export function ArtPanel({
               title={title}
               descriptionLines={descriptionLines}
               currentEnemy={currentEnemy}
+              enemyDescriptionContext={enemyDescriptionContext}
               activeLabyrinthModifiers={activeLabyrinthModifiers}
               triggerRef={artWrapperRef}
               visible={tooltipVisible}
@@ -327,7 +331,7 @@ function ActorStatsPanel({
   isDead,
   cardWidthClass = battleCardWidthClass,
   deathsDoorActive,
-  deathsDoorGraceTurnsRemaining,
+  deathsDoorGraceTurnsRemaining = null,
 }: Pick<
   ArtPanelProps,
   "deathsDoorGraceTurnsRemaining" | "side" | "title" | "health" | "maxHealth" | "statuses" | "isDead" | "cardWidthClass"
@@ -390,7 +394,7 @@ function ActorStatusRow({
   title,
   statuses,
   deathsDoorActive,
-  deathsDoorGraceTurnsRemaining,
+  deathsDoorGraceTurnsRemaining = null,
   side,
 }: Pick<ArtPanelProps, "deathsDoorGraceTurnsRemaining" | "title" | "statuses" | "side"> & {
   deathsDoorActive: boolean | undefined;

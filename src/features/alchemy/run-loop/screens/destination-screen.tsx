@@ -15,10 +15,12 @@ import type { RewardState } from "@/lib/active-run-session";
 
 export function DestinationScreen({
   rewardState,
+  currentAct,
   onChoose,
   onPrepare,
 }: {
   rewardState: RewardState;
+  currentAct: number;
   onChoose: (destination: Destination) => void;
   onPrepare?: () => void;
 }) {
@@ -52,6 +54,7 @@ export function DestinationScreen({
       <div className="mt-6 flex flex-col justify-center">
         <DestinationChoices
           destinationOptions={destinationOptions}
+          currentAct={currentAct}
           onChoose={(destination) => {
             onChoose(destination);
             playUISound("mapNode");

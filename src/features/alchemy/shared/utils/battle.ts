@@ -192,9 +192,8 @@ export function getEnemyStatusChips(state: BattleSnapshot | null | undefined): S
         value,
         ...(key === "forge"
           ? {
-              description: state.currentEnemy.traits.some((trait) => trait.id === "whitehot")
-                ? "Each stack of Forge increases this enemy’s Physical and Stun damage by 1. Whitehot prevents attack spending."
-                : "Each stack of Forge increases this enemy’s Physical and Stun damage by 1. Attacks that use Forge spend 1 stack.",
+              description:
+                "Each stack of Forge increases this enemy’s Physical and Stun damage by 1 for the rest of combat.",
             }
           : {}),
       });

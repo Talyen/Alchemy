@@ -130,6 +130,18 @@ describe("CLI launch paths", () => {
 });
 
 describe("CLI validation before side effects", () => {
+  it("rejects unsupported icon generation arguments before reading sources or writing icons", () => {
+    const result = probe(
+      "generate-icons.mjs",
+      ["--check"],
+      fixture(),
+      `fs.promises.readFile = fs.promises.writeFile = fs.promises.open = () => { throw new Error('unexpected asset I/O'); };`,
+    );
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain("Unknown option: --check");
+    expect(result.stderr).not.toContain("unexpected asset I/O");
+  });
+
   it("honors --skip-build when the profiling renderer is missing", () => {
     const result = probe(
       "run-performance.mjs",

@@ -10,22 +10,32 @@ interface PendingSave {
   resolve: (outcome: SaveWriteOutcome) => void;
 }
 
-export class SaveWriteQueue {
-  // Serialize writes and clears; keep only the newest pending snapshot.
+interface SaveBatch {
+  pending: PendingSave | null;
+}
+
+export class SaveOperationQueue {
+  // Loads are barriers: writes may coalesce only on the same side of a load.
   // The epoch invalidates submitted writes. Cancellation also tells autosave
   // to discard dirty revisions it has not submitted, preventing deleted-save revival.
   private chain: Promise<void> = Promise.resolve();
-  private coalesced: PendingSave | null = null;
+  private coalesced: SaveBatch | null = null;
+  private pendingWrites = new Set<SaveBatch>();
+  private pendingOperations = 0;
+  private pendingLoads = 0;
   // Counter (not boolean): overlapping clears must each hold the write gate
   // until all finish, otherwise a write could slip between two clears.
   private pendingClears = 0;
-  private runnerActive = false;
   private writesDisabled = false;
   private storageEpoch = 0;
   private cancellationListeners = new Set<() => void>();
 
   get isIdle(): boolean {
-    return !this.runnerActive && this.coalesced === null && !this.isClearPending;
+    return this.pendingOperations === 0;
+  }
+
+  get isLoadPending(): boolean {
+    return this.pendingLoads > 0;
   }
 
   get isClearPending(): boolean {
@@ -53,7 +63,6 @@ export class SaveWriteQueue {
     write: (data: UnstampedSaveData) => Promise<SaveWriteOutcome>,
   ): Promise<SaveWriteOutcome> {
     if (this.writesDisabled || this.isClearPending) {
-      this.discardPending();
       return Promise.resolve("skipped");
     }
     // Clone before the runner's microtask: callers may mutate immediately after
@@ -67,27 +76,45 @@ export class SaveWriteQueue {
     }
     // A replaced payload was never written. Sharing the replacement's success
     // would let its predecessor acknowledge progress absent from the disk.
-    this.discardPending("superseded");
     let resolve!: PendingSave["resolve"];
     const completion = new Promise<SaveWriteOutcome>((settle) => {
       resolve = settle;
     });
-    this.coalesced = { data: owned, storageEpoch: this.storageEpoch, write, resolve };
-    if (!this.runnerActive) {
-      this.runnerActive = true;
-      this.chain = this.chain.then(async () => {
-        try {
-          while (this.coalesced) {
-            const pending = this.coalesced;
-            this.coalesced = null;
-            pending.resolve(await this.runPending(pending));
-          }
-        } finally {
-          this.runnerActive = false;
+    const pending = { data: owned, storageEpoch: this.storageEpoch, write, resolve };
+    if (this.coalesced) {
+      this.coalesced.pending?.resolve("superseded");
+      this.coalesced.pending = pending;
+    } else {
+      const batch: SaveBatch = { pending };
+      this.coalesced = batch;
+      this.pendingWrites.add(batch);
+      void this.enqueueOperation(async () => {
+        if (this.coalesced === batch) this.coalesced = null;
+        this.pendingWrites.delete(batch);
+        const pending = batch.pending;
+        batch.pending = null;
+        return pending ? { pending, outcome: await this.runPending(pending) } : null;
+      }).then((result) => {
+        if (result) {
+          const { pending, outcome } = result;
+          pending.resolve(pending.storageEpoch === this.storageEpoch ? outcome : "skipped");
         }
       });
     }
     return completion;
+  }
+
+  /** The callback owns all load work, including any initialization write. */
+  enqueueLoad<T>(load: () => Promise<T>): Promise<T> {
+    this.pendingLoads++;
+    this.coalesced = null;
+    return this.enqueueOperation(async () => {
+      try {
+        return await load();
+      } finally {
+        this.pendingLoads--;
+      }
+    });
   }
 
   async enqueueClear(
@@ -95,8 +122,7 @@ export class SaveWriteQueue {
     options?: { onError?: (error: unknown) => void },
   ): Promise<boolean> {
     this.pendingClears++;
-    this.cancelPendingWrites();
-    const run = this.chain.then(async () => {
+    const operation = this.enqueueOperation(async () => {
       try {
         const result = await clear();
         if (!result.ok) throw result.error;
@@ -114,24 +140,33 @@ export class SaveWriteQueue {
         this.pendingClears--;
       }
     });
-    this.chain = run.then(() => {});
-    return run;
+    // Reserve the clear's place before cancellation listeners can submit loads.
+    this.cancelPendingWrites();
+    return operation;
   }
 
-  /** Await already-enqueued writes without creating a final save (deliberate checkpoints). */
+  /** Drain submitted storage work without creating a final save. */
   async waitForIdle(): Promise<void> {
     while (!this.isIdle) await this.chain;
   }
 
   async reset(): Promise<void> {
-    await this.chain;
+    await this.waitForIdle();
     this.chain = Promise.resolve();
-    this.discardPending();
-    this.pendingClears = 0;
-    this.runnerActive = false;
     this.writesDisabled = false;
     this.storageEpoch++;
     this.cancellationListeners.clear();
+  }
+
+  private enqueueOperation<T>(execute: () => Promise<T>): Promise<T> {
+    this.pendingOperations++;
+    const operation = this.chain.then(execute);
+    const finished = () => {
+      this.pendingOperations--;
+    };
+    // A failed read must reject its caller without poisoning subsequent work.
+    this.chain = operation.then(finished, finished);
+    return operation;
   }
 
   private async runPending(pending: PendingSave): Promise<SaveWriteOutcome> {
@@ -151,7 +186,11 @@ export class SaveWriteQueue {
 
   private cancelPendingWrites(): void {
     this.storageEpoch++;
-    this.discardPending();
+    for (const batch of this.pendingWrites) {
+      batch.pending?.resolve("skipped");
+      batch.pending = null;
+    }
+    this.coalesced = null;
     for (const listener of this.cancellationListeners) {
       try {
         listener();
@@ -160,10 +199,5 @@ export class SaveWriteQueue {
         logStorageFailure("Save cancellation listener threw", error);
       }
     }
-  }
-
-  private discardPending(outcome: "skipped" | "superseded" = "skipped"): void {
-    this.coalesced?.resolve(outcome);
-    this.coalesced = null;
   }
 }

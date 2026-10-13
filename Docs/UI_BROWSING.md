@@ -41,10 +41,11 @@ cannot replace destination music.
 
 Collection entries rest with dim grey borders. All entries, including locked and
 undiscovered entries, show a matching keyword Shine Border on hover or
-keyboard focus, with neutral shine when no keywords resolve. Homestead companions
-and upgrades use the same treatment regardless of affordability or discovery.
-Wish and reward choices use the same hover treatment. Trinkets and gear, including
-uniques, use their effect keywords on these surfaces, with neutral shine when none
+keyboard focus, with neutral shine when no keywords resolve. Wish and reward
+choices use the same hover treatment. Homestead companions and upgrades follow
+their separate [gallery treatment](./UI.md#page-sizing-and-spacing).
+Trinkets and gear, including uniques, use their effect keywords on these surfaces,
+with neutral shine when none
 exist. Shared trinket and gear art tiles, including Mystery rewards, shops, and
 run-end items, also rest with the default border and show Shine only on hover or
 keyboard focus. Their existing Shine palettes and item-title colors are preserved.
@@ -132,3 +133,15 @@ Crafting consumes one currency per activation. Escape cancels targeting; invalid
 Journey’s End focuses on earned rewards and progression, without a room trail or
 Act/node summary. Deck and Boon inspection retain their normal labels and shared
 overlay behavior. Victory keeps its own title.
+
+When a run newly unlocks a hero, Continue opens a Hero Unlocked reveal with that
+hero’s portrait and name before Main Menu. Hovering or focusing the portrait
+shows the same hero tooltip as hero selection, including the starting deck and
+keywords. The reveal tooltip prefers below the portrait. Hero selection uses a
+consistent placement per row: below the top row and above the bottom row,
+regardless of whether a hero is locked. Shared
+collision handling keeps tooltips within the game frame. The background glow
+uses that hero’s selection palette. Repeat runs do not replay unlocks.
+Defeat and manual End Run follow the same unlock rules as victory. Demo victories
+show available hero unlocks before the demo completion screen. Unlock reveals,
+like the recap, are transient; permanent hero availability remains saved.

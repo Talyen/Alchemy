@@ -144,6 +144,7 @@ export const bondCompanion = transactionOperation(homestead.bondCompanion);
 export const completeResearch = transactionOperation(homestead.completeResearch);
 export const constructBuilding = transactionOperation(homestead.constructBuilding);
 export const plantFarm = transactionOperation(homestead.plantFarm);
+export const resetHomestead = transactionOperation(homestead.resetHomestead);
 export const setMaterials = transactionOperation(homestead.setMaterials);
 export const applyTalentState = transactionOperation(profile.applyTalentState);
 export const clearPermanentData = transactionOperation(profile.clearPermanentData);

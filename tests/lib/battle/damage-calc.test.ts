@@ -19,13 +19,13 @@ describe("computeCardDamageToEnemy", () => {
       const rng = vi.fn(() => 0);
       const state = patchBattleState({
         enemyMitigation: { block: 0, armor: 0 },
-        talentEffects: { homesteadCriticalDamage: 3 },
+        talentEffects: {},
         flags: { nextHitCrit: source === "next-hit", nextPhysicalCrit: source === "physical" },
         rng,
       });
       const context = { manaAtStart: 3, enemyFreezeSkipTurnsAtStart: 0, guaranteedCrit: source === "guaranteed" };
       const result = computeCardDamageToEnemy(state, physicalEffect, undefined, context);
-      expect(result.modifiedDamage).toBe(physicalEffect.amount * CRIT_MULTIPLIER + 3);
+      expect(result.modifiedDamage).toBe(physicalEffect.amount * CRIT_MULTIPLIER);
       expect(result.critical).toBe(true);
       expect(result.nextState.flags.nextHitCrit).toBe(false);
       expect(result.nextState.flags.nextPhysicalCrit).toBe(false);

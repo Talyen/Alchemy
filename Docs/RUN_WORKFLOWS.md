@@ -11,7 +11,7 @@
 ## Change mid-run resume (`ActiveRunData`)
 
 1. Classify the field as active-run progression or transient resume state. Keep the aggregate shape and the wire shape owned by their existing modules; mid-combat fields still use `PersistedBattleStateSchema`.
-2. Update the active-run schema and, for progression fields, the shared `run-progress.ts` schema plus fresh/resume initialization in `run-state-init.ts`. Wire/live progression types and serialization keys derive from that schema. Use defaults and normalization before adding a migration step; the save contract is in [`MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md).
+2. Update the active-run schema and, for progression fields, `PersistedRunProgress` and `ACTIVE_RUN_PROGRESS_KEYS` in `src/lib/active-run-session/run-progress.ts`, the matching validation schema in `src/lib/validation/save-schemas/run-progress.ts`, and fresh/resume initialization in `run-state-init.ts`. The domain contract owns shared wire/live fields and serialization keys; validation owns recovery defaults. Follow the [shared run-progress contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#shared-run-progress-shape), preserving the distinction between fresh-run defaults and missing-field recovery.
 3. Update `encodeRunResumeSnapshot()` / `decodeRunResumeSnapshot()` in `run-resume-codec.ts`. This codec is the sole `RunSession` ↔ `ActiveRunData` translation boundary; shops and interrupted flow keep their focused codec helpers.
 4. Keep `snapshotRun()` / `restoreRun()` as thin lifecycle wrappers and publish boot/resume through one `dispatchRunSessionCommand()`. Defer navigation, audio, and presentation work until after commit.
 5. Run the active-run snapshot/codec tests plus the storage/migration tests named by the save contract using `npm run test:full -- <test-paths>`. Follow the [verification policy](../CONTRIBUTING.md#what-to-run-when-you-change) for the final gate; the default local gate does not perform dependency-related selection.
@@ -22,11 +22,11 @@
 
 Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-session-write-port.ts`) so homestead inventory and `activeRun.runMaterialsEarned` stay aligned for the run-end summary.
 
-Campaign, Labyrinth, and Wildwood victories grant enemy-based Materials through the same reward flow; Wildwood shows them beside Gold on its existing Victory screen and includes them in the run-end summary.
+Campaign, Labyrinth, and Wildwood victories grant shared combat Materials through the same reward flow; Wildwood shows them beside Gold on its existing Victory screen and includes them in the run-end summary.
 
-1. Route combat payouts through `computeCombatMaterialReward()` and mystery grants through `computeMysteryMaterialReward()` (both in `@/lib/homestead/material-rewards`); they own herb-find, scavenger/herbalist, and elite/boss ordering per the policy table there. Do not reimplement the sequence at the call site.
+1. Route combat payouts through `computeCombatMaterialReward()` and mystery grants through `computeMysteryMaterialReward()` (both in `@/lib/homestead/material-rewards`); they own shared encounter-type/band bundles, location modifiers, and final Homestead find bonuses. Direct Wish payouts use the same quantity helper before emitting feedback and pending rewards. Do not reimplement or repeat the sequence at the call site.
 2. Call `awardMaterialsDuringRun(transaction, materials)` inside the owning command (`run-loop/run/reward-commands.ts`, `run-loop/navigation/mystery-flow.ts`, or Armory salvage in `shared/stores/gear-session-command.ts`). The canonical site list is `AWARD_MATERIALS_CALL_SITES` in `shared/stores/run-materials.ts`, enforced by `tests/architecture/run-materials-award-guard.test.ts`; new grant paths must extend it there.
-3. Reuse the run-end display: `awardRunEndMaterials` in the write port (implementation in `shared/stores/write/run-end.ts`), used by both defeat and victory flows, merges `runMaterialsEarned` and `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`.
+3. Reuse the run-end display: `awardRunEndMaterials` in the write port (implementation in `shared/stores/write/run-end.ts`), used by both defeat and victory flows, copies `runMaterialsEarned` into `session.runEndMaterials` and clears the tally. It never grants materials again or applies another multiplier.
 4. Check `tests/features/alchemy/run-loop/run/run-victory-handlers.dom.test.ts` and the affected mystery/reward-flow tests when adding a new source.
 
 **Do not** call `addMaterialsToStockpile()` on the run profile store directly from run-loop or mystery code for player loot.
