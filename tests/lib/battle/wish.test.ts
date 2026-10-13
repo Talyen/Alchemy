@@ -195,22 +195,6 @@ describe("applyWishEffect", () => {
     expect(result.playerStatuses.poison).toBe(3);
   });
 
-  it("draws card with wishDrawsCard", () => {
-    const card = makeTestCard({
-      id: "strike",
-      title: "Strike",
-      effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 4 }],
-    });
-    const state = patchBattleState({
-      deck: [card],
-      talentEffects: { wishDrawsCard: true },
-    });
-    const texts: CombatTextEvent[] = [];
-    const result = applyWishEffect(state, card, 1, texts);
-    expect(result.hand).toHaveLength(1);
-    expect(result.deck).toHaveLength(0);
-  });
-
   it("combines multiple gold bonuses from same wish", () => {
     const state = patchBattleState({
       talentEffects: {

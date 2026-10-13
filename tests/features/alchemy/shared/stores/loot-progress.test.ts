@@ -14,7 +14,7 @@ import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchem
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
-import { createEmptyTalentEffectManifest, getStartingDeck } from "@/lib/game-data";
+import { getStartingDeck } from "@/lib/game-data";
 import { createEmptyRewardState, readActivityData, shopItemSlotKey } from "@/lib/active-run-session";
 import { gearDefinitions, generateGearRewardChoicesForRarity } from "@/lib/gear";
 import { resetRunDomainStore, setRunProgress } from "../../../../helpers/run-domain-store-test";
@@ -28,14 +28,7 @@ const progress = () =>
     undefined,
     defaultGameSession,
   );
-const actions = () =>
-  createShopActions(
-    {
-      talentEffects: createEmptyTalentEffectManifest(),
-      homesteadEffects: { ...defaultHomesteadEffects, gearAstralChanceBonus: 1 },
-    },
-    defaultGameSession,
-  );
+const actions = () => createShopActions(defaultGameSession);
 
 describe("loot progression at run boundaries", () => {
   it("uses destination progress rather than battle count and applies account clears to other heroes", () => {
@@ -70,6 +63,7 @@ describe("loot progression at run boundaries", () => {
     );
     expect(progress().depth).toBe(4);
     const shop = actions();
+    setRunProgress({ effects: { ...defaultHomesteadEffects, gearAstralChanceBonus: 1 } });
     shop.equipment.initialize();
     expect(
       readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop").gear.every(

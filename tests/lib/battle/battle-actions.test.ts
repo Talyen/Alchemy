@@ -15,7 +15,7 @@ describe("player action host boundary", () => {
   it("replays random Card and Wish rewards from a cloned snapshot without retaining execution capabilities", () => {
     const card = makeTestCard({ effects: [{ kind: "wish", amount: 1 }] });
     const snapshot = battleSnapshot(makeTestBattleState({ hand: [card], mana: 10 }));
-    snapshot.talentEffects = { ...snapshot.talentEffects, declinedWishCardChance: 100, blockPerDeclinedWishCard: 2 };
+    snapshot.talentEffects = { ...snapshot.talentEffects, declinedWishCardChance: 100 };
     const before = structuredClone(snapshot);
     const run = (seed: number) => {
       const context = { rng: createSeededRng(seed) };
@@ -28,13 +28,13 @@ describe("player action host boundary", () => {
     expect(snapshot).toEqual(before);
     expect(() => structuredClone(result)).not.toThrow();
     expect(result.chosen.state.hand).toHaveLength(2);
-    expect(result.chosen.combatTexts.some((text) => text.stat === "block")).toBe(true);
+    expect(result.chosen.state.playerStatuses.block).toBe(0);
 
-    // Preserve the exact old mechanics, including random-stream consumption.
+    // The host matches direct engine calls, including random-stream consumption.
     const rng = createSeededRng(42);
     const played = playBattleCardResolved({ ...snapshot, rng }, card.id, 0);
     const texts: typeof played.combatTexts = [];
-    const chosen = chooseWishCard(played.state, played.state.wishOptions![0]!.id, texts);
+    const chosen = chooseWishCard(played.state, played.state.wishOptions![0]!.id);
     expect(result).toEqual({
       played: { ...played, state: battleSnapshot(played.state) },
       chosen: { state: battleSnapshot(chosen), combatTexts: texts },

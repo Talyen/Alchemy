@@ -153,6 +153,10 @@ or unreviewed build cannot become player-visible automatically.
 - **SteamCMD** setup and credential handling belong to `release.yml` and
   `scripts/steam-upload.mjs`. Configure Steam Guard for the build account per
   [Valve's SteamCMD / CI guidance](https://partner.steamgames.com/doc/sdk/uploading).
+  Missing credentials fail delivery by default. The repository variable
+  `ALLOW_STEAM_DRY_RUN=true` permits validation without uploading for either
+  edition when its upload credentials are missing; fully configured uploads
+  still run and invalid configured targets still fail.
 
 ## One-time setup
 

@@ -118,12 +118,10 @@ export function shouldPreserveConsumable(card: BattleCard, state: BattleSnapshot
   const last = state.hand.length === 1;
   const payoff =
     t.uncappedDrawOnConsume > 0 ||
-    (t.drawOnConsume > 0 && !state.flags.consumeDrawUsedThisTurn) ||
-    t.poisonOnConsume > 0 ||
     t.goldOnConsume > 0 ||
     (t.healOnConsume > 0 && state.playerHealth < state.playerMaxHealth) ||
     (last && t.forgeOnConsume > 0) ||
-    ((t.consumeDetonatesBurn || t.consumeDetonatesBurnChance > 0) && state.enemyStatuses.burn > 0) ||
+    (t.consumeDetonatesBurnChance > 0 && state.enemyStatuses.burn > 0) ||
     g.armorOnConsume > 0 ||
     g.manaOnPaidConsume > 0 ||
     (g.poisonTickOnConsume > 0 && state.enemyStatuses.poison > 0) ||

@@ -2,13 +2,17 @@
 
 ## Add a new status effect
 
-1. Define the status type in `src/lib/game-data/types.ts` — extend `PlayerStatusId` or `EnemyStatusId` string unions (discriminated union pattern).
-2. If the status ticks or expires during turn processing, add that behavior in `src/lib/battle/status-ticks.ts`.
-3. Add player-side application logic in `src/lib/battle/status-player.ts` when applicable; add riders in `src/lib/battle/damage-status-riders.ts` only when damage applies the status.
-4. If the status provides crowd control, add its threshold logic in `src/lib/battle/status-cc.ts`.
-5. If the status introduces a keyword, define it in `src/lib/game-data/keywords.ts`.
+1. Extend `PlayerStatusId` or `EnemyStatusId` in `src/lib/game-data/types.ts`. Classify the status in the applicable harmful/beneficial lists and display order there.
+2. Add its initial value to `defaultBattleState()` in `src/lib/battle/battle-setup-defaults.ts`. Saved status records normalize against these defaults in `normalize-persisted-battle-state.ts`; an undeclared key is dropped during load.
+3. If cards can apply, remove, or multiply the status, update the relevant allowlists in `src/lib/game-data/effects/shared-schemas.ts` and `status-schemas.ts`, plus description metadata in `effect-metadata.ts`. Extending the status union alone does not make it a valid card effect. Keep each operation limited to the statuses it supports.
+4. Route status assignment through `src/lib/battle/status-state.ts`. Add player-side grant/reaction logic in `status-player.ts` when applicable, and damage riders in `damage-status-riders.ts` only when damage applies the status.
+5. Add tick/expiry behavior in `src/lib/battle/status-ticks.ts` and, for crowd control, threshold logic in `status-cc.ts`.
+6. Wire visible state through `shared/utils/battle.ts` and `run-loop/battle/presentation/ui/status-icons.tsx` under `src/features/alchemy/`. Reuse keyword metadata when appropriate; non-keyword statuses need their own display metadata. A new keyword follows [Add a new keyword](#add-a-new-keyword).
 
-Persisted status changes follow the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
+Verify the status's consequential application, expiry/removal, and current-format
+save/resume behavior. Persisted changes follow the
+[save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md);
+card effects also follow [Battle handlers](../src/lib/game-data/effects/BATTLE_HANDLERS.md#adding-a-kind).
 
 ---
 

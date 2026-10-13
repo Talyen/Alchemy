@@ -1,4 +1,3 @@
-import { consumeAttackBonuses } from "./effect-handlers/handler-types";
 import { applyShatter, applyWildfire, canInitiateElementalReaction, canShatter } from "./elemental-reactions";
 import { readCombatFlag } from "./action-context";
 import { scalePercent } from "./amount-helpers";
@@ -19,7 +18,7 @@ type DamageEffect = Extract<BattleCardEffect, { kind: "damage" }>;
 
 interface AttackPacket {
   packet: DamageEffect;
-  /** Flat amount the caller adds to the physical follow-up bonus. */
+  /** Opening joins a Physical hit or supplies a separate Physical follow-up. */
   physicalBonus: number;
   applyPartingCut: boolean;
 }
@@ -60,7 +59,7 @@ function applyAttackPacketFollowUps(
   result: BattleState,
   damageType: Extract<BattleCardEffect, { kind: "damage" }>["damageType"],
   modifiedDamage: number,
-  bonuses: { physical: number; bleed: number },
+  physicalBonus: number,
   viper: boolean,
   applyPartingCut: boolean,
   combatTexts: CombatTextEvent[],
@@ -89,21 +88,12 @@ function applyAttackPacketFollowUps(
       combatTexts,
     );
   }
-  if (modifiedDamage > 0 && result.enemyHealth > 0) {
-    if (damageType !== "physical" && bonuses.physical > 0) {
-      result = resolveFollowUpHit(
-        result,
-        { source: "player-follow-up", damageType: "physical", amount: bonuses.physical },
-        combatTexts,
-      );
-    }
-    if (damageType !== "bleed" && bonuses.bleed > 0) {
-      result = resolveFollowUpHit(
-        result,
-        { source: "player-follow-up", damageType: "bleed", amount: bonuses.bleed },
-        combatTexts,
-      );
-    }
+  if (modifiedDamage > 0 && result.enemyHealth > 0 && damageType !== "physical" && physicalBonus > 0) {
+    result = resolveFollowUpHit(
+      result,
+      { source: "player-follow-up", damageType: "physical", amount: physicalBonus },
+      combatTexts,
+    );
   }
   return result;
 }
@@ -126,13 +116,11 @@ export function dealDamageToEnemy(
   const captureDamageEffect = (packet: DamageEffect) =>
     context?.damageEffects?.push({ ...packet, amount: packet.amount + sequenceBonus });
   // Attempt-scoped bonuses precede Dodge; next-hit bonuses are spent only on contact.
-  const bonuses = consumeAttackBonuses(context);
+  const companionBonus = context?.companionAttackBonus?.amount ?? 0;
+  if (context?.companionAttackBonus) context.companionAttackBonus.amount = 0;
   const consumed = consumeAttackPacketFlags(state, resolvedEffect);
   const { packet, applyPartingCut } = consumed;
-  const baseDamageBonus =
-    bonuses.flat +
-    (packet.damageType === "physical" ? bonuses.physical + consumed.physicalBonus : 0) +
-    (packet.damageType === "bleed" ? bonuses.bleed : 0);
+  const baseDamageBonus = companionBonus + (packet.damageType === "physical" ? consumed.physicalBonus : 0);
   const armorSuppliesDamage =
     packet.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0 && state.enemyMitigation.armor > 0;
   if (
@@ -156,7 +144,6 @@ export function dealDamageToEnemy(
     reactionEligible && packet.damageType === "nature" && state.enemyStatuses.burn > 0 && !state.flags.wildfireUsed;
   const shatter = reactionEligible && packet.damageType === "physical" && canShatter(state);
   const damageState = shatter ? applyShatter(consumed.state, combatTexts) : consumed.state;
-  bonuses.physical += consumed.physicalBonus;
 
   // Resolve magnitude and defenses before riders, follow-up hits, then reactions.
   const { nextState, modifiedDamage, critical } = computeCardDamageToEnemy(damageState, packet, card, {
@@ -164,10 +151,7 @@ export function dealDamageToEnemy(
     enemyFreezeSkipTurnsAtStart: damageState.enemyCC.freezeSkipTurns,
     ...context,
     guaranteedCrit: shatter || context?.guaranteedCrit === true,
-    baseDamageBonus:
-      bonuses.flat +
-      (packet.damageType === "physical" ? bonuses.physical : 0) +
-      (packet.damageType === "bleed" ? bonuses.bleed : 0),
+    baseDamageBonus,
   });
   const viper =
     context?.origin === "played-card" &&
@@ -194,7 +178,7 @@ export function dealDamageToEnemy(
     result,
     packet.damageType,
     modifiedDamage,
-    bonuses,
+    consumed.physicalBonus,
     viper,
     applyPartingCut,
     combatTexts,

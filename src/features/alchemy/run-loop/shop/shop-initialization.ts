@@ -21,11 +21,7 @@ import {
   createInitialEquipmentShopState,
 } from "./shop-state-init";
 
-export function initializeShopVisit(
-  draft: RunTransaction,
-  kind: ShopKind,
-  gearAstralChanceBonus = draft.runProfile.effects.gearAstralChanceBonus,
-): void {
+export function initializeShopVisit(draft: RunTransaction, kind: ShopKind): void {
   const rng = createDraftRunRandomSource(draft, "shops");
   const modifiers = resolveDraftShopModifiers(draft);
   switch (kind) {
@@ -53,7 +49,7 @@ export function initializeShopVisit(
         createInitialEquipmentShopState(
           rng,
           resolveDraftLootProgress(draft),
-          gearAstralChanceBonus,
+          draft.runProfile.effects.gearAstralChanceBonus,
           getOwnedUniqueDefinitionIds(snapshotTransactionValue(draft.gear.inventories)),
           modifiers,
           createDraftInstanceIdSource(draft),
@@ -63,15 +59,7 @@ export function initializeShopVisit(
   }
 }
 
-export function createShopInitializer(
-  kind: ShopKind,
-  gameSession: GameSession,
-  gearAstralChanceBonus?: number,
-): () => void {
+export function createShopInitializer(kind: ShopKind, gameSession: GameSession): () => void {
   return () =>
-    dispatchRunSessionCommand(
-      (draft) => acceptCommand(initializeShopVisit(draft, kind, gearAstralChanceBonus)),
-      undefined,
-      gameSession,
-    );
+    dispatchRunSessionCommand((draft) => acceptCommand(initializeShopVisit(draft, kind)), undefined, gameSession);
 }

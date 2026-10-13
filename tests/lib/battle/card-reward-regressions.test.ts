@@ -27,26 +27,6 @@ describe("card reward interactions", () => {
     expect(result.mana).toBe(4);
   });
 
-  it("Photosynthesis heals for an automatically played Nature card", () => {
-    const nature = makeTestCard({ effects: [{ kind: "damage", damageType: "nature", amount: 2 }] });
-    const result = applyEnemyAbility(
-      incomingPhysical({
-        rng: (() => {
-          let calls = 0;
-          return () => (++calls <= 2 ? 0.01 : 0.99);
-        })(),
-        deck: [nature],
-        playerHealth: 50,
-        gearEffects: { dodgeDrawAndPlay: 1 },
-        talentEffects: { healOnNatureCard: 1 },
-      }),
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
-      [],
-    );
-    expect(result.enemyHealth).toBe(98);
-    expect(result.playerHealth).toBe(51);
-  });
-
   it("Mortar and Pestle deals Poison for an automatically used Potion", () => {
     const result = applyEnemyAbility(
       incomingPhysical({

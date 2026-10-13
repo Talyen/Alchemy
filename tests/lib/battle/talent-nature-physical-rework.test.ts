@@ -53,7 +53,7 @@ describe("Nature and Physical Talent reworks", () => {
       enemyHealth: 100,
       enemyMaxHealth: 100,
       rng: () => 0.99,
-      talentEffects: { ...defaultTalentEffects, natureCardPlayTwiceChance: 100, blockOnNatureCard: 1 },
+      talentEffects: { ...defaultTalentEffects, natureCardPlayTwiceChance: 100 },
     });
 
     const result = playBattleCardResolved(state, card.id, 0).state;
@@ -61,7 +61,6 @@ describe("Nature and Physical Talent reworks", () => {
     expect(result.enemyHealth).toBe(96);
     expect(result.mana).toBe(0);
     expect(result.exhausted).toHaveLength(1);
-    expect(result.playerStatuses.block).toBe(1);
   });
 
   it("applies Nature reward riders from resolved packet damage before Health overkill capping", () => {
