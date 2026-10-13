@@ -23,6 +23,10 @@ For direct build, packaging, App ID synchronization, and upload commands, keep
 `ALCHEMY_EDITION` consistent. The [edition contract](./STEAM_DEMO.md#edition-contract)
 owns output directories and Steam targets; release CI handles both editions separately.
 
+Publishing jobs share one Steam concurrency group across release tags, with
+`queue: max` and `cancel-in-progress: false`, so uploads cannot overlap or interrupt
+an active delivery. Build and test jobs can still run independently across tags.
+
 ## Changelog (release-time only)
 
 Commit with [Conventional Commits](https://www.conventionalcommits.org/).
