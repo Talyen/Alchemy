@@ -311,20 +311,31 @@ drains an in-flight upload before removing mirrors so it cannot resurrect a save
 `buildAlchemySaveDataFromStores(session)` owns complete snapshot construction.
 It derives the active activity and permanent fields from the current session,
 then detaches the whole payload; callers cannot supply a stale run or omit a
-live one. `ProgressCompletion` retains snapshot revision/epoch receipts for the
-session, and the shared `io.ts` write seam acknowledges them for ordinary and
-exit writes. Autosave, Gear flushes, and run-end flushes use that same seam.
-A snapshot can be written through another adapter for the same session without
-losing its receipt. Receipts bind the captured contents to their revision and epoch;
-the IO seam validates those contents at submission, before asynchronous writing.
-Editing a captured snapshot makes that submission an external write: it may save,
-but cannot acknowledge live gameplay. Each queued submission owns its completion.
-A coalesced-away submission returns `superseded`, never the replacement payload's
-outcome. Autosave retains that unsaved work for retry; replacement neither clears
-an existing storage failure nor reports a new one. `skipped` remains reserved for
-storage cancellation or unavailability. Only a snapshot actually written can
-acknowledge its captured revision. Imported or externally constructed payloads
-have no receipt. Save receipts never enter the wire format.
+live one. `SessionSaveSnapshots` owns session-local snapshot provenance and submission
+ordering; `ProgressCompletion` owns player-action acknowledgement. The shared
+`io.ts` seam admits only unchanged snapshots captured by that session. Imported
+or externally constructed payloads must go through restore, then snapshot; they
+cannot write over a live career directly. Autosave, Gear flushes, run-end flushes,
+and exit saves use that same boundary.
+
+A snapshot can be written through another adapter for the same session. Each
+receipt binds its contents, career generation, gameplay revision, and capture
+sequence. Capture sequence orders settings-only snapshots as well as gameplay.
+A submission older than the newest admitted snapshot returns `superseded` without
+writing; a snapshot retained across restore, clear, backend replacement, or write
+protection returns `skipped`. Foreign or edited payloads return `failed` before
+storage. Validation runs both at admission and inside the storage lane, so queued
+snapshots cannot revive a replaced career. An already executing backend write
+cannot be recalled; replacement saves follow it through the serialized lane.
+
+Each queued submission owns its completion. A coalesced-away submission returns
+`superseded`, never the replacement payload's outcome. Autosave retains unsaved
+work for retry; supersession neither clears an existing storage failure nor
+reports a new one. Only an actually written, current snapshot can acknowledge
+its captured revision. Detaching an autosave owner or disposing a session cancels
+feedback acknowledgement but still drains authorized exit writes. Save receipts
+never enter the wire format. Low-level transport tests use the storage runtime
+directly to exercise arbitrary payloads below this session boundary.
 
 `run-resume-codec.ts` translates `RunSession` and `ActiveRunData`. The encoder selects
 progress, mode geography, and one tagged `activity`; the decoder hydrates that

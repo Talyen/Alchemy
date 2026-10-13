@@ -11,7 +11,6 @@ export class ProgressCompletion {
   private epoch = 0;
   private restoreVersion = 0;
   private acknowledged = -1;
-  private snapshots = new WeakMap<object, { epoch: number; revision: number; contents: string }>();
   private listeners = new Set<() => void>();
   private restoreListeners = new Set<() => void>();
   private completions: Array<() => void> = [];
@@ -48,23 +47,6 @@ export class ProgressCompletion {
 
   token(revision: number) {
     return { epoch: this.epoch, revision };
-  }
-
-  captureSnapshot<T extends object>(snapshot: T, revision: number): T {
-    this.snapshots.set(snapshot, { ...this.token(revision), contents: JSON.stringify(snapshot) });
-    return snapshot;
-  }
-
-  /** Validate at submission, before callers can mutate the object during IO. */
-  prepareSnapshotWrite(snapshot: object): (outcome: SaveWriteOutcome) => SaveWriteOutcome {
-    const receipt = this.snapshots.get(snapshot);
-    let token: { epoch: number; revision: number } | undefined;
-    try {
-      if (receipt && receipt.contents === JSON.stringify(snapshot)) token = receipt;
-    } catch {
-      // Invalid external payloads still follow the storage failure path.
-    }
-    return (outcome) => (token ? this.complete(token, outcome) : outcome);
   }
 
   complete(token: { epoch: number; revision: number }, outcome: SaveWriteOutcome) {

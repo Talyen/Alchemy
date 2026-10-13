@@ -1,5 +1,6 @@
+import { writeStoragePayload } from "../../../../helpers/storage-payload-writes";
 import { savedActivityFixture, savedActivityData } from "../../../../fixtures/run-activity";
-import { loadAlchemySaveState, saveAlchemySaveData } from "@/features/alchemy/shared/storage";
+import { loadAlchemySaveState } from "@/features/alchemy/shared/storage";
 import { defaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { configureSaveBackend } from "@/features/alchemy/shared/storage/io";
 import { SAVE_KEY } from "@/lib/game-constants";
@@ -95,7 +96,7 @@ describe("storage io", () => {
 
     expect(loaded.status.kind).toBe("unavailable");
     expect(loaded.data).toEqual(defaultSaveData);
-    expect(await saveAlchemySaveData(defaultSaveData, defaultGameSession)).toBe("saved");
+    expect(await writeStoragePayload(defaultSaveData, defaultGameSession)).toBe("saved");
     expect(write).toHaveBeenCalledWith(SAVE_RECOVERY_KEY, expect.any(String));
   });
 
@@ -179,7 +180,7 @@ describe("storage io", () => {
     expect(loaded.data.gold).toBe(42);
     expect(loaded.data.materialInventory).toEqual({ ...emptyInventory(), wood: 4, iron: 2 });
 
-    await saveAlchemySaveData(loaded.data, defaultGameSession);
+    await writeStoragePayload(loaded.data, defaultGameSession);
     const reloaded = JSON.parse(mockStorage[SAVE_KEY]);
     expect(reloaded.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
     expect(reloaded.discoveredCardIds).toEqual(["slash", "block", "bash"]);
@@ -240,7 +241,7 @@ describe("storage io", () => {
     expect(loaded.status.kind).toBe("ok");
     expect(loaded.status.kind === "ok" ? loaded.status.warnings : []).toContain("active run could not be restored");
 
-    await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] }, defaultGameSession);
+    await writeStoragePayload({ ...defaultSaveData, discoveredCardIds: ["slash"] }, defaultGameSession);
     expect(JSON.parse(mockStorage[SAVE_KEY]).discoveredCardIds).toEqual(["slash"]);
     expect(JSON.parse(mockStorage[SAVE_KEY]).activeRun).toBeNull();
   });
@@ -281,7 +282,7 @@ describe("storage io", () => {
 
     expect(loaded.data).toEqual(defaultSaveData);
     expect(loaded.status).toEqual(expectedStatus);
-    await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] }, defaultGameSession);
+    await writeStoragePayload({ ...defaultSaveData, discoveredCardIds: ["slash"] }, defaultGameSession);
     expect(mockStorage[SAVE_KEY]).toBe(payload);
     expect(JSON.parse(mockStorage[SAVE_RECOVERY_KEY]).discoveredCardIds).toEqual(["slash"]);
   });
@@ -291,7 +292,7 @@ describe("storage io", () => {
     mockStorage[SAVE_KEY] = newerPrimary;
 
     expect((await loadAlchemySaveState(defaultGameSession)).status.kind).toBe("unsupported-newer-schema");
-    expect(await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] }, defaultGameSession)).toBe(
+    expect(await writeStoragePayload({ ...defaultSaveData, discoveredCardIds: ["slash"] }, defaultGameSession)).toBe(
       "saved",
     );
 
@@ -311,7 +312,7 @@ describe("storage io", () => {
 
       expect(loaded.status.kind).toBe("ok");
       expect(loaded.data.lastSavedAt).toBe(1000);
-      await saveAlchemySaveData(loaded.data, defaultGameSession);
+      await writeStoragePayload(loaded.data, defaultGameSession);
       expect(writeSave).toHaveBeenCalledWith(expect.any(String), "recovery");
       expect(writeSave).not.toHaveBeenCalledWith(expect.any(String), undefined);
     },
@@ -327,7 +328,7 @@ describe("storage io", () => {
 
     expect(loaded.status.kind).toBe("ok");
     expect(loaded.data.lastSavedAt).toBe(1000);
-    await saveAlchemySaveData(loaded.data, defaultGameSession);
+    await writeStoragePayload(loaded.data, defaultGameSession);
     expect(writeSave).toHaveBeenCalledWith(expect.any(String), "recovery");
   });
 
@@ -340,7 +341,7 @@ describe("storage io", () => {
 
     expect(loaded.status.kind).toBe("ok");
     expect(loaded.data.discoveredCardIds).toEqual(["slash"]);
-    await saveAlchemySaveData(loaded.data, defaultGameSession);
+    await writeStoragePayload(loaded.data, defaultGameSession);
     expect(writeSave).toHaveBeenCalledOnce();
   });
 

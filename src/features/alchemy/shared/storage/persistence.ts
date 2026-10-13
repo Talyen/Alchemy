@@ -56,7 +56,7 @@ export function buildAlchemySaveDataFromStores(gameSession: GameSession): Unstam
       ...encodePersistenceFields(gameSession),
       activeRun,
     });
-    return runtime.progressCompletion.captureSnapshot(save, state.revision);
+    return runtime.saveSnapshots.capture(save, state.revision);
   } catch (error) {
     runtime.progressCompletion.complete(token, "failed");
     throw error;
