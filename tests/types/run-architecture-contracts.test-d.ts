@@ -226,7 +226,7 @@ describe("run architecture type contracts", () => {
       },
       defaultGameSession,
     );
-    const command = createRunSessionCommand(
+    const command = createRunSessionCommand<[gold: number, label: string], { gold: number; label: string }>(
       (_draft, gold: number, label: string) => acceptCommand({ gold, label }),
       undefined,
       defaultGameSession,
