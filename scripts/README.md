@@ -138,6 +138,8 @@ run `npm run predev` first when using that command. Desktop development runs
 the same preparation and adds Steam App ID synchronization.
 Vite and Electron share a lifetime: exiting either process stops the other,
 and the first exit determines the command's status.
+Desktop startup waits for a successful HTTP response and releases the readiness
+response body before launching Electron.
 
 ## Cleanup (`clean` = explicit reset, `prune:transient` = expiry)
 

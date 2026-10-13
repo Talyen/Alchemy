@@ -38,8 +38,12 @@ jobs:
         with:
           filters: |
             desktop:
+              - ".node-version"
+              - ".npmrc"
               - "game-edition.mjs"
               - "scripts/build-verified.mjs"
+              - "scripts/check-bundle-budget.mjs"
+              - "scripts/lib/verification/bundle-budget.mjs"
               - "scripts/lib/command-invocation.mjs"
               - "scripts/lib/run-command.mjs"
               - "scripts/lib/script-run.mjs"
@@ -71,8 +75,12 @@ jobs:
               - "scripts/smoke-desktop*"
               - "scripts/sync-steam-appid*"
             desktop_renderer:
+              - ".node-version"
+              - ".npmrc"
               - "game-edition.mjs"
               - "scripts/build-verified.mjs"
+              - "scripts/check-bundle-budget.mjs"
+              - "scripts/lib/verification/bundle-budget.mjs"
               - "scripts/lib/command-invocation.mjs"
               - "scripts/lib/run-command.mjs"
               - "scripts/lib/script-run.mjs"
@@ -131,6 +139,8 @@ jobs:
               - "scripts/lib/release/release-checks.mjs"
               - "scripts/smoke-desktop*"
             assets:
+              - ".node-version"
+              - ".npmrc"
               - ".github/**"
               - "package.json"
               - "package-lock.json"
