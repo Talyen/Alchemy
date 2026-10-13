@@ -51,7 +51,7 @@ Wildwood post-entry progression belongs to
 between Campaign, Labyrinth, and Wildwood are covered by the [content-system
 workflow](./WORKFLOWS.md#content-system-behavior).
 
-The main menu offers Continue when a run is unfinished, otherwise Play. Continue delegates to `content-system-navigation.resumeRun` through route props. A requested mode cannot replace an active run. End Run in the existing red menu action cancels pending battle/navigation work, finalizes earned progression once, clears the current run, and always shows the End Run screen without confirmation; Main Menu on that recap returns to the menu. Ordinary defeat and victory retain their outcome screens. Drafting belongs to the active run; finishing its starter draft is the only supported re-application of a start snapshot. Domain commands own the activity's resume location; display navigation, including Menu/meta visits, never replaces it. Run-start and progression commands establish their next activity before presentation begins. There are no parked slots or recency fields.
+The main menu offers Continue when a run is unfinished, otherwise Play. Continue delegates to `content-system-navigation.resumeRun` through route props. A requested mode cannot replace an active run. End Run in the existing red menu action cancels pending battle/navigation work, finalizes earned progression once, clears the current run, and always shows Journey’s End without confirmation; continuation follows the [run recap UI](./UI_BROWSING.md#run-journey-recap), including earned hero unlocks. Ordinary defeat and victory retain their outcome screens. Drafting belongs to the active run; finishing its starter draft is the only supported re-application of a start snapshot. Domain commands own the activity's resume location; display navigation, including Menu/meta visits, never replaces it. Run-start and progression commands establish their next activity before presentation begins. There are no parked slots or recency fields.
 
 Destination offer construction is pure in `shared/run-flow/destination-flow.ts`.
 Callers supply offer history, boss ID, and command-bound RNG; destination
@@ -80,8 +80,14 @@ that base update without restarting the full healing reaction chain. Import
 `battle/combat-text-events.ts` for text aggregation and `battle/enemy-healing.ts`
 for enemy healing. Combat text is feedback, not a gameplay rule owner.
 
-- **Card play:** UI → `useBattleController.playCard()` → `commitCardPlay()` → `resolveBattleAction(snapshot, card, context)` → committed snapshot and combat feedback.
-- **Enemy turn:** `commitEndTurn()` → `resolveBattleAction(snapshot, end-turn, context)` → committed result and XP → `playTurnFrames()` for presentation only.
+- **Card play:** UI → `useBattleController`'s `handleCardClick` → bound `battle.playCard` capability → `commitCardPlay` → committed snapshot and combat feedback.
+- **Wish choice:** UI → `handleWishChoice` → bound `battle.chooseWish` capability → `commitBattleWish` → committed chosen card and remaining Wish queue.
+- **End Turn:** UI → `handleEndTurn` → bound `battle.endTurn` capability → `commitEndTurn` → committed result and XP → `playTurnFrames` for presentation only.
+
+Those store commands call `resolveBattleAction(snapshot, action, context)` with
+the typed `BattleAction` request from `battle/battle-actions.ts`: `card` carries
+`cardId`, `index`, and optional play options; `wish` carries `cardId`; `end-turn`
+may carry a simulation turn budget. The context supplies command-bound world RNG.
 
 `resolveBattleAction` in `battle/battle-actions.ts` owns acceptance and resolution
 for Card, Wish, and end-turn requests in both live commands and simulation. Its

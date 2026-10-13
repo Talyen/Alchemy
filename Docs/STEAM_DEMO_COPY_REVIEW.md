@@ -3,50 +3,23 @@
 Status: **Menu, recap, marketing, and lock revisions approved; other notices pending**.
 This review records the current implementation and the remaining copy approvals.
 
-## Approved menu, recap, and marketing copy
+Approved menu, recap, marketing, and lock behavior is owned by
+[Steam demo](./STEAM_DEMO.md). Keep this review only while the approvals below
+remain open; move any enduring decision into its owner when resolved.
 
-These revisions were approved in the implementation request. The application
-name and notices below remain pending separate copy approval.
-
-| Location                                    | Current copy                                                      |
-| ------------------------------------------- | ----------------------------------------------------------------- |
-| Packaged application name, pending approval | `Alchemy Demo`                                                    |
-| Main menu                                   | No edition label; `Wishlist on Steam` appears above Play/Continue |
-| Earned-reward recap                         | `Victory`, no subtitle; action `Continue`                         |
-| Standalone marketing screen header          | `The Journey Continues`                                           |
-| Marketing actions                           | `Wishlist on Steam` and `Main Menu`                               |
-| Marketing image                             | User-supplied Unlock Full Game Demo Promo.jpg                     |
-| Excluded mode and hero labels               | Their ordinary names, with no full-game suffix or extra label     |
-| Edition-locked tooltip requirement          | `Requires Full Game`, bold and red                                |
-
-Existing earned-hero unlock instructions, ordinary defeat copy, resource labels,
-and Collection discoveries are preserved. The menu edition label, previous
-`Demo Complete` heading and promotional paragraph, Feedback & Support, and Controls
-instructions in Options have been removed.
-
-Sources: [menu](../src/features/alchemy/meta/screens/menu-screen.tsx),
-[run-end route](../src/app/screen-routes/run-end-routes.tsx),
-[marketing screen](../src/features/alchemy/run-loop/screens/demo-completion-screen.tsx),
-[edition policy](../src/lib/game-edition.ts),
-[mode selection](../src/features/alchemy/meta/screens/game-mode-select-screen.tsx),
-and [hero tooltip](../src/features/alchemy/shared/ui/tooltips/hero-tooltip.tsx).
-
-## Other newly added player-facing notices
+## Pending copy approvals
 
 | Location                                                      | Exact current copy                                                                     |
 | ------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Packaged application name                                     | `Alchemy Demo`                                                                         |
 | Full-game startup after successful demo progress import       | `Your earned demo progress has been imported. Start a new adventure in the full game.` |
 | Import notice action                                          | `Dismiss`                                                                              |
 | Pending local save, either edition                            | `Saving…`                                                                              |
 | Failed local primary and recovery save writes, either edition | `Couldn’t save`                                                                        |
 | Failed-save action                                            | `Retry`                                                                                |
 
-Sources: [import notice](../src/App.tsx) and
+Sources: [application identity](../game-edition.mjs), [import notice](../src/App.tsx) and
 [save-write notice](../src/app/save-write-notice.tsx).
-
-The Options reset instruction uses the user's requested wording:
-`Reset all options to default values`. Other Options explanatory text has had its
-sentence-ending periods removed.
 
 ## Current wishlist flow
 
@@ -66,20 +39,10 @@ availability limits and required Steam validation are recorded in
 [Steam demo](./STEAM_DEMO.md#input-and-release-evidence); a successful request alone
 does not prove that Steam displayed the destination.
 
-## Local screen captures
-
-Production demo screenshots were captured under `reports/demo-copy-review/` in an
-isolated temporary Electron profile: `menu.png`, `modes.png`, `heroes.png`,
-`recap.png`, and `completion.png`. These ignored review artifacts follow
-[transient-artifact cleanup](../scripts/README.md#cleanup-clean--explicit-reset-prunetransient--expiry)
-and may have expired. The recap uses a seeded Act 1
-boss test run through the normal combat, reward, and settlement flow; reward
-quantities are illustrative rather than a representative balance sample.
-
 ## Selected user-supplied promo image
 
 The user selected `2d Assets/Game Sources/Branding/Marketing/Unlock Full Game Demo Promo.jpg` as the
-in-game marketing artwork. It was moved unchanged from Downloads. Its native
+in-game marketing artwork. Its native
 dimensions are 2752×1536, slightly wider than exact 16:9. The screen preserves
 the full image and its native ratio with proportional containment at the largest
 size fitting between the heading and action row; it never crops or stretches.
