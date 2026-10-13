@@ -3,7 +3,6 @@ import { applyEffectByKind } from "@/lib/battle/effect-handlers/registry";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { MIN_MAX_MANA_FLOOR } from "@/lib/game-constants";
 import { makeCombatTexts as makeTexts, makeTestCard, patchBattleState } from "../../fixtures/battle";
-import { defaultTrinketManifest } from "../../fixtures/default-battle-state";
 
 const manaCard = makeTestCard({ id: "mana-test", effects: [] });
 
@@ -96,7 +95,7 @@ describe("applyEffectByKind (mana effects)", () => {
       enemyHealth: 2,
       talentEffects: { burnDamageOnManaCrystalLoss: 3 },
       gearEffects: { goldOnKill: 4 },
-      trinketEffects: defaultTrinketManifest({ boneCharmHealOnKill: 2 }),
+      trinketEffects: { boneCharmHealOnKill: 2 },
     });
     const texts = makeTexts();
     const effect = { kind: "lose-max-mana" as const, amount: 1 };

@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { defaultTalentEffects } from "@/lib/battle";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { applyDodgeTalentStatuses } from "@/lib/battle/dodge-talent-rewards";
 import { computeTalentEffects } from "@/lib/game-data";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
-import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
 
 describe("gameplay five bugs round 3", () => {
   describe("1. Clean Getaway triggers cleanse rewards once per Dodge", () => {
@@ -12,8 +10,8 @@ describe("gameplay five bugs round 3", () => {
       const state = patchBattleState({
         playerHealth: 50,
         playerMaxHealth: 100,
-        playerStatuses: defaultPlayerStatusValues({ burn: 1, bleed: 1, poison: 1 }),
-        talentEffects: { ...defaultTalentEffects, cleanseStacksOnDodge: 5 },
+        playerStatuses: { burn: 1, bleed: 1, poison: 1 },
+        talentEffects: { cleanseStacksOnDodge: 5 },
         gearEffects: { blockOnCleanse: 3 },
         rng: () => 0.99,
       });
@@ -30,8 +28,8 @@ describe("gameplay five bugs round 3", () => {
     it("grants manaOnCleanse once even when multiple statuses reach zero", () => {
       const state = patchBattleState({
         mana: 1,
-        playerStatuses: defaultPlayerStatusValues({ burn: 2, poison: 2 }),
-        talentEffects: { ...defaultTalentEffects, cleanseStacksOnDodge: 5 },
+        playerStatuses: { burn: 2, poison: 2 },
+        talentEffects: { cleanseStacksOnDodge: 5 },
         gearEffects: { manaOnCleanse: 2 },
         rng: () => 0.99,
       });
@@ -53,7 +51,7 @@ describe("gameplay five bugs round 3", () => {
         enemyMaxHealth: 100,
         enemyMitigation: { armor: 5 },
         rng: () => 0.99,
-        talentEffects: { ...defaultTalentEffects, naturePoisonChance: 100 },
+        talentEffects: { naturePoisonChance: 100 },
       });
       const effect = { kind: "damage" as const, damageType: "nature" as const, amount: 10 };
 
@@ -71,7 +69,7 @@ describe("gameplay five bugs round 3", () => {
         enemyHealth: 3,
         enemyMaxHealth: 100,
         rng: () => 0.99,
-        talentEffects: { ...defaultTalentEffects, naturePoisonChance: 100 },
+        talentEffects: { naturePoisonChance: 100 },
       });
       const effect = { kind: "damage" as const, damageType: "nature" as const, amount: 10 };
 
@@ -131,7 +129,7 @@ describe("gameplay five bugs round 3", () => {
         enemyMaxHealth: 100,
         enemyMitigation: { armor: 5 },
         rng: () => 0.99,
-        talentEffects: { ...defaultTalentEffects, natureBleedChance: 100 },
+        talentEffects: { natureBleedChance: 100 },
       });
       const effect = { kind: "damage" as const, damageType: "nature" as const, amount: 10 };
 
@@ -149,7 +147,7 @@ describe("gameplay five bugs round 3", () => {
         enemyHealth: 3,
         enemyMaxHealth: 100,
         rng: () => 0.99,
-        talentEffects: { ...defaultTalentEffects, natureBleedChance: 100 },
+        talentEffects: { natureBleedChance: 100 },
       });
       const effect = { kind: "damage" as const, damageType: "nature" as const, amount: 10 };
 

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { patchBattleState } from "../../fixtures/battle";
-import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
 import { applyPlayerCombatDamage, playerHealthLostToDamage } from "@/lib/battle/health-state";
 import { DEATHS_DOOR_GRACE_TURNS } from "@/lib/game-constants";
 
@@ -128,7 +127,7 @@ describe("applyPlayerCombatDamage", () => {
     const state = patchBattleState({
       playerHealth: 5,
       playerMaxHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ phoenixFeather: 1 }),
+      playerStatuses: { phoenixFeather: 1 },
     });
     const result = applyPlayerCombatDamage(state, 20, "hostile");
     expect(result.playerHealth).toBe(9);

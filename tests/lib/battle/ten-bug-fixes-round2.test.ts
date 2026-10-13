@@ -8,7 +8,6 @@ import { SIMPLE_HANDLERS } from "@/lib/battle/effect-handlers/simple-handlers";
 import { applyCardHitReactions } from "@/lib/battle/card-hit-reactions";
 import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
 import { applyDodgeTalentStatuses } from "@/lib/battle/dodge-talent-rewards";
-import { defaultTalentEffects } from "@/lib/battle";
 import { cardById, type BattleCard } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
@@ -56,7 +55,7 @@ describe("Combat feedback and reward regressions", () => {
     it("emits armor damage combat text when poisonStripArmor removes enemy armor", () => {
       const state = patchBattleState({
         enemyMitigation: { armor: 3 },
-        talentEffects: { ...defaultTalentEffects, poisonStripArmor: true },
+        talentEffects: { poisonStripArmor: true },
       });
       const combatTexts: CombatTextEvent[] = [];
       const next = applyPoisonTalentRiders(state, 5, combatTexts);
@@ -75,7 +74,7 @@ describe("Combat feedback and reward regressions", () => {
       const state = patchBattleState({
         playerStatuses: { block: 4 },
         enemyMitigation: { armor: 5 },
-        talentEffects: { ...defaultTalentEffects, physicalStripArmorWhileBlocked: true },
+        talentEffects: { physicalStripArmorWhileBlocked: true },
       });
       const combatTexts: CombatTextEvent[] = [];
       const next = applyDamageStatuses(state, { kind: "damage", damageType: "physical", amount: 6 }, 6, combatTexts);
@@ -126,7 +125,7 @@ describe("Combat feedback and reward regressions", () => {
         mana: 3,
         maxMana: 3,
         playerStatuses: { haste: 1 },
-        talentEffects: { ...defaultTalentEffects, wellspringKeepMana: 2 },
+        talentEffects: { wellspringKeepMana: 2 },
       });
       const resolution = endPlayerTurn(state);
 
@@ -199,7 +198,7 @@ describe("Combat feedback and reward regressions", () => {
       const state = patchBattleState({
         enemyHealth: 50,
         enemyCC: { freezeSkipTurns: 2, stunSkipTurns: 0, cooldown: 0 },
-        talentEffects: { ...defaultTalentEffects, companionFreezeDamageVsFrozen: 0 },
+        talentEffects: { companionFreezeDamageVsFrozen: 0 },
       });
       const combatTexts: CombatTextEvent[] = [];
       const testCard = makeTestCard();
@@ -233,7 +232,7 @@ describe("Combat feedback and reward regressions", () => {
       const state = patchBattleState({
         enemyHealth: 50,
         enemyCC: { freezeSkipTurns: 2, stunSkipTurns: 0, cooldown: 0 },
-        talentEffects: { ...defaultTalentEffects, companionFreezeDamageVsFrozen: 4 },
+        talentEffects: { companionFreezeDamageVsFrozen: 4 },
       });
       const combatTexts: CombatTextEvent[] = [];
       const testCard = makeTestCard();
@@ -302,7 +301,7 @@ describe("Combat feedback and reward regressions", () => {
     it("does not dispatch follow-up burn hit when burnOnDodgeBurning is 0 against burning enemy", () => {
       const state = patchBattleState({
         enemyStatuses: { burn: 5 },
-        talentEffects: { ...defaultTalentEffects, burnOnDodgeBurning: 0 },
+        talentEffects: { burnOnDodgeBurning: 0 },
         enemyHealth: 50,
       });
       const combatTexts: CombatTextEvent[] = [];
@@ -316,7 +315,7 @@ describe("Combat feedback and reward regressions", () => {
     it("dispatches follow-up burn hit when burnOnDodgeBurning > 0 against burning enemy", () => {
       const state = patchBattleState({
         enemyStatuses: { burn: 5 },
-        talentEffects: { ...defaultTalentEffects, burnOnDodgeBurning: 3 },
+        talentEffects: { burnOnDodgeBurning: 3 },
         enemyHealth: 50,
       });
       const combatTexts: CombatTextEvent[] = [];

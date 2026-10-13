@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-
 import {
   addGoldWithCombatText,
   gainManaWithCombatText,
@@ -38,7 +37,7 @@ describe("applyHealingWithCombatText", () => {
     const state = patchBattleState({
       playerHealth: 10,
       playerMaxHealth: 30,
-      trinketEffects: defaultTrinketManifest({ grovesFavorThornsOnHealthRestore: 1 }),
+      trinketEffects: { grovesFavorThornsOnHealthRestore: 1 },
     });
     const texts = makeTexts();
 
@@ -52,7 +51,7 @@ describe("applyHealingWithCombatText", () => {
 
   it("does not grant Grove's Favor Thorns or Overflow Block for passive overhealing", () => {
     const state = patchBattleState({
-      trinketEffects: defaultTrinketManifest({ grovesFavorThornsOnHealthRestore: 1 }),
+      trinketEffects: { grovesFavorThornsOnHealthRestore: 1 },
       talentEffects: { overhealToBlockRatio: 1 },
     });
     const texts = makeTexts();
@@ -67,7 +66,7 @@ describe("applyHealingWithCombatText", () => {
 
   it("grants Ironwood Buckler Thorns once for each positive Block gain", () => {
     const state = patchBattleState({
-      trinketEffects: defaultTrinketManifest({ ironwoodBucklerThornsOnBlock: 1 }),
+      trinketEffects: { ironwoodBucklerThornsOnBlock: 1 },
     });
     const texts = makeTexts();
 
