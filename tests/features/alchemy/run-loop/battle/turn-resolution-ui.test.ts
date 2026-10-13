@@ -1,14 +1,14 @@
 import "../../../../helpers/mock-audio";
-
-import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
+import {
+  mutateGameplayForTest,
+  initializeBattleForTest as initializeActiveBattle,
+  resetRunDomainStore,
+} from "../../../../helpers/run-domain-store-test";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { beforeEach, describe, expect, it } from "vitest";
 import { resolveBattleTurn } from "@/lib/battle";
 import { companionLibrary } from "@/lib/game-data";
 import { commitEndTurn } from "@/features/alchemy/run-loop/battle/battle-session";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
-
-import { resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
 import { patchBattleState, slashDeck, seededRng } from "../../../../fixtures/battle";
 import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
@@ -51,13 +51,8 @@ describe("resolved turns", () => {
   });
 
   it("commits a Haste turn without leaving a logical continuation for its draw animation", () => {
-    dispatchGameplayCommand(
-      (draft) =>
-        acceptCommand(
-          initializeActiveBattle(draft, patchBattleState({ playerStatuses: { haste: 1 }, deck: slashDeck(8) })),
-        ),
-      undefined,
-      defaultGameSession,
+    mutateGameplayForTest((draft) =>
+      initializeActiveBattle(draft, patchBattleState({ playerStatuses: { haste: 1 }, deck: slashDeck(8) })),
     );
     const result = commitEndTurn(createBattleCapabilities(defaultGameSession));
     if (!result) throw new Error("Expected a committed turn");

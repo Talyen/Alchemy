@@ -1,10 +1,8 @@
 import "../../../helpers/mock-audio";
-
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/navigation/mystery-event-navigation";
-import { resetAllTestStores, setRunProgress } from "../../../helpers/run-domain-store-test";
+import { mutateRunForTest, resetAllTestStores, setRunProgress } from "../../../helpers/run-domain-store-test";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setMysteryCardChoices, setMysteryEvent } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { cardLibrary } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
@@ -32,7 +30,7 @@ describe("mystery transactional guards", () => {
       ["restful-discovery"],
       30,
     );
-    dispatchRunSessionCommand((draft) => acceptCommand(setMysteryEvent(draft, event)), undefined, defaultGameSession);
+    mutateRunForTest((draft) => setMysteryEvent(draft, event));
     const choice = readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryEvent!.choices[0]!;
     renderMysteryNav().hook.result.current.handleMysteryChoice(choice);
     expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(30);
@@ -49,15 +47,9 @@ describe("mystery transactional guards", () => {
     const { hook } = renderMysteryNav();
     const offered = cardLibrary.slice(0, 3);
     act(() => {
-      dispatchRunSessionCommand(
-        (draft) => {
-          setMysteryCardChoices(draft, offered);
-
-          return acceptCommand();
-        },
-        undefined,
-        defaultGameSession,
-      );
+      mutateRunForTest((draft) => {
+        setMysteryCardChoices(draft, offered);
+      });
     });
     const beforeDeck = readActiveRun(defaultGameSession).runDeck.length;
     let result: boolean | undefined;
@@ -75,15 +67,9 @@ describe("mystery transactional guards", () => {
     const offered = cardLibrary.slice(0, 3);
     const offeredId = offered[0].id;
     act(() => {
-      dispatchRunSessionCommand(
-        (draft) => {
-          setMysteryCardChoices(draft, offered);
-
-          return acceptCommand();
-        },
-        undefined,
-        defaultGameSession,
-      );
+      mutateRunForTest((draft) => {
+        setMysteryCardChoices(draft, offered);
+      });
     });
     let first: boolean | undefined;
     act(() => {

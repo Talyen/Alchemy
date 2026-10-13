@@ -4,13 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RewardsScreen } from "@/features/alchemy/run-loop/screens/rewards-screen";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { type BattleCard } from "@/lib/game-data";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import { resetRunSessionSlice } from "../../../../helpers/run-domain-store-test";
+import { mutateRunForTest, resetRunSessionSlice } from "../../../../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/app/application-session";
-
 import { installReadyArtworkForTests, waitForArtwork } from "../../../../helpers/artwork-test";
 
 const testCard: BattleCard = {
@@ -27,17 +25,12 @@ installReadyArtworkForTests();
 beforeEach(() => {
   useUiStore.setState({ hoveredCardId: null, shimmerState: null, plasmaInteraction: null });
   resetRunSessionSlice();
-  dispatchRunSessionCommand(
-    (draft) =>
-      acceptCommand(
-        setRewardState(draft, {
-          ...createEmptyRewardState(),
-          rewardType: "card",
-          choices: [testCard],
-        }),
-      ),
-    undefined,
-    defaultGameSession,
+  mutateRunForTest((draft) =>
+    setRewardState(draft, {
+      ...createEmptyRewardState(),
+      rewardType: "card",
+      choices: [testCard],
+    }),
   );
 });
 

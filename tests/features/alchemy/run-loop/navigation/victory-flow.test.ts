@@ -1,7 +1,13 @@
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
-import { setBattleActiveForTest, getBattleForTest } from "../../../../helpers/run-domain-store-test";
+import {
+  mutateGameplayForTest,
+  mutateRunForTest,
+  setBattleActiveForTest,
+  getBattleForTest,
+  resetRunDomainStore,
+  setRunProgress,
+} from "../../../../helpers/run-domain-store-test";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import { dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   computeVictoryRewardState,
@@ -20,10 +26,7 @@ import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import { createRunRngState, createRunStateRng } from "@/lib/rng";
 import type { Destination } from "@/lib/routing";
 import { sampleDestinationChoices } from "@/features/alchemy/shared/run-flow/destination-flow";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
-import { resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
-import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { commitVictoryRewards, type CommitVictoryRewardsDeps } from "@/features/alchemy/run-loop/run/victory-commands";
 import { defaultGameSession } from "@/app/application-session";
 beforeEach(() => resetRunDomainStore());
@@ -485,9 +488,7 @@ describe("computeVictoryRewards", () => {
 });
 
 describe("commitVictoryRewards", () => {
-  beforeEach(() =>
-    dispatchGameplayCommand((draft) => acceptCommand(getBattleForTest(draft)), undefined, defaultGameSession),
-  );
+  beforeEach(() => mutateGameplayForTest((draft) => getBattleForTest(draft)));
   function victoryResult(overrides: Partial<VictoryRewardsResult> = {}): VictoryRewardsResult {
     return {
       goldEarned: 20,
@@ -510,11 +511,7 @@ describe("commitVictoryRewards", () => {
   }
 
   function commit(result: VictoryRewardsResult = victoryResult(), deps = commitDeps()) {
-    return dispatchRunSessionCommand(
-      (draft) => acceptCommand(commitVictoryRewards(draft, result, deps, testRng)),
-      undefined,
-      defaultGameSession,
-    );
+    return mutateRunForTest((draft) => commitVictoryRewards(draft, result, deps, testRng));
   }
 
   it("applies max health before writing healed player health", () => {
@@ -532,17 +529,12 @@ describe("commitVictoryRewards", () => {
 
   it.each(["campaign", "wildwood"] as const)("settles committed pending Gems once for %s", (contentSystemType) => {
     const materials = { ...emptyInventory(), gems: 2 };
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.session.activity = { kind: "idle" };
-        draft.run.activeRun.contentSystemType = contentSystemType;
-        setBattleActiveForTest(draft, true);
-        getBattleForTest(draft).battleState.pendingMaterials = materials;
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      draft.session.activity = { kind: "idle" };
+      draft.run.activeRun.contentSystemType = contentSystemType;
+      setBattleActiveForTest(draft, true);
+      getBattleForTest(draft).battleState.pendingMaterials = materials;
+    });
     const deps = commitDeps({ contentSystemType });
     commit(victoryResult(), deps);
     expect(readGameplayState(defaultGameSession).runProfile.materialInventory.gems).toBe(2);

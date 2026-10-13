@@ -1,14 +1,17 @@
-import { setBattleActiveForTest, getBattleForTest } from "../helpers/run-domain-store-test";
+import {
+  mutateGameplayForTest,
+  setBattleActiveForTest,
+  getBattleForTest,
+  resetAllTestStores,
+} from "../helpers/run-domain-store-test";
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { isDeckInspectionVisible, useCardInspection } from "@/app/use-card-inspection";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { battlePresentation } from "@/app/battle-presentation";
 import { makeTestCard } from "../fixtures/battle";
 import { getEffectiveCardDescriptionLines } from "@/lib/game-data/card-description";
-import { resetAllTestStores } from "../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/app/application-session";
 
 const base = {
@@ -24,19 +27,13 @@ const base = {
 beforeEach(() => {
   resetAllTestStores();
   battlePresentation.getState().resetPresentation();
-  dispatchGameplayCommand(
-    (draft) => {
-      draft.session.activity = { kind: "idle" };
-      setBattleActiveForTest(draft, true);
-      getBattleForTest(draft).battleState.enemyHealth = 30;
-      getBattleForTest(draft).battleState.playerHealth = 30;
-      getBattleForTest(draft).battleState.turnPhase = "player";
-
-      return acceptCommand();
-    },
-    undefined,
-    defaultGameSession,
-  );
+  mutateGameplayForTest((draft) => {
+    draft.session.activity = { kind: "idle" };
+    setBattleActiveForTest(draft, true);
+    getBattleForTest(draft).battleState.enemyHealth = 30;
+    getBattleForTest(draft).battleState.playerHealth = 30;
+    getBattleForTest(draft).battleState.turnPhase = "player";
+  });
 });
 afterEach(cleanup);
 
@@ -46,29 +43,17 @@ describe("run card inspection", () => {
       effects: [{ kind: "summon-companion", companionId: "phoenix" }],
       descriptionLines: ["old", "Companion"],
     });
-    dispatchGameplayCommand(
-      (draft) => {
-        getBattleForTest(draft).battleState.gearEffects.companionDamageBonus = 4;
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      getBattleForTest(draft).battleState.gearEffects.companionDamageBonus = 4;
+    });
     const { result } = renderHook(() => useCardInspection(base));
     expect(getEffectiveCardDescriptionLines(summon, result.current.battleDescriptionContext!)[0]).toBe(
       "Deals 5 Burn damage each turn",
     );
     act(() =>
-      dispatchGameplayCommand(
-        (draft) => {
-          getBattleForTest(draft).battleState.gearEffects.companionDamageBonus = 8;
-
-          return acceptCommand();
-        },
-        undefined,
-        defaultGameSession,
-      ),
+      mutateGameplayForTest((draft) => {
+        getBattleForTest(draft).battleState.gearEffects.companionDamageBonus = 8;
+      }),
     );
     expect(getEffectiveCardDescriptionLines(summon, result.current.battleDescriptionContext!)[0]).toBe(
       "Deals 9 Burn damage each turn",
@@ -89,17 +74,11 @@ describe("run card inspection", () => {
     const consumed = makeTestCard({ id: "apple", uid: 1, consume: true });
     const drawn = makeTestCard({ id: "slash", uid: 2 });
     const generated = makeTestCard({ id: "block", uid: 3 });
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.run.activeRun.runDeck = [consumed, drawn];
-        getBattleForTest(draft).battleState.deck = [drawn];
-        getBattleForTest(draft).battleState.discard = [generated];
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      draft.run.activeRun.runDeck = [consumed, drawn];
+      getBattleForTest(draft).battleState.deck = [drawn];
+      getBattleForTest(draft).battleState.discard = [generated];
+    });
     const before = readGameplayState(defaultGameSession);
     const { result } = renderHook(() => useCardInspection(base));
     act(() => result.current.onOpen("discard"));
@@ -114,20 +93,14 @@ describe("run card inspection", () => {
   });
 
   it.each(["enemy", "wish", "transfer", "dead", "card-play"])("rejects inspection during %s", (reason) => {
-    dispatchGameplayCommand(
-      (draft) => {
-        if (reason === "enemy") getBattleForTest(draft).battleState.turnPhase = "enemy";
-        if (reason === "wish") getBattleForTest(draft).battleState.wishOptions = [makeTestCard()];
-        if (reason === "dead") {
-          getBattleForTest(draft).battleState.playerHealth = 0;
-          getBattleForTest(draft).battleState.deathsDoorActive = false;
-        }
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      if (reason === "enemy") getBattleForTest(draft).battleState.turnPhase = "enemy";
+      if (reason === "wish") getBattleForTest(draft).battleState.wishOptions = [makeTestCard()];
+      if (reason === "dead") {
+        getBattleForTest(draft).battleState.playerHealth = 0;
+        getBattleForTest(draft).battleState.deathsDoorActive = false;
+      }
+    });
     if (reason === "transfer") battlePresentation.setState({ cardTransferInProgress: true });
     const { result } = renderHook(() =>
       useCardInspection({ ...base, isCardPlayInProgress: () => reason === "card-play" }),
@@ -145,15 +118,9 @@ describe("run card inspection", () => {
     rerender(base);
     act(() => result.current.onOpen("deck"));
     act(() =>
-      dispatchGameplayCommand(
-        (draft) => {
-          setBattleActiveForTest(draft, false);
-
-          return acceptCommand();
-        },
-        undefined,
-        defaultGameSession,
-      ),
+      mutateGameplayForTest((draft) => {
+        setBattleActiveForTest(draft, false);
+      }),
     );
     expect(useUiStore.getState().cardInspection).toBeNull();
   });

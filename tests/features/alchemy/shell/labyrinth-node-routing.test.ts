@@ -1,5 +1,4 @@
 import "../../../helpers/mock-audio";
-
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createPlaythroughController } from "@/app/playthrough/controller";
 import { createLabyrinthController } from "@/features/alchemy/run-loop/run/labyrinth-controller";
@@ -9,7 +8,6 @@ import { createLabyrinthNodeRouting } from "@/features/alchemy/shell/labyrinth-n
 import { createScreenNavigation } from "@/features/alchemy/shell/screen-navigation";
 import { showRunScreen } from "@/features/alchemy/shared/stores/navigation-commands";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { readActiveRunScreen, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import * as battleEngine from "@/lib/battle";
@@ -17,7 +15,12 @@ import { getStartingDeck } from "@/lib/game-data";
 import { DESTINATIONS } from "@/lib/routing";
 import { createRunRngState } from "@/lib/rng";
 import { gridLabyrinthMapFixture } from "../../../fixtures/labyrinth-map";
-import { resetAllTestStores, setRunProgress, setRunSession } from "../../../helpers/run-domain-store-test";
+import {
+  mutateGameplayForTest,
+  resetAllTestStores,
+  setRunProgress,
+  setRunSession,
+} from "../../../helpers/run-domain-store-test";
 import { makeFlowHandlerDeps } from "../../../helpers/run-flow-handler-deps";
 import { defaultGameSession } from "@/app/application-session";
 import { savedActivityData } from "../../../fixtures/run-activity";
@@ -39,15 +42,10 @@ function prepare(mode: "campaign" | "labyrinth", combat = false) {
     labyrinthMap: mode === "labyrinth" ? map : null,
     selectedLabyrinthNodeId: mode === "labyrinth" ? nodeId : null,
   });
-  dispatchGameplayCommand(
-    (draft) => {
-      draft.run.navigation.screen = mode === "campaign" ? "destination" : "labyrinth-map";
-      draft.session.rewardFlow.state.destinations = [combat ? DESTINATIONS.NORMAL_COMBAT : DESTINATIONS.CARD_SHOP];
-      return acceptCommand();
-    },
-    undefined,
-    defaultGameSession,
-  );
+  mutateGameplayForTest((draft) => {
+    draft.run.navigation.screen = mode === "campaign" ? "destination" : "labyrinth-map";
+    draft.session.rewardFlow.state.destinations = [combat ? DESTINATIONS.NORMAL_COMBAT : DESTINATIONS.CARD_SHOP];
+  });
 }
 
 it.each(["campaign", "labyrinth"] as const)(
@@ -140,14 +138,9 @@ it.each([
   ["labyrinth", "fade"],
 ] as const)("settles an opening Companion victory on the recorded %s room with %s navigation", (mode, timing) => {
   prepare(mode, true);
-  dispatchGameplayCommand(
-    (draft) => {
-      draft.runProfile.effects.companionDamage = 1000;
-      return acceptCommand();
-    },
-    undefined,
-    defaultGameSession,
-  );
+  mutateGameplayForTest((draft) => {
+    draft.runProfile.effects.companionDamage = 1000;
+  });
   const resolve = battleEngine.resolveBattleStart;
   vi.spyOn(battleEngine, "resolveBattleStart").mockImplementation((options, context) =>
     resolve(

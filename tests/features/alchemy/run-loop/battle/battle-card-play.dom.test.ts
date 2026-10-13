@@ -1,6 +1,6 @@
 import "../../../../helpers/mock-audio";
-
 import {
+  mutateGameplayForTest,
   setBattleActiveForTest,
   replaceBattleForTest as setSyncedBattleState,
 } from "../../../../helpers/run-domain-store-test";
@@ -15,10 +15,8 @@ import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfers";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { makeTestCard } from "../../../../fixtures/battle";
@@ -69,9 +67,7 @@ vi.mock("@/lib/animation/animation-prefs", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/animation/animation-prefs")>()),
   shouldReduceMotion: vi.fn(() => true),
 }));
-
 import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
-
 import { awardCardXP } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
@@ -83,16 +79,11 @@ function slashCard() {
 const autoplayControl = { signal: new AbortController().signal, canCommit: () => true };
 
 function givenBattle(state: BattleSnapshot): void {
-  dispatchGameplayCommand(
-    (draft) => {
-      setSyncedBattleState(draft, state);
-      setBattleActiveForTest(draft, true);
-      setScreen(draft, "battle");
-      return acceptCommand();
-    },
-    undefined,
-    defaultGameSession,
-  );
+  mutateGameplayForTest((draft) => {
+    setSyncedBattleState(draft, state);
+    setBattleActiveForTest(draft, true);
+    setScreen(draft, "battle");
+  });
 }
 
 function makeDeps(overrides: Partial<BattleControllerContext> = {}) {

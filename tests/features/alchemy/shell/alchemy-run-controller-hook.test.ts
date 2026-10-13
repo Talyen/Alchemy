@@ -1,24 +1,23 @@
 import "../../../helpers/mock-audio";
 import { battlePresentation } from "@/app/battle-presentation";
-
-import { setBattleActiveForTest as setHasActiveBattle } from "../../../helpers/run-domain-store-test";
-import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ROUTE_SCREENS } from "@/lib/routing";
-import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { readBattle, readHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
-import { setGold, setHasActiveRun, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import {
+  mutateRunForTest,
+  setBattleActiveForTest as setHasActiveBattle,
   resetRunBattleSlice,
   resetRunNavigationSlice,
   resetRunProgressSlice,
   setRunProgress,
+  setRunSession,
 } from "../../../helpers/run-domain-store-test";
+import { act, renderHook } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ROUTE_SCREENS } from "@/lib/routing";
+import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
+import { readBattle, readHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
+import { setGold, setHasActiveRun, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { sessionRuntime } from "@/features/alchemy/shared/stores/session-runtime";
 import { readRunSession, readRunRevision } from "@/features/alchemy/shared/stores/run-reads";
-import { setRunSession } from "../../../helpers/run-domain-store-test";
 import { gridLabyrinthMapFixture } from "../../../fixtures/labyrinth-map";
 import { defaultGameSession } from "@/app/application-session";
 vi.mock("@/lib/platform", () => ({
@@ -49,17 +48,11 @@ describe("useAlchemyRunController", () => {
 
   it("resetRunState tears down run stores when navigating to menu", () => {
     vi.useFakeTimers();
-    dispatchRunSessionCommand(
-      (draft) => {
-        setHasActiveRun(draft, true);
-        setHasActiveBattle(draft, true);
-        setScreen(draft, ROUTE_SCREENS.BATTLE);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((draft) => {
+      setHasActiveRun(draft, true);
+      setHasActiveBattle(draft, true);
+      setScreen(draft, ROUTE_SCREENS.BATTLE);
+    });
     const { result } = renderController();
 
     act(() => {
@@ -115,7 +108,7 @@ describe("useAlchemyRunController", () => {
     const initialRenders = renders;
 
     act(() => {
-      dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 17)), undefined, defaultGameSession);
+      mutateRunForTest((draft) => setGold(draft, 17));
     });
 
     expect(renders).toBe(initialRenders);
