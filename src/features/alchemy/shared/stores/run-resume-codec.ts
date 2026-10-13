@@ -18,10 +18,18 @@ import { battleSnapshot } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
 import type { RunSessionFields } from "./run-domain-types";
-import type { RunSession } from "./run-reads";
 import { ACTIVE_RUN_PROGRESS_KEYS, createInitialActiveRunFields, type ActiveRunProgressFields } from "./run-state-init";
 
-function pickActiveRunProgress(run: RunSession["run"]): ActiveRunProgressFields {
+interface RunResumeSource {
+  run: ActiveRunProgressFields;
+  session: RunSessionFields;
+}
+
+type RunResumeProjection = Omit<ActiveRunData, "activity"> & {
+  activity: PersistedRunActivity | { kind: "idle" } | { kind: "mystery"; data: null };
+};
+
+function pickActiveRunProgress(run: ActiveRunProgressFields): ActiveRunProgressFields {
   const progress = {} as ActiveRunProgressFields;
   // Single container cast for union-key mechanics: every key comes from
   // ACTIVE_RUN_PROGRESS_KEYS, whose exhaustiveness over
@@ -34,38 +42,12 @@ function pickActiveRunProgress(run: RunSession["run"]): ActiveRunProgressFields 
   return progress;
 }
 
-// Session persistence contract (see encodeRunResumeSnapshot below): the
-// transient fields never reach a snapshot, and the gated ones persist only for
-// matching content systems. persistence-commit-filter derives its
-// dirty-tracking skip sets from these, so the two cannot drift apart.
-export const TRANSIENT_SESSION_KEYS = [
-  "selectedLabyrinthNodeId",
-  "pendingCharacterId",
-  "pendingContentSystemType",
-  "runEndLabyrinthFloor",
-  "runEndMaterials",
-  "runEndCurrencies",
-  "runEndTalentXP",
-  "runEndItems",
-  "runRecap",
-] as const satisfies ReadonlyArray<keyof RunSessionFields>;
-
-export const LABYRINTH_GATED_SESSION_KEYS = [
-  "labyrinthMap",
-  "activeLabyrinthModifiers",
-  "activeLabyrinthRewardModifiers",
-  "activeLabyrinthPendingNode",
-] as const satisfies ReadonlyArray<keyof RunSessionFields>;
-
-export const WILDWOOD_GATED_SESSION_KEY = "wildwoodDraft" as const satisfies keyof RunSessionFields;
-export const NON_WILDWOOD_GATED_SESSION_KEY = "starterDraftChoices" as const satisfies keyof RunSessionFields;
-
-function encodeActivity(session: RunSession["session"]): PersistedRunActivity {
+function projectActivity(session: RunSessionFields): RunResumeProjection["activity"] {
   const activity = session.activity;
   switch (activity.kind) {
     case "inactive":
     case "idle":
-      throw new Error("An active run must establish a resumable activity before saving");
+      return { kind: "idle" };
     case "battle": {
       const state = battleSnapshot(activity.data.battleState);
       delete state.battleMetrics;
@@ -97,7 +79,6 @@ function encodeActivity(session: RunSession["session"]): PersistedRunActivity {
     }
     case "mystery": {
       const data = serializeMysteryVisit(activity.data);
-      if (!data) throw new Error("Mystery activity requires its resolved visit");
       return { kind: "mystery", data };
     }
     case "trinket-shop":
@@ -118,23 +99,37 @@ function encodeActivity(session: RunSession["session"]): PersistedRunActivity {
       throw new Error("Unknown run activity");
   }
 }
-export function encodeRunResumeSnapshot(source: RunSession): ActiveRunData {
+/** Shared save projection: preserve borrowed branches so comparison skips unchanged data. */
+export function projectRunResumeSnapshot(source: RunResumeSource): RunResumeProjection | null {
   const { run, session } = source;
+  if (session.activity.kind === "inactive") return null;
   const progress = pickActiveRunProgress(run);
   const labyrinth = progress.contentSystemType === "labyrinth";
   return {
     ...progress,
-    destinationRoundsSinceOffered: { ...progress.destinationRoundsSinceOffered },
-    rng: { seed: progress.rng.seed, counters: { ...progress.rng.counters } },
     labyrinthMap: labyrinth ? session.labyrinthMap : null,
     labyrinthPendingNode: labyrinth ? session.activeLabyrinthPendingNode : null,
-    activeLabyrinthModifiers: labyrinth ? [...session.activeLabyrinthModifiers] : [],
-    activeLabyrinthRewardModifiers: labyrinth ? [...session.activeLabyrinthRewardModifiers] : [],
+    activeLabyrinthModifiers: labyrinth ? session.activeLabyrinthModifiers : [],
+    activeLabyrinthRewardModifiers: labyrinth ? session.activeLabyrinthRewardModifiers : [],
     wildwoodDraft: progress.contentSystemType === "wildwood" ? session.wildwoodDraft : null,
     starterDraftChoices: progress.contentSystemType === "wildwood" ? null : session.starterDraftChoices,
-    activity: encodeActivity(session),
+    activity: projectActivity(session),
   };
 }
+/** Strict wire encoding stays separate from projecting construction-only commands. */
+export function encodeRunResumeSnapshot(source: RunResumeSource): ActiveRunData {
+  const projection = projectRunResumeSnapshot(source);
+  if (!projection || projection.activity.kind === "idle") {
+    throw new Error("An active run must establish a resumable activity before saving");
+  }
+  const activity = projection.activity;
+  if (activity.kind === "mystery") {
+    if (activity.data === null) throw new Error("Mystery activity requires its resolved visit");
+    return { ...projection, activity: { kind: "mystery", data: activity.data } };
+  }
+  return { ...projection, activity };
+}
+
 export function decodeRunResumeSnapshot(activeRun: ActiveRunData, generateSeed?: () => number) {
   const saved = activeRun.activity;
   let activity: RunActivity;

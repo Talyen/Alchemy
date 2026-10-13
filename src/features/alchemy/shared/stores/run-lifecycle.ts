@@ -16,7 +16,7 @@ import { logStorageFailure } from "@/lib/storage-logging";
 import { current, isDraft } from "immer";
 import type { GameSession } from "./game-session-types";
 import { dispatchGameplayCommand, type GameplayDraft } from "./gameplay-command";
-import { getRunSession, readHasActiveRun } from "./run-reads";
+import { readHasActiveRun } from "./run-reads";
 import { applyRestoreRunToDraft } from "./run-restore";
 import { encodeRunResumeSnapshot } from "./run-resume-codec";
 import type { RunTransaction } from "./run-session-command";
@@ -109,7 +109,8 @@ export function resolveActiveRunForSave(gameSession: GameSession): ActiveRunData
 }
 
 export function snapshotRun(gameSession: GameSession): ActiveRunData {
-  return encodeRunResumeSnapshot(getRunSession(undefined, gameSession));
+  const state = sessionRuntime(gameSession).gameplay.reads.getState();
+  return encodeRunResumeSnapshot({ run: state.run.activeRun, session: state.session });
 }
 
 export function syncRunToBattleStart(draft: RunTransaction, playerHealth?: number): number {
