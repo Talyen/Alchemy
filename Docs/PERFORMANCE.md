@@ -183,10 +183,12 @@ trace events fail capture. Screenshots are omitted to reduce trace overhead.
 ## Limitations
 
 - rAF sampling detects **main-thread cadence gaps**, not hardware GPU present timing.
+- Smooth rAF sampling can hide uneven updates inside a capped effect loop. Inspect actual draw cadence when an effect visibly jitters despite stable frame metrics.
 - Trace mode adds overhead — do not treat its FPS numbers as authoritative.
 - The nightly Xvfb Electron run validates seeded journeys and retains replay evidence, but its virtual display is not a GPU-enabled desktop baseline. Use a controlled local Electron machine for numeric comparisons.
 - Never compare Chromium and Electron results as if they were the same environment.
 - Local Electron profiling keeps the GPU enabled (`enableGpu`); CI Electron smoke still uses `--disable-gpu`. Never compare the two — same-machine, same-runtime comparisons only.
+- Electron profiling uses a visible window so focus-gated canvas effects run. Keep it focused during measurement; older hidden-window reports omit that work and are not comparable.
 - Runtime deltas are diagnostic signals, not automatic leak verdicts. Allow for garbage collection and confirm suspicious monotonic growth across repeated runs.
 - A 60 Hz panel cannot report sustained 120+ FPS; use a high-refresh display for that class of measurement.
 

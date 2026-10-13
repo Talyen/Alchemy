@@ -114,7 +114,8 @@ async function launchElectronPage(): Promise<Page> {
   const { launchElectronApp, getElectronMainWindow } = await import("../tests/electron/electron-helpers");
   const previewPort = previewPortFromEnv("PLAYWRIGHT_PERF_PORT", PERF_PREVIEW_PORT);
   process.env.PLAYWRIGHT_ELECTRON_PREVIEW_PORT = String(previewPort);
-  electronApp = await launchElectronApp({ enableGpu: true });
+  // Hidden test windows pause focus-gated canvas effects, understating render work.
+  electronApp = await launchElectronApp({ enableGpu: true, background: false });
   const page = await getElectronMainWindow(electronApp);
   patchElectronGoto(page);
   await page.waitForFunction((mark) => performance.getEntriesByName(mark, "mark").length > 0, STARTUP_READY_MARK, {
