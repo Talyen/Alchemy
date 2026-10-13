@@ -2,7 +2,7 @@ import { logError } from "@/lib/error-logger";
 import type { SessionFeedback } from "./game-session-types";
 
 /** A committed lifecycle change must finish even when one presentation adapter fails. */
-export function runSessionEffect(name: string, effect: () => void): void {
+function runSessionEffect(name: string, effect: () => void): void {
   try {
     effect();
   } catch (error) {

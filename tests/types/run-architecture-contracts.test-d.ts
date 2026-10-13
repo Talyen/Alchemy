@@ -233,7 +233,7 @@ describe("run architecture type contracts", () => {
     );
     expectTypeOf(command).toEqualTypeOf<(gold: number, label: string) => { gold: number; label: string }>();
     expectTypeOf(
-      dispatchGearMutationWithRunHealthSync({ mutate: () => true }, defaultGameSession),
+      dispatchGearMutationWithRunHealthSync({ mutate: (): boolean => true }, defaultGameSession),
     ).toEqualTypeOf<boolean>();
     expectTypeOf(mutateGearWithRunHealthSync(draft, { mutate: (): number | null => null })).toEqualTypeOf<
       number | null

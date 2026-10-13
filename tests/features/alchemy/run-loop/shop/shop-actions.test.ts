@@ -123,7 +123,7 @@ describe("alchemist shop actions", () => {
       });
       setAlchemistState(createInitialAlchemistState());
       setRunProgress({
-        completedResearch: { "botanical-distillation": 4 },
+        completedResearch: { ...readRunProfile(defaultGameSession).completedResearch, "botanical-distillation": 4 },
         effects: computeHomesteadEffects({}, {}, { "botanical-distillation": 4 }),
       });
       const actions = buildActions();

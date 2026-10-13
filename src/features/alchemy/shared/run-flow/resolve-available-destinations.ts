@@ -2,7 +2,7 @@ import { campaignLootDepth, isLootEligible } from "@/lib/loot";
 import type { Destination } from "@/lib/routing";
 import { getRunAvailableDestinations } from "./destination-flow";
 
-export function getPreviousDestination(
+function getPreviousDestination(
   destinationIndexInAct: number,
   completedDestinations: readonly Destination[],
 ): Destination | undefined {
