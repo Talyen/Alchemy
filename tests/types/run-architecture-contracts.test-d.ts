@@ -28,6 +28,7 @@ import {
 import {
   dispatchGearMutationWithRunHealthSync,
   mutateGearWithRunHealthSync,
+  dispatchGearSalvageWithMaterialGrant,
 } from "@/features/alchemy/shared/stores/gear-session-command";
 import { commitEndTurn, createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
@@ -171,10 +172,17 @@ describe("run architecture type contracts", () => {
           gear.inventories.knight[0]!.affixes[0]!.value = 99;
           // @ts-expect-error -- loadout edits must use equip/unequip
           gear.loadouts.knight.body = null;
+          // @ts-expect-error -- salvage cannot bypass its payout and run-accounting owner
+          gear.salvage("item");
         },
       },
       defaultGameSession,
     );
+  });
+
+  it("accepts only item identity for salvage, never a payout callback", () => {
+    // @ts-expect-error -- the settlement owner resolves an item ID, not a supplied payout
+    dispatchGearSalvageWithMaterialGrant(() => null, defaultGameSession);
   });
 
   it("rejects asynchronous results at every generic command entry point", () => {

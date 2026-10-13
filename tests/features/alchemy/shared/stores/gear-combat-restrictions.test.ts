@@ -3,10 +3,15 @@ import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { deriveGearCombatRestrictions } from "@/features/alchemy/shared/stores/gear-combat-restrictions";
+import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import {
-  dispatchGearMutationWithRunHealthSync,
-  dispatchGearSalvageWithMaterialGrant,
-} from "@/features/alchemy/shared/stores/gear-session-command";
+  equipGear,
+  unequipGear,
+  equipTrinket,
+  unequipTrinket,
+  applyCurrencyToGear,
+  salvageGear,
+} from "@/features/alchemy/shared/stores/gear-commands";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import type { GearInstance } from "@/lib/gear";
@@ -46,56 +51,20 @@ describe("combat equipment protection", () => {
   it("rejects every route to changing a battle loadout without touching state or RNG", () => {
     const before = readGameplayState(defaultGameSession);
     const rng = vi.fn(() => 0.5);
-    expect(
-      dispatchGearMutationWithRunHealthSync(
-        { mutate: (gear) => gear.equip("knight", "main-hand", spare) },
-        defaultGameSession,
-      ),
-    ).toBe(false);
-    expect(
-      dispatchGearMutationWithRunHealthSync(
-        { mutate: (gear) => gear.unequip("knight", "main-hand") },
-        defaultGameSession,
-      ),
-    ).toBe(false);
-    expect(
-      dispatchGearMutationWithRunHealthSync(
-        { mutate: (gear) => gear.equip("rogue", "main-hand", sword) },
-        defaultGameSession,
-      ),
-    ).toBe(false);
-    expect(
-      dispatchGearMutationWithRunHealthSync(
-        { mutate: (gear) => gear.equipTrinket("rogue", "brass-censer") },
-        defaultGameSession,
-      ),
-    ).toBe(false);
-    expect(
-      dispatchGearMutationWithRunHealthSync({ mutate: (gear) => gear.unequipTrinket("knight") }, defaultGameSession),
-    ).toBe(false);
-    expect(
-      dispatchGearMutationWithRunHealthSync(
-        {
-          mutate: (gear) => gear.applyCurrency("ascension-seal", sword.instanceId, { rng }),
-        },
-        defaultGameSession,
-      ),
-    ).toBe(false);
-    expect(
-      dispatchGearSalvageWithMaterialGrant((gear) => gear.salvage(sword.instanceId), defaultGameSession),
-    ).toBeNull();
+    expect(equipGear("knight", "main-hand", spare, defaultGameSession)).toBe(false);
+    expect(unequipGear("knight", "main-hand", defaultGameSession)).toBe(false);
+    expect(equipGear("rogue", "main-hand", sword, defaultGameSession)).toBe(false);
+    expect(equipTrinket("rogue", "brass-censer", defaultGameSession)).toBe(false);
+    expect(unequipTrinket("knight", defaultGameSession)).toBe(false);
+    expect(applyCurrencyToGear("ascension-seal", sword.instanceId, { rng }, defaultGameSession)).toBe(false);
+    expect(salvageGear(sword.instanceId, defaultGameSession)).toBe(false);
     expect(rng).not.toHaveBeenCalled();
     expect(readGameplayState(defaultGameSession)).toBe(before);
   });
 
   it("allows unused shared gear and acquisitions without changing the battle equipment", () => {
     const manifest = readBattle(defaultGameSession).battleState.gearEffects;
-    expect(
-      dispatchGearMutationWithRunHealthSync(
-        { mutate: (gear) => gear.equip("rogue", "main-hand", spare) },
-        defaultGameSession,
-      ),
-    ).toBe(true);
+    expect(equipGear("rogue", "main-hand", spare, defaultGameSession)).toBe(true);
     dispatchGearMutationWithRunHealthSync(
       {
         mutate: (gear) => gear.addInstance({ ...spare, instanceId: "reward" }, "knight"),
@@ -109,16 +78,11 @@ describe("combat equipment protection", () => {
   it.each(["constructor", "__proto__"])("treats opaque %s item IDs as ordinary shared spares", (instanceId) => {
     const item = { ...spare, instanceId };
     dispatchGearMutationWithRunHealthSync({ mutate: (gear) => gear.addInstance(item, "knight") }, defaultGameSession);
-    expect(
-      dispatchGearMutationWithRunHealthSync(
-        { mutate: (gear) => gear.equip("rogue", "main-hand", item) },
-        defaultGameSession,
-      ),
-    ).toBe(true);
+    expect(equipGear("rogue", "main-hand", item, defaultGameSession)).toBe(true);
     expect(readGameplayState(defaultGameSession).gear.loadouts.rogue["main-hand"]).toBe(instanceId);
   });
 
-  it("rolls back earlier Gear writes when a later operation returns false or null", () => {
+  it("rolls back earlier Gear writes when a later operation rejects", () => {
     const before = readGameplayState(defaultGameSession);
     expect(
       dispatchGearMutationWithRunHealthSync(
@@ -131,14 +95,6 @@ describe("combat equipment protection", () => {
         defaultGameSession,
       ),
     ).toBe(false);
-    expect(readGameplayState(defaultGameSession)).toBe(before);
-
-    expect(
-      dispatchGearSalvageWithMaterialGrant((gear) => {
-        gear.addCurrencies({ voidstone: 1 });
-        return gear.salvage(sword.instanceId);
-      }, defaultGameSession),
-    ).toBeNull();
     expect(readGameplayState(defaultGameSession)).toBe(before);
   });
 

@@ -75,7 +75,7 @@ describe("gear-store", () => {
     );
     expect(readProfileStore(defaultGameSession).discoveredUniqueIds).toEqual(["wardbreaker"]);
 
-    dispatchGearSalvageWithMaterialGrant((gear) => gear.salvage(unique.instanceId), defaultGameSession);
+    dispatchGearSalvageWithMaterialGrant(unique.instanceId, defaultGameSession);
     expect(flattenGearInventories(readGearState(defaultGameSession).inventories)).toEqual([]);
     expect(readProfileStore(defaultGameSession).discoveredUniqueIds).toEqual(["wardbreaker"]);
     resetGearForTest();
