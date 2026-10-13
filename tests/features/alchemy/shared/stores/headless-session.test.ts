@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { expect, it, vi } from "vitest";
 
 // Importing independent gameplay must never construct the shipping application
 // or load its React presentation adapters, even before a session is created.
@@ -15,26 +15,24 @@ import { createPlaythroughController } from "@/app/playthrough/controller";
 import { readBattle, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { commitEndTurn } from "@/features/alchemy/shared/stores/battle-commands";
 
-describe("headless session dependency boundary", () => {
-  it("starts, resolves combat and round-trips progress without application initialization", async () => {
-    const session = createGameSession({ runtimeInputs: { generateRunSeed: () => 7 } });
-    let restored: ReturnType<typeof createGameSession> | undefined;
-    try {
-      const controller = createPlaythroughController(session);
-      controller.flow.goToScreen("game-mode-select");
-      controller.flow.beginCampaign();
-      controller.flow.handleCharacterSelect("knight");
-      expect(readBattle(session).hasActiveBattle).toBe(true);
-      const turn = readBattle(session).battleState.turn;
-      expect(commitEndTurn(session)).not.toBeNull();
-      expect(readBattle(session).battleState.turn).toBeGreaterThan(turn);
-      const save = createSessionPersistence(session).snapshot();
-      restored = createGameSession({ initialSave: save });
-      expect(readRunProfile(restored)).toEqual(readRunProfile(session));
-      expect(createSessionPersistence(restored).snapshot()).toEqual(save);
-    } finally {
-      await session.dispose();
-      await restored?.dispose();
-    }
-  });
+it("headless session dependency boundary starts, resolves combat and round-trips progress without application initialization", async () => {
+  const session = createGameSession({ runtimeInputs: { generateRunSeed: () => 7 } });
+  let restored: ReturnType<typeof createGameSession> | undefined;
+  try {
+    const controller = createPlaythroughController(session);
+    controller.flow.goToScreen("game-mode-select");
+    controller.flow.beginCampaign();
+    controller.flow.handleCharacterSelect("knight");
+    expect(readBattle(session).hasActiveBattle).toBe(true);
+    const turn = readBattle(session).battleState.turn;
+    expect(commitEndTurn(session)).not.toBeNull();
+    expect(readBattle(session).battleState.turn).toBeGreaterThan(turn);
+    const save = createSessionPersistence(session).snapshot();
+    restored = createGameSession({ initialSave: save });
+    expect(readRunProfile(restored)).toEqual(readRunProfile(session));
+    expect(createSessionPersistence(restored).snapshot()).toEqual(save);
+  } finally {
+    await session.dispose();
+    await restored?.dispose();
+  }
 });

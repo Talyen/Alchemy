@@ -5,7 +5,6 @@ import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { cardById, companionLibrary } from "@/lib/game-data";
 import { makeState as makeSharedState, makeTestCard, slashDeck } from "../../fixtures/battle";
-import { defaultTrinketManifest } from "../../fixtures/default-battle-state";
 
 function makeState(overrides: Parameters<typeof makeSharedState>[0] = {}) {
   return makeSharedState({ mana: 5, maxMana: 5, ...overrides });
@@ -146,7 +145,7 @@ describe("playBattleCardResolved", () => {
     const card = makeTestCard({ effects: [{ kind: "player-status", status: "block", amount: 5 }] });
     const state = makeState({
       hand: [card],
-      trinketEffects: defaultTrinketManifest({ ironwoodBucklerThornsOnBlock: 1 }),
+      trinketEffects: { ironwoodBucklerThornsOnBlock: 1 },
     });
 
     const result = playBattleCardResolved(state, card.id, 0);
@@ -269,11 +268,7 @@ describe("playBattleCardResolved", () => {
       maxMana: 6,
       hand: [card1, card2],
       cardsPlayedThisTurn: 2,
-      trinketEffects: {
-        ...makeState().trinketEffects,
-        resonantChimeCardsRequired: 3,
-        resonantChimeMana: 1,
-      },
+      trinketEffects: { resonantChimeCardsRequired: 3, resonantChimeMana: 1 },
     });
     const first = playBattleCardResolved(state, card1.id, 0);
     expect(first.state.mana).toBe(4);
@@ -289,11 +284,7 @@ describe("playBattleCardResolved", () => {
       maxMana: 3,
       hand: [card],
       cardsPlayedThisTurn: 2,
-      trinketEffects: {
-        ...makeState().trinketEffects,
-        resonantChimeCardsRequired: 3,
-        resonantChimeMana: 1,
-      },
+      trinketEffects: { resonantChimeCardsRequired: 3, resonantChimeMana: 1 },
     });
     const result = playBattleCardResolved(state, card.id, 0);
     expect(result.state.mana).toBe(3);

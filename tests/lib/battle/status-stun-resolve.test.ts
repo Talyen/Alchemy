@@ -259,7 +259,7 @@ describe("resolveStunTrigger via applyCardEffects", () => {
       mana: 10,
       enemyHealth: 20,
       enemyMaxHealth: 20,
-      enemyStatuses: defaultEnemyStatusValues({ freeze: 6 }),
+      enemyStatuses: { freeze: 6 },
       hand: [card],
     });
     const texts: CombatTextEvent[] = [];

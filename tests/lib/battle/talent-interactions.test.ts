@@ -39,17 +39,15 @@ const holy = makeTestCard({ effects: [{ kind: "damage", damageType: "holy", amou
 const leech = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10, lifesteal: true }] });
 const wish = makeTestCard({ effects: [{ kind: "wish", amount: 1 }] });
 
-describe("Mana from Heaven", () => {
-  it("leaves per-Wish gear rewards independent of the card refund", () => {
-    const next = applyWishEffect(
-      battle({ mana: 0, talentEffects: wishTalents, gearEffects: { manaOnWish: 1 } }),
-      wish,
-      1,
-      [],
-    );
-    expect(next.mana).toBe(1);
-    expect(next.playerHealth).toBe(11);
-  });
+it("Mana from Heaven leaves per-Wish gear rewards independent of the card refund", () => {
+  const next = applyWishEffect(
+    battle({ mana: 0, talentEffects: wishTalents, gearEffects: { manaOnWish: 1 } }),
+    wish,
+    1,
+    [],
+  );
+  expect(next.mana).toBe(1);
+  expect(next.playerHealth).toBe(11);
 });
 
 describe("card play rewards", () => {
@@ -290,20 +288,18 @@ describe("Deep Siphon", () => {
   });
 });
 
-describe("talent save", () => {
-  it("restores current combat effects and defaults omitted fields", () => {
-    const saved = JSON.parse(
-      JSON.stringify(
-        battle({
-          talentEffects: { wishCardRefundsMana: true, holyReflectionBlockLostPercent: 30 },
-        }),
-      ),
-    );
-    delete saved.talentEffects.archeryCritOnCrowdControl;
-    const restored = PersistedBattleStateSchema.parse(saved);
-    expect(restored.talentEffects.holyReflectionBlockLostPercent).toBe(30);
-    expect(restored.talentEffects.archeryCritOnCrowdControl).toBe(false);
-    expect(restored.talentEffects.wishCardRefundsMana).toBe(true);
-    expect(applyWishEffect({ ...restored, rng: () => 0.99, mana: 0 }, wish, 1, []).mana).toBe(0);
-  });
+it("talent save restores current combat effects and defaults omitted fields", () => {
+  const saved = JSON.parse(
+    JSON.stringify(
+      battle({
+        talentEffects: { wishCardRefundsMana: true, holyReflectionBlockLostPercent: 30 },
+      }),
+    ),
+  );
+  delete saved.talentEffects.archeryCritOnCrowdControl;
+  const restored = PersistedBattleStateSchema.parse(saved);
+  expect(restored.talentEffects.holyReflectionBlockLostPercent).toBe(30);
+  expect(restored.talentEffects.archeryCritOnCrowdControl).toBe(false);
+  expect(restored.talentEffects.wishCardRefundsMana).toBe(true);
+  expect(applyWishEffect({ ...restored, rng: () => 0.99, mana: 0 }, wish, 1, []).mana).toBe(0);
 });

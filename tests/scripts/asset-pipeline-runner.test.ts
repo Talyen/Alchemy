@@ -46,16 +46,14 @@ describe("resolvePipelinePaths", () => {
   });
 });
 
-describe("ensureOutputDir", () => {
-  it("creates the directory for mutating runs but never in check mode", async () => {
-    const dir = await makeTempDir();
-    const created = path.join(dir, "nested", "out");
-    await ensureOutputDir(created);
-    expect((await readdir(path.join(dir, "nested"))).sort()).toEqual(["out"]);
-    const untouched = path.join(dir, "check-only");
-    await expect(ensureOutputDir(untouched, { check: true })).resolves.toBeUndefined();
-    await expect(readdir(untouched)).rejects.toMatchObject({ code: "ENOENT" });
-  });
+it("ensureOutputDir creates the directory for mutating runs but never in check mode", async () => {
+  const dir = await makeTempDir();
+  const created = path.join(dir, "nested", "out");
+  await ensureOutputDir(created);
+  expect((await readdir(path.join(dir, "nested"))).sort()).toEqual(["out"]);
+  const untouched = path.join(dir, "check-only");
+  await expect(ensureOutputDir(untouched, { check: true })).resolves.toBeUndefined();
+  await expect(readdir(untouched)).rejects.toMatchObject({ code: "ENOENT" });
 });
 
 describe("runManifestPipeline", () => {

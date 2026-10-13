@@ -3,25 +3,23 @@ import { animateHurtSparks, createHurtSparks } from "@/lib/animation/hurt-sparks
 
 describe("hurt-sparks", () => {
   afterEach(() => vi.restoreAllMocks());
-  describe("createHurtSparks", () => {
-    it("samples from vertical edges when requested", () => {
-      const sparks = createHurtSparks(
-        300,
-        200,
-        10,
-        ["#ff0000"],
-        { x: 50, y: 50, width: 100, height: 100 },
-        {
-          edges: "vertical",
-        },
-      );
-      expect(sparks).toHaveLength(10);
-      for (const spark of sparks) {
-        expect(spark.color).toBe("#ff0000");
-        const onLeftOrRight = Math.abs(spark.x - 52) < 0.1 || Math.abs(spark.x - 148) < 0.1;
-        expect(onLeftOrRight).toBe(true);
-      }
-    });
+  it("createHurtSparks samples from vertical edges when requested", () => {
+    const sparks = createHurtSparks(
+      300,
+      200,
+      10,
+      ["#ff0000"],
+      { x: 50, y: 50, width: 100, height: 100 },
+      {
+        edges: "vertical",
+      },
+    );
+    expect(sparks).toHaveLength(10);
+    for (const spark of sparks) {
+      expect(spark.color).toBe("#ff0000");
+      const onLeftOrRight = Math.abs(spark.x - 52) < 0.1 || Math.abs(spark.x - 148) < 0.1;
+      expect(onLeftOrRight).toBe(true);
+    }
   });
 
   describe("animateHurtSparks", () => {

@@ -26,14 +26,12 @@ describe("plasma-colors", () => {
     expect(fallback).toEqual([10, 20, 30]);
   });
 
-  describe("lerpParsedPlasmaColor", () => {
-    it("interpolates between two parsed colors", () => {
-      const from: [number, number, number] = [0, 0, 0];
-      const to: [number, number, number] = [1, 1, 1];
+  it("lerpParsedPlasmaColor interpolates between two parsed colors", () => {
+    const from: [number, number, number] = [0, 0, 0];
+    const to: [number, number, number] = [1, 1, 1];
 
-      expect(lerpParsedPlasmaColor(from, to, 0)).toBe("#000000");
-      expect(lerpParsedPlasmaColor(from, to, 1)).toBe("#ffffff");
-      expect(lerpParsedPlasmaColor(from, to, 0.5)).toBe("#808080");
-    });
+    expect(lerpParsedPlasmaColor(from, to, 0)).toBe("#000000");
+    expect(lerpParsedPlasmaColor(from, to, 1)).toBe("#ffffff");
+    expect(lerpParsedPlasmaColor(from, to, 0.5)).toBe("#808080");
   });
 });

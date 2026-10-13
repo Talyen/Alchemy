@@ -177,23 +177,21 @@ describe("damage riders via applyCardEffects", () => {
   });
 });
 
-describe("Emberforged ignition", () => {
-  it("grants Forge when Burn is absent, then waits for Burn to clear", () => {
-    const state = patchBattleState({
-      enemyHealth: 1000,
-      enemyMaxHealth: 1000,
-      playerStatuses: {},
-      gearEffects: { forgeOnBurnVsUnburnedChances: [100, 100] },
-    });
-    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 1 }] });
-    const first = applyCardEffects(state, card, []);
-    const second = applyCardEffects(first, card, []);
-    expect(first.playerStatuses.forge).toBe(2);
-    expect(second.playerStatuses.forge).toBe(2);
-    const refreshed = setEnemyStatus(second, "burn", 0);
-    const third = applyCardEffects(refreshed, card, []);
-    expect(third.playerStatuses.forge).toBe(refreshed.playerStatuses.forge + 2);
+it("Emberforged ignition grants Forge when Burn is absent, then waits for Burn to clear", () => {
+  const state = patchBattleState({
+    enemyHealth: 1000,
+    enemyMaxHealth: 1000,
+    playerStatuses: {},
+    gearEffects: { forgeOnBurnVsUnburnedChances: [100, 100] },
   });
+  const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 1 }] });
+  const first = applyCardEffects(state, card, []);
+  const second = applyCardEffects(first, card, []);
+  expect(first.playerStatuses.forge).toBe(2);
+  expect(second.playerStatuses.forge).toBe(2);
+  const refreshed = setEnemyStatus(second, "burn", 0);
+  const third = applyCardEffects(refreshed, card, []);
+  expect(third.playerStatuses.forge).toBe(refreshed.playerStatuses.forge + 2);
 });
 
 describe("damage rider regressions", () => {

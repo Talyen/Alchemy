@@ -159,8 +159,9 @@ describe("card and turn reaction ordering", () => {
   });
 });
 
-describe("Companion descriptions match their own damage scaling", () => {
-  it.each(["phoenix", "fox"] as const)("shows Gear, Bond, and conditional bonuses for %s", (id) => {
+it.each(["phoenix", "fox"] as const)(
+  "Companion descriptions match their own damage scaling shows Gear, Bond, and conditional bonuses for %s",
+  (id) => {
     const companion = companionLibrary[id];
     const state = battle({
       activeCompanion: companion,
@@ -200,5 +201,5 @@ describe("Companion descriptions match their own damage scaling", () => {
       })[0],
     ).toBe(description[0]);
     expect(getCompanionDescriptionLines(companion)[0]).toContain("Deals 1 ");
-  });
-});
+  },
+);

@@ -81,25 +81,23 @@ describe("gameplay five bugs round 3", () => {
     });
   });
 
-  describe("4. Lacerate applies Bleed through derived-hit resolver", () => {
-    it("applies Bleed through Armor instead of bypassing it", () => {
-      const card = makeTestCard();
-      const state = patchBattleState({
-        enemyHealth: 100,
-        enemyMaxHealth: 100,
-        enemyMitigation: { armor: 5 },
-        rng: () => 0.99,
-        talentEffects: { ...computeTalentEffects({ physical: ["physical-lacerate"] }), physicalBleedChance: 100 },
-      });
-      const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 10 };
-
-      const result = resolvePlayerHit(state, { source: "card-attack", card, effect, resolvedDamage: 10 }, []);
-
-      // Derived bleed hit: 10 * 0.25 fraction = 2.5 → round(2.5) = 3, reduced by armor
-      // Bug: was addEnemyStatus(bleed, 10) bypassing everything
-      expect(result.enemyStatuses.bleed).toBeLessThan(10);
-      expect(result.enemyStatuses.bleed).toBeGreaterThan(0);
+  it("4. Lacerate applies Bleed through derived-hit resolver applies Bleed through Armor instead of bypassing it", () => {
+    const card = makeTestCard();
+    const state = patchBattleState({
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      enemyMitigation: { armor: 5 },
+      rng: () => 0.99,
+      talentEffects: { ...computeTalentEffects({ physical: ["physical-lacerate"] }), physicalBleedChance: 100 },
     });
+    const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 10 };
+
+    const result = resolvePlayerHit(state, { source: "card-attack", card, effect, resolvedDamage: 10 }, []);
+
+    // Derived bleed hit: 10 * 0.25 fraction = 2.5 → round(2.5) = 3, reduced by armor
+    // Bug: was addEnemyStatus(bleed, 10) bypassing everything
+    expect(result.enemyStatuses.bleed).toBeLessThan(10);
+    expect(result.enemyStatuses.bleed).toBeGreaterThan(0);
   });
 
   describe("5. Briar Patch applies Bleed through derived-hit resolver", () => {

@@ -30,18 +30,16 @@ const evenMetrics = {
   actualBurnFraction: 0,
 };
 
-describe("appliesFightPacingFromEnv", () => {
-  it("defaults on and accepts explicit boolean forms", () => {
-    expect(appliesFightPacingFromEnv(undefined)).toBe(true);
-    expect(appliesFightPacingFromEnv("on")).toBe(true);
-    expect(appliesFightPacingFromEnv("1")).toBe(true);
-    expect(appliesFightPacingFromEnv("true")).toBe(true);
-    expect(appliesFightPacingFromEnv("off")).toBe(false);
-    expect(appliesFightPacingFromEnv("0")).toBe(false);
-    expect(appliesFightPacingFromEnv("false")).toBe(false);
-    expect(() => appliesFightPacingFromEnv("")).toThrow("ALCHEMY_BALANCE_PACING");
-    expect(() => appliesFightPacingFromEnv("sometimes")).toThrow("ALCHEMY_BALANCE_PACING");
-  });
+it("appliesFightPacingFromEnv defaults on and accepts explicit boolean forms", () => {
+  expect(appliesFightPacingFromEnv(undefined)).toBe(true);
+  expect(appliesFightPacingFromEnv("on")).toBe(true);
+  expect(appliesFightPacingFromEnv("1")).toBe(true);
+  expect(appliesFightPacingFromEnv("true")).toBe(true);
+  expect(appliesFightPacingFromEnv("off")).toBe(false);
+  expect(appliesFightPacingFromEnv("0")).toBe(false);
+  expect(appliesFightPacingFromEnv("false")).toBe(false);
+  expect(() => appliesFightPacingFromEnv("")).toThrow("ALCHEMY_BALANCE_PACING");
+  expect(() => appliesFightPacingFromEnv("sometimes")).toThrow("ALCHEMY_BALANCE_PACING");
 });
 
 describe("fight pacing multipliers", () => {
@@ -119,23 +117,21 @@ describe("paceCombatMagnitude", () => {
   });
 });
 
-describe("proc defensive grants bypass pacing (policy pin)", () => {
-  it("grants CC-proc armor at authored magnitude even while the player is behind", () => {
-    const base = pacedState({ playerHealth: 4, playerMaxHealth: 30, enemyHealth: 30, enemyMaxHealth: 30 });
-    const armorAmount = 6;
-    const state = { ...base, gearEffects: { ...base.gearEffects, armorOnStunOrFreeze: armorAmount } };
-    expect(paceCombatMagnitude(state, 10, "player")).toBeGreaterThan(10);
-    const texts: CombatTextEvent[] = [];
-    const triggered = resolvePlayerCrowdControlTrigger({
-      state,
-      stat: "stun",
-      stackValue: 999,
-      thresholdFraction: STUN_THRESHOLD_FRACTION,
-      combatTexts: texts,
-    });
-    expect(triggered.playerStatuses.armor).toBe(armorAmount);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "armor", amount: armorAmount });
+it("proc defensive grants bypass pacing (policy pin) grants CC-proc armor at authored magnitude even while the player is behind", () => {
+  const base = pacedState({ playerHealth: 4, playerMaxHealth: 30, enemyHealth: 30, enemyMaxHealth: 30 });
+  const armorAmount = 6;
+  const state = { ...base, gearEffects: { ...base.gearEffects, armorOnStunOrFreeze: armorAmount } };
+  expect(paceCombatMagnitude(state, 10, "player")).toBeGreaterThan(10);
+  const texts: CombatTextEvent[] = [];
+  const triggered = resolvePlayerCrowdControlTrigger({
+    state,
+    stat: "stun",
+    stackValue: 999,
+    thresholdFraction: STUN_THRESHOLD_FRACTION,
+    combatTexts: texts,
   });
+  expect(triggered.playerStatuses.armor).toBe(armorAmount);
+  expect(texts).toContainEqual({ target: "player", kind: "status", stat: "armor", amount: armorAmount });
 });
 
 describe("fight pacing in combat pipelines", () => {
@@ -163,9 +159,9 @@ describe("fight pacing in combat pipelines", () => {
       playerMaxHealth: 30,
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      playerStatuses: { ...pacedState().playerStatuses, block: 10 },
-      talentEffects: { ...pacedState().talentEffects, flatPhysicalDamage: 99 },
-      gearEffects: { ...pacedState().gearEffects, flatPhysicalDamage: 99 },
+      playerStatuses: { block: 10 },
+      talentEffects: { flatPhysicalDamage: 99 },
+      gearEffects: { flatPhysicalDamage: 99 },
       enemyMitigation: { armor: 0, forge: 0, block: 0 },
     });
     const equalToBlockEffect: Extract<BattleCardEffect, { kind: "damage" }> = {
@@ -227,25 +223,23 @@ describe("fight pacing in combat pipelines", () => {
   });
 });
 
-describe("Forge gain pacing", () => {
-  it("does not scale an ordinary Forge gain and its feedback", () => {
-    const state = pacedState({
-      playerHealth: 8,
-      playerMaxHealth: 30,
-      enemyHealth: 30,
-      enemyMaxHealth: 30,
-      turn: 1,
-    });
-    const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(
-      state,
-      makeTestCard({ effects: [{ kind: "player-status", status: "forge", amount: 10 }] }),
-      texts,
-    );
-    expect(result.playerStatuses.forge).toBe(10);
-    expect(result.enemyStatuses.burn).toBe(0);
-    expect(result.enemyHealth).toBe(state.enemyHealth);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 10 });
-    expect(state.playerStatuses.forge).toBe(0);
+it("Forge gain pacing does not scale an ordinary Forge gain and its feedback", () => {
+  const state = pacedState({
+    playerHealth: 8,
+    playerMaxHealth: 30,
+    enemyHealth: 30,
+    enemyMaxHealth: 30,
+    turn: 1,
   });
+  const texts: CombatTextEvent[] = [];
+  const result = applyCardEffects(
+    state,
+    makeTestCard({ effects: [{ kind: "player-status", status: "forge", amount: 10 }] }),
+    texts,
+  );
+  expect(result.playerStatuses.forge).toBe(10);
+  expect(result.enemyStatuses.burn).toBe(0);
+  expect(result.enemyHealth).toBe(state.enemyHealth);
+  expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 10 });
+  expect(state.playerStatuses.forge).toBe(0);
 });

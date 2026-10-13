@@ -5,7 +5,7 @@ import {
   setRunProgress,
   setRunSession,
 } from "../../../../helpers/run-domain-store-test";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, expect, it } from "vitest";
 import { deductGold, setGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { commitResolvedBattle } from "@/features/alchemy/shared/stores/write/run-battle";
 import { readBattle, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
@@ -16,14 +16,12 @@ beforeEach(() => {
   resetRunDomainStore();
 });
 
-describe("profile gold write port", () => {
-  it("deducts gold and clamps at zero", () => {
-    setRunProgress({ gold: 10 });
-    mutateGameplayForTest((draft) => deductGold(draft, 4));
-    expect(readRunProfile(defaultGameSession).gold).toBe(6);
-    mutateGameplayForTest((draft) => deductGold(draft, 10));
-    expect(readRunProfile(defaultGameSession).gold).toBe(0);
-  });
+it("profile gold write port deducts gold and clamps at zero", () => {
+  setRunProgress({ gold: 10 });
+  mutateGameplayForTest((draft) => deductGold(draft, 4));
+  expect(readRunProfile(defaultGameSession).gold).toBe(6);
+  mutateGameplayForTest((draft) => deductGold(draft, 10));
+  expect(readRunProfile(defaultGameSession).gold).toBe(0);
 });
 
 it("commits a resolved battle's Gold change without replacing other purse changes in the transaction", () => {

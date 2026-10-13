@@ -469,10 +469,8 @@ describe("new wish talents", () => {
   });
 });
 
-describe("battle content helpers", () => {
-  it("converts gems wish to gold exclusively in Wildwood", () => {
-    expect(shouldConvertGemsWishToGold(CONTENT_SYSTEMS.WILDWOOD)).toBe(true);
-    expect(shouldConvertGemsWishToGold(CONTENT_SYSTEMS.CAMPAIGN)).toBe(false);
-    expect(shouldConvertGemsWishToGold(CONTENT_SYSTEMS.LABYRINTH)).toBe(false);
-  });
+it("battle content helpers converts gems wish to gold exclusively in Wildwood", () => {
+  expect(shouldConvertGemsWishToGold(CONTENT_SYSTEMS.WILDWOOD)).toBe(true);
+  expect(shouldConvertGemsWishToGold(CONTENT_SYSTEMS.CAMPAIGN)).toBe(false);
+  expect(shouldConvertGemsWishToGold(CONTENT_SYSTEMS.LABYRINTH)).toBe(false);
 });

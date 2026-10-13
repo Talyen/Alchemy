@@ -57,30 +57,28 @@ function gapSample(frameGaps: FrameGapSample[], extras: Partial<FrameSampleRaw> 
   };
 }
 
-describe("performance catalog", () => {
-  it("matches the scenario files and comparison metric keys", () => {
-    const scenarioFiles = readdirSync(path.resolve(__dirname, "../../performance/scenarios"))
-      .filter((file) => file.endsWith(".perf.ts"))
-      .map((file) => file.replace(/\.perf\.ts$/u, ""))
-      .sort();
-    const catalogScenarios = [
-      ...performanceCatalog.metricScenarios,
-      ...performanceCatalog.syntheticScenarios,
-      ...performanceCatalog.seededScenarios,
-      ...performanceCatalog.diagnosticScenarios,
-    ].sort();
-    expect(
-      [
-        ...catalogScenarios.filter((id) => !REALISTIC_SCENARIOS.includes(id) && id !== "seeded-discovery"),
-        "realistic-journeys",
-      ].sort(),
-    ).toEqual(scenarioFiles);
-    expect([...SCENARIO_IDS].sort()).toEqual(catalogScenarios);
-    const baseline = computeMetrics(sample([16]), { minFrames: 1 });
-    expect(compareMetrics(baseline, baseline).map(({ key }) => key)).toEqual(
-      performanceCatalog.metrics.map(({ key }) => key),
-    );
-  });
+it("performance catalog matches the scenario files and comparison metric keys", () => {
+  const scenarioFiles = readdirSync(path.resolve(__dirname, "../../performance/scenarios"))
+    .filter((file) => file.endsWith(".perf.ts"))
+    .map((file) => file.replace(/\.perf\.ts$/u, ""))
+    .sort();
+  const catalogScenarios = [
+    ...performanceCatalog.metricScenarios,
+    ...performanceCatalog.syntheticScenarios,
+    ...performanceCatalog.seededScenarios,
+    ...performanceCatalog.diagnosticScenarios,
+  ].sort();
+  expect(
+    [
+      ...catalogScenarios.filter((id) => !REALISTIC_SCENARIOS.includes(id) && id !== "seeded-discovery"),
+      "realistic-journeys",
+    ].sort(),
+  ).toEqual(scenarioFiles);
+  expect([...SCENARIO_IDS].sort()).toEqual(catalogScenarios);
+  const baseline = computeMetrics(sample([16]), { minFrames: 1 });
+  expect(compareMetrics(baseline, baseline).map(({ key }) => key)).toEqual(
+    performanceCatalog.metrics.map(({ key }) => key),
+  );
 });
 
 describe("performance scenario contracts", () => {
@@ -418,87 +416,85 @@ describe("environment and scenario compatibility", () => {
   });
 });
 
-describe("renderSummaryMarkdown", () => {
-  it("renders environment and target table", () => {
-    const metrics = computeMetrics(sample(Array.from({ length: 120 }, () => 16)), { minFrames: 100 });
-    const environment: EnvironmentInfo = {
-      timestamp: "2026-01-01T00:00:00.000Z",
-      platform: "darwin",
-      arch: "arm64",
-      node: "v24",
-      runtime: "chromium",
-      viewport: { width: 1440, height: 900 },
-      commit: "abc123",
-      dirtyTree: false,
-      branch: "main",
-      traceMode: false,
-      runsPerScenario: 5,
-      coldMode: false,
-      scenarios: ["battle-effects"],
-    };
-    const aggregates: ScenarioAggregate[] = [
-      {
-        scenario: "battle-effects",
-        profile: "continuous",
-        aggregate: metrics,
-        targets: classifyTargets(metrics, "continuous"),
-        runs: [
-          {
-            scenario: "battle-effects",
-            runIndex: 1,
-            measured: true,
-            profile: "continuous",
-            metrics,
-            targets: classifyTargets(metrics, "continuous"),
-            observations: { rendererStartupReadyMs: 2400 },
-            rawSamplePath: "/reports/battle-effects-1-sample.json",
-            longAnimationFrameSupported: true,
-            longAnimationFrames: [
-              {
-                startTime: 12,
-                duration: 80,
-                blockingDuration: 20,
-                renderTailMs: 35,
-                styleAndLayoutTailMs: 12,
-                phase: "play-card",
-                scripts: [
-                  {
-                    duration: 28,
-                    forcedStyleAndLayoutDuration: 4,
-                    sourceURL: "app.js",
-                    sourceFunctionName: "renderCard",
-                    invoker: "requestAnimationFrame",
-                  },
-                ],
-              },
-            ],
-            traceInsight: {
-              status: "available",
-              slowFrames: [
+it("renderSummaryMarkdown renders environment and target table", () => {
+  const metrics = computeMetrics(sample(Array.from({ length: 120 }, () => 16)), { minFrames: 100 });
+  const environment: EnvironmentInfo = {
+    timestamp: "2026-01-01T00:00:00.000Z",
+    platform: "darwin",
+    arch: "arm64",
+    node: "v24",
+    runtime: "chromium",
+    viewport: { width: 1440, height: 900 },
+    commit: "abc123",
+    dirtyTree: false,
+    branch: "main",
+    traceMode: false,
+    runsPerScenario: 5,
+    coldMode: false,
+    scenarios: ["battle-effects"],
+  };
+  const aggregates: ScenarioAggregate[] = [
+    {
+      scenario: "battle-effects",
+      profile: "continuous",
+      aggregate: metrics,
+      targets: classifyTargets(metrics, "continuous"),
+      runs: [
+        {
+          scenario: "battle-effects",
+          runIndex: 1,
+          measured: true,
+          profile: "continuous",
+          metrics,
+          targets: classifyTargets(metrics, "continuous"),
+          observations: { rendererStartupReadyMs: 2400 },
+          rawSamplePath: "/reports/battle-effects-1-sample.json",
+          longAnimationFrameSupported: true,
+          longAnimationFrames: [
+            {
+              startTime: 12,
+              duration: 80,
+              blockingDuration: 20,
+              renderTailMs: 35,
+              styleAndLayoutTailMs: 12,
+              phase: "play-card",
+              scripts: [
                 {
-                  timeMs: 10,
-                  gapMs: 80,
-                  phases: ["play-card", "damage-feedback"],
-                  work: [{ name: "Layout", category: "style/layout", source: "app.js", selfMs: 60 }],
-                  unaccountedMs: 20,
+                  duration: 28,
+                  forcedStyleAndLayoutDuration: 4,
+                  sourceURL: "app.js",
+                  sourceFunctionName: "renderCard",
+                  invoker: "requestAnimationFrame",
                 },
               ],
             },
+          ],
+          traceInsight: {
+            status: "available",
+            slowFrames: [
+              {
+                timeMs: 10,
+                gapMs: 80,
+                phases: ["play-card", "damage-feedback"],
+                work: [{ name: "Layout", category: "style/layout", source: "app.js", selfMs: 60 }],
+                unaccountedMs: 20,
+              },
+            ],
           },
-        ],
-      },
-    ];
-    const md = renderSummaryMarkdown({ environment, aggregates });
-    expect(md).toContain("# Performance profile");
-    expect(md).toContain("battle-effects");
-    expect(md).toContain("GREEN");
-    expect(md).toContain("abc123");
-    expect(md).toContain("rendererStartupReadyMs");
-    expect(md).toContain("[sample](/reports/battle-effects-1-sample.json)");
-    expect(md).toContain("Slow-frame evidence — run 1");
-    expect(md).toContain("play-card → damage-feedback");
-    expect(md).toContain("Layout (style/layout): 60.0 ms — app.js");
-    expect(md).toContain("Long Animation Frames ≥50 ms: 1");
-    expect(md).toContain("renderCard (28.0 ms; forced layout 4.0 ms) — app.js");
-  });
+        },
+      ],
+    },
+  ];
+  const md = renderSummaryMarkdown({ environment, aggregates });
+  expect(md).toContain("# Performance profile");
+  expect(md).toContain("battle-effects");
+  expect(md).toContain("GREEN");
+  expect(md).toContain("abc123");
+  expect(md).toContain("rendererStartupReadyMs");
+  expect(md).toContain("[sample](/reports/battle-effects-1-sample.json)");
+  expect(md).toContain("Slow-frame evidence — run 1");
+  expect(md).toContain("play-card → damage-feedback");
+  expect(md).toContain("Layout (style/layout): 60.0 ms — app.js");
+  expect(md).toContain("Long Animation Frames ≥50 ms: 1");
+  expect(md).toContain("renderCard (28.0 ms; forced layout 4.0 ms) — app.js");
 });

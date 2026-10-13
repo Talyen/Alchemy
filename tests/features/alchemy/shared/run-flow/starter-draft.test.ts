@@ -8,18 +8,16 @@ import { DRAFT_CHOICES, DRAFT_ROUNDS } from "@/lib/game-constants";
 
 const drafted = Array.from({ length: DRAFT_ROUNDS }, (_, index) => makeTestCard({ id: `card-${index}` }));
 
-describe("createStarterDraftChoices", () => {
-  it("returns the standard number of distinct draft choices", () => {
-    let seed = 42;
-    const rng = () => {
-      seed = (seed * 9301 + 49297) % 233280;
-      return seed / 233280;
-    };
-    const choices = createStarterDraftChoices([], rng);
-    expect(choices).toHaveLength(DRAFT_CHOICES);
-    const uniqueIds = new Set(choices.map((c) => c.id));
-    expect(uniqueIds.size).toBe(DRAFT_CHOICES);
-  });
+it("createStarterDraftChoices returns the standard number of distinct draft choices", () => {
+  let seed = 42;
+  const rng = () => {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  };
+  const choices = createStarterDraftChoices([], rng);
+  expect(choices).toHaveLength(DRAFT_CHOICES);
+  const uniqueIds = new Set(choices.map((c) => c.id));
+  expect(uniqueIds.size).toBe(DRAFT_CHOICES);
 });
 
 describe("wildcardStarterResumeTarget", () => {

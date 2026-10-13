@@ -320,16 +320,14 @@ describe("endPlayerTurn — Death's Door", () => {
   });
 });
 
-describe("endPlayerTurn — companion", () => {
-  it("does not apply companion turn-start effects", () => {
-    const state = battleState({
-      activeCompanion: companionLibrary.wolf,
-      enemyHealth: 30,
-    });
-    const result = endPlayerTurn(state);
-    expect(result.state.enemyHealth).toBe(30);
-    expect(result.state.enemyStatuses.bleed).toBe(0);
+it("endPlayerTurn — companion does not apply companion turn-start effects", () => {
+  const state = battleState({
+    activeCompanion: companionLibrary.wolf,
+    enemyHealth: 30,
   });
+  const result = endPlayerTurn(state);
+  expect(result.state.enemyHealth).toBe(30);
+  expect(result.state.enemyStatuses.bleed).toBe(0);
 });
 
 describe("endPlayerTurn — pending turn-start pulses", () => {
@@ -390,22 +388,20 @@ describe("endPlayerTurn — pending turn-start pulses", () => {
   });
 });
 
-describe("terminal battle turns", () => {
-  it.each([false, true])("Lifegiving cannot revive lethal damage (Poison: %s)", (poison) => {
-    const state = battleState({
-      playerHealth: 1,
-      deathsDoorUsed: true,
-      deathsDoorActive: false,
-      gearEffects: { healthPerTurn: 1 },
-      playerStatuses: { poison: poison ? 2 : 0 },
-      enemyCC: { stunSkipTurns: poison ? 1 : 0 },
-      rng: () => 0.99,
-    });
-    const result = endPlayerTurn(state);
-    expect(result.state.playerHealth).toBe(0);
-    expect(result.state.turn).toBe(state.turn);
-    expect(result.state.hand).toEqual(state.hand);
+it.each([false, true])("terminal battle turns Lifegiving cannot revive lethal damage (Poison: %s)", (poison) => {
+  const state = battleState({
+    playerHealth: 1,
+    deathsDoorUsed: true,
+    deathsDoorActive: false,
+    gearEffects: { healthPerTurn: 1 },
+    playerStatuses: { poison: poison ? 2 : 0 },
+    enemyCC: { stunSkipTurns: poison ? 1 : 0 },
+    rng: () => 0.99,
   });
+  const result = endPlayerTurn(state);
+  expect(result.state.playerHealth).toBe(0);
+  expect(result.state.turn).toBe(state.turn);
+  expect(result.state.hand).toEqual(state.hand);
 });
 
 it("stops enemy trait pulses when Poison defeats the hero", () => {

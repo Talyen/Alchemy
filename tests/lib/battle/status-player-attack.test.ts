@@ -32,19 +32,17 @@ describe("applyPlayerStatusFromAttack", () => {
   });
 });
 
-describe("damage status riders during crowd-control immunity", () => {
-  it.each([
-    { stunSkipTurns: 1, freezeSkipTurns: 0, cooldown: 0 },
-    { stunSkipTurns: 0, freezeSkipTurns: 1, cooldown: 0 },
-    { stunSkipTurns: 0, freezeSkipTurns: 0, cooldown: 1 },
-  ])("blocks buildup while preserving damage with %j", (playerCC) => {
-    for (const damageType of ["stun", "freeze"] as const) {
-      const state = patchBattleState({ playerCC });
-      const result = processEnemyDamageEffect(state, { kind: "damage", damageType, amount: 2 }, []);
-      expect(result.playerHealth).toBe(state.playerHealth - 2);
-      expect(result.playerStatuses[damageType]).toBe(0);
-      expect(result.playerCC).toEqual(playerCC);
-      expect(state.playerStatuses[damageType]).toBe(0);
-    }
-  });
+it.each([
+  { stunSkipTurns: 1, freezeSkipTurns: 0, cooldown: 0 },
+  { stunSkipTurns: 0, freezeSkipTurns: 1, cooldown: 0 },
+  { stunSkipTurns: 0, freezeSkipTurns: 0, cooldown: 1 },
+])("damage status riders during crowd-control immunity blocks buildup while preserving damage with %j", (playerCC) => {
+  for (const damageType of ["stun", "freeze"] as const) {
+    const state = patchBattleState({ playerCC });
+    const result = processEnemyDamageEffect(state, { kind: "damage", damageType, amount: 2 }, []);
+    expect(result.playerHealth).toBe(state.playerHealth - 2);
+    expect(result.playerStatuses[damageType]).toBe(0);
+    expect(result.playerCC).toEqual(playerCC);
+    expect(state.playerStatuses[damageType]).toBe(0);
+  }
 });

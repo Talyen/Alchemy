@@ -22,135 +22,125 @@ import { setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-wr
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 
 describe("Combat feedback and reward regressions", () => {
-  describe("Bug 1: Pre-hit eligibility snapshot in resolveTypedEnemyHit", () => {
-    it("preserves eligibility snapshot when applying damage status riders", () => {
-      const eligibility = patchBattleState({
-        playerStatuses: { block: 0 },
-        gearEffects: { freezeGrantsBlockAndMana: 1 },
-      });
-      // Damaged state has block = 5, but eligibility snapshot had block = 0
-      const state = patchBattleState({
-        playerStatuses: { block: 5 },
-        gearEffects: { freezeGrantsBlockAndMana: 1 },
-        enemyHealth: 50,
-      });
-
-      const combatTexts: CombatTextEvent[] = [];
-      const result = resolveTypedEnemyHit(
-        state,
-        { kind: "damage", damageType: "freeze", amount: 4 },
-        4,
-        combatTexts,
-        eligibility,
-      );
-
-      // Since eligibility had 0 block, freezeGrantsBlockAndMana should have granted Block
-      expect(result.state.playerStatuses.block).toBe(5 + 4);
+  it("Bug 1: Pre-hit eligibility snapshot in resolveTypedEnemyHit preserves eligibility snapshot when applying damage status riders", () => {
+    const eligibility = patchBattleState({
+      playerStatuses: { block: 0 },
+      gearEffects: { freezeGrantsBlockAndMana: 1 },
     });
-  });
-
-  describe("Bug 3: CC immunity feedback on cooldown for multiply-enemy-status", () => {
-    it("emits Immune to Freeze notice when enemy status multiplier is blocked by player CC cooldown", () => {
-      const state = patchBattleState({
-        playerStatuses: { freeze: 10 },
-        playerCC: { cooldown: 2, stunSkipTurns: 0, freezeSkipTurns: 0 },
-        currentEnemy: { abilityIds: ["chill-spike"] },
-      });
-      const abilityCard: BattleCard = {
-        id: "chill-spike",
-        title: "Chill Spike",
-        descriptionLines: [],
-        art: "",
-        cost: 0,
-        effects: [{ kind: "multiply-enemy-status", status: "freeze", factor: 2 }],
-      };
-      const combatTexts: CombatTextEvent[] = [];
-      const next = applyEnemyAbility(state, abilityCard, combatTexts);
-
-      expect(next.playerStatuses.freeze).toBe(10);
-      expect(combatTexts).toContainEqual({
-        target: "player",
-        kind: "notice",
-        stat: "freeze",
-        signal: "immune",
-        text: "Immune to Freeze",
-      });
+    // Damaged state has block = 5, but eligibility snapshot had block = 0
+    const state = patchBattleState({
+      playerStatuses: { block: 5 },
+      gearEffects: { freezeGrantsBlockAndMana: 1 },
+      enemyHealth: 50,
     });
-  });
 
-  describe("Bug 5: Turn-end mana tracking forwarded in resolveHasteTurn", () => {
-    it("preserves manaAtTurnEnd on haste turns so wellspringKeepMana awards bonus mana", () => {
-      const state = patchBattleState({
-        mana: 3,
-        maxMana: 3,
-        playerStatuses: { haste: 1 },
-        talentEffects: { wellspringKeepMana: 2 },
-      });
-      const resolution = endPlayerTurn(state);
-
-      expect(resolution.kind).toBe("haste");
-      // Player had unspent mana (3 > 0), so wellspringKeepMana grants 2 bonus mana
-      expect(resolution.state.mana).toBe(3 + 2);
-    });
-  });
-
-  describe("Bug 6: prepareWildwoodBossInDraft passes updated deck length", () => {
-    it("commits the removed deck and next boss together", async () => {
-      const session = createGameSession();
-      dispatchGameplayCommand(
-        (draft) => {
-          draft.run.activeRun.contentSystemType = CONTENT_SYSTEMS.WILDWOOD;
-          draft.run.activeRun.runDeck = Array.from({ length: 9 }, (_, uid) => ({ ...cardById["slash"]!, uid }));
-          setHasActiveRun(draft, true);
-          draft.session.activity = { kind: "wildwood-removal" };
-          draft.session.wildwoodDraft = {
-            ...createInitialWildwoodDraftState("knight", () => 0.5),
-            phase: "removal",
-          };
-          return acceptCommand();
-        },
-        undefined,
-        session,
-      );
-
-      const result = dispatchRunSessionCommand(
-        (draft) => {
-          const prepared = prepareWildwoodBossInDraft(draft, 0);
-          return prepared ? acceptCommand(prepared) : rejectCommand("failed", null);
-        },
-        undefined,
-        session,
-      );
-
-      expect(result).not.toBeNull();
-      expect(readActiveRun(session).runDeck.length).toBe(8);
-      expect(readRunSession(session).wildwoodDraft?.phase).toBe("battle");
-      await session.dispose();
-    });
-  });
-
-  describe("scaled empty draws", () => {
-    it.each([0, 0.4, 1, 2])(
-      "only grants an emergency Wish for a positive resolved draw at multiplier %s",
-      (multiplier) => {
-        const state = patchBattleState({ deck: [], discard: [], hand: [] });
-        const next = SIMPLE_HANDLERS["random-draw"](
-          state,
-          makeTestCard(),
-          { kind: "random-draw", minAmount: 1, maxAmount: 1 },
-          multiplier,
-          [],
-        );
-        if (Math.round(multiplier) > 0) {
-          expect(next.wishOptions?.length).toBeGreaterThan(0);
-          expect(next.wishQueue).toEqual([]);
-        } else {
-          expect(next.wishOptions).toBeNull();
-          expect(next.wishQueue).toEqual([]);
-        }
-      },
+    const combatTexts: CombatTextEvent[] = [];
+    const result = resolveTypedEnemyHit(
+      state,
+      { kind: "damage", damageType: "freeze", amount: 4 },
+      4,
+      combatTexts,
+      eligibility,
     );
+
+    // Since eligibility had 0 block, freezeGrantsBlockAndMana should have granted Block
+    expect(result.state.playerStatuses.block).toBe(5 + 4);
   });
+
+  it("Bug 3: CC immunity feedback on cooldown for multiply-enemy-status emits Immune to Freeze notice when enemy status multiplier is blocked by player CC cooldown", () => {
+    const state = patchBattleState({
+      playerStatuses: { freeze: 10 },
+      playerCC: { cooldown: 2, stunSkipTurns: 0, freezeSkipTurns: 0 },
+      currentEnemy: { abilityIds: ["chill-spike"] },
+    });
+    const abilityCard: BattleCard = {
+      id: "chill-spike",
+      title: "Chill Spike",
+      descriptionLines: [],
+      art: "",
+      cost: 0,
+      effects: [{ kind: "multiply-enemy-status", status: "freeze", factor: 2 }],
+    };
+    const combatTexts: CombatTextEvent[] = [];
+    const next = applyEnemyAbility(state, abilityCard, combatTexts);
+
+    expect(next.playerStatuses.freeze).toBe(10);
+    expect(combatTexts).toContainEqual({
+      target: "player",
+      kind: "notice",
+      stat: "freeze",
+      signal: "immune",
+      text: "Immune to Freeze",
+    });
+  });
+
+  it("Bug 5: Turn-end mana tracking forwarded in resolveHasteTurn preserves manaAtTurnEnd on haste turns so wellspringKeepMana awards bonus mana", () => {
+    const state = patchBattleState({
+      mana: 3,
+      maxMana: 3,
+      playerStatuses: { haste: 1 },
+      talentEffects: { wellspringKeepMana: 2 },
+    });
+    const resolution = endPlayerTurn(state);
+
+    expect(resolution.kind).toBe("haste");
+    // Player had unspent mana (3 > 0), so wellspringKeepMana grants 2 bonus mana
+    expect(resolution.state.mana).toBe(3 + 2);
+  });
+
+  it("Bug 6: prepareWildwoodBossInDraft passes updated deck length commits the removed deck and next boss together", async () => {
+    const session = createGameSession();
+    dispatchGameplayCommand(
+      (draft) => {
+        draft.run.activeRun.contentSystemType = CONTENT_SYSTEMS.WILDWOOD;
+        draft.run.activeRun.runDeck = Array.from({ length: 9 }, (_, uid) => ({ ...cardById["slash"]!, uid }));
+        setHasActiveRun(draft, true);
+        draft.session.activity = { kind: "wildwood-removal" };
+        draft.session.wildwoodDraft = {
+          ...createInitialWildwoodDraftState("knight", () => 0.5),
+          phase: "removal",
+        };
+        return acceptCommand();
+      },
+      undefined,
+      session,
+    );
+
+    const result = dispatchRunSessionCommand(
+      (draft) => {
+        const prepared = prepareWildwoodBossInDraft(draft, 0);
+        return prepared ? acceptCommand(prepared) : rejectCommand("failed", null);
+      },
+      undefined,
+      session,
+    );
+
+    expect(result).not.toBeNull();
+    expect(readActiveRun(session).runDeck.length).toBe(8);
+    expect(readRunSession(session).wildwoodDraft?.phase).toBe("battle");
+    await session.dispose();
+  });
+
+  it.each([0, 0.4, 1, 2])(
+    "scaled empty draws only grants an emergency Wish for a positive resolved draw at multiplier %s",
+    (multiplier) => {
+      const state = patchBattleState({ deck: [], discard: [], hand: [] });
+      const next = SIMPLE_HANDLERS["random-draw"](
+        state,
+        makeTestCard(),
+        { kind: "random-draw", minAmount: 1, maxAmount: 1 },
+        multiplier,
+        [],
+      );
+      if (Math.round(multiplier) > 0) {
+        expect(next.wishOptions?.length).toBeGreaterThan(0);
+        expect(next.wishQueue).toEqual([]);
+      } else {
+        expect(next.wishOptions).toBeNull();
+        expect(next.wishQueue).toEqual([]);
+      }
+    },
+  );
 
   describe("Companion removal does not grant Consume gear rewards", () => {
     it("does not grant armorOnConsume when playing a summon-companion card", () => {

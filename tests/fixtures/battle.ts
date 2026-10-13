@@ -13,17 +13,14 @@ export function makeCombatTexts(): CombatTextEvent[] {
   return [];
 }
 
+type DamageEffect = Extract<BattleCardEffect, { kind: "damage" }>;
+
 export function makeEffect(
-  damageType: string,
+  damageType: DamageEffect["damageType"],
   amount: number,
-  extras: Partial<BattleCardEffect> = {},
-): BattleCardEffect {
-  return {
-    kind: "damage",
-    damageType: damageType as import("@/lib/game-data/types").DamageType,
-    amount,
-    ...extras,
-  } as BattleCardEffect;
+  extras: Partial<Omit<DamageEffect, "kind" | "damageType" | "amount">> = {},
+): DamageEffect {
+  return { kind: "damage", damageType, amount, ...extras };
 }
 
 export function makeState(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
@@ -36,30 +33,10 @@ export function makeStateWithFailedRolls(overrides: Parameters<typeof makeTestBa
   return makeState({ rng: chanceFailRng, ...overrides });
 }
 
-type DamageEffect = Extract<BattleCardEffect, { kind: "damage" }>;
-
 export function dealDamage(state: BattleState, card: BattleCard, texts: CombatTextEvent[] = makeCombatTexts()) {
   const effect = card.effects.find((candidate): candidate is DamageEffect => candidate.kind === "damage");
   if (!effect) throw new Error("dealDamage fixture: card has no damage effect");
   return dealDamageToEnemy(state, card, effect, texts);
-}
-
-export function makeTestBattleState(overrides: Partial<BattleState> = {}): BattleState {
-  const base = defaultBattleState();
-  const merged = {
-    ...base,
-    mana: BASE_PLAYER_MANA,
-    maxMana: BASE_PLAYER_MANA,
-    rng: seededRng(42),
-
-    appliesFightPacing: false,
-  };
-  return {
-    ...merged,
-    ...overrides,
-    playerCC: overrides.playerCC ? { ...merged.playerCC, ...overrides.playerCC } : merged.playerCC,
-    enemyCC: overrides.enemyCC ? { ...merged.enemyCC, ...overrides.enemyCC } : merged.enemyCC,
-  };
 }
 
 const BATTLE_RECORD_FIELDS = [
@@ -81,16 +58,22 @@ export type BattleStatePatch = Partial<Omit<BattleState, BattleRecordField>> & {
   [K in BattleRecordField]?: Partial<BattleState[K]>;
 };
 
-export function patchBattleState(patch: BattleStatePatch = {}): BattleState {
-  const base = makeTestBattleState();
+export function makeTestBattleState(patch: BattleStatePatch = {}): BattleState {
+  const base = {
+    ...defaultBattleState(),
+    mana: BASE_PLAYER_MANA,
+    maxMana: BASE_PLAYER_MANA,
+    rng: seededRng(42),
+    appliesFightPacing: false,
+  };
   const state = { ...base, ...patch } as BattleState;
   for (const field of BATTLE_RECORD_FIELDS) {
-    Object.assign(state, {
-      [field]: patch[field] || field === "uniqueGear" ? { ...base[field], ...patch[field] } : base[field],
-    });
+    Object.assign(state, { [field]: { ...base[field], ...patch[field] } });
   }
   return state;
 }
+
+export const patchBattleState = makeTestBattleState;
 
 function dodgeThenMissRng() {
   let calls = 0;
@@ -111,24 +94,18 @@ export function incomingPhysical(overrides: Parameters<typeof patchBattleState>[
   });
 }
 
-export function slashDeck(count: number): BattleCard[] {
+function effectDeck(id: string, title: string, effect: BattleCardEffect, count: number): BattleCard[] {
   return Array.from({ length: count }, (_, index) =>
-    makeTestCard({
-      id: `slash-${index}`,
-      title: "Slash",
-      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-    }),
+    makeTestCard({ id: `${id}-${index}`, title, effects: [{ ...effect }] }),
   );
 }
 
+export function slashDeck(count: number): BattleCard[] {
+  return effectDeck("slash", "Slash", { kind: "damage", damageType: "physical", amount: 6 }, count);
+}
+
 export function blockDeck(count: number): BattleCard[] {
-  return Array.from({ length: count }, (_, index) =>
-    makeTestCard({
-      id: `block-${index}`,
-      title: "Block",
-      effects: [{ kind: "player-status", status: "block", amount: 5 }],
-    }),
-  );
+  return effectDeck("block", "Block", { kind: "player-status", status: "block", amount: 5 }, count);
 }
 
 export function statusDeck(
@@ -136,13 +113,7 @@ export function statusDeck(
   amount: number,
   count: number,
 ): BattleCard[] {
-  return Array.from({ length: count }, (_, index) =>
-    makeTestCard({
-      id: `${status}-${index}`,
-      title: status,
-      effects: [{ kind: "damage", damageType: status, amount }],
-    }),
-  );
+  return effectDeck(status, status, { kind: "damage", damageType: status, amount }, count);
 }
 
 /**

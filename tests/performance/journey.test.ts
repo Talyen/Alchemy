@@ -62,31 +62,29 @@ describe("reachable performance cases", () => {
   });
 });
 
-describe("journey segment measurement", () => {
-  it("pools repeated visits to a segment without counting intervening idle frames", () => {
-    const sample: FrameSampleRaw = {
-      frameGaps: Array.from({ length: 30 }, (_, index) => ({
-        startTime: index * 10,
-        duration: index === 16 ? 60 : 10,
-      })),
-      frameTimes: [],
-      longTasks: [{ startTime: 160, duration: 60, phase: "idle" }],
-      durationMs: 300,
-      phaseMarks: [
-        { time: 0, phase: "combat" },
-        { time: 100, phase: "idle" },
-        { time: 200, phase: "combat" },
-      ],
-    };
-    const actions = [{ name: "play", segment: "combat", timeMs: 50 }];
-    const results = measureSegments(sample, actions, [
-      { name: "combat", minActions: 1, minFrames: 20 },
-      { name: "idle", minActions: 0, minFrames: 10 },
-    ]);
-    expect(results[0]).toMatchObject({ name: "combat", actions: 1, valid: true });
-    expect(results[0]?.metrics.frameCount).toBe(20);
-    expect(results[0]?.metrics.hitchesOver50ms).toBe(0);
-    expect(results[1]?.metrics.hitchesOver50ms).toBe(1);
-    expect(measureSegments(sample, [], [{ name: "combat", minActions: 1, minFrames: 20 }])[0]?.valid).toBe(false);
-  });
+it("journey segment measurement pools repeated visits to a segment without counting intervening idle frames", () => {
+  const sample: FrameSampleRaw = {
+    frameGaps: Array.from({ length: 30 }, (_, index) => ({
+      startTime: index * 10,
+      duration: index === 16 ? 60 : 10,
+    })),
+    frameTimes: [],
+    longTasks: [{ startTime: 160, duration: 60, phase: "idle" }],
+    durationMs: 300,
+    phaseMarks: [
+      { time: 0, phase: "combat" },
+      { time: 100, phase: "idle" },
+      { time: 200, phase: "combat" },
+    ],
+  };
+  const actions = [{ name: "play", segment: "combat", timeMs: 50 }];
+  const results = measureSegments(sample, actions, [
+    { name: "combat", minActions: 1, minFrames: 20 },
+    { name: "idle", minActions: 0, minFrames: 10 },
+  ]);
+  expect(results[0]).toMatchObject({ name: "combat", actions: 1, valid: true });
+  expect(results[0]?.metrics.frameCount).toBe(20);
+  expect(results[0]?.metrics.hitchesOver50ms).toBe(0);
+  expect(results[1]?.metrics.hitchesOver50ms).toBe(1);
+  expect(measureSegments(sample, [], [{ name: "combat", minActions: 1, minFrames: 20 }])[0]?.valid).toBe(false);
 });

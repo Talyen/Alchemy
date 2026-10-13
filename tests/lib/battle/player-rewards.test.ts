@@ -79,17 +79,15 @@ describe("applyHealingWithCombatText", () => {
   });
 });
 
-describe("addGoldWithCombatText", () => {
-  it("scales gold using gear multiplier when present", () => {
-    const state = patchBattleState({
-      gold: 10,
-      gearEffects: { goldGainPercent: 50 },
-    });
-    const texts = makeTexts();
-    const nextState = addGoldWithCombatText(state, 10, texts);
-    expect(nextState.gold).toBe(25);
-    expect(texts).toEqual([{ target: "player", kind: "status", stat: "gold", amount: 15 }]);
+it("addGoldWithCombatText scales gold using gear multiplier when present", () => {
+  const state = patchBattleState({
+    gold: 10,
+    gearEffects: { goldGainPercent: 50 },
   });
+  const texts = makeTexts();
+  const nextState = addGoldWithCombatText(state, 10, texts);
+  expect(nextState.gold).toBe(25);
+  expect(texts).toEqual([{ target: "player", kind: "status", stat: "gold", amount: 15 }]);
 });
 
 function ccProcKillState(): BattleState {

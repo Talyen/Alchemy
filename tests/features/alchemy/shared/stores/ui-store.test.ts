@@ -55,55 +55,49 @@ describe("plasma registrations", () => {
   });
 });
 
-describe("nextShimmerState", () => {
-  it("holds the same reference inside the cooldown without fake timers", () => {
-    const first = nextShimmerState(null, "card-a", 1000);
-    expect(first).toMatchObject({ cardId: "card-a", token: 1, triggeredAt: 1000 });
-    expect(nextShimmerState(first, "card-a", 1005)).toBe(first);
-    const second = nextShimmerState(first, "card-b", 1005);
-    expect(second).toMatchObject({ cardId: "card-b", token: 2 });
-  });
+it("nextShimmerState holds the same reference inside the cooldown without fake timers", () => {
+  const first = nextShimmerState(null, "card-a", 1000);
+  expect(first).toMatchObject({ cardId: "card-a", token: 1, triggeredAt: 1000 });
+  expect(nextShimmerState(first, "card-a", 1005)).toBe(first);
+  const second = nextShimmerState(first, "card-b", 1005);
+  expect(second).toMatchObject({ cardId: "card-b", token: 2 });
 });
 
-describe("maybeTriggerShimmer", () => {
-  it("is per-card cooldown not global", () => {
-    const nowSpy = vi.spyOn(Date, "now").mockReturnValue(1000);
-    const store = useUiStore.getState();
-    store.maybeTriggerShimmer("card-a");
-    const first = useUiStore.getState().shimmerState;
-    expect(first?.cardId).toBe("card-a");
-    expect(first?.token).toBe(1);
+it("maybeTriggerShimmer is per-card cooldown not global", () => {
+  const nowSpy = vi.spyOn(Date, "now").mockReturnValue(1000);
+  const store = useUiStore.getState();
+  store.maybeTriggerShimmer("card-a");
+  const first = useUiStore.getState().shimmerState;
+  expect(first?.cardId).toBe("card-a");
+  expect(first?.token).toBe(1);
 
-    nowSpy.mockReturnValue(1005);
-    store.maybeTriggerShimmer("card-a");
-    expect(useUiStore.getState().shimmerState?.token).toBe(1);
+  nowSpy.mockReturnValue(1005);
+  store.maybeTriggerShimmer("card-a");
+  expect(useUiStore.getState().shimmerState?.token).toBe(1);
 
-    store.maybeTriggerShimmer("card-b");
-    expect(useUiStore.getState().shimmerState?.cardId).toBe("card-b");
-    expect(useUiStore.getState().shimmerState?.token).toBe(2);
+  store.maybeTriggerShimmer("card-b");
+  expect(useUiStore.getState().shimmerState?.cardId).toBe("card-b");
+  expect(useUiStore.getState().shimmerState?.token).toBe(2);
 
-    nowSpy.mockReturnValue(2000);
-    store.maybeTriggerShimmer("card-a");
-    expect(useUiStore.getState().shimmerState?.cardId).toBe("card-a");
-    nowSpy.mockRestore();
-  });
+  nowSpy.mockReturnValue(2000);
+  store.maybeTriggerShimmer("card-a");
+  expect(useUiStore.getState().shimmerState?.cardId).toBe("card-a");
+  nowSpy.mockRestore();
 });
 
-describe("inspection mutual exclusion", () => {
-  it("keeps card and enemy inspection mutually exclusive", () => {
-    const store = useUiStore.getState();
-    store.setCardInspection("deck");
-    expect(isBattleInspectionOpen(useUiStore.getState())).toBe(true);
+it("inspection mutual exclusion keeps card and enemy inspection mutually exclusive", () => {
+  const store = useUiStore.getState();
+  store.setCardInspection("deck");
+  expect(isBattleInspectionOpen(useUiStore.getState())).toBe(true);
 
-    store.setEnemyInspectionOpen(true);
-    expect(useUiStore.getState().cardInspection).toBeNull();
-    expect(useUiStore.getState().enemyInspectionOpen).toBe(true);
+  store.setEnemyInspectionOpen(true);
+  expect(useUiStore.getState().cardInspection).toBeNull();
+  expect(useUiStore.getState().enemyInspectionOpen).toBe(true);
 
-    store.setCardInspection("draw");
-    expect(useUiStore.getState().enemyInspectionOpen).toBe(false);
-    expect(useUiStore.getState().cardInspection).toBe("draw");
+  store.setCardInspection("draw");
+  expect(useUiStore.getState().enemyInspectionOpen).toBe(false);
+  expect(useUiStore.getState().cardInspection).toBe("draw");
 
-    store.setCardInspection(null);
-    expect(isBattleInspectionOpen(useUiStore.getState())).toBe(false);
-  });
+  store.setCardInspection(null);
+  expect(isBattleInspectionOpen(useUiStore.getState())).toBe(false);
 });

@@ -71,30 +71,28 @@ describe("gameplay five bugs regressions", () => {
     });
   });
 
-  describe("3. Exorcism Cleanse Notice Event", () => {
-    it("emits a cleanse notice event when cleansing Burn to deal damage", () => {
-      const combatTexts: Array<import("@/lib/battle/types").CombatTextEvent> = [];
-      const state = patchBattleState({
-        playerStatuses: { burn: 4 },
-        enemyHealth: 50,
-        enemyMaxHealth: 50,
-      });
-
-      const card = cardById["exorcism"]!;
-      const effect = card.effects.find((e) => e.kind === "cleanse-player-status-to-damage") as Extract<
-        (typeof card.effects)[number],
-        { kind: "cleanse-player-status-to-damage" }
-      >;
-
-      const next = EFFECT_APPLY_BY_KIND["cleanse-player-status-to-damage"](state, card, effect, 1, combatTexts);
-      expect(next.playerStatuses.burn).toBe(0);
-      expect(next.enemyHealth).toBe(46);
-
-      const cleanseNotice = combatTexts.find(
-        (e) => e.target === "player" && e.kind === "notice" && e.stat === "burn" && e.signal === "cleanse",
-      );
-      expect(cleanseNotice).toBeDefined();
+  it("3. Exorcism Cleanse Notice Event emits a cleanse notice event when cleansing Burn to deal damage", () => {
+    const combatTexts: Array<import("@/lib/battle/types").CombatTextEvent> = [];
+    const state = patchBattleState({
+      playerStatuses: { burn: 4 },
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
     });
+
+    const card = cardById["exorcism"]!;
+    const effect = card.effects.find((e) => e.kind === "cleanse-player-status-to-damage") as Extract<
+      (typeof card.effects)[number],
+      { kind: "cleanse-player-status-to-damage" }
+    >;
+
+    const next = EFFECT_APPLY_BY_KIND["cleanse-player-status-to-damage"](state, card, effect, 1, combatTexts);
+    expect(next.playerStatuses.burn).toBe(0);
+    expect(next.enemyHealth).toBe(46);
+
+    const cleanseNotice = combatTexts.find(
+      (e) => e.target === "player" && e.kind === "notice" && e.stat === "burn" && e.signal === "cleanse",
+    );
+    expect(cleanseNotice).toBeDefined();
   });
 
   describe("4. Autoplay & Wish Scoring for Resource-Based Damage", () => {

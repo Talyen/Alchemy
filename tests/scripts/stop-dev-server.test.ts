@@ -50,28 +50,26 @@ describe("isProjectOwnedCommandLine", () => {
   });
 });
 
-describe("stopOwnedListeners", () => {
-  it("stops only listeners owned by this project", async () => {
-    const stopPid = vi.fn(async () => undefined);
-    const log = vi.fn();
-    const commandLines = new Map([
-      [11, "node /workspace/Alchemy/node_modules/vite/bin/vite.js"],
-      [12, "node /workspace/Alchemy-copy/node_modules/vite/bin/vite.js"],
-      [13, ""],
-      [14, "node /workspace/Alchemy/.worktrees/another-task/node_modules/vite/bin/vite.js"],
-    ]);
+it("stopOwnedListeners stops only listeners owned by this project", async () => {
+  const stopPid = vi.fn(async () => undefined);
+  const log = vi.fn();
+  const commandLines = new Map([
+    [11, "node /workspace/Alchemy/node_modules/vite/bin/vite.js"],
+    [12, "node /workspace/Alchemy-copy/node_modules/vite/bin/vite.js"],
+    [13, ""],
+    [14, "node /workspace/Alchemy/.worktrees/another-task/node_modules/vite/bin/vite.js"],
+  ]);
 
-    await stopOwnedListeners({
-      port: 4173,
-      projectRoot: "/workspace/Alchemy",
-      platform: "linux",
-      getListeningPids: async () => [11, 12, 13, 14],
-      getCommandLine: async (pid) => commandLines.get(pid) ?? "",
-      stopPid,
-      log,
-    });
-
-    expect(stopPid).toHaveBeenCalledExactlyOnceWith(11);
-    expect(log).toHaveBeenCalledWith(expect.stringContaining("PID 12"));
+  await stopOwnedListeners({
+    port: 4173,
+    projectRoot: "/workspace/Alchemy",
+    platform: "linux",
+    getListeningPids: async () => [11, 12, 13, 14],
+    getCommandLine: async (pid) => commandLines.get(pid) ?? "",
+    stopPid,
+    log,
   });
+
+  expect(stopPid).toHaveBeenCalledExactlyOnceWith(11);
+  expect(log).toHaveBeenCalledWith(expect.stringContaining("PID 12"));
 });

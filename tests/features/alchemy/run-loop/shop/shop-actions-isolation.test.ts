@@ -311,23 +311,21 @@ describe("shop action isolation", () => {
     });
   });
 
-  describe("per-shop isolation", () => {
-    it("a stale merchant purchase cannot spend gold after entering the alchemist", () => {
-      setRunProgress({ gold: 999 });
-      setShopState(createInitialShopState());
-      const card = requiredItem(
-        readActivityData(readRunSession(defaultGameSession).activity, "shop").cards[0],
-        "merchant card",
-      );
-      setAlchemistState(createInitialAlchemistState());
-      const actions = buildActions();
-      expect(actions.merchant.buyCard(card, shopItemSlotKey(card.id, 0))).toBe(false);
-      expect(actions.merchant.refresh()).toBe(false);
-      expect(actions.merchant.removeCard(0)).toBe(false);
-      expect(readRunProfile(defaultGameSession).gold).toBe(999);
-      expect(readRunSession(defaultGameSession).activity.kind).toBe("alchemist");
+  it("per-shop isolation a stale merchant purchase cannot spend gold after entering the alchemist", () => {
+    setRunProgress({ gold: 999 });
+    setShopState(createInitialShopState());
+    const card = requiredItem(
+      readActivityData(readRunSession(defaultGameSession).activity, "shop").cards[0],
+      "merchant card",
+    );
+    setAlchemistState(createInitialAlchemistState());
+    const actions = buildActions();
+    expect(actions.merchant.buyCard(card, shopItemSlotKey(card.id, 0))).toBe(false);
+    expect(actions.merchant.refresh()).toBe(false);
+    expect(actions.merchant.removeCard(0)).toBe(false);
+    expect(readRunProfile(defaultGameSession).gold).toBe(999);
+    expect(readRunSession(defaultGameSession).activity.kind).toBe("alchemist");
 
-      expect(readActivityData(readRunSession(defaultGameSession).activity, "alchemist").firstPurchaseUsed).toBe(false);
-    });
+    expect(readActivityData(readRunSession(defaultGameSession).activity, "alchemist").firstPurchaseUsed).toBe(false);
   });
 });

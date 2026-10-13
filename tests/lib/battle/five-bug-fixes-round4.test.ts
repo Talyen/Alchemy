@@ -90,29 +90,25 @@ describe("Five targeted bug fixes round 4", () => {
     });
   });
 
-  describe("Bug 4: next-hit-poison presentation metadata includes poison keyword", () => {
-    it("returns poison keyword for next-hit-poison effect", () => {
-      const keywords = collectKeywordsFromBattleEffect({ kind: "next-hit-poison" });
-      expect(keywords).toEqual(["poison"]);
-    });
+  it("Bug 4: next-hit-poison presentation metadata includes poison keyword returns poison keyword for next-hit-poison effect", () => {
+    const keywords = collectKeywordsFromBattleEffect({ kind: "next-hit-poison" });
+    expect(keywords).toEqual(["poison"]);
   });
 
-  describe("Bug 5: resolveEnemyAttackHit dodged branch reports post-dodge player health", () => {
-    it("reports updated healthAfterHit when dodge triggers healing", () => {
-      const state = patchBattleState({
-        playerHealth: 30,
-        playerMaxHealth: 100,
-        flags: { dodgeNextAttack: true },
-        talentEffects: { healOnDodge: 10 },
-      });
-      const combatTexts: CombatTextEvent[] = [];
-      const result = resolveEnemyAttackHit(state, { kind: "damage", damageType: "physical", amount: 8 }, combatTexts, {
-        canDodge: true,
-      });
-
-      expect(result.dodged).toBe(true);
-      expect(result.state.playerHealth).toBe(40);
-      expect(result.healthAfterHit).toBe(40);
+  it("Bug 5: resolveEnemyAttackHit dodged branch reports post-dodge player health reports updated healthAfterHit when dodge triggers healing", () => {
+    const state = patchBattleState({
+      playerHealth: 30,
+      playerMaxHealth: 100,
+      flags: { dodgeNextAttack: true },
+      talentEffects: { healOnDodge: 10 },
     });
+    const combatTexts: CombatTextEvent[] = [];
+    const result = resolveEnemyAttackHit(state, { kind: "damage", damageType: "physical", amount: 8 }, combatTexts, {
+      canDodge: true,
+    });
+
+    expect(result.dodged).toBe(true);
+    expect(result.state.playerHealth).toBe(40);
+    expect(result.healthAfterHit).toBe(40);
   });
 });
