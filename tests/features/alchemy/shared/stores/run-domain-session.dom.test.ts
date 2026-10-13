@@ -4,15 +4,11 @@ import {
   setBattleActiveForTest as mutateHasActiveBattle,
   replaceBattleForTest as mutateSyncedBattleState,
 } from "../../../../helpers/run-domain-store-test";
-import { awardRunEndMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { saveAlchemySaveData } from "@/features/alchemy/shared/storage";
 
 import { createGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { subscribeGameplayCommits } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import {
   abandonRun,
-  applyRunDefeatTeardown,
-  finalizeRunEndSession,
   syncBattleToRun as mutateBattleToRun,
   syncRunToBattleStart as mutateRunToBattleStart,
   teardownRun,
@@ -32,13 +28,9 @@ import {
   createRunSessionCommand,
   subscribeRunSessionCommits,
 } from "@/features/alchemy/shared/stores/run-session-command";
-import {
-  finalizeRunXP as mutateFinalizeRunXP,
-  setHasActiveRun as mutateHasActiveRun,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setHasActiveRun as mutateHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 
 import { createEmptyRewardState, readActivityData } from "@/lib/active-run-session";
-import { playDefeat, stopAllSfx } from "@/lib/audio";
 import { defaultBattleState } from "@/lib/battle";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { ROUTE_SCREENS } from "@/lib/routing";
@@ -127,32 +119,6 @@ describe("run transitions", () => {
     expect(readActiveRunScreen(defaultGameSession)).toBe(ROUTE_SCREENS.MENU);
   });
 
-  it("finalizeRunEndSession clears hasActiveRun", async () => {
-    setHasActiveRun(true);
-    finalizeRunEndSession(
-      {
-        awardRunEndMaterials: vi.fn(() => emptyInventory()),
-        finalizeRunXP: vi.fn(),
-      },
-      defaultGameSession,
-    );
-    expect(readRunSession(defaultGameSession).hasActiveRun).toBe(false);
-    await vi.waitFor(() => {
-      expect(saveAlchemySaveData).toHaveBeenCalledWith(
-        expect.objectContaining({ activeRun: null }),
-        defaultGameSession,
-      );
-    });
-  });
-
-  it("finalizeRunEndSession ignores a second call after hasActiveRun is cleared", () => {
-    setHasActiveRun(true);
-    const awardRunEndMaterials = vi.fn(() => emptyInventory());
-    finalizeRunEndSession({ awardRunEndMaterials, finalizeRunXP: vi.fn() }, defaultGameSession);
-    finalizeRunEndSession({ awardRunEndMaterials, finalizeRunXP: vi.fn() }, defaultGameSession);
-    expect(awardRunEndMaterials).toHaveBeenCalledOnce();
-  });
-
   it("abandonRun preserves the run-end snapshot for the End Run screen", () => {
     setHasActiveRun(true);
     setHasActiveBattle(true);
@@ -161,7 +127,7 @@ describe("run transitions", () => {
       runMaterialsEarned: { ...emptyInventory(), wood: 5 },
     });
 
-    const ended = abandonRun({ awardRunEndMaterials, finalizeRunXP: mutateFinalizeRunXP }, defaultGameSession);
+    const ended = abandonRun(defaultGameSession);
 
     expect(ended).toBe(true);
     expect(readRunSession(defaultGameSession).hasActiveRun).toBe(false);
@@ -170,47 +136,7 @@ describe("run transitions", () => {
     expect(readRunSession(defaultGameSession).runEndMaterials.wood).toBe(5);
     expect(readBattle(defaultGameSession)).not.toHaveProperty("pendingBattleTransition");
 
-    expect(abandonRun({ awardRunEndMaterials, finalizeRunXP: mutateFinalizeRunXP }, defaultGameSession)).toBe(false);
-  });
-
-  it("applyRunDefeatTeardown commits run and combat teardown together", async () => {
-    setHasActiveRun(true);
-    setHasActiveBattle(true);
-    const awardRunEndMaterials = vi.fn(() => emptyInventory());
-    const finalizeRunXP = vi.fn();
-    const clearCombatPresentation = vi.fn();
-    const commits: Array<{ hasActiveRun: boolean; hasActiveBattle: boolean }> = [];
-    const unsubscribe = subscribeRunSessionCommits(() => {
-      commits.push({
-        hasActiveRun: readRunSession(defaultGameSession).hasActiveRun,
-        hasActiveBattle: readBattle(defaultGameSession).hasActiveBattle,
-      });
-    }, defaultGameSession);
-
-    applyRunDefeatTeardown(
-      {
-        awardRunEndMaterials,
-        finalizeRunXP,
-        clearCombatPresentation,
-      },
-      defaultGameSession,
-    );
-    unsubscribe();
-
-    expect(awardRunEndMaterials).toHaveBeenCalledOnce();
-    expect(finalizeRunXP).toHaveBeenCalledOnce();
-    await vi.waitFor(() => {
-      expect(saveAlchemySaveData).toHaveBeenCalledWith(
-        expect.objectContaining({ activeRun: null }),
-        defaultGameSession,
-      );
-    });
-    expect(commits).toEqual([{ hasActiveRun: false, hasActiveBattle: false }]);
-    expect(clearCombatPresentation).toHaveBeenCalledOnce();
-    expect(readRunSession(defaultGameSession).hasActiveRun).toBe(false);
-    expect(readBattle(defaultGameSession).hasActiveBattle).toBe(false);
-    expect(stopAllSfx).toHaveBeenCalledOnce();
-    expect(playDefeat).toHaveBeenCalledOnce();
+    expect(abandonRun(defaultGameSession)).toBe(false);
   });
 });
 

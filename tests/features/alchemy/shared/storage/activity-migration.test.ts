@@ -8,7 +8,7 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 import { saveEnvelopeFixture } from "../../../../fixtures/saves";
 import { makeMinimalActiveRunInput } from "../../../../fixtures/active-run";
 import { version19MysterySave } from "../../../../fixtures/current-saves";
-import * as materials from "@/features/alchemy/shared/stores/run-session-write-port";
+import * as settlement from "@/features/alchemy/shared/stores/write/run-end";
 
 const sessions: Array<ReturnType<typeof createGameSession>> = [];
 afterEach(async () => {
@@ -158,7 +158,7 @@ it("does not retire committed terminal battles or partially publish a failed set
   const session = createGameSession();
   sessions.push(session);
   const before = readGameplayState(session);
-  vi.spyOn(materials, "awardRunEndMaterials").mockImplementationOnce(() => {
+  vi.spyOn(settlement, "settleRunEnd").mockImplementationOnce(() => {
     throw new Error("settlement failed");
   });
   expect(() =>

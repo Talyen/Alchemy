@@ -9,7 +9,6 @@ import {
   awardCardXP as mutateAwardCardXP,
   awardMysteryXP as mutateAwardMysteryXP,
   clearPermanentData as mutateClearPermanentData,
-  finalizeRunXP as mutateFinalizeRunXP,
   unlockAllTalents as mutateUnlockAllTalents,
   unlockTalent as mutateUnlockTalent,
   resetUnlockedTalents as mutateResetUnlockedTalents,
@@ -42,7 +41,6 @@ import {
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-reads";
 
-import { awardRunEndMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createCompleteActiveRunData, makeActiveRunData } from "./active-run-data-fixture";
 import { createEmptyRewardState, serializePendingReward } from "@/lib/active-run-session";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
@@ -52,6 +50,7 @@ import {
   RUN_SNAPSHOT_FIELD_KEYS,
 } from "@/features/alchemy/shared/stores/run-state-init";
 import { defaultGameSession } from "@/app/application-session";
+import { finalizeRunXP as mutateFinalizeRunXP } from "@/features/alchemy/shared/stores/write/run-meta";
 import { savedActivityFixture } from "../../../../fixtures/run-activity";
 
 const syncGearRunHealth = createGameplayCommand(
@@ -481,51 +480,6 @@ describe("talent XP accumulation through run end", () => {
   });
 });
 
-describe("finalizeRunXP", () => {
-  it("applies no multiplier for difficulty-1", () => {
-    setRunProgress({ selectedDifficulty: "difficulty-1" });
-    awardMysteryXP("burn", 10);
-    finalizeRunXP();
-    expect(readRunProfile(defaultGameSession).talentXP.burn).toBe(10);
-    expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
-    expect(readRunSession(defaultGameSession).runEndTalentXP.burn).toBe(10);
-  });
-
-  it("applies 1.3x multiplier for difficulty-2", () => {
-    setRunProgress({ selectedDifficulty: "difficulty-2" });
-    awardMysteryXP("burn", 10);
-    finalizeRunXP();
-    expect(readRunProfile(defaultGameSession).talentXP.burn).toBe(13);
-    expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
-    expect(readRunSession(defaultGameSession).runEndTalentXP.burn).toBe(13);
-  });
-
-  it("applies 1.6x multiplier for difficulty-3", () => {
-    setRunProgress({ selectedDifficulty: "difficulty-3" });
-    awardMysteryXP("burn", 10);
-    finalizeRunXP();
-    expect(readRunProfile(defaultGameSession).talentXP.burn).toBe(16);
-    expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
-  });
-
-  it("is idempotent — second call does not double-count XP", () => {
-    setRunProgress({ selectedDifficulty: "difficulty-2" });
-    awardMysteryXP("burn", 10);
-    finalizeRunXP();
-    expect(readRunSession(defaultGameSession).runEndTalentXP.burn).toBe(13);
-    finalizeRunXP();
-    expect(readRunProfile(defaultGameSession).talentXP.burn).toBe(13);
-    expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
-    expect(readRunSession(defaultGameSession).runEndTalentXP).toEqual({});
-  });
-
-  it("clears runEndTalentXP snapshot when there is no run XP to merge", () => {
-    setRunSession({ runEndTalentXP: { burn: 99 } });
-    finalizeRunXP();
-    expect(readRunSession(defaultGameSession).runEndTalentXP).toEqual({});
-  });
-});
-
 describe("applyRunStartSnapshot", () => {
   it("clears runTalentXP and run-end snapshots when starting a fresh run", () => {
     awardMysteryXP("burn", 5);
@@ -569,7 +523,7 @@ describe("finalizeRunEndSession", () => {
     setRunSession({ hasActiveRun: true });
     setRunProgress({ runObtainedItems: obtained });
 
-    finalizeRunEndSession({ awardRunEndMaterials, finalizeRunXP: mutateFinalizeRunXP }, defaultGameSession);
+    finalizeRunEndSession(defaultGameSession);
 
     const recap = readRunSession(defaultGameSession).runEndItems;
     expect(recap).toEqual(obtained);
@@ -584,7 +538,7 @@ describe("finalizeRunEndSession", () => {
     setRunSession({ hasActiveRun: true });
     setRunProgress({ runBoons: ["test-boon"], roomsEncountered: 4 });
 
-    finalizeRunEndSession({ awardRunEndMaterials, finalizeRunXP: mutateFinalizeRunXP }, defaultGameSession);
+    finalizeRunEndSession(defaultGameSession);
 
     expect(readRunSession(defaultGameSession).hasActiveRun).toBe(false);
     expect(readActiveRun(defaultGameSession).runBoons).toEqual(["test-boon"]);

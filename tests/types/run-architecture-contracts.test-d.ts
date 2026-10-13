@@ -29,6 +29,12 @@ import {
 } from "@/features/alchemy/shared/stores/gear-session-command";
 import { commitEndTurn, createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
+import type { GameSession } from "@/features/alchemy/shared/stores/game-session";
+import {
+  abandonRun,
+  applyRunDefeatTeardown,
+  finalizeRunEndSession,
+} from "@/features/alchemy/shared/stores/run-lifecycle";
 
 declare const asyncMutation: () => Promise<void>;
 declare const maybeAsyncMutation: () => number | PromiseLike<number>;
@@ -50,6 +56,12 @@ type NonDraftFirstWrite = Exclude<
 >;
 
 describe("run architecture type contracts", () => {
+  it("keeps run settlement complete and store-owned", () => {
+    expectTypeOf<Extract<keyof WritePort, "awardRunEndMaterials" | "finalizeRunXP">>().toEqualTypeOf<never>();
+    expectTypeOf(finalizeRunEndSession).parameters.toEqualTypeOf<[GameSession]>();
+    expectTypeOf(applyRunDefeatTeardown).parameters.toEqualTypeOf<[GameSession]>();
+    expectTypeOf(abandonRun).parameters.toEqualTypeOf<[GameSession]>();
+  });
   it("requires explicit RNG for player actions and returns data-only snapshots", () => {
     // @ts-expect-error -- snapshots cannot supply execution dependencies implicitly
     resolveBattleCard(snapshot, "card", 0);

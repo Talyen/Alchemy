@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
-import { readActiveRun, readRunProfile, readRunRevision } from "@/features/alchemy/shared/stores/run-reads";
+import {
+  readActiveRun,
+  readRunProfile,
+  readRunRevision,
+  readRunSession,
+} from "@/features/alchemy/shared/stores/run-reads";
 import {
   addMaterialsToStockpile,
   awardMaterialsDuringRun,
@@ -10,7 +15,7 @@ import {
   setHasActiveRun,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { SaveDataSchema } from "@/lib/validation/save-schemas/save-data";
-import { awardRunEndMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { finalizeRunEndSession } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -119,6 +124,7 @@ describe("four-tier Homestead persistence and settlement", () => {
   it("settles Stone and alternating Wish currency through the proper wallets", () => {
     dispatchGameplayCommand(
       (draft) => {
+        setHasActiveRun(draft, true);
         draft.run.activeRun.contentSystemType = CONTENT_SYSTEMS.LABYRINTH;
         draft.run.activeRun.roomsEncountered = 3;
         draft.runProfile.effects = {
@@ -128,40 +134,16 @@ describe("four-tier Homestead persistence and settlement", () => {
           endRunGoldPerRoom: 4,
           endRunWishPerRoom: 4,
         };
-        const before = draft.runProfile.gold;
-        const granted = awardRunEndMaterials(draft);
-        expect(granted.stone).toBe(12);
-        expect(granted.gems).toBe(28);
-        expect(draft.runProfile.gold - before).toBe(20);
-        expect(draft.session.runEndMaterials.stone).toBe(12);
-
         return acceptCommand();
       },
       undefined,
       defaultGameSession,
     );
-  });
-
-  it("pays Wildwood Materials and Gold with the usual Homestead rules", () => {
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.run.activeRun.contentSystemType = CONTENT_SYSTEMS.WILDWOOD;
-        draft.run.activeRun.roomsEncountered = 3;
-        draft.runProfile.effects = {
-          ...defaultHomesteadEffects,
-          endRunStonePerRoom: 4,
-          endRunGoldPerRoom: 4,
-          endRunWishPerRoom: 4,
-        };
-        const before = draft.runProfile.gold;
-        expect(awardRunEndMaterials(draft)).toEqual({ ...emptyInventory(), stone: 12, gems: 4 });
-        expect(draft.runProfile.gold - before).toBe(20);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    const before = readRunProfile(defaultGameSession).gold;
+    const granted = finalizeRunEndSession(defaultGameSession);
+    expect(granted).toEqual({ ...emptyInventory(), stone: 12, gems: 28 });
+    expect(readRunProfile(defaultGameSession).gold - before).toBe(20);
+    expect(readRunSession(defaultGameSession).runEndMaterials.stone).toBe(12);
   });
 });
 

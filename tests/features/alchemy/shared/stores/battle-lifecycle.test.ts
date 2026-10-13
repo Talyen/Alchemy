@@ -14,9 +14,8 @@ import {
   dispatchRunSessionCommand,
   subscribeRunSessionCommits,
 } from "@/features/alchemy/shared/stores/run-session-command";
-import { finalizeRunXP, setHasActiveRun, setRunDeck } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setHasActiveRun, setRunDeck } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createVictoryCommand } from "@/features/alchemy/run-loop/run/victory-commands";
-import { awardRunEndMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { cardById, getStartingDeck } from "@/lib/game-data";
 import { DESTINATIONS } from "@/lib/routing";
 import { parseActiveRun } from "@/lib/active-run-session";
@@ -37,7 +36,7 @@ it("rejects every battle command after End Run without changing progress, RNG, o
     undefined,
     defaultGameSession,
   );
-  expect(abandonRun({ awardRunEndMaterials, finalizeRunXP }, defaultGameSession)).toBe(true);
+  expect(abandonRun(defaultGameSession)).toBe(true);
   const before = readGameplayState(defaultGameSession);
   const commit = vi.fn();
   const unsubscribe = subscribeRunSessionCommits(commit, defaultGameSession);

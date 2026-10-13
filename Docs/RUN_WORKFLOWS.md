@@ -26,7 +26,7 @@ Campaign, Labyrinth, and Wildwood victories grant enemy-based Materials through 
 
 1. Route combat payouts through `computeCombatMaterialReward()` and mystery grants through `computeMysteryMaterialReward()` (both in `@/lib/homestead/material-rewards`); they own herb-find, scavenger/herbalist, and elite/boss ordering per the policy table there. Do not reimplement the sequence at the call site.
 2. Call `awardMaterialsDuringRun(transaction, materials)` inside the owning command (`run-loop/run/reward-commands.ts`, `run-loop/navigation/mystery-flow.ts`, or Armory salvage in `shared/stores/gear-session-command.ts`). The canonical site list is `AWARD_MATERIALS_CALL_SITES` in `shared/stores/run-materials.ts`, enforced by `tests/architecture/run-materials-award-guard.test.ts`; new grant paths must extend it there.
-3. Reuse the run-end display: `awardRunEndMaterials` in the write port (implementation in `shared/stores/write/run-end.ts`), used by both defeat and victory flows, merges `runMaterialsEarned` and `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`.
+3. Reuse the run-end display: `settleRunEnd` in `shared/stores/write/run-end.ts`, used by all endings, merges `runMaterialsEarned` and `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`. Material bonuses and talent XP finalization are private settlement steps; feature commands cannot award them independently.
 4. Check `tests/features/alchemy/run-loop/run/run-victory-handlers.dom.test.ts` and the affected mystery/reward-flow tests when adding a new source.
 
 **Do not** call `addMaterialsToStockpile()` on the run profile store directly from run-loop or mystery code for player loot.
@@ -54,11 +54,13 @@ Destination eligibility uses health and maximum health after victory bonuses and
 
 ## Run teardown
 
-Run outcome flows use [`run-end-commands.ts`](../src/features/alchemy/run-loop/run/run-end-commands.ts), which supplies the settlement callbacks to [`run-lifecycle.ts`](../src/features/alchemy/shared/stores/run-lifecycle.ts):
+Run outcome flows use [`run-end-commands.ts`](../src/features/alchemy/run-loop/run/run-end-commands.ts), which passes the session to intent-level commands in [`run-lifecycle.ts`](../src/features/alchemy/shared/stores/run-lifecycle.ts):
 
 - Victory: `completeRunVictory()` calls `finalizeRunEndSession()` to award earned progression, capture the victory recap, end resumable activity, and flush the save.
 - Defeat: `completeRunDefeat()` calls `applyRunDefeatTeardown()` to settle progression with a death recap, clear combat state, and perform defeat feedback and saving after commit.
 - Voluntary End Run: `abandonCurrentRun()` calls `abandonRun()` to settle progression with an abandoned recap and clear resumable activity immediately. The battle route retains its outgoing display for the screen fade; the flow navigates to the End Run screen.
+
+All endings use the store-owned `settleRunEnd` operation, including victory inside a reward claim and abandonment during restore. It owns Homestead bonuses, permanent XP, hero unlocks, recap snapshots, and activity teardown in one transaction. Callers cannot substitute progression callbacks. Repeated lifecycle completion rejects without another save, defeat sound, or presentation cleanup. `settleRunVictory(transaction)` composes this complete operation inside reward claims; the claim owner flushes its accepted terminal save after commit.
 
 `teardownRun()` is a raw session reset with presentation cleanup. It does not award progression, capture a recap, or explicitly flush the save; do not substitute it for an outcome command.
 
