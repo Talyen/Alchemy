@@ -190,7 +190,13 @@ reads and route actions; `createShopActions` binds shop operations; and
 Deferred playback consumes `BattleControllerContext.battle`, so it cannot choose a
 career implicitly. Bound methods retain ownership when passed individually and
 reject use after disposal. `bindSessionCapabilities` and `assertSessionOwnership`
-keep ownership private in `session-capabilities.ts`. Flow and Labyrinth routing
+delegate to `session-capability-graph.ts`, which validates the complete nested
+capability graph before binding. Groups are detached, immutable plain records or
+arrays; methods retain ownership when extracted or spread into another group.
+Aliases, cycles, symbol keys, and non-enumerable groups are preserved and checked.
+Accessors and opaque class/container instances are rejected rather than executed
+or silently skipped. Bound groups cannot be altered after validation, and every
+newly bound method checks session lifetime before execution. Flow and Labyrinth routing
 reject mixed-session outcomes, navigation, battle commands, and node callbacks
 before they can mutate gameplay. Pure presentation callbacks need no session.
 Outcome handlers remain constructed before battle controllers; their separate
