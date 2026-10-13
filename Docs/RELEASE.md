@@ -24,8 +24,9 @@ For direct build, packaging, App ID synchronization, and upload commands, keep
 owns output directories and Steam targets; release CI handles both editions separately.
 
 `dist:desktop` validates arguments before App ID synchronization or building.
-Direct packaging accepts `--dir` for unpacked output and `--build` to run the same
-build and bundle checks as `dist:desktop`. Steam upload accepts
+Direct packaging always validates renderer resources and the bundle budget before
+writing builder configuration or signing. It accepts `--dir` for unpacked output
+and `--build` to synchronize the App ID and build first. Steam upload accepts
 `--dry-run` as an alternative to `STEAM_UPLOAD_DRY_RUN=1`; either prevents
 uploading even with complete credentials. Both CLIs reject unknown flags and
 positional arguments before writing configuration or launching external tools.

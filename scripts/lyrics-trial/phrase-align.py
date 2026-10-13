@@ -33,6 +33,7 @@ def main():
     torch.set_num_threads(4)
     started = time.monotonic()
     output = Path('reports/boss-lyrics')
+    output.mkdir(parents=True, exist_ok=True)
     audio = decode(args.audio)
     audio_hash = hashlib.sha256(args.audio.read_bytes()).hexdigest()
     model = stable_whisper.load_model('small.en', device='cpu')

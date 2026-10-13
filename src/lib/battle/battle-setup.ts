@@ -69,6 +69,7 @@ export function drawOpeningHand(state: BattleState): BattleState {
       CARDS_PER_TURN + state.trinketEffects.extraDrawPerBattle,
       state.nextCardUid,
       getBattleRng(state),
+      state.pendingHandCards,
     ),
   );
   return getBattleOutcome(drawn) === null &&

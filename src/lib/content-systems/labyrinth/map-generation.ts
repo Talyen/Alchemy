@@ -161,10 +161,27 @@ function generateFloor(
   completedRooms = 0,
 ): { floor: LabyrinthFloor; nodes: LabyrinthNode[]; entryId: string } {
   const positions = generateFloorPositions(rng);
-  const types = plannedTypes(positions.length, rng, completedRooms + 1);
-  const used = new Set(usedEnemies);
   const origin = positions[0] ?? { row: 0, col: 0 };
-  const nodes = orderTypesForPositions(types, positions, rng).map((type, index) => {
+  const lootDepthAt = (position: LabyrinthGridPosition) =>
+    completedRooms + Math.abs(position.row - origin.row) + Math.abs(position.col - origin.col);
+  const roomPositions = positions.slice(1, -1);
+  const types = orderTypesForPositions(
+    plannedTypes(positions.length, rng, Math.max(...roomPositions.map(lootDepthAt))),
+    positions,
+    rng,
+  );
+  const trinketShopIndex = types.indexOf("trinket-shop");
+  if (trinketShopIndex >= 0 && !isLootEligible("trinket", lootDepthAt(positions[trinketShopIndex]!))) {
+    // Keep the planned support rooms distinct while moving this shop past its
+    // depth gate. Eligibility belongs to the room, not the floor's entrance.
+    const eligibleSlots = positions.flatMap((position, index) =>
+      index > 0 && index < positions.length - 1 && isLootEligible("trinket", lootDepthAt(position)) ? [index] : [],
+    );
+    const slot = pickRandom(eligibleSlots, rng);
+    if (slot !== undefined) [types[trinketShopIndex], types[slot]] = [types[slot]!, types[trinketShopIndex]!];
+  }
+  const used = new Set(usedEnemies);
+  const nodes = types.map((type, index) => {
     const enemyType: EnemyType = type === "boss" ? "boss" : type === "elite" ? "elite" : "normal";
     const enemyId = COMBAT_NODE_TYPES.has(type) ? pickEnemyId(enemyType, used, rng) : undefined;
     if (enemyId) used.add(enemyId);
@@ -174,7 +191,7 @@ function generateFloor(
       type,
       floor: depth,
       gridPosition: gridPos,
-      lootDepth: completedRooms + Math.abs(gridPos.row - origin.row) + Math.abs(gridPos.col - origin.col),
+      lootDepth: lootDepthAt(gridPos),
       rng,
       ...(enemyId ? { enemyId } : {}),
     });
