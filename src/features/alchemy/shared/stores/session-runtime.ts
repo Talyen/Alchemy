@@ -1,3 +1,4 @@
+import { SessionSaveSnapshots } from "../storage/session-save-snapshots";
 import { ProgressCompletion } from "../storage/progress-completion";
 import { createInstanceId } from "@/lib/utils";
 import { createSaveIo } from "../storage/save-io";
@@ -51,6 +52,7 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
     ),
   );
   const gameplay = createGameplayStore(generateRunSeed);
+  const progressCompletion = new ProgressCompletion();
   return {
     gameplay,
     presentationBase: gameplay.reads.getState(),
@@ -62,7 +64,8 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
     createInstanceId: instanceIdSource,
     feedback,
     inCommand: false,
-    progressCompletion: new ProgressCompletion(),
+    progressCompletion,
+    saveSnapshots: new SessionSaveSnapshots(progressCompletion),
     persistentClearInFlight: false,
     disposed: false,
     lifecycle: createRunLifecycleEffects(feedback),

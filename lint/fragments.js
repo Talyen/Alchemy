@@ -139,6 +139,7 @@ export const DOMAIN_STORE_PATTERNS = [
       "**/gameplay-command",
       "**/transaction-internal",
       "**/readonly-view",
+      "**/boundary-data",
       "**/session-runtime",
       "**/gear-session-command",
       "**/gear-actions",

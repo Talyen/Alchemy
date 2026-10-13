@@ -1,4 +1,3 @@
-import { AUTOSAVE_RETRY_COOLDOWN_MS } from "@/lib/game-constants";
 import { createAlchemyAutosaveLifecycle } from "@/app/autosave-lifecycle";
 import { afterEach, expect, it, vi } from "vitest";
 import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
@@ -187,7 +186,7 @@ it("acknowledges a snapshot through another adapter for the same session", async
     dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 10)), undefined, session);
     const feedback = vi.fn();
     reader.afterProgressSaved(feedback);
-    expect(await writer.write(createDefaultSaveData())).toBe("saved");
+    expect(await writer.write(createDefaultSaveData())).toBe("failed");
     expect(reader.readProgress().kind).toBe("saving");
     expect(feedback).not.toHaveBeenCalled();
     expect(guardProgressAction(session, () => true, false)()).toBe(false);
@@ -370,8 +369,8 @@ it.each(["write", "writeOnExit"] as const)(
       // Restoring the caller's object cannot retroactively certify the submitted payload.
       delete snapshot.talentXP.armor;
       writing.resolve({ ok: true });
-      expect(await write).toBe("saved");
-      expect(JSON.parse(writes[0]!).talentXP.armor).toBe(999);
+      expect(await write).toBe("failed");
+      expect(writes).toEqual([]);
       expect(persistence.readProgress().kind).toBe("saving");
       expect(feedback).not.toHaveBeenCalled();
       expect(guardProgressAction(session, () => true, false)()).toBe(false);
@@ -389,7 +388,7 @@ it.each(["write", "writeOnExit"] as const)(
   },
 );
 
-it("a replacement external write cannot borrow the superseded gameplay snapshot's receipt", async () => {
+it("an external payload cannot replace a queued gameplay checkpoint", async () => {
   const writing = deferred<{ ok: true }>();
   const writes: string[] = [];
   const session = createGameSession({
@@ -406,7 +405,7 @@ it("a replacement external write cannot borrow the superseded gameplay snapshot'
   const persistence = createSessionPersistence(session);
   const release = persistence.trackProgress(() => {});
   try {
-    const first = persistence.write(createDefaultSaveData());
+    const first = persistence.write(persistence.snapshot());
     await Promise.resolve();
     dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 70)), undefined, session);
     const feedback = vi.fn();
@@ -415,12 +414,12 @@ it("a replacement external write cannot borrow the superseded gameplay snapshot'
     const replacement = persistence.write(createDefaultSaveData());
     writing.resolve({ ok: true });
     expect(await first).toBe("saved");
-    expect(await checkpoint).toBe("superseded");
-    expect(await replacement).toBe("saved");
-    expect(writes.map((value) => JSON.parse(value).gold)).toEqual([0, 0]);
-    expect(persistence.readProgress().kind).toBe("failed");
-    expect(feedback).not.toHaveBeenCalled();
-    expect(guardProgressAction(session, () => true, false)()).toBe(false);
+    expect(await checkpoint).toBe("saved");
+    expect(await replacement).toBe("failed");
+    expect(writes.map((value) => JSON.parse(value).gold)).toEqual([0, 70]);
+    expect(persistence.readProgress().kind).toBe("idle");
+    expect(feedback).toHaveBeenCalledOnce();
+    expect(guardProgressAction(session, () => true, false)()).toBe(true);
     expect(await persistence.checkpoint()).toBe("saved");
     expect(JSON.parse(writes.at(-1)!).gold).toBe(70);
     expect(feedback).toHaveBeenCalledOnce();
@@ -430,47 +429,7 @@ it("a replacement external write cannot borrow the superseded gameplay snapshot'
   }
 });
 
-it.each(["write", "writeOnExit"] as const)(
-  "%s does not acknowledge a snapshot edited before submission",
-  async (method) => {
-    const writes: string[] = [];
-    const session = createGameSession({
-      saveBackend: {
-        readCandidates: async () => ({ ok: true, candidates: [] }),
-        write: async (_key, value) => {
-          writes.push(value);
-          return { ok: true };
-        },
-        writeSync: (_key, value) => {
-          writes.push(value);
-          return { ok: true };
-        },
-        clear: async () => ({ ok: true }),
-      },
-    });
-    const persistence = createSessionPersistence(session);
-    const release = persistence.trackProgress(() => {});
-    try {
-      dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 70)), undefined, session);
-      const feedback = vi.fn();
-      persistence.afterProgressSaved(feedback);
-      const snapshot = persistence.snapshot();
-      snapshot.gold = 0;
-      expect(await persistence[method](snapshot)).toBe("saved");
-      expect(JSON.parse(writes.at(-1)!).gold).toBe(0);
-      expect(persistence.readProgress().kind).toBe("saving");
-      expect(feedback).not.toHaveBeenCalled();
-      expect(await persistence.checkpoint()).toBe("saved");
-      expect(JSON.parse(writes.at(-1)!).gold).toBe(70);
-      expect(feedback).toHaveBeenCalledOnce();
-    } finally {
-      release();
-      await session.dispose();
-    }
-  },
-);
-
-it("autosave retries a replaced checkpoint and releases feedback only after gameplay reaches disk", async () => {
+it("autosave preserves its checkpoint when an external write is rejected", async () => {
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
   const writes: string[] = [];
   const session = createGameSession({
@@ -491,11 +450,9 @@ it("autosave retries a replaced checkpoint and releases feedback only after game
     const feedback = vi.fn();
     persistence.afterProgressSaved(feedback);
     lifecycle.flush();
-    expect(await persistence.write({ ...createDefaultSaveData(), gold: 0 })).toBe("saved");
-    expect(persistence.readProgress().kind).toBe("failed");
-    expect(feedback).not.toHaveBeenCalled();
-    await vi.advanceTimersByTimeAsync(AUTOSAVE_RETRY_COOLDOWN_MS);
-    expect(writes.map((value) => JSON.parse(value).gold)).toEqual([0, 70]);
+    expect(await persistence.write({ ...createDefaultSaveData(), gold: 0 })).toBe("failed");
+    await lifecycle.drain();
+    expect(writes.map((value) => JSON.parse(value).gold)).toEqual([70]);
     expect(persistence.readProgress().kind).toBe("idle");
     expect(feedback).toHaveBeenCalledOnce();
   } finally {
