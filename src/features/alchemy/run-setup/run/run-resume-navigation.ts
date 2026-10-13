@@ -25,6 +25,8 @@ import {
   setRewardState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
+import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
+import { isGameModeUnlocked } from "@/lib/game-data";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
 import { isEditionModeAvailable } from "@/lib/game-edition";
 import { ROUTE_SCREENS } from "@/lib/routing";
@@ -91,6 +93,7 @@ export function createRunResumeNavigation(deps: ContentSystemNavigationDeps, gam
       resumeRun();
       return;
     }
+    if (!isGameModeUnlocked(systemId, readProfileStore(gameSession).finishedRunCharacters)) return;
     dispatchRunSessionCommand(
       (draft) => {
         setPendingCharacterId(draft, null);

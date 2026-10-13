@@ -12,7 +12,7 @@ import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { createScreenNavigation } from "@/features/alchemy/shell/screen-navigation";
-import { readActivityData } from "@/lib/active-run-session";
+import { emptyHydratedMysteryVisit, readActivityData } from "@/lib/active-run-session";
 import { defaultGameSession } from "@/app/application-session";
 beforeEach(resetAllTestStores);
 
@@ -61,7 +61,7 @@ describe("Labyrinth destination modifiers", () => {
   it("Golden Omen presents and pays the doubled event reward once", () => {
     setRunProgress({ contentSystemType: "labyrinth", gold: 0 });
     setRunSession({
-      activity: { kind: "campfire", data: emptyAlchemyVisit() },
+      activity: { kind: "mystery", data: emptyHydratedMysteryVisit() },
       activeLabyrinthRewardModifiers: ["golden-omen"],
     });
     const { result } = renderHook(() => createMysteryEventNavigation({ navigateTo: vi.fn() }, defaultGameSession));
@@ -80,7 +80,7 @@ describe("Labyrinth destination modifiers", () => {
   it("Restful Discovery includes its healing in the existing event outcome", () => {
     setRunProgress({ contentSystemType: "labyrinth", runPlayerHealth: 5, runMaxHealth: 100 });
     setRunSession({
-      activity: { kind: "campfire", data: emptyAlchemyVisit() },
+      activity: { kind: "mystery", data: emptyHydratedMysteryVisit() },
       activeLabyrinthRewardModifiers: ["restful-discovery"],
     });
     const { result } = renderHook(() => createMysteryEventNavigation({ navigateTo: vi.fn() }, defaultGameSession));
