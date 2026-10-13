@@ -19,6 +19,7 @@ import { createEmptyRewardState, emptyEquipmentShopState, emptyShopState } from 
 import { canEnterLabyrinthNode, withClearedNode } from "@/lib/content-systems/labyrinth/map-state";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { createSeededRng } from "@/lib/rng";
+import { findMysteryEvent } from "@/lib/mystery";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { decodeRunResumeSnapshot } from "@/features/alchemy/shared/stores/run-resume-codec";
 import { runProfilePersistenceCodec } from "@/features/alchemy/shared/stores/run-profile-codec";
@@ -287,7 +288,18 @@ it.each([
   "draft-deck",
   "difficulty-select",
 ] as const)("decodes the saved %s location without navigation initialization", (screen) => {
-  const saved = makeActiveRunData({ activity: savedActivityFixture(screen) });
+  const activity =
+    screen === "mystery"
+      ? savedActivityFixture(screen, {
+          event: findMysteryEvent("ancient-altar"),
+          chosenChoice: null,
+          cardChoices: null,
+          grantedTrinketIds: [],
+          grantedGear: [],
+          chosenCardId: null,
+        })
+      : savedActivityFixture(screen);
+  const saved = makeActiveRunData({ activity });
   const first = decodeRunResumeSnapshot(saved);
   const second = decodeRunResumeSnapshot(saved);
   expect(first.session.activity.kind).toBe(screen);

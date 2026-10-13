@@ -64,7 +64,12 @@ export function useAlchemyRunController(
           resumeTo,
           transition,
           cancelPending,
-          battle,
+          battle: {
+            startBattle: battle.startBattle,
+            startBossBattle: battle.startBossBattle,
+            startBossById: battle.startBossById,
+            presentBattleStart: battle.presentBattleStart,
+          },
         },
         outcomes,
         gameSession,
