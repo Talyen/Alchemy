@@ -41,10 +41,11 @@ cannot replace destination music.
 
 Collection entries rest with dim grey borders. All entries, including locked and
 undiscovered entries, show a matching keyword Shine Border on hover or
-keyboard focus, with neutral shine when no keywords resolve. Homestead companions
-and upgrades use the same treatment regardless of affordability or discovery.
-Wish and reward choices use the same hover treatment. Trinkets and gear, including
-uniques, use their effect keywords on these surfaces, with neutral shine when none
+keyboard focus, with neutral shine when no keywords resolve. Wish and reward
+choices use the same hover treatment. Homestead companions and upgrades follow
+their separate [gallery treatment](./UI.md#page-sizing-and-spacing).
+Trinkets and gear, including uniques, use their effect keywords on these surfaces,
+with neutral shine when none
 exist. Shared trinket and gear art tiles, including Mystery rewards, shops, and
 run-end items, also rest with the default border and show Shine only on hover or
 keyboard focus. Their existing Shine palettes and item-title colors are preserved.
