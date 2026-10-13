@@ -8,10 +8,6 @@ export const FLAG_DEFINITIONS = {
   hawkEyeReady: { default: false as const, secondaryValue: null, lifetime: "until-consumed" },
   killRewardsPaid: { default: false as const, secondaryValue: null, lifetime: "combat" },
   nextHolyCardFree: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
-  nextWishExtraChoice: { default: false as const, secondaryValue: null, lifetime: "until-consumed" },
-  pendingWishMana: { default: 0 as const, secondaryValue: null, lifetime: "player-turn" },
-  previousCardWasArchery: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
-  previousCardWasNature: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   archeryCardsPlayedThisTurn: { default: 0 as const, secondaryValue: 0 as const, lifetime: "player-turn" },
   archerySecondCardActive: { default: false as const, secondaryValue: false as const, lifetime: "player-turn" },
   companionNextAttackBonus: { default: 0 as const, secondaryValue: null, lifetime: "until-consumed" },
@@ -40,7 +36,6 @@ export const FLAG_DEFINITIONS = {
 
   resonantChimeUsedThisTurn: { default: false as const, secondaryValue: true as const, lifetime: "player-turn" },
   runicQuillUsedThisTurn: { default: false as const, secondaryValue: true as const, lifetime: "player-turn" },
-  consumeDrawUsedThisTurn: { default: false as const, secondaryValue: true as const, lifetime: "player-turn" },
   pendingCinderSkinReaction: { default: false as const, secondaryValue: null, lifetime: "combat" },
   pendingEmberwakeDamage: { default: false as const, secondaryValue: null, lifetime: "combat" },
   cinderSkinUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },

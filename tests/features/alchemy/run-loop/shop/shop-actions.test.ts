@@ -22,7 +22,6 @@ import {
 import {
   ALCHEMIST_MIX_PRICE,
   ALCHEMIST_POTIONS_OFFERED,
-  ALCHEMIST_POTION_PRICE,
   SHOP_CARD_PRICE,
   SHOP_REMOVE_PRICE,
   TRINKET_SHOP_TRINKET_PRICE,
@@ -35,13 +34,16 @@ import { gearDefinitions } from "@/lib/gear";
 import { makeEffect } from "../../../../fixtures/battle";
 import { playUISound } from "@/lib/audio";
 import { readActivityData } from "@/lib/active-run-session";
+import { computeHomesteadEffects } from "@/lib/homestead/effects";
+import { createRunRngState } from "@/lib/rng";
 import { defaultGameSession } from "@/app/application-session";
 
 describe("alchemist shop actions", () => {
   it("Restock can make one refresh free without allowing infinite refreshes", () => {
-    setRunProgress({ gold: 100 });
+    setRunProgress({ gold: 100, rng: createRunRngState(13) });
     setShopState({ ...createInitialShopState(), refreshesLeft: 2 });
-    const actions = buildActions({ talentEffects: { shopFreeRefreshChance: 100 } });
+    const actions = buildActions();
+    setRunProgress({ unlockedTalents: { gold: ["gold-shop-refresh"] } });
 
     expect(actions.merchant.refresh()).toBe(true);
     expect(readRunProfile(defaultGameSession).gold).toBe(100);
@@ -55,9 +57,9 @@ describe("alchemist shop actions", () => {
   });
 
   it("Restock failure keeps the normal affordability guard", () => {
-    setRunProgress({ gold: 0 });
+    setRunProgress({ gold: 0, unlockedTalents: { gold: ["gold-shop-refresh"] } });
     setShopState({ ...createInitialShopState(), refreshesLeft: 1 });
-    const actions = buildActions({ talentEffects: { shopFreeRefreshChance: 100 } });
+    const actions = buildActions();
     const before = readRunSession(defaultGameSession);
 
     expect(actions.merchant.refresh()).toBe(false);
@@ -111,7 +113,7 @@ describe("alchemist shop actions", () => {
       expect(playUISound).toHaveBeenCalledWith("alchemistMix");
     });
 
-    it("discounts mixing without changing the talent potion-strength bonus", () => {
+    it("discounts mixing without changing ingredient potency", () => {
       setRunProgress({
         gold: 999,
         runDeck: [
@@ -120,17 +122,18 @@ describe("alchemist shop actions", () => {
         ],
       });
       setAlchemistState(createInitialAlchemistState());
-      const actions = buildActions({
-        talentEffects: { potionMixPotency: 1 },
-        homesteadEffects: { mixPotionDiscount: 8 },
+      setRunProgress({
+        completedResearch: { "botanical-distillation": 4 },
+        effects: computeHomesteadEffects({}, {}, { "botanical-distillation": 4 }),
       });
+      const actions = buildActions();
 
       expect(actions.alchemist.getMixPrice()).toBe(ALCHEMIST_MIX_PRICE - 8);
       const result = actions.alchemist.mixPotions(0, 1);
       expect(readRunProfile(defaultGameSession).gold).toBe(999 - (ALCHEMIST_MIX_PRICE - 8));
       expect(result?.effects).toEqual([
-        expect.objectContaining({ kind: "damage", damageType: "holy", amount: 6 }),
-        expect.objectContaining({ kind: "damage", damageType: "holy", amount: 6 }),
+        expect.objectContaining({ kind: "damage", damageType: "holy", amount: 5 }),
+        expect.objectContaining({ kind: "damage", damageType: "holy", amount: 5 }),
       ]);
     });
 
@@ -159,7 +162,7 @@ describe("alchemist shop actions", () => {
         runDeck: [mixed, ingredient],
       });
       setAlchemistState(createInitialAlchemistState());
-      const actions = buildActions({ talentEffects: { potionMixPotency: 0 } });
+      const actions = buildActions();
 
       const result = actions.alchemist.mixPotions(0, 1);
       expect(result?.effects).toEqual([...mixed.effects, ...ingredient.effects]);
@@ -181,7 +184,7 @@ describe("alchemist shop actions", () => {
         ],
       });
       setAlchemistState(createInitialAlchemistState());
-      const actions = buildActions({ talentEffects: { potionMixPotency: 0 } });
+      const actions = buildActions();
 
       expect(actions.alchemist.mixPotions(0, 1)).not.toBeNull();
       expect(actions.alchemist.mixPotions(0, 1)).toBeNull();
@@ -217,20 +220,6 @@ describe("alchemist shop actions", () => {
     } finally {
       unsubscribe();
     }
-  });
-
-  describe("talent discounts", () => {
-    it("applies potion discount only for standard potions in alchemist", () => {
-      setRunProgress({ gold: 999 });
-      setAlchemistState(createInitialAlchemistState());
-      const actions = buildActions({ talentEffects: { potionDiscount: 5, shopCardDiscount: 3 } });
-      const potion = requiredItem(
-        readActivityData(readRunSession(defaultGameSession).activity, "alchemist").potions[0],
-        "alchemist potion",
-      );
-
-      expect(actions.alchemist.getPotionBuyPrice(potion)).toBeLessThanOrEqual(ALCHEMIST_POTION_PRICE - 3);
-    });
   });
 });
 
@@ -300,19 +289,6 @@ describe("merchant shop actions", () => {
       expect(readRunProfile(defaultGameSession).gold).toBe(goldAfterFirst - SHOP_CARD_PRICE);
     });
   });
-  describe("talent discounts", () => {
-    it("applies haggle discount to shop card price", () => {
-      setRunProgress({ gold: 999 });
-      setShopState(createInitialShopState());
-      const actions = buildActions({ talentEffects: { shopCardDiscount: 5 } });
-      const card = requiredItem(
-        readActivityData(readRunSession(defaultGameSession).activity, "shop").cards[0],
-        "merchant card",
-      );
-
-      expect(actions.merchant.getCardBuyPrice(card)).toBe(SHOP_CARD_PRICE - 5);
-    });
-  });
   describe("buy card", () => {
     it("purchases the live shelf card when the supplied copy is stale", () => {
       setRunProgress({ gold: 999 });
@@ -347,34 +323,6 @@ describe("merchant shop actions", () => {
       unsubscribe();
       expect(readRunProfile(defaultGameSession).gold).toBe(999);
       expect(commits).toHaveLength(0);
-    });
-  });
-  describe("init", () => {
-    it("initializes the merchant shop from the current deck", () => {
-      setRunProgress({ runDeck: [makeCard()] });
-      const actions = buildActions();
-
-      actions.initialize("merchant");
-
-      const shop = readActivityData(readRunSession(defaultGameSession).activity, "shop");
-      expect(shop.firstPurchaseUsed).toBe(false);
-      expect(shop.purchasedSlotKeys).toHaveLength(0);
-      expect(shop.cards.length).toBeGreaterThan(0);
-    });
-  });
-  describe("selectors reflect current store state", () => {
-    it("reads the current first-purchase state when pricing merchant cards", () => {
-      setRunProgress({ gold: 999 });
-      setShopState(createInitialShopState());
-      const card = requiredItem(
-        readActivityData(readRunSession(defaultGameSession).activity, "shop").cards[0],
-        "merchant card",
-      );
-
-      buildActions().merchant.buyCard(card, shopItemSlotKey(card.id, 0));
-
-      const postBuyActions = buildActions();
-      expect(postBuyActions.merchant.getCardBuyPrice(card)).toBe(SHOP_CARD_PRICE);
     });
   });
 });

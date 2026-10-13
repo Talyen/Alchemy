@@ -12,9 +12,25 @@ import { writeSteamBuildVdfs } from "./lib/release/steam-vdf.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const selected = releaseEdition();
-const dryRun = process.env.STEAM_UPLOAD_DRY_RUN === "1";
+const requiredKeys = [
+  selected.edition === "demo" ? "STEAM_DEMO_APP_ID" : "STEAM_APP_ID",
+  selected.edition === "demo" ? "STEAM_DEMO_DEPOT_ID" : "STEAM_DEPOT_ID",
+  "STEAM_USERNAME",
+  "STEAM_PASSWORD",
+];
+const missingKeys = requiredKeys.filter((key) => !process.env[key]?.trim());
+const dryRun =
+  process.env.STEAM_UPLOAD_DRY_RUN === "1" || (process.env.ALLOW_STEAM_DRY_RUN === "true" && missingKeys.length > 0);
+
+if (dryRun && process.env.STEAM_UPLOAD_DRY_RUN !== "1") {
+  console.warn(`Steam upload disabled by ALLOW_STEAM_DRY_RUN=true; missing ${missingKeys.join(", ")}.`);
+}
 
 if (!dryRun) {
+  if (missingKeys.length > 0) {
+    console.error(`Missing required env var(s): ${missingKeys.join(", ")}`);
+    process.exit(1);
+  }
   for (const [name, value] of [
     ["App ID", selected.steamAppId],
     ["depot ID", selected.steamDepotId],
@@ -26,17 +42,6 @@ if (!dryRun) {
       (name === "App ID" && Number(value) === 480)
     ) {
       throw new Error(`Invalid production Steam ${name}`);
-    }
-  }
-  for (const key of [
-    selected.edition === "demo" ? "STEAM_DEMO_APP_ID" : "STEAM_APP_ID",
-    selected.edition === "demo" ? "STEAM_DEMO_DEPOT_ID" : "STEAM_DEPOT_ID",
-    "STEAM_USERNAME",
-    "STEAM_PASSWORD",
-  ]) {
-    if (!process.env[key]) {
-      console.error(`Missing required env var: ${key}`);
-      process.exit(1);
     }
   }
 }
@@ -81,7 +86,7 @@ const renderer = JSON.parse(asar.extractFile(archive, `${selected.rendererDirect
 assertPackageEdition(metadata, renderer);
 
 if (dryRun) {
-  console.log("STEAM_UPLOAD_DRY_RUN=1 — wrote substituted VDFs:");
+  console.log("Steam upload dry run — wrote substituted VDFs:");
   console.log(appPath);
   console.log(`contentroot OK: ${contentRoot}`);
   process.exit(0);

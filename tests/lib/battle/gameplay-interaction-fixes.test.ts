@@ -75,7 +75,7 @@ describe("gameplay interaction regressions", () => {
       deathsDoorUsed: !protectedHero,
       enemyStatuses: { burn: 2 },
       currentEnemy: { traits: [{ id: "cinder-skin", title: "Cinder Skin", description: "" }] },
-      talentEffects: { consumeDetonatesBurn: true, healOnConsume: 1 },
+      talentEffects: { consumeDetonatesBurnChance: 100, healOnConsume: 1 },
       rng: () => 0.99,
     });
     const result = playBattleCardResolved(state, card.id, 0).state;

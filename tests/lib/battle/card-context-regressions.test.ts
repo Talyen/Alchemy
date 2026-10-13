@@ -3,7 +3,6 @@ import { cardById, type BattleCard } from "@/lib/game-data";
 import { computeCardPayment } from "@/lib/battle/card-cost-rules";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
-import { prepareTalentCardPlay } from "@/lib/battle/talent-card-play";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { patchBattleState } from "../../fixtures/battle";
 
@@ -81,17 +80,5 @@ describe("card context regressions", () => {
     const next = advanceToPlayerTurn({ ...resumed, currentEnemy: played.currentEnemy, rng: () => 0.99 });
     expect(next.playerHealth - played.playerHealth).toBe(5);
     expect(played.enemyHealth - next.enemyHealth).toBe(5);
-  });
-
-  it("Armor Siphon cannot steal Armor already depleted by Ecosystem", () => {
-    const state = patchBattleState({
-      rng: () => 0.99,
-      enemyMitigation: { armor: 1 },
-      enemyStatuses: { poison: 2 },
-      talentEffects: { armorStealOnLeechCard: 1, poisonOnNatureCardVsPoisoned: 1 },
-    });
-    const next = prepareTalentCardPlay(state, cardById.bloodthorn!, []).state;
-    expect(next.enemyMitigation.armor).toBe(0);
-    expect(next.playerStatuses.armor).toBe(0);
   });
 });

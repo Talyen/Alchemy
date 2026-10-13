@@ -24,16 +24,23 @@ export function isProjectOwnedCommandLine(commandLine, projectRoot, platform = p
   const normalizedCommand = normalizePathForMatch(commandLine, platform);
   const normalizedRoot = normalizePathForMatch(projectRoot, platform).replace(/[\\/]+$/u, "");
 
+  let matched = false;
   let offset = normalizedCommand.indexOf(normalizedRoot);
   while (offset !== -1) {
     const before = offset === 0 ? "" : normalizedCommand[offset - 1];
     const after = normalizedCommand[offset + normalizedRoot.length] ?? "";
     const startsAtBoundary = offset === 0 || /[\s"'=]/u.test(before);
     const endsAtBoundary = after === "" || after === separator || /[\s"']/u.test(after);
-    if (startsAtBoundary && endsAtBoundary) return true;
+    if (startsAtBoundary && endsAtBoundary) {
+      // Managed worktrees are independent checkouts even though their paths
+      // sit below the original project. Root cleanup must leave them running.
+      const suffix = normalizedCommand.slice(offset + normalizedRoot.length);
+      if (suffix.startsWith(`${separator}.worktrees${separator}`)) return false;
+      matched = true;
+    }
     offset = normalizedCommand.indexOf(normalizedRoot, offset + 1);
   }
-  return false;
+  return matched;
 }
 
 async function runPowerShell(command) {
