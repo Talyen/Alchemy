@@ -1,3 +1,4 @@
+import { initializeShopVisitForTest, initializeAlchemyVisitForTest } from "../helpers/room-visits";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createCareerActor } from "@/app/playthrough/actor";
 import { createPlaythroughController } from "@/app/playthrough/controller";
@@ -9,7 +10,6 @@ import { strengthenPotion } from "@/lib/alchemist/brewing";
 import { brewCandidates, shouldPreserveConsumable, potionPurchaseScore } from "@/app/playthrough/brewing-policy";
 import type { CareerConfig } from "@/app/playthrough/types";
 import { cardSlotKeyOf } from "@/features/alchemy/run-loop/shop/shop-commands-core";
-import { initializeAlchemyVisit } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import {
   applyTalentState,
@@ -69,7 +69,7 @@ function start(deck = cards("health-potion", "acid-potion"), gold = 100) {
 describe("headless brewing through production commands", () => {
   it("previews without RNG mutation, mixes with real pricing, and preserves the shared service limit after resume", () => {
     const controller = start();
-    controller.shop().alchemist.initialize();
+    initializeShopVisitForTest("alchemist", session);
     const actor = createCareerActor(config, undefined, session);
     const before = stateDigest(session);
     const offered = actor.observe();
@@ -103,7 +103,7 @@ describe("headless brewing through production commands", () => {
 
   it("distills, rejects stale targets and unaffordable services, and keeps service Gold reserved when buying", () => {
     const controller = start(cards("acid-potion"), 40);
-    controller.shop().alchemist.initialize();
+    initializeShopVisitForTest("alchemist", session);
     const actor = createCareerActor(config, undefined, session);
     const options = actor.observe();
     expect(options.find((c) => c.kind === "distill")?.score).toBeGreaterThan(0);
@@ -121,7 +121,7 @@ describe("headless brewing through production commands", () => {
     const distilled = actor.execute(options.find((c) => c.kind === "distill")!) as (typeof cardById)[string];
     expect(distilled.descriptionLines).not.toEqual(cardById["acid-potion"]!.descriptionLines);
     expect(readRunProfile(session).gold).toBe(0);
-    controller.shop().alchemist.initialize();
+    initializeShopVisitForTest("alchemist", session);
     expect(actor.observe().some((c) => c.kind === "mix" || c.kind === "distill")).toBe(false);
     const poor = stateDigest(session);
     expect(controller.shop().alchemist.strengthenPotion(0)).toBeNull();
@@ -138,7 +138,7 @@ describe("headless brewing through production commands", () => {
       undefined,
       session,
     );
-    controller.shop().alchemist.initialize();
+    initializeShopVisitForTest("alchemist", session);
     expect(controller.shop().alchemist.getMixPrice()).toBe(30);
     const actor = createCareerActor(config, undefined, session);
     actor.execute(actor.observe().find((c) => c.kind === "distill")!);
@@ -147,7 +147,7 @@ describe("headless brewing through production commands", () => {
 
   it("offers useful refreshes and respects exhausted refreshes", () => {
     const controller = start(cards("slash"), 100);
-    controller.shop().alchemist.initialize();
+    initializeShopVisitForTest("alchemist", session);
     dispatchGameplayCommand(
       (draft) => {
         const activity = readRunSession(session).activity;
@@ -172,7 +172,7 @@ describe("headless brewing through production commands", () => {
 
   it("declines weaker copies and searches inferior stock only with potion room and purchase Gold", () => {
     const controller = start(cards("slash"), 100);
-    controller.shop().alchemist.initialize();
+    initializeShopVisitForTest("alchemist", session);
     const activity = readRunSession(session).activity;
     if (activity.kind !== "alchemist") throw new Error("Expected shop");
     const stronger = activity.data.potions.map((card) => strengthenPotion(card)!);
@@ -227,7 +227,7 @@ describe("headless brewing through production commands", () => {
 
   it.each(["new", "combine"] as const)("brews %s at campfire, survives save/resume, and cannot also rest", (kind) => {
     start(kind === "new" ? cards("slash") : cards("health-potion", "acid-potion"));
-    initializeAlchemyVisit("campfire", session);
+    initializeAlchemyVisitForTest("campfire", session);
     const actor = createCareerActor(config, undefined, session);
     const choice = actor.observe().find((c) => c.kind === (kind === "new" ? "campfire-new" : "campfire-mix"))!;
     actor.execute(choice);
@@ -250,7 +250,7 @@ describe("headless brewing through production commands", () => {
 
   it("prioritizes survival, distinguishes disabled brewing, and skips unchanged distillation", () => {
     start();
-    initializeAlchemyVisit("campfire", session);
+    initializeAlchemyVisitForTest("campfire", session);
     dispatchGameplayCommand(
       (draft) => {
         setRunPlayerHealth(draft, 1);

@@ -1,6 +1,10 @@
+import {
+  initializeShopVisitForTest,
+  initializeAlchemyVisitForTest,
+  initializeMysteryVisitForTest,
+} from "../helpers/room-visits";
 import { offerRunChoices } from "@/app/playthrough/run-offers";
 import { createChoiceCatalog } from "@/app/playthrough/choice-catalog";
-import { initializeAlchemyVisit } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
 import { savedActivityData } from "../fixtures/run-activity";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createPlaythroughFixture } from "@/app/playthrough/fixtures";
@@ -55,7 +59,7 @@ describe("retained headless rejection and persistence contracts", () => {
       undefined,
       defaultGameSession,
     );
-    initializeAlchemyVisit("transmutation", defaultGameSession);
+    initializeAlchemyVisitForTest("transmutation", defaultGameSession);
     const before = readActiveRun(defaultGameSession).runDeck;
     const catalog = createChoiceCatalog();
     function observe() {
@@ -108,7 +112,7 @@ describe("retained headless rejection and persistence contracts", () => {
   it("rejects repeated and unaffordable shop purchases without duplicate grants", () => {
     const controller = start();
     const shop = controller.shop().merchant;
-    shop.initialize();
+    initializeShopVisitForTest("merchant");
     const activity = readRunSession(defaultGameSession).activity;
     if (activity.kind !== "shop") throw new Error("Shop not initialized");
     const card = activity.data.cards[0]!;
@@ -150,7 +154,7 @@ describe("retained headless rejection and persistence contracts", () => {
     const { flow } = start();
     // Targeted setup, deliberately separate from earned-career sampling.
     dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "destination")), undefined, defaultGameSession);
-    flow.beginMysteryEvent();
+    initializeMysteryVisitForTest();
     dispatchGameplayCommand((draft) => acceptCommand(setRunDeck(draft, [])), undefined, defaultGameSession);
     const visit = readRunSession(defaultGameSession).activity;
     if (visit.kind !== "mystery") throw new Error("Missing mystery");

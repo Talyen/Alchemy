@@ -1,7 +1,9 @@
+import { shopItemSlotKey } from "@/features/alchemy/run-loop/shop/shop-slot-keys";
+import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
 import "../../../../helpers/mock-audio";
 import { afterEach, expect, it, vi } from "vitest";
 import { enterRunRoom } from "@/features/alchemy/run-loop/run/room-entry-commands";
-import * as shopInitialization from "@/features/alchemy/run-loop/shop/shop-initialization";
+import * as shopInitialization from "@/features/alchemy/run-loop/run/room-visit-initialization";
 import { createGameSession, type GameSession } from "@/features/alchemy/shared/stores/game-session";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
@@ -180,4 +182,33 @@ it("rejects stale Campaign choices and wrong-mode requests before consuming RNG"
   const rewards = readGameplayState(game);
   expect(enterRunRoom({ kind: "campaign", destination: DESTINATIONS.CAMPFIRE }, game)).toBeNull();
   expect(readGameplayState(game)).toBe(rewards);
+});
+
+it("retained shop capabilities cannot recreate a visit or expose a room-entry bypass", () => {
+  const game = session("campaign", DESTINATIONS.CARD_SHOP);
+  const shops = createShopActions(game);
+  dispatchGameplayCommand(
+    (draft) => {
+      draft.runProfile.gold = 999;
+      return acceptCommand();
+    },
+    undefined,
+    game,
+  );
+  enter("campaign", DESTINATIONS.CARD_SHOP, game);
+  const visit = readRunSession(game).activity;
+  if (visit.kind !== "shop") throw new Error("Missing Card Shop");
+  const card = visit.data.cards[0]!;
+  expect(shops.merchant.buyCard(card, shopItemSlotKey(card.id, 0))).toBe(true);
+  const before = readGameplayState(game);
+  // Older capability objects exposed this bypass and reset purchased slots for free.
+  const initialize = Reflect.get(shops, "initialize") as ((kind: "merchant") => void) | undefined;
+  initialize?.("merchant");
+  expect(readGameplayState(game)).toBe(before);
+  expect(shops).not.toHaveProperty("initialize");
+  for (const commands of [shops.merchant, shops.alchemist, shops.trinket, shops.equipment]) {
+    expect(commands).not.toHaveProperty("initialize");
+  }
+  expect(enter("campaign", DESTINATIONS.CARD_SHOP, game)).toBeNull();
+  expect(readGameplayState(game)).toBe(before);
 });

@@ -19,6 +19,7 @@ import {
   setShopState,
   setTrinketShopState,
 } from "./shop-actions-harness";
+import { initializeShopVisitForTest } from "../../../../helpers/room-visits";
 import {
   ALCHEMIST_MIX_PRICE,
   ALCHEMIST_POTIONS_OFFERED,
@@ -425,7 +426,7 @@ describe("trinket shop actions", () => {
         for (const trinket of trinketLibrary.slice(buyLast ? 1 : 0)) gear.addTrinket(trinket.id);
       });
       const actions = buildActions();
-      actions.trinket.initialize();
+      initializeShopVisitForTest("trinket");
       if (buyLast) {
         const trinket = trinketLibrary[0]!;
         expect(actions.trinket.buy(trinket, shopItemSlotKey(trinket.id, 0))).toBe(true);

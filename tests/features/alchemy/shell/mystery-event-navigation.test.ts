@@ -12,14 +12,13 @@ import {
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-reads";
 import { findMysteryEvent, type MysteryChoice, type MysteryEffect } from "@/lib/mystery";
-import { playGoldGain, playGoldSpend, playUISound } from "@/lib/audio";
-import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
+import { playGoldGain, playGoldSpend } from "@/lib/audio";
 import { emptyHydratedMysteryVisit, hydrateMysteryVisit, readActivityData } from "@/lib/active-run-session";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { defaultGameSession } from "@/app/application-session";
-function createMysteryNav(navigateTo = vi.fn((_screen: Screen, onCommit?: () => void) => onCommit?.())) {
-  const nav = createMysteryEventNavigation({ navigateTo }, defaultGameSession);
-  return { nav, navigateTo };
+function createMysteryNav() {
+  const nav = createMysteryEventNavigation(defaultGameSession);
+  return { nav };
 }
 
 function offerChoices(choices: MysteryChoice[]): MysteryChoice[] {
@@ -60,25 +59,6 @@ describe("createMysteryEventNavigation", () => {
       readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryChosenChoice?.effects,
     ).toEqual([{ kind: "gainMaterial", material: "herbs", amount: 5 }]);
     expect(choice.effects[0]).toEqual({ kind: "gainMaterial", material: "herbs", amount: 3 });
-  });
-
-  it("beginMysteryEvent stores an event and navigates", () => {
-    const { nav, navigateTo } = createMysteryNav();
-
-    nav.beginMysteryEvent();
-
-    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryEvent).not.toBeNull();
-    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryCardChoices).toBeNull();
-    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryGrantedTrinketIds).toEqual(
-      [],
-    );
-    expect(
-      readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryGrantedGearInstances,
-    ).toEqual([]);
-    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryChosenCardId).toBeNull();
-    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryChosenChoice).toBeNull();
-    expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.MYSTERY, undefined);
-    expect(playUISound).toHaveBeenCalledWith("musicBoxMystery");
   });
 
   it("awards and records Wildwood mystery Materials", () => {

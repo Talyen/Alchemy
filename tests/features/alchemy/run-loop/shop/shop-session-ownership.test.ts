@@ -1,3 +1,4 @@
+import { initializeShopVisitForTest } from "../../../../helpers/room-visits";
 import { describe, expect, it } from "vitest";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
 import { shopItemSlotKey } from "@/features/alchemy/run-loop/shop/shop-slot-keys";
@@ -20,8 +21,8 @@ describe("shop session ownership", () => {
       try {
         const actions = createShopActions(session);
         const otherActions = createShopActions(other);
-        actions.initialize(kind);
-        otherActions.initialize(kind);
+        initializeShopVisitForTest(kind, session);
+        initializeShopVisitForTest(kind, other);
         const quote = kind === "merchant" ? actions.merchant.getCardBuyPrice : actions.alchemist.getPotionBuyPrice;
         const buy = kind === "merchant" ? actions.merchant.buyCard : actions.alchemist.buyPotion;
         const otherQuote =
@@ -69,7 +70,7 @@ describe("shop session ownership", () => {
           undefined,
           session,
         );
-        actions.initialize(kind);
+        initializeShopVisitForTest(kind, session);
         const quote = kind === "merchant" ? actions.merchant.getRemoveCardPrice : actions.alchemist.getMixPrice;
         const basePrice = kind === "merchant" ? SHOP_REMOVE_PRICE : ALCHEMIST_MIX_PRICE;
         expect(quote()).toBe(basePrice);

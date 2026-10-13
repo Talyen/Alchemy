@@ -1,13 +1,10 @@
+import { initializeAlchemyVisitForTest } from "../../../../helpers/room-visits";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playUISound } from "@/lib/audio";
 import { StrictMode } from "react";
 import { TransmutationScreen } from "@/features/alchemy/run-loop/screens/transmutation-screen";
-import {
-  initializeAlchemyVisit,
-  selectTransmutation,
-  transmuteCard,
-} from "@/features/alchemy/run-loop/navigation/alchemy-commands";
+import { selectTransmutation, transmuteCard } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
 import { useTransmutationScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { cardById, keywordDefinitions, type BattleCard } from "@/lib/game-data";
@@ -90,7 +87,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   setRunProgress({ characterId: "wizard", runDeck: [cardById.slash!, cardById.frostbolt!, cardById["mixed-potion"]!] });
   setRunSession({ hasActiveRun: true, activity: { kind: "destination" } });
-  initializeAlchemyVisit("transmutation", defaultGameSession);
+  initializeAlchemyVisitForTest("transmutation", defaultGameSession);
 });
 afterEach(() => {
   cleanup();

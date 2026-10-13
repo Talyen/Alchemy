@@ -3,7 +3,7 @@ import { type GameSession } from "@/features/alchemy/shared/stores/game-session-
 import { createAlchemistShopCommands } from "./alchemist-shop-commands";
 import { createEquipmentShopCommands } from "./equipment-shop-commands";
 import { createMerchantShopCommands } from "./merchant-shop-commands";
-import type { ShopActions, ShopKind } from "./shop-action-types";
+import type { ShopActions } from "./shop-action-types";
 import { createTrinketShopCommands } from "./trinket-shop-commands";
 
 export function createShopActions(gameSession: GameSession): ShopActions {
@@ -14,8 +14,5 @@ export function createShopActions(gameSession: GameSession): ShopActions {
     equipment: createEquipmentShopCommands(gameSession),
   };
 
-  return bindSessionCapabilities(gameSession, {
-    initialize: (kind: ShopKind) => shops[kind].initialize(),
-    ...shops,
-  });
+  return bindSessionCapabilities(gameSession, shops);
 }

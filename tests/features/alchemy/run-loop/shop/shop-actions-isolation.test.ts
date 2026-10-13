@@ -17,6 +17,7 @@ import {
   setShopState,
   setTrinketShopState,
 } from "./shop-actions-harness";
+import { initializeShopVisitForTest } from "../../../../helpers/room-visits";
 import {
   ALCHEMIST_POTION_PRICE,
   ALCHEMIST_REFRESH_PRICE,
@@ -66,7 +67,7 @@ const shops = [
 
     replayIds: () => readActivityData(readRunSession(defaultGameSession).activity, "shop").cards.map((card) => card.id),
     restockDedup: true,
-    initialize: (actions: Actions) => actions.merchant.initialize(),
+    initialize: () => initializeShopVisitForTest("merchant"),
     replayRefresh: true,
   },
   {
@@ -97,7 +98,7 @@ const shops = [
     replayIds: () =>
       readActivityData(readRunSession(defaultGameSession).activity, "alchemist").potions.map((card) => card.id),
     restockDedup: true,
-    initialize: (actions: Actions) => actions.alchemist.initialize(),
+    initialize: () => initializeShopVisitForTest("alchemist"),
     replayRefresh: true,
   },
   {
@@ -128,7 +129,7 @@ const shops = [
     replayIds: () =>
       readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop").trinkets.map((entry) => entry.id),
     restockDedup: true,
-    initialize: (actions: Actions) => actions.trinket.initialize(),
+    initialize: () => initializeShopVisitForTest("trinket"),
     replayRefresh: true,
   },
   {
@@ -167,7 +168,7 @@ const shops = [
         (item) => item.definitionId,
       ),
     restockDedup: false,
-    initialize: (actions: Actions) => actions.equipment.initialize(),
+    initialize: () => initializeShopVisitForTest("equipment"),
     replayRefresh: true,
   },
 ];
@@ -284,12 +285,12 @@ describe("shop action isolation", () => {
       setRunProgress({ gold: 999, rng: rngState });
       shop.seed();
 
-      shop.initialize(buildActions());
+      shop.initialize();
       const first = shop.replayIds();
 
       shop.seed();
       setRunProgress({ rng: rngState });
-      shop.initialize(buildActions());
+      shop.initialize();
       expect(shop.replayIds()).toEqual(first);
     });
   });

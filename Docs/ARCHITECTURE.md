@@ -195,8 +195,15 @@ or save restoration. Retained capabilities do not need to be recreated.
 Each shop supplies typed shelf selection, item identity, pricing, and acquisition
 rules; the shared purchase owner uses that pricing rule for both displayed quotes
 and commits, validating and acquiring the live shelf item inside the transaction.
-Pure shelf samplers live in `shop-state-init.ts`. `shop-initialization.ts` owns the shared transaction-level initialization used by
-room entry and standalone shop commands. `shop-commands-core.ts` owns
+Pure shelf samplers live in `shop-state-init.ts`. `run-loop/run/room-visit-initialization.ts`
+owns transaction-only creation of shops, Campfire, Transmutation, and Mystery.
+Only `room-entry-commands.ts` may import this owner; Oxlint and dependency
+boundaries enforce that rule. Room entry commits complete visits before
+navigation. Shop and route capabilities expose no initializer, and screen mount
+effects cannot replace visits, reset purchases or refresh allowances, or reroll
+saved offers. Resume hydrates existing visits; damaged Transmutation choices use
+the screen's unavailable-visit exit. Focused tests seed visits through a test-only
+fixture adapter when route validation is outside their scenario. `shop-commands-core.ts` owns
 purchase validation and the complete refresh recipe; the activity
 selects pricing and the typed `setRunActivityData` write target. Callers supply
 shop-specific sampling and acquisition rules without wiring separate state writers.

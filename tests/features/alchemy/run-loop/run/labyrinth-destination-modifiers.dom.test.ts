@@ -1,5 +1,6 @@
 import { emptyAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
 import "../../../../helpers/mock-audio";
+import { initializeMysteryVisitForTest } from "../../../../helpers/room-visits";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";
@@ -64,8 +65,8 @@ describe("Labyrinth destination modifiers", () => {
       activity: { kind: "campfire", data: emptyAlchemyVisit() },
       activeLabyrinthRewardModifiers: ["golden-omen"],
     });
-    const { result } = renderHook(() => createMysteryEventNavigation({ navigateTo: vi.fn() }, defaultGameSession));
-    act(() => result.current.beginMysteryEvent());
+    const { result } = renderHook(() => createMysteryEventNavigation(defaultGameSession));
+    act(() => initializeMysteryVisitForTest());
     const choice = readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryEvent!.choices.find(
       (entry) => entry.effects.some((effect) => effect.kind === "gainGold"),
     )!;
@@ -83,8 +84,8 @@ describe("Labyrinth destination modifiers", () => {
       activity: { kind: "campfire", data: emptyAlchemyVisit() },
       activeLabyrinthRewardModifiers: ["restful-discovery"],
     });
-    const { result } = renderHook(() => createMysteryEventNavigation({ navigateTo: vi.fn() }, defaultGameSession));
-    act(() => result.current.beginMysteryEvent());
+    const { result } = renderHook(() => createMysteryEventNavigation(defaultGameSession));
+    act(() => initializeMysteryVisitForTest());
     const choice = readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryEvent!.choices[0]!;
     expect(choice.effects.at(-1)).toEqual({ kind: "healHealth", amount: 15 });
     act(() => result.current.handleMysteryChoice(choice));

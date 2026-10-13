@@ -50,12 +50,7 @@ export function createRunFlowEngine(
     },
     gameSession,
   );
-  const mystery = createMysteryEventNavigation(
-    {
-      navigateTo,
-    },
-    gameSession,
-  );
+  const mystery = createMysteryEventNavigation(gameSession);
   const actions: RunFlowShellActions = {
     navigateTo,
     transition,
@@ -79,7 +74,6 @@ export function createRunFlowEngine(
     beginCampaign: contentNav.beginCampaign,
     beginLabyrinth: contentNav.beginLabyrinth,
     beginWildwood: contentNav.beginWildwood,
-    beginMysteryEvent: mystery.beginMysteryEvent,
     endLabyrinthRun: flowHandlers.endLabyrinthRun,
     handleAbandonRun: () => {
       cancelPending();
