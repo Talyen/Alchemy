@@ -144,6 +144,9 @@ function normalizeCombatResources(state: BattleSnapshot, defaults: BattleSnapsho
     enemyMaxHealth,
     playerHealth: Math.min(clampNonNegative(state.playerHealth, defaults.playerHealth), playerMaxHealth),
     enemyHealth: Math.min(clampNonNegative(state.enemyHealth, defaults.enemyHealth), enemyMaxHealth),
+    enemyRegeneration: clampNonNegative(state.enemyRegeneration, defaults.enemyRegeneration),
+    enemyPhysicalDamageBonus: clampNonNegative(state.enemyPhysicalDamageBonus, defaults.enemyPhysicalDamageBonus),
+    companionDamageBuff: clampNonNegative(state.companionDamageBuff, defaults.companionDamageBuff),
     gold: clampNonNegative(state.gold, defaults.gold),
     mana: clampNonNegative(state.mana, defaults.mana),
     maxMana: Math.max(MIN_MAX_MANA_FLOOR, clampNonNegative(state.maxMana, defaults.maxMana)),
@@ -151,17 +154,54 @@ function normalizeCombatResources(state: BattleSnapshot, defaults: BattleSnapsho
 }
 
 function normalizeCardPiles(state: BattleSnapshot, defaults: BattleSnapshot) {
+  const piles = ["hand", "pendingHandCards", "deck", "discard", "exhausted"] as const;
+  const counts = new Map<number, number>();
   let highestCardUid = 0;
-  for (const pile of [state.deck, state.hand, state.pendingHandCards, state.discard, state.exhausted]) {
-    for (const card of pile) highestCardUid = Math.max(highestCardUid, toFiniteNonNegativeInt(card.uid) ?? 0);
+  for (const pile of piles) {
+    for (const card of state[pile]) {
+      if (Number.isSafeInteger(card.uid) && card.uid! >= 0) {
+        counts.set(card.uid!, (counts.get(card.uid!) ?? 0) + 1);
+        highestCardUid = Math.max(highestCardUid, card.uid!);
+      }
+    }
   }
-  const overflow = state.hand.slice(MAX_HAND_SIZE);
+  let nextCardUid = Math.max(toFiniteNonNegativeInt(state.nextCardUid) ?? defaults.nextCardUid, highestCardUid + 1);
+  const used = new Set<number>();
+  const repaired = { ...state };
+  for (const pile of piles) {
+    repaired[pile] = state[pile].map((card) => {
+      if (Number.isSafeInteger(card.uid) && card.uid! >= 0 && !used.has(card.uid!)) {
+        used.add(card.uid!);
+        return card;
+      }
+      // Undrawn cards may have no presentation identity yet; visible cards must.
+      if (card.uid === undefined && pile !== "hand" && pile !== "pendingHandCards") return card;
+      return { ...card, uid: nextCardUid++ };
+    });
+  }
+  const unambiguousUid = (uid: number | null) => (uid !== null && counts.get(uid) === 1 ? uid : null);
+  const overflow = repaired.hand.slice(MAX_HAND_SIZE);
   return {
+    deck: repaired.deck,
+    discard: repaired.discard,
+    exhausted: repaired.exhausted,
+    uniqueGear: {
+      ...state.uniqueGear,
+      lastArcheryUid: unambiguousUid(state.uniqueGear.lastArcheryUid),
+      returningFlightUid: unambiguousUid(state.uniqueGear.returningFlightUid),
+    },
     cardsPlayedThisTurn: toFiniteNonNegativeInt(state.cardsPlayedThisTurn) ?? 0,
-    nextCardUid: Math.max(toFiniteNonNegativeInt(state.nextCardUid) ?? defaults.nextCardUid, highestCardUid + 1),
-    hand: overflow.length ? state.hand.slice(0, MAX_HAND_SIZE) : state.hand,
-    pendingHandCards: overflow.length ? [...overflow, ...state.pendingHandCards] : state.pendingHandCards,
+    nextCardUid,
+    hand: overflow.length ? repaired.hand.slice(0, MAX_HAND_SIZE) : repaired.hand,
+    pendingHandCards: [...overflow, ...repaired.pendingHandCards],
   };
+}
+
+function normalizeWishChoices(state: BattleSnapshot) {
+  const queue = state.wishQueue.filter((options) => options.length > 0);
+  if (state.wishOptions?.length) return { wishOptions: state.wishOptions, wishQueue: queue };
+  const [wishOptions = null, ...wishQueue] = queue;
+  return { wishOptions, wishQueue };
 }
 
 function normalizeSurvival(state: BattleSnapshot, saved: Partial<BattleSnapshot>, defaults: BattleSnapshot) {
@@ -172,7 +212,7 @@ function normalizeSurvival(state: BattleSnapshot, saved: Partial<BattleSnapshot>
   return {
     turn,
     deathsDoorActive: savedSurvival.deathsDoorActive === true,
-    deathsDoorUsed: savedSurvival.deathsDoorUsed === true,
+    deathsDoorUsed: savedSurvival.deathsDoorActive === true || savedSurvival.deathsDoorUsed === true,
     deathsDoorGraceTurnsRemaining: toFiniteNonNegativeInt(state.deathsDoorGraceTurnsRemaining),
     deathsDoorTriggeredTurn:
       triggeredTurn !== null && triggeredTurn >= 1 && triggeredTurn <= turn ? triggeredTurn : null,
@@ -219,13 +259,26 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
   // battleMetrics is runtime-only telemetry; never persisted.
   delete merged.battleMetrics;
   const companion = merged.activeCompanion;
+  const resources = normalizeCombatResources(merged, defaults);
+  const survival = normalizeSurvival(merged, saved, defaults);
+  const pendingBleedLeechHealing = Math.min(
+    clampNonNegative(merged.pendingBleedLeechHealing, 0),
+    merged.enemyStatuses.bleed,
+  );
   return {
     ...merged,
-    ...normalizeCombatResources(merged, defaults),
+    ...resources,
+    ...normalizeWishChoices(merged),
     ...normalizeCardPiles(merged, defaults),
-    ...normalizeSurvival(merged, saved, defaults),
+    ...survival,
+    playerHealth: survival.deathsDoorActive ? Math.max(1, resources.playerHealth) : resources.playerHealth,
+    pendingBleedLeechHealing,
+    pendingEnemyBleedLeechHealing: Math.min(
+      clampNonNegative(merged.pendingEnemyBleedLeechHealing, 0),
+      merged.playerStatuses.bleed,
+    ),
     pendingCardBleedLeechHealing: Math.min(
-      clampNonNegative(merged.pendingBleedLeechHealing, 0),
+      pendingBleedLeechHealing,
       clampNonNegative(merged.pendingCardBleedLeechHealing, 0),
     ),
     activeCompanion:

@@ -232,10 +232,10 @@ describe("saved battle card recovery", () => {
       const cards = [damaged, healthy];
       const battleState = {
         ...makeTestBattleState(),
-        deck: cards,
+        deck: cards.map((entry, index) => ({ ...entry, uid: index + 3 })),
         hand: cards,
-        discard: cards,
-        exhausted: cards,
+        discard: cards.map((entry, index) => ({ ...entry, uid: index + 5 })),
+        exhausted: cards.map((entry, index) => ({ ...entry, uid: index + 7 })),
         wishOptions: cards,
         wishQueue: [cards],
       };
@@ -257,10 +257,10 @@ describe("saved battle card recovery", () => {
       const restored = readBattle(defaultGameSession);
       const expected = [{ ...card, uid: 1 }, healthy];
       for (const state of [restored.battleState]) {
-        expect(state.deck).toEqual(expected);
+        expect(state.deck).toEqual(expected.map((entry, index) => ({ ...entry, uid: index + 3 })));
         expect(state.hand).toEqual(expected);
-        expect(state.discard).toEqual(expected);
-        expect(state.exhausted).toEqual(expected);
+        expect(state.discard).toEqual(expected.map((entry, index) => ({ ...entry, uid: index + 5 })));
+        expect(state.exhausted).toEqual(expected.map((entry, index) => ({ ...entry, uid: index + 7 })));
         expect(state.wishOptions).toEqual(expected);
         expect(state.wishQueue).toEqual([expected]);
       }
