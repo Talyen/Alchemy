@@ -42,7 +42,9 @@ function nodeTile(title = "Blacksmith") {
 async function inspect(title = "Blacksmith") {
   await screen.findByRole("img", { name: title, exact: true });
   await waitForArtwork();
-  fireEvent.mouseEnter(nodeTile(title));
+  const tile = nodeTile(title);
+  fireEvent.mouseEnter(tile);
+  fireEvent.pointerMove(tile);
   return screen.findByRole("tooltip");
 }
 
@@ -295,6 +297,7 @@ describe("HomesteadScreen", () => {
     fireEvent.click(screen.getByRole("button", { name: "Reset", exact: true }));
     expect(defaultProps.onResetHomestead).toHaveBeenCalledTimes(1);
     rerender(<HomesteadScreen {...defaultProps} afterProgressSaved={afterProgressSaved} />);
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     await inspect();
     expect(nodeTile().getAttribute("aria-label")).toContain("Upgrade Blacksmith");
     fireEvent.click(nodeTile());
