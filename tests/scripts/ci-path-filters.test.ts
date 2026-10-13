@@ -96,6 +96,8 @@ const PATH_CASES: Array<[string, string[], string[]]> = [
   ["scripts/lib/release/release-checks.mjs", ["desktop", "tooling"], ["desktop", "desktop_renderer"]],
   ["desktop/main.cjs", ["desktop"], ["desktop", "desktop_renderer"]],
   ["src/lib/platform.ts", ["desktop", "runtime"], ["desktop", "desktop_renderer"]],
+  ["public/startup-preferences.js", ["runtime"], ["desktop", "desktop_renderer"]],
+  ["public/startup-words.js", ["runtime"], ["desktop", "desktop_renderer"]],
   ["src/App.tsx", ["runtime"], ["desktop_renderer"]],
   ["src/app/app-shell.ts", ["interactions", "runtime"], ["desktop_renderer"]],
   ["src/lib/battle/damage-calc.ts", ["runtime"], ["desktop_renderer"]],

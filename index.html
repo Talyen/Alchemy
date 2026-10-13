@@ -431,29 +431,7 @@
         animation: none;
       }
     </style>
-    <script>
-      try {
-        if (localStorage.getItem("alchemy-disable-animations") === "true") {
-          document.documentElement.classList.add("alchemy-disable-animations");
-        }
-        if (localStorage.getItem("alchemy-skip-loading-screen") === "true") {
-          document.documentElement.classList.add("alchemy-skip-loading-screen");
-        }
-        let gameSizePercent = 100;
-        try {
-          const raw = localStorage.getItem("alchemy-device-display-v1");
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            if (typeof parsed?.gameSizePercent === "number") {
-              gameSizePercent = Math.min(150, Math.max(75, parsed.gameSizePercent));
-            }
-          }
-        } catch (e) {}
-        const stageScale = Math.min(window.innerWidth / ((1080 * 1470) / 738), window.innerHeight / 1080);
-        const contentScale = stageScale * (gameSizePercent / 100);
-        document.documentElement.style.setProperty("--content-scale", String(contentScale));
-      } catch (e) {}
-    </script>
+    <script src="/startup-preferences.js"></script>
     <script type="module" src="/src/startup.ts"></script>
     <link rel="preload" as="font" href="/fonts/Inter.woff2" crossorigin />
     <title>Alchemy</title>
@@ -542,45 +520,7 @@
         </span>
       </h1>
       <p id="startup-splash-phrase" class="alchemy-loading-word">Adventure awaits...</p>
-      <script>
-        (function () {
-          try {
-            var prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-            var disableAnimations = document.documentElement.classList.contains("alchemy-disable-animations");
-            if (prefersReduced || disableAnimations) return;
-
-            var words = [
-              "Adventure awaits",
-              "Polishing trinkets",
-              "Shuffling decks",
-              "Waking monsters",
-              "Brewing potions",
-              "Gathering crystals",
-              "Sharpening blades",
-              "Mapping labyrinth",
-              "Attuning relics",
-              "Consulting oracle",
-              "Enchanting baubles",
-              "Counting loot",
-              "Training companions",
-              "Building homestead",
-              "Restocking shops",
-            ];
-            var phrase = document.getElementById("startup-splash-phrase");
-            if (!phrase) return;
-            var index = 0;
-            window.__alchemySplashWordIndex = 0;
-            window.__alchemySplashWordTimer = window.setInterval(function () {
-              index = (index + 1) % words.length;
-              window.__alchemySplashWordIndex = index;
-              phrase.textContent = words[index] + "...";
-              phrase.style.animation = "none";
-              void phrase.offsetHeight;
-              phrase.style.animation = "";
-            }, 750);
-          } catch (e) {}
-        })();
-      </script>
+      <script src="/startup-words.js"></script>
     </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

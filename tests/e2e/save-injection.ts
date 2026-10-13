@@ -81,6 +81,9 @@ async function writeDesktopSaveAndReload(page: Page, save: unknown): Promise<voi
   await write();
   await write();
   await page.reload({ waitUntil: "domcontentloaded" });
+  // A loaded desktop checkpoint includes the cold-start reveal, which may
+  // outlast the default assertion timeout before controls become interactive.
+  await expect(page.locator("#startup-splash")).toHaveCount(0, { timeout: 30_000 });
 }
 
 async function injectLocalStorage(page: Page, save: Record<string, unknown>, merge: boolean) {

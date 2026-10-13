@@ -28,6 +28,7 @@ export const SHARED_BUILD_PATTERNS = Object.freeze([
   ".npmrc",
   "tsconfig*.json",
   "vite.config.ts",
+  "public/startup-*.js",
   "scripts/build-verified.mjs",
   "scripts/check-bundle-budget.mjs",
   "scripts/lib/verification/bundle-budget.mjs",
