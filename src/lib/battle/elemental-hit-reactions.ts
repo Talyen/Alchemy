@@ -8,7 +8,7 @@ import {
   applyArmorReward,
 } from "./player-rewards";
 import { applyLuckyCloverGold, applyNatureGoldReward, applyNatureManaRefund } from "./bonus-effects";
-import { applyDamageBlock, applyHolyBlockChance, applyHolyLifesteal, applyHolyTithe } from "./damage-rider-leech";
+import { applyHolyBlockChance, applyHolyLifesteal, applyHolyTithe } from "./damage-rider-leech";
 import {
   applyBrassCenser,
   applyNatureLeech,
@@ -84,7 +84,6 @@ export function applyHolyDamageRiders(
     nextState = applyBlockReward(nextState, state.gearEffects.blockOnHolyHitWithoutBlock, combatTexts);
   }
   nextState = applyHolyBlockChance(nextState, facts.healthDamage, combatTexts);
-  nextState = applyDamageBlock(nextState, damage, combatTexts, eligibility);
   nextState = applyHolyTithe(nextState, facts.healthDamage, combatTexts);
 
   nextState = applyTalentHitConversions(nextState, "holy", damage, combatTexts);

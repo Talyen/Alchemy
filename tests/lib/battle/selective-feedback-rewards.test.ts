@@ -66,16 +66,6 @@ describe("selective feedback rewards", () => {
     expect(result.state.playerHealth).toBe(health === 19 ? 29 : health);
   });
 
-  it("a healing Holy hit cannot enable Radiant Guard with its own healing", () => {
-    const holy = makeTestCard({ cost: 0, effects: [{ kind: "damage", damageType: "holy", amount: 20 }] });
-    const result = play(
-      battle({ playerHealth: 19, talentEffects: { holyLifestealPercent: 200, holyBlockPercentFromDamage: 15 } }),
-      holy,
-    );
-    expect(result.state.playerHealth).toBe(40);
-    expect(result.state.playerStatuses.block).toBe(0);
-  });
-
   it("Overflow accepts card healing but not passive or explicit Leech healing", () => {
     const state = battle({ playerHealth: 39, talentEffects: { overhealToBlockRatio: 0.25 } });
     const heal = makeTestCard({ cost: 0, effects: [{ kind: "heal", amount: 9 }] });
@@ -288,7 +278,7 @@ describe("selective feedback rewards", () => {
     const state = battle({
       playerHealth: 21,
       playerStatuses: { block: 10 },
-      talentEffects: { holyReflectionBlockLostPercent: 30, healthThresholdBlock: { threshold: 50, amount: 6 } },
+      talentEffects: { holyReflectionBlockLostPercent: 30, healthThresholdBlockOnce: { threshold: 50, amount: 6 } },
     });
     const result = processEnemyDamageEffect(state, { kind: "damage", damageType: "physical", amount: 12 }, [], {
       triggerBlockRetaliation: true,

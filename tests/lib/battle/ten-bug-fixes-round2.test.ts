@@ -1,11 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { resolveTypedEnemyHit } from "@/lib/battle/typed-hit-resolution";
-import { applyDamageStatuses, applyPoisonTalentRiders } from "@/lib/battle/damage-status-riders";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { prepareWildwoodBossInDraft } from "@/features/alchemy/run-loop/run/wildwood-commands";
 import { SIMPLE_HANDLERS } from "@/lib/battle/effect-handlers/simple-handlers";
-import { applyCardHitReactions } from "@/lib/battle/card-hit-reactions";
 import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
 import { applyDodgeTalentStatuses } from "@/lib/battle/dodge-talent-rewards";
 import { cardById, type BattleCard } from "@/lib/game-data";
@@ -48,45 +46,6 @@ describe("Combat feedback and reward regressions", () => {
 
       // Since eligibility had 0 block, freezeGrantsBlockAndMana should have granted Block
       expect(result.state.playerStatuses.block).toBe(5 + 4);
-    });
-  });
-
-  describe("Bug 2: Armor strip combat text feedback for poisonStripArmor and physicalStripArmorWhileBlocked", () => {
-    it("emits armor damage combat text when poisonStripArmor removes enemy armor", () => {
-      const state = patchBattleState({
-        enemyMitigation: { armor: 3 },
-        talentEffects: { poisonStripArmor: true },
-      });
-      const combatTexts: CombatTextEvent[] = [];
-      const next = applyPoisonTalentRiders(state, 5, combatTexts);
-
-      expect(next.enemyMitigation.armor).toBe(2);
-      expect(combatTexts).toContainEqual({
-        target: "enemy",
-        kind: "damage",
-        stat: "armor",
-        amount: 1,
-        impact: false,
-      });
-    });
-
-    it("emits armor damage combat text when physicalStripArmorWhileBlocked removes enemy armor", () => {
-      const state = patchBattleState({
-        playerStatuses: { block: 4 },
-        enemyMitigation: { armor: 5 },
-        talentEffects: { physicalStripArmorWhileBlocked: true },
-      });
-      const combatTexts: CombatTextEvent[] = [];
-      const next = applyDamageStatuses(state, { kind: "damage", damageType: "physical", amount: 6 }, 6, combatTexts);
-
-      expect(next.enemyMitigation.armor).toBe(3);
-      expect(combatTexts).toContainEqual({
-        target: "enemy",
-        kind: "damage",
-        stat: "armor",
-        amount: 2,
-        impact: false,
-      });
     });
   });
 
@@ -191,75 +150,6 @@ describe("Combat feedback and reward regressions", () => {
         }
       },
     );
-  });
-
-  describe("Bug 8: Guard companionFreezeDamageVsFrozen in card-hit-reactions", () => {
-    it("does not dispatch follow-up freeze hit when companionFreezeDamageVsFrozen is 0", () => {
-      const state = patchBattleState({
-        enemyHealth: 50,
-        enemyCC: { freezeSkipTurns: 2, stunSkipTurns: 0, cooldown: 0 },
-        talentEffects: { companionFreezeDamageVsFrozen: 0 },
-      });
-      const combatTexts: CombatTextEvent[] = [];
-      const testCard = makeTestCard();
-      applyCardHitReactions(
-        state,
-        {
-          source: "card-attack",
-          resolvedDamage: 5,
-          card: testCard,
-          effect: { kind: "damage", damageType: "physical", amount: 5 },
-          origin: "companion",
-        },
-        {
-          healthDamage: 5,
-          previousHealth: 50,
-          enemyWasAlive: true,
-          killed: false,
-          critical: false,
-          eligibility: state,
-          resolvedDamage: 5,
-        },
-        combatTexts,
-      );
-
-      // No follow-up hit dispatched
-      const followUp = combatTexts.find((t) => t.stat === "freeze" && t.kind === "damage");
-      expect(followUp).toBeUndefined();
-    });
-
-    it("dispatches follow-up freeze hit when companionFreezeDamageVsFrozen > 0", () => {
-      const state = patchBattleState({
-        enemyHealth: 50,
-        enemyCC: { freezeSkipTurns: 2, stunSkipTurns: 0, cooldown: 0 },
-        talentEffects: { companionFreezeDamageVsFrozen: 4 },
-      });
-      const combatTexts: CombatTextEvent[] = [];
-      const testCard = makeTestCard();
-      applyCardHitReactions(
-        state,
-        {
-          source: "card-attack",
-          resolvedDamage: 5,
-          card: testCard,
-          effect: { kind: "damage", damageType: "physical", amount: 5 },
-          origin: "companion",
-        },
-        {
-          healthDamage: 5,
-          previousHealth: 50,
-          enemyWasAlive: true,
-          killed: false,
-          critical: false,
-          eligibility: state,
-          resolvedDamage: 5,
-        },
-        combatTexts,
-      );
-
-      const followUp = combatTexts.find((t) => t.stat === "freeze" && t.kind === "damage");
-      expect(followUp).toBeDefined();
-    });
   });
 
   describe("Companion removal does not grant Consume gear rewards", () => {

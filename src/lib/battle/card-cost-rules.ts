@@ -15,32 +15,6 @@ type CardCostState = { action?: import("./action-context").BattleActionContext }
   "flags" | "talentEffects" | "gearEffects" | "uniqueGear" | "encounterBenefits"
 >;
 
-type FirstCardFreeTalent = Extract<keyof CardCostState["talentEffects"], `first${string}CardFree`>;
-
-const FIRST_CARD_FREE_RULES: ReadonlyArray<
-  readonly [talent: FirstCardFreeTalent, usedFlag: BooleanCombatFlag, matches: (card: BattleCard) => boolean]
-> = [
-  ["firstBurnCardFree", "firstBurnCardFreeUsed", (card) => cardHasKeyword(card, "burn")],
-  [
-    "firstHolyCardFree",
-    "firstHolyCardFreeUsed",
-    (card) => cardHasKeyword(card, "holy") || cardHasDamageType(card, "holy"),
-  ],
-  [
-    "firstPoisonCardFree",
-    "firstPoisonCardFreeUsed",
-    (card) => cardHasKeyword(card, "poison") || cardHasDamageType(card, "poison"),
-  ],
-  [
-    "firstBleedCardFree",
-    "firstBleedCardFreeUsed",
-    (card) => cardHasKeyword(card, "bleed") || cardHasDamageType(card, "bleed"),
-  ],
-  ["firstConsumeCardFree", "firstConsumeCardFreeUsed", (card) => !!card.consume],
-  ["firstCompanionCardFree", "firstCompanionCardFreeUsed", (card) => cardHasKeyword(card, "companion")],
-  ["firstArcheryCardFree", "firstArcheryCardFreeUsed", (card) => cardHasKeyword(card, "archery")],
-];
-
 function applyCostDiscount(cost: number, reduction: number): number {
   return reduction > 0 ? Math.max(0, cost - reduction) : cost;
 }
@@ -54,12 +28,12 @@ function computeStandardCost(state: CardCostState, card: BattleCard, discountedC
   };
   if (card.cost === 0) return result;
 
-  const firstFree = FIRST_CARD_FREE_RULES.find(
-    ([talent, flag, matches]) => state.talentEffects[talent] && !readCombatFlag(state, flag) && matches(card),
-  );
-  if (firstFree) {
-    const [, usedFlag] = firstFree;
-    result.consumedFlags.add(usedFlag);
+  if (
+    state.talentEffects.firstBurnCardFree &&
+    !readCombatFlag(state, "firstBurnCardFreeUsed") &&
+    cardHasKeyword(card, "burn")
+  ) {
+    result.consumedFlags.add("firstBurnCardFreeUsed");
     return result;
   }
   if (discountedCost === 0) return result;
@@ -135,7 +109,7 @@ export function computeEffectiveCost(state: CardCostState, card: BattleCard) {
   );
   const discountedCost = isFree ? 0 : Math.max(0, card.cost - discount - returnedDiscount);
   const result = computeStandardCost(state, card, discountedCost);
-  // First-card Talents take priority and leave the Unique free-card opportunity armed.
+  // Flashpoint takes priority and leaves the Unique free-card opportunity armed.
   if (result.consumedFlags.size > 0) delete uniqueDiscounts.knightsAnswerReady;
   if (quickdrawUsed) result.consumedFlags.add("encounterArcheryUsed");
   return { ...result, uniqueDiscounts };

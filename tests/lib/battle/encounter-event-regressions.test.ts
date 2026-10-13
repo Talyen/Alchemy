@@ -5,7 +5,7 @@ import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
 import { buildWishOptions } from "@/lib/battle/wish";
 import { BattleCardEffectSchema } from "@/lib/game-data";
 import { applyNumericCorruption, getEditableCorruptionTargets } from "@/lib/corruption/numeric";
-import { regressionBattle } from "../../fixtures/battle";
+import { makeTestCard, regressionBattle } from "../../fixtures/battle";
 
 function battle(trait: string) {
   return regressionBattle({
@@ -88,17 +88,17 @@ describe("encounter event regressions", () => {
   });
 
   it.each([10, 39])("incidental Leech at %s Health receives Deep Siphon without card-only cleansing", (health) => {
-    const card = cardById.slash!;
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "nature", amount: 3 }] });
     const state = battle("none");
     const result = playBattleCardResolved(
       {
         ...state,
+        gearEffects: { ...state.gearEffects, natureLeechChance: 100 },
         playerHealth: health,
         playerStatuses: { ...state.playerStatuses, poison: 2 },
         enemyCC: { ...state.enemyCC, stunSkipTurns: 1 },
         talentEffects: {
           ...state.talentEffects,
-          physicalLeechVsStunned: true,
           leechHealingBonus: 1,
           cleanseOnCardOverheal: true,
         },

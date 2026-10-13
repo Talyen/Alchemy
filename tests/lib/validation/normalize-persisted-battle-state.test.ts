@@ -137,9 +137,11 @@ describe("normalizePersistedBattleState", () => {
   it("keeps current talent effects while dropping unknown saved fields", () => {
     const defaults = defaultBattleState();
     const normalized = normalizePersistedBattleState({
+      flags: { ...defaults.flags, firstBurnCardFreeUsed: true, firstHolyCardFreeUsed: true } as typeof defaults.flags,
       talentEffects: {
         ...defaults.talentEffects,
         holyReflectionBlockLostPercent: 30,
+        burnDamagePerMana: MANABURN_DAMAGE_PERCENT,
         burnDamagePerManaCrystal: MANABURN_DAMAGE_PERCENT,
         holyOnAttackBlocked: 6,
         archeryHolyDamageVsFrozen: 2,
@@ -172,12 +174,14 @@ describe("normalizePersistedBattleState", () => {
       } as typeof defaults.talentEffects,
     });
 
+    expect(normalized.flags).toEqual({ ...defaults.flags, firstBurnCardFreeUsed: true });
     expect(normalized.talentEffects).toEqual({
       ...defaults.talentEffects,
       holyReflectionBlockLostPercent: 30,
-      burnDamagePerManaCrystal: MANABURN_DAMAGE_PERCENT,
+      burnDamagePerMana: MANABURN_DAMAGE_PERCENT,
       cardHealMultipliers: { apple: 1, bread: 1 },
     });
+    expect(normalized.talentEffects).not.toHaveProperty("burnDamagePerManaCrystal");
     expect(normalizePersistedBattleState(normalized).talentEffects).toEqual(normalized.talentEffects);
   });
 

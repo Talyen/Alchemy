@@ -19,20 +19,11 @@ export const FLAG_DEFINITIONS = {
   encounterArcheryUsed: { default: false as const, secondaryValue: true as const, lifetime: "player-turn" },
   secondWindTriggered: { default: false as const, secondaryValue: null, lifetime: "combat" },
   uniqueRepeatActive: { default: false as const, secondaryValue: null, lifetime: "combat" },
-  firstHolyCardFreeUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
   firstBurnCardFreeUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
-  firstBurnCardDoubledUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
-  firstPoisonCardFreeUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
-  firstBleedCardFreeUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
   firstBurnTrinketDoubledUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
-  firstConsumeCardFreeUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
-  firstCompanionCardFreeUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
-  firstArcheryCardFreeUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
 
   // Secondary actions may grant, but never spend, this future-card discount.
   nextCardCostReduction: { default: 0 as const, secondaryValue: 0 as const, lifetime: "until-consumed" },
-
-  goldOnFirstPoisonThisCombat: { default: false as const, secondaryValue: null, lifetime: "combat" },
 
   resonantChimeUsedThisTurn: { default: false as const, secondaryValue: true as const, lifetime: "player-turn" },
   runicQuillUsedThisTurn: { default: false as const, secondaryValue: true as const, lifetime: "player-turn" },

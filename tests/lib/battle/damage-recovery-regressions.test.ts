@@ -102,7 +102,7 @@ describe("damage and recovery interactions", () => {
       playerHealth: 21,
       playerMaxHealth: 40,
       playerStatuses: { block: 1 },
-      talentEffects: { healthThresholdBlock: { threshold: 50, amount: 4 } },
+      talentEffects: { healthThresholdBlockOnce: { threshold: 50, amount: 4 } },
       currentEnemy: { traits: [{ id: "earth-elemental", title: "Crushing Force", description: "" }] },
     });
     const result = processEnemyDamageEffect(state, { kind: "damage", damageType: "physical", amount: 3 }, []);

@@ -1,6 +1,5 @@
 import type { CompanionDamageModifiers } from "@/lib/game-data";
 import { LOW_HEALTH_THRESHOLD_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
-import { scalePerMana } from "./amount-helpers";
 import type { BattleSnapshot } from "./types";
 
 type CompanionScalingState = Pick<
@@ -10,7 +9,6 @@ type CompanionScalingState = Pick<
   | "trinketEffects"
   | "companionDamageBuff"
   | "enemyCC"
-  | "maxMana"
   | "enemyHealth"
   | "enemyMaxHealth"
 >;
@@ -24,8 +22,7 @@ export function getBattleCompanionDamageModifiers(state: CompanionScalingState):
       state.gearEffects.companionDamageBonus +
       state.trinketEffects.companionDamageBonus +
       state.companionDamageBuff +
-      (state.enemyCC.freezeSkipTurns > 0 ? talents.companionVsFrozenBonus : 0) +
-      scalePerMana(state.maxMana, talents.companionDamagePerManaCrystal, "half"),
+      (state.enemyCC.freezeSkipTurns > 0 ? talents.companionVsFrozenBonus : 0),
     bleedDamageBonus: talents.companionBleedDamageBonus,
     damageMultiplier:
       talents.companionDoubledVsLowHealth &&
