@@ -79,30 +79,6 @@ describe("computeTalentEffects", () => {
     const effects = computeTalentEffects({ burn: ["physical-brute-force"] });
     expect(effects.flatPhysicalDamage).toBe(0);
   });
-
-  it("keeps the low-Health cleanse distinct from Armor thresholds", () => {
-    const effects = computeTalentEffects({
-      physical: ["physical-shield-bash"],
-      block: ["block-to-physical"],
-      nature: ["nature-verdant-cycle"],
-      leech: ["leech-nature-chance"],
-      gold: ["gold-on-wish"],
-      wish: ["wish-gold"],
-      health: ["health-threshold-armor"],
-      armor: ["armor-mitigate-stun"],
-    });
-
-    expect(effects.blockToPhysicalDamageMultiplier).toBeCloseTo(0.6);
-    expect(effects.physicalStripArmorWhileBlocked).toBe(false);
-    expect(effects.natureLeechChance).toBe(10);
-    expect(effects.afflictionLeechBonusPercent).toBe(10);
-    expect(effects.goldOnWish).toBe(7);
-    expect(effects.goldOnWishChance).toBe(10);
-    expect(effects.declinedWishCardChance).toBe(10);
-    expect(effects.cleanseBelowHealthPercent).toBe(25);
-    expect(effects.healthThresholdArmor).toHaveLength(1);
-    expect(effects.healthThresholdArmor).toEqual(expect.arrayContaining([{ threshold: 50, amount: 3 }]));
-  });
 });
 
 describe("combat feedback talent progression", () => {

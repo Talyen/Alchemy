@@ -3,7 +3,6 @@ export type MakeFlowHandlerDepsOverrides = Partial<RunFlowHandlerDeps> & Partial
 
 export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}): RunFlowHandlerDeps {
   const {
-    getAvailableDestinations = () => [],
     actions: actionsOverride,
     navigateTo = () => {},
     transition = () => {},
@@ -15,5 +14,5 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
     presentBattleStart,
     clearCardHover: overrides.clearCardHover ?? (() => {}),
   };
-  return { actions, getAvailableDestinations };
+  return { actions };
 }

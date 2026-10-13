@@ -1,7 +1,6 @@
 import { rollBattleChance } from "./chance-roll";
 import { resolveBattleSequence } from "./battle-sequence";
-import { applyHealthLossTalentRewards, checkHealthThresholds } from "./status-player";
-import { drawKeywordCard } from "./draw";
+import { checkHealthThresholds } from "./status-player";
 import { hasEncounterBenefit } from "./encounter-trait-state";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { BattleState, CombatTextEvent } from "./types";
@@ -113,9 +112,7 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
       pendingBleedLeechHealing: Math.min(nextBleed, decayHalvedStatus(state.pendingBleedLeechHealing)),
       pendingCardBleedLeechHealing: Math.min(nextBleed, decayHalvedStatus(state.pendingCardBleedLeechHealing)),
     };
-    return hit.healthDamage > 0 && state.talentEffects.drawPhysicalOnBleedTick
-      ? drawKeywordCard(retainedLeech, "physical", { combatTexts })
-      : retainedLeech;
+    return retainedLeech;
   });
 }
 
@@ -156,16 +153,12 @@ function dealPlayerDotTick(
   const healthAfterTick = nextState.playerHealth;
   nextState = decayArmorAfterDamage(nextState, damage, "player", combatTexts);
   nextState = checkHealthThresholds(state.playerHealth, healthAfterTick, nextState, combatTexts);
-  nextState = applyHealthLossTalentRewards(state, nextState, healthLost, combatTexts);
   return nextState;
 }
 
 function mitigatePlayerDot(state: BattleState, damage: number, status: "burn" | "poison" | "bleed"): number {
   const scaled = scaleReceivedPlayerDamage(reduceDamageByMana(state, damage), state.talentEffects, status);
-  const blockReduction = status === "burn" ? state.talentEffects.blockReduceBurnDamage : 0;
-  const afterBlock =
-    blockReduction > 0 && state.playerStatuses.block > 0 ? Math.max(0, scaled - blockReduction) : scaled;
-  const resisted = mitigatePlayerCombatDamage(state, afterBlock, status);
+  const resisted = mitigatePlayerCombatDamage(state, scaled, status);
   return armorMitigatesElementalDamage(state, status) ? Math.max(0, resisted - state.playerStatuses.armor) : resisted;
 }
 

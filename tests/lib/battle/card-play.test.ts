@@ -187,31 +187,7 @@ describe("playBattleCardResolved", () => {
     expect(result.state.enemyHealth).toBe(24);
   });
 
-  it("applies Nature card Block and Photosynthesis once when playing a Nature card", () => {
-    const card = makeTestCard({
-      id: "vines",
-      cost: 1,
-      effects: [
-        { kind: "damage", damageType: "nature", amount: 2 },
-        { kind: "damage", damageType: "nature", amount: 2 },
-      ],
-    });
-    const state = makeState({
-      hand: [card],
-      playerHealth: 10,
-      playerMaxHealth: 30,
-      talentEffects: {
-        ...makeState().talentEffects,
-        blockOnNatureCard: 3,
-        healOnNatureCard: 1,
-      },
-    });
-    const result = playBattleCardResolved(state, card.id, 0);
-    expect(result.state.playerStatuses.block).toBe(3);
-    expect(result.state.playerHealth).toBe(11);
-  });
-
-  it("applies consume talent riders but ignores summon-companion cards", () => {
+  it("applies Consume rewards while summons leave battle without Consume", () => {
     const potion = makeTestCard({
       id: "apple",
       cost: 1,
@@ -221,15 +197,15 @@ describe("playBattleCardResolved", () => {
     const summon = makeTestCard({
       id: "wolf-companion",
       cost: 1,
-      consume: true,
       effects: [{ kind: "summon-companion", companionId: "wolf" }],
     });
     const talents = {
       ...makeState().talentEffects,
       healOnConsume: 1,
       goldOnConsume: 1,
-      poisonOnConsume: 1,
+      goldOnConsumeChance: 100,
       drawOnConsume: 1,
+      drawOnConsumeChance: 100,
     };
     const potionState = makeState({
       hand: [potion],
@@ -243,27 +219,8 @@ describe("playBattleCardResolved", () => {
     const potionResult = playBattleCardResolved(potionState, potion.id, 0);
     expect(potionResult.state.gold).toBe(1);
     expect(potionResult.state.playerStatuses.block).toBe(0);
-    expect(potionResult.state.enemyStatuses.poison).toBe(1);
     expect(potionResult.state.hand.some((c) => c.id === "drawn")).toBe(true);
-    expect(potionResult.state.flags.consumeDrawUsedThisTurn).toBe(true);
-
-    const secondPotion = makeTestCard({
-      id: "bread",
-      cost: 1,
-      consume: true,
-      effects: [{ kind: "heal", amount: 2 }],
-    });
-    const second = playBattleCardResolved(
-      {
-        ...potionResult.state,
-        hand: [secondPotion],
-        mana: 5,
-        deck: [makeTestCard({ id: "should-not-draw" })],
-      },
-      secondPotion.id,
-      0,
-    );
-    expect(second.state.hand.some((c) => c.id === "should-not-draw")).toBe(false);
+    expect(potionResult.state.playerHealth).toBe(13);
 
     const summonResult = playBattleCardResolved(
       makeState({
@@ -283,10 +240,9 @@ describe("playBattleCardResolved", () => {
     expect(summonResult.state.enemyStatuses.poison).toBe(0);
   });
 
-  it("summons and consumes a companion card", () => {
+  it("summons a Companion and removes its card for the battle", () => {
     const card = makeTestCard({
       id: "wolf-companion",
-      consume: true,
       effects: [{ kind: "summon-companion", companionId: "wolf" }],
     });
     const state = makeState({ hand: [card] });
@@ -498,7 +454,10 @@ describe("reworked cards", () => {
       deck: [{ ...cardById.slash }],
       rng: () => 0.99,
     });
-    let state = { ...initial, talentEffects: { ...initial.talentEffects, forgeOnConsume: 3 } };
+    let state = {
+      ...initial,
+      talentEffects: { ...initial.talentEffects, forgeOnConsume: 3, forgeOnConsumeChance: 100 },
+    };
     for (let play = 0; play < 2; play += 1) {
       const index = state.hand.findIndex((entry) => entry.id === card.id);
       const before = state;

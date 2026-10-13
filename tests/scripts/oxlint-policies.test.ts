@@ -7,6 +7,28 @@ async function effectiveMessages(filePath: string, code: string, ruleId: string)
 }
 
 describe("Oxlint policies", () => {
+  it("reserves visit initialization for room entry across route, command, and headless adapters", async () => {
+    const code = 'import { initializeShopVisit } from "@/features/alchemy/run-loop/run/room-visit-initialization";';
+    for (const file of [
+      "src/app/screen-routes/run-loop-routes.tsx",
+      "src/features/alchemy/shell/run-route-actions.ts",
+      "src/features/alchemy/run-loop/shop/merchant-shop-commands.ts",
+      "src/features/alchemy/run-loop/navigation/alchemy-commands.ts",
+      "src/app/playthrough/controller.ts",
+      "src/features/alchemy/shared/stores/meta-commands.ts",
+    ]) {
+      const messages = await effectiveMessages(file, code, "no-restricted-imports");
+      expect(messages, file).not.toEqual([]);
+    }
+    expect(
+      await effectiveMessages(
+        "src/features/alchemy/run-loop/run/room-entry-commands.ts",
+        code,
+        "no-restricted-imports",
+      ),
+    ).toEqual([]);
+  });
+
   it("bans any .rng access including nextState, computed, and destructuring", async () => {
     const cases = [
       `const x = state.rng;`,
@@ -62,7 +84,7 @@ describe("Oxlint policies", () => {
         const nestedDispatch = await effectiveMessages(
           file,
           'import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";',
-          "alchemy/restricted-syntax",
+          "no-restricted-imports",
         );
         expect(nestedDispatch, file).toHaveLength(1);
       }
@@ -246,6 +268,9 @@ it("keeps the shipping singleton out of reusable domains and headless careers", 
     "src/features/alchemy/shared/storage/bootstrap-save-state.ts",
     "src/app/playthrough/controller.ts",
     "src/app/autosave-lifecycle.ts",
+    "src/features/alchemy/shell/use-alchemy-run-controller.ts",
+    "src/features/alchemy/shell/use-battle-controller.ts",
+    "src/features/alchemy/shell/use-screen-transitions.ts",
     "src/features/alchemy/run-loop/battle/battle-presentation-store.ts",
     "src/features/alchemy/run-loop/battle/use-battle-opening-draw.ts",
     "src/features/alchemy/run-loop/screens/battle-screen/hand.tsx",
@@ -254,7 +279,7 @@ it("keeps the shipping singleton out of reusable domains and headless careers", 
       imports.length,
     );
   }
-  for (const file of ["src/app/use-app-save-state.ts", "src/features/alchemy/shell/use-battle-controller.ts"]) {
+  for (const file of ["src/app/use-app-save-state.ts", "src/App.tsx"]) {
     expect(
       await effectiveMessages(
         file,
@@ -382,4 +407,27 @@ it("keeps save validation out of run domain contracts, including erased type imp
     "no-restricted-imports",
   );
   expect(allowed).toEqual([]);
+});
+
+it.each([
+  "src/app/playthrough/meta-offers.ts",
+  "src/features/alchemy/meta/screens/armory-screen.tsx",
+  "src/features/alchemy/run-loop/run/reward-commands.ts",
+])("keeps generic Gear mutation and raw Gear actions out of %s", async (file) => {
+  for (const owner of ["gear-session-command", "gear-actions"]) {
+    expect(
+      await effectiveMessages(
+        file,
+        `import * as gearInternals from "@/features/alchemy/shared/stores/${owner}";`,
+        "no-restricted-imports",
+      ),
+    ).toHaveLength(1);
+  }
+  expect(
+    await effectiveMessages(
+      file,
+      'import { salvageGear } from "@/features/alchemy/shared/stores/gear-commands";',
+      "no-restricted-imports",
+    ),
+  ).toHaveLength(0);
 });

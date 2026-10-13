@@ -1,3 +1,5 @@
+import { isCompanionSummonCard } from "./card-pools";
+import { CONSUME_DESCRIPTION_LINE } from "@/lib/game-constants";
 import { mapEffectChildren } from "../effect-tree";
 import type { BattleCard } from "../types";
 import { cardById } from "./library/cards";
@@ -58,7 +60,13 @@ export function hydrateCard(savedCard: SavedCard): BattleCard {
   const content = keepSavedContent ? savedCard : libraryCard;
   const { consume: catalogConsume, description: _catalogDescription, ...catalogMetadata } = libraryCard;
   // Missing Consume meant reusable in complete saved content, even if the catalog now Consumes.
-  const consume = savedCard.consume ?? (keepSavedContent ? undefined : catalogConsume);
+  const hiddenSummonConsume =
+    isCompanionSummonCard(content) &&
+    !content.descriptionLines.includes(CONSUME_DESCRIPTION_LINE) &&
+    !content.description?.some((line) => line.role === "consume");
+  const consume = hiddenSummonConsume
+    ? undefined
+    : (savedCard.consume ?? (keepSavedContent ? undefined : catalogConsume));
 
   return cloneBattleCard({
     ...catalogMetadata,

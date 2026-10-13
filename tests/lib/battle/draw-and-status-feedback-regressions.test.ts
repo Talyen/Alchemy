@@ -35,7 +35,7 @@ describe("draw and status interaction regressions", () => {
       deck: [],
       discard: [],
       trinketEffects: { runicQuillDrawOnConsume: 1 },
-      talentEffects: { uncappedDrawOnConsume: 1 },
+      talentEffects: { drawOnConsume: 1, drawOnConsumeChance: 100 },
       rng: () => 0.99,
     });
     const next = playBattleCardResolved(state, card.id, 0).state;

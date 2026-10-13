@@ -1,20 +1,21 @@
 import "../../../helpers/mock-audio";
-
-import { initializeBattleForTest as initializeActiveBattle } from "../../../helpers/run-domain-store-test";
+import {
+  mutateGameplayForTest,
+  mutateRunForTest,
+  initializeBattleForTest as initializeActiveBattle,
+  resetRunDomainStore,
+  setRunSession,
+} from "../../../helpers/run-domain-store-test";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useScreenTransitions } from "@/features/alchemy/shell/use-screen-transitions";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
-import { resetRunDomainStore, setRunSession } from "../../../helpers/run-domain-store-test";
 import { readRunResumeScreen, readActiveRunScreen } from "@/features/alchemy/shared/stores/run-reads";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setRunProgressActivity, resetNavigation } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { showRunScreen } from "@/features/alchemy/shared/stores/navigation-commands";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { emptyShopState, createEmptyRewardState } from "@/lib/active-run-session";
-
-import { dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { defaultBattleState } from "@/lib/battle";
 import { createScreenNavigation } from "@/features/alchemy/shell/screen-navigation";
 import { defaultGameSession } from "@/app/application-session";
@@ -106,14 +107,12 @@ describe("screen navigation", () => {
   it("keeps the resume activity when React unmounts before the screen is shown", () => {
     setRunSession({ hasActiveRun: true });
     const show = vi.fn();
-    const { result, unmount } = renderHook(() => useScreenTransitions("battle", show), { reactStrictMode: true });
+    const { result, unmount } = renderHook(() => useScreenTransitions(defaultGameSession, "battle", show), {
+      reactStrictMode: true,
+    });
     act(() =>
       result.current.navigateTo("rewards", () =>
-        dispatchRunSessionCommand(
-          (transaction) => acceptCommand(setRunProgressActivity(transaction, "rewards")),
-          undefined,
-          defaultGameSession,
-        ),
+        mutateRunForTest((transaction) => setRunProgressActivity(transaction, "rewards")),
       ),
     );
     expect(readRunResumeScreen(defaultGameSession)).toBe("rewards");
@@ -152,23 +151,14 @@ it.each(["idle", "shop", "rewards", "battle"] as const)(
   "preserves %s gameplay through display, reset, cancellation, and supersession",
   (kind) => {
     setRunSession({ hasActiveRun: true, rewardState: { ...createEmptyRewardState(), gold: 25 } });
-    if (kind !== "idle")
-      dispatchRunSessionCommand(
-        (transaction) => acceptCommand(setRunProgressActivity(transaction, "rewards")),
-        undefined,
-        defaultGameSession,
-      );
+    if (kind !== "idle") mutateRunForTest((transaction) => setRunProgressActivity(transaction, "rewards"));
     if (kind === "shop")
       setRunSession({
         activity: { kind, data: { ...emptyShopState(), refreshesLeft: 1, purchasedSlotKeys: ["bought-slot"] } },
       });
     if (kind === "battle") {
       // Store-owned battle setup needs the raw draft; this fixture preserves the same owner as production.
-      dispatchGameplayCommand(
-        (draft) => acceptCommand(initializeActiveBattle(draft, defaultBattleState())),
-        undefined,
-        defaultGameSession,
-      );
+      mutateGameplayForTest((draft) => initializeActiveBattle(draft, defaultBattleState()));
     }
     const before = readGameplayState(defaultGameSession);
     const save = snapshotRun(defaultGameSession);
@@ -182,11 +172,7 @@ it.each(["idle", "shop", "rewards", "battle"] as const)(
     }
     showRunScreen("mystery", defaultGameSession);
     assertGameplayUnchanged();
-    dispatchRunSessionCommand(
-      (transaction) => acceptCommand(resetNavigation(transaction)),
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((transaction) => resetNavigation(transaction));
     assertGameplayUnchanged();
     const nav = createScreenNavigation(
       {

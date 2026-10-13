@@ -97,31 +97,16 @@ describe("distinct talent conditions", () => {
       enemyCC: { stunSkipTurns: 1 },
       deck: [drawCard, drawCard, drawCard],
     });
-    const first = prepareTalentCardPlay(initial, cardById["fire-arrow"]!, []).state;
+    const first = prepareTalentCardPlay(initial, cardById["fire-arrow"]!, []);
     expect(first.hand).toHaveLength(1);
-    expect(prepareTalentCardPlay(first, cardById["fire-arrow"]!, []).state.hand).toHaveLength(2);
+    expect(prepareTalentCardPlay(first, cardById["fire-arrow"]!, []).hand).toHaveLength(2);
     expect(
       prepareTalentCardPlay(
         battle({ talentEffects: initial.talentEffects, deck: [drawCard] }),
         cardById["fire-arrow"]!,
         [],
-      ).state.hand,
+      ).hand,
     ).toHaveLength(0);
-  });
-
-  it("Quickdraw and Venom Strike use their current damage and repeat contracts", () => {
-    const effects = talents("Quickdraw", "Venom Strike");
-    const matching = battle({ talentEffects: effects, enemyStatuses: { poison: 1 } });
-    expect(prepareTalentCardPlay(matching, cardById["venom-arrow"]!, []).attackBonuses.physical).toBe(0);
-    expect(
-      prepareTalentCardPlay(
-        battle({ talentEffects: effects, playerStatuses: { block: 1 } }),
-        cardById["venom-arrow"]!,
-        [],
-      ).attackBonuses.physical,
-    ).toBe(0);
-    expect(effects.archeryDamageWithoutBlock).toBe(1);
-    expect(effects.poisonCardPlayTwiceChance).toBe(10);
   });
 
   it("Flash Fire repeats the current Burn card without a second roll", () => {
@@ -259,7 +244,7 @@ describe("repeatable card and Consume rewards", () => {
     expect(second.hand).toHaveLength(2);
   });
 
-  it("Consume rewards distinguish the last held card from ordinary consumption", () => {
+  it("Consume rewards can repeat with cards remaining in hand", () => {
     const initial = battle({
       talentEffects: talents("Last Supper", "Second Helping", "Rotgut", "Combustible"),
       enemyStatuses: { burn: 3 },
@@ -273,7 +258,7 @@ describe("repeatable card and Consume rewards", () => {
     expect(first.hand).toHaveLength(1);
     const second = handlePostPlayCardDestination(first, cardById["health-potion"]!);
     expect(second.enemyHealth).toBe(97);
-    expect(second.playerStatuses.forge).toBe(1);
+    expect(second.playerStatuses.forge).toBe(2);
     expect(second.hand).toHaveLength(2);
   });
 

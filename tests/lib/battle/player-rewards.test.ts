@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-
 import {
   addGoldWithCombatText,
   gainManaWithCombatText,
@@ -38,7 +37,7 @@ describe("applyHealingWithCombatText", () => {
     const state = patchBattleState({
       playerHealth: 10,
       playerMaxHealth: 30,
-      trinketEffects: defaultTrinketManifest({ grovesFavorThornsOnHealthRestore: 1 }),
+      trinketEffects: { grovesFavorThornsOnHealthRestore: 1 },
     });
     const texts = makeTexts();
 
@@ -52,7 +51,7 @@ describe("applyHealingWithCombatText", () => {
 
   it("does not grant Grove's Favor Thorns or Overflow Block for passive overhealing", () => {
     const state = patchBattleState({
-      trinketEffects: defaultTrinketManifest({ grovesFavorThornsOnHealthRestore: 1 }),
+      trinketEffects: { grovesFavorThornsOnHealthRestore: 1 },
       talentEffects: { overhealToBlockRatio: 1 },
     });
     const texts = makeTexts();
@@ -67,7 +66,7 @@ describe("applyHealingWithCombatText", () => {
 
   it("grants Ironwood Buckler Thorns once for each positive Block gain", () => {
     const state = patchBattleState({
-      trinketEffects: defaultTrinketManifest({ ironwoodBucklerThornsOnBlock: 1 }),
+      trinketEffects: { ironwoodBucklerThornsOnBlock: 1 },
     });
     const texts = makeTexts();
 
@@ -183,18 +182,18 @@ describe("lethality payouts — every kill path pays the same rewards", () => {
 });
 
 describe("Arcane Mending from bonus Mana", () => {
-  it.each([true, false])("heals once per gain with combat text enabled: %s", (collectText) => {
+  it.each([true, false])("heals per Mana actually gained with combat text enabled: %s", (collectText) => {
     const state = patchBattleState({
       mana: 0,
       maxMana: 4,
       playerHealth: 10,
-      talentEffects: { healOnManaGain: 2 },
+      talentEffects: { healthPerMana: 1 },
     });
     const texts = makeTexts();
     const next = gainManaWithCombatText(state, 3, collectText ? texts : undefined);
     expect(next.mana).toBe(3);
-    expect(next.playerHealth).toBe(12);
-    if (collectText) expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 2 });
+    expect(next.playerHealth).toBe(13);
+    if (collectText) expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 3 });
     expect(state.playerHealth).toBe(10);
   });
 
@@ -203,7 +202,7 @@ describe("Arcane Mending from bonus Mana", () => {
       mana: 4,
       maxMana: 4,
       playerHealth: 10,
-      talentEffects: { healOnManaGain: 2 },
+      talentEffects: { healthPerMana: 1 },
     });
     expect(gainManaWithCombatText(state, 3, []).playerHealth).toBe(10);
   });

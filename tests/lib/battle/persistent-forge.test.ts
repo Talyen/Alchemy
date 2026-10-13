@@ -182,9 +182,9 @@ describe("persistent Forge", () => {
     expect(saved.world).toEqual(world);
   });
 
-  it("Last Supper can reward successive last-card Consumes in the same turn", () => {
+  it("Last Supper can reward successive Consumes in the same turn", () => {
     const talents = computeTalentEffects({ consume: ["consume-last-supper"] });
-    const first = play(battle({ talentEffects: talents }), cardById.bread!);
+    const first = play(battle({ talentEffects: talents, rng: () => 0.05 }), cardById.bread!);
     const second = play(first, cardById.bread!);
     expect(second.turn).toBe(first.turn);
     expect(second.playerStatuses.forge).toBe(2);

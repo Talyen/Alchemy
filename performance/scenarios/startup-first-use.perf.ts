@@ -1,4 +1,4 @@
-import { enableLoadingScreen, injectHomestead } from "../../tests/e2e/save-injection";
+import { injectHomestead } from "../../tests/e2e/save-injection";
 import { MenuPage } from "../../tests/pages/menu-page";
 import { delay } from "../delay";
 import { expect, test } from "../fixtures";
@@ -14,7 +14,9 @@ test.describe("startup-first-use", () => {
       captureElectronLaunchTiming: true,
       setup: async (page) => {
         await injectHomestead(page);
-        await enableLoadingScreen(page);
+        await page.addInitScript(() => {
+          localStorage.removeItem("alchemy-skip-loading-screen");
+        });
         await page.goto("/");
         await new MenuPage(page).expectMainMenuAfterColdStart();
       },

@@ -1,7 +1,9 @@
 import "../../../../helpers/mock-audio";
-
 import { getRunSessionFromState } from "@/features/alchemy/shared/stores/run-reads";
-import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
+import {
+  mutateGameplayForTest,
+  initializeBattleForTest as initializeActiveBattle,
+} from "../../../../helpers/run-domain-store-test";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
 import { playBattleEvent, playCardSound } from "@/lib/audio";
@@ -11,8 +13,6 @@ import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfers";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
-
 import { battlePresentation } from "@/app/battle-presentation";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { patchBattleState, slashDeck } from "../../../../fixtures/battle";
@@ -38,11 +38,7 @@ function makeUi(rejectDraw = false, onDraw?: (ctx: BattleControllerContext) => v
     hand: slashDeck(3),
     deck: slashDeck(8),
   });
-  dispatchGameplayCommand(
-    (draft) => acceptCommand(initializeActiveBattle(draft, initial)),
-    undefined,
-    defaultGameSession,
-  );
+  mutateGameplayForTest((draft) => initializeActiveBattle(draft, initial));
   let releaseDiscard!: () => void;
   const discard = new Promise<void>((resolve) => {
     releaseDiscard = resolve;
@@ -105,23 +101,18 @@ describe("End Turn execution and playback", () => {
   it("keeps a focal enemy ability cue on the terminal playback shortcut", () => {
     const { ui } = makeUi();
     vi.mocked(playCardSound).mockReturnValue("slash.ogg");
-    dispatchGameplayCommand(
-      (draft) =>
-        acceptCommand(
-          initializeActiveBattle(
-            draft,
-            patchBattleState({
-              playerHealth: 1,
-              deathsDoorUsed: true,
-              gearEffects: { dodgeChance: -100 },
-              currentEnemy: { abilityIds: ["slash"] },
-              enemyHealth: 1000,
-              enemyMaxHealth: 1000,
-            }),
-          ),
-        ),
-      undefined,
-      defaultGameSession,
+    mutateGameplayForTest((draft) =>
+      initializeActiveBattle(
+        draft,
+        patchBattleState({
+          playerHealth: 1,
+          deathsDoorUsed: true,
+          gearEffects: { dodgeChance: -100 },
+          currentEnemy: { abilityIds: ["slash"] },
+          enemyHealth: 1000,
+          enemyMaxHealth: 1000,
+        }),
+      ),
     );
     ui.handleEndTurn();
     expect(readBattle(defaultGameSession).battleState.playerHealth).toBe(0);

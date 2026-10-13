@@ -1,22 +1,81 @@
 import { describe, expect, it, vi } from "vitest";
-import { SaveWriteQueue, type SaveWriteOutcome } from "@/features/alchemy/shared/storage/save-write-queue";
+import { SaveOperationQueue, type SaveWriteOutcome } from "@/features/alchemy/shared/storage/save-operation-queue";
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
+import type { UnstampedSaveData } from "@/features/alchemy/shared/storage/types";
 import { deferred } from "../../../../helpers/deferred";
 
 function snapshot(gold: number) {
   return { ...createDefaultSaveData(), gold };
 }
 
-describe("SaveWriteQueue", () => {
+describe("SaveOperationQueue", () => {
+  it("keeps a load between its preceding save and a later save without coalescing across it", async () => {
+    const queue = new SaveOperationQueue();
+    let gold = 0;
+    const write = async (data: UnstampedSaveData) => {
+      gold = data.gold;
+      return "saved" as const;
+    };
+    const preceding = queue.enqueue(snapshot(1), write);
+    const loaded = queue.enqueueLoad(async () => gold);
+    const following = queue.enqueue(snapshot(2), write);
+    expect(await preceding).toBe("saved");
+    expect(await loaded).toBe(1);
+    expect(await following).toBe("saved");
+    expect(gold).toBe(2);
+  });
+
+  it("rejects a failed load while allowing the next write to complete", async () => {
+    const queue = new SaveOperationQueue();
+    const failure = new Error("load failed");
+    const loading = queue.enqueueLoad(async () => {
+      throw failure;
+    });
+    const saving = queue.enqueue(snapshot(1), async () => "saved");
+    await expect(loading).rejects.toBe(failure);
+    await expect(saving).resolves.toBe("saved");
+    await queue.waitForIdle();
+    expect(queue.isIdle).toBe(true);
+  });
+
+  it("drains pending loads and initialization writes before reporting idle", async () => {
+    const queue = new SaveOperationQueue();
+    const gate = deferred<void>();
+    let gold = 0;
+    const loading = queue.enqueueLoad(async () => {
+      await gate.promise;
+      gold = 31;
+    });
+    let drained = false;
+    const draining = queue.waitForIdle().then(() => {
+      drained = true;
+    });
+    await Promise.resolve();
+    expect(drained).toBe(false);
+    gate.resolve();
+    await Promise.all([loading, draining]);
+    expect(gold).toBe(31);
+    expect(drained).toBe(true);
+  });
+
   it("still clears and cancels autosave when another cancellation listener throws", async () => {
-    const queue = new SaveWriteQueue();
+    const queue = new SaveOperationQueue();
     queue.subscribeCancellation(() => {
       throw new Error("subscriber failed");
     });
     const cancelled = vi.fn();
     queue.subscribeCancellation(cancelled);
-    const clear = vi.fn(async () => ({ ok: true }));
+    let present = true;
+    let reloaded: Promise<boolean> | undefined;
+    queue.subscribeCancellation(() => {
+      reloaded = queue.enqueueLoad(async () => present);
+    });
+    const clear = vi.fn(async () => {
+      present = false;
+      return { ok: true };
+    });
     await expect(queue.enqueueClear(clear)).resolves.toBe(true);
+    expect(await reloaded).toBe(false);
     expect(clear).toHaveBeenCalledOnce();
     expect(cancelled).toHaveBeenCalledOnce();
     expect(queue.isClearPending).toBe(false);
@@ -26,11 +85,15 @@ describe("SaveWriteQueue", () => {
   it.each(["saved", "failed"] as const)(
     "superseded callers never inherit a replacement that is %s",
     async (outcome) => {
-      const queue = new SaveWriteQueue();
+      const queue = new SaveOperationQueue();
       const gate = deferred<SaveWriteOutcome>();
       const write = vi.fn().mockReturnValueOnce(gate.promise).mockResolvedValue(outcome);
+      const discardedWrite = vi.fn();
+      const initial = queue.enqueue(snapshot(0), discardedWrite);
       const first = queue.enqueue(snapshot(1), write);
       await Promise.resolve();
+      expect(await initial).toBe("superseded");
+      expect(discardedWrite).not.toHaveBeenCalled();
       const second = queue.enqueue(snapshot(2), write);
       const third = queue.enqueue(snapshot(3), write);
       expect(second).not.toBe(third);
@@ -50,7 +113,7 @@ describe("SaveWriteQueue", () => {
   );
 
   it("owns its snapshot so caller mutations after enqueue cannot corrupt the write", async () => {
-    const queue = new SaveWriteQueue();
+    const queue = new SaveOperationQueue();
     const write = vi.fn().mockResolvedValue("saved");
     const data = snapshot(1);
     const outcome = queue.enqueue(data, write);
@@ -59,46 +122,28 @@ describe("SaveWriteQueue", () => {
     expect(write).toHaveBeenCalledExactlyOnceWith(snapshot(1));
   });
 
-  it("coalesces each pending snapshot with its own writer, including replacements during a write", async () => {
-    const queue = new SaveWriteQueue();
-    const gate = deferred<SaveWriteOutcome>();
-    const firstWrite = vi.fn(() => gate.promise);
-    const replacedWrite = vi.fn().mockResolvedValue("failed");
-    const latestWrite = vi.fn().mockResolvedValue("saved");
-    const first = queue.enqueue(snapshot(1), replacedWrite);
-    const replacement = queue.enqueue(snapshot(2), firstWrite);
-    expect(first).not.toBe(replacement);
-    await Promise.resolve();
-    expect(firstWrite).toHaveBeenCalledExactlyOnceWith(snapshot(2));
-    const next = queue.enqueue(snapshot(3), replacedWrite);
-    const latest = queue.enqueue(snapshot(4), latestWrite);
-    gate.resolve("saved");
-    await expect(first).resolves.toBe("superseded");
-    await expect(replacement).resolves.toBe("saved");
-    await expect(next).resolves.toBe("superseded");
-    await expect(latest).resolves.toBe("saved");
-    expect(latestWrite).toHaveBeenCalledExactlyOnceWith(snapshot(4));
-    expect(replacedWrite).not.toHaveBeenCalled();
-  });
-
   it.each(["clear", "protection"])("%s cancels in-flight acknowledgement and pending writes", async (action) => {
-    const queue = new SaveWriteQueue();
+    const queue = new SaveOperationQueue();
     const gate = deferred<SaveWriteOutcome>();
     const write = vi.fn().mockReturnValue(gate.promise);
     const first = queue.enqueue(snapshot(1), write);
     await Promise.resolve();
     const second = queue.enqueue(snapshot(2), write);
+    const loading = queue.enqueueLoad(async () => undefined);
+    const third = queue.enqueue(snapshot(3), write);
     const clear = action === "clear" ? queue.enqueueClear(async () => ({ ok: true })) : undefined;
     if (action === "protection") queue.setWritesDisabled(true);
     gate.resolve("saved");
     expect(await first).toBe("skipped");
     expect(await second).toBe("skipped");
+    expect(await third).toBe("skipped");
+    await loading;
     await clear;
     expect(write).toHaveBeenCalledTimes(1);
   });
 
   it("recovers its runner after a thrown write", async () => {
-    const queue = new SaveWriteQueue();
+    const queue = new SaveOperationQueue();
     expect(
       await queue.enqueue(snapshot(1), async () => {
         throw new Error("unavailable");
@@ -108,7 +153,7 @@ describe("SaveWriteQueue", () => {
   });
 
   it("blocks writes until all overlapping clears finish", async () => {
-    const queue = new SaveWriteQueue();
+    const queue = new SaveOperationQueue();
     const gate = deferred<{ ok: boolean }>();
     const first = queue.enqueueClear(async () => ({ ok: true }));
     const second = queue.enqueueClear(() => gate.promise);
@@ -129,18 +174,8 @@ describe("SaveWriteQueue", () => {
     expect(await queue.enqueue(snapshot(2), write)).toBe("saved");
   });
 
-  it("keeps write protection isolated per queue instance", async () => {
-    const protectedQueue = new SaveWriteQueue();
-    const openQueue = new SaveWriteQueue();
-    protectedQueue.setWritesDisabled(true);
-    expect(protectedQueue.areWritesDisabled()).toBe(true);
-    expect(openQueue.areWritesDisabled()).toBe(false);
-    expect(await openQueue.enqueue(snapshot(1), async () => "saved")).toBe("saved");
-    expect(await protectedQueue.enqueue(snapshot(2), async () => "saved")).toBe("skipped");
-  });
-
   it.each(["reported", "thrown"])("survives a throwing notification for a %s clear failure", async (failure) => {
-    const queue = new SaveWriteQueue();
+    const queue = new SaveOperationQueue();
     const error = new Error("clear denied");
     const onError = vi.fn(() => {
       throw new Error("notification failed");
@@ -161,19 +196,8 @@ describe("SaveWriteQueue", () => {
     await queue.waitForIdle();
   });
 
-  it("clears protection and listeners on reset", async () => {
-    const queue = new SaveWriteQueue();
-    const listener = vi.fn();
-    queue.subscribeCancellation(listener);
-    queue.setWritesDisabled(true);
-    await queue.reset();
-    expect(queue.areWritesDisabled()).toBe(false);
-    expect(await queue.enqueue(snapshot(1), async () => "saved")).toBe("saved");
-    expect(listener).toHaveBeenCalledTimes(1);
-  });
-
   it("rejects uncloneable snapshots without blocking later saves", async () => {
-    const queue = new SaveWriteQueue();
+    const queue = new SaveOperationQueue();
     const write = vi.fn().mockResolvedValue("saved" as const);
     const invalid = { ...snapshot(1), unexpected: () => {} };
     expect(await queue.enqueue(invalid, write)).toBe("failed");

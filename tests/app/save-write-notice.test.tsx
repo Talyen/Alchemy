@@ -6,7 +6,7 @@ import {
   saveAlchemySaveData,
   resetStorageIoForTests,
 } from "@/features/alchemy/shared/storage/io";
-import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
+import { snapshotSessionSave } from "@/features/alchemy/shared/storage/session-persistence";
 import { defaultGameSession } from "@/app/application-session";
 
 afterEach(async () => {
@@ -30,13 +30,13 @@ describe("visible save acknowledgement", () => {
     render(<SaveWriteNotice />);
     expect(screen.queryByRole("alert")).toBeNull();
     await act(async () => {
-      expect(await saveAlchemySaveData(createDefaultSaveData(), defaultGameSession)).toBe("failed");
+      expect(await saveAlchemySaveData(snapshotSessionSave(defaultGameSession), defaultGameSession)).toBe("failed");
     });
     expect(screen.getByRole("alert").textContent).toContain("Couldn’t save");
     expect(errors).toHaveBeenCalled();
     fail = false;
     await act(async () => {
-      expect(await saveAlchemySaveData(createDefaultSaveData(), defaultGameSession)).toBe("saved");
+      expect(await saveAlchemySaveData(snapshotSessionSave(defaultGameSession), defaultGameSession)).toBe("saved");
     });
     expect(screen.queryByRole("alert")).toBeNull();
   });
@@ -54,7 +54,7 @@ describe("visible save acknowledgement", () => {
     );
     render(<SaveWriteNotice />);
     await act(async () => {
-      expect(await saveAlchemySaveData(createDefaultSaveData(), defaultGameSession)).toBe("saved");
+      expect(await saveAlchemySaveData(snapshotSessionSave(defaultGameSession), defaultGameSession)).toBe("saved");
     });
     expect(screen.queryByRole("alert")).toBeNull();
   });

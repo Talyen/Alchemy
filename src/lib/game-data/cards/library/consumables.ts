@@ -98,6 +98,7 @@ export const consumableCards: BattleCard[] = [
   cardBuilders.effectsCard({
     id: "blood-offering",
     art: assetRefs.bloodOffering,
+    consume: true,
     effects: [
       { kind: "lose-health", amount: 1 },
       { kind: "draw-cards", amount: 2 },

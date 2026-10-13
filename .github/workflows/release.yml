@@ -400,6 +400,11 @@ jobs:
 
   release:
     needs: [package, package-demo]
+    # Tags share Steam credentials and upload targets; keep each delivery intact.
+    concurrency:
+      group: steam-publishing
+      queue: max
+      cancel-in-progress: false
     runs-on: windows-latest
     timeout-minutes: 30
     permissions:
@@ -428,25 +433,13 @@ jobs:
         uses: CyberAndrii/setup-steamcmd@afc45f145b95c175c3a3862d3ca84756537d48e8 # v1.3.0
 
       - name: Steam upload
-        shell: bash
         env:
           STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
           STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
           STEAM_APP_ID: ${{ secrets.STEAM_APP_ID }}
           STEAM_DEPOT_ID: ${{ secrets.STEAM_DEPOT_ID }}
           ALLOW_STEAM_DRY_RUN: ${{ vars.ALLOW_STEAM_DRY_RUN }}
-        run: |
-          if [ -z "$STEAM_USERNAME" ] || [ -z "$STEAM_PASSWORD" ] || [ -z "$STEAM_APP_ID" ] || [ -z "$STEAM_DEPOT_ID" ]; then
-            if [ "$ALLOW_STEAM_DRY_RUN" = "true" ]; then
-              echo "Steam credentials not configured — ALLOW_STEAM_DRY_RUN=true, running dry-run validation"
-              npm run steam:upload:dry-run
-            else
-              echo "::error::Steam credentials are not configured. Set the STEAM_* secrets, or set repository variable ALLOW_STEAM_DRY_RUN=true to release without a Steam upload."
-              exit 1
-            fi
-          else
-            node scripts/steam-upload.mjs
-          fi
+        run: node scripts/steam-upload.mjs
 
       - name: Upload verified demo candidate
         env:
@@ -456,6 +449,7 @@ jobs:
           STEAM_APP_ID: ${{ secrets.STEAM_APP_ID }}
           STEAM_DEMO_APP_ID: ${{ secrets.STEAM_DEMO_APP_ID }}
           STEAM_DEMO_DEPOT_ID: ${{ secrets.STEAM_DEMO_DEPOT_ID }}
+          ALLOW_STEAM_DRY_RUN: ${{ vars.ALLOW_STEAM_DRY_RUN }}
         run: node scripts/steam-upload.mjs
 
       - name: Create GitHub Release

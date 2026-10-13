@@ -14,9 +14,44 @@ import {
 } from "@/lib/content-systems/labyrinth/grid";
 import { LABYRINTH_SUPPORT_TYPES } from "@/lib/content-systems/labyrinth/data";
 import { enemyById } from "@/lib/game-data";
+import { isLootEligible } from "@/lib/loot";
 import type { LabyrinthGridPosition, LabyrinthNodeType } from "@/lib/content-systems/types";
 
 describe("Open Field generation", () => {
+  it("can offer a depth-eligible Trinket shop after a short route through the prior floor", () => {
+    const map = generateLabyrinthMap(createSeededRng(42));
+    const firstEntrance = map.nodes[map.currentNodeId]!;
+    const boss = floorNodes(map, 1).find((node) => node.type === "boss")!;
+    const completed = floorNodes(map, 1).filter(
+      ({ type, gridPosition: { row, col } }) =>
+        type !== "entrance" &&
+        (col === firstEntrance.gridPosition.col ||
+          (row === boss.gridPosition.row &&
+            col >= Math.min(firstEntrance.gridPosition.col, boss.gridPosition.col) &&
+            col <= Math.max(firstEntrance.gridPosition.col, boss.gridPosition.col))),
+    );
+    for (const node of completed) node.cleared = true;
+    map.currentNodeId = boss.id;
+    let shops = 0;
+    for (let seed = 1; seed <= 16; seed += 1) {
+      const expanded = expandBeyondBoss(map, boss.id, createSeededRng(seed));
+      const nodes = floorNodes(expanded, 2);
+      const entrance = nodes.find((node) => node.type === "entrance")!;
+      const support = nodes.filter((node) =>
+        LABYRINTH_SUPPORT_TYPES.includes(node.type as (typeof LABYRINTH_SUPPORT_TYPES)[number]),
+      );
+      expect(new Set(support.map((node) => node.type)).size).toBe(support.length);
+      for (const node of nodes.filter((candidate) => candidate.type === "trinket-shop")) {
+        const distance =
+          Math.abs(node.gridPosition.row - entrance.gridPosition.row) +
+          Math.abs(node.gridPosition.col - entrance.gridPosition.col);
+        expect(isLootEligible("trinket", completed.length + distance)).toBe(true);
+        shops += 1;
+      }
+    }
+    expect(shops).toBeGreaterThan(0);
+  });
+
   it("generates full grids with a safe top entrance, distant bottom boss and existing encounters", () => {
     const starts = new Set<number>();
     for (let seed = 1; seed <= 32; seed += 1) {

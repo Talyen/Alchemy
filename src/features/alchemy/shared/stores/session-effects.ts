@@ -2,7 +2,7 @@ import { logError } from "@/lib/error-logger";
 import type { SessionFeedback } from "./game-session-types";
 
 /** A committed lifecycle change must finish even when one presentation adapter fails. */
-export function runSessionEffect(name: string, effect: () => void): void {
+function runSessionEffect(name: string, effect: () => void): void {
   try {
     effect();
   } catch (error) {
@@ -56,8 +56,8 @@ export function createRunLifecycleEffects(feedback: Pick<SessionFeedback, "clear
     presentation.emit();
   }
   return {
-    onClearPresentation: presentation.on,
-    onTeardown: teardown.on,
+    onClearPresentation: (listener: () => void) => presentation.on(listener),
+    onTeardown: (listener: () => void) => teardown.on(listener),
     clearPresentation,
     teardown() {
       clearPresentation();

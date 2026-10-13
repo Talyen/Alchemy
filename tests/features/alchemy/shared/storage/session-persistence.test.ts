@@ -6,6 +6,8 @@ import { resetHomestead } from "@/features/alchemy/shared/stores/meta-commands";
 import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
+import { setGold } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { sessionRuntime } from "@/features/alchemy/shared/stores/session-runtime";
 import { createPlaythroughController } from "@/app/playthrough/controller";
 import { chooseMysteryOption } from "@/features/alchemy/run-loop/navigation/mystery-commands";
 import { readActivityData } from "@/lib/active-run-session";
@@ -30,8 +32,8 @@ function battleSave() {
 describe("session save restoration", () => {
   it("recomputes Homestead effects without regranting starting Thorns or multiplying saved loot", async () => {
     const save = battleSave();
-    save.constructedBuildings = { "hunters-lodge": 4, "wishing-well": 4 };
-    save.plantedFarms = { orchard: 4, "wheat-field": 4, "crystal-garden": 4 };
+    save.constructedBuildings = { ...save.constructedBuildings, "hunters-lodge": 4, "wishing-well": 4 };
+    save.plantedFarms = { ...save.plantedFarms, orchard: 4, "wheat-field": 4, "crystal-garden": 4 };
     save.materialInventory.gems = 14;
     save.activeRun!.runMaterialsEarned.gems = 14;
     if (save.activeRun?.activity.kind !== "battle") throw new Error("Battle was lost");
@@ -72,9 +74,9 @@ describe("session save restoration", () => {
   it("resets Homestead atomically and resumes without refunding or replaying combat grants", async () => {
     const save = battleSave();
     save.discoveredCardIds.push("wolf-companion");
-    save.constructedBuildings = { "blacksmiths-forge": 1 };
-    save.plantedFarms = { "chicken-coop": 4, orchard: 2 };
-    save.completedResearch = { "leyline-energy": 1 };
+    save.constructedBuildings = { ...save.constructedBuildings, "blacksmiths-forge": 1 };
+    save.plantedFarms = { ...save.plantedFarms, "chicken-coop": 4, orchard: 2 };
+    save.completedResearch = { ...save.completedResearch, "leyline-energy": 1 };
     save.bondedCompanions.wolf = 1;
     save.materialInventory.iron = 7;
     save.activeRun!.runMaterialsEarned.iron = 5;
@@ -136,7 +138,7 @@ describe("session save restoration", () => {
 
   it("saves actual Mystery payouts for the summary and rejects repeated claims after resume", async () => {
     const save = battleSave();
-    save.constructedBuildings = { "wishing-well": 4 };
+    save.constructedBuildings = { ...save.constructedBuildings, "wishing-well": 4 };
     save.activeRun!.activity = savedActivityFixture("mystery", {
       event: {
         id: "treasure",
@@ -189,14 +191,20 @@ describe("session save restoration", () => {
     }
   });
 
-  it("publishes permanent progression and its restored battle in one revision to save subscribers", async () => {
+  it("publishes progression, battle, settings, and save protection together to every save observer", async () => {
     const save = battleSave();
+    save.musicVolume = 7;
+    save.brightness = 63;
     const session = createGameSession();
     const persistence = createSessionPersistence(session);
+    persistence.trackProgress(() => {});
+    dispatchGameplayCommand((draft) => acceptCommand(setGold(draft, 30)), undefined, session);
     const before = readGameplayState(session);
     const snapshots: Array<ReturnType<typeof persistence.snapshot>> = [];
+    const progressSnapshots: Array<ReturnType<typeof persistence.snapshot>> = [];
     const revisions: number[] = [];
     persistence.subscribe(() => snapshots.push(persistence.snapshot()));
+    persistence.subscribeProgress(() => progressSnapshots.push(persistence.snapshot()));
     subscribeRunSessionCommits((revision) => revisions.push(revision), session);
     try {
       expect(persistence.restore(save)).toBe(true);
@@ -204,43 +212,100 @@ describe("session save restoration", () => {
       expect(snapshots).toHaveLength(1);
       expect(snapshots[0]).toMatchObject({
         gold: 725,
+        musicVolume: 7,
+        brightness: 63,
         talentXP: { armor: 29 },
         discoveredCardIds: ["slash", "bash"],
         gearInventories: { knight: [{ instanceId: "restored-gear" }] },
         activeRun: { rng: save.activeRun!.rng, activity: { kind: "battle" } },
       });
       expect(snapshots[0]!.activeRun!.activity).toEqual(persistence.snapshot().activeRun!.activity);
+      expect(progressSnapshots).toEqual(snapshots);
+      expect(persistence.readProgress()).toEqual({ kind: "saving", revision: before.revision + 1 });
     } finally {
       await session.dispose();
     }
   });
 
-  it("rolls back all progression and leaves settings unchanged when run initialization fails", async () => {
-    let fail = false;
-    const session = createGameSession({
-      runtimeInputs: {
-        generateRunSeed: () => {
-          if (fail) throw new Error("Seed source failed");
-          return 123;
+  it.each(["run initialization", "settings preparation"] as const)(
+    "preserves pending progress, completion feedback, and settings when %s fails",
+    async (failure) => {
+      let fail = false;
+      const session = createGameSession({
+        saveBackend: {
+          readCandidates: async () => ({ ok: true, candidates: [] }),
+          write: async () => ({ ok: true }),
+          writeSync: () => null,
+          clear: async () => ({ ok: true }),
         },
-      },
-    });
-    const persistence = createSessionPersistence(session);
-    const before = readGameplayState(session);
-    const snapshot = persistence.snapshot();
-    const listener = vi.fn();
-    persistence.subscribe(listener);
-    const save = createDefaultSaveData();
-    save.gold = 900;
+        runtimeInputs: {
+          generateRunSeed: () => {
+            if (fail) throw new Error("Seed source failed");
+            return 123;
+          },
+        },
+      });
+      const persistence = createSessionPersistence(session);
+      persistence.trackProgress(() => {});
+      dispatchGameplayCommand((draft) => acceptCommand(setGold(draft, 30)), undefined, session);
+      const completed = vi.fn();
+      persistence.afterProgressSaved(completed);
+      const progress = persistence.readProgress();
+      const before = readGameplayState(session);
+      const snapshot = persistence.snapshot();
+      const listener = vi.fn();
+      persistence.subscribe(listener);
+      persistence.subscribeProgress(listener);
+      const save = createDefaultSaveData();
+      save.gold = 900;
+      save.musicVolume = 7;
+      save.discoveredCardIds = ["bash"];
+      if (failure === "run initialization") fail = true;
+      else
+        Object.defineProperty(save, "musicVolume", {
+          get: () => {
+            throw new Error("Settings preparation failed");
+          },
+        });
+      try {
+        expect(() => persistence.restore(save)).toThrow(
+          failure === "run initialization" ? "Seed source failed" : "Settings preparation failed",
+        );
+        expect(readGameplayState(session)).toBe(before);
+        expect(persistence.snapshot()).toEqual(snapshot);
+        expect(persistence.readProgress()).toBe(progress);
+        expect(listener).not.toHaveBeenCalled();
+        expect(completed).not.toHaveBeenCalled();
+        expect(await persistence.write(snapshot)).toBe("saved");
+        expect(completed).toHaveBeenCalledOnce();
+      } finally {
+        await session.dispose();
+      }
+    },
+  );
+
+  it("retains complete restored state and notifies autosave even when a settings observer throws", async () => {
+    const save = battleSave();
     save.musicVolume = 7;
-    save.discoveredCardIds = ["bash"];
-    fail = true;
+    const session = createGameSession();
+    const persistence = createSessionPersistence(session);
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    sessionRuntime(session).settings.subscribe(() => {
+      throw new Error("Audio settings adapter failed");
+    });
+    const snapshots: Array<ReturnType<typeof persistence.snapshot>> = [];
+    persistence.subscribe(() => snapshots.push(persistence.snapshot()));
     try {
-      expect(() => persistence.restore(save)).toThrow("Seed source failed");
-      expect(readGameplayState(session)).toBe(before);
-      expect(persistence.snapshot()).toEqual(snapshot);
-      expect(listener).not.toHaveBeenCalled();
+      expect(() => persistence.restore(save)).not.toThrow();
+      expect(snapshots).toEqual([persistence.snapshot()]);
+      expect(snapshots[0]).toMatchObject({
+        gold: 725,
+        musicVolume: 7,
+        activeRun: { rng: save.activeRun!.rng, activity: { kind: "battle" } },
+      });
+      expect(logged).toHaveBeenCalled();
     } finally {
+      logged.mockRestore();
       await session.dispose();
     }
   });

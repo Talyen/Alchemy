@@ -14,14 +14,6 @@ export function rollRange(basicMin: number, basicMax: number, astralMin: number,
   };
 }
 
-function uniqueRoll(value: number): AffixRollRange {
-  return {
-    basic: { min: value, max: value },
-    astral: { min: value, max: value },
-    unique: { min: value, max: value },
-  };
-}
-
 export const ROLL_SMALL = rollRange(1, 2, 3, 4);
 const ROLL_RESIST = rollRange(10, 15, 15, 20);
 // Percent-based bonuses share the resist numbers today but tune independently:
@@ -65,7 +57,7 @@ export function uniqueAffix<const T extends string>(
     ...(secondaryKeywordId ? { secondaryKeywordId } : {}),
     descriptionTemplate,
     effectKey,
-    roll: uniqueRoll(rollValue),
+    roll: rollRange(rollValue, rollValue, rollValue, rollValue),
     uniqueOnly: true,
   };
 }
@@ -76,13 +68,12 @@ export function resistAffix<const T extends string>(
   keywordId: KeywordId,
   effectKey: keyof GearEffectManifest,
 ): AffixRowInput & { id: T } {
-  const label = keywordId.charAt(0).toUpperCase() + keywordId.slice(1);
   return {
     id,
     name,
     aspect: "defensive",
     keywordId,
-    descriptionTemplate: `Reduce ${label} damage taken by {value}%`,
+    descriptionTemplate: `Reduce ${affixLabel(keywordId)} damage taken by {value}%`,
     effectKey,
     roll: ROLL_RESIST,
   };

@@ -35,7 +35,11 @@ function resume(state: ReturnType<typeof battle>) {
 describe("one-Mana card tradeoffs", () => {
   it("Prayer costs one Mana, repeats its effects when doubled, and Consumes only once", () => {
     const initial = battle({
-      talentEffects: computeTalentEffects({ consume: ["consume-last-supper", "consume-second-helping"] }),
+      talentEffects: {
+        ...computeTalentEffects({ consume: ["consume-last-supper", "consume-second-helping"] }),
+        forgeOnConsumeChance: 100,
+        drawOnConsumeChance: 100,
+      },
       deck: [cardById.slash!, cardById.slash!],
       flags: { playNextCardTwice: true },
     });
@@ -58,7 +62,6 @@ describe("one-Mana card tradeoffs", () => {
     expect(played.enemyHealth).toBe(199);
     expect(played.wishOptions).toHaveLength(3);
     expect(played.gold).toBe(0);
-    expect(played.flags.pendingWishMana).toBe(0);
     expect(played.pendingTurnStartEffects).toHaveLength(0);
   });
 

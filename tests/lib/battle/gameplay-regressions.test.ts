@@ -41,7 +41,7 @@ describe("gameplay regressions", () => {
       playerMaxHealth: 100,
       playerStatuses: { block: 0, armor: 0 },
       talentEffects: {
-        healthThresholdBlock: { threshold: 50, amount: 6 },
+        healthThresholdBlockOnce: { threshold: 50, amount: 6 },
         healthThresholdArmor: [
           { threshold: 50, amount: 5 },
           { threshold: 25, amount: 3 },

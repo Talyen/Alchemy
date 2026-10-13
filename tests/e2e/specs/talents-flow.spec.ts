@@ -41,9 +41,9 @@ test.describe("Talents Flow", () => {
       await expect(resumed.getByText(`${before - 2} Talent Points Remaining`, { exact: true })).toBeVisible();
       for (const name of ["Lightfoot", "Catch Breath"]) {
         await expect(resumed.getByText(name, { exact: true })).toBeVisible();
-        await expect(resumed.getByRole("button").filter({ has: resumed.getByText(name, { exact: true }) })).toHaveCount(
-          0,
-        );
+        const node = resumed.getByRole("button").filter({ has: resumed.getByText(name, { exact: true }) });
+        await expect(node).toHaveAttribute("aria-disabled", "true");
+        await expect(node.locator(".talent-card-unlocked")).toBeVisible();
       }
     });
   });

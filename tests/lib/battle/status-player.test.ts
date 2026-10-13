@@ -21,13 +21,14 @@ describe("Armor gain rewards", () => {
       talentEffects: {
         armorBreakBlock: 3,
         overhealToBlockRatio: 1,
-        armorOnBlockChance: 100,
+        armorOnBlockCardChance: 100,
+        armorOnBlockCard: 6,
         drawHolyOnBlockChance: 100,
       },
     });
     const next = source === "armor break" ? removePlayerArmor(state, 1, []) : applyCardHealing(state, 3, []);
     expect(next.playerStatuses.block).toBe(3);
-    expect(next.playerStatuses.armor).toBe(source === "armor break" ? 3 : 4);
+    expect(next.playerStatuses.armor).toBe(source === "armor break" ? 0 : 1);
     expect(next.hand.map((card) => card.id)).toEqual([holy.id]);
   });
 

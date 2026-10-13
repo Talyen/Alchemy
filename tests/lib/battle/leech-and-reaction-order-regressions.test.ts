@@ -23,7 +23,7 @@ describe("Leech and reaction ordering", () => {
       playerMaxHealth: 100,
       enemyHealth: 100,
       enemyMaxHealth: 100,
-      talentEffects: { holyLifestealPercent: 50, cardLeechHealingBonus: 1 },
+      talentEffects: { holyLifestealPercent: 50, leechHealingBonus: 1 },
       rng: () => 0.99,
     });
     const next = playBattleCardResolved(state, card.id, 0).state;
@@ -31,7 +31,7 @@ describe("Leech and reaction ordering", () => {
     expect(next.enemyHealth).toBe(80);
 
     const ordinary = { ...card, effects: [{ kind: "damage", damageType: "holy", amount: 20 } as const] };
-    expect(playBattleCardResolved({ ...state, hand: [ordinary] }, ordinary.id, 0).state.playerHealth).toBe(20);
+    expect(playBattleCardResolved({ ...state, hand: [ordinary] }, ordinary.id, 0).state.playerHealth).toBe(21);
   });
 
   it("turn decay pays depletion rewards even when turn-start Purge immediately refills Block", () => {
@@ -92,7 +92,7 @@ describe("Leech and reaction ordering", () => {
       enemyMaxHealth: 100,
       roomScalingMultiplier: 4,
       currentEnemy: { traits: countessAndCinder },
-      talentEffects: { healOnConsume: 1, goldOnConsume: 4 },
+      talentEffects: { healOnConsume: 1, goldOnConsume: 4, goldOnConsumeChance: 100 },
       rng: () => 0.1,
     });
     const next = handlePostPlayCardDestination(state, card);

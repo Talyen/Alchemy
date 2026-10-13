@@ -43,7 +43,16 @@ export function useAppKeyboardShortcuts({
 
   useEffect(() => {
     const previousFocus = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || !screenInteractiveRef.current)
+      if (
+        event.defaultPrevented ||
+        event.isComposing ||
+        // oxlint-disable-next-line typescript/no-deprecated -- Some IME commit events expose only legacy code 229.
+        event.keyCode === 229 ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        !screenInteractiveRef.current
+      )
         return;
       if (
         event.key === "Enter" &&

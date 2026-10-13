@@ -26,6 +26,7 @@ function start(feedback: GameSessionOptions["feedback"] = {}) {
     runtimeInputs: { generateRunSeed: () => 7 },
     feedback,
     saveBackend: {
+      writeSync: () => null,
       readCandidates: async () => ({ ok: true, candidates: [] }),
       write: async (key, value) => {
         bytes.set(key, value);
@@ -122,7 +123,7 @@ it("a broken run-start sound cannot prevent opening combat or subsequent accepte
   const { session, controller } = start({ playUISound: fail("sound unavailable") });
   expect(readActiveRunScreen(session)).toBe("battle");
   expect(readRunSession(session).activity.kind).toBe("battle");
-  expect(controller.battle.endTurn()).not.toBeNull();
+  expect(controller.battle.endTurn(controller.battle.read().battleState)).not.toBeNull();
 });
 
 it.each(["abandoned", "death", "victory"] as const)(

@@ -1,6 +1,6 @@
 # Alchemy — Game rules and glossary
 
-Canonical owner for game rules, content-system behavior, and shared domain terms. Coding rules: [AGENTS.md](../AGENTS.md). Run state: [ARCHITECTURE.md](./ARCHITECTURE.md). How-to checklists: [WORKFLOWS.md](./WORKFLOWS.md). Command catalog: [REFERENCE.md](./REFERENCE.md).
+Canonical owner for game rules, content-system behavior, and shared domain terms. Coding rules: [AGENTS.md](../AGENTS.md). Run state: [ARCHITECTURE.md](./ARCHITECTURE.md). How-to checklists: [WORKFLOWS.md](./WORKFLOWS.md). Command catalog: [COMMANDS.md](./COMMANDS.md).
 
 ## Guide index
 
@@ -60,7 +60,7 @@ card-origin Wishes exclude the real originating card.
 - **1-on-1 targeting** — one enemy per battle; attacks/debuffs go to the enemy, blocks/heals/buffs to player/companions; no target selectors.
 - **Turn order** — Player (companion attacks → play cards) → Enemy (enemy DoTs → ability → player DoTs → regen) → reset (draw 4, restore mana, halve player block). Enemy block halves when the next enemy phase begins.
 - **Mana** — resets to `maxMana` each turn; unspent mana is lost (Wellspring talent excepted).
-- **Companions** — invulnerable; act at player turn start; persist indefinitely.
+- **Companions** — invulnerable; act at player turn start; persist indefinitely. Summon cards leave the battle after playing without Consume, entering the battle-removed pile rather than discard. They grant no Consume XP, bonuses, rewards, or enemy Consume reactions. Non-summoning Companion cards retain their normal destinations.
 - **Draw / deck** — Ecosystem tutors one Nature card before the ordinary opening draw. Battle initialization then commits the opening 4 plus other battle-start bonus draws before their animation; later turns draw 4. Max hand 7; ordinary and keyword draws reserve actual cards in an ordered battle-only queue when the hand is full, and Wishes queue chosen cards the same way. Queued cards enter the hand oldest first when space opens, before later draws, and survive turn changes and save/resume. A draw with no eligible card grants nothing. The previous hand is discarded at player turn end, while cards drawn during the enemy phase remain alongside the next four draws; discard reshuffles when the draw pile empties; Consumed cards are removed for the remainder of the battle. If a player-turn draw finds the hand, queue, draw pile, and discard empty, an Emergency Wish opens the normal Wish choices and the selected card enters the hand; this can recur whenever the piles are empty.
 - **Block** — absorbs incoming damage first; halved (not cleared) at the start of the owner's next turn, after the opposing side had a chance to attack into it.
 - **Haste** — extra turns skip the enemy phase; both blocks hold until a real attack window resolves, then halve once each.
@@ -114,7 +114,7 @@ Crowd-control triggers require both combatants to survive the hit. A lethal Stun
 - **Player damage mitigation** — Aetherward reduces hostile hits, Burn/Poison/Bleed ticks, and typed self-damage by the number of filled Mana Crystals, before the remaining defenses. Temporary overflow Mana does not count, and multiple Aetherward copies do not stack; Health costs bypass it. Burn, Poison, and Bleed ticks retain their damage type through flat reductions and Gear resistance. Enemy attack buildup, ordinary enemy Leech (including Flesheater), and Armor decay use damage after all applicable mitigation, before death prevention; fully resisted damage grants none. Later hero healing cannot cancel earned Leech. Ravenous still limits Leech to actual Health lost.
 - **Reinforce** — Reinforce divides absorbed Physical damage by its absorption multiplier to determine Block spent, rounded to nearest integer; exhausting the full absorption capacity spends all remaining Block. Extra enemy Block destruction applies to Block spent.
 - **Elemental Armor** — Fireward lets Armor mitigate direct Burn hits as well as Burn ticks and typed self-damage; Thick Hide does the same for Bleed. Enemy hits spend Block before applying Armor. Health costs still bypass Armor.
-- **Block status resistance** — while the hero has Block, Coagulate halves incoming Bleed damage and Detoxify halves incoming Poison damage. They mitigate damage rather than preventing buildup, and check Block before the incoming packet spends it; damage that breaks through Block still deals Health damage and matching status buildup.
+- **Block status resistance** — while the hero has Block, Blood Ward halves incoming Bleed damage and Venom Ward halves incoming Poison damage. They mitigate damage rather than preventing buildup, and check Block before the incoming packet spends it; damage that breaks through Block still deals Health damage and matching status buildup.
 - **Shield Slam** — Physical damage increases by half the player’s current Block. Rupture detonates Bleed only from a positive Critical Physical packet; a fully blocked or armored hit does not detonate it.
 - **Crushing Force** — Earth Elemental checks the Block spent by the incoming hit. Replacing broken Block through a defensive reward does not cancel its follow-up; killing the enemy with retaliation does.
 - **Damage vulnerabilities** — Brittle Ice adds 1 damage to positive player/Companion packets against Frozen enemies, and Corrosive adds 1 against Poisoned enemies, including Icy Heart, Thunderstone, and crowd-control Gear damage; Exploit Weakness doubles damage against Stunned enemies. A matching enemy trait never disables these Talents. Trait matching retains its established first-match order.
@@ -204,7 +204,7 @@ Simulation-only instrumentation and measurement semantics live in [Balance simul
 
 - **State and arithmetic** — treat `BattleState` as immutable. Combat magnitudes use nearest-integer `Math.round()`, never `Math.floor()`; the battle-engine lint boundary enforces this convention.
 - **Turn presentation** — the accepted End Turn action resolves and commits before discard, enemy, draw, and Companion feedback plays. Companion turn-start effects resolve after the enemy and next-hand rules, before the next player action; delaying or cancelling their visual feedback cannot cancel their gameplay. Card and opening-hand results likewise commit before animation. Autoplay and automatic End Turn remain separate user preferences. Autoplay ends the turn when no safe card remains; manual automatic End Turn still leaves playable lethal cards for the player to decide.
-- **Battle RNG** — live combat draws the persisted `world` run stream (`withDraftWorldBattleRng` inside a command). Engine consumers use `getBattleRng(state)`, never direct `state.rng` access or `Math.random()`; RNG setup helpers own the execution-only callback seam; committed and saved `BattleSnapshot` values never contain it. Tests use `createRunStreamRng`; the balance simulator uses `createRunStateRng` over a local `RunRngState` (both use the same mixer as `nextRunRngValue`). Simulator card and Wish decisions use a separate seed-derived policy RNG and never advance combat counters. `createBattleState` may pass explicit RNG in unit tests. All dice draw from `@/lib/rng` and stay in `[0, 1)`; out-of-range draws and empty ranges throw instead of biasing. Chance helpers share one probability core (`rollChance`; `rollPercent` is the 0–100 wrapper). Small math lives in `@/lib/math` (`clamp`, `clamp01`, `lerp`).
+- **Battle RNG** — live combat draws the persisted `world` run stream through `BattleResolutionContext` (see [run randomness](./RUN_STATE.md#run-randomness) for command wiring). Engine consumers use `getBattleRng(state)`, never direct `state.rng` access or `Math.random()`; RNG setup helpers own the execution-only callback seam; committed and saved `BattleSnapshot` values never contain it. Tests use `createRunStreamRng`; the balance simulator uses `createRunStateRng` over a local `RunRngState` (both use the same mixer as `nextRunRngValue`). Simulator card and Wish decisions use a separate seed-derived policy RNG and never advance combat counters. `createBattleState` may pass explicit RNG in unit tests. All dice draw from `@/lib/rng` and stay in `[0, 1)`; out-of-range draws and empty ranges throw instead of biasing. Chance helpers share one probability core (`rollChance`; `rollPercent` is the 0–100 wrapper). Small math lives in `@/lib/math` (`clamp`, `clamp01`, `lerp`).
 
 #### Card classification
 
@@ -218,7 +218,7 @@ Classification queries use [Card classification](#card-classification).
 - **Status ownership** — `addPlayerStatus` delegates assignment to `setPlayerStatus`, so both absolute updates and deltas cap pending enemy Bleed Leech when changing Bleed. Explicit Armor loss uses `removePlayerArmor` so Reactive Guard cannot be skipped. Player Forge grants resolve authored amounts and independent +1 talent bonuses once, then Smithguard and Everkeen reactions; bonus Forge cannot recursively activate gain bonuses. Initialization and hydration retain raw state construction.
 - **Damage module ownership** — `player-damage-base.ts` constructs player damage packets from base amounts, Forge, and flat typed bonuses. `player-damage-multipliers.ts` owns additive multipliers and first-Burn bonus flags. `damage-calc.ts` orders those stages, then applies pacing, critical strikes, mitigation, and final resolution. `player-defensive-reactions.ts` owns Block/Health-triggered defensive rewards; `enemy-attack-damage.ts` retains incoming-hit orchestration and reaction ordering.
 - **Armor gain limits** — Layered adds its flat Armor bonus only to the first positive Armor grant each player turn, including opening grants and reactions. Ironroot grants Armor only for the first Nature card played each player turn, including automatic plays. Each limit has its own persisted combat flag and resets at the next player turn; save/resume cannot refresh either allowance.
-- **Deep Siphon** — explicit card Leech restores 1 additional Health per healing packet, including repeated/scheduled card hits and card-origin deferred Bleed. A packet containing both card-origin and incidental Bleed Leech receives the bonus once. Incidental, Companion, and passive Leech do not receive it. The flat bonus follows Desperate/Sanguine scaling and precedes Blood Feast and Affliction Siphon.
+- **Deep Siphon** — all positive player Leech healing packets restore 1 additional Health, including Companion, incidental, and deferred Bleed Leech. Apply the bonus once per payout after Desperate/Gear scaling and before Blood Feast and Affliction Siphon. Card-origin attribution remains for Clean Slate.
 - **Meteor** — deals 7 Burn damage, loses 1 temporary Mana, and is Consumed. Its ordinary card cost still applies. It does not remove a Mana Crystal or trigger Mana Flare.
 - **Resource scaling** — Talent bonuses from Forge, Armor, and Block, including below-half-Health Armor gains, use percentage fields in the talent manifest. Retired boolean overrides are absent from defaults and ignored during load. Homestead and Gear retain their distinct permissions and never add the same Forge contribution twice.
 - **Homestead** — Wheat Field restores purchased-tier Health after each combat, stacking with post-combat recovery and clamping to maximum Health in every mode. Orchard adds purchased-tier starting Thorns alongside gear/encounter grants; resume never repeats starting grants. Crystal Garden adds 25 percentage points per tier to Freeze damage scaling from current Mana, stacking with talents and using normal damage-resolution timing. Homestead resource bonuses increase eligible reward quantities by 10 percentage points per node tier; they never grant per-room or run-end resources.
@@ -262,7 +262,7 @@ remain unchanged.
 
 ## Corruption altars
 
-- Pick one card that has neither Corruption nor Transmutation, commit, and reveal the result. The existing intro, picker, and before/after result remain the entire interaction. Leaving before corruption restores the same destination choice; a completed result is saved and cannot be rerolled. A card can be corrupted once, including after transformation. Mana costs never mutate.
+- Pick one card that has neither Corruption nor Transmutation, commit, and reveal the result. The existing intro, picker, and before/after result remain the entire interaction. Leaving before corruption restores the same destination choice; a completed result is saved and cannot be rerolled. A card can be corrupted once; a transformed result is already corrupted and cannot be corrupted again. Mana costs never mutate.
 - Transformation has a 10% chance when another eligible library card exists. It replaces the selected card with a different card and one eligible mutation, preserving its deck-slot UID. Mixed Potions are not transformation destinations. Cards without numeric targets can receive a secondary effect; transformation is forced only if no local mutation exists.
 - Other outcomes use `CORRUPTION_OUTCOME_WEIGHTS` from [Corruption tuning](../src/lib/game-constants/corruption.ts), renormalized after filtering for eligible families. Select the family first and then an equally likely compatible variant so large variant pools cannot crowd out other outcomes.
 - Strengthening adds 50% (nearest integer, minimum one) to plain Physical/Holy/Nature damage, healing, or flat Block; weakening removes 25% with the same rounding. Other editable magnitudes change by one. Lower Health/Mana losses count as improvements. Numbers cannot go below zero or violate the effect schema’s stricter minimum, random-damage bounds cannot cross, and unchanged results are excluded. Repeated copies of an edited effect stay aligned with its description. Companion summon summaries are not numeric card-effect targets; upgrades such as Powerful Wish edit any added effect's own description.
@@ -280,8 +280,9 @@ Players keep one unfinished run. The main menu offers Continue when it exists,
 otherwise Play opens the existing mode/hero setup. Continue restores the exact
 activity, including pending battle results, rewards, events, shops, and drafts.
 Menu and meta visits preserve that location. The existing red End Run menu action
-ends the run immediately without confirmation and always shows the End Run screen;
-Main Menu on that recap returns to the main menu. Earned progression is kept and
+ends the run immediately without confirmation and always shows Journey’s End.
+Continue reveals newly unlocked heroes before Main Menu; when no hero was
+unlocked, Main Menu returns directly (see [run recap UI](./UI_BROWSING.md#run-journey-recap)). Earned progression is kept and
 unclaimed choices are not granted. Normal defeat and victory retain their outcome screens. Drafting is part of the run, not setup
 for a second run. Gold, Talents, Homestead progress, and equipment remain permanent
 profile data. A current battle still protects its equipped items during meta visits.
@@ -385,32 +386,49 @@ until-consumed flags survive that reset. Save field names and values are unchang
 
 Attack packet ordering remains attempt bonuses, Dodge, contact-only flag
 consumption, magnitude and mitigation, riders, follow-up hits, then settled
-reactions. `consumeAttackBonuses` owns the action-local pool shared by successive
-effects and play-twice; these attempt bonuses are spent even on a Dodge, while
-next-hit flags are preserved. This ordering is separate from the detailed
+reactions. `damage.ts` spends the action-local Coordinated Strike bonus on the
+Companion's first attempted damage packet, including a Dodge; utility actions
+retain it. Next-hit flags commit only after the packet passes Dodge. This
+ordering is separate from the detailed
 hit-stage ordering above and must not reorder RNG or feedback.
 
 ## Brewing, Transmutation, and elemental reactions
 
-Campfires offer Rest or Brew, including at full Health. Brew adds one of three fixed standard Potion offers (at least one recovery/defense option), or combines two owned eligible Potions. It replaces Rest without a resource cost. Potions remain in the run deck after Consume. Rest-only room bonuses apply only to Rest.
+Campfires offer Rest or Brew, including at full Health. When the deck contains
+at least two eligible Potions, Brew combines two chosen instances; otherwise, it
+grants one of three fixed standard Potion offers (at least one recovery/defense
+option). The deck determines which brewing action is available. Rest and Brew
+share one use per visit, with no resource cost for Brew. Potions remain in the run
+deck after Consume. Rest-only room bonuses apply only to Rest.
 
-The Alchemist shop sells ordinary Potions and offers one Brew service per visit: Mix or Distill, at the existing 40 Gold mixing price before discounts. Distill adds 1 to supported beneficial numerical magnitudes, including Wishes; cost, Consume, probabilities, draw counts, durations, and percentage effects stay unchanged. Panacea restores 2 Health alongside its full cleanse; each distillation adds 1 Health. Increased values are green in card hover tooltips, including after reload. Potions can be brewed repeatedly, including Mixed Potions; All seven standard Potions can be distilled.
+The Alchemist shop sells ordinary Potions and offers Mix Potion and Distill,
+sharing one service use per visit at the 40 Gold mixing price before discounts.
+All seven standard Potions can be distilled. Mixed and previously strengthened
+Potions remain eligible for brewing at later visits; refreshing or reloading does
+not restore the current visit's service use.
+
+Distill adds 1 to supported beneficial numerical magnitudes, including Wishes;
+cost, Consume, probabilities, draw counts, durations, and percentage effects stay
+unchanged. Panacea restores 2 Health alongside its full cleanse; each distillation
+adds 1 Health. Increased values are green in card hover tooltips, including after
+reload. The Distillation talent's combat potency bonus is separate from the
+Distill service.
 
 Transmutation offers one free alteration to an eligible card. Each visit rolls three class-independent keywords: one Damage, one Buffs/Restoration, and one Resources/Additions. Health and Leech belong to Buffs/Restoration. Only keywords useful somewhere in the eligible deck enter the roll; an unavailable category is filled from the remaining keywords without duplicates. All 21 keywords participate. Offers and randomly selected source keywords are fixed for each card throughout the visit, including Back and reload.
 
 Damage converts to another damage type; Block, Armor, Forge, and Thorns convert among themselves; positive Health restoration, Mana restoration, and Gold gains convert among themselves. Every occurrence of the randomly chosen compatible source keyword changes, including nested branches and repeats. Existing magnitudes, costs, probabilities, durations, and targeting remain unchanged. Conversions with unsupported conditions or scaling are excluded. Other keywords add their native mechanic: Wish 1, Leech on damage, Archery on attacks, Consume, Dodge the next attack, or one Companion action when the deck contains a summon. Added effect lines respect Corruption's four-effect-line limit. Existing destination keywords are excluded.
 
-The keyword buttons sit above the original card and its preview, joined by a right arrow. Transmute commits the exact preview and advances after saving. Cards keep their identity and artwork, gain the keyword's title prefix and shine, and can be altered only once. Transmutation and Corruption are mutually exclusive. Strengthened standard Potions remain eligible; Mixed Potions are excluded.
+The keyword buttons sit above the original card and its preview, joined by a right arrow. Transmute commits the exact preview, reveals the result after saving, and waits for Continue. Resuming a completed visit shows that saved result without altering the card again or replaying completion feedback. Cards keep their identity and artwork, gain the keyword's title prefix and shine, and can be altered only once. Transmutation and Corruption are mutually exclusive. Strengthened standard Potions remain eligible; Mixed Potions are excluded.
 
 Shatter and Wildfire each activate once per player turn through card hits (including automatic plays) or Companion actions. Their saved flags reset before turn-start Companion actions. Secondary Gear/talent damage, retaliation, delayed pulses, and status ticks do not initiate reactions.
 
 - **Shatter:** a positive Physical attack against an actually Frozen enemy destroys all enemy Block and Armor before mitigation and guarantees that hit's Critical. Freeze remains. Later hits resolve normally. Dodge is resolved before removing defenses or spending the opportunity; Frozen enemies currently cannot Dodge under the existing crowd-control rule.
 - **Wildfire:** a positive resolved Nature hit against an already Burning enemy detonates the remaining projected Burn ticks and clears Burn, after the hit and its normal follow-ups/retaliation, only while the hero and enemy survive. It uses remaining-tick detonation modifiers and per-tick rounding; unmodified 8 Burn pays 8 + 4 + 2 + 1 = 15. It adds no multiplier or Nature buildup.
 
-Card inspection previews show current defenses or projected remaining Burn damage and whether the reaction is used this turn. Chance-dependent hits label their reactions conditionally. Gameplay commits independently of the visible confirmation, defense-breaking notices, fire damage feedback, and result screens.
+Resolved reactions use the existing [battle feedback](./UI_BATTLE.md#battle-feedback) for defense removal, Critical Hits, and Burn damage. Card descriptions and keyword explanations follow the [authoring contract](./CONTENT_AUTHORING.md#add-a-new-card); they do not preview these universal reactions. Gameplay commits independently of presentation.
 
 ### Persistent Forge
 
 Player and enemy Forge add 1 Physical/Stun damage per stack and survive attacks; Purge removes the entire category. Whitehot grants enemies 1 starting Forge. Burning Blade deals base 1 plus rounded half Forge, without generating Forge or applying another Forge conversion. Avatar selects Block 5, Forge 2, or Armor 5 with equal odds. Blacksmith converts 10/20/30/40% of Forge to Burn; Ignite, Sanctify, Rust and Tempered Guard use 25%, and unique Holy permissions use 50%. Overlapping conversions take the strongest permission.
 
-Forge gain bonuses each roll once for the base grant and add at most 1 Forge; all successes form one nonrecursive award. Matching ordinary affixes contribute independently in equipped order. Icebreaker, Emberforged, Sunder and Oathkeeper resolve once per eligible attack action, not per packet. Their action-local bookkeeping is not saved. Vanguard’s Crest and Obsidian Hammer retain their authored per-turn limits, saved through reload. The Patient Edge grants 1 Forge on turns 3, 6, 9 and later multiples of 3. Last Supper checks the hand when the card was played and excludes Companion summons.
+Forge gain bonuses each roll once for the base grant and add at most 1 Forge; all successes form one nonrecursive award. Matching ordinary affixes contribute independently in equipped order. Icebreaker, Emberforged, Sunder and Oathkeeper resolve once per eligible attack action, not per packet. Their action-local bookkeeping is not saved. Vanguard’s Crest and Obsidian Hammer retain their authored per-turn limits, saved through reload. The Patient Edge grants 1 Forge on turns 3, 6, 9 and later multiples of 3. Last Supper independently rolls 10% for 1 Forge whenever a card is Consumed, regardless of hand size.

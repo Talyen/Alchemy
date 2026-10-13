@@ -14,9 +14,10 @@ export const armorTalents = [
   t(
     "armor-block-burst",
     "Armored Surge",
-    "Gaining Block has a 10% chance to also grant that amount of Armor",
+    "Playing a Block card has a 10% chance to grant 6 Armor",
     "Shield",
-    setEffect("armorOnBlockChance", 10),
+    setEffect("armorOnBlockCardChance", 10),
+    setEffect("armorOnBlockCard", 6),
   ),
   t(
     "armor-burn-mitigate",

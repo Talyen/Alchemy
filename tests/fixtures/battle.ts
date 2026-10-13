@@ -62,52 +62,34 @@ export function makeTestBattleState(overrides: Partial<BattleState> = {}): Battl
   };
 }
 
-export type BattleStatePatch = Omit<
-  Partial<BattleState>,
-  | "playerStatuses"
-  | "enemyStatuses"
-  | "trinketEffects"
-  | "talentEffects"
-  | "gearEffects"
-  | "flags"
-  | "uniqueGear"
-  | "enemyMitigation"
-  | "playerCC"
-  | "enemyCC"
-  | "currentEnemy"
-> & {
-  playerStatuses?: Partial<BattleState["playerStatuses"]>;
-  enemyStatuses?: Partial<BattleState["enemyStatuses"]>;
-  trinketEffects?: Partial<BattleState["trinketEffects"]>;
-  talentEffects?: Partial<BattleState["talentEffects"]>;
-  gearEffects?: Partial<BattleState["gearEffects"]>;
-  flags?: Partial<BattleState["flags"]>;
-  uniqueGear?: Partial<BattleState["uniqueGear"]>;
-  enemyMitigation?: Partial<BattleState["enemyMitigation"]>;
-  playerCC?: Partial<BattleState["playerCC"]>;
-  enemyCC?: Partial<BattleState["enemyCC"]>;
-  currentEnemy?: Partial<BattleState["currentEnemy"]>;
+const BATTLE_RECORD_FIELDS = [
+  "playerStatuses",
+  "enemyStatuses",
+  "trinketEffects",
+  "talentEffects",
+  "gearEffects",
+  "flags",
+  "uniqueGear",
+  "enemyMitigation",
+  "playerCC",
+  "enemyCC",
+  "currentEnemy",
+] as const;
+type BattleRecordField = (typeof BATTLE_RECORD_FIELDS)[number];
+
+export type BattleStatePatch = Partial<Omit<BattleState, BattleRecordField>> & {
+  [K in BattleRecordField]?: Partial<BattleState[K]>;
 };
 
 export function patchBattleState(patch: BattleStatePatch = {}): BattleState {
   const base = makeTestBattleState();
-  return {
-    ...base,
-    ...patch,
-    playerStatuses: patch.playerStatuses ? { ...base.playerStatuses, ...patch.playerStatuses } : base.playerStatuses,
-    enemyStatuses: patch.enemyStatuses ? { ...base.enemyStatuses, ...patch.enemyStatuses } : base.enemyStatuses,
-    trinketEffects: patch.trinketEffects ? { ...base.trinketEffects, ...patch.trinketEffects } : base.trinketEffects,
-    talentEffects: patch.talentEffects ? { ...base.talentEffects, ...patch.talentEffects } : base.talentEffects,
-    gearEffects: patch.gearEffects ? { ...base.gearEffects, ...patch.gearEffects } : base.gearEffects,
-    uniqueGear: { ...base.uniqueGear, ...patch.uniqueGear },
-    flags: patch.flags ? { ...base.flags, ...patch.flags } : base.flags,
-    enemyMitigation: patch.enemyMitigation
-      ? { ...base.enemyMitigation, ...patch.enemyMitigation }
-      : base.enemyMitigation,
-    playerCC: patch.playerCC ? { ...base.playerCC, ...patch.playerCC } : base.playerCC,
-    enemyCC: patch.enemyCC ? { ...base.enemyCC, ...patch.enemyCC } : base.enemyCC,
-    currentEnemy: patch.currentEnemy ? { ...base.currentEnemy, ...patch.currentEnemy } : base.currentEnemy,
-  };
+  const state = { ...base, ...patch } as BattleState;
+  for (const field of BATTLE_RECORD_FIELDS) {
+    Object.assign(state, {
+      [field]: patch[field] || field === "uniqueGear" ? { ...base[field], ...patch[field] } : base[field],
+    });
+  }
+  return state;
 }
 
 function dodgeThenMissRng() {

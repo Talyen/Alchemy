@@ -1,25 +1,27 @@
 import { getTransmutationOffers, getTransmutationVariants } from "@/lib/alchemist/transmutation";
 import "../../../../helpers/mock-audio";
-
-import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
+import { initializeAlchemyVisitForTest as initializeAlchemyVisit } from "../../../../helpers/visit-initialization";
+import {
+  mutateGameplayForTest,
+  initializeBattleForTest as initializeActiveBattle,
+  resetAllTestStores,
+  setRunProgress,
+  setRunSession,
+} from "../../../../helpers/run-domain-store-test";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
-
 import { patchBattleState } from "../../../../fixtures/battle";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
-  initializeAlchemyVisit,
   brewAtCampfire,
   transmuteCard,
   selectTransmutation,
 } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
 import { restAtCampfire } from "@/features/alchemy/run-loop/run/destination-commands";
 import { createAlchemistShopCommands } from "@/features/alchemy/run-loop/shop/alchemist-shop-commands";
-import { resetAllTestStores, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { snapshotRun, restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readActiveRun, readRunSession, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { parseActiveRun } from "@/lib/validation";
-import { cardById, computeTalentEffects, type BattleCard } from "@/lib/game-data";
+import { cardById, type BattleCard } from "@/lib/game-data";
 import { defaultGameSession } from "@/app/application-session";
 beforeEach(() => {
   resetAllTestStores();
@@ -200,13 +202,7 @@ describe("alchemy visit transactions and resume", () => {
         },
       },
     });
-    const shop = createAlchemistShopCommands(
-      {
-        talentEffects: computeTalentEffects({}),
-        homesteadEffects: { mixPotionDiscount: 0 },
-      },
-      defaultGameSession,
-    );
+    const shop = createAlchemistShopCommands(defaultGameSession);
     setRunProgress({ gold: 39 });
     expect(shop.strengthenPotion(1)).toBeNull();
     expect(readRunProfile(defaultGameSession).gold).toBe(39);
@@ -219,13 +215,8 @@ describe("alchemy visit transactions and resume", () => {
     expect(shop.strengthenPotion(2)).toBeNull();
   });
   it("preserves spent reaction opportunities in a current battle save", () => {
-    dispatchGameplayCommand(
-      (draft) =>
-        acceptCommand(
-          initializeActiveBattle(draft, patchBattleState({ flags: { shatterUsed: true, wildfireUsed: true } })),
-        ),
-      undefined,
-      defaultGameSession,
+    mutateGameplayForTest((draft) =>
+      initializeActiveBattle(draft, patchBattleState({ flags: { shatterUsed: true, wildfireUsed: true } })),
     );
     reload();
     expect(readBattle(defaultGameSession).battleState.flags).toMatchObject({ shatterUsed: true, wildfireUsed: true });
@@ -246,13 +237,7 @@ describe("alchemy visit transactions and resume", () => {
       },
       activeLabyrinthRewardModifiers: ["open-kitchen"],
     });
-    const shop = createAlchemistShopCommands(
-      {
-        talentEffects: computeTalentEffects({}),
-        homesteadEffects: { mixPotionDiscount: 0 },
-      },
-      defaultGameSession,
-    );
+    const shop = createAlchemistShopCommands(defaultGameSession);
     expect(shop.strengthenPotion(1)?.effects).toEqual([{ kind: "heal", amount: 9 }]);
     expect(readRunProfile(defaultGameSession).gold).toBe(0);
   });

@@ -1,3 +1,4 @@
+import { resolveDraftAvailableDestinations } from "@/features/alchemy/shared/stores/destination-offer-command";
 import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import {
   isBossOnlyDestinationOffer,
@@ -24,27 +25,21 @@ import {
   setRewardState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
+import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
+import { isGameModeUnlocked } from "@/lib/game-data";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
 import { isEditionModeAvailable } from "@/lib/game-edition";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import type { ContentSystemNavigationDeps } from "./content-system-navigation-types";
 
-function restoreResumedCampaignDestinations(
-  draft: RunTransaction,
-  getAvailableDestinations: ContentSystemNavigationDeps["getAvailableDestinations"],
-): void {
+function restoreResumedCampaignDestinations(draft: RunTransaction): void {
   const active = draft.run.activeRun;
   const reward = draft.session.rewardFlow.state;
   if (reward.destinations.length > 0 && (!isBossOnlyDestinationOffer(reward.destinations) || reward.selectedBossId))
     return;
   setRewardState(draft, (prev) =>
     restoreOrCreateDestinationRewardState(snapshotTransactionValue(prev), {
-      availableDestinations: getAvailableDestinations({
-        currentHealth: active.runPlayerHealth,
-        currentGold: draft.runProfile.gold,
-        destinationIndexInAct: active.destinationIndexInAct,
-        maxHealth: active.runMaxHealth,
-      }),
+      availableDestinations: resolveDraftAvailableDestinations(draft),
       offerState: {
         lastOfferedDestinations: snapshotTransactionValue(active.lastOfferedDestinations),
         roundsSinceOffered: active.destinationRoundsSinceOffered,
@@ -76,7 +71,7 @@ export function createRunResumeNavigation(deps: ContentSystemNavigationDeps, gam
     // Card hover clears universally on navigation (see run-flow-engine).
     if (screen === ROUTE_SCREENS.DESTINATION && mode === CONTENT_SYSTEMS.CAMPAIGN) {
       dispatchRunSessionCommand(
-        (draft) => acceptCommand(restoreResumedCampaignDestinations(draft, deps.getAvailableDestinations)),
+        (draft) => acceptCommand(restoreResumedCampaignDestinations(draft)),
         undefined,
         gameSession,
       );
@@ -98,6 +93,7 @@ export function createRunResumeNavigation(deps: ContentSystemNavigationDeps, gam
       resumeRun();
       return;
     }
+    if (!isGameModeUnlocked(systemId, readProfileStore(gameSession).finishedRunCharacters)) return;
     dispatchRunSessionCommand(
       (draft) => {
         setPendingCharacterId(draft, null);

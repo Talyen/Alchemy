@@ -31,18 +31,49 @@ export function getCampfireBrewKind(deck: readonly BattleCard[]): "new" | "combi
 function strengthenEffect(effect: BattleCardEffect): BattleCardEffect {
   if (
     effect.kind === "player-status" &&
-    (effect.status === "haste" || effect.status === "phoenixFeather" || effect.convertCurrentMana !== undefined)
+    (effect.status === "haste" ||
+      effect.status === "phoenixFeather" ||
+      effect.convertCurrentMana !== undefined ||
+      effect.perManaCrystal !== undefined)
   )
     return effect;
-  if (effect.kind === "damage" && (effect.equalToBlockPercent !== undefined || effect.equalToGoldPercent !== undefined))
+  if (
+    effect.kind === "damage" &&
+    (effect.equalToBlock === true ||
+      effect.equalToArmor === true ||
+      effect.equalToForge === true ||
+      effect.equalToGoldPercent !== undefined)
+  )
     return effect;
+  if (effect.kind === "damage") {
+    // A doubled Frozen outcome shares the displayed base magnitude.
+    const frozenIncrease =
+      effect.damageTypeIfTargetFrozen === effect.damageType && effect.amountIfTargetFrozen === effect.amount * 2
+        ? POTION_DISTILL_BONUS * 2
+        : POTION_DISTILL_BONUS;
+    return {
+      ...effect,
+      amount: effect.amount + POTION_DISTILL_BONUS,
+      ...(effect.amountIfTargetFrozen !== undefined
+        ? { amountIfTargetFrozen: effect.amountIfTargetFrozen + frozenIncrease }
+        : {}),
+      ...(effect.blockDamageBonus !== undefined
+        ? { blockDamageBonus: effect.blockDamageBonus + POTION_DISTILL_BONUS }
+        : {}),
+    };
+  }
+  if (effect.kind === "player-status")
+    return {
+      ...effect,
+      amount: effect.amount + POTION_DISTILL_BONUS,
+      ...(effect.forgeAmount !== undefined ? { forgeAmount: effect.forgeAmount + POTION_DISTILL_BONUS } : {}),
+    };
   if (
     effect.kind === "heal" ||
     effect.kind === "restore-mana" ||
     effect.kind === "gain-gold" ||
     effect.kind === "wish" ||
-    effect.kind === "damage" ||
-    effect.kind === "player-status"
+    effect.kind === "companion-action"
   ) {
     return { ...effect, amount: effect.amount + POTION_DISTILL_BONUS };
   }
@@ -71,12 +102,11 @@ export function strengthenPotion(card: BattleCard): BattleCard | null {
         const increased = part.references.some((reference) => {
           const before = getCardEffect(card.effects, reference);
           const after = getCardEffect(effects, reference);
+          const beforeValue = (before as Record<string, unknown> | undefined)?.[reference.field];
+          const afterValue = (after as Record<string, unknown> | undefined)?.[reference.field];
           return (
-            after &&
-            reference.field === "amount" &&
-            "amount" in after &&
-            typeof after.amount === "number" &&
-            (!before || ("amount" in before && typeof before.amount === "number" && after.amount > before.amount))
+            typeof afterValue === "number" &&
+            (beforeValue === undefined || (typeof beforeValue === "number" && afterValue > beforeValue))
           );
         });
         return increased ? { ...part, distilled: true } : part;

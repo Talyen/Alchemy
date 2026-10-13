@@ -1,5 +1,5 @@
 import { talentFor } from "../talent-builder";
-import { addEffect, setEffect } from "../types";
+import { setEffect } from "../types";
 
 const t = talentFor("wish");
 
@@ -35,7 +35,13 @@ export const wishTalents = [
   ),
   t("wish-draw", "Insight", "Wish has a 10% chance to draw a card", "Eye", setEffect("wishDrawChance", 10)),
   t("wish-powerful", "Powerful Wish", "Wish cards are upgraded", "Bolt", setEffect("wishCardsUpgraded", true)),
-  t("wish-mana", "Mana from Heaven", "Gain 1 Mana when you Wish", "CloudRain", addEffect("manaOnWish", 1)),
+  t(
+    "wish-mana",
+    "Mana from Heaven",
+    "Wish cards refund their Mana cost",
+    "CloudRain",
+    setEffect("wishCardRefundsMana", true),
+  ),
   t(
     "wish-gold",
     "Roads Not Taken",

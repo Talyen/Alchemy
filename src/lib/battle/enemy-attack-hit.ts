@@ -8,7 +8,7 @@ import { mergeCombatText } from "./combat-text-events";
 import { addGoldWithCombatText, applyHealingWithCombatText } from "./player-rewards";
 import { processCompanionTurnStart } from "./companion";
 import { purgeOnePlayerBenefit } from "./player-purge";
-import { halveRounded, scalePercent } from "./amount-helpers";
+import { halveRounded } from "./amount-helpers";
 import { takeRandomCardFromDeck, drawKeywordCard } from "./draw";
 import { tryDodgeEnemyAttackPacket } from "./dodge";
 import { applyDodgeTalentStatuses } from "./dodge-talent-rewards";
@@ -59,7 +59,6 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
   const repeatedDamageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
   if (playTwice) {
     nextState = applyCardEffects(nextState, drawn.card, combatTexts, {
-      attackBonuses: chained.attackBonuses,
       damageEffects: repeatedDamageEffects,
       origin: "triggered-card",
       manaAtStart: nextState.mana,
@@ -89,22 +88,12 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
 function applyDodgeDefensiveReactions(
   state: BattleState,
   combatTexts: CombatTextEvent[],
-  dodgedAmount: number,
   eligibility: BattleState,
 ): BattleState {
   let nextState = state;
   const gearBlock = eligibility.playerStatuses.block === 0 ? nextState.gearEffects.blockOnDodge : 0;
-  const dodgeBlock =
-    nextState.talentEffects.dodgeBlockAmount > 0
-      ? nextState.talentEffects.dodgeBlockAmount
-      : nextState.talentEffects.blockOnDodgeEqualToAttack
-        ? dodgedAmount
-        : scalePercent(dodgedAmount, nextState.talentEffects.dodgeBlockPercent);
-  if (gearBlock + dodgeBlock > 0) {
-    nextState = applyBlockReward(nextState, gearBlock + dodgeBlock, combatTexts, {
-      skipFightPacing: dodgeBlock > 0 && nextState.talentEffects.dodgeBlockAmount <= 0,
-    });
-  }
+  const block = gearBlock + nextState.talentEffects.dodgeBlockAmount;
+  if (block > 0) nextState = applyBlockReward(nextState, block, combatTexts);
   const armor = nextState.gearEffects.armorOnDodge + nextState.talentEffects.armorOnDodge;
   if (eligibility.playerStatuses.armor === 0 && armor > 0) nextState = applyArmorReward(nextState, armor, combatTexts);
   const healing =
@@ -117,7 +106,6 @@ function applyDodgeDefensiveReactions(
 function applyDodgeCounterAttacks(
   state: BattleState,
   combatTexts: CombatTextEvent[],
-  dodgedAmount: number,
   eligibility: BattleState,
 ): BattleState {
   let nextState = state;
@@ -132,18 +120,6 @@ function applyDodgeCounterAttacks(
         { source: "player-follow-up", damageType: "physical", amount: current.gearEffects.physicalOnDodge },
         combatTexts,
       ),
-    );
-  }
-  nextState = resolvePendingBattleReactions(nextState, combatTexts);
-  if (isPlayerDefeated(nextState)) return nextState;
-  const riposteDamage = nextState.talentEffects.physicalOnDodgeEqualToAttack
-    ? dodgedAmount
-    : scalePercent(dodgedAmount, nextState.talentEffects.dodgePhysicalDamagePercent);
-  if (riposteDamage > 0 && nextState.enemyHealth > 0) {
-    nextState = resolveFollowUpHit(
-      nextState,
-      { source: "talent-derived", damageType: "physical", amount: riposteDamage },
-      combatTexts,
     );
   }
   nextState = resolvePendingBattleReactions(nextState, combatTexts);
@@ -190,7 +166,7 @@ function applyDodgeOffensiveBuffs(state: BattleState): BattleState {
       flags: { ...nextState.flags, nextPhysicalCrit: true },
     };
   }
-  if (nextState.talentEffects.partingCutOnDodge || nextState.talentEffects.partingCutDamagePercent > 0) {
+  if (nextState.talentEffects.partingCutDamagePercent > 0) {
     nextState = { ...nextState, flags: { ...nextState.flags, nextPhysicalDealsBleed: true } };
   }
   if (nextState.talentEffects.nextArcheryCardFreeOnDodge) {
@@ -202,7 +178,7 @@ function applyDodgeOffensiveBuffs(state: BattleState): BattleState {
   return nextState;
 }
 
-function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], dodgedAmount: number): BattleState {
+function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (!state.uniqueGear.viperReady && state.gearEffects.dodgeReadiesVenomousHit > 0) {
     mergeCombatText(combatTexts, {
       target: "player",
@@ -233,15 +209,9 @@ function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], 
   nextState = resolvePendingBattleReactions(nextState, combatTexts);
   if (isPlayerDefeated(nextState)) return nextState;
   if (state.gearEffects.archeryDodgeAndDraw > 0) nextState = drawKeywordCard(nextState, "archery", { combatTexts });
-  nextState = resolvePendingBattleReactions(
-    applyDodgeDefensiveReactions(nextState, combatTexts, dodgedAmount, state),
-    combatTexts,
-  );
+  nextState = resolvePendingBattleReactions(applyDodgeDefensiveReactions(nextState, combatTexts, state), combatTexts);
   if (isPlayerDefeated(nextState)) return nextState;
-  nextState = resolvePendingBattleReactions(
-    applyDodgeCounterAttacks(nextState, combatTexts, dodgedAmount, state),
-    combatTexts,
-  );
+  nextState = resolvePendingBattleReactions(applyDodgeCounterAttacks(nextState, combatTexts, state), combatTexts);
   if (isPlayerDefeated(nextState)) return nextState;
   nextState = applyDodgeOffensiveBuffs(nextState);
   if (
@@ -259,11 +229,10 @@ function tryDodgeEnemyDamagePacket(
   state: BattleState,
   combatTexts: CombatTextEvent[],
   canDodge: boolean,
-  dodgedAmount: number,
 ): BattleState | null {
   const dodged = tryDodgeEnemyAttackPacket(state, combatTexts, canDodge);
   if (!dodged) return null;
-  return applyOnPlayerDodge(dodged, combatTexts, dodgedAmount);
+  return applyOnPlayerDodge(dodged, combatTexts);
 }
 
 export function resolveEnemyAttackHit(
@@ -275,12 +244,7 @@ export function resolveEnemyAttackHit(
   const { canDodge = false, ...damageOptions } = options;
   if (canDodge && hasEnemyTrait(state, "ravenous")) effect = { ...effect, lifesteal: true };
   const preparedDamage = prepareEnemyDamage(state, effect, damageOptions);
-  const dodged = tryDodgeEnemyDamagePacket(
-    state,
-    combatTexts,
-    canDodge && preparedDamage.attemptedDamage > 0,
-    preparedDamage.incomingDamage,
-  );
+  const dodged = tryDodgeEnemyDamagePacket(state, combatTexts, canDodge && preparedDamage.attemptedDamage > 0);
   if (dodged) {
     const nextState = resolvePendingBattleReactions(dodged, combatTexts);
     return {

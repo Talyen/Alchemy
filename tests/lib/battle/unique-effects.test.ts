@@ -1,4 +1,3 @@
-import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it, vi } from "vitest";
 import { patchBattleState, makeTestCard } from "../../fixtures/battle";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
@@ -28,7 +27,7 @@ describe("unique item battle effects", () => {
       enemyHealth: 100,
       enemyMaxHealth: 100,
       enemyMitigation: { armor: 10, block: 15, forge: 5 },
-      gearEffects: { ...defaultGearEffects, attackPurgeOncePerTurn: 1 },
+      gearEffects: { attackPurgeOncePerTurn: 1 },
     });
 
     const combatTexts: CombatTextEvent[] = [];
@@ -53,7 +52,7 @@ describe("unique item battle effects", () => {
       enemyHealth: 100,
       enemyMaxHealth: 100,
       enemyStatuses: { thorns: 3, burnBonus: 2, poison: 4 },
-      gearEffects: { ...defaultGearEffects, attackPurgeOncePerTurn: 1 },
+      gearEffects: { attackPurgeOncePerTurn: 1 },
     });
 
     const afterPurge = resolvePlayerHit(baseState, { source: "attack-purge" }, []);
@@ -65,7 +64,7 @@ describe("unique item battle effects", () => {
   });
 
   it("Wardbreaker saves its turn use until an enemy gains a benefit", () => {
-    const state = patchBattleState({ gearEffects: { ...defaultGearEffects, attackPurgeOncePerTurn: 1 } });
+    const state = patchBattleState({ gearEffects: { attackPurgeOncePerTurn: 1 } });
     const empty = resolvePlayerHit(state, { source: "attack-purge" }, []);
     expect(empty.uniqueGear.wardbreakerPurgeUsed).toBe(false);
     const protectedEnemy = { ...empty, enemyMitigation: { ...empty.enemyMitigation, block: 4 } };
@@ -87,7 +86,7 @@ describe("unique item battle effects", () => {
       enemyHealth: 100,
       enemyMaxHealth: 100,
       enemyMitigation: { armor: 4, block: 0, forge: 0 },
-      gearEffects: { ...defaultGearEffects, attackPurgeOncePerTurn: 1 },
+      gearEffects: { attackPurgeOncePerTurn: 1 },
     });
 
     const resolution = playBattleCardResolved(baseState, "strike", 0);
@@ -102,7 +101,7 @@ describe("unique item battle effects", () => {
       enemyHealth: 100,
       enemyMaxHealth: 100,
       enemyStatuses: { stun: 60 },
-      gearEffects: { ...defaultGearEffects, holyStunBuildupGold: 25 },
+      gearEffects: { holyStunBuildupGold: 25 },
     });
 
     const afterNonHolyStun = resolveStunTrigger(nonHolyStun, []);
@@ -117,7 +116,7 @@ describe("unique item battle effects", () => {
       gold: 10,
       enemyHealth: 100,
       enemyStatuses: { stun: 40 },
-      gearEffects: { ...defaultGearEffects, holyStunBuildupGold: 25 },
+      gearEffects: { holyStunBuildupGold: 25 },
     });
     const afterHoly = applyDamageStatuses(stateBeforeHoly, holyEffect, 15, []);
     expect(afterHoly.enemyStatuses.stun).toBe(0);
@@ -129,7 +128,7 @@ describe("unique item battle effects", () => {
       playerHealth: 50,
       playerMaxHealth: 100,
       rng: () => 0.05,
-      gearEffects: { ...defaultGearEffects, burnBleedMirrorAndLeech: 1 },
+      gearEffects: { burnBleedMirrorAndLeech: 1 },
     });
 
     const burnEffect: Extract<BattleCardEffect, { kind: "damage" }> = {
@@ -153,7 +152,7 @@ describe("unique item battle effects", () => {
       playerStatuses: { block: 0 },
       enemyHealth: 100,
       enemyStatuses: { freeze: 0 },
-      gearEffects: { ...defaultGearEffects, freezeGrantsBlockAndMana: 1 },
+      gearEffects: { freezeGrantsBlockAndMana: 1 },
     });
 
     const freezeEffect: Extract<BattleCardEffect, { kind: "damage" }> = {
@@ -181,7 +180,7 @@ describe("unique item battle effects", () => {
         playerStatuses: { block: 0 },
         enemyHealth: 100,
         enemyStatuses: { freeze: 40 },
-        gearEffects: { ...defaultGearEffects, freezeGrantsBlockAndMana: 1 },
+        gearEffects: { freezeGrantsBlockAndMana: 1 },
       }),
       freezeEffect,
       15,
@@ -207,13 +206,13 @@ describe("unique item battle effects", () => {
       enemyHealth: 100,
       enemyMaxHealth: 100,
       rng: dodgeThenMissRng(),
-      gearEffects: { ...defaultGearEffects, dodgeDrawAndPlay: 1 },
+      gearEffects: { dodgeDrawAndPlay: 1 },
     });
 
     const combatTexts: CombatTextEvent[] = [];
     const afterHit = applyEnemyAbility(
       baseState,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
       combatTexts,
     );
 
@@ -247,12 +246,12 @@ describe("unique item battle effects", () => {
       enemyHealth: 100,
       enemyMaxHealth: 100,
       rng: dodgeThenMissRng(),
-      gearEffects: { ...defaultGearEffects, dodgeDrawAndPlay: 1 },
+      gearEffects: { dodgeDrawAndPlay: 1 },
     });
 
     const afterHit = applyEnemyAbility(
       baseState,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
       [],
     );
     expect(afterHit.hand).toHaveLength(7);
@@ -277,7 +276,7 @@ describe("unique item battle effects", () => {
       enemyHealth: health,
       enemyMaxHealth: 100,
       enemyStatuses: { bleed: 15, poison: 10 },
-      gearEffects: { ...defaultGearEffects, archeryDetonateBleedPoison: 1 },
+      gearEffects: { archeryDetonateBleedPoison: 1 },
     });
     const result = playBattleCardResolved(state, "quick-shot", 0).state;
     expect(result.enemyHealth).toBe(expectedHealth);
@@ -304,7 +303,7 @@ describe("unique item battle effects", () => {
       hand: [burnCard],
       deck: [freezeCard],
       nextCardUid: 100,
-      gearEffects: { ...defaultGearEffects, elementalTwinCasting: 1 },
+      gearEffects: { elementalTwinCasting: 1 },
     });
 
     const resolution = playBattleCardResolved(baseState, "fireball", 0);
@@ -334,7 +333,7 @@ describe("unique item battle effects", () => {
         mana: 3,
         hand: [freezeCard],
         deck: [burnCard],
-        gearEffects: { ...defaultGearEffects, elementalTwinCasting: 1 },
+        gearEffects: { elementalTwinCasting: 1 },
       }),
       "frostbolt",
       0,
@@ -395,7 +394,7 @@ describe("unique item battle effects", () => {
       playerMaxHealth: 100,
       playerStatuses: { block: 5 },
       enemyHealth: 100,
-      gearEffects: { ...defaultGearEffects, saintfallRetribution: 4 },
+      gearEffects: { saintfallRetribution: 4 },
     });
 
     const combatTexts: CombatTextEvent[] = [];
@@ -594,7 +593,7 @@ describe("processArcheryEchoes", () => {
     const state = patchBattleState({
       enemyHealth: 40,
       uniqueGear: { archeryEchoes: [echo] },
-      gearEffects: { ...defaultGearEffects, archeryEchoNextTurn: 0 },
+      gearEffects: { archeryEchoNextTurn: 0 },
     });
     const result = processArcheryEchoes(state, []);
     expect(result.uniqueGear.archeryEchoes).toEqual([]);

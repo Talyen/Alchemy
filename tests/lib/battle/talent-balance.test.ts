@@ -114,7 +114,7 @@ describe("repeatability-based talent balance", () => {
     expect(addForgeToPlayer(tiny, 1).playerStatuses.forge).toBe(1);
   });
 
-  it("feeds Overheat's Forge through Tempered Guard into Armored Surge", () => {
+  it("feeds Overheat through Tempered Guard without triggering card-play Armored Surge", () => {
     const talents = computeTalentEffects({
       forge: ["forge-burn-burst", "forge-to-block"],
       armor: ["armor-block-burst"],
@@ -125,7 +125,7 @@ describe("repeatability-based talent balance", () => {
     );
     const guarded = applyPlayerStatusEffect(forged, { kind: "player-status", status: "block", amount: 2 }, []);
     expect(forged.playerStatuses.forge).toBe(9);
-    expect(guarded.playerStatuses).toMatchObject({ forge: 9, block: 4, armor: 4 });
+    expect(guarded.playerStatuses).toMatchObject({ forge: 9, block: 4, armor: 0 });
     expect(guarded.enemyHealth).toBe(100);
   });
 

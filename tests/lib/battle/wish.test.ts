@@ -195,22 +195,6 @@ describe("applyWishEffect", () => {
     expect(result.playerStatuses.poison).toBe(3);
   });
 
-  it("draws card with wishDrawsCard", () => {
-    const card = makeTestCard({
-      id: "strike",
-      title: "Strike",
-      effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 4 }],
-    });
-    const state = patchBattleState({
-      deck: [card],
-      talentEffects: { wishDrawsCard: true },
-    });
-    const texts: CombatTextEvent[] = [];
-    const result = applyWishEffect(state, card, 1, texts);
-    expect(result.hand).toHaveLength(1);
-    expect(result.deck).toHaveLength(0);
-  });
-
   it("combines multiple gold bonuses from same wish", () => {
     const state = patchBattleState({
       talentEffects: {
@@ -453,42 +437,24 @@ describe("new wish talents", () => {
     const gold = applyWishEffect(goldState, card, 1, goldTexts);
     expect(gold.gold).toBe(63 + tier);
     expect(
-      goldTexts.filter((event) => event.stat === "gold").reduce((sum, event) => sum + (event.amount ?? 0), 0),
+      goldTexts
+        .filter((event) => event.stat === "gold")
+        .reduce((sum, event) => sum + ("amount" in event ? event.amount : 0), 0),
     ).toBe(13 + tier);
   });
 
-  it("wishManaTrigger adds mana per wish", () => {
-    const card = makeTestCard({ id: "strike", title: "Strike" });
-    const state = patchBattleState({
-      mana: 2,
-      maxMana: 4,
-      talentEffects: { manaOnWish: 2 },
-    });
-    const result = applyWishEffect(state, card, 1, []);
-    expect(result.mana).toBe(4);
-  });
-
-  it("Mana from Wishes triggers Arcane Mending only when gaining Mana from zero", () => {
+  it("Wish gear grants Mana only from zero and triggers Arcane Mending", () => {
     const state = patchBattleState({
       mana: 0,
       maxMana: 4,
       playerHealth: 10,
-      talentEffects: { manaOnWish: 2, healOnManaGain: 2 },
+      gearEffects: { manaOnWish: 2 },
+      talentEffects: { healthPerMana: 1, wishCardRefundsMana: true },
     });
     const next = applyWishEffect(state, makeTestCard(), 2, []);
-    expect(next.mana).toBe(4);
+    expect(next.mana).toBe(2);
     expect(next.playerHealth).toBe(12);
-  });
-
-  it("wishManaTrigger caps mana at maxMana", () => {
-    const card = makeTestCard({ id: "strike", title: "Strike" });
-    const state = patchBattleState({
-      mana: 3,
-      maxMana: 3,
-      talentEffects: { manaOnWish: 2 },
-    });
-    const result = applyWishEffect(state, card, 1, []);
-    expect(result.mana).toBe(3);
+    expect(applyWishEffect({ ...state, mana: 4 }, makeTestCard(), 1, []).mana).toBe(4);
   });
 
   it("wishBurnTrigger applies burn damage on wish", () => {

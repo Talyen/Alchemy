@@ -61,7 +61,7 @@ export function resolveBattleAction(
       // They must settle before the next turn can begin.
       if (!snapshot.wishOptions?.some((card) => card.id === action.cardId)) return reject("Wish choice is unavailable");
       const combatTexts: CombatTextEvent[] = [];
-      const state = chooseWishCard({ ...snapshot, rng: getBattleRng(context) }, action.cardId, combatTexts);
+      const state = chooseWishCard({ ...snapshot, rng: getBattleRng(context) }, action.cardId);
       return { kind: "accepted", action: "wish", resolution: { state: battleSnapshot(state), combatTexts } };
     }
     case "end-turn": {
@@ -89,7 +89,11 @@ export function resolveBattleCard(
   context: BattleResolutionContext,
   options?: CardPlayOptions,
 ): ResolvedPlayerAction {
-  const result = resolveBattleAction(snapshot, { kind: "card", cardId, index, options }, context);
+  const result = resolveBattleAction(
+    snapshot,
+    { kind: "card", cardId, index, ...(options ? { options } : {}) },
+    context,
+  );
   return result.kind === "accepted" && result.action === "card"
     ? result.resolution
     : { state: snapshot, combatTexts: [] };
@@ -111,7 +115,11 @@ export function resolveBattleTurn(
   context: BattleResolutionContext,
   options?: { maxTurns: number },
 ): ResolvedBattleTurn {
-  const result = resolveBattleAction(snapshot, { kind: "end-turn", maxTurns: options?.maxTurns }, context);
+  const result = resolveBattleAction(
+    snapshot,
+    { kind: "end-turn", ...(options ? { maxTurns: options.maxTurns } : {}) },
+    context,
+  );
   return result.kind === "accepted" && result.action === "end-turn"
     ? result.resolution
     : { state: snapshot, frames: [] };

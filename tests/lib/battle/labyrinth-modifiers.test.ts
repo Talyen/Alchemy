@@ -354,7 +354,7 @@ describe("Labyrinth enemy modifiers", () => {
         runDeck: [],
         currentEnemy: { ...state().currentEnemy, traits: enemy("whitehot").traits },
         contentSystemType: "labyrinth",
-        battleRooms,
+        totalRooms: battleRooms,
         rng: () => 0.99,
         appliesFightPacing: false,
       });

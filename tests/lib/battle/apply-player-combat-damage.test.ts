@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { patchBattleState } from "../../fixtures/battle";
-import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
 import { applyPlayerCombatDamage, playerHealthLostToDamage } from "@/lib/battle/health-state";
 import { DEATHS_DOOR_GRACE_TURNS } from "@/lib/game-constants";
 
@@ -51,12 +50,12 @@ describe("applyPlayerCombatDamage", () => {
     expect(result.playerHealth).toBe(24);
   });
 
-  it("does not apply receiveHalfNatureDamage (attack/DoT paths scale instead)", () => {
+  it("does not apply receiveHalfBurnDamage (attack/DoT paths scale instead)", () => {
     const state = patchBattleState({
       playerHealth: 30,
-      talentEffects: { receiveHalfNatureDamage: true },
+      talentEffects: { receiveHalfBurnDamage: true },
     });
-    const result = applyPlayerCombatDamage(state, 10, "hostile", "nature");
+    const result = applyPlayerCombatDamage(state, 10, "hostile", "burn");
     expect(result.playerHealth).toBe(20);
   });
 
@@ -128,7 +127,7 @@ describe("applyPlayerCombatDamage", () => {
     const state = patchBattleState({
       playerHealth: 5,
       playerMaxHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ phoenixFeather: 1 }),
+      playerStatuses: { phoenixFeather: 1 },
     });
     const result = applyPlayerCombatDamage(state, 20, "hostile");
     expect(result.playerHealth).toBe(9);

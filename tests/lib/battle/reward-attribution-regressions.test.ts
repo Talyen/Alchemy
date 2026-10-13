@@ -120,15 +120,16 @@ describe("reward attribution regressions", () => {
       rng: () => 0.99,
       playerHealth: 1,
       deathsDoorUsed: true,
+      mana: 0,
       enemyHealth: 100,
       enemyMaxHealth: 100,
       enemyStatuses: { thorns: 10 },
       activeCompanion: companionLibrary.wolf,
-      talentEffects: { blockOnCompanionDamage: 3, companionStunChance: 100 },
+      talentEffects: { companionManaChance: 100, companionStunChance: 100 },
     });
     const result = processCompanionTurnStart(state, []);
     expect(result.playerHealth).toBe(0);
-    expect(result.playerStatuses.block).toBe(0);
+    expect(result.mana).toBe(0);
     expect(result.enemyStatuses.stun).toBe(0);
   });
 });

@@ -1,5 +1,4 @@
 import "../../../../helpers/mock-audio";
-
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { Screen } from "@/lib/routing";
@@ -13,19 +12,28 @@ import {
   hydrateAlchemyPersistenceFields,
 } from "@/features/alchemy/shared/storage";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readActiveRunScreen, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { resetAllTestStores, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
+import {
+  mutateGameplayForTest,
+  resetAllTestStores,
+  setRunProgress,
+  setRunSession,
+} from "../../../../helpers/run-domain-store-test";
 import { ANCIENT_ALTAR_MYSTERY_VISIT } from "../../shared/stores/active-run-data-fixture";
 import { defaultGameSession } from "@/app/application-session";
 import { savedActivityFixture } from "../../../../fixtures/run-activity";
 
-beforeEach(resetAllTestStores);
+beforeEach(() => {
+  resetAllTestStores();
+  mutateGameplayForTest((draft) => {
+    draft.profile.finishedRunCharacters = ["knight", "rogue", "ranger", "wizard", "alchemist", "warlock", "druid"];
+  });
+});
 
 function createNavigation(presentBattleStart = vi.fn()) {
   const navigateTo = (screen: Screen, onCommit?: () => void) => {
-    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, screen)), undefined, defaultGameSession);
+    mutateGameplayForTest((draft) => setScreen(draft, screen));
     onCommit?.();
   };
   return createContentSystemNavigation(
@@ -33,7 +41,6 @@ function createNavigation(presentBattleStart = vi.fn()) {
       navigateTo,
       resumeTo: navigateTo,
       presentBattleStart,
-      getAvailableDestinations: () => ["Normal Combat"],
       onResumeWildwood: vi.fn(),
     },
     defaultGameSession,
@@ -45,7 +52,7 @@ function startMode(nav: ReturnType<typeof createNavigation>, mode: ContentSystem
   begin[mode]();
   if (mode === "campaign") {
     nav.initializeRunForDifficulty("knight", DEFAULT_CAMPAIGN_DIFFICULTY_ID);
-    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "destination")), undefined, defaultGameSession);
+    mutateGameplayForTest((draft) => setScreen(draft, "destination"));
   } else {
     nav.handleCharacterSelect("knight");
   }
@@ -68,7 +75,7 @@ describe("saved mode navigation", () => {
       const nav = createNavigation();
       startMode(nav, mode);
       const checkpoint = snapshotRun(defaultGameSession);
-      dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "menu")), undefined, defaultGameSession);
+      mutateGameplayForTest((draft) => setScreen(draft, "menu"));
       nav.beginCampaign();
       nav.handleCharacterSelect("rogue");
       expect(snapshotRun(defaultGameSession)).toEqual(checkpoint);
@@ -83,7 +90,7 @@ describe("saved mode navigation", () => {
     nav.handleCharacterSelect("wildcard");
     setRunProgress({ runDeck: Array.from({ length: DRAFT_ROUNDS }, () => getStartingDeck("knight")[0]!) });
     setRunSession({ starterDraftChoices: [] });
-    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "menu")), undefined, defaultGameSession);
+    mutateGameplayForTest((draft) => setScreen(draft, "menu"));
     nav.beginCampaign();
     reloadSavedRuns();
     nav.resumeRun();
@@ -106,7 +113,7 @@ describe("saved mode navigation", () => {
     }
     expect(readRunSession(defaultGameSession).starterDraftChoices).toEqual([]);
 
-    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "menu")), undefined, defaultGameSession);
+    mutateGameplayForTest((draft) => setScreen(draft, "menu"));
     nav.handleStandardDraftComplete();
     expect(presentBattleStart).not.toHaveBeenCalled();
     reloadSavedRuns();
@@ -121,15 +128,9 @@ describe("saved mode navigation", () => {
   });
 
   it("sends a veteran Campaign Wildcard to Difficulty Select only after confirming a reloaded draft", () => {
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.profile.completedDifficulties.wildcard = [DEFAULT_CAMPAIGN_DIFFICULTY_ID];
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      draft.profile.completedDifficulties.wildcard = [DEFAULT_CAMPAIGN_DIFFICULTY_ID];
+    });
     const presentBattleStart = vi.fn();
     const nav = createNavigation(presentBattleStart);
     nav.beginCampaign();
@@ -140,7 +141,7 @@ describe("saved mode navigation", () => {
       nav.handleStarterDraftPick(choice!.id);
     }
 
-    dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "menu")), undefined, defaultGameSession);
+    mutateGameplayForTest((draft) => setScreen(draft, "menu"));
     reloadSavedRuns();
     nav.resumeRun();
     expect(readActiveRunScreen(defaultGameSession)).toBe("draft-deck");
@@ -177,7 +178,7 @@ describe("saved mode navigation", () => {
         setRunSession({ rewardState: { ...createEmptyRewardState(), choices: [card], gold: 7 } });
       }
       const checkpoint = snapshotRun(defaultGameSession);
-      dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "menu")), undefined, defaultGameSession);
+      mutateGameplayForTest((draft) => setScreen(draft, "menu"));
       expect(snapshotRun(defaultGameSession)).toEqual(checkpoint);
       nav.beginCampaign();
       reloadSavedRuns();

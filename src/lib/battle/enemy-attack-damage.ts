@@ -6,7 +6,6 @@ import { computeLeechHeal } from "./damage-rider-leech";
 import { scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
-import { applyHealthLossTalentRewards } from "./status-player";
 import type { BattleState, CombatTextEvent } from "./types";
 import { applyPlayerCombatDamage, playerHealthLostToDamage } from "./health-state";
 import { isPlayerDefeated } from "./battle-outcome";
@@ -173,7 +172,6 @@ function resolveEnemyDamageEffectCore(
     resolvePendingBattleReactions,
     state,
   );
-  nextState = applyHealthLossTalentRewards(hitState, nextState, outcome.healthDamage, combatTexts);
 
   const fullOutcome = { ...outcome, blockLost: outcome.blockLost + preDamageBlockStrip };
   if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...fullOutcome };

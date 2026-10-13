@@ -10,7 +10,6 @@ import { ReservedLock } from "./parts/armory-item-chrome";
 
 export function TrinketPickerGrid({
   reservedTrinkets,
-  characterId,
   trinkets,
   equippedTrinkets,
   editable,

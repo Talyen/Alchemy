@@ -21,7 +21,6 @@ export const ARMED_PLAYER_CHIP_IDS = [
   "nextHitPhysicalBonus",
   "nextPhysicalDealsBleed",
   "nextArcheryCardFree",
-  "nextWishExtraChoice",
   "nextHolyCardFree",
   "nextNatureCardFree",
   "dodgeNextAttack",
@@ -47,12 +46,6 @@ const fixedDefinitions = {
     label: "Hawk Eye",
     description: "Your next attack Critically Hits. Does not stack. Lasts until used or combat ends.",
     icon: keywordIcons.archery,
-    colorClass: keywordDefinitions.holy.colorClass,
-  },
-  nextWishExtraChoice: {
-    label: "Divine Intervention",
-    description: "Your next Wish offers 1 additional card choice. Does not stack. Lasts until used or combat ends.",
-    icon: keywordIcons.wish,
     colorClass: keywordDefinitions.holy.colorClass,
   },
   burnBonus: {

@@ -11,9 +11,6 @@ import type {
 import {
   addCraftingCurrencies,
   applyCraftingCurrency,
-  createEmptyEquippedTrinkets,
-  createEmptyGearInventories,
-  createEmptyGearLoadouts,
   EMPTY_CRAFTING_CURRENCIES,
   equipGear,
   findGearInventoryOwner,
@@ -27,18 +24,9 @@ import {
 } from "@/lib/gear";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Draft } from "immer";
-import type { GearSaveFields, GearStateFields } from "./gear-store-types";
+import type { GearStateFields } from "./gear-store-types";
+import { createInitialGearState } from "./gear-state-defaults";
 import { ownTransactionInput } from "./readonly-view";
-
-export function createInitialGearState(): GearStateFields {
-  return {
-    inventories: createEmptyGearInventories(),
-    loadouts: createEmptyGearLoadouts(),
-    ownedTrinketIds: [],
-    equippedTrinkets: createEmptyEquippedTrinkets(),
-    craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
-  };
-}
 
 export function initializeGear(
   gear: Draft<GearStateFields>,
@@ -123,7 +111,7 @@ export function salvageGearInstance(
   yieldedMaterials: MaterialInventory;
 } | null {
   // Materials routing lives OUTSIDE this helper: only
-  // dispatchGearSalvageWithMaterialGrant grants yieldedMaterials (during a run)
+  // salvageGearInTransaction grants yieldedMaterials (during a run)
   // or stockpiles them (meta). Calling this directly never grants materials.
   const owner = findGearInventoryOwner(gear.inventories, instanceId);
   if (!owner) return null;
@@ -172,15 +160,4 @@ export function addGearCurrencies(
 
 export function resetGear(gear: Draft<GearStateFields>): void {
   Object.assign(gear, createInitialGearState());
-}
-
-export function createDefaultGearSaveFields(): GearSaveFields {
-  const initial = createInitialGearState();
-  return {
-    gearInventories: initial.inventories,
-    gearLoadouts: initial.loadouts,
-    ownedTrinketIds: initial.ownedTrinketIds,
-    equippedTrinkets: initial.equippedTrinkets,
-    craftingCurrencies: initial.craftingCurrencies,
-  };
 }

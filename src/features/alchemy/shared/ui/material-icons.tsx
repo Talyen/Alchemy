@@ -1,5 +1,5 @@
 import { cn, formatLargeAmount } from "@/lib/utils";
-import { MATERIAL_IDS, materialLabels, type MaterialId, type MaterialInventory } from "@/lib/homestead/types";
+import { materialLabels, type MaterialId } from "@/lib/homestead/types";
 import {
   resourceGems,
   resourceFood,
@@ -151,56 +151,6 @@ export function ResourcePill({
         </span>
       </div>
     </div>
-  );
-}
-
-export function HomesteadResourceWallet({
-  gold = 0,
-  materialInventory,
-  className,
-}: {
-  gold?: number | undefined;
-  materialInventory: MaterialInventory;
-  className?: string | undefined;
-}) {
-  return (
-    <div
-      className={cn(
-        "mx-auto grid w-full max-w-fit grid-cols-2 justify-center gap-2 sm:grid-cols-4 xl:grid-cols-8",
-        className,
-      )}
-    >
-      <ResourcePill resource="gold" amount={gold} />
-      {MATERIAL_IDS.map((mat) => (
-        <ResourcePill key={mat} resource={mat} amount={materialInventory[mat] ?? 0} />
-      ))}
-    </div>
-  );
-}
-
-export function MaterialCost({
-  material,
-  amount,
-  affordable = true,
-  className,
-}: {
-  material: MaterialId;
-  amount: number;
-  affordable?: boolean | undefined;
-  className?: string | undefined;
-}) {
-  return (
-    <span className={cn("ml-1.5 inline-flex shrink-0 items-center gap-1.5 leading-none", className)}>
-      <HomesteadResourceArtwork resource={material} size="md" />
-      <span
-        className={cn(
-          "leading-none font-bold tabular-nums",
-          affordable ? "text-foreground" : "font-extrabold text-destructive",
-        )}
-      >
-        {amount}
-      </span>
-    </span>
   );
 }
 

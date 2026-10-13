@@ -8,7 +8,7 @@ import { useInteractiveCard } from "./use-interactive-card";
 export function useChooserHover(scope: string, itemId: string, locked: boolean) {
   const { shimmerActive, shimmerToken, onHoverStart, onHoverEnd } = useInteractiveCard(scope, itemId);
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } = useHoverVisible({
-    onHoverStart: locked ? undefined : onHoverStart,
+    ...(!locked ? { onHoverStart } : {}),
     onHoverEnd,
   });
 

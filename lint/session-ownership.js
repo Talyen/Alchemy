@@ -2,6 +2,7 @@ import path from "node:path";
 
 // These are shipping application adapters, even where they live beside a feature.
 export const APPLICATION_SESSION_ADAPTERS = Object.freeze([
+  "src/App.tsx",
   "src/app/use-dev-shortcuts.ts",
   "src/app/use-app-navigation.ts",
   "src/app/use-card-inspection.ts",
@@ -9,9 +10,6 @@ export const APPLICATION_SESSION_ADAPTERS = Object.freeze([
   "src/app/use-alchemy-bootstrap.ts",
   "src/app/save-write-notice.tsx",
   "src/app/use-app-save-state.ts",
-  "src/features/alchemy/shell/use-alchemy-run-controller.ts",
-  "src/features/alchemy/shell/use-battle-controller.ts",
-  "src/features/alchemy/shell/use-screen-transitions.ts",
   "src/app/battle-presentation.ts",
   "src/features/alchemy/shared/stores/gameplay-state-store.ts",
   "src/features/alchemy/shared/stores/settings-store.ts",

@@ -1,5 +1,5 @@
 import { companionLibrary, enemyBestiary, ENEMY_TYPE_VALUES, findEnemyAbilityCard } from "@/lib/game-data";
-import { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "@/lib/battle";
+import { collectUncoveredEnemyTraitIds } from "@/lib/battle";
 import { validateEnemyTraitDescriptionParity } from "./card-parity/enemy-trait-parity";
 import { CompanionContentSchema, EnemyContentSchema } from "./schemas";
 import { validateLibraryBasics, type Collector } from "./utils";
@@ -30,13 +30,6 @@ export function validateEnemies(collector: Collector): void {
   const bestiaryTraitIds = enemyBestiary.flatMap((enemy) => enemy.traits.map((trait) => trait.id));
   for (const traitId of collectUncoveredEnemyTraitIds(bestiaryTraitIds)) {
     collector.error("enemies", traitId, "Enemy trait has no runtime handler or reaction coverage");
-  }
-  for (const modifierKind of collectUncoveredDifficultyModifierKinds()) {
-    collector.error(
-      "encounter-traits",
-      modifierKind,
-      "Difficulty modifier has no turn-start handler or passive-only entry",
-    );
   }
 }
 

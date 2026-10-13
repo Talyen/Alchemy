@@ -2,11 +2,12 @@ import { mergeCombatText } from "./combat-text-events";
 import type { BattleState, CombatTextEvent } from "./types";
 import { isStunFreezeBuildupBlocked } from "./crowd-control-policy";
 import type { EnemyStatusId, PlayerStatusId } from "@/lib/game-data";
-import { PERCENT_DENOMINATOR, LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
+import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { scalePercent, halveRounded } from "./amount-helpers";
 import { hasEncounterBenefit, hasEnemyTrait } from "./encounter-trait-state";
 import { reduceEnemyArmor } from "./enemy-mitigation-state";
+
 export function blockAmountWithForge(state: BattleState, amount: number): number {
   if (amount <= 0) return amount;
   const forgeBonus = scalePercent(state.playerStatuses.forge, state.talentEffects.forgeBlockPercent);
@@ -15,7 +16,7 @@ export function blockAmountWithForge(state: BattleState, amount: number): number
 
 function playerStatusDelta(state: BattleState, status: PlayerStatusId, delta: number): number {
   if (status === "stun" && delta > 0) {
-    return Math.max(0, Math.round(delta * (1 - state.talentEffects.stunBuildupReductionPercent / PERCENT_DENOMINATOR)));
+    return Math.max(0, Math.round(delta));
   }
   return status === "block" && delta > 0 ? delta + state.gearEffects.flatBlockGained : delta;
 }

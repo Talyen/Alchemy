@@ -49,11 +49,11 @@ describe("balance tuning", () => {
     expect(third.playerStatuses.armor - nextTurn.playerStatuses.armor).toBe(3);
   });
 
-  it("Deep Siphon improves a one-Health card heal without improving incidental or zero-damage Leech", () => {
+  it("Deep Siphon improves card and incidental Leech without granting zero-damage healing", () => {
     const talentEffects = computeTalentEffects({ leech: ["leech-first-double"] });
     const initial = patchBattleState({ playerHealth: 10, playerMaxHealth: 30, talentEffects, rng: () => 0.99 });
     expect(applyLeechHitHealing(initial, 2, [], true).playerHealth).toBe(12);
-    expect(applyLeechHitHealing(initial, 2, [], false).playerHealth).toBe(11);
+    expect(applyLeechHitHealing(initial, 2, [], false).playerHealth).toBe(12);
     expect(applyLeechHitHealing(initial, 0, [], true).playerHealth).toBe(10);
   });
 

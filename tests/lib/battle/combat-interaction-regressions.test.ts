@@ -7,8 +7,13 @@ import { cardById } from "@/lib/game-data";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("combat interaction regressions", () => {
-  it("self-inflicted Burn still earns Desperate Guard when Armor-break cleansing heals above half", () => {
-    const card = cardById.exorcism!;
+  it("self-inflicted Burn earns Desperate Guard before later card healing returns above half", () => {
+    const card = makeTestCard({
+      effects: [
+        { kind: "self-damage", damageType: "burn", amount: 1 },
+        { kind: "heal", amount: 2 },
+      ],
+    });
     const state = patchBattleState({
       hand: [card],
       playerHealth: 15,
@@ -16,15 +21,12 @@ describe("combat interaction regressions", () => {
       playerStatuses: { armor: 1, poison: 1 },
       talentEffects: {
         armorBreakBlock: 3,
-        armorOnBlockChance: 10,
-        armorCleanseChance: 10,
-        healOnStatusCleanse: 2,
         healthThresholdBlockOnce: { threshold: 50, amount: 6 },
       },
       rng: () => 0,
     });
     const next = playBattleCardResolved(state, card.id, 0).state;
-    expect(next.playerHealth).toBeGreaterThanOrEqual(15);
+    expect(next.playerHealth).toBe(16);
     expect(next.flags.desperateGuardUsed).toBe(true);
     expect(next.playerStatuses.block).toBe(9);
     expect(state.playerStatuses.armor).toBe(1);
