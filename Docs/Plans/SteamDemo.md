@@ -50,4 +50,6 @@ Local Windows x64 demo packaging passes renderer/music/fuse/native/source-map
 verification. Full handoff gate results are recorded under ignored reports; no
 public Steam upload, hardware journey or cross-app service claim is certified.
 
-Game-only acceptance evidence and remaining human checks are recorded in [game acceptance](../DEMO_GAME_ACCEPTANCE.md). Use `npm run demo:playtest` before Steamworks setup.
+Candidate checks and the remaining human acceptance procedure live in the
+[demo checklist](../STEAM_DEMO_CHECKLIST.md). Use `npm run demo:playtest` before
+Steamworks setup; completed verification belongs with its candidate evidence.

@@ -11,9 +11,8 @@ presentation state, not a persisted activity. No full-Campaign difficulty
 completion credit is granted. Edition locks appear only as bold red
 “Requires Full Game” tooltip text; names and Collection discoveries stay intact.
 
-Local game evidence and the offline playtest launcher: [game acceptance](./DEMO_GAME_ACCEPTANCE.md).
-
-Player readiness checks: [demo checklist](./STEAM_DEMO_CHECKLIST.md).
+Candidate readiness checks and the offline playtest launcher:
+[demo checklist](./STEAM_DEMO_CHECKLIST.md).
 Player-facing copy awaiting approval: [copy review](./STEAM_DEMO_COPY_REVIEW.md).
 Shipping procedures: [release](./RELEASE.md) and [release setup](./RELEASE_SETUP.md).
 
