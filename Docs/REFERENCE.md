@@ -145,7 +145,7 @@ Lookup for modules not covered in [ARCHITECTURE.md](./ARCHITECTURE.md). Paths ar
 - **Image preload helper** — `src/lib/image-preload.ts`
 - **Potion mixing** — `src/lib/alchemist/potion-mixer.ts`
 - **Platform / Steam** — `src/lib/platform.ts`, `src/lib/desktop-api.ts`, `src/lib/platform-save-backend.ts`, `desktop/`
-- **Reward card sampling** — `src/features/alchemy/run-loop/navigation/reward-flow.ts`
+- **Reward offer eligibility and sampling** — `src/features/alchemy/run-loop/navigation/reward-offers.ts`; `reward-flow.ts` assembles the settled reward state
 - **Reward math (gold / traits)** — `src/features/alchemy/run-loop/navigation/reward-math.ts`
 - **Run loop layering** — [ARCHITECTURE.md § Run loop overview](./ARCHITECTURE.md#run-loop-overview)
 - **Run lifecycle / capability ports** — [ARCHITECTURE.md](./ARCHITECTURE.md)

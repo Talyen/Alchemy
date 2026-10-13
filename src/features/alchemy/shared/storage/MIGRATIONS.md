@@ -1,66 +1,12 @@
 # Save Migration Guide
 
-Random damage and cleanse-to-damage effects support optional `lifesteal`, used by
-Transmutation's Leech addition. Omission keeps ordinary damage. Current card and
-battle saves preserve the flag, its Leech description, and keyword detection;
-there is no save-version change.
+Canonical owner for save compatibility, load recovery, write acknowledgement,
+and deletion. Start with the [public save contract](#public-save-contract) for
+storage behavior or the [required pattern](#required-pattern-automated) for a
+schema change. [Run and save workflows](../../../../../Docs/RUN_WORKFLOWS.md)
+cover implementation steps; gameplay tuning belongs to the linked rule owners.
 
 ## Supported baseline
-
-Reset Homestead persists ordinary zeroed node/bond levels and the refunded
-material stockpile. Refunds are derived from current catalog tier costs and
-committed once; hydration only recomputes effects and never refunds again.
-Discovery remains independent from bonds. Purchase feedback is presentation-only
-and is not serialized. No save-version change or refund ledger is required.
-
-Homestead find bonuses replace per-room yields; effects are derived from the saved
-node levels on hydration. Wheat Field uses post-combat recovery, Orchard adds
-starting Thorns, and Crystal Garden uses current-Mana Freeze scaling. The declared
-battle manifest adds zero-default starting Thorns and Gems/Gold find bonuses and
-retires Homestead Critical damage. Current battle snapshots preserve resolved
-Thorns, pending modified Wish materials, and RNG without replaying starting grants
-or reward multipliers. These additive defaults and balance changes do not bump
-the save version.
-
-Transmutation visits save three class-independent keyword choices and each eligible
-card's source snapshot/index, randomly selected source keyword, and exact altered
-result in `AlchemyVisit.transmutation`. The selected source, keyword, and preview
-index persist. Hydration restores all source/result cards; Back and current-format
-resume never reroll initialized visits. After a covering save, completed visits
-show the saved result and wait for Continue without repeating the alteration.
-Only exhausted visits or completed visits missing a result advance automatically.
-Saved cards retain the `transmuted` keyword, `baseTitle`, generated description,
-and added keyword tags; hydration
-restores the prefixed title and permanent shine. Campfire retains its existing
-visit fields. Retired replacement-card candidate lists are repaired to an
-uninitialized selection and receive the new offers on entry. Historical
-pre-release mechanics are not a parallel supported workflow. These optional
-fields do not change the save version.
-
-Battle snapshots include `pendingCardBleedLeechHealing`, the explicit-card subset
-of queued Bleed Leech. It defaults to zero and cannot exceed the total queued
-Leech. New snapshots preserve that attribution through ticks, detonations, and
-resume so Deep Siphon applies only to card-origin Leech. This additive field does
-not change the save version.
-
-Battle flags include independent per-turn Layered and Ironroot Armor allowances.
-Current snapshots preserve spent allowances through resume; omitted flags default
-to unused through the combat-flag defaults. Deep Siphon uses
-`cardLeechHealingBonus` (flat Health); the retired percentage field is ignored.
-These additive defaults do not change the save version.
-
-Spellrending uses `turnStartPurgeChance` instead of the retired payment-trigger
-field and per-turn flag. Its existing affix ID is unchanged; current catalog roll
-normalization uses the fixed 25% value. Battle gear manifests and flag defaults
-retain only current fields. This pre-release balance change does not bump the
-save version.
-
-The unassigned Bonded affix, its all-type Companion Forge permission, the
-unauthored Burn-to-Forge talent field, and the unused enemy Forge-per-turn
-difficulty modifier are retired. Current defaults discard their old fields,
-affix normalization rejects the removed affix ID, and modifier validation drops
-the removed kind. Authored Forge sources and native enemy traits remain active.
-These pre-release removals do not change the save version.
 
 There are currently no historical player saves that must be preserved. Remove code
 that exists only to retain obsolete saved mechanics rather than maintaining parallel
@@ -125,6 +71,19 @@ Preserve valid current-run card effects, descriptions, and explicit Consume over
 Reworked Talents may retain their IDs, while current run restoration rebinds derived manifests from purchased IDs and Homestead effects. Remove retired manifest keys and their gameplay branches instead of preserving legacy battle behavior. Battle normalization keeps only declared Talent and combat-flag keys; their defaults own the supported shape. Combat flags retain valid booleans and finite nonnegative numbers, repairing other values to their declared defaults. Use defaults for compatible additions and retire incompatible development snapshots when required. Shop state adds `freeRefreshUsed` with a false default and field-by-field hydration for older saves; refresh affordability, RNG, and visit limits follow the [shop workflow](../../../../../Docs/WORKFLOWS.md#change-a-shop).
 
 Battle flags default safely, normalize to their declared boolean/number types, and preserve their current values on resume. Their turn/combat/until-consumed lifetimes are owned by [combat-flags.ts](../../../../../src/lib/battle/combat-flags.ts): Archery sequence flags reset each player turn, while Hawk Eye and Riposte readiness survive until consumed and the first-Burn-free allowance lasts for the combat. Never reconstruct readiness from existing status or Dodge state, or replay opening draws/rewards during normalization. New battles initialize fresh flags.
+
+This includes the independent Layered, Ironroot, Shatter, Wildfire, Vanguard’s
+Crest, and Obsidian Hammer per-turn allowances: loading preserves spent uses,
+while missing flags use their declared defaults. Forge has no deferred spending
+or threshold-reward queue; normalization discards obsolete queues and retired
+manifest fields.
+Current [Forge rules](../../../../../Docs/GAME_RULES.md#persistent-forge) and
+[Gear rules](../../../../../Docs/ARMORY.md#battle-integration) own their mechanics.
+
+`pendingCardBleedLeechHealing` is the explicit-card subset of queued Bleed Leech.
+It defaults to zero, cannot exceed total queued Leech, and preserves attribution
+through ticks, detonations, and resume. [Deep Siphon](../../../../../Docs/TALENT_RULES.md#healing-and-leech)
+owns the resulting healing bonus.
 
 ## Run recap tracking
 
@@ -245,7 +204,7 @@ Dev builds also accept `?wipeLocalSave=1` (exact value) to clear local candidate
 
 ## Load order
 
-Candidate compatibility/freshness prefilter → supported migrations → current-shape validation and normalization → winner selection → active-run card hydration → codec hydration and restore. Version 19 Mystery offers migrate to version 20 before validation; below-floor and future formats never enter that transformation. `SaveDataSchema` is a load-tolerant shape validator; raw-version acceptance belongs to candidate evaluation and must occur first. Test-only direct parsing is not the compatibility gate. Repair follows the owners in [defaults and resume normalization](#defaults-and-resume-normalization); after winner selection, `toActiveRunData` hydrates its run deck, draft choices, Card/Alchemist shop cards, Mystery cards, and Corruption pair. Battle piles hydrate later through `restoreActiveBattle`; candidate evaluation does not publish gameplay state.
+Candidate compatibility/freshness prefilter → supported migrations → current-shape validation and normalization → winner selection → active-run card hydration → codec hydration and restore. Versions 19 and 20 migrate to the current activity shape before validation; below-floor and future formats never enter those transformations. `SaveDataSchema` is a load-tolerant shape validator; raw-version acceptance belongs to candidate evaluation and must occur first. Test-only direct parsing is not the compatibility gate. Repair follows the owners in [defaults and resume normalization](#defaults-and-resume-normalization); after winner selection, `toActiveRunData` hydrates its run deck, draft choices, Card/Alchemist shop cards, Mystery cards, Corruption pair, and Campfire/Transmutation cards. Battle piles hydrate later through `restoreActiveBattle`; candidate evaluation does not publish gameplay state.
 
 ## Implementation rules
 
@@ -264,29 +223,16 @@ Building, farm, and research level bounds come from the current four-tier catalo
 existing levels retain their values and level four survives reload. Companion
 Bonds keep three tiers. New numeric Homestead combat fields default to zero in
 the talent manifest and rebind from purchased levels during run restoration.
-Do not replay opening grants or production while rebinding. Existing Potion
-mixtures retain their stored effects; new mixing discounts alter purchase prices,
-not saved Potion contents. Stone uses the existing material inventory entry;
-Gold production uses the purse owner. No material IDs or saved building IDs change.
+Preserve resolved starting Thorns, pending modified Wish materials, and RNG;
+never replay opening grants or apply find bonuses again while rebinding.
+[Homestead rules](../../../../../Docs/TALENT_RULES.md#talent-manifests-and-progression)
+own effects and discounts; find bonuses modify eligible rewards at their source.
 
-## Strategic card revisions
-
-Conditional-damage fields and card hydration currently accept complete saved
-effects and descriptions, so changing the catalog alone does not update a saved
-card. Preserve valid current-run modifications together, but do not retain old
-Shield Bash, Maul, or Ice Shot mechanics solely for development saves. Apply the
-[supported baseline](#supported-baseline) when a revision makes a snapshot
-incompatible, restarting or exiting its battle rather than continuing obsolete
-rules. Merge clocks, width reservations, and floating sums are presentation-only
-and never enter saves.
-
-## Display preferences
-
-Screen Effects and Drifting Lights were removed before the supported release
-baseline. Their renderers, defaults, codec fields, and schema fields are removed
-together. Existing snapshots retain ordinary settings and permanent progress;
-unknown removed preference fields are discarded by the save schema. Game Size
-and Tooltip Size remain device preferences despite sharing the Display tab.
+Reset Homestead persists zeroed node/bond levels and the refunded material
+stockpile in one command. Refunds use current catalog tier costs; hydration only
+recomputes effects and never refunds again. Discovery remains independent from
+bonds. Purchase feedback is presentation-only and never serialized; no refund
+ledger is needed.
 
 ## Shared run-progress shape
 
@@ -303,10 +249,29 @@ by [Steam demo](../../../../../Docs/STEAM_DEMO.md). Receipts survive Clear Save 
 no active run or full-Campaign win credit is imported. Public demo carryover freezes
 the supported baseline just like a full release; never retire promised progress.
 
-## Alchemy visit and reaction additions
+## Alchemy visits and modified cards
 
-Current saves include optional Campfire/Transmutation visit records with fixed offers, original/result cards, and completion. Missing records default to null and initialize on first entry; existing records survive resume without rerolling or repeated grants. Saved cards retain transformed effects and descriptions; repeat brewing is allowed. The obsolete `brewed` field is ignored when parsing saves. Description magnitudes retain optional `distilled` marks so upgraded values remain green in tooltips.
+Campfire and Transmutation are branches of `activeRun.activity`, each carrying
+its `AlchemyVisit` data. They are not separate optional top-level visit records.
+Save fixed offers, original/result cards, and completion together. Uninitialized
+visits receive offers on entry; initialized visits survive resume without
+rerolling or repeated grants. Campfire Rest/Brew and Alchemist Mix/Distill limits
+survive reload; eligible Potions may be brewed again at later visits under the
+[brewing rules](../../../../../Docs/GAME_RULES.md#brewing-transmutation-and-elemental-reactions).
 
-Battle flags include `shatterUsed` and `wildfireUsed`, defaulting to false through the canonical flag definitions and resetting each player turn. Current snapshots preserve spent opportunities across reload. These compatible additive defaults do not require a schema-version bump.
+`AlchemyVisit.transmutation` additionally saves each keyword choice's exact
+alterations, including source snapshots/indices, selected source keywords, and
+result cards, plus the current source/keyword/preview selection. Hydration
+restores every source/result card. Completed Transmutation shows its saved result
+and Continue without repeating the alteration or completion feedback. Exhausted
+visits and completed visits missing a result advance automatically. Retired
+replacement-card offers repair to an uninitialized selection, not a parallel
+workflow.
 
-Persistent Forge replaces player attack spending and removes the Unique Gear `spentForge` recovery queue. Current manifests use Forge bonus chances and per-copy gear chance arrays. Defaults and normalization retain ordered probability arrays, Everkeen readiness, and the Vanguard/Obsidian turn flags without replaying rewards. Derived manifests rebind from current purchased Talent IDs and loadouts. These pre-release content changes do not bump the save version; current-format saves retain typed card effects and magnitude descriptions together.
+Modified cards retain effects, descriptions, explicit Consume overrides,
+`transmuted`, `baseTitle`, and added tags together. Optional `lifesteal` on random
+damage and cleanse-to-damage preserves Transmutation's Leech addition; omission
+does not grant Leech. Structured description magnitudes retain `distilled` marks
+through hydration and mixing so upgraded values remain green. These compatible
+additions use safe defaults without a schema bump; incompatible changes still
+follow the [supported baseline](#supported-baseline).
