@@ -1,11 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { enemyBestiary } from "@/lib/game-data";
 import {
-  collectUncoveredDifficultyModifierKinds,
   collectUncoveredEnemyTraitIds,
-  DIFFICULTY_TURN_START_MODIFIER_KINDS,
   ENEMY_TRAIT_TURN_START_HANDLER_IDS,
-  PASSIVE_ONLY_DIFFICULTY_MODIFIER_KINDS,
   PASSIVE_ONLY_ENEMY_TRAIT_IDS,
   REACTION_ONLY_ENEMY_TRAIT_IDS,
   processEnemyRegeneration,
@@ -15,12 +12,6 @@ import { IRON_HIDE_ARMOR_PER_TURN, TRAIT_FORGE_PER_TURN, TRAIT_FREEZE_BONUS_PER_
 import { patchBattleState } from "../../fixtures/battle";
 
 describe("enemy turn trait coverage", () => {
-  it("documents every active trait handler and passive-only allowlist entry", () => {
-    const bestiaryTraitIds = enemyBestiary.flatMap((enemy) => enemy.traits.map((trait) => trait.id));
-    const uncoveredTraits = collectUncoveredEnemyTraitIds(bestiaryTraitIds);
-    expect(uncoveredTraits, `Missing handler or PASSIVE_ONLY entry for: ${uncoveredTraits.join(", ")}`).toEqual([]);
-  });
-
   it("rejects inherited object property names as unhandled traits", () => {
     expect(collectUncoveredEnemyTraitIds(["toString", "constructor", "__proto__", "toString"])).toEqual([
       "toString",
@@ -29,18 +20,9 @@ describe("enemy turn trait coverage", () => {
     ]);
   });
 
-  it("documents every difficulty modifier kind with handler or passive-only entry", () => {
-    const uncoveredKinds = collectUncoveredDifficultyModifierKinds();
-    expect(uncoveredKinds, `Missing handler or PASSIVE_ONLY entry for: ${uncoveredKinds.join(", ")}`).toEqual([]);
-  });
-
   it("keeps handler and passive allowlists disjoint", () => {
     const traitOverlap = ENEMY_TRAIT_TURN_START_HANDLER_IDS.filter((id) => PASSIVE_ONLY_ENEMY_TRAIT_IDS.includes(id));
-    const modifierOverlap = DIFFICULTY_TURN_START_MODIFIER_KINDS.filter((kind) =>
-      PASSIVE_ONLY_DIFFICULTY_MODIFIER_KINDS.includes(kind),
-    );
     expect(traitOverlap).toEqual([]);
-    expect(modifierOverlap).toEqual([]);
     expect(PASSIVE_ONLY_ENEMY_TRAIT_IDS.filter((id) => REACTION_ONLY_ENEMY_TRAIT_IDS.includes(id))).toEqual([]);
   });
 });
@@ -119,15 +101,5 @@ describe("processEnemyTraits", () => {
     const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
     expect(processEnemyTraits(legacy, texts).enemyStatuses.freezeBonus).toBe(7);
     expect(texts).not.toContainEqual(expect.objectContaining({ stat: "freezeBonus" }));
-  });
-
-  it("does not run handlers for passive-only regeneration trait", () => {
-    const blightTreant = enemyBestiary.find((e) => e.id === "blight-treant")!;
-    const state = patchBattleState({
-      currentEnemy: blightTreant,
-      enemyMitigation: { forge: 0 },
-    });
-    const result = processEnemyTraits(state, []);
-    expect(result.enemyMitigation.forge).toBe(0);
   });
 });

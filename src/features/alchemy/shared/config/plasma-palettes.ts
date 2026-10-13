@@ -4,7 +4,6 @@ import {
   getEnemyAbilities,
   getCompanionKeywords,
   getTrinketKeywords,
-  keywordDefinitions,
   type BattleCard,
   type BestiaryEntry,
   type CharacterId,
@@ -99,10 +98,6 @@ export function getPlasmaColorPairForUnique(): PlasmaColorPair | null {
   return getPlasmaColorPairFromColors(getUniqueGearShineColors());
 }
 
-export function getPlasmaColorPairForTalent(talent: Pick<TalentDefinition, "keywordId">): PlasmaColorPair | null {
-  return getPlasmaColorPair(getPlasmaKeywordsForTalent(talent));
-}
-
 export function getPlasmaColorPairForCompanion(companion: CompanionDefinition): PlasmaColorPair | null {
   return (
     getPlasmaColorPair(getCompanionKeywords(companion)) ??
@@ -143,8 +138,4 @@ export function getBossTextShineColors(boss: BestiaryEntry): readonly string[] {
 
 export function getPlasmaColorPairForEnemy(entry: BestiaryEntry): PlasmaColorPair | null {
   return getPlasmaColorPair(getPlasmaKeywordsForEnemy(entry));
-}
-
-export function getPlasmaKeywordLabel(keywordId: KeywordId): string {
-  return keywordDefinitions[keywordId]?.label ?? keywordId;
 }

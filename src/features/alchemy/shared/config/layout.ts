@@ -78,8 +78,6 @@ export const cardInteractiveGlowClass = "card-interactive-glow";
 export const cardHoverScaleClass = "card-hover-scale";
 export const screenShellPaddingClass = "p-[calc(2.1*var(--content-rem,1rem))]";
 
-export const settingsPanelShellClass = "rounded-shell-panel border border-border/70 p-5 surface-muted";
-
 export const chooserLockedSurfaceClass = "cursor-not-allowed opacity-45 grayscale";
 
 export const lockedHoverPreviewClass =
