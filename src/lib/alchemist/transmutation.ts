@@ -58,9 +58,7 @@ function convertibleSource(effect: BattleCardEffect): KeywordId | undefined {
   if (effect.kind === "random-damage" && effect.damageTypePool) return effect.damageTypePool[0];
   if (effect.kind === "player-status") {
     if (
-      Object.entries(effect).every(
-        ([key, value]) => ["kind", "status", "amount"].includes(key) || value === false || value === undefined,
-      )
+      Object.entries(effect).every(([key, value]) => ["kind", "status", "amount"].includes(key) || value === undefined)
     )
       return BUFF_KEYWORDS.find((keyword) => keyword === effect.status);
   }
